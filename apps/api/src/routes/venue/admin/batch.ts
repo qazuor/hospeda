@@ -1,6 +1,6 @@
 /**
- * Admin batch gastronomy listings endpoint.
- * Retrieves multiple gastronomy listings by IDs in a single request.
+ * Admin batch venue listings endpoint.
+ * Retrieves multiple venue listings by IDs in a single request.
  */
 import { PermissionEnum, VenueBatchRequestSchema, VenueBatchResponseSchema } from '@repo/schemas';
 import { VenueService } from '@repo/service-core';
@@ -13,7 +13,7 @@ const venueService = new VenueService({ logger: apiLogger });
 
 /**
  * POST /api/v1/admin/venues/batch
- * Get multiple gastronomy listings by IDs — Admin endpoint.
+ * Get multiple venue listings by IDs — Admin endpoint.
  *
  * Used by admin relation-selector components that need to resolve multiple
  * UUIDs to their display labels in a single round-trip.
@@ -21,10 +21,10 @@ const venueService = new VenueService({ logger: apiLogger });
 export const adminBatchVenuesRoute = createAdminRoute({
     method: 'post',
     path: '/batch',
-    summary: 'Get multiple gastronomy listings by IDs (admin)',
+    summary: 'Get multiple venue listings by IDs (admin)',
     description:
-        'Retrieves multiple gastronomy listings by their IDs for entity select components. Requires VENUE_VIEW_ALL.',
-    tags: ['Gastronomy'],
+        'Retrieves multiple venue listings by their IDs for entity select components. Requires VENUE_VIEW_ALL.',
+    tags: ['Venue'],
     anyOfPermissions: [[PermissionEnum.VENUE_VIEW_ALL]],
     requestBody: VenueBatchRequestSchema,
     responseSchema: VenueBatchResponseSchema,

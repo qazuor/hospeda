@@ -115,7 +115,7 @@ const BASE_PROMOTION = {
 };
 const MENU_SECTION = {
     id: '11111111-1111-4111-8111-111111111112',
-    gastronomyId: IDS.listing,
+    venueId: IDS.listing,
     name: 'Entradas',
     description: null,
     nameI18n: { es: 'Entradas', en: 'Starters', pt: 'Entradas' },
@@ -127,7 +127,7 @@ const MENU_SECTION = {
         {
             id: '11111111-1111-4111-8111-111111111113',
             sectionId: '11111111-1111-4111-8111-111111111112',
-            gastronomyId: IDS.listing,
+            venueId: IDS.listing,
             name: 'Empanada',
             description: null,
             nameI18n: { es: 'Empanada', en: 'Empanada', pt: 'Empanada' },
@@ -145,7 +145,7 @@ const MENU_SECTION = {
 };
 const VENUE_EVENT = {
     id: '11111111-1111-4111-8111-111111111114',
-    gastronomyId: IDS.listing,
+    venueId: IDS.listing,
     title: 'Happy hour',
     description: null,
     recurrence: 'weekly',
@@ -160,7 +160,7 @@ const VENUE_EVENT = {
 };
 const DAILY_SPECIAL = {
     id: '11111111-1111-4111-8111-111111111115',
-    gastronomyId: IDS.listing,
+    venueId: IDS.listing,
     title: 'Ravioles',
     description: null,
     priceCents: 2500,
@@ -458,7 +458,7 @@ describe('TEST:V5:32 promotions, alerts and paid public fields', () => {
         expect((await denied.json()).data.entitled).toBe(false);
     });
 
-    it('gastronomy paid public fields follow the owner set regardless of the viewer', async () => {
+    it('venue paid public fields follow the owner set regardless of the viewer', async () => {
         const app = makeApp(publicGetVenueBySlugRoute, IDS.touristVip);
         const response = await app.request('/case/slug/la-parrilla');
         expect(response.status, JSON.stringify(await response.clone().json())).toBe(200);

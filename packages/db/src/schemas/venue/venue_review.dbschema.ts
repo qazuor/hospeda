@@ -15,21 +15,21 @@ import { users } from '../user/user.dbschema.ts';
 import { venues } from './venue.dbschema.ts';
 
 /**
- * Gastronomy review table (SPEC-239).
+ * Venue review table (SPEC-239).
  *
  * Mirrors accommodation_reviews exactly:
- * - FK gastronomyId CASCADE (if the listing is deleted, reviews go with it)
+ * - FK venueId CASCADE (if the listing is deleted, reviews go with it)
  * - FK userId SET NULL (review stays when reviewer is deleted)
  * - Granular rating breakdown via jsonb
  * - averageRating / lifecycleState / moderationState
  * - Full moderation audit (moderatedById / moderatedAt / moderationReason)
- * - UNIQUE(userId, gastronomyId) — one review per user per listing
+ * - UNIQUE(userId, venueId) — one review per user per listing
  */
 export const venueReviews = pgTable(
     'venue_reviews',
     {
         id: uuid('id').primaryKey().defaultRandom(),
-        gastronomyId: uuid('venue_id')
+        venueId: uuid('venue_id')
             .notNull()
             .references(() => venues.id, { onDelete: 'cascade' }),
         userId: uuid('user_id')
@@ -62,7 +62,7 @@ export const venueReviews = pgTable(
         deletedAt: timestamp('deleted_at', { withTimezone: true }),
         deletedById: uuid('deleted_by_id').references(() => users.id, { onDelete: 'set null' }),
         /**
-         * Moderation state defaults to PENDING: gastronomy reviews require
+         * Moderation state defaults to PENDING: venue reviews require
          * moderator approval before appearing publicly (unlike accommodation
          * reviews which default to APPROVED).
          */
@@ -77,22 +77,20 @@ export const venueReviews = pgTable(
         moderationReason: text('moderation_reason')
     },
     (table) => ({
-        gastronomy_reviews_gastronomyId_idx: index('venue_reviews_venueId_idx').on(
-            table.gastronomyId
-        ),
-        gastronomy_reviews_userId_idx: index('venue_reviews_userId_idx').on(table.userId),
-        gastronomy_reviews_user_gastronomy_uniq: uniqueIndex('venue_reviews_user_venue_uniq').on(
+        venue_reviews_venueId_idx: index('venue_reviews_venueId_idx').on(table.venueId),
+        venue_reviews_userId_idx: index('venue_reviews_userId_idx').on(table.userId),
+        venue_reviews_user_venue_uniq: uniqueIndex('venue_reviews_user_venue_uniq').on(
             table.userId,
-            table.gastronomyId
+            table.venueId
         ),
-        gastronomy_reviews_lifecycleState_idx: index('venue_reviews_lifecycleState_idx').on(
+        venue_reviews_lifecycleState_idx: index('venue_reviews_lifecycleState_idx').on(
             table.lifecycleState
         ),
         // Composite: most common query is listByVenue filtered by lifecycle
-        gastronomy_reviews_gastronomyId_lifecycleState_idx: index(
+        venue_reviews_venueId_lifecycleState_idx: index(
             'venue_reviews_venueId_lifecycleState_idx'
-        ).on(table.gastronomyId, table.lifecycleState),
-        gastronomy_reviews_moderationState_idx: index('venue_reviews_moderationState_idx').on(
+        ).on(table.venueId, table.lifecycleState),
+        venue_reviews_moderationState_idx: index('venue_reviews_moderationState_idx').on(
             table.moderationState
         )
     })
@@ -100,7 +98,7 @@ export const venueReviews = pgTable(
 
 export const venueReviewsRelations = relations(venueReviews, ({ one }) => ({
     venue: one(venues, {
-        fields: [venueReviews.gastronomyId],
+        fields: [venueReviews.venueId],
         references: [venues.id]
     }),
     user: one(users, {

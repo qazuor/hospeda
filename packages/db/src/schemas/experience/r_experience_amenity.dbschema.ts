@@ -8,7 +8,7 @@ import { experiences } from './experiences.dbschema.ts';
  *
  * Mirrors r_venue_amenity with composite PK on (experienceId, amenityId).
  * Both FKs cascade on delete so rows are cleaned up automatically.
- * References the existing shared `amenities` catalog (same as accommodations and gastronomy).
+ * References the existing shared `amenities` catalog (same as accommodations and venue).
  */
 export const rExperienceAmenity = pgTable(
     'r_experience_amenity',

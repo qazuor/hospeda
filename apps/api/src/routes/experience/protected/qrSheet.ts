@@ -8,7 +8,7 @@
  * The accommodation twin (`routes/accommodation/protected/qrSheet.ts`) carries
  * the full reasoning for the order of the checks, for why there is NO
  * entitlement gate, for why the code is minted once and reused, and for why the
- * minted destination ignores the downloader's language. As in gastronomy, the
+ * minted destination ignores the downloader's language. As in venue, the
  * staff bypass is `EXPERIENCE_VIEW_ALL`.
  *
  * ## The publicity check is the publication state, as in accommodation
@@ -16,7 +16,7 @@
  * `ExperienceService._canView` answers NOT_FOUND to every non-owner on a listing
  * that is not `publicationStatus === PUBLISHED` (V6.9b, HOS-1641). A listing in
  * any other state would otherwise mint a code and be printed, and every scan of
- * that paper would 404 permanently. The gastronomy twin carries the same clause
+ * that paper would 404 permanently. The venue twin carries the same clause
  * and the same reason.
  *
  * An experience now carries three codes at once, and none of them is a

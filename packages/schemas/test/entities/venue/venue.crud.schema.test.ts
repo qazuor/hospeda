@@ -8,11 +8,11 @@ import {
     VenueRestoreInputSchema,
     VenueUpdateInputSchema
 } from '../../../src/entities/venue/venue.crud.schema.js';
-import { createMinimalGastronomy } from '../../fixtures/venue.fixtures.js';
+import { createMinimalVenue } from '../../fixtures/venue.fixtures.js';
 
 // Helper: build a minimal admin-create payload
 const buildCreatePayload = () => {
-    const base = createMinimalGastronomy();
+    const base = createMinimalVenue();
     return {
         name: base.name,
         slug: base.slug,
@@ -24,7 +24,7 @@ const buildCreatePayload = () => {
     };
 };
 
-describe('GastronomyAdminCreateInputSchema', () => {
+describe('VenueAdminCreateInputSchema', () => {
     it('should validate a valid create payload', () => {
         const data = buildCreatePayload();
         expect(() => VenueAdminCreateInputSchema.parse(data)).not.toThrow();
@@ -51,7 +51,7 @@ describe('GastronomyAdminCreateInputSchema', () => {
     });
 });
 
-describe('GastronomyOwnerUpdateInputSchema', () => {
+describe('VenueOwnerUpdateInputSchema', () => {
     // HOS-166 D-1: the owner now controls identity fields (name/description/destinationId).
     // `slug` remains admin-only (immutable post-create, derived from name — OQ-3).
 
@@ -102,7 +102,7 @@ describe('GastronomyOwnerUpdateInputSchema', () => {
     });
 });
 
-describe('GastronomyUpdateInputSchema (admin update)', () => {
+describe('VenueUpdateInputSchema (admin update)', () => {
     it('should allow partial updates', () => {
         const data = { name: 'Updated Name' };
         expect(() => VenueUpdateInputSchema.parse(data)).not.toThrow();
@@ -118,7 +118,7 @@ describe('GastronomyUpdateInputSchema (admin update)', () => {
     });
 
     it('should reject an invalid type value on update (enum validation enforced on entity schema)', () => {
-        // GastronomyUpdateInputSchema.type is derived from GastronomyTypeEnumSchema — invalid values are rejected.
+        // venueUpdateInputSchema.type is derived from venueTypeEnumSchema — invalid values are rejected.
         const data = { type: 'TAQUERIA' };
         expect(() => VenueUpdateInputSchema.parse(data)).toThrow(ZodError);
     });
@@ -150,7 +150,7 @@ describe('GastronomyUpdateInputSchema (admin update)', () => {
     });
 });
 
-describe('GastronomyDeleteInputSchema', () => {
+describe('VenueDeleteInputSchema', () => {
     it('should validate a valid delete input', () => {
         const data = { id: faker.string.uuid() };
         expect(() => VenueDeleteInputSchema.parse(data)).not.toThrow();
@@ -171,7 +171,7 @@ describe('GastronomyDeleteInputSchema', () => {
     });
 });
 
-describe('GastronomyRestoreInputSchema', () => {
+describe('VenueRestoreInputSchema', () => {
     it('should validate a valid restore input', () => {
         const data = { id: faker.string.uuid() };
         expect(() => VenueRestoreInputSchema.parse(data)).not.toThrow();

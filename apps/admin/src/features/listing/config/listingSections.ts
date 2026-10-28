@@ -3,7 +3,7 @@
  * Builder functions for the SHARED listing consolidated section configs.
  *
  * These sections are reused verbatim by every concrete listing entity
- * (gastronomy via SPEC-240, experiences later) — they contain ZERO entity-
+ * (venue via SPEC-240, experiences later) — they contain ZERO entity-
  * specific fields or values.
  *
  * Two sections are exported:
@@ -24,7 +24,7 @@
  *
  * HOS-382: `media.featuredImage` and `media.gallery` were REMOVED from this
  * section. They used to buffer into a `media` object on PATCH, but the
- * `media` JSONB column was dropped from `gastronomies`/`experiences`
+ * `media` JSONB column was dropped from `legacy listing table`/`experiences`
  * (HOS-372) — the update schemas silently strip a `media` key, so every
  * photo uploaded through those fields was orphaned in Cloudinary with no DB
  * row ever created. Photos are now managed exclusively via the relational
@@ -34,7 +34,7 @@
  * column, not nested under `media`.
  *
  * Permissions are selected from the listing vertical so each section uses
- * only the matching gastronomy or experience permissions.
+ * only the matching venue or experience permissions.
  *
  * Field types are taken from the real `FieldTypeEnum`.  If a needed type
  * (e.g. a structured opening-hours editor) does not yet exist, the closest
@@ -449,7 +449,7 @@ export function createListingOperationalSection(
             // ------------------------------------------------------------------
             {
                 // HOS-372: the field id is `videos`, NOT `media.videos`. The `media`
-                // JSONB column was dropped from `gastronomies`/`experiences` and
+                // JSONB column was dropped from `legacy listing table`/`experiences` and
                 // `media` is no longer a write field — a dotted `media.videos` id
                 // submits a `media` object the update schema now strips, so the
                 // videos would never reach the DB. `videos` is its own column.

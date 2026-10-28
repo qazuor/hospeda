@@ -1,16 +1,16 @@
 /**
- * Gastronomy Gallery Tab Route (HOS-382)
+ * Venue Gallery Tab Route (HOS-382)
  *
  * Relational-gallery counterpart of `accommodations/$id_.gallery.tsx`, for the
- * gastronomy listing vertical. The `venue_media` table (HOS-372) is the
- * source of truth for gastronomy listing photos; the old `media.featuredImage`
+ * venue listing vertical. The `venue_media` table (HOS-372) is the
+ * source of truth for venue listing photos; the old `media.featuredImage`
  * / `media.gallery` fields are removed from the edit form (see
  * `listingSections.ts`).
  *
- * Mirrors the pattern of `$id_.seo.tsx` (the only other gastronomy sub-tab
+ * Mirrors the pattern of `$id_.seo.tsx` (the only other venue sub-tab
  * route today): `SidebarPageLayout` + `PageTabs` with `venueTabs`, rather
  * than accommodation's dedicated `AccommodationSubTabLayout` wrapper — that
- * component is accommodation-specific and gastronomy/experience routes don't
+ * component is accommodation-specific and venue/experience routes don't
  * use it.
  */
 
@@ -41,7 +41,7 @@ function VenueGalleryPage() {
     const { data: venue, isLoading: isVenueLoading } = useVenueQuery(id);
 
     return (
-        <SidebarPageLayout titleKey="admin-pages.titles.gastronomiesView">
+        <SidebarPageLayout titleKey="admin-pages.titles.venuesView">
             <div className="space-y-4">
                 <PageTabs
                     tabs={venueTabs}

@@ -12,7 +12,7 @@ import type { AppOpenAPI } from '../../../../src/types.js';
 const BASE = '/api/v1/public/venues/slug';
 
 // ---------------------------------------------------------------------------
-// HOS-117 T-022 — GONE (410) regression: a soft-deleted gastronomy listing
+// HOS-117 T-022 — GONE (410) regression: a soft-deleted venue listing
 // must be deindexed via HTTP 410, distinct from a genuinely-nonexistent slug
 // (404). Only the service layer is mocked, and only for a single magic slug —
 // every other slug delegates to the real (unmocked) implementation so the
@@ -21,7 +21,7 @@ const BASE = '/api/v1/public/venues/slug';
 // ERROR_CODE_TO_HTTP) still runs, so this asserts the real GONE -> 410
 // wiring, not just the service-level throw.
 // ---------------------------------------------------------------------------
-const GONE_SLUG = 'hos-117-soft-deleted-gastronomy';
+const GONE_SLUG = 'hos-117-soft-deleted-venue';
 
 vi.mock('@repo/service-core', async (importOriginal) => {
     const actual = await importOriginal<typeof import('@repo/service-core')>();
@@ -38,7 +38,7 @@ vi.mock('@repo/service-core', async (importOriginal) => {
             ): ReturnType<typeof actual.VenueService.prototype.getBySlug> {
                 if (args[1] === GONE_SLUG) {
                     return {
-                        error: { code: ServiceErrorCode.GONE, message: 'Gastronomy is gone' }
+                        error: { code: ServiceErrorCode.GONE, message: 'Venue is gone' }
                     } as Awaited<ReturnType<typeof actual.VenueService.prototype.getBySlug>>;
                 }
                 return super.getBySlug(...args);
@@ -125,7 +125,7 @@ describe('GET /api/v1/public/venues/slug/:slug', () => {
     // Soft-delete GONE (410) — HOS-117 T-022
     // -------------------------------------------------------------------------
 
-    describe('Soft-deleted gastronomy (GONE)', () => {
+    describe('Soft-deleted venue (GONE)', () => {
         it('returns 410 when the service reports GONE for a soft-deleted slug', async () => {
             const res = await app.request(`${BASE}/${GONE_SLUG}`, {
                 method: 'GET',

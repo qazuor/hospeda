@@ -15,7 +15,7 @@
  * body the action-based `POST /:id/moderate` refused with 400) and this guard
  * temporarily forbade any mutation. HOS-1684 gives the panel the four actions
  * (`REQUEST_FIX`, `TAKE_DOWN`, `LIFT`, `CLOSE_FIX_REQUEST`) on accommodations,
- * gastronomies and experiences, so the guard demands the control again:
+ * venue listings and experiences, so the guard demands the control again:
  *
  * 1. every route renders `<ListingModerationCard`;
  * 2. its JSX block passes the route's own `vertical`, `entityId={id}` and the

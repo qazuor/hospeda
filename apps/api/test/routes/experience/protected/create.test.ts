@@ -93,7 +93,7 @@ function createMockContext() {
     return { get: vi.fn((key: string) => store.get(key)) };
 }
 
-// See VALID_GASTRONOMY_BODY for why `destinationId` is present (H-88).
+// See VALID_VENUE_BODY for why `destinationId` is present (H-88).
 const VALID_EXPERIENCE_BODY = {
     name: 'Kayak tour on the Uruguay river',
     summary: 'A guided two-hour kayak tour along the riverside.',

@@ -1,5 +1,5 @@
 /**
- * HOS-372 guard — gastronomy and experience read paths must compose media from the relational
+ * HOS-372 guard — venue and experience read paths must compose media from the relational
  * tables.
  *
  * This exists because the wiring was missing once already. The composition
@@ -9,7 +9,7 @@
  * `_afterList` / `_afterSearch` at all.
  *
  * That failure mode is completely silent. Photos persist correctly into
- * `gastronomy_media` / `experience_media`, every write test passes, and the
+ * `venue_media` / `experience_media`, every write test passes, and the
  * photos simply never appear — not on the public page, not on the listing card,
  * not in the editor on reload. Nothing errors.
  *
@@ -31,7 +31,7 @@ const FEATURED_URL = 'https://cdn.example.com/featured.jpg';
 const GALLERY_URL = 'https://cdn.example.com/gallery.jpg';
 
 /** Rows as the relational media model returns them. */
-function buildRows(fkField: 'gastronomyId' | 'experienceId') {
+function buildRows(fkField: 'venueId' | 'experienceId') {
     const base = {
         moderationState: ModerationStatusEnum.APPROVED,
         caption: null,
@@ -88,7 +88,7 @@ type ComposedMedia = {
 describe.each([
     {
         vertical: 'venue',
-        fk: 'gastronomyId' as const,
+        fk: 'venueId' as const,
         finder: 'findByVenues' as const,
         build: (media: Record<string, unknown>) =>
             new VenueService({} as ServiceConfig, media as never)

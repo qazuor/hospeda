@@ -276,7 +276,7 @@
                 "tourist": "Turista VIP",
                 "partner": "parceiros",
                 "unknown": "Hospeda",
-                "venue": "gastronomia"
+                "venue": "Comer e sair"
             }
         }
     },
@@ -301,14 +301,14 @@
             }
         },
         "max_venues": {
-            "title": "Você atingiu o limite de gastronomias",
-            "message_one": "Você tem {{currentCount}} de {{maxAllowed}} gastronomia no seu plano. Faça um upgrade para publicar mais.",
-            "message_other": "Você tem {{currentCount}} de {{maxAllowed}} gastronomias no seu plano. Faça um upgrade para publicar mais.",
+            "title": "Você atingiu o limite de fichas de Comer e sair",
+            "message_one": "Você tem {{currentCount}} de {{maxAllowed}} ficha de Comer e sair no seu plano. Faça um upgrade para publicar mais.",
+            "message_other": "Você tem {{currentCount}} de {{maxAllowed}} fichas de Comer e sair no seu plano. Faça um upgrade para publicar mais.",
             "cta": "Ver minha assinatura",
             "atLimitPanel": {
                 "title": "Você atingiu o limite do seu plano",
-                "body_one": "Você está usando {{currentCount}} de {{maxAllowed}} ficha de gastronomia. Faça um upgrade do plano para publicar outra.",
-                "body_other": "Você está usando {{currentCount}} de {{maxAllowed}} fichas de gastronomia. Faça um upgrade do plano para publicar outra.",
+                "body_one": "Você está usando {{currentCount}} de {{maxAllowed}} ficha de Comer e sair. Faça um upgrade do plano para publicar outra.",
+                "body_other": "Você está usando {{currentCount}} de {{maxAllowed}} fichas de Comer e sair. Faça um upgrade do plano para publicar outra.",
                 "primaryCta": "Ver minha assinatura",
                 "secondaryCta": "Ver minhas fichas"
             }
@@ -366,7 +366,7 @@
             "title": "Você atingiu o limite de conversas com o assistente de IA"
         },
         "max_ai_chat_venue_per_month": {
-            "title": "Você atingiu o limite de chat de IA da sua gastronomia"
+            "title": "Você atingiu o limite de chat de IA da sua ficha de Comer e sair"
         },
         "max_ai_chat_experience_per_month": {
             "title": "Você atingiu o limite de chat de IA da sua experiência"
@@ -594,8 +594,8 @@
             "asTourist": "Como viajante (incluído)",
             "asOwner": "Como anfitrião",
             "aiBusiness": "IA para o seu negócio",
-            "gastronomyListing": "Seu estabelecimento na Hospeda",
-            "gastronomyMenu": "O cardápio",
+            "venueListing": "Seu estabelecimento na Hospeda",
+            "venueMenu": "O cardápio",
             "experienceListing": "Sua experiência na Hospeda",
             "experienceService": "Antes e depois do passeio",
             "listingExtras": "Ferramentas extras"
@@ -632,12 +632,12 @@
             "aiImport": "Importações com IA por mês",
             "aiChatOwner": "Consultas com IA por mês",
             "aiSupport": "Assistente IA de suporte",
-            "maxGastronomies": "Estabelecimentos que você pode publicar",
-            "publishGastronomy": "Publicar seu estabelecimento",
-            "editGastronomyInfo": "Editar as informações do estabelecimento",
-            "gastronomyMenu": "Cardápio carregado na Hospeda",
-            "gastronomyDailySpecial": "Prato do dia",
-            "gastronomyEvents": "Eventos do estabelecimento",
+            "maxVenues": "Estabelecimentos que você pode publicar",
+            "publishVenue": "Publicar seu estabelecimento",
+            "editVenueInfo": "Editar as informações do estabelecimento",
+            "venueMenu": "Cardápio carregado na Hospeda",
+            "venueDailySpecial": "Prato do dia",
+            "venueEvents": "Eventos do estabelecimento",
             "menuItemPhotos": "Fotos por prato",
             "multilingualMenu": "Cardápio em vários idiomas",
             "menuQrScanMetrics": "QR do cardápio com painel de escaneamentos",
@@ -682,12 +682,12 @@
             "aiChatOwner": "Quantidade mensal de consultas à IA disponíveis para o proprietário.",
             "aiSupport": "Assistente com IA para resolver dúvidas sobre a plataforma em tempo real.",
             "menuQrScanMetrics": "Um QR de mesa que abre seu cardápio, com um painel de escaneamentos: total, por dia, e por dispositivo e idioma.",
-            "maxGastronomies": "Quantidade de estabelecimentos que você pode ter publicados ao mesmo tempo.",
-            "publishGastronomy": "Publique seu estabelecimento para que os visitantes o encontrem na Hospeda.",
-            "editGastronomyInfo": "Atualize os dados e detalhes do seu estabelecimento quando quiser.",
-            "gastronomyMenu": "Carregue seu cardápio na Hospeda para que apareça na página do seu estabelecimento.",
-            "gastronomyDailySpecial": "Mostre o prato do dia na sua publicação e troque quando quiser.",
-            "gastronomyEvents": "Divulgue na página do seu estabelecimento os eventos que você organiza.",
+            "maxVenues": "Quantidade de estabelecimentos que você pode ter publicados ao mesmo tempo.",
+            "publishVenue": "Publique seu estabelecimento para que os visitantes o encontrem na Hospeda.",
+            "editVenueInfo": "Atualize os dados e detalhes do seu estabelecimento quando quiser.",
+            "venueMenu": "Carregue seu cardápio na Hospeda para que apareça na página do seu estabelecimento.",
+            "venueDailySpecial": "Mostre o prato do dia na sua publicação e troque quando quiser.",
+            "venueEvents": "Divulgue na página do seu estabelecimento os eventos que você organiza.",
             "menuItemPhotos": "Adicione uma foto a cada prato do seu cardápio.",
             "multilingualMenu": "Ofereça seu cardápio em vários idiomas para visitantes de outros países.",
             "maxExperiences": "Quantidade de experiências que você pode ter publicadas ao mesmo tempo.",
@@ -707,7 +707,7 @@
         },
         "limitLabel": {
             "max_accommodations": "Hospedagens publicadas",
-            "max_venues": "Gastronomias publicadas",
+            "max_venues": "Fichas de Comer e sair publicadas",
             "max_experiences": "Experiências publicadas",
             "max_photos_per_accommodation": "Fotos por hospedagem",
             "max_active_promotions": "Promoções ativas",
@@ -719,7 +719,7 @@
             "max_ai_text_improve_per_month": "Melhorias de texto com IA por mês",
             "max_ai_chat_per_month": "Consultas com IA por mês",
             "max_ai_chat_consumer_per_month": "Consultas ao assistente de IA por mês",
-            "max_ai_chat_venue_per_month": "Consultas ao chat de IA (gastronomia) por mês",
+            "max_ai_chat_venue_per_month": "Consultas ao chat de IA (Comer e sair) por mês",
             "max_ai_chat_experience_per_month": "Consultas ao chat de IA (experiências) por mês",
             "max_ai_search_per_month": "Buscas com IA por mês",
             "max_ai_support_per_month": "Consultas ao suporte com IA por mês",

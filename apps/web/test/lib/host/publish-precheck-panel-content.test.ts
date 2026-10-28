@@ -77,7 +77,7 @@ describe('publish precheck panel content during the billing transition', () => {
         ).toBe('publish.precheck.venue.resumeOrCreate.title');
     });
 
-    it('uses the right noun in gastronomy fallback copy', () => {
+    it('uses the right noun in venue fallback copy', () => {
         const body = resolvePrecheckPanelContent({
             ...BASE,
             vertical: 'venue',

@@ -13,7 +13,7 @@
  *   client-side Cloudinary delete: since HOS-372 the server deletes the binary
  *   inside `removeMedia`, before dropping the row. The client-side call this
  *   replaced was unreachable anyway — `media/protected/delete-entity` rejects
- *   `gastronomy` and `experience` with HTTP 400.
+ *   the venue and experience kinds with HTTP 400.
  * - Setting a new featured image calls upload → addMedia → setFeaturedMedia
  *   immediately, and the previous featured moves to the gallery.
  * - A failed operation surfaces an inline error + toast and does NOT mutate
@@ -370,7 +370,7 @@ describe('MediaSection — per-operation persistence (HOS-372)', () => {
             // HOS-372: the binary is deleted server-side, inside removeMedia,
             // BEFORE the row is dropped. The old client-side call this replaced
             // could never have succeeded — `media/protected/delete-entity`
-            // rejects `gastronomy`/`experience` with HTTP 400.
+            // rejects the venue/experience kinds with HTTP 400.
             expect(mockDeleteMedia).not.toHaveBeenCalled();
         });
 
@@ -706,7 +706,7 @@ describe('MediaSection — per-operation persistence (HOS-372)', () => {
         });
 
         it('stops the batch after the FIRST quota-exceeded response, firing exactly one error and one addMedia call', async () => {
-            // Gastronomy gallery cap is 30 — well above 5, so the client-side
+            // Venue gallery cap is 30 — well above 5, so the client-side
             // upfront check does NOT reject this batch; the server response
             // is what enforces the cap here (simulates a concurrent edit in
             // another tab filling the remaining slots mid-batch).

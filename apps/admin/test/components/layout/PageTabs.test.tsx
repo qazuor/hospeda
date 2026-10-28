@@ -317,7 +317,7 @@ describe('PageTabs', () => {
             expect(postTabs.map((t) => t.id)).toEqual(['content', 'gallery', 'seo', 'sponsorship']);
         });
 
-        it('should export gastronomyTabs', () => {
+        it('should export venueTabs', () => {
             expect(venueTabs).toBeDefined();
             expect(venueTabs).toHaveLength(3);
             expect(venueTabs.map((t) => t.id)).toEqual(['overview', 'gallery', 'seo']);

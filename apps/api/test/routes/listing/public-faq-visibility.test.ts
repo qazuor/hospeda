@@ -1,7 +1,7 @@
 /**
- * HOS-1263 regression: a gastronomy or experience FAQ the owner marked "not visible on the
+ * HOS-1263 regression: a venue or experience FAQ the owner marked "not visible on the
  * listing" must be ABSENT from the public payload, and so must a soft-deleted or non-ACTIVE one of the whole-listing reads
- * (`getBySlug` and `getById`), for both gastronomy and experience. The
+ * (`getBySlug` and `getById`), for both venue and experience. The
  * dedicated `/faqs` routes already filtered; the embedded path did not.
  */
 import { beforeAll, describe, expect, it, vi } from 'vitest';
@@ -25,7 +25,7 @@ const faq = (
     id: `00000000-0000-4000-8000-00000000000${n}`,
     question: overrides.question ?? `Visible question number ${n}`,
     answer: `A long enough answer number ${n}`,
-    gastronomyId: LISTING_ID,
+    venueId: LISTING_ID,
     experienceId: LISTING_ID,
     displayOrder: n,
     category: null,
@@ -51,9 +51,9 @@ const buildListing = (type: string) => ({
     slug: 'hos-1263-listing',
     name: 'Listing name',
     type,
-    summary: 'A summary long enough to satisfy the gastronomy and experience schema minimums.',
+    summary: 'A summary long enough to satisfy the venue and experience schema minimums.',
     description:
-        'A description long enough to satisfy the gastronomy and experience schema minimums, repeated. '.repeat(
+        'A description long enough to satisfy the venue and experience schema minimums, repeated. '.repeat(
             3
         ),
     destinationId: '33333333-3333-4333-8333-333333333333',
@@ -94,15 +94,15 @@ vi.mock('../../../src/utils/listing-catalog-relations', () => ({
 }));
 
 const CASES = [
-    ['gastronomy getBySlug', '/api/v1/public/venues/slug/hos-1263-listing'],
-    ['gastronomy getById', `/api/v1/public/venues/${LISTING_ID}`],
+    ['venue getBySlug', '/api/v1/public/venues/slug/hos-1263-listing'],
+    ['venue getById', `/api/v1/public/venues/${LISTING_ID}`],
     ['experience getBySlug', '/api/v1/public/experiences/slug/hos-1263-listing'],
     ['experience getById', `/api/v1/public/experiences/${LISTING_ID}`],
-    ['gastronomy /faqs', `/api/v1/public/venues/${LISTING_ID}/faqs`],
+    ['venue /faqs', `/api/v1/public/venues/${LISTING_ID}/faqs`],
     ['experience /faqs', `/api/v1/public/experiences/${LISTING_ID}/faqs`]
 ] as const;
 
-describe('public gastronomy and experience reads hide FAQs marked not visible on the listing', () => {
+describe('public venue and experience reads hide FAQs marked not visible on the listing', () => {
     let app: AppOpenAPI;
 
     beforeAll(() => {

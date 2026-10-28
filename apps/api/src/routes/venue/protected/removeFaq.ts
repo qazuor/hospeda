@@ -1,9 +1,9 @@
 /**
  * DELETE /api/v1/protected/venues/:id/faqs/:faqId
- * Remove (soft-delete) a FAQ from a gastronomy listing (T-044)
+ * Remove (soft-delete) a FAQ from a venue listing (T-044)
  *
  * Gated on VENUE_EDIT_OWN (listing owner) or VENUE_EDIT_ALL (staff).
- * The FAQ must belong to the specified gastronomy (enforced inside removeVenueFaq).
+ * The FAQ must belong to the specified venue (enforced inside removeVenueFaq).
  */
 
 import { VenueFaqRemoveOutputSchema, VerticalEnum } from '@repo/schemas';
@@ -18,7 +18,7 @@ import { createProtectedRoute } from '../../../utils/route-factory';
 const venueService = new VenueService({ logger: apiLogger });
 
 /**
- * Route handler — soft-deletes a specific FAQ from a gastronomy listing.
+ * Route handler — soft-deletes a specific FAQ from a venue listing.
  *
  * TYPE-WORKAROUND: accesses the internal `model` field from the service instance
  * to pass to the standalone FAQ helper without requiring a public accessor.
@@ -26,10 +26,10 @@ const venueService = new VenueService({ logger: apiLogger });
 export const protectedRemoveVenueFaqRoute = createProtectedRoute({
     method: 'delete',
     path: '/{id}/faqs/{faqId}',
-    summary: 'Remove FAQ from gastronomy listing',
-    description: 'Soft-deletes a FAQ from a gastronomy listing',
+    summary: 'Remove FAQ from venue listing',
+    description: 'Soft-deletes a FAQ from a venue listing',
     listingAccess: { vertical: VerticalEnum.VENUE, operation: 'EDIT', idParam: 'id' },
-    tags: ['Gastronomy', 'Gastronomy FAQs'],
+    tags: ['Venue', 'Venue FAQs'],
     protectedTag: false,
     requestParams: {
         id: z.string().uuid({ message: 'zodError.common.id.invalidUuid' }),
@@ -43,7 +43,7 @@ export const protectedRemoveVenueFaqRoute = createProtectedRoute({
         const model = (venueService as unknown as { model: Parameters<typeof removeVenueFaq>[0] })
             .model;
         const result = await removeVenueFaq(model, actor, {
-            gastronomyId: params.id as string,
+            venueId: params.id as string,
             faqId: params.faqId as string
         });
 

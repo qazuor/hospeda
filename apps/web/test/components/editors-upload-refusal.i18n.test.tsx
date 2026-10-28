@@ -34,7 +34,7 @@ vi.mock('@/lib/api/endpoints-protected', () => ({
         removeMedia: vi.fn(),
         setFeaturedMedia: vi.fn()
     },
-    gastronomyMediaApi: {
+    venueMediaApi: {
         listMedia: mockListMedia,
         addMedia: vi.fn(),
         removeMedia: vi.fn(),

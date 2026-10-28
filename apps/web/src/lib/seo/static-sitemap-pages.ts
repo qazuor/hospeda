@@ -78,7 +78,7 @@ export const STATIC_SITEMAP_PAGES: readonly StaticSitemapPage[] = [
     // to carry that word.
     { path: '/planes/comer-y-salir/', changefreq: 'monthly', priority: 0.7 },
     // HOS-985: the experience vertical's own level-2 sales page, alongside
-    // gastronomy's above.
+    // venue's above.
     { path: '/planes/experiencias/', changefreq: 'monthly', priority: 0.7 },
     // HOS-985: the host-audience level-2 sales page. It inherits the priority
     // the retired `/suscriptores/propietarios/` landing carried, since it is
@@ -96,7 +96,7 @@ export const STATIC_SITEMAP_PAGES: readonly StaticSitemapPage[] = [
     // audience, which is a search intent distinct from its sales page's.
     //
     // The three verticals' entries are NEW rather than relocated: no pricing URL
-    // ever existed for gastronomy, experiences or aliados. Their price moved
+    // ever existed for venue, experiences or aliados. Their price moved
     // DOWN out of a landing that keeps serving, rather than ACROSS from a page
     // that stopped — which is also why no redirect points at them.
     { path: '/planes/anfitriones/precios/', changefreq: 'weekly', priority: 0.8 },
@@ -200,7 +200,7 @@ export const NON_SITEMAP_STATIC_PAGES: Readonly<Record<string, StaticSitemapExcl
 
     // Redirect-only since HOS-1032. The five pricing URLs the `/planes/`
     // namespace replaced (HOS-941 D-8), plus the two comparison pages whose
-    // table moved onto the pricing page itself (D-11) and the two gastronomy/experience
+    // table moved onto the pricing page itself (D-11) and the two venue/experience
     // landings whose price block moved down a level (D-9 for the slug).
     //
     // All seven leave the sitemap in the SAME change that turns them into

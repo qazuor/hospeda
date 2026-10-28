@@ -1,11 +1,11 @@
 /**
  * GET /api/v1/protected/venues/mine/views
  *
- * Basic view-count statistics for the authenticated owner's own gastronomy
+ * Basic view-count statistics for the authenticated owner's own venue
  * listings, over a rolling window (7d or 30d) — HOS-734.
  *
  * Mirrors `views/protected/accommodations-me.ts`: same `entity_views`
- * telemetry table, applied to the GASTRONOMY vertical instead of ACCOMMODATION. Advanced gastronomy analytics
+ * telemetry table, applied to the VENUE vertical instead of ACCOMMODATION. Advanced venue analytics
  * (QR scans, most-viewed dishes) are explicitly OUT of scope — owner decision,
  * HOS-734 — and will define their own event catalog and entitlement key in a
  * follow-up spec.
@@ -35,18 +35,18 @@ import { createProtectedRoute } from '../../../utils/route-factory';
  * GET /mine/views?window=7d|30d
  *
  * Authenticated owner endpoint that returns view stats for all of the
- * caller's own gastronomy listings over the specified rolling window.
+ * caller's own venue listings over the specified rolling window.
  * Reads the owner's effective view_basic_stats capability before returning statistics.
  */
 export const protectedVenueViewStatsRoute = createProtectedRoute({
     method: 'get',
     path: '/mine/views',
-    summary: 'Get view stats for my gastronomy listings',
+    summary: 'Get view stats for my venue listings',
     description:
-        'Returns view-count statistics for every gastronomy listing owned by the authenticated ' +
+        'Returns view-count statistics for every venue listing owned by the authenticated ' +
         'owner over a rolling window (7d or 30d). Scoped strictly to actor.id — no owner ' +
         'override is accepted. Requires the view_basic_stats entitlement.',
-    tags: ['Gastronomy'],
+    tags: ['Venue'],
     requestQuery: {
         window: EntityViewWindowSchema.default('30d')
     },

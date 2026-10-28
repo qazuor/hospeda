@@ -1,5 +1,5 @@
 /**
- * Regression suite for HOS-400 — gastronomy FAQ channel-visibility flags reach
+ * Regression suite for HOS-400 — venue FAQ channel-visibility flags reach
  * the service, mirroring `accommodation-faq-channel-visibility.test.ts`
  * (H-119 / H-59) for the vertical HOS-400 adopted the flags into.
  *
@@ -95,7 +95,7 @@ const QUESTION = '¿Tienen menú apto para celíacos?';
 const ANSWER = 'Sí, todas las opciones sin TACC están marcadas en la carta.';
 
 /**
- * A complete FAQ row, shaped to satisfy `GastronomyFaqSingleOutputSchema`.
+ * A complete FAQ row, shaped to satisfy `VenueFaqSingleOutputSchema`.
  *
  * The route factory validates the RESPONSE against the declared schema and
  * answers `500 INTERNAL_ERROR` when it does not match, so a partial fixture
@@ -103,7 +103,7 @@ const ANSWER = 'Sí, todas las opciones sin TACC están marcadas en la carta.';
  */
 const FAQ_ROW = {
     id: FAQ_ID,
-    gastronomyId: VENUE_ID,
+    venueId: VENUE_ID,
     question: QUESTION,
     answer: ANSWER,
     category: null,
@@ -127,7 +127,7 @@ function buildHeaders(): Record<string, string> {
     };
 }
 
-describe('Gastronomy FAQ channel-visibility flags reach the service (HOS-400)', () => {
+describe('Venue FAQ channel-visibility flags reach the service (HOS-400)', () => {
     let app: AppOpenAPI;
 
     beforeEach(() => {

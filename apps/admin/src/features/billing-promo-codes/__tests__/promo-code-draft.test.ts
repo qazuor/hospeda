@@ -18,7 +18,7 @@ const messages: Record<string, string> = {
     'admin-billing.promoCodes.editor.reach.allFuture': 'todas las verticales, también las futuras',
     'admin-billing.promoCodes.editor.reach.selected': 'verticales seleccionadas',
     'admin-billing.promoCodes.editor.verticals.accommodation': 'alojamientos',
-    'admin-billing.promoCodes.editor.verticals.gastronomy': 'gastronomía',
+    'admin-billing.promoCodes.editor.verticals.venue': 'gastronomía',
     'admin-billing.promoCodes.editor.verticals.experience': 'experiencias',
     'admin-billing.promoCodes.editor.verticals.tourist': 'turismo',
     'admin-billing.promoCodes.editor.verticals.partner': 'partners',

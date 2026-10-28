@@ -122,7 +122,7 @@ const baseSource = {
 // These verticals have no content quota in this sheet; the photo quota belongs only to accommodation.
 const cases = [
     {
-        file: 'gastronomy/addFaq',
+        file: 'venue/addFaq',
         route: protectedAddVenueFaqRoute,
         method: 'POST',
         path: '/{id}/faqs',
@@ -131,7 +131,7 @@ const cases = [
         vertical: VerticalEnum.VENUE
     },
     {
-        file: 'gastronomy/removeFaq',
+        file: 'venue/removeFaq',
         route: protectedRemoveVenueFaqRoute,
         method: 'DELETE',
         path: '/{id}/faqs/{faqId}',
@@ -140,7 +140,7 @@ const cases = [
         vertical: VerticalEnum.VENUE
     },
     {
-        file: 'gastronomy/updateFaq',
+        file: 'venue/updateFaq',
         route: protectedUpdateVenueFaqRoute,
         method: 'PUT',
         path: '/{id}/faqs/{faqId}',
@@ -149,7 +149,7 @@ const cases = [
         vertical: VerticalEnum.VENUE
     },
     {
-        file: 'gastronomy/reorderFaqs',
+        file: 'venue/reorderFaqs',
         route: protectedReorderVenueFaqsRoute,
         method: 'PUT',
         path: '/{id}/faqs/reorder',
@@ -158,7 +158,7 @@ const cases = [
         vertical: VerticalEnum.VENUE
     },
     {
-        file: 'gastronomy/addMedia',
+        file: 'venue/addMedia',
         route: protectedAddVenueMediaRoute,
         method: 'POST',
         path: '/{id}/media',
@@ -167,7 +167,7 @@ const cases = [
         vertical: VerticalEnum.VENUE
     },
     {
-        file: 'gastronomy/addFeaturedMedia',
+        file: 'venue/addFeaturedMedia',
         route: protectedAddVenueFeaturedMediaRoute,
         method: 'POST',
         path: '/{id}/media/featured',
@@ -176,7 +176,7 @@ const cases = [
         vertical: VerticalEnum.VENUE
     },
     {
-        file: 'gastronomy/removeMedia',
+        file: 'venue/removeMedia',
         route: protectedRemoveVenueMediaRoute,
         method: 'DELETE',
         path: '/{id}/media/{mediaId}',
@@ -185,7 +185,7 @@ const cases = [
         vertical: VerticalEnum.VENUE
     },
     {
-        file: 'gastronomy/reorderMedia',
+        file: 'venue/reorderMedia',
         route: protectedReorderVenueMediaRoute,
         method: 'PATCH',
         path: '/{id}/media/reorder',
@@ -194,7 +194,7 @@ const cases = [
         vertical: VerticalEnum.VENUE
     },
     {
-        file: 'gastronomy/setFeaturedMedia',
+        file: 'venue/setFeaturedMedia',
         route: protectedSetFeaturedVenueMediaRoute,
         method: 'PUT',
         path: '/{id}/media/{mediaId}/featured',
@@ -203,7 +203,7 @@ const cases = [
         vertical: VerticalEnum.VENUE
     },
     {
-        file: 'gastronomy/updateMedia',
+        file: 'venue/updateMedia',
         route: protectedUpdateVenueMediaRoute,
         method: 'PATCH',
         path: '/{id}/media/{mediaId}',
@@ -212,7 +212,7 @@ const cases = [
         vertical: VerticalEnum.VENUE
     },
     {
-        file: 'gastronomy/patch',
+        file: 'venue/patch',
         route: protectedPatchVenueRoute,
         method: 'PATCH',
         path: '/{id}',
@@ -221,7 +221,7 @@ const cases = [
         vertical: VerticalEnum.VENUE
     },
     {
-        file: 'gastronomy/uploadMenuFile',
+        file: 'venue/uploadMenuFile',
         route: protectedUploadVenueMenuFileRoute,
         method: 'POST',
         path: '/{id}/menu-file',
@@ -230,7 +230,7 @@ const cases = [
         vertical: VerticalEnum.VENUE
     },
     {
-        file: 'gastronomy/deleteMenuFile',
+        file: 'venue/deleteMenuFile',
         route: protectedDeleteVenueMenuFileRoute,
         method: 'DELETE',
         path: '/{id}/menu-file',
@@ -239,7 +239,7 @@ const cases = [
         vertical: VerticalEnum.VENUE
     },
     {
-        file: 'gastronomy/putMenu',
+        file: 'venue/putMenu',
         route: protectedPutVenueMenuRoute,
         method: 'PUT',
         path: '/{id}/menu',
@@ -248,7 +248,7 @@ const cases = [
         vertical: VerticalEnum.VENUE
     },
     {
-        file: 'gastronomy/uploadMenuItemPhoto',
+        file: 'venue/uploadMenuItemPhoto',
         route: protectedUploadVenueMenuItemPhotoRoute,
         method: 'POST',
         path: '/{id}/menu-item-photo',
@@ -257,7 +257,7 @@ const cases = [
         vertical: VerticalEnum.VENUE
     },
     {
-        file: 'gastronomy/putDailySpecials',
+        file: 'venue/putDailySpecials',
         route: protectedPutVenueDailySpecialsRoute,
         method: 'PUT',
         path: '/{id}/daily-specials',
@@ -266,7 +266,7 @@ const cases = [
         vertical: VerticalEnum.VENUE
     },
     {
-        file: 'gastronomy/putEvents',
+        file: 'venue/putEvents',
         route: protectedPutVenueEventsRoute,
         method: 'PUT',
         path: '/{id}/events',
@@ -275,7 +275,7 @@ const cases = [
         vertical: VerticalEnum.VENUE
     },
     {
-        file: 'gastronomy/brochure',
+        file: 'venue/brochure',
         route: protectedGetVenueBrochureRoute,
         method: 'GET',
         path: '/{id}/brochure',
@@ -487,7 +487,7 @@ beforeEach(() => {
     mocks.service.mockResolvedValue({ data: {} });
 });
 
-describe('TEST:V5:31 gastronomy and experience content gates', () => {
+describe('TEST:V5:31 venue and experience content gates', () => {
     it.each(cases)('$file requires its effective key on the published listing', async (row) => {
         configureSet(
             OWNER_A,
@@ -550,7 +550,7 @@ describe('TEST:V5:31 gastronomy and experience content gates', () => {
         expect(mocks.effectiveSet).not.toHaveBeenCalled();
     });
     it('requires dish-photo and translation keys only when the validated menu carries them', async () => {
-        const row = cases.find((item) => item.file === 'gastronomy/putMenu');
+        const row = cases.find((item) => item.file === 'venue/putMenu');
         if (!row) throw new Error('Menu route missing');
         configureSet(OWNER_A, ['edit_venue_info', 'manage_venue_menu']);
         const photo = {

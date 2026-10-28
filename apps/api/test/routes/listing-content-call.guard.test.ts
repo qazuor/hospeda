@@ -7,7 +7,7 @@
  * This guard pins the inventory of admin EDIT routes of the three verticals:
  * - every route wraps exactly one call, and that call is its content method
  *   (never a read, never the whole handler, never a second call);
- * - the gastronomy and experience photo and FAQ routes call module-level
+ * - the venue and experience photo and FAQ routes call module-level
  *   service functions, named here instead of a `service.method`;
  * - a new admin EDIT route fails here until it is classified.
  */

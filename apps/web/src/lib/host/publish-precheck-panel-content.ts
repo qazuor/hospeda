@@ -50,7 +50,7 @@ export type PublishVertical = 'accommodation' | 'venue' | 'experience';
  *
  * `noun` exists because the FALLBACK text has to read correctly for a vertical
  * whose key is not translated yet. "Tenés una propiedad sin publicar" is simply
- * wrong on the gastronomy page, and a fallback that is wrong is worse than one
+ * wrong on the venue page, and a fallback that is wrong is worse than one
  * that is generic.
  *
  * **All three nouns are feminine, and the fallbacks below depend on it**

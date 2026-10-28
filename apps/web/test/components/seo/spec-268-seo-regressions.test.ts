@@ -30,7 +30,7 @@ const robotsPage = readFileSync(resolve(ROOT, 'pages/robots.txt.ts'), 'utf8');
 const seoHead = readFileSync(resolve(ROOT, 'components/seo/SEOHead.astro'), 'utf8');
 
 describe('SPEC-268 SEO regressions', () => {
-    it('gastronomy detail treats empty SEO fields as absent and falls back', () => {
+    it('venue detail treats empty SEO fields as absent and falls back', () => {
         expect(venueDetail).toContain('seo?.title?.trim() || venue.name');
         expect(venueDetail).toContain('seo?.description?.trim() ||');
     });

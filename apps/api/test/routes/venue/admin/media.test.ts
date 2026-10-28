@@ -1,5 +1,5 @@
 /**
- * Tests for gastronomy media routes — Admin tier (HOS-372).
+ * Tests for venue media routes — Admin tier (HOS-372).
  *
  * Covers:
  * - POST   /api/v1/admin/venues/:id/media
@@ -11,7 +11,7 @@
  * Testing strategy: mock the standalone `@repo/service-core` media helper
  * functions so no real DB is needed, then exercise the routes via
  * `initApp()` with the `x-mock-actor-*` header triplet (see
- * venue/admin/admin-gastronomy.test.ts convention).
+ * venue/admin/admin-venue.test.ts convention).
  *
  * @module test/routes/venue/admin/media
  */
@@ -106,7 +106,7 @@ const NO_PERMS_HEADERS = {
 
 const buildMediaRow = (id: string, sortOrder: number) => ({
     id,
-    gastronomyId: VENUE_ID,
+    venueId: VENUE_ID,
     url: `https://res.cloudinary.com/demo/image/upload/${id}.jpg`,
     publicId: `hospeda/dev/${id}`,
     caption: 'Plato principal',
@@ -123,7 +123,7 @@ const buildMediaRow = (id: string, sortOrder: number) => ({
     deletedAt: null
 });
 
-describe('Gastronomy media routes — Admin tier (HOS-372)', () => {
+describe('Venue media routes — Admin tier (HOS-372)', () => {
     let app: AppOpenAPI;
 
     beforeAll(() => {
@@ -266,9 +266,9 @@ describe('Gastronomy media routes — Admin tier (HOS-372)', () => {
                 const call = mockReorderVenueMedia.mock.calls[0] as [
                     unknown,
                     unknown,
-                    { gastronomyId: string; orderedIds: string[] }
+                    { venueId: string; orderedIds: string[] }
                 ];
-                expect(call[2].gastronomyId).toBe(VENUE_ID);
+                expect(call[2].venueId).toBe(VENUE_ID);
                 expect(call[2].orderedIds).toEqual([MEDIA_ID_2, MEDIA_ID_1]);
             }
         });
@@ -288,7 +288,7 @@ describe('Gastronomy media routes — Admin tier (HOS-372)', () => {
         it('returns 4xx (not 500) when the listing is not found', async () => {
             mockAddVenueMedia.mockResolvedValue({
                 data: undefined,
-                error: { code: 'NOT_FOUND', message: 'Gastronomy listing not found' }
+                error: { code: 'NOT_FOUND', message: 'Venue listing not found' }
             });
 
             const res = await app.request(BASE, {
@@ -306,7 +306,7 @@ describe('Gastronomy media routes — Admin tier (HOS-372)', () => {
                 data: undefined,
                 error: {
                     code: 'VALIDATION_ERROR',
-                    message: 'orderedIds does not match visible media for this gastronomy listing'
+                    message: 'orderedIds does not match visible media for this venue listing'
                 }
             });
 

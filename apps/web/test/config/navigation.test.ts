@@ -91,7 +91,7 @@ describe('ACCOUNT_DISCOVERY_DOORS (config shape, HOS-131 §6.2/§6.3)', () => {
         expect(partner?.href).toBe('mi-cuenta/aliados');
     });
 
-    it('gives the listing door three acquirable options: accommodation, gastronomy, and experience (HOS-134)', () => {
+    it('gives the listing door three acquirable options: accommodation, venue, and experience (HOS-134)', () => {
         const listing = ACCOUNT_DISCOVERY_DOORS.find((door) => door.id === 'listing');
         expect(listing?.options.map((option) => option.id)).toEqual([
             'accommodation',
@@ -126,7 +126,7 @@ describe('ACCOUNT_DISCOVERY_DOORS (config shape, HOS-131 §6.2/§6.3)', () => {
         const venue = listing?.options.find((option) => option.id === 'venue');
         const experience = listing?.options.find((option) => option.id === 'experience');
 
-        // This case used to assert the opposite — that the two gastronomy/experience options
+        // This case used to assert the opposite — that the two venue/experience options
         // led AWAY from a self-service publish flow — and that reading survived
         // one URL rename too many. HOS-1032 repointed both at the 301 target of
         // the URL they used to name, and the target was a SALES page, so the
@@ -308,7 +308,7 @@ describe('getNavForSurface (selector)', () => {
     it('returns only the always-curated items (dashboard, favorites, subscription) for the avatar surface', () => {
         const { groups } = getNavForSurface({ surface: 'avatar', visibility: ALLOW_ALL });
         // cuenta -> dashboard + subscription; turista -> favorites. hostDashboard
-        // and gastronomy/experience are picked by priority via pickBusinessShortcut, NOT
+        // and venue/experience are picked by priority via pickBusinessShortcut, NOT
         // surface membership, so anfitrion/comercio contribute nothing here.
         expect(groups.map((group) => group.id)).toEqual(['cuenta', 'turista']);
         const cuenta = findGroup(groups, 'cuenta');

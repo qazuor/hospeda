@@ -14,7 +14,7 @@ export const PRICING_VERTICAL_BY_AUDIENCE: Record<
 > = {
     owner: 'accommodation',
     tourist: 'tourist',
-    gastronomy: 'venue',
+    venue: 'venue',
     experience: 'experience',
     partner: null
 };

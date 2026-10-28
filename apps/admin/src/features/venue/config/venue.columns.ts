@@ -1,6 +1,6 @@
 /**
  * @file venue.columns.ts
- * Column factory for the gastronomy admin list page.
+ * Column factory for the venue admin list page.
  *
  * Mirrors the host-trades columns pattern.  Each column receives a translation
  * function so headers are localised at render time.
@@ -40,7 +40,7 @@ const PRICE_RANGE_LABELS: Record<PriceRangeEnum, string> = {
     [PriceRangeEnum.PREMIUM]: 'Premium'
 };
 
-/** Badge colour mapping per gastronomy type. */
+/** Badge colour mapping per venue type. */
 const TYPE_BADGE_OPTIONS = Object.values(VenueTypeEnum).map((value) => ({
     value,
     label: TYPE_LABELS[value] ?? value,
@@ -59,7 +59,7 @@ const PRICE_RANGE_BADGE_OPTIONS = Object.values(PriceRangeEnum).map((value) => (
 // ---------------------------------------------------------------------------
 
 /**
- * Builds the TanStack Table column definitions for the gastronomy admin list page.
+ * Builds the TanStack Table column definitions for the venue admin list page.
  *
  * @param t - Translation function from `useTranslations()`
  * @returns Read-only array of column configurations
@@ -93,7 +93,7 @@ export const createVenueColumns = (t: ColumnTFunction): readonly ColumnConfig<Ve
     },
     {
         id: 'priceRange',
-        header: t('admin-entities.gastronomy.columns.priceRange'),
+        header: t('admin-entities.venue.columns.priceRange'),
         accessorKey: 'priceRange',
         enableSorting: true,
         columnType: ColumnType.BADGE,

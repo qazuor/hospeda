@@ -429,7 +429,7 @@ export async function createListing(args: {
     return listing.id;
 }
 
-/** Creates a gastronomy or experience listing for TEST:V6:2/3. */
+/** Creates a venue or experience listing for TEST:V6:2/3. */
 export async function createVerticalListing(args: {
     readonly vertical: typeof VerticalEnum.VENUE | typeof VerticalEnum.EXPERIENCE;
     readonly ownerId: string;
@@ -471,7 +471,7 @@ export async function createVerticalListing(args: {
         );
         if (args.complete !== false) {
             await getDb().insert(venueMedia).values({
-                gastronomyId: listing.id,
+                venueId: listing.id,
                 url: 'https://example.test/matrix.jpg',
                 moderationState: 'APPROVED',
                 state: 'visible',

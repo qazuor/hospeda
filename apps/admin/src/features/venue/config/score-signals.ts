@@ -1,6 +1,6 @@
 /**
  * @file score-signals.ts
- * Quality-score signal definitions for gastronomy listings (SPEC-239 T-059).
+ * Quality-score signal definitions for venue listings (SPEC-239 T-059).
  *
  * Mirrors `createEventSignals` — the caller passes resolved feature flags so
  * the config stays pure and trivially testable.  Weights sum to 100 for the
@@ -51,7 +51,7 @@ function readPath(source: Record<string, unknown>, path: string): unknown {
 // ---------------------------------------------------------------------------
 
 /**
- * Creates the quality signal config for a gastronomy listing.
+ * Creates the quality signal config for a venue listing.
  *
  * @returns Read-only array of `SignalConfig` for use with `computeScore`.
  */
@@ -186,13 +186,13 @@ export function createVenueSignals(): readonly SignalConfig<Record<string, unkno
             }
         },
         // ----------------------------------------------------------------
-        // Cuisine — gastronomy type (RESTAURANT, BAR, CAFE, …)
+        // Cuisine — food category (RESTAURANT, BAR, CAFE, …)
         // ----------------------------------------------------------------
         {
             id: 'cuisine',
             labelKey: 'admin-entities.qualityScore.signals.cuisine.label',
             weight: 14,
-            sectionId: 'gastronomy-specific',
+            sectionId: 'venue-specific',
             check: (entity) =>
                 isNonEmptyString(entity.type) ? { status: 'done' } : { status: 'pending' }
         },
@@ -226,7 +226,7 @@ export function createVenueSignals(): readonly SignalConfig<Record<string, unkno
             id: 'capacity',
             labelKey: 'admin-entities.qualityScore.signals.capacity.label',
             weight: 8,
-            sectionId: 'gastronomy-specific',
+            sectionId: 'venue-specific',
             check: (entity) =>
                 isNonEmptyString(entity.priceRange) ? { status: 'done' } : { status: 'pending' }
         }

@@ -29,7 +29,7 @@
             "empty": "Você ainda não tem comércios. Crie sua primeira ficha para começar.",
             "edit": "Editar",
             "badge": {
-                "gastronomy": "Gastronomia",
+                "venue": "Comer e sair",
                 "experience": "Experiência"
             },
             "emptyCta": "Criar meu primeiro comércio",
@@ -46,9 +46,9 @@
                 "draftIncomplete": "Rascunho — incompleto"
             },
             "usage": {
-                "gastronomy": {
-                    "label_one": "{{current}} de {{max}} gastronomia",
-                    "label_other": "{{current}} de {{max}} gastronomias"
+                "venue": {
+                    "label_one": "{{current}} de {{max}} ficha de Comer e sair",
+                    "label_other": "{{current}} de {{max}} fichas de Comer e sair"
                 },
                 "experience": {
                     "label_one": "{{current}} de {{max}} experiência",
@@ -74,7 +74,7 @@
                 "downloaded": "Pronto, baixamos.",
                 "qrAlt": "Código QR que leva ao cardápio de {{name}}",
                 "encodes": "Leva a: {{url}}",
-                "locked": "O QR do cardápio e suas estatísticas de leitura estão disponíveis no plano Premium de gastronomia.",
+                "locked": "O QR do cardápio e suas estatísticas de leitura estão disponíveis no plano Premium de Comer e sair.",
                 "error": "Não foi possível carregar as leituras do QR. Tente novamente mais tarde.",
                 "empty": "Ainda não houve leituras neste período."
             }
@@ -305,7 +305,7 @@
         "create": {
             "fields": {
                 "name": {
-                    "gastronomy": "Nome do comércio",
+                    "venue": "Nome do comércio",
                     "experience": "Nome da experiência"
                 },
                 "type": "Categoria",
@@ -316,12 +316,12 @@
                 "destinationEmpty": "Ainda não há cidades / destinos cadastrados. Entre em contato para que possamos ajudar a preencher este campo."
             },
             "submit": {
-                "gastronomy": "Criar comércio",
+                "venue": "Criar comércio",
                 "experience": "Criar experiência"
             },
             "submitting": "Criando...",
             "error": {
-                "gastronomy": "Não conseguimos criar o comércio. Tente novamente.",
+                "venue": "Não conseguimos criar o comércio. Tente novamente.",
                 "experience": "Não conseguimos criar a experiência. Tente novamente."
             }
         },
@@ -340,11 +340,11 @@
         },
         "publish": {
             "confirmTitle": {
-                "gastronomy": "Publicar este estabelecimento?",
+                "venue": "Publicar este estabelecimento?",
                 "experience": "Publicar esta experiência?"
             },
             "choosePlan": {
-                "gastronomy": "Escolher plano de gastronomia",
+                "venue": "Escolher plano de Comer e sair",
                 "experience": "Escolher plano de experiências"
             },
             "missingRequirements": "Não foi possível publicar porque faltam informações."

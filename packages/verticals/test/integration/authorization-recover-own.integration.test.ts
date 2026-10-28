@@ -86,7 +86,7 @@ async function seedVersion(
 }
 
 describe('TEST:V5:2 archived owner without TITLE', () => {
-    it('recovers an archived gastronomy from the floor and denies it when the other vertical lacks the key', async () => {
+    it('recovers an archived venue from the floor and denies it when the other vertical lacks the key', async () => {
         await inRollback(async (db) => {
             const [user] = await db
                 .insert(users)

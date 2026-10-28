@@ -191,7 +191,7 @@ export const PRODUCTION_ADDON_CATALOG: readonly AddonCatalogDefinition[] = [
     limitPack({
         slug: 'extra-venues-1',
         name: 'Extra Comer y salir Listing (+1)',
-        description: 'Adds 1 additional gastronomy listing to your plan. Renews monthly.',
+        description: 'Adds 1 additional venue listing to your plan. Renews monthly.',
         key: 'max_venues',
         value: 1,
         monthlyPesos: 15_000,

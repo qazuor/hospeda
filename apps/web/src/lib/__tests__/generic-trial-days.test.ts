@@ -64,7 +64,7 @@ afterEach(() => vi.clearAllMocks());
 
 describe('computeMinimumTrialDays', () => {
     // The audience-agnostic core, extracted for HOS-943 so the plan index can
-    // resolve tourist / gastronomy / experience / partner through the SAME rule
+    // resolve tourist / venue / experience / partner through the SAME rule
     // the owner tier has used since H-98 rather than a second copy of it. It
     // takes plans already selected for one audience and knows nothing about
     // categories or domains — the selection is the caller's job.
@@ -134,7 +134,7 @@ describe('computeMinimumTrialDays', () => {
     });
 
     it('does not filter by category — that is the caller’s selection', () => {
-        // Deliberate: the plan index selects tourist, gastronomy, experience and
+        // Deliberate: the plan index selects tourist, venue, experience and
         // partner plans, none of which are the `owner` category this function
         // used to be hardwired to. Narrowing here would make it unusable for
         // four of the five audiences.

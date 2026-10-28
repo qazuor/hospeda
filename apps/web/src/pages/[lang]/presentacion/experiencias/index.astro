@@ -17,13 +17,13 @@
  * "correct" any of them back to today's behaviour. Shipping the issue is what closes the gap:
  *  1. THE 30-DAY TRIAL — masthead factsheet, step 03, closing paragraph. Listing has no trial
  *     today: `startListingCheckout` passes a literal `trialDays: 0` to MercadoPago and the first
- *     charge lands on day 1. A REGRESSION, not a missing feature — HOS-590 gave gastronomy/experience the trial,
+ *     charge lands on day 1. A REGRESSION, not a missing feature — HOS-590 gave venue/experience the trial,
  *     HOS-1012 removed it when it rebuilt the local trial for accommodation only. HOS-1184. Public
  *     marketing already promises the 30 days, so the page agrees with the site, not with the code.
- *  2. AI TRANSLATION TO ENGLISH AND PORTUGUESE — "Qué podés mostrar". Gastronomy and experience listings have the
+ *  2. AI TRANSLATION TO ENGLISH AND PORTUGUESE — "Qué podés mostrar". Venue and experience listings have the
  *     FOUR multilang columns but no AI path; the owner types every locale by hand. HOS-1192.
  *  3. STATISTICS BY DAY — "Qué podés mostrar" and "Para ser justos". The daily-series route exists;
- *     the gastronomy/experience widget plots only uniques and totals over a 7d/30d window. HOS-1193.
+ *     the venue/experience widget plots only uniques and totals over a 7d/30d window. HOS-1193.
  *  4. THE PHOTO LADDER 15 / 30 / 50 — the tier table. Today all three tiers get a flat 30
  *     (`MAX_PHOTOS_PER_EXPERIENCE`); HOS-1108, numbers fixed by the owner in a comment on it on
  *     2026-09-05. Note that 50 also implies raising the per-entity ceiling from 30.
@@ -51,7 +51,7 @@
  *    section into the others is what broke it. The original's THIRD row was wrong and is now two:
  *    the owner CAN change the slug (`listing/editor/BasicInfoSection.client.tsx` — opt-in checkbox
  *    plus a warning about Google and shared links); only `isFeatured` is the team's, being out of
- *    the owner PATCH with no gastronomy/experience plan granting `FEATURED_LISTING`.
+ *    the owner PATCH with no venue/experience plan granting `FEATURED_LISTING`.
  *
  * WHY IT IS NOT THE PUBLIC LANDING (/planes/experiencias/). That landing sells and is optimized to
  * rank. This page is what the owner sends personally to one prospect over WhatsApp, or dictates by

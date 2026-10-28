@@ -21,7 +21,7 @@ describe('TEST:1760:3b moderation state query contract', () => {
         expect(buildListingModerationStatePath({ vertical: 'venue', id: 'listing-id' })).toBe(
             '/api/v1/admin/venues/listing-id/moderation'
         );
-        expect(query.queryKey).toEqual(['gastronomies', 'listing-id', 'moderation']);
+        expect(query.queryKey).toEqual(['venues', 'listing-id', 'moderation']);
         await expect(query.queryFn()).resolves.toEqual({
             publicationStatus: 'PUBLISHED',
             fixRequest: null

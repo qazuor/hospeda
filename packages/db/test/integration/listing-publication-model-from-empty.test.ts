@@ -2,7 +2,7 @@
 // SCRATCH.
 //
 // A database built with the branch's migrations, from empty, carries the model of
-// `V/02` §2.5 on the three listing tables (`accommodations`, `gastronomies`,
+// `V/02` §2.5 on the three listing tables (`accommodations`, `legacy listing tables`,
 // `experiences`): the `publication_status` state of `V/03` §9 with its six
 // values, `inactive_since` (spec `inactiva_desde`), `deadlines_version` (spec
 // `plazos_version`), `deletion_announced_at` (spec `borrado_anunciado`, nullable),

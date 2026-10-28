@@ -79,18 +79,18 @@
             "title": "Tu comercio",
             "body": "Edita el contenido, horarios y datos visibles de tu comercio."
         },
-        "greetingGastronomy": {
-            "title": "Bienvenido a tu panel de gastronomia",
+        "greetingVenue": {
+            "title": "Bienvenido a tu panel de Comer y salir",
             "body": "Desde aca podes gestionar tu cuenta y el contenido publico de tu local gastronomico."
         },
-        "listingGastronomy": {
+        "listingVenue": {
             "body": "Edita el menu, los horarios y los datos visibles de tu local gastronomico."
         },
         "myListings": {
             "title": "Tus comercios",
             "body": "Revisa el estado de cada uno de tus comercios y accede a editarlos."
         },
-        "gastronomyQr": {
+        "venueQr": {
             "title": "QR de tu menu",
             "body": "Genera el codigo QR de tu menu y consulta cuantas veces lo escanearon tus clientes."
         },
@@ -170,7 +170,7 @@
                     "cta": "Publicá tu experiencia"
                 },
                 "venue": {
-                    "title": "Gastronomía",
+                    "title": "Comer y salir",
                     "description": "Sumá tu local gastronómico a Hospeda: restaurante, parrilla, panadería, café o food truck. Dejanos tus datos, aprobamos tu solicitud y desde tu cuenta completás y publicás tu ficha vos mismo.",
                     "cta": "Publicá tu local gastronómico"
                 }
@@ -449,7 +449,7 @@
             "vertical": {
                 "accommodation": "alojamiento",
                 "experience": "experiencias",
-                "venue": "gastronomía"
+                "venue": "Comer y salir"
             },
             "total_one": "{{count}} día de prueba en total",
             "total_other": "{{count}} días de prueba en total",
@@ -487,7 +487,7 @@
                 "tourist": "Turista",
                 "partner": "Aliados",
                 "unknown": "Hospeda",
-                "venue": "Gastronomía"
+                "venue": "Comer y salir"
             },
             "price": "{{amount}} {{cycle}}",
             "nextCharge": "Próximo cobro: {{date}}, por {{amount}}."
@@ -554,7 +554,7 @@
             "destination": "Destinos",
             "event": "Eventos",
             "experience": "Experiencias",
-            "gastronomy": "Gastronomía",
+            "venue": "Comer y salir",
             "post": "Blog"
         },
         "collections": {
@@ -798,7 +798,7 @@
             "cancelModal": {
                 "body": "Para cancelar tu suscripción, escribinos a info@hospeda.com.ar y un agente la procesará a la brevedad. Tu plan seguirá activo hasta el final del período actual."
             },
-            "titleGastronomy": "Suscripción de gastronomía",
+            "titleVenue": "Suscripción de Comer y salir",
             "titleExperience": "Suscripción de experiencias",
             "titleTourist": "Suscripción de turista",
             "domainSwitcher": {
@@ -806,7 +806,7 @@
                 "accommodation": "Alojamiento",
                 "experience": "Experiencias",
                 "tourist": "Turista",
-                "gastronomy": "Gastronomía"
+                "venue": "Comer y salir"
             }
         },
         "whatsNew": {

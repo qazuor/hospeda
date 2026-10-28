@@ -24,7 +24,7 @@ export const UserListItemSchema = UserListItemWithCountsSchema.extend(
 export const UserListItemWithComputedFieldsSchema = UserListItemSchema.extend({
     locationCity: z.string().optional(),
     accommodationsCount: z.number().optional(),
-    gastronomiesCount: z.number().optional(),
+    venuesCount: z.number().optional(),
     experiencesCount: z.number().optional(),
     eventsCount: z.number().optional(),
     postsCount: z.number().optional()
@@ -32,7 +32,7 @@ export const UserListItemWithComputedFieldsSchema = UserListItemSchema.extend({
     ...data,
     locationCity: data.location?.city || undefined,
     accommodationsCount: data.accommodationsCount || 0,
-    gastronomiesCount: data.gastronomiesCount || 0,
+    venuesCount: data.venuesCount || 0,
     experiencesCount: data.experiencesCount || 0,
     eventsCount: data.eventsCount || 0,
     postsCount: data.postsCount || 0

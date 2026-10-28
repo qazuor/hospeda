@@ -67,7 +67,7 @@ const ownerActor = {
  * `isFeatured: false` filter — it can assert that the cap fires, never that the
  * cap counted the right rows. That filter is pinned instead by
  * `apps/api/test/services/photo-limit-gallery-only.guard.test.ts`; the
- * gastronomy and experience twins, which mock at the model level, assert it
+ * venue and experience twins, which mock at the model level, assert it
  * behaviourally. `visibleCount` drives the count query, which is what the
  * cap reads.
  */

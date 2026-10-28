@@ -40,7 +40,7 @@
  *
  * `noindex` (via `DetailLayout`) + a canonical pointing at the LISTING, never
  * at itself. It is also NOT added to `sitemap-dynamic.xml.ts` — that file
- * builds gastronomy entries from `ENTITY_PUBLIC_PATHS.gastronomy`
+ * builds venue entries from the public entity path registry
  * (`/comer-y-salir/{slug}/`) alone, a fixed template with no filesystem
  * globbing, so this page is excluded from the sitemap by construction, with
  * nothing extra to switch off (R-1, OQ-2).
@@ -101,7 +101,7 @@ if (!hasMenuContent) {
 
 // --- Edge cacheability (HOS-369 W2-4 pattern, same tags as the listing) ---
 // Sharing the listing's own entity tags is deliberate: a menu edit must purge
-// BOTH pages together. `list-gastronomy` stays excluded for the same reason
+// BOTH pages together. `list-venue` stays excluded for the same reason
 // the listing excludes it — a detail page (this one included) is not a
 // listing, and the collection tag would evict every other venue's page too.
 const venueCacheTags = buildEntityCacheTags({
@@ -126,12 +126,12 @@ applyCacheHeaders({
 const listingPath = `comer-y-salir/${venue.slug}`;
 const listingUrl = buildUrl({ locale, path: listingPath });
 
-const pageTitleWord = t('gastronomy.detail.menuCarta.title', 'Carta');
+const pageTitleWord = t('venue.detail.menuCarta.title', 'Carta');
 const seoTitle = `${pageTitleWord} - ${venue.name} | Hospeda`;
-const seoDescription = t('gastronomy.detail.menuCarta.seoDescription', 'Carta de {{name}}', {
+const seoDescription = t('venue.detail.menuCarta.seoDescription', 'Carta de {{name}}', {
     name: venue.name
 });
-const backToListingLabel = t('gastronomy.detail.menuCarta.backToListing', '← Volver a la ficha');
+const backToListingLabel = t('venue.detail.menuCarta.backToListing', '← Volver a la ficha');
 
 // --- Opening hours (only when the listing already has them at hand) ---
 const hasOpeningHours =
@@ -151,7 +151,7 @@ const hasOpeningHours =
         slot="breadcrumbs"
         locale={locale}
         items={[
-            { label: t('gastronomy.listing.title', 'Gastronomía'), path: 'comer-y-salir/' },
+            { label: t('venue.listing.title', 'Gastronomía'), path: 'comer-y-salir/' },
             { label: venue.name, path: listingPath },
             { label: pageTitleWord }
         ]}

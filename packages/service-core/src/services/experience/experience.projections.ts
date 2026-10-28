@@ -60,7 +60,7 @@ export function projectExperiencePublicList(entities: Experience[]): Partial<Exp
 }
 
 // ---------------------------------------------------------------------------
-// Owner-avatar resolver (mirrors gastronomy pattern)
+// Owner-avatar resolver (mirrors venue pattern)
 // ---------------------------------------------------------------------------
 
 /**

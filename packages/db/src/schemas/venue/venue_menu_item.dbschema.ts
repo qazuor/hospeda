@@ -45,7 +45,7 @@ import { venueMenuSections } from './venue_menu_section.dbschema.ts';
  * ONE photo per dish, not a gallery. The venue's gallery already exists
  * (`venue_media`) and a carta rendering N photos per dish is a different
  * product. Nothing here caps how many DISHES may carry one: the capability is
- * gated by the `menu_item_photos` entitlement (gastronomy premium) and by NO
+ * gated by the `menu_item_photos` entitlement (venue premium) and by NO
  * numeric limit key — owner decision, HOS-1045, and a deliberate one, since
  * the limit engine resolves an unknown key as *unlimited* in five layers
  * without raising, so a cap that is not wired end to end is worse than none.
@@ -72,7 +72,7 @@ export const venueMenuItems = pgTable(
             .notNull()
             .references(() => venueMenuSections.id, { onDelete: 'cascade' }),
         /** Denormalized FK to the listing. See the file docblock for why. */
-        gastronomyId: uuid('venue_id')
+        venueId: uuid('venue_id')
             .notNull()
             .references(() => venues.id, { onDelete: 'cascade' }),
         /** Name of the dish or drink. */
@@ -121,7 +121,7 @@ export const venueMenuItems = pgTable(
         /**
          * Cloudinary `public_id` of that asset, so a later cleanup can DESTROY
          * it rather than merely forget it — the distinction `venue_media`
-         * and `gastronomies.menu_file_public_id` both make, and the reason
+         * and `venues.menu_file_public_id` both make, and the reason
          * HOS-372 exists at all: a forgotten asset keeps billing.
          *
          * Nullable independently of {@link photoUrl}: a row whose URL came from
@@ -142,14 +142,10 @@ export const venueMenuItems = pgTable(
         updatedById: uuid('updated_by_id').references(() => users.id, { onDelete: 'set null' })
     },
     (table) => ({
-        gastronomyMenuItems_sectionId_idx: index('venueMenuItems_sectionId_idx').on(
-            table.sectionId
-        ),
-        gastronomyMenuItems_gastronomyId_idx: index('venueMenuItems_venueId_idx').on(
-            table.gastronomyId
-        ),
+        venueMenuItems_sectionId_idx: index('venueMenuItems_sectionId_idx').on(table.sectionId),
+        venueMenuItems_venueId_idx: index('venueMenuItems_venueId_idx').on(table.venueId),
         /** The public read: every dish of one section, in order. */
-        gastronomyMenuItems_sectionId_displayOrder_idx: index(
+        venueMenuItems_sectionId_displayOrder_idx: index(
             'venueMenuItems_sectionId_displayOrder_idx'
         ).on(table.sectionId, table.displayOrder)
     })
@@ -161,7 +157,7 @@ export const venueMenuItemsRelations = relations(venueMenuItems, ({ one }) => ({
         references: [venueMenuSections.id]
     }),
     venue: one(venues, {
-        fields: [venueMenuItems.gastronomyId],
+        fields: [venueMenuItems.venueId],
         references: [venues.id]
     })
 }));

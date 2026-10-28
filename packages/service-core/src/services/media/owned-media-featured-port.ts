@@ -59,7 +59,7 @@ export type BuildOwnedMediaFeaturedPortInput<TRow> = {
     readonly mediaModel: FeaturedCapableMediaModel<TRow>;
     /**
      * Name of the owning foreign-key column on the media table, in its
-     * camelCase model form — `'accommodationId'`, `'gastronomyId'`,
+     * camelCase model form — `'accommodationId'`, `'venueId'`,
      * `'experienceId'`, `'postId'`, `'eventId'`.
      */
     readonly ownerKey: string;
@@ -94,11 +94,11 @@ export type BuildOwnedMediaFeaturedPortInput<TRow> = {
  * @example
  * ```ts
  * const port = buildOwnedMediaFeaturedPort({
- *     mediaModel: new GastronomyMediaModel(),
- *     ownerKey: 'gastronomyId',
- *     ownerId: gastronomyId,
+ *     mediaModel: new venueMediaModel(),
+ *     ownerKey: 'venueId',
+ *     ownerId: venueId,
  *     media: validated.media,
- *     findFeatured: (tx) => mediaModel.findFeatured({ gastronomyId, tx }),
+ *     findFeatured: (tx) => mediaModel.findFeatured({ venueId, tx }),
  *     deletedById: actor.id
  * });
  * ```

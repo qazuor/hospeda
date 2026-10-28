@@ -63,12 +63,12 @@ describe('carta.astro — 404 guards', () => {
 // ---------------------------------------------------------------------------
 // 3. REUSES VenueMenu.astro — never reimplements the carta render (NG)
 // ---------------------------------------------------------------------------
-describe('carta.astro — reuses GastronomyMenu.astro verbatim', () => {
-    it('imports GastronomyMenu from the shared component', () => {
+describe('carta.astro — reuses VenueMenu.astro verbatim', () => {
+    it('imports VenueMenu from the shared component', () => {
         expect(cartaSrc).toContain("import VenueMenu from '@/components/venue/VenueMenu.astro'");
     });
 
-    it('mounts GastronomyMenu with the same props the listing forwards to it', () => {
+    it('mounts VenueMenu with the same props the listing forwards to it', () => {
         expect(cartaSrc).toContain('<VenueMenu');
         expect(cartaSrc).toContain('menuSections={venue.menuSections}');
         expect(cartaSrc).toContain('fileUrl={venue.menuFileUrl}');
@@ -76,10 +76,10 @@ describe('carta.astro — reuses GastronomyMenu.astro verbatim', () => {
     });
 
     it('does NOT re-declare menu section/item markup of its own', () => {
-        // The carta section markup (`.gastro-menu__section`, dish list, etc.)
+        // The carta section markup (`.venue-menu__section`, dish list, etc.)
         // belongs to VenueMenu.astro alone — this page must not fork it.
-        expect(cartaSrc).not.toContain('gastro-menu__section');
-        expect(cartaSrc).not.toContain('gastro-menu__item');
+        expect(cartaSrc).not.toContain('venue-menu__section');
+        expect(cartaSrc).not.toContain('venue-menu__item');
     });
 });
 
@@ -135,7 +135,7 @@ describe('carta.astro — cache headers mirror the listing', () => {
         expect(listingSrc).toContain('applyCacheHeaders({');
     });
 
-    it('builds entity cache tags scoped to this gastronomy entity', () => {
+    it('builds entity cache tags scoped to this venue entity', () => {
         expect(cartaSrc).toContain("entity: 'venue'");
         expect(cartaSrc).toContain('buildEntityCacheTags');
     });
@@ -154,7 +154,7 @@ describe('carta.astro — cache headers mirror the listing', () => {
 describe('carta.astro — copy goes through @repo/i18n', () => {
     it('uses createTranslations, not literal Spanish copy', () => {
         expect(cartaSrc).toContain("import { createTranslations } from '@/lib/i18n'");
-        expect(cartaSrc).toContain("t('gastronomy.detail.menuCarta.title'");
-        expect(cartaSrc).toContain("t('gastronomy.detail.menuCarta.backToListing'");
+        expect(cartaSrc).toContain("t('venue.detail.menuCarta.title'");
+        expect(cartaSrc).toContain("t('venue.detail.menuCarta.backToListing'");
     });
 });

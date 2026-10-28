@@ -6,7 +6,7 @@
  * WHAT THIS FILE IS DEFENDING, AND WHY IT NEEDS BOTH HALVES
  *
  * A listing quota was measured on staging counting THREE listings as zero: an
- * account holding one gastronomy listing on a plan of one created two more, each
+ * account holding one venue listing on a plan of one created two more, each
  * answering 201, with no `X-Usage-Warning` header and no `listing limit
  * reached` line anywhere in the log. Nothing was mis-wired — the gate ran, read
  * a count of `0`, compared `0 < 1`, and correctly allowed the request.
@@ -81,7 +81,7 @@ beforeEach(() => {
 });
 
 describe("countOwn — counts the owner's listings in EVERY state (HOS-1247)", () => {
-    it('gastronomy: scopes to the owner and narrows by nothing else', async () => {
+    it('venue: scopes to the owner and narrows by nothing else', async () => {
         const { service, model } = makeVenueService(3);
 
         const result = await service.countOwn(ownerActor);
@@ -119,7 +119,7 @@ describe("countOwn — counts the owner's listings in EVERY state (HOS-1247)", (
 });
 
 describe('the trap countOwn exists to avoid: _executeCount forces PUBLISHED', () => {
-    it('gastronomy: the public count narrows by publication status', async () => {
+    it('venue: the public count narrows by publication status', async () => {
         const { service, model } = makeVenueService(0);
 
         await (

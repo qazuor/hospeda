@@ -12,7 +12,7 @@ import { VenueMenuSectionPublicSchema } from './subtypes/venue.menu.schema.js';
 import { VenueSchema } from './venue.schema.js';
 
 /**
- * Gastronomy Access Schemas — Three-Tier Response Projection
+ * venue Access Schemas — Three-Tier Response Projection
  *
  * Mirrors the same pick/omit discipline as `accommodation.access.schema.ts`:
  * - **Public** — only fields safe for unauthenticated visitors.
@@ -52,7 +52,7 @@ export const VenuePublicSchema = VenueSchema.pick({
     summaryI18n: true,
     descriptionI18n: true,
 
-    // Gastronomy-specific public fields
+    // venue-specific public fields
     priceRange: true,
     menuUrl: true,
     // HOS-895 PR2 — the uploaded photo/PDF alternative is now a `-pro`/
@@ -60,7 +60,7 @@ export const VenuePublicSchema = VenueSchema.pick({
     // ungated). The COLUMN stays picked here — it is still owner-writable data
     // — but the public `getBySlug` route nulls both fields out live, before
     // this schema is reached, when the owner's CURRENT plan does not grant
-    // `MANAGE_VENUE_MENU` (see `resolveOwnerGrantsGastronomyMenuManagement`
+    // `MANAGE_VENUE_MENU` (see `resolveOwnerGrantsvenueMenuManagement`
     // in `@repo/service-core`). Schema presence is safe for the same reason
     // `richDescription`'s entitlement-by-omission gate is: the service strips
     // it server-side before `stripWithSchema`, so a not-entitled owner's row
@@ -213,12 +213,12 @@ export const VenuePublicSchema = VenueSchema.pick({
      * absent when the owner's CURRENT plan does not grant
      * `MANAGE_VENUE_EVENTS`. A downgraded owner's already-typed agenda
      * stays in the database and stops being published — the rows are not
-     * deleted (see `resolveOwnerGastronomyPlanEntitlements` in
+     * deleted (see `resolveOwnervenuePlanEntitlements` in
      * `@repo/service-core`).
      *
      * Named `venueEvents` and not `events` deliberately. `events` is the
      * platform's DESTINATION agenda — a festival, a popular fiesta — and a
-     * gastronomy payload carrying a field by that name would read, to every
+     * venue payload carrying a field by that name would read, to every
      * consumer that already knows the other one, as the wrong thing.
      */
     venueEvents: z.array(VenueEventPublicSchema).optional()
@@ -349,7 +349,7 @@ export const VenueAdminSchema = VenueSchema.extend({
      * input and in `resolveListingCompleteness`.
      */
     summary: z.string().max(300, { message: 'zodError.listing.summary.max' }),
-    /** HOS-190: read⊇write lenient contactInfo (see GastronomyProtectedSchema). */
+    /** HOS-190: read⊇write lenient contactInfo (see venueProtectedSchema). */
     contactInfo: ContactInfoReadSchema.nullish()
 });
 

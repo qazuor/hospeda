@@ -1,5 +1,5 @@
 /**
- * ACC:15 (HOS-1493) on the gastronomy and experience sub-entity gates: photos
+ * ACC:15 (HOS-1493) on the venue and experience sub-entity gates: photos
  * and FAQ entries are listing content, so action 15 passes their gates — only
  * inside the scope a route's listing-access chain opened for the listing's
  * owner. The sibling gate shared by menu, events and certificates does not

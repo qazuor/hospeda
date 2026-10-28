@@ -5,7 +5,7 @@
  * GET /api/v1/protected/experiences/{id}/brochure
  * ```
  *
- * The gastronomy twin (`routes/venue/protected/brochure.ts`) carries the
+ * The venue twin (`routes/venue/protected/brochure.ts`) carries the
  * full reasoning for the order of the checks, for why the response is a raw
  * `Response`, and for why the projection is explicit. Two things differ here,
  * both because the two verticals publish different things:
@@ -17,7 +17,7 @@
  *   (HOS-1048), which is what makes it printable at all.
  *
  * R-1: the grant is on the experience premium plan, separately from
- * gastronomy's. There is no shared umbrella plan to grant it once.
+ * venue's. There is no shared umbrella plan to grant it once.
  *
  * @module routes/experience/protected/brochure
  */

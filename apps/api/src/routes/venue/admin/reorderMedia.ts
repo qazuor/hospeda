@@ -1,6 +1,6 @@
 /**
  * PATCH /api/v1/admin/venues/:id/media/reorder
- * Reorder photos in a gastronomy listing gallery — Admin endpoint (HOS-372).
+ * Reorder photos in a venue listing gallery — Admin endpoint (HOS-372).
  *
  * The caller supplies the full ordered list of visible media UUIDs. The service
  * validates that the supplied set matches the current visible rows exactly (no
@@ -30,7 +30,7 @@ const venueService = new VenueService({ logger: apiLogger });
 
 /**
  * PATCH /api/v1/admin/venues/:id/media/reorder
- * Reorder gastronomy listing gallery photos — Admin endpoint.
+ * Reorder venue listing gallery photos — Admin endpoint.
  *
  * Requires VENUE_EDIT_ALL permission. The service helper
  * `reorderVenueMedia` enforces the same gate via `checkVenueCanEditMedia`.
@@ -39,12 +39,12 @@ export const adminReorderVenueMediaRoute = createAdminRoute({
     method: 'patch',
     listingAccess: { vertical: VerticalEnum.VENUE, operation: 'EDIT', idParam: 'id' },
     path: '/{id}/media/reorder',
-    summary: 'Reorder gastronomy listing gallery photos (admin)',
+    summary: 'Reorder venue listing gallery photos (admin)',
     description:
         'Sets the sortOrder for the visible gallery photos by supplying their UUIDs ' +
         'in the desired order. The supplied list must match the current visible rows ' +
         'exactly. Requires VENUE_EDIT_ALL.',
-    tags: ['Gastronomy', 'Media'],
+    tags: ['Venue', 'Media'],
     requestParams: {
         id: z.string().uuid({ message: 'zodError.common.id.invalidUuid' })
     },
@@ -65,7 +65,7 @@ export const adminReorderVenueMediaRoute = createAdminRoute({
             ctx,
             run: () =>
                 reorderVenueMedia(model, actor, {
-                    gastronomyId: params.id as string,
+                    venueId: params.id as string,
                     orderedIds: (body as VenueMediaReorderPayload).orderedIds
                 })
         });

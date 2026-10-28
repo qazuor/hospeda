@@ -9,7 +9,7 @@ import { logError, logQuery } from '../../utils/logger.ts';
 import { withListingBirthColumns } from '../listing/listing-birth.ts';
 
 /**
- * Search input for gastronomy listings (basic subset — expand as routes are built).
+ * Search input for venue listings (basic subset — expand as routes are built).
  */
 interface VenueModelSearchInput {
     readonly q?: string;
@@ -23,7 +23,7 @@ interface VenueModelSearchInput {
 }
 
 /**
- * VenueModel — all DB access for gastronomy listings (SPEC-239).
+ * VenueModel — all DB access for venue listings (SPEC-239).
  *
  * Mirrors AccommodationModel structure: extends BaseModelImpl, provides search()
  * and findWithRelations() overrides. Expand with domain-specific query methods
@@ -33,7 +33,7 @@ export class VenueModel extends BaseModelImpl<Venue> {
     protected table = venues;
     public entityName = 'venues';
 
-    /** Creates a gastronomy with its initial publication clock. */
+    /** Creates a venue with its initial publication clock. */
     override async create(data: Partial<Venue>, tx?: DrizzleClient): Promise<Venue> {
         return super.create(withListingBirthColumns({ data }).data, tx);
     }
@@ -88,7 +88,7 @@ export class VenueModel extends BaseModelImpl<Venue> {
      * Paginated search with optional filters.
      * @param params - Search parameters
      * @param tx - Optional transaction client
-     * @returns Matching gastronomies and total count
+     * @returns Matching legacy listing tables and total count
      */
     async search(
         params: VenueModelSearchInput,
@@ -156,7 +156,7 @@ export class VenueModel extends BaseModelImpl<Venue> {
     }
 
     /**
-     * Returns the IDs of every non-deleted gastronomy listing owned by the
+     * Returns the IDs of every non-deleted venue listing owned by the
      * given owner. Mirrors `AccommodationModel.findIdsByOwnerId` — used by
      * `EntityViewService.getStatsForOwnListings` /
      * `getDailySeriesForOwnListings` (HOS-734) to resolve which
@@ -165,7 +165,7 @@ export class VenueModel extends BaseModelImpl<Venue> {
      *
      * @param ownerId - The owner's user id.
      * @param tx - Optional transaction client.
-     * @returns Array of gastronomy listing IDs (may be empty).
+     * @returns Array of venue listing IDs (may be empty).
      */
     async findIdsByOwnerId(ownerId: string, tx?: DrizzleClient): Promise<string[]> {
         const db = this.getClient(tx);

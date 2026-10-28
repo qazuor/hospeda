@@ -168,7 +168,7 @@ describe('restrictPayloadToSection', () => {
     });
 
     it('should preserve an explicit null, which is not the same as an absent key', () => {
-        // The whole gastronomy clearing contract rides on this: `null` means
+        // The whole venue clearing contract rides on this: `null` means
         // "clear the column", an absent key means "no change". A restriction
         // implemented with a falsy check would turn every clear into a no-op.
         const restricted = restrictPayloadToSection({

@@ -10,7 +10,7 @@
  *  - `videos` are NOT migrated to the table (SPEC-204 D1 decision). Since HOS-372
  *    dropped the `media` JSONB column they live in a dedicated `videos` column on
  *    `accommodations`, and are supplied by the caller as an explicit parameter —
- *    same contract as `composeListingMedia`, which serves the gastronomy and experience
+ *    same contract as `composeListingMedia`, which serves the venue and experience
  *    verticals.
  *  - The output shape is byte-identical to what consumers received while reads
  *    came from JSONB, so the ~21 downstream read-sites stay untouched (T-013).

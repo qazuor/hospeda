@@ -53,7 +53,7 @@ export interface EditorNavGroup {
 /**
  * Builds the grouped nav model for one editor page.
  *
- * Registry-driven since HOS-1080, so gastronomy and experience render the same
+ * Registry-driven since HOS-1080, so venue and experience render the same
  * nav from their own section list instead of growing a second copy of it.
  *
  * @param params - Locale, the vertical's registry, the entity id, the active

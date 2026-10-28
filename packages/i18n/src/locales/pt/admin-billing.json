@@ -1347,7 +1347,7 @@
         "productDomainLabels": {
             "accommodation": "Hospedagem",
             "listing": "Comércio",
-            "gastronomy": "Gastronomia",
+            "venue": "Comer e sair",
             "experience": "Experiência",
             "partner": "Parceiro",
             "tourist": "Turista",
@@ -1664,7 +1664,7 @@
             },
             "verticals": {
                 "accommodation": "Hospedagens",
-                "gastronomy": "Gastronomia",
+                "venue": "Comer e sair",
                 "experience": "Experiências",
                 "tourist": "Turismo",
                 "partner": "Parceiros"

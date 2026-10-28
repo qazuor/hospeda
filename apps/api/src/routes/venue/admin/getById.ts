@@ -1,6 +1,6 @@
 /**
- * Admin get gastronomy listing by ID endpoint.
- * Returns full gastronomy information including admin fields.
+ * Admin get venue listing by ID endpoint.
+ * Returns full venue information including admin fields.
  */
 import { PermissionEnum, VenueAdminSchema } from '@repo/schemas';
 import { ServiceError, VenueService } from '@repo/service-core';
@@ -14,7 +14,7 @@ const venueService = new VenueService({ logger: apiLogger });
 
 /**
  * GET /api/v1/admin/venues/:id
- * Get gastronomy listing by ID — Admin endpoint.
+ * Get venue listing by ID — Admin endpoint.
  *
  * Gate requires VENUE_VIEW_ALL; the service layer additionally enforces
  * entity-level visibility (owned vs. all).
@@ -22,10 +22,10 @@ const venueService = new VenueService({ logger: apiLogger });
 export const adminGetVenueByIdRoute = createAdminRoute({
     method: 'get',
     path: '/{id}',
-    summary: 'Get gastronomy listing by ID (admin)',
+    summary: 'Get venue listing by ID (admin)',
     description:
-        'Retrieves full gastronomy listing information including admin fields. Requires VENUE_VIEW_ALL.',
-    tags: ['Gastronomy'],
+        'Retrieves full venue listing information including admin fields. Requires VENUE_VIEW_ALL.',
+    tags: ['Venue'],
     anyOfPermissions: [[PermissionEnum.VENUE_VIEW_ALL]],
     requestParams: {
         id: z.string().uuid({ message: 'zodError.common.id.invalidUuid' })

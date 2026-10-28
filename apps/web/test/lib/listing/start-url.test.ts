@@ -1,13 +1,13 @@
 /**
  * @file start-url.test.ts
- * @description HOS-810 — the destination of "Empezar ahora" on the two gastronomy/experience
+ * @description HOS-810 — the destination of "Empezar ahora" on the two venue/experience
  * vertical landings.
  *
  * ## What is actually asserted here
  *
  * The bug was never "the link is missing"; the link was there and went to
  * `/auth/signup/`, which bounced a signed-in visitor to `/mi-cuenta/` — a page
- * with no route onward to the gastronomy/experience create form. So the assertion that
+ * with no route onward to the venue/experience create form. So the assertion that
  * matters is the DESTINATION, split by whether a session exists, and both
  * halves are covered here:
  *
@@ -91,7 +91,7 @@ describe('buildListingStartUrl', () => {
             expect(url).toBe('/es/auth/signup/?returnUrl=%2Fes%2Fpublicar%2Fexperiencias%2F');
         });
 
-        it('carries the vertical publish page as returnUrl (gastronomy)', () => {
+        it('carries the vertical publish page as returnUrl (venue)', () => {
             const url = buildListingStartUrl({ locale: 'es', vertical: 'venue' });
             expect(url).toBe('/es/auth/signup/?returnUrl=%2Fes%2Fpublicar%2Fcomer-y-salir%2F');
         });

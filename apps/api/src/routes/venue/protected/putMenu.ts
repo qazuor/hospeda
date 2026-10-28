@@ -55,10 +55,10 @@ export async function handlePutVenueMenu(
         .model;
 
     const result = await replaceVenueMenu(model, actor, {
-        gastronomyId: params.id as string,
+        venueId: params.id as string,
         // TYPE-WORKAROUND: the factory hands the handler a
         // `Record<string, unknown>`, but the body has already been validated
-        // against `GastronomyMenuReplacePayloadSchema` by the route; the service
+        // against `VenueMenuReplacePayloadSchema` by the route; the service
         // re-parses it anyway, so the cast asserts nothing the next line does not
         // verify.
         menu: body as unknown as VenueMenuReplacePayload
@@ -74,9 +74,9 @@ export async function handlePutVenueMenu(
 export const protectedPutVenueMenuRoute = createProtectedRoute({
     method: 'put',
     path: '/{id}/menu',
-    summary: 'Replace the structured menu of a gastronomy listing',
+    summary: 'Replace the structured menu of a venue listing',
     description:
-        'Replaces the listing’s sections and dishes with the submitted document. An empty sections array deletes the structured menu, leaving the uploaded photo/PDF and the external link untouched. Owner-only, and requires the manage_venue_menu entitlement granted by the professional gastronomy plan and above; a document carrying a per-dish photo additionally requires menu_item_photos (premium), and a document carrying a nameI18n/descriptionI18n translation additionally requires multilingual_venue_menu (premium).',
+        'Replaces the listing’s sections and dishes with the submitted document. An empty sections array deletes the structured menu, leaving the uploaded photo/PDF and the external link untouched. Owner-only, and requires the manage_venue_menu entitlement granted by the professional venue plan and above; a document carrying a per-dish photo additionally requires menu_item_photos (premium), and a document carrying a nameI18n/descriptionI18n translation additionally requires multilingual_venue_menu (premium).',
     listingAccess: {
         vertical: VerticalEnum.VENUE,
         operation: 'EDIT',
@@ -87,7 +87,7 @@ export const protectedPutVenueMenuRoute = createProtectedRoute({
             ...(menuPayloadCarriesTranslations(body) ? ['multilingual_venue_menu'] : [])
         ]
     },
-    tags: ['Gastronomy', 'Gastronomy Menu'],
+    tags: ['Venue', 'Venue Menu'],
     protectedTag: false,
     requestParams: {
         id: z.string().uuid({ message: 'zodError.common.id.invalidUuid' })

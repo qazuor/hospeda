@@ -185,14 +185,14 @@ const catalogoSidebar: SidebarInput = {
         {
             type: 'group',
             id: 'gastronomia',
-            label: { es: 'Gastronomía', en: 'Gastronomy', pt: 'Gastronomia' },
+            label: { es: 'Comer y salir', en: 'Food & nightlife', pt: 'Comer e sair' },
             icon: 'OffersIcon',
             defaultOpen: false,
             permissions: ['VENUE_VIEW_ALL', 'VENUE_CREATE'],
             items: [
                 {
                     type: 'link',
-                    id: 'gastronomy-list',
+                    id: 'venue-list',
                     label: { es: 'Listado', en: 'List', pt: 'Lista' },
                     icon: 'ListIcon',
                     route: '/venues',
@@ -200,11 +200,11 @@ const catalogoSidebar: SidebarInput = {
                 },
                 {
                     type: 'link',
-                    id: 'gastronomy-new',
+                    id: 'venue-new',
                     label: {
-                        es: 'Nueva gastronomía',
-                        en: 'New gastronomy',
-                        pt: 'Nova gastronomia'
+                        es: 'Nueva ficha de Comer y salir',
+                        en: 'New Food & nightlife listing',
+                        pt: 'Nova ficha de Comer e sair'
                     },
                     icon: 'AddIcon',
                     route: '/venues/new',

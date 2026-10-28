@@ -12,7 +12,7 @@
  *
  * NOTE: the admin tier uses PATCH for the equivalent route (preexisting
  * inconsistency between tiers). This protected route intentionally mirrors
- * gastronomy/experience protected FAQ reorder (PUT), not the admin tier.
+ * venue/experience protected FAQ reorder (PUT), not the admin tier.
  * The listing access resolver requires the EDIT capability on the owner.
  */
 

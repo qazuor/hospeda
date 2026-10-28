@@ -22,7 +22,7 @@ import type { PostEditFormData } from './post-edit-data';
  *
  * Structural on purpose — the editor needs an id and a label and nothing else,
  * so `DestinationData` (id/name/path) satisfies it without this section
- * depending on that shape, and without borrowing the gastronomy or experience vertical's
+ * depending on that shape, and without borrowing the venue or experience vertical's
  * `DestinationOption`.
  */
 export interface PostDestinationOption {

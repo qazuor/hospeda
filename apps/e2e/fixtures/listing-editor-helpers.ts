@@ -1,6 +1,6 @@
 /**
  * @file listing-editor-helpers.ts
- * @description Shared helpers for driving the gastronomy or experience owner editor island
+ * @description Shared helpers for driving the venue or experience owner editor island
  * (`ListingEditor.client.tsx`) from Playwright.
  *
  * Added in HOS-371, when `richDescription` became a TipTap editor and the
@@ -62,11 +62,11 @@ export type ListingEditorSection =
     | 'servicios'
     | 'fotos'
     | 'contacto'
-    // HOS-895, HOS-1042 — gastronomy only, the mirror of the two
+    // HOS-895, HOS-1042 — venue only, the mirror of the two
     // experience-only slugs above. Opening either on an experience listing
     // redirects to the hub.
     | 'carta'
-    // HOS-1041 — gastronomy only too, and immediately after the carta because
+    // HOS-1041 — venue only too, and immediately after the carta because
     // that is where the registry puts it: the carta is the year's menu, this is
     // today's. Listed here for the reason this union exists at all — the E2E
     // package cannot import `apps/web`'s registry, so a section it cannot NAME

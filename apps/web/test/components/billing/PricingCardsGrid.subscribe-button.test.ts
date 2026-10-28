@@ -22,7 +22,7 @@ describe('PricingCardsGrid subscribe button (TEST:V8a:3 / TEST:V8a:4)', () => {
     });
     it.each([
         ['owner', 'accommodation'],
-        ['gastronomy', 'venue'],
+        ['venue', 'venue'],
         ['experience', 'experience']
     ] as const)('maps %s to %s', (audience, vertical) => {
         expect(SUBSCRIBE_VERTICAL_BY_AUDIENCE[audience]).toBe(vertical);

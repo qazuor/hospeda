@@ -20,18 +20,18 @@ type Translator = (key: string, fallback?: string) => string;
  *
  * FIVE values since HOS-1032, one per audience Hospeda sells to, because
  * `/planes/<audiencia>/precios/` renders all five through the same
- * `PricingCardsGrid` (AC-44). The three added here are the gastronomy/experience verticals
+ * `PricingCardsGrid` (AC-44). The three added here are the venue/experience verticals
  * and partner; they never take the owner branch of {@link getDisplayFeatures},
  * so widening the type changed no existing behaviour.
  *
- * `owner` (not `host`) and `gastronomy` (not `gastronomia`) are the PLAN
+ * `owner` (not `host`) and `venue` (not `gastronomia`) are the PLAN
  * vocabulary — the `category` and `product_domain` columns — deliberately kept
  * apart from the Spanish URL segments. `AudienceCardId` in
  * `billing/audience-plans.ts` is the third vocabulary, spelled `host`; the
  * translation between the two lives in `PRICING_AUDIENCE_BY_CARD_ID` there and
  * nowhere else.
  */
-export type PricingAudience = 'owner' | 'tourist' | 'gastronomy' | 'experience' | 'partner';
+export type PricingAudience = 'owner' | 'tourist' | 'venue' | 'experience' | 'partner';
 
 /** A renderable feature bullet: either a single entitlement or a collapsed group. */
 export interface DisplayFeature {

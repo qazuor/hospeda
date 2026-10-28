@@ -261,7 +261,7 @@ export type BaseMediaFieldsType = typeof BaseMediaFields;
  * Top-level `videos` field for entities whose photos live in a relational media
  * table (HOS-372).
  *
- * Accommodations, gastronomy listings and experiences store their photos as rows
+ * Accommodations, venue listings and experiences store their photos as rows
  * (`accommodation_media` / `venue_media` / `experience_media`), so the JSONB
  * `media` blob is being retired for them. Videos have no relational table of their
  * own — a video is an external YouTube/Vimeo URL rather than an uploaded asset, so
@@ -340,7 +340,7 @@ export const AccommodationEntityMediaFields = {
  *
  * Lives here, in the neutral media module, rather than in one of the three
  * family-specific media schemas, so `accommodation`, `post`, `event`,
- * `gastronomy` and `experience` cannot drift on what "an empty PATCH" means.
+ * `venue` and `experience` cannot drift on what "an empty PATCH" means.
  *
  * @param data - The parsed payload (or a service input that spreads its shape).
  * @returns `true` when at least one editable field was supplied.

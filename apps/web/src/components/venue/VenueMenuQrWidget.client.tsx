@@ -1,13 +1,13 @@
 /**
  * @file VenueMenuQrWidget.client.tsx
- * @description Owner panel for the gastronomy menu QR and its scan analytics
+ * @description Owner panel for the venue menu QR and its scan analytics
  * (HOS-1044 §6.6), rendered in `mi-cuenta/comercio/` next to
  * `ListingViewsWidget`.
  *
  * Follows that same widget's pattern rather than inventing a new one:
  * `client:visible`, a `loading`/`ready`/`error` state machine, its own
  * `*.module.css`. It adds one state ListingViewsWidget does not need —
- * `locked` — because unlike `VIEW_BASIC_STATS` (the gastronomy/experience floor every
+ * `locked` — because unlike `VIEW_BASIC_STATS` (the venue/experience floor every
  * tier gets), `menu_qr_scan_metrics` is a premium-only entitlement
  * (`venue-premium`), so a basic/pro venue's request answers `403`. That
  * refusal is a REAL state, never rendered as a generic error: the copy names
@@ -42,7 +42,7 @@ import { createTranslations, type TranslationFn } from '@/lib/i18n';
 import { buildSvgDataUrl, renderSvgToPngBlob } from '@/lib/qr/qr-png';
 import styles from './VenueMenuQrWidget.module.css';
 
-/** The one gastronomy listing shape this widget needs. */
+/** The one venue listing shape this widget needs. */
 export interface VenueMenuQrWidgetListing {
     readonly id: string;
     readonly name: string;
@@ -50,7 +50,7 @@ export interface VenueMenuQrWidgetListing {
 
 export interface VenueMenuQrWidgetProps {
     readonly locale: SupportedLocale;
-    /** The owner's gastronomy listings only — the menu QR is gastronomy-specific. */
+    /** The owner's venue listings only — the menu QR is venue-specific. */
     readonly listings: readonly VenueMenuQrWidgetListing[];
 }
 
@@ -93,8 +93,8 @@ async function fetchListingState(
     windowParam: '7d' | '30d'
 ): Promise<ListingQrState> {
     const [qrResult, scansResult] = await Promise.all([
-        listingAnalyticsApi.getMenuQr({ gastronomyId: listingId }),
-        listingAnalyticsApi.getMenuQrScans({ gastronomyId: listingId, window: windowParam })
+        listingAnalyticsApi.getMenuQr({ venueId: listingId }),
+        listingAnalyticsApi.getMenuQrScans({ venueId: listingId, window: windowParam })
     ]);
 
     if (!qrResult.ok || !scansResult.ok) {
@@ -262,11 +262,11 @@ function QrBlock({
 
 /**
  * VenueMenuQrWidget — per-listing menu QR + scan analytics for
- * gastronomy owners, gated by the `menu_qr_scan_metrics` entitlement.
+ * venue owners, gated by the `menu_qr_scan_metrics` entitlement.
  *
  * @example
  * ```astro
- * <VenueMenuQrWidget client:visible locale={locale} listings={gastronomyListings} />
+ * <VenueMenuQrWidget client:visible locale={locale} listings={venueListings} />
  * ```
  */
 export function VenueMenuQrWidget({
@@ -312,7 +312,7 @@ export function VenueMenuQrWidget({
     return (
         <div
             className={styles.widget}
-            data-testid="gastronomy-menu-qr-widget"
+            data-testid="venue-menu-qr-widget"
         >
             <div className={styles.header}>
                 <h2 className={styles.title}>
@@ -350,14 +350,14 @@ export function VenueMenuQrWidget({
                     <div
                         key={listing.id}
                         className={styles.card}
-                        data-testid="gastronomy-menu-qr-card"
+                        data-testid="venue-menu-qr-card"
                     >
                         <h3 className={styles.cardName}>{listing.name}</h3>
 
                         {state.status === 'locked' && (
                             <p
                                 className={styles.locked}
-                                data-testid="gastronomy-menu-qr-locked"
+                                data-testid="venue-menu-qr-locked"
                             >
                                 {t(
                                     'listing.owner.list.menuQr.locked',

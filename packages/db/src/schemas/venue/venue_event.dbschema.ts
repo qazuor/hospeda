@@ -67,7 +67,7 @@ export const VenueEventRecurrencePgEnum = pgEnum('venue_event_recurrence_enum', 
  * ## Why the two recurrence shapes share ONE table
  *
  * A dated one-off and a weekly repeat differ by exactly two nullable columns
- * ({@link gastronomyEvents.date} and {@link gastronomyEvents.weekday}), and the
+ * ({@link venueEvents.date} and {@link venueEvents.weekday}), and the
  * reader wants them INTERLEAVED — "what's on at this venue" is one list, sorted
  * by when it next happens, not two. Two tables would make every read a union and
  * every ordering decision a merge.
@@ -103,7 +103,7 @@ export const venueEvents = pgTable(
          * the agenda when the listing is hard-deleted — the same choice
          * `venue_menu_sections` and `venue_media` make.
          */
-        gastronomyId: uuid('venue_id')
+        venueId: uuid('venue_id')
             .notNull()
             .references(() => venues.id, { onDelete: 'cascade' }),
         /** What the event is called, e.g. "Noche de música en vivo". */
@@ -116,7 +116,7 @@ export const venueEvents = pgTable(
          * The calendar day, for a `once` event. `NULL` for a `weekly` one.
          *
          * A `date` and not a `timestamp`: the time of day lives in
-         * {@link gastronomyEvents.startTime}, and a venue's "Friday the 12th"
+         * {@link venueEvents.startTime}, and a venue's "Friday the 12th"
          * is a local calendar day, not an instant. Storing it as a timestamp
          * would drag the row through a timezone conversion that can only ever
          * move it to the wrong day — the exact `toISOString()` hazard that has
@@ -163,21 +163,22 @@ export const venueEvents = pgTable(
         updatedById: uuid('updated_by_id').references(() => users.id, { onDelete: 'set null' })
     },
     (table) => ({
-        gastronomyEvents_gastronomyId_idx: index('venueEvents_venueId_idx').on(table.gastronomyId),
+        venueEvents_venueId_idx: index('venueEvents_venueId_idx').on(table.venueId),
         /**
          * The read the public listing performs verbatim: every entry of ONE
          * listing, in order. Composite so the order-by is served by the index
          * rather than by a sort of the event rows.
          */
-        gastronomyEvents_gastronomyId_displayOrder_idx: index(
-            'venueEvents_venueId_displayOrder_idx'
-        ).on(table.gastronomyId, table.displayOrder)
+        venueEvents_venueId_displayOrder_idx: index('venueEvents_venueId_displayOrder_idx').on(
+            table.venueId,
+            table.displayOrder
+        )
     })
 );
 
 export const venueEventsRelations = relations(venueEvents, ({ one }) => ({
     venue: one(venues, {
-        fields: [venueEvents.gastronomyId],
+        fields: [venueEvents.venueId],
         references: [venues.id]
     })
 }));

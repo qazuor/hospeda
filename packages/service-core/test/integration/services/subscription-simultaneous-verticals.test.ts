@@ -191,7 +191,7 @@ async function runScenario(expireFirst: boolean) {
         .select()
         .from(subscriptions)
         .where(eq(subscriptions.id, accommodation.subscriptionId));
-    const [gastronomyRow] = await getServiceTestDb()
+    const [venueRow] = await getServiceTestDb()
         .select()
         .from(subscriptions)
         .where(eq(subscriptions.id, venue.subscriptionId));
@@ -200,7 +200,7 @@ async function runScenario(expireFirst: boolean) {
         vertical: 'accommodation',
         status: 'ABANDONED'
     });
-    expect(gastronomyRow).toMatchObject({
+    expect(venueRow).toMatchObject({
         userId: user.id,
         vertical: 'venue',
         status: 'ACTIVE'
@@ -215,14 +215,14 @@ async function runScenario(expireFirst: boolean) {
     expect(
         venueNotices.filter((notice) => notice.template !== 'billing.signup-confirmed')
     ).toHaveLength(0);
-    return { provider, gastronomy: venue, userId: user.id };
+    return { provider, venue: venue, userId: user.id };
 }
 
 describe('TEST:B3:33 simultaneous verticals advance independently', () => {
-    it('Case A: Gastronomy activates before Accommodation expires', async () => {
+    it('Case A: Venue activates before Accommodation expires', async () => {
         await runScenario(false);
     });
-    it('Case B: Accommodation expires before Gastronomy activates', async () => {
+    it('Case B: Accommodation expires before Venue activates', async () => {
         await runScenario(true);
     });
 });

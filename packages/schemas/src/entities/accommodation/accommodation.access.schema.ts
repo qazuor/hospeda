@@ -256,7 +256,7 @@ export const AccommodationPublicSchema = AccommodationSchema.pick({
      * (phone/email/website only — see {@link AccommodationPublicContactInfoSchema}
      * for exactly what is included and why). Added via `.extend()`, not
      * `.pick()`, since the base `.pick()` call above deliberately omits
-     * `contactInfo` entirely (mirrors the gastronomy/experience public
+     * `contactInfo` entirely (mirrors the venue/experience public
      * schemas' "Omits: ... contactInfo (direct)" precedent) — this schema
      * re-adds a deliberately narrowed shape instead of the full one.
      */

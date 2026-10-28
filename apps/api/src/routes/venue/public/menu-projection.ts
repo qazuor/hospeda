@@ -1,8 +1,8 @@
 /**
- * Public projection gate for a gastronomy listing's menu (HOS-895 PR2).
+ * Public projection gate for a venue listing's menu (HOS-895 PR2).
  *
  * Extracted out of `getBySlug.ts` so the withholding rule has a direct unit
- * test surface, independent of building a full `GastronomyPublicSchema`
+ * test surface, independent of building a full `VenuePublicSchema`
  * fixture through the route/HTTP layer.
  *
  * @module routes/venue/public/menu-projection
@@ -49,7 +49,7 @@ function projectTranslations<T extends { nameI18n?: unknown; descriptionI18n?: u
  * THREE removals, and only two of them are entitlement gates:
  *
  *  - `photoPublicId` goes ALWAYS, entitled or not. It is an internal handle
- *    for destroying the asset; `GastronomyMenuItemPublicSchema` omits it, and
+ *    for destroying the asset; `VenueMenuItemPublicSchema` omits it, and
  *    this is what makes that omission true at runtime instead of only in the
  *    type. The sections arriving here are raw DB rows, which carry it.
  *  - `photoUrl`/`photoAlt` go only when the owner's plan does not grant
@@ -86,9 +86,9 @@ function projectSections(
 
 /**
  * Withholds the uploaded photo/PDF, the structured carta's sections, and the
- * per-dish photos when the owner's CURRENT gastronomy plan does not grant the
+ * per-dish photos when the owner's CURRENT venue plan does not grant the
  * corresponding key — the rows are not deleted (see
- * `resolveOwnerGastronomyMenuGrants` in `@repo/service-core`), only kept out of
+ * `resolveOwnerVenueMenuGrants` in `@repo/service-core`), only kept out of
  * the public payload.
  *
  * The two gates are INDEPENDENT and nest in one direction only. A `-pro` owner
@@ -102,7 +102,7 @@ function projectSections(
  * one fallback still free on every tier and is never gated, so the caller
  * passes it through unchanged.
  *
- * @param input.gastronomy - The stored `menuFileUrl`/`menuFileKind` columns.
+ * @param input.venue - The stored `menuFileUrl`/`menuFileKind` columns.
  * @param input.menuSections - The structured carta's sections, as read (may be
  *   non-empty even when `ownerGrantsMenuManagement` is `false` — a downgraded
  *   owner's previously-typed carta is not deleted).
@@ -117,14 +117,14 @@ function projectSections(
  *   convention `amenities`/`features` already use on this schema.
  */
 export function applyVenueMenuManagementGate(input: {
-    readonly gastronomy: VenueMenuGateSource;
+    readonly venue: VenueMenuGateSource;
     readonly menuSections: readonly VenueMenuSectionPublic[];
     readonly ownerGrantsMenuManagement: boolean;
     readonly ownerGrantsMenuItemPhotos: boolean;
     readonly ownerGrantsMenuTranslations: boolean;
 }): VenueMenuGateResult {
     const {
-        gastronomy: venue,
+        venue,
         menuSections,
         ownerGrantsMenuManagement,
         ownerGrantsMenuItemPhotos,

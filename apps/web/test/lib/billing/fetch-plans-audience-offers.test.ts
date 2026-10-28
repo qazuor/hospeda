@@ -71,7 +71,7 @@ describe('fetchAudienceOffers', () => {
     it('keeps other audiences when one vertical fails', async () => {
         stubCatalogs({ failedVertical: 'venue' });
         const { startingPrices } = await fetchAudienceOffers();
-        expect(startingPrices.gastronomy).toBeNull();
+        expect(startingPrices.venue).toBeNull();
         expect(startingPrices.experience).toEqual({ kind: 'from', monthlyPriceArs: 1200000 });
     });
 
@@ -87,8 +87,8 @@ describe('fetchAudienceOffers', () => {
     it('degrades every audience when the network throws', async () => {
         global.fetch = vi.fn().mockRejectedValue(new Error('offline'));
         await expect(fetchAudienceOffers()).resolves.toEqual({
-            startingPrices: { host: null, tourist: null, gastronomy: null, experience: null },
-            trialDays: { host: null, tourist: null, gastronomy: null, experience: null }
+            startingPrices: { host: null, tourist: null, venue: null, experience: null },
+            trialDays: { host: null, tourist: null, venue: null, experience: null }
         });
     });
 });

@@ -298,7 +298,7 @@ describe('BaseListingService.createForOwner (HOS-687 §6.1)', () => {
         const grantedRoles = mockGrantRole.mock.calls.map((call) => call[0]?.role);
         // Exactly one, asserted as a whole array rather than
         // by membership: the failure this guards against is granting the OTHER
-        // vertical's role (the fixture service is `gastronomy`, so an
+        // vertical's role (the fixture service is `venue`, so an
         // EXPERIENCE_OWNER here would mean the map is read off the wrong key)
         // or granting the same role twice.
         expect(grantedRoles).toEqual([RoleEnum.VENUE_OWNER]);

@@ -20,7 +20,7 @@
  * gallery precedent (SPEC-204 locked decision: no drag/reorder in the admin
  * gallery UI). Archive/restore are also omitted — unlike `accommodation_media`,
  * the admin API exposes no archive/restore routes for `venue_media` /
- * `experience_media` (see `apps/api/src/routes/gastronomy/admin/` and
+ * `experience_media` (see `apps/api/src/routes/venue/admin/` and
  * `apps/api/src/routes/experience/admin/` — only get/add/remove/setFeatured/
  * reorder exist, and reorder is deliberately unused here too).
  *
@@ -51,7 +51,7 @@ export type ListingMediaVertical = 'venue' | 'experience';
  * A single gallery photo row, from either listing vertical.
  *
  * `VenueMedia` and `ExperienceMedia` differ only in their parent FK
- * field (`gastronomyId` vs `experienceId`) — every field the UI reads
+ * field (`venueId` vs `experienceId`) — every field the UI reads
  * (`id`, `url`, `isFeatured`, `caption`, `alt`, `state`, `sortOrder`, …) is
  * shared via `BaseListingMediaSchema`, so a union is safe to consume here.
  */
@@ -91,7 +91,7 @@ const VERTICAL_ROUTE_SEGMENT: Record<ListingMediaVertical, string> = {
 
 /** Entity query roots remain the entityName configured by each listing feature. */
 const VERTICAL_ENTITY_NAME: Record<ListingMediaVertical, string> = {
-    venue: 'gastronomies',
+    venue: 'venues',
     experience: 'experiences'
 };
 
@@ -107,7 +107,7 @@ const mediaEndpoint = (vertical: ListingMediaVertical, entityId: string) =>
  * "no cover" right after one was uploaded, until some unrelated refetch
  * happened to refresh it.
  *
- * The entity key uses the feature's `entityName` (`'gastronomies'` /
+ * The entity key uses the feature's `entityName` (`'venues'` /
  * `'experiences'`) so it stays aligned with the listing entity hooks.
  *
  * Written once and shared by all three mutations rather than pasted into each
@@ -139,7 +139,7 @@ function invalidateAfterMediaMutation(
  * scope for the admin panel's gallery tab — see module docs above).
  *
  * @param vertical - `'venue'` or `'experience'`.
- * @param entityId - UUID of the gastronomy/experience listing.
+ * @param entityId - UUID of the venue/experience listing.
  */
 export function useListingMediaList(vertical: ListingMediaVertical, entityId: string) {
     return useQuery({
@@ -172,7 +172,7 @@ export function useListingMediaList(vertical: ListingMediaVertical, entityId: st
  * gallery from the server.
  *
  * @param vertical - `'venue'` or `'experience'`.
- * @param entityId - UUID of the gastronomy/experience listing.
+ * @param entityId - UUID of the venue/experience listing.
  */
 export function useListingMediaAdd(vertical: ListingMediaVertical, entityId: string) {
     const queryClient = useQueryClient();
@@ -264,7 +264,7 @@ export function useListingMediaAddFeatured(vertical: ListingMediaVertical, entit
  * On success the list query is invalidated.
  *
  * @param vertical - `'venue'` or `'experience'`.
- * @param entityId - UUID of the gastronomy/experience listing.
+ * @param entityId - UUID of the venue/experience listing.
  */
 export function useListingMediaRemove(vertical: ListingMediaVertical, entityId: string) {
     const queryClient = useQueryClient();
@@ -296,7 +296,7 @@ export function useListingMediaRemove(vertical: ListingMediaVertical, entityId: 
  * `isFeatured` flags without any manual state juggling.
  *
  * @param vertical - `'venue'` or `'experience'`.
- * @param entityId - UUID of the gastronomy/experience listing.
+ * @param entityId - UUID of the venue/experience listing.
  */
 export function useListingMediaSetFeatured(vertical: ListingMediaVertical, entityId: string) {
     const queryClient = useQueryClient();

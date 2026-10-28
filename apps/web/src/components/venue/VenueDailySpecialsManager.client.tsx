@@ -1,6 +1,6 @@
 /**
  * @file VenueDailySpecialsManager.client.tsx
- * @description The owner's menú del día editor for a gastronomy listing
+ * @description The owner's menú del día editor for a venue listing
  * (HOS-1041).
  *
  * ## What this panel is FOR, and why the dates are the whole of it
@@ -74,7 +74,7 @@ interface DailySpecialsEnvelope {
 }
 
 export interface VenueDailySpecialsManagerProps {
-    /** UUID of the gastronomy listing. */
+    /** UUID of the venue listing. */
     readonly listingId: string;
     /** Active UI locale. */
     readonly locale: SupportedLocale;
@@ -222,7 +222,7 @@ export function VenueDailySpecialsManager({
         setState('idle');
 
         if (result.ok) {
-            setMessage(t('gastronomy.owner.editor.dailySpecials.saved', 'Menú del día guardado.'));
+            setMessage(t('venue.owner.editor.dailySpecials.saved', 'Menú del día guardado.'));
             return;
         }
 
@@ -234,7 +234,7 @@ export function VenueDailySpecialsManager({
             setIsLocked(true);
             setMessage(
                 t(
-                    'gastronomy.owner.editor.dailySpecials.locked',
+                    'venue.owner.editor.dailySpecials.locked',
                     'El menú del día está disponible desde el plan Profesional.'
                 )
             );
@@ -242,10 +242,7 @@ export function VenueDailySpecialsManager({
         }
 
         setMessage(
-            t(
-                'gastronomy.owner.editor.dailySpecials.saveError',
-                'No se pudo guardar el menú del día.'
-            )
+            t('venue.owner.editor.dailySpecials.saveError', 'No se pudo guardar el menú del día.')
         );
     }, [basePath, specials, t]);
 
@@ -254,11 +251,11 @@ export function VenueDailySpecialsManager({
     return (
         <section className={styles.panel}>
             <h2 className={styles.heading}>
-                {t('gastronomy.owner.editor.dailySpecials.title', 'Menú del día')}
+                {t('venue.owner.editor.dailySpecials.title', 'Menú del día')}
             </h2>
             <p className={styles.intro}>
                 {t(
-                    'gastronomy.owner.editor.dailySpecials.intro',
+                    'venue.owner.editor.dailySpecials.intro',
                     'El plato del día o la sugerencia del chef. Cada uno vale hasta la fecha que le pongas y después deja de mostrarse solo — no hace falta que vuelvas a sacarlo.'
                 )}
             </p>
@@ -277,7 +274,7 @@ export function VenueDailySpecialsManager({
                             <legend className={styles.srOnly}>
                                 {special.title ||
                                     t(
-                                        'gastronomy.owner.editor.dailySpecials.newSpecial',
+                                        'venue.owner.editor.dailySpecials.newSpecial',
                                         'Nuevo plato del día'
                                     )}
                             </legend>
@@ -289,11 +286,11 @@ export function VenueDailySpecialsManager({
                                     value={special.title}
                                     maxLength={150}
                                     placeholder={t(
-                                        'gastronomy.owner.editor.dailySpecials.titlePlaceholder',
+                                        'venue.owner.editor.dailySpecials.titlePlaceholder',
                                         'Milanesa a la napolitana con puré'
                                     )}
                                     aria-label={t(
-                                        'gastronomy.owner.editor.dailySpecials.titleLabel',
+                                        'venue.owner.editor.dailySpecials.titleLabel',
                                         'Plato'
                                     )}
                                     onChange={(event) =>
@@ -307,11 +304,11 @@ export function VenueDailySpecialsManager({
                                     step={1}
                                     value={centsToPesosInputValue({ cents: special.priceCents })}
                                     placeholder={t(
-                                        'gastronomy.owner.editor.dailySpecials.pricePlaceholder',
+                                        'venue.owner.editor.dailySpecials.pricePlaceholder',
                                         'Precio'
                                     )}
                                     aria-label={t(
-                                        'gastronomy.owner.editor.dailySpecials.priceLabel',
+                                        'venue.owner.editor.dailySpecials.priceLabel',
                                         'Precio en pesos'
                                     )}
                                     onChange={(event) =>
@@ -330,7 +327,7 @@ export function VenueDailySpecialsManager({
                                 >
                                     ↑
                                     <span className={styles.srOnly}>
-                                        {t('gastronomy.owner.editor.dailySpecials.moveUp', 'Subir')}
+                                        {t('venue.owner.editor.dailySpecials.moveUp', 'Subir')}
                                     </span>
                                 </button>
                                 <button
@@ -341,10 +338,7 @@ export function VenueDailySpecialsManager({
                                 >
                                     ↓
                                     <span className={styles.srOnly}>
-                                        {t(
-                                            'gastronomy.owner.editor.dailySpecials.moveDown',
-                                            'Bajar'
-                                        )}
+                                        {t('venue.owner.editor.dailySpecials.moveDown', 'Bajar')}
                                     </span>
                                 </button>
                                 <button
@@ -352,7 +346,7 @@ export function VenueDailySpecialsManager({
                                     className={styles.dangerButton}
                                     onClick={() => removeSpecial(index)}
                                 >
-                                    {t('gastronomy.owner.editor.dailySpecials.remove', 'Quitar')}
+                                    {t('venue.owner.editor.dailySpecials.remove', 'Quitar')}
                                 </button>
                             </div>
 
@@ -363,11 +357,11 @@ export function VenueDailySpecialsManager({
                                     value={special.description}
                                     maxLength={500}
                                     placeholder={t(
-                                        'gastronomy.owner.editor.dailySpecials.descriptionPlaceholder',
+                                        'venue.owner.editor.dailySpecials.descriptionPlaceholder',
                                         'Con guarnición y postre'
                                     )}
                                     aria-label={t(
-                                        'gastronomy.owner.editor.dailySpecials.descriptionLabel',
+                                        'venue.owner.editor.dailySpecials.descriptionLabel',
                                         'Detalle'
                                     )}
                                     onChange={(event) =>
@@ -378,7 +372,7 @@ export function VenueDailySpecialsManager({
 
                             <div className={styles.specialRow}>
                                 <label className={styles.dateLabel}>
-                                    {t('gastronomy.owner.editor.dailySpecials.from', 'Desde')}
+                                    {t('venue.owner.editor.dailySpecials.from', 'Desde')}
                                     <input
                                         className={styles.dateInput}
                                         type="date"
@@ -389,7 +383,7 @@ export function VenueDailySpecialsManager({
                                     />
                                 </label>
                                 <label className={styles.dateLabel}>
-                                    {t('gastronomy.owner.editor.dailySpecials.until', 'Hasta')}
+                                    {t('venue.owner.editor.dailySpecials.until', 'Hasta')}
                                     <input
                                         className={styles.dateInput}
                                         type="date"
@@ -404,7 +398,7 @@ export function VenueDailySpecialsManager({
                             {isExpired && (
                                 <p className={styles.expiredNote}>
                                     {t(
-                                        'gastronomy.owner.editor.dailySpecials.expired',
+                                        'venue.owner.editor.dailySpecials.expired',
                                         'Ya venció — no se está mostrando.'
                                     )}
                                 </p>
@@ -412,7 +406,7 @@ export function VenueDailySpecialsManager({
                             {isScheduled && (
                                 <p className={styles.scheduledNote}>
                                     {t(
-                                        'gastronomy.owner.editor.dailySpecials.scheduled',
+                                        'venue.owner.editor.dailySpecials.scheduled',
                                         'Programado — todavía no se muestra.'
                                     )}
                                 </p>
@@ -426,7 +420,7 @@ export function VenueDailySpecialsManager({
                     className={styles.secondaryButton}
                     onClick={addSpecial}
                 >
-                    {t('gastronomy.owner.editor.dailySpecials.add', 'Agregar plato del día')}
+                    {t('venue.owner.editor.dailySpecials.add', 'Agregar plato del día')}
                 </button>
             </div>
 
@@ -437,8 +431,8 @@ export function VenueDailySpecialsManager({
                 onClick={() => void save()}
             >
                 {state === 'saving'
-                    ? t('gastronomy.owner.editor.dailySpecials.saving', 'Guardando…')
-                    : t('gastronomy.owner.editor.dailySpecials.save', 'Guardar menú del día')}
+                    ? t('venue.owner.editor.dailySpecials.saving', 'Guardando…')
+                    : t('venue.owner.editor.dailySpecials.save', 'Guardar menú del día')}
             </button>
 
             {message && <p className={styles.message}>{message}</p>}

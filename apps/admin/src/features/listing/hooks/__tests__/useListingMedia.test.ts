@@ -34,7 +34,7 @@ const mockedFetchApi = vi.mocked(fetchApi);
 function makeMedia(overrides: Partial<Record<string, unknown>> = {}) {
     return {
         id: 'media-1',
-        gastronomyId: 'ent-1',
+        venueId: 'ent-1',
         url: 'https://example.com/photo.jpg',
         moderationState: 'APPROVED',
         state: 'visible',
@@ -355,18 +355,18 @@ describe('gallery mutations invalidate the cached entity (HOS-389 §3)', () => {
         });
     });
 
-    it.each(MUTATIONS)('$name invalidates the gastronomy entity detail', async ({ run, args }) => {
+    it.each(MUTATIONS)('$name invalidates the venue entity detail', async ({ run, args }) => {
         const { result } = run('venue', 'ent-1');
 
         await act(async () => {
             await result.current.mutateAsync(args);
         });
 
-        // 'gastronomies' is the entityName the listing entity hooks are created
+        // 'venues' is the entityName the listing entity hooks are created
         // with — asserting the resolved key, not the helper, is what proves the
         // media hook and the entity hook agree on where the cache lives.
         expect(invalidateSpy).toHaveBeenCalledWith(
-            expect.objectContaining({ queryKey: ['gastronomies', 'detail', 'ent-1'] })
+            expect.objectContaining({ queryKey: ['venues', 'detail', 'ent-1'] })
         );
     });
 

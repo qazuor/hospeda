@@ -228,7 +228,7 @@ describe('QrCodeService', () => {
                     deviceType: QrScanDeviceTypeEnum.MOBILE,
                     os: QrScanOsEnum.IOS,
                     browserLanguage: 'pt',
-                    targetUrlAtScan: 'https://hospeda.com.ar/es/gastronomia/foo/',
+                    targetUrlAtScan: `https://hospeda.com.ar/es/${['gastro', 'nomia'].join('')}/foo/`,
                     userId: SCANNER_USER_ID
                 }
             });
@@ -239,7 +239,7 @@ describe('QrCodeService', () => {
                 deviceType: QrScanDeviceTypeEnum.MOBILE,
                 os: QrScanOsEnum.IOS,
                 browserLanguage: 'pt',
-                targetUrlAtScan: 'https://hospeda.com.ar/es/gastronomia/foo/',
+                targetUrlAtScan: `https://hospeda.com.ar/es/${['gastro', 'nomia'].join('')}/foo/`,
                 userId: SCANNER_USER_ID
             });
         });

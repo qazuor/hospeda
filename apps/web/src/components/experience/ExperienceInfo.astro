@@ -44,7 +44,7 @@ const richHtml =
 
 const descriptionText = renderPlain({ raw: experience.description });
 
-// Opening hours: experience hours use the same shape as gastronomy.
+// Opening hours: experience hours use the same shape as venue.
 // We cast safely since both OpeningHoursEntry interfaces are structurally identical.
 const openingHours =
     experience.openingHours && Object.keys(experience.openingHours).length > 0

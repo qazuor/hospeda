@@ -5,7 +5,7 @@
  * ## What broke, and why it looked fine
  *
  * The two listing landings promised their free trial with the number written
- * out: `landing.price.trial` of the gastronomy namespace read literally
+ * out: `landing.price.trial` of the venue namespace read literally
  * "30 días de prueba gratis", `…faq.a1` repeated the same 30 inside a sentence,
  * and the experience vertical carried both again — twelve strings across two
  * verticals and three locales, none of which anything compared against
@@ -44,7 +44,7 @@
  * A repo-wide version of this rule
  * would fail on all of them, and the pressure to add an exemption list is
  * exactly how a guard turns into a fail-open one. `pricing.json`, `listing.json` and the `landing` subtree of
- * `gastronomy.json` / `experience.json` are the files that describe what a subscription costs and
+ * `venue.json` / `experience.json` are the files that describe what a subscription costs and
  * grants, and in those a number of days is always a claim about the catalogue.
  *
  * Widening the scope, or excusing a string inside it, is meant to be a
@@ -67,17 +67,17 @@
 import { describe, expect, it } from 'vitest';
 
 import experienceEn from '../src/locales/en/experience.json';
-import gastronomyEn from '../src/locales/en/gastronomy.json';
 import listingEn from '../src/locales/en/listing.json';
 import pricingEn from '../src/locales/en/pricing.json';
+import venueEn from '../src/locales/en/venue.json';
 import experienceEs from '../src/locales/es/experience.json';
-import gastronomyEs from '../src/locales/es/gastronomy.json';
 import listingEs from '../src/locales/es/listing.json';
 import pricingEs from '../src/locales/es/pricing.json';
+import venueEs from '../src/locales/es/venue.json';
 import experiencePt from '../src/locales/pt/experience.json';
-import gastronomyPt from '../src/locales/pt/gastronomy.json';
 import listingPt from '../src/locales/pt/listing.json';
 import pricingPt from '../src/locales/pt/pricing.json';
+import venuePt from '../src/locales/pt/venue.json';
 
 /**
  * The two vertical landings of one locale, gathered under one `landing` root so
@@ -85,15 +85,15 @@ import pricingPt from '../src/locales/pt/pricing.json';
  * `landing.<vertical>.…`.
  */
 const landings = (
-    gastronomy: { readonly landing: unknown },
+    venue: { readonly landing: unknown },
     experience: { readonly landing: unknown }
 ): Record<string, unknown> => ({
-    landing: { gastronomy: gastronomy.landing, experience: experience.landing }
+    landing: { venue: venue.landing, experience: experience.landing }
 });
 
-const LANDINGS_ES = landings(gastronomyEs, experienceEs);
-const LANDINGS_EN = landings(gastronomyEn, experienceEn);
-const LANDINGS_PT = landings(gastronomyPt, experiencePt);
+const LANDINGS_ES = landings(venueEs, experienceEs);
+const LANDINGS_EN = landings(venueEn, experienceEn);
+const LANDINGS_PT = landings(venuePt, experiencePt);
 
 /** The catalogue-describing locale files, per locale. */
 const GUARDED_FILES: ReadonlyArray<{
@@ -103,9 +103,9 @@ const GUARDED_FILES: ReadonlyArray<{
     { label: 'es/listing.json', dict: listingEs as Record<string, unknown> },
     { label: 'en/listing.json', dict: listingEn as Record<string, unknown> },
     { label: 'pt/listing.json', dict: listingPt as Record<string, unknown> },
-    { label: 'es/{gastronomy,experience}.json#landing', dict: LANDINGS_ES },
-    { label: 'en/{gastronomy,experience}.json#landing', dict: LANDINGS_EN },
-    { label: 'pt/{gastronomy,experience}.json#landing', dict: LANDINGS_PT },
+    { label: 'es/{venue,experience}.json#landing', dict: LANDINGS_ES },
+    { label: 'en/{venue,experience}.json#landing', dict: LANDINGS_EN },
+    { label: 'pt/{venue,experience}.json#landing', dict: LANDINGS_PT },
     { label: 'es/pricing.json', dict: pricingEs as Record<string, unknown> },
     { label: 'en/pricing.json', dict: pricingEn as Record<string, unknown> },
     { label: 'pt/pricing.json', dict: pricingPt as Record<string, unknown> }
@@ -174,16 +174,16 @@ describe('HOS-941 R-2 — no locale string states a trial length', () => {
 });
 
 /** The two listing verticals whose landings advertise a trial. */
-const LISTING_VERTICALS = ['gastronomy', 'experience'] as const;
+const LISTING_VERTICALS = ['venue', 'experience'] as const;
 
 /** The listing locale files, per locale. */
 const LISTING_FILES: ReadonlyArray<{
     readonly label: string;
     readonly dict: Record<string, unknown>;
 }> = [
-    { label: 'es/{gastronomy,experience}.json#landing', dict: LANDINGS_ES },
-    { label: 'en/{gastronomy,experience}.json#landing', dict: LANDINGS_EN },
-    { label: 'pt/{gastronomy,experience}.json#landing', dict: LANDINGS_PT }
+    { label: 'es/{venue,experience}.json#landing', dict: LANDINGS_ES },
+    { label: 'en/{venue,experience}.json#landing', dict: LANDINGS_EN },
+    { label: 'pt/{venue,experience}.json#landing', dict: LANDINGS_PT }
 ];
 
 describe('HOS-941 R-2 — the listing landings interpolate the trial length', () => {

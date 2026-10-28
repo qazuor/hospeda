@@ -219,86 +219,86 @@ describe('vertical-aware copy (HOS-1283)', () => {
     // Regression for "a restaurant on trial gets nine emails written for a
     // host": every one of these seven sends used to hardcode accommodation
     // wording ("tu alojamiento", "cuántas camas", "dónde quedarse") with no
-    // way to tell a gastronomy or experience trial apart. `productDomain` is
+    // way to tell a venue or experience trial apart. `productDomain` is
     // rendered through `resolveTrialSeriesCopy`, so these assertions are on
     // the ACTUAL RENDERED MARKUP, not on the template source — a `toMatch`
     // over the whole file would pass with the bug still in place, since the
     // accommodation string is still right there in the source as the default.
-    const gastronomyProps: TrialSeriesEmailProps = { ...props, productDomain: 'venue' };
+    const venueProps: TrialSeriesEmailProps = { ...props, productDomain: 'venue' };
     const experienceProps: TrialSeriesEmailProps = { ...props, productDomain: 'experience' };
 
     it('trial-ending-10d: swaps the listing noun and the tip bullets', () => {
         const accommodation = renderToStaticMarkup(TrialEnding10Days(props));
-        const gastronomy = renderToStaticMarkup(TrialEnding10Days(gastronomyProps));
+        const venue = renderToStaticMarkup(TrialEnding10Days(venueProps));
 
         expect(accommodation).toContain('publicaste tu alojamiento');
         expect(accommodation).not.toContain('publicaste tu local');
 
-        expect(gastronomy).toContain('publicaste tu local');
-        expect(gastronomy).not.toContain('tu alojamiento');
-        expect(gastronomy).not.toContain('cuántas camas tiene');
-        expect(gastronomy).toContain('el nombre del local');
+        expect(venue).toContain('publicaste tu local');
+        expect(venue).not.toContain('tu alojamiento');
+        expect(venue).not.toContain('cuántas camas tiene');
+        expect(venue).toContain('el nombre del local');
     });
 
     it('trial-ending-5d: swaps the saved-items line', () => {
         const accommodation = renderToStaticMarkup(TrialEnding5Days(props));
-        const gastronomy = renderToStaticMarkup(TrialEnding5Days(gastronomyProps));
+        const venue = renderToStaticMarkup(TrialEnding5Days(venueProps));
         const experience = renderToStaticMarkup(TrialEnding5Days(experienceProps));
 
         expect(accommodation).toContain('tus servicios y tus datos');
-        expect(gastronomy).toContain('tu menú, tus horarios y tus datos');
-        expect(gastronomy).not.toContain('tus servicios y tus datos');
+        expect(venue).toContain('tu menú, tus horarios y tus datos');
+        expect(venue).not.toContain('tus servicios y tus datos');
         expect(experience).toContain('tu descripción, tus horarios y tus datos');
     });
 
-    it('trial-ending-1d: never tells a gastronomy owner their ALOJAMIENTO is disappearing', () => {
-        const gastronomy = renderToStaticMarkup(TrialEnding1Day(gastronomyProps));
+    it('trial-ending-1d: never tells a venue owner their ALOJAMIENTO is disappearing', () => {
+        const venue = renderToStaticMarkup(TrialEnding1Day(venueProps));
 
         // Every EmailLayout footer carries the brand tagline "Plataforma de
         // alojamientos turísticos..." regardless of vertical (out of scope —
         // it is platform branding, not a per-recipient mismatch), so the
         // negative assertion targets the SENTENCE the bug actually wrote, not
         // the bare word.
-        expect(gastronomy).toContain('tu local deja de aparecer');
-        expect(gastronomy).not.toContain('tu alojamiento deja de aparecer');
+        expect(venue).toContain('tu local deja de aparecer');
+        expect(venue).not.toContain('tu alojamiento deja de aparecer');
     });
 
     it('trial-expired: the alert box names the right saved fields', () => {
         const accommodation = renderToStaticMarkup(TrialExpired(props));
-        const gastronomy = renderToStaticMarkup(TrialExpired(gastronomyProps));
+        const venue = renderToStaticMarkup(TrialExpired(venueProps));
 
         expect(accommodation).toContain('tu alojamiento dejó de aparecer');
         expect(accommodation).toContain('servicios, ubicación y datos de contacto');
 
-        expect(gastronomy).toContain('tu local dejó de aparecer');
-        expect(gastronomy).not.toContain('tu alojamiento dejó de aparecer');
-        expect(gastronomy).toContain('menú, horarios, ubicación y datos de contacto');
+        expect(venue).toContain('tu local dejó de aparecer');
+        expect(venue).not.toContain('tu alojamiento dejó de aparecer');
+        expect(venue).toContain('menú, horarios, ubicación y datos de contacto');
     });
 
     it('trial-win-back-1d: "ayer" names the right vertical', () => {
-        const gastronomy = renderToStaticMarkup(TrialWinBack1Day(gastronomyProps));
-        expect(gastronomy).toContain('Ayer tu local dejó de verse');
-        expect(gastronomy).not.toContain('Ayer tu alojamiento dejó de verse');
+        const venue = renderToStaticMarkup(TrialWinBack1Day(venueProps));
+        expect(venue).toContain('Ayer tu local dejó de verse');
+        expect(venue).not.toContain('Ayer tu alojamiento dejó de verse');
     });
 
     it('trial-win-back-5d: the search intent AND the "not appearing" line both switch', () => {
         const accommodation = renderToStaticMarkup(TrialWinBack5Days(props));
-        const gastronomy = renderToStaticMarkup(TrialWinBack5Days(gastronomyProps));
+        const venue = renderToStaticMarkup(TrialWinBack5Days(venueProps));
 
         expect(accommodation).toContain('buscando dónde quedarse');
-        expect(gastronomy).toContain('buscando dónde comer');
-        expect(gastronomy).not.toContain('dónde quedarse');
-        expect(gastronomy).toContain('tu local no aparece');
-        expect(gastronomy).not.toContain('tu alojamiento no aparece');
+        expect(venue).toContain('buscando dónde comer');
+        expect(venue).not.toContain('dónde quedarse');
+        expect(venue).toContain('tu local no aparece');
+        expect(venue).not.toContain('tu alojamiento no aparece');
     });
 
     it('trial-win-back-10d: the InfoRow label matches the vertical', () => {
         const accommodation = renderToStaticMarkup(TrialWinBack10Days(props));
-        const gastronomy = renderToStaticMarkup(TrialWinBack10Days(gastronomyProps));
+        const venue = renderToStaticMarkup(TrialWinBack10Days(venueProps));
 
         expect(accommodation).toContain('Descripción y servicios');
-        expect(gastronomy).toContain('Descripción y menú');
-        expect(gastronomy).not.toContain('Descripción y servicios');
+        expect(venue).toContain('Descripción y menú');
+        expect(venue).not.toContain('Descripción y servicios');
     });
 
     it('an omitted productDomain renders byte-identical to the original accommodation copy', () => {

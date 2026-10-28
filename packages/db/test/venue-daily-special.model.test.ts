@@ -21,7 +21,7 @@
  * What this deliberately does NOT claim to cover is Postgres's own evaluation
  * of that SQL on the four boundary days. That is a real gap and it is named
  * rather than papered over: the boundary is asserted at the schema layer
- * (`gastronomy.daily-special.schema.test.ts`, which pins that a one-day window
+ * (`venue.daily-special.schema.test.ts`, which pins that a one-day window
  * has both bounds on the same date) and the operators are asserted here.
  */
 
@@ -100,7 +100,7 @@ describe('VenueDailySpecialModel.findValidOn', () => {
 
         // Act
         void model.findValidOn({
-            gastronomyId: '22222222-2222-4222-8222-222222222222',
+            venueId: '22222222-2222-4222-8222-222222222222',
             today: '2026-09-03',
             tx: client
         });
@@ -126,7 +126,7 @@ describe('VenueDailySpecialModel.findValidOn', () => {
 
         // Act
         void model.findValidOn({
-            gastronomyId: '22222222-2222-4222-8222-222222222222',
+            venueId: '22222222-2222-4222-8222-222222222222',
             today: '2026-09-03',
             tx: client
         });
@@ -148,7 +148,7 @@ describe('VenueDailySpecialModel.findValidOn', () => {
 
         // Act
         void model.findValidOn({
-            gastronomyId: '22222222-2222-4222-8222-222222222222',
+            venueId: '22222222-2222-4222-8222-222222222222',
             today: '2026-09-03',
             tx: client
         });
@@ -164,7 +164,7 @@ describe('VenueDailySpecialModel.findValidOn', () => {
 
         // Act
         void model.findValidOn({
-            gastronomyId: '22222222-2222-4222-8222-222222222222',
+            venueId: '22222222-2222-4222-8222-222222222222',
             today: '2026-09-03',
             tx: client
         });
@@ -182,7 +182,7 @@ describe('VenueDailySpecialModel.findValidOn', () => {
 
         // Act
         void model.findValidOn({
-            gastronomyId: '22222222-2222-4222-8222-222222222222',
+            venueId: '22222222-2222-4222-8222-222222222222',
             today: '2026-09-03',
             tx: client
         });

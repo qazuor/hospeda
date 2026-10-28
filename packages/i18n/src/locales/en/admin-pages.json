@@ -20,7 +20,7 @@
         "eventsList": "Events - List",
         "eventsNew": "Events - New",
         "eventsView": "View Event",
-        "gastronomiesView": "View Gastronomy",
+        "venuesView": "View Food & nightlife",
         "experiencesView": "View Experience",
         "postsList": "Posts - List",
         "postsNew": "Posts - New",
@@ -628,7 +628,7 @@
                 "POST_COMMENT": "Post Comments",
                 "RECOMMENDATION": "Recommendations",
                 "MODERATION": "Moderation",
-                "GASTRONOMY": "Gastronomy",
+                "VENUE": "Food & nightlife",
                 "EXPERIENCE": "Experiences",
                 "HOST_TRADE": "Host Trade",
                 "PARTNER": "Partners",
@@ -743,19 +743,19 @@
                     }
                 },
                 "VENUE_OWNER": {
-                    "name": "Gastronomy Owner",
+                    "name": "Food & nightlife owner",
                     "description": "Owner of a restaurant, bar or café who manages their own listing (no access to experiences)",
                     "capabilities": {
-                        "cap1": "Manage their gastronomy listing",
+                        "cap1": "Manage their Food & nightlife listing",
                         "cap2": "Update opening hours and contact details",
                         "cap3": "Upload photos",
                         "cap4": "Reply to reviews",
-                        "cap5": "View their gastronomy analytics"
+                        "cap5": "View their Food & nightlife listing analytics"
                     }
                 },
                 "EXPERIENCE_OWNER": {
                     "name": "Experience Owner",
-                    "description": "Owner of a tour or activity who manages their own listing (no access to gastronomy)",
+                    "description": "Owner of a tour or activity who manages their own listing (no access to Food & nightlife)",
                     "capabilities": {
                         "cap1": "Manage their experience listing",
                         "cap2": "Update schedules and contact details",
@@ -810,7 +810,7 @@
             },
             "relatedCounts": {
                 "accommodationsShort": "Acc.",
-                "gastronomiesShort": "Gast.",
+                "venuesShort": "Gast.",
                 "experiencesShort": "Exp.",
                 "eventsShort": "Evt.",
                 "postsShort": "Posts"
@@ -830,7 +830,7 @@
                 "error": "We couldn't read this vertical's trial.",
                 "vertical": {
                     "accommodation": "Accommodation",
-                    "venue": "Gastronomy",
+                    "venue": "Food & nightlife",
                     "experience": "Experiences"
                 },
                 "status": {

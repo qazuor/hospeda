@@ -176,7 +176,7 @@ function toDate(value: unknown): Date {
 export const listingPurgeModel = {
     /**
      * Deletes listing-only rows, blanks listing content, and marks remote rows for post-commit work.
-     * Uploaded gastronomy menu files and dish photos are carried into marked media rows first.
+     * Uploaded venue menu files and dish photos are carried into marked media rows first.
      */
     async purgeListingContent(args: {
         readonly tx: DrizzleClient;

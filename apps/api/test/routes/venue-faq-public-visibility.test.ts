@@ -1,5 +1,5 @@
 /**
- * Regression suite for HOS-400 — the public gastronomy FAQs endpoint must not
+ * Regression suite for HOS-400 — the public venue FAQs endpoint must not
  * leak a FAQ marked `isVisibleOnListing: false`.
  *
  * `listVenueFaqs` (the service-core helper this route calls) is SHARED
@@ -54,7 +54,7 @@ const URL = `/api/v1/public/venues/${VENUE_ID}/faqs`;
 
 const VISIBLE_FAQ = {
     id: 'cccccccc-cccc-4ccc-8ccc-cccccccccc01',
-    gastronomyId: VENUE_ID,
+    venueId: VENUE_ID,
     question: '¿Aceptan reservas para grupos grandes?',
     answer: 'Sí, hasta 20 personas con aviso previo.',
     category: null,
@@ -67,7 +67,7 @@ const VISIBLE_FAQ = {
 
 const HIDDEN_FAQ = {
     id: 'cccccccc-cccc-4ccc-8ccc-cccccccccc02',
-    gastronomyId: VENUE_ID,
+    venueId: VENUE_ID,
     question: '¿Hacen descuentos a empleados de la zona?',
     answer: 'Sí, un 10% con credencial, pero preferimos no publicarlo.',
     category: null,

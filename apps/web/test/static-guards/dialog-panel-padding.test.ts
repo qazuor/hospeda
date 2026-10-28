@@ -7,7 +7,7 @@
  * WHY A GUARD. `Dialog.module.css` used to leave `.panel` with no padding at
  * all, on the assumption that content brings its own. Thirteen of the fifteen
  * consumers did, because they compose `DialogHeader`/`DialogBody`/`DialogFooter`,
- * which each carry padding. Two did not — both gastronomy/experience plan pickers passed
+ * which each carry padding. Two did not — both venue/experience plan pickers passed
  * bare children — and shipped a heading at 0px from the panel corner, on the
  * screen a customer reads while deciding to pay more. Those two have since
  * been migrated onto the slots, so all fifteen compose them today.

@@ -75,8 +75,8 @@ function makeModel(entity: TestEntity | null = null) {
         findAllWithRelations: vi.fn().mockResolvedValue({ items: [], total: 0 }),
         create: vi.fn().mockImplementation(async (data: Partial<TestEntity>) => ({
             id: ENTITY_ID,
-            name: 'Test Gastronomy',
-            slug: (data as Record<string, unknown>).slug ?? 'test-gastronomy',
+            name: 'Test Venue',
+            slug: (data as Record<string, unknown>).slug ?? 'test-venue',
             type: 'RESTAURANT',
             ...data
         })),

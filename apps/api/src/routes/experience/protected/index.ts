@@ -14,7 +14,7 @@
  * insertion order. Verified by mutation on the post/event twin of these routes
  * (registering the DELETE first leaves
  * `test/routes/post-protected-media.test.ts` green). There is no equivalent
- * gastronomy/experience-side route test to re-run that mutation against here, but it is the
+ * venue/experience-side route test to re-run that mutation against here, but it is the
  * same Hono router. The other two entries are very likely the same, but were
  * not verified — do not read them as proven.
  */

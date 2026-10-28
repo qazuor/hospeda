@@ -250,7 +250,7 @@
                 "body": "Tu ficha sigue sin publicar. Para publicarla necesitás una suscripción de {{vertical}}.",
                 "vertical": {
                     "accommodation": "alojamiento",
-                    "gastronomy": "gastronomía",
+                    "venue": "Comer y salir",
                     "experience": "experiencias"
                 }
             },

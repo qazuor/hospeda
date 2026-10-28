@@ -6,7 +6,7 @@
  * codes. On `/protected/users/:id` the two answers differed by status (403 vs
  * 404) and the 403 even named the permission the caller was missing. On
  * `/protected/accommodations/:id` — and, it turned out, on the experience and
- * gastronomy twins — BOTH answers were `404 NOT_FOUND`, and the entire
+ * venue twins — BOTH answers were `404 NOT_FOUND`, and the entire
  * disclosure lived in one capital letter: the route hand-wrote
  * `'Accommodation not found'` for the foreign row while the service composed
  * `'accommodation not found'` for the missing one.
@@ -217,7 +217,7 @@ const OWNED_ENTITY_CASES = [
         }
     },
     {
-        label: 'gastronomy',
+        label: 'venue',
         service: VenueService,
         importRoute: async () => {
             const mod = await import('../../src/routes/venue/protected/getById.js');
@@ -293,7 +293,7 @@ const QR_SHEET_CASES = [
         }
     },
     {
-        label: 'gastronomy',
+        label: 'venue',
         service: VenueService,
         importRoute: async () => {
             const mod = await import('../../src/routes/venue/protected/qrSheet.js');
@@ -394,7 +394,7 @@ const QR_CODE_CASES = [
         }
     },
     {
-        label: 'gastronomy',
+        label: 'venue',
         service: VenueService,
         importRoute: async () => {
             const mod = await import('../../src/routes/venue/protected/qrCode.js');

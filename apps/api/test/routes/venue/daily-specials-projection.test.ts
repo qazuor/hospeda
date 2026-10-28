@@ -14,7 +14,7 @@ import { applyVenueDailySpecialsGate } from '../../../src/routes/venue/public/da
 /** A stored special as the read hands it over — already window-filtered. */
 const special = (title: string) => ({
     id: '11111111-1111-4111-8111-111111111111',
-    gastronomyId: '22222222-2222-4222-8222-222222222222',
+    venueId: '22222222-2222-4222-8222-222222222222',
     title,
     description: null,
     priceCents: 1_850_000,

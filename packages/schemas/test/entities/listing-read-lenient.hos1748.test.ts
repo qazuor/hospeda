@@ -17,7 +17,7 @@ import {
 import { ExperiencePriceUnitEnum } from '../../src/enums/experience-price-unit.enum.js';
 import { ExperienceTypeEnum } from '../../src/enums/experience-type.enum.js';
 import { createValidAccommodation } from '../fixtures/accommodation.fixtures.js';
-import { createMinimalGastronomy } from '../fixtures/venue.fixtures.js';
+import { createMinimalVenue } from '../fixtures/venue.fixtures.js';
 
 /**
  * HOS-1748: a PURGED listing keeps its row with `summary = ''` and
@@ -73,8 +73,8 @@ const purgedAccommodation = {
     extraInfo: null
 };
 
-const purgedGastronomy = {
-    ...createMinimalGastronomy(),
+const purgedVenue = {
+    ...createMinimalVenue(),
     ...COMMON_BLANKED,
     menuUrl: null,
     menuFileUrl: null,
@@ -122,7 +122,7 @@ interface ReadCase {
 }
 
 const accommodation = createValidAccommodation();
-const gastronomy = createMinimalGastronomy();
+const venue = createMinimalVenue();
 
 const cases: readonly ReadCase[] = [
     ['AccommodationListItemSchema', AccommodationListItemSchema],
@@ -141,16 +141,16 @@ const cases: readonly ReadCase[] = [
     )
     .concat(
         [
-            ['GastronomyAdminSchema', VenueAdminSchema],
-            ['GastronomyAdminListItemSchema', VenueAdminListItemSchema],
-            ['GastronomyProtectedSchema', VenueProtectedSchema]
+            ['VenueAdminSchema', VenueAdminSchema],
+            ['VenueAdminListItemSchema', VenueAdminListItemSchema],
+            ['VenueProtectedSchema', VenueProtectedSchema]
         ].map(
             ([name, schema]) =>
                 ({
                     name,
                     schema,
-                    purged: purgedGastronomy,
-                    valid: gastronomy,
+                    purged: purgedVenue,
+                    valid: venue,
                     capped: true
                 }) as ReadCase
         ),

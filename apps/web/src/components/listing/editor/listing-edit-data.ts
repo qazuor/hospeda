@@ -75,8 +75,8 @@ export interface ListingEditData {
     /**
      * Where the experience starts (HOS-1048) — experience vertical only, since
      * `meetingPoint` is on `ExperienceOwnerUpdateInputSchema` and not on the
-     * gastronomy one. It lives on the shared state object anyway, exactly as
-     * gastronomy's `priceRange`/`menuUrl` do: this type is the union of both
+     * venue one. It lives on the shared state object anyway, exactly as
+     * venue's `priceRange`/`menuUrl` do: this type is the union of both
      * verticals, and `buildPatchPayload` decides what actually ships.
      */
     readonly meetingPoint: string;

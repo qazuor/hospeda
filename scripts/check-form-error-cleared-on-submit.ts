@@ -669,7 +669,7 @@ export function run(root: string): number {
             '\n  `handleApiError` only ever SETS the banner — nothing in `useZodForm` clears ' +
                 'it. Open the submit handler with `setFormError(null)`, before any early ' +
                 'return, so a submit that only fails client-side validation retires the ' +
-                'previous attempt’s message too. The gastronomy listing create form is the ' +
+                'previous attempt’s message too. The venue listing create form is the ' +
                 'reference shape. HOS-816 is what happens without it: the user saves ' +
                 'successfully and reads a red banner telling them it failed.'
         );

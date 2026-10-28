@@ -1,6 +1,6 @@
 /**
- * Admin soft delete gastronomy review endpoint.
- * Allows admins to soft-delete any gastronomy review.
+ * Admin soft delete venue review endpoint.
+ * Allows admins to soft-delete any venue review.
  */
 import { DeleteResultSchema, PermissionEnum } from '@repo/schemas';
 import { ServiceError, VenueReviewService } from '@repo/service-core';
@@ -14,7 +14,7 @@ const venueReviewService = new VenueReviewService({ logger: apiLogger });
 
 /**
  * DELETE /api/v1/admin/venues/reviews/:id
- * Soft delete gastronomy review — Admin endpoint.
+ * Soft delete venue review — Admin endpoint.
  *
  * Requires VENUE_MODERATE_REVIEW permission. The service layer
  * (`_canSoftDelete`) also accepts the review author.
@@ -22,9 +22,9 @@ const venueReviewService = new VenueReviewService({ logger: apiLogger });
 export const adminDeleteVenueReviewRoute = createAdminRoute({
     method: 'delete',
     path: '/{id}',
-    summary: 'Soft delete gastronomy review (admin)',
-    description: 'Soft deletes a gastronomy review. Requires VENUE_MODERATE_REVIEW permission.',
-    tags: ['Gastronomy Reviews', 'Admin'],
+    summary: 'Soft delete venue reviews (admin)',
+    description: 'Soft deletes a venue reviews. Requires VENUE_MODERATE_REVIEW permission.',
+    tags: ['Venue Reviews', 'Admin'],
     anyOfPermissions: [[PermissionEnum.VENUE_MODERATE_REVIEW]],
     requestParams: {
         id: z.string().uuid({ message: 'zodError.common.id.invalidUuid' })

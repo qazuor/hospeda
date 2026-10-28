@@ -11,7 +11,7 @@
  * one. Two ordinary situations make the difference matter:
  *
  *  - A `-basico` owner opens the editor. They must see the menu section, the
- *    link field and the uploaded file — those work on every gastronomy tier —
+ *    link field and the uploaded file — those work on every venue tier —
  *    with only the structured half disabled. A gate here would answer 403 and
  *    the editor would have nothing to render.
  *  - An owner whose subscription lapsed after they typed forty dishes. Their
@@ -45,12 +45,12 @@ const venueService = new VenueService({ logger: apiLogger });
  * indistinguishable.
  *
  * @param ctx - The Hono request context.
- * @param gastronomyId - The listing being read.
+ * @param venueId - The listing being read.
  * @returns Nothing; throws when the caller may not read this listing.
  */
-async function requireOwnedVenue(ctx: Context, gastronomyId: string): Promise<void> {
+async function requireOwnedVenue(ctx: Context, venueId: string): Promise<void> {
     const actor = getActorFromContext(ctx);
-    const result = await venueService.getById(actor, gastronomyId);
+    const result = await venueService.getById(actor, venueId);
 
     if (result.error) {
         throw new ServiceError(result.error.code, result.error.message);
@@ -64,14 +64,14 @@ async function requireOwnedVenue(ctx: Context, gastronomyId: string): Promise<vo
 
 /** Reads the carta. Exported standalone so the route test can call it directly. */
 export async function handleGetVenueMenu(ctx: Context, params: Record<string, unknown>) {
-    const gastronomyId = params.id as string;
+    const venueId = params.id as string;
 
-    await requireOwnedVenue(ctx, gastronomyId);
+    await requireOwnedVenue(ctx, venueId);
 
     // TYPE-WORKAROUND: access protected `model` via cast to avoid `any`, the
     // same accessor the FAQ and media routes use.
     const model = (venueService as unknown as { model: Parameters<typeof getVenueMenu>[0] }).model;
-    const result = await getVenueMenu(model, { gastronomyId });
+    const result = await getVenueMenu(model, { venueId });
 
     if (result.error) {
         throw new ServiceError(result.error.code, result.error.message);
@@ -83,10 +83,10 @@ export async function handleGetVenueMenu(ctx: Context, params: Record<string, un
 export const protectedGetVenueMenuRoute = createCRUDRoute({
     method: 'get',
     path: '/{id}/menu',
-    summary: 'Read the menu of a gastronomy listing',
+    summary: 'Read the menu of a venue listing',
     description:
-        "Returns the listing's structured menu (sections and dishes) together with the uploaded photo/PDF and the external menu link, if set. Owner-only. Not gated on the structured-menu entitlement: every gastronomy tier can see its own menu, and only writing the structured half is a paid capability.",
-    tags: ['Gastronomy', 'Gastronomy Menu'],
+        "Returns the listing's structured menu (sections and dishes) together with the uploaded photo/PDF and the external menu link, if set. Owner-only. Not gated on the structured-menu entitlement: every venue tier can see its own menu, and only writing the structured half is a paid capability.",
+    tags: ['Venue', 'Venue Menu'],
     requestParams: {
         id: z.string().uuid({ message: 'zodError.common.id.invalidUuid' })
     },

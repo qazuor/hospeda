@@ -45,9 +45,9 @@ data-migrations applied (`0057-staff-email-domain-to-com-ar` is the last one).
 ## ANNOUNCE THIS BEFORE YOU START
 
 `0059` purges 23 test accounts and everything they own. Production's `experiences`
-and `gastronomies` tables contain **only** rows owned by those accounts — the three
+and legacy listing table contain **only** rows owned by those accounts — the three
 publicly visible experiences on the site are three of the seven it removes, and the
-nine gastronomies are the entire table.
+nine listings are the entire table.
 
 **Both verticals end at zero and the public experiences section ships empty.** That is
 the declared purpose of the migration (start the first real customer from a clean
@@ -181,7 +181,7 @@ Expected output, matching the rehearsal exactly:
 Running 11 pending data-migration(s)...
   0058 OK   -> Purged example data: 104 accommodations, 18 posts, 23 events,
                5 organizers, 5 locations, 37 users…
-  0059 OK   -> Purged test data: 23 accounts, 9 gastronomies, 7 experiences,
+  0059 OK   -> Purged test data: 23 accounts, 9 listings, 7 experiences,
                8 partners, 5 accommodations…
   0060 OK · 0061 OK · 0062 OK · 0064 OK · 0065 OK · 0066 OK · 0067 OK
   0068 OK · 0069 OK
@@ -203,7 +203,7 @@ ledger partway through the batch.
 - [ ] Smoke the public site: home, a destination, an accommodation detail
 - [ ] The experiences section renders its empty state cleanly (it will be empty — see
       [above](#announce-this-before-you-start))
-- [ ] Gastronomy and experience: the catalogue exists and the free trial is offered
+- [ ] Venue and experience: the catalogue exists and the free trial is offered
 
 ### 6 — Purge the edge cache
 

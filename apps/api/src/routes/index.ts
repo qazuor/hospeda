@@ -323,7 +323,7 @@ export const setupRoutes = (app: AppOpenAPI) => {
         // Mounted at /api/v1/public/accommodations so routes resolve as:
         //   GET /api/v1/public/accommodations/:id/external-reputation
         app.route('/api/v1/public/accommodations', publicExternalReputationRoutes);
-        // Gastronomy listings (SPEC-239 T-042)
+        // Venue listings (SPEC-239 T-042)
         app.route('/api/v1/public/venues', publicVenueRoutes);
         // Experience listings (SPEC-240 T-019)
         app.route('/api/v1/public/experiences', publicExperienceRoutes);
@@ -418,7 +418,7 @@ export const setupRoutes = (app: AppOpenAPI) => {
         // ═══════════════════════════════════════════════════════════════════════
 
         // SPEC-239 T-041: Force-password-change gate on ALL protected routes.
-        // Gastronomy and experience owner accounts are provisioned with mustChangePassword=true.
+        // Venue and experience owner accounts are provisioned with mustChangePassword=true.
         // Any protected request from such a user returns 403 PASSWORD_CHANGE_REQUIRED
         // until they change their password via /api/v1/protected/auth/change-password.
         // The exempt path list is maintained inside the middleware itself.
@@ -470,7 +470,7 @@ export const setupRoutes = (app: AppOpenAPI) => {
         //   PATCH    /api/v1/protected/accommodations/:id/external-reputation/master-toggle
         //   POST     /api/v1/protected/accommodations/:id/external-reputation/refresh
         app.route('/api/v1/protected/accommodations', protectedExternalReputationRoutes);
-        // Gastronomy listings (SPEC-239 T-043 / T-044)
+        // Venue listings (SPEC-239 T-043 / T-044)
         app.route('/api/v1/protected/venues', protectedVenueRoutes);
         // Experience listings (SPEC-240 T-020)
         app.route('/api/v1/protected/experiences', protectedExperienceRoutes);
@@ -482,7 +482,7 @@ export const setupRoutes = (app: AppOpenAPI) => {
         app.route('/api/v1/protected/partners', protectedPartnerRoutes);
         app.route('/api/v1/protected/host-onboarding', protectedHostOnboardingRoutes);
         // HOS-1156: the vertical-parameterised publish precheck, which
-        // generalises /host-onboarding/precheck to gastronomy and experiences.
+        // generalises /host-onboarding/precheck to venue and experiences.
         app.route('/api/v1/protected/publish', protectedPublishRoutes);
         app.route('/api/v1/protected/destinations', protectedDestinationRoutes);
         app.route('/api/v1/protected/events', protectedEventRoutes);
@@ -550,7 +550,7 @@ export const setupRoutes = (app: AppOpenAPI) => {
         // Mounted at /api/v1/admin/accommodations so routes resolve as:
         //   POST /api/v1/admin/accommodations/:id/external-reputation/disable
         app.route('/api/v1/admin/accommodations', adminExternalReputationRoutes);
-        // Gastronomy listings (SPEC-239 T-045 / T-046)
+        // Venue listings (SPEC-239 T-045 / T-046)
         app.route('/api/v1/admin/venues', adminVenueRoutes);
         // Experience listings (SPEC-240 T-021)
         app.route('/api/v1/admin/experiences', adminExperienceRoutes);

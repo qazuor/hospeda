@@ -1375,7 +1375,7 @@ describe('toAccommodationDetailPageProps — contactInfo + socialNetworks (H-118
 // fix, `normalizeSocialNetworks` copied `whatsapp` straight from the raw API
 // item into the object handed to the render layer.
 
-describe('toGastronomyDetailPageProps — socialNetworks.whatsapp dead field (HOS-1076)', () => {
+describe('toVenueDetailPageProps — socialNetworks.whatsapp dead field (HOS-1076)', () => {
     it('never surfaces socialNetworks.whatsapp even if present on the raw payload', () => {
         const result = toVenueDetailPageProps({
             item: {

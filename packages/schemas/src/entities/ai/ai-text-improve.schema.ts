@@ -50,7 +50,7 @@ export type AiTextImproveFieldType = z.infer<typeof AiTextImproveFieldTypeSchema
  * Which vertical the improved text belongs to (HOS-1075).
  *
  * Before this field existed the route had no way to know whether
- * `fieldValue` came from an accommodation, a gastronomy listing, or an
+ * `fieldValue` came from an accommodation, a venue listing, or an
  * experience listing, so it could only gate on the actor's ACCOMMODATION
  * entitlement — a host who also owns a comercio could improve their
  * comercio's text for free off their accommodation plan, and a comercio-only

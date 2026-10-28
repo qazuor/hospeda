@@ -67,7 +67,7 @@ export class ListingPublicationService {
                 if (existing.error)
                     throw new ServiceError(existing.error.code, existing.error.message);
                 if (!existing.data)
-                    throw new ServiceError(ServiceErrorCode.NOT_FOUND, 'Gastronomy not found');
+                    throw new ServiceError(ServiceErrorCode.NOT_FOUND, 'Venue not found');
                 const media = await loadListingMedia({ entityType: vertical, entityId: args.id });
                 const completeness = await evaluateListingPublishCompleteness({
                     vertical,
@@ -276,8 +276,7 @@ export class ListingPublicationService {
         if (vertical === VerticalEnum.VENUE) {
             const result = await venueService.getById(actor, id);
             if (result.error) throw new ServiceError(result.error.code, result.error.message);
-            if (!result.data)
-                throw new ServiceError(ServiceErrorCode.NOT_FOUND, 'Gastronomy not found');
+            if (!result.data) throw new ServiceError(ServiceErrorCode.NOT_FOUND, 'Venue not found');
             const { amenityIds, featureIds } = await venueService.loadJunctionIds(id);
             return { ...result.data, amenityIds, featureIds };
         }

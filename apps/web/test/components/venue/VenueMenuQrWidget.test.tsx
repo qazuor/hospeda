@@ -1,10 +1,10 @@
 /**
  * @file VenueMenuQrWidget.test.tsx
- * @description RTL tests for the gastronomy menu QR + scan analytics owner
+ * @description RTL tests for the food menu QR + scan analytics owner
  * panel (HOS-1044 §6.6).
  *
  * Verifies:
- *  - Renders nothing when the owner has zero gastronomy listings.
+ *  - Renders nothing when the owner has zero venue listings.
  *  - A premium venue (both calls 200) renders the total, daily series,
  *    device/OS/language breakdowns, and the QR with a download button.
  *  - A non-premium venue (either call 403) renders the LOCKED state, never a
@@ -58,7 +58,7 @@ vi.mock('../../../src/lib/api/endpoints-protected', () => ({
     }
 }));
 
-const LISTING: VenueMenuQrWidgetListing = { id: 'gastro-1', name: 'La Parrilla del Puerto' };
+const LISTING: VenueMenuQrWidgetListing = { id: 'venue-1', name: 'La Parrilla del Puerto' };
 
 const READY_QR = {
     ok: true as const,
@@ -86,12 +86,12 @@ const READY_STATS = {
     }
 };
 
-describe('GastronomyMenuQrWidget (HOS-1044)', () => {
+describe('VenueMenuQrWidget (HOS-1044)', () => {
     beforeEach(() => {
         vi.clearAllMocks();
     });
 
-    it('renders nothing when the owner has zero gastronomy listings', () => {
+    it('renders nothing when the owner has zero venue listings', () => {
         const { container } = render(
             <VenueMenuQrWidget
                 locale="es"
@@ -118,7 +118,7 @@ describe('GastronomyMenuQrWidget (HOS-1044)', () => {
         expect(screen.getByText('La Parrilla del Puerto')).toBeTruthy();
         expect(screen.getByTestId('menu-qr-daily-series')).toBeTruthy();
         expect(screen.getByTestId('menu-qr-download')).toBeTruthy();
-        expect(screen.queryByTestId('gastronomy-menu-qr-locked')).toBeNull();
+        expect(screen.queryByTestId('venue-menu-qr-locked')).toBeNull();
 
         // The daily series and breakdown counts are on the page.
         expect(screen.getByTestId('menu-qr-daily-series').textContent).toContain('10');
@@ -159,7 +159,7 @@ describe('GastronomyMenuQrWidget (HOS-1044)', () => {
             />
         );
 
-        expect(await screen.findByTestId('gastronomy-menu-qr-locked')).toHaveTextContent(
+        expect(await screen.findByTestId('venue-menu-qr-locked')).toHaveTextContent(
             'plan Premium de gastronomía'
         );
         expect(screen.queryByTestId('menu-qr-total')).toBeNull();
@@ -180,7 +180,7 @@ describe('GastronomyMenuQrWidget (HOS-1044)', () => {
             />
         );
 
-        expect(await screen.findByTestId('gastronomy-menu-qr-locked')).toBeTruthy();
+        expect(await screen.findByTestId('venue-menu-qr-locked')).toBeTruthy();
     });
 
     it('renders a generic error (not locked) on a non-403 failure', async () => {
@@ -198,7 +198,7 @@ describe('GastronomyMenuQrWidget (HOS-1044)', () => {
         );
 
         expect(await screen.findByRole('alert')).toHaveTextContent('No pudimos cargar');
-        expect(screen.queryByTestId('gastronomy-menu-qr-locked')).toBeNull();
+        expect(screen.queryByTestId('venue-menu-qr-locked')).toBeNull();
     });
 
     it('re-fetches scans (and the QR) with window=7d when the toggle is clicked', async () => {

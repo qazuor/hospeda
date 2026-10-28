@@ -46,12 +46,12 @@ const venueService = new VenueService({ logger: apiLogger });
  * indistinguishable.
  *
  * @param ctx - The Hono request context.
- * @param gastronomyId - The listing being read.
+ * @param venueId - The listing being read.
  * @returns Nothing; throws when the caller may not read this listing.
  */
-async function requireOwnedVenue(ctx: Context, gastronomyId: string): Promise<void> {
+async function requireOwnedVenue(ctx: Context, venueId: string): Promise<void> {
     const actor = getActorFromContext(ctx);
-    const result = await venueService.getById(actor, gastronomyId);
+    const result = await venueService.getById(actor, venueId);
 
     if (result.error) {
         throw new ServiceError(result.error.code, result.error.message);
@@ -65,15 +65,15 @@ async function requireOwnedVenue(ctx: Context, gastronomyId: string): Promise<vo
 
 /** Reads the agenda. Exported standalone so the route test can call it directly. */
 export async function handleGetVenueEvents(ctx: Context, params: Record<string, unknown>) {
-    const gastronomyId = params.id as string;
+    const venueId = params.id as string;
 
-    await requireOwnedVenue(ctx, gastronomyId);
+    await requireOwnedVenue(ctx, venueId);
 
     // TYPE-WORKAROUND: access protected `model` via cast to avoid `any`, the
     // same accessor the FAQ, media and menu routes use.
     const model = (venueService as unknown as { model: Parameters<typeof getVenueEvents>[0] })
         .model;
-    const result = await getVenueEvents(model, { gastronomyId });
+    const result = await getVenueEvents(model, { venueId });
 
     if (result.error) {
         throw new ServiceError(result.error.code, result.error.message);
@@ -85,10 +85,10 @@ export async function handleGetVenueEvents(ctx: Context, params: Record<string, 
 export const protectedGetVenueEventsRoute = createCRUDRoute({
     method: 'get',
     path: '/{id}/events',
-    summary: 'Read the venue events agenda of a gastronomy listing',
+    summary: 'Read the venue events agenda of a venue listing',
     description:
         "Returns the listing's own events — live music night, happy hour, dinner show — in display order, including entries the owner has switched off. Owner-only. Not gated on the venue-events entitlement: an owner whose plan no longer grants it still owns the rows, and only writing is a paid capability.",
-    tags: ['Gastronomy', 'Gastronomy Events'],
+    tags: ['Venue', 'Venue Events'],
     requestParams: {
         id: z.string().uuid({ message: 'zodError.common.id.invalidUuid' })
     },

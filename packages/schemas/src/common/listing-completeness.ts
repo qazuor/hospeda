@@ -5,7 +5,7 @@
  *
  * "Complete" is deliberately NOT "passes the Create schema" — the create
  * schemas are permissive by design (`slug`, `ownerId`, `destinationId` are all
- * `.optional()` on `GastronomyAdminCreateInputSchema`), so a listing that
+ * `.optional()` on `venueAdminCreateInputSchema`), so a listing that
  * satisfies Create can still be unpublishable garbage. This module defines a
  * separate, explicit, per-vertical publish-readiness contract, evaluated by a
  * single pure function with THREE intended callers (§6.6):
@@ -69,7 +69,7 @@ const OPENING_HOURS_DAY_KEYS = ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun']
 /**
  * The subset of a listing's fields `resolveListingCompleteness`
  * reads. Deliberately a standalone structural type rather than the full
- * `Gastronomy` / `Experience` entity type: at draft time a real DB row can
+ * `venue` / `Experience` entity type: at draft time a real DB row can
  * legitimately violate those schemas' non-nullish invariants (e.g.
  * `destinationId` is `.optional()` at create — spec §6.6), so every field
  * here is nullable/optional to match what a genuinely incomplete draft looks
@@ -181,7 +181,7 @@ type ReachableContactChannel =
  *
  * - `venue` — keeps the original six. Applying the experience rule here
  *   would make EVERY venue listing unpublishable, because
- *   `GastronomyPublicSchema` publishes no `contactInfo` at all: its hole is
+ *   `venuePublicSchema` publishes no `contactInfo` at all: its hole is
  *   wider than a mis-calibrated gate and is tracked separately (HOS-924
  *   "Relacionado"). Narrowing this row is the follow-up to exposing contact
  *   there, not something to do first.
@@ -271,7 +271,7 @@ function hasAtLeastOneOpeningShift(openingHours: OpeningHours | null | undefined
  * ```ts
  * const { complete, missing } = resolveListingCompleteness({
  *   entityType: 'venue',
- *   listing: gastronomyRow,
+ *   listing: venueRow,
  * });
  * if (!complete) {
  *   throw new HTTPException(422, { message: 'Listing incomplete', cause: { missing } });
@@ -310,7 +310,7 @@ export function resolveListingCompleteness(
         missing.push('contactInfo');
     }
 
-    // ── Gastronomy-specific required fields ───────────────────────────────
+    // ── venue-specific required fields ───────────────────────────────
     if (entityType === ProductDomainEnum.VENUE) {
         if (!hasAtLeastOneOpeningShift(listing.openingHours)) {
             missing.push('openingHours');
@@ -325,7 +325,7 @@ export function resolveListingCompleteness(
     // `ExperienceSchema`, so a listing that satisfies the Create schema always
     // has SOME price data — but "some" is not "meaningful": `priceFrom: 0` with
     // `isPriceOnRequest: false` reads as "$0", a broken listing. This mirrors
-    // gastronomy's `priceRange` requirement (real price information is
+    // venue's `priceRange` requirement (real price information is
     // viability, not quality).
     //
     // `priceUnit` is deliberately NOT checked here. It became nullable in H-156
@@ -336,7 +336,7 @@ export function resolveListingCompleteness(
     // used to assert both fields were non-nullable; that stopped being true.)
     //
     // NOTE (deferred, not decided here): `openingHours` was deliberately NOT
-    // added as a required field for experience, unlike gastronomy. A
+    // added as a required field for experience, unlike venue. A
     // restaurant has a fixed weekly schedule by nature; an "experience" (tour,
     // rental, on-demand activity) may legitimately run on flexible or
     // by-request hours with no weekly shift pattern to fill in. Whether

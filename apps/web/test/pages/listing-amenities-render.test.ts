@@ -1,6 +1,6 @@
 /**
  * @file listing-amenities-render.test.ts
- * @description HOS-1072 — the two gastronomy/experience detail surfaces actually MOUNT the
+ * @description HOS-1072 — the two venue/experience detail surfaces actually MOUNT the
  * amenity/feature grids, and the two vertical presentation pages say the owner
  * can publish them.
  *

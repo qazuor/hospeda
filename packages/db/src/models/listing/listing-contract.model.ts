@@ -32,7 +32,7 @@ const LISTING_TABLES: Readonly<Record<ListingVertical, string>> = {
 export const listingContractModel = {
     /**
      * Reads every non-deleted row carrying this id across the three listing
-     * tables (`accommodations`, `gastronomies`, `experiences`). It is a plain
+     * tables (`accommodations`, `legacy listing tables`, `experiences`). It is a plain
      * read: no row lock. A `PURGED` listing is still returned (PB12 keeps the
      * row with `deleted_at` NULL); a soft-deleted row is not.
      *

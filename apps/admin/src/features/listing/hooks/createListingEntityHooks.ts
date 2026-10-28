@@ -11,7 +11,7 @@
  * delete, softDelete, restore) to `createEntityHooks` and adds only the
  * listing-specific hooks on top.
  *
- * Response unwrapping follows the verified gastronomy/accommodation API shape:
+ * Response unwrapping follows the verified venue/accommodation API shape:
  *   GET detail   →  `{ success, data: <entity> }`          → unwrap `response.data.data`
  *   GET list     →  `{ success, data: { items, pagination } }` → handled by createEntityHooks
  *   POST mutate  →  `{ success, data: <entity | null> }`   → unwrap `response.data.data`
@@ -35,13 +35,13 @@ import { createEntityQueryKeys } from '@/lib/query-keys/factory';
  */
 export type ListingEntityHooksConfig = {
     /**
-     * Entity name used as the TanStack Query root cache key (e.g. `'gastronomy'`).
+     * Entity name used as the TanStack Query root cache key (e.g. `'venue'`).
      * Must match the `entityName` passed to `createListingListConfig`.
      */
     readonly entityName: string;
 
     /**
-     * Base admin API endpoint (e.g. `'/api/v1/admin/gastronomy'`).
+     * Base admin API endpoint (e.g. `'/api/v1/admin/venue'`).
      */
     readonly apiEndpoint: string;
 };
@@ -99,10 +99,10 @@ export type PendingReviewsQueryParams = {
  *
  * @example
  * ```ts
- * // In the gastronomy feature (SPEC-240):
+ * // In the venue feature (SPEC-240):
  * const venueHooks = createListingEntityHooks<VenueAdmin>({
- *   entityName: 'gastronomy',
- *   apiEndpoint: '/api/v1/admin/gastronomy',
+ *   entityName: 'venue',
+ *   apiEndpoint: '/api/v1/admin/venue',
  * });
  *
  * // In a component:

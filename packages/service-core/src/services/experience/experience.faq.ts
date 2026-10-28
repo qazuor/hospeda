@@ -3,7 +3,7 @@
  *
  * FAQ service helpers for experience listings (SPEC-240 T-016).
  *
- * Mirrors the FAQ management pattern from `gastronomy.faq.ts`.
+ * Mirrors the FAQ management pattern from `venue.faq.ts`.
  *
  * ## Permission model
  *

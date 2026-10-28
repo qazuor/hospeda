@@ -1,6 +1,6 @@
 /**
  * @file listing-media-builder.ts
- * @description Fixture `media` block → `gastronomy_media` / `experience_media`
+ * @description Fixture `media` block → `venue_media` / `experience_media`
  * rows (HOS-372).
  *
  * Thin per-vertical wrappers over {@link buildMediaRows}: the ordering and
@@ -15,20 +15,20 @@ import type { FixtureMediaBlock } from './media-rows-builder.js';
 import { buildMediaRows } from './media-rows-builder.js';
 
 /**
- * Maps a gastronomy fixture's `media` block to `gastronomy_media` rows.
+ * Maps a venue fixture's `media` block to `venue_media` rows.
  *
- * @param input.gastronomyId - UUID of the listing that owns the photos.
- * @param input.media - The `media` block from the gastronomy JSON fixture.
- * @returns Ordered rows for `GastronomyMediaModel.create()`.
+ * @param input.venueId - UUID of the listing that owns the photos.
+ * @param input.media - The `media` block from the venue JSON fixture.
+ * @returns Ordered rows for `venueMediaModel.create()`.
  */
 export function buildVenueMediaRows({
-    gastronomyId,
+    venueId,
     media
 }: {
-    readonly gastronomyId: string;
+    readonly venueId: string;
     readonly media: FixtureMediaBlock;
 }): Partial<VenueMedia>[] {
-    return buildMediaRows({ media }).map((row) => ({ ...row, gastronomyId }));
+    return buildMediaRows({ media }).map((row) => ({ ...row, venueId }));
 }
 
 /**

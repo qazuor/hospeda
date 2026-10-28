@@ -1,6 +1,6 @@
 /**
  * @file gastronomia-index.test.ts
- * @description Source-read tests for the gastronomy listing page (SPEC-239 T-053).
+ * @description Source-read tests for the venue listing page (SPEC-239 T-053).
  * Astro pages cannot be rendered in Vitest — we assert on source structure.
  */
 
@@ -22,17 +22,17 @@ describe('comer-y-salir/index.astro', () => {
     });
 
     describe('API calls', () => {
-        it('imports and calls gastronomyApi.list for the listing', () => {
+        it('imports and calls venueApi.list for the listing', () => {
             expect(src).toContain('venueApi');
             expect(src).toContain('venueApi.list');
         });
 
-        it('passes page and pageSize to gastronomyApi.list', () => {
+        it('passes page and pageSize to venueApi.list', () => {
             expect(src).toContain('page,');
             expect(src).toContain('pageSize,');
         });
 
-        it('passes the q (search) filter to gastronomyApi.list', () => {
+        it('passes the q (search) filter to venueApi.list', () => {
             expect(src).toContain('q,');
         });
 
@@ -63,7 +63,7 @@ describe('comer-y-salir/index.astro', () => {
     });
 
     describe('transform', () => {
-        it('transforms list items via toGastronomyCardProps before rendering', () => {
+        it('transforms list items via toVenueCardProps before rendering', () => {
             expect(src).toContain('toVenueCardProps');
         });
     });
@@ -75,7 +75,7 @@ describe('comer-y-salir/index.astro', () => {
             expect(src).toContain('items={itemListEntries}');
         });
 
-        it('renders GastronomyCard for each card', () => {
+        it('renders VenueCard for each card', () => {
             expect(src).toContain('VenueCard');
         });
 
@@ -92,7 +92,7 @@ describe('comer-y-salir/index.astro', () => {
             expect(src).toContain('const hasActiveFilters = hasActiveVenueListingFilters({');
             expect(src).toContain('{!hasError && cards.length === 0 && hasActiveFilters && (');
             expect(src).toContain('{!hasError && cards.length === 0 && !hasActiveFilters && (');
-            expect(src).toContain('gastronomy.listing.emptyCatalog');
+            expect(src).toContain('venue.listing.emptyCatalog');
         });
 
         it('renders ErrorBanner on fetch failure', () => {
@@ -142,16 +142,16 @@ describe('comer-y-salir/index.astro', () => {
     });
 
     describe('i18n', () => {
-        it('uses gastronomy i18n namespace for page title', () => {
-            expect(src).toContain('gastronomy.listing.title');
+        it('uses venue i18n namespace for page title', () => {
+            expect(src).toContain('venue.listing.title');
         });
 
-        it('uses gastronomy.types for type filter labels', () => {
-            expect(src).toContain('gastronomy.types.');
+        it('uses venue.types for type filter labels', () => {
+            expect(src).toContain('venue.types.');
         });
 
-        it('uses gastronomy.card.priceRange for price range labels', () => {
-            expect(src).toContain('gastronomy.card.priceRange.');
+        it('uses venue.card.priceRange for price range labels', () => {
+            expect(src).toContain('venue.card.priceRange.');
         });
     });
 

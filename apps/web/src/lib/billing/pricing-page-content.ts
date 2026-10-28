@@ -73,7 +73,7 @@ export interface BillingFaqItem {
  * `'checkout'` starts a MercadoPago subscription from the card itself — the two
  * accommodation audiences, and the only ones whose checkout begins on a pricing
  * page. `'link'` sends the visitor somewhere else to complete it: the listing
- * create flow for the gastronomy/experience verticals (whose tier picker lives there, not
+ * create flow for the venue/experience verticals (whose tier picker lives there, not
  * here), and the lead form for aliados, whose partnership is agreed in a
  * conversation rather than bought (HOS-941 D-13).
  */
@@ -81,7 +81,7 @@ export type PricingCtaMode = 'checkout' | 'link';
 
 /** The copy and the flags one pricing page renders. */
 export interface PricingPageContent {
-    /** i18n namespace root for this audience, e.g. `pricing.gastronomy`. */
+    /** i18n namespace root for this audience, e.g. `pricing.venue`. */
     readonly copyRoot: string;
     /** Advertisable trial length in days, or `null` to say nothing. */
     readonly trialDays: number | null;
@@ -110,7 +110,7 @@ export interface PricingPageContent {
 const COPY_ROOT_BY_AUDIENCE: Readonly<Record<PricingAudience, string>> = {
     owner: 'pricing.owner',
     tourist: 'pricing.tourist',
-    gastronomy: 'pricing.gastronomy',
+    venue: 'pricing.venue',
     experience: 'pricing.experience',
     partner: 'pricing.partner'
 } as const;
@@ -131,7 +131,7 @@ const COPY_ROOT_BY_AUDIENCE: Readonly<Record<PricingAudience, string>> = {
 const AUDIENCES_WITH_COMPARISON: ReadonlySet<PricingAudience> = new Set<PricingAudience>([
     'owner',
     'tourist',
-    'gastronomy',
+    'venue',
     'experience'
 ]);
 
@@ -304,7 +304,7 @@ export function buildPricingBreadcrumbs({
  *
  * Built from the SAME resolved items the page renders, never from the keys, so
  * the JSON-LD cannot advertise a trial the visible answer omits — the failure
- * mode both gastronomy/experience landings were built to avoid.
+ * mode both venue/experience landings were built to avoid.
  *
  * @param params.faqs - The already-resolved questions and answers.
  * @returns A `schema.org` `FAQPage` object, ready for `<JsonLd>`.

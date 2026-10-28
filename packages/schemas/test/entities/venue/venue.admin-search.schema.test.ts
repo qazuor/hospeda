@@ -3,7 +3,7 @@ import { describe, expect, it } from 'vitest';
 import { ZodError } from 'zod';
 import { VenueAdminSearchSchema } from '../../../src/entities/venue/venue.admin-search.schema.js';
 
-describe('GastronomyAdminSearchSchema', () => {
+describe('VenueAdminSearchSchema', () => {
     it('should validate an empty admin search (all defaults)', () => {
         const result = VenueAdminSearchSchema.parse({});
         expect(result.page).toBe(1);

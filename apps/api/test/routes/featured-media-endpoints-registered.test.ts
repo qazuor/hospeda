@@ -99,7 +99,7 @@ const COVER_ENDPOINTS: ReadonlyArray<{
     },
     {
         path: `/api/v1/admin/venues/${ID}/media/featured`,
-        caller: 'apps/admin — useListingMediaAddFeatured, vertical gastronomy'
+        caller: 'apps/admin — useListingMediaAddFeatured, vertical venue'
     },
     {
         path: `/api/v1/protected/experiences/${ID}/media/featured`,

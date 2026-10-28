@@ -148,7 +148,7 @@ describe('TEST:1684:3 AC-1684:2 the mutation posts the action to its vertical mo
 
         // Assert
         expect(invalidate).toHaveBeenCalledWith({
-            queryKey: [vertical === 'venue' ? 'gastronomies' : base.replace('/api/v1/admin/', '')]
+            queryKey: [vertical === 'venue' ? 'venues' : base.replace('/api/v1/admin/', '')]
         });
     });
 

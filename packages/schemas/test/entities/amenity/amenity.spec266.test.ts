@@ -136,7 +136,7 @@ describe('AmenitySchema — applicableVerticals (SPEC-266)', () => {
         expect(result.success).toBe(true);
     });
 
-    it('should ACCEPT gastronomy vertical', () => {
+    it('should ACCEPT venue vertical', () => {
         const result = AmenitySchema.safeParse({
             ...baseAmenity(),
             applicableVerticals: ['venue'] as ('accommodation' | 'venue' | 'experience')[]

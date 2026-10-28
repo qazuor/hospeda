@@ -59,7 +59,7 @@ import { z } from 'zod';
  * Approved CDN / image origins for What's New entry images (SPEC-175 §9 / T-018).
  *
  * **TBD-2 resolved (HOS-964)**: `https://res.cloudinary.com` is Hospeda's one
- * media CDN — every accommodation/gastronomy/experience photo and every uploaded avatar
+ * media CDN — every accommodation/venue/experience photo and every uploaded avatar
  * already goes through it (`@repo/media`'s `getMediaUrl`,
  * `apps/web/src/lib/media.ts`'s `ALLOWED_REMOTE_HOSTS`). It is ALREADY in both
  * apps' CSP `img-src` directive:

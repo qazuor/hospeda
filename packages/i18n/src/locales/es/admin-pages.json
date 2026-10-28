@@ -20,7 +20,7 @@
         "eventsList": "Eventos - Lista",
         "eventsNew": "Eventos - Nuevo",
         "eventsView": "Ver Evento",
-        "gastronomiesView": "Ver Gastronomía",
+        "venuesView": "Ver Comer y salir",
         "experiencesView": "Ver Experiencia",
         "postsList": "Publicaciones - Lista",
         "postsNew": "Publicaciones - Nuevo",
@@ -628,7 +628,7 @@
                 "POST_COMMENT": "Comentarios de Publicaciones",
                 "RECOMMENDATION": "Recomendaciones",
                 "MODERATION": "Moderación",
-                "GASTRONOMY": "Gastronomía",
+                "VENUE": "Comer y salir",
                 "EXPERIENCE": "Experiencias",
                 "HOST_TRADE": "Canje entre Anfitriones",
                 "PARTNER": "Partners",
@@ -743,19 +743,19 @@
                     }
                 },
                 "VENUE_OWNER": {
-                    "name": "Dueño de Gastronomía",
+                    "name": "Dueño de Comer y salir",
                     "description": "Titular de un restaurante, bar o café que gestiona su propia ficha (sin acceso a experiencias)",
                     "capabilities": {
                         "cap1": "Gestionar su ficha gastronómica",
                         "cap2": "Actualizar horarios y contacto",
                         "cap3": "Subir fotos",
                         "cap4": "Responder reseñas",
-                        "cap5": "Ver analíticas de su gastronomía"
+                        "cap5": "Ver analíticas de su ficha de Comer y salir"
                     }
                 },
                 "EXPERIENCE_OWNER": {
                     "name": "Dueño de Experiencia",
-                    "description": "Titular de una excursión o actividad que gestiona su propia ficha (sin acceso a gastronomía)",
+                    "description": "Titular de una excursión o actividad que gestiona su propia ficha (sin acceso a Comer y salir)",
                     "capabilities": {
                         "cap1": "Gestionar su ficha de experiencia",
                         "cap2": "Actualizar horarios y contacto",
@@ -810,7 +810,7 @@
             },
             "relatedCounts": {
                 "accommodationsShort": "Aloj.",
-                "gastronomiesShort": "Gastro.",
+                "venuesShort": "Gastro.",
                 "experiencesShort": "Exp.",
                 "eventsShort": "Ev.",
                 "postsShort": "Posts"
@@ -830,7 +830,7 @@
                 "error": "No pudimos leer la prueba de esta vertical.",
                 "vertical": {
                     "accommodation": "Alojamiento",
-                    "venue": "Gastronomía",
+                    "venue": "Comer y salir",
                     "experience": "Experiencias"
                 },
                 "status": {

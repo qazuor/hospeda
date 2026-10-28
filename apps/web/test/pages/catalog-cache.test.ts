@@ -11,8 +11,8 @@
  *
  * **W2-4** covers the six pages W2-3 deliberately left uncached
  * (`/destinos/atraccion/`, `/destinos/lugar/`, `/comer-y-salir/`,
- * `/experiencias/` and the two gastronomy/experience detail pages). They were excluded
- * because `attraction`, `pointOfInterest`, `gastronomy` and `experience` had no
+ * `/experiencias/` and the two venue/experience detail pages). They were excluded
+ * because `attraction`, `pointOfInterest`, `venue` and `experience` had no
  * tag vocabulary, no `entity-tag-mapper` case, and their services never called
  * the revalidation service — caching them would have manufactured the exact
  * unpurgeable-response failure this suite exists to prevent. W2-4 built that
@@ -157,7 +157,7 @@ const CATALOG_PAGES: readonly CatalogPage[] = [
  * done its job and is replaced by real coverage below.
  *
  * `attraction` and `pointOfInterest` have NO collection tag on purpose —
- * nothing lists them — so they are checked separately from the two gastronomy/experience
+ * nothing lists them — so they are checked separately from the two venue/experience
  * families.
  */
 const W2_4_PAGES = [
@@ -331,7 +331,7 @@ describe('W2-4 pages — cacheable now that their purge chain exists (HOS-369)',
         expect(source).not.toMatch(/locals\s+as\s+\{[^}]*user/);
     });
 
-    it('the gastronomy/experience detail pages cache only AFTER their publication gate', () => {
+    it('the venue/experience detail pages cache only AFTER their publication gate', () => {
         // A non-PUBLISHED listing 404s before reaching `applyCacheHeaders`:
         // since HOS-1641 the public read answers only PUBLISHED, so the gate
         // is the `!result.ok` 404. If the call ever moves above that gate, a

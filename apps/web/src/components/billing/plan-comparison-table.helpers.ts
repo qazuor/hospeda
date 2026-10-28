@@ -22,7 +22,7 @@ export type ComparisonAudience = Exclude<PricingAudience, 'partner'>;
 const GROUPS_BY_AUDIENCE = {
     owner: OWNER_GROUPS,
     tourist: TOURIST_GROUPS,
-    gastronomy: VENUE_GROUPS,
+    venue: VENUE_GROUPS,
     experience: EXPERIENCE_GROUPS
 } as const;
 
@@ -39,7 +39,7 @@ export function getComparisonGroups(audience: ComparisonAudience) {
  * Filters the plans that become table columns.
  *
  * Accommodation audiences go through the shared `filterPlansByCategory`, which
- * filters on `category`. Every gastronomy/experience plan carries
+ * filters on `category`. Every venue/experience plan carries
  * `category: 'owner'` to satisfy `PlanCategory`, and its real discriminator
  * (`product_domain`) is applied server-side by `?domain=`, so those audiences
  * keep the same active-only, `sortOrder`-sorted guarantee directly instead of

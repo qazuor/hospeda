@@ -473,7 +473,7 @@
                     "uuid": "El ID del propietario debe ser un UUID válido"
                 }
             },
-            "gastronomy": {
+            "venue": {
                 "destinationId": {
                     "uuid": "El destination id debe ser un UUID válido"
                 },
@@ -566,7 +566,7 @@
         "chat": {
             "accommodationId": {
                 "invalidUuid": "El ID del alojamiento debe ser un UUID válido",
-                "notAllowedForEntityType": "No se puede enviar accommodationId cuando la consulta es sobre gastronomía o experiencias"
+                "notAllowedForEntityType": "No se puede enviar accommodationId cuando la consulta es sobre Comer y salir o experiencias"
             },
             "entityId": {
                 "conflictsWithAccommodationId": "entityId y accommodationId apuntan a fichas distintas",
@@ -2426,8 +2426,8 @@
         "externalPlatform": {
             "invalid": "La plataforma externa no es válida"
         },
-        "gastronomyType": {
-            "invalid": "El tipo de gastronomía no es válido"
+        "venueType": {
+            "invalid": "El tipo de Comer y salir no es válido"
         },
         "hostTradeBenefitType": {
             "invalid": "El tipo de beneficio seleccionado no es válido"
@@ -3253,7 +3253,7 @@
         "tooSmallNumber": "El número es demasiado bajo",
         "unrecognizedKeys": "Se encontraron campos no reconocidos"
     },
-    "gastronomy": {
+    "venue": {
         "amenityIds": {
             "invalidUuid": "El ID de servicio debe ser un UUID válido"
         },
@@ -3409,7 +3409,7 @@
             }
         }
     },
-    "gastronomyFeature": {
+    "venueFeature": {
         "comments": {
             "max": "El comments no puede superar los {{max}} caracteres",
             "min": "El comments debe tener al menos {{min}} caracteres"

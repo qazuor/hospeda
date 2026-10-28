@@ -1,6 +1,6 @@
 /**
- * Public gastronomy reviews list endpoint (T-042)
- * Returns a paginated list of APPROVED reviews for a specific gastronomy listing.
+ * Public venue reviews list endpoint (T-042)
+ * Returns a paginated list of APPROVED reviews for a specific venue listing.
  *
  * VenueReviewService.listByVenue() force-filters lifecycleState=ACTIVE AND
  * moderationState=APPROVED so that PENDING / REJECTED reviews never surface here
@@ -26,7 +26,7 @@ const reviewService = new VenueReviewService({ logger: apiLogger });
  */
 const VenueReviewPublicSchema = VenueReviewSchema.pick({
     id: true,
-    gastronomyId: true,
+    venueId: true,
     userId: true,
     title: true,
     content: true,
@@ -50,25 +50,25 @@ const VenueReviewPublicSchema = VenueReviewSchema.pick({
 });
 
 /**
- * GET /api/v1/public/venues/:gastronomyId/reviews
- * List APPROVED gastronomy reviews — Public endpoint.
+ * GET /api/v1/public/venues/:venueId/reviews
+ * List APPROVED venue reviews — Public endpoint.
  *
  * Uses VenueReviewService.listByVenue() which force-filters to
  * ACTIVE + APPROVED reviews only. At most 100 reviews per call (service cap).
  */
 export const publicListVenueReviewsRoute = createPublicListRoute({
     method: 'get',
-    path: '/{gastronomyId}/reviews',
-    summary: 'List gastronomy reviews',
-    description: 'Returns a paginated list of approved reviews for a specific gastronomy listing',
-    tags: ['Gastronomy', 'Gastronomy Reviews'],
+    path: '/{venueId}/reviews',
+    summary: 'List venue reviews',
+    description: 'Returns a paginated list of approved reviews for a specific venue listing',
+    tags: ['Venue', 'Venue Reviews'],
     requestParams: {
-        gastronomyId: z.string().uuid({ message: 'zodError.common.id.invalidUuid' })
+        venueId: z.string().uuid({ message: 'zodError.common.id.invalidUuid' })
     },
     responseSchema: VenueReviewPublicSchema,
     handler: async (ctx: Context, params: Record<string, unknown>, _body, query) => {
         const actor = getActorFromContext(ctx);
-        const result = await reviewService.listByVenue(params.gastronomyId as string, actor);
+        const result = await reviewService.listByVenue(params.venueId as string, actor);
 
         if (result.error) {
             throw new ServiceError(result.error.code, result.error.message);

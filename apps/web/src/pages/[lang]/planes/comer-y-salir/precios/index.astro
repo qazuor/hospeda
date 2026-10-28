@@ -1,7 +1,7 @@
 ---
 /**
  * @file planes/comer-y-salir/precios/index.astro
- * @description Pricing page for the gastronomy vertical — level 3 of the three
+ * @description Pricing page for the venue vertical — level 3 of the three
  * HOS-941 D-7 defines: "which one do I pick and what does it cost", for a
  * visitor who has already decided to publish.
  *
@@ -15,7 +15,7 @@
  *
  * ## Where this content came from
  *
- * The price block that used to live INSIDE `/publicar-restaurante/` (HOS-690).
+ * The price block that used to live inside the retired venue lead page (HOS-690).
  * That URL now 301s to `/planes/comer-y-salir/`, the sales page — the retirement
  * and this page are one move, which is why HOS-985 deliberately left both
  * undone: taking the old URL down before this page existed would have left the
@@ -30,7 +30,7 @@
  *
  * `venue-basico`, `-pro` and `-premium` are all `isActive` since HOS-975,
  * so this renders three cards today. It reads them off
- * `GET /api/v1/public/plan-catalog?vertical=gastronomy` rather than a list in this file
+ * `GET /api/v1/public/plan-catalog?vertical=venue` rather than a list in this file
  * (AC-45): the day the owner deactivates one — or activates a fourth — the page
  * follows with no edit here. The card layout centres whatever count it gets,
  * which is HOS-891 fixed for this audience by construction rather than by a
@@ -38,9 +38,9 @@
  *
  * ## Why the CTA is a link and not a checkout button
  *
- * A gastronomy/experience subscription is not started from a marketing page: the buyer
+ * A venue/experience subscription is not started from a marketing page: the buyer
  * creates the listing first and picks the tier inside that flow. `buildListingStartUrl` is the same constant href
- * `/publicar-restaurante/` used — constant because this page is edge-cached and
+ * the retired venue publish URL used — constant because this page is edge-cached and
  * parses no session, so it cannot know who is reading it; the signed-in vs
  * signed-out branch happens one hop later on `/auth/signup/`.
  */
@@ -82,10 +82,10 @@ applyCacheHeaders({
 });
 
 const touristVipBenefitsPromise = fetchTouristVipBenefitKeys();
-const plans = await fetchAudiencePlans({ audience: 'gastronomy' });
+const plans = await fetchAudiencePlans({ audience: 'venue' });
 const touristVipBenefits = await touristVipBenefitsPromise;
 const { copyRoot, faqs, hasComparison, priceMode } = resolvePricingPageContent({
-    audience: 'gastronomy',
+    audience: 'venue',
     plans,
     translators: { t, tPlural }
 });
@@ -99,7 +99,7 @@ const siteOrigin = Astro.site?.href.replace(/\/$/, '') ?? Astro.url.origin;
  * (`getPlanName` / `getPlanDescription`) and not from the raw config values.
  *
  * `plan.name` / `plan.description` off the API are the billing package's
- * internal strings — for the gastronomy/experience verticals, English engineering prose
+ * internal strings — for the venue/experience verticals, English engineering prose
  * carrying issue IDs. Publishing those as structured data would put them in the
  * field a search result quotes, while the visible card said something else.
  */
@@ -124,7 +124,7 @@ const description = t(`${copyRoot}.pageDescription`);
 const breadcrumbs = buildPricingBreadcrumbs({
     homeLabel: t('nav.home', 'Inicio'),
     homeUrl: `${siteOrigin}${buildUrl({ locale, path: '' })}`,
-    salesLabel: t('gastronomy.landing.lead.title'),
+    salesLabel: t('venue.landing.lead.title'),
     salesPath: 'planes/comer-y-salir',
     salesUrl: `${siteOrigin}${buildUrl({ locale, path: 'planes/comer-y-salir' })}`,
     pageLabel: title,
@@ -159,7 +159,7 @@ const headingMain = headingWords.join(' ');
 
     <AudiencePricingSections
         locale={locale}
-        audience="gastronomy"
+        audience="venue"
         plans={plans}
         touristVipBenefits={touristVipBenefits}
         intlLocale={intlLocale}

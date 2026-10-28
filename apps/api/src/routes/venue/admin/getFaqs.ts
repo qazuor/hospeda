@@ -1,6 +1,6 @@
 /**
  * GET /api/v1/admin/venues/:id/faqs
- * Get all FAQs for a gastronomy listing — Admin endpoint.
+ * Get all FAQs for a venue listing — Admin endpoint.
  */
 import { PermissionEnum, VenueFaqListOutputSchema } from '@repo/schemas';
 import { listVenueFaqs, ServiceError, VenueService } from '@repo/service-core';
@@ -14,7 +14,7 @@ const venueService = new VenueService({ logger: apiLogger });
 
 /**
  * GET /api/v1/admin/venues/:id/faqs
- * Get gastronomy FAQs — Admin endpoint.
+ * Get venue FAQs — Admin endpoint.
  *
  * Requires VENUE_VIEW_ALL. Uses the standalone `listVenueFaqs` helper
  * that mirrors the protected/public FAQ list pattern.
@@ -22,9 +22,9 @@ const venueService = new VenueService({ logger: apiLogger });
 export const adminGetVenueFaqsRoute = createAdminRoute({
     method: 'get',
     path: '/{id}/faqs',
-    summary: 'Get gastronomy listing FAQs (admin)',
-    description: 'Retrieve all FAQs for a gastronomy listing. Requires VENUE_VIEW_ALL.',
-    tags: ['Gastronomy', 'FAQs'],
+    summary: 'Get venue listing FAQs (admin)',
+    description: 'Retrieve all FAQs for a venue listing. Requires VENUE_VIEW_ALL.',
+    tags: ['Venue', 'FAQs'],
     anyOfPermissions: [[PermissionEnum.VENUE_VIEW_ALL]],
     requestParams: {
         id: z.string().uuid({ message: 'zodError.common.id.invalidUuid' })
@@ -38,7 +38,7 @@ export const adminGetVenueFaqsRoute = createAdminRoute({
             .model;
 
         const result = await listVenueFaqs(model, actor, {
-            gastronomyId: params.id as string
+            venueId: params.id as string
         });
 
         if (result.error) {

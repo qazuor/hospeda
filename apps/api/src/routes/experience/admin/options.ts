@@ -1,6 +1,6 @@
 /**
  * GET /api/v1/admin/experiences/options
- * Lightweight relation-selector lookup endpoint (mirrors gastronomy pattern).
+ * Lightweight relation-selector lookup endpoint (mirrors venue pattern).
  *
  * MUST be registered BEFORE the /{id} route so Hono does not resolve "options"
  * as a UUID param.

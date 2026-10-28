@@ -23,7 +23,7 @@ function VenueSeoPage() {
     });
 
     return (
-        <SidebarPageLayout titleKey="admin-pages.titles.gastronomiesView">
+        <SidebarPageLayout titleKey="admin-pages.titles.venuesView">
             <div className="space-y-4">
                 <PageTabs
                     tabs={venueTabs}

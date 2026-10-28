@@ -3,7 +3,7 @@
  *
  * Unit tests for experience media helper functions (HOS-372).
  *
- * Mirrors `gastronomy.media.test.ts` — see that file for the full rationale
+ * Mirrors `venue.media.test.ts` — see that file for the full rationale
  * behind each assertion (identical logic, different vertical).
  *
  * Coverage:
@@ -585,7 +585,7 @@ describe('getExperienceMedia', () => {
 // `addExperienceMedia` enforces `getGalleryCap('experience')` itself, so a
 // caller that reaches it directly with an already-uploaded URL cannot walk past
 // the limit the upload routes apply. This describe was added with HOS-791: the
-// gastronomy twin had cap coverage and the experience one had none, so the
+// venue twin had cap coverage and the experience one had none, so the
 // service-layer cap here was shipping unverified.
 // ---------------------------------------------------------------------------
 

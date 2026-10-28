@@ -85,7 +85,7 @@ describe('TEST:V2:10 (a) trial accepts its vertical listing-count limit', () => 
         expect(() => validatePublication({ context: ctx })).not.toThrow();
     });
 
-    it('gastronomy trial: max_venues passes', () => {
+    it('venue trial: max_venues passes', () => {
         const ctx = contextOf({
             vertical: 'venue',
             role: 'trial',

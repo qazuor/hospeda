@@ -1,7 +1,7 @@
 /**
  * @file VenueReviewForm.history-back.test.tsx
  * @description Regression tests for HOS-334: with the review dialog open on
- * the gastronomy detail page, the system back button must close the dialog
+ * the venue detail page, the system back button must close the dialog
  * instead of navigating away from the page — and the text the visitor
  * already typed must not be lost to that navigation.
  *
@@ -103,14 +103,14 @@ function setupDialogMocks() {
 }
 
 const DEFAULT_PROPS = {
-    gastronomyId: 'gastro-123',
-    gastronomyName: 'La Parrilla de Juan',
+    venueId: 'venue-123',
+    venueName: 'La Parrilla de Juan',
     locale: 'es' as const,
     apiUrl: 'http://localhost:3001',
     signInHref: '/es/auth/signin'
 };
 
-describe('GastronomyReviewForm — back button closes the dialog (HOS-334)', () => {
+describe('VenueReviewForm — back button closes the dialog (HOS-334)', () => {
     beforeAll(async () => {
         __setNavigateImpl(fakeNavigate);
         enableClientRouter();

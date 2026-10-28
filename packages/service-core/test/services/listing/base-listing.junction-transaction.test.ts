@@ -5,7 +5,7 @@
  * listing owner editor answered 500 in BOTH verticals:
  *
  * ```
- * PATCH /api/v1/protected/gastronomies/{id} → 500
+ * PATCH /api/v1/protected/legacy listing tables/{id} → 500
  * PATCH /api/v1/protected/experiences/{id}  → 500
  * ServiceError: Junction sync requires an active transaction;
  *               wrap update() in withServiceTransaction
@@ -14,7 +14,7 @@
  * `_afterUpdate` / `_afterCreate` hard-refuse to sync the junction tables
  * without `ctx.tx`, and nothing on the owner path (`updateOwn` → `update`) ever
  * opened a boundary. `r_experience_amenity`, `r_experience_feature` and their
- * gastronomy counterparts were consequently at ZERO rows: no listing could ever
+ * venue counterparts were consequently at ZERO rows: no listing could ever
  * record a service.
  *
  * These tests pin the four properties that fix has to hold:

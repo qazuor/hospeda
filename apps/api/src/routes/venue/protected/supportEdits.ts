@@ -24,7 +24,7 @@ const ownerAccess: MiddlewareHandler = async (ctx, next) => {
 /**
  * GET /api/v1/protected/venues/{id}/support-edits — row 26 (ACC:15,
  * HOS-1493, H13): the owner reads the most recent support edits of their own
- * gastronomy listing. Anybody else gets 404.
+ * venue listing. Anybody else gets 404.
  */
 export const protectedVenueSupportEditsRoute = createProtectedRoute({
     method: 'get',
@@ -32,9 +32,9 @@ export const protectedVenueSupportEditsRoute = createProtectedRoute({
     listingAccess: { vertical: VerticalEnum.VENUE, operation: 'READ_OWN', idParam: 'id' },
     emailUnverifiedOperation: 'READ_OWN',
     options: { middlewares: [ownerAccess] },
-    summary: 'List support edits of own gastronomy listing',
+    summary: 'List support edits of own venue listing',
     description: 'The most recent edits support made to the content of the listing (row 26).',
-    tags: ['Gastronomies'],
+    tags: ['Venues'],
     requestParams: { id: z.string().uuid() },
     responseSchema: ListingSupportEditsResponseSchema,
     handler: async (_ctx: Context, params: Record<string, unknown>) =>

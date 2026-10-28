@@ -1,5 +1,5 @@
 /**
- * gastronomy.events.ts
+ * venue.events.ts
  *
  * The venue's own agenda — read and whole-document write (HOS-1042).
  *
@@ -9,7 +9,7 @@
  *
  * ## Two operations, not six
  *
- * The same choice `gastronomy.menu.ts` makes, for the same reason and with the
+ * The same choice `venue.menu.ts` makes, for the same reason and with the
  * same contrast against `venue_media`: an agenda entry is text, so nothing
  * exists outside the database and nothing can be orphaned by a save that never
  * happens. What it has instead is that it is edited as a WHOLE — reordering two
@@ -35,7 +35,7 @@
  * (`MANAGE_VENUE_EVENTS`) and is checked at the route, before this is
  * reached.
  *
- * @module gastronomy.events
+ * @module venue.events
  */
 
 import { VenueEventModel, type VenueModel, withTransaction } from '@repo/db';
@@ -57,24 +57,24 @@ import { checkVenueCanEditFaqs } from './venue.permissions';
  *
  * `findAll` paginates, and the agenda is read whole — so an unstated page size
  * would silently truncate a long agenda rather than fail. Sized well above the
- * schema's own ceiling (`GASTRONOMY_EVENTS_MAX_ENTRIES`), so an agenda that
+ * schema's own ceiling (`VENUE_EVENTS_MAX_ENTRIES`), so an agenda that
  * passed validation on the way in can always be read back out.
  */
 const EVENTS_READ_PAGE_SIZE = 500;
 
 /**
- * Loads a gastronomy listing by ID or throws NOT_FOUND.
+ * Loads a venue listing by ID or throws NOT_FOUND.
  *
  * @param model - The VenueModel instance.
- * @param gastronomyId - UUID of the listing.
+ * @param venueId - UUID of the listing.
  * @param tx - Optional Drizzle transaction client.
- * @returns The gastronomy DB row.
+ * @returns The venue DB row.
  * @throws {ServiceError} NOT_FOUND when no matching row exists.
  */
-async function requireVenue(model: VenueModel, gastronomyId: string, tx?: ServiceContext['tx']) {
-    const entity = await model.findById(gastronomyId, tx);
+async function requireVenue(model: VenueModel, venueId: string, tx?: ServiceContext['tx']) {
+    const entity = await model.findById(venueId, tx);
     if (!entity) {
-        throw new ServiceError(ServiceErrorCode.NOT_FOUND, 'Gastronomy listing not found');
+        throw new ServiceError(ServiceErrorCode.NOT_FOUND, 'venue listing not found');
     }
     return entity;
 }
@@ -90,7 +90,7 @@ const byDisplayOrder = <T extends { displayOrder: number; title: string }>(a: T,
  *
  * **This is not cosmetic.** A `time` column does not return what you put in it:
  * `'18:00'` goes in and `'18:00:00'` comes out — measured against this repo's
- * own Postgres, not assumed. `GastronomyEventTimeSchema` rejects seconds ON
+ * own Postgres, not assumed. `VenueEventTimeSchema` rejects seconds ON
  * PURPOSE (two spellings of one instant is a field whose equality checks are
  * wrong somewhere downstream), so without this every read would fail its own
  * response schema and the editor would round-trip a value it cannot re-submit.
@@ -133,9 +133,9 @@ export function projectEvent<T extends { startTime: string; endTime: string | nu
  * which is where a reader-facing decision belongs.
  *
  * @param model - VenueModel instance.
- * @param data - `{ gastronomyId }`.
+ * @param data - `{ venueId }`.
  * @param ctx - Optional service context for transaction propagation.
- * @returns `ServiceOutput<GastronomyEventsOutput>`.
+ * @returns `ServiceOutput<VenueEventsOutput>`.
  */
 export async function getVenueEvents(
     model: VenueModel,
@@ -155,13 +155,13 @@ export async function getVenueEvents(
                 }
             };
         }
-        const { gastronomyId } = parseResult.data;
+        const { venueId } = parseResult.data;
 
-        await requireVenue(model, gastronomyId, ctx?.tx);
+        await requireVenue(model, venueId, ctx?.tx);
 
         const eventModel = new VenueEventModel();
         const { items: rows } = await eventModel.findAll(
-            { gastronomyId },
+            { venueId },
             { pageSize: EVENTS_READ_PAGE_SIZE },
             undefined,
             ctx?.tx
@@ -175,7 +175,7 @@ export async function getVenueEvents(
         return {
             error: {
                 code: ServiceErrorCode.INTERNAL_ERROR,
-                message: err instanceof Error ? err.message : 'Failed to read gastronomy events'
+                message: err instanceof Error ? err.message : 'Failed to read venue events'
             }
         };
     }
@@ -204,9 +204,9 @@ export async function getVenueEvents(
  *
  * @param model - VenueModel instance.
  * @param actor - The actor performing the action.
- * @param data - `{ gastronomyId, agenda }`.
+ * @param data - `{ venueId, agenda }`.
  * @param ctx - Optional service context for transaction propagation.
- * @returns `ServiceOutput<GastronomyEventsOutput>` with the agenda as now stored.
+ * @returns `ServiceOutput<venueEventsOutput>` with the agenda as now stored.
  */
 export async function replaceVenueEvents(
     model: VenueModel,
@@ -228,9 +228,9 @@ export async function replaceVenueEvents(
             };
         }
         const validated = parseResult.data;
-        const { gastronomyId } = validated;
+        const { venueId } = validated;
 
-        const venue = await requireVenue(model, gastronomyId, ctx?.tx);
+        const venue = await requireVenue(model, venueId, ctx?.tx);
         checkVenueCanEditFaqs(actor, venue);
 
         const eventModel = new VenueEventModel();
@@ -239,12 +239,12 @@ export async function replaceVenueEvents(
         // is one: an agenda half-written — the old entries gone and the new ones
         // not yet in — is a published page the owner never described.
         const runInTx = async (tx: ServiceContext['tx']): Promise<void> => {
-            await eventModel.hardDelete({ gastronomyId }, tx);
+            await eventModel.hardDelete({ venueId }, tx);
 
             for (const [index, event] of validated.agenda.events.entries()) {
                 await eventModel.create(
                     {
-                        gastronomyId,
+                        venueId,
                         title: event.title,
                         // `''` and `undefined` both mean "no blurb"; stored as
                         // NULL so the read has one absent value, not two.
@@ -284,7 +284,7 @@ export async function replaceVenueEvents(
             });
         }
 
-        return await getVenueEvents(model, { gastronomyId }, ctx);
+        return await getVenueEvents(model, { venueId }, ctx);
     } catch (err) {
         if (err instanceof ServiceError) {
             return { error: { code: err.code, message: err.message } };
@@ -292,7 +292,7 @@ export async function replaceVenueEvents(
         return {
             error: {
                 code: ServiceErrorCode.INTERNAL_ERROR,
-                message: err instanceof Error ? err.message : 'Failed to replace gastronomy events'
+                message: err instanceof Error ? err.message : 'Failed to replace venue events'
             }
         };
     }

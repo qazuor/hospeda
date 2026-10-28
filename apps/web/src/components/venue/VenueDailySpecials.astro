@@ -1,7 +1,7 @@
 ---
 /**
  * @file VenueDailySpecials.astro
- * @description Renders a gastronomy listing's menú del día on the public detail
+ * @description Renders a venue listing's menú del día on the public detail
  * page (HOS-1041).
  *
  * ## Why this is its own block, above the carta
@@ -54,30 +54,30 @@ if (dailySpecials.length === 0) {
     return;
 }
 
-const title = t('gastronomy.detail.dailySpecials.title', 'Menú del día');
-const intro = t('gastronomy.detail.dailySpecials.intro', 'Lo que se ofrece hoy');
-const consultLabel = t('gastronomy.detail.dailySpecials.consultPrice', 'A consultar');
+const title = t('venue.detail.dailySpecials.title', 'Menú del día');
+const intro = t('venue.detail.dailySpecials.intro', 'Lo que se ofrece hoy');
+const consultLabel = t('venue.detail.dailySpecials.consultPrice', 'A consultar');
 ---
 
-<section class="gastro-specials" id="gastro-specials">
-    <div class="gastro-specials__head">
-        <h2 class="gastro-specials__title">{title}</h2>
-        <p class="gastro-specials__intro">{intro}</p>
+<section class="venue-specials" id="venue-specials">
+    <div class="venue-specials__head">
+        <h2 class="venue-specials__title">{title}</h2>
+        <p class="venue-specials__intro">{intro}</p>
     </div>
 
-    <ul class="gastro-specials__items">
+    <ul class="venue-specials__items">
         {dailySpecials.map((special) => (
-            <li class="gastro-specials__item">
-                <div class="gastro-specials__item-main">
-                    <span class="gastro-specials__item-title">{special.title}</span>
-                    <span class="gastro-specials__item-price">
+            <li class="venue-specials__item">
+                <div class="venue-specials__item-main">
+                    <span class="venue-specials__item-title">{special.title}</span>
+                    <span class="venue-specials__item-price">
                         {special.priceCents == null
                             ? consultLabel
                             : formatPrice({ amount: special.priceCents / 100, locale })}
                     </span>
                 </div>
                 {special.description && (
-                    <p class="gastro-specials__item-description">{special.description}</p>
+                    <p class="venue-specials__item-description">{special.description}</p>
                 )}
             </li>
         ))}
@@ -85,7 +85,7 @@ const consultLabel = t('gastronomy.detail.dailySpecials.consultPrice', 'A consul
 </section>
 
 <style>
-    .gastro-specials {
+    .venue-specials {
         display: flex;
         flex-direction: column;
         gap: var(--space-4, 16px);
@@ -95,13 +95,13 @@ const consultLabel = t('gastronomy.detail.dailySpecials.consultPrice', 'A consul
         border-radius: var(--radius-card, 24px);
     }
 
-    .gastro-specials__head {
+    .venue-specials__head {
         display: flex;
         flex-direction: column;
         gap: var(--space-1, 4px);
     }
 
-    .gastro-specials__title {
+    .venue-specials__title {
         font-family: var(--font-heading);
         font-size: 1.5rem;
         font-weight: 600;
@@ -109,14 +109,14 @@ const consultLabel = t('gastronomy.detail.dailySpecials.consultPrice', 'A consul
         margin: 0;
     }
 
-    .gastro-specials__intro {
+    .venue-specials__intro {
         font-family: var(--font-sans);
         font-size: 0.9rem;
         color: var(--core-muted-foreground);
         margin: 0;
     }
 
-    .gastro-specials__items {
+    .venue-specials__items {
         list-style: none;
         margin: 0;
         padding: 0;
@@ -125,17 +125,17 @@ const consultLabel = t('gastronomy.detail.dailySpecials.consultPrice', 'A consul
         gap: var(--space-3, 12px);
     }
 
-    .gastro-specials__item {
+    .venue-specials__item {
         border-bottom: 1px dashed var(--border);
         padding-bottom: var(--space-2, 8px);
     }
 
-    .gastro-specials__item:last-child {
+    .venue-specials__item:last-child {
         border-bottom: none;
         padding-bottom: 0;
     }
 
-    .gastro-specials__item-main {
+    .venue-specials__item-main {
         display: flex;
         justify-content: space-between;
         align-items: baseline;
@@ -143,18 +143,18 @@ const consultLabel = t('gastronomy.detail.dailySpecials.consultPrice', 'A consul
         font-family: var(--font-sans);
     }
 
-    .gastro-specials__item-title {
+    .venue-specials__item-title {
         font-weight: 600;
         color: var(--core-foreground);
     }
 
-    .gastro-specials__item-price {
+    .venue-specials__item-price {
         font-weight: 600;
         color: var(--brand-primary);
         white-space: nowrap;
     }
 
-    .gastro-specials__item-description {
+    .venue-specials__item-description {
         font-family: var(--font-sans);
         font-size: 0.85rem;
         color: var(--core-muted-foreground);

@@ -1,6 +1,6 @@
 /**
  * DELETE /api/v1/admin/venues/:id/media/:mediaId
- * Remove (soft-delete) a photo from a gastronomy listing gallery — Admin endpoint (HOS-372).
+ * Remove (soft-delete) a photo from a venue listing gallery — Admin endpoint (HOS-372).
  *
  * Soft-deletes the `venue_media` row identified by `mediaId` and
  * resequences the remaining visible rows to a dense 0-based `sortOrder`.
@@ -23,7 +23,7 @@ const venueService = new VenueService({ logger: apiLogger });
 
 /**
  * DELETE /api/v1/admin/venues/:id/media/:mediaId
- * Remove photo from gastronomy listing gallery — Admin endpoint.
+ * Remove photo from venue listing gallery — Admin endpoint.
  *
  * Requires VENUE_EDIT_ALL permission. The service helper
  * `removeVenueMedia` enforces the same gate via `checkVenueCanEditMedia`.
@@ -32,10 +32,10 @@ export const adminRemoveVenueMediaRoute = createAdminRoute({
     method: 'delete',
     listingAccess: { vertical: VerticalEnum.VENUE, operation: 'EDIT', idParam: 'id' },
     path: '/{id}/media/{mediaId}',
-    summary: 'Remove photo from gastronomy listing gallery (admin)',
+    summary: 'Remove photo from venue listing gallery (admin)',
     description:
         'Soft-deletes a media row and resequences the remaining visible photos. Requires VENUE_EDIT_ALL.',
-    tags: ['Gastronomy', 'Media'],
+    tags: ['Venue', 'Media'],
     requestParams: {
         id: z.string().uuid({ message: 'zodError.common.id.invalidUuid' }),
         mediaId: z.string().uuid({ message: 'zodError.common.id.invalidUuid' })
@@ -54,7 +54,7 @@ export const adminRemoveVenueMediaRoute = createAdminRoute({
                     model,
                     actor,
                     {
-                        gastronomyId: params.id as string,
+                        venueId: params.id as string,
                         mediaId: params.mediaId as string
                     },
                     getMediaProvider()

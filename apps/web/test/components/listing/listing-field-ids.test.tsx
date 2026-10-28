@@ -11,7 +11,7 @@
  * ## Both verticals, because the form's SHAPE branches
  *
  * `PriceSection` is the only section whose fields depend on the vertical:
- * gastronomy edits `priceRange` + `menuUrl`, experience edits `priceFrom` +
+ * venue edits `priceRange` + `menuUrl`, experience edits `priceFrom` +
  * `priceUnit`. So the schema, the key set and the exemptions are all
  * per-vertical, and a single-vertical run would leave half the price fields
  * unchecked while looking like full coverage.

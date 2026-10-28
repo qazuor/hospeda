@@ -54,7 +54,7 @@ describe('listing-clock-scan: writes', () => {
     it("W3': deadlinesVersion in .values() of a listing table, with and without the clock", () => {
         const source =
             'export async function seed(db) {\n' +
-            '    await db.insert(gastronomies).values({ inactiveSince: now, deadlinesVersion: 1 });\n' +
+            '    await db.insert(venues).values({ inactiveSince: now, deadlinesVersion: 1 });\n' +
             '    await db.update(experiences).set({ deadlinesVersion: 2 });\n' +
             '}\n';
         const found = sites('packages/seed/src/example/x.ts', source);
@@ -82,7 +82,7 @@ describe('listing-clock-scan: writes', () => {
             '    await tx.execute(sql`UPDATE accommodations SET inactive_since = now(), deadlines_version = 1 WHERE id = $' +
             '{id}`);\n' +
             "    await tx.execute('INSERT INTO experiences (id, inactive_since) VALUES ($1, now())');\n" +
-            '    await tx.execute(sql`SELECT id FROM gastronomies WHERE deadlines_version = 1`);\n' +
+            '    await tx.execute(sql`SELECT id FROM venues WHERE deadlines_version = 1`);\n' +
             '}\n';
         expect(
             sites('packages/service-core/src/x.ts', source).filter((s) => s.kind === 'write')
@@ -96,7 +96,7 @@ describe('listing-clock-scan: writes', () => {
     it('W5: UPDATE <listing> SET in a migration, even after a WHERE inside a subquery; ADD COLUMN is not a write', () => {
         const source =
             'ALTER TABLE "accommodations" ADD COLUMN "inactive_since" timestamp;\n' +
-            'UPDATE gastronomies g SET publication_status = (SELECT 1 WHERE true),\n' +
+            'UPDATE venues g SET publication_status = (SELECT 1 WHERE true),\n' +
             '    inactive_since = now(), deadlines_version = 1;\n';
         const found = scanFile({ file: 'packages/db/src/migrations/9999_x.sql', source }).sites;
         expect(found.map((s) => [s.column, s.line, s.symbol, s.writesClockToo])).toEqual([

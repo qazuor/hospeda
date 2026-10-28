@@ -31,7 +31,7 @@ import { rExperienceFeature } from './r_experience_feature.dbschema.ts';
 /**
  * Experiences table — listings for tourism services and experiences (SPEC-240).
  *
- * Mirrors the gastronomy table shape as closely as possible:
+ * Mirrors the legacy listing table shape as closely as possible:
  * - Same audit columns (createdById, updatedById, deletedById)
  * - Same publication state (`listingPublicationColumns`, V/03 §9)
  * - Same jsonb contact/social/media/seo/adminInfo pattern
@@ -39,7 +39,7 @@ import { rExperienceFeature } from './r_experience_feature.dbschema.ts';
  * - Same rating aggregate columns (reviewsCount, averageRating, rating)
  * - Entity-specific columns: type (ExperienceTypePgEnum), priceFrom (integer centavos),
  *   priceUnit (ExperiencePriceUnitPgEnum), isPriceOnRequest (boolean)
- * - openingHours stored as jsonb on main table (same choice as gastronomy — PARITY)
+ * - openingHours stored as jsonb on main table (same choice as venue — PARITY)
  */
 export const experiences = pgTable(
     'experiences',
@@ -50,7 +50,7 @@ export const experiences = pgTable(
         summary: text('summary').notNull(),
         description: text('description').notNull(),
         richDescription: text('rich_description'),
-        // I18n columns (same pattern as gastronomy — SPEC-212 style)
+        // I18n columns (same pattern as venue — SPEC-212 style)
         nameI18n: jsonb('name_i18n').$type<I18nText>(),
         summaryI18n: jsonb('summary_i18n').$type<I18nText>(),
         descriptionI18n: jsonb('description_i18n').$type<I18nText>(),
@@ -224,12 +224,12 @@ export const experiences = pgTable(
          * flag is on.
          */
         acceptsPrivateGroups: boolean('accepts_private_groups').notNull().default(false),
-        // Jsonb grouped columns (matching gastronomy / accommodation pattern)
+        // Jsonb grouped columns (matching venue / accommodation pattern)
         contactInfo: jsonb('contact_info').$type<ContactInfo>(),
         socialNetworks: jsonb('social_networks').$type<SocialNetwork>(),
         /**
          * Weekly opening hours — keyed by day name with open/close time strings.
-         * Stored as jsonb on the main table (same choice as gastronomy — no separate hours table).
+         * Stored as jsonb on the main table (same choice as venue — no separate hours table).
          */
         openingHours: jsonb('opening_hours').$type<Record<string, unknown>>(),
         /**
@@ -284,7 +284,7 @@ export const experiences = pgTable(
          * here would leave TWO mechanisms answering one question, the asymmetry
          * HOS-1257 exists to close. The full argument, and the note that the
          * right future question is "should BOTH derive?", is recorded once on
-         * `gastronomies.featuredByEntitlement`.
+         * `legacy listing tables.featuredByEntitlement`.
          */
         featuredByEntitlement: boolean('featured_by_entitlement').notNull().default(false),
         // Denormalized aggregate stats (updated by trigger / service)
@@ -295,7 +295,7 @@ export const experiences = pgTable(
             .default(0),
         /** Granular rating breakdown stored as JSONB (service/value/guide/overall). */
         rating: jsonb('rating').$type<Record<string, unknown>>(),
-        // Full audit (mirrors gastronomy)
+        // Full audit (mirrors venue)
         createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
         updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow().notNull(),
         createdById: uuid('created_by_id').references(() => users.id, { onDelete: 'set null' }),
@@ -316,14 +316,14 @@ export const experiences = pgTable(
             'experiences_destinationId_publicationStatus_idx'
         ).on(table.destinationId, table.publicationStatus),
         // HOS-1286: parallel index for featuredByEntitlement — see the twin on
-        // `gastronomies` and the accommodations pair it mirrors.
+        // `legacy listing tables` and the accommodations pair it mirrors.
         experiences_featuredByEntitlement_idx: index('experiences_featuredByEntitlement_idx').on(
             table.featuredByEntitlement
         ),
         experiences_type_idx: index('experiences_type_idx').on(table.type),
         experiences_ownerId_idx: index('experiences_ownerId_idx').on(table.ownerId),
         experiences_deletedAt_idx: index('experiences_deletedAt_idx').on(table.deletedAt),
-        // Composite: owner + soft-delete (mirrors gastronomy pattern)
+        // Composite: owner + soft-delete (mirrors venue pattern)
         experiences_ownerId_deletedAt_idx: index('experiences_ownerId_deletedAt_idx').on(
             table.ownerId,
             table.deletedAt

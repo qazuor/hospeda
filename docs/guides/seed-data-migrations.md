@@ -307,7 +307,7 @@ Everything else under `data/**` is guarded — the required catalogs (amenity, a
 destination, exchangeRate(+Config), feature, revalidationConfig, sponsorshipLevel,
 sponsorshipPackage, postTag, pointOfInterest, poiCategory, user/required,
 tag/{internal,system}-*.json) **and** the curated prod-content sources that used to escape
-(partner, gastronomy, hostTrade, postSponsor, postSponsorship). The billing
+(partner, legacy venue content, hostTrade, postSponsor, postSponsorship). The billing
 config files (`packages/billing/src/config/*.config.ts`) used to be guarded too; they
 were deleted with `@repo/billing` (HOS-1626) and `scripts/check-seed-dual-write.sh` no
 longer names them.
@@ -316,7 +316,7 @@ Plus nine **inline-constant seeders** whose fixtures live in a TS constant (no `
 folder to path-match), guarded on any diff to the whole file:
 
 ```
-packages/seed/src/example/experiences.seed.ts             (prod-content gastronomy and experience listings)
+packages/seed/src/example/experiences.seed.ts             (prod-content venue and experience listings)
 packages/seed/src/example/entityTagAssignments.seed.ts    (tags GUARDED destination catalog rows)
 packages/seed/src/example/userTags.seed.ts                (tags the GUARDED required admin-user)
 packages/seed/src/required/{rolePermissions,aiPrompts,aiSettings,socialAutomation,contentModeration,systemUser}.seed.ts
@@ -558,7 +558,7 @@ export const meta = {
     name: '0034-hos-372-example-media-to-relational',
     group: 'required',
     requiresColumns: [
-        { table: 'gastronomies', column: 'media' },
+        { table: 'venues', column: 'media' },
         { table: 'experiences', column: 'media' }
     ]
 } as const satisfies SeedMigrationModule['meta'];

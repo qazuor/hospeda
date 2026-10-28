@@ -2,7 +2,7 @@
  * Experience relation-selector lookup schema (SPEC-240).
  *
  * Experience extends the shared `{ id, label, slug }` option item with `type`
- * and `destination` — matching the gastronomy options pattern — so the
+ * and `destination` — matching the venue options pattern — so the
  * experience selector can disambiguate listings in relation pickers.
  */
 import { z } from 'zod';

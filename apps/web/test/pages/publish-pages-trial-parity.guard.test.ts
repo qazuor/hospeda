@@ -9,7 +9,7 @@
  * `/publicar/comer-y-salir/` and `/publicar/experiencias/` had ZERO — even
  * though their own SALES landings (`/planes/comer-y-salir/`,
  * `/planes/experiencias/`) already promise a free trial one click away. A
- * gastronomy or experience owner who reached the publish form directly never
+ * venue or experience owner who reached the publish form directly never
  * saw the promise their own funnel had just made them.
  *
  * ## What this guard checks, and why source-level is enough here
@@ -22,11 +22,11 @@
  * unit test cannot see — that all three pages actually WIRE that function
  * in, scoped to their own vertical's trial status AND eligibility. Deleting
  * the import, or hardcoding `productDomain` to `'accommodation'` on the
- * gastronomy/experience pages' `getTrialStatus`/`getTrialEligibility` calls, would regress
+ * venue/experience pages' `getTrialStatus`/`getTrialEligibility` calls, would regress
  * the exact bug HOS-1293 reports while `publish-trial-callout.test.ts` stayed
  * fully green (it never touches these page files).
  *
- * ## Gastronomy and experience lost their callout (HOS-1418)
+ * ## Venue and experience lost their callout (HOS-1418)
  *
  * The "probá gratis" callout on the two vertical pages read its trial length
  * from the old plan catalogue (`GET /public/plans`), which no longer exists.

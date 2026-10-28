@@ -16,7 +16,7 @@ import { trialSeriesStyles as styles, type TrialSeriesEmailProps } from './trial
  *
  * Its one illustrative example used to name the reason as "el alojamiento
  * estaba cerrado" (HOS-1283) — accurate for a listing that closes seasonally,
- * meaningless for a gastronomy or experience owner, whose Spanish grammatical
+ * meaningless for a venue or experience owner, whose Spanish grammatical
  * gender it would also get wrong ("cerrado" vs "cerrada"). Rather than branch
  * three ways over one throwaway clause, the example was made vertical-neutral
  * ("tuviste que poner en pausa el negocio") — it does not need

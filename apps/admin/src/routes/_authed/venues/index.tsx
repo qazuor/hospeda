@@ -1,9 +1,9 @@
 /**
- * Gastronomy list page — admin directory of food and beverage listings.
+ * Venue list page — admin directory of food and beverage listings.
  *
- * Uses the generic `createEntityListPage` system via the gastronomy feature config.
+ * Uses the generic `createEntityListPage` system via the venue feature config.
  * The route and component are generated from `VenuesRoute` /
- * `VenuesPageComponent` in the `gastronomy` feature config.
+ * `VenuesPageComponent` in the `venue` feature config.
  */
 
 import { createFileRoute } from '@tanstack/react-router';

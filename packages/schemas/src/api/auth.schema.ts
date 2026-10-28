@@ -38,7 +38,7 @@ export const ActorSchema = z.object({
         .boolean()
         .optional()
         .describe(
-            'Whether the account must rotate a server-generated password before using protected routes (SPEC-239 gastronomy/experience owner provisioning). Mirrors `users.must_change_password`. Distinct from `AuthMeResponse.passwordChangeRequired`, which is the admin-panel-only `adminInfo` flag and is computed for a different audience. Carried on the actor since HOS-296 so consumers do not need a second Better Auth `get-session` round-trip to read it.'
+            'Whether the account must rotate a server-generated password before using protected routes (SPEC-239 venue/experience owner provisioning). Mirrors `users.must_change_password`. Distinct from `AuthMeResponse.passwordChangeRequired`, which is the admin-panel-only `adminInfo` flag and is computed for a different audience. Carried on the actor since HOS-296 so consumers do not need a second Better Auth `get-session` round-trip to read it.'
         ),
     _isSystemActor: z
         .boolean()

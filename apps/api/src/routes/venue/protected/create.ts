@@ -1,17 +1,17 @@
 /**
- * Owner self-service gastronomy listing create endpoint (HOS-166 §7.2).
+ * Owner self-service venue listing create endpoint (HOS-166 §7.2).
  *
  *   POST /api/v1/protected/venues/
  *
  * Mirrors the accommodation owner create (`POST /protected/accommodations/`)
- * and the admin create at `venue/admin/create.ts`. The gastronomy
+ * and the admin create at `venue/admin/create.ts`. The venue
  * owner-create payload has its own required shape
  * (`priceFrom`/`priceUnit`/`isPriceOnRequest`), so this vertical has its own
  * route; the experience one lives in `experience/protected/create.ts`.
  *
  * ## D-3 — server-forced fields
  *
- * `GastronomyOwnerCreateInputSchema` already OMITS `ownerId`, `slug`,
+ * `VenueOwnerCreateInputSchema` already OMITS `ownerId`, `slug`,
  * `publicationStatus` and `isFeatured` — this handler is the only place
  * `ownerId` comes from:
  * - `ownerId` — always `actor.id`. An owner can only ever create a listing
@@ -24,7 +24,7 @@
  * ## Permission — an authenticated session, and nothing else (HOS-687)
  *
  * This route declares NO `requiredPermissions`: it is how an account BECOMES a
- * gastronomy owner (`createForOwner` grants the owner role inside the same
+ * venue owner (`createForOwner` grants the owner role inside the same
  * transaction as the insert, mirror of
  * `AccommodationService.createForOnboarding`), so demanding the owner's
  * permission to reach it would make the role unreachable. Authentication is
@@ -53,7 +53,7 @@ import { createProtectedRoute } from '../../../utils/route-factory';
 const venueService = new VenueService({ logger: apiLogger });
 
 /**
- * Handler for the gastronomy owner-create endpoint. Exported standalone so it
+ * Handler for the venue owner-create endpoint. Exported standalone so it
  * is unit-testable against a mocked `Context` + spied service without booting
  * the full Hono app.
  */
@@ -86,19 +86,19 @@ export async function handleCreateVenueListing(ctx: Context, body: Record<string
 /**
  * POST /api/v1/protected/venues/
  *
- * Creates a gastronomy listing owned by the caller. Starts as a
+ * Creates a venue listing owned by the caller. Starts as a
  * `DRAFT` (D-3) — see module docstring.
  */
 export const protectedCreateVenueListingRoute = createProtectedRoute({
     method: 'post',
     path: '/',
     listingAccess: { vertical: VerticalEnum.VENUE, operation: 'CREATE' },
-    summary: 'Create a gastronomy listing (owner self-service)',
+    summary: 'Create a venue listing (owner self-service)',
     description:
-        'Creates a gastronomy listing owned by the authenticated caller and grants them the VENUE_OWNER role in the same transaction. Starts hidden (DRAFT) until the owner completes it. Requires an authenticated session and no gastronomy permission.',
-    tags: ['Gastronomy'],
+        'Creates a venue listing owned by the authenticated caller and grants them the VENUE_OWNER role in the same transaction. Starts hidden (DRAFT) until the owner completes it. Requires an authenticated session and no venue permission.',
+    tags: ['Venue'],
     // No `requiredPermissions` on purpose (HOS-687): this route is how an
-    // account BECOMES a gastronomy owner, so demanding the owner's permission
+    // account BECOMES a venue owner, so demanding the owner's permission
     // to reach it made the role unreachable. Authentication is still enforced
     // by the factory — see the module docstring.
     requestBody: VenueOwnerCreateInputSchema,

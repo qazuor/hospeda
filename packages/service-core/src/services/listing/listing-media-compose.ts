@@ -18,8 +18,8 @@
  * ## Difference from the accommodation composer
  *
  * `composeAccommodationMedia` reads `videos` from the entity's JSONB `media.videos`
- * (accommodation never migrated videos out of the JSONB blob). Gastronomy and experience listings
- * moved videos to a dedicated `videos` JSONB COLUMN on `gastronomies` / `experiences`
+ * (accommodation never migrated videos out of the JSONB blob). venue and experience listings
+ * moved videos to a dedicated `videos` JSONB COLUMN on `legacy listing tables` / `experiences`
  * (HOS-372) — a video is an external URL, not an uploaded asset, so it never needed a
  * relational row. This composer therefore takes `videos` as an explicit parameter
  * rather than reading it off a `currentMedia` object, so callers pass
@@ -47,7 +47,7 @@ export interface ComposeListingMediaInput {
      * All non-deleted listing media rows for one listing, in any order (this
      * helper re-sorts by `sortOrder`). May include both `visible` and `archived`
      * rows. Accepts any row shape structurally compatible with
-     * `BaseListingMediaSchema` — both `GastronomyMedia` and `ExperienceMedia`
+     * `BaseListingMediaSchema` — both `venueMedia` and `ExperienceMedia`
      * qualify without a cast.
      */
     readonly rows: readonly BaseListingMedia[];
@@ -116,7 +116,7 @@ function bySortOrder(a: BaseListingMedia, b: BaseListingMedia): number {
  *
  * @example
  * ```ts
- * const media = composeListingMedia({ rows: gastronomyMediaRows, videos: gastronomy.videos });
+ * const media = composeListingMedia({ rows: venueMediaRows, videos: venue.videos });
  * ```
  */
 export function composeListingMedia({ rows, videos }: ComposeListingMediaInput): Media {
@@ -127,7 +127,7 @@ export function composeListingMedia({ rows, videos }: ComposeListingMediaInput):
     //
     // The gate is unconditional here rather than a per-caller option because
     // this is the single composition implementation behind post, event,
-    // gastronomy and experience payloads: an opt-in flag would be fail-open,
+    // venue and experience payloads: an opt-in flag would be fail-open,
     // and the next read path added would ship the photo. Media MANAGEMENT is
     // unaffected — it reads raw rows through the dedicated `getMedia`
     // endpoints, never through a composed entity.

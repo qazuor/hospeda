@@ -32,7 +32,7 @@ export interface VenueEventEntryCardProps {
      * it keeps the island i18n-agnostic for these strings.
      *
      * Here that is not only style. The names live under
-     * `gastronomy.detail.openingHours.*`, and `gastronomy.detail` does NOT ship
+     * `venue.detail.openingHours.*`, and `venue.detail` does NOT ship
      * to the browser: 25 of its 32 keys are named only by `.astro` files
      * rendering server-side, so declaring the prefix in
      * `CLIENT_I18N_KEY_PREFIXES` would push 1,205 B brotli of never-named
@@ -62,8 +62,7 @@ export function VenueEventEntryCard({
     return (
         <fieldset className={styles.card}>
             <legend className={styles.srOnly}>
-                {entry.title ||
-                    t('gastronomy.owner.editor.venueEventsManager.newEntry', 'Nuevo evento')}
+                {entry.title || t('venue.owner.editor.venueEventsManager.newEntry', 'Nuevo evento')}
             </legend>
 
             <div className={styles.row}>
@@ -72,13 +71,10 @@ export function VenueEventEntryCard({
                     type="text"
                     value={entry.title}
                     placeholder={t(
-                        'gastronomy.owner.editor.venueEventsManager.titlePlaceholder',
+                        'venue.owner.editor.venueEventsManager.titlePlaceholder',
                         'Música en vivo, Happy hour…'
                     )}
-                    aria-label={t(
-                        'gastronomy.owner.editor.venueEventsManager.entryTitle',
-                        'Título'
-                    )}
+                    aria-label={t('venue.owner.editor.venueEventsManager.entryTitle', 'Título')}
                     onChange={(event) => {
                         onPatch(index, { title: event.target.value });
                     }}
@@ -87,7 +83,7 @@ export function VenueEventEntryCard({
                     type="button"
                     className={styles.iconButton}
                     aria-label={t(
-                        'gastronomy.owner.editor.venueEventsManager.moveUp',
+                        'venue.owner.editor.venueEventsManager.moveUp',
                         'Subir el evento'
                     )}
                     onClick={() => {
@@ -100,7 +96,7 @@ export function VenueEventEntryCard({
                     type="button"
                     className={styles.iconButton}
                     aria-label={t(
-                        'gastronomy.owner.editor.venueEventsManager.moveDown',
+                        'venue.owner.editor.venueEventsManager.moveDown',
                         'Bajar el evento'
                     )}
                     onClick={() => {
@@ -116,7 +112,7 @@ export function VenueEventEntryCard({
                         onRemove(index);
                     }}
                 >
-                    {t('gastronomy.owner.editor.venueEventsManager.removeEntry', 'Quitar')}
+                    {t('venue.owner.editor.venueEventsManager.removeEntry', 'Quitar')}
                 </button>
             </div>
 
@@ -124,11 +120,11 @@ export function VenueEventEntryCard({
                 className={styles.textarea}
                 value={entry.description}
                 placeholder={t(
-                    'gastronomy.owner.editor.venueEventsManager.descriptionPlaceholder',
+                    'venue.owner.editor.venueEventsManager.descriptionPlaceholder',
                     'Detalle opcional'
                 )}
                 aria-label={t(
-                    'gastronomy.owner.editor.venueEventsManager.entryDescription',
+                    'venue.owner.editor.venueEventsManager.entryDescription',
                     'Descripción'
                 )}
                 onChange={(event) => {
@@ -147,7 +143,7 @@ export function VenueEventEntryCard({
                         }}
                     />
                     {t(
-                        'gastronomy.owner.editor.venueEventsManager.recurrenceWeekly',
+                        'venue.owner.editor.venueEventsManager.recurrenceWeekly',
                         'Todas las semanas'
                     )}
                 </label>
@@ -160,7 +156,7 @@ export function VenueEventEntryCard({
                             onSetRecurrence(index, 'once');
                         }}
                     />
-                    {t('gastronomy.owner.editor.venueEventsManager.recurrenceOnce', 'Un solo día')}
+                    {t('venue.owner.editor.venueEventsManager.recurrenceOnce', 'Un solo día')}
                 </label>
             </div>
 
@@ -170,7 +166,7 @@ export function VenueEventEntryCard({
                         className={styles.input}
                         value={entry.weekday}
                         aria-label={t(
-                            'gastronomy.owner.editor.venueEventsManager.weekday',
+                            'venue.owner.editor.venueEventsManager.weekday',
                             'Día de la semana'
                         )}
                         onChange={(event) => {
@@ -191,7 +187,7 @@ export function VenueEventEntryCard({
                         className={styles.input}
                         type="date"
                         value={entry.date}
-                        aria-label={t('gastronomy.owner.editor.venueEventsManager.date', 'Fecha')}
+                        aria-label={t('venue.owner.editor.venueEventsManager.date', 'Fecha')}
                         onChange={(event) => {
                             onPatch(index, { date: event.target.value });
                         }}
@@ -203,7 +199,7 @@ export function VenueEventEntryCard({
                     type="time"
                     value={entry.startTime}
                     aria-label={t(
-                        'gastronomy.owner.editor.venueEventsManager.startTime',
+                        'venue.owner.editor.venueEventsManager.startTime',
                         'Hora de inicio'
                     )}
                     onChange={(event) => {
@@ -216,7 +212,7 @@ export function VenueEventEntryCard({
                     type="time"
                     value={entry.endTime}
                     aria-label={t(
-                        'gastronomy.owner.editor.venueEventsManager.endTime',
+                        'venue.owner.editor.venueEventsManager.endTime',
                         'Hora de fin (opcional)'
                     )}
                     onChange={(event) => {
@@ -232,7 +228,7 @@ export function VenueEventEntryCard({
                             onPatch(index, { isActive: event.target.checked });
                         }}
                     />
-                    {t('gastronomy.owner.editor.venueEventsManager.active', 'Activo')}
+                    {t('venue.owner.editor.venueEventsManager.active', 'Activo')}
                 </label>
             </div>
         </fieldset>

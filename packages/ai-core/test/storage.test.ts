@@ -108,7 +108,7 @@ const VALID_SETTINGS_BLOB = {
             params: {}
         },
         // HOS-400: separate AiFeature values from `chat` (own metering
-        // counter per gastronomy or experience vertical); the write record requires every
+        // counter per venue or experience vertical); the write record requires every
         // AiFeature key.
         chat_venue: {
             enabled: false,

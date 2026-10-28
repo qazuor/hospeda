@@ -1,6 +1,6 @@
 /**
  * @file venue-type-icons.test.ts
- * @description Unit tests for the gastronomy-type → icon resolver. Verifies
+ * @description Unit tests for the venue-type → icon resolver. Verifies
  * that every value of `VenueTypeEnum` maps to a defined icon component
  * and that unknown values fall back to the generic fallback icon (HOS-97).
  */
@@ -21,7 +21,7 @@ import { VenueTypeEnum } from '@repo/schemas';
 import { describe, expect, it } from 'vitest';
 import { getVenueTypeIcon, VENUE_TYPE_FALLBACK_ICON } from '../../src/lib/venue-type-icons';
 
-describe('getGastronomyTypeIcon', () => {
+describe('getVenueTypeIcon', () => {
     it('returns RestaurantIcon for RESTAURANT', () => {
         expect(getVenueTypeIcon({ type: 'RESTAURANT' })).toBe(RestaurantIcon);
     });
@@ -63,7 +63,7 @@ describe('getGastronomyTypeIcon', () => {
         expect(getVenueTypeIcon({ type: 'Food_Truck' })).toBe(MotorhomeParkingIcon);
     });
 
-    it('falls back to GASTRONOMY_TYPE_FALLBACK_ICON for unknown types', () => {
+    it('falls back to VENUE_TYPE_FALLBACK_ICON for unknown types', () => {
         expect(getVenueTypeIcon({ type: 'spaceship' })).toBe(VENUE_TYPE_FALLBACK_ICON);
         expect(getVenueTypeIcon({ type: '' })).toBe(VENUE_TYPE_FALLBACK_ICON);
     });
@@ -72,7 +72,7 @@ describe('getGastronomyTypeIcon', () => {
         expect(VENUE_TYPE_FALLBACK_ICON).toBe(ForkKnifeIcon);
     });
 
-    it('covers every value of GastronomyTypeEnum with a defined icon component', () => {
+    it('covers every value of VenueTypeEnum with a defined icon component', () => {
         const allTypes = Object.values(VenueTypeEnum);
         expect(allTypes.length).toBeGreaterThan(0);
         for (const type of allTypes) {

@@ -21,7 +21,7 @@ export type PublicAuthorListItem = {
 
 export type UserWithCounts = User & {
     accommodationsCount: number;
-    gastronomiesCount: number;
+    venuesCount: number;
     experiencesCount: number;
     eventsCount: number;
     postsCount: number;
@@ -384,7 +384,7 @@ export class UserModel extends BaseModelImpl<User> {
             .select({
                 user: users,
                 accommodationsCount: accommodationsCountSq,
-                gastronomiesCount: venuesCountSq,
+                venuesCount: venuesCountSq,
                 experiencesCount: experiencesCountSq,
                 eventsCount: eventsCountSq,
                 postsCount: postsCountSq
@@ -400,7 +400,7 @@ export class UserModel extends BaseModelImpl<User> {
         let rows: Array<{
             user: typeof users.$inferSelect;
             accommodationsCount: number;
-            gastronomiesCount: number;
+            venuesCount: number;
             experiencesCount: number;
             eventsCount: number;
             postsCount: number;
@@ -420,7 +420,7 @@ export class UserModel extends BaseModelImpl<User> {
             // DRIZZLE-LIMITATION: select with leftJoin projects row.user as Drizzle's full users-table row type with branded enums; User domain entity uses unbranded enum unions.
             ...(row.user as unknown as User),
             accommodationsCount: row.accommodationsCount ?? 0,
-            gastronomiesCount: row.gastronomiesCount ?? 0,
+            venuesCount: row.venuesCount ?? 0,
             experiencesCount: row.experiencesCount ?? 0,
             eventsCount: row.eventsCount ?? 0,
             postsCount: row.postsCount ?? 0

@@ -1,5 +1,5 @@
 /**
- * Tests for admin gastronomy routes (SPEC-239 T-045 / T-046).
+ * Tests for admin venue routes (SPEC-239 T-045 / T-046).
  *
  * Verifies:
  *  - POST   /api/v1/admin/venues         requires VENUE_CREATE (403 without)
@@ -15,7 +15,7 @@ import { beforeAll, describe, expect, it } from 'vitest';
 import { initApp } from '../../../../src/app.js';
 import type { AppOpenAPI } from '../../../../src/types.js';
 
-describe('Admin gastronomy routes — SPEC-239 T-045 / T-046', () => {
+describe('Admin venue routes — SPEC-239 T-045 / T-046', () => {
     let app: AppOpenAPI;
 
     const MOCK_USER_ID = '11111111-1111-4111-8111-111111111111';
@@ -68,7 +68,7 @@ describe('Admin gastronomy routes — SPEC-239 T-045 / T-046', () => {
         'x-mock-actor-permissions': JSON.stringify(['access.panelAdmin', 'venue.editAll'])
     };
 
-    /** Actor with admin-panel access but NO gastronomy or experience permissions */
+    /** Actor with admin-panel access but NO venue or experience permissions */
     const headersNoPerms = {
         ...USER_AGENT,
         'x-mock-actor-id': MOCK_USER_ID,

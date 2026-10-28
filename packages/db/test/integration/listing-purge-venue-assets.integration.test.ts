@@ -72,7 +72,7 @@ async function readMarkedPages(tx: DrizzleClient) {
     return items;
 }
 
-describe('TEST:1702:1 AC:1702:1 AC:1702:4 gastronomy purge keeps a marked media row for every remote file', () => {
+describe('TEST:1702:1 AC:1702:1 AC:1702:4 venue purge keeps a marked media row for every remote file', () => {
     it('keeps and marks gallery, dish and menu file rows while deleting the menu content', async () => {
         await withTestTransaction(async (tx) => {
             const owner = testData.user();
@@ -195,7 +195,7 @@ describe('TEST:1702:1 AC:1702:1 AC:1702:4 gastronomy purge keeps a marked media 
         });
     });
 
-    it('preserves the menu file and dish photo of another gastronomy owned by the same user', async () => {
+    it('preserves the menu file and dish photo of another venue owned by the same user', async () => {
         await withTestTransaction(async (tx) => {
             const owner = testData.user();
             const destination = testData.destination();

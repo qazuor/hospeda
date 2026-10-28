@@ -131,9 +131,9 @@ describe('TEST:V6:24 step 4c', () => {
             expect(first[0]?.tags).toEqual([
                 'accom-14820000-0000-4000-8000-000000000001',
                 'exp-14820000-0000-4000-8000-000000000003',
-                'gastro-14820000-0000-4000-8000-000000000002'
+                'venue-14820000-0000-4000-8000-000000000002'
             ]);
-            expect(first[1]?.tags).toEqual(['home', 'list-accom', 'list-exp', 'list-gastro']);
+            expect(first[1]?.tags).toEqual(['home', 'list-accom', 'list-exp', 'list-venue']);
             expect(first[2]?.tags).toEqual(
                 liveDestinations.rows
                     .flatMap(({ id, slug }) => [`dest-${slug}`, `dest-${id}`])

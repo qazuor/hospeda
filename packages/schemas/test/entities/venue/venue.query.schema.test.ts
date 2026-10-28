@@ -5,7 +5,7 @@ import {
     VenueSearchSchema
 } from '../../../src/entities/venue/venue.query.schema.js';
 
-describe('GastronomySearchSchema', () => {
+describe('VenueSearchSchema', () => {
     it('should validate an empty search (all defaults)', () => {
         expect(() => VenueSearchSchema.parse({})).not.toThrow();
 
@@ -53,7 +53,7 @@ describe('GastronomySearchSchema', () => {
     });
 });
 
-describe('GastronomyFiltersSchema', () => {
+describe('VenueFiltersSchema', () => {
     it('should validate empty filters', () => {
         expect(() => VenueFiltersSchema.parse({})).not.toThrow();
     });

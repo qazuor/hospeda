@@ -353,11 +353,11 @@ const KeepSelectionsObjectSchema = z.object({
      */
     promotionIds: z.array(z.string().uuid()).max(100).optional(),
     /**
-     * Gastronomy or experience LISTING UUIDs the owner wants
+     * venue or experience LISTING UUIDs the owner wants
      * kept public after a downgrade applies (HOS-1122). Every other
      * listing the target tier's cap no longer covers is plan-restricted.
      *
-     * ONE field for both verticals, not one per vertical: a gastronomy or experience
+     * ONE field for both verticals, not one per vertical: a venue or experience
      * subscription belongs to exactly one vertical (HOS-688), so the ids in
      * any single scheduled change are always of one kind. The apply step
      * intersects them with the listings actually linked to THAT

@@ -101,7 +101,7 @@ export const PERMISSION_ROLE_MAP: Partial<Record<PermissionEnum, ReadonlySet<Rol
         RoleEnum.ADMIN,
         RoleEnum.SUPER_ADMIN
     ]),
-    // Editors + admins hold POST_CREATE; hosts/tourists/gastronomy/experience-owners do
+    // Editors + admins hold POST_CREATE; hosts, tourists, venue owners, or experience owners do
     // not. This is the editor discovery-door "acquired" signal (HOS-134
     // §5.3/§5.4) — it drives both the "Ya lo tenés" state on the aliados hub
     // and the stateful partner-door label.
@@ -209,7 +209,7 @@ export function hasAccommodationsNavAccess({
 }
 
 /**
- * Does the user hold a role that grants the gastronomy/experience-owner self-service area
+ * Does the user hold a role that grants the venue/experience-owner self-service area
  * (`/mi-cuenta/comercio/*`)?
  *
  * Companion to {@link hasAccommodationsNavAccess}, keyed on
@@ -219,7 +219,7 @@ export function hasAccommodationsNavAccess({
  *
  * @param params - `{ roles }` (RO-RO): every role the user holds, or `null`
  *   for unauthenticated visitors.
- * @returns `true` when at least one held role carries gastronomy/experience-owner access.
+ * @returns `true` when at least one held role carries venue/experience-owner access.
  */
 export function hasListingNavAccess({
     roles

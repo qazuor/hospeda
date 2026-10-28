@@ -44,7 +44,7 @@ const translators: PricingPageTranslators = {
 const PRICED_AUDIENCES: readonly PricingAudience[] = [
     'owner',
     'tourist',
-    'gastronomy',
+    'venue',
     'experience'
 ] as const;
 

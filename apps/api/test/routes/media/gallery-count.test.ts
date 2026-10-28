@@ -9,10 +9,10 @@
  * type. A duplicated limit check fails OPEN when someone updates one side only
  * — the cap silently stops applying instead of breaking loudly.
  *
- * Gastronomy and experience verticals had ZERO cap coverage before this file.
+ * Venue and experience verticals had ZERO cap coverage before this file.
  *
- * Note on why counting the JSONB would be wrong for gastronomy and experience: once photos live
- * in `gastronomy_media` / `experience_media`, `media.gallery` stops being
+ * Note on why counting the JSONB would be wrong for venue and experience: once photos live
+ * in `venue_media` / `experience_media`, `media.gallery` stops being
  * written and eventually the column is dropped — so a JSONB-based count reads 0
  * forever, and the cap never fires no matter how many photos are uploaded.
  */
@@ -73,13 +73,13 @@ describe('resolveVisibleGalleryCount (HOS-372)', () => {
 
         expect(count).toBe(5);
         expect(venueMediaModel.findByVenue).toHaveBeenCalledWith({
-            gastronomyId: ENTITY_ID,
+            venueId: ENTITY_ID,
             state: 'visible',
             isFeatured: false
         });
     });
 
-    it('counts gastronomy photos from venue_media, not from the JSONB blob', async () => {
+    it('counts venue photos from venue_media, not from the JSONB blob', async () => {
         const count = await resolveVisibleGalleryCount({
             entityType: 'venue',
             entityId: ENTITY_ID,
@@ -90,7 +90,7 @@ describe('resolveVisibleGalleryCount (HOS-372)', () => {
         // Exact equality, NOT objectContaining: a partial matcher stays green
         // when a filter is dropped, which is precisely the failure this asserts.
         expect(venueMediaModel.findByVenue).toHaveBeenCalledWith({
-            gastronomyId: ENTITY_ID,
+            venueId: ENTITY_ID,
             state: 'visible',
             isFeatured: false
         });

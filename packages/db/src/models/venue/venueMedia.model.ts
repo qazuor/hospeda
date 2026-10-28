@@ -12,8 +12,8 @@ import { listingMediaShownConditions } from '../listing/listing-media-shown.ts';
  * RO-RO parameter object (Receive Object, Return Object pattern).
  */
 interface FindByVenueInput {
-    /** The gastronomy listing UUID to load media for. */
-    gastronomyId: string;
+    /** The venue listing UUID to load media for. */
+    venueId: string;
     /**
      * Filter by visibility state.
      * - `'visible'`  — active gallery photos (and the featured image).
@@ -42,8 +42,8 @@ interface FindByVenueInput {
  * Input type for `findFeatured`.
  */
 interface FindFeaturedInput {
-    /** The gastronomy listing UUID whose featured image is requested. */
-    gastronomyId: string;
+    /** The venue listing UUID whose featured image is requested. */
+    venueId: string;
     /** Optional transaction client. */
     tx?: DrizzleClient;
 }
@@ -52,8 +52,8 @@ interface FindFeaturedInput {
  * Input type for `findByVenues` (batch read).
  */
 interface FindByVenuesInput {
-    /** The gastronomy listing UUIDs to load media for (one query, grouped by id). */
-    gastronomyIds: readonly string[];
+    /** The venue listing UUIDs to load media for (one query, grouped by id). */
+    venueIds: readonly string[];
     /**
      * Optional state filter ('visible' | 'archived'). Omit to return all states.
      */
@@ -63,7 +63,7 @@ interface FindByVenuesInput {
 }
 
 /**
- * Model for gastronomy listing media (gallery photos).
+ * Model for venue listing media (gallery photos).
  *
  * Provides the canonical query surface for reading the `venue_media` table.
  * All write operations (create, update, soft-delete, restore) are inherited from
@@ -97,11 +97,11 @@ export class VenueMediaModel extends BaseModelImpl<VenueMedia> {
     protected override readonly validRelationKeys = ['venue'] as const;
 
     // -------------------------------------------------------------------------
-    // Gastronomy-media-specific finders
+    // Venue-media-specific finders
     // -------------------------------------------------------------------------
 
     /**
-     * Lists all non-deleted media rows for a given gastronomy listing, ordered
+     * Lists all non-deleted media rows for a given venue listing, ordered
      * by `sort_order ASC`.
      *
      * This is the canonical gallery-read query used by public and admin consumers.
@@ -112,7 +112,7 @@ export class VenueMediaModel extends BaseModelImpl<VenueMedia> {
      * 200 rows per page). For a listing that has never exceeded ~200 photos the
      * default `pageSize: 50` is sufficient for a single-page load.
      *
-     * @param input.gastronomyId - UUID of the parent gastronomy listing.
+     * @param input.venueId - UUID of the parent venue listing.
      * @param input.state        - Optional state filter ('visible' | 'archived').
      * @param input.isFeatured   - Optional featured filter. Pass `false` to count
      *                             gallery photos only, excluding the featured image (HOS-791).
@@ -122,13 +122,13 @@ export class VenueMediaModel extends BaseModelImpl<VenueMedia> {
      * @returns Paginated list of media rows + total count.
      */
     async findByVenue(input: FindByVenueInput): Promise<{ items: VenueMedia[]; total: number }> {
-        const { gastronomyId, state, isFeatured, page = 1, pageSize = 50, tx } = input;
+        const { venueId, state, isFeatured, page = 1, pageSize = 50, tx } = input;
         const db = this.getClient(tx);
-        const logContext = { gastronomyId, state, isFeatured, page, pageSize };
+        const logContext = { venueId, state, isFeatured, page, pageSize };
 
         try {
             const conditions = [
-                eq(venueMedia.gastronomyId, gastronomyId),
+                eq(venueMedia.venueId, venueId),
                 ...listingMediaShownConditions({ table: venueMedia })
             ];
             if (state !== undefined) {
@@ -157,20 +157,20 @@ export class VenueMediaModel extends BaseModelImpl<VenueMedia> {
                 total: Number(countResult[0]?.count ?? 0)
             };
             try {
-                logQuery(this.entityName, 'findByGastronomy', logContext, result);
+                logQuery(this.entityName, 'findByvenue', logContext, result);
             } catch {}
             return result;
         } catch (error) {
             const err = error instanceof Error ? error : new Error(String(error));
             try {
-                logError(this.entityName, 'findByGastronomy', logContext, err);
+                logError(this.entityName, 'findByvenue', logContext, err);
             } catch {}
-            throw new DbError(this.entityName, 'findByGastronomy', logContext, err.message);
+            throw new DbError(this.entityName, 'findByVenue', logContext, err.message);
         }
     }
 
     /**
-     * Returns the featured image row for a given gastronomy listing, or `null`
+     * Returns the featured image row for a given venue listing, or `null`
      * when none exists.
      *
      * At most one non-deleted row can have `is_featured = true` per listing — a
@@ -178,14 +178,14 @@ export class VenueMediaModel extends BaseModelImpl<VenueMedia> {
      * finder intentionally does NOT use a LIMIT hint beyond what the index
      * guarantees.
      *
-     * @param input.gastronomyId - UUID of the parent gastronomy listing.
+     * @param input.venueId - UUID of the parent venue listing.
      * @param input.tx           - Optional transaction client.
      * @returns The featured media row, or `null` if no featured image is set.
      */
     async findFeatured(input: FindFeaturedInput): Promise<VenueMedia | null> {
-        const { gastronomyId, tx } = input;
+        const { venueId, tx } = input;
         const db = this.getClient(tx);
-        const logContext = { gastronomyId };
+        const logContext = { venueId };
 
         try {
             const result = await db
@@ -193,7 +193,7 @@ export class VenueMediaModel extends BaseModelImpl<VenueMedia> {
                 .from(venueMedia)
                 .where(
                     and(
-                        eq(venueMedia.gastronomyId, gastronomyId),
+                        eq(venueMedia.venueId, venueId),
                         eq(venueMedia.isFeatured, true),
                         ...listingMediaShownConditions({ table: venueMedia })
                     )
@@ -215,8 +215,8 @@ export class VenueMediaModel extends BaseModelImpl<VenueMedia> {
     }
 
     /**
-     * Batch-loads non-deleted media rows for multiple gastronomy listings in a
-     * single query, grouped by `gastronomyId`. This is the canonical read used
+     * Batch-loads non-deleted media rows for multiple venue listings in a
+     * single query, grouped by `venueId`. This is the canonical read used
      * by list/search composition to avoid the N+1 that would result from
      * calling {@link findByVenue} once per list item.
      *
@@ -230,22 +230,22 @@ export class VenueMediaModel extends BaseModelImpl<VenueMedia> {
      * single list page of listings x their galleries stays well within a
      * reasonable row budget.
      *
-     * @param input.gastronomyIds - UUIDs to load (empty array → empty map, no query).
+     * @param input.venueIds - UUIDs to load (empty array → empty map, no query).
      * @param input.state         - Optional state filter ('visible' | 'archived').
      * @param input.tx            - Optional transaction client.
-     * @returns Map of gastronomyId → ordered media rows.
+     * @returns Map of venueId → ordered media rows.
      */
     async findByVenues(input: FindByVenuesInput): Promise<Map<string, VenueMedia[]>> {
-        const { gastronomyIds, state, tx } = input;
+        const { venueIds, state, tx } = input;
         const grouped = new Map<string, VenueMedia[]>();
-        if (gastronomyIds.length === 0) return grouped;
+        if (venueIds.length === 0) return grouped;
 
         const db = this.getClient(tx);
-        const logContext = { count: gastronomyIds.length, state };
+        const logContext = { count: venueIds.length, state };
 
         try {
             const conditions = [
-                inArray(venueMedia.gastronomyId, [...gastronomyIds]),
+                inArray(venueMedia.venueId, [...venueIds]),
                 ...listingMediaShownConditions({ table: venueMedia })
             ];
             if (state !== undefined) {
@@ -262,15 +262,15 @@ export class VenueMediaModel extends BaseModelImpl<VenueMedia> {
                 .orderBy(asc(venueMedia.sortOrder), asc(venueMedia.id))) as VenueMedia[];
 
             for (const row of rows) {
-                const list = grouped.get(row.gastronomyId);
+                const list = grouped.get(row.venueId);
                 if (list) {
                     list.push(row);
                 } else {
-                    grouped.set(row.gastronomyId, [row]);
+                    grouped.set(row.venueId, [row]);
                 }
             }
             try {
-                logQuery(this.entityName, 'findByGastronomies', logContext, {
+                logQuery(this.entityName, 'findBylegacy listing tables', logContext, {
                     venues: grouped.size,
                     rows: rows.length
                 });
@@ -279,9 +279,9 @@ export class VenueMediaModel extends BaseModelImpl<VenueMedia> {
         } catch (error) {
             const err = error instanceof Error ? error : new Error(String(error));
             try {
-                logError(this.entityName, 'findByGastronomies', logContext, err);
+                logError(this.entityName, 'findBylegacy listing tables', logContext, err);
             } catch {}
-            throw new DbError(this.entityName, 'findByGastronomies', logContext, err.message);
+            throw new DbError(this.entityName, 'findByVenues', logContext, err.message);
         }
     }
 }

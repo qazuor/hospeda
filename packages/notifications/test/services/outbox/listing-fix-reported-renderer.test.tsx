@@ -34,7 +34,7 @@ describe('TEST:1701:4 AC:1701:4 AC:1701:1 the fix-reported staff notice renders 
         expect(result.subject).toBe('Un dueño avisó que corrigió su ficha');
         for (const text of [
             'Parrilla La Costa',
-            'gastronomía',
+            'Comer y salir',
             payload.reason,
             '20 de octubre de 2026',
             '13 de octubre de 2026',

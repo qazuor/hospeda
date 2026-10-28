@@ -10,11 +10,11 @@ import {
     VenueFaqUpdateInputSchema
 } from '../../../src/entities/venue/subtypes/venue.faq.schema.js';
 
-const gastronomyId = faker.string.uuid();
+const venueId = faker.string.uuid();
 const faqId = faker.string.uuid();
 
 const validFaqPayload = () => ({
-    question: 'What are the opening hours for this gastronomy?',
+    question: 'What are the opening hours for this venue?',
     answer: 'We are open from Monday to Saturday, 9am to 10pm.',
     category: 'Hours',
     displayOrder: 1,
@@ -25,26 +25,26 @@ const validFaqPayload = () => ({
     updatedById: null
 });
 
-describe('GastronomyFaqSchema', () => {
-    it('should validate a valid FAQ with gastronomyId', () => {
+describe('VenueFaqSchema', () => {
+    it('should validate a valid FAQ with venueId', () => {
         const data = {
             ...validFaqPayload(),
             id: faqId,
-            gastronomyId
+            venueId
         };
         expect(() => VenueFaqSchema.parse(data)).not.toThrow();
     });
 
-    it('should reject invalid gastronomyId', () => {
-        const data = { ...validFaqPayload(), id: faqId, gastronomyId: 'not-a-uuid' };
+    it('should reject invalid venueId', () => {
+        const data = { ...validFaqPayload(), id: faqId, venueId: 'not-a-uuid' };
         expect(() => VenueFaqSchema.parse(data)).toThrow(ZodError);
     });
 });
 
-describe('GastronomyFaqAddInputSchema', () => {
+describe('VenueFaqAddInputSchema', () => {
     it('should validate a valid add input', () => {
         const data = {
-            gastronomyId,
+            venueId,
             faq: {
                 question: 'Do you have parking available nearby?',
                 answer: 'Yes, free parking is available on the street.'
@@ -57,7 +57,7 @@ describe('GastronomyFaqAddInputSchema', () => {
         // Same fragment HOS-393 gave accommodation_faqs: a client that omits
         // the flags gets exactly the behaviour FAQs had before they existed.
         const data = {
-            gastronomyId,
+            venueId,
             faq: {
                 question: 'Do you have parking available nearby?',
                 answer: 'Yes, free parking is available on the street.'
@@ -70,7 +70,7 @@ describe('GastronomyFaqAddInputSchema', () => {
 
     it('should preserve an explicit false for both flags (HOS-400)', () => {
         const data = {
-            gastronomyId,
+            venueId,
             faq: {
                 question: 'Do you have parking available nearby?',
                 answer: 'Yes, free parking is available on the street.',
@@ -83,7 +83,7 @@ describe('GastronomyFaqAddInputSchema', () => {
         expect(parsed.faq.isUsableByAi).toBe(false);
     });
 
-    it('should reject missing gastronomyId', () => {
+    it('should reject missing venueId', () => {
         const data = {
             faq: {
                 question: 'Do you have parking?',
@@ -93,9 +93,9 @@ describe('GastronomyFaqAddInputSchema', () => {
         expect(() => VenueFaqAddInputSchema.parse(data)).toThrow(ZodError);
     });
 
-    it('should reject invalid gastronomyId', () => {
+    it('should reject invalid venueId', () => {
         const data = {
-            gastronomyId: 'not-a-uuid',
+            venueId: 'not-a-uuid',
             faq: {
                 question: 'Do you have parking?',
                 answer: 'Yes, free parking available.'
@@ -105,10 +105,10 @@ describe('GastronomyFaqAddInputSchema', () => {
     });
 });
 
-describe('GastronomyFaqUpdateInputSchema', () => {
+describe('VenueFaqUpdateInputSchema', () => {
     it('should validate a valid update input', () => {
         const data = {
-            gastronomyId,
+            venueId,
             faqId,
             faq: { question: 'Updated question about hours?' }
         };
@@ -116,7 +116,7 @@ describe('GastronomyFaqUpdateInputSchema', () => {
     });
 
     it('should reject missing faqId', () => {
-        const data = { gastronomyId, faq: { question: 'Q?' } };
+        const data = { venueId, faq: { question: 'Q?' } };
         expect(() => VenueFaqUpdateInputSchema.parse(data)).toThrow(ZodError);
     });
 
@@ -124,40 +124,38 @@ describe('GastronomyFaqUpdateInputSchema', () => {
         // A `.default()` here would fire on every partial edit and silently
         // reset a hidden FAQ back to public — the exact trap the HOS-393
         // JSDoc documents for FaqWithChannelVisibilityUpdatePayloadSchema.
-        const data = { gastronomyId, faqId, faq: { question: 'Updated question about hours?' } };
+        const data = { venueId, faqId, faq: { question: 'Updated question about hours?' } };
         const parsed = VenueFaqUpdateInputSchema.parse(data);
         expect(Object.hasOwn(parsed.faq, 'isVisibleOnListing')).toBe(false);
         expect(Object.hasOwn(parsed.faq, 'isUsableByAi')).toBe(false);
     });
 });
 
-describe('GastronomyFaqRemoveInputSchema', () => {
+describe('VenueFaqRemoveInputSchema', () => {
     it('should validate a valid remove input', () => {
-        const data = { gastronomyId, faqId };
+        const data = { venueId, faqId };
         expect(() => VenueFaqRemoveInputSchema.parse(data)).not.toThrow();
     });
 
     it('should reject invalid faqId', () => {
-        expect(() => VenueFaqRemoveInputSchema.parse({ gastronomyId, faqId: 'bad' })).toThrow(
-            ZodError
-        );
+        expect(() => VenueFaqRemoveInputSchema.parse({ venueId, faqId: 'bad' })).toThrow(ZodError);
     });
 });
 
-describe('GastronomyFaqListInputSchema', () => {
+describe('VenueFaqListInputSchema', () => {
     it('should validate a valid list input', () => {
-        expect(() => VenueFaqListInputSchema.parse({ gastronomyId })).not.toThrow();
+        expect(() => VenueFaqListInputSchema.parse({ venueId })).not.toThrow();
     });
 
-    it('should reject missing gastronomyId', () => {
+    it('should reject missing venueId', () => {
         expect(() => VenueFaqListInputSchema.parse({})).toThrow(ZodError);
     });
 });
 
-describe('GastronomyFaqReorderInputSchema', () => {
+describe('VenueFaqReorderInputSchema', () => {
     it('should validate a valid reorder input with {faqId, displayOrder} items', () => {
         const data = {
-            gastronomyId,
+            venueId,
             order: [
                 { faqId, displayOrder: 0 },
                 { faqId: faker.string.uuid(), displayOrder: 1 }
@@ -167,14 +165,12 @@ describe('GastronomyFaqReorderInputSchema', () => {
     });
 
     it('should reject empty order array', () => {
-        expect(() => VenueFaqReorderInputSchema.parse({ gastronomyId, order: [] })).toThrow(
-            ZodError
-        );
+        expect(() => VenueFaqReorderInputSchema.parse({ venueId, order: [] })).toThrow(ZodError);
     });
 
     it('should reject when order item has invalid faqId', () => {
         const data = {
-            gastronomyId,
+            venueId,
             order: [{ faqId: 'not-a-uuid', displayOrder: 0 }]
         };
         expect(() => VenueFaqReorderInputSchema.parse(data)).toThrow(ZodError);

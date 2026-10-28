@@ -242,7 +242,7 @@ any data change. Ship the `CREATE` of the destination and the `DROP` of the sour
 release and the data-migration executes against a column that is already gone — it moves
 nothing, and the `seed_migrations` ledger records it applied, permanently. HOS-433 is that
 failure, observed in production: the `0034` media-to-relational data-migration ran in 18ms
-against a dropped `gastronomies.media` and was recorded `ok`.
+against the dropped media column in the legacy listing table and was recorded `ok`.
 
 The split below fixes both. Release N keeps the source column alive, which is exactly what
 the data-migration needs; Release N+1 removes it once nothing — neither running code nor a
@@ -363,7 +363,7 @@ After any reset (`hops db-migrate --target=staging --reset`) run
 `pnpm db:apply-extras` to restore it before seeding, or use `hops db-migrate`
 which handles this automatically.
 
-See [`docs/decisions/ADR-035-gastronomy-experience-separation.md`](../decisions/ADR-035-gastronomy-experience-separation.md) for the `product_domain` rationale.
+See ADR-035 for the `product_domain` rationale.
 
 ---
 

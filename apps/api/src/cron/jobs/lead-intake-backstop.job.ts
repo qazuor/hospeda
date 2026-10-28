@@ -39,11 +39,11 @@
  *
  * ## Why this job is alliance-only now (HOS-693)
  *
- * This job originally backstopped both the gastronomy/experience and the alliance intake
- * funnels. Gastronomy/experience lead intake was retired (its public form and admin
+ * This job originally backstopped both the venue/experience and the alliance intake
+ * funnels. Venue/experience lead intake was retired (its public form and admin
  * provisioning flow are gone), so this job was narrowed to alliance leads only
- * — leaving the gastronomy/experience query in place would eventually throw once
- * the retired gastronomy/experience leads table itself is dropped, and it shared a `Promise.all` with the
+ * — leaving the venue/experience query in place would eventually throw once
+ * the legacy leads table is dropped, and it shared a `Promise.all` with the
  * alliance query, so that throw would have taken the alliance backstop down
  * with it.
  *
@@ -58,10 +58,10 @@ import type { CronJobDefinition, CronJobResult } from '../types.js';
 /**
  * Lead statuses that still need a human.
  *
- * `alliance_leads.status` uses the same workflow vocabulary the retired gastronomy/experience
+ * `alliance_leads.status` uses the same workflow vocabulary the retired venue/experience
  * funnel's backstop used to check — see the schema comment on
  * `alliance_leads.status`, which mirrors the retired leads table's `status` even though
- * this job no longer queries the latter (HOS-693: gastronomy/experience lead intake was
+ * this job no longer queries the latter (HOS-693: venue/experience lead intake was
  * retired, so this job now covers alliance leads only).
  */
 const UNRESOLVED_STATUSES = ['pending', 'reviewing'] as const;

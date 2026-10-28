@@ -64,7 +64,7 @@ export enum NotificationType {
     ADMIN_PAYMENT_FAILURE = 'admin_payment_failure',
     ADMIN_SYSTEM_EVENT = 'admin_system_event',
     /**
-     * H-62 / H-148 — sent to the ops mailbox the moment a partner or gastronomy/experience
+     * H-62 / H-148 — sent to the ops mailbox the moment a partner or venue/experience
      * application arrives through one of the five public acquisition forms.
      *
      * Both funnels are served by ONE type rather than two. What ops needs to
@@ -1237,7 +1237,7 @@ export interface AdminLeadReceivedPayload extends BaseNotificationPayload {
     readonly funnelLabel: string;
     /**
      * The concrete program or domain applied for (e.g. "Proveedor",
-     * "Gastronomía"). A human label resolved by the caller, never a slug: this
+     * "Comer y salir"). A human label resolved by the caller, never a slug: this
      * package does not depend on `@repo/schemas` and must not start doing so
      * for a display string.
      */

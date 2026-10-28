@@ -3,7 +3,7 @@
  * @description Readers that turn one loaded listing into the shapes the
  * editor's pages need (HOS-1080).
  *
- * `ListingDetail` is a `gastronomy | experience` union, and the editor
+ * `ListingDetail` combines the venue and experience variants, and the editor
  * reads heterogeneous fields off it by key — something the union type cannot
  * express, which is why the pre-split page carried a double-cast bridge to a
  * loose record plus inline extraction in its frontmatter. With eleven pages
@@ -22,7 +22,7 @@ import type { ListingDetail } from '@/lib/listing/owner-listings';
 
 /** The loose record view of a listing detail. */
 function asRecord(detail: ListingDetail): Record<string, unknown> {
-    // TYPE-WORKAROUND: the detail is a gastronomy|experience union; the editor
+    // TYPE-WORKAROUND: the detail is a venue|experience union; the editor
     // reads heterogeneous operational fields by key, which the union cannot
     // express.
     return detail as unknown as Record<string, unknown>;
@@ -83,7 +83,7 @@ export function readListingMedia({ detail }: { readonly detail: ListingDetail })
     };
 }
 
-/** What the gastronomy/experience editor hub needs to describe each section. */
+/** What the venue/experience editor hub needs to describe each section. */
 export interface ListingEditorHubFacts {
     /** The listing in the shape `resolveListingCompleteness` evaluates. */
     readonly listing: ListingCompletenessListing;

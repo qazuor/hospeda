@@ -1,7 +1,7 @@
 /**
  * @file venue-hours.ts
  * @description Helpers for computing "open now" status and today's opening-hours
- * entry from a gastronomy listing's `openingHours` map (SPEC-239 T-053 / T-054).
+ * entry from a venue listing's `openingHours` map (SPEC-239 T-053 / T-054).
  *
  * The `openingHours` field on the public API response is a `Record<string, …>`
  * keyed by lower-cased English day names: `monday`, `tuesday`, … `sunday`.
@@ -84,7 +84,7 @@ export function parseTimeToMinutes(timeStr: string | undefined): number | null {
 }
 
 /**
- * Computes whether the gastronomy listing is currently open based on the
+ * Computes whether the venue listing is currently open based on the
  * `openingHours` map and the current local time.
  *
  * A day can have multiple shifts (e.g. midday and night service); the listing

@@ -123,7 +123,7 @@ const CASES = [
         }
     },
     {
-        label: 'gastronomy',
+        label: 'venue',
         service: VenueService,
         staffPermission: PermissionEnum.VENUE_VIEW_ALL,
         segment: 'comer-y-salir',

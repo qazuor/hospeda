@@ -1,6 +1,6 @@
 /**
  * @file VenueMenuManager.client.tsx
- * @description The owner's carta editor for a gastronomy listing (HOS-895).
+ * @description The owner's carta editor for a venue listing (HOS-895).
  *
  * ## Three ways to show a menu, side by side
  *
@@ -156,7 +156,7 @@ interface MenuEnvelope {
 }
 
 export interface VenueMenuManagerProps {
-    /** UUID of the gastronomy listing. */
+    /** UUID of the venue listing. */
     readonly listingId: string;
     /** Active UI locale. */
     readonly locale: SupportedLocale;
@@ -417,7 +417,7 @@ export function VenueMenuManager({ listingId, locale }: VenueMenuManagerProps): 
                 setIsPhotoLocked(true);
                 setMessage(
                     t(
-                        'gastronomy.owner.editor.menuManager.photoLocked',
+                        'venue.owner.editor.menuManager.photoLocked',
                         'Las fotos por plato están disponibles en el plan Premium. Podés quitar las fotos y guardar la carta igual.'
                     )
                 );
@@ -427,7 +427,7 @@ export function VenueMenuManager({ listingId, locale }: VenueMenuManagerProps): 
             if (!response?.ok) {
                 setMessage(
                     t(
-                        'gastronomy.owner.editor.menuManager.photoUploadError',
+                        'venue.owner.editor.menuManager.photoUploadError',
                         'No se pudo subir la foto del plato.'
                     )
                 );
@@ -438,7 +438,7 @@ export function VenueMenuManager({ listingId, locale }: VenueMenuManagerProps): 
             if (!parsed.data?.url) {
                 setMessage(
                     t(
-                        'gastronomy.owner.editor.menuManager.photoUploadError',
+                        'venue.owner.editor.menuManager.photoUploadError',
                         'No se pudo subir la foto del plato.'
                     )
                 );
@@ -451,7 +451,7 @@ export function VenueMenuManager({ listingId, locale }: VenueMenuManagerProps): 
             });
             setMessage(
                 t(
-                    'gastronomy.owner.editor.menuManager.photoAttached',
+                    'venue.owner.editor.menuManager.photoAttached',
                     'Foto agregada. Acordate de guardar la carta.'
                 )
             );
@@ -529,7 +529,7 @@ export function VenueMenuManager({ listingId, locale }: VenueMenuManagerProps): 
         setState('idle');
 
         if (result.ok) {
-            setMessage(t('gastronomy.owner.editor.menuManager.saved', 'Carta guardada.'));
+            setMessage(t('venue.owner.editor.menuManager.saved', 'Carta guardada.'));
             return;
         }
 
@@ -555,7 +555,7 @@ export function VenueMenuManager({ listingId, locale }: VenueMenuManagerProps): 
                 setIsPhotoLocked(true);
                 setMessage(
                     t(
-                        'gastronomy.owner.editor.menuManager.photoLocked',
+                        'venue.owner.editor.menuManager.photoLocked',
                         'Las fotos por plato están disponibles en el plan Premium. Podés quitar las fotos y guardar la carta igual.'
                     )
                 );
@@ -575,7 +575,7 @@ export function VenueMenuManager({ listingId, locale }: VenueMenuManagerProps): 
                 setIsTranslationLocked(true);
                 setMessage(
                     t(
-                        'gastronomy.owner.editor.menuManager.translationLocked',
+                        'venue.owner.editor.menuManager.translationLocked',
                         'Traducir la carta está disponible en el plan Premium. Podés borrar las traducciones y guardar la carta en español.'
                     )
                 );
@@ -585,16 +585,14 @@ export function VenueMenuManager({ listingId, locale }: VenueMenuManagerProps): 
             setIsLocked(true);
             setMessage(
                 t(
-                    'gastronomy.owner.editor.menuManager.locked',
+                    'venue.owner.editor.menuManager.locked',
                     'Cargar la carta plato por plato está disponible desde el plan Profesional. Mientras tanto podés subir una foto o un PDF del menú, o dejar el enlace.'
                 )
             );
             return;
         }
 
-        setMessage(
-            t('gastronomy.owner.editor.menuManager.saveError', 'No se pudo guardar la carta.')
-        );
+        setMessage(t('venue.owner.editor.menuManager.saveError', 'No se pudo guardar la carta.'));
     }, [basePath, sections, t]);
 
     // ── The uploaded photo / PDF ────────────────────────────────────────────
@@ -627,7 +625,7 @@ export function VenueMenuManager({ listingId, locale }: VenueMenuManagerProps): 
             if (!response?.ok) {
                 setMessage(
                     t(
-                        'gastronomy.owner.editor.menuManager.uploadError',
+                        'venue.owner.editor.menuManager.uploadError',
                         'No se pudo subir el archivo del menú.'
                     )
                 );
@@ -638,7 +636,7 @@ export function VenueMenuManager({ listingId, locale }: VenueMenuManagerProps): 
             if (payload.data?.file) {
                 setFile(payload.data.file);
                 setMessage(
-                    t('gastronomy.owner.editor.menuManager.uploaded', 'Archivo del menú subido.')
+                    t('venue.owner.editor.menuManager.uploaded', 'Archivo del menú subido.')
                 );
             }
         },
@@ -656,14 +654,14 @@ export function VenueMenuManager({ listingId, locale }: VenueMenuManagerProps): 
             setFile(null);
             setPickedFileName(null);
             setMessage(
-                t('gastronomy.owner.editor.menuManager.fileRemoved', 'Archivo del menú eliminado.')
+                t('venue.owner.editor.menuManager.fileRemoved', 'Archivo del menú eliminado.')
             );
             return;
         }
 
         setMessage(
             t(
-                'gastronomy.owner.editor.menuManager.deleteError',
+                'venue.owner.editor.menuManager.deleteError',
                 'No se pudo eliminar el archivo del menú.'
             )
         );
@@ -698,12 +696,10 @@ export function VenueMenuManager({ listingId, locale }: VenueMenuManagerProps): 
             className={styles.panel}
             id="editor-menu"
         >
-            <h2 className={styles.heading}>
-                {t('gastronomy.owner.editor.menuManager.title', 'Carta')}
-            </h2>
+            <h2 className={styles.heading}>{t('venue.owner.editor.menuManager.title', 'Carta')}</h2>
             <p className={styles.intro}>
                 {t(
-                    'gastronomy.owner.editor.menuManager.intro',
+                    'venue.owner.editor.menuManager.intro',
                     'Cargá tu carta plato por plato, o subí una foto o un PDF del menú. Podés usar las dos formas, y ninguna es obligatoria.'
                 )}
             </p>
@@ -711,7 +707,7 @@ export function VenueMenuManager({ listingId, locale }: VenueMenuManagerProps): 
             {/* ── The uploaded photo / PDF ──────────────────────────────── */}
             <div className={styles.fileBlock}>
                 <h3 className={styles.subheading}>
-                    {t('gastronomy.owner.editor.menuManager.fileTitle', 'Foto o PDF del menú')}
+                    {t('venue.owner.editor.menuManager.fileTitle', 'Foto o PDF del menú')}
                 </h3>
 
                 {file ? (
@@ -730,16 +726,13 @@ export function VenueMenuManager({ listingId, locale }: VenueMenuManagerProps): 
                                 rel="noopener noreferrer"
                             >
                                 {file.kind === 'pdf'
-                                    ? t('gastronomy.owner.editor.menuManager.filePdf', 'Ver el PDF')
-                                    : t(
-                                          'gastronomy.owner.editor.menuManager.fileImage',
-                                          'Ver la foto'
-                                      )}
+                                    ? t('venue.owner.editor.menuManager.filePdf', 'Ver el PDF')
+                                    : t('venue.owner.editor.menuManager.fileImage', 'Ver la foto')}
                             </a>
                         ) : (
                             <span className={styles.intro}>
                                 {t(
-                                    'gastronomy.owner.editor.menuManager.fileUnavailable',
+                                    'venue.owner.editor.menuManager.fileUnavailable',
                                     'No se puede abrir este archivo. Eliminalo y subilo de nuevo.'
                                 )}
                             </span>
@@ -752,7 +745,7 @@ export function VenueMenuManager({ listingId, locale }: VenueMenuManagerProps): 
                                 void deleteFile();
                             }}
                         >
-                            {t('gastronomy.owner.editor.menuManager.removeFile', 'Eliminar')}
+                            {t('venue.owner.editor.menuManager.removeFile', 'Eliminar')}
                         </button>
                     </div>
                 ) : null}
@@ -761,10 +754,10 @@ export function VenueMenuManager({ listingId, locale }: VenueMenuManagerProps): 
                     <span className={styles.uploadButton}>
                         {file
                             ? t(
-                                  'gastronomy.owner.editor.menuManager.replaceFile',
+                                  'venue.owner.editor.menuManager.replaceFile',
                                   'Reemplazar el archivo'
                               )
-                            : t('gastronomy.owner.editor.menuManager.addFile', 'Subir foto o PDF')}
+                            : t('venue.owner.editor.menuManager.addFile', 'Subir foto o PDF')}
                     </span>
                     <input
                         type="file"
@@ -788,7 +781,7 @@ export function VenueMenuManager({ listingId, locale }: VenueMenuManagerProps): 
                     >
                         {pickedFileName ??
                             t(
-                                'gastronomy.owner.editor.menuManager.noFileChosen',
+                                'venue.owner.editor.menuManager.noFileChosen',
                                 'Ningún archivo elegido'
                             )}
                     </span>
@@ -798,7 +791,7 @@ export function VenueMenuManager({ listingId, locale }: VenueMenuManagerProps): 
             {/* ── The structured carta ──────────────────────────────────── */}
             <div className={styles.sectionsBlock}>
                 <h3 className={styles.subheading}>
-                    {t('gastronomy.owner.editor.menuManager.sectionsTitle', 'Platos por sección')}
+                    {t('venue.owner.editor.menuManager.sectionsTitle', 'Platos por sección')}
                 </h3>
 
                 {sections.map((section, sectionIndex) => (
@@ -811,10 +804,7 @@ export function VenueMenuManager({ listingId, locale }: VenueMenuManagerProps): 
                     >
                         <legend className={styles.srOnly}>
                             {section.name ||
-                                t(
-                                    'gastronomy.owner.editor.menuManager.newSection',
-                                    'Nueva sección'
-                                )}
+                                t('venue.owner.editor.menuManager.newSection', 'Nueva sección')}
                         </legend>
 
                         <div className={styles.sectionHead}>
@@ -823,11 +813,11 @@ export function VenueMenuManager({ listingId, locale }: VenueMenuManagerProps): 
                                 type="text"
                                 value={section.name}
                                 placeholder={t(
-                                    'gastronomy.owner.editor.menuManager.sectionNamePlaceholder',
+                                    'venue.owner.editor.menuManager.sectionNamePlaceholder',
                                     'Entradas, Principales, Postres…'
                                 )}
                                 aria-label={t(
-                                    'gastronomy.owner.editor.menuManager.sectionName',
+                                    'venue.owner.editor.menuManager.sectionName',
                                     'Nombre de la sección'
                                 )}
                                 onChange={(event) => {
@@ -838,7 +828,7 @@ export function VenueMenuManager({ listingId, locale }: VenueMenuManagerProps): 
                                 type="button"
                                 className={styles.iconButton}
                                 aria-label={t(
-                                    'gastronomy.owner.editor.menuManager.moveSectionUp',
+                                    'venue.owner.editor.menuManager.moveSectionUp',
                                     'Subir la sección'
                                 )}
                                 onClick={() => {
@@ -851,7 +841,7 @@ export function VenueMenuManager({ listingId, locale }: VenueMenuManagerProps): 
                                 type="button"
                                 className={styles.iconButton}
                                 aria-label={t(
-                                    'gastronomy.owner.editor.menuManager.moveSectionDown',
+                                    'venue.owner.editor.menuManager.moveSectionDown',
                                     'Bajar la sección'
                                 )}
                                 onClick={() => {
@@ -867,7 +857,7 @@ export function VenueMenuManager({ listingId, locale }: VenueMenuManagerProps): 
                                     removeSection(sectionIndex);
                                 }}
                             >
-                                {t('gastronomy.owner.editor.menuManager.removeSection', 'Quitar')}
+                                {t('venue.owner.editor.menuManager.removeSection', 'Quitar')}
                             </button>
                         </div>
 
@@ -901,11 +891,11 @@ export function VenueMenuManager({ listingId, locale }: VenueMenuManagerProps): 
                                     type="text"
                                     value={item.name}
                                     placeholder={t(
-                                        'gastronomy.owner.editor.menuManager.itemNamePlaceholder',
+                                        'venue.owner.editor.menuManager.itemNamePlaceholder',
                                         'Nombre del plato'
                                     )}
                                     aria-label={t(
-                                        'gastronomy.owner.editor.menuManager.itemName',
+                                        'venue.owner.editor.menuManager.itemName',
                                         'Nombre del plato'
                                     )}
                                     onChange={(event) => {
@@ -919,11 +909,11 @@ export function VenueMenuManager({ listingId, locale }: VenueMenuManagerProps): 
                                     type="text"
                                     value={item.description}
                                     placeholder={t(
-                                        'gastronomy.owner.editor.menuManager.itemDescriptionPlaceholder',
+                                        'venue.owner.editor.menuManager.itemDescriptionPlaceholder',
                                         'Ingredientes, porción…'
                                     )}
                                     aria-label={t(
-                                        'gastronomy.owner.editor.menuManager.itemDescription',
+                                        'venue.owner.editor.menuManager.itemDescription',
                                         'Descripción del plato'
                                     )}
                                     onChange={(event) => {
@@ -959,11 +949,11 @@ export function VenueMenuManager({ listingId, locale }: VenueMenuManagerProps): 
                                     step={1}
                                     value={centsToPesosInputValue({ cents: item.priceCents })}
                                     placeholder={t(
-                                        'gastronomy.owner.editor.menuManager.itemPricePlaceholder',
+                                        'venue.owner.editor.menuManager.itemPricePlaceholder',
                                         'A consultar'
                                     )}
                                     aria-label={t(
-                                        'gastronomy.owner.editor.menuManager.itemPrice',
+                                        'venue.owner.editor.menuManager.itemPrice',
                                         'Precio del plato'
                                     )}
                                     onChange={(event) => {
@@ -985,7 +975,7 @@ export function VenueMenuManager({ listingId, locale }: VenueMenuManagerProps): 
                                         }}
                                     />
                                     {t(
-                                        'gastronomy.owner.editor.menuManager.itemAvailable',
+                                        'venue.owner.editor.menuManager.itemAvailable',
                                         'Disponible'
                                     )}
                                 </label>
@@ -996,7 +986,7 @@ export function VenueMenuManager({ listingId, locale }: VenueMenuManagerProps): 
                                         removeItem(sectionIndex, itemIndex);
                                     }}
                                 >
-                                    {t('gastronomy.owner.editor.menuManager.removeItem', 'Quitar')}
+                                    {t('venue.owner.editor.menuManager.removeItem', 'Quitar')}
                                 </button>
 
                                 {/*
@@ -1017,7 +1007,7 @@ export function VenueMenuManager({ listingId, locale }: VenueMenuManagerProps): 
                                                 item.photoAlt ||
                                                 item.name ||
                                                 t(
-                                                    'gastronomy.owner.editor.menuManager.photoPreview',
+                                                    'venue.owner.editor.menuManager.photoPreview',
                                                     'Foto del plato'
                                                 )
                                             }
@@ -1028,11 +1018,11 @@ export function VenueMenuManager({ listingId, locale }: VenueMenuManagerProps): 
                                         <span>
                                             {item.photoUrl
                                                 ? t(
-                                                      'gastronomy.owner.editor.menuManager.replacePhoto',
+                                                      'venue.owner.editor.menuManager.replacePhoto',
                                                       'Cambiar la foto'
                                                   )
                                                 : t(
-                                                      'gastronomy.owner.editor.menuManager.addPhoto',
+                                                      'venue.owner.editor.menuManager.addPhoto',
                                                       'Agregar foto'
                                                   )}
                                         </span>
@@ -1065,11 +1055,11 @@ export function VenueMenuManager({ listingId, locale }: VenueMenuManagerProps): 
                                                 type="text"
                                                 value={item.photoAlt ?? ''}
                                                 placeholder={t(
-                                                    'gastronomy.owner.editor.menuManager.photoAltPlaceholder',
+                                                    'venue.owner.editor.menuManager.photoAltPlaceholder',
                                                     'Describí la foto (opcional)'
                                                 )}
                                                 aria-label={t(
-                                                    'gastronomy.owner.editor.menuManager.photoAlt',
+                                                    'venue.owner.editor.menuManager.photoAlt',
                                                     'Texto alternativo de la foto'
                                                 )}
                                                 onChange={(event) => {
@@ -1093,7 +1083,7 @@ export function VenueMenuManager({ listingId, locale }: VenueMenuManagerProps): 
                                                 }}
                                             >
                                                 {t(
-                                                    'gastronomy.owner.editor.menuManager.removePhoto',
+                                                    'venue.owner.editor.menuManager.removePhoto',
                                                     'Quitar la foto'
                                                 )}
                                             </button>
@@ -1110,7 +1100,7 @@ export function VenueMenuManager({ listingId, locale }: VenueMenuManagerProps): 
                                 addItem(sectionIndex);
                             }}
                         >
-                            {t('gastronomy.owner.editor.menuManager.addItem', 'Agregar plato')}
+                            {t('venue.owner.editor.menuManager.addItem', 'Agregar plato')}
                         </button>
                     </fieldset>
                 ))}
@@ -1120,7 +1110,7 @@ export function VenueMenuManager({ listingId, locale }: VenueMenuManagerProps): 
                     className={styles.secondaryButton}
                     onClick={addSection}
                 >
-                    {t('gastronomy.owner.editor.menuManager.addSection', 'Agregar sección')}
+                    {t('venue.owner.editor.menuManager.addSection', 'Agregar sección')}
                 </button>
 
                 {/*
@@ -1137,8 +1127,8 @@ export function VenueMenuManager({ listingId, locale }: VenueMenuManagerProps): 
                     }}
                 >
                     {state === 'saving'
-                        ? t('gastronomy.owner.editor.menuManager.saving', 'Guardando…')
-                        : t('gastronomy.owner.editor.menuManager.save', 'Guardar carta')}
+                        ? t('venue.owner.editor.menuManager.saving', 'Guardando…')
+                        : t('venue.owner.editor.menuManager.save', 'Guardar carta')}
                 </button>
             </div>
 

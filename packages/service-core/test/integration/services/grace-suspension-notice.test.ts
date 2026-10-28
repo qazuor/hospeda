@@ -218,14 +218,14 @@ async function seedPromo(input: {
     });
 }
 
-/** Another live title of the same user, in gastronomy, whose version inherits Tourist VIP. */
+/** Another live title of the same user, in venue, whose version inherits Tourist VIP. */
 async function seedInheritingVenueTitle(userId: string) {
     const db = getServiceTestDb();
     const [plan] = await db
         .insert(plans)
         .values({ vertical: 'venue', slug: `b7-vip-${crypto.randomUUID()}`, name: 'Gastro' })
         .returning();
-    if (!plan) throw new Error('gastronomy plan missing');
+    if (!plan) throw new Error('venue plan missing');
     const [version] = await db
         .insert(planVersions)
         .values({
@@ -239,12 +239,12 @@ async function seedInheritingVenueTitle(userId: string) {
             inheritsTouristVip: true
         })
         .returning();
-    if (!version) throw new Error('gastronomy version missing');
+    if (!version) throw new Error('venue version missing');
     const [option] = await db
         .insert(billingOptions)
         .values({ planVersionId: version.id, cycle: 'monthly', amount: 25000, currency: 'ARS' })
         .returning();
-    if (!option) throw new Error('gastronomy option missing');
+    if (!option) throw new Error('venue option missing');
     await db.insert(subscriptions).values({
         userId,
         vertical: 'venue',

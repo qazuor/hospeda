@@ -36,7 +36,7 @@ function renderSection(overrides: Partial<React.ComponentProps<typeof PriceSecti
 }
 
 describe('PriceSection', () => {
-    describe('gastronomy branch', () => {
+    describe('venue branch', () => {
         it('renders the tier and menu fields, and none of the experience ones', () => {
             renderSection();
 

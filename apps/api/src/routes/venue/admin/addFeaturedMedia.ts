@@ -1,6 +1,6 @@
 /**
  * POST /api/v1/admin/venues/:id/media/featured
- * Register an already-uploaded URL as the gastronomy listing's COVER — Admin endpoint
+ * Register an already-uploaded URL as the venue listing's COVER — Admin endpoint
  * (HOS-803).
  *
  * The admin mirror of `routes/venue/protected/addFeaturedMedia.ts`, and the one
@@ -18,7 +18,7 @@
  *
  * No cap needs waiving, because none is spent: the replaced cover is DELETED
  * (soft-deleted) in the same transaction, so one row enters the featured slot
- * and one leaves the table and the visible gallery never moves. Gastronomy and experience
+ * and one leaves the table and the visible gallery never moves. Venue and experience
  * listings have no per-plan photo allowance either.
  *
  * The replaced photo is NOT kept. It does not fall back into the gallery; it
@@ -57,15 +57,15 @@ export const adminAddVenueFeaturedMediaRoute = createAdminRoute({
     method: 'post',
     listingAccess: { vertical: VerticalEnum.VENUE, operation: 'EDIT', idParam: 'id' },
     path: '/{id}/media/featured',
-    summary: 'Upload the gastronomy listing cover image (admin)',
+    summary: 'Upload the venue listing cover image (admin)',
     description:
-        'Registers an already-uploaded URL as the gastronomy listing cover. The row is created ' +
+        'Registers an already-uploaded URL as the venue listing cover. The row is created ' +
         'already featured and the photo it replaces is DELETED in the same transaction ' +
         '— soft-deleted, so it disappears from the listing while its stored file ' +
         'is kept. Unlike POST /:id/media this does not ' +
         'consume a gallery slot, because the cover is not a gallery item ' +
         '(HOS-791). Requires VENUE_EDIT_ALL.',
-    tags: ['Gastronomy', 'Media'],
+    tags: ['Venue', 'Media'],
     requestParams: {
         id: z.string().uuid({ message: 'zodError.common.id.invalidUuid' })
     },
@@ -82,7 +82,7 @@ export const adminAddVenueFeaturedMediaRoute = createAdminRoute({
         const actor = getActorFromContext(ctx);
 
         const input: VenueFeaturedMediaAddInput = {
-            gastronomyId: params.id as string,
+            venueId: params.id as string,
             media: body as VenueMediaAddPayload
         };
 

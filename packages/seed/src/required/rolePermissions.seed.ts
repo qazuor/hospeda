@@ -385,7 +385,7 @@ export const ROLE_PERMISSIONS: Record<RoleEnum, PermissionEnum[]> = {
         PermissionEnum.MODERATION_THRESHOLD_RESTORE,
         PermissionEnum.MODERATION_THRESHOLD_HARD_DELETE,
 
-        // HOS-1077: per-vertical staff permissions for gastronomy and experiences.
+        // HOS-1077: per-vertical staff permissions for venue and experiences.
         PermissionEnum.VENUE_CREATE,
         PermissionEnum.VENUE_VIEW_ALL,
         PermissionEnum.VENUE_EDIT_ALL,
@@ -756,7 +756,7 @@ export const ROLE_PERMISSIONS: Record<RoleEnum, PermissionEnum[]> = {
         PermissionEnum.MODERATION_THRESHOLD_RESTORE,
         PermissionEnum.MODERATION_THRESHOLD_HARD_DELETE,
 
-        // HOS-1077: per-vertical staff permissions for gastronomy and experiences.
+        // HOS-1077: per-vertical staff permissions for venue and experiences.
         PermissionEnum.VENUE_CREATE,
         PermissionEnum.VENUE_VIEW_ALL,
         PermissionEnum.VENUE_EDIT_ALL,
@@ -1143,7 +1143,7 @@ export const ROLE_PERMISSIONS: Record<RoleEnum, PermissionEnum[]> = {
 
     // ---------------------------------------------------------------------------
     [RoleEnum.VENUE_OWNER]: [
-        // HOS-1077: owner rights are scoped to gastronomy listings.
+        // HOS-1077: owner rights are scoped to venue listings.
         //
         // Single owner write permission, mirroring SPEC-253 D2=b: one
         // `editOwn` covers every owner-accessible section, not ten per-section

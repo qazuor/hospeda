@@ -24,10 +24,10 @@ import { SubscriptionStatusEnumSchema } from '../enums/subscription-status.schem
  * getById endpoint of the matching vertical.
  */
 export const OwnerListingSummarySchema = z.object({
-    /** Listing UUID (primary key of the gastronomy/experience row). */
+    /** Listing UUID (primary key of the venue/experience row). */
     id: z.string().uuid({ message: 'zodError.listing.ownerListing.id.invalid' }),
 
-    /** Which gastronomy or experience vertical this listing belongs to ('venue' | 'experience'). */
+    /** Which venue or experience vertical this listing belongs to ('venue' | 'experience'). */
     vertical: z.enum(['venue', 'experience']),
 
     /** Display name of the listing (read-only for owners). */
@@ -37,7 +37,7 @@ export const OwnerListingSummarySchema = z.object({
     slug: z.string(),
 
     /**
-     * Vertical-specific sub-type (e.g. a gastronomy or experience type value),
+     * Vertical-specific sub-type (e.g. a venue or experience type value),
      * carried as a plain string because the concrete enum differs per vertical
      * and this is a display-only badge.
      */
@@ -89,7 +89,7 @@ export const OwnerListingSummarySchema = z.object({
      * `billing_subscriptions.status` — see `SubscriptionStatusEnum`), scoped
      * to this one listing. Resolved via `getListingSubscriptionStatuses`
      * (`@repo/service-core`), which reads the `entity_subscriptions` cache by listing, so a
-     * gastronomy or experience listing can only ever surface its own
+     * venue or experience listing can only ever surface its own
      * vertical's billing state, never a partner's.
      *
      * Optional AND nullable (not just nullable) so existing callers/fixtures

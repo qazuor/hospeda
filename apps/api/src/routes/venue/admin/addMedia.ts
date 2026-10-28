@@ -1,6 +1,6 @@
 /**
  * POST /api/v1/admin/venues/:id/media
- * Add a photo to a gastronomy listing gallery — Admin endpoint (HOS-372).
+ * Add a photo to a venue listing gallery — Admin endpoint (HOS-372).
  *
  * This is a URL-receiver endpoint: the caller has already uploaded the file to
  * Cloudinary via `POST /api/v1/admin/media/upload`. This endpoint registers the
@@ -25,7 +25,7 @@ const venueService = new VenueService({ logger: apiLogger });
 
 /**
  * POST /api/v1/admin/venues/:id/media
- * Add photo to gastronomy listing gallery — Admin endpoint.
+ * Add photo to venue listing gallery — Admin endpoint.
  *
  * Requires VENUE_EDIT_ALL permission. The service helper
  * `addVenueMedia` enforces the same gate via `checkVenueCanEditMedia`.
@@ -34,10 +34,10 @@ export const adminAddVenueMediaRoute = createAdminRoute({
     method: 'post',
     listingAccess: { vertical: VerticalEnum.VENUE, operation: 'EDIT', idParam: 'id' },
     path: '/{id}/media',
-    summary: 'Add photo to gastronomy listing gallery (admin)',
+    summary: 'Add photo to venue listing gallery (admin)',
     description:
         'Registers an already-uploaded URL as a new venue_media row. Requires VENUE_EDIT_ALL.',
-    tags: ['Gastronomy', 'Media'],
+    tags: ['Venue', 'Media'],
     requestParams: {
         id: z.string().uuid({ message: 'zodError.common.id.invalidUuid' })
     },
@@ -51,7 +51,7 @@ export const adminAddVenueMediaRoute = createAdminRoute({
         const actor = getActorFromContext(ctx);
 
         const input: VenueMediaAddInput = {
-            gastronomyId: params.id as string,
+            venueId: params.id as string,
             media: body as VenueMediaAddPayload
         };
 

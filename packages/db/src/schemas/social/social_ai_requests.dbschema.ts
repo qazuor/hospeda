@@ -24,7 +24,7 @@ export const socialAiRequests = pgTable(
         topic: text('topic'),
         /** Free-text idea or prompt from the operator */
         userIdea: text('user_idea'),
-        /** Content pillar (e.g. "travel", "gastronomy") */
+        /** Content pillar (e.g. "travel", "food") */
         pillar: text('pillar'),
         /** Optional audience hint from the GPT */
         audienceId: uuid('audience_id').references(() => socialAudiences.id, {

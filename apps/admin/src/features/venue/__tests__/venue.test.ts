@@ -1,12 +1,12 @@
 /**
- * Config-level tests for the gastronomy admin feature (T-059 — SPEC-239).
+ * Config-level tests for the venue admin feature (T-059 — SPEC-239).
  *
  * Verifies:
  * - Column factory produces the expected columns with correct IDs, types, and
  *   badge options covering all enum values.
  * - `venueListConfig` (built on `createListingListConfig`) points to the
  *   correct endpoint, includes shared listing filters, and appends
- *   gastronomy-specific filters (type, priceRange) AFTER the shared ones.
+ *   venue-specific filters (type, priceRange) AFTER the shared ones.
  * - `createVenueConsolidatedConfig` assembles exactly 3 sections in the
  *   correct order with the expected field IDs and FieldTypeEnum values.
  * - Schema validation passes/fails as expected for create and update payloads.
@@ -32,7 +32,7 @@ const t = (key: string): string => key;
 // Column factory
 // ---------------------------------------------------------------------------
 
-describe('createGastronomyColumns', () => {
+describe('createVenueColumns', () => {
     const columns = createVenueColumns(t);
 
     it('returns all required column IDs', () => {
@@ -51,11 +51,11 @@ describe('createGastronomyColumns', () => {
         const nameCol = columns.find((c) => c.id === 'name');
         expect(nameCol?.linkHandler).toBeDefined();
         const link = nameCol?.linkHandler?.({
-            id: 'uuid-gastro-1',
+            id: 'uuid-venue-1',
             name: 'Test Restó'
         } as unknown as Parameters<NonNullable<typeof nameCol.linkHandler>>[0]);
         expect(link?.to).toBe('/venues/$id');
-        expect((link?.params as { id: string })?.id).toBe('uuid-gastro-1');
+        expect((link?.params as { id: string })?.id).toBe('uuid-venue-1');
     });
 
     it('name column returns undefined when row has no id', () => {
@@ -66,12 +66,12 @@ describe('createGastronomyColumns', () => {
         expect(link).toBeUndefined();
     });
 
-    it('name column uses GASTRONOMY entity type', () => {
+    it('name column uses VENUE entity type', () => {
         const nameCol = columns.find((c) => c.id === 'name');
         expect(nameCol?.entityOptions?.entityType).toBe(EntityType.VENUE);
     });
 
-    it('type column has badge options for all 9 GastronomyTypeEnum values', () => {
+    it('type column has badge options for all 9 VenueTypeEnum values', () => {
         const typeCol = columns.find((c) => c.id === 'type');
         const enumValues = Object.values(VenueTypeEnum);
         expect(typeCol?.badgeOptions).toBeDefined();
@@ -96,12 +96,12 @@ describe('createGastronomyColumns', () => {
 // Entity list config
 // ---------------------------------------------------------------------------
 
-describe('gastronomyListConfig', () => {
+describe('venueListConfig', () => {
     it('points to the correct API endpoint', () => {
         expect(venueListConfig.apiEndpoint).toBe('/api/v1/admin/venues');
     });
 
-    it('uses the GASTRONOMY entity type', () => {
+    it('uses the VENUE entity type', () => {
         expect(venueListConfig.entityType).toBe(EntityType.VENUE);
     });
 
@@ -121,17 +121,17 @@ describe('gastronomyListConfig', () => {
         expect(paramKeys).toContain('includeDeleted');
     });
 
-    it('includes gastronomy-specific filter: type', () => {
+    it('includes venue-specific filter: type', () => {
         const paramKeys = (venueListConfig.filterBarConfig?.filters ?? []).map((f) => f.paramKey);
         expect(paramKeys).toContain('type');
     });
 
-    it('includes gastronomy-specific filter: priceRange', () => {
+    it('includes venue-specific filter: priceRange', () => {
         const paramKeys = (venueListConfig.filterBarConfig?.filters ?? []).map((f) => f.paramKey);
         expect(paramKeys).toContain('priceRange');
     });
 
-    it('shared filters appear before gastronomy-specific filters (lower order)', () => {
+    it('shared filters appear before venue-specific filters (lower order)', () => {
         const filters = venueListConfig.filterBarConfig?.filters ?? [];
         const destinationIdx = filters.findIndex((f) => f.paramKey === 'destinationId');
         const typeIdx = filters.findIndex((f) => f.paramKey === 'type');
@@ -140,7 +140,7 @@ describe('gastronomyListConfig', () => {
         expect(typeIdx).toBeLessThan(priceRangeIdx);
     });
 
-    it('type filter options cover all GastronomyTypeEnum values', () => {
+    it('type filter options cover all VenueTypeEnum values', () => {
         const typeFilter = (venueListConfig.filterBarConfig?.filters ?? []).find(
             (f) => f.paramKey === 'type'
         );
@@ -171,13 +171,13 @@ describe('gastronomyListConfig', () => {
 // Consolidated config
 // ---------------------------------------------------------------------------
 
-describe('createGastronomyConsolidatedConfig', () => {
+describe('createVenueConsolidatedConfig', () => {
     const config = createVenueConsolidatedConfig(t);
 
     it('has exactly 3 sections in the correct order', () => {
         expect(config.sections).toHaveLength(3);
         expect(config.sections[0]?.id).toBe('listing-identity');
-        expect(config.sections[1]?.id).toBe('gastronomy-specific');
+        expect(config.sections[1]?.id).toBe('venue-specific');
         expect(config.sections[2]?.id).toBe('listing-operational');
     });
 
@@ -191,7 +191,7 @@ describe('createGastronomyConsolidatedConfig', () => {
         expect(ids).toContain('ownerId');
     });
 
-    it('gastronomy-specific section contains type, priceRange, and menuUrl fields', () => {
+    it('venue-specific section contains type, priceRange, and menuUrl fields', () => {
         const ids = config.sections[1]?.fields.map((f) => f.id) ?? [];
         expect(ids).toContain('type');
         expect(ids).toContain('priceRange');
@@ -216,7 +216,7 @@ describe('createGastronomyConsolidatedConfig', () => {
         expect(menuUrlField?.type).toBe(FieldTypeEnum.TEXT);
     });
 
-    it('gastronomy-specific section is visible in view, edit, and create modes', () => {
+    it('venue-specific section is visible in view, edit, and create modes', () => {
         const section = config.sections[1];
         expect(section?.modes).toContain('view');
         expect(section?.modes).toContain('edit');
@@ -230,7 +230,7 @@ describe('createGastronomyConsolidatedConfig', () => {
         expect(ids).toContain('socialNetworks.instagram');
     });
 
-    it('listing-identity section does NOT contain gastronomy-specific fields', () => {
+    it('listing-identity section does NOT contain venue-specific fields', () => {
         const ids = config.sections[0]?.fields.map((f) => f.id) ?? [];
         expect(ids).not.toContain('type');
         expect(ids).not.toContain('priceRange');
@@ -242,12 +242,12 @@ describe('createGastronomyConsolidatedConfig', () => {
 // Schema validation — create input
 // ---------------------------------------------------------------------------
 
-describe('GastronomyAdminCreateInputSchema — safeParse', () => {
+describe('VenueAdminCreateInputSchema — safeParse', () => {
     // Valid UUIDs use strict format (version nibble 1-8, variant nibble 8-b)
     const VALID_UUID = 'a1b2c3d4-e5f6-4789-8abc-def012345678';
 
     // H-88: `ownerId` and `destinationId` belong in the minimal payload. Both
-    // columns are NOT NULL with no default on `gastronomies` (verified against
+    // columns are NOT NULL with no default on `venues` (verified against
     // the database), so a payload without them cannot become a row — the insert
     // dies on a 23502 and the operator is told "A database error occurred" with
     // nothing to correct. They used to be `.optional()` here, which made this
@@ -323,7 +323,7 @@ describe('GastronomyAdminCreateInputSchema — safeParse', () => {
         expect(result.success).toBe(false);
     });
 
-    it('rejects an invalid GastronomyTypeEnum value', () => {
+    it('rejects an invalid VenueTypeEnum value', () => {
         const result = VenueAdminCreateInputSchema.safeParse({
             ...VALID_PAYLOAD,
             type: 'INVALID_TYPE'
@@ -344,7 +344,7 @@ describe('GastronomyAdminCreateInputSchema — safeParse', () => {
 // Schema validation — update input
 // ---------------------------------------------------------------------------
 
-describe('GastronomyUpdateInputSchema — safeParse', () => {
+describe('VenueUpdateInputSchema — safeParse', () => {
     it('accepts an empty object (all fields optional in update)', () => {
         const result = VenueUpdateInputSchema.safeParse({});
         expect(result.success).toBe(true);

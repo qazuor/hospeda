@@ -134,15 +134,15 @@ export async function up(ctx: SeedMigrationCtx): Promise<SeedMigrationResult> {
             ? []
             : (
                   await db
-                      .select({ gastronomyId: venueMedia.gastronomyId })
+                      .select({ venueId: venueMedia.venueId })
                       .from(venueMedia)
                       .where(
                           inArray(
-                              venueMedia.gastronomyId,
+                              venueMedia.venueId,
                               gastronomyCandidates.map((row) => row.id)
                           )
                       )
-              ).map((row) => row.gastronomyId)
+              ).map((row) => row.venueId)
     );
 
     let gastronomyListings = 0;
@@ -150,7 +150,7 @@ export async function up(ctx: SeedMigrationCtx): Promise<SeedMigrationResult> {
     for (const listing of gastronomyCandidates) {
         if (gastronomyMigrated.has(listing.id)) continue;
         const rows = buildVenueMediaRows({
-            gastronomyId: listing.id,
+            venueId: listing.id,
             media: listing.media
         }) as (typeof venueMedia.$inferInsert)[];
         if (rows.length === 0) continue;

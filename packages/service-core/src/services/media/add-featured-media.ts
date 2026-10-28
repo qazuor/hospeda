@@ -86,7 +86,7 @@ export type PreviousFeaturedOutcome = {
  * The narrow set of media-table operations the primitive needs.
  *
  * Each vertical supplies its own adapter because the five media tables have
- * different foreign-key columns (`accommodationId`, `gastronomyId`, …) and no
+ * different foreign-key columns (`accommodationId`, `venueId`, …) and no
  * shared base class. Keeping the port this small is what keeps the POLICY —
  * the disposition of the old cover and the write ordering — in one place
  * instead of being re-derived per entity.

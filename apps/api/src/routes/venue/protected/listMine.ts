@@ -1,7 +1,7 @@
 /**
- * Protected "list my gastronomy listings" endpoint (SPEC-249 T-006).
+ * Protected "list my venue listings" endpoint (SPEC-249 T-006).
  *
- * Returns the authenticated actor's OWN gastronomy listings as lightweight
+ * Returns the authenticated actor's OWN venue listings as lightweight
  * summaries for the web self-service area (`mi-cuenta/comercio`). Ownership is
  * the gate — `VenueService.listOwn` hard-scopes to `ownerId = actor.id`,
  * so a tourist or another owner simply gets an empty list.
@@ -20,15 +20,15 @@ const venueService = new VenueService({ logger: apiLogger });
 
 /**
  * GET /api/v1/protected/venues/mine
- * Lists the authenticated owner's own gastronomy listings (summary view).
+ * Lists the authenticated owner's own venue listings (summary view).
  */
 export const protectedListMyVenueRoute = createProtectedRoute({
     method: 'get',
     path: '/mine',
     emailUnverifiedOperation: 'READ_OWN',
-    summary: 'List my gastronomy listings (protected)',
-    description: "Returns the authenticated owner's own gastronomy listings as summaries",
-    tags: ['Gastronomy'],
+    summary: 'List my venue listings (protected)',
+    description: "Returns the authenticated owner's own venue listings as summaries",
+    tags: ['Venue'],
     responseSchema: OwnerListingListSchema,
     handler: async (ctx: Context) => {
         const actor = getActorFromContext(ctx);

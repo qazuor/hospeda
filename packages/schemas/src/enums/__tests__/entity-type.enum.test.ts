@@ -12,7 +12,7 @@ describe('EntityTypeEnum', () => {
         // Arrange
         const values = Object.values(EntityTypeEnum);
 
-        // Assert (AC-F15; F3 appended EXPERIENCE + GASTRONOMY for user bookmarks,
+        // Assert (AC-F15; F3 appended EXPERIENCE + venue for user bookmarks,
         // HOS-981 appended HOST_TRADE for qr_codes.entity_type, HOS-1063 appended
         // PARTNER for entity_views.entity_type)
         expect(values).toHaveLength(13);
@@ -58,7 +58,7 @@ describe('EntityTypeEnum', () => {
         });
     });
 
-    describe('2 new values added in F3 (favorites for experiences + gastronomy)', () => {
+    describe('2 new values added in F3 (favorites for experiences + venue)', () => {
         it('should include EXPERIENCE', () => {
             expect(EntityTypeEnum.EXPERIENCE).toBe('EXPERIENCE');
         });

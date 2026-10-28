@@ -1,5 +1,5 @@
 /**
- * gastronomy.daily-specials.ts
+ * venue.daily-specials.ts
  *
  * The menú del día — read and whole-document write (HOS-1041).
  *
@@ -36,9 +36,9 @@
  * {@link checkVenueCanEditFaqs} gate the carta and FAQ helpers use.
  * Whether the caller's PLAN includes the menú del día is an entitlement
  * (`MANAGE_VENUE_DAILY_SPECIAL`), checked at the route before this is
- * reached — the same split `gastronomy.menu.ts` makes.
+ * reached — the same split `venue.menu.ts` makes.
  *
- * @module gastronomy.daily-specials
+ * @module venue.daily-specials
  */
 
 import { VenueDailySpecialModel, type VenueModel, withTransaction } from '@repo/db';
@@ -60,7 +60,7 @@ import { checkVenueCanEditFaqs } from './venue.permissions';
  *
  * `findAll` paginates, so an unstated page size would silently truncate rather
  * than fail. Sized well past the schema's own ceiling
- * (`GASTRONOMY_DAILY_SPECIALS_MAX`) because the owner's read is NOT filtered by
+ * (`VENUE_DAILY_SPECIALS_MAX`) because the owner's read is NOT filtered by
  * the window: it returns every special the listing has ever accumulated, and
  * the payload cap only bounds what one save writes, not what many saves left
  * behind.
@@ -68,18 +68,18 @@ import { checkVenueCanEditFaqs } from './venue.permissions';
 const DAILY_SPECIALS_READ_PAGE_SIZE = 1000;
 
 /**
- * Loads a gastronomy listing by ID or throws NOT_FOUND.
+ * Loads a venue listing by ID or throws NOT_FOUND.
  *
  * @param model - The VenueModel instance.
- * @param gastronomyId - UUID of the listing.
+ * @param venueId - UUID of the listing.
  * @param tx - Optional Drizzle transaction client.
- * @returns The gastronomy DB row.
+ * @returns The venue DB row.
  * @throws {ServiceError} NOT_FOUND when no matching row exists.
  */
-async function requireVenue(model: VenueModel, gastronomyId: string, tx?: ServiceContext['tx']) {
-    const entity = await model.findById(gastronomyId, tx);
+async function requireVenue(model: VenueModel, venueId: string, tx?: ServiceContext['tx']) {
+    const entity = await model.findById(venueId, tx);
     if (!entity) {
-        throw new ServiceError(ServiceErrorCode.NOT_FOUND, 'Gastronomy listing not found');
+        throw new ServiceError(ServiceErrorCode.NOT_FOUND, 'venue listing not found');
     }
     return entity;
 }
@@ -98,11 +98,11 @@ const byDisplayOrder = <T extends { displayOrder: number; title: string }>(a: T,
  * function's.
  *
  * @param model - VenueModel instance.
- * @param data - `{ gastronomyId, validOn? }`. Pass `validOn` (a `YYYY-MM-DD`
+ * @param data - `{ venueId, validOn? }`. Pass `validOn` (a `YYYY-MM-DD`
  *   resolved in the AR market timezone) for the PUBLIC read; omit it for the
  *   owner's, which must include scheduled and elapsed rows.
  * @param ctx - Optional service context for transaction propagation.
- * @returns `ServiceOutput<GastronomyDailySpecialsOutput>`.
+ * @returns `ServiceOutput<VenueDailySpecialsOutput>`.
  */
 export async function getVenueDailySpecials(
     model: VenueModel,
@@ -122,9 +122,9 @@ export async function getVenueDailySpecials(
                 }
             };
         }
-        const { gastronomyId, validOn } = parseResult.data;
+        const { venueId, validOn } = parseResult.data;
 
-        await requireVenue(model, gastronomyId, ctx?.tx);
+        await requireVenue(model, venueId, ctx?.tx);
 
         const specialModel = new VenueDailySpecialModel();
 
@@ -132,10 +132,10 @@ export async function getVenueDailySpecials(
         // served by the composite index; the unfiltered path is the owner's and
         // deliberately sees everything.
         const rows = validOn
-            ? await specialModel.findValidOn({ gastronomyId, today: validOn, tx: ctx?.tx })
+            ? await specialModel.findValidOn({ venueId, today: validOn, tx: ctx?.tx })
             : (
                   await specialModel.findAll(
-                      { gastronomyId },
+                      { venueId },
                       { pageSize: DAILY_SPECIALS_READ_PAGE_SIZE },
                       undefined,
                       ctx?.tx
@@ -150,8 +150,7 @@ export async function getVenueDailySpecials(
         return {
             error: {
                 code: ServiceErrorCode.INTERNAL_ERROR,
-                message:
-                    err instanceof Error ? err.message : 'Failed to read gastronomy daily specials'
+                message: err instanceof Error ? err.message : 'Failed to read venue daily specials'
             }
         };
     }
@@ -180,9 +179,9 @@ export async function getVenueDailySpecials(
  *
  * @param model - VenueModel instance.
  * @param actor - The actor performing the action.
- * @param data - `{ gastronomyId, specials }`.
+ * @param data - `{ venueId, specials }`.
  * @param ctx - Optional service context for transaction propagation.
- * @returns `ServiceOutput<GastronomyDailySpecialsOutput>` as now stored — the
+ * @returns `ServiceOutput<venueDailySpecialsOutput>` as now stored — the
  *   OWNER's view, unfiltered, because this is the owner's own write echoing
  *   back and a filtered echo would hide the special they just scheduled.
  */
@@ -206,9 +205,9 @@ export async function replaceVenueDailySpecials(
             };
         }
         const validated = parseResult.data;
-        const { gastronomyId } = validated;
+        const { venueId } = validated;
 
-        const venue = await requireVenue(model, gastronomyId, ctx?.tx);
+        const venue = await requireVenue(model, venueId, ctx?.tx);
         checkVenueCanEditFaqs(actor, venue);
 
         const specialModel = new VenueDailySpecialModel();
@@ -217,12 +216,12 @@ export async function replaceVenueDailySpecials(
         // gives: a half-written menú del día — the old plates gone and the new
         // ones not yet in — is a published offer the owner never described.
         const runInTx = async (tx: ServiceContext['tx']): Promise<void> => {
-            await specialModel.hardDelete({ gastronomyId }, tx);
+            await specialModel.hardDelete({ venueId }, tx);
 
             for (const [index, special] of validated.specials.specials.entries()) {
                 await specialModel.create(
                     {
-                        gastronomyId,
+                        venueId,
                         title: special.title,
                         // `''` and `undefined` both mean "no detail"; stored as
                         // NULL so the read has one absent value, not two.
@@ -257,7 +256,7 @@ export async function replaceVenueDailySpecials(
             });
         }
 
-        return await getVenueDailySpecials(model, { gastronomyId }, ctx);
+        return await getVenueDailySpecials(model, { venueId }, ctx);
     } catch (err) {
         if (err instanceof ServiceError) {
             return { error: { code: err.code, message: err.message } };
@@ -266,9 +265,7 @@ export async function replaceVenueDailySpecials(
             error: {
                 code: ServiceErrorCode.INTERNAL_ERROR,
                 message:
-                    err instanceof Error
-                        ? err.message
-                        : 'Failed to replace gastronomy daily specials'
+                    err instanceof Error ? err.message : 'Failed to replace venue daily specials'
             }
         };
     }

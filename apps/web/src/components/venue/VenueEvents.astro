@@ -1,7 +1,7 @@
 ---
 /**
  * @file VenueEvents.astro
- * @description Renders a gastronomy listing's OWN agenda on the public detail
+ * @description Renders a venue listing's OWN agenda on the public detail
  * page (HOS-1042) — live music night, happy hour, dinner show, the Tuesday
  * deal. Things that happen AT the venue, on a schedule the venue sets.
  *
@@ -18,7 +18,7 @@
  * ## Purely presentational, trusts pre-filtered props
  *
  * Same stance `VenueMenu.astro` takes: `venueEvents` arrives PRE-FILTERED
- * by the API (`gastronomy/public/events-projection.ts`) — withheld entirely
+ * by the API projection — withheld entirely
  * when the owner's CURRENT plan does not grant `manage_venue_events`, and
  * with `isActive: false` entries already dropped. This component has no gate
  * of its own to apply and does not re-derive either filter.
@@ -27,7 +27,7 @@
  *
  * Two shapes only (mirrors `VenueEventRecurrenceSchema`):
  *  - `weekly` — "Todos los jueves, 18:00 a 20:00" (weekday name from the
- *    shared `gastronomy.detail.openingHours.<day>` keys, NOT a duplicated set
+ *    shared `venue.detail.openingHours.<day>` keys, NOT a duplicated set
  *    — `OpeningHoursSection` already owns those translations).
  *  - `once` — the formatted calendar day, e.g. "12 de septiembre, 18:00 a
  *    20:00".
@@ -79,8 +79,8 @@ const WEEKDAY_I18N_KEYS = [
 function resolveWhen(event: VenueEvent): string {
     if (event.recurrence === 'weekly' && event.weekday !== null) {
         const dayKey = WEEKDAY_I18N_KEYS[event.weekday] ?? 'monday';
-        const weekdayLabel = t(`gastronomy.detail.openingHours.${dayKey}`, dayKey);
-        return t('gastronomy.detail.venueEvents.weekly', 'Todos los {{weekday}}', {
+        const weekdayLabel = t(`venue.detail.openingHours.${dayKey}`, dayKey);
+        return t('venue.detail.venueEvents.weekly', 'Todos los {{weekday}}', {
             weekday: weekdayLabel
         });
     }
@@ -109,37 +109,37 @@ function resolveWhen(event: VenueEvent): string {
 function resolveSchedule(event: VenueEvent): string {
     const when = resolveWhen(event);
     if (event.endTime) {
-        return t('gastronomy.detail.venueEvents.range', '{{when}}, {{start}} a {{end}}', {
+        return t('venue.detail.venueEvents.range', '{{when}}, {{start}} a {{end}}', {
             when,
             start: event.startTime,
             end: event.endTime
         });
     }
-    return t('gastronomy.detail.venueEvents.fromOnly', '{{when}}, desde las {{start}}', {
+    return t('venue.detail.venueEvents.fromOnly', '{{when}}, desde las {{start}}', {
         when,
         start: event.startTime
     });
 }
 
-const title = t('gastronomy.detail.venueEvents.title', 'Agenda del local');
+const title = t('venue.detail.venueEvents.title', 'Agenda del local');
 const entries = venueEvents.map((event) => ({
     event,
     schedule: resolveSchedule(event)
 }));
 ---
 
-<section class="gastro-venue-events" id="gastro-venue-events">
-    <h2 class="gastro-venue-events__title">{title}</h2>
+<section class="venue-venue-events" id="venue-venue-events">
+    <h2 class="venue-venue-events__title">{title}</h2>
 
-    <ul class="gastro-venue-events__list">
+    <ul class="venue-venue-events__list">
         {entries.map(({ event, schedule }) => (
-            <li class="gastro-venue-events__item">
-                <div class="gastro-venue-events__item-main">
-                    <span class="gastro-venue-events__item-title">{event.title}</span>
-                    <span class="gastro-venue-events__item-schedule">{schedule}</span>
+            <li class="venue-venue-events__item">
+                <div class="venue-venue-events__item-main">
+                    <span class="venue-venue-events__item-title">{event.title}</span>
+                    <span class="venue-venue-events__item-schedule">{schedule}</span>
                 </div>
                 {event.description && (
-                    <p class="gastro-venue-events__item-description">{event.description}</p>
+                    <p class="venue-venue-events__item-description">{event.description}</p>
                 )}
             </li>
         ))}
@@ -147,14 +147,14 @@ const entries = venueEvents.map((event) => ({
 </section>
 
 <style>
-    .gastro-venue-events {
+    .venue-venue-events {
         display: flex;
         flex-direction: column;
         gap: var(--space-4, 16px);
         margin-bottom: var(--space-6, 24px);
     }
 
-    .gastro-venue-events__title {
+    .venue-venue-events__title {
         font-family: var(--font-heading);
         font-size: 1.5rem;
         font-weight: 600;
@@ -162,7 +162,7 @@ const entries = venueEvents.map((event) => ({
         margin: 0;
     }
 
-    .gastro-venue-events__list {
+    .venue-venue-events__list {
         list-style: none;
         margin: 0;
         padding: 0;
@@ -171,17 +171,17 @@ const entries = venueEvents.map((event) => ({
         gap: var(--space-3, 12px);
     }
 
-    .gastro-venue-events__item {
+    .venue-venue-events__item {
         border-bottom: 1px dashed var(--border);
         padding-bottom: var(--space-3, 12px);
     }
 
-    .gastro-venue-events__item:last-child {
+    .venue-venue-events__item:last-child {
         border-bottom: none;
         padding-bottom: 0;
     }
 
-    .gastro-venue-events__item-main {
+    .venue-venue-events__item-main {
         display: flex;
         flex-wrap: wrap;
         justify-content: space-between;
@@ -190,19 +190,19 @@ const entries = venueEvents.map((event) => ({
         font-family: var(--font-sans);
     }
 
-    .gastro-venue-events__item-title {
+    .venue-venue-events__item-title {
         font-weight: 600;
         color: var(--core-foreground);
     }
 
-    .gastro-venue-events__item-schedule {
+    .venue-venue-events__item-schedule {
         font-size: 0.875rem;
         font-weight: 600;
         color: var(--brand-primary);
         white-space: nowrap;
     }
 
-    .gastro-venue-events__item-description {
+    .venue-venue-events__item-description {
         font-family: var(--font-sans);
         font-size: 0.85rem;
         color: var(--core-muted-foreground);

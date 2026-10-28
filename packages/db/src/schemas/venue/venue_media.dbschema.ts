@@ -15,15 +15,15 @@ import { ModerationStatusPgEnum } from '../enums.dbschema.ts';
 import { venues } from './venue.dbschema.ts';
 
 /**
- * PostgreSQL enum for the visibility state of a single gastronomy media row.
+ * PostgreSQL enum for the visibility state of a single venue media row.
  *
  * - `visible`  — photo is part of the active gallery (or is the featured image).
  * - `archived` — photo was moved out of the gallery and is waiting to be restored.
  *               `is_featured` MUST be false when state is `archived` (enforced by
  *               the extras-carril CHECK constraint).
  *
- * Mirrors `AccommodationMediaStatePgEnum` deliberately. No gastronomy flow archives
- * photos today — the gastronomy plan carries `limits: []`, so there is no
+ * Mirrors `AccommodationMediaStatePgEnum` deliberately. No venue flow archives
+ * photos today — the venue plan carries `limits: []`, so there is no
  * downgrade-over-limit remediation like the accommodation one (SPEC-167). The
  * state is modeled anyway so all three verticals share ONE table shape and can
  * therefore share one composition/service implementation instead of diverging
@@ -32,10 +32,10 @@ import { venues } from './venue.dbschema.ts';
 export const VenueMediaStatePgEnum = pgEnum('venue_media_state_enum', ['visible', 'archived']);
 
 /**
- * `venue_media` — relational table for gastronomy listing gallery photos.
+ * `venue_media` — relational table for venue listing gallery photos.
  *
- * Replaces the JSONB `gastronomies.media.gallery` / `media.featuredImage` sub-fields
- * with a proper per-row structure. Videos live in the dedicated `gastronomies.videos`
+ * Replaces the JSONB `venues.media.gallery` / `media.featuredImage` sub-fields
+ * with a proper per-row structure. Videos live in the dedicated `venues.videos`
  * JSONB column, NOT here: a video is an external YouTube/Vimeo URL, not an uploaded
  * asset, so it cannot be orphaned and gains nothing from a relational row (HOS-372).
  *
@@ -54,11 +54,11 @@ export const venueMedia = pgTable(
     {
         id: uuid('id').primaryKey().defaultRandom(),
         /**
-         * FK to the owning gastronomy listing. ON DELETE CASCADE ensures photo rows are
+         * FK to the owning venue listing. ON DELETE CASCADE ensures photo rows are
          * removed by the DATABASE when the listing is hard-deleted — integrity guaranteed
          * by the schema rather than by a check someone has to remember to write.
          */
-        gastronomyId: uuid('venue_id')
+        venueId: uuid('venue_id')
             .notNull()
             .references(() => venues.id, { onDelete: 'cascade' }),
         /**
@@ -104,7 +104,7 @@ export const venueMedia = pgTable(
         /**
          * Visibility state within the listing's media collection.
          * `visible`  → in the active gallery (or is the featured image).
-         * `archived` → moved out of the gallery. No gastronomy flow writes this today.
+         * `archived` → moved out of the gallery. No venue flow writes this today.
          */
         state: VenueMediaStatePgEnum('state').notNull().default('visible'),
         /**
@@ -136,28 +136,30 @@ export const venueMedia = pgTable(
     },
     (table) => ({
         /** Index for fetching all media belonging to one listing (the dominant query). */
-        gastronomyMedia_gastronomyId_idx: index('venueMedia_venueId_idx').on(table.gastronomyId),
+        venueMedia_venueId_idx: index('venueMedia_venueId_idx').on(table.venueId),
         /** Index to filter quickly by state (visible vs archived gallery reads). */
-        gastronomyMedia_state_idx: index('venueMedia_state_idx').on(table.state),
+        venueMedia_state_idx: index('venueMedia_state_idx').on(table.state),
         /** Index to quickly locate the featured photo for a given listing. */
-        gastronomyMedia_isFeatured_idx: index('venueMedia_isFeatured_idx').on(table.isFeatured),
+        venueMedia_isFeatured_idx: index('venueMedia_isFeatured_idx').on(table.isFeatured),
         /** Composite index for the canonical gallery-read query: listing + state + order. */
-        gastronomyMedia_gastronomyId_state_sortOrder_idx: index(
-            'venueMedia_venueId_state_sortOrder_idx'
-        ).on(table.gastronomyId, table.state, table.sortOrder),
+        venueMedia_venueId_state_sortOrder_idx: index('venueMedia_venueId_state_sortOrder_idx').on(
+            table.venueId,
+            table.state,
+            table.sortOrder
+        ),
         /** Soft-delete filter index. */
-        gastronomyMedia_deletedAt_idx: index('venueMedia_deletedAt_idx').on(table.deletedAt)
+        venueMedia_deletedAt_idx: index('venueMedia_deletedAt_idx').on(table.deletedAt)
     })
 );
 
 /**
  * Drizzle relations for `venue_media`.
  *
- * Each media row belongs to exactly one gastronomy listing.
+ * Each media row belongs to exactly one venue listing.
  */
 export const venueMediaRelations = relations(venueMedia, ({ one }) => ({
     venue: one(venues, {
-        fields: [venueMedia.gastronomyId],
+        fields: [venueMedia.venueId],
         references: [venues.id]
     })
 }));

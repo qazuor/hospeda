@@ -597,7 +597,7 @@ describe('getPostMedia', () => {
 //
 // Registering an already-uploaded URL was never capped for posts: only the
 // upload routes checked the limit, so a direct call walked past it. Same
-// `getGalleryCap` constant and same filter as the experience/gastronomy twins.
+// `getGalleryCap` constant and same filter as the experience/venue twins.
 // ---------------------------------------------------------------------------
 
 describe('addPostMedia — gallery cap', () => {

@@ -24,7 +24,7 @@ export const SocialPostSchema = z.object({
     title: z.string().min(1, { message: 'zodError.socialPost.title.required' }),
     slug: z.string().min(1, { message: 'zodError.socialPost.slug.required' }),
     source: SocialSourceEnumSchema,
-    /** Content pillar label (e.g. "travel", "gastronomy", "institutional") */
+    /** Content pillar label (e.g. "travel", "food", "institutional") */
     pillar: z.string().optional(),
     /** Optional campaign association */
     campaignId: z.string().uuid({ message: 'zodError.socialPost.campaignId.uuid' }).optional(),

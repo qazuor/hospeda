@@ -128,7 +128,7 @@ export interface ListingEntity extends Record<string, unknown> {
 // ---------------------------------------------------------------------------
 
 /**
- * Abstract base class for listing services (gastronomy, experience, …).
+ * Abstract base class for listing services (venue, experience, …).
  *
  * ## What this class provides
  *
@@ -158,7 +158,7 @@ export interface ListingEntity extends Record<string, unknown> {
  * - `_executeSearch`, `_executeCount`
  *
  * Listing-specific abstract getters (new in this class):
- * - `_entityFkColumn` — FK column name on the junction table (e.g. `'gastronomyId'`)
+ * - `_entityFkColumn` — FK column name on the junction table (e.g. `'venueId'`)
  * - `_amenityJunctionModel` — junction model for amenities
  * - `_featureJunctionModel` — junction model for features
  * - `_amenityModel` — catalog model for amenities (validates IDs)
@@ -195,7 +195,7 @@ export abstract class BaseListingService<
     /**
      * Name of the FK column on the junction table that references this entity.
      *
-     * @example `'gastronomyId'` for the gastronomy service.
+     * @example `'venueId'` for the venue service.
      */
     protected abstract get _entityFkColumn(): string;
 
@@ -209,7 +209,7 @@ export abstract class BaseListingService<
      * success, it just evicts nothing. Making each subclass state it means the
      * compiler checks it against the union instead of a string coincidence.
      *
-     * @example `'venue'` for the gastronomy service.
+     * @example `'venue'` for the venue service.
      */
     protected abstract get _revalidationEntityType(): 'venue' | 'experience';
 
@@ -346,7 +346,7 @@ export abstract class BaseListingService<
      * Without this, ticking ANY service or feature checkbox in the owner editor
      * answered 500: `_afterUpdate` throws `INTERNAL_ERROR` ("Junction sync
      * requires an active transaction") when `ctx.tx` is absent, and no caller on
-     * the owner path — `updateOwn` ← `PATCH /protected/{gastronomies,experiences}/:id`
+     * the owner path — `updateOwn` ← `PATCH /protected/{legacy listing tables,experiences}/:id`
      * — ever opened one. The junction tables stayed empty, so no listing could
      * ever record a service.
      *
@@ -989,11 +989,11 @@ export abstract class BaseListingService<
      * ```ts
      * // In VenueReviewService._afterCreate:
      * const approved = await reviewModel.findAll({
-     *   gastronomyId: listing.id,
+     *   venueId: listing.id,
      *   moderationState: ModerationStateEnum.APPROVED,
      *   deletedAt: null,
      * }, undefined, undefined, ctx?.tx);
-     * await gastronomyService.recomputeRating(listing.id, approved.items, ctx?.tx);
+     * await venueService.recomputeRating(listing.id, approved.items, ctx?.tx);
      * ```
      */
     public async recomputeRating(
@@ -1179,7 +1179,7 @@ export abstract class BaseListingService<
      * that method does: **the public `count()` inherited from `BaseCrudRead`
      * cannot answer this question.** Both verticals' `_executeCount` mirror
      * their `_executeSearch` and force `publicationStatus: PUBLISHED`
-     * (`gastronomy.service.ts` / `experience.service.ts`),
+     * (`venue.service.ts` / `experience.service.ts`),
      * because a public-search total has to match the page it paginates. A
      * listing created through the owner self-service route starts
      * `DRAFT` by construction (the owner self-service create routes D-3), so

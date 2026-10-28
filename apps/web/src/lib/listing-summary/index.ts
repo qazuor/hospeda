@@ -1,8 +1,8 @@
 /**
- * Gastronomy and experience listing summary builder — public API (BETA-119).
+ * Venue and experience listing summary builder — public API (BETA-119).
  *
  * Provides the same rich, natural-language "Mostrando X de Y ..." summary
- * sentence already used by accommodations/events/posts, for the gastronomy
+ * sentence already used by accommodations/events/posts, for the venue
  * and experience listing pages — which previously fell back to the generic
  * "N resultados encontrados" line.
  *
@@ -53,7 +53,7 @@ export type {
     SummaryLocale
 } from './summary.types';
 
-/** Fixed entity config for gastronomy listings — masculine noun, supports `priceRange`. */
+/** Fixed entity config for venue listings — masculine noun, supports `priceRange`. */
 const VENUE_ENTITY: ListingEntityConfig = {
     gender: 'masculine',
     subjectSingular: {
@@ -77,7 +77,7 @@ const EXPERIENCE_ENTITY: ListingEntityConfig = {
     hasPriceRange: false
 };
 
-/** Build the gastronomy listing summary sentence. See the module doc for an example. */
+/** Build the venue listing summary sentence. See the module doc for an example. */
 export function buildVenueListingSummary(input: Omit<BuildListingSummaryInput, 'entity'>): string {
     return buildListingSummary({ ...input, entity: VENUE_ENTITY });
 }

@@ -240,9 +240,9 @@ describe('EntityViewTracker — EVENT (SPEC-159 T-013)', () => {
     });
 });
 
-describe('EntityViewTracker — GASTRONOMY / EXPERIENCE (HOS-734)', () => {
+describe('EntityViewTracker — VENUE / EXPERIENCE (HOS-734)', () => {
     const VENUE_PROPS = {
-        entityType: 'GASTRONOMY' as const,
+        entityType: 'VENUE' as const,
         slug: 'la-parrilla-del-puerto',
         entityId: '550e8400-e29b-41d4-a716-446655440003',
         locale: 'es' as const
@@ -264,12 +264,12 @@ describe('EntityViewTracker — GASTRONOMY / EXPERIENCE (HOS-734)', () => {
         vi.restoreAllMocks();
     });
 
-    it('renders null (no DOM output) for GASTRONOMY', () => {
+    it('renders null (no DOM output) for VENUE', () => {
         const { container } = render(<EntityViewTracker {...VENUE_PROPS} />);
         expect(container).toBeEmptyDOMElement();
     });
 
-    it('calls sendViewBeacon with entityType GASTRONOMY and correct entityId', () => {
+    it('calls sendViewBeacon with entityType VENUE and correct entityId', () => {
         render(<EntityViewTracker {...VENUE_PROPS} />);
 
         expect(sendViewBeaconMock).toHaveBeenCalledTimes(1);
@@ -289,7 +289,7 @@ describe('EntityViewTracker — GASTRONOMY / EXPERIENCE (HOS-734)', () => {
         });
     });
 
-    it('does NOT fire a PostHog trackEvent for GASTRONOMY (owner decision, HOS-734)', () => {
+    it('does NOT fire a PostHog trackEvent for VENUE (owner decision, HOS-734)', () => {
         render(<EntityViewTracker {...VENUE_PROPS} />);
         expect(trackEventMock).not.toHaveBeenCalled();
     });
@@ -299,7 +299,7 @@ describe('EntityViewTracker — GASTRONOMY / EXPERIENCE (HOS-734)', () => {
         expect(trackEventMock).not.toHaveBeenCalled();
     });
 
-    it('fires again when entityId changes (View Transitions navigation) for GASTRONOMY', () => {
+    it('fires again when entityId changes (View Transitions navigation) for VENUE', () => {
         const { rerender } = render(<EntityViewTracker {...VENUE_PROPS} />);
         expect(sendViewBeaconMock).toHaveBeenCalledTimes(1);
 

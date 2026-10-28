@@ -113,11 +113,11 @@ describe('AC:V6:30 a media row marked for remote deletion is never shown', () =>
                 tx
             });
             const gasList = await venueMediaModel.findByVenue({
-                gastronomyId: venue.id,
+                venueId: venue.id,
                 tx
             });
             const gasBatch = await venueMediaModel.findByVenues({
-                gastronomyIds: [venue.id],
+                venueIds: [venue.id],
                 tx
             });
             const expList = await experienceMediaModel.findByExperience({
@@ -136,10 +136,10 @@ describe('AC:V6:30 a media row marked for remote deletion is never shown', () =>
                     accommodationId: accommodation.id,
                     tx
                 }),
-                gastronomyList: { ids: ids(gasList.items), total: gasList.total },
-                gastronomyBatch: ids(gasBatch.get(venue.id)),
-                gastronomyFeatured: await venueMediaModel.findFeatured({
-                    gastronomyId: venue.id,
+                venueList: { ids: ids(gasList.items), total: gasList.total },
+                venueBatch: ids(gasBatch.get(venue.id)),
+                venueFeatured: await venueMediaModel.findFeatured({
+                    venueId: venue.id,
                     tx
                 }),
                 experienceList: { ids: ids(expList.items), total: expList.total },
@@ -152,9 +152,9 @@ describe('AC:V6:30 a media row marked for remote deletion is never shown', () =>
                 accommodationList: { ids: [acc.shownId], total: 1 },
                 accommodationBatch: [acc.shownId],
                 accommodationFeatured: null,
-                gastronomyList: { ids: [gas.shownId], total: 1 },
-                gastronomyBatch: [gas.shownId],
-                gastronomyFeatured: null,
+                venueList: { ids: [gas.shownId], total: 1 },
+                venueBatch: [gas.shownId],
+                venueFeatured: null,
                 experienceList: { ids: [exp.shownId], total: 1 },
                 experienceBatch: [exp.shownId],
                 experienceFeatured: null

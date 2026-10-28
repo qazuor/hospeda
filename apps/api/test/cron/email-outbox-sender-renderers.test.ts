@@ -147,7 +147,7 @@ describe('TEST:B3:34 the production outbox sender renders signup notices', () =>
                 windowEndsAt: null,
                 closedCourtesyMonths: 2
             },
-            expected: ['Gastronomía', '2 meses de cortesía', 'volver a suscribirte']
+            expected: ['Comer y salir', '2 meses de cortesía', 'volver a suscribirte']
         },
         {
             template: 'billing.arrears-suspension',
@@ -417,7 +417,7 @@ describe('TEST:V6:36 the production outbox sender renders the on-archive notice'
         });
         const html = renderToStaticMarkup(result.react);
         expect(result.subject.trim()).not.toBe('');
-        expect(result.subject).toContain('gastronomía');
+        expect(result.subject).toContain('Comer y salir');
         expect(html).toContain('7 de enero de 2027');
         expect(html).not.toContain(listingId);
     });
@@ -436,7 +436,7 @@ describe('TEST:V9b:10 the production outbox sender renders retention notices', (
                 transition: 'PB5',
                 archiveAt: '2027-01-12T02:00:00.000Z'
             },
-            subject: 'Tu ficha de gastronomía se va a archivar por inactividad',
+            subject: 'Tu ficha de Comer y salir se va a archivar por inactividad',
             body: '11 de enero de 2027'
         },
         {
@@ -446,7 +446,7 @@ describe('TEST:V9b:10 the production outbox sender renders retention notices', (
                 listingId,
                 deletionAt: '2027-01-12T02:00:00.000Z'
             },
-            subject: 'El contenido de tu ficha de gastronomía se va a borrar',
+            subject: 'El contenido de tu ficha de Comer y salir se va a borrar',
             body: '11 de enero de 2027'
         }
     ])('renders $template through the production sender', async ({

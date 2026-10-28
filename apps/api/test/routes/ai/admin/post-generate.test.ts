@@ -240,10 +240,10 @@ const VALID_DRAFT = {
     object: {
         title: 'Visit Concepción del Uruguay This Summer',
         summary:
-            'Discover the best of Concepción del Uruguay with its river beaches, colonial architecture, and vibrant local gastronomy.',
+            'Discover the best of Concepción del Uruguay with its river beaches, colonial architecture, and vibrant local food.',
         content:
             '<h2>Why Visit</h2><p>Concepción del Uruguay is one of the hidden gems of Entre Ríos province. ' +
-            'Its colonial architecture, river beaches on the Uruguay River, and vibrant gastronomy make it a must-visit destination.</p>'
+            'Its colonial architecture, river beaches on the Uruguay River, and vibrant food make it a must-visit destination.</p>'
     },
     usage: { promptTokens: 120, completionTokens: 280, totalTokens: 400 },
     provider: 'stub',
@@ -257,7 +257,7 @@ const VALID_BODY = {
     points: [
         'River beaches on the Uruguay River',
         'Colonial historic center (UNESCO heritage candidate)',
-        'Local gastronomy: asado and river fish'
+        'Local food: asado and river fish'
     ],
     category: 'TOURISM',
     tone: 'formal',

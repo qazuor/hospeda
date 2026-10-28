@@ -3,7 +3,7 @@
  *
  * Media (gallery photo) service helpers for experience listings (HOS-372).
  *
- * Mirrors `gastronomy.media.ts` field-for-field (which itself mirrors
+ * Mirrors `venue.media.ts` field-for-field (which itself mirrors
  * `AccommodationService.addMedia` / `removeMedia` / `reorderMedia` /
  * `adminGetMedia` / `setFeaturedMedia`), using the standalone-function
  * convention established by `experience.faq.ts` (module-level exported
@@ -369,7 +369,7 @@ export async function removeExperienceMedia(
  * 4. Batch-update each row's `sortOrder` to its index in `orderedIds`.
  *    All updates run in a single transaction.
  *
- * See `gastronomy.media.ts::reorderVenueMedia` for the full rationale on
+ * See `venue.media.ts::reorderVenueMedia` for the full rationale on
  * why a pure set-difference check is not sufficient to catch duplicates on its
  * own, and why an explicit array-length-vs-set-size check is added here too.
  *
@@ -672,7 +672,7 @@ export async function setFeaturedExperienceMedia(
 /**
  * Corrects the TEXT metadata of a single photo in an experience listing gallery (HOS-1036).
  *
- * The gastronomy/experience twin of `AccommodationService.updateMedia` (HOS-388) and of
+ * The venue/experience twin of `AccommodationService.updateMedia` (HOS-388) and of
  * `updatePostMedia`. Before this existed the only way to fix — or write for the
  * first time — a photo's `alt` was to delete it and re-upload, burning a second
  * Cloudinary asset and losing the row's gallery position.

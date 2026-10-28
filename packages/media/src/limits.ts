@@ -38,7 +38,7 @@ export const PROVIDER_MAX_IMAGE_FILE_SIZE_MB = 10;
 
 /**
  * Maximum size, in MB, of a single entity photo (accommodation, destination,
- * event, post, gastronomy, experience).
+ * event, post, venue, experience).
  *
  * Set to the provider ceiling: double the previous effective cap of 5 MB, which
  * rejected ordinary mid-range phone photos. A 12 MP JPEG typically lands

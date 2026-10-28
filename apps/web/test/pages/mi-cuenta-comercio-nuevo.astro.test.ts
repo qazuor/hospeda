@@ -1,7 +1,7 @@
 /**
  * @file mi-cuenta-comercio-nuevo.astro.test.ts
  * @description Source-level assertions for what became of the owner
- * self-service gastronomy/experience create path (HOS-687, then HOS-1156 D-6).
+ * self-service venue/experience create path (HOS-687, then HOS-1156 D-6).
  *
  * Astro pages cannot be rendered via Vitest, so these are string-level
  * assertions on the `.astro` source — the same pattern used elsewhere in this
@@ -21,7 +21,7 @@
  * The HOS-687 property did not disappear, it MOVED. It is asserted where the
  * form lives now (`publicar-listing-pages.test.ts`: no `buildLoginRedirect`,
  * no role gate) and on the API route that grants the role
- * (`routes/{gastronomy,experience}/protected/create.ts` declare no `requiredPermissions`). What stays
+ * (the protected create routes declare no `requiredPermissions`). What stays
  * here is its companion half — that only the CREATE path was ever opened.
  */
 
@@ -47,7 +47,7 @@ const createRedirectSource = readStripped(resolve(PAGES_ROOT, 'nuevo/[vertical].
 const pickerRedirectSource = readStripped(resolve(PAGES_ROOT, 'nuevo/index.astro'));
 const listingIndexSource = readFileSync(resolve(PAGES_ROOT, 'index.astro'), 'utf8');
 /**
- * The gastronomy/experience editor's shared front door.
+ * The venue/experience editor's shared front door.
  *
  * HOS-1080 split the single `[vertical]/[id]/editar.astro` into eleven routes,
  * and the listing-role gate moved into the resolver every one of them calls —

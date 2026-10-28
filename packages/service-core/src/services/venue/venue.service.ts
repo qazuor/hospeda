@@ -1,31 +1,31 @@
 /**
- * gastronomy.service.ts
+ * venue.service.ts
  *
- * Concrete service for gastronomy listings (SPEC-239 T-035 / T-036).
+ * Concrete service for venue listings (SPEC-239 T-035 / T-036).
  *
  * ## Architecture
  *
  * `VenueService` extends {@link BaseListingService} and satisfies its
- * abstract contract by wiring the gastronomy-specific DB models.  All shared
+ * abstract contract by wiring the venue-specific DB models.  All shared
  * behaviors (slug auto-generation, junction sync, owner-scoping, rating recompute,
  * destination validation) are inherited from the base — zero shared logic is
  * re-derived here.  This is the SPEC-240 reuse acceptance gate.
  *
- * ## Gastronomy-specific additions (T-035 / T-036)
+ * ## Venue-specific additions (T-035 / T-036)
  *
  * 1. **Abstract getters** — wire `venueModel`, junction models
  *    (`rVenueAmenityModel`, `rVenueFeatureModel`) and catalog models
  *    (`amenityModel`, `featureModel`) for the base junction-sync machinery.
- * 2. **Search filters** — `_executeSearch` / `_executeCount` apply gastronomy
+ * 2. **Search filters** — `_executeSearch` / `_executeCount` apply venue
  *    filters (`type`, `priceRange`, `destinationId`, `isFeatured`, …).
  * 3. **Owner update gate** — `updateOwn()` validates with
- *    `GastronomyOwnerUpdateInputSchema` (operational sections only), enforces
+ *    `VenueOwnerUpdateInputSchema` (operational sections only), enforces
  *    ownership (`NOT_FOUND` for non-owners), and gates on a single
  *    `VENUE_EDIT_OWN` permission (SPEC-253 D2=b; per-section perms removed).
  * 4. **Public projections** — `_projectPublicEntity` strips `adminInfo` and
  *    `ownerId` from public-tier responses.
  *
- * @module gastronomy.service
+ * @module venue.service
  */
 
 import {
@@ -92,9 +92,9 @@ import {
 } from './venue-qr';
 
 /**
- * Business-logic service for gastronomy listings.
+ * Business-logic service for venue listings.
  *
- * Extends {@link BaseListingService} with gastronomy-specific model
+ * Extends {@link BaseListingService} with venue-specific model
  * wiring and operational-update gate.  All shared lifecycle behaviors (slug,
  * junction sync, owner-scoping, rating recompute) are provided by the base class.
  *
@@ -125,7 +125,7 @@ export class VenueService extends BaseListingService<
     typeof VenueUpdateInputSchema,
     typeof VenueSearchSchema
 > {
-    static readonly ENTITY_NAME = 'gastronomy';
+    static readonly ENTITY_NAME = 'venue';
 
     protected readonly entityName = VenueService.ENTITY_NAME;
 
@@ -173,11 +173,11 @@ export class VenueService extends BaseListingService<
         this.adminSearchSchema = VenueAdminSearchSchema;
         this._amenityModelInstance = new AmenityModel();
         this._featureModelInstance = new FeatureModel();
-        // TYPE-WORKAROUND: concrete gastronomy junction model bridged to the generic ListingJunctionModel contract
+        // TYPE-WORKAROUND: concrete venue junction model bridged to the generic ListingJunctionModel contract
         this._amenityJunctionModelInstance = rVenueAmenityModel as unknown as ListingJunctionModel<
             Record<string, unknown>
         >;
-        // TYPE-WORKAROUND: concrete gastronomy junction model bridged to the generic ListingJunctionModel contract
+        // TYPE-WORKAROUND: concrete venue junction model bridged to the generic ListingJunctionModel contract
         this._featureJunctionModelInstance = rVenueFeatureModel as unknown as ListingJunctionModel<
             Record<string, unknown>
         >;
@@ -193,7 +193,7 @@ export class VenueService extends BaseListingService<
      * Used by `syncListingAmenityJunction` / `syncListingFeatureJunction`.
      */
     protected override get _entityFkColumn(): string {
-        return 'gastronomyId';
+        return 'venueId';
     }
 
     /**
@@ -207,12 +207,12 @@ export class VenueService extends BaseListingService<
         return 'venue';
     }
 
-    /** Gastronomy-amenity junction model (satisfies {@link ListingJunctionModel}). */
+    /** Venue-amenity junction model (satisfies {@link ListingJunctionModel}). */
     protected override get _amenityJunctionModel(): ListingJunctionModel<Record<string, unknown>> {
         return this._amenityJunctionModelInstance;
     }
 
-    /** Gastronomy-feature junction model. */
+    /** Venue-feature junction model. */
     protected override get _featureJunctionModel(): ListingJunctionModel<Record<string, unknown>> {
         return this._featureJunctionModelInstance;
     }
@@ -346,7 +346,7 @@ export class VenueService extends BaseListingService<
             !hasPermission(actor, PermissionEnum.VENUE_VIEW_ALL)
         ) {
             if (entity.publicationStatus === PublicationStatusEnum.PUBLISHED) {
-                throw new ServiceError(ServiceErrorCode.GONE, 'Gastronomy is gone');
+                throw new ServiceError(ServiceErrorCode.GONE, 'venue is gone');
             }
             throw entityNotFoundError({ entityName: VENUE_ENTITY_NAME });
         }
@@ -392,7 +392,7 @@ export class VenueService extends BaseListingService<
      *
      * Called by the base class `_executeAdminSearch` post-processing.
      *
-     * @param entity - Raw gastronomy entity from the database.
+     * @param entity - Raw venue entity from the database.
      * @returns Projected entity with private fields removed.
      */
     protected override _projectPublicEntity(entity: Venue): Venue {
@@ -402,7 +402,7 @@ export class VenueService extends BaseListingService<
     /**
      * List variant: resolves owner avatar then strips private fields.
      *
-     * @param entities - Array of raw gastronomy entities.
+     * @param entities - Array of raw venue entities.
      * @returns Array of projected entities.
      */
     protected override _projectPublicEntityList(entities: Venue[]): Venue[] {
@@ -413,11 +413,11 @@ export class VenueService extends BaseListingService<
     }
 
     // -----------------------------------------------------------------------
-    // Search execution (gastronomy-specific filters)
+    // Search execution (venue-specific filters)
     // -----------------------------------------------------------------------
 
     /**
-     * Executes the public search query with gastronomy-specific filter support.
+     * Executes the public search query with venue-specific filter support.
      *
      * Scalar filters forwarded to the model: `type`, `priceRange`, `destinationId`,
      * `ownerId`, `isFeatured`.
@@ -434,10 +434,10 @@ export class VenueService extends BaseListingService<
      * they read a derived aggregate the current model query does not expose,
      * and remain a follow-up.
      *
-     * @param params - Validated search parameters from `GastronomySearchSchema`.
+     * @param params - Validated search parameters from `VenueSearchSchema`.
      * @param _actor - The actor performing the action (public path; unused).
      * @param ctx - Service context for transaction propagation.
-     * @returns Paginated gastronomy listing results.
+     * @returns Paginated venue listing results.
      */
     protected async _executeSearch(
         params: VenueSearch,
@@ -491,7 +491,7 @@ export class VenueService extends BaseListingService<
             catalogConditions.length > 0 ? catalogConditions : undefined,
             ctx?.tx
         );
-        return result as unknown as PaginatedListOutput<Venue>; // TYPE-WORKAROUND: base list result narrowed to the gastronomy entity type (Drizzle row vs Zod entity, same bridge as accommodation services)
+        return result as unknown as PaginatedListOutput<Venue>; // TYPE-WORKAROUND: base list result narrowed to the venue entity type (Drizzle row vs Zod entity, same bridge as accommodation services)
     }
 
     /**
@@ -500,7 +500,7 @@ export class VenueService extends BaseListingService<
      * @param params - Validated search parameters.
      * @param _actor - The actor performing the action.
      * @param ctx - Service context.
-     * @returns Total count of matching gastronomy listings.
+     * @returns Total count of matching venue listings.
      */
     protected async _executeCount(
         params: VenueSearch,
@@ -543,7 +543,7 @@ export class VenueService extends BaseListingService<
     /**
      * Admin search — inherits owner-scoping from the base class.
      *
-     * Gastronomy-specific entity filters (`type`, `priceRange`, `destinationId`,
+     * Venue-specific entity filters (`type`, `priceRange`, `destinationId`,
      * `ownerId`) are plain scalars that the generic admin search
      * builder handles natively via the where-clause builder.
      *
@@ -561,12 +561,12 @@ export class VenueService extends BaseListingService<
     // -----------------------------------------------------------------------
 
     /**
-     * Owner-scoped operational update for gastronomy listings.
+     * Owner-scoped operational update for venue listings.
      *
      * ## Enforcement contract
      *
      * 1. **Schema validation**: payload is validated with
-     *    `GastronomyOwnerUpdateInputSchema`, which ONLY permits operational
+     *    `VenueOwnerUpdateInputSchema`, which ONLY permits operational
      *    sections (`openingHours`, `contactInfo`, `socialNetworks`, `media`,
      *    `menuUrl`, `priceRange`, `richDescription`, `amenityIds`, `featureIds`).
      *    Identity fields (`name`, `slug`, `type`, `destinationId`) are absent
@@ -580,14 +580,14 @@ export class VenueService extends BaseListingService<
      * 4. **Delegation**: passes through to `this.update()` so that junction sync
      *    (`_beforeUpdate` / `_afterUpdate`) fires for amenity/feature changes.
      *
-     * @param gastronomyId - UUID of the gastronomy listing to update.
+     * @param venueId - UUID of the venue listing to update.
      * @param data - Validated operational-only update payload.
      * @param actor - The actor performing the update.
      * @param ctx - Optional service context for transaction propagation.
-     * @returns `ServiceOutput<Gastronomy>` wrapping the updated entity.
+     * @returns `ServiceOutput<Venue>` wrapping the updated entity.
      */
     public async updateOwn(
-        gastronomyId: string,
+        venueId: string,
         data: VenueOwnerUpdateInput,
         actor: Actor,
         ctx?: ServiceContext<VenueHookState>
@@ -609,12 +609,12 @@ export class VenueService extends BaseListingService<
             const validated = parseResult.data;
 
             // 2. Load the listing.
-            const entity = await this.model.findById(gastronomyId, ctx?.tx);
+            const entity = await this.model.findById(venueId, ctx?.tx);
             if (!entity) {
                 return {
                     error: {
                         code: ServiceErrorCode.NOT_FOUND,
-                        message: 'Gastronomy listing not found'
+                        message: 'Venue listing not found'
                     }
                 };
             }
@@ -626,7 +626,7 @@ export class VenueService extends BaseListingService<
                 return {
                     error: {
                         code: ServiceErrorCode.NOT_FOUND,
-                        message: 'Gastronomy listing not found'
+                        message: 'Venue listing not found'
                     }
                 };
             }
@@ -649,7 +649,7 @@ export class VenueService extends BaseListingService<
             //    passes the base gate without any privilege elevation.
             return this.update(
                 actor,
-                gastronomyId,
+                venueId,
                 validated as VenueUpdateInput,
                 ctx as ServiceContext
             );
@@ -681,7 +681,7 @@ export class VenueService extends BaseListingService<
      *    never try to spot that the slug changed.
      * 2. **Never mint here.** `if (!code) return updated` — a venue with no
      *    QR yet stays without one. The code is created when it is asked for
-     *    (`routes/gastronomy/protected/menuQr.ts`), never during an
+     *    (`routes/venue/protected/menuQr.ts`), never during an
      *    unrelated edit.
      * 3. **`siteUrl` and the locale come from the CURRENT `targetUrl`**, via
      *    {@link resolveSiteUrlFromTargetUrl} and
@@ -726,7 +726,7 @@ export class VenueService extends BaseListingService<
             const lang = resolveVenueMenuQrLangFromTargetUrl({ targetUrl: code.targetUrl });
             if (!siteUrl || !lang) {
                 this.logger.error(
-                    { gastronomyId: updated.id, qrCodeId: code.id },
+                    { venueId: updated.id, qrCodeId: code.id },
                     'Menu QR target URL is not a recognizable absolute carta URL; cannot repoint it'
                 );
                 return updated;
@@ -743,7 +743,7 @@ export class VenueService extends BaseListingService<
         } catch (error) {
             this.logger.error(
                 {
-                    gastronomyId: updated.id,
+                    venueId: updated.id,
                     error: error instanceof Error ? error.message : String(error)
                 },
                 'Could not repoint the venue’s menu QR code; the listing update stands'

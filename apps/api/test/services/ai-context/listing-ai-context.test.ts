@@ -1,5 +1,5 @@
 /**
- * Tests for the two gastronomy and experience AI-chat context assemblers (HOS-400).
+ * Tests for the two venue and experience AI-chat context assemblers (HOS-400).
  *
  * Exercises the PURE builders only — no DB, no billing. The async wrappers are
  * thin I/O around these, and the properties worth defending (the owner-data
@@ -95,7 +95,7 @@ function expectMarkersAlternate(block: string): void {
 }
 
 // ---------------------------------------------------------------------------
-// Gastronomy
+// Venue
 // ---------------------------------------------------------------------------
 
 describe('buildVenueMarkdownContext', () => {

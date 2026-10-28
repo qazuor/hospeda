@@ -406,7 +406,7 @@ export function getPostCategoryColor({ category }: { readonly category: string }
  * @example
  * ```ts
  * const { t } = createTranslations(locale);
- * getPostCategoryLabel({ category: 'GASTRONOMY', t }) // 'Gastronomía' (es) or 'Gastronomy' (en)
+ * getPostCategoryLabel({ category: 'GASTRONOMY', t }) // 'Gastronomía' (es) or 'Food' (en)
  * ```
  */
 export function getPostCategoryLabel({

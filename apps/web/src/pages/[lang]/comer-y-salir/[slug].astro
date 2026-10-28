@@ -1,8 +1,8 @@
 ---
 /**
  * @file gastronomia/[slug].astro
- * @description Gastronomy detail page (SPEC-239 T-054).
- * Fetches a single gastronomy listing by slug, fetches reviews + FAQs in
+ * @description Venue detail page (SPEC-239 T-054).
+ * Fetches a single venue listing by slug, fetches reviews + FAQs in
  * parallel, and composes the detail block components.
  *
  * 404 is returned when:
@@ -26,10 +26,10 @@ import VenueMenu from '@/components/venue/VenueMenu.astro';
 import VenueEvents from '@/components/venue/VenueEvents.astro';
 import OpeningHoursSection from '@/components/venue/OpeningHoursSection.astro';
 import VenueContactBlock from '@/components/venue/VenueContactBlock.astro';
-// Reused, not duplicated (HOS-1072): gastronomy reads the SAME `amenities` /
+// Reused, not duplicated (HOS-1072): venue reads the SAME `amenities` /
 // `features` catalog as accommodations, so it shares the i18n namespace
 // (`accommodations.amenityNames.<slug>`) these two grids already resolve. A
-// gastronomy/experience copy would fork that contract for no gain.
+// venue/experience copy would fork that contract for no gain.
 import AmenitiesGrid from '@/components/accommodation/AmenitiesGrid.astro';
 import FeaturesGrid from '@/components/accommodation/FeaturesGrid.astro';
 import VenueEventsCta from '@/components/venue/VenueEventsCta.astro';
@@ -85,9 +85,9 @@ const venue = toVenueDetailPageProps({ item: raw, locale });
 // reaching here, so it can never be shared from the edge. It mirrors the
 // service side, which only schedules a purge for a PUBLISHED listing.
 //
-// Addressed by its OWN two tags and deliberately NOT by `list-gastronomy`: a
+// Addressed by its OWN two tags and deliberately NOT by `list-venue`: a
 // detail page is not a listing, and the collection tag would make every
-// gastronomy write evict every other one's page.
+// venue write evict every other one's page.
 const venueCacheTags = buildEntityCacheTags({
     entity: 'venue',
     slug,
@@ -169,7 +169,7 @@ let bookmarkCount: number | undefined;
 
 try {
     const countResult = await userBookmarksPublicApi.count({
-        entityType: 'GASTRONOMY',
+        entityType: 'VENUE',
         entityId: venue.id
     });
     if (countResult.ok) {
@@ -184,16 +184,16 @@ const descriptionText = renderPlain({ raw: venue.description });
 
 // --- "Accepts events" CTA (HOS-1055) ---
 // Reuses the existing `private_events` catalog amenity (HOS-1072 exposed it in
-// `gastronomy.amenities`) rather than a new DB column or public-schema field —
+// `venue.amenities`) rather than a new DB column or public-schema field —
 // see the owner editor's `AmenitiesSection.client.tsx` for the same decision on
 // the write side.
 //
 // The CTA has no external `href` of its own — it is an in-page anchor to
 // `VenueContactBlock` (see `VenueEventsCta.astro`'s header for why:
-// gastronomy has no single public contact channel to pick, especially since
+// venue has no single public contact channel to pick, especially since
 // HOS-1076 found `socialNetworks.whatsapp` never carried real data and
 // removed it — HOS-1088 tracks the open question of a real phone/WhatsApp
-// channel for gastronomy). That sidesteps picking a channel AND the outbound
+// channel for venue). That sidesteps picking a channel AND the outbound
 // href-sanitization guard (HOS-592/F-02): there is nothing external to
 // sanitize.
 //
@@ -241,14 +241,14 @@ const seoTitle = venue.seo?.title?.trim() || venue.name;
 const seoDescription =
     venue.seo?.description?.trim() ||
     venue.summary ||
-    t('gastronomy.listing.subtitle', 'Gastronomía en el Litoral Entrerriano');
+    t('venue.listing.subtitle', 'Gastronomía en el Litoral Entrerriano');
 
 // --- Breadcrumb JSON-LD (HOS-117 T-007) ---
 const siteOrigin = Astro.site?.href.replace(/\/$/, '') ?? Astro.url.origin;
 const breadcrumbItems = [
     { name: t('nav.home', 'Inicio'), url: `${siteOrigin}/${locale}/` },
     {
-        name: t('gastronomy.listing.title', 'Gastronomía'),
+        name: t('venue.listing.title', 'Gastronomía'),
         url: `${siteOrigin}/${locale}/comer-y-salir/`
     },
     { name: venue.name, url: `${siteOrigin}${Astro.url.pathname}` }
@@ -263,7 +263,7 @@ const breadcrumbItems = [
     showBreadcrumbs={true}
     showSidebar={false}
     ogImage={venue.featuredImage.url}
-    ogType={t(`gastronomy.types.${venue.type}`, venue.type)}
+    ogType={t(`venue.types.${venue.type}`, venue.type)}
     ogSubtitle={venue.destinationName}
     ogRating={venue.averageRating > 0 ? venue.averageRating.toFixed(1) : undefined}
 >
@@ -285,7 +285,7 @@ const breadcrumbItems = [
         locale={locale}
         items={[
             {
-                label: t('gastronomy.listing.title', 'Gastronomía'),
+                label: t('venue.listing.title', 'Gastronomía'),
                 path: 'comer-y-salir/'
             },
             { label: venue.name }
@@ -301,10 +301,10 @@ const breadcrumbItems = [
         />
     </Fragment>
 
-    <div class="gastro-detail">
+    <div class="venue-detail">
         <!-- Gallery -->
         {galleryImages.length > 0 && (
-            <div class="gastro-detail__gallery">
+            <div class="venue-detail__gallery">
                 <ImageGallery
                     client:load
                     images={galleryImages}
@@ -383,37 +383,37 @@ const breadcrumbItems = [
 
         <!-- Reviews preview -->
         {venue.reviewsCount > 0 && (
-            <section class="gastro-detail__reviews">
-                <h2 class="gastro-detail__section-title">
-                    {t('gastronomy.detail.reviews.title', 'Reseñas')}
+            <section class="venue-detail__reviews">
+                <h2 class="venue-detail__section-title">
+                    {t('venue.detail.reviews.title', 'Reseñas')}
                 </h2>
                 {reviews.length === 0 ? (
-                    <p class="gastro-detail__reviews-empty">
+                    <p class="venue-detail__reviews-empty">
                         {t(
-                            'gastronomy.detail.reviews.empty',
+                            'venue.detail.reviews.empty',
                             'Todavía no hay reseñas. ¡Sé el primero en opinar!'
                         )}
                     </p>
                 ) : (
-                    <ul class="gastro-detail__reviews-list">
+                    <ul class="venue-detail__reviews-list">
                         {reviews.slice(0, 3).map((review) => (
-                            <li class="gastro-detail__review-item">
-                                <p class="gastro-detail__review-author">
+                            <li class="venue-detail__review-item">
+                                <p class="venue-detail__review-author">
                                     {review.user?.name ?? t('common.anonymous')}
                                 </p>
                                 {review.averageRating != null && (
-                                    <span class="gastro-detail__review-rating">
+                                    <span class="venue-detail__review-rating">
                                         ★ {review.averageRating.toFixed(1)}
                                     </span>
                                 )}
                                 {review.content && (
-                                    <p class="gastro-detail__review-content">{review.content}</p>
+                                    <p class="venue-detail__review-content">{review.content}</p>
                                 )}
                             </li>
                         ))}
                         {totalReviews > 3 && (
-                            <p class="gastro-detail__reviews-more">
-                                {tPlural('gastronomy.detail.reviews.more', totalReviews - 3)}
+                            <p class="venue-detail__reviews-more">
+                                {tPlural('venue.detail.reviews.more', totalReviews - 3)}
                             </p>
                         )}
                     </ul>
@@ -422,11 +422,11 @@ const breadcrumbItems = [
         )}
 
         <!-- Leave a review (authenticated visitors submit; anonymous see a sign-in CTA) -->
-        <section class="gastro-detail__review-form">
+        <section class="venue-detail__review-form">
             <VenueReviewForm
                 client:visible
-                gastronomyId={venue.id}
-                gastronomyName={venue.name}
+                venueId={venue.id}
+                venueName={venue.name}
                 locale={locale}
                 apiUrl={getApiUrl()}
                 signInHref={reviewSignInHref}
@@ -442,7 +442,7 @@ const breadcrumbItems = [
              basic view stats in mi-cuenta/comercio. -->
         <EntityViewTracker
             client:idle
-            entityType="GASTRONOMY"
+            entityType="VENUE"
             slug={slug}
             entityId={venue.id}
             locale={locale}
@@ -458,7 +458,7 @@ const breadcrumbItems = [
          `resolveChatError` with the entity type, not the accommodation key). -->
     <AiChatWidget
         client:idle
-        entityType="gastronomy"
+        entityType="venue"
         entityId={venue.id}
         locale={locale}
         apiUrl={getApiUrl()}
@@ -466,7 +466,7 @@ const breadcrumbItems = [
 </DetailLayout>
 
 <style>
-    .gastro-detail {
+    .venue-detail {
         max-width: var(--container-max, 1350px);
         margin: 0 auto;
         padding: var(--space-6, 24px) var(--space-4, 16px);
@@ -475,12 +475,12 @@ const breadcrumbItems = [
         gap: var(--space-8, 32px);
     }
 
-    .gastro-detail__gallery {
+    .venue-detail__gallery {
         border-radius: var(--radius-card, 24px);
         overflow: hidden;
     }
 
-    .gastro-detail__section-title {
+    .venue-detail__section-title {
         font-family: var(--font-heading);
         font-size: 1.5rem;
         font-weight: 600;
@@ -489,7 +489,7 @@ const breadcrumbItems = [
     }
 
     /* Reviews */
-    .gastro-detail__reviews-empty {
+    .venue-detail__reviews-empty {
         font-family: var(--font-sans);
         font-size: 0.95rem;
         color: var(--core-muted-foreground);
@@ -497,7 +497,7 @@ const breadcrumbItems = [
         margin: 0;
     }
 
-    .gastro-detail__reviews-list {
+    .venue-detail__reviews-list {
         list-style: none;
         padding: 0;
         margin: 0;
@@ -506,14 +506,14 @@ const breadcrumbItems = [
         gap: var(--space-4, 16px);
     }
 
-    .gastro-detail__review-item {
+    .venue-detail__review-item {
         padding: var(--space-4, 16px);
         background-color: var(--core-card);
         border: 1px solid var(--border);
         border-radius: var(--radius-md, 12px);
     }
 
-    .gastro-detail__review-author {
+    .venue-detail__review-author {
         font-family: var(--font-sans);
         font-weight: 600;
         font-size: 0.9rem;
@@ -521,14 +521,14 @@ const breadcrumbItems = [
         margin: 0 0 4px;
     }
 
-    .gastro-detail__review-rating {
+    .venue-detail__review-rating {
         font-family: var(--font-sans);
         font-size: 0.85rem;
         color: var(--rating-star);
         font-weight: 500;
     }
 
-    .gastro-detail__review-content {
+    .venue-detail__review-content {
         font-family: var(--font-sans);
         font-size: 0.9rem;
         line-height: 1.5;
@@ -536,7 +536,7 @@ const breadcrumbItems = [
         margin: 6px 0 0;
     }
 
-    .gastro-detail__reviews-more {
+    .venue-detail__reviews-more {
         font-family: var(--font-sans);
         font-size: 0.875rem;
         color: var(--brand-primary);

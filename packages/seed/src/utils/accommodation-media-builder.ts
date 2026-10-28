@@ -19,7 +19,7 @@ export interface BuildAccommodationMediaRowsInput {
  * `InsertAccommodationMedia` rows ready for direct DB insertion.
  *
  * Ordering, defaulting and skip rules live in {@link buildMediaRows}, shared
- * with the gastronomy and experience builders (HOS-372) — the three media
+ * with the venue and experience builders (HOS-372) — the three media
  * tables are identical apart from the owning foreign key stamped here.
  *
  * @param input - `{ accommodationId, media }` from the accommodation fixture.

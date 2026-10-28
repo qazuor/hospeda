@@ -25,12 +25,12 @@ const SRC_ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '../../src');
 const PRICING_PAGES = {
     owner: 'pages/[lang]/planes/anfitriones/precios/index.astro',
     tourist: 'pages/[lang]/planes/turistas/precios/index.astro',
-    gastronomy: 'pages/[lang]/planes/comer-y-salir/precios/index.astro',
+    venue: 'pages/[lang]/planes/comer-y-salir/precios/index.astro',
     experience: 'pages/[lang]/planes/experiencias/precios/index.astro'
 } as const;
 
 /** The two whose CTA links out instead of charging (F-1 / D-1). */
-const SHARED_SUBSCRIBE_AUDIENCES = ['gastronomy', 'experience'] as const;
+const SHARED_SUBSCRIBE_AUDIENCES = ['venue', 'experience'] as const;
 
 /** The two whose card CTA is the (future) in-page checkout (F-1). */
 const CHECKOUT_AUDIENCES = ['owner', 'tourist'] as const;
@@ -59,7 +59,7 @@ describe('HOS-1233 — every pricing page renders the shared sections', () => {
     });
 });
 
-describe('AC:B13a:10/11 — gastronomy and experience use the shared subscribe action', () => {
+describe('AC:B13a:10/11 — venue and experience use the shared subscribe action', () => {
     it('both declare checkout and retain the subscribe banner', () => {
         for (const audience of SHARED_SUBSCRIBE_AUDIENCES) {
             expect(readSrc(PRICING_PAGES[audience]), audience).toContain('ctaMode="checkout"');

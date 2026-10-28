@@ -1,5 +1,5 @@
 /**
- * Admin get gastronomy review by ID endpoint.
+ * Admin get venue review by ID endpoint.
  * Returns full review information including moderation fields.
  */
 import { PermissionEnum, VenueReviewSchema } from '@repo/schemas';
@@ -14,17 +14,17 @@ const venueReviewService = new VenueReviewService({ logger: apiLogger });
 
 /**
  * GET /api/v1/admin/venues/reviews/:id
- * Get gastronomy review by ID — Admin endpoint.
+ * Get venue review by ID — Admin endpoint.
  *
  * Requires VENUE_MODERATE_REVIEW permission.
  */
 export const adminGetVenueReviewByIdRoute = createAdminRoute({
     method: 'get',
     path: '/{id}',
-    summary: 'Get gastronomy review by ID (admin)',
+    summary: 'Get venue reviews by ID (admin)',
     description:
-        'Retrieves full gastronomy review information including moderation fields. Requires VENUE_MODERATE_REVIEW.',
-    tags: ['Gastronomy Reviews', 'Admin'],
+        'Retrieves full venue reviews information including moderation fields. Requires VENUE_MODERATE_REVIEW.',
+    tags: ['Venue Reviews', 'Admin'],
     anyOfPermissions: [[PermissionEnum.VENUE_MODERATE_REVIEW]],
     requestParams: {
         id: z.string().uuid({ message: 'zodError.common.id.invalidUuid' })

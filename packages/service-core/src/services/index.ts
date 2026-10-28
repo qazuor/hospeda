@@ -22,7 +22,7 @@ export {
 // HOS-963: pure media-composition helper reused by raw-query public routes
 // (e.g. `similar.ts`) that bypass `AccommodationService.search()` and therefore
 // never hit `_afterSearch`, the chokepoint that normally composes `media` from
-// the relational `accommodation_media` table. Mirrors gastronomy and experience's
+// the relational `accommodation_media` table. Mirrors venue and experience's
 // `composeListingMedia` export below.
 export {
     type ComposeAccommodationMediaInput,

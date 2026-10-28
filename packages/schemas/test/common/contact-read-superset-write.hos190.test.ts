@@ -89,8 +89,8 @@ const READ_SCHEMAS: ReadonlyArray<{ name: string; schema: z.ZodTypeAny }> = [
     { name: 'PostSponsorAdminSchema', schema: PostSponsorAdminSchema },
     { name: 'ExperienceProtectedSchema', schema: ExperienceProtectedSchema },
     { name: 'ExperienceAdminSchema', schema: ExperienceAdminSchema },
-    { name: 'GastronomyProtectedSchema', schema: VenueProtectedSchema },
-    { name: 'GastronomyAdminSchema', schema: VenueAdminSchema },
+    { name: 'VenueProtectedSchema', schema: VenueProtectedSchema },
+    { name: 'VenueAdminSchema', schema: VenueAdminSchema },
     { name: 'UserSelfSchema', schema: UserSelfSchema }
 ];
 
@@ -105,7 +105,7 @@ const WRITE_SCHEMAS: ReadonlyArray<{ name: string; schema: z.ZodTypeAny }> = [
     { name: 'EventCreateInputSchema', schema: EventCreateInputSchema },
     { name: 'PostSponsorCreateInputSchema', schema: PostSponsorCreateInputSchema },
     { name: 'ExperienceAdminCreateInputSchema', schema: ExperienceAdminCreateInputSchema },
-    { name: 'GastronomyAdminCreateInputSchema', schema: VenueAdminCreateInputSchema },
+    { name: 'VenueAdminCreateInputSchema', schema: VenueAdminCreateInputSchema },
     { name: 'UserCreateInputSchema', schema: UserCreateInputSchema }
 ];
 

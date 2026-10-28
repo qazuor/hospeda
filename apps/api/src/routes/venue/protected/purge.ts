@@ -18,7 +18,7 @@ const ownerAccess: MiddlewareHandler = async (ctx, next) => {
     });
     await next();
 };
-/** Owner PB12 route for gastronomy listings. */
+/** Owner PB12 route for venue listings. */
 export const protectedPurgeVenueRoute = createProtectedRoute({
     method: 'post',
     successStatusCode: 200,
@@ -26,9 +26,9 @@ export const protectedPurgeVenueRoute = createProtectedRoute({
     listingAccess: { vertical: VerticalEnum.VENUE, operation: 'DELETE', idParam: 'id' },
     emailUnverifiedOperation: 'DELETE_LISTING',
     options: { middlewares: [ownerAccess] },
-    summary: 'Purge own gastronomy listing',
+    summary: 'Purge own venue listing',
     description: 'Permanently removes listing content through PB12.',
-    tags: ['Gastronomies'],
+    tags: ['Venues'],
     requestParams: { id: z.string().uuid() },
     responseSchema: z.object({ purged: z.literal(true) }),
     handler: async (ctx: Context, params: Record<string, unknown>) =>

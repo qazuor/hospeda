@@ -92,7 +92,7 @@ describe('billing signup outbox renderers', () => {
             })
         });
         const incompleteHtml = renderToStaticMarkup(incomplete.react);
-        expect(incompleteHtml).toContain('Gastronomía');
+        expect(incompleteHtml).toContain('Comer y salir');
         expect(incompleteHtml).toContain('quedó sin completarse');
         expect(incompleteHtml).toContain('2 meses de cortesía');
         expect(incompleteHtml).toContain('volver a suscribirte');
@@ -186,7 +186,7 @@ describe('billing signup outbox renderers', () => {
             })
         });
         const html = renderToStaticMarkup(result.react);
-        expect(html).toContain('Gastronomía');
+        expect(html).toContain('Comer y salir');
         expect(html).toContain('Para volver, registrá el pago de la cuota adeudada.');
         expect(html).not.toContain('volvé a suscribirte');
         expect(html).not.toContain('promo');

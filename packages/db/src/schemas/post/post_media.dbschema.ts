@@ -22,7 +22,7 @@ import { posts } from './post.dbschema.ts';
  *
  * No editorial flow archives photos today (only the accommodation plan-downgrade
  * remediation does, SPEC-167, and posts have no plan). Carried anyway so post,
- * event, gastronomy, experience and accommodation media share ONE table shape — and therefore
+ * event, venue, experience and accommodation media share ONE table shape — and therefore
  * one sync/compose implementation. Own enum type per table, matching how
  * `venue_media` and `experience_media` each declare theirs (HOS-372).
  */

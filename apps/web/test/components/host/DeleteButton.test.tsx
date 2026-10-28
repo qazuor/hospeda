@@ -7,8 +7,8 @@
  * three verticals, the listing moves to `PURGED`.
  *
  * HOS-1156 T-015 added the vertical. The last two cases below are the ones that
- * matter for AC-14: the panel on a gastronomy publish page must delete a
- * gastronomy draft, and the default must stay accommodation so PropertyCard —
+ * matter for AC-14: the panel on a venue publish page must delete a
+ * venue draft, and the default must stay accommodation so PropertyCard —
  * which passes no vertical at all — keeps its previous behaviour.
  */
 

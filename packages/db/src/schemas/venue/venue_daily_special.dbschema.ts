@@ -18,7 +18,7 @@ import { venues } from './venue.dbschema.ts';
  * window this is one more free-text field that rots in public; with it, the
  * row simply stops matching the read.
  *
- * ## Why a table and not a JSONB column on `gastronomies`
+ * ## Why a table and not a JSONB column on `venues`
  *
  * Owner decision. The validity filter runs on EVERY read of the public listing,
  * and a JSONB document cannot serve that from an index — the reader would have
@@ -40,7 +40,7 @@ import { venues } from './venue.dbschema.ts';
  * `getTodayInMarketTimezone()` (AR, UTC-3). At 21:00 in Concepción del Uruguay
  * the UTC day has already rolled over, so a UTC "today" would retire the dish
  * of the day in the middle of dinner service — the precise hour it exists for.
- * See `gastronomy.daily-specials.ts` for where that value enters.
+ * See `venue.daily-specials.ts` for where that value enters.
  *
  * ## What it deliberately does NOT carry
  *
@@ -59,7 +59,7 @@ export const venueDailySpecials = pgTable(
     {
         id: uuid('id').primaryKey().defaultRandom(),
         /** FK to the owning listing. CASCADE — a listing deletes its specials. */
-        gastronomyId: uuid('venue_id')
+        venueId: uuid('venue_id')
             .notNull()
             .references(() => venues.id, { onDelete: 'cascade' }),
         /** The dish, as the venue announces it. e.g. "Milanesa a la napolitana con puré". */
@@ -96,9 +96,7 @@ export const venueDailySpecials = pgTable(
         updatedById: uuid('updated_by_id').references(() => users.id, { onDelete: 'set null' })
     },
     (table) => ({
-        gastronomyDailySpecials_gastronomyId_idx: index('venueDailySpecials_venueId_idx').on(
-            table.gastronomyId
-        ),
+        venueDailySpecials_venueId_idx: index('venueDailySpecials_venueId_idx').on(table.venueId),
         /**
          * The read the public listing performs verbatim: the specials of ONE
          * listing whose window contains today, in order.
@@ -108,15 +106,15 @@ export const venueDailySpecials = pgTable(
          * that runs on every page view is served by the index instead of by a
          * scan of the listing's specials.
          */
-        gastronomyDailySpecials_gastronomyId_validity_idx: index(
+        venueDailySpecials_venueId_validity_idx: index(
             'venueDailySpecials_venueId_validity_idx'
-        ).on(table.gastronomyId, table.validFrom, table.validUntil)
+        ).on(table.venueId, table.validFrom, table.validUntil)
     })
 );
 
 export const venueDailySpecialsRelations = relations(venueDailySpecials, ({ one }) => ({
     venue: one(venues, {
-        fields: [venueDailySpecials.gastronomyId],
+        fields: [venueDailySpecials.venueId],
         references: [venues.id]
     })
 }));

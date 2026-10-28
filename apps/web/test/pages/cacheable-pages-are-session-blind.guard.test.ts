@@ -97,7 +97,7 @@ const SESSION_AWARE_PREFIXES: ReadonlyArray<{
     },
     {
         prefix: '[lang]/publicar',
-        reason: 'Host/gastronomy/experience onboarding funnels branch on whether the visitor already has an account.'
+        reason: 'Host/venue/experience onboarding funnels branch on whether the visitor already has an account.'
     },
     {
         prefix: '[lang]/newsletter/',

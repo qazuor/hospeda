@@ -95,7 +95,7 @@ describe('PublishButton listing verticals (TEST:1729:2, TEST:1729:3)', () => {
         const notice = await screen.findByTestId('publish-subscribe-to-publish');
         expect(notice).toHaveTextContent('Suscribite para publicar');
         expect(notice).toHaveTextContent(
-            vertical === 'venue' ? 'suscripción de gastronomía' : 'suscripción de experiencias'
+            vertical === 'venue' ? 'suscripción de Comer y salir' : 'suscripción de experiencias'
         );
         expect(screen.getByRole('link', { name: 'Ver planes' })).toHaveAttribute('href', href);
     });

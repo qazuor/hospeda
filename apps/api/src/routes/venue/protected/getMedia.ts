@@ -1,6 +1,6 @@
 /**
  * GET /api/v1/protected/venues/:id/media
- * List photos in a gastronomy listing gallery (HOS-372).
+ * List photos in a venue listing gallery (HOS-372).
  *
  * Returns all non-deleted media rows for the given listing, ordered by
  * `sortOrder ASC`. Supports an optional `state` query filter (defaults to
@@ -21,7 +21,7 @@ import { createCRUDRoute } from '../../../utils/route-factory';
 const venueService = new VenueService({ logger: apiLogger });
 
 /**
- * Route handler — lists the gallery photos for a gastronomy listing.
+ * Route handler — lists the gallery photos for a venue listing.
  *
  * TYPE-WORKAROUND: accesses the internal `model` field from the service instance
  * to pass to the standalone media helper without requiring a public accessor.
@@ -29,12 +29,12 @@ const venueService = new VenueService({ logger: apiLogger });
 export const protectedGetVenueMediaRoute = createCRUDRoute({
     method: 'get',
     path: '/{id}/media',
-    summary: 'List gastronomy listing gallery photos',
+    summary: 'List venue listing gallery photos',
     description:
-        'Retrieves all media rows for a gastronomy listing, ordered by sortOrder ASC. ' +
+        'Retrieves all media rows for a venue listing, ordered by sortOrder ASC. ' +
         'Supports an optional `state` query filter (default: visible). ' +
         'Requires VENUE_EDIT_OWN (listing owner) or VENUE_EDIT_ALL (staff).',
-    tags: ['Gastronomy', 'Gastronomy Media'],
+    tags: ['Venue', 'Venue Media'],
     requestParams: {
         id: z.string().uuid({ message: 'zodError.common.id.invalidUuid' })
     },
@@ -56,7 +56,7 @@ export const protectedGetVenueMediaRoute = createCRUDRoute({
         const model = (venueService as unknown as { model: Parameters<typeof getVenueMedia>[0] })
             .model;
         const result = await getVenueMedia(model, actor, {
-            gastronomyId: params.id as string,
+            venueId: params.id as string,
             state
         });
 

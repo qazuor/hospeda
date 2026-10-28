@@ -22,7 +22,7 @@
  * | Entity type   | Counted from                                                     |
  * |---------------|------------------------------------------------------------------|
  * | accommodation | `accommodation_media` rows (`state='visible'`, `is_featured=false`) |
- * | gastronomy    | `venue_media` rows (`state='visible'`, `is_featured=false`)    |
+ * | venue    | `venue_media` rows (`state='visible'`, `is_featured=false`)    |
  * | experience    | `experience_media` rows (`state='visible'`, `is_featured=false`)    |
  * | destination   | JSONB `media.gallery`                                              |
  * | event         | `event_media` rows (`state='visible'`, `is_featured=false`)         |
@@ -100,7 +100,7 @@ export async function resolveVisibleGalleryCount(
         }
         case 'venue': {
             const { total } = await venueMediaModel.findByVenue({
-                gastronomyId: entityId,
+                venueId: entityId,
                 state: 'visible',
                 isFeatured: false
             });

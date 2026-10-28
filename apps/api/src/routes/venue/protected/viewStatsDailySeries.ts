@@ -1,7 +1,7 @@
 /**
  * GET /api/v1/protected/venues/mine/views/daily-series
  *
- * Gap-filled daily view-count series for every gastronomy listing owned by
+ * Gap-filled daily view-count series for every venue listing owned by
  * the authenticated owner, over a rolling window (7d or 30d) — HOS-734.
  *
  * Mirrors `views/protected/daily-series.ts` (the accommodation twin). See
@@ -28,19 +28,19 @@ import { createProtectedRoute } from '../../../utils/route-factory';
  * GET /mine/views/daily-series?window=7d|30d
  *
  * Authenticated owner endpoint that returns a gap-filled daily view-count
- * series aggregated across all of the caller's own gastronomy listings.
+ * series aggregated across all of the caller's own venue listings.
  * Reads the owner's effective view_basic_stats capability before returning statistics.
  */
 export const protectedVenueViewStatsDailySeriesRoute = createProtectedRoute({
     method: 'get',
     path: '/mine/views/daily-series',
-    summary: 'Get daily view series for my gastronomy listings',
+    summary: 'Get daily view series for my venue listings',
     description:
-        'Returns a gap-filled daily view-count series aggregated across all gastronomy listings ' +
+        'Returns a gap-filled daily view-count series aggregated across all venue listings ' +
         'owned by the authenticated owner over a rolling window (7d or 30d). Each item ' +
         'represents one calendar day; days with no views have total = 0. Scoped strictly to ' +
         'actor.id — no owner override is accepted. Requires the view_basic_stats entitlement.',
-    tags: ['Gastronomy'],
+    tags: ['Venue'],
     requestQuery: {
         window: EntityViewWindowSchema.default('30d')
     },

@@ -1,6 +1,6 @@
 /**
- * Public get gastronomy listings by destination endpoint (T-042)
- * Returns a paginated list of gastronomy listings for a specific destination.
+ * Public get venue listings by destination endpoint (T-042)
+ * Returns a paginated list of venue listings for a specific destination.
  *
  * Delegates to VenueService.search() with a forced destinationId filter.
  * VenueService does not expose a dedicated getByDestination() method
@@ -21,7 +21,7 @@ const venueService = new VenueService({ logger: apiLogger });
 
 /**
  * GET /api/v1/public/venues/destination/:destinationId
- * List gastronomy listings by destination — Public endpoint.
+ * List venue listings by destination — Public endpoint.
  *
  * Uses VenueService.search() with a forced destinationId filter.
  * Pagination defaults: page=1, pageSize=20.
@@ -29,9 +29,9 @@ const venueService = new VenueService({ logger: apiLogger });
 export const publicGetVenuesByDestinationRoute = createPublicListRoute({
     method: 'get',
     path: '/destination/{destinationId}',
-    summary: 'Get gastronomy listings by destination',
-    description: 'Returns gastronomy listings for a specific destination',
-    tags: ['Gastronomy'],
+    summary: 'Get venue listings by destination',
+    description: 'Returns venue listings for a specific destination',
+    tags: ['Venue'],
     requestParams: {
         destinationId: z.string().uuid({ message: 'zodError.common.id.invalidUuid' })
     },

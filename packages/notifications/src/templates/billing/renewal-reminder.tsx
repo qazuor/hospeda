@@ -24,7 +24,7 @@ export interface RenewalReminderProps {
      * `billing_subscriptions.product_domain` string, or `null`/`undefined` on
      * a pre-domain row. `RENEWAL_REMINDER` fires for an active subscription in
      * ANY vertical (`notification-schedule.job.ts` does not scope its sweep to
-     * accommodation), so the closing line below used to tell every gastronomy,
+     * accommodation), so the closing line below used to tell every venue,
      * experience, tourist and partner subscriber "gracias por confiar en
      * Hospeda para tus necesidades de alojamiento turístico" — see
      * `resolveRenewalReminderFooter`. Omitted or unrecognized fails open to

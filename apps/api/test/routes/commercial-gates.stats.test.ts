@@ -55,7 +55,7 @@ vi.mock('@repo/service-core', async (importOriginal) => ({
         getUnreadCount = mocks.service;
     },
     VenueService: class {
-        static ENTITY_NAME = 'gastronomy';
+        static ENTITY_NAME = 'venue';
         getById = mocks.service;
     },
     QrCodeService: class {
@@ -149,7 +149,7 @@ const rows = [
         allowed: PREMIUM
     },
     {
-        file: 'gastronomy/views',
+        file: 'venue/views',
         route: protectedVenueViewStatsRoute,
         path: '/mine/views',
         key: 'view_basic_stats',
@@ -158,7 +158,7 @@ const rows = [
         allowed: GASTRO_BASIC
     },
     {
-        file: 'gastronomy/daily-series',
+        file: 'venue/daily-series',
         route: protectedVenueViewStatsDailySeriesRoute,
         path: '/mine/views/daily-series',
         key: 'view_basic_stats',
@@ -185,7 +185,7 @@ const rows = [
         allowed: BASIC
     },
     {
-        file: 'gastronomy/menu-qr',
+        file: 'venue/menu-qr',
         route: protectedGetVenueMenuQrRoute,
         path: `/${LISTING}/menu-qr`,
         key: 'menu_qr_scan_metrics',
@@ -195,7 +195,7 @@ const rows = [
         resource: true
     },
     {
-        file: 'gastronomy/menu-qr-scans',
+        file: 'venue/menu-qr-scans',
         route: protectedGetVenueMenuQrScansRoute,
         path: `/${LISTING}/menu-qr/scans`,
         key: 'menu_qr_scan_metrics',
@@ -336,9 +336,9 @@ describe('TEST:V5:32 stats gates', () => {
         }
         if ('resource' in row)
             mocks.service.mockResolvedValue({
-                data: { id: LISTING, ownerId: row.allowed, slug: 'gastronomy', name: 'Venue' }
+                data: { id: LISTING, ownerId: row.allowed, slug: 'venue', name: 'Venue' }
             });
-        if (row.file === 'gastronomy/menu-qr') {
+        if (row.file === 'venue/menu-qr') {
             mocks.qr.mockImplementation(async (input: { targetUrl: string }) => ({
                 data: { id: LISTING, slug: 'qrslug', targetUrl: input.targetUrl }
             }));

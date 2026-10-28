@@ -81,7 +81,7 @@ export type ExperienceRating = z.infer<typeof ExperienceRatingSchema>;
  *
  * @example
  * ```ts
- * const GastronomySchema = z.object({
+ * const venueSchema = z.object({
  *   id: z.string().uuid(),
  *   ...ExperienceRatingFields,
  * });

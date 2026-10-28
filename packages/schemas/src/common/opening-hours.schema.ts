@@ -156,7 +156,7 @@ export type DaySchedule = z.infer<typeof DayScheduleSchema>;
 // ============================================================================
 
 /**
- * Full weekly opening-hours schema for a gastronomy or experience listing.
+ * Full weekly opening-hours schema for a venue or experience listing.
  *
  * Contains a schedule object with seven day keys (`mon` through `sun`),
  * each following {@link DayScheduleSchema}. Optional timezone, notes, and

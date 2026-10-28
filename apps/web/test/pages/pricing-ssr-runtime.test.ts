@@ -57,8 +57,8 @@ const AUDIENCE_PAGES: readonly AudiencePage[] = [
     },
     {
         path: 'planes/comer-y-salir/precios',
-        audienceId: 'gastronomy',
-        pricingAudience: 'gastronomy',
+        audienceId: 'venue',
+        pricingAudience: 'venue',
         publishesPrice: true
     },
     {

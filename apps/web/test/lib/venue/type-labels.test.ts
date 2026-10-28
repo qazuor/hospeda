@@ -1,6 +1,6 @@
 /**
  * @file type-labels.test.ts
- * @description The gastronomy owner form and the public listing page name a
+ * @description The venue owner form and the public listing page name a
  * listing type from ONE source (HOS-822).
  *
  * Written against the cause of the original drift (two hand-maintained label
@@ -16,9 +16,9 @@ import { buildVenueTypeLabelKey, resolveVenueTypeLabel } from '../../../src/lib/
 const LOCALES: readonly SupportedLocale[] = ['es', 'en', 'pt'];
 const VENUE_TYPES = Object.values(VenueTypeEnum);
 
-describe('buildGastronomyTypeLabelKey', () => {
-    it('points at the public gastronomy namespace', () => {
-        expect(buildVenueTypeLabelKey({ type: 'RESTAURANT' })).toBe('gastronomy.types.RESTAURANT');
+describe('buildVenueTypeLabelKey', () => {
+    it('points at the public venue namespace', () => {
+        expect(buildVenueTypeLabelKey({ type: 'RESTAURANT' })).toBe('venue.types.RESTAURANT');
     });
 
     it('never rebuilds the retired editor-private namespace', () => {
@@ -28,7 +28,7 @@ describe('buildGastronomyTypeLabelKey', () => {
     });
 });
 
-describe('resolveGastronomyTypeLabel: the form reads what the listing prints', () => {
+describe('resolveVenueTypeLabel: the form reads what the listing prints', () => {
     it.each(LOCALES)('resolves every enum member to a real translated label in %s', (locale) => {
         const { t } = createTranslations(locale);
 

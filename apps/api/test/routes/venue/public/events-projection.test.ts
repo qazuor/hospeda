@@ -20,7 +20,7 @@ import { applyVenueEventsGate } from '../../../../src/routes/venue/public/events
 function anEvent(overrides: Partial<VenueEventPublic> = {}): VenueEventPublic {
     return {
         id: '33333333-3333-4333-8333-333333333333',
-        gastronomyId: '22222222-2222-4222-8222-222222222222',
+        venueId: '22222222-2222-4222-8222-222222222222',
         title: 'Happy hour',
         description: null,
         recurrence: 'weekly',
@@ -36,7 +36,7 @@ function anEvent(overrides: Partial<VenueEventPublic> = {}): VenueEventPublic {
     };
 }
 
-describe('applyGastronomyVenueEventsGate (HOS-1042)', () => {
+describe('applyVenueVenueEventsGate (HOS-1042)', () => {
     it('publishes the active entries when the plan grants the agenda', () => {
         // Arrange
         const events = [anEvent(), anEvent({ id: '44444444-4444-4444-8444-444444444444' })];

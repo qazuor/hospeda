@@ -91,7 +91,7 @@ export const KNOWN_LIMIT_KEYS = new Set([
     'max_ai_text_improve_per_month',
     'max_ai_chat_per_month',
     'max_ai_chat_consumer_per_month',
-    // HOS-400 — each gastronomy/experience verticals's own AI-chat cap. Title-only entry,
+    // HOS-400 — each venue or experience vertical's own AI-chat cap. Title-only entry,
     // same shape as the pair above (see the comment a few lines up).
     'max_ai_chat_venue_per_month',
     'max_ai_chat_experience_per_month',

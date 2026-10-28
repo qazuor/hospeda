@@ -1,7 +1,7 @@
 ---
 /**
  * @file VenueDescription.astro
- * @description Plain description section for a gastronomy listing (SPEC-239 T-054).
+ * @description Plain description section for a venue listing (SPEC-239 T-054).
  *
  * Uses the same render pattern as the accommodation Description component:
  * - `richDescription` (markdown) is rendered via `renderContent` when present.
@@ -36,23 +36,23 @@ const richHtml =
 ---
 
 {summary && (
-    <div class="gastro-desc__summary">
+    <div class="venue-desc__summary">
         <p>{summary}</p>
     </div>
 )}
 
 {richHtml ? (
-    <div class="gastro-desc__body gastro-desc__body--rich" set:html={richHtml} />
+    <div class="venue-desc__body venue-desc__body--rich" set:html={richHtml} />
 ) : (
     descriptionText && (
-        <div class="gastro-desc__body">
+        <div class="venue-desc__body">
             <p>{descriptionText}</p>
         </div>
     )
 )}
 
 <style>
-    .gastro-desc__summary {
+    .venue-desc__summary {
         background-color: var(--surface-warm);
         border-left: 4px solid var(--brand-accent);
         border-radius: var(--radius-button, 8px);
@@ -60,7 +60,7 @@ const richHtml =
         margin-bottom: var(--space-5, 20px);
     }
 
-    .gastro-desc__summary p {
+    .venue-desc__summary p {
         font-family: var(--font-sans);
         font-size: 1.1rem;
         line-height: 1.6;
@@ -68,40 +68,40 @@ const richHtml =
         margin: 0;
     }
 
-    .gastro-desc__body {
+    .venue-desc__body {
         font-family: var(--font-sans);
         font-size: 1rem;
         line-height: 1.7;
         color: var(--core-foreground);
     }
 
-    .gastro-desc__body p {
+    .venue-desc__body p {
         margin-bottom: var(--space-3, 12px);
     }
 
-    .gastro-desc__body p:last-child {
+    .venue-desc__body p:last-child {
         margin-bottom: 0;
     }
 
     /* Rich-text heading styles */
-    .gastro-desc__body--rich :global(h2),
-    .gastro-desc__body--rich :global(h3) {
+    .venue-desc__body--rich :global(h2),
+    .venue-desc__body--rich :global(h3) {
         font-family: var(--font-heading);
         font-weight: 600;
         color: var(--core-foreground);
         margin-bottom: var(--space-2, 8px);
     }
 
-    .gastro-desc__body--rich :global(strong) {
+    .venue-desc__body--rich :global(strong) {
         font-weight: 700;
     }
 
-    .gastro-desc__body--rich :global(ul),
-    .gastro-desc__body--rich :global(ol) {
+    .venue-desc__body--rich :global(ul),
+    .venue-desc__body--rich :global(ol) {
         padding-left: var(--space-5, 20px);
     }
 
-    .gastro-desc__body--rich :global(li) {
+    .venue-desc__body--rich :global(li) {
         margin-bottom: var(--space-1, 4px);
     }
 </style>

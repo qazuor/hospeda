@@ -44,17 +44,17 @@ export const protectedDeleteVenueMenuFileRoute = createProtectedRoute({
     },
     summary: 'Remove the uploaded menu photo or PDF',
     description:
-        'Clears the listing’s uploaded menu file and deletes the stored asset. Owner-only, and requires the manage_venue_menu entitlement granted by the professional gastronomy plan and above. The structured menu and the external link are untouched.',
-    tags: ['Gastronomy', 'Gastronomy Menu'],
+        'Clears the listing’s uploaded menu file and deletes the stored asset. Owner-only, and requires the manage_venue_menu entitlement granted by the professional venue plan and above. The structured menu and the external link are untouched.',
+    tags: ['Venue', 'Venue Menu'],
     requestParams: {
         id: z.string().uuid({ message: 'zodError.common.id.invalidUuid' })
     },
     responseSchema: SuccessSchema,
     handler: async (ctx: Context, params: Record<string, unknown>) => {
         const actor = getActorFromContext(ctx);
-        const gastronomyId = params.id as string;
+        const venueId = params.id as string;
 
-        const listing = await venueService.getById(actor, gastronomyId);
+        const listing = await venueService.getById(actor, venueId);
         const hasEditAll = actor.permissions?.includes(PermissionEnum.VENUE_EDIT_ALL);
 
         // 404, not 403 — a 403 would confirm the id exists (error contract).
@@ -65,7 +65,7 @@ export const protectedDeleteVenueMenuFileRoute = createProtectedRoute({
             (!hasEditAll && !actor.permissions?.includes(PermissionEnum.VENUE_EDIT_OWN))
         ) {
             return createErrorResponse(
-                { code: 'NOT_FOUND', message: 'Gastronomy listing not found' },
+                { code: 'NOT_FOUND', message: 'Venue listing not found' },
                 ctx,
                 404
             );
@@ -86,7 +86,7 @@ export const protectedDeleteVenueMenuFileRoute = createProtectedRoute({
         ).model;
 
         await model.update(
-            { id: gastronomyId },
+            { id: venueId },
             {
                 menuFileUrl: null,
                 menuFilePublicId: null,
@@ -106,7 +106,7 @@ export const protectedDeleteVenueMenuFileRoute = createProtectedRoute({
                 apiLogger.warn(
                     {
                         error: error instanceof Error ? error.message : String(error),
-                        gastronomyId,
+                        venueId,
                         publicId
                     },
                     'Menu file cleared from listing but the stored asset could not be deleted'

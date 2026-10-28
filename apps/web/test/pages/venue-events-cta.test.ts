@@ -13,12 +13,12 @@
  * A first version of this CTA linked to `socialNetworks.whatsapp`. HOS-1076
  * (merged the same week) found that field never carried real data — it was
  * never part of `SocialNetworkSchema` — and removed it from
- * `VenueSocialNetworks` entirely: gastronomy has no public phone/WhatsApp
+ * `VenueSocialNetworks` entirely: venue has no public phone/WhatsApp
  * channel by design (HOS-1088 tracks the open question). What remains is a
  * handful of owner-optional social links plus a menu URL, and picking "the
  * first one that resolves" would sometimes point an "accepts events" CTA at a
  * restaurant's YouTube channel. So the CTA is an in-page anchor
- * (`#gastro-contact`) to `VenueContactBlock` instead: no channel to pick,
+ * (`#venue-contact`) to `VenueContactBlock` instead: no channel to pick,
  * and no outbound href for the HOS-592/F-02 sanitization guard to apply to.
  */
 import { readFileSync } from 'node:fs';
@@ -105,9 +105,9 @@ describe('gastronomia/[slug].astro — accepts-events CTA (HOS-1055)', () => {
     });
 });
 
-describe('GastronomyEventsCta.astro (HOS-1055)', () => {
+describe('VenueEventsCta.astro (HOS-1055)', () => {
     it('is a same-page anchor to the contact block, not an external link', () => {
-        expect(EVENTS_CTA).toContain('href="#gastro-contact"');
+        expect(EVENTS_CTA).toContain('href="#venue-contact"');
         // No outbound markers — this is not an outbound link, so the
         // HOS-592/F-02 sanitization guard has nothing to check here.
         expect(EVENTS_CTA).not.toContain('target="_blank"');
@@ -119,19 +119,19 @@ describe('GastronomyEventsCta.astro (HOS-1055)', () => {
         expect(EVENTS_CTA).not.toContain('readonly href');
     });
 
-    it('renders through the gastronomy.detail.eventsCta i18n namespace, with fallbacks', () => {
-        expect(EVENTS_CTA).toContain('gastronomy.detail.eventsCta.title');
-        expect(EVENTS_CTA).toContain('gastronomy.detail.eventsCta.description');
-        expect(EVENTS_CTA).toContain('gastronomy.detail.eventsCta.button');
+    it('renders through the venue.detail.eventsCta i18n namespace, with fallbacks', () => {
+        expect(EVENTS_CTA).toContain('venue.detail.eventsCta.title');
+        expect(EVENTS_CTA).toContain('venue.detail.eventsCta.description');
+        expect(EVENTS_CTA).toContain('venue.detail.eventsCta.button');
     });
 
-    it('does not promise a specific channel (e.g. WhatsApp) that gastronomy cannot deliver', () => {
+    it('does not promise a specific channel (e.g. WhatsApp) that venue cannot deliver', () => {
         expect(EVENTS_CTA.toLowerCase()).not.toContain('whatsapp');
     });
 });
 
-describe('GastronomyContactBlock.astro — the CTA anchor target (HOS-1055)', () => {
+describe('VenueContactBlock.astro — the CTA anchor target (HOS-1055)', () => {
     it('carries the stable id the events CTA anchors into', () => {
-        expect(CONTACT_BLOCK).toContain('id="gastro-contact"');
+        expect(CONTACT_BLOCK).toContain('id="venue-contact"');
     });
 });

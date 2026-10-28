@@ -1,7 +1,7 @@
 /**
  * @file owner-listings.ts
- * @description Fetches the authenticated gastronomy/experience owner's own listings across
- * both verticals (gastronomy + experiences) for the `mi-cuenta/comercio`
+ * @description Fetches the authenticated venue/experience owner's own listings across
+ * both verticals (venue + experiences) for the `mi-cuenta/comercio`
  * self-service area (SPEC-249), extended in HOS-166 PR-C with the owner
  * self-service create call and a per-listing completeness
  * enrichment used to drive the listing-card state machine.
@@ -33,13 +33,13 @@ const EXPERIENCE_PATH = '/api/v1/protected/experiences';
 /** Owner-tier detail of a single listing, one of the two verticals. */
 export type ListingDetail = VenueProtected | ExperienceProtected;
 
-/** The two supported gastronomy/experience verticals (matches the URL segment + enum value). */
+/** The two supported venue/experience verticals (matches the URL segment + enum value). */
 export type { VenueOrExperience };
 
 type ListResponse = { readonly listings: readonly OwnerListingSummary[] };
 
 /**
- * Fetches and merges the owner's gastronomy + experience listings.
+ * Fetches and merges the owner's venue + experience listings.
  *
  * @param cookieHeader - Raw `Cookie` header from the SSR request, forwarded so
  *   the protected endpoints can resolve the session (browser callers may omit
@@ -122,7 +122,7 @@ export interface OwnerListingSummaryWithState extends OwnerListingSummary {
  * public listing is complete by construction, and paying for the extra
  * fetch would tell the owner nothing new).
  *
- * The per-listing detail fetch is fanned out with `Promise.all` — gastronomy/experience
+ * The per-listing detail fetch is fanned out with `Promise.all` — venue/experience
  * owners are expected to hold a handful of listings (HOS-166 OQ-4: no cap in
  * v1, but not a bulk-catalog use case), so an N+1 SSR fetch here is an
  * accepted tradeoff over adding new API surface. This preview calls the SAME
@@ -159,7 +159,7 @@ export async function fetchOwnerListingsWithState({
                 return { ...summary, completeness: null };
             }
 
-            // `detail` is a gastronomy|experience union whose two members share no
+            // `detail` is a venue|experience union whose two members share no
             // nameable structural supertype; the canonical function reads a narrow,
             // field-compatible subset (`ListingCompletenessListing`).
             const completeness = resolveListingCompleteness({

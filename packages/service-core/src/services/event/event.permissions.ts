@@ -238,7 +238,7 @@ export function checkCanViewEvent(actor: Actor, event: Event): void {
     // is accepted here too so the soft-deleted exemption above is self-sufficient
     // and does not silently rely on seed roles bundling EVENT_VIEW_ALL with
     // EVENT_VIEW_PRIVATE/EVENT_VIEW_DRAFT (matches the isStaff pattern in
-    // gastronomy/experience `_canView`).
+    // venue/experience `_canView`).
     if (
         actor.permissions?.includes(PermissionEnum.EVENT_VIEW_PRIVATE) ||
         actor.permissions?.includes(PermissionEnum.EVENT_VIEW_DRAFT) ||

@@ -1,6 +1,6 @@
 /**
- * Public get gastronomy listing by slug endpoint (T-042)
- * Returns a single gastronomy listing projected through GastronomyPublicSchema.
+ * Public get venue listing by slug endpoint (T-042)
+ * Returns a single venue listing projected through VenuePublicSchema.
  * Returns null (404) when the listing is not found or not publicly visible.
  */
 
@@ -30,7 +30,7 @@ const venueService = new VenueService({ logger: apiLogger });
 
 /**
  * GET /api/v1/public/venues/slug/:slug
- * Get gastronomy listing by slug — Public endpoint.
+ * Get venue listing by slug — Public endpoint.
  *
  * Delegates to VenueService.getBySlug (inherited from BaseCrudService
  * via getByField('slug', ...)). Returns null when the slug resolves to no
@@ -39,9 +39,9 @@ const venueService = new VenueService({ logger: apiLogger });
 export const publicGetVenueBySlugRoute = createPublicRoute({
     method: 'get',
     path: '/slug/{slug}',
-    summary: 'Get gastronomy listing by slug',
-    description: 'Retrieves a gastronomy listing by its URL-friendly slug',
-    tags: ['Gastronomy'],
+    summary: 'Get venue listing by slug',
+    description: 'Retrieves a venue listing by its URL-friendly slug',
+    tags: ['Venue'],
     requestParams: {
         slug: z.string().min(1).max(255)
     },
@@ -70,7 +70,7 @@ export const publicGetVenueBySlugRoute = createPublicRoute({
         //
         // HOS-895 PR2: the structured carta and the uploaded photo/PDF are read
         // in the same parallel batch, and gated by a live check that reads the
-        // owner's CURRENT gastronomy subscription, not whatever plan was active
+        // owner's CURRENT venue subscription, not whatever plan was active
         // when the carta was typed or the file was uploaded. See the resolver's
         // own doc for why this is a live read rather than a synced column.
         //
@@ -113,7 +113,7 @@ export const publicGetVenueBySlugRoute = createPublicRoute({
         // three, and — worse — the three answers could come from different
         // reads of the same subscription if a plan change landed mid-render,
         // publishing one paid feature while withholding another for no reason a
-        // reader could see. See `resolveOwnerGastronomyPlanEntitlements`.
+        // reader could see. See `resolveOwnerVenuePlanEntitlements`.
         const ownerGrants = await readEffectiveKeys({
             userId: venue.ownerId,
             vertical: VerticalEnum.VENUE,
@@ -130,13 +130,13 @@ export const publicGetVenueBySlugRoute = createPublicRoute({
             await Promise.all([
                 fetchVenueAmenities(venue.id),
                 fetchVenueFeatures(venue.id),
-                getVenueMenu(model, { gastronomyId: venue.id }),
-                getVenueEvents(model, { gastronomyId: venue.id }),
-                getVenueDailySpecials(model, { gastronomyId: venue.id, validOn: today })
+                getVenueMenu(model, { venueId: venue.id }),
+                getVenueEvents(model, { venueId: venue.id }),
+                getVenueDailySpecials(model, { venueId: venue.id, validOn: today })
             ]);
 
         const menuGate = applyVenueMenuManagementGate({
-            gastronomy: venue,
+            venue: venue,
             menuSections: menuResult.error ? [] : menuResult.data.sections,
             ownerGrantsMenuManagement: ownerGrants.manage_venue_menu ?? false,
             ownerGrantsMenuItemPhotos: ownerGrants.menu_item_photos ?? false,

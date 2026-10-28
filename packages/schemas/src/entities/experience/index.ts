@@ -1,7 +1,7 @@
 /**
  * Experience entity schemas — all schema files for the Experiencias listing.
  *
- * Mirrors the gastronomy barrel: each sub-file has a single responsibility.
+ * Mirrors the venue barrel: each sub-file has a single responsibility.
  */
 
 // Access level schemas (public, protected, admin)

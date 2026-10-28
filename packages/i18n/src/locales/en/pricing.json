@@ -15,7 +15,7 @@
             "tourist": "anyone travelling around the Litoral who wants more out of the platform",
             "experience": "people who run outings and activities for visitors",
             "partner": "institutions and businesses looking to partner with Hospeda",
-            "gastronomy": "owners of a food business who want to be found"
+            "venue": "owners of a food business who want to be found"
         },
         "plan": {
             "owner-basico": "someone renting out a single property who is just getting started",
@@ -93,10 +93,10 @@
                     "item3": "Compare places to stay and write your own reviews."
                 }
             },
-            "gastronomy": {
+            "venue": {
                 "title": "List my food business",
                 "audience": "For restaurants, grills, bakeries, food trucks and any food business that wants to appear in the guide.",
-                "cta": "See gastronomy plans",
+                "cta": "See Food & nightlife plans",
                 "highlights": {
                     "item1": "A listing with photos, menu, opening hours and contact details.",
                     "item2": "Show up in the dining guide travellers browse.",
@@ -225,12 +225,12 @@
         "seePlans": "See plans and pricing"
     },
     "consultPrice": "Ask us",
-    "gastronomy": {
+    "venue": {
         "tagline": "Plans and pricing",
-        "heading": "Gastronomy pricing",
+        "heading": "Food & nightlife pricing",
         "subtitle": "Every plan lists your venue. What changes is how much of it you can show.",
         "empty": "Plans unavailable right now.",
-        "cardsHeading": "Gastronomy plan comparison",
+        "cardsHeading": "Food & nightlife plan comparison",
         "pageTitle": "Pricing to list your food business",
         "pageDescription": "See what it costs to list your restaurant, grill, deli or food truck on Hospeda.",
         "ctaLabel": "Get started"

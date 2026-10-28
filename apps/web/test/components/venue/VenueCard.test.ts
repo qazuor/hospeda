@@ -14,7 +14,7 @@ const src = readFileSync(
     'utf8'
 );
 
-describe('GastronomyCard.astro', () => {
+describe('VenueCard.astro', () => {
     describe('locale access', () => {
         it('uses Astro.locals.locale via createTranslations(locale), not Astro.params.lang', () => {
             // Must import SupportedLocale and accept locale as a Prop
@@ -36,25 +36,25 @@ describe('GastronomyCard.astro', () => {
     });
 
     describe('type badge', () => {
-        it('resolves type label via t() with gastronomy.types namespace', () => {
-            expect(src).toContain('gastronomy.types.');
+        it('resolves type label via t() with venue.types namespace', () => {
+            expect(src).toContain('venue.types.');
         });
 
         it('renders the type label in a badge element', () => {
-            expect(src).toContain('gastro-card__type-badge');
+            expect(src).toContain('venue-card__type-badge');
         });
     });
 
     describe('price range badge', () => {
-        it('resolves price range label via t() with gastronomy.card.priceRange namespace', () => {
-            expect(src).toContain('gastronomy.card.priceRange.');
+        it('resolves price range label via t() with venue.card.priceRange namespace', () => {
+            expect(src).toContain('venue.card.priceRange.');
         });
     });
 
     describe('rating', () => {
         it('renders star icons when averageRating is present', () => {
             expect(src).toContain('data.averageRating > 0');
-            expect(src).toContain('gastro-card__stars');
+            expect(src).toContain('venue-card__stars');
         });
 
         it('shows reviewsCount alongside the rating', () => {
@@ -69,7 +69,7 @@ describe('GastronomyCard.astro', () => {
 
         it('has a location bar with a LocationIcon', () => {
             expect(src).toContain('LocationIcon');
-            expect(src).toContain('gastro-card__location-bar');
+            expect(src).toContain('venue-card__location-bar');
         });
     });
 
@@ -90,25 +90,25 @@ describe('GastronomyCard.astro', () => {
             expect(src).toContain('openNowStatus !== null');
         });
 
-        it('uses gastronomy.card.openNow i18n key', () => {
-            expect(src).toContain('gastronomy.card.openNow');
+        it('uses venue.card.openNow i18n key', () => {
+            expect(src).toContain('venue.card.openNow');
         });
 
-        it('uses gastronomy.card.closedNow i18n key', () => {
-            expect(src).toContain('gastronomy.card.closedNow');
+        it('uses venue.card.closedNow i18n key', () => {
+            expect(src).toContain('venue.card.closedNow');
         });
 
         // BETA-117: the badge was illegible over photos because it used
         // near-transparent alpha tints. It must use solid/opaque fills.
         it('uses the green brand fill for the open state', () => {
             expect(src).toContain(
-                '.gastro-card__open-badge--open {\n' +
+                '.venue-card__open-badge--open {\n' +
                     '        background-color: var(--hospeda-forest);'
             );
         });
 
         it('darkens the red fill for the closed state (dark-mode contrast)', () => {
-            expect(src).toContain('.gastro-card__open-badge--closed {\n');
+            expect(src).toContain('.venue-card__open-badge--closed {\n');
             expect(src).toContain(
                 'background-color: color-mix(in oklab, var(--destructive) 85%, black);'
             );
@@ -119,13 +119,13 @@ describe('GastronomyCard.astro', () => {
         // near-black in dark and fail WCAG AA (< 4.5:1) on the badge fills.
         it('uses a theme-constant white foreground on the badge base', () => {
             expect(src).toMatch(
-                /\.gastro-card__open-badge \{[\s\S]*?color: var\(--destructive-foreground\);[\s\S]*?\}/
+                /\.venue-card__open-badge \{[\s\S]*?color: var\(--destructive-foreground\);[\s\S]*?\}/
             );
         });
 
         it('does not use the theme-flipping --primary-foreground on the badges', () => {
             expect(src).not.toContain(
-                '.gastro-card__open-badge--open {\n' +
+                '.venue-card__open-badge--open {\n' +
                     '        background-color: var(--hospeda-forest);\n' +
                     '        color: var(--primary-foreground);'
             );

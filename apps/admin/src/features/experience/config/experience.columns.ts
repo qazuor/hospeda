@@ -2,7 +2,7 @@
  * @file experience.columns.ts
  * Column factory for the experience admin list page (SPEC-240 T-028).
  *
- * Mirrors the gastronomy columns pattern. Each column receives a translation
+ * Mirrors the venue columns pattern. Each column receives a translation
  * function so headers are localised at render time.
  */
 

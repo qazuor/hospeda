@@ -58,10 +58,10 @@ export async function handlePutVenueDailySpecials(
     ).model;
 
     const result = await replaceVenueDailySpecials(model, actor, {
-        gastronomyId: params.id as string,
+        venueId: params.id as string,
         // TYPE-WORKAROUND: the factory hands the handler a
         // `Record<string, unknown>`, but the body has already been validated
-        // against `GastronomyDailySpecialsReplacePayloadSchema` by the route;
+        // against `VenueDailySpecialsReplacePayloadSchema` by the route;
         // the service re-parses it anyway, so the cast asserts nothing the next
         // line does not verify.
         specials: body as unknown as VenueDailySpecialsReplacePayload
@@ -77,16 +77,16 @@ export async function handlePutVenueDailySpecials(
 export const protectedPutVenueDailySpecialsRoute = createProtectedRoute({
     method: 'put',
     path: '/{id}/daily-specials',
-    summary: 'Replace the menú del día of a gastronomy listing',
+    summary: 'Replace the menú del día of a venue listing',
     description:
-        'Replaces the listing’s daily specials with the submitted document. Each special carries its own inclusive validity window and stops being shown publicly once it passes — no job runs and nothing has to be taken down by hand. An empty specials array removes them immediately. Owner-only, and requires the manage_venue_daily_special entitlement granted by the professional gastronomy plan and above.',
+        'Replaces the listing’s daily specials with the submitted document. Each special carries its own inclusive validity window and stops being shown publicly once it passes — no job runs and nothing has to be taken down by hand. An empty specials array removes them immediately. Owner-only, and requires the manage_venue_daily_special entitlement granted by the professional venue plan and above.',
     listingAccess: {
         vertical: VerticalEnum.VENUE,
         operation: 'EDIT',
         idParam: 'id',
         capabilities: ['manage_venue_daily_special']
     },
-    tags: ['Gastronomy', 'Gastronomy Daily Specials'],
+    tags: ['Venue', 'Venue Daily Specials'],
     protectedTag: false,
     requestParams: {
         id: z.string().uuid({ message: 'zodError.common.id.invalidUuid' })

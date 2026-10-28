@@ -1,5 +1,5 @@
 /**
- * gastronomy.service.test.ts
+ * venue.service.test.ts
  *
  * Unit tests for VenueService (SPEC-239 T-035 / T-036).
  *
@@ -191,8 +191,8 @@ beforeEach(() => {
 // updateOwn
 // ---------------------------------------------------------------------------
 
-describe('GastronomyService.updateOwn', () => {
-    it('should return NOT_FOUND when gastronomy does not exist', async () => {
+describe('VenueService.updateOwn', () => {
+    it('should return NOT_FOUND when venue does not exist', async () => {
         const service = makeService(null);
         const result = await service.updateOwn(ENTITY_ID, {}, ownerActor);
         expect(result.error?.code).toBe(ServiceErrorCode.NOT_FOUND);
@@ -342,7 +342,7 @@ describe('GastronomyService.updateOwn', () => {
 // admin-only post-create (HOS-166 OQ-3 — derived server-side from `name` at
 // create, staff-only rename after). Only true control fields
 // (publicationStatus/ownerId) remain stripped.
-describe('GastronomyService.updateOwn — identity-field regression (SPEC-249 T-022, SPEC-253, HOS-166 D-1)', () => {
+describe('VenueService.updateOwn — identity-field regression (SPEC-249 T-022, SPEC-253, HOS-166 D-1)', () => {
     it('persists name/description/destinationId/type/summary/i18n; strips control fields + slug', async () => {
         const entity = makeVenueEntity();
         const service = makeService(entity);
@@ -387,7 +387,7 @@ describe('GastronomyService.updateOwn — identity-field regression (SPEC-249 T-
 // _executeSearch (indirect — through search() public API with mocked model)
 // ---------------------------------------------------------------------------
 
-describe('GastronomyService search filter forwarding', () => {
+describe('VenueService search filter forwarding', () => {
     it('should call model.findAllWithRelations with deletedAt: null filter (Bug B7a: relations loaded for destinationName)', async () => {
         const entity = makeVenueEntity();
         const service = makeService(entity);
@@ -432,11 +432,11 @@ describe('GastronomyService search filter forwarding', () => {
 //
 // What they cannot assert: that the SQL returns the right rows. The model is
 // mocked here — no database is involved. Row-level behaviour is the clause's own
-// suite (`packages/db/test/utils/gastronomy-catalog-filters.test.ts`, which
+// suite (`packages/db/test/utils/venue-catalog-filters.test.ts`, which
 // compiles the SQL) plus the staging smoke.
 // ---------------------------------------------------------------------------
 
-describe('GastronomyService — apto/catalog filters (HOS-1054)', () => {
+describe('VenueService — apto/catalog filters (HOS-1054)', () => {
     const GLUTEN_FREE = '11111111-1111-4111-8111-111111111111';
     const LACTOSE_FREE = '22222222-2222-4222-8222-222222222222';
     const dialect = new PgDialect();
@@ -465,7 +465,7 @@ describe('GastronomyService — apto/catalog filters (HOS-1054)', () => {
     it('never leaks the filter into the scalar where clause', async () => {
         // `features` is an array against a junction table; if it slipped into the
         // `where` object the base builder would try to compare a `features` COLUMN
-        // that does not exist on `gastronomies`.
+        // that does not exist on `legacy listing tables`.
         const service = makeService(makeVenueEntity());
         const mockFindAllWithRelations = (service as AnyService).model.findAllWithRelations;
 
@@ -521,7 +521,7 @@ describe('GastronomyService — apto/catalog filters (HOS-1054)', () => {
 // _projectPublicEntity
 // ---------------------------------------------------------------------------
 
-describe('GastronomyService._projectPublicEntity', () => {
+describe('VenueService._projectPublicEntity', () => {
     it('should strip adminInfo from the projected entity', () => {
         const entity = makeVenueEntity({ adminInfo: { notes: 'internal' } });
         const service = makeService(entity);
@@ -541,7 +541,7 @@ describe('GastronomyService._projectPublicEntity', () => {
 // _canView (visibility gate) — HOS-117 T-022
 // ---------------------------------------------------------------------------
 
-describe('GastronomyService._canView', () => {
+describe('VenueService._canView', () => {
     it('should throw GONE for a deleted PUBLIC entity when actor lacks VENUE_VIEW_ALL', () => {
         // The deleted-at gate fires first (before the owner check), so both owner
         // and non-owner actors without VENUE_VIEW_ALL receive GONE (410,
@@ -590,9 +590,9 @@ describe('GastronomyService._canView', () => {
 // ENTITY_NAME
 // ---------------------------------------------------------------------------
 
-describe('GastronomyService.ENTITY_NAME', () => {
-    it('should be "gastronomy"', () => {
-        expect(VenueService.ENTITY_NAME).toBe('gastronomy');
+describe('VenueService.ENTITY_NAME', () => {
+    it('should be "venue"', () => {
+        expect(VenueService.ENTITY_NAME).toBe('venue');
     });
 });
 
@@ -601,7 +601,7 @@ describe('GastronomyService.ENTITY_NAME', () => {
 // A hidden (PRIVATE/non-ACTIVE) listing must never surface on the public list.
 // ---------------------------------------------------------------------------
 
-describe('GastronomyService public search visibility filter (AC-6.2)', () => {
+describe('VenueService public search visibility filter (AC-6.2)', () => {
     it('forces publicationStatus=PUBLISHED on public search (no hidden-listing leak)', async () => {
         const service = makeService(makeVenueEntity());
         const model = (service as AnyService).model;
@@ -630,7 +630,7 @@ describe('GastronomyService public search visibility filter (AC-6.2)', () => {
 // was routed through update(), which omits ownerId, so it silently no-op'd)
 // ---------------------------------------------------------------------------
 
-describe('GastronomyService.assignOwner', () => {
+describe('VenueService.assignOwner', () => {
     it('writes the new ownerId via model.update for a staff actor', async () => {
         const service = makeService(makeVenueEntity());
         const model = (service as AnyService).model;
@@ -671,8 +671,8 @@ describe('GastronomyService.assignOwner', () => {
 // listOwn — owner-tier read inherited from BaseListingService (SPEC-249 T-004)
 // ---------------------------------------------------------------------------
 
-describe('GastronomyService.listOwn', () => {
-    it("lists the owner's own non-deleted gastronomy listings (hard-scoped to ownerId)", async () => {
+describe('VenueService.listOwn', () => {
+    it("lists the owner's own non-deleted venue listings (hard-scoped to ownerId)", async () => {
         const entity = makeVenueEntity();
         const service = makeService(entity);
         const mockFindAll = (service as AnyService).model.findAll;
@@ -692,11 +692,11 @@ describe('GastronomyService.listOwn', () => {
 
 // ---------------------------------------------------------------------------
 // Bug B7a regression — _executeSearch loads destination+owner relations
-// Fixes: destinationName always empty on gastronomy card (findAll never joined
+// Fixes: destinationName always empty on venue card (findAll never joined
 // the destination table; findAllWithRelations does).
 // ---------------------------------------------------------------------------
 
-describe('GastronomyService._executeSearch — B7a regression (destination relation loaded)', () => {
+describe('VenueService._executeSearch — B7a regression (destination relation loaded)', () => {
     it('passes destination: true and owner: true to findAllWithRelations', async () => {
         const entity = makeVenueEntity();
         const service = makeService(entity);
@@ -745,7 +745,7 @@ describe('GastronomyService._executeSearch — B7a regression (destination relat
 // service must read it from there.
 // ---------------------------------------------------------------------------
 
-describe('GastronomyService._executeSearch — BETA-119 regression (sort forwarded from ctx.pagination)', () => {
+describe('VenueService._executeSearch — BETA-119 regression (sort forwarded from ctx.pagination)', () => {
     it('forwards ctx.pagination.sortBy/sortOrder into the findAllWithRelations pagination argument', async () => {
         const entity = makeVenueEntity();
         const service = makeService(entity);

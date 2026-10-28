@@ -197,7 +197,7 @@ describe('TEST:V3:8 cache invalidation', () => {
         const h = harness();
         const first = h.create();
         const second = h.create();
-        for (const vertical of ['ACCOMMODATION', 'TOURIST', 'GASTRONOMY']) {
+        for (const vertical of ['ACCOMMODATION', 'TOURIST', 'VENUE']) {
             await first.readThrough({
                 userId: 'a',
                 vertical,
@@ -205,7 +205,7 @@ describe('TEST:V3:8 cache invalidation', () => {
             });
         }
         await first.invalidateUser({ userId: 'a' });
-        for (const vertical of ['ACCOMMODATION', 'TOURIST', 'GASTRONOMY']) {
+        for (const vertical of ['ACCOMMODATION', 'TOURIST', 'VENUE']) {
             const load = vi.fn(async () => snapshot('a', vertical, 2));
             expect((await second.readThrough({ userId: 'a', vertical, load })).values[0]?.[1]).toBe(
                 2

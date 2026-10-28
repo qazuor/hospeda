@@ -1,6 +1,6 @@
 /**
- * Admin gastronomy list endpoint
- * Returns all gastronomy listings with full admin access.
+ * Admin venue list endpoint
+ * Returns all venue listings with full admin access.
  */
 import { VenueAdminListItemSchema, VenueAdminSearchSchema } from '@repo/schemas';
 import { ServiceError, VenueService } from '@repo/service-core';
@@ -13,7 +13,7 @@ const venueService = new VenueService({ logger: apiLogger });
 
 /**
  * GET /api/v1/admin/venues
- * List gastronomy listings — Admin endpoint.
+ * List venue listings — Admin endpoint.
  *
  * Permission model: the entity-specific permission (VENUE_VIEW_ALL) is
  * enforced in the service (`_canAdminList` → `checkVenueCanAdminList`).
@@ -23,9 +23,9 @@ const venueService = new VenueService({ logger: apiLogger });
 export const adminListVenuesRoute = createAdminListRoute({
     method: 'get',
     path: '/',
-    summary: 'List gastronomy listings (admin)',
-    description: 'Returns a paginated list of gastronomy listings with full admin details',
-    tags: ['Gastronomy'],
+    summary: 'List venue listings (admin)',
+    description: 'Returns a paginated list of venue listings with full admin details',
+    tags: ['Venue'],
     requestQuery: VenueAdminSearchSchema.omit({ page: true, pageSize: true }).shape,
     responseSchema: VenueAdminListItemSchema,
     handler: async (ctx, _params, _body, query) => {

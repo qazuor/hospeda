@@ -65,7 +65,7 @@ describe('HOS-1642 owner acts for other listing subentities', () => {
 
     it('TEST:V9a:7 — carta, special and event edits each write a name-only act', async () => {
         await withServiceTestTransaction(async (tx) => {
-            const { gastronomyId, ownerId } = await seedVenue(tx);
+            const { venueId, ownerId } = await seedVenue(tx);
             const actor = owner(ownerId);
             const model = new VenueModel();
             const ctx = { tx };
@@ -73,7 +73,7 @@ describe('HOS-1642 owner acts for other listing subentities', () => {
                 model,
                 actor,
                 {
-                    gastronomyId,
+                    venueId,
                     menu: {
                         sections: [{ name: 'Carta secreta', items: [{ name: 'Plato secreto' }] }]
                     }
@@ -85,7 +85,7 @@ describe('HOS-1642 owner acts for other listing subentities', () => {
                 model,
                 actor,
                 {
-                    gastronomyId,
+                    venueId,
                     specials: {
                         specials: [
                             {
@@ -103,7 +103,7 @@ describe('HOS-1642 owner acts for other listing subentities', () => {
                 model,
                 actor,
                 {
-                    gastronomyId,
+                    venueId,
                     agenda: {
                         events: [
                             {
@@ -120,7 +120,7 @@ describe('HOS-1642 owner acts for other listing subentities', () => {
             expect(agenda.error).toBeUndefined();
             await expectActs({
                 entityType: 'venue',
-                entityId: gastronomyId,
+                entityId: venueId,
                 ownerId,
                 fields: ['menu', 'dailySpecials', 'events'],
                 tx,
@@ -171,7 +171,7 @@ describe('HOS-1642 owner acts for other listing subentities', () => {
                 vertical === 'accommodation'
                     ? (seeded as Awaited<ReturnType<typeof seedAccommodation>>).accommodationId
                     : vertical === 'venue'
-                      ? (seeded as Awaited<ReturnType<typeof seedVenue>>).gastronomyId
+                      ? (seeded as Awaited<ReturnType<typeof seedVenue>>).venueId
                       : (seeded as Awaited<ReturnType<typeof seedExperience>>).experienceId;
             const ownerId = 'userId' in seeded ? seeded.userId : seeded.ownerId;
             const [tag] = await tx

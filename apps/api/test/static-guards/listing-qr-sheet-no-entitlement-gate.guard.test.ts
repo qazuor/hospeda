@@ -5,7 +5,7 @@
  * printable sheet (`qrSheet.ts`) and the dashboard image (`qrCode.ts`, PR 2).
  *
  * The six routes sit beside two documents that ARE gated — the brochure
- * (`DOWNLOAD_LISTING_PDF`) and the gastronomy menu writes
+ * (`DOWNLOAD_LISTING_PDF`) and the venue menu writes
  * (`MANAGE_VENUE_MENU`) — and they were written by copying those files.
  * The obvious "consistency" fix is to add `requireEntitlement` here too, and it
  * would look like tidying rather than like a product change: nothing else in the

@@ -5,7 +5,7 @@ import * as mod from '../../../../src/routes/_authed/venues/$id_.edit';
 /**
  * HOS-382 regression test.
  *
- * This file used to assert that the gastronomy edit page wired
+ * This file used to assert that the venue edit page wired
  * `media.featuredImage` / `media.gallery` field handlers to Cloudinary
  * uploads. That wiring was the bug: `media` is not a writable key on
  * `VenueUpdateInputSchema` (the `media` JSONB column was dropped —

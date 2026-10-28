@@ -6,7 +6,7 @@
  * Every module reachable from `src/utils/index.ts` imports ZERO dbschemas.
  * Nothing declared that, nothing enforced it, and nothing in the type system
  * notices when it stops being true — which is exactly how it got broken: a
- * gastronomy clause builder was added to `utils/` because it is a helper, and
+ * venue clause builder was added to `utils/` because it is a helper, and
  * helpers live in `utils/`.
  *
  * ## What breaks when it is violated
@@ -51,7 +51,7 @@ const UTILS_DIR = join(__dirname, '../src/utils');
 
 /**
  * Matches a real ES import/export-from statement naming a `.dbschema` module,
- * e.g. `import { venues } from '../schemas/gastronomy/gastronomy.dbschema.ts';`
+ * e.g. `import { venues } from '../schemas/venue/venue.dbschema.ts';`
  * or `export * from './x.dbschema.ts';`. Prose is not a statement, so a comment
  * that merely says "dbschema" does not match.
  */
@@ -85,9 +85,7 @@ describe('src/utils/ stays free of dbschema imports (HOS-1054)', () => {
     it('the regex it relies on actually catches a dbschema import', () => {
         // A guard whose predicate never fires is a guard that passes forever.
         expect(
-            DBSCHEMA_IMPORT.test(
-                "import { venues } from '../../schemas/gastronomy/gastronomy.dbschema.ts';"
-            )
+            DBSCHEMA_IMPORT.test("import { venues } from '../../schemas/venue/venue.dbschema.ts';")
         ).toBe(true);
         expect(DBSCHEMA_IMPORT.test("export * from './r_venue_feature.dbschema.ts';")).toBe(true);
         // ...and does not fire on prose that merely names one.

@@ -240,13 +240,13 @@ describe('HOS-1077 per-vertical permission split', () => {
             );
         });
 
-        it('rejects EXPERIENCE_EDIT_ALL on a gastronomy check', () => {
+        it('rejects EXPERIENCE_EDIT_ALL on a venue check', () => {
             expectForbidden(() =>
                 checkCanEditAll(makeActor([PermissionEnum.EXPERIENCE_EDIT_ALL]), {}, 'venue')
             );
         });
 
-        it('rejects a gastronomy owner editing their own experience-vertical row', () => {
+        it('rejects a venue owner editing their own experience-vertical row', () => {
             expectForbidden(() =>
                 checkCanEditOwn(
                     makeActor([PermissionEnum.VENUE_EDIT_OWN], 'actor-1'),
@@ -258,7 +258,7 @@ describe('HOS-1077 per-vertical permission split', () => {
     });
 
     describe("the vertical's own permission passes", () => {
-        it('accepts VENUE_EDIT_ALL on a gastronomy check', () => {
+        it('accepts VENUE_EDIT_ALL on a venue check', () => {
             expect(() =>
                 checkCanEditAll(makeActor([PermissionEnum.VENUE_EDIT_ALL]), {}, 'venue')
             ).not.toThrow();
@@ -270,7 +270,7 @@ describe('HOS-1077 per-vertical permission split', () => {
             ).not.toThrow();
         });
 
-        it('accepts VENUE_EDIT_OWN for the owner of a gastronomy listing', () => {
+        it('accepts VENUE_EDIT_OWN for the owner of a venue listing', () => {
             expect(() =>
                 checkCanEditOwn(makeActor([PermissionEnum.VENUE_EDIT_OWN]), ownedEntity, 'venue')
             ).not.toThrow();
@@ -284,7 +284,7 @@ describe('HOS-1077 per-vertical permission split', () => {
             );
         });
 
-        it('EXPERIENCE_EDIT_ALL is refused on a gastronomy check', () => {
+        it('EXPERIENCE_EDIT_ALL is refused on a venue check', () => {
             expectForbidden(() =>
                 checkCanEditAll(makeActor([PermissionEnum.EXPERIENCE_EDIT_ALL]), {}, 'venue')
             );
@@ -313,7 +313,7 @@ describe('HOS-1077 per-vertical permission split', () => {
     });
 
     describe('delete is scoped to its vertical', () => {
-        it('rejects EXPERIENCE_DELETE on a gastronomy check', () => {
+        it('rejects EXPERIENCE_DELETE on a venue check', () => {
             expectForbidden(() =>
                 checkCanDeleteListing(makeActor([PermissionEnum.EXPERIENCE_DELETE]), {}, 'venue')
             );

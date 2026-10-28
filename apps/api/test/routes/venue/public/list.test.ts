@@ -95,7 +95,7 @@ describe('GET /api/v1/public/venues', () => {
     //
     // What they cannot assert: which rows come back. The DB is mocked, so the
     // clause is built and handed over but never executed — row-level behaviour
-    // is `packages/db/test/utils/gastronomy-catalog-filters.test.ts` (which
+    // is `packages/db/test/utils/venue-catalog-filters.test.ts` (which
     // compiles the SQL) plus the staging smoke.
     // -------------------------------------------------------------------------
 

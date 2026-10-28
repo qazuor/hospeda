@@ -16,7 +16,7 @@
  * does not merely go unchecked, it is invisible in the report, so the guard
  * announces that every column it found is protected and says nothing about the
  * one it lost. Each of those fixtures pairs the exotic table with a healthy,
- * fully-declared `gastronomies` — otherwise the old guard would have exited 1
+ * fully-declared `venues` — otherwise the old guard would have exited 1
  * anyway via its "found zero contact_info columns" branch and the fixture
  * would prove nothing.
  */
@@ -69,12 +69,12 @@ function makeTree(files: Record<string, string>): string {
     return root;
 }
 
-const SCHEMA_PATH = 'packages/db/src/schemas/gastronomy/gastronomy.dbschema.ts';
+const SCHEMA_PATH = 'packages/db/src/schemas/venue/venue.dbschema.ts';
 
 /** A schema file carrying one `contact_info` JSONB column. */
 const SCHEMA_SOURCE = `import { jsonb, pgTable, uuid } from 'drizzle-orm/pg-core';
 
-export const gastronomies = pgTable('gastronomies', {
+export const venues = pgTable('venues', {
     id: uuid('id').primaryKey(),
     contactInfo: jsonb('contact_info').$type<ContactInfo>(),
     socialNetworks: jsonb('social_networks')
@@ -83,11 +83,11 @@ export const gastronomies = pgTable('gastronomies', {
 
 /** Wraps a class body into a plausible model file. */
 function modelFile(body: string, extra = ''): string {
-    return `import { gastronomies } from '../../schemas/gastronomy/gastronomy.dbschema';
+    return `import { venues } from '../../schemas/venue/venue.dbschema';
 ${extra}
-export class GastronomyModel extends BaseModelImpl<Gastronomy> {
-    protected table = gastronomies;
-    public entityName = 'gastronomies';
+export class VenueModel extends BaseModelImpl<Venue> {
+    protected table = venues;
+    public entityName = 'venues';
 ${body}
 }
 `;
@@ -111,7 +111,7 @@ const DECLARED =
     "    protected override readonly mergeableJsonbColumns = ['contactInfo', 'socialNetworks'] as const;";
 
 /**
- * A tree holding the healthy, declared `gastronomies` table PLUS one extra
+ * A tree holding the healthy, declared `venues` table PLUS one extra
  * table written in `extra`, with no model of its own.
  *
  * The healthy table is what makes the fixture bite: with it present the scan is
@@ -120,14 +120,18 @@ const DECLARED =
  * extra table was discovered", not "the scan broke".
  */
 function treeWithExtraTable(extra: string, extraPath: string = SCHEMA_PATH): string {
+    const extraTableSource = extra
+        .replaceAll('venues', 'extraVenues')
+        .replaceAll("'extraVenues'", "'extra_venues'");
     const files: Record<string, string> = {
-        'packages/db/src/models/gastronomy/gastronomy.model.ts': modelFile(DECLARED)
+        'packages/db/src/models/venue/venue.model.ts': modelFile(DECLARED)
     };
     if (extraPath === SCHEMA_PATH) {
-        files[SCHEMA_PATH] = `${SCHEMA_SOURCE}\n${extra}\n`;
+        files[SCHEMA_PATH] = `${SCHEMA_SOURCE}\n${extraTableSource}\n`;
     } else {
         files[SCHEMA_PATH] = SCHEMA_SOURCE;
-        files[extraPath] = `import { jsonb, pgTable } from 'drizzle-orm/pg-core';\n\n${extra}\n`;
+        files[extraPath] =
+            `import { jsonb, pgTable } from 'drizzle-orm/pg-core';\n\n${extraTableSource}\n`;
     }
     return makeTree(files);
 }
@@ -154,33 +158,30 @@ describe('findStringRanges / isInsideString', () => {
 
 describe('findTableAliases', () => {
     it('picks up an import alias and a module-level rebinding', () => {
-        const src = `import { gastronomies as gastroTable } from './x';
-const legacyTable = gastronomies;`;
-        expect([...findTableAliases(src, 'gastronomies')].sort()).toEqual([
-            'gastroTable',
-            'gastronomies',
-            'legacyTable'
+        const src = `import { venues as venueTable } from './x';
+const legacyTable = venues;`;
+        expect([...findTableAliases(src, 'venues')].sort()).toEqual([
+            'legacyTable',
+            'venueTable',
+            'venues'
         ]);
     });
 
     it('follows the chain TRANSITIVELY, not one hop', () => {
         // One hop stopped here: `catalogTable` is bound to the ALIAS, never to
-        // `gastronomies` itself, so neither pattern matched it.
-        const src = `import { gastronomies as gastroTable } from './x';
-const catalogTable = gastroTable;`;
-        expect([...findTableAliases(src, 'gastronomies')].sort()).toEqual([
+        // `venues` itself, so neither pattern matched it.
+        const src = `import { venues as venueTable } from './x';
+const catalogTable = venueTable;`;
+        expect([...findTableAliases(src, 'venues')].sort()).toEqual([
             'catalogTable',
-            'gastroTable',
-            'gastronomies'
+            'venueTable',
+            'venues'
         ]);
     });
 
     it('picks up a rebinding that carries a type annotation', () => {
-        const src = 'const catalogTable: typeof gastronomies = gastronomies;';
-        expect([...findTableAliases(src, 'gastronomies')].sort()).toEqual([
-            'catalogTable',
-            'gastronomies'
-        ]);
+        const src = 'const catalogTable: typeof venues = venues;';
+        expect([...findTableAliases(src, 'venues')].sort()).toEqual(['catalogTable', 'venues']);
     });
 });
 
@@ -239,11 +240,11 @@ describe('findMatchingDelimiter', () => {
 describe('findClassBodies', () => {
     it('separates two classes in the same file', () => {
         const src = stripComments(
-            'class A { protected table = users; }\nclass B { protected table = gastronomies; }'
+            'class A { protected table = users; }\nclass B { protected table = venues; }'
         );
         const bodies = findClassBodies(src);
         expect(bodies.map((c) => c.name)).toEqual(['A', 'B']);
-        expect(bodies[1]?.body).toContain('gastronomies');
+        expect(bodies[1]?.body).toContain('venues');
         expect(bodies[1]?.body).not.toContain('users');
     });
 
@@ -251,12 +252,12 @@ describe('findClassBodies', () => {
         // `indexOf('{')` from the class head landed on the generic's brace, so
         // the "body" came out as ` id: string ` and the class disappeared.
         const src = stripComments(
-            'class M extends BaseModelImpl<{ id: string }> { protected table = gastronomies; }'
+            'class M extends BaseModelImpl<{ id: string }> { protected table = venues; }'
         );
         const bodies = findClassBodies(src);
 
         expect(bodies).toHaveLength(1);
-        expect(bodies[0]?.body).toContain('protected table = gastronomies;');
+        expect(bodies[0]?.body).toContain('protected table = venues;');
         expect(bodies[0]?.body).not.toContain('id: string');
     });
 
@@ -294,11 +295,11 @@ describe('findOwningClassBody', () => {
     protected table = users;
     protected override readonly mergeableJsonbColumns = ['contactInfo', 'socialNetworks'] as const;
 }
-class GastronomyModel {
-    protected table = gastronomies;
+class VenueModel {
+    protected table = venues;
 }`;
-        const owner = findOwningClassBody(src, 'gastronomies');
-        expect(owner?.name).toBe('GastronomyModel');
+        const owner = findOwningClassBody(src, 'venues');
+        expect(owner?.name).toBe('VenueModel');
         expect(declaresContactInfoMergeable(owner?.body ?? '')).toEqual({ kind: 'absent' });
     });
 });
@@ -368,7 +369,7 @@ class M {
     });
 
     it('reports a missing declaration as absent', () => {
-        expect(declaresContactInfoMergeable('protected table = gastronomies;')).toEqual({
+        expect(declaresContactInfoMergeable('protected table = venues;')).toEqual({
             kind: 'absent'
         });
     });
@@ -382,7 +383,7 @@ describe('run() — the healthy tree', () => {
     it('passes when the owning model declares the column', () => {
         const root = makeTree({
             [SCHEMA_PATH]: SCHEMA_SOURCE,
-            'packages/db/src/models/gastronomy/gastronomy.model.ts': modelFile(
+            'packages/db/src/models/venue/venue.model.ts': modelFile(
                 "    protected override readonly mergeableJsonbColumns = ['contactInfo', 'socialNetworks'] as const;"
             )
         });
@@ -396,7 +397,7 @@ describe('run() — the healthy tree', () => {
     it('passes when a JSDoc example precedes the real declaration', () => {
         const root = makeTree({
             [SCHEMA_PATH]: SCHEMA_SOURCE,
-            'packages/db/src/models/gastronomy/gastronomy.model.ts': modelFile(
+            'packages/db/src/models/venue/venue.model.ts': modelFile(
                 `    /**
      * @example
      * protected override readonly mergeableJsonbColumns = ['media'] as const;
@@ -411,7 +412,7 @@ describe('run() — the healthy tree', () => {
     it('passes when the declaration spreads a constant from the same file', () => {
         const root = makeTree({
             [SCHEMA_PATH]: SCHEMA_SOURCE,
-            'packages/db/src/models/gastronomy/gastronomy.model.ts': modelFile(
+            'packages/db/src/models/venue/venue.model.ts': modelFile(
                 '    protected override readonly mergeableJsonbColumns = [...SHARED_CONTACT_MERGE] as const;',
                 "const SHARED_CONTACT_MERGE = ['contactInfo', 'socialNetworks'] as const;"
             )
@@ -425,7 +426,7 @@ describe('run() — evasion (a): the entry commented out inside the array', () =
     it('fails, instead of reporting all checks passed', () => {
         const root = makeTree({
             [SCHEMA_PATH]: SCHEMA_SOURCE,
-            'packages/db/src/models/gastronomy/gastronomy.model.ts': modelFile(
+            'packages/db/src/models/venue/venue.model.ts': modelFile(
                 `    protected override readonly mergeableJsonbColumns = [
         // 'contactInfo' — disabled while HOS-9999 is investigated
     ] as const;`
@@ -442,7 +443,7 @@ describe('run() — evasion (a): the entry commented out inside the array', () =
     it('fails for the block-comment spelling too', () => {
         const root = makeTree({
             [SCHEMA_PATH]: SCHEMA_SOURCE,
-            'packages/db/src/models/gastronomy/gastronomy.model.ts': modelFile(
+            'packages/db/src/models/venue/venue.model.ts': modelFile(
                 "    protected override readonly mergeableJsonbColumns = [/* 'contactInfo' */] as const;"
             )
         });
@@ -455,7 +456,7 @@ describe('run() — evasion (b): the declaration exists only inside a JSDoc bloc
     it('fails, instead of accepting the prose as the declaration', () => {
         const root = makeTree({
             [SCHEMA_PATH]: SCHEMA_SOURCE,
-            'packages/db/src/models/gastronomy/gastronomy.model.ts': modelFile(
+            'packages/db/src/models/venue/venue.model.ts': modelFile(
                 `    /**
      * This model used to carry
      * \`protected override readonly mergeableJsonbColumns = ['contactInfo', 'socialNetworks'] as const;\`
@@ -477,15 +478,13 @@ describe('run() — evasion (c): two models over the same table', () => {
         const declared =
             "    protected override readonly mergeableJsonbColumns = ['contactInfo', 'socialNetworks'] as const;";
 
-        for (const missingFile of ['aGastronomyPublic.model.ts', 'zGastronomyPublic.model.ts']) {
+        for (const missingFile of ['aVenuePublic.model.ts', 'zVenuePublic.model.ts']) {
             const otherFile =
-                missingFile === 'aGastronomyPublic.model.ts'
-                    ? 'zGastronomy.model.ts'
-                    : 'aGastronomy.model.ts';
+                missingFile === 'aVenuePublic.model.ts' ? 'zVenue.model.ts' : 'aVenue.model.ts';
             const root = makeTree({
                 [SCHEMA_PATH]: SCHEMA_SOURCE,
-                [`packages/db/src/models/gastronomy/${missingFile}`]: modelFile(''),
-                [`packages/db/src/models/gastronomy/${otherFile}`]: modelFile(declared)
+                [`packages/db/src/models/venue/${missingFile}`]: modelFile(''),
+                [`packages/db/src/models/venue/${otherFile}`]: modelFile(declared)
             });
 
             const { code, output } = runQuiet(root);
@@ -501,8 +500,8 @@ describe('run() — evasion (c): two models over the same table', () => {
             "    protected override readonly mergeableJsonbColumns = ['contactInfo', 'socialNetworks'] as const;";
         const root = makeTree({
             [SCHEMA_PATH]: SCHEMA_SOURCE,
-            'packages/db/src/models/gastronomy/aGastronomy.model.ts': modelFile(declared),
-            'packages/db/src/models/gastronomy/zGastronomy.model.ts': modelFile(declared)
+            'packages/db/src/models/venue/aVenue.model.ts': modelFile(declared),
+            'packages/db/src/models/venue/zVenue.model.ts': modelFile(declared)
         });
 
         expect(runQuiet(root).code).toBe(0);
@@ -526,15 +525,15 @@ describe('run() — the remaining failure modes', () => {
     it('fails when a sibling class in the same file holds the declaration', () => {
         const root = makeTree({
             [SCHEMA_PATH]: SCHEMA_SOURCE,
-            'packages/db/src/models/gastronomy/gastronomy.model.ts': `import { gastronomies, users } from '../../schemas';
+            'packages/db/src/models/venue/venue.model.ts': `import { venues, users } from '../../schemas';
 
 export class UserModel extends BaseModelImpl<User> {
     protected table = users;
     protected override readonly mergeableJsonbColumns = ['contactInfo', 'socialNetworks'] as const;
 }
 
-export class GastronomyModel extends BaseModelImpl<Gastronomy> {
-    protected table = gastronomies;
+export class VenueModel extends BaseModelImpl<Venue> {
+    protected table = venues;
 }
 `
         });
@@ -545,7 +544,7 @@ export class GastronomyModel extends BaseModelImpl<Gastronomy> {
     it('fails when the declaration spreads something it cannot read', () => {
         const root = makeTree({
             [SCHEMA_PATH]: SCHEMA_SOURCE,
-            'packages/db/src/models/gastronomy/gastronomy.model.ts': modelFile(
+            'packages/db/src/models/venue/venue.model.ts': modelFile(
                 '    protected override readonly mergeableJsonbColumns = [...SHARED_CONTACT_MERGE] as const;',
                 "import { SHARED_CONTACT_MERGE } from './shared';"
             )
@@ -568,7 +567,7 @@ export class GastronomyModel extends BaseModelImpl<Gastronomy> {
 
     it('does not discover a column that is itself commented out', () => {
         const root = makeTree({
-            [SCHEMA_PATH]: `export const gastronomies = pgTable('gastronomies', {
+            [SCHEMA_PATH]: `export const venues = pgTable('venues', {
     // contactInfo: jsonb('contact_info'),
     id: uuid('id')
 });
@@ -647,7 +646,7 @@ export { venues };`,
 
             // The table has no model at all, so being SEEN is exactly what
             // makes this fail. A guard blind to the shape prints the healthy
-            // `gastronomies` and calls it a day.
+            // `venues` and calls it a day.
             expect(code).toBe(1);
             expect(output).toContain('venues');
             expect(output).not.toContain('All checks passed');
@@ -657,14 +656,14 @@ export { venues };`,
     it('attributes a separately-exported table to ITSELF, not to the table above it', () => {
         // Worse than invisible: the slice-between-`export const`s scan handed
         // this table's column to its predecessor, so the report showed
-        // `gastronomies` twice and `venues` never.
+        // `venues` twice and `venues` never.
         const root = treeWithExtraTable(`const venues = pgTable('venues', {
     contactInfo: jsonb('contact_info')
 });
 export { venues };`);
 
         expect([...new Set(findContactInfoTables(root).map((t) => t.tableVar))].sort()).toEqual([
-            'gastronomies',
+            'extraVenues',
             'venues'
         ]);
     });
@@ -722,7 +721,7 @@ describe('run() — evasion (d): the declaration exists only inside a STRING lit
         // "it only lives in prose" evasion from a comment into a string.
         const root = makeTree({
             [SCHEMA_PATH]: SCHEMA_SOURCE,
-            'packages/db/src/models/gastronomy/gastronomy.model.ts': modelFile(
+            'packages/db/src/models/venue/venue.model.ts': modelFile(
                 `    private readonly legacyNote =
         "protected override readonly mergeableJsonbColumns = ['contactInfo', 'socialNetworks'] as const;";`
             )
@@ -742,12 +741,12 @@ describe('run() — evasion (e): an owning model that imports the table under an
         // from the report while the run goes green.
         const root = makeTree({
             [SCHEMA_PATH]: SCHEMA_SOURCE,
-            'packages/db/src/models/gastronomy/gastronomy.model.ts': modelFile(DECLARED),
-            'packages/db/src/models/gastronomy/gastronomyRead.model.ts': `import { gastronomies as gastroTable } from '../../schemas/gastronomy/gastronomy.dbschema';
+            'packages/db/src/models/venue/venue.model.ts': modelFile(DECLARED),
+            'packages/db/src/models/venue/venueRead.model.ts': `import { venues as venueTable } from '../../schemas/venue/venue.dbschema';
 
-export class GastronomyReadModel extends BaseModelImpl<Gastronomy> {
-    protected table = gastroTable;
-    public entityName = 'gastronomies';
+export class VenueReadModel extends BaseModelImpl<Venue> {
+    protected table = venueTable;
+    public entityName = 'venues';
 }
 `
         });
@@ -755,17 +754,17 @@ export class GastronomyReadModel extends BaseModelImpl<Gastronomy> {
         const { code, output } = runQuiet(root);
 
         expect(code).toBe(1);
-        expect(output).toContain('GastronomyReadModel');
+        expect(output).toContain('VenueReadModel');
     });
 });
 
 describe('run() — evasion (f): two owning CLASSES in the same file', () => {
-    const declaredClass = `export class GastronomyModel extends BaseModelImpl<Gastronomy> {
-    protected table = gastronomies;
+    const declaredClass = `export class VenueModel extends BaseModelImpl<Venue> {
+    protected table = venues;
 ${DECLARED}
 }`;
-    const undeclaredClass = `export class GastronomyPublicModel extends BaseModelImpl<Gastronomy> {
-    protected table = gastronomies;
+    const undeclaredClass = `export class VenuePublicModel extends BaseModelImpl<Venue> {
+    protected table = venues;
 }`;
 
     // Round 1 fixed the order dependence BETWEEN files; `findOwningClassBody`
@@ -776,7 +775,7 @@ ${DECLARED}
     ])('fails with the %s, so class order cannot decide the verdict', (_label, body) => {
         const root = makeTree({
             [SCHEMA_PATH]: SCHEMA_SOURCE,
-            'packages/db/src/models/gastronomy/gastronomy.model.ts': `import { gastronomies } from '../../schemas/gastronomy/gastronomy.dbschema';
+            'packages/db/src/models/venue/venue.model.ts': `import { venues } from '../../schemas/venue/venue.dbschema';
 
 ${body}`
         });
@@ -784,18 +783,18 @@ ${body}`
         const { code, output } = runQuiet(root);
 
         expect(code).toBe(1);
-        expect(output).toContain('GastronomyPublicModel');
+        expect(output).toContain('VenuePublicModel');
     });
 
     it('passes when both classes declare it', () => {
         const root = makeTree({
             [SCHEMA_PATH]: SCHEMA_SOURCE,
-            'packages/db/src/models/gastronomy/gastronomy.model.ts': `import { gastronomies } from '../../schemas/gastronomy/gastronomy.dbschema';
+            'packages/db/src/models/venue/venue.model.ts': `import { venues } from '../../schemas/venue/venue.dbschema';
 
 ${declaredClass}
 
-export class GastronomyPublicModel extends BaseModelImpl<Gastronomy> {
-    protected table = gastronomies;
+export class VenuePublicModel extends BaseModelImpl<Venue> {
+    protected table = venues;
 ${DECLARED}
 }
 `
@@ -807,11 +806,11 @@ ${DECLARED}
     it('findOwningClassBodies returns BOTH, where findOwningClassBody returns one', () => {
         const source = `${declaredClass}\n\n${undeclaredClass}\n`;
 
-        expect(findOwningClassBodies(source, 'gastronomies').map((c) => c.name)).toEqual([
-            'GastronomyModel',
-            'GastronomyPublicModel'
+        expect(findOwningClassBodies(source, 'venues').map((c) => c.name)).toEqual([
+            'VenueModel',
+            'VenuePublicModel'
         ]);
-        expect(findOwningClassBody(source, 'gastronomies')?.name).toBe('GastronomyModel');
+        expect(findOwningClassBody(source, 'venues')?.name).toBe('VenueModel');
     });
 });
 
@@ -819,7 +818,7 @@ ${DECLARED}
 // Round 3: the shapes that survived rounds 1 and 2
 //
 // Every fixture here pairs the exotic spelling with the healthy, declared
-// `gastronomy.model.ts`. That pairing is what makes the assertion bite: one
+// `venue.model.ts`. That pairing is what makes the assertion bite: one
 // declaring owner is enough for a table to pass, so a guard blind to the
 // second owner does not report it as unchecked — it prints "All checks
 // passed" and says nothing at all. Measured before the fix: every one of
@@ -830,25 +829,25 @@ ${DECLARED}
 function treeWithSecondOwner(path: string, source: string): string {
     return makeTree({
         [SCHEMA_PATH]: SCHEMA_SOURCE,
-        'packages/db/src/models/gastronomy/gastronomy.model.ts': modelFile(DECLARED),
-        [`packages/db/src/models/gastronomy/${path}`]: source
+        'packages/db/src/models/venue/venue.model.ts': modelFile(DECLARED),
+        [`packages/db/src/models/venue/${path}`]: source
     });
 }
 
-const IMPORT_TABLE = "import { gastronomies } from '../../schemas/gastronomy/gastronomy.dbschema';";
+const IMPORT_TABLE = "import { venues } from '../../schemas/venue/venue.dbschema';";
 
 describe('run() — evasion (g): an owning model in a file NOT named `*.model.ts`', () => {
     it('sees it, so its missing declaration is reported', () => {
         // The schema side stopped filtering by `*.dbschema.ts` in round 2 and
         // the models side kept the identical bug: 31 of the 148 `.ts` files
         // under `packages/db/src/models/**` carry no `.model.ts` suffix, and
-        // `gastronomy/gastronomy-catalog-filters.ts` is one of them today.
+        // `venue/venue-catalog-filters.ts` is one of them today.
         const root = treeWithSecondOwner(
-            'gastronomy-catalog-filters.ts',
+            'venue-catalog-filters.ts',
             `${IMPORT_TABLE}
 
-export class GastronomyCatalogFilterModel extends BaseModelImpl<Gastronomy> {
-    protected table = gastronomies;
+export class VenueCatalogFilterModel extends BaseModelImpl<Venue> {
+    protected table = venues;
 }
 `
         );
@@ -856,7 +855,7 @@ export class GastronomyCatalogFilterModel extends BaseModelImpl<Gastronomy> {
         const { code, output } = runQuiet(root);
 
         expect(code).toBe(1);
-        expect(output).toContain('GastronomyCatalogFilterModel');
+        expect(output).toContain('VenueCatalogFilterModel');
         expect(output).not.toContain('All checks passed');
     });
 });
@@ -864,11 +863,11 @@ export class GastronomyCatalogFilterModel extends BaseModelImpl<Gastronomy> {
 describe('run() — evasion (h): a type annotation on `protected table`', () => {
     it('still recognises the class as an owner', () => {
         const root = treeWithSecondOwner(
-            'gastronomyAnnotated.model.ts',
+            'venueAnnotated.model.ts',
             `${IMPORT_TABLE}
 
-export class GastronomyAnnotatedModel extends BaseModelImpl<Gastronomy> {
-    protected table: typeof gastronomies = gastronomies;
+export class VenueAnnotatedModel extends BaseModelImpl<Venue> {
+    protected table: typeof venues = venues;
 }
 `
         );
@@ -876,18 +875,18 @@ export class GastronomyAnnotatedModel extends BaseModelImpl<Gastronomy> {
         const { code, output } = runQuiet(root);
 
         expect(code).toBe(1);
-        expect(output).toContain('GastronomyAnnotatedModel');
+        expect(output).toContain('VenueAnnotatedModel');
     });
 });
 
 describe('run() — evasion (i): an inline object type in the class heading', () => {
     it('still finds the class body, so the owner does not vanish', () => {
         const root = treeWithSecondOwner(
-            'gastronomyInline.model.ts',
+            'venueInline.model.ts',
             `${IMPORT_TABLE}
 
-export class GastronomyInlineModel extends BaseModelImpl<{ id: string }> {
-    protected table = gastronomies;
+export class VenueInlineModel extends BaseModelImpl<{ id: string }> {
+    protected table = venues;
 }
 `
         );
@@ -895,19 +894,19 @@ export class GastronomyInlineModel extends BaseModelImpl<{ id: string }> {
         const { code, output } = runQuiet(root);
 
         expect(code).toBe(1);
-        expect(output).toContain('GastronomyInlineModel');
+        expect(output).toContain('VenueInlineModel');
     });
 });
 
 describe('run() — evasion (j): an alias resolved in TWO hops', () => {
     it('recognises the twice-rebound table as the same table', () => {
         const root = treeWithSecondOwner(
-            'gastronomyHop.model.ts',
-            `import { gastronomies as gastroTable } from '../../schemas/gastronomy/gastronomy.dbschema';
+            'venueHop.model.ts',
+            `import { venues as venueTable } from '../../schemas/venue/venue.dbschema';
 
-const catalogTable = gastroTable;
+const catalogTable = venueTable;
 
-export class GastronomyHopModel extends BaseModelImpl<Gastronomy> {
+export class VenueHopModel extends BaseModelImpl<Venue> {
     protected table = catalogTable;
 }
 `
@@ -916,18 +915,18 @@ export class GastronomyHopModel extends BaseModelImpl<Gastronomy> {
         const { code, output } = runQuiet(root);
 
         expect(code).toBe(1);
-        expect(output).toContain('GastronomyHopModel');
+        expect(output).toContain('VenueHopModel');
     });
 });
 
 describe('run() — evasion (k): a namespace-qualified table', () => {
-    it('recognises `protected table = schema.gastronomies;` as ownership', () => {
+    it('recognises `protected table = schema.venues;` as ownership', () => {
         const root = treeWithSecondOwner(
-            'gastronomyNamespace.model.ts',
+            'venueNamespace.model.ts',
             `import * as schema from '../../schemas';
 
-export class GastronomyNamespaceModel extends BaseModelImpl<Gastronomy> {
-    protected table = schema.gastronomies;
+export class VenueNamespaceModel extends BaseModelImpl<Venue> {
+    protected table = schema.venues;
 }
 `
         );
@@ -935,7 +934,7 @@ export class GastronomyNamespaceModel extends BaseModelImpl<Gastronomy> {
         const { code, output } = runQuiet(root);
 
         expect(code).toBe(1);
-        expect(output).toContain('GastronomyNamespaceModel');
+        expect(output).toContain('VenueNamespaceModel');
     });
 });
 
@@ -994,10 +993,10 @@ describe('run() — the false positives round 2 left behind', () => {
     it('accepts `public override readonly`, which widens a protected member legally', () => {
         const root = makeTree({
             [SCHEMA_PATH]: SCHEMA_SOURCE,
-            'packages/db/src/models/gastronomy/gastronomy.model.ts': `${IMPORT_TABLE}
+            'packages/db/src/models/venue/venue.model.ts': `${IMPORT_TABLE}
 
-export class GastronomyModel extends BaseModelImpl<Gastronomy> {
-    protected table = gastronomies;
+export class VenueModel extends BaseModelImpl<Venue> {
+    protected table = venues;
     public override readonly mergeableJsonbColumns = ['contactInfo', 'socialNetworks'] as const;
 }
 `
@@ -1012,10 +1011,10 @@ export class GastronomyModel extends BaseModelImpl<Gastronomy> {
     it('names an anonymous default-export model instead of reporting `:: extends`', () => {
         const root = makeTree({
             [SCHEMA_PATH]: SCHEMA_SOURCE,
-            'packages/db/src/models/gastronomy/gastronomy.model.ts': `${IMPORT_TABLE}
+            'packages/db/src/models/venue/venue.model.ts': `${IMPORT_TABLE}
 
-export default class extends BaseModelImpl<Gastronomy> {
-    protected table = gastronomies;
+export default class extends BaseModelImpl<Venue> {
+    protected table = venues;
 }
 `
         });
@@ -1036,8 +1035,8 @@ describe('discovery is deduplicated per TABLE, not per file', () => {
         // it is how a duplicate could mask a table discovery had truly lost.
         const root = makeTree({
             [SCHEMA_PATH]: SCHEMA_SOURCE,
-            'packages/db/src/schemas/gastronomy/gastronomy.legacy.dbschema.ts': SCHEMA_SOURCE,
-            'packages/db/src/models/gastronomy/gastronomy.model.ts': modelFile(DECLARED)
+            'packages/db/src/schemas/venue/venue.legacy.dbschema.ts': SCHEMA_SOURCE,
+            'packages/db/src/models/venue/venue.model.ts': modelFile(DECLARED)
         });
 
         // One entry per (table, property): `contactInfo` and `socialNetworks`, each ONCE.
@@ -1102,7 +1101,7 @@ describe('run() — socialNetworks is guarded exactly like contactInfo (HOS-1262
     it('fails when the model declares contactInfo but NOT socialNetworks', () => {
         const root = makeTree({
             [SCHEMA_PATH]: SCHEMA_SOURCE,
-            'packages/db/src/models/gastronomy/gastronomy.model.ts': modelFile(
+            'packages/db/src/models/venue/venue.model.ts': modelFile(
                 "    protected override readonly mergeableJsonbColumns = ['contactInfo'] as const;"
             )
         });
@@ -1121,7 +1120,7 @@ describe('run() — socialNetworks is guarded exactly like contactInfo (HOS-1262
 });`);
 
         const found = findContactInfoTables(root)
-            .filter((t) => t.tableVar === 'venues')
+            .filter((t) => t.tableVar === 'extraVenues')
             .map((t) => `${t.propertyName}:${t.dbColumn}`)
             .sort();
 
@@ -1136,7 +1135,7 @@ describe('run() — socialNetworks is guarded exactly like contactInfo (HOS-1262
     c: jsonb('c').$type<Seo>()
 });`);
 
-        expect(findContactInfoTables(root).filter((t) => t.tableVar === 'venues')).toEqual([]);
+        expect(findContactInfoTables(root).filter((t) => t.tableVar === 'extraVenues')).toEqual([]);
     });
 
     it('reads a `$type` after a generic argument that contains a comma', () => {
@@ -1156,13 +1155,13 @@ describe('run() — socialNetworks is guarded exactly like contactInfo (HOS-1262
 });
 
 describe('run() — written exemptions', () => {
-    const EXEMPT = { 'gastronomies::socialNetworks': 'pending the writers sending null' };
+    const EXEMPT = { 'venues::socialNetworks': 'pending the writers sending null' };
 
-    /** A gastronomies model declaring only contactInfo. */
+    /** A venues model declaring only contactInfo. */
     const undeclaredSocial = () =>
         makeTree({
             [SCHEMA_PATH]: SCHEMA_SOURCE,
-            'packages/db/src/models/gastronomy/gastronomy.model.ts': modelFile(
+            'packages/db/src/models/venue/venue.model.ts': modelFile(
                 "    protected override readonly mergeableJsonbColumns = ['contactInfo'] as const;"
             )
         });
@@ -1183,14 +1182,14 @@ describe('run() — written exemptions', () => {
         const { code, output } = runWith(undeclaredSocial(), EXEMPT);
 
         expect(code).toBe(0);
-        expect(output).toContain('EXEMPT: gastronomies::socialNetworks');
+        expect(output).toContain('EXEMPT: venues::socialNetworks');
         expect(output).toContain('pending the writers sending null');
     });
 
     it('fails a STALE exemption: the model already declares the column', () => {
         const root = makeTree({
             [SCHEMA_PATH]: SCHEMA_SOURCE,
-            'packages/db/src/models/gastronomy/gastronomy.model.ts': modelFile(DECLARED)
+            'packages/db/src/models/venue/venue.model.ts': modelFile(DECLARED)
         });
 
         const { code, output } = runWith(root, EXEMPT);
@@ -1211,7 +1210,7 @@ describe('run() — written exemptions', () => {
 
     it('fails an exemption with no written reason', () => {
         const { code, output } = runWith(undeclaredSocial(), {
-            'gastronomies::socialNetworks': ' '
+            'venues::socialNetworks': ' '
         });
 
         expect(code).toBe(1);
@@ -1222,7 +1221,7 @@ describe('run() — written exemptions', () => {
         const { code, output } = runWith(
             makeTree({
                 [SCHEMA_PATH]: SCHEMA_SOURCE,
-                'packages/db/src/models/gastronomy/gastronomy.model.ts': modelFile(
+                'packages/db/src/models/venue/venue.model.ts': modelFile(
                     "    protected override readonly mergeableJsonbColumns = ['socialNetworks'] as const;"
                 )
             }),

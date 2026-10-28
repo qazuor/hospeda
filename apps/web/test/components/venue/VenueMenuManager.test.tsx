@@ -1,6 +1,6 @@
 /**
  * @file VenueMenuManager.test.tsx
- * @description The gastronomy carta panel (HOS-895).
+ * @description The venue carta panel (HOS-895).
  *
  * Three things are asserted, and each is a decision that would otherwise be
  * invisible until an owner complained:
@@ -110,7 +110,7 @@ const LOADED_MENU_WITH_PHOTO = {
     }
 };
 
-describe('GastronomyMenuManager (HOS-895)', () => {
+describe('VenueMenuManager (HOS-895)', () => {
     beforeEach(() => {
         vi.clearAllMocks();
     });
@@ -192,7 +192,7 @@ describe('GastronomyMenuManager (HOS-895)', () => {
     // ── The scheme gate (HOS-592 / F-02, via HOS-895) ───────────────────────
     //
     // `menuFileUrl` is not composed only by our upload route: three of the four
-    // gastronomy write schemas are `.omit(...)`-based over `VenueSchema`,
+    // venue write schemas are `.omit(...)`-based over `VenueSchema`,
     // so they accepted `javascript:…` from a request body until HOS-895 named
     // the column in their omit lists. `z.string().url()` does not restrict the
     // scheme, so a schema-valid value is still a stored-XSS sink the moment it

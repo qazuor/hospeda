@@ -49,7 +49,7 @@ export const venueMenuSections = pgTable(
          * check someone has to remember to write — removes the menu when the
          * listing is hard-deleted. Same choice `venue_media` makes.
          */
-        gastronomyId: uuid('venue_id')
+        venueId: uuid('venue_id')
             .notNull()
             .references(() => venues.id, { onDelete: 'cascade' }),
         /** Heading of the course, e.g. "Entradas", "Principales", "Postres". */
@@ -79,23 +79,21 @@ export const venueMenuSections = pgTable(
         updatedById: uuid('updated_by_id').references(() => users.id, { onDelete: 'set null' })
     },
     (table) => ({
-        gastronomyMenuSections_gastronomyId_idx: index('venueMenuSections_venueId_idx').on(
-            table.gastronomyId
-        ),
+        venueMenuSections_venueId_idx: index('venueMenuSections_venueId_idx').on(table.venueId),
         /**
          * The read the public listing performs verbatim: every section of ONE
          * listing, in order. Composite so the order-by is served by the index
          * rather than by a sort of the section rows.
          */
-        gastronomyMenuSections_gastronomyId_displayOrder_idx: index(
+        venueMenuSections_venueId_displayOrder_idx: index(
             'venueMenuSections_venueId_displayOrder_idx'
-        ).on(table.gastronomyId, table.displayOrder)
+        ).on(table.venueId, table.displayOrder)
     })
 );
 
 export const venueMenuSectionsRelations = relations(venueMenuSections, ({ one, many }) => ({
     venue: one(venues, {
-        fields: [venueMenuSections.gastronomyId],
+        fields: [venueMenuSections.venueId],
         references: [venues.id]
     }),
     items: many(venueMenuItems)

@@ -1,7 +1,7 @@
 /**
- * gastronomy.permissions.test.ts
+ * venue.permissions.test.ts
  *
- * Unit tests for gastronomy permission helpers (SPEC-239 T-038).
+ * Unit tests for venue permission helpers (SPEC-239 T-038).
  *
  * All tests use mocked `hasPermission` so they are completely decoupled
  * from the `Actor` shape and the permission registry. No DB is touched.
@@ -57,14 +57,14 @@ beforeEach(() => {
 // checkVenueCanCreate
 // ---------------------------------------------------------------------------
 
-describe('checkGastronomyCanCreate', () => {
+describe('checkVenueCanCreate', () => {
     it('should allow actor with VENUE_CREATE', () => {
         expect(() =>
             checkVenueCanCreate(makeActor([PermissionEnum.VENUE_CREATE]), {})
         ).not.toThrow();
     });
 
-    // HOS-687 / HOS-589 AC-27 (service predicate, gastronomy vertical).
+    // HOS-687 / HOS-589 AC-27 (service predicate, venue vertical).
     it('allows a signed-in account holding NO listing permission (AC-27)', () => {
         const plainUser: Actor = { id: 'actor-plain', roles: [RoleEnum.USER], permissions: [] };
         expect(() => checkVenueCanCreate(plainUser, {})).not.toThrow();
@@ -84,7 +84,7 @@ describe('checkGastronomyCanCreate', () => {
 // checkVenueCanEditAll
 // ---------------------------------------------------------------------------
 
-describe('checkGastronomyCanEditAll', () => {
+describe('checkVenueCanEditAll', () => {
     it('should allow actor with VENUE_EDIT_ALL', () => {
         expect(() =>
             checkVenueCanEditAll(makeActor([PermissionEnum.VENUE_EDIT_ALL]), {})
@@ -100,7 +100,7 @@ describe('checkGastronomyCanEditAll', () => {
 // checkVenueCanEditOwn (SPEC-253 D2=b: single VENUE_EDIT_OWN)
 // ---------------------------------------------------------------------------
 
-describe('checkGastronomyCanEditOwn', () => {
+describe('checkVenueCanEditOwn', () => {
     const entity = { ownerId: 'actor-uuid-1' };
     const nonOwnedEntity = { ownerId: 'other-owner' };
 
@@ -131,7 +131,7 @@ describe('checkGastronomyCanEditOwn', () => {
 // checkVenueCanDelete
 // ---------------------------------------------------------------------------
 
-describe('checkGastronomyCanDelete', () => {
+describe('checkVenueCanDelete', () => {
     it('should allow actor with VENUE_DELETE', () => {
         expect(() =>
             checkVenueCanDelete(makeActor([PermissionEnum.VENUE_DELETE]), {})
@@ -147,7 +147,7 @@ describe('checkGastronomyCanDelete', () => {
 // checkVenueCanHardDelete
 // ---------------------------------------------------------------------------
 
-describe('checkGastronomyCanHardDelete', () => {
+describe('checkVenueCanHardDelete', () => {
     it('should allow actor with VENUE_DELETE', () => {
         expect(() =>
             checkVenueCanHardDelete(makeActor([PermissionEnum.VENUE_DELETE]), {})
@@ -163,7 +163,7 @@ describe('checkGastronomyCanHardDelete', () => {
 // checkVenueCanRestore
 // ---------------------------------------------------------------------------
 
-describe('checkGastronomyCanRestore', () => {
+describe('checkVenueCanRestore', () => {
     it('should allow actor with VENUE_EDIT_ALL', () => {
         expect(() =>
             checkVenueCanRestore(makeActor([PermissionEnum.VENUE_EDIT_ALL]), {})
@@ -179,7 +179,7 @@ describe('checkGastronomyCanRestore', () => {
 // checkVenueCanAdminList
 // ---------------------------------------------------------------------------
 
-describe('checkGastronomyCanAdminList', () => {
+describe('checkVenueCanAdminList', () => {
     it('should allow actor with VENUE_VIEW_ALL', () => {
         expect(() =>
             checkVenueCanAdminList(makeActor([PermissionEnum.VENUE_VIEW_ALL]))
@@ -195,7 +195,7 @@ describe('checkGastronomyCanAdminList', () => {
 // checkVenueCanModerateReview
 // ---------------------------------------------------------------------------
 
-describe('checkGastronomyCanModerateReview', () => {
+describe('checkVenueCanModerateReview', () => {
     it('should allow actor with VENUE_MODERATE_REVIEW', () => {
         expect(() =>
             checkVenueCanModerateReview(makeActor([PermissionEnum.VENUE_MODERATE_REVIEW]))
@@ -211,7 +211,7 @@ describe('checkGastronomyCanModerateReview', () => {
 // checkVenueCanEditFaqs (SPEC-253 D2=b: the per-section FAQ permission replaced by VENUE_EDIT_OWN)
 // ---------------------------------------------------------------------------
 
-describe('checkGastronomyCanEditFaqs', () => {
+describe('checkVenueCanEditFaqs', () => {
     const entity = { ownerId: 'actor-uuid-1' };
     const nonOwnedEntity = { ownerId: 'other-owner' };
 
@@ -245,7 +245,7 @@ describe('checkGastronomyCanEditFaqs', () => {
 // checkVenueCanView (public — always allows)
 // ---------------------------------------------------------------------------
 
-describe('checkGastronomyCanView', () => {
+describe('checkVenueCanView', () => {
     it('should allow any actor (public read)', () => {
         expect(() => checkVenueCanView(makeActor([]))).not.toThrow();
         expect(() => checkVenueCanView(makeActor([PermissionEnum.VENUE_VIEW_ALL]))).not.toThrow();

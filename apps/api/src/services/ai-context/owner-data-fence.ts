@@ -3,7 +3,7 @@
  *
  * Extracted verbatim from `accommodation-ai-context.ts`, where HOS-393 wrote it
  * and HOS-547 widened it. It moved here unchanged the moment a SECOND and THIRD
- * assembler needed it (gastronomy and experience chat), because the alternative
+ * assembler needed it (venue and experience chat), because the alternative
  * — three copies of a security control — is the failure mode HOS-547 already
  * described once: a fence around some of the surfaces is not a control, it is a
  * false sense of one. Three copies free to drift is the same defect a level up.

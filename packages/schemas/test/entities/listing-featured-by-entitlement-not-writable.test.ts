@@ -10,7 +10,7 @@
  *
  * `write-input-server-written.guard.test.ts` already froze the accepted field
  * set of every write schema, and it is what caught this: adding the column to
- * the two vertical base schemas landed it in `GastronomyUpdateInputSchema`
+ * the two vertical base schemas landed it in `venueUpdateInputSchema`
  * automatically, because those schemas are built with `.omit()` and a field is
  * accepted unless it is named. An owner could have sent
  * `featuredByEntitlement: true` in their own PATCH and featured their listing
@@ -92,19 +92,19 @@ const WRITE_SCHEMAS: ReadonlyArray<{
 }> = [
     {
         vertical: 'venue',
-        name: 'GastronomyOwnerCreateInputSchema',
+        name: 'VenueOwnerCreateInputSchema',
         schema: VenueOwnerCreateInputSchema as unknown as Parseable,
         plausibleBody: { ...DEFAULT_PLAUSIBLE_BODY, type: 'RESTAURANT' }
     },
     {
         vertical: 'venue',
-        name: 'GastronomyOwnerUpdateInputSchema',
+        name: 'VenueOwnerUpdateInputSchema',
         schema: VenueOwnerUpdateInputSchema as unknown as Parseable,
         plausibleBody: DEFAULT_PLAUSIBLE_BODY
     },
     {
         vertical: 'venue',
-        name: 'GastronomyAdminCreateInputSchema',
+        name: 'VenueAdminCreateInputSchema',
         schema: VenueAdminCreateInputSchema as unknown as Parseable,
         plausibleBody: {
             ...DEFAULT_PLAUSIBLE_BODY,
@@ -115,7 +115,7 @@ const WRITE_SCHEMAS: ReadonlyArray<{
     },
     {
         vertical: 'venue',
-        name: 'GastronomyUpdateInputSchema',
+        name: 'VenueUpdateInputSchema',
         schema: VenueUpdateInputSchema as unknown as Parseable,
         plausibleBody: DEFAULT_PLAUSIBLE_BODY
     },

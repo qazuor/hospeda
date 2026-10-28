@@ -102,7 +102,7 @@ export const StartPaidSubscriptionResponseSchema = z.object({
      * - `'discount'` — a discount was applied (the monthly preapproval amount was
      *   lowered, or the annual line-item was reduced). A normal MP redirect to
      *   `checkoutUrl` still follows; the marker is informational.
-     * - `'attached'` — HOS-688 §6.8, gastronomy and experience only. The owner ALREADY holds a
+     * - `'attached'` — HOS-688 §6.8, venue and experience only. The owner ALREADY holds a
      *   live subscription for this vertical and is under its listing cap, so the
      *   listing was attached to that subscription and **no checkout was opened**.
      *   Like `'comp'`, `checkoutUrl` is an in-app sentinel rather than a payment
@@ -110,7 +110,7 @@ export const StartPaidSubscriptionResponseSchema = z.object({
      *   the one where a rename would quietly survive: opening a checkout here
      *   creates a SECOND MercadoPago preapproval and charges the owner twice for
      *   a plan that already covers them.
-     * - `'trial'` — HOS-1184, gastronomy and experience only. The owner is eligible for their
+     * - `'trial'` — HOS-1184, venue and experience only. The owner is eligible for their
      *   vertical's free trial, so a Hospeda-owned `trialing` subscription was
      *   created with NO MercadoPago preapproval and no card, and the listing was
      *   attached to it. Like `'comp'` and `'attached'`, `checkoutUrl` is an
@@ -129,7 +129,7 @@ export const StartPaidSubscriptionResponseSchema = z.object({
      *
      * The accommodation side never needed the marker back: its trial is granted
      * by the publish flow, which does not go through a checkout route at all.
-     * Gastronomy and experience grant it from their own start-subscription
+     * venue and experience grant it from their own start-subscription
      * route — the same route that otherwise opens a checkout — so the response
      * has to be able to say which of the two happened.
      */
@@ -184,7 +184,7 @@ export const StartPaidSubscriptionResponseSchema = z.object({
      * §8.1), pre-filled and editable, before redirecting to `checkoutUrl`.
      *
      * Optional at the type level ONLY because this response schema is
-     * reused verbatim by the gastronomy, experience and partner
+     * reused verbatim by the venue, experience and partner
      * start-subscription routes, which are
      * untouched by HOS-937 (accommodation monthly/annual only — see spec
      * §6.3) and do not resolve a payer email. Both accommodation branches

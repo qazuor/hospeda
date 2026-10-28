@@ -133,7 +133,7 @@ const touristHeaders: Record<string, string> = {
     'x-mock-actor-permissions': JSON.stringify([])
 };
 
-/** Admin with full gastronomy or experience permissions. */
+/** Admin with full venue or experience permissions. */
 const adminHeaders: Record<string, string> = {
     'content-type': 'application/json',
     ...USER_AGENT,

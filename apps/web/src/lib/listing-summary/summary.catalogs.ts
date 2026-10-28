@@ -1,18 +1,18 @@
 /**
  * Phrase dictionary and default catalogs for the listing summary
- * builder (gastronomy + experience, BETA-119).
+ * builder (venue + experience, BETA-119).
  *
  * Mirrors `post-listing-summary/summary.catalogs` and
  * `event-listing-summary/summary.catalogs` in structure. The default type
  * catalogs match the FilterSidebar options in `gastronomia/index.astro` and
  * `experiencias/index.astro`, and the labels match the existing
- * `gastronomy.types.*` / `experience.type.*` i18n copy in
- * `packages/i18n/src/locales/{es,en,pt}/{gastronomy,experience}.json`.
+ * venue and experience type-label translations in
+ * the venue and experience locale files.
  */
 
 import type { CatalogEntry, EntityGender, SummaryLocale } from './summary.types';
 
-/** Default gastronomy type labels (mirror the FilterSidebar config + i18n copy). */
+/** Default venue type labels (mirror the FilterSidebar config + i18n copy). */
 export const DEFAULT_VENUE_TYPES: readonly CatalogEntry[] = [
     { key: 'RESTAURANT', label: { es: 'restaurante', en: 'restaurant', pt: 'restaurante' } },
     { key: 'BAR', label: { es: 'bar', en: 'bar', pt: 'bar' } },
@@ -74,7 +74,7 @@ export const DEFAULT_EXPERIENCE_TYPES: readonly CatalogEntry[] = [
 ] as const;
 
 /**
- * Default price-range labels (gastronomy only). Plural adjective forms so
+ * Default price-range labels (venue only). Plural adjective forms so
  * they compose naturally as "con precios económicos" / "with budget prices".
  */
 export const DEFAULT_PRICE_RANGES: readonly CatalogEntry[] = [

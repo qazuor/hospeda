@@ -12,7 +12,7 @@ import {
 /**
  * Experience FAQ Schema — FAQ entity belonging to an experience listing.
  *
- * Mirrors `GastronomyFaqSchema`: extends the shared `BaseFaqSchema` with an
+ * Mirrors `venueFaqSchema`: extends the shared `BaseFaqSchema` with an
  * experience-specific `id` and `experienceId` foreign key.
  * Relationship: 1 Experience → N FAQs (1-to-N, not N-to-N).
  */

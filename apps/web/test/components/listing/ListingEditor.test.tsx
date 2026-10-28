@@ -274,7 +274,7 @@ describe('ListingEditor', () => {
         expect(screen.getByText('12/300')).toBeInTheDocument();
     });
 
-    it('PATCHes the gastronomy endpoint with only the dirty field on submit', async () => {
+    it('PATCHes the venue endpoint with only the dirty field on submit', async () => {
         mockPatch.mockResolvedValueOnce({ ok: true, data: {} });
         renderEditor('venue');
 
@@ -388,7 +388,7 @@ describe('ListingEditor', () => {
         expect(body.priceFrom).toBeUndefined();
     });
 
-    it('PATCHes only the priceRange field group when the price tier changes (gastronomy)', async () => {
+    it('PATCHes only the priceRange field group when the price tier changes (venue)', async () => {
         mockPatch.mockResolvedValueOnce({ ok: true, data: {} });
         renderEditor('venue', 'price');
 

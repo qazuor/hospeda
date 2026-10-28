@@ -411,12 +411,12 @@ export const GET: APIRoute = async () => {
         })
     );
 
-    // Gastronomy: /comer-y-salir/{slug}/
+    // Venue: /comer-y-salir/{slug}/
     entries.push(
         ...buildEntriesForEntity({
             items: resolvedVenue,
             siteUrl,
-            pathFn: ENTITY_PUBLIC_PATHS.gastronomy,
+            pathFn: ENTITY_PUBLIC_PATHS.venue,
             changefreq: 'weekly',
             priority: 0.8
         })

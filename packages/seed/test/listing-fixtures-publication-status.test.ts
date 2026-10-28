@@ -21,7 +21,7 @@ const DATA_DIR = join(__dirname, '..', 'src', 'data');
 const OLD_LISTING_KEYS = ['lifecycleState', 'visibility', 'moderationState'] as const;
 const BIRTH_STATES = new Set(['PUBLISHED', 'DRAFT']);
 
-/** Gastronomy fixtures whose old pair was not ACTIVE + PUBLIC (measured before HOS-1641). */
+/** venue fixtures whose old pair was not ACTIVE + PUBLIC (measured before HOS-1641). */
 const DRAFT_VENUE_FIXTURES = new Set(['006-venue-uruguay-bar-el-rinconcito.json']);
 
 const listJsonFiles = (dir: string, recursive: boolean): string[] =>

@@ -37,8 +37,8 @@ Run the manual pass on at least these pages:
 | Event detail | first valid `/es/eventos/<slug>/` |
 | Posts list | `/es/publicaciones/` |
 | Post detail | first valid `/es/publicaciones/<slug>/` |
-| Gastronomy list | `/es/gastronomia/` |
-| Gastronomy detail | first valid `/es/gastronomia/<slug>/` |
+| Venue list | `/es/comer-y-salir/` |
+| Venue detail | first valid `/es/comer-y-salir/<slug>/` |
 | Experiences list | `/es/experiencias/` |
 | Experience detail | first valid `/es/experiencias/<slug>/` |
 | Pricing | `/es/suscriptores/planes/` |

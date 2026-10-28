@@ -1,6 +1,6 @@
 /**
  * @file useVenuePage.ts
- * Page-orchestrator hook for the gastronomy view and edit pages.
+ * Page-orchestrator hook for the venue view and edit pages.
  *
  * Centralises data loading, mode switching, and navigation so route components
  * stay thin.  Mirrors the `useHostTradePage` pattern adapted for the full
@@ -18,7 +18,7 @@ import { createVenueConsolidatedConfig } from '../config/venue-consolidated.conf
 import { useUpdateVenueMutation, useVenueQuery } from './useVenueQuery';
 
 /**
- * Centralised hook for the gastronomy view/edit pages.
+ * Centralised hook for the venue view/edit pages.
  *
  * Provides:
  *   - `entity` / `isLoading` / `error` from the detail query
@@ -28,7 +28,7 @@ import { useUpdateVenueMutation, useVenueQuery } from './useVenueQuery';
  *   - `updateMutation` for the edit form
  *   - Navigation helpers (`goToList`, `goToView`, `goToEdit`)
  *
- * @param entityId - UUID of the gastronomy listing being displayed
+ * @param entityId - UUID of the venue listing being displayed
  * @returns Page state and helpers for view/edit routes
  */
 export const useVenuePage = (entityId: string) => {
@@ -118,7 +118,7 @@ export const useVenuePage = (entityId: string) => {
             isLoading: updateMutationResult.isPending
         },
 
-        entityType: 'gastronomy',
+        entityType: 'venue',
         entityId,
 
         goToList,

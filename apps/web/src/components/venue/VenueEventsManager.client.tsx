@@ -1,6 +1,6 @@
 /**
  * @file VenueEventsManager.client.tsx
- * @description The owner's venue-agenda editor for a gastronomy listing
+ * @description The owner's venue-agenda editor for a venue listing
  * (HOS-1042) — live music night, happy hour, dinner show, the Tuesday deal.
  *
  * Structurally the twin of `VenueMenuManager`, simplified: a FLAT list of
@@ -61,7 +61,7 @@ interface EventsEnvelope {
 }
 
 export interface VenueEventsManagerProps {
-    /** UUID of the gastronomy listing. */
+    /** UUID of the venue listing. */
     readonly listingId: string;
     /** Active UI locale. */
     readonly locale: SupportedLocale;
@@ -229,7 +229,7 @@ export function VenueEventsManager({
         setState('idle');
 
         if (result.ok) {
-            setMessage(t('gastronomy.owner.editor.venueEventsManager.saved', 'Agenda guardada.'));
+            setMessage(t('venue.owner.editor.venueEventsManager.saved', 'Agenda guardada.'));
             return;
         }
 
@@ -240,7 +240,7 @@ export function VenueEventsManager({
             setIsLocked(true);
             setMessage(
                 t(
-                    'gastronomy.owner.editor.venueEventsManager.locked',
+                    'venue.owner.editor.venueEventsManager.locked',
                     'Mantener una agenda de eventos está disponible desde el plan Profesional.'
                 )
             );
@@ -248,10 +248,7 @@ export function VenueEventsManager({
         }
 
         setMessage(
-            t(
-                'gastronomy.owner.editor.venueEventsManager.saveError',
-                'No se pudo guardar la agenda.'
-            )
+            t('venue.owner.editor.venueEventsManager.saveError', 'No se pudo guardar la agenda.')
         );
     }, [basePath, entries, t]);
 
@@ -264,11 +261,11 @@ export function VenueEventsManager({
             id="editor-venue-events"
         >
             <h2 className={styles.heading}>
-                {t('gastronomy.owner.editor.venueEventsManager.title', 'Agenda del local')}
+                {t('venue.owner.editor.venueEventsManager.title', 'Agenda del local')}
             </h2>
             <p className={styles.intro}>
                 {t(
-                    'gastronomy.owner.editor.venueEventsManager.intro',
+                    'venue.owner.editor.venueEventsManager.intro',
                     'Contale a tus comensales cuándo pasa algo en tu local: música en vivo, happy hour, la promo de los martes.'
                 )}
             </p>
@@ -296,7 +293,7 @@ export function VenueEventsManager({
                 disabled={atMax}
                 onClick={addEntry}
             >
-                {t('gastronomy.owner.editor.venueEventsManager.addEntry', 'Agregar evento')}
+                {t('venue.owner.editor.venueEventsManager.addEntry', 'Agregar evento')}
             </button>
 
             {atMax ? (
@@ -309,7 +306,7 @@ export function VenueEventsManager({
                      * wired now rather than left for whoever lowers it.
                      */}
                     {tPlural(
-                        'gastronomy.owner.editor.venueEventsManager.maxReached',
+                        'venue.owner.editor.venueEventsManager.maxReached',
                         VENUE_EVENTS_MAX_ENTRIES,
                         { max: VENUE_EVENTS_MAX_ENTRIES }
                     )}
@@ -330,8 +327,8 @@ export function VenueEventsManager({
                 }}
             >
                 {state === 'saving'
-                    ? t('gastronomy.owner.editor.venueEventsManager.saving', 'Guardando…')
-                    : t('gastronomy.owner.editor.venueEventsManager.save', 'Guardar agenda')}
+                    ? t('venue.owner.editor.venueEventsManager.saving', 'Guardando…')
+                    : t('venue.owner.editor.venueEventsManager.save', 'Guardar agenda')}
             </button>
 
             {message ? (

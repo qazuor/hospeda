@@ -1,6 +1,6 @@
 /**
  * @file listing-editor-hub-status-model.test.ts
- * @description Guards the gastronomy/experience editor hub's status lines (HOS-1080).
+ * @description Guards the venue/experience editor hub's status lines (HOS-1080).
  *
  * The rule these exist to hold is H-101, inherited from the accommodation hub:
  * never warn about what does not block while staying silent about what does.
@@ -16,7 +16,7 @@ import {
     resolveListingEditorSectionStatuses
 } from '@/lib/editor/listing-editor-hub-status-model';
 
-/** A gastronomy listing complete enough to publish. */
+/** A venue listing complete enough to publish. */
 function completeListing(
     overrides: Partial<ListingCompletenessListing> = {}
 ): ListingCompletenessListing {
@@ -132,7 +132,7 @@ describe('resolveListingEditorSectionStatuses — blocking lines', () => {
         expect(Object.values(statuses).some((status) => status.tone === 'blocking')).toBe(false);
     });
 
-    it('should apply the experience price rule rather than the gastronomy one', () => {
+    it('should apply the experience price rule rather than the venue one', () => {
         // The vertical is what decides which fields are required at all, and it
         // reaches `resolveListingCompleteness` from the ROUTE's vocabulary.
         const statuses = resolveListingEditorSectionStatuses({

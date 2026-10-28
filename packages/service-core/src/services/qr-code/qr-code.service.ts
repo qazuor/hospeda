@@ -498,7 +498,7 @@ export class QrCodeService extends BaseCrudService<
      * Reads the live `GENERATED` code a subject holds FOR ONE PURPOSE.
      *
      * The key is all three of `(entityType, entityId, purpose)`, never the
-     * first two. A gastronomy listing carries a door code and a table code; an
+     * first two. A venue listing carries a door code and a table code; an
      * experience carries a listing code and a certificate code that resolve to
      * the same URL. Looking up by entity alone would answer with whichever of
      * them the database happened to return, and the provisioner would then
@@ -751,7 +751,7 @@ export class QrCodeService extends BaseCrudService<
      * `deviceType`, `os` and `browserLanguage`.
      *
      * Generic by `qrCodeId` on purpose (§11 OQ-4) — nothing here is
-     * gastronomy-specific, so the same method serves the ficha QR (HOS-982)
+     * venue-specific, so the same method serves the ficha QR (HOS-982)
      * and any future `purpose`. Counting is by `qrCodeId`, never by the
      * entity behind it: a code's target can change (a slug rename) and the
      * scan history must survive that split, which counting by entity would

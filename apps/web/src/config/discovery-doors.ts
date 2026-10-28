@@ -173,7 +173,7 @@ export const ACCOUNT_DISCOVERY_DOORS: readonly DiscoveryDoor[] = [
                 i18nKey: 'account.doors.publish.options.experience.title',
                 descriptionI18nKey: 'account.doors.publish.options.experience.description',
                 icon: CompassIcon,
-                // See the `gastronomy` option above (HOS-1156) — same repoint,
+                // See the venue option above (HOS-1156) — same repoint,
                 // other vertical.
                 href: PUBLISH_PAGE_PATH_BY_VERTICAL.experience,
                 ctaI18nKey: 'account.doors.publish.options.experience.cta',
@@ -260,7 +260,7 @@ export const ACCOUNT_DISCOVERY_DOORS: readonly DiscoveryDoor[] = [
             // per content type, so an acquired editor lands on the listing for
             // the thing they clicked instead of a shared dashboard they then
             // have to navigate out of. Matches the convention `accommodation`
-            // and the two gastronomy/experience verticals already follow above.
+            // and the two venue/experience verticals already follow above.
             //
             // Both keep `href: 'colaborar/editores'` — there is ONE application
             // form and one manual promotion to RoleEnum.EDITOR (HOS-134 §2);
@@ -302,7 +302,7 @@ export const ACCOUNT_DISCOVERY_DOORS: readonly DiscoveryDoor[] = [
 ];
 
 /**
- * The "listing" discovery door's options — accommodation, gastronomy,
+ * The "listing" discovery door's options — accommodation, venue,
  * experience — reused by the pre-auth header "Publicar" CTA (HOS-691
  * AC-38) so the header dropdown and the mobile menu never hardcode the
  * same three (label, icon, href) tuples in a third and fourth place.

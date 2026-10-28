@@ -1,11 +1,11 @@
 // @vitest-environment jsdom
 /**
  * @file venue-consolidated.config.test.ts
- * Unit tests for the gastronomy consolidated entity config (SPEC-239 T-059).
+ * Unit tests for the venue consolidated entity config (SPEC-239 T-059).
  *
  * Covers:
  *  - createVenueConsolidatedConfig returns at least 3 sections
- *  - Includes a gastronomy-specific section with the type, priceRange, menuUrl fields
+ *  - Includes a venue-specific section with the type, priceRange, menuUrl fields
  *  - listing-identity section is present
  *  - listing-operational section is present
  *  - Metadata has entityName / entityNamePlural
@@ -27,49 +27,49 @@ const t = (key: string) => key;
 // Tests
 // ---------------------------------------------------------------------------
 
-describe('createGastronomyConsolidatedConfig', () => {
+describe('createVenueConsolidatedConfig', () => {
     it('should return at least 3 sections', () => {
         const config = createVenueConsolidatedConfig(t);
         expect(config.sections.length).toBeGreaterThanOrEqual(3);
     });
 
-    it('should include a gastronomy-specific section', () => {
+    it('should include a venue-specific section', () => {
         const config = createVenueConsolidatedConfig(t);
-        const specificSection = config.sections.find((s) => s.id === 'gastronomy-specific');
+        const specificSection = config.sections.find((s) => s.id === 'venue-specific');
         expect(specificSection).toBeDefined();
     });
 
-    it('gastronomy-specific section should include a "type" field', () => {
+    it('venue-specific section should include a "type" field', () => {
         const config = createVenueConsolidatedConfig(t);
-        const section = config.sections.find((s) => s.id === 'gastronomy-specific');
+        const section = config.sections.find((s) => s.id === 'venue-specific');
         const typeField = section?.fields.find((f) => f.id === 'type');
         expect(typeField).toBeDefined();
     });
 
     it('"type" field should be required', () => {
         const config = createVenueConsolidatedConfig(t);
-        const section = config.sections.find((s) => s.id === 'gastronomy-specific');
+        const section = config.sections.find((s) => s.id === 'venue-specific');
         const typeField = section?.fields.find((f) => f.id === 'type');
         expect(typeField?.required).toBe(true);
     });
 
-    it('gastronomy-specific section should include a "priceRange" field', () => {
+    it('venue-specific section should include a "priceRange" field', () => {
         const config = createVenueConsolidatedConfig(t);
-        const section = config.sections.find((s) => s.id === 'gastronomy-specific');
+        const section = config.sections.find((s) => s.id === 'venue-specific');
         const field = section?.fields.find((f) => f.id === 'priceRange');
         expect(field).toBeDefined();
     });
 
     it('"priceRange" field should NOT be required', () => {
         const config = createVenueConsolidatedConfig(t);
-        const section = config.sections.find((s) => s.id === 'gastronomy-specific');
+        const section = config.sections.find((s) => s.id === 'venue-specific');
         const field = section?.fields.find((f) => f.id === 'priceRange');
         expect(field?.required).toBeFalsy();
     });
 
-    it('gastronomy-specific section should include a "menuUrl" field', () => {
+    it('venue-specific section should include a "menuUrl" field', () => {
         const config = createVenueConsolidatedConfig(t);
-        const section = config.sections.find((s) => s.id === 'gastronomy-specific');
+        const section = config.sections.find((s) => s.id === 'venue-specific');
         const field = section?.fields.find((f) => f.id === 'menuUrl');
         expect(field).toBeDefined();
     });
@@ -101,9 +101,9 @@ describe('createGastronomyConsolidatedConfig', () => {
         }
     });
 
-    it('type field should have select options for all gastronomy types', () => {
+    it('type field should have select options for all venue types', () => {
         const config = createVenueConsolidatedConfig(t);
-        const section = config.sections.find((s) => s.id === 'gastronomy-specific');
+        const section = config.sections.find((s) => s.id === 'venue-specific');
         const typeField = section?.fields.find((f) => f.id === 'type');
         const options = (typeField?.typeConfig as { options?: { value: string }[] })?.options ?? [];
         const values = options.map((o) => o.value);
@@ -115,7 +115,7 @@ describe('createGastronomyConsolidatedConfig', () => {
 
     it('priceRange field should have select options for all price ranges', () => {
         const config = createVenueConsolidatedConfig(t);
-        const section = config.sections.find((s) => s.id === 'gastronomy-specific');
+        const section = config.sections.find((s) => s.id === 'venue-specific');
         const field = section?.fields.find((f) => f.id === 'priceRange');
         const options = (field?.typeConfig as { options?: { value: string }[] })?.options ?? [];
         const values = options.map((o) => o.value);

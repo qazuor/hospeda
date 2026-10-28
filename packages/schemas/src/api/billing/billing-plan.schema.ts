@@ -218,7 +218,7 @@ export const CreateBillingPlanSchema = z
          * Deliberately NOT derivable from {@link category}: the two answer
          * different questions. `category` is who the plan is sold to
          * (`owner` / `complex` / `tourist`), the domain is which entitlement
-         * engine owns it — and the gastronomy, experience and partner verticals share one
+         * engine owns it — and the venue, experience and partner verticals share one
          * category while holding three different domains.
          */
         productDomain: ProductDomainEnumSchema,

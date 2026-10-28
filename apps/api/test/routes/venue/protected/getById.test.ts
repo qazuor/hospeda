@@ -1,7 +1,7 @@
 /**
  * Regression tests for GET /api/v1/protected/venues/:id — ownership IDOR fix.
  *
- * Security context: GastronomyProtectedSchema exposes owner-private fields
+ * Security context: VenueProtectedSchema exposes owner-private fields
  * (contactInfo, ownerId, publicationStatus, richDescription, audit dates) that
  * the public tier never returns. Before this fix any authenticated user could
  * fetch any listing via the protected tier, leaking those PII fields.
@@ -23,7 +23,7 @@ const OWNER_ID = '11111111-1111-4111-a111-111111111111';
 const NON_OWNER_ID = '22222222-2222-4222-a222-222222222222';
 
 // ---------------------------------------------------------------------------
-// Minimal gastronomy fixture that satisfies GastronomyProtectedSchema.
+// Minimal venue fixture that satisfies VenueProtectedSchema.
 // Mirrors the shape returned by VenueService.getById in the owner-tier
 // projection. The fixture sets ownerId = OWNER_ID so ownership assertions work.
 // ---------------------------------------------------------------------------
@@ -97,7 +97,7 @@ vi.mock('@repo/service-core', async (importOriginal) => {
 });
 
 // ---------------------------------------------------------------------------
-// Header helpers — mirror the pattern in other protected gastronomy tests.
+// Header helpers — mirror the pattern in other protected venue tests.
 // ---------------------------------------------------------------------------
 
 const UA = { 'user-agent': 'vitest' };

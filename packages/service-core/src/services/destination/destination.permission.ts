@@ -39,7 +39,7 @@ export function checkCanViewDestination(actor: Actor, entity: Destination): void
     // DESTINATION_VIEW_ALL is accepted here too so the soft-deleted exemption
     // above is self-sufficient and does not silently rely on seed roles bundling
     // DESTINATION_VIEW_ALL with DESTINATION_VIEW_PRIVATE/DESTINATION_VIEW_DRAFT
-    // (matches the isStaff pattern in gastronomy/experience `_canView`).
+    // (matches the isStaff pattern in venue/experience `_canView`).
     if (
         entity.visibility === VisibilityEnum.PUBLIC ||
         hasPermission(actor, PermissionEnum.DESTINATION_VIEW_PRIVATE) ||

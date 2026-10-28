@@ -2,7 +2,7 @@
  * @file entityView-listing-stats.service.test.ts
  *
  * Unit tests for {@link EntityViewService.getStatsForOwnListings}
- * (HOS-734 — basic view stats for the gastronomy/experience listing
+ * (HOS-734 — basic view stats for the venue/experience listing
  * verticals).
  *
  * Verifies:
@@ -10,13 +10,13 @@
  *    `ACCOMMODATION_VIEW_OWN`) — ownership scoping via `findIdsByOwnerId`
  *    IS the security boundary, matching `VenueService.listOwn`'s
  *    existing convention.
- *  - Correct model dispatch: GASTRONOMY → `VenueModel`, EXPERIENCE →
+ *  - Correct model dispatch: venue → `VenueModel`, EXPERIENCE →
  *    `ExperienceModel`.
  *  - Scope isolation: actor.id (never a caller-supplied id) is passed to
  *    `findIdsByOwnerId`.
  *  - Zero-view normalization and zero-listing short-circuit (no model call).
  *  - Window mapping ('7d' → 7, '30d' → 30).
- *  - Validation: entityType restricted to GASTRONOMY/EXPERIENCE, window
+ *  - Validation: entityType restricted to venue/EXPERIENCE, window
  *    restricted to '7d'/'30d'.
  *  - Model error propagates as INTERNAL_ERROR.
  *
@@ -80,17 +80,17 @@ describe('EntityViewService.getStatsForOwnListings (HOS-734)', () => {
     });
 
     // =========================================================================
-    // GASTRONOMY
+    // venue
     // =========================================================================
 
-    describe('entityType: GASTRONOMY', () => {
+    describe('entityType: VENUE', () => {
         const baseInput: GetStatsForOwnListingsInput = {
             actor: ownerActor,
             entityType: EntityTypeEnum.VENUE,
             window: '30d'
         };
 
-        it('should return stats for all owned gastronomy listings', async () => {
+        it('should return stats for all owned venue listings', async () => {
             // Arrange
             asMock(venueModelMock.findIdsByOwnerId).mockResolvedValue([
                 UUID_LISTING_1,
@@ -111,7 +111,7 @@ describe('EntityViewService.getStatsForOwnListings (HOS-734)', () => {
             expect(asMock(experienceModelMock.findIdsByOwnerId)).not.toHaveBeenCalled();
         });
 
-        it('should pass actor.id (not a caller-supplied id) to GastronomyModel.findIdsByOwnerId', async () => {
+        it('should pass actor.id (not a caller-supplied id) to VenueModel.findIdsByOwnerId', async () => {
             // Arrange
             asMock(venueModelMock.findIdsByOwnerId).mockResolvedValue([UUID_LISTING_1]);
             asMock(modelMock.getStatsForEntities).mockResolvedValue([]);

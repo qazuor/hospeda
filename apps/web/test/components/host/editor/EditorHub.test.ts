@@ -22,7 +22,7 @@ const CODE = SOURCE.replace(/\/\*[\s\S]*?\*\//g, '').replace(/(^|\s)\/\/.*$/gm, 
 describe('EditorHub.astro — structure (AC-4)', () => {
     it('should derive its rows from the section registry it is given', () => {
         // HOS-1080: the registry is a PROP now, not an import. That is what lets
-        // gastronomy and experience render the same hub — and it is why an
+        // venue and experience render the same hub — and it is why an
         // import of the accommodation registry here would be a regression.
         expect(CODE).toContain('getVisibleEditorSections({ registry, visibility })');
         expect(CODE).not.toContain('ACCOMMODATION_EDITOR_SECTIONS');

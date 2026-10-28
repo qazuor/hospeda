@@ -1,6 +1,6 @@
 /**
  * @file publicar-listing-pages.test.ts
- * @description Source-reading checks for the two gastronomy/experience publish pages
+ * @description Source-reading checks for the two venue/experience publish pages
  * (HOS-1156 T-020/T-021).
  *
  * Both pages are the same mould with different words, so they are checked
@@ -134,14 +134,14 @@ for (const page of PAGES) {
     });
 }
 
-describe('the two gastronomy/experience publish pages share the mould, not the words (§1)', () => {
+describe('the two venue/experience publish pages share the mould, not the words (§1)', () => {
     const [venue, experiences] = PAGES;
     const venueSrc = readStripped(venue.file);
     const experiencesSrc = readStripped(experiences.file);
 
     it('names no i18n key of the other vertical', () => {
         expect(venueSrc).not.toContain('publish.experience.');
-        expect(experiencesSrc).not.toContain('publish.gastronomy.');
+        expect(experiencesSrc).not.toContain('publish.venue.');
     });
 
     it('does not share a hero fallback sentence', () => {

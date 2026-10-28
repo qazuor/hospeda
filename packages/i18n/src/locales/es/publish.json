@@ -58,7 +58,7 @@
             },
             "step3": {
                 "title": "Salís publicado",
-                "desc": "Tu local aparece en el catálogo de gastronomía y los comensales de la zona te encuentran."
+                "desc": "Tu local aparece en el catálogo de Comer y salir y los comensales de la zona te encuentran."
             }
         },
         "benefits": {
@@ -123,7 +123,7 @@
         "venue": {
             "resumeOrCreate": {
                 "title": "Ya tenés una ficha empezada",
-                "body": "Tenés una ficha de gastronomía sin publicar. Podés retomarla donde la dejaste o empezar una nueva desde cero.",
+                "body": "Tenés una ficha de Comer y salir sin publicar. Podés retomarla donde la dejaste o empezar una nueva desde cero.",
                 "resumeCta": "Retomar la ficha",
                 "createCta": "Crear una nueva"
             },

@@ -28,7 +28,7 @@
  * Whether a submitted carta document carries a photo on ANY of its dishes.
  *
  * Reads defensively over `unknown` because it runs on the raw body: the route
- * factory has validated it against `GastronomyMenuReplacePayloadSchema`, but
+ * factory has validated it against `VenueMenuReplacePayloadSchema`, but
  * this function is also the thing a test points at directly, and a gate that
  * throws on a malformed shape would be a gate that can be disabled by sending
  * a malformed shape.

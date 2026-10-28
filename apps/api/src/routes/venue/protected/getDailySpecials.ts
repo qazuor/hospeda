@@ -47,12 +47,12 @@ const venueService = new VenueService({ logger: apiLogger });
  * yours" and "does not exist" are indistinguishable.
  *
  * @param ctx - The Hono request context.
- * @param gastronomyId - The listing being read.
+ * @param venueId - The listing being read.
  * @returns Nothing; throws when the caller may not read this listing.
  */
-async function requireOwnedVenue(ctx: Context, gastronomyId: string): Promise<void> {
+async function requireOwnedVenue(ctx: Context, venueId: string): Promise<void> {
     const actor = getActorFromContext(ctx);
-    const result = await venueService.getById(actor, gastronomyId);
+    const result = await venueService.getById(actor, venueId);
 
     if (result.error) {
         throw new ServiceError(result.error.code, result.error.message);
@@ -66,9 +66,9 @@ async function requireOwnedVenue(ctx: Context, gastronomyId: string): Promise<vo
 
 /** Reads the specials. Exported standalone so the route test can call it directly. */
 export async function handleGetVenueDailySpecials(ctx: Context, params: Record<string, unknown>) {
-    const gastronomyId = params.id as string;
+    const venueId = params.id as string;
 
-    await requireOwnedVenue(ctx, gastronomyId);
+    await requireOwnedVenue(ctx, venueId);
 
     // TYPE-WORKAROUND: access protected `model` via cast to avoid `any`, the
     // same accessor the menu, FAQ and media routes use.
@@ -77,7 +77,7 @@ export async function handleGetVenueDailySpecials(ctx: Context, params: Record<s
             model: Parameters<typeof getVenueDailySpecials>[0];
         }
     ).model;
-    const result = await getVenueDailySpecials(model, { gastronomyId });
+    const result = await getVenueDailySpecials(model, { venueId });
 
     if (result.error) {
         throw new ServiceError(result.error.code, result.error.message);
@@ -89,10 +89,10 @@ export async function handleGetVenueDailySpecials(ctx: Context, params: Record<s
 export const protectedGetVenueDailySpecialsRoute = createCRUDRoute({
     method: 'get',
     path: '/{id}/daily-specials',
-    summary: 'Read the menú del día of a gastronomy listing',
+    summary: 'Read the menú del día of a venue listing',
     description:
-        'Returns every daily special the listing holds — including ones scheduled for the future and ones whose validity window has already passed, which the owner needs in order to edit them. Owner-only. Not gated on the menú-del-día entitlement: every gastronomy tier can see its own specials, and only publishing them is a paid capability.',
-    tags: ['Gastronomy', 'Gastronomy Daily Specials'],
+        'Returns every daily special the listing holds — including ones scheduled for the future and ones whose validity window has already passed, which the owner needs in order to edit them. Owner-only. Not gated on the menú-del-día entitlement: every venue tier can see its own specials, and only publishing them is a paid capability.',
+    tags: ['Venue', 'Venue Daily Specials'],
     requestParams: {
         id: z.string().uuid({ message: 'zodError.common.id.invalidUuid' })
     },

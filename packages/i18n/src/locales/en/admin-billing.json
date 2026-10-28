@@ -1347,7 +1347,7 @@
         "productDomainLabels": {
             "accommodation": "Accommodation",
             "listing": "Listings",
-            "gastronomy": "Gastronomy",
+            "venue": "Food & nightlife",
             "experience": "Experience",
             "partner": "Partner",
             "tourist": "Tourist",
@@ -1664,7 +1664,7 @@
             },
             "verticals": {
                 "accommodation": "Accommodation",
-                "gastronomy": "Gastronomy",
+                "venue": "Food & nightlife",
                 "experience": "Experiences",
                 "tourist": "Tourism",
                 "partner": "Partners"

@@ -35,7 +35,7 @@ The admin and web **do NOT share design tokens today**. Only 3 hex values are sh
   - forest: `oklch(0.5 0.14 155)`
   - sand: `oklch(0.7 0.12 75)`
 - Dark mode via `[data-theme="dark"]` attribute, computed inversions preserving hue relationships
-- Semantic category colors (tourism teal, gastronomy forest, wellness river) mapped to specific entity types
+- Semantic category colors (tourism teal, food forest, wellness river) mapped to specific entity types
 - Designed for tourism/hospitality mood — earthy, natural
 
 ### Concrete mismatch
@@ -78,7 +78,7 @@ The admin and web **do NOT share design tokens today**. Only 3 hex values are sh
 | Component | Admin | Web |
 |-----------|-------|-----|
 | **Button** | shadcn Button + Tailwind utilities. Sharp affordances. | BEM-scoped styles. Softer curves, tourism-appropriate. |
-| **Card** | shadcn border `hsl(var(--muted-foreground) / 0.2)`, neutral muted background | Custom `--shadow-*` tokens, data-attribute-driven category colors (music → brand-accent, gastronomy → hospeda-forest) |
+| **Card** | shadcn border `hsl(var(--muted-foreground) / 0.2)`, neutral muted background | Custom `--shadow-*` tokens, data-attribute-driven category colors (music → brand-accent, venue → hospeda-forest) |
 | **Sidebar nav** | Explicit `--sidebar-background` tokens | No sidebar (web is marketing site). Would clash with warm palette if added. |
 
 ## 6. Brand "feel"

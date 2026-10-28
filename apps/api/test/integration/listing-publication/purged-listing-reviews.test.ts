@@ -152,7 +152,7 @@ describe.each(verticals)('TEST:V9b:3 AC:V9b:3 reseñas de terceros — %s', (ver
             const [review] = await getDb()
                 .insert(venueReviews)
                 .values({
-                    gastronomyId: listingId,
+                    venueId: listingId,
                     userId: reviewer.id,
                     title: 'Third-party title',
                     content: reviewText,
@@ -162,7 +162,7 @@ describe.each(verticals)('TEST:V9b:3 AC:V9b:3 reseñas de terceros — %s', (ver
                     lifecycleState: 'ACTIVE'
                 })
                 .returning();
-            if (!review) throw new Error('Gastronomy review fixture insert failed');
+            if (!review) throw new Error('Venue review fixture insert failed');
             reviewId = review.id;
         } else {
             const [review] = await getDb()

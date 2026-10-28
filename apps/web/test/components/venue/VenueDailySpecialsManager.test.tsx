@@ -1,6 +1,6 @@
 /**
  * @file VenueDailySpecialsManager.test.tsx
- * @description The gastronomy menú del día panel (HOS-1041).
+ * @description The venue menú del día panel (HOS-1041).
  *
  * Four things are asserted, and each is a decision that would otherwise stay
  * invisible until an owner complained:
@@ -75,7 +75,7 @@ beforeEach(() => {
     // place still turns a suite green through mock leakage.
 });
 
-describe('GastronomyDailySpecialsManager', () => {
+describe('VenueDailySpecialsManager', () => {
     it('loads its own specials rather than waiting to be handed them', async () => {
         // Arrange
         mockGet.mockResolvedValue(LOADED);

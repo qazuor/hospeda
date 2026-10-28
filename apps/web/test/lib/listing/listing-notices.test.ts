@@ -401,6 +401,6 @@ describe('buildSubscribeToPublishCopy — row 21', () => {
             title: 'Suscribite para publicar',
             body: 'Tu ficha sigue sin publicar. Para publicarla necesitás una suscripción de alojamiento.'
         });
-        expect(venue.body).toContain('una suscripción de gastronomía.');
+        expect(venue.body).toContain('una suscripción de Comer y salir.');
     });
 });

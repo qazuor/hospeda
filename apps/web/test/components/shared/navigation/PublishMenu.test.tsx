@@ -1,7 +1,7 @@
 /**
  * @file PublishMenu.test.tsx
  * @description Tests the header "Publicar" CTA dropdown (HOS-691) — the
- * three-way chooser (accommodation / gastronomy / experience) that replaced
+ * three-way chooser (accommodation / venue / experience) that replaced
  * the single `/publicar/` link in Header.astro.
  */
 
@@ -31,13 +31,13 @@ describe('PublishMenu', () => {
         expect(screen.getByRole('menu', { name: /publicar/i })).toBeInTheDocument();
     });
 
-    it('renders exactly three options: accommodation, gastronomy, experience (AC-38)', () => {
+    it('renders exactly three options: accommodation, venue, experience (AC-38)', () => {
         render(<PublishMenu locale="es" />);
         open();
         const items = screen.getAllByRole('menuitem');
         expect(items).toHaveLength(3);
         expect(screen.getByRole('menuitem', { name: /alojamiento/i })).toBeInTheDocument();
-        expect(screen.getByRole('menuitem', { name: /gastronomía/i })).toBeInTheDocument();
+        expect(screen.getByRole('menuitem', { name: /comer y salir/i })).toBeInTheDocument();
         expect(screen.getByRole('menuitem', { name: /experiencias/i })).toBeInTheDocument();
     });
 
@@ -48,7 +48,7 @@ describe('PublishMenu', () => {
             'href',
             '/es/publicar/'
         );
-        expect(screen.getByRole('menuitem', { name: /gastronomía/i })).toHaveAttribute(
+        expect(screen.getByRole('menuitem', { name: /comer y salir/i })).toHaveAttribute(
             'href',
             '/es/publicar/comer-y-salir/'
         );
@@ -57,8 +57,8 @@ describe('PublishMenu', () => {
             '/es/publicar/experiencias/'
         );
 
-        // HOS-1156: the two gastronomy and experience entries used to read `/es/planes/…/` here,
-        // and that was the defect — a "Publicar" menu whose two gastronomy and experience options
+        // HOS-1156: the two venue and experience entries used to read `/es/planes/…/` here,
+        // and that was the defect — a "Publicar" menu whose two venue and experience options
         // opened SALES pages. The literals above are deliberately spelled out
         // rather than derived from `PUBLISH_CTA_OPTIONS`: deriving them would
         // make this case pass for any value the config happened to hold, which

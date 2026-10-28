@@ -122,7 +122,7 @@
             },
             "capacidad": {
                 "title": "Capacidad",
-                "description": "Cuánta gente podés recibir",
+                "description": "How many people you can host",
                 "fields": {
                     "maxGuests": "Huéspedes máximos",
                     "bedrooms": "Habitaciones",
@@ -250,7 +250,7 @@
                 "body": "Your listing is still unpublished. To publish it you need a {{vertical}} subscription.",
                 "vertical": {
                     "accommodation": "accommodation",
-                    "gastronomy": "gastronomy",
+                    "venue": "Food & nightlife",
                     "experience": "experiences"
                 }
             },

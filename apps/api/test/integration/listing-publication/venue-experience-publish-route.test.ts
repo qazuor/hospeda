@@ -1,4 +1,4 @@
-/** TEST:V6:2/3 — PB1 over the real HTTP stack for gastronomy and experience. */
+/** TEST:V6:2/3 — PB1 over the real HTTP stack for venue and experience. */
 import { randomUUID } from 'node:crypto';
 import { eq, getDb, trials } from '@repo/db';
 import { PermissionEnum, PublicationStatusEnum, RoleEnum, VerticalEnum } from '@repo/schemas';

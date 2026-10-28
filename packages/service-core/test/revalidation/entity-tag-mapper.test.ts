@@ -179,7 +179,7 @@ describe('getAffectedCacheTags', () => {
         });
     });
 
-    describe('gastronomy and experience (HOS-369 W2-4)', () => {
+    describe('venue and experience (HOS-369 W2-4)', () => {
         it.each([
             'venue',
             'experience'
@@ -191,10 +191,10 @@ describe('getAffectedCacheTags', () => {
                 destinationSlug: 'colon'
             });
 
-            const prefix = entityType === 'venue' ? 'gastro' : 'exp';
+            const prefix = entityType === 'venue' ? 'venue' : 'exp';
             expect(tags).toContain(`${prefix}-la-parrilla`);
             expect(tags).toContain(`${prefix}-uuid-1`);
-            expect(tags).toContain(entityType === 'venue' ? 'list-gastro' : 'list-exp');
+            expect(tags).toContain(entityType === 'venue' ? 'list-venue' : 'list-exp');
             expect(tags).toContain('dest-colon');
         });
 
@@ -203,21 +203,21 @@ describe('getAffectedCacheTags', () => {
             'experience'
         ] as const)('does NOT purge the home page for %s', (entityType) => {
             // Unlike accommodations, events and posts, the home surfaces no
-            // gastronomy and experience listings. Adding `home` here would evict it on every
+            // venue and experience listings. Adding `home` here would evict it on every
             // restaurant edit for nothing.
             const tags = getAffectedCacheTags({ entityType, slug: 'x', id: 'y' });
             expect(tags).not.toContain('home');
         });
 
-        it('does not cross the gastronomy and experience collections', () => {
-            // A gastronomy write must not evict the experiences listing.
+        it('does not cross the venue and experience collections', () => {
+            // A venue write must not evict the experiences listing.
             const tags = getAffectedCacheTags({ entityType: 'venue', slug: 'x' });
             expect(tags).not.toContain('list-exp');
         });
 
         it('degrades to the collection tag when no identifying key is present', () => {
             const tags = getAffectedCacheTags({ entityType: 'venue' });
-            expect(tags).toEqual(['list-gastro']);
+            expect(tags).toEqual(['list-venue']);
         });
     });
 

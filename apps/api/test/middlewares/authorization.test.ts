@@ -561,7 +561,7 @@ describe('Authorization Middleware', () => {
             expect(res.status).toBe(200);
         });
 
-        it('admits an actor holding only the gastronomy permission', async () => {
+        it('admits an actor holding only the venue permission', async () => {
             const res = await requestWith([PermissionEnum.VENUE_EDIT_ALL]);
             expect(res.status).toBe(200);
         });

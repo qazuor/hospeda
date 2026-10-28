@@ -50,7 +50,7 @@ const canCreateEvents = hasEventsNavAccess({ roles: user.roles });
 
 // The organizer catalog: at most 100 entries today, no pagination UI — the
 // same simplifying assumption `destinationsApi.list({ pageSize: 100 })` makes
-// in the gastronomy/experience create page.
+// in the venue/experience create page.
 const organizersResult = canCreateEvents
     ? await eventOrganizersApi.list({ pageSize: 100 })
     : null;

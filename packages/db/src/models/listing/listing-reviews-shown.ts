@@ -22,7 +22,7 @@ const TABLES: Record<
     },
     venue: {
         listing: venues,
-        reviewListingId: venueReviews.gastronomyId
+        reviewListingId: venueReviews.venueId
     },
     experience: {
         listing: experiences,

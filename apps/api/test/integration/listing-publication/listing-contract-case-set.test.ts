@@ -185,7 +185,7 @@ afterAll(async () => {
 
 listingCaseSet({ describe, it, expect, makeHarness: async () => harness });
 
-describe('TEST:V6:34 AC:V6:26 ficha and fichaPurgada over the three states (gastronomy)', () => {
+describe('TEST:V6:34 AC:V6:26 ficha and fichaPurgada over the three states (venue)', () => {
     it('TEST:V6:34 AC:V6:26 PUBLISHED, MODERATED and PURGED by PB12', async () => {
         const ownerId = randomUUID();
         const vertical = VerticalEnum.VENUE;

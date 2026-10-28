@@ -4,17 +4,17 @@
  * Async read-side glue that loads `experience_media` rows and attaches the
  * composed `Media` shape onto experience entities (HOS-372).
  *
- * Mirrors `gastronomy.media-read.ts` (and, transitively, `accommodation.media-read.ts`)
+ * Mirrors `venue.media-read.ts` (and, transitively, `accommodation.media-read.ts`)
  * field-for-field, delegating the pure composition step to the SHARED
  * `composeListingMedia` helper — see `listing-media-compose.ts` for why one
- * function serves both the gastronomy and experience verticals.
+ * function serves both the venue and experience verticals.
  *
  * Both helpers use the batch finder `findByExperiences` (one `IN` query) so
  * list/search composition does not incur an N+1.
  *
  * Empty-composition fidelity: when a listing has no photos and no videos, the
  * composed object is `{}`. To avoid a `null → {}` shape drift, the original
- * `media` value is preserved in that case (mirrors accommodation/gastronomy).
+ * `media` value is preserved in that case (mirrors accommodation/venue).
  *
  * Fail-hard contract: a DB error from `findByExperiences` propagates (no catch,
  * no JSONB fallback) — the relational table is the read source of truth.

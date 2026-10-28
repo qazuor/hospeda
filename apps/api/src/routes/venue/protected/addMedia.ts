@@ -1,6 +1,6 @@
 /**
  * POST /api/v1/protected/venues/:id/media
- * Add a photo to a gastronomy listing gallery (HOS-372).
+ * Add a photo to a venue listing gallery (HOS-372).
  *
  * This is a URL-receiver endpoint: the caller has already uploaded the file to
  * Cloudinary via `POST /api/v1/admin/media/upload`. This endpoint registers the
@@ -28,7 +28,7 @@ import { createProtectedRoute } from '../../../utils/route-factory';
 const venueService = new VenueService({ logger: apiLogger });
 
 /**
- * Route handler — adds a photo to the specified gastronomy listing's gallery.
+ * Route handler — adds a photo to the specified venue listing's gallery.
  *
  * TYPE-WORKAROUND: accesses the internal `model` field from the service instance
  * to pass to the standalone media helper without requiring a public accessor.
@@ -36,12 +36,12 @@ const venueService = new VenueService({ logger: apiLogger });
 export const protectedAddVenueMediaRoute = createProtectedRoute({
     method: 'post',
     path: '/{id}/media',
-    summary: 'Add photo to gastronomy listing gallery',
+    summary: 'Add photo to venue listing gallery',
     description:
         'Registers an already-uploaded URL as a new venue_media row. ' +
         'Requires VENUE_EDIT_OWN (listing owner) or VENUE_EDIT_ALL (staff).',
     listingAccess: { vertical: VerticalEnum.VENUE, operation: 'EDIT', idParam: 'id' },
-    tags: ['Gastronomy', 'Gastronomy Media'],
+    tags: ['Venue', 'Venue Media'],
     protectedTag: false,
     requestParams: {
         id: z.string().uuid({ message: 'zodError.common.id.invalidUuid' })
@@ -56,7 +56,7 @@ export const protectedAddVenueMediaRoute = createProtectedRoute({
         const actor = getActorFromContext(ctx);
 
         const input: VenueMediaAddInput = {
-            gastronomyId: params.id as string,
+            venueId: params.id as string,
             media: body as VenueMediaAddPayload
         };
 

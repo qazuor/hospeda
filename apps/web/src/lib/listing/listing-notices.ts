@@ -416,7 +416,7 @@ export function buildUnpublishConfirmNotes({
 /** Row 21: the vertical's name inside "you need a {vertical} subscription". */
 const SUBSCRIBE_TO_PUBLISH_VERTICAL_KEY: Readonly<Record<PublishVerticalSlug, string>> = {
     accommodation: 'host.properties.card.subscribeToPublish.vertical.accommodation',
-    venue: 'host.properties.card.subscribeToPublish.vertical.gastronomy',
+    venue: 'host.properties.card.subscribeToPublish.vertical.venue',
     experience: 'host.properties.card.subscribeToPublish.vertical.experience'
 };
 

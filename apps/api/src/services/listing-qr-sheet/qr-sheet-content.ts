@@ -121,7 +121,7 @@ export const MINTED_TARGET_LOCALE: Locale = 'es';
  * `brochure-content.ts` duplicates it: that file lives in the Astro app and this
  * one runs in the API. A divergence would point every printed code at a 404,
  * which is why `test/services/listing-qr-sheet-content.test.ts` asserts the two
- * gastronomy and experience segments against the brochure's own builder and the accommodation one
+ * venue and experience segments against the brochure's own builder and the accommodation one
  * against a literal.
  */
 const PUBLIC_PATH_SEGMENT: Readonly<Record<ListingQrSheetVertical, string>> = {

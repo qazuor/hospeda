@@ -253,7 +253,7 @@ describe('EntityViewModel.getDailySeriesForEntityIds (SPEC-207)', () => {
          * Stands in for Postgres: it holds views that belong to ONE entity type
          * and answers a query only with rows whose type matches the type BOUND
          * into that query. A hardcoded `'ACCOMMODATION'` literal binds nothing,
-         * so a gastronomy request finds no match, exactly as in production.
+         * so a venue request finds no match, exactly as in production.
          */
         function buildTypeAwareDb(storedType: string, storedRows: unknown[]): MockDb {
             return {
@@ -266,7 +266,7 @@ describe('EntityViewModel.getDailySeriesForEntityIds (SPEC-207)', () => {
             };
         }
 
-        it('should return a NON-ZERO total for gastronomy ids', async () => {
+        it('should return a NON-ZERO total for venue ids', async () => {
             // Arrange
             const mockDb = buildTypeAwareDb(EntityTypeEnum.VENUE, [
                 { date: '2026-09-08', total: '4' }

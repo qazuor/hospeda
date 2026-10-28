@@ -14,7 +14,7 @@
  * to Cloudinary. Returns the resulting URL, publicId, width, and height.
  *
  * Listing access (HOS-1682): for the three verticals with a listing
- * (accommodation, gastronomy, experience) the route runs the listing access
+ * (accommodation, venue, experience) the route runs the listing access
  * chain (`enforceListingAccess`, operation EDIT) with the vertical of the
  * service branch, after the ownership check and before the gallery cap, the
  * file read and the provider call: listing state, coverage, capability and the
@@ -149,7 +149,7 @@ type UploadListingAccess = { readonly listingAccess: ListingAccessConfig };
  *
  * Each entry mirrors the persisting route the uploaded asset ends up in: the
  * accommodation gallery takes `addMedia`'s plan photo limit, the accommodation
- * featured image takes `addFeaturedMedia`'s `requested: 1`, and gastronomy and
+ * featured image takes `addFeaturedMedia`'s `requested: 1`, and venue and
  * experience declare no limit, like their own `addMedia`/`addFeaturedMedia`.
  * The vertical is named literally per branch: it is the vertical of the table
  * the service branch reads the listing from, never a value of the request.
@@ -331,7 +331,7 @@ export const protectedUploadEntityRoute = createProtectedRoute({
 
         // Ownership check.
         //
-        // Entities that carry `ownerId` (accommodation, gastronomy, experience)
+        // Entities that carry `ownerId` (accommodation, venue, experience)
         // keep the original direct comparison, unchanged.
         //
         // The rest do not have that column at all. This code used to cast every

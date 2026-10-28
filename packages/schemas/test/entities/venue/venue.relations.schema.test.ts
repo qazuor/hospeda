@@ -8,17 +8,17 @@ import {
     VenueWithFullRelationsSchema,
     VenueWithOwnerSchema
 } from '../../../src/entities/venue/venue.relations.schema.js';
-import { createMinimalGastronomy } from '../../fixtures/venue.fixtures.js';
+import { createMinimalVenue } from '../../fixtures/venue.fixtures.js';
 
-describe('GastronomyWithDestinationSchema', () => {
-    it('should validate gastronomy without destination (optional)', () => {
-        const data = createMinimalGastronomy();
+describe('VenueWithDestinationSchema', () => {
+    it('should validate venue without destination (optional)', () => {
+        const data = createMinimalVenue();
         expect(() => VenueWithDestinationSchema.parse(data)).not.toThrow();
     });
 
-    it('should validate gastronomy with destination', () => {
+    it('should validate venue with destination', () => {
         const data = {
-            ...createMinimalGastronomy(),
+            ...createMinimalVenue(),
             destination: {
                 id: faker.string.uuid(),
                 name: 'Concepción del Uruguay',
@@ -29,15 +29,15 @@ describe('GastronomyWithDestinationSchema', () => {
     });
 });
 
-describe('GastronomyWithOwnerSchema', () => {
-    it('should validate gastronomy without owner (optional)', () => {
-        const data = createMinimalGastronomy();
+describe('VenueWithOwnerSchema', () => {
+    it('should validate venue without owner (optional)', () => {
+        const data = createMinimalVenue();
         expect(() => VenueWithOwnerSchema.parse(data)).not.toThrow();
     });
 
-    it('should validate gastronomy with owner summary', () => {
+    it('should validate venue with owner summary', () => {
         const data = {
-            ...createMinimalGastronomy(),
+            ...createMinimalVenue(),
             owner: {
                 id: faker.string.uuid(),
                 email: 'owner@example.com',
@@ -49,10 +49,10 @@ describe('GastronomyWithOwnerSchema', () => {
     });
 });
 
-describe('GastronomyWithBasicRelationsSchema', () => {
-    it('should validate gastronomy with both destination and owner', () => {
+describe('VenueWithBasicRelationsSchema', () => {
+    it('should validate venue with both destination and owner', () => {
         const data = {
-            ...createMinimalGastronomy(),
+            ...createMinimalVenue(),
             destination: { id: faker.string.uuid(), name: 'Test City', slug: 'test-city' },
             owner: {
                 id: faker.string.uuid(),
@@ -65,10 +65,10 @@ describe('GastronomyWithBasicRelationsSchema', () => {
     });
 });
 
-describe('GastronomyWithFullRelationsSchema', () => {
-    it('should validate gastronomy with all relations', () => {
+describe('VenueWithFullRelationsSchema', () => {
+    it('should validate venue with all relations', () => {
         const data = {
-            ...createMinimalGastronomy(),
+            ...createMinimalVenue(),
             destination: { id: faker.string.uuid(), name: 'Test City', slug: 'test-city' },
             owner: {
                 id: faker.string.uuid(),
@@ -92,8 +92,8 @@ describe('GastronomyWithFullRelationsSchema', () => {
         expect(() => VenueWithFullRelationsSchema.parse(data)).not.toThrow();
     });
 
-    it('should validate gastronomy with no optional relations', () => {
-        const data = createMinimalGastronomy();
+    it('should validate venue with no optional relations', () => {
+        const data = createMinimalVenue();
         expect(() => VenueWithFullRelationsSchema.parse(data)).not.toThrow();
     });
 });
@@ -105,7 +105,7 @@ describe('feature/amenity summaries without a `name` key (zod 4.3.6 parity)', ()
         ['amenities', VenueWithAmenitiesSchema]
     ] as const)('accepts a %s summary that omits name', (field, schema) => {
         const data = {
-            ...createMinimalGastronomy(),
+            ...createMinimalVenue(),
             [field]: [{ id: faker.string.uuid(), slug: 'wifi' }]
         };
         expect(schema.safeParse(data).success).toBe(true);

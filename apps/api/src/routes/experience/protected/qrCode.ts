@@ -9,7 +9,7 @@
  * the full reasoning: why the dashboard needs the SVG rather than the PDF, why
  * this is the SAME code the printable sheet carries and not a second one, why
  * the "published" state is checked before anything is minted, and why
- * there is no entitlement gate. As in gastronomy, the staff bypass is
+ * there is no entitlement gate. As in venue, the staff bypass is
  * `EXPERIENCE_VIEW_ALL`.
  *
  * ## An experience holds three codes and this route touches exactly one

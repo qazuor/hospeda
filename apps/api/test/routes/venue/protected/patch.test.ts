@@ -32,17 +32,17 @@ vi.mock('@repo/service-core', async (importOriginal) => {
             }
 
             override async updateOwn(
-                gastronomyId: string,
+                venueId: string,
                 data: Record<string, unknown>,
                 _actor: Parameters<typeof orig.VenueService.prototype.updateOwn>[2]
             ): ReturnType<typeof orig.VenueService.prototype.updateOwn> {
                 // Capture for assertions
                 (globalThis as Record<string, unknown>).__lastUpdateOwnInput = {
-                    gastronomyId,
+                    venueId,
                     data
                 };
                 return {
-                    data: { id: gastronomyId, name: 'mock' } as unknown as Awaited<
+                    data: { id: venueId, name: 'mock' } as unknown as Awaited<
                         ReturnType<typeof orig.VenueService.prototype.updateOwn>
                     >['data'] & {},
                     error: undefined
@@ -124,7 +124,7 @@ describe('PATCH /api/v1/protected/venues/:id', () => {
             });
 
             const captured = (globalThis as Record<string, unknown>).__lastUpdateOwnInput as
-                | { gastronomyId: string; data: Record<string, unknown> }
+                | { venueId: string; data: Record<string, unknown> }
                 | undefined;
 
             // Skip assertion if mock auth isn't wired (CI without actor middleware)

@@ -1,9 +1,9 @@
 /**
- * Gastronomy menu schemas — the venue's carta (HOS-895).
+ * venue menu schemas — the venue's carta (HOS-895).
  *
  * ## Three ways to show a menu, none of them mandatory
  *
- * Before HOS-895 a menu was ONE thing: `gastronomies.menu_url`, a link to a
+ * Before HOS-895 a menu was ONE thing: `legacy listing tables.menu_url`, a link to a
  * page the venue had published somewhere else. A small restaurant rarely has
  * one; it almost always has a photo or a PDF. Resolving only that, though,
  * would have left the three issues queued behind this one — HOS-1043
@@ -15,8 +15,8 @@
  * | Shape | Where it lives | For whom |
  * |---|---|---|
  * | Structured carta | `venue_menu_sections` + `venue_menu_items` | the venue willing to type its dishes |
- * | Uploaded photo / PDF | `gastronomies.menu_file_url` + `menu_file_kind` | the venue that has the menu as an image |
- * | External link | `gastronomies.menu_url` (pre-existing) | the venue that already publishes one |
+ * | Uploaded photo / PDF | `legacy listing tables.menu_file_url` + `menu_file_kind` | the venue that has the menu as an image |
+ * | External link | `legacy listing tables.menu_url` (pre-existing) | the venue that already publishes one |
  *
  * All three may be set at once and **none is required**. Nobody is made to load
  * forty items to be allowed to publish.
@@ -84,7 +84,7 @@ export const VENUE_MENU_MAX_ITEM_PRICE_CENTS = 100_000_000;
  * @see packages/db/src/schemas/venue/venue.dbschema.ts
  */
 export const VenueMenuFileKindSchema = z.enum(['image', 'pdf'], {
-    message: 'zodError.gastronomy.menuFileKind.invalid'
+    message: 'zodError.venue.menuFileKind.invalid'
 });
 export type VenueMenuFileKind = z.infer<typeof VenueMenuFileKindSchema>;
 
@@ -98,7 +98,7 @@ export type VenueMenuFileKind = z.infer<typeof VenueMenuFileKindSchema>;
  */
 export const VenueMenuFileSchema = z.object({
     /** Public delivery URL of the photo or PDF. */
-    url: mediaAssetUrl('zodError.gastronomy.menuFileUrl.invalid'),
+    url: mediaAssetUrl('zodError.venue.menuFileUrl.invalid'),
     /** Whether {@link url} points at an image or at a PDF. */
     kind: VenueMenuFileKindSchema
 });
@@ -114,7 +114,7 @@ export type VenueMenuFile = z.infer<typeof VenueMenuFileSchema>;
  * They are part of the STORED row and deliberately absent from the read
  * projections below: a diner reading a menu has no business learning the UUID
  * of the staff member who last touched it. Same public/stored split
- * `GastronomyFaqPublicSchema` makes.
+ * `venueFaqPublicSchema` makes.
  */
 const MenuAuthorFields = {
     /** User who created the row; `null` once that user is deleted. */
@@ -130,7 +130,7 @@ export const VenueMenuItemSchema = z.object({
     /** The section this dish belongs to. */
     sectionId: z.string().uuid({ message: 'zodError.common.id.invalidUuid' }),
     /** The listing this dish belongs to (denormalized — see the db schema). */
-    gastronomyId: z.string().uuid({ message: 'zodError.common.id.invalidUuid' }),
+    venueId: z.string().uuid({ message: 'zodError.common.id.invalidUuid' }),
     /** Name of the dish or drink. */
     name: z.string().min(1).max(150),
     /** Optional description. */
@@ -163,7 +163,7 @@ export const VenueMenuItemSchema = z.object({
      * load-bearing field is the URL: `alt` degrades to the dish's own name and
      * `publicId` is never rendered at all, so there is no half-value to make
      * unrepresentable. What flat fields buy instead is that this schema stays a
-     * faithful mirror of the COLUMNS — it is the type `GastronomyMenuItemModel`
+     * faithful mirror of the COLUMNS — it is the type `venueMenuItemModel`
      * is parameterised by, and a nested object here would force a mapping layer
      * between every row read and every row written.
      *
@@ -209,7 +209,7 @@ export const VenueMenuSectionSchema = z.object({
     /** Menu section ID (UUID). */
     id: z.string().uuid({ message: 'zodError.common.id.invalidUuid' }),
     /** The listing this section belongs to. */
-    gastronomyId: z.string().uuid({ message: 'zodError.common.id.invalidUuid' }),
+    venueId: z.string().uuid({ message: 'zodError.common.id.invalidUuid' }),
     /** Heading of the course. */
     name: z.string().min(1).max(120),
     /** Optional blurb under the heading. */
@@ -268,13 +268,13 @@ export const VenueMenuItemInputSchema = z.object({
     name: z
         .string()
         .trim()
-        .min(1, { message: 'zodError.gastronomy.menuItem.name.min' })
-        .max(150, { message: 'zodError.gastronomy.menuItem.name.max' }),
+        .min(1, { message: 'zodError.venue.menuItem.name.min' })
+        .max(150, { message: 'zodError.venue.menuItem.name.max' }),
     /** Optional description. Empty string and `null` both mean "none". */
     description: z
         .string()
         .trim()
-        .max(500, { message: 'zodError.gastronomy.menuItem.description.max' })
+        .max(500, { message: 'zodError.venue.menuItem.description.max' })
         .nullish(),
     /**
      * Localized name (HOS-1043), or `null`/omitted to leave the dish untranslated.
@@ -294,10 +294,10 @@ export const VenueMenuItemInputSchema = z.object({
      */
     priceCents: z
         .number()
-        .int({ message: 'zodError.gastronomy.menuItem.priceCents.int' })
-        .min(0, { message: 'zodError.gastronomy.menuItem.priceCents.min' })
+        .int({ message: 'zodError.venue.menuItem.priceCents.int' })
+        .min(0, { message: 'zodError.venue.menuItem.priceCents.min' })
         .max(VENUE_MENU_MAX_ITEM_PRICE_CENTS, {
-            message: 'zodError.gastronomy.menuItem.priceCents.max'
+            message: 'zodError.venue.menuItem.priceCents.max'
         })
         .nullish(),
     /** Whether the dish is on offer. Defaults to `true`. */
@@ -316,7 +316,7 @@ export const VenueMenuItemInputSchema = z.object({
      * to render, it is scheme-checked here, and the ENTITLEMENT for having a
      * dish photo at all is enforced by the route before this parses.
      */
-    photoUrl: mediaAssetUrl('zodError.gastronomy.menuItemPhoto.url.invalid').nullish(),
+    photoUrl: mediaAssetUrl('zodError.venue.menuItemPhoto.url.invalid').nullish(),
     /**
      * Cloudinary `public_id` of that asset, round-tripped by the client so a
      * later cleanup can destroy it rather than merely forget it.
@@ -324,7 +324,7 @@ export const VenueMenuItemInputSchema = z.object({
     photoPublicId: z
         .string()
         .trim()
-        .max(255, { message: 'zodError.gastronomy.menuItemPhoto.publicId.max' })
+        .max(255, { message: 'zodError.venue.menuItemPhoto.publicId.max' })
         .nullish(),
     /**
      * Alt text. Optional, and its absence is not an accessibility hole — the
@@ -333,7 +333,7 @@ export const VenueMenuItemInputSchema = z.object({
     photoAlt: z
         .string()
         .trim()
-        .max(200, { message: 'zodError.gastronomy.menuItemPhoto.alt.max' })
+        .max(200, { message: 'zodError.venue.menuItemPhoto.alt.max' })
         .nullish()
 });
 export type VenueMenuItemInput = z.input<typeof VenueMenuItemInputSchema>;
@@ -349,7 +349,7 @@ export type VenueMenuItemInput = z.input<typeof VenueMenuItemInputSchema>;
  */
 export const VenueMenuItemPhotoUploadOutputSchema = z.object({
     /** Public delivery URL of the uploaded photo. */
-    url: mediaAssetUrl('zodError.gastronomy.menuItemPhoto.url.invalid'),
+    url: mediaAssetUrl('zodError.venue.menuItemPhoto.url.invalid'),
     /** Cloudinary `public_id`, for the client to round-trip into the document. */
     publicId: z.string()
 });
@@ -361,13 +361,13 @@ export const VenueMenuSectionInputSchema = z.object({
     name: z
         .string()
         .trim()
-        .min(1, { message: 'zodError.gastronomy.menuSection.name.min' })
-        .max(120, { message: 'zodError.gastronomy.menuSection.name.max' }),
+        .min(1, { message: 'zodError.venue.menuSection.name.min' })
+        .max(120, { message: 'zodError.venue.menuSection.name.max' }),
     /** Optional blurb under the heading. */
     description: z
         .string()
         .trim()
-        .max(500, { message: 'zodError.gastronomy.menuSection.description.max' })
+        .max(500, { message: 'zodError.venue.menuSection.description.max' })
         .nullish(),
     /**
      * Localized heading (HOS-1043), or `null`/omitted. See
@@ -384,7 +384,7 @@ export const VenueMenuSectionInputSchema = z.object({
     items: z
         .array(VenueMenuItemInputSchema)
         .max(VENUE_MENU_MAX_ITEMS_PER_SECTION, {
-            message: 'zodError.gastronomy.menuSection.items.max'
+            message: 'zodError.venue.menuSection.items.max'
         })
         .default([])
 });
@@ -422,7 +422,7 @@ export const VenueMenuReplacePayloadSchema = z.object({
     sections: z
         .array(VenueMenuSectionInputSchema)
         .max(VENUE_MENU_MAX_SECTIONS, {
-            message: 'zodError.gastronomy.menu.sections.max'
+            message: 'zodError.venue.menu.sections.max'
         })
         .default([])
 });
@@ -434,13 +434,13 @@ export type VenueMenuReplacePayload = z.input<typeof VenueMenuReplacePayloadSche
 
 /** Service input for reading a listing's carta. */
 export const VenueMenuGetInputSchema = z.object({
-    gastronomyId: z.string().uuid({ message: 'zodError.common.id.invalidUuid' })
+    venueId: z.string().uuid({ message: 'zodError.common.id.invalidUuid' })
 });
 export type VenueMenuGetInput = z.infer<typeof VenueMenuGetInputSchema>;
 
 /** Service input for replacing a listing's carta. */
 export const VenueMenuReplaceInputSchema = z.object({
-    gastronomyId: z.string().uuid({ message: 'zodError.common.id.invalidUuid' }),
+    venueId: z.string().uuid({ message: 'zodError.common.id.invalidUuid' }),
     menu: VenueMenuReplacePayloadSchema
 });
 export type VenueMenuReplaceInput = z.input<typeof VenueMenuReplaceInputSchema>;
@@ -459,7 +459,7 @@ export const VenueMenuOutputSchema = z.object({
     sections: z.array(VenueMenuSectionPublicSchema),
     /** The uploaded photo or PDF, or `null`. */
     file: VenueMenuFileSchema.nullable(),
-    /** The external link (`gastronomies.menu_url`), or `null`. */
+    /** The external link (`legacy listing tables.menu_url`), or `null`. */
     externalUrl: z.string().url().nullable()
 });
 export type VenueMenuOutput = z.infer<typeof VenueMenuOutputSchema>;

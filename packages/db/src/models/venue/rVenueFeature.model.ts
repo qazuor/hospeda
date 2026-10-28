@@ -3,7 +3,7 @@ import { BaseModelImpl } from '../../base/base.model.ts';
 import { rVenueFeature } from '../../schemas/venue/r_venue_feature.dbschema.ts';
 
 /**
- * RVenueFeatureModel — DB access for gastronomy-feature junction (SPEC-239).
+ * RVenueFeatureModel — DB access for venue-feature junction (SPEC-239).
  * Mirrors RAccommodationFeatureModel: thin BaseModelImpl wrapper.
  */
 export class RVenueFeatureModel extends BaseModelImpl<VenueFeatureRelation> {

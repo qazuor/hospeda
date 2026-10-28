@@ -50,7 +50,7 @@ export * from './listing-catalog.schema.js';
 export * from './listing-completeness.js';
 // Listing common schemas (SPEC-239)
 export * from './listing-identity.schema.js';
-// Shared relational media row base (HOS-372) — gastronomy/experience media extend this
+// Shared relational media row base (HOS-372) — venue/experience media extend this
 export * from './listing-media.schema.js';
 export * from './listing-moderation.schema.js';
 export * from './listing-notices.schema.js';
