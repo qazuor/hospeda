@@ -133,6 +133,32 @@ hops --target=staging redeploy api           # explicit flag required for redepl
 hops --target=prod db-migrate --no-pull      # explicit flag required for db-migrate
 ```
 
+**Container resolution never crosses targets** (HOS-1950). prod and
+staging run on the same docker daemon and expose the same ports (api 3001,
+web 4321, admin 3000), so a container is resolved by its Coolify
+`coolify.resourceName` label (`hospeda-<kind>-<target>`, or
+`<kind>-database-<UUID>` for postgres/redis). The image / port fallbacks
+still exist for non-Coolify setups, but a fallback that lands on a
+container labelled for ANY other resource is an error. With the staging
+app stopped, `hops --target=staging redeploy api` fails naming the target
+and the label it looked for, instead of redeploying prod. Every command
+that resolves a container prints one line to stderr:
+
+```text
+ℹ Resolved api (staging) → container <name> [hospeda-api-staging]
+```
+
+A resolution through a fallback is printed as a warning with
+`(via <strategy> fallback)` appended.
+
+**`cron-list` / `cron-trigger` honour `--target`.** prod reads
+`HOSPEDA_API_URL` (default `https://api.hospeda.com.ar`) and
+`HOPS_ADMIN_COOKIE`. staging reads `HOPS_STAGING_API_URL` and
+`HOPS_STAGING_ADMIN_COOKIE`, both required with no default: the repo has no
+single trustworthy source for the staging API host, so a staging run without
+them fails instead of reaching production, and the prod cookie is never sent
+to another host. A staging URL on the prod host is rejected too.
+
 App container names are stable (`hospeda-<api|web|admin>-<prod|staging>`)
 and hardcoded in the code. Database service UUIDs differ per Coolify
 deployment, so they live in `.env.local`:
