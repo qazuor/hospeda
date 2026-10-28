@@ -3266,10 +3266,6 @@
             "path": "/api/v1/protected/venues"
         },
         {
-            "method": "POST",
-            "path": "/api/v1/protected/venues/:venueId/reviews"
-        },
-        {
             "method": "GET",
             "path": "/api/v1/protected/venues/:id"
         },
@@ -3404,6 +3400,10 @@
         {
             "method": "POST",
             "path": "/api/v1/protected/venues/:id/unpublish"
+        },
+        {
+            "method": "POST",
+            "path": "/api/v1/protected/venues/:venueId/reviews"
         },
         {
             "method": "GET",
@@ -3899,15 +3899,15 @@
         },
         {
             "method": "GET",
+            "path": "/api/v1/public/venues/:id"
+        },
+        {
+            "method": "GET",
             "path": "/api/v1/public/venues/:venueId/faqs"
         },
         {
             "method": "GET",
             "path": "/api/v1/public/venues/:venueId/reviews"
-        },
-        {
-            "method": "GET",
-            "path": "/api/v1/public/venues/:id"
         },
         {
             "method": "GET",
