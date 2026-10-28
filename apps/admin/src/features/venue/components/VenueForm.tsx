@@ -252,9 +252,9 @@ export function VenueForm({
                 </section>
 
                 {/* ---- Venue-specific ---- */}
-                <section aria-labelledby="gastronomy-specific-heading">
+                <section aria-labelledby="venue-specific-heading">
                     <h3
-                        id="gastronomy-specific-heading"
+                        id="venue-specific-heading"
                         className="mb-4 font-semibold text-muted-foreground text-sm uppercase tracking-wide"
                     >
                         Detalles gastronómicos

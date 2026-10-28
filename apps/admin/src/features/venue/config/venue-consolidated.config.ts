@@ -63,7 +63,7 @@ const PRICE_RANGE_OPTIONS = [
  */
 function createVenueSpecificSection(): ConsolidatedSectionConfig {
     return {
-        id: 'gastronomy-specific',
+        id: 'venue-specific',
         title: 'Detalles de Gastronomía',
         description: 'Tipo de establecimiento, rango de precios y menú online',
         layout: LayoutTypeEnum.GRID,

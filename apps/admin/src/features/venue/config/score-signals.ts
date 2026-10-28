@@ -192,7 +192,7 @@ export function createVenueSignals(): readonly SignalConfig<Record<string, unkno
             id: 'cuisine',
             labelKey: 'admin-entities.qualityScore.signals.cuisine.label',
             weight: 14,
-            sectionId: 'gastronomy-specific',
+            sectionId: 'venue-specific',
             check: (entity) =>
                 isNonEmptyString(entity.type) ? { status: 'done' } : { status: 'pending' }
         },
@@ -226,7 +226,7 @@ export function createVenueSignals(): readonly SignalConfig<Record<string, unkno
             id: 'capacity',
             labelKey: 'admin-entities.qualityScore.signals.capacity.label',
             weight: 8,
-            sectionId: 'gastronomy-specific',
+            sectionId: 'venue-specific',
             check: (entity) =>
                 isNonEmptyString(entity.priceRange) ? { status: 'done' } : { status: 'pending' }
         }
