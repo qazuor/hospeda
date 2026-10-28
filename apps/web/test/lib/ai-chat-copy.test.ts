@@ -5,7 +5,7 @@
 import type { AiChatEntityType } from '@repo/schemas';
 import { describe, expect, it } from 'vitest';
 import esExperience from '../../../../packages/i18n/src/locales/es/experience.json';
-import esGastronomy from '../../../../packages/i18n/src/locales/es/gastronomy.json';
+import esVenue from '../../../../packages/i18n/src/locales/es/venue.json';
 import { aiChatCopyKey, resolveAiChatCopy, resolveChatError } from '../../src/lib/ai-chat-copy';
 import { pickClientNamespaces } from '../../src/lib/i18n-client-namespaces';
 
@@ -23,7 +23,7 @@ const missingT = (key: string, fallback?: string): string => fallback ?? key;
 
 describe('client bundle carries the vertical chat namespaces (root cause)', () => {
     it.each([
-        ['gastronomy', esGastronomy.aiChat],
+        ['venue', esVenue.aiChat],
         ['experience', esExperience.aiChat]
     ] as const)('should ship every %s.aiChat key to the browser', (ns, block) => {
         // Arrange

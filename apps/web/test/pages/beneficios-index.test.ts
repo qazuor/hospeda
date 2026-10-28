@@ -111,7 +111,7 @@ describe('beneficios/index.astro — copy stays single-sourced', () => {
 
     it.each(LOCALES)('resolves every reused key in %s', (locale) => {
         const trees = {
-            gastronomy: readLocale(locale, 'gastronomy'),
+            venue: readLocale(locale, 'venue'),
             experience: readLocale(locale, 'experience'),
             'alliance-leads': readLocale(locale, 'alliance-leads')
         };

@@ -44,7 +44,7 @@ const { t } = createTranslations(locale);
 /**
  * The weekday picker's seven labels, resolved HERE and passed down.
  *
- * They live under `gastronomy.detail.openingHours.*` — the set
+ * They live under `venue.detail.openingHours.*` — the set
  * `OpeningHoursSection` already owns — and that prefix deliberately does not
  * ship to the browser: 25 of its 32 keys are named only by `.astro` files
  * rendering server-side, so adding it to `CLIENT_I18N_KEY_PREFIXES` would push
@@ -56,7 +56,7 @@ const { t } = createTranslations(locale);
  * `typeLabels`: the island stays i18n-agnostic for these strings.
  */
 const weekdayLabels = WEEKDAY_I18N_KEYS.map((dayKey) =>
-	t(`gastronomy.detail.openingHours.${dayKey}`, dayKey)
+	t(`venue.detail.openingHours.${dayKey}`, dayKey)
 );
 ---
 

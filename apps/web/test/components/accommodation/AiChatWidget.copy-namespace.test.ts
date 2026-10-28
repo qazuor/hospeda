@@ -41,7 +41,7 @@ describe('aiChatCopyKey', () => {
 
     describe('for a gastronomy or experience vertical', () => {
         it.each([
-            ['gastronomy', 'gastronomy'],
+            ['gastronomy', 'venue'],
             ['experience', 'experience']
         ] as const)('should send %s vertical-specific keys to its own bundle', (entity, ns) => {
             for (const suffix of VERTICAL_SPECIFIC) {
