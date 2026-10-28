@@ -8,7 +8,11 @@
  */
 
 import { afterEach, beforeEach, describe, expect, it } from 'bun:test';
-import { PROD_API_DEFAULT_URL, resolveApiEndpoint } from '../src/lib/api-client.ts';
+import {
+    normalizedHostname,
+    PROD_API_DEFAULT_URL,
+    resolveApiEndpoint
+} from '../src/lib/api-client.ts';
 
 const ENV_KEYS_TOUCHED = [
     'HOSPEDA_API_URL',
@@ -80,6 +84,60 @@ describe('resolveApiEndpoint — staging', () => {
         expect(() => resolveApiEndpoint({ target: 'staging' })).toThrow(
             /HOPS_STAGING_ADMIN_COOKIE is not set/
         );
+    });
+});
+
+describe('resolveApiEndpoint — staging URL that is really prod', () => {
+    beforeEach(() => {
+        process.env.HOPS_STAGING_ADMIN_COOKIE = 'staging-cookie';
+    });
+
+    it('rejects the prod host with a trailing root dot', () => {
+        process.env.HOPS_STAGING_API_URL = 'https://api.hospeda.com.ar.';
+
+        expect(() => resolveApiEndpoint({ target: 'staging' })).toThrow(
+            /same host as the prod API/
+        );
+    });
+
+    it('rejects the prod host on another port', () => {
+        process.env.HOPS_STAGING_API_URL = 'https://api.hospeda.com.ar:8443';
+
+        expect(() => resolveApiEndpoint({ target: 'staging' })).toThrow(
+            /same host as the prod API/
+        );
+    });
+
+    it('rejects the prod host in upper case', () => {
+        process.env.HOPS_STAGING_API_URL = 'https://API.Hospeda.com.ar';
+
+        expect(() => resolveApiEndpoint({ target: 'staging' })).toThrow(
+            /same host as the prod API/
+        );
+    });
+
+    it('rejects the public prod default even when HOSPEDA_API_URL points elsewhere', () => {
+        process.env.HOSPEDA_API_URL = 'http://hospeda-api-prod.internal:3001';
+        process.env.HOPS_STAGING_API_URL = 'https://api.hospeda.com.ar';
+
+        expect(() => resolveApiEndpoint({ target: 'staging' })).toThrow(
+            /same host as the prod API/
+        );
+    });
+
+    it('rejects the configured prod host when it is not the public default', () => {
+        process.env.HOSPEDA_API_URL = 'http://hospeda-api-prod.internal:3001';
+        process.env.HOPS_STAGING_API_URL = 'https://hospeda-api-prod.internal.';
+
+        expect(() => resolveApiEndpoint({ target: 'staging' })).toThrow(
+            /same host as the prod API/
+        );
+    });
+});
+
+describe('normalizedHostname', () => {
+    it('lower-cases, drops the port and the trailing dot', () => {
+        expect(normalizedHostname('https://API.Hospeda.com.ar.:8443/x')).toBe('api.hospeda.com.ar');
     });
 });
 

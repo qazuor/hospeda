@@ -76,12 +76,21 @@ function stripSlash(url: string): string {
     return url.replace(/\/$/, '');
 }
 
-function hostOf(url: string): string {
+/**
+ * Normalised hostname of a URL for identity comparison: lower-case, port
+ * ignored, trailing root dot(s) stripped (`api.hospeda.com.ar.` is the same
+ * host as `api.hospeda.com.ar`).
+ *
+ * @throws when the value is not an absolute URL.
+ */
+export function normalizedHostname(url: string): string {
+    let hostname: string;
     try {
-        return new URL(url).host.toLowerCase();
+        hostname = new URL(url).hostname;
     } catch {
         throw new Error(`'${url}' is not a valid absolute URL.`);
     }
+    return hostname.toLowerCase().replace(/\.+$/, '');
 }
 
 /**
@@ -118,9 +127,17 @@ export function resolveApiEndpoint(params: { readonly target: Target }): ApiEndp
         );
     }
     const stagingUrl = stripSlash(stagingUrlRaw);
-    if (hostOf(stagingUrl) === hostOf(prodUrl)) {
+    // Compare against BOTH the configured prod URL and the public prod
+    // default: HOSPEDA_API_URL may point elsewhere (a tunnel, an internal
+    // name) while the staging value still names the public prod host.
+    const stagingHost = normalizedHostname(stagingUrl);
+    const prodHosts = new Set([
+        normalizedHostname(prodUrl),
+        normalizedHostname(PROD_API_DEFAULT_URL)
+    ]);
+    if (prodHosts.has(stagingHost)) {
         throw new Error(
-            `HOPS_STAGING_API_URL (${stagingUrl}) points at the same host as the prod API (${prodUrl}) — refusing to run a staging command against production.`
+            `HOPS_STAGING_API_URL (${stagingUrl}) points at the same host as the prod API (${[...prodHosts].join(' / ')}) — refusing to run a staging command against production.`
         );
     }
     const cookie = get('HOPS_STAGING_ADMIN_COOKIE');

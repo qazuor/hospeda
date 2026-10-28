@@ -8,6 +8,7 @@
 
 import { afterEach, beforeEach, describe, expect, it } from 'bun:test';
 import { fetchCronJobs } from '../src/commands/cron-list.ts';
+import { cronTrigger } from '../src/commands/cron-trigger.ts';
 import { setActiveTarget } from '../src/lib/container-lookup.ts';
 
 const ENV_KEYS_TOUCHED = [
@@ -19,7 +20,7 @@ const ENV_KEYS_TOUCHED = [
 
 let originalEnv: Record<string, string | undefined>;
 const originalFetch = globalThis.fetch;
-let calls: Array<{ url: string; cookie: string | null }>;
+let calls: Array<{ url: string; cookie: string | null; method: string }>;
 
 beforeEach(() => {
     originalEnv = {};
@@ -30,14 +31,31 @@ beforeEach(() => {
     calls = [];
     globalThis.fetch = (async (input: string | URL | Request, init?: RequestInit) => {
         const headers = new Headers(init?.headers);
-        calls.push({ url: String(input), cookie: headers.get('Cookie') });
-        return new Response(
-            JSON.stringify({
-                success: true,
-                data: { jobs: [], totalJobs: 0, enabledJobs: 0 }
-            }),
-            { status: 200, headers: { 'Content-Type': 'application/json' } }
-        );
+        const method = init?.method ?? 'GET';
+        calls.push({ url: String(input), cookie: headers.get('Cookie'), method });
+        const data =
+            method === 'POST'
+                ? {
+                      success: true,
+                      message: 'ok',
+                      processed: 0,
+                      errors: 0,
+                      durationMs: 1,
+                      jobName: 'job-a',
+                      dryRun: true,
+                      executedAt: '2026-10-28T00:00:00.000Z'
+                  }
+                : {
+                      jobs: [
+                          { name: 'job-a', description: 'A', schedule: '* * * * *', enabled: true }
+                      ],
+                      totalJobs: 1,
+                      enabledJobs: 1
+                  };
+        return new Response(JSON.stringify({ success: true, data }), {
+            status: 200,
+            headers: { 'Content-Type': 'application/json' }
+        });
     }) as typeof fetch;
 });
 
@@ -87,5 +105,28 @@ describe('fetchCronJobs — target routing', () => {
 
         expect(calls[0]?.url).toBe('https://api.hospeda.com.ar/api/v1/admin/cron');
         expect(calls[0]?.cookie).toBe('prod-cookie');
+    });
+});
+
+describe('cronTrigger — target routing', () => {
+    it('POSTs the trigger to the staging API with the staging cookie', async () => {
+        // Arrange
+        process.env.HOSPEDA_API_URL = 'https://api.hospeda.com.ar';
+        process.env.HOPS_ADMIN_COOKIE = 'prod-cookie';
+        process.env.HOPS_STAGING_API_URL = 'https://staging-api.hospeda.com.ar';
+        process.env.HOPS_STAGING_ADMIN_COOKIE = 'staging-cookie';
+        setActiveTarget('staging');
+
+        // Act
+        await cronTrigger(['job-a', '--dry-run', '--yes']);
+
+        // Assert: the list read AND the trigger both went to staging.
+        expect(calls.map((c) => c.method)).toEqual(['GET', 'POST']);
+        const post = calls[1];
+        expect(post?.url).toBe(
+            'https://staging-api.hospeda.com.ar/api/v1/admin/cron/job-a?dryRun=true'
+        );
+        expect(post?.cookie).toBe('staging-cookie');
+        expect(calls.every((c) => !c.url.startsWith('https://api.hospeda.com.ar'))).toBe(true);
     });
 });
