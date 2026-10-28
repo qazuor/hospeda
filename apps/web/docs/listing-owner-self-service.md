@@ -61,7 +61,7 @@ tracking), so editing one section never re-submits the rest.
 moderation/`isFeatured`/`ownerId` fields are **read-only** for owners. They are
 managed by the Hospeda team. These keys are ABSENT from the owner-update schema,
 so any forged value in the PATCH body is silently stripped server-side (see the
-AC-3 regression in `gastronomy.service.test.ts` / `experience.service.test.ts`).
+AC-3 regression in the venue and experience service tests.
 The editor page shows identity fields read-only above the form.
 
 ## Gating
