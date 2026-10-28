@@ -142,7 +142,7 @@ export const createBasicInfoConsolidatedSection = (): ConsolidatedSectionConfig 
             typeConfig: {
                 options: [
                     { value: 'accommodation', label: 'Alojamiento' },
-                    { value: 'gastronomy', label: 'Gastronomía' },
+                    { value: 'venue', label: 'Gastronomía' },
                     { value: 'experience', label: 'Experiencia' }
                 ]
             }
