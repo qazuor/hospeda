@@ -17,7 +17,8 @@ import hotelsImg from "@/assets/images/categories/hotels.jpg";
 import apartmentsImg from "@/assets/images/categories/apartments.jpg";
 import musicImg from "@/assets/images/categories/music.jpg";
 import cultureImg from "@/assets/images/categories/culture.jpg";
-import gastronomyImg from "@/assets/images/categories/gastronomy.jpg";
+import foodEventsImg from "@/assets/images/categories/food-events.jpg";
+import { EventCategoryEnum } from "@repo/schemas";
 import postsImg from "@/assets/images/categories/posts.jpg";
 import CtaOwnersSection from "@/components/sections/CtaOwnersSection.astro";
 import DestinationsSection from "@/components/sections/DestinationsSection.astro";
@@ -207,10 +208,10 @@ const categoryTiles = [
         image: cultureImg,
     },
     {
-        title: t("home.categoryTiles.tiles.gastronomy.title", "Gastronomía"),
-        description: t("home.categoryTiles.tiles.gastronomy.description", "Sabores únicos de la cocina regional y nacional"),
-        href: `${buildUrl({ locale, path: "/eventos/" })}?category=GASTRONOMY`,
-        image: gastronomyImg,
+        title: t("home.categoryTiles.tiles.foodEvents.title", "Eventos gastronómicos"),
+        description: t("home.categoryTiles.tiles.foodEvents.description", "Sabores únicos de la cocina regional y nacional"),
+        href: `${buildUrl({ locale, path: "/eventos/" })}?category=${EventCategoryEnum.GASTRONOMY}`,
+        image: foodEventsImg,
     },
     {
         title: t("home.categoryTiles.tiles.posts.title", "Artículos"),
