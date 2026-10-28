@@ -55,7 +55,7 @@ const faqBaseFields = {
  * subtype requires.
  */
 const CASES = [
-    { name: 'Gastronomy', schema: VenueSchema, fkField: 'gastronomyId' },
+    { name: 'Gastronomy', schema: VenueSchema, fkField: 'venueId' },
     { name: 'Experience', schema: ExperienceSchema, fkField: 'experienceId' },
     { name: 'Accommodation', schema: AccommodationSchema, fkField: 'accommodationId' },
     { name: 'Destination', schema: DestinationSchema, fkField: 'destinationId' }

@@ -88,10 +88,10 @@ export type AccommodationFeatureRelation = z.infer<typeof AccommodationFeatureRe
 /**
  * Gastronomy-Feature Relation Schema
  * Represents the many-to-many relationship between gastronomy listings and features.
- * Mirrors the accommodation variant with gastronomyId instead of accommodationId.
+ * Mirrors the accommodation variant with venueId instead of accommodationId.
  */
 export const VenueFeatureRelationSchema = z.object({
-    gastronomyId: z.string().uuid({ message: 'zodError.common.id.invalidUuid' }),
+    venueId: z.string().uuid({ message: 'zodError.common.id.invalidUuid' }),
     featureId: FeatureIdSchema,
     hostReWriteName: z
         .string()
@@ -109,7 +109,7 @@ export type VenueFeatureRelation = z.infer<typeof VenueFeatureRelationSchema>;
 /**
  * Experience-Feature Relation Schema (SPEC-240)
  * Represents the many-to-many relationship between experience listings and features.
- * Mirrors GastronomyFeatureRelationSchema with experienceId instead of gastronomyId.
+ * Mirrors GastronomyFeatureRelationSchema with experienceId instead of venueId.
  */
 export const ExperienceFeatureRelationSchema = z.object({
     experienceId: z.string().uuid({ message: 'zodError.common.id.invalidUuid' }),

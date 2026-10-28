@@ -101,7 +101,7 @@ export type AccommodationAmenityRelation = z.infer<typeof AccommodationAmenityRe
  * Simpler than the accommodation variant: no pricing or optional-cost fields.
  */
 export const VenueAmenityRelationSchema = z.object({
-    gastronomyId: z.string().uuid({ message: 'zodError.common.id.invalidUuid' }),
+    venueId: z.string().uuid({ message: 'zodError.common.id.invalidUuid' }),
     amenityId: AmenityIdSchema
 });
 export type VenueAmenityRelation = z.infer<typeof VenueAmenityRelationSchema>;

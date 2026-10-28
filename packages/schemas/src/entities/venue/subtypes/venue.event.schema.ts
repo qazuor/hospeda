@@ -132,7 +132,7 @@ export const VenueEventSchema = z.object({
     /** Event ID (UUID). */
     id: z.string().uuid({ message: 'zodError.common.id.invalidUuid' }),
     /** The listing this entry belongs to. */
-    gastronomyId: z.string().uuid({ message: 'zodError.common.id.invalidUuid' }),
+    venueId: z.string().uuid({ message: 'zodError.common.id.invalidUuid' }),
     /** What the event is called. */
     title: z.string().min(1).max(150),
     /** Optional blurb. */
@@ -321,13 +321,13 @@ export type VenueEventsReplacePayload = z.input<typeof VenueEventsReplacePayload
 
 /** Service input for reading a listing's agenda. */
 export const VenueEventsGetInputSchema = z.object({
-    gastronomyId: z.string().uuid({ message: 'zodError.common.id.invalidUuid' })
+    venueId: z.string().uuid({ message: 'zodError.common.id.invalidUuid' })
 });
 export type VenueEventsGetInput = z.infer<typeof VenueEventsGetInputSchema>;
 
 /** Service input for replacing a listing's agenda. */
 export const VenueEventsReplaceInputSchema = z.object({
-    gastronomyId: z.string().uuid({ message: 'zodError.common.id.invalidUuid' }),
+    venueId: z.string().uuid({ message: 'zodError.common.id.invalidUuid' }),
     agenda: VenueEventsReplacePayloadSchema
 });
 export type VenueEventsReplaceInput = z.input<typeof VenueEventsReplaceInputSchema>;

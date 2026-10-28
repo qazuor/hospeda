@@ -36,7 +36,7 @@ import { VenueMenuFileKindSchema } from './subtypes/venue.menu.schema.js';
  *
  * @example
  * ```ts
- * const gastronomy: Gastronomy = GastronomySchema.parse(raw);
+ * const venue: Gastronomy = GastronomySchema.parse(raw);
  * ```
  */
 export const VenueSchema = z.object({
@@ -146,7 +146,7 @@ export const VenueSchema = z.object({
      *    id must keep parsing; the same call was made for `pointsOfInterest`'s
      *    `relation` in HOS-146.
      */
-    faqs: z.array(VenueFaqSchema.partial({ id: true, gastronomyId: true })).optional(),
+    faqs: z.array(VenueFaqSchema.partial({ id: true, venueId: true })).optional(),
 
     /**
      * Granular rating breakdown (food / service / ambiance / value).

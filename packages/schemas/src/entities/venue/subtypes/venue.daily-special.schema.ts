@@ -142,7 +142,7 @@ export const VenueDailySpecialSchema = z.object({
     /** Daily-special ID (UUID). */
     id: z.string().uuid({ message: 'zodError.common.id.invalidUuid' }),
     /** The listing this special belongs to. */
-    gastronomyId: z.string().uuid({ message: 'zodError.common.id.invalidUuid' }),
+    venueId: z.string().uuid({ message: 'zodError.common.id.invalidUuid' }),
     /** The dish, as the venue announces it. */
     title: z.string().min(1).max(150),
     /** Optional detail. */
@@ -275,7 +275,7 @@ export type VenueDailySpecialsReplacePayload = z.input<
 
 /** Service input for reading a listing's specials. */
 export const VenueDailySpecialsGetInputSchema = z.object({
-    gastronomyId: z.string().uuid({ message: 'zodError.common.id.invalidUuid' }),
+    venueId: z.string().uuid({ message: 'zodError.common.id.invalidUuid' }),
     /**
      * When set, only the specials valid on this day are returned — the public
      * read. Omit for the OWNER's read, which must show the ones that have not
@@ -288,7 +288,7 @@ export type VenueDailySpecialsGetInput = z.infer<typeof VenueDailySpecialsGetInp
 
 /** Service input for replacing a listing's specials. */
 export const VenueDailySpecialsReplaceInputSchema = z.object({
-    gastronomyId: z.string().uuid({ message: 'zodError.common.id.invalidUuid' }),
+    venueId: z.string().uuid({ message: 'zodError.common.id.invalidUuid' }),
     specials: VenueDailySpecialsReplacePayloadSchema
 });
 export type VenueDailySpecialsReplaceInput = z.input<typeof VenueDailySpecialsReplaceInputSchema>;

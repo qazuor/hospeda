@@ -300,7 +300,7 @@ export const UserSearchOutputSchema = UserSearchResultSchema;
 // Additional missing legacy exports
 export const UserListItemWithCountsSchema = UserListItemSchema.extend({
     accommodationsCount: z.number().int().min(0).default(0),
-    gastronomiesCount: z.number().int().min(0).default(0),
+    venuesCount: z.number().int().min(0).default(0),
     experiencesCount: z.number().int().min(0).default(0),
     reviewsCount: z.number().int().min(0).default(0),
     bookingsCount: z.number().int().min(0).default(0),

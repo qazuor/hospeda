@@ -275,7 +275,7 @@ describe('the per-dish photo (HOS-1045)', () => {
         const parsed = VenueMenuItemPublicSchema.safeParse({
             id: '33333333-3333-4333-8333-333333333333',
             sectionId: '11111111-1111-4111-8111-111111111111',
-            gastronomyId: '22222222-2222-4222-8222-222222222222',
+            venueId: '22222222-2222-4222-8222-222222222222',
             name: 'Empanada',
             description: null,
             priceCents: 250_000,
@@ -365,7 +365,7 @@ describe('GastronomyMenuReplacePayloadSchema — translations (HOS-1043)', () =>
         const parsed = VenueMenuItemPublicSchema.safeParse({
             id: '33333333-3333-4333-8333-333333333333',
             sectionId: '11111111-1111-4111-8111-111111111111',
-            gastronomyId: '22222222-2222-4222-8222-222222222222',
+            venueId: '22222222-2222-4222-8222-222222222222',
             name: 'Empanada',
             description: null,
             nameI18n: { es: 'Empanada', en: 'Empanada', pt: 'Empanada' },

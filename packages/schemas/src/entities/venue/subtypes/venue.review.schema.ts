@@ -26,7 +26,7 @@ export const VenueReviewSchema = z.object({
     id: z.string().uuid({ message: 'zodError.common.id.invalidUuid' }),
 
     // Foreign key to the reviewed gastronomy listing
-    gastronomyId: z.string().uuid({ message: 'zodError.common.id.invalidUuid' }),
+    venueId: z.string().uuid({ message: 'zodError.common.id.invalidUuid' }),
 
     // Reviewer reference (nullable: guest reviews without an account are allowed)
     userId: z.string().uuid({ message: 'zodError.common.id.invalidUuid' }).nullable(),
@@ -120,13 +120,13 @@ export type VenueReview = z.infer<typeof VenueReviewSchema>;
 /**
  * Input schema for creating a gastronomy review.
  *
- * `gastronomyId` and `overallRating` are the only required fields.
+ * `venueId` and `overallRating` are the only required fields.
  * `title` and `content` mirror the DB columns (both nullable/optional).
  * `averageRating` is server-computed from the rating breakdown; clients
  * must NOT send it — it is omitted from the create input.
  */
 export const VenueReviewCreateInputSchema = z.object({
-    gastronomyId: z.string().uuid({ message: 'zodError.common.id.invalidUuid' }),
+    venueId: z.string().uuid({ message: 'zodError.common.id.invalidUuid' }),
     overallRating: z
         .number({ message: 'zodError.venue.review.overallRating.required' })
         .min(1, { message: 'zodError.venue.review.overallRating.min' })
@@ -154,7 +154,7 @@ export type VenueReviewCreateInput = z.infer<typeof VenueReviewCreateInputSchema
  * Input schema for updating a gastronomy review (partial).
  */
 export const VenueReviewUpdateInputSchema = VenueReviewCreateInputSchema.omit({
-    gastronomyId: true
+    venueId: true
 }).partial();
 
 /** TypeScript type for {@link VenueReviewUpdateInputSchema}. */

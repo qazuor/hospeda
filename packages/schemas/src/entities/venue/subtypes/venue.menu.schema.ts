@@ -130,7 +130,7 @@ export const VenueMenuItemSchema = z.object({
     /** The section this dish belongs to. */
     sectionId: z.string().uuid({ message: 'zodError.common.id.invalidUuid' }),
     /** The listing this dish belongs to (denormalized — see the db schema). */
-    gastronomyId: z.string().uuid({ message: 'zodError.common.id.invalidUuid' }),
+    venueId: z.string().uuid({ message: 'zodError.common.id.invalidUuid' }),
     /** Name of the dish or drink. */
     name: z.string().min(1).max(150),
     /** Optional description. */
@@ -209,7 +209,7 @@ export const VenueMenuSectionSchema = z.object({
     /** Menu section ID (UUID). */
     id: z.string().uuid({ message: 'zodError.common.id.invalidUuid' }),
     /** The listing this section belongs to. */
-    gastronomyId: z.string().uuid({ message: 'zodError.common.id.invalidUuid' }),
+    venueId: z.string().uuid({ message: 'zodError.common.id.invalidUuid' }),
     /** Heading of the course. */
     name: z.string().min(1).max(120),
     /** Optional blurb under the heading. */
@@ -434,13 +434,13 @@ export type VenueMenuReplacePayload = z.input<typeof VenueMenuReplacePayloadSche
 
 /** Service input for reading a listing's carta. */
 export const VenueMenuGetInputSchema = z.object({
-    gastronomyId: z.string().uuid({ message: 'zodError.common.id.invalidUuid' })
+    venueId: z.string().uuid({ message: 'zodError.common.id.invalidUuid' })
 });
 export type VenueMenuGetInput = z.infer<typeof VenueMenuGetInputSchema>;
 
 /** Service input for replacing a listing's carta. */
 export const VenueMenuReplaceInputSchema = z.object({
-    gastronomyId: z.string().uuid({ message: 'zodError.common.id.invalidUuid' }),
+    venueId: z.string().uuid({ message: 'zodError.common.id.invalidUuid' }),
     menu: VenueMenuReplacePayloadSchema
 });
 export type VenueMenuReplaceInput = z.input<typeof VenueMenuReplaceInputSchema>;
