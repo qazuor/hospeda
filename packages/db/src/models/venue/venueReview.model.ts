@@ -19,7 +19,7 @@ export class VenueReviewModel extends BaseModelImpl<VenueReview> {
      * Must match the JS variable name used in the Drizzle schema (camelCase),
      * NOT the SQL table name. Used by findAllWithRelations via db.query[tableName]
      * (BETA-150: returning the snake_case SQL name made every public
-     * GET /legacy listing tables/:id/reviews request 500 with
+     * GET /venue/:id/reviews request 500 with
      * "Invalid table configuration for: venue_reviews").
      */
     protected getTableName(): string {

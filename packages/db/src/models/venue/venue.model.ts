@@ -88,7 +88,7 @@ export class VenueModel extends BaseModelImpl<Venue> {
      * Paginated search with optional filters.
      * @param params - Search parameters
      * @param tx - Optional transaction client
-     * @returns Matching legacy listing tables and total count
+     * @returns Matching venues and total count
      */
     async search(
         params: VenueModelSearchInput,

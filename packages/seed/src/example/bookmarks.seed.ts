@@ -59,7 +59,7 @@ export const preProcessBookmark = async (item: unknown, context: SeedContext) =>
             realEntityId = context.idMapper.getMappedUserId(seedEntityId);
             break;
         case EntityTypeEnum.VENUE:
-            // legacy listing tables register their mapping under the VENUE_ID_MAPPER_NAMESPACE namespace.
+            // venues register their mapping under the VENUE_ID_MAPPER_NAMESPACE namespace.
             realEntityId = context.idMapper.getRealId(VENUE_ID_MAPPER_NAMESPACE, seedEntityId);
             break;
         case EntityTypeEnum.EXPERIENCE:

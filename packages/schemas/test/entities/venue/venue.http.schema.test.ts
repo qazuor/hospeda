@@ -81,7 +81,7 @@ describe('VenueSearchHttpSchema', () => {
 });
 
 describe('VenueCreateHttpSchema', () => {
-    // H-88: `ownerId` is REQUIRED. `legacy listing tables.owner_id` is NOT NULL with no
+    // H-88: `ownerId` is REQUIRED. `venues.owner_id` is NOT NULL with no
     // default, so a create payload without it cannot become a row — it reached
     // Postgres and came back as an opaque 500. A fixture that omits it is not a
     // "valid create payload".

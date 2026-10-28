@@ -90,7 +90,7 @@ const tableWithStatusColumn = pgTable('hos_1379_status_col', {
 });
 
 /**
- * Shaped like `accommodations` / `legacy listing tables` / `experiences` since V6.9b
+ * Shaped like `accommodations` / `venues` / `experiences` since V6.9b
  * (HOS-1641): no `lifecycleState` and no `status`, but a `publicationStatus`
  * column, and admin search schemas that REDEFINE `status` to
  * PublicationStatusEnum.

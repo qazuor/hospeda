@@ -2,11 +2,11 @@
  * HOS-372 guard — `media` must not be a WRITE field on the update surface of the
  * entities whose photos moved to a relational media table.
  *
- * The `media` JSONB column was dropped from `accommodations`, `legacy listing tables` and
+ * The `media` JSONB column was dropped from `accommodations`, `venues` and
  * `experiences`. Anything still accepting `media` on update hands the model a key
  * with no column behind it, and the outcome is worse than a no-op: Drizzle drops
  * the key from the SET clause, so a payload carrying ONLY `media` produces
- * `update "legacy listing tables" set  where ...` — invalid SQL, a runtime error. A payload
+ * `update "venues" set  where ...` — invalid SQL, a runtime error. A payload
  * carrying `media` plus other fields silently discards the media instead.
  *
  * Videos are the legitimate part of that old blob, and they now travel as a

@@ -6,7 +6,7 @@
  * Bookmarks store only `entityId` + `entityType` polymorphic references. To
  * render a meaningful card (title + image + link), the API needs to JOIN
  * across the target tables: `accommodations`, `destinations`, `events`, `posts`,
- * `experiences`, `legacy listing tables`. Rather than coupling each consumer to the
+ * `experiences`, `venues`. Rather than coupling each consumer to the
  * per-entity model layer, this helper batches one query per entity type and
  * returns a lookup map keyed by `entityId`.
  *

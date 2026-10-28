@@ -35,7 +35,7 @@ export type VenueMediaState = z.infer<typeof VenueMediaStateSchema>;
 export const VenueMediaSchema = BaseListingMediaSchema.extend({
     /** UUID primary key for this media row. */
     id: z.string().uuid({ message: 'zodError.common.id.invalidUuid' }),
-    /** UUID of the parent venue listing (FK → legacy listing tables.id). */
+    /** UUID of the parent venue listing (FK → venues.id). */
     venueId: z.string().uuid({ message: 'zodError.common.id.invalidUuid' })
 });
 
@@ -365,10 +365,10 @@ export const VenueMediaRestoreInputSchema = z.object({
 export type VenueMediaRestoreInput = z.infer<typeof VenueMediaRestoreInputSchema>;
 
 // ----------------------------------------------------------------------------
-// Update Text Metadata (HOS-1036 — PATCH /venues/:id/media/:mediaId)
+// Update Text Metadata (HOS-1036 — PATCH /venue/:id/media/:mediaId)
 // ----------------------------------------------------------------------------
 
-/** HTTP payload for `PATCH /venues/:id/media/:mediaId`. Alias of the shared listing payload. */
+/** HTTP payload for `PATCH /venue/:id/media/:mediaId`. Alias of the shared listing payload. */
 export const VenueMediaUpdatePayloadSchema = ListingMediaUpdatePayloadSchema;
 /** Inferred type for the update-media HTTP payload. */
 export type VenueMediaUpdatePayload = z.infer<typeof VenueMediaUpdatePayloadSchema>;

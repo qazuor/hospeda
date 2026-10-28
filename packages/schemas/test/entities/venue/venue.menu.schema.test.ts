@@ -158,7 +158,7 @@ describe('VenueMenuFileSchema (HOS-895)', () => {
 describe('the menu-file columns are not writable from a listing body (HOS-895)', () => {
     /*
      * REGRESSION ANCHOR. `menuFileUrl`, `menuFilePublicId` and `menuFileKind`
-     * are written by `POST`/`DELETE /legacy listing tables/{id}/menu-file` and by nothing
+     * are written by `POST`/`DELETE /venue/{id}/menu-file` and by nothing
      * else — but adding them to `VenueSchema` made three of the four write
      * schemas accept them silently, because those three are built with
      * `.omit(...)` and therefore take every field they are not told to drop.

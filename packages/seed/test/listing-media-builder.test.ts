@@ -2,7 +2,7 @@
  * Unit tests for the listing media row builders (HOS-372).
  *
  * These builders feed BOTH halves of the dual-write: the baseline seeders
- * (`example/legacy listing tables.seed.ts`, `example/experiences.seed.ts`) and the
+ * (`example/venues.seed.ts`, `example/experiences.seed.ts`) and the
  * data-migration 0034 (the listing media backfill). Sharing one
  * builder is what guarantees a freshly-seeded database and a backfilled one end
  * up with identical rows, so the ordering and defaulting rules are pinned here.

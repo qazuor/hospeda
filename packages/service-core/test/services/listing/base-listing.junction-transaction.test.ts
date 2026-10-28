@@ -5,7 +5,7 @@
  * listing owner editor answered 500 in BOTH verticals:
  *
  * ```
- * PATCH /api/v1/protected/legacy listing tables/{id} → 500
+ * PATCH /api/v1/protected/venue/{id} → 500
  * PATCH /api/v1/protected/experiences/{id}  → 500
  * ServiceError: Junction sync requires an active transaction;
  *               wrap update() in withServiceTransaction

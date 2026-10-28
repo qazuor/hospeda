@@ -19,7 +19,7 @@
  *
  * `composeAccommodationMedia` reads `videos` from the entity's JSONB `media.videos`
  * (accommodation never migrated videos out of the JSONB blob). venue and experience listings
- * moved videos to a dedicated `videos` JSONB COLUMN on `legacy listing tables` / `experiences`
+ * moved videos to a dedicated `videos` JSONB COLUMN on `venues` / `experiences`
  * (HOS-372) — a video is an external URL, not an uploaded asset, so it never needed a
  * relational row. This composer therefore takes `videos` as an explicit parameter
  * rather than reading it off a `currentMedia` object, so callers pass

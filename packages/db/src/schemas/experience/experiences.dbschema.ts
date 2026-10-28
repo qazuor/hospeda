@@ -284,7 +284,7 @@ export const experiences = pgTable(
          * here would leave TWO mechanisms answering one question, the asymmetry
          * HOS-1257 exists to close. The full argument, and the note that the
          * right future question is "should BOTH derive?", is recorded once on
-         * `legacy listing tables.featuredByEntitlement`.
+         * `venues.featuredByEntitlement`.
          */
         featuredByEntitlement: boolean('featured_by_entitlement').notNull().default(false),
         // Denormalized aggregate stats (updated by trigger / service)
@@ -316,7 +316,7 @@ export const experiences = pgTable(
             'experiences_destinationId_publicationStatus_idx'
         ).on(table.destinationId, table.publicationStatus),
         // HOS-1286: parallel index for featuredByEntitlement — see the twin on
-        // `legacy listing tables` and the accommodations pair it mirrors.
+        // `venues` and the accommodations pair it mirrors.
         experiences_featuredByEntitlement_idx: index('experiences_featuredByEntitlement_idx').on(
             table.featuredByEntitlement
         ),

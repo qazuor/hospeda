@@ -33,7 +33,7 @@
  *   `data:` and `vbscript:` (the same gap as HOS-592), and the value survived
  *   verbatim.
  * - `menuFilePublicId` — cross-tenant asset destruction. That column is the
- *   handle `DELETE /legacy listing tables/{id}/menu-file` gives the media provider, so an
+ *   handle `DELETE /venue/{id}/menu-file` gives the media provider, so an
  *   owner could create a listing carrying ANOTHER venue's Cloudinary id and then
  *   delete that venue's file.
  *
