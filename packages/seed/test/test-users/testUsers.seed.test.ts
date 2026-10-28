@@ -63,13 +63,13 @@ describe('TEST_USERS matrix', () => {
             expect(user).not.toHaveProperty('subStatus');
             expect(user).not.toHaveProperty('addonSlug');
             expect(user).not.toHaveProperty('subscriptionProductDomain');
-            expect(user).not.toHaveProperty('ownsGastronomyAtCap');
+            expect(user).not.toHaveProperty('ownsVenueAtCap');
             expect(user).not.toHaveProperty('ownsExperienceAtCap');
         }
     });
 
     describe('venue-owner@local.test (HOS-694)', () => {
-        it('holds only the gastronomy owner role', () => {
+        it('holds only the venue owner role', () => {
             const user = findUser('venue-owner@local.test');
             expect(user.role).toBe(RoleEnum.VENUE_OWNER);
             expect(user.extraRoles ?? []).not.toContain(RETIRED_OWNER_ROLE);

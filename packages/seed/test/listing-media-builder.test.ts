@@ -28,7 +28,7 @@ const MEDIA: FixtureMediaBlock = {
 };
 
 describe('buildVenueMediaRows', () => {
-    it('should stamp the gastronomy foreign key on every row', () => {
+    it('should stamp the venue foreign key on every row', () => {
         const rows = buildVenueMediaRows({ venueId: VENUE_ID, media: MEDIA });
 
         expect(rows).toHaveLength(3);
@@ -111,7 +111,7 @@ describe('buildVenueMediaRows', () => {
 });
 
 describe('buildExperienceMediaRows', () => {
-    it('should stamp the experience foreign key instead of the gastronomy one', () => {
+    it('should stamp the experience foreign key instead of the venue one', () => {
         const rows = buildExperienceMediaRows({ experienceId: EXPERIENCE_ID, media: MEDIA });
 
         expect(rows).toHaveLength(3);
@@ -120,11 +120,11 @@ describe('buildExperienceMediaRows', () => {
         }
     });
 
-    it('should produce the same ordering and defaults as the gastronomy builder', () => {
+    it('should produce the same ordering and defaults as the venue builder', () => {
         // The two verticals' tables are identical apart from the FK, so their
         // rows must be identical too — a divergence here means the shared
         // builder was bypassed for one of them.
-        const gastronomyRows = buildVenueMediaRows({
+        const venueRows = buildVenueMediaRows({
             venueId: VENUE_ID,
             media: MEDIA
         });
@@ -136,6 +136,6 @@ describe('buildExperienceMediaRows', () => {
         const withoutOwner = (rows: Array<Record<string, unknown>>) =>
             rows.map(({ venueId: _g, experienceId: _e, ...rest }) => rest);
 
-        expect(withoutOwner(experienceRows)).toEqual(withoutOwner(gastronomyRows));
+        expect(withoutOwner(experienceRows)).toEqual(withoutOwner(venueRows));
     });
 });

@@ -692,23 +692,23 @@ describe('HOS-25 T-022 — end-to-end reseed-determinism against a real database
         );
     });
 
-    describe('5. Raw-Drizzle-insert / already-bypassed entity (gastronomies)', () => {
+    describe('5. Raw-Drizzle-insert / already-bypassed entity (venues)', () => {
         it.skipIf(!dbAvailable)(
             'persists the same deterministic id across an insert -> delete -> reseed cycle via a direct db.insert() (no model, no service)',
             async () => {
                 await withRealDbTransaction(async (tx) => {
                     const ownerId = await insertUser(tx);
                     const destinationId = await insertPlainDestination(tx);
-                    const seedId = 't022-gastronomy-fixture-001';
+                    const seedId = 't022-venue-fixture-001';
                     const expectedId = getVenueFixtureId(seedId);
 
                     expect(expectedId).toBe(deterministicFixtureId({ seedKey: `venue:${seedId}` }));
 
                     const baseValues = {
-                        slug: `t022-gastronomy-${seedId}`,
-                        name: 'T-022 Test Gastronomy',
-                        summary: 'T-022 gastronomy summary',
-                        description: 'T-022 gastronomy description',
+                        slug: `t022-venue-${seedId}`,
+                        name: 'T-022 Test Venue',
+                        summary: 'T-022 venue summary',
+                        description: 'T-022 venue description',
                         type: 'RESTAURANT',
                         ownerId,
                         destinationId,
@@ -760,7 +760,7 @@ describe('HOS-25 T-022 — end-to-end reseed-determinism against a real database
 
     describe('6. Cross-entity id isolation at the persisted-DB level', () => {
         it.skipIf(!dbAvailable)(
-            'never collides between an accommodation-shaped seedKey and a post/gastronomy-shaped seedKey sharing the same raw fixture id',
+            'never collides between an accommodation-shaped seedKey and a post/venue-shaped seedKey sharing the same raw fixture id',
             async () => {
                 const sharedRawId = 't022-shared-raw-fixture-id';
 
