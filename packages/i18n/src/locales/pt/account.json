@@ -79,18 +79,18 @@
             "title": "Seu negócio",
             "body": "Edite o conteúdo público, horários e dados visíveis do seu negócio."
         },
-        "greetingGastronomy": {
+        "greetingVenue": {
             "title": "Bem-vindo ao seu painel de gastronomia",
             "body": "Daqui você pode gerenciar sua conta e o conteúdo público do seu estabelecimento gastronômico."
         },
-        "listingGastronomy": {
+        "listingVenue": {
             "body": "Edite o cardápio, os horários e os dados visíveis do seu estabelecimento gastronômico."
         },
         "myListings": {
             "title": "Seus negócios",
             "body": "Revise o status de cada um dos seus negócios e edite-os."
         },
-        "gastronomyQr": {
+        "venueQr": {
             "title": "QR do seu cardápio",
             "body": "Gere o código QR do seu cardápio e veja quantas vezes seus clientes o escanearam."
         },
@@ -554,7 +554,7 @@
             "destination": "Destinos",
             "event": "Eventos",
             "experience": "Experiências",
-            "gastronomy": "Gastronomia",
+            "venue": "Gastronomia",
             "post": "Blog"
         },
         "collections": {
@@ -798,7 +798,7 @@
             "cancelModal": {
                 "body": "Para cancelar sua assinatura, envie um e-mail para info@hospeda.com.ar e um agente irá processá-la em breve. Seu plano continuará ativo até o final do período atual."
             },
-            "titleGastronomy": "Assinatura de gastronomia",
+            "titleVenue": "Assinatura de gastronomia",
             "titleExperience": "Assinatura de experiências",
             "titleTourist": "Assinatura de turista",
             "domainSwitcher": {
@@ -806,7 +806,7 @@
                 "accommodation": "Hospedagem",
                 "experience": "Experiências",
                 "tourist": "Turista",
-                "gastronomy": "Gastronomia"
+                "venue": "Gastronomia"
             }
         },
         "whatsNew": {

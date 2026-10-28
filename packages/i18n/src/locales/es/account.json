@@ -79,18 +79,18 @@
             "title": "Tu comercio",
             "body": "Edita el contenido, horarios y datos visibles de tu comercio."
         },
-        "greetingGastronomy": {
+        "greetingVenue": {
             "title": "Bienvenido a tu panel de gastronomia",
             "body": "Desde aca podes gestionar tu cuenta y el contenido publico de tu local gastronomico."
         },
-        "listingGastronomy": {
+        "listingVenue": {
             "body": "Edita el menu, los horarios y los datos visibles de tu local gastronomico."
         },
         "myListings": {
             "title": "Tus comercios",
             "body": "Revisa el estado de cada uno de tus comercios y accede a editarlos."
         },
-        "gastronomyQr": {
+        "venueQr": {
             "title": "QR de tu menu",
             "body": "Genera el codigo QR de tu menu y consulta cuantas veces lo escanearon tus clientes."
         },
@@ -554,7 +554,7 @@
             "destination": "Destinos",
             "event": "Eventos",
             "experience": "Experiencias",
-            "gastronomy": "Gastronomía",
+            "venue": "Gastronomía",
             "post": "Blog"
         },
         "collections": {
@@ -798,7 +798,7 @@
             "cancelModal": {
                 "body": "Para cancelar tu suscripción, escribinos a info@hospeda.com.ar y un agente la procesará a la brevedad. Tu plan seguirá activo hasta el final del período actual."
             },
-            "titleGastronomy": "Suscripción de gastronomía",
+            "titleVenue": "Suscripción de gastronomía",
             "titleExperience": "Suscripción de experiencias",
             "titleTourist": "Suscripción de turista",
             "domainSwitcher": {
@@ -806,7 +806,7 @@
                 "accommodation": "Alojamiento",
                 "experience": "Experiencias",
                 "tourist": "Turista",
-                "gastronomy": "Gastronomía"
+                "venue": "Gastronomía"
             }
         },
         "whatsNew": {

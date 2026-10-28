@@ -171,8 +171,8 @@ export const WEB_TOURS: ReadonlyArray<TourConfig> = [
             {
                 id: 'greeting',
                 target: 'center',
-                title: 'account.welcomeTour.greetingGastronomy.title',
-                body: 'account.welcomeTour.greetingGastronomy.body',
+                title: 'account.welcomeTour.greetingVenue.title',
+                body: 'account.welcomeTour.greetingVenue.body',
                 side: 'bottom',
                 align: 'center'
             },
@@ -180,7 +180,7 @@ export const WEB_TOURS: ReadonlyArray<TourConfig> = [
                 id: 'comercio-listings',
                 target: '[data-tour="comercio-listings"]',
                 title: 'account.welcomeTour.listing.title',
-                body: 'account.welcomeTour.listingGastronomy.body',
+                body: 'account.welcomeTour.listingVenue.body',
                 side: 'right',
                 align: 'start'
             },
@@ -195,8 +195,8 @@ export const WEB_TOURS: ReadonlyArray<TourConfig> = [
             {
                 id: 'venue-qr',
                 target: '[data-tour="venue-qr"]',
-                title: 'account.welcomeTour.gastronomyQr.title',
-                body: 'account.welcomeTour.gastronomyQr.body',
+                title: 'account.welcomeTour.venueQr.title',
+                body: 'account.welcomeTour.venueQr.body',
                 side: 'top',
                 align: 'start'
             },

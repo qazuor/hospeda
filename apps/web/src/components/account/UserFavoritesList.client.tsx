@@ -134,11 +134,11 @@ const TABS: readonly TabDefinition[] = [
     },
     {
         key: 'VENUE',
-        labelKey: 'account.favorites.tabs.gastronomy',
+        labelKey: 'account.favorites.tabs.venue',
         panelId: 'tab-panel-gastronomy',
         tabId: 'tab-gastronomy',
         pathSegment: 'gastronomia',
-        cardTypeKey: 'account.favorites.tabs.gastronomy'
+        cardTypeKey: 'account.favorites.tabs.venue'
     },
     {
         key: 'EXPERIENCE',
@@ -823,7 +823,7 @@ export function UserFavoritesList({ locale, apiUrl }: UserFavoritesListProps) {
             DESTINATION: t('account.favorites.tabs.destination', 'Destinos'),
             EVENT: t('account.favorites.tabs.event', 'Eventos'),
             EXPERIENCE: t('account.favorites.tabs.experience', 'Experiencias'),
-            VENUE: t('account.favorites.tabs.gastronomy', 'Gastronomía'),
+            VENUE: t('account.favorites.tabs.venue', 'Gastronomía'),
             POST: t('account.favorites.tabs.post', 'Posts')
         };
 

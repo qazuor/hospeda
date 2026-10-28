@@ -79,18 +79,18 @@
             "title": "Your business",
             "body": "Edit the public content, opening hours and visible details of your business."
         },
-        "greetingGastronomy": {
+        "greetingVenue": {
             "title": "Welcome to your restaurant dashboard",
             "body": "From here you can manage your account and the public content of your restaurant."
         },
-        "listingGastronomy": {
+        "listingVenue": {
             "body": "Edit the menu, opening hours and visible details of your restaurant."
         },
         "myListings": {
             "title": "Your businesses",
             "body": "Review the status of each of your businesses and edit them."
         },
-        "gastronomyQr": {
+        "venueQr": {
             "title": "Your menu QR code",
             "body": "Generate your menu's QR code and check how many times your customers scanned it."
         },
@@ -554,7 +554,7 @@
             "destination": "Destinations",
             "event": "Events",
             "experience": "Experiences",
-            "gastronomy": "Gastronomy",
+            "venue": "Gastronomy",
             "post": "Blog"
         },
         "collections": {
@@ -798,7 +798,7 @@
             "cancelModal": {
                 "body": "To cancel your subscription, email us at info@hospeda.com.ar and an agent will process it promptly. Your plan will remain active until the end of the current period."
             },
-            "titleGastronomy": "Gastronomy subscription",
+            "titleVenue": "Gastronomy subscription",
             "titleExperience": "Experience subscription",
             "titleTourist": "Traveler subscription",
             "domainSwitcher": {
@@ -806,7 +806,7 @@
                 "accommodation": "Accommodation",
                 "experience": "Experiences",
                 "tourist": "Traveler",
-                "gastronomy": "Gastronomy"
+                "venue": "Gastronomy"
             }
         },
         "whatsNew": {
