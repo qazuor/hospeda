@@ -22,7 +22,7 @@ export type ComparisonAudience = Exclude<PricingAudience, 'partner'>;
 const GROUPS_BY_AUDIENCE = {
     owner: OWNER_GROUPS,
     tourist: TOURIST_GROUPS,
-    gastronomy: VENUE_GROUPS,
+    venue: VENUE_GROUPS,
     experience: EXPERIENCE_GROUPS
 } as const;
 
