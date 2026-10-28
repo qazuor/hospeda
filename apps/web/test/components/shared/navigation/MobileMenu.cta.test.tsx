@@ -156,7 +156,7 @@ describe('MobileMenu — "Publicar" submenu (HOS-691)', () => {
             'href',
             '/es/publicar/'
         );
-        expect(screen.getByRole('menuitem', { name: /gastronomía/i })).toHaveAttribute(
+        expect(screen.getByRole('menuitem', { name: /comer y salir/i })).toHaveAttribute(
             'href',
             '/es/publicar/comer-y-salir/'
         );

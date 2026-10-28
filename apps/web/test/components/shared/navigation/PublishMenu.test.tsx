@@ -37,7 +37,7 @@ describe('PublishMenu', () => {
         const items = screen.getAllByRole('menuitem');
         expect(items).toHaveLength(3);
         expect(screen.getByRole('menuitem', { name: /alojamiento/i })).toBeInTheDocument();
-        expect(screen.getByRole('menuitem', { name: /gastronomía/i })).toBeInTheDocument();
+        expect(screen.getByRole('menuitem', { name: /comer y salir/i })).toBeInTheDocument();
         expect(screen.getByRole('menuitem', { name: /experiencias/i })).toBeInTheDocument();
     });
 
@@ -48,7 +48,7 @@ describe('PublishMenu', () => {
             'href',
             '/es/publicar/'
         );
-        expect(screen.getByRole('menuitem', { name: /gastronomía/i })).toHaveAttribute(
+        expect(screen.getByRole('menuitem', { name: /comer y salir/i })).toHaveAttribute(
             'href',
             '/es/publicar/comer-y-salir/'
         );
