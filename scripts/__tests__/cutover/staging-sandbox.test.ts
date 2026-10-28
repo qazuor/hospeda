@@ -41,12 +41,16 @@ interface FakeDb {
 
 function fakeDb({
     name = 'hospeda_staging',
+    role = 'hospeda_staging_user',
     anchored = ['pre-anchored-live', 'pre-anchored-cancelled'],
-    emails = [EMAIL_A, EMAIL_B]
+    emails = [EMAIL_A, EMAIL_B],
+    failIdentity = false
 }: {
     readonly name?: string;
+    readonly role?: string;
     readonly anchored?: readonly string[];
     readonly emails?: readonly string[];
+    readonly failIdentity?: boolean;
 } = {}): FakeDb {
     const queries: string[] = [];
     const db: FakeDb = {
@@ -56,7 +60,10 @@ function fakeDb({
         client: {
             query: async (sql) => {
                 queries.push(sql.trim());
-                if (sql.includes('current_database()')) return { rows: [{ name }] };
+                if (sql.includes('current_database()')) {
+                    if (failIdentity) throw new Error('connection reset');
+                    return { rows: [{ name, role }] };
+                }
                 if (sql.includes('FROM provider_link'))
                     return { rows: anchored.map((id) => ({ id })) };
                 if (sql.includes('declared_payer_email'))
@@ -214,6 +221,32 @@ describe('HOS-1951 dry run (the default)', () => {
         expect(h.db.queries[1]).toBe('BEGIN READ ONLY');
         expect(h.db.queries.at(-1)).toBe('ROLLBACK');
         expect(h.db.ended).toBe(1);
+    });
+});
+
+describe('HOS-1951 staging sources', () => {
+    it('anchors the provider links and the completed creation attempts', async () => {
+        // Arrange
+        const h = harness();
+        // Act
+        await h.run(['--target=staging']);
+        // Assert
+        const anchored = h.db.queries.find((q) => q.includes('FROM provider_link')) ?? '';
+        expect(anchored).toContain('UNION');
+        expect(anchored).toContain("result->>'authorizationId' FROM idempotency_key");
+        expect(anchored).toContain("operation = 'PREAPPROVAL_CREATE'");
+    });
+
+    it('falls back to users.email like the creations sweep does', async () => {
+        // Arrange
+        const h = harness();
+        // Act
+        await h.run(['--target=staging']);
+        // Assert
+        const emails = h.db.queries.find((q) => q.includes('declared_payer_email')) ?? '';
+        expect(emails).toContain("coalesce(nullif(btrim(s.declared_payer_email), ''), u.email)");
+        expect(emails).toContain('LEFT JOIN users u ON u.id = s.user_id');
+        expect(emails).not.toMatch(/WHERE\s+declared_payer_email IS NOT NULL/);
     });
 });
 
@@ -376,7 +409,34 @@ describe('HOS-1951 environment guards (fail-closed)', () => {
         // Assert
         expect(code).toBe(2);
         expect(h.errLines.join('\n')).toContain("the database is not 'hospeda_staging'");
-        expect(h.db.queries).toEqual(['SELECT current_database() AS name']);
+        expect(h.db.queries).toEqual(['SELECT current_database() AS name, current_user AS role']);
+        expect(h.provider.calls).toEqual([]);
+        expect(h.sandbox.calls).not.toContain('SEARCH');
+        expect(h.db.ended).toBe(1);
+    });
+
+    it('refuses (exit 2) a database role that is not staging, before reading any source', async () => {
+        // Arrange
+        const h = harness({ db: fakeDb({ role: 'postgres' }) });
+        // Act
+        const code = await h.run(['--target=staging', '--apply']);
+        // Assert
+        expect(code).toBe(2);
+        expect(h.errLines.join('\n')).toContain("the database role is not 'hospeda_staging_user'");
+        expect(h.db.queries).toHaveLength(1);
+        expect(h.provider.calls).toEqual([]);
+        expect(h.sandbox.calls).not.toContain('SEARCH');
+    });
+
+    it('refuses (exit 2) when the identity query fails, instead of assuming staging', async () => {
+        // Arrange
+        const h = harness({ db: fakeDb({ failIdentity: true }) });
+        // Act
+        const code = await h.run(['--target=staging', '--apply']);
+        // Assert
+        expect(code).toBe(2);
+        expect(h.errLines.join('\n')).toContain('could not read the database name');
+        expect(h.db.queries).toHaveLength(1);
         expect(h.provider.calls).toEqual([]);
         expect(h.sandbox.calls).not.toContain('SEARCH');
         expect(h.db.ended).toBe(1);

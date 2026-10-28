@@ -53,6 +53,17 @@ describe('HOS-1951 readAccountTags', () => {
         expect(await build(impl).readAccountTags()).toEqual([]);
     });
 
+    it.each([
+        [{ id: 1, tags: 'test_user' }],
+        [{ id: 1, tags: [1, 2] }],
+        [{ id: 1, tags: { 0: 'test_user' } }]
+    ])('throws on tags of the wrong shape: %j', async (json) => {
+        // Arrange
+        const { impl } = fakeFetch({ answer: () => ({ status: 200, json }) });
+        // Act / Assert
+        await expect(build(impl).readAccountTags()).rejects.toBeInstanceOf(ProviderError);
+    });
+
     it('throws on a non-200 answer', async () => {
         // Arrange
         const { impl } = fakeFetch({ answer: () => ({ status: 401, json: {} }) });

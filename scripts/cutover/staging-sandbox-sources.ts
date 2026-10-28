@@ -5,27 +5,43 @@ import type { ReadOnlyClient } from './known-ids.ts';
  * `payerEmails` are held in memory only: they are never printed nor written to the manifest.
  */
 export interface StagingSources {
-    /** `provider_link.provider_id`: the preapproval id of every linked subscription. */
+    /**
+     * Preapproval ids the database stores: every `provider_link.provider_id`, plus the
+     * `authorizationId` of every completed `PREAPPROVAL_CREATE` idempotency key (the attempts
+     * a retry replaced, which no longer have a link).
+     */
     readonly anchoredIds: readonly string[];
     /**
-     * `subscription.declared_payer_email`: the email sent to the provider as `payer_email`
-     * when the authorization was created. It is how a loose preapproval (one that never got
-     * its `provider_link` row, like an abandoned checkout) is found.
+     * The email each subscription sent to the provider as `payer_email`:
+     * `coalesce(declared_payer_email, users.email)`, the same expression the creations sweep
+     * uses (`creation-sweep.model.ts`). The fallback covers rows created before migration
+     * 0177 and successors created with no declared email. It is how a loose preapproval (one
+     * that never got its `provider_link` row, like an abandoned checkout) is found.
      */
     readonly payerEmails: readonly string[];
 }
 
 /**
- * Every link, cancelled or not: whether one is still alive is decided by re-reading it by id,
- * never by `cancelled_seen_at` (the last re-read can be old).
+ * Every link, cancelled or not, and every preapproval id a completed creation attempt recorded:
+ * whether one is still alive is decided by re-reading it by id, never by `cancelled_seen_at`
+ * (the last re-read can be old).
  */
 const ANCHORED_IDS_SQL = `
-    SELECT DISTINCT provider_id AS id FROM provider_link WHERE provider_id IS NOT NULL`;
+    SELECT provider_id AS id FROM provider_link WHERE provider_id IS NOT NULL
+    UNION
+    SELECT result->>'authorizationId' FROM idempotency_key
+    WHERE operation = 'PREAPPROVAL_CREATE' AND result->>'authorizationId' IS NOT NULL`;
 
-/** Every declared email, in every status: an active row may still have a loose retry behind it. */
+/**
+ * Every payer email, in every status: an active row may still have a loose retry behind it.
+ * `coalesce(declared, users.email)` as in the creations sweep; a blank declared email falls
+ * back too. An account closure pseudonymizes `users.email` and clears the declared one, so a
+ * closed account's loose preapprovals are found only through the anchored ids above.
+ */
 const PAYER_EMAILS_SQL = `
-    SELECT DISTINCT btrim(declared_payer_email) AS email FROM subscription
-    WHERE declared_payer_email IS NOT NULL AND btrim(declared_payer_email) <> ''`;
+    SELECT DISTINCT btrim(coalesce(nullif(btrim(s.declared_payer_email), ''), u.email)) AS email
+    FROM subscription s LEFT JOIN users u ON u.id = s.user_id
+    WHERE btrim(coalesce(nullif(btrim(s.declared_payer_email), ''), u.email)) <> ''`;
 
 function column({
     rows,

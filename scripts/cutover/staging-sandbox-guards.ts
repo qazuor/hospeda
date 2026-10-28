@@ -12,6 +12,12 @@ export const STAGING_TARGET = 'staging';
  */
 export const STAGING_DATABASE_NAME = 'hospeda_staging';
 
+/**
+ * Role of the staging database (`DB_CREDENTIAL_DEFAULTS.staging` in the same file). Production's
+ * is `postgres`. Read from the server with `current_user`.
+ */
+export const STAGING_DATABASE_USER = 'hospeda_staging_user';
+
 /** Raised when the run cannot PROVE it is pointed at the staging database and the sandbox. */
 export class EnvironmentRefusal extends Error {
     public constructor({ message }: { readonly message: string }) {
@@ -48,8 +54,9 @@ export async function assertSandboxAccount({
 }
 
 /**
- * Fail-closed check of the database: the server must answer `current_database()` with the
- * staging name. Any other name, an empty answer or a failed query refuse.
+ * Fail-closed check of the database: the server must answer `current_database()` and
+ * `current_user` with the staging name and role. Any other value, an empty answer or a failed
+ * query refuse.
  *
  * @param input - a connected read-only client
  * @throws EnvironmentRefusal when the database is not proven to be staging's
@@ -60,9 +67,13 @@ export async function assertStagingDatabase({
     readonly client: ReadOnlyClient;
 }): Promise<void> {
     let name: unknown;
+    let role: unknown;
     try {
-        const answer = await client.query('SELECT current_database() AS name');
+        const answer = await client.query(
+            'SELECT current_database() AS name, current_user AS role'
+        );
         name = answer.rows[0]?.name;
+        role = answer.rows[0]?.role;
     } catch {
         throw new EnvironmentRefusal({
             message: 'could not read the database name; refusing to run'
@@ -71,6 +82,11 @@ export async function assertStagingDatabase({
     if (name !== STAGING_DATABASE_NAME) {
         throw new EnvironmentRefusal({
             message: `the database is not '${STAGING_DATABASE_NAME}'; refusing to run`
+        });
+    }
+    if (role !== STAGING_DATABASE_USER) {
+        throw new EnvironmentRefusal({
+            message: `the database role is not '${STAGING_DATABASE_USER}'; refusing to run`
         });
     }
 }
