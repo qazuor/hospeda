@@ -4,7 +4,10 @@
     "exempt": {
         "files": [
             "scripts/__tests__/check-venue-rename-frontier.test.ts",
+            "scripts/__tests__/check-venue-retired-word.test.ts",
             "scripts/check-venue-rename-frontier.ts",
+            "scripts/check-venue-retired-word.ts",
+            "scripts/guards/venue-retired-word.json",
             "scripts/guards/venue-rename-frontier.json"
         ],
         "themeOccurrences": {
@@ -435,7 +438,6 @@
         "scripts/client-tools/src/commands/test/command.ts": 1,
         "scripts/client-tools/src/commands/test/test.ts": 1,
         "scripts/client-tools/src/registry.ts": 1,
-        "scripts/production-catalog/commercial-catalog.ts": 1,
         "specs-prioritization.csv": 3
     },
     "renamedFrom": {

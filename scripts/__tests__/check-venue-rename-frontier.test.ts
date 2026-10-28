@@ -23,6 +23,9 @@ const inv = (files: Record<string, number>) => ({
         files: [
             'scripts/__tests__/check-venue-rename-frontier.test.ts',
             'scripts/check-venue-rename-frontier.ts',
+            'scripts/check-venue-retired-word.ts',
+            'scripts/__tests__/check-venue-retired-word.test.ts',
+            'scripts/guards/venue-retired-word.json',
             'scripts/guards/venue-rename-frontier.json'
         ],
         themeOccurrences: {}
