@@ -2427,7 +2427,7 @@
             "invalid": "La plataforma externa no es válida"
         },
         "venueType": {
-            "invalid": "El tipo de Comer y salir no es válido"
+            "invalid": "El tipo de local no es válido"
         },
         "hostTradeBenefitType": {
             "invalid": "El tipo de beneficio seleccionado no es válido"
