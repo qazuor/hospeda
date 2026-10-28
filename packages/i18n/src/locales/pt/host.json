@@ -250,7 +250,7 @@
                 "body": "O seu anúncio continua sem publicar. Para publicá-lo você precisa de uma assinatura de {{vertical}}.",
                 "vertical": {
                     "accommodation": "hospedagem",
-                    "gastronomy": "gastronomia",
+                    "venue": "gastronomia",
                     "experience": "experiências"
                 }
             },

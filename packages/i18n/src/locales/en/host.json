@@ -250,7 +250,7 @@
                 "body": "Your listing is still unpublished. To publish it you need a {{vertical}} subscription.",
                 "vertical": {
                     "accommodation": "accommodation",
-                    "gastronomy": "gastronomy",
+                    "venue": "gastronomy",
                     "experience": "experiences"
                 }
             },
