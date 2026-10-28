@@ -41,7 +41,7 @@ function renderForm(overrides?: Partial<React.ComponentProps<typeof VenueForm>>)
 // Tests
 // ---------------------------------------------------------------------------
 
-describe('GastronomyForm — rendering', () => {
+describe('VenueForm — rendering', () => {
     it('should render the name field', () => {
         renderForm();
         expect(screen.getByPlaceholderText(/Ej: La Parrilla/i)).toBeInTheDocument();
@@ -122,7 +122,7 @@ describe('GastronomyForm — rendering', () => {
     });
 });
 
-describe('GastronomyForm — interaction', () => {
+describe('VenueForm — interaction', () => {
     it('should call onCancel when Cancel is clicked', async () => {
         const user = userEvent.setup();
         const onCancel = vi.fn();

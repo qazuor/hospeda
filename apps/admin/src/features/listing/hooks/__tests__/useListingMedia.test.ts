@@ -355,7 +355,7 @@ describe('gallery mutations invalidate the cached entity (HOS-389 §3)', () => {
         });
     });
 
-    it.each(MUTATIONS)('$name invalidates the gastronomy entity detail', async ({ run, args }) => {
+    it.each(MUTATIONS)('$name invalidates the venue entity detail', async ({ run, args }) => {
         const { result } = run('venue', 'ent-1');
 
         await act(async () => {

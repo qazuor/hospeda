@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 /**
  * @file venue.config.test.ts
- * Unit tests for the gastronomy entity list config (SPEC-239 T-059).
+ * Unit tests for the venue entity list config (SPEC-239 T-059).
  *
  * Covers:
  *  - venueListConfig has correct apiEndpoint, basePath, entityKey
@@ -21,7 +21,7 @@ import {
     venueListConfig
 } from '../config/venue.config';
 
-describe('gastronomyListConfig', () => {
+describe('venueListConfig', () => {
     it('should point to the correct admin API endpoint', () => {
         expect(venueListConfig.apiEndpoint).toBe('/api/v1/admin/venues');
     });
@@ -58,7 +58,7 @@ describe('gastronomyListConfig', () => {
     });
 });
 
-describe('GastronomiesRoute', () => {
+describe('VenuesRoute', () => {
     it('should be defined', () => {
         expect(VenuesRoute).toBeDefined();
     });
@@ -68,13 +68,13 @@ describe('GastronomiesRoute', () => {
     });
 });
 
-describe('GastronomiesPageComponent', () => {
+describe('VenuesPageComponent', () => {
     it('should be a function (React component)', () => {
         expect(typeof VenuesPageComponent).toBe('function');
     });
 });
 
-describe('GASTRONOMY_VIEW_PERMISSION', () => {
+describe('VENUE_VIEW_PERMISSION', () => {
     it('should be VENUE_VIEW_ALL', () => {
         expect(VENUE_VIEW_PERMISSION).toBe(PermissionEnum.VENUE_VIEW_ALL);
     });

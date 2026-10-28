@@ -101,7 +101,7 @@ const cases = [
         }
     },
     {
-        name: 'gastronomyListConfig',
+        name: 'venueListConfig',
         schema: venueListConfig.listItemSchema,
         endpoint: '/api/v1/admin/venues',
         normal: venueNormal,
