@@ -2700,7 +2700,7 @@ export function toVenueCardProps({
         entity: 'venue',
         id: String(item.id || ''),
         extract: true,
-        fallback: '/assets/images/placeholder-gastronomy.svg'
+        fallback: '/assets/images/placeholder-venue.svg'
     });
 
     // Resolve destination name from API join (destinationId is the FK)
