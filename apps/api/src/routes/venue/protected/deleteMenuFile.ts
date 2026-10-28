@@ -45,7 +45,7 @@ export const protectedDeleteVenueMenuFileRoute = createProtectedRoute({
     summary: 'Remove the uploaded menu photo or PDF',
     description:
         'Clears the listing’s uploaded menu file and deletes the stored asset. Owner-only, and requires the manage_venue_menu entitlement granted by the professional gastronomy plan and above. The structured menu and the external link are untouched.',
-    tags: ['Venue', 'Gastronomy Menu'],
+    tags: ['Venue', 'Venue Menu'],
     requestParams: {
         id: z.string().uuid({ message: 'zodError.common.id.invalidUuid' })
     },
@@ -65,7 +65,7 @@ export const protectedDeleteVenueMenuFileRoute = createProtectedRoute({
             (!hasEditAll && !actor.permissions?.includes(PermissionEnum.VENUE_EDIT_OWN))
         ) {
             return createErrorResponse(
-                { code: 'NOT_FOUND', message: 'Gastronomy listing not found' },
+                { code: 'NOT_FOUND', message: 'Venue listing not found' },
                 ctx,
                 404
             );

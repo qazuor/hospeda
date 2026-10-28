@@ -87,7 +87,7 @@ export const protectedPutVenueMenuRoute = createProtectedRoute({
             ...(menuPayloadCarriesTranslations(body) ? ['multilingual_venue_menu'] : [])
         ]
     },
-    tags: ['Venue', 'Gastronomy Menu'],
+    tags: ['Venue', 'Venue Menu'],
     protectedTag: false,
     requestParams: {
         id: z.string().uuid({ message: 'zodError.common.id.invalidUuid' })

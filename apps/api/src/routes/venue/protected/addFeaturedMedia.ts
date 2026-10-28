@@ -69,7 +69,7 @@ export const protectedAddVenueFeaturedMediaRoute = createProtectedRoute({
         'consume a gallery slot, because the cover is not a gallery item ' +
         '(HOS-791). Requires VENUE_EDIT_OWN (listing owner) or VENUE_EDIT_ALL (staff).',
     listingAccess: { vertical: VerticalEnum.VENUE, operation: 'EDIT', idParam: 'id' },
-    tags: ['Venue', 'Gastronomy Media'],
+    tags: ['Venue', 'Venue Media'],
     protectedTag: false,
     requestParams: {
         id: z.string().uuid({ message: 'zodError.common.id.invalidUuid' })

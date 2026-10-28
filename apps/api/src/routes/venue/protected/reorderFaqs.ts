@@ -34,7 +34,7 @@ export const protectedReorderVenueFaqsRoute = createProtectedRoute({
     summary: 'Reorder FAQs on venue listing',
     description: 'Sets a new display order for FAQs belonging to the given venue listing',
     listingAccess: { vertical: VerticalEnum.VENUE, operation: 'EDIT', idParam: 'id' },
-    tags: ['Venue', 'Gastronomy FAQs'],
+    tags: ['Venue', 'Venue FAQs'],
     protectedTag: false,
     requestParams: {
         id: z.string().uuid({ message: 'zodError.common.id.invalidUuid' })

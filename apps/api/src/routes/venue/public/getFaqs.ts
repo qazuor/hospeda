@@ -36,7 +36,7 @@ export const publicGetVenueFaqsRoute = createPublicRoute({
     path: '/{venueId}/faqs',
     summary: 'List FAQs for a venue listing',
     description: 'Returns frequently asked questions for a venue listing, ordered by display order',
-    tags: ['Venue', 'Gastronomy FAQs'],
+    tags: ['Venue', 'Venue FAQs'],
     requestParams: {
         venueId: z.string().uuid({ message: 'zodError.common.id.invalidUuid' })
     },

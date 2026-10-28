@@ -29,7 +29,7 @@ export const protectedRemoveVenueFaqRoute = createProtectedRoute({
     summary: 'Remove FAQ from venue listing',
     description: 'Soft-deletes a FAQ from a venue listing',
     listingAccess: { vertical: VerticalEnum.VENUE, operation: 'EDIT', idParam: 'id' },
-    tags: ['Venue', 'Gastronomy FAQs'],
+    tags: ['Venue', 'Venue FAQs'],
     protectedTag: false,
     requestParams: {
         id: z.string().uuid({ message: 'zodError.common.id.invalidUuid' }),

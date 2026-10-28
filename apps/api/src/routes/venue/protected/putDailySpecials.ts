@@ -86,7 +86,7 @@ export const protectedPutVenueDailySpecialsRoute = createProtectedRoute({
         idParam: 'id',
         capabilities: ['manage_venue_daily_special']
     },
-    tags: ['Venue', 'Gastronomy Daily Specials'],
+    tags: ['Venue', 'Venue Daily Specials'],
     protectedTag: false,
     requestParams: {
         id: z.string().uuid({ message: 'zodError.common.id.invalidUuid' })

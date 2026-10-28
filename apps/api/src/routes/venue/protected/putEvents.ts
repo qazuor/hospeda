@@ -84,7 +84,7 @@ export const protectedPutVenueEventsRoute = createProtectedRoute({
         idParam: 'id',
         capabilities: ['manage_venue_events']
     },
-    tags: ['Venue', 'Gastronomy Events'],
+    tags: ['Venue', 'Venue Events'],
     protectedTag: false,
     requestParams: {
         id: z.string().uuid({ message: 'zodError.common.id.invalidUuid' })

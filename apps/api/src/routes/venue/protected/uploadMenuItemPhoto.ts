@@ -79,7 +79,7 @@ export const protectedUploadVenueMenuItemPhotoRoute = createProtectedRoute({
     summary: 'Upload a photo for one dish of the menu',
     description:
         'Uploads a single dish photo and returns its delivery URL and Cloudinary public id. The caller attaches them to a dish in the next PUT /{id}/menu. Owner-only, and requires the menu_item_photos entitlement granted by the premium gastronomy plan.',
-    tags: ['Venue', 'Gastronomy Menu'],
+    tags: ['Venue', 'Venue Menu'],
     requestParams: {
         id: z.string().uuid({ message: 'zodError.common.id.invalidUuid' })
     },
@@ -120,7 +120,7 @@ export const protectedUploadVenueMenuItemPhotoRoute = createProtectedRoute({
             (!hasEditAll && !actor.permissions?.includes(PermissionEnum.VENUE_EDIT_OWN))
         ) {
             return createErrorResponse(
-                { code: 'NOT_FOUND', message: 'Gastronomy listing not found' },
+                { code: 'NOT_FOUND', message: 'Venue listing not found' },
                 ctx,
                 404
             );
@@ -184,7 +184,7 @@ export const protectedUploadVenueMenuItemPhotoRoute = createProtectedRoute({
                     error: error instanceof Error ? error.message : String(error),
                     venueId
                 },
-                'Gastronomy menu-item photo upload failed'
+                'Venue menu-item photo upload failed'
             );
             return createErrorResponse(
                 { code: 'UPSTREAM_ERROR', message: 'Menu item photo upload failed' },

@@ -12,7 +12,7 @@ export const adminGetVenueModerationStateRoute = createAdminRoute({
     path: '/{id}/moderation',
     summary: 'Read listing moderation state',
     description: 'Reads publication status and the open fix request. Requires LISTING_MODERATE.',
-    tags: ['Gastronomys', 'Admin'],
+    tags: ['Venues', 'Admin'],
     requiredPermissions: [PermissionEnum.LISTING_MODERATE],
     requestParams: { id: z.string().uuid() },
     responseSchema: ListingModerationStateSchema,

@@ -61,7 +61,7 @@ export const publicListVenueReviewsRoute = createPublicListRoute({
     path: '/{venueId}/reviews',
     summary: 'List venue reviews',
     description: 'Returns a paginated list of approved reviews for a specific venue listing',
-    tags: ['Venue', 'Gastronomy Reviews'],
+    tags: ['Venue', 'Venue Reviews'],
     requestParams: {
         venueId: z.string().uuid({ message: 'zodError.common.id.invalidUuid' })
     },

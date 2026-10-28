@@ -35,7 +35,7 @@ export const protectedUpdateVenueFaqRoute = createProtectedRoute({
     summary: 'Update FAQ on venue listing',
     description: 'Updates an existing FAQ on a venue listing',
     listingAccess: { vertical: VerticalEnum.VENUE, operation: 'EDIT', idParam: 'id' },
-    tags: ['Venue', 'Gastronomy FAQs'],
+    tags: ['Venue', 'Venue FAQs'],
     protectedTag: false,
     requestParams: {
         id: z.string().uuid({ message: 'zodError.common.id.invalidUuid' }),
