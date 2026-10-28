@@ -185,14 +185,14 @@ const catalogoSidebar: SidebarInput = {
         {
             type: 'group',
             id: 'gastronomia',
-            label: { es: 'Gastronomía', en: 'Gastronomy', pt: 'Gastronomia' },
+            label: { es: 'Gastronomía', en: 'Venue', pt: 'Gastronomia' },
             icon: 'OffersIcon',
             defaultOpen: false,
             permissions: ['VENUE_VIEW_ALL', 'VENUE_CREATE'],
             items: [
                 {
                     type: 'link',
-                    id: 'gastronomy-list',
+                    id: 'venue-list',
                     label: { es: 'Listado', en: 'List', pt: 'Lista' },
                     icon: 'ListIcon',
                     route: '/venues',
@@ -200,10 +200,10 @@ const catalogoSidebar: SidebarInput = {
                 },
                 {
                     type: 'link',
-                    id: 'gastronomy-new',
+                    id: 'venue-new',
                     label: {
                         es: 'Nueva gastronomía',
-                        en: 'New gastronomy',
+                        en: 'New venue',
                         pt: 'Nova gastronomia'
                     },
                     icon: 'AddIcon',

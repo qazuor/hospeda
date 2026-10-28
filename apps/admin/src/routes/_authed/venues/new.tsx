@@ -18,7 +18,7 @@ import { createErrorComponent, createPendingComponent } from '@/lib/factories';
 
 export const Route = createFileRoute('/_authed/venues/new')({
     component: VenueCreatePage,
-    errorComponent: createErrorComponent('Gastronomy'),
+    errorComponent: createErrorComponent('Venue'),
     pendingComponent: createPendingComponent()
 });
 

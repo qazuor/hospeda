@@ -145,9 +145,9 @@ export function VenueForm({
         >
             <div className="space-y-6">
                 {/* ---- Identity ---- */}
-                <section aria-labelledby="gastronomy-identity-heading">
+                <section aria-labelledby="venue-identity-heading">
                     <h3
-                        id="gastronomy-identity-heading"
+                        id="venue-identity-heading"
                         className="mb-4 font-semibold text-muted-foreground text-sm uppercase tracking-wide"
                     >
                         Datos principales

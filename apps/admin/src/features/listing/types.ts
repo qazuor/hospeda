@@ -83,7 +83,7 @@ export type ListingEntityConfigParams<TListItem extends { id: string }> = {
      * Additional entity-specific filter controls appended to the shared
      * listing filters (destination, featured, ownerId).
      *
-     * For example, gastronomy adds `gastronomyType` and `priceRange`.
+     * For example, venue adds `venueType` and `priceRange`.
      * Evaluated as ordered-AFTER the shared filters; set `order` accordingly.
      */
     readonly extraFilters?: ReadonlyArray<FilterControlConfig>;

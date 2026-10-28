@@ -46,16 +46,16 @@ const SHARED_FILTER_ORDER = {
  * ```ts
  * // In the venue feature (SPEC-240):
  * const venueListConfig = createListingListConfig({
- *   entityName: 'gastronomy',
- *   entityKey: 'gastronomy',
+ *   entityName: 'venue',
+ *   entityKey: 'venue',
  *   entityType: EntityType.VENUE,
- *   apiEndpoint: '/api/v1/admin/gastronomy',
- *   basePath: '/platform/gastronomy',
- *   detailPath: '/platform/gastronomy/[id]',
+ *   apiEndpoint: '/api/v1/admin/venue',
+ *   basePath: '/platform/venue',
+ *   detailPath: '/platform/venue/[id]',
  *   listItemSchema: VenueListItemSchema,
  *   createColumns: createVenueColumns,
  *   extraFilters: [
- *     { paramKey: 'gastronomyType', type: 'select', labelKey: '…', order: 10, options: […] },
+ *     { paramKey: 'venueType', type: 'select', labelKey: '…', order: 10, options: […] },
  *     { paramKey: 'priceRange',     type: 'select', labelKey: '…', order: 11, options: […] },
  *   ],
  * });

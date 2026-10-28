@@ -51,7 +51,7 @@ export type ListingMediaVertical = 'venue' | 'experience';
  * A single gallery photo row, from either listing vertical.
  *
  * `VenueMedia` and `ExperienceMedia` differ only in their parent FK
- * field (`gastronomyId` vs `experienceId`) — every field the UI reads
+ * field (`venueId` vs `experienceId`) — every field the UI reads
  * (`id`, `url`, `isFeatured`, `caption`, `alt`, `state`, `sortOrder`, …) is
  * shared via `BaseListingMediaSchema`, so a union is safe to consume here.
  */

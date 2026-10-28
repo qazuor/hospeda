@@ -93,7 +93,7 @@ function AccommodationViewContent({
 
                 {/* HOS-1684: the listing's publication state and its moderation
                     by action, with reason (`POST /:id/moderate`), as on
-                    gastronomy and experience. */}
+                    venue and experience. */}
                 <ListingModerationCard
                     vertical="accommodation"
                     entityId={id}

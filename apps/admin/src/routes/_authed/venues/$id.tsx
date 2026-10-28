@@ -35,7 +35,7 @@ import { createErrorComponent, createPendingComponent } from '@/lib/factories';
 export const Route = createFileRoute('/_authed/venues/$id')({
     component: VenueViewPage,
     loader: async ({ params }) => ({ venueId: params.id }),
-    errorComponent: createErrorComponent('Gastronomy'),
+    errorComponent: createErrorComponent('Venue'),
     pendingComponent: createPendingComponent()
 });
 

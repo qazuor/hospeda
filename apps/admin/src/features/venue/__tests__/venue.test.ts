@@ -51,11 +51,11 @@ describe('createVenueColumns', () => {
         const nameCol = columns.find((c) => c.id === 'name');
         expect(nameCol?.linkHandler).toBeDefined();
         const link = nameCol?.linkHandler?.({
-            id: 'uuid-gastro-1',
+            id: 'uuid-venue-1',
             name: 'Test Restó'
         } as unknown as Parameters<NonNullable<typeof nameCol.linkHandler>>[0]);
         expect(link?.to).toBe('/venues/$id');
-        expect((link?.params as { id: string })?.id).toBe('uuid-gastro-1');
+        expect((link?.params as { id: string })?.id).toBe('uuid-venue-1');
     });
 
     it('name column returns undefined when row has no id', () => {

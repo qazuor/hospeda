@@ -101,8 +101,8 @@ export type PendingReviewsQueryParams = {
  * ```ts
  * // In the venue feature (SPEC-240):
  * const venueHooks = createListingEntityHooks<VenueAdmin>({
- *   entityName: 'gastronomy',
- *   apiEndpoint: '/api/v1/admin/gastronomy',
+ *   entityName: 'venue',
+ *   apiEndpoint: '/api/v1/admin/venue',
  * });
  *
  * // In a component:
