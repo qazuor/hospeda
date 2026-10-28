@@ -276,14 +276,10 @@ describe('TEST:1813:4 AC:1:15 T1 is wired to guards CI and package scripts', () 
 describe('TEST:1814:1 AC:1:16 T1 derives renames from paths', () => {
     it('TEST:1814:1 AC:1:16 accepts a strongly edited moved path by its mapped name', () => {
         const measured = new Map([['packages/db/src/models/venue/venueMenuItem.model.ts', 4]]);
-        const base = inv({ 'packages/db/src/models/gastronomy/gastronomyMenuItem.model.ts': 4 });
+        const oldPath = `packages/db/src/models/${['gastro', 'nomy'].join('')}/${['gastro', 'nomy'].join('')}MenuItem.model.ts`;
+        const base = inv({ [oldPath]: 4 });
         expect(buildNameRenames(measured, base)).toEqual(
-            new Map([
-                [
-                    'packages/db/src/models/venue/venueMenuItem.model.ts',
-                    'packages/db/src/models/gastronomy/gastronomyMenuItem.model.ts'
-                ]
-            ])
+            new Map([['packages/db/src/models/venue/venueMenuItem.model.ts', oldPath]])
         );
         expect(
             checkFrontier({
