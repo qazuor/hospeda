@@ -19,6 +19,7 @@
  */
 
 import { get, required } from './env.ts';
+import type { Target } from './target.ts';
 
 /** Standard success envelope returned by the Hospeda API. */
 export interface ApiSuccess<T> {
@@ -56,22 +57,90 @@ export class HospedaApiError extends Error {
     }
 }
 
-interface ClientOptions {
-    /** Override base URL (defaults to env HOSPEDA_API_URL). */
-    readonly baseUrl?: string;
-    /** Override cookie header (defaults to env HOPS_ADMIN_COOKIE). */
-    readonly cookie?: string;
+/** Public URL of the production API, used when HOSPEDA_API_URL is unset. */
+export const PROD_API_DEFAULT_URL = 'https://api.hospeda.com.ar';
+
+/**
+ * Where the admin API of one target lives and the session cookie that
+ * authenticates against it.
+ */
+export interface ApiEndpoint {
+    readonly target: Target;
+    /** Base URL, no trailing slash. */
+    readonly baseUrl: string;
+    /** Full `Cookie` header value for an admin session on that target. */
+    readonly cookie: string;
+}
+
+function stripSlash(url: string): string {
+    return url.replace(/\/$/, '');
+}
+
+function hostOf(url: string): string {
+    try {
+        return new URL(url).host.toLowerCase();
+    } catch {
+        throw new Error(`'${url}' is not a valid absolute URL.`);
+    }
 }
 
 /**
- * Build a client pointed at the production Hospeda API. Throws (with
- * a helpful message pointing at `.env.local.example`) if the cookie is
- * not configured.
+ * Resolve the admin API endpoint of a target (HOS-1950).
+ *
+ *   prod    — `HOSPEDA_API_URL`, defaulting to {@link PROD_API_DEFAULT_URL};
+ *             cookie from `HOPS_ADMIN_COOKIE` (names kept for back-compat).
+ *   staging — `HOPS_STAGING_API_URL` and `HOPS_STAGING_ADMIN_COOKIE`, both
+ *             REQUIRED, with no default. There is no single trustworthy
+ *             source for the staging API host in the repo (the smoke script
+ *             and the deployment docs disagree), and a staging command that
+ *             silently fell back to the prod URL — or carried the prod admin
+ *             cookie to another host — is exactly the failure this guards.
+ *
+ * Staging NEVER reads `HOSPEDA_API_URL` / `HOPS_ADMIN_COOKIE`, and its URL
+ * may not point at the same host as prod.
+ *
+ * @throws when a required variable is missing, or when the staging URL
+ * resolves to the prod host.
  */
-export function createHospedaApiClient(options: ClientOptions = {}): HospedaApiClient {
-    const baseUrl = options.baseUrl ?? get('HOSPEDA_API_URL') ?? 'https://api.hospeda.com.ar';
-    const cookie = options.cookie ?? required('HOPS_ADMIN_COOKIE');
-    return new HospedaApiClient(baseUrl.replace(/\/$/, ''), cookie);
+export function resolveApiEndpoint(params: { readonly target: Target }): ApiEndpoint {
+    const { target } = params;
+    const prodUrl = stripSlash(get('HOSPEDA_API_URL') ?? PROD_API_DEFAULT_URL);
+    if (target === 'prod') {
+        return { target, baseUrl: prodUrl, cookie: required('HOPS_ADMIN_COOKIE') };
+    }
+
+    const stagingUrlRaw = get('HOPS_STAGING_API_URL');
+    if (!stagingUrlRaw) {
+        throw new Error(
+            "HOPS_STAGING_API_URL is not set in scripts/server-tools/.env.local — refusing to run against target 'staging' " +
+                'without an explicit staging API URL (it never falls back to HOSPEDA_API_URL or to production). ' +
+                'Set it to the public URL of hospeda-api-staging.'
+        );
+    }
+    const stagingUrl = stripSlash(stagingUrlRaw);
+    if (hostOf(stagingUrl) === hostOf(prodUrl)) {
+        throw new Error(
+            `HOPS_STAGING_API_URL (${stagingUrl}) points at the same host as the prod API (${prodUrl}) — refusing to run a staging command against production.`
+        );
+    }
+    const cookie = get('HOPS_STAGING_ADMIN_COOKIE');
+    if (!cookie) {
+        throw new Error(
+            'HOPS_STAGING_ADMIN_COOKIE is not set in scripts/server-tools/.env.local. Staging needs its own admin session cookie ' +
+                '(copied from the staging admin app); the prod HOPS_ADMIN_COOKIE is never sent to another host.'
+        );
+    }
+    return { target, baseUrl: stagingUrl, cookie };
+}
+
+/**
+ * Build a client pointed at the admin API of the given target. Throws
+ * with an actionable message when that target's URL or cookie is not
+ * configured (see {@link resolveApiEndpoint}).
+ */
+export function createHospedaApiClient(params: { readonly target: Target }): HospedaApiClient {
+    const endpoint = resolveApiEndpoint(params);
+    return new HospedaApiClient(endpoint.baseUrl, endpoint.cookie);
 }
 
 class HospedaApiClient {
@@ -128,7 +197,7 @@ class HospedaApiClient {
             // the error actionable so the operator knows what to do.
             if (response.status === 401) {
                 throw new HospedaApiError(
-                    `${message}\n\nThe admin session cookie has expired. Refresh HOPS_ADMIN_COOKIE in scripts/server-tools/.env.local with a value copied from the browser DevTools (admin app → Application → Cookies).`,
+                    `${message}\n\nThe admin session cookie has expired. Refresh HOPS_ADMIN_COOKIE (prod) or HOPS_STAGING_ADMIN_COOKIE (staging) in scripts/server-tools/.env.local with a value copied from the browser DevTools (admin app → Application → Cookies).`,
                     401,
                     parsed ?? text
                 );
