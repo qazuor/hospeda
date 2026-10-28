@@ -161,12 +161,12 @@ export const LISTING_SUPPORT_EDIT_CONTENT_FIELDS = [
     'price', // [BLANK] accommodation
     'location', // [BLANK] accommodation
     'extraInfo', // [BLANK] accommodation
-    'menuUrl', // [BLANK] gastronomy
-    'menuFileUrl', // [BLANK] gastronomy
-    'menuFilePublicId', // [BLANK] gastronomy
-    'menuFileKind', // [BLANK] gastronomy
-    'openingHours', // [BLANK] gastronomy, experience + [§1.2] "horarios"
-    'priceRange', // [BLANK] gastronomy
+    'menuUrl', // [BLANK] venue
+    'menuFileUrl', // [BLANK] venue
+    'menuFilePublicId', // [BLANK] venue
+    'menuFileKind', // [BLANK] venue
+    'openingHours', // [BLANK] venue, experience + [§1.2] "horarios"
+    'priceRange', // [BLANK] venue
     'priceFrom', // [BLANK] experience
     'priceUnit', // [BLANK] experience
     'isPriceOnRequest', // [BLANK] experience
