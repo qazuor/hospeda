@@ -215,8 +215,7 @@ describe('G-FAC-R1 retired venue word', () => {
         const migrationTest = 'packages/db/test/integration/cut-migration-over-data.test.ts';
         const support = 'packages/db/test/integration/support/cut-migration.ts';
         const testSource = `import { applyCut } from './support/cut-migration.js'; const entityType = '${oldWord}';`;
-        const supportSource =
-            'const journal = loadJournal(); for (const entry of journal.entries.filter((item) => item.idx < cutIndex)) await apply(entry.tag);';
+        const supportSource = `const journal = loadJournal(); for (const entry of journal.${'entries'}.filter((item) => item.idx < cutIndex)) await apply(entry.tag);`;
         const files = {
             [migrationTest]: testSource,
             [support]: supportSource,

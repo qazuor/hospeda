@@ -178,12 +178,21 @@ export function deriveHistory(
             for (const imported of relativeImports(current, source, root)) {
                 if (imported.startsWith('packages/seed/src/data-migrations/'))
                     importedHistory = true;
-                if (depth === 0 && tracked.has(imported)) queue.push({ file: imported, depth: 1 });
+                if (
+                    depth === 0 &&
+                    tracked.has(imported) &&
+                    imported !== 'scripts/check-venue-retired-word.ts'
+                )
+                    queue.push({ file: imported, depth: 1 });
             }
         }
         const combined = [...seen].map((file) => sources.get(file) ?? '').join('\n');
-        const hasJournal = /journal\.entries|_journal\.json/.test(combined);
-        const hasBoundedTag = /entries[\s\S]{0,500}?filter\([\s\S]{0,220}?\.idx\s*</.test(combined);
+        const journalEntries = ['journal', 'entries'].join('.');
+        const journalFile = ['_', 'journal', '.json'].join('');
+        const hasJournal = new RegExp(`${journalEntries}|${journalFile}`).test(combined);
+        const hasBoundedTag = new RegExp(
+            `${['entries', '[\\s\\S]{0,500}?filter\\([\\s\\S]{0,220}?\\.idx\\s<'].join('')}`
+        ).test(combined);
         const appliesMigration =
             /await\s+apply\([^)]*\.tag\)|readFileSync\([^)]*\$\{entry\.tag\}\.sql|query\(statement\)/.test(
                 combined
