@@ -23,6 +23,7 @@
  */
 
 import { dockerInspectLabels, dockerPs } from './docker.ts';
+import { get } from './env.ts';
 import { log } from './log.ts';
 import { getAppResourceName, getDbResourceName, type Target } from './target.ts';
 
@@ -191,10 +192,14 @@ const COOLIFY_NAME_LABEL_KEYS: ReadonlyArray<string> = [
  * without a docker daemon. Production code uses {@link REAL_DOCKER}.
  */
 export interface DockerQueryPort {
-    /** `docker ps --format <fmt> [--filter ...]` over RUNNING containers. */
+    /**
+     * `docker ps --format <fmt> [--filter ...]` over RUNNING containers, or
+     * over every container (stopped included) when `all` is set.
+     */
     readonly ps: (params: {
         readonly format: string;
         readonly filters?: ReadonlyArray<string>;
+        readonly all?: boolean;
     }) => Promise<ReadonlyArray<string>>;
     /** `docker inspect <name>` → `Config.Labels` (empty object when none). */
     readonly inspectLabels: (container: string) => Promise<Readonly<Record<string, string>>>;
@@ -273,16 +278,37 @@ async function tryStrategy(label: string, strategy: Strategy): Promise<string | 
     );
 }
 
+/** The label that identifies a Coolify resource, compared strictly. */
+const RESOURCE_NAME_LABEL = 'coolify.resourceName';
+
+/** Any label under this prefix marks a container as Coolify-managed. */
+const COOLIFY_LABEL_PREFIX = 'coolify.';
+
 /**
- * Read the Coolify resource name a container carries, if any. Returns
- * `undefined` for a container that is not a Coolify-managed resource.
+ * Read the `coolify.resourceName` a container carries. Deliberately does
+ * NOT fall back to `coolify.serviceName`: identity is decided by the
+ * resource name alone.
  */
 function readResourceLabel(labels: Readonly<Record<string, string>>): string | undefined {
-    for (const key of COOLIFY_NAME_LABEL_KEYS) {
-        const value = labels[key];
-        if (value) return value;
-    }
-    return undefined;
+    const value = labels[RESOURCE_NAME_LABEL];
+    return value ? value : undefined;
+}
+
+/** True when the container carries at least one `coolify.*` label. */
+function isCoolifyManaged(labels: Readonly<Record<string, string>>): boolean {
+    return Object.keys(labels).some((key) => key.startsWith(COOLIFY_LABEL_PREFIX));
+}
+
+/**
+ * True when ANY container on the daemon — stopped ones included — carries
+ * a `coolify.*` label, i.e. this host is run by Coolify. Reads the
+ * comma-joined `{{.Labels}}` column of `docker ps -a`.
+ */
+async function daemonHasCoolifyContainers(docker: DockerQueryPort): Promise<boolean> {
+    const rows = await docker.ps({ format: '{{.Labels}}', all: true });
+    return rows.some((row) =>
+        row.split(',').some((pair) => pair.trim().startsWith(COOLIFY_LABEL_PREFIX))
+    );
 }
 
 /**
@@ -300,33 +326,52 @@ export interface ResolvedContainer {
 }
 
 /**
- * Central cross-target guard (HOS-1950). A container that the label
- * strategy did NOT select is only acceptable when it is not a Coolify
- * resource at all (a single-environment / non-Coolify setup, which is what
- * the image / port fallbacks exist for). A container carrying ANY Coolify
- * resource label other than the one the target expects belongs to some
- * other resource — on the VPS that is the same app of the OTHER target,
- * because prod and staging expose the same ports (api 3001, web 4321,
- * admin 3000) and run the same images. Returning it would make
- * `hops --target=staging redeploy api` redeploy production.
+ * Central cross-target guard (HOS-1950). Runs on EVERY container a
+ * strategy returns, for every kind that has a target-specific label.
+ * Fail-closed:
  *
- * @throws when the container carries a foreign Coolify resource label.
+ *   - A Coolify-managed container (any `coolify.*` label) must carry
+ *     `coolify.resourceName` EXACTLY equal to the label the target expects.
+ *     A different value is the other target (prod and staging share ports
+ *     and images); a missing value is a managed container we cannot
+ *     attribute — both are errors.
+ *   - An unmanaged container (no `coolify.*` label at all) is accepted only
+ *     when the daemon runs no Coolify container at all (a non-Coolify
+ *     host), or when the operator opted in with
+ *     `HOPS_ALLOW_UNLABELLED_FALLBACK=1`. On the VPS a stray
+ *     `docker run postgres:17` must never be taken for staging.
+ *
+ * @throws when the container cannot be proven to belong to the target.
  */
-function assertNotForeignResource(params: {
+async function assertBelongsToTarget(params: {
     readonly kind: ContainerKind;
     readonly target: Target;
     readonly expectedLabel: string;
     readonly name: string;
-    readonly foundLabel: string | undefined;
+    readonly labels: Readonly<Record<string, string>>;
     readonly strategy: string;
-}): void {
-    const { kind, target, expectedLabel, name, foundLabel, strategy } = params;
-    if (foundLabel === undefined || foundLabel === expectedLabel) return;
+    readonly docker: DockerQueryPort;
+    readonly allowUnlabelledFallback: boolean;
+}): Promise<void> {
+    const { kind, target, expectedLabel, name, labels, strategy, docker } = params;
+    const header = `Refusing to resolve kind '${kind}' for target '${target}': no running container proves it carries ${RESOURCE_NAME_LABEL}='${expectedLabel}'. `;
+    const hint = `\nIs the '${target}' ${kind} stopped in Coolify? Run \`hops docker-by-name hospeda\` to inspect what is running.`;
+
+    if (isCoolifyManaged(labels)) {
+        const found = readResourceLabel(labels);
+        if (found === expectedLabel) return;
+        throw new Error(
+            found === undefined
+                ? `${header}The ${strategy} lookup matched '${name}', a Coolify-managed container with no ${RESOURCE_NAME_LABEL} label.${hint}`
+                : `${header}The ${strategy} lookup matched '${name}', but that container belongs to '${found}', not to target '${target}' — refusing to act on another target's container.${hint}`
+        );
+    }
+
+    if (params.allowUnlabelledFallback) return;
+    if (!(await daemonHasCoolifyContainers(docker))) return;
     throw new Error(
-        `No running container carries the Coolify label '${expectedLabel}' (kind '${kind}', target '${target}'). ` +
-            `The ${strategy} fallback matched '${name}', but that container belongs to '${foundLabel}', ` +
-            `not to target '${target}' — refusing to act on another target's container.\n` +
-            `Is the '${target}' ${kind} stopped in Coolify? Run \`hops docker-by-name hospeda\` to inspect what is running.`
+        `${header}The ${strategy} fallback matched '${name}', which carries no Coolify labels, on a host that runs Coolify — it cannot be attributed to '${target}'. ` +
+            `Set HOPS_ALLOW_UNLABELLED_FALLBACK=1 only if that container really is the '${target}' ${kind}.${hint}`
     );
 }
 
@@ -340,8 +385,10 @@ function assertNotForeignResource(params: {
  *   - The Coolify resource label of the target always wins.
  *   - The image / port / name fallbacks may run when the label finds
  *     nothing, but their result passes through
- *     {@link assertNotForeignResource}: a container labelled for any OTHER
- *     resource (e.g. the other target) is an error, never an answer.
+ *     {@link assertBelongsToTarget}: a container labelled for any OTHER
+ *     resource (e.g. the other target), a managed container without a
+ *     resource name, or an unlabelled container on a Coolify host is an
+ *     error, never an answer.
  *   - Ambiguity (2+ matches in one strategy) is an error.
  *
  * @throws when nothing resolves, when a strategy is ambiguous, or when a
@@ -351,8 +398,14 @@ export async function resolveContainer(params: {
     readonly kind: ContainerKind;
     readonly target: Target;
     readonly docker: DockerQueryPort;
+    /**
+     * Accept a container with no Coolify labels on a Coolify host
+     * (`HOPS_ALLOW_UNLABELLED_FALLBACK=1`). Defaults to false.
+     */
+    readonly allowUnlabelledFallback?: boolean;
 }): Promise<ResolvedContainer> {
     const { kind, target, docker } = params;
+    const allowUnlabelledFallback = params.allowUnlabelledFallback ?? false;
     const config = KIND_CONFIG[kind];
     const labelValue = resolveResourceName(kind, target);
 
@@ -363,13 +416,15 @@ export async function resolveContainer(params: {
         const labels = await docker.inspectLabels(name);
         const resourceLabel = readResourceLabel(labels);
         if (labelValue !== undefined) {
-            assertNotForeignResource({
+            await assertBelongsToTarget({
                 kind,
                 target,
                 expectedLabel: labelValue,
                 name,
-                foundLabel: resourceLabel,
-                strategy
+                labels,
+                strategy,
+                docker,
+                allowUnlabelledFallback
             });
         }
         return { name, strategy, resourceLabel, labels };
@@ -440,6 +495,11 @@ export function formatResolution(params: {
     return `Resolved ${kind} (${target}) → container ${resolved.name} [${label}]${via}`;
 }
 
+/** Opt-in for unlabelled fallback matches on a Coolify host. */
+function allowUnlabelledFallbackFromEnv(): boolean {
+    return get('HOPS_ALLOW_UNLABELLED_FALLBACK') === '1';
+}
+
 /**
  * Resolve a container kind for the active target to a single running
  * container name, and print the resolution to stderr.
@@ -450,7 +510,12 @@ export function formatResolution(params: {
  */
 export async function findContainer(kind: ContainerKind): Promise<string> {
     const target = getActiveTarget();
-    const resolved = await resolveContainer({ kind, target, docker: REAL_DOCKER });
+    const resolved = await resolveContainer({
+        kind,
+        target,
+        docker: REAL_DOCKER,
+        allowUnlabelledFallback: allowUnlabelledFallbackFromEnv()
+    });
     if (resolved.strategy === 'label') {
         log.info(formatResolution({ kind, target, resolved }));
     } else {
@@ -486,7 +551,12 @@ export async function findContainerVerbose(kind: ContainerKind): Promise<{
     readonly labels: Readonly<Record<string, string>>;
 }> {
     const target = getActiveTarget();
-    const resolved = await resolveContainer({ kind, target, docker: REAL_DOCKER });
+    const resolved = await resolveContainer({
+        kind,
+        target,
+        docker: REAL_DOCKER,
+        allowUnlabelledFallback: allowUnlabelledFallbackFromEnv()
+    });
     log.info(formatResolution({ kind, target, resolved }));
     const strategy =
         resolved.strategy === 'label'

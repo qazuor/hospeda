@@ -50,8 +50,10 @@ export async function docker(
 export async function dockerPs(params: {
     readonly format: string;
     readonly filters?: ReadonlyArray<string>;
+    /** `docker ps -a`: include stopped containers. Defaults to running only. */
+    readonly all?: boolean;
 }): Promise<ReadonlyArray<string>> {
-    const args = ['ps', '--format', params.format];
+    const args = ['ps', ...(params.all ? ['-a'] : []), '--format', params.format];
     for (const f of params.filters ?? []) {
         args.push('--filter', f);
     }

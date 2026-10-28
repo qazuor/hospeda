@@ -27,19 +27,39 @@ interface FakeContainer {
     readonly labels: Readonly<Record<string, string>>;
 }
 
-/** Coolify v4 publishes the resource name under both keys. */
+/**
+ * Coolify labels. `serviceName` is deliberately DIFFERENT from
+ * `resourceName` (`svc-<resourceName>`), so a resolver that read identity
+ * from `serviceName` instead of `resourceName` fails these tests.
+ */
 function coolifyLabels(resourceName: string, uuid: string): Record<string, string> {
     return {
+        'coolify.managed': 'true',
         'coolify.resourceName': resourceName,
-        'coolify.serviceName': resourceName,
+        'coolify.serviceName': `svc-${resourceName}`,
         'coolify.name': uuid
     };
 }
 
-function fakeDocker(running: ReadonlyArray<FakeContainer>): DockerQueryPort {
+/**
+ * In-memory docker. `running` answers `docker ps`; `stopped` only shows up
+ * under `docker ps -a` (`all: true`).
+ */
+function fakeDocker(
+    running: ReadonlyArray<FakeContainer>,
+    stopped: ReadonlyArray<FakeContainer> = []
+): DockerQueryPort {
     return {
-        ps: async ({ format, filters = [] }) => {
-            const matching = running.filter((c) =>
+        ps: async ({ format, filters = [], all = false }) => {
+            const pool = all ? [...running, ...stopped] : running;
+            if (format === '{{.Labels}}') {
+                return pool.map((c) =>
+                    Object.entries(c.labels)
+                        .map(([k, v]) => `${k}=${v}`)
+                        .join(',')
+                );
+            }
+            const matching = pool.filter((c) =>
                 filters.every((f) => {
                     if (f.startsWith('label=')) {
                         const [key, value] = f.slice('label='.length).split('=');
@@ -238,6 +258,119 @@ describe('resolveContainer — database kinds never cross targets (HOS-1950)', (
 
         expect(resolved.name).toBe(STAGING_PG.name);
         expect(resolved.strategy).toBe('label');
+    });
+});
+
+describe('resolveContainer — fail-closed on unattributable containers (HOS-1950 review)', () => {
+    const STRAY_PG: FakeContainer = {
+        name: 'some-random-postgres',
+        image: 'postgres:17',
+        ports: [5432],
+        labels: {}
+    };
+    const STOPPED_STAGING_PG: FakeContainer = {
+        name: 'stagingpguuid',
+        image: 'postgres:17-alpine',
+        ports: [5432],
+        labels: coolifyLabels('postgresql-database-stagingpguuid', 'stagingpguuid')
+    };
+    let savedStaging: string | undefined;
+
+    beforeEach(() => {
+        savedStaging = process.env.HOPS_STAGING_POSTGRES_UUID;
+        process.env.HOPS_STAGING_POSTGRES_UUID = 'stagingpguuid';
+    });
+
+    afterEach(() => {
+        if (savedStaging === undefined) delete process.env.HOPS_STAGING_POSTGRES_UUID;
+        else process.env.HOPS_STAGING_POSTGRES_UUID = savedStaging;
+    });
+
+    it('rejects an unlabelled postgres on a Coolify host when staging postgres is stopped', async () => {
+        // Arrange: staging pg exists but is stopped; a stray, unlabelled
+        // postgres is the only one running and matches the image fallback.
+        const docker = fakeDocker([STRAY_PG], [STOPPED_STAGING_PG]);
+
+        // Act
+        const attempt = resolveContainer({ kind: 'postgres', target: 'staging', docker });
+
+        // Assert
+        await expect(attempt).rejects.toThrow(/carries no Coolify labels/);
+        await expect(attempt).rejects.toThrow(/HOPS_ALLOW_UNLABELLED_FALLBACK=1/);
+    });
+
+    it('rejects an unlabelled app on a Coolify host (prod running elsewhere on another port)', async () => {
+        const strayApi: FakeContainer = {
+            name: 'something-on-3001',
+            image: 'node:22',
+            ports: [3001],
+            labels: {}
+        };
+        const prodWeb: FakeContainer = {
+            name: 'prodweb-uuid',
+            image: 'hospeda-web:latest',
+            ports: [4321],
+            labels: coolifyLabels('hospeda-web-prod', 'prod-web-app-uuid')
+        };
+        const docker = fakeDocker([strayApi, prodWeb]);
+
+        await expect(resolveContainer({ kind: 'api', target: 'staging', docker })).rejects.toThrow(
+            /carries no Coolify labels/
+        );
+    });
+
+    it('accepts the unlabelled container on a Coolify host only with the explicit opt-in', async () => {
+        const docker = fakeDocker([STRAY_PG], [STOPPED_STAGING_PG]);
+
+        const resolved = await resolveContainer({
+            kind: 'postgres',
+            target: 'staging',
+            docker,
+            allowUnlabelledFallback: true
+        });
+
+        expect(resolved.name).toBe(STRAY_PG.name);
+        expect(resolved.strategy).toBe('image');
+    });
+
+    it('rejects a Coolify-managed container without coolify.resourceName', async () => {
+        const managedNoName: FakeContainer = {
+            name: 'managed-mystery',
+            image: 'postgres:17',
+            ports: [5432],
+            labels: { 'coolify.managed': 'true' }
+        };
+        const docker = fakeDocker([managedNoName]);
+
+        await expect(
+            resolveContainer({
+                kind: 'postgres',
+                target: 'staging',
+                docker,
+                allowUnlabelledFallback: true
+            })
+        ).rejects.toThrow(/Coolify-managed container with no coolify.resourceName label/);
+    });
+
+    it('decides identity by resourceName, never by serviceName', async () => {
+        // A prod container whose serviceName happens to read like staging:
+        // the label strategy finds it via serviceName, the guard must still
+        // see resourceName = prod and refuse.
+        const confusing: FakeContainer = {
+            name: 'prod-but-servicename-says-staging',
+            image: 'hospeda-api:latest',
+            ports: [3001],
+            labels: {
+                'coolify.managed': 'true',
+                'coolify.resourceName': 'hospeda-api-prod',
+                'coolify.serviceName': 'hospeda-api-staging'
+            }
+        };
+        const docker = fakeDocker([confusing]);
+
+        await expect(resolveContainer({ kind: 'api', target: 'staging', docker })).rejects.toThrow(
+            /belongs to 'hospeda-api-prod'/
+        );
     });
 });
 
