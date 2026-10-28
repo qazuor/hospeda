@@ -1173,6 +1173,7 @@
         "packages/seed/src/utils/media-rows-builder.ts": 2,
         "packages/seed/test/data-migrations/0013-hos-142-poi-catalog-expansion.test.ts": 1,
         "packages/seed/test/data-migrations/0034.data-migration.test.ts": 28,
+        "packages/seed/test/data-migrations/0036-hos-369-w24-revalidation-config.test.ts": 1,
         "packages/seed/test/data-migrations/0059-hos712-owner-restrict-fk-purge.integration.test.ts": 34,
         "packages/seed/test/data-migrations/0059.data-migration.test.ts": 3,
         "packages/seed/test/data-migrations/0079.data-migration.test.ts": 14,
