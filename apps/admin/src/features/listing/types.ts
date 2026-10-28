@@ -120,7 +120,7 @@ export type ListingEntityConfigParams<TListItem extends { id: string }> = {
  */
 export type ListingConsolidatedConfigParams = {
     /**
-     * Translated singular label for the entity (e.g. `'Gastronomía'`).
+     * Translated singular label for the entity (e.g. `'Comer y salir'`).
      * Becomes `ConsolidatedEntityConfig.metadata.entityName`.
      */
     readonly entityName: string;

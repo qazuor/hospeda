@@ -53,7 +53,7 @@ const VERTICAL_BADGE_STYLES: Record<ApplicableVertical, string> = {
 
 const VERTICAL_LABELS: Record<ApplicableVertical, string> = {
     accommodation: 'Alojamiento',
-    venue: 'Gastronomía',
+    venue: 'Comer y salir',
     experience: 'Experiencia'
 };
 
