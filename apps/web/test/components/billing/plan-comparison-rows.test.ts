@@ -222,9 +222,9 @@ describe('resolveRowCells — column set changes (HOS-329 regression)', () => {
     });
 
     it('renders a plan with no entitlements as not-included, never as a borrowed yes', () => {
-        const empty = plan('gastronomy-listing', []);
-        expect(cellsBySlug('branding', [empty])).toEqual({ 'gastronomy-listing': 'no' });
-        expect(cellsBySlug('advancedStats', [empty])).toEqual({ 'gastronomy-listing': 'no' });
+        const empty = plan('venue-listing', []);
+        expect(cellsBySlug('branding', [empty])).toEqual({ 'venue-listing': 'no' });
+        expect(cellsBySlug('advancedStats', [empty])).toEqual({ 'venue-listing': 'no' });
     });
 });
 
@@ -406,7 +406,7 @@ describe('row i18n coverage', () => {
     it('actually collects the rendered rows (guards against a vacuous sweep)', () => {
         expect(ALL_RENDERED_ROWS.length).toBeGreaterThan(30);
         expect(ALL_RENDERED_ROWS.map((r) => r.id)).toContain('calendarSync');
-        expect(ALL_RENDERED_ROWS.map((r) => r.id)).toContain('publishGastronomy');
+        expect(ALL_RENDERED_ROWS.map((r) => r.id)).toContain('publishVenue');
         expect(ALL_RENDERED_ROWS.map((r) => r.id)).toContain('experienceCertificate');
     });
 

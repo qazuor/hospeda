@@ -93,10 +93,10 @@ export const COMPARISON_ROW_ICONS: Record<string, ComponentType<IconProps> | und
     // tables would otherwise have rendered ONE iconed row among fifteen, beside
     // owner and tourist tables where every row has one.
     maxGastronomies: ForkKnifeIcon,
-    publishGastronomy: HomeIcon,
-    editGastronomyInfo: EditIcon,
-    gastronomyMenu: FileTextIcon,
-    gastronomyDailySpecial: CalendarIcon,
+    publishVenue: HomeIcon,
+    editVenueInfo: EditIcon,
+    venueMenu: FileTextIcon,
+    venueDailySpecial: CalendarIcon,
     venueEvents: MegaphoneIcon,
     menuItemPhotos: ImageIcon,
     multilingualMenu: GlobeIcon,

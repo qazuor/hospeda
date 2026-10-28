@@ -325,20 +325,20 @@ export const OWNER_AI_ROWS: readonly RowConfig[] = [
 /** What a gastronomy tier lets its owner publish and maintain. */
 export const VENUE_LISTING_ROWS: readonly RowConfig[] = [
     {
-        id: 'maxGastronomies',
-        labelKey: 'billing.comparison.row.maxGastronomies',
+        id: 'maxVenues',
+        labelKey: 'billing.comparison.row.maxVenues',
         cell: { kind: 'limit', key: LimitKeyEnum.MAX_VENUES },
         status: 'available'
     },
     {
-        id: 'publishGastronomy',
-        labelKey: 'billing.comparison.row.publishGastronomy',
+        id: 'publishVenue',
+        labelKey: 'billing.comparison.row.publishVenue',
         cell: { kind: 'entitlement', key: EntitlementKeyEnum.PUBLISH_VENUE },
         status: 'available'
     },
     {
-        id: 'editGastronomyInfo',
-        labelKey: 'billing.comparison.row.editGastronomyInfo',
+        id: 'editVenueInfo',
+        labelKey: 'billing.comparison.row.editVenueInfo',
         cell: { kind: 'entitlement', key: EntitlementKeyEnum.EDIT_VENUE_INFO },
         status: 'available'
     },
@@ -353,20 +353,20 @@ export const VENUE_LISTING_ROWS: readonly RowConfig[] = [
 /** The carta, and everything that hangs off it. The gastronomy differentiator. */
 export const VENUE_MENU_ROWS: readonly RowConfig[] = [
     {
-        id: 'gastronomyMenu',
-        labelKey: 'billing.comparison.row.gastronomyMenu',
+        id: 'venueMenu',
+        labelKey: 'billing.comparison.row.venueMenu',
         cell: { kind: 'entitlement', key: EntitlementKeyEnum.MANAGE_VENUE_MENU },
         status: 'available'
     },
     {
-        id: 'gastronomyDailySpecial',
-        labelKey: 'billing.comparison.row.gastronomyDailySpecial',
+        id: 'venueDailySpecial',
+        labelKey: 'billing.comparison.row.venueDailySpecial',
         cell: { kind: 'entitlement', key: EntitlementKeyEnum.MANAGE_VENUE_DAILY_SPECIAL },
         status: 'available'
     },
     {
-        id: 'gastronomyEvents',
-        labelKey: 'billing.comparison.row.gastronomyEvents',
+        id: 'venueEvents',
+        labelKey: 'billing.comparison.row.venueEvents',
         cell: { kind: 'entitlement', key: EntitlementKeyEnum.MANAGE_VENUE_EVENTS },
         status: 'available'
     },
@@ -466,8 +466,8 @@ function listingExtrasRows({
 }
 
 export const VENUE_GROUPS: readonly GroupConfig[] = [
-    { id: 'gastronomyListing', rows: VENUE_LISTING_ROWS },
-    { id: 'gastronomyMenu', rows: VENUE_MENU_ROWS },
+    { id: 'venueListing', rows: VENUE_LISTING_ROWS },
+    { id: 'venueMenu', rows: VENUE_MENU_ROWS },
     {
         id: 'listingExtras',
         rows: listingExtrasRows({ aiChatLimitKey: LimitKeyEnum.MAX_AI_CHAT_VENUE_PER_MONTH })
