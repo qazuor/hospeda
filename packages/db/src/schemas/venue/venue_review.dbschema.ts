@@ -79,7 +79,7 @@ export const venueReviews = pgTable(
     (table) => ({
         venue_reviews_venueId_idx: index('venue_reviews_venueId_idx').on(table.venueId),
         venue_reviews_userId_idx: index('venue_reviews_userId_idx').on(table.userId),
-        gastronomy_reviews_user_gastronomy_uniq: uniqueIndex('venue_reviews_user_venue_uniq').on(
+        venue_reviews_user_venue_uniq: uniqueIndex('venue_reviews_user_venue_uniq').on(
             table.userId,
             table.venueId
         ),

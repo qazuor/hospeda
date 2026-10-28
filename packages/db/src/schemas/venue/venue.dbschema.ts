@@ -190,25 +190,25 @@ export const venues = pgTable(
         deletedById: uuid('deleted_by_id').references(() => users.id, { onDelete: 'set null' })
     },
     (table) => ({
-        gastronomies_destinationId_idx: index('venues_destinationId_idx').on(table.destinationId),
+        venues_destinationId_idx: index('venues_destinationId_idx').on(table.destinationId),
         // HOS-1641 (V6.9b): public and per-destination reads filter on
         // `publication_status = 'PUBLISHED'`; these replace the visibility indexes.
-        gastronomies_publicationStatus_idx: index('venues_publicationStatus_idx').on(
+        venues_publicationStatus_idx: index('venues_publicationStatus_idx').on(
             table.publicationStatus
         ),
-        gastronomies_destinationId_publicationStatus_idx: index(
+        venues_destinationId_publicationStatus_idx: index(
             'venues_destinationId_publicationStatus_idx'
         ).on(table.destinationId, table.publicationStatus),
         // HOS-1286: index for featuredByEntitlement, mirroring the accommodations
         // one — the only featuring source since HOS-1419 dropped `is_featured`.
-        gastronomies_featuredByEntitlement_idx: index('venues_featuredByEntitlement_idx').on(
+        venues_featuredByEntitlement_idx: index('venues_featuredByEntitlement_idx').on(
             table.featuredByEntitlement
         ),
-        gastronomies_type_idx: index('venues_type_idx').on(table.type),
-        gastronomies_ownerId_idx: index('venues_ownerId_idx').on(table.ownerId),
-        gastronomies_deletedAt_idx: index('venues_deletedAt_idx').on(table.deletedAt),
+        venues_type_idx: index('venues_type_idx').on(table.type),
+        venues_ownerId_idx: index('venues_ownerId_idx').on(table.ownerId),
+        venues_deletedAt_idx: index('venues_deletedAt_idx').on(table.deletedAt),
         // Composite indexes (same pattern as accommodations)
-        gastronomies_ownerId_deletedAt_idx: index('venues_ownerId_deletedAt_idx').on(
+        venues_ownerId_deletedAt_idx: index('venues_ownerId_deletedAt_idx').on(
             table.ownerId,
             table.deletedAt
         )
