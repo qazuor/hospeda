@@ -177,7 +177,7 @@ data** — without it they stay empty.
 **What a fresh worktree contains.** After a refresh + `wt:up`, the worktree DB clones the
 current template (sentinel OK, no heal) with the venue and experience example data seeded: at last
 check 6 venue listings, 5 experience listings, 3 venue and experience owners, plus the dev test
-users. Verify with `psql -d worktree_<slug> -c 'SELECT count(*) FROM venues'` and — legacy-name-allowed: legacy table name in a documented psql command (HOS-1823)
+users. Verify with `psql -d worktree_<slug> -c 'SELECT count(*) FROM venues'` and
 `… FROM experiences` — both must be `> 0`.
 
 ## Test users
