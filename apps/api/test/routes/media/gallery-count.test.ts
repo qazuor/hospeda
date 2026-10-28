@@ -73,7 +73,7 @@ describe('resolveVisibleGalleryCount (HOS-372)', () => {
 
         expect(count).toBe(5);
         expect(venueMediaModel.findByVenue).toHaveBeenCalledWith({
-            gastronomyId: ENTITY_ID,
+            venueId: ENTITY_ID,
             state: 'visible',
             isFeatured: false
         });
@@ -90,7 +90,7 @@ describe('resolveVisibleGalleryCount (HOS-372)', () => {
         // Exact equality, NOT objectContaining: a partial matcher stays green
         // when a filter is dropped, which is precisely the failure this asserts.
         expect(venueMediaModel.findByVenue).toHaveBeenCalledWith({
-            gastronomyId: ENTITY_ID,
+            venueId: ENTITY_ID,
             state: 'visible',
             isFeatured: false
         });

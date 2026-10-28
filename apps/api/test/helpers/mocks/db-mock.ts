@@ -1204,11 +1204,11 @@ export function createDbMock() {
             displayWeight: 'display_weight'
         },
         rVenueAmenity: {
-            gastronomyId: 'venue_id',
+            venueId: 'venue_id',
             amenityId: 'amenity_id'
         },
         rVenueFeature: {
-            gastronomyId: 'venue_id',
+            venueId: 'venue_id',
             featureId: 'feature_id',
             hostReWriteName: 'host_rewrite_name',
             comments: 'comments'

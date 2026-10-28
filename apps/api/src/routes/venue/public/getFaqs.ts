@@ -25,7 +25,7 @@ import { createPublicRoute } from '../../../utils/route-factory';
 const venueService = new VenueService({ logger: apiLogger });
 
 /**
- * GET /api/v1/public/venues/:gastronomyId/faqs
+ * GET /api/v1/public/venues/:venueId/faqs
  * List FAQs for a gastronomy listing — Public endpoint.
  *
  * Returns the FAQ array ordered by displayOrder ASC NULLS LAST.
@@ -33,13 +33,13 @@ const venueService = new VenueService({ logger: apiLogger });
  */
 export const publicGetVenueFaqsRoute = createPublicRoute({
     method: 'get',
-    path: '/{gastronomyId}/faqs',
+    path: '/{venueId}/faqs',
     summary: 'List FAQs for a gastronomy listing',
     description:
         'Returns frequently asked questions for a gastronomy listing, ordered by display order',
     tags: ['Gastronomy', 'Gastronomy FAQs'],
     requestParams: {
-        gastronomyId: z.string().uuid({ message: 'zodError.common.id.invalidUuid' })
+        venueId: z.string().uuid({ message: 'zodError.common.id.invalidUuid' })
     },
     responseSchema: VenueFaqPublicListOutputSchema,
     handler: async (ctx: Context, params: Record<string, unknown>) => {
@@ -52,7 +52,7 @@ export const publicGetVenueFaqsRoute = createPublicRoute({
             .model;
 
         const result = await listVenueFaqs(model, actor, {
-            gastronomyId: params.gastronomyId as string
+            venueId: params.venueId as string
         });
 
         if (result.error) {

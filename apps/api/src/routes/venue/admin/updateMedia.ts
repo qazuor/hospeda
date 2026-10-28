@@ -4,14 +4,14 @@
  *
  * The gastronomy twin of `accommodation/admin/updateMedia.ts` (HOS-388). Until this
  * route existed there was no way at all to write a photo's `alt` or `caption`
- * for a gastronomy: the editor never offered the fields, and the only "fix" was to
+ * for a venue: the editor never offered the fields, and the only "fix" was to
  * delete the photo and re-upload it — burning a second Cloudinary asset and
  * losing the photo's gallery position. A photo with no alt text is a photo a
  * screen reader cannot describe and a search engine cannot read.
  *
  * Pure TEXT metadata: `caption`, `description`, `alt`, `attribution`. It can
  * never touch `url`, `publicId`, `moderationState`, `state`, `isFeatured`,
- * `sortOrder` or `gastronomyId` — those columns are not reachable from
+ * `sortOrder` or `venueId` — those columns are not reachable from
  * `GastronomyMediaUpdatePayloadSchema` even if the client sends them (Zod strips
  * unknown keys on a plain object schema).
  *
@@ -91,7 +91,7 @@ export const adminUpdateVenueMediaRoute = createAdminRoute({
             ctx,
             run: () =>
                 updateVenueMedia(model, actor, {
-                    gastronomyId: params.id as string,
+                    venueId: params.id as string,
                     mediaId: params.mediaId as string,
                     caption: payload.caption,
                     description: payload.description,

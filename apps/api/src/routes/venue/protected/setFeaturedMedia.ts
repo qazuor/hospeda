@@ -11,7 +11,7 @@
  * The target media row MUST be `state = 'visible'` — archived photos are
  * rejected before reaching the DB (CHECK constraint guard).
  *
- * No request body — gastronomyId and mediaId come from URL params.
+ * No request body — venueId and mediaId come from URL params.
  *
  * Gated on VENUE_EDIT_OWN (listing owner) or VENUE_EDIT_ALL (staff) —
  * enforced inside `setFeaturedVenueMedia` via `checkVenueCanEditMedia`.
@@ -66,7 +66,7 @@ export const protectedSetFeaturedVenueMediaRoute = createProtectedRoute({
             }
         ).model;
         const result = await setFeaturedVenueMedia(model, actor, {
-            gastronomyId: params.id as string,
+            venueId: params.id as string,
             mediaId: params.mediaId as string
         });
 

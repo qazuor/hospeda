@@ -109,8 +109,8 @@ export const protectedUploadVenueMenuItemPhotoRoute = createProtectedRoute({
 
         // ── 2. Ownership, answered as 404 ────────────────────────────────────
         const actor = getActorFromContext(ctx);
-        const gastronomyId = params.id as string;
-        const listing = await venueService.getById(actor, gastronomyId);
+        const venueId = params.id as string;
+        const listing = await venueService.getById(actor, venueId);
         const hasEditAll = actor.permissions?.includes(PermissionEnum.VENUE_EDIT_ALL);
 
         if (
@@ -173,7 +173,7 @@ export const protectedUploadVenueMenuItemPhotoRoute = createProtectedRoute({
         // a listing holds exactly one attachment. A carta holds as many photos
         // as it has dishes, so a fixed id would make every upload destroy the
         // previous dish's picture.
-        const folder = buildEntityFolder('venue', gastronomyId);
+        const folder = buildEntityFolder('venue', venueId);
 
         let uploaded: Awaited<ReturnType<typeof provider.upload>>;
         try {
@@ -182,7 +182,7 @@ export const protectedUploadVenueMenuItemPhotoRoute = createProtectedRoute({
             apiLogger.error(
                 {
                     error: error instanceof Error ? error.message : String(error),
-                    gastronomyId
+                    venueId
                 },
                 'Gastronomy menu-item photo upload failed'
             );

@@ -65,7 +65,7 @@ export const adminReorderVenueMediaRoute = createAdminRoute({
             ctx,
             run: () =>
                 reorderVenueMedia(model, actor, {
-                    gastronomyId: params.id as string,
+                    venueId: params.id as string,
                     orderedIds: (body as VenueMediaReorderPayload).orderedIds
                 })
         });

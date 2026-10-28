@@ -55,7 +55,7 @@ export const adminGetVenueMediaRoute = createAdminRoute({
         const model = (venueService as unknown as { model: Parameters<typeof getVenueMedia>[0] })
             .model;
         const result = await getVenueMedia(model, actor, {
-            gastronomyId: params.id as string,
+            venueId: params.id as string,
             state
         });
 

@@ -100,7 +100,7 @@ export async function resolveVisibleGalleryCount(
         }
         case 'venue': {
             const { total } = await venueMediaModel.findByVenue({
-                gastronomyId: entityId,
+                venueId: entityId,
                 state: 'visible',
                 isFeatured: false
             });

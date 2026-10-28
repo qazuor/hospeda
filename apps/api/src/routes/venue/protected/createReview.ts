@@ -31,7 +31,7 @@ const writeReviewRateLimit = createSlidingWindowPerUserRateLimit({
  */
 const VenueReviewProtectedSchema = VenueReviewSchema.pick({
     id: true,
-    gastronomyId: true,
+    venueId: true,
     userId: true,
     title: true,
     content: true,
@@ -46,25 +46,25 @@ const VenueReviewProtectedSchema = VenueReviewSchema.pick({
 });
 
 /**
- * POST /api/v1/protected/venues/:gastronomyId/reviews
+ * POST /api/v1/protected/venues/:venueId/reviews
  * Create a gastronomy review — Protected endpoint.
  *
- * gastronomyId and userId are supplied by the URL and the authenticated actor
+ * venueId and userId are supplied by the URL and the authenticated actor
  * respectively — the client MUST NOT echo them in the request body (they are
- * absent from GastronomyReviewCreateInputSchema... actually gastronomyId IS
+ * absent from GastronomyReviewCreateInputSchema... actually venueId IS
  * required there, so we merge it from the path param).
  */
 export const protectedCreateVenueReviewRoute = createProtectedRoute({
     method: 'post',
-    path: '/{gastronomyId}/reviews',
+    path: '/{venueId}/reviews',
     summary: 'Create gastronomy review',
     description:
         'Submits a new review for a gastronomy listing. The review starts in PENDING state awaiting moderation.',
     tags: ['Gastronomy', 'Gastronomy Reviews'],
     requestParams: {
-        gastronomyId: VenueReviewCreateInputSchema.shape.gastronomyId
+        venueId: VenueReviewCreateInputSchema.shape.venueId
     },
-    requestBody: VenueReviewCreateInputSchema.omit({ gastronomyId: true }),
+    requestBody: VenueReviewCreateInputSchema.omit({ venueId: true }),
     responseSchema: VenueReviewProtectedSchema,
     handler: async (
         ctx: Context,
@@ -74,7 +74,7 @@ export const protectedCreateVenueReviewRoute = createProtectedRoute({
         const actor = getActorFromContext(ctx);
         const input = {
             ...(body as z.infer<typeof VenueReviewCreateInputSchema>),
-            gastronomyId: params.gastronomyId as string
+            venueId: params.venueId as string
         };
 
         const service = new VenueReviewService({ logger: apiLogger });

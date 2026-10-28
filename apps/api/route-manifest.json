@@ -3267,7 +3267,7 @@
         },
         {
             "method": "POST",
-            "path": "/api/v1/protected/venues/:gastronomyId/reviews"
+            "path": "/api/v1/protected/venues/:venueId/reviews"
         },
         {
             "method": "GET",
@@ -3899,11 +3899,11 @@
         },
         {
             "method": "GET",
-            "path": "/api/v1/public/venues/:gastronomyId/faqs"
+            "path": "/api/v1/public/venues/:venueId/faqs"
         },
         {
             "method": "GET",
-            "path": "/api/v1/public/venues/:gastronomyId/reviews"
+            "path": "/api/v1/public/venues/:venueId/reviews"
         },
         {
             "method": "GET",

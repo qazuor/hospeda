@@ -53,10 +53,10 @@ export async function handleGetVenueMenuQrScans(
     query: Record<string, unknown>
 ): Promise<z.infer<typeof QrCodeScanStatsSchema>> {
     const actor = getActorFromContext(ctx);
-    const gastronomyId = params.id as string;
+    const venueId = params.id as string;
     const window = query.window as z.infer<typeof QrCodeScanWindowSchema>;
 
-    const listing = await venueService.getById(actor, gastronomyId);
+    const listing = await venueService.getById(actor, venueId);
     const entity = listing.error ? null : listing.data;
 
     // Listing access has already checked ownership; retain the missing-row 404.

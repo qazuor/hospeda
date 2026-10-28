@@ -130,13 +130,13 @@ export const publicGetVenueBySlugRoute = createPublicRoute({
             await Promise.all([
                 fetchVenueAmenities(venue.id),
                 fetchVenueFeatures(venue.id),
-                getVenueMenu(model, { gastronomyId: venue.id }),
-                getVenueEvents(model, { gastronomyId: venue.id }),
-                getVenueDailySpecials(model, { gastronomyId: venue.id, validOn: today })
+                getVenueMenu(model, { venueId: venue.id }),
+                getVenueEvents(model, { venueId: venue.id }),
+                getVenueDailySpecials(model, { venueId: venue.id, validOn: today })
             ]);
 
         const menuGate = applyVenueMenuManagementGate({
-            gastronomy: venue,
+            venue: venue,
             menuSections: menuResult.error ? [] : menuResult.data.sections,
             ownerGrantsMenuManagement: ownerGrants.manage_venue_menu ?? false,
             ownerGrantsMenuItemPhotos: ownerGrants.menu_item_photos ?? false,

@@ -54,7 +54,7 @@ export const adminRemoveVenueMediaRoute = createAdminRoute({
                     model,
                     actor,
                     {
-                        gastronomyId: params.id as string,
+                        venueId: params.id as string,
                         mediaId: params.mediaId as string
                     },
                     getMediaProvider()

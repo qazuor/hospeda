@@ -52,9 +52,9 @@ export const protectedDeleteVenueMenuFileRoute = createProtectedRoute({
     responseSchema: SuccessSchema,
     handler: async (ctx: Context, params: Record<string, unknown>) => {
         const actor = getActorFromContext(ctx);
-        const gastronomyId = params.id as string;
+        const venueId = params.id as string;
 
-        const listing = await venueService.getById(actor, gastronomyId);
+        const listing = await venueService.getById(actor, venueId);
         const hasEditAll = actor.permissions?.includes(PermissionEnum.VENUE_EDIT_ALL);
 
         // 404, not 403 — a 403 would confirm the id exists (error contract).
@@ -86,7 +86,7 @@ export const protectedDeleteVenueMenuFileRoute = createProtectedRoute({
         ).model;
 
         await model.update(
-            { id: gastronomyId },
+            { id: venueId },
             {
                 menuFileUrl: null,
                 menuFilePublicId: null,
@@ -106,7 +106,7 @@ export const protectedDeleteVenueMenuFileRoute = createProtectedRoute({
                 apiLogger.warn(
                     {
                         error: error instanceof Error ? error.message : String(error),
-                        gastronomyId,
+                        venueId,
                         publicId
                     },
                     'Menu file cleared from listing but the stored asset could not be deleted'

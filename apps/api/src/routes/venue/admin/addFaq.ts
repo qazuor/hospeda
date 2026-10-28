@@ -47,7 +47,7 @@ export const adminAddVenueFaqRoute = createAdminRoute({
         const actor = getActorFromContext(ctx);
 
         const input: VenueFaqAddInput = {
-            gastronomyId: params.id as string,
+            venueId: params.id as string,
             faq: body as FaqWithChannelVisibilityCreatePayloadType
         };
 

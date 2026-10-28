@@ -158,8 +158,8 @@ export const protectedUploadVenueMenuFileRoute = createProtectedRoute({
         // 404 rather than 403 is the error contract's anti-enumeration rule —
         // a 403 would confirm the id exists.
         const actor = getActorFromContext(ctx);
-        const gastronomyId = params.id as string;
-        const listing = await venueService.getById(actor, gastronomyId);
+        const venueId = params.id as string;
+        const listing = await venueService.getById(actor, venueId);
         const hasEditAll = actor.permissions?.includes(PermissionEnum.VENUE_EDIT_ALL);
 
         if (
@@ -224,7 +224,7 @@ export const protectedUploadVenueMenuFileRoute = createProtectedRoute({
         // `resourceType: 'auto'` because the same route stores both kinds and
         // the default (`'image'`) would make Cloudinary try to rasterise the
         // PDF.
-        const folder = buildEntityFolder('venue', gastronomyId);
+        const folder = buildEntityFolder('venue', venueId);
 
         let uploaded: Awaited<ReturnType<typeof provider.upload>>;
         try {
@@ -239,7 +239,7 @@ export const protectedUploadVenueMenuFileRoute = createProtectedRoute({
             apiLogger.error(
                 {
                     error: error instanceof Error ? error.message : String(error),
-                    gastronomyId
+                    venueId
                 },
                 'Gastronomy menu-file upload failed'
             );
@@ -270,7 +270,7 @@ export const protectedUploadVenueMenuFileRoute = createProtectedRoute({
         ).model;
 
         await model.update(
-            { id: gastronomyId },
+            { id: venueId },
             {
                 menuFileUrl: uploaded.url,
                 menuFilePublicId: uploaded.publicId,

@@ -11,7 +11,7 @@
  * The target media row MUST be `state = 'visible'` — archived photos are
  * rejected before reaching the DB (CHECK constraint guard).
  *
- * No request body — gastronomyId and mediaId come from URL params.
+ * No request body — venueId and mediaId come from URL params.
  */
 import { VenueMediaSingleOutputSchema, VerticalEnum } from '@repo/schemas';
 import { ServiceError, setFeaturedVenueMedia, VenueService } from '@repo/service-core';
@@ -60,7 +60,7 @@ export const adminSetFeaturedVenueMediaRoute = createAdminRoute({
             ctx,
             run: () =>
                 setFeaturedVenueMedia(model, actor, {
-                    gastronomyId: params.id as string,
+                    venueId: params.id as string,
                     mediaId: params.mediaId as string
                 })
         });

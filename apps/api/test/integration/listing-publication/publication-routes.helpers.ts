@@ -471,7 +471,7 @@ export async function createVerticalListing(args: {
         );
         if (args.complete !== false) {
             await getDb().insert(venueMedia).values({
-                gastronomyId: listing.id,
+                venueId: listing.id,
                 url: 'https://example.test/matrix.jpg',
                 moderationState: 'APPROVED',
                 state: 'visible',

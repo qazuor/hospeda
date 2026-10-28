@@ -103,7 +103,7 @@ const ANSWER = 'Sí, todas las opciones sin TACC están marcadas en la carta.';
  */
 const FAQ_ROW = {
     id: FAQ_ID,
-    gastronomyId: VENUE_ID,
+    venueId: VENUE_ID,
     question: QUESTION,
     answer: ANSWER,
     category: null,

@@ -101,7 +101,7 @@ async function patchGastronomy(options: {
 // ---------------------------------------------------------------------------
 
 test.describe('LISTING-OWNER-04: PATCH updateOwn permission gate @p0 @listing-owner', () => {
-    let gastronomyId: string;
+    let venueId: string;
 
     test.beforeAll(async () => {
         const rows = await execSQL<{ id: string }>(
@@ -112,7 +112,7 @@ test.describe('LISTING-OWNER-04: PATCH updateOwn permission gate @p0 @listing-ow
         if (!row) {
             throw new Error(`Gastronomy '${GASTRONOMY_SLUG}' not found — run e2e:seed first`);
         }
-        gastronomyId = row.id;
+        venueId = row.id;
     });
 
     test('non-owner USER gets NOT_FOUND on PATCH updateOwn (ownership-first, no info disclosure)', async () => {
@@ -130,7 +130,7 @@ test.describe('LISTING-OWNER-04: PATCH updateOwn permission gate @p0 @listing-ow
         // reachable via seeded roles and is covered by the unit test
         // listing.permissions.test.ts ("should forbid actor with no permissions").
         const response = await patchGastronomy({
-            listingId: gastronomyId,
+            listingId: venueId,
             sessionCookie,
             body: { richDescription: 'Should be blocked by the ownership gate' }
         });
@@ -150,7 +150,7 @@ test.describe('LISTING-OWNER-04: PATCH updateOwn permission gate @p0 @listing-ow
         // PATCH Julieta's own listing — should succeed with 200.
         // Use a stable field that does not interfere with other tests.
         const response = await patchGastronomy({
-            listingId: gastronomyId,
+            listingId: venueId,
             sessionCookie,
             body: { richDescription: `E2E permission gate test ${Date.now()}` }
         });
@@ -171,7 +171,7 @@ test.describe('LISTING-OWNER-04: PATCH updateOwn permission gate @p0 @listing-ow
             { apiBaseUrl: API_URL, webBaseUrl: WEB_URL }
         );
 
-        // Rodrigo's gastronomy: la-cerveceria-del-rio (static ID from id-mappings.json).
+        // Rodrigo's venue: la-cerveceria-del-rio (static ID from id-mappings.json).
         const RODRIGO_VENUE_ID = '322263e1-2a1c-59bc-bdcf-8d30818b7a55';
 
         const response = await patchGastronomy({

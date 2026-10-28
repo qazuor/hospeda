@@ -52,7 +52,7 @@ export const protectedReorderVenueFaqsRoute = createProtectedRoute({
         const model = (venueService as unknown as { model: Parameters<typeof reorderVenueFaqs>[0] })
             .model;
         const result = await reorderVenueFaqs(model, actor, {
-            gastronomyId: params.id as string,
+            venueId: params.id as string,
             order: (body as { order: Array<{ faqId: string; displayOrder: number }> }).order
         });
 

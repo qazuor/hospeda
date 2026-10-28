@@ -91,9 +91,9 @@ export async function handleGetVenueMenuQr(
     params: Record<string, unknown>
 ): Promise<z.infer<typeof VenueMenuQrResponseSchema>> {
     const actor = getActorFromContext(ctx);
-    const gastronomyId = params.id as string;
+    const venueId = params.id as string;
 
-    const listing = await venueService.getById(actor, gastronomyId);
+    const listing = await venueService.getById(actor, venueId);
     const entity = listing.error ? null : listing.data;
 
     // Listing access has already checked ownership; retain the missing-row 404.

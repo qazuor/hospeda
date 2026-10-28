@@ -152,7 +152,7 @@ describe.each(verticals)('TEST:V9b:3 AC:V9b:3 reseñas de terceros — %s', (ver
             const [review] = await getDb()
                 .insert(venueReviews)
                 .values({
-                    gastronomyId: listingId,
+                    venueId: listingId,
                     userId: reviewer.id,
                     title: 'Third-party title',
                     content: reviewText,

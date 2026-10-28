@@ -67,7 +67,7 @@ export const protectedReorderVenueMediaRoute = createProtectedRoute({
             venueService as unknown as { model: Parameters<typeof reorderVenueMedia>[0] }
         ).model;
         const result = await reorderVenueMedia(model, actor, {
-            gastronomyId: params.id as string,
+            venueId: params.id as string,
             orderedIds: (body as VenueMediaReorderPayload).orderedIds
         });
 

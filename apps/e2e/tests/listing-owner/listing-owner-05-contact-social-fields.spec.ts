@@ -86,7 +86,7 @@ async function authenticateContext(
 // ---------------------------------------------------------------------------
 
 test.describe('LISTING-OWNER-05: contact has no website; social includes linkedIn @p0 @listing-owner', () => {
-    let gastronomyId: string;
+    let venueId: string;
     let originalLinkedIn: string | null;
 
     test.beforeAll(async () => {
@@ -98,7 +98,7 @@ test.describe('LISTING-OWNER-05: contact has no website; social includes linkedI
         if (!row) {
             throw new Error(`Gastronomy '${GASTRONOMY_SLUG}' not found — run e2e:seed first`);
         }
-        gastronomyId = row.id;
+        venueId = row.id;
         originalLinkedIn = row.social_networks?.linkedIn ?? null;
     });
 
@@ -144,7 +144,7 @@ test.describe('LISTING-OWNER-05: contact has no website; social includes linkedI
             listingEditorUrl({
                 webUrl: WEB_URL,
                 vertical: 'venue',
-                listingId: gastronomyId,
+                listingId: venueId,
                 section: 'contacto'
             }),
             { waitUntil: 'load' }
@@ -195,7 +195,7 @@ test.describe('LISTING-OWNER-05: contact has no website; social includes linkedI
             listingEditorUrl({
                 webUrl: WEB_URL,
                 vertical: 'venue',
-                listingId: gastronomyId,
+                listingId: venueId,
                 section: 'contacto'
             }),
             { waitUntil: 'load' }
@@ -229,7 +229,7 @@ test.describe('LISTING-OWNER-05: contact has no website; social includes linkedI
             listingEditorUrl({
                 webUrl: WEB_URL,
                 vertical: 'venue',
-                listingId: gastronomyId,
+                listingId: venueId,
                 section: 'contacto'
             }),
             { waitUntil: 'load' }

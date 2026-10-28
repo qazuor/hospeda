@@ -50,7 +50,7 @@ export const adminReorderVenueFaqsRoute = createAdminRoute({
         const actor = getActorFromContext(ctx);
 
         const reorderInput = VenueFaqReorderInputSchema.parse({
-            gastronomyId: params.id as string,
+            venueId: params.id as string,
             order: (body as FaqReorderPayload).order
         });
 

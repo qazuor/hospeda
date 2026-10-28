@@ -38,7 +38,7 @@ export const adminGetVenueFaqsRoute = createAdminRoute({
             .model;
 
         const result = await listVenueFaqs(model, actor, {
-            gastronomyId: params.id as string
+            venueId: params.id as string
         });
 
         if (result.error) {

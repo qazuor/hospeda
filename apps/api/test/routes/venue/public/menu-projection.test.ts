@@ -18,7 +18,7 @@ import { applyVenueMenuManagementGate } from '../../../../src/routes/venue/publi
 
 const SECTION: VenueMenuSectionPublic = {
     id: '11111111-1111-4111-8111-111111111111',
-    gastronomyId: '22222222-2222-4222-8222-222222222222',
+    venueId: '22222222-2222-4222-8222-222222222222',
     name: 'Entradas',
     description: null,
     displayOrder: 0,
@@ -33,7 +33,7 @@ const PHOTO_URL = 'https://res.cloudinary.com/x/empanada.jpg';
 const ITEM_WITH_PHOTO: VenueMenuItemPublic = {
     id: '33333333-3333-4333-8333-333333333333',
     sectionId: SECTION.id,
-    gastronomyId: SECTION.gastronomyId,
+    venueId: SECTION.venueId,
     name: 'Empanada de carne',
     description: null,
     priceCents: 250_000,
@@ -60,7 +60,7 @@ const SECTION_WITH_PHOTO = {
 const ITEM_WITH_TRANSLATION: VenueMenuItemPublic = {
     id: '44444444-4444-4444-8444-444444444444',
     sectionId: SECTION.id,
-    gastronomyId: SECTION.gastronomyId,
+    venueId: SECTION.venueId,
     name: 'Empanada de carne',
     description: null,
     nameI18n: { es: 'Empanada de carne', en: 'Beef empanada', pt: 'Empanada de carne' },
@@ -85,7 +85,7 @@ const SECTION_WITH_TRANSLATION: VenueMenuSectionPublic = {
 describe('applyVenueMenuManagementGate', () => {
     it('withholds the file and the structured carta when the owner is not entitled', () => {
         const result = applyVenueMenuManagementGate({
-            gastronomy: {
+            venue: {
                 menuFileUrl: 'https://res.cloudinary.com/x/menu.jpg',
                 menuFileKind: 'image'
             },
@@ -102,7 +102,7 @@ describe('applyVenueMenuManagementGate', () => {
 
     it('passes the file and the structured carta through when the owner is entitled', () => {
         const result = applyVenueMenuManagementGate({
-            gastronomy: {
+            venue: {
                 menuFileUrl: 'https://res.cloudinary.com/x/menu.pdf',
                 menuFileKind: 'pdf'
             },
@@ -123,7 +123,7 @@ describe('applyVenueMenuManagementGate', () => {
         // grant. This case pins that an entitled owner with nothing set gets
         // the honest `null`, not an accidental non-null leftover.
         const result = applyVenueMenuManagementGate({
-            gastronomy: { menuFileUrl: null, menuFileKind: null },
+            venue: { menuFileUrl: null, menuFileKind: null },
             menuSections: [],
             ownerGrantsMenuManagement: true,
             ownerGrantsMenuItemPhotos: true,
@@ -141,7 +141,7 @@ describe('applyVenueMenuManagementGate', () => {
         // "loaded, and there are none" — the same convention amenities/features
         // already use on this schema.
         const result = applyVenueMenuManagementGate({
-            gastronomy: { menuFileUrl: undefined, menuFileKind: undefined },
+            venue: { menuFileUrl: undefined, menuFileKind: undefined },
             menuSections: [],
             ownerGrantsMenuManagement: true,
             ownerGrantsMenuItemPhotos: true,
@@ -155,7 +155,7 @@ describe('applyVenueMenuManagementGate', () => {
 
     it('publishes the dish photo when the owner is entitled to photos', () => {
         const result = applyVenueMenuManagementGate({
-            gastronomy: { menuFileUrl: null, menuFileKind: null },
+            venue: { menuFileUrl: null, menuFileKind: null },
             menuSections: [SECTION_WITH_PHOTO],
             ownerGrantsMenuManagement: true,
             ownerGrantsMenuItemPhotos: true,
@@ -178,7 +178,7 @@ describe('applyVenueMenuManagementGate', () => {
         // `ownerGrantsMenuManagement` stays TRUE here, so a mutation that made
         // the photo follow the carta's grant fails this case and only this one.
         const result = applyVenueMenuManagementGate({
-            gastronomy: { menuFileUrl: null, menuFileKind: null },
+            venue: { menuFileUrl: null, menuFileKind: null },
             menuSections: [SECTION_WITH_PHOTO],
             ownerGrantsMenuManagement: true,
             ownerGrantsMenuItemPhotos: false,
@@ -202,7 +202,7 @@ describe('applyVenueMenuManagementGate', () => {
         // `undefined`, and only the first is what the omission promises.
         for (const grantsPhotos of [true, false]) {
             const result = applyVenueMenuManagementGate({
-                gastronomy: { menuFileUrl: null, menuFileKind: null },
+                venue: { menuFileUrl: null, menuFileKind: null },
                 menuSections: [SECTION_WITH_PHOTO],
                 ownerGrantsMenuManagement: true,
                 ownerGrantsMenuItemPhotos: grantsPhotos,
@@ -219,7 +219,7 @@ describe('applyVenueMenuManagementGate', () => {
 
     it('publishes the section and dish translations when the owner is entitled', () => {
         const result = applyVenueMenuManagementGate({
-            gastronomy: { menuFileUrl: null, menuFileKind: null },
+            venue: { menuFileUrl: null, menuFileKind: null },
             menuSections: [SECTION_WITH_TRANSLATION],
             ownerGrantsMenuManagement: true,
             ownerGrantsMenuItemPhotos: true,
@@ -244,7 +244,7 @@ describe('applyVenueMenuManagementGate', () => {
         // a mutation that made translations follow the carta's own grant
         // fails this case and only this one.
         const result = applyVenueMenuManagementGate({
-            gastronomy: { menuFileUrl: null, menuFileKind: null },
+            venue: { menuFileUrl: null, menuFileKind: null },
             menuSections: [SECTION_WITH_TRANSLATION],
             ownerGrantsMenuManagement: true,
             ownerGrantsMenuItemPhotos: true,
@@ -270,7 +270,7 @@ describe('applyVenueMenuManagementGate', () => {
         } as unknown as VenueMenuSectionPublic;
 
         const result = applyVenueMenuManagementGate({
-            gastronomy: { menuFileUrl: null, menuFileKind: null },
+            venue: { menuFileUrl: null, menuFileKind: null },
             menuSections: [combined],
             ownerGrantsMenuManagement: true,
             ownerGrantsMenuItemPhotos: true,

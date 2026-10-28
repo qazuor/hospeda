@@ -1,5 +1,5 @@
 /**
- * Tests for POST /api/v1/protected/venues/:gastronomyId/reviews
+ * Tests for POST /api/v1/protected/venues/:venueId/reviews
  *
  * Covers:
  * - Route registration
@@ -37,7 +37,7 @@ vi.mock('@repo/service-core', async (importOriginal) => {
                 return {
                     data: {
                         id: 'review-id',
-                        gastronomyId: input.gastronomyId as string,
+                        venueId: input.venueId as string,
                         userId: actor?.id ?? null,
                         overallRating: input.overallRating as number,
                         moderationState: 'PENDING',
@@ -55,7 +55,7 @@ vi.mock('@repo/service-core', async (importOriginal) => {
     };
 });
 
-describe('POST /api/v1/protected/venues/:gastronomyId/reviews', () => {
+describe('POST /api/v1/protected/venues/:venueId/reviews', () => {
     let app: AppOpenAPI;
 
     beforeAll(() => {

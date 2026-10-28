@@ -102,7 +102,7 @@ function projectSections(
  * one fallback still free on every tier and is never gated, so the caller
  * passes it through unchanged.
  *
- * @param input.gastronomy - The stored `menuFileUrl`/`menuFileKind` columns.
+ * @param input.venue - The stored `menuFileUrl`/`menuFileKind` columns.
  * @param input.menuSections - The structured carta's sections, as read (may be
  *   non-empty even when `ownerGrantsMenuManagement` is `false` — a downgraded
  *   owner's previously-typed carta is not deleted).
@@ -117,14 +117,14 @@ function projectSections(
  *   convention `amenities`/`features` already use on this schema.
  */
 export function applyVenueMenuManagementGate(input: {
-    readonly gastronomy: VenueMenuGateSource;
+    readonly venue: VenueMenuGateSource;
     readonly menuSections: readonly VenueMenuSectionPublic[];
     readonly ownerGrantsMenuManagement: boolean;
     readonly ownerGrantsMenuItemPhotos: boolean;
     readonly ownerGrantsMenuTranslations: boolean;
 }): VenueMenuGateResult {
     const {
-        gastronomy: venue,
+        venue,
         menuSections,
         ownerGrantsMenuManagement,
         ownerGrantsMenuItemPhotos,

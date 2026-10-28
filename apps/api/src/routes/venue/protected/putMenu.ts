@@ -55,7 +55,7 @@ export async function handlePutVenueMenu(
         .model;
 
     const result = await replaceVenueMenu(model, actor, {
-        gastronomyId: params.id as string,
+        venueId: params.id as string,
         // TYPE-WORKAROUND: the factory hands the handler a
         // `Record<string, unknown>`, but the body has already been validated
         // against `GastronomyMenuReplacePayloadSchema` by the route; the service

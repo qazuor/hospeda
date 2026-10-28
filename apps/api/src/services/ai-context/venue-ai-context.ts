@@ -312,7 +312,7 @@ export async function assembleVenueContext(
  * adopting HOS-393 AC-11). A FAQ missing the field (pre-migration data) reads
  * as usable, matching the column's `DEFAULT true`.
  */
-async function safeLoadFaqs(gastronomyId: string): Promise<VenueContextFaq[]> {
+async function safeLoadFaqs(venueId: string): Promise<VenueContextFaq[]> {
     try {
         const db = getDb();
         const rows = await db
@@ -320,7 +320,7 @@ async function safeLoadFaqs(gastronomyId: string): Promise<VenueContextFaq[]> {
             .from(venueFaqs)
             .where(
                 and(
-                    eq(venueFaqs.gastronomyId, gastronomyId),
+                    eq(venueFaqs.venueId, venueId),
                     isNull(venueFaqs.deletedAt),
                     eq(venueFaqs.lifecycleState, 'ACTIVE'),
                     eq(venueFaqs.isUsableByAi, true)
@@ -331,7 +331,7 @@ async function safeLoadFaqs(gastronomyId: string): Promise<VenueContextFaq[]> {
         return rows;
     } catch (error) {
         apiLogger.warn(
-            { gastronomyId, error: error instanceof Error ? error.message : String(error) },
+            { venueId, error: error instanceof Error ? error.message : String(error) },
             'gastronomy-ai-context: failed to load FAQs; continuing with empty list'
         );
         return [];
@@ -344,7 +344,7 @@ async function safeLoadFaqs(gastronomyId: string): Promise<VenueContextFaq[]> {
  * Returns `[]` on any error, with a logged warning — the same graceful contract
  * the accommodation assembler applies to its secondary relations.
  */
-async function safeLoadMenuItems(gastronomyId: string): Promise<VenueContextMenuItem[]> {
+async function safeLoadMenuItems(venueId: string): Promise<VenueContextMenuItem[]> {
     try {
         const db = getDb();
         const rows = await db
@@ -357,13 +357,13 @@ async function safeLoadMenuItems(gastronomyId: string): Promise<VenueContextMenu
             })
             .from(venueMenuItems)
             .leftJoin(venueMenuSections, eq(venueMenuItems.sectionId, venueMenuSections.id))
-            .where(eq(venueMenuItems.gastronomyId, gastronomyId))
+            .where(eq(venueMenuItems.venueId, venueId))
             .orderBy(asc(venueMenuSections.displayOrder), asc(venueMenuItems.displayOrder))
             .limit(VENUE_CONTEXT_MENU_ITEM_MAX);
         return rows;
     } catch (error) {
         apiLogger.warn(
-            { gastronomyId, error: error instanceof Error ? error.message : String(error) },
+            { venueId, error: error instanceof Error ? error.message : String(error) },
             'gastronomy-ai-context: failed to load menu items; continuing with empty carta'
         );
         return [];

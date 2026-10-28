@@ -36,7 +36,7 @@ export const adminRemoveVenueFaqRoute = createAdminRoute({
         const actor = getActorFromContext(ctx);
 
         const input: VenueFaqRemoveInput = {
-            gastronomyId: params.id as string,
+            venueId: params.id as string,
             faqId: params.faqId as string
         };
 

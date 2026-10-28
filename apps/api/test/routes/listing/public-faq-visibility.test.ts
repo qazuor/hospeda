@@ -25,7 +25,7 @@ const faq = (
     id: `00000000-0000-4000-8000-00000000000${n}`,
     question: overrides.question ?? `Visible question number ${n}`,
     answer: `A long enough answer number ${n}`,
-    gastronomyId: LISTING_ID,
+    venueId: LISTING_ID,
     experienceId: LISTING_ID,
     displayOrder: n,
     category: null,

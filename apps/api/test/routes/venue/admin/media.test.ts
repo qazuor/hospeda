@@ -106,7 +106,7 @@ const NO_PERMS_HEADERS = {
 
 const buildMediaRow = (id: string, sortOrder: number) => ({
     id,
-    gastronomyId: VENUE_ID,
+    venueId: VENUE_ID,
     url: `https://res.cloudinary.com/demo/image/upload/${id}.jpg`,
     publicId: `hospeda/dev/${id}`,
     caption: 'Plato principal',
@@ -266,9 +266,9 @@ describe('Gastronomy media routes — Admin tier (HOS-372)', () => {
                 const call = mockReorderVenueMedia.mock.calls[0] as [
                     unknown,
                     unknown,
-                    { gastronomyId: string; orderedIds: string[] }
+                    { venueId: string; orderedIds: string[] }
                 ];
-                expect(call[2].gastronomyId).toBe(VENUE_ID);
+                expect(call[2].venueId).toBe(VENUE_ID);
                 expect(call[2].orderedIds).toEqual([MEDIA_ID_2, MEDIA_ID_1]);
             }
         });
