@@ -1,5 +1,5 @@
 /**
- * Turns a gastronomy or experience listing's PUBLIC projection into printable brochure content
+ * Turns a venue or experience listing's PUBLIC projection into printable brochure content
  * (HOS-1058).
  *
  * ---
@@ -7,7 +7,7 @@
  *
  * **The brochure is a rendering of the public ficha, never of the row.**
  *
- * Every field below is read off `GastronomyPublicSchema` /
+ * Every field below is read off `VenuePublicSchema` /
  * `ExperiencePublicSchema` — the same projections the anonymous detail
  * endpoints answer with. That is not a convenience: a printed PDF is the one
  * artifact that leaves the platform entirely, gets photocopied and left on a
@@ -17,8 +17,8 @@
  *
  * Two consequences are worth stating because they read as omissions:
  *
- * - **A gastronomy brochure carries no phone and no e-mail.**
- *   `GastronomyPublicSchema` does not pick `contactInfo` at all (the comment
+ * - **A venue brochure carries no phone and no e-mail.**
+ *   `VenuePublicSchema` does not pick `contactInfo` at all (the comment
  *   there calls it "restaurant contact info at owner discretion", published
  *   through `socialNetworks`), so a phone number in the PDF would be a field
  *   the public page does not show. The experience projection DOES publish a
@@ -40,7 +40,7 @@ import { trans } from '@repo/i18n';
 import { ModerationStatusEnum } from '@repo/schemas';
 import type { ExperienceBrochureSource, VenueBrochureSource } from './brochure-source.js';
 
-/** The two gastronomy and experience verticals a brochure can be built for. */
+/** The two venue and experience verticals a brochure can be built for. */
 export type BrochureVertical = 'venue' | 'experience';
 
 /** One titled block of the printed page. */
@@ -308,10 +308,10 @@ function commonFooterCopy(input: { locale: Locale }): { qrHint: string; footer: 
 }
 
 /**
- * Builds the brochure content of a gastronomy listing.
+ * Builds the brochure content of a venue listing.
  *
  * @param input.listing - The listing, ALREADY projected through
- *   `GastronomyPublicSchema`. Passing a protected or admin projection here
+ *   `VenuePublicSchema`. Passing a protected or admin projection here
  *   would defeat the whole point of the module — the route parses first.
  * @param input.locale - Locale to print in.
  * @param input.siteUrl - Public base URL of the web app.

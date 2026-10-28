@@ -34,7 +34,7 @@ export const adminAddVenueMediaRoute = createAdminRoute({
     method: 'post',
     listingAccess: { vertical: VerticalEnum.VENUE, operation: 'EDIT', idParam: 'id' },
     path: '/{id}/media',
-    summary: 'Add photo to gastronomy listing gallery (admin)',
+    summary: 'Add photo to venue listing gallery (admin)',
     description:
         'Registers an already-uploaded URL as a new venue_media row. Requires VENUE_EDIT_ALL.',
     tags: ['Venue', 'Media'],

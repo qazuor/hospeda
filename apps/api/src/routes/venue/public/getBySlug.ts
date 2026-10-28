@@ -39,8 +39,8 @@ const venueService = new VenueService({ logger: apiLogger });
 export const publicGetVenueBySlugRoute = createPublicRoute({
     method: 'get',
     path: '/slug/{slug}',
-    summary: 'Get gastronomy listing by slug',
-    description: 'Retrieves a gastronomy listing by its URL-friendly slug',
+    summary: 'Get venue listing by slug',
+    description: 'Retrieves a venue listing by its URL-friendly slug',
     tags: ['Venue'],
     requestParams: {
         slug: z.string().min(1).max(255)

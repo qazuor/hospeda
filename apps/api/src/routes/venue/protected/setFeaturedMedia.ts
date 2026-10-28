@@ -42,7 +42,7 @@ const venueService = new VenueService({ logger: apiLogger });
 export const protectedSetFeaturedVenueMediaRoute = createProtectedRoute({
     method: 'put',
     path: '/{id}/media/{mediaId}/featured',
-    summary: 'Set featured photo for gastronomy listing gallery',
+    summary: 'Set featured photo for venue listing gallery',
     description:
         'Promotes the target media row to is_featured=true and demotes the previous ' +
         'featured row (if any). Archived photos cannot be featured — restore the ' +

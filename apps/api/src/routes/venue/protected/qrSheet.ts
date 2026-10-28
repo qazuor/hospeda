@@ -136,7 +136,7 @@ export async function handleGetVenueQrSheet(
 export const protectedGetVenueQrSheetRoute = createProtectedRoute({
     method: 'get',
     path: '/{id}/qr-sheet',
-    summary: 'Download the printable QR sheet of a gastronomy listing',
+    summary: 'Download the printable QR sheet of a venue listing',
     description:
         'Returns a print-ready A4 PDF carrying a large QR code that resolves to the listing’s public page, the business name, an invitation to scan and the Hospeda brand. Designed to be taped to a door or left on a counter. Owner-only, and only for a listing that is publicly visible. No plan entitlement is required.',
     tags: ['Venue'],

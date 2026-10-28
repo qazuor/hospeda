@@ -35,7 +35,7 @@ const venueService = new VenueService({ logger: apiLogger });
 export const protectedRemoveVenueMediaRoute = createProtectedRoute({
     method: 'delete',
     path: '/{id}/media/{mediaId}',
-    summary: 'Remove photo from gastronomy listing gallery',
+    summary: 'Remove photo from venue listing gallery',
     description:
         'Soft-deletes a media row and resequences the remaining visible photos. ' +
         'Requires VENUE_EDIT_OWN (listing owner) or VENUE_EDIT_ALL (staff).',

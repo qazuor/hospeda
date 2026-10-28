@@ -110,7 +110,7 @@ export const validateEntityMediaPermission = ({
     //
     // HOS-1079: an exhaustive switch, not a binary ternary. Reached only for
     // `entityType` values already confirmed to be in `OWN_ANY_ENTITIES` (the
-    // guard above), i.e. exactly {accommodation, gastronomy, experience} — so
+    // guard above), i.e. exactly {accommodation, venue, experience} — so
     // `null` here is a defensive, never-actually-hit fallback for any OTHER
     // `MediaEntityType`, matching the ownership-required behaviour every
     // non-OWN/ANY entity already gets.

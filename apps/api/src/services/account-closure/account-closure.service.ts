@@ -32,7 +32,7 @@ import {
 
 /**
  * The three listing verticals whose trial-machine lock action 24 takes, in this
- * fixed order (accommodation, gastronomy, experience): the same order every
+ * fixed order (accommodation, venue, experience): the same order every
  * closure uses, so two of them never wait on each other crosswise.
  */
 const LISTING_LOCK_VERTICALS = [

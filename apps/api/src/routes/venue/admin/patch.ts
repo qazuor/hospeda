@@ -29,9 +29,8 @@ export const adminPatchVenueRoute = createAdminRoute({
     method: 'patch',
     listingAccess: { vertical: VerticalEnum.VENUE, operation: 'EDIT', idParam: 'id' },
     path: '/{id}',
-    summary: 'Partial update gastronomy listing (admin)',
-    description:
-        'Updates specific fields of a gastronomy listing. Requires VENUE_EDIT_ALL permission.',
+    summary: 'Partial update venue listing (admin)',
+    description: 'Updates specific fields of a venue listing. Requires VENUE_EDIT_ALL permission.',
     tags: ['Venue'],
     requestParams: {
         id: z.string().uuid({ message: 'zodError.common.id.invalidUuid' })

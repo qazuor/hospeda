@@ -116,7 +116,7 @@ export async function handleGetVenueBrochure(
         purpose: QrCodePurposeEnum.BROCHURE,
         targetUrl: content.url,
         label: buildEntityQrLabel({
-            description: 'Gastronomy brochure QR',
+            description: 'venue brochure QR',
             name: entity.name,
             slug: parsed.data.slug
         }),
@@ -143,9 +143,9 @@ export const protectedGetVenueBrochureRoute = createProtectedRoute({
         idParam: 'id',
         step6Key: 'download_listing_pdf'
     },
-    summary: 'Download the printable PDF sheet of a gastronomy listing',
+    summary: 'Download the printable PDF sheet of a venue listing',
     description:
-        'Returns a print-ready A4 PDF of the listing’s PUBLIC page — cover photo, opening hours, contact, services and a QR back to the online sheet. Owner-only, and only for a listing that is publicly visible. Requires the download_listing_pdf entitlement, granted by the premium gastronomy plan.',
+        'Returns a print-ready A4 PDF of the listing’s PUBLIC page — cover photo, opening hours, contact, services and a QR back to the online sheet. Owner-only, and only for a listing that is publicly visible. Requires the download_listing_pdf entitlement, granted by the premium venue plan.',
     tags: ['Venue'],
     requestParams: {
         id: z.string().uuid({ message: 'zodError.common.id.invalidUuid' })

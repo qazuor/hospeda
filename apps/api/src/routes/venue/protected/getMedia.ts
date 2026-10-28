@@ -29,12 +29,12 @@ const venueService = new VenueService({ logger: apiLogger });
 export const protectedGetVenueMediaRoute = createCRUDRoute({
     method: 'get',
     path: '/{id}/media',
-    summary: 'List gastronomy listing gallery photos',
+    summary: 'List venue listing gallery photos',
     description:
-        'Retrieves all media rows for a gastronomy listing, ordered by sortOrder ASC. ' +
+        'Retrieves all media rows for a venue listing, ordered by sortOrder ASC. ' +
         'Supports an optional `state` query filter (default: visible). ' +
         'Requires VENUE_EDIT_OWN (listing owner) or VENUE_EDIT_ALL (staff).',
-    tags: ['Venue', 'Gastronomy Media'],
+    tags: ['Venue', 'venue Media'],
     requestParams: {
         id: z.string().uuid({ message: 'zodError.common.id.invalidUuid' })
     },

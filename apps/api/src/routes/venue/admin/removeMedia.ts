@@ -32,7 +32,7 @@ export const adminRemoveVenueMediaRoute = createAdminRoute({
     method: 'delete',
     listingAccess: { vertical: VerticalEnum.VENUE, operation: 'EDIT', idParam: 'id' },
     path: '/{id}/media/{mediaId}',
-    summary: 'Remove photo from gastronomy listing gallery (admin)',
+    summary: 'Remove photo from venue listing gallery (admin)',
     description:
         'Soft-deletes a media row and resequences the remaining visible photos. Requires VENUE_EDIT_ALL.',
     tags: ['Venue', 'Media'],

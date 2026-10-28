@@ -75,9 +75,9 @@ export async function handlePutVenueEvents(
 export const protectedPutVenueEventsRoute = createProtectedRoute({
     method: 'put',
     path: '/{id}/events',
-    summary: 'Replace the venue events agenda of a gastronomy listing',
+    summary: 'Replace the venue events agenda of a venue listing',
     description:
-        'Replaces the listing’s own events with the submitted document. Each entry is either dated (recurrence "once" with a date) or weekly (recurrence "weekly" with a weekday 0-6, Sunday-based); the two are mutually exclusive and the payload is rejected if an entry declares neither or both. An empty events array takes the agenda down. Owner-only, and requires the manage_venue_events entitlement granted by the professional gastronomy plan and above.',
+        'Replaces the listing’s own events with the submitted document. Each entry is either dated (recurrence "once" with a date) or weekly (recurrence "weekly" with a weekday 0-6, Sunday-based); the two are mutually exclusive and the payload is rejected if an entry declares neither or both. An empty events array takes the agenda down. Owner-only, and requires the manage_venue_events entitlement granted by the professional venue plan and above.',
     listingAccess: {
         vertical: VerticalEnum.VENUE,
         operation: 'EDIT',

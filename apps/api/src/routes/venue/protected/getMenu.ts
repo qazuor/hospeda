@@ -83,10 +83,10 @@ export async function handleGetVenueMenu(ctx: Context, params: Record<string, un
 export const protectedGetVenueMenuRoute = createCRUDRoute({
     method: 'get',
     path: '/{id}/menu',
-    summary: 'Read the menu of a gastronomy listing',
+    summary: 'Read the menu of a venue listing',
     description:
-        "Returns the listing's structured menu (sections and dishes) together with the uploaded photo/PDF and the external menu link, if set. Owner-only. Not gated on the structured-menu entitlement: every gastronomy tier can see its own menu, and only writing the structured half is a paid capability.",
-    tags: ['Venue', 'Gastronomy Menu'],
+        "Returns the listing's structured menu (sections and dishes) together with the uploaded photo/PDF and the external menu link, if set. Owner-only. Not gated on the structured-menu entitlement: every venue tier can see its own menu, and only writing the structured half is a paid capability.",
+    tags: ['Venue', 'venue Menu'],
     requestParams: {
         id: z.string().uuid({ message: 'zodError.common.id.invalidUuid' })
     },

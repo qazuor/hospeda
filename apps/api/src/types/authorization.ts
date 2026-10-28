@@ -87,11 +87,11 @@ export interface AuthorizationConfig {
      * `requiredPermissions`, which stays a plain AND list.
      *
      * ```ts
-     * // "gastronomy.editAll OR experience.editAll" for a shared operation
+     * // "venue.editAll OR experience.editAll" for a shared operation
      * anyOfPermissions: [[VENUE_EDIT_ALL, EXPERIENCE_EDIT_ALL]]
      *
-     * // "(gastronomy.editAll OR experience.editAll) AND
-     * //  (gastronomy.moderateReview OR experience.moderateReview)"
+     * // "(venue.editAll OR experience.editAll) AND
+     * //  (venue.moderateReview OR experience.moderateReview)"
      * anyOfPermissions: [
      *     [VENUE_EDIT_ALL, EXPERIENCE_EDIT_ALL],
      *     [VENUE_MODERATE_REVIEW, EXPERIENCE_MODERATE_REVIEW]

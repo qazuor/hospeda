@@ -1,16 +1,16 @@
 /**
- * Public projection gate for a gastronomy listing's venue events (HOS-1042).
+ * Public projection gate for a venue listing's venue events (HOS-1042).
  *
  * Extracted out of `getBySlug.ts` for the same reason `menu-projection.ts` was:
  * the withholding rule gets a direct unit-test surface, independent of building
- * a full `GastronomyPublicSchema` fixture through the route/HTTP layer.
+ * a full `VenuePublicSchema` fixture through the route/HTTP layer.
  *
  * ## Two filters, not one, and they refuse for different reasons
  *
- * 1. **The entitlement.** The owner's CURRENT gastronomy plan must grant
+ * 1. **The entitlement.** The owner's CURRENT venue plan must grant
  *    `MANAGE_VENUE_EVENTS`. Rows written while a `-pro` subscription was
  *    live are NOT deleted when it lapses (see
- *    `resolveOwnerGastronomyPlanEntitlements` in `@repo/service-core`) — they
+ *    `resolveOwnerVenuePlanEntitlements` in `@repo/service-core`) — they
  *    simply stop being published, which is what stops a lapsed venue from
  *    keeping the paid presentation for free.
  * 2. **`isActive`.** The owner parked the entry. This one has nothing to do
@@ -33,7 +33,7 @@ export interface VenueEventsGateResult {
 }
 
 /**
- * Withholds the venue agenda when the owner's CURRENT gastronomy plan does not
+ * Withholds the venue agenda when the owner's CURRENT venue plan does not
  * grant `manage_venue_events`, and drops the entries the owner switched
  * off.
  *

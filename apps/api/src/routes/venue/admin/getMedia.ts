@@ -28,9 +28,9 @@ const venueService = new VenueService({ logger: apiLogger });
 export const adminGetVenueMediaRoute = createAdminRoute({
     method: 'get',
     path: '/{id}/media',
-    summary: 'List gastronomy listing gallery photos (admin)',
+    summary: 'List venue listing gallery photos (admin)',
     description:
-        'Retrieves all media rows for a gastronomy listing, ordered by sortOrder ASC. ' +
+        'Retrieves all media rows for a venue listing, ordered by sortOrder ASC. ' +
         'Supports an optional `state` query filter (default: visible). Requires VENUE_EDIT_ALL.',
     tags: ['Venue', 'Media'],
     anyOfPermissions: [[PermissionEnum.VENUE_EDIT_ALL]],

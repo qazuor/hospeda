@@ -57,10 +57,10 @@ const VenueReviewProtectedSchema = VenueReviewSchema.pick({
 export const protectedCreateVenueReviewRoute = createProtectedRoute({
     method: 'post',
     path: '/{venueId}/reviews',
-    summary: 'Create gastronomy review',
+    summary: 'Create venue reviews',
     description:
-        'Submits a new review for a gastronomy listing. The review starts in PENDING state awaiting moderation.',
-    tags: ['Venue', 'Gastronomy Reviews'],
+        'Submits a new review for a venue listing. The review starts in PENDING state awaiting moderation.',
+    tags: ['Venue', 'venue reviews'],
     requestParams: {
         venueId: VenueReviewCreateInputSchema.shape.venueId
     },

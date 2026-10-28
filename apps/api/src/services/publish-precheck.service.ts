@@ -10,7 +10,7 @@
  * ---
  * ONE ROUTE, THREE VERTICALS — AND THE CAP THAT ALMOST BROKE IT
  *
- * The obvious way to read a gastronomy or experience cap is to mount
+ * The obvious way to read a venue or experience cap is to mount
  * the retired per-vertical entitlement middleware, which is what puts the
  * vertical's key into `userLimits`. That middleware takes its vertical at
  * CONSTRUCTION time, so it cannot serve a route whose vertical arrives as a path
@@ -31,7 +31,7 @@
  * ## This module fails OPEN, on purpose
  *
  * Any unresolved input yields `create_direct` — show the form. The real cap is
- * enforced by `enforceGastronomyLimit`/`enforceExperienceLimit`/
+ * enforced by `enforceVenueLimit`/`enforceExperienceLimit`/
  * `enforceAccommodationLimit` on the create path, which fail CLOSED. A transient
  * failure here therefore costs an owner a friendlier dialog, never the limit.
  *

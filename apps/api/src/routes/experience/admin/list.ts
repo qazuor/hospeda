@@ -30,7 +30,7 @@ export const adminListExperiencesRoute = createAdminListRoute({
     // Use the admin LIST schema, which keeps the eager-loaded `owner` and
     // `destination` relation summaries (adminList loads them via the relations
     // query). The base admin schema strips them, so the grid could only show raw
-    // FK UUIDs in the Destino / Propietario columns. Mirrors the gastronomy route.
+    // FK UUIDs in the Destino / Propietario columns. Mirrors the venue route.
     responseSchema: ExperienceAdminListItemSchema,
     handler: async (ctx, _params, _body, query) => {
         const actor = getActorFromContext(ctx);

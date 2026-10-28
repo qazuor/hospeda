@@ -22,9 +22,9 @@ const venueService = new VenueService({ logger: apiLogger });
 export const adminGetVenueByIdRoute = createAdminRoute({
     method: 'get',
     path: '/{id}',
-    summary: 'Get gastronomy listing by ID (admin)',
+    summary: 'Get venue listing by ID (admin)',
     description:
-        'Retrieves full gastronomy listing information including admin fields. Requires VENUE_VIEW_ALL.',
+        'Retrieves full venue listing information including admin fields. Requires VENUE_VIEW_ALL.',
     tags: ['Venue'],
     anyOfPermissions: [[PermissionEnum.VENUE_VIEW_ALL]],
     requestParams: {

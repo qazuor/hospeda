@@ -27,8 +27,8 @@ const venueService = new VenueService({ logger: apiLogger });
 export const adminCreateVenueRoute = createAdminRoute({
     method: 'post',
     path: '/',
-    summary: 'Create gastronomy listing',
-    description: 'Creates a new gastronomy listing. Requires VENUE_CREATE permission.',
+    summary: 'Create venue listing',
+    description: 'Creates a new venue listing. Requires VENUE_CREATE permission.',
     tags: ['Venue'],
     // Own create: `VENUE_CREATE` (re-checked by the listing-access middleware). Create on behalf of
     // another owner (`ownerId` ≠ actor) is action 15 (ACC:15, H12): the listing

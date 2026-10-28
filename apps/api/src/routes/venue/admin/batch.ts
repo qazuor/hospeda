@@ -21,9 +21,9 @@ const venueService = new VenueService({ logger: apiLogger });
 export const adminBatchVenuesRoute = createAdminRoute({
     method: 'post',
     path: '/batch',
-    summary: 'Get multiple gastronomy listings by IDs (admin)',
+    summary: 'Get multiple venue listings by IDs (admin)',
     description:
-        'Retrieves multiple gastronomy listings by their IDs for entity select components. Requires VENUE_VIEW_ALL.',
+        'Retrieves multiple venue listings by their IDs for entity select components. Requires VENUE_VIEW_ALL.',
     tags: ['Venue'],
     anyOfPermissions: [[PermissionEnum.VENUE_VIEW_ALL]],
     requestBody: VenueBatchRequestSchema,

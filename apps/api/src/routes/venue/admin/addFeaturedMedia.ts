@@ -57,9 +57,9 @@ export const adminAddVenueFeaturedMediaRoute = createAdminRoute({
     method: 'post',
     listingAccess: { vertical: VerticalEnum.VENUE, operation: 'EDIT', idParam: 'id' },
     path: '/{id}/media/featured',
-    summary: 'Upload the gastronomy listing cover image (admin)',
+    summary: 'Upload the venue listing cover image (admin)',
     description:
-        'Registers an already-uploaded URL as the gastronomy listing cover. The row is created ' +
+        'Registers an already-uploaded URL as the venue listing cover. The row is created ' +
         'already featured and the photo it replaces is DELETED in the same transaction ' +
         '— soft-deleted, so it disappears from the listing while its stored file ' +
         'is kept. Unlike POST /:id/media this does not ' +

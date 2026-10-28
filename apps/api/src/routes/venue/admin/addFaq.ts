@@ -30,9 +30,9 @@ export const adminAddVenueFaqRoute = createAdminRoute({
     method: 'post',
     listingAccess: { vertical: VerticalEnum.VENUE, operation: 'EDIT', idParam: 'id' },
     path: '/{id}/faqs',
-    summary: 'Add FAQ to gastronomy listing (admin)',
+    summary: 'Add FAQ to venue listing (admin)',
     description:
-        'Adds a new frequently asked question to a gastronomy listing. Requires VENUE_EDIT_ALL.',
+        'Adds a new frequently asked question to a venue listing. Requires VENUE_EDIT_ALL.',
     tags: ['Venue', 'FAQs'],
     requestParams: {
         id: z.string().uuid({ message: 'zodError.common.id.invalidUuid' })

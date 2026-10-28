@@ -89,10 +89,10 @@ export async function handleGetVenueDailySpecials(ctx: Context, params: Record<s
 export const protectedGetVenueDailySpecialsRoute = createCRUDRoute({
     method: 'get',
     path: '/{id}/daily-specials',
-    summary: 'Read the menú del día of a gastronomy listing',
+    summary: 'Read the menú del día of a venue listing',
     description:
-        'Returns every daily special the listing holds — including ones scheduled for the future and ones whose validity window has already passed, which the owner needs in order to edit them. Owner-only. Not gated on the menú-del-día entitlement: every gastronomy tier can see its own specials, and only publishing them is a paid capability.',
-    tags: ['Venue', 'Gastronomy Daily Specials'],
+        'Returns every daily special the listing holds — including ones scheduled for the future and ones whose validity window has already passed, which the owner needs in order to edit them. Owner-only. Not gated on the menú-del-día entitlement: every venue tier can see its own specials, and only publishing them is a paid capability.',
+    tags: ['Venue', 'venue Daily Specials'],
     requestParams: {
         id: z.string().uuid({ message: 'zodError.common.id.invalidUuid' })
     },

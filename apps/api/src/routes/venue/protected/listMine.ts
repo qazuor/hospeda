@@ -26,8 +26,8 @@ export const protectedListMyVenueRoute = createProtectedRoute({
     method: 'get',
     path: '/mine',
     emailUnverifiedOperation: 'READ_OWN',
-    summary: 'List my gastronomy listings (protected)',
-    description: "Returns the authenticated owner's own gastronomy listings as summaries",
+    summary: 'List my venue listings (protected)',
+    description: "Returns the authenticated owner's own venue listings as summaries",
     tags: ['Venue'],
     responseSchema: OwnerListingListSchema,
     handler: async (ctx: Context) => {

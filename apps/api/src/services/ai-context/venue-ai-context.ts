@@ -245,7 +245,7 @@ function formatOpeningHours(openingHours: Record<string, unknown> | null): strin
 // ---------------------------------------------------------------------------
 
 /**
- * Loads a gastronomy listing's context and assembles the system message.
+ * Loads a venue listing's context and assembles the system message.
  *
  * Throws `ServiceError(NOT_FOUND)` when the venue does not exist or is
  * soft-deleted, which the streaming route factory maps to a pre-stream 404.
@@ -332,7 +332,7 @@ async function safeLoadFaqs(venueId: string): Promise<VenueContextFaq[]> {
     } catch (error) {
         apiLogger.warn(
             { venueId, error: error instanceof Error ? error.message : String(error) },
-            'gastronomy-ai-context: failed to load FAQs; continuing with empty list'
+            'venue-ai-context: failed to load FAQs; continuing with empty list'
         );
         return [];
     }
@@ -364,7 +364,7 @@ async function safeLoadMenuItems(venueId: string): Promise<VenueContextMenuItem[
     } catch (error) {
         apiLogger.warn(
             { venueId, error: error instanceof Error ? error.message : String(error) },
-            'gastronomy-ai-context: failed to load menu items; continuing with empty carta'
+            'venue-ai-context: failed to load menu items; continuing with empty carta'
         );
         return [];
     }

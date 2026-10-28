@@ -32,9 +32,9 @@ const AssignOwnerBodySchema = z.object({
 export const adminAssignVenueOwnerRoute = createAdminRoute({
     method: 'post',
     path: '/{id}/assign-owner',
-    summary: 'Assign owner to gastronomy listing (admin)',
+    summary: 'Assign owner to venue listing (admin)',
     description:
-        'Sets or replaces the owner of a gastronomy listing. Requires VENUE_EDIT_ALL permission.',
+        'Sets or replaces the owner of a venue listing. Requires VENUE_EDIT_ALL permission.',
     tags: ['Venue'],
     anyOfPermissions: [[PermissionEnum.VENUE_EDIT_ALL]],
     requestParams: {

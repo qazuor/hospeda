@@ -41,9 +41,9 @@ import { createProtectedRoute } from '../../../utils/route-factory';
 export const protectedVenueViewStatsRoute = createProtectedRoute({
     method: 'get',
     path: '/mine/views',
-    summary: 'Get view stats for my gastronomy listings',
+    summary: 'Get view stats for my venue listings',
     description:
-        'Returns view-count statistics for every gastronomy listing owned by the authenticated ' +
+        'Returns view-count statistics for every venue listing owned by the authenticated ' +
         'owner over a rolling window (7d or 30d). Scoped strictly to actor.id — no owner ' +
         'override is accepted. Requires the view_basic_stats entitlement.',
     tags: ['Venue'],

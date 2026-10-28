@@ -29,9 +29,9 @@ const venueService = new VenueService({ logger: apiLogger });
 export const protectedGetVenueByIdRoute = createProtectedRoute({
     method: 'get',
     path: '/{id}',
-    summary: 'Get gastronomy listing by ID (protected)',
+    summary: 'Get venue listing by ID (protected)',
     description:
-        'Returns a gastronomy listing with owner-tier fields. Only the owner or staff with VENUE_VIEW_ALL may access this endpoint.',
+        'Returns a venue listing with owner-tier fields. Only the owner or staff with VENUE_VIEW_ALL may access this endpoint.',
     tags: ['Venue'],
     emailUnverifiedOperation: 'READ_OWN',
     requestParams: {

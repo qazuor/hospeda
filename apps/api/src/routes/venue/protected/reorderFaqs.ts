@@ -31,8 +31,8 @@ const venueService = new VenueService({ logger: apiLogger });
 export const protectedReorderVenueFaqsRoute = createProtectedRoute({
     method: 'put',
     path: '/{id}/faqs/reorder',
-    summary: 'Reorder FAQs on gastronomy listing',
-    description: 'Sets a new display order for FAQs belonging to the given gastronomy listing',
+    summary: 'Reorder FAQs on venue listing',
+    description: 'Sets a new display order for FAQs belonging to the given venue listing',
     listingAccess: { vertical: VerticalEnum.VENUE, operation: 'EDIT', idParam: 'id' },
     tags: ['Venue', 'Gastronomy FAQs'],
     protectedTag: false,

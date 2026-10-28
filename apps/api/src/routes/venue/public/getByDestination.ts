@@ -29,8 +29,8 @@ const venueService = new VenueService({ logger: apiLogger });
 export const publicGetVenuesByDestinationRoute = createPublicListRoute({
     method: 'get',
     path: '/destination/{destinationId}',
-    summary: 'Get gastronomy listings by destination',
-    description: 'Returns gastronomy listings for a specific destination',
+    summary: 'Get venue listings by destination',
+    description: 'Returns venue listings for a specific destination',
     tags: ['Venue'],
     requestParams: {
         destinationId: z.string().uuid({ message: 'zodError.common.id.invalidUuid' })

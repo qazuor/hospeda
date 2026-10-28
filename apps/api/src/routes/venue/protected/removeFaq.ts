@@ -26,8 +26,8 @@ const venueService = new VenueService({ logger: apiLogger });
 export const protectedRemoveVenueFaqRoute = createProtectedRoute({
     method: 'delete',
     path: '/{id}/faqs/{faqId}',
-    summary: 'Remove FAQ from gastronomy listing',
-    description: 'Soft-deletes a FAQ from a gastronomy listing',
+    summary: 'Remove FAQ from venue listing',
+    description: 'Soft-deletes a FAQ from a venue listing',
     listingAccess: { vertical: VerticalEnum.VENUE, operation: 'EDIT', idParam: 'id' },
     tags: ['Venue', 'Gastronomy FAQs'],
     protectedTag: false,

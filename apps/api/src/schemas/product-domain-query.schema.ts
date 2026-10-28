@@ -4,7 +4,7 @@
  * Routing-specific Zod schema for endpoints that must resolve ONE of a billing
  * customer's subscriptions when that customer may hold several.
  *
- * A dual-role owner (an accommodation host who is ALSO a gastronomy/experience listing
+ * A dual-role owner (an accommodation host who is ALSO a venue/experience listing
  * owner) can have two subscriptions under the same `billing_customers` row.
  * Any route that picks "the" subscription with a `.find()` over
  * `subscriptions.getByCustomerId()` must scope that search by product domain,
@@ -32,9 +32,9 @@ import { z } from 'zod';
  * MercadoPago preapproval (HOS-847), never a customer's real plan subscription
  * — there is nothing for a caller to legitimately scope a read to there.
  *
- * `GASTRONOMY` / `EXPERIENCE` scope to one gastronomy or experience vertical each. The
+ * `GASTRONOMY` / `EXPERIENCE` scope to one venue or experience vertical each. The
  * transitional umbrella value is retired (HOS-695) — there is no longer
- * a way to scope a read to "any gastronomy or experience vertical" here. See
+ * a way to scope a read to "any venue or experience vertical" here. See
  * `subscriptionMatchesDomain`.
  *
  * `TOURIST` widened in (HOS-1282). Left out at HOS-1233 on purpose, to avoid

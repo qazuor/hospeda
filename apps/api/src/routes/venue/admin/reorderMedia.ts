@@ -39,7 +39,7 @@ export const adminReorderVenueMediaRoute = createAdminRoute({
     method: 'patch',
     listingAccess: { vertical: VerticalEnum.VENUE, operation: 'EDIT', idParam: 'id' },
     path: '/{id}/media/reorder',
-    summary: 'Reorder gastronomy listing gallery photos (admin)',
+    summary: 'Reorder venue listing gallery photos (admin)',
     description:
         'Sets the sortOrder for the visible gallery photos by supplying their UUIDs ' +
         'in the desired order. The supplied list must match the current visible rows ' +

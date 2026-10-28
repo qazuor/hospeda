@@ -35,7 +35,7 @@ export const adminSetFeaturedVenueMediaRoute = createAdminRoute({
     method: 'put',
     listingAccess: { vertical: VerticalEnum.VENUE, operation: 'EDIT', idParam: 'id' },
     path: '/{id}/media/{mediaId}/featured',
-    summary: 'Set featured photo for gastronomy listing gallery (admin)',
+    summary: 'Set featured photo for venue listing gallery (admin)',
     description:
         'Promotes the target media row to is_featured=true and demotes the previous ' +
         'featured row (if any). Archived photos cannot be featured — restore the ' +

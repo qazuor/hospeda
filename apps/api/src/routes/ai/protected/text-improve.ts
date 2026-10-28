@@ -126,7 +126,7 @@ export const protectedAiTextImproveRoute = createProtectedStreamingRoute({
     path: '/',
     summary: 'AI text improvement (streaming SSE)',
     description:
-        'Improves an accommodation or comercio (gastronomy/experience) text field using the ' +
+        'Improves an accommodation or comercio (venue/experience) text field using the ' +
         '`text_improve` AI feature. Streams the suggestion token-by-token via Server-Sent Events.',
     tags: ['AI - Text Improve'],
     requestSchema: AiTextImproveRequestSchema,

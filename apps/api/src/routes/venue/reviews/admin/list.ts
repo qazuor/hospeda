@@ -29,10 +29,10 @@ const venueReviewService = new VenueReviewService({ logger: apiLogger });
 export const adminListVenueReviewsRoute = createAdminListRoute({
     method: 'get',
     path: '/',
-    summary: 'List all gastronomy reviews (admin)',
+    summary: 'List all venue reviews (admin)',
     description:
-        'Returns a paginated list of all gastronomy reviews with full admin details, including pending and rejected reviews.',
-    tags: ['Gastronomy Reviews', 'Admin'],
+        'Returns a paginated list of all venue reviews with full admin details, including pending and rejected reviews.',
+    tags: ['venue reviews', 'Admin'],
     anyOfPermissions: [[PermissionEnum.VENUE_MODERATE_REVIEW]],
     requestQuery: {
         status: z.nativeEnum(ModerationStatusEnum).optional()

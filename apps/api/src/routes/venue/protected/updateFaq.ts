@@ -32,8 +32,8 @@ const venueService = new VenueService({ logger: apiLogger });
 export const protectedUpdateVenueFaqRoute = createProtectedRoute({
     method: 'put',
     path: '/{id}/faqs/{faqId}',
-    summary: 'Update FAQ on gastronomy listing',
-    description: 'Updates an existing FAQ on a gastronomy listing',
+    summary: 'Update FAQ on venue listing',
+    description: 'Updates an existing FAQ on a venue listing',
     listingAccess: { vertical: VerticalEnum.VENUE, operation: 'EDIT', idParam: 'id' },
     tags: ['Venue', 'Gastronomy FAQs'],
     protectedTag: false,

@@ -24,8 +24,8 @@ export const adminRemoveVenueFaqRoute = createAdminRoute({
     method: 'delete',
     listingAccess: { vertical: VerticalEnum.VENUE, operation: 'EDIT', idParam: 'id' },
     path: '/{id}/faqs/{faqId}',
-    summary: 'Remove FAQ from gastronomy listing (admin)',
-    description: 'Removes a FAQ from a gastronomy listing. Requires VENUE_EDIT_ALL.',
+    summary: 'Remove FAQ from venue listing (admin)',
+    description: 'Removes a FAQ from a venue listing. Requires VENUE_EDIT_ALL.',
     tags: ['Venue', 'FAQs'],
     requestParams: {
         id: z.string().uuid({ message: 'zodError.common.id.invalidUuid' }),

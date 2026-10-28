@@ -156,10 +156,10 @@ export const protectedGetVenueMenuQrRoute = createProtectedRoute({
         idParam: 'id',
         step6Key: 'menu_qr_scan_metrics'
     },
-    summary: 'Get the menu QR for a gastronomy listing',
+    summary: 'Get the menu QR for a venue listing',
     description:
         'Returns the SVG of the venue’s menu QR, the URL it encodes (`{site}/qr/{qrSlug}/`), and the carta page that URL redirects to. The code is created on the first call and reused afterwards, so the image stays byte-identical for the life of the listing even if the listing is renamed. Owner-only.',
-    tags: ['Venue', 'Gastronomy Menu'],
+    tags: ['Venue', 'venue Menu'],
     requestParams: {
         id: z.string().uuid({ message: 'zodError.common.id.invalidUuid' })
     },

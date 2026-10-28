@@ -33,9 +33,9 @@ export const adminReorderVenueFaqsRoute = createAdminRoute({
     method: 'patch',
     listingAccess: { vertical: VerticalEnum.VENUE, operation: 'EDIT', idParam: 'id' },
     path: '/{id}/faqs/reorder',
-    summary: 'Reorder FAQs for a gastronomy listing (admin)',
+    summary: 'Reorder FAQs for a venue listing (admin)',
     description:
-        'Sets displayOrder for a set of FAQs belonging to a gastronomy listing. All faqId values must belong to the given listing. Requires VENUE_EDIT_ALL.',
+        'Sets displayOrder for a set of FAQs belonging to a venue listing. All faqId values must belong to the given listing. Requires VENUE_EDIT_ALL.',
     tags: ['Venue', 'FAQs'],
     requestParams: {
         id: z.string().uuid({ message: 'zodError.common.id.invalidUuid' })

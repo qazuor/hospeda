@@ -1,5 +1,5 @@
 /**
- * Public gastronomy routes (T-042)
+ * Public venue routes (T-042)
  * Routes that do not require authentication.
  *
  * NOTE: Routes with path params that could conflict with named sub-paths (e.g.
@@ -22,7 +22,7 @@ app.route('/', publicGetVenueBySlugRoute);
 // GET /destination/:destinationId — Must be before /:id.
 app.route('/', publicGetVenuesByDestinationRoute);
 
-// GET / — List gastronomy listings.
+// GET / — List venue listings.
 app.route('/', publicListVenuesRoute);
 
 // GET /:id — Get by ID (catch-all param route).

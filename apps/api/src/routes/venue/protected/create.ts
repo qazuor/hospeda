@@ -93,9 +93,9 @@ export const protectedCreateVenueListingRoute = createProtectedRoute({
     method: 'post',
     path: '/',
     listingAccess: { vertical: VerticalEnum.VENUE, operation: 'CREATE' },
-    summary: 'Create a gastronomy listing (owner self-service)',
+    summary: 'Create a venue listing (owner self-service)',
     description:
-        'Creates a gastronomy listing owned by the authenticated caller and grants them the VENUE_OWNER role in the same transaction. Starts hidden (DRAFT) until the owner completes it. Requires an authenticated session and no gastronomy permission.',
+        'Creates a venue listing owned by the authenticated caller and grants them the VENUE_OWNER role in the same transaction. Starts hidden (DRAFT) until the owner completes it. Requires an authenticated session and no venue permission.',
     tags: ['Venue'],
     // No `requiredPermissions` on purpose (HOS-687): this route is how an
     // account BECOMES a venue owner, so demanding the owner's permission

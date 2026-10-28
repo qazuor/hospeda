@@ -1,11 +1,11 @@
 /**
- * Relational media loader for the gastronomy and experience publish-readiness gate
+ * Relational media loader for the venue and experience publish-readiness gate
  * (H-154 / HOS-494).
  *
  * ## Why this module exists
  *
  * `resolveListingCompleteness` (`@repo/schemas`) requires a `media.featuredImage`
- * before a gastronomy or experience listing may be paid for or published. Until HOS-372 that
+ * before a venue or experience listing may be paid for or published. Until HOS-372 that
  * field lived on the listing row itself, in a `media` JSONB column, so both
  * consumers of the gate could read it straight off a `model.findById()` result.
  *
@@ -40,7 +40,7 @@
  * The two candidate reads do differ in principle: `findFeatured()` filters on
  * `isFeatured` + `deletedAt` only, while `composeListingMedia` additionally
  * requires `state === 'visible'`. In practice they agree today, because a CHECK
- * constraint on both media tables (`chk_{gastronomy,experience}_media_featured_not_archived`)
+ * constraint on both media tables (`chk_{venue,experience}_media_featured_not_archived`)
  * makes an archived featured row impossible — so this is NOT a live bug in
  * `findFeatured`, and the choice here is not fixing one. But that agreement
  * rests on a constraint maintained in the extras carril rather than on the
@@ -58,16 +58,16 @@ import { composeListingMedia } from '@repo/service-core';
 
 /** Input to {@link loadListingMedia}. */
 export interface LoadListingMediaInput {
-    /** Which gastronomy or experience vertical the listing belongs to. Selects the media table. */
+    /** Which venue or experience vertical the listing belongs to. Selects the media table. */
     readonly entityType: VenueOrExperience;
-    /** UUID of the gastronomy or experience listing whose media rows to load. */
+    /** UUID of the venue or experience listing whose media rows to load. */
     readonly entityId: string;
     /** Optional active transaction client, forwarded to the media model. */
     readonly tx?: DrizzleClient;
 }
 
 /**
- * Loads a gastronomy or experience listing's relational media rows and composes them into the
+ * Loads a venue or experience listing's relational media rows and composes them into the
  * `Media` shape the completeness gate expects.
  *
  * `videos` is deliberately NOT passed to the composer: it lives on the listing's
@@ -95,11 +95,11 @@ export async function loadListingMedia(input: LoadListingMediaInput): Promise<Me
     const { entityType, entityId, tx } = input;
 
     // HOS-1079: an exhaustive switch, not a binary ternary — `entityType` is
-    // typed `GastronomyOrExperience` (exactly 'gastronomy' | 'experience'), so the
+    // typed `VenueOrExperience` (exactly 'venue' | 'experience'), so the
     // `default` throw below is unreachable today by the compiler's own
     // guarantee, but keeps this file's selection logic self-defending if that
     // type is ever widened, instead of silently reading experience's media
-    // for anything that is not literally 'gastronomy'.
+    // for anything that is not literally 'venue'.
     let grouped: Awaited<
         ReturnType<
             typeof venueMediaModel.findByVenues | typeof experienceMediaModel.findByExperiences

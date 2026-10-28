@@ -21,10 +21,10 @@ const venueReviewService = new VenueReviewService({ logger: apiLogger });
 export const adminGetVenueReviewByIdRoute = createAdminRoute({
     method: 'get',
     path: '/{id}',
-    summary: 'Get gastronomy review by ID (admin)',
+    summary: 'Get venue reviews by ID (admin)',
     description:
-        'Retrieves full gastronomy review information including moderation fields. Requires VENUE_MODERATE_REVIEW.',
-    tags: ['Gastronomy Reviews', 'Admin'],
+        'Retrieves full venue reviews information including moderation fields. Requires VENUE_MODERATE_REVIEW.',
+    tags: ['venue reviews', 'Admin'],
     anyOfPermissions: [[PermissionEnum.VENUE_MODERATE_REVIEW]],
     requestParams: {
         id: z.string().uuid({ message: 'zodError.common.id.invalidUuid' })

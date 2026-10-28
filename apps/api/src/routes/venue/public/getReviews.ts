@@ -59,9 +59,9 @@ const VenueReviewPublicSchema = VenueReviewSchema.pick({
 export const publicListVenueReviewsRoute = createPublicListRoute({
     method: 'get',
     path: '/{venueId}/reviews',
-    summary: 'List gastronomy reviews',
-    description: 'Returns a paginated list of approved reviews for a specific gastronomy listing',
-    tags: ['Venue', 'Gastronomy Reviews'],
+    summary: 'List venue reviews',
+    description: 'Returns a paginated list of approved reviews for a specific venue listing',
+    tags: ['Venue', 'venue reviews'],
     requestParams: {
         venueId: z.string().uuid({ message: 'zodError.common.id.invalidUuid' })
     },

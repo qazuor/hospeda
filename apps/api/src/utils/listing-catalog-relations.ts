@@ -1,6 +1,6 @@
 /**
  * @file listing-catalog-relations.ts
- * @description Reads the amenities and features a gastronomy or experience listing (gastronomy
+ * @description Reads the amenities and features a venue or experience listing (venue
  * or experience) is linked to, joined with the shared catalog, for the public
  * detail response (HOS-1072).
  *
@@ -42,7 +42,7 @@ import type { ListingAmenityPublic, ListingFeaturePublic } from '@repo/schemas';
  */
 
 /**
- * Amenities linked to one gastronomy listing, joined with the shared catalog.
+ * Amenities linked to one venue listing, joined with the shared catalog.
  *
  * @param venueId - The listing's UUID.
  * @returns Catalog-joined amenity rows, most important first. Empty when none.
@@ -71,7 +71,7 @@ export async function fetchVenueAmenities(
 }
 
 /**
- * Features linked to one gastronomy listing, joined with the shared catalog.
+ * Features linked to one venue listing, joined with the shared catalog.
  *
  * @param venueId - The listing's UUID.
  * @returns Catalog-joined feature rows, most important first. Empty when none.

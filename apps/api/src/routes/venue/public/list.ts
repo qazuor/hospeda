@@ -33,8 +33,8 @@ const venueService = new VenueService({ logger: apiLogger });
 export const publicListVenuesRoute = createPublicListRoute({
     method: 'get',
     path: '/',
-    summary: 'List gastronomy listings',
-    description: 'Returns a paginated list of public gastronomy listings',
+    summary: 'List venue listings',
+    description: 'Returns a paginated list of public venue listings',
     tags: ['Venue'],
     requestQuery: VenueSearchHttpSchema.shape,
     responseSchema: VenuePublicSchema,

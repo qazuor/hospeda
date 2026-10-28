@@ -42,7 +42,7 @@ const venueService = new VenueService({ logger: apiLogger });
 export const protectedReorderVenueMediaRoute = createProtectedRoute({
     method: 'patch',
     path: '/{id}/media/reorder',
-    summary: 'Reorder gastronomy listing gallery photos',
+    summary: 'Reorder venue listing gallery photos',
     description:
         'Sets the sortOrder for the visible gallery photos by supplying their UUIDs ' +
         'in the desired order. The supplied list must match the current visible rows ' +

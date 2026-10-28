@@ -46,9 +46,8 @@ export const protectedPatchVenueRoute = createProtectedRoute({
     method: 'patch',
     path: '/{id}',
     listingAccess: { vertical: VerticalEnum.VENUE, operation: 'EDIT', idParam: 'id' },
-    summary: 'Update gastronomy listing (owner)',
-    description:
-        'Partially updates operational fields of a gastronomy listing. Requires ownership.',
+    summary: 'Update venue listing (owner)',
+    description: 'Partially updates operational fields of a venue listing. Requires ownership.',
     tags: ['Venue'],
     requestParams: {
         id: z.string().uuid({ message: 'zodError.common.id.invalidUuid' })

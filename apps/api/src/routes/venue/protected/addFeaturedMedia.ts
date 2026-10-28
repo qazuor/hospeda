@@ -60,9 +60,9 @@ const venueService = new VenueService({ logger: apiLogger });
 export const protectedAddVenueFeaturedMediaRoute = createProtectedRoute({
     method: 'post',
     path: '/{id}/media/featured',
-    summary: 'Upload the gastronomy listing cover image',
+    summary: 'Upload the venue listing cover image',
     description:
-        'Registers an already-uploaded URL as the gastronomy listing cover. The row is created ' +
+        'Registers an already-uploaded URL as the venue listing cover. The row is created ' +
         'already featured and the photo it replaces is DELETED in the same transaction ' +
         '— soft-deleted, so it disappears from the listing while its stored file ' +
         'is kept. Unlike POST /:id/media this does not ' +

@@ -85,10 +85,10 @@ export async function handleGetVenueEvents(ctx: Context, params: Record<string, 
 export const protectedGetVenueEventsRoute = createCRUDRoute({
     method: 'get',
     path: '/{id}/events',
-    summary: 'Read the venue events agenda of a gastronomy listing',
+    summary: 'Read the venue events agenda of a venue listing',
     description:
         "Returns the listing's own events — live music night, happy hour, dinner show — in display order, including entries the owner has switched off. Owner-only. Not gated on the venue-events entitlement: an owner whose plan no longer grants it still owns the rows, and only writing is a paid capability.",
-    tags: ['Venue', 'Gastronomy Events'],
+    tags: ['Venue', 'venue Events'],
     requestParams: {
         id: z.string().uuid({ message: 'zodError.common.id.invalidUuid' })
     },

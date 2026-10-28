@@ -34,9 +34,9 @@ import { createProtectedRoute } from '../../../utils/route-factory';
 export const protectedVenueViewStatsDailySeriesRoute = createProtectedRoute({
     method: 'get',
     path: '/mine/views/daily-series',
-    summary: 'Get daily view series for my gastronomy listings',
+    summary: 'Get daily view series for my venue listings',
     description:
-        'Returns a gap-filled daily view-count series aggregated across all gastronomy listings ' +
+        'Returns a gap-filled daily view-count series aggregated across all venue listings ' +
         'owned by the authenticated owner over a rolling window (7d or 30d). Each item ' +
         'represents one calendar day; days with no views have total = 0. Scoped strictly to ' +
         'actor.id — no owner override is accepted. Requires the view_basic_stats entitlement.',

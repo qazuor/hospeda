@@ -1,7 +1,7 @@
 /**
- * Public-tier FAQ visibility for the gastronomy and experience verticals (HOS-1263).
+ * Public-tier FAQ visibility for the venue and experience verticals (HOS-1263).
  *
- * `gastronomies` and `experiences` carry an owner-controlled
+ * `legacy listing table` and `experiences` carry an owner-controlled
  * `isVisibleOnListing` flag on each FAQ (HOS-400). The dedicated
  * `GET .../:id/faqs` routes filter it, but the listing page reads the FAQs
  * EMBEDDED in `getBySlug` / `getById`, because the services load `faqs: true`
@@ -12,7 +12,7 @@
  * it in the Astro component would still ship it in the page HTML.
  *
  * A guard test (`listing-faq-visibility.guard.test.ts`) requires every public
- * gastronomy or experience route that returns a whole listing to go through this helper.
+ * venue or experience route that returns a whole listing to go through this helper.
  *
  * @module utils/listing-faq-visibility
  */
@@ -27,9 +27,9 @@ export interface FaqVisibilityColumns {
 /**
  * Keeps the FAQs a public reader may see: ACTIVE, not soft-deleted, and not
  * hidden by the owner. This is the same predicate accommodation applies in SQL.
- * It is needed here because the gastronomy and experience services load FAQs through a
+ * It is needed here because the venue and experience services load FAQs through a
  * `with: { faqs: true }` relation, which filters neither soft-deleted nor
- * non-ACTIVE rows, and deleting a gastronomy or experience FAQ is a soft delete. A missing
+ * non-ACTIVE rows, and deleting a venue or experience FAQ is a soft delete. A missing
  * `isVisibleOnListing` (pre-migration data) reads as visible, matching the
  * column's `DEFAULT true`.
  *

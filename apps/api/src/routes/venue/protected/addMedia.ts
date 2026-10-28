@@ -36,7 +36,7 @@ const venueService = new VenueService({ logger: apiLogger });
 export const protectedAddVenueMediaRoute = createProtectedRoute({
     method: 'post',
     path: '/{id}/media',
-    summary: 'Add photo to gastronomy listing gallery',
+    summary: 'Add photo to venue listing gallery',
     description:
         'Registers an already-uploaded URL as a new venue_media row. ' +
         'Requires VENUE_EDIT_OWN (listing owner) or VENUE_EDIT_ALL (staff).',

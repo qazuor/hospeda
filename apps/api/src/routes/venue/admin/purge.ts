@@ -27,7 +27,7 @@ export const adminPurgeOnRequestVenueRoute = createAdminRoute({
         idParam: 'id',
         administrativeAction: 'ACC_23'
     },
-    summary: 'Purge gastronomy listing at the owner request (ACC:23)',
+    summary: 'Purge venue listing at the owner request (ACC:23)',
     description:
         'Administrative action 23: runs PB12 on another owner listing at that owner request, with a mandatory reason. Requires LISTING_PURGE_ON_REQUEST, evaluated on the owner.',
     tags: ['Gastronomies', 'Admin'],

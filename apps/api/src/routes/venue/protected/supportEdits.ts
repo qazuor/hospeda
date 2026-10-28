@@ -32,7 +32,7 @@ export const protectedVenueSupportEditsRoute = createProtectedRoute({
     listingAccess: { vertical: VerticalEnum.VENUE, operation: 'READ_OWN', idParam: 'id' },
     emailUnverifiedOperation: 'READ_OWN',
     options: { middlewares: [ownerAccess] },
-    summary: 'List support edits of own gastronomy listing',
+    summary: 'List support edits of own venue listing',
     description: 'The most recent edits support made to the content of the listing (row 26).',
     tags: ['Gastronomies'],
     requestParams: { id: z.string().uuid() },

@@ -59,7 +59,7 @@ const venueService = new VenueService({ logger: apiLogger });
 export const protectedUpdateVenueMediaRoute = createProtectedRoute({
     method: 'patch',
     path: '/{id}/media/{mediaId}',
-    summary: 'Correct photo text metadata in gastronomy gallery',
+    summary: 'Correct photo text metadata in venue gallery',
     description:
         'Patch caption/description/alt/attribution on an existing media row. ' +
         'Each field is nullable: omit to leave unchanged, null to clear, a value ' +

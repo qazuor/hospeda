@@ -22,9 +22,9 @@ const venueReviewService = new VenueReviewService({ logger: apiLogger });
 export const adminDeleteVenueReviewRoute = createAdminRoute({
     method: 'delete',
     path: '/{id}',
-    summary: 'Soft delete gastronomy review (admin)',
-    description: 'Soft deletes a gastronomy review. Requires VENUE_MODERATE_REVIEW permission.',
-    tags: ['Gastronomy Reviews', 'Admin'],
+    summary: 'Soft delete venue reviews (admin)',
+    description: 'Soft deletes a venue reviews. Requires VENUE_MODERATE_REVIEW permission.',
+    tags: ['venue reviews', 'Admin'],
     anyOfPermissions: [[PermissionEnum.VENUE_MODERATE_REVIEW]],
     requestParams: {
         id: z.string().uuid({ message: 'zodError.common.id.invalidUuid' })

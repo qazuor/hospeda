@@ -123,7 +123,7 @@ export async function handleGetVenueQrCode(
 export const protectedGetVenueQrCodeRoute = createProtectedRoute({
     method: 'get',
     path: '/{id}/qr',
-    summary: 'Get the listing QR of a gastronomy listing as an image',
+    summary: 'Get the listing QR of a venue listing as an image',
     description:
         'Returns the SVG of the venue’s listing QR and the URL that symbol encodes (`{site}/qr/{qrSlug}/`). It is the SAME code the printable sheet carries — the same `qr_codes` row, created on the first call and reused afterwards, drawn at the same error-correction level the sheet prints at — so the image an owner sees in the dashboard is, module for module, the one that ends up on the door. Distinct from the menu QR, which opens the carta and is premium-gated. Owner-only, and only for a listing that is publicly visible. No plan entitlement is required.',
     tags: ['Venue'],

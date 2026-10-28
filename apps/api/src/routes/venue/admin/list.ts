@@ -23,8 +23,8 @@ const venueService = new VenueService({ logger: apiLogger });
 export const adminListVenuesRoute = createAdminListRoute({
     method: 'get',
     path: '/',
-    summary: 'List gastronomy listings (admin)',
-    description: 'Returns a paginated list of gastronomy listings with full admin details',
+    summary: 'List venue listings (admin)',
+    description: 'Returns a paginated list of venue listings with full admin details',
     tags: ['Venue'],
     requestQuery: VenueAdminSearchSchema.omit({ page: true, pageSize: true }).shape,
     responseSchema: VenueAdminListItemSchema,

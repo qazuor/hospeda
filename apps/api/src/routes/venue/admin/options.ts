@@ -33,7 +33,7 @@ const venueService = new VenueService({ logger: apiLogger });
 export const adminVenueOptionsRoute = createAdminRoute({
     method: 'get',
     path: '/options',
-    summary: 'Gastronomy options (admin lookup)',
+    summary: 'venue options (admin lookup)',
     description:
         'Returns lightweight {id, label, slug, type, destination} options for relation selectors. Admin-panel access only; DRAFT-inclusive.',
     tags: ['Venue'],
