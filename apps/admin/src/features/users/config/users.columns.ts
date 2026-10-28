@@ -149,9 +149,9 @@ export const createUsersColumns = (t: ColumnTFunction): readonly ColumnConfig<Us
         startVisibleOnGrid: false
     },
     {
-        id: 'gastronomiesCount',
-        header: t('admin-entities.columns.gastronomiesCount'),
-        accessorKey: 'gastronomiesCount',
+        id: 'venuesCount',
+        header: t('admin-entities.columns.venuesCount'),
+        accessorKey: 'venuesCount',
         enableSorting: false,
         columnType: ColumnType.NUMBER,
         startVisibleOnTable: false,

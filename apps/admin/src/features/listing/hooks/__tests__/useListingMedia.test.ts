@@ -34,7 +34,7 @@ const mockedFetchApi = vi.mocked(fetchApi);
 function makeMedia(overrides: Partial<Record<string, unknown>> = {}) {
     return {
         id: 'media-1',
-        gastronomyId: 'ent-1',
+        venueId: 'ent-1',
         url: 'https://example.com/photo.jpg',
         moderationState: 'APPROVED',
         state: 'visible',

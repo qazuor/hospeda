@@ -105,7 +105,7 @@ import { ListingGalleryManager } from '../ListingGalleryManager';
 function makeFeaturedRow(id = 'featured-1') {
     return {
         id,
-        gastronomyId: 'ent-1',
+        venueId: 'ent-1',
         url: `https://example.com/${id}.jpg`,
         isFeatured: true,
         state: 'visible',
@@ -119,7 +119,7 @@ function makeFeaturedRow(id = 'featured-1') {
 function makeGalleryRow(id: string, sortOrder = 1) {
     return {
         id,
-        gastronomyId: 'ent-1',
+        venueId: 'ent-1',
         url: `https://example.com/${id}.jpg`,
         isFeatured: false,
         state: 'visible',

@@ -9,7 +9,7 @@ function createUser(overrides: Partial<User> = {}): User {
     return {
         id: 'user-1',
         accommodationsCount: 0,
-        gastronomiesCount: 0,
+        venuesCount: 0,
         experiencesCount: 0,
         eventsCount: 0,
         postsCount: 0,
@@ -23,7 +23,7 @@ describe('UserRelationsSummaryCell', () => {
             <UserRelationsSummaryCell
                 row={createUser({
                     accommodationsCount: 2,
-                    gastronomiesCount: 1,
+                    venuesCount: 1,
                     experiencesCount: 3,
                     eventsCount: 4,
                     postsCount: 5
@@ -58,7 +58,7 @@ describe('UserRelationsSummaryCell', () => {
             <UserRelationsSummaryCell
                 row={createUser({
                     accommodationsCount: 0,
-                    gastronomiesCount: 0,
+                    venuesCount: 0,
                     experiencesCount: 0,
                     eventsCount: 4,
                     postsCount: 0
