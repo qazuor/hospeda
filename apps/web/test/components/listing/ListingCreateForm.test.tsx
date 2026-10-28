@@ -44,7 +44,7 @@ const destinations = [{ id: 'dest-1', name: 'Concepción del Uruguay' }];
  * `ListingDetail`'s many required fields are irrelevant to these
  * tests.
  *
- * TYPE-WORKAROUND: a real `ListingDetail` (Gastronomy|Experience
+ * TYPE-WORKAROUND: a real `ListingDetail` (Venue|Experience
  * union) has dozens of required fields unrelated to this test's assertions;
  * a double-cast keeps the fixture minimal instead of hand-filling every one.
  */
@@ -92,7 +92,7 @@ describe('ListingCreateForm', () => {
         });
     });
 
-    describe('gastronomy submit', () => {
+    describe('venue submit', () => {
         it('submits a DRAFT create payload and redirects to the editor on success', async () => {
             mockCreate.mockResolvedValue({ ok: true, data: fakeCreatedListing('listing-1') });
 

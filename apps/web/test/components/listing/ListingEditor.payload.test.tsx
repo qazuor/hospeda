@@ -9,11 +9,11 @@
  * They exist because `buildPayload` is not a uniform diff — it carries per-field
  * semantics that a naive rewrite silently flattens:
  *
- *  - gastronomy `priceRange`/`menuUrl` are `.nullish()` on the domain schema and
+ *  - venue `priceRange`/`menuUrl` are `.nullish()` on the domain schema and
  *    send an explicit `null` when cleared;
  *  - experience `priceFrom` REJECTS `null` (T-021) and must omit the key
  *    entirely when cleared; `priceUnit` no longer does — H-156 made the column
- *    nullable, so it clears to an explicit `null` like the gastronomy fields;
+ *    nullable, so it clears to an explicit `null` like the venue fields;
  *  - `socialNetworks` and the four i18n fields are replaced WHOLESALE, so the
  *    payload must carry the untouched members too — the block is overwritten
  *    server-side, not merged;
@@ -303,7 +303,7 @@ async function waitForBaselineResync(times: number): Promise<void> {
  *
  * `JSON.stringify` drops keys whose value is `undefined` and keeps `null`, which
  * is exactly the difference between "omit the key = no change" (experience
- * price fields) and "explicitly clear this column" (gastronomy price fields).
+ * price fields) and "explicitly clear this column" (venue price fields).
  * Asserting on the raw mock argument cannot distinguish the two.
  */
 async function wireBody(): Promise<Record<string, unknown>> {
@@ -332,7 +332,7 @@ describe('ListingEditor — PATCH payload contract (HOS-258)', () => {
         vi.mocked(addToast).mockClear();
     });
 
-    describe('gastronomy price fields clear to null', () => {
+    describe('venue price fields clear to null', () => {
         it('sends priceRange as an explicit null when the tier is cleared', async () => {
             renderEditor('venue', buildListing({ priceRange: 'MID' }), 'price');
 
@@ -424,7 +424,7 @@ describe('ListingEditor — PATCH payload contract (HOS-258)', () => {
         // assertion hid: omitting the key means "no change", so an owner who
         // ticked "price on request" and cleared the unit saw the edit accepted
         // and the stale unit stay on the row. The column is nullable now, so
-        // clearing sends an explicit `null` — the same way gastronomy's
+        // clearing sends an explicit `null` — the same way venue's
         // `priceRange` already did.
         it('sends priceUnit as an explicit null when cleared (H-156)', async () => {
             const seededUnit = Object.values(ExperiencePriceUnitEnum)[0] as string;
@@ -648,7 +648,7 @@ describe('ListingEditor — PATCH payload contract (HOS-258)', () => {
         });
 
         // Same, `experience` vertical (HOS-902 scope explicitly covers both —
-        // `ListingEditor` serves gastronomy and experience through the
+        // `ListingEditor` serves venue and experience through the
         // same `buildPatchPayload`/i18n code path, which is vertical-agnostic;
         // the price/practical-info branches are the only ones that fork on
         // `vertical`).
@@ -749,7 +749,7 @@ describe('ListingEditor — PATCH payload contract (HOS-258)', () => {
             );
 
             // Removal goes through `listingMediaApi.removeMedia`, which deletes
-            // the binary server-side. `delete-entity` rejects gastronomy and experience verticals
+            // the binary server-side. `delete-entity` rejects venue and experience verticals
             // with a 400, so any call here is a regression. Since HOS-1080 the
             // photos live on their own route, which makes the guarantee stronger
             // rather than weaker: no section but `fotos` can reach media at all.
