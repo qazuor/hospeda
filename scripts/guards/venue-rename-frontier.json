@@ -99,7 +99,7 @@
         "apps/api/test/routes/destination-reviews/create.security.test.ts": 1,
         "apps/api/test/routes/existence-disclosure.paired-probe.test.ts": 3,
         "apps/api/test/routes/experience/protected/create.test.ts": 1,
-        "apps/api/test/routes/faq-payload-schema.guard.test.ts": 4,
+        "apps/api/test/routes/faq-payload-schema.guard.test.ts": 2,
         "apps/api/test/routes/listing-owner-listing-public-page.test.ts": 1,
         "apps/api/test/routes/listing-qr-code.test.ts": 1,
         "apps/api/test/routes/listing-qr-sheet.test.ts": 1,
