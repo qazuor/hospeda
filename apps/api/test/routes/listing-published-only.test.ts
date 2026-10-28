@@ -83,10 +83,10 @@ describe('TEST:V5:6 published foreign gastronomy writes', () => {
         vi.spyOn(VenueService.prototype, 'getById').mockResolvedValue({ data: row });
         const updateOwn = vi.spyOn(VenueService.prototype, 'updateOwn');
         updateOwn.mockResolvedValue({
-            error: { code: ServiceErrorCode.NOT_FOUND, message: 'gastronomy not found' }
+            error: { code: ServiceErrorCode.NOT_FOUND, message: 'venue not found' }
         });
         addMedia.mockResolvedValue({
-            error: { code: ServiceErrorCode.NOT_FOUND, message: 'gastronomy not found' }
+            error: { code: ServiceErrorCode.NOT_FOUND, message: 'venue not found' }
         });
         const headers = {
             'content-type': 'application/json',
@@ -169,7 +169,7 @@ describe('TEST:V5:6 public gastronomy detail', () => {
         vi.spyOn(VenueService.prototype, 'getById').mockImplementation(async (actor, id) => {
             if (id === MISSING_ID) {
                 return {
-                    error: { code: ServiceErrorCode.NOT_FOUND, message: 'gastronomy not found' }
+                    error: { code: ServiceErrorCode.NOT_FOUND, message: 'venue not found' }
                 };
             }
             const entity = { ...row, publicationStatus };
