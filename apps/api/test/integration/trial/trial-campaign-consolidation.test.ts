@@ -190,7 +190,7 @@ describe('TEST:V4:22 (parte 2: clase y una sola pieza) - three verticals, one pi
         expect(markedSentIds).toContain(firstClaimed[0]?.id);
         const sentHtml = sent.join(' ');
         expect(sentHtml).toContain('Alojamiento');
-        expect(sentHtml).toContain('Gastronomía');
+        expect(sentHtml).toContain('Comer y salir');
         expect(sentHtml).toContain('Experiencias');
 
         await convertTrialOnTitle({
@@ -237,7 +237,7 @@ describe('TEST:V4:22 (parte 2: clase y una sola pieza) - three verticals, one pi
         const secondHtml = sent.slice(sentBeforeSecondMilestone).join(' ');
         expect(secondHtml).toContain('Alojamiento');
         expect(secondHtml).toContain('Experiencias');
-        expect(secondHtml).not.toContain('Gastronomía');
+        expect(secondHtml).not.toContain('Comer y salir');
         const secondClaimed = claimedRows.filter(
             (row) => row.template === NotificationType.TRIAL_WIN_BACK_5D
         );
