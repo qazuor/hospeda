@@ -151,9 +151,9 @@ The group is **intentionally not part of `--required` or `--example`** — that 
 | `host-pro@local.test` | HOST | accommodation + promotions |
 | `host-premium@local.test` | HOST | accommodation + promotions |
 | `host-provider@local.test` | HOST | accommodation + promotions, and owns the `plomeria-litoral` `host_trades` listing (dual role, HOS-376 AC-16/AC-17) |
-| `gastronomy-owner@local.test` | GASTRONOMY_OWNER | none (role only, no listing) |
+| `venue-owner@local.test` | VENUE_OWNER | none (role only, no listing) |
 | `experience-owner@local.test` | EXPERIENCE_OWNER | none (role only, no listing) |
-| `host-gastronomy@local.test` | HOST + GASTRONOMY_OWNER | accommodation + promotions; the GASTRONOMY_OWNER role has no backing listing (HOS-296 multi-role, HOS-694 AC-3/AC-12) |
+| `host-venue@local.test` | HOST + VENUE_OWNER | accommodation + promotions; the VENUE_OWNER role has no backing listing (HOS-296 multi-role, HOS-694 AC-3/AC-12) |
 | `complex-basico@local.test` | CLIENT_MANAGER | none |
 | `complex-pro@local.test` | CLIENT_MANAGER | none |
 | `complex-premium@local.test` | CLIENT_MANAGER | none |
