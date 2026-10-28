@@ -15,7 +15,7 @@ import {
 } from '../../src/utils/product-domain-copy.js';
 
 describe('resolveTrialSeriesCopy (HOS-1283)', () => {
-    it('resolves gastronomy copy', () => {
+    it('resolves venue copy', () => {
         const copy = resolveTrialSeriesCopy('venue');
         expect(copy.possessive).toBe('tu local');
         expect(copy.searchIntent).toBe('dónde comer');
@@ -36,15 +36,15 @@ describe('resolveTrialSeriesCopy (HOS-1283)', () => {
         expect(resolveTrialSeriesCopy('not-a-real-domain')).toEqual(accommodation);
     });
 
-    it('gastronomy and experience copy differ from accommodation in every field', () => {
+    it('venue and experience copy differ from accommodation in every field', () => {
         // Guards against a resolver that "branches" but returns the same
         // object for every case — every field must actually change.
         const accommodation = resolveTrialSeriesCopy('accommodation');
-        const gastronomy = resolveTrialSeriesCopy('venue');
+        const venue = resolveTrialSeriesCopy('venue');
         const experience = resolveTrialSeriesCopy('experience');
 
         for (const key of Object.keys(accommodation) as (keyof typeof accommodation)[]) {
-            expect(gastronomy[key], `gastronomy.${key}`).not.toBe(accommodation[key]);
+            expect(venue[key], `venue.${key}`).not.toBe(accommodation[key]);
             expect(experience[key], `experience.${key}`).not.toBe(accommodation[key]);
         }
     });

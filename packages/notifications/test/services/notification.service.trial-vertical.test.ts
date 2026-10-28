@@ -79,7 +79,7 @@ describe('NotificationService — vertical copy reaches the real send (HOS-1283)
         return renderToStaticMarkup(react);
     }
 
-    it('trial_ending_1d: a gastronomy candidate never reaches the mailer as "tu alojamiento"', async () => {
+    it('trial_ending_1d: a venue candidate never reaches the mailer as "tu alojamiento"', async () => {
         const payload: NotificationPayload = {
             type: NotificationType.TRIAL_ENDING_1D,
             ...basePayload,

@@ -304,7 +304,7 @@ describe('Billing Email Templates', () => {
                 expect(html).toContain('tus necesidades de alojamiento turístico');
             });
 
-            it('names the local for a gastronomy renewal, never alojamiento', () => {
+            it('names the local for a venue renewal, never alojamiento', () => {
                 const html = renderToStaticMarkup(
                     RenewalReminder({ ...validProps, productDomain: 'venue' })
                 );
