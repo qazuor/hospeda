@@ -244,9 +244,13 @@ describe('HOS-1951 staging sources', () => {
         await h.run(['--target=staging']);
         // Assert
         const emails = h.db.queries.find((q) => q.includes('declared_payer_email')) ?? '';
-        expect(emails).toContain("coalesce(nullif(btrim(s.declared_payer_email), ''), u.email)");
-        expect(emails).toContain('LEFT JOIN users u ON u.id = s.user_id');
-        expect(emails).not.toMatch(/WHERE\s+declared_payer_email IS NOT NULL/);
+        const fallback = "btrim(coalesce(nullif(btrim(s.declared_payer_email), ''), u.email))";
+        const [projected = '', filter = ''] = emails.split(/\bFROM\b/);
+        // the projected column AND the filter both use the fallback, not the declared column alone
+        expect(projected).toContain(`${fallback} AS email`);
+        expect(filter).toContain(`WHERE ${fallback} <> ''`);
+        expect(filter).toContain('LEFT JOIN users u ON u.id = s.user_id');
+        expect(emails).not.toMatch(/declared_payer_email IS NOT NULL/);
     });
 });
 
