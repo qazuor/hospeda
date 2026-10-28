@@ -92,7 +92,7 @@ export const COMPARISON_ROW_ICONS: Record<string, ComponentType<IconProps> | und
     // so an unmapped row degrades silently — which is why the two gastronomy/experience
     // tables would otherwise have rendered ONE iconed row among fifteen, beside
     // owner and tourist tables where every row has one.
-    maxGastronomies: ForkKnifeIcon,
+    maxVenues: ForkKnifeIcon,
     publishVenue: HomeIcon,
     editVenueInfo: EditIcon,
     venueMenu: FileTextIcon,
