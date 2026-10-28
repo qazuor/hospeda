@@ -88,7 +88,7 @@ export const sky = {
 } as const;
 
 /**
- * Forest — brand green for gastronomy / nature contexts.
+ * Forest — brand green for venue / nature contexts.
  *
  * Canonical: `oklch(0.50 0.14 155)` → shade 500 = `#007742`.
  * Used as `--hospeda-forest` on web.
