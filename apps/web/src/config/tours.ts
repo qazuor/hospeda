@@ -375,7 +375,7 @@ export function getWelcomeToursForRoles({
  * completes (or is skipped) and `WEB_TOURS` still holds a later match that is
  * still unseen, this function starts returning THAT tour on the very next
  * render, and `TourController` launches it automatically. A user with several
- * pending tours (e.g. the seeded `host-gastronomy@local.test` dual-role
+ * pending tours (e.g. the seeded `host-venue@local.test` dual-role
  * fixture, or anybody who held multiple roles before this feature shipped)
  * therefore sees them run back-to-back, each ending with its own "Finalizar"
  * click, rather than ten steps flattened into one mega-tour — and rather

@@ -2,13 +2,13 @@
  * LISTING-OWNER-01 — Gastronomy or experience owner edits operational fields on both verticals
  * (gastronomy + experience) and changes are visible on the public ficha.
  *
- * Actors: gastro-owner-julieta@local.test (role VENUE_OWNER, seeded by
+ * Actors: venue-owner-julieta@local.test (role VENUE_OWNER, seeded by
  *   @repo/seed example pipeline: venues.seed + experiences.seed).
  * Tags: @p0 @listing-owner
  *
  * Preconditions:
  *   - e2e:seed has run (`pnpm --filter hospeda-e2e e2e:seed`).
- *   - Julieta's account (gastro-owner-julieta@local.test / Password123!)
+ *   - Julieta's account (venue-owner-julieta@local.test / Password123!)
  *     exists with role VENUE_OWNER and profileCompleted=true.
  *   - She owns PUBLIC/ACTIVE venues:
  *       - la-parrilla-del-puerto (slug)
@@ -60,7 +60,7 @@ const API_URL = process.env.HOSPEDA_E2E_API_URL ?? 'http://localhost:3001';
 
 /** Known seeded gastronomy or experience owner. Password is stable across all E2E runs. */
 const JULIETA = {
-    email: 'gastro-owner-julieta@local.test',
+    email: 'venue-owner-julieta@local.test',
     password: 'Password123!'
 } as const;
 
@@ -199,7 +199,7 @@ test.describe('LISTING-OWNER-01: gastronomy or experience owner edits listings �
         await expect(experienceEditLink).toBeVisible();
 
         // Listings owned by OTHER gastronomy or experience owners must NOT appear.
-        // La Cervecería del Río belongs to rodrigo (gastro-owner-rodrigo@local.test).
+        // La Cervecería del Río belongs to rodrigo (venue-owner-rodrigo@local.test).
         await expect(
             page.locator('.mc-list__name', { hasText: 'La Cervecería del Río' })
         ).not.toBeVisible();

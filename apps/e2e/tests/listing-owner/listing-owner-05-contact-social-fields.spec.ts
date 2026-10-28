@@ -10,14 +10,14 @@
  *   3. A value entered in the linkedIn input is saved (PATCH succeeds) and
  *      persists (re-opening the editor shows the pre-filled value).
  *
- * Actor: gastro-owner-julieta@local.test (role VENUE_OWNER).
+ * Actor: venue-owner-julieta@local.test (role VENUE_OWNER).
  * Listing: la-parrilla-del-puerto (gastronomy).
  *
  * Tags: @p0 @listing-owner
  *
  * Preconditions:
  *   - e2e:seed has run.
- *   - gastro-owner-julieta@local.test exists with role VENUE_OWNER.
+ *   - venue-owner-julieta@local.test exists with role VENUE_OWNER.
  *   - la-parrilla-del-puerto is seeded and ACTIVE/PUBLIC.
  *   - Web and API servers are running (playwright.config webServer).
  *
@@ -51,7 +51,7 @@ const API_URL = process.env.HOSPEDA_E2E_API_URL ?? 'http://localhost:3001';
 
 /** Gastronomy or experience owner whose gastronomy editor is under test. */
 const JULIETA = {
-    email: 'gastro-owner-julieta@local.test',
+    email: 'venue-owner-julieta@local.test',
     password: 'Password123!'
 } as const;
 
