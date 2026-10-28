@@ -4,19 +4,19 @@ import {
     VenueProtectedSchema,
     VenuePublicSchema
 } from '../../../src/entities/venue/venue.access.schema.js';
-import { createMinimalGastronomy, createValidGastronomy } from '../../fixtures/venue.fixtures.js';
+import { createMinimalVenue, createValidVenue } from '../../fixtures/venue.fixtures.js';
 
-describe('GastronomyPublicSchema', () => {
-    it('should parse a valid gastronomy for public response', () => {
+describe('VenuePublicSchema', () => {
+    it('should parse a valid venue for public response', () => {
         // Use minimal fixture to avoid issues with complex nested fields
         // that may not satisfy the strict access-schema overrides (e.g. BaseMediaObjectSchema)
-        const data = createMinimalGastronomy();
+        const data = createMinimalVenue();
         expect(() => VenuePublicSchema.parse(data)).not.toThrow();
     });
 
     it('should exclude ownerId from public response', () => {
         const data = {
-            ...createValidGastronomy(),
+            ...createValidVenue(),
             ownerId: '123e4567-e89b-12d3-a456-426614174000'
         };
         const result = VenuePublicSchema.safeParse(data);
@@ -40,9 +40,9 @@ describe('GastronomyPublicSchema', () => {
     });
 });
 
-describe('GastronomyProtectedSchema', () => {
-    it('should parse a valid gastronomy for protected response', () => {
-        const data = createMinimalGastronomy();
+describe('VenueProtectedSchema', () => {
+    it('should parse a valid venue for protected response', () => {
+        const data = createMinimalVenue();
         expect(() => VenueProtectedSchema.parse(data)).not.toThrow();
     });
 
@@ -62,9 +62,9 @@ describe('GastronomyProtectedSchema', () => {
     });
 });
 
-describe('GastronomyAdminSchema', () => {
-    it('should parse a valid gastronomy for admin response', () => {
-        const data = createMinimalGastronomy();
+describe('VenueAdminSchema', () => {
+    it('should parse a valid venue for admin response', () => {
+        const data = createMinimalVenue();
         expect(() => VenueAdminSchema.parse(data)).not.toThrow();
     });
 
@@ -81,7 +81,7 @@ describe('GastronomyAdminSchema', () => {
 // destination object so stripWithSchema does not drop it from the response).
 // ---------------------------------------------------------------------------
 
-describe('GastronomyPublicSchema — B7a regression (destination relation field)', () => {
+describe('VenuePublicSchema — B7a regression (destination relation field)', () => {
     it('should include destination in its shape', () => {
         const keys = Object.keys(VenuePublicSchema.shape ?? {});
         expect(keys).toContain('destination');
@@ -89,7 +89,7 @@ describe('GastronomyPublicSchema — B7a regression (destination relation field)
 
     it('should accept a valid destination object on parse', () => {
         const data = {
-            ...createMinimalGastronomy(),
+            ...createMinimalVenue(),
             destination: {
                 id: '123e4567-e89b-12d3-a456-426614174001',
                 name: 'Concepción del Uruguay',
@@ -104,7 +104,7 @@ describe('GastronomyPublicSchema — B7a regression (destination relation field)
     });
 
     it('should accept null destination (nullish — FK may not resolve in edge cases)', () => {
-        const data = { ...createMinimalGastronomy(), destination: null };
+        const data = { ...createMinimalVenue(), destination: null };
         const result = VenuePublicSchema.safeParse(data);
         expect(result.success).toBe(true);
     });

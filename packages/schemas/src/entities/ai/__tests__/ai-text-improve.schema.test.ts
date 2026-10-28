@@ -366,7 +366,7 @@ describe('AiTextImproveRequestSchema', () => {
 // ============================================================================
 
 describe('AiTextImproveEntityTypeSchema', () => {
-    it('should include all members (accommodation, gastronomy, experience)', () => {
+    it('should include all members (accommodation, venue, experience)', () => {
         const values = Object.values(AiTextImproveEntityTypeSchema.enum);
         expect(values).toContain('accommodation');
         expect(values).toContain('venue');

@@ -6,7 +6,7 @@ import { VenueRatingSchema } from '../../src/common/venue-rating.schema.js';
 // GastronomyRatingSchema — SPEC-239 T-005
 // ============================================================================
 
-describe('GastronomyRatingSchema', () => {
+describe('VenueRatingSchema', () => {
     describe('valid inputs', () => {
         it('should parse a valid rating breakdown with all four fields', () => {
             // Arrange

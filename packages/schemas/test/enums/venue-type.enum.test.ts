@@ -9,7 +9,7 @@ import { VenueTypeEnumSchema } from '../../src/enums/venue-type.schema.js';
 //           ROTISERIA, FOOD_TRUCK
 // ============================================================================
 
-describe('GastronomyTypeEnum', () => {
+describe('VenueTypeEnum', () => {
     describe('enum values', () => {
         it('should define RESTAURANT', () => {
             expect(VenueTypeEnum.RESTAURANT).toBe('RESTAURANT');
@@ -52,7 +52,7 @@ describe('GastronomyTypeEnum', () => {
         });
     });
 
-    describe('GastronomyTypeEnumSchema', () => {
+    describe('VenueTypeEnumSchema', () => {
         it('should accept all 9 defined values', () => {
             // Arrange
             const values = Object.values(VenueTypeEnum);

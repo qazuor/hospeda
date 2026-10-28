@@ -1055,8 +1055,8 @@ describe('getGalleryCap', () => {
 // Gastronomy and experience media support (SPEC-249 T-015a)
 // ============================================================================
 
-describe('Gastronomy and experience media entity types', () => {
-    it('MediaEntityTypeSchema accepts gastronomy and experience', () => {
+describe('Venue and experience media entity types', () => {
+    it('MediaEntityTypeSchema accepts venue and experience', () => {
         expect(MediaEntityTypeSchema.safeParse('venue').success).toBe(true);
         expect(MediaEntityTypeSchema.safeParse('experience').success).toBe(true);
     });
@@ -1068,7 +1068,7 @@ describe('Gastronomy and experience media entity types', () => {
         expect(getGalleryCap('experience')).toBe(30);
     });
 
-    it('resolves storage folders for gastronomy and experience', () => {
+    it('resolves storage folders for venue and experience', () => {
         expect(ENTITY_FOLDER_MAP.venue({ environment: 'test', entityId: 'g1' })).toBe(
             'hospeda/test/venues/g1'
         );
@@ -1077,7 +1077,7 @@ describe('Gastronomy and experience media entity types', () => {
         );
     });
 
-    it('throws when a gastronomy or experience folder resolver is missing entityId', () => {
+    it('throws when a venue or experience folder resolver is missing entityId', () => {
         expect(() => ENTITY_FOLDER_MAP.venue({ environment: 'test' })).toThrow();
         expect(() => ENTITY_FOLDER_MAP.experience({ environment: 'test' })).toThrow();
     });

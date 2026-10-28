@@ -47,8 +47,8 @@ const LEGACY_MEDIA = {
 
 const updateSchemas = [
     { name: 'AccommodationUpdateInputSchema', schema: AccommodationUpdateInputSchema },
-    { name: 'GastronomyUpdateInputSchema', schema: VenueUpdateInputSchema },
-    { name: 'GastronomyOwnerUpdateInputSchema', schema: VenueOwnerUpdateInputSchema },
+    { name: 'VenueUpdateInputSchema', schema: VenueUpdateInputSchema },
+    { name: 'VenueOwnerUpdateInputSchema', schema: VenueOwnerUpdateInputSchema },
     { name: 'ExperienceUpdateInputSchema', schema: ExperienceUpdateInputSchema },
     { name: 'ExperienceOwnerUpdateInputSchema', schema: ExperienceOwnerUpdateInputSchema }
 ];

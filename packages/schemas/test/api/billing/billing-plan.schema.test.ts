@@ -272,7 +272,7 @@ describe('AdminBillingPlanResponseSchema (HOS-1314)', () => {
         id: '11111111-1111-4111-8111-111111111111',
         slug: 'venue-pro',
         name: 'Pro',
-        description: 'Gastronomy pro plan.',
+        description: 'Venue pro plan.',
         category: 'owner' as const,
         monthlyPriceArs: 1_500_000,
         annualPriceArs: 15_000_000,

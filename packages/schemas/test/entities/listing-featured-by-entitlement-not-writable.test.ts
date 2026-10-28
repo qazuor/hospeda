@@ -92,19 +92,19 @@ const WRITE_SCHEMAS: ReadonlyArray<{
 }> = [
     {
         vertical: 'venue',
-        name: 'GastronomyOwnerCreateInputSchema',
+        name: 'VenueOwnerCreateInputSchema',
         schema: VenueOwnerCreateInputSchema as unknown as Parseable,
         plausibleBody: { ...DEFAULT_PLAUSIBLE_BODY, type: 'RESTAURANT' }
     },
     {
         vertical: 'venue',
-        name: 'GastronomyOwnerUpdateInputSchema',
+        name: 'VenueOwnerUpdateInputSchema',
         schema: VenueOwnerUpdateInputSchema as unknown as Parseable,
         plausibleBody: DEFAULT_PLAUSIBLE_BODY
     },
     {
         vertical: 'venue',
-        name: 'GastronomyAdminCreateInputSchema',
+        name: 'VenueAdminCreateInputSchema',
         schema: VenueAdminCreateInputSchema as unknown as Parseable,
         plausibleBody: {
             ...DEFAULT_PLAUSIBLE_BODY,
@@ -115,7 +115,7 @@ const WRITE_SCHEMAS: ReadonlyArray<{
     },
     {
         vertical: 'venue',
-        name: 'GastronomyUpdateInputSchema',
+        name: 'VenueUpdateInputSchema',
         schema: VenueUpdateInputSchema as unknown as Parseable,
         plausibleBody: DEFAULT_PLAUSIBLE_BODY
     },

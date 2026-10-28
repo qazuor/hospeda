@@ -25,7 +25,7 @@ const validReviewBase = () => ({
     updatedById: null
 });
 
-describe('GastronomyReviewSchema', () => {
+describe('VenueReviewSchema', () => {
     it('should validate a valid review', () => {
         const data = validReviewBase();
         expect(() => VenueReviewSchema.parse(data)).not.toThrow();
@@ -85,7 +85,7 @@ describe('GastronomyReviewSchema', () => {
         expect(() => VenueReviewSchema.parse(data)).toThrow(ZodError);
     });
 
-    it('should reject a rating with an out-of-range dimension (GastronomyRatingSchema enforced on entity schema)', () => {
+    it('should reject a rating with an out-of-range dimension (VenueRatingSchema enforced on entity schema)', () => {
         // GastronomyReviewSchema.rating is GastronomyRatingSchema.nullish() — invalid dimensions
         // are rejected directly on the entity schema (food max is 5).
         const data = {
@@ -105,7 +105,7 @@ describe('GastronomyReviewSchema', () => {
     });
 });
 
-describe('GastronomyReviewCreateInputSchema', () => {
+describe('VenueReviewCreateInputSchema', () => {
     it('should validate a minimal create input (only required fields)', () => {
         const data = {
             venueId,
@@ -149,7 +149,7 @@ describe('GastronomyReviewCreateInputSchema', () => {
     });
 });
 
-describe('GastronomyReviewUpdateInputSchema', () => {
+describe('VenueReviewUpdateInputSchema', () => {
     it('should allow an empty update (all optional)', () => {
         expect(() => VenueReviewUpdateInputSchema.parse({})).not.toThrow();
     });

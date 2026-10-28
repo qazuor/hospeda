@@ -8,7 +8,7 @@ import {
 // OwnerListingSummarySchema (SPEC-249 T-003)
 // ============================================================================
 
-const gastronomyRow = {
+const venueRow = {
     id: '11111111-1111-4111-8111-111111111111',
     vertical: 'venue',
     name: 'La Parrilla',
@@ -29,8 +29,8 @@ const experienceRow = {
 };
 
 describe('OwnerListingSummarySchema', () => {
-    it('parses a gastronomy listing row', () => {
-        const result = OwnerListingSummarySchema.safeParse(gastronomyRow);
+    it('parses a venue listing row', () => {
+        const result = OwnerListingSummarySchema.safeParse(venueRow);
         expect(result.success).toBe(true);
     });
 
@@ -41,7 +41,7 @@ describe('OwnerListingSummarySchema', () => {
 
     it('rejects an unknown vertical', () => {
         const result = OwnerListingSummarySchema.safeParse({
-            ...gastronomyRow,
+            ...venueRow,
             vertical: 'lodging'
         });
         expect(result.success).toBe(false);
@@ -49,7 +49,7 @@ describe('OwnerListingSummarySchema', () => {
 
     it('rejects a non-uuid id', () => {
         const result = OwnerListingSummarySchema.safeParse({
-            ...gastronomyRow,
+            ...venueRow,
             id: 'not-a-uuid'
         });
         expect(result.success).toBe(false);
@@ -57,9 +57,9 @@ describe('OwnerListingSummarySchema', () => {
 
     it('carries the publication state (HOS-1641) and rejects a value outside the six states', () => {
         // Arrange
-        const purged = { ...gastronomyRow, publicationStatus: 'PURGED', isPublic: false };
-        const legacy = { ...gastronomyRow, publicationStatus: 'ACTIVE' };
-        const { publicationStatus: _omitted, ...missing } = gastronomyRow;
+        const purged = { ...venueRow, publicationStatus: 'PURGED', isPublic: false };
+        const legacy = { ...venueRow, publicationStatus: 'ACTIVE' };
+        const { publicationStatus: _omitted, ...missing } = venueRow;
 
         // Act
         const purgedResult = OwnerListingSummarySchema.safeParse(purged);
@@ -79,7 +79,7 @@ describe('OwnerListingSummarySchema', () => {
 describe('OwnerListingListSchema', () => {
     it('parses a mixed-vertical list under `listings`', () => {
         const result = OwnerListingListSchema.safeParse({
-            listings: [gastronomyRow, experienceRow]
+            listings: [venueRow, experienceRow]
         });
         expect(result.success).toBe(true);
     });

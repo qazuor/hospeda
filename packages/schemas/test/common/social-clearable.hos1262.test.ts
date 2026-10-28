@@ -93,13 +93,13 @@ describe('SocialNetworkReadSchema (READ) — a stored JSON null must not 500 the
     });
 });
 
-describe('flat HTTP social fields accept null (accommodation, gastronomy, event organizer)', () => {
+describe('flat HTTP social fields accept null (accommodation, venue, event organizer)', () => {
     it('accommodation update accepts `facebook: null` and rejects `""`', () => {
         expect(AccommodationUpdateHttpSchema.safeParse({ facebook: null }).success).toBe(true);
         expect(AccommodationUpdateHttpSchema.safeParse({ facebook: '' }).success).toBe(false);
     });
 
-    it('gastronomy update accepts `instagram: null`', () => {
+    it('venue update accepts `instagram: null`', () => {
         expect(VenueUpdateHttpSchema.safeParse({ instagram: null }).success).toBe(true);
     });
 

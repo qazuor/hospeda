@@ -49,7 +49,7 @@ const ONE_OFF_SHOW = {
     startTime: '22:00'
 };
 
-describe('GastronomyEventInputSchema — the recurrence refinement (HOS-1042)', () => {
+describe('VenueEventInputSchema — the recurrence refinement (HOS-1042)', () => {
     it('accepts a weekly entry carrying a weekday and no date', () => {
         // Act
         const result = VenueEventInputSchema.safeParse(WEEKLY_HAPPY_HOUR);
@@ -131,7 +131,7 @@ describe('GastronomyEventInputSchema — the recurrence refinement (HOS-1042)', 
     });
 });
 
-describe('GastronomyEventInputSchema — times (HOS-1042)', () => {
+describe('VenueEventInputSchema — times (HOS-1042)', () => {
     it('accepts an end time EARLIER than the start — a show that crosses midnight', () => {
         // Act
         const result = VenueEventInputSchema.safeParse({
@@ -188,7 +188,7 @@ describe('GastronomyEventInputSchema — times (HOS-1042)', () => {
     });
 });
 
-describe('GastronomyEventsReplacePayloadSchema (HOS-1042)', () => {
+describe('VenueEventsReplacePayloadSchema (HOS-1042)', () => {
     it('accepts an EMPTY agenda — that is how a venue takes it down', () => {
         // Act
         const result = VenueEventsReplacePayloadSchema.safeParse({ events: [] });

@@ -14,7 +14,7 @@ const venueId = faker.string.uuid();
 const faqId = faker.string.uuid();
 
 const validFaqPayload = () => ({
-    question: 'What are the opening hours for this gastronomy?',
+    question: 'What are the opening hours for this venue?',
     answer: 'We are open from Monday to Saturday, 9am to 10pm.',
     category: 'Hours',
     displayOrder: 1,
@@ -25,7 +25,7 @@ const validFaqPayload = () => ({
     updatedById: null
 });
 
-describe('GastronomyFaqSchema', () => {
+describe('VenueFaqSchema', () => {
     it('should validate a valid FAQ with venueId', () => {
         const data = {
             ...validFaqPayload(),
@@ -41,7 +41,7 @@ describe('GastronomyFaqSchema', () => {
     });
 });
 
-describe('GastronomyFaqAddInputSchema', () => {
+describe('VenueFaqAddInputSchema', () => {
     it('should validate a valid add input', () => {
         const data = {
             venueId,
@@ -105,7 +105,7 @@ describe('GastronomyFaqAddInputSchema', () => {
     });
 });
 
-describe('GastronomyFaqUpdateInputSchema', () => {
+describe('VenueFaqUpdateInputSchema', () => {
     it('should validate a valid update input', () => {
         const data = {
             venueId,
@@ -131,7 +131,7 @@ describe('GastronomyFaqUpdateInputSchema', () => {
     });
 });
 
-describe('GastronomyFaqRemoveInputSchema', () => {
+describe('VenueFaqRemoveInputSchema', () => {
     it('should validate a valid remove input', () => {
         const data = { venueId, faqId };
         expect(() => VenueFaqRemoveInputSchema.parse(data)).not.toThrow();

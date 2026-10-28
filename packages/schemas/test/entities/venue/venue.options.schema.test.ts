@@ -3,7 +3,7 @@ import { describe, expect, it } from 'vitest';
 import { ZodError } from 'zod';
 import { VenueOptionsItemSchema } from '../../../src/entities/venue/venue.options.schema.js';
 
-describe('GastronomyOptionsItemSchema', () => {
+describe('VenueOptionsItemSchema', () => {
     it('should validate a minimal options item (type and destination are required)', () => {
         // GastronomyOptionsItemSchema extends EntityOptionsItemSchema with required type+destination
         const data = {

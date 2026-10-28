@@ -97,9 +97,9 @@ describe('HOS-1077 per-vertical permissions', () => {
     it('the two verticals share no permission value', () => {
         // If any value were shared, granting one vertical would grant the other
         // — the exact defect HOS-1077 exists to remove.
-        const gastronomy = Object.values(VERTICALS[0].permissions);
+        const venue = Object.values(VERTICALS[0].permissions);
         const experience = Object.values(VERTICALS[1].permissions);
-        expect(gastronomy.filter((v) => (experience as string[]).includes(v))).toEqual([]);
+        expect(venue.filter((v) => (experience as string[]).includes(v))).toEqual([]);
     });
 
     it('neither vertical reuses a legacy shared-family value', () => {

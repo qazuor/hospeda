@@ -70,7 +70,7 @@ describe('StartPaidSubscriptionResponseSchema', () => {
         expect(result.success).toBe(true);
     });
 
-    it('accepts a response with no payerEmail (gastronomy/experience/partner start-subscription routes reuse this schema)', () => {
+    it('accepts a response with no payerEmail (venue/experience/partner start-subscription routes reuse this schema)', () => {
         const result = StartPaidSubscriptionResponseSchema.safeParse({
             checkoutUrl: 'https://mp.test/checkout/abc',
             localSubscriptionId: '11111111-1111-4111-8111-111111111111',

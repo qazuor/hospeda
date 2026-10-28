@@ -44,7 +44,7 @@ describe('videos field exposure on relational-media entities (HOS-372)', () => {
     // assertion below then catches.
     const cases = [
         {
-            name: 'GastronomyPublicSchema',
+            name: 'VenuePublicSchema',
             shapeKeys: Object.keys(VenuePublicSchema.shape),
             isolated: VenuePublicSchema.pick({ videos: true })
         },

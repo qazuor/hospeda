@@ -25,7 +25,7 @@ const OWNER_ID = '00000000-0000-4000-a000-000000000001';
 const DESTINATION_ID = '00000000-0000-4000-a000-000000000002';
 
 /** A fully-complete gastronomy listing snapshot. */
-function makeCompleteGastronomyListing(): ListingCompletenessListing {
+function makeCompleteVenueListing(): ListingCompletenessListing {
     return {
         name: 'La Parrilla del Puerto',
         summary: 'A riverside parrilla with fresh grilled fish and steak.',
@@ -86,11 +86,11 @@ function makeCompleteExperienceListing(): ListingCompletenessListing {
 // resolveListingCompleteness — gastronomy
 // ---------------------------------------------------------------------------
 
-describe('resolveListingCompleteness — gastronomy', () => {
+describe('resolveListingCompleteness — venue', () => {
     it('should return complete=true and missing=[] for a fully-complete listing', () => {
         const result = resolveListingCompleteness({
             entityType: ProductDomainEnum.VENUE,
-            listing: makeCompleteGastronomyListing()
+            listing: makeCompleteVenueListing()
         });
 
         expect(result.complete).toBe(true);
@@ -98,7 +98,7 @@ describe('resolveListingCompleteness — gastronomy', () => {
     });
 
     it('should report "name" missing when name is empty', () => {
-        const listing = { ...makeCompleteGastronomyListing(), name: '' };
+        const listing = { ...makeCompleteVenueListing(), name: '' };
         const result = resolveListingCompleteness({
             entityType: ProductDomainEnum.VENUE,
             listing
@@ -109,7 +109,7 @@ describe('resolveListingCompleteness — gastronomy', () => {
     });
 
     it('should report "name" missing when name is null', () => {
-        const listing = { ...makeCompleteGastronomyListing(), name: null };
+        const listing = { ...makeCompleteVenueListing(), name: null };
         const result = resolveListingCompleteness({
             entityType: ProductDomainEnum.VENUE,
             listing
@@ -119,7 +119,7 @@ describe('resolveListingCompleteness — gastronomy', () => {
     });
 
     it('should report "summary" missing when summary is below the minimum length', () => {
-        const listing = { ...makeCompleteGastronomyListing(), summary: 'too short' };
+        const listing = { ...makeCompleteVenueListing(), summary: 'too short' };
         const result = resolveListingCompleteness({
             entityType: ProductDomainEnum.VENUE,
             listing
@@ -129,7 +129,7 @@ describe('resolveListingCompleteness — gastronomy', () => {
     });
 
     it('should report "description" missing when description is below the minimum length', () => {
-        const listing = { ...makeCompleteGastronomyListing(), description: 'too short' };
+        const listing = { ...makeCompleteVenueListing(), description: 'too short' };
         const result = resolveListingCompleteness({
             entityType: ProductDomainEnum.VENUE,
             listing
@@ -139,7 +139,7 @@ describe('resolveListingCompleteness — gastronomy', () => {
     });
 
     it('should report "destinationId" missing when destinationId is absent', () => {
-        const listing = { ...makeCompleteGastronomyListing(), destinationId: undefined };
+        const listing = { ...makeCompleteVenueListing(), destinationId: undefined };
         const result = resolveListingCompleteness({
             entityType: ProductDomainEnum.VENUE,
             listing
@@ -149,7 +149,7 @@ describe('resolveListingCompleteness — gastronomy', () => {
     });
 
     it('should report "ownerId" missing when ownerId is absent', () => {
-        const listing = { ...makeCompleteGastronomyListing(), ownerId: null };
+        const listing = { ...makeCompleteVenueListing(), ownerId: null };
         const result = resolveListingCompleteness({
             entityType: ProductDomainEnum.VENUE,
             listing
@@ -159,7 +159,7 @@ describe('resolveListingCompleteness — gastronomy', () => {
     });
 
     it('should report "type" missing when type is absent', () => {
-        const listing = { ...makeCompleteGastronomyListing(), type: undefined };
+        const listing = { ...makeCompleteVenueListing(), type: undefined };
         const result = resolveListingCompleteness({
             entityType: ProductDomainEnum.VENUE,
             listing
@@ -169,7 +169,7 @@ describe('resolveListingCompleteness — gastronomy', () => {
     });
 
     it('should report "media.featuredImage" missing when media is absent', () => {
-        const listing = { ...makeCompleteGastronomyListing(), media: undefined };
+        const listing = { ...makeCompleteVenueListing(), media: undefined };
         const result = resolveListingCompleteness({
             entityType: ProductDomainEnum.VENUE,
             listing
@@ -179,7 +179,7 @@ describe('resolveListingCompleteness — gastronomy', () => {
     });
 
     it('should report "media.featuredImage" missing when featuredImage is absent', () => {
-        const listing = { ...makeCompleteGastronomyListing(), media: {} };
+        const listing = { ...makeCompleteVenueListing(), media: {} };
         const result = resolveListingCompleteness({
             entityType: ProductDomainEnum.VENUE,
             listing
@@ -190,7 +190,7 @@ describe('resolveListingCompleteness — gastronomy', () => {
 
     it('should report "contactInfo" missing when no phone or email is set', () => {
         const listing = {
-            ...makeCompleteGastronomyListing(),
+            ...makeCompleteVenueListing(),
             contactInfo: { website: 'https://example.com' }
         };
         const result = resolveListingCompleteness({
@@ -203,7 +203,7 @@ describe('resolveListingCompleteness — gastronomy', () => {
 
     it('should NOT report "contactInfo" missing when only an email is set', () => {
         const listing = {
-            ...makeCompleteGastronomyListing(),
+            ...makeCompleteVenueListing(),
             contactInfo: { personalEmail: 'owner@example.com' }
         };
         const result = resolveListingCompleteness({
@@ -216,7 +216,7 @@ describe('resolveListingCompleteness — gastronomy', () => {
 
     it('should report "openingHours" missing when no day has a shift', () => {
         const listing = {
-            ...makeCompleteGastronomyListing(),
+            ...makeCompleteVenueListing(),
             openingHours: {
                 timezone: 'America/Argentina/Buenos_Aires',
                 days: {
@@ -239,7 +239,7 @@ describe('resolveListingCompleteness — gastronomy', () => {
     });
 
     it('should report "openingHours" missing when openingHours is absent', () => {
-        const listing = { ...makeCompleteGastronomyListing(), openingHours: undefined };
+        const listing = { ...makeCompleteVenueListing(), openingHours: undefined };
         const result = resolveListingCompleteness({
             entityType: ProductDomainEnum.VENUE,
             listing
@@ -249,7 +249,7 @@ describe('resolveListingCompleteness — gastronomy', () => {
     });
 
     it('should report "priceRange" missing when priceRange is absent', () => {
-        const listing = { ...makeCompleteGastronomyListing(), priceRange: null };
+        const listing = { ...makeCompleteVenueListing(), priceRange: null };
         const result = resolveListingCompleteness({
             entityType: ProductDomainEnum.VENUE,
             listing
@@ -264,7 +264,7 @@ describe('resolveListingCompleteness — gastronomy', () => {
         // a listing missing them entirely is still complete.
         const result = resolveListingCompleteness({
             entityType: ProductDomainEnum.VENUE,
-            listing: makeCompleteGastronomyListing()
+            listing: makeCompleteVenueListing()
         });
 
         expect(result.complete).toBe(true);
@@ -307,7 +307,7 @@ describe('resolveListingCompleteness — experience', () => {
         expect(result.missing).toEqual([]);
     });
 
-    it('should NOT require openingHours or priceRange (gastronomy-only fields)', () => {
+    it('should NOT require openingHours or priceRange (venue-only fields)', () => {
         const listing = {
             ...makeCompleteExperienceListing(),
             openingHours: undefined,
@@ -323,7 +323,7 @@ describe('resolveListingCompleteness — experience', () => {
         expect(result.missing).not.toContain('priceRange');
     });
 
-    it('should report shared-block fields missing the same way as gastronomy', () => {
+    it('should report shared-block fields missing the same way as venue', () => {
         const listing = { ...makeCompleteExperienceListing(), name: '' };
         const result = resolveListingCompleteness({
             entityType: ProductDomainEnum.EXPERIENCE,
@@ -407,9 +407,9 @@ describe('resolveListingCompleteness — experience', () => {
             expect(result.missing).not.toContain('priceFrom');
         });
 
-        it('should NOT apply the priceFrom rule to gastronomy listings', () => {
+        it('should NOT apply the priceFrom rule to venue listings', () => {
             const listing = {
-                ...makeCompleteGastronomyListing(),
+                ...makeCompleteVenueListing(),
                 priceFrom: 0,
                 isPriceOnRequest: false
             };
@@ -521,7 +521,7 @@ describe('HOS-924 — an experience cannot publish on a channel its page never s
         expect(result.missing).toContain('contactInfo');
     });
 
-    it('accepts a WhatsApp-only gastronomy listing — the narrowing is per-vertical', () => {
+    it('accepts a WhatsApp-only venue listing — the narrowing is per-vertical', () => {
         // Applying the experience rule to gastronomy would make EVERY
         // gastronomy listing unpublishable: `GastronomyPublicSchema` publishes
         // no `contactInfo` at all. That hole is wider than a mis-calibrated
@@ -529,7 +529,7 @@ describe('HOS-924 — an experience cannot publish on a channel its page never s
         const result = resolveListingCompleteness({
             entityType: ProductDomainEnum.VENUE,
             listing: {
-                ...makeCompleteGastronomyListing(),
+                ...makeCompleteVenueListing(),
                 contactInfo: { whatsapp: SAMPLE_VALUE.whatsapp }
             }
         });

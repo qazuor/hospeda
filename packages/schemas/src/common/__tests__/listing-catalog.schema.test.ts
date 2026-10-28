@@ -37,7 +37,7 @@ const FEATURE_ROW = {
     comments: 'Salida 8:00 desde el centro'
 } as const;
 
-const buildGastronomy = (overrides: Record<string, unknown> = {}): Record<string, unknown> => ({
+const buildVenue = (overrides: Record<string, unknown> = {}): Record<string, unknown> => ({
     id: ENTITY_UUID,
     slug: 'parrilla-el-fogon',
     name: 'Parrilla El Fogón',
@@ -75,10 +75,10 @@ const buildExperience = (overrides: Record<string, unknown> = {}): Record<string
     ...overrides
 });
 
-describe('GastronomyPublicSchema — amenities/features reach the public tier (HOS-1072)', () => {
+describe('VenuePublicSchema — amenities/features reach the public tier (HOS-1072)', () => {
     it('keeps a catalog-joined amenity through the public parse', () => {
         // Arrange
-        const raw = buildGastronomy({ amenities: [AMENITY_ROW] });
+        const raw = buildVenue({ amenities: [AMENITY_ROW] });
 
         // Act
         const result = VenuePublicSchema.safeParse(raw);
@@ -91,7 +91,7 @@ describe('GastronomyPublicSchema — amenities/features reach the public tier (H
 
     it('keeps a feature with its owner-authored relabel and comment', () => {
         // Arrange
-        const raw = buildGastronomy({ features: [FEATURE_ROW] });
+        const raw = buildVenue({ features: [FEATURE_ROW] });
 
         // Act
         const result = VenuePublicSchema.safeParse(raw);
@@ -104,7 +104,7 @@ describe('GastronomyPublicSchema — amenities/features reach the public tier (H
 
     it('leaves both keys ABSENT — not empty arrays — when the payload omits them', () => {
         // Arrange: a list payload, which never runs the catalog join.
-        const raw = buildGastronomy();
+        const raw = buildVenue();
 
         // Act
         const result = VenuePublicSchema.safeParse(raw);
@@ -119,7 +119,7 @@ describe('GastronomyPublicSchema — amenities/features reach the public tier (H
     it('strips catalog columns that are NOT part of the published projection', () => {
         // Arrange: `isBuiltin` and `adminInfo` exist on the catalog row and must
         // not ride along just because the join could reach them.
-        const raw = buildGastronomy({
+        const raw = buildVenue({
             amenities: [{ ...AMENITY_ROW, isBuiltin: true, adminInfo: { notes: 'interno' } }]
         });
 
@@ -134,7 +134,7 @@ describe('GastronomyPublicSchema — amenities/features reach the public tier (H
 
     it('rejects an amenity row whose catalog join produced no slug', () => {
         // Arrange: the slug IS the i18n key — a row without one renders nothing.
-        const raw = buildGastronomy({ amenities: [{ amenityId: AMENITY_UUID, icon: null }] });
+        const raw = buildVenue({ amenities: [{ amenityId: AMENITY_UUID, icon: null }] });
 
         // Act
         const result = VenuePublicSchema.safeParse(raw);

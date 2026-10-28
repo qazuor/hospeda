@@ -22,7 +22,7 @@ const base = {
     validUntil: '2026-09-03'
 };
 
-describe('GastronomyDailySpecialInputSchema — the window', () => {
+describe('VenueDailySpecialInputSchema — the window', () => {
     it('accepts a one-day special, both bounds on the same date', () => {
         // The DEFINING case, not an edge one: "menú del día" means today, and
         // an inclusive window expresses that as from === until. A half-open
@@ -137,7 +137,7 @@ describe('GastronomyDailySpecialInputSchema — the window', () => {
     });
 });
 
-describe('GastronomyDailySpecialInputSchema — the dish', () => {
+describe('VenueDailySpecialInputSchema — the dish', () => {
     it('keeps a zero price as zero rather than treating it as absent', () => {
         // `0` is a real price. The service uses `?? null` for exactly this
         // reason, and the schema has to let a zero through for that to matter.
@@ -173,7 +173,7 @@ describe('GastronomyDailySpecialInputSchema — the dish', () => {
     });
 });
 
-describe('GastronomyDailySpecialsReplacePayloadSchema', () => {
+describe('VenueDailySpecialsReplacePayloadSchema', () => {
     it('accepts an empty document as "take the menú del día down"', () => {
         // The manual escape hatch beside the automatic expiry, for the venue
         // that sold out at 13:00.

@@ -30,7 +30,7 @@ import {
     VenueUpdateInputSchema
 } from '../../../src/entities/venue/venue.crud.schema.js';
 
-describe('GastronomyMenuReplacePayloadSchema (HOS-895)', () => {
+describe('VenueMenuReplacePayloadSchema (HOS-895)', () => {
     it('accepts an empty carta — that is how an owner deletes it', () => {
         const parsed = VenueMenuReplacePayloadSchema.safeParse({ sections: [] });
 
@@ -123,7 +123,7 @@ describe('GastronomyMenuReplacePayloadSchema (HOS-895)', () => {
     });
 });
 
-describe('GastronomyMenuFileSchema (HOS-895)', () => {
+describe('VenueMenuFileSchema (HOS-895)', () => {
     it('accepts an image and a pdf', () => {
         expect(
             VenueMenuFileSchema.safeParse({
@@ -189,10 +189,10 @@ describe('the menu-file columns are not writable from a listing body (HOS-895)',
     } as const;
 
     it.each([
-        ['GastronomyUpdateInputSchema (admin update)', VenueUpdateInputSchema],
-        ['GastronomyAdminCreateInputSchema', VenueAdminCreateInputSchema],
-        ['GastronomyOwnerCreateInputSchema', VenueOwnerCreateInputSchema],
-        ['GastronomyOwnerUpdateInputSchema (owner PATCH)', VenueOwnerUpdateInputSchema]
+        ['VenueUpdateInputSchema (admin update)', VenueUpdateInputSchema],
+        ['VenueAdminCreateInputSchema', VenueAdminCreateInputSchema],
+        ['VenueOwnerCreateInputSchema', VenueOwnerCreateInputSchema],
+        ['VenueOwnerUpdateInputSchema (owner PATCH)', VenueOwnerUpdateInputSchema]
     ])('%s drops every menu-file column', (_label, schema) => {
         const parsed = schema.safeParse(HOSTILE);
 
@@ -297,7 +297,7 @@ describe('the per-dish photo (HOS-1045)', () => {
     });
 });
 
-describe('GastronomyMenuReplacePayloadSchema — translations (HOS-1043)', () => {
+describe('VenueMenuReplacePayloadSchema — translations (HOS-1043)', () => {
     it('accepts a section and dish carrying a full {es,en,pt} translation', () => {
         const parsed = VenueMenuReplacePayloadSchema.safeParse({
             sections: [

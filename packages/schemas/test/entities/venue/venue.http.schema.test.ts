@@ -10,7 +10,7 @@ import {
     VenueUpdateHttpSchema
 } from '../../../src/entities/venue/venue.http.schema.js';
 
-describe('GastronomySearchHttpSchema', () => {
+describe('VenueSearchHttpSchema', () => {
     it('should validate an empty search (all defaults)', () => {
         expect(() => VenueSearchHttpSchema.parse({})).not.toThrow();
     });
@@ -80,7 +80,7 @@ describe('GastronomySearchHttpSchema', () => {
     });
 });
 
-describe('GastronomyCreateHttpSchema', () => {
+describe('VenueCreateHttpSchema', () => {
     // H-88: `ownerId` is REQUIRED. `gastronomies.owner_id` is NOT NULL with no
     // default, so a create payload without it cannot become a row — it reached
     // Postgres and came back as an opaque 500. A fixture that omits it is not a
@@ -109,7 +109,7 @@ describe('GastronomyCreateHttpSchema', () => {
     });
 });
 
-describe('GastronomyUpdateHttpSchema', () => {
+describe('VenueUpdateHttpSchema', () => {
     it('should allow empty update', () => {
         expect(() => VenueUpdateHttpSchema.parse({})).not.toThrow();
     });
@@ -124,7 +124,7 @@ describe('GastronomyUpdateHttpSchema', () => {
     });
 });
 
-describe('httpToDomainGastronomySearch', () => {
+describe('httpToDomainVenueSearch', () => {
     it('should convert HTTP search params to domain search input', () => {
         const httpInput = VenueSearchHttpSchema.parse({
             type: 'RESTAURANT',
@@ -161,7 +161,7 @@ describe('httpToDomainGastronomySearch', () => {
     });
 });
 
-describe('httpToDomainGastronomyCreate', () => {
+describe('httpToDomainVenueCreate', () => {
     it('should convert HTTP create payload to domain create input', () => {
         const httpInput = VenueCreateHttpSchema.parse({
             name: 'Café del Centro',
@@ -178,7 +178,7 @@ describe('httpToDomainGastronomyCreate', () => {
     });
 });
 
-describe('httpToDomainGastronomyUpdate', () => {
+describe('httpToDomainVenueUpdate', () => {
     it('should convert HTTP update payload to domain update input', () => {
         const httpInput = VenueUpdateHttpSchema.parse({ priceRange: 'BUDGET' });
         const result = httpToDomainVenueUpdate(httpInput);

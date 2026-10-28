@@ -49,7 +49,7 @@ const buildAdminCreateInput = (
 // GastronomyAdminCreateInputSchema
 // ============================================================================
 
-describe('GastronomyAdminCreateInputSchema', () => {
+describe('VenueAdminCreateInputSchema', () => {
     describe('required vs optional fields', () => {
         it('should parse a valid admin create input', () => {
             const raw = buildAdminCreateInput();
@@ -109,7 +109,7 @@ describe('GastronomyAdminCreateInputSchema', () => {
 // GastronomyOwnerUpdateInputSchema — SPEC-253 T-027
 // ============================================================================
 
-describe('GastronomyOwnerUpdateInputSchema', () => {
+describe('VenueOwnerUpdateInputSchema', () => {
     it('should parse an empty update (all fields optional)', () => {
         // Arrange / Act
         const result = VenueOwnerUpdateInputSchema.safeParse({});
@@ -137,7 +137,7 @@ describe('GastronomyOwnerUpdateInputSchema', () => {
             }
         });
 
-        it('should accept all gastronomy type enum values', () => {
+        it('should accept all venue type enum values', () => {
             for (const type of Object.values(VenueTypeEnum)) {
                 const result = VenueOwnerUpdateInputSchema.safeParse({ type });
                 expect(result.success).toBe(true);
@@ -237,7 +237,7 @@ describe('GastronomyOwnerUpdateInputSchema', () => {
     // -------------------------------------------------------------------------
 
     describe('previously-permitted operational sections (regression guard)', () => {
-        it('should accept priceRange (gastronomy-specific operational field)', () => {
+        it('should accept priceRange (venue-specific operational field)', () => {
             const result = VenueOwnerUpdateInputSchema.safeParse({ priceRange: 'MID' });
             expect(result.success).toBe(true);
         });
@@ -272,8 +272,8 @@ describe('GastronomyOwnerUpdateInputSchema', () => {
     // (experience-only fields — they must not leak into gastronomy schema)
     // -------------------------------------------------------------------------
 
-    describe('experience-only fields MUST NOT appear in gastronomy owner update (SPEC-253 T-027)', () => {
-        it('should strip priceFrom silently (experience-only field — not valid for gastronomy)', () => {
+    describe('experience-only fields MUST NOT appear in venue owner update (SPEC-253 T-027)', () => {
+        it('should strip priceFrom silently (experience-only field — not valid for venue)', () => {
             // Arrange: priceFrom is experience-only; if present in a gastronomy payload
             // it must be stripped by Zod's unknown-key stripping behaviour.
             const result = VenueOwnerUpdateInputSchema.safeParse({
@@ -288,7 +288,7 @@ describe('GastronomyOwnerUpdateInputSchema', () => {
             }
         });
 
-        it('should strip priceUnit silently (experience-only field — not valid for gastronomy)', () => {
+        it('should strip priceUnit silently (experience-only field — not valid for venue)', () => {
             const result = VenueOwnerUpdateInputSchema.safeParse({
                 priceUnit: 'per_person' // experience-only — must be stripped
             } as Record<string, unknown>);
@@ -379,7 +379,7 @@ describe('GastronomyOwnerUpdateInputSchema', () => {
 // GastronomyOwnerCreateInputSchema — HOS-166 §7.2
 // ============================================================================
 
-describe('GastronomyOwnerCreateInputSchema', () => {
+describe('VenueOwnerCreateInputSchema', () => {
     const buildOwnerCreateInput = (
         overrides: Record<string, unknown> = {}
     ): Record<string, unknown> => ({
@@ -455,7 +455,7 @@ describe('GastronomyOwnerCreateInputSchema', () => {
 // GastronomyUpdateInputSchema (admin PATCH)
 // ============================================================================
 
-describe('GastronomyUpdateInputSchema', () => {
+describe('VenueUpdateInputSchema', () => {
     it('should parse an empty partial update', () => {
         const result = VenueUpdateInputSchema.safeParse({});
         expect(result.success).toBe(true);
@@ -508,7 +508,7 @@ describe('GastronomyUpdateInputSchema', () => {
 // GastronomyDeleteInputSchema
 // ============================================================================
 
-describe('GastronomyDeleteInputSchema', () => {
+describe('VenueDeleteInputSchema', () => {
     it('should parse with id and default force=false', () => {
         // Arrange / Act
         const result = VenueDeleteInputSchema.safeParse({ id: VALID_UUID });
@@ -538,7 +538,7 @@ describe('GastronomyDeleteInputSchema', () => {
 // GastronomyRestoreInputSchema
 // ============================================================================
 
-describe('GastronomyRestoreInputSchema', () => {
+describe('VenueRestoreInputSchema', () => {
     it('should parse a valid UUID id', () => {
         const result = VenueRestoreInputSchema.safeParse({ id: VALID_UUID });
         expect(result.success).toBe(true);

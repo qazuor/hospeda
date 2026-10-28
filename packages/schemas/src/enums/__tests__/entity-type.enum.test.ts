@@ -58,7 +58,7 @@ describe('EntityTypeEnum', () => {
         });
     });
 
-    describe('2 new values added in F3 (favorites for experiences + gastronomy)', () => {
+    describe('2 new values added in F3 (favorites for experiences + venue)', () => {
         it('should include EXPERIENCE', () => {
             expect(EntityTypeEnum.EXPERIENCE).toBe('EXPERIENCE');
         });

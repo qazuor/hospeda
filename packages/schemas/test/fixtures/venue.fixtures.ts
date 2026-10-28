@@ -19,7 +19,7 @@ import {
 /**
  * Creates gastronomy-specific identity fields matching ListingIdentityFields.
  */
-const createGastronomyIdentityFields = () => ({
+const createVenueIdentityFields = () => ({
     slug: faker.lorem.slug(3),
     name: faker.company.name().slice(0, 100),
     summary: faker.lorem.paragraph().slice(0, 300),
@@ -79,7 +79,7 @@ const createOpeningHoursFields = () => ({
 /**
  * Creates a gastronomy rating (food/service/ambiance/value).
  */
-const createGastronomyRating = () => ({
+const createVenueRating = () => ({
     food: faker.number.float({ min: 1, max: 5, fractionDigits: 1 }),
     service: faker.number.float({ min: 1, max: 5, fractionDigits: 1 }),
     ambiance: faker.number.float({ min: 1, max: 5, fractionDigits: 1 }),
@@ -92,10 +92,10 @@ const createGastronomyRating = () => ({
  * produces placeholder URLs (e.g. "https://facebook.com/example") that may not
  * pass the schema's strict regex validation for each platform pattern.
  */
-export const createValidGastronomy = () => ({
+export const createValidVenue = () => ({
     ...createBaseIdFields(),
     ...createBaseAuditFields(),
-    ...createGastronomyIdentityFields(),
+    ...createVenueIdentityFields(),
     type: faker.helpers.arrayElement(Object.values(VenueTypeEnum)),
     priceRange: faker.helpers.maybe(
         () => faker.helpers.arrayElement(['BUDGET', 'MID', 'HIGH', 'PREMIUM'] as const),
@@ -116,14 +116,14 @@ export const createValidGastronomy = () => ({
     ...createBaseMediaFields(),
     ...createBaseAdminFields(),
     ...createBaseTagsFields(),
-    rating: faker.helpers.maybe(() => createGastronomyRating(), { probability: 0.7 }),
+    rating: faker.helpers.maybe(() => createVenueRating(), { probability: 0.7 }),
     faqs: undefined
 });
 
 /**
  * Creates a minimal gastronomy with only required fields.
  */
-export const createMinimalGastronomy = () => ({
+export const createMinimalVenue = () => ({
     id: faker.string.uuid(),
     slug: 'parrilla-de-juan',
     name: 'La Parrilla de Juan',
@@ -145,7 +145,7 @@ export const createMinimalGastronomy = () => ({
 /**
  * Creates an invalid gastronomy (missing required fields + bad values).
  */
-export const createInvalidGastronomy = () => ({
+export const createInvalidVenue = () => ({
     id: 'not-a-uuid',
     name: '', // Too short
     type: 'INVALID_TYPE', // Not in enum

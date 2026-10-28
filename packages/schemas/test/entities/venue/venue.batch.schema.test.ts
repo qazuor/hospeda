@@ -6,7 +6,7 @@ import {
     VenueBatchResponseSchema
 } from '../../../src/entities/venue/venue.batch.schema.js';
 
-describe('GastronomyBatchRequestSchema', () => {
+describe('VenueBatchRequestSchema', () => {
     it('should validate a valid batch request with one ID', () => {
         const data = { ids: [faker.string.uuid()] };
         expect(() => VenueBatchRequestSchema.parse(data)).not.toThrow();
@@ -43,7 +43,7 @@ describe('GastronomyBatchRequestSchema', () => {
     });
 });
 
-describe('GastronomyBatchResponseSchema', () => {
+describe('VenueBatchResponseSchema', () => {
     it('should validate an array with null items (not-found entries)', () => {
         const data = [null, null];
         expect(() => VenueBatchResponseSchema.parse(data)).not.toThrow();
