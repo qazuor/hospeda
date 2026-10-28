@@ -149,7 +149,7 @@ export const SET_PASSWORD_SEGMENT = 'agregar-contrasena' as const;
 
 /**
  * Sub-path of the change-password form (under /{locale}/mi-cuenta/).
- * Used by gastronomy/experience owners who must rotate their password on first login (SPEC-239 T-041).
+ * Used by venue/experience owners who must rotate their password on first login (SPEC-239 T-041).
  * Whitelisted in the middleware guard analogously to SET_PASSWORD_SEGMENT.
  */
 export const CHANGE_PASSWORD_SEGMENT = 'cambiar-contrasena' as const;

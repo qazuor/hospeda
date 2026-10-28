@@ -1,8 +1,8 @@
 /**
  * @file listing-editor-hub-status-model.ts
- * @description Per-section status lines for the gastronomy/experience editor hub (HOS-1080).
+ * @description Per-section status lines for the venue/experience editor hub (HOS-1080).
  *
- * The gastronomy/experience counterpart of `editor-hub-status-model.ts`, and it inherits that
+ * The venue/experience counterpart of `editor-hub-status-model.ts`, and it inherits that
  * file's hardest-won rule verbatim (H-101): **never warn about what does not
  * block while staying silent about what does.** The accommodation hub once
  * shouted "⚠ Sin fotos" — which did not block publishing — while `bathrooms` and

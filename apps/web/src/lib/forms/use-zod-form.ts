@@ -68,7 +68,7 @@ export interface UseZodFormOptions<TSchema extends ZodTypeAny> {
      * Zod keys whose value is a nested object rendered as ONE group of controls
      * rather than one labelled input (HOS-814).
      *
-     * Zod reports an issue at its deepest path, so a bad shift inside gastronomy/experience
+     * Zod reports an issue at its deepest path, so a bad shift inside venue/experience
      * `openingHours` arrives as `openingHours.days.mon.shifts.0.close`. Nothing
      * reads that key: the section renders `<FieldError>` for `openingHours`, and
      * `focusFirstInvalidField` derives an id from `openingHours`. The result was

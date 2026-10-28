@@ -1,10 +1,10 @@
 /**
  * @file resolve-listing-editor-page.ts
- * @description Front-door for every gastronomy/experience editor page (HOS-1080).
+ * @description Front-door for every venue/experience editor page (HOS-1080).
  *
- * The gastronomy/experience counterpart of `resolve-editor-page.ts`. Eleven pages (the hub
+ * The venue/experience counterpart of `resolve-editor-page.ts`. Eleven pages (the hub
  * plus the sections) need the same seven things before they can render: a
- * logged-in user, gastronomy/experience access, a known vertical, an id in the route, the
+ * logged-in user, venue/experience access, a known vertical, an id in the route, the
  * listing loaded, an ownership check, and a clean redirect when any of those
  * fails. Written once here so a new section page cannot forget one of them —
  * which is exactly what the single pre-split route made easy to do, since it was
@@ -41,7 +41,7 @@ import { buildUrl } from '@/lib/urls';
 /** Extra payloads a page can ask the resolver to load. */
 export type ListingEditorDataNeed = 'catalog' | 'destinations';
 
-/** What a gastronomy/experience editor page gets back. Exactly one of `redirect` / `detail`. */
+/** What a venue/experience editor page gets back. Exactly one of `redirect` / `detail`. */
 export type ListingEditorPageResolution =
     | { readonly redirect: Response; readonly detail?: undefined }
     | {
@@ -66,7 +66,7 @@ export type ListingEditorPageResolution =
       };
 
 /**
- * Resolves everything a gastronomy/experience editor page needs, or the redirect it should
+ * Resolves everything a venue/experience editor page needs, or the redirect it should
  * return.
  *
  * @param params - The Astro global, the page's section slug (`null` for the
@@ -90,7 +90,7 @@ export async function resolveListingEditorPage({
     }
 
     // HOS-296: gate through the shared `nav-gating` predicate over the role SET,
-    // so a VENUE_OWNER who is ALSO a HOST keeps gastronomy/experience access (AC-1).
+    // so a VENUE_OWNER who is ALSO a HOST keeps venue/experience access (AC-1).
     if (!hasListingNavAccess({ roles: user.roles })) {
         return { redirect: astro.redirect(buildUrl({ locale, path: 'mi-cuenta' })) };
     }
@@ -109,7 +109,7 @@ export async function resolveListingEditorPage({
     // An unknown slug must not render a page claiming to be a section that does
     // not exist — send it to the hub, which always exists. This is also what
     // answers `/gastronomy/<id>/editar/punto-de-encuentro`: the experience-only
-    // sections are absent from a gastronomy registry, so the lookup misses.
+    // sections are absent from a venue registry, so the lookup misses.
     const section =
         sectionSlug === null ? null : findEditorSectionBySlug({ registry, slug: sectionSlug });
     if (sectionSlug !== null && !section) {
@@ -158,7 +158,7 @@ export async function resolveListingEditorPage({
  * Loads the amenity and feature catalogs for one vertical.
  *
  * SPEC-266: filtered to the listing's actual vertical, so a brewery
- * (gastronomy) only sees gastronomy-scoped amenities and an experience listing
+ * (venue) only sees venue-scoped amenities and an experience listing
  * sees experience-scoped ones.
  *
  * Degrades cleanly: a failed fetch yields empty lists rather than a 500, which

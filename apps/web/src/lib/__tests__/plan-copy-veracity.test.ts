@@ -247,7 +247,7 @@ const FIRST_SUBSCRIPTION_HINTS: Record<Locale, readonly string[]> = {
     // `(customer, product domain)`, so the honest qualifier names the VERTICAL,
     // not the subscription. "one per account" would now be false in the
     // generous direction (someone who spent their accommodation trial does get
-    // one in gastronomy) and "first subscription" false in the strict one
+    // one in venue) and "first subscription" false in the strict one
     // (within accommodation the trial is one, whichever plan is chosen). Both
     // spellings are accepted because the older copy is still true wherever it
     // survives. "primera propiedad" / "first property" stay REJECTED: they say

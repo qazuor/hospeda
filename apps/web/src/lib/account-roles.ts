@@ -67,7 +67,7 @@ const TOURIST_PLANS_PATH = PRICING_PAGE_PATH_BY_AUDIENCE.tourist;
  * Set of roles that grant access to venue/experience-owner navigation
  * (sidebar "Mi comercio" entry, the listing self-service area).
  *
- * Gastronomy and experience listings (venue, experiences) are a separate domain from
+ * Venue and experience listings (venue, experiences) are a separate domain from
  * accommodation hosting, so this set is intentionally distinct from
  * `ROLES_WITH_ACCOMMODATIONS_NAV` — a plain accommodation HOST does NOT
  * get the listing area, and a plain VENUE_OWNER or EXPERIENCE_OWNER does NOT get the host

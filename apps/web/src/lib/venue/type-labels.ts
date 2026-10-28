@@ -1,6 +1,6 @@
 /**
  * @file venue/type-labels.ts
- * @description Single source for the gastronomy listing-type label (HOS-822).
+ * @description Single source for the venue listing-type label (HOS-822).
  *
  * The owner form and the public listing page name the SAME `VenueTypeEnum`
  * value, and until this module they read it from two different i18n blocks: the
@@ -25,7 +25,7 @@
 type Translate = (key: string, fallback?: string) => string;
 
 /**
- * i18n key prefix that holds the PUBLIC label for each gastronomy listing type.
+ * i18n key prefix that holds the PUBLIC label for each venue listing type.
  *
  * This is the exact namespace the public cards and detail headers read; the
  * constant exists so a caller cannot pick the wrong one by hand.
@@ -33,7 +33,7 @@ type Translate = (key: string, fallback?: string) => string;
 const TYPE_LABEL_KEY_PREFIX = 'venue.types';
 
 /**
- * Builds the i18n key that names a gastronomy listing type.
+ * Builds the i18n key that names a venue listing type.
  *
  * Exported for the static guard that pins the owner form to the public
  * namespace: asserting on the key is what makes the "one source" property
@@ -54,7 +54,7 @@ export function buildVenueTypeLabelKey({ type }: { readonly type: string }): str
 }
 
 /**
- * Resolves the display label for a gastronomy listing type, from the same key the
+ * Resolves the display label for a venue listing type, from the same key the
  * public page uses.
  *
  * @param params.t - Active locale translator.

@@ -13,7 +13,7 @@ const hasNonEmptyCsv = (value: string | undefined): boolean =>
 const hasFiniteNumber = (value: number | undefined): boolean =>
     typeof value === 'number' && Number.isFinite(value);
 
-/** Parsed gastronomy filters relevant to the listing empty-state copy. */
+/** Parsed venue filters relevant to the listing empty-state copy. */
 export interface VenueListingEmptyStateFilters {
     readonly q: string | undefined;
     readonly destinationId: string | undefined;
@@ -71,7 +71,7 @@ export interface AccommodationListingEmptyStateFilters {
 }
 
 /**
- * Whether a zero-result gastronomy listing is empty because the visitor applied
+ * Whether a zero-result venue listing is empty because the visitor applied
  * one or more real result-narrowing filters.
  */
 export function hasActiveVenueListingFilters({

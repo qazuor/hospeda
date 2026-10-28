@@ -32,7 +32,7 @@
  * shrinks `LIVE_FALLBACKS` and moves that copy from THIS file's coverage to
  * `plan-copy-veracity.test.ts`'s — which reads the catalog and, as of the
  * HOS-616 fix, sweeps entire namespaces (`benefits`, `owners`, `about`, `blog`,
- * `gastronomy`) rather than an enumerated path list, so newly-catalogued copy
+ * the venue route segment rather than an enumerated path list, so newly-catalogued copy
  * is covered the moment it lands without anyone remembering to list it. This
  * file's own closing comment already anticipates the end state: "If this ever
  * hits zero… delete this file." When that happens, `plan-copy-veracity.test.ts`
@@ -116,7 +116,7 @@ const BANNED_PHRASES: readonly string[] = [
     // local trial row in the same transaction as the lifecycle flip — so the
     // stated reason is no longer true. They stay banned for a narrower one: an
     // inline fallback is context-free, and the sentence is still false for
-    // gastronomy/experience verticals, whose listings go live through a checkout that
+    // venue/experience verticals, whose listings go live through a checkout that
     // charges (HOS-1184). Copy that IS shown only to an eligible accommodation
     // owner belongs in a locale file gated on the server's verdict — see
     // `host.properties.card.actions.publishConfirmTrialNote`, rendered only when

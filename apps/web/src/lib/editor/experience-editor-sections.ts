@@ -4,7 +4,7 @@
  * `accommodation-editor-sections.ts` (HOS-1080).
  *
  * `meetingPoint` and `practicalInfo` are gated by the SHAPE of the schema: their
- * keys live on `ExperienceOwnerUpdateInputSchema` and not on the gastronomy one,
+ * keys live on `ExperienceOwnerUpdateInputSchema` and not on the venue one,
  * so for a restaurant they are not "hidden", they do not exist. Shared pieces
  * live in `listing-editor-sections.ts`.
  */

@@ -31,7 +31,7 @@ export interface EventDraft {
 /**
  * `Date#getDay()` order: `0` = Sunday … `6` = Saturday, matching
  * `VenueEventWeekdaySchema`. The labels themselves are NOT duplicated
- * here — both consumers reuse `gastronomy.detail.openingHours.<day>`, the
+ * here — both consumers reuse the existing opening-hours locale keys, the
  * same keys the public opening-hours section and `VenueEvents.astro`
  * already read.
  */

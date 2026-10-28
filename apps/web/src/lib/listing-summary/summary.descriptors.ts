@@ -70,7 +70,7 @@ const textDescriptor: FilterDescriptor = {
 };
 
 /**
- * Price-range filter (gastronomy only). Renders: `con precios económicos`.
+ * Price-range filter (venue only). Renders: `con precios económicos`.
  * No-op (inactive) for entities where `hasPriceRange` is false, even if a
  * stray `priceRange` value were somehow present in `filters`.
  */

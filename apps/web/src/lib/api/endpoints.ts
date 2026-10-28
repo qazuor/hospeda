@@ -435,7 +435,7 @@ export const amenitiesApi = {
         sortOrder?: 'asc' | 'desc';
         /**
          * SPEC-266: scope the catalog to one vertical. The accommodation editor
-         * needs `accommodation` so gastronomy/experience amenities stay out of
+         * needs `accommodation` so venue/experience amenities stay out of
          * its checkbox group. Added in HOS-318 — without it the editor page had
          * to bypass this wrapper with a raw `fetch`, which apps/web forbids.
          */
@@ -1552,7 +1552,7 @@ export const authApi = {
     }
 };
 
-// --- Gastronomy (SPEC-239) ---
+// --- Venue (SPEC-239) ---
 
 /**
  * Review item shape returned by GET /venues/:id/reviews.
@@ -1576,10 +1576,10 @@ export interface VenueReviewPublicItem {
     readonly createdAt?: string | null;
 }
 
-/** Public gastronomy API endpoints (SPEC-239 T-042..T-044). */
+/** Public venue API endpoints (SPEC-239 T-042..T-044). */
 export const venueApi = {
     /**
-     * List gastronomy listings with pagination, search, sorting, and filters.
+     * List venue listings with pagination, search, sorting, and filters.
      *
      * GET /api/v1/public/venues
      */
@@ -1600,7 +1600,7 @@ export const venueApi = {
         /**
          * Comma-separated feature UUIDs the listing must ALL carry. This is the
          * "apto" filter (HOS-1054): sin TACC, vegano, vegetariano, sin lactosa
-         * and sin frutos secos are gastronomy-scoped `features` catalog rows,
+         * and sin frutos secos are venue-scoped `features` catalog rows,
          * not columns of their own.
          */
         readonly features?: string;
@@ -1611,7 +1611,7 @@ export const venueApi = {
     },
 
     /**
-     * Get a single gastronomy listing by its URL slug.
+     * Get a single venue listing by its URL slug.
      *
      * GET /api/v1/public/venues/slug/:slug
      */
@@ -1620,7 +1620,7 @@ export const venueApi = {
     },
 
     /**
-     * Get paginated reviews for a gastronomy listing (with user info).
+     * Get paginated reviews for a venue listing (with user info).
      *
      * GET /api/v1/public/venues/:id/reviews
      */
@@ -1640,7 +1640,7 @@ export const venueApi = {
     },
 
     /**
-     * Get the FAQ list for a gastronomy listing.
+     * Get the FAQ list for a venue listing.
      *
      * GET /api/v1/public/venues/:id/faqs
      */

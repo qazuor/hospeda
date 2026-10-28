@@ -1,6 +1,6 @@
 /**
  * @file start-url.ts
- * @description Destination of the "Empezar ahora" CTA on the two gastronomy/experience
+ * @description Destination of the "Empezar ahora" CTA on the two venue/experience
  * sales pages (`/planes/comer-y-salir/`, `/planes/experiencias/`) — HOS-810.
  *
  * ## The loop this closes

@@ -1,6 +1,6 @@
 /**
  * @file listing-editor-registry.ts
- * @description Picks the editor registry for a gastronomy or experience listing
+ * @description Picks the editor registry for a venue or experience listing
  * by its vertical (HOS-1080).
  *
  * The per-vertical registries live in `venue-editor-sections.ts` and

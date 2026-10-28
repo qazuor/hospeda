@@ -28,7 +28,7 @@
  *
  * **Every URL is per-vertical.** The panel talks about a cap, offers to resume a
  * draft and links to "mis fichas"; all three differ per vertical, and a panel on
- * the gastronomy page that offered to resume a property would be worse than no
+ * the venue page that offered to resume a property would be worse than no
  * panel at all.
  *
  * @module lib/publish/publish-page-slot
@@ -116,7 +116,7 @@ function buildDraftEditUrl(input: {
  * The subscription page, scoped to the vertical's own billing domain.
  *
  * `/mi-cuenta/suscripcion/` defaults to the accommodation subscription and takes
- * `?domain=` for the others (HOS-689). Sending a gastronomy/experience owner to the bare URL
+ * `?domain=` for the others (HOS-689). Sending a venue/experience owner to the bare URL
  * would show them a page about a subscription they may not even hold.
  */
 function buildSubscriptionUrl(input: {

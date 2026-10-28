@@ -48,7 +48,7 @@ export const DEFAULT_COMPRESSION_MAX_DIMENSION_PX = 2560;
  *
  * 0.85 is the conventional "visually lossless" floor for photographic
  * content — below it, compression artifacts start showing in skies and flat
- * walls, exactly the content that dominates accommodation/gastronomy/experience photos.
+ * walls, exactly the content that dominates accommodation/venue/experience photos.
  */
 export const DEFAULT_COMPRESSION_QUALITY = 0.85;
 

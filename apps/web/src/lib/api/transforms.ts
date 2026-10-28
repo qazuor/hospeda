@@ -2600,7 +2600,7 @@ export function transformEventEditDetail({
 }
 
 // ---------------------------------------------------------------------------
-// Gastronomy transforms (SPEC-239)
+// Venue transforms (SPEC-239)
 // ---------------------------------------------------------------------------
 
 /**
@@ -2661,7 +2661,7 @@ function normalizeOpeningHours(raw: unknown): Record<string, VenueOpeningHoursEn
  *
  * NOTE (HOS-1076): `whatsapp` is deliberately NOT read here, even though a raw
  * payload could carry one (belt and braces — see `VenueSocialNetworks`).
- * Gastronomy's `socialNetworks` shape (`SocialNetworkSchema`) has never had a
+ * Venue's `socialNetworks` shape (`SocialNetworkSchema`) has never had a
  * `whatsapp` field, so this key must never be forwarded to the render layer.
  */
 function normalizeSocialNetworks(raw: unknown): VenueSocialNetworks | null {
