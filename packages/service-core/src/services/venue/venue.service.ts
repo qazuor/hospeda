@@ -346,7 +346,7 @@ export class VenueService extends BaseListingService<
             !hasPermission(actor, PermissionEnum.VENUE_VIEW_ALL)
         ) {
             if (entity.publicationStatus === PublicationStatusEnum.PUBLISHED) {
-                throw new ServiceError(ServiceErrorCode.GONE, 'Gastronomy is gone');
+                throw new ServiceError(ServiceErrorCode.GONE, 'venue is gone');
             }
             throw entityNotFoundError({ entityName: VENUE_ENTITY_NAME });
         }
@@ -681,7 +681,7 @@ export class VenueService extends BaseListingService<
      *    never try to spot that the slug changed.
      * 2. **Never mint here.** `if (!code) return updated` — a venue with no
      *    QR yet stays without one. The code is created when it is asked for
-     *    (`routes/gastronomy/protected/menuQr.ts`), never during an
+     *    (`routes/venue/protected/menuQr.ts`), never during an
      *    unrelated edit.
      * 3. **`siteUrl` and the locale come from the CURRENT `targetUrl`**, via
      *    {@link resolveSiteUrlFromTargetUrl} and

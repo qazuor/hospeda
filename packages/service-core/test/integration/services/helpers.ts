@@ -759,7 +759,7 @@ export async function seedEvent(
 }
 
 // ---------------------------------------------------------------------------
-// SPEC-239 seed helpers — gastronomy lifecycle
+// SPEC-239 seed helpers — venue lifecycle
 // ---------------------------------------------------------------------------
 
 interface SeedVenueOverrides {
@@ -773,10 +773,10 @@ interface SeedVenueOverrides {
 }
 
 /**
- * Inserts a User (owner), a Destination (CITY), and a Gastronomy listing
+ * Inserts a User (owner), a Destination (CITY), and a venue listing
  * referencing both. Returns all three IDs.
  *
- * The gastronomy is created `DRAFT` by default so reconciliation tests can
+ * The venue is created `DRAFT` by default so reconciliation tests can
  * assert the flip to `PUBLISHED`.
  *
  * @param tx - Drizzle transaction client (always rolled back after the test).
@@ -853,7 +853,7 @@ interface SeedVenueReviewOverrides {
 }
 
 /**
- * Inserts a `gastronomy_reviews` row directly (bypassing the service layer)
+ * Inserts a `venue_reviews` row directly (bypassing the service layer)
  * for tests that need a pre-existing review to moderate.
  *
  * @param tx - Drizzle transaction client.
@@ -884,7 +884,7 @@ export async function seedVenueReview(
 // HOS-1269 seed helpers — experience lifecycle
 // ---------------------------------------------------------------------------
 //
-// Mirrors the SPEC-239 gastronomy helpers above ("seedVenue" /
+// Mirrors the SPEC-239 venue helpers above ("seedVenue" /
 // "seedVenueReview") so the
 // experience vertical gets the same real-DB integration coverage. Until this
 // ticket, `experiences` had NO integration-test fixture at all — every helper
@@ -908,7 +908,7 @@ interface SeedExperienceOverrides {
  * reconciliation tests can assert the flip to `PUBLISHED`. `priceFrom` is left at its DB default (0) with
  * `isPriceOnRequest=false`, which is deliberately an incomplete listing for
  * `resolveListingCompleteness` (missing `priceFrom`) — same role
- * `seedVenue`'s default row plays for the gastronomy completeness tests.
+ * `seedVenue`'s default row plays for the venue completeness tests.
  *
  * @param tx - Drizzle transaction client (always rolled back after the test).
  * @param overrides - Optional ID / field overrides.
@@ -989,7 +989,7 @@ interface SeedExperienceReviewOverrides {
  * Inserts an `experience_reviews` row directly (bypassing the service layer)
  * for tests that need a pre-existing review to moderate.
  *
- * Unlike `gastronomy_reviews.rating` (nullable since migration 0023, HOS-259),
+ * Unlike `venue_reviews.rating` (nullable since migration 0023, HOS-259),
  * `experience_reviews.rating` is STILL `NOT NULL` with no default — the
  * table was created in 0019 and never received the equivalent fix. This
  * helper therefore always supplies a full rating breakdown; a review created

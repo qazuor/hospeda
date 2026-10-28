@@ -5,7 +5,7 @@
  * column patch a media model writes (HOS-1036).
  *
  * Five entities now expose the same endpoint — accommodation (HOS-388), post,
- * event, gastronomy and experience — and all five depend on the SAME
+ * event, venue and experience — and all five depend on the SAME
  * three-state rule, which is easy to get subtly wrong per copy:
  *
  * - a field that is `undefined` (omitted from the body) must NOT appear in the

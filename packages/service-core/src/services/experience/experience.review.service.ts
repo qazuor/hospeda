@@ -563,7 +563,7 @@ export class ExperienceReviewService extends BaseCrudService<
      * Called after create, moderation decision, and soft-delete.
      *
      * Experience reviews use the ExperienceRatingSchema breakdown (food / service /
-     * ambiance / value) — identical to gastronomy. The identity mapping below
+     * ambiance / value) — identical to venue. The identity mapping below
      * passes each dimension through unchanged.
      *
      * @param experienceId - UUID of the listing to refresh.

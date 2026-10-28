@@ -76,7 +76,7 @@ import { checkVenueCanEditMedia } from './venue.permissions';
 async function requireVenue(model: VenueModel, venueId: string, tx?: ServiceContext['tx']) {
     const entity = await model.findById(venueId, tx);
     if (!entity) {
-        throw new ServiceError(ServiceErrorCode.NOT_FOUND, 'Gastronomy listing not found');
+        throw new ServiceError(ServiceErrorCode.NOT_FOUND, 'venue listing not found');
     }
     return entity;
 }
@@ -228,11 +228,11 @@ export async function addVenueMedia(
 }
 
 /**
- * Removes a single photo from a gastronomy listing gallery.
+ * Removes a single photo from a venue listing gallery.
  *
  * Steps:
  * 1. Gate on `checkVenueCanEditMedia`.
- * 2. Verify the media row exists AND belongs to this gastronomy listing.
+ * 2. Verify the media row exists AND belongs to this venue listing.
  * 3. Soft-delete the row (sets `deletedAt`).
  * 4. Resequence the remaining visible rows to a dense 0-based `sortOrder`
  *    (preserves their relative order). Both steps run in a single transaction.
@@ -346,7 +346,7 @@ export async function removeVenueMedia(
 }
 
 /**
- * Reorders a gastronomy listing's gallery photos.
+ * Reorders a venue listing's gallery photos.
  *
  * Steps:
  * 1. Gate on `checkVenueCanEditMedia`.
@@ -370,7 +370,7 @@ export async function removeVenueMedia(
  * @param actor - The actor performing the action.
  * @param data - Validated reorder input.
  * @param ctx - Optional service context for transaction propagation.
- * @returns `ServiceOutput<GastronomyMediaListOutput>` containing the reordered rows.
+ * @returns `ServiceOutput<venueMediaListOutput>` containing the reordered rows.
  */
 export async function reorderVenueMedia(
     model: VenueModel,
@@ -485,7 +485,7 @@ export async function reorderVenueMedia(
 }
 
 /**
- * Lists the media rows for a gastronomy listing gallery.
+ * Lists the media rows for a venue listing gallery.
  *
  * Returns all non-deleted rows ordered by `sortOrder ASC`. Supports an optional
  * `state` filter (defaults to `'visible'`). Gated with
@@ -495,7 +495,7 @@ export async function reorderVenueMedia(
  * @param actor - The actor performing the action.
  * @param data - Validated list-media input.
  * @param ctx - Optional service context for transaction propagation.
- * @returns `ServiceOutput<GastronomyMediaListOutput>` containing the media array.
+ * @returns `ServiceOutput<venueMediaListOutput>` containing the media array.
  */
 export async function getVenueMedia(
     model: VenueModel,
@@ -544,11 +544,11 @@ export async function getVenueMedia(
 }
 
 /**
- * Promotes a single photo to the featured image of a gastronomy listing.
+ * Promotes a single photo to the featured image of a venue listing.
  *
  * Steps:
  * 1. Gate on `checkVenueCanEditMedia`.
- * 2. Verify the target media row exists AND belongs to this gastronomy listing.
+ * 2. Verify the target media row exists AND belongs to this venue listing.
  * 3. Guard: target row must be `state = 'visible'` — a DB CHECK constraint
  *    forbids `is_featured = true AND state = 'archived'`, so we reject early
  *    with a clear ServiceError rather than letting the DB raise.
@@ -561,7 +561,7 @@ export async function getVenueMedia(
  * @param actor - The actor performing the action.
  * @param data - Validated set-featured input.
  * @param ctx - Optional service context for transaction propagation.
- * @returns `ServiceOutput<GastronomyMediaSingleOutput>` containing the updated row.
+ * @returns `ServiceOutput<venueMediaSingleOutput>` containing the updated row.
  */
 export async function setFeaturedVenueMedia(
     model: VenueModel,
@@ -662,9 +662,9 @@ export async function setFeaturedVenueMedia(
 }
 
 /**
- * Corrects the TEXT metadata of a single photo in a gastronomy listing gallery (HOS-1036).
+ * Corrects the TEXT metadata of a single photo in a venue listing gallery (HOS-1036).
  *
- * The gastronomy/experience twin of `AccommodationService.updateMedia` (HOS-388) and of
+ * The venue/experience twin of `AccommodationService.updateMedia` (HOS-388) and of
  * `updatePostMedia`. Before this existed the only way to fix — or write for the
  * first time — a photo's `alt` was to delete it and re-upload, burning a second
  * Cloudinary asset and losing the row's gallery position.
@@ -679,13 +679,13 @@ export async function setFeaturedVenueMedia(
  * that module for what spreading would erase).
  *
  * The MEDIA row is what is protected against existence probing: a row belonging to
- * another gastronomy listing, a non-existent id, or a soft-deleted row all answer
+ * another venue listing, a non-existent id, or a soft-deleted row all answer
  * NOT_FOUND — never FORBIDDEN, so a foreign media id cannot be confirmed to exist.
  *
- * The PARENT gastronomy listing is NOT: `checkVenueCanEditMedia` throws FORBIDDEN
- * on a gastronomy listing the actor may not edit and NOT_FOUND on one that does not
+ * The PARENT venue listing is NOT: `checkVenueCanEditMedia` throws FORBIDDEN
+ * on a venue listing the actor may not edit and NOT_FOUND on one that does not
  * exist, so an ownership-scoped actor (`VENUE_EDIT_OWN` without `VENUE_EDIT_ALL`)
- * can tell a stranger's gastronomy listing from an invented one. Every sibling media
+ * can tell a stranger's venue listing from an invented one. Every sibling media
  * helper shares that same gate, so closing the gap in `update` alone would leave it at
  * 404 while `remove` stays at 403 on the same parent — a follow-up covers all of them
  * at once.
@@ -698,7 +698,7 @@ export async function setFeaturedVenueMedia(
  * @param actor - The actor performing the action.
  * @param data - Update input (`venueId` + `mediaId` + the text fields).
  * @param ctx - Optional service context for transaction propagation.
- * @returns `ServiceOutput<GastronomyMediaSingleOutput>` containing the updated row.
+ * @returns `ServiceOutput<venueMediaSingleOutput>` containing the updated row.
  */
 export async function updateVenueMedia(
     model: VenueModel,
@@ -783,7 +783,7 @@ export async function updateVenueMedia(
 }
 
 /**
- * Registers a photo that is the gastronomy listing's cover from the moment it exists,
+ * Registers a photo that is the venue listing's cover from the moment it exists,
  * replacing the previous cover in the same transaction (HOS-803).
  *
  * ## Why this is not `addVenueMedia` plus `setFeaturedVenueMedia`

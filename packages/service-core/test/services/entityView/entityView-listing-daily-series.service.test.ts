@@ -2,7 +2,7 @@
  * @file entityView-listing-daily-series.service.test.ts
  *
  * Unit tests for {@link EntityViewService.getDailySeriesForOwnListings}
- * (HOS-734 — basic view stats for the gastronomy/experience listing
+ * (HOS-734 — basic view stats for the venue/experience listing
  * verticals). Mirrors `entityView-host-daily-series.service.test.ts`.
  *
  * Verifies:
@@ -11,7 +11,7 @@
  *  - Zero-listing owner: fully gap-filled all-zero series, no model call.
  *  - Non-zero: aggregated per-day totals gap-filled to exactly windowDays items.
  *  - Window mapping ('7d' → 7, '30d' → 30).
- *  - Correct model dispatch per vertical (GASTRONOMY vs EXPERIENCE).
+ *  - Correct model dispatch per vertical (venue vs EXPERIENCE).
  *
  * All DB models are mocked via `createTypedModelMock` — no database required.
  * Every test follows the AAA (Arrange / Act / Assert) pattern.

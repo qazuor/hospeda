@@ -1,7 +1,7 @@
 /**
  * packages/service-core/test/services/experience/experience.featured-media.test.ts
  *
- * HOS-803 — `addExperienceFeaturedMedia`, the gastronomy/experience wiring of the shared
+ * HOS-803 — `addExperienceFeaturedMedia`, the venue/experience wiring of the shared
  * born-featured primitive.
  *
  * The primitive's policy is proved once, against a fake table, in
@@ -14,7 +14,7 @@
  *  - and that the bug is actually fixed here too — a full gallery no longer
  *    blocks a cover replacement.
  *
- * Gastronomy is the same code with one word changed, covered by its own twin.
+ * venue is the same code with one word changed, covered by its own twin.
  */
 
 // ---- vi.mock MUST be first — hoisted by vitest ---------------------------
@@ -69,7 +69,7 @@ const EXPERIENCE_ID = '00000000-0000-4000-a000-000000000001';
 const PREVIOUS_ID = '00000000-0000-4000-a000-000000000002';
 const OWNER_ID = '00000000-0000-4000-a000-000000000003';
 
-/** 30 for the gastronomy and experience verticals — the cap this wiring must actually pass on. */
+/** 30 for the venue and experience verticals — the cap this wiring must actually pass on. */
 const ENTITY_CAP = getGalleryCap('experience');
 
 const PAYLOAD = { url: 'https://cdn.example.com/new-cover.jpg' };

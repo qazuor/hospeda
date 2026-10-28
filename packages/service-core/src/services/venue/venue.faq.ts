@@ -64,7 +64,7 @@ import { checkVenueCanEditFaqEntries, checkVenueCanView } from './venue.permissi
 async function requireVenue(model: VenueModel, venueId: string, tx?: ServiceContext['tx']) {
     const entity = await model.findById(venueId, tx);
     if (!entity) {
-        throw new ServiceError(ServiceErrorCode.NOT_FOUND, 'Gastronomy listing not found');
+        throw new ServiceError(ServiceErrorCode.NOT_FOUND, 'venue listing not found');
     }
     return entity;
 }
@@ -160,16 +160,16 @@ export async function addVenueFaq(
 }
 
 /**
- * Updates an existing FAQ entry on a gastronomy listing.
+ * Updates an existing FAQ entry on a venue listing.
  *
  * Permission: `VENUE_EDIT_OWN` (listing owner) or `VENUE_EDIT_ALL` (staff).
- * The FAQ must belong to the specified gastronomy (enforced by `venueId` check).
+ * The FAQ must belong to the specified venue (enforced by `venueId` check).
  *
  * @param model - VenueModel instance.
  * @param actor - The actor performing the action.
  * @param data - Validated update-FAQ input.
  * @param ctx - Optional service context for transaction propagation.
- * @returns `ServiceOutput<GastronomyFaqSingleOutput>` containing the updated FAQ.
+ * @returns `ServiceOutput<venueFaqSingleOutput>` containing the updated FAQ.
  */
 export async function updateVenueFaq(
     model: VenueModel,
@@ -243,10 +243,10 @@ export async function updateVenueFaq(
 }
 
 /**
- * Removes (soft-deletes) a FAQ from a gastronomy listing.
+ * Removes (soft-deletes) a FAQ from a venue listing.
  *
  * Permission: `VENUE_EDIT_OWN` (listing owner) or `VENUE_EDIT_ALL` (staff).
- * The FAQ must belong to the specified gastronomy.
+ * The FAQ must belong to the specified venue.
  *
  * @param model - VenueModel instance.
  * @param actor - The actor performing the action.
@@ -318,7 +318,7 @@ export async function removeVenueFaq(
 }
 
 /**
- * Lists FAQs for a gastronomy listing (public path).
+ * Lists FAQs for a venue listing (public path).
  *
  * Permission: any actor that can view the listing may read its FAQs.
  * FAQs are returned ordered by `displayOrder ASC NULLS LAST, createdAt ASC`.
@@ -327,7 +327,7 @@ export async function removeVenueFaq(
  * @param actor - The actor performing the action.
  * @param data - Validated list-FAQ input.
  * @param ctx - Optional service context for transaction propagation.
- * @returns `ServiceOutput<GastronomyFaqListOutput>` containing the FAQ array.
+ * @returns `ServiceOutput<venueFaqListOutput>` containing the FAQ array.
  */
 export async function listVenueFaqs(
     model: VenueModel,
@@ -366,7 +366,7 @@ export async function listVenueFaqs(
         checkVenueCanView(actor);
 
         // TYPE-WORKAROUND: Drizzle widens the entity type when loading relations;
-        // `faqs` is not part of the base Gastronomy type.
+        // `faqs` is not part of the base venue type.
         const faqs = (venue as unknown as { faqs?: unknown[] }).faqs ?? [];
         return { data: { faqs: faqs as VenueFaq[] } };
     } catch (err) {
@@ -383,12 +383,12 @@ export async function listVenueFaqs(
 }
 
 /**
- * Reorders FAQs on a gastronomy listing (SPEC-177 pattern).
+ * Reorders FAQs on a venue listing (SPEC-177 pattern).
  *
  * Steps:
  * 1. Gate on `checkVenueCanEditFaqs` (same as add/update/remove).
  * 2. Load all active FAQs for the listing and validate every `faqId` in
- *    `order` belongs to this gastronomy (unknown IDs → VALIDATION_ERROR).
+ *    `order` belongs to this venue (unknown IDs → VALIDATION_ERROR).
  * 3. Apply each `displayOrder` value individually via `faqModel.update`.
  *
  * Permission: `VENUE_EDIT_OWN` (listing owner) or `VENUE_EDIT_ALL` (staff).

@@ -12,7 +12,7 @@
  *
  *   - `PhotoSection.client.tsx` (accommodations) never called any delete endpoint.
  *   - `MediaField.tsx` (listing editor) did call `protectedMediaApi.deleteMedia`, but
- *     `media/protected/delete-entity` rejects `gastronomy`/`experience` with HTTP
+ *     `media/protected/delete-entity` rejects `venue`/`experience` with HTTP
  *     400, so the call could never succeed.
  *   - The `media-orphan-cleanup` cron only wipes the `hospeda/preview/` and
  *     `hospeda/test/` prefixes, and short-circuits entirely when

@@ -2,7 +2,7 @@
  * @file entityView-listing-stats.service.test.ts
  *
  * Unit tests for {@link EntityViewService.getStatsForOwnListings}
- * (HOS-734 — basic view stats for the gastronomy/experience listing
+ * (HOS-734 — basic view stats for the venue/experience listing
  * verticals).
  *
  * Verifies:
@@ -10,13 +10,13 @@
  *    `ACCOMMODATION_VIEW_OWN`) — ownership scoping via `findIdsByOwnerId`
  *    IS the security boundary, matching `VenueService.listOwn`'s
  *    existing convention.
- *  - Correct model dispatch: GASTRONOMY → `VenueModel`, EXPERIENCE →
+ *  - Correct model dispatch: venue → `VenueModel`, EXPERIENCE →
  *    `ExperienceModel`.
  *  - Scope isolation: actor.id (never a caller-supplied id) is passed to
  *    `findIdsByOwnerId`.
  *  - Zero-view normalization and zero-listing short-circuit (no model call).
  *  - Window mapping ('7d' → 7, '30d' → 30).
- *  - Validation: entityType restricted to GASTRONOMY/EXPERIENCE, window
+ *  - Validation: entityType restricted to venue/EXPERIENCE, window
  *    restricted to '7d'/'30d'.
  *  - Model error propagates as INTERNAL_ERROR.
  *
@@ -80,7 +80,7 @@ describe('EntityViewService.getStatsForOwnListings (HOS-734)', () => {
     });
 
     // =========================================================================
-    // GASTRONOMY
+    // venue
     // =========================================================================
 
     describe('entityType: VENUE', () => {

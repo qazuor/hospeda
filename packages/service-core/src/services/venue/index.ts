@@ -1,7 +1,7 @@
 /**
- * Gastronomy services barrel export (SPEC-239).
+ * venue services barrel export (SPEC-239).
  *
- * Public API surface for the gastronomy service layer:
+ * Public API surface for the venue service layer:
  * - {@link VenueService} — main CRUD + operational-update + search service
  * - {@link VenueReviewService} — review create / moderate / list / rating recompute
  * - FAQ helpers — addVenueFaq / updateVenueFaq / removeVenueFaq /

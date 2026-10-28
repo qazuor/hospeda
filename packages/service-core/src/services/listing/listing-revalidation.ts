@@ -3,7 +3,7 @@
  *
  * `BaseListingService` already owned this logic as a private method,
  * reachable only from create/update. The gallery mutations live in standalone
- * modules (`gastronomy.media.ts`, `experience.media.ts`) that receive a model
+ * modules (`venue.media.ts`, `experience.media.ts`) that receive a model
  * rather than the service, so they could not call it — which is why a photo
  * change never purged the public page.
  *

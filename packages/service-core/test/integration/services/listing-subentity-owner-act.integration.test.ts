@@ -2,7 +2,7 @@
  * HOS-1642 (piece V9a) — TEST:V9a:6, against a REAL PostgreSQL database.
  *
  * Every owner FAQ and photos/media write on a listing (accommodation,
- * gastronomy, experience) writes ONE `domain_event` row — the EXISTING
+ * venue, experience) writes ONE `domain_event` row — the EXISTING
  * `recordListingOwnerAct` mechanism (HOS-1499) through the
  * `recordListingSubEntityEdit` wrapper — inside the operation's transaction,
  * with changes = `[{ field: 'faqs' }]` or `[{ field: 'media' }]`: the field

@@ -1,5 +1,5 @@
 /**
- * SPEC-239 — Cross-layer integration test for the gastronomy listing
+ * SPEC-239 — Cross-layer integration test for the venue listing
  * admin-sells lifecycle.
  *
  * ## Scope
@@ -16,7 +16,7 @@
  * ## Why real-DB
  *
  * Mocked unit tests cannot detect:
- * - Drizzle relations misconfigured in gastronomy schemas.
+ * - Drizzle relations misconfigured in venue schemas.
  * - Rating recompute queries that only touch approved reviews.
  *  * - The UNIQUE constraint on `venue_reviews(userId, venueId)`.
  *
@@ -25,7 +25,7 @@
  * Uses `withServiceTestTransaction` so every insert is rolled back after each
  * test, keeping the ephemeral DB clean between runs.
  *
- * @module spec-239-gastronomy-listing.integration.test
+ * @module spec-239-venue-listing.integration.test
  */
 
 import {
@@ -164,7 +164,7 @@ describe('SPEC-239 — Venue listing admin-sells lifecycle (integration)', () =>
     });
 
     // -----------------------------------------------------------------------
-    // T-1: Admin creates gastronomy listing (born DRAFT)
+    // T-1: Admin creates venue listing (born DRAFT)
     // -----------------------------------------------------------------------
 
     it.skipIf(!dbAvailable)('T-1: admin creates a venue listing (born DRAFT)', async () => {
@@ -174,7 +174,7 @@ describe('SPEC-239 — Venue listing admin-sells lifecycle (integration)', () =>
             const ctx: ServiceContext = { tx };
 
             // Act: create via service using enum values and required non-null defaults.
-            // GastronomyAdminCreateInputSchema omits id/timestamps but keeps
+            // venueAdminCreateInputSchema omits id/timestamps but keeps
             // averageRating, reviewsCount (they have schema defaults
             // but are still part of the required shape before omit).
             const result = await venueService.create(
@@ -209,7 +209,7 @@ describe('SPEC-239 — Venue listing admin-sells lifecycle (integration)', () =>
 
     // -----------------------------------------------------------------------
     // T-3: Owner assigned to listing (via model-level update — ownerId is
-    //      intentionally excluded from GastronomyUpdateInputSchema as a
+    //      intentionally excluded from venueUpdateInputSchema as a
     //      server-managed field; admin ownership assignment uses the model).
     // -----------------------------------------------------------------------
 
@@ -292,7 +292,7 @@ describe('SPEC-239 — Venue listing admin-sells lifecycle (integration)', () =>
     // -----------------------------------------------------------------------
     // T-7: Owner update schema only allows operational fields — identity
     //      fields (name, slug, type, destinationId) are absent from
-    //      GastronomyOwnerUpdateInputSchema and are silently stripped at
+    //      venueOwnerUpdateInputSchema and are silently stripped at
     //      the Zod parse boundary inside updateOwn().
     //
     //      This test verifies that an owner update succeeds for an
@@ -333,7 +333,7 @@ describe('SPEC-239 — Venue listing admin-sells lifecycle (integration)', () =>
                 // Operational field updated
                 expect(result.data.priceRange).toBe(PriceRangeEnum.HIGH);
 
-                // Identity fields remain unchanged (GastronomyOwnerUpdateInputSchema
+                // Identity fields remain unchanged (venueOwnerUpdateInputSchema
                 // intentionally excludes them — they are absent, not overwritten)
                 expect(result.data.name).toBe(originalName);
                 expect(result.data.type).toBe(originalType);
@@ -419,8 +419,8 @@ describe('SPEC-239 — Venue listing admin-sells lifecycle (integration)', () =>
     // -----------------------------------------------------------------------
     // T-8b: Review WITHOUT the granular `rating` breakdown must succeed.
     //
-    // Regression (SPEC-259 Chrome smoke): the `gastronomy_reviews.rating` jsonb
-    // column was NOT NULL with no default, but GastronomyReviewCreateInputSchema
+    // Regression (SPEC-259 Chrome smoke): the `venue_reviews.rating` jsonb
+    // column was NOT NULL with no default, but venueReviewCreateInputSchema
     // marks `rating` optional (a reviewer may submit only the scalar
     // `overallRating`). Submitting a rating-less review therefore violated the
     // NOT NULL constraint and surfaced as a 500. Migration 0023 drops NOT NULL

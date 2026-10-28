@@ -2,7 +2,7 @@
  * Listing services barrel export (SPEC-239).
  *
  * Exports all public APIs from the listing service layer shared by the
- * gastronomy and experience verticals:
+ * venue and experience verticals:
  * - `BaseListingService` — abstract base for entity services
  * - Permission helpers, junction-sync utilities, media composition and types
  *

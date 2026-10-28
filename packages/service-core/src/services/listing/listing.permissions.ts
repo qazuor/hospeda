@@ -84,7 +84,7 @@ export type ListingPermissionSlot =
 /**
  * The per-vertical permission families.
  *
- * This table is the whole point of HOS-1077: `gastronomy.editAll` and
+ * This table is the whole point of HOS-1077: `venue.editAll` and
  * `experience.editAll` are different permissions, so a restaurant moderator can
  * finally be granted one without the other.
  */
@@ -140,7 +140,7 @@ export function verticalPermission(
 }
 
 /**
- * Checks the vertical's own permission, and only that one: a gastronomy
+ * Checks the vertical's own permission, and only that one: a venue
  * permission never authorizes an experience listing, nor the other way round.
  *
  * @param actor - The actor performing the action.
@@ -172,7 +172,7 @@ export function hasListingPermission(
  * onboarding, where creating the first accommodation draft requires no
  * `ACCOMMODATION_*` permission and grants `HOST` on the way through.
  *
- * The admin create path is unaffected: `apps/api/src/routes/gastronomy/admin/create.ts`
+ * The admin create path is unaffected: `apps/api/src/routes/venue/admin/create.ts`
  * and its experience twin carry their own `anyOfPermissions` gate with the
  * corresponding vertical's CREATE permission, so this service predicate does
  * not widen the admin door.

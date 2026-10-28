@@ -79,7 +79,7 @@ const DAILY_SPECIALS_READ_PAGE_SIZE = 1000;
 async function requireVenue(model: VenueModel, venueId: string, tx?: ServiceContext['tx']) {
     const entity = await model.findById(venueId, tx);
     if (!entity) {
-        throw new ServiceError(ServiceErrorCode.NOT_FOUND, 'Gastronomy listing not found');
+        throw new ServiceError(ServiceErrorCode.NOT_FOUND, 'venue listing not found');
     }
     return entity;
 }
@@ -182,7 +182,7 @@ export async function getVenueDailySpecials(
  * @param actor - The actor performing the action.
  * @param data - `{ venueId, specials }`.
  * @param ctx - Optional service context for transaction propagation.
- * @returns `ServiceOutput<GastronomyDailySpecialsOutput>` as now stored — the
+ * @returns `ServiceOutput<venueDailySpecialsOutput>` as now stored — the
  *   OWNER's view, unfiltered, because this is the owner's own write echoing
  *   back and a filtered echo would hide the special they just scheduled.
  */

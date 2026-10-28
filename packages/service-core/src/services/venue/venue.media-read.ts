@@ -1,13 +1,13 @@
 /**
- * gastronomy.media-read.ts
+ * venue.media-read.ts
  *
  * Async read-side glue that loads `venue_media` rows and attaches the
- * composed `Media` shape onto gastronomy entities (HOS-372).
+ * composed `Media` shape onto venue entities (HOS-372).
  *
  * Mirrors `accommodation.media-read.ts` field-for-field, delegating the pure
  * composition step to the SHARED `composeListingMedia` helper (unlike
  * accommodation, which has its own dedicated composer — see
- * `listing-media-compose.ts` for why one function serves both gastronomy and experience
+ * `listing-media-compose.ts` for why one function serves both venue and experience
  * verticals).
  *
  * Both helpers use the batch finder `findByVenues` (one `IN` query) so
@@ -24,7 +24,7 @@
  * a video is an external YouTube/Vimeo URL rather than an uploaded asset, so it
  * was never migrated to the relational table (HOS-372).
  *
- * @module gastronomy.media-read
+ * @module venue.media-read
  */
 
 import type { DrizzleClient, VenueMediaModel } from '@repo/db';
@@ -50,10 +50,10 @@ function withComposedVenueMedia<T extends Venue>(entity: T, rows: readonly Venue
 // ---------------------------------------------------------------------------
 
 /**
- * Loads the media rows for a single gastronomy listing and attaches the
+ * Loads the media rows for a single venue listing and attaches the
  * composed `Media` shape. No-op for `null` (single-read miss).
  *
- * @param input.entity     - The gastronomy listing (or `null`).
+ * @param input.entity     - The venue listing (or `null`).
  * @param input.mediaModel - The `venue_media` model.
  * @param input.tx         - Optional active transaction client.
  */
@@ -69,10 +69,10 @@ export async function attachComposedVenueMedia<T extends Venue>(input: {
 }
 
 /**
- * Loads the media rows for a list of gastronomy listings in a single batch query
+ * Loads the media rows for a list of venue listings in a single batch query
  * and attaches the composed `Media` shape to each. No-op for an empty list.
  *
- * @param input.items      - The gastronomy listing array.
+ * @param input.items      - The venue listing array.
  * @param input.mediaModel - The `venue_media` model.
  * @param input.tx         - Optional active transaction client.
  */

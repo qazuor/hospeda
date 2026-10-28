@@ -1033,18 +1033,18 @@ export class EntityViewService extends BaseService {
     }
 
     // -------------------------------------------------------------------------
-    // HOS-734: listing vertical aggregation methods (GASTRONOMY / EXPERIENCE)
+    // HOS-734: listing vertical aggregation methods (venue / EXPERIENCE)
     // -------------------------------------------------------------------------
 
     /**
-     * Returns view-count statistics for every gastronomy or experience listing
+     * Returns view-count statistics for every venue or experience listing
      * owned by the actor (SPEC-159's "basic stats" extended to listing —
      * HOS-734).
      *
      * **Ownership, not a `PermissionEnum`:** unlike
-     * `getStatsForHostAccommodations`, there is no gastronomy/experience "view
+     * `getStatsForHostAccommodations`, there is no venue/experience "view
      * own" permission — `actor.id` resolving owned IDs IS the security
-     * boundary, matching `protectedListMyGastronomyRoute`'s existing
+     * boundary, matching `protectedListMyvenueRoute`'s existing
      * convention. The former route-layer plan entitlement gate was removed by
      * HOS-1352 (transitional until V3, HOS-1357); no entitlement is checked
      * here either.
@@ -1052,7 +1052,7 @@ export class EntityViewService extends BaseService {
      * **Zero-view normalization:** DB omits entities with no rows in the window;
      * this method adds them back as `{ unique: 0, total: 0 }`.
      *
-     * @param input - Actor + listing vertical (GASTRONOMY/EXPERIENCE) + rolling window.
+     * @param input - Actor + listing vertical (venue/EXPERIENCE) + rolling window.
      * @returns One `EntityViewStats` entry per owned listing.
      */
     public async getStatsForOwnListings(
@@ -1085,14 +1085,14 @@ export class EntityViewService extends BaseService {
     }
 
     /**
-     * Returns a gap-filled daily view-count series for every gastronomy or
+     * Returns a gap-filled daily view-count series for every venue or
      * experience listing owned by the actor (HOS-734). Mirrors
      * {@link getDailySeriesForHostAccommodations}.
      *
      * See {@link getStatsForOwnListings} for the ownership/entitlement
      * split rationale — identical here.
      *
-     * @param input - Actor + listing vertical (GASTRONOMY/EXPERIENCE) + rolling window.
+     * @param input - Actor + listing vertical (venue/EXPERIENCE) + rolling window.
      * @returns Gap-filled array of exactly `windowDays` items ordered by date ASC.
      */
     public async getDailySeriesForOwnListings(

@@ -87,7 +87,7 @@ const MENU_READ_PAGE_SIZE = 4000;
 async function requireVenue(model: VenueModel, venueId: string, tx?: ServiceContext['tx']) {
     const entity = await model.findById(venueId, tx);
     if (!entity) {
-        throw new ServiceError(ServiceErrorCode.NOT_FOUND, 'Gastronomy listing not found');
+        throw new ServiceError(ServiceErrorCode.NOT_FOUND, 'venue listing not found');
     }
     return entity;
 }
@@ -220,7 +220,7 @@ export async function getVenueMenu(
  * @param actor - The actor performing the action.
  * @param data - `{ venueId, menu }`.
  * @param ctx - Optional service context for transaction propagation.
- * @returns `ServiceOutput<GastronomyMenuOutput>` with the carta as now stored.
+ * @returns `ServiceOutput<venueMenuOutput>` with the carta as now stored.
  */
 export async function replaceVenueMenu(
     model: VenueModel,

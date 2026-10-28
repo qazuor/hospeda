@@ -6,7 +6,7 @@
  * Bookmarks store only `entityId` + `entityType` polymorphic references. To
  * render a meaningful card (title + image + link), the API needs to JOIN
  * across the target tables: `accommodations`, `destinations`, `events`, `posts`,
- * `experiences`, `gastronomies`. Rather than coupling each consumer to the
+ * `experiences`, `legacy listing tables`. Rather than coupling each consumer to the
  * per-entity model layer, this helper batches one query per entity type and
  * returns a lookup map keyed by `entityId`.
  *
@@ -82,10 +82,10 @@ export type UserBookmarkWithEntityInfo = UserBookmark & BookmarkEntityInfo;
  * 1. Group bookmark entity IDs by `entityType`.
  * 2. Run one batched query per known entity type (max 6 entity-type queries + 3
  *    media batches = 9 queries regardless of bookmark count):
- *    - ACCOMMODATION / EXPERIENCE / GASTRONOMY: `SELECT id, name, slug WHERE id
+ *    - ACCOMMODATION / EXPERIENCE / venue: `SELECT id, name, slug WHERE id
  *      IN (...)` plus one batched call to that vertical's relational media table
  *      for the featured image URL. Their photos are rows, not JSONB (SPEC-204
- *      for accommodations, HOS-372 for gastronomy and experience), and the `media` blob is being
+ *      for accommodations, HOS-372 for venue and experience), and the `media` blob is being
  *      dropped — reading it here returned nothing on a freshly seeded database.
  *    - DESTINATION / EVENT / POST: `SELECT id, name|title, slug, media WHERE id
  *      IN (...)`. These three still keep their whole media object in JSONB.
@@ -233,7 +233,7 @@ export async function enrichBookmarksWithEntityInfo(
      * Featured image URL for an entity, read from a relational media map.
      *
      * Shared by the three verticals whose photos live in per-vertical media
-     * tables (SPEC-204 for accommodations, HOS-372 for gastronomy and experience). Entities with
+     * tables (SPEC-204 for accommodations, HOS-372 for venue and experience). Entities with
      * no featured row are simply absent from the map.
      */
     const featuredUrlFrom = (map: unknown, entityId: string): string | null => {

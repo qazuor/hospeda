@@ -218,7 +218,7 @@ async function seedPromo(input: {
     });
 }
 
-/** Another live title of the same user, in gastronomy, whose version inherits Tourist VIP. */
+/** Another live title of the same user, in venue, whose version inherits Tourist VIP. */
 async function seedInheritingVenueTitle(userId: string) {
     const db = getServiceTestDb();
     const [plan] = await db
