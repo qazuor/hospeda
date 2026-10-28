@@ -76,7 +76,7 @@ const row = VenueSchema.parse({
     updatedAt: new Date('2026-01-01T00:00:00Z')
 });
 
-describe('TEST:V5:6 published foreign gastronomy writes', () => {
+describe('TEST:V5:6 published foreign venue writes', () => {
     it('pairs PATCH and POST media refusals with an invented id', async () => {
         const { initApp } = await import('../../src/app.js');
         const app = initApp();
@@ -150,7 +150,7 @@ async function probe(app: Hono<AppBindings>, id: string) {
 
 afterEach(() => vi.restoreAllMocks());
 
-describe('TEST:V5:6 public gastronomy detail', () => {
+describe('TEST:V5:6 public venue detail', () => {
     it('shows only PUBLISHED and pairs every hidden state with an invented id', async () => {
         const { publicGetVenueByIdRoute } = await import(
             '../../src/routes/venue/public/getById.js'

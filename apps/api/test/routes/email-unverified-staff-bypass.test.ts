@@ -208,7 +208,7 @@ describe('TEST:V5:3 TEST:1692:5 an unverified actor uses no staff bypass on the 
         });
     });
 
-    describe('K3 VENUE_VIEW_ALL bypass in gastronomy detail', () => {
+    describe('K3 VENUE_VIEW_ALL bypass in venue detail', () => {
         it('unverified with and without the permission gets the same 404', async () => {
             const getById = vi
                 .spyOn(VenueService.prototype, 'getById')

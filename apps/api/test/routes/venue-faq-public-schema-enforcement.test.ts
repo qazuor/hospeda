@@ -1,8 +1,8 @@
 /**
- * Regression tests for SPEC-210 PR2 — gastronomy FAQ public schema enforcement.
+ * Regression tests for SPEC-210 PR2 — venue FAQ public schema enforcement.
  *
  * Verifies that GET /api/v1/public/venues/:venueId/faqs serializes
- * responses through `GastronomyFaqPublicSchema` and NEVER leaks the internal-only
+ * responses through `VenueFaqPublicSchema` and NEVER leaks the internal-only
  * fields: `createdAt`, `updatedAt`, `createdById`, `updatedById`, `deletedAt`,
  * `deletedById`, and `lifecycleState`.
  *
@@ -32,11 +32,11 @@ const FORBIDDEN_FIELDS = [
     'lifecycleState'
 ] as const;
 
-/** Fields that must be present on every public gastronomy FAQ item. */
+/** Fields that must be present on every public venue FAQ item. */
 const REQUIRED_PUBLIC_FIELDS = ['id', 'venueId', 'question', 'answer'] as const;
 
 /**
- * Raw FAQ object that includes all fields from the full GastronomyFaqSchema
+ * Raw FAQ object that includes all fields from the full VenueFaqSchema
  * (including internal audit/lifecycle fields that must be stripped).
  */
 const RAW_FAQ_WITH_FORBIDDEN_FIELDS = {
@@ -47,7 +47,7 @@ const RAW_FAQ_WITH_FORBIDDEN_FIELDS = {
     answer: 'Yes, we have a dedicated vegetarian section with seasonal dishes updated weekly.',
     category: 'Qué hacer',
     displayOrder: 1,
-    // Audit fields — must be stripped by GastronomyFaqPublicSchema
+    // Audit fields — must be stripped by VenueFaqPublicSchema
     createdAt: new Date(),
     updatedAt: new Date(),
     createdById: '223e4567-e89b-12d3-a456-000000000001',
@@ -62,7 +62,7 @@ const RAW_FAQ_WITH_FORBIDDEN_FIELDS = {
 // Schema unit tests — ALWAYS RUN (no DB required)
 // ---------------------------------------------------------------------------
 
-describe('GastronomyFaqPublicSchema — unit tests (no DB, always run) (SPEC-210)', () => {
+describe('VenueFaqPublicSchema — unit tests (no DB, always run) (SPEC-210)', () => {
     it('strips all audit fields and lifecycleState from a raw FAQ object', () => {
         const result = VenueFaqPublicSchema.safeParse(RAW_FAQ_WITH_FORBIDDEN_FIELDS);
         expect(result.success).toBe(true);
@@ -106,7 +106,7 @@ describe('GastronomyFaqPublicSchema — unit tests (no DB, always run) (SPEC-210
         expect(result.success).toBe(true);
     });
 
-    it('GastronomyFaqPublicListOutputSchema wraps the FAQ array under the faqs key', () => {
+    it('VenueFaqPublicListOutputSchema wraps the FAQ array under the faqs key', () => {
         const payload = {
             faqs: [RAW_FAQ_WITH_FORBIDDEN_FIELDS]
         };

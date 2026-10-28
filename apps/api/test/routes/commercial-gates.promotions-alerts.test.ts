@@ -458,7 +458,7 @@ describe('TEST:V5:32 promotions, alerts and paid public fields', () => {
         expect((await denied.json()).data.entitled).toBe(false);
     });
 
-    it('gastronomy paid public fields follow the owner set regardless of the viewer', async () => {
+    it('venue paid public fields follow the owner set regardless of the viewer', async () => {
         const app = makeApp(publicGetVenueBySlugRoute, IDS.touristVip);
         const response = await app.request('/case/slug/la-parrilla');
         expect(response.status, JSON.stringify(await response.clone().json())).toBe(200);

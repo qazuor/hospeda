@@ -124,7 +124,7 @@ describe('TEST:V5:3 TEST:1692:5 an unverified actor uses no staff bypass on the 
         });
     });
 
-    describe('K6 LISTING_FOREIGN_CONTENT_EDIT bypass in gastronomy action 15', () => {
+    describe('K6 LISTING_FOREIGN_CONTENT_EDIT bypass in venue action 15', () => {
         it('unverified with and without the permission gets the same 404', async () => {
             setPorts({
                 ownerId: OTHER_ID,

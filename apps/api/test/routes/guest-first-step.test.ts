@@ -63,7 +63,7 @@ const routes = [
         create: mockServices.accommodationCreate
     },
     {
-        name: 'gastronomy review',
+        name: 'venue review',
         route: protectedCreateVenueReviewRoute,
         path: `/${listingId}/reviews`,
         body: { overallRating: 5 },

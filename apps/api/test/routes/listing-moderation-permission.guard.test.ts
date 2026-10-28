@@ -16,9 +16,7 @@ describe('TEST:V6:12 listing moderation permission guard', () => {
         for (const route of ROUTES) {
             const source = readFileSync(route, 'utf8');
             expect(source).toMatch(/\bLISTING_MODERATE\b/);
-            expect(source).not.toMatch(
-                /\b(?:ACCOMMODATION|GASTRONOMY|EXPERIENCE)_MODERATION_CHANGE\b/
-            );
+            expect(source).not.toMatch(/\b(?:ACCOMMODATION|VENUE|EXPERIENCE)_MODERATION_CHANGE\b/);
         }
     });
 
