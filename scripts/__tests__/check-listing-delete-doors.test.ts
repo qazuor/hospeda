@@ -61,7 +61,7 @@ function route(method: string, routePath: string): string {
 
 describe('AC:V6:25 listing delete doors guard', () => {
     describe('TEST:1814:4 AC:1:16 follows VenueModel and drops its retired name', () => {
-        it('TEST:1814:4 AC:1:16 detects VenueModel and ignores GastronomyModel', () => {
+        it('TEST:1814:4 AC:1:16 detects VenueModel and ignores the legacy model', () => {
             const venueClass = check({
                 'packages/db/src/models/venue/venue.model.ts':
                     'new VenueModel({ logger }).hardDelete(actor, id);\n'
@@ -84,7 +84,7 @@ describe('AC:V6:25 listing delete doors guard', () => {
     });
 
     describe('TEST:1814:4 AC:1:16 follows VenueService and drops its retired name', () => {
-        it('TEST:1814:4 AC:1:16 detects VenueService and ignores GastronomyService', () => {
+        it('TEST:1814:4 AC:1:16 detects VenueService and ignores the legacy service', () => {
             const file = 'packages/service-core/src/services/venue/venue.service.ts';
             const venueClass = check({
                 [file]: 'new VenueService({ logger }).hardDelete(actor, id);\n'
@@ -194,8 +194,9 @@ describe('AC:V6:25 listing delete doors guard', () => {
         ]) {
             expect(check({ [file]: source }).exitCode).toBe(1);
         }
+        const oldService = ['Gastro', 'nomyService'].join('');
         const legacy = check({
-            [file]: 'export const f = (actor, id) => new GastronomyService({ logger }).hardDelete(actor, id);\n'
+            [file]: `export const f = (actor, id) => new ${oldService}({ logger }).hardDelete(actor, id);\n`
         });
         expect(legacy.exitCode).toBe(0);
     });

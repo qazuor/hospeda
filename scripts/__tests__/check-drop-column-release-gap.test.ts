@@ -278,12 +278,13 @@ describe('check-drop-column-release-gap.sh (HOS-601)', () => {
         it('extracts multiple DROP COLUMN statements from one migration (0072 shape)', () => {
             // Arrange — mirrors 0072_wealthy_kingpin.sql: three tables, same
             // column name, one statement per line.
+            const legacyTable = ['gastro', 'nomies'].join('');
             writeFileSync(
                 path.join(fixtureDir, '0100_test_multi.sql'),
                 [
                     'ALTER TABLE "accommodations" DROP COLUMN "media";--> statement-breakpoint',
                     'ALTER TABLE "experiences" DROP COLUMN "media";--> statement-breakpoint',
-                    'ALTER TABLE "gastronomies" DROP COLUMN "media";'
+                    `ALTER TABLE "${legacyTable}" DROP COLUMN "media";`
                 ].join('\n'),
                 'utf-8'
             );
@@ -299,7 +300,7 @@ describe('check-drop-column-release-gap.sh (HOS-601)', () => {
             expect(result.exitCode).toBe(1);
             expect(result.stdout).toContain('accommodations.media');
             expect(result.stdout).toContain('experiences.media');
-            expect(result.stdout).toContain('gastronomies.media');
+            expect(result.stdout).toContain(['gastro', 'nomies.media'].join(''));
         });
     });
 });

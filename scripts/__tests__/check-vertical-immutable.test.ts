@@ -38,8 +38,8 @@ describe('TEST:V5:5 GUARD:G2 (c)', () => {
     it('accepts the current branch and a listing update without a vertical field', () => {
         expect(run().exitCode).toBe(0);
         const root = makeTree({
-            'packages/service-core/src/services/gastronomy/gastronomy.service.ts':
-                'db.update(gastronomies).set({ name: "New name" });\n'
+            'packages/service-core/src/services/venue/venue.service.ts':
+                'db.update(venues).set({ name: "New name" });\n'
         });
         expect(run({ root, minScannedFiles: 1 }).exitCode).toBe(0);
     });
@@ -77,8 +77,7 @@ describe('TEST:V5:5 GUARD:G2 (c)', () => {
         const file = 'packages/service-core/src/services/venue/venue.service.ts';
         const root = makeTree({
             [file]:
-                'const unchanged = 1;\n' +
-                'db.update(gastronomies).set({ vertical: "accommodation" });\n'
+                'const unchanged = 1;\n' + 'db.update(venues).set({ vertical: "accommodation" });\n'
         });
         const result = run({ root, minScannedFiles: 1 });
         expect(result.exitCode).toBe(1);
