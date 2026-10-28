@@ -34,10 +34,10 @@ const CONTENT_MIN = 10;
 const STAR_POSITIONS = [1, 2, 3, 4, 5] as const;
 
 interface VenueReviewFormProps {
-    /** UUID of the gastronomy listing being reviewed. */
-    readonly gastronomyId: string;
+    /** UUID of the venue listing being reviewed. */
+    readonly venueId: string;
     /** Listing name, shown as the dialog subtitle. */
-    readonly gastronomyName: string;
+    readonly venueName: string;
     /** Active locale for i18n. */
     readonly locale: SupportedLocale;
     /** Absolute API base URL (web app and API live on different hosts). */
@@ -57,8 +57,8 @@ function joinApi(apiUrl: string, path: string): string {
  * @param props - Component props (see {@link VenueReviewFormProps}).
  */
 export function VenueReviewForm({
-    gastronomyId,
-    gastronomyName,
+    venueId,
+    venueName,
     locale,
     apiUrl,
     signInHref
@@ -134,7 +134,7 @@ export function VenueReviewForm({
 
             try {
                 const response = await fetch(
-                    joinApi(apiUrl, `/api/v1/protected/venues/${gastronomyId}/reviews`),
+                    joinApi(apiUrl, `/api/v1/protected/venues/${venueId}/reviews`),
                     {
                         method: 'POST',
                         credentials: 'include',
@@ -188,7 +188,7 @@ export function VenueReviewForm({
             apiUrl,
             contentTrimmed,
             contentValid,
-            gastronomyId,
+            venueId,
             locale,
             overall,
             rated,
@@ -357,7 +357,7 @@ export function VenueReviewForm({
                                     >
                                         {t('review.list.writeReview', 'Escribir reseña')}
                                     </h3>
-                                    <p className={styles.dialogSubtitle}>{gastronomyName}</p>
+                                    <p className={styles.dialogSubtitle}>{venueName}</p>
                                 </div>
                                 <button
                                     type="button"

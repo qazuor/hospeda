@@ -50,8 +50,8 @@ vi.mock('@/lib/auth-cache', () => ({
 }));
 
 const DEFAULT_PROPS = {
-    gastronomyId: 'gastro-123',
-    gastronomyName: 'La Parrilla de Juan',
+    venueId: 'venue-123',
+    venueName: 'La Parrilla de Juan',
     locale: 'es' as const,
     apiUrl: 'http://localhost:3001',
     signInHref: '/es/auth/signin'
@@ -194,7 +194,7 @@ describe('GastronomyReviewForm — client-side session resolution (HOS-369 WB0-4
             ...DEFAULT_PROPS,
             isAuthenticated: false
         };
-        expect(props.gastronomyId).toBe(DEFAULT_PROPS.gastronomyId);
+        expect(props.venueId).toBe(DEFAULT_PROPS.venueId);
     });
 
     it('shows the review CTA for a signed-in visitor — state comes only from the session, never a prop', () => {

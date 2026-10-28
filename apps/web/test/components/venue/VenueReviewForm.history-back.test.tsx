@@ -103,8 +103,8 @@ function setupDialogMocks() {
 }
 
 const DEFAULT_PROPS = {
-    gastronomyId: 'gastro-123',
-    gastronomyName: 'La Parrilla de Juan',
+    venueId: 'venue-123',
+    venueName: 'La Parrilla de Juan',
     locale: 'es' as const,
     apiUrl: 'http://localhost:3001',
     signInHref: '/es/auth/signin'
