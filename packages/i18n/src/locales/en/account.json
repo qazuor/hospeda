@@ -449,7 +449,7 @@
             "vertical": {
                 "accommodation": "accommodation",
                 "experience": "experiences",
-                "venue": "gastronomy"
+                "venue": "Food & nightlife"
             },
             "total_one": "{{count}} trial day in total",
             "total_other": "{{count}} trial days in total",
@@ -487,7 +487,7 @@
                 "tourist": "Tourist",
                 "partner": "Partners",
                 "unknown": "Hospeda",
-                "venue": "Gastronomy"
+                "venue": "Food & nightlife"
             },
             "price": "{{amount}} {{cycle}}",
             "nextCharge": "Next charge: {{date}}, for {{amount}}."
@@ -554,7 +554,7 @@
             "destination": "Destinations",
             "event": "Events",
             "experience": "Experiences",
-            "venue": "Gastronomy",
+            "venue": "Food & nightlife",
             "post": "Blog"
         },
         "collections": {
@@ -798,7 +798,7 @@
             "cancelModal": {
                 "body": "To cancel your subscription, email us at info@hospeda.com.ar and an agent will process it promptly. Your plan will remain active until the end of the current period."
             },
-            "titleVenue": "Gastronomy subscription",
+            "titleVenue": "Food & nightlife subscription",
             "titleExperience": "Experience subscription",
             "titleTourist": "Traveler subscription",
             "domainSwitcher": {
@@ -806,7 +806,7 @@
                 "accommodation": "Accommodation",
                 "experience": "Experiences",
                 "tourist": "Traveler",
-                "venue": "Gastronomy"
+                "venue": "Food & nightlife"
             }
         },
         "whatsNew": {

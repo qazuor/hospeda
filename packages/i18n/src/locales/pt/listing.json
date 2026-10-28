@@ -29,7 +29,7 @@
             "empty": "Você ainda não tem comércios. Crie sua primeira ficha para começar.",
             "edit": "Editar",
             "badge": {
-                "venue": "Gastronomia",
+                "venue": "Comer e sair",
                 "experience": "Experiência"
             },
             "emptyCta": "Criar meu primeiro comércio",
@@ -47,8 +47,8 @@
             },
             "usage": {
                 "venue": {
-                    "label_one": "{{current}} de {{max}} gastronomia",
-                    "label_other": "{{current}} de {{max}} gastronomias"
+                    "label_one": "{{current}} de {{max}} ficha de Comer e sair",
+                    "label_other": "{{current}} de {{max}} fichas de Comer e sair"
                 },
                 "experience": {
                     "label_one": "{{current}} de {{max}} experiência",
@@ -74,7 +74,7 @@
                 "downloaded": "Pronto, baixamos.",
                 "qrAlt": "Código QR que leva ao cardápio de {{name}}",
                 "encodes": "Leva a: {{url}}",
-                "locked": "O QR do cardápio e suas estatísticas de leitura estão disponíveis no plano Premium de gastronomia.",
+                "locked": "O QR do cardápio e suas estatísticas de leitura estão disponíveis no plano Premium de Comer e sair.",
                 "error": "Não foi possível carregar as leituras do QR. Tente novamente mais tarde.",
                 "empty": "Ainda não houve leituras neste período."
             }
@@ -344,7 +344,7 @@
                 "experience": "Publicar esta experiência?"
             },
             "choosePlan": {
-                "venue": "Escolher plano de gastronomia",
+                "venue": "Escolher plano de Comer e sair",
                 "experience": "Escolher plano de experiências"
             },
             "missingRequirements": "Não foi possível publicar porque faltam informações."

@@ -80,7 +80,7 @@
             "body": "Edite o conteúdo público, horários e dados visíveis do seu negócio."
         },
         "greetingVenue": {
-            "title": "Bem-vindo ao seu painel de gastronomia",
+            "title": "Bem-vindo ao seu painel de Comer e sair",
             "body": "Daqui você pode gerenciar sua conta e o conteúdo público do seu estabelecimento gastronômico."
         },
         "listingVenue": {
@@ -170,7 +170,7 @@
                     "cta": "Publique sua experiência"
                 },
                 "venue": {
-                    "title": "Gastronomia",
+                    "title": "Comer e sair",
                     "description": "Some seu local gastronômico ao Hospeda: restaurante, churrascaria, padaria, café ou food truck. Deixe seus dados, aprovamos sua solicitação e, a partir da sua conta, você completa e publica sua própria ficha.",
                     "cta": "Publique seu local gastronômico"
                 }
@@ -449,7 +449,7 @@
             "vertical": {
                 "accommodation": "hospedagem",
                 "experience": "experiências",
-                "venue": "gastronomia"
+                "venue": "Comer e sair"
             },
             "total_one": "{{count}} dia de teste no total",
             "total_other": "{{count}} dias de teste no total",
@@ -487,7 +487,7 @@
                 "tourist": "Turista",
                 "partner": "Parceiros",
                 "unknown": "Hospeda",
-                "venue": "Gastronomia"
+                "venue": "Comer e sair"
             },
             "price": "{{amount}} {{cycle}}",
             "nextCharge": "Próxima cobrança: {{date}}, no valor de {{amount}}."
@@ -554,7 +554,7 @@
             "destination": "Destinos",
             "event": "Eventos",
             "experience": "Experiências",
-            "venue": "Gastronomia",
+            "venue": "Comer e sair",
             "post": "Blog"
         },
         "collections": {
@@ -798,7 +798,7 @@
             "cancelModal": {
                 "body": "Para cancelar sua assinatura, envie um e-mail para info@hospeda.com.ar e um agente irá processá-la em breve. Seu plano continuará ativo até o final do período atual."
             },
-            "titleVenue": "Assinatura de gastronomia",
+            "titleVenue": "Assinatura de Comer e sair",
             "titleExperience": "Assinatura de experiências",
             "titleTourist": "Assinatura de turista",
             "domainSwitcher": {
@@ -806,7 +806,7 @@
                 "accommodation": "Hospedagem",
                 "experience": "Experiências",
                 "tourist": "Turista",
-                "venue": "Gastronomia"
+                "venue": "Comer e sair"
             }
         },
         "whatsNew": {

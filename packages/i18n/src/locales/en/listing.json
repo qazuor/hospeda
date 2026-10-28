@@ -29,7 +29,7 @@
             "empty": "You don't have any businesses yet. Create your first listing to get started.",
             "edit": "Edit",
             "badge": {
-                "venue": "Gastronomy",
+                "venue": "Food & nightlife",
                 "experience": "Experience"
             },
             "emptyCta": "Create my first business",
@@ -47,8 +47,8 @@
             },
             "usage": {
                 "venue": {
-                    "label_one": "{{current}} of {{max}} gastronomy listing",
-                    "label_other": "{{current}} of {{max}} gastronomy listings"
+                    "label_one": "{{current}} of {{max}} Food & nightlife listing",
+                    "label_other": "{{current}} of {{max}} Food & nightlife listings"
                 },
                 "experience": {
                     "label_one": "{{current}} of {{max}} experience listing",
@@ -74,7 +74,7 @@
                 "downloaded": "Done, downloaded.",
                 "qrAlt": "QR code linking to {{name}}'s menu",
                 "encodes": "Links to: {{url}}",
-                "locked": "The menu QR and its scan analytics are available on the gastronomy Premium plan.",
+                "locked": "The menu QR and its scan analytics are available on the Food & nightlife Premium plan.",
                 "error": "We couldn't load the QR scans. Please try again later.",
                 "empty": "No scans yet in this period."
             }
@@ -344,7 +344,7 @@
                 "experience": "Publish this experience?"
             },
             "choosePlan": {
-                "venue": "Choose a gastronomy plan",
+                "venue": "Choose a Food & nightlife plan",
                 "experience": "Choose an experiences plan"
             },
             "missingRequirements": "The listing could not be published because information is missing."
