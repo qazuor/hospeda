@@ -173,7 +173,7 @@ or by inspecting the `coolify.resourceName` label — it looks like
 | `update`           | shipped  | git pull the repo and reinstall the hops binary in one step.             |
 | `db-backup-now`    | shipped  | Trigger a `pg_dump` to R2 (`manual/` prefix) outside the daily schedule. |
 | `db-restore`       | shipped  | Pick a backup from R2 and `pg_restore` into the container (auto pre-restore snapshot, destructive). |
-| `db-seed`          | shipped  | Run `@repo/seed` against the target DB (reset+required+example by default; destructive, optional `git pull` first). |
+| `db-seed`          | shipped  | Run `@repo/seed` against the target DB (reset+required+example by default; destructive, optional `git pull` first). `--baseline-stamp` (HOS-1952) is a stamp-only mode: no seed, no wipe, stamps the `seed_migrations` ledger after a reset (`contentOnly` migrations still run); run it after `db-seed`; refused on prod (use `db-seed-migrate`). |
 | `db-seed-migrate`  | shipped  | Apply pending seed data-migrations (HOS-25) against the target DB; `--status` to preview. Non-destructive, never reseeds; ledger-tracked exactly-once. |
 | `cutover-step-3`   | shipped  | Run the V6 cutover step 3 script (writes the five cutover trials) against the target DB; dry-run by default, typed confirmation on prod. |
 | `db-seed-test-users` | shipped | Additively seed the 13 SPEC-143 test-user accounts (role×plan matrix). ADD-ONLY, no reset flag; rejected on `--target=prod`. |

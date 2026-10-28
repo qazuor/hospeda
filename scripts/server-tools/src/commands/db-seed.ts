@@ -50,7 +50,7 @@ import { buildPostgresUrl } from '../lib/postgres.ts';
 import { confirm } from '../lib/prompt.ts';
 import { resolveRepoRoot } from '../lib/repo-root.ts';
 import { runner } from '../lib/runner.ts';
-import { getDbCredentials } from '../lib/target.ts';
+import { getDbCredentials, type Target } from '../lib/target.ts';
 
 const HELP = `
 hops db-seed [--target=prod|staging]
@@ -59,6 +59,7 @@ hops db-seed [--target=prod|staging]
              [--clean-images]
              [--build]
              [--migrate] [--no-apply-extras]
+             [--baseline-stamp]
              [--yes]
 
 Run \`pnpm --filter @repo/seed seed\` against the target environment.
@@ -99,6 +100,23 @@ Flags:
   --no-apply-extras   When used with --migrate: skip the Postgres extras after
                       migrate. Without --migrate, this flag has no effect.
                       The default ON behaviour is idempotent.
+  --baseline-stamp    STAMP-ONLY mode (HOS-1952). Does NOT seed and does NOT
+                      wipe: runs \`pnpm --filter @repo/seed seed --data-migrate
+                      --baseline-stamp\` against the target DB, which records
+                      every pending seed data-migration in the \`seed_migrations\`
+                      ledger as applied WITHOUT running its up() — the baseline
+                      fixtures already reflect the post-migration end state.
+                      Migrations flagged \`contentOnly\` are the exception: the
+                      seed runs those for real (their content has no fixture).
+                      Use it AFTER a reset+seed (\`hops db-seed\`), as the
+                      \`pnpm db:fresh\` chain does. The DB is resolved by
+                      --target like the rest of the command. REFUSED on
+                      --target=prod (even with --yes): a reset keeps the
+                      ledger, so a live DB cannot be told from a reset one
+                      and real pending migrations would be marked applied
+                      unrun. On prod use \`hops db-seed-migrate\`. Also
+                      refused with --example, --clean-images, --migrate,
+                      --no-reset, --no-required, --no-example.
   --no-reset          Skip the database reset step (population only).
                       May fail on UNIQUE violations if rows already exist.
   --no-required       Skip the --required step (rare; tests / partial seeds).
@@ -135,6 +153,7 @@ Unattended examples:
   hops db-seed --target=prod --pull --yes                      # prod: required only
   hops db-seed --target=staging --no-pull --yes --no-example   # required only
   hops db-seed --target=staging --migrate --no-pull --yes      # migrate + seed
+  hops db-seed --target=staging --baseline-stamp --no-pull --yes   # stamp ledger only
 
 Required environment variables (in scripts/server-tools/.env.local):
   HOPS_<TARGET>_POSTGRES_UUID         Coolify Postgres service UUID for the target.
@@ -195,6 +214,19 @@ export interface ParsedArgs {
     readonly install: boolean;
     readonly pull: 'on' | 'off' | 'ask';
     readonly skipConfirm: boolean;
+    /**
+     * HOS-1952: stamp-only mode. Runs the seed CLI's
+     * `--data-migrate --baseline-stamp` path INSTEAD of a seed: no reset, no
+     * required/example groups. Used after a reset+seed so the `seed_migrations`
+     * ledger records the data-migrations the baseline already covers.
+     */
+    readonly baselineStamp: boolean;
+    /**
+     * Which of `--no-reset` / `--no-required` / `--no-example` were passed.
+     * Meaningless in stamp-only mode, so {@link resolveTargetFlags} refuses
+     * them there instead of ignoring them.
+     */
+    readonly seedShapingFlags: ReadonlyArray<string>;
 }
 
 export function parseArgs(argv: ReadonlyArray<string>): ParsedArgs {
@@ -217,7 +249,11 @@ export function parseArgs(argv: ReadonlyArray<string>): ParsedArgs {
         applyExtras: !args.includes('--no-apply-extras'),
         install: !args.includes('--no-install'),
         pull: wantsPull ? 'on' : skipsPull ? 'off' : 'ask',
-        skipConfirm: args.includes('--yes')
+        skipConfirm: args.includes('--yes'),
+        baselineStamp: args.includes('--baseline-stamp'),
+        seedShapingFlags: ['--no-reset', '--no-required', '--no-example'].filter((flag) =>
+            args.includes(flag)
+        )
     };
 }
 
@@ -244,7 +280,35 @@ export function resolveTargetFlags(args: {
     readonly target: string;
 }): ResolvedTargetFlags {
     const { parsed, target } = args;
+    if (parsed.baselineStamp) {
+        // Stamp-only mode seeds nothing, so flags that only make sense for a
+        // seed would be silently ignored: refuse them instead (fail closed).
+        const conflicts = [
+            parsed.exampleExplicit ? '--example' : null,
+            parsed.cleanImages ? '--clean-images' : null,
+            parsed.migrate ? '--migrate' : null,
+            ...parsed.seedShapingFlags
+        ].filter((flag): flag is string => flag !== null);
+        if (conflicts.length > 0) {
+            return {
+                parsed,
+                refusal: `--baseline-stamp is stamp-only (no seed, no wipe) and cannot be combined with ${conflicts.join(', ')}. Run \`hops db-seed\` first, then \`hops db-seed --baseline-stamp\`.`
+            };
+        }
+    }
     if (target !== 'prod') return { parsed };
+    if (parsed.baselineStamp) {
+        // HOS-1952: `reset` keeps `seed_migrations` (partitionTablesForReset), so
+        // the ledger is never empty after a reset and nothing here can tell a
+        // freshly reset database from a live one. Stamping a live one records
+        // REAL pending migrations as applied without running them. The use case
+        // is staging/local after a reset, so prod is refused outright, --yes or not.
+        return {
+            parsed,
+            refusal:
+                '--baseline-stamp is refused on --target=prod: it marks pending data-migrations as applied WITHOUT running them, and a live database cannot be told apart from a freshly reset one (a reset keeps the seed_migrations ledger). Use `hops db-seed-migrate --target=prod` to apply pending migrations.'
+        };
+    }
     if (parsed.exampleExplicit) {
         return {
             parsed,
@@ -256,6 +320,9 @@ export function resolveTargetFlags(args: {
 }
 
 export function buildSeedArgs(parsed: ParsedArgs): ReadonlyArray<string> {
+    if (parsed.baselineStamp) {
+        return ['--filter', '@repo/seed', 'seed', '--data-migrate', '--baseline-stamp'];
+    }
     const flags: string[] = [];
     if (parsed.reset) flags.push('--reset');
     if (parsed.required) flags.push('--required');
@@ -264,6 +331,7 @@ export function buildSeedArgs(parsed: ParsedArgs): ReadonlyArray<string> {
 }
 
 export function formatFlagSummary(parsed: ParsedArgs): string {
+    if (parsed.baselineStamp) return '+baseline-stamp (stamp-only: no seed, no reset)';
     const on: string[] = [];
     const off: string[] = [];
     (parsed.reset ? on : off).push('reset');
@@ -278,6 +346,32 @@ export function formatFlagSummary(parsed: ParsedArgs): string {
     const onPart = on.length > 0 ? `+${on.join(' +')}` : '';
     const offPart = off.length > 0 ? `-${off.join(' -')}` : '';
     return [onPart, offPart].filter((s) => s.length > 0).join(' ');
+}
+
+/** Prod confirmation decision from {@link getProdConfirmation}. */
+export interface ProdConfirmation {
+    /** Whether the operator must confirm before the run proceeds. */
+    readonly required: boolean;
+    /** Which warning/prompt applies; `none` when no confirmation is needed. */
+    readonly kind: 'none' | 'wipe' | 'seed';
+}
+
+/**
+ * Decides whether a prod run needs an explicit confirmation. `--yes` skips it.
+ * Staging never prompts. Pure so the prod guard is unit-testable.
+ *
+ * @param args.parsed - Flags after {@link resolveTargetFlags}.
+ * @param args.target - The active target.
+ * @returns The confirmation kind, or `{ required: false, kind: 'none' }`.
+ */
+export function getProdConfirmation(args: {
+    readonly parsed: ParsedArgs;
+    readonly target: string;
+}): ProdConfirmation {
+    const { parsed, target } = args;
+    if (target !== 'prod' || parsed.skipConfirm) return { required: false, kind: 'none' };
+    // --baseline-stamp never reaches here on prod: resolveTargetFlags refuses it.
+    return { required: true, kind: parsed.reset ? 'wipe' : 'seed' };
 }
 
 /**
@@ -398,32 +492,41 @@ async function runSeed(params: {
     }
 }
 
-export async function dbSeed(argv: ReadonlyArray<string>): Promise<void> {
+/** Injection points for {@link dbSeed}; defaults are the real implementations. */
+export interface DbSeedDeps {
+    /** Resolves the active target. */
+    readonly getTarget?: () => Target;
+    /** Aborts the command with a message (must not return). */
+    readonly fail?: (message: string) => never;
+}
+
+export async function dbSeed(argv: ReadonlyArray<string>, deps: DbSeedDeps = {}): Promise<void> {
+    const fail: (message: string) => never = deps.fail ?? die;
     if (argv.includes('--help') || argv.includes('-h')) {
         process.stdout.write(`${HELP}\n`);
         return;
     }
 
-    const target = getActiveTarget();
+    const target = (deps.getTarget ?? getActiveTarget)();
     // HOS-564: per-target policy BEFORE any side effect (pull/install/build).
     const resolved = resolveTargetFlags({ parsed: parseArgs(argv), target });
     if (resolved.refusal) {
-        die(resolved.refusal);
+        fail(resolved.refusal);
     }
     const parsed = resolved.parsed;
 
-    if (!parsed.reset && !parsed.required && !parsed.example) {
-        die('Nothing to do: --no-reset --no-required --no-example were all passed.');
+    if (!parsed.baselineStamp && !parsed.reset && !parsed.required && !parsed.example) {
+        fail('Nothing to do: --no-reset --no-required --no-example were all passed.');
     }
 
     const repoRoot = resolveRepoRoot();
     if (!existsSync(repoRoot)) {
-        die(
+        fail(
             `Repo root '${repoRoot}' not found. Set HOPS_REPO_ROOT in .env.local or clone the repo at ~/hospeda.`
         );
     }
     if (!existsSync(join(repoRoot, '.git'))) {
-        die(`'${repoRoot}' is not a git repository.`);
+        fail(`'${repoRoot}' is not a git repository.`);
     }
 
     const container = await findContainer('postgres');
@@ -482,7 +585,8 @@ export async function dbSeed(argv: ReadonlyArray<string>): Promise<void> {
     // --reset is the destructive flag — drops every row before the run.
     // Confirm in prod unless --yes was passed. Staging is designed to be
     // reseeded freely, so no extra prompt there.
-    if (target === 'prod' && parsed.reset && !parsed.skipConfirm) {
+    const prodConfirmation = getProdConfirmation({ parsed, target });
+    if (prodConfirmation.kind === 'wipe') {
         log.warn('THIS WILL WIPE THE PRODUCTION DATABASE.');
         log.warn('--reset drops every row before reseeding.');
         if (parsed.cleanImages) {
@@ -497,7 +601,7 @@ export async function dbSeed(argv: ReadonlyArray<string>): Promise<void> {
             log.warn('Aborted.');
             return;
         }
-    } else if (target === 'prod' && !parsed.reset && !parsed.skipConfirm) {
+    } else if (prodConfirmation.kind === 'seed') {
         // Non-reset prod run is non-destructive but still worth a heads-up.
         const ok = await confirm('Run db-seed (no --reset) against PRODUCTION?', {
             defaultValue: false

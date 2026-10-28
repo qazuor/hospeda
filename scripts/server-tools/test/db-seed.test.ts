@@ -15,7 +15,9 @@ import { afterEach, beforeEach, describe, expect, it } from 'bun:test';
 import {
     buildSeedArgs,
     collectCloudinaryEnv,
+    dbSeed,
     formatFlagSummary,
+    getProdConfirmation,
     parseArgs,
     resolveTargetFlags
 } from '../src/commands/db-seed.ts';
@@ -481,5 +483,111 @@ describe('collectCloudinaryEnv(cleanImages)', () => {
 
     it('returns an empty object when cleanImages is true but no creds are set', () => {
         expect(collectCloudinaryEnv(true)).toEqual({});
+    });
+});
+
+describe('--baseline-stamp (HOS-1952)', () => {
+    it('is OFF by default and ON when passed, in any position', () => {
+        expect(parseArgs([]).baselineStamp).toBe(false);
+        expect(parseArgs(['--baseline-stamp']).baselineStamp).toBe(true);
+        expect(parseArgs(['--yes', '--no-pull', '--baseline-stamp']).baselineStamp).toBe(true);
+    });
+
+    it('invokes the seed CLI data-migrate path with --baseline-stamp and no seed flags', () => {
+        const args = buildSeedArgs(parseArgs(['--baseline-stamp']));
+        expect(args).toEqual([
+            '--filter',
+            '@repo/seed',
+            'seed',
+            '--data-migrate',
+            '--baseline-stamp'
+        ]);
+        expect(args).not.toContain('--reset');
+        expect(args).not.toContain('--required');
+        expect(args).not.toContain('--example');
+    });
+
+    it('does not leak --data-migrate into a normal seed', () => {
+        expect(buildSeedArgs(parseArgs([]))).not.toContain('--data-migrate');
+        expect(buildSeedArgs(parseArgs([]))).not.toContain('--baseline-stamp');
+    });
+
+    it('summarises as stamp-only', () => {
+        expect(formatFlagSummary(parseArgs(['--baseline-stamp']))).toContain('baseline-stamp');
+    });
+
+    it('refuses combination with --example, --clean-images and --migrate', () => {
+        for (const flag of ['--example', '--clean-images', '--migrate']) {
+            const result = resolveTargetFlags({
+                parsed: parseArgs(['--baseline-stamp', flag]),
+                target: 'staging'
+            });
+            expect(result.refusal).toContain(flag);
+        }
+    });
+
+    it('refuses --no-reset, --no-required and --no-example instead of ignoring them', () => {
+        for (const flag of ['--no-reset', '--no-required', '--no-example']) {
+            const result = resolveTargetFlags({
+                parsed: parseArgs(['--baseline-stamp', flag]),
+                target: 'staging'
+            });
+            expect(result.refusal).toContain(flag);
+        }
+    });
+
+    it('accepts a plain stamp on staging', () => {
+        const result = resolveTargetFlags({
+            parsed: parseArgs(['--baseline-stamp']),
+            target: 'staging'
+        });
+        expect(result.refusal).toBeUndefined();
+    });
+
+    it('refuses the stamp on prod, even with --yes', () => {
+        for (const argv of [['--baseline-stamp'], ['--baseline-stamp', '--yes']]) {
+            const result = resolveTargetFlags({ parsed: parseArgs(argv), target: 'prod' });
+            expect(result.refusal).toContain('refused on --target=prod');
+        }
+    });
+});
+
+describe('dbSeed wiring for --baseline-stamp on prod (HOS-1952)', () => {
+    const failing = (message: string): never => {
+        throw new Error(message);
+    };
+
+    it('aborts before any side effect on prod, even with --yes', async () => {
+        await expect(
+            dbSeed(['--baseline-stamp', '--yes', '--no-pull'], {
+                getTarget: () => 'prod',
+                fail: failing
+            })
+        ).rejects.toThrow('refused on --target=prod');
+    });
+
+    it('does not refuse on staging (it proceeds to the repo-root check)', async () => {
+        process.env.HOPS_REPO_ROOT = '/nonexistent-hops-repo-root-for-test';
+        await expect(
+            dbSeed(['--baseline-stamp', '--yes', '--no-pull'], {
+                getTarget: () => 'staging',
+                fail: failing
+            })
+        ).rejects.toThrow('Repo root');
+    });
+});
+
+describe('getProdConfirmation', () => {
+    it('keeps the wipe and no-reset prod prompts and skips them with --yes', () => {
+        expect(getProdConfirmation({ parsed: parseArgs([]), target: 'prod' }).kind).toBe('wipe');
+        expect(
+            getProdConfirmation({ parsed: parseArgs(['--no-reset']), target: 'prod' }).kind
+        ).toBe('seed');
+        expect(getProdConfirmation({ parsed: parseArgs(['--yes']), target: 'prod' }).required).toBe(
+            false
+        );
+        expect(getProdConfirmation({ parsed: parseArgs([]), target: 'staging' }).required).toBe(
+            false
+        );
     });
 });
