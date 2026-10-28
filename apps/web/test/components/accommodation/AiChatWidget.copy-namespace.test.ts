@@ -70,9 +70,7 @@ describe('aiChatCopyKey', () => {
             expect(aiChatCopyKey('accommodation', 'unavailable')).toBe(
                 'accommodations.aiChat.unavailable'
             );
-            expect(aiChatCopyKey('gastronomy', 'unavailable')).toBe(
-                'gastronomy.aiChat.unavailable'
-            );
+            expect(aiChatCopyKey('gastronomy', 'unavailable')).toBe('venue.aiChat.unavailable');
             expect(aiChatCopyKey('experience', 'unavailable')).toBe(
                 'experience.aiChat.unavailable'
             );

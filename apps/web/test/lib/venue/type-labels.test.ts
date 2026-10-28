@@ -18,7 +18,7 @@ const VENUE_TYPES = Object.values(VenueTypeEnum);
 
 describe('buildGastronomyTypeLabelKey', () => {
     it('points at the public gastronomy namespace', () => {
-        expect(buildVenueTypeLabelKey({ type: 'RESTAURANT' })).toBe('gastronomy.types.RESTAURANT');
+        expect(buildVenueTypeLabelKey({ type: 'RESTAURANT' })).toBe('venue.types.RESTAURANT');
     });
 
     it('never rebuilds the retired editor-private namespace', () => {

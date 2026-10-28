@@ -7,7 +7,7 @@
  *
  * What these guard, specifically: the page addresses five audiences, and three
  * of them (experience, gastronomy, partner) render copy that LIVES IN ANOTHER
- * PAGE'S NAMESPACE on purpose — `gastronomy.landing.*` / `experience.landing.*` for the two verticals
+ * PAGE'S NAMESPACE on purpose — `venue.landing.*` / `experience.landing.*` for the two verticals
  * whose landings already publish the same claims, `alliance-leads.partner.*`
  * for the ally sentences. Two distinct regressions are possible there and
  * neither is caught by an existing guard:
@@ -89,13 +89,13 @@ describe('beneficios/index.astro — copy stays single-sourced', () => {
         'experience.landing.benefits.item2.desc',
         'experience.landing.benefits.item3.title',
         'experience.landing.benefits.item3.desc',
-        'gastronomy.landing.benefits.title',
-        'gastronomy.landing.benefits.item1.title',
-        'gastronomy.landing.benefits.item1.desc',
-        'gastronomy.landing.benefits.item2.title',
-        'gastronomy.landing.benefits.item2.desc',
-        'gastronomy.landing.benefits.item3.title',
-        'gastronomy.landing.benefits.item3.desc',
+        'venue.landing.benefits.title',
+        'venue.landing.benefits.item1.title',
+        'venue.landing.benefits.item1.desc',
+        'venue.landing.benefits.item2.title',
+        'venue.landing.benefits.item2.desc',
+        'venue.landing.benefits.item3.title',
+        'venue.landing.benefits.item3.desc',
         // `item1` retired by HOS-1228 (HOS-941 D-13): it promised access to a
         // network of verified stays and businesses, which nothing implements.
         // The survivors keep their original numbers — they pair with

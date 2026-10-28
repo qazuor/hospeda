@@ -138,17 +138,17 @@ if (!hasStructuredMenu && !hasFile) {
     return;
 }
 
-// Nested under `menuCarta`, NOT `menu` — `gastronomy.detail.menu` is already a
+// Nested under `menuCarta`, NOT `menu` — `venue.detail.menu` is already a
 // leaf string ("Ver menú", the external-link CTA label in
 // VenueContactBlock.astro), and a JSON key cannot be both a string and
 // an object subtree.
-const title = t('gastronomy.detail.menuCarta.title', 'Carta');
-const attachmentImageTitle = t('gastronomy.detail.menuCarta.attachmentImage', 'Carta en imagen');
-const attachmentPdfTitle = t('gastronomy.detail.menuCarta.attachmentPdf', 'Carta en PDF');
-const viewPdfLabel = t('gastronomy.detail.menuCarta.viewPdf', 'Ver carta en PDF');
-const consultLabel = t('gastronomy.detail.menuCarta.consultPrice', 'A consultar');
-const unavailableLabel = t('gastronomy.detail.menuCarta.unavailable', 'No disponible');
-const switchLanguageLabel = t('gastronomy.detail.menuCarta.switchLanguage', 'Ver la carta en:');
+const title = t('venue.detail.menuCarta.title', 'Carta');
+const attachmentImageTitle = t('venue.detail.menuCarta.attachmentImage', 'Carta en imagen');
+const attachmentPdfTitle = t('venue.detail.menuCarta.attachmentPdf', 'Carta en PDF');
+const viewPdfLabel = t('venue.detail.menuCarta.viewPdf', 'Ver carta en PDF');
+const consultLabel = t('venue.detail.menuCarta.consultPrice', 'A consultar');
+const unavailableLabel = t('venue.detail.menuCarta.unavailable', 'No disponible');
+const switchLanguageLabel = t('venue.detail.menuCarta.switchLanguage', 'Ver la carta en:');
 ---
 
 <section class="gastro-menu" id="gastro-menu">

@@ -154,7 +154,7 @@ describe('carta.astro — cache headers mirror the listing', () => {
 describe('carta.astro — copy goes through @repo/i18n', () => {
     it('uses createTranslations, not literal Spanish copy', () => {
         expect(cartaSrc).toContain("import { createTranslations } from '@/lib/i18n'");
-        expect(cartaSrc).toContain("t('gastronomy.detail.menuCarta.title'");
-        expect(cartaSrc).toContain("t('gastronomy.detail.menuCarta.backToListing'");
+        expect(cartaSrc).toContain("t('venue.detail.menuCarta.title'");
+        expect(cartaSrc).toContain("t('venue.detail.menuCarta.backToListing'");
     });
 });

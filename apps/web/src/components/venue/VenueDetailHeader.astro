@@ -48,9 +48,9 @@ const {
 } = Astro.props;
 const { t, tPlural } = createTranslations(locale);
 
-const typeLabel = t(`gastronomy.types.${venue.type}`, venue.type);
+const typeLabel = t(`venue.types.${venue.type}`, venue.type);
 const priceRangeLabel = venue.priceRange
-    ? t(`gastronomy.card.priceRange.${venue.priceRange}`, venue.priceRange)
+    ? t(`venue.card.priceRange.${venue.priceRange}`, venue.priceRange)
     : null;
 
 const fullStars = Math.floor(venue.averageRating);
@@ -77,7 +77,7 @@ const isNew = venue.createdAt
                 {venue.isFeatured && (
                     <span class="featured-badge">
                         <StarIcon size={12} weight="fill" aria-hidden="true" />
-                        <span>{t('gastronomy.card.featured', 'Destacado')}</span>
+                        <span>{t('venue.card.featured', 'Destacado')}</span>
                     </span>
                 )}
                 {isNew && (

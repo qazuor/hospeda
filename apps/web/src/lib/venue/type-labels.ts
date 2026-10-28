@@ -4,7 +4,7 @@
  *
  * The owner form and the public listing page name the SAME `VenueTypeEnum`
  * value, and until this module they read it from two different i18n blocks: the
- * public pages read `gastronomy.types.<TYPE>` and the owner form read a private
+ * public pages read `venue.types.<TYPE>` and the owner form read a private
  * duplicate of it under `listing.owner.editor.typeOption`. Two hand-maintained
  * lists of the same labels do not stay in agreement, and they drifted in
  * several places across the three locales.
@@ -30,7 +30,7 @@ type Translate = (key: string, fallback?: string) => string;
  * This is the exact namespace the public cards and detail headers read; the
  * constant exists so a caller cannot pick the wrong one by hand.
  */
-const TYPE_LABEL_KEY_PREFIX = 'gastronomy.types';
+const TYPE_LABEL_KEY_PREFIX = 'venue.types';
 
 /**
  * Builds the i18n key that names a gastronomy listing type.
@@ -46,7 +46,7 @@ const TYPE_LABEL_KEY_PREFIX = 'gastronomy.types';
  * @example
  * ```ts
  * buildVenueTypeLabelKey({ type: 'RESTAURANT' });
- * // => 'gastronomy.types.RESTAURANT'
+ * // => 'venue.types.RESTAURANT'
  * ```
  */
 export function buildVenueTypeLabelKey({ type }: { readonly type: string }): string {

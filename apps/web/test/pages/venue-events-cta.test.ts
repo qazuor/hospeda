@@ -120,9 +120,9 @@ describe('GastronomyEventsCta.astro (HOS-1055)', () => {
     });
 
     it('renders through the gastronomy.detail.eventsCta i18n namespace, with fallbacks', () => {
-        expect(EVENTS_CTA).toContain('gastronomy.detail.eventsCta.title');
-        expect(EVENTS_CTA).toContain('gastronomy.detail.eventsCta.description');
-        expect(EVENTS_CTA).toContain('gastronomy.detail.eventsCta.button');
+        expect(EVENTS_CTA).toContain('venue.detail.eventsCta.title');
+        expect(EVENTS_CTA).toContain('venue.detail.eventsCta.description');
+        expect(EVENTS_CTA).toContain('venue.detail.eventsCta.button');
     });
 
     it('does not promise a specific channel (e.g. WhatsApp) that gastronomy cannot deliver', () => {

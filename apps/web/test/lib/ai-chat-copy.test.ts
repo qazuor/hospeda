@@ -63,7 +63,7 @@ describe('resolveAiChatCopy', () => {
     });
 
     it('should return the translation when the key resolves', () => {
-        const t = (key: string) => (key === 'gastronomy.aiChat.panelLabel' ? 'Panel' : key);
+        const t = (key: string) => (key === 'venue.aiChat.panelLabel' ? 'Panel' : key);
         expect(resolveAiChatCopy({ t, entityType: 'gastronomy', suffix: 'panelLabel' })).toBe(
             'Panel'
         );
@@ -95,14 +95,13 @@ describe('resolveChatError', () => {
     });
 
     it('should prefer a resolvable API message key', () => {
-        const t = (key: string) =>
-            key === 'gastronomy.aiChat.unavailable' ? 'No disponible' : key;
+        const t = (key: string) => (key === 'venue.aiChat.unavailable' ? 'No disponible' : key);
         expect(
             resolveChatError({
                 t,
                 entityType: 'gastronomy',
                 code: 'ENTITLEMENT_REQUIRED',
-                message: 'gastronomy.aiChat.unavailable'
+                message: 'venue.aiChat.unavailable'
             })
         ).toBe('No disponible');
     });
@@ -120,7 +119,7 @@ describe('resolveChatError', () => {
 
 describe('aiChatCopyKey', () => {
     it('should route vertical keys to the vertical namespace', () => {
-        expect(aiChatCopyKey('gastronomy', 'panelLabel')).toBe('gastronomy.aiChat.panelLabel');
+        expect(aiChatCopyKey('gastronomy', 'panelLabel')).toBe('venue.aiChat.panelLabel');
         expect(aiChatCopyKey('experience', 'fabLabel')).toBe('experience.aiChat.fabLabel');
     });
 });

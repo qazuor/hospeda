@@ -6,7 +6,7 @@
  * ## Why this test exists, and why the guard is not enough
  *
  * The card originally resolved its day names with
- * `t('gastronomy.detail.openingHours.<day>')`. That prefix does NOT ship to the
+ * `t('venue.detail.openingHours.<day>')`. That prefix does NOT ship to the
  * browser — 25 of its 32 keys are named only by `.astro` files rendering
  * server-side — so the lookup worked in SSR and then, on hydration, resolved to
  * `undefined` and fell through to the call site's inline fallback. The owner
@@ -92,14 +92,14 @@ describe('GastronomyVenueEventEntryCard — weekday labels (HOS-1042)', () => {
 
     it('renders NO raw i18n key text and no bare day key', () => {
         // The production symptom, asserted negatively. `monday` is what the
-        // unshipped-prefix fallback produced, and `gastronomy.detail` is what a
+        // unshipped-prefix fallback produced, and `venue.detail` is what a
         // call site with no fallback would have printed.
         // Arrange & Act
         const { container } = { container: document.body };
         renderCard(ES_WEEKDAYS);
 
         // Assert
-        expect(container.textContent).not.toContain('gastronomy.detail');
+        expect(container.textContent).not.toContain('venue.detail');
         expect(container.textContent).not.toContain('openingHours');
         for (const bareKey of ['monday', 'thursday', 'sunday']) {
             expect(container.textContent).not.toContain(bareKey);

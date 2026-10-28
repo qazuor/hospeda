@@ -184,7 +184,7 @@ const descriptionText = renderPlain({ raw: venue.description });
 
 // --- "Accepts events" CTA (HOS-1055) ---
 // Reuses the existing `private_events` catalog amenity (HOS-1072 exposed it in
-// `gastronomy.amenities`) rather than a new DB column or public-schema field —
+// `venue.amenities`) rather than a new DB column or public-schema field —
 // see the owner editor's `AmenitiesSection.client.tsx` for the same decision on
 // the write side.
 //
@@ -241,14 +241,14 @@ const seoTitle = venue.seo?.title?.trim() || venue.name;
 const seoDescription =
     venue.seo?.description?.trim() ||
     venue.summary ||
-    t('gastronomy.listing.subtitle', 'Gastronomía en el Litoral Entrerriano');
+    t('venue.listing.subtitle', 'Gastronomía en el Litoral Entrerriano');
 
 // --- Breadcrumb JSON-LD (HOS-117 T-007) ---
 const siteOrigin = Astro.site?.href.replace(/\/$/, '') ?? Astro.url.origin;
 const breadcrumbItems = [
     { name: t('nav.home', 'Inicio'), url: `${siteOrigin}/${locale}/` },
     {
-        name: t('gastronomy.listing.title', 'Gastronomía'),
+        name: t('venue.listing.title', 'Gastronomía'),
         url: `${siteOrigin}/${locale}/comer-y-salir/`
     },
     { name: venue.name, url: `${siteOrigin}${Astro.url.pathname}` }
@@ -263,7 +263,7 @@ const breadcrumbItems = [
     showBreadcrumbs={true}
     showSidebar={false}
     ogImage={venue.featuredImage.url}
-    ogType={t(`gastronomy.types.${venue.type}`, venue.type)}
+    ogType={t(`venue.types.${venue.type}`, venue.type)}
     ogSubtitle={venue.destinationName}
     ogRating={venue.averageRating > 0 ? venue.averageRating.toFixed(1) : undefined}
 >
@@ -285,7 +285,7 @@ const breadcrumbItems = [
         locale={locale}
         items={[
             {
-                label: t('gastronomy.listing.title', 'Gastronomía'),
+                label: t('venue.listing.title', 'Gastronomía'),
                 path: 'comer-y-salir/'
             },
             { label: venue.name }
@@ -385,12 +385,12 @@ const breadcrumbItems = [
         {venue.reviewsCount > 0 && (
             <section class="gastro-detail__reviews">
                 <h2 class="gastro-detail__section-title">
-                    {t('gastronomy.detail.reviews.title', 'Reseñas')}
+                    {t('venue.detail.reviews.title', 'Reseñas')}
                 </h2>
                 {reviews.length === 0 ? (
                     <p class="gastro-detail__reviews-empty">
                         {t(
-                            'gastronomy.detail.reviews.empty',
+                            'venue.detail.reviews.empty',
                             'Todavía no hay reseñas. ¡Sé el primero en opinar!'
                         )}
                     </p>
@@ -413,7 +413,7 @@ const breadcrumbItems = [
                         ))}
                         {totalReviews > 3 && (
                             <p class="gastro-detail__reviews-more">
-                                {tPlural('gastronomy.detail.reviews.more', totalReviews - 3)}
+                                {tPlural('venue.detail.reviews.more', totalReviews - 3)}
                             </p>
                         )}
                     </ul>

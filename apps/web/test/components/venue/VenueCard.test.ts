@@ -37,7 +37,7 @@ describe('GastronomyCard.astro', () => {
 
     describe('type badge', () => {
         it('resolves type label via t() with gastronomy.types namespace', () => {
-            expect(src).toContain('gastronomy.types.');
+            expect(src).toContain('venue.types.');
         });
 
         it('renders the type label in a badge element', () => {
@@ -47,7 +47,7 @@ describe('GastronomyCard.astro', () => {
 
     describe('price range badge', () => {
         it('resolves price range label via t() with gastronomy.card.priceRange namespace', () => {
-            expect(src).toContain('gastronomy.card.priceRange.');
+            expect(src).toContain('venue.card.priceRange.');
         });
     });
 
@@ -91,11 +91,11 @@ describe('GastronomyCard.astro', () => {
         });
 
         it('uses gastronomy.card.openNow i18n key', () => {
-            expect(src).toContain('gastronomy.card.openNow');
+            expect(src).toContain('venue.card.openNow');
         });
 
         it('uses gastronomy.card.closedNow i18n key', () => {
-            expect(src).toContain('gastronomy.card.closedNow');
+            expect(src).toContain('venue.card.closedNow');
         });
 
         // BETA-117: the badge was illegible over photos because it used

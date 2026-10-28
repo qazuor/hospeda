@@ -159,7 +159,7 @@ export const CLIENT_I18N_KEY_PREFIXES = [
     'listing.owner',
     // The gastronomy-only editor panels (menu, daily specials, venue events)
     // live under their own namespace since the shared `listing` one was split.
-    'gastronomy.owner',
+    'venue.owner',
     'common.anonymous',
     // Named directly by the review islands' network-failure branch. It is also
     // listed in EXTERNAL_I18N_KEY_PREFIXES, which covers the copy built inside
@@ -235,7 +235,7 @@ export const CLIENT_I18N_KEY_PREFIXES = [
     'experience.editOwn',
     'experience.reviews',
     // HOS-822 — the gastronomy/experience owner form and the public listing page now name
-    // the SAME listing-type key (`experience.type.*` / `gastronomy.types.*`,
+    // the SAME listing-type key (`experience.type.*` / `venue.types.*`,
     // via `resolveVenueTypeLabel` / `resolveExperienceTypeLabel`). The form is a client island, so both
     // prefixes have to ship: they replace `listing.owner.editor.typeOption.*`,
     // the editor-private duplicate that was reachable here under
@@ -252,10 +252,10 @@ export const CLIENT_I18N_KEY_PREFIXES = [
     // HOS-1077: gastronomy half of the permission-value pair described at
     // `experience.editOwn` above. Not an i18n key.
     // HOS-1264 — gastronomy half of `experience.aiChat` above.
-    'gastronomy.aiChat',
+    'venue.aiChat',
     'venue.editOwn',
     // HOS-822 — gastronomy half of the shared listing-type source above.
-    'gastronomy.types',
+    'venue.types',
     'home.featuredDestinations',
     'home.searchBar',
     'host-trades.card',

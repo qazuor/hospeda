@@ -7,7 +7,7 @@
  *
  * The namespace prefixes below are written as FULL string literals on purpose.
  * `test/lib/i18n-client-namespaces.guard.test.ts` discovers what the browser
- * names by scanning literals, so spelling `'gastronomy.aiChat'` out is what
+ * names by scanning literals, so spelling `'venue.aiChat'` out is what
  * makes that guard demand its entry in `CLIENT_I18N_KEY_PREFIXES`. A bare
  * `'gastronomy'` (the previous shape) was invisible to it, the prefix was never
  * shipped, and the panel printed raw keys (HOS-1264).
@@ -25,7 +25,7 @@ export type AiChatTranslate = (key: string, fallback?: string) => string;
  */
 const AI_CHAT_PREFIX_BY_ENTITY_TYPE: Readonly<Record<AiChatEntityType, string>> = {
     accommodation: 'accommodations.aiChat',
-    gastronomy: 'gastronomy.aiChat',
+    gastronomy: 'venue.aiChat',
     experience: 'experience.aiChat'
 };
 
@@ -60,7 +60,7 @@ export function aiChatCopyKey(entityType: AiChatEntityType, suffix: string): str
  * miss. Necessary because `t()` returns the KEY ITSELF for an unknown key in
  * production (only DEV yields `[MISSING: ...]`) - which is exactly how a raw
  * `accommodations.aiChat.unavailable` ended up on screen (HOS-292) and, again,
- * three raw `gastronomy.aiChat.*` keys (HOS-1264).
+ * three raw `venue.aiChat.*` keys (HOS-1264).
  */
 const UNRESOLVED = '__hospeda_unresolved__';
 

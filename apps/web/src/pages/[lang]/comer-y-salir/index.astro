@@ -192,13 +192,13 @@ const PRICE_RANGES = ['BUDGET', 'MID', 'HIGH', 'PREMIUM'] as const;
 const filterGroups: FilterGroup[] = [
     {
         id: 'q',
-        label: t('gastronomy.listing.search'),
+        label: t('venue.listing.search'),
         type: 'search',
-        placeholder: t('gastronomy.listing.searchPlaceholder')
+        placeholder: t('venue.listing.searchPlaceholder')
     },
     {
         id: 'destinationId',
-        label: t('gastronomy.listing.destination'),
+        label: t('venue.listing.destination'),
         type: 'select-search',
         options: destinations.map((d) => ({
             value: d.id,
@@ -209,25 +209,25 @@ const filterGroups: FilterGroup[] = [
     },
     {
         id: 'type',
-        label: t('gastronomy.listing.type'),
+        label: t('venue.listing.type'),
         type: 'checkbox',
         options: VENUE_TYPES.map((value) => ({
             value,
-            label: t(`gastronomy.types.${value}`, value)
+            label: t(`venue.types.${value}`, value)
         }))
     },
     {
         id: 'priceRange',
-        label: t('gastronomy.listing.priceRange'),
+        label: t('venue.listing.priceRange'),
         type: 'checkbox',
         options: PRICE_RANGES.map((value) => ({
             value,
-            label: t(`gastronomy.card.priceRange.${value}`, value)
+            label: t(`venue.card.priceRange.${value}`, value)
         }))
     },
     {
         id: 'isFeatured',
-        label: t('gastronomy.listing.featured'),
+        label: t('venue.listing.featured'),
         type: 'toggle'
     },
     // The aptos group (HOS-1054). Rendered only when the catalog read
@@ -240,7 +240,7 @@ const filterGroups: FilterGroup[] = [
         ? ([
               {
                   id: 'features',
-                  label: t('gastronomy.listing.features'),
+                  label: t('venue.listing.features'),
                   type: 'icon-chips',
                   options: featureCatalog.map((f) => ({
                       value: f.id,
@@ -256,19 +256,19 @@ const filterGroups: FilterGroup[] = [
         : []),
     {
         id: 'minRating',
-        label: t('gastronomy.listing.minRating'),
+        label: t('venue.listing.minRating'),
         type: 'stars'
     }
 ];
 
 const sortOptions = [
-    { value: 'featured', label: t('gastronomy.listing.sort.featured') },
+    { value: 'featured', label: t('venue.listing.sort.featured') },
     {
         value: 'ratingDesc',
-        label: t('gastronomy.listing.sort.ratingDesc')
+        label: t('venue.listing.sort.ratingDesc')
     },
-    { value: 'newest', label: t('gastronomy.listing.sort.newest') },
-    { value: 'nameAsc', label: t('gastronomy.listing.sort.nameAsc') }
+    { value: 'newest', label: t('venue.listing.sort.newest') },
+    { value: 'nameAsc', label: t('venue.listing.sort.nameAsc') }
 ];
 
 // --- Build initial params for sidebar (avoids hydration flash) ---
@@ -325,7 +325,7 @@ const canonicalPath = page > 1 ? `${baseUrl}page/${page}/` : baseUrl;
 const typeChips = VENUE_TYPES.map((value) => {
     const isActive = type === value;
     return {
-        label: t(`gastronomy.types.${value}`, value),
+        label: t(`venue.types.${value}`, value),
         href: buildToggleParamHref({
             baseUrl,
             searchParams: url.searchParams,
@@ -347,21 +347,21 @@ const itemListEntries = cards.map((card) => ({
 
 <ListingLayout
     locale={locale}
-    title={t('gastronomy.listing.title', 'Gastronomía')}
+    title={t('venue.listing.title', 'Gastronomía')}
     description={t(
-        'gastronomy.listing.subtitle',
+        'venue.listing.subtitle',
         'Descubrí los mejores restaurantes, bares y sabores de la región'
     )}
     canonicalPath={canonicalPath}
     showFilters={true}
     filterPosition="left"
-    ogTagline={t('gastronomy.listing.subtitle', 'Descubrí los mejores sabores')}
+    ogTagline={t('venue.listing.subtitle', 'Descubrí los mejores sabores')}
     totalCount={total}
     filterSummary={filterSummary}
 >
     <ItemListJsonLd
         slot="head-extra"
-        name={t('gastronomy.listing.title', 'Gastronomía')}
+        name={t('venue.listing.title', 'Gastronomía')}
         items={itemListEntries}
         numberOfItems={total}
         startPosition={(page - 1) * pageSize + 1}
@@ -370,14 +370,14 @@ const itemListEntries = cards.map((card) => ({
     <Breadcrumbs
         slot="breadcrumbs"
         locale={locale}
-        items={[{ label: t('gastronomy.listing.title', 'Gastronomía') }]}
+        items={[{ label: t('venue.listing.title', 'Gastronomía') }]}
     />
 
     <ListingPageHeader
         slot="page-header"
         locale={locale}
-        tagline={t('gastronomy.listing.subtitle', 'Descubrí los mejores sabores')}
-        title={t('gastronomy.listing.title', 'Gastronomía')}
+        tagline={t('venue.listing.subtitle', 'Descubrí los mejores sabores')}
+        title={t('venue.listing.title', 'Gastronomía')}
     />
 
     <FilterSidebar
@@ -391,7 +391,7 @@ const itemListEntries = cards.map((card) => ({
 
     <FilterChips
         chips={typeChips}
-        ariaLabel={t('gastronomy.typeChips.ariaLabel', 'Filtrar por tipo de establecimiento')}
+        ariaLabel={t('venue.typeChips.ariaLabel', 'Filtrar por tipo de establecimiento')}
         showScrollButtons
         prevLabel={t('common.prev', 'Anterior')}
         nextLabel={t('common.next', 'Siguiente')}
@@ -411,7 +411,7 @@ const itemListEntries = cards.map((card) => ({
             variant="no-results"
             actionUrl={baseUrl}
             message={t(
-                'gastronomy.listing.emptyState',
+                'venue.listing.emptyState',
                 'No se encontraron establecimientos gastronómicos con los filtros seleccionados.'
             )}
         />
@@ -422,7 +422,7 @@ const itemListEntries = cards.map((card) => ({
 			locale={locale}
 			variant="empty"
 			message={t(
-				'gastronomy.listing.emptyCatalog',
+				'venue.listing.emptyCatalog',
 				'Todavía no hay establecimientos gastronómicos publicados.'
 			)}
 		/>

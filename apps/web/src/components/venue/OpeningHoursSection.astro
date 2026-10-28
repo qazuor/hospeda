@@ -29,18 +29,18 @@ const { t } = createTranslations(locale);
 
 /**
  * Map API day keys to i18n keys so the labels respect the active locale.
- * We don't have `gastronomy.detail.openingHours.days.*` keys in the JSON yet,
+ * We don't have `venue.detail.openingHours.days.*` keys in the JSON yet,
  * so we fall back to hard-coded Spanish labels via t() with defaults.
  * When the locale files add dedicated keys they'll be picked up automatically.
  */
 const DAY_LABELS: Record<string, string> = {
-    monday: t('gastronomy.detail.openingHours.monday'),
-    tuesday: t('gastronomy.detail.openingHours.tuesday'),
-    wednesday: t('gastronomy.detail.openingHours.wednesday'),
-    thursday: t('gastronomy.detail.openingHours.thursday'),
-    friday: t('gastronomy.detail.openingHours.friday'),
-    saturday: t('gastronomy.detail.openingHours.saturday'),
-    sunday: t('gastronomy.detail.openingHours.sunday')
+    monday: t('venue.detail.openingHours.monday'),
+    tuesday: t('venue.detail.openingHours.tuesday'),
+    wednesday: t('venue.detail.openingHours.wednesday'),
+    thursday: t('venue.detail.openingHours.thursday'),
+    friday: t('venue.detail.openingHours.friday'),
+    saturday: t('venue.detail.openingHours.saturday'),
+    sunday: t('venue.detail.openingHours.sunday')
 };
 
 /** Index 0–6 (Sun–Sat) for the current local day. */
@@ -60,9 +60,9 @@ const DAY_KEY_TO_GETDAY: Record<string, number> = {
     saturday: 6
 };
 
-const closedLabel = t('gastronomy.detail.openingHours.closed', 'Cerrado');
-const todayLabel = t('gastronomy.detail.openingHours.today', 'Hoy');
-const sectionTitle = t('gastronomy.detail.openingHours.title', 'Horarios de atención');
+const closedLabel = t('venue.detail.openingHours.closed', 'Cerrado');
+const todayLabel = t('venue.detail.openingHours.today', 'Hoy');
+const sectionTitle = t('venue.detail.openingHours.title', 'Horarios de atención');
 
 /**
  * Build row data for each day in Mon→Sun order.

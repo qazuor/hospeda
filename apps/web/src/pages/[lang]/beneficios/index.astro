@@ -103,18 +103,18 @@ const experienceBenefits = [
 const venueBenefits = [
 	{
 		Icon: MapIcon,
-		titleKey: 'gastronomy.landing.benefits.item1.title',
-		descKey: 'gastronomy.landing.benefits.item1.desc'
+		titleKey: 'venue.landing.benefits.item1.title',
+		descKey: 'venue.landing.benefits.item1.desc'
 	},
 	{
 		Icon: SettingsIcon,
-		titleKey: 'gastronomy.landing.benefits.item2.title',
-		descKey: 'gastronomy.landing.benefits.item2.desc'
+		titleKey: 'venue.landing.benefits.item2.title',
+		descKey: 'venue.landing.benefits.item2.desc'
 	},
 	{
 		Icon: ShieldIcon,
-		titleKey: 'gastronomy.landing.benefits.item3.title',
-		descKey: 'gastronomy.landing.benefits.item3.desc'
+		titleKey: 'venue.landing.benefits.item3.title',
+		descKey: 'venue.landing.benefits.item3.desc'
 	}
 ] as const;
 
@@ -153,7 +153,7 @@ const splitLastWord = (full: string): { main: string; accent: string } => {
 const touristHeading = splitLastWord(t('benefits.tourist.title'));
 const ownerHeading = splitLastWord(t('benefits.owner.title'));
 const experienceHeading = splitLastWord(t('experience.landing.benefits.title'));
-const venueHeading = splitLastWord(t('gastronomy.landing.benefits.title'));
+const venueHeading = splitLastWord(t('venue.landing.benefits.title'));
 const partnerHeading = splitLastWord(t('benefits.partner.title'));
 
 const benefitsTitle = t('benefits.title', 'Beneficios');

@@ -92,7 +92,7 @@ describe('comer-y-salir/index.astro', () => {
             expect(src).toContain('const hasActiveFilters = hasActiveVenueListingFilters({');
             expect(src).toContain('{!hasError && cards.length === 0 && hasActiveFilters && (');
             expect(src).toContain('{!hasError && cards.length === 0 && !hasActiveFilters && (');
-            expect(src).toContain('gastronomy.listing.emptyCatalog');
+            expect(src).toContain('venue.listing.emptyCatalog');
         });
 
         it('renders ErrorBanner on fetch failure', () => {
@@ -143,15 +143,15 @@ describe('comer-y-salir/index.astro', () => {
 
     describe('i18n', () => {
         it('uses gastronomy i18n namespace for page title', () => {
-            expect(src).toContain('gastronomy.listing.title');
+            expect(src).toContain('venue.listing.title');
         });
 
         it('uses gastronomy.types for type filter labels', () => {
-            expect(src).toContain('gastronomy.types.');
+            expect(src).toContain('venue.types.');
         });
 
         it('uses gastronomy.card.priceRange for price range labels', () => {
-            expect(src).toContain('gastronomy.card.priceRange.');
+            expect(src).toContain('venue.card.priceRange.');
         });
     });
 

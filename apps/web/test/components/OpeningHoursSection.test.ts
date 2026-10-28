@@ -62,7 +62,7 @@ describe('OpeningHoursSection.astro (source assertions)', () => {
     });
 
     it('uses gastronomy.detail.openingHours.title i18n key for section heading', () => {
-        expect(src).toContain('gastronomy.detail.openingHours.title');
+        expect(src).toContain('venue.detail.openingHours.title');
     });
 
     it('does not use Tailwind utility classes', () => {

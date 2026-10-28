@@ -27,7 +27,7 @@
  *
  * Two shapes only (mirrors `VenueEventRecurrenceSchema`):
  *  - `weekly` — "Todos los jueves, 18:00 a 20:00" (weekday name from the
- *    shared `gastronomy.detail.openingHours.<day>` keys, NOT a duplicated set
+ *    shared `venue.detail.openingHours.<day>` keys, NOT a duplicated set
  *    — `OpeningHoursSection` already owns those translations).
  *  - `once` — the formatted calendar day, e.g. "12 de septiembre, 18:00 a
  *    20:00".
@@ -79,8 +79,8 @@ const WEEKDAY_I18N_KEYS = [
 function resolveWhen(event: VenueEvent): string {
     if (event.recurrence === 'weekly' && event.weekday !== null) {
         const dayKey = WEEKDAY_I18N_KEYS[event.weekday] ?? 'monday';
-        const weekdayLabel = t(`gastronomy.detail.openingHours.${dayKey}`, dayKey);
-        return t('gastronomy.detail.venueEvents.weekly', 'Todos los {{weekday}}', {
+        const weekdayLabel = t(`venue.detail.openingHours.${dayKey}`, dayKey);
+        return t('venue.detail.venueEvents.weekly', 'Todos los {{weekday}}', {
             weekday: weekdayLabel
         });
     }
@@ -109,19 +109,19 @@ function resolveWhen(event: VenueEvent): string {
 function resolveSchedule(event: VenueEvent): string {
     const when = resolveWhen(event);
     if (event.endTime) {
-        return t('gastronomy.detail.venueEvents.range', '{{when}}, {{start}} a {{end}}', {
+        return t('venue.detail.venueEvents.range', '{{when}}, {{start}} a {{end}}', {
             when,
             start: event.startTime,
             end: event.endTime
         });
     }
-    return t('gastronomy.detail.venueEvents.fromOnly', '{{when}}, desde las {{start}}', {
+    return t('venue.detail.venueEvents.fromOnly', '{{when}}, desde las {{start}}', {
         when,
         start: event.startTime
     });
 }
 
-const title = t('gastronomy.detail.venueEvents.title', 'Agenda del local');
+const title = t('venue.detail.venueEvents.title', 'Agenda del local');
 const entries = venueEvents.map((event) => ({
     event,
     schedule: resolveSchedule(event)

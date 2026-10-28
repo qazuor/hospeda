@@ -36,11 +36,11 @@ const { t } = createTranslations(locale);
 const detailUrl = buildUrl({ locale, path: `gastronomia/${data.slug}/` });
 
 /** Type label from i18n (e.g. 'RESTAURANT' → 'Restaurante'). */
-const typeLabel = t(`gastronomy.types.${data.type}`, data.type);
+const typeLabel = t(`venue.types.${data.type}`, data.type);
 
 /** Price range label from i18n (e.g. 'MID' → 'Moderado'). */
 const priceRangeLabel = data.priceRange
-    ? t(`gastronomy.card.priceRange.${data.priceRange}`, data.priceRange)
+    ? t(`venue.card.priceRange.${data.priceRange}`, data.priceRange)
     : null;
 
 const fullStars = Math.floor(data.averageRating);
@@ -56,9 +56,9 @@ const openNowStatus: boolean | null = data.openingHours
     ? computeOpenNowStatus(data.openingHours as Record<string, VenueOpeningHoursEntry>)
     : null;
 
-const featuredLabel = t('gastronomy.card.featured', 'Destacado');
-const openNowLabel = t('gastronomy.card.openNow', 'Abierto ahora');
-const closedNowLabel = t('gastronomy.card.closedNow', 'Cerrado ahora');
+const featuredLabel = t('venue.card.featured', 'Destacado');
+const openNowLabel = t('venue.card.openNow', 'Abierto ahora');
+const closedNowLabel = t('venue.card.closedNow', 'Cerrado ahora');
 const shouldProxyFeaturedImage = isCloudinaryDeliveryUrl(data.featuredImage.url);
 ---
 

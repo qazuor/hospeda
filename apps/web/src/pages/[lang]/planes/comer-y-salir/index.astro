@@ -63,41 +63,41 @@ applyCacheHeaders({
  * length used to be read from no longer exists, and promising a number we
  * cannot read from the source of truth is worse than staying quiet (HOS-525).
  */
-const priceFaqAnswer = t('gastronomy.landing.faq.a1NoTrial');
+const priceFaqAnswer = t('venue.landing.faq.a1NoTrial');
 
 const benefits = [
     {
         Icon: MapIcon,
-        title: t('gastronomy.landing.benefits.item1.title'),
-        desc: t('gastronomy.landing.benefits.item1.desc')
+        title: t('venue.landing.benefits.item1.title'),
+        desc: t('venue.landing.benefits.item1.desc')
     },
     {
         Icon: SettingsIcon,
-        title: t('gastronomy.landing.benefits.item2.title'),
-        desc: t('gastronomy.landing.benefits.item2.desc')
+        title: t('venue.landing.benefits.item2.title'),
+        desc: t('venue.landing.benefits.item2.desc')
     },
     {
         Icon: ShieldIcon,
-        title: t('gastronomy.landing.benefits.item3.title'),
-        desc: t('gastronomy.landing.benefits.item3.desc')
+        title: t('venue.landing.benefits.item3.title'),
+        desc: t('venue.landing.benefits.item3.desc')
     }
 ] as const;
 
 const steps = [
     {
         num: '01',
-        title: t('gastronomy.landing.howItWorks.step1.title'),
-        desc: t('gastronomy.landing.howItWorks.step1.desc')
+        title: t('venue.landing.howItWorks.step1.title'),
+        desc: t('venue.landing.howItWorks.step1.desc')
     },
     {
         num: '02',
-        title: t('gastronomy.landing.howItWorks.step2.title'),
-        desc: t('gastronomy.landing.howItWorks.step2.desc')
+        title: t('venue.landing.howItWorks.step2.title'),
+        desc: t('venue.landing.howItWorks.step2.desc')
     },
     {
         num: '03',
-        title: t('gastronomy.landing.howItWorks.step3.title'),
-        desc: t('gastronomy.landing.howItWorks.step3.desc')
+        title: t('venue.landing.howItWorks.step3.title'),
+        desc: t('venue.landing.howItWorks.step3.desc')
     }
 ] as const;
 
@@ -110,9 +110,9 @@ const steps = [
  * each, so the JSON-LD can never advertise a trial the visible answer omits.
  */
 const faqs = [
-    { q: t('gastronomy.landing.faq.q1'), a: priceFaqAnswer },
-    { q: t('gastronomy.landing.faq.q2'), a: t('gastronomy.landing.faq.a2') },
-    { q: t('gastronomy.landing.faq.q3'), a: t('gastronomy.landing.faq.a3') }
+    { q: t('venue.landing.faq.q1'), a: priceFaqAnswer },
+    { q: t('venue.landing.faq.q2'), a: t('venue.landing.faq.a2') },
+    { q: t('venue.landing.faq.q3'), a: t('venue.landing.faq.a3') }
 ] as const;
 
 const faqJsonLd = {
@@ -125,8 +125,8 @@ const faqJsonLd = {
     }))
 };
 
-const title = t('gastronomy.landing.lead.title');
-const subtitle = t('gastronomy.landing.lead.subtitle');
+const title = t('venue.landing.lead.title');
+const subtitle = t('venue.landing.lead.subtitle');
 /**
  * The CTA points at this vertical's own pricing page.
  *
@@ -149,7 +149,7 @@ const pricingHref = buildUrl({ locale, path: PRICING_PAGE_PATH_BY_AUDIENCE.gastr
     <Breadcrumbs slot="breadcrumbs" locale={locale} items={[{ label: title }]} />
 
     <MarketingHero
-        tagline={t('gastronomy.landing.benefits.tagline')}
+        tagline={t('venue.landing.benefits.tagline')}
         titleAccent={title}
         subtitle={subtitle}
     >
@@ -163,29 +163,29 @@ const pricingHref = buildUrl({ locale, path: PRICING_PAGE_PATH_BY_AUDIENCE.gastr
     </MarketingHero>
 
     <BenefitsSection
-        tagline={t('gastronomy.landing.benefits.tagline')}
-        title={t('gastronomy.landing.benefits.title')}
+        tagline={t('venue.landing.benefits.tagline')}
+        title={t('venue.landing.benefits.title')}
         items={benefits}
         columns={3}
     />
 
     <StepsSection
-        tagline={t('gastronomy.landing.howItWorks.tagline')}
-        title={t('gastronomy.landing.howItWorks.title')}
+        tagline={t('venue.landing.howItWorks.tagline')}
+        title={t('venue.landing.howItWorks.title')}
         items={steps}
         columns={3}
         warm
     />
 
     <FaqSection
-        tagline={t('gastronomy.landing.faq.tagline')}
-        title={t('gastronomy.landing.faq.title')}
+        tagline={t('venue.landing.faq.tagline')}
+        title={t('venue.landing.faq.title')}
         items={faqs}
     />
 
     <section class="sales-cta section section--warm">
         <div class="sales-cta__container section__container">
-            <h2 class="sales-cta__title">{t('gastronomy.landing.price.title')}</h2>
+            <h2 class="sales-cta__title">{t('venue.landing.price.title')}</h2>
             <GradientButton
                 href={pricingHref}
                 label={t('pricing.nav.seePlans')}

@@ -104,13 +104,13 @@ export function AmenitiesSection({
                             onChange={() => onToggleAmenity(eventsAmenity.id)}
                         />
                         {t(
-                            'gastronomy.owner.editor.acceptsEvents.label',
+                            'venue.owner.editor.acceptsEvents.label',
                             'Acepto eventos (cumpleaños, empresas, casamientos)'
                         )}
                     </label>
                     <p className={fieldStyles.hint}>
                         {t(
-                            'gastronomy.owner.editor.acceptsEvents.hint',
+                            'venue.owner.editor.acceptsEvents.hint',
                             'Mostramos un botón de contacto en tu ficha para que te escriban por este tipo de consultas.'
                         )}
                     </p>
