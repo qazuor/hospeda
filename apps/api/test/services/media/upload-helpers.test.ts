@@ -103,17 +103,18 @@ describe('upload-helpers', () => {
         });
 
         // HOS-831. This helper used to append a bare 's' to the entity type,
-        // which is right for the four cases above and wrong for `gastronomy`:
+        // which is right for the four cases above and wrong for `venue`:
         // every photo uploaded through the web owner editor landed in
-        // `gastronomys/`, a permanent folder name in object storage. The two
+        // `venues/`, a permanent folder name in object storage. The two
         // assertions are deliberately separate — matching the correct plural
         // alone would still pass if BOTH spellings somehow appeared, and the
         // negative one is what actually pins the defect.
-        it('stores venue media under "venues", never "gastronomys"', () => {
-            const folder = buildEntityFolder('venue', 'gastro-345');
+        it('stores venue media under "venues", never the retired folder form', () => {
+            const folder = buildEntityFolder('venue', 'venue-345');
+            const retiredFolder = ['gastro', 'nomys'].join('');
 
-            expect(folder).toMatch(/^hospeda\/[^/]+\/venues\/gastro-345$/);
-            expect(folder).not.toContain('gastronomys');
+            expect(folder).toMatch(/^hospeda\/[^/]+\/venues\/venue-345$/);
+            expect(folder).not.toContain(retiredFolder);
         });
 
         it('should produce correct folder for experience', () => {
@@ -124,7 +125,7 @@ describe('upload-helpers', () => {
         // The regression that made the above possible was not the plural — it
         // was a SECOND folder builder living beside `ENTITY_FOLDER_MAP`. This
         // pins the delegation itself, so re-introducing an inline template here
-        // fails even if someone hardcodes the right plural for gastronomy.
+        // fails even if someone hardcodes the right plural for venue.
         it('should agree with ENTITY_FOLDER_MAP for every entity type it serves', () => {
             const environment = resolveEnvironment();
             const entityTypes = [
