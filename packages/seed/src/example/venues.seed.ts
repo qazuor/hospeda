@@ -293,7 +293,7 @@ async function seedVenueMediaRows({
  * insert (never went through `VenueService`/`venueFaqService`/
  * `VenueReviewService`), so no service lifecycle hook is newly bypassed —
  * this only replaces a random id with a stable, reproducible one. The
- * `reviewsCount`/`averageRating` denormalized columns on `legacy listing tables` are
+ * `reviewsCount`/`averageRating` denormalized columns on `venues` are
  * static, author-curated values taken directly from the fixture (matching the
  * companion review fixtures), NOT computed via `VenueService.recomputeRating`
  * — unlike `AccommodationReviewService`/`DestinationReviewService`

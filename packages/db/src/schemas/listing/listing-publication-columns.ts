@@ -4,7 +4,7 @@ import { PublicationStatusPgEnum } from './publication_status.dbschema.ts';
 /**
  * The publication-model columns of a `listing` (HOS-1478, V6.8a; `V/02` §2.5,
  * `V/03` §9), added identically to the three listing tables — `accommodations`,
- * `legacy listing tables` and `experiences`. `listing` is those existing rows, not a new
+ * `venues` and `experiences`. `listing` is those existing rows, not a new
  * table, and the vertical IS the table, so it cannot change.
  *
  * Returns fresh column builders on every call: a Drizzle builder must not be

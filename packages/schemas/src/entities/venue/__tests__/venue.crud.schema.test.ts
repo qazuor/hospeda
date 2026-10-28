@@ -35,7 +35,7 @@ const buildAdminCreateInput = (
         'Un espacio único para disfrutar de la mejor gastronomía rioplatense con carnes seleccionadas y vinos de la región.',
     type: VenueTypeEnum.PARRILLA,
     destinationId: VALID_UUID,
-    // H-88: `owner_id` is NOT NULL with no default on `legacy listing tables`, so a
+    // H-88: `owner_id` is NOT NULL with no default on `venues`, so a
     // create input without it is not a valid create — it is the payload that
     // reached Postgres and came back as a bare 500.
     ownerId: VALID_UUID,
@@ -65,7 +65,7 @@ describe('VenueAdminCreateInputSchema', () => {
 
         // H-88. This used to assert the opposite — "should allow omitting
         // ownerId (may be assigned later)". Nothing assigns it later: the row is
-        // inserted on this very call and `legacy listing tables.owner_id` is NOT NULL, so
+        // inserted on this very call and `venues.owner_id` is NOT NULL, so
         // accepting the payload here only moved the failure to Postgres, where
         // it surfaced as 500 "A database error occurred" naming no field.
         it('should REJECT omitting ownerId, naming the field (H-88)', () => {
@@ -483,7 +483,7 @@ describe('VenueUpdateInputSchema', () => {
     it('HOS-382 regression: silently strips a `media` object instead of rejecting it', () => {
         // The admin panel used to submit `media.featuredImage` / `media.gallery`
         // as a nested `media` object on PATCH. The `media` JSONB column was
-        // dropped from the `legacy listing tables` table (HOS-372), so this schema omits
+        // dropped from the `venues` table (HOS-372), so this schema omits
         // `media` from its shape entirely — but since the schema is NOT `.strict()`,
         // Zod's default object mode ('strip') drops the unknown `media` key rather
         // than failing validation. That silent-strip behaviour is exactly what let

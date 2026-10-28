@@ -49,7 +49,7 @@ export const VenueAdminCreateInputSchema = VenueSchema.omit({
     // publication state — never a request body, not even an admin's.
     publicationStatus: true,
     // HOS-895: the uploaded menu photo/PDF. Written ONLY by
-    // `POST`/`DELETE /venues/{id}/menu-file`, in the same
+    // `POST`/`DELETE /venue/{id}/menu-file`, in the same
     // request that stores or destroys the Cloudinary asset — never
     // from a listing body. Omitted here because these schemas are
     // built with `.omit(...)`, so a field is accepted unless it is
@@ -69,7 +69,7 @@ export const VenueAdminCreateInputSchema = VenueSchema.omit({
         .max(100, { message: 'zodError.listing.slug.max' })
         .optional(),
     /**
-     * Owning user UUID. REQUIRED (H-88): `legacy listing tables.owner_id` is NOT NULL
+     * Owning user UUID. REQUIRED (H-88): `venues.owner_id` is NOT NULL
      * with no default, so a create without it cannot produce a row — the insert
      * fails with a 23502 and the caller gets an opaque 500 "A database error
      * occurred" that names nothing. Declaring it required rejects the payload at
@@ -84,7 +84,7 @@ export const VenueAdminCreateInputSchema = VenueSchema.omit({
     ownerId: UserIdSchema,
     /**
      * Destination UUID for the listing. REQUIRED for the same reason as
-     * {@link ownerId} — `legacy listing tables.destination_id` is NOT NULL with no
+     * {@link ownerId} — `venues.destination_id` is NOT NULL with no
      * default (H-88).
      */
     destinationId: DestinationIdSchema,
@@ -227,7 +227,7 @@ export type VenueOwnerUpdateInput = z.infer<typeof VenueOwnerUpdateInputSchema>;
 
 /**
  * Schema for a `VENUE_OWNER` self-service listing create
- * (`POST /api/v1/protected/venues/`, HOS-166 §7.2).
+ * (`POST /api/v1/protected/venue/`, HOS-166 §7.2).
  *
  * Unlike {@link VenueAdminCreateInputSchema} (which trusts the caller for
  * `ownerId`/`slug` because only staff can reach it), this
@@ -258,7 +258,7 @@ export const VenueOwnerCreateInputSchema = VenueSchema.omit({
     deletedAt: true,
     deletedById: true,
     // HOS-895: the uploaded menu photo/PDF. Written ONLY by
-    // `POST`/`DELETE /venues/{id}/menu-file`, in the same
+    // `POST`/`DELETE /venue/{id}/menu-file`, in the same
     // request that stores or destroys the Cloudinary asset — never
     // from a listing body. Omitted here because these schemas are
     // built with `.omit(...)`, so a field is accepted unless it is
@@ -283,7 +283,7 @@ export const VenueOwnerCreateInputSchema = VenueSchema.omit({
     //   staff surface from an unauthenticated-role body.
     // - `translationMeta` — SPEC-212 curation metadata, written by the AI
     //   translation pipeline and documented "exposed on admin responses only".
-    //   No `translation_meta` column exists on `legacy listing tables` today, so this is
+    //   No `translation_meta` column exists on `venues` today, so this is
     //   inert rather than live — it is omitted so it cannot become live the day
     //   the column lands.
     // - `media` — the `media` jsonb column was DROPPED (HOS-372); photos live in
@@ -389,7 +389,7 @@ export const VenueUpdateInputSchema = z
                 reviewsCount: true,
                 averageRating: true,
                 // HOS-895: the uploaded menu photo/PDF. Written ONLY by
-                // `POST`/`DELETE /venues/{id}/menu-file`, in the same
+                // `POST`/`DELETE /venue/{id}/menu-file`, in the same
                 // request that stores or destroys the Cloudinary asset — never
                 // from a listing body. Omitted here because these schemas are
                 // built with `.omit(...)`, so a field is accepted unless it is

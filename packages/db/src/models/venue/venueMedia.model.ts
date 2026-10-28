@@ -270,7 +270,7 @@ export class VenueMediaModel extends BaseModelImpl<VenueMedia> {
                 }
             }
             try {
-                logQuery(this.entityName, 'findBylegacy listing tables', logContext, {
+                logQuery(this.entityName, 'findByVenues', logContext, {
                     venues: grouped.size,
                     rows: rows.length
                 });
@@ -279,7 +279,7 @@ export class VenueMediaModel extends BaseModelImpl<VenueMedia> {
         } catch (error) {
             const err = error instanceof Error ? error : new Error(String(error));
             try {
-                logError(this.entityName, 'findBylegacy listing tables', logContext, err);
+                logError(this.entityName, 'findByVenues', logContext, err);
             } catch {}
             throw new DbError(this.entityName, 'findByVenues', logContext, err.message);
         }

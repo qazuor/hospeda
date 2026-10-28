@@ -1,5 +1,5 @@
 {
-    "$comment": "Mapa de categoría → tests, consumido por `hops test <categoría>` (scripts/client-tools). Cada `include` es una lista de globs sobre la RUTA de cada archivo de test del repo. Las categorías NO particionan: un test de checkout de gastronomía cae en `billing` y en `venue`, y está bien — correr de más es barato, correr de menos es el problema. `hops test --orphans` lista los tests que no caen en ninguna, que es como se detecta que este archivo quedó viejo.",
+    "$comment": "Mapa de categoría → tests, consumido por `hops test <categoría>` (scripts/client-tools). Cada `include` es una lista de globs sobre la RUTA de cada archivo de test del repo. Las categorías NO particionan: un test de la vertical Comer y salir (venue) cae en `billing` y en `venue`, y está bien — correr de más es barato, correr de menos es el problema. `hops test --orphans` lista los tests que no caen en ninguna, que es como se detecta que este archivo quedó viejo.",
 
     "billing": {
         "description": "Checkout, suscripciones, add-ons, promos, webhooks de MercadoPago",
@@ -44,8 +44,8 @@
         "include": ["**/*destination*", "**/*point-of-interest*", "**/*poi*", "**/*attraction*"]
     },
     "venue": {
-        "description": "Vertical de gastronomía",
-        "include": ["**/*gastronom*", "**/*venue*"]
+        "description": "Vertical Comer y salir (venue)",
+        "include": ["**/*venue*"]
     },
     "experiences": {
         "description": "Vertical de experiencias",

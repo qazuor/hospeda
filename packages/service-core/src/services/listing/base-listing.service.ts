@@ -346,7 +346,7 @@ export abstract class BaseListingService<
      * Without this, ticking ANY service or feature checkbox in the owner editor
      * answered 500: `_afterUpdate` throws `INTERNAL_ERROR` ("Junction sync
      * requires an active transaction") when `ctx.tx` is absent, and no caller on
-     * the owner path — `updateOwn` ← `PATCH /protected/{legacy listing tables,experiences}/:id`
+     * the owner path — `updateOwn` ← `PATCH /protected/{venues,experiences}/:id`
      * — ever opened one. The junction tables stayed empty, so no listing could
      * ever record a service.
      *

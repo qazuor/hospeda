@@ -49,7 +49,7 @@
  * column against the OUTER query's table, producing
  * `WHERE "venues"."feature_id" = ...` — nonsense that fails at runtime.
  * The table reference (`${rvenueFeature}`) and the outer correlation
- * (`${legacy listing tables.id}`) resolve correctly and stay template args. Same
+ * (`${venues.id}`) resolve correctly and stay template args. Same
  * workaround, same reason, as the accommodation clauses.
  */
 

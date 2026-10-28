@@ -465,7 +465,7 @@ describe('VenueService — apto/catalog filters (HOS-1054)', () => {
     it('never leaks the filter into the scalar where clause', async () => {
         // `features` is an array against a junction table; if it slipped into the
         // `where` object the base builder would try to compare a `features` COLUMN
-        // that does not exist on `legacy listing tables`.
+        // that does not exist on `venues`.
         const service = makeService(makeVenueEntity());
         const mockFindAllWithRelations = (service as AnyService).model.findAllWithRelations;
 

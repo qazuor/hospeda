@@ -3,7 +3,7 @@
  *
  * ## Three ways to show a menu, none of them mandatory
  *
- * Before HOS-895 a menu was ONE thing: `legacy listing tables.menu_url`, a link to a
+ * Before HOS-895 a menu was ONE thing: `venues.menu_url`, a link to a
  * page the venue had published somewhere else. A small restaurant rarely has
  * one; it almost always has a photo or a PDF. Resolving only that, though,
  * would have left the three issues queued behind this one — HOS-1043
@@ -15,8 +15,8 @@
  * | Shape | Where it lives | For whom |
  * |---|---|---|
  * | Structured carta | `venue_menu_sections` + `venue_menu_items` | the venue willing to type its dishes |
- * | Uploaded photo / PDF | `legacy listing tables.menu_file_url` + `menu_file_kind` | the venue that has the menu as an image |
- * | External link | `legacy listing tables.menu_url` (pre-existing) | the venue that already publishes one |
+ * | Uploaded photo / PDF | `venues.menu_file_url` + `menu_file_kind` | the venue that has the menu as an image |
+ * | External link | `venues.menu_url` (pre-existing) | the venue that already publishes one |
  *
  * All three may be set at once and **none is required**. Nobody is made to load
  * forty items to be allowed to publish.
@@ -459,7 +459,7 @@ export const VenueMenuOutputSchema = z.object({
     sections: z.array(VenueMenuSectionPublicSchema),
     /** The uploaded photo or PDF, or `null`. */
     file: VenueMenuFileSchema.nullable(),
-    /** The external link (`legacy listing tables.menu_url`), or `null`. */
+    /** The external link (`venues.menu_url`), or `null`. */
     externalUrl: z.string().url().nullable()
 });
 export type VenueMenuOutput = z.infer<typeof VenueMenuOutputSchema>;
