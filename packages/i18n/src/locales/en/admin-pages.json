@@ -810,7 +810,7 @@
             },
             "relatedCounts": {
                 "accommodationsShort": "Acc.",
-                "gastronomiesShort": "Gast.",
+                "venuesShort": "Gast.",
                 "experiencesShort": "Exp.",
                 "eventsShort": "Evt.",
                 "postsShort": "Posts"

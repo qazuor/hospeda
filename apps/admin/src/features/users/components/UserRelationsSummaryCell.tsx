@@ -11,7 +11,7 @@ export function UserRelationsSummaryCell({ row }: { readonly row: User }) {
             count: row.accommodationsCount ?? 0
         },
         {
-            label: t('admin-pages.access.users.relatedCounts.gastronomiesShort'),
+            label: t('admin-pages.access.users.relatedCounts.venuesShort'),
             count: row.venuesCount ?? 0
         },
         {

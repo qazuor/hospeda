@@ -2,7 +2,10 @@
 
 import { render, screen } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
-import type { User } from '@/features/users/schemas/users.schemas';
+import {
+    type User,
+    UserListItemWithComputedFieldsSchema
+} from '@/features/users/schemas/users.schemas';
 import { UserRelationsSummaryCell } from '../UserRelationsSummaryCell';
 
 function createUser(overrides: Partial<User> = {}): User {
@@ -18,6 +21,21 @@ function createUser(overrides: Partial<User> = {}): User {
 }
 
 describe('UserRelationsSummaryCell', () => {
+    it('parses the venues count from the users response schema', () => {
+        const user = UserListItemWithComputedFieldsSchema.parse({
+            id: '00000000-0000-4000-a000-000000000001',
+            slug: 'user',
+            email: 'user@example.com',
+            createdAt: new Date(),
+            updatedAt: new Date(),
+            createdById: null,
+            updatedById: null,
+            venuesCount: 7
+        });
+
+        expect(user.venuesCount).toBe(7);
+    });
+
     it('renders the full related-count summary', () => {
         render(
             <UserRelationsSummaryCell
@@ -35,7 +53,7 @@ describe('UserRelationsSummaryCell', () => {
             screen.getByText('admin-pages.access.users.relatedCounts.accommodationsShort')
         ).toBeInTheDocument();
         expect(
-            screen.getByText('admin-pages.access.users.relatedCounts.gastronomiesShort')
+            screen.getByText('admin-pages.access.users.relatedCounts.venuesShort')
         ).toBeInTheDocument();
         expect(
             screen.getByText('admin-pages.access.users.relatedCounts.experiencesShort')
@@ -70,7 +88,7 @@ describe('UserRelationsSummaryCell', () => {
             screen.queryByText('admin-pages.access.users.relatedCounts.accommodationsShort')
         ).not.toBeInTheDocument();
         expect(
-            screen.queryByText('admin-pages.access.users.relatedCounts.gastronomiesShort')
+            screen.queryByText('admin-pages.access.users.relatedCounts.venuesShort')
         ).not.toBeInTheDocument();
         expect(
             screen.queryByText('admin-pages.access.users.relatedCounts.experiencesShort')
