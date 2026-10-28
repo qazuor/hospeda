@@ -319,10 +319,13 @@ describe('User Query Schemas', () => {
                 const userWithCounts = {
                     ...user,
                     accommodationsCount: 5,
+                    venuesCount: 7,
                     eventsCount: 3,
                     reviewsCount: 12
                 };
-                expect(() => UserListItemWithCountsSchema.parse(userWithCounts)).not.toThrow();
+                expect(UserListItemWithCountsSchema.parse(userWithCounts)).toMatchObject({
+                    venuesCount: 7
+                });
             });
 
             it('should work without optional counts', () => {
