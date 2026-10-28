@@ -518,7 +518,7 @@ export interface DestinationReviewRating {
     readonly cleanliness: number;
     readonly hospitality: number;
     readonly culturalOffer: number;
-    readonly gastronomy: number;
+    readonly venue: number;
     readonly affordability: number;
     readonly nightlife: number;
     readonly infrastructure: number;
@@ -555,7 +555,7 @@ export const destinationReviewsApi = {
      *   destinationId: 'dest-uuid',
      *   body: {
      *     rating: { landscape: 5, attractions: 4, accessibility: 4, safety: 5,
-     *               cleanliness: 5, hospitality: 5, culturalOffer: 4, gastronomy: 5,
+     *               cleanliness: 5, hospitality: 5, culturalOffer: 4, venue: 5,
      *               affordability: 4, nightlife: 3, infrastructure: 4, environmentalCare: 4,
      *               wifiAvailability: 3, shopping: 3, beaches: 5, greenSpaces: 4,
      *               localEvents: 4, weatherSatisfaction: 5 },
@@ -2488,11 +2488,11 @@ export const listingAnalyticsApi = {
      * Premium-only: a caller on gastronomy basic/pro gets a `403`, which the
      * panel renders as a locked upsell state, never a generic error.
      *
-     * @param params - `{ gastronomyId }`
+     * @param params - `{ venueId }`
      * @returns The QR's SVG markup, the scan URL it encodes, its target URL,
      *   and both slugs.
      */
-    getMenuQr({ gastronomyId }: { readonly gastronomyId: string }): Promise<
+    getMenuQr({ venueId }: { readonly venueId: string }): Promise<
         ApiResult<{
             readonly svg: string;
             readonly url: string;
@@ -2502,7 +2502,7 @@ export const listingAnalyticsApi = {
         }>
     > {
         return apiClient.getProtected({
-            path: `${PROTECTED}/venues/${gastronomyId}/menu-qr`
+            path: `${PROTECTED}/venues/${venueId}/menu-qr`
         });
     },
 
@@ -2515,14 +2515,14 @@ export const listingAnalyticsApi = {
      * Same gate as {@link getMenuQr}: a `403` means the panel should render
      * the locked upsell state.
      *
-     * @param params - `{ gastronomyId, window }`
+     * @param params - `{ venueId, window }`
      * @returns The scan aggregate for the requested window.
      */
     getMenuQrScans({
-        gastronomyId,
+        venueId,
         window: windowParam
     }: {
-        readonly gastronomyId: string;
+        readonly venueId: string;
         readonly window: AnalyticsWindow;
     }): Promise<
         ApiResult<{
@@ -2535,7 +2535,7 @@ export const listingAnalyticsApi = {
         }>
     > {
         return apiClient.getProtected({
-            path: `${PROTECTED}/venues/${gastronomyId}/menu-qr/scans`,
+            path: `${PROTECTED}/venues/${venueId}/menu-qr/scans`,
             params: { window: windowParam }
         });
     }

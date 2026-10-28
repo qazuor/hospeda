@@ -93,8 +93,8 @@ async function fetchListingState(
     windowParam: '7d' | '30d'
 ): Promise<ListingQrState> {
     const [qrResult, scansResult] = await Promise.all([
-        listingAnalyticsApi.getMenuQr({ gastronomyId: listingId }),
-        listingAnalyticsApi.getMenuQrScans({ gastronomyId: listingId, window: windowParam })
+        listingAnalyticsApi.getMenuQr({ venueId: listingId }),
+        listingAnalyticsApi.getMenuQrScans({ venueId: listingId, window: windowParam })
     ]);
 
     if (!qrResult.ok || !scansResult.ok) {
