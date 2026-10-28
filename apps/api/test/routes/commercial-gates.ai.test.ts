@@ -181,7 +181,7 @@ describe('TEST:V5:32 AI gates', () => {
             VerticalEnum.ACCOMMODATION
         ],
         [
-            'chat gastronomy owner',
+            'chat venue owner',
             'chat_venue',
             'ai_chat',
             'max_ai_chat_venue_per_month',
