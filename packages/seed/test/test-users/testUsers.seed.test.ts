@@ -32,6 +32,14 @@ describe('TEST_USERS matrix', () => {
         expect(TEST_USERS).toHaveLength(13);
     });
 
+    it('should retain the current venue fixture emails', () => {
+        expect(
+            TEST_USERS.map((user) => user.email).filter(
+                (email) => email === 'venue-owner@local.test' || email === 'host-venue@local.test'
+            )
+        ).toEqual(['venue-owner@local.test', 'host-venue@local.test']);
+    });
+
     it('should have no duplicate emails', () => {
         // Arrange / Act
         const emails = TEST_USERS.map((u) => u.email);
@@ -60,8 +68,8 @@ describe('TEST_USERS matrix', () => {
         }
     });
 
-    describe('gastronomy-owner@local.test (HOS-694)', () => {
-        const user = findUser('gastronomy-owner@local.test');
+    describe('venue-owner@local.test (HOS-694)', () => {
+        const user = findUser('venue-owner@local.test');
         it('holds only the gastronomy owner role', () => {
             expect(user.role).toBe(RoleEnum.VENUE_OWNER);
             expect(user.extraRoles ?? []).not.toContain(RETIRED_OWNER_ROLE);
@@ -76,8 +84,8 @@ describe('TEST_USERS matrix', () => {
         });
     });
 
-    describe('host-gastronomy@local.test (dual role, HOS-296 / HOS-694 AC-3 / AC-12)', () => {
-        const user = findUser('host-gastronomy@local.test');
+    describe('host-venue@local.test (dual role, HOS-296 / HOS-694 AC-3 / AC-12)', () => {
+        const user = findUser('host-venue@local.test');
 
         it('should declare HOST as the primary role (so the HOS-30 accommodation fixture applies)', () => {
             expect(user.role).toBe(RoleEnum.HOST);
@@ -98,7 +106,7 @@ describe('TEST_USERS matrix', () => {
             'host-pro@local.test',
             'host-premium@local.test',
             'host-provider@local.test',
-            'host-gastronomy@local.test'
+            'host-venue@local.test'
         ]);
     });
 });

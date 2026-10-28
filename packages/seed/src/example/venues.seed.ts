@@ -117,36 +117,38 @@ const E2E_TOURIST = {
 } as const;
 
 /**
- * Dev VENUE_OWNER users for gastronomy listings.
+ * Dev VENUE_OWNER users for venue listings.
  * Three owners covering 6 listings (2 each):
  * - Julieta: listings 001 (la-parrilla-del-puerto, CdU) + 002 (cafe-del-palacio, Colón)
  * - Rodrigo: listings 003 (cerveceria-del-rio, Gualeguaychú) + 004 (heladeria-luna, Concordia)
  * - Valentina: listings 005 (restaurant-termas, Federación) + 006 (bar-rinconcito, CdU — DRAFT/PRIVATE)
  */
+export const VENUE_ID_MAPPER_NAMESPACE = 'venues';
+
 const LISTING_OWNERS: readonly ListingOwnerSpec[] = [
     {
         seedId: '041-user-venue-owner-julieta',
-        email: 'gastro-owner-julieta@local.test',
+        email: 'venue-owner-julieta@local.test',
         displayName: 'Julieta Ferreyra',
         firstName: 'Julieta',
         lastName: 'Ferreyra',
-        slug: 'julieta-ferreyra-gastro'
+        slug: 'julieta-ferreyra-venue'
     },
     {
         seedId: '042-user-venue-owner-rodrigo',
-        email: 'gastro-owner-rodrigo@local.test',
+        email: 'venue-owner-rodrigo@local.test',
         displayName: 'Rodrigo Casas',
         firstName: 'Rodrigo',
         lastName: 'Casas',
-        slug: 'rodrigo-casas-gastro'
+        slug: 'rodrigo-casas-venue'
     },
     {
         seedId: '043-user-venue-owner-valentina',
-        email: 'gastro-owner-valentina@local.test',
+        email: 'venue-owner-valentina@local.test',
         displayName: 'Valentina Ríos',
         firstName: 'Valentina',
         lastName: 'Ríos',
-        slug: 'valentina-rios-gastro'
+        slug: 'valentina-rios-venue'
     }
 ] as const;
 
@@ -415,7 +417,7 @@ export async function seedVenues(context: SeedContext): Promise<void> {
             );
         }
 
-        // Register in idMapper so gastronomy JSON files can resolve ownerId
+        // Register in idMapper so venue JSON files can resolve ownerId
         context.idMapper.setMapping('users', owner.seedId, realUserId, owner.displayName);
 
         summaryTracker.trackSuccess('ListingOwners');
@@ -602,7 +604,7 @@ export async function seedVenues(context: SeedContext): Promise<void> {
 
             if (realId) {
                 // Register in idMapper so downstream (reviews, FAQs) can resolve
-                context.idMapper.setMapping('venues', item.id, realId, item.name);
+                context.idMapper.setMapping(VENUE_ID_MAPPER_NAMESPACE, item.id, realId, item.name);
 
                 // ── Step 3b: relational media rows (HOS-372) ───────────────────
                 // Mirrors the accommodation seed: a direct model insert rather
