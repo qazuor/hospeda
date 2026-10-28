@@ -495,8 +495,12 @@ export function formatResolution(params: {
     return `Resolved ${kind} (${target}) → container ${resolved.name} [${label}]${via}`;
 }
 
-/** Opt-in for unlabelled fallback matches on a Coolify host. */
-function allowUnlabelledFallbackFromEnv(): boolean {
+/**
+ * Opt-in for unlabelled fallback matches on a Coolify host. Only the exact
+ * value `'1'` enables it; anything else (`'0'`, `'true'`, empty, unset) is
+ * off. Exported for tests.
+ */
+export function allowUnlabelledFallbackFromEnv(): boolean {
     return get('HOPS_ALLOW_UNLABELLED_FALLBACK') === '1';
 }
 

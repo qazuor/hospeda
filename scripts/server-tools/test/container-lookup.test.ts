@@ -15,6 +15,7 @@
 
 import { afterEach, beforeEach, describe, expect, it } from 'bun:test';
 import {
+    allowUnlabelledFallbackFromEnv,
     type DockerQueryPort,
     formatResolution,
     resolveContainer
@@ -371,6 +372,82 @@ describe('resolveContainer — fail-closed on unattributable containers (HOS-195
         await expect(resolveContainer({ kind: 'api', target: 'staging', docker })).rejects.toThrow(
             /belongs to 'hospeda-api-prod'/
         );
+    });
+});
+
+describe('resolveContainer — review round 3 (HOS-1950)', () => {
+    it('fails when the Coolify-host probe (docker ps -a) itself fails', async () => {
+        // Arrange: an unlabelled container reaches the guard, and the probe
+        // that decides "is this a Coolify host?" errors out. Swallowing that
+        // error as "no containers" would accept the stray container.
+        const stray: FakeContainer = {
+            name: 'something-on-3001',
+            image: 'node:22',
+            ports: [3001],
+            labels: {}
+        };
+        const base = fakeDocker([stray]);
+        const docker: DockerQueryPort = {
+            ps: async (params) => {
+                if (params.all) throw new Error('docker ps -a failed: permission denied');
+                return base.ps(params);
+            },
+            inspectLabels: base.inspectLabels
+        };
+
+        // Act
+        const attempt = resolveContainer({ kind: 'api', target: 'staging', docker });
+
+        // Assert
+        await expect(attempt).rejects.toThrow(/docker ps -a failed/);
+    });
+
+    it('rejects a managed container whose serviceName matches but has no resourceName', async () => {
+        const serviceNameOnly: FakeContainer = {
+            name: 'servicename-only',
+            image: 'hospeda-api:latest',
+            ports: [3001],
+            labels: {
+                'coolify.managed': 'true',
+                'coolify.serviceName': 'hospeda-api-staging'
+            }
+        };
+        const docker = fakeDocker([serviceNameOnly]);
+
+        await expect(resolveContainer({ kind: 'api', target: 'staging', docker })).rejects.toThrow(
+            /Coolify-managed container with no coolify.resourceName label/
+        );
+    });
+});
+
+describe('allowUnlabelledFallbackFromEnv', () => {
+    const KEY = 'HOPS_ALLOW_UNLABELLED_FALLBACK';
+    let saved: string | undefined;
+
+    beforeEach(() => {
+        saved = process.env[KEY];
+    });
+
+    afterEach(() => {
+        if (saved === undefined) delete process.env[KEY];
+        else process.env[KEY] = saved;
+    });
+
+    it('is true only for the exact value "1"', () => {
+        process.env[KEY] = '1';
+        expect(allowUnlabelledFallbackFromEnv()).toBe(true);
+    });
+
+    for (const value of ['0', 'true', 'TRUE', 'yes', ' 1', '']) {
+        it(`is false for ${JSON.stringify(value)}`, () => {
+            process.env[KEY] = value;
+            expect(allowUnlabelledFallbackFromEnv()).toBe(false);
+        });
+    }
+
+    it('is false when unset', () => {
+        delete process.env[KEY];
+        expect(allowUnlabelledFallbackFromEnv()).toBe(false);
     });
 });
 
