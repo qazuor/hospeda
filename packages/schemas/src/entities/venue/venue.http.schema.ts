@@ -105,8 +105,8 @@ export const VenueCreateHttpSchema = z.object({
     /** Online menu URL (must be HTTPS). */
     menuUrl: z
         .string()
-        .url({ message: 'zodError.gastronomy.menuUrl.invalid' })
-        .startsWith('https://', { message: 'zodError.gastronomy.menuUrl.httpsRequired' })
+        .url({ message: 'zodError.venue.menuUrl.invalid' })
+        .startsWith('https://', { message: 'zodError.venue.menuUrl.httpsRequired' })
         .optional(),
     /** Whether the listing is featured. */
     /** Destination UUID for the listing. */
@@ -120,11 +120,11 @@ export const VenueCreateHttpSchema = z.object({
     // Junction sync fields (write-only)
     /** Optional amenity UUIDs to associate on create (write-only). */
     amenityIds: z
-        .array(z.string().uuid({ message: 'zodError.gastronomy.amenityIds.invalidUuid' }))
+        .array(z.string().uuid({ message: 'zodError.venue.amenityIds.invalidUuid' }))
         .optional(),
     /** Optional feature UUIDs to associate on create (write-only). */
     featureIds: z
-        .array(z.string().uuid({ message: 'zodError.gastronomy.featureIds.invalidUuid' }))
+        .array(z.string().uuid({ message: 'zodError.venue.featureIds.invalidUuid' }))
         .optional(),
     // Contact information (flat fields mapped to ContactInfoSchema in converter)
     phone: z.string().optional(),

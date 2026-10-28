@@ -251,9 +251,9 @@ export const VenueMediaReorderPayloadSchema = z.object({
      */
     orderedIds: z
         .array(z.string().uuid({ message: 'zodError.common.id.invalidUuid' }), {
-            message: 'zodError.gastronomy.media.reorder.orderedIds.invalid'
+            message: 'zodError.venue.media.reorder.orderedIds.invalid'
         })
-        .min(1, { message: 'zodError.gastronomy.media.reorder.orderedIds.min' })
+        .min(1, { message: 'zodError.venue.media.reorder.orderedIds.min' })
 });
 
 /** Inferred type for the reorder payload. */

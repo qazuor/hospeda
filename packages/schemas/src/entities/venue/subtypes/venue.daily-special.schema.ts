@@ -150,9 +150,9 @@ export const VenueDailySpecialSchema = z.object({
     /** Price in centavos, or `null` for "a consultar". */
     priceCents: z.number().int().min(0).max(VENUE_DAILY_SPECIAL_MAX_PRICE_CENTS).nullable(),
     /** First day the special is shown, inclusive. */
-    validFrom: calendarDate('zodError.gastronomy.dailySpecial.validFrom.invalid'),
+    validFrom: calendarDate('zodError.venue.dailySpecial.validFrom.invalid'),
     /** Last day the special is shown, inclusive. */
-    validUntil: calendarDate('zodError.gastronomy.dailySpecial.validUntil.invalid'),
+    validUntil: calendarDate('zodError.venue.dailySpecial.validUntil.invalid'),
     /** Position among the listing's specials. */
     displayOrder: z.number().int().min(0),
     createdAt: z.coerce.date(),
@@ -186,13 +186,13 @@ export const VenueDailySpecialInputSchema = z
         title: z
             .string()
             .trim()
-            .min(1, { message: 'zodError.gastronomy.dailySpecial.title.min' })
-            .max(150, { message: 'zodError.gastronomy.dailySpecial.title.max' }),
+            .min(1, { message: 'zodError.venue.dailySpecial.title.min' })
+            .max(150, { message: 'zodError.venue.dailySpecial.title.max' }),
         /** Optional detail. Empty string and `null` both mean "none". */
         description: z
             .string()
             .trim()
-            .max(500, { message: 'zodError.gastronomy.dailySpecial.description.max' })
+            .max(500, { message: 'zodError.venue.dailySpecial.description.max' })
             .nullish(),
         /**
          * Price in CENTAVOS — never pesos, never a float. `null` (or omitted)
@@ -201,16 +201,16 @@ export const VenueDailySpecialInputSchema = z
          */
         priceCents: z
             .number()
-            .int({ message: 'zodError.gastronomy.dailySpecial.priceCents.int' })
-            .min(0, { message: 'zodError.gastronomy.dailySpecial.priceCents.min' })
+            .int({ message: 'zodError.venue.dailySpecial.priceCents.int' })
+            .min(0, { message: 'zodError.venue.dailySpecial.priceCents.min' })
             .max(VENUE_DAILY_SPECIAL_MAX_PRICE_CENTS, {
-                message: 'zodError.gastronomy.dailySpecial.priceCents.max'
+                message: 'zodError.venue.dailySpecial.priceCents.max'
             })
             .nullish(),
         /** First day the special is shown, inclusive. `YYYY-MM-DD`. */
-        validFrom: calendarDate('zodError.gastronomy.dailySpecial.validFrom.invalid'),
+        validFrom: calendarDate('zodError.venue.dailySpecial.validFrom.invalid'),
         /** Last day the special is shown, inclusive. `YYYY-MM-DD`. */
-        validUntil: calendarDate('zodError.gastronomy.dailySpecial.validUntil.invalid')
+        validUntil: calendarDate('zodError.venue.dailySpecial.validUntil.invalid')
     })
     .superRefine((value, ctx) => {
         // A window that ends before it starts matches NOTHING, on any day. It
@@ -221,7 +221,7 @@ export const VenueDailySpecialInputSchema = z
             ctx.addIssue({
                 code: z.ZodIssueCode.custom,
                 path: ['validUntil'],
-                message: 'zodError.gastronomy.dailySpecial.validUntil.beforeValidFrom'
+                message: 'zodError.venue.dailySpecial.validUntil.beforeValidFrom'
             });
             return;
         }
@@ -233,7 +233,7 @@ export const VenueDailySpecialInputSchema = z
             ctx.addIssue({
                 code: z.ZodIssueCode.custom,
                 path: ['validUntil'],
-                message: 'zodError.gastronomy.dailySpecial.validUntil.windowTooLong'
+                message: 'zodError.venue.dailySpecial.validUntil.windowTooLong'
             });
         }
     });
@@ -261,7 +261,7 @@ export const VenueDailySpecialsReplacePayloadSchema = z.object({
     specials: z
         .array(VenueDailySpecialInputSchema)
         .max(VENUE_DAILY_SPECIALS_MAX, {
-            message: 'zodError.gastronomy.dailySpecials.max'
+            message: 'zodError.venue.dailySpecials.max'
         })
         .default([])
 });
@@ -282,7 +282,7 @@ export const VenueDailySpecialsGetInputSchema = z.object({
      * started yet and the ones that have already elapsed, or the editor would
      * silently drop rows the owner is in the middle of scheduling.
      */
-    validOn: calendarDate('zodError.gastronomy.dailySpecial.validOn.invalid').optional()
+    validOn: calendarDate('zodError.venue.dailySpecial.validOn.invalid').optional()
 });
 export type VenueDailySpecialsGetInput = z.infer<typeof VenueDailySpecialsGetInputSchema>;
 

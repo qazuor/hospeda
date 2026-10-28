@@ -55,7 +55,7 @@ describe('GastronomyDailySpecialInputSchema — the window', () => {
 
         expect(result.success).toBe(false);
         expect(result.error?.issues[0]?.message).toBe(
-            'zodError.gastronomy.dailySpecial.validUntil.beforeValidFrom'
+            'zodError.venue.dailySpecial.validUntil.beforeValidFrom'
         );
     });
 
@@ -82,7 +82,7 @@ describe('GastronomyDailySpecialInputSchema — the window', () => {
 
         expect(result.success).toBe(false);
         expect(result.error?.issues[0]?.message).toBe(
-            'zodError.gastronomy.dailySpecial.validUntil.windowTooLong'
+            'zodError.venue.dailySpecial.validUntil.windowTooLong'
         );
     });
 

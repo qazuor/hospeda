@@ -37,8 +37,8 @@ export const VenueReviewSchema = z.object({
      */
     title: z
         .string()
-        .min(3, { message: 'zodError.gastronomy.review.title.min' })
-        .max(255, { message: 'zodError.gastronomy.review.title.max' })
+        .min(3, { message: 'zodError.venue.review.title.min' })
+        .max(255, { message: 'zodError.venue.review.title.max' })
         .nullable()
         .optional(),
 
@@ -49,8 +49,8 @@ export const VenueReviewSchema = z.object({
      */
     content: z
         .string()
-        .min(10, { message: 'zodError.gastronomy.review.content.min' })
-        .max(2000, { message: 'zodError.gastronomy.review.content.max' })
+        .min(10, { message: 'zodError.venue.review.content.min' })
+        .max(2000, { message: 'zodError.venue.review.content.max' })
         .nullable()
         .optional(),
 
@@ -75,9 +75,9 @@ export const VenueReviewSchema = z.object({
      * Mirrors the `overall_rating` numeric(3,2) column; required on creation.
      */
     overallRating: z
-        .number({ message: 'zodError.gastronomy.review.overallRating.required' })
-        .min(1, { message: 'zodError.gastronomy.review.overallRating.min' })
-        .max(5, { message: 'zodError.gastronomy.review.overallRating.max' }),
+        .number({ message: 'zodError.venue.review.overallRating.required' })
+        .min(1, { message: 'zodError.venue.review.overallRating.min' })
+        .max(5, { message: 'zodError.venue.review.overallRating.max' }),
 
     /**
      * Reviewer display name (for guest reviews without a registered account).
@@ -128,21 +128,21 @@ export type VenueReview = z.infer<typeof VenueReviewSchema>;
 export const VenueReviewCreateInputSchema = z.object({
     gastronomyId: z.string().uuid({ message: 'zodError.common.id.invalidUuid' }),
     overallRating: z
-        .number({ message: 'zodError.gastronomy.review.overallRating.required' })
-        .min(1, { message: 'zodError.gastronomy.review.overallRating.min' })
-        .max(5, { message: 'zodError.gastronomy.review.overallRating.max' }),
+        .number({ message: 'zodError.venue.review.overallRating.required' })
+        .min(1, { message: 'zodError.venue.review.overallRating.min' })
+        .max(5, { message: 'zodError.venue.review.overallRating.max' }),
     rating: VenueRatingSchema.optional(),
     /** Optional review headline (mirrors `title` DB column). */
     title: z
         .string()
-        .min(3, { message: 'zodError.gastronomy.review.title.min' })
-        .max(255, { message: 'zodError.gastronomy.review.title.max' })
+        .min(3, { message: 'zodError.venue.review.title.min' })
+        .max(255, { message: 'zodError.venue.review.title.max' })
         .optional(),
     /** Optional free-text review body (mirrors `content` DB column). */
     content: z
         .string()
-        .min(10, { message: 'zodError.gastronomy.review.content.min' })
-        .max(2000, { message: 'zodError.gastronomy.review.content.max' })
+        .min(10, { message: 'zodError.venue.review.content.min' })
+        .max(2000, { message: 'zodError.venue.review.content.max' })
         .optional(),
     reviewerName: z.string().max(100).optional()
 });

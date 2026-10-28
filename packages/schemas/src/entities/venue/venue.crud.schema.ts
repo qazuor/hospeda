@@ -94,7 +94,7 @@ export const VenueAdminCreateInputSchema = VenueSchema.omit({
      * Undefined → no junction rows written.
      */
     amenityIds: z
-        .array(z.string().uuid({ message: 'zodError.gastronomy.amenityIds.invalidUuid' }))
+        .array(z.string().uuid({ message: 'zodError.venue.amenityIds.invalidUuid' }))
         .optional(),
     /**
      * Optional list of feature UUIDs to associate on create (write-only).
@@ -102,7 +102,7 @@ export const VenueAdminCreateInputSchema = VenueSchema.omit({
      * Undefined → no junction rows written.
      */
     featureIds: z
-        .array(z.string().uuid({ message: 'zodError.gastronomy.featureIds.invalidUuid' }))
+        .array(z.string().uuid({ message: 'zodError.venue.featureIds.invalidUuid' }))
         .optional()
 });
 
@@ -205,14 +205,14 @@ export const VenueOwnerUpdateInputSchema = VenueSchema.pick({
          * undefined → no change | [] → clear all | [ids] → sync to exact set.
          */
         amenityIds: z
-            .array(z.string().uuid({ message: 'zodError.gastronomy.amenityIds.invalidUuid' }))
+            .array(z.string().uuid({ message: 'zodError.venue.amenityIds.invalidUuid' }))
             .optional(),
         /**
          * Optional feature UUID list for junction sync on update (write-only).
          * undefined → no change | [] → clear all | [ids] → sync to exact set.
          */
         featureIds: z
-            .array(z.string().uuid({ message: 'zodError.gastronomy.featureIds.invalidUuid' }))
+            .array(z.string().uuid({ message: 'zodError.venue.featureIds.invalidUuid' }))
             .optional(),
         /** Published rename opt-in (HOS-784 stage 2). */
         refreshSlugFromName: z.boolean().optional()
@@ -313,14 +313,14 @@ export const VenueOwnerCreateInputSchema = VenueSchema.omit({
      * Syncs the junction table transactionally alongside the gastronomy row.
      */
     amenityIds: z
-        .array(z.string().uuid({ message: 'zodError.gastronomy.amenityIds.invalidUuid' }))
+        .array(z.string().uuid({ message: 'zodError.venue.amenityIds.invalidUuid' }))
         .optional(),
     /**
      * Optional list of feature UUIDs to associate on create (write-only).
      * Syncs the junction table transactionally alongside the gastronomy row.
      */
     featureIds: z
-        .array(z.string().uuid({ message: 'zodError.gastronomy.featureIds.invalidUuid' }))
+        .array(z.string().uuid({ message: 'zodError.venue.featureIds.invalidUuid' }))
         .optional()
 });
 
@@ -417,14 +417,14 @@ export const VenueUpdateInputSchema = z
          * undefined → no change | [] → clear all | [ids] → sync to exact set.
          */
         amenityIds: z
-            .array(z.string().uuid({ message: 'zodError.gastronomy.amenityIds.invalidUuid' }))
+            .array(z.string().uuid({ message: 'zodError.venue.amenityIds.invalidUuid' }))
             .optional(),
         /**
          * Optional feature UUID list for junction sync on update (write-only).
          * undefined → no change | [] → clear all | [ids] → sync to exact set.
          */
         featureIds: z
-            .array(z.string().uuid({ message: 'zodError.gastronomy.featureIds.invalidUuid' }))
+            .array(z.string().uuid({ message: 'zodError.venue.featureIds.invalidUuid' }))
             .optional(),
         /** Published rename opt-in (HOS-784 stage 2). */
         refreshSlugFromName: z.boolean().optional()
@@ -463,7 +463,7 @@ export const VenueDeleteInputSchema = z.object({
     // Use `.default(false)` only — `.optional().default(false)` is a dead chain:
     // `.default()` already supplies the value when the key is absent; the outer
     // `.optional()` is redundant and confusing. Matches accommodation's pattern.
-    force: z.boolean({ message: 'zodError.gastronomy.delete.force.invalidType' }).default(false)
+    force: z.boolean({ message: 'zodError.venue.delete.force.invalidType' }).default(false)
 });
 
 /** TypeScript type for {@link VenueDeleteInputSchema}. */
@@ -474,8 +474,8 @@ export type VenueDeleteInput = z.infer<typeof VenueDeleteInputSchema>;
  * Returns success status and deletion timestamp.
  */
 export const VenueDeleteOutputSchema = z.object({
-    success: z.boolean({ message: 'zodError.gastronomy.delete.success.required' }).default(true),
-    deletedAt: z.date({ message: 'zodError.gastronomy.delete.deletedAt.invalidType' }).optional()
+    success: z.boolean({ message: 'zodError.venue.delete.success.required' }).default(true),
+    deletedAt: z.date({ message: 'zodError.venue.delete.deletedAt.invalidType' }).optional()
 });
 
 /** TypeScript type for {@link VenueDeleteOutputSchema}. */

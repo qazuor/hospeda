@@ -84,7 +84,7 @@ export const VENUE_MENU_MAX_ITEM_PRICE_CENTS = 100_000_000;
  * @see packages/db/src/schemas/venue/venue.dbschema.ts
  */
 export const VenueMenuFileKindSchema = z.enum(['image', 'pdf'], {
-    message: 'zodError.gastronomy.menuFileKind.invalid'
+    message: 'zodError.venue.menuFileKind.invalid'
 });
 export type VenueMenuFileKind = z.infer<typeof VenueMenuFileKindSchema>;
 
@@ -98,7 +98,7 @@ export type VenueMenuFileKind = z.infer<typeof VenueMenuFileKindSchema>;
  */
 export const VenueMenuFileSchema = z.object({
     /** Public delivery URL of the photo or PDF. */
-    url: mediaAssetUrl('zodError.gastronomy.menuFileUrl.invalid'),
+    url: mediaAssetUrl('zodError.venue.menuFileUrl.invalid'),
     /** Whether {@link url} points at an image or at a PDF. */
     kind: VenueMenuFileKindSchema
 });
@@ -268,13 +268,13 @@ export const VenueMenuItemInputSchema = z.object({
     name: z
         .string()
         .trim()
-        .min(1, { message: 'zodError.gastronomy.menuItem.name.min' })
-        .max(150, { message: 'zodError.gastronomy.menuItem.name.max' }),
+        .min(1, { message: 'zodError.venue.menuItem.name.min' })
+        .max(150, { message: 'zodError.venue.menuItem.name.max' }),
     /** Optional description. Empty string and `null` both mean "none". */
     description: z
         .string()
         .trim()
-        .max(500, { message: 'zodError.gastronomy.menuItem.description.max' })
+        .max(500, { message: 'zodError.venue.menuItem.description.max' })
         .nullish(),
     /**
      * Localized name (HOS-1043), or `null`/omitted to leave the dish untranslated.
@@ -294,10 +294,10 @@ export const VenueMenuItemInputSchema = z.object({
      */
     priceCents: z
         .number()
-        .int({ message: 'zodError.gastronomy.menuItem.priceCents.int' })
-        .min(0, { message: 'zodError.gastronomy.menuItem.priceCents.min' })
+        .int({ message: 'zodError.venue.menuItem.priceCents.int' })
+        .min(0, { message: 'zodError.venue.menuItem.priceCents.min' })
         .max(VENUE_MENU_MAX_ITEM_PRICE_CENTS, {
-            message: 'zodError.gastronomy.menuItem.priceCents.max'
+            message: 'zodError.venue.menuItem.priceCents.max'
         })
         .nullish(),
     /** Whether the dish is on offer. Defaults to `true`. */
@@ -316,7 +316,7 @@ export const VenueMenuItemInputSchema = z.object({
      * to render, it is scheme-checked here, and the ENTITLEMENT for having a
      * dish photo at all is enforced by the route before this parses.
      */
-    photoUrl: mediaAssetUrl('zodError.gastronomy.menuItemPhoto.url.invalid').nullish(),
+    photoUrl: mediaAssetUrl('zodError.venue.menuItemPhoto.url.invalid').nullish(),
     /**
      * Cloudinary `public_id` of that asset, round-tripped by the client so a
      * later cleanup can destroy it rather than merely forget it.
@@ -324,7 +324,7 @@ export const VenueMenuItemInputSchema = z.object({
     photoPublicId: z
         .string()
         .trim()
-        .max(255, { message: 'zodError.gastronomy.menuItemPhoto.publicId.max' })
+        .max(255, { message: 'zodError.venue.menuItemPhoto.publicId.max' })
         .nullish(),
     /**
      * Alt text. Optional, and its absence is not an accessibility hole — the
@@ -333,7 +333,7 @@ export const VenueMenuItemInputSchema = z.object({
     photoAlt: z
         .string()
         .trim()
-        .max(200, { message: 'zodError.gastronomy.menuItemPhoto.alt.max' })
+        .max(200, { message: 'zodError.venue.menuItemPhoto.alt.max' })
         .nullish()
 });
 export type VenueMenuItemInput = z.input<typeof VenueMenuItemInputSchema>;
@@ -349,7 +349,7 @@ export type VenueMenuItemInput = z.input<typeof VenueMenuItemInputSchema>;
  */
 export const VenueMenuItemPhotoUploadOutputSchema = z.object({
     /** Public delivery URL of the uploaded photo. */
-    url: mediaAssetUrl('zodError.gastronomy.menuItemPhoto.url.invalid'),
+    url: mediaAssetUrl('zodError.venue.menuItemPhoto.url.invalid'),
     /** Cloudinary `public_id`, for the client to round-trip into the document. */
     publicId: z.string()
 });
@@ -361,13 +361,13 @@ export const VenueMenuSectionInputSchema = z.object({
     name: z
         .string()
         .trim()
-        .min(1, { message: 'zodError.gastronomy.menuSection.name.min' })
-        .max(120, { message: 'zodError.gastronomy.menuSection.name.max' }),
+        .min(1, { message: 'zodError.venue.menuSection.name.min' })
+        .max(120, { message: 'zodError.venue.menuSection.name.max' }),
     /** Optional blurb under the heading. */
     description: z
         .string()
         .trim()
-        .max(500, { message: 'zodError.gastronomy.menuSection.description.max' })
+        .max(500, { message: 'zodError.venue.menuSection.description.max' })
         .nullish(),
     /**
      * Localized heading (HOS-1043), or `null`/omitted. See
@@ -384,7 +384,7 @@ export const VenueMenuSectionInputSchema = z.object({
     items: z
         .array(VenueMenuItemInputSchema)
         .max(VENUE_MENU_MAX_ITEMS_PER_SECTION, {
-            message: 'zodError.gastronomy.menuSection.items.max'
+            message: 'zodError.venue.menuSection.items.max'
         })
         .default([])
 });
@@ -422,7 +422,7 @@ export const VenueMenuReplacePayloadSchema = z.object({
     sections: z
         .array(VenueMenuSectionInputSchema)
         .max(VENUE_MENU_MAX_SECTIONS, {
-            message: 'zodError.gastronomy.menu.sections.max'
+            message: 'zodError.venue.menu.sections.max'
         })
         .default([])
 });

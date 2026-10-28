@@ -95,13 +95,13 @@ export const VenueFeatureRelationSchema = z.object({
     featureId: FeatureIdSchema,
     hostReWriteName: z
         .string()
-        .min(3, { message: 'zodError.gastronomyFeature.hostReWriteName.min' })
-        .max(100, { message: 'zodError.gastronomyFeature.hostReWriteName.max' })
+        .min(3, { message: 'zodError.venueFeature.hostReWriteName.min' })
+        .max(100, { message: 'zodError.venueFeature.hostReWriteName.max' })
         .optional(),
     comments: z
         .string()
-        .min(5, { message: 'zodError.gastronomyFeature.comments.min' })
-        .max(300, { message: 'zodError.gastronomyFeature.comments.max' })
+        .min(5, { message: 'zodError.venueFeature.comments.min' })
+        .max(300, { message: 'zodError.venueFeature.comments.max' })
         .optional()
 });
 export type VenueFeatureRelation = z.infer<typeof VenueFeatureRelationSchema>;

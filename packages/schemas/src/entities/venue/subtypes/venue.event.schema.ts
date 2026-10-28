@@ -65,7 +65,7 @@ export const VENUE_EVENTS_MAX_ENTRIES = 30;
  * and has no cross-entity consumer.
  */
 export const VenueEventRecurrenceSchema = z.enum(['once', 'weekly'], {
-    message: 'zodError.gastronomy.eventRecurrence.invalid'
+    message: 'zodError.venue.eventRecurrence.invalid'
 });
 export type VenueEventRecurrence = z.infer<typeof VenueEventRecurrenceSchema>;
 
@@ -82,7 +82,7 @@ export type VenueEventRecurrence = z.infer<typeof VenueEventRecurrenceSchema>;
  */
 export const VenueEventTimeSchema = z
     .string()
-    .regex(/^([01]\d|2[0-3]):[0-5]\d$/, { message: 'zodError.gastronomy.eventTime.invalid' });
+    .regex(/^([01]\d|2[0-3]):[0-5]\d$/, { message: 'zodError.venue.eventTime.invalid' });
 
 /**
  * Day of the week, `0` = Sunday … `6` = Saturday.
@@ -93,9 +93,9 @@ export const VenueEventTimeSchema = z
  */
 export const VenueEventWeekdaySchema = z
     .number()
-    .int({ message: 'zodError.gastronomy.eventWeekday.int' })
-    .min(0, { message: 'zodError.gastronomy.eventWeekday.range' })
-    .max(6, { message: 'zodError.gastronomy.eventWeekday.range' });
+    .int({ message: 'zodError.venue.eventWeekday.int' })
+    .min(0, { message: 'zodError.venue.eventWeekday.range' })
+    .max(6, { message: 'zodError.venue.eventWeekday.range' });
 
 /**
  * The calendar day of a `once` event, as `YYYY-MM-DD`.
@@ -107,7 +107,7 @@ export const VenueEventWeekdaySchema = z
  */
 export const VenueEventDateSchema = z
     .string()
-    .regex(/^\d{4}-\d{2}-\d{2}$/, { message: 'zodError.gastronomy.eventDate.invalid' });
+    .regex(/^\d{4}-\d{2}-\d{2}$/, { message: 'zodError.venue.eventDate.invalid' });
 
 // ----------------------------------------------------------------------------
 // Stored row
@@ -197,14 +197,14 @@ function refineRecurrenceShape(
             ctx.addIssue({
                 code: z.ZodIssueCode.custom,
                 path: ['date'],
-                message: 'zodError.gastronomy.event.dateRequiredForOnce'
+                message: 'zodError.venue.event.dateRequiredForOnce'
             });
         }
         if (value.weekday !== undefined && value.weekday !== null) {
             ctx.addIssue({
                 code: z.ZodIssueCode.custom,
                 path: ['weekday'],
-                message: 'zodError.gastronomy.event.weekdayForbiddenForOnce'
+                message: 'zodError.venue.event.weekdayForbiddenForOnce'
             });
         }
     } else {
@@ -212,14 +212,14 @@ function refineRecurrenceShape(
             ctx.addIssue({
                 code: z.ZodIssueCode.custom,
                 path: ['weekday'],
-                message: 'zodError.gastronomy.event.weekdayRequiredForWeekly'
+                message: 'zodError.venue.event.weekdayRequiredForWeekly'
             });
         }
         if (value.date !== undefined && value.date !== null) {
             ctx.addIssue({
                 code: z.ZodIssueCode.custom,
                 path: ['date'],
-                message: 'zodError.gastronomy.event.dateForbiddenForWeekly'
+                message: 'zodError.venue.event.dateForbiddenForWeekly'
             });
         }
     }
@@ -237,7 +237,7 @@ function refineRecurrenceShape(
         ctx.addIssue({
             code: z.ZodIssueCode.custom,
             path: ['endTime'],
-            message: 'zodError.gastronomy.event.endTimeEqualsStart'
+            message: 'zodError.venue.event.endTimeEqualsStart'
         });
     }
 }
@@ -266,13 +266,13 @@ export const VenueEventInputSchema = z
         title: z
             .string()
             .trim()
-            .min(1, { message: 'zodError.gastronomy.event.title.min' })
-            .max(150, { message: 'zodError.gastronomy.event.title.max' }),
+            .min(1, { message: 'zodError.venue.event.title.min' })
+            .max(150, { message: 'zodError.venue.event.title.max' }),
         /** Optional blurb. Empty string and `null` both mean "none". */
         description: z
             .string()
             .trim()
-            .max(500, { message: 'zodError.gastronomy.event.description.max' })
+            .max(500, { message: 'zodError.venue.event.description.max' })
             .nullish(),
         /** Whether this entry repeats. */
         recurrence: VenueEventRecurrenceSchema,
@@ -309,7 +309,7 @@ export const VenueEventsReplacePayloadSchema = z.object({
     events: z
         .array(VenueEventInputSchema)
         .max(VENUE_EVENTS_MAX_ENTRIES, {
-            message: 'zodError.gastronomy.events.max'
+            message: 'zodError.venue.events.max'
         })
         .default([])
 });

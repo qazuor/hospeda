@@ -62,8 +62,8 @@ export const VenueSchema = z.object({
      */
     menuUrl: z
         .string()
-        .url({ message: 'zodError.gastronomy.menuUrl.invalid' })
-        .startsWith('https://', { message: 'zodError.gastronomy.menuUrl.httpsRequired' })
+        .url({ message: 'zodError.venue.menuUrl.invalid' })
+        .startsWith('https://', { message: 'zodError.venue.menuUrl.httpsRequired' })
         .nullish(),
 
     /**
@@ -74,7 +74,7 @@ export const VenueSchema = z.object({
      * absent from `GastronomyOwnerUpdateInputSchema`. See
      * `subtypes/venue.menu.schema.ts` for the three-shapes model.
      */
-    menuFileUrl: z.string().url({ message: 'zodError.gastronomy.menuFileUrl.invalid' }).nullish(),
+    menuFileUrl: z.string().url({ message: 'zodError.venue.menuFileUrl.invalid' }).nullish(),
 
     /** Whether {@link menuFileUrl} is an image or a PDF. */
     menuFileKind: VenueMenuFileKindSchema.nullish(),

@@ -42,7 +42,7 @@ export const VenueAdminSearchSchema = AdminSearchBaseSchema.extend({
     /** Filter by destination UUID. */
     destinationId: z
         .string()
-        .uuid({ message: 'zodError.admin.search.gastronomy.destinationId.uuid' })
+        .uuid({ message: 'zodError.admin.search.venue.destinationId.uuid' })
         .optional()
         .describe('Filter by destination'),
 
@@ -52,7 +52,7 @@ export const VenueAdminSearchSchema = AdminSearchBaseSchema.extend({
     /** Filter by owner UUID. */
     ownerId: z
         .string()
-        .uuid({ message: 'zodError.admin.search.gastronomy.ownerId.uuid' })
+        .uuid({ message: 'zodError.admin.search.venue.ownerId.uuid' })
         .optional()
         .describe('Filter by owner')
 
