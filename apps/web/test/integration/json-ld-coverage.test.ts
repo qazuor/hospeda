@@ -57,7 +57,7 @@ const DETAIL_PAGES: ReadonlyArray<{
     },
     {
         name: 'venue detail',
-        file: 'gastronomia/[slug].astro',
+        file: 'comer-y-salir/[slug].astro',
         typedComponent: 'RestaurantJsonLd',
         extras: ['BreadcrumbJsonLd']
     },
