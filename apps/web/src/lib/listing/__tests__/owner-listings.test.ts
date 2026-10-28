@@ -35,7 +35,7 @@ const exp = {
 afterEach(() => vi.clearAllMocks());
 
 describe('fetchOwnerListings', () => {
-    it('merges gastronomy and experience listings', async () => {
+    it('merges venue and experience listings', async () => {
         mockGetProtected
             .mockResolvedValueOnce({ ok: true, data: { listings: [gastro] } })
             .mockResolvedValueOnce({ ok: true, data: { listings: [exp] } });
@@ -71,7 +71,7 @@ describe('fetchOwnerListings', () => {
 describe('fetchOwnerListingDetail', () => {
     const detail = { id: 'abc', ownerId: 'owner-1', name: 'La Parrilla', slug: 'la-parrilla' };
 
-    it('fetches gastronomy detail from the venues path', async () => {
+    it('fetches venue detail from the venues path', async () => {
         mockGetProtected.mockResolvedValueOnce({ ok: true, data: detail });
 
         const result = await fetchOwnerListingDetail({
