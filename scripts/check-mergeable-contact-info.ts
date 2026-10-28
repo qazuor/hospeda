@@ -16,7 +16,7 @@
  *
  * Measured against `origin/staging` before this guard existed: 4 of 7 tables
  * carrying a `contact_info` column (`event_organizers`, `post_sponsors`,
- * `legacy listing tables`, `experiences`) shipped with the dangerous default while
+ * `venues`, `experiences`) shipped with the dangerous default while
  * `accommodations`, `users` and `partners` had already opted in.
  *
  * ---------------------------------------------------------------------------
@@ -87,10 +87,10 @@
  *    `protected table = <tableVar>;` assignment in any `.ts` file under
  *    `packages/db/src/models/**` — the suffix `*.model.ts` is NOT required,
  *    31 of the 148 files there do not carry it). Ownership is resolved
- *    through import aliases (`import { legacy listing tables as gastroTable }`),
+ *    through import aliases (`import { venues as venueTable }`),
  *    through further re-bindings of those aliases, through a type annotation
  *    on the property, and through a namespace qualifier
- *    (`protected table = schema.legacy listing tables;`). No owning model is a FAILURE,
+ *    (`protected table = schema.venues;`). No owning model is a FAILURE,
  *    not a silent skip — a `contact_info` column with no model attached is
  *    exactly the kind of gap this guard exists to surface. When SEVERAL
  *    classes claim the same table — in different files OR in the same file —
@@ -615,8 +615,8 @@ export function findClassBodies(
 
 /**
  * Every local name that refers to `tableVar` inside one module: the table's own
- * name, an import alias (`import { legacy listing tables as gastroTable }`) and a
- * module-level re-binding (`const gastroTable = legacy listing tables;`).
+ * name, an import alias (`import { venues as venueTable }`) and a
+ * module-level re-binding (`const venueTable = venues;`).
  *
  * Without this, a model that imports the table under an alias is not recognised
  * as an owner. That fails OPEN in the worst possible way when a second model
@@ -624,8 +624,8 @@ export function findClassBodies(
  * aliased — undeclared — model disappears from the report entirely.
  *
  * Resolution is TRANSITIVE, to a fixpoint. One hop was not enough: an import
- * alias re-bound once more (`import { legacy listing tables as gastroTable }` followed
- * by `const catalogTable = gastroTable;`) matched neither pattern against the
+ * alias re-bound once more (`import { venues as venueTable }` followed
+ * by `const catalogTable = venueTable;`) matched neither pattern against the
  * table's own name, so the model assigning `catalogTable` was not an owner and
  * went missing exactly like an unaliased one.
  */
@@ -674,10 +674,10 @@ export function findTableAliases(strippedSource: string, tableVar: string): read
  * which erased an owner rather than flagging it:
  *
  *   - a TYPE ANNOTATION on the property
- *     (`protected table: typeof legacy listing tables = legacy listing tables;`), which is
+ *     (`protected table: typeof venues = venues;`), which is
  *     ordinary TypeScript;
  *   - a NAMESPACE-qualified table (`import * as schema` +
- *     `protected table = schema.legacy listing tables;`).
+ *     `protected table = schema.venues;`).
  *
  * The visibility modifier is optional here for the same reason it is optional
  * on the declaration itself: recognising MORE owners can only add violations,
