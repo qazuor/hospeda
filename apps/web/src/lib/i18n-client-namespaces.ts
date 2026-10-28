@@ -310,7 +310,7 @@ export const CLIENT_I18N_KEY_PREFIXES = [
     'review.destinationSidebar',
     'review.dialog',
     'review.form',
-    'review.gastronomySidebar',
+    'review.venueSidebar',
     'review.list',
     'review.sidebar',
     'search.fewerAdults',

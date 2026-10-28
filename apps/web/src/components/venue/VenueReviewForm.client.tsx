@@ -227,15 +227,15 @@ export function VenueReviewForm({
                         className={styles.cardTitle}
                     >
                         {submitted
-                            ? t('review.gastronomySidebar.pendingTitle', 'Reseña en revisión')
-                            : t('review.gastronomySidebar.title', 'Tu opinión')}
+                            ? t('review.venueSidebar.pendingTitle', 'Reseña en revisión')
+                            : t('review.venueSidebar.title', 'Tu opinión')}
                     </h3>
                 </div>
 
                 {submitted ? (
                     <output className={styles.cardPending}>
                         {t(
-                            'review.gastronomySidebar.pendingBanner',
+                            'review.venueSidebar.pendingBanner',
                             'Tu reseña fue enviada y se publicará cuando nuestro equipo la apruebe.'
                         )}
                     </output>
@@ -243,7 +243,7 @@ export function VenueReviewForm({
                     <>
                         <p className={styles.cardText}>
                             {t(
-                                'review.gastronomySidebar.canLeaveReview',
+                                'review.venueSidebar.canLeaveReview',
                                 'Compartí tu experiencia en este lugar para ayudar a otros comensales.'
                             )}
                         </p>
@@ -252,7 +252,7 @@ export function VenueReviewForm({
                             className={styles.cardCta}
                             onClick={handleOpen}
                         >
-                            {t('review.gastronomySidebar.cta', 'Dejar reseña')}
+                            {t('review.venueSidebar.cta', 'Dejar reseña')}
                             <svg
                                 viewBox="0 0 24 24"
                                 width="16"
@@ -280,7 +280,7 @@ export function VenueReviewForm({
                     <>
                         <p className={styles.cardText}>
                             {t(
-                                'review.gastronomySidebar.signInCtaHint',
+                                'review.venueSidebar.signInCtaHint',
                                 'Necesitás una cuenta para dejar tu reseña.'
                             )}
                         </p>
@@ -288,7 +288,7 @@ export function VenueReviewForm({
                             className={styles.cardCta}
                             href={signInHref}
                         >
-                            {t('review.gastronomySidebar.signInCta', 'Iniciá sesión para opinar')}
+                            {t('review.venueSidebar.signInCta', 'Iniciá sesión para opinar')}
                         </a>
                     </>
                 )}
@@ -335,7 +335,7 @@ export function VenueReviewForm({
                             </span>
                             <p className={styles.pendingNotice}>
                                 {t(
-                                    'review.form.gastronomy.pendingNotice',
+                                    'review.form.venue.pendingNotice',
                                     'Tu reseña está pendiente de aprobación y será visible cuando sea revisada.'
                                 )}
                             </p>
