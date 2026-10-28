@@ -125,7 +125,7 @@ export class VenueService extends BaseListingService<
     typeof VenueUpdateInputSchema,
     typeof VenueSearchSchema
 > {
-    static readonly ENTITY_NAME = 'gastronomy';
+    static readonly ENTITY_NAME = 'venue';
 
     protected readonly entityName = VenueService.ENTITY_NAME;
 

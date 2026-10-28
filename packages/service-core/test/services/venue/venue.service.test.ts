@@ -592,7 +592,7 @@ describe('GastronomyService._canView', () => {
 
 describe('GastronomyService.ENTITY_NAME', () => {
     it('should be "gastronomy"', () => {
-        expect(VenueService.ENTITY_NAME).toBe('gastronomy');
+        expect(VenueService.ENTITY_NAME).toBe('venue');
     });
 });
 
