@@ -85,10 +85,10 @@ import venuePt from '../src/locales/pt/venue.json';
  * `landing.<vertical>.…`.
  */
 const landings = (
-    gastronomy: { readonly landing: unknown },
+    venue: { readonly landing: unknown },
     experience: { readonly landing: unknown }
 ): Record<string, unknown> => ({
-    landing: { gastronomy: gastronomy.landing, experience: experience.landing }
+    landing: { gastronomy: venue.landing, experience: experience.landing }
 });
 
 const LANDINGS_ES = landings(venueEs, experienceEs);
@@ -103,9 +103,9 @@ const GUARDED_FILES: ReadonlyArray<{
     { label: 'es/listing.json', dict: listingEs as Record<string, unknown> },
     { label: 'en/listing.json', dict: listingEn as Record<string, unknown> },
     { label: 'pt/listing.json', dict: listingPt as Record<string, unknown> },
-    { label: 'es/{gastronomy,experience}.json#landing', dict: LANDINGS_ES },
-    { label: 'en/{gastronomy,experience}.json#landing', dict: LANDINGS_EN },
-    { label: 'pt/{gastronomy,experience}.json#landing', dict: LANDINGS_PT },
+    { label: 'es/{venue,experience}.json#landing', dict: LANDINGS_ES },
+    { label: 'en/{venue,experience}.json#landing', dict: LANDINGS_EN },
+    { label: 'pt/{venue,experience}.json#landing', dict: LANDINGS_PT },
     { label: 'es/pricing.json', dict: pricingEs as Record<string, unknown> },
     { label: 'en/pricing.json', dict: pricingEn as Record<string, unknown> },
     { label: 'pt/pricing.json', dict: pricingPt as Record<string, unknown> }
@@ -181,9 +181,9 @@ const LISTING_FILES: ReadonlyArray<{
     readonly label: string;
     readonly dict: Record<string, unknown>;
 }> = [
-    { label: 'es/{gastronomy,experience}.json#landing', dict: LANDINGS_ES },
-    { label: 'en/{gastronomy,experience}.json#landing', dict: LANDINGS_EN },
-    { label: 'pt/{gastronomy,experience}.json#landing', dict: LANDINGS_PT }
+    { label: 'es/{venue,experience}.json#landing', dict: LANDINGS_ES },
+    { label: 'en/{venue,experience}.json#landing', dict: LANDINGS_EN },
+    { label: 'pt/{venue,experience}.json#landing', dict: LANDINGS_PT }
 ];
 
 describe('HOS-941 R-2 — the listing landings interpolate the trial length', () => {
