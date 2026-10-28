@@ -32,7 +32,7 @@ describe('NOTIFIABLE_ENTITY_TYPES', () => {
             'destination',
             'event',
             'post',
-            'gastronomy',
+            'venue',
             'experience'
         ]);
     });
@@ -121,7 +121,7 @@ describe('buildEntityLocaleUrls', () => {
         ['destination', 'destinos'],
         ['event', 'eventos'],
         ['post', 'publicaciones'],
-        ['gastronomy', 'comer-y-salir'],
+        ['venue', 'comer-y-salir'],
         ['experience', 'experiencias']
     ] as const)('maps %s to /%s/', (entityType, segment) => {
         const [first] = buildEntityLocaleUrls({ entityType, slug: 's', siteUrl: SITE });

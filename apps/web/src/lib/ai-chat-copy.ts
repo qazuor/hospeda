@@ -9,7 +9,7 @@
  * `test/lib/i18n-client-namespaces.guard.test.ts` discovers what the browser
  * names by scanning literals, so spelling `'venue.aiChat'` out is what
  * makes that guard demand its entry in `CLIENT_I18N_KEY_PREFIXES`. A bare
- * `'gastronomy'` (the previous shape) was invisible to it, the prefix was never
+ * `'venue'` (the previous shape) was invisible to it, the prefix was never
  * shipped, and the panel printed raw keys (HOS-1264).
  *
  * @module lib/ai-chat-copy
@@ -25,7 +25,7 @@ export type AiChatTranslate = (key: string, fallback?: string) => string;
  */
 const AI_CHAT_PREFIX_BY_ENTITY_TYPE: Readonly<Record<AiChatEntityType, string>> = {
     accommodation: 'accommodations.aiChat',
-    gastronomy: 'venue.aiChat',
+    venue: 'venue.aiChat',
     experience: 'experience.aiChat'
 };
 
@@ -70,14 +70,14 @@ const I18N_KEY_PATTERN = /^[a-zA-Z][\w-]*(\.[\w-]+)+$/;
 /** Spanish noun phrase naming the thing being asked about, per vertical. */
 const SUBJECT_BY_ENTITY_TYPE: Readonly<Record<AiChatEntityType, string>> = {
     accommodation: 'alojamiento',
-    gastronomy: 'local',
+    venue: 'local',
     experience: 'experiencia'
 };
 
 /** Demonstrative ("este"/"esta") agreeing with the noun above. */
 const DEMONSTRATIVE_BY_ENTITY_TYPE: Readonly<Record<AiChatEntityType, string>> = {
     accommodation: 'este',
-    gastronomy: 'este',
+    venue: 'este',
     experience: 'esta'
 };
 

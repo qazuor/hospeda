@@ -9,7 +9,7 @@ import esVenue from '../../../../packages/i18n/src/locales/es/venue.json';
 import { aiChatCopyKey, resolveAiChatCopy, resolveChatError } from '../../src/lib/ai-chat-copy';
 import { pickClientNamespaces } from '../../src/lib/i18n-client-namespaces';
 
-const VERTICALS = ['gastronomy', 'experience'] as const;
+const VERTICALS = ['venue', 'experience'] as const;
 const VERTICAL_KEYS = [
     'fabLabel',
     'panelLabel',
@@ -64,9 +64,7 @@ describe('resolveAiChatCopy', () => {
 
     it('should return the translation when the key resolves', () => {
         const t = (key: string) => (key === 'venue.aiChat.panelLabel' ? 'Panel' : key);
-        expect(resolveAiChatCopy({ t, entityType: 'gastronomy', suffix: 'panelLabel' })).toBe(
-            'Panel'
-        );
+        expect(resolveAiChatCopy({ t, entityType: 'venue', suffix: 'panelLabel' })).toBe('Panel');
     });
 });
 
@@ -74,7 +72,7 @@ describe('resolveChatError', () => {
     const base = { t: missingT, message: null } as const;
 
     it.each([
-        ['gastronomy', 'este local'],
+        ['venue', 'este local'],
         ['experience', 'esta experiencia']
     ] as const)('should name the %s subject on ENTITLEMENT_REQUIRED', (entityType, subject) => {
         const out = resolveChatError({ ...base, entityType, code: 'ENTITLEMENT_REQUIRED' });
@@ -99,7 +97,7 @@ describe('resolveChatError', () => {
         expect(
             resolveChatError({
                 t,
-                entityType: 'gastronomy',
+                entityType: 'venue',
                 code: 'ENTITLEMENT_REQUIRED',
                 message: 'venue.aiChat.unavailable'
             })
@@ -119,7 +117,7 @@ describe('resolveChatError', () => {
 
 describe('aiChatCopyKey', () => {
     it('should route vertical keys to the vertical namespace', () => {
-        expect(aiChatCopyKey('gastronomy', 'panelLabel')).toBe('venue.aiChat.panelLabel');
+        expect(aiChatCopyKey('venue', 'panelLabel')).toBe('venue.aiChat.panelLabel');
         expect(aiChatCopyKey('experience', 'fabLabel')).toBe('experience.aiChat.fabLabel');
     });
 });

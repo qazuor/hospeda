@@ -2,7 +2,7 @@
 /**
  * @file gastronomia/[slug].astro
  * @description Gastronomy detail page (SPEC-239 T-054).
- * Fetches a single gastronomy listing by slug, fetches reviews + FAQs in
+ * Fetches a single venue listing by slug, fetches reviews + FAQs in
  * parallel, and composes the detail block components.
  *
  * 404 is returned when:
@@ -26,10 +26,10 @@ import VenueMenu from '@/components/venue/VenueMenu.astro';
 import VenueEvents from '@/components/venue/VenueEvents.astro';
 import OpeningHoursSection from '@/components/venue/OpeningHoursSection.astro';
 import VenueContactBlock from '@/components/venue/VenueContactBlock.astro';
-// Reused, not duplicated (HOS-1072): gastronomy reads the SAME `amenities` /
+// Reused, not duplicated (HOS-1072): venue reads the SAME `amenities` /
 // `features` catalog as accommodations, so it shares the i18n namespace
 // (`accommodations.amenityNames.<slug>`) these two grids already resolve. A
-// gastronomy/experience copy would fork that contract for no gain.
+// venue/experience copy would fork that contract for no gain.
 import AmenitiesGrid from '@/components/accommodation/AmenitiesGrid.astro';
 import FeaturesGrid from '@/components/accommodation/FeaturesGrid.astro';
 import VenueEventsCta from '@/components/venue/VenueEventsCta.astro';
@@ -87,7 +87,7 @@ const venue = toVenueDetailPageProps({ item: raw, locale });
 //
 // Addressed by its OWN two tags and deliberately NOT by `list-venue`: a
 // detail page is not a listing, and the collection tag would make every
-// gastronomy write evict every other one's page.
+// venue write evict every other one's page.
 const venueCacheTags = buildEntityCacheTags({
     entity: 'venue',
     slug,
@@ -190,10 +190,10 @@ const descriptionText = renderPlain({ raw: venue.description });
 //
 // The CTA has no external `href` of its own — it is an in-page anchor to
 // `VenueContactBlock` (see `VenueEventsCta.astro`'s header for why:
-// gastronomy has no single public contact channel to pick, especially since
+// venue has no single public contact channel to pick, especially since
 // HOS-1076 found `socialNetworks.whatsapp` never carried real data and
 // removed it — HOS-1088 tracks the open question of a real phone/WhatsApp
-// channel for gastronomy). That sidesteps picking a channel AND the outbound
+// channel for venue). That sidesteps picking a channel AND the outbound
 // href-sanitization guard (HOS-592/F-02): there is nothing external to
 // sanitize.
 //
@@ -425,8 +425,8 @@ const breadcrumbItems = [
         <section class="venue-detail__review-form">
             <VenueReviewForm
                 client:visible
-                gastronomyId={venue.id}
-                gastronomyName={venue.name}
+                venueId={venue.id}
+                venueName={venue.name}
                 locale={locale}
                 apiUrl={getApiUrl()}
                 signInHref={reviewSignInHref}
@@ -458,7 +458,7 @@ const breadcrumbItems = [
          `resolveChatError` with the entity type, not the accommodation key). -->
     <AiChatWidget
         client:idle
-        entityType="gastronomy"
+        entityType="venue"
         entityId={venue.id}
         locale={locale}
         apiUrl={getApiUrl()}
