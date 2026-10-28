@@ -5,7 +5,7 @@
  * Actor: venue-owner-julieta@local.test (role VENUE_OWNER).
  *
  * Listings under test:
- *   - la-parrilla-del-puerto (gastronomy, seeded type = PARRILLA)
+ *   - la-parrilla-del-puerto (venue, seeded type = PARRILLA)
  *   - excursion-rio-uruguay-concepcion (experience, seeded type = EXCURSION)
  *
  * What this validates (AC-1 + AC-3):
@@ -56,7 +56,7 @@ const API_URL = process.env.HOSPEDA_E2E_API_URL ?? 'http://localhost:3001';
 // Actors
 // ---------------------------------------------------------------------------
 
-/** Gastronomy or experience owner whose listings are tested in this file. */
+/** Venue or experience owner whose listings are tested in this file. */
 const JULIETA = {
     email: 'venue-owner-julieta@local.test',
     password: 'Password123!'
@@ -66,16 +66,16 @@ const JULIETA = {
 // Listing identifiers
 // ---------------------------------------------------------------------------
 
-const GASTRONOMY_SLUG = 'la-parrilla-del-puerto';
+const VENUE_SLUG = 'la-parrilla-del-puerto';
 const EXPERIENCE_SLUG = 'excursion-rio-uruguay-concepcion';
 
 /**
  * Type values to switch TO in each test.
  * Must be different from the seeded value to ensure the form is dirty.
- * - Gastronomy seeded type: PARRILLA → switch to BAR
+ * - Venue seeded type: PARRILLA → switch to BAR
  * - Experience seeded type: EXCURSION → switch to BOAT_TRIP
  */
-const GASTRONOMY_NEW_TYPE = 'BAR';
+const VENUE_NEW_TYPE = 'BAR';
 const EXPERIENCE_NEW_TYPE = 'BOAT_TRIP';
 
 // ---------------------------------------------------------------------------
@@ -107,22 +107,22 @@ async function authenticateContext(
 test.describe('LISTING-OWNER-03: owner edits type + i18n fields — persist on public ficha @p0 @listing-owner', () => {
     let venueId: string;
     let experienceId: string;
-    let originalGastronomyType: string;
+    let originalVenueType: string;
     let originalExperienceType: string;
-    let originalGastronomyNameI18nEs: string | null;
+    let originalVenueNameI18nEs: string | null;
 
     test.beforeAll(async () => {
         // Resolve listing IDs from slug.
         const gastroRows = await execSQL<{ id: string; type: string }>(
             'SELECT id, type FROM venues WHERE slug = $1 LIMIT 1',
-            [GASTRONOMY_SLUG]
+            [VENUE_SLUG]
         );
         const gastroRow = gastroRows[0];
         if (!gastroRow) {
-            throw new Error(`Gastronomy '${GASTRONOMY_SLUG}' not found — run e2e:seed first`);
+            throw new Error(`Venue '${VENUE_SLUG}' not found — run e2e:seed first`);
         }
         venueId = gastroRow.id;
-        originalGastronomyType = gastroRow.type;
+        originalVenueType = gastroRow.type;
 
         const expRows = await execSQL<{ id: string; type: string }>(
             'SELECT id, type FROM experiences WHERE slug = $1 LIMIT 1',
@@ -138,18 +138,18 @@ test.describe('LISTING-OWNER-03: owner edits type + i18n fields — persist on p
         // Read the current nameI18n es value so we can restore it.
         const nameI18nRows = await execSQL<{ name_i18n: Record<string, string> | null }>(
             'SELECT name_i18n FROM venues WHERE slug = $1 LIMIT 1',
-            [GASTRONOMY_SLUG]
+            [VENUE_SLUG]
         );
         const nameI18nVal = nameI18nRows[0]?.name_i18n;
-        originalGastronomyNameI18nEs = nameI18nVal?.es ?? null;
+        originalVenueNameI18nEs = nameI18nVal?.es ?? null;
     });
 
     test.afterAll(async () => {
-        // Restore gastronomy type to the seeded value.
-        if (originalGastronomyType) {
+        // Restore venue type to the seeded value.
+        if (originalVenueType) {
             await execSQL('UPDATE venues SET type = $1 WHERE slug = $2', [
-                originalGastronomyType,
-                GASTRONOMY_SLUG
+                originalVenueType,
+                VENUE_SLUG
             ]);
         }
         // Restore experience type to the seeded value.
@@ -159,10 +159,10 @@ test.describe('LISTING-OWNER-03: owner edits type + i18n fields — persist on p
                 EXPERIENCE_SLUG
             ]);
         }
-        // Restore gastronomy nameI18n.es to the original value (NULL or string).
+        // Restore venue nameI18n.es to the original value (NULL or string).
         await execSQL(
             "UPDATE venues SET name_i18n = jsonb_set(COALESCE(name_i18n, '{}'::jsonb), '{es}', $1::jsonb) WHERE slug = $2",
-            [JSON.stringify(originalGastronomyNameI18nEs ?? null), GASTRONOMY_SLUG]
+            [JSON.stringify(originalVenueNameI18nEs ?? null), VENUE_SLUG]
         );
     });
 
@@ -172,7 +172,7 @@ test.describe('LISTING-OWNER-03: owner edits type + i18n fields — persist on p
         await seedCookieConsent(page);
     });
 
-    test('owner changes gastronomy type, persists via PATCH, public ficha reflects new type badge', async ({
+    test('owner changes venue type, persists via PATCH, public ficha reflects new type badge', async ({
         page,
         context
     }) => {
@@ -183,7 +183,7 @@ test.describe('LISTING-OWNER-03: owner edits type + i18n fields — persist on p
         );
         await authenticateContext(context, sessionCookie);
 
-        // ── Navigate to the gastronomy editor's basic-info section ───────────
+        // ── Navigate to the venue editor's basic-info section ───────────
         // HOS-1080: `#ce-type` is a basic-info field, and `…/editar/` is the hub
         // now — it lists the sections and renders no form.
         await page.goto(
@@ -212,7 +212,7 @@ test.describe('LISTING-OWNER-03: owner edits type + i18n fields — persist on p
         // Use setReactSelectValue (React 19 dirty-tracking fix): calls the
         // native HTMLSelectElement.prototype setter and dispatches a bubbling
         // 'change' event so React's onChange fires and markDirty('type') runs.
-        await setReactSelectValue(typeSelect, GASTRONOMY_NEW_TYPE);
+        await setReactSelectValue(typeSelect, VENUE_NEW_TYPE);
 
         // Registers the PATCH listener before clicking (avoiding a race where
         // the response lands first) and races it against the "no hay cambios"
@@ -224,17 +224,17 @@ test.describe('LISTING-OWNER-03: owner edits type + i18n fields — persist on p
         expect(saved.ok(), `PATCH failed: ${saved.status()} ${saved.url()}`).toBe(true);
 
         // ── Public ficha: verify type badge reflects new value ───────────────
-        // The public gastronomy ficha renders the translated type label inside
+        // The public venue ficha renders the translated type label inside
         // .venue-detail-header__type-badge. For BAR the i18n fallback is the
         // raw enum value 'BAR' (since there may be no translation key in the
         // local seed's i18n catalog). We match by the DB value or any text that
         // appears — using toContainText on the badge element covers both cases.
-        await page.goto(`${WEB_URL}/es/comer-y-salir/${GASTRONOMY_SLUG}/`, {
+        await page.goto(`${WEB_URL}/es/comer-y-salir/${VENUE_SLUG}/`, {
             waitUntil: 'domcontentloaded'
         });
         const typeBadge = page.locator('.venue-detail-header__type-badge');
         await expect(typeBadge).toBeVisible({ timeout: 10_000 });
-        // The badge text is whatever the i18n function renders for GASTRONOMY_NEW_TYPE.
+        // The badge text is whatever the i18n function renders for VENUE_NEW_TYPE.
         // We cannot predict the exact label without the full i18n catalog, but we
         // CAN assert the DB was updated (confirmed by the 200 PATCH) and the badge
         // no longer shows the original type label.
@@ -254,7 +254,7 @@ test.describe('LISTING-OWNER-03: owner edits type + i18n fields — persist on p
         );
         await authenticateContext(context, sessionCookie);
 
-        // ── Navigate to the gastronomy editor's translations section ─────────
+        // ── Navigate to the venue editor's translations section ─────────
         // HOS-1080: the translation panel has its own page now.
         await page.goto(
             listingEditorUrl({
@@ -337,7 +337,7 @@ test.describe('LISTING-OWNER-03: owner edits type + i18n fields — persist on p
         await authenticateContext(context, sessionCookie);
 
         // ── Navigate to the experience editor's basic-info section ───────────
-        // HOS-1080: `#ce-type` is a basic-info field (see the gastronomy test).
+        // HOS-1080: `#ce-type` is a basic-info field (see the venue test).
         await page.goto(
             listingEditorUrl({
                 webUrl: WEB_URL,

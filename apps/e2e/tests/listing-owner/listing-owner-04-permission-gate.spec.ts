@@ -59,7 +59,7 @@ const TOURIST = {
     password: 'Password123!'
 } as const;
 
-/** Gastronomy or experience owner — Julieta (role VENUE_OWNER, has VENUE_EDIT_OWN). */
+/** Venue or experience owner — Julieta (role VENUE_OWNER, has VENUE_EDIT_OWN). */
 const JULIETA = {
     email: 'venue-owner-julieta@local.test',
     password: 'Password123!'
@@ -69,17 +69,17 @@ const JULIETA = {
 // Listing identifier
 // ---------------------------------------------------------------------------
 
-const GASTRONOMY_SLUG = 'la-parrilla-del-puerto';
+const VENUE_SLUG = 'la-parrilla-del-puerto';
 
 // ---------------------------------------------------------------------------
 // Helpers
 // ---------------------------------------------------------------------------
 
 /**
- * Builds an authenticated fetch to the protected PATCH endpoint for a gastronomy.
+ * Builds an authenticated fetch to the protected PATCH endpoint for a venue.
  * Returns the raw Response so the caller can inspect status without throwing.
  */
-async function patchGastronomy(options: {
+async function patchVenue(options: {
     readonly listingId: string;
     readonly sessionCookie: string;
     readonly body: Record<string, unknown>;
@@ -106,11 +106,11 @@ test.describe('LISTING-OWNER-04: PATCH updateOwn permission gate @p0 @listing-ow
     test.beforeAll(async () => {
         const rows = await execSQL<{ id: string }>(
             'SELECT id FROM venues WHERE slug = $1 LIMIT 1',
-            [GASTRONOMY_SLUG]
+            [VENUE_SLUG]
         );
         const row = rows[0];
         if (!row) {
-            throw new Error(`Gastronomy '${GASTRONOMY_SLUG}' not found — run e2e:seed first`);
+            throw new Error(`Venue '${VENUE_SLUG}' not found — run e2e:seed first`);
         }
         venueId = row.id;
     });
@@ -122,14 +122,14 @@ test.describe('LISTING-OWNER-04: PATCH updateOwn permission gate @p0 @listing-ow
             { apiBaseUrl: API_URL, webBaseUrl: WEB_URL }
         );
 
-        // Attempt to PATCH the gastronomy owned by Julieta (not the tourist).
+        // Attempt to PATCH the venue owned by Julieta (not the tourist).
         // updateOwn enforces ownership BEFORE the permission gate and returns
         // NOT_FOUND for non-owners to avoid information disclosure (SPEC-253 AC-2
         // design; identical outcome to the VENUE_OWNER-wrong-listing case below).
         // The 403 FORBIDDEN path (AC-2: an OWNER missing VENUE_EDIT_OWN) is not
         // reachable via seeded roles and is covered by the unit test
         // listing.permissions.test.ts ("should forbid actor with no permissions").
-        const response = await patchGastronomy({
+        const response = await patchVenue({
             listingId: venueId,
             sessionCookie,
             body: { richDescription: 'Should be blocked by the ownership gate' }
@@ -149,7 +149,7 @@ test.describe('LISTING-OWNER-04: PATCH updateOwn permission gate @p0 @listing-ow
 
         // PATCH Julieta's own listing — should succeed with 200.
         // Use a stable field that does not interfere with other tests.
-        const response = await patchGastronomy({
+        const response = await patchVenue({
             listingId: venueId,
             sessionCookie,
             body: { richDescription: `E2E permission gate test ${Date.now()}` }
@@ -162,7 +162,7 @@ test.describe('LISTING-OWNER-04: PATCH updateOwn permission gate @p0 @listing-ow
     });
 
     test("VENUE_OWNER trying to PATCH a listing she doesn't own gets NOT_FOUND (ownership gate)", async () => {
-        // Julieta signs in and tries to PATCH Rodrigo's gastronomy.
+        // Julieta signs in and tries to PATCH Rodrigo's venue.
         // The service returns NOT_FOUND (404) for non-owners (ownership check
         // before permission check — SPEC-253 updateOwn returns entity.ownerId !== actor.id
         // as NOT_FOUND to avoid information disclosure).
@@ -174,7 +174,7 @@ test.describe('LISTING-OWNER-04: PATCH updateOwn permission gate @p0 @listing-ow
         // Rodrigo's venue: la-cerveceria-del-rio (static ID from id-mappings.json).
         const RODRIGO_VENUE_ID = '322263e1-2a1c-59bc-bdcf-8d30818b7a55';
 
-        const response = await patchGastronomy({
+        const response = await patchVenue({
             listingId: RODRIGO_VENUE_ID,
             sessionCookie,
             body: { richDescription: 'Cross-owner attempt' }

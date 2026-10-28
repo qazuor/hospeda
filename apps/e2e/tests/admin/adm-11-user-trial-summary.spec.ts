@@ -99,7 +99,7 @@ test.describe('TEST:V8a:7 (panel, fila 4) admin user trial summary @p1 @admin', 
         await expect(card).toContainText(`${facts.base_days} del plan`);
         await expect(card).toContainText('10 por promociones');
         await expect(card).toContainText('7 regalados por soporte');
-        await expect(page.getByTestId('user-trial-summary-gastronomy')).toContainText(
+        await expect(page.getByTestId('user-trial-summary-venue')).toContainText(
             'Sin prueba gratis en esta vertical.'
         );
         await expect(page.getByTestId('user-trial-summary-experience')).toContainText(
