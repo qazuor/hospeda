@@ -488,7 +488,7 @@ export class EntityViewService extends BaseService {
      * (HOS-734). Instantiated once on first use (or the injected override) —
      * mirrors {@link accommodationModel}.
      */
-    private get gastronomyModel(): VenueModel {
+    private get venueModel(): VenueModel {
         if (!this.venueModelLazy) {
             this.venueModelLazy = this.venueModelOverride ?? new VenueModelClass();
         }
@@ -516,7 +516,7 @@ export class EntityViewService extends BaseService {
     private listingModelFor(
         entityType: EntityTypeEnum.VENUE | EntityTypeEnum.EXPERIENCE
     ): VenueModel | ExperienceModel {
-        return entityType === EntityTypeEnum.VENUE ? this.gastronomyModel : this.experienceModel;
+        return entityType === EntityTypeEnum.VENUE ? this.venueModel : this.experienceModel;
     }
 
     /**
