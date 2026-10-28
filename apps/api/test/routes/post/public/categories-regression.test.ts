@@ -3,14 +3,14 @@
  *
  * Before T-003 (schema) + T-005 (model) + T-007 (service forwarding) landed,
  * `PostSearchHttpSchema` had no `categories` array field. Because the schema
- * is a plain (non-strict) `z.object`, an unknown `?categories=CULTURE,GASTRONOMY`
- * query param was silently STRIPPED before ever reaching the service — the
+ * is a plain (non-strict) `z.object`, an unrecognized category alongside a supported one
+ * in the query param was silently STRIPPED before ever reaching the service — the
  * blog sidebar already serialized this shape, so real users hit a listing
  * that silently ignored their multi-category selection and matched EVERY
  * post instead of the union of the selected categories.
  *
  * This suite proves the fix end-to-end through a real HTTP request: schema
- * parses `?categories=CULTURE,GASTRONOMY` into an array → the route forwards
+ * parses the selected categories into an array → the route forwards
  * it to `PostService.search()` → the (mocked) service applies the exact same
  * union semantics the real `PostModel` WHERE branch implements (see
  * `packages/db/test/models/post.model.categories.test.ts` for the real-model
@@ -20,7 +20,7 @@
  * RED before the fix: `categories` never reaches the mocked service (it is
  * stripped at the schema boundary), so the mock's fallback path returns the
  * FULL unfiltered fixture — which fails the "does not include NATURE"
- * assertion below. GREEN after the fix: only CULTURE + GASTRONOMY come back.
+ * assertion below. GREEN after the fix: only CULTURE + FOOD posts come back.
  *
  * @see .specs/HOS-96-multi-select-quick-filter-chips/spec.md — US-9, AC5
  */
@@ -142,7 +142,7 @@ describe('GET /api/v1/public/posts — ?categories=A,B regression (HOS-96 T-020)
         vi.clearAllMocks();
     });
 
-    it('returns posts of BOTH categories, count > 0, when given ?categories=CULTURE,GASTRONOMY', async () => {
+    it('returns posts of BOTH categories with count > 0 for the selected categories', async () => {
         // Act
         const res = await app.request(`${BASE}?categories=CULTURE,GASTRONOMY`, {
             headers: { 'user-agent': 'vitest', accept: 'application/json' }
