@@ -18,7 +18,7 @@ import { venues } from './venue.dbschema.ts';
  * Gastronomy FAQ table (SPEC-239).
  *
  * Mirrors accommodation_faqs exactly:
- * - FK gastronomyId CASCADE (FAQs deleted with the listing)
+ * - FK venueId CASCADE (FAQs deleted with the listing)
  * - question/answer notNull, category nullable
  * - displayOrder for UI-controlled ordering (NULLS LAST in queries)
  * - lifecycleState defaults ACTIVE
@@ -28,7 +28,7 @@ export const venueFaqs = pgTable(
     'venue_faqs',
     {
         id: uuid('id').primaryKey().defaultRandom(),
-        gastronomyId: uuid('venue_id')
+        venueId: uuid('venue_id')
             .notNull()
             .references(() => venues.id, { onDelete: 'cascade' }),
         question: text('question').notNull(),
@@ -60,14 +60,14 @@ export const venueFaqs = pgTable(
         deletedById: uuid('deleted_by_id').references(() => users.id, { onDelete: 'set null' })
     },
     (table) => ({
-        gastronomyFaqs_gastronomyId_idx: index('venueFaqs_venueId_idx').on(table.gastronomyId),
-        gastronomyFaqs_category_idx: index('venueFaqs_category_idx').on(table.category)
+        venueFaqs_venueId_idx: index('venueFaqs_venueId_idx').on(table.venueId),
+        venueFaqs_category_idx: index('venueFaqs_category_idx').on(table.category)
     })
 );
 
 export const venueFaqsRelations = relations(venueFaqs, ({ one }) => ({
     venue: one(venues, {
-        fields: [venueFaqs.gastronomyId],
+        fields: [venueFaqs.venueId],
         references: [venues.id]
     })
 }));

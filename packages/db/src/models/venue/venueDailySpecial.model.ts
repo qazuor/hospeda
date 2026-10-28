@@ -11,7 +11,7 @@ import { logError, logQuery } from '../../utils/logger.ts';
  */
 interface FindValidOnInput {
     /** UUID of the parent gastronomy listing. */
-    gastronomyId: string;
+    venueId: string;
     /**
      * The day to test the window against, as a bare `YYYY-MM-DD`.
      *
@@ -72,15 +72,15 @@ export class VenueDailySpecialModel extends BaseModelImpl<VenueDailySpecial> {
      * Both bounds are INCLUSIVE (`valid_from <= today <= valid_until`), which is
      * why a one-day special has both columns set to the same date.
      *
-     * @param input.gastronomyId - UUID of the parent gastronomy listing.
+     * @param input.venueId - UUID of the parent gastronomy listing.
      * @param input.today - The day to test, as `YYYY-MM-DD`.
      * @param input.tx - Optional transaction client.
      * @returns The currently-valid specials, ordered for display.
      */
     async findValidOn(input: FindValidOnInput): Promise<VenueDailySpecial[]> {
-        const { gastronomyId, today, tx } = input;
+        const { venueId, today, tx } = input;
         const db = this.getClient(tx);
-        const logContext = { gastronomyId, today };
+        const logContext = { venueId, today };
 
         try {
             const items = await db
@@ -88,7 +88,7 @@ export class VenueDailySpecialModel extends BaseModelImpl<VenueDailySpecial> {
                 .from(venueDailySpecials)
                 .where(
                     and(
-                        eq(venueDailySpecials.gastronomyId, gastronomyId),
+                        eq(venueDailySpecials.venueId, venueId),
                         lte(venueDailySpecials.validFrom, today),
                         gte(venueDailySpecials.validUntil, today)
                     )

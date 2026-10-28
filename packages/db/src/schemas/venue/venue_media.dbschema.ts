@@ -58,7 +58,7 @@ export const venueMedia = pgTable(
          * removed by the DATABASE when the listing is hard-deleted — integrity guaranteed
          * by the schema rather than by a check someone has to remember to write.
          */
-        gastronomyId: uuid('venue_id')
+        venueId: uuid('venue_id')
             .notNull()
             .references(() => venues.id, { onDelete: 'cascade' }),
         /**
@@ -136,17 +136,19 @@ export const venueMedia = pgTable(
     },
     (table) => ({
         /** Index for fetching all media belonging to one listing (the dominant query). */
-        gastronomyMedia_gastronomyId_idx: index('venueMedia_venueId_idx').on(table.gastronomyId),
+        venueMedia_venueId_idx: index('venueMedia_venueId_idx').on(table.venueId),
         /** Index to filter quickly by state (visible vs archived gallery reads). */
-        gastronomyMedia_state_idx: index('venueMedia_state_idx').on(table.state),
+        venueMedia_state_idx: index('venueMedia_state_idx').on(table.state),
         /** Index to quickly locate the featured photo for a given listing. */
-        gastronomyMedia_isFeatured_idx: index('venueMedia_isFeatured_idx').on(table.isFeatured),
+        venueMedia_isFeatured_idx: index('venueMedia_isFeatured_idx').on(table.isFeatured),
         /** Composite index for the canonical gallery-read query: listing + state + order. */
-        gastronomyMedia_gastronomyId_state_sortOrder_idx: index(
-            'venueMedia_venueId_state_sortOrder_idx'
-        ).on(table.gastronomyId, table.state, table.sortOrder),
+        venueMedia_venueId_state_sortOrder_idx: index('venueMedia_venueId_state_sortOrder_idx').on(
+            table.venueId,
+            table.state,
+            table.sortOrder
+        ),
         /** Soft-delete filter index. */
-        gastronomyMedia_deletedAt_idx: index('venueMedia_deletedAt_idx').on(table.deletedAt)
+        venueMedia_deletedAt_idx: index('venueMedia_deletedAt_idx').on(table.deletedAt)
     })
 );
 
@@ -157,7 +159,7 @@ export const venueMedia = pgTable(
  */
 export const venueMediaRelations = relations(venueMedia, ({ one }) => ({
     venue: one(venues, {
-        fields: [venueMedia.gastronomyId],
+        fields: [venueMedia.venueId],
         references: [venues.id]
     })
 }));

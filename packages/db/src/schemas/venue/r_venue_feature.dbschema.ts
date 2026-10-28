@@ -6,7 +6,7 @@ import { venues } from './venue.dbschema.ts';
 /**
  * Junction table: gastronomy <-> feature (many-to-many, SPEC-239).
  *
- * Mirrors r_accommodation_feature with composite PK on (gastronomyId, featureId).
+ * Mirrors r_accommodation_feature with composite PK on (venueId, featureId).
  * Both FKs cascade on delete so rows are cleaned up automatically.
  * References the existing shared `features` catalog (same as accommodations).
  * Includes hostReWriteName and comments just like the accommodation variant.
@@ -14,7 +14,7 @@ import { venues } from './venue.dbschema.ts';
 export const rVenueFeature = pgTable(
     'r_venue_feature',
     {
-        gastronomyId: uuid('venue_id')
+        venueId: uuid('venue_id')
             .notNull()
             .references(() => venues.id, { onDelete: 'cascade' }),
         featureId: uuid('feature_id')
@@ -26,9 +26,9 @@ export const rVenueFeature = pgTable(
         comments: text('comments')
     },
     (table) => ({
-        pk: primaryKey({ columns: [table.gastronomyId, table.featureId] }),
-        gastronomyId_featureId_idx: index('r_venue_feature_venueId_featureId_idx').on(
-            table.gastronomyId,
+        pk: primaryKey({ columns: [table.venueId, table.featureId] }),
+        venueId_featureId_idx: index('r_venue_feature_venueId_featureId_idx').on(
+            table.venueId,
             table.featureId
         ),
         featureId_idx: index('r_venue_feature_featureId_idx').on(table.featureId)
@@ -38,7 +38,7 @@ export const rVenueFeature = pgTable(
 export const rVenueFeatureRelations = relations(rVenueFeature, ({ one }) => ({
     venue: one(venues, {
         relationName: 'venueToFeature',
-        fields: [rVenueFeature.gastronomyId],
+        fields: [rVenueFeature.venueId],
         references: [venues.id]
     }),
     feature: one(features, {

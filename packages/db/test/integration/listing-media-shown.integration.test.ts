@@ -113,11 +113,11 @@ describe('AC:V6:30 a media row marked for remote deletion is never shown', () =>
                 tx
             });
             const gasList = await venueMediaModel.findByVenue({
-                gastronomyId: venue.id,
+                venueId: venue.id,
                 tx
             });
             const gasBatch = await venueMediaModel.findByVenues({
-                gastronomyIds: [venue.id],
+                venueIds: [venue.id],
                 tx
             });
             const expList = await experienceMediaModel.findByExperience({
@@ -139,7 +139,7 @@ describe('AC:V6:30 a media row marked for remote deletion is never shown', () =>
                 gastronomyList: { ids: ids(gasList.items), total: gasList.total },
                 gastronomyBatch: ids(gasBatch.get(venue.id)),
                 gastronomyFeatured: await venueMediaModel.findFeatured({
-                    gastronomyId: venue.id,
+                    venueId: venue.id,
                     tx
                 }),
                 experienceList: { ids: ids(expList.items), total: expList.total },

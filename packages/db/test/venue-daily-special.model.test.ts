@@ -100,7 +100,7 @@ describe('VenueDailySpecialModel.findValidOn', () => {
 
         // Act
         void model.findValidOn({
-            gastronomyId: '22222222-2222-4222-8222-222222222222',
+            venueId: '22222222-2222-4222-8222-222222222222',
             today: '2026-09-03',
             tx: client
         });
@@ -126,7 +126,7 @@ describe('VenueDailySpecialModel.findValidOn', () => {
 
         // Act
         void model.findValidOn({
-            gastronomyId: '22222222-2222-4222-8222-222222222222',
+            venueId: '22222222-2222-4222-8222-222222222222',
             today: '2026-09-03',
             tx: client
         });
@@ -148,7 +148,7 @@ describe('VenueDailySpecialModel.findValidOn', () => {
 
         // Act
         void model.findValidOn({
-            gastronomyId: '22222222-2222-4222-8222-222222222222',
+            venueId: '22222222-2222-4222-8222-222222222222',
             today: '2026-09-03',
             tx: client
         });
@@ -164,7 +164,7 @@ describe('VenueDailySpecialModel.findValidOn', () => {
 
         // Act
         void model.findValidOn({
-            gastronomyId: '22222222-2222-4222-8222-222222222222',
+            venueId: '22222222-2222-4222-8222-222222222222',
             today: '2026-09-03',
             tx: client
         });
@@ -182,7 +182,7 @@ describe('VenueDailySpecialModel.findValidOn', () => {
 
         // Act
         void model.findValidOn({
-            gastronomyId: '22222222-2222-4222-8222-222222222222',
+            venueId: '22222222-2222-4222-8222-222222222222',
             today: '2026-09-03',
             tx: client
         });

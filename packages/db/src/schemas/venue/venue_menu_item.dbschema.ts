@@ -72,7 +72,7 @@ export const venueMenuItems = pgTable(
             .notNull()
             .references(() => venueMenuSections.id, { onDelete: 'cascade' }),
         /** Denormalized FK to the listing. See the file docblock for why. */
-        gastronomyId: uuid('venue_id')
+        venueId: uuid('venue_id')
             .notNull()
             .references(() => venues.id, { onDelete: 'cascade' }),
         /** Name of the dish or drink. */
@@ -142,14 +142,10 @@ export const venueMenuItems = pgTable(
         updatedById: uuid('updated_by_id').references(() => users.id, { onDelete: 'set null' })
     },
     (table) => ({
-        gastronomyMenuItems_sectionId_idx: index('venueMenuItems_sectionId_idx').on(
-            table.sectionId
-        ),
-        gastronomyMenuItems_gastronomyId_idx: index('venueMenuItems_venueId_idx').on(
-            table.gastronomyId
-        ),
+        venueMenuItems_sectionId_idx: index('venueMenuItems_sectionId_idx').on(table.sectionId),
+        venueMenuItems_venueId_idx: index('venueMenuItems_venueId_idx').on(table.venueId),
         /** The public read: every dish of one section, in order. */
-        gastronomyMenuItems_sectionId_displayOrder_idx: index(
+        venueMenuItems_sectionId_displayOrder_idx: index(
             'venueMenuItems_sectionId_displayOrder_idx'
         ).on(table.sectionId, table.displayOrder)
     })
@@ -161,7 +157,7 @@ export const venueMenuItemsRelations = relations(venueMenuItems, ({ one }) => ({
         references: [venueMenuSections.id]
     }),
     venue: one(venues, {
-        fields: [venueMenuItems.gastronomyId],
+        fields: [venueMenuItems.venueId],
         references: [venues.id]
     })
 }));

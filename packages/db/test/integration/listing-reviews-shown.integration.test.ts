@@ -85,7 +85,7 @@ describe('TEST:1686:1 AC:1686:1 AC:1686:4 listingReviewsShownCondition', () => {
                     vertical: VerticalEnum.VENUE,
                     table: venues,
                     reviewTable: venueReviews,
-                    fk: venueReviews.gastronomyId,
+                    fk: venueReviews.venueId,
                     listing: venue,
                     rating: { food: 5, service: 5, ambiance: 5, value: 5 }
                 },
@@ -114,7 +114,7 @@ describe('TEST:1686:1 AC:1686:1 AC:1686:4 listingReviewsShownCondition', () => {
                               }
                             : fixture.vertical === VerticalEnum.VENUE
                               ? {
-                                    gastronomyId: fixture.listing.id,
+                                    venueId: fixture.listing.id,
                                     userId: reviewer.id,
                                     rating: fixture.rating,
                                     overallRating: 5
