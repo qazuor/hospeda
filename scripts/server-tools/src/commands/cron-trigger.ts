@@ -15,6 +15,7 @@
  */
 
 import { createHospedaApiClient } from '../lib/api-client.ts';
+import { getActiveTarget } from '../lib/container-lookup.ts';
 import { die, log } from '../lib/log.ts';
 import { confirm, pickOne } from '../lib/prompt.ts';
 import { type CronJobInfo, fetchCronJobs } from './cron-list.ts';
@@ -135,6 +136,10 @@ export async function cronTrigger(argv: ReadonlyArray<string>): Promise<void> {
         );
     }
 
+    const target = getActiveTarget();
+    const client = createHospedaApiClient({ target });
+
+    log.info(`Target   : ${target} (${client.baseUrl()})`);
     log.info(`Job      : ${chosen.name}`);
     log.info(`Schedule : ${chosen.schedule}`);
     log.info(`Mode     : ${parsed.dryRun ? 'DRY RUN (dryRun=true)' : 'LIVE (dryRun=false)'}`);
@@ -142,7 +147,7 @@ export async function cronTrigger(argv: ReadonlyArray<string>): Promise<void> {
 
     if (!parsed.skipConfirm) {
         const ok = await confirm(
-            `Trigger '${chosen.name}' on the API now${parsed.dryRun ? ' (dry run)' : ''}?`,
+            `Trigger '${chosen.name}' on the ${target} API now${parsed.dryRun ? ' (dry run)' : ''}?`,
             { defaultValue: parsed.dryRun }
         );
         if (!ok) {
@@ -151,7 +156,6 @@ export async function cronTrigger(argv: ReadonlyArray<string>): Promise<void> {
         }
     }
 
-    const client = createHospedaApiClient();
     log.info('Sending trigger request...');
     const result = await client.post<CronTriggerResult>(
         `/api/v1/admin/cron/${encodeURIComponent(chosen.name)}`,
