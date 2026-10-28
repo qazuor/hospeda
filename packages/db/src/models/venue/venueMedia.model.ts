@@ -165,7 +165,7 @@ export class VenueMediaModel extends BaseModelImpl<VenueMedia> {
             try {
                 logError(this.entityName, 'findByvenue', logContext, err);
             } catch {}
-            throw new DbError(this.entityName, 'findByGastronomy', logContext, err.message);
+            throw new DbError(this.entityName, 'findByVenue', logContext, err.message);
         }
     }
 
@@ -281,7 +281,7 @@ export class VenueMediaModel extends BaseModelImpl<VenueMedia> {
             try {
                 logError(this.entityName, 'findBylegacy listing tables', logContext, err);
             } catch {}
-            throw new DbError(this.entityName, 'findByGastronomies', logContext, err.message);
+            throw new DbError(this.entityName, 'findByVenues', logContext, err.message);
         }
     }
 }
