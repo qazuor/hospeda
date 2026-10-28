@@ -12,7 +12,7 @@ describe('EntityTypeEnum', () => {
         // Arrange
         const values = Object.values(EntityTypeEnum);
 
-        // Assert (AC-F15; F3 appended EXPERIENCE + GASTRONOMY for user bookmarks,
+        // Assert (AC-F15; F3 appended EXPERIENCE + venue for user bookmarks,
         // HOS-981 appended HOST_TRADE for qr_codes.entity_type, HOS-1063 appended
         // PARTNER for entity_views.entity_type)
         expect(values).toHaveLength(13);

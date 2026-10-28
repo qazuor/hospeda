@@ -2,7 +2,7 @@
  * Product domain enum — the billing vertical a subscription or plan belongs to.
  *
  * - accommodation: Traditional lodging listings (hotels, cabins, etc.).
- * - venue: Gastronomy listings, independently subscribable and capped.
+ * - venue: venue listings, independently subscribable and capped.
  * - experience: Experience listings, independently subscribable and capped.
  * - partner: Partner directory subscriptions.
  * - tourist: Consumer-side plans (`tourist-free`, `tourist-vip`) — a vertical
@@ -66,7 +66,7 @@ export enum ProductDomainEnum {
  *
  * This names the PAIR; it is not an umbrella term and not a third domain.
  * Widening it to the three listing verticals would be new code (every
- * `Record<GastronomyOrExperience, …>` would then demand an accommodation
+ * `Record<venueOrExperience, …>` would then demand an accommodation
  * entry), so it stays exactly two members.
  *
  * Spelled as the members' string values so a plain `'venue'` literal and

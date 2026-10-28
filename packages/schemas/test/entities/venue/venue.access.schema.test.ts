@@ -76,7 +76,7 @@ describe('VenueAdminSchema', () => {
 });
 
 // ---------------------------------------------------------------------------
-// Bug B7a regression — GastronomyPublicSchema exposes destination relation
+// Bug B7a regression — venuePublicSchema exposes destination relation
 // Fixes: destinationName always empty on card (schema must allow the joined
 // destination object so stripWithSchema does not drop it from the response).
 // ---------------------------------------------------------------------------

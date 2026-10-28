@@ -60,7 +60,7 @@ export enum PermissionCategoryEnum {
     ACCESS = 'ACCESS',
     MEDIA = 'MEDIA',
     MODERATION = 'MODERATION',
-    /** Gastronomy listings (HOS-1077). */
+    /** venue listings (HOS-1077). */
     VENUE = 'VENUE',
     /** Experience listings (HOS-1077). */
     EXPERIENCE = 'EXPERIENCE',
@@ -933,16 +933,16 @@ export enum PermissionEnum {
     MODERATION_THRESHOLD_RESTORE = 'moderation.threshold.restore', // Allows restoring a soft-deleted moderation threshold.
     MODERATION_THRESHOLD_HARD_DELETE = 'moderation.threshold.hardDelete', // Allows permanently deleting a moderation threshold.
 
-    // GASTRONOMY / EXPERIENCE: the per-vertical replacement for the retired
+    // venue / EXPERIENCE: the per-vertical replacement for the retired
     // shared permission family that named both verticals at once (HOS-1077 / HOS-1417).
     //
     // ## Why these exist
     //
     // That family named TWO product verticals at once, so it was impossible to
-    // grant edit rights over gastronomy without also granting them over
+    // grant edit rights over venue without also granting them over
     // experiences: a restaurant moderator could moderate excursions too.
     // Accommodation never had that problem — it is one vertical with its own
-    // family. These 14 give gastronomy and experience the same vocabulary.
+    // family. These 14 give venue and experience the same vocabulary.
     //
     // ## Deliberate shape: 7 each, NOT 64 each
     //
@@ -950,7 +950,7 @@ export enum PermissionEnum {
     // Roughly 14 of accommodation's 64 are per-SECTION listing permissions
     // (`amenities.edit`, `basicInfo.edit`, `faqs.edit`, `gallery.manage`, …)
     // that SPEC-253 D2=b deliberately collapsed into one owner permission.
-    // Others correspond to functionality gastronomy and experience do not have
+    // Others correspond to functionality venue and experience do not have
     // (`occupancy.manage`, `iaContent.approve`, `location.exact.view`), and a
     // permission no route ever demands is dead letter.
     //

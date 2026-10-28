@@ -107,7 +107,7 @@ describe('VenueSchema', () => {
         });
 
         it('should reject an invalid type value (enum validation on entity schema)', () => {
-            // GastronomySchema.type is GastronomyTypeEnumSchema — invalid values are rejected.
+            // venueSchema.type is venueTypeEnumSchema — invalid values are rejected.
             const data = { ...createMinimalVenue(), type: 'PIZZERIA' };
             expect(() => VenueSchema.parse(data)).toThrow(ZodError);
         });

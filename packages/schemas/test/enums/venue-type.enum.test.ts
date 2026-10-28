@@ -4,7 +4,7 @@ import { VenueTypeEnum } from '../../src/enums/venue-type.enum.js';
 import { VenueTypeEnumSchema } from '../../src/enums/venue-type.schema.js';
 
 // ============================================================================
-// GastronomyTypeEnum — SPEC-239 T-003
+// venueTypeEnum — SPEC-239 T-003
 // 9 values: RESTAURANT, BAR, CAFE, PARRILLA, CERVECERIA, HELADERIA, PANADERIA,
 //           ROTISERIA, FOOD_TRUCK
 // ============================================================================

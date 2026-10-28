@@ -42,7 +42,7 @@ export enum QrCodePurposeEnum {
     HOST_TRADE_USAGE = 'HOST_TRADE_USAGE',
     /** The entity's public listing page — all three listing verticals (HOS-982). */
     LISTING = 'LISTING',
-    /** A gastronomy listing's menu, printed on the table (HOS-1044). */
+    /** A venue listing's menu, printed on the table (HOS-1044). */
     MENU = 'MENU',
     /** The code printed on an experience's certificate (already live; HOS-1129). */
     CERTIFICATE = 'CERTIFICATE',

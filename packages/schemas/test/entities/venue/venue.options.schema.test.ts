@@ -5,7 +5,7 @@ import { VenueOptionsItemSchema } from '../../../src/entities/venue/venue.option
 
 describe('VenueOptionsItemSchema', () => {
     it('should validate a minimal options item (type and destination are required)', () => {
-        // GastronomyOptionsItemSchema extends EntityOptionsItemSchema with required type+destination
+        // venueOptionsItemSchema extends EntityOptionsItemSchema with required type+destination
         const data = {
             id: faker.string.uuid(),
             label: 'La Parrilla de Juan',

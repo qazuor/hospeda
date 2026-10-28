@@ -8,10 +8,10 @@
  * not all of them the same way:
  *
  * ```
- * GastronomyOwnerUpdateInputSchema = GastronomySchema.pick({...})            ← allowlist
- * GastronomyAdminCreateInputSchema = GastronomySchema.omit({...})            ← denylist
- * GastronomyOwnerCreateInputSchema = GastronomySchema.omit({...})            ← denylist
- * GastronomyUpdateInputSchema      = GastronomySchema.omit({...}).partial()  ← denylist
+ * venueOwnerUpdateInputSchema = venueSchema.pick({...})            ← allowlist
+ * venueAdminCreateInputSchema = venueSchema.omit({...})            ← denylist
+ * venueOwnerCreateInputSchema = venueSchema.omit({...})            ← denylist
+ * venueUpdateInputSchema      = venueSchema.omit({...}).partial()  ← denylist
  * ```
  *
  * A `.omit()` schema accepts every base field it does not NAME. So adding a
@@ -26,18 +26,18 @@
  *
  * ## What it cost (HOS-895, fixed in PR #3172)
  *
- * Three menu-attachment columns were added to `GastronomySchema`. Measured with
+ * Three menu-attachment columns were added to `venueSchema`. Measured with
  * a hostile body against the real schemas, three of the four accepted them:
  *
  * - `menuFileUrl` — stored XSS. `z.string().url()` accepts `javascript:`,
  *   `data:` and `vbscript:` (the same gap as HOS-592), and the value survived
  *   verbatim.
  * - `menuFilePublicId` — cross-tenant asset destruction. That column is the
- *   handle `DELETE /gastronomies/{id}/menu-file` gives the media provider, so an
+ *   handle `DELETE /legacy listing tables/{id}/menu-file` gives the media provider, so an
  *   owner could create a listing carrying ANOTHER venue's Cloudinary id and then
  *   delete that venue's file.
  *
- * The worst reach was `GastronomyOwnerCreateInputSchema`: no staff account in
+ * The worst reach was `venueOwnerCreateInputSchema`: no staff account in
  * the path, any signed-in merchant. The second hole was found only because
  * finding the first prompted someone to look at the siblings that shipped with
  * it — no guard flagged it, and none would have.

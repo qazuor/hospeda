@@ -35,7 +35,7 @@ describe('VenueSearchHttpSchema', () => {
     });
 
     // HOS-1054: the "apto" filter. Sin TACC / vegano / sin lactosa are rows of
-    // the shared `features` catalog scoped to the gastronomy vertical, so the
+    // the shared `features` catalog scoped to the venue vertical, so the
     // filter travels as feature UUIDs — not as a dedicated allergen param.
     describe('features (the "apto" filter, HOS-1054)', () => {
         const GLUTEN_FREE = '11111111-1111-4111-8111-111111111111';
@@ -81,7 +81,7 @@ describe('VenueSearchHttpSchema', () => {
 });
 
 describe('VenueCreateHttpSchema', () => {
-    // H-88: `ownerId` is REQUIRED. `gastronomies.owner_id` is NOT NULL with no
+    // H-88: `ownerId` is REQUIRED. `legacy listing tables.owner_id` is NOT NULL with no
     // default, so a create payload without it cannot become a row — it reached
     // Postgres and came back as an opaque 500. A fixture that omits it is not a
     // "valid create payload".

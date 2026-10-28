@@ -4,9 +4,9 @@ import { stripShapeDefaults } from '../../utils/utils.js';
 import { VenueSchema } from './venue.schema.js';
 
 /**
- * Gastronomy CRUD Schemas
+ * venue CRUD Schemas
  *
- * This file contains all schemas related to CRUD operations for gastronomy listings:
+ * This file contains all schemas related to CRUD operations for venue listings:
  * - Admin create (full identity control)
  * - Owner update (operational fields only — no identity manipulation)
  * - Patch / partial update (alias of owner update for clarity)
@@ -19,7 +19,7 @@ import { VenueSchema } from './venue.schema.js';
 // ============================================================================
 
 /**
- * Schema for creating a new gastronomy listing (admin path).
+ * Schema for creating a new venue listing (admin path).
  *
  * Admins control identity fields (name, slug, type, destinationId) and can
  * optionally assign an owner on creation.
@@ -69,7 +69,7 @@ export const VenueAdminCreateInputSchema = VenueSchema.omit({
         .max(100, { message: 'zodError.listing.slug.max' })
         .optional(),
     /**
-     * Owning user UUID. REQUIRED (H-88): `gastronomies.owner_id` is NOT NULL
+     * Owning user UUID. REQUIRED (H-88): `legacy listing tables.owner_id` is NOT NULL
      * with no default, so a create without it cannot produce a row — the insert
      * fails with a 23502 and the caller gets an opaque 500 "A database error
      * occurred" that names nothing. Declaring it required rejects the payload at
@@ -84,13 +84,13 @@ export const VenueAdminCreateInputSchema = VenueSchema.omit({
     ownerId: UserIdSchema,
     /**
      * Destination UUID for the listing. REQUIRED for the same reason as
-     * {@link ownerId} — `gastronomies.destination_id` is NOT NULL with no
+     * {@link ownerId} — `legacy listing tables.destination_id` is NOT NULL with no
      * default (H-88).
      */
     destinationId: DestinationIdSchema,
     /**
      * Optional list of amenity UUIDs to associate on create (write-only).
-     * Syncs the junction table transactionally alongside the gastronomy row.
+     * Syncs the junction table transactionally alongside the venue row.
      * Undefined → no junction rows written.
      */
     amenityIds: z
@@ -98,7 +98,7 @@ export const VenueAdminCreateInputSchema = VenueSchema.omit({
         .optional(),
     /**
      * Optional list of feature UUIDs to associate on create (write-only).
-     * Syncs the junction table transactionally alongside the gastronomy row.
+     * Syncs the junction table transactionally alongside the venue row.
      * Undefined → no junction rows written.
      */
     featureIds: z
@@ -111,7 +111,7 @@ export type VenueAdminCreateInput = z.infer<typeof VenueAdminCreateInputSchema>;
 
 /**
  * Schema for the admin create response.
- * Returns the complete gastronomy object.
+ * Returns the complete venue object.
  */
 export const VenueAdminCreateOutputSchema = VenueSchema;
 
@@ -123,7 +123,7 @@ export type VenueAdminCreateOutput = z.infer<typeof VenueAdminCreateOutputSchema
 // ============================================================================
 
 /**
- * Schema for owner-managed updates to a gastronomy listing.
+ * Schema for owner-managed updates to a venue listing.
  *
  * **HOS-166 D-1 — SPEC-239 decision #5 is deliberately REVERSED here.** That
  * decision was coherent only under SPEC-239's decision #1 (admin creates every
@@ -173,7 +173,7 @@ export type VenueAdminCreateOutput = z.infer<typeof VenueAdminCreateOutputSchema
  * - `slug` (not owner-editable directly — HOS-166 OQ-3)
  * - `publicationStatus` (written only by the PB publication transitions —
  *   HOS-1641), `ownerId` (control fields — HOS-166 §6.2)
- * - `priceFrom`, `priceUnit` (gastronomy uses `priceRange` + `menuUrl` instead)
+ * - `priceFrom`, `priceUnit` (venue uses `priceRange` + `menuUrl` instead)
  */
 export const VenueOwnerUpdateInputSchema = VenueSchema.pick({
     // HOS-166 D-1: identity fields the owner now controls.
@@ -273,7 +273,7 @@ export const VenueOwnerCreateInputSchema = VenueSchema.omit({
     // HOS-1113: three more that the owner PATCH already refuses and this
     // create silently accepted, because a `.omit()` schema takes every base
     // field it does not name. The owner-create body is spread verbatim into
-    // `GastronomyAdminCreateInputSchema.parse(...)` by the route handler and
+    // `venueAdminCreateInputSchema.parse(...)` by the route handler and
     // inserted, so "accepted here" means "written to the row".
     //
     // - `adminInfo` — the `admin_info` jsonb column: internal staff notes plus
@@ -283,11 +283,11 @@ export const VenueOwnerCreateInputSchema = VenueSchema.omit({
     //   staff surface from an unauthenticated-role body.
     // - `translationMeta` — SPEC-212 curation metadata, written by the AI
     //   translation pipeline and documented "exposed on admin responses only".
-    //   No `translation_meta` column exists on `gastronomies` today, so this is
+    //   No `translation_meta` column exists on `legacy listing tables` today, so this is
     //   inert rather than live — it is omitted so it cannot become live the day
     //   the column lands.
     // - `media` — the `media` jsonb column was DROPPED (HOS-372); photos live in
-    //   `venue_media`. `GastronomyUpdateInputSchema` omits it for exactly
+    //   `venue_media`. `venueUpdateInputSchema` omits it for exactly
     //   this reason (see HOS-382 below); accepting it here reproduces the same
     //   silently-vanishing-photo path on the owner's first save.
     adminInfo: true,
@@ -310,14 +310,14 @@ export const VenueOwnerCreateInputSchema = VenueSchema.omit({
     destinationId: DestinationIdSchema.optional(),
     /**
      * Optional list of amenity UUIDs to associate on create (write-only).
-     * Syncs the junction table transactionally alongside the gastronomy row.
+     * Syncs the junction table transactionally alongside the venue row.
      */
     amenityIds: z
         .array(z.string().uuid({ message: 'zodError.venue.amenityIds.invalidUuid' }))
         .optional(),
     /**
      * Optional list of feature UUIDs to associate on create (write-only).
-     * Syncs the junction table transactionally alongside the gastronomy row.
+     * Syncs the junction table transactionally alongside the venue row.
      */
     featureIds: z
         .array(z.string().uuid({ message: 'zodError.venue.featureIds.invalidUuid' }))
@@ -332,7 +332,7 @@ export type VenueOwnerCreateInput = z.infer<typeof VenueOwnerCreateInputSchema>;
 // ============================================================================
 
 /**
- * Schema for admin full / partial updates to a gastronomy listing (PATCH).
+ * Schema for admin full / partial updates to a venue listing (PATCH).
  *
  * All entity fields are partial so the admin may update any subset.
  * Uses `stripShapeDefaults` (same as accommodation) to prevent Zod 4's
@@ -442,8 +442,8 @@ export const VenuePatchInputSchema = VenueUpdateInputSchema;
 export type VenuePatchInput = z.infer<typeof VenuePatchInputSchema>;
 
 /**
- * Schema for gastronomy update response.
- * Returns the complete updated gastronomy object.
+ * Schema for venue update response.
+ * Returns the complete updated venue object.
  */
 export const VenueUpdateOutputSchema = VenueSchema;
 
@@ -455,7 +455,7 @@ export type VenueUpdateOutput = z.infer<typeof VenueUpdateOutputSchema>;
 // ============================================================================
 
 /**
- * Schema for gastronomy deletion input.
+ * Schema for venue deletion input.
  * Requires ID and optional force flag for hard delete.
  */
 export const VenueDeleteInputSchema = z.object({
@@ -470,7 +470,7 @@ export const VenueDeleteInputSchema = z.object({
 export type VenueDeleteInput = z.infer<typeof VenueDeleteInputSchema>;
 
 /**
- * Schema for gastronomy deletion response.
+ * Schema for venue deletion response.
  * Returns success status and deletion timestamp.
  */
 export const VenueDeleteOutputSchema = z.object({
@@ -486,8 +486,8 @@ export type VenueDeleteOutput = z.infer<typeof VenueDeleteOutputSchema>;
 // ============================================================================
 
 /**
- * Schema for gastronomy restoration input.
- * Requires only the gastronomy ID.
+ * Schema for venue restoration input.
+ * Requires only the venue ID.
  */
 export const VenueRestoreInputSchema = z.object({
     id: z.string().uuid({ message: 'zodError.common.id.invalidUuid' })
@@ -497,8 +497,8 @@ export const VenueRestoreInputSchema = z.object({
 export type VenueRestoreInput = z.infer<typeof VenueRestoreInputSchema>;
 
 /**
- * Schema for gastronomy restoration response.
- * Returns the complete restored gastronomy object.
+ * Schema for venue restoration response.
+ * Returns the complete restored venue object.
  */
 export const VenueRestoreOutputSchema = VenueSchema;
 

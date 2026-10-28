@@ -89,7 +89,7 @@ describe('CreateBillingPlanSchema', () => {
 
         it('accepts a domain that does not match the category', () => {
             // Category and domain answer different questions, and the schema
-            // must not quietly couple them: the gastronomy, experience and partner
+            // must not quietly couple them: the venue, experience and partner
             // verticals share one category while holding three distinct domains, so a
             // cross-check here would make two of them unrepresentable.
             const result = CreateBillingPlanSchema.safeParse({

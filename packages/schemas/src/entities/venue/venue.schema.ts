@@ -17,10 +17,10 @@ import { VenueFaqSchema } from './subtypes/venue.faq.schema.js';
 import { VenueMenuFileKindSchema } from './subtypes/venue.menu.schema.js';
 
 /**
- * Gastronomy Entity Schema — listing for food and beverage venues.
+ * venue Entity Schema — listing for food and beverage venues.
  *
  * Composed by spreading shared base-field const objects (same composition pattern
- * as `AccommodationSchema`) plus gastronomy-specific fields:
+ * as `AccommodationSchema`) plus venue-specific fields:
  * - Identity: name/slug/summary/description/richDescription + i18n via `ListingIdentityFields`
  * - Schedule: weekly opening hours via `OpeningHoursFields`
  * - Contact: phone/email/website via `BaseContactFields`
@@ -36,7 +36,7 @@ import { VenueMenuFileKindSchema } from './subtypes/venue.menu.schema.js';
  *
  * @example
  * ```ts
- * const venue: Gastronomy = GastronomySchema.parse(raw);
+ * const venue: venue = venueSchema.parse(raw);
  * ```
  */
 export const VenueSchema = z.object({
@@ -46,8 +46,8 @@ export const VenueSchema = z.object({
     // Core identity fields (name/slug/summary/description/richDescription + i18n)
     ...ListingIdentityFields,
 
-    // Gastronomy-specific fields
-    /** Gastronomy sub-category (RESTAURANT, BAR, CAFE, PARRILLA, etc.). */
+    // venue-specific fields
+    /** venue sub-category (RESTAURANT, BAR, CAFE, PARRILLA, etc.). */
     type: VenueTypeEnumSchema,
 
     /**
@@ -71,7 +71,7 @@ export const VenueSchema = z.object({
      *
      * NOT owner-writable through the listing PATCH: it is written by the
      * dedicated upload route in the same request that stores the file, so it is
-     * absent from `GastronomyOwnerUpdateInputSchema`. See
+     * absent from `venueOwnerUpdateInputSchema`. See
      * `subtypes/venue.menu.schema.ts` for the three-shapes model.
      */
     menuFileUrl: z.string().url({ message: 'zodError.venue.menuFileUrl.invalid' }).nullish(),
@@ -128,7 +128,7 @@ export const VenueSchema = z.object({
      * FAQs belonging to this entity, loaded from the dedicated `venue_faqs`
      * table and embedded in the detail payload.
      *
-     * Built from `GastronomyFaqSchema` with its identity fields made OPTIONAL, which is
+     * Built from `venueFaqSchema` with its identity fields made OPTIONAL, which is
      * doing two jobs at once:
      *
      *  - It DECLARES `id`, so Zod stops stripping it. The field used to be typed
@@ -150,7 +150,7 @@ export const VenueSchema = z.object({
 
     /**
      * Granular rating breakdown (food / service / ambiance / value).
-     * Aggregate of individual `GastronomyReview` records. Null when no
+     * Aggregate of individual `venueReview` records. Null when no
      * reviews have been submitted yet.
      */
     rating: VenueRatingSchema.nullish()

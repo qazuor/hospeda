@@ -26,7 +26,7 @@ export const VenueOptionsDestinationSchema = z.object({
  */
 export const VenueOptionsItemSchema = EntityOptionsItemSchema.extend({
     /** Venue sub-type (RESTAURANT, BAR, CAFE, etc.). */
-    type: VenueTypeEnumSchema.describe('Gastronomy type'),
+    type: VenueTypeEnumSchema.describe('venue type'),
     /** The venue listing's destination, or null when unresolved. */
     destination: VenueOptionsDestinationSchema.nullable().describe(
         'Destination summary (id, name, slug)'
@@ -42,7 +42,7 @@ export type VenueOptionsItem = z.infer<typeof VenueOptionsItemSchema>;
  * Wrapper schema for the venue `/options` response payload.
  */
 export const VenueOptionsListSchema = z.object({
-    items: z.array(VenueOptionsItemSchema).describe('Matching gastronomy options')
+    items: z.array(VenueOptionsItemSchema).describe('Matching venue options')
 });
 
 /**

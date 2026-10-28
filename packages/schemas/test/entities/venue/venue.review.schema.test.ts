@@ -86,7 +86,7 @@ describe('VenueReviewSchema', () => {
     });
 
     it('should reject a rating with an out-of-range dimension (VenueRatingSchema enforced on entity schema)', () => {
-        // GastronomyReviewSchema.rating is GastronomyRatingSchema.nullish() — invalid dimensions
+        // venueReviewSchema.rating is venueRatingSchema.nullish() — invalid dimensions
         // are rejected directly on the entity schema (food max is 5).
         const data = {
             ...validReviewBase(),

@@ -3,7 +3,7 @@
  * expressible, on the way in AND on the way out.
  *
  * `socialNetworks` is now a MERGEABLE JSONB column on every model that owns one
- * (accommodation, experience, gastronomy, partner, postSponsor, user,
+ * (accommodation, experience, venue, partner, postSponsor, user,
  * eventOrganizer). Merge semantics invert how a key is CLEARED: an omitted key
  * means "leave it alone", so deleting a link is an explicit `null` — exactly the
  * contract `contactInfo` adopted in HOS-375. Before this change every key was

@@ -5,7 +5,7 @@
  * - Request: optional, must be a well-formed email when present — an
  *   invalid format fails `safeParse` (the route maps this to HTTP 400, per
  *   the API error contract's "input shape" tier).
- * - Response: optional at the SCHEMA level only (the gastronomy/experience/partner
+ * - Response: optional at the SCHEMA level only (the venue/experience/partner
  *   start-subscription routes reuse this same response schema and never
  *   populate it — see the schema's own JSDoc); the accommodation
  *   monthly/annual branches always populate it in practice.

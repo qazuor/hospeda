@@ -158,7 +158,7 @@ describe('VenueMenuFileSchema (HOS-895)', () => {
 describe('the menu-file columns are not writable from a listing body (HOS-895)', () => {
     /*
      * REGRESSION ANCHOR. `menuFileUrl`, `menuFilePublicId` and `menuFileKind`
-     * are written by `POST`/`DELETE /gastronomies/{id}/menu-file` and by nothing
+     * are written by `POST`/`DELETE /legacy listing tables/{id}/menu-file` and by nothing
      * else — but adding them to `VenueSchema` made three of the four write
      * schemas accept them silently, because those three are built with
      * `.omit(...)` and therefore take every field they are not told to drop.
@@ -267,7 +267,7 @@ describe('the per-dish photo (HOS-1045)', () => {
     });
 
     it('keeps photoPublicId OUT of the public projection', () => {
-        // `GastronomyMenuItemPublicSchema` omits it deliberately — a derived
+        // `venueMenuItemPublicSchema` omits it deliberately — a derived
         // schema accepts everything it does not name, so this asserts the
         // decision was taken rather than inherited. Checked with `in`, not
         // `toBeUndefined`: a key copied as `undefined` and a key never copied

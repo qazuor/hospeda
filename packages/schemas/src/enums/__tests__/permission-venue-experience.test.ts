@@ -78,7 +78,7 @@ describe('HOS-1077 per-vertical permissions', () => {
             });
 
             it('spells every value as two camelCase segments, not a dotted third', () => {
-                // A dotted third segment (`gastronomy.moderation.change`) would add
+                // A dotted third segment (`venue.moderation.change`) would add
                 // a dual-spelled family to the baseline frozen by
                 // `permission-naming-convention.guard.test.ts`.
                 for (const value of Object.values(vertical.permissions)) {
