@@ -238,14 +238,14 @@ Everything below is derived. Nothing is asked.
 - **`roles` (the audience)** — **INFERRED.** Read the issue's own subject, the
   role whose journey the step exercised, and the `Observado` text. The values are
   a closed set (`WhatsNewAudienceRoleSchema`): `HOST`, `EDITOR`, `ADMIN`,
-  `SUPER_ADMIN`, `GASTRONOMY_OWNER`, `EXPERIENCE_OWNER`, `SPONSOR`, `USER` —
+  `SUPER_ADMIN`, `VENUE_OWNER`, `EXPERIENCE_OWNER`, `SPONSOR`, `USER` —
   anything else fails validation at API boot. Omit the key entirely for something
   every account can see; an empty array is not how you say "everyone".
 
   | What was observed | `roles` |
   |---|---|
   | Something in a host's own panel or listing | `['HOST']` |
-  | A restaurant/menu owner surface | `['GASTRONOMY_OWNER']` |
+  | A venue owner surface | `['VENUE_OWNER']` |
   | An experience owner surface | `['EXPERIENCE_OWNER']` |
   | A sponsor/partner surface | `['SPONSOR']` |
   | The admin panel | `['ADMIN', 'SUPER_ADMIN']`, or `['EDITOR']` for content work |
@@ -295,7 +295,7 @@ Everything below is derived. Nothing is asked.
     id: '2026-09-05-venue-experience-publish-free-trial',
     publishedAt: 'on-promotion',
     highlight: false,
-    roles: ['GASTRONOMY_OWNER'],
+    roles: ['VENUE_OWNER'],
     title: { es: '…', en: '…', pt: '…' },
     body: { es: '…', en: '…', pt: '…' },
     translations: { en: 'machine', pt: 'machine' }
