@@ -46,7 +46,7 @@ export const protectedVenueViewStatsRoute = createProtectedRoute({
         'Returns view-count statistics for every gastronomy listing owned by the authenticated ' +
         'owner over a rolling window (7d or 30d). Scoped strictly to actor.id — no owner ' +
         'override is accepted. Requires the view_basic_stats entitlement.',
-    tags: ['Gastronomy'],
+    tags: ['Venue'],
     requestQuery: {
         window: EntityViewWindowSchema.default('30d')
     },

@@ -28,7 +28,7 @@ export const protectedListMyVenueRoute = createProtectedRoute({
     emailUnverifiedOperation: 'READ_OWN',
     summary: 'List my gastronomy listings (protected)',
     description: "Returns the authenticated owner's own gastronomy listings as summaries",
-    tags: ['Gastronomy'],
+    tags: ['Venue'],
     responseSchema: OwnerListingListSchema,
     handler: async (ctx: Context) => {
         const actor = getActorFromContext(ctx);

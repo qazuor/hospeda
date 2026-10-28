@@ -49,7 +49,7 @@ export const protectedSetFeaturedVenueMediaRoute = createProtectedRoute({
         'photo to visible first. Requires VENUE_EDIT_OWN (listing owner) or VENUE_EDIT_ALL (staff). ' +
         'No request body — ids come from URL params.',
     listingAccess: { vertical: VerticalEnum.VENUE, operation: 'EDIT', idParam: 'id' },
-    tags: ['Gastronomy', 'Gastronomy Media'],
+    tags: ['Venue', 'Gastronomy Media'],
     protectedTag: false,
     requestParams: {
         id: z.string().uuid({ message: 'zodError.common.id.invalidUuid' }),

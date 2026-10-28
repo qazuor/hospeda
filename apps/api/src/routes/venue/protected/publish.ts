@@ -14,7 +14,7 @@ export const protectedPublishVenueRoute = createProtectedRoute({
     listingAccess: { vertical: VerticalEnum.VENUE, operation: 'PUBLISH', idParam: 'id' },
     summary: 'Publish gastronomy listing',
     description: 'Publishes an owned gastronomy listing immediately through PB1.',
-    tags: ['Gastronomy'],
+    tags: ['Venue'],
     requestParams: { id: z.string().uuid() },
     responseSchema: VenueProtectedSchema,
     handler: async (ctx: Context, params: Record<string, unknown>) => {

@@ -36,7 +36,7 @@ export const adminVenueOptionsRoute = createAdminRoute({
     summary: 'Gastronomy options (admin lookup)',
     description:
         'Returns lightweight {id, label, slug, type, destination} options for relation selectors. Admin-panel access only; DRAFT-inclusive.',
-    tags: ['Gastronomy'],
+    tags: ['Venue'],
     requestQuery: EntityOptionsQuerySchema.shape,
     responseSchema: VenueOptionsListSchema,
     handler: async (

@@ -31,7 +31,7 @@ export const adminUpdateVenueRoute = createAdminRoute({
     path: '/{id}',
     summary: 'Update gastronomy listing (admin)',
     description: 'Updates a gastronomy listing. Requires VENUE_EDIT_ALL permission.',
-    tags: ['Gastronomy'],
+    tags: ['Venue'],
     requestParams: {
         id: z.string().uuid({ message: 'zodError.common.id.invalidUuid' })
     },

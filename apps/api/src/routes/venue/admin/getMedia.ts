@@ -32,7 +32,7 @@ export const adminGetVenueMediaRoute = createAdminRoute({
     description:
         'Retrieves all media rows for a gastronomy listing, ordered by sortOrder ASC. ' +
         'Supports an optional `state` query filter (default: visible). Requires VENUE_EDIT_ALL.',
-    tags: ['Gastronomy', 'Media'],
+    tags: ['Venue', 'Media'],
     anyOfPermissions: [[PermissionEnum.VENUE_EDIT_ALL]],
     requestParams: {
         id: z.string().uuid({ message: 'zodError.common.id.invalidUuid' })

@@ -60,7 +60,7 @@ export const protectedCreateVenueReviewRoute = createProtectedRoute({
     summary: 'Create gastronomy review',
     description:
         'Submits a new review for a gastronomy listing. The review starts in PENDING state awaiting moderation.',
-    tags: ['Gastronomy', 'Gastronomy Reviews'],
+    tags: ['Venue', 'Gastronomy Reviews'],
     requestParams: {
         venueId: VenueReviewCreateInputSchema.shape.venueId
     },

@@ -33,7 +33,7 @@ export const adminAddVenueFaqRoute = createAdminRoute({
     summary: 'Add FAQ to gastronomy listing (admin)',
     description:
         'Adds a new frequently asked question to a gastronomy listing. Requires VENUE_EDIT_ALL.',
-    tags: ['Gastronomy', 'FAQs'],
+    tags: ['Venue', 'FAQs'],
     requestParams: {
         id: z.string().uuid({ message: 'zodError.common.id.invalidUuid' })
     },

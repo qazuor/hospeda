@@ -37,7 +37,7 @@ export const publicGetVenueFaqsRoute = createPublicRoute({
     summary: 'List FAQs for a gastronomy listing',
     description:
         'Returns frequently asked questions for a gastronomy listing, ordered by display order',
-    tags: ['Gastronomy', 'Gastronomy FAQs'],
+    tags: ['Venue', 'Gastronomy FAQs'],
     requestParams: {
         venueId: z.string().uuid({ message: 'zodError.common.id.invalidUuid' })
     },
@@ -45,7 +45,7 @@ export const publicGetVenueFaqsRoute = createPublicRoute({
     handler: async (ctx: Context, params: Record<string, unknown>) => {
         const actor = getActorFromContext(ctx);
 
-        // TYPE-WORKAROUND: access the internal gastronomyModel from the service instance
+        // TYPE-WORKAROUND: access the internal venueModel from the service instance
         // to pass to the standalone FAQ helper. The service exposes it via protected
         // `model` — we cast through unknown to satisfy TypeScript without `any`.
         const model = (venueService as unknown as { model: Parameters<typeof listVenueFaqs>[0] })

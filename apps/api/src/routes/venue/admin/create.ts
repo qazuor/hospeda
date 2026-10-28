@@ -29,7 +29,7 @@ export const adminCreateVenueRoute = createAdminRoute({
     path: '/',
     summary: 'Create gastronomy listing',
     description: 'Creates a new gastronomy listing. Requires VENUE_CREATE permission.',
-    tags: ['Gastronomy'],
+    tags: ['Venue'],
     // Own create: `VENUE_CREATE` (re-checked by the listing-access middleware). Create on behalf of
     // another owner (`ownerId` ≠ actor) is action 15 (ACC:15, H12): the listing
     // access chain demands LISTING_FOREIGN_CONTENT_EDIT and runs steps 5 to 7 on

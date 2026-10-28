@@ -24,7 +24,7 @@ export const adminBatchVenuesRoute = createAdminRoute({
     summary: 'Get multiple gastronomy listings by IDs (admin)',
     description:
         'Retrieves multiple gastronomy listings by their IDs for entity select components. Requires VENUE_VIEW_ALL.',
-    tags: ['Gastronomy'],
+    tags: ['Venue'],
     anyOfPermissions: [[PermissionEnum.VENUE_VIEW_ALL]],
     requestBody: VenueBatchRequestSchema,
     responseSchema: VenueBatchResponseSchema,

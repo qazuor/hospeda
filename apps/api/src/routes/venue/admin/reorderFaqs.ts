@@ -36,7 +36,7 @@ export const adminReorderVenueFaqsRoute = createAdminRoute({
     summary: 'Reorder FAQs for a gastronomy listing (admin)',
     description:
         'Sets displayOrder for a set of FAQs belonging to a gastronomy listing. All faqId values must belong to the given listing. Requires VENUE_EDIT_ALL.',
-    tags: ['Gastronomy', 'FAQs'],
+    tags: ['Venue', 'FAQs'],
     requestParams: {
         id: z.string().uuid({ message: 'zodError.common.id.invalidUuid' })
     },

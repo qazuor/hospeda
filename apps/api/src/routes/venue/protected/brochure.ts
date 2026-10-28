@@ -146,7 +146,7 @@ export const protectedGetVenueBrochureRoute = createProtectedRoute({
     summary: 'Download the printable PDF sheet of a gastronomy listing',
     description:
         'Returns a print-ready A4 PDF of the listing’s PUBLIC page — cover photo, opening hours, contact, services and a QR back to the online sheet. Owner-only, and only for a listing that is publicly visible. Requires the download_listing_pdf entitlement, granted by the premium gastronomy plan.',
-    tags: ['Gastronomy'],
+    tags: ['Venue'],
     requestParams: {
         id: z.string().uuid({ message: 'zodError.common.id.invalidUuid' })
     },

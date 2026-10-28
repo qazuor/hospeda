@@ -25,7 +25,7 @@ export const adminListVenuesRoute = createAdminListRoute({
     path: '/',
     summary: 'List gastronomy listings (admin)',
     description: 'Returns a paginated list of gastronomy listings with full admin details',
-    tags: ['Gastronomy'],
+    tags: ['Venue'],
     requestQuery: VenueAdminSearchSchema.omit({ page: true, pageSize: true }).shape,
     responseSchema: VenueAdminListItemSchema,
     handler: async (ctx, _params, _body, query) => {

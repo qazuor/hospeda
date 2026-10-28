@@ -35,7 +35,7 @@ export const publicListVenuesRoute = createPublicListRoute({
     path: '/',
     summary: 'List gastronomy listings',
     description: 'Returns a paginated list of public gastronomy listings',
-    tags: ['Gastronomy'],
+    tags: ['Venue'],
     requestQuery: VenueSearchHttpSchema.shape,
     responseSchema: VenuePublicSchema,
     handler: async (ctx, _params, _body, query) => {

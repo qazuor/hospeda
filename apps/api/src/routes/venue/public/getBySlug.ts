@@ -41,7 +41,7 @@ export const publicGetVenueBySlugRoute = createPublicRoute({
     path: '/slug/{slug}',
     summary: 'Get gastronomy listing by slug',
     description: 'Retrieves a gastronomy listing by its URL-friendly slug',
-    tags: ['Gastronomy'],
+    tags: ['Venue'],
     requestParams: {
         slug: z.string().min(1).max(255)
     },

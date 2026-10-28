@@ -113,7 +113,7 @@ export const protectedGetVenueMenuQrScansRoute = createProtectedRoute({
         'Returns the total scans, a gap-filled daily series, and device/OS/language breakdowns ' +
         'for the venue’s menu QR over a rolling window (7d or 30d, default 30d). A venue with no ' +
         'menu QR yet gets an all-zero aggregate — this endpoint never mints a code. Owner-only.',
-    tags: ['Gastronomy', 'Gastronomy Menu'],
+    tags: ['Venue', 'Gastronomy Menu'],
     requestParams: {
         id: z.string().uuid({ message: 'zodError.common.id.invalidUuid' })
     },

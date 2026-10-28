@@ -88,7 +88,7 @@ export const protectedGetVenueEventsRoute = createCRUDRoute({
     summary: 'Read the venue events agenda of a gastronomy listing',
     description:
         "Returns the listing's own events — live music night, happy hour, dinner show — in display order, including entries the owner has switched off. Owner-only. Not gated on the venue-events entitlement: an owner whose plan no longer grants it still owns the rows, and only writing is a paid capability.",
-    tags: ['Gastronomy', 'Gastronomy Events'],
+    tags: ['Venue', 'Gastronomy Events'],
     requestParams: {
         id: z.string().uuid({ message: 'zodError.common.id.invalidUuid' })
     },

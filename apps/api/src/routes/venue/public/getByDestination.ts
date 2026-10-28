@@ -31,7 +31,7 @@ export const publicGetVenuesByDestinationRoute = createPublicListRoute({
     path: '/destination/{destinationId}',
     summary: 'Get gastronomy listings by destination',
     description: 'Returns gastronomy listings for a specific destination',
-    tags: ['Gastronomy'],
+    tags: ['Venue'],
     requestParams: {
         destinationId: z.string().uuid({ message: 'zodError.common.id.invalidUuid' })
     },

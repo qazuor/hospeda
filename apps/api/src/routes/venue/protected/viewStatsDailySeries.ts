@@ -40,7 +40,7 @@ export const protectedVenueViewStatsDailySeriesRoute = createProtectedRoute({
         'owned by the authenticated owner over a rolling window (7d or 30d). Each item ' +
         'represents one calendar day; days with no views have total = 0. Scoped strictly to ' +
         'actor.id — no owner override is accepted. Requires the view_basic_stats entitlement.',
-    tags: ['Gastronomy'],
+    tags: ['Venue'],
     requestQuery: {
         window: EntityViewWindowSchema.default('30d')
     },

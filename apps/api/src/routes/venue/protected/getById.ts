@@ -32,7 +32,7 @@ export const protectedGetVenueByIdRoute = createProtectedRoute({
     summary: 'Get gastronomy listing by ID (protected)',
     description:
         'Returns a gastronomy listing with owner-tier fields. Only the owner or staff with VENUE_VIEW_ALL may access this endpoint.',
-    tags: ['Gastronomy'],
+    tags: ['Venue'],
     emailUnverifiedOperation: 'READ_OWN',
     requestParams: {
         id: z.string().uuid({ message: 'zodError.common.id.invalidUuid' })

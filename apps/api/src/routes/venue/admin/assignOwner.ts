@@ -35,7 +35,7 @@ export const adminAssignVenueOwnerRoute = createAdminRoute({
     summary: 'Assign owner to gastronomy listing (admin)',
     description:
         'Sets or replaces the owner of a gastronomy listing. Requires VENUE_EDIT_ALL permission.',
-    tags: ['Gastronomy'],
+    tags: ['Venue'],
     anyOfPermissions: [[PermissionEnum.VENUE_EDIT_ALL]],
     requestParams: {
         id: z.string().uuid({ message: 'zodError.common.id.invalidUuid' })

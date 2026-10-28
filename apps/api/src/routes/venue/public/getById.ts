@@ -27,7 +27,7 @@ export const publicGetVenueByIdRoute = createPublicRoute({
     path: '/{id}',
     summary: 'Get gastronomy listing by ID',
     description: 'Retrieves a gastronomy listing by its UUID',
-    tags: ['Gastronomy'],
+    tags: ['Venue'],
     requestParams: {
         id: z.string().uuid({ message: 'zodError.common.id.invalidUuid' })
     },

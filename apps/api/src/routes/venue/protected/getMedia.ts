@@ -34,7 +34,7 @@ export const protectedGetVenueMediaRoute = createCRUDRoute({
         'Retrieves all media rows for a gastronomy listing, ordered by sortOrder ASC. ' +
         'Supports an optional `state` query filter (default: visible). ' +
         'Requires VENUE_EDIT_OWN (listing owner) or VENUE_EDIT_ALL (staff).',
-    tags: ['Gastronomy', 'Gastronomy Media'],
+    tags: ['Venue', 'Gastronomy Media'],
     requestParams: {
         id: z.string().uuid({ message: 'zodError.common.id.invalidUuid' })
     },

@@ -26,7 +26,7 @@ export const adminRemoveVenueFaqRoute = createAdminRoute({
     path: '/{id}/faqs/{faqId}',
     summary: 'Remove FAQ from gastronomy listing (admin)',
     description: 'Removes a FAQ from a gastronomy listing. Requires VENUE_EDIT_ALL.',
-    tags: ['Gastronomy', 'FAQs'],
+    tags: ['Venue', 'FAQs'],
     requestParams: {
         id: z.string().uuid({ message: 'zodError.common.id.invalidUuid' }),
         faqId: z.string().uuid({ message: 'zodError.common.id.invalidUuid' })

@@ -41,7 +41,7 @@ export const adminSetFeaturedVenueMediaRoute = createAdminRoute({
         'featured row (if any). Archived photos cannot be featured — restore the ' +
         'photo to visible first. Requires VENUE_EDIT_ALL. No request body — ids ' +
         'come from URL params.',
-    tags: ['Gastronomy', 'Media'],
+    tags: ['Venue', 'Media'],
     requestParams: {
         id: z.string().uuid({ message: 'zodError.common.id.invalidUuid' }),
         mediaId: z.string().uuid({ message: 'zodError.common.id.invalidUuid' })

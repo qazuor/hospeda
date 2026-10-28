@@ -49,7 +49,7 @@ export const protectedPatchVenueRoute = createProtectedRoute({
     summary: 'Update gastronomy listing (owner)',
     description:
         'Partially updates operational fields of a gastronomy listing. Requires ownership.',
-    tags: ['Gastronomy'],
+    tags: ['Venue'],
     requestParams: {
         id: z.string().uuid({ message: 'zodError.common.id.invalidUuid' })
     },

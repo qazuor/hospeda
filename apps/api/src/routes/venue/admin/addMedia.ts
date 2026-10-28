@@ -37,7 +37,7 @@ export const adminAddVenueMediaRoute = createAdminRoute({
     summary: 'Add photo to gastronomy listing gallery (admin)',
     description:
         'Registers an already-uploaded URL as a new venue_media row. Requires VENUE_EDIT_ALL.',
-    tags: ['Gastronomy', 'Media'],
+    tags: ['Venue', 'Media'],
     requestParams: {
         id: z.string().uuid({ message: 'zodError.common.id.invalidUuid' })
     },

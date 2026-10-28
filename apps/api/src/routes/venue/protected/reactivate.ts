@@ -16,7 +16,7 @@ export const protectedReactivateVenueRoute = createProtectedRoute({
     emailUnverifiedOperation: 'REACTIVATE_LISTING',
     summary: 'Reactivate archived gastronomy listing',
     description: 'Moves an archived listing back to DRAFT through PB8.',
-    tags: ['Gastronomy'],
+    tags: ['Venue'],
     requestParams: { id: z.string().uuid() },
     responseSchema: VenueProtectedSchema,
     handler: async (ctx: Context, params: Record<string, unknown>) => {

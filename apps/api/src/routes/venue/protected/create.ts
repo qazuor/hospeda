@@ -96,7 +96,7 @@ export const protectedCreateVenueListingRoute = createProtectedRoute({
     summary: 'Create a gastronomy listing (owner self-service)',
     description:
         'Creates a gastronomy listing owned by the authenticated caller and grants them the VENUE_OWNER role in the same transaction. Starts hidden (DRAFT) until the owner completes it. Requires an authenticated session and no gastronomy permission.',
-    tags: ['Gastronomy'],
+    tags: ['Venue'],
     // No `requiredPermissions` on purpose (HOS-687): this route is how an
     // account BECOMES a gastronomy owner, so demanding the owner's permission
     // to reach it made the role unreachable. Authentication is still enforced

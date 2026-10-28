@@ -35,7 +35,7 @@ export const adminRemoveVenueMediaRoute = createAdminRoute({
     summary: 'Remove photo from gastronomy listing gallery (admin)',
     description:
         'Soft-deletes a media row and resequences the remaining visible photos. Requires VENUE_EDIT_ALL.',
-    tags: ['Gastronomy', 'Media'],
+    tags: ['Venue', 'Media'],
     requestParams: {
         id: z.string().uuid({ message: 'zodError.common.id.invalidUuid' }),
         mediaId: z.string().uuid({ message: 'zodError.common.id.invalidUuid' })
