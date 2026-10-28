@@ -367,9 +367,6 @@ jobs:
       # TEST:V6:18 (HOS-1641, AC:V6:32). Its own step, like every guard here.
       - name: Check no file reads the six old listing columns (TEST:V6:18)
         run: pnpm check:listing-old-columns
-      # G-FAC-T1 counts the temporary identifier frontier through stage A; it is removed when G-FAC-R1 starts in 1.B5.
-      - name: Check the venue rename frontier (G-FAC-T1, HOS-1813)
-        run: pnpm check:venue-rename-frontier
       # G-FAC-R1 guards the retired venue word.
       - name: Check the retired venue word (G-FAC-R1, HOS-1823)
         run: pnpm check:venue-retired-word
