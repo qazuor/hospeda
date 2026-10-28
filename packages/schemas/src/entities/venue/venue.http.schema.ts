@@ -23,7 +23,7 @@ export const VenueSearchHttpSchema = BaseHttpSearchSchema.extend({
     /** Filter by price-range tier. */
     priceRange: PriceRangeEnumSchema.optional(),
     /** Filter by featured status (coerced from query string). */
-    isFeatured: createBooleanQueryParam('Filter featured gastronomy listings'),
+    isFeatured: createBooleanQueryParam('Filter featured venue listings'),
     /** Minimum average rating (0–5, coerced from query string). */
     minRating: z.coerce.number().min(0).max(5).optional(),
     /** Maximum average rating (0–5, coerced from query string). */
@@ -72,9 +72,9 @@ export const VenueSearchHttpSchema = BaseHttpSearchSchema.extend({
         ])
         .optional(),
     /** Opt-in projection: include amenities per result. */
-    includeAmenities: createBooleanQueryParam('Include gastronomy amenities in response'),
+    includeAmenities: createBooleanQueryParam('Include venue amenities in response'),
     /** Opt-in projection: include features per result. */
-    includeFeatures: createBooleanQueryParam('Include gastronomy features in response')
+    includeFeatures: createBooleanQueryParam('Include venue features in response')
 });
 
 export type VenueSearchHttp = z.infer<typeof VenueSearchHttpSchema>;
@@ -164,9 +164,9 @@ export type VenueUpdateHttp = z.infer<typeof VenueUpdateHttpSchema>;
  */
 export const VenueGetHttpSchema = z.object({
     id: z.string().uuid({ message: 'zodError.common.id.invalidUuid' }),
-    includeReviews: createBooleanQueryParam('Include gastronomy reviews'),
-    includeAmenities: createBooleanQueryParam('Include gastronomy amenities'),
-    includeFeatures: createBooleanQueryParam('Include gastronomy features')
+    includeReviews: createBooleanQueryParam('Include venue reviews'),
+    includeAmenities: createBooleanQueryParam('Include venue amenities'),
+    includeFeatures: createBooleanQueryParam('Include venue features')
 });
 
 export type VenueGetHttp = z.infer<typeof VenueGetHttpSchema>;
