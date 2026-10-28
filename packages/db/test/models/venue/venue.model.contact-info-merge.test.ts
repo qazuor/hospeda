@@ -67,18 +67,18 @@ const ACTOR_ID = '00000000-0000-4000-8000-000000000001';
  * `update().set().where().returning()` for the write itself.
  */
 function buildMockInnerTx() {
-    const returning = vi.fn().mockResolvedValue([{ id: 'gastronomy-1' }]);
+    const returning = vi.fn().mockResolvedValue([{ id: 'venue-1' }]);
     const where = vi.fn(() => ({ returning }));
     const set = vi.fn(() => ({ where }));
     const update = vi.fn(() => ({ set }));
-    const execute = vi.fn().mockResolvedValue({ rows: [{ id: 'gastronomy-1' }] });
+    const execute = vi.fn().mockResolvedValue({ rows: [{ id: 'venue-1' }] });
 
     return { execute, update, set, where, returning };
 }
 
 /** Minimal non-transactional client for the plain-replacement path. */
 function buildMockPlainDb() {
-    const returning = vi.fn().mockResolvedValue([{ id: 'gastronomy-1' }]);
+    const returning = vi.fn().mockResolvedValue([{ id: 'venue-1' }]);
     const where = vi.fn(() => ({ returning }));
     const set = vi.fn(() => ({ where }));
     const update = vi.fn(() => ({ set }));
@@ -154,7 +154,7 @@ describe('VenueModel — `contactInfo` is a mergeable JSONB column', () => {
         setDb({} as unknown as DrizzleClient);
 
         // Act
-        await new VenueModel().update({ id: 'gastronomy-1' }, { contactInfo: PHONE_PATCH });
+        await new VenueModel().update({ id: 'venue-1' }, { contactInfo: PHONE_PATCH });
 
         // Assert — the merge path is the one that locks the row first.
         expect(withTransaction).toHaveBeenCalledOnce();
@@ -188,7 +188,7 @@ describe('VenueModel — `contactInfo` is a mergeable JSONB column', () => {
         setDb(buildMockPlainDb() as unknown as DrizzleClient);
 
         // Act
-        await new VenueModel().update({ id: 'gastronomy-1' }, {
+        await new VenueModel().update({ id: 'venue-1' }, {
             contactInfo: PHONE_PATCH,
             updatedById: ACTOR_ID
         } as unknown as Parameters<VenueModel['update']>[1]);
@@ -212,7 +212,7 @@ describe('VenueModel — `contactInfo` is a mergeable JSONB column', () => {
         setDb({} as unknown as DrizzleClient);
 
         // Act
-        await new VenueModel().update({ id: 'gastronomy-1' }, { contactInfo: PHONE_PATCH });
+        await new VenueModel().update({ id: 'venue-1' }, { contactInfo: PHONE_PATCH });
 
         // Assert — a plain object here would wipe every other contact field.
         const setPayload = innerTx.set.mock.calls[0]?.[0] as Record<string, unknown>;
@@ -298,7 +298,7 @@ describe('VenueModel — `contactInfo` is a mergeable JSONB column', () => {
         );
         setDb({} as unknown as DrizzleClient);
 
-        await new VenueModel().update({ id: 'gastronomy-1' }, {
+        await new VenueModel().update({ id: 'venue-1' }, {
             contactInfo: null
         } as unknown as Parameters<VenueModel['update']>[1]);
 
@@ -314,7 +314,7 @@ describe('VenueModel — `contactInfo` is a mergeable JSONB column', () => {
 
         // Act — `openingHours` is NOT declared mergeable on this model (HOS-1262 moved
         // `socialNetworks` into the mergeable set, so it can no longer be the control).
-        await new VenueModel().update({ id: 'gastronomy-1' }, {
+        await new VenueModel().update({ id: 'venue-1' }, {
             openingHours: { monday: [] }
         } as unknown as Parameters<VenueModel['update']>[1]);
 

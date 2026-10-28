@@ -71,7 +71,7 @@ describe('listing birth model integration (TEST:V6:19)', () => {
         });
     });
 
-    it('writes gastronomy birth state and its current deadline version', async () => {
+    it('writes venue birth state and its current deadline version', async () => {
         await withTestTransaction(async (tx) => {
             const user = testData.user();
             const destination = testData.destination();

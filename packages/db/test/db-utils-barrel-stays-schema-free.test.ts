@@ -85,9 +85,7 @@ describe('src/utils/ stays free of dbschema imports (HOS-1054)', () => {
     it('the regex it relies on actually catches a dbschema import', () => {
         // A guard whose predicate never fires is a guard that passes forever.
         expect(
-            DBSCHEMA_IMPORT.test(
-                "import { venues } from '../../schemas/gastronomy/gastronomy.dbschema.ts';"
-            )
+            DBSCHEMA_IMPORT.test("import { venues } from '../../schemas/venue/venue.dbschema.ts';")
         ).toBe(true);
         expect(DBSCHEMA_IMPORT.test("export * from './r_venue_feature.dbschema.ts';")).toBe(true);
         // ...and does not fire on prose that merely names one.
