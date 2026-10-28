@@ -643,7 +643,7 @@ describe('UserMenu — PostHog identify/reset', () => {
                 roles: ['HOST', 'USER', 'VENUE_OWNER'],
                 user_type: 'owner',
                 is_host: true,
-                is_gastronomy_owner: true,
+                is_venue_owner: true,
                 is_experience_owner: false,
                 is_staff: false
             });
@@ -670,7 +670,7 @@ describe('UserMenu — PostHog identify/reset', () => {
             expect(identifyUser).toHaveBeenLastCalledWith(
                 'user-1',
                 expect.objectContaining({
-                    is_gastronomy_owner: false,
+                    is_venue_owner: false,
                     is_experience_owner: true,
                     user_type: 'owner'
                 })
@@ -700,7 +700,7 @@ describe('UserMenu — PostHog identify/reset', () => {
                 roles: ['ADMIN', 'USER'],
                 user_type: 'staff',
                 is_host: false,
-                is_gastronomy_owner: false,
+                is_venue_owner: false,
                 is_experience_owner: false,
                 is_staff: true
             });

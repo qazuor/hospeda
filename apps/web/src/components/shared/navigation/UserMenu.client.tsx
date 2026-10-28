@@ -115,7 +115,7 @@ const HOST_PERMISSION = 'accommodation.create' as const;
 
 /**
  * Permission that marks a user as a gastronomy listing owner (self-service,
- * SPEC-253). Fed to PostHog as `is_gastronomy_owner`.
+ * SPEC-253). Fed to PostHog as `is_venue_owner`.
  */
 const VENUE_OWNER_PERMISSION = 'venue.editOwn' as const;
 
@@ -200,7 +200,7 @@ export function UserMenu({
     // but not the permission set), so the initial identify carries the id
     // alone; a second identify with the enriched props fires when /auth/me (or
     // the cache) lands. PostHog merges person properties across identify calls,
-    // so segmenting funnels by is_host / is_gastronomy_owner / is_experience_owner / is_staff works
+    // so segmenting funnels by is_host / is_venue_owner / is_experience_owner / is_staff works
     // without re-sending the id-only call.
     //
     // HOS-296 — the `role` scalar person-property became the `roles` ARRAY.
@@ -212,7 +212,7 @@ export function UserMenu({
     //     with `contains`, so `roles contains 'HOST'` replaces the old
     //     `role = 'HOST'` breakdown one-for-one;
     //   - the real segmentation levers here are already the permission-derived
-    //     `is_host` / `is_gastronomy_owner` / `is_experience_owner` / `is_staff` booleans below, which
+    //     `is_host` / `is_venue_owner` / `is_experience_owner` / `is_staff` booleans below, which
     //     are unchanged and keep working for a multi-hat user (a HOST +
     //     a vertical owner correctly reports BOTH as true instead of
     //     whichever single role happened to win).
@@ -229,7 +229,7 @@ export function UserMenu({
                       user_type: resolveAnalyticsUserType({ permissions }),
                       roles: rolesKey.length > 0 ? rolesKey.split(',') : [],
                       is_host: permissions.includes(HOST_PERMISSION),
-                      is_gastronomy_owner: permissions.includes(VENUE_OWNER_PERMISSION),
+                      is_venue_owner: permissions.includes(VENUE_OWNER_PERMISSION),
                       is_experience_owner: permissions.includes(EXPERIENCE_OWNER_PERMISSION),
                       is_staff: permissions.includes(STAFF_DISCRIMINATOR_PERMISSION)
                   };

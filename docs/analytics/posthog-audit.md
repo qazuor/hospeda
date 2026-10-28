@@ -87,7 +87,7 @@
 - Propiedades actuales de persona:
   - `role`
   - `is_host`
-  - `is_gastronomy_owner`, `is_experience_owner`
+  - `is_gastronomy_owner` — legacy-name-allowed: propiedad PostHog anterior al renombrado (HOS-1823); `is_experience_owner`
   - `is_staff`
   - `plan`
   - `plan_status`
