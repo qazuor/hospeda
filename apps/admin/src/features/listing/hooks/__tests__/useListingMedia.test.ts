@@ -362,11 +362,11 @@ describe('gallery mutations invalidate the cached entity (HOS-389 §3)', () => {
             await result.current.mutateAsync(args);
         });
 
-        // 'gastronomies' is the entityName the listing entity hooks are created
+        // 'venues' is the entityName the listing entity hooks are created
         // with — asserting the resolved key, not the helper, is what proves the
         // media hook and the entity hook agree on where the cache lives.
         expect(invalidateSpy).toHaveBeenCalledWith(
-            expect.objectContaining({ queryKey: ['gastronomies', 'detail', 'ent-1'] })
+            expect.objectContaining({ queryKey: ['venues', 'detail', 'ent-1'] })
         );
     });
 

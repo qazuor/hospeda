@@ -30,8 +30,8 @@ describe('gastronomyListConfig', () => {
         expect(venueListConfig.basePath).toBe('/venues');
     });
 
-    it('should have entityKey gastronomy', () => {
-        expect(venueListConfig.entityKey).toBe('gastronomy');
+    it('should have entityKey venue', () => {
+        expect(venueListConfig.entityKey).toBe('venue');
     });
 
     it('should have a createColumns function', () => {

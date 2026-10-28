@@ -91,7 +91,7 @@ const VERTICAL_ROUTE_SEGMENT: Record<ListingMediaVertical, string> = {
 
 /** Entity query roots remain the entityName configured by each listing feature. */
 const VERTICAL_ENTITY_NAME: Record<ListingMediaVertical, string> = {
-    venue: 'gastronomies',
+    venue: 'venues',
     experience: 'experiences'
 };
 
@@ -107,7 +107,7 @@ const mediaEndpoint = (vertical: ListingMediaVertical, entityId: string) =>
  * "no cover" right after one was uploaded, until some unrelated refetch
  * happened to refresh it.
  *
- * The entity key uses the feature's `entityName` (`'gastronomies'` /
+ * The entity key uses the feature's `entityName` (`'venues'` /
  * `'experiences'`) so it stays aligned with the listing entity hooks.
  *
  * Written once and shared by all three mutations rather than pasted into each

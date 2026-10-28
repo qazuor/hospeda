@@ -93,8 +93,8 @@ const PRICE_RANGE_OPTIONS = [
  * Permissions gate: VENUE_VIEW_ALL
  */
 export const venueListConfig = createListingListConfig<VenueListItem>({
-    entityName: 'gastronomies',
-    entityKey: 'gastronomy',
+    entityName: 'venues',
+    entityKey: 'venue',
     entityType: EntityType.VENUE,
     apiEndpoint: '/api/v1/admin/venues',
     basePath: '/venues',

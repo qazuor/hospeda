@@ -96,7 +96,7 @@ describe('usePurgeListingOnRequestMutation — action 23 posts to its vertical p
         });
 
         // Assert
-        expect(invalidate).toHaveBeenCalledWith({ queryKey: ['gastronomies'] });
+        expect(invalidate).toHaveBeenCalledWith({ queryKey: ['venues'] });
     });
 
     it('rejects when the route answers an error, so the caller can show it', async () => {
