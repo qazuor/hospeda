@@ -241,7 +241,7 @@ export const protectedUploadVenueMenuFileRoute = createProtectedRoute({
                     error: error instanceof Error ? error.message : String(error),
                     venueId
                 },
-                'Gastronomy menu-file upload failed'
+                'Venue menu-file upload failed'
             );
             return createErrorResponse(
                 { code: 'UPSTREAM_ERROR', message: 'Menu file upload failed' },
