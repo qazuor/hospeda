@@ -2,13 +2,13 @@ import { z } from 'zod';
 import { VenueSchema } from './venue.schema.js';
 
 /**
- * Gastronomy Batch Schemas
+ * Venue Batch Schemas
  *
- * Used for retrieving multiple gastronomy listings by their IDs in a single request.
+ * Used for retrieving multiple venue listings by their IDs in a single request.
  */
 
 /**
- * Batch request schema for gastronomy operations.
+ * Batch request schema for venue operations.
  *
  * @example
  * ```ts
@@ -20,7 +20,7 @@ import { VenueSchema } from './venue.schema.js';
  */
 export const VenueBatchRequestSchema = z.object({
     /**
-     * Array of gastronomy listing IDs to retrieve.
+     * Array of venue listing IDs to retrieve.
      * Limited to 100 IDs per request for performance.
      */
     ids: z
@@ -42,7 +42,7 @@ export const VenueBatchRequestSchema = z.object({
 export const VenueBatchItemSchema = VenueSchema.partial().required({ id: true });
 
 /**
- * Batch response schema — array of gastronomy items or null for not-found entries.
+ * Batch response schema — array of venue items or null for not-found entries.
  */
 export const VenueBatchResponseSchema = z.array(VenueBatchItemSchema.nullable());
 

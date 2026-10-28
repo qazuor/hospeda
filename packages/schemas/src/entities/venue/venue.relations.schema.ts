@@ -2,15 +2,15 @@ import { z } from 'zod';
 import { VenueSchema } from './venue.schema.js';
 
 /**
- * Gastronomy Relations Schemas
+ * Venue Relations Schemas
  *
- * This file contains schemas for gastronomy listings with related entities:
- * - GastronomyWithDestination
- * - GastronomyWithOwner
- * - GastronomyWithReviews
- * - GastronomyWithAmenities
- * - GastronomyWithFeatures
- * - GastronomyWithFullRelations
+ * This file contains schemas for venue listings with related entities:
+ * - VenueWithDestination
+ * - VenueWithOwner
+ * - VenueWithReviews
+ * - VenueWithAmenities
+ * - VenueWithFeatures
+ * - VenueWithFullRelations
  */
 
 // ============================================================================
@@ -40,7 +40,7 @@ const UserSummarySchema = z.object({
 });
 
 /**
- * Review summary schema for gastronomy relations.
+ * Review summary schema for venue relations.
  */
 const VenueReviewSummarySchema = z.object({
     id: z.string().uuid(),
@@ -72,11 +72,11 @@ const AmenitySummarySchema = z.object({
 });
 
 // ============================================================================
-// GASTRONOMY WITH RELATIONS SCHEMAS
+// VENUE WITH RELATIONS SCHEMAS
 // ============================================================================
 
 /**
- * Gastronomy with destination information.
+ * Venue with destination information.
  */
 export const VenueWithDestinationSchema = VenueSchema.extend({
     destination: DestinationMiniSchema.optional()
@@ -84,7 +84,7 @@ export const VenueWithDestinationSchema = VenueSchema.extend({
 export type VenueWithDestination = z.infer<typeof VenueWithDestinationSchema>;
 
 /**
- * Gastronomy with owner information.
+ * Venue with owner information.
  */
 export const VenueWithOwnerSchema = VenueSchema.extend({
     owner: UserSummarySchema.optional()
@@ -92,7 +92,7 @@ export const VenueWithOwnerSchema = VenueSchema.extend({
 export type VenueWithOwner = z.infer<typeof VenueWithOwnerSchema>;
 
 /**
- * Gastronomy with reviews array.
+ * Venue with reviews array.
  */
 export const VenueWithReviewsSchema = VenueSchema.extend({
     reviews: z.array(VenueReviewSummarySchema).optional(),
@@ -102,7 +102,7 @@ export const VenueWithReviewsSchema = VenueSchema.extend({
 export type VenueWithReviews = z.infer<typeof VenueWithReviewsSchema>;
 
 /**
- * Gastronomy with features array.
+ * Venue with features array.
  */
 export const VenueWithFeaturesSchema = VenueSchema.extend({
     features: z.array(FeatureSummarySchema).optional()
@@ -110,7 +110,7 @@ export const VenueWithFeaturesSchema = VenueSchema.extend({
 export type VenueWithFeatures = z.infer<typeof VenueWithFeaturesSchema>;
 
 /**
- * Gastronomy with amenities array.
+ * Venue with amenities array.
  */
 export const VenueWithAmenitiesSchema = VenueSchema.extend({
     amenities: z.array(AmenitySummarySchema).optional()
@@ -118,7 +118,7 @@ export const VenueWithAmenitiesSchema = VenueSchema.extend({
 export type VenueWithAmenities = z.infer<typeof VenueWithAmenitiesSchema>;
 
 /**
- * Gastronomy with basic relations (destination + owner).
+ * Venue with basic relations (destination + owner).
  */
 export const VenueWithBasicRelationsSchema = VenueSchema.extend({
     destination: DestinationMiniSchema.optional(),
@@ -127,7 +127,7 @@ export const VenueWithBasicRelationsSchema = VenueSchema.extend({
 export type VenueWithBasicRelations = z.infer<typeof VenueWithBasicRelationsSchema>;
 
 /**
- * Gastronomy with all relations.
+ * Venue with all relations.
  */
 export const VenueWithFullRelationsSchema = VenueSchema.extend({
     destination: DestinationMiniSchema.optional(),

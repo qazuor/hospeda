@@ -1,7 +1,7 @@
 /**
- * Admin Search Schema for Gastronomy Listings
+ * Admin Search Schema for Venue Listings
  *
- * Extends the base admin search schema with gastronomy-specific filters
+ * Extends the base admin search schema with venue-specific filters
  * for use in admin list endpoints.
  */
 import { z } from 'zod';
@@ -10,12 +10,12 @@ import { PriceRangeEnumSchema, VenueTypeEnumSchema } from '../../enums/index.js'
 import { PublicationStatusEnum } from '../../enums/publication-status.enum.js';
 
 /**
- * Admin search schema for gastronomy listings.
- * Extends the base admin search with gastronomy-specific filters.
+ * Admin search schema for venue listings.
+ * Extends the base admin search with venue-specific filters.
  *
  * @example
  * ```ts
- * const params = GastronomyAdminSearchSchema.parse({
+ * const params = VenueAdminSearchSchema.parse({
  *   page: 1,
  *   pageSize: 20,
  *   type: 'RESTAURANT',
@@ -26,7 +26,7 @@ import { PublicationStatusEnum } from '../../enums/publication-status.enum.js';
 export const VenueAdminSearchSchema = AdminSearchBaseSchema.extend({
     /**
      * Filter by `publicationStatus` (HOS-1641). REPLACES the base `status`,
-     * which is a `LifecycleStatusEnum` filter: gastronomy listings no longer carry a
+     * which is a `LifecycleStatusEnum` filter: venue listings no longer carry a
      * lifecycle column, so the panel filters on the six `PublicationStatusEnum`
      * values instead. `'all'` (the default) does not filter. Same override as
      * `HostTradeBenefitUsageAdminSearchSchema`.
@@ -36,7 +36,7 @@ export const VenueAdminSearchSchema = AdminSearchBaseSchema.extend({
         .default('all')
         .describe('Filter by publication status. Use "all" to show all statuses'),
 
-    /** Filter by gastronomy sub-type. */
+    /** Filter by venue sub-type. */
     type: VenueTypeEnumSchema.optional().describe('Filter by gastronomy type'),
 
     /** Filter by destination UUID. */
@@ -56,11 +56,11 @@ export const VenueAdminSearchSchema = AdminSearchBaseSchema.extend({
         .optional()
         .describe('Filter by owner')
 
-    /** Filter featured gastronomy listings. */
+    /** Filter featured venue listings. */
 });
 
 /**
  * Type inferred from {@link VenueAdminSearchSchema}.
- * Represents the validated admin search parameters for gastronomy listings.
+ * Represents the validated admin search parameters for venue listings.
  */
 export type VenueAdminSearch = z.infer<typeof VenueAdminSearchSchema>;

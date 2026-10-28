@@ -1,16 +1,16 @@
 /**
- * Gastronomy relation-selector lookup schema (SPEC-239).
+ * Venue relation-selector lookup schema (SPEC-239).
  *
- * Gastronomy extends the shared `{ id, label, slug }` option item with `type`
+ * Venue extends the shared `{ id, label, slug }` option item with `type`
  * and `destination` — matching the accommodation options pattern — so the
- * gastronomy selector can disambiguate listings in relation pickers.
+ * venue selector can disambiguate listings in relation pickers.
  */
 import { z } from 'zod';
 import { EntityOptionsItemSchema } from '../../common/entity-options.schema.js';
 import { VenueTypeEnumSchema } from '../../enums/index.js';
 
 /**
- * Minimal destination descriptor embedded in a gastronomy option item.
+ * Minimal destination descriptor embedded in a venue option item.
  */
 export const VenueOptionsDestinationSchema = z.object({
     /** Destination id (UUID). */
@@ -22,12 +22,12 @@ export const VenueOptionsDestinationSchema = z.object({
 });
 
 /**
- * Gastronomy option item: base `{ id, label, slug }` plus `type` and `destination`.
+ * Venue option item: base `{ id, label, slug }` plus `type` and `destination`.
  */
 export const VenueOptionsItemSchema = EntityOptionsItemSchema.extend({
-    /** Gastronomy sub-type (RESTAURANT, BAR, CAFE, etc.). */
+    /** Venue sub-type (RESTAURANT, BAR, CAFE, etc.). */
     type: VenueTypeEnumSchema.describe('Gastronomy type'),
-    /** The gastronomy listing's destination, or null when unresolved. */
+    /** The venue listing's destination, or null when unresolved. */
     destination: VenueOptionsDestinationSchema.nullable().describe(
         'Destination summary (id, name, slug)'
     )
@@ -39,7 +39,7 @@ export const VenueOptionsItemSchema = EntityOptionsItemSchema.extend({
 export type VenueOptionsItem = z.infer<typeof VenueOptionsItemSchema>;
 
 /**
- * Wrapper schema for the gastronomy `/options` response payload.
+ * Wrapper schema for the venue `/options` response payload.
  */
 export const VenueOptionsListSchema = z.object({
     items: z.array(VenueOptionsItemSchema).describe('Matching gastronomy options')
