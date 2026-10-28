@@ -18,7 +18,7 @@ vi.mock('@repo/service-core', async (importActual) => {
             vi.fn().mockImplementation(function () {
                 return { getById: mockGetById };
             }),
-            { ENTITY_NAME: 'gastronomy' }
+            { ENTITY_NAME: 'venue' }
         ),
         QrCodeService: vi.fn().mockImplementation(function () {
             return { getOrCreateForEntity: mockGetOrCreateForEntity };

@@ -199,7 +199,7 @@ describe('SPEC-063 T-058 — cross-cutting lifecycleState strip on public endpoi
                 cleanliness: 4,
                 hospitality: 5,
                 culturalOffer: 4,
-                gastronomy: 5,
+                venue: 5,
                 affordability: 3,
                 nightlife: 4,
                 infrastructure: 4,

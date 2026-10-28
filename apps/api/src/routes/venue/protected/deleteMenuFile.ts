@@ -44,7 +44,7 @@ export const protectedDeleteVenueMenuFileRoute = createProtectedRoute({
     },
     summary: 'Remove the uploaded menu photo or PDF',
     description:
-        'Clears the listing’s uploaded menu file and deletes the stored asset. Owner-only, and requires the manage_venue_menu entitlement granted by the professional gastronomy plan and above. The structured menu and the external link are untouched.',
+        'Clears the listing’s uploaded menu file and deletes the stored asset. Owner-only, and requires the manage_venue_menu entitlement granted by the professional venue plan and above. The structured menu and the external link are untouched.',
     tags: ['Venue', 'Venue Menu'],
     requestParams: {
         id: z.string().uuid({ message: 'zodError.common.id.invalidUuid' })

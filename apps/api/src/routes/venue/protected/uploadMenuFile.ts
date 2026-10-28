@@ -286,7 +286,7 @@ export const protectedUploadVenueMenuFileRoute = createProtectedRoute({
             createSlidingWindowPerUserRateLimit({
                 windowMs: 60_000,
                 max: MENU_FILE_UPLOAD_RATE_LIMIT_MAX,
-                keyPrefix: 'upload:gastronomy-menu-file'
+                keyPrefix: 'upload:venue-menu-file'
             })
         ]
     }

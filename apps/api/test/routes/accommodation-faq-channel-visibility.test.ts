@@ -24,7 +24,7 @@
  *
  * Only `accommodation_faqs` carries `is_visible_on_listing` / `is_usable_by_ai`
  * (verified against the production schema). `destination_faqs`,
- * `gastronomy_faqs` and `experience_faqs` have no such columns and no UI for
+ * `venue_faqs` and `experience_faqs` have no such columns and no UI for
  * them; adding the flags there is HOS-400. For those entities the correct
  * behaviour is a `400`, not a silent drop — asserted in
  * `packages/schemas/test/common/faq-channel-visibility-payload.test.ts` at the

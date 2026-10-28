@@ -245,8 +245,8 @@ The following entities use the three-tier structure:
 | `post-sponsor` | no | no | yes (admin-only) |
 | `owner-promotion` | yes (legacy router) | no | yes |
 | `views` | yes (capture only) | yes (read own/all) | no |
-| `gastronomy` | yes | yes | yes |
-| `gastronomy/reviews` | yes (approved only) | yes (create) | yes (full moderation) |
+| `venue` | yes | yes | yes |
+| `venue/reviews` | yes (approved only) | yes (create) | yes (full moderation) |
 | `experience` | yes | yes | yes |
 | `experience/reviews` | yes (approved only) | yes (create) | yes (full moderation) |
 | `accommodation/external-listings` | no | yes (owner CRUD) | no |
@@ -532,71 +532,71 @@ dedup — see privacy note). The `window` query param is required (`7d` or `30d`
 
 ---
 
-## Gastronomy Routes (SPEC-239)
+## Venue Routes (SPEC-239)
 
-Gastronomy listings follow the standard three-tier structure mounted at:
+Venue listings follow the standard three-tier structure mounted at:
 
-- `/api/v1/public/gastronomies` — public reads, no auth
-- `/api/v1/protected/gastronomies` — owner-scoped edits, session required
-- `/api/v1/admin/gastronomies` — full CRUD, `PermissionEnum.GASTRONOMY_*` / `EXPERIENCE_*`
+- `/api/v1/public/venues` — public reads, no auth
+- `/api/v1/protected/venues` — owner-scoped edits, session required
+- `/api/v1/admin/venues` — full CRUD, `PermissionEnum.VENUE_*` / `EXPERIENCE_*`
 
 Reviews have their own admin sub-router mounted at
-`/api/v1/admin/gastronomies/reviews`.
+`/api/v1/admin/venues/reviews`.
 
 ### Public tier
 
 | Method | Path | Notes |
 |--------|------|-------|
-| `GET` | `/api/v1/public/gastronomies` | Paginated list (filter by type, priceRange, destinationId, isFeatured, ownerId) |
-| `GET` | `/api/v1/public/gastronomies/{id}` | Get by UUID; 404 when not publicly visible |
-| `GET` | `/api/v1/public/gastronomies/slug/{slug}` | Get by URL slug; null when not found |
-| `GET` | `/api/v1/public/gastronomies/destination/{destinationId}` | Paginated list filtered by destination |
-| `GET` | `/api/v1/public/gastronomies/{gastronomyId}/faqs` | Ordered FAQ list (displayOrder ASC NULLS LAST) |
-| `GET` | `/api/v1/public/gastronomies/{gastronomyId}/reviews` | Paginated APPROVED-only reviews |
+| `GET` | `/api/v1/public/venues` | Paginated list (filter by type, priceRange, destinationId, isFeatured, ownerId) |
+| `GET` | `/api/v1/public/venues/{id}` | Get by UUID; 404 when not publicly visible |
+| `GET` | `/api/v1/public/venues/slug/{slug}` | Get by URL slug; null when not found |
+| `GET` | `/api/v1/public/venues/destination/{destinationId}` | Paginated list filtered by destination |
+| `GET` | `/api/v1/public/venues/{venueId}/faqs` | Ordered FAQ list (displayOrder ASC NULLS LAST) |
+| `GET` | `/api/v1/public/venues/{venueId}/reviews` | Paginated APPROVED-only reviews |
 
 ### Protected tier (session required, owner-scoped)
 
 | Method | Path | Permission | Notes |
 |--------|------|-----------|-------|
-| `GET` | `/api/v1/protected/gastronomies/mine` | Auth only (owner-scoped) | Returns the session owner's OWN listings as summaries; `listOwn` hard-scopes to ownerId. Registered before `/{id}` (SPEC-249) |
-| `GET` | `/api/v1/protected/gastronomies/{id}` | Auth only | Returns `GastronomyProtectedSchema` (includes ownerId, contactInfo, audit fields) |
-| `PATCH` | `/api/v1/protected/gastronomies/{id}` | `GASTRONOMY_EDIT_OWN` (single perm, SPEC-253 D2=b) | Operational fields only; identity fields silently stripped by Zod |
-| `POST` | `/api/v1/protected/gastronomies/{id}/faqs` | `GASTRONOMY_EDIT_OWN` | displayOrder auto-assigned as max+1 |
-| `PUT` | `/api/v1/protected/gastronomies/{id}/faqs/{faqId}` | `GASTRONOMY_EDIT_OWN` | Update existing FAQ |
-| `DELETE` | `/api/v1/protected/gastronomies/{id}/faqs/{faqId}` | Auth only | Removal always allowed |
-| `PUT` | `/api/v1/protected/gastronomies/{id}/faqs/reorder` | `GASTRONOMY_EDIT_OWN` | Bulk displayOrder update |
-| `POST` | `/api/v1/protected/gastronomies/{gastronomyId}/reviews` | Auth only | Review starts in PENDING state; one per user per listing enforced |
+| `GET` | `/api/v1/protected/venues/mine` | Auth only (owner-scoped) | Returns the session owner's OWN listings as summaries; `listOwn` hard-scopes to ownerId. Registered before `/{id}` (SPEC-249) |
+| `GET` | `/api/v1/protected/venues/{id}` | Auth only | Returns `VenueProtectedSchema` (includes ownerId, contactInfo, audit fields) |
+| `PATCH` | `/api/v1/protected/venues/{id}` | `VENUE_EDIT_OWN` (single perm, SPEC-253 D2=b) | Operational fields only; identity fields silently stripped by Zod |
+| `POST` | `/api/v1/protected/venues/{id}/faqs` | `VENUE_EDIT_OWN` | displayOrder auto-assigned as max+1 |
+| `PUT` | `/api/v1/protected/venues/{id}/faqs/{faqId}` | `VENUE_EDIT_OWN` | Update existing FAQ |
+| `DELETE` | `/api/v1/protected/venues/{id}/faqs/{faqId}` | Auth only | Removal always allowed |
+| `PUT` | `/api/v1/protected/venues/{id}/faqs/reorder` | `VENUE_EDIT_OWN` | Bulk displayOrder update |
+| `POST` | `/api/v1/protected/venues/{venueId}/reviews` | Auth only | Review starts in PENDING state; one per user per listing enforced |
 
 ### Admin tier
 
 | Method | Path | `requiredPermissions` | Notes |
 |--------|------|-----------------------|-------|
-| `GET` | `/api/v1/admin/gastronomies` | `GASTRONOMY_VIEW_ALL` | Paginated list with full admin details |
-| `POST` | `/api/v1/admin/gastronomies` | `GASTRONOMY_CREATE` | Create listing |
-| `GET` | `/api/v1/admin/gastronomies/options` | Panel access only | Lightweight `{id, label, slug, type, destination}` for relation selectors |
-| `POST` | `/api/v1/admin/gastronomies/batch` | `GASTRONOMY_VIEW_ALL` | Resolve multiple UUIDs to display labels |
-| `GET` | `/api/v1/admin/gastronomies/{id}` | `GASTRONOMY_VIEW_ALL` | Full admin details |
-| `PUT` | `/api/v1/admin/gastronomies/{id}` | `GASTRONOMY_EDIT_ALL` | Full update |
-| `PATCH` | `/api/v1/admin/gastronomies/{id}` | `GASTRONOMY_EDIT_ALL` | Partial update |
-| `POST` | `/api/v1/admin/gastronomies/{id}/purge` | `LISTING_PURGE_ON_REQUEST` (V5 chain, evaluated on the owner) | Action 23: runs PB12 at the owner's request, with a mandatory reason. The only staff delete; there is no soft delete, hard delete or restore of a listing (HOS-1477, AC:V6:25) |
-| `POST` | `/api/v1/admin/gastronomies/{id}/assign-owner` | `GASTRONOMY_EDIT_ALL` | Set or replace the `GASTRONOMY_OWNER` |
-| `GET` | `/api/v1/admin/gastronomies/{id}/faqs` | `GASTRONOMY_VIEW_ALL` | All FAQs including drafts |
-| `POST` | `/api/v1/admin/gastronomies/{id}/faqs` | `GASTRONOMY_EDIT_ALL` | Add FAQ |
-| `PUT` | `/api/v1/admin/gastronomies/{id}/faqs/{faqId}` | `GASTRONOMY_EDIT_ALL` | Update FAQ |
-| `DELETE` | `/api/v1/admin/gastronomies/{id}/faqs/{faqId}` | `GASTRONOMY_EDIT_ALL` | Remove FAQ |
-| `PATCH` | `/api/v1/admin/gastronomies/{id}/faqs/reorder` | `GASTRONOMY_EDIT_ALL` | Bulk displayOrder update |
+| `GET` | `/api/v1/admin/venues` | `VENUE_VIEW_ALL` | Paginated list with full admin details |
+| `POST` | `/api/v1/admin/venues` | `VENUE_CREATE` | Create listing |
+| `GET` | `/api/v1/admin/venues/options` | Panel access only | Lightweight `{id, label, slug, type, destination}` for relation selectors |
+| `POST` | `/api/v1/admin/venues/batch` | `VENUE_VIEW_ALL` | Resolve multiple UUIDs to display labels |
+| `GET` | `/api/v1/admin/venues/{id}` | `VENUE_VIEW_ALL` | Full admin details |
+| `PUT` | `/api/v1/admin/venues/{id}` | `VENUE_EDIT_ALL` | Full update |
+| `PATCH` | `/api/v1/admin/venues/{id}` | `VENUE_EDIT_ALL` | Partial update |
+| `POST` | `/api/v1/admin/venues/{id}/purge` | `LISTING_PURGE_ON_REQUEST` (V5 chain, evaluated on the owner) | Action 23: runs PB12 at the owner's request, with a mandatory reason. The only staff delete; there is no soft delete, hard delete or restore of a listing (HOS-1477, AC:V6:25) |
+| `POST` | `/api/v1/admin/venues/{id}/assign-owner` | `VENUE_EDIT_ALL` | Set or replace the `VENUE_OWNER` |
+| `GET` | `/api/v1/admin/venues/{id}/faqs` | `VENUE_VIEW_ALL` | All FAQs including drafts |
+| `POST` | `/api/v1/admin/venues/{id}/faqs` | `VENUE_EDIT_ALL` | Add FAQ |
+| `PUT` | `/api/v1/admin/venues/{id}/faqs/{faqId}` | `VENUE_EDIT_ALL` | Update FAQ |
+| `DELETE` | `/api/v1/admin/venues/{id}/faqs/{faqId}` | `VENUE_EDIT_ALL` | Remove FAQ |
+| `PATCH` | `/api/v1/admin/venues/{id}/faqs/reorder` | `VENUE_EDIT_ALL` | Bulk displayOrder update |
 
-### Gastronomy Reviews — Admin
+### Venue Reviews — Admin
 
-Reviews are mounted on a separate sub-router at `/api/v1/admin/gastronomies/reviews`.
+Reviews are mounted on a separate sub-router at `/api/v1/admin/venues/reviews`.
 
 | Method | Path | `requiredPermissions` | Notes |
 |--------|------|-----------------------|-------|
-| `GET` | `/api/v1/admin/gastronomies/reviews` | `GASTRONOMY_MODERATE_REVIEW` | All reviews including PENDING and REJECTED |
-| `GET` | `/api/v1/admin/gastronomies/reviews/{id}` | `GASTRONOMY_MODERATE_REVIEW` | Full review with moderation fields |
-| `PUT` | `/api/v1/admin/gastronomies/reviews/{id}` | `GASTRONOMY_EDIT_ALL` + `GASTRONOMY_MODERATE_REVIEW` | Update review content |
-| `DELETE` | `/api/v1/admin/gastronomies/reviews/{id}` | `GASTRONOMY_MODERATE_REVIEW` | Soft delete |
-| `POST` | `/api/v1/admin/gastronomies/reviews/{id}/moderate` | `GASTRONOMY_MODERATE_REVIEW` | Approve or reject; triggers rating recompute |
+| `GET` | `/api/v1/admin/venues/reviews` | `VENUE_MODERATE_REVIEW` | All reviews including PENDING and REJECTED |
+| `GET` | `/api/v1/admin/venues/reviews/{id}` | `VENUE_MODERATE_REVIEW` | Full review with moderation fields |
+| `PUT` | `/api/v1/admin/venues/reviews/{id}` | `VENUE_EDIT_ALL` + `VENUE_MODERATE_REVIEW` | Update review content |
+| `DELETE` | `/api/v1/admin/venues/reviews/{id}` | `VENUE_MODERATE_REVIEW` | Soft delete |
+| `POST` | `/api/v1/admin/venues/reviews/{id}/moderate` | `VENUE_MODERATE_REVIEW` | Approve or reject; triggers rating recompute |
 
 ---
 
@@ -606,7 +606,7 @@ Experience listings follow the standard three-tier structure mounted at:
 
 - `/api/v1/public/experiences` — public reads, no auth
 - `/api/v1/protected/experiences` — owner-scoped edits, session required
-- `/api/v1/admin/experiences` — full CRUD, `PermissionEnum.GASTRONOMY_*`
+- `/api/v1/admin/experiences` — full CRUD, `PermissionEnum.VENUE_*`
 
 Reviews have their own admin sub-router mounted at
 `/api/v1/admin/experiences/reviews`.
@@ -669,29 +669,29 @@ Reviews are mounted on a separate sub-router at `/api/v1/admin/experiences/revie
 
 ---
 
-## Gastronomy and Experience Owner Routes (HOS-166)
+## Venue and Experience Owner Routes (HOS-166)
 
 There is no umbrella router for these two verticals. The empty public and admin tiers were deleted, and the
 owner self-service routes live next to the rest of each vertical, following the
 accommodation pattern (`POST /` to create, `POST /{id}/purge` to delete through PB12):
 
-- `/api/v1/protected/gastronomies` (OpenAPI tag `Gastronomy`)
+- `/api/v1/protected/venues` (OpenAPI tag `Venue`)
 - `/api/v1/protected/experiences` (OpenAPI tag `Experience`)
 
 ### Protected tier
 
 Every route here authorises on **row ownership** (`actor.id === listing.ownerId`)
-on top of `GASTRONOMY_EDIT_OWN` / `EXPERIENCE_EDIT_OWN`, except the two routes below that
+on top of `VENUE_EDIT_OWN` / `EXPERIENCE_EDIT_OWN`, except the two routes below that
 declare no permission on purpose. The permission says "may edit *a* listing of their
 own" and does not identify *which*, so on its own it would let any
-`GASTRONOMY_OWNER` / `EXPERIENCE_OWNER` act on any listing. A listing that is somebody
+`VENUE_OWNER` / `EXPERIENCE_OWNER` act on any listing. A listing that is somebody
 else's answers the same **404** as one that does not exist (HOS-600).
 
 | Method | Path | `requiredPermissions` | Notes |
 |--------|------|-----------------------|-------|
-| `POST` | `/api/v1/protected/gastronomies/` | none (authenticated session) | Owner self-service create (HOS-687: this is how an account BECOMES an owner). The listing is born `PRIVATE`/`DRAFT`; `createForOwner` grants the `GASTRONOMY_OWNER` role in the same transaction. |
+| `POST` | `/api/v1/protected/venues/` | none (authenticated session) | Owner self-service create (HOS-687: this is how an account BECOMES an owner). The listing is born `PRIVATE`/`DRAFT`; `createForOwner` grants the `VENUE_OWNER` role in the same transaction. |
 | `POST` | `/api/v1/protected/experiences/` | none (authenticated session) | Same, for `EXPERIENCE_OWNER`. The CHECKED owner-create schema also enforces the pricing rule (400). |
-| `POST` | `/api/v1/protected/gastronomies/{id}/purge` | none (`listingAccess` DELETE: ownership is the gate) | PB12: the owner deletes one of their own listings; it moves to `PURGED` and its content is erased for good. A foreign listing answers **404**. Replaced the retired `DELETE /{id}` draft delete (HOS-1477, AC:V6:25). |
+| `POST` | `/api/v1/protected/venues/{id}/purge` | none (`listingAccess` DELETE: ownership is the gate) | PB12: the owner deletes one of their own listings; it moves to `PURGED` and its content is erased for good. A foreign listing answers **404**. Replaced the retired `DELETE /{id}` draft delete (HOS-1477, AC:V6:25). |
 | `POST` | `/api/v1/protected/experiences/{id}/purge` | none (`listingAccess` DELETE: ownership is the gate) | Same, for experiences. |
 
 ---

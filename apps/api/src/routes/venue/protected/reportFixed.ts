@@ -34,9 +34,8 @@ export const protectedVenueReportFixedRoute = createProtectedRoute({
     listingAccess: { vertical: VerticalEnum.VENUE, operation: 'READ_OWN', idParam: 'id' },
     options: { middlewares: [ownerAccess] },
     summary: 'Report a fix request as fixed',
-    description:
-        'The owner reports the open fix request of their gastronomy listing as fixed (row 30).',
-    tags: ['Gastronomies'],
+    description: 'The owner reports the open fix request of their venue listing as fixed (row 30).',
+    tags: ['Venues'],
     requestParams: { id: z.string().uuid() },
     responseSchema: ReportFixedResponseSchema,
     handler: async (_ctx: Context, params: Record<string, unknown>) =>

@@ -171,7 +171,7 @@ export const protectedGetVenueMenuQrRoute = createProtectedRoute({
             createSlidingWindowPerUserRateLimit({
                 windowMs: 60_000,
                 max: MENU_QR_RATE_LIMIT_MAX,
-                keyPrefix: 'menu-qr:gastronomy'
+                keyPrefix: 'menu-qr:venue'
             })
         ]
     }

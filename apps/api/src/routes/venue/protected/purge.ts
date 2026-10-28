@@ -28,7 +28,7 @@ export const protectedPurgeVenueRoute = createProtectedRoute({
     options: { middlewares: [ownerAccess] },
     summary: 'Purge own venue listing',
     description: 'Permanently removes listing content through PB12.',
-    tags: ['Gastronomies'],
+    tags: ['Venues'],
     requestParams: { id: z.string().uuid() },
     responseSchema: z.object({ purged: z.literal(true) }),
     handler: async (ctx: Context, params: Record<string, unknown>) =>

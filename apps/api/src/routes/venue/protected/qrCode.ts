@@ -90,7 +90,7 @@ export async function handleGetVenueQrCode(
     if (!entity.slug) {
         throw new ServiceError(
             ServiceErrorCode.INTERNAL_ERROR,
-            'gastronomy listing has no slug to build a QR code for'
+            'venue listing has no slug to build a QR code for'
         );
     }
 

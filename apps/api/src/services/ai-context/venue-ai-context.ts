@@ -280,7 +280,7 @@ export async function assembleVenueContext(
 
     const venue = rows[0];
     if (!venue) {
-        throw new ServiceError(ServiceErrorCode.NOT_FOUND, `Gastronomy '${entityId}' not found.`);
+        throw new ServiceError(ServiceErrorCode.NOT_FOUND, `Venue '${entityId}' not found.`);
     }
 
     const [faqs, menuItems] = await Promise.all([

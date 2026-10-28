@@ -14,7 +14,7 @@ export const protectedReactivateVenueRoute = createProtectedRoute({
     path: '/{id}/reactivate',
     listingAccess: { vertical: VerticalEnum.VENUE, operation: 'REACTIVATE', idParam: 'id' },
     emailUnverifiedOperation: 'REACTIVATE_LISTING',
-    summary: 'Reactivate archived gastronomy listing',
+    summary: 'Reactivate archived venue listing',
     description: 'Moves an archived listing back to DRAFT through PB8.',
     tags: ['Venue'],
     requestParams: { id: z.string().uuid() },

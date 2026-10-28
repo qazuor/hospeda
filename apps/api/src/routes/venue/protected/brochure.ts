@@ -96,7 +96,7 @@ export async function handleGetVenueBrochure(
         // drift worth seeing in the logs.
         throw new ServiceError(
             ServiceErrorCode.INTERNAL_ERROR,
-            'gastronomy listing could not be projected for printing'
+            'venue listing could not be projected for printing'
         );
     }
 

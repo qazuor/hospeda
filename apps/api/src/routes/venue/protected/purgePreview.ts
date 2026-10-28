@@ -29,7 +29,7 @@ export const protectedVenuePurgePreviewRoute = createProtectedRoute({
     options: { middlewares: [ownerAccess] },
     summary: 'Preview add-ons lost when purging own venue listing',
     description: 'Lists live listing add-ons that remain after a purge.',
-    tags: ['Gastronomies'],
+    tags: ['Venues'],
     requestParams: { id: z.string().uuid() },
     responseSchema: ListingPurgePreviewResponseSchema,
     handler: async (ctx: Context, params: Record<string, unknown>) =>

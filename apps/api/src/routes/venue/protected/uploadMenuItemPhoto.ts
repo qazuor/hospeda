@@ -78,7 +78,7 @@ export const protectedUploadVenueMenuItemPhotoRoute = createProtectedRoute({
     },
     summary: 'Upload a photo for one dish of the menu',
     description:
-        'Uploads a single dish photo and returns its delivery URL and Cloudinary public id. The caller attaches them to a dish in the next PUT /{id}/menu. Owner-only, and requires the menu_item_photos entitlement granted by the premium gastronomy plan.',
+        'Uploads a single dish photo and returns its delivery URL and Cloudinary public id. The caller attaches them to a dish in the next PUT /{id}/menu. Owner-only, and requires the menu_item_photos entitlement granted by the premium venue plan.',
     tags: ['Venue', 'Venue Menu'],
     requestParams: {
         id: z.string().uuid({ message: 'zodError.common.id.invalidUuid' })
@@ -203,7 +203,7 @@ export const protectedUploadVenueMenuItemPhotoRoute = createProtectedRoute({
             createSlidingWindowPerUserRateLimit({
                 windowMs: 60_000,
                 max: MENU_ITEM_PHOTO_UPLOAD_RATE_LIMIT_MAX,
-                keyPrefix: 'upload:gastronomy-menu-item-photo'
+                keyPrefix: 'upload:venue-menu-item-photo'
             })
         ]
     }

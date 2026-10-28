@@ -1,11 +1,11 @@
 /**
- * Protected gastronomy routes (T-043 / T-044 / HOS-372)
+ * Protected venue routes (T-043 / T-044 / HOS-372)
  * Routes that require authentication.
  *
  * Routes with overlapping param patterns are registered from most specific to
  * most general, matching the convention the rest of the codebase follows:
  * - /{id}/faqs/reorder (PUT) before /{id}/faqs/{faqId} (PUT/DELETE).
- * - /{gastronomyId}/reviews (POST) before /{id} (GET/PATCH).
+ * - /{venueId}/reviews (POST) before /{id} (GET/PATCH).
  * - /{id}/media/reorder (PATCH) before /{id}/media/{mediaId} (DELETE).
  * - /{id}/media/{mediaId}/featured (PUT) before /{id}/media/{mediaId} (DELETE).
  *
@@ -14,7 +14,7 @@
  * insertion order. Verified by mutation on the post/event twin of these routes
  * (registering the DELETE first leaves
  * `test/routes/post-protected-media.test.ts` green). There is no equivalent
- * gastronomy/experience-side route test to re-run that mutation against here, but it is the
+ * venue/experience-side route test to re-run that mutation against here, but it is the
  * same Hono router. The other two entries are very likely the same, but were
  * not verified — do not read them as proven.
  */
@@ -97,7 +97,7 @@ app.route('/', protectedGetVenueQrCodeRoute);
 // entries: Hono resolves a static segment ahead of a param at the same
 // position regardless of insertion order.
 //
-// GET /{id}/menu — read the carta. NOT entitlement-gated: every gastronomy
+// GET /{id}/menu — read the carta. NOT entitlement-gated: every venue
 // tier sees its own menu, and only writing the structured half is paid.
 app.route('/', protectedGetVenueMenuRoute);
 
@@ -137,7 +137,7 @@ app.route('/', protectedGetVenueMenuQrScansRoute);
 // before /{id} for the same DEFENSIVE reason as the entries above.
 //
 // GET /{id}/daily-specials — read them, UNFILTERED by the window. NOT
-// entitlement-gated: every gastronomy tier sees its own specials, and only
+// entitlement-gated: every venue tier sees its own specials, and only
 // publishing them is paid.
 app.route('/', protectedGetVenueDailySpecialsRoute);
 
@@ -177,7 +177,7 @@ app.route('/', protectedUpdateVenueFaqRoute);
 // DELETE /{id}/faqs/{faqId} — Remove FAQ.
 app.route('/', protectedRemoveVenueFaqRoute);
 
-// POST /{gastronomyId}/reviews — Tourist creates a review.
+// POST /{venueId}/reviews — Tourist creates a review.
 app.route('/', protectedCreateVenueReviewRoute);
 
 // Media management (HOS-372) — gated on VENUE_EDIT_OWN/VENUE_EDIT_ALL

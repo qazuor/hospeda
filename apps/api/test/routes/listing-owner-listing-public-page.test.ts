@@ -85,7 +85,7 @@ function buildApp(
 
 const CASES = [
     {
-        label: 'gastronomy',
+        label: 'venue',
         service: VenueService,
         importRoute: async () => {
             const mod = await import('../../src/routes/venue/protected/listMine.js');

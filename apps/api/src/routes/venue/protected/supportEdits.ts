@@ -34,7 +34,7 @@ export const protectedVenueSupportEditsRoute = createProtectedRoute({
     options: { middlewares: [ownerAccess] },
     summary: 'List support edits of own venue listing',
     description: 'The most recent edits support made to the content of the listing (row 26).',
-    tags: ['Gastronomies'],
+    tags: ['Venues'],
     requestParams: { id: z.string().uuid() },
     responseSchema: ListingSupportEditsResponseSchema,
     handler: async (_ctx: Context, params: Record<string, unknown>) =>

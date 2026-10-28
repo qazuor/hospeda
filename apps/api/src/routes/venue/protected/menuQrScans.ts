@@ -108,7 +108,7 @@ export const protectedGetVenueMenuQrScansRoute = createProtectedRoute({
         idParam: 'id',
         step6Key: 'menu_qr_scan_metrics'
     },
-    summary: 'Get the scan aggregate for a gastronomy listing’s menu QR',
+    summary: 'Get the scan aggregate for a venue listing’s menu QR',
     description:
         'Returns the total scans, a gap-filled daily series, and device/OS/language breakdowns ' +
         'for the venue’s menu QR over a rolling window (7d or 30d, default 30d). A venue with no ' +
@@ -128,7 +128,7 @@ export const protectedGetVenueMenuQrScansRoute = createProtectedRoute({
             createSlidingWindowPerUserRateLimit({
                 windowMs: 60_000,
                 max: MENU_QR_SCANS_RATE_LIMIT_MAX,
-                keyPrefix: 'menu-qr-scans:gastronomy'
+                keyPrefix: 'menu-qr-scans:venue'
             })
         ]
     }

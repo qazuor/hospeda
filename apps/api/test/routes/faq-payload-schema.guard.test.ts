@@ -60,7 +60,7 @@ const ROUTES_DIR = join(__dirname, '../../src/routes');
  * (HOS-400 PR 1) can honour `isUsableByAi`. `destination` deliberately has no
  * AI chat and stays out.
  */
-const ENTITIES_WITH_FLAGS = new Set(['accommodation', 'gastronomy', 'experience']);
+const ENTITIES_WITH_FLAGS = new Set(['accommodation', 'venue', 'experience']);
 
 /**
  * Every FAQ mutating route file present today, as `<entity>/<tier>/<file>`.
@@ -126,7 +126,7 @@ function requestBodySchemaOf(source: string): string | null {
 /** The entity segment of a `<entity>/<tier>/<file>` route path. */
 function entityOf(routePath: string): string {
     const entity = routePath.split('/')[0] as string;
-    return entity === 'venue' ? 'gastronomy' : entity;
+    return entity === 'venue' ? 'venue' : entity;
 }
 
 const routes = discoverFaqMutationRoutes();

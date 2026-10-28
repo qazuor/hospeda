@@ -161,8 +161,8 @@ describe('GET /api/v1/public/posts — category/categories backward compat + edg
     // -----------------------------------------------------------------------
 
     describe('both `category` and `categories` present: array wins', () => {
-        it('?category=CULTURE&categories=GASTRONOMY,NATURE returns GASTRONOMY+NATURE, NOT CULTURE', async () => {
-            const res = await app.request(`${BASE}?category=CULTURE&categories=GASTRONOMY,NATURE`, {
+        it('?category=CULTURE&categories=VENUE,NATURE returns VENUE+NATURE, NOT CULTURE', async () => {
+            const res = await app.request(`${BASE}?category=CULTURE&categories=VENUE,NATURE`, {
                 headers: { 'user-agent': 'vitest', accept: 'application/json' }
             });
 
@@ -171,7 +171,7 @@ describe('GET /api/v1/public/posts — category/categories backward compat + edg
             const categories = (body.data.items as Array<{ category: string }>).map(
                 (item) => item.category
             );
-            expect(categories).toContain('GASTRONOMY');
+            expect(categories).toContain('VENUE');
             expect(categories).toContain('NATURE');
             expect(categories).not.toContain('CULTURE');
         });

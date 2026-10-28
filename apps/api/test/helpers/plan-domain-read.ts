@@ -55,7 +55,7 @@ let existingSubscriptionRows: ReadonlyArray<Record<string, unknown>> = [];
  *
  * @example
  * ```ts
- * mockPlanDomainRead(ProductDomainEnum.GASTRONOMY);
+ * mockPlanDomainRead(ProductDomainEnum.VENUE);
  * mockExistingSubscriptionsRead([
  *     { id: 'sub_1', status: 'active', productDomain: 'accommodation' }
  * ]);

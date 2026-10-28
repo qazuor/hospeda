@@ -95,7 +95,7 @@ export async function handleGetVenueQrSheet(
     if (!entity.slug) {
         throw new ServiceError(
             ServiceErrorCode.INTERNAL_ERROR,
-            'gastronomy listing has no slug to print a QR sheet for'
+            'venue listing has no slug to print a QR sheet for'
         );
     }
 

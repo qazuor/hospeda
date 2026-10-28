@@ -217,7 +217,7 @@ const OWNED_ENTITY_CASES = [
         }
     },
     {
-        label: 'gastronomy',
+        label: 'venue',
         service: VenueService,
         importRoute: async () => {
             const mod = await import('../../src/routes/venue/protected/getById.js');
@@ -293,7 +293,7 @@ const QR_SHEET_CASES = [
         }
     },
     {
-        label: 'gastronomy',
+        label: 'venue',
         service: VenueService,
         importRoute: async () => {
             const mod = await import('../../src/routes/venue/protected/qrSheet.js');
@@ -394,7 +394,7 @@ const QR_CODE_CASES = [
         }
     },
     {
-        label: 'gastronomy',
+        label: 'venue',
         service: VenueService,
         importRoute: async () => {
             const mod = await import('../../src/routes/venue/protected/qrCode.js');

@@ -32,7 +32,7 @@ import { z } from 'zod';
  * MercadoPago preapproval (HOS-847), never a customer's real plan subscription
  * — there is nothing for a caller to legitimately scope a read to there.
  *
- * `GASTRONOMY` / `EXPERIENCE` scope to one venue or experience vertical each. The
+ * `VENUE` / `EXPERIENCE` scope to one venue or experience vertical each. The
  * transitional umbrella value is retired (HOS-695) — there is no longer
  * a way to scope a read to "any venue or experience vertical" here. See
  * `subscriptionMatchesDomain`.
