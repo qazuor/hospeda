@@ -51,7 +51,7 @@ const assembleAccommodationChatContext: ChatContextAssembler = async (input) => 
 /** Maps each chat entity type to the assembler that builds its context. */
 export const CHAT_CONTEXT_ASSEMBLERS: ChatContextAssemblerMap = {
     accommodation: assembleAccommodationChatContext,
-    gastronomy: assembleVenueContext,
+    venue: assembleVenueContext,
     experience: assembleExperienceContext
 };
 
@@ -69,6 +69,6 @@ export const CHAT_CONTEXT_ASSEMBLERS: ChatContextAssemblerMap = {
  */
 export const CHAT_FEATURE_BY_ENTITY_TYPE: Readonly<Record<AiChatEntityType, AiFeature>> = {
     accommodation: 'chat',
-    gastronomy: 'chat_venue',
+    venue: 'chat_venue',
     experience: 'chat_experience'
 };
