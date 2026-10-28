@@ -141,10 +141,10 @@ describe('plan index — the five audiences are told apart without reading (AC-2
 
         expect(declared.map((match) => match[1]).sort()).toEqual([
             'experience',
-            'gastronomy',
             'host',
             'partner',
-            'tourist'
+            'tourist',
+            'venue'
         ]);
         // Two audiences sharing an ink distinguish nothing.
         expect(new Set(declared.map((match) => match[2]?.trim())).size).toBe(5);
@@ -766,7 +766,7 @@ describe('plan index — the trial line stands out, the price gains a step (3 an
 // HOS-943 adjustment 5 — "restaurante" was the vertical's only door
 // ---------------------------------------------------------------------------
 
-describe('the gastronomy card does not narrow the vertical to restaurants', () => {
+describe('the venue card does not narrow the vertical to restaurants', () => {
     const LOCALES = ['es', 'en', 'pt'] as const;
 
     const venueCard = (locale: string): Record<string, string> => {
@@ -775,9 +775,9 @@ describe('the gastronomy card does not narrow the vertical to restaurants', () =
             `../../../../../packages/i18n/src/locales/${locale}/pricing.json`
         );
         const parsed = JSON.parse(readFileSync(file, 'utf8')) as {
-            index?: { cards?: { gastronomy?: Record<string, unknown> } };
+            index?: { cards?: { venue?: Record<string, unknown> } };
         };
-        const card = parsed.index?.cards?.gastronomy ?? {};
+        const card = parsed.index?.cards?.venue ?? {};
 
         return Object.fromEntries(
             Object.entries(card)
@@ -827,7 +827,7 @@ describe('the gastronomy card does not narrow the vertical to restaurants', () =
             'utf8'
         );
 
-        expect(audiencePlans).toContain("gastronomy: 'planes/comer-y-salir'");
+        expect(audiencePlans).toContain("venue: 'planes/comer-y-salir'");
         expect(STATIC_SITEMAP_PAGES.map((page) => page.path)).not.toContain(
             '/publicar-restaurante/'
         );

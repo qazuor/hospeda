@@ -18,7 +18,7 @@
  * handful of owner-optional social links plus a menu URL, and picking "the
  * first one that resolves" would sometimes point an "accepts events" CTA at a
  * restaurant's YouTube channel. So the CTA is an in-page anchor
- * (`#gastro-contact`) to `VenueContactBlock` instead: no channel to pick,
+ * (`#venue-contact`) to `VenueContactBlock` instead: no channel to pick,
  * and no outbound href for the HOS-592/F-02 sanitization guard to apply to.
  */
 import { readFileSync } from 'node:fs';
@@ -107,7 +107,7 @@ describe('gastronomia/[slug].astro — accepts-events CTA (HOS-1055)', () => {
 
 describe('GastronomyEventsCta.astro (HOS-1055)', () => {
     it('is a same-page anchor to the contact block, not an external link', () => {
-        expect(EVENTS_CTA).toContain('href="#gastro-contact"');
+        expect(EVENTS_CTA).toContain('href="#venue-contact"');
         // No outbound markers — this is not an outbound link, so the
         // HOS-592/F-02 sanitization guard has nothing to check here.
         expect(EVENTS_CTA).not.toContain('target="_blank"');
@@ -132,6 +132,6 @@ describe('GastronomyEventsCta.astro (HOS-1055)', () => {
 
 describe('GastronomyContactBlock.astro — the CTA anchor target (HOS-1055)', () => {
     it('carries the stable id the events CTA anchors into', () => {
-        expect(CONTACT_BLOCK).toContain('id="gastro-contact"');
+        expect(CONTACT_BLOCK).toContain('id="venue-contact"');
     });
 });

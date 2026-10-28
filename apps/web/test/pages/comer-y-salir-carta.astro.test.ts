@@ -76,10 +76,10 @@ describe('carta.astro — reuses GastronomyMenu.astro verbatim', () => {
     });
 
     it('does NOT re-declare menu section/item markup of its own', () => {
-        // The carta section markup (`.gastro-menu__section`, dish list, etc.)
+        // The carta section markup (`.venue-menu__section`, dish list, etc.)
         // belongs to VenueMenu.astro alone — this page must not fork it.
-        expect(cartaSrc).not.toContain('gastro-menu__section');
-        expect(cartaSrc).not.toContain('gastro-menu__item');
+        expect(cartaSrc).not.toContain('venue-menu__section');
+        expect(cartaSrc).not.toContain('venue-menu__item');
     });
 });
 
