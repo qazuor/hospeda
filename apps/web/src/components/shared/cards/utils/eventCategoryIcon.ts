@@ -203,7 +203,7 @@ export const EVENT_CATEGORY_LABELS: Readonly<
  *
  * @example
  * ```ts
- * getEventCategoryLabel('venue', 'es') // 'Gastronomía'
+ * getEventCategoryLabel('gastronomy', 'es') // 'Gastronomía'
  * getEventCategoryLabel('MUSIC', 'en')       // 'Music'
  * getEventCategoryLabel('unknown', 'pt')     // 'Unknown'
  * ```

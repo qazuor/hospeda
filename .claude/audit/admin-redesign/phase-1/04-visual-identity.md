@@ -35,7 +35,7 @@ The admin and web **do NOT share design tokens today**. Only 3 hex values are sh
   - forest: `oklch(0.5 0.14 155)`
   - sand: `oklch(0.7 0.12 75)`
 - Dark mode via `[data-theme="dark"]` attribute, computed inversions preserving hue relationships
-- Semantic category colors (tourism teal, venue forest, wellness river) mapped to specific entity types
+- Semantic category colors (tourism teal, food forest, wellness river) mapped to specific entity types
 - Designed for tourism/hospitality mood — earthy, natural
 
 ### Concrete mismatch

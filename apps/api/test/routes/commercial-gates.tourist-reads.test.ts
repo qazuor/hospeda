@@ -267,7 +267,7 @@ describe('TEST:V5:33 tourist read and write gates', () => {
                               cleanliness: 5,
                               hospitality: 5,
                               culturalOffer: 5,
-                              venue: 5,
+                              gastronomy: 5,
                               affordability: 5,
                               nightlife: 5,
                               infrastructure: 5,

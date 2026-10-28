@@ -518,7 +518,7 @@ export interface DestinationReviewRating {
     readonly cleanliness: number;
     readonly hospitality: number;
     readonly culturalOffer: number;
-    readonly venue: number;
+    readonly gastronomy: number;
     readonly affordability: number;
     readonly nightlife: number;
     readonly infrastructure: number;
@@ -555,7 +555,7 @@ export const destinationReviewsApi = {
      *   destinationId: 'dest-uuid',
      *   body: {
      *     rating: { landscape: 5, attractions: 4, accessibility: 4, safety: 5,
-     *               cleanliness: 5, hospitality: 5, culturalOffer: 4, venue: 5,
+     *               cleanliness: 5, hospitality: 5, culturalOffer: 4, gastronomy: 5,
      *               affordability: 4, nightlife: 3, infrastructure: 4, environmentalCare: 4,
      *               wifiAvailability: 3, shopping: 3, beaches: 5, greenSpaces: 4,
      *               localEvents: 4, weatherSatisfaction: 5 },

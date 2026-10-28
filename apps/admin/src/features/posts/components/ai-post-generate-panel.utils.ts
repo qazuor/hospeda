@@ -26,7 +26,7 @@
 export const POST_CATEGORY_LABELS: Record<string, string> = {
     EVENTS: 'Eventos',
     CULTURE: 'Cultura',
-    VENUE: 'Gastronomía',
+    GASTRONOMY: 'Gastronomía',
     NATURE: 'Naturaleza',
     TOURISM: 'Turismo',
     GENERAL: 'General',

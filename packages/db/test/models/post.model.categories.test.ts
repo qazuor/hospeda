@@ -233,7 +233,7 @@ describe('PostModel — categories/category manual WHERE branch (HOS-96)', () =>
     // fixture set so the assertion covers actual filtering behavior, not just
     // WHERE-clause shape.
     // -----------------------------------------------------------------------
-    it('regression: ?categories=CULTURE,VENUE matches posts of EITHER category (union)', async () => {
+    it('regression: ?categories=CULTURE,GASTRONOMY matches posts of EITHER category (union)', async () => {
         const fixture = [
             { id: '1', category: 'CULTURE' },
             { id: '2', category: 'GASTRONOMY' },

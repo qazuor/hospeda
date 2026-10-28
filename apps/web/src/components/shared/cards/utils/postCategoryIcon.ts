@@ -83,7 +83,7 @@ export const POST_CATEGORY_ICON_COMPONENTS: Readonly<Record<string, ComponentTyp
  *
  * @example
  * ```astro
- * const CategoryIcon = getPostCategoryIconComponent('venue');
+ * const CategoryIcon = getPostCategoryIconComponent('gastronomy');
  * <CategoryIcon size={96} weight="duotone" aria-hidden="true" />
  * ```
  */

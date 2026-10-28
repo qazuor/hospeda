@@ -370,7 +370,7 @@ const DEST_RATING = {
     cleanliness: 4,
     hospitality: 5,
     culturalOffer: 4,
-    venue: 5,
+    gastronomy: 5,
     affordability: 4,
     nightlife: 3,
     infrastructure: 4,

@@ -64,7 +64,7 @@ describe('DestinationRatingBreakdown.astro', () => {
     });
 
     describe('dimension keys', () => {
-        it('should include landscape and venue dimensions', () => {
+        it('should include landscape and gastronomy dimensions', () => {
             expect(src).toContain("'landscape'");
             expect(src).toContain("'gastronomy'");
         });

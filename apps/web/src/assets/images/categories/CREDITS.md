@@ -9,7 +9,7 @@ All images sourced from [Pexels](https://www.pexels.com/) under the [Pexels Lice
 | Apartments | `apartments.jpg` | Artbovich | <https://www.pexels.com/photo/photo-of-a-room-with-chairs-and-a-sofa-6969990/> |
 | Music | `music.jpg` | Andrew Kota | <https://www.pexels.com/photo/man-playing-guitar-sitting-on-brown-log-4083503/> |
 | Culture | `culture.jpg` | Marcelo Gonzalez | <https://www.pexels.com/photo/historic-mansion-in-lobos-argentina-surrounded-by-lush-trees-31705744/> |
-| Venue | `gastronomy.jpg` legacy-name-allowed: existing image asset filename (HOS-1823) | Alex Dos Santos | <https://www.pexels.com/photo/traditional-argentine-asado-on-open-grill-37057972/> |
+| Food events | `food-events.jpg` | Alex Dos Santos | <https://www.pexels.com/photo/traditional-argentine-asado-on-open-grill-37057972/> |
 | Posts | `posts.jpg` | Sandy Rondon | <https://www.pexels.com/photo/yerba-mate-gourd-and-thermos-in-montevideo-park-34449869/> |
 
 ## License Summary

@@ -115,7 +115,7 @@ const VALID_RATING = {
     cleanliness: 4,
     hospitality: 5,
     culturalOffer: 4,
-    venue: 5,
+    gastronomy: 5,
     affordability: 3,
     nightlife: 4,
     infrastructure: 4,

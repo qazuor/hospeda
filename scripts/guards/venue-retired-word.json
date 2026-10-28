@@ -14,7 +14,7 @@
                 "apps/web/src/components/destination/destination-rating.ts": 4,
                 "apps/web/src/components/event/editor/BasicInfoSection.client.tsx": 2,
                 "apps/web/src/components/event/editor/EventCreateForm.client.tsx": 2,
-                "apps/web/src/components/shared/cards/utils/postCategoryIcon.ts": 2,
+                "apps/web/src/components/shared/cards/utils/postCategoryIcon.ts": 3,
                 "apps/web/src/lib/colors.ts": 5,
                 "apps/web/src/lib/event-listing-summary/summary.catalogs.ts": 2,
                 "apps/web/src/lib/facet-slugs.ts": 2,
@@ -197,7 +197,7 @@
                 "packages/service-core/src/services/destinationReview/destinationReview.helpers.ts": 4,
                 "packages/service-core/src/services/destinationReview/destinationReview.service.ts": 4,
                 "packages/service-core/test/services/post/post.categories.search.test.ts": 4,
-                "packages/db/test/models/post.model.categories.test.ts": 6,
+                "packages/db/test/models/post.model.categories.test.ts": 7,
                 "packages/db/test/schemas/destination/poi-category.dbschema.test.ts": 2,
                 "packages/design-tokens/src/generators/__snapshots__/generate-css.test.ts.snap": 16,
                 "packages/icons/test/domain.test.ts": 5,
@@ -227,7 +227,20 @@
                 "packages/service-core/test/services/destinationReview/listByUser.test.ts": 1,
                 "packages/service-core/test/services/destinationReview/listWithUser.test.ts": 1,
                 "packages/seed/test/poi-pipeline/categories-ac3.test.ts": 1,
-                "packages/seed/test/poi-pipeline/emit.test.ts": 1
+                "packages/seed/test/poi-pipeline/emit.test.ts": 1,
+                "apps/admin/src/features/posts/components/ai-post-generate-panel.utils.ts": 1,
+                "apps/admin/src/features/posts/config/sections/basic-info.consolidated.ts": 1,
+                "apps/api/test/integration/cross-cutting/lifecycle-public-endpoints.test.ts": 1,
+                "apps/api/test/integration/destination-reviews/create.test.ts": 2,
+                "apps/api/test/routes/commercial-gates.tourist-reads.test.ts": 1,
+                "apps/api/test/routes/destination-reviews/create.security.test.ts": 1,
+                "apps/api/test/routes/post/public/categories-backward-compat.test.ts": 4,
+                "apps/web/src/components/shared/cards/utils/eventCategoryIcon.ts": 5,
+                "apps/web/src/lib/api/endpoints-protected.ts": 2,
+                "apps/web/test/components/destination/DestinationRatingBreakdown.test.ts": 2,
+                "packages/schemas/src/entities/post/post.http.schema.ts": 1,
+                "packages/service-core/test/integration/services/helpers.ts": 1,
+                "packages/service-core/test/services/moderation/review-moderation.flow.test.ts": 1
             },
             "keys": {
                 "packages/i18n/src/locales/en/admin-entities.json#ratingDimensions.gastronomy": 0,
@@ -323,5 +336,5 @@
     },
     "historyCount": 85,
     "historyWordFiles": 14,
-    "ledgerFingerprint": "1238723e09400b020e2ab03695814b82f8cee91230157ee3a40dcd2bf3959df1"
+    "ledgerFingerprint": "89340f527f249c644c7b3d0a79f14df84d24b459d3f40e6338966e0a0fc6038f"
 }

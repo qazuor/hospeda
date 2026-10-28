@@ -6,7 +6,7 @@ import type { ConsolidatedSectionConfig } from '@/features/destinations/types/co
 const POST_CATEGORY_LABELS: Record<string, string> = {
     EVENTS: 'Eventos',
     CULTURE: 'Cultura',
-    VENUE: 'Gastronomía',
+    GASTRONOMY: 'Gastronomía',
     NATURE: 'Naturaleza',
     TOURISM: 'Turismo',
     GENERAL: 'General',

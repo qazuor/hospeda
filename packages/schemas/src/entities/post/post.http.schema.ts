@@ -24,7 +24,7 @@ export const PostSearchHttpSchema = BaseHttpSearchSchema.extend({
     category: PostCategoryEnumSchema.optional(),
     /**
      * Multi-value sibling of `category` (HOS-96 US-9). Accepts CSV
-     * (`?categories=CULTURE,venue`) or repeated query params. Kept
+     * (`?categories=CULTURE,GASTRONOMY`) or repeated query params. Kept
      * alongside the singular `category` enum for backward compatibility
      * (US-10); when both are present the array takes precedence in the model
      * layer, mirroring `AccommodationModel`'s `types`/`type` blueprint.
