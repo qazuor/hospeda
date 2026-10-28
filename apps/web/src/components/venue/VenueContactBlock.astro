@@ -71,12 +71,12 @@ const menuLabel = t('venue.detail.menu', 'Ver menú');
 const socialLabel = t('venue.detail.social', 'Redes sociales');
 ---
 
-<section class="gastro-contact" id="gastro-contact">
+<section class="venue-contact" id="venue-contact">
     {menuHref && (
-        <div class="gastro-contact__menu">
+        <div class="venue-contact__menu">
             <a
                 href={menuHref}
-                class="gastro-contact__menu-btn"
+                class="venue-contact__menu-btn"
                 target="_blank"
                 rel="noopener noreferrer"
             >
@@ -86,17 +86,17 @@ const socialLabel = t('venue.detail.social', 'Redes sociales');
     )}
 
     {hasSocial && (
-        <div class="gastro-contact__social">
-            <h3 class="gastro-contact__social-title">{socialLabel}</h3>
-            <ul class="gastro-contact__social-list">
+        <div class="venue-contact__social">
+            <h3 class="venue-contact__social-title">{socialLabel}</h3>
+            <ul class="venue-contact__social-list">
                 {SOCIAL_LINKS.map(({ key, label, icon }) => {
                     const href = resolveSafeExternalUrl(socialNetworks?.[key]);
                     if (!href) return null;
                     return (
-                        <li class="gastro-contact__social-item">
+                        <li class="venue-contact__social-item">
                             <a
                                 href={href}
-                                class="gastro-contact__social-link"
+                                class="venue-contact__social-link"
                                 target="_blank"
                                 rel="noopener noreferrer"
                                 aria-label={label}
@@ -113,7 +113,7 @@ const socialLabel = t('venue.detail.social', 'Redes sociales');
 </section>
 
 <style>
-    .gastro-contact {
+    .venue-contact {
         display: flex;
         flex-direction: column;
         gap: var(--space-5, 20px);
@@ -121,7 +121,7 @@ const socialLabel = t('venue.detail.social', 'Redes sociales');
     }
 
     /* Menu CTA button */
-    .gastro-contact__menu-btn {
+    .venue-contact__menu-btn {
         display: inline-flex;
         align-items: center;
         gap: 6px;
@@ -137,17 +137,17 @@ const socialLabel = t('venue.detail.social', 'Redes sociales');
         transition: opacity 200ms ease-out;
     }
 
-    .gastro-contact__menu-btn:hover {
+    .venue-contact__menu-btn:hover {
         opacity: 0.85;
     }
 
-    .gastro-contact__menu-btn:focus-visible {
+    .venue-contact__menu-btn:focus-visible {
         outline: 2px solid var(--brand-primary);
         outline-offset: 2px;
     }
 
     /* Social networks */
-    .gastro-contact__social-title {
+    .venue-contact__social-title {
         font-family: var(--font-heading);
         font-size: 1.1rem;
         font-weight: 600;
@@ -155,7 +155,7 @@ const socialLabel = t('venue.detail.social', 'Redes sociales');
         margin-bottom: var(--space-3, 12px);
     }
 
-    .gastro-contact__social-list {
+    .venue-contact__social-list {
         list-style: none;
         padding: 0;
         margin: 0;
@@ -164,7 +164,7 @@ const socialLabel = t('venue.detail.social', 'Redes sociales');
         gap: 10px;
     }
 
-    .gastro-contact__social-link {
+    .venue-contact__social-link {
         display: inline-flex;
         align-items: center;
         gap: 6px;
@@ -182,12 +182,12 @@ const socialLabel = t('venue.detail.social', 'Redes sociales');
             border-color 150ms ease-out;
     }
 
-    .gastro-contact__social-link:hover {
+    .venue-contact__social-link:hover {
         background-color: var(--surface-warm);
         border-color: var(--brand-primary);
     }
 
-    .gastro-contact__social-link:focus-visible {
+    .venue-contact__social-link:focus-visible {
         outline: 2px solid var(--brand-primary);
         outline-offset: 2px;
     }

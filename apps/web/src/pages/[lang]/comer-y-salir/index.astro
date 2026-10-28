@@ -429,7 +429,7 @@ const itemListEntries = cards.map((card) => ({
 	)}
 
     {!hasError && cards.length > 0 && (
-        <div class="gastro-grid">
+        <div class="venue-grid">
             {cards.map((card, i) => (
                 <div data-reveal="up" data-stagger-index={Math.min(i, 6)} data-stagger-step="100">
                     <VenueCard
@@ -459,14 +459,14 @@ const itemListEntries = cards.map((card) => ({
 </ListingLayout>
 
 <style>
-    .gastro-grid {
+    .venue-grid {
         display: grid;
         grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
         gap: var(--space-card-gap);
     }
 
     @media (max-width: 480px) {
-        .gastro-grid {
+        .venue-grid {
             grid-template-columns: 1fr;
         }
     }

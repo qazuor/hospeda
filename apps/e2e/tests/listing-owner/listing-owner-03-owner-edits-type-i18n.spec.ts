@@ -225,14 +225,14 @@ test.describe('LISTING-OWNER-03: owner edits type + i18n fields — persist on p
 
         // ── Public ficha: verify type badge reflects new value ───────────────
         // The public gastronomy ficha renders the translated type label inside
-        // .gastro-detail-header__type-badge. For BAR the i18n fallback is the
+        // .venue-detail-header__type-badge. For BAR the i18n fallback is the
         // raw enum value 'BAR' (since there may be no translation key in the
         // local seed's i18n catalog). We match by the DB value or any text that
         // appears — using toContainText on the badge element covers both cases.
         await page.goto(`${WEB_URL}/es/comer-y-salir/${GASTRONOMY_SLUG}/`, {
             waitUntil: 'domcontentloaded'
         });
-        const typeBadge = page.locator('.gastro-detail-header__type-badge');
+        const typeBadge = page.locator('.venue-detail-header__type-badge');
         await expect(typeBadge).toBeVisible({ timeout: 10_000 });
         // The badge text is whatever the i18n function renders for GASTRONOMY_NEW_TYPE.
         // We cannot predict the exact label without the full i18n catalog, but we

@@ -62,10 +62,10 @@ const closedNowLabel = t('venue.card.closedNow', 'Cerrado ahora');
 const shouldProxyFeaturedImage = isCloudinaryDeliveryUrl(data.featuredImage.url);
 ---
 
-<article class="gastro-card">
-    <a href={detailUrl} class="gastro-card__link" aria-label={data.name}>
+<article class="venue-card">
+    <a href={detailUrl} class="venue-card__link" aria-label={data.name}>
         <!-- IMAGE AREA -->
-        <div class="gastro-card__image-area">
+        <div class="venue-card__image-area">
             {data.featuredImage.url && !data.featuredImage.url.includes('placeholder') ? (
                 shouldProxyFeaturedImage ? (
                     <Image
@@ -77,7 +77,7 @@ const shouldProxyFeaturedImage = isCloudinaryDeliveryUrl(data.featuredImage.url)
                         loading={eager ? 'eager' : 'lazy'}
                         fetchpriority={eager ? 'high' : undefined}
                         decoding="async"
-                        class="gastro-card__img"
+                        class="venue-card__img"
                         data-fallback="/assets/images/placeholder-gastronomy.svg"
                     />
                 ) : (
@@ -89,7 +89,7 @@ const shouldProxyFeaturedImage = isCloudinaryDeliveryUrl(data.featuredImage.url)
                         loading={eager ? 'eager' : 'lazy'}
                         fetchpriority={eager ? 'high' : undefined}
                         decoding="async"
-                        class="gastro-card__img"
+                        class="venue-card__img"
                         data-fallback="/assets/images/placeholder-gastronomy.svg"
                     />
                 )
@@ -102,15 +102,15 @@ const shouldProxyFeaturedImage = isCloudinaryDeliveryUrl(data.featuredImage.url)
                     loading={eager ? 'eager' : 'lazy'}
                     fetchpriority={eager ? 'high' : undefined}
                     decoding="async"
-                    class="gastro-card__img"
+                    class="venue-card__img"
                     data-fallback="/assets/images/placeholder-gastronomy.svg"
                 />
             )}
 
             <!-- NEW corner badge -->
             {isNew && (
-                <div class="gastro-card__status-corner" aria-hidden="true">
-                    <span class="gastro-card__status-text">
+                <div class="venue-card__status-corner" aria-hidden="true">
+                    <span class="venue-card__status-text">
                         {t('home.accommodations.badge.new', 'Nuevo')}
                     </span>
                 </div>
@@ -118,7 +118,7 @@ const shouldProxyFeaturedImage = isCloudinaryDeliveryUrl(data.featuredImage.url)
 
             <!-- Featured badge -->
             {data.isFeatured && (
-                <div class="gastro-card__featured-badge featured-badge">
+                <div class="venue-card__featured-badge featured-badge">
                     <StarIcon size={12} weight="fill" aria-hidden="true" />
                     <span>{featuredLabel}</span>
                 </div>
@@ -127,14 +127,14 @@ const shouldProxyFeaturedImage = isCloudinaryDeliveryUrl(data.featuredImage.url)
             <!-- Open/closed badge (only when openingHours data is present) -->
             {openNowStatus !== null && (
                 <div
-                    class={`gastro-card__open-badge gastro-card__open-badge--${openNowStatus ? 'open' : 'closed'}`}
+                    class={`venue-card__open-badge venue-card__open-badge--${openNowStatus ? 'open' : 'closed'}`}
                 >
                     {openNowStatus ? openNowLabel : closedNowLabel}
                 </div>
             )}
 
             <!-- Top-right actions: FavoriteButton island -->
-            <div class="gastro-card__actions">
+            <div class="venue-card__actions">
                 <FavoriteButton
                     client:visible
                     entityId={data.id}
@@ -147,7 +147,7 @@ const shouldProxyFeaturedImage = isCloudinaryDeliveryUrl(data.featuredImage.url)
             </div>
 
             <!-- Wave separator -->
-            <div class="gastro-card__wave" aria-hidden="true">
+            <div class="venue-card__wave" aria-hidden="true">
                 <svg
                     viewBox="0 0 432 40"
                     preserveAspectRatio="none"
@@ -159,31 +159,31 @@ const shouldProxyFeaturedImage = isCloudinaryDeliveryUrl(data.featuredImage.url)
         </div>
 
         <!-- CONTENT AREA -->
-        <div class="gastro-card__content">
+        <div class="venue-card__content">
             <!-- Type + Location row -->
-            <div class="gastro-card__category-row">
-                <span class="gastro-card__type-badge">{typeLabel}</span>
-                <div class="gastro-card__location-bar">
+            <div class="venue-card__category-row">
+                <span class="venue-card__type-badge">{typeLabel}</span>
+                <div class="venue-card__location-bar">
                     <LocationIcon size={12} weight="fill" aria-hidden="true" />
                     <span>{data.destinationName}</span>
                 </div>
             </div>
 
             <!-- Name -->
-            <h3 class="gastro-card__name">{data.name}</h3>
+            <h3 class="venue-card__name">{data.name}</h3>
 
             <!-- Summary -->
-            <p class="gastro-card__description">{data.summary}</p>
+            <p class="venue-card__description">{data.summary}</p>
 
             <!-- Stars + rating -->
             {data.averageRating > 0 && (
-                <div class="gastro-card__stars">
+                <div class="venue-card__stars">
                     {Array.from({ length: 5 }).map((_, i) => (
                         <span
                             class={
                                 i < fullStars
-                                    ? 'gastro-card__star--filled'
-                                    : 'gastro-card__star--empty'
+                                    ? 'venue-card__star--filled'
+                                    : 'venue-card__star--empty'
                             }
                         >
                             <StarIcon
@@ -193,11 +193,11 @@ const shouldProxyFeaturedImage = isCloudinaryDeliveryUrl(data.featuredImage.url)
                             />
                         </span>
                     ))}
-                    <span class="gastro-card__rating-value">
+                    <span class="venue-card__rating-value">
                         {data.averageRating.toFixed(1)}
                     </span>
                     {data.reviewsCount > 0 && (
-                        <span class="gastro-card__reviews-count">
+                        <span class="venue-card__reviews-count">
                             ({data.reviewsCount} {t('common.reviews', 'reseñas')})
                         </span>
                     )}
@@ -205,16 +205,16 @@ const shouldProxyFeaturedImage = isCloudinaryDeliveryUrl(data.featuredImage.url)
             )}
 
             <!-- Divider -->
-            <div class="gastro-card__divider" aria-hidden="true"></div>
+            <div class="venue-card__divider" aria-hidden="true"></div>
 
             <!-- Price range + CTA row -->
-            <div class="gastro-card__price-row">
+            <div class="venue-card__price-row">
                 {priceRangeLabel ? (
-                    <span class="gastro-card__price-range">{priceRangeLabel}</span>
+                    <span class="venue-card__price-range">{priceRangeLabel}</span>
                 ) : (
                     <span></span>
                 )}
-                <span class="gastro-card__cta-btn">
+                <span class="venue-card__cta-btn">
                     {t('common.readMore', 'Ver más')} →
                 </span>
             </div>
@@ -223,7 +223,7 @@ const shouldProxyFeaturedImage = isCloudinaryDeliveryUrl(data.featuredImage.url)
 </article>
 
 <style>
-    .gastro-card {
+    .venue-card {
         background-color: var(--core-card);
         border: 1px solid var(--border);
         border-radius: var(--radius-md, 12px);
@@ -234,11 +234,11 @@ const shouldProxyFeaturedImage = isCloudinaryDeliveryUrl(data.featuredImage.url)
         transition: box-shadow 200ms ease-out;
     }
 
-    .gastro-card:hover {
+    .venue-card:hover {
         box-shadow: var(--shadow-card-hover);
     }
 
-    .gastro-card__link {
+    .venue-card__link {
         text-decoration: none;
         color: inherit;
         display: flex;
@@ -246,14 +246,14 @@ const shouldProxyFeaturedImage = isCloudinaryDeliveryUrl(data.featuredImage.url)
         height: 100%;
     }
 
-    .gastro-card__link:focus-visible {
+    .venue-card__link:focus-visible {
         outline: 2px solid var(--brand-primary);
         outline-offset: 2px;
         border-radius: var(--radius-md, 12px);
     }
 
     /* IMAGE AREA */
-    .gastro-card__image-area {
+    .venue-card__image-area {
         position: relative;
         height: clamp(160px, 30vw, 220px);
         overflow: hidden;
@@ -261,19 +261,19 @@ const shouldProxyFeaturedImage = isCloudinaryDeliveryUrl(data.featuredImage.url)
         background-color: var(--muted);
     }
 
-    .gastro-card__img {
+    .venue-card__img {
         width: 100%;
         height: 100%;
         object-fit: cover;
         transition: transform 200ms ease-out;
     }
 
-    .gastro-card:hover .gastro-card__img {
+    .venue-card:hover .venue-card__img {
         transform: scale(1.08);
     }
 
     /* Status corner (Nuevo) */
-    .gastro-card__status-corner {
+    .venue-card__status-corner {
         position: absolute;
         top: 0;
         left: 0;
@@ -282,7 +282,7 @@ const shouldProxyFeaturedImage = isCloudinaryDeliveryUrl(data.featuredImage.url)
         overflow: hidden;
     }
 
-    .gastro-card__status-corner::before {
+    .venue-card__status-corner::before {
         content: '';
         position: absolute;
         top: 0;
@@ -293,7 +293,7 @@ const shouldProxyFeaturedImage = isCloudinaryDeliveryUrl(data.featuredImage.url)
         border-right: 80px solid transparent;
     }
 
-    .gastro-card__status-text {
+    .venue-card__status-text {
         position: absolute;
         top: 16px;
         left: 4px;
@@ -307,14 +307,14 @@ const shouldProxyFeaturedImage = isCloudinaryDeliveryUrl(data.featuredImage.url)
     }
 
     /* Featured badge */
-    .gastro-card__featured-badge {
+    .venue-card__featured-badge {
         position: absolute;
         bottom: 48px;
         right: 12px;
     }
 
     /* Open/closed badge */
-    .gastro-card__open-badge {
+    .venue-card__open-badge {
         position: absolute;
         bottom: 48px;
         left: 12px;
@@ -335,11 +335,11 @@ const shouldProxyFeaturedImage = isCloudinaryDeliveryUrl(data.featuredImage.url)
 
     /* BETA-117: solid, opaque fills (not low-alpha tints) so the badge reads
      * over any photo, in both light and dark themes. */
-    .gastro-card__open-badge--open {
+    .venue-card__open-badge--open {
         background-color: var(--hospeda-forest);
     }
 
-    .gastro-card__open-badge--closed {
+    .venue-card__open-badge--closed {
         /* Darken the red fill (mix toward black, keeping the token so dark mode
          * still adapts) so white text clears 4.5:1 in both themes — the raw
          * `--destructive` fill only reaches ~4.2:1 against white. */
@@ -347,7 +347,7 @@ const shouldProxyFeaturedImage = isCloudinaryDeliveryUrl(data.featuredImage.url)
     }
 
     /* Top-right actions overlay (FavoriteButton) */
-    .gastro-card__actions {
+    .venue-card__actions {
         position: absolute;
         top: 12px;
         right: 12px;
@@ -359,7 +359,7 @@ const shouldProxyFeaturedImage = isCloudinaryDeliveryUrl(data.featuredImage.url)
     }
 
     /* Wave separator */
-    .gastro-card__wave {
+    .venue-card__wave {
         position: absolute;
         bottom: 0;
         left: 0;
@@ -368,14 +368,14 @@ const shouldProxyFeaturedImage = isCloudinaryDeliveryUrl(data.featuredImage.url)
         pointer-events: none;
     }
 
-    .gastro-card__wave svg {
+    .venue-card__wave svg {
         width: 100%;
         height: 100%;
         display: block;
     }
 
     /* CONTENT AREA */
-    .gastro-card__content {
+    .venue-card__content {
         background-color: var(--core-card);
         padding: 0 16px 20px;
         display: flex;
@@ -385,14 +385,14 @@ const shouldProxyFeaturedImage = isCloudinaryDeliveryUrl(data.featuredImage.url)
     }
 
     /* Category + location row */
-    .gastro-card__category-row {
+    .venue-card__category-row {
         display: flex;
         align-items: center;
         gap: 10px;
         min-width: 0;
     }
 
-    .gastro-card__type-badge {
+    .venue-card__type-badge {
         flex-shrink: 0;
         display: inline-flex;
         align-items: center;
@@ -408,7 +408,7 @@ const shouldProxyFeaturedImage = isCloudinaryDeliveryUrl(data.featuredImage.url)
         border: 1px solid var(--brand-primary-a25);
     }
 
-    .gastro-card__location-bar {
+    .venue-card__location-bar {
         display: flex;
         align-items: center;
         gap: 6px;
@@ -420,11 +420,11 @@ const shouldProxyFeaturedImage = isCloudinaryDeliveryUrl(data.featuredImage.url)
         color: var(--core-muted-foreground);
     }
 
-    .gastro-card__location-bar > :global(svg) {
+    .venue-card__location-bar > :global(svg) {
         flex-shrink: 0;
     }
 
-    .gastro-card__location-bar > span {
+    .venue-card__location-bar > span {
         overflow: hidden;
         text-overflow: ellipsis;
         white-space: nowrap;
@@ -432,7 +432,7 @@ const shouldProxyFeaturedImage = isCloudinaryDeliveryUrl(data.featuredImage.url)
     }
 
     /* Name */
-    .gastro-card__name {
+    .venue-card__name {
         font-family: var(--font-heading);
         font-weight: 700;
         font-size: clamp(1rem, 0.5vw + 0.875rem, 1.25rem);
@@ -444,7 +444,7 @@ const shouldProxyFeaturedImage = isCloudinaryDeliveryUrl(data.featuredImage.url)
     }
 
     /* Summary */
-    .gastro-card__description {
+    .venue-card__description {
         font-family: var(--font-sans);
         font-weight: 400;
         font-size: clamp(0.75rem, 0.2vw + 0.625rem, 0.8125rem);
@@ -459,24 +459,24 @@ const shouldProxyFeaturedImage = isCloudinaryDeliveryUrl(data.featuredImage.url)
     }
 
     /* Stars */
-    .gastro-card__stars {
+    .venue-card__stars {
         display: flex;
         align-items: center;
         gap: 4px;
     }
 
-    .gastro-card__star--filled {
+    .venue-card__star--filled {
         color: var(--rating-star);
         display: inline-flex;
     }
 
-    .gastro-card__star--empty {
+    .venue-card__star--empty {
         color: var(--core-muted-foreground);
         opacity: 0.4;
         display: inline-flex;
     }
 
-    .gastro-card__rating-value {
+    .venue-card__rating-value {
         font-family: var(--font-sans);
         font-weight: 700;
         font-size: 13px;
@@ -485,7 +485,7 @@ const shouldProxyFeaturedImage = isCloudinaryDeliveryUrl(data.featuredImage.url)
         margin-left: 4px;
     }
 
-    .gastro-card__reviews-count {
+    .venue-card__reviews-count {
         font-family: var(--font-sans);
         font-weight: 400;
         font-size: 12px;
@@ -494,21 +494,21 @@ const shouldProxyFeaturedImage = isCloudinaryDeliveryUrl(data.featuredImage.url)
     }
 
     /* Divider */
-    .gastro-card__divider {
+    .venue-card__divider {
         height: 1px;
         background-color: var(--border);
         width: 100%;
     }
 
     /* Price range + CTA row */
-    .gastro-card__price-row {
+    .venue-card__price-row {
         display: flex;
         align-items: center;
         justify-content: space-between;
         padding-top: 4px;
     }
 
-    .gastro-card__price-range {
+    .venue-card__price-range {
         font-family: var(--font-heading);
         font-weight: 600;
         font-size: 14px;
@@ -516,7 +516,7 @@ const shouldProxyFeaturedImage = isCloudinaryDeliveryUrl(data.featuredImage.url)
         color: var(--brand-accent-text);
     }
 
-    .gastro-card__cta-btn {
+    .venue-card__cta-btn {
         display: inline-flex;
         align-items: center;
         gap: 6px;
@@ -536,30 +536,30 @@ const shouldProxyFeaturedImage = isCloudinaryDeliveryUrl(data.featuredImage.url)
         transition: opacity 200ms ease-out;
     }
 
-    .gastro-card:hover .gastro-card__cta-btn {
+    .venue-card:hover .venue-card__cta-btn {
         opacity: 0.85;
     }
 
     /* Mobile adjustments */
     @media (max-width: 767px) {
-        .gastro-card__image-area {
+        .venue-card__image-area {
             height: 200px;
         }
 
-        .gastro-card__content {
+        .venue-card__content {
             gap: 6px;
             padding-bottom: 12px;
         }
 
-        .gastro-card__description {
+        .venue-card__description {
             -webkit-line-clamp: 3;
         }
 
-        .gastro-card__reviews-count {
+        .venue-card__reviews-count {
             display: none;
         }
 
-        .gastro-card__featured-badge {
+        .venue-card__featured-badge {
             bottom: 48px;
             left: 12px;
             right: auto;
@@ -568,7 +568,7 @@ const shouldProxyFeaturedImage = isCloudinaryDeliveryUrl(data.featuredImage.url)
 
         /* On mobile the featured badge takes bottom-left, so the open/closed
            badge moves to bottom-right to stay opposite it (BETA-117). */
-        .gastro-card__open-badge {
+        .venue-card__open-badge {
             left: auto;
             right: 12px;
         }

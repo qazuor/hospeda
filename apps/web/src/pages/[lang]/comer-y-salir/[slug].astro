@@ -301,10 +301,10 @@ const breadcrumbItems = [
         />
     </Fragment>
 
-    <div class="gastro-detail">
+    <div class="venue-detail">
         <!-- Gallery -->
         {galleryImages.length > 0 && (
-            <div class="gastro-detail__gallery">
+            <div class="venue-detail__gallery">
                 <ImageGallery
                     client:load
                     images={galleryImages}
@@ -383,36 +383,36 @@ const breadcrumbItems = [
 
         <!-- Reviews preview -->
         {venue.reviewsCount > 0 && (
-            <section class="gastro-detail__reviews">
-                <h2 class="gastro-detail__section-title">
+            <section class="venue-detail__reviews">
+                <h2 class="venue-detail__section-title">
                     {t('venue.detail.reviews.title', 'Reseñas')}
                 </h2>
                 {reviews.length === 0 ? (
-                    <p class="gastro-detail__reviews-empty">
+                    <p class="venue-detail__reviews-empty">
                         {t(
                             'venue.detail.reviews.empty',
                             'Todavía no hay reseñas. ¡Sé el primero en opinar!'
                         )}
                     </p>
                 ) : (
-                    <ul class="gastro-detail__reviews-list">
+                    <ul class="venue-detail__reviews-list">
                         {reviews.slice(0, 3).map((review) => (
-                            <li class="gastro-detail__review-item">
-                                <p class="gastro-detail__review-author">
+                            <li class="venue-detail__review-item">
+                                <p class="venue-detail__review-author">
                                     {review.user?.name ?? t('common.anonymous')}
                                 </p>
                                 {review.averageRating != null && (
-                                    <span class="gastro-detail__review-rating">
+                                    <span class="venue-detail__review-rating">
                                         ★ {review.averageRating.toFixed(1)}
                                     </span>
                                 )}
                                 {review.content && (
-                                    <p class="gastro-detail__review-content">{review.content}</p>
+                                    <p class="venue-detail__review-content">{review.content}</p>
                                 )}
                             </li>
                         ))}
                         {totalReviews > 3 && (
-                            <p class="gastro-detail__reviews-more">
+                            <p class="venue-detail__reviews-more">
                                 {tPlural('venue.detail.reviews.more', totalReviews - 3)}
                             </p>
                         )}
@@ -422,7 +422,7 @@ const breadcrumbItems = [
         )}
 
         <!-- Leave a review (authenticated visitors submit; anonymous see a sign-in CTA) -->
-        <section class="gastro-detail__review-form">
+        <section class="venue-detail__review-form">
             <VenueReviewForm
                 client:visible
                 gastronomyId={venue.id}
@@ -466,7 +466,7 @@ const breadcrumbItems = [
 </DetailLayout>
 
 <style>
-    .gastro-detail {
+    .venue-detail {
         max-width: var(--container-max, 1350px);
         margin: 0 auto;
         padding: var(--space-6, 24px) var(--space-4, 16px);
@@ -475,12 +475,12 @@ const breadcrumbItems = [
         gap: var(--space-8, 32px);
     }
 
-    .gastro-detail__gallery {
+    .venue-detail__gallery {
         border-radius: var(--radius-card, 24px);
         overflow: hidden;
     }
 
-    .gastro-detail__section-title {
+    .venue-detail__section-title {
         font-family: var(--font-heading);
         font-size: 1.5rem;
         font-weight: 600;
@@ -489,7 +489,7 @@ const breadcrumbItems = [
     }
 
     /* Reviews */
-    .gastro-detail__reviews-empty {
+    .venue-detail__reviews-empty {
         font-family: var(--font-sans);
         font-size: 0.95rem;
         color: var(--core-muted-foreground);
@@ -497,7 +497,7 @@ const breadcrumbItems = [
         margin: 0;
     }
 
-    .gastro-detail__reviews-list {
+    .venue-detail__reviews-list {
         list-style: none;
         padding: 0;
         margin: 0;
@@ -506,14 +506,14 @@ const breadcrumbItems = [
         gap: var(--space-4, 16px);
     }
 
-    .gastro-detail__review-item {
+    .venue-detail__review-item {
         padding: var(--space-4, 16px);
         background-color: var(--core-card);
         border: 1px solid var(--border);
         border-radius: var(--radius-md, 12px);
     }
 
-    .gastro-detail__review-author {
+    .venue-detail__review-author {
         font-family: var(--font-sans);
         font-weight: 600;
         font-size: 0.9rem;
@@ -521,14 +521,14 @@ const breadcrumbItems = [
         margin: 0 0 4px;
     }
 
-    .gastro-detail__review-rating {
+    .venue-detail__review-rating {
         font-family: var(--font-sans);
         font-size: 0.85rem;
         color: var(--rating-star);
         font-weight: 500;
     }
 
-    .gastro-detail__review-content {
+    .venue-detail__review-content {
         font-family: var(--font-sans);
         font-size: 0.9rem;
         line-height: 1.5;
@@ -536,7 +536,7 @@ const breadcrumbItems = [
         margin: 6px 0 0;
     }
 
-    .gastro-detail__reviews-more {
+    .venue-detail__reviews-more {
         font-family: var(--font-sans);
         font-size: 0.875rem;
         color: var(--brand-primary);

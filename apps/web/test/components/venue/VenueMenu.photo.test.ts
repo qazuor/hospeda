@@ -53,7 +53,7 @@ describe('GastronomyMenu.astro — the per-dish photo (HOS-1045)', () => {
         // A carta may hold up to thirty sections of a hundred dishes
         // (GASTRONOMY_MENU_MAX_*), so an eager image per dish would be the
         // single largest thing on the page.
-        expect(src).toContain('class="gastro-menu__item-photo"');
-        expect(src).toMatch(/gastro-menu__item-photo"\s+loading="lazy"/);
+        expect(src).toContain('class="venue-menu__item-photo"');
+        expect(src).toMatch(/venue-menu__item-photo"\s+loading="lazy"/);
     });
 });

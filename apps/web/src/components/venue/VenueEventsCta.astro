@@ -21,7 +21,7 @@
  * birthday party.
  *
  * So this button does not carry an external `href` at all: it is a same-page
- * anchor (`#gastro-contact`) to `VenueContactBlock`, which already
+ * anchor (`#venue-contact`) to `VenueContactBlock`, which already
  * renders every channel the owner actually set. That also means the outbound
  * href-sanitization guard (HOS-592/F-02) does not apply here — there is no
  * outbound link to sanitize, not an exemption from having to.
@@ -41,12 +41,12 @@ const { locale } = Astro.props;
 const { t } = createTranslations(locale);
 ---
 
-<section class="gastro-events-cta">
-    <div class="gastro-events-cta__text">
-        <h2 class="gastro-events-cta__title">
+<section class="venue-events-cta">
+    <div class="venue-events-cta__text">
+        <h2 class="venue-events-cta__title">
             {t('venue.detail.eventsCta.title', '¿Buscás salón para eventos?')}
         </h2>
-        <p class="gastro-events-cta__description">
+        <p class="venue-events-cta__description">
             {t(
                 'venue.detail.eventsCta.description',
                 'Este lugar acepta cumpleaños, eventos de empresa y casamientos. Contactanos para coordinar.'
@@ -54,15 +54,15 @@ const { t } = createTranslations(locale);
         </p>
     </div>
     <a
-        href="#gastro-contact"
-        class="gastro-events-cta__button"
+        href="#venue-contact"
+        class="venue-events-cta__button"
     >
         {t('venue.detail.eventsCta.button', 'Contactar')}
     </a>
 </section>
 
 <style>
-    .gastro-events-cta {
+    .venue-events-cta {
         display: flex;
         flex-wrap: wrap;
         align-items: center;
@@ -75,14 +75,14 @@ const { t } = createTranslations(locale);
         margin-bottom: var(--space-6, 24px);
     }
 
-    .gastro-events-cta__text {
+    .venue-events-cta__text {
         display: flex;
         flex-direction: column;
         gap: var(--space-1, 4px);
         min-width: 0;
     }
 
-    .gastro-events-cta__title {
+    .venue-events-cta__title {
         font-family: var(--font-heading);
         font-size: 1.15rem;
         font-weight: 600;
@@ -90,7 +90,7 @@ const { t } = createTranslations(locale);
         margin: 0;
     }
 
-    .gastro-events-cta__description {
+    .venue-events-cta__description {
         font-family: var(--font-sans);
         font-size: 0.9rem;
         color: var(--core-muted-foreground);
@@ -99,7 +99,7 @@ const { t } = createTranslations(locale);
 
     /* Same button recipe as VenueContactBlock's menu CTA (SPEC-308: dark
        ink on the vibrant orange fill — white fails AA). */
-    .gastro-events-cta__button {
+    .venue-events-cta__button {
         display: inline-flex;
         align-items: center;
         gap: 6px;
@@ -115,11 +115,11 @@ const { t } = createTranslations(locale);
         transition: opacity 200ms ease-out;
     }
 
-    .gastro-events-cta__button:hover {
+    .venue-events-cta__button:hover {
         opacity: 0.85;
     }
 
-    .gastro-events-cta__button:focus-visible {
+    .venue-events-cta__button:focus-visible {
         outline: 2px solid var(--brand-primary);
         outline-offset: 2px;
     }

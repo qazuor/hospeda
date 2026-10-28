@@ -39,7 +39,7 @@ describe('GastronomyMenu.astro — the language switcher (HOS-1043)', () => {
         // Two gastronomy listings never share a page, but the guard is cheap
         // and the alternative (a document-level listener) would be wrong the
         // day that changes.
-        expect(src).toContain("document.getElementById('gastro-menu')");
+        expect(src).toContain("document.getElementById('venue-menu')");
     });
 
     it('resolves the displayed text through resolveI18nText with the legacy field as fallback', () => {
