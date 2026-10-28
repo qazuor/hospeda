@@ -67,7 +67,7 @@ export const VenueEventRecurrencePgEnum = pgEnum('venue_event_recurrence_enum', 
  * ## Why the two recurrence shapes share ONE table
  *
  * A dated one-off and a weekly repeat differ by exactly two nullable columns
- * ({@link gastronomyEvents.date} and {@link gastronomyEvents.weekday}), and the
+ * ({@link venueEvents.date} and {@link venueEvents.weekday}), and the
  * reader wants them INTERLEAVED — "what's on at this venue" is one list, sorted
  * by when it next happens, not two. Two tables would make every read a union and
  * every ordering decision a merge.
@@ -116,7 +116,7 @@ export const venueEvents = pgTable(
          * The calendar day, for a `once` event. `NULL` for a `weekly` one.
          *
          * A `date` and not a `timestamp`: the time of day lives in
-         * {@link gastronomyEvents.startTime}, and a venue's "Friday the 12th"
+         * {@link venueEvents.startTime}, and a venue's "Friday the 12th"
          * is a local calendar day, not an instant. Storing it as a timestamp
          * would drag the row through a timezone conversion that can only ever
          * move it to the wrong day — the exact `toISOString()` hazard that has

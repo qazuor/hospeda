@@ -18,7 +18,7 @@ import { venues } from './venue.dbschema.ts';
  * window this is one more free-text field that rots in public; with it, the
  * row simply stops matching the read.
  *
- * ## Why a table and not a JSONB column on `gastronomies`
+ * ## Why a table and not a JSONB column on `venues`
  *
  * Owner decision. The validity filter runs on EVERY read of the public listing,
  * and a JSONB document cannot serve that from an index — the reader would have
@@ -40,7 +40,7 @@ import { venues } from './venue.dbschema.ts';
  * `getTodayInMarketTimezone()` (AR, UTC-3). At 21:00 in Concepción del Uruguay
  * the UTC day has already rolled over, so a UTC "today" would retire the dish
  * of the day in the middle of dinner service — the precise hour it exists for.
- * See `gastronomy.daily-specials.ts` for where that value enters.
+ * See `venue.daily-specials.ts` for where that value enters.
  *
  * ## What it deliberately does NOT carry
  *

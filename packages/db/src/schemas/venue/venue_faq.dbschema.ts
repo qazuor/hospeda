@@ -15,7 +15,7 @@ import { users } from '../user/user.dbschema.ts';
 import { venues } from './venue.dbschema.ts';
 
 /**
- * Gastronomy FAQ table (SPEC-239).
+ * Venue FAQ table (SPEC-239).
  *
  * Mirrors accommodation_faqs exactly:
  * - FK venueId CASCADE (FAQs deleted with the listing)
@@ -38,7 +38,7 @@ export const venueFaqs = pgTable(
         questionI18n: jsonb('question_i18n').$type<I18nText>(),
         answerI18n: jsonb('answer_i18n').$type<I18nText>(),
         category: text('category'),
-        /** Display order for FAQ items within a gastronomy listing. NULLS LAST in queries. */
+        /** Display order for FAQ items within a venue listing. NULLS LAST in queries. */
         displayOrder: integer('display_order'),
         /**
          * HOS-400: channel visibility, adopting the fragment HOS-393 introduced on

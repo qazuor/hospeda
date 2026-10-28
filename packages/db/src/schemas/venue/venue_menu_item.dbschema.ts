@@ -45,7 +45,7 @@ import { venueMenuSections } from './venue_menu_section.dbschema.ts';
  * ONE photo per dish, not a gallery. The venue's gallery already exists
  * (`venue_media`) and a carta rendering N photos per dish is a different
  * product. Nothing here caps how many DISHES may carry one: the capability is
- * gated by the `menu_item_photos` entitlement (gastronomy premium) and by NO
+ * gated by the `menu_item_photos` entitlement (venue premium) and by NO
  * numeric limit key — owner decision, HOS-1045, and a deliberate one, since
  * the limit engine resolves an unknown key as *unlimited* in five layers
  * without raising, so a cap that is not wired end to end is worse than none.
@@ -121,7 +121,7 @@ export const venueMenuItems = pgTable(
         /**
          * Cloudinary `public_id` of that asset, so a later cleanup can DESTROY
          * it rather than merely forget it — the distinction `venue_media`
-         * and `gastronomies.menu_file_public_id` both make, and the reason
+         * and `venues.menu_file_public_id` both make, and the reason
          * HOS-372 exists at all: a forgotten asset keeps billing.
          *
          * Nullable independently of {@link photoUrl}: a row whose URL came from

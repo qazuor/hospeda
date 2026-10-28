@@ -46,13 +46,13 @@ import { venueReviews } from './venue_review.dbschema.ts';
 export const VenueMenuFileKindPgEnum = pgEnum('venue_menu_file_kind_enum', ['image', 'pdf']);
 
 /**
- * Gastronomy table — listings for food and beverage venues (SPEC-239).
+ * Venue table — listings for food and beverage venues (SPEC-239).
  *
  * Mirrors the accommodation table shape as closely as possible:
  * - Same audit columns (createdById, updatedById, deletedById)
  * - Same publication state (`listingPublicationColumns`, V/03 §9)
  * - Same jsonb contact/social/media/seo/adminInfo pattern
- * - Additional columns specific to gastronomy: type, priceRange, menuUrl, openingHours
+ * - Additional columns specific to venue: type, priceRange, menuUrl, openingHours
  */
 export const venues = pgTable(
     'venues',
@@ -68,7 +68,7 @@ export const venues = pgTable(
         summaryI18n: jsonb('summary_i18n').$type<I18nText>(),
         descriptionI18n: jsonb('description_i18n').$type<I18nText>(),
         richDescriptionI18n: jsonb('rich_description_i18n').$type<I18nText>(),
-        /** Gastronomy sub-category (RESTAURANT, BAR, CAFE, PARRILLA, etc.). */
+        /** Venue sub-category (RESTAURANT, BAR, CAFE, PARRILLA, etc.). */
         type: VenueTypePgEnum('type').notNull(),
         /** Price-range tier for the venue (BUDGET/MID/HIGH/PREMIUM). Nullable until owner sets it. */
         priceRange: PriceRangePgEnum('price_range'),
@@ -142,11 +142,11 @@ export const venues = pgTable(
          * source: the public `isFeatured` value is derived from it in the PUBLIC
          * routes only (`resolvePublicIsFeatured`).
          *
-         * **Only one source feeds it, unlike accommodation.** No gastronomy plan
-         * grants FEATURED_LISTING (the gastronomy entitlement config grants
+         * **Only one source feeds it, unlike accommodation.** No venue plan
+         * grants FEATURED_LISTING (the venue entitlement config grants
          * EDIT/PUBLISH/VIEW_BASIC_STATS per vertical and nothing else), so this
          * column has exactly one writer — the addon — where accommodation has
-         * two (plan owner-wide + addon per-listing). A future gastronomy plan that
+         * two (plan owner-wide + addon per-listing). A future venue plan that
          * grants featuring must add the plan-driven half; it does not exist yet
          * and is not stubbed here.
          *
@@ -168,7 +168,7 @@ export const venues = pgTable(
          * included, whereas the join would put a new query on a hot public path
          * with no precedent to consult when it misbehaves.
          *
-         * If this is ever unified for real, the question is not "should gastronomy
+         * If this is ever unified for real, the question is not "should venue
          * derive?" but "should BOTH derive?" — recorded here so whoever asks it
          * knows the alternative was considered and why it lost.
          */
@@ -245,7 +245,7 @@ export const venuesRelations = relations(venues, ({ one, many }) => ({
     venueEvents: many(venueEvents)
 }));
 
-/** Type-inferred insert type for gastronomy rows. */
+/** Type-inferred insert type for venue rows. */
 export type InsertVenue = typeof venues.$inferInsert;
-/** Type-inferred select type for gastronomy rows. */
+/** Type-inferred select type for venue rows. */
 export type SelectVenue = typeof venues.$inferSelect;

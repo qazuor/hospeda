@@ -4,7 +4,7 @@ import { amenities } from '../accommodation/amenity.dbschema.ts';
 import { venues } from './venue.dbschema.ts';
 
 /**
- * Junction table: gastronomy <-> amenity (many-to-many, SPEC-239).
+ * Junction table: venue <-> amenity (many-to-many, SPEC-239).
  *
  * Mirrors r_accommodation_amenity with composite PK on (venueId, amenityId).
  * Both FKs cascade on delete so rows are cleaned up automatically.

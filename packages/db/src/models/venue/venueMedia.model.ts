@@ -12,7 +12,7 @@ import { listingMediaShownConditions } from '../listing/listing-media-shown.ts';
  * RO-RO parameter object (Receive Object, Return Object pattern).
  */
 interface FindByVenueInput {
-    /** The gastronomy listing UUID to load media for. */
+    /** The venue listing UUID to load media for. */
     venueId: string;
     /**
      * Filter by visibility state.
@@ -42,7 +42,7 @@ interface FindByVenueInput {
  * Input type for `findFeatured`.
  */
 interface FindFeaturedInput {
-    /** The gastronomy listing UUID whose featured image is requested. */
+    /** The venue listing UUID whose featured image is requested. */
     venueId: string;
     /** Optional transaction client. */
     tx?: DrizzleClient;
@@ -52,7 +52,7 @@ interface FindFeaturedInput {
  * Input type for `findByVenues` (batch read).
  */
 interface FindByVenuesInput {
-    /** The gastronomy listing UUIDs to load media for (one query, grouped by id). */
+    /** The venue listing UUIDs to load media for (one query, grouped by id). */
     venueIds: readonly string[];
     /**
      * Optional state filter ('visible' | 'archived'). Omit to return all states.
@@ -63,7 +63,7 @@ interface FindByVenuesInput {
 }
 
 /**
- * Model for gastronomy listing media (gallery photos).
+ * Model for venue listing media (gallery photos).
  *
  * Provides the canonical query surface for reading the `venue_media` table.
  * All write operations (create, update, soft-delete, restore) are inherited from
@@ -97,11 +97,11 @@ export class VenueMediaModel extends BaseModelImpl<VenueMedia> {
     protected override readonly validRelationKeys = ['venue'] as const;
 
     // -------------------------------------------------------------------------
-    // Gastronomy-media-specific finders
+    // Venue-media-specific finders
     // -------------------------------------------------------------------------
 
     /**
-     * Lists all non-deleted media rows for a given gastronomy listing, ordered
+     * Lists all non-deleted media rows for a given venue listing, ordered
      * by `sort_order ASC`.
      *
      * This is the canonical gallery-read query used by public and admin consumers.
@@ -112,7 +112,7 @@ export class VenueMediaModel extends BaseModelImpl<VenueMedia> {
      * 200 rows per page). For a listing that has never exceeded ~200 photos the
      * default `pageSize: 50` is sufficient for a single-page load.
      *
-     * @param input.venueId - UUID of the parent gastronomy listing.
+     * @param input.venueId - UUID of the parent venue listing.
      * @param input.state        - Optional state filter ('visible' | 'archived').
      * @param input.isFeatured   - Optional featured filter. Pass `false` to count
      *                             gallery photos only, excluding the featured image (HOS-791).
@@ -170,7 +170,7 @@ export class VenueMediaModel extends BaseModelImpl<VenueMedia> {
     }
 
     /**
-     * Returns the featured image row for a given gastronomy listing, or `null`
+     * Returns the featured image row for a given venue listing, or `null`
      * when none exists.
      *
      * At most one non-deleted row can have `is_featured = true` per listing — a
@@ -178,7 +178,7 @@ export class VenueMediaModel extends BaseModelImpl<VenueMedia> {
      * finder intentionally does NOT use a LIMIT hint beyond what the index
      * guarantees.
      *
-     * @param input.venueId - UUID of the parent gastronomy listing.
+     * @param input.venueId - UUID of the parent venue listing.
      * @param input.tx           - Optional transaction client.
      * @returns The featured media row, or `null` if no featured image is set.
      */
@@ -215,7 +215,7 @@ export class VenueMediaModel extends BaseModelImpl<VenueMedia> {
     }
 
     /**
-     * Batch-loads non-deleted media rows for multiple gastronomy listings in a
+     * Batch-loads non-deleted media rows for multiple venue listings in a
      * single query, grouped by `venueId`. This is the canonical read used
      * by list/search composition to avoid the N+1 that would result from
      * calling {@link findByVenue} once per list item.

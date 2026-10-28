@@ -15,7 +15,7 @@ import { users } from '../user/user.dbschema.ts';
 import { venues } from './venue.dbschema.ts';
 
 /**
- * Gastronomy review table (SPEC-239).
+ * Venue review table (SPEC-239).
  *
  * Mirrors accommodation_reviews exactly:
  * - FK venueId CASCADE (if the listing is deleted, reviews go with it)
@@ -62,7 +62,7 @@ export const venueReviews = pgTable(
         deletedAt: timestamp('deleted_at', { withTimezone: true }),
         deletedById: uuid('deleted_by_id').references(() => users.id, { onDelete: 'set null' }),
         /**
-         * Moderation state defaults to PENDING: gastronomy reviews require
+         * Moderation state defaults to PENDING: venue reviews require
          * moderator approval before appearing publicly (unlike accommodation
          * reviews which default to APPROVED).
          */
