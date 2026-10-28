@@ -119,7 +119,7 @@ const HOST_CARD_KEYS = [
     'subscribeToPublish.title',
     'subscribeToPublish.body',
     'subscribeToPublish.vertical.accommodation',
-    'subscribeToPublish.vertical.gastronomy',
+    'subscribeToPublish.vertical.venue',
     'subscribeToPublish.vertical.experience',
     'unpublishTrialNote',
     'unpublishRecurringNote_one',

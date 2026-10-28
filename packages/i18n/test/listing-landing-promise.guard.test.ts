@@ -7,7 +7,7 @@
  *
  * `/publicar-experiencia/` opened with «Contanos sobre las experiencias que
  * ofrecés y **te contactamos** para sumarte a Hospeda», and
- * `/publicar-restaurante/` with «Completá el formulario y **nos ponemos en
+ * the venue listing landing with «Completá el formulario y **nos ponemos en
  * contacto**». Both sentences describe a lead form that HOS-690 deleted from
  * those pages: there is nowhere to tell us anything and nobody queued to reply.
  * Three blocks lower each page declares the flow it actually implements —

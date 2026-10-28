@@ -14,21 +14,19 @@ describe('listing owner publish translations — TEST:1729:7', () => {
         for (const locale of locales) {
             expect(Object.keys(locale.owner.publish.confirmTitle).sort()).toEqual([
                 'experience',
-                'gastronomy'
+                'venue'
             ]);
             expect(Object.keys(locale.owner.publish.choosePlan).sort()).toEqual([
                 'experience',
-                'gastronomy'
+                'venue'
             ]);
             expect(locale.owner.publish.missingRequirements).toBeTruthy();
         }
-        expect(spanishListing.owner.publish.confirmTitle.gastronomy).toBe(
-            '¿Publicar este comercio?'
-        );
+        expect(spanishListing.owner.publish.confirmTitle.venue).toBe('¿Publicar este comercio?');
         expect(englishListing.owner.publish.confirmTitle.experience).toBe(
             'Publish this experience?'
         );
-        expect(portugueseListing.owner.publish.choosePlan.gastronomy).toBe(
+        expect(portugueseListing.owner.publish.choosePlan.venue).toBe(
             'Escolher plano de gastronomia'
         );
     });

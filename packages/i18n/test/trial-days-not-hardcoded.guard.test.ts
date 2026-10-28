@@ -88,7 +88,7 @@ const landings = (
     venue: { readonly landing: unknown },
     experience: { readonly landing: unknown }
 ): Record<string, unknown> => ({
-    landing: { gastronomy: venue.landing, experience: experience.landing }
+    landing: { venue: venue.landing, experience: experience.landing }
 });
 
 const LANDINGS_ES = landings(venueEs, experienceEs);
@@ -174,7 +174,7 @@ describe('HOS-941 R-2 — no locale string states a trial length', () => {
 });
 
 /** The two listing verticals whose landings advertise a trial. */
-const LISTING_VERTICALS = ['gastronomy', 'experience'] as const;
+const LISTING_VERTICALS = ['venue', 'experience'] as const;
 
 /** The listing locale files, per locale. */
 const LISTING_FILES: ReadonlyArray<{
