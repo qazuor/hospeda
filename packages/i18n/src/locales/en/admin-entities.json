@@ -118,8 +118,8 @@
             "description": "Directory of service providers for hosts"
         },
         "venue": {
-            "singular": "Gastronomy",
-            "plural": "Gastronomies",
+            "singular": "Food & nightlife listing",
+            "plural": "Food & nightlife listings",
             "description": "Manage restaurants, bars, cafes and other food and beverage venues"
         },
         "experience": {
@@ -196,11 +196,11 @@
             "button": "Assign"
         },
         "create": {
-            "title": "New Gastronomy",
-            "successTitle": "Gastronomy created",
-            "successMessage": "The gastronomy was created successfully",
+            "title": "New Food & nightlife listing",
+            "successTitle": "Listing created",
+            "successMessage": "The Food & nightlife listing was created successfully",
             "errorTitle": "Error creating",
-            "errorMessage": "We could not create the gastronomy. Please try again."
+            "errorMessage": "We could not create the Food & nightlife listing. Please try again."
         }
     },
     "columns": {
@@ -275,7 +275,7 @@
         "sponsor": "Sponsor",
         "sponsorship": "Sponsorship",
         "eventsCount": "Events",
-        "venuesCount": "Gastronomies",
+        "venuesCount": "Food & nightlife listings",
         "experiencesCount": "Experiences",
         "destinationsCount": "Destinations",
         "postsCount": "Posts",

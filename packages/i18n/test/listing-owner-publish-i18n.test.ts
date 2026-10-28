@@ -27,7 +27,7 @@ describe('listing owner publish translations — TEST:1729:7', () => {
             'Publish this experience?'
         );
         expect(portugueseListing.owner.publish.choosePlan.venue).toBe(
-            'Escolher plano de gastronomia'
+            'Escolher plano de Comer e sair'
         );
     });
 });

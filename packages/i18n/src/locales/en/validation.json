@@ -566,7 +566,7 @@
         "chat": {
             "accommodationId": {
                 "invalidUuid": "The accommodation ID must be a valid UUID",
-                "notAllowedForEntityType": "accommodationId cannot be sent when the question is about a gastronomy or experience listing"
+                "notAllowedForEntityType": "accommodationId cannot be sent when the question is about a Food & nightlife or experience listing"
             },
             "entityId": {
                 "conflictsWithAccommodationId": "entityId and accommodationId point to different listings",
@@ -2427,7 +2427,7 @@
             "invalid": "La plataforma externa no es válida"
         },
         "venueType": {
-            "invalid": "El tipo de gastronomía no es válido"
+            "invalid": "The Food & nightlife type is not valid"
         },
         "hostTradeBenefitType": {
             "invalid": "El tipo de beneficio seleccionado no es válido"

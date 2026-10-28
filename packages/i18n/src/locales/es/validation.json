@@ -566,7 +566,7 @@
         "chat": {
             "accommodationId": {
                 "invalidUuid": "El ID del alojamiento debe ser un UUID válido",
-                "notAllowedForEntityType": "No se puede enviar accommodationId cuando la consulta es sobre gastronomía o experiencias"
+                "notAllowedForEntityType": "No se puede enviar accommodationId cuando la consulta es sobre Comer y salir o experiencias"
             },
             "entityId": {
                 "conflictsWithAccommodationId": "entityId y accommodationId apuntan a fichas distintas",
@@ -2427,7 +2427,7 @@
             "invalid": "La plataforma externa no es válida"
         },
         "venueType": {
-            "invalid": "El tipo de gastronomía no es válido"
+            "invalid": "El tipo de Comer y salir no es válido"
         },
         "hostTradeBenefitType": {
             "invalid": "El tipo de beneficio seleccionado no es válido"

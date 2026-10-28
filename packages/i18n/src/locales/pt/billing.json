@@ -276,7 +276,7 @@
                 "tourist": "Turista VIP",
                 "partner": "parceiros",
                 "unknown": "Hospeda",
-                "venue": "gastronomia"
+                "venue": "Comer e sair"
             }
         }
     },
@@ -301,14 +301,14 @@
             }
         },
         "max_venues": {
-            "title": "Você atingiu o limite de gastronomias",
-            "message_one": "Você tem {{currentCount}} de {{maxAllowed}} gastronomia no seu plano. Faça um upgrade para publicar mais.",
-            "message_other": "Você tem {{currentCount}} de {{maxAllowed}} gastronomias no seu plano. Faça um upgrade para publicar mais.",
+            "title": "Você atingiu o limite de fichas de Comer e sair",
+            "message_one": "Você tem {{currentCount}} de {{maxAllowed}} ficha de Comer e sair no seu plano. Faça um upgrade para publicar mais.",
+            "message_other": "Você tem {{currentCount}} de {{maxAllowed}} fichas de Comer e sair no seu plano. Faça um upgrade para publicar mais.",
             "cta": "Ver minha assinatura",
             "atLimitPanel": {
                 "title": "Você atingiu o limite do seu plano",
-                "body_one": "Você está usando {{currentCount}} de {{maxAllowed}} ficha de gastronomia. Faça um upgrade do plano para publicar outra.",
-                "body_other": "Você está usando {{currentCount}} de {{maxAllowed}} fichas de gastronomia. Faça um upgrade do plano para publicar outra.",
+                "body_one": "Você está usando {{currentCount}} de {{maxAllowed}} ficha de Comer e sair. Faça um upgrade do plano para publicar outra.",
+                "body_other": "Você está usando {{currentCount}} de {{maxAllowed}} fichas de Comer e sair. Faça um upgrade do plano para publicar outra.",
                 "primaryCta": "Ver minha assinatura",
                 "secondaryCta": "Ver minhas fichas"
             }
@@ -366,7 +366,7 @@
             "title": "Você atingiu o limite de conversas com o assistente de IA"
         },
         "max_ai_chat_venue_per_month": {
-            "title": "Você atingiu o limite de chat de IA da sua gastronomia"
+            "title": "Você atingiu o limite de chat de IA da sua ficha de Comer e sair"
         },
         "max_ai_chat_experience_per_month": {
             "title": "Você atingiu o limite de chat de IA da sua experiência"
@@ -707,7 +707,7 @@
         },
         "limitLabel": {
             "max_accommodations": "Hospedagens publicadas",
-            "max_venues": "Gastronomias publicadas",
+            "max_venues": "Fichas de Comer e sair publicadas",
             "max_experiences": "Experiências publicadas",
             "max_photos_per_accommodation": "Fotos por hospedagem",
             "max_active_promotions": "Promoções ativas",
@@ -719,7 +719,7 @@
             "max_ai_text_improve_per_month": "Melhorias de texto com IA por mês",
             "max_ai_chat_per_month": "Consultas com IA por mês",
             "max_ai_chat_consumer_per_month": "Consultas ao assistente de IA por mês",
-            "max_ai_chat_venue_per_month": "Consultas ao chat de IA (gastronomia) por mês",
+            "max_ai_chat_venue_per_month": "Consultas ao chat de IA (Comer e sair) por mês",
             "max_ai_chat_experience_per_month": "Consultas ao chat de IA (experiências) por mês",
             "max_ai_search_per_month": "Buscas com IA por mês",
             "max_ai_support_per_month": "Consultas ao suporte com IA por mês",

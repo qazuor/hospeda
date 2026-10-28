@@ -276,7 +276,7 @@
                 "tourist": "Turista VIP",
                 "partner": "partners",
                 "unknown": "Hospeda",
-                "venue": "gastronomy"
+                "venue": "Food & nightlife"
             }
         }
     },
@@ -301,14 +301,14 @@
             }
         },
         "max_venues": {
-            "title": "You've reached your gastronomy limit",
-            "message_one": "You have {{currentCount}} of {{maxAllowed}} gastronomy listing in your plan. Upgrade to publish more.",
-            "message_other": "You have {{currentCount}} of {{maxAllowed}} gastronomy listings in your plan. Upgrade to publish more.",
+            "title": "You've reached your Food & nightlife listing limit",
+            "message_one": "You have {{currentCount}} of {{maxAllowed}} Food & nightlife listing in your plan. Upgrade to publish more.",
+            "message_other": "You have {{currentCount}} of {{maxAllowed}} Food & nightlife listings in your plan. Upgrade to publish more.",
             "cta": "View my subscription",
             "atLimitPanel": {
                 "title": "You've reached your plan's limit",
-                "body_one": "You're using {{currentCount}} of {{maxAllowed}} gastronomy listing. Upgrade your plan to publish another one.",
-                "body_other": "You're using {{currentCount}} of {{maxAllowed}} gastronomy listings. Upgrade your plan to publish another one.",
+                "body_one": "You're using {{currentCount}} of {{maxAllowed}} Food & nightlife listing. Upgrade your plan to publish another one.",
+                "body_other": "You're using {{currentCount}} of {{maxAllowed}} Food & nightlife listings. Upgrade your plan to publish another one.",
                 "primaryCta": "View my subscription",
                 "secondaryCta": "View my listings"
             }
@@ -366,7 +366,7 @@
             "title": "You've reached your AI assistant chat limit"
         },
         "max_ai_chat_venue_per_month": {
-            "title": "You've reached your gastronomy AI chat limit"
+            "title": "You've reached your Food & nightlife AI chat limit"
         },
         "max_ai_chat_experience_per_month": {
             "title": "You've reached your experience AI chat limit"
@@ -519,8 +519,8 @@
     "entitlement": {
         "publish_accommodations": "Publish accommodations",
         "edit_accommodation_info": "Edit accommodation info",
-        "edit_venue_info": "Edit gastronomy info",
-        "publish_venue": "Publish gastronomy listings",
+        "edit_venue_info": "Edit Food & nightlife info",
+        "publish_venue": "Publish Food & nightlife listings",
         "edit_experience_info": "Edit experience info",
         "publish_experience": "Publish experience listings",
         "download_listing_pdf": "Printable PDF listing sheet",
@@ -707,7 +707,7 @@
         },
         "limitLabel": {
             "max_accommodations": "Published accommodations",
-            "max_venues": "Published gastronomy listings",
+            "max_venues": "Published Food & nightlife listings",
             "max_experiences": "Published experiences",
             "max_photos_per_accommodation": "Photos per accommodation",
             "max_active_promotions": "Active promotions",
@@ -719,7 +719,7 @@
             "max_ai_text_improve_per_month": "AI text improvements per month",
             "max_ai_chat_per_month": "AI chat queries per month",
             "max_ai_chat_consumer_per_month": "AI assistant queries per month",
-            "max_ai_chat_venue_per_month": "AI chat queries (gastronomy) per month",
+            "max_ai_chat_venue_per_month": "AI chat queries (Food & nightlife) per month",
             "max_ai_chat_experience_per_month": "AI chat queries (experiences) per month",
             "max_ai_search_per_month": "AI searches per month",
             "max_ai_support_per_month": "AI support queries per month",

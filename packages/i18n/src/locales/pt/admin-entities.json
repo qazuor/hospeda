@@ -118,8 +118,8 @@
             "description": "Diretório de prestadores de serviço para anfitriões"
         },
         "venue": {
-            "singular": "Gastronomia",
-            "plural": "Gastronomias",
+            "singular": "Ficha de Comer e sair",
+            "plural": "Fichas de Comer e sair",
             "description": "Gerencie restaurantes, bares, cafés e outros estabelecimentos de alimentação"
         },
         "experience": {
@@ -196,11 +196,11 @@
             "button": "Atribuir"
         },
         "create": {
-            "title": "Nova Gastronomia",
-            "successTitle": "Gastronomia criada",
-            "successMessage": "A gastronomia foi criada com sucesso",
+            "title": "Nova ficha de Comer e sair",
+            "successTitle": "Ficha criada",
+            "successMessage": "A ficha de Comer e sair foi criada com sucesso",
             "errorTitle": "Erro ao criar",
-            "errorMessage": "Não foi possível criar a gastronomia. Tente novamente."
+            "errorMessage": "Não foi possível criar a ficha de Comer e sair. Tente novamente."
         }
     },
     "columns": {
@@ -275,7 +275,7 @@
         "sponsor": "Patrocinador",
         "sponsorship": "Patrocínio",
         "eventsCount": "Eventos",
-        "venuesCount": "Gastronomias",
+        "venuesCount": "Fichas de Comer e sair",
         "experiencesCount": "Experiências",
         "destinationsCount": "Destinos",
         "postsCount": "Publicações",
