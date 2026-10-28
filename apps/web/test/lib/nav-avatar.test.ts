@@ -58,7 +58,7 @@ describe('getCuratedAccountNav', () => {
         ]);
     });
 
-    it('inserts the listings shortcut for a gastronomy/experience-only owner', () => {
+    it('inserts the listings shortcut for a venue/experience-only owner', () => {
         const { shortcutItems } = getCuratedAccountNav({
             permissions: [PermissionEnum.VENUE_EDIT_OWN]
         });

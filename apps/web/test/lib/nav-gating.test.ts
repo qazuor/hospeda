@@ -45,7 +45,7 @@ describe('PERMISSION_ROLE_MAP', () => {
         expect(isVisibleByRoles(node, [RoleEnum.HOST])).toBe(false);
     });
 
-    it('keeps the two role sets distinct (HOST is not a gastronomy/experience role, VENUE_OWNER is not a host role)', () => {
+    it('keeps the two role sets distinct (HOST is not a venue/experience role, VENUE_OWNER is not a host role)', () => {
         expect(PERMISSION_ROLE_MAP[PermissionEnum.VENUE_EDIT_OWN]?.has(RoleEnum.HOST)).toBe(false);
         expect(
             PERMISSION_ROLE_MAP[PermissionEnum.ACCOMMODATION_CREATE]?.has(RoleEnum.VENUE_OWNER)
