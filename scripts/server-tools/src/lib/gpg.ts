@@ -28,9 +28,12 @@
  * - The passphrase never reaches argv (where it would be visible in `ps`).
  *   It is written to a dedicated pipe on fd 3 and gpg reads it through
  *   `--passphrase-fd 3`. `--pinentry-mode loopback` is required for that on
- *   gpg >= 2.1, and `--no-symkey-cache` stops gpg-agent from caching the
- *   passphrase — which would otherwise outlive the process AND let a later
- *   decrypt with a wrong passphrase succeed from the cache.
+ *   gpg >= 2.1. `--no-symkey-cache` (gpg >= 2.2.7; the VPS runs 2.2.27) is
+ *   defence in depth: it asks gpg-agent not to keep the passphrase in its
+ *   cache after the process exits. No test depends on it — removing it
+ *   changed no observable result on gpg 2.4.4 (a wrong passphrase was still
+ *   rejected after a successful decrypt), so do not cite it as the reason
+ *   the wrong-passphrase test passes.
  */
 
 import { Buffer } from 'node:buffer';
