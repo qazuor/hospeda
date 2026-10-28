@@ -79,7 +79,7 @@ function renderCard(weekdayLabels: readonly string[]) {
     );
 }
 
-describe('GastronomyVenueEventEntryCard — weekday labels (HOS-1042)', () => {
+describe('VenueVenueEventEntryCard — weekday labels (HOS-1042)', () => {
     it('renders the seven translated day names as options', () => {
         // Arrange & Act
         renderCard(ES_WEEKDAYS);

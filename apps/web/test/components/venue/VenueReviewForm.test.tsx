@@ -97,7 +97,7 @@ function rateFiveStars() {
 // Tests
 // ---------------------------------------------------------------------------
 
-describe('GastronomyReviewForm — title/content min-length gate (HOS-190)', () => {
+describe('VenueReviewForm — title/content min-length gate (HOS-190)', () => {
     beforeEach(() => {
         setupDialogMocks();
     });
@@ -175,7 +175,7 @@ describe('GastronomyReviewForm — title/content min-length gate (HOS-190)', () 
     });
 });
 
-describe('GastronomyReviewForm — client-side session resolution (HOS-369 WB0-4)', () => {
+describe('VenueReviewForm — client-side session resolution (HOS-369 WB0-4)', () => {
     beforeEach(() => {
         setupDialogMocks();
     });
@@ -185,7 +185,7 @@ describe('GastronomyReviewForm — client-side session resolution (HOS-369 WB0-4
         expect(screen.getByText(/Necesitás una cuenta para dejar tu reseña/i)).toBeInTheDocument();
     });
 
-    it('no longer accepts isAuthenticated — removed from GastronomyReviewForm props (HOS-369 WB0-5)', () => {
+    it('no longer accepts isAuthenticated — removed from VenueReviewForm props (HOS-369 WB0-5)', () => {
         // Assert — this only typechecks if the field is gone. If a future
         // change resurrects it, `@ts-expect-error` starts reporting an
         // unused-directive error and typecheck fails.

@@ -17,7 +17,7 @@ const src = readFileSync(
     'utf8'
 );
 
-describe('GastronomyMenu.astro — the language switcher (HOS-1043)', () => {
+describe('VenueMenu.astro — the language switcher (HOS-1043)', () => {
     it('only renders the switcher when a translation is actually present', () => {
         // `hasTranslations` gates the switcher block — a switcher with
         // nothing to switch to would be a dead control on every `-pro` and
@@ -36,7 +36,7 @@ describe('GastronomyMenu.astro — the language switcher (HOS-1043)', () => {
     });
 
     it('scopes the click listener to this carta, not the whole document', () => {
-        // Two gastronomy listings never share a page, but the guard is cheap
+        // Two venue listings never share a page, but the guard is cheap
         // and the alternative (a document-level listener) would be wrong the
         // day that changes.
         expect(src).toContain("document.getElementById('venue-menu')");

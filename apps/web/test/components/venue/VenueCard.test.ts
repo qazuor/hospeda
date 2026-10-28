@@ -14,7 +14,7 @@ const src = readFileSync(
     'utf8'
 );
 
-describe('GastronomyCard.astro', () => {
+describe('VenueCard.astro', () => {
     describe('locale access', () => {
         it('uses Astro.locals.locale via createTranslations(locale), not Astro.params.lang', () => {
             // Must import SupportedLocale and accept locale as a Prop
@@ -36,7 +36,7 @@ describe('GastronomyCard.astro', () => {
     });
 
     describe('type badge', () => {
-        it('resolves type label via t() with gastronomy.types namespace', () => {
+        it('resolves type label via t() with venue.types namespace', () => {
             expect(src).toContain('venue.types.');
         });
 
@@ -46,7 +46,7 @@ describe('GastronomyCard.astro', () => {
     });
 
     describe('price range badge', () => {
-        it('resolves price range label via t() with gastronomy.card.priceRange namespace', () => {
+        it('resolves price range label via t() with venue.card.priceRange namespace', () => {
             expect(src).toContain('venue.card.priceRange.');
         });
     });
@@ -90,11 +90,11 @@ describe('GastronomyCard.astro', () => {
             expect(src).toContain('openNowStatus !== null');
         });
 
-        it('uses gastronomy.card.openNow i18n key', () => {
+        it('uses venue.card.openNow i18n key', () => {
             expect(src).toContain('venue.card.openNow');
         });
 
-        it('uses gastronomy.card.closedNow i18n key', () => {
+        it('uses venue.card.closedNow i18n key', () => {
             expect(src).toContain('venue.card.closedNow');
         });
 
