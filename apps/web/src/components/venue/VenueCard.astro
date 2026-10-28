@@ -78,7 +78,7 @@ const shouldProxyFeaturedImage = isCloudinaryDeliveryUrl(data.featuredImage.url)
                         fetchpriority={eager ? 'high' : undefined}
                         decoding="async"
                         class="venue-card__img"
-                        data-fallback="/assets/images/placeholder-gastronomy.svg"
+                        data-fallback="/assets/images/placeholder-venue.svg"
                     />
                 ) : (
                     <img
@@ -90,12 +90,12 @@ const shouldProxyFeaturedImage = isCloudinaryDeliveryUrl(data.featuredImage.url)
                         fetchpriority={eager ? 'high' : undefined}
                         decoding="async"
                         class="venue-card__img"
-                        data-fallback="/assets/images/placeholder-gastronomy.svg"
+                        data-fallback="/assets/images/placeholder-venue.svg"
                     />
                 )
             ) : (
                 <img
-                    src={data.featuredImage.url || '/assets/images/placeholder-gastronomy.svg'}
+                    src={data.featuredImage.url || '/assets/images/placeholder-venue.svg'}
                     alt={data.featuredImage.caption ?? data.name}
                     width="432"
                     height="220"
@@ -103,7 +103,7 @@ const shouldProxyFeaturedImage = isCloudinaryDeliveryUrl(data.featuredImage.url)
                     fetchpriority={eager ? 'high' : undefined}
                     decoding="async"
                     class="venue-card__img"
-                    data-fallback="/assets/images/placeholder-gastronomy.svg"
+                    data-fallback="/assets/images/placeholder-venue.svg"
                 />
             )}
 
