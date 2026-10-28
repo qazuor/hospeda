@@ -1,6 +1,6 @@
 # Venue/experience owner self-service area (SPEC-249)
 
-The venue/experience owner self-service area lets a `GASTRONOMY_OWNER` or `EXPERIENCE_OWNER` edit the
+The venue/experience owner self-service area lets a `VENUE_OWNER` or `EXPERIENCE_OWNER` edit the
 **operational** fields of their own venue and experience listings from the
 public web app, under `/[lang]/mi-cuenta/comercio`.
 
@@ -11,7 +11,7 @@ operational content fresh through this area.
 
 > **Since HOS-687 an admin is no longer part of the entrance.** Any signed-in
 > account can open the create path and submit it; the create call grants
-> `GASTRONOMY_OWNER` or `EXPERIENCE_OWNER` inside the same transaction as the listing insert. The
+> `VENUE_OWNER` or `EXPERIENCE_OWNER` inside the same transaction as the listing insert. The
 > "admin sells, provisions, owner maintains" framing above still describes the
 > legacy lead funnel, which HOS-589 removes in a later step.
 
@@ -19,10 +19,10 @@ operational content fresh through this area.
 
 | Route | Purpose | Requires |
 | --- | --- | --- |
-| `/[lang]/mi-cuenta/comercio/` | List the owner's own listings (both verticals), with a per-listing "Editar" link. | `GASTRONOMY_OWNER` or `EXPERIENCE_OWNER` |
+| `/[lang]/mi-cuenta/comercio/` | List the owner's own listings (both verticals), with a per-listing "Editar" link. | `VENUE_OWNER` or `EXPERIENCE_OWNER` |
 | `/[lang]/mi-cuenta/comercio/nuevo/` | Vertical picker (venue or experience). | A session |
 | `/[lang]/mi-cuenta/comercio/nuevo/[vertical]/` | Create form. Submitting it is what makes the caller a venue/experience owner (HOS-687). | A session |
-| `/[lang]/mi-cuenta/comercio/[vertical]/[id]/editar/` | Operational editor for one listing. `vertical` is `venue` or `experience`. | `GASTRONOMY_OWNER` or `EXPERIENCE_OWNER` |
+| `/[lang]/mi-cuenta/comercio/[vertical]/[id]/editar/` | Operational editor for one listing. `vertical` is `venue` or `experience`. | `VENUE_OWNER` or `EXPERIENCE_OWNER` |
 
 All four pages are SSR (`prerender = false`). The index and the editor are
 owner-scoped and role-gated, because they read and write listings that must
@@ -40,7 +40,7 @@ seeds from the protected `GET /{vertical}/{id}` detail
 
 Persisted through the vertical's protected `PATCH /{vertical}/{id}` endpoint
 (`updateOwn`), which only accepts operational sections and gates each one with a
-per-vertical permission (`GASTRONOMY_EDIT_OWN` / `EXPERIENCE_EDIT_OWN`):
+per-vertical permission (`VENUE_EDIT_OWN` / `EXPERIENCE_EDIT_OWN`):
 
 - **Rich description** (`richDescription`)
 - **Contact info** (`contactInfo`: phone, work email, website)
