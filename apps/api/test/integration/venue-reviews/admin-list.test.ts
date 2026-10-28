@@ -1,5 +1,5 @@
 /**
- * Integration tests for the admin gastronomy-review list endpoint —
+ * Integration tests for the admin venue-review list endpoint —
  * moderation `status` filter.
  *
  * Regression (SPEC-259 Chrome smoke): the moderation UI calls
@@ -53,15 +53,15 @@ vi.mock('@repo/service-core', async (importOriginal) => {
 import { initApp } from '../../../src/app';
 import { validateApiEnv } from '../../../src/utils/env';
 
-describe('Admin GastronomyReview List — moderation status filter (SPEC-259 regression)', () => {
+describe('Admin VenueReview List — moderation status filter (SPEC-259 regression)', () => {
     let app: ReturnType<typeof initApp>;
 
-    // Trailing slash: the admin gastronomy router mounts reviews at `/reviews`
+    // Trailing slash: the admin venue router mounts reviews at `/reviews`
     // with an inner `path: '/'`, so the full path resolves as `/reviews/`.
     const base = '/api/v1/admin/venues/reviews/';
 
-    // Grant the full gastronomy and experience admin permission set so the route middleware
-    // pipeline (sibling routes share the gastronomy admin router) does not
+    // Grant the full venue and experience admin permission set so the route middleware
+    // pipeline (sibling routes share the venue admin router) does not
     // block before the handler runs. The endpoint itself requires
     // VENUE_MODERATE_REVIEW.
     const adminActor = {
