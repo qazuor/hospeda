@@ -1,7 +1,7 @@
 /**
  * @file MobileMenu.cta.test.tsx
  * @description RTL tests for the mobile menu's "Publicar" submenu
- * (HOS-691) — a three-way chooser (accommodation / gastronomy /
+ * (HOS-691) — a three-way chooser (accommodation / venue /
  * experience), replacing the single owner CTA link this file used to test
  * (SPEC-182 D3 / HOS-311's host-mode-CTA swap between the `/publicar`
  * funnel and a "Modo anfitrión" shortcut).
@@ -165,8 +165,8 @@ describe('MobileMenu — "Publicar" submenu (HOS-691)', () => {
             '/es/publicar/experiencias/'
         );
 
-        // HOS-1156: the two gastronomy and experience entries used to read `/es/planes/…/` here,
-        // and that was the defect — a "Publicar" menu whose two gastronomy and experience options
+        // HOS-1156: the two venue and experience entries used to read `/es/planes/…/` here,
+        // and that was the defect — a "Publicar" menu whose two food and experience options
         // opened SALES pages. The literals above are deliberately spelled out
         // rather than derived from `PUBLISH_CTA_OPTIONS`: deriving them would
         // make this case pass for any value the config happened to hold, which

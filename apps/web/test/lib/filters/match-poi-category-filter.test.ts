@@ -23,7 +23,7 @@ describe('matchesActivePoiCategories', () => {
     });
 
     it('matches a POI whose (non-primary) category is the selected one', () => {
-        // A POI primary=beach that also belongs to gastronomy must match a
+        // A POI primary=beach that also belongs to venue must match a
         // "gastronomia" selection — the filter checks ALL categories, not just
         // the primary (spec AC-3).
         expect(

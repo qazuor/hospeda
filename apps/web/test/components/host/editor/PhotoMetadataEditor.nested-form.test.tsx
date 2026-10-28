@@ -1,7 +1,7 @@
 /**
  * @file PhotoMetadataEditor.nested-form.test.tsx
  * @description Regression test for HOS-1297. Every editor that mounts
- * `PhotoMetadataEditor` (post, event, gastronomy/experience) wraps the whole
+ * `PhotoMetadataEditor` (post, event, venue/experience) wraps the whole
  * page in its own `<form>`. The panel used to render its own `<form onSubmit>`,
  * which is a nested form: the HTML parser drops the inner one, so "Guardar"
  * submitted the OUTER form natively (a GET, page reload) and never reached the

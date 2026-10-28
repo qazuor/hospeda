@@ -1,6 +1,6 @@
 /**
  * @file ListingViewsWidget.test.tsx
- * @description RTL tests for the gastronomy/experience basic view-stats
+ * @description RTL tests for the venue/experience basic view-stats
  * widget (HOS-734).
  *
  * Verifies:
@@ -9,7 +9,7 @@
  *    one row per listing, zipped with its name.
  *  - The 7d/30d toggle re-fetches with the new window.
  *  - A failed fetch shows the inline error message (never a locked/upsell
- *    CTA — VIEW_BASIC_STATS is the gastronomy/experience floor, HOS-734).
+ *    CTA — VIEW_BASIC_STATS is the venue/experience floor, HOS-734).
  */
 
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';

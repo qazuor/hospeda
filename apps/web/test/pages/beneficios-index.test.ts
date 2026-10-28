@@ -6,7 +6,7 @@
  * source).
  *
  * What these guard, specifically: the page addresses five audiences, and three
- * of them (experience, gastronomy, partner) render copy that LIVES IN ANOTHER
+ * of them (experience, venue, partner) render copy that LIVES IN ANOTHER
  * PAGE'S NAMESPACE on purpose — `venue.landing.*` / `experience.landing.*` for the two verticals
  * whose landings already publish the same claims, `alliance-leads.partner.*`
  * for the ally sentences. Two distinct regressions are possible there and
@@ -70,7 +70,7 @@ describe('beneficios/index.astro — the five audience sections', () => {
         // points at the sales page that replaced it. HOS-1032 retired
         // `/publicar-experiencia/` and `/publicar-restaurante/` the same way —
         // both are now 301s (see `test/pages/publicar-experiencia-index.test.ts`
-        // / `publicar-restaurante-index.test.ts`) — so the gastronomy and
+        // / `publicar-restaurante-index.test.ts`) — so the venue and
         // experience sections were repointed at their own sales pages directly,
         // rather than at a URL that immediately forwards them there.
         expect(src).toContain("path: 'planes/anfitriones'");

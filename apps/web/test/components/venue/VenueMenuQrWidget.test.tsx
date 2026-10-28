@@ -1,10 +1,10 @@
 /**
  * @file VenueMenuQrWidget.test.tsx
- * @description RTL tests for the gastronomy menu QR + scan analytics owner
+ * @description RTL tests for the food menu QR + scan analytics owner
  * panel (HOS-1044 §6.6).
  *
  * Verifies:
- *  - Renders nothing when the owner has zero gastronomy listings.
+ *  - Renders nothing when the owner has zero venue listings.
  *  - A premium venue (both calls 200) renders the total, daily series,
  *    device/OS/language breakdowns, and the QR with a download button.
  *  - A non-premium venue (either call 403) renders the LOCKED state, never a
@@ -86,12 +86,12 @@ const READY_STATS = {
     }
 };
 
-describe('GastronomyMenuQrWidget (HOS-1044)', () => {
+describe('VenueMenuQrWidget (HOS-1044)', () => {
     beforeEach(() => {
         vi.clearAllMocks();
     });
 
-    it('renders nothing when the owner has zero gastronomy listings', () => {
+    it('renders nothing when the owner has zero venue listings', () => {
         const { container } = render(
             <VenueMenuQrWidget
                 locale="es"

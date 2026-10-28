@@ -92,7 +92,7 @@ describe('web tours config', () => {
 
         it('resolves both tours for a multi-role user, one at a time, in priority order (HOS-788)', () => {
             // Mirrors the seeded 'host-venue@local.test' dual-role fixture
-            // (HOST + a gastronomy/experience verticals): both the host and gastronomy
+            // (HOST + a venue/experience verticals): both the host and venue
             // tours apply, and only one is handed out per call — the caller
             // (TourController) re-derives the next one once the first is
             // marked seen, chaining them instead of flattening both into a

@@ -18,7 +18,7 @@
  * - Gallery cap enforcement, per entity (post 15, event 10 — different caps are
  *   the reason the cap assertions are derived from `getGalleryCap`, not typed in).
  * - The moderation lock (`disabled`) closes every write affordance. This is the
- *   one behavior with no gastronomy/experience counterpart: listings have no
+ *   one behavior with no venue/experience counterpart: listings have no
  *   author-edit lock, posts and events do (HOS-374 §7.6.3).
  *
  * @module test/components/account/editor/ContentMediaSection

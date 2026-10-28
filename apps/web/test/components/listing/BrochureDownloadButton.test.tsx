@@ -32,7 +32,7 @@ vi.mock('../../../src/lib/env', () => ({
     getApiUrl: () => 'https://api.test'
 }));
 
-/** Renders the button for a published gastronomy listing. */
+/** Renders the button for a published venue listing. */
 function renderButton() {
     return render(
         <BrochureDownloadButton

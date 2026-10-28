@@ -7,7 +7,7 @@
  * `ListingFaqManager.test.tsx` renders the manager and asserts its transport
  * with a fixture shaped the way the buggy code ASSUMED. These tests use the
  * shape the API actually returns: `ExperienceFaqSingleOutputSchema` and its
- * gastronomy twin are both `z.object({ faq: … })`, and HOS-841 was the manager
+ * venue twin are both `z.object({ faq: … })`, and HOS-841 was the manager
  * storing that envelope instead of the FAQ inside it — a blank card on screen
  * and a follow-up PUT to `…/faqs/undefined`. Neither is visible unless the
  * fixture is wrapped, which is what makes this suite distinct rather than
@@ -28,7 +28,7 @@
  * about the manager itself, now rendered the way its route renders it.
  *
  * `vertical="experience"` on purpose: the sibling suite only ever renders
- * `gastronomy`, so the experience endpoint had no covering test anywhere.
+ * the venue vertical, so the experience endpoint had no covering test anywhere.
  */
 
 import { fireEvent, render, waitFor, within } from '@testing-library/react';
@@ -128,7 +128,7 @@ describe('ListingFaqManager — persistence round trip (HOS-811 / HOS-841)', () 
         mockPostProtected.mockReset();
         mockPut.mockReset();
         // HOS-841: the FAQ arrives WRAPPED — `ExperienceFaqSingleOutputSchema`
-        // and its gastronomy twin are both `z.object({ faq: … })`. This fixture
+        // and its venue twin are both `z.object({ faq: … })`. This fixture
         // used to return the FAQ bare, which is the shape the buggy code
         // assumed, so the suite reproduced the assumption instead of the API and
         // stayed green while the manager put the envelope into the list.
