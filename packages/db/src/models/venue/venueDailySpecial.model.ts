@@ -10,7 +10,7 @@ import { logError, logQuery } from '../../utils/logger.ts';
  * Input for {@link VenueDailySpecialModel.findValidOn}.
  */
 interface FindValidOnInput {
-    /** UUID of the parent gastronomy listing. */
+    /** UUID of the parent venue listing. */
     venueId: string;
     /**
      * The day to test the window against, as a bare `YYYY-MM-DD`.
@@ -72,7 +72,7 @@ export class VenueDailySpecialModel extends BaseModelImpl<VenueDailySpecial> {
      * Both bounds are INCLUSIVE (`valid_from <= today <= valid_until`), which is
      * why a one-day special has both columns set to the same date.
      *
-     * @param input.venueId - UUID of the parent gastronomy listing.
+     * @param input.venueId - UUID of the parent venue listing.
      * @param input.today - The day to test, as `YYYY-MM-DD`.
      * @param input.tx - Optional transaction client.
      * @returns The currently-valid specials, ordered for display.

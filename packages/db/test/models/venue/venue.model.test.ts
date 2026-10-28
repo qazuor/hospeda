@@ -2,7 +2,7 @@
  * Unit tests for `VenueModel.findIdsByOwnerId` (HOS-734).
  *
  * Mirrors `AccommodationModel.findIdsByOwnerId`: resolves the IDs of every
- * non-deleted gastronomy listing owned by a given user, used by
+ * non-deleted venue listing owned by a given user, used by
  * `EntityViewService.getStatsForOwnListings` /
  * `getDailySeriesForOwnListings` to scope the owner's view stats
  * without accepting a caller-supplied ownerId (anti-peeking).

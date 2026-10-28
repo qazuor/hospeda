@@ -1,5 +1,5 @@
 /**
- * Guards for the gastronomy catalog-membership WHERE clauses (HOS-1054).
+ * Guards for the venue catalog-membership WHERE clauses (HOS-1054).
  *
  * ## What these assert, and what they cannot
  *

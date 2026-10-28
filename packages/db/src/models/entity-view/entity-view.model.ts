@@ -111,7 +111,7 @@ export interface GetDailySeriesInput {
  */
 export interface GetDailySeriesForEntityIdsInput {
     /**
-     * Shared entity type for all IDs in the batch (accommodation, gastronomy or
+     * Shared entity type for all IDs in the batch (accommodation, venue or
      * experience). Required: the query filters on it, and a wrong or missing
      * value matches zero rows (HOS-1265).
      */

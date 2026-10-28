@@ -1,9 +1,9 @@
 /**
  * @file venue.model.contact-info-merge.test.ts
- * @description A partial `contactInfo` PATCH on `gastronomies` must NOT wipe
+ * @description A partial `contactInfo` PATCH on `legacy listing tables` must NOT wipe
  * the column.
  *
- * `gastronomies.contact_info` is one JSONB column that can hold several
+ * `legacy listing tables.contact_info` is one JSONB column that can hold several
  * contact fields at once (see `ContactInfoSchema` in `@repo/schemas`).
  * `BaseModelImpl.update()` replaces a JSONB column wholesale unless the model
  * opts the column into merge semantics via `mergeableJsonbColumns` — before

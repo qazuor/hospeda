@@ -1,12 +1,12 @@
 /**
  * @file venue-catalog-filters.ts
- * @description WHERE-clause builders that restrict gastronomy listings to those
+ * @description WHERE-clause builders that restrict venue listings to those
  * carrying a given set of catalog rows (amenities or features).
  *
- * HOS-1054 needs this so a diner can ask the gastronomy listing for the places
+ * HOS-1054 needs this so a diner can ask the venue listing for the places
  * that declare an apto — «sin TACC», «vegano», «sin lactosa» — instead of
  * calling each restaurant to ask. The aptos are ordinary `features` catalog
- * rows scoped to the `gastronomy` vertical, so filtering by apto IS filtering by
+ * rows scoped to the `venue` vertical, so filtering by apto IS filtering by
  * feature; there is no allergen-specific column and deliberately so (a new apto
  * is a new catalog row, not a migration).
  *
@@ -48,8 +48,8 @@
  * Drizzle column references. Inside a subquery Drizzle would alias a referenced
  * column against the OUTER query's table, producing
  * `WHERE "venues"."feature_id" = ...` — nonsense that fails at runtime.
- * The table reference (`${rGastronomyFeature}`) and the outer correlation
- * (`${gastronomies.id}`) resolve correctly and stay template args. Same
+ * The table reference (`${rvenueFeature}`) and the outer correlation
+ * (`${legacy listing tables.id}`) resolve correctly and stay template args. Same
  * workaround, same reason, as the accommodation clauses.
  */
 
@@ -59,10 +59,10 @@ import { rVenueFeature } from '../../schemas/venue/r_venue_feature.dbschema.ts';
 import { venues } from '../../schemas/venue/venue.dbschema.ts';
 
 /**
- * Build a WHERE clause restricting gastronomy listings to those linked to ALL
+ * Build a WHERE clause restricting venue listings to those linked to ALL
  * of the given feature IDs (set intersection).
  *
- * The gastronomy "aptos" (sin TACC, vegano, vegetariano, sin lactosa, sin
+ * The venue "aptos" (sin TACC, vegano, vegetariano, sin lactosa, sin
  * frutos secos) are feature rows, so this is the clause backing the apto
  * filter.
  *
@@ -86,10 +86,10 @@ export function buildVenueFeatureIntersectionClause(featureIds: readonly string[
 }
 
 /**
- * Build a WHERE clause restricting gastronomy listings to those linked to ALL
+ * Build a WHERE clause restricting venue listings to those linked to ALL
  * of the given amenity IDs (set intersection).
  *
- * Included alongside the feature clause because `GastronomySearchSchema` has
+ * Included alongside the feature clause because `venueSearchSchema` has
  * always declared an `amenities` filter that the service silently discarded —
  * a schema that promises a filter and drops it is worse than no filter, since
  * the caller gets a 200 with an unfiltered page.
@@ -113,7 +113,7 @@ export function buildVenueAmenityIntersectionClause(amenityIds: readonly string[
 }
 
 /**
- * Assemble the catalog-membership conditions for a gastronomy search.
+ * Assemble the catalog-membership conditions for a venue search.
  *
  * Returns an empty array when neither filter is active, so the caller can pass
  * the result straight through to `additionalConditions` without a null check.

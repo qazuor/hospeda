@@ -21,7 +21,7 @@
  * What this deliberately does NOT claim to cover is Postgres's own evaluation
  * of that SQL on the four boundary days. That is a real gap and it is named
  * rather than papered over: the boundary is asserted at the schema layer
- * (`gastronomy.daily-special.schema.test.ts`, which pins that a one-day window
+ * (`venue.daily-special.schema.test.ts`, which pins that a one-day window
  * has both bounds on the same date) and the operators are asserted here.
  */
 

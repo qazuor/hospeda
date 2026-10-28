@@ -4,7 +4,7 @@
  * networks the caller did not send, on EVERY model that owns the column.
  *
  * `BaseModelImpl.update()` replaces a JSONB column wholesale unless the model
- * lists it in `mergeableJsonbColumns`. Six models (experience, gastronomy,
+ * lists it in `mergeableJsonbColumns`. Six models (experience, venue,
  * partner, postSponsor, user, eventOrganizer) shipped without `socialNetworks`
  * in that list, so `{ socialNetworks: { instagram } }` silently deleted
  * `facebook`, `twitter`, and the rest. `accommodation` already declared it and
