@@ -473,7 +473,7 @@
                     "uuid": "El ID del propietario debe ser un UUID válido"
                 }
             },
-            "gastronomy": {
+            "venue": {
                 "destinationId": {
                     "uuid": "El destination id debe ser un UUID válido"
                 },
@@ -2426,7 +2426,7 @@
         "externalPlatform": {
             "invalid": "La plataforma externa no es válida"
         },
-        "gastronomyType": {
+        "venueType": {
             "invalid": "El tipo de gastronomía no es válido"
         },
         "hostTradeBenefitType": {
@@ -3253,7 +3253,7 @@
         "tooSmallNumber": "El número es demasiado bajo",
         "unrecognizedKeys": "Se encontraron campos no reconocidos"
     },
-    "gastronomy": {
+    "venue": {
         "amenityIds": {
             "invalidUuid": "El ID de servicio debe ser un UUID válido"
         },
@@ -3409,7 +3409,7 @@
             }
         }
     },
-    "gastronomyFeature": {
+    "venueFeature": {
         "comments": {
             "max": "El comments no puede superar los {{max}} caracteres",
             "min": "El comments debe tener al menos {{min}} caracteres"
