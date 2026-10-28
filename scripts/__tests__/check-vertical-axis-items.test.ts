@@ -42,7 +42,7 @@ function makeTree({ files }: { readonly files: Readonly<Record<string, string>> 
 const SWITCH = `export function segment(v: string) {
     switch (v) {
         case 'venue':
-            return 'gastronomies';
+            return 'venues';
         case 'experience':
             return 'experiences';
         default:
@@ -91,7 +91,7 @@ describe('TEST:V1:8 — GUARD:G1', () => {
             ],
             [
                 'packages/shared/src/x.ts',
-                "export const f = (v: string) =>\n    v === 'venue'\n        ? 'gastronomies'\n        : 'experiences';\n"
+                "export const f = (v: string) =>\n    v === 'venue'\n        ? 'venues'\n        : 'experiences';\n"
             ]
         ])('%s: %s', (file, source) => {
             const result = guardOver({ overrides: { [file]: source } });

@@ -156,7 +156,7 @@ export const COMMANDS: readonly CommandEntry[] = [
     },
     {
         name: 'test',
-        summary: 'Corre los tests de una categoría (billing, auth, gastronomy…)',
+        summary: 'Corre los tests de una categoría (billing, auth, venue…)',
         load: async () => (await import('./commands/test/command.ts')).testCommand
     },
     {

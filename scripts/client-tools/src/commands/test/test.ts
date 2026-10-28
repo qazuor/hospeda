@@ -61,7 +61,7 @@ ${pc.bold('Categorías')}
 ${rows}
 
   ${pc.dim(`Se editan en ${CATEGORIES_FILE}. Se superponen a propósito: un test de`)}
-  ${pc.dim('checkout de gastronomía cae en billing Y en gastronomy.')}
+  ${pc.dim('checkout de Comer y salir cae en billing Y en venue.')}
 `;
 }
 
