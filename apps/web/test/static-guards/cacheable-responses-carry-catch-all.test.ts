@@ -199,7 +199,7 @@ describe('every emitter puts the catch-all on the response', () => {
 
     it('the sitemaps carry it, ahead of every collection tag', () => {
         // Enumerated rather than derived from `CACHE_TAG_COLLECTIONS`, so that
-        // adding a collection has to be acknowledged here. `list-gastro` and
+        // adding a collection has to be acknowledged here. `list-venue` and
         // `list-exp` arrived with HOS-369 W2-4 and belong: `sitemap-dynamic`
         // really does list gastronomy and experience entries, so a write to
         // either changes the document.
@@ -209,7 +209,7 @@ describe('every emitter puts the catch-all on the response', () => {
             'test:list-dest',
             'test:list-event',
             'test:list-post',
-            'test:list-gastro',
+            'test:list-venue',
             'test:list-exp'
         ]);
     });

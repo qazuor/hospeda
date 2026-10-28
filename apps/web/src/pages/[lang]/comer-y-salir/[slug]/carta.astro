@@ -101,7 +101,7 @@ if (!hasMenuContent) {
 
 // --- Edge cacheability (HOS-369 W2-4 pattern, same tags as the listing) ---
 // Sharing the listing's own entity tags is deliberate: a menu edit must purge
-// BOTH pages together. `list-gastronomy` stays excluded for the same reason
+// BOTH pages together. `list-venue` stays excluded for the same reason
 // the listing excludes it — a detail page (this one included) is not a
 // listing, and the collection tag would evict every other venue's page too.
 const venueCacheTags = buildEntityCacheTags({

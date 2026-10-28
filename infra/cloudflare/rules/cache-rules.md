@@ -712,8 +712,8 @@ the response cacheable. Measured on 2026-08-04:
 | `/{lang}/publicaciones/` and `/{categoria,etiqueta,autor}/<x>/` | yes — **since 2026-08-04** (W2-3), tagged `list-post` |
 | `/{lang}/publicaciones/<slug>/` (detail) | yes — **since 2026-08-04** (W2-3), tagged `post-<slug>` + `post-<id>` |
 | `/{lang}/destinos/{atraccion,lugar}/<slug>/` | yes — **since 2026-08-04** (W2-4), tagged `attr-<slug>` / `poi-<slug>` (no collection tag exists) |
-| `/{lang}/{gastronomia,experiencias}/` | yes — **since 2026-08-04** (W2-4), tagged `list-gastro` / `list-exp` |
-| `/{lang}/{gastronomia,experiencias}/<slug>/` | yes — **since 2026-08-04** (W2-4), tagged `gastro-<slug>` / `exp-<slug>` + id |
+| `/{lang}/{gastronomia,experiencias}/` | yes — **since 2026-08-04** (W2-4), tagged `list-venue` / `list-exp` |
+| `/{lang}/{gastronomia,experiencias}/<slug>/` | yes — **since 2026-08-04** (W2-4), tagged `venue-<slug>` / `exp-<slug>` + id |
 | `/{lang}/partners/<slug>/` (detail, HOS-294) | origin has cached since launch, but the rule matches **only once W2-5 (HOS-519) is applied** — pending as of 2026-09-04. Tagged by `buildEntityCacheTags({ entity: 'partner', slug, id })`; no collection tag exists, same as attractions/POIs |
 | `/{lang}/planes/{anfitriones,turistas,aliados,gastronomia,experiencias}/` and their `/precios/` siblings | origin has cached (`cacheClass: 'pricing'`) since these pages shipped, but the rule matches **only once W2-6 (HOS-519) is applied** — pending as of 2026-09-04 |
 | `/{lang}/presentacion/{proveedores,gastronomia,alojamientos,aliados,editores,experiencias}/` | origin has cached (`cacheClass: 'static'`) since launch, but the rule matches **only once W2-6 (HOS-519) is applied** — pending as of 2026-09-04 |

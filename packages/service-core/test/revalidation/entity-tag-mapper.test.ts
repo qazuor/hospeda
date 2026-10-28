@@ -191,10 +191,10 @@ describe('getAffectedCacheTags', () => {
                 destinationSlug: 'colon'
             });
 
-            const prefix = entityType === 'venue' ? 'gastro' : 'exp';
+            const prefix = entityType === 'venue' ? 'venue' : 'exp';
             expect(tags).toContain(`${prefix}-la-parrilla`);
             expect(tags).toContain(`${prefix}-uuid-1`);
-            expect(tags).toContain(entityType === 'venue' ? 'list-gastro' : 'list-exp');
+            expect(tags).toContain(entityType === 'venue' ? 'list-venue' : 'list-exp');
             expect(tags).toContain('dest-colon');
         });
 
@@ -217,7 +217,7 @@ describe('getAffectedCacheTags', () => {
 
         it('degrades to the collection tag when no identifying key is present', () => {
             const tags = getAffectedCacheTags({ entityType: 'venue' });
-            expect(tags).toEqual(['list-gastro']);
+            expect(tags).toEqual(['list-venue']);
         });
     });
 

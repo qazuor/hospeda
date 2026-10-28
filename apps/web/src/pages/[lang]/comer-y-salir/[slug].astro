@@ -85,7 +85,7 @@ const venue = toVenueDetailPageProps({ item: raw, locale });
 // reaching here, so it can never be shared from the edge. It mirrors the
 // service side, which only schedules a purge for a PUBLISHED listing.
 //
-// Addressed by its OWN two tags and deliberately NOT by `list-gastronomy`: a
+// Addressed by its OWN two tags and deliberately NOT by `list-venue`: a
 // detail page is not a listing, and the collection tag would make every
 // gastronomy write evict every other one's page.
 const venueCacheTags = buildEntityCacheTags({
