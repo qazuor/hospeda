@@ -357,7 +357,7 @@ export function VenueMenuQrWidget({
                         {state.status === 'locked' && (
                             <p
                                 className={styles.locked}
-                                data-testid="gastronomy-menu-qr-locked"
+                                data-testid="venue-menu-qr-locked"
                             >
                                 {t(
                                     'listing.owner.list.menuQr.locked',

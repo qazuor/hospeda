@@ -118,7 +118,7 @@ describe('GastronomyMenuQrWidget (HOS-1044)', () => {
         expect(screen.getByText('La Parrilla del Puerto')).toBeTruthy();
         expect(screen.getByTestId('menu-qr-daily-series')).toBeTruthy();
         expect(screen.getByTestId('menu-qr-download')).toBeTruthy();
-        expect(screen.queryByTestId('gastronomy-menu-qr-locked')).toBeNull();
+        expect(screen.queryByTestId('venue-menu-qr-locked')).toBeNull();
 
         // The daily series and breakdown counts are on the page.
         expect(screen.getByTestId('menu-qr-daily-series').textContent).toContain('10');
@@ -159,7 +159,7 @@ describe('GastronomyMenuQrWidget (HOS-1044)', () => {
             />
         );
 
-        expect(await screen.findByTestId('gastronomy-menu-qr-locked')).toHaveTextContent(
+        expect(await screen.findByTestId('venue-menu-qr-locked')).toHaveTextContent(
             'plan Premium de gastronomía'
         );
         expect(screen.queryByTestId('menu-qr-total')).toBeNull();
@@ -180,7 +180,7 @@ describe('GastronomyMenuQrWidget (HOS-1044)', () => {
             />
         );
 
-        expect(await screen.findByTestId('gastronomy-menu-qr-locked')).toBeTruthy();
+        expect(await screen.findByTestId('venue-menu-qr-locked')).toBeTruthy();
     });
 
     it('renders a generic error (not locked) on a non-403 failure', async () => {
@@ -198,7 +198,7 @@ describe('GastronomyMenuQrWidget (HOS-1044)', () => {
         );
 
         expect(await screen.findByRole('alert')).toHaveTextContent('No pudimos cargar');
-        expect(screen.queryByTestId('gastronomy-menu-qr-locked')).toBeNull();
+        expect(screen.queryByTestId('venue-menu-qr-locked')).toBeNull();
     });
 
     it('re-fetches scans (and the QR) with window=7d when the toggle is clicked', async () => {
