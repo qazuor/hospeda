@@ -42,7 +42,7 @@ const UserSummarySchema = z.object({
 /**
  * Review summary schema for gastronomy relations.
  */
-const GastronomyReviewSummarySchema = z.object({
+const VenueReviewSummarySchema = z.object({
     id: z.string().uuid(),
     overallRating: z.number().min(1).max(5),
     comment: z.string().optional(),
@@ -95,7 +95,7 @@ export type VenueWithOwner = z.infer<typeof VenueWithOwnerSchema>;
  * Gastronomy with reviews array.
  */
 export const VenueWithReviewsSchema = VenueSchema.extend({
-    reviews: z.array(GastronomyReviewSummarySchema).optional(),
+    reviews: z.array(VenueReviewSummarySchema).optional(),
     reviewsCount: z.number().int().min(0).optional(),
     averageRating: z.number().min(0).max(5).optional()
 });
@@ -134,7 +134,7 @@ export const VenueWithFullRelationsSchema = VenueSchema.extend({
     owner: UserSummarySchema.optional(),
     features: z.array(FeatureSummarySchema).optional(),
     amenities: z.array(AmenitySummarySchema).optional(),
-    reviews: z.array(GastronomyReviewSummarySchema).optional(),
+    reviews: z.array(VenueReviewSummarySchema).optional(),
     reviewsCount: z.number().int().min(0).optional(),
     averageRating: z.number().min(0).max(5).optional()
 });
