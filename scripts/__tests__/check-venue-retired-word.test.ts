@@ -8,6 +8,7 @@ import { deriveHistory, ledgerFingerprint, run } from '../check-venue-retired-wo
 const ROOT = process.cwd();
 const oldWord = ['gastro', 'nomy'].join('');
 const oldVisible = ['Gastronom', 'ía'].join('');
+const legacyMarker = ['legacy-name', 'allowed:'].join('-');
 const emptyExceptions = {
     a: { files: {}, keys: {} },
     b: { files: {}, keys: {} },
@@ -93,7 +94,7 @@ describe('G-FAC-R1 retired venue word', () => {
     });
 
     it('rejects an uncounted legacy marker', () => {
-        const source = `const folder = '${oldWord}'; // legacy-name-allowed: historical object folder`;
+        const source = `const folder = '${oldWord}'; // ${legacyMarker} historical object folder`;
         const { result } = fixture({ 'apps/api/src/delete.ts': source });
         expect(result.violations.length).toBeGreaterThan(0);
     });
@@ -103,7 +104,7 @@ describe('G-FAC-R1 retired venue word', () => {
             ...emptyExceptions,
             e: { markers: { 'apps/api/src/routes/media/protected/delete-entity.ts': 2 } }
         };
-        const source = `const first = '${oldWord}s'; // legacy-name-allowed: historical folder\nconst second = '${oldWord}s';`;
+        const source = `const first = '${oldWord}s'; // ${legacyMarker} historical folder\nconst second = '${oldWord}s';`;
         const { result } = fixture(
             { 'apps/api/src/routes/media/protected/delete-entity.ts': source },
             { exemptions }
@@ -120,7 +121,7 @@ describe('G-FAC-R1 retired venue word', () => {
             e: { markers: { 'apps/api/src/delete.ts': 1 } }
         };
         const { result } = fixture(
-            { 'apps/api/src/delete.ts': '// legacy-name-allowed: marker without a legacy token' },
+            { 'apps/api/src/delete.ts': `// ${legacyMarker} marker without a legacy token` },
             { exemptions }
         );
         expect(result.violations.some(({ text }) => text.includes('no occurrence'))).toBe(true);

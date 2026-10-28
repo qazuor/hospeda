@@ -44,6 +44,7 @@ type Violation = {
     readonly text: string;
 };
 
+const legacyMarker = ['legacy-name', 'allowed:'].join('-');
 const isHistoryModule = (path: string) => path.startsWith('packages/seed/src/data-migrations/');
 export const outOfScan = (path: string) => {
     if (path.startsWith('.specs/') || isHistoryModule(path)) return true;
@@ -294,7 +295,7 @@ export function run({
         });
         for (let index = 0; index < rows.length; index++) {
             const row = rows[index] ?? '';
-            const hasMarker = row.includes('legacy-name-allowed:');
+            const hasMarker = row.includes(legacyMarker);
             if (hasMarker) markerLinesByFile.set(file, (markerLinesByFile.get(file) ?? 0) + 1);
             const rowMatches: { readonly rule: number; readonly text: string }[] = [];
             const rules = [
