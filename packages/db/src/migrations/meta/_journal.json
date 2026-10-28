@@ -1268,6 +1268,13 @@
       "when": 1793098839310,
       "tag": "0180_venue_rename",
       "breakpoints": true
+    },
+    {
+      "idx": 181,
+      "version": "7",
+      "when": 1793218068800,
+      "tag": "0181_hos1825_moderation_kind_check",
+      "breakpoints": true
     }
   ]
 }
