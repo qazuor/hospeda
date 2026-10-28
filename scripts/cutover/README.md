@@ -69,6 +69,76 @@ in the application env registry (the unit spec marks the registry as N/A for thi
 | `CUTOVER_CARD_TOKEN` | One-use card token created by the owner for this run. The card number never enters this script. |
 | `CUTOVER_PAYER_EMAIL` | Owner payer email sent in the provider payment request. Never printed or written to the manifest. |
 | `CUTOVER_PAYMENT_METHOD_ID` | Payment method id paired with the card token. |
+| `CUTOVER_STAGING_DATABASE_URL` | Connection string of the STAGING database, used only by the staging sandbox run below. Opened read-only (`default_transaction_read_only=on` plus a `READ ONLY` transaction). |
+
+## Staging sandbox run (step V1 of the staging window, HOS-1951)
+
+A separate entry point, `cli-staging-sandbox.ts`, cancels in the provider **sandbox** the
+preapprovals the **staging** database knows about, before the window's reset erases their
+anchors. It is not the U3 cutover above: it walks no unfiltered census and cancels no plans.
+
+```bash
+# dry run (the default): reads, re-reads by id and writes the manifest; sends no cancellation
+corepack pnpm exec tsx scripts/cutover/cli-staging-sandbox.ts --target=staging
+
+# real run: cancels every live preapproval found and re-reads each until it reads cancelled
+corepack pnpm exec tsx scripts/cutover/cli-staging-sandbox.ts --target=staging --apply
+
+# retry: re-reads the ids of a previous manifest too (works after the reset, when the DB is empty)
+corepack pnpm exec tsx scripts/cutover/cli-staging-sandbox.ts --target=staging --apply \
+  --from-manifest scripts/cutover/out/staging-sandbox-manifest-<timestamp>.json
+```
+
+Session variables: `CUTOVER_MP_ACCESS_TOKEN` (the sandbox token) and
+`CUTOVER_STAGING_DATABASE_URL`. Optional flags: `--probes <path>` (same default as above) and
+`--manifest-out <path>` (default `scripts/cutover/out/staging-sandbox-manifest-<timestamp>.json`).
+
+**Guards, fail-closed, all before any cancellation (exit 2):**
+
+1. `--target=staging` is required; any other value, or none, refuses.
+2. Both session variables must be set.
+3. The token's account must carry the `test_user` tag on `GET /users/me`. That is the only
+   measured signal of the sandbox: both tokens start with `APP_USR-` and `live_mode` is `true`
+   in both (EX-14). A failed read refuses too.
+4. The database must answer `current_database() = 'hospeda_staging'` and
+   `current_user = 'hospeda_staging_user'` (the staging name and role, see
+   `scripts/server-tools/src/lib/target.ts`; production's are both `postgres`). Asked to the
+   server, never parsed from the URL. A failed query refuses too.
+
+**Sources**, read inside a `READ ONLY` transaction:
+
+- **Anchored**: every `provider_link.provider_id`, cancelled or not (whether it is alive is
+  decided by re-reading it by id, never by `cancelled_seen_at`), plus the `authorizationId` of
+  every completed `PREAPPROVAL_CREATE` row of `idempotency_key` (earlier attempts a retry
+  replaced, which no longer have a link).
+- **Loose**: the email each subscription sent as `payer_email`,
+  `coalesce(declared_payer_email, users.email)` as in the creations sweep
+  (`creation-sweep.model.ts`); the fallback covers rows from before migration 0177 and
+  successors created with no declared email. Each one is searched with
+  `GET /preapproval/search?payer_email=`. The search
+  filters by that field in the sandbox (RC-1), but its listing status is stale (RC-4), so every
+  id found is re-read by id. A search whose walked count is not its `total` is a
+  `SEARCH_INCOMPLETE` failure. The old `billing_pending_checkouts` and `billing_checkouts` tables
+  are not read: migration `0125` dropped them.
+- **Previous manifest** (`--from-manifest`): its `foundIds`, `liveIds` and failed ids.
+
+Probe ids in the probe manifest are left alone (`preservedProbeIds`). A preapproval re-read as
+`cancelled` is never sent again (`alreadyCancelledIds`); a 404 is `notFoundIds`; a status that is
+neither live nor `cancelled` is a failure and the object is left alone. With `--apply`, each live
+id is cancelled and then re-read with the 3 retries of step 2 (2 s, 5 s, 10 s); one that never
+reads `cancelled` is `NOT_CANCELLED`.
+
+**Manifest**: `kind: "staging-sandbox-preapprovals"`, ids and counts only (payer emails are
+counted, never written or printed): `foundIds`, `liveIds`, `cancelRequestedIds`, `cancelledIds`,
+`alreadyCancelledIds`, `notFoundIds`, `preservedProbeIds`, `failures`. Written incrementally,
+with the same no-overwrite rules as the cutover manifest.
+
+Exit 0 clean (`ok` or `dry-run`), 1 any failure (**do not go on to V4**), 2 usage error or guard
+refusal. Not covered: a sandbox preapproval with no anchored id whose payer email is no longer
+in the database. That is the case of a closed account: the closure pseudonymizes `users.email`
+and clears `declared_payer_email`, so its loose preapprovals are found only if a creation
+attempt recorded their id. A preapproval created for an email the database never stored is not
+found either.
 
 ## What it does
 

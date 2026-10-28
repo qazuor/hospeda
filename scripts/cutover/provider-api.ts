@@ -87,32 +87,42 @@ function assertSafeId({ id }: { readonly id: string }): void {
     }
 }
 
+/** One provider call: method, path, optional JSON body and idempotency key. */
+export interface ProviderRequestInput {
+    readonly method: 'GET' | 'PUT' | 'POST';
+    readonly path: string;
+    readonly body?: Readonly<Record<string, JsonValue>>;
+    readonly idempotencyKey?: string;
+}
+
+/** What a provider call answers: the HTTP status and the parsed JSON (or `null`). */
+export interface ProviderRequestResult {
+    readonly httpStatus: number;
+    readonly json: unknown;
+}
+
+/** Sends one provider call with the retry policy of this folder. Built by {@link createProviderRequest}. */
+export type ProviderRequest = (input: ProviderRequestInput) => Promise<ProviderRequestResult>;
+
 /**
- * Builds the provider client over native fetch. GET and PUT here are idempotent, and the
- * only POST (a refund) carries a deterministic idempotency key, so 429 and 5xx are retried
- * with a short increasing delay. Error messages carry the
- * path and HTTP status only: provider bodies can hold personal data and are dropped.
+ * Builds the one HTTP sender every provider client of this folder uses. 429 and 5xx are
+ * retried with a short increasing delay; the token goes only in the `Authorization` header.
  *
  * @param input - token and optional injection points (base URL, fetch, sleep)
- * @returns the provider operations the cutover needs
+ * @returns the sender
  */
-export function createProviderApi({
+export function createProviderRequest({
     accessToken,
     baseUrl = DEFAULT_PROVIDER_BASE_URL,
     fetchImpl = fetch,
     sleep = (ms: number) => new Promise<void>((resolve) => setTimeout(resolve, ms))
-}: CreateProviderApiInput): ProviderApi {
-    const request = async ({
+}: CreateProviderApiInput): ProviderRequest {
+    return async ({
         method,
         path,
         body,
         idempotencyKey
-    }: {
-        readonly method: 'GET' | 'PUT' | 'POST';
-        readonly path: string;
-        readonly body?: Readonly<Record<string, JsonValue>>;
-        readonly idempotencyKey?: string;
-    }): Promise<{ readonly httpStatus: number; readonly json: unknown }> => {
+    }: ProviderRequestInput): Promise<ProviderRequestResult> => {
         let lastStatus = 0;
         for (let attempt = 1; attempt <= MAX_ATTEMPTS; attempt += 1) {
             try {
@@ -140,6 +150,19 @@ export function createProviderApi({
         }
         return { httpStatus: lastStatus, json: null };
     };
+}
+
+/**
+ * Builds the provider client over native fetch. GET and PUT here are idempotent, and the
+ * only POST (a refund) carries a deterministic idempotency key, so 429 and 5xx are retried
+ * with a short increasing delay. Error messages carry the
+ * path and HTTP status only: provider bodies can hold personal data and are dropped.
+ *
+ * @param input - token and optional injection points (base URL, fetch, sleep)
+ * @returns the provider operations the cutover needs
+ */
+export function createProviderApi(input: CreateProviderApiInput): ProviderApi {
+    const request = createProviderRequest(input);
 
     return {
         createProbe: async ({ payerEmail, idempotencyKey }): Promise<CreateCallResult> => {
