@@ -351,7 +351,7 @@ ${DESTINO_GUIDANCE}`,
     /**
      * Base prompt for the `chat_venue` feature (HOS-400).
      *
-     * The context block this reads is assembled by `gastronomy-ai-context.ts`
+     * The context block this reads is assembled by the venue AI context module
      * and carries what a diner actually asks about: cuisine type, opening hours,
      * the structured carta, price range and the venue's FAQs.
      */
