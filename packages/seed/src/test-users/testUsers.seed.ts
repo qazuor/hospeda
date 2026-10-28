@@ -54,7 +54,7 @@ export interface TestUserSpec {
  * was removed along with the billing machinery it drove).
  *
  * What survives is what is still exercised without billing: staff role gates,
- * tourist/host/gastronomy/experience/complex role fixtures, the HOST accommodation,
+ * tourist/host/venue/experience/complex role fixtures, the HOST accommodation,
  * promotion and provider-listing attachments, and multi-role grants.
  *
  * NOTE: super-admin@local.test and admin@local.test are intentionally

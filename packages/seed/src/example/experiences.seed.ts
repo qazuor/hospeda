@@ -319,7 +319,7 @@ function buildExperienceInputs(
  *
  * Uses `ExperienceMediaModel` rather than this file's raw `pg.Pool`. Going
  * through the model keeps the row shape typed and reuses the same builder
- * the accommodation and gastronomy seeds use.
+ * the accommodation and venue seeds use.
  *
  * Idempotent: skips entirely when the listing already has media rows.
  *

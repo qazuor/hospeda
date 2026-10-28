@@ -7,7 +7,7 @@
  * key — call them twice, get the same UUID. What none of them prove is that
  * a REAL seed run actually PERSISTS that computed id: that the
  * `deterministicId` model-direct passthrough in `createSeedFactory` (and the
- * raw-Drizzle-insert variant used by `gastronomies.seed.ts`) writes the
+ * raw-Drizzle-insert variant used by `legacy listing tables.seed.ts`) writes the
  * explicit id unmodified, and that deleting a row and reseeding the exact
  * same fixture reproduces the exact same persisted UUID.
  *
@@ -34,8 +34,8 @@
  *    review id's reseed-stability AND the parent aggregate's correctness,
  *    reusing the same insert shape as
  *    `accommodation-review-recalculate-stats.integration.test.ts` (T-025).
- * 5. **Raw-Drizzle-insert / already-bypassed entity**: `gastronomies`, which
- *    (per `gastronomies.seed.ts`) was ALREADY a direct `db.insert()` before
+ * 5. **Raw-Drizzle-insert / already-bypassed entity**: `legacy listing tables`, which
+ *    (per `legacy listing tables.seed.ts`) was ALREADY a direct `db.insert()` before
  *    HOS-25 — never routed through a service OR a `BaseModelImpl` subclass —
  *    so this proves the deterministic id survives that third insertion style
  *    too.
@@ -722,7 +722,7 @@ describe('HOS-25 T-022 — end-to-end reseed-determinism against a real database
                         updatedById: ownerId
                     };
 
-                    // ── First seed — direct db.insert(), exactly like gastronomies.seed.ts ──
+                    // ── First seed — direct db.insert(), exactly like legacy listing tables.seed.ts ──
                     const [inserted1] = await tx
                         .insert(venues)
                         .values({

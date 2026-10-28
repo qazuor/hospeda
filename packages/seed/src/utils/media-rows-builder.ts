@@ -3,8 +3,8 @@
  * @description Vertical-agnostic mapping from a fixture's `media` block to
  * relational media rows (HOS-372).
  *
- * Accommodations, gastronomy listings and experiences all keep their photos in
- * per-vertical tables (`accommodation_media`, `gastronomy_media`,
+ * Accommodations, venue listings and experiences all keep their photos in
+ * per-vertical tables (`accommodation_media`, `venue_media`,
  * `experience_media`) that mirror each other exactly. The only thing that
  * differs between them is the name of the owning foreign key, so the ordering
  * and defaulting rules live here ONCE and each vertical's builder just stamps

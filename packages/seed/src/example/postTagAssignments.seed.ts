@@ -47,7 +47,7 @@ export interface PostModelPort {
  *
  * E-2 assignment rationale (from tag-seeds.md § Example Assignments):
  * - Post 001 (tourism / destinations guide)  → guía de viaje, destinos, recomendaciones locales
- * - Post 002 (gastronomy)                    → dónde comer, cultura entrerriana, recomendaciones locales
+ * - Post 002 (venue)                    → dónde comer, cultura entrerriana, recomendaciones locales
  * - Post 003 (carnival)                      → carnaval, eventos locales, cultura entrerriana
  * - Post 004 (thermal baths / wellness)      → turismo termal, escapadas, fin de semana largo
  * - Post 005 (nature / eco-tourism)          → naturaleza entrerriana, turismo rural, escapadas

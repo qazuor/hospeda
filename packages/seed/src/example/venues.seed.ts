@@ -38,12 +38,12 @@ export const getVenueFixtureId = (seedId: string): string =>
 
 /**
  * Derives the deterministic UUIDv5 id for a single FAQ belonging to an
- * `example` gastronomy fixture (HOS-25 T-026), keyed off the parent
- * gastronomy's seed-key plus the FAQ's position in its fixture array (FAQ
+ * `example` venue fixture (HOS-25 T-026), keyed off the parent
+ * venue's seed-key plus the FAQ's position in its fixture array (FAQ
  * fixtures have no `id` of their own) — mirrors
  * `getAccommodationFaqFixtureId` in `accommodations.seed.ts`.
  *
- * @param input - RO-RO input with the parent gastronomy's seed-key and this FAQ's index
+ * @param input - RO-RO input with the parent venue's seed-key and this FAQ's index
  * @returns Stable UUIDv5 derived from the FAQ's composite seed-key
  */
 export const getVenueFaqFixtureId = (input: { venueSeedId: string; index: number }): string =>
@@ -53,13 +53,13 @@ export const getVenueFaqFixtureId = (input: { venueSeedId: string; index: number
 
 /**
  * Derives the deterministic UUIDv5 id for a single review belonging to an
- * `example` gastronomy fixture (HOS-25 T-026), keyed off the parent
- * gastronomy's seed-key plus the reviewer's own seed id — the `(userId,
+ * `example` venue fixture (HOS-25 T-026), keyed off the parent
+ * venue's seed-key plus the reviewer's own seed id — the `(userId,
  * venueId)` pair is already the DB's own UNIQUE constraint for this
  * table, so it is a more content-stable composite key than array position
  * (unaffected by fixture-array reordering).
  *
- * @param input - RO-RO input with the parent gastronomy's seed-key and the reviewer's seed id
+ * @param input - RO-RO input with the parent venue's seed-key and the reviewer's seed id
  * @returns Stable UUIDv5 derived from the review's composite seed-key
  */
 export const getVenueReviewFixtureId = (input: {
@@ -163,7 +163,7 @@ const LISTING_OWNERS: readonly ListingOwnerSpec[] = [
 ] as const;
 
 /**
- * Raw shape of a gastronomy listing seed JSON file.
+ * Raw shape of a venue listing seed JSON file.
  *
  * Field `id` is seed-only metadata excluded from the DB insert.
  * Fields `ownerId` and `destinationId` are seed IDs resolved via idMapper.
@@ -191,7 +191,7 @@ interface VenueSeedData {
 }
 
 /**
- * Wrapper shape of a gastronomy FAQ seed JSON file.
+ * Wrapper shape of a venue FAQ seed JSON file.
  * `$venueId` references the listing seed id; `faqs` is the array of entries.
  */
 interface VenueFaqFile {
@@ -205,7 +205,7 @@ interface VenueFaqFile {
 }
 
 /**
- * Wrapper shape of a gastronomy review seed JSON file.
+ * Wrapper shape of a venue review seed JSON file.
  * `$venueId` references the listing seed id; `reviews` is the array of entries.
  */
 interface VenueReviewFile {
@@ -222,9 +222,9 @@ interface VenueReviewFile {
 }
 
 /**
- * Inserts a listing's fixture photos as `gastronomy_media` rows (HOS-372).
+ * Inserts a listing's fixture photos as `venue_media` rows (HOS-372).
  *
- * Photos used to be written into the `gastronomy` row's `media` JSONB column.
+ * Photos used to be written into the `venue` row's `media` JSONB column.
  * They now live in a relational table, which is what every read path composes
  * from, so seeding the blob would produce listings with no visible photos.
  *
@@ -265,8 +265,8 @@ async function seedVenueMediaRows({
 }
 
 /**
- * Seeds the three VENUE_OWNER users, the gastronomy listings (via Drizzle
- * insert), gastronomy FAQs, and gastronomy reviews.
+ * Seeds the three VENUE_OWNER users, the venue listings (via Drizzle
+ * insert), venue FAQs, and venue reviews.
  *
  * ### Ordering constraint
  * MUST run after destinations and example users so that:
@@ -279,21 +279,21 @@ async function seedVenueMediaRows({
  *   intentionally NOT visible; demonstrates the gating.
  *
  * ### Idempotency
- * - Gastronomy rows: idempotent via `onConflictDoNothing` on the unique `slug`.
+ * - venue rows: idempotent via `onConflictDoNothing` on the unique `slug`.
  * - Listing owner users: idempotent via pre-check on `email`.
  * - FAQ rows: idempotent via `onConflictDoNothing` on the (now explicit,
  *   deterministic) primary key.
  * - Review rows: idempotent via `onConflictDoNothing` on UNIQUE(userId, venueId).
  *
  * ### Deterministic ids (HOS-25 T-026)
- * Gastronomy listings, FAQs, and reviews are all inserted with an explicit
+ * venue listings, FAQs, and reviews are all inserted with an explicit
  * UUIDv5 id derived from a stable seed-key (see `getVenueFixtureId` /
  * `getVenueFaqFixtureId` / `getVenueReviewFixtureId` above), instead
  * of the column's `defaultRandom()`. This was already a model-direct Drizzle
- * insert (never went through `VenueService`/`GastronomyFaqService`/
+ * insert (never went through `VenueService`/`venueFaqService`/
  * `VenueReviewService`), so no service lifecycle hook is newly bypassed —
  * this only replaces a random id with a stable, reproducible one. The
- * `reviewsCount`/`averageRating` denormalized columns on `gastronomies` are
+ * `reviewsCount`/`averageRating` denormalized columns on `legacy listing tables` are
  * static, author-curated values taken directly from the fixture (matching the
  * companion review fixtures), NOT computed via `VenueService.recomputeRating`
  * — unlike `AccommodationReviewService`/`DestinationReviewService`
@@ -395,7 +395,7 @@ export async function seedVenues(context: SeedContext): Promise<void> {
             // what makes those suites pass — sweeping raw SQL in `apps/e2e`
             // does not cover it.
             //
-            // Grant USER from signup and the gastronomy owner role for the listing.
+            // Grant USER from signup and the venue owner role for the listing.
             for (const role of [RoleEnum.USER, RoleEnum.VENUE_OWNER]) {
                 const granted = await grantRole({
                     userId: realUserId,
@@ -526,7 +526,7 @@ export async function seedVenues(context: SeedContext): Promise<void> {
         }
     }
 
-    // ── Step 3: Load and insert gastronomy listing JSON files ────────────────
+    // ── Step 3: Load and insert venue listing JSON files ────────────────
     const items = (await loadJsonFiles('src/data/venue', files)) as unknown as VenueSeedData[];
 
     for (const [index, item] of items.entries()) {
@@ -547,7 +547,7 @@ export async function seedVenues(context: SeedContext): Promise<void> {
 
             // HOS-25 T-026: stable UUIDv5 derived from the fixture's seed-key,
             // inserted explicitly (bypassing the column's `defaultRandom()`) so
-            // versioned data-migrations can target a specific gastronomy listing
+            // versioned data-migrations can target a specific venue listing
             // by a fixed id.
             const venueId = getVenueFixtureId(item.id);
             const now = new Date();
@@ -584,7 +584,7 @@ export async function seedVenues(context: SeedContext): Promise<void> {
                     openingHours: (item.openingHours ??
                         null) as (typeof venues.$inferInsert)['openingHours'],
                     // HOS-372: photos are NOT written here anymore. They go to
-                    // `gastronomy_media` after the insert (see step 3b below);
+                    // `venue_media` after the insert (see step 3b below);
                     // the `media` JSONB column is on its way out and every read
                     // path already composes from the table.
                     seo: (item.seo ?? null) as (typeof venues.$inferInsert)['seo'],
@@ -675,7 +675,7 @@ export async function seedVenues(context: SeedContext): Promise<void> {
                     .insert(venueFaqs)
                     .values({
                         // HOS-25 T-026: stable UUIDv5 keyed off the parent
-                        // gastronomy's seed-key + this FAQ's array position
+                        // venue's seed-key + this FAQ's array position
                         // (FAQ fixtures have no `id` of their own) — mirrors
                         // `getAccommodationFaqFixtureId`. Also makes
                         // `onConflictDoNothing()` below meaningfully idempotent
@@ -740,7 +740,7 @@ export async function seedVenues(context: SeedContext): Promise<void> {
                     .insert(venueReviews)
                     .values({
                         // HOS-25 T-026: stable UUIDv5 keyed off the parent
-                        // gastronomy's seed-key + the reviewer's own seed id —
+                        // venue's seed-key + the reviewer's own seed id —
                         // the (userId, venueId) pair is already this
                         // table's UNIQUE constraint, so it doubles as a
                         // content-stable composite key (unaffected by array

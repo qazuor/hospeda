@@ -100,7 +100,7 @@ export async function runExampleSeeds(context: SeedContext): Promise<void> {
         await seedAccommodationExternalReputation();
         await seedHostTrades(context);
         context.actor = oldContextActor;
-        // SPEC-239 — gastronomy listings
+        // SPEC-239 — venue listings
         await seedVenues(context);
         // SPEC-240 T-014 — experience listing seed data
         await seedExperiences(context);
