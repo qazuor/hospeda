@@ -258,7 +258,19 @@
                 "packages/i18n/src/locales/pt/blog.json": 2,
                 "packages/i18n/src/locales/pt/destination.json": 2,
                 "packages/i18n/src/locales/pt/event.json": 4,
-                "packages/i18n/src/locales/pt/footer.json": 1
+                "packages/i18n/src/locales/pt/footer.json": 1,
+                "docs/architecture/entity-model-reference.md": 4,
+                "apps/web/src/lib/api/endpoints.ts": 1,
+                "apps/web/src/lib/post-listing-summary/summary.types.ts": 1,
+                "apps/web/test/components/FilterSidebar.test.tsx": 1,
+                "apps/web/test/components/shared/cards/utils/eventCategoryIcon.test.ts": 2,
+                "apps/web/test/components/shared/filters/filter-reducer.test.ts": 1,
+                "apps/web/test/lib/poi-labels.hos139-sync-regression.test.ts": 1,
+                "apps/web/test/pages/eventos-facet-seo.test.ts": 1,
+                "apps/web/test/pages/facet-chip-sidebar-url-sync-matrix.test.tsx": 5,
+                "apps/web/test/pages/publicaciones-category-chips-active.test.ts": 5,
+                "apps/web/test/pages/publicaciones-facet-seo.test.ts": 5,
+                "apps/web/test/pages/publicaciones-multiselect-wiring.test.ts": 7
             },
             "keys": {
                 "packages/i18n/src/locales/en/admin-entities.json#ratingDimensions.gastronomy": 0,
@@ -380,5 +392,5 @@
     },
     "historyCount": 85,
     "historyWordFiles": 14,
-    "ledgerFingerprint": "47729c1b08d2de12fbbd80707a8178e6de449c8c73d468ce764d7a6f46369d0f"
+    "ledgerFingerprint": "34800c54cd83df10e3beb52465495db7e086d1f39ee207d8e459fcaa1805a9b0"
 }
