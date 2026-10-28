@@ -391,7 +391,7 @@ Icons for tourism attractions and points of interest in the Litoral region.
 | Thermal Pools | `ThermalPoolsIcon` | Thermal baths |
 | Thermal Spa | `ThermalSpaIcon` | Spa facilities |
 
-### Gastronomy & Shopping (8 icons)
+### Food & Shopping (8 icons)
 
 | Icon Name | Component Name | Common Usage |
 |-----------|---------------|--------------|
