@@ -1,5 +1,5 @@
 /**
- * Every public gastronomy or experience read that returns a WHOLE listing filters hidden FAQs
+ * Every public venue or experience read that returns a WHOLE listing filters hidden FAQs
  * (HOS-1263).
  *
  * WHY A STATIC GUARD: the services load `faqs: true` by default, so any route
@@ -8,7 +8,7 @@
  * no trace in the file and no failing test, and it already happened once: the
  * dedicated `/faqs` route filtered while the listing page's own read did not.
  * A route named after its file would not cover the next vertical, so this scans
- * the public directory of each gastronomy or experience vertical for anything that calls the
+ * the public directory of each venue or experience vertical for anything that calls the
  * service's whole-entity reads.
  *
  * @module test/utils/listing-faq-visibility.guard
@@ -55,7 +55,7 @@ const wrapsTheRead = (source: string): boolean => {
     );
 };
 
-describe('gastronomy and experience public routes filter non-public FAQs (HOS-1263)', () => {
+describe('venue and experience public routes filter non-public FAQs (HOS-1263)', () => {
     const readers = VERTICALS.flatMap((v) => filesUnder(join(ROUTES, v, 'public'))).filter((file) =>
         READ.test(readFileSync(file, 'utf8'))
     );
