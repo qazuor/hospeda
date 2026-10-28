@@ -28,10 +28,10 @@ app.route('/', publicListVenuesRoute);
 // GET /:id — Get by ID (catch-all param route).
 app.route('/', publicGetVenueByIdRoute);
 
-// GET /:gastronomyId/reviews — List approved reviews.
+// List approved reviews for a venue.
 app.route('/', publicListVenueReviewsRoute);
 
-// GET /:gastronomyId/faqs — List FAQs.
+// List FAQs for a venue.
 app.route('/', publicGetVenueFaqsRoute);
 
 export { app as publicVenueRoutes };
