@@ -6,6 +6,6 @@ import { VenueTypeEnum } from './venue-type.enum.js';
  * Accepts all nine gastronomy sub-type values.
  */
 export const VenueTypeEnumSchema = z.nativeEnum(VenueTypeEnum, {
-    error: () => ({ message: 'zodError.enums.gastronomyType.invalid' })
+    error: () => ({ message: 'zodError.enums.venueType.invalid' })
 });
 export type VenueType = z.infer<typeof VenueTypeEnumSchema>;

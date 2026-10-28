@@ -21,7 +21,7 @@
  *
  * ## Scope, deliberately narrow
  *
- * Only `gastronomy.landing.lead.subtitle` and `experience.landing.lead.subtitle`
+ * Only `venue.landing.lead.subtitle` and `experience.landing.lead.subtitle`
  * — the hero line of each landing, which is also the page's meta description.
  * These two are read server-side by the two `.astro` landing pages themselves;
  * the actual lead-collecting form (`ListingLead.client.tsx`) was deleted by
@@ -43,11 +43,11 @@
 import { describe, expect, it } from 'vitest';
 
 import experienceEn from '../src/locales/en/experience.json';
-import gastronomyEn from '../src/locales/en/gastronomy.json';
+import venueEn from '../src/locales/en/venue.json';
 import experienceEs from '../src/locales/es/experience.json';
-import gastronomyEs from '../src/locales/es/gastronomy.json';
+import venueEs from '../src/locales/es/venue.json';
 import experiencePt from '../src/locales/pt/experience.json';
-import gastronomyPt from '../src/locales/pt/gastronomy.json';
+import venuePt from '../src/locales/pt/venue.json';
 
 /**
  * The six hero subtitles under guard: two landings × three locales.
@@ -57,9 +57,9 @@ import gastronomyPt from '../src/locales/pt/gastronomy.json';
  * stops guarding is the failure this exists to prevent.
  */
 const SUBTITLES: ReadonlyArray<{ readonly label: string; readonly text: string }> = [
-    { label: 'es gastronomy.landing.lead.subtitle', text: gastronomyEs.landing.lead.subtitle },
-    { label: 'en gastronomy.landing.lead.subtitle', text: gastronomyEn.landing.lead.subtitle },
-    { label: 'pt gastronomy.landing.lead.subtitle', text: gastronomyPt.landing.lead.subtitle },
+    { label: 'es venue.landing.lead.subtitle', text: venueEs.landing.lead.subtitle },
+    { label: 'en venue.landing.lead.subtitle', text: venueEn.landing.lead.subtitle },
+    { label: 'pt venue.landing.lead.subtitle', text: venuePt.landing.lead.subtitle },
     { label: 'es experience.landing.lead.subtitle', text: experienceEs.landing.lead.subtitle },
     { label: 'en experience.landing.lead.subtitle', text: experienceEn.landing.lead.subtitle },
     { label: 'pt experience.landing.lead.subtitle', text: experiencePt.landing.lead.subtitle }

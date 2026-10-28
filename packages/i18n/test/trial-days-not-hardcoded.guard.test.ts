@@ -44,7 +44,7 @@
  * A repo-wide version of this rule
  * would fail on all of them, and the pressure to add an exemption list is
  * exactly how a guard turns into a fail-open one. `pricing.json`, `listing.json` and the `landing` subtree of
- * `gastronomy.json` / `experience.json` are the files that describe what a subscription costs and
+ * `venue.json` / `experience.json` are the files that describe what a subscription costs and
  * grants, and in those a number of days is always a claim about the catalogue.
  *
  * Widening the scope, or excusing a string inside it, is meant to be a
@@ -67,17 +67,17 @@
 import { describe, expect, it } from 'vitest';
 
 import experienceEn from '../src/locales/en/experience.json';
-import gastronomyEn from '../src/locales/en/gastronomy.json';
 import listingEn from '../src/locales/en/listing.json';
 import pricingEn from '../src/locales/en/pricing.json';
+import venueEn from '../src/locales/en/venue.json';
 import experienceEs from '../src/locales/es/experience.json';
-import gastronomyEs from '../src/locales/es/gastronomy.json';
 import listingEs from '../src/locales/es/listing.json';
 import pricingEs from '../src/locales/es/pricing.json';
+import venueEs from '../src/locales/es/venue.json';
 import experiencePt from '../src/locales/pt/experience.json';
-import gastronomyPt from '../src/locales/pt/gastronomy.json';
 import listingPt from '../src/locales/pt/listing.json';
 import pricingPt from '../src/locales/pt/pricing.json';
+import venuePt from '../src/locales/pt/venue.json';
 
 /**
  * The two vertical landings of one locale, gathered under one `landing` root so
@@ -91,9 +91,9 @@ const landings = (
     landing: { gastronomy: gastronomy.landing, experience: experience.landing }
 });
 
-const LANDINGS_ES = landings(gastronomyEs, experienceEs);
-const LANDINGS_EN = landings(gastronomyEn, experienceEn);
-const LANDINGS_PT = landings(gastronomyPt, experiencePt);
+const LANDINGS_ES = landings(venueEs, experienceEs);
+const LANDINGS_EN = landings(venueEn, experienceEn);
+const LANDINGS_PT = landings(venuePt, experiencePt);
 
 /** The catalogue-describing locale files, per locale. */
 const GUARDED_FILES: ReadonlyArray<{
