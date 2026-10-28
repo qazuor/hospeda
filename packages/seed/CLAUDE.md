@@ -158,7 +158,7 @@ The group is **intentionally not part of `--required` or `--example`** — that 
 | `complex-pro@local.test` | CLIENT_MANAGER | none |
 | `complex-premium@local.test` | CLIENT_MANAGER | none |
 
-The `-basico` / `-pro` / `-premium` suffixes are leftover names from the retired plan matrix; they no longer select a plan. Every user is created with `emailVerified=true`, `ACTIVE` lifecycle, `PUBLIC` visibility, a Better Auth credential `account` row, and the roles `{USER, role, ...extraRoles}` (role drift is healed on re-run by `syncTestUserRoles`). Fixtures that existed before HOS-1416 and are gone: `tourist-vip`, `host-pro-plus-addon`, `host-trial`, `gastronomy-owner-at-cap`, the experience/gastronomy trial and addon variants, and every `<vertical>-<billing-state>` fixture (HOS-1268).
+The `-basico` / `-pro` / `-premium` suffixes are leftover names from the retired plan matrix; they no longer select a plan. Every user is created with `emailVerified=true`, `ACTIVE` lifecycle, `PUBLIC` visibility, a Better Auth credential `account` row, and the roles `{USER, role, ...extraRoles}` (role drift is healed on re-run by `syncTestUserRoles`). Fixtures that existed before HOS-1416 and are gone: `tourist-vip`, `host-pro-plus-addon`, `host-trial`, legacy venue-owner fixture, the venue and experience trial and add-on variants, and every `<vertical>-<billing-state>` fixture (HOS-1268).
 
 **Login:** every user shares the password `Password123!` (`TEST_PW` in `testUsers.seed.ts`), hashed with bcrypt `SALT_ROUNDS=12` to match `apps/api/src/lib/auth.ts`. Super admin and admin already exist via the required seed (`admin-user.json` / `super-admin-user.json`, `admin@hospeda.com.ar` / `superadmin@hospeda.com.ar`), so they are not duplicated here.
 
@@ -183,7 +183,7 @@ heal role drift. Listing-owner fixtures hold only their own vertical role
 ### HOST accommodation fixture (HOS-30)
 
 Every HOST-role user in the matrix — `host-basico`, `host-pro`, `host-premium`,
-`host-provider` and `host-gastronomy` — also gets
+`host-provider` and one retired host seed slug — also gets
 **exactly one fully-featured accommodation they own**, created directly (no
 `--example` JSON fixture involved). This unblocks staging crawl/smoke testing
 of the owner routes (`/mi-cuenta/propiedades/*` — forms, image previews,
