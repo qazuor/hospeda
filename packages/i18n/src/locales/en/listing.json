@@ -29,7 +29,7 @@
             "empty": "You don't have any businesses yet. Create your first listing to get started.",
             "edit": "Edit",
             "badge": {
-                "gastronomy": "Gastronomy",
+                "venue": "Gastronomy",
                 "experience": "Experience"
             },
             "emptyCta": "Create my first business",
@@ -46,7 +46,7 @@
                 "draftIncomplete": "Draft — incomplete"
             },
             "usage": {
-                "gastronomy": {
+                "venue": {
                     "label_one": "{{current}} of {{max}} gastronomy listing",
                     "label_other": "{{current}} of {{max}} gastronomy listings"
                 },
@@ -305,7 +305,7 @@
         "create": {
             "fields": {
                 "name": {
-                    "gastronomy": "Business name",
+                    "venue": "Business name",
                     "experience": "Experience name"
                 },
                 "type": "Category",
@@ -316,12 +316,12 @@
                 "destinationEmpty": "There are no cities / destinations available yet. Contact us so we can help you complete this field."
             },
             "submit": {
-                "gastronomy": "Create business",
+                "venue": "Create business",
                 "experience": "Create experience"
             },
             "submitting": "Creating...",
             "error": {
-                "gastronomy": "We couldn't create the business. Please try again.",
+                "venue": "We couldn't create the business. Please try again.",
                 "experience": "We couldn't create the experience. Please try again."
             }
         },
@@ -340,11 +340,11 @@
         },
         "publish": {
             "confirmTitle": {
-                "gastronomy": "Publish this business?",
+                "venue": "Publish this business?",
                 "experience": "Publish this experience?"
             },
             "choosePlan": {
-                "gastronomy": "Choose a gastronomy plan",
+                "venue": "Choose a gastronomy plan",
                 "experience": "Choose an experiences plan"
             },
             "missingRequirements": "The listing could not be published because information is missing."

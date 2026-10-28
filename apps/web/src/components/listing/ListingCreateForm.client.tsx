@@ -155,18 +155,15 @@ export function ListingCreateForm({
     // across both verticals and needs a neutral term rather than a branch.
     const nameLabel =
         vertical === 'venue'
-            ? t('listing.owner.create.fields.name.gastronomy', 'Nombre del comercio')
+            ? t('listing.owner.create.fields.name.venue', 'Nombre del comercio')
             : t('listing.owner.create.fields.name.experience', 'Nombre de la experiencia');
     const submitLabel =
         vertical === 'venue'
-            ? t('listing.owner.create.submit.gastronomy', 'Crear comercio')
+            ? t('listing.owner.create.submit.venue', 'Crear comercio')
             : t('listing.owner.create.submit.experience', 'Crear experiencia');
     const createErrorMessage =
         vertical === 'venue'
-            ? t(
-                  'listing.owner.create.error.gastronomy',
-                  'No pudimos crear el comercio. Probá de nuevo.'
-              )
+            ? t('listing.owner.create.error.venue', 'No pudimos crear el comercio. Probá de nuevo.')
             : t(
                   'listing.owner.create.error.experience',
                   'No pudimos crear la experiencia. Probá de nuevo.'

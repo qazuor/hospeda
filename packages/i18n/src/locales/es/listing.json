@@ -29,7 +29,7 @@
             "empty": "Todavía no tenés comercios. Creá tu primera ficha para empezar.",
             "edit": "Editar",
             "badge": {
-                "gastronomy": "Gastronomía",
+                "venue": "Gastronomía",
                 "experience": "Experiencia"
             },
             "emptyCta": "Crear mi primer comercio",
@@ -46,7 +46,7 @@
                 "draftIncomplete": "Borrador — incompleto"
             },
             "usage": {
-                "gastronomy": {
+                "venue": {
                     "label_one": "{{current}} de {{max}} gastronomía",
                     "label_other": "{{current}} de {{max}} gastronomías"
                 },
@@ -305,7 +305,7 @@
         "create": {
             "fields": {
                 "name": {
-                    "gastronomy": "Nombre del comercio",
+                    "venue": "Nombre del comercio",
                     "experience": "Nombre de la experiencia"
                 },
                 "type": "Categoría",
@@ -316,12 +316,12 @@
                 "destinationEmpty": "Todavía no hay ciudades / destinos cargados. Contactanos para poder completar este campo."
             },
             "submit": {
-                "gastronomy": "Crear comercio",
+                "venue": "Crear comercio",
                 "experience": "Crear experiencia"
             },
             "submitting": "Creando...",
             "error": {
-                "gastronomy": "No pudimos crear el comercio. Probá de nuevo.",
+                "venue": "No pudimos crear el comercio. Probá de nuevo.",
                 "experience": "No pudimos crear la experiencia. Probá de nuevo."
             }
         },
@@ -340,11 +340,11 @@
         },
         "publish": {
             "confirmTitle": {
-                "gastronomy": "¿Publicar este comercio?",
+                "venue": "¿Publicar este comercio?",
                 "experience": "¿Publicar esta experiencia?"
             },
             "choosePlan": {
-                "gastronomy": "Elegir plan de gastronomía",
+                "venue": "Elegir plan de gastronomía",
                 "experience": "Elegir plan de experiencias"
             },
             "missingRequirements": "No se pudo publicar porque faltan datos."

@@ -83,7 +83,7 @@ describe('ListingActions publish — TEST:1729:5 and TEST:1729:7', () => {
         expect(
             screen.getByText(
                 vertical === 'venue'
-                    ? 'listing.owner.publish.confirmTitle.gastronomy'
+                    ? 'listing.owner.publish.confirmTitle.venue'
                     : 'listing.owner.publish.confirmTitle.experience'
             )
         ).toBeInTheDocument();
