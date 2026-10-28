@@ -23,14 +23,14 @@ import type { SeedContext } from '../utils/seedContext.js';
 import { summaryTracker } from '../utils/summaryTracker.js';
 
 /**
- * Derives the deterministic UUIDv5 id for an `example` gastronomy listing
+ * Derives the deterministic UUIDv5 id for an `example` venue listing
  * fixture (HOS-25 T-026), from the fixture's own top-level `id` seed-key.
  *
  * Exported (rather than an inline lambda) so tests can assert the id is
  * stable across calls without running the full seed pipeline, mirroring
  * `getAccommodationFixtureId` in `accommodations.seed.ts` (HOS-25 T-016).
  *
- * @param seedId - Raw gastronomy fixture's top-level `id` field
+ * @param seedId - Raw venue fixture's top-level `id` field
  * @returns Stable UUIDv5 derived from the fixture's seed-key
  */
 export const getVenueFixtureId = (seedId: string): string =>
