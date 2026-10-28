@@ -1,7 +1,7 @@
 /**
  * @file tours.ts
  * @description Web welcome tour configurations, one per audience (tourist,
- * host, gastronomy owner, experience owner, editor, sponsor).
+ * host, venue owner, experience owner, editor, sponsor).
  *
  * These are the web-specific equivalents of the admin's tour configs
  * (apps/admin/src/config/ia/tours.ts). They define different DOM selectors
@@ -40,7 +40,7 @@ export interface TourConfig {
  * any of them, never after.
  *
  * The role-specific tours that follow are ordered by how they were rolled out
- * (host first, then the two gastronomy/experience verticals split out of the old shared
+ * (host first, then the two venue/experience verticals split out of the old shared
  * two-vertical tour by HOS-788, then editor, then sponsor) — there is no
  * product reason to prefer one business hat's tour over another's, so ANY
  * stable order is fine here; this one is just the one that needed the least
@@ -164,7 +164,7 @@ export const WEB_TOURS: ReadonlyArray<TourConfig> = [
         id: 'web.venue.welcome',
         version: 1,
         // HOS-788: each welcome tour is gated by its own vertical owner role.
-        // A gastronomy owner does not acquire the experience tour.
+        // A venue owner does not acquire the experience tour.
         roles: ['VENUE_OWNER'],
         trigger: 'auto-first-visit',
         steps: [
@@ -215,7 +215,7 @@ export const WEB_TOURS: ReadonlyArray<TourConfig> = [
         version: 1,
         // HOS-788: split out of the old shared two-vertical tour, same
         // reasoning as `web.venue.welcome` above — gated on
-        // `EXPERIENCE_OWNER` only, so gastronomy owners do not see this tour.
+        // `EXPERIENCE_OWNER` only, so venue owners do not see this tour.
         //
         // No experience-exclusive step: `ExperienceCertificatePanel`
         // (`ListingActions.client.tsx`) is real and experience-only,
@@ -223,8 +223,8 @@ export const WEB_TOURS: ReadonlyArray<TourConfig> = [
         // never guaranteed on a brand-new EXPERIENCE_OWNER's first visit,
         // which is exactly when this tour runs. Anchoring a step to it would
         // sometimes point at nothing, so this tour stays on the same
-        // guaranteed-present gastronomy/experience elements the gastronomy tour also uses,
-        // minus the gastronomy-only QR step.
+        // guaranteed-present venue/experience elements the venue tour also uses,
+        // minus the venue-only QR step.
         roles: ['EXPERIENCE_OWNER'],
         trigger: 'auto-first-visit',
         steps: [
