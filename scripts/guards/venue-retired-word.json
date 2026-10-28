@@ -270,7 +270,11 @@
                 "apps/web/test/pages/facet-chip-sidebar-url-sync-matrix.test.tsx": 5,
                 "apps/web/test/pages/publicaciones-category-chips-active.test.ts": 5,
                 "apps/web/test/pages/publicaciones-facet-seo.test.ts": 5,
-                "apps/web/test/pages/publicaciones-multiselect-wiring.test.ts": 7
+                "apps/web/test/pages/publicaciones-multiselect-wiring.test.ts": 7,
+                "apps/web/src/components/venue/VenueReviewForm.client.tsx": 8,
+                "apps/web/src/components/venue/VenueReviewForm.module.css": 5,
+                "apps/web/test/middleware.test.ts": 5,
+                "apps/web/test/components/account/UserReviewsList.test.tsx": 1
             },
             "keys": {
                 "packages/i18n/src/locales/en/admin-entities.json#ratingDimensions.gastronomy": 0,
@@ -392,5 +396,5 @@
     },
     "historyCount": 85,
     "historyWordFiles": 14,
-    "ledgerFingerprint": "34800c54cd83df10e3beb52465495db7e086d1f39ee207d8e459fcaa1805a9b0"
+    "ledgerFingerprint": "87448c97bd8531e080c56a61883d916ac1adfa8c585490aeede26e463744b1f8"
 }
