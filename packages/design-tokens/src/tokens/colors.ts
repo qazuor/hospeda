@@ -140,7 +140,7 @@ export const river: Palette = deriveShades({ l: 0.63, c: 0.19, h: 259 });
 export const sky: Palette = deriveShades({ l: 0.8, c: 0.08, h: 259 });
 
 /**
- * Forest — brand green for gastronomy / nature contexts. Hue 155.
+ * Forest — brand green for venue / nature contexts. Hue 155.
  * Web token `--hospeda-forest`.
  */
 export const forest: Palette = deriveShades({ l: 0.5, c: 0.14, h: 155 });
