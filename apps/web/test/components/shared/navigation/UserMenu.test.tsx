@@ -214,7 +214,7 @@ describe('UserMenu — permission-gated items', () => {
         });
     });
 
-    it('shows the "Mi comercio" business shortcut for users with only gastronomy.editOwn permission', async () => {
+    it('shows the "Mi comercio" business shortcut for users with only venue.editOwn permission', async () => {
         sessionStorage.setItem(
             AUTH_ME_CACHE_KEY,
             JSON.stringify({
