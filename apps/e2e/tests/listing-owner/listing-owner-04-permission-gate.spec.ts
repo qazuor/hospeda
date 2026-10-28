@@ -15,7 +15,7 @@
  *
  * Actors:
  *   - e2e-tourist@local.test           (role USER, no VENUE_EDIT_OWN)
- *   - gastro-owner-julieta@local.test  (role VENUE_OWNER, VENUE_EDIT_OWN)
+ *   - venue-owner-julieta@local.test  (role VENUE_OWNER, VENUE_EDIT_OWN)
  *
  * The "staff bypass" is tested by confirming Julieta (the owner) gets 200,
  * and a non-owner tourist gets 403. A full VENUE_EDIT_ALL assertion would
@@ -29,12 +29,12 @@
  * Preconditions:
  *   - e2e:seed has run (`pnpm --filter hospeda-e2e e2e:seed`).
  *   - e2e-tourist@local.test exists with role USER.
- *   - gastro-owner-julieta@local.test exists with role VENUE_OWNER.
- *   - la-parrilla-del-puerto gastronomy listing is seeded and ACTIVE.
+ *   - venue-owner-julieta@local.test exists with role VENUE_OWNER.
+ *   - la-parrilla-del-puerto venue listing is seeded and ACTIVE.
  *   - API server is running.
  *
  * @see SPEC-253 spec.md § AC-2
- * @see apps/api/src/routes/gastronomy/protected/patch.ts
+ * @see apps/api/src/routes/venue/protected/patch.ts
  * @see packages/service-core/src/services/venue/venue.service.ts (updateOwn)
  */
 
@@ -61,7 +61,7 @@ const TOURIST = {
 
 /** Gastronomy or experience owner — Julieta (role VENUE_OWNER, has VENUE_EDIT_OWN). */
 const JULIETA = {
-    email: 'gastro-owner-julieta@local.test',
+    email: 'venue-owner-julieta@local.test',
     password: 'Password123!'
 } as const;
 
@@ -105,7 +105,7 @@ test.describe('LISTING-OWNER-04: PATCH updateOwn permission gate @p0 @listing-ow
 
     test.beforeAll(async () => {
         const rows = await execSQL<{ id: string }>(
-            'SELECT id FROM gastronomies WHERE slug = $1 LIMIT 1',
+            'SELECT id FROM venues WHERE slug = $1 LIMIT 1',
             [GASTRONOMY_SLUG]
         );
         const row = rows[0];
@@ -172,10 +172,10 @@ test.describe('LISTING-OWNER-04: PATCH updateOwn permission gate @p0 @listing-ow
         );
 
         // Rodrigo's gastronomy: la-cerveceria-del-rio (static ID from id-mappings.json).
-        const RODRIGO_GASTRONOMY_ID = '56c9958b-3ca5-46c1-af8a-d7ba12b7f051';
+        const RODRIGO_VENUE_ID = '322263e1-2a1c-59bc-bdcf-8d30818b7a55';
 
         const response = await patchGastronomy({
-            listingId: RODRIGO_GASTRONOMY_ID,
+            listingId: RODRIGO_VENUE_ID,
             sessionCookie,
             body: { richDescription: 'Cross-owner attempt' }
         });

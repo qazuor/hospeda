@@ -184,7 +184,7 @@ describe('the menu-file columns are not writable from a listing body (HOS-895)',
         destinationId: '22222222-2222-4222-8222-222222222222',
         ownerId: '11111111-1111-4111-8111-111111111111',
         menuFileUrl: 'javascript:alert(document.cookie)',
-        menuFilePublicId: 'hospeda/prod/gastronomies/somebody-elses-listing/menu-file',
+        menuFilePublicId: 'hospeda/prod/venues/somebody-elses-listing/menu-file',
         menuFileKind: 'image'
     } as const;
 
@@ -218,7 +218,7 @@ describe('the per-dish photo (HOS-1045)', () => {
         const parsed = VenueMenuReplacePayloadSchema.safeParse(
             withPhoto({
                 photoUrl: 'https://res.cloudinary.com/hospeda/empanada.jpg',
-                photoPublicId: 'hospeda/dev/gastronomies/x/empanada',
+                photoPublicId: 'hospeda/dev/venues/x/empanada',
                 photoAlt: 'Empanada recién horneada'
             })
         );
@@ -230,7 +230,7 @@ describe('the per-dish photo (HOS-1045)', () => {
         // cleanup needs to DESTROY the asset rather than merely forget it. A
         // schema that dropped it would look identical on the public page and
         // leak a billed asset per replaced photo.
-        expect(item?.photoPublicId).toBe('hospeda/dev/gastronomies/x/empanada');
+        expect(item?.photoPublicId).toBe('hospeda/dev/venues/x/empanada');
         expect(item?.photoAlt).toBe('Empanada recién horneada');
     });
 
@@ -281,7 +281,7 @@ describe('the per-dish photo (HOS-1045)', () => {
             priceCents: 250_000,
             isAvailable: true,
             photoUrl: 'https://res.cloudinary.com/hospeda/empanada.jpg',
-            photoPublicId: 'hospeda/dev/gastronomies/x/empanada',
+            photoPublicId: 'hospeda/dev/venues/x/empanada',
             photoAlt: null,
             displayOrder: 0,
             createdAt: new Date(),
@@ -373,7 +373,7 @@ describe('GastronomyMenuReplacePayloadSchema — translations (HOS-1043)', () =>
             priceCents: 250_000,
             isAvailable: true,
             photoUrl: null,
-            photoPublicId: 'hospeda/dev/gastronomies/x/empanada',
+            photoPublicId: 'hospeda/dev/venues/x/empanada',
             photoAlt: null,
             displayOrder: 0,
             createdAt: new Date(),

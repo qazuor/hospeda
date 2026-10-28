@@ -7,7 +7,7 @@
         "en": "Espacio disponible para eventos y celebraciones privadas",
         "pt": "Espacio disponible para eventos y celebraciones privadas"
     },
-    "applicableVerticals": ["gastronomy"],
+    "applicableVerticals": ["venue"],
     "type": "SERVICES",
     "icon": "CoveredGrillAreaIcon",
     "isBuiltin": false,

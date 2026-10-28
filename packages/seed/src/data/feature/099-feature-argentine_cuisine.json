@@ -7,7 +7,7 @@
         "en": "Argentine and criollo cuisine: grilled meats, empanadas and traditional dishes",
         "pt": "Cozinha argentina e crioula: assados, empanadas e pratos tradicionais"
     },
-    "applicableVerticals": ["gastronomy"],
+    "applicableVerticals": ["venue"],
     "icon": "TraditionalGrillIcon",
     "isBuiltin": false,
     "isFeatured": true,

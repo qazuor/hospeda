@@ -186,6 +186,17 @@ describe('DELETE /api/v1/protected/media/delete-entity — integration (SPEC-208
         expect(mockDelete).toHaveBeenCalledWith({ publicId: venuePublicId });
     });
 
+    it('resolves venue service from the new Cloudinary folder', async () => {
+        const venuePublicId = `hospeda/test/venues/${ENTITY_ID}/featured`;
+        const res = await app.request(DELETE_URL(venuePublicId), {
+            method: 'DELETE',
+            headers: authHeaders(buildOwnerActor())
+        });
+        expect(res.status).toBe(200);
+        expect(VenueService.prototype.getById).toHaveBeenCalledWith(expect.anything(), ENTITY_ID);
+        expect(mockDelete).toHaveBeenCalledWith({ publicId: venuePublicId });
+    });
+
     // ── CRITICAL AUTHZ: foreign publicId ─────────────────────────────────────
 
     it('answers a foreign publicId exactly as it answers a missing entity (HOS-600)', async () => {

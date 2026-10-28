@@ -87,8 +87,8 @@ import {
     getAccommodationFaqFixtureId,
     getAccommodationFixtureId
 } from '../../src/example/accommodations.seed.js';
-import { getGastronomyFixtureId } from '../../src/example/gastronomies.seed.js';
 import { getPostFixtureId } from '../../src/example/posts.seed.js';
+import { getVenueFixtureId } from '../../src/example/venues.seed.js';
 import {
     getDestinationFixtureId,
     preProcessDestination
@@ -700,11 +700,9 @@ describe('HOS-25 T-022 — end-to-end reseed-determinism against a real database
                     const ownerId = await insertUser(tx);
                     const destinationId = await insertPlainDestination(tx);
                     const seedId = 't022-gastronomy-fixture-001';
-                    const expectedId = getGastronomyFixtureId(seedId);
+                    const expectedId = getVenueFixtureId(seedId);
 
-                    expect(expectedId).toBe(
-                        deterministicFixtureId({ seedKey: `gastronomy:${seedId}` })
-                    );
+                    expect(expectedId).toBe(deterministicFixtureId({ seedKey: `venue:${seedId}` }));
 
                     const baseValues = {
                         slug: `t022-gastronomy-${seedId}`,
@@ -743,7 +741,7 @@ describe('HOS-25 T-022 — end-to-end reseed-determinism against a real database
                     expect(gone).toHaveLength(0);
 
                     // ── Reseed: same seed id, same raw-insert mechanism ─────────
-                    const reseededId = getGastronomyFixtureId(seedId);
+                    const reseededId = getVenueFixtureId(seedId);
                     expect(reseededId).toBe(expectedId);
 
                     const [inserted2] = await tx
@@ -768,7 +766,7 @@ describe('HOS-25 T-022 — end-to-end reseed-determinism against a real database
 
                 const accommodationId = getAccommodationFixtureId({ id: sharedRawId });
                 const postId = getPostFixtureId({ id: sharedRawId });
-                const gastronomyId = getGastronomyFixtureId(sharedRawId);
+                const gastronomyId = getVenueFixtureId(sharedRawId);
                 const destinationId = getDestinationFixtureId({ id: sharedRawId });
 
                 const allIds = [accommodationId, postId, gastronomyId, destinationId];

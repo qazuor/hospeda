@@ -7,7 +7,7 @@
         "en": "Opciones en el menú libres de gluten para personas con celiaquía o intolerancia",
         "pt": "Opciones en el menú libres de gluten para personas con celiaquía o intolerancia"
     },
-    "applicableVerticals": ["gastronomy"],
+    "applicableVerticals": ["venue"],
     "icon": "EcologicalIcon",
     "isBuiltin": false,
     "isFeatured": true,

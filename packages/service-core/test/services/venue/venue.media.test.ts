@@ -677,8 +677,8 @@ describe('removeGastronomyMedia — Cloudinary asset deletion', () => {
     /** A row whose binary IS ours to delete (carries a Cloudinary public id). */
     const cloudinaryRow = () =>
         makeMediaRow({
-            url: 'https://res.cloudinary.com/demo/image/upload/v1/hospeda/dev/gastronomies/g1/photo.jpg',
-            publicId: 'hospeda/dev/gastronomies/g1/photo'
+            url: 'https://res.cloudinary.com/demo/image/upload/v1/hospeda/dev/venues/g1/photo.jpg',
+            publicId: 'hospeda/dev/venues/g1/photo'
         } as Partial<VenueMedia>);
 
     it('should delete the Cloudinary binary BEFORE soft-deleting the row', async () => {
@@ -708,7 +708,7 @@ describe('removeGastronomyMedia — Cloudinary asset deletion', () => {
 
         expect(result.error).toBeUndefined();
         expect(provider.delete).toHaveBeenCalledWith({
-            publicId: 'hospeda/dev/gastronomies/g1/photo'
+            publicId: 'hospeda/dev/venues/g1/photo'
         });
         expect(callOrder).toEqual(['cloudinary', 'db']);
     });

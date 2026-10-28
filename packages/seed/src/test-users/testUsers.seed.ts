@@ -97,7 +97,7 @@ export const TEST_USERS: readonly TestUserSpec[] = [
     },
     // Each fixture owns only its own listing vertical.
     {
-        email: 'gastronomy-owner@local.test',
+        email: 'venue-owner@local.test',
         displayName: 'Comercio Gastronomía',
         role: RoleEnum.VENUE_OWNER
     },
@@ -114,7 +114,7 @@ export const TEST_USERS: readonly TestUserSpec[] = [
     // with no backing listing, since role possession alone is what the nav
     // gate and the header control read (HOS-1417 retired the shared owner role).
     {
-        email: 'host-gastronomy@local.test',
+        email: 'host-venue@local.test',
         displayName: 'Host y Comercio',
         role: RoleEnum.HOST,
         extraRoles: [RoleEnum.VENUE_OWNER]
@@ -170,7 +170,7 @@ function splitDisplayName(displayName: string): { firstName: string; lastName: s
  * hit `revokeRole`'s last-role guard.
  *
  * `extraRoles` (HOS-694) lets a single fixture declare more than one
- * non-USER hat at once — used by `host-gastronomy@local.test` (HOST +
+ * non-USER hat at once — used by `host-venue@local.test` (HOST +
  * VENUE_OWNER) to exercise HOS-296's multi-role invariant end-to-end
  * without needing a second `role` field on `TestUserSpec`.
  *

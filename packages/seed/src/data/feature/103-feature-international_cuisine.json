@@ -7,7 +7,7 @@
         "en": "International cuisine: dishes from different culinary traditions around the world",
         "pt": "Cozinha internacional: pratos de diferentes tradições culinárias do mundo"
     },
-    "applicableVerticals": ["gastronomy"],
+    "applicableVerticals": ["venue"],
     "icon": "GlobeIcon",
     "isBuiltin": false,
     "isFeatured": true,

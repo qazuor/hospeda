@@ -7,7 +7,7 @@
         "en": "Estacionamiento para bicicletas disponible",
         "pt": "Estacionamiento para bicicletas disponible"
     },
-    "applicableVerticals": ["gastronomy"],
+    "applicableVerticals": ["venue"],
     "type": "OUTDOORS",
     "icon": "BicyclesIcon",
     "isBuiltin": false,

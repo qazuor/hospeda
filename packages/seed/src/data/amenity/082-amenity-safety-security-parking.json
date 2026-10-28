@@ -7,7 +7,7 @@
         "en": "Estacionamiento vigilado",
         "pt": "Estacionamiento vigilado"
     },
-    "applicableVerticals": ["accommodation", "gastronomy", "experience"],
+    "applicableVerticals": ["accommodation", "venue", "experience"],
     "type": "SAFETY",
     "icon": "SecureParkingIcon",
     "isBuiltin": false,

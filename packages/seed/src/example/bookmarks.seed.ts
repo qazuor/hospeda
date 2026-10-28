@@ -3,6 +3,7 @@ import { UserBookmarkService } from '@repo/service-core';
 import exampleManifest from '../manifest-example.json';
 import type { SeedContext } from '../utils/seedContext.js';
 import { createSeedFactory } from '../utils/seedFactory.js';
+import { VENUE_ID_MAPPER_NAMESPACE } from './venues.seed.js';
 
 /**
  * Normalizer for bookmark data
@@ -23,7 +24,7 @@ const bookmarkNormalizer = (data: Record<string, unknown>) => {
 /**
  * Pre-process callback to map IDs and set correct actor
  */
-const preProcessBookmark = async (item: unknown, context: SeedContext) => {
+export const preProcessBookmark = async (item: unknown, context: SeedContext) => {
     const bookmarkData = item as Record<string, unknown>;
 
     // Map seed IDs to real database IDs using specific getters
@@ -58,8 +59,8 @@ const preProcessBookmark = async (item: unknown, context: SeedContext) => {
             realEntityId = context.idMapper.getMappedUserId(seedEntityId);
             break;
         case EntityTypeEnum.VENUE:
-            // Gastronomies register their mapping under the 'gastronomies' namespace.
-            realEntityId = context.idMapper.getRealId('gastronomies', seedEntityId);
+            // Gastronomies register their mapping under the VENUE_ID_MAPPER_NAMESPACE namespace.
+            realEntityId = context.idMapper.getRealId(VENUE_ID_MAPPER_NAMESPACE, seedEntityId);
             break;
         case EntityTypeEnum.EXPERIENCE:
             // Experiences are not yet registered in the idMapper; a fixture using
@@ -126,7 +127,7 @@ const getBookmarkInfo = (item: unknown, context: SeedContext) => {
         EVENT: 'events',
         POST: 'posts',
         USER: 'users',
-        GASTRONOMY: 'gastronomies',
+        VENUE: VENUE_ID_MAPPER_NAMESPACE,
         EXPERIENCE: 'experiences'
     } as const;
 

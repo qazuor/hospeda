@@ -700,7 +700,7 @@ export async function createAccommodation(options: {
 /**
  * Signs in an already-existing user (seeded or previously created) and
  * returns their session cookie. Use this for tests that authenticate as a
- * known seeded account (e.g. the gastronomy/experience owner Julieta) rather than
+ * known seeded account (e.g. the venue/experience owner Julieta) rather than
  * creating a fresh user per test.
  *
  * The underlying mechanism is identical to the sign-in step inside

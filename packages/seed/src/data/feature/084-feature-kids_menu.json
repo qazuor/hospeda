@@ -7,7 +7,7 @@
         "en": "Menú especial para niños con porciones y preparaciones adecuadas",
         "pt": "Menú especial para niños con porciones y preparaciones adecuadas"
     },
-    "applicableVerticals": ["gastronomy"],
+    "applicableVerticals": ["venue"],
     "icon": "FamilySuitableIcon",
     "isBuiltin": false,
     "isFeatured": false,

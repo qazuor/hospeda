@@ -411,15 +411,15 @@ export async function seedExperiences(context: SeedContext): Promise<void> {
 
         // ------------------------------------------------------------------
         // 3. Resolve the user who owns the experiences.
-        //    We reuse gastro-owner-julieta@local.test — the first listing owner
-        //    seeded by gastronomies.seed.ts (which runs before experiences in the
+        //    We reuse venue-owner-julieta@local.test — the first listing owner
+        //    seeded by venues.seed.ts (which runs before experiences in the
         //    pipeline).  That user already has:
         //      • a Better Auth `accounts` credential row (password = Password123!)
-        //      • profile_completed = true (set by gastronomies.seed.ts)
+        //      • profile_completed = true (set by venues.seed.ts)
         //    so E2E tests can sign in and reach the listing-owner area without hitting
         //    the profile-completion middleware gate.
         // ------------------------------------------------------------------
-        const ownerEmail = 'gastro-owner-julieta@local.test';
+        const ownerEmail = 'venue-owner-julieta@local.test';
         const { rows: ownerRows } = await pool.query<DbRow>(
             'SELECT id FROM users WHERE email = $1 LIMIT 1',
             [ownerEmail]

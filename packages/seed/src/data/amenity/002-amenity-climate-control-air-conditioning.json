@@ -7,7 +7,7 @@
         "en": "Aire acondicionado",
         "pt": "Aire acondicionado"
     },
-    "applicableVerticals": ["accommodation", "gastronomy", "experience"],
+    "applicableVerticals": ["accommodation", "venue", "experience"],
     "type": "CLIMATE_CONTROL",
     "icon": "AirConditioningIcon",
     "isBuiltin": false,

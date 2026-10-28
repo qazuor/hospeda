@@ -1,5 +1,4 @@
 {
-    "$gastronomyId": "002-gastronomy-colon-cafe-del-palacio",
     "reviews": [
         {
             "userId": "006-user-laura-vega",
@@ -29,5 +28,6 @@
             "overallRating": 5,
             "moderationState": "APPROVED"
         }
-    ]
+    ],
+    "$venueId": "002-venue-colon-cafe-del-palacio"
 }

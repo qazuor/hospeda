@@ -7,7 +7,7 @@
         "en": "Promociones especiales en bebidas durante el happy hour",
         "pt": "Promociones especiales en bebidas durante el happy hour"
     },
-    "applicableVerticals": ["gastronomy"],
+    "applicableVerticals": ["venue"],
     "type": "SERVICES",
     "icon": "BarServiceIcon",
     "isBuiltin": false,

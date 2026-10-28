@@ -2,14 +2,14 @@
  * LISTING-OWNER-03 — Owner edits type select and i18n fields (TranslationPanel),
  * saves, and changes persist on the public ficha (SPEC-253 T-028).
  *
- * Actor: gastro-owner-julieta@local.test (role VENUE_OWNER).
+ * Actor: venue-owner-julieta@local.test (role VENUE_OWNER).
  *
  * Listings under test:
  *   - la-parrilla-del-puerto (gastronomy, seeded type = PARRILLA)
  *   - excursion-rio-uruguay-concepcion (experience, seeded type = EXCURSION)
  *
  * What this validates (AC-1 + AC-3):
- *   1. Owner can change the `type` select on a gastronomy listing; the value
+ *   1. Owner can change the `type` select on a venue listing; the value
  *      persists via PATCH and is reflected in the public ficha type badge.
  *   2. Owner can edit the es-locale `nameI18n` via the TranslationPanel;
  *      the value persists via PATCH.
@@ -23,7 +23,7 @@
  *
  * Preconditions:
  *   - e2e:seed has run (pnpm --filter hospeda-e2e e2e:seed).
- *   - gastro-owner-julieta@local.test exists with role VENUE_OWNER.
+ *   - venue-owner-julieta@local.test exists with role VENUE_OWNER.
  *   - Listings la-parrilla-del-puerto + excursion-rio-uruguay-concepcion
  *     are ACTIVE/PUBLIC and owned by Julieta.
  *   - Web and API servers are running (playwright.config webServer).
@@ -58,7 +58,7 @@ const API_URL = process.env.HOSPEDA_E2E_API_URL ?? 'http://localhost:3001';
 
 /** Gastronomy or experience owner whose listings are tested in this file. */
 const JULIETA = {
-    email: 'gastro-owner-julieta@local.test',
+    email: 'venue-owner-julieta@local.test',
     password: 'Password123!'
 } as const;
 
@@ -105,7 +105,7 @@ async function authenticateContext(
 // ---------------------------------------------------------------------------
 
 test.describe('LISTING-OWNER-03: owner edits type + i18n fields — persist on public ficha @p0 @listing-owner', () => {
-    let gastronomyId: string;
+    let venueId: string;
     let experienceId: string;
     let originalGastronomyType: string;
     let originalExperienceType: string;
@@ -121,7 +121,7 @@ test.describe('LISTING-OWNER-03: owner edits type + i18n fields — persist on p
         if (!gastroRow) {
             throw new Error(`Gastronomy '${GASTRONOMY_SLUG}' not found — run e2e:seed first`);
         }
-        gastronomyId = gastroRow.id;
+        venueId = gastroRow.id;
         originalGastronomyType = gastroRow.type;
 
         const expRows = await execSQL<{ id: string; type: string }>(
@@ -190,7 +190,7 @@ test.describe('LISTING-OWNER-03: owner edits type + i18n fields — persist on p
             listingEditorUrl({
                 webUrl: WEB_URL,
                 vertical: 'venue',
-                listingId: gastronomyId,
+                listingId: venueId,
                 section: 'datos'
             }),
             { waitUntil: 'load' }
@@ -260,7 +260,7 @@ test.describe('LISTING-OWNER-03: owner edits type + i18n fields — persist on p
             listingEditorUrl({
                 webUrl: WEB_URL,
                 vertical: 'venue',
-                listingId: gastronomyId,
+                listingId: venueId,
                 section: 'traducciones'
             }),
             { waitUntil: 'load' }
@@ -295,6 +295,13 @@ test.describe('LISTING-OWNER-03: owner edits type + i18n fields — persist on p
             pathPattern: /\/protected\/venues\//
         });
         expect(saved.ok(), `PATCH failed: ${saved.status()} ${saved.url()}`).toBe(true);
+        expect(saved.url()).toContain(`/api/v1/protected/venues/${venueId}`);
+
+        const persistedRows = await execSQL<{ name_i18n: { es?: string } | null }>(
+            'SELECT name_i18n FROM venues WHERE id = $1 LIMIT 1',
+            [venueId]
+        );
+        expect(persistedRows[0]?.name_i18n?.es).toBe(newI18nName);
 
         // ── Re-open editor: assert nameI18n.es textarea is pre-filled ────────
         // Navigation to the same editor triggers a fresh SSR page with the
@@ -304,7 +311,7 @@ test.describe('LISTING-OWNER-03: owner edits type + i18n fields — persist on p
             listingEditorUrl({
                 webUrl: WEB_URL,
                 vertical: 'venue',
-                listingId: gastronomyId,
+                listingId: venueId,
                 section: 'traducciones'
             }),
             { waitUntil: 'load' }

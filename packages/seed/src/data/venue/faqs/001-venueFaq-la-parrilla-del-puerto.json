@@ -1,5 +1,4 @@
 {
-    "$gastronomyId": "001-gastronomy-uruguay-la-parrilla-del-puerto",
     "faqs": [
         {
             "question": "¿Hacen reservas?",
@@ -19,5 +18,6 @@
             "category": "Servicios",
             "displayOrder": 3
         }
-    ]
+    ],
+    "$venueId": "001-venue-uruguay-la-parrilla-del-puerto"
 }

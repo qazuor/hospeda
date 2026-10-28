@@ -7,7 +7,7 @@
         "en": "Pedidos para llevar disponibles",
         "pt": "Pedidos para llevar disponibles"
     },
-    "applicableVerticals": ["gastronomy"],
+    "applicableVerticals": ["venue"],
     "type": "SERVICES",
     "icon": "LuggageStorageIcon",
     "isBuiltin": false,

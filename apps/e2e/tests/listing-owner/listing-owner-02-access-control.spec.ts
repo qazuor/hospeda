@@ -20,13 +20,13 @@
  *        `if (!ownsListing && !isStaff) → redirect('mi-cuenta/comercio')`
  *
  * Actors:
- *   - e2e-tourist@local.test          (role USER, seeded by gastronomies.seed.ts Step 2b)
- *   - gastro-owner-julieta@local.test (role VENUE_OWNER, seeded by gastronomies.seed.ts)
+ *   - e2e-tourist@local.test          (role USER, seeded by venues.seed.ts Step 2b)
+ *   - venue-owner-julieta@local.test (role VENUE_OWNER, seeded by venues.seed.ts)
  *
  * Cross-owner listing used:
  *   - "La Cervecería del Río" (gastronomy, owner: Rodrigo)
  *     seed id : 003-gastronomy-gualeguaychu-la-cerveceria-del-rio
- *     static UUID: 56c9958b-3ca5-46c1-af8a-d7ba12b7f051  (id-mappings.json)
+ *     static UUID: 322263e1-2a1c-59bc-bdcf-8d30818b7a55  (id-mappings.json)
  *     slug   : la-cerveceria-del-rio
  *
  * Tags: @p0 @listing-owner
@@ -34,8 +34,8 @@
  * Preconditions:
  *   - e2e:seed has run (`pnpm --filter hospeda-e2e e2e:seed`).
  *   - e2e-tourist@local.test exists with role USER and profileCompleted=true.
- *   - gastro-owner-julieta@local.test exists with role VENUE_OWNER.
- *   - Rodrigo's gastronomy "La Cervecería del Río" (id above) is seeded and ACTIVE.
+ *   - venue-owner-julieta@local.test exists with role VENUE_OWNER.
+ *   - Rodrigo's venue "La Cervecería del Río" (id above) is seeded and ACTIVE.
  *   - Web and API servers are running (playwright.config webServer).
  *
  * No data mutation occurs in these tests — no afterEach restore is needed.
@@ -63,7 +63,7 @@ const API_URL = process.env.HOSPEDA_E2E_API_URL ?? 'http://localhost:3001';
 
 /**
  * Plain tourist (role USER). Has no VENUE_OWNER role.
- * Seeded by packages/seed/src/example/gastronomies.seed.ts Step 2b
+ * Seeded by packages/seed/src/example/venues.seed.ts Step 2b
  * as part of the example seed (runs via `e2e:seed`).
  */
 const TOURIST = {
@@ -77,7 +77,7 @@ const TOURIST = {
  * plus three experiences. She does NOT own Rodrigo's listings.
  */
 const JULIETA = {
-    email: 'gastro-owner-julieta@local.test',
+    email: 'venue-owner-julieta@local.test',
     password: 'Password123!'
 } as const;
 
@@ -86,14 +86,14 @@ const JULIETA = {
 // ---------------------------------------------------------------------------
 
 /**
- * Static UUID for Rodrigo's gastronomy "La Cervecería del Río".
+ * Static UUID for Rodrigo's venue "La Cervecería del Río".
  * Source: packages/seed/mappings/id-mappings.json →
  *   gastronomies["003-gastronomy-gualeguaychu-la-cerveceria-del-rio"].id
  *
  * This UUID is assigned once at seed time and is stable across re-runs
  * (id-mappings.json is committed and never regenerated mid-project).
  */
-const RODRIGO_GASTRONOMY_ID = '56c9958b-3ca5-46c1-af8a-d7ba12b7f051';
+const RODRIGO_VENUE_ID = '322263e1-2a1c-59bc-bdcf-8d30818b7a55';
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -173,7 +173,7 @@ test.describe('LISTING-OWNER-02: access-control negative paths @p0 @listing-owne
         // detail.ownerId === user.id, for the hub and every section alike
         // (HOS-1080 moved it out of the single page into the shared resolver).
         // Rodrigo's listing ownerId !== Julieta's userId → redirect to /mi-cuenta/comercio/.
-        const rivalEditorUrl = `${WEB_URL}/es/mi-cuenta/comercio/venue/${RODRIGO_GASTRONOMY_ID}/editar`;
+        const rivalEditorUrl = `${WEB_URL}/es/mi-cuenta/comercio/venue/${RODRIGO_VENUE_ID}/editar`;
         await page.goto(rivalEditorUrl, { waitUntil: 'domcontentloaded' });
 
         // The ownership gate redirects to /[lang]/mi-cuenta/comercio/ (her index).

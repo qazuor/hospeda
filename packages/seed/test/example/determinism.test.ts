@@ -38,12 +38,12 @@ import { getEventLocationFixtureId } from '../../src/example/eventLocations.seed
 import { getEventOrganizerFixtureId } from '../../src/example/eventOrganizers.seed.js';
 import { getEventFixtureId } from '../../src/example/events.seed.js';
 import { getExperienceFixtureId } from '../../src/example/experiences.seed.js';
-import {
-    getGastronomyFaqFixtureId,
-    getGastronomyFixtureId,
-    getGastronomyReviewFixtureId
-} from '../../src/example/gastronomies.seed.js';
 import { getPostFixtureId } from '../../src/example/posts.seed.js';
+import {
+    getVenueFaqFixtureId,
+    getVenueFixtureId,
+    getVenueReviewFixtureId
+} from '../../src/example/venues.seed.js';
 import { deterministicFixtureId } from '../../src/utils/deterministicFixtureId.js';
 
 const __filename = fileURLToPath(import.meta.url);
@@ -66,9 +66,9 @@ interface IdOnlyFixture {
     id: string;
 }
 
-/** Minimal shape of a gastronomy FAQ/review wrapper fixture, for the fields these tests need. */
-interface GastronomyChildFixtureFile {
-    $gastronomyId: string;
+/** Minimal shape of a venue FAQ/review wrapper fixture, for the fields these tests need. */
+interface VenueChildFixtureFile {
+    $venueId: string;
     faqs?: unknown[];
     reviews?: Array<{ userId: string }>;
 }
@@ -89,9 +89,9 @@ function readManifestFiles(
         | 'eventLocations'
         | 'eventOrganizers'
         | 'posts'
-        | 'gastronomies'
-        | 'gastronomyFaqs'
-        | 'gastronomyReviews'
+        | 'venues'
+        | 'venueFaqs'
+        | 'venueReviews'
 ): string[] {
     const manifestPath = join(SEED_SRC_DIR, 'manifest-example.json');
     const manifest = JSON.parse(readFileSync(manifestPath, 'utf-8')) as Record<string, string[]>;
@@ -353,16 +353,16 @@ describe('example seed determinism (HOS-25 T-016)', () => {
         getId: getPostFixtureId
     });
 
-    describe('getGastronomyFixtureId (HOS-25 T-026)', () => {
-        const files = readManifestFiles('gastronomies');
-        const fixtures = files.map((file) => loadFixture<IdOnlyFixture>(file, 'gastronomy'));
+    describe('getVenueFixtureId (HOS-25 T-026)', () => {
+        const files = readManifestFiles('venues');
+        const fixtures = files.map((file) => loadFixture<IdOnlyFixture>(file, 'venue'));
 
         it('should return the same id across repeated calls for the same fixture', () => {
             const fixture = fixtures[0];
             expect(fixture).toBeDefined();
             if (!fixture) return;
 
-            expect(getGastronomyFixtureId(fixture.id)).toBe(getGastronomyFixtureId(fixture.id));
+            expect(getVenueFixtureId(fixture.id)).toBe(getVenueFixtureId(fixture.id));
         });
 
         it('should match the documented seed-key convention exactly', () => {
@@ -370,42 +370,42 @@ describe('example seed determinism (HOS-25 T-016)', () => {
             expect(fixture).toBeDefined();
             if (!fixture) return;
 
-            const expected = deterministicFixtureId({ seedKey: `gastronomy:${fixture.id}` });
-            expect(getGastronomyFixtureId(fixture.id)).toBe(expected);
+            const expected = deterministicFixtureId({ seedKey: `venue:${fixture.id}` });
+            expect(getVenueFixtureId(fixture.id)).toBe(expected);
         });
 
-        it('should produce a unique id for every real example gastronomy fixture', () => {
-            const ids = fixtures.map((fixture) => getGastronomyFixtureId(fixture.id));
+        it('should produce a unique id for every real example venue fixture', () => {
+            const ids = fixtures.map((fixture) => getVenueFixtureId(fixture.id));
             expect(new Set(ids).size).toBe(ids.length);
         });
     });
 
-    describe('getGastronomyFaqFixtureId (HOS-25 T-026)', () => {
-        it('should return the same id across repeated calls for the same (gastronomySeedId, index) pair', () => {
+    describe('getVenueFaqFixtureId (HOS-25 T-026)', () => {
+        it('should return the same id across repeated calls for the same (venueSeedId, index) pair', () => {
             const input = {
-                gastronomySeedId: '001-gastronomy-uruguay-la-parrilla-del-puerto',
+                venueSeedId: '001-venue-uruguay-la-parrilla-del-puerto',
                 index: 0
             };
 
-            expect(getGastronomyFaqFixtureId(input)).toBe(getGastronomyFaqFixtureId(input));
+            expect(getVenueFaqFixtureId(input)).toBe(getVenueFaqFixtureId(input));
         });
 
         it('should match the documented composite seed-key convention exactly', () => {
             const input = {
-                gastronomySeedId: '001-gastronomy-uruguay-la-parrilla-del-puerto',
+                venueSeedId: '001-venue-uruguay-la-parrilla-del-puerto',
                 index: 1
             };
             const expected = deterministicFixtureId({
-                seedKey: `gastronomyFaq:${input.gastronomySeedId}:${input.index}`
+                seedKey: `venueFaq:${input.venueSeedId}:${input.index}`
             });
 
-            expect(getGastronomyFaqFixtureId(input)).toBe(expected);
+            expect(getVenueFaqFixtureId(input)).toBe(expected);
         });
 
-        it('should produce stable, unique ids for every real example gastronomy FAQ fixture', () => {
-            const files = readManifestFiles('gastronomyFaqs');
+        it('should produce stable, unique ids for every real example venue FAQ fixture', () => {
+            const files = readManifestFiles('venueFaqs');
             const fixtures = files.map((file) =>
-                loadFixture<GastronomyChildFixtureFile>(file, 'gastronomy/faqs')
+                loadFixture<VenueChildFixtureFile>(file, 'venue/faqs')
             );
             expect(fixtures.length).toBeGreaterThan(0);
 
@@ -414,13 +414,13 @@ describe('example seed determinism (HOS-25 T-016)', () => {
                 const faqs = fixture.faqs ?? [];
                 expect(faqs.length).toBeGreaterThan(0);
                 for (let index = 0; index < faqs.length; index++) {
-                    const id = getGastronomyFaqFixtureId({
-                        gastronomySeedId: fixture.$gastronomyId,
+                    const id = getVenueFaqFixtureId({
+                        venueSeedId: fixture.$venueId,
                         index
                     });
                     expect(
-                        getGastronomyFaqFixtureId({
-                            gastronomySeedId: fixture.$gastronomyId,
+                        getVenueFaqFixtureId({
+                            venueSeedId: fixture.$venueId,
                             index
                         })
                     ).toBe(id);
@@ -432,32 +432,32 @@ describe('example seed determinism (HOS-25 T-016)', () => {
         });
     });
 
-    describe('getGastronomyReviewFixtureId (HOS-25 T-026)', () => {
-        it('should return the same id across repeated calls for the same (gastronomySeedId, reviewerSeedId) pair', () => {
+    describe('getVenueReviewFixtureId (HOS-25 T-026)', () => {
+        it('should return the same id across repeated calls for the same (venueSeedId, reviewerSeedId) pair', () => {
             const input = {
-                gastronomySeedId: '001-gastronomy-uruguay-la-parrilla-del-puerto',
+                venueSeedId: '001-venue-uruguay-la-parrilla-del-puerto',
                 reviewerSeedId: '009-user-sofia-morales'
             };
 
-            expect(getGastronomyReviewFixtureId(input)).toBe(getGastronomyReviewFixtureId(input));
+            expect(getVenueReviewFixtureId(input)).toBe(getVenueReviewFixtureId(input));
         });
 
         it('should match the documented composite seed-key convention exactly', () => {
             const input = {
-                gastronomySeedId: '001-gastronomy-uruguay-la-parrilla-del-puerto',
+                venueSeedId: '001-venue-uruguay-la-parrilla-del-puerto',
                 reviewerSeedId: '004-user-ana-rodríguez'
             };
             const expected = deterministicFixtureId({
-                seedKey: `gastronomyReview:${input.gastronomySeedId}:${input.reviewerSeedId}`
+                seedKey: `venueReview:${input.venueSeedId}:${input.reviewerSeedId}`
             });
 
-            expect(getGastronomyReviewFixtureId(input)).toBe(expected);
+            expect(getVenueReviewFixtureId(input)).toBe(expected);
         });
 
-        it('should produce stable, unique ids for every real example gastronomy review fixture', () => {
-            const files = readManifestFiles('gastronomyReviews');
+        it('should produce stable, unique ids for every real example venue review fixture', () => {
+            const files = readManifestFiles('venueReviews');
             const fixtures = files.map((file) =>
-                loadFixture<GastronomyChildFixtureFile>(file, 'gastronomy/reviews')
+                loadFixture<VenueChildFixtureFile>(file, 'venue/reviews')
             );
             expect(fixtures.length).toBeGreaterThan(0);
 
@@ -466,13 +466,13 @@ describe('example seed determinism (HOS-25 T-016)', () => {
                 const reviews = fixture.reviews ?? [];
                 expect(reviews.length).toBeGreaterThan(0);
                 for (const review of reviews) {
-                    const id = getGastronomyReviewFixtureId({
-                        gastronomySeedId: fixture.$gastronomyId,
+                    const id = getVenueReviewFixtureId({
+                        venueSeedId: fixture.$venueId,
                         reviewerSeedId: review.userId
                     });
                     expect(
-                        getGastronomyReviewFixtureId({
-                            gastronomySeedId: fixture.$gastronomyId,
+                        getVenueReviewFixtureId({
+                            venueSeedId: fixture.$venueId,
                             reviewerSeedId: review.userId
                         })
                     ).toBe(id);
@@ -512,13 +512,13 @@ describe('example seed determinism (HOS-25 T-016)', () => {
     });
 
     describe('cross-entity id isolation (HOS-25 T-026)', () => {
-        it('should never collide between a post and a gastronomy sharing the same raw fixture id', () => {
+        it('should never collide between a post and a venue sharing the same raw fixture id', () => {
             const sharedRawId = 'shared-raw-fixture-id';
 
             const postId = getPostFixtureId({ id: sharedRawId });
-            const gastronomyId = getGastronomyFixtureId(sharedRawId);
+            const venueId = getVenueFixtureId(sharedRawId);
 
-            expect(postId).not.toBe(gastronomyId);
+            expect(postId).not.toBe(venueId);
         });
     });
 

@@ -215,7 +215,7 @@ describe('whats-new data file', () => {
             const hostEntries = filterEntriesByRole({ entries: whatsNewEntries, roles: ['HOST'] });
 
             const aiChatEntry = whatsNewEntries.find(
-                (entry) => entry.id === '2026-09-03-ai-chat-gastronomy-experience'
+                (entry) => entry.id === '2026-09-03-ai-chat-venue-experience'
             );
             expect(aiChatEntry).toBeDefined();
 
@@ -235,7 +235,7 @@ describe('whats-new data file', () => {
             const hostEntries = filterEntriesByRole({ entries: whatsNewEntries, roles: ['HOST'] });
 
             const trialEntry = whatsNewEntries.find(
-                (entry) => entry.id === '2026-09-05-gastronomy-experience-publish-free-trial'
+                (entry) => entry.id === '2026-09-05-venue-experience-publish-free-trial'
             );
             expect(trialEntry).toBeDefined();
 

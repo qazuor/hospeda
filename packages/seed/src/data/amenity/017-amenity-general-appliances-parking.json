@@ -7,7 +7,7 @@
         "en": "Cochera / Estacionamiento",
         "pt": "Cochera / Estacionamiento"
     },
-    "applicableVerticals": ["accommodation", "gastronomy", "experience"],
+    "applicableVerticals": ["accommodation", "venue", "experience"],
     "type": "GENERAL_APPLIANCES",
     "icon": "ParkingIcon",
     "isBuiltin": false,

@@ -109,10 +109,10 @@ describe('upload-helpers', () => {
         // assertions are deliberately separate — matching the correct plural
         // alone would still pass if BOTH spellings somehow appeared, and the
         // negative one is what actually pins the defect.
-        it('should pluralize gastronomy as "gastronomies", never "gastronomys"', () => {
+        it('stores venue media under "venues", never "gastronomys"', () => {
             const folder = buildEntityFolder('venue', 'gastro-345');
 
-            expect(folder).toMatch(/^hospeda\/[^/]+\/gastronomies\/gastro-345$/);
+            expect(folder).toMatch(/^hospeda\/[^/]+\/venues\/gastro-345$/);
             expect(folder).not.toContain('gastronomys');
         });
 

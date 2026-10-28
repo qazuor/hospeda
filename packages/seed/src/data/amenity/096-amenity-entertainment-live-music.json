@@ -7,7 +7,7 @@
         "en": "Música en vivo en horarios especiales",
         "pt": "Música en vivo en horarios especiales"
     },
-    "applicableVerticals": ["gastronomy"],
+    "applicableVerticals": ["venue"],
     "type": "ENTERTAINMENT",
     "icon": "TvIcon",
     "isBuiltin": false,

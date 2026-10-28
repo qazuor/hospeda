@@ -963,7 +963,7 @@ export const whatsNewEntries: WhatsNewEntry[] = WhatsNewCatalogSchema.parse([
         translations: { en: 'reviewed', pt: 'reviewed' }
     },
     {
-        id: '2026-09-05-gastronomy-experience-publish-free-trial',
+        id: '2026-09-05-venue-experience-publish-free-trial',
         publishedAt: '2026-09-07T12:00:00Z',
         highlight: true,
         roles: ['VENUE_OWNER', 'EXPERIENCE_OWNER'],
@@ -995,7 +995,7 @@ export const whatsNewEntries: WhatsNewEntry[] = WhatsNewCatalogSchema.parse([
         }
     },
     {
-        id: '2026-09-03-ai-chat-gastronomy-experience',
+        id: '2026-09-03-ai-chat-venue-experience',
         publishedAt: '2026-09-07T06:00:00Z',
         highlight: true,
         roles: ['USER'],
@@ -1011,7 +1011,7 @@ export const whatsNewEntries: WhatsNewEntry[] = WhatsNewCatalogSchema.parse([
         }
     },
     {
-        id: '2026-09-03-gastronomy-daily-menu',
+        id: '2026-09-03-venue-daily-menu',
         publishedAt: '2026-09-07T03:00:00Z',
         highlight: false,
         roles: ['VENUE_OWNER'],

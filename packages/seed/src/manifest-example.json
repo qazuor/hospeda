@@ -407,21 +407,18 @@
     "entityTagAssignments": [],
     "accommodationExternalListings": [],
     "accommodationExternalReputation": [],
-    "gastronomies": [
-        "001-gastronomy-uruguay-la-parrilla-del-puerto.json",
-        "002-gastronomy-colon-cafe-del-palacio.json",
-        "003-gastronomy-gualeguaychu-la-cerveceria-del-rio.json",
-        "004-gastronomy-concordia-heladeria-artesanal-luna.json",
-        "005-gastronomy-federacion-restaurant-termas.json",
-        "006-gastronomy-uruguay-bar-el-rinconcito.json"
+    "venues": [
+        "001-venue-uruguay-la-parrilla-del-puerto.json",
+        "002-venue-colon-cafe-del-palacio.json",
+        "003-venue-gualeguaychu-la-cerveceria-del-rio.json",
+        "004-venue-concordia-heladeria-artesanal-luna.json",
+        "005-venue-federacion-restaurant-termas.json",
+        "006-venue-uruguay-bar-el-rinconcito.json"
     ],
-    "gastronomyFaqs": [
-        "001-gastronomyFaq-la-parrilla-del-puerto.json",
-        "002-gastronomyFaq-cafe-del-palacio.json"
-    ],
-    "gastronomyReviews": [
-        "001-gastronomyReview-la-parrilla-del-puerto.json",
-        "002-gastronomyReview-cafe-del-palacio.json"
+    "venueFaqs": ["001-venueFaq-la-parrilla-del-puerto.json", "002-venueFaq-cafe-del-palacio.json"],
+    "venueReviews": [
+        "001-venueReview-la-parrilla-del-puerto.json",
+        "002-venueReview-cafe-del-palacio.json"
     ],
     "hostTrades": [
         "001-hostTrade-uruguay-cerrajeria.json",

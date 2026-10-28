@@ -83,13 +83,13 @@ export const meta = {
     // runner refuses to start rather than report zero rows moved and close
     // itself in the ledger forever.
     requiresColumns: [
-        { table: 'gastronomies', column: 'opening_hours' },
+        { table: 'venues', column: 'opening_hours' },
         { table: 'experiences', column: 'opening_hours' }
     ]
 } as const satisfies SeedMigrationModule['meta'];
 
 /** The two listing tables carrying an `opening_hours` jsonb column. */
-const LISTING_TABLES = ['gastronomies', 'experiences'] as const;
+const LISTING_TABLES = ['venues', 'experiences'] as const;
 
 /** One of {@link LISTING_TABLES}. */
 export type ListingTable = (typeof LISTING_TABLES)[number];
@@ -220,7 +220,7 @@ async function normalizeTable(
 export async function up(ctx: SeedMigrationCtx): Promise<SeedMigrationResult> {
     const { db } = ctx;
 
-    const gastronomy = await normalizeTable(db, 'gastronomies');
+    const gastronomy = await normalizeTable(db, 'venues');
     const experience = await normalizeTable(db, 'experiences');
 
     const totalRows = gastronomy.rows + experience.rows;

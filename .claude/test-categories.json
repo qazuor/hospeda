@@ -43,7 +43,7 @@
         "description": "Destinos, puntos de interés y atractivos",
         "include": ["**/*destination*", "**/*point-of-interest*", "**/*poi*", "**/*attraction*"]
     },
-    "gastronomy": {
+    "venue": {
         "description": "Vertical de gastronomía",
         "include": ["**/*gastronom*", "**/*venue*"]
     },

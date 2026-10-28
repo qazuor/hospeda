@@ -1,5 +1,4 @@
 {
-    "$gastronomyId": "001-gastronomy-uruguay-la-parrilla-del-puerto",
     "reviews": [
         {
             "userId": "009-user-sofia-morales",
@@ -43,5 +42,6 @@
             "overallRating": 4,
             "moderationState": "APPROVED"
         }
-    ]
+    ],
+    "$venueId": "001-venue-uruguay-la-parrilla-del-puerto"
 }

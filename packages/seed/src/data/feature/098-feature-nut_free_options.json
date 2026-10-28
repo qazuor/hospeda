@@ -7,7 +7,7 @@
         "en": "Nut-free menu options for people with an allergy",
         "pt": "Opções do cardápio sem frutos secos para pessoas alérgicas"
     },
-    "applicableVerticals": ["gastronomy"],
+    "applicableVerticals": ["venue"],
     "icon": "ShieldIcon",
     "isBuiltin": false,
     "isFeatured": true,
