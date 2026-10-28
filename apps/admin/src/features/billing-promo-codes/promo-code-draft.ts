@@ -80,7 +80,7 @@ export const PROMO_CODE_REJECTION_KEY: Record<
 
 const verticalLabels: Record<VerticalEnum, string> = {
     [VerticalEnum.ACCOMMODATION]: 'admin-billing.promoCodes.editor.verticals.accommodation',
-    [VerticalEnum.VENUE]: 'admin-billing.promoCodes.editor.verticals.gastronomy',
+    [VerticalEnum.VENUE]: 'admin-billing.promoCodes.editor.verticals.venue',
     [VerticalEnum.EXPERIENCE]: 'admin-billing.promoCodes.editor.verticals.experience',
     [VerticalEnum.TOURIST]: 'admin-billing.promoCodes.editor.verticals.tourist',
     [VerticalEnum.PARTNER]: 'admin-billing.promoCodes.editor.verticals.partner'
