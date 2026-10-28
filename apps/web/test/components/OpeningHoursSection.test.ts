@@ -61,7 +61,7 @@ describe('OpeningHoursSection.astro (source assertions)', () => {
         expect(src).toContain('isOpen');
     });
 
-    it('uses gastronomy.detail.openingHours.title i18n key for section heading', () => {
+    it('uses venue.detail.openingHours.title i18n key for section heading', () => {
         expect(src).toContain('venue.detail.openingHours.title');
     });
 
@@ -305,7 +305,7 @@ describe('computeOpenNowStatus', () => {
 // normalizeOpeningHours (exercised via the exported toVenueCardProps)
 // ---------------------------------------------------------------------------
 
-describe('normalizeOpeningHours (via toGastronomyCardProps)', () => {
+describe('normalizeOpeningHours (via toVenueCardProps)', () => {
     const baseItem = {
         id: '11111111-1111-1111-1111-111111111111',
         slug: 'la-parrilla',
