@@ -323,10 +323,10 @@ describe('DELETE /api/v1/admin/media — security hardening (T-005)', () => {
 });
 
 // ============================================================================
-// Gastronomy and experience media permissions (SPEC-249 T-015b) — split OWN/ANY
+// Venue and experience media permissions (SPEC-249 T-015b) — split OWN/ANY
 // ============================================================================
 
-describe('validateEntityMediaPermission — gastronomy and experience verticals', () => {
+describe('validateEntityMediaPermission — venue and experience verticals', () => {
     for (const entityType of [
         'venue',
         'experience'
@@ -386,7 +386,7 @@ describe('validateEntityMediaPermission — gastronomy and experience verticals'
                 ).toEqual({ allowed: false, reason: 'MISSING_ENTITY_PERMISSION' });
             });
 
-            it('rejects actor with no gastronomy or experience media permission', () => {
+            it('rejects actor with no venue or experience media permission', () => {
                 const actor = makeActor([PermissionEnum.MEDIA_UPLOAD]);
                 const result = validateEntityMediaPermission({
                     actor,
