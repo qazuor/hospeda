@@ -295,6 +295,13 @@ test.describe('LISTING-OWNER-03: owner edits type + i18n fields — persist on p
             pathPattern: /\/protected\/venues\//
         });
         expect(saved.ok(), `PATCH failed: ${saved.status()} ${saved.url()}`).toBe(true);
+        expect(saved.url()).toContain(`/api/v1/protected/venues/${gastronomyId}`);
+
+        const persistedRows = await execSQL<{ name_i18n: { es?: string } | null }>(
+            'SELECT name_i18n FROM venues WHERE id = $1 LIMIT 1',
+            [gastronomyId]
+        );
+        expect(persistedRows[0]?.name_i18n?.es).toBe(newI18nName);
 
         // ── Re-open editor: assert nameI18n.es textarea is pre-filled ────────
         // Navigation to the same editor triggers a fresh SSR page with the

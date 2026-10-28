@@ -184,9 +184,13 @@ test.describe('LISTING-OWNER-01: gastronomy or experience owner edits listings â
         // The edit link for the gastronomy must be present in the DOM (href contains
         // the vertical segment + listing UUID).
         const gastronomyEditLink = page.locator(
-            `a.mc-list__edit[href*="/gastronomy/${gastronomyId}/editar"]`
+            `a.mc-list__edit[href*="/venue/${gastronomyId}/editar"]`
         );
         await expect(gastronomyEditLink).toBeVisible();
+        await expect(gastronomyEditLink).toHaveAttribute(
+            'href',
+            new RegExp(`/mi-cuenta/comercio/venue/${gastronomyId}/editar/?$`)
+        );
 
         // Experience listing also appears in the index.
         await expect(

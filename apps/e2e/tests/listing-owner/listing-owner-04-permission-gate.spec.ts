@@ -34,7 +34,7 @@
  *   - API server is running.
  *
  * @see SPEC-253 spec.md § AC-2
- * @see apps/api/src/routes/gastronomy/protected/patch.ts
+ * @see apps/api/src/routes/venue/protected/patch.ts
  * @see packages/service-core/src/services/venue/venue.service.ts (updateOwn)
  */
 
@@ -105,7 +105,7 @@ test.describe('LISTING-OWNER-04: PATCH updateOwn permission gate @p0 @listing-ow
 
     test.beforeAll(async () => {
         const rows = await execSQL<{ id: string }>(
-            'SELECT id FROM gastronomies WHERE slug = $1 LIMIT 1',
+            'SELECT id FROM venues WHERE slug = $1 LIMIT 1',
             [GASTRONOMY_SLUG]
         );
         const row = rows[0];
