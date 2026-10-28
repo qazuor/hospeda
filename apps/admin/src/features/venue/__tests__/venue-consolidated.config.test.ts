@@ -35,43 +35,41 @@ describe('createVenueConsolidatedConfig', () => {
 
     it('should include a venue-specific section', () => {
         const config = createVenueConsolidatedConfig(t);
-        const specificSection = config.sections.find(
-            (s) => s.id === ['gastro', 'nomy-specific'].join('')
-        );
+        const specificSection = config.sections.find((s) => s.id === 'venue-specific');
         expect(specificSection).toBeDefined();
     });
 
     it('venue-specific section should include a "type" field', () => {
         const config = createVenueConsolidatedConfig(t);
-        const section = config.sections.find((s) => s.id === ['gastro', 'nomy-specific'].join(''));
+        const section = config.sections.find((s) => s.id === 'venue-specific');
         const typeField = section?.fields.find((f) => f.id === 'type');
         expect(typeField).toBeDefined();
     });
 
     it('"type" field should be required', () => {
         const config = createVenueConsolidatedConfig(t);
-        const section = config.sections.find((s) => s.id === ['gastro', 'nomy-specific'].join(''));
+        const section = config.sections.find((s) => s.id === 'venue-specific');
         const typeField = section?.fields.find((f) => f.id === 'type');
         expect(typeField?.required).toBe(true);
     });
 
     it('venue-specific section should include a "priceRange" field', () => {
         const config = createVenueConsolidatedConfig(t);
-        const section = config.sections.find((s) => s.id === ['gastro', 'nomy-specific'].join(''));
+        const section = config.sections.find((s) => s.id === 'venue-specific');
         const field = section?.fields.find((f) => f.id === 'priceRange');
         expect(field).toBeDefined();
     });
 
     it('"priceRange" field should NOT be required', () => {
         const config = createVenueConsolidatedConfig(t);
-        const section = config.sections.find((s) => s.id === ['gastro', 'nomy-specific'].join(''));
+        const section = config.sections.find((s) => s.id === 'venue-specific');
         const field = section?.fields.find((f) => f.id === 'priceRange');
         expect(field?.required).toBeFalsy();
     });
 
     it('venue-specific section should include a "menuUrl" field', () => {
         const config = createVenueConsolidatedConfig(t);
-        const section = config.sections.find((s) => s.id === ['gastro', 'nomy-specific'].join(''));
+        const section = config.sections.find((s) => s.id === 'venue-specific');
         const field = section?.fields.find((f) => f.id === 'menuUrl');
         expect(field).toBeDefined();
     });

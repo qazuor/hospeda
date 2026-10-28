@@ -177,7 +177,7 @@ describe('createVenueConsolidatedConfig', () => {
     it('has exactly 3 sections in the correct order', () => {
         expect(config.sections).toHaveLength(3);
         expect(config.sections[0]?.id).toBe('listing-identity');
-        expect(config.sections[1]?.id).toBe(['gastro', 'nomy-specific'].join(''));
+        expect(config.sections[1]?.id).toBe('venue-specific');
         expect(config.sections[2]?.id).toBe('listing-operational');
     });
 
