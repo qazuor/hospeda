@@ -108,7 +108,7 @@ export async function resolveListingEditorPage({
 
     // An unknown slug must not render a page claiming to be a section that does
     // not exist — send it to the hub, which always exists. This is also what
-    // answers `/gastronomy/<id>/editar/punto-de-encuentro`: the experience-only
+    // answers a venue point-of-meeting request: the experience-only
     // sections are absent from a venue registry, so the lookup misses.
     const section =
         sectionSlug === null ? null : findEditorSectionBySlug({ registry, slug: sectionSlug });
