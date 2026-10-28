@@ -79,13 +79,13 @@ const MENU_READ_PAGE_SIZE = 4000;
  * Loads a gastronomy listing by ID or throws NOT_FOUND.
  *
  * @param model - The VenueModel instance.
- * @param gastronomyId - UUID of the listing.
+ * @param venueId - UUID of the listing.
  * @param tx - Optional Drizzle transaction client.
  * @returns The gastronomy DB row.
  * @throws {ServiceError} NOT_FOUND when no matching row exists.
  */
-async function requireVenue(model: VenueModel, gastronomyId: string, tx?: ServiceContext['tx']) {
-    const entity = await model.findById(gastronomyId, tx);
+async function requireVenue(model: VenueModel, venueId: string, tx?: ServiceContext['tx']) {
+    const entity = await model.findById(venueId, tx);
     if (!entity) {
         throw new ServiceError(ServiceErrorCode.NOT_FOUND, 'Gastronomy listing not found');
     }
@@ -109,7 +109,7 @@ const byDisplayOrder = <T extends { displayOrder: number; name: string }>(a: T, 
  * only for sections would conclude that it is.
  *
  * @param model - VenueModel instance.
- * @param data - `{ gastronomyId }`.
+ * @param data - `{ venueId }`.
  * @param ctx - Optional service context for transaction propagation.
  * @returns `ServiceOutput<GastronomyMenuOutput>`.
  */
@@ -131,15 +131,15 @@ export async function getVenueMenu(
                 }
             };
         }
-        const { gastronomyId } = parseResult.data;
+        const { venueId } = parseResult.data;
 
-        const venue = await requireVenue(model, gastronomyId, ctx?.tx);
+        const venue = await requireVenue(model, venueId, ctx?.tx);
 
         const sectionModel = new VenueMenuSectionModel();
         const itemModel = new VenueMenuItemModel();
 
         const { items: sectionRows } = await sectionModel.findAll(
-            { gastronomyId },
+            { venueId },
             { pageSize: MENU_READ_PAGE_SIZE },
             undefined,
             ctx?.tx
@@ -151,7 +151,7 @@ export async function getVenueMenu(
         // per course, which is the classic N+1 on a page that renders the whole
         // menu at once.
         const { items: itemRows } = await itemModel.findAll(
-            { gastronomyId },
+            { venueId },
             { pageSize: MENU_READ_PAGE_SIZE },
             undefined,
             ctx?.tx
@@ -218,7 +218,7 @@ export async function getVenueMenu(
  *
  * @param model - VenueModel instance.
  * @param actor - The actor performing the action.
- * @param data - `{ gastronomyId, menu }`.
+ * @param data - `{ venueId, menu }`.
  * @param ctx - Optional service context for transaction propagation.
  * @returns `ServiceOutput<GastronomyMenuOutput>` with the carta as now stored.
  */
@@ -242,9 +242,9 @@ export async function replaceVenueMenu(
             };
         }
         const validated = parseResult.data;
-        const { gastronomyId } = validated;
+        const { venueId } = validated;
 
-        const venue = await requireVenue(model, gastronomyId, ctx?.tx);
+        const venue = await requireVenue(model, venueId, ctx?.tx);
         checkVenueCanEditFaqs(actor, venue);
 
         const sectionModel = new VenueMenuSectionModel();
@@ -258,12 +258,12 @@ export async function replaceVenueMenu(
             // CASCADE on `venue_menu_items.section_id` takes the dishes
             // with the sections, so the items are not deleted explicitly. That
             // is a property of the SCHEMA, not of this call order.
-            await sectionModel.hardDelete({ gastronomyId }, tx);
+            await sectionModel.hardDelete({ venueId }, tx);
 
             for (const [sectionIndex, section] of validated.menu.sections.entries()) {
                 const createdSection = await sectionModel.create(
                     {
-                        gastronomyId,
+                        venueId,
                         name: section.name,
                         // `''` and `undefined` both mean "no blurb"; stored as
                         // NULL so the read has one absent value, not two.
@@ -290,7 +290,7 @@ export async function replaceVenueMenu(
                     await itemModel.create(
                         {
                             sectionId: createdSection.id,
-                            gastronomyId,
+                            venueId,
                             name: item.name,
                             description: item.description || null,
                             // `?? null` and NOT `|| null`: `0` is a real price
@@ -346,7 +346,7 @@ export async function replaceVenueMenu(
             });
         }
 
-        return await getVenueMenu(model, { gastronomyId }, ctx);
+        return await getVenueMenu(model, { venueId }, ctx);
     } catch (err) {
         if (err instanceof ServiceError) {
             return { error: { code: err.code, message: err.message } };

@@ -18,7 +18,7 @@
  * Mocked unit tests cannot detect:
  * - Drizzle relations misconfigured in gastronomy schemas.
  * - Rating recompute queries that only touch approved reviews.
- *  * - The UNIQUE constraint on `venue_reviews(userId, gastronomyId)`.
+ *  * - The UNIQUE constraint on `venue_reviews(userId, venueId)`.
  *
  * ## Harness
  *
@@ -218,7 +218,7 @@ describe('SPEC-239 — Gastronomy listing admin-sells lifecycle (integration)', 
         async () => {
             await withServiceTestTransaction(async (tx) => {
                 // Arrange: seed listing + a second user (the intended owner)
-                const { ownerId: originalOwnerId, gastronomyId } = await seedVenue(tx, {
+                const { ownerId: originalOwnerId, venueId } = await seedVenue(tx, {
                     publicationStatus: PublicationStatusEnum.DRAFT
                 });
 
@@ -235,11 +235,11 @@ describe('SPEC-239 — Gastronomy listing admin-sells lifecycle (integration)', 
 
                 // Act: assign owner at model level (service layer intentionally
                 //      excludes ownerId from the update schema as a dedicated admin action)
-                await venueModel.update({ id: gastronomyId }, { ownerId: newOwnerId }, tx);
+                await venueModel.update({ id: venueId }, { ownerId: newOwnerId }, tx);
 
                 // Read back via service to confirm
                 const ctx: ServiceContext = { tx };
-                const result = await venueService.getById(adminActor, gastronomyId, ctx);
+                const result = await venueService.getById(adminActor, venueId, ctx);
 
                 // Assert
                 expect(result.error).toBeUndefined();
@@ -260,7 +260,7 @@ describe('SPEC-239 — Gastronomy listing admin-sells lifecycle (integration)', 
         async () => {
             await withServiceTestTransaction(async (tx) => {
                 // Arrange: seed listing that is PUBLISHED (owner can see it)
-                const { ownerId, gastronomyId } = await seedVenue(tx, {
+                const { ownerId, venueId } = await seedVenue(tx, {
                     publicationStatus: PublicationStatusEnum.PUBLISHED
                 });
                 const ownerActor = createListingOwnerActor(ownerId);
@@ -268,7 +268,7 @@ describe('SPEC-239 — Gastronomy listing admin-sells lifecycle (integration)', 
 
                 // Act: owner updates operational field
                 const result = await venueService.updateOwn(
-                    gastronomyId,
+                    venueId,
                     {
                         priceRange: PriceRangeEnum.MID,
                         menuUrl: 'https://example.com/menu'
@@ -305,21 +305,21 @@ describe('SPEC-239 — Gastronomy listing admin-sells lifecycle (integration)', 
         async () => {
             await withServiceTestTransaction(async (tx) => {
                 // Arrange
-                const { ownerId, gastronomyId } = await seedVenue(tx, {
+                const { ownerId, venueId } = await seedVenue(tx, {
                     publicationStatus: PublicationStatusEnum.PUBLISHED
                 });
                 const ownerActor = createListingOwnerActor(ownerId);
                 const ctx: ServiceContext = { tx };
 
                 // Read the current name before the owner update
-                const before = await venueService.getById(adminActor, gastronomyId, ctx);
+                const before = await venueService.getById(adminActor, venueId, ctx);
                 const originalName = before.data?.name;
                 const originalType = before.data?.type;
                 expect(originalName).toBeTruthy();
 
                 // Act: owner updates an operational field only
                 const result = await venueService.updateOwn(
-                    gastronomyId,
+                    venueId,
                     { priceRange: PriceRangeEnum.HIGH },
                     ownerActor,
                     ctx
@@ -351,7 +351,7 @@ describe('SPEC-239 — Gastronomy listing admin-sells lifecycle (integration)', 
         async () => {
             await withServiceTestTransaction(async (tx) => {
                 // Arrange: PUBLISHED listing so the tourist reviewer can see it
-                const { gastronomyId } = await seedVenue(tx, {
+                const { venueId } = await seedVenue(tx, {
                     publicationStatus: PublicationStatusEnum.PUBLISHED
                 });
                 const touristUserId = await seedTouristUser(tx);
@@ -362,7 +362,7 @@ describe('SPEC-239 — Gastronomy listing admin-sells lifecycle (integration)', 
                 const createResult = await reviewService.create(
                     touristActor,
                     {
-                        gastronomyId,
+                        venueId,
                         overallRating: 4.5,
                         rating: { food: 5, service: 4, ambiance: 4, value: 4 },
                         title: 'Excellent place!',
@@ -399,7 +399,7 @@ describe('SPEC-239 — Gastronomy listing admin-sells lifecycle (integration)', 
                 expect(approvedState).toBe(ModerationStatusEnum.APPROVED);
 
                 // Assert-3: listing rating recomputed (>0, reviewsCount=1)
-                const venueAfter = await venueService.getById(adminActor, gastronomyId, ctx);
+                const venueAfter = await venueService.getById(adminActor, venueId, ctx);
                 expect(venueAfter.error).toBeUndefined();
                 expect(venueAfter.data).toBeDefined();
                 if (!venueAfter.data) throw new Error('expected gastronomy data');
@@ -433,7 +433,7 @@ describe('SPEC-239 — Gastronomy listing admin-sells lifecycle (integration)', 
         async () => {
             await withServiceTestTransaction(async (tx) => {
                 // Arrange: PUBLISHED listing + tourist reviewer
-                const { gastronomyId } = await seedVenue(tx, {
+                const { venueId } = await seedVenue(tx, {
                     publicationStatus: PublicationStatusEnum.PUBLISHED
                 });
                 const touristUserId = await seedTouristUser(tx);
@@ -445,7 +445,7 @@ describe('SPEC-239 — Gastronomy listing admin-sells lifecycle (integration)', 
                 const createResult = await reviewService.create(
                     touristActor,
                     {
-                        gastronomyId,
+                        venueId,
                         overallRating: 4,
                         title: 'Solid spot',
                         content: 'Tasty and reasonably priced, would return.'
@@ -483,7 +483,7 @@ describe('SPEC-239 — Gastronomy listing admin-sells lifecycle (integration)', 
         'T-8c: listForModeration returns PENDING reviews and enforces permission',
         async () => {
             await withServiceTestTransaction(async (tx) => {
-                const { gastronomyId } = await seedVenue(tx, {
+                const { venueId } = await seedVenue(tx, {
                     publicationStatus: PublicationStatusEnum.PUBLISHED
                 });
                 const touristUserId = await seedTouristUser(tx);
@@ -493,7 +493,7 @@ describe('SPEC-239 — Gastronomy listing admin-sells lifecycle (integration)', 
                 // Arrange: a freshly-created review is PENDING.
                 const createResult = await reviewService.create(
                     touristActor,
-                    { gastronomyId, overallRating: 5, title: 'Great' },
+                    { venueId, overallRating: 5, title: 'Great' },
                     ctx
                 );
                 expect(createResult.error).toBeUndefined();

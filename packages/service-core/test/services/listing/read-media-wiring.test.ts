@@ -31,7 +31,7 @@ const FEATURED_URL = 'https://cdn.example.com/featured.jpg';
 const GALLERY_URL = 'https://cdn.example.com/gallery.jpg';
 
 /** Rows as the relational media model returns them. */
-function buildRows(fkField: 'gastronomyId' | 'experienceId') {
+function buildRows(fkField: 'venueId' | 'experienceId') {
     const base = {
         moderationState: ModerationStatusEnum.APPROVED,
         caption: null,
@@ -88,7 +88,7 @@ type ComposedMedia = {
 describe.each([
     {
         vertical: 'venue',
-        fk: 'gastronomyId' as const,
+        fk: 'venueId' as const,
         finder: 'findByVenues' as const,
         build: (media: Record<string, unknown>) =>
             new VenueService({} as ServiceConfig, media as never)

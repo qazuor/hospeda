@@ -56,13 +56,13 @@ import { checkVenueCanEditFaqEntries, checkVenueCanView } from './venue.permissi
  * Loads a gastronomy listing by ID or throws NOT_FOUND.
  *
  * @param model - The VenueModel instance.
- * @param gastronomyId - UUID of the listing.
+ * @param venueId - UUID of the listing.
  * @param tx - Optional Drizzle transaction client.
  * @returns The gastronomy DB row.
  * @throws {ServiceError} NOT_FOUND when no matching row exists.
  */
-async function requireVenue(model: VenueModel, gastronomyId: string, tx?: ServiceContext['tx']) {
-    const entity = await model.findById(gastronomyId, tx);
+async function requireVenue(model: VenueModel, venueId: string, tx?: ServiceContext['tx']) {
+    const entity = await model.findById(venueId, tx);
     if (!entity) {
         throw new ServiceError(ServiceErrorCode.NOT_FOUND, 'Gastronomy listing not found');
     }
@@ -109,14 +109,14 @@ export async function addVenueFaq(
         // HOS-1642 (AC:V9a:6): the write and its owner-act event share one
         // transaction — the event commits or rolls back WITH the FAQ row.
         const run = async (tx: DrizzleClient): Promise<ServiceOutput<VenueFaqSingleOutput>> => {
-            const venue = await requireVenue(model, validated.gastronomyId, tx);
+            const venue = await requireVenue(model, validated.venueId, tx);
             checkVenueCanEditFaqEntries(actor, venue);
 
             const faqModel = new VenueFaqModel();
 
             // Compute next displayOrder: max(existing) + 1 or 0 when none exist.
             const existing = await faqModel.findAll(
-                { gastronomyId: validated.gastronomyId, deletedAt: null },
+                { venueId: validated.venueId, deletedAt: null },
                 { pageSize: 1, sortBy: 'displayOrder', sortOrder: 'desc' },
                 undefined,
                 tx
@@ -126,7 +126,7 @@ export async function addVenueFaq(
 
             const faqToCreate = {
                 ...validated.faq,
-                gastronomyId: validated.gastronomyId,
+                venueId: validated.venueId,
                 displayOrder: nextOrder
             };
 
@@ -163,7 +163,7 @@ export async function addVenueFaq(
  * Updates an existing FAQ entry on a gastronomy listing.
  *
  * Permission: `VENUE_EDIT_OWN` (listing owner) or `VENUE_EDIT_ALL` (staff).
- * The FAQ must belong to the specified gastronomy (enforced by `gastronomyId` check).
+ * The FAQ must belong to the specified gastronomy (enforced by `venueId` check).
  *
  * @param model - VenueModel instance.
  * @param actor - The actor performing the action.
@@ -194,12 +194,12 @@ export async function updateVenueFaq(
 
         // HOS-1642 (AC:V9a:6): write + owner-act event in one transaction.
         const run = async (tx: DrizzleClient): Promise<ServiceOutput<VenueFaqSingleOutput>> => {
-            const venue = await requireVenue(model, validated.gastronomyId, tx);
+            const venue = await requireVenue(model, validated.venueId, tx);
             checkVenueCanEditFaqEntries(actor, venue);
 
             const faqModel = new VenueFaqModel();
             const faq = await faqModel.findById(validated.faqId, tx);
-            if (!faq || faq.gastronomyId !== validated.gastronomyId || faq.deletedAt) {
+            if (!faq || faq.venueId !== validated.venueId || faq.deletedAt) {
                 throw new ServiceError(
                     ServiceErrorCode.NOT_FOUND,
                     'FAQ not found for this gastronomy listing'
@@ -208,7 +208,7 @@ export async function updateVenueFaq(
 
             const updatedFaq = await faqModel.update(
                 { id: validated.faqId },
-                { ...validated.faq, gastronomyId: validated.gastronomyId },
+                { ...validated.faq, venueId: validated.venueId },
                 tx
             );
             if (!updatedFaq) {
@@ -277,12 +277,12 @@ export async function removeVenueFaq(
 
         // HOS-1642 (AC:V9a:6): write + owner-act event in one transaction.
         const run = async (tx: DrizzleClient): Promise<ServiceOutput<{ success: true }>> => {
-            const venue = await requireVenue(model, validated.gastronomyId, tx);
+            const venue = await requireVenue(model, validated.venueId, tx);
             checkVenueCanEditFaqEntries(actor, venue);
 
             const faqModel = new VenueFaqModel();
             const faq = await faqModel.findById(validated.faqId, tx);
-            if (!faq || faq.gastronomyId !== validated.gastronomyId || faq.deletedAt) {
+            if (!faq || faq.venueId !== validated.venueId || faq.deletedAt) {
                 throw new ServiceError(
                     ServiceErrorCode.NOT_FOUND,
                     'FAQ not found for this gastronomy listing'
@@ -352,7 +352,7 @@ export async function listVenueFaqs(
 
         // Load the listing with its FAQs relation for a single-query pattern.
         const venue = await model.findWithRelations(
-            { id: validated.gastronomyId },
+            { id: validated.venueId },
             { faqs: true },
             ctx?.tx
         );
@@ -395,7 +395,7 @@ export async function listVenueFaqs(
  *
  * @param model - VenueModel instance.
  * @param actor - The actor performing the action.
- * @param data - Validated reorder input: `{ gastronomyId, order: [{ faqId, displayOrder }] }`.
+ * @param data - Validated reorder input: `{ venueId, order: [{ faqId, displayOrder }] }`.
  * @param ctx - Optional service context for transaction propagation.
  * @returns `ServiceOutput<{ success: true }>` on success.
  */
@@ -425,14 +425,14 @@ export async function reorderVenueFaqs(
         // transaction with its owner-act event, so a partial reorder is no
         // longer possible and the event cannot outlive (or miss) the writes.
         const run = async (tx: DrizzleClient): Promise<ServiceOutput<{ success: true }>> => {
-            const venue = await requireVenue(model, validated.gastronomyId, tx);
+            const venue = await requireVenue(model, validated.venueId, tx);
             checkVenueCanEditFaqEntries(actor, venue);
 
             const faqModel = new VenueFaqModel();
 
             // Load all active FAQs to validate ownership of every faqId in `order`.
             const { items: existingFaqs } = await faqModel.findAll(
-                { gastronomyId: validated.gastronomyId, deletedAt: null },
+                { venueId: validated.venueId, deletedAt: null },
                 { pageSize: 200 },
                 undefined,
                 tx

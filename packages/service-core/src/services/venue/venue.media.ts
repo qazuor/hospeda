@@ -68,13 +68,13 @@ import { checkVenueCanEditMedia } from './venue.permissions';
  * Loads a gastronomy listing by ID or throws NOT_FOUND.
  *
  * @param model - The VenueModel instance.
- * @param gastronomyId - UUID of the listing.
+ * @param venueId - UUID of the listing.
  * @param tx - Optional Drizzle transaction client.
  * @returns The gastronomy DB row.
  * @throws {ServiceError} NOT_FOUND when no matching row exists.
  */
-async function requireVenue(model: VenueModel, gastronomyId: string, tx?: ServiceContext['tx']) {
-    const entity = await model.findById(gastronomyId, tx);
+async function requireVenue(model: VenueModel, venueId: string, tx?: ServiceContext['tx']) {
+    const entity = await model.findById(venueId, tx);
     if (!entity) {
         throw new ServiceError(ServiceErrorCode.NOT_FOUND, 'Gastronomy listing not found');
     }
@@ -131,7 +131,7 @@ export async function addVenueMedia(
         // HOS-1642 (AC:V9a:6): the write and its owner-act event share one
         // transaction — the event commits or rolls back WITH the media row.
         const run = async (tx: DrizzleClient): Promise<ServiceOutput<VenueMediaSingleOutput>> => {
-            const venue = await requireVenue(model, validated.gastronomyId, tx);
+            const venue = await requireVenue(model, validated.venueId, tx);
             checkVenueCanEditMedia(actor, venue);
             // ACC:15 (HOS-1493): a photo written by action 15 never carries a
             // moderation verdict; a no-op outside its authorized scope.
@@ -141,7 +141,7 @@ export async function addVenueMedia(
 
             // Compute next sortOrder: max(visible sortOrder) + 1, or 0 if none yet.
             const existing = await mediaModel.findAll(
-                { gastronomyId: validated.gastronomyId, state: 'visible', deletedAt: null },
+                { venueId: validated.venueId, state: 'visible', deletedAt: null },
                 { pageSize: 1, sortBy: 'sortOrder', sortOrder: 'desc' },
                 undefined,
                 tx
@@ -164,7 +164,7 @@ export async function addVenueMedia(
             // `sortOrder` already in use whenever that row holds the maximum.
             const galleryCount = await mediaModel.count(
                 {
-                    gastronomyId: validated.gastronomyId,
+                    venueId: validated.venueId,
                     state: 'visible',
                     isFeatured: false,
                     deletedAt: null
@@ -183,7 +183,7 @@ export async function addVenueMedia(
 
             const rowToCreate = {
                 ...validated.media,
-                gastronomyId: validated.gastronomyId,
+                venueId: validated.venueId,
                 moderationState: validated.media.moderationState ?? ModerationStatusEnum.PENDING,
                 state: 'visible' as const,
                 isFeatured: false,
@@ -273,12 +273,12 @@ export async function removeVenueMedia(
         }
         const validated = parseResult.data;
 
-        const venue = await requireVenue(model, validated.gastronomyId, ctx?.tx);
+        const venue = await requireVenue(model, validated.venueId, ctx?.tx);
         checkVenueCanEditMedia(actor, venue);
 
         const mediaModel = new VenueMediaModel();
         const mediaRow = await mediaModel.findById(validated.mediaId, ctx?.tx);
-        if (!mediaRow || mediaRow.gastronomyId !== validated.gastronomyId || mediaRow.deletedAt) {
+        if (!mediaRow || mediaRow.venueId !== validated.venueId || mediaRow.deletedAt) {
             throw new ServiceError(
                 ServiceErrorCode.NOT_FOUND,
                 'Media not found for this gastronomy listing'
@@ -296,7 +296,7 @@ export async function removeVenueMedia(
 
             // Reload the remaining visible rows to resequence them.
             const { items: remaining } = await mediaModel.findByVenue({
-                gastronomyId: validated.gastronomyId,
+                venueId: validated.venueId,
                 state: 'visible',
                 pageSize: 200,
                 tx
@@ -393,14 +393,14 @@ export async function reorderVenueMedia(
         }
         const validated = parseResult.data;
 
-        const venue = await requireVenue(model, validated.gastronomyId, ctx?.tx);
+        const venue = await requireVenue(model, validated.venueId, ctx?.tx);
         checkVenueCanEditMedia(actor, venue);
 
         const mediaModel = new VenueMediaModel();
 
         // Load all visible rows to validate and resequence.
         const { items: visibleRows } = await mediaModel.findByVenue({
-            gastronomyId: validated.gastronomyId,
+            venueId: validated.venueId,
             state: 'visible',
             pageSize: 200,
             tx: ctx?.tx
@@ -518,12 +518,12 @@ export async function getVenueMedia(
         }
         const validated = parseResult.data;
 
-        const venue = await requireVenue(model, validated.gastronomyId, ctx?.tx);
+        const venue = await requireVenue(model, validated.venueId, ctx?.tx);
         checkVenueCanEditMedia(actor, venue);
 
         const mediaModel = new VenueMediaModel();
         const { items } = await mediaModel.findByVenue({
-            gastronomyId: validated.gastronomyId,
+            venueId: validated.venueId,
             state: validated.state ?? 'visible',
             pageSize: 200,
             tx: ctx?.tx
@@ -584,7 +584,7 @@ export async function setFeaturedVenueMedia(
         }
         const validated = parseResult.data;
 
-        const venue = await requireVenue(model, validated.gastronomyId, ctx?.tx);
+        const venue = await requireVenue(model, validated.venueId, ctx?.tx);
         checkVenueCanEditMedia(actor, venue);
 
         const mediaModel = new VenueMediaModel();
@@ -593,7 +593,7 @@ export async function setFeaturedVenueMedia(
         // leaves `is_featured` set, so without this a released cover stays a
         // promotable target — HOS-803 C-1. Mirrors `updateMedia`'s long-standing
         // guard on the accommodation side.
-        if (!mediaRow || mediaRow.gastronomyId !== validated.gastronomyId || mediaRow.deletedAt) {
+        if (!mediaRow || mediaRow.venueId !== validated.venueId || mediaRow.deletedAt) {
             throw new ServiceError(
                 ServiceErrorCode.NOT_FOUND,
                 'Media not found for this gastronomy listing'
@@ -613,7 +613,7 @@ export async function setFeaturedVenueMedia(
         // (venue_id) WHERE is_featured = true AND deleted_at IS NULL.
         const doSetFeatured = async (tx: DrizzleClient): Promise<void> => {
             const existing = await mediaModel.findFeatured({
-                gastronomyId: validated.gastronomyId,
+                venueId: validated.venueId,
                 tx
             });
             if (existing && existing.id !== validated.mediaId) {
@@ -670,7 +670,7 @@ export async function setFeaturedVenueMedia(
  * Cloudinary asset and losing the row's gallery position.
  *
  * Text only: `caption`, `description`, `alt`, `attribution`. `url`, `publicId`,
- * `moderationState`, `state`, `isFeatured`, `sortOrder` and `gastronomyId` are not
+ * `moderationState`, `state`, `isFeatured`, `sortOrder` and `venueId` are not
  * reachable from {@link VenueMediaUpdateInputSchema} even if the client sends
  * them.
  *
@@ -696,7 +696,7 @@ export async function setFeaturedVenueMedia(
  *
  * @param model - VenueModel instance.
  * @param actor - The actor performing the action.
- * @param data - Update input (`gastronomyId` + `mediaId` + the text fields).
+ * @param data - Update input (`venueId` + `mediaId` + the text fields).
  * @param ctx - Optional service context for transaction propagation.
  * @returns `ServiceOutput<GastronomyMediaSingleOutput>` containing the updated row.
  */
@@ -724,16 +724,12 @@ export async function updateVenueMedia(
         // HOS-1642 (AC:V9a:6): the write and its owner-act event share one
         // transaction.
         const run = async (tx: DrizzleClient): Promise<ServiceOutput<VenueMediaSingleOutput>> => {
-            const venue = await requireVenue(model, validated.gastronomyId, tx);
+            const venue = await requireVenue(model, validated.venueId, tx);
             checkVenueCanEditMedia(actor, venue);
 
             const mediaModel = new VenueMediaModel();
             const mediaRow = await mediaModel.findById(validated.mediaId, tx);
-            if (
-                !mediaRow ||
-                mediaRow.gastronomyId !== validated.gastronomyId ||
-                mediaRow.deletedAt
-            ) {
+            if (!mediaRow || mediaRow.venueId !== validated.venueId || mediaRow.deletedAt) {
                 throw new ServiceError(
                     ServiceErrorCode.NOT_FOUND,
                     'Media not found for this gastronomy listing'
@@ -843,7 +839,7 @@ export async function addVenueFeaturedMedia(
         }
         const validated = parseResult.data;
 
-        const venue = await requireVenue(model, validated.gastronomyId, ctx?.tx);
+        const venue = await requireVenue(model, validated.venueId, ctx?.tx);
         checkVenueCanEditMedia(actor, venue);
         // ACC:15 (HOS-1493): a photo written by action 15 never carries a
         // moderation verdict; a no-op outside its authorized scope.
@@ -859,11 +855,11 @@ export async function addVenueFeaturedMedia(
             const { media, previousFeatured } = await addFeaturedMediaRow({
                 port: buildOwnedMediaFeaturedPort({
                     mediaModel,
-                    ownerKey: 'gastronomyId',
-                    ownerId: validated.gastronomyId,
+                    ownerKey: 'venueId',
+                    ownerId: validated.venueId,
                     media: validated.media,
                     findFeatured: (tx2) =>
-                        mediaModel.findFeatured({ gastronomyId: validated.gastronomyId, tx: tx2 }),
+                        mediaModel.findFeatured({ venueId: validated.venueId, tx: tx2 }),
                     deletedById: actor.id
                 }),
                 tx

@@ -40,7 +40,7 @@ type AnyService = any;
 // ---------------------------------------------------------------------------
 
 const REVIEW_ID = '00000000-0000-4000-a000-000000000001';
-const GASTRONOMY_ID = '00000000-0000-4000-a000-000000000002';
+const VENUE_ID = '00000000-0000-4000-a000-000000000002';
 const REVIEWER_ID = '00000000-0000-4000-a000-000000000003';
 const STAFF_ID = '00000000-0000-4000-a000-000000000004';
 const OTHER_USER = '00000000-0000-4000-a000-000000000005';
@@ -48,7 +48,7 @@ const OTHER_USER = '00000000-0000-4000-a000-000000000005';
 function makeReview(overrides: Partial<Record<string, unknown>> = {}): VenueReview {
     return {
         id: REVIEW_ID,
-        gastronomyId: GASTRONOMY_ID,
+        venueId: VENUE_ID,
         userId: REVIEWER_ID,
         overallRating: 4,
         averageRating: 0,
@@ -104,7 +104,7 @@ function makeReviewModel(review: VenueReview | null = null) {
         })),
         update: vi.fn().mockImplementation(async (_where: unknown, data: Partial<VenueReview>) => ({
             id: REVIEW_ID,
-            gastronomyId: GASTRONOMY_ID,
+            venueId: VENUE_ID,
             ...data
         })),
         softDelete: vi.fn().mockResolvedValue(undefined),
@@ -117,11 +117,11 @@ function makeReviewModel(review: VenueReview | null = null) {
 function makeVenueModel() {
     return {
         findById: vi.fn().mockResolvedValue({
-            id: GASTRONOMY_ID,
+            id: VENUE_ID,
             ownerId: OTHER_USER,
             publicationStatus: PublicationStatusEnum.PUBLISHED
         }),
-        update: vi.fn().mockResolvedValue({ id: GASTRONOMY_ID, averageRating: 4.0 })
+        update: vi.fn().mockResolvedValue({ id: VENUE_ID, averageRating: 4.0 })
     };
 }
 
@@ -210,7 +210,7 @@ describe('GastronomyReviewService.moderateReview', () => {
             staffActor
         );
 
-        expect(recomputeSpy).toHaveBeenCalledWith(GASTRONOMY_ID, expect.any(Array), undefined);
+        expect(recomputeSpy).toHaveBeenCalledWith(VENUE_ID, expect.any(Array), undefined);
     });
 });
 
@@ -261,7 +261,7 @@ describe('GastronomyReviewService.listByGastronomy', () => {
             deletedAt: null
         });
         const service = makeService(approvedReview);
-        const result = await service.listByVenue(GASTRONOMY_ID, staffActor);
+        const result = await service.listByVenue(VENUE_ID, staffActor);
         expect(result.error).toBeUndefined();
         expect(result.data?.reviews).toBeDefined();
         expect(result.data?.total).toBeGreaterThanOrEqual(0);
@@ -271,13 +271,13 @@ describe('GastronomyReviewService.listByGastronomy', () => {
         const service = makeService();
         const mockFindAllWithRelations = (service as AnyService).model.findAllWithRelations;
 
-        await service.listByVenue(GASTRONOMY_ID, staffActor);
+        await service.listByVenue(VENUE_ID, staffActor);
 
         // After B7b fix: listByVenue uses findAllWithRelations (arg[0]=relations, arg[1]=where)
         expect(mockFindAllWithRelations).toHaveBeenCalledWith(
             expect.objectContaining({ user: true }),
             expect.objectContaining({
-                gastronomyId: GASTRONOMY_ID,
+                venueId: VENUE_ID,
                 lifecycleState: LifecycleStatusEnum.ACTIVE,
                 moderationState: ModerationStatusEnum.APPROVED,
                 deletedAt: null
@@ -295,7 +295,7 @@ describe('GastronomyReviewService.listByGastronomy', () => {
             publicationStatus: PublicationStatusEnum.PURGED
         });
 
-        const result = await service.listByVenue(GASTRONOMY_ID, staffActor);
+        const result = await service.listByVenue(VENUE_ID, staffActor);
 
         expect(result.data).toEqual({ reviews: [], total: 0 });
         expect((service as AnyService).model.findAllWithRelations).not.toHaveBeenCalled();
@@ -315,7 +315,7 @@ describe('GastronomyReviewService.listByGastronomy', () => {
             publicationStatus
         });
 
-        const result = await service.listByVenue(GASTRONOMY_ID, staffActor);
+        const result = await service.listByVenue(VENUE_ID, staffActor);
 
         expect(result.error).toBeUndefined();
         expect(result.data?.reviews).toHaveLength(1);
@@ -333,13 +333,13 @@ describe('GastronomyReviewService._beforeCreate', () => {
         const model = (service as AnyService)._venueModel;
         model.findById
             .mockResolvedValueOnce({
-                id: GASTRONOMY_ID,
+                id: VENUE_ID,
                 ownerId: OTHER_USER,
                 publicationStatus: PublicationStatusEnum.DRAFT
             })
             .mockResolvedValueOnce(null);
         const beforeCreate = (service as AnyService)._beforeCreate.bind(service);
-        const input = { gastronomyId: GASTRONOMY_ID, overallRating: 4 };
+        const input = { venueId: VENUE_ID, overallRating: 4 };
         const capture = async () => {
             try {
                 await beforeCreate(input, reviewerActor, { hookState: {} });
@@ -360,7 +360,7 @@ describe('GastronomyReviewService._beforeCreate', () => {
 
         const beforeCreate = (service as AnyService)._beforeCreate.bind(service);
         await expect(
-            beforeCreate({ gastronomyId: GASTRONOMY_ID, overallRating: 4 }, reviewerActor, {
+            beforeCreate({ venueId: VENUE_ID, overallRating: 4 }, reviewerActor, {
                 hookState: {}
             })
         ).rejects.toMatchObject({ code: ServiceErrorCode.ALREADY_EXISTS });
@@ -371,11 +371,9 @@ describe('GastronomyReviewService._beforeCreate', () => {
         (service as AnyService).model.findOne.mockResolvedValue(null);
 
         const beforeCreate = (service as AnyService)._beforeCreate.bind(service);
-        const patch = await beforeCreate(
-            { gastronomyId: GASTRONOMY_ID, overallRating: 4 },
-            reviewerActor,
-            { hookState: {} }
-        );
+        const patch = await beforeCreate({ venueId: VENUE_ID, overallRating: 4 }, reviewerActor, {
+            hookState: {}
+        });
 
         expect(patch.moderationState).toBe(ModerationStatusEnum.PENDING);
         expect(patch.userId).toBe(REVIEWER_ID);
@@ -463,7 +461,7 @@ describe('GastronomyReviewService.listByGastronomy — B7b regression (user rela
         const service = makeService(review);
         const mockFindAllWithRelations = (service as AnyService).model.findAllWithRelations;
 
-        await service.listByVenue(GASTRONOMY_ID, staffActor);
+        await service.listByVenue(VENUE_ID, staffActor);
 
         // arg[0] must include user: true so the DB layer performs the JOIN
         expect(mockFindAllWithRelations.mock.calls[0]?.[0]).toMatchObject({ user: true });
@@ -473,11 +471,11 @@ describe('GastronomyReviewService.listByGastronomy — B7b regression (user rela
         const service = makeService();
         const mockFindAllWithRelations = (service as AnyService).model.findAllWithRelations;
 
-        await service.listByVenue(GASTRONOMY_ID, staffActor);
+        await service.listByVenue(VENUE_ID, staffActor);
 
         // arg[1] is the where object — security filters must remain
         expect(mockFindAllWithRelations.mock.calls[0]?.[1]).toMatchObject({
-            gastronomyId: GASTRONOMY_ID,
+            venueId: VENUE_ID,
             lifecycleState: LifecycleStatusEnum.ACTIVE,
             moderationState: ModerationStatusEnum.APPROVED,
             deletedAt: null
@@ -492,7 +490,7 @@ describe('GastronomyReviewService.listByGastronomy — B7b regression (user rela
         });
         const service = makeService(review);
 
-        const result = await service.listByVenue(GASTRONOMY_ID, staffActor);
+        const result = await service.listByVenue(VENUE_ID, staffActor);
 
         expect(result.error).toBeUndefined();
         expect(result.data?.reviews).toBeDefined();

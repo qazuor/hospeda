@@ -50,7 +50,7 @@ describe('projectEvent (HOS-1042)', () => {
     /** A stored row exactly as Postgres hands it back. */
     const storedRow = {
         id: '33333333-3333-4333-8333-333333333333',
-        gastronomyId: '22222222-2222-4222-8222-222222222222',
+        venueId: '22222222-2222-4222-8222-222222222222',
         title: 'Cena show',
         description: null,
         recurrence: 'once' as const,

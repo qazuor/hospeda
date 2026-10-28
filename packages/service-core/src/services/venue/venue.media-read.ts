@@ -64,7 +64,7 @@ export async function attachComposedVenueMedia<T extends Venue>(input: {
 }): Promise<T | null> {
     const { entity, mediaModel, tx } = input;
     if (!entity) return entity;
-    const grouped = await mediaModel.findByVenues({ gastronomyIds: [entity.id], tx });
+    const grouped = await mediaModel.findByVenues({ venueIds: [entity.id], tx });
     return withComposedVenueMedia(entity, grouped.get(entity.id) ?? []);
 }
 
@@ -84,7 +84,7 @@ export async function attachComposedVenueMediaList<T extends Venue>(input: {
     const { items, mediaModel, tx } = input;
     if (!items || items.length === 0) return [...items];
     const grouped = await mediaModel.findByVenues({
-        gastronomyIds: items.map((i) => i.id),
+        venueIds: items.map((i) => i.id),
         tx
     });
     return items.map((item) => withComposedVenueMedia(item, grouped.get(item.id) ?? []));

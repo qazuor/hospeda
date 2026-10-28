@@ -16,7 +16,7 @@
 import { EntityTypeEnum } from '@repo/schemas';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-const GASTRONOMY_ID = '390a09a5-dee0-5a59-83b1-21d4a62bd0c5';
+const VENUE_ID = '390a09a5-dee0-5a59-83b1-21d4a62bd0c5';
 const EXPERIENCE_ID = '686b70d4-aa3f-57c6-8958-a83eca33cd69';
 
 const RELATIONAL_URL = 'https://cdn.example.com/from-media-table.jpg';
@@ -63,7 +63,7 @@ describe('enrichBookmarksWithEntityInfo — listing thumbnails (HOS-372)', () =>
     it('should resolve a gastronomy thumbnail from venue_media, not the blob', async () => {
         stubSelectChain([
             {
-                id: GASTRONOMY_ID,
+                id: VENUE_ID,
                 name: 'La Parrilla del Puerto',
                 slug: 'la-parrilla-del-puerto',
                 // Present but must be ignored — the column is on its way out.
@@ -71,13 +71,13 @@ describe('enrichBookmarksWithEntityInfo — listing thumbnails (HOS-372)', () =>
             }
         ]);
         mockFindByVenues.mockResolvedValue(
-            new Map([[GASTRONOMY_ID, [{ isFeatured: true, url: RELATIONAL_URL }]]])
+            new Map([[VENUE_ID, [{ isFeatured: true, url: RELATIONAL_URL }]]])
         );
 
         const [enriched] = await enrichBookmarksWithEntityInfo([
             {
                 id: 'bookmark-1',
-                entityId: GASTRONOMY_ID,
+                entityId: VENUE_ID,
                 entityType: EntityTypeEnum.VENUE
             } as never
         ]);
@@ -85,7 +85,7 @@ describe('enrichBookmarksWithEntityInfo — listing thumbnails (HOS-372)', () =>
         expect(enriched?.entityImage).toBe(RELATIONAL_URL);
         expect(enriched?.entityName).toBe('La Parrilla del Puerto');
         expect(mockFindByVenues).toHaveBeenCalledWith(
-            expect.objectContaining({ gastronomyIds: [GASTRONOMY_ID], state: 'visible' })
+            expect.objectContaining({ venueIds: [VENUE_ID], state: 'visible' })
         );
     });
 
@@ -118,15 +118,15 @@ describe('enrichBookmarksWithEntityInfo — listing thumbnails (HOS-372)', () =>
 
     it('should return a null image when the listing has no featured row', async () => {
         // Non-featured rows must not be promoted into the thumbnail slot.
-        stubSelectChain([{ id: GASTRONOMY_ID, name: 'Sin foto', slug: 'sin-foto', media: null }]);
+        stubSelectChain([{ id: VENUE_ID, name: 'Sin foto', slug: 'sin-foto', media: null }]);
         mockFindByVenues.mockResolvedValue(
-            new Map([[GASTRONOMY_ID, [{ isFeatured: false, url: RELATIONAL_URL }]]])
+            new Map([[VENUE_ID, [{ isFeatured: false, url: RELATIONAL_URL }]]])
         );
 
         const [enriched] = await enrichBookmarksWithEntityInfo([
             {
                 id: 'bookmark-3',
-                entityId: GASTRONOMY_ID,
+                entityId: VENUE_ID,
                 entityType: EntityTypeEnum.VENUE
             } as never
         ]);

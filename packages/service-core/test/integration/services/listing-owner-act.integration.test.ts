@@ -95,7 +95,7 @@ describe('HOS-1499 V9a — owner acts on a listing land in domain_event (integra
 
     // TEST:V9a:1 — AC:V9a:1 (create + edit; export pending, see header)
     it.skipIf(!dbAvailable)(
-        'TEST:V9a:1 — gastronomy: creating and editing write one event each, with the minimum fields',
+        'TEST:V9a:1 — venue: creating and editing write one event each, with the minimum fields',
         async () => {
             await withServiceTestTransaction(async (tx) => {
                 const { ownerId, destinationId } = await seedVenue(tx);
@@ -295,7 +295,7 @@ describe('HOS-1499 V9a — owner acts on a listing land in domain_event (integra
             });
 
             await withServiceTestTransaction(async (tx) => {
-                const { ownerId, gastronomyId } = await seedVenue(tx);
+                const { ownerId, venueId } = await seedVenue(tx);
 
                 // The write runs in a SAVEPOINT of the test transaction: when it
                 // throws, the savepoint rolls back — and with it the event, ONLY
@@ -305,7 +305,7 @@ describe('HOS-1499 V9a — owner acts on a listing land in domain_event (integra
                 try {
                     await tx.transaction(async (savepoint) => {
                         const result = await failing.updateOwn(
-                            gastronomyId,
+                            venueId,
                             { summary: 'Un resumen que no debe quedar' },
                             ownerActor(ownerId),
                             { tx: savepoint as unknown as ServiceContext['tx'] }
@@ -319,7 +319,7 @@ describe('HOS-1499 V9a — owner acts on a listing land in domain_event (integra
 
                 const events = await domainEventModel.findByEntity({
                     entityType: 'venue',
-                    entityId: gastronomyId,
+                    entityId: venueId,
                     tx
                 });
                 expect(events).toHaveLength(0);
@@ -376,25 +376,22 @@ describe('HOS-1499 V9a — owner acts on a listing land in domain_event (integra
         'TEST:V9a:3 — five description edits leave none of the five texts in any event of the listing',
         async () => {
             await withServiceTestTransaction(async (tx) => {
-                const { ownerId, gastronomyId } = await seedVenue(tx);
+                const { ownerId, venueId } = await seedVenue(tx);
                 const actor = ownerActor(ownerId);
                 const texts = [1, 2, 3, 4, 5].map(
                     (n) => `Texto de descripción número ${n} — marca única ${crypto.randomUUID()}`
                 );
 
                 for (const description of texts) {
-                    const edited = await venueService.updateOwn(
-                        gastronomyId,
-                        { description },
-                        actor,
-                        { tx }
-                    );
+                    const edited = await venueService.updateOwn(venueId, { description }, actor, {
+                        tx
+                    });
                     expect(edited.error).toBeUndefined();
                 }
 
                 const events = await domainEventModel.findByEntity({
                     entityType: 'venue',
-                    entityId: gastronomyId,
+                    entityId: venueId,
                     tx
                 });
                 expect(events).toHaveLength(5);

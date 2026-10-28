@@ -193,7 +193,7 @@ export class VenueService extends BaseListingService<
      * Used by `syncListingAmenityJunction` / `syncListingFeatureJunction`.
      */
     protected override get _entityFkColumn(): string {
-        return 'gastronomyId';
+        return 'venueId';
     }
 
     /**
@@ -580,14 +580,14 @@ export class VenueService extends BaseListingService<
      * 4. **Delegation**: passes through to `this.update()` so that junction sync
      *    (`_beforeUpdate` / `_afterUpdate`) fires for amenity/feature changes.
      *
-     * @param gastronomyId - UUID of the gastronomy listing to update.
+     * @param venueId - UUID of the gastronomy listing to update.
      * @param data - Validated operational-only update payload.
      * @param actor - The actor performing the update.
      * @param ctx - Optional service context for transaction propagation.
      * @returns `ServiceOutput<Gastronomy>` wrapping the updated entity.
      */
     public async updateOwn(
-        gastronomyId: string,
+        venueId: string,
         data: VenueOwnerUpdateInput,
         actor: Actor,
         ctx?: ServiceContext<VenueHookState>
@@ -609,7 +609,7 @@ export class VenueService extends BaseListingService<
             const validated = parseResult.data;
 
             // 2. Load the listing.
-            const entity = await this.model.findById(gastronomyId, ctx?.tx);
+            const entity = await this.model.findById(venueId, ctx?.tx);
             if (!entity) {
                 return {
                     error: {
@@ -649,7 +649,7 @@ export class VenueService extends BaseListingService<
             //    passes the base gate without any privilege elevation.
             return this.update(
                 actor,
-                gastronomyId,
+                venueId,
                 validated as VenueUpdateInput,
                 ctx as ServiceContext
             );
@@ -726,7 +726,7 @@ export class VenueService extends BaseListingService<
             const lang = resolveVenueMenuQrLangFromTargetUrl({ targetUrl: code.targetUrl });
             if (!siteUrl || !lang) {
                 this.logger.error(
-                    { gastronomyId: updated.id, qrCodeId: code.id },
+                    { venueId: updated.id, qrCodeId: code.id },
                     'Menu QR target URL is not a recognizable absolute carta URL; cannot repoint it'
                 );
                 return updated;
@@ -743,7 +743,7 @@ export class VenueService extends BaseListingService<
         } catch (error) {
             this.logger.error(
                 {
-                    gastronomyId: updated.id,
+                    venueId: updated.id,
                     error: error instanceof Error ? error.message : String(error)
                 },
                 'Could not repoint the venue’s menu QR code; the listing update stands'

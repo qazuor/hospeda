@@ -8,7 +8,7 @@
  * `test/services/media/add-featured-media.test.ts`. This file asserts only the
  * things the WIRING can get wrong and the primitive cannot:
  *
- *  - that the foreign key threaded into every read and write is `gastronomyId`;
+ *  - that the foreign key threaded into every read and write is `venueId`;
  *  - that the permission gate still runs before any of it;
  *  - that the outgoing cover is soft-deleted with the actor stamped on it;
  *  - and that the bug is actually fixed here too — a full gallery no longer
@@ -65,7 +65,7 @@ import { addVenueFeaturedMedia } from '../../../src/services/venue/venue.media';
 import type { Actor } from '../../../src/types';
 import * as permissionUtils from '../../../src/utils/permission';
 
-const GASTRONOMY_ID = '00000000-0000-4000-a000-000000000001';
+const VENUE_ID = '00000000-0000-4000-a000-000000000001';
 const PREVIOUS_ID = '00000000-0000-4000-a000-000000000002';
 const OWNER_ID = '00000000-0000-4000-a000-000000000003';
 
@@ -77,7 +77,7 @@ const PAYLOAD = { url: 'https://cdn.example.com/new-cover.jpg' };
 function makeMediaRow(overrides: Record<string, unknown> = {}) {
     return {
         id: '00000000-0000-4000-a000-00000000000a',
-        gastronomyId: GASTRONOMY_ID,
+        venueId: VENUE_ID,
         url: PAYLOAD.url,
         moderationState: ModerationStatusEnum.PENDING,
         state: 'visible' as const,
@@ -145,11 +145,11 @@ beforeEach(() => {
 
 describe('addGastronomyFeaturedMedia (HOS-803)', () => {
     it('succeeds with the gallery exactly at the cap — the reported bug', async () => {
-        const model = makeVenueModel({ id: GASTRONOMY_ID, ownerId: OWNER_ID });
+        const model = makeVenueModel({ id: VENUE_ID, ownerId: OWNER_ID });
         arrangeGallery({ galleryCount: ENTITY_CAP, previousFeatured: true });
 
         const result = await addVenueFeaturedMedia(model as unknown as ModelArg, ownerActor, {
-            gastronomyId: GASTRONOMY_ID,
+            venueId: VENUE_ID,
             media: PAYLOAD
         });
 
@@ -158,11 +158,11 @@ describe('addGastronomyFeaturedMedia (HOS-803)', () => {
     });
 
     it('creates the row already featured', async () => {
-        const model = makeVenueModel({ id: GASTRONOMY_ID, ownerId: OWNER_ID });
+        const model = makeVenueModel({ id: VENUE_ID, ownerId: OWNER_ID });
         arrangeGallery({ galleryCount: ENTITY_CAP, previousFeatured: true });
 
         await addVenueFeaturedMedia(model as unknown as ModelArg, ownerActor, {
-            gastronomyId: GASTRONOMY_ID,
+            venueId: VENUE_ID,
             media: PAYLOAD
         });
 
@@ -171,37 +171,37 @@ describe('addGastronomyFeaturedMedia (HOS-803)', () => {
         // is missing, and missing is the failure being excluded.
         expect(created.isFeatured).toBe(true);
         expect(created.state).toBe('visible');
-        expect(created.gastronomyId).toBe(GASTRONOMY_ID);
+        expect(created.venueId).toBe(VENUE_ID);
     });
 
-    it('threads gastronomyId, not another vertical key, through the reads and writes', async () => {
-        const model = makeVenueModel({ id: GASTRONOMY_ID, ownerId: OWNER_ID });
+    it('threads venueId, not another vertical key, through the reads and writes', async () => {
+        const model = makeVenueModel({ id: VENUE_ID, ownerId: OWNER_ID });
         arrangeGallery({ galleryCount: 4, previousFeatured: true });
 
         await addVenueFeaturedMedia(model as unknown as ModelArg, ownerActor, {
-            gastronomyId: GASTRONOMY_ID,
+            venueId: VENUE_ID,
             media: PAYLOAD
         });
 
         const created = mockMediaModel.create.mock.calls[0]?.[0] as Record<string, unknown>;
-        expect(created.gastronomyId).toBe(GASTRONOMY_ID);
+        expect(created.venueId).toBe(VENUE_ID);
 
         const findFeaturedArg = mockMediaModel.findFeatured.mock.calls[0]?.[0] as Record<
             string,
             unknown
         >;
-        expect(findFeaturedArg.gastronomyId).toBe(GASTRONOMY_ID);
+        expect(findFeaturedArg.venueId).toBe(VENUE_ID);
 
         // The swap moves the gallery by zero, so nothing counts it.
         expect(mockMediaModel.count).not.toHaveBeenCalled();
     });
 
     it('soft-deletes the previous cover, stamping the actor', async () => {
-        const model = makeVenueModel({ id: GASTRONOMY_ID, ownerId: OWNER_ID });
+        const model = makeVenueModel({ id: VENUE_ID, ownerId: OWNER_ID });
         arrangeGallery({ galleryCount: 4, previousFeatured: true });
 
         const result = await addVenueFeaturedMedia(model as unknown as ModelArg, ownerActor, {
-            gastronomyId: GASTRONOMY_ID,
+            venueId: VENUE_ID,
             media: PAYLOAD
         });
 
@@ -217,11 +217,11 @@ describe('addGastronomyFeaturedMedia (HOS-803)', () => {
     });
 
     it('deletes the previous cover at the cap too, so the gallery cannot grow', async () => {
-        const model = makeVenueModel({ id: GASTRONOMY_ID, ownerId: OWNER_ID });
+        const model = makeVenueModel({ id: VENUE_ID, ownerId: OWNER_ID });
         arrangeGallery({ galleryCount: ENTITY_CAP, previousFeatured: true });
 
         const result = await addVenueFeaturedMedia(model as unknown as ModelArg, ownerActor, {
-            gastronomyId: GASTRONOMY_ID,
+            venueId: VENUE_ID,
             media: PAYLOAD
         });
 
@@ -241,11 +241,11 @@ describe('addGastronomyFeaturedMedia (HOS-803)', () => {
     });
 
     it('reports no previous cover when the listing had none', async () => {
-        const model = makeVenueModel({ id: GASTRONOMY_ID, ownerId: OWNER_ID });
+        const model = makeVenueModel({ id: VENUE_ID, ownerId: OWNER_ID });
         arrangeGallery({ galleryCount: 2, previousFeatured: false });
 
         const result = await addVenueFeaturedMedia(model as unknown as ModelArg, ownerActor, {
-            gastronomyId: GASTRONOMY_ID,
+            venueId: VENUE_ID,
             media: PAYLOAD
         });
 
@@ -259,7 +259,7 @@ describe('addGastronomyFeaturedMedia (HOS-803)', () => {
         const model = makeVenueModel(null);
 
         const result = await addVenueFeaturedMedia(model as unknown as ModelArg, ownerActor, {
-            gastronomyId: GASTRONOMY_ID,
+            venueId: VENUE_ID,
             media: PAYLOAD
         });
 
@@ -268,11 +268,11 @@ describe('addGastronomyFeaturedMedia (HOS-803)', () => {
     });
 
     it('refuses an actor without VENUE_EDIT_OWN, before touching the table', async () => {
-        const model = makeVenueModel({ id: GASTRONOMY_ID, ownerId: OWNER_ID });
+        const model = makeVenueModel({ id: VENUE_ID, ownerId: OWNER_ID });
         arrangeGallery({ galleryCount: 0, previousFeatured: false });
 
         const result = await addVenueFeaturedMedia(model as unknown as ModelArg, touristActor, {
-            gastronomyId: GASTRONOMY_ID,
+            venueId: VENUE_ID,
             media: PAYLOAD
         });
 
@@ -281,10 +281,10 @@ describe('addGastronomyFeaturedMedia (HOS-803)', () => {
     });
 
     it('rejects a payload with no url', async () => {
-        const model = makeVenueModel({ id: GASTRONOMY_ID, ownerId: OWNER_ID });
+        const model = makeVenueModel({ id: VENUE_ID, ownerId: OWNER_ID });
 
         const result = await addVenueFeaturedMedia(model as unknown as ModelArg, ownerActor, {
-            gastronomyId: GASTRONOMY_ID,
+            venueId: VENUE_ID,
             media: {} as never
         });
 

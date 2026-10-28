@@ -765,7 +765,7 @@ export async function seedEvent(
 interface SeedVenueOverrides {
     readonly ownerId?: string;
     readonly destinationId?: string;
-    readonly gastronomyId?: string;
+    readonly venueId?: string;
     /** Publication state; defaults to `DRAFT` (never public). */
     readonly publicationStatus?: PublicationStatusEnum;
     readonly inactiveSince?: Date;
@@ -781,7 +781,7 @@ interface SeedVenueOverrides {
  *
  * @param tx - Drizzle transaction client (always rolled back after the test).
  * @param overrides - Optional ID / field overrides.
- * @returns Object containing `{ ownerId, destinationId, gastronomyId }`.
+ * @returns Object containing `{ ownerId, destinationId, venueId }`.
  */
 export async function seedVenue(
     tx: DrizzleClient,
@@ -789,11 +789,11 @@ export async function seedVenue(
 ): Promise<{
     readonly ownerId: string;
     readonly destinationId: string;
-    readonly gastronomyId: string;
+    readonly venueId: string;
 }> {
     const ownerId = overrides.ownerId ?? crypto.randomUUID();
     const destinationId = overrides.destinationId ?? crypto.randomUUID();
-    const gastronomyId = overrides.gastronomyId ?? crypto.randomUUID();
+    const venueId = overrides.venueId ?? crypto.randomUUID();
     const uid = crypto.randomUUID().slice(0, 8);
 
     await tx.insert(users).values({
@@ -828,7 +828,7 @@ export async function seedVenue(
     } as typeof destinations.$inferInsert);
 
     await tx.insert(venues).values({
-        id: gastronomyId,
+        id: venueId,
         slug: `seed-gastronomy-${uid}`,
         name: 'La Parrilla de Prueba',
         summary: 'A seed gastronomy listing summary',
@@ -841,12 +841,12 @@ export async function seedVenue(
         deadlinesVersion: overrides.deadlinesVersion ?? 1
     } as typeof venues.$inferInsert);
 
-    return { ownerId, destinationId, gastronomyId };
+    return { ownerId, destinationId, venueId };
 }
 
 interface SeedVenueReviewOverrides {
     readonly reviewId?: string;
-    readonly gastronomyId: string;
+    readonly venueId: string;
     readonly userId: string;
     readonly overallRating?: number;
     readonly moderationState?: string;
@@ -857,7 +857,7 @@ interface SeedVenueReviewOverrides {
  * for tests that need a pre-existing review to moderate.
  *
  * @param tx - Drizzle transaction client.
- * @param options - Required `gastronomyId` and `userId`.
+ * @param options - Required `venueId` and `userId`.
  * @returns Object containing `{ reviewId }`.
  */
 export async function seedVenueReview(
@@ -868,7 +868,7 @@ export async function seedVenueReview(
 
     await tx.insert(venueReviews).values({
         id: reviewId,
-        gastronomyId: options.gastronomyId,
+        venueId: options.venueId,
         userId: options.userId,
         rating: { food: 4, service: 4, ambiance: 3, value: 4 },
         averageRating: 3.75,

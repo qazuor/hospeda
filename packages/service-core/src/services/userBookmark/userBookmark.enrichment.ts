@@ -222,7 +222,7 @@ export async function enrichBookmarksWithEntityInfo(
             : Promise.resolve([]),
         venueIds.length > 0
             ? venueMediaModel.findByVenues({
-                  gastronomyIds: venueIds,
+                  venueIds: venueIds,
                   state: 'visible',
                   tx
               })

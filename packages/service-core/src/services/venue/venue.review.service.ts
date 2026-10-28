@@ -108,7 +108,7 @@ function computeEffectiveRating(input: VenueReviewCreateInput): number {
  *
  * // Tourist creates a review (goes to PENDING)
  * const result = await service.create(
- *   { gastronomyId: 'uuid', overallRating: 4 },
+ *   { venueId: 'uuid', overallRating: 4 },
  *   actor,
  *   ctx
  * );
@@ -150,7 +150,7 @@ export class VenueReviewService extends BaseCrudService<
     // -----------------------------------------------------------------------
 
     protected override getDefaultListRelations(): Record<string, boolean> {
-        return { gastronomy: true, user: true };
+        return { venue: true, user: true };
     }
 
     /**
@@ -289,7 +289,7 @@ export class VenueReviewService extends BaseCrudService<
         actor: Actor,
         ctx: ServiceContext
     ): Promise<Partial<VenueReview>> {
-        const venue = await this._venueModel.findById(data.gastronomyId, ctx.tx);
+        const venue = await this._venueModel.findById(data.venueId, ctx.tx);
         if (
             !resolveResourceStep({
                 actorId: actor.id,
@@ -301,7 +301,7 @@ export class VenueReviewService extends BaseCrudService<
         }
         const existing = await this.model.findOne({
             userId: actor.id,
-            gastronomyId: data.gastronomyId,
+            venueId: data.venueId,
             deletedAt: null
         });
         if (existing) {
@@ -338,7 +338,7 @@ export class VenueReviewService extends BaseCrudService<
         _actor: Actor,
         ctx: ServiceContext
     ): Promise<VenueReview> {
-        await this._recomputeListingRating(entity.gastronomyId, ctx);
+        await this._recomputeListingRating(entity.venueId, ctx);
         return entity;
     }
 
@@ -446,7 +446,7 @@ export class VenueReviewService extends BaseCrudService<
                 };
             }
 
-            const gastronomyId = (review as Record<string, unknown>).gastronomyId as string;
+            const venueId = (review as Record<string, unknown>).venueId as string;
 
             const updated = await this.model.update(
                 { id: input.id },
@@ -469,7 +469,7 @@ export class VenueReviewService extends BaseCrudService<
             }
 
             // Recompute listing rating after every moderation decision.
-            await this._recomputeListingRating(gastronomyId, ctx ?? {});
+            await this._recomputeListingRating(venueId, ctx ?? {});
 
             return { data: updated as unknown as VenueReview }; // TYPE-WORKAROUND: model row narrowed to the Zod GastronomyReview entity type
         } catch (err) {
@@ -593,18 +593,18 @@ export class VenueReviewService extends BaseCrudService<
      *
      * Force-filtered — no PENDING / REJECTED reviews are returned.
      *
-     * @param gastronomyId - UUID of the gastronomy listing.
+     * @param venueId - UUID of the gastronomy listing.
      * @param _actor - The actor performing the action (unused; public path).
      * @param ctx - Optional service context for transaction propagation.
      * @returns `ServiceOutput` with the approved review list and total count.
      */
     public async listByVenue(
-        gastronomyId: string,
+        venueId: string,
         _actor: Actor,
         ctx?: ServiceContext
     ): Promise<ServiceOutput<{ reviews: VenueReview[]; total: number }>> {
         try {
-            const venue = await this._venueModel.findById(gastronomyId, ctx?.tx);
+            const venue = await this._venueModel.findById(venueId, ctx?.tx);
             if (
                 venue &&
                 !listingShowsReviews({
@@ -621,7 +621,7 @@ export class VenueReviewService extends BaseCrudService<
             const result = await this.model.findAllWithRelations(
                 { user: true },
                 {
-                    gastronomyId,
+                    venueId,
                     lifecycleState: LifecycleStatusEnum.ACTIVE,
                     moderationState: ModerationStatusEnum.APPROVED,
                     deletedAt: null
@@ -659,17 +659,14 @@ export class VenueReviewService extends BaseCrudService<
      *
      * Called after create, moderation decision, and soft-delete.
      *
-     * @param gastronomyId - UUID of the listing to refresh.
+     * @param venueId - UUID of the listing to refresh.
      * @param ctx - Service context (carries the active transaction).
      */
-    private async _recomputeListingRating(
-        gastronomyId: string,
-        ctx: ServiceContext
-    ): Promise<void> {
+    private async _recomputeListingRating(venueId: string, ctx: ServiceContext): Promise<void> {
         try {
             const { items: approvedReviews } = await this.model.findAll(
                 {
-                    gastronomyId,
+                    venueId,
                     moderationState: ModerationStatusEnum.APPROVED,
                     deletedAt: null
                 },
@@ -694,7 +691,7 @@ export class VenueReviewService extends BaseCrudService<
                 };
             });
 
-            await this._venueService.recomputeRating(gastronomyId, ratingRows, ctx?.tx);
+            await this._venueService.recomputeRating(venueId, ratingRows, ctx?.tx);
         } catch {
             // Swallow recompute errors to prevent a rating-update failure from
             // rolling back the review write (best-effort denormalization).
