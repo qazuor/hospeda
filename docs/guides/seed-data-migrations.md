@@ -558,7 +558,7 @@ export const meta = {
     name: '0034-hos-372-example-media-to-relational',
     group: 'required',
     requiresColumns: [
-        { table: 'gastronomies', column: 'media' },
+        { table: 'venues', column: 'media' },
         { table: 'experiences', column: 'media' }
     ]
 } as const satisfies SeedMigrationModule['meta'];

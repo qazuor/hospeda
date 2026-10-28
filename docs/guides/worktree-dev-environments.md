@@ -117,7 +117,7 @@ provision a worktree DB by hand:
   time this DB was healed — any change (new table, new column, new extras file)
   triggers a heal; an unchanged fingerprint is a no-op, no Postgres round-trip needed.
   A configurable **sentinel-table** check (`.db.schemaSentinelTables`, e.g.
-  `gastronomies`, `experiences`) runs as an additional safety net whenever the
+  `venues`, `experiences`) runs as an additional safety net whenever the
   fingerprint reports current, in case the fingerprint has a bug or a misconfigured
   path. Either signal healing the schema runs `db:push` + drizzle extras — **additive
   and non-destructive**, it does **not** reseed, so existing rows are preserved and
@@ -177,7 +177,7 @@ data** — without it they stay empty.
 **What a fresh worktree contains.** After a refresh + `wt:up`, the worktree DB clones the
 current template (sentinel OK, no heal) with the venue and experience example data seeded: at last
 check 6 venue listings, 5 experience listings, 3 venue and experience owners, plus the dev test
-users. Verify with `psql -d worktree_<slug> -c 'SELECT count(*) FROM gastronomies'` and — legacy-name-allowed: legacy table name in a documented psql command (HOS-1823)
+users. Verify with `psql -d worktree_<slug> -c 'SELECT count(*) FROM venues'` and — legacy-name-allowed: legacy table name in a documented psql command (HOS-1823)
 `… FROM experiences` — both must be `> 0`.
 
 ## Test users

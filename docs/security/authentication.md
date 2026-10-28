@@ -815,7 +815,7 @@ export enum RoleEnum {
   CLIENT_MANAGER = 'CLIENT_MANAGER',
   EDITOR = 'EDITOR',
   HOST = 'HOST',
-  GASTRONOMY_OWNER = 'GASTRONOMY_OWNER',
+  VENUE_OWNER = 'VENUE_OWNER',
   EXPERIENCE_OWNER = 'EXPERIENCE_OWNER',
   SPONSOR = 'SPONSOR',
   USER = 'USER',
@@ -829,7 +829,7 @@ role grants its own explicit set of permissions (rows in `r_role_permission`,
 admin-editable per HOS-120), and an actor's effective permissions are the
 union across every role it holds — since HOS-296, an actor holds a SET
 (`roles: readonly RoleEnum[]`, backed by the `user_role` table), not a single
-scalar. One account can be `HOST` and `GASTRONOMY_OWNER` / `EXPERIENCE_OWNER` at the same time.
+scalar. One account can be `HOST` and `VENUE_OWNER` / `EXPERIENCE_OWNER` at the same time.
 
 ### Permission System
 
