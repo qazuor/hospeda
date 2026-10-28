@@ -103,7 +103,7 @@ describe('createVenueConsolidatedConfig', () => {
 
     it('type field should have select options for all venue types', () => {
         const config = createVenueConsolidatedConfig(t);
-        const section = config.sections.find((s) => s.id === ['gastro', 'nomy-specific'].join(''));
+        const section = config.sections.find((s) => s.id === 'venue-specific');
         const typeField = section?.fields.find((f) => f.id === 'type');
         const options = (typeField?.typeConfig as { options?: { value: string }[] })?.options ?? [];
         const values = options.map((o) => o.value);
@@ -115,7 +115,7 @@ describe('createVenueConsolidatedConfig', () => {
 
     it('priceRange field should have select options for all price ranges', () => {
         const config = createVenueConsolidatedConfig(t);
-        const section = config.sections.find((s) => s.id === ['gastro', 'nomy-specific'].join(''));
+        const section = config.sections.find((s) => s.id === 'venue-specific');
         const field = section?.fields.find((f) => f.id === 'priceRange');
         const options = (field?.typeConfig as { options?: { value: string }[] })?.options ?? [];
         const values = options.map((o) => o.value);
