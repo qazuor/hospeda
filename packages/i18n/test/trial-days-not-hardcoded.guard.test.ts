@@ -5,7 +5,7 @@
  * ## What broke, and why it looked fine
  *
  * The two listing landings promised their free trial with the number written
- * out: `landing.price.trial` of the gastronomy namespace read literally
+ * out: `landing.price.trial` of the venue namespace read literally
  * "30 días de prueba gratis", `…faq.a1` repeated the same 30 inside a sentence,
  * and the experience vertical carried both again — twelve strings across two
  * verticals and three locales, none of which anything compared against

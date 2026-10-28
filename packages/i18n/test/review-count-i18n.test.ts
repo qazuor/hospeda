@@ -1,6 +1,6 @@
 /**
  * Regression guard for the review-count header shared by listing listing
- * detail pages (gastronomy + experience).
+ * detail pages (venue + experience).
  *
  * `VenueDetailHeader.astro` and `ExperienceHero.astro` render the review
  * count via `tPlural('review.list.totalReviews', count, { count })`. A SPEC-259
