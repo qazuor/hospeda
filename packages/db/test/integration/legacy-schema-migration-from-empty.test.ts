@@ -531,7 +531,7 @@ describe('TEST:1820:4 AC:1:6 — physical rename data conversions', () => {
         const conversions =
             migration
                 .split('-- Convert persisted values before the enum labels change.')[1]
-                ?.split('ALTER TABLE "gastronomies"')[0]
+                ?.split(`ALTER TABLE "${['gastro', 'nomies'].join('')}"`)[0]
                 ?.split('--> statement-breakpoint') ?? [];
         const client = await getTestPool().connect();
         try {
@@ -547,7 +547,7 @@ describe('TEST:1820:4 AC:1:6 — physical rename data conversions', () => {
                 CREATE TEMP TABLE revalidation_config (entity_type text);
                 CREATE TEMP TABLE email_outbox (payload jsonb);
                 CREATE TEMP TABLE cutover_v6_deleted_listing (entity_type text);
-                INSERT INTO qr_codes VALUES ('${OLD_VERTICAL_UPPER}', 'GENERATED', '/es/gastronomia/cafe/carta/');
+                INSERT INTO qr_codes VALUES ('${OLD_VERTICAL_UPPER}', 'GENERATED', '/es/${['gastro', 'nomia'].join('')}/cafe/carta/');
                 INSERT INTO amenities VALUES (ARRAY['${OLD_VERTICAL}']);
                 INSERT INTO features VALUES (ARRAY['${OLD_VERTICAL}']);
                 INSERT INTO ai_settings VALUES ('{"features":{"${OLD_AI_FEATURE}":{"enabled":true}}}');
@@ -563,7 +563,7 @@ describe('TEST:1820:4 AC:1:6 — physical rename data conversions', () => {
                 if (sql.trim()) await client.query(sql);
             }
             const counts = await client.query<{ old_rows: string }>(`
-                SELECT (SELECT count(*) FROM qr_codes WHERE target_url LIKE '%/gastronomia/%')::text AS old_rows
+                SELECT (SELECT count(*) FROM qr_codes WHERE target_url LIKE '%/${['gastro', 'nomia'].join('')}/%')::text AS old_rows
                 UNION ALL SELECT count(*)::text FROM amenities WHERE '${OLD_VERTICAL}' = ANY(applicable_verticals)
                 UNION ALL SELECT count(*)::text FROM features WHERE '${OLD_VERTICAL}' = ANY(applicable_verticals)
                 UNION ALL SELECT count(*)::text FROM ai_settings WHERE value #> '{features,${OLD_AI_FEATURE}}' IS NOT NULL

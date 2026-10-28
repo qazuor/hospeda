@@ -39,7 +39,7 @@ describe('VenueModel.findIdsByOwnerId', () => {
     });
 
     it('returns the owned listing IDs and logs the query', async () => {
-        const rows = [{ id: 'gastro-1' }, { id: 'gastro-2' }];
+        const rows = [{ id: 'venue-1' }, { id: 'venue-2' }];
         const where = vi.fn().mockResolvedValue(rows);
         const from = vi.fn().mockReturnValue({ where });
         const select = vi.fn().mockReturnValue({ from });
@@ -47,7 +47,7 @@ describe('VenueModel.findIdsByOwnerId', () => {
 
         const result = await model.findIdsByOwnerId('owner-1');
 
-        expect(result).toEqual(['gastro-1', 'gastro-2']);
+        expect(result).toEqual(['venue-1', 'venue-2']);
         expect(select).toHaveBeenCalledWith({ id: expect.anything() });
         expect(logQuery).toHaveBeenCalledWith(
             'venues',
@@ -83,14 +83,14 @@ describe('VenueModel.findIdsByOwnerId', () => {
     });
 
     it('uses the provided transaction client instead of getDb()', async () => {
-        const where = vi.fn().mockResolvedValue([{ id: 'gastro-tx' }]);
+        const where = vi.fn().mockResolvedValue([{ id: 'venue-tx' }]);
         const from = vi.fn().mockReturnValue({ where });
         const select = vi.fn().mockReturnValue({ from });
         const mockTx = { select } as unknown as Parameters<typeof model.findIdsByOwnerId>[1];
 
         const result = await model.findIdsByOwnerId('owner-1', mockTx);
 
-        expect(result).toEqual(['gastro-tx']);
+        expect(result).toEqual(['venue-tx']);
         expect(getDb).not.toHaveBeenCalled();
     });
 });
