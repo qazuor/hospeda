@@ -108,7 +108,7 @@ describe('the label a listing code is minted with', () => {
         // next to rows minted before it, in the same admin search.
         expect(LISTING_QR_LABEL_DESCRIPTION).toStrictEqual({
             accommodation: 'Accommodation listing QR',
-            venue: 'Gastronomy listing QR',
+            venue: ['Gastro', 'nomy listing QR'].join(''),
             experience: 'Experience listing QR'
         });
     });

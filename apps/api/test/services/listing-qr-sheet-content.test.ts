@@ -33,7 +33,7 @@ import {
 const SITE = 'https://hospeda.com.ar';
 
 describe('where the printed code lands (HOS-982)', () => {
-    it('agrees with the brochure on both gastronomy and experience verticals, segment for segment', () => {
+    it('agrees with the brochure on both venue and experience verticals, segment for segment', () => {
         for (const vertical of ['venue', 'experience'] as const) {
             expect(
                 buildListingPublicUrl({ vertical, slug: 'el-fogon', locale: 'es', siteUrl: SITE })
