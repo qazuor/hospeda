@@ -240,7 +240,25 @@
                 "apps/web/test/components/destination/DestinationRatingBreakdown.test.ts": 2,
                 "packages/schemas/src/entities/post/post.http.schema.ts": 1,
                 "packages/service-core/test/integration/services/helpers.ts": 1,
-                "packages/service-core/test/services/moderation/review-moderation.flow.test.ts": 1
+                "packages/service-core/test/services/moderation/review-moderation.flow.test.ts": 1,
+                "packages/i18n/src/locales/en/admin-entities.json": 6,
+                "packages/i18n/src/locales/en/admin-filters.json": 4,
+                "packages/i18n/src/locales/en/blog.json": 4,
+                "packages/i18n/src/locales/en/destination.json": 4,
+                "packages/i18n/src/locales/en/event.json": 10,
+                "packages/i18n/src/locales/en/footer.json": 2,
+                "packages/i18n/src/locales/es/admin-entities.json": 3,
+                "packages/i18n/src/locales/es/admin-filters.json": 2,
+                "packages/i18n/src/locales/es/blog.json": 2,
+                "packages/i18n/src/locales/es/destination.json": 2,
+                "packages/i18n/src/locales/es/event.json": 4,
+                "packages/i18n/src/locales/es/footer.json": 1,
+                "packages/i18n/src/locales/pt/admin-entities.json": 3,
+                "packages/i18n/src/locales/pt/admin-filters.json": 2,
+                "packages/i18n/src/locales/pt/blog.json": 2,
+                "packages/i18n/src/locales/pt/destination.json": 2,
+                "packages/i18n/src/locales/pt/event.json": 4,
+                "packages/i18n/src/locales/pt/footer.json": 1
             },
             "keys": {
                 "packages/i18n/src/locales/en/admin-entities.json#ratingDimensions.gastronomy": 0,
@@ -310,7 +328,33 @@
                 "packages/i18n/src/locales/pt/about.json#region.text": 1,
                 "packages/i18n/src/locales/pt/about.json#page.regionText2": 1,
                 "packages/i18n/src/locales/pt/blog.json#listPage.description": 1,
-                "packages/i18n/src/locales/pt/event.json#categoryPage.categories.WORKSHOP.description": 1
+                "packages/i18n/src/locales/pt/event.json#categoryPage.categories.WORKSHOP.description": 1,
+                "packages/i18n/src/locales/es/common.json#qrSheet.brandTagline": 1,
+                "packages/i18n/src/locales/es/faq.json#categories.about.items.different.answer": 1,
+                "packages/i18n/src/locales/es/faq.json#categories.contributors.items.placeReviews.answer": 1,
+                "packages/i18n/src/locales/es/faq.json#categories.contributors.items.submitPhotos.answer": 1,
+                "packages/i18n/src/locales/es/faq.json#categories.partners.items.officialPartner.answer": 1,
+                "packages/i18n/src/locales/es/features.json#gastro.title": 1,
+                "packages/i18n/src/locales/es/features.json#hero.stats.worlds.label": 1,
+                "packages/i18n/src/locales/es/features.json#meta.description": 1,
+                "packages/i18n/src/locales/es/features.json#proximamente.items.touristCard.description": 1,
+                "packages/i18n/src/locales/es/features.json#seo.collectionDescription": 1,
+                "packages/i18n/src/locales/es/features.json#subnav.gastro": 1,
+                "packages/i18n/src/locales/es/features.json#vistazo.pillars.descubrir.description": 1,
+                "packages/i18n/src/locales/es/pricing.json#tourist.steps.1.desc": 1,
+                "packages/i18n/src/locales/pt/common.json#qrSheet.brandTagline": 1,
+                "packages/i18n/src/locales/pt/faq.json#categories.about.items.different.answer": 1,
+                "packages/i18n/src/locales/pt/faq.json#categories.contributors.items.placeReviews.answer": 1,
+                "packages/i18n/src/locales/pt/faq.json#categories.contributors.items.submitPhotos.answer": 1,
+                "packages/i18n/src/locales/pt/faq.json#categories.partners.items.officialPartner.answer": 1,
+                "packages/i18n/src/locales/pt/features.json#gastro.title": 1,
+                "packages/i18n/src/locales/pt/features.json#hero.stats.worlds.label": 1,
+                "packages/i18n/src/locales/pt/features.json#meta.description": 1,
+                "packages/i18n/src/locales/pt/features.json#proximamente.items.touristCard.description": 1,
+                "packages/i18n/src/locales/pt/features.json#seo.collectionDescription": 1,
+                "packages/i18n/src/locales/pt/features.json#subnav.gastro": 1,
+                "packages/i18n/src/locales/pt/features.json#vistazo.pillars.descubrir.description": 1,
+                "packages/i18n/src/locales/pt/pricing.json#tourist.steps.1.desc": 1
             }
         },
         "c": {
@@ -336,5 +380,5 @@
     },
     "historyCount": 85,
     "historyWordFiles": 14,
-    "ledgerFingerprint": "89340f527f249c644c7b3d0a79f14df84d24b459d3f40e6338966e0a0fc6038f"
+    "ledgerFingerprint": "47729c1b08d2de12fbbd80707a8178e6de449c8c73d468ce764d7a6f46369d0f"
 }
