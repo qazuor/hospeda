@@ -28,7 +28,7 @@ INSERT INTO "billing_option" ("id", "plan_version_id", "cycle", "amount", "curre
 INSERT INTO "addon" ("id", "slug", "name", "description") VALUES
 	('73cea908-12f1-55b8-9607-3b2943629271', 'extra-accommodations-5', 'Extra Accommodations Pack (+5)', 'Adds 5 additional accommodations to your plan. Renews monthly.'),
 	('ccc9266a-4db1-5e93-a93b-f432fd48baa5', 'extra-photos-20', 'Extra Photos Pack (+20 photos)', 'Adds 20 additional photos to each accommodation. Renews monthly.'),
-	('3a40ce3f-8b7c-59c3-94c1-9b4ee56486e9', 'extra-venues-1', 'Extra Comer y salir Listing (+1)', 'Adds 1 additional gastronomy listing to your plan. Renews monthly.'),
+	('3a40ce3f-8b7c-59c3-94c1-9b4ee56486e9', 'extra-venues-1', 'Extra Comer y salir Listing (+1)', 'Adds 1 additional venue listing to your plan. Renews monthly.'),
 	('66b3d450-e92f-56ef-ae92-042204aee1bb', 'extra-experiences-1', 'Extra Experience Listing (+1)', 'Adds 1 additional experience listing to your plan. Renews monthly.'),
 	('8c4adeb1-46b3-541f-a7af-751df16f459b', 'visibility-boost-7d', 'Visibility Boost (7 days)', 'Your accommodation appears featured in search results for 7 days.'),
 	('b8605b0b-1310-5b5e-acc4-b7473b1e7d4a', 'visibility-boost-30d', 'Visibility Boost (30 days)', 'Your accommodation appears featured in search results for 30 days.'),

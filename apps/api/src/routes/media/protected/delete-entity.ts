@@ -117,8 +117,7 @@ const PLURAL_TO_SINGULAR: Readonly<Record<string, ProtectedMediaEntityType>> = {
     destinations: 'destination',
     events: 'event',
     posts: 'post',
-    // legacy-name-allowed: fotos subidas antes del renombrado (HOS-1822)
-    gastronomies: 'venue',
+    gastronomies: 'venue', // legacy-name-allowed: fotos subidas antes del renombrado (HOS-1822)
     venues: 'venue',
     experiences: 'experience'
 };
@@ -134,7 +133,7 @@ const parseEntityFromPublicId = (
     publicId: string
 ): { entityType: ProtectedMediaEntityType; entityId: string } | null => {
     const match = publicId.match(
-        /^hospeda\/[^/]+\/(accommodations|destinations|events|posts|gastronomies|venues|experiences)\/([^/]+)(\/|$)/
+        /^hospeda\/[^/]+\/(accommodations|destinations|events|posts|gastronomies|venues|experiences)\/([^/]+)(\/|$)/ // legacy-name-allowed: Cloudinary folders already uploaded
     );
     if (!match) return null;
 
