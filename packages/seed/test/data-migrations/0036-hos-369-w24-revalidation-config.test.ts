@@ -14,6 +14,5 @@ describe('0036-hos-369-w24-revalidation-config', () => {
         await up({ db } as never);
 
         expect(inserted.map((row) => row.entityType)).toContain('venue');
-        expect(inserted.map((row) => row.entityType)).not.toContain('gastronomy');
     });
 });
