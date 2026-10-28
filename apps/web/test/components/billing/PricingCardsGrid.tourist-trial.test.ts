@@ -73,7 +73,7 @@ describe('PricingCardsGrid — row 1, the tourist trial is consumed on start (HO
 
     it('only the tourist audience carries the note, through an exhaustive record', () => {
         expect(src).toMatch(
-            /TRIAL_CONSUMES_NOTE_BY_AUDIENCE: Readonly<Record<PricingAudience, boolean>> = \{\s*tourist: true,\s*owner: false,\s*gastronomy: false,\s*experience: false,\s*partner: false\s*\};/
+            /TRIAL_CONSUMES_NOTE_BY_AUDIENCE: Readonly<Record<PricingAudience, boolean>> = \{\s*tourist: true,\s*owner: false,\s*venue: false,\s*experience: false,\s*partner: false\s*\};/
         );
         expect(src).toContain(
             'const showsTrialConsumesNote = TRIAL_CONSUMES_NOTE_BY_AUDIENCE[audience];'

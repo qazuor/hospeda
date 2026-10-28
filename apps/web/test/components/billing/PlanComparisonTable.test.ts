@@ -259,7 +259,7 @@ describe('PlanComparisonTable.astro — mobile layout (HOS-1753)', () => {
         // AC:1753:4 — the same component renders all four comparisons, so one
         // CSS fix covers them; per-audience selectors would mean four fixes.
         expect(mobileBlock).not.toContain('data-audience');
-        expect(mobileBlock).not.toContain('--gastronomy');
+        expect(mobileBlock).not.toContain('--venue');
         expect(mobileBlock).not.toContain('--experience');
         expect(mobileBlock).not.toContain('--owner');
         expect(mobileBlock).not.toContain('--tourist');
