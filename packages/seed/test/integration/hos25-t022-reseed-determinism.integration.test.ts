@@ -766,10 +766,10 @@ describe('HOS-25 T-022 — end-to-end reseed-determinism against a real database
 
                 const accommodationId = getAccommodationFixtureId({ id: sharedRawId });
                 const postId = getPostFixtureId({ id: sharedRawId });
-                const gastronomyId = getVenueFixtureId(sharedRawId);
+                const venueId = getVenueFixtureId(sharedRawId);
                 const destinationId = getDestinationFixtureId({ id: sharedRawId });
 
-                const allIds = [accommodationId, postId, gastronomyId, destinationId];
+                const allIds = [accommodationId, postId, venueId, destinationId];
                 expect(new Set(allIds).size).toBe(allIds.length);
             }
         );

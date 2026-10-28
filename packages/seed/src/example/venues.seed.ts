@@ -55,7 +55,7 @@ export const getVenueFaqFixtureId = (input: { venueSeedId: string; index: number
  * Derives the deterministic UUIDv5 id for a single review belonging to an
  * `example` gastronomy fixture (HOS-25 T-026), keyed off the parent
  * gastronomy's seed-key plus the reviewer's own seed id — the `(userId,
- * gastronomyId)` pair is already the DB's own UNIQUE constraint for this
+ * venueId)` pair is already the DB's own UNIQUE constraint for this
  * table, so it is a more content-stable composite key than array position
  * (unaffected by fixture-array reordering).
  *
@@ -231,16 +231,16 @@ interface GastronomyReviewFile {
  * Idempotent: skips entirely when the listing already has media rows, so a
  * re-run against an already-seeded database never duplicates a gallery.
  *
- * @param input.gastronomyId - Real DB id of the listing.
+ * @param input.venueId - Real DB id of the listing.
  * @param input.media - The fixture's `media` block, if any.
  * @param input.label - Listing name, for logging.
  */
 async function seedGastronomyMediaRows({
-    gastronomyId,
+    venueId,
     media,
     label
 }: {
-    readonly gastronomyId: string;
+    readonly venueId: string;
     readonly media: FixtureMediaBlock | undefined;
     readonly label: string;
 }): Promise<void> {
@@ -250,7 +250,7 @@ async function seedGastronomyMediaRows({
 
     const mediaModel = new VenueMediaModel();
     const { total: existingCount } = await mediaModel.findByVenue({
-        gastronomyId,
+        venueId,
         pageSize: 1
     });
     if (existingCount > 0) {
@@ -258,7 +258,7 @@ async function seedGastronomyMediaRows({
         return;
     }
 
-    const rows = buildVenueMediaRows({ gastronomyId, media });
+    const rows = buildVenueMediaRows({ venueId, media });
     for (const row of rows) {
         await mediaModel.create(row);
     }
@@ -283,7 +283,7 @@ async function seedGastronomyMediaRows({
  * - Listing owner users: idempotent via pre-check on `email`.
  * - FAQ rows: idempotent via `onConflictDoNothing` on the (now explicit,
  *   deterministic) primary key.
- * - Review rows: idempotent via `onConflictDoNothing` on UNIQUE(userId, gastronomyId).
+ * - Review rows: idempotent via `onConflictDoNothing` on UNIQUE(userId, venueId).
  *
  * ### Deterministic ids (HOS-25 T-026)
  * Gastronomy listings, FAQs, and reviews are all inserted with an explicit
@@ -621,7 +621,7 @@ export async function seedVenues(context: SeedContext): Promise<void> {
                 // than the service, so `isFeatured` and `sortOrder` are set
                 // explicitly and no permission gate or N+1 ordering query runs.
                 await seedGastronomyMediaRows({
-                    gastronomyId: realId,
+                    venueId: realId,
                     media: item.media as FixtureMediaBlock | undefined,
                     label: item.name
                 });
@@ -684,7 +684,7 @@ export async function seedVenues(context: SeedContext): Promise<void> {
                             venueSeedId: faqFileData.$venueId,
                             index: faqIndex
                         }),
-                        gastronomyId: realVenueId,
+                        venueId: realVenueId,
                         question: faq.question,
                         answer: faq.answer,
                         category: faq.category ?? null,
@@ -735,13 +735,13 @@ export async function seedVenues(context: SeedContext): Promise<void> {
                     continue;
                 }
 
-                // onConflictDoNothing protects the UNIQUE(userId, gastronomyId) index
+                // onConflictDoNothing protects the UNIQUE(userId, venueId) index
                 await db
                     .insert(venueReviews)
                     .values({
                         // HOS-25 T-026: stable UUIDv5 keyed off the parent
                         // gastronomy's seed-key + the reviewer's own seed id —
-                        // the (userId, gastronomyId) pair is already this
+                        // the (userId, venueId) pair is already this
                         // table's UNIQUE constraint, so it doubles as a
                         // content-stable composite key (unaffected by array
                         // reordering, unlike an index-based key).
@@ -749,7 +749,7 @@ export async function seedVenues(context: SeedContext): Promise<void> {
                             venueSeedId: reviewFileData.$venueId,
                             reviewerSeedId: review.userId
                         }),
-                        gastronomyId: realVenueId,
+                        venueId: realVenueId,
                         userId: realUserId,
                         title: review.title ?? null,
                         content: review.content ?? null,

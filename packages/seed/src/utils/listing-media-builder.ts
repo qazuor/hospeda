@@ -17,18 +17,18 @@ import { buildMediaRows } from './media-rows-builder.js';
 /**
  * Maps a gastronomy fixture's `media` block to `gastronomy_media` rows.
  *
- * @param input.gastronomyId - UUID of the listing that owns the photos.
+ * @param input.venueId - UUID of the listing that owns the photos.
  * @param input.media - The `media` block from the gastronomy JSON fixture.
  * @returns Ordered rows for `GastronomyMediaModel.create()`.
  */
 export function buildVenueMediaRows({
-    gastronomyId,
+    venueId,
     media
 }: {
-    readonly gastronomyId: string;
+    readonly venueId: string;
     readonly media: FixtureMediaBlock;
 }): Partial<VenueMedia>[] {
-    return buildMediaRows({ media }).map((row) => ({ ...row, gastronomyId }));
+    return buildMediaRows({ media }).map((row) => ({ ...row, venueId }));
 }
 
 /**
