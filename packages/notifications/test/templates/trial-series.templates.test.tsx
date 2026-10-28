@@ -219,7 +219,7 @@ describe('vertical-aware copy (HOS-1283)', () => {
     // Regression for "a restaurant on trial gets nine emails written for a
     // host": every one of these seven sends used to hardcode accommodation
     // wording ("tu alojamiento", "cuántas camas", "dónde quedarse") with no
-    // way to tell a gastronomy or experience trial apart. `productDomain` is
+    // way to tell a venue or experience trial apart. `productDomain` is
     // rendered through `resolveTrialSeriesCopy`, so these assertions are on
     // the ACTUAL RENDERED MARKUP, not on the template source — a `toMatch`
     // over the whole file would pass with the bug still in place, since the

@@ -295,7 +295,7 @@ describe('Billing Email Templates', () => {
         describe('productDomain footer (HOS-1283)', () => {
             // Regression: RENEWAL_REMINDER fires for an active subscription in
             // ANY of the five business verticals (`notification-schedule.job.ts`
-            // does not scope its sweep to accommodation), so a gastronomy
+            // does not scope its sweep to accommodation), so a venue
             // renewal used to close with "gracias por confiar en Hospeda para
             // tus necesidades de alojamiento turístico" — the same defect the
             // trial series had.

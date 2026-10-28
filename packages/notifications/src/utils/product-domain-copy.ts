@@ -13,7 +13,7 @@
  * subscriptions can currently reach the trial series at all, alongside
  * accommodation itself — `createTrialSubscription` (`apps/api`) has exactly
  * two callers, one for accommodation's first publish and one for a
- * gastronomy/experience listing's first publish (HOS-1184). `tourist` and
+ * venue/experience listing's first publish (HOS-1184). `tourist` and
  * `partner` never create a local, Hospeda-owned trial today (neither has a
  * "first publish" event — see HOS-1283's investigation), so there is no
  * vertical copy to write for them yet; the fallback below covers them safely
@@ -65,7 +65,7 @@ const ACCOMMODATION_TRIAL_COPY: TrialSeriesVerticalCopy = {
     expiredSavedLine: 'fotos, descripción, servicios, ubicación y datos de contacto'
 };
 
-/** Vocabulary matches the gastronomy landing page (`gastronomy.json`'s `landing`). */
+/** Vocabulary matches the venue landing page (`venue.json`'s `landing`). */
 const GASTRONOMY_TRIAL_COPY: TrialSeriesVerticalCopy = {
     possessive: 'tu local',
     searchIntent: 'dónde comer',

@@ -29,7 +29,7 @@ const alliance: AdminLeadReceivedProps = {
     submittedAtLabel: '15 de agosto de 2026, 18:30'
 };
 
-/** The gastronomy funnel collects no phone and often no message. */
+/** The venue funnel collects no phone and often no message. */
 const venueMinimal: AdminLeadReceivedProps = {
     funnelLabel: 'Comercios',
     programLabel: 'Gastronomía',
