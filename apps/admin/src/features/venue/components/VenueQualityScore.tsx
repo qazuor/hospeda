@@ -1,6 +1,6 @@
 /**
  * @file VenueQualityScore.tsx
- * Quality-score widget for gastronomy listings (SPEC-239 T-059).
+ * Quality-score widget for venue listings (SPEC-239 T-059).
  *
  * Mirrors `EventQualityScore` — subscribes to the TanStack Form store via
  * `useStore` so the score recomputes live as the admin edits the form.
@@ -29,7 +29,7 @@ export interface VenueQualityScoreProps {
 }
 
 /**
- * Quality-score widget specialised for gastronomy listings.
+ * Quality-score widget specialised for venue listings.
  *
  * Signals: featuredImage · galleryPhotos · photosAlt · description · summary ·
  * contact · cuisine · operatingHours · capacity = 100 pts total.

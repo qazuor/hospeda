@@ -1,10 +1,10 @@
 /**
  * @file venue.config.ts
- * Entity list configuration for the gastronomy admin list page.
+ * Entity list configuration for the venue admin list page.
  *
  * Uses `createListingListConfig` from the generic listing layer so that the
  * shared filter scaffold (destination, featured, ownerId, includeDeleted) is
- * applied automatically.  Gastronomy-specific filters (type, priceRange) are
+ * applied automatically.  Venue-specific filters (type, priceRange) are
  * injected via `extraFilters`.
  */
 
@@ -25,7 +25,7 @@ import { createVenueColumns } from './venue.columns';
 // ---------------------------------------------------------------------------
 
 /**
- * Minimal list-item shape for the gastronomy table.
+ * Minimal list-item shape for the venue table.
  * Picks the subset of fields actually rendered in columns.
  */
 export type VenueListItem = Pick<
@@ -86,7 +86,7 @@ const PRICE_RANGE_OPTIONS = [
 // ---------------------------------------------------------------------------
 
 /**
- * Full entity list configuration for the gastronomy admin list page.
+ * Full entity list configuration for the venue admin list page.
  * Built on top of the shared listing layer via `createListingListConfig`.
  *
  * Endpoint: `GET /api/v1/admin/venues`
@@ -131,5 +131,5 @@ const { component, route } = createEntityListPage(venueListConfig);
 
 export { component as VenuesPageComponent, route as VenuesRoute };
 
-/** Required permission to view the gastronomy list. */
+/** Required permission to view the venue list. */
 export const VENUE_VIEW_PERMISSION = PermissionEnum.VENUE_VIEW_ALL;

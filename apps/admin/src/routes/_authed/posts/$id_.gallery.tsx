@@ -1,7 +1,7 @@
 /**
  * Post Gallery Tab Route (HOS-390)
  *
- * Relational-gallery counterpart of `gastronomies/$id_.gallery.tsx`, for posts.
+ * Relational-gallery counterpart of the venue gallery route, for posts.
  * The `post_media` table is the source of truth for post photos; the old
  * `media.featuredImage` / `media.gallery` fields were removed from the edit
  * form (the whole `media` section was removed from post-consolidated.config.ts).

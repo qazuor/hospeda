@@ -1,7 +1,7 @@
 /**
  * @file media-alt.utils.ts
  * Derives a fallback `alt` text for a newly-uploaded gallery photo from the
- * name of the entity it belongs to (accommodation / gastronomy / experience).
+ * name of the entity it belongs to (accommodation / venue / experience).
  *
  * Context (HOS-382 accessibility fix): the granular gallery `addMedia`
  * endpoints have no companion `updateMedia` endpoint, so `alt` can only be
@@ -31,7 +31,7 @@ const MEDIA_ALT_MAX_LENGTH = 200;
  * with a 400. A name that's too LONG is not rejected: it's truncated to
  * `MEDIA_ALT_MAX_LENGTH` so the schema's upper bound is still satisfied.
  *
- * @param entityName - The accommodation/gastronomy/experience display name,
+ * @param entityName - The accommodation/venue/experience display name,
  *   if already available to the caller (e.g. from the page's own entity
  *   query). `undefined`/`null` are accepted so call sites don't need to
  *   guard before calling.

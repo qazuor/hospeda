@@ -31,7 +31,7 @@ export const experienceHooks = createListingEntityHooks<ExperienceAdmin>({
 });
 
 // ---------------------------------------------------------------------------
-// Individual named exports (mirrors gastronomy pattern for import ergonomics)
+// Individual named exports (mirrors venue pattern for import ergonomics)
 // ---------------------------------------------------------------------------
 
 /**

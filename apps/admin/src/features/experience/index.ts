@@ -35,7 +35,7 @@ export {
     useUpdateExperienceMutation
 } from './hooks/useExperienceQuery';
 
-// Canonical hooks re-export (mirrors gastronomy pattern)
+// Canonical hooks re-export (mirrors venue pattern)
 export {
     useCreateExperienceMutation as useExperienceCreate,
     useUpdateExperienceMutation as useExperienceUpdate

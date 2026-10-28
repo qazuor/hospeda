@@ -2,8 +2,8 @@
  * @file types.ts
  * Generic listing admin config-layer types.
  *
- * These types are ZERO-gastronomy-specific.  A concrete listing entity
- * (gastronomy, experiences, …) registers its list page and form layer by
+ * These types are ZERO-venue-specific.  A concrete listing entity
+ * (venue, experiences, …) registers its list page and form layer by
  * instantiating these parameter objects and passing them to the builder
  * functions in this feature.
  *
@@ -33,13 +33,13 @@ import type { ConsolidatedEntityConfig } from '@/features/accommodations/types/c
  */
 export type ListingEntityConfigParams<TListItem extends { id: string }> = {
     /**
-     * Human-readable entity name key (e.g. `'gastronomy'`).
+     * Human-readable entity name key (e.g. `'venue'`).
      * Used as the `name` field in `EntityConfig` and as the TanStack Query root key.
      */
     readonly entityName: string;
 
     /**
-     * i18n translation key that resolves entity singular/plural labels (e.g. `'gastronomy'`).
+     * i18n translation key that resolves entity singular/plural labels (e.g. `'venue'`).
      * Corresponds to `EntityConfig.entityKey`.
      */
     readonly entityKey: string;
@@ -51,19 +51,19 @@ export type ListingEntityConfigParams<TListItem extends { id: string }> = {
     readonly entityType: EntityType;
 
     /**
-     * Base admin API endpoint (e.g. `'/api/v1/admin/gastronomy'`).
+     * Base admin API endpoint (e.g. `'/api/v1/admin/venue'`).
      * All CRUD operations are performed against this endpoint.
      */
     readonly apiEndpoint: string;
 
     /**
-     * Base navigation path for list and breadcrumbs (e.g. `'/platform/gastronomy'`).
+     * Base navigation path for list and breadcrumbs (e.g. `'/platform/venue'`).
      */
     readonly basePath: string;
 
     /**
      * Path pattern for the detail page, with `[id]` placeholder
-     * (e.g. `'/platform/gastronomy/[id]'`).
+     * (e.g. `'/platform/venue/[id]'`).
      */
     readonly detailPath: string;
 

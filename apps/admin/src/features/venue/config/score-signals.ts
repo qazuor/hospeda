@@ -186,7 +186,7 @@ export function createVenueSignals(): readonly SignalConfig<Record<string, unkno
             }
         },
         // ----------------------------------------------------------------
-        // Cuisine — venue type (RESTAURANT, BAR, CAFE, …)
+        // Cuisine — food category (RESTAURANT, BAR, CAFE, …)
         // ----------------------------------------------------------------
         {
             id: 'cuisine',

@@ -16,7 +16,7 @@
  *
  * Owner field-gating validation: ownerId field in the identity section is
  * constrained to modes ['view', 'edit'] (not 'create') — only admins can
- * assign owners AFTER creation. This mirrors the gastronomy pattern and is
+ * assign owners AFTER creation. This mirrors the venue pattern and is
  * required by AC-4.1 (SPEC-240).
  */
 

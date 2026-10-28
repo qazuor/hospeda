@@ -20,7 +20,7 @@
  * gallery precedent (SPEC-204 locked decision: no drag/reorder in the admin
  * gallery UI). Archive/restore are also omitted — unlike `accommodation_media`,
  * the admin API exposes no archive/restore routes for `venue_media` /
- * `experience_media` (see `apps/api/src/routes/gastronomy/admin/` and
+ * `experience_media` (see `apps/api/src/routes/venue/admin/` and
  * `apps/api/src/routes/experience/admin/` — only get/add/remove/setFeatured/
  * reorder exist, and reorder is deliberately unused here too).
  *
@@ -139,7 +139,7 @@ function invalidateAfterMediaMutation(
  * scope for the admin panel's gallery tab — see module docs above).
  *
  * @param vertical - `'venue'` or `'experience'`.
- * @param entityId - UUID of the gastronomy/experience listing.
+ * @param entityId - UUID of the venue/experience listing.
  */
 export function useListingMediaList(vertical: ListingMediaVertical, entityId: string) {
     return useQuery({
@@ -172,7 +172,7 @@ export function useListingMediaList(vertical: ListingMediaVertical, entityId: st
  * gallery from the server.
  *
  * @param vertical - `'venue'` or `'experience'`.
- * @param entityId - UUID of the gastronomy/experience listing.
+ * @param entityId - UUID of the venue/experience listing.
  */
 export function useListingMediaAdd(vertical: ListingMediaVertical, entityId: string) {
     const queryClient = useQueryClient();
@@ -264,7 +264,7 @@ export function useListingMediaAddFeatured(vertical: ListingMediaVertical, entit
  * On success the list query is invalidated.
  *
  * @param vertical - `'venue'` or `'experience'`.
- * @param entityId - UUID of the gastronomy/experience listing.
+ * @param entityId - UUID of the venue/experience listing.
  */
 export function useListingMediaRemove(vertical: ListingMediaVertical, entityId: string) {
     const queryClient = useQueryClient();
@@ -296,7 +296,7 @@ export function useListingMediaRemove(vertical: ListingMediaVertical, entityId: 
  * `isFeatured` flags without any manual state juggling.
  *
  * @param vertical - `'venue'` or `'experience'`.
- * @param entityId - UUID of the gastronomy/experience listing.
+ * @param entityId - UUID of the venue/experience listing.
  */
 export function useListingMediaSetFeatured(vertical: ListingMediaVertical, entityId: string) {
     const queryClient = useQueryClient();

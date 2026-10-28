@@ -5,7 +5,7 @@
  * Supports an optional owner assignment via OwnerSelect (existing users only).
  * Gate-protected by EXPERIENCE_CREATE.
  *
- * Mirrors the gastronomy create page pattern (SPEC-240 T-028).
+ * Mirrors the venue create page pattern (SPEC-240 T-028).
  */
 
 import { ExperienceAdminCreateInputSchema, PermissionEnum } from '@repo/schemas';

@@ -10,7 +10,7 @@
  * Mirrors the pattern of `$id_.seo.tsx` (the only other experience sub-tab
  * route today): `SidebarPageLayout` + `PageTabs` with `experienceTabs`, rather
  * than accommodation's dedicated `AccommodationSubTabLayout` wrapper — that
- * component is accommodation-specific and gastronomy/experience routes don't
+ * component is accommodation-specific and venue/experience routes don't
  * use it.
  */
 

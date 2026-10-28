@@ -1,10 +1,10 @@
 /**
  * @file index.ts
- * Public barrel for the gastronomy admin feature.
+ * Public barrel for the venue admin feature.
  *
  * Exports the list config + route/component pair, the consolidated form
  * configuration factory, all query hooks, and UI components for the
- * gastronomy entity.
+ * venue entity.
  *
  * DO NOT export internal file paths from this barrel — consumers must import
  * from `@/features/venue`, not from sub-paths.

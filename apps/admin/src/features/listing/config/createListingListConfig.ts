@@ -4,9 +4,9 @@
  *
  * The shared listing filter scaffold (destination, featured, ownerId) is
  * always prepended to the filter bar.  The calling entity may inject extra
- * filters (e.g. gastronomy's type / priceRange) via `extraFilters`.
+ * filters (e.g. venue's type / priceRange) via `extraFilters`.
  *
- * ZERO gastronomy-specific values are hardcoded here — this file is the
+ * ZERO venue-specific values are hardcoded here — this file is the
  * reusable layer that SPEC-240 and future experience listings inherit.
  */
 
@@ -44,7 +44,7 @@ const SHARED_FILTER_ORDER = {
  *
  * @example
  * ```ts
- * // In the gastronomy feature (SPEC-240):
+ * // In the venue feature (SPEC-240):
  * const venueListConfig = createListingListConfig({
  *   entityName: 'gastronomy',
  *   entityKey: 'gastronomy',
@@ -78,7 +78,7 @@ export function createListingListConfig<TListItem extends { id: string }>(
     } = params;
 
     // ------------------------------------------------------------------
-    // Shared listing filter scaffold (no gastronomy values here)
+    // Shared listing filter scaffold (no venue values here)
     // ------------------------------------------------------------------
     const sharedFilters = [
         {
