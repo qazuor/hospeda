@@ -197,7 +197,7 @@ layer) is still there and is the real entry point.
 
 The URLs moved too (HOS-1032): pricing now lives at
 `/{lang}/planes/<vertical>/precios/` for the five verticals — `anfitriones`,
-`turistas`, `gastronomia`, `experiencias`, `aliados`. The old
+`turistas`, `comer-y-salir`, `experiencias`, `aliados`. The old
 `/{lang}/suscriptores/planes/*` pages survive only as SSR 301 redirects to the
 new locations.
 
