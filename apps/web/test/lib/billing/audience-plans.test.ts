@@ -119,7 +119,7 @@ const VENUE_PLANS = [
         trialDays: VENUE_TRIAL
     }),
     // Inactive, and carrying a SHORTER trial than the live plan: if `isActive`
-    // stopped being checked, gastronomy would advertise 1 day.
+    // stopped being checked, venue would advertise 1 day.
     makePlan({
         slug: 'venue-pro',
         vertical: 'venue',
@@ -145,7 +145,7 @@ const HOST_PLANS = ACCOMMODATION_PLANS.filter((plan) => plan.vertical === 'accom
 const ALL_OK = {
     accommodation: ok(HOST_PLANS),
     tourist: ok(TOURIST_PLANS),
-    gastronomy: ok(VENUE_PLANS),
+    venue: ok(VENUE_PLANS),
     experience: ok(EXPERIENCE_PLANS)
 } as const;
 
@@ -162,24 +162,24 @@ describe('audience card model', () => {
         // The partner card linked to `/planes/aliados/`, removed with the old
         // billing; Partner has no subject until V7 and nothing may link to it.
         expect(AUDIENCE_CARD_ORDER).toHaveLength(4);
-        expect([...AUDIENCE_CARD_ORDER]).toEqual(['host', 'tourist', 'gastronomy', 'experience']);
+        expect([...AUDIENCE_CARD_ORDER]).toEqual(['host', 'tourist', 'venue', 'experience']);
         expect(Object.values(AUDIENCE_CARD_PATHS).join(' ')).not.toContain('aliados');
     });
 
-    it('keeps gastronomy and experience as two separate audiences (AC-9)', () => {
+    it('keeps venue and experience as two separate audiences (AC-9)', () => {
         // The retired shared umbrella domain must not reappear as a joint card.
         // Built in parts so the old grouping word never appears as a literal.
-        expect(AUDIENCE_CARD_ORDER).toContain('gastronomy');
+        expect(AUDIENCE_CARD_ORDER).toContain('venue');
         expect(AUDIENCE_CARD_ORDER).toContain('experience');
         expect(AUDIENCE_CARD_ORDER).not.toContain('comm' + 'erce');
-        expect(AUDIENCE_CARD_PATHS.gastronomy).not.toBe(AUDIENCE_CARD_PATHS.experience);
+        expect(AUDIENCE_CARD_PATHS.venue).not.toBe(AUDIENCE_CARD_PATHS.experience);
     });
 
     it('routes every audience to its intended destination', () => {
         expect(AUDIENCE_CARD_PATHS).toEqual({
             host: 'planes/anfitriones/precios',
             tourist: 'planes/turistas/precios',
-            gastronomy: 'planes/comer-y-salir',
+            venue: 'planes/comer-y-salir',
             experience: 'planes/experiencias'
         });
     });
@@ -280,7 +280,7 @@ describe('resolveAudienceStartingPrices', () => {
 
         expect(prices.host).toEqual({ kind: 'from', monthlyPriceArs: 1_800_000 });
         expect(prices.tourist).toEqual({ kind: 'free' });
-        expect(prices.gastronomy).toEqual({ kind: 'from', monthlyPriceArs: 1_000_000 });
+        expect(prices.venue).toEqual({ kind: 'from', monthlyPriceArs: 1_000_000 });
         expect(prices.experience).toEqual({ kind: 'from', monthlyPriceArs: 1_000_000 });
     });
 
@@ -296,9 +296,9 @@ describe('resolveAudienceStartingPrices', () => {
     });
 
     it('degrades ONE audience to null without disturbing the others (AC-8)', () => {
-        const prices = resolveAudienceStartingPrices({ ...ALL_OK, gastronomy: failed() });
+        const prices = resolveAudienceStartingPrices({ ...ALL_OK, venue: failed() });
 
-        expect(prices.gastronomy).toBeNull();
+        expect(prices.venue).toBeNull();
         expect(prices.host).not.toBeNull();
         expect(prices.tourist).not.toBeNull();
         expect(prices.experience).not.toBeNull();
@@ -308,7 +308,7 @@ describe('resolveAudienceStartingPrices', () => {
         const prices = resolveAudienceStartingPrices({
             accommodation: failed(),
             tourist: failed(),
-            gastronomy: failed(),
+            venue: failed(),
             experience: failed()
         });
 
@@ -338,7 +338,7 @@ describe('resolveAudienceTrialDays', () => {
             host: OWNER_TRIAL,
             // Tourist starts at a free tier, so its card carries no trial (HOS-1766).
             tourist: null,
-            gastronomy: VENUE_TRIAL,
+            venue: VENUE_TRIAL,
             experience: EXPERIENCE_TRIAL
         });
     });
@@ -460,7 +460,7 @@ describe('resolveAudienceTrialDays', () => {
     });
 
     it('ignores inactive plans even when they offer a shorter trial', () => {
-        expect(resolveAudienceTrialDays(ALL_OK).gastronomy).toBe(VENUE_TRIAL);
+        expect(resolveAudienceTrialDays(ALL_OK).venue).toBe(VENUE_TRIAL);
     });
 
     it('keeps tourist catalog trials out of the host card (AC:B13a:11)', () => {
@@ -480,9 +480,9 @@ describe('resolveAudienceTrialDays', () => {
     });
 
     it('degrades ONE audience to null without disturbing the others', () => {
-        const trials = resolveAudienceTrialDays({ ...ALL_OK, gastronomy: failed() });
+        const trials = resolveAudienceTrialDays({ ...ALL_OK, venue: failed() });
 
-        expect(trials.gastronomy).toBeNull();
+        expect(trials.venue).toBeNull();
         expect(trials.host).toBe(OWNER_TRIAL);
         expect(trials.tourist).toBeNull();
         expect(trials.experience).toBe(EXPERIENCE_TRIAL);
@@ -492,7 +492,7 @@ describe('resolveAudienceTrialDays', () => {
         const trials = resolveAudienceTrialDays({
             accommodation: failed(),
             tourist: failed(),
-            gastronomy: failed(),
+            venue: failed(),
             experience: failed()
         });
 

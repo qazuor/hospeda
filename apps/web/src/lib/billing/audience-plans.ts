@@ -4,7 +4,7 @@
  * INDEX introduced by HOS-942 (H1 of the HOS-941 epic).
  *
  * The index shows one card per audience Hospeda sells to — host, tourist,
- * gastronomy, experience, partner — each with a "from $X" figure where that
+ * venue, experience, partner — each with a "from $X" figure where that
  * audience publishes one, and, where it has one, its free-trial length. This
  * module owns three things the `.astro` page deliberately does not:
  *
@@ -73,7 +73,7 @@ import { isPriceOnRequestAudience } from './price-on-request-audiences';
  * offering has no subject until V7 (HOS-1637, AC:B13a:21). Nothing may link to
  * those URLs.
  */
-export type AudienceCardId = 'host' | 'tourist' | 'gastronomy' | 'experience';
+export type AudienceCardId = 'host' | 'tourist' | 'venue' | 'experience';
 
 /**
  * Display order of the audience cards.
@@ -84,7 +84,7 @@ export type AudienceCardId = 'host' | 'tourist' | 'gastronomy' | 'experience';
 export const AUDIENCE_CARD_ORDER: readonly AudienceCardId[] = [
     'host',
     'tourist',
-    'gastronomy',
+    'venue',
     'experience'
 ] as const;
 
@@ -110,7 +110,7 @@ export const AUDIENCE_CARD_ORDER: readonly AudienceCardId[] = [
 export const AUDIENCE_CARD_PATHS: Readonly<Record<AudienceCardId, string>> = {
     host: PRICING_PAGE_PATH_BY_AUDIENCE.owner,
     tourist: PRICING_PAGE_PATH_BY_AUDIENCE.tourist,
-    gastronomy: 'planes/comer-y-salir',
+    venue: 'planes/comer-y-salir',
     experience: 'planes/experiencias'
 } as const;
 
@@ -126,7 +126,7 @@ export const AUDIENCE_CARD_PATHS: Readonly<Record<AudienceCardId, string>> = {
 export const PRICING_AUDIENCE_BY_CARD_ID: Readonly<Record<AudienceCardId, PricingAudience>> = {
     host: 'owner',
     tourist: 'tourist',
-    gastronomy: 'gastronomy',
+    venue: 'venue',
     experience: 'experience'
 } as const;
 
@@ -139,7 +139,7 @@ export const CARD_ID_BY_PRICING_AUDIENCE: Readonly<
 > = {
     owner: 'host',
     tourist: 'tourist',
-    gastronomy: 'gastronomy',
+    venue: 'venue',
     experience: 'experience'
 } as const;
 
@@ -267,7 +267,7 @@ export interface AudienceOffers {
 export interface AudiencePlanResults {
     readonly accommodation: FetchPlansResult;
     readonly tourist: FetchPlansResult;
-    readonly gastronomy: FetchPlansResult;
+    readonly venue: FetchPlansResult;
     readonly experience: FetchPlansResult;
 }
 
@@ -283,7 +283,7 @@ export function selectAudiencePlans(
     return {
         host: plansOf(results.accommodation),
         tourist: plansOf(results.tourist),
-        gastronomy: plansOf(results.gastronomy),
+        venue: plansOf(results.venue),
         experience: plansOf(results.experience)
     };
 }
@@ -386,11 +386,11 @@ export function resolveAudienceTrialDays(results: AudiencePlanResults): Audience
  * @returns Price and trial per audience, `null` where either is unresolvable.
  */
 export async function fetchAudienceOffers(): Promise<AudienceOffers> {
-    const [accommodation, tourist, gastronomy, experience] = await Promise.all(
+    const [accommodation, tourist, venue, experience] = await Promise.all(
         Object.values(AUDIENCE_PLAN_VERTICALS).map((vertical) => fetchPublicPlans({ vertical }))
     );
 
-    const results: AudiencePlanResults = { accommodation, tourist, gastronomy, experience };
+    const results: AudiencePlanResults = { accommodation, tourist, venue, experience };
 
     return {
         startingPrices: resolveAudienceStartingPrices(results),

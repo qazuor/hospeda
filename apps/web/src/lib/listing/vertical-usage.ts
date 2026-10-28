@@ -110,5 +110,5 @@ export function resolveUsageUpgradePath({
 }: {
     readonly vertical: ListingVertical;
 }): string {
-    return PRICING_PAGE_PATH_BY_AUDIENCE[vertical === 'venue' ? 'gastronomy' : vertical];
+    return PRICING_PAGE_PATH_BY_AUDIENCE[vertical === 'venue' ? 'venue' : vertical];
 }

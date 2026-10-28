@@ -30,7 +30,7 @@ const PRICING_AUDIENCE_BY_VERTICAL: Readonly<
     Record<PublishVerticalSlug, keyof typeof PRICING_PAGE_PATH_BY_AUDIENCE>
 > = {
     accommodation: 'owner',
-    venue: 'gastronomy',
+    venue: 'venue',
     experience: 'experience'
 };
 
