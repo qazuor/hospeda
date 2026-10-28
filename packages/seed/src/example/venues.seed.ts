@@ -125,6 +125,16 @@ const E2E_TOURIST = {
  */
 export const VENUE_ID_MAPPER_NAMESPACE = 'venues';
 
+/** Register a fixture venue ID for downstream seeders that resolve references. */
+export function registerVenueIdMapping(
+    idMapper: SeedContext['idMapper'],
+    seedId: string,
+    realId: string,
+    name: string
+): void {
+    idMapper.setMapping(VENUE_ID_MAPPER_NAMESPACE, seedId, realId, name);
+}
+
 const LISTING_OWNERS: readonly ListingOwnerSpec[] = [
     {
         seedId: '041-user-venue-owner-julieta',
@@ -604,7 +614,7 @@ export async function seedVenues(context: SeedContext): Promise<void> {
 
             if (realId) {
                 // Register in idMapper so downstream (reviews, FAQs) can resolve
-                context.idMapper.setMapping(VENUE_ID_MAPPER_NAMESPACE, item.id, realId, item.name);
+                registerVenueIdMapping(context.idMapper, item.id, realId, item.name);
 
                 // ── Step 3b: relational media rows (HOS-372) ───────────────────
                 // Mirrors the accommodation seed: a direct model insert rather
