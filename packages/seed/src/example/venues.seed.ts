@@ -303,7 +303,7 @@ async function seedVenueMediaRows({
  * @param context - Seed context providing the idMapper and actor
  */
 export async function seedVenues(context: SeedContext): Promise<void> {
-    const entityName = 'Gastronomies';
+    const entityName = 'Venues';
     context.currentEntity = entityName;
 
     if (!context.actor) {
