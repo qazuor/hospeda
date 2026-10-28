@@ -143,7 +143,7 @@ beforeEach(() => {
     mockMediaModel.softDelete.mockResolvedValue(1);
 });
 
-describe('addGastronomyFeaturedMedia (HOS-803)', () => {
+describe('addVenueFeaturedMedia (HOS-803)', () => {
     it('succeeds with the gallery exactly at the cap — the reported bug', async () => {
         const model = makeVenueModel({ id: VENUE_ID, ownerId: OWNER_ID });
         arrangeGallery({ galleryCount: ENTITY_CAP, previousFeatured: true });

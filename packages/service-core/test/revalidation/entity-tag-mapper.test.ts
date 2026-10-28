@@ -179,7 +179,7 @@ describe('getAffectedCacheTags', () => {
         });
     });
 
-    describe('gastronomy and experience (HOS-369 W2-4)', () => {
+    describe('venue and experience (HOS-369 W2-4)', () => {
         it.each([
             'venue',
             'experience'
@@ -209,7 +209,7 @@ describe('getAffectedCacheTags', () => {
             expect(tags).not.toContain('home');
         });
 
-        it('does not cross the gastronomy and experience collections', () => {
+        it('does not cross the venue and experience collections', () => {
             // A gastronomy write must not evict the experiences listing.
             const tags = getAffectedCacheTags({ entityType: 'venue', slug: 'x' });
             expect(tags).not.toContain('list-exp');

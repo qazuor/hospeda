@@ -113,7 +113,7 @@ async function seedTouristUser(tx: import('@repo/db').DrizzleClient): Promise<st
 // Suite
 // ---------------------------------------------------------------------------
 
-describe('SPEC-239 — Gastronomy listing admin-sells lifecycle (integration)', () => {
+describe('SPEC-239 — Venue listing admin-sells lifecycle (integration)', () => {
     let venueService: VenueService;
     let reviewService: VenueReviewService;
     let adminActor: Actor;
@@ -167,7 +167,7 @@ describe('SPEC-239 — Gastronomy listing admin-sells lifecycle (integration)', 
     // T-1: Admin creates gastronomy listing (born DRAFT)
     // -----------------------------------------------------------------------
 
-    it.skipIf(!dbAvailable)('T-1: admin creates a gastronomy listing (born DRAFT)', async () => {
+    it.skipIf(!dbAvailable)('T-1: admin creates a venue listing (born DRAFT)', async () => {
         await withServiceTestTransaction(async (tx) => {
             // Arrange: seed owner + destination
             const { ownerId, destinationId } = await seedVenue(tx);
@@ -181,8 +181,8 @@ describe('SPEC-239 — Gastronomy listing admin-sells lifecycle (integration)', 
                 adminActor,
                 {
                     name: 'La Parrilla Admin',
-                    summary: 'Admin-created gastronomy listing summary',
-                    description: 'Admin-created gastronomy listing for integration test suite.',
+                    summary: 'Admin-created venue listing summary',
+                    description: 'Admin-created venue listing for integration test suite.',
                     type: VenueTypeEnum.PARRILLA,
                     ownerId: ownerId as `${string}-${string}-${string}-${string}-${string}`,
                     destinationId:
@@ -214,7 +214,7 @@ describe('SPEC-239 — Gastronomy listing admin-sells lifecycle (integration)', 
     // -----------------------------------------------------------------------
 
     it.skipIf(!dbAvailable)(
-        'T-3: admin assigns owner to existing gastronomy listing via model',
+        'T-3: admin assigns owner to existing venue listing via model',
         async () => {
             await withServiceTestTransaction(async (tx) => {
                 // Arrange: seed listing + a second user (the intended owner)
@@ -402,7 +402,7 @@ describe('SPEC-239 — Gastronomy listing admin-sells lifecycle (integration)', 
                 const venueAfter = await venueService.getById(adminActor, venueId, ctx);
                 expect(venueAfter.error).toBeUndefined();
                 expect(venueAfter.data).toBeDefined();
-                if (!venueAfter.data) throw new Error('expected gastronomy data');
+                if (!venueAfter.data) throw new Error('expected venue data');
 
                 const rc = venueAfter.data.reviewsCount;
                 const ar = venueAfter.data.averageRating;

@@ -799,7 +799,7 @@ export async function seedVenue(
     await tx.insert(users).values({
         id: ownerId,
         email: `seed-gastro-owner-${uid}@example.com`,
-        displayName: 'Gastronomy Owner',
+        displayName: 'Venue Owner',
         emailVerified: true,
         lifecycleState: 'ACTIVE'
     } as typeof users.$inferInsert);
@@ -807,12 +807,12 @@ export async function seedVenue(
     await tx.insert(destinations).values({
         id: destinationId,
         slug: `seed-gastro-dest-${uid}`,
-        name: 'Gastronomy Destination',
+        name: 'Venue Destination',
         destinationType: 'CITY',
         level: 4,
         path: `/seed/gastro-dest-${uid}`,
-        summary: 'Seed gastronomy destination summary',
-        description: 'Seed gastronomy destination description',
+        summary: 'Seed venue destination summary',
+        description: 'Seed venue destination description',
         location: {
             state: 'Entre Rios',
             country: 'Argentina',
@@ -829,10 +829,10 @@ export async function seedVenue(
 
     await tx.insert(venues).values({
         id: venueId,
-        slug: `seed-gastronomy-${uid}`,
+        slug: `seed-venue-${uid}`,
         name: 'La Parrilla de Prueba',
-        summary: 'A seed gastronomy listing summary',
-        description: 'A seed gastronomy listing description for integration tests.',
+        summary: 'A seed venue listing summary',
+        description: 'A seed venue listing description for integration tests.',
         type: 'RESTAURANT',
         ownerId,
         destinationId,

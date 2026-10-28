@@ -149,7 +149,7 @@ beforeEach(() => {
 // addVenueMedia
 // ---------------------------------------------------------------------------
 
-describe('addGastronomyMedia', () => {
+describe('addVenueMedia', () => {
     it('should return NOT_FOUND when listing does not exist', async () => {
         const model = makeVenueModel(null);
         const input: VenueMediaAddInput = {
@@ -253,7 +253,7 @@ describe('addGastronomyMedia', () => {
 // removeVenueMedia
 // ---------------------------------------------------------------------------
 
-describe('removeGastronomyMedia', () => {
+describe('removeVenueMedia', () => {
     it('should return NOT_FOUND when the media row does not exist', async () => {
         const model = makeVenueModel({ id: VENUE_ID, ownerId: OWNER_ID });
         mockMediaModel.findById.mockResolvedValue(null);
@@ -374,7 +374,7 @@ describe('removeGastronomyMedia', () => {
 // reorderVenueMedia
 // ---------------------------------------------------------------------------
 
-describe('reorderGastronomyMedia', () => {
+describe('reorderVenueMedia', () => {
     const ID_A = '00000000-0000-4000-a000-00000000000a';
     const ID_B = '00000000-0000-4000-a000-00000000000b';
     const ID_C = '00000000-0000-4000-a000-00000000000c';
@@ -515,7 +515,7 @@ describe('reorderGastronomyMedia', () => {
 // setFeaturedVenueMedia
 // ---------------------------------------------------------------------------
 
-describe('setFeaturedGastronomyMedia', () => {
+describe('setFeaturedVenueMedia', () => {
     it('should return NOT_FOUND when the media row does not exist', async () => {
         const model = makeVenueModel({ id: VENUE_ID, ownerId: OWNER_ID });
         mockMediaModel.findById.mockResolvedValue(null);
@@ -625,7 +625,7 @@ describe('setFeaturedGastronomyMedia', () => {
 // getVenueMedia
 // ---------------------------------------------------------------------------
 
-describe('getGastronomyMedia', () => {
+describe('getVenueMedia', () => {
     it('should return NOT_FOUND when listing does not exist', async () => {
         const model = makeVenueModel(null);
         const input: VenueMediaListInput = { venueId: VENUE_ID };
@@ -673,7 +673,7 @@ describe('getGastronomyMedia', () => {
  * the user can retry. Asserting only that both happened would still pass if the
  * row were dropped first, which is the exact failure mode being prevented.
  */
-describe('removeGastronomyMedia — Cloudinary asset deletion', () => {
+describe('removeVenueMedia — Cloudinary asset deletion', () => {
     /** A row whose binary IS ours to delete (carries a Cloudinary public id). */
     const cloudinaryRow = () =>
         makeMediaRow({
@@ -799,7 +799,7 @@ describe('removeGastronomyMedia — Cloudinary asset deletion', () => {
 // HOS-389 §2 + §4 — the gastronomy and experience half
 // ---------------------------------------------------------------------------
 
-describe('addGastronomyMedia — gallery cap (HOS-389 §2)', () => {
+describe('addVenueMedia — gallery cap (HOS-389 §2)', () => {
     const CAP = getGalleryCap('venue');
 
     const input: VenueMediaAddInput = {
@@ -879,7 +879,7 @@ describe('addGastronomyMedia — gallery cap (HOS-389 §2)', () => {
     });
 });
 
-describe('gastronomy media — public-page revalidation (HOS-389 §4)', () => {
+describe('venue media — public-page revalidation (HOS-389 §4)', () => {
     const input: VenueMediaAddInput = {
         venueId: VENUE_ID,
         media: { url: 'https://cdn.example.com/new.jpg' }

@@ -83,14 +83,14 @@ describe('EntityViewService.getStatsForOwnListings (HOS-734)', () => {
     // GASTRONOMY
     // =========================================================================
 
-    describe('entityType: GASTRONOMY', () => {
+    describe('entityType: VENUE', () => {
         const baseInput: GetStatsForOwnListingsInput = {
             actor: ownerActor,
             entityType: EntityTypeEnum.VENUE,
             window: '30d'
         };
 
-        it('should return stats for all owned gastronomy listings', async () => {
+        it('should return stats for all owned venue listings', async () => {
             // Arrange
             asMock(venueModelMock.findIdsByOwnerId).mockResolvedValue([
                 UUID_LISTING_1,
@@ -111,7 +111,7 @@ describe('EntityViewService.getStatsForOwnListings (HOS-734)', () => {
             expect(asMock(experienceModelMock.findIdsByOwnerId)).not.toHaveBeenCalled();
         });
 
-        it('should pass actor.id (not a caller-supplied id) to GastronomyModel.findIdsByOwnerId', async () => {
+        it('should pass actor.id (not a caller-supplied id) to VenueModel.findIdsByOwnerId', async () => {
             // Arrange
             asMock(venueModelMock.findIdsByOwnerId).mockResolvedValue([UUID_LISTING_1]);
             asMock(modelMock.getStatsForEntities).mockResolvedValue([]);

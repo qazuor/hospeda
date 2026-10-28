@@ -81,7 +81,7 @@ beforeEach(() => {
 });
 
 describe("countOwn — counts the owner's listings in EVERY state (HOS-1247)", () => {
-    it('gastronomy: scopes to the owner and narrows by nothing else', async () => {
+    it('venue: scopes to the owner and narrows by nothing else', async () => {
         const { service, model } = makeVenueService(3);
 
         const result = await service.countOwn(ownerActor);
@@ -119,7 +119,7 @@ describe("countOwn — counts the owner's listings in EVERY state (HOS-1247)", (
 });
 
 describe('the trap countOwn exists to avoid: _executeCount forces PUBLISHED', () => {
-    it('gastronomy: the public count narrows by publication status', async () => {
+    it('venue: the public count narrows by publication status', async () => {
         const { service, model } = makeVenueService(0);
 
         await (

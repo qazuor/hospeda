@@ -148,7 +148,7 @@ describe('EntityViewService.getDailySeriesForOwnListings (HOS-734)', () => {
         });
     });
 
-    describe('when owner has listings (GASTRONOMY)', () => {
+    describe('when owner has listings (VENUE)', () => {
         it('should call getDailySeriesForEntityIds with the actor-owned IDs', async () => {
             // Arrange
             asMock(venueModelMock.findIdsByOwnerId).mockResolvedValue([UUID_LISTING_1]);

@@ -82,7 +82,7 @@ function makeQrDouble(initial: { slug: string; targetUrl: string } | null) {
               id: QR_ID,
               slug: initial.slug,
               targetUrl: initial.targetUrl,
-              label: 'Gastronomy menu QR — La Parrilla del Sur (la-parrilla-del-sur)',
+              label: 'Venue menu QR — La Parrilla del Sur (la-parrilla-del-sur)',
               description: null,
               source: QrCodeSourceEnum.GENERATED,
               entityType: EntityTypeEnum.VENUE,
@@ -180,7 +180,7 @@ const admin: Actor = {
     permissions: [PermissionEnum.VENUE_EDIT_ALL]
 };
 
-describe('GastronomyService — menu QR target sync on slug change (HOS-1044 AC-5)', () => {
+describe('VenueService — menu QR target sync on slug change (HOS-1044 AC-5)', () => {
     beforeEach(() => {
         vi.clearAllMocks();
     });

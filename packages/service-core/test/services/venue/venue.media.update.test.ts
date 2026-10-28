@@ -143,7 +143,7 @@ beforeEach(() => {
 
 // ---------------------------------------------------------------------------
 
-describe('updateGastronomyMedia (HOS-1036)', () => {
+describe('updateVenueMedia (HOS-1036)', () => {
     describe('happy path', () => {
         it('writes every supplied field, and ONLY the supplied fields', async () => {
             const result = await run(makeVenue(), ownerActor, {
@@ -208,7 +208,7 @@ describe('updateGastronomyMedia (HOS-1036)', () => {
     });
 
     describe('ownership and existence — 404, never 403', () => {
-        it('returns NOT_FOUND when the media row belongs to another gastronomy', async () => {
+        it('returns NOT_FOUND when the media row belongs to another venue', async () => {
             mockMediaModel.findById.mockResolvedValue(
                 makeMediaRow({ venueId: OTHER_VENUE_ID } as Partial<VenueMedia>)
             );
@@ -251,7 +251,7 @@ describe('updateGastronomyMedia (HOS-1036)', () => {
             expect(mockMediaModel.update).not.toHaveBeenCalled();
         });
 
-        it('returns NOT_FOUND when the parent gastronomy does not exist', async () => {
+        it('returns NOT_FOUND when the parent venue does not exist', async () => {
             const result = await run(null, ownerActor, {
                 venueId: VENUE_ID,
                 mediaId: MEDIA_ID,
@@ -262,7 +262,7 @@ describe('updateGastronomyMedia (HOS-1036)', () => {
             expect(mockMediaModel.update).not.toHaveBeenCalled();
         });
 
-        it('returns FORBIDDEN when the actor may not edit the gastronomy', async () => {
+        it('returns FORBIDDEN when the actor may not edit the venue', async () => {
             const result = await run(makeVenue(), strangerActor, {
                 venueId: VENUE_ID,
                 mediaId: MEDIA_ID,

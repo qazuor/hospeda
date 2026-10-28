@@ -88,7 +88,7 @@ const unauthActor: Actor = {
 
 function makeReviewModel(review: VenueReview | null = null) {
     return {
-        entityName: 'gastronomy_review',
+        entityName: 'venue_review',
         findById: vi.fn().mockResolvedValue(review),
         findOne: vi.fn().mockResolvedValue(null), // default: no duplicate
         findAll: vi
@@ -152,7 +152,7 @@ beforeEach(() => {
 // moderateReview
 // ---------------------------------------------------------------------------
 
-describe('GastronomyReviewService.moderateReview', () => {
+describe('VenueReviewService.moderateReview', () => {
     it('should return FORBIDDEN when actor lacks VENUE_MODERATE_REVIEW', async () => {
         const service = makeService();
         const result = await service.moderateReview(
@@ -218,7 +218,7 @@ describe('GastronomyReviewService.moderateReview', () => {
 // getPendingCount
 // ---------------------------------------------------------------------------
 
-describe('GastronomyReviewService.getPendingCount', () => {
+describe('VenueReviewService.getPendingCount', () => {
     it('should return FORBIDDEN when actor lacks VENUE_MODERATE_REVIEW', async () => {
         const service = makeService();
         const result = await service.getPendingCount(reviewerActor);
@@ -253,7 +253,7 @@ describe('GastronomyReviewService.getPendingCount', () => {
 // listByVenue
 // ---------------------------------------------------------------------------
 
-describe('GastronomyReviewService.listByGastronomy', () => {
+describe('VenueReviewService.listByVenue', () => {
     it('should return the list of APPROVED+ACTIVE reviews for a listing', async () => {
         const approvedReview = makeReview({
             lifecycleState: LifecycleStatusEnum.ACTIVE,
@@ -327,7 +327,7 @@ describe('GastronomyReviewService.listByGastronomy', () => {
 // _beforeCreate: duplicate review prevention
 // ---------------------------------------------------------------------------
 
-describe('GastronomyReviewService._beforeCreate', () => {
+describe('VenueReviewService._beforeCreate', () => {
     it('masks a DRAFT listing exactly like a missing listing', async () => {
         const service = makeService();
         const model = (service as AnyService)._venueModel;
@@ -441,7 +441,7 @@ describe('GastronomyReviewService permission hooks', () => {
 
 describe('GastronomyReviewService.ENTITY_NAME', () => {
     it('should be "gastronomyReview"', () => {
-        expect(VenueReviewService.ENTITY_NAME).toBe('gastronomyReview');
+        expect(VenueReviewService.ENTITY_NAME).toBe('venueReview');
     });
 });
 

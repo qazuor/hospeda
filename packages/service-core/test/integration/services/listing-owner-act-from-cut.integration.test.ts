@@ -165,7 +165,7 @@ describe('HOS-1500 V9a — owner-act register starts at the cut (integration)', 
     );
 
     it.skipIf(!dbAvailable)(
-        'TEST:V9a:4 — gastronomy first owner edit after cut is the latest recorded act',
+        'TEST:V9a:4 — venue first owner edit after cut is the latest recorded act',
         async () => {
             await withServiceTestTransaction(async (tx) => {
                 const { ownerId, venueId } = await seedVenue(tx, {

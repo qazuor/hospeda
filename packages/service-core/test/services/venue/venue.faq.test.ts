@@ -143,7 +143,7 @@ beforeEach(() => {
 // addVenueFaq
 // ---------------------------------------------------------------------------
 
-describe('addGastronomyFaq', () => {
+describe('addVenueFaq', () => {
     it('should return VALIDATION_ERROR for invalid venueId', async () => {
         // Arrange
         const model = makeVenueModel();
@@ -277,7 +277,7 @@ describe('addGastronomyFaq', () => {
 // updateVenueFaq
 // ---------------------------------------------------------------------------
 
-describe('updateGastronomyFaq', () => {
+describe('updateVenueFaq', () => {
     it('should return NOT_FOUND when listing does not exist', async () => {
         // Arrange
         const model = makeVenueModel(null);
