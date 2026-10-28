@@ -128,6 +128,15 @@ describe.skipIf(!hasGpg)('gpg symmetric round trip (real gpg, bun runtime)', () 
     });
 });
 
+describe('gpg availability in CI', () => {
+    // The round trip above skips without gpg, so a CI image that stopped
+    // shipping it would turn the whole suite into a silent no-op. In CI the
+    // skip is not acceptable: fail loudly instead.
+    it.skipIf(process.env.CI !== 'true')('has a gpg binary on PATH', () => {
+        expect(hasGpg).toBe(true);
+    });
+});
+
 describe('gpg helpers input validation', () => {
     it('refuses an empty passphrase before spawning gpg', async () => {
         await expect(gpgSymmetricEncrypt(Buffer.from('x'), '')).rejects.toThrow(
