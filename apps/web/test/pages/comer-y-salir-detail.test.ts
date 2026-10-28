@@ -1,6 +1,6 @@
 /**
  * @file gastronomia-detail.test.ts
- * @description Source-read tests for the gastronomy detail page (SPEC-239 T-054).
+ * @description Source-read tests for the venue detail page (SPEC-239 T-054).
  */
 
 import { readFileSync } from 'node:fs';
@@ -27,7 +27,7 @@ describe('comer-y-salir/[slug].astro', () => {
     });
 
     describe('API calls', () => {
-        it('fetches the listing via gastronomyApi.getBySlug', () => {
+        it('fetches the listing via venueApi.getBySlug', () => {
             expect(src).toContain('venueApi.getBySlug');
         });
 
@@ -39,7 +39,7 @@ describe('comer-y-salir/[slug].astro', () => {
     });
 
     describe('transform', () => {
-        it('transforms raw API response via toGastronomyDetailPageProps', () => {
+        it('transforms raw API response via toVenueDetailPageProps', () => {
             expect(src).toContain('toVenueDetailPageProps');
         });
     });
@@ -69,11 +69,11 @@ describe('comer-y-salir/[slug].astro', () => {
     });
 
     describe('detail blocks', () => {
-        it('renders GastronomyDetailHeader', () => {
+        it('renders VenueDetailHeader', () => {
             expect(src).toContain('VenueDetailHeader');
         });
 
-        it('renders GastronomyDescription', () => {
+        it('renders VenueDescription', () => {
             expect(src).toContain('VenueDescription');
         });
 
@@ -82,7 +82,7 @@ describe('comer-y-salir/[slug].astro', () => {
             expect(src).toContain('venue.openingHours');
         });
 
-        it('renders GastronomyContactBlock for menu + social', () => {
+        it('renders VenueContactBlock for menu + social', () => {
             expect(src).toContain('VenueContactBlock');
         });
 
@@ -96,7 +96,7 @@ describe('comer-y-salir/[slug].astro', () => {
     });
 
     describe('richDescription', () => {
-        it('passes richDescription to GastronomyDescription', () => {
+        it('passes richDescription to VenueDescription', () => {
             expect(src).toContain('richDescription={venue.richDescription}');
         });
     });
@@ -125,13 +125,13 @@ describe('comer-y-salir/[slug].astro', () => {
     });
 
     describe('view tracking (HOS-734)', () => {
-        it('mounts EntityViewTracker with entityType GASTRONOMY, client:idle', () => {
+        it('mounts EntityViewTracker with entityType VENUE, client:idle', () => {
             expect(src).toContain(
                 "import { EntityViewTracker } from '@/components/analytics/EntityViewTracker.client';"
             );
             expect(src).toContain('<EntityViewTracker');
             expect(src).toContain('client:idle');
-            expect(src).toContain('entityType="GASTRONOMY"');
+            expect(src).toContain('entityType="VENUE"');
             expect(src).toContain('entityId={venue.id}');
         });
     });

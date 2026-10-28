@@ -62,15 +62,15 @@ const LANDINGS: ReadonlyArray<{
     { label: 'planes/comer-y-salir/precios', src: venuePricing, vertical: 'venue' }
 ];
 
-describe('HOS-810 — gastronomy/experience landing CTA wiring', () => {
+describe('HOS-810 — venue/experience landing CTA wiring', () => {
     it('guards both pricing pages, not one', () => {
         // Non-vacuity: a one-element list would let the sibling regress unseen,
-        // which is exactly how the gastronomy landing kept the old copy while
+        // which is exactly how the venue landing kept the old copy while
         // the experience one was being looked at.
         expect(LANDINGS).toHaveLength(2);
     });
 
-    it('gastronomy and experience pricing use checkout with the shared banner and per-card CTA (AC:B13a:10/11)', () => {
+    it('venue and experience pricing use checkout with the shared banner and per-card CTA (AC:B13a:10/11)', () => {
         for (const { label, src } of LANDINGS) {
             expect(src, label).toContain('ctaMode="checkout"');
             expect(src, label).toContain('<AudiencePricingSections');

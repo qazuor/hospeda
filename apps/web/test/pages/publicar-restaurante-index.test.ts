@@ -1,7 +1,7 @@
 /**
  * @file publicar-restaurante-index.test.ts
  * @description Source-read tests for `/publicar-restaurante/`, which HOS-1032
- * turned from the gastronomy vertical's full marketing page (hero, benefits,
+ * turned from the venue vertical's full marketing page (hero, benefits,
  * how-it-works, price, FAQ — see the previous revision of this file) into a
  * permanent redirect to `/planes/comer-y-salir/`, the new level-2 sales page.
  *
@@ -50,7 +50,7 @@ describe('publicar-restaurante/index.astro', () => {
         expect(src).toMatch(/Astro\.redirect\([\s\S]*?,\s*301\s*\)/);
     });
 
-    it('targets the gastronomy PUBLISH page, overriding HOS-941 D-8', () => {
+    it('targets the venue PUBLISH page, overriding HOS-941 D-8', () => {
         // This redirect pointed at `/planes/comer-y-salir/` — a SALES page — and the
         // reasoning was correct while no publish page existed for this vertical.
         // One does now, and it carries the argument AND the form, so it is a

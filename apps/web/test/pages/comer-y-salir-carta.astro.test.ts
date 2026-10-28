@@ -63,12 +63,12 @@ describe('carta.astro — 404 guards', () => {
 // ---------------------------------------------------------------------------
 // 3. REUSES VenueMenu.astro — never reimplements the carta render (NG)
 // ---------------------------------------------------------------------------
-describe('carta.astro — reuses GastronomyMenu.astro verbatim', () => {
-    it('imports GastronomyMenu from the shared component', () => {
+describe('carta.astro — reuses VenueMenu.astro verbatim', () => {
+    it('imports VenueMenu from the shared component', () => {
         expect(cartaSrc).toContain("import VenueMenu from '@/components/venue/VenueMenu.astro'");
     });
 
-    it('mounts GastronomyMenu with the same props the listing forwards to it', () => {
+    it('mounts VenueMenu with the same props the listing forwards to it', () => {
         expect(cartaSrc).toContain('<VenueMenu');
         expect(cartaSrc).toContain('menuSections={venue.menuSections}');
         expect(cartaSrc).toContain('fileUrl={venue.menuFileUrl}');
@@ -135,7 +135,7 @@ describe('carta.astro — cache headers mirror the listing', () => {
         expect(listingSrc).toContain('applyCacheHeaders({');
     });
 
-    it('builds entity cache tags scoped to this gastronomy entity', () => {
+    it('builds entity cache tags scoped to this venue entity', () => {
         expect(cartaSrc).toContain("entity: 'venue'");
         expect(cartaSrc).toContain('buildEntityCacheTags');
     });

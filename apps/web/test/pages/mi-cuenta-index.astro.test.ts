@@ -5,7 +5,7 @@
  *
  * WHAT THIS GUARDS. The dashboard is not a static page — it already branches on
  * whether the visitor is a host, prepending "Mis propiedades" and "Panel del
- * anfitrión" to the nav grid. The gastronomy/experience owner was the one role the branch had
+ * anfitrión" to the nav grid. The venue/experience owner was the one role the branch had
  * never heard of: a merchant whose listing exists and is sitting in DRAFT saw a
  * page that mentioned their business nowhere, while the sidebar right next to it
  * showed "Mi comercio". The dashboard is the first screen they land on, so it is
@@ -15,7 +15,7 @@
  * are string-level assertions on the .astro source (the same pattern as
  * `mi-cuenta-comercio-nuevo.astro.test.ts`). They prove the branch is DECLARED,
  * not that it RENDERS — that second question was answered by hand against the
- * running server, with a gastronomy/experience-owner session and a tourist session.
+ * running server, with a venue/experience-owner session and a tourist session.
  */
 
 import { readFileSync } from 'node:fs';
@@ -28,7 +28,7 @@ const source = readFileSync(
 );
 
 describe('mi-cuenta/index.astro — role-aware dashboard (H-151)', () => {
-    it('resolves gastronomy/experience access through the shared gating predicate, not a role literal', () => {
+    it('resolves venue/experience access through the shared gating predicate, not a role literal', () => {
         expect(source).toContain('hasListingNavAccess');
         // The repo's rule since HOS-296: gate on the role SET via the shared
         // predicate, never by comparing against a role string here.

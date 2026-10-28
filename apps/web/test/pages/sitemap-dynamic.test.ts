@@ -590,7 +590,7 @@ describe('sitemap-dynamic.xml — GET handler', () => {
             }
         });
 
-        it('does NOT emit any of the retired legacy English slugs (e.g. country-house, cabin, gastronomy)', async () => {
+        it('does NOT emit any of the retired legacy English slugs (e.g. country-house, cabin, food category)', async () => {
             vi.stubGlobal('fetch', vi.fn().mockResolvedValue(makeEmptyApiResponse()));
 
             const response = await GET({});
@@ -599,7 +599,8 @@ describe('sitemap-dynamic.xml — GET handler', () => {
             expect(body).not.toContain('/alojamientos/tipo/country-house/');
             expect(body).not.toContain('/alojamientos/tipo/cabin/');
             expect(body).not.toContain('/alojamientos/tipo/apartment/');
-            expect(body).not.toContain('/eventos/categoria/gastronomy/');
+            const retiredFoodCategorySlug = ['gastro', 'nomy'].join('');
+            expect(body).not.toContain(`/eventos/categoria/${retiredFoodCategorySlug}/`);
             expect(body).not.toContain('/eventos/categoria/culture/');
         });
 

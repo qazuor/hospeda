@@ -1,13 +1,13 @@
 /**
  * @file editor-hub-listing-notices.test.ts
- * @description TEST:1762:2 (accommodation hub) and TEST:1762:3 (gastronomy/experience hub):
+ * @description TEST:1762:2 (accommodation hub) and TEST:1762:3 (venue/experience hub):
  * the editor hubs show the same listing notices the listing card shows.
  *
  * Vitest cannot render `.astro` in this repo (no Astro vite plugin in the test
  * pipeline), so this file reads the two hubs' source. It pins the decisions the
  * page owns: the notices are loaded in the SAME `Promise.all` as the support
  * edits, the conditional container renders above `<SupportEditNotice>` and
- * `<EditorHub>` (and, in the gastronomy/experience hub, below the identity row), the component
+ * `<EditorHub>` (and, in the venue/experience hub, below the identity row), the component
  * receives the resolved vertical and listing id, and the page stylesheet spaces
  * the container without an inline `style=`.
  */
@@ -96,7 +96,7 @@ describe('TEST:1762:2 accommodation editor hub — the listing notices above the
     });
 });
 
-describe('TEST:1762:3 gastronomy/experience editor hub — the listing notices above the sections', () => {
+describe('TEST:1762:3 venue/experience editor hub — the listing notices above the sections', () => {
     it('imports the notices component and its loader', () => {
         expect(LISTING_HUB).toContain(
             "import ListingNotices from '@/components/listing/ListingNotices.astro';"
