@@ -201,12 +201,12 @@ describe("HOS-1822: venue What's New and tour id migration (integration)", () =>
     );
 
     it.skipIf(!process.env.HOSPEDA_TEST_DATABASE_URL && !process.env.HOSPEDA_DATABASE_URL)(
-        'chains the 0109 commerce id through to the venue id',
+        'chains the earlier id through to the venue id',
         async () => {
             await withRollback(async (tx) => {
                 await clearTargets(tx);
-                const commerceId = `2026-09-05-${`comm${'erce'}`}-publish-free-trial`;
-                await insertUser(tx, { email: CHAIN_EMAIL, seenIds: [commerceId] });
+                const priorId = `2026-09-05-${`comm${'erce'}`}-publish-free-trial`;
+                await insertUser(tx, { email: CHAIN_EMAIL, seenIds: [priorId] });
                 await priorMigration.up(buildCtx(tx));
                 await migration.up(buildCtx(tx));
                 const settings = (await readSettings(tx, CHAIN_EMAIL)) as {
