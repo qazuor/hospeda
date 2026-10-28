@@ -48,29 +48,29 @@ export type VenueListItem = Pick<
 // ---------------------------------------------------------------------------
 
 const VENUE_TYPE_OPTIONS = [
-    { value: VenueTypeEnum.RESTAURANT, labelKey: 'admin-filters.gastronomyType.restaurant' },
-    { value: VenueTypeEnum.BAR, labelKey: 'admin-filters.gastronomyType.bar' },
-    { value: VenueTypeEnum.CAFE, labelKey: 'admin-filters.gastronomyType.cafe' },
-    { value: VenueTypeEnum.PARRILLA, labelKey: 'admin-filters.gastronomyType.parrilla' },
+    { value: VenueTypeEnum.RESTAURANT, labelKey: 'admin-filters.venueType.restaurant' },
+    { value: VenueTypeEnum.BAR, labelKey: 'admin-filters.venueType.bar' },
+    { value: VenueTypeEnum.CAFE, labelKey: 'admin-filters.venueType.cafe' },
+    { value: VenueTypeEnum.PARRILLA, labelKey: 'admin-filters.venueType.parrilla' },
     {
         value: VenueTypeEnum.CERVECERIA,
-        labelKey: 'admin-filters.gastronomyType.cerveceria'
+        labelKey: 'admin-filters.venueType.cerveceria'
     },
     {
         value: VenueTypeEnum.HELADERIA,
-        labelKey: 'admin-filters.gastronomyType.heladeria'
+        labelKey: 'admin-filters.venueType.heladeria'
     },
     {
         value: VenueTypeEnum.PANADERIA,
-        labelKey: 'admin-filters.gastronomyType.panaderia'
+        labelKey: 'admin-filters.venueType.panaderia'
     },
     {
         value: VenueTypeEnum.ROTISERIA,
-        labelKey: 'admin-filters.gastronomyType.rotiseria'
+        labelKey: 'admin-filters.venueType.rotiseria'
     },
     {
         value: VenueTypeEnum.FOOD_TRUCK,
-        labelKey: 'admin-filters.gastronomyType.foodTruck'
+        labelKey: 'admin-filters.venueType.foodTruck'
     }
 ] as const;
 
@@ -109,7 +109,7 @@ export const venueListConfig = createListingListConfig<VenueListItem>({
     extraFilters: [
         {
             paramKey: 'type',
-            labelKey: 'admin-filters.gastronomyType.label' as const,
+            labelKey: 'admin-filters.venueType.label' as const,
             type: 'select' as const,
             order: 10,
             // TYPE-WORKAROUND: option constant is a readonly tuple; the filter config expects a mutable array.

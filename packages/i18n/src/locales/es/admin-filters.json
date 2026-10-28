@@ -227,7 +227,7 @@
         "internet": "Internet",
         "albanileria": "Albañilería"
     },
-    "gastronomyType": {
+    "venueType": {
         "label": "Tipo",
         "restaurant": "Restaurante",
         "bar": "Bar",
