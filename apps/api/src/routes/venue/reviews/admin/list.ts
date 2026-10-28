@@ -1,6 +1,6 @@
 /**
- * Admin gastronomy reviews list endpoint.
- * Returns all gastronomy reviews including pending ones.
+ * Admin venue reviews list endpoint.
+ * Returns all venue reviews including pending ones.
  */
 import { ModerationStatusEnum, PermissionEnum, VenueReviewSchema } from '@repo/schemas';
 import { ServiceError, VenueReviewService } from '@repo/service-core';
@@ -14,7 +14,7 @@ const venueReviewService = new VenueReviewService({ logger: apiLogger });
 
 /**
  * GET /api/v1/admin/venues/reviews
- * List all gastronomy reviews — Admin endpoint.
+ * List all venue reviews — Admin endpoint.
  *
  * Returns all reviews including PENDING and REJECTED (not filtered to APPROVED
  * like the public list). Requires VENUE_MODERATE_REVIEW permission.

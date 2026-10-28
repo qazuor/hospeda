@@ -1,6 +1,6 @@
 /**
- * Public get gastronomy listing by ID endpoint (T-042)
- * Returns a single gastronomy listing projected through GastronomyPublicSchema.
+ * Public get venue listing by ID endpoint (T-042)
+ * Returns a single venue listing projected through VenuePublicSchema.
  * Returns 404 when the listing is not visible (non-existent, soft-deleted, or non-public).
  */
 import { VenuePublicSchema } from '@repo/schemas';
@@ -17,7 +17,7 @@ const venueService = new VenueService({ logger: apiLogger });
 
 /**
  * GET /api/v1/public/venues/:id
- * Get gastronomy listing by ID — Public endpoint.
+ * Get venue listing by ID — Public endpoint.
  *
  * Returns null (404) when the listing does not exist or is not publicly visible.
  * The service's _canView check and projection apply.

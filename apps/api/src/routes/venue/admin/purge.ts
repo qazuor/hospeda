@@ -13,7 +13,7 @@ const service = new ListingPurgeService();
 
 /**
  * POST /api/v1/admin/venues/{id}/purge — administrative action 23 (ACC:23):
- * support purges another owner's gastronomy listing at that owner's request, with a
+ * support purges another owner's venue listing at that owner's request, with a
  * mandatory reason, by running PB12. No `requiredPermissions`: the action's own
  * permission is checked by the V5 chain (step 3) with the owner as subject.
  */

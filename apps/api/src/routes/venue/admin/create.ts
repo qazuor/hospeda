@@ -1,6 +1,6 @@
 /**
- * Admin create gastronomy endpoint
- * Allows admins to create new gastronomy listings.
+ * Admin create venue endpoint
+ * Allows admins to create new venue listings.
  */
 import {
     PermissionEnum,
@@ -20,7 +20,7 @@ const venueService = new VenueService({ logger: apiLogger });
 
 /**
  * POST /api/v1/admin/venues
- * Create gastronomy listing — Admin endpoint.
+ * Create venue listing — Admin endpoint.
  *
  * Requires VENUE_CREATE permission.
  */

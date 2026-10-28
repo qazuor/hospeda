@@ -59,7 +59,7 @@ export async function handlePutVenueEvents(
         venueId: params.id as string,
         // TYPE-WORKAROUND: the factory hands the handler a
         // `Record<string, unknown>`, but the body has already been validated
-        // against `GastronomyEventsReplacePayloadSchema` by the route; the
+        // against `VenueEventsReplacePayloadSchema` by the route; the
         // service re-parses it anyway, so the cast asserts nothing the next line
         // does not verify.
         agenda: body as unknown as VenueEventsReplacePayload

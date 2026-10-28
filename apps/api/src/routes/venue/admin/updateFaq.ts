@@ -1,6 +1,6 @@
 /**
  * PUT /api/v1/admin/venues/:id/faqs/:faqId
- * Update an existing FAQ in a gastronomy listing — Admin endpoint.
+ * Update an existing FAQ in a venue listing — Admin endpoint.
  */
 import {
     FaqWithChannelVisibilityUpdatePayloadSchema,
@@ -21,7 +21,7 @@ const venueService = new VenueService({ logger: apiLogger });
 
 /**
  * PUT /api/v1/admin/venues/:id/faqs/:faqId
- * Update FAQ in gastronomy listing — Admin endpoint.
+ * Update FAQ in venue listing — Admin endpoint.
  *
  * Requires VENUE_EDIT_ALL permission. The service helper
  * `updateVenueFaq` enforces the same gate via `checkVenueCanEditFaqs`.

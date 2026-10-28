@@ -1,6 +1,6 @@
 /**
- * Admin patch gastronomy listing endpoint (partial PATCH).
- * Allows admins to partially update any gastronomy listing.
+ * Admin patch venue listing endpoint (partial PATCH).
+ * Allows admins to partially update any venue listing.
  */
 import {
     VenueAdminSchema,
@@ -20,9 +20,9 @@ const venueService = new VenueService({ logger: apiLogger });
 
 /**
  * PATCH /api/v1/admin/venues/:id
- * Partial update gastronomy listing — Admin endpoint.
+ * Partial update venue listing — Admin endpoint.
  *
- * Uses the same `GastronomyUpdateInputSchema` (all fields partial) as the PUT
+ * Uses the same `VenueUpdateInputSchema` (all fields partial) as the PUT
  * endpoint. Requires VENUE_EDIT_ALL permission.
  */
 export const adminPatchVenueRoute = createAdminRoute({

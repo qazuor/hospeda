@@ -1,6 +1,6 @@
 /**
  * POST /api/v1/admin/venues/:id/media
- * Add a photo to a gastronomy listing gallery — Admin endpoint (HOS-372).
+ * Add a photo to a venue listing gallery — Admin endpoint (HOS-372).
  *
  * This is a URL-receiver endpoint: the caller has already uploaded the file to
  * Cloudinary via `POST /api/v1/admin/media/upload`. This endpoint registers the
@@ -25,7 +25,7 @@ const venueService = new VenueService({ logger: apiLogger });
 
 /**
  * POST /api/v1/admin/venues/:id/media
- * Add photo to gastronomy listing gallery — Admin endpoint.
+ * Add photo to venue listing gallery — Admin endpoint.
  *
  * Requires VENUE_EDIT_ALL permission. The service helper
  * `addVenueMedia` enforces the same gate via `checkVenueCanEditMedia`.

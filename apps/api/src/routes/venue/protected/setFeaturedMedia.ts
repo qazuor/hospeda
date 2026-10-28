@@ -1,6 +1,6 @@
 /**
  * PUT /api/v1/protected/venues/:id/media/:mediaId/featured
- * Set the featured photo for a gastronomy listing gallery (HOS-372).
+ * Set the featured photo for a venue listing gallery (HOS-372).
  *
  * Promotes the target `venue_media` row to `is_featured = true` and
  * demotes the previous featured row (if any) back to `is_featured = false`.
@@ -34,7 +34,7 @@ import { createProtectedRoute } from '../../../utils/route-factory';
 const venueService = new VenueService({ logger: apiLogger });
 
 /**
- * Route handler — promotes a photo to featured on a gastronomy listing.
+ * Route handler — promotes a photo to featured on a venue listing.
  *
  * TYPE-WORKAROUND: accesses the internal `model` field from the service instance
  * to pass to the standalone media helper without requiring a public accessor.

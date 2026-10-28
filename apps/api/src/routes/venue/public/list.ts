@@ -1,6 +1,6 @@
 /**
- * Public gastronomy list endpoint (T-042)
- * Returns a paginated list of visible gastronomy listings with filtering and sorting.
+ * Public venue list endpoint (T-042)
+ * Returns a paginated list of visible venue listings with filtering and sorting.
  *
  * Visibility contract: only listings with publicationStatus=PUBLISHED are returned
  * (V6.9b, HOS-1641). The VenueService._executeSearch already applies deletedAt=null;
@@ -23,11 +23,11 @@ const venueService = new VenueService({ logger: apiLogger });
 
 /**
  * GET /api/v1/public/venues
- * List gastronomy listings — Public endpoint.
+ * List venue listings — Public endpoint.
  *
- * All filter params from GastronomySearchHttpSchema are converted to the domain
- * search input via httpToDomainGastronomySearch and forwarded to
- * gastronomyService.search(), which force-filters deletedAt=null and applies
+ * All filter params from VenueSearchHttpSchema are converted to the domain
+ * search input via httpToDomainVenueSearch and forwarded to
+ * venueService.search(), which force-filters deletedAt=null and applies
  * scalar filters (type, priceRange, destinationId, isFeatured, ownerId).
  */
 export const publicListVenuesRoute = createPublicListRoute({

@@ -26,7 +26,7 @@
  * and a QR encodes one destination for the life of the sticker. A later slug
  * rename repoints the SAME code via `VenueService._afterUpdate`, which
  * reads the locale back out of the stored target rather than re-guessing it
- * (`gastronomy-qr.ts`).
+ * (`venue-qr.ts`).
  *
  * ## Why the SVG travels as a JSON field
  *

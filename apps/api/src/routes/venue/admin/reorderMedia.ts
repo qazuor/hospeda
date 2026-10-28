@@ -1,6 +1,6 @@
 /**
  * PATCH /api/v1/admin/venues/:id/media/reorder
- * Reorder photos in a gastronomy listing gallery — Admin endpoint (HOS-372).
+ * Reorder photos in a venue listing gallery — Admin endpoint (HOS-372).
  *
  * The caller supplies the full ordered list of visible media UUIDs. The service
  * validates that the supplied set matches the current visible rows exactly (no
@@ -30,7 +30,7 @@ const venueService = new VenueService({ logger: apiLogger });
 
 /**
  * PATCH /api/v1/admin/venues/:id/media/reorder
- * Reorder gastronomy listing gallery photos — Admin endpoint.
+ * Reorder venue listing gallery photos — Admin endpoint.
  *
  * Requires VENUE_EDIT_ALL permission. The service helper
  * `reorderVenueMedia` enforces the same gate via `checkVenueCanEditMedia`.

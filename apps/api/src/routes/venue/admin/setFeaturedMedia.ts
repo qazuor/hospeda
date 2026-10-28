@@ -1,6 +1,6 @@
 /**
  * PUT /api/v1/admin/venues/:id/media/:mediaId/featured
- * Set the featured photo for a gastronomy listing gallery — Admin endpoint (HOS-372).
+ * Set the featured photo for a venue listing gallery — Admin endpoint (HOS-372).
  *
  * Promotes the target `venue_media` row to `is_featured = true` and
  * demotes the previous featured row (if any) back to `is_featured = false`.
@@ -26,7 +26,7 @@ const venueService = new VenueService({ logger: apiLogger });
 
 /**
  * PUT /api/v1/admin/venues/:id/media/:mediaId/featured
- * Set featured photo for gastronomy listing gallery — Admin endpoint.
+ * Set featured photo for venue listing gallery — Admin endpoint.
  *
  * Requires VENUE_EDIT_ALL permission. The service helper
  * `setFeaturedVenueMedia` enforces the same gate via `checkVenueCanEditMedia`.

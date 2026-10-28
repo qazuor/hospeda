@@ -1,5 +1,5 @@
 /**
- * The owner's printable QR sheet for a gastronomy listing (HOS-982).
+ * The owner's printable QR sheet for a venue listing (HOS-982).
  *
  * ```
  * GET /api/v1/protected/venues/{id}/qr-sheet

@@ -11,7 +11,7 @@
  * one. Two ordinary situations make the difference matter:
  *
  *  - A `-basico` owner opens the editor. They must see the menu section, the
- *    link field and the uploaded file — those work on every gastronomy tier —
+ *    link field and the uploaded file — those work on every venue tier —
  *    with only the structured half disabled. A gate here would answer 403 and
  *    the editor would have nothing to render.
  *  - An owner whose subscription lapsed after they typed forty dishes. Their

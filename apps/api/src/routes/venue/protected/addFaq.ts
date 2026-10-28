@@ -1,6 +1,6 @@
 /**
  * POST /api/v1/protected/venues/:id/faqs
- * Add a new FAQ to a gastronomy listing (T-044)
+ * Add a new FAQ to a venue listing (T-044)
  *
  * Gated on VENUE_EDIT_OWN (listing owner) or VENUE_EDIT_ALL (staff).
  * displayOrder is auto-assigned by addVenueFaq() as max(existing)+1.
@@ -24,7 +24,7 @@ import { createProtectedRoute } from '../../../utils/route-factory';
 const venueService = new VenueService({ logger: apiLogger });
 
 /**
- * Route handler — adds a FAQ to the specified gastronomy listing.
+ * Route handler — adds a FAQ to the specified venue listing.
  *
  * TYPE-WORKAROUND: accesses the internal `model` field from the service instance
  * to pass to the standalone FAQ helper without requiring a public accessor.

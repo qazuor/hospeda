@@ -11,7 +11,7 @@
  * file used to land in Cloudinary immediately while the DB association waited
  * for the form's Save, so an owner who uploaded and walked away left the asset
  * billing with nothing pointing at it. The upload and the
- * `gastronomies.menu_file_*` write are therefore ONE request, and the menu
+ * `venues.menu_file_*` write are therefore ONE request, and the menu
  * document (`PUT .../menu`) does not carry the file at all.
  *
  * ## Why NOT the shared `media/upload-entity` endpoint

@@ -1,6 +1,6 @@
 /**
  * GET /api/v1/admin/venues/:id/faqs
- * Get all FAQs for a gastronomy listing — Admin endpoint.
+ * Get all FAQs for a venue listing — Admin endpoint.
  */
 import { PermissionEnum, VenueFaqListOutputSchema } from '@repo/schemas';
 import { listVenueFaqs, ServiceError, VenueService } from '@repo/service-core';
@@ -14,7 +14,7 @@ const venueService = new VenueService({ logger: apiLogger });
 
 /**
  * GET /api/v1/admin/venues/:id/faqs
- * Get gastronomy FAQs — Admin endpoint.
+ * Get venue FAQs — Admin endpoint.
  *
  * Requires VENUE_VIEW_ALL. Uses the standalone `listVenueFaqs` helper
  * that mirrors the protected/public FAQ list pattern.

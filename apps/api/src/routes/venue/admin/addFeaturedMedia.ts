@@ -1,6 +1,6 @@
 /**
  * POST /api/v1/admin/venues/:id/media/featured
- * Register an already-uploaded URL as the gastronomy listing's COVER — Admin endpoint
+ * Register an already-uploaded URL as the venue listing's COVER — Admin endpoint
  * (HOS-803).
  *
  * The admin mirror of `routes/venue/protected/addFeaturedMedia.ts`, and the one
@@ -18,7 +18,7 @@
  *
  * No cap needs waiving, because none is spent: the replaced cover is DELETED
  * (soft-deleted) in the same transaction, so one row enters the featured slot
- * and one leaves the table and the visible gallery never moves. Gastronomy and experience
+ * and one leaves the table and the visible gallery never moves. Venue and experience
  * listings have no per-plan photo allowance either.
  *
  * The replaced photo is NOT kept. It does not fall back into the gallery; it

@@ -1,8 +1,8 @@
 /**
  * PATCH /api/v1/protected/venues/:id/media/:mediaId
- * Correct the text metadata of a gastronomy gallery photo (HOS-1036).
+ * Correct the text metadata of a venue gallery photo (HOS-1036).
  *
- * The gastronomy twin of `accommodation/protected/updateMedia.ts` (HOS-388). Until this
+ * The venue twin of `accommodation/protected/updateMedia.ts` (HOS-388). Until this
  * route existed there was no way at all to write a photo's `alt` or `caption`
  * for a venue: the editor never offered the fields, and the only "fix" was to
  * delete the photo and re-upload it — burning a second Cloudinary asset and
@@ -12,7 +12,7 @@
  * Pure TEXT metadata: `caption`, `description`, `alt`, `attribution`. It can
  * never touch `url`, `publicId`, `moderationState`, `state`, `isFeatured`,
  * `sortOrder` or `venueId` — those columns are not reachable from
- * `GastronomyMediaUpdatePayloadSchema` even if the client sends them (Zod strips
+ * `VenueMediaUpdatePayloadSchema` even if the client sends them (Zod strips
  * unknown keys on a plain object schema).
  *
  * All four fields are nullable: omit a field to leave it untouched, send `null`
@@ -20,15 +20,15 @@
  * an empty body is rejected as `VALIDATION_ERROR`, not a silent 200.
  *
  * The MEDIA row is what is protected against existence probing: a row belonging to
- * another gastronomy, a non-existent id, or a soft-deleted row all answer `NOT_FOUND`
+ * another venue, a non-existent id, or a soft-deleted row all answer `NOT_FOUND`
  * (404) — never `FORBIDDEN` (403), so a foreign media id cannot be confirmed to exist
  * (see `apps/api/docs/error-contract.md`).
  *
- * The PARENT gastronomy is NOT protected that way, and that is deliberate. The gate
- * (`checkVenueCanEditMedia`) answers `FORBIDDEN` (403) on a gastronomy the actor
+ * The PARENT venue is NOT protected that way, and that is deliberate. The gate
+ * (`checkVenueCanEditMedia`) answers `FORBIDDEN` (403) on a venue the actor
  * may not edit and `NOT_FOUND` (404) on one that does not exist, so an actor whose
  * grant is ownership-scoped (`VENUE_EDIT_OWN` without `VENUE_EDIT_ALL`) can tell
- * a stranger's gastronomy id from an invented one. The sibling media helpers — add,
+ * a stranger's venue id from an invented one. The sibling media helpers — add,
  * remove, reorder, setFeatured and the media read — all share that same gate, so
  * closing the gap in `update` alone would leave `update` at 404 while `remove` stays at
  * 403 on the very same parent. It belongs to a follow-up covering all six helpers
@@ -52,7 +52,7 @@ import { createProtectedRoute } from '../../../utils/route-factory';
 const venueService = new VenueService({ logger: apiLogger });
 
 /**
- * Route handler — corrects a photo's text metadata on a gastronomy.
+ * Route handler — corrects a photo's text metadata on a venue.
  *
  * Permission model: the service helper `updateVenueMedia` gates on `checkVenueCanEditMedia` — listing owner or staff — exactly like `setFeaturedVenueMedia`.
  */

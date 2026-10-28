@@ -1,9 +1,9 @@
 /**
  * PUT /api/v1/protected/venues/:id/faqs/:faqId
- * Update an existing FAQ on a gastronomy listing (T-044)
+ * Update an existing FAQ on a venue listing (T-044)
  *
  * Gated on VENUE_EDIT_OWN (listing owner) or VENUE_EDIT_ALL (staff).
- * The FAQ must belong to the specified gastronomy (enforced inside updateVenueFaq).
+ * The FAQ must belong to the specified venue (enforced inside updateVenueFaq).
  */
 
 import {
@@ -24,7 +24,7 @@ import { createProtectedRoute } from '../../../utils/route-factory';
 const venueService = new VenueService({ logger: apiLogger });
 
 /**
- * Route handler — updates a specific FAQ on a gastronomy listing.
+ * Route handler — updates a specific FAQ on a venue listing.
  *
  * TYPE-WORKAROUND: accesses the internal `model` field from the service instance
  * to pass to the standalone FAQ helper without requiring a public accessor.

@@ -1,6 +1,6 @@
 /**
  * DELETE /api/v1/admin/venues/:id/faqs/:faqId
- * Remove an existing FAQ from a gastronomy listing — Admin endpoint.
+ * Remove an existing FAQ from a venue listing — Admin endpoint.
  */
 import { type VenueFaqRemoveInput, VenueFaqRemoveOutputSchema, VerticalEnum } from '@repo/schemas';
 import { removeVenueFaq, ServiceError, VenueService } from '@repo/service-core';
@@ -15,7 +15,7 @@ const venueService = new VenueService({ logger: apiLogger });
 
 /**
  * DELETE /api/v1/admin/venues/:id/faqs/:faqId
- * Remove FAQ from gastronomy listing — Admin endpoint.
+ * Remove FAQ from venue listing — Admin endpoint.
  *
  * Requires VENUE_EDIT_ALL permission. The service helper
  * `removeVenueFaq` enforces the same gate via `checkVenueCanEditFaqs`.

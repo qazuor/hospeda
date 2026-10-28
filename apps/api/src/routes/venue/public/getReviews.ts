@@ -1,6 +1,6 @@
 /**
- * Public gastronomy reviews list endpoint (T-042)
- * Returns a paginated list of APPROVED reviews for a specific gastronomy listing.
+ * Public venue reviews list endpoint (T-042)
+ * Returns a paginated list of APPROVED reviews for a specific venue listing.
  *
  * VenueReviewService.listByVenue() force-filters lifecycleState=ACTIVE AND
  * moderationState=APPROVED so that PENDING / REJECTED reviews never surface here
@@ -51,7 +51,7 @@ const VenueReviewPublicSchema = VenueReviewSchema.pick({
 
 /**
  * GET /api/v1/public/venues/:venueId/reviews
- * List APPROVED gastronomy reviews — Public endpoint.
+ * List APPROVED venue reviews — Public endpoint.
  *
  * Uses VenueReviewService.listByVenue() which force-filters to
  * ACTIVE + APPROVED reviews only. At most 100 reviews per call (service cap).

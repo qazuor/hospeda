@@ -1,6 +1,6 @@
 /**
  * GET /api/v1/admin/venues/:id/media
- * List photos in a gastronomy listing gallery — Admin endpoint (HOS-372).
+ * List photos in a venue listing gallery — Admin endpoint (HOS-372).
  *
  * Returns all non-deleted media rows for the given listing, ordered by
  * `sortOrder ASC`. Supports an optional `state` query filter (defaults to
@@ -18,7 +18,7 @@ const venueService = new VenueService({ logger: apiLogger });
 
 /**
  * GET /api/v1/admin/venues/:id/media
- * List gastronomy listing gallery photos — Admin endpoint.
+ * List venue listing gallery photos — Admin endpoint.
  *
  * Requires VENUE_EDIT_ALL permission (mirrors the internal
  * `checkVenueCanEditMedia` gate — media management has no separate

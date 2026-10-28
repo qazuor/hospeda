@@ -1,6 +1,6 @@
 /**
  * PATCH /api/v1/protected/venues/:id/media/reorder
- * Reorder photos in a gastronomy listing gallery (HOS-372).
+ * Reorder photos in a venue listing gallery (HOS-372).
  *
  * The caller supplies the full ordered list of visible media UUIDs. The service
  * validates that the supplied set matches the current visible rows exactly (no
@@ -14,7 +14,7 @@
  * That is defensive, not required — Hono resolves the static `reorder` segment
  * ahead of the `{mediaId}` param regardless of insertion order (verified by
  * mutation on the post/event twin, `test/routes/post-protected-media.test.ts`;
- * there is no gastronomy/experience-side route test to re-run it against).
+ * there is no venue/experience-side route test to re-run it against).
  */
 
 import {
@@ -34,7 +34,7 @@ import { createProtectedRoute } from '../../../utils/route-factory';
 const venueService = new VenueService({ logger: apiLogger });
 
 /**
- * Route handler — reorders the gallery photos on a gastronomy listing.
+ * Route handler — reorders the gallery photos on a venue listing.
  *
  * TYPE-WORKAROUND: accesses the internal `model` field from the service instance
  * to pass to the standalone media helper without requiring a public accessor.

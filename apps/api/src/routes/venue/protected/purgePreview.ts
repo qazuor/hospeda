@@ -20,7 +20,7 @@ const ownerAccess: MiddlewareHandler = async (ctx, next) => {
     await next();
 };
 
-/** Owner-only read of the add-ons left behind by purging a gastronomy listing. */
+/** Owner-only read of the add-ons left behind by purging a venue listing. */
 export const protectedVenuePurgePreviewRoute = createProtectedRoute({
     method: 'get',
     path: '/{id}/purge-preview',

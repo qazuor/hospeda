@@ -7,7 +7,7 @@
  *
  * NOTE: VenueService does not (yet) expose a dedicated `findOptions` method
  * like AccommodationService does.  This route uses `adminList` with a small page
- * and projects the result to the `GastronomyOptionsItemSchema` shape inline.
+ * and projects the result to the `VenueOptionsItemSchema` shape inline.
  * When a dedicated `findOptions` is added to VenueService, replace the
  * inline mapping with the service call.
  */
@@ -60,7 +60,7 @@ export const adminVenueOptionsRoute = createAdminRoute({
             throw new ServiceError(result.error.code, result.error.message);
         }
 
-        // TYPE-WORKAROUND: adminList returns PaginatedListOutput<Gastronomy>; project to options shape
+        // TYPE-WORKAROUND: adminList returns PaginatedListOutput<Venue>; project to options shape
         const items = (result.data?.items ?? []).map((g: Record<string, unknown>) => ({
             id: g.id as string,
             label: g.name as string,

@@ -1,7 +1,7 @@
 /**
- * Admin moderate gastronomy review endpoint — T-046.
+ * Admin moderate venue review endpoint — T-046.
  *
- * Approves or rejects a single gastronomy review. Delegates the state
+ * Approves or rejects a single venue review. Delegates the state
  * transition to `VenueReviewService.moderateReview()`, which gates the
  * action on {@link PermissionEnum.VENUE_MODERATE_REVIEW}.
  *
@@ -22,9 +22,9 @@ const venueReviewService = new VenueReviewService({ logger: apiLogger });
  * POST /api/v1/admin/venues/reviews/:id/moderate
  *
  * Applies a moderation decision (`APPROVED` | `REJECTED`) to a single
- * gastronomy review. Sets `moderationState`, `moderatedById`, `moderatedAt`,
+ * venue review. Sets `moderationState`, `moderatedById`, `moderatedAt`,
  * and optionally `moderationReason` on the persisted row. Also triggers
- * rating recompute on the parent gastronomy listing.
+ * rating recompute on the parent venue listing.
  *
  * Returns the updated review.
  *

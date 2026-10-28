@@ -1,6 +1,6 @@
 /**
- * Admin update gastronomy listing endpoint (full PUT).
- * Allows admins to update any gastronomy listing.
+ * Admin update venue listing endpoint (full PUT).
+ * Allows admins to update any venue listing.
  */
 import {
     VenueAdminSchema,
@@ -20,7 +20,7 @@ const venueService = new VenueService({ logger: apiLogger });
 
 /**
  * PUT /api/v1/admin/venues/:id
- * Update gastronomy listing — Admin endpoint.
+ * Update venue listing — Admin endpoint.
  *
  * Requires VENUE_EDIT_ALL permission. The service layer (`_canUpdate`)
  * enforces the same gate, providing defense in depth.

@@ -1,6 +1,6 @@
 /**
  * GET /api/v1/protected/venues/:id/media
- * List photos in a gastronomy listing gallery (HOS-372).
+ * List photos in a venue listing gallery (HOS-372).
  *
  * Returns all non-deleted media rows for the given listing, ordered by
  * `sortOrder ASC`. Supports an optional `state` query filter (defaults to
@@ -21,7 +21,7 @@ import { createCRUDRoute } from '../../../utils/route-factory';
 const venueService = new VenueService({ logger: apiLogger });
 
 /**
- * Route handler — lists the gallery photos for a gastronomy listing.
+ * Route handler — lists the gallery photos for a venue listing.
  *
  * TYPE-WORKAROUND: accesses the internal `model` field from the service instance
  * to pass to the standalone media helper without requiring a public accessor.

@@ -1,5 +1,5 @@
 /**
- * The owner's printable PDF ficha of a gastronomy listing (HOS-1058).
+ * The owner's printable PDF ficha of a venue listing (HOS-1058).
  *
  * ```
  * GET /api/v1/protected/venues/{id}/brochure
@@ -24,7 +24,7 @@
  * mind is that `stripWithSchema` does NOT run on this path — so the projection
  * that keeps owner-private fields out of the document is done explicitly, by
  * parsing the entity through `VenueBrochureSourceSchema`, whose every key
- * is proven to exist in `GastronomyPublicSchema` by
+ * is proven to exist in `VenuePublicSchema` by
  * `test/services/listing-brochure.test.ts`.
  *
  * @module routes/venue/protected/brochure

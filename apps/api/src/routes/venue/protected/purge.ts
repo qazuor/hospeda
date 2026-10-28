@@ -18,7 +18,7 @@ const ownerAccess: MiddlewareHandler = async (ctx, next) => {
     });
     await next();
 };
-/** Owner PB12 route for gastronomy listings. */
+/** Owner PB12 route for venue listings. */
 export const protectedPurgeVenueRoute = createProtectedRoute({
     method: 'post',
     successStatusCode: 200,

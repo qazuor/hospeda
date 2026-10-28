@@ -1,6 +1,6 @@
 /**
  * POST /api/v1/protected/venues/:id/media
- * Add a photo to a gastronomy listing gallery (HOS-372).
+ * Add a photo to a venue listing gallery (HOS-372).
  *
  * This is a URL-receiver endpoint: the caller has already uploaded the file to
  * Cloudinary via `POST /api/v1/admin/media/upload`. This endpoint registers the
@@ -28,7 +28,7 @@ import { createProtectedRoute } from '../../../utils/route-factory';
 const venueService = new VenueService({ logger: apiLogger });
 
 /**
- * Route handler — adds a photo to the specified gastronomy listing's gallery.
+ * Route handler — adds a photo to the specified venue listing's gallery.
  *
  * TYPE-WORKAROUND: accesses the internal `model` field from the service instance
  * to pass to the standalone media helper without requiring a public accessor.

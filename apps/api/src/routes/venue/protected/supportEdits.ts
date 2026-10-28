@@ -24,7 +24,7 @@ const ownerAccess: MiddlewareHandler = async (ctx, next) => {
 /**
  * GET /api/v1/protected/venues/{id}/support-edits — row 26 (ACC:15,
  * HOS-1493, H13): the owner reads the most recent support edits of their own
- * gastronomy listing. Anybody else gets 404.
+ * venue listing. Anybody else gets 404.
  */
 export const protectedVenueSupportEditsRoute = createProtectedRoute({
     method: 'get',

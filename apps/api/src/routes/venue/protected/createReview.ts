@@ -1,6 +1,6 @@
 /**
- * Protected create gastronomy review endpoint (T-044)
- * A logged-in tourist (or any authenticated user) submits a review for a gastronomy listing.
+ * Protected create venue review endpoint (T-044)
+ * A logged-in tourist (or any authenticated user) submits a review for a venue listing.
  *
  * Behavior:
  * - moderationState is forced to PENDING by VenueReviewService._beforeCreate()
@@ -47,11 +47,11 @@ const VenueReviewProtectedSchema = VenueReviewSchema.pick({
 
 /**
  * POST /api/v1/protected/venues/:venueId/reviews
- * Create a gastronomy review — Protected endpoint.
+ * Create a venue review — Protected endpoint.
  *
  * venueId and userId are supplied by the URL and the authenticated actor
  * respectively — the client MUST NOT echo them in the request body (they are
- * absent from GastronomyReviewCreateInputSchema... actually venueId IS
+ * absent from VenueReviewCreateInputSchema... actually venueId IS
  * required there, so we merge it from the path param).
  */
 export const protectedCreateVenueReviewRoute = createProtectedRoute({

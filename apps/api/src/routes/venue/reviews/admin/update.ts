@@ -1,6 +1,6 @@
 /**
- * Admin update gastronomy review endpoint.
- * Allows admins to update any gastronomy review.
+ * Admin update venue review endpoint.
+ * Allows admins to update any venue review.
  */
 import {
     PermissionEnum,
@@ -19,7 +19,7 @@ const venueReviewService = new VenueReviewService({ logger: apiLogger });
 
 /**
  * PUT /api/v1/admin/venues/reviews/:id
- * Update gastronomy review — Admin endpoint.
+ * Update venue review — Admin endpoint.
  *
  * Requires both VENUE_EDIT_ALL and VENUE_MODERATE_REVIEW — reviews are
  * moderated content (mirrors accommodation review update pattern).

@@ -1,6 +1,6 @@
 /**
  * PATCH /api/v1/admin/venues/:id/faqs/reorder
- * Reorder FAQs for a gastronomy listing — Admin endpoint.
+ * Reorder FAQs for a venue listing — Admin endpoint.
  *
  * MUST be registered BEFORE /{id}/faqs/{faqId} to prevent "reorder" from
  * being captured as a faqId param.
@@ -24,7 +24,7 @@ const venueService = new VenueService({ logger: apiLogger });
 
 /**
  * PATCH /api/v1/admin/venues/:id/faqs/reorder
- * Reorder FAQs for a gastronomy listing — Admin endpoint.
+ * Reorder FAQs for a venue listing — Admin endpoint.
  *
  * Validates that all supplied faqId values belong to the given listing before
  * applying displayOrder updates. Requires VENUE_EDIT_ALL permission.

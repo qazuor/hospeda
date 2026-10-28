@@ -1,5 +1,5 @@
 /**
- * Admin get gastronomy review by ID endpoint.
+ * Admin get venue review by ID endpoint.
  * Returns full review information including moderation fields.
  */
 import { PermissionEnum, VenueReviewSchema } from '@repo/schemas';
@@ -14,7 +14,7 @@ const venueReviewService = new VenueReviewService({ logger: apiLogger });
 
 /**
  * GET /api/v1/admin/venues/reviews/:id
- * Get gastronomy review by ID — Admin endpoint.
+ * Get venue review by ID — Admin endpoint.
  *
  * Requires VENUE_MODERATE_REVIEW permission.
  */

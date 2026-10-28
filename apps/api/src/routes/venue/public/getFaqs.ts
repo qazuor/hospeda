@@ -1,6 +1,6 @@
 /**
- * Public gastronomy FAQs endpoint (T-042)
- * Returns FAQs for a specific gastronomy listing ordered by display_order ASC NULLS LAST.
+ * Public venue FAQs endpoint (T-042)
+ * Returns FAQs for a specific venue listing ordered by display_order ASC NULLS LAST.
  *
  * Uses listVenueFaqs() which loads the listing with its `faqs` relation
  * and returns active, non-deleted FAQs. Any authenticated or anonymous actor
@@ -21,12 +21,12 @@ import { filterPublicFaqs } from '../../../utils/listing-faq-visibility';
 import { apiLogger } from '../../../utils/logger';
 import { createPublicRoute } from '../../../utils/route-factory';
 
-/** Gastronomy model instance for FAQ helpers (injected from VenueService). */
+/** Venue model instance for FAQ helpers (injected from VenueService). */
 const venueService = new VenueService({ logger: apiLogger });
 
 /**
  * GET /api/v1/public/venues/:venueId/faqs
- * List FAQs for a gastronomy listing — Public endpoint.
+ * List FAQs for a venue listing — Public endpoint.
  *
  * Returns the FAQ array ordered by displayOrder ASC NULLS LAST.
  * Returns 404 when the listing does not exist.

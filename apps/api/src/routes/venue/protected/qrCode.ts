@@ -1,5 +1,5 @@
 /**
- * The owner's listing QR for a gastronomy listing, as an image (HOS-982 PR 2).
+ * The owner's listing QR for a venue listing, as an image (HOS-982 PR 2).
  *
  * ```
  * GET /api/v1/protected/venues/{id}/qr

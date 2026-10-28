@@ -1,6 +1,6 @@
 /**
  * DELETE /api/v1/protected/venues/:id/media/:mediaId
- * Remove (soft-delete) a photo from a gastronomy listing gallery (HOS-372).
+ * Remove (soft-delete) a photo from a venue listing gallery (HOS-372).
  *
  * Soft-deletes the `venue_media` row identified by `mediaId` and
  * resequences the remaining visible rows to a dense 0-based `sortOrder`.
@@ -27,7 +27,7 @@ import { createProtectedRoute } from '../../../utils/route-factory';
 const venueService = new VenueService({ logger: apiLogger });
 
 /**
- * Route handler — soft-deletes a specific photo from a gastronomy listing gallery.
+ * Route handler — soft-deletes a specific photo from a venue listing gallery.
  *
  * TYPE-WORKAROUND: accesses the internal `model` field from the service instance
  * to pass to the standalone media helper without requiring a public accessor.
