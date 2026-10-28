@@ -142,8 +142,8 @@ test.describe('LISTING-OWNER-01: gastronomy or experience owner edits listings â
             'SELECT id, menu_url FROM venues WHERE slug = $1 LIMIT 1',
             [GASTRONOMY_SLUG]
         );
-        const gastronomyId = gastronomyRows[0]?.id;
-        if (!gastronomyId) {
+        const venueId = gastronomyRows[0]?.id;
+        if (!venueId) {
             throw new Error(`Gastronomy '${GASTRONOMY_SLUG}' not found â€” run e2e:seed first`);
         }
         originalMenuUrl = gastronomyRows[0]?.menu_url ?? null;
@@ -184,12 +184,12 @@ test.describe('LISTING-OWNER-01: gastronomy or experience owner edits listings â
         // The edit link for the gastronomy must be present in the DOM (href contains
         // the vertical segment + listing UUID).
         const gastronomyEditLink = page.locator(
-            `a.mc-list__edit[href*="/venue/${gastronomyId}/editar"]`
+            `a.mc-list__edit[href*="/venue/${venueId}/editar"]`
         );
         await expect(gastronomyEditLink).toBeVisible();
         await expect(gastronomyEditLink).toHaveAttribute(
             'href',
-            new RegExp(`/mi-cuenta/comercio/venue/${gastronomyId}/editar/?$`)
+            new RegExp(`/mi-cuenta/comercio/venue/${venueId}/editar/?$`)
         );
 
         // Experience listing also appears in the index.
@@ -235,7 +235,7 @@ test.describe('LISTING-OWNER-01: gastronomy or experience owner edits listings â
             listingEditorUrl({
                 webUrl: WEB_URL,
                 vertical: 'venue',
-                listingId: gastronomyId,
+                listingId: venueId,
                 section: 'precio'
             }),
             { waitUntil: 'load' }

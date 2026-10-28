@@ -105,7 +105,7 @@ async function authenticateContext(
 // ---------------------------------------------------------------------------
 
 test.describe('LISTING-OWNER-03: owner edits type + i18n fields — persist on public ficha @p0 @listing-owner', () => {
-    let gastronomyId: string;
+    let venueId: string;
     let experienceId: string;
     let originalGastronomyType: string;
     let originalExperienceType: string;
@@ -121,7 +121,7 @@ test.describe('LISTING-OWNER-03: owner edits type + i18n fields — persist on p
         if (!gastroRow) {
             throw new Error(`Gastronomy '${GASTRONOMY_SLUG}' not found — run e2e:seed first`);
         }
-        gastronomyId = gastroRow.id;
+        venueId = gastroRow.id;
         originalGastronomyType = gastroRow.type;
 
         const expRows = await execSQL<{ id: string; type: string }>(
@@ -190,7 +190,7 @@ test.describe('LISTING-OWNER-03: owner edits type + i18n fields — persist on p
             listingEditorUrl({
                 webUrl: WEB_URL,
                 vertical: 'venue',
-                listingId: gastronomyId,
+                listingId: venueId,
                 section: 'datos'
             }),
             { waitUntil: 'load' }
@@ -260,7 +260,7 @@ test.describe('LISTING-OWNER-03: owner edits type + i18n fields — persist on p
             listingEditorUrl({
                 webUrl: WEB_URL,
                 vertical: 'venue',
-                listingId: gastronomyId,
+                listingId: venueId,
                 section: 'traducciones'
             }),
             { waitUntil: 'load' }
@@ -295,11 +295,11 @@ test.describe('LISTING-OWNER-03: owner edits type + i18n fields — persist on p
             pathPattern: /\/protected\/venues\//
         });
         expect(saved.ok(), `PATCH failed: ${saved.status()} ${saved.url()}`).toBe(true);
-        expect(saved.url()).toContain(`/api/v1/protected/venues/${gastronomyId}`);
+        expect(saved.url()).toContain(`/api/v1/protected/venues/${venueId}`);
 
         const persistedRows = await execSQL<{ name_i18n: { es?: string } | null }>(
             'SELECT name_i18n FROM venues WHERE id = $1 LIMIT 1',
-            [gastronomyId]
+            [venueId]
         );
         expect(persistedRows[0]?.name_i18n?.es).toBe(newI18nName);
 
@@ -311,7 +311,7 @@ test.describe('LISTING-OWNER-03: owner edits type + i18n fields — persist on p
             listingEditorUrl({
                 webUrl: WEB_URL,
                 vertical: 'venue',
-                listingId: gastronomyId,
+                listingId: venueId,
                 section: 'traducciones'
             }),
             { waitUntil: 'load' }
