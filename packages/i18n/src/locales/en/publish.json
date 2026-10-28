@@ -58,7 +58,7 @@
             },
             "step3": {
                 "title": "You go live",
-                "desc": "Your venue shows up in the gastronomy catalogue and diners in the area find you."
+                "desc": "Your venue shows up in the Food & nightlife catalogue and diners in the area find you."
             }
         },
         "benefits": {
@@ -123,7 +123,7 @@
         "venue": {
             "resumeOrCreate": {
                 "title": "You already have a listing in progress",
-                "body": "You have an unpublished gastronomy listing. You can pick it up where you left off or start a new one from scratch.",
+                "body": "You have an unpublished Food & nightlife listing. You can pick it up where you left off or start a new one from scratch.",
                 "resumeCta": "Resume the listing",
                 "createCta": "Create a new one"
             },

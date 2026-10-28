@@ -96,7 +96,7 @@
             "venue": {
                 "title": "List my food business",
                 "audience": "For restaurants, grills, bakeries, food trucks and any food business that wants to appear in the guide.",
-                "cta": "See gastronomy plans",
+                "cta": "See Food & nightlife plans",
                 "highlights": {
                     "item1": "A listing with photos, menu, opening hours and contact details.",
                     "item2": "Show up in the dining guide travellers browse.",
@@ -227,10 +227,10 @@
     "consultPrice": "Ask us",
     "venue": {
         "tagline": "Plans and pricing",
-        "heading": "Gastronomy pricing",
+        "heading": "Food & nightlife pricing",
         "subtitle": "Every plan lists your venue. What changes is how much of it you can show.",
         "empty": "Plans unavailable right now.",
-        "cardsHeading": "Gastronomy plan comparison",
+        "cardsHeading": "Food & nightlife plan comparison",
         "pageTitle": "Pricing to list your food business",
         "pageDescription": "See what it costs to list your restaurant, grill, deli or food truck on Hospeda.",
         "ctaLabel": "Get started"

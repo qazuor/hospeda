@@ -7,11 +7,11 @@
         "unavailable": "O chat de IA não está disponível para este local"
     },
     "listing": {
-        "title": "Gastronomia",
+        "title": "Comer e sair",
         "subtitle": "Descubra os melhores restaurantes, bares e sabores da região",
         "emptyState": "Nenhum estabelecimento gastronômico encontrado com os filtros selecionados.",
         "emptyCatalog": "Ainda não há estabelecimentos gastronômicos publicados.",
-        "errorBanner": "Não foi possível carregar a lista de gastronomia. Tente novamente mais tarde.",
+        "errorBanner": "Não foi possível carregar a lista de Comer e sair. Tente novamente mais tarde.",
         "results_one": "{{count}} estabelecimento encontrado",
         "results_other": "{{count}} estabelecimentos encontrados",
         "search": "Busca por texto",
@@ -140,19 +140,19 @@
             },
             "step3": {
                 "title": "Seja encontrado",
-                "desc": "Os clientes te encontram buscando gastronomia na região."
+                "desc": "Os clientes te encontram buscando Comer e sair na região."
             }
         },
         "price": {
             "tagline": "Um único plano, simples",
             "taglineMulti": "Escolha o plano ideal para o seu comércio",
-            "title": "Gastronomia Premium",
+            "title": "Comer e sair Premium",
             "priceSuffix": "/mês",
             "fromPrefix": "A partir de ",
             "tiersTitle": "Escolha seu plano",
             "trial_one": "{{count}} dia de teste grátis na sua primeira assinatura",
             "trial_other": "{{count}} dias de teste grátis na sua primeira assinatura",
-            "feature1": "1 ficha de gastronomia publicada",
+            "feature1": "1 ficha de Comer e sair publicada",
             "feature2": "Presença no catálogo do Hospeda",
             "feature3": "Sem comissão por reserva ou consulta",
             "cta": "Começar agora",
@@ -168,7 +168,7 @@
             "q2": "Existe algum compromisso de permanência?",
             "a2": "Não. Você pode cancelar sua assinatura quando quiser pela sua conta.",
             "q3": "Quantas fichas posso publicar?",
-            "a3": "O plano inclui uma ficha de gastronomia por conta."
+            "a3": "O plano inclui uma ficha de Comer e sair por conta."
         },
         "lead": {
             "title": "Adicione seu negócio",

@@ -96,7 +96,7 @@
             "venue": {
                 "title": "Publicar meu local gastronômico",
                 "audience": "Para restaurantes, churrascarias, padarias, food trucks e todo local gastronômico que queira aparecer no guia.",
-                "cta": "Ver planos de gastronomia",
+                "cta": "Ver planos de Comer e sair",
                 "highlights": {
                     "item1": "Anúncio com fotos, cardápio, horários e dados de contato.",
                     "item2": "Apareça no guia gastronômico que os viajantes consultam.",
@@ -227,10 +227,10 @@
     "consultPrice": "Consultar",
     "venue": {
         "tagline": "Planos e preços",
-        "heading": "Preços para gastronomia",
+        "heading": "Preços para Comer e sair",
         "subtitle": "Todos os planos publicam seu estabelecimento. O que muda é quanto dele você pode mostrar.",
         "empty": "Planos indisponíveis no momento.",
-        "cardsHeading": "Comparativo de planos para gastronomia",
+        "cardsHeading": "Comparativo de planos para Comer e sair",
         "pageTitle": "Preços para publicar seu estabelecimento gastronômico",
         "pageDescription": "Veja quanto custa publicar seu restaurante, churrascaria, rotisseria ou food truck na Hospeda.",
         "ctaLabel": "Começar"

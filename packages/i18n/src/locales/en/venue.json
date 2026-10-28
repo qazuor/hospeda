@@ -7,11 +7,11 @@
         "unavailable": "AI chat is not available for this venue"
     },
     "listing": {
-        "title": "Gastronomy",
+        "title": "Food & nightlife",
         "subtitle": "Discover the best restaurants, bars, and flavors of the region",
         "emptyState": "No gastronomic establishments found with the selected filters.",
         "emptyCatalog": "There are no published gastronomic establishments yet.",
-        "errorBanner": "Could not load the gastronomy listings. Please try again later.",
+        "errorBanner": "Could not load the Food & nightlife listings. Please try again later.",
         "results_one": "{{count}} establishment found",
         "results_other": "{{count}} establishments found",
         "search": "Text search",
@@ -140,19 +140,19 @@
             },
             "step3": {
                 "title": "Get discovered",
-                "desc": "Diners find you while searching for gastronomy in the area."
+                "desc": "Diners find you while searching Food & nightlife in the area."
             }
         },
         "price": {
             "tagline": "One simple plan",
             "taglineMulti": "Choose the plan that fits your business",
-            "title": "Gastronomy Premium",
+            "title": "Food & nightlife Premium",
             "priceSuffix": "/month",
             "fromPrefix": "From ",
             "tiersTitle": "Choose your plan",
             "trial_one": "{{count}} day free trial on your first subscription",
             "trial_other": "{{count}} days free trial on your first subscription",
-            "feature1": "1 published gastronomy listing",
+            "feature1": "1 published Food & nightlife listing",
             "feature2": "Presence in the Hospeda catalog",
             "feature3": "No commission on bookings or inquiries",
             "cta": "Get started",
@@ -168,7 +168,7 @@
             "q2": "Is there a minimum commitment?",
             "a2": "No. You can cancel your subscription anytime from your account.",
             "q3": "How many listings can I publish?",
-            "a3": "The plan includes one gastronomy listing per account."
+            "a3": "The plan includes one Food & nightlife listing per account."
         },
         "lead": {
             "title": "Add your business",

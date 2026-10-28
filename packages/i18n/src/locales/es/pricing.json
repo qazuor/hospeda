@@ -96,7 +96,7 @@
             "venue": {
                 "title": "Publicar mi local gastronómico",
                 "audience": "Para restaurantes, parrillas, panaderías, food trucks y todo local gastronómico que quiera aparecer en la guía.",
-                "cta": "Ver planes de gastronomía",
+                "cta": "Ver planes de Comer y salir",
                 "highlights": {
                     "item1": "Ficha con fotos, menú, horarios y datos de contacto.",
                     "item2": "Aparecé en la guía gastronómica que consultan los viajeros.",
@@ -227,10 +227,10 @@
     "consultPrice": "Consultar",
     "venue": {
         "tagline": "Planes y precios",
-        "heading": "Precios para gastronomía",
+        "heading": "Precios para Comer y salir",
         "subtitle": "Todos los planes publican tu local. Cambia cuánto podés mostrar de él.",
         "empty": "Planes no disponibles en este momento.",
-        "cardsHeading": "Comparativa de planes para gastronomía",
+        "cardsHeading": "Comparativa de planes para Comer y salir",
         "pageTitle": "Precios para publicar tu local gastronómico",
         "pageDescription": "Mirá cuánto sale publicar tu restaurante, parrilla, rotisería o carrito en Hospeda.",
         "ctaLabel": "Empezar"
