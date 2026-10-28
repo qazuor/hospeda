@@ -207,7 +207,7 @@ async function resolveVenueOrExperienceById(params: {
         default: {
             const exhaustiveCheck: never = params.entityType;
             throw new Error(
-                `resolveGastronomyOrExperienceById: unsupported entityType '${exhaustiveCheck}'`
+                `resolveVenueOrExperienceById: unsupported entityType '${exhaustiveCheck}'`
             );
         }
     }

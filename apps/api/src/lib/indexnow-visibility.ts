@@ -133,7 +133,7 @@ const VISIBILITY_LOOKUPS: Readonly<Record<string, VisibilityLookup>> = {
                 .limit(1)
         ).length > 0,
 
-    gastronomy: async (slug) =>
+    venue: async (slug) =>
         (
             await getDb()
                 .select({ slug: venues.slug })
