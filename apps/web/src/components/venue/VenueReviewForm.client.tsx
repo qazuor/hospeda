@@ -51,7 +51,7 @@ function joinApi(apiUrl: string, path: string): string {
 }
 
 /**
- * VenueReviewForm — authenticated review submission for a gastronomy
+ * VenueReviewForm — authenticated review submission for a venue
  * listing.
  *
  * @param props - Component props (see {@link VenueReviewFormProps}).

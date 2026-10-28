@@ -6,7 +6,7 @@
  * {@link ./eventCategoryIcon.ts}).
  *
  * Categories that exist on BOTH entities deliberately resolve to the SAME icon
- * as the event map (`CULTURE`/`cultural`, `GASTRONOMY`/`gastronomy`,
+ * as the event map (`CULTURE`/`cultural`, `GASTRONOMY`/the matching slug,
  * `NATURE`/`nature`, `SPORT`/`sports`, `WELLNESS`/`wellness`, `FAMILY`/`family`,
  * `ART`/`art`, `FESTIVALS`/`festival`, `EVENTS`), so "Arte" looks the same
  * whether the reader is on an event card or a blog card.
@@ -83,7 +83,7 @@ export const POST_CATEGORY_ICON_COMPONENTS: Readonly<Record<string, ComponentTyp
  *
  * @example
  * ```astro
- * const CategoryIcon = getPostCategoryIconComponent('gastronomy');
+ * const CategoryIcon = getPostCategoryIconComponent('venue');
  * <CategoryIcon size={96} weight="duotone" aria-hidden="true" />
  * ```
  */

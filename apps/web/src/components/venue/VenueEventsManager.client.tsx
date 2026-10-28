@@ -1,6 +1,6 @@
 /**
  * @file VenueEventsManager.client.tsx
- * @description The owner's venue-agenda editor for a gastronomy listing
+ * @description The owner's venue-agenda editor for a venue listing
  * (HOS-1042) — live music night, happy hour, dinner show, the Tuesday deal.
  *
  * Structurally the twin of `VenueMenuManager`, simplified: a FLAT list of
@@ -61,7 +61,7 @@ interface EventsEnvelope {
 }
 
 export interface VenueEventsManagerProps {
-    /** UUID of the gastronomy listing. */
+    /** UUID of the venue listing. */
     readonly listingId: string;
     /** Active UI locale. */
     readonly locale: SupportedLocale;

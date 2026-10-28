@@ -1,7 +1,7 @@
 /**
  * @file PublishMenu.client.tsx
  * @description Header "Publicar" CTA — a three-way dropdown offering
- * accommodation, gastronomy, and experience (HOS-691).
+ * accommodation, venue, and experience (HOS-691).
  *
  * Replaces the single `/publicar/` link Header.astro used to render. Covers
  * BOTH the wide (≥1280) and narrow (1025-1279) breakpoints — they already

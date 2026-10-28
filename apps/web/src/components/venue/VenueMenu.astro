@@ -1,7 +1,7 @@
 ---
 /**
  * @file VenueMenu.astro
- * @description Renders a gastronomy listing's menu on the public detail page
+ * @description Renders a venue listing's menu on the public detail page
  * (HOS-895 PR2).
  *
  * ## The hierarchy, and why it is "show all", not "pick one"
@@ -27,7 +27,7 @@
  * ## The gate
  *
  * Both `menuSections` and the attachment (`fileUrl`/`fileKind`) arrive
- * PRE-FILTERED by the API (`gastronomy/public/getBySlug.ts`): withheld,
+ * PRE-FILTERED by the API response: withheld,
  * live, when the owner's CURRENT plan does not grant
  * `manage_venue_menu` (HOS-895 PR2, owner decision 2026-09-02). This
  * component has no gate of its own to apply — an owner without the

@@ -1,6 +1,6 @@
 /**
  * @file VenueDailySpecialsManager.client.tsx
- * @description The owner's menú del día editor for a gastronomy listing
+ * @description The owner's menú del día editor for a venue listing
  * (HOS-1041).
  *
  * ## What this panel is FOR, and why the dates are the whole of it
@@ -74,7 +74,7 @@ interface DailySpecialsEnvelope {
 }
 
 export interface VenueDailySpecialsManagerProps {
-    /** UUID of the gastronomy listing. */
+    /** UUID of the venue listing. */
     readonly listingId: string;
     /** Active UI locale. */
     readonly locale: SupportedLocale;

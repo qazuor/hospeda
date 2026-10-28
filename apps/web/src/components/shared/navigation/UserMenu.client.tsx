@@ -114,7 +114,7 @@ const TEXTS = {
 const HOST_PERMISSION = 'accommodation.create' as const;
 
 /**
- * Permission that marks a user as a gastronomy listing owner (self-service,
+ * Permission that marks a user as a venue listing owner (self-service,
  * SPEC-253). Fed to PostHog as `is_venue_owner`.
  */
 const VENUE_OWNER_PERMISSION = 'venue.editOwn' as const;

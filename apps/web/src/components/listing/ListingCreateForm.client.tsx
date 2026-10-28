@@ -84,7 +84,7 @@ const VENUE_TYPE_OPTIONS = Object.values(VenueTypeEnum);
 const EXPERIENCE_TYPE_OPTIONS = Object.values(ExperienceTypeEnum);
 const PRICE_UNIT_OPTIONS = Object.values(ExperiencePriceUnitEnum);
 
-/** Fields this form collects for gastronomy — a subset of the real create schema. */
+/** Fields this form collects for venue — a subset of the real create schema. */
 const VENUE_FORM_SCHEMA = VenueOwnerCreateInputSchema.pick({
     name: true,
     type: true,
@@ -146,7 +146,7 @@ export function ListingCreateForm({
 
     const typeOptions = vertical === 'venue' ? VENUE_TYPE_OPTIONS : EXPERIENCE_TYPE_OPTIONS;
 
-    // HOS-820: "comercio" is the name of the internal module gastronomy and
+    // HOS-820: "comercio" is the name of the internal module venue and
     // experience share — not a word an excursion, a boat trip or a tour guide
     // recognises itself in. The page already knows which vertical it is
     // creating (the route carries it), so the three strings that NAME the thing

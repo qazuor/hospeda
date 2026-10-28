@@ -262,7 +262,7 @@ function QrBlock({
 
 /**
  * VenueMenuQrWidget — per-listing menu QR + scan analytics for
- * gastronomy owners, gated by the `menu_qr_scan_metrics` entitlement.
+ * venue owners, gated by the `menu_qr_scan_metrics` entitlement.
  *
  * @example
  * ```astro

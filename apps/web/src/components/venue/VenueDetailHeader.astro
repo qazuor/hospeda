@@ -1,7 +1,7 @@
 ---
 /**
  * @file VenueDetailHeader.astro
- * @description Detail page header for a gastronomy listing (SPEC-239 T-054).
+ * @description Detail page header for a venue listing (SPEC-239 T-054).
  * Shows name, type badge, price-range badge, average rating, and a featured star.
  * The FavoriteButton island lives in a right-side column (mirrors EventDetailHeader).
  *
@@ -297,7 +297,7 @@ const isNew = venue.createdAt
     }
 
     /* =========================================================
-     * Compact state — only the genuinely gastronomy-specific override
+     * Compact state — only the genuinely venue-specific override
      * (badges gap) remains here; the row collapse, title shrink, location
      * demote, rating/back hide, and badge shrink all come from the shared
      * `.wh-compact-*` utilities applied in the markup (contract in

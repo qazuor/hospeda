@@ -1,7 +1,7 @@
 ---
 /**
  * @file VenueEventsCta.astro
- * @description "Accepts events" call-to-action for a gastronomy listing
+ * @description "Accepts events" call-to-action for a venue listing
  * (HOS-1055) — birthdays, corporate events, weddings.
  *
  * Deliberately small: a toggle and a button, nothing else (no venue calendar,
@@ -9,11 +9,11 @@
  *
  * ## Why this is an in-page anchor, not an external link
  *
- * Gastronomy has no single public "contact this business" channel to pick.
+ * Venue has no single public "contact this business" channel to pick.
  * `contactInfo` (phone/email) was never part of `VenuePublicSchema`, and
  * `whatsapp` was removed from `VenueSocialNetworks` entirely (HOS-1076) —
  * it never carried real data (see that component's header, and HOS-1088 for
- * the open question of whether gastronomy ever gets a phone/WhatsApp channel).
+ * the open question of whether venue ever gets a phone/WhatsApp channel).
  * What remains is a handful of owner-optional social links plus a menu URL,
  * any subset of which may be set. Picking one of them (say, the first that
  * resolves) would sometimes point an "accepts events" CTA at a restaurant's

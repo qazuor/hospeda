@@ -1,15 +1,15 @@
 ---
 /**
  * @file VenueContactBlock.astro
- * @description Social networks + menu URL block for a gastronomy listing
+ * @description Social networks + menu URL block for a venue listing
  * (SPEC-239 T-054).
  *
  * IMPORTANT: The public VenuePublicSchema does NOT expose phone or email
  * fields (contactInfo is not part of the public schema). Only `socialNetworks`
- * and `menuUrl` are available publicly and rendered here. Gastronomy has no
+ * and `menuUrl` are available publicly and rendered here. Venue has no
  * public phone/WhatsApp channel of any kind — `whatsapp` was removed from
  * `VenueSocialNetworks` (HOS-1076) because it was never real. See
- * HOS-1088 for the open decision on whether gastronomy ever gets one.
+ * HOS-1088 for the open decision on whether venue ever gets one.
  *
  * The root `<section>` below carries a stable `id` (HOS-1055): the "accepts
  * events" CTA on the detail page is an in-page anchor to THIS block rather

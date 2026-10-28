@@ -15,7 +15,7 @@
  * Cloudinary and never appeared anywhere).
  *
  * Uploads still go to the protected `media/upload-entity` endpoint (which
- * already accepts the `gastronomy` and `experience` entity types, T-015a/b) —
+ * already accepts venue and experience listing types, T-015a/b) —
  * that part is UNCHANGED. What changed is what happens right after a successful
  * upload: instead of calling `onChange` with the full next
  * `{ featuredImage, gallery }` state for the orchestrator to buffer, this
@@ -29,7 +29,7 @@
  * This replaced a client-side best-effort call to
  * `protectedMediaApi.deleteMedia({ publicId })` that could never have worked:
  * `media/protected/delete-entity` only accepts accommodation / destination /
- * event / post, and rejected `gastronomy` and `experience` with HTTP 400 — even
+ * event / post, and rejected venue and experience listing types with HTTP 400 — even
  * though `media/upload-entity` accepts both. Uploads went in through a door that
  * existed; deletes went out through one that returned 400, so every listing
  * photo removal orphaned its asset regardless of this call.
@@ -259,7 +259,7 @@ function describeUploadError(err: unknown, t: Translate): string {
  * error, for a multi-file batch upload (HOS-832, mirrors the accommodation
  * editor's `isPlanLimitReached` gate for the same reason — see below).
  *
- * Unlike accommodation, a gastronomy or experience listing has no per-plan photo entitlement: its
+ * Unlike accommodation, a venue or experience listing has no per-plan photo entitlement: its
  * gallery cap is the single fixed `getGalleryCap(vertical)` constant, already
  * checked against the WHOLE batch before any upload starts (see
  * `handleGallerySelect`). Under normal operation the server can therefore

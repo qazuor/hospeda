@@ -11,7 +11,7 @@
  * mis-target within one field's own family, never point at an unrelated element
  * or at nothing at all.
  *
- * ## Why gastronomy and experience listings rename more ids than accommodation did
+ * ## Why venue and experience listings rename more ids than accommodation did
  *
  * This editor validates against a schema with NESTED blocks, so several of its
  * Zod keys are dotted paths (`contactInfo.workEmail`,

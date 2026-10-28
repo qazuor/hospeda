@@ -12,10 +12,10 @@
  *
  * The orchestrator mounts this section only for the `experience` vertical, and
  * that is a SHAPE decision, not an entitlement one: `meetingPoint` exists on
- * `ExperienceOwnerUpdateInputSchema` and not on the gastronomy one, because a
+ * `ExperienceOwnerUpdateInputSchema` and not on the venue one, because a
  * restaurant's address is its address — it has no separate gathering spot. Do
  * not "generalise" it to both verticals without adding the columns on the
- * gastronomy side first; a field the schema strips saves nothing and reports
+ * venue side first; a field the schema strips saves nothing and reports
  * success.
  *
  * ## One page, two tiers

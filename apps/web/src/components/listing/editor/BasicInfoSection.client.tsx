@@ -50,7 +50,7 @@ const RICH_DESCRIPTION_ID = buildFieldId({
     name: 'richDescription'
 });
 
-/** Gastronomy type options in display order. */
+/** Venue type options in display order. */
 const VENUE_TYPE_OPTIONS = Object.values(VenueTypeEnum);
 
 /** Experience type options in display order. */
@@ -300,7 +300,7 @@ export function BasicInfoSection({
                 Deliberately NOT behind a `PlanEntitlementGate`: that gate reads
                 the ACCOMMODATION entitlement set (the retired `loadEntitlements` filtered to
                 `product_domain = 'accommodation'`), so gating a listing field on
-                it would deny the field to every listing owner. Gastronomy and experience billing
+                it would deny the field to every listing owner. Venue and experience billing
                 is a separate domain — see the root CLAUDE.md, SPEC-239.
 
                 The title is a <span>, not a <label htmlFor>: the editing surface

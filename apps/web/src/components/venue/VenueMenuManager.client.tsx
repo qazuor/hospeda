@@ -1,6 +1,6 @@
 /**
  * @file VenueMenuManager.client.tsx
- * @description The owner's carta editor for a gastronomy listing (HOS-895).
+ * @description The owner's carta editor for a venue listing (HOS-895).
  *
  * ## Three ways to show a menu, side by side
  *
@@ -156,7 +156,7 @@ interface MenuEnvelope {
 }
 
 export interface VenueMenuManagerProps {
-    /** UUID of the gastronomy listing. */
+    /** UUID of the venue listing. */
     readonly listingId: string;
     /** Active UI locale. */
     readonly locale: SupportedLocale;

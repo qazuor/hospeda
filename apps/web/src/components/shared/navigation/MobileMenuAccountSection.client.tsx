@@ -12,7 +12,7 @@
  * **HOS-691**: the single owner CTA link (which used to swap between the
  * `/publicar` funnel and a "Modo anfitrión" shortcut based on
  * `roles.includes('HOST')`) is replaced by a three-way "Publicar" submenu
- * offering accommodation, gastronomy, and experience — the same options the
+ * offering accommodation, venue, and experience — the same options the
  * desktop header's `PublishMenu.client.tsx` renders, sourced from the same
  * `PUBLISH_CTA_OPTIONS` (AC-38). It renders unconditionally, for every
  * visitor including an existing HOST or VENUE_OWNER (AC-12) — the old

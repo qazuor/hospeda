@@ -1,7 +1,7 @@
 ---
 /**
  * @file VenueEvents.astro
- * @description Renders a gastronomy listing's OWN agenda on the public detail
+ * @description Renders a venue listing's OWN agenda on the public detail
  * page (HOS-1042) — live music night, happy hour, dinner show, the Tuesday
  * deal. Things that happen AT the venue, on a schedule the venue sets.
  *
@@ -18,7 +18,7 @@
  * ## Purely presentational, trusts pre-filtered props
  *
  * Same stance `VenueMenu.astro` takes: `venueEvents` arrives PRE-FILTERED
- * by the API (`gastronomy/public/events-projection.ts`) — withheld entirely
+ * by the API projection — withheld entirely
  * when the owner's CURRENT plan does not grant `manage_venue_events`, and
  * with `isActive: false` entries already dropped. This component has no gate
  * of its own to apply and does not re-derive either filter.
