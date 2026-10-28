@@ -12,7 +12,7 @@
  *
  * ## What moved, and what stayed behind
  *
- * Supersedes `/publicar-restaurante/`, which 301s here since HOS-1032. That
+ * Supersedes the retired venue lead page, which 301s here since HOS-1032. That
  * could not happen earlier: the old page still carried the price block inline,
  * and the price only moved DOWN to `/planes/comer-y-salir/precios/` when H7 built
  * it, so retiring the URL first would have left the vertical with no price at
@@ -130,7 +130,7 @@ const subtitle = t('venue.landing.lead.subtitle');
 /**
  * The CTA points at this vertical's own pricing page.
  *
- * It used to point at `/publicar-restaurante/`, which carried the price block
+ * It used to point at the retired venue lead page, which carried the price block
  * inline — the interim H6 documented, because sending both CTAs at a
  * `/precios/` page that did not exist yet would have made every conversion path
  * on this page a 404. HOS-1032 built it and retired the old URL in the same

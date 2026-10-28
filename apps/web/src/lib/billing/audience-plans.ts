@@ -96,8 +96,8 @@ export const AUDIENCE_CARD_ORDER: readonly AudienceCardId[] = [
  * tables and this index must not be able to disagree about where they are. The
  * other three point at the vertical's SALES page (level 2 of HOS-941 D-7).
  *
- * HOS-1032 changed those three from `publicar-restaurante` /
- * `publicar-experiencia` / `sumate/partner`, which this same change turned into
+ * HOS-1032 changed those three from the retired venue publish URL /
+ * the retired experience publish URL / `sumate/partner`, which this same change turned into
  * 301s. A link to a URL that redirects is not broken, but it is a hop the index
  * has no reason to spend, and it is the shape AC-51 exists to keep out.
  *

@@ -883,12 +883,12 @@ misconfigured.
 ### Measured on 2026-08-04, after W2-4 was applied
 
 The four W2-4 surfaces that have data on staging all reach `HIT`:
-`/es/gastronomia/`, `/es/experiencias/`, an experience detail, and two
+`venue collection URL`, `/es/experiencias/`, an experience detail, and two
 attraction pages.
 
 Purge scoping, each probe 7 s after the purge:
 
-| Purged tag | `/es/experiencias/` | `/es/gastronomia/` | Experience detail | Attraction |
+| Purged tag | `/es/experiencias/` | `venue collection URL` | Experience detail | Attraction |
 |---|---|---|---|---|
 | `preview:list-exp` | **MISS** | `HIT` | `HIT` | `HIT` |
 

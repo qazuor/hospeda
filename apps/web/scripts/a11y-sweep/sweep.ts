@@ -81,8 +81,8 @@ const INVENTORY: ReadonlyArray<{ url: string; name: string }> = [
     // coverage this baseline already had.
     { url: '/es/suscriptores/planes/', name: 'Plans Index' },
     // HOS-985: the five level-2 sales pages, built from the same
-    // SalesSection-based components. `/publicar-restaurante/` and
-    // `/publicar-experiencia/` used to be audited here and were dropped by
+    // SalesSection-based components. The retired venue and experience lead pages
+    // used to be audited here and were dropped by
     // HOS-1032, which turned them into 301s — a redirect has no markup to audit
     // and axe would run against whatever it lands on, double-counting the page
     // that IS listed.
