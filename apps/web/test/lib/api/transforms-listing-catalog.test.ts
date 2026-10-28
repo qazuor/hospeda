@@ -1,6 +1,6 @@
 /**
  * @file transforms-listing-catalog.test.ts
- * @description HOS-1072 — the gastronomy/experience detail transforms turn the
+ * @description HOS-1072 — the venue/experience detail transforms turn the
  * API's catalog-joined `amenities` / `features` into the item shape
  * `AmenitiesGrid.astro` and `FeaturesGrid.astro` render.
  *
@@ -21,7 +21,7 @@ import {
 const AMENITY_ID = '3f1a6b2c-1111-4d3e-8a90-2b7c4d5e6f70';
 const FEATURE_ID = '9c8b7a65-2222-4f1e-9b03-1a2b3c4d5e6f';
 
-/** Minimal public gastronomy payload; only the catalog arrays vary per test. */
+/** Minimal public venue payload; only the catalog arrays vary per test. */
 const venuePayload = (overrides: Record<string, unknown> = {}) => ({
     id: 'gastro-1',
     slug: 'parrilla-el-fogon',
@@ -49,7 +49,7 @@ const experiencePayload = (overrides: Record<string, unknown> = {}) => ({
     ...overrides
 });
 
-describe('toGastronomyDetailPageProps — amenities (HOS-1072)', () => {
+describe('toVenueDetailPageProps — amenities (HOS-1072)', () => {
     it('puts the catalog SLUG in `name`, which is the grid i18n key', () => {
         // Arrange
         const raw = venuePayload({
@@ -74,7 +74,7 @@ describe('toGastronomyDetailPageProps — amenities (HOS-1072)', () => {
 
     it('never claims an additional cost the listing junction cannot store', () => {
         // Arrange: even if a stray value arrived, the grid must not print
-        // "(costo adicional)" for a column `r_gastronomy_amenity` does not have.
+        // "(costo adicional)" for a column `r_venue_amenity` does not have.
         const raw = venuePayload({
             amenities: [
                 { amenityId: AMENITY_ID, slug: 'parking', icon: null, additionalCost: 5000 }
@@ -133,7 +133,7 @@ describe('toGastronomyDetailPageProps — amenities (HOS-1072)', () => {
     });
 });
 
-describe('toGastronomyDetailPageProps — features (HOS-1072)', () => {
+describe('toVenueDetailPageProps — features (HOS-1072)', () => {
     it('reads the owner-authored relabel and comment straight through', () => {
         // Arrange
         const raw = venuePayload({
