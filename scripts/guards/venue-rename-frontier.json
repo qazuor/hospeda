@@ -86,7 +86,6 @@
         "apps/api/src/routes/venue/protected/updateMedia.ts": 1,
         "apps/api/src/routes/venue/protected/uploadMenuFile.ts": 3,
         "apps/api/src/routes/venue/protected/uploadMenuItemPhoto.ts": 5,
-        "apps/api/src/routes/venue/public/index.ts": 2,
         "apps/api/src/schemas/product-domain-query.schema.ts": 1,
         "apps/api/src/services/ai-context/venue-ai-context.ts": 1,
         "apps/api/src/services/listing-publication/listing-publication.service.ts": 2,
