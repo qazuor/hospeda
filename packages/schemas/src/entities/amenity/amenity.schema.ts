@@ -96,8 +96,8 @@ export const AccommodationAmenityRelationSchema = z.object({
 export type AccommodationAmenityRelation = z.infer<typeof AccommodationAmenityRelationSchema>;
 
 /**
- * Gastronomy-Amenity Relation Schema
- * Represents the many-to-many relationship between gastronomy listings and amenities.
+ * venue-Amenity Relation Schema
+ * Represents the many-to-many relationship between venue listings and amenities.
  * Simpler than the accommodation variant: no pricing or optional-cost fields.
  */
 export const VenueAmenityRelationSchema = z.object({
@@ -109,7 +109,7 @@ export type VenueAmenityRelation = z.infer<typeof VenueAmenityRelationSchema>;
 /**
  * Experience-Amenity Relation Schema (SPEC-240)
  * Represents the many-to-many relationship between experience listings and amenities.
- * Mirrors GastronomyAmenityRelationSchema: no pricing or optional-cost fields.
+ * Mirrors venueAmenityRelationSchema: no pricing or optional-cost fields.
  */
 export const ExperienceAmenityRelationSchema = z.object({
     experienceId: z.string().uuid({ message: 'zodError.common.id.invalidUuid' }),

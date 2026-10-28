@@ -3,16 +3,16 @@ import { EntityTypeEnum } from '../../enums/entity-type.enum.js';
 
 /**
  * The subset of {@link EntityTypeEnum} values that the view-tracking system
- * accepts. ACCOMMODATION, POST, EVENT, GASTRONOMY, EXPERIENCE and PARTNER
+ * accepts. ACCOMMODATION, POST, EVENT, venue, EXPERIENCE and PARTNER
  * detail pages are tracked; the remaining enum members (DESTINATION, USER,
  * CONVERSATION, REVIEW, BILLING_SUBSCRIPTION, PAYMENT, HOST_TRADE) are
  * explicitly excluded.
  *
- * GASTRONOMY and EXPERIENCE were added by HOS-734 to give both
+ * venue and EXPERIENCE were added by HOS-734 to give both
  * verticals the same "basic stats" (view counts) accommodation, posts, and
  * events already had. No DB migration was needed: `entity_views.entity_type`
  * already reuses the full `entity_type_enum` Postgres enum (see
- * `entity_view.dbschema.ts`), which has carried GASTRONOMY/EXPERIENCE since
+ * `entity_view.dbschema.ts`), which has carried venue/EXPERIENCE since
  * they were added to {@link EntityTypeEnum} for the user-bookmark subsystem.
  * Only this narrower Zod subset needed widening.
  *
@@ -44,7 +44,7 @@ export const TRACKABLE_ENTITY_TYPES = [
  * @example
  * ```ts
  * TrackableEntityTypeSchema.parse('ACCOMMODATION'); // ok
- * TrackableEntityTypeSchema.parse('GASTRONOMY');    // ok (HOS-734)
+ * TrackableEntityTypeSchema.parse('venue');    // ok (HOS-734)
  * TrackableEntityTypeSchema.parse('PARTNER');       // ok (HOS-1063)
  * TrackableEntityTypeSchema.parse('DESTINATION');   // throws ZodError
  * ```
@@ -63,7 +63,7 @@ export const TrackableEntityTypeSchema = z.enum(
 
 /**
  * Inferred TypeScript type for the trackable-entity subset.
- * One of `'ACCOMMODATION' | 'POST' | 'EVENT' | 'GASTRONOMY' | 'EXPERIENCE' |
+ * One of `'ACCOMMODATION' | 'POST' | 'EVENT' | 'venue' | 'EXPERIENCE' |
  * 'PARTNER'`.
  */
 export type TrackableEntityType = z.infer<typeof TrackableEntityTypeSchema>;

@@ -11,7 +11,7 @@ import { VerticalEnum } from '../enums/vertical.enum.js';
  * `vertical.activation_event`.
  */
 export const VERTICAL_ACTIVATION_EVENTS = {
-    /** The listing was published (accommodation, gastronomy, experience). */
+    /** The listing was published (accommodation, venue, experience). */
     LISTING_PUBLISHED: 'listing_published',
     /** The person pressed the `Empezar` button (tourist). */
     START_BUTTON_PRESSED: 'start_button_pressed'

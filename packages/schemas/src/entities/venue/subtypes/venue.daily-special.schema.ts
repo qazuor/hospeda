@@ -1,5 +1,5 @@
 /**
- * Gastronomy daily-special schemas — the menú del día (HOS-1041).
+ * venue daily-special schemas — the menú del día (HOS-1041).
  *
  * ## What separates this from the carta
  *
@@ -39,7 +39,7 @@ import { z } from 'zod';
  * is the ordinary shape — so the cap is not one. It is small because this is
  * the DAY's offer, not a second carta: a venue typing twenty rows here is
  * describing its permanent menu and belongs in
- * `GastronomyMenuReplacePayloadSchema`.
+ * `venueMenuReplacePayloadSchema`.
  *
  * A ceiling, not a product tier. The tier decision (`venue-pro` and above)
  * is an ENTITLEMENT, checked at the route — the same split the carta makes.
@@ -50,7 +50,7 @@ export const VENUE_DAILY_SPECIALS_MAX = 10;
  * The highest price a special may carry, in centavos (ARS 1.000.000).
  *
  * Same bound and same reason as the carta's
- * `GASTRONOMY_MENU_MAX_ITEM_PRICE_CENTS`: an integer of centavos typed by a
+ * `venue_MENU_MAX_ITEM_PRICE_CENTS`: an integer of centavos typed by a
  * person, where a slipped decimal point is three orders of magnitude and
  * nothing else stands between the keyboard and the public page.
  */
@@ -175,7 +175,7 @@ export type VenueDailySpecialPublic = z.infer<typeof VenueDailySpecialPublicSche
 /**
  * One special as the owner submits it.
  *
- * Carries NO id, for the reason `GastronomyMenuItemInputSchema` states: the
+ * Carries NO id, for the reason `venueMenuItemInputSchema` states: the
  * specials are written as a whole document, so a client-supplied id would be
  * one the server has to either trust or ignore, and trusting one is how a
  * caller writes into somebody else's listing.

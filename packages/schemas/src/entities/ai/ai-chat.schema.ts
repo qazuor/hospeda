@@ -152,7 +152,7 @@ export type AiChatEntityType = z.infer<typeof AiChatEntityTypeSchema>;
  * Making it optional and adding `entityId` means the old shape and the new one
  * are both valid during a rollout where the API deploys before the web app.
  * The pair is constrained rather than merely permitted: `accommodationId` on a
- * GASTRONOMY or EXPERIENCE request is rejected outright instead of being silently ignored,
+ * venue or EXPERIENCE request is rejected outright instead of being silently ignored,
  * because a body that names a restaurant in `entityId` and an accommodation in
  * `accommodationId` is a client bug, and answering it about either one is worse
  * than refusing it.

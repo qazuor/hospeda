@@ -8,9 +8,9 @@ import { BaseModerationFields } from '../../../common/moderation.schema.js';
 /**
  * Experience Review Schema — User review for an experience listing.
  *
- * Mirrors the `GastronomyReviewSchema` pattern exactly, including
+ * Mirrors the `venueReviewSchema` pattern exactly, including
  * {@link ExperienceRatingSchema} for the rating breakdown (food / service /
- * ambiance / value) — the same dimensions gastronomy uses.
+ * ambiance / value) — the same dimensions venue uses.
  *
  * Columns match the `experience_reviews` DB table exactly:
  * - `title` (text, nullable) — optional short headline for the review.

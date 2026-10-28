@@ -6,7 +6,7 @@ import { BaseModerationFields } from '../../../common/moderation.schema.js';
 import { VenueRatingSchema } from '../../../common/venue-rating.schema.js';
 
 /**
- * Gastronomy Review Schema — User review for a gastronomy listing.
+ * venue Review Schema — User review for a venue listing.
  *
  * Mirrors the accommodation review subtype pattern but uses
  * {@link VenueRatingSchema} for the rating breakdown (food / service /
@@ -25,7 +25,7 @@ export const VenueReviewSchema = z.object({
     // Base ID
     id: z.string().uuid({ message: 'zodError.common.id.invalidUuid' }),
 
-    // Foreign key to the reviewed gastronomy listing
+    // Foreign key to the reviewed venue listing
     venueId: z.string().uuid({ message: 'zodError.common.id.invalidUuid' }),
 
     // Reviewer reference (nullable: guest reviews without an account are allowed)
@@ -118,7 +118,7 @@ export type VenueReview = z.infer<typeof VenueReviewSchema>;
 // ----------------------------------------------------------------------------
 
 /**
- * Input schema for creating a gastronomy review.
+ * Input schema for creating a venue review.
  *
  * `venueId` and `overallRating` are the only required fields.
  * `title` and `content` mirror the DB columns (both nullable/optional).
@@ -151,7 +151,7 @@ export const VenueReviewCreateInputSchema = z.object({
 export type VenueReviewCreateInput = z.infer<typeof VenueReviewCreateInputSchema>;
 
 /**
- * Input schema for updating a gastronomy review (partial).
+ * Input schema for updating a venue review (partial).
  */
 export const VenueReviewUpdateInputSchema = VenueReviewCreateInputSchema.omit({
     venueId: true

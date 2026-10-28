@@ -2,7 +2,7 @@ import { z } from 'zod';
 
 // ============================================================================
 // Listing catalog projections — the amenity / feature rows a public
-// gastronomy or experience detail page renders (HOS-1072).
+// venue or experience detail page renders (HOS-1072).
 // ============================================================================
 
 /**

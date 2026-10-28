@@ -3,7 +3,7 @@ import { ModerationStatusEnumSchema } from '../enums/index.js';
 import { ImageAttributionSchema, mediaAssetUrl } from './media.schema.js';
 
 // ============================================================================
-// ListingMediaSchema — shared relational media row shape for gastronomy and
+// ListingMediaSchema — shared relational media row shape for venue and
 // experience listings. Mirrors `accommodation_media` (HOS-372).
 // ============================================================================
 
@@ -11,16 +11,16 @@ import { ImageAttributionSchema, mediaAssetUrl } from './media.schema.js';
  * Enum schema for the visibility state of a single listing media row.
  *
  * - `visible`  — photo is part of the active gallery (or is the featured image).
- * - `archived` — photo was moved out of the gallery. No gastronomy or experience flow archives
+ * - `archived` — photo was moved out of the gallery. No venue or experience flow archives
  *   photos today (their plans carry `limits: []`, so there is no
  *   downgrade-over-limit remediation like the accommodation one — SPEC-167).
- *   The state is modeled anyway so gastronomy and experience share ONE table
+ *   The state is modeled anyway so venue and experience share ONE table
  *   shape (and therefore one composition/service implementation) with
  *   accommodation instead of diverging.
  *
  * Mirrors `AccommodationMediaStateSchema`
  * (`packages/schemas/src/entities/accommodation/subtypes/accommodation.media.schema.ts`)
- * by value, but is intentionally a SEPARATE schema instance: gastronomy and
+ * by value, but is intentionally a SEPARATE schema instance: venue and
  * experience media is its own domain per ADR-035, and importing
  * from the accommodation entity file would couple two verticals that must be
  * able to evolve independently.
@@ -39,9 +39,9 @@ export type ListingMediaState = z.infer<typeof ListingMediaStateSchema>;
  * base with its own `id` id field and `<vertical>Id` FK:
  *
  * ```ts
- * export const GastronomyMediaSchema = BaseListingMediaSchema.extend({
+ * export const venueMediaSchema = BaseListingMediaSchema.extend({
  *   id: z.string().uuid(),
- *   gastronomyId: z.string().uuid(),
+ *   venueId: z.string().uuid(),
  * });
  * ```
  *
@@ -158,7 +158,7 @@ export type BaseListingMedia = z.infer<typeof BaseListingMediaSchema>;
 /**
  * Shared HTTP payload for `PATCH /<venues|experiences>/:id/media/:mediaId`.
  *
- * The gastronomy/experience twin of `AccommodationMediaUpdatePayloadSchema` (HOS-388) and of
+ * The venue/experience twin of `AccommodationMediaUpdatePayloadSchema` (HOS-388) and of
  * `ContentMediaUpdatePayloadSchema` (`common/content-media.schema.ts`). The
  * three are field-for-field identical and differ only in the `zodError.*`
  * namespace their messages carry — same reason the three ROW schemas are

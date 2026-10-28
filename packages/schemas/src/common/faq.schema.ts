@@ -71,7 +71,7 @@ export type BaseFaqType = z.infer<typeof BaseFaqSchema>;
  * flags today: `isUsableByAi` is inert where there is no AI chat, and the chat
  * currently exists only on accommodations.
  *
- * Kept as a shared fragment from day one so HOS-400 (AI chat for gastronomy and
+ * Kept as a shared fragment from day one so HOS-400 (AI chat for venue and
  * experiences) can adopt it by spreading it into those schemas, rather than
  * copy-pasting the field definitions.
  *
@@ -173,7 +173,7 @@ export type FaqWithChannelVisibilityUpdatePayloadType = z.infer<
  * updatedById, deletedAt, deletedById), lifecycle state, and any internal metadata.
  * Consumers should NEVER rely on the excluded fields being present.
  *
- * Per-entity public schemas (ExperienceFaqPublicSchema, GastronomyFaqPublicSchema)
+ * Per-entity public schemas (ExperienceFaqPublicSchema, venueFaqPublicSchema)
  * extend this with their own `id` and parent FK field.
  */
 export const BaseFaqPublicSchema = BaseFaqSchema.pick({

@@ -1,5 +1,5 @@
 /**
- * Gastronomy venue-event schemas — the venue's own agenda (HOS-1042).
+ * venue venue-event schemas — the venue's own agenda (HOS-1042).
  *
  * Live music night, happy hour, dinner show, the Tuesday deal. Things that
  * happen AT the venue and that a diner may show up for.
@@ -48,7 +48,7 @@ import { z } from 'zod';
  * A ceiling, not a product tier: the tier decision (`venue-pro` and above
  * may keep an agenda at all) is an ENTITLEMENT, checked at the route. This
  * number exists so a single PUT cannot be used to write an unbounded number of
- * rows in one transaction — the same reason `GASTRONOMY_MENU_MAX_SECTIONS`
+ * rows in one transaction — the same reason `venue_MENU_MAX_SECTIONS`
  * exists next to it.
  */
 export const VENUE_EVENTS_MAX_ENTRIES = 30;
@@ -61,7 +61,7 @@ export const VENUE_EVENTS_MAX_ENTRIES = 30;
  * How a venue event repeats. Mirrors `venue_event_recurrence_enum`.
  *
  * Declared here rather than in `enums/` for the same reason
- * `GastronomyMenuFileKindSchema` is: it describes one column of one vertical
+ * `venueMenuFileKindSchema` is: it describes one column of one vertical
  * and has no cross-entity consumer.
  */
 export const VenueEventRecurrenceSchema = z.enum(['once', 'weekly'], {
@@ -228,7 +228,7 @@ function refineRecurrenceShape(
     // since a zero-length event is not a thing a venue announces. An end that
     // is simply earlier in the clock — "22:00 a 02:00" — is a real and common
     // announcement, so it is NOT rejected here: see the note on
-    // `GastronomyEventInputSchema` for why this only catches the same-day case.
+    // `venueEventInputSchema` for why this only catches the same-day case.
     if (
         value.endTime !== undefined &&
         value.endTime !== null &&
@@ -249,7 +249,7 @@ function refineRecurrenceShape(
  * {@link VenueEventsReplacePayloadSchema}), so an id supplied by the
  * client would be an id the server has to either trust or ignore — and trusting
  * one is how a caller writes an event into somebody else's listing. Same
- * reasoning `GastronomyMenuItemInputSchema` states.
+ * reasoning `venueMenuItemInputSchema` states.
  *
  * ## Why an end time earlier than the start is accepted
  *

@@ -24,7 +24,7 @@ import {
 const OWNER_ID = '00000000-0000-4000-a000-000000000001';
 const DESTINATION_ID = '00000000-0000-4000-a000-000000000002';
 
-/** A fully-complete gastronomy listing snapshot. */
+/** A fully-complete venue listing snapshot. */
 function makeCompleteVenueListing(): ListingCompletenessListing {
     return {
         name: 'La Parrilla del Puerto',
@@ -83,7 +83,7 @@ function makeCompleteExperienceListing(): ListingCompletenessListing {
 }
 
 // ---------------------------------------------------------------------------
-// resolveListingCompleteness — gastronomy
+// resolveListingCompleteness — venue
 // ---------------------------------------------------------------------------
 
 describe('resolveListingCompleteness — venue', () => {
@@ -522,8 +522,8 @@ describe('HOS-924 — an experience cannot publish on a channel its page never s
     });
 
     it('accepts a WhatsApp-only venue listing — the narrowing is per-vertical', () => {
-        // Applying the experience rule to gastronomy would make EVERY
-        // gastronomy listing unpublishable: `GastronomyPublicSchema` publishes
+        // Applying the experience rule to venue would make EVERY
+        // venue listing unpublishable: `venuePublicSchema` publishes
         // no `contactInfo` at all. That hole is wider than a mis-calibrated
         // gate and is tracked separately.
         const result = resolveListingCompleteness({

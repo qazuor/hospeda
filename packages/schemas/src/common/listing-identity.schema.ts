@@ -22,7 +22,7 @@ import { I18nTextSchema, TranslationMetaSchema } from './i18n.schema.js';
  *
  * @example
  * ```ts
- * const GastronomySchema = z.object({
+ * const venueSchema = z.object({
  *   id: z.string().uuid(),
  *   ...ListingIdentityFields,
  *   // ... other fields

@@ -37,7 +37,7 @@ export const VenueAdminSearchSchema = AdminSearchBaseSchema.extend({
         .describe('Filter by publication status. Use "all" to show all statuses'),
 
     /** Filter by venue sub-type. */
-    type: VenueTypeEnumSchema.optional().describe('Filter by gastronomy type'),
+    type: VenueTypeEnumSchema.optional().describe('Filter by venue type'),
 
     /** Filter by destination UUID. */
     destinationId: z

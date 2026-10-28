@@ -51,7 +51,7 @@ export const PurchaseAddonSchema = z.object({
      *
      * Only the id is accepted. WHICH table it belongs to is derived server-side
      * from the addon's own `productDomain` — a client that could name the
-     * vertical could pair a gastronomy addon with an accommodation target.
+     * vertical could pair a venue addon with an accommodation target.
      *
      * Validated with `AccommodationIdSchema` because all three listing tables use
      * `uuid` primary keys and that schema is a UUID check; existence and

@@ -17,7 +17,7 @@ import { ImageAttributionSchema, mediaAssetUrl } from './media.schema.js';
  * No editorial flow archives photos today: `archivedGallery` is written only by
  * the accommodation plan-downgrade remediation (SPEC-167), and posts/events
  * have no plan at all. The state is modeled anyway so that posts, events,
- * gastronomy, experience and accommodation listings share ONE table shape — and therefore
+ * venue, experience and accommodation listings share ONE table shape — and therefore
  * one sync/compose implementation — instead of diverging on a column that costs
  * nothing to carry.
  */
@@ -45,7 +45,7 @@ export type ContentMediaState = z.infer<typeof ContentMediaStateSchema>;
  * `BaseListingMediaSchema` (`common/listing-media.schema.ts`) is already this
  * exact object, and `AccommodationMediaSchema` is a fourth. Reusing the listing
  * one here was the obvious move and was deliberately NOT taken: that file is
- * mid-change under HOS-382 (the relational MediaField port to the gastronomy and experience admin
+ * mid-change under HOS-382 (the relational MediaField port to the venue and experience admin
  * forms), and widening a schema another in-flight branch is editing trades a
  * duplicate for a merge conflict on the shape every media table depends on.
  *

@@ -5,7 +5,7 @@
  *
  * Asserting the item schemas alone would be vacuous for the bug this covers.
  * The failure was never that the item shape was wrong: it was that
- * `GastronomyPublicSchema` and `ExperiencePublicSchema` did not DECLARE the
+ * `venuePublicSchema` and `ExperiencePublicSchema` did not DECLARE the
  * fields, so `stripWithSchema` dropped everything the route attached and the
  * owner's ticked amenities never left the API. So every assertion below runs a
  * full public-tier parse and reads the result — remove the `amenities` /

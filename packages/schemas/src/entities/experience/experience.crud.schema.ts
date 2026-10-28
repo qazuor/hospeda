@@ -350,7 +350,7 @@ export const ExperienceOwnerCreateInputSchema = ExperienceSchema.omit({
     reviewsCount: true,
     averageRating: true,
     rating: true,
-    // HOS-1113 — the same three the gastronomy owner-create schema omits, for
+    // HOS-1113 — the same three the venue owner-create schema omits, for
     // the same reason: a `.omit()` schema accepts every base field it does not
     // name, and the owner PATCH (`ExperienceOwnerUpdateInputSchema`) already
     // refuses all three. The route handler spreads this body verbatim into
@@ -424,7 +424,7 @@ export type ExperienceOwnerCreateInput = z.infer<typeof ExperienceOwnerCreateInp
  * Schema for admin full / partial updates to an experience listing (PATCH).
  *
  * All entity fields are partial so the admin may update any subset.
- * Uses `stripShapeDefaults` (same as gastronomy) to prevent Zod 4's
+ * Uses `stripShapeDefaults` (same as venue) to prevent Zod 4's
  * `.partial()` from injecting defaults for absent keys.
  *
  * ### Why server-managed fields are explicitly omitted

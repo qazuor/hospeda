@@ -224,10 +224,10 @@ export type ExtendTrialRequest = z.infer<typeof ExtendTrialRequestSchema>;
  * `productDomain` is optional and scopes the verdict to ONE vertical, mirroring
  * `GET /trial/status`'s own `?productDomain=` (HOS-1282). Eligibility has been
  * per-domain since HOS-1012 D-2 — `resolveTrialEligibility` in
- * `apps/api` REQUIRES the caller to pass one, precisely so a gastronomy or experience call site
+ * `apps/api` REQUIRES the caller to pass one, precisely so a venue or experience call site
  * cannot forget and silently consume the accommodation trial instead — but the
  * route itself only ever pinned `'accommodation'` until HOS-1293 gave it a
- * second real caller (the gastronomy/experience publish pages) that needed its
+ * second real caller (the venue/experience publish pages) that needed its
  * OWN vertical's verdict. Omitted, the route still defaults to
  * `'accommodation'`, matching every pre-existing caller's behaviour.
  */
@@ -255,7 +255,7 @@ export type TrialEligibilityQuery = z.infer<typeof TrialEligibilityQuerySchema>;
  * asked about `'accommodation'`, so its own docs used to say "any product
  * domain" — that was accurate for the ONE caller that existed, not for the
  * underlying rule, which has been per-domain since HOS-1012 D-2: someone who
- * spent their accommodation trial starts clean in gastronomy.) This mirrors,
+ * spent their accommodation trial starts clean in venue.) This mirrors,
  * via the shared `hasAnyPriorSubscription` query, the EXACT rule
  * `subscription-checkout.service.ts` enforces at actual checkout time for that
  * same domain, so this read-only check can never diverge from what checkout

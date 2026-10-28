@@ -1,9 +1,9 @@
 /**
- * Gastronomy menu schemas — the venue's carta (HOS-895).
+ * venue menu schemas — the venue's carta (HOS-895).
  *
  * ## Three ways to show a menu, none of them mandatory
  *
- * Before HOS-895 a menu was ONE thing: `gastronomies.menu_url`, a link to a
+ * Before HOS-895 a menu was ONE thing: `legacy listing tables.menu_url`, a link to a
  * page the venue had published somewhere else. A small restaurant rarely has
  * one; it almost always has a photo or a PDF. Resolving only that, though,
  * would have left the three issues queued behind this one — HOS-1043
@@ -15,8 +15,8 @@
  * | Shape | Where it lives | For whom |
  * |---|---|---|
  * | Structured carta | `venue_menu_sections` + `venue_menu_items` | the venue willing to type its dishes |
- * | Uploaded photo / PDF | `gastronomies.menu_file_url` + `menu_file_kind` | the venue that has the menu as an image |
- * | External link | `gastronomies.menu_url` (pre-existing) | the venue that already publishes one |
+ * | Uploaded photo / PDF | `legacy listing tables.menu_file_url` + `menu_file_kind` | the venue that has the menu as an image |
+ * | External link | `legacy listing tables.menu_url` (pre-existing) | the venue that already publishes one |
  *
  * All three may be set at once and **none is required**. Nobody is made to load
  * forty items to be allowed to publish.
@@ -114,7 +114,7 @@ export type VenueMenuFile = z.infer<typeof VenueMenuFileSchema>;
  * They are part of the STORED row and deliberately absent from the read
  * projections below: a diner reading a menu has no business learning the UUID
  * of the staff member who last touched it. Same public/stored split
- * `GastronomyFaqPublicSchema` makes.
+ * `venueFaqPublicSchema` makes.
  */
 const MenuAuthorFields = {
     /** User who created the row; `null` once that user is deleted. */
@@ -163,7 +163,7 @@ export const VenueMenuItemSchema = z.object({
      * load-bearing field is the URL: `alt` degrades to the dish's own name and
      * `publicId` is never rendered at all, so there is no half-value to make
      * unrepresentable. What flat fields buy instead is that this schema stays a
-     * faithful mirror of the COLUMNS — it is the type `GastronomyMenuItemModel`
+     * faithful mirror of the COLUMNS — it is the type `venueMenuItemModel`
      * is parameterised by, and a nested object here would force a mapping layer
      * between every row read and every row written.
      *
@@ -459,7 +459,7 @@ export const VenueMenuOutputSchema = z.object({
     sections: z.array(VenueMenuSectionPublicSchema),
     /** The uploaded photo or PDF, or `null`. */
     file: VenueMenuFileSchema.nullable(),
-    /** The external link (`gastronomies.menu_url`), or `null`. */
+    /** The external link (`legacy listing tables.menu_url`), or `null`. */
     externalUrl: z.string().url().nullable()
 });
 export type VenueMenuOutput = z.infer<typeof VenueMenuOutputSchema>;

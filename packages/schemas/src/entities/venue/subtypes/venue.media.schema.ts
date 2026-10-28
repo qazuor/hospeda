@@ -13,9 +13,9 @@ import {
 import { ModerationStatusEnumSchema } from '../../../enums/index.js';
 
 /**
- * Enum schema for the visibility state of a single gastronomy media row.
+ * Enum schema for the visibility state of a single venue media row.
  * Re-exports the shared {@link ListingMediaStateSchema} under the
- * per-vertical name used by gastronomy media endpoints/services.
+ * per-vertical name used by venue media endpoints/services.
  *
  * @see packages/db/src/schemas/venue/venue_media.dbschema.ts
  */
@@ -35,15 +35,15 @@ export type VenueMediaState = z.infer<typeof VenueMediaStateSchema>;
 export const VenueMediaSchema = BaseListingMediaSchema.extend({
     /** UUID primary key for this media row. */
     id: z.string().uuid({ message: 'zodError.common.id.invalidUuid' }),
-    /** UUID of the parent gastronomy listing (FK → gastronomies.id). */
+    /** UUID of the parent venue listing (FK → legacy listing tables.id). */
     venueId: z.string().uuid({ message: 'zodError.common.id.invalidUuid' })
 });
 
 /**
- * Type inferred from `GastronomyMediaSchema`.
+ * Type inferred from `venueMediaSchema`.
  *
- * Structurally compatible with `SelectGastronomyMedia` (the Drizzle-inferred
- * type) so the model generic `BaseModelImpl<GastronomyMedia>` typechecks
+ * Structurally compatible with `SelectvenueMedia` (the Drizzle-inferred
+ * type) so the model generic `BaseModelImpl<venueMedia>` typechecks
  * without casts.
  */
 export type VenueMedia = z.infer<typeof VenueMediaSchema>;
@@ -53,7 +53,7 @@ export type VenueMedia = z.infer<typeof VenueMediaSchema>;
 // ----------------------------------------------------------------------------
 
 /**
- * Input payload for adding a single photo to a gastronomy listing gallery.
+ * Input payload for adding a single photo to a venue listing gallery.
  *
  * This is a URL-receiver schema: the upload to Cloudinary has already
  * happened via `POST /api/v1/admin/media/upload`. This endpoint registers
@@ -132,7 +132,7 @@ export type VenueMediaAddPayload = z.infer<typeof VenueMediaAddPayloadSchema>;
  * Combines the URL param `venueId` with the photo payload.
  */
 export const VenueMediaAddInputSchema = z.object({
-    /** UUID of the parent gastronomy listing (from URL param `/:id`). */
+    /** UUID of the parent venue listing (from URL param `/:id`). */
     venueId: z.string().uuid({ message: 'zodError.common.id.invalidUuid' }),
     /** Photo payload received from the caller. */
     media: VenueMediaAddPayloadSchema
@@ -153,12 +153,12 @@ export type VenueMediaAddInput = z.infer<typeof VenueMediaAddInputSchema>;
  * verbatim is what keeps `isFeatured` unreachable from a request body: the
  * caller never states the outcome, the endpoint does.
  *
- * There is no `planGalleryCap` here, unlike the accommodation twin. Gastronomy
+ * There is no `planGalleryCap` here, unlike the accommodation twin. venue
  * listings have no per-plan photo allowance — only the fixed per-entity cap
  * from `getGalleryCap`, which the service reads itself.
  */
 export const VenueFeaturedMediaAddInputSchema = z.object({
-    /** UUID of the parent gastronomy listing (from URL param `/:id`). */
+    /** UUID of the parent venue listing (from URL param `/:id`). */
     venueId: z.string().uuid({ message: 'zodError.common.id.invalidUuid' }),
     /** Photo payload received from the caller — identical to add-media. */
     media: VenueMediaAddPayloadSchema
@@ -191,7 +191,7 @@ export type VenueFeaturedMediaAddOutput = z.infer<typeof VenueFeaturedMediaAddOu
 
 /**
  * Single-row output schema for add-media / update-media / get-media-by-id responses.
- * Wraps the created/updated `GastronomyMedia` row in a `media` key, mirroring
+ * Wraps the created/updated `venueMedia` row in a `media` key, mirroring
  * the `{ faq: ... }` envelope used by FAQ endpoints.
  */
 export const VenueMediaSingleOutputSchema = z.object({
@@ -203,7 +203,7 @@ export type VenueMediaSingleOutput = z.infer<typeof VenueMediaSingleOutputSchema
 
 /**
  * List output schema for `GET /:id/media` responses.
- * Wraps an ordered array of `GastronomyMedia` rows in a `media` key, mirroring
+ * Wraps an ordered array of `venueMedia` rows in a `media` key, mirroring
  * the `{ faqs: [...] }` envelope used by FAQ list endpoints.
  */
 export const VenueMediaListOutputSchema = z.object({
@@ -218,12 +218,12 @@ export type VenueMediaListOutput = z.infer<typeof VenueMediaListOutputSchema>;
 // ----------------------------------------------------------------------------
 
 /**
- * Service input schema for removing a single media row from a gastronomy
+ * Service input schema for removing a single media row from a venue
  * listing gallery. The row is soft-deleted and the remaining visible rows
  * are resequenced.
  */
 export const VenueMediaRemoveInputSchema = z.object({
-    /** UUID of the parent gastronomy listing (from URL param `/:id`). */
+    /** UUID of the parent venue listing (from URL param `/:id`). */
     venueId: z.string().uuid({ message: 'zodError.common.id.invalidUuid' }),
     /** UUID of the media row to remove (from URL param `/:mediaId`). */
     mediaId: z.string().uuid({ message: 'zodError.common.id.invalidUuid' })
@@ -260,11 +260,11 @@ export const VenueMediaReorderPayloadSchema = z.object({
 export type VenueMediaReorderPayload = z.infer<typeof VenueMediaReorderPayloadSchema>;
 
 /**
- * Service input schema for reordering a gastronomy listing's gallery.
+ * Service input schema for reordering a venue listing's gallery.
  * Combines the URL param `venueId` with the ordered-ids payload.
  */
 export const VenueMediaReorderInputSchema = z.object({
-    /** UUID of the parent gastronomy listing (from URL param `/:id`). */
+    /** UUID of the parent venue listing (from URL param `/:id`). */
     venueId: z.string().uuid({ message: 'zodError.common.id.invalidUuid' }),
     /** Ordered array of visible media UUIDs. */
     orderedIds: VenueMediaReorderPayloadSchema.shape.orderedIds
@@ -278,11 +278,11 @@ export type VenueMediaReorderInput = z.infer<typeof VenueMediaReorderInputSchema
 // ----------------------------------------------------------------------------
 
 /**
- * Service input schema for listing a gastronomy listing's media rows.
+ * Service input schema for listing a venue listing's media rows.
  * Supports an optional `state` filter (defaults to `'visible'`).
  */
 export const VenueMediaListInputSchema = z.object({
-    /** UUID of the parent gastronomy listing (from URL param `/:id`). */
+    /** UUID of the parent venue listing (from URL param `/:id`). */
     venueId: z.string().uuid({ message: 'zodError.common.id.invalidUuid' }),
     /**
      * Visibility state filter.
@@ -300,7 +300,7 @@ export type VenueMediaListInput = z.infer<typeof VenueMediaListInputSchema>;
 // ----------------------------------------------------------------------------
 
 /**
- * Service input schema for setting the featured photo of a gastronomy listing.
+ * Service input schema for setting the featured photo of a venue listing.
  *
  * Targets a specific `venue_media` row by ID and promotes it to
  * `is_featured = true`. The previous featured row (if any) is cleared in the
@@ -313,7 +313,7 @@ export type VenueMediaListInput = z.infer<typeof VenueMediaListInputSchema>;
  * writing to avoid tripping the CHECK constraint.
  */
 export const VenueMediaSetFeaturedInputSchema = z.object({
-    /** UUID of the parent gastronomy listing (from URL param `/:id`). */
+    /** UUID of the parent venue listing (from URL param `/:id`). */
     venueId: z.string().uuid({ message: 'zodError.common.id.invalidUuid' }),
     /** UUID of the media row to promote as featured (from URL param `/:mediaId`). */
     mediaId: z.string().uuid({ message: 'zodError.common.id.invalidUuid' })
@@ -327,7 +327,7 @@ export type VenueMediaSetFeaturedInput = z.infer<typeof VenueMediaSetFeaturedInp
 // ----------------------------------------------------------------------------
 
 /**
- * Service input schema for archiving a single gastronomy photo.
+ * Service input schema for archiving a single venue photo.
  *
  * Flips `state = 'archived'` and sets `archivedAt = NOW()` on the target row.
  * A FEATURED photo cannot be archived — the DB CHECK constraint enforces
@@ -335,7 +335,7 @@ export type VenueMediaSetFeaturedInput = z.infer<typeof VenueMediaSetFeaturedInp
  * before reaching the DB when `isFeatured = true`.
  */
 export const VenueMediaArchiveInputSchema = z.object({
-    /** UUID of the parent gastronomy listing (from URL param `/:id`). */
+    /** UUID of the parent venue listing (from URL param `/:id`). */
     venueId: z.string().uuid({ message: 'zodError.common.id.invalidUuid' }),
     /** UUID of the media row to archive (from URL param `/:mediaId`). */
     mediaId: z.string().uuid({ message: 'zodError.common.id.invalidUuid' })
@@ -349,13 +349,13 @@ export type VenueMediaArchiveInput = z.infer<typeof VenueMediaArchiveInputSchema
 // ----------------------------------------------------------------------------
 
 /**
- * Service input schema for restoring an archived gastronomy photo.
+ * Service input schema for restoring an archived venue photo.
  *
  * Flips `state = 'visible'`, clears `archivedAt = NULL`, and appends the row
  * at the END of the current visible gallery (`sortOrder = max visible + 1`).
  */
 export const VenueMediaRestoreInputSchema = z.object({
-    /** UUID of the parent gastronomy listing (from URL param `/:id`). */
+    /** UUID of the parent venue listing (from URL param `/:id`). */
     venueId: z.string().uuid({ message: 'zodError.common.id.invalidUuid' }),
     /** UUID of the archived media row to restore (from URL param `/:mediaId`). */
     mediaId: z.string().uuid({ message: 'zodError.common.id.invalidUuid' })
@@ -384,7 +384,7 @@ export type VenueMediaUpdatePayload = z.infer<typeof VenueMediaUpdatePayloadSche
  */
 export const VenueMediaUpdateInputSchema = z
     .object({
-        /** UUID of the parent gastronomy listing (from URL param `/:id`). */
+        /** UUID of the parent venue listing (from URL param `/:id`). */
         venueId: z.string().uuid({ message: 'zodError.common.id.invalidUuid' }),
         /** UUID of the media row to update (from URL param `/:mediaId`). */
         mediaId: z.string().uuid({ message: 'zodError.common.id.invalidUuid' }),

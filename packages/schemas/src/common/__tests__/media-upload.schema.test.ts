@@ -1052,7 +1052,7 @@ describe('getGalleryCap', () => {
 });
 
 // ============================================================================
-// Gastronomy and experience media support (SPEC-249 T-015a)
+// venue and experience media support (SPEC-249 T-015a)
 // ============================================================================
 
 describe('Venue and experience media entity types', () => {

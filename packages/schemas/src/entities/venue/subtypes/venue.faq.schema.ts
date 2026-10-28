@@ -10,17 +10,17 @@ import {
 } from '../../../common/faq.schema.js';
 
 /**
- * Gastronomy FAQ Schema — FAQ entity belonging to a gastronomy listing.
+ * venue FAQ Schema — FAQ entity belonging to a venue listing.
  *
  * Mirrors `AccommodationFaqSchema`: extends the shared `BaseFaqSchema` with a
- * gastronomy-specific `id` and `venueId` foreign key.
- * Relationship: 1 Gastronomy → N FAQs (1-to-N, not N-to-N).
+ * venue-specific `id` and `venueId` foreign key.
+ * Relationship: 1 venue → N FAQs (1-to-N, not N-to-N).
  */
 export const VenueFaqSchema = BaseFaqSchema.extend({
     /** FAQ entity ID (UUID). */
     id: z.string().uuid({ message: 'zodError.common.id.invalidUuid' }),
 
-    /** The gastronomy listing this FAQ belongs to. */
+    /** The venue listing this FAQ belongs to. */
     venueId: z.string().uuid({ message: 'zodError.common.id.invalidUuid' }),
 
     // HOS-400: channel visibility, adopting the HOS-393 fragment. Required-with-default
@@ -36,7 +36,7 @@ export type VenueFaq = z.infer<typeof VenueFaqSchema>;
 // ----------------------------------------------------------------------------
 
 /**
- * Gastronomy FAQ Public Schema — safe subset for public API responses (SPEC-210).
+ * venue FAQ Public Schema — safe subset for public API responses (SPEC-210).
  *
  * Field set: id, venueId, question, answer, category, displayOrder.
  * Deliberately EXCLUDES audit fields (createdAt, updatedAt, createdById, updatedById,
@@ -47,7 +47,7 @@ export const VenueFaqPublicSchema = BaseFaqPublicSchema.extend({
     /** FAQ entity ID (UUID). */
     id: z.string().uuid({ message: 'zodError.common.id.invalidUuid' }),
 
-    /** The gastronomy listing this FAQ belongs to. */
+    /** The venue listing this FAQ belongs to. */
     venueId: z.string().uuid({ message: 'zodError.common.id.invalidUuid' })
 });
 
@@ -55,8 +55,8 @@ export const VenueFaqPublicSchema = BaseFaqPublicSchema.extend({
 export type VenueFaqPublic = z.infer<typeof VenueFaqPublicSchema>;
 
 /**
- * Output schema for listing gastronomy FAQs — public variant (SPEC-210).
- * Replaces GastronomyFaqListOutputSchema on the public endpoint.
+ * Output schema for listing venue FAQs — public variant (SPEC-210).
+ * Replaces venueFaqListOutputSchema on the public endpoint.
  */
 export const VenueFaqPublicListOutputSchema = z.object({
     faqs: z.array(VenueFaqPublicSchema)
@@ -68,7 +68,7 @@ export type VenueFaqPublicListOutput = z.infer<typeof VenueFaqPublicListOutputSc
 // ----------------------------------------------------------------------------
 
 /**
- * Input schema for adding a FAQ to a gastronomy listing.
+ * Input schema for adding a FAQ to a venue listing.
  */
 export const VenueFaqAddInputSchema = z.object({
     venueId: z.string().uuid({ message: 'zodError.common.id.invalidUuid' }),
@@ -77,7 +77,7 @@ export const VenueFaqAddInputSchema = z.object({
 export type VenueFaqAddInput = z.infer<typeof VenueFaqAddInputSchema>;
 
 /**
- * Input schema for updating a FAQ on a gastronomy listing.
+ * Input schema for updating a FAQ on a venue listing.
  */
 export const VenueFaqUpdateInputSchema = z.object({
     venueId: z.string().uuid({ message: 'zodError.common.id.invalidUuid' }),
@@ -87,7 +87,7 @@ export const VenueFaqUpdateInputSchema = z.object({
 export type VenueFaqUpdateInput = z.infer<typeof VenueFaqUpdateInputSchema>;
 
 /**
- * Input schema for removing a FAQ from a gastronomy listing.
+ * Input schema for removing a FAQ from a venue listing.
  */
 export const VenueFaqRemoveInputSchema = z.object({
     venueId: z.string().uuid({ message: 'zodError.common.id.invalidUuid' }),
@@ -96,7 +96,7 @@ export const VenueFaqRemoveInputSchema = z.object({
 export type VenueFaqRemoveInput = z.infer<typeof VenueFaqRemoveInputSchema>;
 
 /**
- * Input schema for listing FAQs on a gastronomy listing.
+ * Input schema for listing FAQs on a venue listing.
  */
 export const VenueFaqListInputSchema = z.object({
     venueId: z.string().uuid({ message: 'zodError.common.id.invalidUuid' })
@@ -108,7 +108,7 @@ export type VenueFaqListInput = z.infer<typeof VenueFaqListInputSchema>;
 // ----------------------------------------------------------------------------
 
 /**
- * Output schema for a single gastronomy FAQ operation (add / update).
+ * Output schema for a single venue FAQ operation (add / update).
  */
 export const VenueFaqSingleOutputSchema = z.object({
     faq: VenueFaqSchema
@@ -116,7 +116,7 @@ export const VenueFaqSingleOutputSchema = z.object({
 export type VenueFaqSingleOutput = z.infer<typeof VenueFaqSingleOutputSchema>;
 
 /**
- * Output schema for listing gastronomy FAQs.
+ * Output schema for listing venue FAQs.
  */
 export const VenueFaqListOutputSchema = z.object({
     faqs: z.array(VenueFaqSchema)
@@ -124,7 +124,7 @@ export const VenueFaqListOutputSchema = z.object({
 export type VenueFaqListOutput = z.infer<typeof VenueFaqListOutputSchema>;
 
 /**
- * Output schema for removing a gastronomy FAQ.
+ * Output schema for removing a venue FAQ.
  */
 export const VenueFaqRemoveOutputSchema = SuccessSchema;
 
@@ -133,8 +133,8 @@ export const VenueFaqRemoveOutputSchema = SuccessSchema;
 // ----------------------------------------------------------------------------
 
 /**
- * Service input schema for reordering FAQs on a gastronomy listing.
- * The service validates that all faqId values belong to the given gastronomy.
+ * Service input schema for reordering FAQs on a venue listing.
+ * The service validates that all faqId values belong to the given venue.
  */
 export const VenueFaqReorderInputSchema = z.object({
     venueId: z.string().uuid({ message: 'zodError.common.id.invalidUuid' }),
