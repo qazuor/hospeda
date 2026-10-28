@@ -110,7 +110,7 @@ export function renderListingQrSvg(input: { readonly url: string }): Promise<str
  */
 export const LISTING_QR_LABEL_DESCRIPTION: Readonly<Record<ListingQrSheetVertical, string>> = {
     accommodation: 'Accommodation listing QR',
-    venue: 'Gastronomy listing QR',
+    venue: 'Venue listing QR',
     experience: 'Experience listing QR'
 };
 
