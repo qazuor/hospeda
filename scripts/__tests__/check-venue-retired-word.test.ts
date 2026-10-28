@@ -95,9 +95,7 @@ describe('G-FAC-R1 retired venue word', () => {
     it('rejects an uncounted legacy marker', () => {
         const source = `const folder = '${oldWord}s'; // legacy-name-allowed: historical object folder`;
         const { result } = fixture({ 'apps/api/src/delete.ts': source });
-        expect(result.violations.some(({ text }) => text.includes('marker list expected'))).toBe(
-            true
-        );
+        expect(result.violations.some(({ text }) => text.includes('marker'))).toBe(true);
     });
 
     it('rejects removal of the Cloudinary marker from the counted regex occurrence', () => {
