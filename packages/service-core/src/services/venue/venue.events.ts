@@ -175,7 +175,7 @@ export async function getVenueEvents(
         return {
             error: {
                 code: ServiceErrorCode.INTERNAL_ERROR,
-                message: err instanceof Error ? err.message : 'Failed to read gastronomy events'
+                message: err instanceof Error ? err.message : 'Failed to read venue events'
             }
         };
     }
@@ -292,7 +292,7 @@ export async function replaceVenueEvents(
         return {
             error: {
                 code: ServiceErrorCode.INTERNAL_ERROR,
-                message: err instanceof Error ? err.message : 'Failed to replace gastronomy events'
+                message: err instanceof Error ? err.message : 'Failed to replace venue events'
             }
         };
     }

@@ -235,7 +235,7 @@ export function checkVenueCanHardDelete(actor: Actor, _entity: unknown): void {
     if (!hasListingPermission(actor, 'delete', VERTICAL)) {
         throw new ServiceError(
             ServiceErrorCode.FORBIDDEN,
-            'Permission denied: Insufficient permissions to permanently delete gastronomy listing'
+            'Permission denied: Insufficient permissions to permanently delete venue listing'
         );
     }
 }

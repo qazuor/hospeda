@@ -281,7 +281,7 @@ export async function removeVenueMedia(
         if (!mediaRow || mediaRow.venueId !== validated.venueId || mediaRow.deletedAt) {
             throw new ServiceError(
                 ServiceErrorCode.NOT_FOUND,
-                'Media not found for this gastronomy listing'
+                'Media not found for this venue listing'
             );
         }
 
@@ -427,7 +427,7 @@ export async function reorderVenueMedia(
             if (extraIds.length > 0) details.push(`unknown/foreign: ${extraIds.join(', ')}`);
             throw new ServiceError(
                 ServiceErrorCode.VALIDATION_ERROR,
-                `orderedIds does not match visible media for this gastronomy listing — ${details.join('; ')}`
+                `orderedIds does not match visible media for this venue listing — ${details.join('; ')}`
             );
         }
 
@@ -596,7 +596,7 @@ export async function setFeaturedVenueMedia(
         if (!mediaRow || mediaRow.venueId !== validated.venueId || mediaRow.deletedAt) {
             throw new ServiceError(
                 ServiceErrorCode.NOT_FOUND,
-                'Media not found for this gastronomy listing'
+                'Media not found for this venue listing'
             );
         }
 
@@ -732,7 +732,7 @@ export async function updateVenueMedia(
             if (!mediaRow || mediaRow.venueId !== validated.venueId || mediaRow.deletedAt) {
                 throw new ServiceError(
                     ServiceErrorCode.NOT_FOUND,
-                    'Media not found for this gastronomy listing'
+                    'Media not found for this venue listing'
                 );
             }
 

@@ -454,7 +454,7 @@ export async function seedDestinationReview(
             cleanliness: 5,
             hospitality: 5,
             culturalOffer: 4,
-            gastronomy: 5,
+            venue: 5,
             affordability: 4,
             nightlife: 3,
             infrastructure: 4,
@@ -798,7 +798,7 @@ export async function seedVenue(
 
     await tx.insert(users).values({
         id: ownerId,
-        email: `seed-gastro-owner-${uid}@example.com`,
+        email: `seed-venue-owner-${uid}@example.com`,
         displayName: 'Venue Owner',
         emailVerified: true,
         lifecycleState: 'ACTIVE'
@@ -806,11 +806,11 @@ export async function seedVenue(
 
     await tx.insert(destinations).values({
         id: destinationId,
-        slug: `seed-gastro-dest-${uid}`,
+        slug: `seed-venue-dest-${uid}`,
         name: 'Venue Destination',
         destinationType: 'CITY',
         level: 4,
-        path: `/seed/gastro-dest-${uid}`,
+        path: `/seed/venue-dest-${uid}`,
         summary: 'Seed venue destination summary',
         description: 'Seed venue destination description',
         location: {
@@ -821,7 +821,7 @@ export async function seedVenue(
         media: {
             featuredImage: {
                 moderationState: 'APPROVED',
-                url: 'https://example.com/seed-gastro-destination.jpg'
+                url: 'https://example.com/seed-venue-destination.jpg'
             }
         },
         lifecycleState: 'ACTIVE'

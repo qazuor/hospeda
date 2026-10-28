@@ -181,7 +181,7 @@ export class VenueReviewService extends BaseCrudService<
         if (!actor?.id) {
             throw new ServiceError(
                 ServiceErrorCode.FORBIDDEN,
-                'Permission denied: authentication required to submit a gastronomy review'
+                'Permission denied: authentication required to submit a venue review'
             );
         }
     }
@@ -191,7 +191,7 @@ export class VenueReviewService extends BaseCrudService<
         if (!hasPermission(actor, PermissionEnum.VENUE_EDIT_ALL)) {
             throw new ServiceError(
                 ServiceErrorCode.FORBIDDEN,
-                'Permission denied: VENUE_EDIT_ALL required to update a gastronomy review'
+                'Permission denied: VENUE_EDIT_ALL required to update a venue review'
             );
         }
     }
@@ -202,7 +202,7 @@ export class VenueReviewService extends BaseCrudService<
         if (!hasPermission(actor, PermissionEnum.VENUE_EDIT_ALL) && !isAuthor) {
             throw new ServiceError(
                 ServiceErrorCode.FORBIDDEN,
-                'Permission denied: cannot delete this gastronomy review'
+                'Permission denied: cannot delete this venue review'
             );
         }
     }
@@ -212,7 +212,7 @@ export class VenueReviewService extends BaseCrudService<
         if (!hasPermission(actor, PermissionEnum.VENUE_EDIT_ALL)) {
             throw new ServiceError(
                 ServiceErrorCode.FORBIDDEN,
-                'Permission denied: VENUE_EDIT_ALL required to permanently delete a gastronomy review'
+                'Permission denied: VENUE_EDIT_ALL required to permanently delete a venue review'
             );
         }
     }
@@ -222,7 +222,7 @@ export class VenueReviewService extends BaseCrudService<
         if (!hasPermission(actor, PermissionEnum.VENUE_EDIT_ALL)) {
             throw new ServiceError(
                 ServiceErrorCode.FORBIDDEN,
-                'Permission denied: VENUE_EDIT_ALL required to restore a gastronomy review'
+                'Permission denied: VENUE_EDIT_ALL required to restore a venue review'
             );
         }
     }
@@ -251,7 +251,7 @@ export class VenueReviewService extends BaseCrudService<
         if (!hasPermission(actor, PermissionEnum.VENUE_EDIT_ALL)) {
             throw new ServiceError(
                 ServiceErrorCode.FORBIDDEN,
-                'Permission denied: VENUE_EDIT_ALL required to update gastronomy review visibility'
+                'Permission denied: VENUE_EDIT_ALL required to update venue review visibility'
             );
         }
     }
@@ -265,7 +265,7 @@ export class VenueReviewService extends BaseCrudService<
         if (!hasPermission(actor, PermissionEnum.VENUE_MODERATE_REVIEW)) {
             throw new ServiceError(
                 ServiceErrorCode.FORBIDDEN,
-                'Permission denied: VENUE_MODERATE_REVIEW required for gastronomy review admin list'
+                'Permission denied: VENUE_MODERATE_REVIEW required for venue review admin list'
             );
         }
     }
@@ -307,7 +307,7 @@ export class VenueReviewService extends BaseCrudService<
         if (existing) {
             throw new ServiceError(
                 ServiceErrorCode.ALREADY_EXISTS,
-                'You have already submitted a review for this gastronomy listing.'
+                'You have already submitted a review for this venue listing.'
             );
         }
 
@@ -441,7 +441,7 @@ export class VenueReviewService extends BaseCrudService<
                 return {
                     error: {
                         code: ServiceErrorCode.NOT_FOUND,
-                        message: 'Gastronomy review not found'
+                        message: 'Venue review not found'
                     }
                 };
             }

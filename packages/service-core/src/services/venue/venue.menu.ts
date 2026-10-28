@@ -195,7 +195,7 @@ export async function getVenueMenu(
         return {
             error: {
                 code: ServiceErrorCode.INTERNAL_ERROR,
-                message: err instanceof Error ? err.message : 'Failed to read gastronomy menu'
+                message: err instanceof Error ? err.message : 'Failed to read venue menu'
             }
         };
     }
@@ -354,7 +354,7 @@ export async function replaceVenueMenu(
         return {
             error: {
                 code: ServiceErrorCode.INTERNAL_ERROR,
-                message: err instanceof Error ? err.message : 'Failed to replace gastronomy menu'
+                message: err instanceof Error ? err.message : 'Failed to replace venue menu'
             }
         };
     }

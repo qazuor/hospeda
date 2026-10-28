@@ -104,7 +104,7 @@ export function buildVenueMenuQrLabel(input: {
     readonly name: string;
     readonly slug: string;
 }): string {
-    const label = `Gastronomy menu QR — ${input.name} (${input.slug})`;
+    const label = `Venue menu QR — ${input.name} (${input.slug})`;
     return label.length > QR_CODE_LABEL_MAX_LENGTH
         ? label.slice(0, QR_CODE_LABEL_MAX_LENGTH)
         : label;

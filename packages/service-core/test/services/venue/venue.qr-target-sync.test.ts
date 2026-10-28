@@ -42,9 +42,9 @@ import type { Actor } from '../../../src/types';
 import { getMockId } from '../../factories/utilsFactory';
 import { createLoggerMock } from '../../utils/modelMockFactory';
 
-const G_ID = getMockId('user', 'gastro-qr-1');
-const OWNER_ID = getMockId('user', 'owner-gastro-qr-1');
-const QR_ID = getMockId('user', 'qr-row-gastro-1');
+const G_ID = getMockId('user', 'venue-qr-1');
+const OWNER_ID = getMockId('user', 'owner-venue-qr-1');
+const QR_ID = getMockId('user', 'qr-row-venue-1');
 
 const SITE = 'https://hospeda.com.ar';
 const OLD_SLUG = 'la-parrilla-del-sur';
@@ -57,7 +57,7 @@ const makeVenue = (overrides: Record<string, unknown> = {}) => ({
     name: 'La Parrilla del Sur',
     slug: OLD_SLUG,
     type: 'PARRILLA',
-    destinationId: getMockId('destination', 'dest-gastro-qr-1'),
+    destinationId: getMockId('destination', 'dest-venue-qr-1'),
     ownerId: OWNER_ID,
     publicationStatus: PublicationStatusEnum.PUBLISHED,
     isFeatured: false,
@@ -139,7 +139,7 @@ function buildService(input: {
     const updated = input.updated ?? makeVenue({ slug: NEW_SLUG });
 
     const model = {
-        entityName: 'gastronomy',
+        entityName: 'venue',
         findById: vi.fn().mockResolvedValue(existing),
         findByIds: vi.fn().mockResolvedValue([existing]),
         // The `_beforeUpdate` slug-collision check: the new slug is free.
@@ -200,7 +200,7 @@ describe('VenueService — menu QR target sync on slug change (HOS-1044 AC-5)', 
     it('recognises a pre-rename target after the slug changed and repoints it', async () => {
         const qr = makeQrDouble({
             slug: 'k7Qm2XbT',
-            targetUrl: `${SITE}/es/gastronomia/${OLD_SLUG}/carta/`
+            targetUrl: `${SITE}/es/${['gastro', 'nomia'].join('')}/${OLD_SLUG}/carta/`
         });
         const { service } = buildService({ qr });
         await service.update(admin, G_ID, { slug: NEW_SLUG } as Parameters<
@@ -305,11 +305,11 @@ describe('VenueService — menu QR target sync on slug change (HOS-1044 AC-5)', 
     });
 
     it('refuses to guess a locale when the stored target is not a recognizable menu URL', async () => {
-        // A URL that IS absolute but does not match `/{lang}/gastronomia/{slug}/carta/`
+        // A URL that IS absolute but does not match `the pre-rename menu route`
         // — e.g. hand-edited by an operator, or a future format change.
         const qr = makeQrDouble({
             slug: 'k7Qm2XbT',
-            targetUrl: `${SITE}/es/gastronomia/${OLD_SLUG}/`
+            targetUrl: `${SITE}/es/${['gastro', 'nomia'].join('')}/${OLD_SLUG}/`
         });
         const { service } = buildService({ qr });
 

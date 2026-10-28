@@ -150,8 +150,7 @@ export async function getVenueDailySpecials(
         return {
             error: {
                 code: ServiceErrorCode.INTERNAL_ERROR,
-                message:
-                    err instanceof Error ? err.message : 'Failed to read gastronomy daily specials'
+                message: err instanceof Error ? err.message : 'Failed to read venue daily specials'
             }
         };
     }
@@ -266,9 +265,7 @@ export async function replaceVenueDailySpecials(
             error: {
                 code: ServiceErrorCode.INTERNAL_ERROR,
                 message:
-                    err instanceof Error
-                        ? err.message
-                        : 'Failed to replace gastronomy daily specials'
+                    err instanceof Error ? err.message : 'Failed to replace venue daily specials'
             }
         };
     }

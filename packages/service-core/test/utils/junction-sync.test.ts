@@ -41,13 +41,13 @@ function createPaginatingModel<TRow>(rows: readonly TRow[]) {
 describe('readAllJunctionRows', () => {
     it('reads the full set with a non-accommodation `where` (the listing shape)', async () => {
         const rows = Array.from({ length: 45 }, (_, i) => ({
-            gastronomyId: 'gastro-1',
+            venueId: 'venue-1',
             amenityId: `am-${i}`
         }));
         const junctionModel = createPaginatingModel(rows);
 
         const result = await readAllJunctionRows({
-            where: { gastronomyId: 'gastro-1' },
+            where: { venueId: 'venue-1' },
             junctionModel,
             sortBy: 'amenityId',
             tx
@@ -55,7 +55,7 @@ describe('readAllJunctionRows', () => {
 
         expect(result).toHaveLength(45);
         expect(junctionModel.findAll).toHaveBeenCalledWith(
-            { gastronomyId: 'gastro-1' },
+            { venueId: 'venue-1' },
             expect.objectContaining({ pageSize: PAGE_SIZE, sortBy: 'amenityId', sortOrder: 'asc' }),
             undefined,
             tx

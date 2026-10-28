@@ -614,7 +614,7 @@ export class VenueService extends BaseListingService<
                 return {
                     error: {
                         code: ServiceErrorCode.NOT_FOUND,
-                        message: 'Gastronomy listing not found'
+                        message: 'Venue listing not found'
                     }
                 };
             }
@@ -626,7 +626,7 @@ export class VenueService extends BaseListingService<
                 return {
                     error: {
                         code: ServiceErrorCode.NOT_FOUND,
-                        message: 'Gastronomy listing not found'
+                        message: 'Venue listing not found'
                     }
                 };
             }

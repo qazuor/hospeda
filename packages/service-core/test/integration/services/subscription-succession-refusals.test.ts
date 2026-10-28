@@ -227,7 +227,7 @@ describe('TEST:B3:39 S1 succession branch refusals', () => {
         const planId = (
             await getServiceTestPool().query<{ id: string }>(
                 'INSERT INTO plan (vertical, slug, name) VALUES ($1, $2, $3) RETURNING id',
-                ['venue', `succession-gastro-${crypto.randomUUID()}`, 'Gastronomy plan']
+                ['venue', `succession-venue-${crypto.randomUUID()}`, 'Venue plan']
             )
         ).rows[0]?.id;
         const versionId = (

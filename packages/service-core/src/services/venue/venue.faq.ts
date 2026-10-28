@@ -202,7 +202,7 @@ export async function updateVenueFaq(
             if (!faq || faq.venueId !== validated.venueId || faq.deletedAt) {
                 throw new ServiceError(
                     ServiceErrorCode.NOT_FOUND,
-                    'FAQ not found for this gastronomy listing'
+                    'FAQ not found for this venue listing'
                 );
             }
 
@@ -285,7 +285,7 @@ export async function removeVenueFaq(
             if (!faq || faq.venueId !== validated.venueId || faq.deletedAt) {
                 throw new ServiceError(
                     ServiceErrorCode.NOT_FOUND,
-                    'FAQ not found for this gastronomy listing'
+                    'FAQ not found for this venue listing'
                 );
             }
 
@@ -358,7 +358,7 @@ export async function listVenueFaqs(
         );
         if (!venue) {
             return {
-                error: { code: ServiceErrorCode.NOT_FOUND, message: 'Gastronomy listing not found' }
+                error: { code: ServiceErrorCode.NOT_FOUND, message: 'Venue listing not found' }
             };
         }
 
@@ -446,7 +446,7 @@ export async function reorderVenueFaqs(
             if (unknownIds.length > 0) {
                 throw new ServiceError(
                     ServiceErrorCode.VALIDATION_ERROR,
-                    `Unknown or foreign faqId(s) for this gastronomy listing: ${unknownIds.join(', ')}`
+                    `Unknown or foreign faqId(s) for this venue listing: ${unknownIds.join(', ')}`
                 );
             }
 
