@@ -45,7 +45,7 @@ const SPEC_096_REQUIRED_NAMESPACES = [
     'ui',
     'account',
     // Gastronomy listing listings (SPEC-239)
-    'gastronomy',
+    'venue',
     // Listing shared — lead form, change-password, visibility (SPEC-239)
     'listing',
     // Legal cookies page + partners directory — registered as runtime

@@ -68,7 +68,7 @@ export const webNamespaces = [
     'aiSearch',
     'host-trades',
     'mobile',
-    'gastronomy',
+    'venue',
     'google-calendar',
     'listing',
     'external-reputation',
@@ -139,7 +139,6 @@ import faqEn from './locales/en/faq.json';
 import featuresEn from './locales/en/features.json';
 import fieldsEn from './locales/en/fields.json';
 import footerEn from './locales/en/footer.json';
-import gastronomyEn from './locales/en/gastronomy.json';
 import googleCalendarEn from './locales/en/google-calendar.json';
 import homeEn from './locales/en/home.json';
 import hostEn from './locales/en/host.json';
@@ -163,6 +162,7 @@ import tagsEn from './locales/en/tags.json';
 import termsEn from './locales/en/terms.json';
 import uiEn from './locales/en/ui.json';
 import validationEn from './locales/en/validation.json';
+import venueEn from './locales/en/venue.json';
 // ---------------------------------------------------------------------------
 // Spanish — shared namespaces only
 // ---------------------------------------------------------------------------
@@ -196,7 +196,6 @@ import faqEs from './locales/es/faq.json';
 import featuresEs from './locales/es/features.json';
 import fieldsEs from './locales/es/fields.json';
 import footerEs from './locales/es/footer.json';
-import gastronomyEs from './locales/es/gastronomy.json';
 import googleCalendarEs from './locales/es/google-calendar.json';
 import homeEs from './locales/es/home.json';
 import hostEs from './locales/es/host.json';
@@ -220,6 +219,7 @@ import tagsEs from './locales/es/tags.json';
 import termsEs from './locales/es/terms.json';
 import uiEs from './locales/es/ui.json';
 import validationEs from './locales/es/validation.json';
+import venueEs from './locales/es/venue.json';
 
 // ---------------------------------------------------------------------------
 // Portuguese — shared namespaces only
@@ -254,7 +254,6 @@ import faqPt from './locales/pt/faq.json';
 import featuresPt from './locales/pt/features.json';
 import fieldsPt from './locales/pt/fields.json';
 import footerPt from './locales/pt/footer.json';
-import gastronomyPt from './locales/pt/gastronomy.json';
 import googleCalendarPt from './locales/pt/google-calendar.json';
 import homePt from './locales/pt/home.json';
 import hostPt from './locales/pt/host.json';
@@ -278,6 +277,7 @@ import tagsPt from './locales/pt/tags.json';
 import termsPt from './locales/pt/terms.json';
 import uiPt from './locales/pt/ui.json';
 import validationPt from './locales/pt/validation.json';
+import venuePt from './locales/pt/venue.json';
 
 // ---------------------------------------------------------------------------
 // Shared raw translations (no admin-* namespaces)
@@ -336,7 +336,7 @@ export const rawWebTranslations = {
         tags: tagsEs,
         maps: mapsEs,
         mobile: mobileEs,
-        gastronomy: gastronomyEs,
+        venue: venueEs,
         'google-calendar': googleCalendarEs,
         listing: listingEs,
         experience: experienceEs,
@@ -392,7 +392,7 @@ export const rawWebTranslations = {
         tags: tagsEn,
         maps: mapsEn,
         mobile: mobileEn,
-        gastronomy: gastronomyEn,
+        venue: venueEn,
         'google-calendar': googleCalendarEn,
         listing: listingEn,
         experience: experienceEn,
@@ -448,7 +448,7 @@ export const rawWebTranslations = {
         tags: tagsPt,
         maps: mapsPt,
         mobile: mobilePt,
-        gastronomy: gastronomyPt,
+        venue: venuePt,
         'google-calendar': googleCalendarPt,
         listing: listingPt,
         experience: experiencePt,
