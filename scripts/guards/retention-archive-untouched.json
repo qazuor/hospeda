@@ -32,7 +32,7 @@
         },
         {
             "file": "packages/notifications/src/services/outbox/listing-archived-renderers.tsx",
-            "sha256": "bcd02d78dfae11d929a0809c7d9835fa99f885af52755dbea136cc284a0508c7"
+            "sha256": "1ae4db9e8466e2922768df6a5523d6f6e3dcd0500af1d009a36d20e1a6f2c17e"
         },
         {
             "file": "packages/notifications/src/templates/listing/listing-archived.tsx",

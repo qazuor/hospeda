@@ -167,6 +167,16 @@ export function formatTrialVerticals(input: { readonly verticals: readonly strin
  * @returns The label ready to be embedded in a sentence.
  */
 export function formatTrialVerticalInline(input: { readonly vertical: string }): string {
-    const label = formatTrialVerticals({ verticals: [input.vertical] });
-    return input.vertical === 'venue' ? label : label.toLocaleLowerCase('es-AR');
+    const label = Object.hasOwn(TRIAL_VERTICAL_INLINE_LABELS, input.vertical)
+        ? TRIAL_VERTICAL_INLINE_LABELS[input.vertical as TrialCampaignVertical]
+        : undefined;
+    return label ?? input.vertical.toLocaleLowerCase('es-AR');
 }
+
+/** Mid-sentence labels: common nouns lowercased, the venue proper name kept as is. */
+const TRIAL_VERTICAL_INLINE_LABELS: Readonly<Record<TrialCampaignVertical, string>> = {
+    accommodation: 'alojamiento',
+    venue: 'Comer y salir',
+    experience: 'experiencias',
+    tourist: 'turismo'
+};
