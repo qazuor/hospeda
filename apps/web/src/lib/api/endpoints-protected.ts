@@ -60,7 +60,7 @@ import { transformProtectedEffectiveSet } from './transforms';
 import type { ApiResult, PaginatedResponse } from './types';
 
 /**
- * The two gastronomy/experience verticals that share the granular media endpoint shape
+ * The two venue/experience verticals that share the granular media endpoint shape
  * (HOS-372). Duplicated (not imported) from `@/lib/listing/owner-listings`
  * to avoid this low-level endpoints module depending on a higher-level
  * feature module — mirrors how other entity-scoped unions in this file are
@@ -2890,7 +2890,7 @@ export type SubscribeDestinationResponse = z.infer<typeof SubscribeDestinationRe
  */
 export const publishApi = {
     /**
-     * Publish a gastronomy or experience listing.
+     * Publish a venue or experience listing.
      *
      * @param params.vertical - Listing vertical.
      * @param params.id - Listing identifier.

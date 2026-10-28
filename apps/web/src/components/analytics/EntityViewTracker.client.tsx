@@ -3,7 +3,7 @@
  * @description Headless React island that fires a typed PostHog event and a
  * view beacon once when a post or event detail page hydrates (SPEC-159 T-013).
  * Widened by HOS-734 to also capture the view beacon (no PostHog funnel event
- * yet) on gastronomy and experience detail pages — the plumbing that feeds
+ * yet) on venue and experience detail pages — the plumbing that feeds
  * the owner-facing "basic view stats" widget in `mi-cuenta/comercio`.
  *
  * Renders nothing. Mount in detail pages with `client:idle` so it never
@@ -11,9 +11,9 @@
  *
  * The PostHog events are explicit (not relying on autocapture `$pageview`)
  * because we want typed props (slug, post_id / event_id, locale) that funnels
- * can filter against without parsing the URL. GASTRONOMY and EXPERIENCE do
+ * can filter against without parsing the URL. VENUE and EXPERIENCE do
  * NOT get a dedicated PostHog event here (owner decision, HOS-734): a
- * marketing-analytics funnel for gastronomy and experience views is out of scope for the
+ * marketing-analytics funnel for venue and experience views is out of scope for the
  * "básicas" this issue covers — only the `entity_views` capture (which feeds
  * the real owner-facing stat) is wired for them.
  *
@@ -44,7 +44,7 @@ import type { SupportedLocale } from '@/lib/i18n';
 /**
  * The entity types this tracker currently supports.
  * POST and EVENT each have a corresponding PostHog event in the catalog.
- * GASTRONOMY and EXPERIENCE (HOS-734) and PARTNER (HOS-1063) capture the view
+ * VENUE and EXPERIENCE (HOS-734) and PARTNER (HOS-1063) capture the view
  * beacon only — see the file header for why no PostHog event is fired for them.
  *
  * This list had DRIFTED from the server's `TRACKABLE_ENTITY_TYPES`, which has
@@ -83,13 +83,13 @@ const ENTITY_TYPE_ENUM_MAP = {
 } as const satisfies Record<SupportedEntityType, EntityTypeEnum>;
 
 /**
- * Headless React island that fires analytics on post, event, gastronomy, and
+ * Headless React island that fires analytics on post, event, venue, and
  * experience detail page views (HOS-734 widened the last two).
  *
  * On each mount it:
  *  1. For POST/EVENT: fires the typed PostHog event (`post_viewed` /
  *     `event_viewed`) with slug, entity id, and locale (SPEC-159 T-013). For
- *     GASTRONOMY/EXPERIENCE: no PostHog event yet — see the file header.
+ *     VENUE/EXPERIENCE: no PostHog event yet — see the file header.
  *  2. Sends a view beacon to `POST /api/v1/public/views` (SPEC-159 T-013,
  *     widened HOS-734) for every supported entity type.
  *
@@ -120,8 +120,8 @@ export function EntityViewTracker({
                 });
                 break;
             default:
-                // GASTRONOMY / EXPERIENCE (HOS-734): entity_views capture only.
-                // No dedicated PostHog funnel event yet — advanced gastronomy/experience
+                // VENUE / EXPERIENCE (HOS-734): entity_views capture only.
+                // No dedicated PostHog funnel event yet — advanced venue/experience
                 // analytics (QR scans, dish views, origin destinations) will
                 // define their own event catalog in a follow-up spec.
                 break;

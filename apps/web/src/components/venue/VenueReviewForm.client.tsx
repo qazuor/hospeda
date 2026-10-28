@@ -1,13 +1,13 @@
 /**
  * @file VenueReviewForm.client.tsx
- * @description Review-submission island for the gastronomy detail page
+ * @description Review-submission island for the venue detail page
  * (SPEC-239 / SPEC-259 smoke follow-up). Lets an authenticated visitor open a
  * native <dialog> with a compact review form.
  *
- * Domain difference vs. the accommodation review form: gastronomy reviews use a
+ * Domain difference vs. the accommodation review form: venue reviews use a
  * single required scalar `overallRating` (1–5) instead of a multi-dimension
  * breakdown — the granular `rating` object is optional and intentionally not
- * collected here (see the gastronomy review schema). Submitted reviews start in
+ * collected here (see the venue review schema). Submitted reviews start in
  * PENDING moderation, so the success state shows a "pending approval" notice
  * rather than implying the review is already live.
  *

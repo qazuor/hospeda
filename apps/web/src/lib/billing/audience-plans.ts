@@ -30,7 +30,7 @@
  *
  * ## Why five cards and not four
  *
- * Gastronomy and experience are SEPARATE audiences, never a joint
+ * Venue and experience are SEPARATE audiences, never a joint
  * card. `ProductDomainEnum` holds the separate per-vertical domains and the old
  * shared umbrella value is RETIRED (HOS-692); a surface that grouped the two verticals would reintroduce
  * the vocabulary the product-domain split exists to remove.

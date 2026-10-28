@@ -1,13 +1,13 @@
 /**
  * @file VenueMenuQrWidget.client.tsx
- * @description Owner panel for the gastronomy menu QR and its scan analytics
+ * @description Owner panel for the venue menu QR and its scan analytics
  * (HOS-1044 §6.6), rendered in `mi-cuenta/comercio/` next to
  * `ListingViewsWidget`.
  *
  * Follows that same widget's pattern rather than inventing a new one:
  * `client:visible`, a `loading`/`ready`/`error` state machine, its own
  * `*.module.css`. It adds one state ListingViewsWidget does not need —
- * `locked` — because unlike `VIEW_BASIC_STATS` (the gastronomy/experience floor every
+ * `locked` — because unlike `VIEW_BASIC_STATS` (the venue/experience floor every
  * tier gets), `menu_qr_scan_metrics` is a premium-only entitlement
  * (`venue-premium`), so a basic/pro venue's request answers `403`. That
  * refusal is a REAL state, never rendered as a generic error: the copy names
@@ -42,7 +42,7 @@ import { createTranslations, type TranslationFn } from '@/lib/i18n';
 import { buildSvgDataUrl, renderSvgToPngBlob } from '@/lib/qr/qr-png';
 import styles from './VenueMenuQrWidget.module.css';
 
-/** The one gastronomy listing shape this widget needs. */
+/** The one venue listing shape this widget needs. */
 export interface VenueMenuQrWidgetListing {
     readonly id: string;
     readonly name: string;
@@ -50,7 +50,7 @@ export interface VenueMenuQrWidgetListing {
 
 export interface VenueMenuQrWidgetProps {
     readonly locale: SupportedLocale;
-    /** The owner's gastronomy listings only — the menu QR is gastronomy-specific. */
+    /** The owner's venue listings only — the menu QR is venue-specific. */
     readonly listings: readonly VenueMenuQrWidgetListing[];
 }
 
