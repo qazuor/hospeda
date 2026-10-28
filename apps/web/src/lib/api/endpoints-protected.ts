@@ -102,7 +102,7 @@ type BookmarkEntityType =
     | 'DESTINATION'
     | 'EVENT'
     | 'EXPERIENCE'
-    | 'GASTRONOMY'
+    | 'VENUE'
     | 'POST';
 
 /** Protected user bookmark API endpoints */

@@ -242,7 +242,7 @@ describe('EntityViewTracker — EVENT (SPEC-159 T-013)', () => {
 
 describe('EntityViewTracker — GASTRONOMY / EXPERIENCE (HOS-734)', () => {
     const VENUE_PROPS = {
-        entityType: 'GASTRONOMY' as const,
+        entityType: 'VENUE' as const,
         slug: 'la-parrilla-del-puerto',
         entityId: '550e8400-e29b-41d4-a716-446655440003',
         locale: 'es' as const

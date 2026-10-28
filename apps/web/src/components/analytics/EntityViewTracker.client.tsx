@@ -53,7 +53,7 @@ import type { SupportedLocale } from '@/lib/i18n';
  * accepts, and accommodations are tracked by their own dedicated island), but it
  * is worth knowing about before assuming the two lists mirror each other.
  */
-type SupportedEntityType = 'POST' | 'EVENT' | 'GASTRONOMY' | 'EXPERIENCE' | 'PARTNER';
+type SupportedEntityType = 'POST' | 'EVENT' | 'VENUE' | 'EXPERIENCE' | 'PARTNER';
 
 /**
  * Props for {@link EntityViewTracker}.
@@ -77,7 +77,7 @@ interface EntityViewTrackerProps {
 const ENTITY_TYPE_ENUM_MAP = {
     POST: EntityTypeEnum.POST,
     EVENT: EntityTypeEnum.EVENT,
-    GASTRONOMY: EntityTypeEnum.VENUE,
+    VENUE: EntityTypeEnum.VENUE,
     EXPERIENCE: EntityTypeEnum.EXPERIENCE,
     PARTNER: EntityTypeEnum.PARTNER
 } as const satisfies Record<SupportedEntityType, EntityTypeEnum>;

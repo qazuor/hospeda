@@ -36,6 +36,11 @@ describe('comer-y-salir/[slug].astro', () => {
             expect(src).toContain('venueApi.getReviews');
             expect(src).toContain('venueApi.getFaqs');
         });
+
+        it('uses the renamed venue entity type for view tracking and bookmarks', () => {
+            expect(src).toContain("entityType: 'VENUE'");
+            expect(src).toContain('entityType="VENUE"');
+        });
     });
 
     describe('transform', () => {

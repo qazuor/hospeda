@@ -169,7 +169,7 @@ let bookmarkCount: number | undefined;
 
 try {
     const countResult = await userBookmarksPublicApi.count({
-        entityType: 'GASTRONOMY',
+        entityType: 'VENUE',
         entityId: venue.id
     });
     if (countResult.ok) {
@@ -442,7 +442,7 @@ const breadcrumbItems = [
              basic view stats in mi-cuenta/comercio. -->
         <EntityViewTracker
             client:idle
-            entityType="GASTRONOMY"
+            entityType="VENUE"
             slug={slug}
             entityId={venue.id}
             locale={locale}

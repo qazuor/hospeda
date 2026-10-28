@@ -1413,7 +1413,7 @@ export const userBookmarksPublicApi = {
             | 'DESTINATION'
             | 'EVENT'
             | 'EXPERIENCE'
-            | 'GASTRONOMY'
+            | 'VENUE'
             | 'POST';
         readonly entityId: string;
     }): Promise<ApiResult<{ readonly count: number }>> {
