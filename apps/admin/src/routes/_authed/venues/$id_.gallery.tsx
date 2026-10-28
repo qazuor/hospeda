@@ -41,7 +41,7 @@ function VenueGalleryPage() {
     const { data: venue, isLoading: isVenueLoading } = useVenueQuery(id);
 
     return (
-        <SidebarPageLayout titleKey="admin-pages.titles.gastronomiesView">
+        <SidebarPageLayout titleKey="admin-pages.titles.venuesView">
             <div className="space-y-4">
                 <PageTabs
                     tabs={venueTabs}
