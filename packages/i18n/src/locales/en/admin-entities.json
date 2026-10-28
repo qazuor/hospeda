@@ -117,7 +117,7 @@
             "plural": "Trades",
             "description": "Directory of service providers for hosts"
         },
-        "gastronomy": {
+        "venue": {
             "singular": "Gastronomy",
             "plural": "Gastronomies",
             "description": "Manage restaurants, bars, cafes and other food and beverage venues"
@@ -157,7 +157,7 @@
             "errorMessage": "We could not create the experience. Please try again."
         }
     },
-    "gastronomy": {
+    "venue": {
         "tabs": {
             "general": "General",
             "faqs": "FAQs",

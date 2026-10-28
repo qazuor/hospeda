@@ -93,7 +93,7 @@ export const createVenueColumns = (t: ColumnTFunction): readonly ColumnConfig<Ve
     },
     {
         id: 'priceRange',
-        header: t('admin-entities.gastronomy.columns.priceRange'),
+        header: t('admin-entities.venue.columns.priceRange'),
         accessorKey: 'priceRange',
         enableSorting: true,
         columnType: ColumnType.BADGE,

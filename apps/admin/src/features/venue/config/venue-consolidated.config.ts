@@ -160,9 +160,9 @@ export const createVenueConsolidatedConfig = (
         createListingOperationalSection('venue')
     ],
     metadata: {
-        title: t('admin-entities.entities.gastronomy.singular'),
-        description: t('admin-entities.entities.gastronomy.description'),
-        entityName: t('admin-entities.entities.gastronomy.singular'),
-        entityNamePlural: t('admin-entities.entities.gastronomy.plural')
+        title: t('admin-entities.entities.venue.singular'),
+        description: t('admin-entities.entities.venue.description'),
+        entityName: t('admin-entities.entities.venue.singular'),
+        entityNamePlural: t('admin-entities.entities.venue.plural')
     }
 });

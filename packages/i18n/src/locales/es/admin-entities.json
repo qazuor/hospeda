@@ -117,7 +117,7 @@
             "plural": "Oficios",
             "description": "Directorio de proveedores de servicios para anfitriones"
         },
-        "gastronomy": {
+        "venue": {
             "singular": "Gastronomía",
             "plural": "Gastronomías",
             "description": "Gestiona restaurantes, bares, cafés y otros comercios gastronómicos"
@@ -157,7 +157,7 @@
             "errorMessage": "No pudimos crear la experiencia. Probá de nuevo."
         }
     },
-    "gastronomy": {
+    "venue": {
         "tabs": {
             "general": "General",
             "faqs": "Preguntas Frecuentes",
