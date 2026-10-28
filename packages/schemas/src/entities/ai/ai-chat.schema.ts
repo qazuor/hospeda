@@ -122,7 +122,7 @@ export type AiChatMessage = z.infer<typeof AiChatMessageSchema>;
  * chat shipped first and its clients do not send the field, so treating absence
  * as accommodation keeps every already-deployed caller valid.
  */
-export const AiChatEntityTypeSchema = z.enum(['accommodation', 'gastronomy', 'experience']);
+export const AiChatEntityTypeSchema = z.enum(['accommodation', 'venue', 'experience']);
 
 /** TypeScript type for the entity a chat request targets. */
 export type AiChatEntityType = z.infer<typeof AiChatEntityTypeSchema>;
@@ -209,7 +209,7 @@ export const AiChatRequestSchema = z
         const isAccommodation = val.entityType === undefined || val.entityType === 'accommodation';
 
         if (!isAccommodation && val.accommodationId !== undefined) {
-            // A gastronomy or experience request that also names an accommodation is refused
+            // A venue or experience request that also names an accommodation is refused
             // rather than resolved. Ignoring the stray field would let a client
             // bug read as a working chat about the wrong listing entirely.
             ctx.addIssue({
@@ -280,8 +280,8 @@ export interface AiChatTarget {
  * ```ts
  * resolveAiChatTarget({ accommodationId: 'abc', messages: [...] });
  * // → { entityType: 'accommodation', entityId: 'abc' }
- * resolveAiChatTarget({ entityType: 'gastronomy', entityId: 'xyz', messages: [...] });
- * // → { entityType: 'gastronomy', entityId: 'xyz' }
+ * resolveAiChatTarget({ entityType: 'venue', entityId: 'xyz', messages: [...] });
+ * // → { entityType: 'venue', entityId: 'xyz' }
  * ```
  */
 export function resolveAiChatTarget(request: AiChatRequest): AiChatTarget {
