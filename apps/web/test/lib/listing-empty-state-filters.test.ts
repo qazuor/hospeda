@@ -12,7 +12,7 @@ import {
     normalizeActiveDestinationAttractionIds
 } from '@/lib/listing-empty-state-filters';
 
-describe('hasActiveGastronomyListingFilters', () => {
+describe('hasActiveVenueListingFilters', () => {
     it('returns false for the bare listing', () => {
         expect(
             hasActiveVenueListingFilters({
@@ -39,7 +39,7 @@ describe('hasActiveGastronomyListingFilters', () => {
         // filters", not "there are no restaurants published yet".
         { features: '11111111-1111-4111-8111-111111111111' },
         { features: 'id-a,id-b' }
-    ])('returns true when a real gastronomy filter is active: %o', (filters) => {
+    ])('returns true when a real venue filter is active: %o', (filters) => {
         expect(
             hasActiveVenueListingFilters({
                 q: undefined,
