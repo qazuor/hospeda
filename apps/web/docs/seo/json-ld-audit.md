@@ -39,7 +39,7 @@ component and reused on lower-detail surfaces.
 | `PriceSpecificationJsonLd` | `src/components/seo/PriceSpecificationJsonLd.astro` | `Offer` + `UnitPriceSpecification` | `suscriptores/turistas`, `suscriptores/planes` |
 
 `RestaurantJsonLd` and `TouristAttractionJsonLd` were the two entities
-missing from this table before HOS-117 T-007/T-013 — gastronomy and
+missing from this table before HOS-117 T-007/T-013 — venue and
 experience detail pages existed and already mounted their typed components,
 but neither the audit doc nor the coverage guard test tracked them.
 
@@ -51,7 +51,7 @@ but neither the audit doc nor the coverage guard test tracked them.
 | Event | `src/pages/[lang]/eventos/[slug].astro` | `EventJsonLd` | `BreadcrumbJsonLd` |
 | Destination | `src/pages/[lang]/destinos/[...path].astro` | `PlaceJsonLd` | `BreadcrumbJsonLd`, `FAQPageJsonLd` (conditional) |
 | Post | `src/pages/[lang]/publicaciones/[slug].astro` | `ArticleJsonLd` | `BreadcrumbJsonLd` |
-| Gastronomy | `src/pages/[lang]/comer-y-salir/[slug].astro` | `RestaurantJsonLd` | `BreadcrumbJsonLd` |
+| Venue | `src/pages/[lang]/comer-y-salir/[slug].astro` | `RestaurantJsonLd` | `BreadcrumbJsonLd` |
 | Experience | `src/pages/[lang]/experiencias/[slug].astro` | `TouristAttractionJsonLd` | `BreadcrumbJsonLd` |
 
 ## Required-field audit per @type
@@ -149,7 +149,7 @@ Component: `src/components/seo/RestaurantJsonLd.astro`.
 | `@type` | hard-coded `Restaurant` | OK |
 | `aggregateRating` | conditional `AggregateRating`, only when a usable rating exists | OK |
 
-> This entity's typed component was added alongside the gastronomy
+> This entity's typed component was added alongside the venue
 > vertical and had never been folded into this audit doc until HOS-117
 > T-013 — verify its full field list against `RestaurantJsonLd.astro`
 > directly if extending it; this table intentionally only calls out the
@@ -255,7 +255,7 @@ retired inline pattern as current.
 
 `json-ld-coverage.test.ts` originally enumerated only 4 detail entities
 (accommodation, event, destination, post). T-007 extended `DETAIL_PAGES`
-to all 6 (adding gastronomy → `RestaurantJsonLd` and experience →
+to all 6 (adding venue → `RestaurantJsonLd` and experience →
 `TouristAttractionJsonLd`), closing a real regression gap: the two newer
 verticals could have dropped their typed component or `BreadcrumbJsonLd`
 with no CI signal.

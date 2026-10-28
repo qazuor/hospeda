@@ -14,7 +14,7 @@ any other page's internal links, or from the sitemap generator's link graph.
 It is reachable by anyone who has the URL, but nothing in the app links to it.
 
 - The owner shares the link **manually** with prospective hosts, restaurants,
-  gastronomy/experience businesses, and sponsors during outreach — it is a
+  venue/experience businesses, and sponsors during outreach — it is a
   sales/onboarding artifact, not a discoverable nav destination.
 - It is **still indexable by default** (no `noindex` meta tag, unlike the
   hidden test pages under `/suscriptores/plan1` etc.) — search engines may
