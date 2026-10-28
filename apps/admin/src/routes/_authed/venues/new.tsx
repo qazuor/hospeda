@@ -1,5 +1,5 @@
 /**
- * Gastronomy create page — allows admins to create a new venue listing.
+ * Venue create page — allows admins to create a new venue listing.
  *
  * Uses `EntityCreatePageBase` with the venue consolidated config.
  * Supports an optional owner assignment via OwnerSelect (existing users only —

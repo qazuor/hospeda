@@ -1,7 +1,7 @@
 /**
- * Gastronomy view page — displays a single venue listing with:
+ * Venue view page — displays a single venue listing with:
  *  - General fields via EntityViewContent (flat mode)
- *  - FAQs sub-tab (FaqManager, gastronomies entity type)
+ *  - FAQs sub-tab (FaqManager, venues entity type)
  *  - Reviews moderation sub-tab (pending reviews + approve/reject actions)
  *  - Assign-owner action (OwnerSelect + useAssignVenueOwnerMutation)
  *  - Purge action at the owner's request (action 23, ListingPurgeOnRequestCard);

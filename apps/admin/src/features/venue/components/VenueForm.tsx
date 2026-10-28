@@ -1,6 +1,6 @@
 /**
  * @file VenueForm.tsx
- * Standalone React form component for gastronomy create / edit (SPEC-239 T-059).
+ * Standalone React form component for venue create / edit (SPEC-239 T-059).
  *
  * Uses TanStack Form with Zod validation at submit boundary.
  * All fields are Tailwind-styled; no CSS modules.
@@ -98,7 +98,7 @@ function FieldWrapper({ label, htmlFor, required, error, children }: FieldWrappe
 // ---------------------------------------------------------------------------
 
 /**
- * Gastronomy create / edit form.
+ * Venue create / edit form.
  *
  * Validates at submit via `VenueCreateHttpSchema.safeParse`.
  * Field-level errors are surfaced after a failed submit attempt.
@@ -251,7 +251,7 @@ export function VenueForm({
                     </div>
                 </section>
 
-                {/* ---- Gastronomy-specific ---- */}
+                {/* ---- Venue-specific ---- */}
                 <section aria-labelledby="gastronomy-specific-heading">
                     <h3
                         id="gastronomy-specific-heading"
@@ -412,7 +412,7 @@ export function VenueForm({
                         </form.Field>
 
                         {/*
-                            Owner ID — REQUIRED (H-88). `gastronomies.owner_id`
+                            Owner ID — REQUIRED (H-88). `venues.owner_id`
                             is NOT NULL with no default, so submitting without it
                             reached the database and came back as a bare 500
                             "A database error occurred". The field was labelled

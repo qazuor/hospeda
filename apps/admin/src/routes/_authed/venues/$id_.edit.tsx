@@ -1,5 +1,5 @@
 /**
- * Gastronomy edit page — allows admins to update an existing venue listing.
+ * Venue edit page — allows admins to update an existing venue listing.
  *
  * Uses `EntityPageBase` in edit mode with `EntityEditContent` (flat layout).
  * Gate-protected by VENUE_EDIT_ALL.

@@ -1,9 +1,9 @@
 /**
  * @file venue-consolidated.config.ts
- * Consolidated section configuration for the gastronomy entity.
+ * Consolidated section configuration for the venue entity.
  *
  * Assembles the shared listing sections (identity + operational) and injects
- * a gastronomy-specific section in between that covers:
+ * a venue-specific section in between that covers:
  *   - type (VenueTypeEnum SELECT)
  *   - priceRange (PriceRangeEnum SELECT, optional)
  *   - menuUrl (TEXT, optional — URL field)
@@ -22,10 +22,10 @@ import type {
 import { createListingIdentitySection, createListingOperationalSection } from '@/features/listing';
 
 // ---------------------------------------------------------------------------
-// Gastronomy-specific field options
+// Venue-specific field options
 // ---------------------------------------------------------------------------
 
-/** SELECT options for the gastronomy type field. */
+/** SELECT options for the venue type field. */
 const VENUE_TYPE_OPTIONS = [
     { value: VenueTypeEnum.RESTAURANT, label: 'Restaurante' },
     { value: VenueTypeEnum.BAR, label: 'Bar' },
@@ -47,19 +47,19 @@ const PRICE_RANGE_OPTIONS = [
 ] as const;
 
 // ---------------------------------------------------------------------------
-// Gastronomy-specific section
+// Venue-specific section
 // ---------------------------------------------------------------------------
 
 /**
- * Builds the gastronomy-specific section that sits between the shared
+ * Builds the venue-specific section that sits between the shared
  * identity and operational sections.
  *
  * Fields:
- *  - `type`       — Gastronomy sub-category (SELECT, required).
+ *  - `type`       — Venue sub-category (SELECT, required).
  *  - `priceRange` — Price-range tier (SELECT, optional).
  *  - `menuUrl`    — Online menu URL (TEXT, optional).
  *
- * @returns A `ConsolidatedSectionConfig` for gastronomy-specific fields.
+ * @returns A `ConsolidatedSectionConfig` for venue-specific fields.
  */
 function createVenueSpecificSection(): ConsolidatedSectionConfig {
     return {
@@ -138,18 +138,18 @@ function createVenueSpecificSection(): ConsolidatedSectionConfig {
 // ---------------------------------------------------------------------------
 
 /**
- * Creates the complete consolidated configuration for the gastronomy entity.
+ * Creates the complete consolidated configuration for the venue entity.
  *
  * Section order:
  *  1. Listing identity section (shared — name, slug, summary, description, …)
- *  2. Gastronomy-specific section (type, priceRange, menuUrl)
+ *  2. Venue-specific section (type, priceRange, menuUrl)
  *  3. Listing operational section (shared — contact, social, media, hours, …)
  *
  * Used by `EntityCreatePageBase` (create flow) and `EntityPageBase`
  * (view/edit flow).
  *
  * @param t - Translation function from `useTranslations()`
- * @returns Consolidated entity configuration for the gastronomy entity.
+ * @returns Consolidated entity configuration for the venue entity.
  */
 export const createVenueConsolidatedConfig = (
     t: ReturnType<typeof useTranslations>['t']
