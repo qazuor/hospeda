@@ -66,7 +66,7 @@ const ACCOMMODATION_TRIAL_COPY: TrialSeriesVerticalCopy = {
 };
 
 /** Vocabulary matches the venue landing page (`venue.json`'s `landing`). */
-const GASTRONOMY_TRIAL_COPY: TrialSeriesVerticalCopy = {
+const VENUE_TRIAL_COPY: TrialSeriesVerticalCopy = {
     possessive: 'tu local',
     searchIntent: 'dónde comer',
     detailsLabel: 'menú',
@@ -102,7 +102,7 @@ const EXPERIENCE_TRIAL_COPY: TrialSeriesVerticalCopy = {
 export function resolveTrialSeriesCopy(
     productDomain: string | null | undefined
 ): TrialSeriesVerticalCopy {
-    if (productDomain === 'venue') return GASTRONOMY_TRIAL_COPY;
+    if (productDomain === 'venue') return VENUE_TRIAL_COPY;
     if (productDomain === 'experience') return EXPERIENCE_TRIAL_COPY;
     return ACCOMMODATION_TRIAL_COPY;
 }
@@ -137,7 +137,7 @@ type TrialCampaignVertical = 'accommodation' | 'venue' | 'experience' | 'tourist
 
 export const TRIAL_VERTICAL_LABELS: Readonly<Record<TrialCampaignVertical, string>> = {
     accommodation: 'Alojamiento',
-    venue: 'Gastronomía',
+    venue: 'Comer y salir',
     experience: 'Experiencias',
     tourist: 'Turismo'
 };

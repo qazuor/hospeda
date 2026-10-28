@@ -1237,7 +1237,7 @@ export interface AdminLeadReceivedPayload extends BaseNotificationPayload {
     readonly funnelLabel: string;
     /**
      * The concrete program or domain applied for (e.g. "Proveedor",
-     * "Gastronomía"). A human label resolved by the caller, never a slug: this
+     * "Comer y salir"). A human label resolved by the caller, never a slug: this
      * package does not depend on `@repo/schemas` and must not start doing so
      * for a display string.
      */

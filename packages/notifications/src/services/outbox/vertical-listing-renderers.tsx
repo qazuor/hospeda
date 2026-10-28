@@ -54,7 +54,7 @@ const ACCOUNT_LISTINGS_PATH: Readonly<Record<ListingNoticeVertical, string>> = {
 const SUBSCRIPTION_PATH = '/es/mi-cuenta/suscripcion/';
 const VERTICAL_LABELS: Readonly<Record<ListingNoticeVertical, string>> = {
     accommodation: 'alojamiento',
-    venue: 'gastronomía',
+    venue: 'Comer y salir',
     experience: 'experiencia'
 };
 
