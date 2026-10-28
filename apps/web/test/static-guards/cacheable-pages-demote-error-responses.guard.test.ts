@@ -170,7 +170,7 @@ describe('detector: what counts as shared-cacheable', () => {
         // the call, and "I could not tell" must resolve to "police it".
         const source = `applyCacheHeaders({ locals: Astro.locals, headers: Astro.response.headers,
             cacheable: hasOnlyPaginationParams({ searchParams: Astro.url.searchParams }),
-            cacheClass: 'catalog', tags: [CACHE_TAG_COLLECTIONS.gastronomy] });`;
+            cacheClass: 'catalog', tags: [CACHE_TAG_COLLECTIONS.venue] });`;
         expect(mayBeEdgeCacheable({ source })).toBe(true);
     });
 
