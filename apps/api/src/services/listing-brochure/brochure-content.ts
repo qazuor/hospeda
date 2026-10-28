@@ -114,7 +114,7 @@ const PUBLIC_PATH_SEGMENT: Readonly<Record<BrochureVertical, string>> = {
 
 /** i18n namespace each vertical's detail copy lives in. */
 const DETAIL_NS: Readonly<Record<BrochureVertical, string>> = {
-    venue: 'gastronomy.detail',
+    venue: 'venue.detail',
     experience: 'experience.detail'
 };
 
@@ -326,7 +326,7 @@ export function buildVenueBrochureContent(input: {
     const ns = DETAIL_NS.venue;
 
     const title = i18nText({ value: listing.nameI18n, locale }) || listing.name;
-    const typeLabel = t({ locale, key: `gastronomy.types.${listing.type}` });
+    const typeLabel = t({ locale, key: `venue.types.${listing.type}` });
     const destination = listing.destination?.name ?? '';
     const intro =
         i18nText({ value: listing.summaryI18n, locale }) ||
@@ -336,7 +336,7 @@ export function buildVenueBrochureContent(input: {
         '';
 
     const priceRange = listing.priceRange
-        ? t({ locale, key: `gastronomy.card.priceRange.${listing.priceRange}` })
+        ? t({ locale, key: `venue.card.priceRange.${listing.priceRange}` })
         : '';
 
     const sections: BrochureSection[] = [];

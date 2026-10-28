@@ -97,7 +97,7 @@ const RATE_LIMIT_FEATURE: AiFeature = 'chat';
 
 const OWNER_CHAT_COPY_BY_ENTITY_TYPE = {
     accommodation: 'accommodations.aiChat.unavailable',
-    gastronomy: 'gastronomy.aiChat.unavailable',
+    gastronomy: 'venue.aiChat.unavailable',
     experience: 'experience.aiChat.unavailable'
 } as const;
 

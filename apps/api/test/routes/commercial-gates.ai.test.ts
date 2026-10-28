@@ -236,11 +236,11 @@ describe('TEST:V5:32 AI gates', () => {
                 feature: 'chat_venue',
                 entitlementKey: 'ai_chat',
                 limitKey: 'max_ai_chat_venue_per_month',
-                entitlementMessage: 'gastronomy.aiChat.unavailable'
+                entitlementMessage: 'venue.aiChat.unavailable'
             })
         ).rejects.toMatchObject({
             code: 'ENTITLEMENT_REQUIRED',
-            message: 'gastronomy.aiChat.unavailable',
+            message: 'venue.aiChat.unavailable',
             details: { entitlementKey: 'ai_chat' }
         });
         expect(getMonthlyCallCount).not.toHaveBeenCalled();
