@@ -1,5 +1,5 @@
 /**
- * Gastronomy edit page — allows admins to update an existing gastronomy listing.
+ * Gastronomy edit page — allows admins to update an existing venue listing.
  *
  * Uses `EntityPageBase` in edit mode with `EntityEditContent` (flat layout).
  * Gate-protected by VENUE_EDIT_ALL.
@@ -26,7 +26,7 @@ import { useVenuePage } from '@/features/venue';
 import { useTranslations } from '@/hooks/use-translations';
 import { createErrorComponent, createPendingComponent } from '@/lib/factories';
 
-/** Route configuration for the gastronomy edit page. */
+/** Route configuration for the venue edit page. */
 export const Route = createFileRoute('/_authed/venues/$id_/edit')({
     component: VenueEditPage,
     loader: async ({ params }) => ({ venueId: params.id }),
@@ -35,7 +35,7 @@ export const Route = createFileRoute('/_authed/venues/$id_/edit')({
 });
 
 /**
- * Edit page for an existing gastronomy listing.
+ * Edit page for an existing venue listing.
  * Includes the main edit form (flat) and a FAQs sub-tab for managing FAQs
  * alongside editing the entity fields.
  */
@@ -53,13 +53,13 @@ function VenueEditPage() {
                         basePath={`/venues/${id}`}
                     />
                     <RevalidateEntityButton
-                        entityType="gastronomy"
+                        entityType="venue"
                         entityId={id}
                     />
                 </div>
 
                 <EntityPageBase
-                    entityType="gastronomy"
+                    entityType="venue"
                     entityId={id}
                     initialMode="edit"
                     entityData={entityData}
@@ -68,10 +68,10 @@ function VenueEditPage() {
                     <Tabs defaultValue="general">
                         <TabsList>
                             <TabsTrigger value="general">
-                                {t('admin-entities.gastronomy.tabs.general')}
+                                {t('admin-entities.venue.tabs.general')}
                             </TabsTrigger>
                             <TabsTrigger value="faqs">
-                                {t('admin-entities.gastronomy.tabs.faqs')}
+                                {t('admin-entities.venue.tabs.faqs')}
                             </TabsTrigger>
                         </TabsList>
 
@@ -80,7 +80,7 @@ function VenueEditPage() {
                             className="mt-4"
                         >
                             <EntityEditContent
-                                entityType="gastronomy"
+                                entityType="venue"
                                 flat
                             />
                         </TabsContent>

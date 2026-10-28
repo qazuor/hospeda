@@ -90,7 +90,7 @@ export enum EntityType {
     AMENITY = 'amenity',
     TAG = 'tag',
     HOST_TRADE = 'host-trade',
-    VENUE = 'gastronomy',
+    VENUE = 'venue',
     EXPERIENCE = 'experience',
     PARTNER = 'partner'
 }

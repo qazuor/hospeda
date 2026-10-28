@@ -1,5 +1,5 @@
 /**
- * Gastronomy view page — displays a single gastronomy listing with:
+ * Gastronomy view page — displays a single venue listing with:
  *  - General fields via EntityViewContent (flat mode)
  *  - FAQs sub-tab (FaqManager, gastronomies entity type)
  *  - Reviews moderation sub-tab (pending reviews + approve/reject actions)
@@ -31,7 +31,7 @@ import {
 import { useTranslations } from '@/hooks/use-translations';
 import { createErrorComponent, createPendingComponent } from '@/lib/factories';
 
-/** Route configuration for the gastronomy view page. */
+/** Route configuration for the venue view page. */
 export const Route = createFileRoute('/_authed/venues/$id')({
     component: VenueViewPage,
     loader: async ({ params }) => ({ venueId: params.id }),
@@ -62,7 +62,7 @@ interface PendingReview {
 /**
  * Inline reviews moderation panel displayed as a sub-tab in the view page.
  *
- * @param gastronomyId - UUID of the parent gastronomy entity
+ * @param venueId - UUID of the parent venue entity
  */
 function VenueReviewsPanel({ venueId: _venueId }: { readonly venueId: string }) {
     const { t } = useTranslations();
@@ -85,7 +85,7 @@ function VenueReviewsPanel({ venueId: _venueId }: { readonly venueId: string }) 
     if (reviews.length === 0) {
         return (
             <div className="py-8 text-center text-muted-foreground">
-                {t('admin-entities.gastronomy.reviews.noPending')}
+                {t('admin-entities.venue.reviews.noPending')}
             </div>
         );
     }
@@ -96,8 +96,7 @@ function VenueReviewsPanel({ venueId: _venueId }: { readonly venueId: string }) 
                 <Card key={review.id}>
                     <CardHeader>
                         <CardTitle className="text-base">
-                            {review.reviewerName ??
-                                t('admin-entities.gastronomy.reviews.anonymous')}
+                            {review.reviewerName ?? t('admin-entities.venue.reviews.anonymous')}
                             {review.overallRating !== undefined && (
                                 <span className="ml-2 text-muted-foreground text-sm">
                                     ★ {review.overallRating}
@@ -122,7 +121,7 @@ function VenueReviewsPanel({ venueId: _venueId }: { readonly venueId: string }) 
                                     })
                                 }
                             >
-                                {t('admin-entities.gastronomy.reviews.approve')}
+                                {t('admin-entities.venue.reviews.approve')}
                             </Button>
                             <Button
                                 size="sm"
@@ -135,7 +134,7 @@ function VenueReviewsPanel({ venueId: _venueId }: { readonly venueId: string }) 
                                     })
                                 }
                             >
-                                {t('admin-entities.gastronomy.reviews.reject')}
+                                {t('admin-entities.venue.reviews.reject')}
                             </Button>
                         </div>
                     </CardContent>
@@ -152,7 +151,7 @@ function VenueReviewsPanel({ venueId: _venueId }: { readonly venueId: string }) 
 /**
  * Inline assign-owner panel shown at the top of the view page.
  *
- * @param gastronomyId - UUID of the gastronomy entity
+ * @param venueId - UUID of the venue entity
  * @param currentOwnerId - Currently assigned owner UUID (if any)
  */
 function VenueAssignOwner({
@@ -177,7 +176,7 @@ function VenueAssignOwner({
         <Card>
             <CardHeader>
                 <CardTitle className="font-medium text-sm">
-                    {t('admin-entities.gastronomy.assignOwner.title')}
+                    {t('admin-entities.venue.assignOwner.title')}
                 </CardTitle>
             </CardHeader>
             <CardContent className="flex items-end gap-3">
@@ -194,7 +193,7 @@ function VenueAssignOwner({
                 >
                     {assignMutation.isPending
                         ? t('admin-entities.messages.saving')
-                        : t('admin-entities.gastronomy.assignOwner.button')}
+                        : t('admin-entities.venue.assignOwner.button')}
                 </Button>
             </CardContent>
         </Card>
@@ -206,7 +205,7 @@ function VenueAssignOwner({
 // ---------------------------------------------------------------------------
 
 /**
- * View page for a single gastronomy listing.
+ * View page for a single venue listing.
  * Displays fields read-only, FAQs sub-tab, reviews moderation sub-tab,
  * assign-owner panel, and delete action.
  */
@@ -262,7 +261,7 @@ function VenueViewPage() {
             </div>
 
             <EntityPageBase
-                entityType="gastronomy"
+                entityType="venue"
                 entityId={id}
                 initialMode="view"
                 entityData={{
@@ -275,13 +274,13 @@ function VenueViewPage() {
                 <Tabs defaultValue="general">
                     <TabsList>
                         <TabsTrigger value="general">
-                            {t('admin-entities.gastronomy.tabs.general')}
+                            {t('admin-entities.venue.tabs.general')}
                         </TabsTrigger>
                         <TabsTrigger value="faqs">
-                            {t('admin-entities.gastronomy.tabs.faqs')}
+                            {t('admin-entities.venue.tabs.faqs')}
                         </TabsTrigger>
                         <TabsTrigger value="reviews">
-                            {t('admin-entities.gastronomy.tabs.reviews')}
+                            {t('admin-entities.venue.tabs.reviews')}
                         </TabsTrigger>
                     </TabsList>
 
@@ -290,7 +289,7 @@ function VenueViewPage() {
                         className="mt-4"
                     >
                         <EntityViewContent
-                            entityType="gastronomy"
+                            entityType="venue"
                             entityId={id}
                             sections={entityData.sections}
                             entity={entityData.entity ?? {}}
