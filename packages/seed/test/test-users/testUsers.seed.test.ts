@@ -69,29 +69,29 @@ describe('TEST_USERS matrix', () => {
     });
 
     describe('venue-owner@local.test (HOS-694)', () => {
-        const user = findUser('venue-owner@local.test');
         it('holds only the gastronomy owner role', () => {
+            const user = findUser('venue-owner@local.test');
             expect(user.role).toBe(RoleEnum.VENUE_OWNER);
             expect(user.extraRoles ?? []).not.toContain(RETIRED_OWNER_ROLE);
         });
     });
 
     describe('experience-owner@local.test (HOS-694)', () => {
-        const user = findUser('experience-owner@local.test');
         it('holds only the experience owner role', () => {
+            const user = findUser('experience-owner@local.test');
             expect(user.role).toBe(RoleEnum.EXPERIENCE_OWNER);
             expect(user.extraRoles ?? []).not.toContain(RETIRED_OWNER_ROLE);
         });
     });
 
     describe('host-venue@local.test (dual role, HOS-296 / HOS-694 AC-3 / AC-12)', () => {
-        const user = findUser('host-venue@local.test');
-
         it('should declare HOST as the primary role (so the HOS-30 accommodation fixture applies)', () => {
+            const user = findUser('host-venue@local.test');
             expect(user.role).toBe(RoleEnum.HOST);
         });
 
         it('should declare VENUE_OWNER as an extra role (HOS-1417 retired the shared owner role)', () => {
+            const user = findUser('host-venue@local.test');
             expect(user.extraRoles).toContain(RoleEnum.VENUE_OWNER);
         });
     });
