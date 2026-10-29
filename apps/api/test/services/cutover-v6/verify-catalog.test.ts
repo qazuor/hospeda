@@ -249,7 +249,7 @@ describe('verifyCatalog', () => {
         const promo = {
             ...(base.promoCodes[0] as (typeof base.promoCodes)[number]),
             allVerticals: false,
-            verticals: ['gastronomy']
+            verticals: ['cafeteria']
         };
 
         // Act / Assert
