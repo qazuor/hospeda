@@ -56,6 +56,34 @@ API tsconfig and workspace `tsx` while preserving the script's exit code through
 | `--confirm-step-4b` | off | Required by `--step-4b`; without it the mode refuses to start (exit 2). |
 | `--payment-amount <ARS>` | none | Required by `--step-4b`; integer pesos from 15 through 1000. The owner approves the actual amount before the rehearsal. |
 
+### V6 step 4c cache purge
+
+`pnpm --dir apps/api exec tsx scripts/cutover-v6-step-4c.ts --dry-run` (or
+`--confirm-purge` for the real run). It purges, in order and stopping at the
+first group that fails: `listings`, `collections`, `destinations`,
+`legacy-tags` (the retired `list-gastro` and `gastro-<slug|id>` tags, the slugs
+and ids read from the passage table and the live `venues`) and `legacy-prefixes`
+(54 URL prefixes: 2 hosts x 3 locales x 9 routes, from
+`apps/api/src/services/cutover-v6/step-4c.legacy.ts`, pinned by a test). The
+legacy tags go in `revalidateMany` batches of 100 and the prefixes in one
+request to `/api/revalidate/` (`{ "prefixes": [...] }`), so the whole run is
+about 5 Cloudflare requests (Free plan: 5 per minute, bucket shared with the live
+API). Every response is checked: a 429 is a purge that did not happen and the
+run exits 1 naming the failed group (`haltedAfter`). The write-block rule of
+step 0b must keep `/api/revalidate/` open
+([`write-block-rule.md`](../../infra/cloudflare/rules/write-block-rule.md)).
+
+| Flag | Default | Meaning |
+|---|---|---|
+| `--dry-run` | off | Counts the groups; calls nothing. |
+| `--confirm-purge` | off | Required for a real run; without it (and without `--dry-run`) the script refuses (exit 2). |
+| `--extra-tags-file <path>` | none | Optional. Text file, one bare tag per line (no `<env>:` namespace). Blank lines and lines starting with `#` are ignored. Added to the generated legacy tags and de-duplicated before grouping. |
+| `--extra-prefixes-file <path>` | none | Optional. Same format, one `host/path` prefix per line (no scheme). Added to the generated prefixes and de-duplicated. |
+
+Exit codes: 0 done (or dry run), 1 a purge failed or an error, 2 refused. The
+prefix mode of `/api/revalidate/` accepts the production hosts only on a `prod`
+deployment.
+
 ### Credentials (proposed names, operator's shell session only)
 
 Never versioned, never logged, never written to the manifest. They are intentionally **not**
