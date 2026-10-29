@@ -127,6 +127,6 @@ describe('cronTrigger — target routing', () => {
             'https://staging-api.hospeda.com.ar/api/v1/admin/cron/job-a?dryRun=true'
         );
         expect(post?.cookie).toBe('staging-cookie');
-        expect(calls.every((c) => !c.url.startsWith('https://api.hospeda.com.ar'))).toBe(true);
+        expect(calls.every((c) => new URL(c.url).hostname !== 'api.hospeda.com.ar')).toBe(true);
     });
 });
