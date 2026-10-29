@@ -66,6 +66,7 @@ import { logsClear } from './commands/logs-clear.ts';
 import { prune } from './commands/prune.ts';
 import { psql } from './commands/psql.ts';
 import { r2Lifecycle } from './commands/r2-lifecycle.ts';
+import { r2PurgeForeignBackups } from './commands/r2-purge-foreign-backups.ts';
 import { redeploy } from './commands/redeploy.ts';
 import { update } from './commands/update.ts';
 import {
@@ -233,7 +234,14 @@ const COMMANDS: ReadonlyArray<Command> = [
         targetPolicy: 'explicit-required',
         argv: {
             booleanFlags: ['--no-snapshot-first', '--yes', ...HELP_FLAGS],
-            valueFlags: [{ name: '--target-db', syntax: 'space' }]
+            valueFlags: [
+                { name: '--target-db', syntax: 'both' },
+                // HOS-1957: exact-name selection and the prod -> staging
+                // rehearsal source. The command refuses any foreign bucket
+                // onto prod itself (src/lib/restore-plan.ts).
+                { name: '--object', syntax: 'both' },
+                { name: '--from-target', syntax: 'both' }
+            ]
         },
         run: dbRestore
     },
@@ -448,6 +456,17 @@ const COMMANDS: ReadonlyArray<Command> = [
             ]
         },
         run: r2Lifecycle
+    },
+    {
+        name: 'r2-purge-foreign-backups',
+        summary:
+            'List (or --delete) the staging-bucket objects written while staging held prod data (HOS-1957).',
+        // --delete removes R2 objects; the command itself refuses prod. The
+        // default mode only lists, but it still needs an explicit target so
+        // it can never be pointed at a bucket by an env default.
+        targetPolicy: 'explicit-required',
+        argv: { booleanFlags: ['--delete', ...HELP_FLAGS], valueFlags: [] },
+        run: r2PurgeForeignBackups
     },
     {
         name: 'free-mem',
