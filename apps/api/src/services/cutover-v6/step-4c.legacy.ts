@@ -29,8 +29,35 @@ export const LEGACY_COLLECTION_TAGS = [`list-${OLD_TAG_WORD}`] as const;
 /** The retired per-entity tag prefix: the old tag of a listing is `<prefix>-<slug>` or `<prefix>-<id>`. */
 export const LEGACY_ENTITY_TAG_PREFIX: string = OLD_TAG_WORD;
 
-/** Both production hosts: one Cloudflare cache key per host. */
-export const LEGACY_PREFIX_HOSTS = ['hospeda.com.ar', 'www.hospeda.com.ar'] as const;
+/** The production site URL, the default when the running environment names none. */
+export const PROD_SITE_URL = 'https://hospeda.com.ar';
+
+/**
+ * Hosts that also answer on a `www.` alias with its own Cloudflare cache key.
+ * Only production has one: staging (`staging.hospeda.com.ar`) does not, so a
+ * `www.staging...` prefix would purge a host that does not exist.
+ */
+const HOSTS_WITH_WWW_ALIAS: ReadonlySet<string> = new Set(['hospeda.com.ar']);
+
+/**
+ * Derives the hosts whose pages must be purged from the public site URL of the
+ * environment the step runs in (one Cloudflare cache key per host).
+ *
+ * Production (`https://hospeda.com.ar`) yields `hospeda.com.ar` and
+ * `www.hospeda.com.ar`; any other environment yields only its own host, so the
+ * rehearsal on staging never names (and the web endpoint never refuses) a
+ * production host.
+ *
+ * @throws {Error} When `siteUrl` is not a valid URL.
+ */
+export function resolveLegacyPrefixHosts({
+    siteUrl = PROD_SITE_URL
+}: {
+    readonly siteUrl?: string;
+} = {}): readonly string[] {
+    const host = new URL(siteUrl).hostname.toLowerCase();
+    return HOSTS_WITH_WWW_ALIAS.has(host) ? [host, `www.${host}`] : [host];
+}
 
 /** Locales whose pages were cached. */
 export const LEGACY_PREFIX_LOCALES = ['es', 'en', 'pt'] as const;
@@ -55,9 +82,16 @@ export const LEGACY_PREFIX_PATHS: readonly string[] = [
 /** Cloudflare accepts at most 100 operations per purge request. */
 export const MAX_PURGE_OPERATIONS_PER_REQUEST = 100;
 
-/** Builds the 54 URL prefixes (host + path, no scheme): 2 hosts x 3 locales x 9 routes. */
-export function buildLegacyPrefixes(): readonly string[] {
-    return LEGACY_PREFIX_HOSTS.flatMap((host) =>
+/**
+ * Builds the URL prefixes (host + path, no scheme): hosts x 3 locales x 9 routes.
+ * Production gives the 54 of the cutover (2 hosts); a host without a `www` alias gives 27.
+ */
+export function buildLegacyPrefixes({
+    siteUrl
+}: {
+    readonly siteUrl?: string;
+} = {}): readonly string[] {
+    return resolveLegacyPrefixHosts({ siteUrl }).flatMap((host) =>
         LEGACY_PREFIX_LOCALES.flatMap((locale) =>
             LEGACY_PREFIX_PATHS.map((path) => `${host}/${locale}/${path}`)
         )
