@@ -9,8 +9,8 @@
     "listing": {
         "title": "Food & nightlife",
         "subtitle": "Discover the best restaurants, bars, and flavors of the region",
-        "emptyState": "No gastronomic establishments found with the selected filters.",
-        "emptyCatalog": "There are no published gastronomic establishments yet.",
+        "emptyState": "No venues found with the selected filters.",
+        "emptyCatalog": "There are no published venues yet.",
         "errorBanner": "Could not load the Food & nightlife listings. Please try again later.",
         "results_one": "{{count}} establishment found",
         "results_other": "{{count}} establishments found",

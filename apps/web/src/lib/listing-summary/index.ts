@@ -26,7 +26,7 @@
  *         types: DEFAULT_VENUE_TYPES
  *     }
  * });
- * // => 'Mostrando 3 de 4 establecimientos gastronómicos de restaurante en Colón, solo destacados, ordenados con los destacados primero.'
+ * // => 'Mostrando 3 de 4 locales de tipo restaurante en Colón, solo destacados, ordenados con los destacados primero.'
  * ```
  */
 
@@ -57,15 +57,16 @@ export type {
 const VENUE_ENTITY: ListingEntityConfig = {
     gender: 'masculine',
     subjectSingular: {
-        es: 'establecimiento gastronómico',
-        en: 'gastronomic establishment',
-        pt: 'estabelecimento gastronômico'
+        es: 'local',
+        en: 'venue',
+        pt: 'estabelecimento'
     },
     subjectPlural: {
-        es: 'establecimientos gastronómicos',
-        en: 'gastronomic establishments',
-        pt: 'estabelecimentos gastronômicos'
+        es: 'locales',
+        en: 'venues',
+        pt: 'estabelecimentos'
     },
+    typeConnector: { es: 'de tipo', en: 'of type', pt: 'do tipo' },
     hasPriceRange: true
 };
 

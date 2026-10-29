@@ -25,9 +25,7 @@ describe('buildVenueListingSummary', () => {
                 filters: {},
                 counts: { shown: 9, total: 18 }
             });
-            expect(result).toBe(
-                'Mostrando 9 de 18 establecimientos gastronómicos, sin filtros activos.'
-            );
+            expect(result).toBe('Mostrando 9 de 18 locales, sin filtros activos.');
         });
 
         it('should append the gendered sort phrase after the no-filters phrase', () => {
@@ -38,7 +36,7 @@ describe('buildVenueListingSummary', () => {
                 sort: { sortKey: 'featured' }
             });
             expect(result).toBe(
-                'Mostrando 9 de 18 establecimientos gastronómicos, sin filtros activos, ordenados con los destacados primero.'
+                'Mostrando 9 de 18 locales, sin filtros activos, ordenados con los destacados primero.'
             );
         });
 
@@ -48,9 +46,7 @@ describe('buildVenueListingSummary', () => {
                 filters: {},
                 counts: { shown: 1, total: 1 }
             });
-            expect(result).toBe(
-                'Mostrando 1 de 1 establecimiento gastronómico, sin filtros activos.'
-            );
+            expect(result).toBe('Mostrando 1 de 1 local, sin filtros activos.');
         });
 
         it('should render in English', () => {
@@ -59,11 +55,21 @@ describe('buildVenueListingSummary', () => {
                 filters: {},
                 counts: { shown: 9, total: 18 }
             });
-            expect(result).toBe('Showing 9 of 18 gastronomic establishments, no active filters.');
+            expect(result).toBe('Showing 9 of 18 venues, no active filters.');
         });
     });
 
     describe('type filter', () => {
+        it('should join the type with the venue connector in English', () => {
+            const result = buildVenueListingSummary({
+                locale: 'en',
+                filters: { type: 'RESTAURANT' },
+                counts: { shown: 5, total: 12 },
+                catalogs: { types: DEFAULT_VENUE_TYPES }
+            });
+            expect(result).toBe('Showing 5 of 12 venues of type restaurant.');
+        });
+
         it('should flow the type into the subject', () => {
             const result = buildVenueListingSummary({
                 locale: 'es',
@@ -71,7 +77,7 @@ describe('buildVenueListingSummary', () => {
                 counts: { shown: 5, total: 12 },
                 catalogs: { types: DEFAULT_VENUE_TYPES }
             });
-            expect(result).toBe('Mostrando 5 de 12 establecimientos gastronómicos de restaurante.');
+            expect(result).toBe('Mostrando 5 de 12 locales de tipo restaurante.');
         });
 
         it('should not show "sin filtros activos" once destination is also active', () => {
@@ -81,7 +87,7 @@ describe('buildVenueListingSummary', () => {
                 counts: { shown: 3, total: 3 },
                 catalogs: { types: DEFAULT_VENUE_TYPES, destinations: DESTINATIONS }
             });
-            expect(result).toBe('Mostrando 3 de 3 establecimientos gastronómicos de bar en Colón.');
+            expect(result).toBe('Mostrando 3 de 3 locales de tipo bar en Colón.');
         });
 
         it('should fall back to the raw key when type is not in the catalog', () => {
@@ -90,7 +96,7 @@ describe('buildVenueListingSummary', () => {
                 filters: { type: 'UNKNOWN' },
                 counts: { shown: 1, total: 1 }
             });
-            expect(result).toContain('de UNKNOWN');
+            expect(result).toContain('de tipo UNKNOWN');
         });
     });
 
@@ -102,7 +108,7 @@ describe('buildVenueListingSummary', () => {
                 counts: { shown: 4, total: 10 },
                 catalogs: { destinations: DESTINATIONS }
             });
-            expect(result).toBe('Mostrando 4 de 10 establecimientos gastronómicos en Concordia.');
+            expect(result).toBe('Mostrando 4 de 10 locales en Concordia.');
         });
     });
 
@@ -114,7 +120,7 @@ describe('buildVenueListingSummary', () => {
                 counts: { shown: 2, total: 20 }
             });
             expect(result).toBe(
-                'Mostrando 2 de 20 establecimientos gastronómicos que contienen "pizza" en el nombre o la descripción.'
+                'Mostrando 2 de 20 locales que contienen "pizza" en el nombre o la descripción.'
             );
         });
 
@@ -126,7 +132,7 @@ describe('buildVenueListingSummary', () => {
                 catalogs: { destinations: DESTINATIONS }
             });
             expect(result).toBe(
-                'Mostrando 2 de 10 establecimientos gastronómicos en Colón, que contienen "pizza" en el nombre o la descripción.'
+                'Mostrando 2 de 10 locales en Colón, que contienen "pizza" en el nombre o la descripción.'
             );
         });
 
@@ -149,9 +155,7 @@ describe('buildVenueListingSummary', () => {
                 counts: { shown: 6, total: 30 },
                 catalogs: { priceRanges: DEFAULT_PRICE_RANGES }
             });
-            expect(result).toBe(
-                'Mostrando 6 de 30 establecimientos gastronómicos, con precios económicos.'
-            );
+            expect(result).toBe('Mostrando 6 de 30 locales, con precios económicos.');
         });
 
         it('should render in English', () => {
@@ -201,9 +205,7 @@ describe('buildVenueListingSummary', () => {
                 filters: { isFeatured: true },
                 counts: { shown: 7, total: 18 }
             });
-            expect(result).toBe(
-                'Mostrando 7 de 18 establecimientos gastronómicos, solo destacados.'
-            );
+            expect(result).toBe('Mostrando 7 de 18 locales, solo destacados.');
         });
 
         it('should not be active when isFeatured is falsy', () => {
@@ -275,7 +277,7 @@ describe('buildVenueListingSummary', () => {
                 counts: { shown: 0, total: 0 },
                 catalogs: { types: DEFAULT_VENUE_TYPES }
             });
-            expect(result).toBe('No se encontraron establecimientos gastronómicos de bar.');
+            expect(result).toBe('No se encontraron locales de tipo bar.');
         });
     });
 
@@ -300,7 +302,7 @@ describe('buildVenueListingSummary', () => {
                 }
             });
             expect(result).toBe(
-                'Mostrando 2 de 5 establecimientos gastronómicos de restaurante en Colón, que contienen "centro" en el nombre o la descripción, con precios moderados, con calificación mínima de 4, solo destacados, ordenados por mejor calificación.'
+                'Mostrando 2 de 5 locales de tipo restaurante en Colón, que contienen "centro" en el nombre o la descripción, con precios moderados, con calificación mínima de 4, solo destacados, ordenados por mejor calificación.'
             );
         });
     });
@@ -452,9 +454,7 @@ describe('buildVenueListingSummary (pt)', () => {
             filters: {},
             counts: { shown: 9, total: 18 }
         });
-        expect(result).toBe(
-            'Mostrando 9 de 18 estabelecimentos gastronômicos, sem filtros ativos.'
-        );
+        expect(result).toBe('Mostrando 9 de 18 estabelecimentos, sem filtros ativos.');
     });
 
     it('should use the singular subject when total is 1', () => {
@@ -463,7 +463,7 @@ describe('buildVenueListingSummary (pt)', () => {
             filters: {},
             counts: { shown: 1, total: 1 }
         });
-        expect(result).toBe('Mostrando 1 de 1 estabelecimento gastronômico, sem filtros ativos.');
+        expect(result).toBe('Mostrando 1 de 1 estabelecimento, sem filtros ativos.');
     });
 
     it('should append the masculine featured-first sort phrase', () => {
@@ -474,7 +474,7 @@ describe('buildVenueListingSummary (pt)', () => {
             sort: { sortKey: 'featured' }
         });
         expect(result).toBe(
-            'Mostrando 9 de 18 estabelecimentos gastronômicos, sem filtros ativos, ordenados com os destacados primeiro.'
+            'Mostrando 9 de 18 estabelecimentos, sem filtros ativos, ordenados com os destacados primeiro.'
         );
     });
 
@@ -489,9 +489,7 @@ describe('buildVenueListingSummary (pt)', () => {
             counts: { shown: 2, total: 2 },
             sort: { sortKey }
         });
-        expect(result).toBe(
-            `Mostrando 2 de 2 estabelecimentos gastronômicos, sem filtros ativos, ${expected}.`
-        );
+        expect(result).toBe(`Mostrando 2 de 2 estabelecimentos, sem filtros ativos, ${expected}.`);
     });
 
     it('should render type, destination and price range', () => {
@@ -506,7 +504,7 @@ describe('buildVenueListingSummary (pt)', () => {
             }
         });
         expect(result).toBe(
-            'Mostrando 1 de 1 estabelecimento gastronômico de churrascaria em Colón, com preços econômicos.'
+            'Mostrando 1 de 1 estabelecimento do tipo churrascaria em Colón, com preços econômicos.'
         );
     });
 
@@ -530,7 +528,7 @@ describe('buildVenueListingSummary (pt)', () => {
             }
         });
         expect(result).toBe(
-            'Mostrando 2 de 5 estabelecimentos gastronômicos de restaurante em Colón, que contêm "centro" no nome ou na descrição, com preços moderados, com avaliação mínima de 4,5, somente destacados, ordenados por melhor avaliação.'
+            'Mostrando 2 de 5 estabelecimentos do tipo restaurante em Colón, que contêm "centro" no nome ou na descrição, com preços moderados, com avaliação mínima de 4,5, somente destacados, ordenados por melhor avaliação.'
         );
     });
 
@@ -541,7 +539,7 @@ describe('buildVenueListingSummary (pt)', () => {
             counts: { shown: 0, total: 0 }
         });
         expect(result).toBe(
-            'Nenhum resultado encontrado para estabelecimentos gastronômicos que contêm "xyz" no nome ou na descrição.'
+            'Nenhum resultado encontrado para estabelecimentos que contêm "xyz" no nome ou na descrição.'
         );
     });
 });

@@ -77,6 +77,12 @@ export interface ListingEntityConfig {
     readonly subjectSingular: Record<SummaryLocale, string>;
     readonly subjectPlural: Record<SummaryLocale, string>;
     readonly hasPriceRange: boolean;
+    /**
+     * Optional connector placed between the subject noun and the type label
+     * (e.g. `de tipo` -> "locales de tipo restaurante"). When omitted the
+     * generic `ofCategory` phrase is used ("experiencias de alquiler de autos").
+     */
+    readonly typeConnector?: Record<SummaryLocale, string>;
 }
 
 /** Input for {@link buildListingSummary}. */

@@ -81,10 +81,10 @@
         },
         "greetingVenue": {
             "title": "Bienvenido a tu panel de Comer y salir",
-            "body": "Desde aca podes gestionar tu cuenta y el contenido publico de tu local gastronomico."
+            "body": "Desde aca podes gestionar tu cuenta y el contenido publico de tu local."
         },
         "listingVenue": {
-            "body": "Edita el menu, los horarios y los datos visibles de tu local gastronomico."
+            "body": "Edita el menu, los horarios y los datos visibles de tu local."
         },
         "myListings": {
             "title": "Tus comercios",
@@ -171,8 +171,8 @@
                 },
                 "venue": {
                     "title": "Comer y salir",
-                    "description": "Sumá tu local gastronómico a Hospeda: restaurante, parrilla, panadería, café o food truck. Dejanos tus datos, aprobamos tu solicitud y desde tu cuenta completás y publicás tu ficha vos mismo.",
-                    "cta": "Publicá tu local gastronómico"
+                    "description": "Sumá tu local a Hospeda: restaurante, parrilla, panadería, café o food truck. Dejanos tus datos, aprobamos tu solicitud y desde tu cuenta completás y publicás tu ficha vos mismo.",
+                    "cta": "Publicá tu local"
                 }
             }
         },

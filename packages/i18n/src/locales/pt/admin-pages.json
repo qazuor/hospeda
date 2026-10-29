@@ -746,7 +746,7 @@
                     "name": "Dono de Comer e sair",
                     "description": "Titular de um restaurante, bar ou café que gerencia seu próprio perfil (sem acesso a experiências)",
                     "capabilities": {
-                        "cap1": "Gerenciar seu perfil gastronômico",
+                        "cap1": "Gerenciar seu perfil do estabelecimento",
                         "cap2": "Atualizar horários e contato",
                         "cap3": "Enviar fotos",
                         "cap4": "Responder avaliações",

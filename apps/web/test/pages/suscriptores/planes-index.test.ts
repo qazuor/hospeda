@@ -797,7 +797,7 @@ describe('the venue card does not narrow the vertical to restaurants', () => {
     it.each(LOCALES)('%s still names the vertical in the title', (locale) => {
         // Not merely "absence of restaurant": the title has to say what it is,
         // or the card stops being a door at all.
-        expect(venueCard(locale).title).toMatch(/local gastron[oóô]mico|food business/i);
+        expect(venueCard(locale).title).toMatch(/Comer y salir|Comer e sair|Food & nightlife/i);
     });
 
     it.each(LOCALES)('%s widens the audience line past three venue types', (locale) => {
@@ -808,7 +808,7 @@ describe('the venue card does not narrow the vertical to restaurants', () => {
         const audience = venueCard(locale).audience ?? '';
 
         expect(audience).toMatch(/food truck/i);
-        expect(audience).toMatch(/local gastron[oóô]mico|food business/i);
+        expect(audience).toMatch(/todo local|todo estabelecimento|any food business/i);
     });
 
     it('retires the old URL instead of leaving it indexed — D-9 reversed by HOS-1032', () => {

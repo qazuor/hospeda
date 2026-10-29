@@ -519,8 +519,8 @@
     "entitlement": {
         "publish_accommodations": "Publicar alojamientos",
         "edit_accommodation_info": "Editar información del alojamiento",
-        "edit_venue_info": "Editar información del comercio gastronómico",
-        "publish_venue": "Publicar comercios gastronómicos",
+        "edit_venue_info": "Editar información del local",
+        "publish_venue": "Publicar locales",
         "edit_experience_info": "Editar información de la experiencia",
         "publish_experience": "Publicar experiencias",
         "download_listing_pdf": "Ficha en PDF para imprimir",
@@ -742,7 +742,7 @@
         "max_ai_text_improve_per_month": "Cuántas veces por mes podés pedirle a la IA que mejore tus textos. La cuota se renueva al empezar cada mes.",
         "max_ai_chat_per_month": "Cuántas consultas por mes puede responder la IA sobre tus alojamientos. Al agotarla, vuelve a estar disponible el mes siguiente.",
         "max_ai_chat_consumer_per_month": "Cuántas consultas podés hacerle por mes al asistente de IA. Al agotarla, la cuota se renueva el mes siguiente.",
-        "max_ai_chat_venue_per_month": "Cuántas consultas por mes puede responder la IA sobre tu local gastronómico. Al agotarla, vuelve a estar disponible el mes siguiente.",
+        "max_ai_chat_venue_per_month": "Cuántas consultas por mes puede responder la IA sobre tu local. Al agotarla, vuelve a estar disponible el mes siguiente.",
         "max_ai_chat_experience_per_month": "Cuántas consultas por mes puede responder la IA sobre tu experiencia. Al agotarla, vuelve a estar disponible el mes siguiente.",
         "max_ai_search_per_month": "Cuántas búsquedas con IA podés hacer por mes. Al agotarla, seguís usando la búsqueda tradicional hasta el mes siguiente.",
         "max_ai_support_per_month": "Cuántas consultas por mes podés hacerle al asistente de soporte con IA. La cuota se renueva al empezar cada mes.",
@@ -750,7 +750,7 @@
         "max_ai_accommodation_import_per_month": "Cuántos alojamientos podés importar por mes desde otra plataforma con ayuda de la IA. La cuota se renueva al empezar cada mes.",
         "max_search_history_entries": "Cuántas búsquedas anteriores se guardan en tu historial. Al superar el tope se borran las más viejas.",
         "max_collections": "Cuántas listas de favoritos podés tener creadas. Al llegar al tope tenés que borrar una para crear otra.",
-        "max_venues": "Cuántos locales gastronómicos podés tener publicados al mismo tiempo. Al llegar al tope necesitás un plan mayor para sumar otro.",
+        "max_venues": "Cuántos locales podés tener publicados al mismo tiempo. Al llegar al tope necesitás un plan mayor para sumar otro.",
         "max_experiences": "Cuántas experiencias podés tener publicadas al mismo tiempo. Al llegar al tope necesitás un plan mayor para sumar otra.",
         "max_active_private_galleries": "Cuántas galerías privadas podés tener vivas al mismo tiempo. Cada galería caduca sola al cumplirse su plazo y se borra, así que los lugares se liberan a medida que vencen."
     }

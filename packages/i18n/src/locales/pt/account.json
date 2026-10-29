@@ -81,10 +81,10 @@
         },
         "greetingVenue": {
             "title": "Bem-vindo ao seu painel de Comer e sair",
-            "body": "Daqui você pode gerenciar sua conta e o conteúdo público do seu estabelecimento gastronômico."
+            "body": "Daqui você pode gerenciar sua conta e o conteúdo público do seu estabelecimento."
         },
         "listingVenue": {
-            "body": "Edite o cardápio, os horários e os dados visíveis do seu estabelecimento gastronômico."
+            "body": "Edite o cardápio, os horários e os dados visíveis do seu estabelecimento."
         },
         "myListings": {
             "title": "Seus negócios",
@@ -171,8 +171,8 @@
                 },
                 "venue": {
                     "title": "Comer e sair",
-                    "description": "Some seu local gastronômico ao Hospeda: restaurante, churrascaria, padaria, café ou food truck. Deixe seus dados, aprovamos sua solicitação e, a partir da sua conta, você completa e publica sua própria ficha.",
-                    "cta": "Publique seu local gastronômico"
+                    "description": "Some seu estabelecimento ao Hospeda: restaurante, churrascaria, padaria, café ou food truck. Deixe seus dados, aprovamos sua solicitação e, a partir da sua conta, você completa e publica sua própria ficha.",
+                    "cta": "Publique seu estabelecimento"
                 }
             }
         },

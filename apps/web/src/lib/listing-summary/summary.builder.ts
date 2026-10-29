@@ -5,9 +5,9 @@
  * Produces a single human-readable sentence describing the active filters,
  * shown / total counts, and sort. Examples:
  *
- * - "Mostrando 9 de 18 establecimientos gastronómicos, sin filtros activos, ordenados con los destacados primero."
+ * - "Mostrando 9 de 18 locales, sin filtros activos, ordenados con los destacados primero."
  * - "Mostrando 3 de 4 experiencias en Concordia, ordenadas con las destacadas primero."
- * - "Mostrando 1 de 1 establecimiento gastronómico de restaurante en Colón, con precios económicos."
+ * - "Mostrando 1 de 1 local de tipo restaurante en Colón, con precios económicos."
  * - "No se encontraron experiencias que contienen \"kayak\" en el nombre o la descripción."
  *
  * Mirrors `post-listing-summary/summary.builder` and
@@ -34,8 +34,8 @@ const DEFAULT_LOCALE: SummaryLocale = 'es';
  * comma-joined.
  *
  * Examples:
- *   - "establecimientos gastronómicos de restaurante"                    (type flow)
- *   - "establecimientos gastronómicos de restaurante en Colón"          (type + destination flow)
+ *   - "locales de tipo restaurante"                                      (type flow)
+ *   - "locales de tipo restaurante en Colón"                            (type + destination flow)
  *   - "experiencias en Concordia, que contienen \"kayak\"…"             (text gets a comma)
  */
 function assembleModifiers(

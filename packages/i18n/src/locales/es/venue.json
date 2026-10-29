@@ -9,8 +9,8 @@
     "listing": {
         "title": "Comer y salir",
         "subtitle": "Descubrí los mejores restaurantes, bares y sabores de la región",
-        "emptyState": "No se encontraron establecimientos gastronómicos con los filtros seleccionados.",
-        "emptyCatalog": "Todavía no hay establecimientos gastronómicos publicados.",
+        "emptyState": "No se encontraron locales con los filtros seleccionados.",
+        "emptyCatalog": "Todavía no hay locales publicados.",
         "errorBanner": "No se pudo cargar el listado de Comer y salir. Intentá de nuevo más tarde.",
         "results_one": "{{count}} establecimiento encontrado",
         "results_other": "{{count}} establecimientos encontrados",
@@ -113,7 +113,7 @@
     "landing": {
         "benefits": {
             "tagline": "¿Por qué Hospeda?",
-            "title": "Beneficios para tu local gastronómico",
+            "title": "Beneficios para tu local",
             "item1": {
                 "title": "Visibilidad en la región",
                 "desc": "Aparecé donde miles de viajeros buscan dónde comer en Concepción del Uruguay y el litoral entrerriano."
@@ -161,7 +161,7 @@
         "faq": {
             "tagline": "Resolvé tus dudas",
             "title": "Preguntas frecuentes",
-            "q1": "¿Cuánto cuesta publicar mi local gastronómico en Hospeda?",
+            "q1": "¿Cuánto cuesta publicar mi local en Hospeda?",
             "a1_one": "Un pago fijo mensual, con {{count}} día de prueba gratis en tu primera suscripción. Sin comisión por reserva ni consulta.",
             "a1_other": "Un pago fijo mensual, con {{count}} días de prueba gratis en tu primera suscripción. Sin comisión por reserva ni consulta.",
             "a1NoTrial": "Un pago fijo mensual. Sin comisión por reserva ni consulta.",

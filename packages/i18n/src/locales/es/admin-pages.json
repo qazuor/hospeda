@@ -746,7 +746,7 @@
                     "name": "Dueño de Comer y salir",
                     "description": "Titular de un restaurante, bar o café que gestiona su propia ficha (sin acceso a experiencias)",
                     "capabilities": {
-                        "cap1": "Gestionar su ficha gastronómica",
+                        "cap1": "Gestionar su ficha de local",
                         "cap2": "Actualizar horarios y contacto",
                         "cap3": "Subir fotos",
                         "cap4": "Responder reseñas",
