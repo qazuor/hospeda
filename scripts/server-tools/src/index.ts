@@ -278,7 +278,9 @@ const COMMANDS: ReadonlyArray<Command> = [
             booleanFlags: [
                 '--no-reset',
                 '--no-required',
+                '--example',
                 '--no-example',
+                '--baseline-stamp',
                 '--clean-images',
                 '--build',
                 '--migrate',
