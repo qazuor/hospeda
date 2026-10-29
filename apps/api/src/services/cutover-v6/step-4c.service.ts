@@ -4,6 +4,11 @@ import type { EntityChangeData } from '@repo/service-core';
 import { getAffectedCacheTags } from '@repo/service-core';
 import { z } from 'zod';
 import { PASSAGE_TABLE } from './passage-table.js';
+import {
+    buildLegacyEntityTags,
+    buildLegacyPrefixes,
+    LEGACY_COLLECTION_TAGS
+} from './step-4c.legacy.js';
 
 /** External page-cache and edge purge port. */
 export interface PagePurger {
@@ -12,11 +17,22 @@ export interface PagePurger {
         readonly ok: boolean;
         readonly failed: readonly string[];
     }>;
+    /**
+     * Purges URL prefixes (host + path, no scheme). Every request must be checked:
+     * a non-2xx answer (a 429 included) is a purge that did not happen.
+     */
+    purgePrefixes(input: {
+        readonly group: string;
+        readonly prefixes: readonly string[];
+    }): Promise<{
+        readonly ok: boolean;
+        readonly failed: readonly string[];
+    }>;
 }
 
 /** A tag group and its purge verdict. */
 export interface Step4cGroup {
-    readonly name: 'listings' | 'collections' | 'destinations';
+    readonly name: 'listings' | 'collections' | 'destinations' | 'legacy-tags' | 'legacy-prefixes';
     readonly tagCount: number;
     readonly ok: boolean;
     readonly failed: readonly string[];
@@ -28,6 +44,8 @@ export interface Step4cResult {
     readonly groups: readonly Step4cGroup[];
     readonly listingCount: number;
     readonly destinationCount: number;
+    /** Set when a group failed: the groups after it were NOT attempted (the edge budget is scarce). */
+    readonly haltedAfter?: Step4cGroup['name'];
 }
 
 /** Missing passage table means the required earlier cutover step did not run or 5b ran first. */
@@ -43,10 +61,20 @@ export interface RunStep4cInput {
     readonly db: DrizzleClient;
     readonly pagePurger: PagePurger;
     readonly dryRun: boolean;
+    /** Extra tags (bare, un-namespaced) merged into the legacy tag group. */
+    readonly extraTags?: readonly string[];
+    /** Extra URL prefixes merged into the legacy prefix group. */
+    readonly extraPrefixes?: readonly string[];
 }
 
 /** Revalidates deleted listing pages, collection pages, home, and live destinations. */
-export async function runStep4c({ db, pagePurger, dryRun }: RunStep4cInput): Promise<Step4cResult> {
+export async function runStep4c({
+    db,
+    pagePurger,
+    dryRun,
+    extraTags = [],
+    extraPrefixes = []
+}: RunStep4cInput): Promise<Step4cResult> {
     const existence = await db.execute(
         sql`SELECT to_regclass('public.cutover_v6_deleted_listing')::text AS table_name`
     );
@@ -92,11 +120,32 @@ export async function runStep4c({ db, pagePurger, dryRun }: RunStep4cInput): Pro
         destinations.flatMap(({ id, slug }) => entityTags({ entityType: 'destination', slug, id }))
     );
 
+    // The retired vocabulary (HOS-1957, G10): old listings known from the passage
+    // table and from the live venues, which production's edge still caches under
+    // `gastro-*`. Un-renamed slugs and ids both appear as tags.
+    const venueResult = await db.execute(sql`SELECT id::text AS id, slug FROM venues`);
+    const legacyTags = sortedUnique([
+        ...LEGACY_COLLECTION_TAGS,
+        ...buildLegacyEntityTags({
+            listings: [
+                ...listings
+                    .filter(({ entityType }) => entityType === 'venue')
+                    .map(({ entityId }) => ({ id: entityId })),
+                ...rowsOf<{ id: string; slug: string | null }>(venueResult)
+            ]
+        }),
+        ...extraTags
+    ]);
+    const legacyPrefixes = sortedUnique([...buildLegacyPrefixes(), ...extraPrefixes]);
+
     const groups: Step4cGroup[] = [];
+    let haltedAfter: Step4cGroup['name'] | undefined;
     for (const [name, tags] of [
         ['listings', listingTags],
         ['collections', collectionTags],
-        ['destinations', destinationTags]
+        ['destinations', destinationTags],
+        ['legacy-tags', legacyTags],
+        ['legacy-prefixes', legacyPrefixes]
     ] as const) {
         if (dryRun) {
             groups.push({ name, tagCount: tags.length, ok: true, failed: [] });
@@ -106,20 +155,26 @@ export async function runStep4c({ db, pagePurger, dryRun }: RunStep4cInput): Pro
             groups.push({ name, tagCount: 0, ok: true, failed: [] });
             continue;
         }
-        const result = await pagePurger.purge({ group: name, tags });
-        groups.push({
-            name,
-            tagCount: tags.length,
-            ok: result.ok && result.failed.length === 0,
-            failed: result.failed
-        });
+        const result =
+            name === 'legacy-prefixes'
+                ? await pagePurger.purgePrefixes({ group: name, prefixes: tags })
+                : await pagePurger.purge({ group: name, tags });
+        const groupOk = result.ok && result.failed.length === 0;
+        groups.push({ name, tagCount: tags.length, ok: groupOk, failed: result.failed });
+        if (!groupOk) {
+            // A rejected purge (a 429 above all) leaves the bucket empty: going on
+            // would burn the budget the live API shares and fail the same way.
+            haltedAfter = name;
+            break;
+        }
     }
     const ok = groups.every((group) => group.ok);
     return {
         status: dryRun ? 'dry_run' : ok ? 'completed' : 'failed',
         groups,
         listingCount: listings.length,
-        destinationCount: destinations.length
+        destinationCount: destinations.length,
+        ...(haltedAfter ? { haltedAfter } : {})
     };
 }
 

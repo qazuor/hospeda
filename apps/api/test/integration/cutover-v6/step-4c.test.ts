@@ -21,6 +21,7 @@ const deleted = [
     { entityType: 'venue', entityId: '14820000-0000-4000-8000-000000000002' },
     { entityType: 'experience', entityId: '14820000-0000-4000-8000-000000000003' }
 ] as const;
+const noTransport = async () => ({ ok: true, status: 200 });
 type Call = { readonly group: string; readonly tags: readonly string[] };
 
 function fakePurger(failGroup?: string, calls: Call[] = []): PagePurger {
@@ -29,6 +30,12 @@ function fakePurger(failGroup?: string, calls: Call[] = []): PagePurger {
             calls.push({ group, tags: [...tags] });
             return group === failGroup
                 ? { ok: false, failed: tags.slice(0, 1) }
+                : { ok: true, failed: [] };
+        },
+        async purgePrefixes({ group, prefixes }) {
+            calls.push({ group, tags: [...prefixes] });
+            return group === failGroup
+                ? { ok: false, failed: prefixes.slice(0, 1) }
                 : { ok: true, failed: [] };
         }
     };
@@ -125,7 +132,9 @@ describe('TEST:V6:24 step 4c', () => {
             expect(first.map(({ group }) => group)).toEqual([
                 'listings',
                 'collections',
-                'destinations'
+                'destinations',
+                'legacy-tags',
+                'legacy-prefixes'
             ]);
             expect(second).toEqual(first);
             expect(first[0]?.tags).toEqual([
@@ -139,6 +148,9 @@ describe('TEST:V6:24 step 4c', () => {
                     .flatMap(({ id, slug }) => [`dest-${slug}`, `dest-${id}`])
                     .sort()
             );
+            expect(first[3]?.tags).toContain('list-gastro');
+            expect(first[3]?.tags).toContain('gastro-14820000-0000-4000-8000-000000000002');
+            expect(first[4]?.tags).toHaveLength(54);
             expect(firstResult).toMatchObject({
                 status: 'completed',
                 listingCount: 3,
@@ -212,7 +224,9 @@ describe('TEST:V6:24 step 4c', () => {
             expect(calls.map(({ group }) => group)).toEqual([
                 'listings',
                 'collections',
-                'destinations'
+                'destinations',
+                'legacy-tags',
+                'legacy-prefixes'
             ]);
             expect(result.status).toBe('failed');
             expect(result.groups[1]).toMatchObject({
@@ -259,7 +273,10 @@ describe('TEST:V6:24 step 4c', () => {
         await withRollback(async () => {
             const { adapter, received } = recordingAdapter();
             const prod = new RevalidationService({ adapter, cacheTagEnvironment: 'prod' });
-            const purger = createRevalidationPagePurger({ service: prod });
+            const purger = createRevalidationPagePurger({
+                service: prod,
+                prefixTransport: noTransport
+            });
             expect(
                 await purger.purge({ group: 'collections', tags: ['home', 'list-accom'] })
             ).toMatchObject({ ok: true });
@@ -273,7 +290,10 @@ describe('TEST:V6:24 step 4c', () => {
                 cacheTagEnvironment: 'prod'
             });
             expect(
-                await createRevalidationPagePurger({ service: failed }).purge({
+                await createRevalidationPagePurger({
+                    service: failed,
+                    prefixTransport: noTransport
+                }).purge({
                     group: 'collections',
                     tags: ['home']
                 })
@@ -282,7 +302,10 @@ describe('TEST:V6:24 step 4c', () => {
             const unresolvedRecorder = recordingAdapter();
             const unresolved = new RevalidationService({ adapter: unresolvedRecorder.adapter });
             expect(
-                await createRevalidationPagePurger({ service: unresolved }).purge({
+                await createRevalidationPagePurger({
+                    service: unresolved,
+                    prefixTransport: noTransport
+                }).purge({
                     group: 'collections',
                     tags: ['home']
                 })
@@ -293,9 +316,9 @@ describe('TEST:V6:24 step 4c', () => {
                 adapter: new NoOpRevalidationAdapter(),
                 cacheTagEnvironment: 'prod'
             });
-            expect(() => createRevalidationPagePurger({ service: noOp })).toThrow(
-                Step4cNoOpAdapterError
-            );
+            expect(() =>
+                createRevalidationPagePurger({ service: noOp, prefixTransport: noTransport })
+            ).toThrow(Step4cNoOpAdapterError);
         });
     });
 });

@@ -108,7 +108,7 @@ revalidation secret only for check 3, and never paste it into a ticket.
 
    ```bash
    curl -sS -o /dev/null -w '%{http_code}\n' https://hospeda.com.ar/es/
-   curl -sS -o /dev/null -w '%{http_code}\n' https://api.hospeda.com.ar/api/v1/public/health
+   curl -sS -o /dev/null -w '%{http_code}\n' https://api.hospeda.com.ar/health
    ```
 
    Both must print `200`.
