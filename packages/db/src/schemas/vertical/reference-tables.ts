@@ -19,6 +19,22 @@ import { verticals } from './vertical.dbschema.ts';
 import { verticalDeadlineVersions } from './vertical-deadline-version.dbschema.ts';
 
 /**
+ * Billing catalog tables populated by migration 0176 (HOS-1827): `billing_option` and
+ * the add-on tables. They are part of {@link REFERENCE_TABLES} (the seed reset must keep
+ * them), and are exported separately so the integration-test clean slate can still
+ * truncate them: that harness gives each test an empty billing catalog, whereas the seed
+ * reset preserves these rows for live environments.
+ */
+export const MIGRATION_CATALOG_TABLES: readonly string[] = [
+    getTableName(billingOptions),
+    getTableName(addons),
+    getTableName(addonVersions),
+    getTableName(addonVersionEntitlements),
+    getTableName(addonVersionLimits),
+    getTableName(addonProducts)
+];
+
+/**
  * Tables whose rows are written BY A STRUCTURAL MIGRATION, not by any seed
  * (HOS-1430). The rule: a table belongs here if ANY file in
  * `packages/db/src/migrations/*.sql` runs `INSERT INTO` it and no seed re-inserts those
@@ -38,10 +54,5 @@ export const REFERENCE_TABLES: readonly string[] = [
     getTableName(planVersions),
     getTableName(planVersionEntitlements),
     getTableName(planVersionLimits),
-    getTableName(billingOptions),
-    getTableName(addons),
-    getTableName(addonVersions),
-    getTableName(addonVersionEntitlements),
-    getTableName(addonVersionLimits),
-    getTableName(addonProducts)
+    ...MIGRATION_CATALOG_TABLES
 ];

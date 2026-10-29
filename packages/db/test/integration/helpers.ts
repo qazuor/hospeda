@@ -19,7 +19,10 @@
 import { drizzle } from 'drizzle-orm/node-postgres';
 import { Pool } from 'pg';
 import * as hospedaSchema from '../../src/schemas/index.ts';
-import { REFERENCE_TABLES } from '../../src/schemas/vertical/reference-tables.ts';
+import {
+    MIGRATION_CATALOG_TABLES,
+    REFERENCE_TABLES
+} from '../../src/schemas/vertical/reference-tables.ts';
 import type { DrizzleClient } from '../../src/types.ts';
 
 /**
@@ -131,7 +134,14 @@ export async function withCleanSlate(fn: (db: DrizzleClient) => Promise<void>): 
         `SELECT tablename FROM pg_tables WHERE schemaname = 'public' ORDER BY tablename`
     );
     const tables = result.rows
-        .filter((r) => !REFERENCE_TABLES.includes(r.tablename))
+        // The seed reset preserves the migration-0176 catalog (live environments need it);
+        // this harness instead gives each test an EMPTY billing catalog, so those tables
+        // are truncated here even though they are in REFERENCE_TABLES.
+        .filter(
+            (r) =>
+                MIGRATION_CATALOG_TABLES.includes(r.tablename) ||
+                !REFERENCE_TABLES.includes(r.tablename)
+        )
         .map((r) => `"${r.tablename}"`);
     if (tables.length > 0) {
         await p.query(`TRUNCATE ${tables.join(', ')} RESTART IDENTITY CASCADE`);
