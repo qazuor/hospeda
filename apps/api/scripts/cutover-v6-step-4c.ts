@@ -21,14 +21,14 @@ import { env, validateApiEnv } from '../src/utils/env.js';
  * Runs the protected one-time step 4c command.
  * Run from the repository root with: `pnpm --filter hospeda-api exec tsx scripts/cutover-v6-step-4c.ts --dry-run`.
  *
- * Purges, in this order and stopping at the first group that fails:
+ * Purges, in this order, attempting every group even if one fails:
  * `listings`, `collections`, `destinations`, `legacy-tags` (the retired
  * collection and per-entity tags of the old vertical) and `legacy-prefixes` (the 54 URL prefixes of
  * the old and new restaurant-vertical routes on `hospeda.com.ar` and `www.hospeda.com.ar`).
  * Tags go through `revalidateMany` (100 per request) and the prefixes in one
  * request, so the whole run costs about 5 Cloudflare requests (Free plan: 5 per
  * minute, shared with the live API). Every response is checked: a 429 is a purge
- * that did not happen, so the run exits 1 and names the failed group.
+ * that did not happen, so the run exits 1 and the result names the failed group and tags.
  *
  * Flags:
  *   --dry-run                      Count only, call nothing.

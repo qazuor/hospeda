@@ -59,8 +59,8 @@ API tsconfig and workspace `tsx` while preserving the script's exit code through
 ### V6 step 4c cache purge
 
 `pnpm --dir apps/api exec tsx scripts/cutover-v6-step-4c.ts --dry-run` (or
-`--confirm-purge` for the real run). It purges, in order and stopping at the
-first group that fails: `listings`, `collections`, `destinations`,
+`--confirm-purge` for the real run). It purges, in order, attempting every
+group even if one fails: `listings`, `collections`, `destinations`,
 `legacy-tags` (the retired collection tag and the per-entity tags of the old
 vertical, built from the slugs and ids in the passage table and the live
 `venues`; the words live in `step-4c.legacy.ts`, assembled from parts because the
@@ -71,7 +71,7 @@ legacy tags go in `revalidateMany` batches of 100 and the prefixes in one
 request to `/api/revalidate/` (`{ "prefixes": [...] }`), so the whole run is
 about 5 Cloudflare requests (Free plan: 5 per minute, bucket shared with the live
 API). Every response is checked: a 429 is a purge that did not happen and the
-run exits 1 naming the failed group (`haltedAfter`). The write-block rule of
+run exits 1 and the result names the failed group and tags. The write-block rule of
 step 0b must keep `/api/revalidate/` open
 ([`write-block-rule.md`](../../infra/cloudflare/rules/write-block-rule.md)).
 

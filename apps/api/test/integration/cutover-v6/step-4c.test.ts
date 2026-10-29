@@ -45,6 +45,11 @@ function fakePurger(failGroup?: string, calls: Call[] = []): PagePurger {
     };
 }
 
+/** The `destinations` purge call; it is no longer the last one now that the legacy groups follow. */
+function destinationCall(calls: readonly Call[]): Call | undefined {
+    return calls.find(({ group }) => group === 'destinations');
+}
+
 async function withRollback(run: (tx: DrizzleClient) => Promise<void>) {
     const rollback = new Error('rollback');
     try {
@@ -187,7 +192,20 @@ describe('TEST:V6:24 step 4c', () => {
                 pagePurger: fakePurger(undefined, calls),
                 dryRun: false
             });
-            expect(calls.map(({ group }) => group)).toEqual(['collections', 'destinations']);
+            // An empty passage table empties only the `listings` group. The legacy
+            // groups do not depend on it: the retired collection tag and the 54 URL
+            // prefixes are a fixed set that production's edge still holds, so both go
+            // out, and neither is ever an empty group that would waste a request.
+            expect(calls.map(({ group }) => group)).toEqual([
+                'collections',
+                'destinations',
+                'legacy-tags',
+                'legacy-prefixes'
+            ]);
+            expect(calls.find(({ group }) => group === 'legacy-tags')?.tags).toContain(
+                LEGACY_COLLECTION_TAGS[0]
+            );
+            expect(calls.find(({ group }) => group === 'legacy-prefixes')?.tags).toHaveLength(54);
             expect(result.groups[0]).toMatchObject({ name: 'listings', tagCount: 0, ok: true });
         });
     });
@@ -208,12 +226,12 @@ describe('TEST:V6:24 step 4c', () => {
                 dryRun: false
             });
             expect(result.destinationCount).toBe(liveDestinations.rows.length);
-            expect(calls.at(-1)?.tags).toEqual(
+            expect(destinationCall(calls)?.tags).toEqual(
                 liveDestinations.rows
                     .flatMap(({ id: liveId, slug }) => [`dest-${slug}`, `dest-${liveId}`])
                     .sort()
             );
-            expect(calls.at(-1)?.tags).not.toContain(`dest-${id}`);
+            expect(destinationCall(calls)?.tags).not.toContain(`dest-${id}`);
         });
     });
 

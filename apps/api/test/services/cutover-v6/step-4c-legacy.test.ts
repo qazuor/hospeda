@@ -310,15 +310,17 @@ describe('runStep4c legacy groups', () => {
         expect(result.status).toBe('completed');
     });
 
-    it('fails and stops at the first rejected group (a 429 must not be skipped over)', async () => {
+    it('fails when a legacy group is rejected (a 429 must not be skipped over) but still attempts the rest', async () => {
         // Arrange
         const { purger, calls } = recordingPurger({ failGroup: 'legacy-tags' });
         // Act
         const result = await runStep4c({ db: fakeDb(), pagePurger: purger, dryRun: false });
         // Assert
         expect(result.status).toBe('failed');
-        expect(result.haltedAfter).toBe('legacy-tags');
-        expect(calls.map(({ group }) => group)).not.toContain('legacy-prefixes');
+        expect(result.groups.find(({ name }) => name === 'legacy-tags')).toMatchObject({
+            ok: false
+        });
+        expect(calls.map(({ group }) => group)).toContain('legacy-prefixes');
     });
 
     it('fails when only the prefix purge is rejected', async () => {
