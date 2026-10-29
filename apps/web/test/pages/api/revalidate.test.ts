@@ -348,3 +348,60 @@ describe('POST /api/revalidate — cross-environment purges are refused', () => 
         expect(await response.json()).toMatchObject({ error: 'cache_tag_namespace_unresolved' });
     });
 });
+
+describe('POST /api/revalidate — URL prefix purge (cutover step 4c)', () => {
+    it('forwards non-production prefixes to Cloudflare as `prefixes`', async () => {
+        const prefixes = ['staging.hospeda.com.ar/es/comer-y-salir/'];
+
+        const response = await POST(makeContext({ body: { prefixes } }));
+
+        expect(response.status).toBe(200);
+        expect(await response.json()).toEqual({ ok: true, purged: 1 });
+        expect(lastPurgeBody(fetchMock)).toEqual({ prefixes });
+    });
+
+    it('accepts the production hosts only on the prod deployment', async () => {
+        vi.stubEnv('HOSPEDA_DEPLOY_ENV', 'prod');
+        _resetCacheTagEnvironment();
+        const prefixes = [
+            'hospeda.com.ar/es/comer-y-salir/',
+            'www.hospeda.com.ar/es/comer-y-salir/'
+        ];
+
+        const response = await POST(makeContext({ body: { prefixes } }));
+
+        expect(response.status).toBe(200);
+        expect(lastPurgeBody(fetchMock)).toEqual({ prefixes });
+    });
+
+    it('REFUSES production hosts from a non-prod deployment, and purges nothing', async () => {
+        const response = await POST(
+            makeContext({ body: { prefixes: ['hospeda.com.ar/es/comer-y-salir/'] } })
+        );
+
+        expect(response.status).toBe(400);
+        expect(fetchMock).not.toHaveBeenCalled();
+    });
+
+    it.each([
+        ['a scheme', 'https://staging.hospeda.com.ar/es/'],
+        ['no path', 'staging.hospeda.com.ar'],
+        ['a query', 'staging.hospeda.com.ar/es/?a=1']
+    ])('rejects a prefix with %s', async (_label, prefix) => {
+        const response = await POST(makeContext({ body: { prefixes: [prefix] } }));
+
+        expect(response.status).toBe(400);
+        expect(fetchMock).not.toHaveBeenCalled();
+    });
+
+    it('rejects `tags` and `prefixes` together instead of picking one', async () => {
+        const response = await POST(
+            makeContext({
+                body: { tags: [`${NS}home`], prefixes: ['staging.hospeda.com.ar/es/'] }
+            })
+        );
+
+        expect(response.status).toBe(400);
+        expect(fetchMock).not.toHaveBeenCalled();
+    });
+});

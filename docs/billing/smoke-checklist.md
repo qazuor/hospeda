@@ -21,8 +21,8 @@ Each later phase adds its own items to this checklist (GATE:FP.2).
 
 Each part is executed in its own environment and signed off separately.
 
-- **Part 1 (staging)** is executed inside the cutover rehearsal ([PASO:0](../../scripts/cutover/README.md#paso-0),
-  [GATE:M3](../../scripts/cutover/README.md#gate-m3)). Before merging any PR that touches billing to
+- **Part 1 (staging)** is executed inside the cutover rehearsal ([PASO:0](../../.specs/HOS-1352-billing-verticals-redesign/spec-consolidada/30-el-corte.md#paso-0),
+  [GATE:M3](../../.specs/HOS-1352-billing-verticals-redesign/spec-consolidada/30-el-corte.md#gate-m3)). Before merging any PR that touches billing to
   `staging`, run the relevant staging items (CLAUDE.md).
 - **Part 2 (production)** is executed in step 5c of the cutover, after step 5. It is run **only
   by the owner**, with their card and an amount approved in advance. Its observation — together

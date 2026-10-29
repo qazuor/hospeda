@@ -7,6 +7,10 @@ import {
     createRevalidationPagePurger,
     Step4cNoOpAdapterError
 } from '../../../src/services/cutover-v6/step-4c.adapters.js';
+import {
+    LEGACY_COLLECTION_TAGS,
+    LEGACY_ENTITY_TAG_PREFIX
+} from '../../../src/services/cutover-v6/step-4c.legacy.js';
 import type { PagePurger } from '../../../src/services/cutover-v6/step-4c.service.js';
 import {
     runStep4c,
@@ -21,6 +25,7 @@ const deleted = [
     { entityType: 'venue', entityId: '14820000-0000-4000-8000-000000000002' },
     { entityType: 'experience', entityId: '14820000-0000-4000-8000-000000000003' }
 ] as const;
+const noTransport = async () => ({ ok: true, status: 200 });
 type Call = { readonly group: string; readonly tags: readonly string[] };
 
 function fakePurger(failGroup?: string, calls: Call[] = []): PagePurger {
@@ -30,8 +35,19 @@ function fakePurger(failGroup?: string, calls: Call[] = []): PagePurger {
             return group === failGroup
                 ? { ok: false, failed: tags.slice(0, 1) }
                 : { ok: true, failed: [] };
+        },
+        async purgePrefixes({ group, prefixes }) {
+            calls.push({ group, tags: [...prefixes] });
+            return group === failGroup
+                ? { ok: false, failed: prefixes.slice(0, 1) }
+                : { ok: true, failed: [] };
         }
     };
+}
+
+/** The `destinations` purge call; it is no longer the last one now that the legacy groups follow. */
+function destinationCall(calls: readonly Call[]): Call | undefined {
+    return calls.find(({ group }) => group === 'destinations');
 }
 
 async function withRollback(run: (tx: DrizzleClient) => Promise<void>) {
@@ -125,7 +141,9 @@ describe('TEST:V6:24 step 4c', () => {
             expect(first.map(({ group }) => group)).toEqual([
                 'listings',
                 'collections',
-                'destinations'
+                'destinations',
+                'legacy-tags',
+                'legacy-prefixes'
             ]);
             expect(second).toEqual(first);
             expect(first[0]?.tags).toEqual([
@@ -139,6 +157,11 @@ describe('TEST:V6:24 step 4c', () => {
                     .flatMap(({ id, slug }) => [`dest-${slug}`, `dest-${id}`])
                     .sort()
             );
+            expect(first[3]?.tags).toContain(LEGACY_COLLECTION_TAGS[0]);
+            expect(first[3]?.tags).toContain(
+                `${LEGACY_ENTITY_TAG_PREFIX}-14820000-0000-4000-8000-000000000002`
+            );
+            expect(first[4]?.tags).toHaveLength(54);
             expect(firstResult).toMatchObject({
                 status: 'completed',
                 listingCount: 3,
@@ -169,7 +192,20 @@ describe('TEST:V6:24 step 4c', () => {
                 pagePurger: fakePurger(undefined, calls),
                 dryRun: false
             });
-            expect(calls.map(({ group }) => group)).toEqual(['collections', 'destinations']);
+            // An empty passage table empties only the `listings` group. The legacy
+            // groups do not depend on it: the retired collection tag and the 54 URL
+            // prefixes are a fixed set that production's edge still holds, so both go
+            // out, and neither is ever an empty group that would waste a request.
+            expect(calls.map(({ group }) => group)).toEqual([
+                'collections',
+                'destinations',
+                'legacy-tags',
+                'legacy-prefixes'
+            ]);
+            expect(calls.find(({ group }) => group === 'legacy-tags')?.tags).toContain(
+                LEGACY_COLLECTION_TAGS[0]
+            );
+            expect(calls.find(({ group }) => group === 'legacy-prefixes')?.tags).toHaveLength(54);
             expect(result.groups[0]).toMatchObject({ name: 'listings', tagCount: 0, ok: true });
         });
     });
@@ -190,12 +226,12 @@ describe('TEST:V6:24 step 4c', () => {
                 dryRun: false
             });
             expect(result.destinationCount).toBe(liveDestinations.rows.length);
-            expect(calls.at(-1)?.tags).toEqual(
+            expect(destinationCall(calls)?.tags).toEqual(
                 liveDestinations.rows
                     .flatMap(({ id: liveId, slug }) => [`dest-${slug}`, `dest-${liveId}`])
                     .sort()
             );
-            expect(calls.at(-1)?.tags).not.toContain(`dest-${id}`);
+            expect(destinationCall(calls)?.tags).not.toContain(`dest-${id}`);
         });
     });
 
@@ -212,7 +248,9 @@ describe('TEST:V6:24 step 4c', () => {
             expect(calls.map(({ group }) => group)).toEqual([
                 'listings',
                 'collections',
-                'destinations'
+                'destinations',
+                'legacy-tags',
+                'legacy-prefixes'
             ]);
             expect(result.status).toBe('failed');
             expect(result.groups[1]).toMatchObject({
@@ -259,7 +297,10 @@ describe('TEST:V6:24 step 4c', () => {
         await withRollback(async () => {
             const { adapter, received } = recordingAdapter();
             const prod = new RevalidationService({ adapter, cacheTagEnvironment: 'prod' });
-            const purger = createRevalidationPagePurger({ service: prod });
+            const purger = createRevalidationPagePurger({
+                service: prod,
+                prefixTransport: noTransport
+            });
             expect(
                 await purger.purge({ group: 'collections', tags: ['home', 'list-accom'] })
             ).toMatchObject({ ok: true });
@@ -273,7 +314,10 @@ describe('TEST:V6:24 step 4c', () => {
                 cacheTagEnvironment: 'prod'
             });
             expect(
-                await createRevalidationPagePurger({ service: failed }).purge({
+                await createRevalidationPagePurger({
+                    service: failed,
+                    prefixTransport: noTransport
+                }).purge({
                     group: 'collections',
                     tags: ['home']
                 })
@@ -282,7 +326,10 @@ describe('TEST:V6:24 step 4c', () => {
             const unresolvedRecorder = recordingAdapter();
             const unresolved = new RevalidationService({ adapter: unresolvedRecorder.adapter });
             expect(
-                await createRevalidationPagePurger({ service: unresolved }).purge({
+                await createRevalidationPagePurger({
+                    service: unresolved,
+                    prefixTransport: noTransport
+                }).purge({
                     group: 'collections',
                     tags: ['home']
                 })
@@ -293,9 +340,9 @@ describe('TEST:V6:24 step 4c', () => {
                 adapter: new NoOpRevalidationAdapter(),
                 cacheTagEnvironment: 'prod'
             });
-            expect(() => createRevalidationPagePurger({ service: noOp })).toThrow(
-                Step4cNoOpAdapterError
-            );
+            expect(() =>
+                createRevalidationPagePurger({ service: noOp, prefixTransport: noTransport })
+            ).toThrow(Step4cNoOpAdapterError);
         });
     });
 });
