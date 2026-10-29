@@ -6,6 +6,7 @@ import {
     createGoogleGrantRevoker,
     createPhotoStorage
 } from '../src/services/cutover-v6/step-5b.adapters.js';
+import { step5bExitCode } from '../src/services/cutover-v6/step-5b.exit-code.js';
 import { runStep5b } from '../src/services/cutover-v6/step-5b.service.js';
 import { getMediaProvider, initializeMediaProvider } from '../src/services/media.js';
 import { env, validateApiEnv } from '../src/utils/env.js';
@@ -41,8 +42,7 @@ async function main(): Promise<void> {
             dryRun
         });
         console.info(JSON.stringify(result));
-        process.exitCode =
-            result.status === 'completed' || result.status === 'already_done' ? 0 : 1;
+        process.exitCode = step5bExitCode({ status: result.status });
     } finally {
         await pool.end();
     }
