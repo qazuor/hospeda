@@ -95,10 +95,28 @@ function sourceFiles(dir: string): readonly string[] {
  * it, since a commented-out link is not a link.
  */
 function stripComments(src: string): string {
-    return src
-        .replace(/\/\*[\s\S]*?\*\//g, '')
-        .replace(/<!--[\s\S]*?-->/g, '')
-        .replace(/(^|[^:])\/\/.*$/gm, '$1');
+    return stripHtmlComments(src.replace(/\/\*[\s\S]*?\*\//g, '')).replace(
+        /(^|[^:])\/\/.*$/gm,
+        '$1'
+    );
+}
+
+/**
+ * Removes `<!-- ... -->` blocks with one left-to-right scan. A scan never
+ * re-reads what it already emitted, so removing one block cannot splice a new
+ * opener out of the text around it (which a regex replace can).
+ */
+function stripHtmlComments(src: string): string {
+    let out = '';
+    let cursor = 0;
+    for (;;) {
+        const open = src.indexOf('<!--', cursor);
+        if (open === -1) return out + src.slice(cursor);
+        out += src.slice(cursor, open);
+        const close = src.indexOf('-->', open + 4);
+        if (close === -1) return out;
+        cursor = close + 3;
+    }
 }
 
 describe('HOS-1156 AC-18 — nothing links to a superseded publish URL', () => {
