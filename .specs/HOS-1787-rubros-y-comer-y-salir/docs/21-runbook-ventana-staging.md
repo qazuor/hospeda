@@ -169,7 +169,9 @@ la siguiente prueba de checkout del smoke la ve como desconocida.
 - **Criterio verificable**, en este orden, todo dentro de la ventana:
   1. **Dry-run** (`v1.sh`): anotar `found`, `live` y `alreadyCancelled` y compararlos con el 28/10
      (found=28, live=7, alreadyCancelled=21, failures=0). **Una diferencia grande frena** hasta entenderla.
-  2. **`v1.sh --apply`**: pasa sólo con `outcome` ok y `failures=0` en el manifest que deja.
+  2. **`v1.sh --apply`**: pasa sólo si la línea de resumen dice `outcome=ok` y `failures=0`, y el manifest que
+     imprime (`manifest: <REPO>/scripts/cutover/out/staging-sandbox-manifest-<ts>.json`) trae `"outcome": "ok"` y
+     `"failures": []`. `failed` o `in-progress` (corte a mitad) frenan: se reintenta con `--from-manifest` ese archivo.
   3. **Dry-run posterior**: tiene que dar **`live=0`**.
   Si cualquiera de los tres falla, **no se pasa a V4**. `--from-manifest <path>` sirve para reintentar **sólo** los
   ids de ese manifest tras un corte o una falla parcial. Los puntos 1 a 4 de arriba quedan como método de respaldo a mano.
