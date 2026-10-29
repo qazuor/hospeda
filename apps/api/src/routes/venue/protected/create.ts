@@ -37,6 +37,7 @@
  */
 
 import {
+    ServiceErrorCode,
     VenueAdminCreateInputSchema,
     type VenueOwnerCreateInput,
     VenueOwnerCreateInputSchema,
@@ -67,10 +68,28 @@ export async function handleCreateVenueListing(ctx: Context, body: Record<string
     // `create()` re-validates against this exact schema internally, so this
     // is a cheap, type-correct way to merge the server-forced fields without
     // hand-listing every default (D-3).
-    const createInput = VenueAdminCreateInputSchema.parse({
+    //
+    // `safeParse`, not `.parse()` (HOS-1954): the owner schema keeps
+    // `destinationId` optional (publish-readiness is a separate gate) while the
+    // admin schema REQUIRES it, so an owner body without it passes the route
+    // validator and fails here. A bare `.parse()` threw a raw ZodError that
+    // surfaced as a 500 `INTERNAL_ERROR`; a 4xx must never be that
+    // (`apps/api/docs/error-contract.md`). Same shape as the experience route.
+    const parsed = VenueAdminCreateInputSchema.safeParse({
         ...data,
         ownerId: actor.id
     });
+
+    if (!parsed.success) {
+        throw new ServiceError(
+            ServiceErrorCode.VALIDATION_ERROR,
+            parsed.error.issues
+                .map((issue) => `${issue.path.join('.')}: ${issue.message}`)
+                .join('; ')
+        );
+    }
+
+    const createInput = parsed.data;
 
     // `createForOwner`, not `create`: the role grant and the insert share one
     // transaction (HOS-687 / HOS-589 §6.1).

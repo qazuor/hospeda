@@ -151,4 +151,17 @@ describe('handleCreateExperienceListing (HOS-166 §7.2, D-3)', () => {
         expect(mockCreateForOwner).toHaveBeenCalledTimes(1);
         expect(mockPlainCreate).not.toHaveBeenCalled();
     });
+
+    it('answers a VALIDATION_ERROR naming destinationId, not a raw ZodError, when it is missing (HOS-1954)', async () => {
+        const ctx = createMockContext();
+        const { destinationId: _omitted, ...bodyWithoutDestination } = VALID_EXPERIENCE_BODY;
+
+        await expect(
+            handleCreateExperienceListing(ctx as never, bodyWithoutDestination)
+        ).rejects.toMatchObject({
+            code: 'VALIDATION_ERROR',
+            message: expect.stringContaining('destinationId')
+        });
+        expect(mockCreateForOwner).not.toHaveBeenCalled();
+    });
 });
