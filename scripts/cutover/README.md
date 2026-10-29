@@ -65,8 +65,12 @@ group even if one fails: `listings`, `collections`, `destinations`,
 vertical, built from the slugs and ids in the passage table and the live
 `venues`; the words live in `step-4c.legacy.ts`, assembled from parts because the
 retired-word guard forbids them as literals) and `legacy-prefixes`
-(54 URL prefixes: 2 hosts x 3 locales x 9 routes, from
-`apps/api/src/services/cutover-v6/step-4c.legacy.ts`, pinned by a test). The
+(URL prefixes: hosts x 3 locales x 9 routes, from
+`apps/api/src/services/cutover-v6/step-4c.legacy.ts`, pinned by a test. The hosts
+derive from `HOSPEDA_SITE_URL` of the environment the step runs in: production gives
+`hospeda.com.ar` and `www.hospeda.com.ar`, 54 prefixes; staging gives
+`staging.hospeda.com.ar` alone, 27, because staging has no `www` alias and the web
+endpoint refuses production hosts on any other deployment). The
 legacy tags go in `revalidateMany` batches of 100 and the prefixes in one
 request to `/api/revalidate/` (`{ "prefixes": [...] }`), so the whole run is
 about 5 Cloudflare requests (Free plan: 5 per minute, bucket shared with the live
@@ -190,8 +194,60 @@ corepack pnpm exec tsx scripts/cutover/cli-rehearsal-sandbox-ids.ts --target=sta
 corepack pnpm exec tsx scripts/cutover/cli-rehearsal-sandbox-ids.ts --target=staging --confirm
 ```
 
-`CUTOVER_STAGING_DATABASE_URL` must reach the staging Postgres from where the command runs.
-How it gets there (published port or ssh tunnel) is G12, still open.
+`CUTOVER_STAGING_DATABASE_URL` must reach the staging Postgres from where the command runs:
+see "Where U3 runs and how it reaches Postgres (G12)" below.
+
+## Where U3 runs and how it reaches Postgres (G12, resolved)
+
+U3 and the rehearsal tools run from the **operator's local machine**, on a checkout of
+`origin/staging` with its dependencies installed (the VPS `~/hospeda` is on `main` the day
+of the cutover and has no `scripts/cutover/`). The database is reached through an ssh
+tunnel; the connection strings live in shell variables of that session only.
+
+- **Secrets**: read the credentials from the container over ssh straight into shell
+  variables. Never `echo` them, never write them to a file, never paste them in a ticket.
+- **Staging**: the Coolify proxy publishes the staging Postgres on the VPS loopback, port
+  `15432`. Tunnel it: `ssh -N -L 25432:127.0.0.1:15432 <vps>`, and point
+  `CUTOVER_STAGING_DATABASE_URL` at `127.0.0.1:25432`.
+- **Production**: there is no published port. Tunnel to the database container's address
+  on the Docker network, resolved at the moment of use and **never written down** (it
+  changes every time the container is recreated):
+
+  ```bash
+  DB_IP=$(ssh <vps> "docker inspect yhhqnorqbtw2aslbxy64kjzd --format '{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}'")
+  ssh -N -L 25433:"$DB_IP":5432 <vps>
+  ```
+
+  Then `CUTOVER_OLD_DATABASE_URL` points at `127.0.0.1:25433`.
+- **Read-only**: the production URL carries `options=-c default_transaction_read_only=on`
+  (URL-encoded in the query string), in addition to U3's own `READ ONLY` transaction.
+
+## The `hops` of the cutover on the VPS (G17)
+
+`~/hospeda` is on `main` and the cutover commands live on `staging`. `hops update --branch
+staging` does `git pull origin staging` **on the current branch**, so it would merge
+`staging` into that `main` checkout: do not use it for this. Do not touch `~/hospeda`.
+Use a separate checkout on the exact cutover SHA, and run the `hops` that comes out of it.
+
+```bash
+# On the VPS. CUTOVER_SHA is the full SHA of the commit being cut over.
+cd ~/hospeda && git fetch origin
+git worktree add ~/hospeda-corte "$CUTOVER_SHA"   # detached HEAD on that exact commit
+cd ~/hospeda-corte && git rev-parse HEAD           # must print CUTOVER_SHA
+
+# server-tools runs on bun (bin/hops is `#!/usr/bin/env bun`): install its own deps
+cd ~/hospeda-corte/scripts/server-tools && bun install
+
+# run THIS checkout's hops, and tell it which checkout is the repo root
+HOPS_REPO_ROOT=~/hospeda-corte bun ~/hospeda-corte/scripts/server-tools/bin/hops --help
+```
+
+`HOPS_REPO_ROOT` (see `scripts/server-tools/src/lib/repo-root.ts`) makes the commands that
+read the repo (the step 3 wrapper, the migrations, the registry) use the cutover checkout
+instead of `~/hospeda`. Do not run `install.sh` for this: it compiles and installs a
+binary on `PATH`, replacing the operator's usual `hops`. When the cutover is over:
+`git worktree remove ~/hospeda-corte`. The recipe is rehearsed in the rehearsal, before
+the cutover.
 
 **Guards, shared by both, fail-closed and before any write (exit 2):**
 
