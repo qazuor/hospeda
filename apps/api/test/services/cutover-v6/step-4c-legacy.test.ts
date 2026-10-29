@@ -151,7 +151,7 @@ describe('prefix purge transport (429 handling)', () => {
     });
 
     it('posts to the slashed endpoint with the encoded secret', async () => {
-        const fetchImpl = vi.fn(async () => new Response('{"ok":true}'));
+        const fetchImpl = vi.fn(async (_url: string) => new Response('{"ok":true}'));
         await createPrefixPurgeTransport({
             siteUrl: 'https://hospeda.com.ar/',
             secret: 's e',
