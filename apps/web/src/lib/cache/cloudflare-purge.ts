@@ -32,6 +32,8 @@
 /** What to purge. */
 export type CloudflarePurgeInstruction =
     | { readonly kind: 'tags'; readonly tags: readonly string[] }
+    /** URL prefixes (host + path, no scheme), e.g. `hospeda.com.ar/es/comer-y-salir/`. */
+    | { readonly kind: 'prefixes'; readonly prefixes: readonly string[] }
     | { readonly kind: 'everything' };
 
 /** The verdict of one purge attempt. */
@@ -116,7 +118,11 @@ export async function purgeCloudflare({
     readonly instruction: CloudflarePurgeInstruction;
 }): Promise<CloudflarePurgeOutcome> {
     const body =
-        instruction.kind === 'everything' ? { purge_everything: true } : { tags: instruction.tags };
+        instruction.kind === 'everything'
+            ? { purge_everything: true }
+            : instruction.kind === 'prefixes'
+              ? { prefixes: instruction.prefixes }
+              : { tags: instruction.tags };
 
     const response = await fetch(buildCloudflarePurgeEndpoint({ zoneId }), {
         method: 'POST',

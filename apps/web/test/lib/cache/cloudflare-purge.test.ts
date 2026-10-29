@@ -160,3 +160,21 @@ describe('purgeCloudflare', () => {
         ).rejects.toThrow('ECONNRESET');
     });
 });
+
+describe('purgeCloudflare — prefixes instruction', () => {
+    it('sends the prefixes to Cloudflare as `{ prefixes }`', async () => {
+        fetchMock.mockResolvedValue(new Response('{"success":true}', { status: 200 }));
+        const prefixes = ['hospeda.com.ar/es/comer-y-salir/'];
+
+        const outcome = await purgeCloudflare({
+            zoneId: ZONE,
+            apiToken: TOKEN,
+            instruction: { kind: 'prefixes', prefixes }
+        });
+
+        expect(outcome).toEqual({ ok: true });
+        expect(JSON.parse(String((fetchMock.mock.calls[0]?.[1] as RequestInit).body))).toEqual({
+            prefixes
+        });
+    });
+});
