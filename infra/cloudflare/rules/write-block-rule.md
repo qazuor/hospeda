@@ -144,6 +144,76 @@ the cutover; on an aborted cutover leave it in place until the retry.
    login attempt returns a 4xx from the origin, e.g. 400/401/422).
 3. Replace the "Applied" line below with the removal date and operator.
 
+## Staging variant (rehearsal only)
+
+**Never apply this together with, or instead of, the production rule above.** It exists
+so the rehearsal of the cutover (staging, restored from a production backup) can walk
+step 0b and step 4c for real. It is a SEPARATE Custom Rule with its own name, on the
+same zone, and it touches no production host.
+
+### Staging hosts
+
+From the app docs (`apps/web/CLAUDE.md`, `apps/admin/CLAUDE.md`, `apps/api/CLAUDE.md`):
+
+| App | Host |
+|---|---|
+| web | `staging.hospeda.com.ar` |
+| admin | `staging-admin.hospeda.com.ar` |
+| api | `staging-api.hospeda.com.ar` |
+
+Staging has no `www` alias. **To confirm in the Cloudflare panel before applying**: the
+repo is not consistent about the API host (`docs/guides/environment-variables.md` lists
+`api.staging.hospeda.com.ar`, and `BEFORE_BETA_TESTING.md` registers the MP webhook on
+`staging.hospeda.com.ar`). Open DNS for the zone, or read `HOSPEDA_API_URL` on
+`hospeda-api-staging` in Coolify, and use the host that really exists. If it differs,
+edit the expression below before pasting it.
+
+### Expression
+
+```
+(
+  http.host in {"staging.hospeda.com.ar" "staging-admin.hospeda.com.ar" "staging-api.hospeda.com.ar"}
+  and not http.request.method in {"GET" "HEAD" "OPTIONS"}
+  and not (
+    http.host eq "staging-api.hospeda.com.ar"
+    and http.request.uri.path in {"/api/v1/webhooks/mercadopago" "/api/v1/webhooks/mercadopago/"}
+  )
+  and not (
+    http.host eq "staging.hospeda.com.ar"
+    and starts_with(http.request.uri.path, "/api/revalidate/")
+  )
+)
+```
+
+One line for the dashboard's expression editor:
+
+```
+(http.host in {"staging.hospeda.com.ar" "staging-admin.hospeda.com.ar" "staging-api.hospeda.com.ar"} and not http.request.method in {"GET" "HEAD" "OPTIONS"} and not (http.host eq "staging-api.hospeda.com.ar" and http.request.uri.path in {"/api/v1/webhooks/mercadopago" "/api/v1/webhooks/mercadopago/"}) and not (http.host eq "staging.hospeda.com.ar" and starts_with(http.request.uri.path, "/api/revalidate/")))
+```
+
+Same two exceptions as production, for the same reasons: the Mercado Pago notice route
+on the API host and `/api/revalidate/` on the web host (step 4c runs before step 5).
+Action **Block**, order **First**, name `HOS-1352 rehearsal - block all writes (staging)`.
+
+### Apply, verify, remove
+
+1. **Apply**: same steps as production (Custom rules, Create rule, paste the one-line
+   expression, Block, place First, Deploy), with the staging name above.
+2. **Verify** with the production checks, replacing the hosts: a POST to
+   `https://staging.hospeda.com.ar/api/auth/sign-in/email` and to
+   `https://staging-api.hospeda.com.ar/api/v1/protected/billing/checkout` must print
+   `403` with a Cloudflare block page; a GET of `https://staging.hospeda.com.ar/es/`
+   must print `200`; an unsigned POST to the MP route and a POST to
+   `https://staging.hospeda.com.ar/api/revalidate/?secret=wrong` (expect `401`) must
+   come from the origin, never the Cloudflare `403`; a POST to
+   `https://staging-admin.hospeda.com.ar/` must print `403`. Also confirm that
+   `https://hospeda.com.ar` still accepts writes as usual: the production hosts must be
+   untouched.
+3. **Remove** at the end of the rehearsal (step 5 of the rehearsal), and also if the
+   rehearsal is abandoned: Security, WAF, Custom rules, the staging rule, **Delete** (not
+   Disable). Repeat the first verification: it must stop returning `403`. A staging rule
+   left behind blocks every later staging smoke.
+
 ### Applied
 
 - Applied: _not yet_
