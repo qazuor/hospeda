@@ -1,6 +1,6 @@
 /**
  * @file listing-amenities-render.test.ts
- * @description HOS-1072 — the two gastronomy/experience detail surfaces actually MOUNT the
+ * @description HOS-1072 — the two venue/experience detail surfaces actually MOUNT the
  * amenity/feature grids, and the two vertical presentation pages say the owner
  * can publish them.
  *
@@ -57,9 +57,9 @@ function withoutComments(source: string): string {
 const read = (relativePath: string): string =>
     withoutComments(readFileSync(resolve(__dirname, '../../src', relativePath), 'utf8'));
 
-const VENUE_PAGE = read('pages/[lang]/gastronomia/[slug].astro');
+const VENUE_PAGE = read('pages/[lang]/comer-y-salir/[slug].astro');
 const EXPERIENCE_INFO = read('components/experience/ExperienceInfo.astro');
-const VENUE_PRESENTATION = read('pages/[lang]/presentacion/gastronomia/index.astro');
+const VENUE_PRESENTATION = read('pages/[lang]/presentacion/comer-y-salir/index.astro');
 const EXPERIENCE_PRESENTATION = read('pages/[lang]/presentacion/experiencias/index.astro');
 
 describe('gastronomia/[slug].astro — mounts the catalog grids (HOS-1072)', () => {

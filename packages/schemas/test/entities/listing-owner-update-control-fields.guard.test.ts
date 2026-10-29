@@ -24,7 +24,7 @@ import { PublicationStatusEnum } from '../../src/enums/index.js';
 const CONTROL_FIELDS = ['publicationStatus', 'isFeatured'] as const;
 
 const OWNER_SCHEMAS = [
-    { name: 'GastronomyOwnerUpdateInputSchema', schema: VenueOwnerUpdateInputSchema },
+    { name: 'VenueOwnerUpdateInputSchema', schema: VenueOwnerUpdateInputSchema },
     { name: 'ExperienceOwnerUpdateInputSchema', schema: ExperienceOwnerUpdateInputSchema }
 ] as const;
 
@@ -34,7 +34,7 @@ describe('listing owner update payload excludes the control fields (AC-11)', () 
             it(`${name} does not declare ${field}`, () => {
                 expect(
                     Object.keys(schema.shape),
-                    `${field} is back in ${name}. Control fields move through their dedicated action — publicationStatus only through the PB publication transitions (moderation is PB10, POST /api/v1/admin/{gastronomies|experiences}/:id/moderate).`
+                    `${field} is back in ${name}. Control fields move through their dedicated action — publicationStatus only through the PB publication transitions (moderation is PB10, POST /api/v1/admin/{venues|experiences}/:id/moderate).`
                 ).not.toContain(field);
             });
         }

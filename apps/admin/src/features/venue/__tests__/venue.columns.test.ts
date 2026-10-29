@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 /**
  * @file venue.columns.test.ts
- * Unit tests for the gastronomy column factory (SPEC-239 T-059).
+ * Unit tests for the venue column factory (SPEC-239 T-059).
  *
  * Covers:
  *  - Column IDs produced by the factory
@@ -30,7 +30,7 @@ const t = (key: string) => key;
 // Tests
 // ---------------------------------------------------------------------------
 
-describe('createGastronomyColumns — structure', () => {
+describe('createVenueColumns — structure', () => {
     it('should return at least 7 columns', () => {
         const columns = createVenueColumns(t);
         expect(columns.length).toBeGreaterThanOrEqual(7);
@@ -78,7 +78,7 @@ describe('createGastronomyColumns — structure', () => {
     });
 });
 
-describe('createGastronomyColumns — column details', () => {
+describe('createVenueColumns — column details', () => {
     it('name column should be sortable', () => {
         const columns = createVenueColumns(t);
         const name = columns.find((c) => c.id === 'name');
@@ -91,7 +91,7 @@ describe('createGastronomyColumns — column details', () => {
         expect(name?.linkHandler).toBeDefined();
     });
 
-    it('name linkHandler should resolve to gastronomies/$id', () => {
+    it('name linkHandler should resolve to venues/$id', () => {
         const columns = createVenueColumns(t);
         const name = columns.find((c) => c.id === 'name');
         const link = name?.linkHandler?.({
@@ -105,7 +105,7 @@ describe('createGastronomyColumns — column details', () => {
             createdAt: new Date()
         });
         expect(link).toMatchObject({
-            to: '/gastronomies/$id',
+            to: '/venues/$id',
             params: { id: 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa' }
         });
     });
@@ -134,7 +134,7 @@ describe('createGastronomyColumns — column details', () => {
         expect(actions?.widgetRenderer).toBeDefined();
     });
 
-    it('type column badge options should include all GastronomyTypeEnum values', () => {
+    it('type column badge options should include all VenueTypeEnum values', () => {
         const columns = createVenueColumns(t);
         const type = columns.find((c) => c.id === 'type');
         const values = (type?.badgeOptions ?? []).map((o) => o.value);

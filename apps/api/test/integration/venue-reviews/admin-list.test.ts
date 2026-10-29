@@ -1,9 +1,9 @@
 /**
- * Integration tests for the admin gastronomy-review list endpoint —
+ * Integration tests for the admin venue-review list endpoint —
  * moderation `status` filter.
  *
  * Regression (SPEC-259 Chrome smoke): the moderation UI calls
- *   GET /api/v1/admin/gastronomies/reviews?status=PENDING&page=1&pageSize=20
+ *   GET /api/v1/admin/venues/reviews?status=PENDING&page=1&pageSize=20
  * but the route did not whitelist `status`, so the admin-list factory rejected
  * it as an unknown query param with HTTP 400 / INVALID_PAGINATION_PARAMS. The
  * admin "Reseñas" tab then silently showed "no pending reviews" even when a
@@ -15,7 +15,7 @@
  * Strategy: mock @repo/service-core so we can assert what the handler forwards
  * to the service after the route parses the query string.
  *
- * Tested endpoint: GET /api/v1/admin/gastronomies/reviews
+ * Tested endpoint: GET /api/v1/admin/venues/reviews
  */
 
 import { ModerationStatusEnum, PermissionEnum, RoleEnum } from '@repo/schemas';
@@ -53,17 +53,17 @@ vi.mock('@repo/service-core', async (importOriginal) => {
 import { initApp } from '../../../src/app';
 import { validateApiEnv } from '../../../src/utils/env';
 
-describe('Admin GastronomyReview List — moderation status filter (SPEC-259 regression)', () => {
+describe('Admin VenueReview List — moderation status filter (SPEC-259 regression)', () => {
     let app: ReturnType<typeof initApp>;
 
-    // Trailing slash: the admin gastronomy router mounts reviews at `/reviews`
+    // Trailing slash: the admin venue router mounts reviews at `/reviews`
     // with an inner `path: '/'`, so the full path resolves as `/reviews/`.
-    const base = '/api/v1/admin/gastronomies/reviews/';
+    const base = '/api/v1/admin/venues/reviews/';
 
-    // Grant the full gastronomy and experience admin permission set so the route middleware
-    // pipeline (sibling routes share the gastronomy admin router) does not
+    // Grant the full venue and experience admin permission set so the route middleware
+    // pipeline (sibling routes share the venue admin router) does not
     // block before the handler runs. The endpoint itself requires
-    // GASTRONOMY_MODERATE_REVIEW.
+    // VENUE_MODERATE_REVIEW.
     const adminActor = {
         id: crypto.randomUUID(),
         roles: [RoleEnum.ADMIN],
@@ -73,11 +73,11 @@ describe('Admin GastronomyReview List — moderation status filter (SPEC-259 reg
             PermissionEnum.ACCESS_PANEL_ADMIN,
             PermissionEnum.ACCESS_API_ADMIN,
             PermissionEnum.MANAGE_CONTENT,
-            PermissionEnum.GASTRONOMY_VIEW_ALL,
-            PermissionEnum.GASTRONOMY_CREATE,
-            PermissionEnum.GASTRONOMY_EDIT_ALL,
-            PermissionEnum.GASTRONOMY_DELETE,
-            PermissionEnum.GASTRONOMY_MODERATE_REVIEW
+            PermissionEnum.VENUE_VIEW_ALL,
+            PermissionEnum.VENUE_CREATE,
+            PermissionEnum.VENUE_EDIT_ALL,
+            PermissionEnum.VENUE_DELETE,
+            PermissionEnum.VENUE_MODERATE_REVIEW
         ]
     };
 

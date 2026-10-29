@@ -15,7 +15,7 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { fetchApi } from '@/lib/api/client';
 
 /** The three listing verticals the purge route exists for. */
-export type PurgeListingVertical = 'accommodation' | 'gastronomy' | 'experience';
+export type PurgeListingVertical = 'accommodation' | 'venue' | 'experience';
 
 /**
  * Admin API plural per vertical. Also the root of each vertical's query cache
@@ -23,7 +23,14 @@ export type PurgeListingVertical = 'accommodation' | 'gastronomy' | 'experience'
  */
 export const PURGE_LISTING_PLURAL: Readonly<Record<PurgeListingVertical, string>> = {
     accommodation: 'accommodations',
-    gastronomy: 'gastronomies',
+    venue: 'venues',
+    experience: 'experiences'
+};
+
+/** Query roots match each entity hook's configured `entityName`. */
+export const PURGE_LISTING_ENTITY_NAME: Readonly<Record<PurgeListingVertical, string>> = {
+    accommodation: 'accommodations',
+    venue: 'venues',
     experience: 'experiences'
 };
 
@@ -83,7 +90,7 @@ export function usePurgeListingOnRequestMutation() {
         },
         onSuccess: (_data, variables) => {
             queryClient.invalidateQueries({
-                queryKey: [PURGE_LISTING_PLURAL[variables.vertical]]
+                queryKey: [PURGE_LISTING_ENTITY_NAME[variables.vertical]]
             });
         }
     });

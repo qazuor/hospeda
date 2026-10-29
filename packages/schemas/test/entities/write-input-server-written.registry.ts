@@ -300,13 +300,13 @@ export const ENTITIES: readonly EntityEntry[] = [
         ]
     },
     {
-        entity: 'gastronomy',
+        entity: 'venue',
         base: VenueSchema as unknown as Shaped,
         writableProbe: 'name',
         neverFromBody: {
             ...AUDIT_COLUMNS,
             menuFileUrl:
-                'written only by POST/DELETE /gastronomies/{id}/menu-file, in the same request that stores or destroys the asset (HOS-895)',
+                'written only by POST/DELETE /venues/{id}/menu-file, in the same request that stores or destroys the asset (HOS-895)',
             menuFilePublicId:
                 'the provider-side asset handle the delete route destroys — a body-writable value deletes another venue’s file (HOS-895)',
             menuFileKind: 'derived from the uploaded file, alongside menuFileUrl (HOS-895)',
@@ -316,7 +316,7 @@ export const ENTITIES: readonly EntityEntry[] = [
         neverFromOwnerBody: { ...LISTING_OWNER_DENIED },
         writeSchemas: [
             {
-                name: 'GastronomyAdminCreateInputSchema',
+                name: 'VenueAdminCreateInputSchema',
                 schema: VenueAdminCreateInputSchema as unknown as Parseable,
                 tier: 'admin',
                 accepts: fields(`
@@ -327,7 +327,7 @@ export const ENTITIES: readonly EntityEntry[] = [
                 `)
             },
             {
-                name: 'GastronomyUpdateInputSchema',
+                name: 'VenueUpdateInputSchema',
                 schema: VenueUpdateInputSchema as unknown as Parseable,
                 tier: 'admin',
                 accepts: fields(`
@@ -337,7 +337,7 @@ export const ENTITIES: readonly EntityEntry[] = [
                 `)
             },
             {
-                name: 'GastronomyOwnerCreateInputSchema',
+                name: 'VenueOwnerCreateInputSchema',
                 schema: VenueOwnerCreateInputSchema as unknown as Parseable,
                 tier: 'owner',
                 accepts: fields(`
@@ -347,7 +347,7 @@ export const ENTITIES: readonly EntityEntry[] = [
                 `)
             },
             {
-                name: 'GastronomyOwnerUpdateInputSchema',
+                name: 'VenueOwnerUpdateInputSchema',
                 schema: VenueOwnerUpdateInputSchema as unknown as Parseable,
                 tier: 'owner',
                 accepts: fields(`

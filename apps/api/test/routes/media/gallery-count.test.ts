@@ -9,10 +9,10 @@
  * type. A duplicated limit check fails OPEN when someone updates one side only
  * — the cap silently stops applying instead of breaking loudly.
  *
- * Gastronomy and experience verticals had ZERO cap coverage before this file.
+ * Venue and experience verticals had ZERO cap coverage before this file.
  *
- * Note on why counting the JSONB would be wrong for gastronomy and experience: once photos live
- * in `gastronomy_media` / `experience_media`, `media.gallery` stops being
+ * Note on why counting the JSONB would be wrong for venue and experience: once photos live
+ * in `venue_media` / `experience_media`, `media.gallery` stops being
  * written and eventually the column is dropped — so a JSONB-based count reads 0
  * forever, and the cap never fires no matter how many photos are uploaded.
  */
@@ -64,9 +64,24 @@ describe('resolveVisibleGalleryCount (HOS-372)', () => {
         eventMediaModel.count.mockResolvedValue(2);
     });
 
-    it('counts gastronomy photos from gastronomy_media, not from the JSONB blob', async () => {
+    it('TEST:1819:6 AC:1:3 resolves venue gallery count through venue media', async () => {
         const count = await resolveVisibleGalleryCount({
-            entityType: 'gastronomy',
+            entityType: 'venue',
+            entityId: ENTITY_ID,
+            entity: entityWithJsonbGallery
+        });
+
+        expect(count).toBe(5);
+        expect(venueMediaModel.findByVenue).toHaveBeenCalledWith({
+            venueId: ENTITY_ID,
+            state: 'visible',
+            isFeatured: false
+        });
+    });
+
+    it('counts venue photos from venue_media, not from the JSONB blob', async () => {
+        const count = await resolveVisibleGalleryCount({
+            entityType: 'venue',
             entityId: ENTITY_ID,
             entity: entityWithJsonbGallery
         });
@@ -75,7 +90,7 @@ describe('resolveVisibleGalleryCount (HOS-372)', () => {
         // Exact equality, NOT objectContaining: a partial matcher stays green
         // when a filter is dropped, which is precisely the failure this asserts.
         expect(venueMediaModel.findByVenue).toHaveBeenCalledWith({
-            gastronomyId: ENTITY_ID,
+            venueId: ENTITY_ID,
             state: 'visible',
             isFeatured: false
         });
@@ -114,7 +129,7 @@ describe('resolveVisibleGalleryCount (HOS-372)', () => {
     // HOS-791 ------------------------------------------------------------
     it.each([
         ['accommodation', () => accommodationMediaModel.findByAccommodation],
-        ['gastronomy', () => venueMediaModel.findByVenue],
+        ['venue', () => venueMediaModel.findByVenue],
         ['experience', () => experienceMediaModel.findByExperience]
     ])('excludes the featured image from the %s count (HOS-791)', async (entityType, getMock) => {
         // The featured image is not a gallery item. Counting it charged the
@@ -135,7 +150,7 @@ describe('resolveVisibleGalleryCount (HOS-372)', () => {
         // An archived photo occupies no gallery slot; counting it would cap an
         // owner below their real allowance.
         await resolveVisibleGalleryCount({
-            entityType: 'gastronomy',
+            entityType: 'venue',
             entityId: ENTITY_ID,
             entity: {}
         });

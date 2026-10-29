@@ -385,13 +385,13 @@ export const ROLE_PERMISSIONS: Record<RoleEnum, PermissionEnum[]> = {
         PermissionEnum.MODERATION_THRESHOLD_RESTORE,
         PermissionEnum.MODERATION_THRESHOLD_HARD_DELETE,
 
-        // HOS-1077: per-vertical staff permissions for gastronomy and experiences.
-        PermissionEnum.GASTRONOMY_CREATE,
-        PermissionEnum.GASTRONOMY_VIEW_ALL,
-        PermissionEnum.GASTRONOMY_EDIT_ALL,
-        PermissionEnum.GASTRONOMY_DELETE,
-        PermissionEnum.GASTRONOMY_MODERATE_REVIEW,
-        PermissionEnum.GASTRONOMY_MODERATION_CHANGE,
+        // HOS-1077: per-vertical staff permissions for venue and experiences.
+        PermissionEnum.VENUE_CREATE,
+        PermissionEnum.VENUE_VIEW_ALL,
+        PermissionEnum.VENUE_EDIT_ALL,
+        PermissionEnum.VENUE_DELETE,
+        PermissionEnum.VENUE_MODERATE_REVIEW,
+        PermissionEnum.VENUE_MODERATION_CHANGE,
         PermissionEnum.EXPERIENCE_CREATE,
         PermissionEnum.EXPERIENCE_VIEW_ALL,
         PermissionEnum.EXPERIENCE_EDIT_ALL,
@@ -756,13 +756,13 @@ export const ROLE_PERMISSIONS: Record<RoleEnum, PermissionEnum[]> = {
         PermissionEnum.MODERATION_THRESHOLD_RESTORE,
         PermissionEnum.MODERATION_THRESHOLD_HARD_DELETE,
 
-        // HOS-1077: per-vertical staff permissions for gastronomy and experiences.
-        PermissionEnum.GASTRONOMY_CREATE,
-        PermissionEnum.GASTRONOMY_VIEW_ALL,
-        PermissionEnum.GASTRONOMY_EDIT_ALL,
-        PermissionEnum.GASTRONOMY_DELETE,
-        PermissionEnum.GASTRONOMY_MODERATE_REVIEW,
-        PermissionEnum.GASTRONOMY_MODERATION_CHANGE,
+        // HOS-1077: per-vertical staff permissions for venue and experiences.
+        PermissionEnum.VENUE_CREATE,
+        PermissionEnum.VENUE_VIEW_ALL,
+        PermissionEnum.VENUE_EDIT_ALL,
+        PermissionEnum.VENUE_DELETE,
+        PermissionEnum.VENUE_MODERATE_REVIEW,
+        PermissionEnum.VENUE_MODERATION_CHANGE,
         PermissionEnum.EXPERIENCE_CREATE,
         PermissionEnum.EXPERIENCE_VIEW_ALL,
         PermissionEnum.EXPERIENCE_EDIT_ALL,
@@ -1142,16 +1142,16 @@ export const ROLE_PERMISSIONS: Record<RoleEnum, PermissionEnum[]> = {
     ],
 
     // ---------------------------------------------------------------------------
-    [RoleEnum.GASTRONOMY_OWNER]: [
-        // HOS-1077: owner rights are scoped to gastronomy listings.
+    [RoleEnum.VENUE_OWNER]: [
+        // HOS-1077: owner rights are scoped to venue listings.
         //
         // Single owner write permission, mirroring SPEC-253 D2=b: one
         // `editOwn` covers every owner-accessible section, not ten per-section
         // permissions.
-        PermissionEnum.GASTRONOMY_EDIT_OWN,
+        PermissionEnum.VENUE_EDIT_OWN,
 
         // Creating a listing is the self-service owner path.
-        PermissionEnum.GASTRONOMY_CREATE,
+        PermissionEnum.VENUE_CREATE,
 
         // USER: Basic profile permissions
         PermissionEnum.USER_VIEW_PROFILE,

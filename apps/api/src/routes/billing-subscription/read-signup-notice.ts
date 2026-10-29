@@ -75,7 +75,7 @@ export async function readSignupNotice(input: {
             }
             break;
         case 'accommodation':
-        case 'gastronomy':
+        case 'venue':
         case 'experience':
             touristVip = (await touristVipCancelledOnActivation({
                 userId: input.userId,

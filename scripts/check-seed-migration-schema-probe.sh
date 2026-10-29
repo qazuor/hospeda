@@ -41,7 +41,7 @@ MIGRATIONS_DIR="${MIGRATIONS_DIR_OVERRIDE:-packages/seed/src/data-migrations}"
 # ledgered, so rewriting them would change an applied migration's checksum for
 # no runtime benefit — the real vector is a THIRD copy, which this guard blocks.
 #
-#   0034 — the original. Its probe at least had a rationale: gastronomies/
+#   0034 — the original. Its probe at least had a rationale: venues/
 #          experiences.media IS dropped (structural migration 0072), so an
 #          absent column genuinely meant "cutover already done".
 #   0037 — the copy-paste, and the worse one: posts/events.media is never

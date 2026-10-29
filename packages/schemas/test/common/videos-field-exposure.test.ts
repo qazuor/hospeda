@@ -2,8 +2,8 @@
  * HOS-372 guard — the `videos` field must stay exposed on the access schemas of
  * every entity whose photos moved to a relational media table.
  *
- * Accommodations, gastronomy listings and experiences keep their photos as rows
- * (`accommodation_media` / `gastronomy_media` / `experience_media`) and their
+ * Accommodations, venue listings and experiences keep their photos as rows
+ * (`accommodation_media` / `venue_media` / `experience_media`) and their
  * videos in a dedicated `videos` column, because a video is an external
  * YouTube/Vimeo URL rather than an uploaded asset. Once the `media` JSONB column
  * is dropped, that column is the ONLY place videos exist.
@@ -44,7 +44,7 @@ describe('videos field exposure on relational-media entities (HOS-372)', () => {
     // assertion below then catches.
     const cases = [
         {
-            name: 'GastronomyPublicSchema',
+            name: 'VenuePublicSchema',
             shapeKeys: Object.keys(VenuePublicSchema.shape),
             isolated: VenuePublicSchema.pick({ videos: true })
         },

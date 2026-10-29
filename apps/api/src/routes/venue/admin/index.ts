@@ -1,5 +1,5 @@
 /**
- * Admin gastronomy routes (SPEC-239 T-045 / T-046 / HOS-372).
+ * Admin venue routes (SPEC-239 T-045 / T-046 / HOS-372).
  * Routes that require admin-level access.
  *
  * IMPORTANT: Route ordering matters — more-specific paths MUST be registered
@@ -40,10 +40,10 @@ import { adminUpdateVenueMediaRoute } from './updateMedia';
 
 const app = createRouter();
 
-// GET / - List all gastronomy listings (including deleted when includeDeleted=true)
+// GET / - List all venue listings (including deleted when includeDeleted=true)
 app.route('/', adminListVenuesRoute);
 
-// POST / - Create gastronomy listing
+// POST / - Create venue listing
 app.route('/', adminCreateVenueRoute);
 
 // POST /batch - Batch operations
@@ -95,7 +95,7 @@ app.route('/', adminUpdateVenueFaqRoute);
 // DELETE /:id/faqs/:faqId - Remove FAQ from a listing
 app.route('/', adminRemoveVenueFaqRoute);
 
-// Media management (HOS-372) - gated on GASTRONOMY_EDIT_ALL
+// Media management (HOS-372) - gated on VENUE_EDIT_ALL
 
 // PATCH /:id/media/reorder - Reorder gallery photos
 // Registered before /:id/media/:mediaId to prevent "reorder" matching as a mediaId param

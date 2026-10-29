@@ -436,17 +436,17 @@ describe('TEST:V5:32 POST /api/v1/protected/ai/text-improve — integration (SPE
     // the stub below injects, standing in for what the retired `entitlementMiddleware`
     // would really load for such an actor — see `host-provider@local.test`,
     // HOS-694). Before this fix the route had no way to know `fieldValue`
-    // belonged to a gastronomy listing and would let the request through on
+    // belonged to a venue listing and would let the request through on
     // that accommodation grant. `entityType` now lets
-    // `aiTextImproveEntitlementRouter` swap in the gastronomy vertical's own
-    // entitlements (currently just `EDIT_GASTRONOMY_INFO` /
-    // `PUBLISH_GASTRONOMY` — HOS-1074's floor, no `AI_TEXT_IMPROVE` yet), so
+    // `aiTextImproveEntitlementRouter` swap in the venue vertical's own
+    // entitlements (currently just `EDIT_VENUE_INFO` /
+    // `PUBLISH_VENUE` — HOS-1074's floor, no `AI_TEXT_IMPROVE` yet), so
     // the SAME actor state that passes for their accommodation is correctly
     // refused for their comercio.
     // =========================================================================
 
     describe('HOS-1075 — entityType routes the entitlement gate to the right vertical', () => {
-        it('streams a gastronomy request without consulting the retired accommodation plan', async () => {
+        it('streams a venue request without consulting the retired accommodation plan', async () => {
             currentEntitlementsForTest.current = new Set([EntitlementKeyEnum.AI_TEXT_IMPROVE]);
             currentLimitsForTest.current = new Map([
                 [LimitKeyEnum.MAX_AI_TEXT_IMPROVE_PER_MONTH, 20]
@@ -458,7 +458,7 @@ describe('TEST:V5:32 POST /api/v1/protected/ai/text-improve — integration (SPE
                 body: JSON.stringify({
                     fieldType: 'description',
                     fieldValue: 'Empanadas caseras, todos los dias.',
-                    entityType: 'gastronomy',
+                    entityType: 'venue',
                     entityId: '11111111-1111-4111-a111-111111111111'
                 })
             });

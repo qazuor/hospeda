@@ -7,8 +7,8 @@
  * three verticals, the listing moves to `PURGED`.
  *
  * HOS-1156 T-015 added the vertical. The last two cases below are the ones that
- * matter for AC-14: the panel on a gastronomy publish page must delete a
- * gastronomy draft, and the default must stay accommodation so PropertyCard —
+ * matter for AC-14: the panel on a venue publish page must delete a
+ * venue draft, and the default must stay accommodation so PropertyCard —
  * which passes no vertical at all — keeps its previous behaviour.
  */
 
@@ -111,7 +111,7 @@ describe('DeleteButton (owner PB12 delete island)', () => {
         );
     });
 
-    for (const vertical of ['accommodation', 'gastronomy', 'experience'] as const) {
+    for (const vertical of ['accommodation', 'venue', 'experience'] as const) {
         it(`runs PB12 in the ${vertical} vertical when told to (AC-14, AC:V6:25)`, async () => {
             purgeMock.mockResolvedValue({ ok: true, data: {} });
             renderButton(vertical);

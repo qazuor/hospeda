@@ -7,7 +7,7 @@
         "en": "Servicio de entrega a domicilio disponible",
         "pt": "Servicio de entrega a domicilio disponible"
     },
-    "applicableVerticals": ["gastronomy"],
+    "applicableVerticals": ["venue"],
     "type": "SERVICES",
     "icon": "TransferServiceIcon",
     "isBuiltin": false,

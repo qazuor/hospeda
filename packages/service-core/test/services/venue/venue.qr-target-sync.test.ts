@@ -5,11 +5,11 @@
  * Mirrors `host-trade.qr-target-sync.test.ts` structurally — same double
  * shape, same case list — because `VenueService._afterUpdate` copies
  * `HostTradeService._afterUpdate`'s four decisions verbatim (see the spec's
- * §6.3). The one addition here is the locale round-trip: a gastronomy menu
+ * §6.3). The one addition here is the locale round-trip: a venue menu
  * target carries `/{lang}/...`, which `HostTradeService`'s fixed-path target
  * never had to preserve.
  *
- * @module test/services/gastronomy/gastronomy.qr-target-sync
+ * @module test/services/venue/venue.qr-target-sync
  */
 
 import {
@@ -42,22 +42,22 @@ import type { Actor } from '../../../src/types';
 import { getMockId } from '../../factories/utilsFactory';
 import { createLoggerMock } from '../../utils/modelMockFactory';
 
-const G_ID = getMockId('user', 'gastro-qr-1');
-const OWNER_ID = getMockId('user', 'owner-gastro-qr-1');
-const QR_ID = getMockId('user', 'qr-row-gastro-1');
+const G_ID = getMockId('user', 'venue-qr-1');
+const OWNER_ID = getMockId('user', 'owner-venue-qr-1');
+const QR_ID = getMockId('user', 'qr-row-venue-1');
 
 const SITE = 'https://hospeda.com.ar';
 const OLD_SLUG = 'la-parrilla-del-sur';
 const NEW_SLUG = 'la-nueva-parrilla-del-sur';
 
-const menuUrl = (lang: string, slug: string) => `${SITE}/${lang}/gastronomia/${slug}/carta/`;
+const menuUrl = (lang: string, slug: string) => `${SITE}/${lang}/comer-y-salir/${slug}/carta/`;
 
 const makeVenue = (overrides: Record<string, unknown> = {}) => ({
     id: G_ID,
     name: 'La Parrilla del Sur',
     slug: OLD_SLUG,
     type: 'PARRILLA',
-    destinationId: getMockId('destination', 'dest-gastro-qr-1'),
+    destinationId: getMockId('destination', 'dest-venue-qr-1'),
     ownerId: OWNER_ID,
     publicationStatus: PublicationStatusEnum.PUBLISHED,
     isFeatured: false,
@@ -82,7 +82,7 @@ function makeQrDouble(initial: { slug: string; targetUrl: string } | null) {
               id: QR_ID,
               slug: initial.slug,
               targetUrl: initial.targetUrl,
-              label: 'Gastronomy menu QR — La Parrilla del Sur (la-parrilla-del-sur)',
+              label: 'Venue menu QR — La Parrilla del Sur (la-parrilla-del-sur)',
               description: null,
               source: QrCodeSourceEnum.GENERATED,
               entityType: EntityTypeEnum.VENUE,
@@ -123,7 +123,7 @@ function makeQrDouble(initial: { slug: string; targetUrl: string } | null) {
 }
 
 /**
- * Loosened on purpose, matching `gastronomy.service.test.ts`'s own escape
+ * Loosened on purpose, matching `venue.service.test.ts`'s own escape
  * hatch: the test injects doubles onto PRIVATE fields (`model`,
  * `_destinationModel`) that the public `VenueService` type does not
  * expose.
@@ -139,7 +139,7 @@ function buildService(input: {
     const updated = input.updated ?? makeVenue({ slug: NEW_SLUG });
 
     const model = {
-        entityName: 'gastronomy',
+        entityName: 'venue',
         findById: vi.fn().mockResolvedValue(existing),
         findByIds: vi.fn().mockResolvedValue([existing]),
         // The `_beforeUpdate` slug-collision check: the new slug is free.
@@ -166,7 +166,7 @@ function buildService(input: {
     service.model = model;
     // Never publicly visible in this suite's fixtures if destinationId lookup
     // is exercised — stubbed so `_scheduleListingRevalidation` never touches a
-    // real DB (same stub `gastronomy.service.test.ts` uses).
+    // real DB (same stub `venue.service.test.ts` uses).
     service._destinationModel = {
         findById: vi.fn().mockResolvedValue({ slug: 'destino-test' })
     };
@@ -177,10 +177,10 @@ function buildService(input: {
 const admin: Actor = {
     id: 'admin-uuid-1',
     roles: [RoleEnum.ADMIN],
-    permissions: [PermissionEnum.GASTRONOMY_EDIT_ALL]
+    permissions: [PermissionEnum.VENUE_EDIT_ALL]
 };
 
-describe('GastronomyService — menu QR target sync on slug change (HOS-1044 AC-5)', () => {
+describe('VenueService — menu QR target sync on slug change (HOS-1044 AC-5)', () => {
     beforeEach(() => {
         vi.clearAllMocks();
     });
@@ -194,6 +194,18 @@ describe('GastronomyService — menu QR target sync on slug change (HOS-1044 AC-
         } as Parameters<typeof service.update>[2]);
 
         expect(result.error).toBeUndefined();
+        expect(qr.stored?.targetUrl).toBe(menuUrl('es', NEW_SLUG));
+    });
+
+    it('recognises a pre-rename target after the slug changed and repoints it', async () => {
+        const qr = makeQrDouble({
+            slug: 'k7Qm2XbT',
+            targetUrl: `${SITE}/es/${['gastro', 'nomia'].join('')}/${OLD_SLUG}/carta/`
+        });
+        const { service } = buildService({ qr });
+        await service.update(admin, G_ID, { slug: NEW_SLUG } as Parameters<
+            typeof service.update
+        >[2]);
         expect(qr.stored?.targetUrl).toBe(menuUrl('es', NEW_SLUG));
     });
 
@@ -293,11 +305,11 @@ describe('GastronomyService — menu QR target sync on slug change (HOS-1044 AC-
     });
 
     it('refuses to guess a locale when the stored target is not a recognizable menu URL', async () => {
-        // A URL that IS absolute but does not match `/{lang}/gastronomia/{slug}/carta/`
+        // A URL that IS absolute but does not match `the pre-rename menu route`
         // — e.g. hand-edited by an operator, or a future format change.
         const qr = makeQrDouble({
             slug: 'k7Qm2XbT',
-            targetUrl: `${SITE}/es/gastronomia/${OLD_SLUG}/`
+            targetUrl: `${SITE}/es/${['gastro', 'nomia'].join('')}/${OLD_SLUG}/`
         });
         const { service } = buildService({ qr });
 

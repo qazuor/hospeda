@@ -17,8 +17,6 @@ import {
     events,
     experienceReviews,
     experiences,
-    gastronomies,
-    gastronomyReviews,
     ownerPromotions,
     postSponsors,
     postSponsorships,
@@ -31,7 +29,9 @@ import {
     sponsorships,
     tags,
     userBookmarks,
-    users
+    users,
+    venueReviews,
+    venues
 } from '@repo/db';
 import { PublicationStatusEnum } from '@repo/schemas';
 import { drizzle } from 'drizzle-orm/node-postgres';
@@ -759,13 +759,13 @@ export async function seedEvent(
 }
 
 // ---------------------------------------------------------------------------
-// SPEC-239 seed helpers — gastronomy lifecycle
+// SPEC-239 seed helpers — venue lifecycle
 // ---------------------------------------------------------------------------
 
 interface SeedVenueOverrides {
     readonly ownerId?: string;
     readonly destinationId?: string;
-    readonly gastronomyId?: string;
+    readonly venueId?: string;
     /** Publication state; defaults to `DRAFT` (never public). */
     readonly publicationStatus?: PublicationStatusEnum;
     readonly inactiveSince?: Date;
@@ -773,15 +773,15 @@ interface SeedVenueOverrides {
 }
 
 /**
- * Inserts a User (owner), a Destination (CITY), and a Gastronomy listing
+ * Inserts a User (owner), a Destination (CITY), and a venue listing
  * referencing both. Returns all three IDs.
  *
- * The gastronomy is created `DRAFT` by default so reconciliation tests can
+ * The venue is created `DRAFT` by default so reconciliation tests can
  * assert the flip to `PUBLISHED`.
  *
  * @param tx - Drizzle transaction client (always rolled back after the test).
  * @param overrides - Optional ID / field overrides.
- * @returns Object containing `{ ownerId, destinationId, gastronomyId }`.
+ * @returns Object containing `{ ownerId, destinationId, venueId }`.
  */
 export async function seedVenue(
     tx: DrizzleClient,
@@ -789,30 +789,30 @@ export async function seedVenue(
 ): Promise<{
     readonly ownerId: string;
     readonly destinationId: string;
-    readonly gastronomyId: string;
+    readonly venueId: string;
 }> {
     const ownerId = overrides.ownerId ?? crypto.randomUUID();
     const destinationId = overrides.destinationId ?? crypto.randomUUID();
-    const gastronomyId = overrides.gastronomyId ?? crypto.randomUUID();
+    const venueId = overrides.venueId ?? crypto.randomUUID();
     const uid = crypto.randomUUID().slice(0, 8);
 
     await tx.insert(users).values({
         id: ownerId,
-        email: `seed-gastro-owner-${uid}@example.com`,
-        displayName: 'Gastronomy Owner',
+        email: `seed-venue-owner-${uid}@example.com`,
+        displayName: 'Venue Owner',
         emailVerified: true,
         lifecycleState: 'ACTIVE'
     } as typeof users.$inferInsert);
 
     await tx.insert(destinations).values({
         id: destinationId,
-        slug: `seed-gastro-dest-${uid}`,
-        name: 'Gastronomy Destination',
+        slug: `seed-venue-dest-${uid}`,
+        name: 'Venue Destination',
         destinationType: 'CITY',
         level: 4,
-        path: `/seed/gastro-dest-${uid}`,
-        summary: 'Seed gastronomy destination summary',
-        description: 'Seed gastronomy destination description',
+        path: `/seed/venue-dest-${uid}`,
+        summary: 'Seed venue destination summary',
+        description: 'Seed venue destination description',
         location: {
             state: 'Entre Rios',
             country: 'Argentina',
@@ -821,43 +821,43 @@ export async function seedVenue(
         media: {
             featuredImage: {
                 moderationState: 'APPROVED',
-                url: 'https://example.com/seed-gastro-destination.jpg'
+                url: 'https://example.com/seed-venue-destination.jpg'
             }
         },
         lifecycleState: 'ACTIVE'
     } as typeof destinations.$inferInsert);
 
-    await tx.insert(gastronomies).values({
-        id: gastronomyId,
-        slug: `seed-gastronomy-${uid}`,
+    await tx.insert(venues).values({
+        id: venueId,
+        slug: `seed-venue-${uid}`,
         name: 'La Parrilla de Prueba',
-        summary: 'A seed gastronomy listing summary',
-        description: 'A seed gastronomy listing description for integration tests.',
+        summary: 'A seed venue listing summary',
+        description: 'A seed venue listing description for integration tests.',
         type: 'RESTAURANT',
         ownerId,
         destinationId,
         publicationStatus: overrides.publicationStatus ?? PublicationStatusEnum.DRAFT,
         inactiveSince: overrides.inactiveSince ?? new Date(),
         deadlinesVersion: overrides.deadlinesVersion ?? 1
-    } as typeof gastronomies.$inferInsert);
+    } as typeof venues.$inferInsert);
 
-    return { ownerId, destinationId, gastronomyId };
+    return { ownerId, destinationId, venueId };
 }
 
 interface SeedVenueReviewOverrides {
     readonly reviewId?: string;
-    readonly gastronomyId: string;
+    readonly venueId: string;
     readonly userId: string;
     readonly overallRating?: number;
     readonly moderationState?: string;
 }
 
 /**
- * Inserts a `gastronomy_reviews` row directly (bypassing the service layer)
+ * Inserts a `venue_reviews` row directly (bypassing the service layer)
  * for tests that need a pre-existing review to moderate.
  *
  * @param tx - Drizzle transaction client.
- * @param options - Required `gastronomyId` and `userId`.
+ * @param options - Required `venueId` and `userId`.
  * @returns Object containing `{ reviewId }`.
  */
 export async function seedVenueReview(
@@ -866,16 +866,16 @@ export async function seedVenueReview(
 ): Promise<{ readonly reviewId: string }> {
     const reviewId = options.reviewId ?? crypto.randomUUID();
 
-    await tx.insert(gastronomyReviews).values({
+    await tx.insert(venueReviews).values({
         id: reviewId,
-        gastronomyId: options.gastronomyId,
+        venueId: options.venueId,
         userId: options.userId,
         rating: { food: 4, service: 4, ambiance: 3, value: 4 },
         averageRating: 3.75,
         overallRating: options.overallRating ?? 4,
         lifecycleState: 'ACTIVE',
         moderationState: options.moderationState ?? 'PENDING'
-    } as typeof gastronomyReviews.$inferInsert);
+    } as typeof venueReviews.$inferInsert);
 
     return { reviewId };
 }
@@ -884,7 +884,7 @@ export async function seedVenueReview(
 // HOS-1269 seed helpers — experience lifecycle
 // ---------------------------------------------------------------------------
 //
-// Mirrors the SPEC-239 gastronomy helpers above ("seedVenue" /
+// Mirrors the SPEC-239 venue helpers above ("seedVenue" /
 // "seedVenueReview") so the
 // experience vertical gets the same real-DB integration coverage. Until this
 // ticket, `experiences` had NO integration-test fixture at all — every helper
@@ -908,7 +908,7 @@ interface SeedExperienceOverrides {
  * reconciliation tests can assert the flip to `PUBLISHED`. `priceFrom` is left at its DB default (0) with
  * `isPriceOnRequest=false`, which is deliberately an incomplete listing for
  * `resolveListingCompleteness` (missing `priceFrom`) — same role
- * `seedVenue`'s default row plays for the gastronomy completeness tests.
+ * `seedVenue`'s default row plays for the venue completeness tests.
  *
  * @param tx - Drizzle transaction client (always rolled back after the test).
  * @param overrides - Optional ID / field overrides.
@@ -989,7 +989,7 @@ interface SeedExperienceReviewOverrides {
  * Inserts an `experience_reviews` row directly (bypassing the service layer)
  * for tests that need a pre-existing review to moderate.
  *
- * Unlike `gastronomy_reviews.rating` (nullable since migration 0023, HOS-259),
+ * Unlike `venue_reviews.rating` (nullable since migration 0023, HOS-259),
  * `experience_reviews.rating` is STILL `NOT NULL` with no default — the
  * table was created in 0019 and never received the equivalent fix. This
  * helper therefore always supplies a full rating breakdown; a review created

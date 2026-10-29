@@ -5,12 +5,12 @@ import {
     type DrizzleClient,
     destinations,
     experiences,
-    gastronomies,
     planCatalogModel,
     plans,
     planVersionEntitlements,
     planVersions,
-    users
+    users,
+    venues
 } from '@repo/db';
 import {
     FLOOR_PLAN_ROLE,
@@ -86,7 +86,7 @@ async function seedVersion(
 }
 
 describe('TEST:V5:2 archived owner without TITLE', () => {
-    it('recovers an archived gastronomy from the floor and denies it when the other vertical lacks the key', async () => {
+    it('recovers an archived venue from the floor and denies it when the other vertical lacks the key', async () => {
         await inRollback(async (db) => {
             const [user] = await db
                 .insert(users)
@@ -128,7 +128,7 @@ describe('TEST:V5:2 archived owner without TITLE', () => {
             }
 
             const [venue] = await db
-                .insert(gastronomies)
+                .insert(venues)
                 .values({
                     slug: randomUUID(),
                     name: 'Archived venue',
@@ -141,7 +141,7 @@ describe('TEST:V5:2 archived owner without TITLE', () => {
                     inactiveSince: new Date(),
                     deadlinesVersion: 1
                 })
-                .returning({ id: gastronomies.id });
+                .returning({ id: venues.id });
             const [experience] = await db
                 .insert(experiences)
                 .values({
@@ -224,11 +224,11 @@ describe('TEST:V5:2 archived owner without TITLE', () => {
 
             const [archived] = await db
                 .select({
-                    ownerId: gastronomies.ownerId,
-                    publicationStatus: gastronomies.publicationStatus
+                    ownerId: venues.ownerId,
+                    publicationStatus: venues.publicationStatus
                 })
-                .from(gastronomies)
-                .where(eq(gastronomies.id, venue.id))
+                .from(venues)
+                .where(eq(venues.id, venue.id))
                 .limit(1);
             const [otherArchived] = await db
                 .select({
@@ -285,7 +285,7 @@ describe('TEST:V5:2 archived owner without TITLE', () => {
             ).toEqual({
                 allowed: false,
                 reason: 'NO_CAPABILITY',
-                key: 'publish_gastronomy'
+                key: 'publish_venue'
             });
             expect(coverageSpy.mock.calls.length).toBeGreaterThan(beforeDraft);
 

@@ -11,7 +11,7 @@ import { ExperienceSchema } from './experience.schema.js';
 /**
  * Experience Access Schemas — Three-Tier Response Projection
  *
- * Mirrors the same pick/omit discipline as `gastronomy.access.schema.ts`:
+ * Mirrors the same pick/omit discipline as `venue.access.schema.ts`:
  * - **Public** — only fields safe for unauthenticated visitors.
  * - **Protected** — extends public with fields for authenticated users / owners.
  * - **Admin** — the full schema, with all fields including admin-internal data.
@@ -31,7 +31,7 @@ import { ExperienceSchema } from './experience.schema.js';
  * - Includes a NARROWED `contactInfo` (HOS-815) — see
  *   {@link ExperiencePublicContactInfoSchema} for the published subset.
  * - The `richDescription` field is re-added via `.extend()` because it follows
- *   the same entitlement-by-omission gate as in the gastronomy schema:
+ *   the same entitlement-by-omission gate as in the venue schema:
  *   the service strips it server-side for non-entitled owners before
  *   calling `stripWithSchema`, so schema presence is safe.
  */
@@ -184,7 +184,7 @@ export const ExperiencePublicSchema = ExperienceSchema.pick({
     contactInfo: ExperiencePublicContactInfoSchema.nullish(),
     /**
      * Override picked `media` to use `BaseMediaObjectSchema` (without any
-     * server-managed internal fields). Mirrors the gastronomy pattern.
+     * server-managed internal fields). Mirrors the venue pattern.
      */
     media: BaseMediaObjectSchema.nullish(),
     /** ISO 8601 creation date (for "Nuevo" badge). */
@@ -243,7 +243,7 @@ export const ExperiencePublicSchema = ExperienceSchema.pick({
      * schema gives this column: `undefined` here means WITHHELD (the provider's
      * plan does not grant `manage_experience_directions`), which is a different
      * fact from "they wrote none". Same convention `menuSections` uses on
-     * `GastronomyPublicSchema`, and for the same reason.
+     * `venuePublicSchema`, and for the same reason.
      *
      * The rows are never deleted on a downgrade — the public route re-reads the
      * CURRENT subscription and simply stops emitting them.
@@ -421,7 +421,7 @@ export type ExperienceProtected = z.infer<typeof ExperienceProtectedSchema>;
 export const ExperienceAdminSchema = ExperienceSchema.extend({
     /**
      * Description relaxed on the read side so DRAFT listings can still be
-     * fetched by the admin panel. See SPEC-143 Finding #9 (gastronomy pattern).
+     * fetched by the admin panel. See SPEC-143 Finding #9 (venue pattern).
      */
     description: z.string().max(2000, { message: 'zodError.listing.description.max' }),
     /**
@@ -445,7 +445,7 @@ export type ExperienceAdmin = z.infer<typeof ExperienceAdminSchema>;
  * the response strips them and the admin grid can only show raw UUIDs. Both are
  * `nullish` because a freshly admin-created listing may not have an owner yet.
  *
- * Mirrors `GastronomyAdminListItemSchema`.
+ * Mirrors `venueAdminListItemSchema`.
  */
 export const ExperienceAdminListItemSchema = ExperienceAdminSchema.extend({
     destination: z

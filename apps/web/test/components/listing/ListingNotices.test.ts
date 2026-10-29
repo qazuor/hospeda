@@ -9,7 +9,7 @@
  * verbatim. These source assertions pin the component's own decisions: it
  * renders the builder's views and nothing else, does not fetch, ships only the
  * row 30 button as an island (`client:idle`), uses no Tailwind, and is mounted
- * on the gastronomy and experience list with the vertical's read (never an invented notice).
+ * on the venue and experience list with the vertical's read (never an invented notice).
  */
 
 import { readFileSync } from 'node:fs';
@@ -55,7 +55,7 @@ describe('ListingNotices.astro — renders the read, decides nothing', () => {
     });
 });
 
-describe('mi-cuenta/comercio — the notices of each gastronomy or experience listing', () => {
+describe('mi-cuenta/comercio — the notices of each venue or experience listing', () => {
     it('reads the notices once per listed vertical through the wrapper', () => {
         expect(COMERCIO_PAGE).toContain(
             'const listedVerticals = [...new Set(listings.map((listing) => listing.vertical))];'

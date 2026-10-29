@@ -39,7 +39,7 @@ function ports(
 
 const editKeys: Record<ListingVertical, string> = {
     [VerticalEnum.ACCOMMODATION]: 'edit_accommodation_info',
-    [VerticalEnum.VENUE]: 'edit_gastronomy_info',
+    [VerticalEnum.VENUE]: 'edit_venue_info',
     [VerticalEnum.EXPERIENCE]: 'edit_experience_info'
 };
 

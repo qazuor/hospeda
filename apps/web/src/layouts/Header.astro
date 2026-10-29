@@ -66,7 +66,7 @@ const navLinks = [
     { label: t("nav.accommodations"), href: buildUrl({ locale, path: "/alojamientos/" }) },
     { label: t("nav.destinations"), href: buildUrl({ locale, path: "/destinos/" }) },
     { label: t("nav.events"), href: buildUrl({ locale, path: "/eventos/" }) },
-    { label: t("nav.gastronomy"), href: buildUrl({ locale, path: "/gastronomia/" }) },
+    { label: t("nav.venue"), href: buildUrl({ locale, path: "/comer-y-salir/" }) },
     { label: t("nav.experiences"), href: buildUrl({ locale, path: "/experiencias/" }) },
     { label: t("nav.blog"), href: buildUrl({ locale, path: "/publicaciones/" }) },
     { label: t("nav.contact"), href: buildUrl({ locale, path: "/contacto/" }) },
@@ -116,11 +116,11 @@ const adminPanelUrl = getAdminUrl();
  * existing HOST (or higher role) hid it entirely, via an SSR entitlements
  * check. That hide rule does not carry over to
  * the three-way chooser (`PublishMenu.client`): a HOST who wants to list a
- * restaurant is exactly who the gastronomy/experience options exist for,
+ * restaurant is exactly who the venue/experience options exist for,
  * and a pre-auth dropdown has no per-option "already acquired" state to
  * react to (see `PUBLISH_CTA_OPTIONS`'s JSDoc). The CTA now renders
  * unconditionally for every visitor — guest, tourist, HOST, or
- * GASTRONOMY_OWNER alike (AC-12); this header does not read capabilities.
+ * VENUE_OWNER alike (AC-12); this header does not read capabilities.
  */
 const serverUserRoles = serverUser?.roles ?? [];
 ---

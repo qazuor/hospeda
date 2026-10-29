@@ -15,19 +15,19 @@ describe('TEST:1760:3b moderation state query contract', () => {
             data: { data: { publicationStatus: 'PUBLISHED', fixRequest: null } }
         } as never);
         const query = useListingModerationStateQuery({
-            vertical: 'gastronomy',
+            vertical: 'venue',
             id: 'listing-id'
         }) as unknown as { queryKey: readonly unknown[]; queryFn: () => Promise<unknown> };
-        expect(buildListingModerationStatePath({ vertical: 'gastronomy', id: 'listing-id' })).toBe(
-            '/api/v1/admin/gastronomies/listing-id/moderation'
+        expect(buildListingModerationStatePath({ vertical: 'venue', id: 'listing-id' })).toBe(
+            '/api/v1/admin/venues/listing-id/moderation'
         );
-        expect(query.queryKey).toEqual(['gastronomies', 'listing-id', 'moderation']);
+        expect(query.queryKey).toEqual(['venues', 'listing-id', 'moderation']);
         await expect(query.queryFn()).resolves.toEqual({
             publicationStatus: 'PUBLISHED',
             fixRequest: null
         });
         expect(fetchApi).toHaveBeenCalledWith({
-            path: '/api/v1/admin/gastronomies/listing-id/moderation',
+            path: '/api/v1/admin/venues/listing-id/moderation',
             method: 'GET'
         });
     });

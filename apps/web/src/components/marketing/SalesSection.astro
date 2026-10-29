@@ -10,7 +10,7 @@
  * and the duplication had already caused a real regression (HOS-331), where
  * copy edited on one surface silently diverged from its twin.
  *
- * Shape is modelled on `publicar-restaurante` / `publicar-experiencia`, which
+ * Shape is modelled on the retired venue and experience lead pages, which
  * were byte-for-byte identical to each other and therefore the pair carrying
  * the least accidental variation.
  *
@@ -20,14 +20,14 @@
  * `--core-background` and `--surface-warm`. Which one a given section needs
  * depends on what precedes it on the page, not on what the section IS: the
  * "how it works" block is `--warm` on the owner landing and plain on the
- * gastronomy one. Hardcoding either would force half the callers to fight it.
+ * venue one. Hardcoding either would force half the callers to fight it.
  *
  * ## Why decoration is a slot
  *
  * The existing pages decorate inconsistently — a watermark icon plus a wavy
  * path and four floating dots on the owner landing, an external arrow image on
  * `publicar`, a `?` watermark on the owner FAQ, and nothing at all on the two
- * gastronomy and experience landings. None of that is shared, so it stays a `decoration` slot
+ * venue and experience landings. None of that is shared, so it stays a `decoration` slot
  * the caller opts into rather than a built-in every consumer must switch off.
  */
 

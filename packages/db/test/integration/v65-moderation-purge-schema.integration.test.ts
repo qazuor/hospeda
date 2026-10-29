@@ -23,7 +23,7 @@ describe('TEST:V6:13 moderation purge schema', () => {
                 FROM information_schema.columns
                 WHERE table_schema = 'public'
                   AND column_name = 'remote_deletion_pending_at'
-                  AND table_name IN ('accommodation_media', 'gastronomy_media', 'experience_media', 'accommodation_calendar_sync')
+                  AND table_name IN ('accommodation_media', 'venue_media', 'experience_media', 'accommodation_calendar_sync')
             `);
             expect(columns.rows).toHaveLength(4);
             expect(columns.rows.every((row) => row.is_nullable === 'YES')).toBe(true);

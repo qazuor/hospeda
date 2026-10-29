@@ -46,16 +46,16 @@ import { apiLogger } from '../utils/logger';
 /**
  * The publish verticals an owner-side precheck can read.
  *
- * `@repo/billing` used to own this type and the gastronomy/experience guard below; both came
+ * `@repo/billing` used to own this type and the venue/experience guard below; both came
  * down with the legacy billing system (HOS-1416). The definitions are local now
  * — same values, same guard, no billing semantics attached.
  */
-export type PublishVertical = 'accommodation' | 'gastronomy' | 'experience';
+export type PublishVertical = 'accommodation' | 'venue' | 'experience';
 
 export const isVenueOrExperienceVertical = (
     vertical: PublishVertical
 ): vertical is Exclude<PublishVertical, 'accommodation'> =>
-    vertical === 'gastronomy' || vertical === 'experience';
+    vertical === 'venue' || vertical === 'experience';
 
 /**
  * The three services are built on FIRST USE, never at module load.
@@ -117,7 +117,7 @@ function serviceFor(vertical: PublishVertical) {
     switch (vertical) {
         case 'accommodation':
             return getAccommodationService();
-        case 'gastronomy':
+        case 'venue':
             return getVenueService();
         case 'experience':
             return getExperienceService();
@@ -145,9 +145,9 @@ function serviceFor(vertical: PublishVertical) {
  * ## The two verticals reach that guarantee by DIFFERENT calls (HOS-1247)
  *
  * This used to be one `service.count(actor, { ownerId: actor.id })` for all
- * three verticals, and the sentence above was FALSE for two of them. A gastronomy or experience
+ * three verticals, and the sentence above was FALSE for two of them. A venue or experience
  * `_executeCount` mirrors its `_executeSearch` and forces
- * `publicationStatus: PUBLISHED` (`gastronomy.service.ts:541`,
+ * `publicationStatus: PUBLISHED` (`venue.service.ts:541`,
  * `experience.service.ts:501`; before V6.9b the pair of old visibility and
  * lifecycle columns) so a public-search total matches the page it
  * paginates. Every owner-created listing starts `DRAFT`
@@ -155,7 +155,7 @@ function serviceFor(vertical: PublishVertical) {
  * precisely the rows the cap exists to count, `checkLimit` compared `0 <
  * maxAllowed`, and three listings went onto a plan of one with nothing raised.
  *
- * So gastronomy and experience now read through `countOwn`, the counting twin of the `listOwn`
+ * So venue and experience now read through `countOwn`, the counting twin of the `listOwn`
  * that backs `GET /{vertical}/mine` — hard-scoped to `ownerId = actor.id`,
  * across every publication state. Accommodation keeps calling
  * `count()`: its `_executeCount` passes `publishedOnly: false` when
@@ -208,7 +208,7 @@ export async function countOwnListings(input: {
         return null;
     }
 
-    // The split the docblock above explains: a gastronomy or experience vertical MUST NOT go
+    // The split the docblock above explains: a venue or experience vertical MUST NOT go
     // through `count()`, whose forced PUBLISHED filter reports zero for
     // every owner-created draft.
     // TYPE-WORKAROUND: BaseCrudService.count() takes z.infer<TSearchSchema> and

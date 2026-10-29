@@ -14,7 +14,7 @@ export const PRICING_VERTICAL_BY_AUDIENCE: Record<
 > = {
     owner: 'accommodation',
     tourist: 'tourist',
-    gastronomy: 'gastronomy',
+    venue: 'venue',
     experience: 'experience',
     partner: null
 };
@@ -63,7 +63,7 @@ export function resolvePlanCardTrialOffer({
 
     const checkoutByVertical: Record<PricingSituationVertical, boolean> = {
         accommodation: false,
-        gastronomy: false,
+        venue: false,
         experience: false,
         tourist: true
     };

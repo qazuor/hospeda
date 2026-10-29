@@ -19,7 +19,7 @@ vi.mock('@repo/service-core', async (importActual) => {
             vi.fn().mockImplementation(function () {
                 return { getById: mockGetById };
             }),
-            { ENTITY_NAME: 'gastronomy' }
+            { ENTITY_NAME: 'venue' }
         ),
         QrCodeService: vi.fn().mockImplementation(function () {
             return {
@@ -116,7 +116,7 @@ describe('GET /{id}/menu-qr/scans — effective capability granted', () => {
         expect(mockFindLiveCodeForEntity).toHaveBeenCalled();
     });
 
-    it('answers 200 for a gastronomy-premium owner (plan grants menu_qr_scan_metrics)', async () => {
+    it('answers 200 for a venue-premium owner (plan grants menu_qr_scan_metrics)', async () => {
         const app = buildApp();
 
         const res = await app.request(`/${VENUE_ID}/menu-qr/scans`);
@@ -166,7 +166,7 @@ describe('GET /{id}/menu-qr/scans — existing code', () => {
             data: {
                 id: QR_ID,
                 slug: 'k7Qm2XbT',
-                targetUrl: 'https://hospeda.com.ar/es/gastronomia/x/carta/'
+                targetUrl: 'https://hospeda.com.ar/es/comer-y-salir/x/carta/'
             }
         });
     });

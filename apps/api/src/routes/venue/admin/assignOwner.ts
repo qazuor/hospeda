@@ -1,6 +1,6 @@
 /**
- * POST /api/v1/admin/gastronomies/:id/assign-owner
- * Set or replace the GASTRONOMY_OWNER of a gastronomy listing — Admin endpoint.
+ * POST /api/v1/admin/venues/:id/assign-owner
+ * Set or replace the VENUE_OWNER of a venue listing — Admin endpoint.
  *
  * Uses the dedicated `VenueService.assignOwner()` action. The generic
  * `update()` path intentionally omits `ownerId` (ownership is immutable there),
@@ -23,20 +23,20 @@ const AssignOwnerBodySchema = z.object({
 });
 
 /**
- * POST /api/v1/admin/gastronomies/:id/assign-owner
- * Assign owner to gastronomy listing — Admin endpoint.
+ * POST /api/v1/admin/venues/:id/assign-owner
+ * Assign owner to venue listing — Admin endpoint.
  *
  * Delegates to `VenueService.assignOwner(actor, id, ownerId)`.
- * Requires GASTRONOMY_EDIT_ALL permission.
+ * Requires VENUE_EDIT_ALL permission.
  */
 export const adminAssignVenueOwnerRoute = createAdminRoute({
     method: 'post',
     path: '/{id}/assign-owner',
-    summary: 'Assign owner to gastronomy listing (admin)',
+    summary: 'Assign owner to venue listing (admin)',
     description:
-        'Sets or replaces the owner of a gastronomy listing. Requires GASTRONOMY_EDIT_ALL permission.',
-    tags: ['Gastronomy'],
-    anyOfPermissions: [[PermissionEnum.GASTRONOMY_EDIT_ALL]],
+        'Sets or replaces the owner of a venue listing. Requires VENUE_EDIT_ALL permission.',
+    tags: ['Venue'],
+    anyOfPermissions: [[PermissionEnum.VENUE_EDIT_ALL]],
     requestParams: {
         id: z.string().uuid({ message: 'zodError.common.id.invalidUuid' })
     },

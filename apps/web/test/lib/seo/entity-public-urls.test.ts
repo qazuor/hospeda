@@ -32,7 +32,7 @@ describe('NOTIFIABLE_ENTITY_TYPES', () => {
             'destination',
             'event',
             'post',
-            'gastronomy',
+            'venue',
             'experience'
         ]);
     });
@@ -121,7 +121,7 @@ describe('buildEntityLocaleUrls', () => {
         ['destination', 'destinos'],
         ['event', 'eventos'],
         ['post', 'publicaciones'],
-        ['gastronomy', 'gastronomia'],
+        ['venue', 'comer-y-salir'],
         ['experience', 'experiencias']
     ] as const)('maps %s to /%s/', (entityType, segment) => {
         const [first] = buildEntityLocaleUrls({ entityType, slug: 's', siteUrl: SITE });
@@ -172,7 +172,7 @@ describe('anti-drift: the sitemap consumes this map', () => {
      * otherwise fail silently.
      *
      * It covered only the first four segments until now, which is why the
-     * sitemap kept its own inline copies of `/gastronomia/` and
+     * sitemap kept its own inline copies of `/comer-y-salir/` and
      * `/experiencias/` unnoticed. A guard proves exactly what its list says.
      */
     it.each([
@@ -180,7 +180,7 @@ describe('anti-drift: the sitemap consumes this map', () => {
         'destinos',
         'eventos',
         'publicaciones',
-        'gastronomia',
+        'comer-y-salir',
         'experiencias'
     ])('does not re-inline the /%s/{slug}/ detail path', (segment) => {
         expect(sitemapSrc).not.toContain(`\`/${segment}/\${slug}/\``);

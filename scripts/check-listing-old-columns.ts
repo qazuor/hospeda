@@ -3,7 +3,7 @@
  * columns (`lifecycle_state`, `visibility`, `moderation_state` of the three listing
  * tables; `owner_suspended`, `plan_restricted`, `billing_unpublished_at` of
  * `accommodations`). Scope: git-listed `.ts/.tsx/.astro/.mjs/.cjs` under `apps/`,
- * `packages/` and `scripts/`, plus the seed JSON of `packages/seed/src/data/{accommodation,gastronomy}/`;
+ * `packages/` and `scripts/`, plus the seed JSON of `packages/seed/src/data/{accommodation,venue}/`;
  * never `packages/db/src/migrations/**` nor Markdown; comments are ignored. Rules:
  * (a) `acc-only`: an accommodation-only name, anywhere; (b) `drizzle`:
  * `<listing table>.<old column>`; (c) `sql`: an SQL string literal naming a listing
@@ -83,8 +83,8 @@ const ACC_ONLY_PATTERN = new RegExp(
     'g'
 );
 const DRIZZLE_PATTERN =
-    /\b(?:accommodations|gastronomies|experiences)\s*\.\s*(lifecycleState|visibility|moderationState)\b/g;
-const SQL_TABLE_PATTERN = /\b(?:accommodations|gastronomies|experiences)\b/;
+    /\b(?:accommodations|venues|experiences)\s*\.\s*(lifecycleState|visibility|moderationState)\b/g;
+const SQL_TABLE_PATTERN = /\b(?:accommodations|venues|experiences)\b/;
 const SQL_KEYWORD_PATTERN =
     /\b(?:SELECT|UPDATE|INSERT|DELETE|FROM|WHERE|JOIN|SET)\b|\bselect\b[\s\S]*\bfrom\b|\bupdate\b[\s\S]*\bset\b|\binsert\s+into\b|\bdelete\s+from\b/;
 const IMPORT_SPECIFIER =
@@ -95,9 +95,9 @@ const LISTING_NAME_PATTERN = new RegExp(
     'g'
 );
 const LISTING_SEGMENT =
-    /(?:^|\/)(?:accommodations?|gastronomy|gastronomies|venues?|experiences?|listings?|host|properties|propiedades|comercio)(?:\/|$)/;
+    /(?:^|\/)(?:accommodations?|venue|venues?|experiences?|listings?|host|properties|propiedades|comercio)(?:\/|$)/;
 const SOURCE_EXTENSION = /\.(?:ts|tsx|astro|mjs|cjs)$/;
-const FIXTURE_JSON = /^packages\/seed\/src\/data\/(?:accommodation|gastronomy)\/.+\.json$/;
+const FIXTURE_JSON = /^packages\/seed\/src\/data\/(?:accommodation|venue)\/.+\.json$/;
 const MIGRATIONS_DIR = /^packages\/db\/src\/migrations\//;
 
 /** Removes line and block comments while preserving source line positions. */

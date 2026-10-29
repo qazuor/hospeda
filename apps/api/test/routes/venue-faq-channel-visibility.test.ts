@@ -1,5 +1,5 @@
 /**
- * Regression suite for HOS-400 — gastronomy FAQ channel-visibility flags reach
+ * Regression suite for HOS-400 — venue FAQ channel-visibility flags reach
  * the service, mirroring `accommodation-faq-channel-visibility.test.ts`
  * (H-119 / H-59) for the vertical HOS-400 adopted the flags into.
  *
@@ -39,7 +39,7 @@ vi.mock('@repo/service-core', async () => {
 const mockActor = {
     id: 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa',
     roles: ['HOST'],
-    permissions: ['gastronomy.editOwn', 'access.panelProtected']
+    permissions: ['venue.editOwn', 'access.panelProtected']
 };
 vi.mock('../../src/utils/actor.js', async (importOriginal) => {
     const actual = await importOriginal<typeof import('../../src/utils/actor.js')>();
@@ -72,7 +72,7 @@ vi.mock('../../src/utils/listing-access/ports', () => ({
                 vertical: VerticalEnum.VENUE,
                 hasLiveNonTrialTitle: false,
                 inheritsTouristVip: false,
-                entries: [{ key: 'edit_gastronomy_info', value: 1, strategy: 'MAX' }]
+                entries: [{ key: 'edit_venue_info', value: 1, strategy: 'MAX' }]
             })
     })
 }));
@@ -88,14 +88,14 @@ import type { AppOpenAPI } from '../../src/types.js';
 // ---------------------------------------------------------------------------
 const VENUE_ID = '00000000-0000-4000-8000-000000000002';
 const FAQ_ID = 'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbb02';
-const ADD_URL = `/api/v1/protected/gastronomies/${VENUE_ID}/faqs`;
+const ADD_URL = `/api/v1/protected/venues/${VENUE_ID}/faqs`;
 const UPDATE_URL = `${ADD_URL}/${FAQ_ID}`;
 
 const QUESTION = '¿Tienen menú apto para celíacos?';
 const ANSWER = 'Sí, todas las opciones sin TACC están marcadas en la carta.';
 
 /**
- * A complete FAQ row, shaped to satisfy `GastronomyFaqSingleOutputSchema`.
+ * A complete FAQ row, shaped to satisfy `VenueFaqSingleOutputSchema`.
  *
  * The route factory validates the RESPONSE against the declared schema and
  * answers `500 INTERNAL_ERROR` when it does not match, so a partial fixture
@@ -103,7 +103,7 @@ const ANSWER = 'Sí, todas las opciones sin TACC están marcadas en la carta.';
  */
 const FAQ_ROW = {
     id: FAQ_ID,
-    gastronomyId: VENUE_ID,
+    venueId: VENUE_ID,
     question: QUESTION,
     answer: ANSWER,
     category: null,
@@ -127,7 +127,7 @@ function buildHeaders(): Record<string, string> {
     };
 }
 
-describe('Gastronomy FAQ channel-visibility flags reach the service (HOS-400)', () => {
+describe('Venue FAQ channel-visibility flags reach the service (HOS-400)', () => {
     let app: AppOpenAPI;
 
     beforeEach(() => {

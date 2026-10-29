@@ -1,0 +1,323 @@
+/**
+ * Venue view page — displays a single venue listing with:
+ *  - General fields via EntityViewContent (flat mode)
+ *  - FAQs sub-tab (FaqManager, venues entity type)
+ *  - Reviews moderation sub-tab (pending reviews + approve/reject actions)
+ *  - Assign-owner action (OwnerSelect + useAssignVenueOwnerMutation)
+ *  - Purge action at the owner's request (action 23, ListingPurgeOnRequestCard);
+ *    the panel has no other listing delete or restore (HOS-1477, AC:V6:25)
+ */
+
+import type { PublicationStatusEnum } from '@repo/schemas';
+import { createFileRoute, useNavigate } from '@tanstack/react-router';
+import { useState } from 'react';
+import { EntityPageBase } from '@/components/entity-pages/EntityPageBase';
+import { EntityViewContent } from '@/components/entity-pages/EntityViewContent';
+import { FaqManager } from '@/components/faqs/FaqManager';
+import { PageTabs, venueTabs } from '@/components/layout/PageTabs';
+import { OwnerSelect } from '@/components/selects/OwnerSelect';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui-wrapped';
+import { ListingModerationCard } from '@/features/listing/components/ListingModerationCard';
+import { ListingPurgeOnRequestCard } from '@/features/listing/components/ListingPurgeOnRequestCard';
+import { canEditListing } from '@/features/listing/config/listing-moderation-actions';
+import {
+    useAssignVenueOwnerMutation,
+    useModerateVenueReviewMutation,
+    useVenuePage,
+    useVenuePendingReviewsQuery
+} from '@/features/venue';
+import { useTranslations } from '@/hooks/use-translations';
+import { createErrorComponent, createPendingComponent } from '@/lib/factories';
+
+/** Route configuration for the venue view page. */
+export const Route = createFileRoute('/_authed/venues/$id')({
+    component: VenueViewPage,
+    loader: async ({ params }) => ({ venueId: params.id }),
+    errorComponent: createErrorComponent('Venue'),
+    pendingComponent: createPendingComponent()
+});
+
+// ---------------------------------------------------------------------------
+// Reviews moderation sub-tab
+// ---------------------------------------------------------------------------
+
+/**
+ * Minimal review shape returned by the pending-reviews endpoint.
+ *
+ * Field names mirror the `VenueReviewSchema` response: `overallRating`
+ * is the scalar star rating, `rating` is the optional per-dimension breakdown
+ * object (food/service/ambiance/value) — NOT a scalar, so it must never be
+ * rendered directly — `reviewerName` and `title`/`content` carry the text.
+ */
+interface PendingReview {
+    readonly id: string;
+    readonly reviewerName?: string | null;
+    readonly title?: string | null;
+    readonly content?: string | null;
+    readonly overallRating?: number;
+}
+
+/**
+ * Inline reviews moderation panel displayed as a sub-tab in the view page.
+ *
+ * @param venueId - UUID of the parent venue entity
+ */
+function VenueReviewsPanel({ venueId: _venueId }: { readonly venueId: string }) {
+    const { t } = useTranslations();
+    const { data: reviewsData, isLoading } = useVenuePendingReviewsQuery({
+        page: 1,
+        pageSize: 20
+    });
+    const moderateMutation = useModerateVenueReviewMutation();
+
+    const reviews = (reviewsData?.items ?? []) as PendingReview[];
+
+    if (isLoading) {
+        return (
+            <div className="py-8 text-center text-muted-foreground">
+                {t('admin-entities.messages.loading')}
+            </div>
+        );
+    }
+
+    if (reviews.length === 0) {
+        return (
+            <div className="py-8 text-center text-muted-foreground">
+                {t('admin-entities.venue.reviews.noPending')}
+            </div>
+        );
+    }
+
+    return (
+        <div className="space-y-4">
+            {reviews.map((review) => (
+                <Card key={review.id}>
+                    <CardHeader>
+                        <CardTitle className="text-base">
+                            {review.reviewerName ?? t('admin-entities.venue.reviews.anonymous')}
+                            {review.overallRating !== undefined && (
+                                <span className="ml-2 text-muted-foreground text-sm">
+                                    ★ {review.overallRating}
+                                </span>
+                            )}
+                        </CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                        {review.title && <p className="mb-1 font-medium text-sm">{review.title}</p>}
+                        {review.content && (
+                            <p className="mb-4 text-muted-foreground text-sm">{review.content}</p>
+                        )}
+                        <div className="flex gap-2">
+                            <Button
+                                size="sm"
+                                variant="default"
+                                disabled={moderateMutation.isPending}
+                                onClick={() =>
+                                    moderateMutation.mutate({
+                                        reviewId: review.id,
+                                        decision: 'APPROVED'
+                                    })
+                                }
+                            >
+                                {t('admin-entities.venue.reviews.approve')}
+                            </Button>
+                            <Button
+                                size="sm"
+                                variant="destructive"
+                                disabled={moderateMutation.isPending}
+                                onClick={() =>
+                                    moderateMutation.mutate({
+                                        reviewId: review.id,
+                                        decision: 'REJECTED'
+                                    })
+                                }
+                            >
+                                {t('admin-entities.venue.reviews.reject')}
+                            </Button>
+                        </div>
+                    </CardContent>
+                </Card>
+            ))}
+        </div>
+    );
+}
+
+// ---------------------------------------------------------------------------
+// Assign-owner panel
+// ---------------------------------------------------------------------------
+
+/**
+ * Inline assign-owner panel shown at the top of the view page.
+ *
+ * @param venueId - UUID of the venue entity
+ * @param currentOwnerId - Currently assigned owner UUID (if any)
+ */
+function VenueAssignOwner({
+    venueId,
+    currentOwnerId
+}: {
+    readonly venueId: string;
+    readonly currentOwnerId?: string | null;
+}) {
+    const { t } = useTranslations();
+    const [selectedOwnerId, setSelectedOwnerId] = useState<string | undefined>(
+        currentOwnerId ?? undefined
+    );
+    const assignMutation = useAssignVenueOwnerMutation();
+
+    const handleAssign = () => {
+        if (!selectedOwnerId) return;
+        assignMutation.mutate({ id: venueId, ownerId: selectedOwnerId });
+    };
+
+    return (
+        <Card>
+            <CardHeader>
+                <CardTitle className="font-medium text-sm">
+                    {t('admin-entities.venue.assignOwner.title')}
+                </CardTitle>
+            </CardHeader>
+            <CardContent className="flex items-end gap-3">
+                <div className="flex-1">
+                    <OwnerSelect
+                        value={selectedOwnerId}
+                        onValueChange={setSelectedOwnerId}
+                    />
+                </div>
+                <Button
+                    size="sm"
+                    disabled={!selectedOwnerId || assignMutation.isPending}
+                    onClick={handleAssign}
+                >
+                    {assignMutation.isPending
+                        ? t('admin-entities.messages.saving')
+                        : t('admin-entities.venue.assignOwner.button')}
+                </Button>
+            </CardContent>
+        </Card>
+    );
+}
+
+// ---------------------------------------------------------------------------
+// View page
+// ---------------------------------------------------------------------------
+
+/**
+ * View page for a single venue listing.
+ * Displays fields read-only, FAQs sub-tab, reviews moderation sub-tab,
+ * assign-owner panel, and delete action.
+ */
+function VenueViewPage() {
+    const { id } = Route.useParams();
+    const navigate = useNavigate();
+    const { t } = useTranslations();
+    const entityData = useVenuePage(id);
+
+    const venue = entityData.entity as
+        | {
+              name?: string;
+              ownerId?: string | null;
+              publicationStatus?: PublicationStatusEnum | null;
+          }
+        | undefined;
+
+    return (
+        <div className="space-y-4">
+            <PageTabs
+                tabs={venueTabs}
+                basePath={`/venues/${id}`}
+            />
+
+            {/* px-6 mirrors the EntityPageBase content inset so the delete row
+                and assign-owner card align with the entity card below instead of
+                sitting full-bleed against the page edges. */}
+            <div className="space-y-4 px-6 pt-6">
+                <div className="flex justify-end gap-2">
+                    {/* HOS-1493 action 23: purge at the owner's request, with reason. */}
+                    <ListingPurgeOnRequestCard
+                        vertical="venue"
+                        entityId={id}
+                        entityName={venue?.name ?? id}
+                        onPurged={() => navigate({ to: '/venues' })}
+                        publicationStatus={venue?.publicationStatus}
+                    />
+                </div>
+
+                {/* HOS-686 AC-26 + HOS-1684: the listing's publication state and its
+                    moderation by action, with reason (`POST /:id/moderate`). */}
+                <ListingModerationCard
+                    vertical="venue"
+                    entityId={id}
+                    entityName={venue?.name ?? id}
+                    publicationStatus={venue?.publicationStatus}
+                />
+
+                <VenueAssignOwner
+                    venueId={id}
+                    currentOwnerId={venue?.ownerId}
+                />
+            </div>
+
+            <EntityPageBase
+                entityType="venue"
+                entityId={id}
+                initialMode="view"
+                entityData={{
+                    ...entityData,
+                    canEdit:
+                        entityData.canEdit &&
+                        canEditListing({ publicationStatus: venue?.publicationStatus })
+                }}
+            >
+                <Tabs defaultValue="general">
+                    <TabsList>
+                        <TabsTrigger value="general">
+                            {t('admin-entities.venue.tabs.general')}
+                        </TabsTrigger>
+                        <TabsTrigger value="faqs">
+                            {t('admin-entities.venue.tabs.faqs')}
+                        </TabsTrigger>
+                        <TabsTrigger value="reviews">
+                            {t('admin-entities.venue.tabs.reviews')}
+                        </TabsTrigger>
+                    </TabsList>
+
+                    <TabsContent
+                        value="general"
+                        className="mt-4"
+                    >
+                        <EntityViewContent
+                            entityType="venue"
+                            entityId={id}
+                            sections={entityData.sections}
+                            entity={entityData.entity ?? {}}
+                            userPermissions={entityData.userPermissions}
+                            flat
+                        />
+                    </TabsContent>
+
+                    <TabsContent
+                        value="faqs"
+                        className="mt-4"
+                    >
+                        <div className="rounded-lg border bg-card p-6">
+                            <FaqManager
+                                entityType="venues"
+                                parentId={id}
+                            />
+                        </div>
+                    </TabsContent>
+
+                    <TabsContent
+                        value="reviews"
+                        className="mt-4"
+                    >
+                        <VenueReviewsPanel venueId={id} />
+                    </TabsContent>
+                </Tabs>
+            </EntityPageBase>
+        </div>
+    );
+}

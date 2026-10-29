@@ -1,11 +1,11 @@
 /**
- * Public-tier "featured" resolution (HOS-929; extended to the gastronomy and experience
+ * Public-tier "featured" resolution (HOS-929; extended to the venue and experience
  * verticals by HOS-1286).
  *
  * The module keeps its accommodation-era filename because the helper is
  * imported at fifteen sites and the rename would be noise, but its subject is
  * now every listing that carries the two columns — `accommodations`,
- * `gastronomies` and `experiences`. `FeaturedSourceColumns` was already
+ * `legacy listing table` and `experiences`. `FeaturedSourceColumns` was already
  * structural rather than tied to `Accommodation`, so nothing here had to change
  * for the other two to use it.
  *
@@ -49,7 +49,7 @@ export const resolvePublicIsFeatured = (input: FeaturedSourceColumns): boolean =
  *
  * The accommodation routes had a natural place to apply
  * {@link resolvePublicIsFeatured}, because each already built its response
- * object for other reasons. The gastronomy and experience routes do not: `getById` and both
+ * object for other reasons. The venue and experience routes do not: `getById` and both
  * `getByDestination` handlers return what the service handed them, untouched.
  * Introducing four hand-written spreads there is four chances to derive it
  * one way in one file and another way in the next, so the spread lives here

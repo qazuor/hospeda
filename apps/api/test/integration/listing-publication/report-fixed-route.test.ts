@@ -28,7 +28,12 @@ const verticals = [
 type Vertical = (typeof verticals)[number];
 const segments: Readonly<Record<Vertical, string>> = {
     [VerticalEnum.ACCOMMODATION]: 'accommodations',
-    [VerticalEnum.VENUE]: 'gastronomies',
+    [VerticalEnum.VENUE]: 'venues',
+    [VerticalEnum.EXPERIENCE]: 'experiences'
+};
+const sqlTables: Readonly<Record<Vertical, string>> = {
+    [VerticalEnum.ACCOMMODATION]: 'accommodations',
+    [VerticalEnum.VENUE]: 'venues',
     [VerticalEnum.EXPERIENCE]: 'experiences'
 };
 const createdOwners: string[] = [];
@@ -120,7 +125,7 @@ async function readListingFacts(vertical: Vertical, id: string) {
         sql<{
             publicationStatus: string;
             inactiveSince: Date;
-        }>`SELECT publication_status AS "publicationStatus", inactive_since AS "inactiveSince" FROM ${sql.identifier(segments[vertical])} WHERE id = ${id}::uuid`
+        }>`SELECT publication_status AS "publicationStatus", inactive_since AS "inactiveSince" FROM ${sql.identifier(sqlTables[vertical])} WHERE id = ${id}::uuid`
     );
     const row = result.rows[0];
     return {
@@ -147,7 +152,7 @@ afterEach(async () => {
     await getDb().execute(
         sql`DELETE FROM email_outbox WHERE recipient_user_id = ANY(${list}::uuid[])`
     );
-    for (const table of Object.values(segments)) {
+    for (const table of Object.values(sqlTables)) {
         await getDb().execute(
             sql`UPDATE ${sql.identifier(table)} SET deleted_at = now() WHERE owner_id = ANY(${list}::uuid[]) AND deleted_at IS NULL`
         );

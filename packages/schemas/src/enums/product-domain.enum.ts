@@ -2,7 +2,7 @@
  * Product domain enum — the billing vertical a subscription or plan belongs to.
  *
  * - accommodation: Traditional lodging listings (hotels, cabins, etc.).
- * - gastronomy: Gastronomy listings, independently subscribable and capped.
+ * - venue: venue listings, independently subscribable and capped.
  * - experience: Experience listings, independently subscribable and capped.
  * - partner: Partner directory subscriptions.
  * - tourist: Consumer-side plans (`tourist-free`, `tourist-vip`) — a vertical
@@ -25,7 +25,7 @@
  *   domain would silently be counted as the owner's accommodation subscription
  *   — the exact contamination this member exists to prevent.
  *
- * **The old shared gastronomy-and-experience value is retired (HOS-695,
+ * **The old shared venue-and-experience value is retired (HOS-695,
  * release C).** It used to be the single pre-HOS-685 transitional value
  * covering both verticals, kept alive through releases A (HOS-685, widened
  * the vocabulary) and B (HOS-692, rewrote every such row to its own
@@ -45,7 +45,7 @@
  * retired shared value is kept out of production source by G8
  * (`scripts/check-old-grouping-word.sh`).
  *
- * The `gastronomy` / `experience` values coincide by name with the two
+ * The `venue` / `experience` values coincide by name with the two
  * non-accommodation values of `entity_subscriptions.entity_type`. That is
  * deliberate: it makes a link row's `product_domain` a pure function of its own
  * `entity_type`. The hazard is querying the wrong column and getting plausible
@@ -53,7 +53,7 @@
  */
 export enum ProductDomainEnum {
     ACCOMMODATION = 'accommodation',
-    VENUE = 'gastronomy',
+    VENUE = 'venue',
     EXPERIENCE = 'experience',
     PARTNER = 'partner',
     TOURIST = 'tourist',
@@ -62,14 +62,14 @@ export enum ProductDomainEnum {
 
 /**
  * The two {@link ProductDomainEnum} members that own self-service listings
- * besides accommodation: gastronomy and experience.
+ * besides accommodation: venue and experience.
  *
  * This names the PAIR; it is not an umbrella term and not a third domain.
  * Widening it to the three listing verticals would be new code (every
- * `Record<GastronomyOrExperience, …>` would then demand an accommodation
+ * `Record<venueOrExperience, …>` would then demand an accommodation
  * entry), so it stays exactly two members.
  *
- * Spelled as the members' string values so a plain `'gastronomy'` literal and
+ * Spelled as the members' string values so a plain `'venue'` literal and
  * a `ProductDomainEnum.VENUE` member are both assignable to it.
  */
 export type VenueOrExperience = `${ProductDomainEnum.VENUE}` | `${ProductDomainEnum.EXPERIENCE}`;

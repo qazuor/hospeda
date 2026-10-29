@@ -277,7 +277,7 @@ export function applyCacheHeaders({
  * This is the third entry point of this module, and it exists because the other
  * two are necessarily too early. `applyCacheHeaders` runs in the first lines of
  * a listing's frontmatter, before the fetch it depends on has even been issued;
- * measured on `pages/[lang]/gastronomia/index.astro`, it ran at line 52 while
+ * measured on `pages/[lang]/comer-y-salir/index.astro`, it ran at line 52 while
  * `hasError` was derived at line 148 and the banner drawn at line 401. Nothing
  * the page could write at line 52 knows what line 148 is about to discover, so
  * the correction has to travel forward through `locals` and be applied by

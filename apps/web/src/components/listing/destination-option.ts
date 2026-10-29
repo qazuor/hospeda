@@ -3,7 +3,7 @@
  * @description Shared destination-select option shape for the listing
  * owner self-service surfaces (HOS-693).
  *
- * Moved out of `gastronomy/ListingLead.client.tsx` when HOS-693 §6.2 deleted
+ * Moved out of the former venue lead component when HOS-693 §6.2 deleted
  * that component along with the pre-onboarding lead form it rendered — the
  * public lead form is gone, but the type it exported is still the one
  * `ListingCreateForm.client.tsx`, `ListingEditor.client.tsx`, and

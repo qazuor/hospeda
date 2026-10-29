@@ -7,7 +7,7 @@
         "en": "Terraza privada",
         "pt": "Terraza privada"
     },
-    "applicableVerticals": ["accommodation", "gastronomy", "experience"],
+    "applicableVerticals": ["accommodation", "venue", "experience"],
     "type": "OUTDOORS",
     "icon": "TerraceIcon",
     "isBuiltin": false,

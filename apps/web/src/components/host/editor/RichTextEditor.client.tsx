@@ -174,7 +174,7 @@ export function RichTextEditor({
             // it did not receive. The `setEditable` fix below removes the one
             // source that actually fired this on mount, but any future emit
             // that serializes back to the value we already hold is equally not
-            // an edit, and a parent that dirty-tracks per field (the gastronomy/experience
+            // an edit, and a parent that dirty-tracks per field (the venue/experience
             // owner editor, HOS-371) would flag the field dirty from it.
             if (md === (valueRef.current ?? '')) {
                 return;
@@ -206,7 +206,7 @@ export function RichTextEditor({
     // already in TipTap's canonical form (`"a\nb"` serializes back as `"a b"`,
     // a trailing newline is stripped, runs of blank lines collapse). So the
     // equality guard in `onUpdate` did not catch it, and any parent that
-    // dirty-tracks per field (the gastronomy/experience owner editor, HOS-371) saw the field
+    // dirty-tracks per field (the venue/experience owner editor, HOS-371) saw the field
     // go dirty on load — Save enabled with zero edits, and the stored Markdown
     // silently re-flowed on the next save of an unrelated field.
     useEffect(() => {

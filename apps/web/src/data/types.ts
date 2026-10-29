@@ -415,7 +415,7 @@ export interface EventCardData {
      * `featuredImage.caption ?? name` as `alt` text for accessibility.
      */
     readonly featuredImage: { readonly url: string; readonly caption?: string };
-    /** Event category slug (e.g. `'music'`, `'cultural'`, `'gastronomy'`). */
+    /** Event category slug (e.g. `'music'`, `'cultural'`, `'food'`). */
     readonly category: string;
     /** Start and optional end date-time for the event. */
     readonly date: EventDateRange;
@@ -508,7 +508,7 @@ export interface ArticleCardData {
         /** Photo credit, normalised and scheme-checked by `extractFeaturedImage`. */
         readonly attribution?: MediaAttribution;
     };
-    /** Post category slug (e.g. `'travel'`, `'gastronomy'`, `'tips'`). */
+    /** Post category slug (e.g. `'travel'`, `'food'`, `'tips'`). */
     readonly category: string;
     /** ISO 8601 publish date-time string. */
     readonly publishedAt: string;
@@ -970,12 +970,12 @@ export interface EventDetailData {
 }
 
 // ---------------------------------------------------------------------------
-// Gastronomy card and detail data (SPEC-239)
+// Venue card and detail data (SPEC-239)
 // ---------------------------------------------------------------------------
 
 /**
  * A single operating shift within a day: an open time and a close time, both
- * in `"HH:mm"` 24-hour format. Mirrors `ShiftSchema` from the gastronomy/experience
+ * in `"HH:mm"` 24-hour format. Mirrors `ShiftSchema` from the venue/experience
  * opening-hours schema (`@repo/schemas`).
  */
 export interface VenueOpeningHoursShift {
@@ -987,7 +987,7 @@ export interface VenueOpeningHoursShift {
 
 /**
  * Opening hours entry for a single day of the week.
- * Produced by the gastronomy transform when `openingHours` is present on the API response.
+ * Produced by the venue transform when `openingHours` is present on the API response.
  *
  * A day can carry MULTIPLE shifts (e.g. a restaurant open midday and again at
  * night), so `shifts` is an ordered array rather than a single open/close pair.
@@ -1000,7 +1000,7 @@ export interface VenueOpeningHoursEntry {
 }
 
 /**
- * Social networks map for a gastronomy listing.
+ * Social networks map for a venue listing.
  * Mirrors the `socialNetworks` field from the `VenuePublicSchema`.
  *
  * NOTE (HOS-1076): `whatsapp` was removed from this shape. It was never part
@@ -1008,9 +1008,9 @@ export interface VenueOpeningHoursEntry {
  * JSONB column — see `packages/schemas/src/common/social.schema.ts`), so the
  * key can never be legitimately populated. Keeping it here was dead weight
  * that would have rendered an ungated WhatsApp number the instant anything
- * ever wrote that key into the JSONB column — gastronomy's public schema
+ * ever wrote that key into the JSONB column — venue's public schema
  * exposes no phone/WhatsApp channel by design. Do not re-add it; a gated
- * WhatsApp channel for gastronomy belongs on its own dedicated path, mirroring
+ * WhatsApp channel for venue belongs on its own dedicated path, mirroring
  * accommodation's `CAN_CONTACT_WHATSAPP_DISPLAY` entitlement.
  */
 export interface VenueSocialNetworks {
@@ -1026,8 +1026,8 @@ export interface VenueSocialNetworks {
  * Props for the VenueCard component (SPEC-239).
  *
  * Produced by `toVenueCardProps()` in `transforms.ts` and consumed by
- * the gastronomy card component. Used on the listing page and any featured
- * gastronomy sections.
+ * the venue card component. Used on the listing page and any featured
+ * venue sections.
  *
  * @example
  * ```ts
@@ -1049,13 +1049,13 @@ export interface VenueSocialNetworks {
  * ```
  */
 export interface VenueCardData {
-    /** UUID identifier for the gastronomy listing. */
+    /** UUID identifier for the venue listing. */
     readonly id: string;
     /** URL-safe slug used to build the detail page path. */
     readonly slug: string;
     /** Display name of the establishment. */
     readonly name: string;
-    /** Gastronomy type enum value (e.g. `'RESTAURANT'`, `'PARRILLA'`). */
+    /** Venue type enum value (e.g. `'RESTAURANT'`, `'PARRILLA'`). */
     readonly type: string;
     /** Short description shown on the card. */
     readonly summary: string;
@@ -1082,7 +1082,7 @@ export interface VenueCardData {
     /** ISO 8601 creation date. Used to derive "new" badge (< 30 days). */
     readonly createdAt?: string | null;
     /**
-     * SPEC-098: Whether the current user has already favorited this gastronomy listing.
+     * SPEC-098: Whether the current user has already favorited this venue listing.
      * Populated by a bulk-check API call on listing pages. Undefined for guests or
      * when the bulk-check was not performed (FavoriteButton single-check fallback
      * handles this case on mount).
@@ -1095,7 +1095,7 @@ export interface VenueCardData {
      */
     readonly favoriteBookmarkId?: string | null;
     /**
-     * SPEC-098: Total public count of users who have bookmarked this gastronomy listing.
+     * SPEC-098: Total public count of users who have bookmarked this venue listing.
      * Used by FavoriteButton's `pill` variant to render the count badge.
      * Undefined when not returned by the API endpoint.
      */
@@ -1103,7 +1103,7 @@ export interface VenueCardData {
 }
 
 /**
- * One dish or drink on a gastronomy listing's structured carta (HOS-895 PR2).
+ * One dish or drink on a food listing's structured carta (HOS-895 PR2).
  * Mirrors `VenueMenuItemPublic` (`@repo/schemas`) with only the fields
  * the public detail page renders.
  */
@@ -1115,7 +1115,7 @@ export interface VenueMenuItem {
      * Localized name (HOS-1043), or `null`.
      *
      * `null` covers both "never translated" and "withheld server-side for a
-     * plan that does not grant `multilingual_gastronomy_menu`" — the API
+     * plan that does not grant `multilingual_venue_menu`" — the API
      * decides, the renderer draws what it is given, the same collapse
      * {@link photoUrl} documents for its own gate.
      */
@@ -1131,7 +1131,7 @@ export interface VenueMenuItem {
      * `null` covers THREE situations the page cannot and need not tell apart:
      * the venue attached no photo to this dish, the owner's current plan does
      * not grant `menu_item_photos`, or their plan no longer grants
-     * `manage_gastronomy_menu` (in which case the whole carta is withheld and
+     * `manage_venue_menu` (in which case the whole carta is withheld and
      * this field never arrives at all). The API decides; the renderer draws
      * what it is given.
      */
@@ -1156,7 +1156,7 @@ export interface VenueMenuSection {
 }
 
 /**
- * One dish on a gastronomy listing's menú del día (HOS-1041). Mirrors
+ * One dish on a food listing's menú del día (HOS-1041). Mirrors
  * `VenueDailySpecialPublic` (`@repo/schemas`) with only the fields the
  * public detail page renders.
  *
@@ -1199,7 +1199,7 @@ export interface VenueEvent {
 }
 
 /**
- * Typed data shape for the gastronomy detail page (SPEC-239).
+ * Typed data shape for the venue detail page (SPEC-239).
  * Produced by `toVenueDetailPageProps()` in `transforms.ts`.
  *
  * Extends `VenueCardData` with fields only needed for the full detail view.
@@ -1214,7 +1214,7 @@ export interface VenueDetailData extends VenueCardData {
     /**
      * Delivery URL of an uploaded photo or PDF of the menu (HOS-895 PR2).
      * `null` both when nothing was uploaded AND when the owner's current plan
-     * does not grant `manage_gastronomy_menu` — the API withholds it live, so
+     * does not grant `manage_venue_menu` — the API withholds it live, so
      * the page cannot tell the two apart and does not need to.
      */
     readonly menuFileUrl?: string | null;
@@ -1230,7 +1230,7 @@ export interface VenueDetailData extends VenueCardData {
      * The menú del día as it stands TODAY (HOS-1041). Empty when the venue is
      * offering nothing today, when every special's window has passed, OR when
      * the owner's current plan does not grant
-     * `manage_gastronomy_daily_special` — the API applies both the window
+     * `manage_venue_daily_special` — the API applies both the window
      * filter and the entitlement gate, so the page cannot tell the three apart
      * and does not need to.
      */
@@ -1238,7 +1238,7 @@ export interface VenueDetailData extends VenueCardData {
     /**
      * The venue's own agenda, in order (HOS-1042). Empty/absent when the venue
      * has none, OR when the owner's current plan does not grant
-     * `manage_gastronomy_events` — same withholding as {@link menuSections}.
+     * `manage_venue_events` — same withholding as {@link menuSections}.
      */
     readonly venueEvents?: readonly VenueEvent[];
     /** Social network links provided by the owner. */
@@ -1250,7 +1250,7 @@ export interface VenueDetailData extends VenueCardData {
     /**
      * Amenities the owner ticked, catalog-joined (HOS-1072).
      *
-     * Reuses {@link DetailAmenity} on purpose rather than declaring a gastronomy/experience
+     * Reuses {@link DetailAmenity} on purpose rather than declaring a venue/experience
      * twin: both verticals read the SAME `amenities` catalog as accommodations
      * and render through the same `AmenitiesGrid`, so `name` carries the slug
      * here too (SPEC-266). Empty when the payload carried none.
@@ -1276,7 +1276,7 @@ export interface VenueDetailData extends VenueCardData {
 /**
  * Opening hours entry for a single day of the week.
  *
- * Experience listings reuse the gastronomy structured-hours sub-system verbatim
+ * Experience listings reuse the venue structured-hours sub-system verbatim
  * (same `OpeningHoursSchema` source, same `OpeningHoursSection` renderer), so
  * this is an alias of {@link VenueOpeningHoursEntry} — multi-shift aware —
  * rather than a divergent copy.
@@ -1517,7 +1517,7 @@ export interface ExperienceDetailData extends ExperienceCardData {
     /**
      * Amenities the owner ticked, catalog-joined (HOS-1072).
      *
-     * Reuses {@link DetailAmenity} on purpose rather than declaring a gastronomy/experience
+     * Reuses {@link DetailAmenity} on purpose rather than declaring a venue/experience
      * twin: both verticals read the SAME `amenities` catalog as accommodations
      * and render through the same `AmenitiesGrid`, so `name` carries the slug
      * here too (SPEC-266). Empty when the payload carried none.

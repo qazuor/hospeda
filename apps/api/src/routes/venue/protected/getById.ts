@@ -1,7 +1,7 @@
 /**
- * Protected gastronomy get-by-ID endpoint (T-043)
- * Returns a gastronomy listing with owner-tier projection for the authenticated
- * owner. Non-owners without the GASTRONOMY_VIEW_ALL bypass permission receive
+ * Protected venue get-by-ID endpoint (T-043)
+ * Returns a venue listing with owner-tier projection for the authenticated
+ * owner. Non-owners without the VENUE_VIEW_ALL bypass permission receive
  * NOT_FOUND so that owner-private fields (contactInfo, ownerId,
  * lifecycleState, richDescription, audit dates) are never leaked.
  */
@@ -17,22 +17,22 @@ import { createProtectedRoute } from '../../../utils/route-factory';
 const venueService = new VenueService({ logger: apiLogger });
 
 /**
- * GET /api/v1/protected/gastronomies/:id
- * Get gastronomy listing by ID — Protected endpoint (owner view only).
+ * GET /api/v1/protected/venues/:id
+ * Get venue listing by ID — Protected endpoint (owner view only).
  *
  * The resource step admits only the owner, or an actor
- * holding GASTRONOMY_VIEW_ALL (staff / admin) may retrieve this endpoint.
+ * holding VENUE_VIEW_ALL (staff / admin) may retrieve this endpoint.
  * Non-owners receive NOT_FOUND to prevent leaking owner-private fields exposed
- * by GastronomyProtectedSchema (contactInfo, lifecycleState, audit dates).
+ * by VenueProtectedSchema (contactInfo, lifecycleState, audit dates).
  * The write path (updateOwn) retains its own ownership gate and is unaffected.
  */
 export const protectedGetVenueByIdRoute = createProtectedRoute({
     method: 'get',
     path: '/{id}',
-    summary: 'Get gastronomy listing by ID (protected)',
+    summary: 'Get venue listing by ID (protected)',
     description:
-        'Returns a gastronomy listing with owner-tier fields. Only the owner or staff with GASTRONOMY_VIEW_ALL may access this endpoint.',
-    tags: ['Gastronomy'],
+        'Returns a venue listing with owner-tier fields. Only the owner or staff with VENUE_VIEW_ALL may access this endpoint.',
+    tags: ['Venue'],
     emailUnverifiedOperation: 'READ_OWN',
     requestParams: {
         id: z.string().uuid({ message: 'zodError.common.id.invalidUuid' })
@@ -48,14 +48,14 @@ export const protectedGetVenueByIdRoute = createProtectedRoute({
 
         const entity = result.data;
 
-        // Ownership gate: only the owner or a staff actor with GASTRONOMY_VIEW_ALL
+        // Ownership gate: only the owner or a staff actor with VENUE_VIEW_ALL
         // may read owner-private fields through the protected tier.
         // HOS-600: composed by the shared helper so this branch is byte-identical
         // to the missing-row 404 the service raises above. The literal it replaces
-        // (`'Gastronomy not found'`) differed from the service's
-        // `'gastronomy not found'` by one capital letter, which was enough to tell
+        // (`'Venue not found'`) differed from the service's
+        // `'venue not found'` by one capital letter, which was enough to tell
         // a caller that the id they were holding is real.
-        const hasViewAll = actor.permissions?.includes(PermissionEnum.GASTRONOMY_VIEW_ALL);
+        const hasViewAll = actor.permissions?.includes(PermissionEnum.VENUE_VIEW_ALL);
         if (!hasViewAll) {
             const access = resolveResourceStep({
                 actorId: actor.id,

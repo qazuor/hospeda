@@ -1,9 +1,9 @@
 /**
  * venue.crud.schema.test.ts
  *
- * Unit tests for the GastronomyOwnerUpdateInputSchema and related CRUD schemas.
+ * Unit tests for the venueOwnerUpdateInputSchema and related CRUD schemas.
  * Covers SPEC-253 T-027: new owner-editable fields (type, summary, i18n) validate
- * correctly; priceFrom/priceUnit (experience-only) do NOT leak into gastronomy;
+ * correctly; priceFrom/priceUnit (experience-only) do NOT leak into venue;
  * existing identity fields (name, slug, destinationId, etc.) are still stripped.
  *
  * DB interactions: none. Schema-only tests.
@@ -35,7 +35,7 @@ const buildAdminCreateInput = (
         'Un espacio único para disfrutar de la mejor gastronomía rioplatense con carnes seleccionadas y vinos de la región.',
     type: VenueTypeEnum.PARRILLA,
     destinationId: VALID_UUID,
-    // H-88: `owner_id` is NOT NULL with no default on `gastronomies`, so a
+    // H-88: `owner_id` is NOT NULL with no default on `venues`, so a
     // create input without it is not a valid create — it is the payload that
     // reached Postgres and came back as a bare 500.
     ownerId: VALID_UUID,
@@ -46,10 +46,10 @@ const buildAdminCreateInput = (
 });
 
 // ============================================================================
-// GastronomyAdminCreateInputSchema
+// venueAdminCreateInputSchema
 // ============================================================================
 
-describe('GastronomyAdminCreateInputSchema', () => {
+describe('VenueAdminCreateInputSchema', () => {
     describe('required vs optional fields', () => {
         it('should parse a valid admin create input', () => {
             const raw = buildAdminCreateInput();
@@ -65,7 +65,7 @@ describe('GastronomyAdminCreateInputSchema', () => {
 
         // H-88. This used to assert the opposite — "should allow omitting
         // ownerId (may be assigned later)". Nothing assigns it later: the row is
-        // inserted on this very call and `gastronomies.owner_id` is NOT NULL, so
+        // inserted on this very call and `venues.owner_id` is NOT NULL, so
         // accepting the payload here only moved the failure to Postgres, where
         // it surfaced as 500 "A database error occurred" naming no field.
         it('should REJECT omitting ownerId, naming the field (H-88)', () => {
@@ -106,10 +106,10 @@ describe('GastronomyAdminCreateInputSchema', () => {
 });
 
 // ============================================================================
-// GastronomyOwnerUpdateInputSchema — SPEC-253 T-027
+// venueOwnerUpdateInputSchema — SPEC-253 T-027
 // ============================================================================
 
-describe('GastronomyOwnerUpdateInputSchema', () => {
+describe('VenueOwnerUpdateInputSchema', () => {
     it('should parse an empty update (all fields optional)', () => {
         // Arrange / Act
         const result = VenueOwnerUpdateInputSchema.safeParse({});
@@ -137,7 +137,7 @@ describe('GastronomyOwnerUpdateInputSchema', () => {
             }
         });
 
-        it('should accept all gastronomy type enum values', () => {
+        it('should accept all venue type enum values', () => {
             for (const type of Object.values(VenueTypeEnum)) {
                 const result = VenueOwnerUpdateInputSchema.safeParse({ type });
                 expect(result.success).toBe(true);
@@ -237,7 +237,7 @@ describe('GastronomyOwnerUpdateInputSchema', () => {
     // -------------------------------------------------------------------------
 
     describe('previously-permitted operational sections (regression guard)', () => {
-        it('should accept priceRange (gastronomy-specific operational field)', () => {
+        it('should accept priceRange (venue-specific operational field)', () => {
             const result = VenueOwnerUpdateInputSchema.safeParse({ priceRange: 'MID' });
             expect(result.success).toBe(true);
         });
@@ -268,13 +268,13 @@ describe('GastronomyOwnerUpdateInputSchema', () => {
     });
 
     // -------------------------------------------------------------------------
-    // SPEC-253 T-027: priceFrom/priceUnit must NOT be in GastronomyOwnerUpdateInputSchema
-    // (experience-only fields — they must not leak into gastronomy schema)
+    // SPEC-253 T-027: priceFrom/priceUnit must NOT be in venueOwnerUpdateInputSchema
+    // (experience-only fields — they must not leak into venue schema)
     // -------------------------------------------------------------------------
 
-    describe('experience-only fields MUST NOT appear in gastronomy owner update (SPEC-253 T-027)', () => {
-        it('should strip priceFrom silently (experience-only field — not valid for gastronomy)', () => {
-            // Arrange: priceFrom is experience-only; if present in a gastronomy payload
+    describe('experience-only fields MUST NOT appear in venue owner update (SPEC-253 T-027)', () => {
+        it('should strip priceFrom silently (experience-only field — not valid for venue)', () => {
+            // Arrange: priceFrom is experience-only; if present in a venue payload
             // it must be stripped by Zod's unknown-key stripping behaviour.
             const result = VenueOwnerUpdateInputSchema.safeParse({
                 priceFrom: 100000 // experience-only — must be stripped
@@ -288,7 +288,7 @@ describe('GastronomyOwnerUpdateInputSchema', () => {
             }
         });
 
-        it('should strip priceUnit silently (experience-only field — not valid for gastronomy)', () => {
+        it('should strip priceUnit silently (experience-only field — not valid for venue)', () => {
             const result = VenueOwnerUpdateInputSchema.safeParse({
                 priceUnit: 'per_person' // experience-only — must be stripped
             } as Record<string, unknown>);
@@ -376,10 +376,10 @@ describe('GastronomyOwnerUpdateInputSchema', () => {
 });
 
 // ============================================================================
-// GastronomyOwnerCreateInputSchema — HOS-166 §7.2
+// venueOwnerCreateInputSchema — HOS-166 §7.2
 // ============================================================================
 
-describe('GastronomyOwnerCreateInputSchema', () => {
+describe('VenueOwnerCreateInputSchema', () => {
     const buildOwnerCreateInput = (
         overrides: Record<string, unknown> = {}
     ): Record<string, unknown> => ({
@@ -452,10 +452,10 @@ describe('GastronomyOwnerCreateInputSchema', () => {
 });
 
 // ============================================================================
-// GastronomyUpdateInputSchema (admin PATCH)
+// venueUpdateInputSchema (admin PATCH)
 // ============================================================================
 
-describe('GastronomyUpdateInputSchema', () => {
+describe('VenueUpdateInputSchema', () => {
     it('should parse an empty partial update', () => {
         const result = VenueUpdateInputSchema.safeParse({});
         expect(result.success).toBe(true);
@@ -483,7 +483,7 @@ describe('GastronomyUpdateInputSchema', () => {
     it('HOS-382 regression: silently strips a `media` object instead of rejecting it', () => {
         // The admin panel used to submit `media.featuredImage` / `media.gallery`
         // as a nested `media` object on PATCH. The `media` JSONB column was
-        // dropped from the `gastronomies` table (HOS-372), so this schema omits
+        // dropped from the `venues` table (HOS-372), so this schema omits
         // `media` from its shape entirely — but since the schema is NOT `.strict()`,
         // Zod's default object mode ('strip') drops the unknown `media` key rather
         // than failing validation. That silent-strip behaviour is exactly what let
@@ -505,10 +505,10 @@ describe('GastronomyUpdateInputSchema', () => {
 });
 
 // ============================================================================
-// GastronomyDeleteInputSchema
+// venueDeleteInputSchema
 // ============================================================================
 
-describe('GastronomyDeleteInputSchema', () => {
+describe('VenueDeleteInputSchema', () => {
     it('should parse with id and default force=false', () => {
         // Arrange / Act
         const result = VenueDeleteInputSchema.safeParse({ id: VALID_UUID });
@@ -535,10 +535,10 @@ describe('GastronomyDeleteInputSchema', () => {
 });
 
 // ============================================================================
-// GastronomyRestoreInputSchema
+// venueRestoreInputSchema
 // ============================================================================
 
-describe('GastronomyRestoreInputSchema', () => {
+describe('VenueRestoreInputSchema', () => {
     it('should parse a valid UUID id', () => {
         const result = VenueRestoreInputSchema.safeParse({ id: VALID_UUID });
         expect(result.success).toBe(true);

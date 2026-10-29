@@ -1,10 +1,10 @@
 /**
  * @file venue-editor-sections.ts
- * @description Section registry for the gastronomy editor, the counterpart of
+ * @description Section registry for the venue editor, the counterpart of
  * `accommodation-editor-sections.ts` (HOS-1080).
  *
  * Built as a function because the hub path carries the vertical and because the
- * gastronomy-only sections (carta, menú del día, eventos) must be ABSENT from
+ * venue-only sections (carta, menú del día, eventos) must be ABSENT from
  * the experience registry rather than hidden: `findEditorSectionBySlug` then
  * returns `undefined` for them and the shared resolver sends the unknown slug
  * to the hub. Shared pieces live in `listing-editor-sections.ts`.
@@ -17,11 +17,11 @@ import {
 } from '@/lib/editor/listing-editor-sections';
 
 /**
- * Sections that exist only on the gastronomy vertical (HOS-895, HOS-1042).
+ * Sections that exist only on the venue vertical (HOS-895, HOS-1042).
  *
  * The mirror of `EXPERIENCE_ONLY_SECTIONS` in `experience-editor-sections.ts`, and left out of the
  * experience registry for the same reason those two are left out of the
- * gastronomy one: an experience has no carta and no venue agenda, so the
+ * venue one: an experience has no carta and no venue agenda, so the
  * sections do not exist for it rather than being hidden from it.
  * `findEditorSectionBySlug` returns `undefined` for both
  * `/experience/<id>/editar/carta` and `/experience/<id>/editar/eventos`, and
@@ -54,11 +54,11 @@ const VENUE_ONLY_SECTIONS: readonly EditorSection[] = [
     // to in meaning: the carta is what the venue cooks all year, this is what
     // it is cooking today. Same `content` group and same structure (a
     // self-persisting manager with its own endpoints and no save button), and
-    // gastronomy-only for the same reason — an experience has no plato del día.
+    // venue-only for the same reason — an experience has no plato del día.
     //
     // No `visibilityKey`, matching this file's rule. The tier is enforced by
     // the API on the WRITE; the page itself must stay reachable on every
-    // gastronomy tier so a `-basico` owner sees the panel and its upsell rather
+    // venue tier so a `-basico` owner sees the panel and its upsell rather
     // than a nav that silently lacks an entry.
     {
         id: 'dailySpecials',
@@ -75,12 +75,12 @@ const VENUE_ONLY_SECTIONS: readonly EditorSection[] = [
 ];
 
 /**
- * Builds the gastronomy section list, in nav order.
+ * Builds the venue section list, in nav order.
  *
  * The carta, menú del día and eventos sit just before `preguntas`, its
  * structural twin in the `content` group (HOS-895).
  *
- * @returns The gastronomy sections.
+ * @returns The venue sections.
  */
 export function buildVenueEditorSections(): readonly EditorSection[] {
     const faqsIndex = LISTING_SHARED_EDITOR_SECTIONS.findIndex((section) => section.id === 'faqs');
@@ -94,13 +94,13 @@ export function buildVenueEditorSections(): readonly EditorSection[] {
 }
 
 /**
- * Builds the editor registry for a gastronomy listing.
+ * Builds the editor registry for a venue listing.
  *
  * @returns The registry the shared nav / hub / breadcrumb machinery reads.
  */
 export function buildVenueEditorRegistry(): EditorRegistry {
     return createListingEditorRegistry({
-        vertical: 'gastronomy',
+        vertical: 'venue',
         sections: buildVenueEditorSections()
     });
 }

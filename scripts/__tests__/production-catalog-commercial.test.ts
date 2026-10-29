@@ -23,9 +23,9 @@ const EXPECTED_PRICES: Readonly<Record<string, readonly [number, number]>> = {
     'accommodation:owner-basico': [1_800_000, 18_000_000],
     'accommodation:owner-pro': [3_500_000, 35_000_000],
     'accommodation:owner-premium': [6_500_000, 65_000_000],
-    'gastronomy:gastronomy-basico': [3_000_000, 30_000_000],
-    'gastronomy:gastronomy-pro': [6_500_000, 65_000_000],
-    'gastronomy:gastronomy-premium': [8_000_000, 80_000_000],
+    'venue:venue-basico': [3_000_000, 30_000_000],
+    'venue:venue-pro': [6_500_000, 65_000_000],
+    'venue:venue-premium': [8_000_000, 80_000_000],
     'experience:experience-basico': [1_500_000, 15_000_000],
     'experience:experience-pro': [3_500_000, 35_000_000],
     'experience:experience-premium': [5_000_000, 50_000_000],
@@ -109,12 +109,12 @@ describe('production catalog add-ons', () => {
         expect(addon.rows.map((row) => row[1])).toEqual([
             'extra-accommodations-5',
             'extra-photos-20',
-            'extra-gastronomies-1',
+            'extra-venues-1',
             'extra-experiences-1',
             'visibility-boost-7d',
             'visibility-boost-30d',
-            'visibility-boost-gastronomy-7d',
-            'visibility-boost-gastronomy-30d',
+            'visibility-boost-venue-7d',
+            'visibility-boost-venue-30d',
             'visibility-boost-experience-7d',
             'visibility-boost-experience-30d'
         ]);
@@ -124,18 +124,18 @@ describe('production catalog add-ons', () => {
         expect(limit.rows.map((row) => `${row[2]}+${row[3]}`)).toEqual([
             'max_accommodations+5',
             'max_photos_per_accommodation+20',
-            'max_gastronomies+1',
+            'max_venues+1',
             'max_experiences+1'
         ]);
         expect(product.rows.map((row) => `${row[3]} ${row[5]} ${row[6]} ${row[7]}`)).toEqual([
             '1300000 PERIODICO monthly {accommodation}',
             '500000 PERIODICO monthly {accommodation}',
-            '1500000 PERIODICO monthly {gastronomy}',
+            '1500000 PERIODICO monthly {venue}',
             '1500000 PERIODICO monthly {experience}',
             '500000 UNA_VEZ null {accommodation}',
             '1500000 UNA_VEZ null {accommodation}',
-            '500000 UNA_VEZ null {gastronomy}',
-            '1500000 UNA_VEZ null {gastronomy}',
+            '500000 UNA_VEZ null {venue}',
+            '1500000 UNA_VEZ null {venue}',
             '500000 UNA_VEZ null {experience}',
             '1500000 UNA_VEZ null {experience}'
         ]);

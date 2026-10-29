@@ -1,13 +1,13 @@
 /**
  * @file listing-editor-sections.ts
- * @description Shared section registry pieces for the gastronomy and experience
+ * @description Shared section registry pieces for the venue and experience
  * editors (HOS-1080, closing HOS-892).
  *
  * The owner editor used to be ONE route rendering every field group as an
  * anchor on a single page, while the accommodation editor had thirteen routes.
  * HOS-892 reported the symptom of that ("un formulario larguísimo sin
  * encabezados"); the owner's decision was to level up rather than down, so the
- * gastronomy and experience editors now mirror `accommodation-editor-sections.ts`
+ * venue and experience editors now mirror `accommodation-editor-sections.ts`
  * and the nav, the hub and the breadcrumbs all derive from the registries.
  *
  * This file holds what the two verticals have IN COMMON: the sections both have,
@@ -29,7 +29,7 @@
 import type { EditorRegistry, EditorSection } from '@/lib/editor/editor-registry';
 import type { VenueOrExperience } from '@/lib/listing/owner-listings';
 
-/** Sections every gastronomy and experience listing has, in nav order. */
+/** Sections every venue and experience listing has, in nav order. */
 export const LISTING_SHARED_EDITOR_SECTIONS: readonly EditorSection[] = [
     {
         id: 'basicInfo',

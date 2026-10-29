@@ -79,18 +79,18 @@
             "title": "Tu comercio",
             "body": "Edita el contenido, horarios y datos visibles de tu comercio."
         },
-        "greetingGastronomy": {
-            "title": "Bienvenido a tu panel de gastronomia",
+        "greetingVenue": {
+            "title": "Bienvenido a tu panel de Comer y salir",
             "body": "Desde aca podes gestionar tu cuenta y el contenido publico de tu local gastronomico."
         },
-        "listingGastronomy": {
+        "listingVenue": {
             "body": "Edita el menu, los horarios y los datos visibles de tu local gastronomico."
         },
         "myListings": {
             "title": "Tus comercios",
             "body": "Revisa el estado de cada uno de tus comercios y accede a editarlos."
         },
-        "gastronomyQr": {
+        "venueQr": {
             "title": "QR de tu menu",
             "body": "Genera el codigo QR de tu menu y consulta cuantas veces lo escanearon tus clientes."
         },
@@ -164,15 +164,15 @@
                     "description": "Publicá tu alojamiento en Hospeda y llegá a miles de viajeros que buscan hospedarse en la región.",
                     "cta": "Publicá tu alojamiento"
                 },
-                "gastronomy": {
-                    "title": "Gastronomía",
-                    "description": "Sumá tu local gastronómico a Hospeda: restaurante, parrilla, panadería, café o food truck. Dejanos tus datos, aprobamos tu solicitud y desde tu cuenta completás y publicás tu ficha vos mismo.",
-                    "cta": "Publicá tu local gastronómico"
-                },
                 "experience": {
                     "title": "Experiencias",
                     "description": "¿Ofrecés tours, actividades o experiencias para viajeros? Dejanos tus datos, aprobamos tu solicitud y desde tu cuenta completás y publicás tu ficha vos mismo.",
                     "cta": "Publicá tu experiencia"
+                },
+                "venue": {
+                    "title": "Comer y salir",
+                    "description": "Sumá tu local gastronómico a Hospeda: restaurante, parrilla, panadería, café o food truck. Dejanos tus datos, aprobamos tu solicitud y desde tu cuenta completás y publicás tu ficha vos mismo.",
+                    "cta": "Publicá tu local gastronómico"
                 }
             }
         },
@@ -448,8 +448,8 @@
             "endedExpired": "Tu prueba terminó el {{end}}.",
             "vertical": {
                 "accommodation": "alojamiento",
-                "gastronomy": "gastronomía",
-                "experience": "experiencias"
+                "experience": "experiencias",
+                "venue": "Comer y salir"
             },
             "total_one": "{{count}} día de prueba en total",
             "total_other": "{{count}} días de prueba en total",
@@ -483,11 +483,11 @@
             "grace": "No pudimos cobrar tu cuota. Si cambiás la tarjeta con la que pagás en Mercado Pago, el cobro se vuelve a intentar en el momento; no podemos asegurarte que entre. Si el cobro no entra antes del {{date}}, tu suscripción se suspende y vas a tener que volver a suscribirte.",
             "vertical": {
                 "accommodation": "Alojamiento",
-                "gastronomy": "Gastronomía",
                 "experience": "Experiencias",
                 "tourist": "Turista",
                 "partner": "Aliados",
-                "unknown": "Hospeda"
+                "unknown": "Hospeda",
+                "venue": "Comer y salir"
             },
             "price": "{{amount}} {{cycle}}",
             "nextCharge": "Próximo cobro: {{date}}, por {{amount}}."
@@ -554,7 +554,7 @@
             "destination": "Destinos",
             "event": "Eventos",
             "experience": "Experiencias",
-            "gastronomy": "Gastronomía",
+            "venue": "Comer y salir",
             "post": "Blog"
         },
         "collections": {
@@ -798,15 +798,15 @@
             "cancelModal": {
                 "body": "Para cancelar tu suscripción, escribinos a info@hospeda.com.ar y un agente la procesará a la brevedad. Tu plan seguirá activo hasta el final del período actual."
             },
-            "titleGastronomy": "Suscripción de gastronomía",
+            "titleVenue": "Suscripción de Comer y salir",
             "titleExperience": "Suscripción de experiencias",
             "titleTourist": "Suscripción de turista",
             "domainSwitcher": {
                 "label": "Elegí qué suscripción ver",
                 "accommodation": "Alojamiento",
-                "gastronomy": "Gastronomía",
                 "experience": "Experiencias",
-                "tourist": "Turista"
+                "tourist": "Turista",
+                "venue": "Comer y salir"
             }
         },
         "whatsNew": {

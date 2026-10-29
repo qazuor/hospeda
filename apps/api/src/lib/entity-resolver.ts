@@ -19,9 +19,9 @@ import {
     EventModel,
     eq,
     experiences,
-    gastronomies,
     getDb,
-    PostModel
+    PostModel,
+    venues
 } from '@repo/db';
 import { createLogger } from '@repo/logger';
 import type { EntityChangeData, EntityResolver } from '@repo/service-core';
@@ -63,7 +63,7 @@ export function createEntityResolver(): EntityResolver {
                         return await resolveEventById({ entityId });
                     case 'post':
                         return await resolvePostById({ entityId });
-                    case 'gastronomy':
+                    case 'venue':
                     case 'experience':
                         return await resolveVenueOrExperienceById({ entityType, entityId });
                     case 'accommodation_review':
@@ -169,18 +169,18 @@ async function resolveEventById(params: {
 }
 
 // ---------------------------------------------------------------------------
-// Gastronomy and experience listing resolvers
+// Venue and experience listing resolvers
 // ---------------------------------------------------------------------------
 
 /**
- * Resolves a single gastronomy or experience listing (gastronomy or experience) by ID.
+ * Resolves a single venue or experience listing (venue or experience) by ID.
  *
  * One function for both verticals because they are the same shape to the cache:
  * a detail page, a listing page, and an optional parent destination whose page
  * surfaces them. The tag mapper already treats them as one arm for exactly that
  * reason, so splitting them here would be two copies of one query.
  *
- * `id` is returned alongside `slug` because the gastronomy and experience cache tags are built
+ * `id` is returned alongside `slug` because the venue and experience cache tags are built
  * from both — the same pair the automatic purge path emits, so a manual
  * revalidation evicts precisely what a photo upload would have.
  *
@@ -189,17 +189,17 @@ async function resolveEventById(params: {
  * @returns The change data for the listing, or `null` when no such row exists.
  */
 async function resolveVenueOrExperienceById(params: {
-    readonly entityType: 'gastronomy' | 'experience';
+    readonly entityType: 'venue' | 'experience';
     readonly entityId: string;
 }): Promise<EntityChangeData | null> {
     // HOS-1079: an exhaustive switch, not a binary ternary — `entityType` is
     // already narrowed to exactly these two literals by the caller's own
     // `switch` above, so the `default` throw is defense-in-depth, not a
     // reachable path today.
-    let table: typeof gastronomies | typeof experiences;
+    let table: typeof venues | typeof experiences;
     switch (params.entityType) {
-        case 'gastronomy':
-            table = gastronomies;
+        case 'venue':
+            table = venues;
             break;
         case 'experience':
             table = experiences;
@@ -207,7 +207,7 @@ async function resolveVenueOrExperienceById(params: {
         default: {
             const exhaustiveCheck: never = params.entityType;
             throw new Error(
-                `resolveGastronomyOrExperienceById: unsupported entityType '${exhaustiveCheck}'`
+                `resolveVenueOrExperienceById: unsupported entityType '${exhaustiveCheck}'`
             );
         }
     }

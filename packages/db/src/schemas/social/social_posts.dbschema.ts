@@ -44,7 +44,7 @@ export const socialPosts = pgTable(
         title: text('title').notNull(),
         slug: text('slug').notNull().unique(),
         source: SocialSourcePgEnum('source').notNull(),
-        /** Content pillar label (e.g. "travel", "gastronomy", "institutional") */
+        /** Content pillar label (e.g. "travel", "food", "institutional") */
         pillar: text('pillar'),
         /** Optional campaign association */
         campaignId: uuid('campaign_id').references(() => socialCampaigns.id, {

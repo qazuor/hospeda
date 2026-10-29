@@ -1,7 +1,7 @@
 /**
- * Regression tests for GET /api/v1/protected/gastronomies/:id — ownership IDOR fix.
+ * Regression tests for GET /api/v1/protected/venues/:id — ownership IDOR fix.
  *
- * Security context: GastronomyProtectedSchema exposes owner-private fields
+ * Security context: VenueProtectedSchema exposes owner-private fields
  * (contactInfo, ownerId, publicationStatus, richDescription, audit dates) that
  * the public tier never returns. Before this fix any authenticated user could
  * fetch any listing via the protected tier, leaking those PII fields.
@@ -9,7 +9,7 @@
  * Covers (read-IDOR regression, SPEC-239):
  * - Non-owner authenticated actor receives NOT_FOUND (404 in HTTP terms)
  * - Owner receives the listing (200)
- * - Staff actor holding GASTRONOMY_VIEW_ALL receives the listing (200 bypass)
+ * - Staff actor holding VENUE_VIEW_ALL receives the listing (200 bypass)
  * - Unauthenticated requests receive 401
  */
 import { PermissionEnum } from '@repo/schemas';
@@ -17,13 +17,13 @@ import { beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { initApp } from '../../../../src/app.js';
 import type { AppOpenAPI } from '../../../../src/types.js';
 
-const BASE = '/api/v1/protected/gastronomies';
+const BASE = '/api/v1/protected/venues';
 const LISTING_ID = 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa';
 const OWNER_ID = '11111111-1111-4111-a111-111111111111';
 const NON_OWNER_ID = '22222222-2222-4222-a222-222222222222';
 
 // ---------------------------------------------------------------------------
-// Minimal gastronomy fixture that satisfies GastronomyProtectedSchema.
+// Minimal venue fixture that satisfies VenueProtectedSchema.
 // Mirrors the shape returned by VenueService.getById in the owner-tier
 // projection. The fixture sets ownerId = OWNER_ID so ownership assertions work.
 // ---------------------------------------------------------------------------
@@ -97,7 +97,7 @@ vi.mock('@repo/service-core', async (importOriginal) => {
 });
 
 // ---------------------------------------------------------------------------
-// Header helpers — mirror the pattern in other protected gastronomy tests.
+// Header helpers — mirror the pattern in other protected venue tests.
 // ---------------------------------------------------------------------------
 
 const UA = { 'user-agent': 'vitest' };
@@ -117,23 +117,23 @@ const nonOwnerHeaders = {
 const ownerHeaders = {
     ...UA,
     'x-mock-actor-id': OWNER_ID,
-    'x-mock-actor-role': 'GASTRONOMY_OWNER',
+    'x-mock-actor-role': 'VENUE_OWNER',
     'x-mock-actor-permissions': JSON.stringify([])
 };
 
-/** Staff actor with GASTRONOMY_VIEW_ALL bypass (not the owner). */
+/** Staff actor with VENUE_VIEW_ALL bypass (not the owner). */
 const staffHeaders = {
     ...UA,
     'x-mock-actor-id': NON_OWNER_ID,
     'x-mock-actor-role': 'ADMIN',
-    'x-mock-actor-permissions': JSON.stringify([PermissionEnum.GASTRONOMY_VIEW_ALL])
+    'x-mock-actor-permissions': JSON.stringify([PermissionEnum.VENUE_VIEW_ALL])
 };
 
 // ---------------------------------------------------------------------------
 // Tests
 // ---------------------------------------------------------------------------
 
-describe('GET /api/v1/protected/gastronomies/:id — ownership IDOR regression', () => {
+describe('GET /api/v1/protected/venues/:id — ownership IDOR regression', () => {
     let app: AppOpenAPI;
 
     beforeAll(() => {
@@ -182,8 +182,8 @@ describe('GET /api/v1/protected/gastronomies/:id — ownership IDOR regression',
         expect(body.data.ownerId).toBe(OWNER_ID);
     });
 
-    it('returns 200 for a staff actor holding GASTRONOMY_VIEW_ALL (bypass gate)', async () => {
-        // Staff with GASTRONOMY_VIEW_ALL must be able to inspect any listing even
+    it('returns 200 for a staff actor holding VENUE_VIEW_ALL (bypass gate)', async () => {
+        // Staff with VENUE_VIEW_ALL must be able to inspect any listing even
         // when they are not the owner — admin / support workflows depend on this.
         const res = await app.request(`${BASE}/${LISTING_ID}`, {
             method: 'GET',

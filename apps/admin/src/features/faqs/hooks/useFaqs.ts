@@ -16,7 +16,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { fetchApi } from '@/lib/api/client';
 
 /** Supported entity types for FAQ management. */
-export type FaqEntityType = 'destinations' | 'accommodations' | 'gastronomies' | 'experiences';
+export type FaqEntityType = 'destinations' | 'accommodations' | 'venues' | 'experiences';
 
 /** Shape returned by the admin FAQs list endpoint. */
 export interface FaqItem {

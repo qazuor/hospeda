@@ -5,7 +5,7 @@
  * listing owner editor answered 500 in BOTH verticals:
  *
  * ```
- * PATCH /api/v1/protected/gastronomies/{id} → 500
+ * PATCH /api/v1/protected/venue/{id} → 500
  * PATCH /api/v1/protected/experiences/{id}  → 500
  * ServiceError: Junction sync requires an active transaction;
  *               wrap update() in withServiceTransaction
@@ -14,7 +14,7 @@
  * `_afterUpdate` / `_afterCreate` hard-refuse to sync the junction tables
  * without `ctx.tx`, and nothing on the owner path (`updateOwn` → `update`) ever
  * opened a boundary. `r_experience_amenity`, `r_experience_feature` and their
- * gastronomy counterparts were consequently at ZERO rows: no listing could ever
+ * venue counterparts were consequently at ZERO rows: no listing could ever
  * record a service.
  *
  * These tests pin the four properties that fix has to hold:
@@ -220,8 +220,8 @@ class TestListingService extends BaseListingService<
     protected get _entityFkColumn() {
         return 'testListingId';
     }
-    protected get _revalidationEntityType(): 'gastronomy' {
-        return 'gastronomy';
+    protected get _revalidationEntityType(): 'venue' {
+        return 'venue';
     }
     protected get _amenityModel(): ListingCatalogModel {
         return this._amenityModel_instance;
@@ -261,7 +261,7 @@ class TestListingService extends BaseListingService<
 const makeActor = (): Actor => ({
     id: OWNER_ID,
     roles: [RoleEnum.ADMIN],
-    permissions: [PermissionEnum.GASTRONOMY_EDIT_ALL]
+    permissions: [PermissionEnum.VENUE_EDIT_ALL]
 });
 
 function makeService() {
@@ -426,7 +426,7 @@ describe('BaseListingService.create — junction transaction boundary (HOS-808)'
 
     it("joins the caller's transaction instead of opening a second boundary", async () => {
         // This is the `createForOwner` path: it already owns a transaction that
-        // also carries the GASTRONOMY_OWNER role grant, and re-wrapping would split
+        // also carries the VENUE_OWNER role grant, and re-wrapping would split
         // that unit of work in two (withServiceTransaction never nests).
         const { svc, amenityJunction } = makeService();
 

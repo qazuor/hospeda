@@ -7,16 +7,16 @@ import { createProtectedRoute } from '../../../utils/route-factory';
 
 const listingPublicationService = new ListingPublicationService();
 
-/** POST /api/v1/protected/gastronomies/{id}/reactivate */
+/** POST /api/v1/protected/venues/{id}/reactivate */
 export const protectedReactivateVenueRoute = createProtectedRoute({
     method: 'post',
     successStatusCode: 200,
     path: '/{id}/reactivate',
     listingAccess: { vertical: VerticalEnum.VENUE, operation: 'REACTIVATE', idParam: 'id' },
     emailUnverifiedOperation: 'REACTIVATE_LISTING',
-    summary: 'Reactivate archived gastronomy listing',
+    summary: 'Reactivate archived venue listing',
     description: 'Moves an archived listing back to DRAFT through PB8.',
-    tags: ['Gastronomy'],
+    tags: ['Venue'],
     requestParams: { id: z.string().uuid() },
     responseSchema: VenueProtectedSchema,
     handler: async (ctx: Context, params: Record<string, unknown>) => {

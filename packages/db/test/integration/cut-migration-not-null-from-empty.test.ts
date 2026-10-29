@@ -13,7 +13,7 @@ import { protectScratchPool, waitForNoConnections } from './support/scratch-data
 
 const scratchName = `hospeda_cut_not_null_scratch_${process.pid}`;
 const preCutName = `hospeda_cut_not_null_pre_${process.pid}`;
-const tables = ['accommodations', 'gastronomies', 'experiences'] as const;
+const tables = ['accommodations', 'venues', 'experiences'] as const;
 const required = ['publication_status', 'inactive_since', 'deadlines_version'] as const;
 let scratchAdmin: Pool;
 let scratch: Pool;

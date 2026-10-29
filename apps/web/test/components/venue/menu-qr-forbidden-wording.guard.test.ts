@@ -1,6 +1,6 @@
 /**
  * @file menu-qr-forbidden-wording.guard.test.ts
- * @description Guard: the gastronomy menu QR panel must NEVER promise
+ * @description Guard: the venue menu QR panel must NEVER promise
  * location/origin/country data (HOS-1044 §8, NG-3/NG-4).
  *
  * HOS-1141 decided against recording a country for a scanned QR: a table QR
@@ -81,7 +81,7 @@ function extractTranslationFallbacks(source: string): string[] {
     return fallbacks;
 }
 
-describe('GastronomyMenuQrWidget forbidden wording (HOS-1044 NG-3/NG-4)', () => {
+describe('VenueMenuQrWidget forbidden wording (HOS-1044 NG-3/NG-4)', () => {
     it('every rendered fallback string carries no location/origin/country wording', () => {
         const source = fs.readFileSync(WIDGET_SOURCE_PATH, 'utf-8');
         const fallbacks = extractTranslationFallbacks(source);

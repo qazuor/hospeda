@@ -83,7 +83,7 @@ describe('subscription Tourist VIP S1 guard (TEST:B3:29)', () => {
         const [purchasePlan] = await getDb()
             .insert(plans)
             .values({
-                vertical: 'gastronomy',
+                vertical: 'venue',
                 slug: `b3-other-${crypto.randomUUID()}`,
                 name: 'Other plan'
             })
@@ -92,7 +92,7 @@ describe('subscription Tourist VIP S1 guard (TEST:B3:29)', () => {
             .insert(planVersions)
             .values({
                 planId: purchasePlan!.id,
-                vertical: 'gastronomy',
+                vertical: 'venue',
                 rank: 700002,
                 sellable: true,
                 current: true,

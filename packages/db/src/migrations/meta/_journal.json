@@ -1261,6 +1261,20 @@
       "when": 1792973203857,
       "tag": "0179_hos1878_cancellation_reason",
       "breakpoints": true
+    },
+    {
+      "idx": 180,
+      "version": "7",
+      "when": 1793098839310,
+      "tag": "0180_venue_rename",
+      "breakpoints": true
+    },
+    {
+      "idx": 181,
+      "version": "7",
+      "when": 1793218068800,
+      "tag": "0181_hos1825_moderation_kind_check",
+      "breakpoints": true
     }
   ]
 }

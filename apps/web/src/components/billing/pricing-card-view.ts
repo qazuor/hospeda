@@ -242,7 +242,7 @@ export function buildPricingCardViews(input: BuildPricingCardViewsInput): Pricin
 
         const collapseTouristVip: Record<PricingAudience, boolean> = {
             owner: true,
-            gastronomy: true,
+            venue: true,
             experience: true,
             tourist: false,
             partner: false

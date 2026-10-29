@@ -60,13 +60,13 @@ import { transformProtectedEffectiveSet } from './transforms';
 import type { ApiResult, PaginatedResponse } from './types';
 
 /**
- * The two gastronomy/experience verticals that share the granular media endpoint shape
+ * The two venue/experience verticals that share the granular media endpoint shape
  * (HOS-372). Duplicated (not imported) from `@/lib/listing/owner-listings`
  * to avoid this low-level endpoints module depending on a higher-level
  * feature module — mirrors how other entity-scoped unions in this file are
  * hand-declared rather than imported (see `CalendarProviderToken` above).
  */
-export type ListingMediaVertical = 'gastronomy' | 'experience';
+export type ListingMediaVertical = 'venue' | 'experience';
 
 const BASE = '/api/v1/public';
 const PROTECTED = '/api/v1/protected';
@@ -102,7 +102,7 @@ type BookmarkEntityType =
     | 'DESTINATION'
     | 'EVENT'
     | 'EXPERIENCE'
-    | 'GASTRONOMY'
+    | 'VENUE'
     | 'POST';
 
 /** Protected user bookmark API endpoints */
@@ -2360,26 +2360,26 @@ export const hostAnalyticsApi = {
 
 // --- Listing Analytics (Protected — HOS-734) ---
 
-/** The two gastronomy/experience verticals — matches `VenueOrExperience` in `@repo/billing`. */
-type ListingAnalyticsVertical = 'gastronomy' | 'experience';
+/** The two venue/experience verticals — matches `VenueOrExperience` in `@repo/billing`. */
+type ListingAnalyticsVertical = 'venue' | 'experience';
 
 /** Path segment each vertical mounts its protected routes under. */
 const LISTING_VERTICAL_PATH: Readonly<Record<ListingAnalyticsVertical, string>> = {
-    gastronomy: 'gastronomies',
+    venue: 'venues',
     experience: 'experiences'
 };
 
 /**
- * Protected gastronomy/experience basic-stats API endpoints
+ * Protected venue/experience basic-stats API endpoints
  * (HOS-734). Mirrors `hostAnalyticsApi`'s accommodation views shape — same
  * `entity_views` telemetry table, same `view_basic_stats` entitlement,
- * applied to the two gastronomy/experience verticals instead of ACCOMMODATION.
+ * applied to the two venue/experience verticals instead of ACCOMMODATION.
  *
- * Gastronomy's menu QR and its scan analytics (HOS-1044) are no longer out of
+ * Venue's menu QR and its scan analytics (HOS-1044) are no longer out of
  * scope: `getMenuQr` and `getMenuQrScans` below, gated by the
- * `menu_qr_scan_metrics` entitlement (granted by `gastronomy-premium` only).
+ * `menu_qr_scan_metrics` entitlement (granted by `venue-premium` only).
  * Still out of scope, per vertical, and still without an endpoint or
- * entitlement key: gastronomy's most-viewed dishes, and experience's origin
+ * entitlement key: venue's most-viewed dishes, and experience's origin
  * destinations.
  */
 /**
@@ -2394,7 +2394,7 @@ const LISTING_VERTICAL_PATH: Readonly<Record<ListingAnalyticsVertical, string>> 
  */
 export const ownerListingsApi = {
     /**
-     * List the caller's own listings in one gastronomy/experience verticals.
+     * List the caller's own listings in one venue or experience vertical.
      *
      * @param params - `{ vertical }`
      * @returns `{ listings }` — the owner's listing summaries for that vertical.
@@ -2425,7 +2425,7 @@ export const ownerListingsApi = {
 export const listingAnalyticsApi = {
     /**
      * Get view stats (cumulative) for every listing the caller owns in one
-     * gastronomy/experience verticals, over a rolling window.
+     * venue/experience verticals, over a rolling window.
      *
      * @param params - `{ vertical, window }`
      * @returns One `{ entityId, unique, total }` entry per owned listing.
@@ -2453,7 +2453,7 @@ export const listingAnalyticsApi = {
 
     /**
      * Get the gap-filled daily view-count series for every listing the
-     * caller owns in one gastronomy/experience verticals, over a rolling window. Not
+     * caller owns in a venue or experience vertical, over a rolling window. Not
      * currently rendered by any web UI (the `mi-cuenta/comercio` widget shows
      * cumulative totals only, HOS-734) — kept here so a future daily chart
      * does not need a new backend round-trip.
@@ -2480,19 +2480,19 @@ export const listingAnalyticsApi = {
     },
 
     /**
-     * Get the menu QR for one gastronomy listing (HOS-1044 §6.2). Mints the
+     * Get the menu QR for one venue listing (HOS-1044 §6.2). Mints the
      * code on first call and reuses it afterwards — the SAME `qr_codes` row
      * every time, even across a slug rename (the target is repointed
      * server-side, not the code itself).
      *
-     * Premium-only: a caller on gastronomy basic/pro gets a `403`, which the
+     * Premium-only: a caller on venue basic/pro gets a `403`, which the
      * panel renders as a locked upsell state, never a generic error.
      *
-     * @param params - `{ gastronomyId }`
+     * @param params - `{ venueId }`
      * @returns The QR's SVG markup, the scan URL it encodes, its target URL,
      *   and both slugs.
      */
-    getMenuQr({ gastronomyId }: { readonly gastronomyId: string }): Promise<
+    getMenuQr({ venueId }: { readonly venueId: string }): Promise<
         ApiResult<{
             readonly svg: string;
             readonly url: string;
@@ -2502,12 +2502,12 @@ export const listingAnalyticsApi = {
         }>
     > {
         return apiClient.getProtected({
-            path: `${PROTECTED}/gastronomies/${gastronomyId}/menu-qr`
+            path: `${PROTECTED}/venues/${venueId}/menu-qr`
         });
     },
 
     /**
-     * Get the scan aggregate for one gastronomy listing's menu QR (HOS-1044
+     * Get the scan aggregate for one venue listing's menu QR (HOS-1044
      * §6.4): total, a gap-filled daily series, and device/OS/language
      * breakdowns over a rolling window. A venue with no menu QR minted yet
      * gets an all-zero aggregate — this endpoint never mints a code.
@@ -2515,14 +2515,14 @@ export const listingAnalyticsApi = {
      * Same gate as {@link getMenuQr}: a `403` means the panel should render
      * the locked upsell state.
      *
-     * @param params - `{ gastronomyId, window }`
+     * @param params - `{ venueId, window }`
      * @returns The scan aggregate for the requested window.
      */
     getMenuQrScans({
-        gastronomyId,
+        venueId,
         window: windowParam
     }: {
-        readonly gastronomyId: string;
+        readonly venueId: string;
         readonly window: AnalyticsWindow;
     }): Promise<
         ApiResult<{
@@ -2535,7 +2535,7 @@ export const listingAnalyticsApi = {
         }>
     > {
         return apiClient.getProtected({
-            path: `${PROTECTED}/gastronomies/${gastronomyId}/menu-qr/scans`,
+            path: `${PROTECTED}/venues/${venueId}/menu-qr/scans`,
             params: { window: windowParam }
         });
     }
@@ -2874,7 +2874,7 @@ export const hostOnboardingApi = {
  * so a change to the API contract surfaces as a typecheck failure at the call
  * sites rather than silently reshaping a rendered page.
  */
-export type PublishVerticalSlug = 'accommodation' | 'gastronomy' | 'experience';
+export type PublishVerticalSlug = 'accommodation' | 'venue' | 'experience';
 export type SubscribeDestinationResponse = z.infer<typeof SubscribeDestinationResponseSchema>;
 
 /**
@@ -2890,7 +2890,7 @@ export type SubscribeDestinationResponse = z.infer<typeof SubscribeDestinationRe
  */
 export const publishApi = {
     /**
-     * Publish a gastronomy or experience listing.
+     * Publish a venue or experience listing.
      *
      * @param params.vertical - Listing vertical.
      * @param params.id - Listing identifier.
@@ -2918,7 +2918,7 @@ export const publishApi = {
      *
      * @example
      * ```ts
-     * const result = await publishApi.precheck({ vertical: 'gastronomy', cookieHeader });
+     * const result = await publishApi.precheck({ vertical: 'venue', cookieHeader });
      * if (result.ok) console.log(result.data.decision);
      * ```
      */
@@ -3056,7 +3056,7 @@ export const publishApi = {
      *
      * @example
      * ```ts
-     * const result = await publishApi.purge({ vertical: 'gastronomy', id });
+     * const result = await publishApi.purge({ vertical: 'venue', id });
      * if (result.ok) window.location.reload();
      * ```
      */
@@ -3101,7 +3101,7 @@ export const publishApi = {
 /** Protected API plural per listing vertical (HOS-1493, row 26 read). */
 const LISTING_VERTICAL_PLURAL: Readonly<Record<PublishVerticalSlug, string>> = {
     accommodation: 'accommodations',
-    gastronomy: 'gastronomies',
+    venue: 'venues',
     experience: 'experiences'
 };
 
@@ -5051,14 +5051,14 @@ export const priceAlertsApi = {
 // --- Listing Media (Protected — HOS-372) ---
 
 /**
- * Maps a gastronomy/experience verticals to its URL path segment.
+ * Maps a venue or experience vertical to its URL path segment.
  */
-function listingMediaPathSegment(vertical: ListingMediaVertical): 'gastronomies' | 'experiences' {
-    return vertical === 'gastronomy' ? 'gastronomies' : 'experiences';
+function listingMediaPathSegment(vertical: ListingMediaVertical): 'venues' | 'experiences' {
+    return vertical === 'venue' ? 'venues' : 'experiences';
 }
 
 /**
- * Row shape returned by the gastronomy_media / experience_media relational
+ * Row shape returned by the venue_media / experience_media relational
  * endpoints. Field-for-field identical between both verticals (they share
  * `BaseListingMediaSchema`) — one client, parameterized by `vertical`, reads
  * cleanly instead of two near-identical objects.
@@ -5087,7 +5087,7 @@ export interface ListingMediaRow {
 }
 
 /**
- * Granular per-operation protected endpoints for listing (gastronomy
+ * Granular per-operation protected endpoints for listing (venue
  * / experience) photo management (HOS-372).
  *
  * Mirrors `accommodationMediaApi` (SPEC-204): each operation persists
@@ -5099,10 +5099,10 @@ export interface ListingMediaRow {
  *
  * @example
  * ```ts
- * const list = await listingMediaApi.listMedia({ vertical: 'gastronomy', id: 'listing-uuid' });
- * const added = await listingMediaApi.addMedia({ vertical: 'gastronomy', id: 'listing-uuid', body: { url, publicId } });
- * await listingMediaApi.setFeaturedMedia({ vertical: 'gastronomy', id: 'listing-uuid', mediaId: added.data.media.id });
- * await listingMediaApi.removeMedia({ vertical: 'gastronomy', id: 'listing-uuid', mediaId: added.data.media.id });
+ * const list = await listingMediaApi.listMedia({ vertical: 'venue', id: 'listing-uuid' });
+ * const added = await listingMediaApi.addMedia({ vertical: 'venue', id: 'listing-uuid', body: { url, publicId } });
+ * await listingMediaApi.setFeaturedMedia({ vertical: 'venue', id: 'listing-uuid', mediaId: added.data.media.id });
+ * await listingMediaApi.removeMedia({ vertical: 'venue', id: 'listing-uuid', mediaId: added.data.media.id });
  * ```
  */
 export const listingMediaApi = {
@@ -5163,7 +5163,7 @@ export const listingMediaApi = {
      * Delete a media row by its DB UUID (soft-delete + resequence).
      *
      * Unlike `accommodationMediaApi.removeMedia`, this does NOT delete the
-     * Cloudinary asset — the gastronomy/experience media routes intentionally
+     * Cloudinary asset — the venue/experience media routes intentionally
      * leave binary cleanup to the caller. Pair with
      * `protectedMediaApi.deleteMedia({ publicId })` (best-effort) when the
      * row being removed carries a `publicId`.

@@ -1,12 +1,12 @@
 /**
  * @file listing-catalog-relations.ts
- * @description Reads the amenities and features a gastronomy or experience listing (gastronomy
+ * @description Reads the amenities and features a venue or experience listing (venue
  * or experience) is linked to, joined with the shared catalog, for the public
  * detail response (HOS-1072).
  *
  * WHY THIS LIVES IN A ROUTE UTIL AND NOT IN THE SERVICE. The listing services
  * already load `amenities` / `features` as Drizzle relations, but a bare
- * `with: { amenities: true }` returns the JUNCTION rows — `{ gastronomyId,
+ * `with: { amenities: true }` returns the JUNCTION rows — `{ venueId,
  * amenityId }` — and nothing else. The catalog fields a page needs to render a
  * row (`slug`, which is also the i18n key, and `icon`) live one hop further
  * out. This mirrors `accommodation/public/getBySlug.ts`, which reaches for
@@ -27,8 +27,8 @@ import {
     getDb,
     rExperienceAmenity,
     rExperienceFeature,
-    rGastronomyAmenity,
-    rGastronomyFeature
+    rVenueAmenity,
+    rVenueFeature
 } from '@repo/db';
 import type { ListingAmenityPublic, ListingFeaturePublic } from '@repo/schemas';
 
@@ -42,25 +42,25 @@ import type { ListingAmenityPublic, ListingFeaturePublic } from '@repo/schemas';
  */
 
 /**
- * Amenities linked to one gastronomy listing, joined with the shared catalog.
+ * Amenities linked to one venue listing, joined with the shared catalog.
  *
- * @param gastronomyId - The listing's UUID.
+ * @param venueId - The listing's UUID.
  * @returns Catalog-joined amenity rows, most important first. Empty when none.
  */
 export async function fetchVenueAmenities(
-    gastronomyId: string
+    venueId: string
 ): Promise<readonly ListingAmenityPublic[]> {
     const db = getDb();
     const rows = await db
         .select({
-            amenityId: rGastronomyAmenity.amenityId,
+            amenityId: rVenueAmenity.amenityId,
             slug: amenities.slug,
             icon: amenities.icon,
             displayWeight: amenities.displayWeight
         })
-        .from(rGastronomyAmenity)
-        .innerJoin(amenities, eq(rGastronomyAmenity.amenityId, amenities.id))
-        .where(eq(rGastronomyAmenity.gastronomyId, gastronomyId))
+        .from(rVenueAmenity)
+        .innerJoin(amenities, eq(rVenueAmenity.amenityId, amenities.id))
+        .where(eq(rVenueAmenity.venueId, venueId))
         .orderBy(desc(amenities.displayWeight), asc(amenities.slug));
 
     return rows.map((row) => ({
@@ -71,27 +71,27 @@ export async function fetchVenueAmenities(
 }
 
 /**
- * Features linked to one gastronomy listing, joined with the shared catalog.
+ * Features linked to one venue listing, joined with the shared catalog.
  *
- * @param gastronomyId - The listing's UUID.
+ * @param venueId - The listing's UUID.
  * @returns Catalog-joined feature rows, most important first. Empty when none.
  */
 export async function fetchVenueFeatures(
-    gastronomyId: string
+    venueId: string
 ): Promise<readonly ListingFeaturePublic[]> {
     const db = getDb();
     const rows = await db
         .select({
-            featureId: rGastronomyFeature.featureId,
+            featureId: rVenueFeature.featureId,
             slug: features.slug,
             icon: features.icon,
             displayWeight: features.displayWeight,
-            hostReWriteName: rGastronomyFeature.hostReWriteName,
-            comments: rGastronomyFeature.comments
+            hostReWriteName: rVenueFeature.hostReWriteName,
+            comments: rVenueFeature.comments
         })
-        .from(rGastronomyFeature)
-        .innerJoin(features, eq(rGastronomyFeature.featureId, features.id))
-        .where(eq(rGastronomyFeature.gastronomyId, gastronomyId))
+        .from(rVenueFeature)
+        .innerJoin(features, eq(rVenueFeature.featureId, features.id))
+        .where(eq(rVenueFeature.venueId, venueId))
         .orderBy(desc(features.displayWeight), asc(features.slug));
 
     return rows.map((row) => ({

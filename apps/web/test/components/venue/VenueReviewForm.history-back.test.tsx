@@ -1,7 +1,7 @@
 /**
  * @file VenueReviewForm.history-back.test.tsx
  * @description Regression tests for HOS-334: with the review dialog open on
- * the gastronomy detail page, the system back button must close the dialog
+ * the venue detail page, the system back button must close the dialog
  * instead of navigating away from the page — and the text the visitor
  * already typed must not be lost to that navigation.
  *
@@ -57,7 +57,7 @@ vi.mock('@/lib/auth-cache', () => ({
 // Imported after the mocks so the module graph picks them up.
 import { VenueReviewForm } from '@/components/venue/VenueReviewForm.client';
 
-const PAGE_URL = 'http://localhost:3000/es/gastronomia/la-parrilla-de-juan/';
+const PAGE_URL = 'http://localhost:3000/es/comer-y-salir/la-parrilla-de-juan/';
 
 /**
  * Minimal stand-in for the router's `navigate()` on its hash fast path.
@@ -103,14 +103,14 @@ function setupDialogMocks() {
 }
 
 const DEFAULT_PROPS = {
-    gastronomyId: 'gastro-123',
-    gastronomyName: 'La Parrilla de Juan',
+    venueId: 'venue-123',
+    venueName: 'La Parrilla de Juan',
     locale: 'es' as const,
     apiUrl: 'http://localhost:3001',
     signInHref: '/es/auth/signin'
 };
 
-describe('GastronomyReviewForm — back button closes the dialog (HOS-334)', () => {
+describe('VenueReviewForm — back button closes the dialog (HOS-334)', () => {
     beforeAll(async () => {
         __setNavigateImpl(fakeNavigate);
         enableClientRouter();
@@ -165,7 +165,7 @@ describe('GastronomyReviewForm — back button closes the dialog (HOS-334)', () 
         // …and the page itself was never left: the CTA that opened it is still
         // mounted, and the URL is back on the plain page (no swap, no navigation).
         expect(screen.getByRole('button', { name: /dejar reseña/i })).toBeInTheDocument();
-        expect(window.location.pathname).toBe('/es/gastronomia/la-parrilla-de-juan/');
+        expect(window.location.pathname).toBe('/es/comer-y-salir/la-parrilla-de-juan/');
         expect(window.location.hash).toBe('');
     });
 });

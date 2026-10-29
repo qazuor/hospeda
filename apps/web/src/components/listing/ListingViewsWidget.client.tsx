@@ -3,10 +3,10 @@
  * @description Basic view-count widget for the `mi-cuenta/comercio` owner
  * index (HOS-734).
  *
- * Shows, per listing the owner has (gastronomy and/or experience),
+ * Shows, per listing the owner has (venue and/or experience),
  * how many unique/total visits it got over a rolling window (7d/30d) —
  * mirrors the accommodation host dashboard's `ViewsWidget`, scoped down to
- * the one stat a gastronomy or experience listing has today.
+ * the one stat a venue or experience listing has today.
  *
  * **Why no "locked" state, unlike the accommodation widget.** `VIEW_BASIC_STATS`
  * is in the entitlement set of every tier of a
@@ -17,9 +17,9 @@
  *
  * **What's explicitly NOT here (owner decision, HOS-734):** the daily-series
  * chart (API route exists, `listingAnalyticsApi.getViewsDailySeries`, ready
- * for a future addition) and most-viewed dishes for gastronomy / origin
+ * for a future addition) and most-viewed dishes for venue / origin
  * destinations for experiences — those still need their own spec, per
- * vertical. Gastronomy's menu QR and its scan analytics are NOT in that list
+ * vertical. Venue's menu QR and its scan analytics are NOT in that list
  * anymore: HOS-1044 built them (`VenueMenuQrWidget.client.tsx`, gated by
  * the `menu_qr_scan_metrics` entitlement), rendered as a separate widget below
  * this one rather than folded in here.
@@ -97,7 +97,7 @@ async function fetchRows(
 }
 
 /**
- * ListingViewsWidget — per-listing basic view stats for gastronomy and
+ * ListingViewsWidget — per-listing basic view stats for venue and
  * experience owners, with a 7d/30d toggle.
  *
  * @example

@@ -22,7 +22,7 @@ const ownerAccess: MiddlewareHandler = async (ctx, next) => {
 };
 
 /**
- * POST /api/v1/protected/gastronomies/{id}/fix-request/report-fixed — row 30
+ * POST /api/v1/protected/venues/{id}/fix-request/report-fixed — row 30
  * (HOS-1492, H4): the owner reports that they fixed what the open fix request
  * asked. Idempotent; 409 `NO_OPEN_FIX_REQUEST` without an open request. Anybody
  * else gets 404.
@@ -34,9 +34,8 @@ export const protectedVenueReportFixedRoute = createProtectedRoute({
     listingAccess: { vertical: VerticalEnum.VENUE, operation: 'READ_OWN', idParam: 'id' },
     options: { middlewares: [ownerAccess] },
     summary: 'Report a fix request as fixed',
-    description:
-        'The owner reports the open fix request of their gastronomy listing as fixed (row 30).',
-    tags: ['Gastronomies'],
+    description: 'The owner reports the open fix request of their venue listing as fixed (row 30).',
+    tags: ['Venues'],
     requestParams: { id: z.string().uuid() },
     responseSchema: ReportFixedResponseSchema,
     handler: async (_ctx: Context, params: Record<string, unknown>) =>

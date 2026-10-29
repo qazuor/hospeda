@@ -3,7 +3,7 @@
  *
  * Generic many-to-many junction synchronisers for listing entities
  * (SPEC-239 T-031).  Parametrised by (junction model, catalog model, FK column
- * name) so gastronomy and future experience entities can share the same logic.
+ * name) so venue and future experience entities can share the same logic.
  *
  * Three-way contract (same as accommodation.junction-sync.ts):
  *  - ids === undefined  →  no-op (leave existing rows untouched)
@@ -62,7 +62,7 @@ export interface SyncListingAmenityJunctionInput<TRow extends Record<string, unk
     readonly entityId: string;
     /**
      * Name of the FK column on the junction row that points at the entity.
-     * For gastronomy: `'gastronomyId'`.  For experience: `'experienceId'`.
+     * For venue: `'venueId'`.  For experience: `'experienceId'`.
      */
     readonly entityFkColumn: string;
     /**
@@ -88,7 +88,7 @@ export interface SyncListingFeatureJunctionInput<TRow extends Record<string, unk
     readonly entityId: string;
     /**
      * Name of the FK column on the junction row that points at the entity.
-     * For gastronomy: `'gastronomyId'`.  For experience: `'experienceId'`.
+     * For venue: `'venueId'`.  For experience: `'experienceId'`.
      */
     readonly entityFkColumn: string;
     /**
@@ -127,10 +127,10 @@ export interface SyncListingFeatureJunctionInput<TRow extends Record<string, unk
  * ```ts
  * // In VenueService._afterCreate:
  * await syncListingAmenityJunction({
- *   entityId: gastronomy.id,
- *   entityFkColumn: 'gastronomyId',
+ *   entityId: venue.id,
+ *   entityFkColumn: 'venueId',
  *   amenityIds: ctx.hookState.pendingAmenityIds,
- *   junctionModel: this.rGastronomyAmenityModel,
+ *   junctionModel: this.rvenueAmenityModel,
  *   amenityModel: this.amenityModel,
  *   tx: ctx.tx!,
  * });

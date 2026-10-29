@@ -1,7 +1,7 @@
 /**
- * Gastronomy HTTP Schemas
+ * Venue HTTP Schemas
  *
- * HTTP-compatible schemas for gastronomy listing operations with automatic
+ * HTTP-compatible schemas for venue listing operations with automatic
  * query string coercion. These schemas handle the conversion from HTTP query
  * parameters (strings) to properly typed objects for the domain layer.
  */
@@ -12,18 +12,18 @@ import { PriceRangeEnumSchema, VenueTypeEnumSchema } from '../../enums/index.js'
 import { stripShapeDefaults } from '../../utils/utils.js';
 
 /**
- * HTTP-compatible gastronomy search schema with automatic coercion.
+ * HTTP-compatible venue search schema with automatic coercion.
  * Handles conversion from HTTP query parameters (strings) to typed domain objects.
  */
 export const VenueSearchHttpSchema = BaseHttpSearchSchema.extend({
     /** Filter by destination UUID. */
     destinationId: z.string().uuid().optional(),
-    /** Filter by gastronomy sub-type. */
+    /** Filter by venue sub-type. */
     type: VenueTypeEnumSchema.optional(),
     /** Filter by price-range tier. */
     priceRange: PriceRangeEnumSchema.optional(),
     /** Filter by featured status (coerced from query string). */
-    isFeatured: createBooleanQueryParam('Filter featured gastronomy listings'),
+    isFeatured: createBooleanQueryParam('Filter featured venue listings'),
     /** Minimum average rating (0–5, coerced from query string). */
     minRating: z.coerce.number().min(0).max(5).optional(),
     /** Maximum average rating (0–5, coerced from query string). */
@@ -55,7 +55,7 @@ export const VenueSearchHttpSchema = BaseHttpSearchSchema.extend({
      *
      * This is what backs the "apto" filter (HOS-1054): sin TACC, vegano,
      * vegetariano, sin lactosa and sin frutos secos are `features` catalog rows
-     * scoped to the `gastronomy` vertical, not columns of their own.
+     * scoped to the `venue` vertical, not columns of their own.
      */
     features: z
         .union([
@@ -72,19 +72,19 @@ export const VenueSearchHttpSchema = BaseHttpSearchSchema.extend({
         ])
         .optional(),
     /** Opt-in projection: include amenities per result. */
-    includeAmenities: createBooleanQueryParam('Include gastronomy amenities in response'),
+    includeAmenities: createBooleanQueryParam('Include venue amenities in response'),
     /** Opt-in projection: include features per result. */
-    includeFeatures: createBooleanQueryParam('Include gastronomy features in response')
+    includeFeatures: createBooleanQueryParam('Include venue features in response')
 });
 
 export type VenueSearchHttp = z.infer<typeof VenueSearchHttpSchema>;
 
 /**
- * HTTP-compatible gastronomy creation schema.
- * Handles form data and JSON input for creating gastronomy listings via HTTP.
+ * HTTP-compatible venue creation schema.
+ * Handles form data and JSON input for creating venue listings via HTTP.
  */
 export const VenueCreateHttpSchema = z.object({
-    /** Display name of the gastronomy listing. */
+    /** Display name of the venue listing. */
     name: z.string().min(2, { message: 'zodError.listing.name.min' }).max(100),
     /** Short marketing summary. */
     summary: z
@@ -98,21 +98,21 @@ export const VenueCreateHttpSchema = z.object({
         .min(20, { message: 'zodError.listing.description.min' })
         .max(2000, { message: 'zodError.listing.description.max' })
         .optional(),
-    /** Gastronomy sub-type. */
+    /** Venue sub-type. */
     type: VenueTypeEnumSchema,
     /** Price-range tier. */
     priceRange: PriceRangeEnumSchema.optional(),
     /** Online menu URL (must be HTTPS). */
     menuUrl: z
         .string()
-        .url({ message: 'zodError.gastronomy.menuUrl.invalid' })
-        .startsWith('https://', { message: 'zodError.gastronomy.menuUrl.httpsRequired' })
+        .url({ message: 'zodError.venue.menuUrl.invalid' })
+        .startsWith('https://', { message: 'zodError.venue.menuUrl.httpsRequired' })
         .optional(),
     /** Whether the listing is featured. */
     /** Destination UUID for the listing. */
     destinationId: z.string().uuid({ message: 'zodError.common.id.invalidUuid' }),
     /**
-     * Owner UUID for the listing. REQUIRED (H-88) — `gastronomies.owner_id` is
+     * Owner UUID for the listing. REQUIRED (H-88) — `venues.owner_id` is
      * NOT NULL with no default, so a form that lets this through submits a
      * payload the table cannot store and the operator gets back an opaque 500.
      */
@@ -120,11 +120,11 @@ export const VenueCreateHttpSchema = z.object({
     // Junction sync fields (write-only)
     /** Optional amenity UUIDs to associate on create (write-only). */
     amenityIds: z
-        .array(z.string().uuid({ message: 'zodError.gastronomy.amenityIds.invalidUuid' }))
+        .array(z.string().uuid({ message: 'zodError.venue.amenityIds.invalidUuid' }))
         .optional(),
     /** Optional feature UUIDs to associate on create (write-only). */
     featureIds: z
-        .array(z.string().uuid({ message: 'zodError.gastronomy.featureIds.invalidUuid' }))
+        .array(z.string().uuid({ message: 'zodError.venue.featureIds.invalidUuid' }))
         .optional(),
     // Contact information (flat fields mapped to ContactInfoSchema in converter)
     phone: z.string().optional(),
@@ -145,7 +145,7 @@ export const VenueCreateHttpSchema = z.object({
 export type VenueCreateHttp = z.infer<typeof VenueCreateHttpSchema>;
 
 /**
- * HTTP-compatible gastronomy update schema.
+ * HTTP-compatible venue update schema.
  * Handles partial updates via HTTP PATCH requests.
  * Strips defaults to preserve "absent key = no change" PATCH semantics.
  */
@@ -159,14 +159,14 @@ export const VenueUpdateHttpSchema = z
 export type VenueUpdateHttp = z.infer<typeof VenueUpdateHttpSchema>;
 
 /**
- * HTTP-compatible query parameters for single gastronomy retrieval.
+ * HTTP-compatible query parameters for single venue retrieval.
  * Used for GET /venue/:id type requests.
  */
 export const VenueGetHttpSchema = z.object({
     id: z.string().uuid({ message: 'zodError.common.id.invalidUuid' }),
-    includeReviews: createBooleanQueryParam('Include gastronomy reviews'),
-    includeAmenities: createBooleanQueryParam('Include gastronomy amenities'),
-    includeFeatures: createBooleanQueryParam('Include gastronomy features')
+    includeReviews: createBooleanQueryParam('Include venue reviews'),
+    includeAmenities: createBooleanQueryParam('Include venue amenities'),
+    includeFeatures: createBooleanQueryParam('Include venue features')
 });
 
 export type VenueGetHttp = z.infer<typeof VenueGetHttpSchema>;
@@ -202,7 +202,7 @@ export const httpToDomainVenueSearch = (httpParams: VenueSearchHttp): VenueSearc
     includeAmenities: httpParams.includeAmenities,
     includeFeatures: httpParams.includeFeatures,
     // Catalog-membership filters (HOS-1054). These used to be domain-only:
-    // `GastronomySearchSchema` declared them, the HTTP schema did not accept
+    // `VenueSearchSchema` declared them, the HTTP schema did not accept
     // them, and the service destructured them away — so a caller who asked for
     // `?features=<sin-TACC>` got a 200 carrying an UNFILTERED page. They are now
     // accepted, mapped, and applied end to end.
@@ -217,7 +217,7 @@ export const httpToDomainVenueSearch = (httpParams: VenueSearchHttp): VenueSearc
  * Transforms HTTP form/JSON data to domain object with proper nested structures.
  *
  * `ownerId` travels through unconditionally: it is REQUIRED on both sides since
- * H-88, because `gastronomies.owner_id` is NOT NULL. It used to be spread only
+ * H-88, because `venues.owner_id` is NOT NULL. It used to be spread only
  * when present, on the assumption that a route handler would inject it from the
  * authenticated actor — no route ever did, so the field simply went missing and
  * the insert died on a 23502.
@@ -292,7 +292,7 @@ export const httpToDomainVenueUpdate = (httpData: VenueUpdateHttp): VenueUpdateI
 
     // Contact info mapping (emit only provided fields).
     // Cast is needed because TypeScript cannot narrow the spread-conditional object
-    // to the exact ContactInfo shape required by GastronomyUpdateInput; at runtime
+    // to the exact ContactInfo shape required by VenueUpdateInput; at runtime
     // the service validates the final object with Zod before persisting.
     ...(httpData.phone !== undefined ||
     httpData.email !== undefined ||

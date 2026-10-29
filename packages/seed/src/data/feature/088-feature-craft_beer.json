@@ -7,7 +7,7 @@
         "en": "Selección de cervezas artesanales locales y regionales en carta",
         "pt": "Selección de cervezas artesanales locales y regionales en carta"
     },
-    "applicableVerticals": ["gastronomy"],
+    "applicableVerticals": ["venue"],
     "icon": "LocalCraftsIcon",
     "isBuiltin": false,
     "isFeatured": false,

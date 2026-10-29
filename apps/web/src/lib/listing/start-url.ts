@@ -1,7 +1,7 @@
 /**
  * @file start-url.ts
- * @description Destination of the "Empezar ahora" CTA on the two gastronomy/experience
- * sales pages (`/planes/gastronomia/`, `/planes/experiencias/`) — HOS-810.
+ * @description Destination of the "Empezar ahora" CTA on the two venue/experience
+ * sales pages (`/planes/comer-y-salir/`, `/planes/experiencias/`) — HOS-810.
  *
  * ## The loop this closes
  *
@@ -67,7 +67,7 @@ import type { VenueOrExperience } from './owner-listings';
  * HOS-1156 in the first place.
  *
  * @param params.locale - Locale prefix.
- * @param params.vertical - `gastronomy` or `experience`.
+ * @param params.vertical - `venue` or `experience`.
  * @returns e.g. `/es/publicar/experiencias/`.
  */
 export function buildListingCreateUrl({
@@ -89,7 +89,7 @@ export function buildListingCreateUrl({
  * rationale.
  *
  * @param params.locale - Locale prefix.
- * @param params.vertical - `gastronomy` or `experience`.
+ * @param params.vertical - `venue` or `experience`.
  * @returns e.g. `/es/auth/signup/?returnUrl=%2Fes%2Fpublicar%2Fexperiencias%2F`.
  */
 export function buildListingStartUrl({

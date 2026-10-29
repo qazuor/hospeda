@@ -25,7 +25,7 @@ export const PUBLISH_ELIGIBILITY_VALUES = [
  *   proceed without touching billing.
  * - `first_publish`: the owner holds no such subscription BUT is still eligible
  *   for an accommodation free trial (HOS-1012 D-2: eligibility is keyed on
- *   `(customerId, productDomain)`, so spending the gastronomy trial leaves the
+ *   `(customerId, productDomain)`, so spending the venue trial leaves the
  *   accommodation one intact). Publishing is ALLOWED and starts a
  *   Hospeda-owned, no-card trial in the same transaction as the lifecycle flip
  *   (`AccommodationService.publish()` did this until V6.9b retired it, HOS-1641).

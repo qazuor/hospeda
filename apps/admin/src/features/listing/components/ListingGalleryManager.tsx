@@ -1,9 +1,9 @@
 /**
  * ListingGalleryManager
  *
- * Dedicated gallery management UI for gastronomy/experience listing photos
+ * Dedicated gallery management UI for venue/experience listing photos
  * (HOS-382). Vertical-agnostic mirror of accommodations' `GalleryManager` —
- * operates on the relational `gastronomy_media` / `experience_media` tables
+ * operates on the relational `venue_media` / `experience_media` tables
  * via the HOS-372 granular admin endpoints — each operation persists
  * immediately (settle-and-refetch). No accumulate-and-save, no drag-and-drop
  * reorder.
@@ -64,7 +64,7 @@ import { deriveAltFromEntityName } from '@/lib/utils/media-alt.utils';
 export interface ListingGalleryManagerProps {
     /** Which listing vertical this gallery belongs to. */
     readonly vertical: ListingMediaVertical;
-    /** UUID of the gastronomy/experience listing whose gallery is being managed. */
+    /** UUID of the venue/experience listing whose gallery is being managed. */
     readonly entityId: string;
     /**
      * Display name of the listing, if already available to the caller (e.g.
@@ -124,7 +124,7 @@ function useFileInput(onFile: (file: File) => void) {
 // ---------------------------------------------------------------------------
 
 /**
- * Full gallery management panel for a single gastronomy/experience listing.
+ * Full gallery management panel for a single venue/experience listing.
  *
  * Splits the visible media list into:
  *   - One optional `featured` row (the "Portada" slot).

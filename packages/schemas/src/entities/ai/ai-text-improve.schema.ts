@@ -50,7 +50,7 @@ export type AiTextImproveFieldType = z.infer<typeof AiTextImproveFieldTypeSchema
  * Which vertical the improved text belongs to (HOS-1075).
  *
  * Before this field existed the route had no way to know whether
- * `fieldValue` came from an accommodation, a gastronomy listing, or an
+ * `fieldValue` came from an accommodation, a venue listing, or an
  * experience listing, so it could only gate on the actor's ACCOMMODATION
  * entitlement — a host who also owns a comercio could improve their
  * comercio's text for free off their accommodation plan, and a comercio-only
@@ -60,13 +60,13 @@ export type AiTextImproveFieldType = z.infer<typeof AiTextImproveFieldTypeSchema
  * **Optional, defaulting to `'accommodation'`** — every caller in production
  * today (the web host editor and the admin accommodation/FAQ panels) sends
  * neither this field nor `entityId`, and their behaviour must not change.
- * A future comercio "mejorar con IA" panel sends `'gastronomy'` /
+ * A future comercio "mejorar con IA" panel sends `'venue'` /
  * `'experience'` explicitly once that surface exists.
  *
  * **APPEND-ONLY**: once a value ships to production, members may only be
  * added, mirroring {@link AiTextImproveFieldTypeSchema}.
  */
-export const AiTextImproveEntityTypeSchema = z.enum(['accommodation', 'gastronomy', 'experience']);
+export const AiTextImproveEntityTypeSchema = z.enum(['accommodation', 'venue', 'experience']);
 
 /** Inferred type for {@link AiTextImproveEntityTypeSchema}. */
 export type AiTextImproveEntityType = z.infer<typeof AiTextImproveEntityTypeSchema>;

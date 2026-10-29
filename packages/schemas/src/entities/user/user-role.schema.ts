@@ -249,10 +249,10 @@ export const RoleGrantReason = {
     /** The owner's last non-archived accommodation was archived — a revoke. */
     LAST_ACCOMMODATION_ARCHIVED: 'last_accommodation_archived',
     /**
-     * The account created its own listing (gastronomy or experience)
+     * The account created its own listing (venue or experience)
      * through the owner self-service create route (HOS-687 / HOS-589 §6.1).
      *
-     * The gastronomy/experience mirror of {@link ACCOMMODATION_CREATED}: creating
+     * The venue/experience mirror of {@link ACCOMMODATION_CREATED}: creating
      * the listing IS the act that makes someone a listing owner, so the hat is
      * granted inside the same transaction and no admin step exists.
      */

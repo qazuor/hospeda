@@ -546,9 +546,7 @@ describe('Authorization Middleware', () => {
     // cover OR groups at the HTTP boundary.
     // -----------------------------------------------------------------------
     describe('anyOfPermissions OR-groups', () => {
-        const GATE = [
-            [PermissionEnum.GASTRONOMY_EDIT_ALL, PermissionEnum.EXPERIENCE_EDIT_ALL]
-        ] as const;
+        const GATE = [[PermissionEnum.VENUE_EDIT_ALL, PermissionEnum.EXPERIENCE_EDIT_ALL]] as const;
 
         const requestWith = async (permissions: PermissionEnum[]) => {
             mockGetActorFromContext.mockReturnValue(createAdminActor(permissions));
@@ -563,8 +561,8 @@ describe('Authorization Middleware', () => {
             expect(res.status).toBe(200);
         });
 
-        it('admits an actor holding only the gastronomy permission', async () => {
-            const res = await requestWith([PermissionEnum.GASTRONOMY_EDIT_ALL]);
+        it('admits an actor holding only the venue permission', async () => {
+            const res = await requestWith([PermissionEnum.VENUE_EDIT_ALL]);
             expect(res.status).toBe(200);
         });
 
@@ -581,16 +579,16 @@ describe('Authorization Middleware', () => {
         it('ANDs the groups with each other', async () => {
             // Two groups, actor satisfies only the first.
             mockGetActorFromContext.mockReturnValue(
-                createAdminActor([PermissionEnum.GASTRONOMY_EDIT_ALL])
+                createAdminActor([PermissionEnum.VENUE_EDIT_ALL])
             );
             mockIsGuestActor.mockReturnValue(false);
             app.use(
                 authorizationMiddleware({
                     level: 'admin',
                     anyOfPermissions: [
-                        [PermissionEnum.GASTRONOMY_EDIT_ALL, PermissionEnum.EXPERIENCE_EDIT_ALL],
+                        [PermissionEnum.VENUE_EDIT_ALL, PermissionEnum.EXPERIENCE_EDIT_ALL],
                         [
-                            PermissionEnum.GASTRONOMY_MODERATE_REVIEW,
+                            PermissionEnum.VENUE_MODERATE_REVIEW,
                             PermissionEnum.EXPERIENCE_MODERATE_REVIEW
                         ]
                     ]
@@ -603,7 +601,7 @@ describe('Authorization Middleware', () => {
 
         it('ANDs the groups with requiredPermissions', async () => {
             mockGetActorFromContext.mockReturnValue(
-                createAdminActor([PermissionEnum.GASTRONOMY_EDIT_ALL])
+                createAdminActor([PermissionEnum.VENUE_EDIT_ALL])
             );
             mockIsGuestActor.mockReturnValue(false);
             app.use(

@@ -40,7 +40,7 @@ describe('TEST:V8a:8 loadSupportEdits — row 26 loader', () => {
 
         // Act
         const result = await loadSupportEdits({
-            vertical: 'gastronomy',
+            vertical: 'venue',
             listingId: LISTING_ID,
             cookieHeader: COOKIE
         });
@@ -48,7 +48,7 @@ describe('TEST:V8a:8 loadSupportEdits — row 26 loader', () => {
         // Assert
         expect(result).toEqual({ items });
         expect(list).toHaveBeenCalledWith({
-            vertical: 'gastronomy',
+            vertical: 'venue',
             listingId: LISTING_ID,
             cookieHeader: COOKIE
         });

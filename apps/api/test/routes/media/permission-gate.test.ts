@@ -323,25 +323,25 @@ describe('DELETE /api/v1/admin/media — security hardening (T-005)', () => {
 });
 
 // ============================================================================
-// Gastronomy and experience media permissions (SPEC-249 T-015b) — split OWN/ANY
+// Venue and experience media permissions (SPEC-249 T-015b) — split OWN/ANY
 // ============================================================================
 
-describe('validateEntityMediaPermission — gastronomy and experience verticals', () => {
+describe('validateEntityMediaPermission — venue and experience verticals', () => {
     for (const entityType of [
-        'gastronomy',
+        'venue',
         'experience'
     ] as const satisfies readonly MediaEntityType[]) {
         describe(entityType, () => {
             const editAll =
-                entityType === 'gastronomy'
-                    ? PermissionEnum.GASTRONOMY_EDIT_ALL
+                entityType === 'venue'
+                    ? PermissionEnum.VENUE_EDIT_ALL
                     : PermissionEnum.EXPERIENCE_EDIT_ALL;
             const editOwn =
-                entityType === 'gastronomy'
-                    ? PermissionEnum.GASTRONOMY_EDIT_OWN
+                entityType === 'venue'
+                    ? PermissionEnum.VENUE_EDIT_OWN
                     : PermissionEnum.EXPERIENCE_EDIT_OWN;
 
-            it('allows actor with vertical EDIT_ALL regardless of ownership', () => {
+            it('TEST:1819:6 AC:1:3 allows venue media permissions', () => {
                 const actor = makeActor([editAll]);
                 const result = validateEntityMediaPermission({
                     actor,
@@ -374,9 +374,9 @@ describe('validateEntityMediaPermission — gastronomy and experience verticals'
 
             it("rejects the other vertical's EDIT_ALL permission", () => {
                 const otherEditAll =
-                    entityType === 'gastronomy'
+                    entityType === 'venue'
                         ? PermissionEnum.EXPERIENCE_EDIT_ALL
-                        : PermissionEnum.GASTRONOMY_EDIT_ALL;
+                        : PermissionEnum.VENUE_EDIT_ALL;
                 expect(
                     validateEntityMediaPermission({
                         actor: makeActor([otherEditAll]),
@@ -386,7 +386,7 @@ describe('validateEntityMediaPermission — gastronomy and experience verticals'
                 ).toEqual({ allowed: false, reason: 'MISSING_ENTITY_PERMISSION' });
             });
 
-            it('rejects actor with no gastronomy or experience media permission', () => {
+            it('rejects actor with no venue or experience media permission', () => {
                 const actor = makeActor([PermissionEnum.MEDIA_UPLOAD]);
                 const result = validateEntityMediaPermission({
                     actor,

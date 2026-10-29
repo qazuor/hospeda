@@ -1,4 +1,4 @@
-/** TEST:V5:4 — a gastronomy id declared as accommodation is absent before media limits. */
+/** TEST:V5:4 — a venue id declared as accommodation is absent before media limits. */
 
 import { ServiceErrorCode } from '@repo/schemas';
 import { AccommodationService, VenueService } from '@repo/service-core';
@@ -53,7 +53,7 @@ async function request(id: string) {
 }
 
 describe('TEST:V5:4 declared vertical on media upload', () => {
-    it('pairs a gastronomy id declared as accommodation with an invented id', async () => {
+    it('pairs a venue id declared as accommodation with an invented id', async () => {
         const accommodation = vi
             .spyOn(AccommodationService.prototype, 'getById')
             .mockResolvedValue({

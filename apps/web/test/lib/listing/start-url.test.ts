@@ -1,13 +1,13 @@
 /**
  * @file start-url.test.ts
- * @description HOS-810 — the destination of "Empezar ahora" on the two gastronomy/experience
+ * @description HOS-810 — the destination of "Empezar ahora" on the two venue/experience
  * vertical landings.
  *
  * ## What is actually asserted here
  *
  * The bug was never "the link is missing"; the link was there and went to
  * `/auth/signup/`, which bounced a signed-in visitor to `/mi-cuenta/` — a page
- * with no route onward to the gastronomy/experience create form. So the assertion that
+ * with no route onward to the venue/experience create form. So the assertion that
  * matters is the DESTINATION, split by whether a session exists, and both
  * halves are covered here:
  *
@@ -37,7 +37,7 @@ import type { VenueOrExperience } from '@/lib/listing/owner-listings';
 import { buildListingCreateUrl, buildListingStartUrl } from '@/lib/listing/start-url';
 
 const LOCALES: readonly SupportedLocale[] = ['es', 'en', 'pt'];
-const VERTICALS: readonly VenueOrExperience[] = ['gastronomy', 'experience'];
+const VERTICALS: readonly VenueOrExperience[] = ['venue', 'experience'];
 
 /** Read the `returnUrl` a start URL carries, decoded. */
 function readReturnUrl(startUrl: string): string {
@@ -55,8 +55,8 @@ describe('buildListingCreateUrl', () => {
         expect(buildListingCreateUrl({ locale: 'es', vertical: 'experience' })).toBe(
             '/es/publicar/experiencias/'
         );
-        expect(buildListingCreateUrl({ locale: 'es', vertical: 'gastronomy' })).toBe(
-            '/es/publicar/gastronomia/'
+        expect(buildListingCreateUrl({ locale: 'es', vertical: 'venue' })).toBe(
+            '/es/publicar/comer-y-salir/'
         );
     });
 
@@ -91,9 +91,9 @@ describe('buildListingStartUrl', () => {
             expect(url).toBe('/es/auth/signup/?returnUrl=%2Fes%2Fpublicar%2Fexperiencias%2F');
         });
 
-        it('carries the vertical publish page as returnUrl (gastronomy)', () => {
-            const url = buildListingStartUrl({ locale: 'es', vertical: 'gastronomy' });
-            expect(url).toBe('/es/auth/signup/?returnUrl=%2Fes%2Fpublicar%2Fgastronomia%2F');
+        it('carries the vertical publish page as returnUrl (venue)', () => {
+            const url = buildListingStartUrl({ locale: 'es', vertical: 'venue' });
+            expect(url).toBe('/es/auth/signup/?returnUrl=%2Fes%2Fpublicar%2Fcomer-y-salir%2F');
         });
 
         it('survives signup.astro s open-redirect guard, per locale and vertical', () => {
@@ -123,7 +123,7 @@ describe('buildListingStartUrl', () => {
     });
 
     it('url-encodes the returnUrl rather than embedding raw slashes', () => {
-        const url = buildListingStartUrl({ locale: 'en', vertical: 'gastronomy' });
+        const url = buildListingStartUrl({ locale: 'en', vertical: 'venue' });
         const rawQuery = url.slice(url.indexOf('returnUrl=') + 'returnUrl='.length);
         expect(rawQuery).not.toContain('/');
         expect(rawQuery).toContain('%2F');

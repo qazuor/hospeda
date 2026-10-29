@@ -8,12 +8,12 @@
  * rather than the `ProductDomainEnum` member, and switches on the literal
  * values instead of importing the enum.
  *
- * `resolveTrialSeriesCopy` only branches on `'gastronomy'` and `'experience'`
+ * `resolveTrialSeriesCopy` only branches on `'venue'` and `'experience'`
  * beyond the accommodation default: those are the only two verticals whose
  * subscriptions can currently reach the trial series at all, alongside
  * accommodation itself — `createTrialSubscription` (`apps/api`) has exactly
  * two callers, one for accommodation's first publish and one for a
- * gastronomy/experience listing's first publish (HOS-1184). `tourist` and
+ * venue/experience listing's first publish (HOS-1184). `tourist` and
  * `partner` never create a local, Hospeda-owned trial today (neither has a
  * "first publish" event — see HOS-1283's investigation), so there is no
  * vertical copy to write for them yet; the fallback below covers them safely
@@ -65,8 +65,8 @@ const ACCOMMODATION_TRIAL_COPY: TrialSeriesVerticalCopy = {
     expiredSavedLine: 'fotos, descripción, servicios, ubicación y datos de contacto'
 };
 
-/** Vocabulary matches the gastronomy landing page (`gastronomy.json`'s `landing`). */
-const GASTRONOMY_TRIAL_COPY: TrialSeriesVerticalCopy = {
+/** Vocabulary matches the venue landing page (`venue.json`'s `landing`). */
+const VENUE_TRIAL_COPY: TrialSeriesVerticalCopy = {
     possessive: 'tu local',
     searchIntent: 'dónde comer',
     detailsLabel: 'menú',
@@ -102,7 +102,7 @@ const EXPERIENCE_TRIAL_COPY: TrialSeriesVerticalCopy = {
 export function resolveTrialSeriesCopy(
     productDomain: string | null | undefined
 ): TrialSeriesVerticalCopy {
-    if (productDomain === 'gastronomy') return GASTRONOMY_TRIAL_COPY;
+    if (productDomain === 'venue') return VENUE_TRIAL_COPY;
     if (productDomain === 'experience') return EXPERIENCE_TRIAL_COPY;
     return ACCOMMODATION_TRIAL_COPY;
 }
@@ -119,7 +119,7 @@ export function resolveTrialSeriesCopy(
  */
 export function resolveRenewalReminderFooter(productDomain: string | null | undefined): string {
     switch (productDomain) {
-        case 'gastronomy':
+        case 'venue':
             return 'Gracias por confiar en Hospeda para hacer crecer tu local gastronómico.';
         case 'experience':
             return 'Gracias por confiar en Hospeda para hacer crecer tu experiencia turística.';
@@ -133,11 +133,11 @@ export function resolveRenewalReminderFooter(productDomain: string | null | unde
 }
 
 /** Etiquetas en español para verticales en un correo consolidado. */
-type TrialCampaignVertical = 'accommodation' | 'gastronomy' | 'experience' | 'tourist';
+type TrialCampaignVertical = 'accommodation' | 'venue' | 'experience' | 'tourist';
 
 export const TRIAL_VERTICAL_LABELS: Readonly<Record<TrialCampaignVertical, string>> = {
     accommodation: 'Alojamiento',
-    gastronomy: 'Gastronomía',
+    venue: 'Comer y salir',
     experience: 'Experiencias',
     tourist: 'Turismo'
 };
@@ -156,3 +156,27 @@ export function formatTrialVerticals(input: { readonly verticals: readonly strin
     if (labels.length < 2) return labels[0] ?? '';
     return `${labels.slice(0, -1).join(', ')} y ${labels.at(-1)}`;
 }
+
+/**
+ * Names one vertical in the middle of a sentence ("tu ficha de ...").
+ *
+ * Generic vertical labels are lowercased to read as common nouns, but the venue
+ * vertical is a proper name ("Comer y salir") and keeps its capitals.
+ *
+ * @param input - The vertical's product-domain string.
+ * @returns The label ready to be embedded in a sentence.
+ */
+export function formatTrialVerticalInline(input: { readonly vertical: string }): string {
+    const label = Object.hasOwn(TRIAL_VERTICAL_INLINE_LABELS, input.vertical)
+        ? TRIAL_VERTICAL_INLINE_LABELS[input.vertical as TrialCampaignVertical]
+        : undefined;
+    return label ?? input.vertical.toLocaleLowerCase('es-AR');
+}
+
+/** Mid-sentence labels: common nouns lowercased, the venue proper name kept as is. */
+const TRIAL_VERTICAL_INLINE_LABELS: Readonly<Record<TrialCampaignVertical, string>> = {
+    accommodation: 'alojamiento',
+    venue: 'Comer y salir',
+    experience: 'experiencias',
+    tourist: 'turismo'
+};

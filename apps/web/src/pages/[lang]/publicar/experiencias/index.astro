@@ -4,7 +4,7 @@
  * @description The experiences publish page (HOS-1156 T-021) — funnel and
  * create form on one URL.
  *
- * Same shape as `/publicar/gastronomia/`, other vertical: see that page's
+ * Same shape as `/publicar/comer-y-salir/`, other vertical: see that page's
  * docblock for what this replaces and why the form left `AccountLayout` (D-2).
  * The two pages share their mould and none of their words (§1).
  *
@@ -55,7 +55,7 @@ const slot = await resolvePublishPageSlot({
 // AC:B13a:21); the leaf that rewrites subscribe → publish (V8a) brings the
 // trial state back on the new billing.
 
-// Only fetched when the form is what renders — see the gastronomy page.
+// Only fetched when the form is what renders — see the venue page.
 const destinationsResult =
     slot.state === 'form'
         ? await destinationsApi.list({ destinationType: 'CITY', pageSize: 100 })

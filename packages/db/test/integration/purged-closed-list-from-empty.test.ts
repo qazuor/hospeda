@@ -1,5 +1,5 @@
 // TEST:V6:15 — the schema walk over a database built from empty: every table hanging from a
-// listing (FK to accommodations, gastronomies or experiences, or an `entity_type` column) has a
+// listing (FK to accommodations, venues or experiences, or an `entity_type` column) has a
 // row in the PURGED closed list that GUARD:G-R9 reads (scripts/guards/purged-closed-list.json).
 import { execFileSync } from 'node:child_process';
 import { readFileSync } from 'node:fs';
@@ -100,7 +100,7 @@ beforeAll(async () => {
          JOIN pg_namespace n ON n.oid = c.relnamespace
          JOIN pg_class target ON target.oid = k.confrelid
          WHERE k.contype = 'f' AND n.nspname = 'public'
-           AND target.relname IN ('accommodations', 'gastronomies', 'experiences')
+           AND target.relname IN ('accommodations', 'venues', 'experiences')
          ORDER BY c.relname`
     );
     byFk = fk.rows.map((row) => row.table_name);

@@ -4,7 +4,7 @@
  * Uses `EntityPageBase` in edit mode with `EntityEditContent` (flat layout).
  * Gate-protected by EXPERIENCE_EDIT_ALL.
  *
- * Mirrors the gastronomy edit page pattern (SPEC-240 T-028).
+ * Mirrors the venue edit page pattern (SPEC-240 T-028).
  *
  * HOS-382: the `media.featuredImage` / `media.gallery` field handlers were
  * removed. Those fields used to buffer uploads into a `media` object on

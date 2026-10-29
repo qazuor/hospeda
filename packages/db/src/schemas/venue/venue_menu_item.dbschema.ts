@@ -11,11 +11,11 @@ import {
     uuid
 } from 'drizzle-orm/pg-core';
 import { users } from '../user/user.dbschema.ts';
-import { gastronomies } from './venue.dbschema.ts';
-import { gastronomyMenuSections } from './venue_menu_section.dbschema.ts';
+import { venues } from './venue.dbschema.ts';
+import { venueMenuSections } from './venue_menu_section.dbschema.ts';
 
 /**
- * `gastronomy_menu_items` — one dish or drink on a venue's real menu (HOS-895).
+ * `venue_menu_items` — one dish or drink on a venue's real menu (HOS-895).
  *
  * ## Why the row exists rather than a JSONB array element
  *
@@ -29,7 +29,7 @@ import { gastronomyMenuSections } from './venue_menu_section.dbschema.ts';
  * ## The photo is COLUMNS here, not a row in a link table (HOS-1045)
  *
  * The obvious shape for "a dish has a photo" is a link table keyed by
- * `gastronomy_menu_items.id`. It does not work, and the reason is one file
+ * `venue_menu_items.id`. It does not work, and the reason is one file
  * over: `replaceVenueMenu` writes the carta as a WHOLE DOCUMENT — it
  * hard-deletes the listing's sections and reinserts them, so `CASCADE` takes
  * every item row with them and a NEW id is minted on every save. A link table
@@ -43,14 +43,14 @@ import { gastronomyMenuSections } from './venue_menu_section.dbschema.ts';
  * binding is as tight as it gets — same row, one transaction.
  *
  * ONE photo per dish, not a gallery. The venue's gallery already exists
- * (`gastronomy_media`) and a carta rendering N photos per dish is a different
+ * (`venue_media`) and a carta rendering N photos per dish is a different
  * product. Nothing here caps how many DISHES may carry one: the capability is
- * gated by the `menu_item_photos` entitlement (gastronomy premium) and by NO
+ * gated by the `menu_item_photos` entitlement (venue premium) and by NO
  * numeric limit key — owner decision, HOS-1045, and a deliberate one, since
  * the limit engine resolves an unknown key as *unlimited* in five layers
  * without raising, so a cap that is not wired end to end is worse than none.
  *
- * ## `gastronomy_id` is denormalized ON PURPOSE
+ * ## `venue_id` is denormalized ON PURPOSE
  *
  * The item's parent is its section, and the section's parent is the listing —
  * so the listing id is reachable by a join. It is stored here anyway because
@@ -63,18 +63,18 @@ import { gastronomyMenuSections } from './venue_menu_section.dbschema.ts';
  *
  * Both FKs CASCADE, so a deleted section takes its dishes with it.
  */
-export const gastronomyMenuItems = pgTable(
-    'gastronomy_menu_items',
+export const venueMenuItems = pgTable(
+    'venue_menu_items',
     {
         id: uuid('id').primaryKey().defaultRandom(),
         /** FK to the owning section. CASCADE — a section deletes its dishes. */
         sectionId: uuid('section_id')
             .notNull()
-            .references(() => gastronomyMenuSections.id, { onDelete: 'cascade' }),
+            .references(() => venueMenuSections.id, { onDelete: 'cascade' }),
         /** Denormalized FK to the listing. See the file docblock for why. */
-        gastronomyId: uuid('gastronomy_id')
+        venueId: uuid('venue_id')
             .notNull()
-            .references(() => gastronomies.id, { onDelete: 'cascade' }),
+            .references(() => venues.id, { onDelete: 'cascade' }),
         /** Name of the dish or drink. */
         name: text('name').notNull(),
         /** Optional description — ingredients, preparation, portion. */
@@ -82,7 +82,7 @@ export const gastronomyMenuItems = pgTable(
         /**
          * Localized name (HOS-1043). Additive/nullable: `name` remains the `es`
          * fallback source and the only value an owner without the
-         * `multilingual_gastronomy_menu` entitlement can ever write. See
+         * `multilingual_venue_menu` entitlement can ever write. See
          * `venue_menu_section.dbschema.ts` for the full mechanism.
          */
         nameI18n: jsonb('name_i18n').$type<I18nText>(),
@@ -120,8 +120,8 @@ export const gastronomyMenuItems = pgTable(
         photoUrl: text('photo_url'),
         /**
          * Cloudinary `public_id` of that asset, so a later cleanup can DESTROY
-         * it rather than merely forget it — the distinction `gastronomy_media`
-         * and `gastronomies.menu_file_public_id` both make, and the reason
+         * it rather than merely forget it — the distinction `venue_media`
+         * and `venues.menu_file_public_id` both make, and the reason
          * HOS-372 exists at all: a forgotten asset keeps billing.
          *
          * Nullable independently of {@link photoUrl}: a row whose URL came from
@@ -142,31 +142,27 @@ export const gastronomyMenuItems = pgTable(
         updatedById: uuid('updated_by_id').references(() => users.id, { onDelete: 'set null' })
     },
     (table) => ({
-        gastronomyMenuItems_sectionId_idx: index('gastronomyMenuItems_sectionId_idx').on(
-            table.sectionId
-        ),
-        gastronomyMenuItems_gastronomyId_idx: index('gastronomyMenuItems_gastronomyId_idx').on(
-            table.gastronomyId
-        ),
+        venueMenuItems_sectionId_idx: index('venueMenuItems_sectionId_idx').on(table.sectionId),
+        venueMenuItems_venueId_idx: index('venueMenuItems_venueId_idx').on(table.venueId),
         /** The public read: every dish of one section, in order. */
-        gastronomyMenuItems_sectionId_displayOrder_idx: index(
-            'gastronomyMenuItems_sectionId_displayOrder_idx'
+        venueMenuItems_sectionId_displayOrder_idx: index(
+            'venueMenuItems_sectionId_displayOrder_idx'
         ).on(table.sectionId, table.displayOrder)
     })
 );
 
-export const gastronomyMenuItemsRelations = relations(gastronomyMenuItems, ({ one }) => ({
-    section: one(gastronomyMenuSections, {
-        fields: [gastronomyMenuItems.sectionId],
-        references: [gastronomyMenuSections.id]
+export const venueMenuItemsRelations = relations(venueMenuItems, ({ one }) => ({
+    section: one(venueMenuSections, {
+        fields: [venueMenuItems.sectionId],
+        references: [venueMenuSections.id]
     }),
-    gastronomy: one(gastronomies, {
-        fields: [gastronomyMenuItems.gastronomyId],
-        references: [gastronomies.id]
+    venue: one(venues, {
+        fields: [venueMenuItems.venueId],
+        references: [venues.id]
     })
 }));
 
-/** Type-inferred insert type for gastronomy_menu_items rows. */
-export type InsertVenueMenuItem = typeof gastronomyMenuItems.$inferInsert;
-/** Type-inferred select type for gastronomy_menu_items rows. */
-export type SelectVenueMenuItem = typeof gastronomyMenuItems.$inferSelect;
+/** Type-inferred insert type for venue_menu_items rows. */
+export type InsertVenueMenuItem = typeof venueMenuItems.$inferInsert;
+/** Type-inferred select type for venue_menu_items rows. */
+export type SelectVenueMenuItem = typeof venueMenuItems.$inferSelect;

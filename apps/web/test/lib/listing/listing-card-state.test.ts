@@ -1,6 +1,6 @@
 /**
  * @file listing-card-state.test.ts
- * @description Unit tests for the gastronomy/experience owner listing-card state machine
+ * @description Unit tests for the venue/experience owner listing-card state machine
  * (HOS-166 §8 point 6). Pure function — no DB, no mocks needed.
  */
 

@@ -25,7 +25,7 @@ function renderSection(overrides: Partial<React.ComponentProps<typeof PriceSecti
     render(
         <PriceSection
             locale="es"
-            vertical="gastronomy"
+            vertical="venue"
             data={buildEditData()}
             errors={{}}
             onFieldChange={onFieldChange}
@@ -36,7 +36,7 @@ function renderSection(overrides: Partial<React.ComponentProps<typeof PriceSecti
 }
 
 describe('PriceSection', () => {
-    describe('gastronomy branch', () => {
+    describe('venue branch', () => {
         it('renders the tier and menu fields, and none of the experience ones', () => {
             renderSection();
 
@@ -212,7 +212,7 @@ describe('PriceSection', () => {
         const { unmount } = render(
             <PriceSection
                 locale="es"
-                vertical="gastronomy"
+                vertical="venue"
                 data={buildEditData()}
                 errors={{}}
                 onFieldChange={vi.fn()}

@@ -30,7 +30,7 @@ const ownedOutbox = new Set<string>();
 const DAY = 86_400_000;
 const tables: Readonly<Record<TestVertical, string>> = {
     accommodation: 'accommodations',
-    gastronomy: 'gastronomies',
+    venue: 'venues',
     experience: 'experiences'
 };
 const afterCommit = {

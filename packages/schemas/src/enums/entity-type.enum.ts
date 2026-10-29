@@ -17,7 +17,7 @@
  * `EXPERIENCE` and `VENUE` were appended so they can participate in the
  * user-bookmark (favorites) subsystem, reaching parity with accommodations,
  * destinations, events and posts. They are first-class domain entities
- * (SPEC-239 gastronomy, SPEC-240 experience) with their own tables, but had
+ * (SPEC-239 venue, SPEC-240 experience) with their own tables, but had
  * never been added to this shared enum.
  *
  * `HOST_TRADE` was appended for HOS-981, so `qr_codes.entity_type` can name the
@@ -48,7 +48,7 @@ export enum EntityTypeEnum {
     BILLING_SUBSCRIPTION = 'BILLING_SUBSCRIPTION',
     PAYMENT = 'PAYMENT',
     EXPERIENCE = 'EXPERIENCE',
-    VENUE = 'GASTRONOMY',
+    VENUE = 'VENUE',
     HOST_TRADE = 'HOST_TRADE',
     PARTNER = 'PARTNER'
 }

@@ -7,7 +7,7 @@
         "en": "Asian cuisine: dishes from Asian culinary traditions",
         "pt": "Cozinha asiática: pratos das tradições culinárias da Ásia"
     },
-    "applicableVerticals": ["gastronomy"],
+    "applicableVerticals": ["venue"],
     "icon": "RestaurantIcon",
     "isBuiltin": false,
     "isFeatured": true,

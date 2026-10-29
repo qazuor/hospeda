@@ -88,7 +88,7 @@ vi.mock('@/hooks/use-media-upload', () => ({
 
 // @repo/schemas mock — provide ENTITY_GALLERY_CAPS + ModerationStatusEnum
 vi.mock('@repo/schemas', () => ({
-    ENTITY_GALLERY_CAPS: { gastronomy: 30, experience: 30 },
+    ENTITY_GALLERY_CAPS: { venue: 30, experience: 30 },
     ModerationStatusEnum: { APPROVED: 'APPROVED', PENDING: 'PENDING', REJECTED: 'REJECTED' }
 }));
 
@@ -105,7 +105,7 @@ import { ListingGalleryManager } from '../ListingGalleryManager';
 function makeFeaturedRow(id = 'featured-1') {
     return {
         id,
-        gastronomyId: 'ent-1',
+        venueId: 'ent-1',
         url: `https://example.com/${id}.jpg`,
         isFeatured: true,
         state: 'visible',
@@ -119,7 +119,7 @@ function makeFeaturedRow(id = 'featured-1') {
 function makeGalleryRow(id: string, sortOrder = 1) {
     return {
         id,
-        gastronomyId: 'ent-1',
+        venueId: 'ent-1',
         url: `https://example.com/${id}.jpg`,
         isFeatured: false,
         state: 'visible',
@@ -137,7 +137,7 @@ function makeGalleryRow(id: string, sortOrder = 1) {
 function renderGalleryManager() {
     return render(
         <ListingGalleryManager
-            vertical="gastronomy"
+            vertical="venue"
             entityId="ent-1"
         />
     );
@@ -194,7 +194,7 @@ describe('ListingGalleryManager — split: featured vs gallery', () => {
 });
 
 describe('ListingGalleryManager — add gallery photo', () => {
-    it('calls upload then addMedia when a file is selected for the gallery, with entityType matching the vertical prop', async () => {
+    it('TEST:1819:6 AC:1:3 sends the venue media entity type on gallery upload', async () => {
         const file = new File(['data'], 'photo.jpg', { type: 'image/jpeg' });
         mockUploadEntityImageMutateAsync.mockResolvedValue({
             url: 'https://cdn.example.com/new.jpg',
@@ -215,13 +215,12 @@ describe('ListingGalleryManager — add gallery photo', () => {
         fireEvent.change(galleryInput, { target: { files: [file] } });
 
         await waitFor(() => {
-            expect(mockUploadEntityImageMutateAsync).toHaveBeenCalledWith(
-                expect.objectContaining({
-                    entityType: 'gastronomy',
-                    entityId: 'ent-1',
-                    role: 'gallery'
-                })
-            );
+            expect(mockUploadEntityImageMutateAsync.mock.calls[0]?.[0]).toEqual({
+                file,
+                entityType: 'venue',
+                entityId: 'ent-1',
+                role: 'gallery'
+            });
             expect(mockAddMutateAsync).toHaveBeenCalledWith(
                 expect.objectContaining({
                     url: 'https://cdn.example.com/new.jpg',
@@ -330,7 +329,7 @@ describe('ListingGalleryManager — alt derived from entity name', () => {
         mockListData.data = [];
         render(
             <ListingGalleryManager
-                vertical="gastronomy"
+                vertical="venue"
                 entityId="ent-1"
                 entityName="Parrilla El Fogón"
             />
@@ -445,7 +444,7 @@ describe('ListingGalleryManager — set portada (upload → add → setFeatured)
         mockListData.data = [];
         render(
             <ListingGalleryManager
-                vertical="gastronomy"
+                vertical="venue"
                 entityId="ent-1"
                 entityName="Parrilla El Fogón"
             />
@@ -508,7 +507,7 @@ describe('ListingGalleryManager — gated on entity-detail loading too (race reg
 
         render(
             <ListingGalleryManager
-                vertical="gastronomy"
+                vertical="venue"
                 entityId="ent-1"
                 isEntityLoading={true}
             />
@@ -529,7 +528,7 @@ describe('ListingGalleryManager — gated on entity-detail loading too (race reg
 
         render(
             <ListingGalleryManager
-                vertical="gastronomy"
+                vertical="venue"
                 entityId="ent-1"
                 entityName="Parrilla El Fogón"
                 isEntityLoading={false}

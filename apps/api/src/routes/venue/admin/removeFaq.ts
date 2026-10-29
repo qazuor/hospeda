@@ -1,6 +1,6 @@
 /**
- * DELETE /api/v1/admin/gastronomies/:id/faqs/:faqId
- * Remove an existing FAQ from a gastronomy listing — Admin endpoint.
+ * DELETE /api/v1/admin/venues/:id/faqs/:faqId
+ * Remove an existing FAQ from a venue listing — Admin endpoint.
  */
 import { type VenueFaqRemoveInput, VenueFaqRemoveOutputSchema, VerticalEnum } from '@repo/schemas';
 import { removeVenueFaq, ServiceError, VenueService } from '@repo/service-core';
@@ -14,19 +14,19 @@ import { createAdminRoute } from '../../../utils/route-factory';
 const venueService = new VenueService({ logger: apiLogger });
 
 /**
- * DELETE /api/v1/admin/gastronomies/:id/faqs/:faqId
- * Remove FAQ from gastronomy listing — Admin endpoint.
+ * DELETE /api/v1/admin/venues/:id/faqs/:faqId
+ * Remove FAQ from venue listing — Admin endpoint.
  *
- * Requires GASTRONOMY_EDIT_ALL permission. The service helper
+ * Requires VENUE_EDIT_ALL permission. The service helper
  * `removeVenueFaq` enforces the same gate via `checkVenueCanEditFaqs`.
  */
 export const adminRemoveVenueFaqRoute = createAdminRoute({
     method: 'delete',
     listingAccess: { vertical: VerticalEnum.VENUE, operation: 'EDIT', idParam: 'id' },
     path: '/{id}/faqs/{faqId}',
-    summary: 'Remove FAQ from gastronomy listing (admin)',
-    description: 'Removes a FAQ from a gastronomy listing. Requires GASTRONOMY_EDIT_ALL.',
-    tags: ['Gastronomy', 'FAQs'],
+    summary: 'Remove FAQ from venue listing (admin)',
+    description: 'Removes a FAQ from a venue listing. Requires VENUE_EDIT_ALL.',
+    tags: ['Venue', 'FAQs'],
     requestParams: {
         id: z.string().uuid({ message: 'zodError.common.id.invalidUuid' }),
         faqId: z.string().uuid({ message: 'zodError.common.id.invalidUuid' })
@@ -36,7 +36,7 @@ export const adminRemoveVenueFaqRoute = createAdminRoute({
         const actor = getActorFromContext(ctx);
 
         const input: VenueFaqRemoveInput = {
-            gastronomyId: params.id as string,
+            venueId: params.id as string,
             faqId: params.faqId as string
         };
 

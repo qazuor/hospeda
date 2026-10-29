@@ -1,15 +1,15 @@
 /**
- * The owner's printable QR sheet for a gastronomy listing (HOS-982).
+ * The owner's printable QR sheet for a venue listing (HOS-982).
  *
  * ```
- * GET /api/v1/protected/gastronomies/{id}/qr-sheet
+ * GET /api/v1/protected/venues/{id}/qr-sheet
  * ```
  *
  * The accommodation twin (`routes/accommodation/protected/qrSheet.ts`) carries
  * the full reasoning for the order of the checks, for why there is NO
  * entitlement gate, for why the code is minted once and reused, and for why the
  * minted destination ignores the downloader's language. The staff bypass is
- * the vertical's inspection permission, `GASTRONOMY_VIEW_ALL`, as
+ * the vertical's inspection permission, `VENUE_VIEW_ALL`, as
  * `ACCOMMODATION_VIEW_ALL` is in the twin.
  *
  * ## The publicity check is the publication state, as in accommodation
@@ -80,7 +80,7 @@ export async function handleGetVenueQrSheet(
 
     const entity = result.data;
 
-    const hasViewAll = actor.permissions?.includes(PermissionEnum.GASTRONOMY_VIEW_ALL);
+    const hasViewAll = actor.permissions?.includes(PermissionEnum.VENUE_VIEW_ALL);
     if (!entity || (!hasViewAll && entity.ownerId !== actor.id)) {
         throw entityNotFoundError({ entityName: VenueService.ENTITY_NAME });
     }
@@ -95,14 +95,14 @@ export async function handleGetVenueQrSheet(
     if (!entity.slug) {
         throw new ServiceError(
             ServiceErrorCode.INTERNAL_ERROR,
-            'gastronomy listing has no slug to print a QR sheet for'
+            'venue listing has no slug to print a QR sheet for'
         );
     }
 
     const content = buildListingQrSheetContent({
         listingName: entity.name,
         slug: entity.slug,
-        vertical: 'gastronomy',
+        vertical: 'venue',
         locale: resolveReturnUrlLocale(ctx),
         siteUrl: env.HOSPEDA_SITE_URL
     });
@@ -118,7 +118,7 @@ export async function handleGetVenueQrSheet(
         // creation-only field, so two spellings would mean this one is never
         // the one written. See `services/listing-qr-sheet/listing-qr-code.ts`.
         label: buildListingQrCodeLabel({
-            vertical: 'gastronomy',
+            vertical: 'venue',
             name: entity.name,
             slug: entity.slug
         }),
@@ -129,17 +129,17 @@ export async function handleGetVenueQrSheet(
 }
 
 /**
- * GET /api/v1/protected/gastronomies/:id/qr-sheet
+ * GET /api/v1/protected/venues/:id/qr-sheet
  *
  * No entitlement gate — owner decision, see the accommodation twin.
  */
 export const protectedGetVenueQrSheetRoute = createProtectedRoute({
     method: 'get',
     path: '/{id}/qr-sheet',
-    summary: 'Download the printable QR sheet of a gastronomy listing',
+    summary: 'Download the printable QR sheet of a venue listing',
     description:
         'Returns a print-ready A4 PDF carrying a large QR code that resolves to the listing’s public page, the business name, an invitation to scan and the Hospeda brand. Designed to be taped to a door or left on a counter. Owner-only, and only for a listing that is publicly visible. No plan entitlement is required.',
-    tags: ['Gastronomy'],
+    tags: ['Venue'],
     requestParams: {
         id: z.string().uuid({ message: 'zodError.common.id.invalidUuid' })
     },

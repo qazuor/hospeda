@@ -1,22 +1,22 @@
 import { relations } from 'drizzle-orm';
 import { index, pgTable, primaryKey, text, uuid } from 'drizzle-orm/pg-core';
 import { features } from '../accommodation/feature.dbschema.ts';
-import { gastronomies } from './venue.dbschema.ts';
+import { venues } from './venue.dbschema.ts';
 
 /**
- * Junction table: gastronomy <-> feature (many-to-many, SPEC-239).
+ * Junction table: venue <-> feature (many-to-many, SPEC-239).
  *
- * Mirrors r_accommodation_feature with composite PK on (gastronomyId, featureId).
+ * Mirrors r_accommodation_feature with composite PK on (venueId, featureId).
  * Both FKs cascade on delete so rows are cleaned up automatically.
  * References the existing shared `features` catalog (same as accommodations).
  * Includes hostReWriteName and comments just like the accommodation variant.
  */
-export const rGastronomyFeature = pgTable(
-    'r_gastronomy_feature',
+export const rVenueFeature = pgTable(
+    'r_venue_feature',
     {
-        gastronomyId: uuid('gastronomy_id')
+        venueId: uuid('venue_id')
             .notNull()
-            .references(() => gastronomies.id, { onDelete: 'cascade' }),
+            .references(() => venues.id, { onDelete: 'cascade' }),
         featureId: uuid('feature_id')
             .notNull()
             .references(() => features.id, { onDelete: 'cascade' }),
@@ -26,28 +26,28 @@ export const rGastronomyFeature = pgTable(
         comments: text('comments')
     },
     (table) => ({
-        pk: primaryKey({ columns: [table.gastronomyId, table.featureId] }),
-        gastronomyId_featureId_idx: index('r_gastronomy_feature_gastronomyId_featureId_idx').on(
-            table.gastronomyId,
+        pk: primaryKey({ columns: [table.venueId, table.featureId] }),
+        venueId_featureId_idx: index('r_venue_feature_venueId_featureId_idx').on(
+            table.venueId,
             table.featureId
         ),
-        featureId_idx: index('r_gastronomy_feature_featureId_idx').on(table.featureId)
+        featureId_idx: index('r_venue_feature_featureId_idx').on(table.featureId)
     })
 );
 
-export const rGastronomyFeatureRelations = relations(rGastronomyFeature, ({ one }) => ({
-    gastronomy: one(gastronomies, {
-        relationName: 'gastronomyToFeature',
-        fields: [rGastronomyFeature.gastronomyId],
-        references: [gastronomies.id]
+export const rVenueFeatureRelations = relations(rVenueFeature, ({ one }) => ({
+    venue: one(venues, {
+        relationName: 'venueToFeature',
+        fields: [rVenueFeature.venueId],
+        references: [venues.id]
     }),
     feature: one(features, {
-        fields: [rGastronomyFeature.featureId],
+        fields: [rVenueFeature.featureId],
         references: [features.id]
     })
 }));
 
-/** Type-inferred insert type for r_gastronomy_feature rows. */
-export type InsertRVenueFeature = typeof rGastronomyFeature.$inferInsert;
-/** Type-inferred select type for r_gastronomy_feature rows. */
-export type SelectRVenueFeature = typeof rGastronomyFeature.$inferSelect;
+/** Type-inferred insert type for r_venue_feature rows. */
+export type InsertRVenueFeature = typeof rVenueFeature.$inferInsert;
+/** Type-inferred select type for r_venue_feature rows. */
+export type SelectRVenueFeature = typeof rVenueFeature.$inferSelect;

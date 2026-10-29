@@ -69,7 +69,7 @@ function renderSection(overrides: Partial<React.ComponentProps<typeof BasicInfoS
     render(
         <BasicInfoSection
             locale="es"
-            vertical="gastronomy"
+            vertical="venue"
             data={buildEditData()}
             destinations={destinations}
             destinationsLoadFailed={false}
@@ -139,7 +139,7 @@ describe('BasicInfoSection', () => {
         const { unmount } = render(
             <BasicInfoSection
                 locale="es"
-                vertical="gastronomy"
+                vertical="venue"
                 data={buildEditData()}
                 destinations={destinations}
                 destinationsLoadFailed={false}

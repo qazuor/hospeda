@@ -115,7 +115,7 @@ export const OPERATION_STEP6_KEY: Readonly<Record<ListingOperation, Step6Require
         kind: 'VERTICAL_KEY',
         keys: {
             [VerticalEnum.ACCOMMODATION]: 'edit_accommodation_info',
-            [VerticalEnum.VENUE]: 'edit_gastronomy_info',
+            [VerticalEnum.VENUE]: 'edit_venue_info',
             [VerticalEnum.EXPERIENCE]: 'edit_experience_info'
         },
         exceptInStates: [PublicationStatusEnum.DRAFT]
@@ -124,7 +124,7 @@ export const OPERATION_STEP6_KEY: Readonly<Record<ListingOperation, Step6Require
         kind: 'ANY_OF_VERTICAL',
         keys: {
             [VerticalEnum.ACCOMMODATION]: ['publish_accommodations', VERTICAL_ACTIVATION_KEY],
-            [VerticalEnum.VENUE]: ['publish_gastronomy', VERTICAL_ACTIVATION_KEY],
+            [VerticalEnum.VENUE]: ['publish_venue', VERTICAL_ACTIVATION_KEY],
             [VerticalEnum.EXPERIENCE]: ['publish_experience', VERTICAL_ACTIVATION_KEY]
         }
     },

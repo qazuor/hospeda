@@ -9,7 +9,7 @@
  * `apps/web/src/lib/billing-limit-error.ts` reads `details.limitKey` to pick
  * the limit-specific copy — with `details` always `undefined` in production,
  * `limitKey` fell back to `'generic'` and EVERY limit (accommodations,
- * gastronomy listings, ...) rendered the same generic toast instead of the
+ * venue listings, ...) rendered the same generic toast instead of the
  * one that names the limit and links its unlocking addon.
  *
  * ## Why this test does NOT use a hand-rolled `app.onError`
@@ -92,11 +92,11 @@ describe('HOS-700 — handleRouteError public-details scope (real route-factory,
     it('LIMIT_REACHED: details.limitKey reaches the client for a non-accommodation key (HOS-690 AC-24)', async () => {
         // Arrange — the mechanism `handleRouteError` uses is keyed on
         // `error.code === LIMIT_REACHED`, not on which limit was hit. This
-        // proves that generality directly for the gastronomy vertical cap
+        // proves that generality directly for the venue vertical cap
         // (HOS-690 AC-24), rather than trusting it by inference from the
         // MAX_ACCOMMODATIONS case above.
         const details = {
-            limitKey: 'max_gastronomies',
+            limitKey: 'max_venues',
             currentCount: 1,
             maxAllowed: 1,
             usagePercent: 100
@@ -104,7 +104,7 @@ describe('HOS-700 — handleRouteError public-details scope (real route-factory,
 
         const app = createSimpleRoute({
             method: 'get',
-            path: '/hos-690-limit-reached-gastronomy',
+            path: '/hos-690-limit-reached-venue',
             summary: 'HOS-690 test route',
             description: 'HOS-690 test route',
             tags: ['Test'],
@@ -112,7 +112,7 @@ describe('HOS-700 — handleRouteError public-details scope (real route-factory,
             handler: () => {
                 throw new ServiceError(
                     ServiceErrorCode.LIMIT_REACHED,
-                    'Gastronomy listing limit reached',
+                    'Venue listing limit reached',
                     details
                 );
             },
@@ -121,7 +121,7 @@ describe('HOS-700 — handleRouteError public-details scope (real route-factory,
 
         // Act — real HTTP request through the real route factory, same as the
         // MAX_ACCOMMODATIONS case: no custom onError registered here.
-        const res = await app.request('/hos-690-limit-reached-gastronomy');
+        const res = await app.request('/hos-690-limit-reached-venue');
 
         // Assert
         expect(res.status).toBe(403);
@@ -129,7 +129,7 @@ describe('HOS-700 — handleRouteError public-details scope (real route-factory,
             error: { code: string; details?: { limitKey?: string } };
         };
         expect(body.error.code).toBe(ServiceErrorCode.LIMIT_REACHED);
-        expect(body.error.details?.limitKey).toBe('max_gastronomies');
+        expect(body.error.details?.limitKey).toBe('max_venues');
     });
 
     it('ENTITLEMENT_REQUIRED: details reaches the client with HOSPEDA_API_DEBUG_ERRORS off', async () => {

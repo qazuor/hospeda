@@ -11,16 +11,16 @@ describe('pickBusinessShortcut', () => {
         expect(item?.id).toBe('hostDashboard');
     });
 
-    it('picks the listings shortcut for a user with only GASTRONOMY_EDIT_OWN', () => {
+    it('picks the listings shortcut for a user with only VENUE_EDIT_OWN', () => {
         const { item } = pickBusinessShortcut({
-            permissions: [PermissionEnum.GASTRONOMY_EDIT_OWN]
+            permissions: [PermissionEnum.VENUE_EDIT_OWN]
         });
         expect(item?.id).toBe('comercio-listings');
     });
 
     it('prioritizes hostDashboard over the listings shortcut when the user has both permissions', () => {
         const { item } = pickBusinessShortcut({
-            permissions: [PermissionEnum.ACCOMMODATION_CREATE, PermissionEnum.GASTRONOMY_EDIT_OWN]
+            permissions: [PermissionEnum.ACCOMMODATION_CREATE, PermissionEnum.VENUE_EDIT_OWN]
         });
         expect(item?.id).toBe('hostDashboard');
     });
@@ -58,9 +58,9 @@ describe('getCuratedAccountNav', () => {
         ]);
     });
 
-    it('inserts the listings shortcut for a gastronomy/experience-only owner', () => {
+    it('inserts the listings shortcut for a venue/experience-only owner', () => {
         const { shortcutItems } = getCuratedAccountNav({
-            permissions: [PermissionEnum.GASTRONOMY_EDIT_OWN]
+            permissions: [PermissionEnum.VENUE_EDIT_OWN]
         });
         expect(shortcutItems.map((item) => item.id)).toEqual([
             'favorites',
@@ -71,7 +71,7 @@ describe('getCuratedAccountNav', () => {
 
     it('never shows both business shortcuts even when the user has both permissions', () => {
         const { shortcutItems } = getCuratedAccountNav({
-            permissions: [PermissionEnum.ACCOMMODATION_CREATE, PermissionEnum.GASTRONOMY_EDIT_OWN]
+            permissions: [PermissionEnum.ACCOMMODATION_CREATE, PermissionEnum.VENUE_EDIT_OWN]
         });
         expect(shortcutItems.filter((item) => item.id === 'hostDashboard')).toHaveLength(1);
         expect(shortcutItems.filter((item) => item.id === 'comercio-listings')).toHaveLength(0);
@@ -79,7 +79,7 @@ describe('getCuratedAccountNav', () => {
 
     it('never leaks non-curated items (e.g. properties, reviews, newsletter)', () => {
         const { dashboardItem, shortcutItems } = getCuratedAccountNav({
-            permissions: [PermissionEnum.ACCOMMODATION_CREATE, PermissionEnum.GASTRONOMY_EDIT_OWN]
+            permissions: [PermissionEnum.ACCOMMODATION_CREATE, PermissionEnum.VENUE_EDIT_OWN]
         });
         const ids = [dashboardItem?.id, ...shortcutItems.map((item) => item.id)];
         expect(ids).not.toContain('properties');

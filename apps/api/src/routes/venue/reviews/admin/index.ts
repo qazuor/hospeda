@@ -1,5 +1,5 @@
 /**
- * Admin gastronomy review routes.
+ * Admin venue review routes.
  * Routes that require admin-level access for review moderation.
  */
 import { createRouter } from '../../../../utils/create-app';

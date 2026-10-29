@@ -34,7 +34,7 @@ import type { TrialStartReader } from '../trial/trial-start-types';
 
 /**
  * The limit keys a pre-trial owner may use on a DRAFT, at the trial's cap, per
- * vertical. Gastronomy and experience declare no photo limit on their media
+ * vertical. venue and experience declare no photo limit on their media
  * routes, so they have nothing to allow.
  */
 export const PRE_TRIAL_DRAFT_LIMIT_KEYS_BY_VERTICAL: Readonly<

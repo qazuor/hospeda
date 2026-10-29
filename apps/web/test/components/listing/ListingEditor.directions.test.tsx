@@ -135,7 +135,7 @@ function buildListing(overrides: Record<string, unknown> = {}): ListingDetail {
 }
 
 function renderEditor(
-    vertical: 'gastronomy' | 'experience',
+    vertical: 'venue' | 'experience',
     initialData: ListingDetail = buildListing()
 ) {
     return render(

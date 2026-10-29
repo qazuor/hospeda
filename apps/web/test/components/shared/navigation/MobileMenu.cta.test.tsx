@@ -1,13 +1,13 @@
 /**
  * @file MobileMenu.cta.test.tsx
  * @description RTL tests for the mobile menu's "Publicar" submenu
- * (HOS-691) — a three-way chooser (accommodation / gastronomy /
+ * (HOS-691) — a three-way chooser (accommodation / venue /
  * experience), replacing the single owner CTA link this file used to test
  * (SPEC-182 D3 / HOS-311's host-mode-CTA swap between the `/publicar`
  * funnel and a "Modo anfitrión" shortcut).
  *
  * HOS-691 AC-12: the submenu renders unconditionally — for a guest, an
- * authenticated non-host, an existing HOST, AND an existing GASTRONOMY_OWNER
+ * authenticated non-host, an existing HOST, AND an existing VENUE_OWNER
  * alike. There is no more per-role hiding or per-role destination swapping
  * to test here; that is the whole point of the rewrite (see the issue's
  * "Tests that break" section).
@@ -156,17 +156,17 @@ describe('MobileMenu — "Publicar" submenu (HOS-691)', () => {
             'href',
             '/es/publicar/'
         );
-        expect(screen.getByRole('menuitem', { name: /gastronomía/i })).toHaveAttribute(
+        expect(screen.getByRole('menuitem', { name: /comer y salir/i })).toHaveAttribute(
             'href',
-            '/es/publicar/gastronomia/'
+            '/es/publicar/comer-y-salir/'
         );
         expect(screen.getByRole('menuitem', { name: /experiencias/i })).toHaveAttribute(
             'href',
             '/es/publicar/experiencias/'
         );
 
-        // HOS-1156: the two gastronomy and experience entries used to read `/es/planes/…/` here,
-        // and that was the defect — a "Publicar" menu whose two gastronomy and experience options
+        // HOS-1156: the two venue and experience entries used to read `/es/planes/…/` here,
+        // and that was the defect — a "Publicar" menu whose two food and experience options
         // opened SALES pages. The literals above are deliberately spelled out
         // rather than derived from `PUBLISH_CTA_OPTIONS`: deriving them would
         // make this case pass for any value the config happened to hold, which
@@ -202,10 +202,10 @@ describe('MobileMenu — "Publicar" submenu (HOS-691)', () => {
         expect(screen.queryByRole('link', { name: /modo anfitrión/i })).not.toBeInTheDocument();
     });
 
-    it('renders the submenu for an existing GASTRONOMY_OWNER (HOS-691 AC-12)', () => {
+    it('renders the submenu for an existing VENUE_OWNER (HOS-691 AC-12)', () => {
         renderMenu({
             initialUser: { id: 'u1', name: 'Listing Owner', email: 'owner@example.com' },
-            initialRoles: ['USER', 'GASTRONOMY_OWNER']
+            initialRoles: ['USER', 'VENUE_OWNER']
         });
         openMenu();
         openPublishSubmenu();
@@ -213,10 +213,10 @@ describe('MobileMenu — "Publicar" submenu (HOS-691)', () => {
         expect(screen.getAllByRole('menuitem')).toHaveLength(3);
     });
 
-    it('renders the submenu for a user who is BOTH HOST and GASTRONOMY_OWNER', () => {
+    it('renders the submenu for a user who is BOTH HOST and VENUE_OWNER', () => {
         renderMenu({
             initialUser: { id: 'u1', name: 'Host Merchant', email: 'both@example.com' },
-            initialRoles: ['USER', 'GASTRONOMY_OWNER', 'HOST']
+            initialRoles: ['USER', 'VENUE_OWNER', 'HOST']
         });
         openMenu();
         openPublishSubmenu();

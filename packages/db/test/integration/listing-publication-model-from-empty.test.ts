@@ -2,7 +2,7 @@
 // SCRATCH.
 //
 // A database built with the branch's migrations, from empty, carries the model of
-// `V/02` §2.5 on the three listing tables (`accommodations`, `gastronomies`,
+// `V/02` §2.5 on the three listing tables (`accommodations`, `venues`,
 // `experiences`): the `publication_status` state of `V/03` §9 with its six
 // values, `inactive_since` (spec `inactiva_desde`), `deadlines_version` (spec
 // `plazos_version`), `deletion_announced_at` (spec `borrado_anunciado`, nullable),
@@ -28,7 +28,7 @@ import { protectScratchPool, waitForNoConnections } from './support/scratch-data
 const pkgDir = resolve(dirname(fileURLToPath(import.meta.url)), '../..');
 const SCRATCH_DB = `hospeda_scratch_listing_model_${process.pid}`;
 
-const LISTING_TABLES = ['accommodations', 'gastronomies', 'experiences'] as const;
+const LISTING_TABLES = ['accommodations', 'venues', 'experiences'] as const;
 
 const PUBLICATION_STATUSES = [
     'DRAFT',
@@ -243,7 +243,7 @@ describe('fix_request, spec pedido_de_arreglo (TEST:V6:17)', () => {
             const adminId = user.rows[0]?.id;
             const listingId = '00000000-0000-4000-8000-000000000001';
             const open = `INSERT INTO fix_request (entity_type, entity_id, reason, opened_by_id)
-                          VALUES ('gastronomy', $1, 'Fix the photos', $2) RETURNING id`;
+                          VALUES ('venue', $1, 'Fix the photos', $2) RETURNING id`;
             const first = await client.query<{ id: string }>(open, [listingId, adminId]);
 
             // Act + Assert: a second OPEN request on the same listing is rejected.

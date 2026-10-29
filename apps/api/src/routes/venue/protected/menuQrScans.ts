@@ -2,7 +2,7 @@
  * The owner's menu QR scan aggregate (HOS-1044 §6.4).
  *
  * ```
- * GET /api/v1/protected/gastronomies/{id}/menu-qr/scans
+ * GET /api/v1/protected/venues/{id}/menu-qr/scans
  * ```
  *
  * The same ownership and menu_qr_scan_metrics gate as `menuQr.ts` applies.
@@ -53,10 +53,10 @@ export async function handleGetVenueMenuQrScans(
     query: Record<string, unknown>
 ): Promise<z.infer<typeof QrCodeScanStatsSchema>> {
     const actor = getActorFromContext(ctx);
-    const gastronomyId = params.id as string;
+    const venueId = params.id as string;
     const window = query.window as z.infer<typeof QrCodeScanWindowSchema>;
 
-    const listing = await venueService.getById(actor, gastronomyId);
+    const listing = await venueService.getById(actor, venueId);
     const entity = listing.error ? null : listing.data;
 
     // Listing access has already checked ownership; retain the missing-row 404.
@@ -95,7 +95,7 @@ export async function handleGetVenueMenuQrScans(
 }
 
 /**
- * GET /api/v1/protected/gastronomies/:id/menu-qr/scans
+ * GET /api/v1/protected/venues/:id/menu-qr/scans
  *
  * Owner-only scan aggregate requiring menu_qr_scan_metrics on the listing owner.
  */
@@ -108,12 +108,12 @@ export const protectedGetVenueMenuQrScansRoute = createProtectedRoute({
         idParam: 'id',
         step6Key: 'menu_qr_scan_metrics'
     },
-    summary: 'Get the scan aggregate for a gastronomy listing’s menu QR',
+    summary: 'Get the scan aggregate for a venue listing’s menu QR',
     description:
         'Returns the total scans, a gap-filled daily series, and device/OS/language breakdowns ' +
         'for the venue’s menu QR over a rolling window (7d or 30d, default 30d). A venue with no ' +
         'menu QR yet gets an all-zero aggregate — this endpoint never mints a code. Owner-only.',
-    tags: ['Gastronomy', 'Gastronomy Menu'],
+    tags: ['Venue', 'Venue Menu'],
     requestParams: {
         id: z.string().uuid({ message: 'zodError.common.id.invalidUuid' })
     },
@@ -128,7 +128,7 @@ export const protectedGetVenueMenuQrScansRoute = createProtectedRoute({
             createSlidingWindowPerUserRateLimit({
                 windowMs: 60_000,
                 max: MENU_QR_SCANS_RATE_LIMIT_MAX,
-                keyPrefix: 'menu-qr-scans:gastronomy'
+                keyPrefix: 'menu-qr-scans:venue'
             })
         ]
     }

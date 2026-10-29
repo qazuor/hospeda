@@ -63,12 +63,12 @@ export class AccountClosureWriteError extends Error {
     }
 }
 
-/** Fixed lock order across the three listing tables: accommodation, gastronomy, experience. */
-const LISTING_LOCK_ORDER = ['accommodation', 'gastronomy', 'experience'] as const;
+/** Fixed lock order across the three listing tables: accommodation, venue, experience. */
+const LISTING_LOCK_ORDER = ['accommodation', 'venue', 'experience'] as const;
 
 const LISTING_TABLES: Record<(typeof LISTING_LOCK_ORDER)[number], string> = {
     accommodation: 'accommodations',
-    gastronomy: 'gastronomies',
+    venue: 'venues',
     experience: 'experiences'
 };
 
@@ -128,7 +128,7 @@ export const accountClosureModel = {
     /**
      * Reads and locks the owner's listings outside `PURGED` (H9): `deleted_at IS NULL` and
      * `publication_status <> 'PURGED'`, across the three tables in a fixed order (accommodation,
-     * gastronomy, experience) so two closures never lock them crosswise. A row with `deleted_at`
+     * venue, experience) so two closures never lock them crosswise. A row with `deleted_at`
      * does not count: PB12 cannot see it, and it would block the account forever.
      */
     async lockListingsNotPurged(args: {

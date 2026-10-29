@@ -1,9 +1,9 @@
 /**
  * @file listing-editor-routes.test.ts
- * @description Guards the gastronomy/experience editor's page routes (HOS-1080, closing
+ * @description Guards the venue/experience editor's page routes (HOS-1080, closing
  * HOS-892).
  *
- * The gastronomy/experience counterpart of `editor-routes.test.ts`. Two of these blocks are
+ * The venue/experience counterpart of `editor-routes.test.ts`. Two of these blocks are
  * the ones worth having:
  *
  *  - **every nav link resolves to a route file that exists.** The registry
@@ -30,19 +30,19 @@ function readRoute(file: string): string {
     return readFileSync(resolve(ROUTES_DIR, file), 'utf8');
 }
 
-/** Every `.astro` route file in the gastronomy/experience editor directory. */
+/** Every `.astro` route file in the venue/experience editor directory. */
 const ROUTE_FILES = readdirSync(ROUTES_DIR).filter((file) => file.endsWith('.astro'));
 
 /**
  * The union of both verticals' sections.
  *
  * Both share one `[vertical]` route tree, so the experience-only pages are real
- * files that a gastronomy request redirects out of rather than files that do not
+ * files that a venue request redirects out of rather than files that do not
  * exist. The registry is what refuses them, not the filesystem.
  *
  * A REAL union since HOS-895, not the experience build alone. That shortcut was
  * correct only while every vertical-exclusive section belonged to the same
- * vertical: `carta` exists for gastronomy and not for experiences, so the
+ * vertical: `carta` exists for venue and not for experiences, so the
  * experience build no longer contains every slug that has a file. Reading it
  * alone made `carta.astro` look like a route matching no registry section —
  * the guard failing on the exact drift it exists to catch, with the drift
@@ -50,7 +50,7 @@ const ROUTE_FILES = readdirSync(ROUTES_DIR).filter((file) => file.endsWith('.ast
  */
 const ALL_SECTIONS = [
     ...new Map(
-        (['gastronomy', 'experience'] as const)
+        (['venue', 'experience'] as const)
             .flatMap((vertical) => buildListingEditorSections({ vertical }))
             .map((section) => [section.slug, section] as const)
     ).values()
@@ -77,7 +77,7 @@ const SECTION_COMPONENTS: Readonly<Record<string, string>> = {
     EditorHub: 'index.astro'
 };
 
-describe('gastronomy/experience editor routes — one file per section', () => {
+describe('venue/experience editor routes — one file per section', () => {
     it('should have a route file for every registry section, plus the hub', () => {
         for (const section of ALL_SECTIONS) {
             expect(ROUTE_FILES, `missing route file ${section.slug}.astro`).toContain(
@@ -101,7 +101,7 @@ describe('gastronomy/experience editor routes — one file per section', () => {
     it('should point every nav link at a route file that exists', () => {
         // The nav builds hrefs from slugs, and a slug with no file is a 404
         // reached from a link the editor drew itself — invisible to typecheck.
-        for (const vertical of ['gastronomy', 'experience'] as const) {
+        for (const vertical of ['venue', 'experience'] as const) {
             for (const section of buildListingEditorSections({ vertical })) {
                 expect(
                     ROUTE_FILES,
@@ -126,7 +126,7 @@ describe('gastronomy/experience editor routes — one file per section', () => {
     });
 });
 
-describe('gastronomy/experience editor routes — shared front door', () => {
+describe('venue/experience editor routes — shared front door', () => {
     it('should resolve auth, ownership and the listing through one resolver', () => {
         // The auth guard, the listing-access gate, the vertical check, the id
         // check, the load and the ownership check live in one place precisely so
@@ -170,7 +170,7 @@ describe('gastronomy/experience editor routes — shared front door', () => {
     });
 });
 
-describe('gastronomy/experience editor routes — the hub never redirects', () => {
+describe('venue/experience editor routes — the hub never redirects', () => {
     it('should not redirect the hub to a section', () => {
         // A redirect here traps the back button: section → hub → forward again
         // (HOS-318 D-8, and the reason the accommodation hub is a real page).
@@ -190,7 +190,7 @@ describe('gastronomy/experience editor routes — the hub never redirects', () =
     });
 });
 
-describe('gastronomy/experience editor routes — section isolation', () => {
+describe('venue/experience editor routes — section isolation', () => {
     it('should mount each self-persisting component on exactly one route', () => {
         for (const [component, owner] of Object.entries(SECTION_COMPONENTS)) {
             // Both import shapes: `EditorHub` is an `.astro` default import,
@@ -240,14 +240,14 @@ describe('gastronomy/experience editor routes — section isolation', () => {
     });
 });
 
-describe('gastronomy/experience editor routes — the E2E suite points at routes that exist', () => {
+describe('venue/experience editor routes — the E2E suite points at routes that exist', () => {
     /**
      * The section slugs `apps/e2e` names, read out of its own source.
      *
      * The E2E package cannot import this registry — it resolves `@repo/*` to
      * built dist and knows nothing about `apps/web/src` — so the two spell the
      * slugs independently and nothing but a full browser run connects them.
-     * That gap is not theoretical: HOS-1080 shipped with all six gastronomy/experience specs
+     * That gap is not theoretical: HOS-1080 shipped with all six venue/experience specs
      * still opening `…/editar/`, which had become the form-less hub, and the
      * only thing that reported it was a red E2E shard.
      */
@@ -302,7 +302,7 @@ describe('gastronomy/experience editor routes — the E2E suite points at routes
     });
 });
 
-describe('gastronomy/experience editor routes — preserved behaviours', () => {
+describe('venue/experience editor routes — preserved behaviours', () => {
     it('should preload FAQs on the questions route so the manager paints real data', () => {
         const source = readRoute('preguntas.astro');
 

@@ -1,5 +1,5 @@
 /**
- * Tests for PATCH /api/v1/protected/gastronomies/:id
+ * Tests for PATCH /api/v1/protected/venues/:id
  *
  * Covers:
  * - Route registration
@@ -14,7 +14,7 @@ import { beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { initApp } from '../../../../src/app.js';
 import type { AppOpenAPI } from '../../../../src/types.js';
 
-const BASE = '/api/v1/protected/gastronomies';
+const BASE = '/api/v1/protected/venues';
 const VALID_UUID = 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa';
 
 // ---------------------------------------------------------------------------
@@ -32,17 +32,17 @@ vi.mock('@repo/service-core', async (importOriginal) => {
             }
 
             override async updateOwn(
-                gastronomyId: string,
+                venueId: string,
                 data: Record<string, unknown>,
                 _actor: Parameters<typeof orig.VenueService.prototype.updateOwn>[2]
             ): ReturnType<typeof orig.VenueService.prototype.updateOwn> {
                 // Capture for assertions
                 (globalThis as Record<string, unknown>).__lastUpdateOwnInput = {
-                    gastronomyId,
+                    venueId,
                     data
                 };
                 return {
-                    data: { id: gastronomyId, name: 'mock' } as unknown as Awaited<
+                    data: { id: venueId, name: 'mock' } as unknown as Awaited<
                         ReturnType<typeof orig.VenueService.prototype.updateOwn>
                     >['data'] & {},
                     error: undefined
@@ -52,7 +52,7 @@ vi.mock('@repo/service-core', async (importOriginal) => {
     };
 });
 
-describe('PATCH /api/v1/protected/gastronomies/:id', () => {
+describe('PATCH /api/v1/protected/venues/:id', () => {
     let app: AppOpenAPI;
 
     beforeAll(() => {
@@ -124,7 +124,7 @@ describe('PATCH /api/v1/protected/gastronomies/:id', () => {
             });
 
             const captured = (globalThis as Record<string, unknown>).__lastUpdateOwnInput as
-                | { gastronomyId: string; data: Record<string, unknown> }
+                | { venueId: string; data: Record<string, unknown> }
                 | undefined;
 
             // Skip assertion if mock auth isn't wired (CI without actor middleware)

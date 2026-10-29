@@ -232,7 +232,7 @@ describe.skipIf(!isServiceTestDbAvailable())(
                 const { productId } = await seedCoverageAddonProduct(tx, {
                     addonId: addon.addonId,
                     versionId,
-                    compatibleVerticals: ['accommodation', 'gastronomy']
+                    compatibleVerticals: ['accommodation', 'venue']
                 });
                 const listingId = crypto.randomUUID();
                 await seedCoverageAddonInstance(tx, {
@@ -284,7 +284,7 @@ describe.skipIf(!isServiceTestDbAvailable())(
 describe.skipIf(!isServiceTestDbAvailable())(
     'TEST:B4:7 USER and GLOBAL addons only in compatible verticals (AC:B4:8)',
     () => {
-        it('a USER and a GLOBAL of a product compatible only with accommodation appear there and not in gastronomy', async () => {
+        it('a USER and a GLOBAL of a product compatible only with accommodation appear there and not in venue', async () => {
             await withServiceTestTransaction(async (tx) => {
                 // Arrange
                 const { userId } = await seedCoverageUser(tx);

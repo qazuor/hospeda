@@ -1,7 +1,7 @@
 /**
  * @file MediaSection.metadata.test.tsx
  * @description Tests for the per-photo text editor wired into the listing
- * (gastronomy / experience) media section by HOS-1036.
+ * (venue / experience) media section by HOS-1036.
  *
  * The listing twin of
  * `test/components/account/editor/ContentMediaSection.metadata.test.tsx`, and
@@ -13,7 +13,7 @@
  *
  *  - the toggle exists for the featured photo AND for each gallery photo;
  *  - saving PATCHes THAT row, with the vertical the section was rendered for —
- *    a `vertical` hard-coded to gastronomy would send an experience owner's
+ *    a `vertical` hard-coded to venue would send an experience owner's
  *    correction to the wrong endpoint;
  *  - an edit to ONE field resends the other three unchanged. The body always
  *    carries all four (`buildPhotoMetadataUpdateBody` never omits; a field
@@ -102,14 +102,14 @@ const LISTING_ID = '00000000-0000-4000-8000-0000000000aa';
 
 const defaultProps: MediaSectionProps = {
     locale: 'es',
-    vertical: 'gastronomy',
+    vertical: 'venue',
     listingId: LISTING_ID
 };
 
 const FEATURED_ROW = {
     id: 'media-uuid-featured',
     url: 'https://cdn.example.com/featured.jpg',
-    publicId: 'hospeda/gastronomy/abc/img-featured',
+    publicId: 'hospeda/venue/abc/img-featured',
     caption: 'Epígrafe viejo',
     description: 'Una descripción vieja de la foto',
     alt: 'Alt viejo de la portada',
@@ -123,7 +123,7 @@ const FEATURED_ROW = {
 const GALLERY_ROW = {
     id: 'media-uuid-g1',
     url: 'https://cdn.example.com/gallery1.jpg',
-    publicId: 'hospeda/gastronomy/abc/img-g1',
+    publicId: 'hospeda/venue/abc/img-g1',
     caption: null,
     description: null,
     alt: null,
@@ -143,7 +143,7 @@ const GALLERY_ROW = {
 const STOCK_ROW = {
     id: 'media-uuid-g2',
     url: 'https://cdn.example.com/gallery2.jpg',
-    publicId: 'hospeda/gastronomy/abc/img-g2',
+    publicId: 'hospeda/venue/abc/img-g2',
     caption: null,
     description: null,
     alt: 'Alt de stock',
@@ -221,7 +221,7 @@ describe('MediaSection — photo text metadata (HOS-1036)', () => {
 
         await waitFor(() => expect(mockUpdateMedia).toHaveBeenCalledTimes(1));
         expect(mockUpdateMedia.mock.calls[0]?.[0]).toEqual({
-            vertical: 'gastronomy',
+            vertical: 'venue',
             id: LISTING_ID,
             mediaId: GALLERY_ROW.id,
             body: {
@@ -262,7 +262,7 @@ describe('MediaSection — photo text metadata (HOS-1036)', () => {
         // toStrictEqual, not toEqual: the latter ignores keys whose value is
         // `undefined`, which is exactly what a dropped mapping produces.
         expect(mockUpdateMedia.mock.calls[0]?.[0]).toStrictEqual({
-            vertical: 'gastronomy',
+            vertical: 'venue',
             id: LISTING_ID,
             mediaId: FEATURED_ROW.id,
             body: {

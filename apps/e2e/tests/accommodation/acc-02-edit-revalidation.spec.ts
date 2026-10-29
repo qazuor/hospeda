@@ -91,7 +91,7 @@ test.describe('ACC-02: edit propagates via revalidation @p0 @accommodation @cach
         // this one charges the full 12s to it.
         //
         // The old 10s only ever passed because few entity types purged at all.
-        // HOS-369 W2-4 wired four more (POI, attraction, gastronomy, experience)
+        // HOS-369 W2-4 wired four more (POI, attraction, venue, experience)
         // and the listing-owner specs exercise two of them, which made the wait real
         // and this test fail reproducibly. Nothing regressed — the timeout was
         // always below the documented contract; it just had no way to show it.

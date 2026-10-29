@@ -21,13 +21,22 @@
  * The page's frontmatter ends in `Astro.redirect(...)` (or a bare 404
  * `Response`), and it renders no template: no layout, no component, no session
  * read. Anything richer means the exemption is now un-protecting real content.
+ *
+ * Q8: the `/carta/` 302 + no-store page-state redirect belongs to sub-spec 3;
+ * that route does not exist yet, so this guard deliberately has no vacuous case.
  */
 
 import { readdirSync, readFileSync, statSync } from 'node:fs';
 import { resolve } from 'node:path';
+import { buildVenueMenuQrTargetUrl } from '@repo/service-core';
 import { describe, expect, it } from 'vitest';
-
+import {
+    RETIRED_ROUTE_REDIRECT_STATUS,
+    RETIRED_VENUE_URL_PREFIXES,
+    resolveLegacyRedirectTarget
+} from '@/lib/legacy-redirects';
 import { PUBLIC_REDIRECT_PATHS } from '@/lib/routes';
+import { buildListingQrTargetUrl } from '../../../api/src/services/listing-qr-sheet/listing-qr-code';
 
 const PAGES_DIR = resolve(__dirname, '../../src/pages/[lang]');
 
@@ -50,6 +59,31 @@ function pagesUnder(pathAfterLocale: string): readonly string[] {
     }
 
     return found;
+}
+
+function pageFiles(dir: string): string[] {
+    return readdirSync(dir).flatMap((entry) => {
+        const file = resolve(dir, entry);
+        return statSync(file).isDirectory() ? pageFiles(file) : [file];
+    });
+}
+
+function pageRouteExists(pathAfterLocale: string): boolean {
+    const wanted = pathAfterLocale.split('/').filter(Boolean);
+    const routes = pageFiles(PAGES_DIR)
+        .filter((file) => file.endsWith('.astro'))
+        .map((file) => {
+            const relative = file
+                .slice(PAGES_DIR.length + 1)
+                .replace(/\.astro$/, '')
+                .replace(/\/index$/, '');
+            return relative.split('/').filter(Boolean);
+        });
+    return routes.some(
+        (route) =>
+            route.length === wanted.length &&
+            route.every((segment, index) => /^\[.+\]$/.test(segment) || segment === wanted[index])
+    );
 }
 
 describe('HOS-1156 — every login-gate exemption is a pure redirect', () => {
@@ -93,4 +127,46 @@ describe('HOS-1156 — every login-gate exemption is a pure redirect', () => {
             });
         }
     }
+});
+
+describe('G-FAC-R2 — retired venue routes resolve in one hop', () => {
+    it('has one redirect for each retired URL family, to a real page and no further redirect', () => {
+        expect(RETIRED_ROUTE_REDIRECT_STATUS).toBe(302);
+        const sources = [
+            `/es${RETIRED_VENUE_URL_PREFIXES[0]}/sample/carta/`,
+            `/es${RETIRED_VENUE_URL_PREFIXES[1]}/precios/`,
+            `/es${RETIRED_VENUE_URL_PREFIXES[2]}/`,
+            `/es${RETIRED_VENUE_URL_PREFIXES[3]}/`,
+            `/es${RETIRED_VENUE_URL_PREFIXES[4]}/abc/editar/fotos/`,
+            `/es${RETIRED_VENUE_URL_PREFIXES[5]}/`
+        ];
+        expect(sources).toHaveLength(6);
+        for (const source of sources) {
+            const result = resolveLegacyRedirectTarget({ path: source });
+            expect(result).toBeDefined();
+            expect(result?.status).toBe(RETIRED_ROUTE_REDIRECT_STATUS);
+            expect(resolveLegacyRedirectTarget({ path: result!.target })).toBeUndefined();
+            const pagePath = result!.target.replace(/^\/(es|en|pt)/, '');
+            expect(pageRouteExists(pagePath)).toBe(true);
+        }
+    });
+    it('keeps both venue QR targets on existing pages with no legacy redirect', () => {
+        const siteUrl = 'https://example.test';
+        const targets = [
+            buildVenueMenuQrTargetUrl({ siteUrl, lang: 'es', slug: 'sample' }),
+            buildListingQrTargetUrl({ vertical: 'venue', slug: 'sample', siteUrl })
+        ];
+        for (const target of targets) {
+            const path = new URL(target).pathname;
+            expect(resolveLegacyRedirectTarget({ path })).toBeUndefined();
+            expect(pageRouteExists(path.replace(/^\/es\//, ''))).toBe(true);
+        }
+    });
+
+    it('redirects the no-locale public page URL to the Spanish page', () => {
+        expect(resolveLegacyRedirectTarget({ path: `${RETIRED_VENUE_URL_PREFIXES[0]}/` })).toEqual({
+            target: '/es/comer-y-salir/',
+            status: RETIRED_ROUTE_REDIRECT_STATUS
+        });
+    });
 });

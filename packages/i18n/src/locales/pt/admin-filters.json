@@ -227,7 +227,7 @@
         "internet": "Internet",
         "albanileria": "Alvenaria"
     },
-    "gastronomyType": {
+    "venueType": {
         "label": "Tipo",
         "restaurant": "Restaurante",
         "bar": "Bar",

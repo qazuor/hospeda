@@ -60,7 +60,7 @@ export const SESSION_OPTIONAL_SEGMENTS = [
     'feedback',
     'guest',
     'publicar'
-    // `publicar-restaurante` and `publicar-experiencia` (the lead
+    // The retired venue and experience lead pages (the lead
     // landings, HOS-295) used to be listed here because both mounted the
     // ListingLead island, which pre-filled the visitor's name/email from
     // `Astro.locals.user`. HOS-690 removed that form from both landings — the
@@ -149,7 +149,7 @@ export const SET_PASSWORD_SEGMENT = 'agregar-contrasena' as const;
 
 /**
  * Sub-path of the change-password form (under /{locale}/mi-cuenta/).
- * Used by gastronomy/experience owners who must rotate their password on first login (SPEC-239 T-041).
+ * Used by venue/experience owners who must rotate their password on first login (SPEC-239 T-041).
  * Whitelisted in the middleware guard analogously to SET_PASSWORD_SEGMENT.
  */
 export const CHANGE_PASSWORD_SEGMENT = 'cambiar-contrasena' as const;
@@ -176,7 +176,7 @@ export type ProfileCompletionBypassRole = (typeof PROFILE_COMPLETION_BYPASS_ROLE
  * `completar-perfil`. Without this list, a user who closed the tab mid-form
  * could sneak into the host onboarding flow.
  *
- * The lead pages (`publicar-restaurante`, `publicar-experiencia`) are
+ * The retired venue and experience lead pages are
  * deliberately NOT here (HOS-295). They are a top-of-funnel capture form that
  * creates no entity under the visitor's account and works fully anonymously;
  * bouncing a signed-in visitor with an incomplete profile off them would leave

@@ -23,8 +23,8 @@
  * `lib/api/transforms.ts`), so they stay a single flat grid.
  *
  * HOS-1055: "accepts events" (birthdays, corporate, weddings) is deliberately
- * NOT a new column on `gastronomies` — it reuses the existing `private_events`
- * catalog amenity (seeded gastronomy-only, same shape as `accepts_reservations`
+ * NOT a new column on the venue table — it reuses the existing `private_events`
+ * catalog amenity (seeded venue-only, same shape as `accepts_reservations`
  * / `delivery` / `takeaway`), which keeps ONE source of truth for the flag
  * instead of a second copy living on the row itself. What's new here is only
  * the UI: that one amenity is pulled OUT of the generic accordion and rendered
@@ -104,13 +104,13 @@ export function AmenitiesSection({
                             onChange={() => onToggleAmenity(eventsAmenity.id)}
                         />
                         {t(
-                            'gastronomy.owner.editor.acceptsEvents.label',
+                            'venue.owner.editor.acceptsEvents.label',
                             'Acepto eventos (cumpleaños, empresas, casamientos)'
                         )}
                     </label>
                     <p className={fieldStyles.hint}>
                         {t(
-                            'gastronomy.owner.editor.acceptsEvents.hint',
+                            'venue.owner.editor.acceptsEvents.hint',
                             'Mostramos un botón de contacto en tu ficha para que te escriban por este tipo de consultas.'
                         )}
                     </p>

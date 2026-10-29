@@ -27,19 +27,19 @@ export interface PurgeListingContentResult {
 
 const LISTING_TABLES: Record<ListingVertical, string> = {
     accommodation: 'accommodations',
-    gastronomy: 'gastronomies',
+    venue: 'venues',
     experience: 'experiences'
 };
 
 const MEDIA_TABLES: Record<ListingVertical, string> = {
     accommodation: 'accommodation_media',
-    gastronomy: 'gastronomy_media',
+    venue: 'venue_media',
     experience: 'experience_media'
 };
 
 const MEDIA_FKS: Record<ListingVertical, string> = {
     accommodation: 'accommodation_id',
-    gastronomy: 'gastronomy_id',
+    venue: 'venue_id',
     experience: 'experience_id'
 };
 
@@ -57,17 +57,17 @@ const CONTENT_TABLES: Record<ListingVertical, readonly { table: string; fk: stri
         { table: 'accommodation_occupancy', fk: 'accommodation_id' },
         { table: 'accommodation_ia_data', fk: 'accommodation_id' }
     ],
-    gastronomy: [
-        { table: 'gastronomy_faqs', fk: 'gastronomy_id' },
-        { table: 'r_gastronomy_amenity', fk: 'gastronomy_id' },
-        { table: 'r_gastronomy_feature', fk: 'gastronomy_id' },
+    venue: [
+        { table: 'venue_faqs', fk: 'venue_id' },
+        { table: 'r_venue_amenity', fk: 'venue_id' },
+        { table: 'r_venue_feature', fk: 'venue_id' },
         { table: 'r_entity_tag', fk: 'entity_id' },
         { table: 'qr_codes', fk: 'entity_id' },
         { table: 'entity_view_monthly_rollups', fk: 'entity_id' },
-        { table: 'gastronomy_menu_items', fk: 'gastronomy_id' },
-        { table: 'gastronomy_menu_sections', fk: 'gastronomy_id' },
-        { table: 'gastronomy_daily_specials', fk: 'gastronomy_id' },
-        { table: 'gastronomy_events', fk: 'gastronomy_id' }
+        { table: 'venue_menu_items', fk: 'venue_id' },
+        { table: 'venue_menu_sections', fk: 'venue_id' },
+        { table: 'venue_daily_specials', fk: 'venue_id' },
+        { table: 'venue_events', fk: 'venue_id' }
     ],
     experience: [
         { table: 'experience_faqs', fk: 'experience_id' },
@@ -85,7 +85,7 @@ const BLANK_CONTENT: Record<ListingVertical, SQL> = {
         name_i18n = NULL, summary_i18n = NULL, description_i18n = NULL, rich_description_i18n = NULL,
         translation_meta = NULL, contact_info = NULL, social_networks = NULL, price = NULL,
         location = NULL, videos = NULL, seo = NULL, extra_info = NULL`,
-    gastronomy: sql`summary = '', description = '', rich_description = NULL,
+    venue: sql`summary = '', description = '', rich_description = NULL,
         name_i18n = NULL, summary_i18n = NULL, description_i18n = NULL, rich_description_i18n = NULL,
         menu_url = NULL, menu_file_url = NULL, menu_file_public_id = NULL,
         menu_file_kind = NULL, contact_info = NULL, social_networks = NULL, opening_hours = NULL,
@@ -101,7 +101,7 @@ const BLANK_CONTENT: Record<ListingVertical, SQL> = {
 
 const ENTITY_TYPES: Record<ListingVertical, EntityTypeEnum> = {
     accommodation: EntityTypeEnum.ACCOMMODATION,
-    gastronomy: EntityTypeEnum.VENUE,
+    venue: EntityTypeEnum.VENUE,
     experience: EntityTypeEnum.EXPERIENCE
 };
 
@@ -121,12 +121,12 @@ const MARK_CALENDAR: Record<
             RETURNING id, provider`);
         return result.rows.map((row) => ({ id: String(row.id), provider: String(row.provider) }));
     },
-    gastronomy: async () => [],
+    venue: async () => [],
     experience: async () => []
 };
 
 /**
- * Carries each uploaded menu file and dish photo into gastronomy_media before the purge
+ * Carries each uploaded menu file and dish photo into venue_media before the purge
  * transaction deletes the rows that named them. The existing mark and post-commit deletion
  * path then handles them like gallery photos, with the daily retry covering any failure.
  */
@@ -135,17 +135,17 @@ const CARRY_REMOTE_ASSETS: Record<
     (args: { readonly tx: DrizzleClient; readonly listingId: string }) => Promise<void>
 > = {
     accommodation: async () => {},
-    gastronomy: async ({ tx, listingId }) => {
+    venue: async ({ tx, listingId }) => {
         await tx.execute(sql`
-            INSERT INTO gastronomy_media (gastronomy_id, url, public_id, is_featured, sort_order)
+            INSERT INTO venue_media (venue_id, url, public_id, is_featured, sort_order)
             SELECT id, COALESCE(menu_file_url, ''), menu_file_public_id, false, 0
-            FROM gastronomies
+            FROM venues
             WHERE id = ${listingId} AND menu_file_public_id IS NOT NULL`);
         await tx.execute(sql`
-            INSERT INTO gastronomy_media (gastronomy_id, url, public_id, is_featured, sort_order)
-            SELECT gastronomy_id, COALESCE(photo_url, ''), photo_public_id, false, 0
-            FROM gastronomy_menu_items
-            WHERE gastronomy_id = ${listingId} AND photo_public_id IS NOT NULL`);
+            INSERT INTO venue_media (venue_id, url, public_id, is_featured, sort_order)
+            SELECT venue_id, COALESCE(photo_url, ''), photo_public_id, false, 0
+            FROM venue_menu_items
+            WHERE venue_id = ${listingId} AND photo_public_id IS NOT NULL`);
     },
     experience: async () => {}
 };
@@ -164,7 +164,7 @@ const CLOSE_PRICE_ALERTS: Record<
             RETURNING id, user_id`);
         return result.rows.map((row) => ({ id: String(row.id), user_id: String(row.user_id) }));
     },
-    gastronomy: async () => [],
+    venue: async () => [],
     experience: async () => []
 };
 
@@ -176,7 +176,7 @@ function toDate(value: unknown): Date {
 export const listingPurgeModel = {
     /**
      * Deletes listing-only rows, blanks listing content, and marks remote rows for post-commit work.
-     * Uploaded gastronomy menu files and dish photos are carried into marked media rows first.
+     * Uploaded venue menu files and dish photos are carried into marked media rows first.
      */
     async purgeListingContent(args: {
         readonly tx: DrizzleClient;

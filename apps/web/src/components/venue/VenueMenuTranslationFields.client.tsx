@@ -74,12 +74,12 @@ export function VenueMenuTranslationFields({
             open={locked}
         >
             <summary className={styles.translationsSummary}>
-                {t('gastronomy.owner.editor.menuManager.translations', 'Traducciones (EN/PT)')}
+                {t('venue.owner.editor.menuManager.translations', 'Traducciones (EN/PT)')}
             </summary>
             {locked && (
                 <p className={styles.translationsLockedHint}>
                     {t(
-                        'gastronomy.owner.editor.menuManager.translationLockedHint',
+                        'venue.owner.editor.menuManager.translationLockedHint',
                         'Disponible en el plan Premium. Borrá el inglés y el portugués para guardar la carta en español.'
                     )}
                 </p>
@@ -90,10 +90,10 @@ export function VenueMenuTranslationFields({
                     type="text"
                     value={nameEn}
                     placeholder={t(
-                        'gastronomy.owner.editor.menuManager.nameEnPlaceholder',
+                        'venue.owner.editor.menuManager.nameEnPlaceholder',
                         'Nombre en inglés'
                     )}
-                    aria-label={t('gastronomy.owner.editor.menuManager.nameEn', 'Nombre en inglés')}
+                    aria-label={t('venue.owner.editor.menuManager.nameEn', 'Nombre en inglés')}
                     onChange={(event) => {
                         onChange({ nameEn: event.target.value });
                     }}
@@ -103,13 +103,10 @@ export function VenueMenuTranslationFields({
                     type="text"
                     value={namePt}
                     placeholder={t(
-                        'gastronomy.owner.editor.menuManager.namePtPlaceholder',
+                        'venue.owner.editor.menuManager.namePtPlaceholder',
                         'Nombre en portugués'
                     )}
-                    aria-label={t(
-                        'gastronomy.owner.editor.menuManager.namePt',
-                        'Nombre en portugués'
-                    )}
+                    aria-label={t('venue.owner.editor.menuManager.namePt', 'Nombre en portugués')}
                     onChange={(event) => {
                         onChange({ namePt: event.target.value });
                     }}
@@ -121,11 +118,11 @@ export function VenueMenuTranslationFields({
                             type="text"
                             value={descriptionEn}
                             placeholder={t(
-                                'gastronomy.owner.editor.menuManager.descriptionEnPlaceholder',
+                                'venue.owner.editor.menuManager.descriptionEnPlaceholder',
                                 'Descripción en inglés'
                             )}
                             aria-label={t(
-                                'gastronomy.owner.editor.menuManager.descriptionEn',
+                                'venue.owner.editor.menuManager.descriptionEn',
                                 'Descripción en inglés'
                             )}
                             onChange={(event) => {
@@ -137,11 +134,11 @@ export function VenueMenuTranslationFields({
                             type="text"
                             value={descriptionPt}
                             placeholder={t(
-                                'gastronomy.owner.editor.menuManager.descriptionPtPlaceholder',
+                                'venue.owner.editor.menuManager.descriptionPtPlaceholder',
                                 'Descripción en portugués'
                             )}
                             aria-label={t(
-                                'gastronomy.owner.editor.menuManager.descriptionPt',
+                                'venue.owner.editor.menuManager.descriptionPt',
                                 'Descripción en portugués'
                             )}
                             onChange={(event) => {

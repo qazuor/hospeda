@@ -1,7 +1,7 @@
 /**
- * gastronomy.review.service.ts
+ * venue.review.service.ts
  *
- * Review service for gastronomy listings (SPEC-239 T-039).
+ * Review service for venue listings (SPEC-239 T-039).
  *
  * ## Behavior
  *
@@ -19,7 +19,7 @@
  * - **Rating recompute**: after create / moderation / delete the listing's
  *   denormalized rating is refreshed. Only APPROVED reviews count.
  *
- * @module gastronomy.review.service
+ * @module venue.review.service
  */
 
 import { type VenueReviewModel, venueModel, venueReviewModel } from '@repo/db';
@@ -94,9 +94,9 @@ function computeEffectiveRating(input: VenueReviewCreateInput): number {
 // ---------------------------------------------------------------------------
 
 /**
- * Service for managing gastronomy reviews.
+ * Service for managing venue reviews.
  *
- * Uses `GastronomyReview` as the entity type (inferred from Zod schema) and
+ * Uses `VenueReview` as the entity type (inferred from Zod schema) and
  * `VenueReviewModel` as the DB model.  Where the Drizzle inferred type
  * diverges from the Zod type (e.g. `isVerified`, `reviewerName` absent from
  * the DB columns), explicit `unknown` casts bridge the gap — this is the same
@@ -108,7 +108,7 @@ function computeEffectiveRating(input: VenueReviewCreateInput): number {
  *
  * // Tourist creates a review (goes to PENDING)
  * const result = await service.create(
- *   { gastronomyId: 'uuid', overallRating: 4 },
+ *   { venueId: 'uuid', overallRating: 4 },
  *   actor,
  *   ctx
  * );
@@ -127,7 +127,7 @@ export class VenueReviewService extends BaseCrudService<
     typeof VenueReviewUpdateInputSchema,
     typeof VenueSearchSchema
 > {
-    static readonly ENTITY_NAME = 'gastronomyReview';
+    static readonly ENTITY_NAME = 'venueReview';
 
     protected readonly entityName = VenueReviewService.ENTITY_NAME;
     protected readonly model: VenueReviewModel;
@@ -150,11 +150,11 @@ export class VenueReviewService extends BaseCrudService<
     // -----------------------------------------------------------------------
 
     protected override getDefaultListRelations(): Record<string, boolean> {
-        return { gastronomy: true, user: true };
+        return { venue: true, user: true };
     }
 
     /**
-     * Gastronomy reviews are searched by `title` and `content`, matching the
+     * Venue reviews are searched by `title` and `content`, matching the
      * convention `AccommodationReviewService` and `DestinationReviewService`
      * already follow.
      *
@@ -181,17 +181,17 @@ export class VenueReviewService extends BaseCrudService<
         if (!actor?.id) {
             throw new ServiceError(
                 ServiceErrorCode.FORBIDDEN,
-                'Permission denied: authentication required to submit a gastronomy review'
+                'Permission denied: authentication required to submit a venue review'
             );
         }
     }
 
-    /** Review update is staff-only (`GASTRONOMY_EDIT_ALL`). */
+    /** Review update is staff-only (`VENUE_EDIT_ALL`). */
     protected _canUpdate(actor: Actor, _entity: VenueReview): void {
-        if (!hasPermission(actor, PermissionEnum.GASTRONOMY_EDIT_ALL)) {
+        if (!hasPermission(actor, PermissionEnum.VENUE_EDIT_ALL)) {
             throw new ServiceError(
                 ServiceErrorCode.FORBIDDEN,
-                'Permission denied: GASTRONOMY_EDIT_ALL required to update a gastronomy review'
+                'Permission denied: VENUE_EDIT_ALL required to update a venue review'
             );
         }
     }
@@ -199,30 +199,30 @@ export class VenueReviewService extends BaseCrudService<
     /** Soft-delete: staff or the review author. */
     protected _canSoftDelete(actor: Actor, entity: VenueReview): void {
         const isAuthor = entity.userId === actor.id;
-        if (!hasPermission(actor, PermissionEnum.GASTRONOMY_EDIT_ALL) && !isAuthor) {
+        if (!hasPermission(actor, PermissionEnum.VENUE_EDIT_ALL) && !isAuthor) {
             throw new ServiceError(
                 ServiceErrorCode.FORBIDDEN,
-                'Permission denied: cannot delete this gastronomy review'
+                'Permission denied: cannot delete this venue review'
             );
         }
     }
 
-    /** Hard delete is staff-only (`GASTRONOMY_EDIT_ALL`). */
+    /** Hard delete is staff-only (`VENUE_EDIT_ALL`). */
     protected _canHardDelete(actor: Actor, _entity: VenueReview): void {
-        if (!hasPermission(actor, PermissionEnum.GASTRONOMY_EDIT_ALL)) {
+        if (!hasPermission(actor, PermissionEnum.VENUE_EDIT_ALL)) {
             throw new ServiceError(
                 ServiceErrorCode.FORBIDDEN,
-                'Permission denied: GASTRONOMY_EDIT_ALL required to permanently delete a gastronomy review'
+                'Permission denied: VENUE_EDIT_ALL required to permanently delete a venue review'
             );
         }
     }
 
-    /** Restore is staff-only (`GASTRONOMY_EDIT_ALL`). */
+    /** Restore is staff-only (`VENUE_EDIT_ALL`). */
     protected _canRestore(actor: Actor, _entity: VenueReview): void {
-        if (!hasPermission(actor, PermissionEnum.GASTRONOMY_EDIT_ALL)) {
+        if (!hasPermission(actor, PermissionEnum.VENUE_EDIT_ALL)) {
             throw new ServiceError(
                 ServiceErrorCode.FORBIDDEN,
-                'Permission denied: GASTRONOMY_EDIT_ALL required to restore a gastronomy review'
+                'Permission denied: VENUE_EDIT_ALL required to restore a venue review'
             );
         }
     }
@@ -248,24 +248,24 @@ export class VenueReviewService extends BaseCrudService<
     }
 
     protected _canUpdateVisibility(actor: Actor, _entity: VenueReview, _v: unknown): void {
-        if (!hasPermission(actor, PermissionEnum.GASTRONOMY_EDIT_ALL)) {
+        if (!hasPermission(actor, PermissionEnum.VENUE_EDIT_ALL)) {
             throw new ServiceError(
                 ServiceErrorCode.FORBIDDEN,
-                'Permission denied: GASTRONOMY_EDIT_ALL required to update gastronomy review visibility'
+                'Permission denied: VENUE_EDIT_ALL required to update venue review visibility'
             );
         }
     }
 
     /**
      * Admin-list gate: verifies admin-panel access (base class) then checks
-     * `GASTRONOMY_MODERATE_REVIEW`.
+     * `VENUE_MODERATE_REVIEW`.
      */
     protected override async _canAdminList(actor: Actor): Promise<void> {
         await super._canAdminList(actor);
-        if (!hasPermission(actor, PermissionEnum.GASTRONOMY_MODERATE_REVIEW)) {
+        if (!hasPermission(actor, PermissionEnum.VENUE_MODERATE_REVIEW)) {
             throw new ServiceError(
                 ServiceErrorCode.FORBIDDEN,
-                'Permission denied: GASTRONOMY_MODERATE_REVIEW required for gastronomy review admin list'
+                'Permission denied: VENUE_MODERATE_REVIEW required for venue review admin list'
             );
         }
     }
@@ -289,7 +289,7 @@ export class VenueReviewService extends BaseCrudService<
         actor: Actor,
         ctx: ServiceContext
     ): Promise<Partial<VenueReview>> {
-        const venue = await this._venueModel.findById(data.gastronomyId, ctx.tx);
+        const venue = await this._venueModel.findById(data.venueId, ctx.tx);
         if (
             !resolveResourceStep({
                 actorId: actor.id,
@@ -301,13 +301,13 @@ export class VenueReviewService extends BaseCrudService<
         }
         const existing = await this.model.findOne({
             userId: actor.id,
-            gastronomyId: data.gastronomyId,
+            venueId: data.venueId,
             deletedAt: null
         });
         if (existing) {
             throw new ServiceError(
                 ServiceErrorCode.ALREADY_EXISTS,
-                'You have already submitted a review for this gastronomy listing.'
+                'You have already submitted a review for this venue listing.'
             );
         }
 
@@ -338,7 +338,7 @@ export class VenueReviewService extends BaseCrudService<
         _actor: Actor,
         ctx: ServiceContext
     ): Promise<VenueReview> {
-        await this._recomputeListingRating(entity.gastronomyId, ctx);
+        await this._recomputeListingRating(entity.venueId, ctx);
         return entity;
     }
 
@@ -378,7 +378,7 @@ export class VenueReviewService extends BaseCrudService<
             undefined,
             ctx?.tx
         );
-        return result as unknown as PaginatedListOutput<VenueReview>; // TYPE-WORKAROUND: base list result narrowed to the gastronomy review entity type (Drizzle row vs Zod entity, same bridge as accommodation services)
+        return result as unknown as PaginatedListOutput<VenueReview>; // TYPE-WORKAROUND: base list result narrowed to the venue review entity type (Drizzle row vs Zod entity, same bridge as accommodation services)
     }
 
     /**
@@ -407,18 +407,18 @@ export class VenueReviewService extends BaseCrudService<
     // -----------------------------------------------------------------------
 
     /**
-     * Approves or rejects a gastronomy review (admin moderation action).
+     * Approves or rejects a venue review (admin moderation action).
      *
      * After persisting the decision, the listing's denormalized rating fields
      * (`averageRating`, `reviewsCount`, `rating`) are recomputed from all
      * APPROVED, non-deleted reviews.
      *
-     * Permission: `GASTRONOMY_MODERATE_REVIEW`.
+     * Permission: `VENUE_MODERATE_REVIEW`.
      *
      * @param input - Moderation decision input.
      * @param actor - The admin actor performing the moderation.
      * @param ctx - Optional service context for transaction propagation.
-     * @returns `ServiceOutput<GastronomyReview>` wrapping the updated review.
+     * @returns `ServiceOutput<VenueReview>` wrapping the updated review.
      */
     public async moderateReview(
         input: VenueReviewModerateInput,
@@ -426,12 +426,12 @@ export class VenueReviewService extends BaseCrudService<
         ctx?: ServiceContext
     ): Promise<ServiceOutput<VenueReview>> {
         try {
-            if (!hasPermission(actor, PermissionEnum.GASTRONOMY_MODERATE_REVIEW)) {
+            if (!hasPermission(actor, PermissionEnum.VENUE_MODERATE_REVIEW)) {
                 return {
                     error: {
                         code: ServiceErrorCode.FORBIDDEN,
                         message:
-                            'Permission denied: GASTRONOMY_MODERATE_REVIEW required to moderate reviews'
+                            'Permission denied: VENUE_MODERATE_REVIEW required to moderate reviews'
                     }
                 };
             }
@@ -441,12 +441,12 @@ export class VenueReviewService extends BaseCrudService<
                 return {
                     error: {
                         code: ServiceErrorCode.NOT_FOUND,
-                        message: 'Gastronomy review not found'
+                        message: 'Venue review not found'
                     }
                 };
             }
 
-            const gastronomyId = (review as Record<string, unknown>).gastronomyId as string;
+            const venueId = (review as Record<string, unknown>).venueId as string;
 
             const updated = await this.model.update(
                 { id: input.id },
@@ -469,9 +469,9 @@ export class VenueReviewService extends BaseCrudService<
             }
 
             // Recompute listing rating after every moderation decision.
-            await this._recomputeListingRating(gastronomyId, ctx ?? {});
+            await this._recomputeListingRating(venueId, ctx ?? {});
 
-            return { data: updated as unknown as VenueReview }; // TYPE-WORKAROUND: model row narrowed to the Zod GastronomyReview entity type
+            return { data: updated as unknown as VenueReview }; // TYPE-WORKAROUND: model row narrowed to the Zod VenueReview entity type
         } catch (err) {
             if (err instanceof ServiceError) {
                 return { error: { code: err.code, message: err.message } };
@@ -486,9 +486,9 @@ export class VenueReviewService extends BaseCrudService<
     }
 
     /**
-     * Returns the count of PENDING reviews for the gastronomy entity type.
+     * Returns the count of PENDING reviews for the venue entity type.
      *
-     * Permission: `GASTRONOMY_MODERATE_REVIEW`.
+     * Permission: `VENUE_MODERATE_REVIEW`.
      *
      * @param actor - The actor requesting the count.
      * @param ctx - Optional service context for transaction propagation.
@@ -499,12 +499,12 @@ export class VenueReviewService extends BaseCrudService<
         ctx?: ServiceContext
     ): Promise<ServiceOutput<{ count: number }>> {
         try {
-            if (!hasPermission(actor, PermissionEnum.GASTRONOMY_MODERATE_REVIEW)) {
+            if (!hasPermission(actor, PermissionEnum.VENUE_MODERATE_REVIEW)) {
                 return {
                     error: {
                         code: ServiceErrorCode.FORBIDDEN,
                         message:
-                            'Permission denied: GASTRONOMY_MODERATE_REVIEW required to read pending count'
+                            'Permission denied: VENUE_MODERATE_REVIEW required to read pending count'
                     }
                 };
             }
@@ -538,7 +538,7 @@ export class VenueReviewService extends BaseCrudService<
      * `lifecycleState`, whereas the moderation UI needs to filter by
      * `moderationState`.
      *
-     * Permission: `GASTRONOMY_MODERATE_REVIEW`.
+     * Permission: `VENUE_MODERATE_REVIEW`.
      *
      * @param actor - The admin actor performing the listing.
      * @param params - Optional moderation-state filter and pagination.
@@ -555,12 +555,12 @@ export class VenueReviewService extends BaseCrudService<
         ctx?: ServiceContext
     ): Promise<ServiceOutput<PaginatedListOutput<VenueReview>>> {
         try {
-            if (!hasPermission(actor, PermissionEnum.GASTRONOMY_MODERATE_REVIEW)) {
+            if (!hasPermission(actor, PermissionEnum.VENUE_MODERATE_REVIEW)) {
                 return {
                     error: {
                         code: ServiceErrorCode.FORBIDDEN,
                         message:
-                            'Permission denied: GASTRONOMY_MODERATE_REVIEW required to list reviews for moderation'
+                            'Permission denied: VENUE_MODERATE_REVIEW required to list reviews for moderation'
                     }
                 };
             }
@@ -574,7 +574,7 @@ export class VenueReviewService extends BaseCrudService<
             }
 
             const result = await this.model.findAll(where, { page, pageSize }, undefined, ctx?.tx);
-            return { data: result as unknown as PaginatedListOutput<VenueReview> }; // TYPE-WORKAROUND: base list result narrowed to the gastronomy review entity type (Drizzle row vs Zod entity, same bridge as accommodation services)
+            return { data: result as unknown as PaginatedListOutput<VenueReview> }; // TYPE-WORKAROUND: base list result narrowed to the venue review entity type (Drizzle row vs Zod entity, same bridge as accommodation services)
         } catch (err) {
             if (err instanceof ServiceError) {
                 return { error: { code: err.code, message: err.message } };
@@ -589,22 +589,22 @@ export class VenueReviewService extends BaseCrudService<
     }
 
     /**
-     * Lists all APPROVED + ACTIVE reviews for a specific gastronomy listing.
+     * Lists all APPROVED + ACTIVE reviews for a specific venue listing.
      *
      * Force-filtered — no PENDING / REJECTED reviews are returned.
      *
-     * @param gastronomyId - UUID of the gastronomy listing.
+     * @param venueId - UUID of the venue listing.
      * @param _actor - The actor performing the action (unused; public path).
      * @param ctx - Optional service context for transaction propagation.
      * @returns `ServiceOutput` with the approved review list and total count.
      */
     public async listByVenue(
-        gastronomyId: string,
+        venueId: string,
         _actor: Actor,
         ctx?: ServiceContext
     ): Promise<ServiceOutput<{ reviews: VenueReview[]; total: number }>> {
         try {
-            const venue = await this._venueModel.findById(gastronomyId, ctx?.tx);
+            const venue = await this._venueModel.findById(venueId, ctx?.tx);
             if (
                 venue &&
                 !listingShowsReviews({
@@ -621,7 +621,7 @@ export class VenueReviewService extends BaseCrudService<
             const result = await this.model.findAllWithRelations(
                 { user: true },
                 {
-                    gastronomyId,
+                    venueId,
                     lifecycleState: LifecycleStatusEnum.ACTIVE,
                     moderationState: ModerationStatusEnum.APPROVED,
                     deletedAt: null
@@ -632,7 +632,7 @@ export class VenueReviewService extends BaseCrudService<
             );
             return {
                 data: {
-                    reviews: result.items as unknown as VenueReview[], // TYPE-WORKAROUND: base list result narrowed to the gastronomy review entity type (Drizzle row vs Zod entity, same bridge as accommodation services)
+                    reviews: result.items as unknown as VenueReview[], // TYPE-WORKAROUND: base list result narrowed to the venue review entity type (Drizzle row vs Zod entity, same bridge as accommodation services)
                     total: result.total
                 }
             };
@@ -654,22 +654,19 @@ export class VenueReviewService extends BaseCrudService<
     // -----------------------------------------------------------------------
 
     /**
-     * Recomputes the gastronomy listing's denormalized rating fields from all
+     * Recomputes the venue listing's denormalized rating fields from all
      * APPROVED, non-deleted reviews using `VenueService.recomputeRating`.
      *
      * Called after create, moderation decision, and soft-delete.
      *
-     * @param gastronomyId - UUID of the listing to refresh.
+     * @param venueId - UUID of the listing to refresh.
      * @param ctx - Service context (carries the active transaction).
      */
-    private async _recomputeListingRating(
-        gastronomyId: string,
-        ctx: ServiceContext
-    ): Promise<void> {
+    private async _recomputeListingRating(venueId: string, ctx: ServiceContext): Promise<void> {
         try {
             const { items: approvedReviews } = await this.model.findAll(
                 {
-                    gastronomyId,
+                    venueId,
                     moderationState: ModerationStatusEnum.APPROVED,
                     deletedAt: null
                 },
@@ -694,7 +691,7 @@ export class VenueReviewService extends BaseCrudService<
                 };
             });
 
-            await this._venueService.recomputeRating(gastronomyId, ratingRows, ctx?.tx);
+            await this._venueService.recomputeRating(venueId, ratingRows, ctx?.tx);
         } catch {
             // Swallow recompute errors to prevent a rating-update failure from
             // rolling back the review write (best-effort denormalization).

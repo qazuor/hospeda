@@ -1,6 +1,6 @@
 /**
- * Admin patch gastronomy listing endpoint (partial PATCH).
- * Allows admins to partially update any gastronomy listing.
+ * Admin patch venue listing endpoint (partial PATCH).
+ * Allows admins to partially update any venue listing.
  */
 import {
     VenueAdminSchema,
@@ -19,20 +19,19 @@ import { createAdminRoute } from '../../../utils/route-factory';
 const venueService = new VenueService({ logger: apiLogger });
 
 /**
- * PATCH /api/v1/admin/gastronomies/:id
- * Partial update gastronomy listing — Admin endpoint.
+ * PATCH /api/v1/admin/venues/:id
+ * Partial update venue listing — Admin endpoint.
  *
- * Uses the same `GastronomyUpdateInputSchema` (all fields partial) as the PUT
- * endpoint. Requires GASTRONOMY_EDIT_ALL permission.
+ * Uses the same `VenueUpdateInputSchema` (all fields partial) as the PUT
+ * endpoint. Requires VENUE_EDIT_ALL permission.
  */
 export const adminPatchVenueRoute = createAdminRoute({
     method: 'patch',
     listingAccess: { vertical: VerticalEnum.VENUE, operation: 'EDIT', idParam: 'id' },
     path: '/{id}',
-    summary: 'Partial update gastronomy listing (admin)',
-    description:
-        'Updates specific fields of a gastronomy listing. Requires GASTRONOMY_EDIT_ALL permission.',
-    tags: ['Gastronomy'],
+    summary: 'Partial update venue listing (admin)',
+    description: 'Updates specific fields of a venue listing. Requires VENUE_EDIT_ALL permission.',
+    tags: ['Venue'],
     requestParams: {
         id: z.string().uuid({ message: 'zodError.common.id.invalidUuid' })
     },

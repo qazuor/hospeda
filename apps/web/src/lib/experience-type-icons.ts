@@ -7,7 +7,7 @@
  *
  * Unlike `accommodation-type-icons.ts` (a thin re-export of a cross-app
  * `@repo/icons/domain` module), this mapping lives locally in `apps/web`
- * because gastronomy/experience listings are web-only today — there is no
+ * because venue/experience listings are web-only today — there is no
  * `@repo/icons/domain/experience-type.ts` shared with `apps/admin` yet.
  */
 import {

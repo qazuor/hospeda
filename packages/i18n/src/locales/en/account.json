@@ -79,18 +79,18 @@
             "title": "Your business",
             "body": "Edit the public content, opening hours and visible details of your business."
         },
-        "greetingGastronomy": {
+        "greetingVenue": {
             "title": "Welcome to your restaurant dashboard",
             "body": "From here you can manage your account and the public content of your restaurant."
         },
-        "listingGastronomy": {
+        "listingVenue": {
             "body": "Edit the menu, opening hours and visible details of your restaurant."
         },
         "myListings": {
             "title": "Your businesses",
             "body": "Review the status of each of your businesses and edit them."
         },
-        "gastronomyQr": {
+        "venueQr": {
             "title": "Your menu QR code",
             "body": "Generate your menu's QR code and check how many times your customers scanned it."
         },
@@ -164,15 +164,15 @@
                     "description": "List your accommodation on Hospeda and reach thousands of travelers looking to stay in the region.",
                     "cta": "List your accommodation"
                 },
-                "gastronomy": {
-                    "title": "Dining",
-                    "description": "Add your food business to Hospeda — restaurant, grill, bakery, café or food truck. Leave your details, we approve your request, and from your account you complete and publish your own listing.",
-                    "cta": "List your food business"
-                },
                 "experience": {
                     "title": "Experiences",
                     "description": "Do you offer tours, activities, or experiences for travelers? Leave your details, we approve your request, and from your account you complete and publish your own listing.",
                     "cta": "List your experience"
+                },
+                "venue": {
+                    "title": "Dining",
+                    "description": "Add your food business to Hospeda — restaurant, grill, bakery, café or food truck. Leave your details, we approve your request, and from your account you complete and publish your own listing.",
+                    "cta": "List your food business"
                 }
             }
         },
@@ -448,8 +448,8 @@
             "endedExpired": "Your trial ended on {{end}}.",
             "vertical": {
                 "accommodation": "accommodation",
-                "gastronomy": "gastronomy",
-                "experience": "experiences"
+                "experience": "experiences",
+                "venue": "Food & nightlife"
             },
             "total_one": "{{count}} trial day in total",
             "total_other": "{{count}} trial days in total",
@@ -483,11 +483,11 @@
             "grace": "We could not charge your installment. If you change the card you pay with on Mercado Pago, the charge is retried right away; we cannot promise it will go through. If it does not go through before {{date}}, your subscription is suspended and you will have to subscribe again.",
             "vertical": {
                 "accommodation": "Accommodation",
-                "gastronomy": "Gastronomy",
                 "experience": "Experiences",
                 "tourist": "Tourist",
                 "partner": "Partners",
-                "unknown": "Hospeda"
+                "unknown": "Hospeda",
+                "venue": "Food & nightlife"
             },
             "price": "{{amount}} {{cycle}}",
             "nextCharge": "Next charge: {{date}}, for {{amount}}."
@@ -554,7 +554,7 @@
             "destination": "Destinations",
             "event": "Events",
             "experience": "Experiences",
-            "gastronomy": "Gastronomy",
+            "venue": "Food & nightlife",
             "post": "Blog"
         },
         "collections": {
@@ -798,15 +798,15 @@
             "cancelModal": {
                 "body": "To cancel your subscription, email us at info@hospeda.com.ar and an agent will process it promptly. Your plan will remain active until the end of the current period."
             },
-            "titleGastronomy": "Gastronomy subscription",
+            "titleVenue": "Food & nightlife subscription",
             "titleExperience": "Experience subscription",
             "titleTourist": "Traveler subscription",
             "domainSwitcher": {
                 "label": "Choose which subscription to view",
                 "accommodation": "Accommodation",
-                "gastronomy": "Gastronomy",
                 "experience": "Experiences",
-                "tourist": "Traveler"
+                "tourist": "Traveler",
+                "venue": "Food & nightlife"
             }
         },
         "whatsNew": {

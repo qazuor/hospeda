@@ -38,8 +38,8 @@ describe('TEST:V5:5 GUARD:G2 (c)', () => {
     it('accepts the current branch and a listing update without a vertical field', () => {
         expect(run().exitCode).toBe(0);
         const root = makeTree({
-            'packages/service-core/src/services/gastronomy/gastronomy.service.ts':
-                'db.update(gastronomies).set({ name: "New name" });\n'
+            'packages/service-core/src/services/venue/venue.service.ts':
+                'db.update(venues).set({ name: "New name" });\n'
         });
         expect(run({ root, minScannedFiles: 1 }).exitCode).toBe(0);
     });
@@ -77,8 +77,7 @@ describe('TEST:V5:5 GUARD:G2 (c)', () => {
         const file = 'packages/service-core/src/services/venue/venue.service.ts';
         const root = makeTree({
             [file]:
-                'const unchanged = 1;\n' +
-                'db.update(gastronomies).set({ vertical: "accommodation" });\n'
+                'const unchanged = 1;\n' + 'db.update(venues).set({ vertical: "accommodation" });\n'
         });
         const result = run({ root, minScannedFiles: 1 });
         expect(result.exitCode).toBe(1);
@@ -99,12 +98,12 @@ describe('TEST:V5:5 GUARD:G2 (c)', () => {
         expect(
             findImmutableVerticalWrites({
                 file,
-                source: '// db.update(accommodations).set({ vertical: "gastronomy" });\n'
+                source: '// db.update(accommodations).set({ vertical: "venue" });\n'
             })
         ).toEqual([]);
         const root = makeTree({
             'apps/api/src/routes/accommodation/patch.test.ts':
-                'db.update(accommodations).set({ vertical: "gastronomy" });\n'
+                'db.update(accommodations).set({ vertical: "venue" });\n'
         });
         expect(run({ root, minScannedFiles: 1 }).output).toContain('expected at least 1');
     });

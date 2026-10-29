@@ -1,6 +1,6 @@
 /**
- * Unit tests for the owner self-service gastronomy create handler (HOS-166 §7.2, D-3):
- * `handleCreateVenueListing` behind `POST /api/v1/protected/gastronomies/`.
+ * Unit tests for the owner self-service venue create handler (HOS-166 §7.2, D-3):
+ * `handleCreateVenueListing` behind `POST /api/v1/protected/venues/`.
  *
  * The handler is exported standalone and exercised against a mocked `Context`,
  * with `VenueService` replaced by a spy so the exact payload passed to
@@ -93,7 +93,7 @@ function createMockContext() {
     return { get: vi.fn((key: string) => store.get(key)) };
 }
 
-// H-88: `destinationId` belongs in a valid body. `gastronomies.destination_id`
+// H-88: `destinationId` belongs in a valid body. `venues.destination_id`
 // is NOT NULL with no default, so a create without it never produced a row — it
 // reached Postgres and came back as a bare 500. It is now rejected at the schema
 // boundary instead, which is what these fixtures have to reflect. (`ownerId` is
@@ -108,7 +108,7 @@ const VALID_VENUE_BODY = {
     destinationId: '00000000-0000-4000-a000-000000000002'
 };
 
-describe('handleCreateGastronomyListing (HOS-166 §7.2, D-3)', () => {
+describe('handleCreateVenueListing (HOS-166 §7.2, D-3)', () => {
     beforeEach(() => {
         vi.clearAllMocks();
         mockCreateForOwner.mockResolvedValue({
@@ -150,10 +150,10 @@ describe('handleCreateGastronomyListing (HOS-166 §7.2, D-3)', () => {
     it('drops a caller-supplied slug end-to-end through the real request pipeline (OQ-3)', async () => {
         // The handler alone does NOT strip `slug` (it re-parses against the
         // ADMIN schema, which permits it) — the guarantee lives at the ROUTE
-        // level, where `requestBody: GastronomyOwnerCreateInputSchema` runs
+        // level, where `requestBody: VenueOwnerCreateInputSchema` runs
         // BEFORE the handler ever sees the body. Simulate that real pipeline
         // here instead of asserting a property the handler itself does not
-        // own (see gastronomy.crud.schema.test.ts for the schema-level guard).
+        // own (see venue.crud.schema.test.ts for the schema-level guard).
         const validatedBody = VenueOwnerCreateInputSchema.parse({
             ...VALID_VENUE_BODY,
             slug: 'owner-chosen-slug'

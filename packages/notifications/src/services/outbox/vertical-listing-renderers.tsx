@@ -32,7 +32,7 @@ const SUPPORT_EDIT_PART_LABELS = {
  * The verticals whose listings share the publication machine. Literal values
  * of `VerticalEnum` (`@repo/schemas`), which this package does not depend on.
  */
-export type ListingNoticeVertical = 'accommodation' | 'gastronomy' | 'experience';
+export type ListingNoticeVertical = 'accommodation' | 'venue' | 'experience';
 
 /**
  * Reads the names of listings of one vertical by id, whatever their state
@@ -47,14 +47,14 @@ export type ListingNamesReader = (input: {
 /** The owner's Mi Cuenta listing page, per vertical. */
 const ACCOUNT_LISTINGS_PATH: Readonly<Record<ListingNoticeVertical, string>> = {
     accommodation: '/es/mi-cuenta/propiedades/',
-    gastronomy: '/es/mi-cuenta/comercio/',
+    venue: '/es/mi-cuenta/comercio/',
     experience: '/es/mi-cuenta/comercio/'
 };
 
 const SUBSCRIPTION_PATH = '/es/mi-cuenta/suscripcion/';
 const VERTICAL_LABELS: Readonly<Record<ListingNoticeVertical, string>> = {
     accommodation: 'alojamiento',
-    gastronomy: 'gastronomía',
+    venue: 'Comer y salir',
     experience: 'experiencia'
 };
 

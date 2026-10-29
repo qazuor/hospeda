@@ -176,13 +176,9 @@ describe('TEST:V4:2 - the trial is single for life', () => {
         await inRolledBackTx(async ({ client, attempt }) => {
             const first = await insertUser(client);
             const second = await insertUser(client);
-            await client.query(INSERT_CONSUMED, [first, 'gastronomy', pseudonymOf('same')]);
+            await client.query(INSERT_CONSUMED, [first, 'venue', pseudonymOf('same')]);
 
-            const error = await attempt(INSERT_CONSUMED, [
-                second,
-                'gastronomy',
-                pseudonymOf('same')
-            ]);
+            const error = await attempt(INSERT_CONSUMED, [second, 'venue', pseudonymOf('same')]);
 
             expect(error?.code).toBe('23505');
             expect(error?.constraint).toBe('uq_trial_email_pseudonym_vertical');
@@ -214,11 +210,7 @@ describe('TEST:V4:2 - the trial is single for life', () => {
             const userId = await insertUser(client);
             await client.query(INSERT_CONSUMED, [userId, 'accommodation', pseudonymOf('multi')]);
 
-            const error = await attempt(INSERT_CONSUMED, [
-                userId,
-                'gastronomy',
-                pseudonymOf('multi')
-            ]);
+            const error = await attempt(INSERT_CONSUMED, [userId, 'venue', pseudonymOf('multi')]);
 
             expect(error).toBeNull();
         });
@@ -387,7 +379,7 @@ describe('TEST:V4:2 - the shape of a trial row', () => {
     it('rejects a trial plan or a floor version that belongs to another vertical', async () => {
         await inRolledBackTx(async ({ client, attempt }) => {
             const userId = await insertUser(client);
-            const { planId, versionId } = await insertPlanAndVersion(client, 'gastronomy');
+            const { planId, versionId } = await insertPlanAndVersion(client, 'venue');
 
             const error = await attempt(INSERT_ACTIVE, [
                 userId,
@@ -503,7 +495,7 @@ describe('TEST:V4:2 - the shape of a trial row', () => {
         await inRolledBackTx(async ({ client, attempt }) => {
             const userId = await insertUser(client);
             const own = await insertPlanAndVersion(client, 'accommodation');
-            const foreign = await insertPlanAndVersion(client, 'gastronomy');
+            const foreign = await insertPlanAndVersion(client, 'venue');
 
             const error = await attempt(INSERT_ACTIVE, [
                 userId,

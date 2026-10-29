@@ -1,6 +1,6 @@
 /**
- * Protected create gastronomy review endpoint (T-044)
- * A logged-in tourist (or any authenticated user) submits a review for a gastronomy listing.
+ * Protected create venue review endpoint (T-044)
+ * A logged-in tourist (or any authenticated user) submits a review for a venue listing.
  *
  * Behavior:
  * - moderationState is forced to PENDING by VenueReviewService._beforeCreate()
@@ -31,7 +31,7 @@ const writeReviewRateLimit = createSlidingWindowPerUserRateLimit({
  */
 const VenueReviewProtectedSchema = VenueReviewSchema.pick({
     id: true,
-    gastronomyId: true,
+    venueId: true,
     userId: true,
     title: true,
     content: true,
@@ -46,25 +46,25 @@ const VenueReviewProtectedSchema = VenueReviewSchema.pick({
 });
 
 /**
- * POST /api/v1/protected/gastronomies/:gastronomyId/reviews
- * Create a gastronomy review — Protected endpoint.
+ * POST /api/v1/protected/venues/:venueId/reviews
+ * Create a venue review — Protected endpoint.
  *
- * gastronomyId and userId are supplied by the URL and the authenticated actor
+ * venueId and userId are supplied by the URL and the authenticated actor
  * respectively — the client MUST NOT echo them in the request body (they are
- * absent from GastronomyReviewCreateInputSchema... actually gastronomyId IS
+ * absent from VenueReviewCreateInputSchema... actually venueId IS
  * required there, so we merge it from the path param).
  */
 export const protectedCreateVenueReviewRoute = createProtectedRoute({
     method: 'post',
-    path: '/{gastronomyId}/reviews',
-    summary: 'Create gastronomy review',
+    path: '/{venueId}/reviews',
+    summary: 'Create venue reviews',
     description:
-        'Submits a new review for a gastronomy listing. The review starts in PENDING state awaiting moderation.',
-    tags: ['Gastronomy', 'Gastronomy Reviews'],
+        'Submits a new review for a venue listing. The review starts in PENDING state awaiting moderation.',
+    tags: ['Venue', 'Venue Reviews'],
     requestParams: {
-        gastronomyId: VenueReviewCreateInputSchema.shape.gastronomyId
+        venueId: VenueReviewCreateInputSchema.shape.venueId
     },
-    requestBody: VenueReviewCreateInputSchema.omit({ gastronomyId: true }),
+    requestBody: VenueReviewCreateInputSchema.omit({ venueId: true }),
     responseSchema: VenueReviewProtectedSchema,
     handler: async (
         ctx: Context,
@@ -74,7 +74,7 @@ export const protectedCreateVenueReviewRoute = createProtectedRoute({
         const actor = getActorFromContext(ctx);
         const input = {
             ...(body as z.infer<typeof VenueReviewCreateInputSchema>),
-            gastronomyId: params.gastronomyId as string
+            venueId: params.venueId as string
         };
 
         const service = new VenueReviewService({ logger: apiLogger });

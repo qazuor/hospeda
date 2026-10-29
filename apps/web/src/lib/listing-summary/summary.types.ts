@@ -1,12 +1,12 @@
 /**
  * Type definitions for the listing summary builder.
  *
- * Shared by the gastronomy and experience listing pages (BETA-119). Both
+ * Shared by the venue and experience listing pages (BETA-119). Both
  * entities have near-identical filter shapes (text, single type/category,
  * destination, isFeatured, minRating) and IDENTICAL sort options
  * (featured | ratingDesc | newest | nameAsc) — only the subject noun
  * (with its grammatical gender) and the optional `priceRange` facet
- * (gastronomy-only) differ. Rather than duplicating the full
+ * (venue-only) differ. Rather than duplicating the full
  * types/catalogs/descriptors/builder set twice (as `post-listing-summary`
  * and `event-listing-summary` do per-entity), this module parametrizes a
  * single builder via {@link ListingEntityConfig} and exposes thin
@@ -31,13 +31,13 @@ export interface SummaryCatalogs {
     readonly destinations?: readonly CatalogEntry[];
     /** Entity type/category label entries keyed by enum value. */
     readonly types?: readonly CatalogEntry[];
-    /** Price-range label entries keyed by enum value (gastronomy only). */
+    /** Price-range label entries keyed by enum value (venue only). */
     readonly priceRanges?: readonly CatalogEntry[];
 }
 
 /**
  * Filters applied to a listing. All fields are optional — only
- * active filters contribute to the summary. Both gastronomy and experience
+ * active filters contribute to the summary. Both venue and experience
  * pages read these as single (non-multi) URL query params.
  */
 export interface ListingSummaryFilters {
@@ -47,7 +47,7 @@ export interface ListingSummaryFilters {
     readonly type?: string | null;
     /** Destination UUID — resolved to a label via the destinations catalog. */
     readonly destinationId?: string | null;
-    /** Categorical price range (e.g. 'BUDGET', 'PREMIUM'). Gastronomy only. */
+    /** Categorical price range (e.g. 'BUDGET', 'PREMIUM'). Venue only. */
     readonly priceRange?: string | null;
     /** Minimum star rating (1-5, may include a decimal). */
     readonly minRating?: number | null;

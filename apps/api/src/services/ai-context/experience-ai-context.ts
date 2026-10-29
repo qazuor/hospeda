@@ -12,8 +12,8 @@
  * (how to GET there, and the map that draws it) is gated behind
  * `MANAGE_EXPERIENCE_DIRECTIONS` from `-pro` upward — HOS-1049 drew that line
  * deliberately. This assembler honours it from the entitlement set the ROUTE
- * resolved, for the reason the gastronomy assembler gates the carta: today every
- * gastronomy or experience tier granting `AI_CHAT` also grants the directions, and that is a
+ * resolved, for the reason the venue assembler gates the carta: today every
+ * venue or experience tier granting `AI_CHAT` also grants the directions, and that is a
  * property of the current catalogue rather than a guarantee.
  *
  * @module apps/api/services/ai-context/experience-ai-context

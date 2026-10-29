@@ -1,6 +1,6 @@
 /** TEST:1744:6 — PB3 revalidates all three verticals and omits incomplete listings from its notice. */
 import { randomUUID } from 'node:crypto';
-import { accommodations, emailOutbox, eq, experiences, gastronomies, getDb } from '@repo/db';
+import { accommodations, emailOutbox, eq, experiences, getDb, venues } from '@repo/db';
 import { PublicationStatusEnum, VerticalEnum } from '@repo/schemas';
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
 import { recalculateCoverage } from '../../../../../packages/verticals/src/publication/coverage-recalculation';
@@ -92,9 +92,9 @@ async function readStatus(vertical: (typeof verticals)[number], id: string) {
     }
     if (vertical === VerticalEnum.VENUE) {
         const [row] = await getDb()
-            .select({ status: gastronomies.publicationStatus })
-            .from(gastronomies)
-            .where(eq(gastronomies.id, id));
+            .select({ status: venues.publicationStatus })
+            .from(venues)
+            .where(eq(venues.id, id));
         return row?.status;
     }
     const [row] = await getDb()

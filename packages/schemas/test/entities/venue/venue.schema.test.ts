@@ -18,15 +18,15 @@ import {
 import { VenueSchema } from '../../../src/entities/venue/venue.schema.js';
 import { PublicationStatusEnum } from '../../../src/enums/publication-status.enum.js';
 import {
-    createInvalidGastronomy,
-    createMinimalGastronomy,
-    createValidGastronomy
+    createInvalidVenue,
+    createMinimalVenue,
+    createValidVenue
 } from '../../fixtures/venue.fixtures.js';
 
-describe('GastronomySchema', () => {
+describe('VenueSchema', () => {
     describe('Valid Data', () => {
-        it('should validate a complete valid gastronomy listing', () => {
-            const data = createValidGastronomy();
+        it('should validate a complete valid venue listing', () => {
+            const data = createValidVenue();
             expect(() => VenueSchema.parse(data)).not.toThrow();
 
             const result = VenueSchema.parse(data);
@@ -35,29 +35,29 @@ describe('GastronomySchema', () => {
             expect(result.type).toBe(data.type);
         });
 
-        it('should validate minimal required gastronomy data', () => {
-            const data = createMinimalGastronomy();
+        it('should validate minimal required venue data', () => {
+            const data = createMinimalVenue();
             expect(() => VenueSchema.parse(data)).not.toThrow();
         });
 
         it('should accept nullish priceRange', () => {
-            const data = { ...createMinimalGastronomy(), priceRange: null };
+            const data = { ...createMinimalVenue(), priceRange: null };
             expect(() => VenueSchema.parse(data)).not.toThrow();
         });
 
         it('should accept openingHours: null (M-2 regression — .nullish() fix)', () => {
             // OpeningHoursFields uses .nullish() so Drizzle/pg can return null for
             // unset JSONB columns. A bare .optional() would reject null here.
-            const data = { ...createMinimalGastronomy(), openingHours: null };
+            const data = { ...createMinimalVenue(), openingHours: null };
             expect(() => VenueSchema.parse(data)).not.toThrow();
         });
 
         it('should accept a valid HTTPS menuUrl', () => {
-            const data = { ...createMinimalGastronomy(), menuUrl: 'https://example.com/menu' };
+            const data = { ...createMinimalVenue(), menuUrl: 'https://example.com/menu' };
             expect(() => VenueSchema.parse(data)).not.toThrow();
         });
 
-        it('should accept all valid GastronomyTypeEnum values', () => {
+        it('should accept all valid VenueTypeEnum values', () => {
             const types = [
                 'RESTAURANT',
                 'BAR',
@@ -70,65 +70,65 @@ describe('GastronomySchema', () => {
                 'FOOD_TRUCK'
             ];
             for (const type of types) {
-                const data = { ...createMinimalGastronomy(), type };
+                const data = { ...createMinimalVenue(), type };
                 expect(() => VenueSchema.parse(data), `should accept type ${type}`).not.toThrow();
             }
         });
 
         it('should accept all valid PriceRangeEnum values', () => {
             for (const pr of ['BUDGET', 'MID', 'HIGH', 'PREMIUM']) {
-                const data = { ...createMinimalGastronomy(), priceRange: pr };
+                const data = { ...createMinimalVenue(), priceRange: pr };
                 expect(() => VenueSchema.parse(data), `should accept ${pr}`).not.toThrow();
             }
         });
     });
 
     describe('Invalid Data', () => {
-        it('should reject gastronomy with invalid data', () => {
-            const data = createInvalidGastronomy();
+        it('should reject venue with invalid data', () => {
+            const data = createInvalidVenue();
             expect(() => VenueSchema.parse(data)).toThrow(ZodError);
         });
 
         it('should reject when type is missing', () => {
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            const { type: _t, ...data } = createMinimalGastronomy() as any;
+            const { type: _t, ...data } = createMinimalVenue() as any;
             expect(() => VenueSchema.parse(data)).toThrow(ZodError);
         });
 
         it('should reject when destinationId is missing', () => {
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            const { destinationId: _d, ...data } = createMinimalGastronomy() as any;
+            const { destinationId: _d, ...data } = createMinimalVenue() as any;
             expect(() => VenueSchema.parse(data)).toThrow(ZodError);
         });
 
         it('should reject non-HTTPS menuUrl', () => {
-            const data = { ...createMinimalGastronomy(), menuUrl: 'http://insecure.com/menu' };
+            const data = { ...createMinimalVenue(), menuUrl: 'http://insecure.com/menu' };
             expect(() => VenueSchema.parse(data)).toThrow(ZodError);
         });
 
         it('should reject an invalid type value (enum validation on entity schema)', () => {
-            // GastronomySchema.type is GastronomyTypeEnumSchema — invalid values are rejected.
-            const data = { ...createMinimalGastronomy(), type: 'PIZZERIA' };
+            // venueSchema.type is venueTypeEnumSchema — invalid values are rejected.
+            const data = { ...createMinimalVenue(), type: 'PIZZERIA' };
             expect(() => VenueSchema.parse(data)).toThrow(ZodError);
         });
 
         it('should reject invalid id format', () => {
-            const data = { ...createMinimalGastronomy(), id: 'not-a-uuid' };
+            const data = { ...createMinimalVenue(), id: 'not-a-uuid' };
             expect(() => VenueSchema.parse(data)).toThrow(ZodError);
         });
 
         it('should reject name shorter than 2 characters', () => {
-            const data = { ...createMinimalGastronomy(), name: 'A' };
+            const data = { ...createMinimalVenue(), name: 'A' };
             expect(() => VenueSchema.parse(data)).toThrow(ZodError);
         });
 
         it('should reject summary shorter than 10 characters', () => {
-            const data = { ...createMinimalGastronomy(), summary: 'Too short' };
+            const data = { ...createMinimalVenue(), summary: 'Too short' };
             expect(() => VenueSchema.parse(data)).toThrow(ZodError);
         });
 
         it('should reject description shorter than 20 characters', () => {
-            const data = { ...createMinimalGastronomy(), description: 'Too short' };
+            const data = { ...createMinimalVenue(), description: 'Too short' };
             expect(() => VenueSchema.parse(data)).toThrow(ZodError);
         });
     });
@@ -145,10 +145,10 @@ const OLD_STATE_FIELDS: readonly string[] = [
     ...Object.keys(BaseModerationFields)
 ];
 
-describe('GastronomySchema.publicationStatus (HOS-1641)', () => {
+describe('VenueSchema.publicationStatus (HOS-1641)', () => {
     it.each(Object.values(PublicationStatusEnum))('accepts the %s state', (state) => {
         // Arrange
-        const data = { ...createMinimalGastronomy(), publicationStatus: state };
+        const data = { ...createMinimalVenue(), publicationStatus: state };
 
         // Act
         const result = VenueSchema.safeParse(data);
@@ -162,7 +162,7 @@ describe('GastronomySchema.publicationStatus (HOS-1641)', () => {
 
     it('rejects a value outside the six states (the old ACTIVE)', () => {
         const result = VenueSchema.safeParse({
-            ...createMinimalGastronomy(),
+            ...createMinimalVenue(),
             publicationStatus: 'ACTIVE'
         });
         expect(result.success).toBe(false);
@@ -177,12 +177,12 @@ describe('GastronomySchema.publicationStatus (HOS-1641)', () => {
     });
 });
 
-describe('Gastronomy write inputs never take publicationStatus (R3)', () => {
+describe('Venue write inputs never take publicationStatus (R3)', () => {
     const INPUTS = [
-        { name: 'GastronomyOwnerCreateInputSchema', schema: VenueOwnerCreateInputSchema },
-        { name: 'GastronomyAdminCreateInputSchema', schema: VenueAdminCreateInputSchema },
-        { name: 'GastronomyOwnerUpdateInputSchema', schema: VenueOwnerUpdateInputSchema },
-        { name: 'GastronomyUpdateInputSchema', schema: VenueUpdateInputSchema }
+        { name: 'VenueOwnerCreateInputSchema', schema: VenueOwnerCreateInputSchema },
+        { name: 'VenueAdminCreateInputSchema', schema: VenueAdminCreateInputSchema },
+        { name: 'VenueOwnerUpdateInputSchema', schema: VenueOwnerUpdateInputSchema },
+        { name: 'VenueUpdateInputSchema', schema: VenueUpdateInputSchema }
     ] as const;
 
     for (const { name, schema } of INPUTS) {
@@ -192,7 +192,7 @@ describe('Gastronomy write inputs never take publicationStatus (R3)', () => {
     }
 });
 
-describe('Gastronomy read tiers (H3)', () => {
+describe('Venue read tiers (H3)', () => {
     it('the PUBLIC tier exposes neither visibility nor publicationStatus', () => {
         const keys = Object.keys(VenuePublicSchema.shape);
         for (const field of Object.keys(BaseVisibilityFields)) {
@@ -202,8 +202,8 @@ describe('Gastronomy read tiers (H3)', () => {
     });
 
     it.each([
-        ['GastronomyProtectedSchema', VenueProtectedSchema],
-        ['GastronomyAdminSchema', VenueAdminSchema]
+        ['VenueProtectedSchema', VenueProtectedSchema],
+        ['VenueAdminSchema', VenueAdminSchema]
     ] as const)('%s exposes publicationStatus and none of the old trio', (_name, schema) => {
         const keys = Object.keys(schema.shape);
         expect(keys).toContain('publicationStatus');
@@ -213,7 +213,7 @@ describe('Gastronomy read tiers (H3)', () => {
     });
 });
 
-describe('GastronomyAdminSearchSchema.status filters by publicationStatus (H7)', () => {
+describe('VenueAdminSearchSchema.status filters by publicationStatus (H7)', () => {
     it.each(Object.values(PublicationStatusEnum))('accepts %s', (state) => {
         expect(VenueAdminSearchSchema.safeParse({ status: state }).success).toBe(true);
     });

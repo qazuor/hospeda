@@ -1,6 +1,6 @@
 /**
- * Admin update gastronomy review endpoint.
- * Allows admins to update any gastronomy review.
+ * Admin update venue review endpoint.
+ * Allows admins to update any venue review.
  */
 import {
     PermissionEnum,
@@ -18,23 +18,19 @@ import { createAdminRoute } from '../../../../utils/route-factory';
 const venueReviewService = new VenueReviewService({ logger: apiLogger });
 
 /**
- * PUT /api/v1/admin/gastronomies/reviews/:id
- * Update gastronomy review — Admin endpoint.
+ * PUT /api/v1/admin/venues/reviews/:id
+ * Update venue review — Admin endpoint.
  *
- * Requires both GASTRONOMY_EDIT_ALL and GASTRONOMY_MODERATE_REVIEW — reviews are
+ * Requires both VENUE_EDIT_ALL and VENUE_MODERATE_REVIEW — reviews are
  * moderated content (mirrors accommodation review update pattern).
  */
 export const adminUpdateVenueReviewRoute = createAdminRoute({
     method: 'put',
     path: '/{id}',
-    summary: 'Update gastronomy review (admin)',
-    description:
-        'Updates a gastronomy review. Requires GASTRONOMY_EDIT_ALL AND GASTRONOMY_MODERATE_REVIEW.',
-    tags: ['Gastronomy Reviews', 'Admin'],
-    anyOfPermissions: [
-        [PermissionEnum.GASTRONOMY_EDIT_ALL],
-        [PermissionEnum.GASTRONOMY_MODERATE_REVIEW]
-    ],
+    summary: 'Update venue reviews (admin)',
+    description: 'Updates a venue reviews. Requires VENUE_EDIT_ALL AND VENUE_MODERATE_REVIEW.',
+    tags: ['Venue Reviews', 'Admin'],
+    anyOfPermissions: [[PermissionEnum.VENUE_EDIT_ALL], [PermissionEnum.VENUE_MODERATE_REVIEW]],
     requestParams: {
         id: z.string().uuid({ message: 'zodError.common.id.invalidUuid' })
     },

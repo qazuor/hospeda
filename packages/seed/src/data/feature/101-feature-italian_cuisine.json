@@ -7,7 +7,7 @@
         "en": "Italian cuisine: pasta, pizza and traditional Italian dishes",
         "pt": "Cozinha italiana: massas, pizzas e pratos da tradição italiana"
     },
-    "applicableVerticals": ["gastronomy"],
+    "applicableVerticals": ["venue"],
     "icon": "RestaurantIcon",
     "isBuiltin": false,
     "isFeatured": true,

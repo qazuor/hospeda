@@ -2,7 +2,7 @@
  * @file publication-status-options.ts
  * The panel's single reading of a listing's publication state (HOS-1641).
  *
- * Accommodations, gastronomies and experiences no longer carry
+ * Accommodations, venue listings and experiences no longer carry
  * `lifecycleState`, `visibility` or `moderationState`: their state is ONE
  * `publicationStatus` (`PublicationStatusEnum`, six values). Every list of the
  * three verticals filters and shows that column through this module, so the

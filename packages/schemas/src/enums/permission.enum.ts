@@ -60,8 +60,8 @@ export enum PermissionCategoryEnum {
     ACCESS = 'ACCESS',
     MEDIA = 'MEDIA',
     MODERATION = 'MODERATION',
-    /** Gastronomy listings (HOS-1077). */
-    GASTRONOMY = 'GASTRONOMY',
+    /** venue listings (HOS-1077). */
+    VENUE = 'VENUE',
     /** Experience listings (HOS-1077). */
     EXPERIENCE = 'EXPERIENCE',
     HOST_TRADE = 'HOST_TRADE',
@@ -933,16 +933,16 @@ export enum PermissionEnum {
     MODERATION_THRESHOLD_RESTORE = 'moderation.threshold.restore', // Allows restoring a soft-deleted moderation threshold.
     MODERATION_THRESHOLD_HARD_DELETE = 'moderation.threshold.hardDelete', // Allows permanently deleting a moderation threshold.
 
-    // GASTRONOMY / EXPERIENCE: the per-vertical replacement for the retired
+    // venue / EXPERIENCE: the per-vertical replacement for the retired
     // shared permission family that named both verticals at once (HOS-1077 / HOS-1417).
     //
     // ## Why these exist
     //
     // That family named TWO product verticals at once, so it was impossible to
-    // grant edit rights over gastronomy without also granting them over
+    // grant edit rights over venue without also granting them over
     // experiences: a restaurant moderator could moderate excursions too.
     // Accommodation never had that problem — it is one vertical with its own
-    // family. These 14 give gastronomy and experience the same vocabulary.
+    // family. These 14 give venue and experience the same vocabulary.
     //
     // ## Deliberate shape: 7 each, NOT 64 each
     //
@@ -950,7 +950,7 @@ export enum PermissionEnum {
     // Roughly 14 of accommodation's 64 are per-SECTION listing permissions
     // (`amenities.edit`, `basicInfo.edit`, `faqs.edit`, `gallery.manage`, …)
     // that SPEC-253 D2=b deliberately collapsed into one owner permission.
-    // Others correspond to functionality gastronomy and experience do not have
+    // Others correspond to functionality venue and experience do not have
     // (`occupancy.manage`, `iaContent.approve`, `location.exact.view`), and a
     // permission no route ever demands is dead letter.
     //
@@ -961,13 +961,13 @@ export enum PermissionEnum {
     // add a dual-spelled family to the baseline frozen by
     // `permission-naming-convention.guard.test.ts`.
     //
-    GASTRONOMY_EDIT_OWN = 'gastronomy.editOwn', // Allows a GASTRONOMY_OWNER to edit their own gastronomy listing.
-    GASTRONOMY_CREATE = 'gastronomy.create', // Allows creating a new gastronomy listing.
-    GASTRONOMY_VIEW_ALL = 'gastronomy.viewAll', // Allows viewing all gastronomy listings (including private/draft).
-    GASTRONOMY_EDIT_ALL = 'gastronomy.editAll', // Allows editing any gastronomy listing regardless of ownership.
-    GASTRONOMY_DELETE = 'gastronomy.delete', // Allows soft-deleting any gastronomy listing.
-    GASTRONOMY_MODERATE_REVIEW = 'gastronomy.moderateReview', // Allows moderating reviews written ABOUT a gastronomy listing.
-    GASTRONOMY_MODERATION_CHANGE = 'gastronomy.moderationChange', // Allows changing the moderation state of a gastronomy LISTING.
+    VENUE_EDIT_OWN = 'venue.editOwn', // Allows a VENUE_OWNER to edit their own venue listing.
+    VENUE_CREATE = 'venue.create', // Allows creating a new venue listing.
+    VENUE_VIEW_ALL = 'venue.viewAll', // Allows viewing all venue listings (including private/draft).
+    VENUE_EDIT_ALL = 'venue.editAll', // Allows editing any venue listing regardless of ownership.
+    VENUE_DELETE = 'venue.delete', // Allows soft-deleting any venue listing.
+    VENUE_MODERATE_REVIEW = 'venue.moderateReview', // Allows moderating reviews written ABOUT a venue listing.
+    VENUE_MODERATION_CHANGE = 'venue.moderationChange', // Allows changing the moderation state of a venue listing.
 
     EXPERIENCE_EDIT_OWN = 'experience.editOwn', // Allows an EXPERIENCE_OWNER to edit their own experience listing.
     EXPERIENCE_CREATE = 'experience.create', // Allows creating a new experience listing.

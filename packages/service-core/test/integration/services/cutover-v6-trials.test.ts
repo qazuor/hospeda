@@ -27,7 +27,7 @@ import {
 } from './helpers';
 
 type Campaign = Parameters<TrialStartTransaction['scheduleExpiryCampaign']>[0];
-type Kind = 'accommodation' | 'gastronomy' | 'experience';
+type Kind = 'accommodation' | 'venue' | 'experience';
 interface SeededListing {
     readonly userId: string;
     readonly listingId: string;
@@ -53,10 +53,10 @@ async function seedPublished(tx: DrizzleClient, kind: Kind): Promise<SeededListi
         userId = row.userId;
         listingId = row.accommodationId;
         vertical = VerticalEnum.ACCOMMODATION;
-    } else if (kind === 'gastronomy') {
+    } else if (kind === 'venue') {
         const row = await seedVenue(tx, overrides);
         userId = row.ownerId;
-        listingId = row.gastronomyId;
+        listingId = row.venueId;
         vertical = VerticalEnum.VENUE;
     } else {
         const row = await seedExperience(tx, overrides);
@@ -113,8 +113,8 @@ describe('TEST:V6:21 cutover V6 trials', () => {
             const seeded = await Promise.all([
                 seedPublished(tx, 'accommodation'),
                 seedPublished(tx, 'accommodation'),
-                seedPublished(tx, 'gastronomy'),
-                seedPublished(tx, 'gastronomy'),
+                seedPublished(tx, 'venue'),
+                seedPublished(tx, 'venue'),
                 seedPublished(tx, 'experience')
             ]);
             const campaigns: Campaign[] = [];
@@ -224,7 +224,7 @@ describe('TEST:V6:21 cutover V6 trials', () => {
     it('rejects an invalid owner email before writing', async () => {
         await withServiceTestTransaction(async (tx) => {
             const good = await seedPublished(tx, 'accommodation');
-            const bad = await seedPublished(tx, 'gastronomy');
+            const bad = await seedPublished(tx, 'venue');
             await tx.update(users).set({ email: 'invalid-email' }).where(eq(users.id, bad.userId));
             await expect(
                 writeCutoverTrials({
@@ -265,7 +265,7 @@ describe('TEST:V6:21 cutover V6 trials', () => {
         await withServiceTestTransaction(async (tx) => {
             const seeded = [
                 await seedPublished(tx, 'accommodation'),
-                await seedPublished(tx, 'gastronomy'),
+                await seedPublished(tx, 'venue'),
                 await seedPublished(tx, 'experience')
             ];
             const failure = new Error('campaign unavailable');

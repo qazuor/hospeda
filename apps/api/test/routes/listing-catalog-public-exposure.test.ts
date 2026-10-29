@@ -1,11 +1,11 @@
 /**
  * @file listing-catalog-public-exposure.test.ts
- * @description HOS-1072 — the public `getBySlug` routes of both gastronomy and experience
+ * @description HOS-1072 — the public `getBySlug` routes of both venue and experience
  * verticals attach the catalog-joined amenities/features AND those survive the
  * response projection.
  *
  * This is the only place the two halves of the bug meet. The schema suite
- * proves `GastronomyPublicSchema` / `ExperiencePublicSchema` DECLARE the fields;
+ * proves `VenuePublicSchema` / `ExperiencePublicSchema` DECLARE the fields;
  * this one proves the route actually puts something in them and that
  * `stripWithSchema` — the step that silently discarded every attached relation
  * before this change — lets it through to the wire.
@@ -67,11 +67,11 @@ const FEATURE_ROW = {
 
 const minimalVenue = {
     id: ENTITY_ID,
-    slug: 'test-gastronomy',
+    slug: 'test-venue',
     name: 'Test Parrilla',
     type: 'PARRILLA',
     summary: 'A test venue.',
-    description: 'A detailed test description for this gastronomy listing.',
+    description: 'A detailed test description for this venue listing.',
     destinationId: DESTINATION_ID,
     publicationStatus: 'PUBLISHED',
     averageRating: 4.5,
@@ -117,14 +117,14 @@ beforeEach(async () => {
     app = await initApp();
 });
 
-describe('GET /public/gastronomies/slug/:slug — catalog exposure (HOS-1072)', () => {
+describe('GET /public/venues/slug/:slug — catalog exposure (HOS-1072)', () => {
     it('publishes the amenities the owner ticked', async () => {
         // Arrange
         venueSvc.getBySlug.mockResolvedValue({ data: minimalVenue });
         catalog.fetchVenueAmenities.mockResolvedValue([AMENITY_ROW]);
 
         // Act
-        const res = await app.request('/api/v1/public/gastronomies/slug/test-gastronomy', {
+        const res = await app.request('/api/v1/public/venues/slug/test-venue', {
             headers: PUBLIC_HEADERS
         });
 
@@ -139,7 +139,7 @@ describe('GET /public/gastronomies/slug/:slug — catalog exposure (HOS-1072)', 
         catalog.fetchVenueFeatures.mockResolvedValue([FEATURE_ROW]);
 
         // Act
-        const res = await app.request('/api/v1/public/gastronomies/slug/test-gastronomy', {
+        const res = await app.request('/api/v1/public/venues/slug/test-venue', {
             headers: PUBLIC_HEADERS
         });
 
@@ -153,7 +153,7 @@ describe('GET /public/gastronomies/slug/:slug — catalog exposure (HOS-1072)', 
         venueSvc.getBySlug.mockResolvedValue({ data: minimalVenue });
 
         // Act
-        await app.request('/api/v1/public/gastronomies/slug/test-gastronomy', {
+        await app.request('/api/v1/public/venues/slug/test-venue', {
             headers: PUBLIC_HEADERS
         });
 
@@ -167,7 +167,7 @@ describe('GET /public/gastronomies/slug/:slug — catalog exposure (HOS-1072)', 
         venueSvc.getBySlug.mockResolvedValue({ data: minimalVenue });
 
         // Act
-        const res = await app.request('/api/v1/public/gastronomies/slug/test-gastronomy', {
+        const res = await app.request('/api/v1/public/venues/slug/test-venue', {
             headers: PUBLIC_HEADERS
         });
 
@@ -182,7 +182,7 @@ describe('GET /public/gastronomies/slug/:slug — catalog exposure (HOS-1072)', 
         venueSvc.getBySlug.mockResolvedValue({ data: null });
 
         // Act
-        const res = await app.request('/api/v1/public/gastronomies/slug/missing', {
+        const res = await app.request('/api/v1/public/venues/slug/missing', {
             headers: PUBLIC_HEADERS
         });
 

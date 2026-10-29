@@ -141,10 +141,10 @@ describe('plan index — the five audiences are told apart without reading (AC-2
 
         expect(declared.map((match) => match[1]).sort()).toEqual([
             'experience',
-            'gastronomy',
             'host',
             'partner',
-            'tourist'
+            'tourist',
+            'venue'
         ]);
         // Two audiences sharing an ink distinguish nothing.
         expect(new Set(declared.map((match) => match[2]?.trim())).size).toBe(5);
@@ -390,7 +390,7 @@ describe('plan index — the trial line is read, never written (R-2)', () => {
     });
 
     it('guards the trial line independently of the price line', () => {
-        // Gastronomy has a price and no trial; partner has NEITHER since
+        // Venue has a price and no trial; partner has NEITHER since
         // HOS-1212, and host has both. Nesting the trial inside the price
         // conditional would couple two lines that vary independently across the
         // five cards; asserted by nesting DEPTH, since the two blocks are
@@ -766,7 +766,7 @@ describe('plan index — the trial line stands out, the price gains a step (3 an
 // HOS-943 adjustment 5 — "restaurante" was the vertical's only door
 // ---------------------------------------------------------------------------
 
-describe('the gastronomy card does not narrow the vertical to restaurants', () => {
+describe('the venue card does not narrow the vertical to restaurants', () => {
     const LOCALES = ['es', 'en', 'pt'] as const;
 
     const venueCard = (locale: string): Record<string, string> => {
@@ -775,9 +775,9 @@ describe('the gastronomy card does not narrow the vertical to restaurants', () =
             `../../../../../packages/i18n/src/locales/${locale}/pricing.json`
         );
         const parsed = JSON.parse(readFileSync(file, 'utf8')) as {
-            index?: { cards?: { gastronomy?: Record<string, unknown> } };
+            index?: { cards?: { venue?: Record<string, unknown> } };
         };
-        const card = parsed.index?.cards?.gastronomy ?? {};
+        const card = parsed.index?.cards?.venue ?? {};
 
         return Object.fromEntries(
             Object.entries(card)
@@ -818,7 +818,7 @@ describe('the gastronomy card does not narrow the vertical to restaurants', () =
         // HOS-1032 revisited that call — `publicar-restaurante/index.astro`'s
         // own docblock records why: the page shipped 2026-08-21 (PR #2920) and
         // had accumulated almost no ranking to move, so retiring the URL in
-        // favour of `/planes/gastronomia/` (which does not carry "restaurante"
+        // favour of `/planes/comer-y-salir/` (which does not carry "restaurante"
         // either, for the same widened-audience reason as the card copy) was
         // judged the cheapest this rename would ever be. The old URL now 301s
         // there instead of staying a page of its own.
@@ -827,11 +827,11 @@ describe('the gastronomy card does not narrow the vertical to restaurants', () =
             'utf8'
         );
 
-        expect(audiencePlans).toContain("gastronomy: 'planes/gastronomia'");
+        expect(audiencePlans).toContain("venue: 'planes/comer-y-salir'");
         expect(STATIC_SITEMAP_PAGES.map((page) => page.path)).not.toContain(
             '/publicar-restaurante/'
         );
-        expect(STATIC_SITEMAP_PAGES.map((page) => page.path)).toContain('/planes/gastronomia/');
+        expect(STATIC_SITEMAP_PAGES.map((page) => page.path)).toContain('/planes/comer-y-salir/');
         expect(NON_SITEMAP_STATIC_PAGES['/publicar-restaurante/']).toBe('transactional');
     });
 });

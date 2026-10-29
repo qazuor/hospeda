@@ -22,7 +22,7 @@ import { fetchOwnerListingsWithState } from '../../../src/lib/listing/owner-list
 function summary(id: string, publicationStatus: PublicationStatusEnum) {
     return {
         id,
-        vertical: 'gastronomy' as const,
+        vertical: 'venue' as const,
         name: `Listing ${id}`,
         slug: `listing-${id}`,
         type: 'RESTAURANT',
@@ -40,7 +40,7 @@ describe('fetchOwnerListingsWithState — PURGED (HOS-1641)', () => {
     it('does not fetch the detail of a PURGED listing and leaves its completeness null', async () => {
         // Arrange
         getProtected.mockImplementation(async ({ path }: { path: string }) => {
-            if (path.endsWith('/gastronomies/mine')) {
+            if (path.endsWith('/venues/mine')) {
                 return {
                     ok: true,
                     data: {
@@ -64,7 +64,7 @@ describe('fetchOwnerListingsWithState — PURGED (HOS-1641)', () => {
         const detailPaths = getProtected.mock.calls
             .map(([args]) => (args as { path: string }).path)
             .filter((path) => !path.endsWith('/mine'));
-        expect(detailPaths).toEqual(['/api/v1/protected/gastronomies/draft']);
+        expect(detailPaths).toEqual(['/api/v1/protected/venues/draft']);
 
         const purged = listings.find((listing) => listing.id === 'purged');
         expect(purged?.publicationStatus).toBe(PublicationStatusEnum.PURGED);
@@ -90,7 +90,7 @@ describe('mi-cuenta/comercio/index.astro — PURGED offers no action (HOS-1641)'
 
     it('keeps a purged listing out of the menu QR widget', () => {
         expect(source).toContain(
-            ".filter((listing) => listing.vertical === 'gastronomy' && !isPurged(listing))"
+            ".filter((listing) => listing.vertical === 'venue' && !isPurged(listing))"
         );
     });
 

@@ -478,8 +478,8 @@ describe('TEST:V5:32 POST /api/v1/protected/ai/chat — integration (SPEC-200 T-
     });
 
     it.each([
-        { entityType: 'gastronomy' as const, key: 'manage_gastronomy_menu', enabled: true },
-        { entityType: 'gastronomy' as const, key: 'manage_gastronomy_menu', enabled: false },
+        { entityType: 'venue' as const, key: 'manage_venue_menu', enabled: true },
+        { entityType: 'venue' as const, key: 'manage_venue_menu', enabled: false },
         {
             entityType: 'experience' as const,
             key: 'manage_experience_directions',
@@ -502,8 +502,8 @@ describe('TEST:V5:32 POST /api/v1/protected/ai/chat — integration (SPEC-200 T-
         ];
         mockOwnerLimits.current = new Map([
             [
-                testCase.entityType === 'gastronomy'
-                    ? 'max_ai_chat_gastronomy_per_month'
+                testCase.entityType === 'venue'
+                    ? 'max_ai_chat_venue_per_month'
                     : 'max_ai_chat_experience_per_month',
                 20
             ]
@@ -523,7 +523,7 @@ describe('TEST:V5:32 POST /api/v1/protected/ai/chat — integration (SPEC-200 T-
         expect(assembler).toHaveBeenCalledWith(
             expect.objectContaining({
                 ownerCapabilities: {
-                    manageVenueMenu: testCase.entityType === 'gastronomy' && testCase.enabled,
+                    manageVenueMenu: testCase.entityType === 'venue' && testCase.enabled,
                     manageExperienceDirections:
                         testCase.entityType === 'experience' && testCase.enabled
                 }

@@ -57,7 +57,7 @@ const app = (options: {
         return next();
     });
     result.route('/api/v1/protected/accommodations', protectedAccommodationRoutes);
-    result.route('/api/v1/protected/gastronomies', protectedVenueRoutes);
+    result.route('/api/v1/protected/venues', protectedVenueRoutes);
     result.route('/api/v1/protected/experiences', protectedExperienceRoutes);
     result.route('/api/v1/protected/users', protectedUserRoutes);
     result.route('/api/v1/protected/billing/subscriptions', protectedBillingSubscriptionRoutes);
@@ -113,7 +113,7 @@ describe('TEST:V5:3 TEST:1692:1 the closed list passes step 2 on the real router
             .mockResolvedValue({ data: { items: [], total: 0 } } as never);
         for (const [path, spy] of [
             [`/api/v1/protected/users/${OWNER_ID}`, userSpy],
-            ['/api/v1/protected/gastronomies/mine', venueSpy],
+            ['/api/v1/protected/venues/mine', venueSpy],
             ['/api/v1/protected/experiences/mine', experienceSpy],
             ['/api/v1/protected/accommodations', accommodationSpy]
         ] as const) {
@@ -142,19 +142,22 @@ describe('TEST:V5:3 TEST:1692:1 the closed list passes step 2 on the real router
             path: `/api/v1/protected/billing-subscription/${OWNER_ID}/cancellation`,
             method: 'POST' as const
         },
-        ...(['accommodations', 'gastronomies', 'experiences'] as const).map((v) => ({
+        ...(['accommodations', 'venues', 'experiences'] as const).map((v) => ({
             op: 'REACTIVATE_LISTING',
             path: `/api/v1/protected/${v}/${LISTING_ID}/reactivate`
         })),
-        ...(['accommodations', 'gastronomies', 'experiences'] as const).map((v) => ({
+        ...(['accommodations', 'venues', 'experiences'] as const).map((v) => ({
             op: 'DELETE_LISTING',
             path: `/api/v1/protected/${v}/${LISTING_ID}/purge`
         })),
-        ...(['accommodations', 'gastronomies', 'experiences'] as const).flatMap((v) => [
+        ...(['accommodations', 'venues', 'experiences'] as const).flatMap((v) => [
             { op: 'READ_OWN', path: `/api/v1/protected/${v}/${LISTING_ID}/purge-preview` },
             { op: 'READ_OWN', path: `/api/v1/protected/${v}/${LISTING_ID}/support-edits` }
         ])
     ];
+    it('keeps venue routes in the closed route set', () => {
+        expect(covered.filter(({ path }) => path.includes('/venues/'))).toHaveLength(4);
+    });
     it.each(covered)('$op passes step 2 on $path', async ({ path, method, permissions = [] }) => {
         cancellationRouteMocks.readOwnSubscriptions.mockClear();
         cancellationRouteMocks.readSubscription.mockClear();

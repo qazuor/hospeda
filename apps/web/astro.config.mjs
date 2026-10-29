@@ -324,7 +324,7 @@ export default defineConfig({
             // reason, the half that dev needs.
             //
             // Verified by mutation on 2026-09-04, not by reasoning: with these three
-            // entries `/es/alojamientos/{slug}/` and `/es/gastronomia/{slug}/` return
+            // entries `/es/alojamientos/{slug}/` and `/es/comer-y-salir/{slug}/` return
             // 200; removing them and reloading returns both to 500. A dev-server
             // restart alone does NOT fix it, so the entries are the cause and not a
             // cleared cache.

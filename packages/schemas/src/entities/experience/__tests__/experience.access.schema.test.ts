@@ -290,7 +290,7 @@ describe('ExperienceAdminSchema', () => {
 // ============================================================================
 // ExperienceAdminListItemSchema — eager-loaded relation summaries (bug #8)
 // Without these fields the admin grid can only render raw FK UUIDs in the
-// Destino / Propietario columns. Mirrors GastronomyAdminListItemSchema.
+// Destino / Propietario columns. Mirrors venueAdminListItemSchema.
 // ============================================================================
 
 describe('ExperienceAdminListItemSchema', () => {

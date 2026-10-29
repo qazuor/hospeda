@@ -72,12 +72,12 @@ const ownerBenefits = [
 ] as const;
 
 /*
- * Experience and gastronomy benefits deliberately point at the
- * `{experience,gastronomy}.landing.*` keys that already back `/publicar-experiencia/` and
- * `/publicar-restaurante/` instead of getting a copy of their own. The claim a
+ * Experience and venue benefits deliberately point at the
+ * landing copy namespaces for venue and experience that already back their lead pages instead of
+ * getting a copy of their own. The claim a
  * vertical makes about itself has one home; a price or policy change edits one
  * string and both the landing and this page follow. Only the section chrome
- * (tagline, CTA label) is local, under `benefits.{experience,gastronomy}.*`.
+ * (tagline, CTA label) is local to the benefits page.
  *
  * Three items each, against five for tourist/owner — the grid is `auto-fit`,
  * so a shorter row lays out on its own without a placeholder.
@@ -103,18 +103,18 @@ const experienceBenefits = [
 const venueBenefits = [
 	{
 		Icon: MapIcon,
-		titleKey: 'gastronomy.landing.benefits.item1.title',
-		descKey: 'gastronomy.landing.benefits.item1.desc'
+		titleKey: 'venue.landing.benefits.item1.title',
+		descKey: 'venue.landing.benefits.item1.desc'
 	},
 	{
 		Icon: SettingsIcon,
-		titleKey: 'gastronomy.landing.benefits.item2.title',
-		descKey: 'gastronomy.landing.benefits.item2.desc'
+		titleKey: 'venue.landing.benefits.item2.title',
+		descKey: 'venue.landing.benefits.item2.desc'
 	},
 	{
 		Icon: ShieldIcon,
-		titleKey: 'gastronomy.landing.benefits.item3.title',
-		descKey: 'gastronomy.landing.benefits.item3.desc'
+		titleKey: 'venue.landing.benefits.item3.title',
+		descKey: 'venue.landing.benefits.item3.desc'
 	}
 ] as const;
 
@@ -153,7 +153,7 @@ const splitLastWord = (full: string): { main: string; accent: string } => {
 const touristHeading = splitLastWord(t('benefits.tourist.title'));
 const ownerHeading = splitLastWord(t('benefits.owner.title'));
 const experienceHeading = splitLastWord(t('experience.landing.benefits.title'));
-const venueHeading = splitLastWord(t('gastronomy.landing.benefits.title'));
+const venueHeading = splitLastWord(t('venue.landing.benefits.title'));
 const partnerHeading = splitLastWord(t('benefits.partner.title'));
 
 const benefitsTitle = t('benefits.title', 'Beneficios');
@@ -409,14 +409,14 @@ const inLanguageMap: Record<SupportedLocale, string> = {
 		</div>
 	</section>
 
-	<!-- Gastronomy Benefits -->
-	<section class="benefits-section benefits-section--gastronomy section section--warm">
+	<!-- Venue Benefits -->
+	<section class="benefits-section benefits-section--venue section section--warm">
 		<div class="benefits-section__decoratives" aria-hidden="true">
-			<span class="benefits-section__watermark benefits-section__watermark--gastronomy">
+			<span class="benefits-section__watermark benefits-section__watermark--venue">
 				<ForkKnifeIcon size={200} weight="duotone" />
 			</span>
 			<svg
-				class="benefits-section__wave benefits-section__wave--gastronomy"
+				class="benefits-section__wave benefits-section__wave--venue"
 				viewBox="0 0 800 60"
 				preserveAspectRatio="none"
 				aria-hidden="true"
@@ -436,10 +436,10 @@ const inLanguageMap: Record<SupportedLocale, string> = {
 			<span class="benefits-section__dot benefits-section__dot--g4"></span>
 		</div>
 		<div class="benefits-section__container">
-			<p class="benefits-section__tagline" data-reveal="up">{t('benefits.gastronomy.tagline')}</p>
+			<p class="benefits-section__tagline" data-reveal="up">{t('benefits.venue.tagline')}</p>
 			<h2 class="benefits-section__title" data-reveal="up">
 				{venueHeading.main && <>{venueHeading.main}{' '}</>}
-				<span class="benefits-section__title-accent benefits-section__title-accent--gastronomy">
+				<span class="benefits-section__title-accent benefits-section__title-accent--venue">
 					{venueHeading.accent}
 					<svg
 						class="benefits-section__title-underline"
@@ -462,7 +462,7 @@ const inLanguageMap: Record<SupportedLocale, string> = {
 					const Icon = b.Icon;
 					return (
 						<div class="benefits-card" data-reveal="up" data-stagger-index={Math.min(i, 6)} data-stagger-step="100">
-							<span class="benefits-card__icon benefits-card__icon--gastronomy" aria-hidden="true">
+							<span class="benefits-card__icon benefits-card__icon--venue" aria-hidden="true">
 								<Icon size="lg" weight="duotone" />
 							</span>
 							<h3 class="benefits-card__title">{t(b.titleKey)}</h3>
@@ -473,8 +473,8 @@ const inLanguageMap: Record<SupportedLocale, string> = {
 			</div>
 			<div class="benefits-section__cta" data-reveal="up">
 				<GradientButton
-					href={buildUrl({ locale, path: 'planes/gastronomia' })}
-					label={t('benefits.gastronomy.cta')}
+					href={buildUrl({ locale, path: 'planes/comer-y-salir' })}
+					label={t('benefits.venue.cta')}
 					variant="accent"
 				/>
 			</div>
@@ -624,7 +624,7 @@ const inLanguageMap: Record<SupportedLocale, string> = {
 		color: var(--brand-primary);
 	}
 
-	.benefits-card__icon--gastronomy {
+	.benefits-card__icon--venue {
 		background-color: var(--brand-accent-a12);
 		color: var(--brand-accent);
 	}
@@ -702,7 +702,7 @@ const inLanguageMap: Record<SupportedLocale, string> = {
 		color: var(--brand-primary);
 	}
 
-	.benefits-section__title-accent--gastronomy .benefits-section__title-underline {
+	.benefits-section__title-accent--venue .benefits-section__title-underline {
 		color: var(--brand-accent);
 	}
 
@@ -738,7 +738,7 @@ const inLanguageMap: Record<SupportedLocale, string> = {
 		transform: rotate(12deg);
 	}
 
-	.benefits-section__watermark--gastronomy {
+	.benefits-section__watermark--venue {
 		bottom: -35px;
 		left: -45px;
 		color: var(--brand-accent);
@@ -778,7 +778,7 @@ const inLanguageMap: Record<SupportedLocale, string> = {
 		color: var(--brand-primary);
 	}
 
-	.benefits-section__wave--gastronomy {
+	.benefits-section__wave--venue {
 		top: 15%;
 		right: -5%;
 		color: var(--brand-accent);

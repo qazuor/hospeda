@@ -6,7 +6,7 @@ function makeEntry(overrides: Partial<CatalogEntry> = {}): CatalogEntry {
     return {
         id: '2026-09-08-daily-menu-window',
         publishedAt: 'on-promotion',
-        roles: ['GASTRONOMY_OWNER'],
+        roles: ['VENUE_OWNER'],
         highlight: false,
         titleEs: 'Publicá el menú del día',
         bodyEs: 'Ahora podés cargar el menú del día desde tu panel.',
@@ -24,7 +24,7 @@ describe('renderPendingEntries', () => {
         expect(report).toContain('2026-09-08-daily-menu-window');
         expect(report).toContain('Publicá el menú del día');
         expect(report).toContain('Ahora podés cargar el menú del día desde tu panel.');
-        expect(report).toContain('GASTRONOMY_OWNER');
+        expect(report).toContain('VENUE_OWNER');
         expect(report).toContain('#3271, #3274');
     });
 

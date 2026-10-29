@@ -1,5 +1,5 @@
 /**
- * TEST:V8a:9 (ACC:15, HOS-1493) through the gastronomy and experience photo and
+ * TEST:V8a:9 (ACC:15, HOS-1493) through the venue and experience photo and
  * FAQ admin routes: an admin with action 15 and the reason header edits a
  * foreign listing's photos and FAQ, which leaves an admin `listing.edited`
  * event carrying the reason and queues the support-edit email to the owner.
@@ -31,17 +31,21 @@ const app = initApp();
 const verticals = [VerticalEnum.VENUE, VerticalEnum.EXPERIENCE] as const;
 type Vertical = (typeof verticals)[number];
 const tables: Readonly<Record<Vertical, string>> = {
-    [VerticalEnum.VENUE]: 'gastronomies',
+    [VerticalEnum.VENUE]: 'venues',
     [VerticalEnum.EXPERIENCE]: 'experiences'
+};
+const routeTables: Readonly<Record<Vertical, string>> = {
+    ...tables,
+    [VerticalEnum.VENUE]: 'venues'
 };
 /** Each vertical's own permissions: edit own, edit all, view all. */
 const perms: Readonly<
     Record<Vertical, { editOwn: PermissionEnum; editAll: PermissionEnum; viewAll: PermissionEnum }>
 > = {
     [VerticalEnum.VENUE]: {
-        editOwn: PermissionEnum.GASTRONOMY_EDIT_OWN,
-        editAll: PermissionEnum.GASTRONOMY_EDIT_ALL,
-        viewAll: PermissionEnum.GASTRONOMY_VIEW_ALL
+        editOwn: PermissionEnum.VENUE_EDIT_OWN,
+        editAll: PermissionEnum.VENUE_EDIT_ALL,
+        viewAll: PermissionEnum.VENUE_VIEW_ALL
     },
     [VerticalEnum.EXPERIENCE]: {
         editOwn: PermissionEnum.EXPERIENCE_EDIT_OWN,
@@ -51,7 +55,7 @@ const perms: Readonly<
 };
 /** The media table and its listing column, per vertical. */
 const media: Readonly<Record<Vertical, { table: string; fk: string }>> = {
-    [VerticalEnum.VENUE]: { table: 'gastronomy_media', fk: 'gastronomy_id' },
+    [VerticalEnum.VENUE]: { table: 'venue_media', fk: 'venue_id' },
     [VerticalEnum.EXPERIENCE]: { table: 'experience_media', fk: 'experience_id' }
 };
 const REASON = 'La dueña pidió que le corrijamos la foto y la pregunta frecuente';
@@ -197,7 +201,7 @@ describe.each(verticals)('TEST:V8a:9 action 15 edits photos and FAQ — %s', (ve
 
         // Act
         const response = await send(
-            `${tables[vertical]}/${id}/media`,
+            `${routeTables[vertical]}/${id}/media`,
             'POST',
             adminHeaders([perms[vertical].viewAll, perms[vertical].editAll], admin),
             { url: PHOTO_URL }
@@ -217,7 +221,7 @@ describe.each(verticals)('TEST:V8a:9 action 15 edits photos and FAQ — %s', (ve
 
         // Act
         const response = await send(
-            `${tables[vertical]}/${id}/media/${mediaId}`,
+            `${routeTables[vertical]}/${id}/media/${mediaId}`,
             'PATCH',
             adminHeaders([perms[vertical].viewAll], admin),
             { caption: 'Vista del salón principal' }
@@ -236,7 +240,7 @@ describe.each(verticals)('TEST:V8a:9 action 15 edits photos and FAQ — %s', (ve
 
         // Act
         const response = await send(
-            `${tables[vertical]}/${id}/faqs`,
+            `${routeTables[vertical]}/${id}/faqs`,
             'POST',
             adminHeaders([perms[vertical].viewAll], admin),
             FAQ_BODY
@@ -256,13 +260,13 @@ describe.each(verticals)('TEST:V8a:9 action 15 edits photos and FAQ — %s', (ve
 
         // Act
         const photo = await send(
-            `${tables[vertical]}/${photoListing}/media/${mediaId}`,
+            `${routeTables[vertical]}/${photoListing}/media/${mediaId}`,
             'PATCH',
             ownerHeaders(vertical, owner),
             { caption: 'Vista del salón principal' }
         );
         const faq = await send(
-            `${tables[vertical]}/${faqListing}/faqs`,
+            `${routeTables[vertical]}/${faqListing}/faqs`,
             'POST',
             ownerHeaders(vertical, owner),
             FAQ_BODY
@@ -283,7 +287,7 @@ describe.each(verticals)('TEST:V8a:9 action 15 edits photos and FAQ — %s', (ve
 
         // Act
         const response = await send(
-            `${tables[vertical]}/${id}/media`,
+            `${routeTables[vertical]}/${id}/media`,
             'POST',
             adminHeaders([perms[vertical].viewAll, perms[vertical].editAll], admin),
             { url: PHOTO_URL, moderationState: 'APPROVED' }

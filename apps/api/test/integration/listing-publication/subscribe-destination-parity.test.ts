@@ -5,10 +5,10 @@ import {
     and,
     eq,
     experiences,
-    gastronomies,
     getDb,
     planVersions,
-    trials
+    trials,
+    venues
 } from '@repo/db';
 import { PermissionEnum, PublicationStatusEnum, RoleEnum, VerticalEnum } from '@repo/schemas';
 import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
@@ -42,7 +42,7 @@ const verticals = [
 ] as const;
 const pathByVertical: Record<(typeof verticals)[number], string> = {
     accommodation: 'accommodations',
-    gastronomy: 'gastronomies',
+    venue: 'venues',
     experience: 'experiences'
 };
 const subscribePath = (vertical: (typeof verticals)[number]) =>
@@ -60,7 +60,7 @@ let savedCatalog: { id: string; current: boolean; sellable: boolean }[] = [];
 let publishedByTest: { vertical: (typeof verticals)[number]; id: string }[] = [];
 const tableByVertical = {
     accommodation: accommodations,
-    gastronomy: gastronomies,
+    venue: venues,
     experience: experiences
 } as const;
 
@@ -137,7 +137,7 @@ describe.each(verticals)('TEST:V8a:1 subscribe destination parity — %s', (vert
             vertical === VerticalEnum.ACCOMMODATION
                 ? accommodations
                 : vertical === VerticalEnum.VENUE
-                  ? gastronomies
+                  ? venues
                   : experiences;
         const [listing] = await getDb()
             .select({ status: table.publicationStatus })
@@ -269,7 +269,7 @@ describe.each(verticals)('TEST:V8a:1 subscribe destination parity — %s', (vert
             roles: [RoleEnum.HOST],
             permissions: [
                 PermissionEnum.ACCOMMODATION_UPDATE_OWN,
-                PermissionEnum.GASTRONOMY_EDIT_OWN,
+                PermissionEnum.VENUE_EDIT_OWN,
                 PermissionEnum.EXPERIENCE_EDIT_OWN
             ]
         };

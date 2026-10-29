@@ -164,7 +164,7 @@ const destinationOptions = [
 ];
 
 function renderEditor(
-    vertical: 'gastronomy' | 'experience',
+    vertical: 'venue' | 'experience',
     sectionId: ListingEditorFormSectionId = 'basicInfo'
 ) {
     return render(
@@ -214,7 +214,7 @@ describe('ListingEditor', () => {
 
         const ssr = renderToStaticMarkup(
             <ListingEditor
-                vertical="gastronomy"
+                vertical="venue"
                 sectionId="basicInfo"
                 listingId="abc"
                 locale="es"
@@ -224,7 +224,7 @@ describe('ListingEditor', () => {
         );
         expect(ssr).not.toContain('data-hydrated');
 
-        const { container } = renderEditor('gastronomy');
+        const { container } = renderEditor('venue');
         await waitFor(() =>
             expect(container.querySelector('form')).toHaveAttribute('data-hydrated', 'true')
         );
@@ -235,7 +235,7 @@ describe('ListingEditor', () => {
         // form section that still hydrated media would be paying for two extra
         // requests per page and could overwrite rows the owner just saved —
         // the HOS-372 failure, reintroduced by the split rather than fixed by it.
-        renderEditor('gastronomy');
+        renderEditor('venue');
 
         await waitFor(() => expect(screen.getByRole('button', { name: 'Guardar' })));
         expect(mockListMedia).not.toHaveBeenCalled();
@@ -243,7 +243,7 @@ describe('ListingEditor', () => {
     });
 
     it('answers a no-op save with a toast instead of a request', () => {
-        renderEditor('gastronomy');
+        renderEditor('venue');
 
         const save = screen.getByRole('button', { name: 'Guardar' });
         expect(save).toBeEnabled();
@@ -257,7 +257,7 @@ describe('ListingEditor', () => {
     });
 
     it('renders the summary counter interpolated, not the literal {{count}} template (BETA-124)', () => {
-        renderEditor('gastronomy');
+        renderEditor('venue');
 
         // Summary starts empty → the counter reads "0/300", NOT the raw
         // "{{count}}/300" template that leaked before the fix (the count was
@@ -274,9 +274,9 @@ describe('ListingEditor', () => {
         expect(screen.getByText('12/300')).toBeInTheDocument();
     });
 
-    it('PATCHes the gastronomy endpoint with only the dirty field on submit', async () => {
+    it('PATCHes the venue endpoint with only the dirty field on submit', async () => {
         mockPatch.mockResolvedValueOnce({ ok: true, data: {} });
-        renderEditor('gastronomy');
+        renderEditor('venue');
 
         fireEvent.change(screen.getByLabelText('Descripción ampliada'), {
             target: { value: 'new text' }
@@ -285,7 +285,7 @@ describe('ListingEditor', () => {
 
         await waitFor(() => expect(mockPatch).toHaveBeenCalledTimes(1));
         expect(mockPatch).toHaveBeenCalledWith({
-            path: '/api/v1/protected/gastronomies/abc',
+            path: '/api/v1/protected/venues/abc',
             body: { richDescription: 'new text' }
         });
         // Success is surfaced as a toast now, not an inline role=status banner.
@@ -314,7 +314,7 @@ describe('ListingEditor', () => {
 
     it('shows an error message when the PATCH fails', async () => {
         mockPatch.mockResolvedValueOnce({ ok: false, error: { status: 500, message: 'boom' } });
-        renderEditor('gastronomy');
+        renderEditor('venue');
 
         fireEvent.change(screen.getByLabelText('Descripción ampliada'), {
             target: { value: 'x' }
@@ -334,7 +334,7 @@ describe('ListingEditor', () => {
             ok: false,
             error: { status: 500, message: 'Ese teléfono ya está en uso' }
         });
-        renderEditor('gastronomy', 'contact');
+        renderEditor('venue', 'contact');
 
         // HOS-371: the phone is a country-code combobox + local number pair now,
         // so the editable control is the "Número" input; the dial code comes
@@ -388,23 +388,23 @@ describe('ListingEditor', () => {
         expect(body.priceFrom).toBeUndefined();
     });
 
-    it('PATCHes only the priceRange field group when the price tier changes (gastronomy)', async () => {
+    it('PATCHes only the priceRange field group when the price tier changes (venue)', async () => {
         mockPatch.mockResolvedValueOnce({ ok: true, data: {} });
-        renderEditor('gastronomy', 'price');
+        renderEditor('venue', 'price');
 
         fireEvent.change(screen.getByLabelText('Rango de precios'), { target: { value: 'MID' } });
         fireEvent.click(screen.getByRole('button', { name: 'Guardar' }));
 
         await waitFor(() => expect(mockPatch).toHaveBeenCalledTimes(1));
         expect(mockPatch).toHaveBeenCalledWith({
-            path: '/api/v1/protected/gastronomies/abc',
+            path: '/api/v1/protected/venues/abc',
             body: { priceRange: 'MID' }
         });
     });
 
     it('PATCHes the contactInfo group when a contact field changes', async () => {
         mockPatch.mockResolvedValueOnce({ ok: true, data: {} });
-        renderEditor('gastronomy', 'contact');
+        renderEditor('venue', 'contact');
 
         // HOS-371: the local number is recomposed with the combobox's dial code
         // (defaulting to Argentina) into the single `mobilePhone` string the
@@ -422,7 +422,7 @@ describe('ListingEditor', () => {
         // `website` is not part of this owner surface (SPEC-253 AC-4) and is
         // therefore absent rather than nulled.
         expect(mockPatch).toHaveBeenCalledWith({
-            path: '/api/v1/protected/gastronomies/abc',
+            path: '/api/v1/protected/venues/abc',
             body: {
                 contactInfo: {
                     mobilePhone: '+54 9 11 1234 5678',
@@ -434,7 +434,7 @@ describe('ListingEditor', () => {
 
     it('lets the owner pick a different country code and recomposes the stored phone (HOS-371)', async () => {
         mockPatch.mockResolvedValueOnce({ ok: true, data: {} });
-        renderEditor('gastronomy', 'contact');
+        renderEditor('venue', 'contact');
 
         // The combobox trigger leads with the field name, then the selection.
         fireEvent.click(screen.getByRole('button', { name: /País: Argentina/ }));
@@ -454,7 +454,7 @@ describe('ListingEditor', () => {
 
     describe('contact email accessibility (HOS-371)', () => {
         it('labels the email input with a real <label>, not just an aria-label', () => {
-            const { container } = renderEditor('gastronomy', 'contact');
+            const { container } = renderEditor('venue', 'contact');
 
             // An `aria-label` alone leaves a sighted user staring at an
             // anonymous empty box (WCAG 3.3.2). `getByLabelText` matches both
@@ -473,7 +473,7 @@ describe('ListingEditor', () => {
 
         it('still PATCHes the contactInfo group from the labelled email input', async () => {
             mockPatch.mockResolvedValueOnce({ ok: true, data: {} });
-            renderEditor('gastronomy', 'contact');
+            renderEditor('venue', 'contact');
 
             fireEvent.change(screen.getByLabelText('Email'), {
                 target: { value: 'hola@laparrilla.test' }
@@ -496,7 +496,7 @@ describe('ListingEditor', () => {
 
     it('PATCHes the socialNetworks group when a social URL changes', async () => {
         mockPatch.mockResolvedValueOnce({ ok: true, data: {} });
-        renderEditor('gastronomy', 'contact');
+        renderEditor('venue', 'contact');
 
         fireEvent.change(screen.getByLabelText('facebook'), {
             target: { value: 'https://facebook.com/x' }
@@ -505,7 +505,7 @@ describe('ListingEditor', () => {
 
         await waitFor(() => expect(mockPatch).toHaveBeenCalledTimes(1));
         expect(mockPatch).toHaveBeenCalledWith({
-            path: '/api/v1/protected/gastronomies/abc',
+            path: '/api/v1/protected/venues/abc',
             body: {
                 // An empty member travels as `null`, not `undefined`: the column
                 // is merged by the API (HOS-1262), so an omitted key would
@@ -548,7 +548,7 @@ describe('ListingEditor', () => {
 
         render(
             <ListingEditor
-                vertical="gastronomy"
+                vertical="venue"
                 sectionId="openingHours"
                 listingId="abc"
                 locale="es"
@@ -580,7 +580,7 @@ describe('ListingEditor', () => {
      */
     it('HOS-906: touching a single day and saving succeeds, with every other day resolving closed', async () => {
         mockPatch.mockResolvedValueOnce({ ok: true, data: {} });
-        renderEditor('gastronomy', 'openingHours');
+        renderEditor('venue', 'openingHours');
 
         // Open Monday and give it a shift — the minimal real "configure one
         // day" flow. Every other day is left untouched.
@@ -633,7 +633,7 @@ describe('ListingEditor', () => {
 
         render(
             <ListingEditor
-                vertical="gastronomy"
+                vertical="venue"
                 sectionId="amenities"
                 listingId="abc"
                 locale="es"
@@ -693,7 +693,7 @@ describe('ListingEditor', () => {
         mockPatch.mockResolvedValueOnce({ ok: true, data: {} });
         const { container } = render(
             <ListingEditor
-                vertical="gastronomy"
+                vertical="venue"
                 sectionId="amenities"
                 listingId="abc"
                 locale="es"
@@ -732,7 +732,7 @@ describe('ListingEditor', () => {
         it('renders name, destinationId, and description seeded from initialData', () => {
             render(
                 <ListingEditor
-                    vertical="gastronomy"
+                    vertical="venue"
                     sectionId="basicInfo"
                     listingId="abc"
                     locale="es"
@@ -752,7 +752,7 @@ describe('ListingEditor', () => {
             mockPatch.mockResolvedValueOnce({ ok: true, data: {} });
             render(
                 <ListingEditor
-                    vertical="gastronomy"
+                    vertical="venue"
                     sectionId="basicInfo"
                     listingId="abc"
                     locale="es"
@@ -768,7 +768,7 @@ describe('ListingEditor', () => {
 
             await waitFor(() => expect(mockPatch).toHaveBeenCalledTimes(1));
             expect(mockPatch).toHaveBeenCalledWith({
-                path: '/api/v1/protected/gastronomies/abc',
+                path: '/api/v1/protected/venues/abc',
                 body: { name: 'La Nueva Parrilla' }
             });
         });
@@ -777,7 +777,7 @@ describe('ListingEditor', () => {
             mockPatch.mockResolvedValueOnce({ ok: true, data: {} });
             render(
                 <ListingEditor
-                    vertical="gastronomy"
+                    vertical="venue"
                     sectionId="basicInfo"
                     listingId="abc"
                     locale="es"
@@ -793,7 +793,7 @@ describe('ListingEditor', () => {
 
             await waitFor(() => expect(mockPatch).toHaveBeenCalledTimes(1));
             expect(mockPatch).toHaveBeenCalledWith({
-                path: '/api/v1/protected/gastronomies/abc',
+                path: '/api/v1/protected/venues/abc',
                 body: { destinationId: DESTINATION_2 }
             });
         });
@@ -802,7 +802,7 @@ describe('ListingEditor', () => {
             mockPatch.mockResolvedValueOnce({ ok: true, data: {} });
             render(
                 <ListingEditor
-                    vertical="gastronomy"
+                    vertical="venue"
                     sectionId="basicInfo"
                     listingId="abc"
                     locale="es"
@@ -818,7 +818,7 @@ describe('ListingEditor', () => {
 
             await waitFor(() => expect(mockPatch).toHaveBeenCalledTimes(1));
             expect(mockPatch).toHaveBeenCalledWith({
-                path: '/api/v1/protected/gastronomies/abc',
+                path: '/api/v1/protected/venues/abc',
                 body: {
                     description: 'Una descripción completamente nueva y suficientemente larga.'
                 }
@@ -829,7 +829,7 @@ describe('ListingEditor', () => {
             mockPatch.mockResolvedValueOnce({ ok: true, data: {} });
             render(
                 <ListingEditor
-                    vertical="gastronomy"
+                    vertical="venue"
                     sectionId="basicInfo"
                     listingId="abc"
                     locale="es"
@@ -857,7 +857,7 @@ describe('ListingEditor', () => {
         it('shows an error message instead of silently hiding the destination select', () => {
             render(
                 <ListingEditor
-                    vertical="gastronomy"
+                    vertical="venue"
                     sectionId="basicInfo"
                     listingId="abc"
                     locale="es"
@@ -876,7 +876,7 @@ describe('ListingEditor', () => {
         it('shows an empty-catalog message (not the load-failed one) when destinations legitimately loaded empty', () => {
             render(
                 <ListingEditor
-                    vertical="gastronomy"
+                    vertical="venue"
                     sectionId="basicInfo"
                     listingId="abc"
                     locale="es"

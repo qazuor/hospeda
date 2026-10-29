@@ -6,7 +6,7 @@
  *
  * ## What was here
  *
- * The owner self-service gastronomy/experience create form, inside `AccountLayout` and behind
+ * The owner self-service venue/experience create form, inside `AccountLayout` and behind
  * an in-page login redirect. D-2 moved it to `MarketingLayout` so the three
  * publish pages look alike, and D-1 replaced the login redirect with a signup
  * CTA — a page reached from a PUBLIC navbar button must not bounce a cold
@@ -15,7 +15,7 @@
  *
  * ## An unknown vertical still 404s
  *
- * The old page answered 404 for anything that was not `gastronomy` or
+ * The old page answered 404 for anything that was not `venue` or
  * `experience`, and so does this. Redirecting an unknown segment to a publish
  * page would turn a typo into a 301 and advertise a URL that never existed.
  *
@@ -31,7 +31,7 @@ export const prerender = false;
 const locale = Astro.locals.locale;
 
 const verticalParam = Astro.params.vertical;
-if (verticalParam !== 'gastronomy' && verticalParam !== 'experience') {
+if (verticalParam !== 'venue' && verticalParam !== 'experience') {
     return new Response(null, { status: 404 });
 }
 

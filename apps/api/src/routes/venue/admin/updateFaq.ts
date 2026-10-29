@@ -1,6 +1,6 @@
 /**
- * PUT /api/v1/admin/gastronomies/:id/faqs/:faqId
- * Update an existing FAQ in a gastronomy listing — Admin endpoint.
+ * PUT /api/v1/admin/venues/:id/faqs/:faqId
+ * Update an existing FAQ in a venue listing — Admin endpoint.
  */
 import {
     FaqWithChannelVisibilityUpdatePayloadSchema,
@@ -20,19 +20,19 @@ import { createAdminRoute } from '../../../utils/route-factory';
 const venueService = new VenueService({ logger: apiLogger });
 
 /**
- * PUT /api/v1/admin/gastronomies/:id/faqs/:faqId
- * Update FAQ in gastronomy listing — Admin endpoint.
+ * PUT /api/v1/admin/venues/:id/faqs/:faqId
+ * Update FAQ in venue listing — Admin endpoint.
  *
- * Requires GASTRONOMY_EDIT_ALL permission. The service helper
+ * Requires VENUE_EDIT_ALL permission. The service helper
  * `updateVenueFaq` enforces the same gate via `checkVenueCanEditFaqs`.
  */
 export const adminUpdateVenueFaqRoute = createAdminRoute({
     method: 'put',
     listingAccess: { vertical: VerticalEnum.VENUE, operation: 'EDIT', idParam: 'id' },
     path: '/{id}/faqs/{faqId}',
-    summary: 'Update FAQ in gastronomy listing (admin)',
-    description: 'Updates an existing FAQ in a gastronomy listing. Requires GASTRONOMY_EDIT_ALL.',
-    tags: ['Gastronomy', 'FAQs'],
+    summary: 'Update FAQ in venue listing (admin)',
+    description: 'Updates an existing FAQ in a venue listing. Requires VENUE_EDIT_ALL.',
+    tags: ['Venue', 'FAQs'],
     requestParams: {
         id: z.string().uuid({ message: 'zodError.common.id.invalidUuid' }),
         faqId: z.string().uuid({ message: 'zodError.common.id.invalidUuid' })
@@ -47,7 +47,7 @@ export const adminUpdateVenueFaqRoute = createAdminRoute({
         const actor = getActorFromContext(ctx);
 
         const input: VenueFaqUpdateInput = {
-            gastronomyId: params.id as string,
+            venueId: params.id as string,
             faqId: params.faqId as string,
             faq: body as FaqWithChannelVisibilityUpdatePayloadType
         };

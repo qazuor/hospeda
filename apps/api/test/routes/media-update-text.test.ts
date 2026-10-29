@@ -3,7 +3,7 @@
  *
  *   PATCH /api/v1/{protected,admin}/posts/:id/media/:mediaId
  *   PATCH /api/v1/{protected,admin}/events/:id/media/:mediaId
- *   PATCH /api/v1/{protected,admin}/gastronomies/:id/media/:mediaId
+ *   PATCH /api/v1/{protected,admin}/venues/:id/media/:mediaId
  *   PATCH /api/v1/{protected,admin}/experiences/:id/media/:mediaId
  *
  * Eight thin handlers with one job each: resolve the actor, forward the four
@@ -185,23 +185,23 @@ const CASES: readonly RouteCase[] = [
         role: 'ADMIN'
     },
     {
-        name: 'protected gastronomy',
+        name: 'protected venue',
         tier: 'protected',
-        segment: 'gastronomies',
-        fk: 'gastronomyId',
+        segment: 'venues',
+        fk: 'venueId',
         mock: mockUpdateVenue,
         removeMock: mockRemoveVenue,
-        permissions: [PermissionEnum.GASTRONOMY_EDIT_OWN],
-        role: 'GASTRONOMY_OWNER'
+        permissions: [PermissionEnum.VENUE_EDIT_OWN],
+        role: 'VENUE_OWNER'
     },
     {
-        name: 'admin gastronomy',
+        name: 'admin venue',
         tier: 'admin',
-        segment: 'gastronomies',
-        fk: 'gastronomyId',
+        segment: 'venues',
+        fk: 'venueId',
         mock: mockUpdateVenue,
         removeMock: mockRemoveVenue,
-        permissions: [PermissionEnum.ACCESS_PANEL_ADMIN, PermissionEnum.GASTRONOMY_EDIT_ALL],
+        permissions: [PermissionEnum.ACCESS_PANEL_ADMIN, PermissionEnum.VENUE_EDIT_ALL],
         role: 'ADMIN'
     },
     {

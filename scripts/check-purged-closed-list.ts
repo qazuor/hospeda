@@ -5,7 +5,7 @@
  *
  * What it does: walks the `.ts` files of `packages/db/src/schemas/` listed by git and, with
  * the TypeScript AST, takes every `pgTable('<name>', ...)` that
- * (a) has a `references(() => <listing>.<column>)` to `accommodations`, `gastronomies` or
+ * (a) has a `references(() => <listing>.<column>)` to `accommodations`, `venues` or
  *     `experiences`, however the formatter splits it across lines;
  * (b) declares a `foreignKey({ foreignColumns: [<listing>.<column>, ...] })`; or
  * (c) has a column whose SQL name is the literal `'entity_type'`, whatever its constructor.
@@ -26,7 +26,7 @@ import { fileURLToPath } from 'node:url';
 import ts from 'typescript';
 
 /** The three listing tables (SQL and Drizzle export names coincide). */
-export const LISTING_TABLES = ['accommodations', 'gastronomies', 'experiences'] as const;
+export const LISTING_TABLES = ['accommodations', 'venues', 'experiences'] as const;
 
 /** Fewer schema files than this means the walk looked at the wrong tree. */
 export const MIN_SCANNED_FILES = 100;

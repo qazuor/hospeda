@@ -15,7 +15,7 @@
  *
  * The orchestrator mounts this only for the `experience` vertical, and that is
  * a shape decision exactly like `MeetingPointSection`'s: these keys exist on
- * `ExperienceOwnerUpdateInputSchema` and not on the gastronomy one, so
+ * `ExperienceOwnerUpdateInputSchema` and not on the venue one, so
  * rendering them for a restaurant would offer fields every save silently
  * strips. Do not "generalise" without adding the columns first.
  *

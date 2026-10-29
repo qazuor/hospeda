@@ -4,11 +4,11 @@ import { VerticalEnum } from '../../src/enums/vertical.enum.js';
 import { VerticalEnumSchema } from '../../src/enums/vertical.schema.js';
 
 describe('VerticalEnum', () => {
-    it('TEST:1813:7 AC:1:15 keeps VENUE at the persisted gastronomy value', () => {
-        expect(VerticalEnum.VENUE).toBe('gastronomy');
+    it('TEST:1819:3 AC:1:3 keeps VENUE at the persisted venue value', () => {
+        expect(VerticalEnum.VENUE).toBe('venue');
     });
 
-    it('TEST:1813:7 AC:1:15 exposes the complete renamed key set', () => {
+    it('TEST:1819:3 AC:1:3 exposes the complete renamed key set', () => {
         expect(Object.keys(VerticalEnum)).toEqual([
             'ACCOMMODATION',
             'VENUE',
@@ -22,9 +22,9 @@ describe('VerticalEnum', () => {
         expect(Object.values(VerticalEnum).sort()).toEqual([
             'accommodation',
             'experience',
-            'gastronomy',
             'partner',
-            'tourist'
+            'tourist',
+            'venue'
         ]);
     });
 

@@ -1,5 +1,5 @@
 import { randomUUID } from 'node:crypto';
-import { accommodationReviews, experienceReviews, gastronomyReviews, getDb, sql } from '@repo/db';
+import { accommodationReviews, experienceReviews, getDb, sql, venueReviews } from '@repo/db';
 import { PublicationStatusEnum, VerticalEnum } from '@repo/schemas';
 import { afterAll, afterEach, beforeAll, describe, expect, it } from 'vitest';
 import { purgeInactiveListing } from '../../../../../packages/verticals/src/publication/purge-inactive-listing';
@@ -23,22 +23,22 @@ const verticals = [
 type Vertical = (typeof verticals)[number];
 const listingTables: Readonly<Record<Vertical, string>> = {
     [VerticalEnum.ACCOMMODATION]: 'accommodations',
-    [VerticalEnum.VENUE]: 'gastronomies',
+    [VerticalEnum.VENUE]: 'venues',
     [VerticalEnum.EXPERIENCE]: 'experiences'
 };
 const reviewTables: Readonly<Record<Vertical, string>> = {
     [VerticalEnum.ACCOMMODATION]: 'accommodation_reviews',
-    [VerticalEnum.VENUE]: 'gastronomy_reviews',
+    [VerticalEnum.VENUE]: 'venue_reviews',
     [VerticalEnum.EXPERIENCE]: 'experience_reviews'
 };
 const reviewListingColumns: Readonly<Record<Vertical, string>> = {
     [VerticalEnum.ACCOMMODATION]: 'accommodation_id',
-    [VerticalEnum.VENUE]: 'gastronomy_id',
+    [VerticalEnum.VENUE]: 'venue_id',
     [VerticalEnum.EXPERIENCE]: 'experience_id'
 };
 const reviewPaths: Readonly<Record<Vertical, (id: string) => string>> = {
     [VerticalEnum.ACCOMMODATION]: (id) => `/api/v1/public/accommodations/${id}/reviews`,
-    [VerticalEnum.VENUE]: (id) => `/api/v1/public/gastronomies/${id}/reviews`,
+    [VerticalEnum.VENUE]: (id) => `/api/v1/public/venues/${id}/reviews`,
     [VerticalEnum.EXPERIENCE]: (id) => `/api/v1/public/experiences/${id}/reviews`
 };
 const MATRIX_NOW = new Date('2026-10-10T12:00:00.000Z');
@@ -150,9 +150,9 @@ describe.each(verticals)('TEST:V9b:3 AC:V9b:3 reseñas de terceros — %s', (ver
             reviewId = review.id;
         } else if (vertical === VerticalEnum.VENUE) {
             const [review] = await getDb()
-                .insert(gastronomyReviews)
+                .insert(venueReviews)
                 .values({
-                    gastronomyId: listingId,
+                    venueId: listingId,
                     userId: reviewer.id,
                     title: 'Third-party title',
                     content: reviewText,
@@ -162,7 +162,7 @@ describe.each(verticals)('TEST:V9b:3 AC:V9b:3 reseñas de terceros — %s', (ver
                     lifecycleState: 'ACTIVE'
                 })
                 .returning();
-            if (!review) throw new Error('Gastronomy review fixture insert failed');
+            if (!review) throw new Error('Venue review fixture insert failed');
             reviewId = review.id;
         } else {
             const [review] = await getDb()

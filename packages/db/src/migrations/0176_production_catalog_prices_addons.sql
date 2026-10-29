@@ -6,12 +6,12 @@ INSERT INTO "billing_option" ("id", "plan_version_id", "cycle", "amount", "curre
 	('a0eff72a-a0be-532c-9a3a-aeeca05d1dd7', '5171d736-8b7d-5840-9262-4ac6cb83bcac', 'annual', 35000000, 'ARS'),
 	('244ca142-82a8-53a5-bc44-46bbd1d0200d', '3696b354-122a-528f-9090-41e22a61091f', 'monthly', 6500000, 'ARS'),
 	('4269b2db-5dc1-5854-a4a4-eb715a8356c9', '3696b354-122a-528f-9090-41e22a61091f', 'annual', 65000000, 'ARS'),
-	('64184385-4a9b-51f9-8be4-eadde06643b3', 'ae55459f-a2b5-5dcf-8352-b2a6ad108f08', 'monthly', 3000000, 'ARS'),
-	('18c22ce2-f8c7-597a-ae95-fdcec362e0bf', 'ae55459f-a2b5-5dcf-8352-b2a6ad108f08', 'annual', 30000000, 'ARS'),
-	('eda05a14-62fe-5707-bdf0-d5f7fd87a943', '8495a831-2edc-5081-af8b-e46068ec0fd1', 'monthly', 6500000, 'ARS'),
-	('62437fbd-6c7c-5f03-a41f-094d04cadbab', '8495a831-2edc-5081-af8b-e46068ec0fd1', 'annual', 65000000, 'ARS'),
-	('aea23fdf-da02-50e8-b0b6-f2d4ede7297e', 'f4978c82-ff0d-5cd1-a9af-ee8356bca538', 'monthly', 8000000, 'ARS'),
-	('1221d80f-bd36-59ec-b711-ab19d935505c', 'f4978c82-ff0d-5cd1-a9af-ee8356bca538', 'annual', 80000000, 'ARS'),
+	('9bb308a3-7eee-5748-92e7-df882a56bcb5', '54a6f750-1b4c-53ff-ba51-c27f51921598', 'monthly', 3000000, 'ARS'),
+	('931c325d-c9c8-52f0-a9ea-48ac8681e568', '54a6f750-1b4c-53ff-ba51-c27f51921598', 'annual', 30000000, 'ARS'),
+	('166b0d61-f1bc-5a30-a945-5ea319a4d876', '3b701ee3-ea7b-5360-a6fb-58bc75842680', 'monthly', 6500000, 'ARS'),
+	('b893ba27-90b9-5145-b3c9-839602ccdcf9', '3b701ee3-ea7b-5360-a6fb-58bc75842680', 'annual', 65000000, 'ARS'),
+	('e76a3048-5e60-55b8-82dd-e8107072ae6c', '8e4b0c4e-702f-5203-85e3-e9c06365eb87', 'monthly', 8000000, 'ARS'),
+	('66f9ec76-9806-5102-a598-3b1b01d6e4e6', '8e4b0c4e-702f-5203-85e3-e9c06365eb87', 'annual', 80000000, 'ARS'),
 	('eaca41c5-5dc0-561c-818c-d85ada0b087b', 'c42b276a-4382-5f17-b81e-19f6ab4a55f2', 'monthly', 1500000, 'ARS'),
 	('f7cf3aac-c00b-59dd-a076-e8402f0ffb82', 'c42b276a-4382-5f17-b81e-19f6ab4a55f2', 'annual', 15000000, 'ARS'),
 	('df8c66c3-4888-5924-b61b-6942ef517b68', 'cfbb3e23-b39b-5711-985a-ce20714a05df', 'monthly', 3500000, 'ARS'),
@@ -28,49 +28,49 @@ INSERT INTO "billing_option" ("id", "plan_version_id", "cycle", "amount", "curre
 INSERT INTO "addon" ("id", "slug", "name", "description") VALUES
 	('73cea908-12f1-55b8-9607-3b2943629271', 'extra-accommodations-5', 'Extra Accommodations Pack (+5)', 'Adds 5 additional accommodations to your plan. Renews monthly.'),
 	('ccc9266a-4db1-5e93-a93b-f432fd48baa5', 'extra-photos-20', 'Extra Photos Pack (+20 photos)', 'Adds 20 additional photos to each accommodation. Renews monthly.'),
-	('541c04e0-38a5-5427-8911-ea8b7c5e4cfb', 'extra-gastronomies-1', 'Extra Gastronomy Listing (+1)', 'Adds 1 additional gastronomy listing to your plan. Renews monthly.'),
+	('3a40ce3f-8b7c-59c3-94c1-9b4ee56486e9', 'extra-venues-1', 'Extra Comer y salir Listing (+1)', 'Adds 1 additional venue listing to your plan. Renews monthly.'),
 	('66b3d450-e92f-56ef-ae92-042204aee1bb', 'extra-experiences-1', 'Extra Experience Listing (+1)', 'Adds 1 additional experience listing to your plan. Renews monthly.'),
 	('8c4adeb1-46b3-541f-a7af-751df16f459b', 'visibility-boost-7d', 'Visibility Boost (7 days)', 'Your accommodation appears featured in search results for 7 days.'),
 	('b8605b0b-1310-5b5e-acc4-b7473b1e7d4a', 'visibility-boost-30d', 'Visibility Boost (30 days)', 'Your accommodation appears featured in search results for 30 days.'),
-	('73f474e9-8880-5408-96dd-c73b9f386174', 'visibility-boost-gastronomy-7d', 'Visibility Boost — Restaurant (7 days)', 'Your restaurant appears featured in search results for 7 days.'),
-	('a01b60c2-814e-5140-ad34-e03f9e1c13f2', 'visibility-boost-gastronomy-30d', 'Visibility Boost — Restaurant (30 days)', 'Your restaurant appears featured in search results for 30 days.'),
+	('b1e66ad8-1cc1-5a10-a3fb-46b117265587', 'visibility-boost-venue-7d', 'Visibility Boost — Comer y salir (7 days)', 'Your restaurant appears featured in search results for 7 days.'),
+	('836d3225-9d7b-5aa4-b78f-a26a00ab0a1e', 'visibility-boost-venue-30d', 'Visibility Boost — Comer y salir (30 days)', 'Your restaurant appears featured in search results for 30 days.'),
 	('c32dbc63-ed34-5d02-8e00-b7efef53f57f', 'visibility-boost-experience-7d', 'Visibility Boost — Experience (7 days)', 'Your experience appears featured in search results for 7 days.'),
 	('8af17461-5b98-5182-b2fa-f7787c65370d', 'visibility-boost-experience-30d', 'Visibility Boost — Experience (30 days)', 'Your experience appears featured in search results for 30 days.');
 --> statement-breakpoint
 INSERT INTO "addon_version" ("id", "addon_id", "validity", "validity_days", "scope_type") VALUES
 	('ce27dae1-29c1-5d55-b416-80ba6d2163ba', '73cea908-12f1-55b8-9607-3b2943629271', 'WHILE_SUBSCRIPTION_ALIVE', NULL, 'VERTICAL_SUBSCRIPTION'),
 	('4e083437-97ab-5c81-ab4a-d4e4f9e1fd7c', 'ccc9266a-4db1-5e93-a93b-f432fd48baa5', 'WHILE_SUBSCRIPTION_ALIVE', NULL, 'VERTICAL_SUBSCRIPTION'),
-	('5ac6389a-5e8c-5d0e-812c-8f1078ced6ac', '541c04e0-38a5-5427-8911-ea8b7c5e4cfb', 'WHILE_SUBSCRIPTION_ALIVE', NULL, 'VERTICAL_SUBSCRIPTION'),
+	('fc99fd03-1b03-5cd6-8e9e-c08645ada1bc', '3a40ce3f-8b7c-59c3-94c1-9b4ee56486e9', 'WHILE_SUBSCRIPTION_ALIVE', NULL, 'VERTICAL_SUBSCRIPTION'),
 	('65745dd2-3593-54e4-b1df-1bcf2c751b9a', '66b3d450-e92f-56ef-ae92-042204aee1bb', 'WHILE_SUBSCRIPTION_ALIVE', NULL, 'VERTICAL_SUBSCRIPTION'),
 	('9da1528b-259a-59c0-a646-85e6a01a6132', '8c4adeb1-46b3-541f-a7af-751df16f459b', 'FIXED_DAYS', 7, 'LISTING'),
 	('159b74f4-8601-5ecc-a96f-5b490c7d0c7e', 'b8605b0b-1310-5b5e-acc4-b7473b1e7d4a', 'FIXED_DAYS', 30, 'LISTING'),
-	('108eea26-9694-5057-a928-7beb4db3d390', '73f474e9-8880-5408-96dd-c73b9f386174', 'FIXED_DAYS', 7, 'LISTING'),
-	('7807baae-18e9-576f-a904-78579f01d672', 'a01b60c2-814e-5140-ad34-e03f9e1c13f2', 'FIXED_DAYS', 30, 'LISTING'),
+	('4e3cb4ce-4fd4-5fad-a3c9-269ed01f031d', 'b1e66ad8-1cc1-5a10-a3fb-46b117265587', 'FIXED_DAYS', 7, 'LISTING'),
+	('5847d820-a695-5e7b-bf54-72489c6bc47d', '836d3225-9d7b-5aa4-b78f-a26a00ab0a1e', 'FIXED_DAYS', 30, 'LISTING'),
 	('e9767b72-4194-5bc7-98a4-088d3ef79360', 'c32dbc63-ed34-5d02-8e00-b7efef53f57f', 'FIXED_DAYS', 7, 'LISTING'),
 	('da6f0582-a9f7-59b0-ab6f-5565960681aa', '8af17461-5b98-5182-b2fa-f7787c65370d', 'FIXED_DAYS', 30, 'LISTING');
 --> statement-breakpoint
 INSERT INTO "addon_version_entitlement" ("id", "addon_version_id", "key") VALUES
 	('84d9b3d6-ba62-56a8-9481-f22394d72389', '9da1528b-259a-59c0-a646-85e6a01a6132', 'featured_listing'),
 	('bafde468-bf6d-5760-b838-624b498390e9', '159b74f4-8601-5ecc-a96f-5b490c7d0c7e', 'featured_listing'),
-	('348a23bc-1b65-5128-9afc-9061effd994f', '108eea26-9694-5057-a928-7beb4db3d390', 'featured_listing'),
-	('56803e0f-707e-57a8-a442-67d3df4e2c81', '7807baae-18e9-576f-a904-78579f01d672', 'featured_listing'),
+	('f9296bd0-107c-523f-8c12-33fecbf26f13', '4e3cb4ce-4fd4-5fad-a3c9-269ed01f031d', 'featured_listing'),
+	('b97109d8-d322-5382-b981-e7a795658809', '5847d820-a695-5e7b-bf54-72489c6bc47d', 'featured_listing'),
 	('4dacc7a1-a94b-5266-a204-8d7fed48fe86', 'e9767b72-4194-5bc7-98a4-088d3ef79360', 'featured_listing'),
 	('18c9fc7f-b7d8-50ec-b034-2ea0abe497db', 'da6f0582-a9f7-59b0-ab6f-5565960681aa', 'featured_listing');
 --> statement-breakpoint
 INSERT INTO "addon_version_limit" ("id", "addon_version_id", "key", "value") VALUES
 	('aa6d0786-d6cf-5389-aed0-9aed13e4258c', 'ce27dae1-29c1-5d55-b416-80ba6d2163ba', 'max_accommodations', 5),
 	('befc8c7d-f050-5f23-a3f2-3f12ba589c45', '4e083437-97ab-5c81-ab4a-d4e4f9e1fd7c', 'max_photos_per_accommodation', 20),
-	('b62c3a87-7ab8-519e-af81-43b0ab10d5af', '5ac6389a-5e8c-5d0e-812c-8f1078ced6ac', 'max_gastronomies', 1),
+	('f0d5f78c-3e82-532c-84ab-e695e51641bf', 'fc99fd03-1b03-5cd6-8e9e-c08645ada1bc', 'max_venues', 1),
 	('1058c957-1812-593c-9af7-b6d7a339084c', '65745dd2-3593-54e4-b1df-1bcf2c751b9a', 'max_experiences', 1);
 --> statement-breakpoint
 INSERT INTO "addon_product" ("id", "addon_id", "version_id", "price", "currency", "charge_kind", "cycle", "compatible_verticals") VALUES
 	('9236170b-3865-53af-891e-6f9eae3451cd', '73cea908-12f1-55b8-9607-3b2943629271', 'ce27dae1-29c1-5d55-b416-80ba6d2163ba', 1300000, 'ARS', 'PERIODICO', 'monthly', '{accommodation}'),
 	('9519d2dd-ee9d-5467-951d-aa9fc6db47b4', 'ccc9266a-4db1-5e93-a93b-f432fd48baa5', '4e083437-97ab-5c81-ab4a-d4e4f9e1fd7c', 500000, 'ARS', 'PERIODICO', 'monthly', '{accommodation}'),
-	('13ebf058-90ec-5682-8280-7a43893ec1bd', '541c04e0-38a5-5427-8911-ea8b7c5e4cfb', '5ac6389a-5e8c-5d0e-812c-8f1078ced6ac', 1500000, 'ARS', 'PERIODICO', 'monthly', '{gastronomy}'),
+	('f3103842-e7e6-5a09-8458-4a9350d46489', '3a40ce3f-8b7c-59c3-94c1-9b4ee56486e9', 'fc99fd03-1b03-5cd6-8e9e-c08645ada1bc', 1500000, 'ARS', 'PERIODICO', 'monthly', '{venue}'),
 	('b4c069e4-1e32-5098-a5e1-6420b3c45df7', '66b3d450-e92f-56ef-ae92-042204aee1bb', '65745dd2-3593-54e4-b1df-1bcf2c751b9a', 1500000, 'ARS', 'PERIODICO', 'monthly', '{experience}'),
 	('a76cc6e2-01d2-5bbb-b028-2f5581dc02be', '8c4adeb1-46b3-541f-a7af-751df16f459b', '9da1528b-259a-59c0-a646-85e6a01a6132', 500000, 'ARS', 'UNA_VEZ', NULL, '{accommodation}'),
 	('10d25758-a906-579d-9df5-e09ff03e058b', 'b8605b0b-1310-5b5e-acc4-b7473b1e7d4a', '159b74f4-8601-5ecc-a96f-5b490c7d0c7e', 1500000, 'ARS', 'UNA_VEZ', NULL, '{accommodation}'),
-	('7aab0143-8b21-5cdf-a2d9-d4ec506619cf', '73f474e9-8880-5408-96dd-c73b9f386174', '108eea26-9694-5057-a928-7beb4db3d390', 500000, 'ARS', 'UNA_VEZ', NULL, '{gastronomy}'),
-	('0b55df76-b0b4-5b4b-8937-5ae72501fb95', 'a01b60c2-814e-5140-ad34-e03f9e1c13f2', '7807baae-18e9-576f-a904-78579f01d672', 1500000, 'ARS', 'UNA_VEZ', NULL, '{gastronomy}'),
+	('bfa7095e-2bfb-5016-b7d3-0291a1d90dfa', 'b1e66ad8-1cc1-5a10-a3fb-46b117265587', '4e3cb4ce-4fd4-5fad-a3c9-269ed01f031d', 500000, 'ARS', 'UNA_VEZ', NULL, '{venue}'),
+	('47548503-6e06-53a7-81c5-4a59111510e3', '836d3225-9d7b-5aa4-b78f-a26a00ab0a1e', '5847d820-a695-5e7b-bf54-72489c6bc47d', 1500000, 'ARS', 'UNA_VEZ', NULL, '{venue}'),
 	('c156627d-feb4-5a34-bbac-5131d57fa8c5', 'c32dbc63-ed34-5d02-8e00-b7efef53f57f', 'e9767b72-4194-5bc7-98a4-088d3ef79360', 500000, 'ARS', 'UNA_VEZ', NULL, '{experience}'),
 	('ef50b122-896a-5524-9e97-8ccd2d5bdf8a', '8af17461-5b98-5182-b2fa-f7787c65370d', 'da6f0582-a9f7-59b0-ab6f-5565960681aa', 1500000, 'ARS', 'UNA_VEZ', NULL, '{experience}');

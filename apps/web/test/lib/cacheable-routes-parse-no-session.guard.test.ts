@@ -57,9 +57,9 @@ const CACHEABLE_ROUTE_FAMILIES: ReadonlyArray<string> = [
     'destinos',
     'eventos',
     'publicaciones',
-    'gastronomia',
+    'comer-y-salir',
     'experiencias',
-    // HOS-690: the two gastronomy/experience verticals landings lost the ListingLead form
+    // HOS-690: the two venue/experience verticals landings lost the ListingLead form
     // (and with it the only reason either page read the session), so both
     // moved off `SESSION_OPTIONAL_SEGMENTS` and onto this list.
     'publicar-restaurante',

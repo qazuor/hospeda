@@ -2,9 +2,9 @@
  * experiences.seed.ts — Experience listing seeder (SPEC-240 T-014).
  *
  * Inserts 5 experience listings covering different types, price units, and
- * publication states.  Mirrors the gastronomy seeder pattern from SPEC-239
+ * publication states.  Mirrors the venue seeder pattern from SPEC-239
  * but uses direct Drizzle-level insertion (bypassing ExperienceService.create)
- * because the seed reuses the gastronomy owner and grants `EXPERIENCE_OWNER`
+ * because the seed reuses the venue owner and grants `EXPERIENCE_OWNER`
  * before inserting that user's experience listings. (It used to have a second
  * reason, the server-managed `has_active_subscription` column; HOS-1419 dropped
  * that column.)
@@ -23,7 +23,7 @@
  * an `EXPERIENCE`-typed bookmark (see `bookmarks.seed.ts`).
  *
  * There is no `example` JSON fixture folder for experiences (unlike
- * gastronomies) — the 5 listings below are hardcoded inline, so no dedicated
+ * venues) — the 5 listings below are hardcoded inline, so no dedicated
  * child-table fixtures (FAQs/reviews) exist for this entity yet.
  *
  * Seeded listings:
@@ -71,7 +71,7 @@ interface ExperienceInsertInput {
     destinationId: string;
     createdById: string;
     /**
-     * Fixture photo block. Shared with the accommodation and gastronomy seeds
+     * Fixture photo block. Shared with the accommodation and venue seeds
      * (HOS-372) instead of the locally-redeclared `SeedMedia` interface this
      * file used to carry — one shape, one place to keep it correct.
      */
@@ -319,7 +319,7 @@ function buildExperienceInputs(
  *
  * Uses `ExperienceMediaModel` rather than this file's raw `pg.Pool`. Going
  * through the model keeps the row shape typed and reuses the same builder
- * the accommodation and gastronomy seeds use.
+ * the accommodation and venue seeds use.
  *
  * Idempotent: skips entirely when the listing already has media rows.
  *
@@ -411,22 +411,22 @@ export async function seedExperiences(context: SeedContext): Promise<void> {
 
         // ------------------------------------------------------------------
         // 3. Resolve the user who owns the experiences.
-        //    We reuse gastro-owner-julieta@local.test — the first listing owner
-        //    seeded by gastronomies.seed.ts (which runs before experiences in the
+        //    We reuse venue-owner-julieta@local.test — the first listing owner
+        //    seeded by venues.seed.ts (which runs before experiences in the
         //    pipeline).  That user already has:
         //      • a Better Auth `accounts` credential row (password = Password123!)
-        //      • profile_completed = true (set by gastronomies.seed.ts)
+        //      • profile_completed = true (set by venues.seed.ts)
         //    so E2E tests can sign in and reach the listing-owner area without hitting
         //    the profile-completion middleware gate.
         // ------------------------------------------------------------------
-        const ownerEmail = 'gastro-owner-julieta@local.test';
+        const ownerEmail = 'venue-owner-julieta@local.test';
         const { rows: ownerRows } = await pool.query<DbRow>(
             'SELECT id FROM users WHERE email = $1 LIMIT 1',
             [ownerEmail]
         );
         if (!ownerRows[0]) {
             throw new Error(
-                `[experiences] Owner "${ownerEmail}" not found. seedGastronomies() must run before seedExperiences() — check the seed pipeline order.`
+                `[experiences] Owner "${ownerEmail}" not found. seedVenues() must run before seedExperiences() — check the seed pipeline order.`
             );
         }
         const listingOwnerId = ownerRows[0].id;

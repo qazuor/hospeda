@@ -22,7 +22,7 @@ import { I18nTextSchema, TranslationMetaSchema } from './i18n.schema.js';
  *
  * @example
  * ```ts
- * const GastronomySchema = z.object({
+ * const venueSchema = z.object({
  *   id: z.string().uuid(),
  *   ...ListingIdentityFields,
  *   // ... other fields
@@ -68,7 +68,7 @@ export const ListingIdentityFields = {
 
     /**
      * Rich-text (markdown) variant of the description.
-     * Optional; only available when the owning GASTRONOMY_OWNER or EXPERIENCE_OWNER has the
+     * Optional; only available when the owning VENUE_OWNER or EXPERIENCE_OWNER has the
      * `CAN_USE_RICH_DESCRIPTION` entitlement. Nullable because existing rows
      * pre-feature will be NULL.
      */

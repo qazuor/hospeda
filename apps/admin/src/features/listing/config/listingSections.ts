@@ -3,7 +3,7 @@
  * Builder functions for the SHARED listing consolidated section configs.
  *
  * These sections are reused verbatim by every concrete listing entity
- * (gastronomy via SPEC-240, experiences later) — they contain ZERO entity-
+ * (venue via SPEC-240, experiences later) — they contain ZERO entity-
  * specific fields or values.
  *
  * Two sections are exported:
@@ -24,17 +24,17 @@
  *
  * HOS-382: `media.featuredImage` and `media.gallery` were REMOVED from this
  * section. They used to buffer into a `media` object on PATCH, but the
- * `media` JSONB column was dropped from `gastronomies`/`experiences`
+ * `media` JSONB column was dropped from `legacy listing table`/`experiences`
  * (HOS-372) — the update schemas silently strip a `media` key, so every
  * photo uploaded through those fields was orphaned in Cloudinary with no DB
  * row ever created. Photos are now managed exclusively via the relational
- * `gastronomy_media` / `experience_media` tables through the dedicated
+ * `venue_media` / `experience_media` tables through the dedicated
  * Gallery tab (`ListingGalleryManager`, mirroring accommodations'
  * `GalleryManager`). `videos` is unaffected — it is its own top-level
  * column, not nested under `media`.
  *
  * Permissions are selected from the listing vertical so each section uses
- * only the matching gastronomy or experience permissions.
+ * only the matching venue or experience permissions.
  *
  * Field types are taken from the real `FieldTypeEnum`.  If a needed type
  * (e.g. a structured opening-hours editor) does not yet exist, the closest
@@ -54,12 +54,12 @@ import type { ConsolidatedSectionConfig } from '@/features/accommodations/types/
 // ---------------------------------------------------------------------------
 
 function permissionsForVertical(vertical: VenueOrExperience) {
-    return vertical === 'gastronomy'
+    return vertical === 'venue'
         ? {
-              view: PermissionEnum.GASTRONOMY_VIEW_ALL,
-              editAll: PermissionEnum.GASTRONOMY_EDIT_ALL,
-              editOwn: PermissionEnum.GASTRONOMY_EDIT_OWN,
-              moderateReview: PermissionEnum.GASTRONOMY_MODERATE_REVIEW
+              view: PermissionEnum.VENUE_VIEW_ALL,
+              editAll: PermissionEnum.VENUE_EDIT_ALL,
+              editOwn: PermissionEnum.VENUE_EDIT_OWN,
+              moderateReview: PermissionEnum.VENUE_MODERATE_REVIEW
           }
         : {
               view: PermissionEnum.EXPERIENCE_VIEW_ALL,
@@ -90,7 +90,7 @@ function permissionsForVertical(vertical: VenueOrExperience) {
  * @returns A `ConsolidatedSectionConfig` for the listing identity section.
  */
 export function createListingIdentitySection(
-    vertical: 'gastronomy' | 'experience'
+    vertical: 'venue' | 'experience'
 ): ConsolidatedSectionConfig {
     const permissions = permissionsForVertical(vertical);
     return {
@@ -313,7 +313,7 @@ export function createListingIdentitySection(
  * @returns A `ConsolidatedSectionConfig` for the listing operational section.
  */
 export function createListingOperationalSection(
-    vertical: 'gastronomy' | 'experience'
+    vertical: 'venue' | 'experience'
 ): ConsolidatedSectionConfig {
     const permissions = permissionsForVertical(vertical);
     return {
@@ -449,7 +449,7 @@ export function createListingOperationalSection(
             // ------------------------------------------------------------------
             {
                 // HOS-372: the field id is `videos`, NOT `media.videos`. The `media`
-                // JSONB column was dropped from `gastronomies`/`experiences` and
+                // JSONB column was dropped from `legacy listing table`/`experiences` and
                 // `media` is no longer a write field — a dotted `media.videos` id
                 // submits a `media` object the update schema now strips, so the
                 // videos would never reach the DB. `videos` is its own column.

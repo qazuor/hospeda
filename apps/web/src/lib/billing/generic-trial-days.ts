@@ -30,7 +30,7 @@
  *   already-selected plan list, returns the minimum `trialDays` among the
  *   active plans that actually offer a trial, or `null` when none do. It is
  *   what the plan index calls once per audience (see
- *   `billing/audience-plans.ts`), so tourist, gastronomy, experience and
+ *   `billing/audience-plans.ts`), so tourist, venue, experience and
  *   partner get the same rule the owner tier has had since H-98 instead of a
  *   second, subtly different copy of it.
  * - {@link computeGenericOwnerTrialDays} is that core narrowed to the owner

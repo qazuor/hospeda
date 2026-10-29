@@ -320,7 +320,7 @@ export const httpToDomainExperienceUpdate = (
  * Type-level validation to ensure HTTP→Domain conversion covers all fields.
  * These checks cause TypeScript compilation errors if schemas are inconsistent.
  *
- * Mirrors the pattern in `gastronomy.http.schema.ts` (checks 1–6).
+ * Mirrors the pattern in `venue.http.schema.ts` (checks 1–6).
  */
 
 // Check 1: All domain search fields are mapped in HTTP conversion

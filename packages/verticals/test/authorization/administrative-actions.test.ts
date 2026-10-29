@@ -303,7 +303,7 @@ describe('TEST:V5:14 — la cadena rechaza al actor de sistema', () => {
         const retiring = [
             { permission: PermissionEnum.ACCOMMODATION_DELETE_ANY, formerAction: 'ACC_23' },
             { permission: PermissionEnum.ACCOMMODATION_HARD_DELETE, formerAction: 'ACC_23' },
-            { permission: PermissionEnum.GASTRONOMY_DELETE, formerAction: 'ACC_23' },
+            { permission: PermissionEnum.VENUE_DELETE, formerAction: 'ACC_23' },
             { permission: PermissionEnum.EXPERIENCE_DELETE, formerAction: 'ACC_23' },
             { permission: PermissionEnum.USER_DELETE, formerAction: 'ACC_24' },
             { permission: PermissionEnum.USER_HARD_DELETE, formerAction: 'ACC_24' },

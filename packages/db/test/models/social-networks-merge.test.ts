@@ -4,7 +4,7 @@
  * networks the caller did not send, on EVERY model that owns the column.
  *
  * `BaseModelImpl.update()` replaces a JSONB column wholesale unless the model
- * lists it in `mergeableJsonbColumns`. Six models (experience, gastronomy,
+ * lists it in `mergeableJsonbColumns`. Six models (experience, venue,
  * partner, postSponsor, user, eventOrganizer) shipped without `socialNetworks`
  * in that list, so `{ socialNetworks: { instagram } }` silently deleted
  * `facebook`, `twitter`, and the rest. `accommodation` already declared it and
@@ -38,7 +38,7 @@ import { experiences } from '../../src/schemas/experience/experiences.dbschema';
 import { partners } from '../../src/schemas/partner/partner.dbschema';
 import { postSponsors } from '../../src/schemas/post/post_sponsor.dbschema';
 import { users } from '../../src/schemas/user/user.dbschema';
-import { gastronomies } from '../../src/schemas/venue/venue.dbschema';
+import { venues } from '../../src/schemas/venue/venue.dbschema';
 import type { DrizzleClient } from '../../src/types';
 import { buildMergeSetClause } from '../../src/utils/jsonb-merge';
 
@@ -63,7 +63,7 @@ const CASES: readonly Case[] = [
     {
         label: 'VenueModel',
         create: () => new VenueModel() as never,
-        table: gastronomies,
+        table: venues,
         dbColumn: 'social_networks'
     },
     {

@@ -64,7 +64,7 @@ describe.skipIf(!DB_AVAILABLE)(
                 // Assert — all counts are zero (no relations inserted).
                 const item = result.items[0];
                 expect(item?.accommodationsCount).toBe(0);
-                expect(item?.gastronomiesCount).toBe(0);
+                expect(item?.venuesCount).toBe(0);
                 expect(item?.experiencesCount).toBe(0);
                 expect(item?.eventsCount).toBe(0);
                 expect(item?.postsCount).toBe(0);

@@ -117,9 +117,9 @@
             "plural": "Oficios",
             "description": "Directorio de proveedores de servicios para anfitriones"
         },
-        "gastronomy": {
-            "singular": "Gastronomía",
-            "plural": "Gastronomías",
+        "venue": {
+            "singular": "Ficha de Comer y salir",
+            "plural": "Fichas de Comer y salir",
             "description": "Gestiona restaurantes, bares, cafés y otros comercios gastronómicos"
         },
         "experience": {
@@ -157,7 +157,7 @@
             "errorMessage": "No pudimos crear la experiencia. Probá de nuevo."
         }
     },
-    "gastronomy": {
+    "venue": {
         "tabs": {
             "general": "General",
             "faqs": "Preguntas Frecuentes",
@@ -196,11 +196,11 @@
             "button": "Asignar"
         },
         "create": {
-            "title": "Nueva Gastronomía",
-            "successTitle": "Gastronomía creada",
-            "successMessage": "La gastronomía se creó exitosamente",
+            "title": "Nueva ficha de Comer y salir",
+            "successTitle": "Ficha creada",
+            "successMessage": "La ficha de Comer y salir se creó exitosamente",
             "errorTitle": "Error al crear",
-            "errorMessage": "No pudimos crear la gastronomía. Probá de nuevo."
+            "errorMessage": "No pudimos crear la ficha de Comer y salir. Probá de nuevo."
         }
     },
     "columns": {
@@ -275,7 +275,7 @@
         "sponsor": "Patrocinador",
         "sponsorship": "Patrocinio",
         "eventsCount": "Eventos",
-        "gastronomiesCount": "Gastronomías",
+        "venuesCount": "Fichas de Comer y salir",
         "experiencesCount": "Experiencias",
         "destinationsCount": "Destinos",
         "postsCount": "Publicaciones",

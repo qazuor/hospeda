@@ -13,7 +13,7 @@
  *   `moderationState`, `isFeatured`, `ownerId`) are ABSENT from the schema,
  *   so any forged keys for those are silently stripped by Zod.
  * - ExperienceService.updateOwn() enforces ownership (non-owner → NOT_FOUND) and
- *   per-section GASTRONOMY_/EXPERIENCE_EDIT_OWN permission checks.
+ *   per-section VENUE_/EXPERIENCE_EDIT_OWN permission checks.
  * Owner updates use the effective edit_experience_info capability.
  */
 

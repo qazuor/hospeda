@@ -7,7 +7,7 @@
  *
  * It is not a web page on paper. It is the thing that sits on a hotel counter,
  * in a cabin's welcome folder, and in the pile at the tourism office — the
- * channel that still moves half the Litoral and that a gastronomy or experience listing currently has
+ * channel that still moves half the Litoral and that a venue or experience listing currently has
  * to pay a designer to enter. So the page is built around two jobs, in this
  * order: be readable at arm's length on a rack, and get the reader back online
  * through the QR.

@@ -1,6 +1,6 @@
 /**
  * @file qr-png.ts
- * @description Client-side SVG→PNG conversion for the gastronomy menu QR
+ * @description Client-side SVG→PNG conversion for the food menu QR
  * download button (HOS-1044 §6.6, §11 OQ-3).
  *
  * The API renders the code as SVG only (`renderQrSvg`,

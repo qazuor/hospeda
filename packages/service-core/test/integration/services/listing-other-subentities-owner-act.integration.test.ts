@@ -20,17 +20,17 @@ import {
 function owner(id: string): Actor {
     return {
         id,
-        roles: [RoleEnum.HOST, RoleEnum.GASTRONOMY_OWNER, RoleEnum.EXPERIENCE_OWNER],
+        roles: [RoleEnum.HOST, RoleEnum.VENUE_OWNER, RoleEnum.EXPERIENCE_OWNER],
         permissions: [
             PermissionEnum.ACCOMMODATION_UPDATE_OWN,
-            PermissionEnum.GASTRONOMY_EDIT_OWN,
+            PermissionEnum.VENUE_EDIT_OWN,
             PermissionEnum.EXPERIENCE_EDIT_OWN
         ]
     };
 }
 
 async function expectActs(input: {
-    readonly entityType: 'accommodation' | 'gastronomy' | 'experience';
+    readonly entityType: 'accommodation' | 'venue' | 'experience';
     readonly entityId: string;
     readonly ownerId: string;
     readonly fields: readonly string[];
@@ -65,7 +65,7 @@ describe('HOS-1642 owner acts for other listing subentities', () => {
 
     it('TEST:V9a:7 — carta, special and event edits each write a name-only act', async () => {
         await withServiceTestTransaction(async (tx) => {
-            const { gastronomyId, ownerId } = await seedVenue(tx);
+            const { venueId, ownerId } = await seedVenue(tx);
             const actor = owner(ownerId);
             const model = new VenueModel();
             const ctx = { tx };
@@ -73,7 +73,7 @@ describe('HOS-1642 owner acts for other listing subentities', () => {
                 model,
                 actor,
                 {
-                    gastronomyId,
+                    venueId,
                     menu: {
                         sections: [{ name: 'Carta secreta', items: [{ name: 'Plato secreto' }] }]
                     }
@@ -85,7 +85,7 @@ describe('HOS-1642 owner acts for other listing subentities', () => {
                 model,
                 actor,
                 {
-                    gastronomyId,
+                    venueId,
                     specials: {
                         specials: [
                             {
@@ -103,7 +103,7 @@ describe('HOS-1642 owner acts for other listing subentities', () => {
                 model,
                 actor,
                 {
-                    gastronomyId,
+                    venueId,
                     agenda: {
                         events: [
                             {
@@ -119,8 +119,8 @@ describe('HOS-1642 owner acts for other listing subentities', () => {
             );
             expect(agenda.error).toBeUndefined();
             await expectActs({
-                entityType: 'gastronomy',
-                entityId: gastronomyId,
+                entityType: 'venue',
+                entityId: venueId,
                 ownerId,
                 fields: ['menu', 'dailySpecials', 'events'],
                 tx,
@@ -157,21 +157,21 @@ describe('HOS-1642 owner acts for other listing subentities', () => {
 
     it.each([
         'accommodation',
-        'gastronomy',
+        'venue',
         'experience'
     ] as const)('TEST:V9a:7 — assigning and removing a tag on %s write owner acts', async (vertical) => {
         await withServiceTestTransaction(async (tx) => {
             const seeded =
                 vertical === 'accommodation'
                     ? await seedAccommodation(tx)
-                    : vertical === 'gastronomy'
+                    : vertical === 'venue'
                       ? await seedVenue(tx)
                       : await seedExperience(tx);
             const entityId =
                 vertical === 'accommodation'
                     ? (seeded as Awaited<ReturnType<typeof seedAccommodation>>).accommodationId
-                    : vertical === 'gastronomy'
-                      ? (seeded as Awaited<ReturnType<typeof seedVenue>>).gastronomyId
+                    : vertical === 'venue'
+                      ? (seeded as Awaited<ReturnType<typeof seedVenue>>).venueId
                       : (seeded as Awaited<ReturnType<typeof seedExperience>>).experienceId;
             const ownerId = 'userId' in seeded ? seeded.userId : seeded.ownerId;
             const [tag] = await tx
@@ -190,7 +190,7 @@ describe('HOS-1642 owner acts for other listing subentities', () => {
                 entityType:
                     vertical === 'accommodation'
                         ? EntityTypeEnum.ACCOMMODATION
-                        : vertical === 'gastronomy'
+                        : vertical === 'venue'
                           ? EntityTypeEnum.VENUE
                           : EntityTypeEnum.EXPERIENCE
             };

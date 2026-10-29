@@ -1,8 +1,8 @@
 /**
- * DELETE /api/v1/protected/gastronomies/:id/media/:mediaId
- * Remove (soft-delete) a photo from a gastronomy listing gallery (HOS-372).
+ * DELETE /api/v1/protected/venues/:id/media/:mediaId
+ * Remove (soft-delete) a photo from a venue listing gallery (HOS-372).
  *
- * Soft-deletes the `gastronomy_media` row identified by `mediaId` and
+ * Soft-deletes the `venue_media` row identified by `mediaId` and
  * resequences the remaining visible rows to a dense 0-based `sortOrder`.
  * Both operations run in a single transaction inside the service.
  *
@@ -10,7 +10,7 @@
  * so the asset is removed BEFORE the row, aborting the whole operation if
  * storage fails rather than leaving a permanently-billed orphan.
  *
- * Gated on GASTRONOMY_EDIT_OWN (listing owner) or GASTRONOMY_EDIT_ALL (staff) —
+ * Gated on VENUE_EDIT_OWN (listing owner) or VENUE_EDIT_ALL (staff) —
  * enforced inside `removeVenueMedia` via `checkVenueCanEditMedia`.
  */
 
@@ -27,7 +27,7 @@ import { createProtectedRoute } from '../../../utils/route-factory';
 const venueService = new VenueService({ logger: apiLogger });
 
 /**
- * Route handler — soft-deletes a specific photo from a gastronomy listing gallery.
+ * Route handler — soft-deletes a specific photo from a venue listing gallery.
  *
  * TYPE-WORKAROUND: accesses the internal `model` field from the service instance
  * to pass to the standalone media helper without requiring a public accessor.
@@ -35,12 +35,12 @@ const venueService = new VenueService({ logger: apiLogger });
 export const protectedRemoveVenueMediaRoute = createProtectedRoute({
     method: 'delete',
     path: '/{id}/media/{mediaId}',
-    summary: 'Remove photo from gastronomy listing gallery',
+    summary: 'Remove photo from venue listing gallery',
     description:
         'Soft-deletes a media row and resequences the remaining visible photos. ' +
-        'Requires GASTRONOMY_EDIT_OWN (listing owner) or GASTRONOMY_EDIT_ALL (staff).',
+        'Requires VENUE_EDIT_OWN (listing owner) or VENUE_EDIT_ALL (staff).',
     listingAccess: { vertical: VerticalEnum.VENUE, operation: 'EDIT', idParam: 'id' },
-    tags: ['Gastronomy', 'Gastronomy Media'],
+    tags: ['Venue', 'Venue Media'],
     protectedTag: false,
     requestParams: {
         id: z.string().uuid({ message: 'zodError.common.id.invalidUuid' }),
@@ -57,7 +57,7 @@ export const protectedRemoveVenueMediaRoute = createProtectedRoute({
             model,
             actor,
             {
-                gastronomyId: params.id as string,
+                venueId: params.id as string,
                 mediaId: params.mediaId as string
             },
             getMediaProvider()

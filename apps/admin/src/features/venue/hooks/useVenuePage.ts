@@ -1,6 +1,6 @@
 /**
  * @file useVenuePage.ts
- * Page-orchestrator hook for the gastronomy view and edit pages.
+ * Page-orchestrator hook for the venue view and edit pages.
  *
  * Centralises data loading, mode switching, and navigation so route components
  * stay thin.  Mirrors the `useHostTradePage` pattern adapted for the full
@@ -18,7 +18,7 @@ import { createVenueConsolidatedConfig } from '../config/venue-consolidated.conf
 import { useUpdateVenueMutation, useVenueQuery } from './useVenueQuery';
 
 /**
- * Centralised hook for the gastronomy view/edit pages.
+ * Centralised hook for the venue view/edit pages.
  *
  * Provides:
  *   - `entity` / `isLoading` / `error` from the detail query
@@ -28,7 +28,7 @@ import { useUpdateVenueMutation, useVenueQuery } from './useVenueQuery';
  *   - `updateMutation` for the edit form
  *   - Navigation helpers (`goToList`, `goToView`, `goToEdit`)
  *
- * @param entityId - UUID of the gastronomy listing being displayed
+ * @param entityId - UUID of the venue listing being displayed
  * @returns Page state and helpers for view/edit routes
  */
 export const useVenuePage = (entityId: string) => {
@@ -53,10 +53,10 @@ export const useVenuePage = (entityId: string) => {
             // HOS-1077 dual-read: these arrays are evaluated with `.some(...)`,
             // so naming both families IS the dual-read — no new mechanism.
             // Release 2 drops the LISTING_* entries.
-            view: [PermissionEnum.GASTRONOMY_VIEW_ALL],
-            edit: [PermissionEnum.GASTRONOMY_EDIT_ALL],
-            create: [PermissionEnum.GASTRONOMY_CREATE],
-            delete: [PermissionEnum.GASTRONOMY_DELETE]
+            view: [PermissionEnum.VENUE_VIEW_ALL],
+            edit: [PermissionEnum.VENUE_EDIT_ALL],
+            create: [PermissionEnum.VENUE_CREATE],
+            delete: [PermissionEnum.VENUE_DELETE]
         }),
         []
     );
@@ -76,10 +76,10 @@ export const useVenuePage = (entityId: string) => {
     const switchToView = () => setMode('view');
     const switchToEdit = () => setMode('edit');
 
-    const goToList = () => navigate({ to: '/gastronomies' });
-    const goToView = () => navigate({ to: '/gastronomies/$id', params: { id: entityId } });
+    const goToList = () => navigate({ to: '/venues' });
+    const goToView = () => navigate({ to: '/venues/$id', params: { id: entityId } });
     const goToEdit = () =>
-        navigate({ to: '/gastronomies/$id/edit' as never, params: { id: entityId } as never });
+        navigate({ to: '/venues/$id/edit' as never, params: { id: entityId } as never });
 
     const getSections = (): SectionConfig[] =>
         mode === 'view' ? entityConfig.viewSections : entityConfig.editSections;
@@ -118,7 +118,7 @@ export const useVenuePage = (entityId: string) => {
             isLoading: updateMutationResult.isPending
         },
 
-        entityType: 'gastronomy',
+        entityType: 'venue',
         entityId,
 
         goToList,

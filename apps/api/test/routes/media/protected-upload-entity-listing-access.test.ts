@@ -79,7 +79,7 @@ const REAL_PNG = Buffer.from(
     'base64'
 );
 
-type ListingEntityType = 'accommodation' | 'gastronomy' | 'experience';
+type ListingEntityType = 'accommodation' | 'venue' | 'experience';
 
 const VERTICALS: readonly {
     readonly entityType: ListingEntityType;
@@ -91,7 +91,7 @@ const VERTICALS: readonly {
         vertical: VerticalEnum.ACCOMMODATION,
         service: AccommodationService
     },
-    { entityType: 'gastronomy', vertical: VerticalEnum.VENUE, service: VenueService },
+    { entityType: 'venue', vertical: VerticalEnum.VENUE, service: VenueService },
     { entityType: 'experience', vertical: VerticalEnum.EXPERIENCE, service: ExperienceService }
 ];
 
@@ -99,7 +99,7 @@ const owner = createMockUserActor({
     id: OWNER_ID,
     permissions: [
         PermissionEnum.ACCOMMODATION_UPDATE_OWN,
-        PermissionEnum.GASTRONOMY_EDIT_OWN,
+        PermissionEnum.VENUE_EDIT_OWN,
         PermissionEnum.EXPERIENCE_EDIT_OWN
     ]
 });
@@ -149,7 +149,7 @@ function configure(args: {
                 inheritsTouristVip: false,
                 entries: [
                     { key: 'edit_accommodation_info', value: 1, strategy: 'MAX' },
-                    { key: 'edit_gastronomy_info', value: 1, strategy: 'MAX' },
+                    { key: 'edit_venue_info', value: 1, strategy: 'MAX' },
                     { key: 'edit_experience_info', value: 1, strategy: 'MAX' },
                     { key: 'max_photos_per_accommodation', value: maxPhotos, strategy: 'SUM' }
                 ]
@@ -296,9 +296,9 @@ describe('TEST:M1682:3 the listing state gates the upload', () => {
 
 describe('TEST:M1682:4 a featured upload never reuses a fixed public id', () => {
     it('two featured uploads on the same listing get two distinct featured/ ids', async () => {
-        const first = await upload({ entityType: 'gastronomy', role: 'featured', overwrite: true });
+        const first = await upload({ entityType: 'venue', role: 'featured', overwrite: true });
         const second = await upload({
-            entityType: 'gastronomy',
+            entityType: 'venue',
             role: 'featured',
             overwrite: true
         });

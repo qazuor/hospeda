@@ -11,7 +11,7 @@ CREATE TABLE "fix_request" (
 	"closed_at" timestamp with time zone,
 	"closed_by_id" uuid,
 	"updated_at" timestamp with time zone DEFAULT now() NOT NULL,
-	CONSTRAINT "fix_request_entity_type_check" CHECK ("fix_request"."entity_type" IN ('accommodation', 'gastronomy', 'experience')),
+	CONSTRAINT "fix_request_entity_type_check" CHECK ("fix_request"."entity_type" IN ('accommodation', 'venue', 'experience')),
 	CONSTRAINT "fix_request_closed_by_requires_closed_at_check" CHECK ("fix_request"."closed_by_id" IS NULL OR "fix_request"."closed_at" IS NOT NULL)
 );
 --> statement-breakpoint

@@ -251,7 +251,7 @@ describe('TEST:B13a:21c AC:B13a:5 resolveSignupTrialNotice', () => {
                             currency: 'ARS',
                             cycle: 'monthly'
                         },
-                        vertical: 'gastronomy',
+                        vertical: 'venue',
                         touristVip: { status: 'NOT_AFFECTED' },
                         trial: { status: 'NOT_RUNNING' }
                     }

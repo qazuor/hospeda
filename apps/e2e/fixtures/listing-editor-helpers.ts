@@ -1,6 +1,6 @@
 /**
  * @file listing-editor-helpers.ts
- * @description Shared helpers for driving the gastronomy or experience owner editor island
+ * @description Shared helpers for driving the venue or experience owner editor island
  * (`ListingEditor.client.tsx`) from Playwright.
  *
  * Added in HOS-371, when `richDescription` became a TipTap editor and the
@@ -62,11 +62,11 @@ export type ListingEditorSection =
     | 'servicios'
     | 'fotos'
     | 'contacto'
-    // HOS-895, HOS-1042 — gastronomy only, the mirror of the two
+    // HOS-895, HOS-1042 — venue only, the mirror of the two
     // experience-only slugs above. Opening either on an experience listing
     // redirects to the hub.
     | 'carta'
-    // HOS-1041 — gastronomy only too, and immediately after the carta because
+    // HOS-1041 — venue only too, and immediately after the carta because
     // that is where the registry puts it: the carta is the year's menu, this is
     // today's. Listed here for the reason this union exists at all — the E2E
     // package cannot import `apps/web`'s registry, so a section it cannot NAME
@@ -84,7 +84,7 @@ export type ListingEditorSection =
  * failing spec as "the editor is broken", not "the path was wrong".
  *
  * @param params.webUrl - Base URL of the web app under test
- * @param params.vertical - `gastronomy` or `experience`
+ * @param params.vertical - `venue` or `experience`
  * @param params.listingId - UUID of the listing being edited
  * @param params.section - Which section page to open
  * @param params.locale - UI locale segment (default `es`)
@@ -97,7 +97,7 @@ export function listingEditorUrl({
     locale = 'es'
 }: {
     readonly webUrl: string;
-    readonly vertical: 'gastronomy' | 'experience';
+    readonly vertical: 'venue' | 'experience';
     readonly listingId: string;
     readonly section: ListingEditorSection;
     readonly locale?: string;
@@ -229,7 +229,7 @@ export function listingSaveButton({ page }: { readonly page: Page }): Locator {
  * form was not dirty" but that the app actively said so.
  *
  * @param params.page - The Playwright page sitting on the editor route
- * @param params.pathPattern - Matches the expected PATCH URL (e.g. `/\/protected\/gastronomies\//`)
+ * @param params.pathPattern - Matches the expected PATCH URL (e.g. `/\/protected\/venues\//`)
  * @param params.timeout - Milliseconds to wait for the PATCH (default 15s)
  */
 export async function saveListingEditor({

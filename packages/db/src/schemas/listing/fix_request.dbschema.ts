@@ -17,7 +17,7 @@ import { quotedList } from '../vertical/quoted-list.ts';
 /**
  * The verticals that own a listing table, which are the only values
  * `fix_request.entity_type` admits. The vertical IS the table (`V/02` §2.5):
- * `accommodation` → `accommodations`, `gastronomy` → `gastronomies`,
+ * `accommodation` → `accommodations`, `venue` → `venues`,
  * `experience` → `experiences`. Tourist and partner own no listing.
  */
 export const FIX_REQUEST_ENTITY_TYPES = [

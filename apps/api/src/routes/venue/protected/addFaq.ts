@@ -1,8 +1,8 @@
 /**
- * POST /api/v1/protected/gastronomies/:id/faqs
- * Add a new FAQ to a gastronomy listing (T-044)
+ * POST /api/v1/protected/venues/:id/faqs
+ * Add a new FAQ to a venue listing (T-044)
  *
- * Gated on GASTRONOMY_EDIT_OWN (listing owner) or GASTRONOMY_EDIT_ALL (staff).
+ * Gated on VENUE_EDIT_OWN (listing owner) or VENUE_EDIT_ALL (staff).
  * displayOrder is auto-assigned by addVenueFaq() as max(existing)+1.
  */
 
@@ -24,7 +24,7 @@ import { createProtectedRoute } from '../../../utils/route-factory';
 const venueService = new VenueService({ logger: apiLogger });
 
 /**
- * Route handler — adds a FAQ to the specified gastronomy listing.
+ * Route handler — adds a FAQ to the specified venue listing.
  *
  * TYPE-WORKAROUND: accesses the internal `model` field from the service instance
  * to pass to the standalone FAQ helper without requiring a public accessor.
@@ -32,10 +32,10 @@ const venueService = new VenueService({ logger: apiLogger });
 export const protectedAddVenueFaqRoute = createProtectedRoute({
     method: 'post',
     path: '/{id}/faqs',
-    summary: 'Add FAQ to gastronomy listing',
-    description: 'Adds a new frequently asked question to a gastronomy listing',
+    summary: 'Add FAQ to venue listing',
+    description: 'Adds a new frequently asked question to a venue listing',
     listingAccess: { vertical: VerticalEnum.VENUE, operation: 'EDIT', idParam: 'id' },
-    tags: ['Gastronomy', 'Gastronomy FAQs'],
+    tags: ['Venue', 'Venue FAQs'],
     protectedTag: false,
     requestParams: {
         id: z.string().uuid({ message: 'zodError.common.id.invalidUuid' })
@@ -50,7 +50,7 @@ export const protectedAddVenueFaqRoute = createProtectedRoute({
         const actor = getActorFromContext(ctx);
 
         const input: VenueFaqAddInput = {
-            gastronomyId: params.id as string,
+            venueId: params.id as string,
             faq: body as FaqWithChannelVisibilityCreatePayloadType
         };
 

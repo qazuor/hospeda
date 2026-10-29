@@ -35,7 +35,7 @@ function path(vertical: (typeof verticals)[number], id: string) {
         vertical === VerticalEnum.ACCOMMODATION
             ? 'accommodations'
             : vertical === VerticalEnum.VENUE
-              ? 'gastronomies'
+              ? 'venues'
               : 'experiences';
     return `/api/v1/protected/${segment}/${id}/reactivate`;
 }
@@ -58,7 +58,7 @@ async function makeListing(
     else {
         if (vertical === VerticalEnum.VENUE)
             await getDb().execute(
-                sql`UPDATE gastronomies SET inactive_since = ${new Date(MATRIX_NOW.getTime() - 120 * 86_400_000)} WHERE id = ${id}`
+                sql`UPDATE venues SET inactive_since = ${new Date(MATRIX_NOW.getTime() - 120 * 86_400_000)} WHERE id = ${id}`
             );
         else
             await getDb().execute(

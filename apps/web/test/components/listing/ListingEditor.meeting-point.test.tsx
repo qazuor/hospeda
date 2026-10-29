@@ -7,7 +7,7 @@
  * These mount the REAL editor and read the REAL PATCH body, so they cover the
  * three things a wiring mistake breaks silently:
  *
- *  - the section renders for `experience` and NOT for `gastronomy` (the field
+ *  - the section renders for `experience` and NOT for `venue` (the field
  *    is absent from `VenueOwnerUpdateInputSchema`, so a control drawn
  *    there would offer an edit every save strips, and answer 200 doing it);
  *  - a persisted value seeds the form (an editor that opens blank re-saves
@@ -136,7 +136,7 @@ function buildListing(overrides: Record<string, unknown> = {}): ListingDetail {
 }
 
 function renderEditor(
-    vertical: 'gastronomy' | 'experience',
+    vertical: 'venue' | 'experience',
     initialData: ListingDetail = buildListing()
 ) {
     return render(
@@ -179,28 +179,28 @@ describe('ListingEditor — meeting point (HOS-1048)', () => {
             expect(screen.getByLabelText('Longitud (opcional)')).toBeInTheDocument();
         });
 
-        it('renders nothing of the kind for a gastronomy listing', () => {
+        it('renders nothing of the kind for a venue listing', () => {
             // A restaurant's address is its address; `meetingPoint` is not on
             // `VenueOwnerUpdateInputSchema`, so a control here would offer
             // an edit the API silently strips while answering 200.
-            const { container } = renderEditor('gastronomy');
+            const { container } = renderEditor('venue');
 
             expect(container.querySelector('#editor-meetingPoint')).toBeNull();
             expect(screen.queryByLabelText('Punto de encuentro')).toBeNull();
         });
 
-        it('exists in the experience registry, and not in the gastronomy one', () => {
+        it('exists in the experience registry, and not in the venue one', () => {
             // HOS-1080 moved the nav out of this island and onto the route, so
             // what used to be an in-page anchor is a section entry now. The
             // vertical gate moved with it: leaving the section out of the
-            // gastronomy registry is what makes
-            // `/gastronomy/<id>/editar/punto-de-encuentro` redirect instead of
+            // venue registry is what makes
+            // `/venue/<id>/editar/punto-de-encuentro` redirect instead of
             // rendering an empty page.
             const experienceIds = buildListingEditorSections({
                 vertical: 'experience'
             }).map((section) => section.id);
             const venueIds = buildListingEditorSections({
-                vertical: 'gastronomy'
+                vertical: 'venue'
             }).map((section) => section.id);
 
             expect(experienceIds).toContain('meetingPoint');
@@ -323,7 +323,7 @@ describe('ListingEditor — meeting point (HOS-1048)', () => {
             expect(body).not.toHaveProperty('meetingPointLong');
         });
 
-        it('never sends a meeting point from a gastronomy save', async () => {
+        it('never sends a meeting point from a venue save', async () => {
             // Non-vacuity for the vertical split. It is now guarded twice over:
             // `buildListingEditorSections` gives a restaurant no meeting-point
             // section to reach (asserted above), AND — should one ever be
@@ -332,7 +332,7 @@ describe('ListingEditor — meeting point (HOS-1048)', () => {
             // asserts the second half, from the page a restaurant DOES have.
             render(
                 <ListingEditor
-                    vertical="gastronomy"
+                    vertical="venue"
                     sectionId="basicInfo"
                     listingId="abc"
                     locale="es"

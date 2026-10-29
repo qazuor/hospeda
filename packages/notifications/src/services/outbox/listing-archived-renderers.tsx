@@ -2,12 +2,12 @@ import type { EmailOutboxRow } from '@repo/db';
 import { getLocalDateString } from '@repo/utils';
 import { ListingArchived } from '../../templates/listing/index.js';
 import { formatDate } from '../../templates/utils/index.js';
-import { formatTrialVerticals } from '../../utils/product-domain-copy.js';
+import { formatTrialVerticalInline } from '../../utils/product-domain-copy.js';
 import type { OutboxMailRenderer } from './email-outbox-delivery.service.js';
 
 /** Outbox template key of the on-archive listing notice (`@repo/verticals` enqueues it). */
 const LISTING_ARCHIVED = 'verticals.listing-archived';
-const LISTING_VERTICALS: readonly string[] = ['accommodation', 'gastronomy', 'experience'];
+const LISTING_VERTICALS: readonly string[] = ['accommodation', 'venue', 'experience'];
 const TRANSITIONS: readonly string[] = ['PB4', 'PB5'];
 const ISO_INSTANT = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(\.\d+)?Z$/;
 
@@ -52,9 +52,7 @@ function parsePayload(row: EmailOutboxRow): ListingArchivedData {
 
 function listingArchived(row: EmailOutboxRow) {
     const data = parsePayload(row);
-    const verticalName = formatTrialVerticals({ verticals: [data.vertical] }).toLocaleLowerCase(
-        'es-AR'
-    );
+    const verticalName = formatTrialVerticalInline({ vertical: data.vertical });
     // The announced deletion is an instant: name the market day it falls on (NUCLEO/07 §3).
     const deletionDate = formatDate({
         dateString: getLocalDateString({ instant: data.deletionAnnouncedAt })

@@ -1,6 +1,6 @@
 /**
- * POST /api/v1/protected/gastronomies/:id/media/featured
- * Register an already-uploaded URL as the gastronomy listing's COVER (HOS-803).
+ * POST /api/v1/protected/venues/:id/media/featured
+ * Register an already-uploaded URL as the venue listing's COVER (HOS-803).
  *
  * ## Why this exists next to `POST /:id/media`
  *
@@ -19,7 +19,7 @@
  * unverifiable: nothing obliges a client to send the promotion it promises, so
  * a caller setting it on every upload would have no cap at all. Here the
  * service creates the row already featured, in one transaction, and
- * `uq_gastronomy_media_single_featured` permits exactly one per listing.
+ * `uq_venue_media_single_featured` permits exactly one per listing.
  *
  * No cap needs waiving, because none is spent: the replaced cover is DELETED
  * (soft-deleted) in the same transaction, so one row enters the featured slot
@@ -30,7 +30,7 @@
  * the deletion is reversible at the row level, but callers must not present the
  * old cover as still available.
  *
- * Gated on GASTRONOMY_EDIT_OWN (listing owner) or GASTRONOMY_EDIT_ALL (staff) — enforced inside `addVenueFeaturedMedia` via `checkVenueCanEditMedia`.
+ * Gated on VENUE_EDIT_OWN (listing owner) or VENUE_EDIT_ALL (staff) — enforced inside `addVenueFeaturedMedia` via `checkVenueCanEditMedia`.
  */
 
 import {
@@ -60,16 +60,16 @@ const venueService = new VenueService({ logger: apiLogger });
 export const protectedAddVenueFeaturedMediaRoute = createProtectedRoute({
     method: 'post',
     path: '/{id}/media/featured',
-    summary: 'Upload the gastronomy listing cover image',
+    summary: 'Upload the venue listing cover image',
     description:
-        'Registers an already-uploaded URL as the gastronomy listing cover. The row is created ' +
+        'Registers an already-uploaded URL as the venue listing cover. The row is created ' +
         'already featured and the photo it replaces is DELETED in the same transaction ' +
         '— soft-deleted, so it disappears from the listing while its stored file ' +
         'is kept. Unlike POST /:id/media this does not ' +
         'consume a gallery slot, because the cover is not a gallery item ' +
-        '(HOS-791). Requires GASTRONOMY_EDIT_OWN (listing owner) or GASTRONOMY_EDIT_ALL (staff).',
+        '(HOS-791). Requires VENUE_EDIT_OWN (listing owner) or VENUE_EDIT_ALL (staff).',
     listingAccess: { vertical: VerticalEnum.VENUE, operation: 'EDIT', idParam: 'id' },
-    tags: ['Gastronomy', 'Gastronomy Media'],
+    tags: ['Venue', 'Venue Media'],
     protectedTag: false,
     requestParams: {
         id: z.string().uuid({ message: 'zodError.common.id.invalidUuid' })
@@ -87,7 +87,7 @@ export const protectedAddVenueFeaturedMediaRoute = createProtectedRoute({
         const actor = getActorFromContext(ctx);
 
         const input: VenueFeaturedMediaAddInput = {
-            gastronomyId: params.id as string,
+            venueId: params.id as string,
             media: body as VenueMediaAddPayload
         };
 

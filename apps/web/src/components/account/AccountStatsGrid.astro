@@ -3,7 +3,7 @@
  * @file AccountStatsGrid.astro
  * @description Quick stats grid for the account dashboard.
  * Renders one of three audience branches — tourist (favorites + reviews),
- * host (properties + messages), or gastronomy/experience owner (listings, HOS-1293) — plus
+ * host (properties + messages), or venue/experience owner (listings, HOS-1293) — plus
  * the subscription card, always shown. Values are updated client-side via DOM
  * id references from the parent page script.
  */
@@ -22,9 +22,9 @@ interface Props {
      *  the default tourist cards (favorites + reviews). The subscription card is always shown. */
     readonly isHost?: boolean;
     /**
-     * When true AND `isHost` is false, renders the gastronomy/experience owner
-     * listings card instead of the tourist pair (HOS-1293). A gastronomy/experience-only owner
-     * (`GASTRONOMY_OWNER`/`EXPERIENCE_OWNER`, no `HOST` role) used to fall
+     * When true AND `isHost` is false, renders the venue/experience owner
+     * listings card instead of the tourist pair (HOS-1293). A venue/experience-only owner
+     * (`VENUE_OWNER`/`EXPERIENCE_OWNER`, no `HOST` role) used to fall
      * into the tourist branch — Favoritos/Reseñas, neither of which
      * describes their account. Host wins over the listings card when an account
      * holds both hats, same precedence `resolveSubscriptionPlansPath` uses.
@@ -58,7 +58,7 @@ const planNames = Object.fromEntries(
     DASHBOARD_PLAN_SLUGS.map((slug) => [slug, getPlanName({ plan: { slug, name: slug, description: '' }, t })])
 );
 // HOS-1066: an account can hold more than one active subscription across
-// product domains (e.g. an accommodation host who also runs a gastronomy
+// product domains (e.g. an accommodation host who also runs a venue
 // listing). `/users/me/stats` then reports `plan: null` with
 // `activeSubscriptionsCount > 1` instead of picking one arbitrarily. The
 // actual count is only known after the client-side fetch, so — same
@@ -78,8 +78,8 @@ const statPropertiesLabel = t('account.pages.dashboard.stats.properties', 'Mis p
 const statPropertiesDesc = t('account.pages.dashboard.stats.propertiesDesc', 'Alojamientos publicados');
 const statMessagesLabel = t('account.pages.dashboard.stats.messages', 'Mensajes sin leer');
 const statMessagesDesc = t('account.pages.dashboard.stats.messagesDesc', 'Consultas de huéspedes');
-// HOS-1293: the gastronomy/experience owner branch. Separate labels from the host pair
-// above — "propiedades" describes accommodation, not a gastronomy or
+// HOS-1293: the venue/experience owner branch. Separate labels from the host pair
+// above — "propiedades" describes accommodation, not a venue or
 // experience listing.
 const statListingsLabel = t('account.pages.dashboard.stats.listings', 'Mis fichas');
 const statListingsDesc = t('account.pages.dashboard.stats.listingsDesc', 'Fichas publicadas');
@@ -121,9 +121,9 @@ const statListingsDesc = t('account.pages.dashboard.stats.listingsDesc', 'Fichas
     ) : isOwner ? (
         <>
             <!--
-              Gastronomy/experience owner: listings stat (HOS-1293). Only ONE card, not a
+              Venue/experience owner: listings stat (HOS-1293). Only ONE card, not a
               pair like the host/tourist branches: this platform has no
-              conversation/inquiry model for gastronomy or experience listings
+              conversation/inquiry model for venue or experience listings
               — `conversations.accommodationId` is the table's only listing
               FK — so a "mensajes" card here would have to be backed by
               either a made-up number or the GUEST-side inbox count (the

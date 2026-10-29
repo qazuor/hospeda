@@ -44,7 +44,8 @@ const SRC_DIR = resolve(__dirname, '../../src');
 const SUPERSEDED_PATHS: ReadonlyArray<{ readonly path: string; readonly replacement: string }> = [
     { path: 'publicar/nueva', replacement: 'publicar' },
     { path: 'mi-cuenta/comercio/nuevo', replacement: 'publicar/{vertical page}' },
-    { path: 'publicar-restaurante', replacement: 'publicar/gastronomia' },
+    { path: 'publicar-restaurante', replacement: 'publicar/comer-y-salir' },
+    { path: 'publicar/gastronomia', replacement: 'publicar/comer-y-salir' },
     { path: 'publicar-experiencia', replacement: 'publicar/experiencias' }
 ];
 
@@ -63,7 +64,8 @@ const EXEMPT: Readonly<Record<string, string>> = {
     'pages/[lang]/mi-cuenta/comercio/nuevo/[vertical].astro': 'The 301 itself.',
     'lib/seo/static-sitemap-pages.ts':
         'Classifies retired URLs as redirect-only so the sitemap never advertises one.',
-    'lib/routes.ts': 'PUBLIC_REDIRECT_PATHS names the retired path it exempts from the login gate.'
+    'lib/routes.ts': 'PUBLIC_REDIRECT_PATHS names the retired path it exempts from the login gate.',
+    'lib/legacy-redirects.ts': 'The redirect map must name the old route prefixes it resolves.'
 };
 
 /** Every source file the guard walks. */
@@ -93,10 +95,28 @@ function sourceFiles(dir: string): readonly string[] {
  * it, since a commented-out link is not a link.
  */
 function stripComments(src: string): string {
-    return src
-        .replace(/\/\*[\s\S]*?\*\//g, '')
-        .replace(/<!--[\s\S]*?-->/g, '')
-        .replace(/(^|[^:])\/\/.*$/gm, '$1');
+    return stripHtmlComments(src.replace(/\/\*[\s\S]*?\*\//g, '')).replace(
+        /(^|[^:])\/\/.*$/gm,
+        '$1'
+    );
+}
+
+/**
+ * Removes `<!-- ... -->` blocks with one left-to-right scan. A scan never
+ * re-reads what it already emitted, so removing one block cannot splice a new
+ * opener out of the text around it (which a regex replace can).
+ */
+function stripHtmlComments(src: string): string {
+    let out = '';
+    let cursor = 0;
+    for (;;) {
+        const open = src.indexOf('<!--', cursor);
+        if (open === -1) return out + src.slice(cursor);
+        out += src.slice(cursor, open);
+        const close = src.indexOf('-->', open + 4);
+        if (close === -1) return out;
+        cursor = close + 3;
+    }
 }
 
 describe('HOS-1156 AC-18 — nothing links to a superseded publish URL', () => {

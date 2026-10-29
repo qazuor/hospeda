@@ -17,7 +17,7 @@ import type { OutboxMailRenderer } from './email-outbox-delivery.service.js';
 
 const PRICING_SLUG: Readonly<Record<string, string>> = {
     accommodation: 'anfitriones',
-    gastronomy: 'gastronomia',
+    venue: 'comer-y-salir',
     experience: 'experiencias',
     tourist: 'turistas'
 };

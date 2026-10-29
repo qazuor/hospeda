@@ -6,7 +6,7 @@
  * Mirrors the accommodation owner create (`POST /protected/accommodations/`)
  * and the admin create at `experience/admin/create.ts`. The experience
  * owner-create payload has its own required shape (`openingHours`/
- * `priceRange`), so this vertical has its own route; the gastronomy one lives
+ * `priceRange`), so this vertical has its own route; the venue one lives
  * in `venue/protected/create.ts`.
  *
  * ## D-3 — server-forced fields

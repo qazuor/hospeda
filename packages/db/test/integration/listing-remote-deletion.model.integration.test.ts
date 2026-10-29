@@ -17,11 +17,11 @@ afterAll(async () => closeTestPool());
 /** Upper bound on pages walked, so a cursor that never advances fails instead of hanging. */
 const MAX_PAGES = 10_000;
 
-const VERTICALS = ['accommodation', 'gastronomy', 'experience'] as const;
+const VERTICALS = ['accommodation', 'venue', 'experience'] as const;
 
 const MEDIA_TABLES = {
     accommodation: { table: 'accommodation_media', fk: 'accommodation_id' },
-    gastronomy: { table: 'gastronomy_media', fk: 'gastronomy_id' },
+    venue: { table: 'venue_media', fk: 'venue_id' },
     experience: { table: 'experience_media', fk: 'experience_id' }
 } as const;
 
@@ -44,7 +44,7 @@ async function createListing(
             { ...base, type: 'CABIN' } as Partial<Accommodation>,
             tx
         );
-    if (vertical === 'gastronomy')
+    if (vertical === 'venue')
         return new VenueModel().create({ ...base, type: 'RESTAURANT' } as Partial<Venue>, tx);
     return new ExperienceModel().create({ ...base, type: 'EXCURSION' } as Partial<Experience>, tx);
 }

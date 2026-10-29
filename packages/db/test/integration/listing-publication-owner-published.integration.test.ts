@@ -36,7 +36,7 @@ async function makeListing(args: {
             { ...base, type: 'CABIN' } as Partial<Accommodation>,
             args.tx
         );
-    if (args.vertical === 'gastronomy')
+    if (args.vertical === 'venue')
         return new VenueModel().create({ ...base, type: 'RESTAURANT' } as Partial<Venue>, args.tx);
     return new ExperienceModel().create(
         { ...base, type: 'EXCURSION' } as Partial<Experience>,
@@ -54,7 +54,7 @@ async function record(args: {
 }) {
     const table = {
         accommodation: 'accommodations',
-        gastronomy: 'gastronomies',
+        venue: 'venues',
         experience: 'experiences'
     }[args.vertical];
     const listing = await args.tx.execute(sql<{ readonly ownerId: string }>`
@@ -102,7 +102,7 @@ describe('listingPublicationModel.hasOwnerPublished', () => {
             });
             const otherVerticalListing = await makeListing({
                 tx,
-                vertical: 'gastronomy',
+                vertical: 'venue',
                 ownerId: owner.id,
                 destinationId: destination.id
             });
@@ -179,7 +179,7 @@ describe('listingPublicationModel.hasOwnerPublished', () => {
             ).toBe(true);
             await record({
                 tx,
-                vertical: 'gastronomy',
+                vertical: 'venue',
                 listingId: otherVerticalListing.id,
                 from: PublicationStatusEnum.DRAFT,
                 to: PublicationStatusEnum.PUBLISHED
@@ -187,7 +187,7 @@ describe('listingPublicationModel.hasOwnerPublished', () => {
             expect(
                 await listingPublicationModel.hasOwnerPublished({
                     tx,
-                    vertical: 'gastronomy',
+                    vertical: 'venue',
                     userId: owner.id
                 })
             ).toBe(true);
@@ -260,13 +260,13 @@ describe('listingPublicationModel.hasOwnerPublished', () => {
             await tx.insert(users).values(crossVertical);
             const crossVerticalListing = await makeListing({
                 tx,
-                vertical: 'gastronomy',
+                vertical: 'venue',
                 ownerId: crossVertical.id,
                 destinationId: destination.id
             });
             await record({
                 tx,
-                vertical: 'gastronomy',
+                vertical: 'venue',
                 listingId: crossVerticalListing.id,
                 from: PublicationStatusEnum.DRAFT,
                 to: PublicationStatusEnum.PUBLISHED

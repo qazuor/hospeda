@@ -24,7 +24,7 @@ import { isVisibleByPermissions } from '@/lib/nav-gating';
  * Ordered candidate ids for the single business-panel shortcut (HOS-131
  * §6.4: "ONE business-panel shortcut, picked by priority"). Only the first
  * candidate the user has permission for is shown — never both. Future dense
- * verticals (e.g. gastronomy, experiences) append to this list.
+ * verticals (e.g. venue, experiences) append to this list.
  */
 const BUSINESS_SHORTCUT_CANDIDATE_IDS: readonly string[] = ['hostDashboard', 'comercio-listings'];
 
@@ -75,7 +75,7 @@ export interface PickBusinessShortcutResult {
  * in priority order and returns the first item whose `requiredPermission` is
  * present in `permissions` — never more than one, even if the user qualifies
  * for several (e.g. a user with both `accommodation.create` and
- * `gastronomy.editOwn` sees only "Panel del anfitrión").
+ * the venue edit permission sees only "Panel del anfitrión").
  *
  * @param params - `{ permissions }` (RO-RO).
  * @returns `{ item }` — the prioritized shortcut, or `{ item: null }` if none apply.

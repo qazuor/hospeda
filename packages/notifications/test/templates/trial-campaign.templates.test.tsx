@@ -42,10 +42,10 @@ describe('templates de campañas del trial', () => {
     it('nombra las tres verticales y conserva exactamente el texto con una sola vertical', () => {
         for (const template of templates) {
             const html = renderToStaticMarkup(
-                template({ ...base, verticals: ['accommodation', 'gastronomy', 'experience'] })
+                template({ ...base, verticals: ['accommodation', 'venue', 'experience'] })
             );
             expect(html).toContain('Alojamiento');
-            expect(html).toContain('Gastronomía');
+            expect(html).toContain('Comer y salir');
             expect(html).toContain('Experiencias');
             expect(renderToStaticMarkup(template({ ...base, verticals: ['accommodation'] }))).toBe(
                 renderToStaticMarkup(template(base))

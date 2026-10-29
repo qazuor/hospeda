@@ -50,7 +50,7 @@
  * Only `publicationStatus === PUBLISHED` has a public page (V6.9b, HOS-1641:
  * the single publication state replaced the old lifecycle and visibility). That
  * is what decides whether the public page exists, so it is what decides whether
- * a code may be printed for it. The gastronomy and experience twins check the
+ * a code may be printed for it. The venue and experience twins check the
  * same state, for the same reason — their services' `_canView` answers
  * NOT_FOUND to every non-owner on a listing that is not PUBLISHED too.
  *

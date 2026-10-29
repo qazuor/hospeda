@@ -1,8 +1,8 @@
 /**
- * The owner's listing QR for a gastronomy listing, as an image (HOS-982 PR 2).
+ * The owner's listing QR for a venue listing, as an image (HOS-982 PR 2).
  *
  * ```
- * GET /api/v1/protected/gastronomies/{id}/qr
+ * GET /api/v1/protected/venues/{id}/qr
  * ```
  *
  * The accommodation twin (`routes/accommodation/protected/qrCode.ts`) carries
@@ -10,7 +10,7 @@
  * this is the SAME code the printable sheet carries and not a second one, why
  * the "published" state is checked before anything is minted, and why
  * there is no entitlement gate. The staff bypass is the vertical's inspection
- * permission, `GASTRONOMY_VIEW_ALL`, as `ACCOMMODATION_VIEW_ALL` is in the twin.
+ * permission, `VENUE_VIEW_ALL`, as `ACCOMMODATION_VIEW_ALL` is in the twin.
  *
  * ## Not to be confused with `menuQr.ts`
  *
@@ -75,7 +75,7 @@ export async function handleGetVenueQrCode(
 
     const entity = result.data;
 
-    const hasViewAll = actor.permissions?.includes(PermissionEnum.GASTRONOMY_VIEW_ALL);
+    const hasViewAll = actor.permissions?.includes(PermissionEnum.VENUE_VIEW_ALL);
     if (!entity || (!hasViewAll && entity.ownerId !== actor.id)) {
         throw entityNotFoundError({ entityName: VenueService.ENTITY_NAME });
     }
@@ -90,7 +90,7 @@ export async function handleGetVenueQrCode(
     if (!entity.slug) {
         throw new ServiceError(
             ServiceErrorCode.INTERNAL_ERROR,
-            'gastronomy listing has no slug to build a QR code for'
+            'venue listing has no slug to build a QR code for'
         );
     }
 
@@ -100,12 +100,12 @@ export async function handleGetVenueQrCode(
         entityId: entity.id,
         purpose: QrCodePurposeEnum.LISTING,
         targetUrl: buildListingQrTargetUrl({
-            vertical: 'gastronomy',
+            vertical: 'venue',
             slug: entity.slug,
             siteUrl: env.HOSPEDA_SITE_URL
         }),
         label: buildListingQrCodeLabel({
-            vertical: 'gastronomy',
+            vertical: 'venue',
             name: entity.name,
             slug: entity.slug
         }),
@@ -116,17 +116,17 @@ export async function handleGetVenueQrCode(
 }
 
 /**
- * GET /api/v1/protected/gastronomies/:id/qr
+ * GET /api/v1/protected/venues/:id/qr
  *
  * No entitlement gate — owner decision, see the accommodation twin.
  */
 export const protectedGetVenueQrCodeRoute = createProtectedRoute({
     method: 'get',
     path: '/{id}/qr',
-    summary: 'Get the listing QR of a gastronomy listing as an image',
+    summary: 'Get the listing QR of a venue listing as an image',
     description:
         'Returns the SVG of the venue’s listing QR and the URL that symbol encodes (`{site}/qr/{qrSlug}/`). It is the SAME code the printable sheet carries — the same `qr_codes` row, created on the first call and reused afterwards, drawn at the same error-correction level the sheet prints at — so the image an owner sees in the dashboard is, module for module, the one that ends up on the door. Distinct from the menu QR, which opens the carta and is premium-gated. Owner-only, and only for a listing that is publicly visible. No plan entitlement is required.',
-    tags: ['Gastronomy'],
+    tags: ['Venue'],
     requestParams: {
         id: z.string().uuid({ message: 'zodError.common.id.invalidUuid' })
     },

@@ -44,7 +44,7 @@ const destinations = [{ id: 'dest-1', name: 'Concepción del Uruguay' }];
  * `ListingDetail`'s many required fields are irrelevant to these
  * tests.
  *
- * TYPE-WORKAROUND: a real `ListingDetail` (Gastronomy|Experience
+ * TYPE-WORKAROUND: a real `ListingDetail` (Venue|Experience
  * union) has dozens of required fields unrelated to this test's assertions;
  * a double-cast keeps the fixture minimal instead of hand-filling every one.
  */
@@ -66,7 +66,7 @@ describe('ListingCreateForm', () => {
         it('renders a fully empty, usable form', () => {
             render(
                 <ListingCreateForm
-                    vertical="gastronomy"
+                    vertical="venue"
                     locale="es"
                     destinations={destinations}
                 />
@@ -79,7 +79,7 @@ describe('ListingCreateForm', () => {
         it('lets the owner type freely into the name field', () => {
             render(
                 <ListingCreateForm
-                    vertical="gastronomy"
+                    vertical="venue"
                     locale="es"
                     destinations={destinations}
                 />
@@ -92,13 +92,13 @@ describe('ListingCreateForm', () => {
         });
     });
 
-    describe('gastronomy submit', () => {
+    describe('venue submit', () => {
         it('submits a DRAFT create payload and redirects to the editor on success', async () => {
             mockCreate.mockResolvedValue({ ok: true, data: fakeCreatedListing('listing-1') });
 
             render(
                 <ListingCreateForm
-                    vertical="gastronomy"
+                    vertical="venue"
                     locale="es"
                     destinations={destinations}
                 />
@@ -126,12 +126,12 @@ describe('ListingCreateForm', () => {
             });
 
             const call = mockCreate.mock.calls[0]?.[0];
-            expect(call?.vertical).toBe('gastronomy');
+            expect(call?.vertical).toBe('venue');
             expect(call?.data).toMatchObject({ name: 'La Parrilla de Juan', type: 'RESTAURANT' });
 
             await waitFor(() => {
                 expect(window.location.href).toContain(
-                    '/mi-cuenta/comercio/gastronomy/listing-1/editar'
+                    '/mi-cuenta/comercio/venue/listing-1/editar'
                 );
             });
         });
@@ -139,7 +139,7 @@ describe('ListingCreateForm', () => {
         it('does not submit when required fields are missing', async () => {
             render(
                 <ListingCreateForm
-                    vertical="gastronomy"
+                    vertical="venue"
                     locale="es"
                     destinations={destinations}
                 />
@@ -157,7 +157,7 @@ describe('ListingCreateForm', () => {
         it('shows an error message instead of silently hiding the destination select', () => {
             render(
                 <ListingCreateForm
-                    vertical="gastronomy"
+                    vertical="venue"
                     locale="es"
                     destinations={[]}
                     destinationsLoadFailed
@@ -173,7 +173,7 @@ describe('ListingCreateForm', () => {
         it('shows an empty-catalog message (not the load-failed one) when destinations legitimately loaded empty', () => {
             render(
                 <ListingCreateForm
-                    vertical="gastronomy"
+                    vertical="venue"
                     locale="es"
                     destinations={[]}
                 />

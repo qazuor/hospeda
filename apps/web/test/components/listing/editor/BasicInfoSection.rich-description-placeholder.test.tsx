@@ -61,7 +61,7 @@ describe('BasicInfoSection — richDescription has no placeholder hint (HOS-829)
         render(
             <BasicInfoSection
                 locale="es"
-                vertical="gastronomy"
+                vertical="venue"
                 data={buildEditData()}
                 destinations={[{ id: DESTINATION_1, name: 'Concepción del Uruguay' }]}
                 destinationsLoadFailed={false}
@@ -89,7 +89,7 @@ describe('BasicInfoSection — richDescription has no placeholder hint (HOS-829)
         const { container } = render(
             <BasicInfoSection
                 locale="es"
-                vertical="gastronomy"
+                vertical="venue"
                 data={buildEditData()}
                 destinations={[{ id: DESTINATION_1, name: 'Concepción del Uruguay' }]}
                 destinationsLoadFailed={false}

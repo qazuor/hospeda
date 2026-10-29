@@ -1,6 +1,6 @@
 /**
- * PATCH /api/v1/admin/gastronomies/:id/media/reorder
- * Reorder photos in a gastronomy listing gallery — Admin endpoint (HOS-372).
+ * PATCH /api/v1/admin/venues/:id/media/reorder
+ * Reorder photos in a venue listing gallery — Admin endpoint (HOS-372).
  *
  * The caller supplies the full ordered list of visible media UUIDs. The service
  * validates that the supplied set matches the current visible rows exactly (no
@@ -29,22 +29,22 @@ import { createAdminRoute } from '../../../utils/route-factory';
 const venueService = new VenueService({ logger: apiLogger });
 
 /**
- * PATCH /api/v1/admin/gastronomies/:id/media/reorder
- * Reorder gastronomy listing gallery photos — Admin endpoint.
+ * PATCH /api/v1/admin/venues/:id/media/reorder
+ * Reorder venue listing gallery photos — Admin endpoint.
  *
- * Requires GASTRONOMY_EDIT_ALL permission. The service helper
+ * Requires VENUE_EDIT_ALL permission. The service helper
  * `reorderVenueMedia` enforces the same gate via `checkVenueCanEditMedia`.
  */
 export const adminReorderVenueMediaRoute = createAdminRoute({
     method: 'patch',
     listingAccess: { vertical: VerticalEnum.VENUE, operation: 'EDIT', idParam: 'id' },
     path: '/{id}/media/reorder',
-    summary: 'Reorder gastronomy listing gallery photos (admin)',
+    summary: 'Reorder venue listing gallery photos (admin)',
     description:
         'Sets the sortOrder for the visible gallery photos by supplying their UUIDs ' +
         'in the desired order. The supplied list must match the current visible rows ' +
-        'exactly. Requires GASTRONOMY_EDIT_ALL.',
-    tags: ['Gastronomy', 'Media'],
+        'exactly. Requires VENUE_EDIT_ALL.',
+    tags: ['Venue', 'Media'],
     requestParams: {
         id: z.string().uuid({ message: 'zodError.common.id.invalidUuid' })
     },
@@ -65,7 +65,7 @@ export const adminReorderVenueMediaRoute = createAdminRoute({
             ctx,
             run: () =>
                 reorderVenueMedia(model, actor, {
-                    gastronomyId: params.id as string,
+                    venueId: params.id as string,
                     orderedIds: (body as VenueMediaReorderPayload).orderedIds
                 })
         });

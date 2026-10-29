@@ -57,8 +57,12 @@ const verticals = [
 type Vertical = (typeof verticals)[number];
 const tables: Readonly<Record<Vertical, string>> = {
     [VerticalEnum.ACCOMMODATION]: 'accommodations',
-    [VerticalEnum.VENUE]: 'gastronomies',
+    [VerticalEnum.VENUE]: 'venues',
     [VerticalEnum.EXPERIENCE]: 'experiences'
+};
+const routeTables: Readonly<Record<Vertical, string>> = {
+    ...tables,
+    [VerticalEnum.VENUE]: 'venues'
 };
 const createFixture: Readonly<
     Record<
@@ -84,11 +88,11 @@ const REASON = 'Juan pidió por correo que borremos sus dos fichas';
 const seeded: { vertical: Vertical; id: string }[] = [];
 
 function adminPath(vertical: Vertical, id: string): string {
-    return `/api/v1/admin/${tables[vertical]}/${id}/purge`;
+    return `/api/v1/admin/${routeTables[vertical]}/${id}/purge`;
 }
 
 function ownerPath(vertical: Vertical, id: string): string {
-    return `/api/v1/protected/${tables[vertical]}/${id}/purge`;
+    return `/api/v1/protected/${routeTables[vertical]}/${id}/purge`;
 }
 
 function adminHeaders(id: string, permission: PermissionEnum): Record<string, string> {

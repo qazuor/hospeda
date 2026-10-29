@@ -5,8 +5,8 @@
  * printable sheet (`qrSheet.ts`) and the dashboard image (`qrCode.ts`, PR 2).
  *
  * The six routes sit beside two documents that ARE gated — the brochure
- * (`DOWNLOAD_LISTING_PDF`) and the gastronomy menu writes
- * (`MANAGE_GASTRONOMY_MENU`) — and they were written by copying those files.
+ * (`DOWNLOAD_LISTING_PDF`) and the venue menu writes
+ * (`MANAGE_VENUE_MENU`) — and they were written by copying those files.
  * The obvious "consistency" fix is to add `requireEntitlement` here too, and it
  * would look like tidying rather than like a product change: nothing else in the
  * suite would go red, because a gated route that refuses an unentitled caller is
@@ -60,7 +60,7 @@ const SHEET_ROUTES: readonly {
         path: join(ROUTES, 'accommodation/protected/qrSheet.ts')
     },
     {
-        vertical: 'gastronomy',
+        vertical: 'venue',
         surface: 'sheet',
         path: join(ROUTES, 'venue/protected/qrSheet.ts')
     },
@@ -75,7 +75,7 @@ const SHEET_ROUTES: readonly {
         path: join(ROUTES, 'accommodation/protected/qrCode.ts')
     },
     {
-        vertical: 'gastronomy',
+        vertical: 'venue',
         surface: 'image',
         path: join(ROUTES, 'venue/protected/qrCode.ts')
     },

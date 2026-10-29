@@ -403,9 +403,9 @@ describe('AiChatRequestSchema — polymorphic target (HOS-400)', () => {
         });
     });
 
-    describe('when the request targets a gastronomy or experience vertical', () => {
+    describe('when the request targets a venue or experience vertical', () => {
         it.each([
-            'gastronomy',
+            'venue',
             'experience'
         ] as const)('should accept entityType %s with an entityId', (entityType) => {
             const result = AiChatRequestSchema.safeParse({
@@ -417,7 +417,7 @@ describe('AiChatRequestSchema — polymorphic target (HOS-400)', () => {
         });
 
         it.each([
-            'gastronomy',
+            'venue',
             'experience'
         ] as const)('should resolve entityType %s to that vertical and its id', (entityType) => {
             const parsed = AiChatRequestSchema.parse({
@@ -428,12 +428,12 @@ describe('AiChatRequestSchema — polymorphic target (HOS-400)', () => {
             expect(resolveAiChatTarget(parsed)).toEqual({ entityType, entityId: VALID_UUID });
         });
 
-        it('should reject a gastronomy or experience request that also carries accommodationId', () => {
+        it('should reject a venue or experience request that also carries accommodationId', () => {
             // A body naming a restaurant in entityId and an accommodation in
             // accommodationId is a client bug; answering about either is worse
             // than refusing.
             const result = AiChatRequestSchema.safeParse({
-                entityType: 'gastronomy',
+                entityType: 'venue',
                 entityId: VALID_UUID,
                 accommodationId: OTHER_UUID,
                 messages: [USER_MESSAGE]
@@ -441,9 +441,9 @@ describe('AiChatRequestSchema — polymorphic target (HOS-400)', () => {
             expect(result.success).toBe(false);
         });
 
-        it('should reject a gastronomy or experience request with no entityId at all', () => {
+        it('should reject a venue or experience request with no entityId at all', () => {
             const result = AiChatRequestSchema.safeParse({
-                entityType: 'gastronomy',
+                entityType: 'venue',
                 messages: [USER_MESSAGE]
             });
             expect(result.success).toBe(false);
@@ -482,7 +482,7 @@ describe('AiChatRequestSchema — polymorphic target (HOS-400)', () => {
     describe('when an id is not a UUID', () => {
         it('should reject a non-UUID entityId', () => {
             const result = AiChatRequestSchema.safeParse({
-                entityType: 'gastronomy',
+                entityType: 'venue',
                 entityId: INVALID_UUID,
                 messages: [USER_MESSAGE]
             });

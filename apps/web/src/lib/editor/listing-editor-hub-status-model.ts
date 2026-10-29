@@ -1,8 +1,8 @@
 /**
  * @file listing-editor-hub-status-model.ts
- * @description Per-section status lines for the gastronomy/experience editor hub (HOS-1080).
+ * @description Per-section status lines for the venue/experience editor hub (HOS-1080).
  *
- * The gastronomy/experience counterpart of `editor-hub-status-model.ts`, and it inherits that
+ * The venue/experience counterpart of `editor-hub-status-model.ts`, and it inherits that
  * file's hardest-won rule verbatim (H-101): **never warn about what does not
  * block while staying silent about what does.** The accommodation hub once
  * shouted "⚠ Sin fotos" — which did not block publishing — while `bathrooms` and
@@ -59,7 +59,7 @@ export interface ListingEditorStatusInput {
     /**
      * The vertical, which decides which fields the completeness check requires.
      *
-     * Taken as the ROUTE's vocabulary (`'gastronomy' | 'experience'`) and mapped
+     * Taken as the ROUTE's vocabulary (`'venue' | 'experience'`) and mapped
      * to `ProductDomainEnum` here. The two spell the same two strings, but
      * only one of them is what the route param actually is, and a cast at every
      * call site is how a third spelling eventually appears.
@@ -145,9 +145,7 @@ function resolveBlockingStatuses({
 }): Record<string, EditorSectionStatus> {
     const { missing } = resolveListingCompleteness({
         entityType:
-            input.vertical === 'gastronomy'
-                ? ProductDomainEnum.VENUE
-                : ProductDomainEnum.EXPERIENCE,
+            input.vertical === 'venue' ? ProductDomainEnum.VENUE : ProductDomainEnum.EXPERIENCE,
         listing: input.listing
     });
     if (missing.length === 0) return {};

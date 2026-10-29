@@ -1,5 +1,5 @@
 /**
- * POST /api/v1/protected/gastronomies/:id/menu-item-photo
+ * POST /api/v1/protected/venues/:id/menu-item-photo
  *
  * Uploads ONE dish photo and hands back the URL for the client to attach to a
  * dish in the carta document (HOS-1045).
@@ -11,7 +11,7 @@
  * Save is an asset that bills with nothing pointing at it (HOS-372). That rule
  * is right, and this route cannot follow it — not because the cost is smaller,
  * but because there is nothing to write TO. The menu-file's target is a column
- * on the listing, which exists. A dish photo's target is a `gastronomy_menu_items`
+ * on the listing, which exists. A dish photo's target is a `venue_menu_items`
  * row whose id is minted afresh on every `PUT .../menu` (the carta is replaced
  * as a whole document), so at upload time the dish may not exist at all and,
  * if it does, its id will not survive the next save.
@@ -78,8 +78,8 @@ export const protectedUploadVenueMenuItemPhotoRoute = createProtectedRoute({
     },
     summary: 'Upload a photo for one dish of the menu',
     description:
-        'Uploads a single dish photo and returns its delivery URL and Cloudinary public id. The caller attaches them to a dish in the next PUT /{id}/menu. Owner-only, and requires the menu_item_photos entitlement granted by the premium gastronomy plan.',
-    tags: ['Gastronomy', 'Gastronomy Menu'],
+        'Uploads a single dish photo and returns its delivery URL and Cloudinary public id. The caller attaches them to a dish in the next PUT /{id}/menu. Owner-only, and requires the menu_item_photos entitlement granted by the premium venue plan.',
+    tags: ['Venue', 'Venue Menu'],
     requestParams: {
         id: z.string().uuid({ message: 'zodError.common.id.invalidUuid' })
     },
@@ -109,18 +109,18 @@ export const protectedUploadVenueMenuItemPhotoRoute = createProtectedRoute({
 
         // ── 2. Ownership, answered as 404 ────────────────────────────────────
         const actor = getActorFromContext(ctx);
-        const gastronomyId = params.id as string;
-        const listing = await venueService.getById(actor, gastronomyId);
-        const hasEditAll = actor.permissions?.includes(PermissionEnum.GASTRONOMY_EDIT_ALL);
+        const venueId = params.id as string;
+        const listing = await venueService.getById(actor, venueId);
+        const hasEditAll = actor.permissions?.includes(PermissionEnum.VENUE_EDIT_ALL);
 
         if (
             listing.error ||
             !listing.data ||
             (!hasEditAll && listing.data.ownerId !== actor.id) ||
-            (!hasEditAll && !actor.permissions?.includes(PermissionEnum.GASTRONOMY_EDIT_OWN))
+            (!hasEditAll && !actor.permissions?.includes(PermissionEnum.VENUE_EDIT_OWN))
         ) {
             return createErrorResponse(
-                { code: 'NOT_FOUND', message: 'Gastronomy listing not found' },
+                { code: 'NOT_FOUND', message: 'Venue listing not found' },
                 ctx,
                 404
             );
@@ -173,7 +173,7 @@ export const protectedUploadVenueMenuItemPhotoRoute = createProtectedRoute({
         // a listing holds exactly one attachment. A carta holds as many photos
         // as it has dishes, so a fixed id would make every upload destroy the
         // previous dish's picture.
-        const folder = buildEntityFolder('gastronomy', gastronomyId);
+        const folder = buildEntityFolder('venue', venueId);
 
         let uploaded: Awaited<ReturnType<typeof provider.upload>>;
         try {
@@ -182,9 +182,9 @@ export const protectedUploadVenueMenuItemPhotoRoute = createProtectedRoute({
             apiLogger.error(
                 {
                     error: error instanceof Error ? error.message : String(error),
-                    gastronomyId
+                    venueId
                 },
-                'Gastronomy menu-item photo upload failed'
+                'Venue menu-item photo upload failed'
             );
             return createErrorResponse(
                 { code: 'UPSTREAM_ERROR', message: 'Menu item photo upload failed' },
@@ -203,7 +203,7 @@ export const protectedUploadVenueMenuItemPhotoRoute = createProtectedRoute({
             createSlidingWindowPerUserRateLimit({
                 windowMs: 60_000,
                 max: MENU_ITEM_PHOTO_UPLOAD_RATE_LIMIT_MAX,
-                keyPrefix: 'upload:gastronomy-menu-item-photo'
+                keyPrefix: 'upload:venue-menu-item-photo'
             })
         ]
     }

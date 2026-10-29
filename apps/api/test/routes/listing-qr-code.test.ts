@@ -123,10 +123,10 @@ const CASES = [
         }
     },
     {
-        label: 'gastronomy',
+        label: 'venue',
         service: VenueService,
-        staffPermission: PermissionEnum.GASTRONOMY_VIEW_ALL,
-        segment: 'gastronomia',
+        staffPermission: PermissionEnum.VENUE_VIEW_ALL,
+        segment: 'comer-y-salir',
         importRoute: async () => {
             const mod = await import('../../src/routes/venue/protected/qrCode.js');
             return mod.protectedGetVenueQrCodeRoute;

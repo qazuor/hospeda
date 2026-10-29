@@ -1,10 +1,10 @@
 /**
- * Protected owner-operational PATCH endpoint for gastronomy listings (T-043)
+ * Protected owner-operational PATCH endpoint for venue listings (T-043)
  * Applies a partial operational update (schedule, contact, media, etc.) to a listing.
  *
  * ## Enforcement contract
  *
- * - Validates the payload through GastronomyOwnerUpdateInputSchema. Since
+ * - Validates the payload through VenueOwnerUpdateInputSchema. Since
  *   HOS-166 D-1, `name`, `description`, and `destinationId` are
  *   owner-editable identity fields (SPEC-239 decision #5 reversed — see the
  *   schema's docstring). Only `slug` (never owner-editable directly; it now
@@ -13,8 +13,8 @@
  *   `moderationState`, `isFeatured`, `ownerId`) are ABSENT from the schema,
  *   so any forged keys for those are silently stripped by Zod.
  * - VenueService.updateOwn() enforces ownership (non-owner → NOT_FOUND) and
- *   per-section GASTRONOMY_/EXPERIENCE_EDIT_OWN permission checks.
- * Owner updates require the effective edit_gastronomy_info capability.
+ *   per-section VENUE_/EXPERIENCE_EDIT_OWN permission checks.
+ * Owner updates require the effective edit_venue_info capability.
  */
 
 import {
@@ -34,7 +34,7 @@ import { createProtectedRoute } from '../../../utils/route-factory';
 const venueService = new VenueService({ logger: apiLogger });
 
 /**
- * PATCH /api/v1/protected/gastronomies/:id
+ * PATCH /api/v1/protected/venues/:id
  * Owner operational update — Protected endpoint.
  *
  * Only operational sections are accepted (openingHours, contactInfo,
@@ -46,10 +46,9 @@ export const protectedPatchVenueRoute = createProtectedRoute({
     method: 'patch',
     path: '/{id}',
     listingAccess: { vertical: VerticalEnum.VENUE, operation: 'EDIT', idParam: 'id' },
-    summary: 'Update gastronomy listing (owner)',
-    description:
-        'Partially updates operational fields of a gastronomy listing. Requires ownership.',
-    tags: ['Gastronomy'],
+    summary: 'Update venue listing (owner)',
+    description: 'Partially updates operational fields of a venue listing. Requires ownership.',
+    tags: ['Venue'],
     requestParams: {
         id: z.string().uuid({ message: 'zodError.common.id.invalidUuid' })
     },

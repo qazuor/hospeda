@@ -13,7 +13,7 @@
  *   client-side Cloudinary delete: since HOS-372 the server deletes the binary
  *   inside `removeMedia`, before dropping the row. The client-side call this
  *   replaced was unreachable anyway — `media/protected/delete-entity` rejects
- *   `gastronomy` and `experience` with HTTP 400.
+ *   the venue and experience kinds with HTTP 400.
  * - Setting a new featured image calls upload → addMedia → setFeaturedMedia
  *   immediately, and the previous featured moves to the gallery.
  * - A failed operation surfaces an inline error + toast and does NOT mutate
@@ -110,7 +110,7 @@ const LISTING_ID = '00000000-0000-4000-8000-0000000000aa';
 
 const defaultProps: MediaSectionProps = {
     locale: 'es',
-    vertical: 'gastronomy',
+    vertical: 'venue',
     listingId: LISTING_ID
 };
 
@@ -121,7 +121,7 @@ const defaultProps: MediaSectionProps = {
 const FEATURED_ROW = {
     id: 'media-uuid-featured',
     url: 'https://cdn.example.com/featured.jpg',
-    publicId: 'hospeda/gastronomies/abc/gallery/img-featured',
+    publicId: 'hospeda/venues/abc/gallery/img-featured',
     isFeatured: true,
     sortOrder: 0,
     state: 'visible' as const,
@@ -131,7 +131,7 @@ const FEATURED_ROW = {
 const GALLERY_ROW_1 = {
     id: 'media-uuid-g1',
     url: 'https://cdn.example.com/gallery1.jpg',
-    publicId: 'hospeda/gastronomies/abc/gallery/img-g1',
+    publicId: 'hospeda/venues/abc/gallery/img-g1',
     isFeatured: false,
     sortOrder: 1,
     state: 'visible' as const,
@@ -141,7 +141,7 @@ const GALLERY_ROW_1 = {
 const GALLERY_ROW_2 = {
     id: 'media-uuid-g2',
     url: 'https://cdn.example.com/gallery2.jpg',
-    publicId: 'hospeda/gastronomies/abc/gallery/img-g2',
+    publicId: 'hospeda/venues/abc/gallery/img-g2',
     isFeatured: false,
     sortOrder: 2,
     state: 'visible' as const,
@@ -151,7 +151,7 @@ const GALLERY_ROW_2 = {
 const NEW_ROW = {
     id: 'media-uuid-new',
     url: 'https://cdn.example.com/new.jpg',
-    publicId: 'hospeda/gastronomies/abc/gallery/img-new',
+    publicId: 'hospeda/venues/abc/gallery/img-new',
     isFeatured: false,
     sortOrder: 3,
     state: 'visible' as const,
@@ -260,7 +260,7 @@ describe('MediaSection — per-operation persistence (HOS-372)', () => {
             render(<MediaSection {...defaultProps} />);
             await waitFor(() => {
                 expect(mockListMedia).toHaveBeenCalledWith({
-                    vertical: 'gastronomy',
+                    vertical: 'venue',
                     id: LISTING_ID
                 });
             });
@@ -303,7 +303,7 @@ describe('MediaSection — per-operation persistence (HOS-372)', () => {
 
             await waitFor(() => {
                 expect(mockAddMedia).toHaveBeenCalledWith({
-                    vertical: 'gastronomy',
+                    vertical: 'venue',
                     id: LISTING_ID,
                     body: expect.objectContaining({
                         url: NEW_ROW.url,
@@ -355,7 +355,7 @@ describe('MediaSection — per-operation persistence (HOS-372)', () => {
 
             await waitFor(() => {
                 expect(mockRemoveMedia).toHaveBeenCalledWith({
-                    vertical: 'gastronomy',
+                    vertical: 'venue',
                     id: LISTING_ID,
                     mediaId: GALLERY_ROW_1.id
                 });
@@ -370,7 +370,7 @@ describe('MediaSection — per-operation persistence (HOS-372)', () => {
             // HOS-372: the binary is deleted server-side, inside removeMedia,
             // BEFORE the row is dropped. The old client-side call this replaced
             // could never have succeeded — `media/protected/delete-entity`
-            // rejects `gastronomy`/`experience` with HTTP 400.
+            // rejects the venue/experience kinds with HTTP 400.
             expect(mockDeleteMedia).not.toHaveBeenCalled();
         });
 
@@ -394,7 +394,7 @@ describe('MediaSection — per-operation persistence (HOS-372)', () => {
     // ── Setting a new featured image ───────────────────────────────────
 
     describe('setting a new featured image', () => {
-        it('calls upload → addMedia → setFeaturedMedia immediately and updates the featured slot', async () => {
+        it('TEST:1819:6 AC:1:3 sends venue as the upload entity type', async () => {
             mockListMedia.mockReturnValue(makeListOk([GALLERY_ROW_1]));
             stubFetchUploadOk();
             mockAddMedia.mockReturnValue(makeAddOk({ ...NEW_ROW, isFeatured: false }));
@@ -410,9 +410,13 @@ describe('MediaSection — per-operation persistence (HOS-372)', () => {
             const file = new File(['img'], 'portada.jpg', { type: 'image/jpeg' });
             fireEvent.change(featured, { target: { files: [file] } });
 
+            await waitFor(() => expect(global.fetch).toHaveBeenCalled());
+            const request = global.fetch.mock.calls[0]?.[1];
+            expect((request?.body as FormData).get('entityType')).toBe('venue');
+
             await waitFor(() => {
                 expect(mockAddMedia).toHaveBeenCalledWith({
-                    vertical: 'gastronomy',
+                    vertical: 'venue',
                     id: LISTING_ID,
                     body: expect.objectContaining({ url: NEW_ROW.url })
                 });
@@ -420,7 +424,7 @@ describe('MediaSection — per-operation persistence (HOS-372)', () => {
 
             await waitFor(() => {
                 expect(mockSetFeaturedMedia).toHaveBeenCalledWith({
-                    vertical: 'gastronomy',
+                    vertical: 'venue',
                     id: LISTING_ID,
                     mediaId: NEW_ROW.id
                 });
@@ -502,7 +506,7 @@ describe('MediaSection — per-operation persistence (HOS-372)', () => {
 
             await waitFor(() => {
                 expect(mockRemoveMedia).toHaveBeenCalledWith({
-                    vertical: 'gastronomy',
+                    vertical: 'venue',
                     id: LISTING_ID,
                     mediaId: FEATURED_ROW.id
                 });
@@ -519,7 +523,7 @@ describe('MediaSection — per-operation persistence (HOS-372)', () => {
     // ── Gallery cap enforcement ────────────────────────────────────────
 
     describe('gallery cap enforcement', () => {
-        const GALLERY_CAP = getGalleryCap('gastronomy');
+        const GALLERY_CAP = getGalleryCap('venue');
 
         it('hides the add (+) button when the gallery is at the cap', async () => {
             const fullGallery = Array.from({ length: GALLERY_CAP }, (_, i) => ({
@@ -554,7 +558,7 @@ describe('MediaSection — per-operation persistence (HOS-372)', () => {
     // starts, and uploads run sequentially.
 
     describe('multi-file gallery upload (HOS-832)', () => {
-        const GALLERY_CAP = getGalleryCap('gastronomy');
+        const GALLERY_CAP = getGalleryCap('venue');
 
         it('declares `multiple` on the gallery input when more than one slot remains', async () => {
             render(<MediaSection {...defaultProps} />);
@@ -702,7 +706,7 @@ describe('MediaSection — per-operation persistence (HOS-372)', () => {
         });
 
         it('stops the batch after the FIRST quota-exceeded response, firing exactly one error and one addMedia call', async () => {
-            // Gastronomy gallery cap is 30 — well above 5, so the client-side
+            // Venue gallery cap is 30 — well above 5, so the client-side
             // upfront check does NOT reject this batch; the server response
             // is what enforces the cap here (simulates a concurrent edit in
             // another tab filling the remaining slots mid-batch).

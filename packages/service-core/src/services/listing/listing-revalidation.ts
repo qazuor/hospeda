@@ -3,7 +3,7 @@
  *
  * `BaseListingService` already owned this logic as a private method,
  * reachable only from create/update. The gallery mutations live in standalone
- * modules (`gastronomy.media.ts`, `experience.media.ts`) that receive a model
+ * modules (`venue.media.ts`, `experience.media.ts`) that receive a model
  * rather than the service, so they could not call it — which is why a photo
  * change never purged the public page.
  *
@@ -27,11 +27,11 @@ const mediaRevalidationLogger = createLogger('listing-media-revalidation');
  * The listing entity types that have a cached public detail page.
  *
  * Not exported: every consumer of {@link scheduleListingRevalidation}
- * and {@link scheduleListingMediaRevalidation} passes a `'gastronomy'` /
+ * and {@link scheduleListingMediaRevalidation} passes a `'venue'` /
  * `'experience'` literal directly rather than importing this type — it exists
  * only to name the parameter here.
  */
-type ListingRevalidationEntityType = 'gastronomy' | 'experience';
+type ListingRevalidationEntityType = 'venue' | 'experience';
 
 /**
  * The listing fields a purge needs. Typed structurally rather than against a
@@ -82,7 +82,7 @@ export function isListingPubliclyVisible(entity: RevalidatableListing): boolean 
  * degrades to purging the listing's own tags rather than throwing: a partial
  * purge beats a failed write.
  *
- * @param entityType - `'gastronomy'` or `'experience'`.
+ * @param entityType - `'venue'` or `'experience'`.
  * @param entity - The listing a public footprint is being purged for.  That
  *   is the POST-write row when the write published the listing or kept it
  *   public, and the PRE-write row when the write UNPUBLISHED it (HOS-1337):
@@ -167,7 +167,7 @@ export const standaloneListingRevalidationLogger = mediaRevalidationLogger;
  * purging the listing's own tags rather than throwing, matching every other
  * revalidation path.
  *
- * @param entityType - `'gastronomy'` or `'experience'`.
+ * @param entityType - `'venue'` or `'experience'`.
  * @param listing - The listing whose gallery just changed.
  */
 export async function scheduleListingMediaRevalidation({

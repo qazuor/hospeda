@@ -4,9 +4,9 @@ import { PriceRangeEnumSchema, VenueTypeEnumSchema } from '../../enums/index.js'
 import { VenueSchema } from './venue.schema.js';
 
 /**
- * Gastronomy Query Schemas
+ * venue Query Schemas
  *
- * This file contains all schemas related to querying gastronomy listings:
+ * This file contains all schemas related to querying venue listings:
  * - Filters schema
  * - Search / list schema
  * - Summary schema
@@ -18,13 +18,13 @@ import { VenueSchema } from './venue.schema.js';
 // ============================================================================
 
 /**
- * Gastronomy-specific filter schema.
+ * venue-specific filter schema.
  * Used as a building block for search schemas.
  */
 export const VenueFiltersSchema = z.object({
     /** Filter by destination UUID. */
     destinationId: z.string().uuid().optional(),
-    /** Filter by gastronomy sub-type. */
+    /** Filter by venue sub-type. */
     type: VenueTypeEnumSchema.optional(),
     /** Filter by price-range tier. */
     priceRange: PriceRangeEnumSchema.optional(),
@@ -54,12 +54,12 @@ export type VenueFilters = z.infer<typeof VenueFiltersSchema>;
 // ============================================================================
 
 /**
- * Standard gastronomy search schema.
- * Extends the platform base search with gastronomy-specific filters.
+ * Standard venue search schema.
+ * Extends the platform base search with venue-specific filters.
  *
  * @example
  * ```ts
- * const results = GastronomySearchSchema.parse({
+ * const results = venueSearchSchema.parse({
  *   q: 'parrilla',
  *   type: 'PARRILLA',
  *   priceRange: 'MID',
@@ -71,7 +71,7 @@ export type VenueFilters = z.infer<typeof VenueFiltersSchema>;
 export const VenueSearchSchema = BaseSearchSchema.extend({
     /** Filter by destination UUID. */
     destinationId: z.string().uuid().optional(),
-    /** Filter by gastronomy sub-type. */
+    /** Filter by venue sub-type. */
     type: VenueTypeEnumSchema.optional(),
     /** Filter by price-range tier. */
     priceRange: PriceRangeEnumSchema.optional(),
@@ -103,8 +103,8 @@ export type VenueSearch = z.infer<typeof VenueSearchSchema>;
 export type VenueSearchInput = VenueSearch;
 
 /**
- * Standard gastronomy search result schema.
- * Wraps an array of full gastronomy schemas with pagination metadata.
+ * Standard venue search result schema.
+ * Wraps an array of full venue schemas with pagination metadata.
  */
 export const VenueSearchResultSchema = PaginationResultSchema(VenueSchema);
 
@@ -116,7 +116,7 @@ export type VenueSearchResult = z.infer<typeof VenueSearchResultSchema>;
 // ============================================================================
 
 /**
- * Gastronomy list item — public-safe minimal projection for listing pages.
+ * venue list item — public-safe minimal projection for listing pages.
  */
 export const VenueListItemSchema = VenueSchema.pick({
     id: true,
@@ -148,7 +148,7 @@ export type VenueListItem = z.infer<typeof VenueListItemSchema>;
 // ============================================================================
 
 /**
- * Gastronomy summary — essential fields for cards and relation selectors.
+ * venue summary — essential fields for cards and relation selectors.
  */
 export const VenueSummarySchema = VenueSchema.pick({
     id: true,
@@ -163,7 +163,7 @@ export const VenueSummarySchema = VenueSchema.pick({
 }).extend({
     /** Featured state, derived from `featuredByEntitlement` (HOS-1419). */
     isFeatured: z.boolean().optional(),
-    // Use `.default(0)` only — same rationale as GastronomyListItemSchema above.
+    // Use `.default(0)` only — same rationale as venueListItemSchema above.
     reviewsCount: z.number().int().min(0).default(0),
     averageRating: z.number().min(0).max(5).default(0)
 });
@@ -176,11 +176,11 @@ export type VenueSummary = z.infer<typeof VenueSummarySchema>;
 // ============================================================================
 
 /**
- * Gastronomy statistics schema.
+ * venue statistics schema.
  * Used for admin dashboards and platform metrics.
  */
 export const VenueStatsSchema = z.object({
-    /** Total number of gastronomy listings. */
+    /** Total number of venue listings. */
     total: z.number(),
     /** Number of featured listings. */
     totalFeatured: z.number(),

@@ -1,9 +1,9 @@
 /**
- * Public projection gate for a gastronomy listing's menú del día (HOS-1041).
+ * Public projection gate for a venue listing's menú del día (HOS-1041).
  *
  * Extracted out of `getBySlug.ts` for the reason `menu-projection.ts` states:
  * the withholding rule gets a direct unit-test surface, independent of building
- * a full `GastronomyPublicSchema` fixture through the route/HTTP layer.
+ * a full `VenuePublicSchema` fixture through the route/HTTP layer.
  *
  * @module routes/venue/public/daily-specials-projection
  */
@@ -15,10 +15,10 @@ export interface VenueDailySpecialsGateResult {
 }
 
 /**
- * Withholds the menú del día when the owner's CURRENT gastronomy plan does not
- * grant `manage_gastronomy_daily_special`.
+ * Withholds the menú del día when the owner's CURRENT venue plan does not
+ * grant `manage_venue_daily_special`.
  *
- * The rows are not deleted (see `resolveOwnerGrantsGastronomyDailySpecial` in
+ * The rows are not deleted (see `resolveOwnerGrantsVenueDailySpecial` in
  * `@repo/service-core`), only kept out of the public payload — so a lapsed
  * subscription hides today's special and a renewed one brings it straight back,
  * without the owner retyping anything.

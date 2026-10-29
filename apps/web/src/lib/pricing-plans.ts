@@ -42,9 +42,9 @@ import type { SupportedLocale } from './i18n';
 export const PRICING_PAGE_PATH_BY_AUDIENCE = {
     owner: 'planes/anfitriones/precios',
     tourist: 'planes/turistas/precios',
-    gastronomy: 'planes/gastronomia/precios',
+    venue: 'planes/comer-y-salir/precios',
     experience: 'planes/experiencias/precios'
-} as const satisfies Readonly<Record<'owner' | 'tourist' | 'gastronomy' | 'experience', string>>;
+} as const satisfies Readonly<Record<'owner' | 'tourist' | 'venue' | 'experience', string>>;
 
 /** Map app locale codes to BCP47 tags used by Intl.NumberFormat / DateTimeFormat. */
 const BCP47_BY_LOCALE: Record<SupportedLocale, string> = {

@@ -21,7 +21,7 @@ type PublishHandler = (input: {
 /** Existing publish endpoint selection, exhaustive across listing verticals. */
 const PUBLISH_HANDLER_BY_VERTICAL: Readonly<Record<PublishVerticalSlug, PublishHandler>> = {
     accommodation: ({ id }) => accommodationEditApi.publish({ id }),
-    gastronomy: ({ id }) => publishApi.publish({ vertical: 'gastronomy', id }),
+    venue: ({ id }) => publishApi.publish({ vertical: 'venue', id }),
     experience: ({ id }) => publishApi.publish({ vertical: 'experience', id })
 };
 
@@ -30,14 +30,14 @@ const PRICING_AUDIENCE_BY_VERTICAL: Readonly<
     Record<PublishVerticalSlug, keyof typeof PRICING_PAGE_PATH_BY_AUDIENCE>
 > = {
     accommodation: 'owner',
-    gastronomy: 'gastronomy',
+    venue: 'venue',
     experience: 'experience'
 };
 
 /** Editor path builder for each listing vertical. */
 const EDITOR_PATH_BY_VERTICAL: Readonly<Record<PublishVerticalSlug, (id: string) => string>> = {
     accommodation: (id) => `mi-cuenta/propiedades/${id}/editar`,
-    gastronomy: (id) => `mi-cuenta/comercio/gastronomy/${id}/editar`,
+    venue: (id) => `mi-cuenta/comercio/venue/${id}/editar`,
     experience: (id) => `mi-cuenta/comercio/experience/${id}/editar`
 };
 

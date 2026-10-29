@@ -1,12 +1,12 @@
 /**
  * LISTING-OWNER-04 — PATCH updateOwn permission gate (SPEC-253 T-029, AC-2).
  *
- * Validates the GASTRONOMY_EDIT_OWN permission gate on the protected PATCH
+ * Validates the VENUE_EDIT_OWN permission gate on the protected PATCH
  * endpoint via direct API calls (no browser navigation needed):
  *
- *   - USER without GASTRONOMY_EDIT_OWN → 403 FORBIDDEN
- *   - GASTRONOMY_OWNER with GASTRONOMY_EDIT_OWN (same owner) → 200 OK
- *   - A staff bypass would require GASTRONOMY_EDIT_ALL; no staff actor is
+ *   - USER without VENUE_EDIT_OWN → 403 FORBIDDEN
+ *   - VENUE_OWNER with VENUE_EDIT_OWN (same owner) → 200 OK
+ *   - A staff bypass would require VENUE_EDIT_ALL; no staff actor is
  *     exercised in this spec.
  *
  * All assertions are direct fetch() calls against the protected API — no
@@ -14,11 +14,11 @@
  * test fast and independent of the web app build.
  *
  * Actors:
- *   - e2e-tourist@local.test           (role USER, no GASTRONOMY_EDIT_OWN)
- *   - gastro-owner-julieta@local.test  (role GASTRONOMY_OWNER, GASTRONOMY_EDIT_OWN)
+ *   - e2e-tourist@local.test           (role USER, no VENUE_EDIT_OWN)
+ *   - venue-owner-julieta@local.test  (role VENUE_OWNER, VENUE_EDIT_OWN)
  *
  * The "staff bypass" is tested by confirming Julieta (the owner) gets 200,
- * and a non-owner tourist gets 403. A full GASTRONOMY_EDIT_ALL assertion would
+ * and a non-owner tourist gets 403. A full VENUE_EDIT_ALL assertion would
  * require a SUPER_ADMIN actor — the seeded test users do not include one with
  * a pre-set password accessible to E2E without the admin seed pipeline.
  * The owner-and-staff bypass is already covered by service-core unit tests
@@ -29,12 +29,12 @@
  * Preconditions:
  *   - e2e:seed has run (`pnpm --filter hospeda-e2e e2e:seed`).
  *   - e2e-tourist@local.test exists with role USER.
- *   - gastro-owner-julieta@local.test exists with role GASTRONOMY_OWNER.
- *   - la-parrilla-del-puerto gastronomy listing is seeded and ACTIVE.
+ *   - venue-owner-julieta@local.test exists with role VENUE_OWNER.
+ *   - la-parrilla-del-puerto venue listing is seeded and ACTIVE.
  *   - API server is running.
  *
  * @see SPEC-253 spec.md § AC-2
- * @see apps/api/src/routes/gastronomy/protected/patch.ts
+ * @see apps/api/src/routes/venue/protected/patch.ts
  * @see packages/service-core/src/services/venue/venue.service.ts (updateOwn)
  */
 
@@ -53,15 +53,15 @@ const API_URL = process.env.HOSPEDA_E2E_API_URL ?? 'http://localhost:3001';
 // Actors
 // ---------------------------------------------------------------------------
 
-/** Plain tourist — role USER, no GASTRONOMY_EDIT_OWN. */
+/** Plain tourist — role USER, no VENUE_EDIT_OWN. */
 const TOURIST = {
     email: 'e2e-tourist@local.test',
     password: 'Password123!'
 } as const;
 
-/** Gastronomy or experience owner — Julieta (role GASTRONOMY_OWNER, has GASTRONOMY_EDIT_OWN). */
+/** Venue or experience owner — Julieta (role VENUE_OWNER, has VENUE_EDIT_OWN). */
 const JULIETA = {
-    email: 'gastro-owner-julieta@local.test',
+    email: 'venue-owner-julieta@local.test',
     password: 'Password123!'
 } as const;
 
@@ -69,22 +69,22 @@ const JULIETA = {
 // Listing identifier
 // ---------------------------------------------------------------------------
 
-const GASTRONOMY_SLUG = 'la-parrilla-del-puerto';
+const VENUE_SLUG = 'la-parrilla-del-puerto';
 
 // ---------------------------------------------------------------------------
 // Helpers
 // ---------------------------------------------------------------------------
 
 /**
- * Builds an authenticated fetch to the protected PATCH endpoint for a gastronomy.
+ * Builds an authenticated fetch to the protected PATCH endpoint for a venue.
  * Returns the raw Response so the caller can inspect status without throwing.
  */
-async function patchGastronomy(options: {
+async function patchVenue(options: {
     readonly listingId: string;
     readonly sessionCookie: string;
     readonly body: Record<string, unknown>;
 }): Promise<Response> {
-    return fetch(`${API_URL}/api/v1/protected/gastronomies/${options.listingId}`, {
+    return fetch(`${API_URL}/api/v1/protected/venues/${options.listingId}`, {
         method: 'PATCH',
         headers: {
             'content-type': 'application/json',
@@ -101,36 +101,36 @@ async function patchGastronomy(options: {
 // ---------------------------------------------------------------------------
 
 test.describe('LISTING-OWNER-04: PATCH updateOwn permission gate @p0 @listing-owner', () => {
-    let gastronomyId: string;
+    let venueId: string;
 
     test.beforeAll(async () => {
         const rows = await execSQL<{ id: string }>(
-            'SELECT id FROM gastronomies WHERE slug = $1 LIMIT 1',
-            [GASTRONOMY_SLUG]
+            'SELECT id FROM venues WHERE slug = $1 LIMIT 1',
+            [VENUE_SLUG]
         );
         const row = rows[0];
         if (!row) {
-            throw new Error(`Gastronomy '${GASTRONOMY_SLUG}' not found — run e2e:seed first`);
+            throw new Error(`Venue '${VENUE_SLUG}' not found — run e2e:seed first`);
         }
-        gastronomyId = row.id;
+        venueId = row.id;
     });
 
     test('non-owner USER gets NOT_FOUND on PATCH updateOwn (ownership-first, no info disclosure)', async () => {
-        // Sign in as a plain tourist (not the owner, no GASTRONOMY_EDIT_OWN permission).
+        // Sign in as a plain tourist (not the owner, no VENUE_EDIT_OWN permission).
         const sessionCookie = await signInExistingUser(
             { email: TOURIST.email, password: TOURIST.password },
             { apiBaseUrl: API_URL, webBaseUrl: WEB_URL }
         );
 
-        // Attempt to PATCH the gastronomy owned by Julieta (not the tourist).
+        // Attempt to PATCH the venue owned by Julieta (not the tourist).
         // updateOwn enforces ownership BEFORE the permission gate and returns
         // NOT_FOUND for non-owners to avoid information disclosure (SPEC-253 AC-2
-        // design; identical outcome to the GASTRONOMY_OWNER-wrong-listing case below).
-        // The 403 FORBIDDEN path (AC-2: an OWNER missing GASTRONOMY_EDIT_OWN) is not
+        // design; identical outcome to the VENUE_OWNER-wrong-listing case below).
+        // The 403 FORBIDDEN path (AC-2: an OWNER missing VENUE_EDIT_OWN) is not
         // reachable via seeded roles and is covered by the unit test
         // listing.permissions.test.ts ("should forbid actor with no permissions").
-        const response = await patchGastronomy({
-            listingId: gastronomyId,
+        const response = await patchVenue({
+            listingId: venueId,
             sessionCookie,
             body: { richDescription: 'Should be blocked by the ownership gate' }
         });
@@ -140,8 +140,8 @@ test.describe('LISTING-OWNER-04: PATCH updateOwn permission gate @p0 @listing-ow
         );
     });
 
-    test('GASTRONOMY_OWNER with GASTRONOMY_EDIT_OWN on own listing gets 200 on PATCH updateOwn', async () => {
-        // Sign in as Julieta (GASTRONOMY_OWNER, owns the listing).
+    test('VENUE_OWNER with VENUE_EDIT_OWN on own listing gets 200 on PATCH updateOwn', async () => {
+        // Sign in as Julieta (VENUE_OWNER, owns the listing).
         const sessionCookie = await signInExistingUser(
             { email: JULIETA.email, password: JULIETA.password },
             { apiBaseUrl: API_URL, webBaseUrl: WEB_URL }
@@ -149,20 +149,20 @@ test.describe('LISTING-OWNER-04: PATCH updateOwn permission gate @p0 @listing-ow
 
         // PATCH Julieta's own listing — should succeed with 200.
         // Use a stable field that does not interfere with other tests.
-        const response = await patchGastronomy({
-            listingId: gastronomyId,
+        const response = await patchVenue({
+            listingId: venueId,
             sessionCookie,
             body: { richDescription: `E2E permission gate test ${Date.now()}` }
         });
 
         expect(
             response.status,
-            `Expected 200 for Julieta (GASTRONOMY_OWNER) on own listing, got ${response.status}`
+            `Expected 200 for Julieta (VENUE_OWNER) on own listing, got ${response.status}`
         ).toBe(200);
     });
 
-    test("GASTRONOMY_OWNER trying to PATCH a listing she doesn't own gets NOT_FOUND (ownership gate)", async () => {
-        // Julieta signs in and tries to PATCH Rodrigo's gastronomy.
+    test("VENUE_OWNER trying to PATCH a listing she doesn't own gets NOT_FOUND (ownership gate)", async () => {
+        // Julieta signs in and tries to PATCH Rodrigo's venue.
         // The service returns NOT_FOUND (404) for non-owners (ownership check
         // before permission check — SPEC-253 updateOwn returns entity.ownerId !== actor.id
         // as NOT_FOUND to avoid information disclosure).
@@ -171,11 +171,11 @@ test.describe('LISTING-OWNER-04: PATCH updateOwn permission gate @p0 @listing-ow
             { apiBaseUrl: API_URL, webBaseUrl: WEB_URL }
         );
 
-        // Rodrigo's gastronomy: la-cerveceria-del-rio (static ID from id-mappings.json).
-        const RODRIGO_GASTRONOMY_ID = '56c9958b-3ca5-46c1-af8a-d7ba12b7f051';
+        // Rodrigo's venue: la-cerveceria-del-rio (static ID from id-mappings.json).
+        const RODRIGO_VENUE_ID = '322263e1-2a1c-59bc-bdcf-8d30818b7a55';
 
-        const response = await patchGastronomy({
-            listingId: RODRIGO_GASTRONOMY_ID,
+        const response = await patchVenue({
+            listingId: RODRIGO_VENUE_ID,
             sessionCookie,
             body: { richDescription: 'Cross-owner attempt' }
         });

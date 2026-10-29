@@ -197,7 +197,7 @@ layer) is still there and is the real entry point.
 
 The URLs moved too (HOS-1032): pricing now lives at
 `/{lang}/planes/<vertical>/precios/` for the five verticals — `anfitriones`,
-`turistas`, `gastronomia`, `experiencias`, `aliados`. The old
+`turistas`, `comer-y-salir`, `experiencias`, `aliados`. The old
 `/{lang}/suscriptores/planes/*` pages survive only as SSR 301 redirects to the
 new locations.
 
@@ -433,17 +433,17 @@ Only `/mi-cuenta/*` routes require authentication. Middleware checks the session
 
 All other routes (including `/suscriptores/*`) are public.
 
-### Gastronomy/experience owner self-service (`/mi-cuenta/comercio`, SPEC-249)
+### Venue/experience owner self-service (`/mi-cuenta/comercio`, SPEC-249)
 
-`GASTRONOMY_OWNER` / `EXPERIENCE_OWNER` users edit the **operational** fields of their own gastronomy /
+`VENUE_OWNER` / `EXPERIENCE_OWNER` users edit the **operational** fields of their own venue /
 experience listings under `/[lang]/mi-cuenta/comercio`. Identity/core fields
 (name, slug, type, destination, lifecycle/visibility) are read-only and
 server-stripped — owners only maintain content (description, contact, hours,
 media, amenities, price). **Owners create their own listings** since HOS-166 §7.2:
-`POST /api/v1/protected/gastronomies` / `POST /api/v1/protected/experiences`
-(`apps/api/src/routes/{gastronomy,experience}/protected/create.ts`) declares NO
+`POST /api/v1/protected/venues` / `POST /api/v1/protected/experiences`
+(the protected create routes) declare NO
 `requiredPermissions` (HOS-687), creates the listing for `actor.id`, and grants
-`GASTRONOMY_OWNER` / `EXPERIENCE_OWNER` in the same transaction via `createForOwner`. The admin
+`VENUE_OWNER` / `EXPERIENCE_OWNER` in the same transaction via `createForOwner`. The admin
 create/provision path still exists in parallel — it is no longer the only way in.
 Full reference:
 [docs/listing-owner-self-service.md](docs/listing-owner-self-service.md).
@@ -1160,7 +1160,7 @@ only surface that lists partners.
 
 ### Publishing: one page per vertical (HOS-1156)
 
-`/{lang}/publicar/`, `/{lang}/publicar/gastronomia/` and
+`/{lang}/publicar/`, `/{lang}/publicar/comer-y-salir/` and
 `/{lang}/publicar/experiencias/` are the three pages the header's "Publicar"
 menu opens. Each one carries the funnel AND the create form — there is no
 funnel/form pair any more, and no vertical picker. Four rules a future reader
@@ -1201,7 +1201,7 @@ would otherwise re-derive wrongly:
 The per-vertical cap, the six-cell decision matrix and the delete-draft action
 are shared with the API: see `PUBLICATION_LIMIT_KEYS` (`packages/verticals/src/publication/publication-types.ts`; `LIMIT_KEY_BY_PUBLISH_VERTICAL` was retired with `@repo/billing`, HOS-1626),
 `GET /api/v1/protected/publish/precheck/{vertical}` and
-`POST /api/v1/protected/{accommodations,gastronomies,experiences}/{id}/purge`.
+`POST /api/v1/protected/{accommodations,venues,experiences}/{id}/purge`.
 The owner's delete button runs PB12 on the three verticals (HOS-1477): the
 listing moves to `PURGED` and its content is erased for good. The old
 `DELETE /protected/{plural}/{id}` doors are retired; `publishApi.purge` is the

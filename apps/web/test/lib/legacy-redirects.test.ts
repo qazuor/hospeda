@@ -15,7 +15,11 @@ import {
     EVENT_CATEGORY_LEGACY_ENGLISH_SLUGS,
     POST_CATEGORY_LEGACY_ENGLISH_SLUGS
 } from '../../src/lib/facet-slugs';
-import { resolveLegacyRedirectTarget } from '../../src/lib/legacy-redirects';
+import {
+    RETIRED_ROUTE_REDIRECT_STATUS,
+    RETIRED_VENUE_URL_PREFIXES,
+    resolveLegacyRedirectTarget
+} from '../../src/lib/legacy-redirects';
 
 describe('resolveLegacyRedirectTarget — no match', () => {
     it('returns undefined for an ordinary route', () => {
@@ -167,5 +171,22 @@ describe('resolveLegacyRedirectTarget — never resolves a path to itself (loop 
                 resolveLegacyRedirectTarget({ path: `/es/publicaciones/categoria/${spanishSlug}/` })
             ).toBeUndefined();
         }
+    });
+});
+
+describe('retired venue URLs (HOS-1821)', () => {
+    it.each(RETIRED_VENUE_URL_PREFIXES)('redirects %s with tail directly', (prefix) => {
+        const source = `/es${prefix}/abc/editar/`;
+        const result = resolveLegacyRedirectTarget({ path: source });
+        expect(result).toBeDefined();
+        expect(result?.status).toBe(RETIRED_ROUTE_REDIRECT_STATUS);
+        expect(result?.target).not.toContain(RETIRED_VENUE_URL_PREFIXES[4]);
+        expect(resolveLegacyRedirectTarget({ path: result!.target })).toBeUndefined();
+    });
+    it('defaults locale-less URLs to Spanish', () => {
+        expect(resolveLegacyRedirectTarget({ path: `${RETIRED_VENUE_URL_PREFIXES[0]}/` })).toEqual({
+            target: '/es/comer-y-salir/',
+            status: RETIRED_ROUTE_REDIRECT_STATUS
+        });
     });
 });

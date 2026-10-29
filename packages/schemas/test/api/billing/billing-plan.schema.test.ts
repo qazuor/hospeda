@@ -89,12 +89,12 @@ describe('CreateBillingPlanSchema', () => {
 
         it('accepts a domain that does not match the category', () => {
             // Category and domain answer different questions, and the schema
-            // must not quietly couple them: the gastronomy, experience and partner
+            // must not quietly couple them: the venue, experience and partner
             // verticals share one category while holding three distinct domains, so a
             // cross-check here would make two of them unrepresentable.
             const result = CreateBillingPlanSchema.safeParse({
                 ...validCreate,
-                slug: 'gastronomy-basico',
+                slug: 'venue-basico',
                 category: 'owner',
                 productDomain: ProductDomainEnum.VENUE
             });
@@ -270,9 +270,9 @@ describe('BillingPlanResponseSchema', () => {
 describe('AdminBillingPlanResponseSchema (HOS-1314)', () => {
     const validAdminResponse = {
         id: '11111111-1111-4111-8111-111111111111',
-        slug: 'gastronomy-pro',
+        slug: 'venue-pro',
         name: 'Pro',
-        description: 'Gastronomy pro plan.',
+        description: 'Venue pro plan.',
         category: 'owner' as const,
         monthlyPriceArs: 1_500_000,
         annualPriceArs: 15_000_000,
@@ -281,7 +281,7 @@ describe('AdminBillingPlanResponseSchema (HOS-1314)', () => {
         trialDays: 0,
         isDefault: false,
         sortOrder: 1,
-        entitlements: ['publish_gastronomy'],
+        entitlements: ['publish_venue'],
         limits: { max_listings: 3 },
         isActive: true,
         publicListing: 'listed' as const,

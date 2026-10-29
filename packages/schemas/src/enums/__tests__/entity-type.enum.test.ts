@@ -12,7 +12,7 @@ describe('EntityTypeEnum', () => {
         // Arrange
         const values = Object.values(EntityTypeEnum);
 
-        // Assert (AC-F15; F3 appended EXPERIENCE + GASTRONOMY for user bookmarks,
+        // Assert (AC-F15; F3 appended EXPERIENCE + venue for user bookmarks,
         // HOS-981 appended HOST_TRADE for qr_codes.entity_type, HOS-1063 appended
         // PARTNER for entity_views.entity_type)
         expect(values).toHaveLength(13);
@@ -58,16 +58,16 @@ describe('EntityTypeEnum', () => {
         });
     });
 
-    describe('2 new values added in F3 (favorites for experiences + gastronomy)', () => {
+    describe('2 new values added in F3 (favorites for experiences + venue)', () => {
         it('should include EXPERIENCE', () => {
             expect(EntityTypeEnum.EXPERIENCE).toBe('EXPERIENCE');
         });
 
-        it('TEST:1813:7 AC:1:15 should include VENUE with the persisted GASTRONOMY value', () => {
-            expect(EntityTypeEnum.VENUE).toBe('GASTRONOMY');
+        it('TEST:1819:3 AC:1:3 should include VENUE with the persisted VENUE value', () => {
+            expect(EntityTypeEnum.VENUE).toBe('VENUE');
         });
 
-        it('TEST:1813:7 AC:1:15 exposes the complete renamed key set', () => {
+        it('TEST:1819:3 AC:1:3 exposes the complete renamed key set', () => {
             expect(Object.keys(EntityTypeEnum)).toEqual([
                 'ACCOMMODATION',
                 'DESTINATION',
@@ -147,8 +147,8 @@ describe('EntityTypeEnum', () => {
             expect(result.success).toBe(true);
         });
 
-        it('should accept GASTRONOMY', () => {
-            const result = EntityTypeEnumSchema.safeParse('GASTRONOMY');
+        it('should accept VENUE', () => {
+            const result = EntityTypeEnumSchema.safeParse('VENUE');
             expect(result.success).toBe(true);
         });
 

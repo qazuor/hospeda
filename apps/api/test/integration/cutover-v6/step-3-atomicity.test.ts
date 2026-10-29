@@ -4,10 +4,10 @@ import {
     enqueueOrMergeScheduledEmail,
     eq,
     experiences,
-    gastronomies,
     getDb,
     inArray,
-    trials
+    trials,
+    venues
 } from '@repo/db';
 import { PublicationStatusEnum, VerticalEnum } from '@repo/schemas';
 import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it } from 'vitest';
@@ -61,7 +61,7 @@ async function seedFive() {
             vertical === VerticalEnum.ACCOMMODATION
                 ? accommodations
                 : vertical === VerticalEnum.VENUE
-                  ? gastronomies
+                  ? venues
                   : experiences;
         await getDb().update(table).set({ inactiveSince: CUTOVER }).where(eq(table.id, listingId));
         seeded.push({ userId: owner.id, listingId, vertical });

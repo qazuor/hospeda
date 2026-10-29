@@ -54,7 +54,7 @@ describe('TEST:1762:1 loadListingNoticesItem — notices of one listing for the 
 
         // Act
         const result = await loadListingNoticesItem({
-            vertical: 'gastronomy',
+            vertical: 'venue',
             listingId: LISTING_ID,
             cookieHeader: COOKIE
         });
@@ -63,7 +63,7 @@ describe('TEST:1762:1 loadListingNoticesItem — notices of one listing for the 
         expect(result).toEqual({ item: firstItem });
         expect(listingNotices).toHaveBeenCalledTimes(1);
         expect(listingNotices).toHaveBeenCalledWith({
-            vertical: 'gastronomy',
+            vertical: 'venue',
             cookieHeader: COOKIE
         });
     });

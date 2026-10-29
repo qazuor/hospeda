@@ -99,7 +99,7 @@ test.describe('TEST:V8a:7 (panel, fila 4) admin user trial summary @p1 @admin', 
         await expect(card).toContainText(`${facts.base_days} del plan`);
         await expect(card).toContainText('10 por promociones');
         await expect(card).toContainText('7 regalados por soporte');
-        await expect(page.getByTestId('user-trial-summary-gastronomy')).toContainText(
+        await expect(page.getByTestId('user-trial-summary-venue')).toContainText(
             'Sin prueba gratis en esta vertical.'
         );
         await expect(page.getByTestId('user-trial-summary-experience')).toContainText(
@@ -119,7 +119,7 @@ test.describe('TEST:V8a:7 (panel, fila 4) admin user trial summary @p1 @admin', 
         });
         const card = page.getByTestId('user-trial-summary');
         await expect(card).toBeVisible({ timeout: 30_000 });
-        for (const vertical of ['accommodation', 'gastronomy', 'experience']) {
+        for (const vertical of ['accommodation', 'venue', 'experience']) {
             await expect(page.getByTestId(`user-trial-summary-${vertical}`)).toContainText(
                 'Sin prueba gratis en esta vertical.'
             );

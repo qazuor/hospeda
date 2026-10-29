@@ -100,8 +100,8 @@
             "spec": ".specs/HOS-1352-billing-verticals-redesign/spec-consolidada/10-corte/V6.md:742-743"
         },
         {
-            "file": "packages/seed/src/example/gastronomies.seed.ts",
-            "symbol": "seedGastronomies",
+            "file": "packages/seed/src/example/venues.seed.ts",
+            "symbol": "seedVenues",
             "count": 2,
             "facts": [1],
             "executors": "creating an example listing (HOS-1476 H10)",

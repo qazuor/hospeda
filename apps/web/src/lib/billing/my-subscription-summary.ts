@@ -11,7 +11,7 @@ type Row = z.infer<typeof OwnSubscriptionsResponseSchema>['subscriptions'][numbe
 /** Translation key for each supported business vertical on the subscription page. */
 export const MY_SUBSCRIPTION_VERTICAL_LABEL_KEY: Record<VerticalEnum, string> = {
     accommodation: 'account.subscription.mine.vertical.accommodation',
-    gastronomy: 'account.subscription.mine.vertical.gastronomy',
+    venue: 'account.subscription.mine.vertical.venue',
     experience: 'account.subscription.mine.vertical.experience',
     tourist: 'account.subscription.mine.vertical.tourist',
     partner: 'account.subscription.mine.vertical.partner'

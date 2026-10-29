@@ -46,7 +46,7 @@ import {
     resolveFeatureConfig,
     resolveSystemPrompt
 } from '@repo/ai-core';
-import { accommodations, experiences, gastronomies, getDb } from '@repo/db';
+import { accommodations, experiences, getDb, venues } from '@repo/db';
 import {
     AI_CHAT_MAX_MESSAGES,
     type AiChatMessage,
@@ -97,25 +97,25 @@ const RATE_LIMIT_FEATURE: AiFeature = 'chat';
 
 const OWNER_CHAT_COPY_BY_ENTITY_TYPE = {
     accommodation: 'accommodations.aiChat.unavailable',
-    gastronomy: 'gastronomy.aiChat.unavailable',
+    venue: 'venue.aiChat.unavailable',
     experience: 'experience.aiChat.unavailable'
 } as const;
 
 const VERTICAL_BY_ENTITY_TYPE = {
     accommodation: VerticalEnum.ACCOMMODATION,
-    gastronomy: VerticalEnum.VENUE,
+    venue: VerticalEnum.VENUE,
     experience: VerticalEnum.EXPERIENCE
 } as const;
 
 const OWNER_CAPABILITY_KEYS_BY_ENTITY_TYPE = {
     accommodation: [],
-    gastronomy: ['manage_gastronomy_menu'],
+    venue: ['manage_venue_menu'],
     experience: ['manage_experience_directions']
 } as const;
 
 const OWNER_CHAT_LIMIT_BY_ENTITY_TYPE = {
     accommodation: 'max_ai_chat_per_month',
-    gastronomy: 'max_ai_chat_gastronomy_per_month',
+    venue: 'max_ai_chat_venue_per_month',
     experience: 'max_ai_chat_experience_per_month'
 } as const;
 
@@ -255,7 +255,7 @@ export const protectedAiChatRoute = createProtectedStreamingRoute({
         // so the compiler owns the exhaustiveness.
         const LISTING_TABLE_BY_ENTITY_TYPE = {
             accommodation: accommodations,
-            gastronomy: gastronomies,
+            venue: venues,
             experience: experiences
         } as const;
         const listingTable = LISTING_TABLE_BY_ENTITY_TYPE[entityType];
@@ -330,7 +330,7 @@ export const protectedAiChatRoute = createProtectedStreamingRoute({
             resolvedPrompt,
             locale,
             ownerCapabilities: {
-                manageVenueMenu: ownerCapabilities.manage_gastronomy_menu === true,
+                manageVenueMenu: ownerCapabilities.manage_venue_menu === true,
                 manageExperienceDirections: ownerCapabilities.manage_experience_directions === true
             }
         });

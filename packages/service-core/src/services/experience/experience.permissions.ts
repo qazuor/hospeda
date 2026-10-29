@@ -6,7 +6,7 @@
  * All real logic lives in the generic `listing.permissions.ts` helpers that
  * resolve the experience permission family. This file re-exports or delegates to
  * those helpers with experience context, keeping the experience service layer
- * consistent with gastronomy's pattern while avoiding permission-logic
+ * consistent with venue's pattern while avoiding permission-logic
  * duplication.
  *
  * Design decisions:
@@ -223,7 +223,7 @@ export function checkExperienceCanEditFaqEntries(
  *
  * For public/protected read paths, any actor is allowed to attempt to list;
  * the service layer enforces the publication-status filter on results.
- * This is intentionally permissive — mirrors gastronomy's pattern.
+ * This is intentionally permissive — mirrors venue's pattern.
  *
  * @param _actor - The actor performing the action (currently unused).
  */

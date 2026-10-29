@@ -1,5 +1,5 @@
 /**
- * Tests for GET /api/v1/public/gastronomies
+ * Tests for GET /api/v1/public/venues
  *
  * Covers: route registration, public access (no auth required), visible-only
  * contract, and response shape.
@@ -8,9 +8,9 @@ import { beforeAll, describe, expect, it } from 'vitest';
 import { initApp } from '../../../../src/app.js';
 import type { AppOpenAPI } from '../../../../src/types.js';
 
-const BASE = '/api/v1/public/gastronomies';
+const BASE = '/api/v1/public/venues';
 
-describe('GET /api/v1/public/gastronomies', () => {
+describe('GET /api/v1/public/venues', () => {
     let app: AppOpenAPI;
 
     beforeAll(() => {
@@ -95,7 +95,7 @@ describe('GET /api/v1/public/gastronomies', () => {
     //
     // What they cannot assert: which rows come back. The DB is mocked, so the
     // clause is built and handed over but never executed — row-level behaviour
-    // is `packages/db/test/utils/gastronomy-catalog-filters.test.ts` (which
+    // is `packages/db/test/utils/venue-catalog-filters.test.ts` (which
     // compiles the SQL) plus the staging smoke.
     // -------------------------------------------------------------------------
 

@@ -13,7 +13,7 @@ import { getListingAccessPorts } from './ports';
 export const AI_ENTITLEMENT_KEY_BY_FEATURE = {
     text_improve: 'ai_text_improve',
     chat: 'ai_chat',
-    chat_gastronomy: 'ai_chat',
+    chat_venue: 'ai_chat',
     chat_experience: 'ai_chat',
     search: 'ai_search',
     support: 'ai_support',
@@ -25,7 +25,7 @@ export const AI_ENTITLEMENT_KEY_BY_FEATURE = {
 export const AI_LIMIT_KEY_BY_FEATURE = {
     text_improve: 'max_ai_text_improve_per_month',
     chat: 'max_ai_chat_per_month',
-    chat_gastronomy: 'max_ai_chat_gastronomy_per_month',
+    chat_venue: 'max_ai_chat_venue_per_month',
     chat_experience: 'max_ai_chat_experience_per_month',
     search: 'max_ai_search_per_month',
     support: 'max_ai_support_per_month',

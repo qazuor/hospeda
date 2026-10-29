@@ -38,7 +38,7 @@ async function createListing(
             { ...base, type: 'CABIN' } as Partial<Accommodation>,
             tx
         );
-    if (vertical === 'gastronomy')
+    if (vertical === 'venue')
         return new VenueModel().create({ ...base, type: 'RESTAURANT' } as Partial<Venue>, tx);
     return new ExperienceModel().create({ ...base, type: 'EXCURSION' } as Partial<Experience>, tx);
 }
@@ -87,7 +87,7 @@ describe('TEST:V6:11 listing moderation model', () => {
             await domainEventModel.insert({
                 tx,
                 eventType: 'listing.status_changed',
-                entityType: 'gastronomy',
+                entityType: 'venue',
                 entityId: listing.id,
                 actorType: 'admin',
                 actorId: admin.id,

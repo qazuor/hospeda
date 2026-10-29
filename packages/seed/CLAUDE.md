@@ -151,14 +151,14 @@ The group is **intentionally not part of `--required` or `--example`** — that 
 | `host-pro@local.test` | HOST | accommodation + promotions |
 | `host-premium@local.test` | HOST | accommodation + promotions |
 | `host-provider@local.test` | HOST | accommodation + promotions, and owns the `plomeria-litoral` `host_trades` listing (dual role, HOS-376 AC-16/AC-17) |
-| `gastronomy-owner@local.test` | GASTRONOMY_OWNER | none (role only, no listing) |
+| `venue-owner@local.test` | VENUE_OWNER | none (role only, no listing) |
 | `experience-owner@local.test` | EXPERIENCE_OWNER | none (role only, no listing) |
-| `host-gastronomy@local.test` | HOST + GASTRONOMY_OWNER | accommodation + promotions; the GASTRONOMY_OWNER role has no backing listing (HOS-296 multi-role, HOS-694 AC-3/AC-12) |
+| `host-venue@local.test` | HOST + VENUE_OWNER | accommodation + promotions; the VENUE_OWNER role has no backing listing (HOS-296 multi-role, HOS-694 AC-3/AC-12) |
 | `complex-basico@local.test` | CLIENT_MANAGER | none |
 | `complex-pro@local.test` | CLIENT_MANAGER | none |
 | `complex-premium@local.test` | CLIENT_MANAGER | none |
 
-The `-basico` / `-pro` / `-premium` suffixes are leftover names from the retired plan matrix; they no longer select a plan. Every user is created with `emailVerified=true`, `ACTIVE` lifecycle, `PUBLIC` visibility, a Better Auth credential `account` row, and the roles `{USER, role, ...extraRoles}` (role drift is healed on re-run by `syncTestUserRoles`). Fixtures that existed before HOS-1416 and are gone: `tourist-vip`, `host-pro-plus-addon`, `host-trial`, `gastronomy-owner-at-cap`, the experience/gastronomy trial and addon variants, and every `<vertical>-<billing-state>` fixture (HOS-1268).
+The `-basico` / `-pro` / `-premium` suffixes are leftover names from the retired plan matrix; they no longer select a plan. Every user is created with `emailVerified=true`, `ACTIVE` lifecycle, `PUBLIC` visibility, a Better Auth credential `account` row, and the roles `{USER, role, ...extraRoles}` (role drift is healed on re-run by `syncTestUserRoles`). Fixtures that existed before HOS-1416 and are gone: `tourist-vip`, `host-pro-plus-addon`, `host-trial`, legacy venue-owner fixture, the venue and experience trial and add-on variants, and every `<vertical>-<billing-state>` fixture (HOS-1268).
 
 **Login:** every user shares the password `Password123!` (`TEST_PW` in `testUsers.seed.ts`), hashed with bcrypt `SALT_ROUNDS=12` to match `apps/api/src/lib/auth.ts`. Super admin and admin already exist via the required seed (`admin-user.json` / `super-admin-user.json`, `admin@hospeda.com.ar` / `superadmin@hospeda.com.ar`), so they are not duplicated here.
 
@@ -178,12 +178,12 @@ and leaves the row alone instead of locking that person out of their own ficha.
 without a second `role` field: `syncTestUserRoles` folds `declaredRole` and every
 `extraRoles` entry into one target role SET, the same mechanism HOS-296 uses to
 heal role drift. Listing-owner fixtures hold only their own vertical role
-(`GASTRONOMY_OWNER` or `EXPERIENCE_OWNER`), per HOS-964 and HOS-1417.
+(`VENUE_OWNER` or `EXPERIENCE_OWNER`), per HOS-964 and HOS-1417.
 
 ### HOST accommodation fixture (HOS-30)
 
 Every HOST-role user in the matrix — `host-basico`, `host-pro`, `host-premium`,
-`host-provider` and `host-gastronomy` — also gets
+`host-provider` and one retired host seed slug — also gets
 **exactly one fully-featured accommodation they own**, created directly (no
 `--example` JSON fixture involved). This unblocks staging crawl/smoke testing
 of the owner routes (`/mi-cuenta/propiedades/*` — forms, image previews,
@@ -803,7 +803,7 @@ Static seed data files are in `src/data/<entity>/` as individual JSON files per 
 - **`displayWeight`**: Integer controlling display order (higher = shown first). E.g., WiFi = 95, Pool = 80, Sauna = 30
 - **`isBuiltin`**: Boolean for system-provided vs user-created items
 - **`isFeatured`**: Boolean for highlighting on public pages
-- **`applicableVerticals`** (SPEC-266): `string[]` of the verticals this catalog item applies to — any of `accommodation`, `gastronomy`, `experience`. Required, min 1. Scopes which vertical's editor shows the item; shared-core items (wifi, parking, pet_friendly…) list all 3. NOTE: the `name` column was dropped — there is NO `name` field in seed JSONs anymore; display labels live in `@repo/i18n` (`amenityNames.<slug>` / `featureNames.<slug>`), and the `slug` IS the i18n key.
+- **`applicableVerticals`** (SPEC-266): `string[]` of the verticals this catalog item applies to — any of `accommodation`, `venue`, `experience`. Required, min 1. Scopes which vertical's editor shows the item; shared-core items (wifi, parking, pet_friendly…) list all 3. NOTE: the `name` column was dropped — there is NO `name` field in seed JSONs anymore; display labels live in `@repo/i18n` (`amenityNames.<slug>` / `featureNames.<slug>`), and the `slug` IS the i18n key.
 
 Example amenity seed:
 
@@ -813,7 +813,7 @@ Example amenity seed:
     "description": "Conexion Wi-Fi",
     "type": "CONNECTIVITY",
     "icon": "WifiIcon",
-    "applicableVerticals": ["accommodation", "gastronomy", "experience"],
+    "applicableVerticals": ["accommodation", "venue", "experience"],
     "isBuiltin": false,
     "isFeatured": true,
     "displayWeight": 95

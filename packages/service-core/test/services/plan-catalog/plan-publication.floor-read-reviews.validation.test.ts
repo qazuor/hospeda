@@ -6,7 +6,7 @@ import { validatePublication } from '../../../src/services/plan-catalog/plan-pub
 const PLAN_ID = '00000000-0000-0000-0000-000000000001';
 const TEST_KEYS = [
     'max_accommodations',
-    'max_gastronomies',
+    'max_venues',
     'max_experiences',
     'save_favorites',
     'write_reviews',

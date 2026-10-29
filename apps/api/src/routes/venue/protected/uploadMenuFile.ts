@@ -1,5 +1,5 @@
 /**
- * POST /api/v1/protected/gastronomies/:id/menu-file
+ * POST /api/v1/protected/venues/:id/menu-file
  *
  * Uploads a photo or a PDF of the venue's printed menu (HOS-895) — the
  * alternative for the restaurant that will not type its carta dish by dish.
@@ -7,11 +7,11 @@
  * ## Why the row is written HERE, in the upload request
  *
  * This is the one part of HOS-895 that is a real uploaded asset, so it inherits
- * `gastronomy_media`'s rule rather than the carta's. HOS-372's finding: the
+ * `venue_media`'s rule rather than the carta's. HOS-372's finding: the
  * file used to land in Cloudinary immediately while the DB association waited
  * for the form's Save, so an owner who uploaded and walked away left the asset
  * billing with nothing pointing at it. The upload and the
- * `gastronomies.menu_file_*` write are therefore ONE request, and the menu
+ * `venues.menu_file_*` write are therefore ONE request, and the menu
  * document (`PUT .../menu`) does not carry the file at all.
  *
  * ## Why NOT the shared `media/upload-entity` endpoint
@@ -30,7 +30,7 @@
  * `validateFile`; only the PDF branch is new, and it is deliberately small:
  * a size cap plus a magic-byte check.
  *
- * Menu file uploads require manage_gastronomy_menu on the listing owner.
+ * Menu file uploads require manage_venue_menu on the listing owner.
  *
  * @module routes/venue/protected/uploadMenuFile
  */
@@ -119,12 +119,12 @@ export const protectedUploadVenueMenuFileRoute = createProtectedRoute({
         vertical: VerticalEnum.VENUE,
         operation: 'EDIT',
         idParam: 'id',
-        capabilities: ['manage_gastronomy_menu']
+        capabilities: ['manage_venue_menu']
     },
     summary: 'Upload a photo or PDF of the menu',
     description:
-        'Uploads a photo or a PDF of the venue’s printed menu and stores it on the listing in the same request. Owner-only, and requires the manage_gastronomy_menu entitlement granted by the professional gastronomy plan and above.',
-    tags: ['Gastronomy', 'Gastronomy Menu'],
+        'Uploads a photo or a PDF of the venue’s printed menu and stores it on the listing in the same request. Owner-only, and requires the manage_venue_menu entitlement granted by the professional venue plan and above.',
+    tags: ['Venue', 'Venue Menu'],
     requestParams: {
         id: z.string().uuid({ message: 'zodError.common.id.invalidUuid' })
     },
@@ -158,18 +158,18 @@ export const protectedUploadVenueMenuFileRoute = createProtectedRoute({
         // 404 rather than 403 is the error contract's anti-enumeration rule —
         // a 403 would confirm the id exists.
         const actor = getActorFromContext(ctx);
-        const gastronomyId = params.id as string;
-        const listing = await venueService.getById(actor, gastronomyId);
-        const hasEditAll = actor.permissions?.includes(PermissionEnum.GASTRONOMY_EDIT_ALL);
+        const venueId = params.id as string;
+        const listing = await venueService.getById(actor, venueId);
+        const hasEditAll = actor.permissions?.includes(PermissionEnum.VENUE_EDIT_ALL);
 
         if (
             listing.error ||
             !listing.data ||
             (!hasEditAll && listing.data.ownerId !== actor.id) ||
-            (!hasEditAll && !actor.permissions?.includes(PermissionEnum.GASTRONOMY_EDIT_OWN))
+            (!hasEditAll && !actor.permissions?.includes(PermissionEnum.VENUE_EDIT_OWN))
         ) {
             return createErrorResponse(
-                { code: 'NOT_FOUND', message: 'Gastronomy listing not found' },
+                { code: 'NOT_FOUND', message: 'Venue listing not found' },
                 ctx,
                 404
             );
@@ -224,7 +224,7 @@ export const protectedUploadVenueMenuFileRoute = createProtectedRoute({
         // `resourceType: 'auto'` because the same route stores both kinds and
         // the default (`'image'`) would make Cloudinary try to rasterise the
         // PDF.
-        const folder = buildEntityFolder('gastronomy', gastronomyId);
+        const folder = buildEntityFolder('venue', venueId);
 
         let uploaded: Awaited<ReturnType<typeof provider.upload>>;
         try {
@@ -239,9 +239,9 @@ export const protectedUploadVenueMenuFileRoute = createProtectedRoute({
             apiLogger.error(
                 {
                     error: error instanceof Error ? error.message : String(error),
-                    gastronomyId
+                    venueId
                 },
-                'Gastronomy menu-file upload failed'
+                'Venue menu-file upload failed'
             );
             return createErrorResponse(
                 { code: 'UPSTREAM_ERROR', message: 'Menu file upload failed' },
@@ -270,7 +270,7 @@ export const protectedUploadVenueMenuFileRoute = createProtectedRoute({
         ).model;
 
         await model.update(
-            { id: gastronomyId },
+            { id: venueId },
             {
                 menuFileUrl: uploaded.url,
                 menuFilePublicId: uploaded.publicId,
@@ -286,7 +286,7 @@ export const protectedUploadVenueMenuFileRoute = createProtectedRoute({
             createSlidingWindowPerUserRateLimit({
                 windowMs: 60_000,
                 max: MENU_FILE_UPLOAD_RATE_LIMIT_MAX,
-                keyPrefix: 'upload:gastronomy-menu-file'
+                keyPrefix: 'upload:venue-menu-file'
             })
         ]
     }

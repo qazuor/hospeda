@@ -18,7 +18,7 @@ import {
     VenueUpdateInputSchema
 } from '../../src/entities/venue/venue.crud.schema.js';
 import { createValidAccommodation } from '../fixtures/accommodation.fixtures.js';
-import { createMinimalGastronomy } from '../fixtures/venue.fixtures.js';
+import { createMinimalVenue } from '../fixtures/venue.fixtures.js';
 
 /**
  * HOS-1748 lock: relaxing the READ schemas must not relax the INPUT or the
@@ -52,8 +52,8 @@ const accommodationBase: Payload = {
     summary: VALID_SUMMARY,
     description: VALID_DESCRIPTION
 };
-const gastronomyBase: Payload = {
-    ...createMinimalGastronomy(),
+const venueBase: Payload = {
+    ...createMinimalVenue(),
     summary: VALID_SUMMARY,
     description: VALID_DESCRIPTION
 };
@@ -73,10 +73,10 @@ const experienceBase: Payload = {
 const inputCases: readonly InputCase[] = [
     ['AccommodationCreateInputSchema', AccommodationCreateInputSchema, accommodationBase],
     ['AccommodationUpdateInputSchema', AccommodationUpdateInputSchema, accommodationBase],
-    ['GastronomyOwnerCreateInputSchema', VenueOwnerCreateInputSchema, gastronomyBase],
-    ['GastronomyOwnerUpdateInputSchema', VenueOwnerUpdateInputSchema, gastronomyBase],
-    ['GastronomyUpdateInputSchema', VenueUpdateInputSchema, gastronomyBase],
-    ['GastronomyAdminCreateInputSchema', VenueAdminCreateInputSchema, gastronomyBase],
+    ['VenueOwnerCreateInputSchema', VenueOwnerCreateInputSchema, venueBase],
+    ['VenueOwnerUpdateInputSchema', VenueOwnerUpdateInputSchema, venueBase],
+    ['VenueUpdateInputSchema', VenueUpdateInputSchema, venueBase],
+    ['VenueAdminCreateInputSchema', VenueAdminCreateInputSchema, venueBase],
     ['ExperienceOwnerCreateInputSchema', ExperienceOwnerCreateInputSchema, experienceBase],
     ['ExperienceOwnerUpdateInputSchema', ExperienceOwnerUpdateInputSchema, experienceBase],
     ['ExperienceUpdateInputSchema', ExperienceUpdateInputSchema, experienceBase],
@@ -115,7 +115,7 @@ describe('TEST:1748:2 input and publish minimums are untouched', () => {
     });
 
     it.each([
-        'gastronomy',
+        'venue',
         'experience'
     ] as const)('resolveListingCompleteness flags a blank summary and description for %s', (entityType) => {
         // Arrange / Act

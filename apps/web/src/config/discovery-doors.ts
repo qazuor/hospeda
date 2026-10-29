@@ -151,21 +151,21 @@ export const ACCOUNT_DISCOVERY_DOORS: readonly DiscoveryDoor[] = [
                 manageHref: 'mi-cuenta/host-dashboard'
             },
             {
-                id: 'gastronomy',
-                i18nKey: 'account.doors.publish.options.gastronomy.title',
-                descriptionI18nKey: 'account.doors.publish.options.gastronomy.description',
+                id: 'venue',
+                i18nKey: 'account.doors.publish.options.venue.title',
+                descriptionI18nKey: 'account.doors.publish.options.venue.description',
                 icon: ForkKnifeIcon,
                 // HOS-1156: this option leads to PUBLISHING, and for a while it
-                // did not. HOS-1032 repointed it at `/planes/gastronomia/` — a
+                // did not. HOS-1032 repointed it at `/planes/comer-y-salir/` — a
                 // SALES page — because the URL it used to name had become a 301
                 // to that page, and the repoint was mechanically correct. The
                 // result was a "Publicar" button that sold to you instead.
                 //
                 // `manageHref` below stays `mi-cuenta/comercio`: this href is
                 // where you go to publish, that one is where you go once you do.
-                href: PUBLISH_PAGE_PATH_BY_VERTICAL.gastronomy,
-                ctaI18nKey: 'account.doors.publish.options.gastronomy.cta',
-                acquiredPermission: PermissionEnum.GASTRONOMY_EDIT_OWN,
+                href: PUBLISH_PAGE_PATH_BY_VERTICAL.venue,
+                ctaI18nKey: 'account.doors.publish.options.venue.cta',
+                acquiredPermission: PermissionEnum.VENUE_EDIT_OWN,
                 manageHref: 'mi-cuenta/comercio'
             },
             {
@@ -173,7 +173,7 @@ export const ACCOUNT_DISCOVERY_DOORS: readonly DiscoveryDoor[] = [
                 i18nKey: 'account.doors.publish.options.experience.title',
                 descriptionI18nKey: 'account.doors.publish.options.experience.description',
                 icon: CompassIcon,
-                // See the `gastronomy` option above (HOS-1156) — same repoint,
+                // See the venue option above (HOS-1156) — same repoint,
                 // other vertical.
                 href: PUBLISH_PAGE_PATH_BY_VERTICAL.experience,
                 ctaI18nKey: 'account.doors.publish.options.experience.cta',
@@ -260,7 +260,7 @@ export const ACCOUNT_DISCOVERY_DOORS: readonly DiscoveryDoor[] = [
             // per content type, so an acquired editor lands on the listing for
             // the thing they clicked instead of a shared dashboard they then
             // have to navigate out of. Matches the convention `accommodation`
-            // and the two gastronomy/experience verticals already follow above.
+            // and the two venue/experience verticals already follow above.
             //
             // Both keep `href: 'colaborar/editores'` — there is ONE application
             // form and one manual promotion to RoleEnum.EDITOR (HOS-134 §2);
@@ -302,7 +302,7 @@ export const ACCOUNT_DISCOVERY_DOORS: readonly DiscoveryDoor[] = [
 ];
 
 /**
- * The "listing" discovery door's options — accommodation, gastronomy,
+ * The "listing" discovery door's options — accommodation, venue,
  * experience — reused by the pre-auth header "Publicar" CTA (HOS-691
  * AC-38) so the header dropdown and the mobile menu never hardcode the
  * same three (label, icon, href) tuples in a third and fourth place.

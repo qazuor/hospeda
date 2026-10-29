@@ -31,7 +31,7 @@ export const POI_TYPE_TO_CATEGORY_SLUG: Readonly<Record<PointOfInterestTypeEnum,
  * primary-category change.
  *
  * Only the 9 categories with a direct enum equivalent are keys here — every
- * other slug (`winery`, `gastronomy`, `religious_site`, an unknown/future
+ * other slug (`winery`, `food`, `religious_site`, an unknown/future
  * slug, ...) has no entry. Use {@link deriveTypeFromCategorySlug} for the
  * total (never-throws, catch-all-to-`OTHER`) version consumed by the service.
  */

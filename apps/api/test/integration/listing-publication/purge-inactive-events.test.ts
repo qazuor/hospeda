@@ -29,7 +29,7 @@ const verticals = [
 type Vertical = (typeof verticals)[number];
 const tables: Readonly<Record<Vertical, string>> = {
     [VerticalEnum.ACCOMMODATION]: 'accommodations',
-    [VerticalEnum.VENUE]: 'gastronomies',
+    [VerticalEnum.VENUE]: 'venues',
     [VerticalEnum.EXPERIENCE]: 'experiences'
 };
 const MATRIX_NOW = new Date('2026-10-10T12:00:00.000Z');
@@ -39,10 +39,10 @@ const fixtureIds: { ownerId: string; destinationId: string; listingId: string }[
 function ownerActor(ownerId: string): Actor {
     return {
         id: ownerId,
-        roles: [RoleEnum.HOST, RoleEnum.GASTRONOMY_OWNER, RoleEnum.EXPERIENCE_OWNER],
+        roles: [RoleEnum.HOST, RoleEnum.VENUE_OWNER, RoleEnum.EXPERIENCE_OWNER],
         permissions: [
             PermissionEnum.ACCOMMODATION_UPDATE_OWN,
-            PermissionEnum.GASTRONOMY_EDIT_OWN,
+            PermissionEnum.VENUE_EDIT_OWN,
             PermissionEnum.EXPERIENCE_EDIT_OWN
         ]
     };

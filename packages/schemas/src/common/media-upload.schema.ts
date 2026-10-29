@@ -34,7 +34,7 @@ export const ENTITY_GALLERY_CAPS = {
     destination: 20,
     event: 10,
     post: 15,
-    gastronomy: 30,
+    venue: 30,
     experience: 30
 } as const;
 
@@ -93,7 +93,7 @@ export const MediaEntityTypeSchema = z.enum([
     'destination',
     'event',
     'post',
-    'gastronomy',
+    'venue',
     'experience',
     'user',
     'postSponsor',
@@ -143,7 +143,7 @@ const GalleryEntityTypeSchema = z.enum([
     'destination',
     'event',
     'post',
-    'gastronomy',
+    'venue',
     'experience'
 ]);
 
@@ -368,9 +368,9 @@ export const ENTITY_FOLDER_MAP = {
         if (!entityId) throw new Error('ENTITY_FOLDER_MAP.post requires entityId');
         return `hospeda/${environment}/posts/${entityId}`;
     },
-    gastronomy: ({ environment, entityId }) => {
-        if (!entityId) throw new Error('ENTITY_FOLDER_MAP.gastronomy requires entityId');
-        return `hospeda/${environment}/gastronomies/${entityId}`;
+    venue: ({ environment, entityId }) => {
+        if (!entityId) throw new Error('ENTITY_FOLDER_MAP.venue requires entityId');
+        return `hospeda/${environment}/venues/${entityId}`;
     },
     experience: ({ environment, entityId }) => {
         if (!entityId) throw new Error('ENTITY_FOLDER_MAP.experience requires entityId');

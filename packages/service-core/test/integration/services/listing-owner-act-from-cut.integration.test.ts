@@ -34,10 +34,10 @@ const CUT_INSTANT = new Date('2026-10-10T12:00:00.000Z');
 function ownerActor(userId: string): Actor {
     return {
         id: userId,
-        roles: [RoleEnum.HOST, RoleEnum.GASTRONOMY_OWNER, RoleEnum.EXPERIENCE_OWNER],
+        roles: [RoleEnum.HOST, RoleEnum.VENUE_OWNER, RoleEnum.EXPERIENCE_OWNER],
         permissions: [
             PermissionEnum.ACCOMMODATION_UPDATE_OWN,
-            PermissionEnum.GASTRONOMY_EDIT_OWN,
+            PermissionEnum.VENUE_EDIT_OWN,
             PermissionEnum.EXPERIENCE_EDIT_OWN
         ]
     };
@@ -165,25 +165,23 @@ describe('HOS-1500 V9a — owner-act register starts at the cut (integration)', 
     );
 
     it.skipIf(!dbAvailable)(
-        'TEST:V9a:4 — gastronomy first owner edit after cut is the latest recorded act',
+        'TEST:V9a:4 — venue first owner edit after cut is the latest recorded act',
         async () => {
             await withServiceTestTransaction(async (tx) => {
-                const { ownerId, gastronomyId } = await seedVenue(tx, {
+                const { ownerId, venueId } = await seedVenue(tx, {
                     publicationStatus: PublicationStatusEnum.PUBLISHED,
                     inactiveSince: CUT_INSTANT,
                     deadlinesVersion: 1
                 });
-                const entityType = 'gastronomy';
+                const entityType = 'venue';
 
                 expect(
-                    await domainEventModel.findByEntity({ entityType, entityId: gastronomyId, tx })
+                    await domainEventModel.findByEntity({ entityType, entityId: venueId, tx })
                 ).toEqual([]);
-                expect(
-                    await findLatestOwnerAct({ entityType, entityId: gastronomyId, tx })
-                ).toBeNull();
+                expect(await findLatestOwnerAct({ entityType, entityId: venueId, tx })).toBeNull();
 
                 const edited = await venueService.updateOwn(
-                    gastronomyId,
+                    venueId,
                     { summary: 'Resumen editado después del corte' },
                     ownerActor(ownerId),
                     { tx }
@@ -192,18 +190,18 @@ describe('HOS-1500 V9a — owner-act register starts at the cut (integration)', 
 
                 const events = await domainEventModel.findByEntity({
                     entityType,
-                    entityId: gastronomyId,
+                    entityId: venueId,
                     tx
                 });
                 const occurredAt = expectPostCutOwnerEdit({
                     events,
                     entityType,
-                    entityId: gastronomyId,
+                    entityId: venueId,
                     ownerId
                 });
-                expect(
-                    await findLatestOwnerAct({ entityType, entityId: gastronomyId, tx })
-                ).toEqual(occurredAt);
+                expect(await findLatestOwnerAct({ entityType, entityId: venueId, tx })).toEqual(
+                    occurredAt
+                );
             });
         }
     );

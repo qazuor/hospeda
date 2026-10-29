@@ -114,7 +114,7 @@ function resolveFaqField(
 
 /**
  * Shared FAQ normalizer for every entity detail transform (accommodation,
- * destination, experience, gastronomy) — HOS-117. Resolves the localized
+ * destination, experience, venue) — HOS-117. Resolves the localized
  * `questionI18n`/`answerI18n` fields for `locale`, falling back to the legacy
  * Spanish `question`/`answer` text when a translation is absent, and records
  * the language the text actually resolved to in `resolvedLocale`.
@@ -2600,7 +2600,7 @@ export function transformEventEditDetail({
 }
 
 // ---------------------------------------------------------------------------
-// Gastronomy transforms (SPEC-239)
+// Venue transforms (SPEC-239)
 // ---------------------------------------------------------------------------
 
 /**
@@ -2661,7 +2661,7 @@ function normalizeOpeningHours(raw: unknown): Record<string, VenueOpeningHoursEn
  *
  * NOTE (HOS-1076): `whatsapp` is deliberately NOT read here, even though a raw
  * payload could carry one (belt and braces — see `VenueSocialNetworks`).
- * Gastronomy's `socialNetworks` shape (`SocialNetworkSchema`) has never had a
+ * Venue's `socialNetworks` shape (`SocialNetworkSchema`) has never had a
  * `whatsapp` field, so this key must never be forwarded to the render layer.
  */
 function normalizeSocialNetworks(raw: unknown): VenueSocialNetworks | null {
@@ -2678,13 +2678,13 @@ function normalizeSocialNetworks(raw: unknown): VenueSocialNetworks | null {
 }
 
 /**
- * Transforms a raw API gastronomy item to VenueCardData props.
+ * Transforms a raw API venue item to VenueCardData props.
  *
  * Maps the `VenuePublic` fields from the public list/detail API response
  * to the clean `VenueCardData` interface consumed by card components.
  * Components MUST NOT read raw API data directly.
  *
- * @param item - Raw gastronomy object from the API
+ * @param item - Raw venue object from the API
  * @param locale - Active locale for i18n field resolution
  * @returns Typed VenueCardData for the card component
  */
@@ -2697,10 +2697,10 @@ export function toVenueCardProps({
 }): VenueCardData {
     const { featuredImage } = processEntityImages({
         item,
-        entity: 'gastronomy',
+        entity: 'venue',
         id: String(item.id || ''),
         extract: true,
-        fallback: '/assets/images/placeholder-gastronomy.svg'
+        fallback: '/assets/images/placeholder-venue.svg'
     });
 
     // Resolve destination name from API join (destinationId is the FK)
@@ -2716,7 +2716,7 @@ export function toVenueCardProps({
         id: String(item.id || ''),
         slug: String(item.slug || ''),
         // Fall back to the legacy flat `name` when the i18n map resolves empty.
-        // Some gastronomy rows carry an empty `nameI18n` ({es:'',en:'',pt:''})
+        // Some venue rows carry an empty `nameI18n` ({es:'',en:'',pt:''})
         // while `name` holds the real value; without this guard the card and
         // detail headings render empty (a11y empty-heading violation, SPEC-308).
         // HOS-802: this used to be an inline `||` guard duplicated at every
@@ -2756,7 +2756,7 @@ export function toVenueCardProps({
 }
 
 /**
- * Maps the catalog-joined `amenities` array a gastronomy/experience detail payload carries
+ * Maps the catalog-joined `amenities` array a venue/experience detail payload carries
  * into the item shape `AmenitiesGrid.astro` renders (HOS-1072).
  *
  * Two deliberate coercions, both matching what the accommodation transform
@@ -2766,11 +2766,11 @@ export function toVenueCardProps({
  *   (`accommodations.amenityNames.<slug>`). SPEC-266 dropped the catalog's
  *   `name` column, so a slug is the only identifier there is.
  * - `isOptional` / `additionalCost` / `displayWeight` are filled with inert
- *   values. The gastronomy/experience junction tables have no such columns (see
+ *   values. The venue/experience junction tables have no such columns (see
  *   `ListingAmenityPublicSchema`), so there is nothing to read; the
  *   constants keep one grid component serving three verticals instead of
  *   forking it. `additionalCost: null` is what stops the grid from printing a
- *   "(costo adicional)" tag no gastronomy/experience owner could have set.
+ *   "(costo adicional)" tag no venue/experience owner could have set.
  *
  * Server order is PRESERVED — the API already sorts by the catalog's
  * `displayWeight` — so the flat `50` here re-sorts nothing.
@@ -2793,11 +2793,11 @@ function mapListingAmenities(raw: unknown): readonly DetailAmenity[] {
 }
 
 /**
- * Maps the catalog-joined `features` array a gastronomy/experience detail payload carries
+ * Maps the catalog-joined `features` array a venue/experience detail payload carries
  * into the item shape `FeaturesGrid.astro` renders (HOS-1072).
  *
  * Unlike the amenity twin, `hostReWriteName` and `comments` are REAL here: the
- * gastronomy/experience feature junction tables carry both columns and the owner writes
+ * venue/experience feature junction tables carry both columns and the owner writes
  * them, so they are read straight through. `name` holds the slug for the same
  * i18n reason as above.
  *
@@ -2823,7 +2823,7 @@ function mapListingFeatures(raw: unknown): readonly DetailFeature[] {
  * or `null`, defensively.
  *
  * `null` covers both "never translated" and "withheld server-side for a plan
- * that does not grant `multilingual_gastronomy_menu`" (HOS-1043) — the same
+ * that does not grant `multilingual_venue_menu`" (HOS-1043) — the same
  * single-value collapse {@link VenueMenuItem.photoUrl}'s own doc
  * describes for the photo gate, and for the same reason: the API decides, the
  * renderer draws what it is given.
@@ -2844,7 +2844,7 @@ function coerceI18nTextLike(raw: unknown): I18nTextLike | null {
 }
 
 /**
- * Maps the raw `menuSections` array a gastronomy detail payload carries
+ * Maps the raw `menuSections` array a venue detail payload carries
  * (HOS-895 PR2, per-dish photos added by HOS-1045, translations added by
  * HOS-1043) into the shape `VenueMenu.astro` renders.
  *
@@ -2929,7 +2929,7 @@ function mapVenueDailySpecials(raw: unknown): readonly VenueDailySpecial[] {
 }
 
 /**
- * Maps the raw `venueEvents` array a gastronomy detail payload carries
+ * Maps the raw `venueEvents` array a venue detail payload carries
  * (HOS-1042) into the shape `VenueEvents.astro` renders.
  *
  * Withheld entirely (not `undefined` vs `[]` distinguished further) when the
@@ -2958,12 +2958,12 @@ function mapVenueEvents(raw: unknown): readonly VenueEvent[] {
 }
 
 /**
- * Transforms a raw API gastronomy item to VenueDetailData props.
+ * Transforms a raw API venue item to VenueDetailData props.
  *
- * Used on the gastronomy detail page where the full `VenuePublic` shape
+ * Used on the venue detail page where the full `VenuePublic` shape
  * (including FAQs, social networks, SEO, and owner data) is available.
  *
- * @param item - Raw gastronomy object from the detail API endpoint
+ * @param item - Raw venue object from the detail API endpoint
  * @param locale - Active locale for i18n field resolution
  * @returns Typed VenueDetailData for the detail page components
  */
@@ -2991,7 +2991,7 @@ export function toVenueDetailPageProps({
         menuUrl: item.menuUrl == null ? null : String(item.menuUrl),
         // HOS-895 PR2: both already withheld server-side (null / absent) for a
         // listing whose owner does not currently hold
-        // `manage_gastronomy_menu` — see VenuePublicSchema's field docs.
+        // `manage_venue_menu` — see VenuePublicSchema's field docs.
         menuFileUrl: item.menuFileUrl == null ? null : String(item.menuFileUrl),
         menuFileKind:
             item.menuFileKind === 'image' || item.menuFileKind === 'pdf' ? item.menuFileKind : null,
@@ -3141,7 +3141,7 @@ export function toExperienceCardProps({
         averageRating: Number(item.averageRating ?? 0),
         reviewsCount: Number(item.reviewsCount ?? 0),
         isFeatured: Boolean(item.isFeatured),
-        // Experience reuses the gastronomy structured-hours normalizer (shared
+        // Experience reuses the venue structured-hours normalizer (shared
         // OpeningHoursSchema source); see normalizeOpeningHours (Bug B8 fix).
         openingHours: normalizeOpeningHours(item.openingHours),
         createdAt: item.createdAt ? String(item.createdAt) : null,

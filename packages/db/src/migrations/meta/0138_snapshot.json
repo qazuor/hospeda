@@ -15726,7 +15726,7 @@
       "checkConstraints": {
         "fix_request_entity_type_check": {
           "name": "fix_request_entity_type_check",
-          "value": "\"fix_request\".\"entity_type\" IN ('accommodation', 'gastronomy', 'experience')"
+          "value": "\"fix_request\".\"entity_type\" IN ('accommodation', 'venue', 'experience')"
         },
         "fix_request_closed_by_requires_closed_at_check": {
           "name": "fix_request_closed_by_requires_closed_at_check",
@@ -27961,7 +27961,7 @@
       "checkConstraints": {
         "ck_vertical_id": {
           "name": "ck_vertical_id",
-          "value": "\"vertical\".\"id\" IN ('accommodation', 'gastronomy', 'experience', 'tourist', 'partner')"
+          "value": "\"vertical\".\"id\" IN ('accommodation', 'venue', 'experience', 'tourist', 'partner')"
         },
         "ck_vertical_activation_event": {
           "name": "ck_vertical_activation_event",

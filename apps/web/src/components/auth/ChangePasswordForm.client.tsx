@@ -2,7 +2,7 @@
  * @file ChangePasswordForm.client.tsx
  * @description Change-password form React island (SPEC-239 T-055).
  *
- * Shown to gastronomy/experience owners who were provisioned with a server-generated
+ * Shown to venue/experience owners who were provisioned with a server-generated
  * password and must choose a personal one before using the platform.
  * Also accessible as a voluntary password change from the account section.
  *

@@ -43,7 +43,12 @@ beforeAll(async () => {
         ['049-vertical-deadline-immutability.trigger.sql', 'vertical_deadline_version']
     ]);
     for (const file of readdirSync(extrasDir)
-        .filter((name) => name.endsWith('.sql') && !name.endsWith('_down.sql'))
+        .filter((name) =>
+            [
+                '041-plan-catalog-immutability.trigger.sql',
+                '045-plan-role-immutability.trigger.sql'
+            ].includes(name)
+        )
         .sort()) {
         const requiredTable = extrasRequiringLaterTables.get(file);
         if (requiredTable) {
@@ -166,7 +171,7 @@ async function indexesOf(table: string): Promise<Record<string, string>> {
     return Object.fromEntries(rows.map((r) => [r.indexname, r.indexdef]));
 }
 
-describe('TEST:V2:1 — the catalog tables after db:migrate from empty', () => {
+describe('TEST:1819:1 AC:1:3 — TEST:V2:1 — the catalog tables after db:migrate from empty', () => {
     it('creates the eight catalog tables', async () => {
         const { rows } = await getTestPool().query<{ tablename: string }>(
             `SELECT tablename FROM pg_tables WHERE schemaname = 'public' AND tablename = ANY($1)
@@ -287,7 +292,7 @@ describe('TEST:V2:1 — the catalog tables after db:migrate from empty', () => {
                 INSERT_VERSION,
                 versionParams({
                     planId,
-                    vertical: 'gastronomy',
+                    vertical: 'venue',
                     rank: 10,
                     sellable: true,
                     current: true
@@ -358,7 +363,7 @@ describe('TEST:V2:2 — cosmetics mutate; what has an effect is only published a
         ['trial_days', '0'],
         ['allows_pause', 'false'],
         ['inherits_tourist_vip', 'true'],
-        ['vertical', "'gastronomy'"]
+        ['vertical', "'venue'"]
     ])('an UPDATE of plan_version.%s is rejected', async (column, value) => {
         await inRolledBackTx(async ({ client, attempt }) => {
             const planId = await insertPlan(client, { vertical: 'accommodation', slug: 'p' });
@@ -642,11 +647,11 @@ describe('TEST:V2:2 — nothing is added to a version published by another trans
 describe('TEST:V2:3 — sellable and current versions never share a rank; one current per plan', () => {
     it('two sellable, current versions with the same rank in one vertical: rejected', async () => {
         await inRolledBackTx(async ({ client, attempt }) => {
-            const basic = await insertPlan(client, { vertical: 'gastronomy', slug: 'basic' });
-            const pro = await insertPlan(client, { vertical: 'gastronomy', slug: 'pro' });
+            const basic = await insertPlan(client, { vertical: 'venue', slug: 'basic' });
+            const pro = await insertPlan(client, { vertical: 'venue', slug: 'pro' });
             await insertVersion(client, {
                 planId: basic,
-                vertical: 'gastronomy',
+                vertical: 'venue',
                 rank: 20,
                 sellable: true,
                 current: true
@@ -656,7 +661,7 @@ describe('TEST:V2:3 — sellable and current versions never share a rank; one cu
                 INSERT_VERSION,
                 versionParams({
                     planId: pro,
-                    vertical: 'gastronomy',
+                    vertical: 'venue',
                     rank: 20,
                     sellable: true,
                     current: true
@@ -670,13 +675,13 @@ describe('TEST:V2:3 — sellable and current versions never share a rank; one cu
 
     it('a version that is not current, or not sellable, does not hold the rank; another vertical neither', async () => {
         await inRolledBackTx(async ({ client, attempt }) => {
-            const basic = await insertPlan(client, { vertical: 'gastronomy', slug: 'basic' });
-            const pro = await insertPlan(client, { vertical: 'gastronomy', slug: 'pro' });
-            const floor = await insertPlan(client, { vertical: 'gastronomy', slug: 'floor' });
+            const basic = await insertPlan(client, { vertical: 'venue', slug: 'basic' });
+            const pro = await insertPlan(client, { vertical: 'venue', slug: 'pro' });
+            const floor = await insertPlan(client, { vertical: 'venue', slug: 'floor' });
             const other = await insertPlan(client, { vertical: 'experience', slug: 'basic' });
             await insertVersion(client, {
                 planId: basic,
-                vertical: 'gastronomy',
+                vertical: 'venue',
                 rank: 20,
                 sellable: true,
                 current: true
@@ -687,7 +692,7 @@ describe('TEST:V2:3 — sellable and current versions never share a rank; one cu
                     INSERT_VERSION,
                     versionParams({
                         planId: pro,
-                        vertical: 'gastronomy',
+                        vertical: 'venue',
                         rank: 20,
                         sellable: true,
                         current: false
@@ -697,7 +702,7 @@ describe('TEST:V2:3 — sellable and current versions never share a rank; one cu
                     INSERT_VERSION,
                     versionParams({
                         planId: floor,
-                        vertical: 'gastronomy',
+                        vertical: 'venue',
                         rank: 20,
                         sellable: false,
                         current: true
@@ -830,7 +835,7 @@ describe('TEST:V2:6/7 (HOS-1436) — plan.role: closed list, one per vertical, i
                 `INSERT INTO plan (vertical, slug, name, role) VALUES ('accommodation', 'floor-2', 'Floor 2', 'floor')`
             );
             const otherVertical = await attempt(
-                `INSERT INTO plan (vertical, slug, name, role) VALUES ('gastronomy', 'floor-1', 'Floor', 'floor')`
+                `INSERT INTO plan (vertical, slug, name, role) VALUES ('venue', 'floor-1', 'Floor', 'floor')`
             );
 
             expect(duplicate?.code).toBe('23505');

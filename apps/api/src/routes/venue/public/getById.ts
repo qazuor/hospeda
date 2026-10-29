@@ -1,6 +1,6 @@
 /**
- * Public get gastronomy listing by ID endpoint (T-042)
- * Returns a single gastronomy listing projected through GastronomyPublicSchema.
+ * Public get venue listing by ID endpoint (T-042)
+ * Returns a single venue listing projected through VenuePublicSchema.
  * Returns 404 when the listing is not visible (non-existent, soft-deleted, or non-public).
  */
 import { VenuePublicSchema } from '@repo/schemas';
@@ -16,8 +16,8 @@ import { createPublicRoute } from '../../../utils/route-factory';
 const venueService = new VenueService({ logger: apiLogger });
 
 /**
- * GET /api/v1/public/gastronomies/:id
- * Get gastronomy listing by ID — Public endpoint.
+ * GET /api/v1/public/venues/:id
+ * Get venue listing by ID — Public endpoint.
  *
  * Returns null (404) when the listing does not exist or is not publicly visible.
  * The service's _canView check and projection apply.
@@ -25,9 +25,9 @@ const venueService = new VenueService({ logger: apiLogger });
 export const publicGetVenueByIdRoute = createPublicRoute({
     method: 'get',
     path: '/{id}',
-    summary: 'Get gastronomy listing by ID',
-    description: 'Retrieves a gastronomy listing by its UUID',
-    tags: ['Gastronomy'],
+    summary: 'Get venue listing by ID',
+    description: 'Retrieves a venue listing by its UUID',
+    tags: ['Venue'],
     requestParams: {
         id: z.string().uuid({ message: 'zodError.common.id.invalidUuid' })
     },

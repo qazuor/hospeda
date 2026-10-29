@@ -1,5 +1,5 @@
 /**
- * GET /api/v1/admin/gastronomies/options
+ * GET /api/v1/admin/venues/options
  * Lightweight relation-selector lookup endpoint (mirrors accommodation pattern).
  *
  * MUST be registered BEFORE the /{id} route so Hono does not resolve "options"
@@ -7,7 +7,7 @@
  *
  * NOTE: VenueService does not (yet) expose a dedicated `findOptions` method
  * like AccommodationService does.  This route uses `adminList` with a small page
- * and projects the result to the `GastronomyOptionsItemSchema` shape inline.
+ * and projects the result to the `VenueOptionsItemSchema` shape inline.
  * When a dedicated `findOptions` is added to VenueService, replace the
  * inline mapping with the service call.
  */
@@ -21,7 +21,7 @@ import { createAdminRoute } from '../../../utils/route-factory';
 const venueService = new VenueService({ logger: apiLogger });
 
 /**
- * GET /api/v1/admin/gastronomies/options
+ * GET /api/v1/admin/venues/options
  * Minimal `{ id, label, slug, type, destination }` lookup for admin relation selectors.
  *
  * Gated by admin-panel access only (no `requiredPermissions`).
@@ -33,10 +33,10 @@ const venueService = new VenueService({ logger: apiLogger });
 export const adminVenueOptionsRoute = createAdminRoute({
     method: 'get',
     path: '/options',
-    summary: 'Gastronomy options (admin lookup)',
+    summary: 'venue options (admin lookup)',
     description:
         'Returns lightweight {id, label, slug, type, destination} options for relation selectors. Admin-panel access only; DRAFT-inclusive.',
-    tags: ['Gastronomy'],
+    tags: ['Venue'],
     requestQuery: EntityOptionsQuerySchema.shape,
     responseSchema: VenueOptionsListSchema,
     handler: async (
@@ -60,7 +60,7 @@ export const adminVenueOptionsRoute = createAdminRoute({
             throw new ServiceError(result.error.code, result.error.message);
         }
 
-        // TYPE-WORKAROUND: adminList returns PaginatedListOutput<Gastronomy>; project to options shape
+        // TYPE-WORKAROUND: adminList returns PaginatedListOutput<Venue>; project to options shape
         const items = (result.data?.items ?? []).map((g: Record<string, unknown>) => ({
             id: g.id as string,
             label: g.name as string,

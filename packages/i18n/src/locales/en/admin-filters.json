@@ -227,7 +227,7 @@
         "internet": "Internet",
         "albanileria": "Masonry"
     },
-    "gastronomyType": {
+    "venueType": {
         "label": "Type",
         "restaurant": "Restaurant",
         "bar": "Bar",

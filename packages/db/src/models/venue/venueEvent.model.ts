@@ -1,6 +1,6 @@
 import type { VenueEvent } from '@repo/schemas';
 import { BaseModelImpl } from '../../base/base.model.ts';
-import { gastronomyEvents } from '../../schemas/venue/venue_event.dbschema.ts';
+import { venueEvents } from '../../schemas/venue/venue_event.dbschema.ts';
 
 /**
  * VenueEventModel — DB access for a venue's own agenda (HOS-1042).
@@ -17,11 +17,11 @@ import { gastronomyEvents } from '../../schemas/venue/venue_event.dbschema.ts';
  * different statement from "deleted".
  */
 export class VenueEventModel extends BaseModelImpl<VenueEvent> {
-    protected table = gastronomyEvents;
-    public entityName = 'gastronomyEvents';
+    protected table = venueEvents;
+    public entityName = 'venueEvents';
 
     protected getTableName(): string {
-        return 'gastronomyEvents';
+        return 'venueEvents';
     }
 }
 

@@ -133,7 +133,7 @@ describe('focusFirstInvalidField', () => {
     });
 
     it('should normalise a dotted Zod path to the rendered id', () => {
-        // The gastronomy/experience editor validates nested blocks, so its keys are dotted.
+        // The venue/experience editor validates nested blocks, so its keys are dotted.
         // `buildFieldId` turns the dot into a hyphen; a raw `#a.b` selector
         // would read the dot as a class.
         renderInputs(['f-contactInfo-workEmail']);

@@ -185,7 +185,7 @@ describe('GET /api/v1/protected/user-bookmarks (list user bookmarks)', () => {
     });
 
     // Regression test (BETA-xxx): entityType query validation used a stale
-    // hand-written enum missing GASTRONOMY/EXPERIENCE, causing a spurious 400
+    // hand-written enum missing VENUE/EXPERIENCE, causing a spurious 400
     // for those tabs in the favorites UI. Iterate the full shared enum so this
     // can't silently go stale again if the enum grows further.
     for (const entityType of Object.values(EntityTypeEnum)) {

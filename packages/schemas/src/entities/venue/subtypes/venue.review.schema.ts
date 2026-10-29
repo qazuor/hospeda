@@ -6,13 +6,13 @@ import { BaseModerationFields } from '../../../common/moderation.schema.js';
 import { VenueRatingSchema } from '../../../common/venue-rating.schema.js';
 
 /**
- * Gastronomy Review Schema — User review for a gastronomy listing.
+ * venue Review Schema — User review for a venue listing.
  *
  * Mirrors the accommodation review subtype pattern but uses
  * {@link VenueRatingSchema} for the rating breakdown (food / service /
  * ambiance / value) instead of accommodation-specific dimensions.
  *
- * Columns match the `gastronomy_reviews` DB table exactly:
+ * Columns match the `venue_reviews` DB table exactly:
  * - `title` (text, nullable) — optional short headline for the review.
  * - `content` (text, nullable) — optional free-text body.
  * - `averageRating` (numeric 3,2) — computed average of the rating breakdown.
@@ -25,8 +25,8 @@ export const VenueReviewSchema = z.object({
     // Base ID
     id: z.string().uuid({ message: 'zodError.common.id.invalidUuid' }),
 
-    // Foreign key to the reviewed gastronomy listing
-    gastronomyId: z.string().uuid({ message: 'zodError.common.id.invalidUuid' }),
+    // Foreign key to the reviewed venue listing
+    venueId: z.string().uuid({ message: 'zodError.common.id.invalidUuid' }),
 
     // Reviewer reference (nullable: guest reviews without an account are allowed)
     userId: z.string().uuid({ message: 'zodError.common.id.invalidUuid' }).nullable(),
@@ -37,8 +37,8 @@ export const VenueReviewSchema = z.object({
      */
     title: z
         .string()
-        .min(3, { message: 'zodError.gastronomy.review.title.min' })
-        .max(255, { message: 'zodError.gastronomy.review.title.max' })
+        .min(3, { message: 'zodError.venue.review.title.min' })
+        .max(255, { message: 'zodError.venue.review.title.max' })
         .nullable()
         .optional(),
 
@@ -49,8 +49,8 @@ export const VenueReviewSchema = z.object({
      */
     content: z
         .string()
-        .min(10, { message: 'zodError.gastronomy.review.content.min' })
-        .max(2000, { message: 'zodError.gastronomy.review.content.max' })
+        .min(10, { message: 'zodError.venue.review.content.min' })
+        .max(2000, { message: 'zodError.venue.review.content.max' })
         .nullable()
         .optional(),
 
@@ -75,9 +75,9 @@ export const VenueReviewSchema = z.object({
      * Mirrors the `overall_rating` numeric(3,2) column; required on creation.
      */
     overallRating: z
-        .number({ message: 'zodError.gastronomy.review.overallRating.required' })
-        .min(1, { message: 'zodError.gastronomy.review.overallRating.min' })
-        .max(5, { message: 'zodError.gastronomy.review.overallRating.max' }),
+        .number({ message: 'zodError.venue.review.overallRating.required' })
+        .min(1, { message: 'zodError.venue.review.overallRating.min' })
+        .max(5, { message: 'zodError.venue.review.overallRating.max' }),
 
     /**
      * Reviewer display name (for guest reviews without a registered account).
@@ -88,7 +88,7 @@ export const VenueReviewSchema = z.object({
     /**
      * UUID of the user who last performed a moderation action.
      * Nullable until a moderator acts on the review.
-     * Mirrors the `moderated_by_id` column in `gastronomy_reviews`.
+     * Mirrors the `moderated_by_id` column in `venue_reviews`.
      */
     moderatedById: UserIdSchema.nullish(),
 
@@ -118,31 +118,31 @@ export type VenueReview = z.infer<typeof VenueReviewSchema>;
 // ----------------------------------------------------------------------------
 
 /**
- * Input schema for creating a gastronomy review.
+ * Input schema for creating a venue review.
  *
- * `gastronomyId` and `overallRating` are the only required fields.
+ * `venueId` and `overallRating` are the only required fields.
  * `title` and `content` mirror the DB columns (both nullable/optional).
  * `averageRating` is server-computed from the rating breakdown; clients
  * must NOT send it — it is omitted from the create input.
  */
 export const VenueReviewCreateInputSchema = z.object({
-    gastronomyId: z.string().uuid({ message: 'zodError.common.id.invalidUuid' }),
+    venueId: z.string().uuid({ message: 'zodError.common.id.invalidUuid' }),
     overallRating: z
-        .number({ message: 'zodError.gastronomy.review.overallRating.required' })
-        .min(1, { message: 'zodError.gastronomy.review.overallRating.min' })
-        .max(5, { message: 'zodError.gastronomy.review.overallRating.max' }),
+        .number({ message: 'zodError.venue.review.overallRating.required' })
+        .min(1, { message: 'zodError.venue.review.overallRating.min' })
+        .max(5, { message: 'zodError.venue.review.overallRating.max' }),
     rating: VenueRatingSchema.optional(),
     /** Optional review headline (mirrors `title` DB column). */
     title: z
         .string()
-        .min(3, { message: 'zodError.gastronomy.review.title.min' })
-        .max(255, { message: 'zodError.gastronomy.review.title.max' })
+        .min(3, { message: 'zodError.venue.review.title.min' })
+        .max(255, { message: 'zodError.venue.review.title.max' })
         .optional(),
     /** Optional free-text review body (mirrors `content` DB column). */
     content: z
         .string()
-        .min(10, { message: 'zodError.gastronomy.review.content.min' })
-        .max(2000, { message: 'zodError.gastronomy.review.content.max' })
+        .min(10, { message: 'zodError.venue.review.content.min' })
+        .max(2000, { message: 'zodError.venue.review.content.max' })
         .optional(),
     reviewerName: z.string().max(100).optional()
 });
@@ -151,10 +151,10 @@ export const VenueReviewCreateInputSchema = z.object({
 export type VenueReviewCreateInput = z.infer<typeof VenueReviewCreateInputSchema>;
 
 /**
- * Input schema for updating a gastronomy review (partial).
+ * Input schema for updating a venue review (partial).
  */
 export const VenueReviewUpdateInputSchema = VenueReviewCreateInputSchema.omit({
-    gastronomyId: true
+    venueId: true
 }).partial();
 
 /** TypeScript type for {@link VenueReviewUpdateInputSchema}. */

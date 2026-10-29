@@ -17,7 +17,7 @@ const mockGetProtected = vi.mocked(apiClient.getProtected);
 
 const gastro = {
     id: '11111111-1111-4111-8111-111111111111',
-    vertical: 'gastronomy',
+    vertical: 'venue',
     name: 'La Parrilla',
     slug: 'la-parrilla',
     type: 'PARRILLA',
@@ -35,7 +35,7 @@ const exp = {
 afterEach(() => vi.clearAllMocks());
 
 describe('fetchOwnerListings', () => {
-    it('merges gastronomy and experience listings', async () => {
+    it('merges venue and experience listings', async () => {
         mockGetProtected
             .mockResolvedValueOnce({ ok: true, data: { listings: [gastro] } })
             .mockResolvedValueOnce({ ok: true, data: { listings: [exp] } });
@@ -43,7 +43,7 @@ describe('fetchOwnerListings', () => {
         const result = await fetchOwnerListings({ cookieHeader: 'session=x' });
 
         expect(result).toHaveLength(2);
-        expect(result.map((l) => l.vertical)).toEqual(['gastronomy', 'experience']);
+        expect(result.map((l) => l.vertical)).toEqual(['venue', 'experience']);
     });
 
     it('degrades cleanly when one vertical fails', async () => {
@@ -54,7 +54,7 @@ describe('fetchOwnerListings', () => {
         const result = await fetchOwnerListings({ cookieHeader: 'session=x' });
 
         expect(result).toHaveLength(1);
-        expect(result[0]?.vertical).toBe('gastronomy');
+        expect(result[0]?.vertical).toBe('venue');
     });
 
     it('returns an empty list when the owner has none', async () => {
@@ -71,18 +71,18 @@ describe('fetchOwnerListings', () => {
 describe('fetchOwnerListingDetail', () => {
     const detail = { id: 'abc', ownerId: 'owner-1', name: 'La Parrilla', slug: 'la-parrilla' };
 
-    it('fetches gastronomy detail from the gastronomies path', async () => {
+    it('fetches venue detail from the venues path', async () => {
         mockGetProtected.mockResolvedValueOnce({ ok: true, data: detail });
 
         const result = await fetchOwnerListingDetail({
-            vertical: 'gastronomy',
+            vertical: 'venue',
             id: 'abc',
             cookieHeader: 'session=x'
         });
 
         expect(result).toEqual(detail);
         expect(mockGetProtected).toHaveBeenCalledWith({
-            path: '/api/v1/protected/gastronomies/abc',
+            path: '/api/v1/protected/venues/abc',
             cookieHeader: 'session=x'
         });
     });
@@ -104,7 +104,7 @@ describe('fetchOwnerListingDetail', () => {
             error: { status: 404, message: 'not found' }
         });
 
-        const result = await fetchOwnerListingDetail({ vertical: 'gastronomy', id: 'abc' });
+        const result = await fetchOwnerListingDetail({ vertical: 'venue', id: 'abc' });
 
         expect(result).toBeNull();
     });

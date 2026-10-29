@@ -15,7 +15,7 @@
  * body the action-based `POST /:id/moderate` refused with 400) and this guard
  * temporarily forbade any mutation. HOS-1684 gives the panel the four actions
  * (`REQUEST_FIX`, `TAKE_DOWN`, `LIFT`, `CLOSE_FIX_REQUEST`) on accommodations,
- * gastronomies and experiences, so the guard demands the control again:
+ * venue listings and experiences, so the guard demands the control again:
  *
  * 1. every route renders `<ListingModerationCard`;
  * 2. its JSX block passes the route's own `vertical`, `entityId={id}` and the
@@ -47,8 +47,8 @@ const ROUTES = [
         fileStatus: 'publicationStatus={accommodation.publicationStatus}'
     },
     {
-        vertical: 'gastronomy',
-        path: '../src/routes/_authed/gastronomies/$id.tsx',
+        vertical: 'venue',
+        path: '../src/routes/_authed/venues/$id.tsx',
         blockStatus: 'publicationStatus={venue?.publicationStatus}',
         fileStatus: null
     },
@@ -67,7 +67,7 @@ const HOOK_PATH = '../src/features/listing/hooks/useModerateListingMutation.ts';
 
 const RETIRED_PERMISSIONS = [
     'ACCOMMODATION_MODERATION_CHANGE',
-    'GASTRONOMY_MODERATION_CHANGE',
+    'VENUE_MODERATION_CHANGE',
     'EXPERIENCE_MODERATION_CHANGE'
 ] as const;
 

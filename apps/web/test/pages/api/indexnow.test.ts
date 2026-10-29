@@ -191,16 +191,16 @@ describe('POST /api/indexnow — what it submits', () => {
      * same union as everything else, and their Spanish segments (`gastronomia`,
      * `experiencias`) are the ones the site actually serves in every locale.
      */
-    it('accepts a gastronomy listing and builds its Spanish-segment URLs', async () => {
+    it('accepts a venue listing and builds its Spanish-segment URLs', async () => {
         await post(
-            makeRequest({ body: { entities: [{ entityType: 'gastronomy', slug: 'parrilla-x' }] } })
+            makeRequest({ body: { entities: [{ entityType: 'venue', slug: 'parrilla-x' }] } })
         );
 
         const { payload } = submitToIndexNow.mock.calls[0][0];
         expect(payload.urlList).toEqual([
-            `${SITE}/es/gastronomia/parrilla-x/`,
-            `${SITE}/en/gastronomia/parrilla-x/`,
-            `${SITE}/pt/gastronomia/parrilla-x/`
+            `${SITE}/es/comer-y-salir/parrilla-x/`,
+            `${SITE}/en/comer-y-salir/parrilla-x/`,
+            `${SITE}/pt/comer-y-salir/parrilla-x/`
         ]);
     });
 

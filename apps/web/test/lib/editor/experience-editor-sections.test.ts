@@ -2,7 +2,7 @@
  * @file experience-editor-sections.test.ts
  * @description Guards the experience editor's section registry (HOS-1080).
  *
- * The gastronomy-only sections must not merely be hidden from an experience's
+ * The venue-only sections must not merely be hidden from an experience's
  * nav, they must not exist for it, or the route stays reachable by typing the
  * URL.
  */
@@ -25,7 +25,7 @@ describe('buildExperienceEditorSections: the vertical split', () => {
         expect(experience.map((section) => section.id)).toContain('practicalInfo');
     });
 
-    it('should differ from the gastronomy list by exactly those two sections', () => {
+    it('should differ from the venue list by exactly those two sections', () => {
         const extra = experience
             .map((section) => section.id)
             .filter((id) => !venue.some((section) => section.id === id));
@@ -40,13 +40,13 @@ describe('buildExperienceEditorSections: the vertical split', () => {
         expect(ids.indexOf('practicalInfo')).toBe(ids.indexOf('meetingPoint') + 1);
     });
 
-    it('should give an experience NONE of the gastronomy-only sections', () => {
+    it('should give an experience NONE of the venue-only sections', () => {
         for (const id of ['menu', 'dailySpecials', 'venueEvents']) {
             expect(experience.map((section) => section.id)).not.toContain(id);
         }
     });
 
-    it('should make the gastronomy-only slugs unresolvable on an experience registry', () => {
+    it('should make the venue-only slugs unresolvable on an experience registry', () => {
         // Absent, not hidden: otherwise the URL stays reachable by typing it and
         // renders a panel whose every write the API refuses.
         const registry = buildExperienceEditorRegistry();
@@ -72,6 +72,6 @@ describe('buildExperienceEditorRegistry: paths', () => {
 describe('buildListingEditorRegistry: dispatch by vertical', () => {
     it('should return the registry that matches the vertical', () => {
         expect(buildListingEditorRegistry({ vertical: 'experience' }).sections).toEqual(experience);
-        expect(buildListingEditorRegistry({ vertical: 'gastronomy' }).sections).toEqual(venue);
+        expect(buildListingEditorRegistry({ vertical: 'venue' }).sections).toEqual(venue);
     });
 });

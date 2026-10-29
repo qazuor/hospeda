@@ -1,9 +1,9 @@
 /**
  * @file venue.model.contact-info-merge.test.ts
- * @description A partial `contactInfo` PATCH on `gastronomies` must NOT wipe
+ * @description A partial `contactInfo` PATCH on `venues` must NOT wipe
  * the column.
  *
- * `gastronomies.contact_info` is one JSONB column that can hold several
+ * `venues.contact_info` is one JSONB column that can hold several
  * contact fields at once (see `ContactInfoSchema` in `@repo/schemas`).
  * `BaseModelImpl.update()` replaces a JSONB column wholesale unless the model
  * opts the column into merge semantics via `mergeableJsonbColumns` — before
@@ -51,7 +51,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import * as clientModule from '../../../src/client';
 import { setDb } from '../../../src/client';
 import { VenueModel } from '../../../src/models/venue/venue.model';
-import { gastronomies } from '../../../src/schemas/venue/venue.dbschema';
+import { venues } from '../../../src/schemas/venue/venue.dbschema';
 import type { DrizzleClient } from '../../../src/types';
 import { buildMergeSetClause } from '../../../src/utils/jsonb-merge';
 
@@ -67,18 +67,18 @@ const ACTOR_ID = '00000000-0000-4000-8000-000000000001';
  * `update().set().where().returning()` for the write itself.
  */
 function buildMockInnerTx() {
-    const returning = vi.fn().mockResolvedValue([{ id: 'gastronomy-1' }]);
+    const returning = vi.fn().mockResolvedValue([{ id: 'venue-1' }]);
     const where = vi.fn(() => ({ returning }));
     const set = vi.fn(() => ({ where }));
     const update = vi.fn(() => ({ set }));
-    const execute = vi.fn().mockResolvedValue({ rows: [{ id: 'gastronomy-1' }] });
+    const execute = vi.fn().mockResolvedValue({ rows: [{ id: 'venue-1' }] });
 
     return { execute, update, set, where, returning };
 }
 
 /** Minimal non-transactional client for the plain-replacement path. */
 function buildMockPlainDb() {
-    const returning = vi.fn().mockResolvedValue([{ id: 'gastronomy-1' }]);
+    const returning = vi.fn().mockResolvedValue([{ id: 'venue-1' }]);
     const where = vi.fn(() => ({ returning }));
     const set = vi.fn(() => ({ where }));
     const update = vi.fn(() => ({ set }));
@@ -154,7 +154,7 @@ describe('VenueModel — `contactInfo` is a mergeable JSONB column', () => {
         setDb({} as unknown as DrizzleClient);
 
         // Act
-        await new VenueModel().update({ id: 'gastronomy-1' }, { contactInfo: PHONE_PATCH });
+        await new VenueModel().update({ id: 'venue-1' }, { contactInfo: PHONE_PATCH });
 
         // Assert — the merge path is the one that locks the row first.
         expect(withTransaction).toHaveBeenCalledOnce();
@@ -188,7 +188,7 @@ describe('VenueModel — `contactInfo` is a mergeable JSONB column', () => {
         setDb(buildMockPlainDb() as unknown as DrizzleClient);
 
         // Act
-        await new VenueModel().update({ id: 'gastronomy-1' }, {
+        await new VenueModel().update({ id: 'venue-1' }, {
             contactInfo: PHONE_PATCH,
             updatedById: ACTOR_ID
         } as unknown as Parameters<VenueModel['update']>[1]);
@@ -212,7 +212,7 @@ describe('VenueModel — `contactInfo` is a mergeable JSONB column', () => {
         setDb({} as unknown as DrizzleClient);
 
         // Act
-        await new VenueModel().update({ id: 'gastronomy-1' }, { contactInfo: PHONE_PATCH });
+        await new VenueModel().update({ id: 'venue-1' }, { contactInfo: PHONE_PATCH });
 
         // Assert — a plain object here would wipe every other contact field.
         const setPayload = innerTx.set.mock.calls[0]?.[0] as Record<string, unknown>;
@@ -226,13 +226,13 @@ describe('VenueModel — `contactInfo` is a mergeable JSONB column', () => {
     });
 
     it('serialises ONLY the sent key — sibling contact fields are never named, so they survive the `||` merge', () => {
-        // Arrange: the real `gastronomies` table and the real mergeable list.
+        // Arrange: the real `venues` table and the real mergeable list.
         const mergeable = (
             new VenueModel() as unknown as { mergeableJsonbColumns: readonly string[] }
         ).mergeableJsonbColumns;
 
         // Act
-        const result = buildMergeSetClause({ contactInfo: PHONE_PATCH }, gastronomies, mergeable);
+        const result = buildMergeSetClause({ contactInfo: PHONE_PATCH }, venues, mergeable);
 
         // Assert — the patch travels verbatim; any sibling field already
         // stored under a key absent from it is left to `||` to preserve.
@@ -265,7 +265,7 @@ describe('VenueModel — `contactInfo` is a mergeable JSONB column', () => {
             new VenueModel() as unknown as { mergeableJsonbColumns: readonly string[] }
         ).mergeableJsonbColumns;
 
-        const result = buildMergeSetClause({ contactInfo: PHONE_PATCH }, gastronomies, mergeable);
+        const result = buildMergeSetClause({ contactInfo: PHONE_PATCH }, venues, mergeable);
 
         expect(sqlShape(result.contactInfo)).toStrictEqual([
             'COALESCE(',
@@ -283,7 +283,7 @@ describe('VenueModel — `contactInfo` is a mergeable JSONB column', () => {
 
         const result = buildMergeSetClause(
             { contactInfo: { mobilePhone: null } },
-            gastronomies,
+            venues,
             mergeable
         );
 
@@ -298,7 +298,7 @@ describe('VenueModel — `contactInfo` is a mergeable JSONB column', () => {
         );
         setDb({} as unknown as DrizzleClient);
 
-        await new VenueModel().update({ id: 'gastronomy-1' }, {
+        await new VenueModel().update({ id: 'venue-1' }, {
             contactInfo: null
         } as unknown as Parameters<VenueModel['update']>[1]);
 
@@ -314,7 +314,7 @@ describe('VenueModel — `contactInfo` is a mergeable JSONB column', () => {
 
         // Act — `openingHours` is NOT declared mergeable on this model (HOS-1262 moved
         // `socialNetworks` into the mergeable set, so it can no longer be the control).
-        await new VenueModel().update({ id: 'gastronomy-1' }, {
+        await new VenueModel().update({ id: 'venue-1' }, {
             openingHours: { monday: [] }
         } as unknown as Parameters<VenueModel['update']>[1]);
 

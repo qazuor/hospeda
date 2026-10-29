@@ -101,7 +101,7 @@ const openFixRequest = {
 
 function renderCard({
     publicationStatus,
-    vertical = 'gastronomy',
+    vertical = 'venue',
     fixRequest = null,
     queryError = false,
     statePublicationStatus
@@ -308,7 +308,7 @@ describe('TEST:1684:2 AC-1684:1 buttons by state and by permission', () => {
         // Assert
         await waitFor(() => expect(mutateAsync).toHaveBeenCalledTimes(1));
         expect(mutateAsync.mock.calls[0]?.[0]).toEqual({
-            vertical: 'gastronomy',
+            vertical: 'venue',
             id: LISTING_ID,
             body: { action: 'TAKE_DOWN', reason: 'Fotos falsas' }
         });
@@ -326,7 +326,7 @@ describe('TEST:1684:2 AC-1684:1 buttons by state and by permission', () => {
         // Assert
         await waitFor(() => expect(mutateAsync).toHaveBeenCalledTimes(1));
         expect(mutateAsync.mock.calls[0]?.[0]).toEqual({
-            vertical: 'gastronomy',
+            vertical: 'venue',
             id: LISTING_ID,
             body: { action: 'LIFT', reason: 'Corregida', keepFixRequest: false }
         });
@@ -345,7 +345,7 @@ describe('TEST:1684:2 AC-1684:1 buttons by state and by permission', () => {
         // Assert
         await waitFor(() => expect(mutateAsync).toHaveBeenCalledTimes(1));
         expect(mutateAsync.mock.calls[0]?.[0]).toEqual({
-            vertical: 'gastronomy',
+            vertical: 'venue',
             id: LISTING_ID,
             body: { action: 'LIFT', reason: 'Falta un detalle', keepFixRequest: true }
         });
@@ -363,7 +363,7 @@ describe('TEST:1684:2 AC-1684:1 buttons by state and by permission', () => {
         // Assert
         await waitFor(() => expect(mutateAsync).toHaveBeenCalledTimes(1));
         expect(mutateAsync.mock.calls[0]?.[0]).toEqual({
-            vertical: 'gastronomy',
+            vertical: 'venue',
             id: LISTING_ID,
             body: { action: 'REQUEST_FIX', reason: 'Cambiar fotos', suggestedDate: null }
         });
@@ -384,7 +384,7 @@ describe('TEST:1684:2 AC-1684:1 buttons by state and by permission', () => {
         // Assert
         await waitFor(() => expect(mutateAsync).toHaveBeenCalledTimes(1));
         expect(mutateAsync.mock.calls[0]?.[0]).toEqual({
-            vertical: 'gastronomy',
+            vertical: 'venue',
             id: LISTING_ID,
             body: { action: 'REQUEST_FIX', reason: 'Cambiar fotos', suggestedDate: '2026-11-01' }
         });
@@ -409,7 +409,7 @@ describe('TEST:1684:2 AC-1684:1 buttons by state and by permission', () => {
         // Assert
         await waitFor(() => expect(mutateAsync).toHaveBeenCalledTimes(1));
         expect(mutateAsync.mock.calls[0]?.[0]).toEqual({
-            vertical: 'gastronomy',
+            vertical: 'venue',
             id: LISTING_ID,
             body: { action: 'CLOSE_FIX_REQUEST', reason: 'Ya está' }
         });
@@ -417,7 +417,7 @@ describe('TEST:1684:2 AC-1684:1 buttons by state and by permission', () => {
 
     it.each([
         'accommodation',
-        'gastronomy',
+        'venue',
         'experience'
     ] as const)('%s reaches the hook with its own vertical', async (vertical) => {
         // Arrange

@@ -18,7 +18,7 @@ import { testDb } from '../../e2e/setup/test-database.js';
 const table = 'cutover_v6_deleted_listing';
 const deleted = [
     { entityType: 'accommodation', entityId: '14820000-0000-4000-8000-000000000001' },
-    { entityType: 'gastronomy', entityId: '14820000-0000-4000-8000-000000000002' },
+    { entityType: 'venue', entityId: '14820000-0000-4000-8000-000000000002' },
     { entityType: 'experience', entityId: '14820000-0000-4000-8000-000000000003' }
 ] as const;
 type Call = { readonly group: string; readonly tags: readonly string[] };
@@ -131,9 +131,9 @@ describe('TEST:V6:24 step 4c', () => {
             expect(first[0]?.tags).toEqual([
                 'accom-14820000-0000-4000-8000-000000000001',
                 'exp-14820000-0000-4000-8000-000000000003',
-                'gastro-14820000-0000-4000-8000-000000000002'
+                'venue-14820000-0000-4000-8000-000000000002'
             ]);
-            expect(first[1]?.tags).toEqual(['home', 'list-accom', 'list-exp', 'list-gastro']);
+            expect(first[1]?.tags).toEqual(['home', 'list-accom', 'list-exp', 'list-venue']);
             expect(first[2]?.tags).toEqual(
                 liveDestinations.rows
                     .flatMap(({ id, slug }) => [`dest-${slug}`, `dest-${id}`])
@@ -145,6 +145,18 @@ describe('TEST:V6:24 step 4c', () => {
                 destinationCount: liveDestinations.rows.length
             });
             expect(secondResult).toEqual(firstResult);
+        });
+    });
+
+    it('TEST:1820:6 AC:1:4 rejects a retired passage entity type with an explicit schema error', async () => {
+        const preRenameVertical = ['gastro', 'nomy'].join('');
+        const entityId = '14820000-0000-4000-8000-000000000002';
+        await withRollback(async (tx) => {
+            await tx.execute(sql`INSERT INTO ${sql.raw(table)} (entity_type, entity_id)
+                VALUES (${preRenameVertical}, ${entityId}::uuid)`);
+            await expect(
+                runStep4c({ db: tx, pagePurger: fakePurger(), dryRun: false })
+            ).rejects.toThrow(/entityType/);
         });
     });
 

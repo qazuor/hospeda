@@ -32,7 +32,7 @@ describe('TEST:V8a:7 ReportFixedButton — row 30 "I fixed it"', () => {
         });
         render(
             <ReportFixedButton
-                vertical="gastronomy"
+                vertical="venue"
                 listingId="listing-1"
                 locale="es"
                 reportedAt={null}
@@ -48,7 +48,7 @@ describe('TEST:V8a:7 ReportFixedButton — row 30 "I fixed it"', () => {
                 screen.getByText('Avisaste que lo corregiste el 12 de octubre de 2026.')
             ).toBeInTheDocument()
         );
-        expect(reportFixedMock).toHaveBeenCalledWith({ vertical: 'gastronomy', id: 'listing-1' });
+        expect(reportFixedMock).toHaveBeenCalledWith({ vertical: 'venue', id: 'listing-1' });
         expect(screen.queryByRole('button', { name: 'Ya lo corregí' })).not.toBeInTheDocument();
     });
 

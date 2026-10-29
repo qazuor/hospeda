@@ -214,14 +214,14 @@ describe('UserMenu — permission-gated items', () => {
         });
     });
 
-    it('shows the "Mi comercio" business shortcut for users with only gastronomy.editOwn permission', async () => {
+    it('shows the "Mi comercio" business shortcut for users with only venue.editOwn permission', async () => {
         sessionStorage.setItem(
             AUTH_ME_CACHE_KEY,
             JSON.stringify({
                 isAuthenticated: true,
                 user: { id: 'user-1', name: 'Carlos', email: 'c@e.com' },
-                permissions: ['gastronomy.editOwn'],
-                roles: ['USER', 'GASTRONOMY_OWNER'],
+                permissions: ['venue.editOwn'],
+                roles: ['USER', 'VENUE_OWNER'],
                 cachedAt: Date.now()
             })
         );
@@ -241,8 +241,8 @@ describe('UserMenu — permission-gated items', () => {
             JSON.stringify({
                 isAuthenticated: true,
                 user: { id: 'user-1', name: 'Carlos', email: 'c@e.com' },
-                permissions: ['accommodation.create', 'gastronomy.editOwn'],
-                roles: ['USER', 'HOST', 'GASTRONOMY_OWNER'],
+                permissions: ['accommodation.create', 'venue.editOwn'],
+                roles: ['USER', 'HOST', 'VENUE_OWNER'],
                 cachedAt: Date.now()
             })
         );
@@ -625,8 +625,8 @@ describe('UserMenu — PostHog identify/reset', () => {
                 data: {
                     actor: {
                         id: 'user-1',
-                        roles: ['USER', 'HOST', 'GASTRONOMY_OWNER'],
-                        permissions: ['accommodation.create', 'gastronomy.editOwn']
+                        roles: ['USER', 'HOST', 'VENUE_OWNER'],
+                        permissions: ['accommodation.create', 'venue.editOwn']
                     },
                     isAuthenticated: true
                 }
@@ -640,10 +640,10 @@ describe('UserMenu — PostHog identify/reset', () => {
                 // HOS-296: an ARRAY person property, sorted for stability.
                 // A multi-hat user reports every hat AND both segment
                 // booleans — under the old scalar only one could be true.
-                roles: ['GASTRONOMY_OWNER', 'HOST', 'USER'],
+                roles: ['HOST', 'USER', 'VENUE_OWNER'],
                 user_type: 'owner',
                 is_host: true,
-                is_gastronomy_owner: true,
+                is_venue_owner: true,
                 is_experience_owner: false,
                 is_staff: false
             });
@@ -670,7 +670,7 @@ describe('UserMenu — PostHog identify/reset', () => {
             expect(identifyUser).toHaveBeenLastCalledWith(
                 'user-1',
                 expect.objectContaining({
-                    is_gastronomy_owner: false,
+                    is_venue_owner: false,
                     is_experience_owner: true,
                     user_type: 'owner'
                 })
@@ -700,7 +700,7 @@ describe('UserMenu — PostHog identify/reset', () => {
                 roles: ['ADMIN', 'USER'],
                 user_type: 'staff',
                 is_host: false,
-                is_gastronomy_owner: false,
+                is_venue_owner: false,
                 is_experience_owner: false,
                 is_staff: true
             });

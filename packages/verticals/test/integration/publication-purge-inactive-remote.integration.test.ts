@@ -48,7 +48,7 @@ async function archivedListing(vertical: (typeof verticals)[number]) {
         destinationId,
         status: Status.ARCHIVED
     });
-    const table = vertical === VerticalEnum.VENUE ? 'gastronomies' : `${vertical}s`;
+    const table = vertical === VerticalEnum.VENUE ? 'venues' : `${vertical}s`;
     await db.execute(
         sql`UPDATE ${sql.raw(table)} SET inactive_since = ${new Date(t0.getTime() - 300 * day)}, deadlines_version = 1, deletion_announced_at = ${new Date(t0.getTime() - day)} WHERE id = ${listing.id}`
     );
@@ -127,8 +127,17 @@ describe.each(verticals)('TEST:V9b:3 AC:V9b:3 %s remote media', (vertical) => {
     it('marks in PB9, calls after commit, and daily retry confirms a failed deletion', async () => {
         const { userId, listing, adapter, table } = await archivedListing(vertical);
         const mediaTable =
-            vertical === VerticalEnum.ACCOMMODATION ? 'accommodation_media' : `${vertical}_media`;
-        const fk = vertical === VerticalEnum.ACCOMMODATION ? 'accommodation_id' : `${vertical}_id`;
+            vertical === VerticalEnum.ACCOMMODATION
+                ? 'accommodation_media'
+                : vertical === VerticalEnum.VENUE
+                  ? 'venue_media'
+                  : 'experience_media';
+        const fk =
+            vertical === VerticalEnum.ACCOMMODATION
+                ? 'accommodation_id'
+                : vertical === VerticalEnum.VENUE
+                  ? 'venue_id'
+                  : 'experience_id';
         const publicId = `pb9/${randomUUID()}`;
         const inserted = await db.execute(
             sql`INSERT INTO ${sql.raw(mediaTable)} (${sql.raw(fk)}, url, public_id, sort_order) VALUES (${listing.id}, 'https://fake.test/photo.jpg', ${publicId}, 0) RETURNING id`

@@ -96,7 +96,7 @@ const W24_REVALIDATION_CONFIGS = [
         enabled: true
     },
     {
-        entityType: 'gastronomy',
+        entityType: 'venue',
         autoRevalidateOnChange: true,
         cronIntervalMinutes: 60,
         debounceSeconds: 5,

@@ -81,7 +81,7 @@ export type ListingCardState =
  * @param params.isPublic - From the listing summary.
  * @param params.completeness - The completeness preview, or `null` when the
  *   listing is public (not computed) or its detail fetch failed.
- * @param params.subscriptionStatus - The listing's current gastronomy/experience
+ * @param params.subscriptionStatus - The listing's current venue/experience
  *   subscription status (`OwnerListingSummary.subscriptionStatus`),
  *   or `null`/`undefined` when it has never had one. Only `past_due` is
  *   currently distinguished (drives `suspended`); every other value is left

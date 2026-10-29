@@ -164,7 +164,7 @@ vi.mock('../../../src/utils/listing-access/ports', () => ({
                     ({
                         max_ai_chat_per_month: mockOwnerLimit.current,
                         max_ai_chat_consumer_per_month: 20,
-                        max_ai_chat_gastronomy_per_month: 20,
+                        max_ai_chat_venue_per_month: 20,
                         max_ai_chat_experience_per_month: 20
                     })[key]
             }
@@ -214,7 +214,7 @@ vi.mock('@repo/db', async (importOriginal) => {
     return {
         ...actual,
         accommodations: accommodationSchema.accommodations,
-        gastronomies: venueSchema.gastronomies,
+        venues: venueSchema.venues,
         experiences: experienceSchema.experiences,
         getDb: vi.fn(() => buildChain())
     };

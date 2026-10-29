@@ -33,7 +33,7 @@ describe('PRICING_PAGE_PATH_BY_AUDIENCE', () => {
         expect(PRICING_PAGE_PATH_BY_AUDIENCE).toEqual({
             owner: 'planes/anfitriones/precios',
             tourist: 'planes/turistas/precios',
-            gastronomy: 'planes/gastronomia/precios',
+            venue: 'planes/comer-y-salir/precios',
             experience: 'planes/experiencias/precios'
         });
     });

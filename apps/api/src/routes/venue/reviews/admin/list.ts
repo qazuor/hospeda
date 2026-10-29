@@ -1,6 +1,6 @@
 /**
- * Admin gastronomy reviews list endpoint.
- * Returns all gastronomy reviews including pending ones.
+ * Admin venue reviews list endpoint.
+ * Returns all venue reviews including pending ones.
  */
 import { ModerationStatusEnum, PermissionEnum, VenueReviewSchema } from '@repo/schemas';
 import { ServiceError, VenueReviewService } from '@repo/service-core';
@@ -13,11 +13,11 @@ import { createAdminListRoute } from '../../../../utils/route-factory';
 const venueReviewService = new VenueReviewService({ logger: apiLogger });
 
 /**
- * GET /api/v1/admin/gastronomies/reviews
- * List all gastronomy reviews — Admin endpoint.
+ * GET /api/v1/admin/venues/reviews
+ * List all venue reviews — Admin endpoint.
  *
  * Returns all reviews including PENDING and REJECTED (not filtered to APPROVED
- * like the public list). Requires GASTRONOMY_MODERATE_REVIEW permission.
+ * like the public list). Requires VENUE_MODERATE_REVIEW permission.
  *
  * The moderation UI sends `status` as the *moderation* state (e.g. PENDING).
  * It is declared in `requestQuery` so the admin-list factory (a) whitelists it
@@ -29,11 +29,11 @@ const venueReviewService = new VenueReviewService({ logger: apiLogger });
 export const adminListVenueReviewsRoute = createAdminListRoute({
     method: 'get',
     path: '/',
-    summary: 'List all gastronomy reviews (admin)',
+    summary: 'List all venue reviews (admin)',
     description:
-        'Returns a paginated list of all gastronomy reviews with full admin details, including pending and rejected reviews.',
-    tags: ['Gastronomy Reviews', 'Admin'],
-    anyOfPermissions: [[PermissionEnum.GASTRONOMY_MODERATE_REVIEW]],
+        'Returns a paginated list of all venue reviews with full admin details, including pending and rejected reviews.',
+    tags: ['Venue Reviews', 'Admin'],
+    anyOfPermissions: [[PermissionEnum.VENUE_MODERATE_REVIEW]],
     requestQuery: {
         status: z.nativeEnum(ModerationStatusEnum).optional()
     },

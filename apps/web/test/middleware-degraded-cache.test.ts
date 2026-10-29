@@ -7,7 +7,7 @@
  *
  * Every listing page calls `applyCacheHeaders()` in its frontmatter BEFORE the
  * data fetch, and computes `hasError` a hundred lines later. Measured on
- * `pages/[lang]/gastronomia/index.astro`: line 52 applies the headers, line 148
+ * `pages/[lang]/comer-y-salir/index.astro`: line 52 applies the headers, line 148
  * derives `hasError`, line 401 renders the `ErrorBanner`. Nothing between them
  * downgrades the decision, so the response that draws "No pudimos cargar…"
  * shipped `public, s-maxage=3600, stale-while-revalidate=3600` and Cloudflare

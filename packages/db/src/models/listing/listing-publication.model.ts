@@ -32,7 +32,7 @@ export interface ListingReconcilerPage {
 
 const TABLES: Record<ListingVertical, string> = {
     accommodation: 'accommodations',
-    gastronomy: 'gastronomies',
+    venue: 'venues',
     experience: 'experiences'
 };
 

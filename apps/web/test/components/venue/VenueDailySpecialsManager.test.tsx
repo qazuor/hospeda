@@ -1,6 +1,6 @@
 /**
  * @file VenueDailySpecialsManager.test.tsx
- * @description The gastronomy menú del día panel (HOS-1041).
+ * @description The venue menú del día panel (HOS-1041).
  *
  * Four things are asserted, and each is a decision that would otherwise stay
  * invisible until an owner complained:
@@ -18,7 +18,7 @@
  *    today and nothing is left behind tomorrow. A default of "today onwards
  *    forever" would reintroduce the rotting field the feature exists to remove.
  * 4. **A 403 is an upsell, not an error.** The menú del día is a
- *    `gastronomy-pro` capability and this page carries no entitlement
+ *    `venue-pro` capability and this page carries no entitlement
  *    information, so the API is what decides.
  */
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
@@ -75,7 +75,7 @@ beforeEach(() => {
     // place still turns a suite green through mock leakage.
 });
 
-describe('GastronomyDailySpecialsManager', () => {
+describe('VenueDailySpecialsManager', () => {
     it('loads its own specials rather than waiting to be handed them', async () => {
         // Arrange
         mockGet.mockResolvedValue(LOADED);
@@ -91,7 +91,7 @@ describe('GastronomyDailySpecialsManager', () => {
         // Assert
         await waitFor(() => {
             expect(mockGet).toHaveBeenCalledWith({
-                path: `/api/v1/protected/gastronomies/${LISTING_ID}/daily-specials`
+                path: `/api/v1/protected/venues/${LISTING_ID}/daily-specials`
             });
         });
         expect(await screen.findByDisplayValue('Milanesa a la napolitana')).toBeTruthy();

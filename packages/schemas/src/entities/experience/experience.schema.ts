@@ -109,7 +109,7 @@ function experienceChecklistSchema(input: {
  * Experience Entity Schema — listing for tourism services and experiences.
  *
  * Composed by spreading shared base-field const objects (same composition pattern
- * as `GastronomySchema`) plus experience-specific fields:
+ * as `venueSchema`) plus experience-specific fields:
  * - Identity: name/slug/summary/description/richDescription + i18n via `ListingIdentityFields`
  * - Schedule: weekly opening hours via `OpeningHoursFields`
  * - Contact: phone/email/website via `BaseContactFields`
@@ -384,7 +384,7 @@ export const ExperienceSchema = z.object({
      */
     publicationStatus: PublicationStatusEnumSchema,
 
-    // Base field groups — spread in the same order as GastronomySchema
+    // Base field groups — spread in the same order as venueSchema
     ...BaseReviewFields,
     ...BaseSeoFields,
     ...BaseContactFields,

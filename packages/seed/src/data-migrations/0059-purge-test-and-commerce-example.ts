@@ -147,11 +147,11 @@ import {
     entityViews,
     experienceReviews,
     experiences,
-    gastronomies,
-    gastronomyReviews,
     inArray,
     partners,
-    users
+    users,
+    venueReviews,
+    venues
 } from '@repo/db';
 import type { PgColumn, PgTable } from 'drizzle-orm/pg-core';
 import { logger } from '../utils/logger.js';
@@ -340,15 +340,15 @@ export async function up(ctx: SeedMigrationCtx): Promise<SeedMigrationResult> {
     // merely happens to own. The slug list stays the whole story there.
     const gastronomyIds = unionIds(
         await db
-            .select({ id: gastronomies.id })
-            .from(gastronomies)
-            .where(inArray(gastronomies.slug, [...GASTRONOMY_SLUGS])),
+            .select({ id: venues.id })
+            .from(venues)
+            .where(inArray(venues.slug, [...GASTRONOMY_SLUGS])),
         testUserIds.length === 0
             ? []
             : await db
-                  .select({ id: gastronomies.id })
-                  .from(gastronomies)
-                  .where(inArray(gastronomies.ownerId, testUserIds))
+                  .select({ id: venues.id })
+                  .from(venues)
+                  .where(inArray(venues.ownerId, testUserIds))
     );
     const experienceIds = unionIds(
         await db
@@ -440,8 +440,8 @@ export async function up(ctx: SeedMigrationCtx): Promise<SeedMigrationResult> {
     });
     const gastronomyReviewsDeleted = await deleteWhereIn({
         db,
-        table: gastronomyReviews,
-        column: gastronomyReviews.userId,
+        table: venueReviews,
+        column: venueReviews.userId,
         values: testUserIds
     });
     const experienceReviewsDeleted = await deleteWhereIn({
@@ -454,8 +454,8 @@ export async function up(ctx: SeedMigrationCtx): Promise<SeedMigrationResult> {
     // ── Step 6: the commerce content. Every inbound FK is CASCADE. ──────────
     const gastronomiesDeleted = await deleteWhereIn({
         db,
-        table: gastronomies,
-        column: gastronomies.id,
+        table: venues,
+        column: venues.id,
         values: gastronomyIds
     });
     const experiencesDeleted = await deleteWhereIn({

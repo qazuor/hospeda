@@ -42,11 +42,11 @@ import {
     destinations,
     eq,
     experiences,
-    gastronomies,
     getDb,
     initializeDb,
     resetDb,
-    users
+    users,
+    venues
 } from '@repo/db';
 import {
     AccommodationTypeEnum,
@@ -181,7 +181,7 @@ async function insertGastronomy(
     args: { readonly ownerId: string; readonly destinationId: string; readonly slug: string }
 ): Promise<string> {
     const inserted = await tx
-        .insert(gastronomies)
+        .insert(venues)
         .values({
             slug: args.slug,
             name: 'HOS-712 gastronomy',
@@ -193,8 +193,8 @@ async function insertGastronomy(
             publicationStatus: PublicationStatusEnum.PUBLISHED,
             inactiveSince: new Date(),
             deadlinesVersion: 1
-        } as typeof gastronomies.$inferInsert)
-        .returning({ id: gastronomies.id });
+        } as typeof venues.$inferInsert)
+        .returning({ id: venues.id });
     const row = inserted[0];
     if (!row) {
         throw new Error('Insert of test gastronomy returned no row');
@@ -284,10 +284,7 @@ async function userExists(tx: DrizzleClient, email: string): Promise<boolean> {
 
 /** True when a gastronomy row with this slug still exists. */
 async function gastronomyExists(tx: DrizzleClient, slug: string): Promise<boolean> {
-    const rows = await tx
-        .select({ id: gastronomies.id })
-        .from(gastronomies)
-        .where(eq(gastronomies.slug, slug));
+    const rows = await tx.select({ id: venues.id }).from(venues).where(eq(venues.slug, slug));
     return rows.length > 0;
 }
 

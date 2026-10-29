@@ -973,7 +973,7 @@ export const HASHTAGS: InsertSocialHashtag[] = [
         priority: 22,
         active: true
     },
-    // Gastronomy
+    // venue
     {
         hashtag: '#Gastronomia',
         normalizedHashtag: '#gastronomia',

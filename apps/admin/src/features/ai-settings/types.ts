@@ -32,7 +32,7 @@ export type AiFeatureId =
     | 'chat'
     // HOS-400: per-vertical chat features (own metering counter each), same
     // product and same entitlement as `chat` — see FEATURE_LABELS below.
-    | 'chat_gastronomy'
+    | 'chat_venue'
     | 'chat_experience'
     | 'search'
     | 'support'
@@ -171,7 +171,7 @@ export const FEATURE_LABELS: Record<AiFeatureId, string> = {
     // monthly quota counts its own `ai_usage` rows. Labelled by vertical here so
     // the usage and cost panels do not show three rows all called "Chat".
     chat: 'Chat (alojamientos)',
-    chat_gastronomy: 'Chat (gastronomía)',
+    chat_venue: 'Chat (gastronomía)',
     chat_experience: 'Chat (experiencias)',
     search: 'Búsqueda',
     support: 'Soporte',

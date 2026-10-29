@@ -306,7 +306,7 @@ describe('check-seed-dual-write.sh (HOS-25 T-024)', () => {
     it('AC-4: FAILS the four other formerly-escaped curated sources + inline experiences', () => {
         // Arrange
         for (const path of [
-            'M\tpackages/seed/src/data/gastronomy/001-gastronomy.json',
+            'M\tpackages/seed/src/data/venue/001-venue.json',
             'M\tpackages/seed/src/data/hostTrade/001-host-trade.json',
             'M\tpackages/seed/src/data/postSponsor/001-sponsor.json',
             'M\tpackages/seed/src/data/postSponsorship/001-sponsorship.json',

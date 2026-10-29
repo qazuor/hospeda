@@ -4,7 +4,7 @@
  *
  * Mirrors the useAccommodationMedia test pattern, plus vertical-specific
  * assertions to guard the singular→plural route-segment mapping
- * (`'gastronomy'` → `/gastronomies/...`, `'experience'` → `/experiences/...`):
+ * (`'venue'` → `/venues/...`, `'experience'` → `/experiences/...`):
  *   - Mock fetchApi at module level
  *   - Wrap hooks in a fresh QueryClientProvider with retries disabled
  *   - Assert: correct path/method/body sent to fetchApi, per vertical
@@ -34,7 +34,7 @@ const mockedFetchApi = vi.mocked(fetchApi);
 function makeMedia(overrides: Partial<Record<string, unknown>> = {}) {
     return {
         id: 'media-1',
-        gastronomyId: 'ent-1',
+        venueId: 'ent-1',
         url: 'https://example.com/photo.jpg',
         moderationState: 'APPROVED',
         state: 'visible',
@@ -65,14 +65,14 @@ afterEach(() => {
 // ---------------------------------------------------------------------------
 
 describe('useListingMediaList — response envelope parsing', () => {
-    it('calls GET on the gastronomies endpoint for vertical="gastronomy"', async () => {
+    it('calls GET on the venues endpoint for vertical="venue"', async () => {
         const items = [makeMedia({ id: 'media-1' }), makeMedia({ id: 'media-2' })];
         mockedFetchApi.mockResolvedValue({
             data: { success: true, data: { media: items } },
             status: 200
         });
 
-        const { result } = renderHook(() => useListingMediaList('gastronomy', 'ent-1'), {
+        const { result } = renderHook(() => useListingMediaList('venue', 'ent-1'), {
             wrapper: createWrapper()
         });
 
@@ -80,7 +80,7 @@ describe('useListingMediaList — response envelope parsing', () => {
 
         expect(mockedFetchApi).toHaveBeenCalledWith(
             expect.objectContaining({
-                path: '/api/v1/admin/gastronomies/ent-1/media?state=visible'
+                path: '/api/v1/admin/venues/ent-1/media?state=visible'
             })
         );
         expect(result.current.data).toHaveLength(2);
@@ -111,7 +111,7 @@ describe('useListingMediaList — response envelope parsing', () => {
             status: 200
         });
 
-        const { result } = renderHook(() => useListingMediaList('gastronomy', 'ent-1'), {
+        const { result } = renderHook(() => useListingMediaList('venue', 'ent-1'), {
             wrapper: createWrapper()
         });
 
@@ -120,7 +120,7 @@ describe('useListingMediaList — response envelope parsing', () => {
     });
 
     it('is disabled when entityId is empty', () => {
-        const { result } = renderHook(() => useListingMediaList('gastronomy', ''), {
+        const { result } = renderHook(() => useListingMediaList('venue', ''), {
             wrapper: createWrapper()
         });
 
@@ -167,7 +167,7 @@ describe('useListingMediaAdd', () => {
             status: 201
         });
 
-        const { result } = renderHook(() => useListingMediaAdd('gastronomy', 'ent-1'), {
+        const { result } = renderHook(() => useListingMediaAdd('venue', 'ent-1'), {
             wrapper: createWrapper()
         });
 
@@ -190,7 +190,7 @@ describe('useListingMediaAdd', () => {
         const wrapper = ({ children }: { readonly children: React.ReactNode }) =>
             React.createElement(QueryClientProvider, { client: queryClient }, children);
 
-        const { result } = renderHook(() => useListingMediaAdd('gastronomy', 'ent-1'), {
+        const { result } = renderHook(() => useListingMediaAdd('venue', 'ent-1'), {
             wrapper
         });
 
@@ -200,7 +200,7 @@ describe('useListingMediaAdd', () => {
 
         expect(invalidateSpy).toHaveBeenCalledWith(
             expect.objectContaining({
-                queryKey: listingMediaQueryKeys.list('gastronomy', 'ent-1')
+                queryKey: listingMediaQueryKeys.list('venue', 'ent-1')
             })
         );
     });
@@ -256,7 +256,7 @@ describe('useListingMediaSetFeatured', () => {
             status: 200
         });
 
-        const { result } = renderHook(() => useListingMediaSetFeatured('gastronomy', 'ent-1'), {
+        const { result } = renderHook(() => useListingMediaSetFeatured('venue', 'ent-1'), {
             wrapper: createWrapper()
         });
 
@@ -264,7 +264,7 @@ describe('useListingMediaSetFeatured', () => {
 
         expect(mockedFetchApi).toHaveBeenCalledWith(
             expect.objectContaining({
-                path: '/api/v1/admin/gastronomies/ent-1/media/media-7/featured',
+                path: '/api/v1/admin/venues/ent-1/media/media-7/featured',
                 method: 'PUT'
             })
         );
@@ -277,7 +277,7 @@ describe('useListingMediaSetFeatured', () => {
             status: 200
         });
 
-        const { result } = renderHook(() => useListingMediaSetFeatured('gastronomy', 'ent-1'), {
+        const { result } = renderHook(() => useListingMediaSetFeatured('venue', 'ent-1'), {
             wrapper: createWrapper()
         });
 
@@ -300,7 +300,7 @@ describe('useListingMediaSetFeatured', () => {
         const wrapper = ({ children }: { readonly children: React.ReactNode }) =>
             React.createElement(QueryClientProvider, { client: queryClient }, children);
 
-        const { result } = renderHook(() => useListingMediaSetFeatured('gastronomy', 'ent-1'), {
+        const { result } = renderHook(() => useListingMediaSetFeatured('venue', 'ent-1'), {
             wrapper
         });
 
@@ -310,7 +310,7 @@ describe('useListingMediaSetFeatured', () => {
 
         expect(invalidateSpy).toHaveBeenCalledWith(
             expect.objectContaining({
-                queryKey: listingMediaQueryKeys.list('gastronomy', 'ent-1')
+                queryKey: listingMediaQueryKeys.list('venue', 'ent-1')
             })
         );
     });
@@ -330,7 +330,7 @@ describe('gallery mutations invalidate the cached entity (HOS-389 §3)', () => {
     const MUTATIONS = [
         {
             name: 'add',
-            run: (vertical: 'gastronomy' | 'experience', id: string) =>
+            run: (vertical: 'venue' | 'experience', id: string) =>
                 renderHook(() => useListingMediaAdd(vertical, id), { wrapper: makeWrapper() }),
             args: { url: 'https://example.com/x.jpg' } as never
         }
@@ -355,18 +355,18 @@ describe('gallery mutations invalidate the cached entity (HOS-389 §3)', () => {
         });
     });
 
-    it.each(MUTATIONS)('$name invalidates the gastronomy entity detail', async ({ run, args }) => {
-        const { result } = run('gastronomy', 'ent-1');
+    it.each(MUTATIONS)('$name invalidates the venue entity detail', async ({ run, args }) => {
+        const { result } = run('venue', 'ent-1');
 
         await act(async () => {
             await result.current.mutateAsync(args);
         });
 
-        // 'gastronomies' is the entityName the listing entity hooks are created
+        // 'venues' is the entityName the listing entity hooks are created
         // with — asserting the resolved key, not the helper, is what proves the
         // media hook and the entity hook agree on where the cache lives.
         expect(invalidateSpy).toHaveBeenCalledWith(
-            expect.objectContaining({ queryKey: ['gastronomies', 'detail', 'ent-1'] })
+            expect.objectContaining({ queryKey: ['venues', 'detail', 'ent-1'] })
         );
     });
 
@@ -387,7 +387,7 @@ describe('gallery mutations invalidate the cached entity (HOS-389 §3)', () => {
     });
 
     it('still invalidates the media list — the entity key is an addition, not a swap', async () => {
-        const { result } = renderHook(() => useListingMediaAdd('gastronomy', 'ent-1'), {
+        const { result } = renderHook(() => useListingMediaAdd('venue', 'ent-1'), {
             wrapper: makeWrapper()
         });
 
@@ -397,7 +397,7 @@ describe('gallery mutations invalidate the cached entity (HOS-389 §3)', () => {
 
         expect(invalidateSpy).toHaveBeenCalledWith(
             expect.objectContaining({
-                queryKey: listingMediaQueryKeys.list('gastronomy', 'ent-1')
+                queryKey: listingMediaQueryKeys.list('venue', 'ent-1')
             })
         );
         expect(invalidateSpy).toHaveBeenCalledTimes(2);

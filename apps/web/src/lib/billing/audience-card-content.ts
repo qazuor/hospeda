@@ -18,7 +18,7 @@
  *
  * Every line is audience-specific and describes something the vertical actually
  * has: the host bullets come from the owner plans' entitlements (publishing,
- * WhatsApp contact, review replies, stats, promotions), the two gastronomy/experience ones
+ * WhatsApp contact, review replies, stats, promotions), the two venue/experience ones
  * restate the benefit blocks the vertical's own landing already publishes, and
  * the partner ones are worded after `alliance-leads.partner.benefits.*`. No
  * bullet mentions a trial length or a payment method — those are the pricing
@@ -70,7 +70,7 @@ export const AUDIENCE_HIGHLIGHT_COUNT = 3;
 export const AUDIENCE_CARD_ICONS: Readonly<Record<AudienceCardId, ComponentType<IconProps>>> = {
     host: HomeIcon,
     tourist: StarIcon,
-    gastronomy: ForkKnifeIcon,
+    venue: ForkKnifeIcon,
     experience: CompassIcon
 } as const;
 

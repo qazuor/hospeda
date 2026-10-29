@@ -17,7 +17,7 @@ import { experiences } from './experiences.dbschema.ts';
 /**
  * Experience review table (SPEC-240).
  *
- * Mirrors gastronomy_reviews exactly:
+ * Mirrors venue_reviews exactly:
  * - FK experienceId CASCADE (if the listing is deleted, reviews go with it)
  * - FK userId SET NULL (review stays when reviewer is deleted)
  * - Granular rating breakdown via jsonb (service/value/guide/overall)
@@ -57,7 +57,7 @@ export const experienceReviews = pgTable(
         deletedById: uuid('deleted_by_id').references(() => users.id, { onDelete: 'set null' }),
         /**
          * Moderation state defaults to PENDING: experience reviews require
-         * moderator approval before appearing publicly (same as gastronomy reviews).
+         * moderator approval before appearing publicly (same as venue reviews).
          */
         moderationState: ModerationStatusPgEnum('moderation_state').notNull().default('PENDING'),
         /** User who performed the last moderation action. */

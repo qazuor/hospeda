@@ -3,7 +3,7 @@
  *
  * ## Why this is not a `requireEntitlement` middleware
  *
- * `PUT .../menu` is ALREADY gated, on `manage_gastronomy_menu`, and that gate
+ * `PUT .../menu` is ALREADY gated, on `manage_venue_menu`, and that gate
  * must stay exactly where it is: a `-pro` owner is entitled to write a carta.
  * What they are not entitled to is a PHOTO on a dish of it — which is a
  * property of the BODY, not of the route. A second `requireEntitlement` on the
@@ -28,7 +28,7 @@
  * Whether a submitted carta document carries a photo on ANY of its dishes.
  *
  * Reads defensively over `unknown` because it runs on the raw body: the route
- * factory has validated it against `GastronomyMenuReplacePayloadSchema`, but
+ * factory has validated it against `VenueMenuReplacePayloadSchema`, but
  * this function is also the thing a test points at directly, and a gate that
  * throws on a malformed shape would be a gate that can be disabled by sending
  * a malformed shape.

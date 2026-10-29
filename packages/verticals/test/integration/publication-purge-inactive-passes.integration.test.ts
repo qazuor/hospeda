@@ -15,7 +15,7 @@ const db = drizzle({ client: pool }) as unknown as DrizzleClient;
 const fixtures = createPublicationFixtureTracker(db);
 const tables: Readonly<Record<(typeof verticals)[number], string>> = {
     accommodation: 'accommodations',
-    gastronomy: 'gastronomies',
+    venue: 'venues',
     experience: 'experiences'
 };
 const verticals = [

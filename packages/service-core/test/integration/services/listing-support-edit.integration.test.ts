@@ -449,17 +449,17 @@ describe('TEST:V8a:8 action 15 edits content and nothing else', () => {
     );
 
     it.skipIf(!dbAvailable)(
-        '(h) gastronomy: action 15 edits content, and refuses a non-content field',
+        '(h) venue: action 15 edits content, and refuses a non-content field',
         async () => {
             await withServiceTestTransaction(async (tx) => {
-                const { ownerId, gastronomyId } = await seedVenue(tx);
+                const { ownerId, venueId } = await seedVenue(tx);
                 const adminId = await seedUser(tx);
 
                 const refusedCode = await errorCodeOf(
                     asAction15(ownerId, () =>
                         venueService.update(
                             admin15(adminId),
-                            gastronomyId,
+                            venueId,
                             { type: 'PARRILLA' } as never,
                             { tx }
                         )
@@ -468,7 +468,7 @@ describe('TEST:V8a:8 action 15 edits content and nothing else', () => {
                 const edited = await asAction15(ownerId, () =>
                     venueService.update(
                         admin15(adminId),
-                        gastronomyId,
+                        venueId,
                         { description: 'Descripción de la parrilla corregida por soporte.' },
                         { tx, actionReason: REASON }
                     )
@@ -477,8 +477,8 @@ describe('TEST:V8a:8 action 15 edits content and nothing else', () => {
                 expect(refusedCode).toBe('FORBIDDEN');
                 expect(edited.error).toBeUndefined();
                 const events = await domainEventModel.findByEntity({
-                    entityType: 'gastronomy',
-                    entityId: gastronomyId,
+                    entityType: 'venue',
+                    entityId: venueId,
                     tx
                 });
                 expect(events).toHaveLength(1);

@@ -11,14 +11,14 @@ describe('assertListingReadable', () => {
             assertListingReadable({
                 actor,
                 entity: { ownerId: 'owner', publicationStatus: PublicationStatusEnum.PUBLISHED },
-                entityName: 'gastronomy'
+                entityName: 'venue'
             })
         ).not.toThrow();
         expect(() =>
             assertListingReadable({
                 actor,
                 entity: { ownerId: 'visitor', publicationStatus: PublicationStatusEnum.DRAFT },
-                entityName: 'gastronomy'
+                entityName: 'venue'
             })
         ).not.toThrow();
     });
@@ -26,7 +26,7 @@ describe('assertListingReadable', () => {
     it('masks hidden and absent rows with the same NOT_FOUND error', () => {
         const capture = (entity: unknown) => {
             try {
-                assertListingReadable({ actor, entity, entityName: 'gastronomy' });
+                assertListingReadable({ actor, entity, entityName: 'venue' });
             } catch (error) {
                 if (error instanceof ServiceError)
                     return { code: error.code, message: error.message };
@@ -38,7 +38,7 @@ describe('assertListingReadable', () => {
         ).toEqual(capture(null));
         expect(capture(null)).toEqual({
             code: ServiceErrorCode.NOT_FOUND,
-            message: 'gastronomy not found'
+            message: 'venue not found'
         });
     });
 });

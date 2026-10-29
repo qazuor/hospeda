@@ -40,14 +40,14 @@ async function createListing(
             { ...base, type: 'CABIN' } as Partial<Accommodation>,
             tx
         );
-    if (vertical === 'gastronomy')
+    if (vertical === 'venue')
         return new VenueModel().create({ ...base, type: 'RESTAURANT' } as Partial<Venue>, tx);
     return new ExperienceModel().create({ ...base, type: 'EXCURSION' } as Partial<Experience>, tx);
 }
 
 describe.each([
     'accommodation',
-    'gastronomy',
+    'venue',
     'experience'
 ] as const)('TEST:V6:13 listing purge model %s', (vertical) => {
     it('TEST:V6:13 blanks only its listing and closes an open fix request', async () => {
@@ -61,13 +61,13 @@ describe.each([
             const otherListing = await createListing(tx, vertical, owner.id, destination.id);
             const mediaTables = {
                 accommodation: { table: 'accommodation_media', fk: 'accommodation_id' },
-                gastronomy: { table: 'gastronomy_media', fk: 'gastronomy_id' },
+                venue: { table: 'venue_media', fk: 'venue_id' },
                 experience: { table: 'experience_media', fk: 'experience_id' }
             } as const;
             const mediaTable = mediaTables[vertical];
             const faqTables = {
                 accommodation: { table: 'accommodation_faqs', fk: 'accommodation_id' },
-                gastronomy: { table: 'gastronomy_faqs', fk: 'gastronomy_id' },
+                venue: { table: 'venue_faqs', fk: 'venue_id' },
                 experience: { table: 'experience_faqs', fk: 'experience_id' }
             } as const;
             const faqTable = faqTables[vertical];
@@ -112,7 +112,7 @@ describe.each([
             });
             const tableByVertical = {
                 accommodation: 'accommodations',
-                gastronomy: 'gastronomies',
+                venue: 'venues',
                 experience: 'experiences'
             } as const;
             const stored = await tx.execute(sql<{

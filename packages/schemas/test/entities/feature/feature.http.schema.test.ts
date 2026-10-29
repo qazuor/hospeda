@@ -19,9 +19,7 @@ import {
 // Helpers
 // ---------------------------------------------------------------------------
 
-const baseApplicableVerticals: ('accommodation' | 'gastronomy' | 'experience')[] = [
-    'accommodation'
-];
+const baseApplicableVerticals: ('accommodation' | 'venue' | 'experience')[] = ['accommodation'];
 
 // ---------------------------------------------------------------------------
 // FeatureSearchHttpSchema — query string parsing
@@ -255,9 +253,9 @@ describe('httpToDomainFeatureUpdate', () => {
     it('should map partial update with only applicableVerticals', () => {
         // Arrange
         const httpData = {
-            applicableVerticals: ['accommodation', 'gastronomy'] as (
+            applicableVerticals: ['accommodation', 'venue'] as (
                 | 'accommodation'
-                | 'gastronomy'
+                | 'venue'
                 | 'experience'
             )[]
         };
@@ -266,7 +264,7 @@ describe('httpToDomainFeatureUpdate', () => {
         const result = httpToDomainFeatureUpdate(httpData);
 
         // Assert
-        expect(result.applicableVerticals).toEqual(['accommodation', 'gastronomy']);
+        expect(result.applicableVerticals).toEqual(['accommodation', 'venue']);
         expect(result.slug).toBeUndefined();
         expect(result.icon).toBeUndefined();
     });

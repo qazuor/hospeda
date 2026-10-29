@@ -4,7 +4,7 @@
  * turned from the experience vertical's full marketing page (hero, benefits,
  * how-it-works, price, FAQ — see the previous revision of this file) into a
  * permanent redirect to `/planes/experiencias/`, the new level-2 sales page.
- * Mirrors `publicar-restaurante-index.test.ts`.
+ * Mirrors the retired venue lead page redirect test.
  *
  * ## Where the retired content coverage lives now
  *

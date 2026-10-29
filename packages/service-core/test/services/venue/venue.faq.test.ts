@@ -1,7 +1,7 @@
 /**
- * gastronomy.faq.test.ts
+ * venue.faq.test.ts
  *
- * Unit tests for gastronomy FAQ helper functions (SPEC-239 T-037).
+ * Unit tests for venue FAQ helper functions (SPEC-239 T-037).
  *
  * Coverage:
  *  - addVenueFaq: schema validation, NOT_FOUND listing, permission gate,
@@ -67,14 +67,14 @@ import { FAKE_DB_TX } from '../../helpers/owner-act-doubles';
 // Fixtures
 // ---------------------------------------------------------------------------
 
-const GASTRONOMY_ID = '00000000-0000-4000-a000-000000000001';
+const VENUE_ID = '00000000-0000-4000-a000-000000000001';
 const FAQ_ID = '00000000-0000-4000-a000-000000000002';
 const OWNER_ID = '00000000-0000-4000-a000-000000000003';
 
 function makeFaq(overrides: Partial<VenueFaq> = {}): VenueFaq {
     return {
         id: FAQ_ID,
-        gastronomyId: GASTRONOMY_ID,
+        venueId: VENUE_ID,
         question: 'What are the opening hours?',
         answer: 'We are open from 12:00 to 23:00 daily.',
         category: 'general',
@@ -88,15 +88,15 @@ function makeFaq(overrides: Partial<VenueFaq> = {}): VenueFaq {
 
 const ownerActor: Actor = {
     id: OWNER_ID,
-    roles: [RoleEnum.GASTRONOMY_OWNER],
-    // SPEC-253 D2=b: single GASTRONOMY_EDIT_OWN replaces the per-section FAQ permission
-    permissions: [PermissionEnum.GASTRONOMY_EDIT_OWN]
+    roles: [RoleEnum.VENUE_OWNER],
+    // SPEC-253 D2=b: single VENUE_EDIT_OWN replaces the per-section FAQ permission
+    permissions: [PermissionEnum.VENUE_EDIT_OWN]
 };
 
 const _staffActor: Actor = {
     id: 'staff-id',
     roles: [RoleEnum.ADMIN],
-    permissions: [PermissionEnum.GASTRONOMY_EDIT_ALL, PermissionEnum.GASTRONOMY_VIEW_ALL]
+    permissions: [PermissionEnum.VENUE_EDIT_ALL, PermissionEnum.VENUE_VIEW_ALL]
 };
 
 const touristActor: Actor = {
@@ -143,12 +143,12 @@ beforeEach(() => {
 // addVenueFaq
 // ---------------------------------------------------------------------------
 
-describe('addGastronomyFaq', () => {
-    it('should return VALIDATION_ERROR for invalid gastronomyId', async () => {
+describe('addVenueFaq', () => {
+    it('should return VALIDATION_ERROR for invalid venueId', async () => {
         // Arrange
         const model = makeVenueModel();
         const input = {
-            gastronomyId: 'not-a-uuid',
+            venueId: 'not-a-uuid',
             faq: { question: 'Question?', answer: 'Answer.' }
         } as unknown as VenueFaqAddInput;
 
@@ -167,7 +167,7 @@ describe('addGastronomyFaq', () => {
         // Arrange
         const model = makeVenueModel(null);
         const input: VenueFaqAddInput = {
-            gastronomyId: GASTRONOMY_ID,
+            venueId: VENUE_ID,
             faq: { question: 'What are the opening hours?', answer: 'We are open daily.' }
         };
 
@@ -182,11 +182,11 @@ describe('addGastronomyFaq', () => {
         expect(result.error?.code).toBe(ServiceErrorCode.NOT_FOUND);
     });
 
-    it('should return FORBIDDEN when actor lacks GASTRONOMY_EDIT_OWN', async () => {
+    it('should return FORBIDDEN when actor lacks VENUE_EDIT_OWN', async () => {
         // Arrange
-        const model = makeVenueModel({ id: GASTRONOMY_ID, ownerId: OWNER_ID });
+        const model = makeVenueModel({ id: VENUE_ID, ownerId: OWNER_ID });
         const input: VenueFaqAddInput = {
-            gastronomyId: GASTRONOMY_ID,
+            venueId: VENUE_ID,
             faq: { question: 'What are the opening hours?', answer: 'We are open daily.' }
         };
 
@@ -203,11 +203,11 @@ describe('addGastronomyFaq', () => {
 
     it('should set displayOrder to 0 when no FAQs exist', async () => {
         // Arrange
-        const model = makeVenueModel({ id: GASTRONOMY_ID, ownerId: OWNER_ID });
+        const model = makeVenueModel({ id: VENUE_ID, ownerId: OWNER_ID });
         mockFaqModel.findAll.mockResolvedValue({ items: [], total: 0 });
 
         const input: VenueFaqAddInput = {
-            gastronomyId: GASTRONOMY_ID,
+            venueId: VENUE_ID,
             faq: { question: 'What are the opening hours?', answer: 'We are open daily.' }
         };
 
@@ -228,14 +228,14 @@ describe('addGastronomyFaq', () => {
 
     it('should set displayOrder to max + 1 when FAQs exist', async () => {
         // Arrange
-        const model = makeVenueModel({ id: GASTRONOMY_ID, ownerId: OWNER_ID });
+        const model = makeVenueModel({ id: VENUE_ID, ownerId: OWNER_ID });
         mockFaqModel.findAll.mockResolvedValue({
             items: [{ ...makeFaq(), displayOrder: 3 }],
             total: 1
         });
 
         const input: VenueFaqAddInput = {
-            gastronomyId: GASTRONOMY_ID,
+            venueId: VENUE_ID,
             faq: { question: 'What are the opening hours?', answer: 'We are open daily.' }
         };
 
@@ -251,12 +251,12 @@ describe('addGastronomyFaq', () => {
 
     it('should create FAQ and return it on success', async () => {
         // Arrange
-        const model = makeVenueModel({ id: GASTRONOMY_ID, ownerId: OWNER_ID });
+        const model = makeVenueModel({ id: VENUE_ID, ownerId: OWNER_ID });
         const createdFaq = makeFaq();
         mockFaqModel.create.mockResolvedValue(createdFaq);
 
         const input: VenueFaqAddInput = {
-            gastronomyId: GASTRONOMY_ID,
+            venueId: VENUE_ID,
             faq: { question: 'What are the opening hours?', answer: 'We are open daily.' }
         };
 
@@ -277,12 +277,12 @@ describe('addGastronomyFaq', () => {
 // updateVenueFaq
 // ---------------------------------------------------------------------------
 
-describe('updateGastronomyFaq', () => {
+describe('updateVenueFaq', () => {
     it('should return NOT_FOUND when listing does not exist', async () => {
         // Arrange
         const model = makeVenueModel(null);
         const input: VenueFaqUpdateInput = {
-            gastronomyId: GASTRONOMY_ID,
+            venueId: VENUE_ID,
             faqId: FAQ_ID,
             faq: { answer: 'Updated answer' }
         };
@@ -299,18 +299,15 @@ describe('updateGastronomyFaq', () => {
     });
 
     it.each([
-        [
-            'belongs to a different listing',
-            { gastronomyId: '00000000-0000-4000-a000-000000000099' }
-        ],
+        ['belongs to a different listing', { venueId: '00000000-0000-4000-a000-000000000099' }],
         ['is already soft-deleted (HOS-1907)', { deletedAt: new Date() }]
     ])('should return NOT_FOUND when the FAQ %s', async (_label, faqOverride) => {
         // Arrange
-        const model = makeVenueModel({ id: GASTRONOMY_ID, ownerId: OWNER_ID });
+        const model = makeVenueModel({ id: VENUE_ID, ownerId: OWNER_ID });
         mockFaqModel.findById.mockResolvedValue({ ...makeFaq(), ...faqOverride });
 
         const input: VenueFaqUpdateInput = {
-            gastronomyId: GASTRONOMY_ID,
+            venueId: VENUE_ID,
             faqId: FAQ_ID,
             faq: { answer: 'Updated answer' }
         };
@@ -329,14 +326,14 @@ describe('updateGastronomyFaq', () => {
 
     it('should update the FAQ and return it on success', async () => {
         // Arrange
-        const model = makeVenueModel({ id: GASTRONOMY_ID, ownerId: OWNER_ID });
+        const model = makeVenueModel({ id: VENUE_ID, ownerId: OWNER_ID });
         const existingFaq = makeFaq();
         const updatedFaq = { ...existingFaq, answer: 'Updated answer.' };
         mockFaqModel.findById.mockResolvedValue(existingFaq);
         mockFaqModel.update.mockResolvedValue(updatedFaq);
 
         const input: VenueFaqUpdateInput = {
-            gastronomyId: GASTRONOMY_ID,
+            venueId: VENUE_ID,
             faqId: FAQ_ID,
             faq: { answer: 'Updated answer' }
         };
@@ -358,12 +355,12 @@ describe('updateGastronomyFaq', () => {
 // removeVenueFaq
 // ---------------------------------------------------------------------------
 
-describe('removeGastronomyFaq', () => {
+describe('removeVenueFaq', () => {
     it('should return NOT_FOUND when listing does not exist', async () => {
         // Arrange
         const model = makeVenueModel(null);
         const input: VenueFaqRemoveInput = {
-            gastronomyId: GASTRONOMY_ID,
+            venueId: VENUE_ID,
             faqId: FAQ_ID
         };
 
@@ -379,18 +376,15 @@ describe('removeGastronomyFaq', () => {
     });
 
     it.each([
-        [
-            'belongs to a different listing',
-            { gastronomyId: '00000000-0000-4000-a000-000000000099' }
-        ],
+        ['belongs to a different listing', { venueId: '00000000-0000-4000-a000-000000000099' }],
         ['is already soft-deleted (HOS-1907)', { deletedAt: new Date() }]
     ])('should return NOT_FOUND when the FAQ %s', async (_label, faqOverride) => {
         // Arrange
-        const model = makeVenueModel({ id: GASTRONOMY_ID, ownerId: OWNER_ID });
+        const model = makeVenueModel({ id: VENUE_ID, ownerId: OWNER_ID });
         mockFaqModel.findById.mockResolvedValue({ ...makeFaq(), ...faqOverride });
 
         const input: VenueFaqRemoveInput = {
-            gastronomyId: GASTRONOMY_ID,
+            venueId: VENUE_ID,
             faqId: FAQ_ID
         };
 
@@ -408,11 +402,11 @@ describe('removeGastronomyFaq', () => {
 
     it('should soft-delete the FAQ and return success', async () => {
         // Arrange
-        const model = makeVenueModel({ id: GASTRONOMY_ID, ownerId: OWNER_ID });
+        const model = makeVenueModel({ id: VENUE_ID, ownerId: OWNER_ID });
         mockFaqModel.findById.mockResolvedValue(makeFaq());
 
         const input: VenueFaqRemoveInput = {
-            gastronomyId: GASTRONOMY_ID,
+            venueId: VENUE_ID,
             faqId: FAQ_ID
         };
 
@@ -438,13 +432,13 @@ describe('removeGastronomyFaq', () => {
 // listVenueFaqs
 // ---------------------------------------------------------------------------
 
-describe('listGastronomyFaqs', () => {
+describe('listVenueFaqs', () => {
     it('should return NOT_FOUND when listing does not exist', async () => {
         // Arrange
         const model = {
             findWithRelations: vi.fn().mockResolvedValue(null)
         };
-        const input: VenueFaqListInput = { gastronomyId: GASTRONOMY_ID };
+        const input: VenueFaqListInput = { venueId: VENUE_ID };
 
         // Act
         const result = await listVenueFaqs(
@@ -460,9 +454,9 @@ describe('listGastronomyFaqs', () => {
     it('should return empty FAQ array when listing has no FAQs', async () => {
         // Arrange
         const model = {
-            findWithRelations: vi.fn().mockResolvedValue({ id: GASTRONOMY_ID, faqs: [] })
+            findWithRelations: vi.fn().mockResolvedValue({ id: VENUE_ID, faqs: [] })
         };
-        const input: VenueFaqListInput = { gastronomyId: GASTRONOMY_ID };
+        const input: VenueFaqListInput = { venueId: VENUE_ID };
 
         // Act
         const result = await listVenueFaqs(
@@ -480,9 +474,9 @@ describe('listGastronomyFaqs', () => {
         // Arrange
         const faqs = [makeFaq()];
         const model = {
-            findWithRelations: vi.fn().mockResolvedValue({ id: GASTRONOMY_ID, faqs })
+            findWithRelations: vi.fn().mockResolvedValue({ id: VENUE_ID, faqs })
         };
-        const input: VenueFaqListInput = { gastronomyId: GASTRONOMY_ID };
+        const input: VenueFaqListInput = { venueId: VENUE_ID };
 
         // Act
         const result = await listVenueFaqs(
@@ -502,12 +496,12 @@ describe('listGastronomyFaqs', () => {
 // reorderVenueFaqs
 // ---------------------------------------------------------------------------
 
-describe('reorderGastronomyFaqs', () => {
+describe('reorderVenueFaqs', () => {
     it('should return NOT_FOUND when listing does not exist', async () => {
         // Arrange
         const model = makeVenueModel(null);
         const input: VenueFaqReorderInput = {
-            gastronomyId: GASTRONOMY_ID,
+            venueId: VENUE_ID,
             order: [{ faqId: FAQ_ID, displayOrder: 0 }]
         };
 
@@ -524,7 +518,7 @@ describe('reorderGastronomyFaqs', () => {
 
     it('should return VALIDATION_ERROR when faqId does not belong to the listing', async () => {
         // Arrange
-        const model = makeVenueModel({ id: GASTRONOMY_ID, ownerId: OWNER_ID });
+        const model = makeVenueModel({ id: VENUE_ID, ownerId: OWNER_ID });
         // Existing FAQs: only FAQ_ID, not the 'foreign-faq-id'
         mockFaqModel.findAll.mockResolvedValue({
             items: [makeFaq()],
@@ -532,7 +526,7 @@ describe('reorderGastronomyFaqs', () => {
         });
 
         const input: VenueFaqReorderInput = {
-            gastronomyId: GASTRONOMY_ID,
+            venueId: VENUE_ID,
             order: [
                 { faqId: FAQ_ID, displayOrder: 0 },
                 { faqId: '00000000-0000-4000-a000-000000000099', displayOrder: 1 }
@@ -552,7 +546,7 @@ describe('reorderGastronomyFaqs', () => {
 
     it('should update display orders and return success', async () => {
         // Arrange
-        const model = makeVenueModel({ id: GASTRONOMY_ID, ownerId: OWNER_ID });
+        const model = makeVenueModel({ id: VENUE_ID, ownerId: OWNER_ID });
         const faq1 = makeFaq();
         const faq2 = { ...makeFaq(), id: '00000000-0000-4000-a000-000000000010', displayOrder: 1 };
         mockFaqModel.findAll.mockResolvedValue({
@@ -562,7 +556,7 @@ describe('reorderGastronomyFaqs', () => {
         mockFaqModel.update.mockResolvedValue({});
 
         const input: VenueFaqReorderInput = {
-            gastronomyId: GASTRONOMY_ID,
+            venueId: VENUE_ID,
             order: [
                 { faqId: faq2.id, displayOrder: 0 },
                 { faqId: FAQ_ID, displayOrder: 1 }

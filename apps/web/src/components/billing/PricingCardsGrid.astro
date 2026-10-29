@@ -72,7 +72,7 @@ interface Props {
 	 *
 	 * `'link'` renders a plain link to {@link ctaHref} instead. The three
 	 * audiences HOS-1032 added both need it, for different reasons that happen
-	 * to want the same markup: a gastronomy or experience tier is bought through the listing
+	 * to want the same markup: a venue or experience tier is bought through the listing
 	 * create flow (`buildListingStartUrl` → signup → the vertical's form → the
 	 * tier picker), not by charging a card from a marketing page; and a
 	 * partnership is agreed in a conversation, so aliados links to the lead form
@@ -82,7 +82,7 @@ interface Props {
 	/**
 	 * Destination of every card's CTA when `ctaMode` is `'link'`. One href for
 	 * the whole grid, not one per card: neither linking audience routes by tier
-	 * (gastronomy/experience picks the tier further down its own flow; partner has no tier to
+	 * (venue/experience picks the tier further down its own flow; partner has no tier to
 	 * pick before talking to someone). Ignored under `'checkout'`.
 	 */
 	readonly ctaHref?: string;
@@ -188,7 +188,7 @@ const consultPriceLabel = t('pricing.consultPrice');
 const TRIAL_CONSUMES_NOTE_BY_AUDIENCE: Readonly<Record<PricingAudience, boolean>> = {
 	tourist: true,
 	owner: false,
-	gastronomy: false,
+	venue: false,
 	experience: false,
 	partner: false
 };

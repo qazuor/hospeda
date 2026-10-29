@@ -46,7 +46,7 @@ function answer(data: unknown) {
 
 const VERTICALS = [
     ['accommodation', '/api/v1/admin/accommodations'],
-    ['gastronomy', '/api/v1/admin/gastronomies'],
+    ['venue', '/api/v1/admin/venues'],
     ['experience', '/api/v1/admin/experiences']
 ] as const satisfies readonly (readonly [PurgeListingVertical, string])[];
 
@@ -87,8 +87,8 @@ describe('TEST:1684:3 AC-1684:2 the mutation posts the action to its vertical mo
 
     it('builds the path from the vertical plural', () => {
         // Arrange / Act / Assert
-        expect(buildModerateListingPath({ vertical: 'gastronomy', id: LISTING_ID })).toBe(
-            `/api/v1/admin/gastronomies/${LISTING_ID}/moderate`
+        expect(buildModerateListingPath({ vertical: 'venue', id: LISTING_ID })).toBe(
+            `/api/v1/admin/venues/${LISTING_ID}/moderate`
         );
     });
 
@@ -148,7 +148,7 @@ describe('TEST:1684:3 AC-1684:2 the mutation posts the action to its vertical mo
 
         // Assert
         expect(invalidate).toHaveBeenCalledWith({
-            queryKey: [base.replace('/api/v1/admin/', '')]
+            queryKey: [vertical === 'venue' ? 'venues' : base.replace('/api/v1/admin/', '')]
         });
     });
 
@@ -162,7 +162,7 @@ describe('TEST:1684:3 AC-1684:2 the mutation posts the action to its vertical mo
         // Act + Assert
         await expect(
             result.current.mutateAsync({
-                vertical: 'gastronomy',
+                vertical: 'venue',
                 id: LISTING_ID,
                 body: { action: 'LIFT', reason: 'x', keepFixRequest: false }
             })

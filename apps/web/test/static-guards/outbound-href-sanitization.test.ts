@@ -134,7 +134,7 @@ const SAFE_OUTBOUND_HREFS: Readonly<Record<string, string>> = Object.freeze({
  * Field names that carry a URL somebody outside Hospeda authored.
  *
  * Drawn from what actually reached an `href` in this codebase — a partner's and
- * a sponsor's `websiteUrl`, an event organizer's `website`, a gastronomy/experience owner's
+ * a sponsor's `websiteUrl`, an event organizer's `website`, a venue/experience owner's
  * `menuUrl`, a photo's `sourceUrl`, and the two fields the external-reputation
  * payload carries from Google.
  */

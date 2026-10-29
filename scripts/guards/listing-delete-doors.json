@@ -48,7 +48,7 @@
         {
             "file": "apps/api/src/routes/venue/admin/delete.ts",
             "method": "DELETE",
-            "path": "/api/v1/admin/gastronomies/:id",
+            "path": "/api/v1/admin/venues/:id",
             "door": "admin soft delete",
             "source": "inventory",
             "spec": [
@@ -59,7 +59,7 @@
         {
             "file": "apps/api/src/routes/venue/admin/hardDelete.ts",
             "method": "DELETE",
-            "path": "/api/v1/admin/gastronomies/:id/hard",
+            "path": "/api/v1/admin/venues/:id/hard",
             "door": "admin hard delete",
             "source": "inventory",
             "spec": [
@@ -70,7 +70,7 @@
         {
             "file": "apps/api/src/routes/venue/admin/restore.ts",
             "method": "POST",
-            "path": "/api/v1/admin/gastronomies/:id/restore",
+            "path": "/api/v1/admin/venues/:id/restore",
             "door": "admin restore",
             "source": "inventory",
             "spec": [
@@ -114,7 +114,7 @@
         {
             "file": "apps/api/src/routes/venue/protected/deleteDraft.ts",
             "method": "DELETE",
-            "path": "/api/v1/protected/gastronomies/:id",
+            "path": "/api/v1/protected/venues/:id",
             "door": "owner draft soft delete (HOS-1156, after the inventory was written)",
             "source": "rule",
             "spec": [
@@ -177,7 +177,7 @@
         {
             "file": "apps/api/src/routes/venue/protected/purge.ts",
             "method": "POST",
-            "path": "/api/v1/protected/gastronomies/:id/purge",
+            "path": "/api/v1/protected/venues/:id/purge",
             "door": "PB12, the owner deletes",
             "source": "inventory",
             "spec": [
@@ -189,7 +189,7 @@
         {
             "file": "apps/api/src/routes/venue/admin/purge.ts",
             "method": "POST",
-            "path": "/api/v1/admin/gastronomies/:id/purge",
+            "path": "/api/v1/admin/venues/:id/purge",
             "door": "action 23, support at the owner request (runs PB12)",
             "source": "inventory",
             "spec": [

@@ -35,7 +35,7 @@
  *   T-013 simple fields (contactInfo — no website per AC-4)
  *   T-013 social networks (facebook/instagram/twitter/tiktok/youtube + *linkedIn)
  *   T-014 structured fields (openingHours)
- *   T-014 price group (gastronomy: priceRange + menuUrl | experience: isPriceOnRequest + *priceFrom + *priceUnit)
+ *   T-014 price group (venue: priceRange + menuUrl | experience: isPriceOnRequest + *priceFrom + *priceUnit)
  *   HOS-1048 meeting point (experience only: meetingPoint + optional lat/long)
  *   T-015 media gallery
  *   T-016 amenities / features
@@ -143,8 +143,8 @@ function patchPathFor({
     vertical: VenueOrExperience;
     listingId: string;
 }): string {
-    return vertical === 'gastronomy'
-        ? `/api/v1/protected/gastronomies/${listingId}`
+    return vertical === 'venue'
+        ? `/api/v1/protected/venues/${listingId}`
         : `/api/v1/protected/experiences/${listingId}`;
 }
 
@@ -268,7 +268,7 @@ function sameSet(a: ReadonlySet<string>, b: ReadonlySet<string>): boolean {
  *    text as if the owner had typed it, permanently overwriting the i18n
  *    column with content the plain `name`/`summary`/`description`/
  *    `richDescription` column held instead.
- *  - Gastronomy's `priceRange`/`menuUrl` are `.nullish()` on the domain schema
+ *  - Venue's `priceRange`/`menuUrl` are `.nullish()` on the domain schema
  *    and clear to an explicit `null`. `priceUnit` now joins them (H-156 made the
  *    column nullable), so clearing it sends `null` rather than omitting the key
  *    — the old omit-instead-of-null rule (T-021) meant the owner could never
@@ -371,7 +371,7 @@ function buildPatchPayload({
         payload.featureIds = [...current.featureIds];
     }
 
-    if (vertical === 'gastronomy') {
+    if (vertical === 'venue') {
         if (current.priceRange !== baseline.priceRange) {
             payload.priceRange = current.priceRange || null;
         }
@@ -387,7 +387,7 @@ function buildPatchPayload({
         }
         if (current.priceUnit !== baseline.priceUnit) {
             // H-156: `priceUnit` is nullable now, so clearing it sends an
-            // explicit `null` (the gastronomy `priceRange` pattern) instead of
+            // explicit `null` (the venue `priceRange` pattern) instead of
             // omitting the key. Omitting used to be the only option — a `null`
             // failed validation — but it also meant the owner could never
             // actually clear the unit after ticking "price on request": the PATCH
@@ -395,7 +395,7 @@ function buildPatchPayload({
             payload.priceUnit = current.priceUnit || null;
         }
         // HOS-1048: the meeting point clears to an explicit `null`, like the
-        // gastronomy price fields and unlike `priceFrom`. The column is nullable
+        // venue price fields and unlike `priceFrom`. The column is nullable
         // and the schema is `.nullish()`, so `null` is the only way to say "I
         // removed the address I had" — omitting the key would mean "no change"
         // and the stale meeting point would survive the save silently, which is
@@ -492,14 +492,14 @@ export function ListingEditor({
 
     // Field-level validation is delegated to the shared `useZodForm` primitive
     // (HOS-190 slice 3) against the REAL per-vertical owner-update schema — the
-    // exact schema `PATCH /api/v1/protected/{gastronomies|experiences}/:id`
+    // exact schema `PATCH /api/v1/protected/{venues|experiences}/:id`
     // validates the request body against (`apps/api/src/routes/.../protected/patch.ts`).
     // Validating the full dirty-field payload against it (instead of the two ad
     // hoc summary/priceFrom checks this editor had) closes contact
     // (mobilePhone/workEmail), social networks, opening hours, menuUrl, and the
     // priceFrom/priceUnit null-vs-undefined bug (see `buildPayload` below).
     const schema =
-        vertical === 'gastronomy' ? VenueOwnerUpdateInputSchema : ExperienceOwnerUpdateInputSchema;
+        vertical === 'venue' ? VenueOwnerUpdateInputSchema : ExperienceOwnerUpdateInputSchema;
     const { fieldErrors, formError, validate, handleApiError, setFormError } = useZodForm({
         schema,
         t,
@@ -516,14 +516,14 @@ export function ListingEditor({
         aggregateFields: OPENING_HOURS_AGGREGATE_FIELDS
     });
 
-    // TYPE-WORKAROUND: the detail is a gastronomy|experience union; we read heterogeneous operational fields by key, which the union type cannot express.
+    // TYPE-WORKAROUND: the detail is a venue|experience union; we read heterogeneous operational fields by key, which the union type cannot express.
     const data = initialData as unknown as Record<string, unknown>;
     const initialContact = (data.contactInfo ?? {}) as Record<string, unknown>;
     const initialSocial = (data.socialNetworks ?? {}) as Record<string, unknown>;
 
     // HOS-372: media is not buffered in this editor's state at all. MediaSection
     // is self-contained (per-operation persistence against the relational
-    // gastronomy_media / experience_media endpoints — see its file header) and
+    // venue_media / experience_media endpoints — see its file header) and
     // hydrates its own state from the API; since HOS-1080 it is mounted by its
     // own route rather than by this island, so nothing about photos reaches
     // here.
@@ -564,7 +564,7 @@ export function ListingEditor({
         // T-021: experience-only pricing fields
         priceFrom: typeof data.priceFrom === 'number' ? data.priceFrom : null,
         priceUnit: strField(data, 'priceUnit'),
-        // HOS-1048: experience-only; a gastronomy listing simply reads them as
+        // HOS-1048: experience-only; a venue listing simply reads them as
         // empty/null and `buildPatchPayload` never emits them for that vertical.
         meetingPoint: strField(data, 'meetingPoint'),
         meetingPointLat: numField(data, 'meetingPointLat'),
@@ -582,7 +582,7 @@ export function ListingEditor({
             totalMinutes: numField(data, 'durationMinutes')
         }).minutes,
         // HOS-1046 / HOS-1047 / HOS-1056: experience-only, same as the meeting
-        // point above — a gastronomy listing reads them as empty and
+        // point above — a venue listing reads them as empty and
         // `buildPatchPayload` never emits them for that vertical.
         whatToBring: strArrayField(data, 'whatToBring'),
         requirements: strArrayField(data, 'requirements'),
@@ -613,7 +613,7 @@ export function ListingEditor({
 
     /**
      * Generic single-field change, shared by every scalar input in the form —
-     * the gastronomy/experience counterpart of the accommodation editor's
+     * the venue/experience counterpart of the accommodation editor's
      * `handleTextFieldChange`. Resets any stale save status, exactly as the
      * former `markDirty` did.
      */
@@ -865,11 +865,11 @@ export function ListingEditor({
             {/*
              * HOS-1048: experience-only. The gate is the SHAPE of the schema,
              * not an entitlement — `meetingPoint` exists on
-             * `ExperienceOwnerUpdateInputSchema` and not on the gastronomy one,
+             * `ExperienceOwnerUpdateInputSchema` and not on the venue one,
              * so rendering it for a restaurant would offer a field every save
              * silently strips. Since HOS-1080 the vertical gate lives one level
              * up as well: `buildListingEditorSections` leaves this section out
-             * of a gastronomy registry entirely, so the route redirects instead
+             * of a venue registry entirely, so the route redirects instead
              * of rendering an empty page. The check stays here too because this
              * island is what decides what to send. The meeting point itself is
              * free from the basic tier; only the map that draws it is paid
@@ -887,7 +887,7 @@ export function ListingEditor({
             {/*
              * HOS-898 / HOS-1046 / HOS-1047 / HOS-1056. Experience-only on the
              * same SHAPE gate as the meeting point above — the keys live on
-             * `ExperienceOwnerUpdateInputSchema` and not on the gastronomy one.
+             * `ExperienceOwnerUpdateInputSchema` and not on the venue one.
              * NOT an entitlement gate: all four ship from the basic tier by
              * owner decision (2026-09-01), so there is no plan check here and
              * there must not be one.

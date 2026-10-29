@@ -123,7 +123,7 @@ function localeHasContent({
  * column directly into the returned value, reasoning that a field carrying
  * only the fallback is identical between `current` and `baseline` and so
  * never looks dirty on its own. That reasoning broke the moment a SIBLING
- * locale of the SAME field changed: `gastronomyModel`/`experienceModel` do
+ * locale of the SAME field changed: `venueModel`/`experienceModel` do
  * NOT declare `nameI18n`/`summaryI18n`/`descriptionI18n`/`richDescriptionI18n`
  * in `mergeableJsonbColumns` (see `packages/db/src/models/venue/
  * venue.model.ts` and `.../experience/experience.model.ts`, both line

@@ -1,5 +1,5 @@
 /**
- * Tests for the listing summary builder (gastronomy + experience,
+ * Tests for the listing summary builder (venue + experience,
  * BETA-119).
  */
 
@@ -17,7 +17,7 @@ const DESTINATIONS: SummaryCatalogs['destinations'] = [
     { key: 'concordia-id', label: { es: 'Concordia', en: 'Concordia', pt: 'Concordia' } }
 ];
 
-describe('buildGastronomyListingSummary', () => {
+describe('buildVenueListingSummary', () => {
     describe('no filters', () => {
         it('should render the generic subject with no-filters phrase', () => {
             const result = buildVenueListingSummary({
@@ -141,7 +141,7 @@ describe('buildGastronomyListingSummary', () => {
         });
     });
 
-    describe('price range filter (gastronomy only)', () => {
+    describe('price range filter (venue only)', () => {
         it('should render the price-range label', () => {
             const result = buildVenueListingSummary({
                 locale: 'es',
@@ -363,7 +363,7 @@ describe('buildExperienceListingSummary', () => {
     describe('price range filter should never apply to experiences', () => {
         it('should ignore a stray priceRange value (hasPriceRange=false)', () => {
             // `priceRange` is a shared field on `ListingSummaryFilters` (used by
-            // gastronomy) but must be defensively ignored by the experience
+            // venue) but must be defensively ignored by the experience
             // entity config, which sets `hasPriceRange: false` — the
             // experiences page itself never reads/sends this filter.
             const result = buildExperienceListingSummary({
@@ -445,7 +445,7 @@ describe('buildExperienceListingSummary', () => {
     });
 });
 
-describe('buildGastronomyListingSummary (pt)', () => {
+describe('buildVenueListingSummary (pt)', () => {
     it('should render the plural subject with no filters', () => {
         const result = buildVenueListingSummary({
             locale: 'pt',

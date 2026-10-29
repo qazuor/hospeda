@@ -108,8 +108,11 @@ edge caching **on staging only**, honoring the origin's own `Cache-Control`.
    or starts_with(http.request.uri.path, "/en/publicaciones")
    or starts_with(http.request.uri.path, "/pt/publicaciones")
    or starts_with(http.request.uri.path, "/es/gastronomia")
+   or starts_with(http.request.uri.path, "/es/comer-y-salir")
    or starts_with(http.request.uri.path, "/en/gastronomia")
+   or starts_with(http.request.uri.path, "/en/comer-y-salir")
    or starts_with(http.request.uri.path, "/pt/gastronomia")
+   or starts_with(http.request.uri.path, "/pt/comer-y-salir")
    or starts_with(http.request.uri.path, "/es/experiencias")
    or starts_with(http.request.uri.path, "/en/experiencias")
    or starts_with(http.request.uri.path, "/pt/experiencias")
@@ -197,8 +200,8 @@ under a matched prefix that has not opted in returns `BYPASS`, which is the
 mechanism working rather than a gap.
 
 W2-3 left six such pages deliberately uncached — `/destinos/atraccion/`,
-`/destinos/lugar/`, and the four gastronomy/experience pages — because
-`attraction`, `pointOfInterest`, `gastronomy` and `experience` had no tag
+`/destinos/lugar/`, and the four venue/experience pages — because
+`attraction`, `pointOfInterest`, venue and experience had no tag
 vocabulary, no `entity-tag-mapper` case, and their services never called the
 revalidation service at all. **W2-4 built that chain and all six now cache**,
 which is why this wave added the `gastronomia`/`experiencias` prefixes: the
@@ -242,7 +245,7 @@ both partners named in the original HOS-519 report
 (`autoservice-litoral`, `fundacion-entre-rios-sustentable`) were HARD-DELETED
 by the seed data-migration `0059` (purge of test and example listings)
 (`PARTNER_SLUGS`, `0059`, `PARTNER_SLUGS` block, lines 260-262),
-an intentional 2026-08-23 owner decision to clear gastronomy and experience example data before
+an intentional 2026-08-23 owner decision to clear venue and experience example data before
 launch. So this rule currently has **nothing to verify against in production**
 — `curl` against either slug answers 404, not 200, and will keep doing so
 until a real gold partner is onboarded. Verify against **staging** instead
@@ -508,8 +511,11 @@ correctly without checking the result.
    or starts_with(http.request.uri.path, "/en/publicaciones")
    or starts_with(http.request.uri.path, "/pt/publicaciones")
    or starts_with(http.request.uri.path, "/es/gastronomia")
+   or starts_with(http.request.uri.path, "/es/comer-y-salir")
    or starts_with(http.request.uri.path, "/en/gastronomia")
+   or starts_with(http.request.uri.path, "/en/comer-y-salir")
    or starts_with(http.request.uri.path, "/pt/gastronomia")
+   or starts_with(http.request.uri.path, "/pt/comer-y-salir")
    or starts_with(http.request.uri.path, "/es/experiencias")
    or starts_with(http.request.uri.path, "/en/experiencias")
    or starts_with(http.request.uri.path, "/pt/experiencias")
@@ -706,8 +712,8 @@ the response cacheable. Measured on 2026-08-04:
 | `/{lang}/publicaciones/` and `/{categoria,etiqueta,autor}/<x>/` | yes — **since 2026-08-04** (W2-3), tagged `list-post` |
 | `/{lang}/publicaciones/<slug>/` (detail) | yes — **since 2026-08-04** (W2-3), tagged `post-<slug>` + `post-<id>` |
 | `/{lang}/destinos/{atraccion,lugar}/<slug>/` | yes — **since 2026-08-04** (W2-4), tagged `attr-<slug>` / `poi-<slug>` (no collection tag exists) |
-| `/{lang}/{gastronomia,experiencias}/` | yes — **since 2026-08-04** (W2-4), tagged `list-gastro` / `list-exp` |
-| `/{lang}/{gastronomia,experiencias}/<slug>/` | yes — **since 2026-08-04** (W2-4), tagged `gastro-<slug>` / `exp-<slug>` + id |
+| `/{lang}/{gastronomia,experiencias}/` | yes — **since 2026-08-04** (W2-4), tagged `list-venue` / `list-exp` |
+| `/{lang}/{gastronomia,experiencias}/<slug>/` | yes — **since 2026-08-04** (W2-4), tagged `venue-<slug>` / `exp-<slug>` + id |
 | `/{lang}/partners/<slug>/` (detail, HOS-294) | origin has cached since launch, but the rule matches **only once W2-5 (HOS-519) is applied** — pending as of 2026-09-04. Tagged by `buildEntityCacheTags({ entity: 'partner', slug, id })`; no collection tag exists, same as attractions/POIs |
 | `/{lang}/planes/{anfitriones,turistas,aliados,gastronomia,experiencias}/` and their `/precios/` siblings | origin has cached (`cacheClass: 'pricing'`) since these pages shipped, but the rule matches **only once W2-6 (HOS-519) is applied** — pending as of 2026-09-04 |
 | `/{lang}/presentacion/{proveedores,gastronomia,alojamientos,aliados,editores,experiencias}/` | origin has cached (`cacheClass: 'static'`) since launch, but the rule matches **only once W2-6 (HOS-519) is applied** — pending as of 2026-09-04 |
@@ -877,12 +883,12 @@ misconfigured.
 ### Measured on 2026-08-04, after W2-4 was applied
 
 The four W2-4 surfaces that have data on staging all reach `HIT`:
-`/es/gastronomia/`, `/es/experiencias/`, an experience detail, and two
+`venue collection URL`, `/es/experiencias/`, an experience detail, and two
 attraction pages.
 
 Purge scoping, each probe 7 s after the purge:
 
-| Purged tag | `/es/experiencias/` | `/es/gastronomia/` | Experience detail | Attraction |
+| Purged tag | `/es/experiencias/` | `venue collection URL` | Experience detail | Attraction |
 |---|---|---|---|---|
 | `preview:list-exp` | **MISS** | `HIT` | `HIT` | `HIT` |
 
@@ -890,7 +896,7 @@ Purge scoping, each probe 7 s after the purge:
 |---|---|---|---|---|
 | `preview:attr-centro-historico` | **MISS** | `HIT` | `HIT` | `HIT` |
 
-The first table shows the two new gastronomy and experience collections are isolated from each
+The first table shows the two new venue and experience collections are isolated from each
 other and from the detail pages. The second shows a per-entity tag evicts one
 attraction without touching its sibling.
 
@@ -932,7 +938,7 @@ shipped.
 
 **The four W2-4 entity types had no `revalidation_config` row**, so
 `scheduleRevalidation` returned at its config lookup and every purge for
-`pointOfInterest`, `attraction`, `gastronomy` and `experience` was a silent
+`pointOfInterest`, `attraction`, venue and `experience` was a silent
 no-op on staging AND production. Fixed by seed baseline + data-migration `0036`,
 plus a `logger.warn` on that branch and a derived static guard
 (`every-entity-type-has-config.guard.test.ts`) that fails when any `entityType`
@@ -959,7 +965,7 @@ Two notes for anyone re-running this:
 
 #### What is still NOT verified by probing
 
-Two W2-4 surfaces have no staging data to measure: a gastronomy detail page
+Two W2-4 surfaces have no staging data to measure: a venue detail page
 (the listing renders no entries) and — until `0031` opened three of them — a POI
 detail page gated on `hasOwnPage`.
 

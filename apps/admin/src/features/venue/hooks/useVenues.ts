@@ -1,6 +1,6 @@
 /**
  * @file useVenues.ts
- * TanStack Query hooks for gastronomy CRUD operations — thin wrappers that
+ * TanStack Query hooks for venue CRUD operations — thin wrappers that
  * re-export the factory-generated hooks from `useVenueQuery.ts` under the
  * canonical names expected by the task manifest.
  *

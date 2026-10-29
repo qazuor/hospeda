@@ -1,6 +1,6 @@
 /**
  * Regression guard for the review-count header shared by listing listing
- * detail pages (gastronomy + experience).
+ * detail pages (venue + experience).
  *
  * `VenueDetailHeader.astro` and `ExperienceHero.astro` render the review
  * count via `tPlural('review.list.totalReviews', count, { count })`. A SPEC-259
@@ -32,7 +32,7 @@ const LOCALES: ReadonlyArray<readonly [string, ReviewLocale]> = [
     ['pt', reviewPt as ReviewLocale]
 ];
 
-describe('review count header i18n (gastronomy + experience detail)', () => {
+describe('review count header i18n (venue + experience detail)', () => {
     for (const [name, locale] of LOCALES) {
         describe(`${name} locale`, () => {
             it('exposes review.list.totalReviews plural forms with a {{count}} placeholder', () => {

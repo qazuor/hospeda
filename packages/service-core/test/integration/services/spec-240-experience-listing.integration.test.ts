@@ -4,7 +4,7 @@
  *
  * ## Scope
  *
- * Ports `spec-239-gastronomy-listing.integration.test.ts` to the experience
+ * Ports `spec-239-venue-listing.integration.test.ts` to the experience
  * vertical. Asserts the full lifecycle from listing creation → owner assignment →
  * owner operational update → review moderation → rating recompute against a REAL ephemeral
  * PostgreSQL database.
@@ -21,11 +21,11 @@
  * - Rating recompute queries that only touch approved reviews.
  *  * - The UNIQUE constraint on `experience_reviews(userId, experienceId)`.
  *
- * ## Deliberately NOT ported: gastronomy's T-8b
+ * ## Deliberately NOT ported: venue's T-8b
  *
- * Gastronomy's suite carries a T-8b regression test asserting that a review
+ * venue's suite carries a T-8b regression test asserting that a review
  * submitted WITHOUT the granular `rating` breakdown still succeeds, because
- * migration 0023 dropped the `NOT NULL` constraint on `gastronomy_reviews.rating`
+ * migration 0023 dropped the `NOT NULL` constraint on `venue_reviews.rating`
  * for exactly that reason. `experience_reviews.rating` never received the
  * equivalent migration — it is still `jsonb NOT NULL` with no default (created
  * in migration 0019, never altered since). `ExperienceReviewCreateInputSchema`
@@ -200,7 +200,7 @@ describe('HOS-1269 — Experience listing admin-sells lifecycle (integration)', 
                     reviewsCount: 0,
                     // These all carry a Zod `.default()`, which makes them
                     // optional on INPUT but not on the OUTPUT type `z.infer`
-                    // resolves to (same reason the gastronomy admin-create
+                    // resolves to (same reason the venue admin-create
                     // test above states averageRating/reviewsCount
                     // explicitly) — so `tsc` requires them here.
                     meetingPointDirections: [],
@@ -417,7 +417,7 @@ describe('HOS-1269 — Experience listing admin-sells lifecycle (integration)', 
 
     // -----------------------------------------------------------------------
     // T-8c: getPendingCount + listByExperience — the experience vertical's
-    // moderation-queue equivalent of gastronomy's `listForModeration`.
+    // moderation-queue equivalent of venue's `listForModeration`.
     // `ExperienceReviewService` never grew a `listForModeration` method (it
     // exposes `getPendingCount` — a global PENDING tally — and
     // `listByExperience` — a per-listing APPROVED+ACTIVE read), so this test

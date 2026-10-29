@@ -823,7 +823,7 @@ describe('isSetPasswordRoute', () => {
 });
 
 describe('isSessionOptionalRoute', () => {
-    // HOS-690: the gastronomy/experience verticals landings ("Publicá tu restaurante" /
+    // HOS-690: the venue/experience verticals landings ("Publicá tu restaurante" /
     // "Publicá tu experiencia") lost the ListingLead form — the page now
     // sells the vertical with its own static benefits/price/FAQ content
     // instead of a lead form — so neither reads `Astro.locals.user` any more.
@@ -867,7 +867,7 @@ describe('isSessionOptionalRoute', () => {
             'destinos',
             'eventos',
             'publicaciones',
-            'gastronomia',
+            'comer-y-salir',
             'experiencias'
         ]) {
             expect(
@@ -983,7 +983,7 @@ describe('isProfileCompletionBypassRole', () => {
     });
 
     it('returns false when no held role is a bypass role', () => {
-        expect(isProfileCompletionBypassRole({ roles: ['user', 'host', 'gastronomy_owner'] })).toBe(
+        expect(isProfileCompletionBypassRole({ roles: ['user', 'host', 'venue_owner'] })).toBe(
             false
         );
     });
@@ -1112,15 +1112,15 @@ describe('buildChangePasswordRedirect', () => {
 /**
  * The web middleware redirects a `mustChangePassword` user away from any
  * protected route that is NOT the change-password route itself (avoiding a
- * redirect loop). These assertions verify that the gastronomy/experience self-service area
+ * redirect loop). These assertions verify that the venue/experience self-service area
  * (`/[lang]/mi-cuenta/comercio/...`) falls inside that gated set — so a freshly
- * provisioned GASTRONOMY_OWNER is forced through `cambiar-contrasena` before
+ * provisioned VENUE_OWNER is forced through `cambiar-contrasena` before
  * reaching it. The gate mechanism itself is reused from SPEC-239 (verify-only).
  */
 describe('SPEC-249 — listing area force-password gating (T-020 / T-023)', () => {
     const listingPaths = [
         '/es/mi-cuenta/comercio/',
-        '/es/mi-cuenta/comercio/gastronomy/abc-123/editar/',
+        '/es/mi-cuenta/comercio/venue/abc-123/editar/',
         '/en/mi-cuenta/comercio/experience/def-456/editar/'
     ];
 
@@ -1302,7 +1302,7 @@ describe('parseSessionUser — /auth/me (HOS-296)', () => {
                     name: 'Multi Hat',
                     email: 'multi@test',
                     image: 'https://img.test/a.png',
-                    roles: ['USER', 'HOST', 'GASTRONOMY_OWNER'],
+                    roles: ['USER', 'HOST', 'VENUE_OWNER'],
                     permissions: ['post.create', 'post.update.own']
                 },
                 isAuthenticated: true
@@ -1313,7 +1313,7 @@ describe('parseSessionUser — /auth/me (HOS-296)', () => {
             id: 'u1',
             name: 'Multi Hat',
             email: 'multi@test',
-            roles: ['USER', 'HOST', 'GASTRONOMY_OWNER'],
+            roles: ['USER', 'HOST', 'VENUE_OWNER'],
             permissions: ['post.create', 'post.update.own'],
             image: 'https://img.test/a.png',
             mustChangePassword: false,
@@ -1477,7 +1477,7 @@ describe('parseSessionUser — /auth/me (HOS-296)', () => {
                 actor: {
                     id: 'u1',
                     email: 'u@test',
-                    roles: ['GASTRONOMY_OWNER'],
+                    roles: ['VENUE_OWNER'],
                     mustChangePassword: true
                 },
                 isAuthenticated: true

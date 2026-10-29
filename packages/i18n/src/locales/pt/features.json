@@ -1,12 +1,12 @@
 {
     "meta": {
         "title": "Todo lo que Hospeda hace por vos",
-        "description": "Descubrí todo lo que ofrece Hospeda: para viajeros, para anfitriones, para gastronomía y experiencias, y para marcas del Litoral entrerriano."
+        "description": "Descubra tudo o que o Hospeda oferece: para viajantes, para anfitriões, para gastronomia e experiências, e para marcas do Litoral entrerriano."
     },
     "popularBadge": "Popular",
     "seo": {
         "collectionName": "Funcionalidades de Hospeda",
-        "collectionDescription": "Catálogo completo de lo que ofrece la plataforma Hospeda, organizado por audiencia: viajeros, anfitriones, gastronomía y experiencias, y marcas.",
+        "collectionDescription": "Catálogo completo do que a plataforma Hospeda oferece, organizado por público: viajantes, anfitriões, gastronomia e experiências, e marcas.",
         "breadcrumbHome": "Inicio",
         "breadcrumbCurrent": "Funcionalidades"
     },
@@ -32,7 +32,7 @@
             },
             "worlds": {
                 "value": "3",
-                "label": "mundos: alojamientos · gastronomía · experiencias"
+                "label": "mundos: hospedagens · gastronomia · experiências"
             }
         }
     },
@@ -40,7 +40,7 @@
         "ariaLabel": "Navegación por audiencia",
         "viajeros": "Viajeros",
         "anfitriones": "Anfitriones",
-        "gastro": "Gastronomía y experiencias",
+        "gastro": "Gastronomia e experiências",
         "marcas": "Marcas",
         "ademas": "Y además",
         "proximamente": "Próximamente"
@@ -52,7 +52,7 @@
         "pillars": {
             "descubrir": {
                 "title": "Descubrir",
-                "description": "Buscá alojamientos, destinos, eventos, gastronomía y experiencias del Litoral. Con mapa, filtros, clima y hasta un buscador que entiende lenguaje natural."
+                "description": "Busque hospedagens, destinos, eventos, gastronomia e experiências do Litoral. Com mapa, filtros, clima e até um buscador que entende linguagem natural."
             },
             "hospedarse": {
                 "title": "Hospedarse",
@@ -60,11 +60,11 @@
             },
             "publicar": {
                 "title": "Publicar y crecer",
-                "description": "Si alquilás, mostrá tu propiedad con fotos, promociones y estadísticas. Herramientas de IA que te escriben, traducen e importan la ficha por vos."
+                "description": "Se você aluga, mostre seu imóvel com fotos, promoções e estatísticas. Ferramentas de IA que escrevem, traduzem e importam a ficha por você."
             },
             "sumarNegocio": {
                 "title": "Sumar tu negocio",
-                "description": "Locales gastronómicos, experiencias, auspiciantes y marcas: un lugar en el mapa turístico de la región, con ficha propia, reseñas y visibilidad."
+                "description": "Locais gastronômicos, experiências, patrocinadores e marcas: um lugar no mapa turístico da região, com ficha própria, avaliações e visibilidade."
             }
         }
     },
@@ -88,7 +88,7 @@
             },
             "contactHost": {
                 "title": "Hablá con el anfitrión",
-                "description": "Consultá directo desde la ficha, incluso sin cuenta. Seguí y respondé desde tu mail con un enlace mágico, o desde tu bandeja si tenés cuenta."
+                "description": "Consulte direto pela ficha, mesmo sem conta. Acompanhe e responda pelo seu e-mail com um link mágico, ou pela sua caixa de entrada se tiver conta."
             },
             "reviews": {
                 "title": "Reseñas de verdad",
@@ -167,7 +167,7 @@
         "who": "Para el que recibe",
         "eyebrow": "tu propiedad, bien mostrada",
         "title": "Publicá tu alojamiento y hacelo crecer.",
-        "description": "Cargá tu propiedad, mostrala con buenas fotos, creá promociones y mirá cómo rinde con estadísticas claras. Y cuando no tenés ganas de escribir, la IA te importa la ficha desde Airbnb o Booking, te mejora los textos y los traduce a tres idiomas.",
+        "description": "Cadastre seu imóvel, mostre com boas fotos, crie promoções e acompanhe o desempenho com estatísticas claras. E quando você não estiver a fim de escrever, a IA importa a ficha do Airbnb ou do Booking, melhora seus textos e os traduz para três idiomas.",
         "banner": {
             "title_one": "{{trialDays}} día gratis en tu primera suscripción. No se cobra nada hasta que termina la prueba.",
             "title_other": "{{trialDays}} días gratis en tu primera suscripción. No se cobra nada hasta que termina la prueba.",
@@ -175,7 +175,7 @@
         },
         "list": {
             "aiImport": {
-                "title": "Importá la ficha en segundos",
+                "title": "Importe a ficha em segundos",
                 "description": "Pegá el link de Airbnb, Booking, MercadoLibre o Google y la IA completa los datos por vos."
             },
             "aiWrite": {
@@ -184,7 +184,7 @@
             },
             "promotions": {
                 "title": "Promociones que se ven",
-                "description": "Creá ofertas con badge en el listado y la ficha, visibles a todos los que buscan."
+                "description": "Crie ofertas com selo na lista e na ficha, visíveis para todos que buscam."
             },
             "stats": {
                 "title": "Estadísticas que se entienden",
@@ -192,7 +192,7 @@
             },
             "reputation": {
                 "title": "Reputación de todos lados, en un lugar",
-                "description": "Conectá tus ratings de Google, Booking y más para mostrarlos en tu ficha."
+                "description": "Conecte suas avaliações do Google, Booking e mais para exibi-las na sua ficha."
             },
             "calendarSync": {
                 "title": "Sincronização com Google Calendar",
@@ -207,12 +207,12 @@
                 "description": "Sumá un asistente que responde consultas sobre tu alojamiento a cualquier hora."
             },
             "seo": {
-                "title": "Tu ficha, lista para Google",
+                "title": "Sua ficha, pronta para o Google",
                 "description": "SEO editable, título y descripción, en cada alojamiento, incluido en todos los planes."
             },
             "hostTrades": {
                 "title": "Directorio de proveedores a mano",
-                "description": "Plomería, electricidad, gas, cerrajería, climatización, limpieza y más: oficios locales de confianza para llamar cuando algo falla en tu alojamiento."
+                "description": "Encanamento, eletricidade, gás, chaveiro, climatização, limpeza e mais: profissionais locais de confiança para chamar quando algo falha na sua hospedagem."
             }
         },
         "table": {
@@ -253,7 +253,7 @@
                     "label": "Soporte prioritario"
                 },
                 "aiImport": {
-                    "label": "Importar ficha con IA",
+                    "label": "Importar ficha com IA",
                     "note": "por mes"
                 },
                 "aiImprove": {
@@ -291,8 +291,8 @@
     "gastro": {
         "who": "Para tu local gastronómico o experiencia",
         "eyebrow": "tu negocio, en el mapa turístico",
-        "title": "Gastronomía y experiencias, donde la gente planea su viaje.",
-        "description": "Un restaurante, una bodega, un paseo en kayak o una cata: tu negocio tiene ficha propia dentro de Hospeda, visible para todos los que están armando su escapada por el Litoral. Vos mantenés el contenido; nosotros lo ponemos en la vidriera.",
+        "title": "Gastronomia e experiências, onde as pessoas planejam a viagem.",
+        "description": "Um restaurante, uma vinícola, um passeio de caiaque ou uma degustação: seu negócio tem ficha própria dentro do Hospeda, visível para todos que estão planejando uma escapada pelo Litoral. Você mantém o conteúdo; nós o colocamos na vitrine.",
         "list": {
             "ownProfile": {
                 "title": "Ficha pública propia",
@@ -316,14 +316,14 @@
             },
             "seo": {
                 "title": "Buen SEO incluido",
-                "description": "Tu ficha está pensada para aparecer bien en Google, con editor de título y descripción."
+                "description": "Sua ficha foi pensada para aparecer bem no Google, com editor de título e descrição."
             },
             "certificates": {
                 "title": "Certificados para quem fez o passeio",
                 "description": "Em experiências, emita um certificado para quem participou: o nome, o passeio e a data, em PDF para imprimir ou enviar. Leva um QR que volta para a sua página."
             }
         },
-        "note": "Mientras tu suscripción está activa, tu ficha es pública. ¿Querés sumarte? Se hace desde «sumar mi negocio» y nuestro equipo te da el alta."
+        "note": "Enquanto sua assinatura estiver ativa, sua ficha é pública. Quer participar? Faça isso em «adicionar meu negócio» e nossa equipe cuida do cadastro."
     },
     "marcas": {
         "who": "Para marcas y auspiciantes",
@@ -337,7 +337,7 @@
             },
             "sponsorship": {
                 "title": "Patrocinio de contenido",
-                "description": "Como Sponsor tenés un panel propio para crear y editar tus patrocinios de posts y eventos, con niveles y paquetes a elegir, analíticas y facturas a la vista. Autogestionado."
+                "description": "Como Sponsor você tem um painel próprio para criar e editar seus patrocínios de posts e eventos, com níveis e pacotes à escolha, análises e faturas à vista. Autogerenciado."
             }
         }
     },
@@ -380,7 +380,7 @@
         "items": {
             "touristCard": {
                 "title": "Tarjeta turista",
-                "description": "Beneficios y descuentos para viajeros en alojamientos, gastronomía y experiencias."
+                "description": "Benefícios e descontos para viajantes em hospedagens, gastronomia e experiências."
             },
             "multiProperty": {
                 "title": "Alojamientos multi-propiedad",

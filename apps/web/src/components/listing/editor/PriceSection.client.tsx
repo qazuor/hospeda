@@ -2,7 +2,7 @@
  * @file PriceSection.client.tsx
  * @description Price fields of the listing owner editor (HOS-258).
  *
- * The only section whose SHAPE depends on the vertical: gastronomy edits a
+ * The only section whose SHAPE depends on the vertical: venue edits a
  * price tier plus a menu link, experience edits a price-on-request toggle plus
  * a starting price and its unit. The accommodation editor has no analogue —
  * none of its sections branch on an entity type.
@@ -62,7 +62,7 @@ export function PriceSection({
 }: PriceSectionProps): JSX.Element {
     const { t } = createTranslations(locale);
 
-    if (vertical === 'gastronomy') {
+    if (vertical === 'venue') {
         return (
             <section
                 className={styles.section}

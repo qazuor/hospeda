@@ -35,14 +35,14 @@ async function createListing(
             { ...base, type: 'CABIN' } as Partial<Accommodation>,
             tx
         );
-    if (vertical === 'gastronomy')
+    if (vertical === 'venue')
         return new VenueModel().create({ ...base, type: 'RESTAURANT' } as Partial<Venue>, tx);
     return new ExperienceModel().create({ ...base, type: 'EXCURSION' } as Partial<Experience>, tx);
 }
 
 describe.each([
     'accommodation',
-    'gastronomy',
+    'venue',
     'experience'
 ] as const)('TEST:V6:8 retention model %s', (vertical) => {
     it('TEST:V6:8 reads the listing clock and its own deadline snapshot and rejects a missing version', async () => {
@@ -54,7 +54,7 @@ describe.each([
             const listing = await createListing(tx, vertical, owner.id, destination.id);
             const table = {
                 accommodation: 'accommodations',
-                gastronomy: 'gastronomies',
+                venue: 'venues',
                 experience: 'experiences'
             }[vertical];
             const stored = await listingRetentionModel.readRetentionListing({
@@ -101,7 +101,7 @@ describe.each([
             const now = new Date('2026-10-11T12:00:00Z');
             const table = {
                 accommodation: 'accommodations',
-                gastronomy: 'gastronomies',
+                venue: 'venues',
                 experience: 'experiences'
             }[vertical];
             await tx.execute(
@@ -193,7 +193,7 @@ describe.each([
             const listing = await createListing(tx, vertical, owner.id, destination.id);
             const table = {
                 accommodation: 'accommodations',
-                gastronomy: 'gastronomies',
+                venue: 'venues',
                 experience: 'experiences'
             }[vertical];
             await tx.execute(

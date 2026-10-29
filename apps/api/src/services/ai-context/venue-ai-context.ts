@@ -1,5 +1,5 @@
 /**
- * AI-chat context assembler for GASTRONOMY listings (HOS-400).
+ * AI-chat context assembler for VENUE listings (HOS-400).
  *
  * The restaurant counterpart of `accommodation-ai-context.ts`. It answers a
  * different set of questions and therefore carries different fields: what the
@@ -12,7 +12,7 @@
  * grant the key, and the service-core readers do not. So this assembler gates
  * them too, from the capability flag the ROUTE resolved for the owner.
  *
- * Today that gate never fires — every gastronomy or experience tier that grants `AI_CHAT` also
+ * Today that gate never fires — every venue or experience tier that grants `AI_CHAT` also
  * grants the carta keys — and it is written anyway, because "today's catalogue
  * happens to bundle them" is not a guarantee. The day the keys are split across
  * tiers differently, an assembler that trusted the coincidence would put paid
@@ -22,13 +22,7 @@
  * @module apps/api/services/ai-context/venue-ai-context
  */
 
-import {
-    gastronomies,
-    gastronomyFaqs,
-    gastronomyMenuItems,
-    gastronomyMenuSections,
-    getDb
-} from '@repo/db';
+import { getDb, venueFaqs, venueMenuItems, venueMenuSections, venues } from '@repo/db';
 import { ServiceErrorCode } from '@repo/schemas';
 import { ServiceError } from '@repo/service-core';
 import { and, asc, eq, isNull } from 'drizzle-orm';
@@ -72,7 +66,7 @@ export const VENUE_MENU_ITEM_DESCRIPTION_MAX_CHARS = 160;
 // Row shapes
 // ---------------------------------------------------------------------------
 
-/** The gastronomy columns this assembler reads. */
+/** The venue columns this assembler reads. */
 export interface VenueContextRow {
     readonly id: string;
     readonly name: string;
@@ -106,14 +100,14 @@ export interface VenueContextMenuItem {
 // ---------------------------------------------------------------------------
 
 /**
- * Assembles the Markdown context block from pre-loaded gastronomy data.
+ * Assembles the Markdown context block from pre-loaded venue data.
  *
  * PURE — no I/O. Every owner-authored value goes through the shared fence.
  *
- * @param venue - The gastronomy row.
+ * @param venue - The venue row.
  * @param faqs - The venue's FAQs. Capped at {@link VENUE_CONTEXT_FAQ_MAX}.
  * @param menuItems - The carta rows loaded for the listing.
- * @param includeMenu - Whether the owner has `manage_gastronomy_menu`.
+ * @param includeMenu - Whether the owner has `manage_venue_menu`.
  * @returns The Markdown block to prepend to the system message.
  */
 export function buildVenueMarkdownContext(
@@ -251,7 +245,7 @@ function formatOpeningHours(openingHours: Record<string, unknown> | null): strin
 // ---------------------------------------------------------------------------
 
 /**
- * Loads a gastronomy listing's context and assembles the system message.
+ * Loads a venue listing's context and assembles the system message.
  *
  * Throws `ServiceError(NOT_FOUND)` when the venue does not exist or is
  * soft-deleted, which the streaming route factory maps to a pre-stream 404.
@@ -269,24 +263,24 @@ export async function assembleVenueContext(
 
     const rows = await db
         .select({
-            id: gastronomies.id,
-            name: gastronomies.name,
-            summary: gastronomies.summary,
-            description: gastronomies.description,
-            type: gastronomies.type,
-            priceRange: gastronomies.priceRange,
-            menuUrl: gastronomies.menuUrl,
-            openingHours: gastronomies.openingHours,
-            averageRating: gastronomies.averageRating,
-            reviewsCount: gastronomies.reviewsCount
+            id: venues.id,
+            name: venues.name,
+            summary: venues.summary,
+            description: venues.description,
+            type: venues.type,
+            priceRange: venues.priceRange,
+            menuUrl: venues.menuUrl,
+            openingHours: venues.openingHours,
+            averageRating: venues.averageRating,
+            reviewsCount: venues.reviewsCount
         })
-        .from(gastronomies)
-        .where(and(eq(gastronomies.id, entityId), isNull(gastronomies.deletedAt)))
+        .from(venues)
+        .where(and(eq(venues.id, entityId), isNull(venues.deletedAt)))
         .limit(1);
 
     const venue = rows[0];
     if (!venue) {
-        throw new ServiceError(ServiceErrorCode.NOT_FOUND, `Gastronomy '${entityId}' not found.`);
+        throw new ServiceError(ServiceErrorCode.NOT_FOUND, `Venue '${entityId}' not found.`);
     }
 
     const [faqs, menuItems] = await Promise.all([
@@ -318,27 +312,27 @@ export async function assembleVenueContext(
  * adopting HOS-393 AC-11). A FAQ missing the field (pre-migration data) reads
  * as usable, matching the column's `DEFAULT true`.
  */
-async function safeLoadFaqs(gastronomyId: string): Promise<VenueContextFaq[]> {
+async function safeLoadFaqs(venueId: string): Promise<VenueContextFaq[]> {
     try {
         const db = getDb();
         const rows = await db
-            .select({ question: gastronomyFaqs.question, answer: gastronomyFaqs.answer })
-            .from(gastronomyFaqs)
+            .select({ question: venueFaqs.question, answer: venueFaqs.answer })
+            .from(venueFaqs)
             .where(
                 and(
-                    eq(gastronomyFaqs.gastronomyId, gastronomyId),
-                    isNull(gastronomyFaqs.deletedAt),
-                    eq(gastronomyFaqs.lifecycleState, 'ACTIVE'),
-                    eq(gastronomyFaqs.isUsableByAi, true)
+                    eq(venueFaqs.venueId, venueId),
+                    isNull(venueFaqs.deletedAt),
+                    eq(venueFaqs.lifecycleState, 'ACTIVE'),
+                    eq(venueFaqs.isUsableByAi, true)
                 )
             )
-            .orderBy(asc(gastronomyFaqs.displayOrder))
+            .orderBy(asc(venueFaqs.displayOrder))
             .limit(VENUE_CONTEXT_FAQ_MAX);
         return rows;
     } catch (error) {
         apiLogger.warn(
-            { gastronomyId, error: error instanceof Error ? error.message : String(error) },
-            'gastronomy-ai-context: failed to load FAQs; continuing with empty list'
+            { venueId, error: error instanceof Error ? error.message : String(error) },
+            'venue-ai-context: failed to load FAQs; continuing with empty list'
         );
         return [];
     }
@@ -350,33 +344,27 @@ async function safeLoadFaqs(gastronomyId: string): Promise<VenueContextFaq[]> {
  * Returns `[]` on any error, with a logged warning — the same graceful contract
  * the accommodation assembler applies to its secondary relations.
  */
-async function safeLoadMenuItems(gastronomyId: string): Promise<VenueContextMenuItem[]> {
+async function safeLoadMenuItems(venueId: string): Promise<VenueContextMenuItem[]> {
     try {
         const db = getDb();
         const rows = await db
             .select({
-                sectionName: gastronomyMenuSections.name,
-                name: gastronomyMenuItems.name,
-                description: gastronomyMenuItems.description,
-                priceCents: gastronomyMenuItems.priceCents,
-                isAvailable: gastronomyMenuItems.isAvailable
+                sectionName: venueMenuSections.name,
+                name: venueMenuItems.name,
+                description: venueMenuItems.description,
+                priceCents: venueMenuItems.priceCents,
+                isAvailable: venueMenuItems.isAvailable
             })
-            .from(gastronomyMenuItems)
-            .leftJoin(
-                gastronomyMenuSections,
-                eq(gastronomyMenuItems.sectionId, gastronomyMenuSections.id)
-            )
-            .where(eq(gastronomyMenuItems.gastronomyId, gastronomyId))
-            .orderBy(
-                asc(gastronomyMenuSections.displayOrder),
-                asc(gastronomyMenuItems.displayOrder)
-            )
+            .from(venueMenuItems)
+            .leftJoin(venueMenuSections, eq(venueMenuItems.sectionId, venueMenuSections.id))
+            .where(eq(venueMenuItems.venueId, venueId))
+            .orderBy(asc(venueMenuSections.displayOrder), asc(venueMenuItems.displayOrder))
             .limit(VENUE_CONTEXT_MENU_ITEM_MAX);
         return rows;
     } catch (error) {
         apiLogger.warn(
-            { gastronomyId, error: error instanceof Error ? error.message : String(error) },
-            'gastronomy-ai-context: failed to load menu items; continuing with empty carta'
+            { venueId, error: error instanceof Error ? error.message : String(error) },
+            'venue-ai-context: failed to load menu items; continuing with empty carta'
         );
         return [];
     }

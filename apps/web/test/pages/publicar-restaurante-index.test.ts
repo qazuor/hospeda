@@ -1,9 +1,9 @@
 /**
  * @file publicar-restaurante-index.test.ts
  * @description Source-read tests for `/publicar-restaurante/`, which HOS-1032
- * turned from the gastronomy vertical's full marketing page (hero, benefits,
+ * turned from the venue vertical's full marketing page (hero, benefits,
  * how-it-works, price, FAQ — see the previous revision of this file) into a
- * permanent redirect to `/planes/gastronomia/`, the new level-2 sales page.
+ * permanent redirect to `/planes/comer-y-salir/`, the new level-2 sales page.
  *
  * ## Where the retired content coverage lives now
  *
@@ -11,7 +11,7 @@
  * benefits/how-it-works/FAQ sections, the trial-aware price block, the
  * `applyCacheHeaders` pricing class) moved with the content itself: the
  * shared-section family guard in `test/pages/sales-pages-family.guard.test.ts`
- * covers `/planes/gastronomia/index.astro` alongside its four siblings, and
+ * covers `/planes/comer-y-salir/index.astro` alongside its four siblings, and
  * `test/pages/listing-landing-cta.guard.test.ts` covers the vertical's
  * checkout CTA wiring on both the sales page and its own `/precios/` page
  * (`test/pages/pricing-ssr-runtime.test.ts`). Nothing here duplicates that
@@ -50,13 +50,14 @@ describe('publicar-restaurante/index.astro', () => {
         expect(src).toMatch(/Astro\.redirect\([\s\S]*?,\s*301\s*\)/);
     });
 
-    it('targets the gastronomy PUBLISH page, overriding HOS-941 D-8', () => {
-        // This redirect pointed at `/planes/gastronomia/` — a SALES page — and the
+    it('targets the venue PUBLISH page, overriding HOS-941 D-8', () => {
+        // This redirect pointed at `/planes/comer-y-salir/` — a SALES page — and the
         // reasoning was correct while no publish page existed for this vertical.
         // One does now, and it carries the argument AND the form, so it is a
         // superset of what the sales page offers an arriving visitor. The URL's
         // own name said *publicar*; it finally leads there (HOS-1156 D-6).
-        expect(src).toContain('PUBLISH_PAGE_PATH_BY_VERTICAL.gastronomy');
-        expect(src).not.toContain("path: 'planes/gastronomia'");
+        expect(src).toContain('PUBLISH_PAGE_PATH_BY_VERTICAL.venue');
+        expect(src).toContain('path: PUBLISH_PAGE_PATH_BY_VERTICAL.venue');
+        expect(src).not.toContain("path: 'planes/comer-y-salir'");
     });
 });

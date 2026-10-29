@@ -22,7 +22,7 @@ const input = {
     tx: {
         transaction: async (work: (tx: unknown) => Promise<unknown>) => work('savepoint')
     } as never,
-    vertical: 'gastronomy' as import('@repo/verticals').ListingVertical,
+    vertical: 'venue' as import('@repo/verticals').ListingVertical,
     listingId: 'listing-1',
     ownerId: 'owner-1',
     fixRequest: FIX,
@@ -50,7 +50,7 @@ describe('TEST:1701:6 AC:1701:1 AC:1701:2 AC:1701:3 enqueueFixReportedNotice', (
                 recipientEmail: 'one@example.test',
                 template: LISTING_FIX_REPORTED_TEMPLATE,
                 payload: {
-                    vertical: 'gastronomy',
+                    vertical: 'venue',
                     listingId: 'listing-1',
                     ownerId: 'owner-1',
                     fixRequestId: 'fix-1',
@@ -75,7 +75,7 @@ describe('TEST:1701:6 AC:1701:1 AC:1701:2 AC:1701:3 enqueueFixReportedNotice', (
                 recipientEmail: 'two@example.test',
                 template: LISTING_FIX_REPORTED_TEMPLATE,
                 payload: {
-                    vertical: 'gastronomy',
+                    vertical: 'venue',
                     listingId: 'listing-1',
                     ownerId: 'owner-1',
                     fixRequestId: 'fix-1',

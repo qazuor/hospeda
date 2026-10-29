@@ -1,11 +1,11 @@
 /**
- * gastronomy.projections.ts
+ * venue.projections.ts
  *
- * Public-tier projection helpers for gastronomy listings (SPEC-239 T-038).
+ * Public-tier projection helpers for venue listings (SPEC-239 T-038).
  *
  * These functions strip or transform fields from a raw DB entity so that the
  * result is safe for public consumption.  The API boundary's response schema
- * (`GastronomyPublicSchema`) applies a final parse; these helpers operate
+ * (`venuePublicSchema`) applies a final parse; these helpers operate
  * BEFORE the schema boundary to reduce what is sent on the wire.
  *
  * Projection rules:
@@ -25,7 +25,7 @@ import type { Venue } from '@repo/schemas';
 // ---------------------------------------------------------------------------
 
 /**
- * Applies public-tier projections to a single gastronomy entity.
+ * Applies public-tier projections to a single venue entity.
  *
  * Strips the following fields before the entity reaches a public endpoint:
  * - `adminInfo` — internal platform notes (never exposed publicly).
@@ -33,7 +33,7 @@ import type { Venue } from '@repo/schemas';
  *
  * All other fields are preserved so public listing pages have full content.
  *
- * @param entity - The raw gastronomy entity from the database.
+ * @param entity - The raw venue entity from the database.
  * @returns A projected copy without private fields; the original is not mutated.
  *
  * @example
@@ -52,7 +52,7 @@ export function projectVenuePublic(entity: Venue): Partial<Venue> {
  * List variant of {@link projectVenuePublic}.
  * Maps `projectVenuePublic` over an array of entities.
  *
- * @param entities - Array of raw gastronomy entities.
+ * @param entities - Array of raw venue entities.
  * @returns Array of projected entities without private fields.
  */
 export function projectVenuePublicList(entities: Venue[]): Partial<Venue>[] {
@@ -84,12 +84,12 @@ function resolveOwnerImage(owner: Record<string, unknown> | undefined | null): s
 }
 
 /**
- * Sets `owner.image` on a gastronomy entity to the resolved avatar URL.
+ * Sets `owner.image` on a venue entity to the resolved avatar URL.
  *
  * Idempotent and non-mutating: returns a new entity only when the owner
  * relation is present and the resolved image differs from the stored one.
  *
- * @param entity - The gastronomy entity (may carry an eager-loaded `owner` relation).
+ * @param entity - The venue entity (may carry an eager-loaded `owner` relation).
  * @returns A new entity object with the resolved avatar, or the original if unchanged.
  */
 export function projectVenueOwnerAvatar<T extends Venue>(entity: T | null): T | null {
@@ -105,7 +105,7 @@ export function projectVenueOwnerAvatar<T extends Venue>(entity: T | null): T | 
 /**
  * List variant of {@link projectVenueOwnerAvatar}.
  *
- * @param entities - Array of gastronomy entities (may carry eager-loaded `owner`).
+ * @param entities - Array of venue entities (may carry eager-loaded `owner`).
  * @returns Array with resolved owner avatars.
  */
 export function projectVenueOwnerAvatarList<T extends Venue>(entities: T[]): T[] {

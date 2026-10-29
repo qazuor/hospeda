@@ -1,7 +1,7 @@
 import type { Venue } from '@repo/schemas';
 import { and, count, desc, eq, isNull } from 'drizzle-orm';
 import { BaseModelImpl } from '../../base/base.model.ts';
-import { gastronomies } from '../../schemas/venue/venue.dbschema.ts';
+import { venues } from '../../schemas/venue/venue.dbschema.ts';
 import type { DrizzleClient } from '../../types.ts';
 import { safeIlike } from '../../utils/drizzle-helpers.ts';
 import { DbError } from '../../utils/error.ts';
@@ -9,7 +9,7 @@ import { logError, logQuery } from '../../utils/logger.ts';
 import { withListingBirthColumns } from '../listing/listing-birth.ts';
 
 /**
- * Search input for gastronomy listings (basic subset — expand as routes are built).
+ * Search input for venue listings (basic subset — expand as routes are built).
  */
 interface VenueModelSearchInput {
     readonly q?: string;
@@ -23,17 +23,17 @@ interface VenueModelSearchInput {
 }
 
 /**
- * VenueModel — all DB access for gastronomy listings (SPEC-239).
+ * VenueModel — all DB access for venue listings (SPEC-239).
  *
  * Mirrors AccommodationModel structure: extends BaseModelImpl, provides search()
  * and findWithRelations() overrides. Expand with domain-specific query methods
  * as the service layer grows.
  */
 export class VenueModel extends BaseModelImpl<Venue> {
-    protected table = gastronomies;
-    public entityName = 'gastronomies';
+    protected table = venues;
+    public entityName = 'venues';
 
-    /** Creates a gastronomy with its initial publication clock. */
+    /** Creates a venue with its initial publication clock. */
     override async create(data: Partial<Venue>, tx?: DrizzleClient): Promise<Venue> {
         return super.create(withListingBirthColumns({ data }).data, tx);
     }
@@ -81,14 +81,14 @@ export class VenueModel extends BaseModelImpl<Venue> {
     protected override readonly mergeableJsonbColumns = ['contactInfo', 'socialNetworks'] as const;
 
     protected getTableName(): string {
-        return 'gastronomies';
+        return 'venues';
     }
 
     /**
      * Paginated search with optional filters.
      * @param params - Search parameters
      * @param tx - Optional transaction client
-     * @returns Matching gastronomies and total count
+     * @returns Matching venues and total count
      */
     async search(
         params: VenueModelSearchInput,
@@ -100,34 +100,29 @@ export class VenueModel extends BaseModelImpl<Venue> {
         const ctx = { params };
 
         try {
-            const whereClauses = [isNull(gastronomies.deletedAt)];
+            const whereClauses = [isNull(venues.deletedAt)];
 
             if (params.destinationId) {
-                whereClauses.push(eq(gastronomies.destinationId, params.destinationId));
+                whereClauses.push(eq(venues.destinationId, params.destinationId));
             }
             if (params.ownerId) {
-                whereClauses.push(eq(gastronomies.ownerId, params.ownerId));
+                whereClauses.push(eq(venues.ownerId, params.ownerId));
             }
             if (params.type) {
-                whereClauses.push(
-                    eq(gastronomies.type, params.type as typeof gastronomies.type._.data)
-                );
+                whereClauses.push(eq(venues.type, params.type as typeof venues.type._.data));
             }
             if (params.priceRange) {
                 whereClauses.push(
-                    eq(
-                        gastronomies.priceRange,
-                        params.priceRange as typeof gastronomies.priceRange._.data
-                    )
+                    eq(venues.priceRange, params.priceRange as typeof venues.priceRange._.data)
                 );
             }
             if (params.isFeatured !== undefined) {
                 // `isFeatured` is the public name; its only source is
                 // `featuredByEntitlement` since HOS-1419 dropped `is_featured`.
-                whereClauses.push(eq(gastronomies.featuredByEntitlement, params.isFeatured));
+                whereClauses.push(eq(venues.featuredByEntitlement, params.isFeatured));
             }
             if (params.q) {
-                whereClauses.push(safeIlike(gastronomies.name, params.q));
+                whereClauses.push(safeIlike(venues.name, params.q));
             }
 
             const where = and(...whereClauses);
@@ -138,7 +133,7 @@ export class VenueModel extends BaseModelImpl<Venue> {
                     .select()
                     .from(this.table)
                     .where(where)
-                    .orderBy(desc(gastronomies.createdAt))
+                    .orderBy(desc(venues.createdAt))
                     .limit(pageSize)
                     .offset(offset),
                 db.select({ count: count() }).from(this.table).where(where)
@@ -161,7 +156,7 @@ export class VenueModel extends BaseModelImpl<Venue> {
     }
 
     /**
-     * Returns the IDs of every non-deleted gastronomy listing owned by the
+     * Returns the IDs of every non-deleted venue listing owned by the
      * given owner. Mirrors `AccommodationModel.findIdsByOwnerId` — used by
      * `EntityViewService.getStatsForOwnListings` /
      * `getDailySeriesForOwnListings` (HOS-734) to resolve which
@@ -170,16 +165,16 @@ export class VenueModel extends BaseModelImpl<Venue> {
      *
      * @param ownerId - The owner's user id.
      * @param tx - Optional transaction client.
-     * @returns Array of gastronomy listing IDs (may be empty).
+     * @returns Array of venue listing IDs (may be empty).
      */
     async findIdsByOwnerId(ownerId: string, tx?: DrizzleClient): Promise<string[]> {
         const db = this.getClient(tx);
         const ctx = { ownerId };
         try {
             const rows = await db
-                .select({ id: gastronomies.id })
-                .from(gastronomies)
-                .where(and(eq(gastronomies.ownerId, ownerId), isNull(gastronomies.deletedAt)));
+                .select({ id: venues.id })
+                .from(venues)
+                .where(and(eq(venues.ownerId, ownerId), isNull(venues.deletedAt)));
 
             const ids = rows.map((r) => r.id);
             logQuery(this.entityName, 'findIdsByOwnerId', ctx, { count: ids.length });

@@ -26,7 +26,7 @@ export const USER_ENTITY_NAME = 'user';
 export const ACCOMMODATION_ENTITY_NAME = 'accommodation';
 
 /** `VenueService.ENTITY_NAME`. */
-export const VENUE_ENTITY_NAME = 'gastronomy';
+export const VENUE_ENTITY_NAME = 'venue';
 
 /** `ExperienceService.ENTITY_NAME`. */
 export const EXPERIENCE_ENTITY_NAME = 'experience';

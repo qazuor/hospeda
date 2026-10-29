@@ -27,7 +27,7 @@ const src = readFileSync(
     'utf8'
 );
 
-describe('GastronomyMenu.astro — the per-dish photo (HOS-1045)', () => {
+describe('VenueMenu.astro — the per-dish photo (HOS-1045)', () => {
     it('routes the photo URL through resolveSafeExternalUrl', () => {
         // The read half of the two-sided scheme guard. `photoUrl` is written by
         // our own upload route today, but the column is readable by anything
@@ -51,9 +51,9 @@ describe('GastronomyMenu.astro — the per-dish photo (HOS-1045)', () => {
 
     it('lazy-loads the dish photos', () => {
         // A carta may hold up to thirty sections of a hundred dishes
-        // (GASTRONOMY_MENU_MAX_*), so an eager image per dish would be the
+        // (VENUE_MENU_MAX_*), so an eager image per dish would be the
         // single largest thing on the page.
-        expect(src).toContain('class="gastro-menu__item-photo"');
-        expect(src).toMatch(/gastro-menu__item-photo"\s+loading="lazy"/);
+        expect(src).toContain('class="venue-menu__item-photo"');
+        expect(src).toMatch(/venue-menu__item-photo"\s+loading="lazy"/);
     });
 });

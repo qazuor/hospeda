@@ -2,7 +2,7 @@
  * Unit tests for the write-side per-dish photo gate (HOS-1045).
  *
  * `menuPayloadCarriesItemPhoto` is what decides whether `PUT .../menu` needs
- * `MENU_ITEM_PHOTOS` on top of the `MANAGE_GASTRONOMY_MENU` the route already
+ * `MENU_ITEM_PHOTOS` on top of the `MANAGE_VENUE_MENU` the route already
  * requires. Tested directly rather than through the route, because the point of
  * the function is the shape of the BODY and a route test would spend its effort
  * on a Hono context and a subscription fixture instead.

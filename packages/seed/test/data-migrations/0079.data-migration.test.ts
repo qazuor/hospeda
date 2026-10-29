@@ -149,7 +149,7 @@ describe('0079-hos-1077 vertical permissions — exported lists', () => {
     });
 
     it('does NOT hand an editOwn to staff — that is an owner authority', () => {
-        expect(STAFF_PERMISSIONS).not.toContain(PermissionEnum.GASTRONOMY_EDIT_OWN);
+        expect(STAFF_PERMISSIONS).not.toContain(PermissionEnum.VENUE_EDIT_OWN);
         expect(STAFF_PERMISSIONS).not.toContain(PermissionEnum.EXPERIENCE_EDIT_OWN);
     });
 
@@ -165,13 +165,13 @@ describe('0079-hos-1077 vertical permissions — exported lists', () => {
     it('gives each owner role its OWN vertical and not the other', () => {
         // The whole product point. If either list carried the other vertical's
         // editOwn, the split would have re-created the coupling it removes.
-        expect(GASTRONOMY_OWNER_PERMISSIONS).toContain(PermissionEnum.GASTRONOMY_EDIT_OWN);
+        expect(GASTRONOMY_OWNER_PERMISSIONS).toContain(PermissionEnum.VENUE_EDIT_OWN);
         expect(GASTRONOMY_OWNER_PERMISSIONS).not.toContain(PermissionEnum.EXPERIENCE_EDIT_OWN);
         expect(GASTRONOMY_OWNER_PERMISSIONS).not.toContain(PermissionEnum.EXPERIENCE_CREATE);
 
         expect(EXPERIENCE_OWNER_PERMISSIONS).toContain(PermissionEnum.EXPERIENCE_EDIT_OWN);
-        expect(EXPERIENCE_OWNER_PERMISSIONS).not.toContain(PermissionEnum.GASTRONOMY_EDIT_OWN);
-        expect(EXPERIENCE_OWNER_PERMISSIONS).not.toContain(PermissionEnum.GASTRONOMY_CREATE);
+        expect(EXPERIENCE_OWNER_PERMISSIONS).not.toContain(PermissionEnum.VENUE_EDIT_OWN);
+        expect(EXPERIENCE_OWNER_PERMISSIONS).not.toContain(PermissionEnum.VENUE_CREATE);
     });
 
     it('gives neither owner role an admin-tier authority over listings', () => {
@@ -183,7 +183,7 @@ describe('0079-hos-1077 vertical permissions — exported lists', () => {
         for (const permissions of [GASTRONOMY_OWNER_PERMISSIONS, EXPERIENCE_OWNER_PERMISSIONS]) {
             const verticalOnes = permissions.filter(
                 (permission) =>
-                    permission.startsWith('gastronomy.') || permission.startsWith('experience.')
+                    permission.startsWith('venue.') || permission.startsWith('experience.')
             );
             expect(verticalOnes.length).toBeGreaterThan(0);
             for (const permission of verticalOnes) {
@@ -208,13 +208,13 @@ describe('0079-hos-1077 vertical permissions — no drift against the seed', () 
         }
     });
 
-    it('the GASTRONOMY_OWNER list equals the seed exactly', () => {
+    it('the VENUE_OWNER list equals the seed exactly', () => {
         expect(
             expectedSeedFor({
-                role: RoleEnum.GASTRONOMY_OWNER,
+                role: RoleEnum.VENUE_OWNER,
                 own: GASTRONOMY_OWNER_PERMISSIONS
             })
-        ).toEqual([...(ROLE_PERMISSIONS[RoleEnum.GASTRONOMY_OWNER] ?? [])].sort());
+        ).toEqual([...(ROLE_PERMISSIONS[RoleEnum.VENUE_OWNER] ?? [])].sort());
     });
 
     it('the EXPERIENCE_OWNER list equals the seed exactly', () => {
@@ -230,7 +230,7 @@ describe('0079-hos-1077 vertical permissions — no drift against the seed', () 
         const allowed = new Set<RoleEnum>([
             RoleEnum.SUPER_ADMIN,
             RoleEnum.ADMIN,
-            RoleEnum.GASTRONOMY_OWNER,
+            RoleEnum.VENUE_OWNER,
             RoleEnum.EXPERIENCE_OWNER
         ]);
         for (const role of Object.values(RoleEnum)) {
@@ -265,7 +265,7 @@ describe('0079-hos-1077 vertical permissions — up()', () => {
         expect(gastronomyOwnerRows).toEqual([
             expect.objectContaining({
                 userId: 'owner-gastro',
-                role: RoleEnum.GASTRONOMY_OWNER
+                role: RoleEnum.VENUE_OWNER
             })
         ]);
         expect(experienceOwnerRows).toEqual([
@@ -294,7 +294,7 @@ describe('0079-hos-1077 vertical permissions — up()', () => {
         const inserts = readInsertValues();
         const userRoleRows = inserts.slice(1).flat() as Array<{ userId: string; role: RoleEnum }>;
         expect(userRoleRows).toHaveLength(1);
-        expect(userRoleRows[0]?.role).toBe(RoleEnum.GASTRONOMY_OWNER);
+        expect(userRoleRows[0]?.role).toBe(RoleEnum.VENUE_OWNER);
         expect(userRoleRows.some((row) => row.role === RoleEnum.EXPERIENCE_OWNER)).toBe(false);
     });
 
@@ -311,7 +311,7 @@ describe('0079-hos-1077 vertical permissions — up()', () => {
             role: RoleEnum;
         }>;
         expect(userRoleRows.map((row) => row.role).sort()).toEqual(
-            [RoleEnum.EXPERIENCE_OWNER, RoleEnum.GASTRONOMY_OWNER].sort()
+            [RoleEnum.EXPERIENCE_OWNER, RoleEnum.VENUE_OWNER].sort()
         );
         expect(userRoleRows.every((row) => row.userId === 'owner-both')).toBe(true);
     });

@@ -272,11 +272,11 @@
             "retry": "Try again",
             "vertical": {
                 "accommodation": "accommodation",
-                "gastronomy": "gastronomy",
                 "experience": "experiences",
                 "tourist": "Turista VIP",
                 "partner": "partners",
-                "unknown": "Hospeda"
+                "unknown": "Hospeda",
+                "venue": "Food & nightlife"
             }
         }
     },
@@ -300,15 +300,15 @@
                 "secondaryCta": "View my properties"
             }
         },
-        "max_gastronomies": {
-            "title": "You've reached your gastronomy limit",
-            "message_one": "You have {{currentCount}} of {{maxAllowed}} gastronomy listing in your plan. Upgrade to publish more.",
-            "message_other": "You have {{currentCount}} of {{maxAllowed}} gastronomy listings in your plan. Upgrade to publish more.",
+        "max_venues": {
+            "title": "You've reached your Food & nightlife listing limit",
+            "message_one": "You have {{currentCount}} of {{maxAllowed}} Food & nightlife listing in your plan. Upgrade to publish more.",
+            "message_other": "You have {{currentCount}} of {{maxAllowed}} Food & nightlife listings in your plan. Upgrade to publish more.",
             "cta": "View my subscription",
             "atLimitPanel": {
                 "title": "You've reached your plan's limit",
-                "body_one": "You're using {{currentCount}} of {{maxAllowed}} gastronomy listing. Upgrade your plan to publish another one.",
-                "body_other": "You're using {{currentCount}} of {{maxAllowed}} gastronomy listings. Upgrade your plan to publish another one.",
+                "body_one": "You're using {{currentCount}} of {{maxAllowed}} Food & nightlife listing. Upgrade your plan to publish another one.",
+                "body_other": "You're using {{currentCount}} of {{maxAllowed}} Food & nightlife listings. Upgrade your plan to publish another one.",
                 "primaryCta": "View my subscription",
                 "secondaryCta": "View my listings"
             }
@@ -365,8 +365,8 @@
         "max_ai_chat_consumer_per_month": {
             "title": "You've reached your AI assistant chat limit"
         },
-        "max_ai_chat_gastronomy_per_month": {
-            "title": "You've reached your gastronomy AI chat limit"
+        "max_ai_chat_venue_per_month": {
+            "title": "You've reached your Food & nightlife AI chat limit"
         },
         "max_ai_chat_experience_per_month": {
             "title": "You've reached your experience AI chat limit"
@@ -483,15 +483,15 @@
             "name": "VIP",
             "description": "VIP support, exclusive promotions, and direct WhatsApp contact with hosts."
         },
-        "gastronomy-basico": {
+        "venue-basico": {
             "name": "Basic",
             "description": "List your venue with its photos, opening hours and contact details. What it takes to be found."
         },
-        "gastronomy-pro": {
+        "venue-pro": {
             "name": "Professional",
             "description": "Add the menu loaded into Hospeda, the dish of the day and your venue's events."
         },
-        "gastronomy-premium": {
+        "venue-premium": {
             "name": "Premium",
             "description": "All of the above plus photos per dish, a menu in several languages, a PDF listing and AI chat."
         },
@@ -519,16 +519,16 @@
     "entitlement": {
         "publish_accommodations": "Publish accommodations",
         "edit_accommodation_info": "Edit accommodation info",
-        "edit_gastronomy_info": "Edit gastronomy info",
-        "publish_gastronomy": "Publish gastronomy listings",
+        "edit_venue_info": "Edit Food & nightlife info",
+        "publish_venue": "Publish Food & nightlife listings",
         "edit_experience_info": "Edit experience info",
         "publish_experience": "Publish experience listings",
         "download_listing_pdf": "Printable PDF listing sheet",
         "issue_experience_certificate": "Experience certificates",
-        "manage_gastronomy_menu": "Structured menu with sections and dishes",
+        "manage_venue_menu": "Structured menu with sections and dishes",
         "menu_item_photos": "Photo for each dish on the menu",
         "manage_experience_directions": "Meeting point map and how to get there",
-        "manage_gastronomy_daily_special": "Dish of the day with its own validity window",
+        "manage_venue_daily_special": "Dish of the day with its own validity window",
         "view_basic_stats": "Basic statistics",
         "view_advanced_stats": "Advanced statistics",
         "respond_reviews": "Respond to reviews",
@@ -566,8 +566,8 @@
         "ai_support": "AI support assistant",
         "ai_translate": "AI content translation",
         "ai_accommodation_import": "AI accommodation import",
-        "manage_gastronomy_events": "Venue events, dated or weekly",
-        "multilingual_gastronomy_menu": "Menu in multiple languages",
+        "manage_venue_events": "Venue events, dated or weekly",
+        "multilingual_venue_menu": "Menu in multiple languages",
         "menu_qr_scan_metrics": "Menu QR with scan analytics panel",
         "manage_experience_private_galleries": "Private galleries for your customers",
         "partner_public_page": "Your own page on Hospeda",
@@ -594,8 +594,8 @@
             "asTourist": "As a traveler (included)",
             "asOwner": "As an owner",
             "aiBusiness": "AI for your business",
-            "gastronomyListing": "Your venue on Hospeda",
-            "gastronomyMenu": "The menu",
+            "venueListing": "Your venue on Hospeda",
+            "venueMenu": "The menu",
             "experienceListing": "Your experience on Hospeda",
             "experienceService": "Before and after the outing",
             "listingExtras": "Extra tools"
@@ -632,12 +632,12 @@
             "aiImport": "AI imports per month",
             "aiChatOwner": "AI chat queries per month",
             "aiSupport": "AI support assistant",
-            "maxGastronomies": "Venues you can list",
-            "publishGastronomy": "Publish your venue",
-            "editGastronomyInfo": "Edit the venue's information",
-            "gastronomyMenu": "Menu loaded into Hospeda",
-            "gastronomyDailySpecial": "Dish of the day",
-            "gastronomyEvents": "Venue events",
+            "maxVenues": "Venues you can list",
+            "publishVenue": "Publish your venue",
+            "editVenueInfo": "Edit the venue's information",
+            "venueMenu": "Menu loaded into Hospeda",
+            "venueDailySpecial": "Dish of the day",
+            "venueEvents": "Venue events",
             "menuItemPhotos": "Photos per dish",
             "multilingualMenu": "Menu in several languages",
             "menuQrScanMetrics": "Menu QR with scan analytics",
@@ -682,12 +682,12 @@
             "aiChatOwner": "Monthly AI queries available to you as a host.",
             "aiSupport": "An AI assistant that helps you resolve platform questions in real time.",
             "menuQrScanMetrics": "A table QR that opens your menu, with a scan panel: total, by day, and by device and language.",
-            "maxGastronomies": "Number of venues you can have published at once.",
-            "publishGastronomy": "Publish your venue so visitors can find it on Hospeda.",
-            "editGastronomyInfo": "Update your venue's details and information whenever you like.",
-            "gastronomyMenu": "Load your menu into Hospeda so it shows on your venue's page.",
-            "gastronomyDailySpecial": "Show the dish of the day on your listing and change it whenever you like.",
-            "gastronomyEvents": "Announce the events you host on your venue's page.",
+            "maxVenues": "Number of venues you can have published at once.",
+            "publishVenue": "Publish your venue so visitors can find it on Hospeda.",
+            "editVenueInfo": "Update your venue's details and information whenever you like.",
+            "venueMenu": "Load your menu into Hospeda so it shows on your venue's page.",
+            "venueDailySpecial": "Show the dish of the day on your listing and change it whenever you like.",
+            "venueEvents": "Announce the events you host on your venue's page.",
             "menuItemPhotos": "Add a photo to every dish on your menu.",
             "multilingualMenu": "Offer your menu in several languages for visitors from other countries.",
             "maxExperiences": "Number of experiences you can have published at once.",
@@ -707,7 +707,7 @@
         },
         "limitLabel": {
             "max_accommodations": "Published accommodations",
-            "max_gastronomies": "Published gastronomy listings",
+            "max_venues": "Published Food & nightlife listings",
             "max_experiences": "Published experiences",
             "max_photos_per_accommodation": "Photos per accommodation",
             "max_active_promotions": "Active promotions",
@@ -719,7 +719,7 @@
             "max_ai_text_improve_per_month": "AI text improvements per month",
             "max_ai_chat_per_month": "AI chat queries per month",
             "max_ai_chat_consumer_per_month": "AI assistant queries per month",
-            "max_ai_chat_gastronomy_per_month": "AI chat queries (gastronomy) per month",
+            "max_ai_chat_venue_per_month": "AI chat queries (Food & nightlife) per month",
             "max_ai_chat_experience_per_month": "AI chat queries (experiences) per month",
             "max_ai_search_per_month": "AI searches per month",
             "max_ai_support_per_month": "AI support queries per month",
@@ -742,7 +742,7 @@
         "max_ai_text_improve_per_month": "How many times a month you can ask the AI to improve your texts. The quota resets at the start of each month.",
         "max_ai_chat_per_month": "How many questions the AI can answer about your places each month. Once spent, it comes back the following month.",
         "max_ai_chat_consumer_per_month": "How many questions you can ask the AI assistant each month. Once spent, the quota resets the following month.",
-        "max_ai_chat_gastronomy_per_month": "How many questions the AI can answer about your restaurant each month. Once spent, it comes back the following month.",
+        "max_ai_chat_venue_per_month": "How many questions the AI can answer about your restaurant each month. Once spent, it comes back the following month.",
         "max_ai_chat_experience_per_month": "How many questions the AI can answer about your experience each month. Once spent, it comes back the following month.",
         "max_ai_search_per_month": "How many AI searches you can run each month. Once spent, you keep using the regular search until the following month.",
         "max_ai_support_per_month": "How many questions a month you can ask the AI support assistant. The quota resets at the start of each month.",
@@ -750,7 +750,7 @@
         "max_ai_accommodation_import_per_month": "How many places you can import from another platform each month with AI help. The quota resets at the start of each month.",
         "max_search_history_entries": "How many past searches are kept in your history. Beyond the cap, the oldest ones are removed.",
         "max_collections": "How many favourite lists you can keep. At the cap you have to delete one to create another.",
-        "max_gastronomies": "How many food and drink venues you can have published at once. At the cap you need a higher plan to add another.",
+        "max_venues": "How many food and drink venues you can have published at once. At the cap you need a higher plan to add another.",
         "max_experiences": "How many experiences you can have published at once. At the cap you need a higher plan to add another.",
         "max_active_private_galleries": "How many private galleries you can keep alive at the same time. Each gallery expires on its own once its term is up and is deleted, so slots free up as they lapse."
     }

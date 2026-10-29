@@ -47,19 +47,19 @@ export interface ListingActionsProps {
 
 /** Public detail path segment per vertical (mirrors the `[slug].astro` routes). */
 const PUBLIC_PATH_BY_VERTICAL: Record<OwnerListingSummaryWithState['vertical'], string> = {
-    gastronomy: 'gastronomia',
+    venue: 'comer-y-salir',
     experience: 'experiencias'
 };
 
 const PUBLISH_CONFIRM_TITLE_KEY: Readonly<Record<PublishVerticalSlug, string>> = {
     accommodation: 'host.properties.card.actions.publishConfirmTitle',
-    gastronomy: 'listing.owner.publish.confirmTitle.gastronomy',
+    venue: 'listing.owner.publish.confirmTitle.venue',
     experience: 'listing.owner.publish.confirmTitle.experience'
 };
 
 const PUBLISH_CHOOSE_PLAN_KEY: Readonly<Record<PublishVerticalSlug, string>> = {
     accommodation: 'host.properties.card.actions.choosePlan',
-    gastronomy: 'listing.owner.publish.choosePlan.gastronomy',
+    venue: 'listing.owner.publish.choosePlan.venue',
     experience: 'listing.owner.publish.choosePlan.experience'
 };
 

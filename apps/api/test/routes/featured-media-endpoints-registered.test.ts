@@ -67,7 +67,7 @@ const HEADERS = {
     // which is not 404, so the whole file passes while proving nothing.
     'x-mock-actor-permissions': JSON.stringify([
         'accommodation.update.any',
-        'gastronomy.editAll',
+        'venue.editAll',
         'experience.editAll',
         'access.panelAdmin'
     ])
@@ -94,12 +94,12 @@ const COVER_ENDPOINTS: ReadonlyArray<{
         caller: 'apps/admin — useAccommodationMediaAddFeatured (mediaEndpoint → /api/v1/admin)'
     },
     {
-        path: `/api/v1/protected/gastronomies/${ID}/media/featured`,
+        path: `/api/v1/protected/venues/${ID}/media/featured`,
         caller: 'protected tier parity with the admin route below'
     },
     {
-        path: `/api/v1/admin/gastronomies/${ID}/media/featured`,
-        caller: 'apps/admin — useListingMediaAddFeatured, vertical gastronomy'
+        path: `/api/v1/admin/venues/${ID}/media/featured`,
+        caller: 'apps/admin — useListingMediaAddFeatured, vertical venue'
     },
     {
         path: `/api/v1/protected/experiences/${ID}/media/featured`,

@@ -25,7 +25,7 @@ const verticals = [
 function listingPath(vertical: (typeof verticals)[number], id: string) {
     const segment: Readonly<Record<(typeof verticals)[number], string>> = {
         [VerticalEnum.ACCOMMODATION]: 'accommodations',
-        [VerticalEnum.VENUE]: 'gastronomies',
+        [VerticalEnum.VENUE]: 'venues',
         [VerticalEnum.EXPERIENCE]: 'experiences'
     };
     return `/api/v1/admin/${segment[vertical]}/${id}/moderate`;
@@ -98,7 +98,7 @@ describe.each(verticals)('TEST:V6:12 moderation HTTP — %s', (vertical) => {
         expect(noSession.status, JSON.stringify(noSession.body)).toBe(401);
         const legacyPermission: Readonly<Record<(typeof verticals)[number], PermissionEnum>> = {
             [VerticalEnum.ACCOMMODATION]: PermissionEnum.ACCOMMODATION_MODERATION_CHANGE,
-            [VerticalEnum.VENUE]: PermissionEnum.GASTRONOMY_MODERATION_CHANGE,
+            [VerticalEnum.VENUE]: PermissionEnum.VENUE_MODERATION_CHANGE,
             [VerticalEnum.EXPERIENCE]: PermissionEnum.EXPERIENCE_MODERATION_CHANGE
         };
         const denied = await readResponse(
@@ -141,7 +141,7 @@ describe.each(verticals)('TEST:V6:12 moderation HTTP — %s', (vertical) => {
         const softDeletedId = await makeListing(vertical, owner.id, destinationId);
         const table: Readonly<Record<(typeof verticals)[number], string>> = {
             [VerticalEnum.ACCOMMODATION]: 'accommodations',
-            [VerticalEnum.VENUE]: 'gastronomies',
+            [VerticalEnum.VENUE]: 'venues',
             [VerticalEnum.EXPERIENCE]: 'experiences'
         };
         await getDb().execute(

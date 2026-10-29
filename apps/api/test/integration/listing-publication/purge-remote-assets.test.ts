@@ -29,7 +29,7 @@ vi.mock('../../../src/services/media', () => ({
 const app = initApp();
 const fixtures: PurgeAssetFixture[] = [];
 const routeNames: Readonly<Record<PurgeAssetFixture['vertical'], string>> = {
-    [VerticalEnum.VENUE]: 'gastronomies',
+    [VerticalEnum.VENUE]: 'venues',
     [VerticalEnum.EXPERIENCE]: 'experiences',
     [VerticalEnum.ACCOMMODATION]: 'accommodations'
 };
@@ -88,16 +88,16 @@ describe('TEST:1702:2 AC:1702:1 AC:1702:3 AC:1702:4 PB12 deletes every remote fi
             ).toEqual([]);
             if (vertical === VerticalEnum.VENUE) {
                 const media = await getDb().execute(
-                    sql`SELECT id FROM gastronomy_media WHERE gastronomy_id = ${fixture.listingId}::uuid`
+                    sql`SELECT id FROM venue_media WHERE venue_id = ${fixture.listingId}::uuid`
                 );
                 const content = await getDb().execute(
-                    sql`SELECT menu_file_url, menu_file_public_id, menu_file_kind, videos FROM gastronomies WHERE id = ${fixture.listingId}::uuid`
+                    sql`SELECT menu_file_url, menu_file_public_id, menu_file_kind, videos FROM venues WHERE id = ${fixture.listingId}::uuid`
                 );
                 const dishes = await getDb().execute(
-                    sql`SELECT id FROM gastronomy_menu_items WHERE gastronomy_id = ${fixture.listingId}::uuid`
+                    sql`SELECT id FROM venue_menu_items WHERE venue_id = ${fixture.listingId}::uuid`
                 );
                 const sections = await getDb().execute(
-                    sql`SELECT id FROM gastronomy_menu_sections WHERE gastronomy_id = ${fixture.listingId}::uuid`
+                    sql`SELECT id FROM venue_menu_sections WHERE venue_id = ${fixture.listingId}::uuid`
                 );
                 expect(media.rows).toEqual([]);
                 expect(content.rows).toEqual([

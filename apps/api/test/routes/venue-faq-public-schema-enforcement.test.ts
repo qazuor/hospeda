@@ -1,15 +1,15 @@
 /**
- * Regression tests for SPEC-210 PR2 — gastronomy FAQ public schema enforcement.
+ * Regression tests for SPEC-210 PR2 — venue FAQ public schema enforcement.
  *
- * Verifies that GET /api/v1/public/gastronomies/:gastronomyId/faqs serializes
- * responses through `GastronomyFaqPublicSchema` and NEVER leaks the internal-only
+ * Verifies that GET /api/v1/public/venues/:venueId/faqs serializes
+ * responses through `VenueFaqPublicSchema` and NEVER leaks the internal-only
  * fields: `createdAt`, `updatedAt`, `createdById`, `updatedById`, `deletedAt`,
  * `deletedById`, and `lifecycleState`.
  *
  * The "Schema unit tests — always run (no DB required)" block runs unconditionally
  * so a schema revert is caught even in the DB-less CI environment.
  *
- * Endpoint: GET /api/v1/public/gastronomies/:gastronomyId/faqs
+ * Endpoint: GET /api/v1/public/venues/:venueId/faqs
  */
 
 import { VenueFaqPublicListOutputSchema, VenueFaqPublicSchema } from '@repo/schemas';
@@ -32,22 +32,22 @@ const FORBIDDEN_FIELDS = [
     'lifecycleState'
 ] as const;
 
-/** Fields that must be present on every public gastronomy FAQ item. */
-const REQUIRED_PUBLIC_FIELDS = ['id', 'gastronomyId', 'question', 'answer'] as const;
+/** Fields that must be present on every public venue FAQ item. */
+const REQUIRED_PUBLIC_FIELDS = ['id', 'venueId', 'question', 'answer'] as const;
 
 /**
- * Raw FAQ object that includes all fields from the full GastronomyFaqSchema
+ * Raw FAQ object that includes all fields from the full VenueFaqSchema
  * (including internal audit/lifecycle fields that must be stripped).
  */
 const RAW_FAQ_WITH_FORBIDDEN_FIELDS = {
     // Public fields
     id: '223e4567-e89b-12d3-a456-426614174001',
-    gastronomyId: '223e4567-e89b-12d3-a456-426614174002',
+    venueId: '223e4567-e89b-12d3-a456-426614174002',
     question: 'Do you offer vegetarian options on the menu?',
     answer: 'Yes, we have a dedicated vegetarian section with seasonal dishes updated weekly.',
     category: 'Qué hacer',
     displayOrder: 1,
-    // Audit fields — must be stripped by GastronomyFaqPublicSchema
+    // Audit fields — must be stripped by VenueFaqPublicSchema
     createdAt: new Date(),
     updatedAt: new Date(),
     createdById: '223e4567-e89b-12d3-a456-000000000001',
@@ -62,7 +62,7 @@ const RAW_FAQ_WITH_FORBIDDEN_FIELDS = {
 // Schema unit tests — ALWAYS RUN (no DB required)
 // ---------------------------------------------------------------------------
 
-describe('GastronomyFaqPublicSchema — unit tests (no DB, always run) (SPEC-210)', () => {
+describe('VenueFaqPublicSchema — unit tests (no DB, always run) (SPEC-210)', () => {
     it('strips all audit fields and lifecycleState from a raw FAQ object', () => {
         const result = VenueFaqPublicSchema.safeParse(RAW_FAQ_WITH_FORBIDDEN_FIELDS);
         expect(result.success).toBe(true);
@@ -74,7 +74,7 @@ describe('GastronomyFaqPublicSchema — unit tests (no DB, always run) (SPEC-210
         }
     });
 
-    it('preserves required public fields (id, gastronomyId, question, answer) after parse', () => {
+    it('preserves required public fields (id, venueId, question, answer) after parse', () => {
         const result = VenueFaqPublicSchema.safeParse(RAW_FAQ_WITH_FORBIDDEN_FIELDS);
         expect(result.success).toBe(true);
         if (result.success) {
@@ -98,7 +98,7 @@ describe('GastronomyFaqPublicSchema — unit tests (no DB, always run) (SPEC-210
     it('parses successfully with only the required public fields (no extras)', () => {
         const minimal = {
             id: '223e4567-e89b-12d3-a456-426614174003',
-            gastronomyId: '223e4567-e89b-12d3-a456-426614174004',
+            venueId: '223e4567-e89b-12d3-a456-426614174004',
             question: 'Is there parking available near the restaurant?',
             answer: 'Yes, there is free parking available on the street and a paid lot two blocks away.'
         };
@@ -106,7 +106,7 @@ describe('GastronomyFaqPublicSchema — unit tests (no DB, always run) (SPEC-210
         expect(result.success).toBe(true);
     });
 
-    it('GastronomyFaqPublicListOutputSchema wraps the FAQ array under the faqs key', () => {
+    it('VenueFaqPublicListOutputSchema wraps the FAQ array under the faqs key', () => {
         const payload = {
             faqs: [RAW_FAQ_WITH_FORBIDDEN_FIELDS]
         };
@@ -129,10 +129,10 @@ describe('GastronomyFaqPublicSchema — unit tests (no DB, always run) (SPEC-210
 // Route-level regression tests (may be skipped if DB unavailable)
 // ---------------------------------------------------------------------------
 
-describe('GET /api/v1/public/gastronomies/:gastronomyId/faqs — schema enforcement (SPEC-210)', () => {
+describe('GET /api/v1/public/venues/:venueId/faqs — schema enforcement (SPEC-210)', () => {
     let app: AppOpenAPI;
-    const gastronomyId = '223e4567-e89b-12d3-a456-426614174000';
-    const base = `/api/v1/public/gastronomies/${gastronomyId}/faqs`;
+    const venueId = '223e4567-e89b-12d3-a456-426614174000';
+    const base = `/api/v1/public/venues/${venueId}/faqs`;
 
     beforeAll(async () => {
         app = initApp();

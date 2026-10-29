@@ -5,11 +5,11 @@
 import type { AiChatEntityType } from '@repo/schemas';
 import { describe, expect, it } from 'vitest';
 import esExperience from '../../../../packages/i18n/src/locales/es/experience.json';
-import esGastronomy from '../../../../packages/i18n/src/locales/es/gastronomy.json';
+import esVenue from '../../../../packages/i18n/src/locales/es/venue.json';
 import { aiChatCopyKey, resolveAiChatCopy, resolveChatError } from '../../src/lib/ai-chat-copy';
 import { pickClientNamespaces } from '../../src/lib/i18n-client-namespaces';
 
-const VERTICALS = ['gastronomy', 'experience'] as const;
+const VERTICALS = ['venue', 'experience'] as const;
 const VERTICAL_KEYS = [
     'fabLabel',
     'panelLabel',
@@ -23,7 +23,7 @@ const missingT = (key: string, fallback?: string): string => fallback ?? key;
 
 describe('client bundle carries the vertical chat namespaces (root cause)', () => {
     it.each([
-        ['gastronomy', esGastronomy.aiChat],
+        ['venue', esVenue.aiChat],
         ['experience', esExperience.aiChat]
     ] as const)('should ship every %s.aiChat key to the browser', (ns, block) => {
         // Arrange
@@ -63,10 +63,8 @@ describe('resolveAiChatCopy', () => {
     });
 
     it('should return the translation when the key resolves', () => {
-        const t = (key: string) => (key === 'gastronomy.aiChat.panelLabel' ? 'Panel' : key);
-        expect(resolveAiChatCopy({ t, entityType: 'gastronomy', suffix: 'panelLabel' })).toBe(
-            'Panel'
-        );
+        const t = (key: string) => (key === 'venue.aiChat.panelLabel' ? 'Panel' : key);
+        expect(resolveAiChatCopy({ t, entityType: 'venue', suffix: 'panelLabel' })).toBe('Panel');
     });
 });
 
@@ -74,7 +72,7 @@ describe('resolveChatError', () => {
     const base = { t: missingT, message: null } as const;
 
     it.each([
-        ['gastronomy', 'este local'],
+        ['venue', 'este local'],
         ['experience', 'esta experiencia']
     ] as const)('should name the %s subject on ENTITLEMENT_REQUIRED', (entityType, subject) => {
         const out = resolveChatError({ ...base, entityType, code: 'ENTITLEMENT_REQUIRED' });
@@ -95,14 +93,13 @@ describe('resolveChatError', () => {
     });
 
     it('should prefer a resolvable API message key', () => {
-        const t = (key: string) =>
-            key === 'gastronomy.aiChat.unavailable' ? 'No disponible' : key;
+        const t = (key: string) => (key === 'venue.aiChat.unavailable' ? 'No disponible' : key);
         expect(
             resolveChatError({
                 t,
-                entityType: 'gastronomy',
+                entityType: 'venue',
                 code: 'ENTITLEMENT_REQUIRED',
-                message: 'gastronomy.aiChat.unavailable'
+                message: 'venue.aiChat.unavailable'
             })
         ).toBe('No disponible');
     });
@@ -120,7 +117,7 @@ describe('resolveChatError', () => {
 
 describe('aiChatCopyKey', () => {
     it('should route vertical keys to the vertical namespace', () => {
-        expect(aiChatCopyKey('gastronomy', 'panelLabel')).toBe('gastronomy.aiChat.panelLabel');
+        expect(aiChatCopyKey('venue', 'panelLabel')).toBe('venue.aiChat.panelLabel');
         expect(aiChatCopyKey('experience', 'fabLabel')).toBe('experience.aiChat.fabLabel');
     });
 });

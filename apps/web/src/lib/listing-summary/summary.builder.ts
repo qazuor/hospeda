@@ -1,6 +1,6 @@
 /**
  * Main orchestrator for the listing summary builder
- * (gastronomy + experience, BETA-119).
+ * (venue + experience, BETA-119).
  *
  * Produces a single human-readable sentence describing the active filters,
  * shown / total counts, and sort. Examples:
@@ -74,7 +74,7 @@ function buildSortPhrase({
 }
 
 /**
- * Build the natural-language summary sentence for a gastronomy or
+ * Build the natural-language summary sentence for a venue or
  * experience) listing. Always returns a single sentence ending with a
  * period. Page authors should not call this directly — use
  * `buildVenueListingSummary` / `buildExperienceListingSummary` from

@@ -96,7 +96,7 @@ const fixtures = {
         extraInfo: { capacity: 4, minNights: 1, bedrooms: 2, bathrooms: 1 },
         faqs: []
     },
-    gastronomy: {
+    venue: {
         ...common,
         type: 'PARRILLA',
         isPriceOnRequest: false,
@@ -122,7 +122,7 @@ const cases = [
                 .protectedGetOwnAccommodationByIdRoute
     },
     {
-        label: 'gastronomy',
+        label: 'venue',
         service: VenueService,
         route: async () =>
             (await import('../../src/routes/venue/protected/getById.js')).protectedGetVenueByIdRoute

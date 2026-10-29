@@ -20,7 +20,7 @@
         },
         {
             "file": "packages/db/src/models/listing/listing-retention.model.ts",
-            "sha256": "8f15798caf43261b1d5e924d44c5c8e11d9b73f3f2e35ff1aa4eb2958cdf3d8f"
+            "sha256": "7880d556a02ce17ed33121b5daa47aff2efc1e32849b67e5263c9ac8483c793c"
         },
         {
             "file": "apps/api/src/cron/jobs/listing-inactivity-archive.job.ts",
@@ -32,7 +32,7 @@
         },
         {
             "file": "packages/notifications/src/services/outbox/listing-archived-renderers.tsx",
-            "sha256": "f5a7691a86ece81e4c5894bcc9447ac282679ae84d0f8e340c86eee09253bbe6"
+            "sha256": "1ae4db9e8466e2922768df6a5523d6f6e3dcd0500af1d009a36d20e1a6f2c17e"
         },
         {
             "file": "packages/notifications/src/templates/listing/listing-archived.tsx",

@@ -435,11 +435,11 @@ export const amenitiesApi = {
         sortOrder?: 'asc' | 'desc';
         /**
          * SPEC-266: scope the catalog to one vertical. The accommodation editor
-         * needs `accommodation` so gastronomy/experience amenities stay out of
+         * needs `accommodation` so venue/experience amenities stay out of
          * its checkbox group. Added in HOS-318 — without it the editor page had
          * to bypass this wrapper with a raw `fetch`, which apps/web forbids.
          */
-        applicableVertical?: 'accommodation' | 'gastronomy' | 'experience';
+        applicableVertical?: 'accommodation' | 'venue' | 'experience';
         /**
          * HOS-103: opt in to the short-TTL SSR cache. Pass
          * `SSR_PUBLIC_CACHE_TTL_MS` ONLY from bounded call sites. HOS-299 added
@@ -466,7 +466,7 @@ export const featuresApi = {
         sortBy?: string;
         sortOrder?: 'asc' | 'desc';
         /** SPEC-266: scope the catalog to one vertical. See `amenitiesApi.list`. */
-        applicableVertical?: 'accommodation' | 'gastronomy' | 'experience';
+        applicableVertical?: 'accommodation' | 'venue' | 'experience';
         /**
          * HOS-103: opt in to the short-TTL SSR cache. Pass
          * `SSR_PUBLIC_CACHE_TTL_MS` ONLY from bounded call sites. HOS-299 added
@@ -1413,7 +1413,7 @@ export const userBookmarksPublicApi = {
             | 'DESTINATION'
             | 'EVENT'
             | 'EXPERIENCE'
-            | 'GASTRONOMY'
+            | 'VENUE'
             | 'POST';
         readonly entityId: string;
     }): Promise<ApiResult<{ readonly count: number }>> {
@@ -1552,10 +1552,10 @@ export const authApi = {
     }
 };
 
-// --- Gastronomy (SPEC-239) ---
+// --- Venue (SPEC-239) ---
 
 /**
- * Review item shape returned by GET /gastronomies/:id/reviews.
+ * Review item shape returned by GET /venues/:id/reviews.
  * The full shape is defined server-side (VenueReviewPublicSchema pick);
  * the web client only needs the fields actually rendered in the review list.
  */
@@ -1576,12 +1576,12 @@ export interface VenueReviewPublicItem {
     readonly createdAt?: string | null;
 }
 
-/** Public gastronomy API endpoints (SPEC-239 T-042..T-044). */
+/** Public venue API endpoints (SPEC-239 T-042..T-044). */
 export const venueApi = {
     /**
-     * List gastronomy listings with pagination, search, sorting, and filters.
+     * List venue listings with pagination, search, sorting, and filters.
      *
-     * GET /api/v1/public/gastronomies
+     * GET /api/v1/public/venues
      */
     list(params?: {
         readonly page?: number;
@@ -1600,29 +1600,29 @@ export const venueApi = {
         /**
          * Comma-separated feature UUIDs the listing must ALL carry. This is the
          * "apto" filter (HOS-1054): sin TACC, vegano, vegetariano, sin lactosa
-         * and sin frutos secos are gastronomy-scoped `features` catalog rows,
+         * and sin frutos secos are venue-scoped `features` catalog rows,
          * not columns of their own.
          */
         readonly features?: string;
         readonly includeAmenities?: boolean;
         readonly includeFeatures?: boolean;
     }): Promise<ApiResult<PaginatedResponse<VenuePublic>>> {
-        return apiClient.getList({ path: `${BASE}/gastronomies`, params });
+        return apiClient.getList({ path: `${BASE}/venues`, params });
     },
 
     /**
-     * Get a single gastronomy listing by its URL slug.
+     * Get a single venue listing by its URL slug.
      *
-     * GET /api/v1/public/gastronomies/slug/:slug
+     * GET /api/v1/public/venues/slug/:slug
      */
     getBySlug({ slug }: { readonly slug: string }): Promise<ApiResult<VenuePublic>> {
-        return apiClient.get({ path: `${BASE}/gastronomies/slug/${slug}` });
+        return apiClient.get({ path: `${BASE}/venues/slug/${slug}` });
     },
 
     /**
-     * Get paginated reviews for a gastronomy listing (with user info).
+     * Get paginated reviews for a venue listing (with user info).
      *
-     * GET /api/v1/public/gastronomies/:id/reviews
+     * GET /api/v1/public/venues/:id/reviews
      */
     getReviews({
         id,
@@ -1634,18 +1634,18 @@ export const venueApi = {
         readonly pageSize?: number;
     }): Promise<ApiResult<PaginatedResponse<VenueReviewPublicItem>>> {
         return apiClient.getList({
-            path: `${BASE}/gastronomies/${id}/reviews`,
+            path: `${BASE}/venues/${id}/reviews`,
             params: { page, pageSize }
         });
     },
 
     /**
-     * Get the FAQ list for a gastronomy listing.
+     * Get the FAQ list for a venue listing.
      *
-     * GET /api/v1/public/gastronomies/:id/faqs
+     * GET /api/v1/public/venues/:id/faqs
      */
     getFaqs({ id }: { readonly id: string }): Promise<ApiResult<ReadonlyArray<unknown>>> {
-        return apiClient.get({ path: `${BASE}/gastronomies/${id}/faqs` });
+        return apiClient.get({ path: `${BASE}/venues/${id}/faqs` });
     }
 };
 

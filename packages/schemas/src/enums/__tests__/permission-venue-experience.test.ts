@@ -37,16 +37,16 @@ describe('retired shared role and permissions', () => {
 describe('HOS-1077 per-vertical permissions', () => {
     const VERTICALS = [
         {
-            name: 'gastronomy',
-            category: PermissionCategoryEnum.GASTRONOMY,
+            name: 'venue',
+            category: PermissionCategoryEnum.VENUE,
             permissions: {
-                editOwn: PermissionEnum.GASTRONOMY_EDIT_OWN,
-                create: PermissionEnum.GASTRONOMY_CREATE,
-                viewAll: PermissionEnum.GASTRONOMY_VIEW_ALL,
-                editAll: PermissionEnum.GASTRONOMY_EDIT_ALL,
-                delete: PermissionEnum.GASTRONOMY_DELETE,
-                moderateReview: PermissionEnum.GASTRONOMY_MODERATE_REVIEW,
-                moderationChange: PermissionEnum.GASTRONOMY_MODERATION_CHANGE
+                editOwn: PermissionEnum.VENUE_EDIT_OWN,
+                create: PermissionEnum.VENUE_CREATE,
+                viewAll: PermissionEnum.VENUE_VIEW_ALL,
+                editAll: PermissionEnum.VENUE_EDIT_ALL,
+                delete: PermissionEnum.VENUE_DELETE,
+                moderateReview: PermissionEnum.VENUE_MODERATE_REVIEW,
+                moderationChange: PermissionEnum.VENUE_MODERATION_CHANGE
             }
         },
         {
@@ -78,7 +78,7 @@ describe('HOS-1077 per-vertical permissions', () => {
             });
 
             it('spells every value as two camelCase segments, not a dotted third', () => {
-                // A dotted third segment (`gastronomy.moderation.change`) would add
+                // A dotted third segment (`venue.moderation.change`) would add
                 // a dual-spelled family to the baseline frozen by
                 // `permission-naming-convention.guard.test.ts`.
                 for (const value of Object.values(vertical.permissions)) {
@@ -97,9 +97,9 @@ describe('HOS-1077 per-vertical permissions', () => {
     it('the two verticals share no permission value', () => {
         // If any value were shared, granting one vertical would grant the other
         // — the exact defect HOS-1077 exists to remove.
-        const gastronomy = Object.values(VERTICALS[0].permissions);
+        const venue = Object.values(VERTICALS[0].permissions);
         const experience = Object.values(VERTICALS[1].permissions);
-        expect(gastronomy.filter((v) => (experience as string[]).includes(v))).toEqual([]);
+        expect(venue.filter((v) => (experience as string[]).includes(v))).toEqual([]);
     });
 
     it('neither vertical reuses a legacy shared-family value', () => {

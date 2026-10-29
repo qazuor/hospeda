@@ -84,21 +84,21 @@ export type ListingPermissionSlot =
 /**
  * The per-vertical permission families.
  *
- * This table is the whole point of HOS-1077: `gastronomy.editAll` and
+ * This table is the whole point of HOS-1077: `venue.editAll` and
  * `experience.editAll` are different permissions, so a restaurant moderator can
  * finally be granted one without the other.
  */
 const VERTICAL_PERMISSIONS: Readonly<
     Record<VenueOrExperience, Readonly<Record<ListingPermissionSlot, PermissionEnum>>>
 > = {
-    gastronomy: {
-        editOwn: PermissionEnum.GASTRONOMY_EDIT_OWN,
-        create: PermissionEnum.GASTRONOMY_CREATE,
-        viewAll: PermissionEnum.GASTRONOMY_VIEW_ALL,
-        editAll: PermissionEnum.GASTRONOMY_EDIT_ALL,
-        delete: PermissionEnum.GASTRONOMY_DELETE,
-        moderateReview: PermissionEnum.GASTRONOMY_MODERATE_REVIEW,
-        moderationChange: PermissionEnum.GASTRONOMY_MODERATION_CHANGE
+    venue: {
+        editOwn: PermissionEnum.VENUE_EDIT_OWN,
+        create: PermissionEnum.VENUE_CREATE,
+        viewAll: PermissionEnum.VENUE_VIEW_ALL,
+        editAll: PermissionEnum.VENUE_EDIT_ALL,
+        delete: PermissionEnum.VENUE_DELETE,
+        moderateReview: PermissionEnum.VENUE_MODERATE_REVIEW,
+        moderationChange: PermissionEnum.VENUE_MODERATION_CHANGE
     },
     experience: {
         editOwn: PermissionEnum.EXPERIENCE_EDIT_OWN,
@@ -118,7 +118,7 @@ const VERTICAL_PERMISSIONS: Readonly<
  * Each listing grants only its vertical's owner role.
  */
 export const VERTICAL_OWNER_ROLES: Readonly<Record<VenueOrExperience, RoleEnum>> = {
-    gastronomy: RoleEnum.GASTRONOMY_OWNER,
+    venue: RoleEnum.VENUE_OWNER,
     experience: RoleEnum.EXPERIENCE_OWNER
 };
 
@@ -140,7 +140,7 @@ export function verticalPermission(
 }
 
 /**
- * Checks the vertical's own permission, and only that one: a gastronomy
+ * Checks the vertical's own permission, and only that one: a venue
  * permission never authorizes an experience listing, nor the other way round.
  *
  * @param actor - The actor performing the action.
@@ -172,7 +172,7 @@ export function hasListingPermission(
  * onboarding, where creating the first accommodation draft requires no
  * `ACCOMMODATION_*` permission and grants `HOST` on the way through.
  *
- * The admin create path is unaffected: `apps/api/src/routes/gastronomy/admin/create.ts`
+ * The admin create path is unaffected: `apps/api/src/routes/venue/admin/create.ts`
  * and its experience twin carry their own `anyOfPermissions` gate with the
  * corresponding vertical's CREATE permission, so this service predicate does
  * not widen the admin door.

@@ -173,7 +173,7 @@ function namespaceLeafPaths(
  * Namespaces HOS-616 is actively draining inline fallbacks into. Swept whole
  * via `namespaceLeafPaths` rather than enumerated by path — see that
  * function's comment. Extend this list as later HOS-616 batches touch more
- * namespaces (`gastronomy.json` and `blog.json` are here even though this
+ * namespaces (`venue.json` and `blog.json` are here even though this
  * round moved no PHANTOM/BACKED-claim-shaped copy into them, so the next
  * batch that does is covered without a second PR to this file).
  */
@@ -182,7 +182,7 @@ const HOS_616_DRAINED_NAMESPACES = [
     'owners.json',
     'about.json',
     'blog.json',
-    'gastronomy.json'
+    'venue.json'
 ] as const;
 
 const PROSE_SURFACES: ReadonlyArray<{ readonly file: string; readonly path: string }> = [
@@ -247,7 +247,7 @@ const FIRST_SUBSCRIPTION_HINTS: Record<Locale, readonly string[]> = {
     // `(customer, product domain)`, so the honest qualifier names the VERTICAL,
     // not the subscription. "one per account" would now be false in the
     // generous direction (someone who spent their accommodation trial does get
-    // one in gastronomy) and "first subscription" false in the strict one
+    // one in venue) and "first subscription" false in the strict one
     // (within accommodation the trial is one, whichever plan is chosen). Both
     // spellings are accepted because the older copy is still true wherever it
     // survives. "primera propiedad" / "first property" stay REJECTED: they say

@@ -3,7 +3,7 @@
  * HOS-1352, piece V6; spec name: the `listing` state). Six states, thirteen
  * transitions (`PB1`..`PB13`).
  *
- * It lives on the three listing tables (`accommodations`, `gastronomies`,
+ * It lives on the three listing tables (`accommodations`, `venues`,
  * `experiences`) as `publication_status` and replaces `lifecycle_state`,
  * `visibility` and `moderation_state`, which the paso-3 cut migration drops.
  *

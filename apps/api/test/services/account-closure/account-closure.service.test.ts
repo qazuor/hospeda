@@ -226,7 +226,7 @@ describe('TEST:V8a:12 the account closure decides in one transaction', () => {
         ]);
         expect(mocks.lockKeys).toEqual([
             `trial-start:${JUAN}:accommodation`,
-            `trial-start:${JUAN}:gastronomy`,
+            `trial-start:${JUAN}:venue`,
             `trial-start:${JUAN}:experience`
         ]);
         expect(mocks.closeAccount).toHaveBeenCalledWith(

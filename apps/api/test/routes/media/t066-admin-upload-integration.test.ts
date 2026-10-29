@@ -339,27 +339,31 @@ describe('POST /api/v1/admin/media/upload — integration (T-066)', () => {
     });
 
     describe('extended entity support', () => {
-        it('accepts gastronomy featured uploads through the shared admin route', async () => {
+        it('TEST:1819:6 AC:1:3 accepts venue featured uploads through the shared admin route', async () => {
             const actor = createMockAdminActor({
                 id: ADMIN_ACTOR_ID,
                 permissions: [
                     PermissionEnum.ACCESS_PANEL_ADMIN,
                     PermissionEnum.ACCESS_API_ADMIN,
                     PermissionEnum.MEDIA_UPLOAD,
-                    PermissionEnum.GASTRONOMY_EDIT_ALL
+                    PermissionEnum.VENUE_EDIT_ALL
                 ]
             });
 
             const req = new Request(ADMIN_UPLOAD_URL, {
                 method: 'POST',
                 headers: buildAuthHeaders(actor),
-                body: buildAdminMultipartBody({}, { entityType: 'gastronomy', role: 'featured' })
+                body: buildAdminMultipartBody({}, { entityType: 'venue', role: 'featured' })
             });
             const res = await app.request(req);
 
             expect(res.status).toBe(200);
+            expect(VenueService.prototype.getById).toHaveBeenCalledWith(
+                expect.anything(),
+                ADMIN_ENTITY_ID
+            );
             const arg = mockUpload.mock.calls[0]?.[0] as { folder: string; publicId: string };
-            expect(arg.folder).toBe(`hospeda/test/gastronomies/${ADMIN_ENTITY_ID}`);
+            expect(arg.folder).toBe(`hospeda/test/venues/${ADMIN_ENTITY_ID}`);
             expect(arg.publicId).toBe('featured');
         });
 

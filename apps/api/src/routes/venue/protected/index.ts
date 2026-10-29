@@ -1,11 +1,11 @@
 /**
- * Protected gastronomy routes (T-043 / T-044 / HOS-372)
+ * Protected venue routes (T-043 / T-044 / HOS-372)
  * Routes that require authentication.
  *
  * Routes with overlapping param patterns are registered from most specific to
  * most general, matching the convention the rest of the codebase follows:
  * - /{id}/faqs/reorder (PUT) before /{id}/faqs/{faqId} (PUT/DELETE).
- * - /{gastronomyId}/reviews (POST) before /{id} (GET/PATCH).
+ * - /{venueId}/reviews (POST) before /{id} (GET/PATCH).
  * - /{id}/media/reorder (PATCH) before /{id}/media/{mediaId} (DELETE).
  * - /{id}/media/{mediaId}/featured (PUT) before /{id}/media/{mediaId} (DELETE).
  *
@@ -14,7 +14,7 @@
  * insertion order. Verified by mutation on the post/event twin of these routes
  * (registering the DELETE first leaves
  * `test/routes/post-protected-media.test.ts` green). There is no equivalent
- * gastronomy/experience-side route test to re-run that mutation against here, but it is the
+ * venue/experience-side route test to re-run that mutation against here, but it is the
  * same Hono router. The other two entries are very likely the same, but were
  * not verified — do not read them as proven.
  */
@@ -97,16 +97,16 @@ app.route('/', protectedGetVenueQrCodeRoute);
 // entries: Hono resolves a static segment ahead of a param at the same
 // position regardless of insertion order.
 //
-// GET /{id}/menu — read the carta. NOT entitlement-gated: every gastronomy
+// GET /{id}/menu — read the carta. NOT entitlement-gated: every venue
 // tier sees its own menu, and only writing the structured half is paid.
 app.route('/', protectedGetVenueMenuRoute);
 
 // PUT /{id}/menu — replace the structured carta. Gated on
-// MANAGE_GASTRONOMY_MENU (gastronomy-pro and above).
+// MANAGE_VENUE_MENU (venue-pro and above).
 app.route('/', protectedPutVenueMenuRoute);
 
 // POST /{id}/menu-file — upload the photo/PDF alternative. Gated on
-// MANAGE_GASTRONOMY_MENU, same as PUT /{id}/menu (HOS-895 PR2 — owner
+// MANAGE_VENUE_MENU, same as PUT /{id}/menu (HOS-895 PR2 — owner
 // decision reversed PR1's ungated shipment).
 app.route('/', protectedUploadVenueMenuFileRoute);
 
@@ -114,7 +114,7 @@ app.route('/', protectedUploadVenueMenuFileRoute);
 app.route('/', protectedDeleteVenueMenuFileRoute);
 
 // POST /{id}/menu-item-photo — upload ONE dish photo (HOS-1045). Gated on
-// MENU_ITEM_PHOTOS (gastronomy-premium), a strictly narrower gate than the
+// MENU_ITEM_PHOTOS (venue-premium), a strictly narrower gate than the
 // carta's: writing a carta is `-pro`, putting a picture on a dish of it is the
 // tier above. Returns the asset; the association is written by PUT /{id}/menu,
 // because a dish's id does not survive that write.
@@ -122,7 +122,7 @@ app.route('/', protectedUploadVenueMenuItemPhotoRoute);
 
 // GET /{id}/menu-qr — the venue's printable menu QR (HOS-1044), minted (or
 // reused) on this call only — never on the public /carta/ page. Gated on
-// MENU_QR_SCAN_METRICS (gastronomy-premium). Registered before /{id} for the
+// MENU_QR_SCAN_METRICS (venue-premium). Registered before /{id} for the
 // same DEFENSIVE reason as the entries above.
 app.route('/', protectedGetVenueMenuQrRoute);
 
@@ -137,12 +137,12 @@ app.route('/', protectedGetVenueMenuQrScansRoute);
 // before /{id} for the same DEFENSIVE reason as the entries above.
 //
 // GET /{id}/daily-specials — read them, UNFILTERED by the window. NOT
-// entitlement-gated: every gastronomy tier sees its own specials, and only
+// entitlement-gated: every venue tier sees its own specials, and only
 // publishing them is paid.
 app.route('/', protectedGetVenueDailySpecialsRoute);
 
 // PUT /{id}/daily-specials — replace them. Gated on
-// MANAGE_GASTRONOMY_DAILY_SPECIAL (gastronomy-pro and above).
+// MANAGE_VENUE_DAILY_SPECIAL (venue-pro and above).
 app.route('/', protectedPutVenueDailySpecialsRoute);
 // Venue events (HOS-1042) — the venue's own agenda. Registered before /{id}
 // for the same DEFENSIVE reason as every static-segment entry above.
@@ -151,8 +151,8 @@ app.route('/', protectedPutVenueDailySpecialsRoute);
 // plan no longer grants it still owns the rows, and only writing is paid.
 app.route('/', protectedGetVenueEventsRoute);
 
-// PUT /{id}/events — replace the agenda. Gated on MANAGE_GASTRONOMY_EVENTS
-// (gastronomy-pro and above).
+// PUT /{id}/events — replace the agenda. Gated on MANAGE_VENUE_EVENTS
+// (venue-pro and above).
 app.route('/', protectedPutVenueEventsRoute);
 
 // GET /{id} — Owner view (protected projection).
@@ -177,10 +177,10 @@ app.route('/', protectedUpdateVenueFaqRoute);
 // DELETE /{id}/faqs/{faqId} — Remove FAQ.
 app.route('/', protectedRemoveVenueFaqRoute);
 
-// POST /{gastronomyId}/reviews — Tourist creates a review.
+// POST /{venueId}/reviews — Tourist creates a review.
 app.route('/', protectedCreateVenueReviewRoute);
 
-// Media management (HOS-372) — gated on GASTRONOMY_EDIT_OWN/GASTRONOMY_EDIT_ALL
+// Media management (HOS-372) — gated on VENUE_EDIT_OWN/VENUE_EDIT_ALL
 // inside the service layer via checkVenueCanEditMedia.
 
 // PATCH /{id}/media/reorder — Must be before /{id}/media/{mediaId} (DELETE).

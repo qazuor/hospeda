@@ -1,9 +1,9 @@
-# ADR-035: Gastronomy / Experience Separation from Accommodation (SPEC-239)
+# ADR-035: Gastronomy / Experience Separation from Accommodation (SPEC-239) <!-- legacy-name-allowed: historical decision record (HOS-1823) -->
 
 ## Status
 
 Accepted (2026-06-17). **Superseded by DEC-ARCH-012** (HOS-1352 program): the
-single umbrella grouping this ADR was written around no longer exists. Gastronomy
+single umbrella grouping this ADR was written around no longer exists. Gastronomy <!-- legacy-name-allowed: historical decision record (HOS-1823) -->
 and experience are two independent verticals, each with its own service, schemas,
 owner role and subscription domain. This document is kept as history; the
 principles that still hold are the vertical isolation and the `product_domain`
@@ -12,16 +12,16 @@ mechanism.
 > **Update (HOS-688 / HOS-692 / HOS-695).** This ADR documents the SPEC-239-era
 > design, where one shared plan carried a single shared `product_domain` value for
 > both new verticals. HOS-688 later split billing into one subscription per owner
-> per vertical (`gastronomy` / `experience`), and HOS-692/HOS-695 retired that
+> per vertical (`gastronomy` / `experience`), and HOS-692/HOS-695 retired that <!-- legacy-name-allowed: historical decision record (HOS-1823) -->
 > shared value from `ProductDomainEnum` entirely: a row still carrying it
-> satisfies neither vertical (see the root `CLAUDE.md`'s gastronomy and experience
+> satisfies neither vertical (see the root `CLAUDE.md`'s gastronomy and experience <!-- legacy-name-allowed: historical decision record (HOS-1823) -->
 > subscription isolation section). The design principles below (CORE vs. vertical
 > separation, the `product_domain` isolation mechanism itself) still hold; the
 > specific shared value they describe does not exist in production any more.
 
 ## Context
 
-SPEC-239 introduces a new product surface, **paid gastronomy and experience
+SPEC-239 introduces a new product surface, **paid gastronomy and experience <!-- legacy-name-allowed: historical decision record (HOS-1823) -->
 listings**, to the Hospeda monorepo. The first concrete vertical is Gastronomía
 (restaurants, bars, cafés, etc.). A second vertical, Experiencias y Servicios,
 follows in SPEC-240.
@@ -46,7 +46,7 @@ The four areas requiring locked decisions were:
 ### 1. Core / vertical code separation
 
 A base listing service (in `packages/service-core/src/services/`) contains zero
-gastronomy logic. `GastronomyService` extends it and adds only gastronomy-specific
+gastronomy logic. `GastronomyService` extends it and adds only gastronomy-specific <!-- legacy-name-allowed: historical decision record (HOS-1823) -->
 fields (`type`, `priceRange`, `menuUrl`) plus its own junction-sync wiring for
 amenity and feature relations.
 
@@ -100,7 +100,7 @@ the Hospeda Drizzle schema.
 
 > **Superseded in part by HOS-1084 (2026-09-03).** The table is now
 > `entity_subscriptions` and serves all three verticals: `entity_type` accepts
-> `'accommodation'` alongside `'gastronomy'` and `'experience'`, `subscription_id`
+> `'accommodation'` alongside `'gastronomy'` and `'experience'`, `subscription_id` <!-- legacy-name-allowed: historical decision record (HOS-1823) -->
 > is nullable (a `status = 'none'` row caches "this owner holds no subscription"),
 > and a `plan_id` column lets a public read resolve entitlements without walking
 > QZPay. Nothing about the isolation this ADR decided changed: the entitlement
@@ -118,7 +118,7 @@ Merchants do not self-onboard in v1. The flow was:
 3. After offline sales, admin provisions the owner, which creates a new owner user
    with a temporary password (`must_change_password = true`) and emails the
    credentials to the merchant.
-4. Admin creates the gastronomy listing in the admin panel, assigning the
+4. Admin creates the gastronomy listing in the admin panel, assigning the <!-- legacy-name-allowed: historical decision record (HOS-1823) -->
    provisioned user as owner.
 5. Admin starts the subscription, which provisions a MercadoPago preapproval
    recurring subscription.
@@ -128,15 +128,15 @@ Merchants do not self-onboard in v1. The flow was:
 The temporary password is generated server-side, passed to the notification port,
 and **never** included in the HTTP response.
 
-> The lead funnel and its endpoints were retired afterwards; gastronomy and
+> The lead funnel and its endpoints were retired afterwards; gastronomy and <!-- legacy-name-allowed: historical decision record (HOS-1823) -->
 > experience owners now create their listings from the protected tier
-> (`POST /api/v1/protected/gastronomies/` and `/experiences/`).
+> (`POST /api/v1/protected/gastronomies/` and `/experiences/`). <!-- legacy-name-allowed: historical decision record (HOS-1823) -->
 
 ### 4. Listing-owner role and permissions
 
 The listing owner is a **new role** and must not be confused with `HOST`. `HOST`
 permissions are accommodation-scoped; reusing it would leak
-`ACCOMMODATION_VIEW_OWN` and related permissions to gastronomy and experience
+`ACCOMMODATION_VIEW_OWN` and related permissions to gastronomy and experience <!-- legacy-name-allowed: historical decision record (HOS-1823) -->
 owners.
 
 Granular `*_EDIT_OWN` operational permissions gate the owner-editable sections:
@@ -174,7 +174,7 @@ This section is the acceptance gate for the CORE/GASTRO separation. SPEC-240
   to the base service.
 - Experience schemas composed by spreading from the shared field-groups
   (identity fields, `OpeningHoursSchema`, media fields, etc.), exactly as
-  `GastronomySchema` does.
+  `GastronomySchema` does. <!-- legacy-name-allowed: historical decision record (HOS-1823) -->
 - An admin `experiences` entity registered via `createListingListConfig` +
   `createListingIdentitySection` / `createListingOperationalSection` + one
   experience-specific section. No shell fork.
@@ -265,5 +265,5 @@ dedicated visibility reconciler is simpler and correct.
   strategy. The extras-carril `product_domain` columns follow the two-carriles
   rule documented there.
 - [ADR-034](ADR-034-mobile-app-foundation.md): Mobile app foundation. The mobile
-  client will consume the public gastronomy endpoints introduced here
-  (`/api/v1/public/gastronomies/*`) once the mobile app is built.
+  client will consume the public gastronomy endpoints introduced here <!-- legacy-name-allowed: historical decision record (HOS-1823) -->
+  (`/api/v1/public/gastronomies/*`) once the mobile app is built. <!-- legacy-name-allowed: historical decision record (HOS-1823) -->

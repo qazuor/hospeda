@@ -37,7 +37,7 @@ vi.mock('../../src/utils/listing-access/ports', () => ({
                 vertical: VerticalEnum.VENUE,
                 hasLiveNonTrialTitle: false,
                 inheritsTouristVip: false,
-                entries: [{ key: 'edit_gastronomy_info', value: 1, strategy: 'MAX' }]
+                entries: [{ key: 'edit_venue_info', value: 1, strategy: 'MAX' }]
             })
     })
 }));
@@ -76,38 +76,35 @@ const row = VenueSchema.parse({
     updatedAt: new Date('2026-01-01T00:00:00Z')
 });
 
-describe('TEST:V5:6 published foreign gastronomy writes', () => {
+describe('TEST:V5:6 published foreign venue writes', () => {
     it('pairs PATCH and POST media refusals with an invented id', async () => {
         const { initApp } = await import('../../src/app.js');
         const app = initApp();
         vi.spyOn(VenueService.prototype, 'getById').mockResolvedValue({ data: row });
         const updateOwn = vi.spyOn(VenueService.prototype, 'updateOwn');
         updateOwn.mockResolvedValue({
-            error: { code: ServiceErrorCode.NOT_FOUND, message: 'gastronomy not found' }
+            error: { code: ServiceErrorCode.NOT_FOUND, message: 'venue not found' }
         });
         addMedia.mockResolvedValue({
-            error: { code: ServiceErrorCode.NOT_FOUND, message: 'gastronomy not found' }
+            error: { code: ServiceErrorCode.NOT_FOUND, message: 'venue not found' }
         });
         const headers = {
             'content-type': 'application/json',
             'user-agent': 'vitest',
             'x-mock-actor-id': '11111111-1111-4111-8111-111111111111',
             'x-mock-actor-role': 'USER',
-            'x-mock-actor-permissions': JSON.stringify(['gastronomy.editOwn'])
+            'x-mock-actor-permissions': JSON.stringify(['venue.editOwn'])
         };
         for (const [method, suffix, body] of [
             ['PATCH', '', { name: 'Changed' }],
             ['POST', '/media', { url: 'https://example.com/photo.jpg' }]
         ] as const) {
             const send = async (id: string) => {
-                const response = await app.request(
-                    `/api/v1/protected/gastronomies/${id}${suffix}`,
-                    {
-                        method,
-                        headers,
-                        body: JSON.stringify(body)
-                    }
-                );
+                const response = await app.request(`/api/v1/protected/venues/${id}${suffix}`, {
+                    method,
+                    headers,
+                    body: JSON.stringify(body)
+                });
                 const result: unknown = await response.json();
                 if (result && typeof result === 'object' && 'metadata' in result) {
                     const { metadata, ...rest } = result;
@@ -153,7 +150,7 @@ async function probe(app: Hono<AppBindings>, id: string) {
 
 afterEach(() => vi.restoreAllMocks());
 
-describe('TEST:V5:6 public gastronomy detail', () => {
+describe('TEST:V5:6 public venue detail', () => {
     it('shows only PUBLISHED and pairs every hidden state with an invented id', async () => {
         const { publicGetVenueByIdRoute } = await import(
             '../../src/routes/venue/public/getById.js'
@@ -172,7 +169,7 @@ describe('TEST:V5:6 public gastronomy detail', () => {
         vi.spyOn(VenueService.prototype, 'getById').mockImplementation(async (actor, id) => {
             if (id === MISSING_ID) {
                 return {
-                    error: { code: ServiceErrorCode.NOT_FOUND, message: 'gastronomy not found' }
+                    error: { code: ServiceErrorCode.NOT_FOUND, message: 'venue not found' }
                 };
             }
             const entity = { ...row, publicationStatus };

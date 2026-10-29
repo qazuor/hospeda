@@ -20,7 +20,7 @@ const source = readFileSync(
 describe('mi-cuenta/suscripcion — row 4 trial summary (HOS-1492)', () => {
     it('TEST:V8a:7 — reads every vertical the route admits, in parallel, with the session cookie', () => {
         expect(source).toMatch(
-            /TRIAL_SUMMARY_VERTICALS: readonly PublishVerticalSlug\[\] = \[\s*'accommodation',\s*'gastronomy',\s*'experience'\s*\]/
+            /TRIAL_SUMMARY_VERTICALS: readonly PublishVerticalSlug\[\] = \[\s*'accommodation',\s*'venue',\s*'experience'\s*\]/
         );
         expect(source).toContain('await Promise.all(');
         expect(source).toContain('publishApi.trialSummary({ vertical, cookieHeader })');

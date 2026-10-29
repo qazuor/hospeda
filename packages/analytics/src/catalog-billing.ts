@@ -10,7 +10,7 @@ const cycle = z.enum(['monthly', 'quarterly', 'semiannual', 'annual']);
  * pins that parity, so renaming an enum VALUE (HOS-1801, stage B) must update
  * this list in the same pull request.
  */
-const vertical = z.enum(['accommodation', 'gastronomy', 'experience', 'tourist', 'partner']);
+const vertical = z.enum(['accommodation', 'venue', 'experience', 'tourist', 'partner']);
 const actorKind = z.enum(['USER', 'ADMIN', 'SYSTEM']);
 const subscriptionClass = z.enum(['PRINCIPAL', 'COMPLEMENTO']);
 const currency = z.literal('ARS');

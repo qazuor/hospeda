@@ -57,7 +57,7 @@ const SEED_ROWS: (typeof features.$inferInsert)[] = [
     { slug: 'kid_friendly', applicableVerticals: ['experience'] },
     {
         slug: 'disability_accessible',
-        applicableVerticals: ['accommodation', 'gastronomy', 'experience']
+        applicableVerticals: ['accommodation', 'venue', 'experience']
     },
     { slug: 'river_front', applicableVerticals: ['accommodation'] },
     { slug: 'adults_only_area', applicableVerticals: ['accommodation'] }

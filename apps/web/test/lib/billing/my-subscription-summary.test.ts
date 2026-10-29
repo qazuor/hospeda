@@ -47,7 +47,7 @@ describe('resolveMySubscriptionSummary — TEST:1755:5', () => {
 describe('resolveMySubscriptionVerticalLabelKey — TEST:1755:6', () => {
     it.each([
         ['accommodation', 'accommodation'],
-        ['gastronomy', 'gastronomy'],
+        ['venue', 'venue'],
         ['experience', 'experience'],
         ['tourist', 'tourist'],
         ['partner', 'partner']

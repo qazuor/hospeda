@@ -211,15 +211,15 @@ describe('HOS-1436 V2.3 — action 18 (rejections, TEST:V2:10)', () => {
 
     it('TEST:V2:10 (e) a repeated rank among the sellable current versions is rejected', async () => {
         const app = initApp();
-        const other = await insertPlan({ vertical: 'gastronomy', slug: 'basic' });
+        const other = await insertPlan({ vertical: 'venue', slug: 'basic' });
         await insertVersion({
             planId: other,
-            vertical: 'gastronomy',
+            vertical: 'venue',
             rank: 20,
             sellable: true,
             current: true
         });
-        const planId = await insertPlan({ vertical: 'gastronomy', slug: 'pro' });
+        const planId = await insertPlan({ vertical: 'venue', slug: 'pro' });
         const response = await app.request(publishUrl({ planId }), {
             method: 'POST',
             headers: superAdmin,

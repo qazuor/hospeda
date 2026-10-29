@@ -307,14 +307,14 @@ export const OWNER_AI_ROWS: readonly RowConfig[] = [
 ];
 
 // ---------------------------------------------------------------------------
-// Gastronomy and experience rows (HOS-1032)
+// Venue and experience rows (HOS-1032)
 // ---------------------------------------------------------------------------
 //
 // The two verticals get their own rows rather than reusing the owner ones,
-// because they grant entirely different keys: `EDIT_GASTRONOMY_INFO` is not
+// because they grant entirely different keys: `EDIT_VENUE_INFO` is not
 // `EDIT_ACCOMMODATION_INFO`, and a row asking for the accommodation key would
-// render every gastronomy or experience tier as "not included". They are also kept apart from
-// EACH OTHER — `gastronomy` and `experience` are separate product domains and
+// render every venue or experience tier as "not included". They are also kept apart from
+// EACH OTHER — `venue` and `experience` are separate product domains and
 // no surface may group them under a shared "Comercio" (HOS-941 R-3).
 //
 // Every cell names a real key off `plans.config.ts`, so a tier the owner
@@ -322,24 +322,24 @@ export const OWNER_AI_ROWS: readonly RowConfig[] = [
 // is reflected with no edit here — the same property that keeps the owner and
 // tourist tables honest.
 
-/** What a gastronomy tier lets its owner publish and maintain. */
+/** What a venue tier lets its owner publish and maintain. */
 export const VENUE_LISTING_ROWS: readonly RowConfig[] = [
     {
-        id: 'maxGastronomies',
-        labelKey: 'billing.comparison.row.maxGastronomies',
-        cell: { kind: 'limit', key: LimitKeyEnum.MAX_GASTRONOMIES },
+        id: 'maxVenues',
+        labelKey: 'billing.comparison.row.maxVenues',
+        cell: { kind: 'limit', key: LimitKeyEnum.MAX_VENUES },
         status: 'available'
     },
     {
-        id: 'publishGastronomy',
-        labelKey: 'billing.comparison.row.publishGastronomy',
-        cell: { kind: 'entitlement', key: EntitlementKeyEnum.PUBLISH_GASTRONOMY },
+        id: 'publishVenue',
+        labelKey: 'billing.comparison.row.publishVenue',
+        cell: { kind: 'entitlement', key: EntitlementKeyEnum.PUBLISH_VENUE },
         status: 'available'
     },
     {
-        id: 'editGastronomyInfo',
-        labelKey: 'billing.comparison.row.editGastronomyInfo',
-        cell: { kind: 'entitlement', key: EntitlementKeyEnum.EDIT_GASTRONOMY_INFO },
+        id: 'editVenueInfo',
+        labelKey: 'billing.comparison.row.editVenueInfo',
+        cell: { kind: 'entitlement', key: EntitlementKeyEnum.EDIT_VENUE_INFO },
         status: 'available'
     },
     {
@@ -350,24 +350,24 @@ export const VENUE_LISTING_ROWS: readonly RowConfig[] = [
     }
 ];
 
-/** The carta, and everything that hangs off it. The gastronomy differentiator. */
+/** The carta, and everything that hangs off it. The venue differentiator. */
 export const VENUE_MENU_ROWS: readonly RowConfig[] = [
     {
-        id: 'gastronomyMenu',
-        labelKey: 'billing.comparison.row.gastronomyMenu',
-        cell: { kind: 'entitlement', key: EntitlementKeyEnum.MANAGE_GASTRONOMY_MENU },
+        id: 'venueMenu',
+        labelKey: 'billing.comparison.row.venueMenu',
+        cell: { kind: 'entitlement', key: EntitlementKeyEnum.MANAGE_VENUE_MENU },
         status: 'available'
     },
     {
-        id: 'gastronomyDailySpecial',
-        labelKey: 'billing.comparison.row.gastronomyDailySpecial',
-        cell: { kind: 'entitlement', key: EntitlementKeyEnum.MANAGE_GASTRONOMY_DAILY_SPECIAL },
+        id: 'venueDailySpecial',
+        labelKey: 'billing.comparison.row.venueDailySpecial',
+        cell: { kind: 'entitlement', key: EntitlementKeyEnum.MANAGE_VENUE_DAILY_SPECIAL },
         status: 'available'
     },
     {
-        id: 'gastronomyEvents',
-        labelKey: 'billing.comparison.row.gastronomyEvents',
-        cell: { kind: 'entitlement', key: EntitlementKeyEnum.MANAGE_GASTRONOMY_EVENTS },
+        id: 'venueEvents',
+        labelKey: 'billing.comparison.row.venueEvents',
+        cell: { kind: 'entitlement', key: EntitlementKeyEnum.MANAGE_VENUE_EVENTS },
         status: 'available'
     },
     {
@@ -379,7 +379,7 @@ export const VENUE_MENU_ROWS: readonly RowConfig[] = [
     {
         id: 'multilingualMenu',
         labelKey: 'billing.comparison.row.multilingualMenu',
-        cell: { kind: 'entitlement', key: EntitlementKeyEnum.MULTILINGUAL_GASTRONOMY_MENU },
+        cell: { kind: 'entitlement', key: EntitlementKeyEnum.MULTILINGUAL_VENUE_MENU },
         status: 'available'
     },
     {
@@ -466,11 +466,11 @@ function listingExtrasRows({
 }
 
 export const VENUE_GROUPS: readonly GroupConfig[] = [
-    { id: 'gastronomyListing', rows: VENUE_LISTING_ROWS },
-    { id: 'gastronomyMenu', rows: VENUE_MENU_ROWS },
+    { id: 'venueListing', rows: VENUE_LISTING_ROWS },
+    { id: 'venueMenu', rows: VENUE_MENU_ROWS },
     {
         id: 'listingExtras',
-        rows: listingExtrasRows({ aiChatLimitKey: LimitKeyEnum.MAX_AI_CHAT_GASTRONOMY_PER_MONTH })
+        rows: listingExtrasRows({ aiChatLimitKey: LimitKeyEnum.MAX_AI_CHAT_VENUE_PER_MONTH })
     }
 ];
 

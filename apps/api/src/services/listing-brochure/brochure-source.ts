@@ -6,7 +6,7 @@
  *
  * The brochure must not be able to print a field the public ficha does not
  * publish. The obvious way to guarantee that is to parse the row with
- * `GastronomyPublicSchema` / `ExperiencePublicSchema` and read the result — and
+ * `VenuePublicSchema` / `ExperiencePublicSchema` and read the result — and
  * it does not work, for a reason worth writing down rather than rediscovering:
  * those schemas carry the public tier's VALUE constraints, including
  * `description.min(20)`, which a DRAFT listing legitimately violates (the
@@ -20,8 +20,8 @@
  *   schemas name every field the brochure can see, and
  *   `test/services/listing-brochure.test.ts` fails the build if any of those
  *   names is absent from the matching PUBLIC schema. Adding `contactInfo` to
- *   the gastronomy brochure — the field a printed sheet most invites you to add
- *   — breaks that test, because the public gastronomy projection does not pick
+ *   the venue brochure — the field a printed sheet most invites you to add
+ *   — breaks that test, because the public venue projection does not pick
  *   it.
  * - **Value validation is the API contract**, and it stays where it already is:
  *   on the public route, enforced by `stripWithSchema`.
@@ -109,9 +109,9 @@ const commonBrochureFields = {
 };
 
 /**
- * What a gastronomy brochure may read.
+ * What a venue brochure may read.
  *
- * No `contactInfo`: `GastronomyPublicSchema` does not pick it, so neither does
+ * No `contactInfo`: `VenuePublicSchema` does not pick it, so neither does
  * this — a phone number on the printed sheet would be a fact the public page
  * does not carry. `menuUrl` and `socialNetworks` are how a restaurant publishes
  * contact on this platform, and both ARE public.
@@ -122,7 +122,7 @@ export const VenueBrochureSourceSchema = z.object({
     menuUrl: z.string().nullish()
 });
 
-/** The gastronomy fields a brochure reads. */
+/** The venue fields a brochure reads. */
 export type VenueBrochureSource = z.infer<typeof VenueBrochureSourceSchema>;
 
 /**

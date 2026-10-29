@@ -34,7 +34,7 @@ describe('PlanCardTrialGate', () => {
             error: { status: 500, message: 'offline' }
         });
         rerender(
-            <PlanCardTrialGate vertical="gastronomy">
+            <PlanCardTrialGate vertical="venue">
                 <p>Trial offer</p>
             </PlanCardTrialGate>
         );

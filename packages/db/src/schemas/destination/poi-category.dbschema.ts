@@ -15,7 +15,7 @@ import { rPoiCategory } from './r_poi_category.dbschema.ts';
  * can create/rename a category through the same `I18nTextField.tsx` flow
  * without touching an i18n string file or redeploying (spec §6.1).
  *
- * `slug` is a machine identifier only (e.g. `winery`, `gastronomy`) — NOT an
+ * `slug` is a machine identifier only (e.g. `winery`, `food`) — NOT an
  * i18n key, unlike HOS-113's `type` precedent.
  */
 export const poiCategories = pgTable(

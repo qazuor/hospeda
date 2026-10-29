@@ -1,6 +1,6 @@
 /**
  * @file billing-limit-error.test.ts
- * @description HOS-690 AC-24 — touching the gastronomy (or experience) limit
+ * @description HOS-690 AC-24 — touching the venue (or experience) limit
  * shows its own copy, not the generic fallback, in all three locales.
  *
  * ## Why this is real evidence, not the HOS-700 trap
@@ -16,7 +16,7 @@
  * On the web side, once `details.limitKey` reaches the client, what matters
  * is exactly the two facts AC-23's guard already enforces structurally:
  *
- *   1. `'max_gastronomies'` / `'max_experiences'` are in `KNOWN_LIMIT_KEYS` —
+ *   1. `'max_venues'` / `'max_experiences'` are in `KNOWN_LIMIT_KEYS` —
  *      otherwise `buildFromDetails` substitutes `'generic'` before `t()` is
  *      ever called, and no locale file would matter.
  *   2. `billing.limit.<key>.title` resolves to real, non-generic copy in
@@ -32,13 +32,13 @@ import { createT, SUPPORTED_LOCALES } from '@/lib/i18n';
 
 const GENERIC_TITLE_ES = 'Límite del plan alcanzado';
 
-describe('HOS-690 AC-24 — gastronomy/experience limits render their own copy', () => {
-    it('max_gastronomies and max_experiences are gated into KNOWN_LIMIT_KEYS', () => {
-        expect(KNOWN_LIMIT_KEYS.has('max_gastronomies')).toBe(true);
+describe('HOS-690 AC-24 — venue/experience limits render their own copy', () => {
+    it('max_venues and max_experiences are gated into KNOWN_LIMIT_KEYS', () => {
+        expect(KNOWN_LIMIT_KEYS.has('max_venues')).toBe(true);
         expect(KNOWN_LIMIT_KEYS.has('max_experiences')).toBe(true);
     });
 
-    for (const limitKey of ['max_gastronomies', 'max_experiences'] as const) {
+    for (const limitKey of ['max_venues', 'max_experiences'] as const) {
         for (const locale of SUPPORTED_LOCALES) {
             it(`resolves a non-generic title for ${limitKey} in ${locale}`, () => {
                 const t = createT(locale);
@@ -127,7 +127,7 @@ describe('HOS-1637 — the at-limit CTA is the plan upgrade, never the removed a
         for (const limitKey of [
             'max_accommodations',
             'max_photos_per_accommodation',
-            'max_gastronomies',
+            'max_venues',
             'max_experiences'
         ]) {
             const payload = buildLimitReachedPayloadFromDetails({

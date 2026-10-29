@@ -1,20 +1,20 @@
 /**
- * PATCH /api/v1/protected/gastronomies/:id/media/reorder
- * Reorder photos in a gastronomy listing gallery (HOS-372).
+ * PATCH /api/v1/protected/venues/:id/media/reorder
+ * Reorder photos in a venue listing gallery (HOS-372).
  *
  * The caller supplies the full ordered list of visible media UUIDs. The service
  * validates that the supplied set matches the current visible rows exactly (no
  * extras, no missing entries, no duplicates) and then applies the new
  * `sortOrder` positions in a single transaction.
  *
- * Gated on GASTRONOMY_EDIT_OWN (listing owner) or GASTRONOMY_EDIT_ALL (staff) —
+ * Gated on VENUE_EDIT_OWN (listing owner) or VENUE_EDIT_ALL (staff) —
  * enforced inside `reorderVenueMedia` via `checkVenueCanEditMedia`.
  *
  * NOTE: `index.ts` registers this before /{id}/media/{mediaId} by convention.
  * That is defensive, not required — Hono resolves the static `reorder` segment
  * ahead of the `{mediaId}` param regardless of insertion order (verified by
  * mutation on the post/event twin, `test/routes/post-protected-media.test.ts`;
- * there is no gastronomy/experience-side route test to re-run it against).
+ * there is no venue/experience-side route test to re-run it against).
  */
 
 import {
@@ -34,7 +34,7 @@ import { createProtectedRoute } from '../../../utils/route-factory';
 const venueService = new VenueService({ logger: apiLogger });
 
 /**
- * Route handler — reorders the gallery photos on a gastronomy listing.
+ * Route handler — reorders the gallery photos on a venue listing.
  *
  * TYPE-WORKAROUND: accesses the internal `model` field from the service instance
  * to pass to the standalone media helper without requiring a public accessor.
@@ -42,13 +42,13 @@ const venueService = new VenueService({ logger: apiLogger });
 export const protectedReorderVenueMediaRoute = createProtectedRoute({
     method: 'patch',
     path: '/{id}/media/reorder',
-    summary: 'Reorder gastronomy listing gallery photos',
+    summary: 'Reorder venue listing gallery photos',
     description:
         'Sets the sortOrder for the visible gallery photos by supplying their UUIDs ' +
         'in the desired order. The supplied list must match the current visible rows ' +
-        'exactly. Requires GASTRONOMY_EDIT_OWN (listing owner) or GASTRONOMY_EDIT_ALL (staff).',
+        'exactly. Requires VENUE_EDIT_OWN (listing owner) or VENUE_EDIT_ALL (staff).',
     listingAccess: { vertical: VerticalEnum.VENUE, operation: 'EDIT', idParam: 'id' },
-    tags: ['Gastronomy', 'Gastronomy Media'],
+    tags: ['Venue', 'Venue Media'],
     protectedTag: false,
     requestParams: {
         id: z.string().uuid({ message: 'zodError.common.id.invalidUuid' })
@@ -67,7 +67,7 @@ export const protectedReorderVenueMediaRoute = createProtectedRoute({
             venueService as unknown as { model: Parameters<typeof reorderVenueMedia>[0] }
         ).model;
         const result = await reorderVenueMedia(model, actor, {
-            gastronomyId: params.id as string,
+            venueId: params.id as string,
             orderedIds: (body as VenueMediaReorderPayload).orderedIds
         });
 

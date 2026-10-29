@@ -1,11 +1,11 @@
 import { z } from 'zod';
 
 // ============================================================================
-// GastronomyRatingSchema — granular rating breakdown for gastronomy listings.
+// venueRatingSchema — granular rating breakdown for venue listings.
 // ============================================================================
 
 /**
- * Granular rating breakdown for a gastronomy listing.
+ * Granular rating breakdown for a venue listing.
  * Each dimension is scored from 0 to 5 (inclusive), where 0 is the worst and 5 is the best.
  *
  * Dimensions:
@@ -16,7 +16,7 @@ import { z } from 'zod';
  *
  * @example
  * ```ts
- * const rating: GastronomyRating = {
+ * const rating: venueRating = {
  *   food: 4.5,
  *   service: 5,
  *   ambiance: 4,
@@ -77,17 +77,17 @@ export const VenueRatingSchema = z.object({
 export type VenueRating = z.infer<typeof VenueRatingSchema>;
 
 /**
- * Spread const for embedding the gastronomy rating block into entity schemas.
+ * Spread const for embedding the venue rating block into entity schemas.
  *
  * @example
  * ```ts
- * const GastronomySchema = z.object({
+ * const venueSchema = z.object({
  *   id: z.string().uuid(),
- *   ...GastronomyRatingFields,
+ *   ...venueRatingFields,
  * });
  * ```
  */
 export const VenueRatingFields = {
-    /** Granular rating breakdown for this gastronomy listing. */
+    /** Granular rating breakdown for this venue listing. */
     rating: VenueRatingSchema.optional()
 } as const;

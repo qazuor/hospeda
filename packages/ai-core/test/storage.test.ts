@@ -108,9 +108,9 @@ const VALID_SETTINGS_BLOB = {
             params: {}
         },
         // HOS-400: separate AiFeature values from `chat` (own metering
-        // counter per gastronomy or experience vertical); the write record requires every
+        // counter per venue or experience vertical); the write record requires every
         // AiFeature key.
-        chat_gastronomy: {
+        chat_venue: {
             enabled: false,
             primaryProvider: 'openai' as const,
             fallbackChain: [],
@@ -246,7 +246,7 @@ describe('readAiSettings', () => {
          */
         const buildRowMissingVerticalChats = () => {
             const features = { ...VALID_SETTINGS_BLOB.features } as Record<string, unknown>;
-            delete features.chat_gastronomy;
+            delete features.chat_venue;
             delete features.chat_experience;
             return {
                 ...VALID_SETTINGS_ROW,
@@ -291,7 +291,7 @@ describe('readAiSettings', () => {
             const result = await readAiSettings();
 
             // Assert
-            expect(result?.features.chat_gastronomy).toBeUndefined();
+            expect(result?.features.chat_venue).toBeUndefined();
             expect(result?.features.chat_experience).toBeUndefined();
         });
 

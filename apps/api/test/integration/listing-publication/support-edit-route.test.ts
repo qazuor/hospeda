@@ -24,8 +24,12 @@ const verticals = [
 type Vertical = (typeof verticals)[number];
 const tables: Readonly<Record<Vertical, string>> = {
     [VerticalEnum.ACCOMMODATION]: 'accommodations',
-    [VerticalEnum.VENUE]: 'gastronomies',
+    [VerticalEnum.VENUE]: 'venues',
     [VerticalEnum.EXPERIENCE]: 'experiences'
+};
+const routeTables: Readonly<Record<Vertical, string>> = {
+    ...tables,
+    [VerticalEnum.VENUE]: 'venues'
 };
 /** Each vertical's own permissions: create, "edit any", and the list read its router mounts on `/`. */
 const perms: Readonly<
@@ -37,9 +41,9 @@ const perms: Readonly<
         viewAll: PermissionEnum.ACCOMMODATION_VIEW_ALL
     },
     [VerticalEnum.VENUE]: {
-        create: PermissionEnum.GASTRONOMY_CREATE,
-        editAny: PermissionEnum.GASTRONOMY_EDIT_ALL,
-        viewAll: PermissionEnum.GASTRONOMY_VIEW_ALL
+        create: PermissionEnum.VENUE_CREATE,
+        editAny: PermissionEnum.VENUE_EDIT_ALL,
+        viewAll: PermissionEnum.VENUE_VIEW_ALL
     },
     [VerticalEnum.EXPERIENCE]: {
         create: PermissionEnum.EXPERIENCE_CREATE,
@@ -151,7 +155,7 @@ afterAll(async () => testDb.teardown());
 
 describe.each(verticals)('TEST:V8a:8 action 15 creates a draft for its owner — %s', (vertical) => {
     const post = (headers: Record<string, string>, body: unknown) =>
-        app.request(`/api/v1/admin/${tables[vertical]}`, {
+        app.request(`/api/v1/admin/${routeTables[vertical]}`, {
             method: 'POST',
             headers,
             body: JSON.stringify(body)
@@ -232,7 +236,7 @@ describe.each(verticals)('TEST:V8a:8 action 15 creates a draft for its owner —
 
 describe.each(verticals)('TEST:V8a:9 action 15 asks for its own permission — %s', (vertical) => {
     const patch = (id: string, headers: Record<string, string>) =>
-        app.request(`/api/v1/admin/${tables[vertical]}/${id}`, {
+        app.request(`/api/v1/admin/${routeTables[vertical]}/${id}`, {
             method: 'PATCH',
             headers,
             body: JSON.stringify({
@@ -286,7 +290,7 @@ describe.each(verticals)('TEST:V8a:9 action 15 asks for its own permission — %
                 id,
                 adminHeaders({
                     id: admin,
-                    // The gastronomy and experience admin routers gate on "view all" before the
+                    // The venue and experience admin routers gate on "view all" before the
                     // handler; step 3 then permits action 15 and the malformed reason
                     // is refused before any write.
                     permissions: [
@@ -356,7 +360,7 @@ describe.each(verticals)('TEST:V8a:9 action 15 asks for its own permission — %
         const before = await listingsOf(vertical, owner);
 
         // Act
-        const response = await app.request(`/api/v1/admin/${tables[vertical]}/${id}`, {
+        const response = await app.request(`/api/v1/admin/${routeTables[vertical]}/${id}`, {
             method: 'PATCH',
             headers: adminHeaders({
                 id: admin,
@@ -418,7 +422,7 @@ describe.each(verticals)('TEST:V8a:8 row 26 read — %s', (vertical) => {
         const owner = await seedOwner();
         const admin = await seedOwner();
         const stranger = await seedOwner();
-        const created = await app.request(`/api/v1/admin/${tables[vertical]}`, {
+        const created = await app.request(`/api/v1/admin/${routeTables[vertical]}`, {
             method: 'POST',
             headers: adminHeaders({
                 id: admin,
@@ -432,7 +436,7 @@ describe.each(verticals)('TEST:V8a:8 row 26 read — %s', (vertical) => {
         await getDb().execute(
             sql`INSERT INTO domain_event (event_type, entity_type, entity_id, actor_type, actor_id, changes, correlation_id) VALUES ('listing.edited', ${vertical}, ${id}, 'owner', ${owner}::uuid, '[{"field":"description"}]'::jsonb, ${randomUUID()}::uuid)`
         );
-        const path = `/api/v1/protected/${tables[vertical]}/${id}/support-edits`;
+        const path = `/api/v1/protected/${routeTables[vertical]}/${id}/support-edits`;
 
         // Act
         const mine = await readResponse(

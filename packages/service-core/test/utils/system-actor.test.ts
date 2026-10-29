@@ -44,7 +44,7 @@ describe('TEST:V5:14 — la fábrica de actores de sistema', () => {
     it.each([
         PermissionEnum.ACCOMMODATION_DELETE_ANY,
         PermissionEnum.ACCOMMODATION_HARD_DELETE,
-        PermissionEnum.GASTRONOMY_DELETE,
+        PermissionEnum.VENUE_DELETE,
         PermissionEnum.EXPERIENCE_DELETE
     ])('TEST:V8a:10 still rejects the retiring delete permission %s (V6.7, HOS-1477)', (permission) => {
         expectDefinitionError(

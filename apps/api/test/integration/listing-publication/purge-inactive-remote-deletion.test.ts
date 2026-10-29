@@ -70,9 +70,9 @@ const verticalConfig: Readonly<Record<Vertical, { table: string; media: string; 
         fk: 'accommodation_id'
     },
     [VerticalEnum.VENUE]: {
-        table: 'gastronomies',
-        media: 'gastronomy_media',
-        fk: 'gastronomy_id'
+        table: 'venues',
+        media: 'venue_media',
+        fk: 'venue_id'
     },
     [VerticalEnum.EXPERIENCE]: {
         table: 'experiences',

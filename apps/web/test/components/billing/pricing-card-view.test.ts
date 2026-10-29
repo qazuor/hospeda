@@ -254,7 +254,7 @@ describe('buildPricingCardViews — the rest of the card', () => {
 });
 
 describe('TEST:1765:1 inherited Tourist VIP benefits', () => {
-    it('shows the VIP line once across a gastronomy ladder and keeps Premium ai_chat', () => {
+    it('shows the VIP line once across a venue ladder and keeps Premium ai_chat', () => {
         const vipKeys = {
             entitlements: new Set(['tourist_vip_only', 'ai_chat']),
             limits: new Set<string>()
@@ -280,7 +280,7 @@ describe('TEST:1765:1 inherited Tourist VIP benefits', () => {
                     entitlements: ['tourist_vip_only', 'professional_feature', 'ai_chat']
                 })
             ],
-            audience: 'gastronomy',
+            audience: 'venue',
             intlLocale: 'es-AR',
             t,
             touristVipBenefits: vipKeys
@@ -339,7 +339,7 @@ describe('TEST:1765:1 inherited Tourist VIP benefits', () => {
                     entitlements: ['base_feature', 'vip_feature']
                 })
             ],
-            audience: 'gastronomy',
+            audience: 'venue',
             intlLocale: 'es-AR',
             t,
             touristVipBenefits: { entitlements: new Set(['vip_feature']), limits: new Set() }
@@ -364,7 +364,7 @@ describe('TEST:1765:1 inherited Tourist VIP benefits', () => {
                     entitlements: ['vip_feature']
                 })
             ],
-            audience: 'gastronomy',
+            audience: 'venue',
             intlLocale: 'es-AR',
             t,
             touristVipBenefits: { entitlements: new Set(['vip_feature']), limits: new Set() }
@@ -395,13 +395,13 @@ describe('TEST:1765:1 inherited Tourist VIP benefits', () => {
         const { cards } = buildPricingCardViews({
             plans: [
                 plan({
-                    slug: 'gastronomy-basic',
+                    slug: 'venue-basic',
                     inheritsTouristVip: true,
                     entitlements: ['local_listings', 'tourist_favorites', 'tourist_collections'],
                     limits: { local_photos: 10, max_favorites: 999, max_collections: 25 }
                 })
             ],
-            audience: 'gastronomy',
+            audience: 'venue',
             intlLocale: 'es-AR',
             t,
             touristVipBenefits: vipKeys
@@ -457,13 +457,13 @@ describe('TEST:1765:1 inherited Tourist VIP benefits', () => {
         const { cards } = buildPricingCardViews({
             plans: [
                 plan({
-                    slug: 'gastronomy-basic',
+                    slug: 'venue-basic',
                     inheritsTouristVip,
                     entitlements: ['vip_feature', 'local_feature'],
                     limits: { vip_cap: 10 }
                 })
             ],
-            audience: 'gastronomy',
+            audience: 'venue',
             intlLocale: 'es-AR',
             t,
             touristVipBenefits

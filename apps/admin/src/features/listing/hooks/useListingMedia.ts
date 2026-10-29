@@ -1,8 +1,8 @@
 /**
  * useListingMedia — TanStack Query hooks for granular gallery CRUD on the
- * relational `gastronomy_media` / `experience_media` tables (HOS-372 → HOS-382).
+ * relational `venue_media` / `experience_media` tables (HOS-372 → HOS-382).
  *
- * Vertical-agnostic: every hook takes a `vertical` argument (`'gastronomy'` or
+ * Vertical-agnostic: every hook takes a `vertical` argument (`'venue'` or
  * `'experience'`) and resolves the correct admin endpoint from it. This
  * mirrors `useFaqs`'s `(entityType, parentId)` shape — the same two listing
  * verticals already share that hook — rather than duplicating one hook file
@@ -19,8 +19,8 @@
  * via the shared query key factories (HOS-389 §3). Reorder is intentionally omitted, mirroring the accommodation
  * gallery precedent (SPEC-204 locked decision: no drag/reorder in the admin
  * gallery UI). Archive/restore are also omitted — unlike `accommodation_media`,
- * the admin API exposes no archive/restore routes for `gastronomy_media` /
- * `experience_media` (see `apps/api/src/routes/gastronomy/admin/` and
+ * the admin API exposes no archive/restore routes for `venue_media` /
+ * `experience_media` (see `apps/api/src/routes/venue/admin/` and
  * `apps/api/src/routes/experience/admin/` — only get/add/remove/setFeatured/
  * reorder exist, and reorder is deliberately unused here too).
  *
@@ -45,13 +45,13 @@ import { createEntityQueryKeys } from '@/lib/query-keys/factory';
 // ---------------------------------------------------------------------------
 
 /** Listing verticals whose gallery is managed via the relational media tables. */
-export type ListingMediaVertical = 'gastronomy' | 'experience';
+export type ListingMediaVertical = 'venue' | 'experience';
 
 /**
  * A single gallery photo row, from either listing vertical.
  *
  * `VenueMedia` and `ExperienceMedia` differ only in their parent FK
- * field (`gastronomyId` vs `experienceId`) — every field the UI reads
+ * field (`venueId` vs `experienceId`) — every field the UI reads
  * (`id`, `url`, `isFeatured`, `caption`, `alt`, `state`, `sortOrder`, …) is
  * shared via `BaseListingMediaSchema`, so a union is safe to consume here.
  */
@@ -85,7 +85,13 @@ export const listingMediaQueryKeys = {
 
 /** Maps the singular vertical name to its plural admin route segment. */
 const VERTICAL_ROUTE_SEGMENT: Record<ListingMediaVertical, string> = {
-    gastronomy: 'gastronomies',
+    venue: 'venues',
+    experience: 'experiences'
+};
+
+/** Entity query roots remain the entityName configured by each listing feature. */
+const VERTICAL_ENTITY_NAME: Record<ListingMediaVertical, string> = {
+    venue: 'venues',
     experience: 'experiences'
 };
 
@@ -101,10 +107,8 @@ const mediaEndpoint = (vertical: ListingMediaVertical, entityId: string) =>
  * "no cover" right after one was uploaded, until some unrelated refetch
  * happened to refresh it.
  *
- * The entity key is built from the same `VERTICAL_ROUTE_SEGMENT` map the
- * endpoint uses, which is also the `entityName` the listing entity hooks are
- * created with (`'gastronomies'` / `'experiences'`) — so the two cannot drift
- * apart into invalidating a key nobody reads.
+ * The entity key uses the feature's `entityName` (`'venues'` /
+ * `'experiences'`) so it stays aligned with the listing entity hooks.
  *
  * Written once and shared by all three mutations rather than pasted into each
  * `onSuccess`: three copies is how one of them silently keeps the stale-entity
@@ -119,7 +123,7 @@ function invalidateAfterMediaMutation(
         queryKey: listingMediaQueryKeys.list(vertical, entityId)
     });
     queryClient.invalidateQueries({
-        queryKey: createEntityQueryKeys(VERTICAL_ROUTE_SEGMENT[vertical]).detail(entityId)
+        queryKey: createEntityQueryKeys(VERTICAL_ENTITY_NAME[vertical]).detail(entityId)
     });
 }
 
@@ -134,8 +138,8 @@ function invalidateAfterMediaMutation(
  * is what `ListingGalleryManager` always uses (archive management is out of
  * scope for the admin panel's gallery tab — see module docs above).
  *
- * @param vertical - `'gastronomy'` or `'experience'`.
- * @param entityId - UUID of the gastronomy/experience listing.
+ * @param vertical - `'venue'` or `'experience'`.
+ * @param entityId - UUID of the venue/experience listing.
  */
 export function useListingMediaList(vertical: ListingMediaVertical, entityId: string) {
     return useQuery({
@@ -167,8 +171,8 @@ export function useListingMediaList(vertical: ListingMediaVertical, entityId: st
  * On success the list query is invalidated so the UI refetches the updated
  * gallery from the server.
  *
- * @param vertical - `'gastronomy'` or `'experience'`.
- * @param entityId - UUID of the gastronomy/experience listing.
+ * @param vertical - `'venue'` or `'experience'`.
+ * @param entityId - UUID of the venue/experience listing.
  */
 export function useListingMediaAdd(vertical: ListingMediaVertical, entityId: string) {
     const queryClient = useQueryClient();
@@ -216,7 +220,7 @@ export function useListingMediaAdd(vertical: ListingMediaVertical, entityId: str
  * This hook invalidates and refetches rather than branching on it, but the id is
  * returned so an optimistic caller can drop that row.
  *
- * @param vertical - `'gastronomy'` or `'experience'`.
+ * @param vertical - `'venue'` or `'experience'`.
  * @param entityId - UUID of the listing.
  */
 export function useListingMediaAddFeatured(vertical: ListingMediaVertical, entityId: string) {
@@ -259,8 +263,8 @@ export function useListingMediaAddFeatured(vertical: ListingMediaVertical, entit
  * After removal the remaining visible rows are resequenced server-side.
  * On success the list query is invalidated.
  *
- * @param vertical - `'gastronomy'` or `'experience'`.
- * @param entityId - UUID of the gastronomy/experience listing.
+ * @param vertical - `'venue'` or `'experience'`.
+ * @param entityId - UUID of the venue/experience listing.
  */
 export function useListingMediaRemove(vertical: ListingMediaVertical, entityId: string) {
     const queryClient = useQueryClient();
@@ -291,8 +295,8 @@ export function useListingMediaRemove(vertical: ListingMediaVertical, entityId: 
  * succeeds the list query is invalidated so the UI sees the updated
  * `isFeatured` flags without any manual state juggling.
  *
- * @param vertical - `'gastronomy'` or `'experience'`.
- * @param entityId - UUID of the gastronomy/experience listing.
+ * @param vertical - `'venue'` or `'experience'`.
+ * @param entityId - UUID of the venue/experience listing.
  */
 export function useListingMediaSetFeatured(vertical: ListingMediaVertical, entityId: string) {
     const queryClient = useQueryClient();

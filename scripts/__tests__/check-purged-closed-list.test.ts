@@ -33,7 +33,7 @@ function check(files: Readonly<Record<string, string>>, list?: string) {
 
 const HEADER =
     "import { pgTable, text, uuid, foreignKey } from 'drizzle-orm/pg-core';\n" +
-    "import { accommodations, gastronomies } from '../listing';\n";
+    "import { accommodations, venues } from '../listing';\n";
 
 describe('TEST:V6:14 GUARD:G-R9 - every table hanging from a listing has a PURGED row', () => {
     it('accepts the repository tree', () => {
@@ -62,20 +62,18 @@ describe('TEST:V6:14 GUARD:G-R9 - every table hanging from a listing has a PURGE
         expect(result.output).toContain(PURGED_LIST_PATH);
     });
 
-    it('rejects the same table declared with foreignKey() to gastronomies', () => {
+    it('rejects the same table declared with foreignKey() to venues', () => {
         const result = check({
             [NEW_TABLE_FILE]:
                 HEADER +
                 "export const newTable = pgTable('new_table', {\n" +
                 "    listingId: uuid('listing_id').notNull()\n" +
                 '}, (t) => ({\n' +
-                '    fk: foreignKey({ columns: [t.listingId], foreignColumns: [gastronomies.id] })\n' +
+                '    fk: foreignKey({ columns: [t.listingId], foreignColumns: [venues.id] })\n' +
                 '}));\n'
         });
         expect(result.exitCode).toBe(1);
-        expect(result.output).toContain(
-            'table new_table hangs from a listing (fk -> gastronomies)'
-        );
+        expect(result.output).toContain('table new_table hangs from a listing (fk -> venues)');
     });
 
     it('rejects a table with an entity_type column, whatever its constructor', () => {

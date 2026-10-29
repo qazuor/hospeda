@@ -1,0 +1,783 @@
+import {
+    accounts,
+    eq,
+    getDb,
+    sql,
+    users,
+    VenueMediaModel,
+    venueFaqs,
+    venueReviews,
+    venues
+} from '@repo/db';
+import { LifecycleStatusEnum, RoleEnum, RoleGrantReason, VisibilityEnum } from '@repo/schemas';
+import { grantRole } from '@repo/service-core';
+import { hash } from 'bcryptjs';
+import exampleManifest from '../manifest-example.json';
+import { deterministicFixtureId } from '../utils/deterministicFixtureId.js';
+import { STATUS_ICONS } from '../utils/icons.js';
+import { buildVenueMediaRows } from '../utils/listing-media-builder.js';
+import { loadJsonFiles } from '../utils/loadJsonFile.js';
+import { logger } from '../utils/logger.js';
+import type { FixtureMediaBlock } from '../utils/media-rows-builder.js';
+import type { SeedContext } from '../utils/seedContext.js';
+import { summaryTracker } from '../utils/summaryTracker.js';
+
+/**
+ * Derives the deterministic UUIDv5 id for an `example` venue listing
+ * fixture (HOS-25 T-026), from the fixture's own top-level `id` seed-key.
+ *
+ * Exported (rather than an inline lambda) so tests can assert the id is
+ * stable across calls without running the full seed pipeline, mirroring
+ * `getAccommodationFixtureId` in `accommodations.seed.ts` (HOS-25 T-016).
+ *
+ * @param seedId - Raw venue fixture's top-level `id` field
+ * @returns Stable UUIDv5 derived from the fixture's seed-key
+ */
+export const getVenueFixtureId = (seedId: string): string =>
+    deterministicFixtureId({ seedKey: `venue:${seedId}` });
+
+/**
+ * Derives the deterministic UUIDv5 id for a single FAQ belonging to an
+ * `example` venue fixture (HOS-25 T-026), keyed off the parent
+ * venue's seed-key plus the FAQ's position in its fixture array (FAQ
+ * fixtures have no `id` of their own) — mirrors
+ * `getAccommodationFaqFixtureId` in `accommodations.seed.ts`.
+ *
+ * @param input - RO-RO input with the parent venue's seed-key and this FAQ's index
+ * @returns Stable UUIDv5 derived from the FAQ's composite seed-key
+ */
+export const getVenueFaqFixtureId = (input: { venueSeedId: string; index: number }): string =>
+    deterministicFixtureId({
+        seedKey: `venueFaq:${input.venueSeedId}:${input.index}`
+    });
+
+/**
+ * Derives the deterministic UUIDv5 id for a single review belonging to an
+ * `example` venue fixture (HOS-25 T-026), keyed off the parent
+ * venue's seed-key plus the reviewer's own seed id — the `(userId,
+ * venueId)` pair is already the DB's own UNIQUE constraint for this
+ * table, so it is a more content-stable composite key than array position
+ * (unaffected by fixture-array reordering).
+ *
+ * @param input - RO-RO input with the parent venue's seed-key and the reviewer's seed id
+ * @returns Stable UUIDv5 derived from the review's composite seed-key
+ */
+export const getVenueReviewFixtureId = (input: {
+    venueSeedId: string;
+    reviewerSeedId: string;
+}): string =>
+    deterministicFixtureId({
+        seedKey: `venueReview:${input.venueSeedId}:${input.reviewerSeedId}`
+    });
+
+/**
+ * Bcrypt rounds — must match apps/api/src/lib/auth.ts BCRYPT_SALT_ROUNDS.
+ */
+const SALT_ROUNDS = 12;
+
+/**
+ * Shared password for all dev listing-owner accounts.
+ * Dev-only convenience — these accounts never exist on staging/prod.
+ */
+const DEV_PW = 'Password123!';
+
+/**
+ * Spec of a VENUE_OWNER user to seed.
+ */
+interface ListingOwnerSpec {
+    readonly seedId: string;
+    readonly email: string;
+    readonly displayName: string;
+    readonly firstName: string;
+    readonly lastName: string;
+    readonly slug: string;
+}
+
+/**
+ * E2E tourist user seeded alongside the listing-owner block.
+ *
+ * Role: USER — intentionally NOT VENUE_OWNER and NOT staff, so the
+ * listing-area nav gate in `/mi-cuenta/comercio/index.astro` redirects
+ * this user to `/mi-cuenta/`.  Used by SPEC-252 listing-02 test case 1.
+ *
+ * `profileCompleted: true` is required because the profile-completion
+ * middleware guard (Step 7.5 in middleware.ts) intercepts incomplete profiles
+ * before the listing-owner role gate runs — an incomplete profile would redirect
+ * to `/mi-cuenta/completar-perfil/` instead, breaking the test assertion.
+ *
+ * Password: Password123! (same shared dev constant as VENUE_OWNER accounts).
+ * Email: e2e-tourist@local.test (clearly E2E-scoped, never used on staging/prod).
+ */
+const E2E_TOURIST = {
+    email: 'e2e-tourist@local.test',
+    displayName: 'E2E Tourist',
+    firstName: 'E2E',
+    lastName: 'Tourist',
+    slug: 'e2e-tourist'
+} as const;
+
+/**
+ * Dev VENUE_OWNER users for venue listings.
+ * Three owners covering 6 listings (2 each):
+ * - Julieta: listings 001 (la-parrilla-del-puerto, CdU) + 002 (cafe-del-palacio, Colón)
+ * - Rodrigo: listings 003 (cerveceria-del-rio, Gualeguaychú) + 004 (heladeria-luna, Concordia)
+ * - Valentina: listings 005 (restaurant-termas, Federación) + 006 (bar-rinconcito, CdU — DRAFT/PRIVATE)
+ */
+export const VENUE_ID_MAPPER_NAMESPACE = 'venues';
+
+/** Register a fixture venue ID for downstream seeders that resolve references. */
+export function registerVenueIdMapping(
+    idMapper: SeedContext['idMapper'],
+    seedId: string,
+    realId: string,
+    name: string
+): void {
+    idMapper.setMapping(VENUE_ID_MAPPER_NAMESPACE, seedId, realId, name);
+}
+
+const LISTING_OWNERS: readonly ListingOwnerSpec[] = [
+    {
+        seedId: '041-user-venue-owner-julieta',
+        email: 'venue-owner-julieta@local.test',
+        displayName: 'Julieta Ferreyra',
+        firstName: 'Julieta',
+        lastName: 'Ferreyra',
+        slug: 'julieta-ferreyra-venue'
+    },
+    {
+        seedId: '042-user-venue-owner-rodrigo',
+        email: 'venue-owner-rodrigo@local.test',
+        displayName: 'Rodrigo Casas',
+        firstName: 'Rodrigo',
+        lastName: 'Casas',
+        slug: 'rodrigo-casas-venue'
+    },
+    {
+        seedId: '043-user-venue-owner-valentina',
+        email: 'venue-owner-valentina@local.test',
+        displayName: 'Valentina Ríos',
+        firstName: 'Valentina',
+        lastName: 'Ríos',
+        slug: 'valentina-rios-venue'
+    }
+] as const;
+
+/**
+ * Raw shape of a venue listing seed JSON file.
+ *
+ * Field `id` is seed-only metadata excluded from the DB insert.
+ * Fields `ownerId` and `destinationId` are seed IDs resolved via idMapper.
+ */
+interface VenueSeedData {
+    readonly id: string;
+    readonly ownerId: string;
+    readonly destinationId: string;
+    readonly slug: string;
+    readonly name: string;
+    readonly summary: string;
+    readonly description: string;
+    readonly type: string;
+    readonly priceRange?: string | null;
+    readonly menuUrl?: string | null;
+    /** Publication state the listing is born with (HOS-1641: replaces the three old state columns). */
+    readonly publicationStatus: string;
+    readonly contactInfo?: Record<string, unknown> | null;
+    readonly socialNetworks?: Record<string, unknown> | null;
+    readonly openingHours?: Record<string, unknown> | null;
+    readonly media?: Record<string, unknown> | null;
+    readonly seo?: Record<string, unknown> | null;
+    readonly reviewsCount: number;
+    readonly averageRating: number;
+}
+
+/**
+ * Wrapper shape of a venue FAQ seed JSON file.
+ * `$venueId` references the listing seed id; `faqs` is the array of entries.
+ */
+interface VenueFaqFile {
+    readonly $venueId: string;
+    readonly faqs: ReadonlyArray<{
+        readonly question: string;
+        readonly answer: string;
+        readonly category?: string | null;
+        readonly displayOrder?: number | null;
+    }>;
+}
+
+/**
+ * Wrapper shape of a venue review seed JSON file.
+ * `$venueId` references the listing seed id; `reviews` is the array of entries.
+ */
+interface VenueReviewFile {
+    readonly $venueId: string;
+    readonly reviews: ReadonlyArray<{
+        readonly userId: string;
+        readonly title?: string | null;
+        readonly content?: string | null;
+        readonly rating: Record<string, unknown>;
+        readonly averageRating: number;
+        readonly overallRating: number;
+        readonly moderationState: string;
+    }>;
+}
+
+/**
+ * Inserts a listing's fixture photos as `venue_media` rows (HOS-372).
+ *
+ * Photos used to be written into the `venue` row's `media` JSONB column.
+ * They now live in a relational table, which is what every read path composes
+ * from, so seeding the blob would produce listings with no visible photos.
+ *
+ * Idempotent: skips entirely when the listing already has media rows, so a
+ * re-run against an already-seeded database never duplicates a gallery.
+ *
+ * @param input.venueId - Real DB id of the listing.
+ * @param input.media - The fixture's `media` block, if any.
+ * @param input.label - Listing name, for logging.
+ */
+async function seedVenueMediaRows({
+    venueId,
+    media,
+    label
+}: {
+    readonly venueId: string;
+    readonly media: FixtureMediaBlock | undefined;
+    readonly label: string;
+}): Promise<void> {
+    if (!media) return;
+    const hasPhotos = Boolean(media.featuredImage) || (media.gallery?.length ?? 0) > 0;
+    if (!hasPhotos) return;
+
+    const mediaModel = new VenueMediaModel();
+    const { total: existingCount } = await mediaModel.findByVenue({
+        venueId,
+        pageSize: 1
+    });
+    if (existingCount > 0) {
+        logger.info(`Skipping media for ${label}: ${existingCount} rows already exist`);
+        return;
+    }
+
+    const rows = buildVenueMediaRows({ venueId, media });
+    for (const row of rows) {
+        await mediaModel.create(row);
+    }
+}
+
+/**
+ * Seeds the three VENUE_OWNER users, the venue listings (via Drizzle
+ * insert), venue FAQs, and venue reviews.
+ *
+ * ### Ordering constraint
+ * MUST run after destinations and example users so that:
+ * - `idMapper` already holds `destinations.*` and `users.*` mappings.
+ *
+ * ### Visibility model
+ * - Listings 001–005: `publicationStatus=PUBLISHED` →
+ *   publicly visible on /gastronomia.
+ * - Listing 006: `publicationStatus=DRAFT` →
+ *   intentionally NOT visible; demonstrates the gating.
+ *
+ * ### Idempotency
+ * - venue rows: idempotent via `onConflictDoNothing` on the unique `slug`.
+ * - Listing owner users: idempotent via pre-check on `email`.
+ * - FAQ rows: idempotent via `onConflictDoNothing` on the (now explicit,
+ *   deterministic) primary key.
+ * - Review rows: idempotent via `onConflictDoNothing` on UNIQUE(userId, venueId).
+ *
+ * ### Deterministic ids (HOS-25 T-026)
+ * venue listings, FAQs, and reviews are all inserted with an explicit
+ * UUIDv5 id derived from a stable seed-key (see `getVenueFixtureId` /
+ * `getVenueFaqFixtureId` / `getVenueReviewFixtureId` above), instead
+ * of the column's `defaultRandom()`. This was already a model-direct Drizzle
+ * insert (never went through `VenueService`/`venueFaqService`/
+ * `VenueReviewService`), so no service lifecycle hook is newly bypassed —
+ * this only replaces a random id with a stable, reproducible one. The
+ * `reviewsCount`/`averageRating` denormalized columns on `venues` are
+ * static, author-curated values taken directly from the fixture (matching the
+ * companion review fixtures), NOT computed via `VenueService.recomputeRating`
+ * — unlike `AccommodationReviewService`/`DestinationReviewService`
+ * (HOS-25 T-025), there is no bypassed hook here that used to compute them, so
+ * no recompute call is introduced.
+ *
+ * @param context - Seed context providing the idMapper and actor
+ */
+export async function seedVenues(context: SeedContext): Promise<void> {
+    const entityName = 'Venues';
+    context.currentEntity = entityName;
+
+    if (!context.actor) {
+        throw new Error(
+            `${STATUS_ICONS.Error} Actor not available in context. Super admin must be loaded first.`
+        );
+    }
+
+    const files: string[] = ((exampleManifest as Record<string, unknown>).venues as string[]) ?? [];
+
+    if (files.length === 0) {
+        logger.warn(`${STATUS_ICONS.Warning} No venue files declared in manifest — skipping.`);
+        return;
+    }
+
+    logger.info(`${STATUS_ICONS.Seed} Seeding ${entityName} (${files.length} entries)...`);
+
+    const db = getDb();
+    let successCount = 0;
+    let errorCount = 0;
+
+    // ── Step 1: Seed VENUE_OWNER users ───────────────────────────────────
+    const passwordHash = await hash(DEV_PW, SALT_ROUNDS);
+
+    for (const owner of LISTING_OWNERS) {
+        // Idempotent: check by email before inserting
+        const existingUser = await db
+            .select({ id: users.id })
+            .from(users)
+            .where(eq(users.email, owner.email))
+            .limit(1);
+
+        let realUserId: string;
+
+        const existingUserRow = existingUser[0];
+        if (existingUserRow) {
+            realUserId = existingUserRow.id;
+            logger.debug(
+                `  ${STATUS_ICONS.Info} Listing owner "${owner.displayName}" already exists — skipped`
+            );
+            // Heal: ensure profile_completed = true on existing rows so the
+            // profile-completion middleware gate does not block the listing-owner area.
+            await db.execute(
+                sql`UPDATE users SET profile_completed = true WHERE id = ${realUserId} AND profile_completed = false`
+            );
+            // Heal: re-grant the hats. Idempotent, and required for databases
+            // seeded before HOS-296 whose owners have no `user_role` rows yet.
+            // Retain the per-vertical owner role for existing seeded accounts.
+            for (const role of [RoleEnum.USER, RoleEnum.VENUE_OWNER]) {
+                const healed = await grantRole({
+                    userId: realUserId,
+                    role,
+                    grantedBy: null,
+                    reason: RoleGrantReason.SEED
+                });
+                if (healed.error) {
+                    throw new Error(
+                        `Failed to grant ${role} to ${owner.email}: ${healed.error.message}`
+                    );
+                }
+            }
+        } else {
+            const insertedUsers = await db
+                .insert(users)
+                .values({
+                    email: owner.email,
+                    emailVerified: true,
+                    displayName: owner.displayName,
+                    firstName: owner.firstName,
+                    lastName: owner.lastName,
+                    slug: owner.slug,
+                    mustChangePassword: false,
+                    profileCompleted: true,
+                    lifecycleState:
+                        LifecycleStatusEnum.ACTIVE as (typeof users.$inferInsert)['lifecycleState'],
+                    visibility: VisibilityEnum.PUBLIC as (typeof users.$inferInsert)['visibility']
+                })
+                .returning({ id: users.id });
+
+            const insertedUserRow = insertedUsers[0];
+            if (!insertedUserRow) {
+                throw new Error(`Insert into users returned no row for email=${owner.email}`);
+            }
+            realUserId = insertedUserRow.id;
+
+            // HOS-296: hats are rows in `user_role`, not a column on `users`.
+            // AC-11's `listing-02-access-control` and `listing-04-permission-gate`
+            // e2e specs sign in as exactly this fixture, so the grant here is
+            // what makes those suites pass — sweeping raw SQL in `apps/e2e`
+            // does not cover it.
+            //
+            // Grant USER from signup and the venue owner role for the listing.
+            for (const role of [RoleEnum.USER, RoleEnum.VENUE_OWNER]) {
+                const granted = await grantRole({
+                    userId: realUserId,
+                    role,
+                    grantedBy: null,
+                    reason: RoleGrantReason.SEED
+                });
+                if (granted.error) {
+                    throw new Error(
+                        `Failed to grant ${role} to ${owner.email}: ${granted.error.message}`
+                    );
+                }
+            }
+
+            // Create Better Auth account row (email + password credential provider)
+            await db.insert(accounts).values({
+                id: crypto.randomUUID(),
+                // Better Auth convention: accountId = userId for credential provider
+                accountId: realUserId,
+                userId: realUserId,
+                providerId: 'credential',
+                password: passwordHash,
+                createdAt: new Date(),
+                updatedAt: new Date()
+            });
+
+            logger.debug(
+                `  ${STATUS_ICONS.Success} Created Listing owner "${owner.displayName}" (${owner.email})`
+            );
+        }
+
+        // Register in idMapper so venue JSON files can resolve ownerId
+        context.idMapper.setMapping('users', owner.seedId, realUserId, owner.displayName);
+
+        summaryTracker.trackSuccess('ListingOwners');
+    }
+
+    // ── Step 2b: Seed E2E tourist user (role USER, credential account) ────────
+    // Needed by SPEC-252 listing-02 test case 1: a logueable non-listing-owner,
+    // non-staff user that the listing-area nav gate redirects away from
+    // /mi-cuenta/comercio/. The example seed's regular users are created via
+    // UserService and never get a Better Auth `accounts` row, so sign-in fails
+    // for them. This user is seeded here alongside the listing owners because
+    // this function already owns the credential-creation infrastructure.
+    {
+        const existingTourist = await db
+            .select({ id: users.id })
+            .from(users)
+            .where(eq(users.email, E2E_TOURIST.email))
+            .limit(1);
+
+        const existingTouristRow = existingTourist[0];
+        if (existingTouristRow) {
+            logger.debug(
+                `  ${STATUS_ICONS.Info} E2E tourist "${E2E_TOURIST.displayName}" already exists — skipped`
+            );
+            // Heal: ensure profile_completed = true so the profile-completion gate
+            // does not intercept before the listing-owner role gate runs.
+            await db.execute(
+                sql`UPDATE users SET profile_completed = true WHERE id = ${existingTouristRow.id} AND profile_completed = false`
+            );
+            // Heal: idempotent USER grant for pre-HOS-296 databases.
+            const healedTourist = await grantRole({
+                userId: existingTouristRow.id,
+                role: RoleEnum.USER,
+                grantedBy: null,
+                reason: RoleGrantReason.SEED
+            });
+            if (healedTourist.error) {
+                throw new Error(
+                    `Failed to grant USER to ${E2E_TOURIST.email}: ${healedTourist.error.message}`
+                );
+            }
+        } else {
+            const insertedTourists = await db
+                .insert(users)
+                .values({
+                    email: E2E_TOURIST.email,
+                    emailVerified: true,
+                    displayName: E2E_TOURIST.displayName,
+                    firstName: E2E_TOURIST.firstName,
+                    lastName: E2E_TOURIST.lastName,
+                    slug: E2E_TOURIST.slug,
+                    mustChangePassword: false,
+                    profileCompleted: true,
+                    lifecycleState:
+                        LifecycleStatusEnum.ACTIVE as (typeof users.$inferInsert)['lifecycleState'],
+                    visibility: VisibilityEnum.PUBLIC as (typeof users.$inferInsert)['visibility']
+                })
+                .returning({ id: users.id });
+
+            const insertedTouristRow = insertedTourists[0];
+            if (!insertedTouristRow) {
+                throw new Error(`Insert into users returned no row for email=${E2E_TOURIST.email}`);
+            }
+
+            // HOS-296: the tourist fixture's single `USER` hat, as a row.
+            // `listing-02` case 1 asserts that this account is REDIRECTED away
+            // from `/mi-cuenta/comercio/`, so the absence of VENUE_OWNER is
+            // as load-bearing as the presence of USER.
+            const grantedTourist = await grantRole({
+                userId: insertedTouristRow.id,
+                role: RoleEnum.USER,
+                grantedBy: null,
+                reason: RoleGrantReason.SEED
+            });
+            if (grantedTourist.error) {
+                throw new Error(
+                    `Failed to grant USER to ${E2E_TOURIST.email}: ${grantedTourist.error.message}`
+                );
+            }
+
+            // Create Better Auth account row (email + password credential provider).
+            // Better Auth convention: accountId = userId for the credential provider.
+            await db.insert(accounts).values({
+                id: crypto.randomUUID(),
+                accountId: insertedTouristRow.id,
+                userId: insertedTouristRow.id,
+                providerId: 'credential',
+                password: passwordHash,
+                createdAt: new Date(),
+                updatedAt: new Date()
+            });
+
+            logger.debug(
+                `  ${STATUS_ICONS.Success} Created E2E tourist "${E2E_TOURIST.displayName}" (${E2E_TOURIST.email})`
+            );
+        }
+    }
+
+    // ── Step 3: Load and insert venue listing JSON files ────────────────
+    const items = (await loadJsonFiles('src/data/venue', files)) as unknown as VenueSeedData[];
+
+    for (const [index, item] of items.entries()) {
+        context.currentFile = files[index] ?? '';
+
+        try {
+            // Resolve destinationId seed ID → real UUID
+            const realDestinationId = context.idMapper.getMappedDestinationId(item.destinationId);
+            if (!realDestinationId) {
+                throw new Error(`No mapping found for destination ID: ${item.destinationId}`);
+            }
+
+            // Resolve ownerId seed ID → real UUID
+            const realOwnerId = context.idMapper.getMappedUserId(item.ownerId);
+            if (!realOwnerId) {
+                throw new Error(`No mapping found for owner ID: ${item.ownerId}`);
+            }
+
+            // HOS-25 T-026: stable UUIDv5 derived from the fixture's seed-key,
+            // inserted explicitly (bypassing the column's `defaultRandom()`) so
+            // versioned data-migrations can target a specific venue listing
+            // by a fixed id.
+            const venueId = getVenueFixtureId(item.id);
+            const now = new Date();
+
+            const [inserted] = await db
+                .insert(venues)
+                .values({
+                    id: venueId,
+                    slug: item.slug,
+                    name: item.name,
+                    summary: item.summary,
+                    description: item.description,
+                    // Seed i18n columns with valid empty-string locales (NOT null
+                    // sub-locales): I18nTextSchema requires strings, and the owner
+                    // editor round-trips these through the protected response (SPEC-253).
+                    nameI18n: { es: '', en: '', pt: '' },
+                    summaryI18n: { es: '', en: '', pt: '' },
+                    descriptionI18n: { es: '', en: '', pt: '' },
+                    richDescriptionI18n: { es: '', en: '', pt: '' },
+                    type: item.type as (typeof venues.$inferInsert)['type'],
+                    priceRange: (item.priceRange ??
+                        null) as (typeof venues.$inferInsert)['priceRange'],
+                    menuUrl: item.menuUrl ?? null,
+                    ownerId: realOwnerId,
+                    destinationId: realDestinationId,
+                    publicationStatus:
+                        item.publicationStatus as (typeof venues.$inferInsert)['publicationStatus'],
+                    inactiveSince: now,
+                    deadlinesVersion: 1,
+                    contactInfo: (item.contactInfo ??
+                        null) as (typeof venues.$inferInsert)['contactInfo'],
+                    socialNetworks: (item.socialNetworks ??
+                        null) as (typeof venues.$inferInsert)['socialNetworks'],
+                    openingHours: (item.openingHours ??
+                        null) as (typeof venues.$inferInsert)['openingHours'],
+                    // HOS-372: photos are NOT written here anymore. They go to
+                    // `venue_media` after the insert (see step 3b below);
+                    // the `media` JSONB column is on its way out and every read
+                    // path already composes from the table.
+                    seo: (item.seo ?? null) as (typeof venues.$inferInsert)['seo'],
+                    reviewsCount: item.reviewsCount,
+                    averageRating: item.averageRating,
+                    createdById: context.actor.id,
+                    updatedById: context.actor.id
+                })
+                .onConflictDoNothing()
+                .returning({ id: venues.id });
+
+            let realId = inserted?.id;
+            if (!realId) {
+                // Row already exists (slug conflict). Resolve its real DB id so
+                // downstream FAQs/reviews/idMapper consumers always get a valid
+                // FK — do NOT assume it equals the freshly-computed deterministic
+                // id: a pre-existing row seeded before HOS-25 T-026 introduced
+                // deterministic ids would still carry its original
+                // randomly-assigned id.
+                const existingRows = await db
+                    .select({ id: venues.id })
+                    .from(venues)
+                    .where(eq(venues.slug, item.slug))
+                    .limit(1);
+                realId = existingRows[0]?.id;
+            }
+
+            if (realId) {
+                // Register in idMapper so downstream (reviews, FAQs) can resolve
+                registerVenueIdMapping(context.idMapper, item.id, realId, item.name);
+
+                // ── Step 3b: relational media rows (HOS-372) ───────────────────
+                // Mirrors the accommodation seed: a direct model insert rather
+                // than the service, so `isFeatured` and `sortOrder` are set
+                // explicitly and no permission gate or N+1 ordering query runs.
+                await seedVenueMediaRows({
+                    venueId: realId,
+                    media: item.media as FixtureMediaBlock | undefined,
+                    label: item.name
+                });
+
+                logger.debug(
+                    `  ${STATUS_ICONS.Success} [${index + 1}/${items.length}] "${item.name}" (${item.type}) → ${item.destinationId} [${item.publicationStatus}]`
+                );
+            } else {
+                logger.debug(
+                    `  ${STATUS_ICONS.Info} [${index + 1}/${items.length}] "${item.name}" already exists — skipped (slug conflict)`
+                );
+            }
+
+            summaryTracker.trackSuccess(entityName);
+            successCount++;
+        } catch (error) {
+            errorCount++;
+            const msg = error instanceof Error ? error.message : String(error);
+            logger.error(
+                `  ${STATUS_ICONS.Error} [${index + 1}/${items.length}] Failed to seed "${item.name}": ${msg}`
+            );
+
+            if (!context.continueOnError) {
+                throw error;
+            }
+        }
+    }
+
+    // ── Step 5: Seed FAQs ────────────────────────────────────────────────────
+    const faqFiles: string[] =
+        ((exampleManifest as Record<string, unknown>).venueFaqs as string[]) ?? [];
+    let faqSuccessCount = 0;
+
+    for (const faqFile of faqFiles) {
+        try {
+            const [faqFileData] = (await loadJsonFiles('src/data/venue/faqs', [
+                faqFile
+            ])) as unknown as [VenueFaqFile];
+
+            const realVenueId = context.idMapper.getRealId('venues', faqFileData.$venueId);
+
+            if (!realVenueId) {
+                logger.warn(
+                    `  ${STATUS_ICONS.Warning} FAQ file "${faqFile}": could not resolve venue "${faqFileData.$venueId}" — skipping`
+                );
+                continue;
+            }
+
+            for (const [faqIndex, faq] of faqFileData.faqs.entries()) {
+                await db
+                    .insert(venueFaqs)
+                    .values({
+                        // HOS-25 T-026: stable UUIDv5 keyed off the parent
+                        // venue's seed-key + this FAQ's array position
+                        // (FAQ fixtures have no `id` of their own) — mirrors
+                        // `getAccommodationFaqFixtureId`. Also makes
+                        // `onConflictDoNothing()` below meaningfully idempotent
+                        // (previously the DB-random default id never collided).
+                        id: getVenueFaqFixtureId({
+                            venueSeedId: faqFileData.$venueId,
+                            index: faqIndex
+                        }),
+                        venueId: realVenueId,
+                        question: faq.question,
+                        answer: faq.answer,
+                        category: faq.category ?? null,
+                        displayOrder: faq.displayOrder ?? null,
+                        lifecycleState: 'ACTIVE',
+                        createdById: context.actor.id,
+                        updatedById: context.actor.id
+                    })
+                    .onConflictDoNothing();
+
+                faqSuccessCount++;
+            }
+        } catch (error) {
+            const msg = error instanceof Error ? error.message : String(error);
+            logger.warn(`  ${STATUS_ICONS.Warning} Failed to seed FAQs from "${faqFile}": ${msg}`);
+            if (!context.continueOnError) {
+                throw error;
+            }
+        }
+    }
+
+    // ── Step 6: Seed Reviews ─────────────────────────────────────────────────
+    const reviewFiles: string[] =
+        ((exampleManifest as Record<string, unknown>).venueReviews as string[]) ?? [];
+    let reviewSuccessCount = 0;
+
+    for (const reviewFile of reviewFiles) {
+        try {
+            const [reviewFileData] = (await loadJsonFiles('src/data/venue/reviews', [
+                reviewFile
+            ])) as unknown as [VenueReviewFile];
+
+            const realVenueId = context.idMapper.getRealId('venues', reviewFileData.$venueId);
+
+            if (!realVenueId) {
+                logger.warn(
+                    `  ${STATUS_ICONS.Warning} Review file "${reviewFile}": could not resolve venue "${reviewFileData.$venueId}" — skipping`
+                );
+                continue;
+            }
+
+            for (const review of reviewFileData.reviews) {
+                const realUserId = context.idMapper.getMappedUserId(review.userId);
+                if (!realUserId) {
+                    logger.warn(
+                        `  ${STATUS_ICONS.Warning} Review in "${reviewFile}": could not resolve user "${review.userId}" — skipping entry`
+                    );
+                    continue;
+                }
+
+                // onConflictDoNothing protects the UNIQUE(userId, venueId) index
+                await db
+                    .insert(venueReviews)
+                    .values({
+                        // HOS-25 T-026: stable UUIDv5 keyed off the parent
+                        // venue's seed-key + the reviewer's own seed id —
+                        // the (userId, venueId) pair is already this
+                        // table's UNIQUE constraint, so it doubles as a
+                        // content-stable composite key (unaffected by array
+                        // reordering, unlike an index-based key).
+                        id: getVenueReviewFixtureId({
+                            venueSeedId: reviewFileData.$venueId,
+                            reviewerSeedId: review.userId
+                        }),
+                        venueId: realVenueId,
+                        userId: realUserId,
+                        title: review.title ?? null,
+                        content: review.content ?? null,
+                        rating: review.rating as (typeof venueReviews.$inferInsert)['rating'],
+                        averageRating: review.averageRating,
+                        overallRating: review.overallRating,
+                        lifecycleState: 'ACTIVE',
+                        moderationState:
+                            review.moderationState as (typeof venueReviews.$inferInsert)['moderationState'],
+                        createdById: context.actor.id,
+                        updatedById: context.actor.id
+                    })
+                    .onConflictDoNothing();
+
+                reviewSuccessCount++;
+            }
+        } catch (error) {
+            const msg = error instanceof Error ? error.message : String(error);
+            logger.warn(
+                `  ${STATUS_ICONS.Warning} Failed to seed reviews from "${reviewFile}": ${msg}`
+            );
+            if (!context.continueOnError) {
+                throw error;
+            }
+        }
+    }
+
+    logger.info(
+        `${STATUS_ICONS.Success} ${entityName}: ${successCount} seeded, ${errorCount} errors. FAQs: ${faqSuccessCount}. Reviews: ${reviewSuccessCount}.`
+    );
+}

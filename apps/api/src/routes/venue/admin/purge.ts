@@ -12,8 +12,8 @@ import { createAdminRoute } from '../../../utils/route-factory';
 const service = new ListingPurgeService();
 
 /**
- * POST /api/v1/admin/gastronomies/{id}/purge — administrative action 23 (ACC:23):
- * support purges another owner's gastronomy listing at that owner's request, with a
+ * POST /api/v1/admin/venues/{id}/purge — administrative action 23 (ACC:23):
+ * support purges another owner's venue listing at that owner's request, with a
  * mandatory reason, by running PB12. No `requiredPermissions`: the action's own
  * permission is checked by the V5 chain (step 3) with the owner as subject.
  */
@@ -27,10 +27,10 @@ export const adminPurgeOnRequestVenueRoute = createAdminRoute({
         idParam: 'id',
         administrativeAction: 'ACC_23'
     },
-    summary: 'Purge gastronomy listing at the owner request (ACC:23)',
+    summary: 'Purge venue listing at the owner request (ACC:23)',
     description:
         'Administrative action 23: runs PB12 on another owner listing at that owner request, with a mandatory reason. Requires LISTING_PURGE_ON_REQUEST, evaluated on the owner.',
-    tags: ['Gastronomies', 'Admin'],
+    tags: ['Venues', 'Admin'],
     requestParams: { id: z.string().uuid() },
     requestBody: ListingPurgeOnRequestSchema,
     responseSchema: ListingPurgeOnRequestResponseSchema,

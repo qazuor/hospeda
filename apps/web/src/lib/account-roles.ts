@@ -64,20 +64,20 @@ const OWNER_PLANS_PATH = PRICING_PAGE_PATH_BY_AUDIENCE.owner;
 const TOURIST_PLANS_PATH = PRICING_PAGE_PATH_BY_AUDIENCE.tourist;
 
 /**
- * Set of roles that grant access to gastronomy/experience-owner navigation
+ * Set of roles that grant access to venue/experience-owner navigation
  * (sidebar "Mi comercio" entry, the listing self-service area).
  *
- * Gastronomy and experience listings (gastronomy, experiences) are a separate domain from
+ * Venue and experience listings (venue, experiences) are a separate domain from
  * accommodation hosting, so this set is intentionally distinct from
  * `ROLES_WITH_ACCOMMODATIONS_NAV` — a plain accommodation HOST does NOT
- * get the listing area, and a plain GASTRONOMY_OWNER or EXPERIENCE_OWNER does NOT get the host
+ * get the listing area, and a plain VENUE_OWNER or EXPERIENCE_OWNER does NOT get the host
  * nav. Since HOS-296 an account can hold both hats at once and then gets
  * BOTH areas (AC-1).
  *
  * Mirrored by the two vertical EDIT_OWN entries in `PERMISSION_ROLE_MAP`.
  *
  * Roles:
- * - GASTRONOMY_OWNER / EXPERIENCE_OWNER: the per-vertical replacements
+ * - VENUE_OWNER / EXPERIENCE_OWNER: the per-vertical replacements
  *   (HOS-1077). Both reach the same `/mi-cuenta/comercio` area; which listings
  *   they can actually edit is decided per listing by the API, not by this set.
  *   Listing them here is what stops an account holding ONLY a vertical role
@@ -85,43 +85,43 @@ const TOURIST_PLANS_PATH = PRICING_PAGE_PATH_BY_AUDIENCE.tourist;
  * - ADMIN / SUPER_ADMIN: platform staff (can reach every area).
  */
 export const ROLES_WITH_LISTING_NAV = new Set<string>([
-    'GASTRONOMY_OWNER',
+    'VENUE_OWNER',
     'EXPERIENCE_OWNER',
     'ADMIN',
     'SUPER_ADMIN'
 ]);
 
 /**
- * Which per-vertical pricing page a gastronomy/experience-only account (no
+ * Which per-vertical pricing page a venue/experience-only account (no
  * accommodation "host" hat) belongs on, or `null` when it holds neither
- * gastronomy/experience role (HOS-1293).
+ * venue/experience role (HOS-1293).
  *
  * Checked only AFTER {@link hasAccommodationsNavAccess} has already failed in
  * both callers below — a dual-hat host who also runs a restaurant still lands
  * on the owner plans page, same precedence HOS-296 established for
  * host-vs-tourist.
  *
- * `GASTRONOMY_OWNER` wins over `EXPERIENCE_OWNER` when an account somehow
+ * `VENUE_OWNER` wins over `EXPERIENCE_OWNER` when an account somehow
  * holds both with no host role — an arbitrary but deterministic tie-break,
  * documented rather than silent, since a single pricing-page redirect cannot
  * name two verticals at once.
  *
  * @param params.roles - Every role the user holds, or `null` for
  *   unauthenticated visitors.
- * @returns `'gastronomy'` or `'experience'`, or `null` when the account holds
- *   no gastronomy/experience role.
+ * @returns `'venue'` or `'experience'`, or `null` when the account holds
+ *   no venue/experience role.
  */
 function resolveListingPricingAudience({
     roles
 }: {
     readonly roles: readonly string[] | null;
-}): 'gastronomy' | 'experience' | null {
+}): 'venue' | 'experience' | null {
     if (!roles || roles.length === 0) {
         return null;
     }
     const roleSet = new Set(roles);
-    if (roleSet.has('GASTRONOMY_OWNER')) {
-        return 'gastronomy';
+    if (roleSet.has('VENUE_OWNER')) {
+        return 'venue';
     }
     if (roleSet.has('EXPERIENCE_OWNER')) {
         return 'experience';
@@ -132,7 +132,7 @@ function resolveListingPricingAudience({
 /**
  * Resolves which subscription pricing page a role-aware upsell or redirect
  * should target: a user holding any host-level hat belongs on the owner plans
- * page, a gastronomy/experience-only owner (gastronomy or experience, HOS-1293) belongs on
+ * page, a venue/experience-only owner (venue or experience, HOS-1293) belongs on
  * their own vertical's plans page, and tourists / unauthenticated visitors
  * belong on the tourist plans page.
  *
@@ -144,15 +144,15 @@ function resolveListingPricingAudience({
  * HOS-296: a user who is BOTH a host and a tourist-tier subscriber lands on
  * the owner page, because holding the host hat is the stronger signal about
  * which catalog they can actually buy from. HOS-1293 extends the same
- * precedence one level: host beats gastronomy/experience beats tourist — before this fix a
- * gastronomy/experience-only owner (`GASTRONOMY_OWNER`/`EXPERIENCE_OWNER`, no `HOST` role)
+ * precedence one level: host beats venue/experience beats tourist — before this fix a
+ * venue/experience-only owner (`VENUE_OWNER`/`EXPERIENCE_OWNER`, no `HOST` role)
  * fell all the way through to the tourist page from `/mi-cuenta/addons/` and
  * the bare `/suscriptores/checkout/` root, because this function recognized
  * only the host-vs-everyone-else split.
  *
  * @param params.roles - Every role the user holds, or `null` for
  *   unauthenticated visitors.
- * @returns The locale-agnostic path segment: the owner, gastronomy,
+ * @returns The locale-agnostic path segment: the owner, venue,
  *          experience, or tourist plans page — see
  *          {@link PRICING_PAGE_PATH_BY_AUDIENCE}.
  */
@@ -185,20 +185,20 @@ export function resolveSubscriptionPlansPath({
  * Callers on the 402 path should treat it as a hint and keep a default that
  * suits their own surface (HOS-283).
  *
- * `'gastronomy'` / `'experience'` (HOS-1293) exist for callers that already
+ * `'venue'` / `'experience'` (HOS-1293) exist for callers that already
  * know the vertical directly — e.g. `AddonsPurchasePanel.client.tsx` resolving
  * one CTA per add-on card from that add-on's own `productDomain` — and were
  * never reachable from the API's `upgradeAudience` field above, which only
  * ever sends `'host'` or `'tourist'`.
  *
- * @param params.audience - `'host'`, `'tourist'`, `'gastronomy'`, or
+ * @param params.audience - `'host'`, `'tourist'`, `'venue'`, or
  *   `'experience'`.
  * @returns The locale-agnostic path segment for the matching pricing page.
  */
 export function resolveSubscriptionPlansPathForAudience({
     audience
 }: {
-    audience: 'host' | 'tourist' | 'gastronomy' | 'experience';
+    audience: 'host' | 'tourist' | 'venue' | 'experience';
 }): string {
     if (audience === 'host') {
         return OWNER_PLANS_PATH;

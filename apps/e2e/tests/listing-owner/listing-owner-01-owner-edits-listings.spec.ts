@@ -1,16 +1,16 @@
 /**
- * LISTING-OWNER-01 — Gastronomy or experience owner edits operational fields on both verticals
- * (gastronomy + experience) and changes are visible on the public ficha.
+ * LISTING-OWNER-01 — Venue or experience owner edits operational fields on both verticals
+ * (venue + experience) and changes are visible on the public ficha.
  *
- * Actors: gastro-owner-julieta@local.test (role GASTRONOMY_OWNER, seeded by
- *   @repo/seed example pipeline: gastronomies.seed + experiences.seed).
+ * Actors: venue-owner-julieta@local.test (role VENUE_OWNER, seeded by
+ *   @repo/seed example pipeline: venues.seed + experiences.seed).
  * Tags: @p0 @listing-owner
  *
  * Preconditions:
  *   - e2e:seed has run (`pnpm --filter hospeda-e2e e2e:seed`).
- *   - Julieta's account (gastro-owner-julieta@local.test / Password123!)
- *     exists with role GASTRONOMY_OWNER and profileCompleted=true.
- *   - She owns PUBLIC/ACTIVE gastronomies:
+ *   - Julieta's account (venue-owner-julieta@local.test / Password123!)
+ *     exists with role VENUE_OWNER and profileCompleted=true.
+ *   - She owns PUBLIC/ACTIVE venues:
  *       - la-parrilla-del-puerto (slug)
  *       - cafe-del-palacio       (slug)
  *   - She owns PUBLIC/ACTIVE experiences (same listingOwnerId):
@@ -22,10 +22,10 @@
  * What this test validates (SPEC-249 T-025 / SPEC-252 T-003):
  *  1. Julieta can sign in and reach /es/mi-cuenta/comercio/.
  *  2. The listing index shows ONLY her own entries (both verticals)
- *     and no listing owned by another GASTRONOMY_OWNER (rodrigo, valentina).
- *  3. She opens the gastronomy editor for "la-parrilla-del-puerto",
+ *     and no listing owned by another VENUE_OWNER (rodrigo, valentina).
+ *  3. She opens the venue editor for "la-parrilla-del-puerto",
  *     changes the menuUrl field, saves; the new value is reflected on the
- *     public gastronomy ficha (/.../gastronomia/la-parrilla-del-puerto/).
+ *     public venue ficha (/.../comer-y-salir/la-parrilla-del-puerto/).
  *  4. She opens the experience editor for "excursion-rio-uruguay-concepcion",
  *     edits the richDescription field, saves; the updated text is reflected
  *     on the public experience ficha (/.../experiencias/excursion-...).
@@ -33,7 +33,7 @@
  *     island → protected PATCH endpoint chain, exercising the full stack.
  *
  * @see SPEC-249 spec.md § Owner self-service web area
- * @see SPEC-252 spec.md § T-003 positive gastronomy/experience owner E2E
+ * @see SPEC-252 spec.md § T-003 positive venue/experience owner E2E
  * @see apps/web/src/pages/[lang]/mi-cuenta/comercio/index.astro
  * @see apps/web/src/pages/[lang]/mi-cuenta/comercio/[vertical]/[id]/editar/
  * @see apps/web/src/components/listing/ListingEditor.client.tsx
@@ -58,9 +58,9 @@ import { setReactInputValue } from '../../fixtures/react19-input-helpers.ts';
 const WEB_URL = process.env.HOSPEDA_E2E_WEB_URL ?? 'http://localhost:4321';
 const API_URL = process.env.HOSPEDA_E2E_API_URL ?? 'http://localhost:3001';
 
-/** Known seeded gastronomy or experience owner. Password is stable across all E2E runs. */
+/** Known seeded venue or experience owner. Password is stable across all E2E runs. */
 const JULIETA = {
-    email: 'gastro-owner-julieta@local.test',
+    email: 'venue-owner-julieta@local.test',
     password: 'Password123!'
 } as const;
 
@@ -68,7 +68,7 @@ const JULIETA = {
  * Known slugs for Julieta's PUBLIC/ACTIVE listings (seeded by @repo/seed).
  * Slugs are stable identifiers that do not change between seed runs.
  */
-const GASTRONOMY_SLUG = 'la-parrilla-del-puerto';
+const VENUE_SLUG = 'la-parrilla-del-puerto';
 const EXPERIENCE_SLUG = 'excursion-rio-uruguay-concepcion';
 
 // ---------------------------------------------------------------------------
@@ -99,9 +99,9 @@ async function authenticateContext(
 // Suite
 // ---------------------------------------------------------------------------
 
-test.describe('LISTING-OWNER-01: gastronomy or experience owner edits listings — both verticals @p0 @listing-owner', () => {
+test.describe('LISTING-OWNER-01: venue or experience owner edits listings — both verticals @p0 @listing-owner', () => {
     /**
-     * Tracks the gastronomy menuUrl value before the test so we can
+     * Tracks the venue menuUrl value before the test so we can
      * restore it in afterEach (the seeded DB is shared; leaving a
      * test-value behind would break idempotency across re-runs without
      * a full reseed).
@@ -114,11 +114,11 @@ test.describe('LISTING-OWNER-01: gastronomy or experience owner edits listings �
     });
 
     test.afterEach(async () => {
-        // Restore the gastronomy menuUrl to the seeded value.
+        // Restore the venue menuUrl to the seeded value.
         if (originalMenuUrl !== undefined) {
-            await execSQL('UPDATE gastronomies SET menu_url = $1 WHERE slug = $2', [
+            await execSQL('UPDATE venues SET menu_url = $1 WHERE slug = $2', [
                 originalMenuUrl,
-                GASTRONOMY_SLUG
+                VENUE_SLUG
             ]);
         }
         // Restore the experience richDescription to the seeded value.
@@ -132,21 +132,21 @@ test.describe('LISTING-OWNER-01: gastronomy or experience owner edits listings �
         originalRichDescription = null;
     });
 
-    test('owner sees her listings, edits gastronomy menuUrl + experience richDescription, changes appear on public ficha', async ({
+    test('owner sees her listings, edits venue menuUrl + experience richDescription, changes appear on public ficha', async ({
         page,
         context
     }) => {
         // ── Precondition: snapshot original seeded values ──────────────────────
 
-        const gastronomyRows = await execSQL<{ id: string; menu_url: string | null }>(
-            'SELECT id, menu_url FROM gastronomies WHERE slug = $1 LIMIT 1',
-            [GASTRONOMY_SLUG]
+        const venueRows = await execSQL<{ id: string; menu_url: string | null }>(
+            'SELECT id, menu_url FROM venues WHERE slug = $1 LIMIT 1',
+            [VENUE_SLUG]
         );
-        const gastronomyId = gastronomyRows[0]?.id;
-        if (!gastronomyId) {
-            throw new Error(`Gastronomy '${GASTRONOMY_SLUG}' not found — run e2e:seed first`);
+        const venueId = venueRows[0]?.id;
+        if (!venueId) {
+            throw new Error(`Venue '${VENUE_SLUG}' not found — run e2e:seed first`);
         }
-        originalMenuUrl = gastronomyRows[0]?.menu_url ?? null;
+        originalMenuUrl = venueRows[0]?.menu_url ?? null;
 
         const experienceRows = await execSQL<{ id: string; rich_description: string | null }>(
             'SELECT id, rich_description FROM experiences WHERE slug = $1 LIMIT 1',
@@ -158,7 +158,7 @@ test.describe('LISTING-OWNER-01: gastronomy or experience owner edits listings �
         }
         originalRichDescription = experienceRows[0]?.rich_description ?? null;
 
-        // ── Step 1: sign in as Julieta (GASTRONOMY_OWNER) ───────────────────────
+        // ── Step 1: sign in as Julieta (VENUE_OWNER) ───────────────────────
 
         const sessionCookie = await signInExistingUser(
             { email: JULIETA.email, password: JULIETA.password },
@@ -166,13 +166,13 @@ test.describe('LISTING-OWNER-01: gastronomy or experience owner edits listings �
         );
         await authenticateContext(context, sessionCookie);
 
-        // ── Step 2: navigate to gastronomy or experience listing index ─────────────────────────
+        // ── Step 2: navigate to venue or experience listing index ─────────────────────────
 
         await page.goto(`${WEB_URL}/es/mi-cuenta/comercio/`, {
             waitUntil: 'domcontentloaded'
         });
 
-        // The page must load without redirect (role guard accepts GASTRONOMY_OWNER).
+        // The page must load without redirect (role guard accepts VENUE_OWNER).
         expect(page.url()).toContain('/mi-cuenta/comercio');
 
         // Her OWN listings appear in the index (the page renders listing.name in
@@ -181,12 +181,14 @@ test.describe('LISTING-OWNER-01: gastronomy or experience owner edits listings �
             page.locator('.mc-list__name', { hasText: 'La Parrilla del Puerto' })
         ).toBeVisible();
 
-        // The edit link for the gastronomy must be present in the DOM (href contains
+        // The edit link for the venue must be present in the DOM (href contains
         // the vertical segment + listing UUID).
-        const gastronomyEditLink = page.locator(
-            `a.mc-list__edit[href*="/gastronomy/${gastronomyId}/editar"]`
+        const venueEditLink = page.locator(`a.mc-list__edit[href*="/venue/${venueId}/editar"]`);
+        await expect(venueEditLink).toBeVisible();
+        await expect(venueEditLink).toHaveAttribute(
+            'href',
+            new RegExp(`/mi-cuenta/comercio/venue/${venueId}/editar/?$`)
         );
-        await expect(gastronomyEditLink).toBeVisible();
 
         // Experience listing also appears in the index.
         await expect(
@@ -198,13 +200,13 @@ test.describe('LISTING-OWNER-01: gastronomy or experience owner edits listings �
         );
         await expect(experienceEditLink).toBeVisible();
 
-        // Listings owned by OTHER gastronomy or experience owners must NOT appear.
-        // La Cervecería del Río belongs to rodrigo (gastro-owner-rodrigo@local.test).
+        // Listings owned by OTHER venue or experience owners must NOT appear.
+        // La Cervecería del Río belongs to rodrigo (venue-owner-rodrigo@local.test).
         await expect(
             page.locator('.mc-list__name', { hasText: 'La Cervecería del Río' })
         ).not.toBeVisible();
 
-        // ── Step 3: edit gastronomy — change menuUrl ───────────────────────────
+        // ── Step 3: edit venue — change menuUrl ───────────────────────────
 
         // Use a value that is:
         //   (a) a valid URL (required by the type="url" input — invalid URLs block
@@ -230,8 +232,8 @@ test.describe('LISTING-OWNER-01: gastronomy or experience owner edits listings �
         await page.goto(
             listingEditorUrl({
                 webUrl: WEB_URL,
-                vertical: 'gastronomy',
-                listingId: gastronomyId,
+                vertical: 'venue',
+                listingId: venueId,
                 section: 'precio'
             }),
             { waitUntil: 'load' }
@@ -272,19 +274,19 @@ test.describe('LISTING-OWNER-01: gastronomy or experience owner edits listings �
         // free, before the editor moved onto the shared ActionBar.
         const gastroSaved = await saveListingEditor({
             page,
-            pathPattern: /\/protected\/gastronomies\//
+            pathPattern: /\/protected\/venues\//
         });
         expect(gastroSaved.ok()).toBe(true);
 
-        // ── Step 3 assertion: public gastronomy ficha reflects new menuUrl ─────
+        // ── Step 3 assertion: public venue ficha reflects new menuUrl ─────
 
         // VenueContactBlock.astro renders menuUrl as an anchor with class
-        // gastro-contact__menu-btn. The page is SSR on-demand (prerender=false) so
+        // venue-contact__menu-btn. The page is SSR on-demand (prerender=false) so
         // a fresh navigation serves the current DB value.
-        await page.goto(`${WEB_URL}/es/gastronomia/${GASTRONOMY_SLUG}/`, {
+        await page.goto(`${WEB_URL}/es/comer-y-salir/${VENUE_SLUG}/`, {
             waitUntil: 'domcontentloaded'
         });
-        const menuLink = page.locator('a.gastro-contact__menu-btn');
+        const menuLink = page.locator('a.venue-contact__menu-btn');
         await expect(menuLink).toHaveAttribute('href', newMenuUrl);
 
         // ── Step 4: edit experience — change richDescription ──────────────────
@@ -292,7 +294,7 @@ test.describe('LISTING-OWNER-01: gastronomy or experience owner edits listings �
         // Plain text value — always different from whatever the seed stores.
         const newRichDescription = `E2E test update ${Date.now()}: tour description refreshed.`;
 
-        // Same waitUntil:'load' rationale as the gastronomy step above — ensures
+        // Same waitUntil:'load' rationale as the venue step above — ensures
         // the Astro bundle has executed and React has hydrated before we interact.
         //
         // HOS-1080: `richDescription` lives in the basic-info section, so this

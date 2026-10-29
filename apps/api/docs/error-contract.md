@@ -205,7 +205,7 @@ been DELETED — not just that an id is real, but that it once was.
 **404 `NOT_FOUND`**. The route hand-wrote `'Accommodation not found'`; the
 service composed `` `${entityName} not found` `` → `'accommodation not found'`.
 One capital letter, and any status-shaped audit passes it. The experience and
-gastronomy twins had copied the same line.
+venue twins had copied the same line.
 
 Three rules follow:
 
@@ -222,7 +222,7 @@ Three rules follow:
    oracle.** `user/protected/getById.ts` now refuses a foreign id without
    touching the database. Same body, and no timing difference either.
 3. **A refusal names neither the permission nor the id** (rule R5 applied to
-   4xx): `'You may only start a subscription for your own gastronomy or experience listing.'`
+   4xx): `'You may only start a subscription for your own venue or experience listing.'`
    and `` `Entity not found: ${entityType} with id ${entityId}` `` were both
    replaced by a single constant shared by the two branches.
 
@@ -252,7 +252,7 @@ not disclose existence unless disclosing it is the product".
 `_canUpdateVisibility` answered 403 for a foreign row across **15 entities** —
 every entity whose table carries an owner column (`ownerId`, `authorId` or
 `userId`): accommodation, accommodationReview, alert, destinationReview,
-entityComment, event, experience, experienceReview, gastronomy, gastronomyReview,
+entityComment, event, experience, experienceReview, legacy venue review entity,
 ownerPromotion, post, tag, userBookmark, userBookmarkCollection. A caller holding
 `*_UPDATE_OWN` learned from that 403 that the id was real.
 
@@ -328,7 +328,7 @@ read decision.
   the guard and break the owner's refusals.
 - [`test/routes/existence-disclosure.paired-probe.test.ts`](../test/routes/existence-disclosure.paired-probe.test.ts)
   — the behavioural half: foreign vs invented id on the users, accommodation,
-  experience and gastronomy protected reads, compared as whole bodies. Note it
+  experience and venue protected reads, compared as whole bodies. Note it
   un-mocks `@repo/service-core` locally: `test/setup.ts` replaces the package
   globally including `ServiceError` itself, and under that mock every route
   error becomes a 500 — a paired probe would compare two artefacts of the mock
@@ -633,7 +633,7 @@ preconditions. A refusal writes nothing, not even the audit event.
 
 Step 3 runs before reading the trial.
 
-`POST /api/v1/admin/{accommodations|gastronomies|experiences}/{id}/moderate` (ACC:12):
+The admin moderation endpoints for accommodation, venue and experience listings (ACC:12):
 
 | Situation | Status | `error.code` |
 |---|---:|---|
@@ -648,7 +648,7 @@ The listing row is read before its owner is checked, so 404 precedes step 3. A s
 
 ## Row 30: "I already fixed it" (V8a.1b, HOS-1492)
 
-`POST /api/v1/protected/{accommodations|gastronomies|experiences}/{id}/fix-request/report-fixed`:
+The protected report-fixed endpoints for accommodation, venue and experience listings:
 the owner tells support that an open fix request (row 30) is corrected. No
 body. It authorizes by ownership (`listingAccess` `READ_OWN`), not by a
 permission, and under the owner's publication lock it re-reads the open fix
@@ -666,11 +666,11 @@ does not move `inactive_since`.
 
 ## Public sellable plan catalog (B13a.5, HOS-1621)
 
-`GET /api/v1/public/plan-catalog?vertical=` does not require a session. A `vertical` outside `accommodation | gastronomy | experience | tourist` is a shape-validation 400. The route has no business rejections and reads only `current AND sellable` plan versions in its `plans` list (AC:B13a:11).
+`GET /api/v1/public/plan-catalog?vertical=` does not require a session. A `vertical` outside `accommodation | venue | experience | tourist` is a shape-validation 400. The route has no business rejections and reads only `current AND sellable` plan versions in its `plans` list (AC:B13a:11).
 
 ## Pricing situation (B13a.5, HOS-1621)
 
-`GET /api/v1/protected/billing-subscription/pricing-situation/{vertical}` requires a session and returns 401 without one. A `vertical` outside `accommodation | gastronomy | experience | tourist` is a shape-validation 400. It has no business rejections: it reads the same tourist VIP inheritance and live commitment gates as S1, and the same publication destination as PB1, without making a purchase decision. Its `TOURIST_VIP_INHERITED` and live commitment results mirror the S1 rejections `TOURIST_VIP_INHERITED` and `COMMITMENT_TAKEN` (AC:B13a:12).
+`GET /api/v1/protected/billing-subscription/pricing-situation/{vertical}` requires a session and returns 401 without one. A `vertical` outside `accommodation | venue | experience | tourist` is a shape-validation 400. It has no business rejections: it reads the same tourist VIP inheritance and live commitment gates as S1, and the same publication destination as PB1, without making a purchase decision. Its `TOURIST_VIP_INHERITED` and live commitment results mirror the S1 rejections `TOURIST_VIP_INHERITED` and `COMMITMENT_TAKEN` (AC:B13a:12).
 
 ## Action 21 promo code rejections (B9b.4)
 

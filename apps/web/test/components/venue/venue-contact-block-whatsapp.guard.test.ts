@@ -1,7 +1,7 @@
 /**
  * @file venue-contact-block-whatsapp.guard.test.ts
  * @description Static guard against re-introducing `socialNetworks.whatsapp`
- * on the gastronomy public detail path (HOS-1076).
+ * on the venue public detail path (HOS-1076).
  *
  * `whatsapp` never existed in `SocialNetworkSchema` (the shape backing the
  * `socialNetworks` JSONB column — `packages/schemas/src/common/social.schema.ts`),
@@ -31,8 +31,8 @@ const CONTACT_BLOCK_PATH = join(__dirname, '../../../src/components/venue/VenueC
 const DATA_TYPES_PATH = join(__dirname, '../../../src/data/types.ts');
 const TRANSFORMS_PATH = join(__dirname, '../../../src/lib/api/transforms.ts');
 
-describe('GastronomyContactBlock — no whatsapp read path (HOS-1076)', () => {
-    it('SOCIAL_LINKS in GastronomyContactBlock.astro has no whatsapp entry', () => {
+describe('VenueContactBlock — no whatsapp read path (HOS-1076)', () => {
+    it('SOCIAL_LINKS in VenueContactBlock.astro has no whatsapp entry', () => {
         const source = readFileSync(CONTACT_BLOCK_PATH, 'utf-8');
         const match = source.match(
             /const SOCIAL_LINKS: readonly SocialLink\[\] = \[[\s\S]*?\] as const;/
@@ -41,7 +41,7 @@ describe('GastronomyContactBlock — no whatsapp read path (HOS-1076)', () => {
         expect(match?.[0]).not.toMatch(/whatsapp/i);
     });
 
-    it('GastronomySocialNetworks (data/types.ts) does not declare a whatsapp field', () => {
+    it('VenueSocialNetworks (data/types.ts) does not declare a whatsapp field', () => {
         const source = readFileSync(DATA_TYPES_PATH, 'utf-8');
         const match = source.match(/export interface VenueSocialNetworks \{[^}]*\}/s);
         expect(match).not.toBeNull();

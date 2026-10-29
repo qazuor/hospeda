@@ -1,4 +1,4 @@
-/** TEST:V6:2/3 — PB1 over the real HTTP stack for gastronomy and experience. */
+/** TEST:V6:2/3 — PB1 over the real HTTP stack for venue and experience. */
 import { randomUUID } from 'node:crypto';
 import { eq, getDb, trials } from '@repo/db';
 import { PermissionEnum, PublicationStatusEnum, RoleEnum, VerticalEnum } from '@repo/schemas';
@@ -29,7 +29,7 @@ vi.mock('../../../src/utils/listing-publication/ports', async (importOriginal) =
 const app = initApp({ clock: { now: () => MATRIX_NOW } });
 const verticals = [VerticalEnum.VENUE, VerticalEnum.EXPERIENCE] as const;
 const url = (vertical: (typeof verticals)[number], id: string) =>
-    `/api/v1/protected/${vertical === VerticalEnum.VENUE ? 'gastronomies' : 'experiences'}/${id}/publish`;
+    `/api/v1/protected/${vertical === VerticalEnum.VENUE ? 'venues' : 'experiences'}/${id}/publish`;
 
 function publish(
     vertical: (typeof verticals)[number],
@@ -87,7 +87,7 @@ describe.each(verticals)('PB1 route — %s (TEST:V6:2/3)', (vertical) => {
         const { listingId } = await listing(vertical, PublicationStatusEnum.DRAFT);
         const viewPermission =
             vertical === VerticalEnum.VENUE
-                ? PermissionEnum.GASTRONOMY_VIEW_ALL
+                ? PermissionEnum.VENUE_VIEW_ALL
                 : PermissionEnum.EXPERIENCE_VIEW_ALL;
         const answer = await readResponse(
             await publish(
@@ -188,7 +188,7 @@ describe.each(verticals)('PB1 route — %s (TEST:V6:2/3)', (vertical) => {
         expect(answer.status).toBe(403);
         expect(answer.body.error?.code).toBe('LIMIT_REACHED');
         expect(answer.body.error?.details?.limitKey).toBe(
-            vertical === 'gastronomy' ? 'max_gastronomies' : 'max_experiences'
+            vertical === 'venue' ? 'max_venues' : 'max_experiences'
         );
     });
 

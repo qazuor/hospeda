@@ -39,7 +39,7 @@ const NOTIFIABLE_ENTITY_TYPES = [
     'destination',
     'event',
     'post',
-    'gastronomy',
+    'venue',
     'experience'
 ] as const;
 
@@ -49,7 +49,7 @@ const TABLE_OF: Readonly<Record<(typeof NOTIFIABLE_ENTITY_TYPES)[number], string
     destination: 'destinations',
     event: 'events',
     post: 'posts',
-    gastronomy: 'gastronomies',
+    venue: 'venues',
     experience: 'experiences'
 };
 
@@ -89,7 +89,7 @@ describe('IndexNow visibility sources', () => {
      * The other three entities keep their pair. `slug` addresses the row and
      * `deletedAt` catches a soft delete the state alone never sees.
      */
-    const LISTING_ENTITY_TYPES = ['accommodation', 'gastronomy', 'experience'] as const;
+    const LISTING_ENTITY_TYPES = ['accommodation', 'venue', 'experience'] as const;
     const PAIR_ENTITY_TYPES = NOTIFIABLE_ENTITY_TYPES.filter(
         (entityType) => !(LISTING_ENTITY_TYPES as readonly string[]).includes(entityType)
     );

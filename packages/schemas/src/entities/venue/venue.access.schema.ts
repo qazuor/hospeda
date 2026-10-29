@@ -12,7 +12,7 @@ import { VenueMenuSectionPublicSchema } from './subtypes/venue.menu.schema.js';
 import { VenueSchema } from './venue.schema.js';
 
 /**
- * Gastronomy Access Schemas — Three-Tier Response Projection
+ * venue Access Schemas — Three-Tier Response Projection
  *
  * Mirrors the same pick/omit discipline as `accommodation.access.schema.ts`:
  * - **Public** — only fields safe for unauthenticated visitors.
@@ -52,7 +52,7 @@ export const VenuePublicSchema = VenueSchema.pick({
     summaryI18n: true,
     descriptionI18n: true,
 
-    // Gastronomy-specific public fields
+    // venue-specific public fields
     priceRange: true,
     menuUrl: true,
     // HOS-895 PR2 — the uploaded photo/PDF alternative is now a `-pro`/
@@ -60,7 +60,7 @@ export const VenuePublicSchema = VenueSchema.pick({
     // ungated). The COLUMN stays picked here — it is still owner-writable data
     // — but the public `getBySlug` route nulls both fields out live, before
     // this schema is reached, when the owner's CURRENT plan does not grant
-    // `MANAGE_GASTRONOMY_MENU` (see `resolveOwnerGrantsGastronomyMenuManagement`
+    // `MANAGE_VENUE_MENU` (see `resolveOwnerGrantsvenueMenuManagement`
     // in `@repo/service-core`). Schema presence is safe for the same reason
     // `richDescription`'s entitlement-by-omission gate is: the service strips
     // it server-side before `stripWithSchema`, so a not-entitled owner's row
@@ -172,26 +172,26 @@ export const VenuePublicSchema = VenueSchema.pick({
     features: z.array(ListingFeaturePublicSchema).optional(),
     /**
      * The structured carta's sections and dishes (HOS-895 PR2), joined from
-     * `gastronomy_menu_sections` / `gastronomy_menu_items`.
+     * `venue_menu_sections` / `venue_menu_items`.
      *
      * Populated by the public `getBySlug` route only — same reason `amenities`
      * / `features` are `.optional()` rather than defaulted: a payload that
      * never ran the join must say "not loaded", not "this venue has none".
      *
      * Empty (not omitted) when the owner's current plan does not grant
-     * `MANAGE_GASTRONOMY_MENU` — a downgraded owner's previously-typed carta is
+     * `MANAGE_VENUE_MENU` — a downgraded owner's previously-typed carta is
      * withheld the same way `menuFileUrl` is (see the field's comment above),
      * even though the ROWS are not deleted.
      *
      * Each section/item's `nameI18n`/`descriptionI18n` (HOS-1043) are withheld
-     * INDEPENDENTLY, on the narrower `MULTILINGUAL_GASTRONOMY_MENU` key —
+     * INDEPENDENTLY, on the narrower `MULTILINGUAL_VENUE_MENU` key —
      * `null` on both when the plan does not grant it, the same live-read
      * mechanism `photoUrl` uses for `MENU_ITEM_PHOTOS`. See
      * `venue.menu.schema.ts` for the full mechanism.
      */
     menuSections: z.array(VenueMenuSectionPublicSchema).optional(),
     /**
-     * The menú del día (HOS-1041), joined from `gastronomy_daily_specials`.
+     * The menú del día (HOS-1041), joined from `venue_daily_specials`.
      *
      * Populated by the public `getBySlug` route only, and — unlike every other
      * joined array on this schema — **already filtered by the validity window**
@@ -201,24 +201,24 @@ export const VenuePublicSchema = VenueSchema.pick({
      * indistinguishable from one that was never written.
      *
      * Empty (not omitted) when the owner's current plan does not grant
-     * `MANAGE_GASTRONOMY_DAILY_SPECIAL` — withheld live, exactly like
+     * `MANAGE_VENUE_DAILY_SPECIAL` — withheld live, exactly like
      * `menuSections`, without the rows being deleted.
      */
     dailySpecials: z.array(VenueDailySpecialPublicSchema).optional(),
     /**
-     * The venue's own agenda (HOS-1042), read from `gastronomy_events`.
+     * The venue's own agenda (HOS-1042), read from `venue_events`.
      *
      * `.optional()` on exactly the terms `menuSections` is, and withheld on
      * exactly the terms it is: absent when the payload never ran the read,
      * absent when the owner's CURRENT plan does not grant
-     * `MANAGE_GASTRONOMY_EVENTS`. A downgraded owner's already-typed agenda
+     * `MANAGE_VENUE_EVENTS`. A downgraded owner's already-typed agenda
      * stays in the database and stops being published — the rows are not
-     * deleted (see `resolveOwnerGastronomyPlanEntitlements` in
+     * deleted (see `resolveOwnervenuePlanEntitlements` in
      * `@repo/service-core`).
      *
      * Named `venueEvents` and not `events` deliberately. `events` is the
      * platform's DESTINATION agenda — a festival, a popular fiesta — and a
-     * gastronomy payload carrying a field by that name would read, to every
+     * venue payload carrying a field by that name would read, to every
      * consumer that already knows the other one, as the wrong thing.
      */
     venueEvents: z.array(VenueEventPublicSchema).optional()
@@ -349,7 +349,7 @@ export const VenueAdminSchema = VenueSchema.extend({
      * input and in `resolveListingCompleteness`.
      */
     summary: z.string().max(300, { message: 'zodError.listing.summary.max' }),
-    /** HOS-190: read⊇write lenient contactInfo (see GastronomyProtectedSchema). */
+    /** HOS-190: read⊇write lenient contactInfo (see venueProtectedSchema). */
     contactInfo: ContactInfoReadSchema.nullish()
 });
 

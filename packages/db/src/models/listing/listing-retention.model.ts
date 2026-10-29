@@ -5,7 +5,7 @@ import type { ListingVertical } from './listing-publication.model.ts';
 
 const TABLES: Record<ListingVertical, string> = {
     accommodation: 'accommodations',
-    gastronomy: 'gastronomies',
+    venue: 'venues',
     experience: 'experiences'
 };
 

@@ -1,4 +1,4 @@
-/** PB6 over the real HTTP stack for gastronomy and experience. */
+/** PB6 over the real HTTP stack for venue and experience. */
 import { randomUUID } from 'node:crypto';
 import { eq, getDb, trials } from '@repo/db';
 import { PublicationStatusEnum, VerticalEnum } from '@repo/schemas';
@@ -28,7 +28,7 @@ vi.mock('../../../src/utils/listing-publication/ports', async (importOriginal) =
 const app = initApp({ clock: { now: () => MATRIX_NOW } });
 const verticals = [VerticalEnum.VENUE, VerticalEnum.EXPERIENCE] as const;
 const url = (vertical: (typeof verticals)[number], id: string) =>
-    `/api/v1/protected/${vertical === VerticalEnum.VENUE ? 'gastronomies' : 'experiences'}/${id}/unpublish`;
+    `/api/v1/protected/${vertical === VerticalEnum.VENUE ? 'venues' : 'experiences'}/${id}/unpublish`;
 
 function unpublish(
     vertical: (typeof verticals)[number],

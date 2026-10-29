@@ -1,6 +1,6 @@
 /**
- * PATCH /api/v1/admin/gastronomies/:id/faqs/reorder
- * Reorder FAQs for a gastronomy listing — Admin endpoint.
+ * PATCH /api/v1/admin/venues/:id/faqs/reorder
+ * Reorder FAQs for a venue listing — Admin endpoint.
  *
  * MUST be registered BEFORE /{id}/faqs/{faqId} to prevent "reorder" from
  * being captured as a faqId param.
@@ -23,20 +23,20 @@ import { createAdminRoute } from '../../../utils/route-factory';
 const venueService = new VenueService({ logger: apiLogger });
 
 /**
- * PATCH /api/v1/admin/gastronomies/:id/faqs/reorder
- * Reorder FAQs for a gastronomy listing — Admin endpoint.
+ * PATCH /api/v1/admin/venues/:id/faqs/reorder
+ * Reorder FAQs for a venue listing — Admin endpoint.
  *
  * Validates that all supplied faqId values belong to the given listing before
- * applying displayOrder updates. Requires GASTRONOMY_EDIT_ALL permission.
+ * applying displayOrder updates. Requires VENUE_EDIT_ALL permission.
  */
 export const adminReorderVenueFaqsRoute = createAdminRoute({
     method: 'patch',
     listingAccess: { vertical: VerticalEnum.VENUE, operation: 'EDIT', idParam: 'id' },
     path: '/{id}/faqs/reorder',
-    summary: 'Reorder FAQs for a gastronomy listing (admin)',
+    summary: 'Reorder FAQs for a venue listing (admin)',
     description:
-        'Sets displayOrder for a set of FAQs belonging to a gastronomy listing. All faqId values must belong to the given listing. Requires GASTRONOMY_EDIT_ALL.',
-    tags: ['Gastronomy', 'FAQs'],
+        'Sets displayOrder for a set of FAQs belonging to a venue listing. All faqId values must belong to the given listing. Requires VENUE_EDIT_ALL.',
+    tags: ['Venue', 'FAQs'],
     requestParams: {
         id: z.string().uuid({ message: 'zodError.common.id.invalidUuid' })
     },
@@ -50,7 +50,7 @@ export const adminReorderVenueFaqsRoute = createAdminRoute({
         const actor = getActorFromContext(ctx);
 
         const reorderInput = VenueFaqReorderInputSchema.parse({
-            gastronomyId: params.id as string,
+            venueId: params.id as string,
             order: (body as FaqReorderPayload).order
         });
 

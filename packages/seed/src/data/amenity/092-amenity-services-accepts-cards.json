@@ -7,7 +7,7 @@
         "en": "Acepta tarjetas de crédito y débito como método de pago",
         "pt": "Acepta tarjetas de crédito y débito como método de pago"
     },
-    "applicableVerticals": ["accommodation", "gastronomy", "experience"],
+    "applicableVerticals": ["accommodation", "venue", "experience"],
     "type": "SERVICES",
     "icon": "ShoppingServiceIcon",
     "isBuiltin": false,

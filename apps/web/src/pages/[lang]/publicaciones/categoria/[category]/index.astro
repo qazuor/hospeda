@@ -31,14 +31,14 @@ const { t } = createTranslations(locale);
 const { category: catSlug } = Astro.params;
 
 // Resolved against the canonical Spanish slug map (H-110). The helper is
-// case-insensitive. The legacy English slug (e.g. `gastronomy`) never reaches
+// case-insensitive. The legacy English category slugs never reach
 // this page as a 200 — the middleware 301-redirects it to the Spanish slug
 // before routing gets here.
 const catEnum = resolvePostCategorySlug({ slug: catSlug });
 if (!catEnum) return new Response(null, { status: 404 });
 
 // `blog.categories.<key>` i18n keys are authored as the English-lowercased
-// enum value (e.g. `gastronomy`, `nightlife`) — a pre-existing, separate
+// enum value for a food category — a pre-existing, separate
 // naming convention from the URL slug map above. Deriving it from the enum
 // keeps display copy correct regardless of which Spanish slug the URL uses.
 const catI18nKey = catEnum.toLowerCase();

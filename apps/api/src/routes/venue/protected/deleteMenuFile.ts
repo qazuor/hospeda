@@ -1,11 +1,11 @@
 /**
- * DELETE /api/v1/protected/gastronomies/:id/menu-file
+ * DELETE /api/v1/protected/venues/:id/menu-file
  *
  * Removes the uploaded photo/PDF of the venue's menu (HOS-895).
  *
  * Deletes the ASSET as well as the columns, which is the point: forgetting the
  * URL and leaving the file in Cloudinary is exactly the orphan HOS-372 built
- * `gastronomy_media` to stop, and `menu_file_public_id` exists so this route
+ * `venue_media` to stop, and `menu_file_public_id` exists so this route
  * has the handle it needs to do it properly.
  *
  * The provider deletion is best-effort and does NOT fail the request. If
@@ -15,7 +15,7 @@
  * single orphaned asset, which is recoverable; leaving a withdrawn menu on the
  * public page is not.
  *
- * Menu file deletion requires manage_gastronomy_menu on the listing owner.
+ * Menu file deletion requires manage_venue_menu on the listing owner.
  *
  * @module routes/venue/protected/deleteMenuFile
  */
@@ -40,32 +40,32 @@ export const protectedDeleteVenueMenuFileRoute = createProtectedRoute({
         vertical: VerticalEnum.VENUE,
         operation: 'EDIT',
         idParam: 'id',
-        capabilities: ['manage_gastronomy_menu']
+        capabilities: ['manage_venue_menu']
     },
     summary: 'Remove the uploaded menu photo or PDF',
     description:
-        'Clears the listing’s uploaded menu file and deletes the stored asset. Owner-only, and requires the manage_gastronomy_menu entitlement granted by the professional gastronomy plan and above. The structured menu and the external link are untouched.',
-    tags: ['Gastronomy', 'Gastronomy Menu'],
+        'Clears the listing’s uploaded menu file and deletes the stored asset. Owner-only, and requires the manage_venue_menu entitlement granted by the professional venue plan and above. The structured menu and the external link are untouched.',
+    tags: ['Venue', 'Venue Menu'],
     requestParams: {
         id: z.string().uuid({ message: 'zodError.common.id.invalidUuid' })
     },
     responseSchema: SuccessSchema,
     handler: async (ctx: Context, params: Record<string, unknown>) => {
         const actor = getActorFromContext(ctx);
-        const gastronomyId = params.id as string;
+        const venueId = params.id as string;
 
-        const listing = await venueService.getById(actor, gastronomyId);
-        const hasEditAll = actor.permissions?.includes(PermissionEnum.GASTRONOMY_EDIT_ALL);
+        const listing = await venueService.getById(actor, venueId);
+        const hasEditAll = actor.permissions?.includes(PermissionEnum.VENUE_EDIT_ALL);
 
         // 404, not 403 — a 403 would confirm the id exists (error contract).
         if (
             listing.error ||
             !listing.data ||
             (!hasEditAll && listing.data.ownerId !== actor.id) ||
-            (!hasEditAll && !actor.permissions?.includes(PermissionEnum.GASTRONOMY_EDIT_OWN))
+            (!hasEditAll && !actor.permissions?.includes(PermissionEnum.VENUE_EDIT_OWN))
         ) {
             return createErrorResponse(
-                { code: 'NOT_FOUND', message: 'Gastronomy listing not found' },
+                { code: 'NOT_FOUND', message: 'Venue listing not found' },
                 ctx,
                 404
             );
@@ -86,7 +86,7 @@ export const protectedDeleteVenueMenuFileRoute = createProtectedRoute({
         ).model;
 
         await model.update(
-            { id: gastronomyId },
+            { id: venueId },
             {
                 menuFileUrl: null,
                 menuFilePublicId: null,
@@ -106,7 +106,7 @@ export const protectedDeleteVenueMenuFileRoute = createProtectedRoute({
                 apiLogger.warn(
                     {
                         error: error instanceof Error ? error.message : String(error),
-                        gastronomyId,
+                        venueId,
                         publicId
                     },
                     'Menu file cleared from listing but the stored asset could not be deleted'

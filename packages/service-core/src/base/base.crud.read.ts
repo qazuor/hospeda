@@ -531,7 +531,7 @@ export abstract class BaseCrudRead<
                         where.lifecycleState = status;
                     } else if ('publicationStatus' in tableRecord) {
                         // The three listing tables (accommodations,
-                        // gastronomies, experiences) have no lifecycleState
+                        // venues, experiences) have no lifecycleState
                         // since V6.9b (HOS-1641): their admin search schemas
                         // REDEFINE `status` to PublicationStatusEnum, exactly
                         // like HostTradeBenefitUsageAdminSearchSchema does for

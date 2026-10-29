@@ -155,7 +155,7 @@ describe('0034 listing media to relational', () => {
         const { ctx, inserts } = buildCtx(
             sequence({
                 gastronomyRows: [{ id: GASTRONOMY_ID, media: PHOTO_BLOCK }],
-                gastronomyMigrated: [{ gastronomyId: GASTRONOMY_ID }],
+                gastronomyMigrated: [{ venueId: GASTRONOMY_ID }],
                 experienceRows: [{ id: EXPERIENCE_ID, media: PHOTO_BLOCK }],
                 experienceMigrated: [{ experienceId: EXPERIENCE_ID }]
             })
@@ -176,7 +176,7 @@ describe('0034 listing media to relational', () => {
                     { id: GASTRONOMY_ID, media: PHOTO_BLOCK },
                     { id: OTHER_ID, media: PHOTO_BLOCK }
                 ],
-                gastronomyMigrated: [{ gastronomyId: GASTRONOMY_ID }]
+                gastronomyMigrated: [{ venueId: GASTRONOMY_ID }]
             })
         );
 

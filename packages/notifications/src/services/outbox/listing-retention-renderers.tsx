@@ -5,12 +5,12 @@ import {
     ListingRetentionBeforeDeletion
 } from '../../templates/listing/index.js';
 import { formatDate } from '../../templates/utils/index.js';
-import { formatTrialVerticals } from '../../utils/product-domain-copy.js';
+import { formatTrialVerticalInline } from '../../utils/product-domain-copy.js';
 import type { OutboxMailRenderer } from './email-outbox-delivery.service.js';
 
 const BEFORE_ARCHIVE = 'verticals.listing-retention-before-archive';
 const BEFORE_DELETION = 'verticals.listing-retention-before-deletion';
-const LISTING_VERTICALS: readonly string[] = ['accommodation', 'gastronomy', 'experience'];
+const LISTING_VERTICALS: readonly string[] = ['accommodation', 'venue', 'experience'];
 const TRANSITIONS: readonly string[] = ['PB4', 'PB5'];
 const ISO_INSTANT = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(\.\d+)?Z$/;
 
@@ -53,7 +53,7 @@ function parsePayload(row: EmailOutboxRow, kind: 'archive' | 'deletion'): Retent
 }
 
 function verticalName(vertical: string): string {
-    return formatTrialVerticals({ verticals: [vertical] }).toLocaleLowerCase('es-AR');
+    return formatTrialVerticalInline({ vertical });
 }
 
 function marketDate(instant: Date): string {

@@ -15,13 +15,13 @@
  * Supersedes `/publicar-experiencia/`, which 301s here once H7 lands — not
  * before, because that page still carries the price block inline and the price
  * only moves DOWN to `/planes/experiencias/precios/` when H7 builds it. This
- * mirrors the gastronomy vertical's split at `/planes/gastronomia/`:
+ * mirrors the venue vertical's split at `/planes/comer-y-salir/`:
  * a visitor who has already decided to publish should not scroll a brochure
  * to reach the grid, and "publicar mi experiencia" and "cuánto cuesta
  * publicar mi experiencia" are two search intents a single URL serves badly.
  *
  * Built from the same `SalesSection`-based components as
- * `/planes/gastronomia/` (HOS-985 H6) — see that file's docblock for the
+ * `/planes/comer-y-salir/` (HOS-985 H6) — see that file's docblock for the
  * shared-component rationale. This page reuses the existing
  * `experience.landing.*` i18n namespace unchanged;
  * only the page shell moved from a hand-rolled `pub-exp__*` layout to the
@@ -126,7 +126,7 @@ const title = t('experience.landing.lead.title');
 const subtitle = t('experience.landing.lead.subtitle');
 /**
  * This vertical's own pricing page — see the same block in
- * `/planes/gastronomia/index.astro`. HOS-1032 built it and retired
+ * `/planes/comer-y-salir/index.astro`. HOS-1032 built it and retired
  * `/publicar-experiencia/` in the same change, ending the interim in which this
  * CTA had to point at the landing that still carried the price inline.
  */

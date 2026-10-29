@@ -86,22 +86,22 @@ export type Feature = z.infer<typeof FeatureSchema>;
 export type AccommodationFeatureRelation = z.infer<typeof AccommodationFeatureRelationSchema>;
 
 /**
- * Gastronomy-Feature Relation Schema
- * Represents the many-to-many relationship between gastronomy listings and features.
- * Mirrors the accommodation variant with gastronomyId instead of accommodationId.
+ * venue-Feature Relation Schema
+ * Represents the many-to-many relationship between venue listings and features.
+ * Mirrors the accommodation variant with venueId instead of accommodationId.
  */
 export const VenueFeatureRelationSchema = z.object({
-    gastronomyId: z.string().uuid({ message: 'zodError.common.id.invalidUuid' }),
+    venueId: z.string().uuid({ message: 'zodError.common.id.invalidUuid' }),
     featureId: FeatureIdSchema,
     hostReWriteName: z
         .string()
-        .min(3, { message: 'zodError.gastronomyFeature.hostReWriteName.min' })
-        .max(100, { message: 'zodError.gastronomyFeature.hostReWriteName.max' })
+        .min(3, { message: 'zodError.venueFeature.hostReWriteName.min' })
+        .max(100, { message: 'zodError.venueFeature.hostReWriteName.max' })
         .optional(),
     comments: z
         .string()
-        .min(5, { message: 'zodError.gastronomyFeature.comments.min' })
-        .max(300, { message: 'zodError.gastronomyFeature.comments.max' })
+        .min(5, { message: 'zodError.venueFeature.comments.min' })
+        .max(300, { message: 'zodError.venueFeature.comments.max' })
         .optional()
 });
 export type VenueFeatureRelation = z.infer<typeof VenueFeatureRelationSchema>;
@@ -109,7 +109,7 @@ export type VenueFeatureRelation = z.infer<typeof VenueFeatureRelationSchema>;
 /**
  * Experience-Feature Relation Schema (SPEC-240)
  * Represents the many-to-many relationship between experience listings and features.
- * Mirrors GastronomyFeatureRelationSchema with experienceId instead of gastronomyId.
+ * Mirrors venueFeatureRelationSchema with experienceId instead of venueId.
  */
 export const ExperienceFeatureRelationSchema = z.object({
     experienceId: z.string().uuid({ message: 'zodError.common.id.invalidUuid' }),

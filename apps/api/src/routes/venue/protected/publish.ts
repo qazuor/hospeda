@@ -7,14 +7,14 @@ import { createProtectedRoute } from '../../../utils/route-factory';
 
 const listingPublicationService = new ListingPublicationService();
 
-/** POST /api/v1/protected/gastronomies/{id}/publish */
+/** POST /api/v1/protected/venues/{id}/publish */
 export const protectedPublishVenueRoute = createProtectedRoute({
     method: 'post',
     path: '/{id}/publish',
     listingAccess: { vertical: VerticalEnum.VENUE, operation: 'PUBLISH', idParam: 'id' },
-    summary: 'Publish gastronomy listing',
-    description: 'Publishes an owned gastronomy listing immediately through PB1.',
-    tags: ['Gastronomy'],
+    summary: 'Publish venue listing',
+    description: 'Publishes an owned venue listing immediately through PB1.',
+    tags: ['Venue'],
     requestParams: { id: z.string().uuid() },
     responseSchema: VenueProtectedSchema,
     handler: async (ctx: Context, params: Record<string, unknown>) => {

@@ -613,7 +613,7 @@ describe('getEventMedia', () => {
 //
 // Registering an already-uploaded URL was never capped for events: only the
 // upload routes checked the limit, so a direct call walked past it. Same
-// `getGalleryCap` constant and same filter as the experience/gastronomy twins.
+// `getGalleryCap` constant and same filter as the experience/venue twins.
 // ---------------------------------------------------------------------------
 
 describe('addEventMedia — gallery cap', () => {

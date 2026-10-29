@@ -7,7 +7,7 @@
         "en": "Área de juegos para niños dentro del establecimiento",
         "pt": "Área de juegos para niños dentro del establecimiento"
     },
-    "applicableVerticals": ["gastronomy"],
+    "applicableVerticals": ["venue"],
     "type": "FAMILY_FRIENDLY",
     "icon": "PlaygroundIcon",
     "isBuiltin": false,

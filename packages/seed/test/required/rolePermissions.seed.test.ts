@@ -442,7 +442,7 @@ const ALL_ROLES = [
     'CLIENT_MANAGER',
     'EDITOR',
     'HOST',
-    'GASTRONOMY_OWNER',
+    'VENUE_OWNER',
     'EXPERIENCE_OWNER',
     'PARTNER_OWNER',
     'SPONSOR',

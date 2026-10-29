@@ -13,9 +13,9 @@
         "default": {
             "owner": "quien publica su alojamiento en Hospeda",
             "tourist": "quien viaja por el litoral y quiere aprovechar mejor la plataforma",
-            "gastronomy": "quien tiene un local gastronómico y quiere que lo encuentren",
             "experience": "quien organiza salidas y actividades para visitantes",
-            "partner": "instituciones y comercios que quieren asociarse con Hospeda"
+            "partner": "instituciones y comercios que quieren asociarse con Hospeda",
+            "venue": "quien tiene un local gastronómico y quiere que lo encuentren"
         },
         "plan": {
             "owner-basico": "quien alquila una sola propiedad y recién empieza a publicarla",
@@ -23,9 +23,9 @@
             "owner-premium": "quien vive de alquilar y necesita todas las herramientas y el mayor alcance",
             "tourist-free": "quien está empezando a mirar alojamientos y quiere guardar algunos favoritos",
             "tourist-vip": "quien viaja seguido y quiere todos los beneficios y el contacto directo con el anfitrión",
-            "gastronomy-basico": "quien recién publica su local y quiere estar en el mapa",
-            "gastronomy-pro": "quien ya tiene clientela y quiere mostrar la carta al día",
-            "gastronomy-premium": "quien maneja el local con carta en varios idiomas y atención constante",
+            "venue-basico": "quien recién publica su local y quiere estar en el mapa",
+            "venue-pro": "quien ya tiene clientela y quiere mostrar la carta al día",
+            "venue-premium": "quien maneja el local con carta en varios idiomas y atención constante",
             "experience-basico": "quien empieza a ofrecer sus salidas y quiere darse a conocer",
             "experience-pro": "quien recibe visitantes seguido y necesita explicar bien cómo llegar",
             "experience-premium": "quien vive de las salidas y quiere entregar certificados y atención permanente",
@@ -93,10 +93,10 @@
                     "item3": "Compará alojamientos y escribí tus reseñas."
                 }
             },
-            "gastronomy": {
+            "venue": {
                 "title": "Publicar mi local gastronómico",
                 "audience": "Para restaurantes, parrillas, panaderías, food trucks y todo local gastronómico que quiera aparecer en la guía.",
-                "cta": "Ver planes de gastronomía",
+                "cta": "Ver planes de Comer y salir",
                 "highlights": {
                     "item1": "Ficha con fotos, menú, horarios y datos de contacto.",
                     "item2": "Aparecé en la guía gastronómica que consultan los viajeros.",
@@ -225,12 +225,12 @@
         "seePlans": "Ver planes y precios"
     },
     "consultPrice": "Consultar",
-    "gastronomy": {
+    "venue": {
         "tagline": "Planes y precios",
-        "heading": "Precios para gastronomía",
+        "heading": "Precios para Comer y salir",
         "subtitle": "Todos los planes publican tu local. Cambia cuánto podés mostrar de él.",
         "empty": "Planes no disponibles en este momento.",
-        "cardsHeading": "Comparativa de planes para gastronomía",
+        "cardsHeading": "Comparativa de planes para Comer y salir",
         "pageTitle": "Precios para publicar tu local gastronómico",
         "pageDescription": "Mirá cuánto sale publicar tu restaurante, parrilla, rotisería o carrito en Hospeda.",
         "ctaLabel": "Empezar"

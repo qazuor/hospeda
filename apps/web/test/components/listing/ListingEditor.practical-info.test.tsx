@@ -7,7 +7,7 @@
  * Sibling of `ListingEditor.meeting-point.test.tsx` and set up the same
  * way, because the same four wiring mistakes are the ones that fail silently:
  *
- *  - the section renders for `experience` and NOT for `gastronomy` (none of
+ *  - the section renders for `experience` and NOT for `venue` (none of
  *    these keys is on `VenueOwnerUpdateInputSchema`, so a control drawn
  *    there would offer an edit every save strips while answering 200);
  *  - a persisted value seeds the form (an editor that opens blank re-saves
@@ -137,7 +137,7 @@ function buildListing(overrides: Record<string, unknown> = {}): ListingDetail {
 }
 
 function renderEditor(
-    vertical: 'gastronomy' | 'experience',
+    vertical: 'venue' | 'experience',
     initialData: ListingDetail = buildListing()
 ) {
     return render(
@@ -190,10 +190,10 @@ describe('ListingEditor — practical details', () => {
             expect(groupsToggle()).toBeInTheDocument();
         });
 
-        it('renders nothing of the kind for a gastronomy listing', () => {
+        it('renders nothing of the kind for a venue listing', () => {
             // None of these keys is on `VenueOwnerUpdateInputSchema`, so a
             // control here would offer an edit the API strips while answering 200.
-            const { container } = renderEditor('gastronomy');
+            const { container } = renderEditor('venue');
 
             expect(container.querySelector('#editor-practicalInfo')).toBeNull();
             expect(screen.queryByLabelText('Qué llevar')).toBeNull();
@@ -207,7 +207,7 @@ describe('ListingEditor — practical details', () => {
                 vertical: 'experience'
             }).map((section) => section.id);
             const venueIds = buildListingEditorSections({
-                vertical: 'gastronomy'
+                vertical: 'venue'
             }).map((section) => section.id);
 
             expect(experienceIds).toContain('practicalInfo');
@@ -407,7 +407,7 @@ describe('ListingEditor — practical details', () => {
             expect(body).not.toHaveProperty('acceptsPrivateGroups');
         });
 
-        it('never sends a practical key from a gastronomy save', async () => {
+        it('never sends a practical key from a venue save', async () => {
             // Non-vacuity for the vertical split. Guarded twice over since
             // HOS-1080: a restaurant has no practical-info section to reach
             // (asserted above), and the form state is shared between verticals,
@@ -415,7 +415,7 @@ describe('ListingEditor — practical details', () => {
             // This asserts the second half, from a page a restaurant DOES have.
             render(
                 <ListingEditor
-                    vertical="gastronomy"
+                    vertical="venue"
                     sectionId="basicInfo"
                     listingId="abc"
                     locale="es"

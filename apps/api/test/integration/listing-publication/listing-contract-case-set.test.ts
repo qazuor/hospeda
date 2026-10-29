@@ -42,8 +42,12 @@ type ListingVertical =
 
 const TABLES: Readonly<Record<ListingVertical, string>> = {
     [VerticalEnum.ACCOMMODATION]: 'accommodations',
-    [VerticalEnum.VENUE]: 'gastronomies',
+    [VerticalEnum.VENUE]: 'venues',
     [VerticalEnum.EXPERIENCE]: 'experiences'
+};
+const ROUTE_TABLES: Readonly<Record<ListingVertical, string>> = {
+    ...TABLES,
+    [VerticalEnum.VENUE]: 'venues'
 };
 
 const CREATE_LISTING: Readonly<
@@ -129,7 +133,7 @@ async function purgeListing(args: { readonly listingId: string }): Promise<void>
     try {
         const response = await readResponse(
             await app.request(
-                `/api/v1/protected/${TABLES[listing.vertical]}/${args.listingId}/purge`,
+                `/api/v1/protected/${ROUTE_TABLES[listing.vertical]}/${args.listingId}/purge`,
                 { method: 'POST', headers: actorHeaders({ id: listing.ownerId }) }
             )
         );
@@ -181,7 +185,7 @@ afterAll(async () => {
 
 listingCaseSet({ describe, it, expect, makeHarness: async () => harness });
 
-describe('TEST:V6:34 AC:V6:26 ficha and fichaPurgada over the three states (gastronomy)', () => {
+describe('TEST:V6:34 AC:V6:26 ficha and fichaPurgada over the three states (venue)', () => {
     it('TEST:V6:34 AC:V6:26 PUBLISHED, MODERATED and PURGED by PB12', async () => {
         const ownerId = randomUUID();
         const vertical = VerticalEnum.VENUE;

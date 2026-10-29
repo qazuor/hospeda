@@ -24,7 +24,7 @@ import {
     VenueBrochureSourceSchema
 } from '../../src/services/listing-brochure/brochure-source.js';
 
-/** A gastronomy row as the owner-tier read returns it — private fields included. */
+/** A venue row as the owner-tier read returns it — private fields included. */
 const VENUE_ROW = {
     id: '22222222-2222-4222-8222-222222222222',
     slug: 'la-parrilla-del-puerto',
@@ -83,7 +83,7 @@ const EXPERIENCE_ROW = {
 describe('the brochure cannot outrun the public ficha (HOS-1058)', () => {
     const CASES = [
         {
-            label: 'gastronomy',
+            label: 'venue',
             source: VenueBrochureSourceSchema,
             publicSchema: VenuePublicSchema
         },
@@ -105,14 +105,14 @@ describe('the brochure cannot outrun the public ficha (HOS-1058)', () => {
         });
     }
 
-    it('does not read contactInfo for gastronomy, because the public ficha has none', () => {
+    it('does not read contactInfo for venue, because the public ficha has none', () => {
         // The single most tempting field to add to a printed restaurant sheet,
-        // and the one `GastronomyPublicSchema` deliberately does not pick.
+        // and the one `VenuePublicSchema` deliberately does not pick.
         expect(Object.keys(VenueBrochureSourceSchema.shape)).not.toContain('contactInfo');
         expect(Object.keys(VenuePublicSchema.shape)).not.toContain('contactInfo');
     });
 
-    it('strips a phone number the owner-tier row carried into the gastronomy brochure', () => {
+    it('strips a phone number the owner-tier row carried into the venue brochure', () => {
         const parsed = VenueBrochureSourceSchema.parse(VENUE_ROW);
         expect(parsed).not.toHaveProperty('contactInfo');
         expect(parsed).not.toHaveProperty('ownerId');
@@ -146,15 +146,15 @@ describe('the brochure cannot outrun the public ficha (HOS-1058)', () => {
 });
 
 describe('the QR target (HOS-1058)', () => {
-    it('builds the gastronomy ficha URL the web app actually serves', () => {
+    it('builds the venue ficha URL the web app actually serves', () => {
         expect(
             buildPublicListingUrl({
-                vertical: 'gastronomy',
+                vertical: 'venue',
                 slug: 'la-parrilla-del-puerto',
                 locale: 'es',
                 siteUrl: 'https://hospeda.com.ar'
             })
-        ).toBe('https://hospeda.com.ar/es/gastronomia/la-parrilla-del-puerto/');
+        ).toBe('https://hospeda.com.ar/es/comer-y-salir/la-parrilla-del-puerto/');
     });
 
     it('builds the experience ficha URL, whose segment differs from the vertical name', () => {
@@ -171,17 +171,17 @@ describe('the QR target (HOS-1058)', () => {
     it('tolerates a trailing slash on the configured site URL', () => {
         expect(
             buildPublicListingUrl({
-                vertical: 'gastronomy',
+                vertical: 'venue',
                 slug: 'x',
                 locale: 'pt',
                 siteUrl: 'https://hospeda.com.ar/'
             })
-        ).toBe('https://hospeda.com.ar/pt/gastronomia/x/');
+        ).toBe('https://hospeda.com.ar/pt/comer-y-salir/x/');
     });
 });
 
 describe('brochure content (HOS-1058)', () => {
-    /** Content of the sample gastronomy listing in one locale. */
+    /** Content of the sample venue listing in one locale. */
     function venue(locale: 'es' | 'en' | 'pt') {
         return buildVenueBrochureContent({
             listing: VenueBrochureSourceSchema.parse(VENUE_ROW),

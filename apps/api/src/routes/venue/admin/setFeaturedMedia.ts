@@ -1,17 +1,17 @@
 /**
- * PUT /api/v1/admin/gastronomies/:id/media/:mediaId/featured
- * Set the featured photo for a gastronomy listing gallery — Admin endpoint (HOS-372).
+ * PUT /api/v1/admin/venues/:id/media/:mediaId/featured
+ * Set the featured photo for a venue listing gallery — Admin endpoint (HOS-372).
  *
- * Promotes the target `gastronomy_media` row to `is_featured = true` and
+ * Promotes the target `venue_media` row to `is_featured = true` and
  * demotes the previous featured row (if any) back to `is_featured = false`.
  * Both operations run in a single DB transaction — clear-then-set order is
  * mandatory to avoid transiently violating the partial unique index on
- * (gastronomy_id) WHERE is_featured = true AND deleted_at IS NULL.
+ * (venue_id) WHERE is_featured = true AND deleted_at IS NULL.
  *
  * The target media row MUST be `state = 'visible'` — archived photos are
  * rejected before reaching the DB (CHECK constraint guard).
  *
- * No request body — gastronomyId and mediaId come from URL params.
+ * No request body — venueId and mediaId come from URL params.
  */
 import { VenueMediaSingleOutputSchema, VerticalEnum } from '@repo/schemas';
 import { ServiceError, setFeaturedVenueMedia, VenueService } from '@repo/service-core';
@@ -25,23 +25,23 @@ import { createAdminRoute } from '../../../utils/route-factory';
 const venueService = new VenueService({ logger: apiLogger });
 
 /**
- * PUT /api/v1/admin/gastronomies/:id/media/:mediaId/featured
- * Set featured photo for gastronomy listing gallery — Admin endpoint.
+ * PUT /api/v1/admin/venues/:id/media/:mediaId/featured
+ * Set featured photo for venue listing gallery — Admin endpoint.
  *
- * Requires GASTRONOMY_EDIT_ALL permission. The service helper
+ * Requires VENUE_EDIT_ALL permission. The service helper
  * `setFeaturedVenueMedia` enforces the same gate via `checkVenueCanEditMedia`.
  */
 export const adminSetFeaturedVenueMediaRoute = createAdminRoute({
     method: 'put',
     listingAccess: { vertical: VerticalEnum.VENUE, operation: 'EDIT', idParam: 'id' },
     path: '/{id}/media/{mediaId}/featured',
-    summary: 'Set featured photo for gastronomy listing gallery (admin)',
+    summary: 'Set featured photo for venue listing gallery (admin)',
     description:
         'Promotes the target media row to is_featured=true and demotes the previous ' +
         'featured row (if any). Archived photos cannot be featured — restore the ' +
-        'photo to visible first. Requires GASTRONOMY_EDIT_ALL. No request body — ids ' +
+        'photo to visible first. Requires VENUE_EDIT_ALL. No request body — ids ' +
         'come from URL params.',
-    tags: ['Gastronomy', 'Media'],
+    tags: ['Venue', 'Media'],
     requestParams: {
         id: z.string().uuid({ message: 'zodError.common.id.invalidUuid' }),
         mediaId: z.string().uuid({ message: 'zodError.common.id.invalidUuid' })
@@ -60,7 +60,7 @@ export const adminSetFeaturedVenueMediaRoute = createAdminRoute({
             ctx,
             run: () =>
                 setFeaturedVenueMedia(model, actor, {
-                    gastronomyId: params.id as string,
+                    venueId: params.id as string,
                     mediaId: params.mediaId as string
                 })
         });

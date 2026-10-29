@@ -1,6 +1,6 @@
 /**
- * GET /api/v1/admin/gastronomies/:id/media
- * List photos in a gastronomy listing gallery — Admin endpoint (HOS-372).
+ * GET /api/v1/admin/venues/:id/media
+ * List photos in a venue listing gallery — Admin endpoint (HOS-372).
  *
  * Returns all non-deleted media rows for the given listing, ordered by
  * `sortOrder ASC`. Supports an optional `state` query filter (defaults to
@@ -17,10 +17,10 @@ import { createAdminRoute } from '../../../utils/route-factory';
 const venueService = new VenueService({ logger: apiLogger });
 
 /**
- * GET /api/v1/admin/gastronomies/:id/media
- * List gastronomy listing gallery photos — Admin endpoint.
+ * GET /api/v1/admin/venues/:id/media
+ * List venue listing gallery photos — Admin endpoint.
  *
- * Requires GASTRONOMY_EDIT_ALL permission (mirrors the internal
+ * Requires VENUE_EDIT_ALL permission (mirrors the internal
  * `checkVenueCanEditMedia` gate — media management has no separate
  * broader view-only permission). The service helper `getVenueMedia`
  * enforces the same gate.
@@ -28,12 +28,12 @@ const venueService = new VenueService({ logger: apiLogger });
 export const adminGetVenueMediaRoute = createAdminRoute({
     method: 'get',
     path: '/{id}/media',
-    summary: 'List gastronomy listing gallery photos (admin)',
+    summary: 'List venue listing gallery photos (admin)',
     description:
-        'Retrieves all media rows for a gastronomy listing, ordered by sortOrder ASC. ' +
-        'Supports an optional `state` query filter (default: visible). Requires GASTRONOMY_EDIT_ALL.',
-    tags: ['Gastronomy', 'Media'],
-    anyOfPermissions: [[PermissionEnum.GASTRONOMY_EDIT_ALL]],
+        'Retrieves all media rows for a venue listing, ordered by sortOrder ASC. ' +
+        'Supports an optional `state` query filter (default: visible). Requires VENUE_EDIT_ALL.',
+    tags: ['Venue', 'Media'],
+    anyOfPermissions: [[PermissionEnum.VENUE_EDIT_ALL]],
     requestParams: {
         id: z.string().uuid({ message: 'zodError.common.id.invalidUuid' })
     },
@@ -55,7 +55,7 @@ export const adminGetVenueMediaRoute = createAdminRoute({
         const model = (venueService as unknown as { model: Parameters<typeof getVenueMedia>[0] })
             .model;
         const result = await getVenueMedia(model, actor, {
-            gastronomyId: params.id as string,
+            venueId: params.id as string,
             state
         });
 

@@ -1,7 +1,7 @@
 /**
  * @file PublishMenu.client.tsx
  * @description Header "Publicar" CTA — a three-way dropdown offering
- * accommodation, gastronomy, and experience (HOS-691).
+ * accommodation, venue, and experience (HOS-691).
  *
  * Replaces the single `/publicar/` link Header.astro used to render. Covers
  * BOTH the wide (≥1280) and narrow (1025-1279) breakpoints — they already
@@ -19,7 +19,7 @@
  * exactly who this three-way chooser exists for, and the pre-auth CTA has
  * no per-option "already acquired" state to react to (see the JSDoc on
  * `PUBLISH_CTA_OPTIONS`). So this component renders unconditionally for
- * every visitor — guest, tourist, HOST, or GASTRONOMY_OWNER alike — and no
+ * every visitor — guest, tourist, HOST, or VENUE_OWNER alike — and no
  * longer needs the SSR entitlements fetch Header.astro used to make.
  *
  * A11y molde copied from `UserMenu.client.tsx` (`aria-haspopup="menu"`,

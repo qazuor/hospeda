@@ -91,7 +91,7 @@ describe('TEST:B3:2 subscription start request', () => {
     it('TEST:1739:5 keeps exactly Partner in the manual-payment-only set', () => {
         expect(MANUAL_PAYMENT_ONLY_VERTICALS).toEqual(['partner']);
         expect(isManualPaymentOnlyVertical({ vertical: 'partner' })).toBe(true);
-        for (const vertical of ['accommodation', 'gastronomy', 'experience', 'tourist', 'other']) {
+        for (const vertical of ['accommodation', 'venue', 'experience', 'tourist', 'other']) {
             expect(isManualPaymentOnlyVertical({ vertical })).toBe(false);
         }
     });

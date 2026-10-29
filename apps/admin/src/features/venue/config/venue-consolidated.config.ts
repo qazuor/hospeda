@@ -1,9 +1,9 @@
 /**
  * @file venue-consolidated.config.ts
- * Consolidated section configuration for the gastronomy entity.
+ * Consolidated section configuration for the venue entity.
  *
  * Assembles the shared listing sections (identity + operational) and injects
- * a gastronomy-specific section in between that covers:
+ * a venue-specific section in between that covers:
  *   - type (VenueTypeEnum SELECT)
  *   - priceRange (PriceRangeEnum SELECT, optional)
  *   - menuUrl (TEXT, optional — URL field)
@@ -22,10 +22,10 @@ import type {
 import { createListingIdentitySection, createListingOperationalSection } from '@/features/listing';
 
 // ---------------------------------------------------------------------------
-// Gastronomy-specific field options
+// Venue-specific field options
 // ---------------------------------------------------------------------------
 
-/** SELECT options for the gastronomy type field. */
+/** SELECT options for the venue type field. */
 const VENUE_TYPE_OPTIONS = [
     { value: VenueTypeEnum.RESTAURANT, label: 'Restaurante' },
     { value: VenueTypeEnum.BAR, label: 'Bar' },
@@ -47,30 +47,30 @@ const PRICE_RANGE_OPTIONS = [
 ] as const;
 
 // ---------------------------------------------------------------------------
-// Gastronomy-specific section
+// Venue-specific section
 // ---------------------------------------------------------------------------
 
 /**
- * Builds the gastronomy-specific section that sits between the shared
+ * Builds the venue-specific section that sits between the shared
  * identity and operational sections.
  *
  * Fields:
- *  - `type`       — Gastronomy sub-category (SELECT, required).
+ *  - `type`       — Venue sub-category (SELECT, required).
  *  - `priceRange` — Price-range tier (SELECT, optional).
  *  - `menuUrl`    — Online menu URL (TEXT, optional).
  *
- * @returns A `ConsolidatedSectionConfig` for gastronomy-specific fields.
+ * @returns A `ConsolidatedSectionConfig` for venue-specific fields.
  */
 function createVenueSpecificSection(): ConsolidatedSectionConfig {
     return {
-        id: 'gastronomy-specific',
+        id: 'venue-specific',
         title: 'Detalles de Gastronomía',
         description: 'Tipo de establecimiento, rango de precios y menú online',
         layout: LayoutTypeEnum.GRID,
         modes: ['view', 'edit', 'create'],
         permissions: {
-            view: [PermissionEnum.GASTRONOMY_VIEW_ALL],
-            edit: [PermissionEnum.GASTRONOMY_EDIT_ALL]
+            view: [PermissionEnum.VENUE_VIEW_ALL],
+            edit: [PermissionEnum.VENUE_EDIT_ALL]
         },
         fields: [
             {
@@ -82,8 +82,8 @@ function createVenueSpecificSection(): ConsolidatedSectionConfig {
                 description: 'Categoría gastronómica del comercio',
                 placeholder: 'Seleccioná el tipo…',
                 permissions: {
-                    view: [PermissionEnum.GASTRONOMY_VIEW_ALL],
-                    edit: [PermissionEnum.GASTRONOMY_EDIT_ALL]
+                    view: [PermissionEnum.VENUE_VIEW_ALL],
+                    edit: [PermissionEnum.VENUE_EDIT_ALL]
                 },
                 typeConfig: {
                     // TYPE-WORKAROUND: option constant is a readonly tuple; SelectFieldConfig expects a mutable array.
@@ -102,8 +102,8 @@ function createVenueSpecificSection(): ConsolidatedSectionConfig {
                 description: 'Nivel de precios del establecimiento',
                 placeholder: 'Seleccioná el rango…',
                 permissions: {
-                    view: [PermissionEnum.GASTRONOMY_VIEW_ALL],
-                    edit: [PermissionEnum.GASTRONOMY_EDIT_ALL]
+                    view: [PermissionEnum.VENUE_VIEW_ALL],
+                    edit: [PermissionEnum.VENUE_EDIT_ALL]
                 },
                 typeConfig: {
                     // TYPE-WORKAROUND: option constant is a readonly tuple; SelectFieldConfig expects a mutable array.
@@ -122,8 +122,8 @@ function createVenueSpecificSection(): ConsolidatedSectionConfig {
                 description: 'Enlace al menú digital del establecimiento (https://…)',
                 placeholder: 'https://tu-restaurante.com/menu',
                 permissions: {
-                    view: [PermissionEnum.GASTRONOMY_VIEW_ALL],
-                    edit: [PermissionEnum.GASTRONOMY_EDIT_ALL]
+                    view: [PermissionEnum.VENUE_VIEW_ALL],
+                    edit: [PermissionEnum.VENUE_EDIT_ALL]
                 },
                 typeConfig: {
                     maxLength: 500
@@ -138,31 +138,31 @@ function createVenueSpecificSection(): ConsolidatedSectionConfig {
 // ---------------------------------------------------------------------------
 
 /**
- * Creates the complete consolidated configuration for the gastronomy entity.
+ * Creates the complete consolidated configuration for the venue entity.
  *
  * Section order:
  *  1. Listing identity section (shared — name, slug, summary, description, …)
- *  2. Gastronomy-specific section (type, priceRange, menuUrl)
+ *  2. Venue-specific section (type, priceRange, menuUrl)
  *  3. Listing operational section (shared — contact, social, media, hours, …)
  *
  * Used by `EntityCreatePageBase` (create flow) and `EntityPageBase`
  * (view/edit flow).
  *
  * @param t - Translation function from `useTranslations()`
- * @returns Consolidated entity configuration for the gastronomy entity.
+ * @returns Consolidated entity configuration for the venue entity.
  */
 export const createVenueConsolidatedConfig = (
     t: ReturnType<typeof useTranslations>['t']
 ): ConsolidatedEntityConfig => ({
     sections: [
-        createListingIdentitySection('gastronomy'),
+        createListingIdentitySection('venue'),
         createVenueSpecificSection(),
-        createListingOperationalSection('gastronomy')
+        createListingOperationalSection('venue')
     ],
     metadata: {
-        title: t('admin-entities.entities.gastronomy.singular'),
-        description: t('admin-entities.entities.gastronomy.description'),
-        entityName: t('admin-entities.entities.gastronomy.singular'),
-        entityNamePlural: t('admin-entities.entities.gastronomy.plural')
+        title: t('admin-entities.entities.venue.singular'),
+        description: t('admin-entities.entities.venue.description'),
+        entityName: t('admin-entities.entities.venue.singular'),
+        entityNamePlural: t('admin-entities.entities.venue.plural')
     }
 });

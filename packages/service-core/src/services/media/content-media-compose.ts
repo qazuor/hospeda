@@ -16,7 +16,7 @@
  *
  * Writing a fourth copy of `filter → sort → map` here would give the two
  * verticals independent bugs — the failure mode being a gallery that orders
- * correctly for a gastronomy listing and not for a post. Delegating keeps ONE
+ * correctly for a venue listing and not for a post. Delegating keeps ONE
  * implementation while letting post/event code import a content-named symbol
  * instead of reaching into `services/listing/`.
  *
@@ -27,7 +27,7 @@
  *
  * ## Videos
  *
- * Unlike gastronomy and experience listings (dedicated `videos` column) posts and events keep
+ * Unlike venue and experience listings (dedicated `videos` column) posts and events keep
  * their videos in the `media` JSONB blob — a video is an external YouTube/Vimeo
  * URL, not an uploaded asset, so HOS-390 never migrated it (SPEC-204 D1) and the
  * `media` column is NOT dropped. Callers therefore pass `entity.media?.videos`.

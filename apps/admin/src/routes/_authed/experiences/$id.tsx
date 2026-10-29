@@ -7,7 +7,7 @@
  *  - Purge action at the owner's request (action 23, ListingPurgeOnRequestCard);
  *    the panel has no other listing delete or restore (HOS-1477, AC:V6:25)
  *
- * Mirrors the gastronomy view page pattern (SPEC-240 T-028).
+ * Mirrors the venue view page pattern (SPEC-240 T-028).
  */
 
 import type { PublicationStatusEnum } from '@repo/schemas';

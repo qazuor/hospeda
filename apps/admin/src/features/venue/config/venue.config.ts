@@ -1,10 +1,10 @@
 /**
  * @file venue.config.ts
- * Entity list configuration for the gastronomy admin list page.
+ * Entity list configuration for the venue admin list page.
  *
  * Uses `createListingListConfig` from the generic listing layer so that the
  * shared filter scaffold (destination, featured, ownerId, includeDeleted) is
- * applied automatically.  Gastronomy-specific filters (type, priceRange) are
+ * applied automatically.  Venue-specific filters (type, priceRange) are
  * injected via `extraFilters`.
  */
 
@@ -25,7 +25,7 @@ import { createVenueColumns } from './venue.columns';
 // ---------------------------------------------------------------------------
 
 /**
- * Minimal list-item shape for the gastronomy table.
+ * Minimal list-item shape for the venue table.
  * Picks the subset of fields actually rendered in columns.
  */
 export type VenueListItem = Pick<
@@ -48,29 +48,29 @@ export type VenueListItem = Pick<
 // ---------------------------------------------------------------------------
 
 const VENUE_TYPE_OPTIONS = [
-    { value: VenueTypeEnum.RESTAURANT, labelKey: 'admin-filters.gastronomyType.restaurant' },
-    { value: VenueTypeEnum.BAR, labelKey: 'admin-filters.gastronomyType.bar' },
-    { value: VenueTypeEnum.CAFE, labelKey: 'admin-filters.gastronomyType.cafe' },
-    { value: VenueTypeEnum.PARRILLA, labelKey: 'admin-filters.gastronomyType.parrilla' },
+    { value: VenueTypeEnum.RESTAURANT, labelKey: 'admin-filters.venueType.restaurant' },
+    { value: VenueTypeEnum.BAR, labelKey: 'admin-filters.venueType.bar' },
+    { value: VenueTypeEnum.CAFE, labelKey: 'admin-filters.venueType.cafe' },
+    { value: VenueTypeEnum.PARRILLA, labelKey: 'admin-filters.venueType.parrilla' },
     {
         value: VenueTypeEnum.CERVECERIA,
-        labelKey: 'admin-filters.gastronomyType.cerveceria'
+        labelKey: 'admin-filters.venueType.cerveceria'
     },
     {
         value: VenueTypeEnum.HELADERIA,
-        labelKey: 'admin-filters.gastronomyType.heladeria'
+        labelKey: 'admin-filters.venueType.heladeria'
     },
     {
         value: VenueTypeEnum.PANADERIA,
-        labelKey: 'admin-filters.gastronomyType.panaderia'
+        labelKey: 'admin-filters.venueType.panaderia'
     },
     {
         value: VenueTypeEnum.ROTISERIA,
-        labelKey: 'admin-filters.gastronomyType.rotiseria'
+        labelKey: 'admin-filters.venueType.rotiseria'
     },
     {
         value: VenueTypeEnum.FOOD_TRUCK,
-        labelKey: 'admin-filters.gastronomyType.foodTruck'
+        labelKey: 'admin-filters.venueType.foodTruck'
     }
 ] as const;
 
@@ -86,19 +86,19 @@ const PRICE_RANGE_OPTIONS = [
 // ---------------------------------------------------------------------------
 
 /**
- * Full entity list configuration for the gastronomy admin list page.
+ * Full entity list configuration for the venue admin list page.
  * Built on top of the shared listing layer via `createListingListConfig`.
  *
- * Endpoint: `GET /api/v1/admin/gastronomies`
- * Permissions gate: GASTRONOMY_VIEW_ALL
+ * Endpoint: `GET /api/v1/admin/venues`
+ * Permissions gate: VENUE_VIEW_ALL
  */
 export const venueListConfig = createListingListConfig<VenueListItem>({
-    entityName: 'gastronomies',
-    entityKey: 'gastronomy',
+    entityName: 'venues',
+    entityKey: 'venue',
     entityType: EntityType.VENUE,
-    apiEndpoint: '/api/v1/admin/gastronomies',
-    basePath: '/gastronomies',
-    detailPath: '/gastronomies/[id]',
+    apiEndpoint: '/api/v1/admin/venues',
+    basePath: '/venues',
+    detailPath: '/venues/[id]',
     // Use the admin LIST schema, which keeps the eager-loaded `owner` and
     // `destination` relation summaries. The base admin schema strips them, so the
     // grid could only show raw FK UUIDs in the Destino / Propietario columns.
@@ -109,7 +109,7 @@ export const venueListConfig = createListingListConfig<VenueListItem>({
     extraFilters: [
         {
             paramKey: 'type',
-            labelKey: 'admin-filters.gastronomyType.label' as const,
+            labelKey: 'admin-filters.venueType.label' as const,
             type: 'select' as const,
             order: 10,
             // TYPE-WORKAROUND: option constant is a readonly tuple; the filter config expects a mutable array.
@@ -131,5 +131,5 @@ const { component, route } = createEntityListPage(venueListConfig);
 
 export { component as VenuesPageComponent, route as VenuesRoute };
 
-/** Required permission to view the gastronomy list. */
-export const VENUE_VIEW_PERMISSION = PermissionEnum.GASTRONOMY_VIEW_ALL;
+/** Required permission to view the venue list. */
+export const VENUE_VIEW_PERMISSION = PermissionEnum.VENUE_VIEW_ALL;

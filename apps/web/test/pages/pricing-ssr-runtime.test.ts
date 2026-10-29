@@ -56,9 +56,9 @@ const AUDIENCE_PAGES: readonly AudiencePage[] = [
         publishesPrice: true
     },
     {
-        path: 'planes/gastronomia/precios',
-        audienceId: 'gastronomy',
-        pricingAudience: 'gastronomy',
+        path: 'planes/comer-y-salir/precios',
+        audienceId: 'venue',
+        pricingAudience: 'venue',
         publishesPrice: true
     },
     {

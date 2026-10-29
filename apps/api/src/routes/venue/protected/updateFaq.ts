@@ -1,9 +1,9 @@
 /**
- * PUT /api/v1/protected/gastronomies/:id/faqs/:faqId
- * Update an existing FAQ on a gastronomy listing (T-044)
+ * PUT /api/v1/protected/venues/:id/faqs/:faqId
+ * Update an existing FAQ on a venue listing (T-044)
  *
- * Gated on GASTRONOMY_EDIT_OWN (listing owner) or GASTRONOMY_EDIT_ALL (staff).
- * The FAQ must belong to the specified gastronomy (enforced inside updateVenueFaq).
+ * Gated on VENUE_EDIT_OWN (listing owner) or VENUE_EDIT_ALL (staff).
+ * The FAQ must belong to the specified venue (enforced inside updateVenueFaq).
  */
 
 import {
@@ -24,7 +24,7 @@ import { createProtectedRoute } from '../../../utils/route-factory';
 const venueService = new VenueService({ logger: apiLogger });
 
 /**
- * Route handler — updates a specific FAQ on a gastronomy listing.
+ * Route handler — updates a specific FAQ on a venue listing.
  *
  * TYPE-WORKAROUND: accesses the internal `model` field from the service instance
  * to pass to the standalone FAQ helper without requiring a public accessor.
@@ -32,10 +32,10 @@ const venueService = new VenueService({ logger: apiLogger });
 export const protectedUpdateVenueFaqRoute = createProtectedRoute({
     method: 'put',
     path: '/{id}/faqs/{faqId}',
-    summary: 'Update FAQ on gastronomy listing',
-    description: 'Updates an existing FAQ on a gastronomy listing',
+    summary: 'Update FAQ on venue listing',
+    description: 'Updates an existing FAQ on a venue listing',
     listingAccess: { vertical: VerticalEnum.VENUE, operation: 'EDIT', idParam: 'id' },
-    tags: ['Gastronomy', 'Gastronomy FAQs'],
+    tags: ['Venue', 'Venue FAQs'],
     protectedTag: false,
     requestParams: {
         id: z.string().uuid({ message: 'zodError.common.id.invalidUuid' }),
@@ -51,7 +51,7 @@ export const protectedUpdateVenueFaqRoute = createProtectedRoute({
         const actor = getActorFromContext(ctx);
 
         const input: VenueFaqUpdateInput = {
-            gastronomyId: params.id as string,
+            venueId: params.id as string,
             faqId: params.faqId as string,
             faq: body as FaqWithChannelVisibilityUpdatePayloadType
         };

@@ -80,14 +80,18 @@ describe('resolvePublishPageSlot — the signed-out state (D-1, AC-5)', () => {
     it('carries a returnUrl back to THIS page, not to the account dashboard (AC-19)', async () => {
         const slot = await resolvePublishPageSlot({
             ...BASE,
-            vertical: 'gastronomy',
+            vertical: 'venue',
             isAuthenticated: false,
             cookieHeader: null,
-            pathname: '/es/publicar/gastronomia/'
+            pathname: '/es/publicar/comer-y-salir/'
         });
 
-        expect(slot.signupUrl).toBe('/es/auth/signup/?returnUrl=%2Fes%2Fpublicar%2Fgastronomia%2F');
-        expect(slot.signinUrl).toBe('/es/auth/signin/?returnUrl=%2Fes%2Fpublicar%2Fgastronomia%2F');
+        expect(slot.signupUrl).toBe(
+            '/es/auth/signup/?returnUrl=%2Fes%2Fpublicar%2Fcomer-y-salir%2F'
+        );
+        expect(slot.signinUrl).toBe(
+            '/es/auth/signin/?returnUrl=%2Fes%2Fpublicar%2Fcomer-y-salir%2F'
+        );
     });
 });
 
@@ -171,19 +175,19 @@ describe('resolvePublishPageSlot — every URL is per-vertical', () => {
         expect(slot.createUrl).toBe('/es/publicar/?create=1');
     });
 
-    for (const vertical of ['gastronomy', 'experience'] as const) {
+    for (const vertical of ['venue', 'experience'] as const) {
         it(`points a ${vertical} panel at listings, the ${vertical} editor and its own billing domain`, async () => {
             precheck.mockResolvedValue(ok('resume_or_create', { drafts: [draft] }));
 
             const slot = await resolvePublishPageSlot({
                 ...BASE,
                 vertical,
-                pathname: `/es/publicar/${vertical === 'gastronomy' ? 'gastronomia' : 'experiencias'}/`
+                pathname: `/es/publicar/${vertical === 'venue' ? 'gastronomia' : 'experiencias'}/`
             });
 
             expect(slot.accountListingsUrl).toBe('/es/mi-cuenta/comercio/');
             expect(slot.editUrl).toBe(`/es/mi-cuenta/comercio/${vertical}/listing-1/editar/`);
-            // A gastronomy/experience owner sent to the bare subscription page would read a
+            // A venue/experience owner sent to the bare subscription page would read a
             // page about a subscription they may not hold (HOS-689).
             expect(slot.subscriptionUrl).toBe(`/es/mi-cuenta/suscripcion/?domain=${vertical}`);
         });

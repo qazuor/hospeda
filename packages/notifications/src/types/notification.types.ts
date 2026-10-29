@@ -64,7 +64,7 @@ export enum NotificationType {
     ADMIN_PAYMENT_FAILURE = 'admin_payment_failure',
     ADMIN_SYSTEM_EVENT = 'admin_system_event',
     /**
-     * H-62 / H-148 — sent to the ops mailbox the moment a partner or gastronomy/experience
+     * H-62 / H-148 — sent to the ops mailbox the moment a partner or venue/experience
      * application arrives through one of the five public acquisition forms.
      *
      * Both funnels are served by ONE type rather than two. What ops needs to
@@ -382,7 +382,7 @@ export interface SubscriptionEventPayload extends BaseNotificationPayload {
     /**
      * The subscription's billing vertical (HOS-1283) — the raw
      * `billing_subscriptions.product_domain` string (`'accommodation'`,
-     * `'gastronomy'`, `'experience'`, `'tourist'`, `'partner'`, or `null` on a
+     * `'venue'`, `'experience'`, `'tourist'`, `'partner'`, or `null` on a
      * pre-domain row), never the `@repo/schemas` enum: this package does not
      * depend on `@repo/schemas` (see {@link PartnerMentionEntryPayload}'s doc).
      * Only `RENEWAL_REMINDER` reads it today, to pick the right footer noun in
@@ -1237,7 +1237,7 @@ export interface AdminLeadReceivedPayload extends BaseNotificationPayload {
     readonly funnelLabel: string;
     /**
      * The concrete program or domain applied for (e.g. "Proveedor",
-     * "Gastronomía"). A human label resolved by the caller, never a slug: this
+     * "Comer y salir"). A human label resolved by the caller, never a slug: this
      * package does not depend on `@repo/schemas` and must not start doing so
      * for a display string.
      */

@@ -19,7 +19,7 @@ export const socialHashtags = pgTable(
         hashtag: text('hashtag').notNull(),
         /** Normalized form — always lowercase with # prefix, e.g. "#playa" */
         normalizedHashtag: text('normalized_hashtag').notNull().unique(),
-        /** Category label for grouping (e.g. "nature", "travel", "gastronomy") */
+        /** Category label for grouping (e.g. "nature", "travel", "food") */
         category: text('category').notNull(),
         /** Optional platform restriction — null means applies to all platforms */
         platform: SocialPlatformPgEnum('platform'),

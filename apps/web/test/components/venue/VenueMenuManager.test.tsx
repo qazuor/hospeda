@@ -1,6 +1,6 @@
 /**
  * @file VenueMenuManager.test.tsx
- * @description The gastronomy carta panel (HOS-895).
+ * @description The venue carta panel (HOS-895).
  *
  * Three things are asserted, and each is a decision that would otherwise be
  * invisible until an owner complained:
@@ -15,7 +15,7 @@
  *    "some call happened" — the exact distinction the FAQ manager's H-89
  *    regression anchor documents.
  * 3. **A 403 is an upsell, not an error.** The structured carta is a
- *    `gastronomy-pro` capability and this page carries no entitlement
+ *    `venue-pro` capability and this page carries no entitlement
  *    information, so the API is what decides. Showing "something went wrong"
  *    for a plan refusal turns an upsell into a bug report.
  */
@@ -100,7 +100,7 @@ const LOADED_MENU_WITH_PHOTO = {
                         priceCents: 250_000,
                         isAvailable: true,
                         photoUrl: PHOTO_URL,
-                        photoPublicId: 'hospeda/dev/gastronomies/x/empanadas',
+                        photoPublicId: 'hospeda/dev/venues/x/empanadas',
                         photoAlt: 'Empanadas recién horneadas'
                     }
                 ]
@@ -110,7 +110,7 @@ const LOADED_MENU_WITH_PHOTO = {
     }
 };
 
-describe('GastronomyMenuManager (HOS-895)', () => {
+describe('VenueMenuManager (HOS-895)', () => {
     beforeEach(() => {
         vi.clearAllMocks();
     });
@@ -130,7 +130,7 @@ describe('GastronomyMenuManager (HOS-895)', () => {
         });
 
         expect(mockGet).toHaveBeenCalledWith({
-            path: `/api/v1/protected/gastronomies/${LISTING_ID}/menu`
+            path: `/api/v1/protected/venues/${LISTING_ID}/menu`
         });
         expect(screen.getByDisplayValue('Empanadas')).toBeInTheDocument();
         // The owner sees PESOS; the state and the wire carry centavos.
@@ -162,7 +162,7 @@ describe('GastronomyMenuManager (HOS-895)', () => {
         // and wrote pesos would satisfy any assertion weaker than this one, and
         // would multiply every stored price by 100 on the next save.
         expect(mockPut).toHaveBeenCalledWith({
-            path: `/api/v1/protected/gastronomies/${LISTING_ID}/menu`,
+            path: `/api/v1/protected/venues/${LISTING_ID}/menu`,
             body: {
                 sections: [
                     {
@@ -192,7 +192,7 @@ describe('GastronomyMenuManager (HOS-895)', () => {
     // ── The scheme gate (HOS-592 / F-02, via HOS-895) ───────────────────────
     //
     // `menuFileUrl` is not composed only by our upload route: three of the four
-    // gastronomy write schemas are `.omit(...)`-based over `VenueSchema`,
+    // venue write schemas are `.omit(...)`-based over `VenueSchema`,
     // so they accepted `javascript:…` from a request body until HOS-895 named
     // the column in their omit lists. `z.string().url()` does not restrict the
     // scheme, so a schema-valid value is still a stored-XSS sink the moment it
@@ -321,7 +321,7 @@ describe('GastronomyMenuManager (HOS-895)', () => {
         // `photoPublicId` is precisely the failure that would leave a billed
         // Cloudinary asset with nothing able to destroy it.
         expect(mockPut).toHaveBeenCalledWith({
-            path: `/api/v1/protected/gastronomies/${LISTING_ID}/menu`,
+            path: `/api/v1/protected/venues/${LISTING_ID}/menu`,
             body: {
                 sections: [
                     {
@@ -336,7 +336,7 @@ describe('GastronomyMenuManager (HOS-895)', () => {
                                 priceCents: 250_000,
                                 isAvailable: true,
                                 photoUrl: PHOTO_URL,
-                                photoPublicId: 'hospeda/dev/gastronomies/x/empanadas',
+                                photoPublicId: 'hospeda/dev/venues/x/empanadas',
                                 photoAlt: 'Empanadas recién horneadas',
                                 nameI18n: null,
                                 descriptionI18n: null

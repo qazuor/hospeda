@@ -58,7 +58,7 @@ export const AnalyticsPersonPropertiesSchema = z.object({
     emailDomain: z.string().min(1).optional(),
     has_published_accommodation: z.boolean().optional(),
     is_experience_owner: z.boolean().optional(),
-    is_gastronomy_owner: z.boolean().optional(),
+    is_venue_owner: z.boolean().optional(),
     is_host: z.boolean().optional(),
     is_staff: z.boolean().optional(),
     last_checkout_outcome: z.string().min(1).optional(),

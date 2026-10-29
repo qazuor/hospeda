@@ -1,6 +1,6 @@
 /**
  * @file VenueCard.tsx
- * List card for a gastronomy listing (SPEC-239 T-059).
+ * List card for a venue listing (SPEC-239 T-059).
  *
  * Displays: name, type badge, owner display name, publication status,
  * last-modified date.  Used in grid-view layouts where the DataTable is
@@ -43,14 +43,14 @@ const PRICE_LABELS: Record<PriceRangeEnum, string> = {
 
 /** Props accepted by {@link VenueCard}. */
 export interface VenueCardProps {
-    /** Gastronomy list item data. */
+    /** Venue list item data. */
     readonly venue: VenueListItem;
     /** Called when the card is clicked (optional supplement to the link). */
     readonly onSelect?: (id: string) => void;
 }
 
 /**
- * Card component for a gastronomy listing.
+ * Card component for a venue listing.
  *
  * Renders inside a grid layout on the list page.  Navigates to the view route
  * on click via `<Link>`.
@@ -79,7 +79,7 @@ export const VenueCard = React.memo(function VenueCardComponent({
 
     return (
         <Link
-            to="/gastronomies/$id"
+            to="/venues/$id"
             params={{ id: venue.id }}
             onClick={handleClick}
             className="block h-full rounded-lg focus:outline-none focus-visible:ring-2 focus-visible:ring-ring"

@@ -17,7 +17,7 @@
 # regardless of whether its data was deterministic and prod-bound. That let the
 # `partners` catalog (6 deterministic fixtures, added 2026-07-08, one day after
 # the guard went live) ship with zero CI signal; `partners` is still empty in
-# prod (HOS-172). Four other curated sources (`gastronomy`, `hostTrade`,
+# prod (HOS-172). Four other curated sources (`venue`, `hostTrade`,
 # `postSponsor`, `postSponsorship`) plus the inline `experiences` fixtures sat
 # in the identical blind zone, safe only by chronological luck. The exemption
 # depended on HOW a seeder was registered (which orchestrator ran it), not on
@@ -54,7 +54,7 @@
 #    Everything else under `data/**` — amenity, attraction, destination,
 #    exchangeRate(+Config), feature, revalidationConfig, sponsorshipLevel,
 #    sponsorshipPackage, postTag, pointOfInterest, poiCategory (all required),
-#    AND partner, gastronomy, hostTrade, postSponsor, postSponsorship (curated
+#    AND partner, venue, hostTrade, postSponsor, postSponsorship (curated
 #    prod content, the five formerly-escaped sources) — is guarded by default.
 #
 #    INLINE-CONSTANT files: a handful of seeders bake their fixtures into an
@@ -64,7 +64,7 @@
 #    pure logic refactor also trips the guard and needs the opt-out marker;
 #    accepted because these files change rarely and the alternative is a silent
 #    data escape). INLINE_CONSTANT_FILES (prod-content only):
-#      - packages/seed/src/example/experiences.seed.ts   (SPEC-240 gastronomy and experience
+#      - packages/seed/src/example/experiences.seed.ts   (SPEC-240 venue and experience
 #        listings — deterministic inline array, no data/ folder at all)
 #      - packages/seed/src/example/entityTagAssignments.seed.ts  (inline
 #        r_entity_tag assignments that attach tags to GUARDED destination

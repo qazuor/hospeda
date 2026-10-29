@@ -7,7 +7,7 @@
         "en": "Vista panorámica",
         "pt": "Vista panorámica"
     },
-    "applicableVerticals": ["accommodation", "gastronomy", "experience"],
+    "applicableVerticals": ["accommodation", "venue", "experience"],
     "type": "OUTDOORS",
     "icon": "PrivateViewpointIcon",
     "isBuiltin": false,

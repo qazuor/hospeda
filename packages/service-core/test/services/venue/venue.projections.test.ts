@@ -1,7 +1,7 @@
 /**
- * gastronomy.projections.test.ts
+ * venue.projections.test.ts
  *
- * Unit tests for gastronomy public-tier projection helpers (SPEC-239 T-038).
+ * Unit tests for venue public-tier projection helpers (SPEC-239 T-038).
  *
  * Tests verify:
  * - `projectVenuePublic` strips `adminInfo` and `ownerId` without mutating the original.
@@ -50,7 +50,7 @@ function makeVenue(overrides: Partial<Record<string, unknown>> = {}): Venue {
 // projectVenuePublic
 // ---------------------------------------------------------------------------
 
-describe('projectGastronomyPublic', () => {
+describe('projectVenuePublic', () => {
     it('should strip adminInfo from the entity', () => {
         const entity = makeVenue({ adminInfo: { notes: 'secret' } });
         const result = projectVenuePublic(entity);
@@ -94,7 +94,7 @@ describe('projectGastronomyPublic', () => {
 // projectVenuePublicList
 // ---------------------------------------------------------------------------
 
-describe('projectGastronomyPublicList', () => {
+describe('projectVenuePublicList', () => {
     it('should apply projection to every entity in the array', () => {
         const entities = [makeVenue(), makeVenue({ id: '00000000-0000-4000-a000-000000000099' })];
         const results = projectVenuePublicList(entities);
@@ -114,7 +114,7 @@ describe('projectGastronomyPublicList', () => {
 // projectVenueOwnerAvatar
 // ---------------------------------------------------------------------------
 
-describe('projectGastronomyOwnerAvatar', () => {
+describe('projectVenueOwnerAvatar', () => {
     it('should return null when entity is null', () => {
         expect(projectVenueOwnerAvatar(null)).toBeNull();
     });
@@ -182,7 +182,7 @@ describe('projectGastronomyOwnerAvatar', () => {
 // projectVenueOwnerAvatarList
 // ---------------------------------------------------------------------------
 
-describe('projectGastronomyOwnerAvatarList', () => {
+describe('projectVenueOwnerAvatarList', () => {
     it('should apply the avatar projection to every entity', () => {
         const withOwner = {
             ...makeVenue(),

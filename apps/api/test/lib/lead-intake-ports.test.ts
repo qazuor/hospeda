@@ -2,9 +2,9 @@
  * Regression suite for H-62 / H-148 — a lead that reaches nobody.
  *
  * The alliance funnel accepted a submission, answered 201, and told no one —
- * it never modelled the idea of an ops alert at all. (Gastronomy and experience had the exact
- * same defect for the same reason; its funnel, and this suite's gastronomy/experience
- * coverage, were retired in HOS-695 alongside the retired gastronomy/experience leads table itself.)
+ * it never modelled the idea of an ops alert at all. (Venue and experience had the exact
+ * same defect for the same reason; its funnel, and this suite's venue/experience
+ * coverage, were retired in HOS-695 alongside the legacy leads table itself.)
  *
  * These tests assert the two facts that make the defect impossible to
  * reintroduce silently:

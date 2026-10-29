@@ -197,7 +197,7 @@ describe('whats-new data file', () => {
                 'EDITOR',
                 'ADMIN',
                 'SUPER_ADMIN',
-                'GASTRONOMY_OWNER',
+                'VENUE_OWNER',
                 'EXPERIENCE_OWNER',
                 'SPONSOR',
                 'USER'
@@ -215,7 +215,7 @@ describe('whats-new data file', () => {
             const hostEntries = filterEntriesByRole({ entries: whatsNewEntries, roles: ['HOST'] });
 
             const aiChatEntry = whatsNewEntries.find(
-                (entry) => entry.id === '2026-09-03-ai-chat-gastronomy-experience'
+                (entry) => entry.id === '2026-09-03-ai-chat-venue-experience'
             );
             expect(aiChatEntry).toBeDefined();
 
@@ -223,10 +223,10 @@ describe('whats-new data file', () => {
             expect(hostEntries.map((entry) => entry.id)).not.toContain(aiChatEntry?.id);
         });
 
-        it('delivers the GASTRONOMY_OWNER/EXPERIENCE_OWNER entry to both owners, not to a HOST', () => {
+        it('delivers the VENUE_OWNER/EXPERIENCE_OWNER entry to both owners, not to a HOST', () => {
             const venueEntries = filterEntriesByRole({
                 entries: whatsNewEntries,
-                roles: ['GASTRONOMY_OWNER']
+                roles: ['VENUE_OWNER']
             });
             const experienceEntries = filterEntriesByRole({
                 entries: whatsNewEntries,
@@ -235,7 +235,7 @@ describe('whats-new data file', () => {
             const hostEntries = filterEntriesByRole({ entries: whatsNewEntries, roles: ['HOST'] });
 
             const trialEntry = whatsNewEntries.find(
-                (entry) => entry.id === '2026-09-05-gastronomy-experience-publish-free-trial'
+                (entry) => entry.id === '2026-09-05-venue-experience-publish-free-trial'
             );
             expect(trialEntry).toBeDefined();
 

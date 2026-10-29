@@ -45,7 +45,7 @@ vi.mock('@/lib/api/client', () => ({ fetchApi: vi.fn() }));
 const mockedFetchApi = vi.mocked(fetchApi);
 
 // ---------------------------------------------------------------------------
-// Minimal list-item schema and stub columns (no gastronomy specifics)
+// Minimal list-item schema and stub columns (no venue specifics)
 // ---------------------------------------------------------------------------
 
 const StubListItemSchema = z.object({
@@ -147,14 +147,14 @@ describe('createListingListConfig — extraFilters', () => {
             ...MINIMAL_PARAMS,
             extraFilters: [
                 {
-                    paramKey: 'gastronomyType',
-                    labelKey: 'admin-filters.gastronomyType.label' as const,
+                    paramKey: 'venueType',
+                    labelKey: 'admin-filters.venueType.label' as const,
                     type: 'select' as const,
                     order: 10,
                     options: [
                         {
                             value: 'RESTAURANT',
-                            labelKey: 'admin-filters.gastronomyType.restaurant' as const
+                            labelKey: 'admin-filters.venueType.restaurant' as const
                         }
                     ]
                 }
@@ -163,7 +163,7 @@ describe('createListingListConfig — extraFilters', () => {
 
         const paramKeys = (configWithExtras.filterBarConfig?.filters ?? []).map((f) => f.paramKey);
         expect(paramKeys).toContain('destinationId'); // shared still present
-        expect(paramKeys).toContain('gastronomyType'); // extra appended
+        expect(paramKeys).toContain('venueType'); // extra appended
     });
 
     it('AC-2: shared filters always appear first (lower order than 10)', () => {
@@ -218,11 +218,11 @@ describe('createListingListConfig — extraListConfig overrides', () => {
 // ---------------------------------------------------------------------------
 
 it('selects only the requested vertical permissions for shared sections', () => {
-    const venue = createListingOperationalSection('gastronomy');
+    const venue = createListingOperationalSection('venue');
     const experience = createListingOperationalSection('experience');
     expect(venue.permissions?.edit).toEqual([
-        PermissionEnum.GASTRONOMY_EDIT_OWN,
-        PermissionEnum.GASTRONOMY_EDIT_ALL
+        PermissionEnum.VENUE_EDIT_OWN,
+        PermissionEnum.VENUE_EDIT_ALL
     ]);
     expect(experience.permissions?.edit).toEqual([
         PermissionEnum.EXPERIENCE_EDIT_OWN,
@@ -234,7 +234,7 @@ it('selects only the requested vertical permissions for shared sections', () => 
 });
 
 describe('createListingIdentitySection', () => {
-    const section = createListingIdentitySection('gastronomy');
+    const section = createListingIdentitySection('venue');
 
     it('AC-4: returns a ConsolidatedSectionConfig with id "listing-identity"', () => {
         expect(section.id).toBe('listing-identity');
@@ -293,11 +293,11 @@ describe('createListingIdentitySection', () => {
         expect(nameField?.required).toBe(true);
     });
 
-    it('AC-4: section has no gastronomy-specific fields', () => {
+    it('AC-4: section has no venue-specific fields', () => {
         const ids = section.fields.map((f) => f.id);
-        // Gastronomy-specific fields (gastronomyType, priceRange, menuUrl)
+        // Venue-specific fields (venueType, priceRange, menuUrl)
         // must NOT appear in the generic identity section
-        expect(ids).not.toContain('gastronomyType');
+        expect(ids).not.toContain('venueType');
         expect(ids).not.toContain('priceRange');
         expect(ids).not.toContain('menuUrl');
     });
@@ -308,7 +308,7 @@ describe('createListingIdentitySection', () => {
 // ---------------------------------------------------------------------------
 
 describe('createListingOperationalSection', () => {
-    const section = createListingOperationalSection('gastronomy');
+    const section = createListingOperationalSection('venue');
 
     it('AC-5: returns a ConsolidatedSectionConfig with id "listing-operational"', () => {
         expect(section.id).toBe('listing-operational');
@@ -387,9 +387,9 @@ describe('createListingOperationalSection', () => {
         expect(features?.type).toBe(FieldTypeEnum.FEATURE_SELECT);
     });
 
-    it('AC-5: section has no gastronomy-specific fields', () => {
+    it('AC-5: section has no venue-specific fields', () => {
         const ids = section.fields.map((f) => f.id);
-        expect(ids).not.toContain('gastronomyType');
+        expect(ids).not.toContain('venueType');
         expect(ids).not.toContain('priceRange');
         expect(ids).not.toContain('menuUrl');
     });

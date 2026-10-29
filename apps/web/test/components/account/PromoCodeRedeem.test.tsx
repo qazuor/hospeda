@@ -63,7 +63,7 @@ describe('AC:B9b:12 HOS-1591 TEST:B9b:12 (support) — promo redemption island',
         vi.mocked(promoCodeApi.redeem).mockResolvedValue(discount('FOREVER') as never);
         render(
             <PromoCodeRedeem
-                vertical="gastronomy"
+                vertical="venue"
                 locale="es"
                 offer="SUBSCRIPTION"
             />
@@ -82,7 +82,7 @@ describe('AC:B9b:12 HOS-1591 TEST:B9b:12 (support) — promo redemption island',
         } as never);
         render(
             <PromoCodeRedeem
-                vertical="gastronomy"
+                vertical="venue"
                 locale="es"
                 offer="TRIAL"
             />

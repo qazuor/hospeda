@@ -1,9 +1,9 @@
 /**
- * Admin moderate gastronomy review endpoint — T-046.
+ * Admin moderate venue review endpoint — T-046.
  *
- * Approves or rejects a single gastronomy review. Delegates the state
+ * Approves or rejects a single venue review. Delegates the state
  * transition to `VenueReviewService.moderateReview()`, which gates the
- * action on {@link PermissionEnum.GASTRONOMY_MODERATE_REVIEW}.
+ * action on {@link PermissionEnum.VENUE_MODERATE_REVIEW}.
  *
  * @module routes/venue/reviews/admin/moderate
  * @see SPEC-239 T-046
@@ -19,29 +19,29 @@ import { createAdminRoute } from '../../../../utils/route-factory';
 const venueReviewService = new VenueReviewService({ logger: apiLogger });
 
 /**
- * POST /api/v1/admin/gastronomies/reviews/:id/moderate
+ * POST /api/v1/admin/venues/reviews/:id/moderate
  *
  * Applies a moderation decision (`APPROVED` | `REJECTED`) to a single
- * gastronomy review. Sets `moderationState`, `moderatedById`, `moderatedAt`,
+ * venue review. Sets `moderationState`, `moderatedById`, `moderatedAt`,
  * and optionally `moderationReason` on the persisted row. Also triggers
- * rating recompute on the parent gastronomy listing.
+ * rating recompute on the parent venue listing.
  *
  * Returns the updated review.
  *
  * @throws 400 if `decision` is not `APPROVED` or `REJECTED`.
- * @throws 403 if the actor lacks GASTRONOMY_MODERATE_REVIEW.
+ * @throws 403 if the actor lacks VENUE_MODERATE_REVIEW.
  * @throws 404 if the review does not exist.
  */
 export const adminModerateVenueReviewRoute = createAdminRoute({
     method: 'post',
     path: '/{id}/moderate',
-    summary: 'Moderate a gastronomy review (admin)',
+    summary: 'Moderate a venue reviews (admin)',
     description:
-        'Approves or rejects a gastronomy review. Sets moderationState, moderatedById, ' +
+        'Approves or rejects a venue reviews. Sets moderationState, moderatedById, ' +
         'moderatedAt, and optionally moderationReason. Triggers rating recompute on the listing. ' +
-        'Requires GASTRONOMY_MODERATE_REVIEW.',
-    tags: ['Gastronomy Reviews', 'Admin'],
-    anyOfPermissions: [[PermissionEnum.GASTRONOMY_MODERATE_REVIEW]],
+        'Requires VENUE_MODERATE_REVIEW.',
+    tags: ['Venue Reviews', 'Admin'],
+    anyOfPermissions: [[PermissionEnum.VENUE_MODERATE_REVIEW]],
     requestParams: {
         id: z.string().uuid({ message: 'zodError.common.id.invalidUuid' })
     },

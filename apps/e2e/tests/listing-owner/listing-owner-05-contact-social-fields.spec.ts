@@ -10,14 +10,14 @@
  *   3. A value entered in the linkedIn input is saved (PATCH succeeds) and
  *      persists (re-opening the editor shows the pre-filled value).
  *
- * Actor: gastro-owner-julieta@local.test (role GASTRONOMY_OWNER).
- * Listing: la-parrilla-del-puerto (gastronomy).
+ * Actor: venue-owner-julieta@local.test (role VENUE_OWNER).
+ * Listing: la-parrilla-del-puerto (venue).
  *
  * Tags: @p0 @listing-owner
  *
  * Preconditions:
  *   - e2e:seed has run.
- *   - gastro-owner-julieta@local.test exists with role GASTRONOMY_OWNER.
+ *   - venue-owner-julieta@local.test exists with role VENUE_OWNER.
  *   - la-parrilla-del-puerto is seeded and ACTIVE/PUBLIC.
  *   - Web and API servers are running (playwright.config webServer).
  *
@@ -49,9 +49,9 @@ const API_URL = process.env.HOSPEDA_E2E_API_URL ?? 'http://localhost:3001';
 // Actors
 // ---------------------------------------------------------------------------
 
-/** Gastronomy or experience owner whose gastronomy editor is under test. */
+/** Venue or experience owner whose venue editor is under test. */
 const JULIETA = {
-    email: 'gastro-owner-julieta@local.test',
+    email: 'venue-owner-julieta@local.test',
     password: 'Password123!'
 } as const;
 
@@ -59,7 +59,7 @@ const JULIETA = {
 // Listing identifier
 // ---------------------------------------------------------------------------
 
-const GASTRONOMY_SLUG = 'la-parrilla-del-puerto';
+const VENUE_SLUG = 'la-parrilla-del-puerto';
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -86,19 +86,19 @@ async function authenticateContext(
 // ---------------------------------------------------------------------------
 
 test.describe('LISTING-OWNER-05: contact has no website; social includes linkedIn @p0 @listing-owner', () => {
-    let gastronomyId: string;
+    let venueId: string;
     let originalLinkedIn: string | null;
 
     test.beforeAll(async () => {
         const rows = await execSQL<{ id: string; social_networks: Record<string, string> | null }>(
-            'SELECT id, social_networks FROM gastronomies WHERE slug = $1 LIMIT 1',
-            [GASTRONOMY_SLUG]
+            'SELECT id, social_networks FROM venues WHERE slug = $1 LIMIT 1',
+            [VENUE_SLUG]
         );
         const row = rows[0];
         if (!row) {
-            throw new Error(`Gastronomy '${GASTRONOMY_SLUG}' not found — run e2e:seed first`);
+            throw new Error(`Venue '${VENUE_SLUG}' not found — run e2e:seed first`);
         }
-        gastronomyId = row.id;
+        venueId = row.id;
         originalLinkedIn = row.social_networks?.linkedIn ?? null;
     });
 
@@ -107,13 +107,13 @@ test.describe('LISTING-OWNER-05: contact has no website; social includes linkedI
         if (originalLinkedIn === null) {
             // Remove the linkedIn key from the JSON.
             await execSQL(
-                "UPDATE gastronomies SET social_networks = social_networks - 'linkedIn' WHERE slug = $1",
-                [GASTRONOMY_SLUG]
+                "UPDATE venues SET social_networks = social_networks - 'linkedIn' WHERE slug = $1",
+                [VENUE_SLUG]
             );
         } else {
             await execSQL(
-                "UPDATE gastronomies SET social_networks = jsonb_set(COALESCE(social_networks, '{}'::jsonb), '{linkedIn}', $1::jsonb) WHERE slug = $2",
-                [JSON.stringify(originalLinkedIn), GASTRONOMY_SLUG]
+                "UPDATE venues SET social_networks = jsonb_set(COALESCE(social_networks, '{}'::jsonb), '{linkedIn}', $1::jsonb) WHERE slug = $2",
+                [JSON.stringify(originalLinkedIn), VENUE_SLUG]
             );
         }
     });
@@ -135,7 +135,7 @@ test.describe('LISTING-OWNER-05: contact has no website; social includes linkedI
         );
         await authenticateContext(context, sessionCookie);
 
-        // ── Open the gastronomy editor's contact section ─────────────────────
+        // ── Open the venue editor's contact section ─────────────────────
         // HOS-1080: contact and social networks share ONE page (the same pairing
         // the accommodation editor's `contacto` route uses), so both assertions
         // below are about this one route. `…/editar/` is the hub and renders
@@ -143,8 +143,8 @@ test.describe('LISTING-OWNER-05: contact has no website; social includes linkedI
         await page.goto(
             listingEditorUrl({
                 webUrl: WEB_URL,
-                vertical: 'gastronomy',
-                listingId: gastronomyId,
+                vertical: 'venue',
+                listingId: venueId,
                 section: 'contacto'
             }),
             { waitUntil: 'load' }
@@ -194,8 +194,8 @@ test.describe('LISTING-OWNER-05: contact has no website; social includes linkedI
         await page.goto(
             listingEditorUrl({
                 webUrl: WEB_URL,
-                vertical: 'gastronomy',
-                listingId: gastronomyId,
+                vertical: 'venue',
+                listingId: venueId,
                 section: 'contacto'
             }),
             { waitUntil: 'load' }
@@ -220,7 +220,7 @@ test.describe('LISTING-OWNER-05: contact has no website; social includes linkedI
 
         const saved = await saveListingEditor({
             page,
-            pathPattern: /\/protected\/gastronomies\//
+            pathPattern: /\/protected\/venues\//
         });
         expect(saved.ok(), `PATCH failed: ${saved.status()} ${saved.url()}`).toBe(true);
 
@@ -228,8 +228,8 @@ test.describe('LISTING-OWNER-05: contact has no website; social includes linkedI
         await page.goto(
             listingEditorUrl({
                 webUrl: WEB_URL,
-                vertical: 'gastronomy',
-                listingId: gastronomyId,
+                vertical: 'venue',
+                listingId: venueId,
                 section: 'contacto'
             }),
             { waitUntil: 'load' }

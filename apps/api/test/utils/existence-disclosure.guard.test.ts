@@ -22,7 +22,7 @@
  *
  *   2. MESSAGE — a route that ALSO delegates existence to `service.getById`
  *      may not hand-write its own not-found string. That is the invisible half:
- *      accommodation, experience and gastronomy each answered 404 NOT_FOUND on
+ *      accommodation, experience and venue each answered 404 NOT_FOUND on
  *      both branches, and leaked purely because the route's literal
  *      (`'Accommodation not found'`) differed from the service's composed
  *      `'accommodation not found'`. A status-only guard is blind to it by

@@ -7,11 +7,11 @@ import {
     VenueReviewUpdateInputSchema
 } from '../../../src/entities/venue/subtypes/venue.review.schema.js';
 
-const gastronomyId = faker.string.uuid();
+const venueId = faker.string.uuid();
 
 const validReviewBase = () => ({
     id: faker.string.uuid(),
-    gastronomyId,
+    venueId,
     userId: faker.string.uuid(),
     overallRating: 4,
     // DB columns: title (nullable), content (nullable)
@@ -25,7 +25,7 @@ const validReviewBase = () => ({
     updatedById: null
 });
 
-describe('GastronomyReviewSchema', () => {
+describe('VenueReviewSchema', () => {
     it('should validate a valid review', () => {
         const data = validReviewBase();
         expect(() => VenueReviewSchema.parse(data)).not.toThrow();
@@ -80,13 +80,13 @@ describe('GastronomyReviewSchema', () => {
         expect(result.averageRating).toBe(0);
     });
 
-    it('should reject invalid gastronomyId', () => {
-        const data = { ...validReviewBase(), gastronomyId: 'not-a-uuid' };
+    it('should reject invalid venueId', () => {
+        const data = { ...validReviewBase(), venueId: 'not-a-uuid' };
         expect(() => VenueReviewSchema.parse(data)).toThrow(ZodError);
     });
 
-    it('should reject a rating with an out-of-range dimension (GastronomyRatingSchema enforced on entity schema)', () => {
-        // GastronomyReviewSchema.rating is GastronomyRatingSchema.nullish() — invalid dimensions
+    it('should reject a rating with an out-of-range dimension (VenueRatingSchema enforced on entity schema)', () => {
+        // venueReviewSchema.rating is venueRatingSchema.nullish() — invalid dimensions
         // are rejected directly on the entity schema (food max is 5).
         const data = {
             ...validReviewBase(),
@@ -105,10 +105,10 @@ describe('GastronomyReviewSchema', () => {
     });
 });
 
-describe('GastronomyReviewCreateInputSchema', () => {
+describe('VenueReviewCreateInputSchema', () => {
     it('should validate a minimal create input (only required fields)', () => {
         const data = {
-            gastronomyId,
+            venueId,
             overallRating: 5
         };
         expect(() => VenueReviewCreateInputSchema.parse(data)).not.toThrow();
@@ -116,7 +116,7 @@ describe('GastronomyReviewCreateInputSchema', () => {
 
     it('should validate a full create input', () => {
         const data = {
-            gastronomyId,
+            venueId,
             overallRating: 4,
             rating: { food: 4, service: 4, ambiance: 4, value: 3 },
             title: 'Great dinner',
@@ -127,7 +127,7 @@ describe('GastronomyReviewCreateInputSchema', () => {
     });
 
     it('should validate create with title and content both absent (both optional)', () => {
-        const data = { gastronomyId, overallRating: 5 };
+        const data = { venueId, overallRating: 5 };
         expect(() => VenueReviewCreateInputSchema.parse(data)).not.toThrow();
     });
 
@@ -138,18 +138,18 @@ describe('GastronomyReviewCreateInputSchema', () => {
         expect(keys).toContain('content');
     });
 
-    it('should reject missing gastronomyId', () => {
+    it('should reject missing venueId', () => {
         const data = { overallRating: 4 };
         expect(() => VenueReviewCreateInputSchema.parse(data)).toThrow(ZodError);
     });
 
     it('should reject missing overallRating', () => {
-        const data = { gastronomyId };
+        const data = { venueId };
         expect(() => VenueReviewCreateInputSchema.parse(data)).toThrow(ZodError);
     });
 });
 
-describe('GastronomyReviewUpdateInputSchema', () => {
+describe('VenueReviewUpdateInputSchema', () => {
     it('should allow an empty update (all optional)', () => {
         expect(() => VenueReviewUpdateInputSchema.parse({})).not.toThrow();
     });
@@ -163,8 +163,8 @@ describe('GastronomyReviewUpdateInputSchema', () => {
         expect(() => VenueReviewUpdateInputSchema.parse({ overallRating: 0 })).toThrow(ZodError);
     });
 
-    it('should not include gastronomyId in update (FK is immutable)', () => {
+    it('should not include venueId in update (FK is immutable)', () => {
         const keys = Object.keys(VenueReviewUpdateInputSchema.shape ?? {});
-        expect(keys).not.toContain('gastronomyId');
+        expect(keys).not.toContain('venueId');
     });
 });

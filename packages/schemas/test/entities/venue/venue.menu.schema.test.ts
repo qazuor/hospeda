@@ -30,7 +30,7 @@ import {
     VenueUpdateInputSchema
 } from '../../../src/entities/venue/venue.crud.schema.js';
 
-describe('GastronomyMenuReplacePayloadSchema (HOS-895)', () => {
+describe('VenueMenuReplacePayloadSchema (HOS-895)', () => {
     it('accepts an empty carta — that is how an owner deletes it', () => {
         const parsed = VenueMenuReplacePayloadSchema.safeParse({ sections: [] });
 
@@ -123,7 +123,7 @@ describe('GastronomyMenuReplacePayloadSchema (HOS-895)', () => {
     });
 });
 
-describe('GastronomyMenuFileSchema (HOS-895)', () => {
+describe('VenueMenuFileSchema (HOS-895)', () => {
     it('accepts an image and a pdf', () => {
         expect(
             VenueMenuFileSchema.safeParse({
@@ -158,7 +158,7 @@ describe('GastronomyMenuFileSchema (HOS-895)', () => {
 describe('the menu-file columns are not writable from a listing body (HOS-895)', () => {
     /*
      * REGRESSION ANCHOR. `menuFileUrl`, `menuFilePublicId` and `menuFileKind`
-     * are written by `POST`/`DELETE /gastronomies/{id}/menu-file` and by nothing
+     * are written by `POST`/`DELETE /venue/{id}/menu-file` and by nothing
      * else — but adding them to `VenueSchema` made three of the four write
      * schemas accept them silently, because those three are built with
      * `.omit(...)` and therefore take every field they are not told to drop.
@@ -184,15 +184,15 @@ describe('the menu-file columns are not writable from a listing body (HOS-895)',
         destinationId: '22222222-2222-4222-8222-222222222222',
         ownerId: '11111111-1111-4111-8111-111111111111',
         menuFileUrl: 'javascript:alert(document.cookie)',
-        menuFilePublicId: 'hospeda/prod/gastronomies/somebody-elses-listing/menu-file',
+        menuFilePublicId: 'hospeda/prod/venues/somebody-elses-listing/menu-file',
         menuFileKind: 'image'
     } as const;
 
     it.each([
-        ['GastronomyUpdateInputSchema (admin update)', VenueUpdateInputSchema],
-        ['GastronomyAdminCreateInputSchema', VenueAdminCreateInputSchema],
-        ['GastronomyOwnerCreateInputSchema', VenueOwnerCreateInputSchema],
-        ['GastronomyOwnerUpdateInputSchema (owner PATCH)', VenueOwnerUpdateInputSchema]
+        ['VenueUpdateInputSchema (admin update)', VenueUpdateInputSchema],
+        ['VenueAdminCreateInputSchema', VenueAdminCreateInputSchema],
+        ['VenueOwnerCreateInputSchema', VenueOwnerCreateInputSchema],
+        ['VenueOwnerUpdateInputSchema (owner PATCH)', VenueOwnerUpdateInputSchema]
     ])('%s drops every menu-file column', (_label, schema) => {
         const parsed = schema.safeParse(HOSTILE);
 
@@ -218,7 +218,7 @@ describe('the per-dish photo (HOS-1045)', () => {
         const parsed = VenueMenuReplacePayloadSchema.safeParse(
             withPhoto({
                 photoUrl: 'https://res.cloudinary.com/hospeda/empanada.jpg',
-                photoPublicId: 'hospeda/dev/gastronomies/x/empanada',
+                photoPublicId: 'hospeda/dev/venues/x/empanada',
                 photoAlt: 'Empanada recién horneada'
             })
         );
@@ -230,7 +230,7 @@ describe('the per-dish photo (HOS-1045)', () => {
         // cleanup needs to DESTROY the asset rather than merely forget it. A
         // schema that dropped it would look identical on the public page and
         // leak a billed asset per replaced photo.
-        expect(item?.photoPublicId).toBe('hospeda/dev/gastronomies/x/empanada');
+        expect(item?.photoPublicId).toBe('hospeda/dev/venues/x/empanada');
         expect(item?.photoAlt).toBe('Empanada recién horneada');
     });
 
@@ -267,7 +267,7 @@ describe('the per-dish photo (HOS-1045)', () => {
     });
 
     it('keeps photoPublicId OUT of the public projection', () => {
-        // `GastronomyMenuItemPublicSchema` omits it deliberately — a derived
+        // `venueMenuItemPublicSchema` omits it deliberately — a derived
         // schema accepts everything it does not name, so this asserts the
         // decision was taken rather than inherited. Checked with `in`, not
         // `toBeUndefined`: a key copied as `undefined` and a key never copied
@@ -275,13 +275,13 @@ describe('the per-dish photo (HOS-1045)', () => {
         const parsed = VenueMenuItemPublicSchema.safeParse({
             id: '33333333-3333-4333-8333-333333333333',
             sectionId: '11111111-1111-4111-8111-111111111111',
-            gastronomyId: '22222222-2222-4222-8222-222222222222',
+            venueId: '22222222-2222-4222-8222-222222222222',
             name: 'Empanada',
             description: null,
             priceCents: 250_000,
             isAvailable: true,
             photoUrl: 'https://res.cloudinary.com/hospeda/empanada.jpg',
-            photoPublicId: 'hospeda/dev/gastronomies/x/empanada',
+            photoPublicId: 'hospeda/dev/venues/x/empanada',
             photoAlt: null,
             displayOrder: 0,
             createdAt: new Date(),
@@ -297,7 +297,7 @@ describe('the per-dish photo (HOS-1045)', () => {
     });
 });
 
-describe('GastronomyMenuReplacePayloadSchema — translations (HOS-1043)', () => {
+describe('VenueMenuReplacePayloadSchema — translations (HOS-1043)', () => {
     it('accepts a section and dish carrying a full {es,en,pt} translation', () => {
         const parsed = VenueMenuReplacePayloadSchema.safeParse({
             sections: [
@@ -365,7 +365,7 @@ describe('GastronomyMenuReplacePayloadSchema — translations (HOS-1043)', () =>
         const parsed = VenueMenuItemPublicSchema.safeParse({
             id: '33333333-3333-4333-8333-333333333333',
             sectionId: '11111111-1111-4111-8111-111111111111',
-            gastronomyId: '22222222-2222-4222-8222-222222222222',
+            venueId: '22222222-2222-4222-8222-222222222222',
             name: 'Empanada',
             description: null,
             nameI18n: { es: 'Empanada', en: 'Empanada', pt: 'Empanada' },
@@ -373,7 +373,7 @@ describe('GastronomyMenuReplacePayloadSchema — translations (HOS-1043)', () =>
             priceCents: 250_000,
             isAvailable: true,
             photoUrl: null,
-            photoPublicId: 'hospeda/dev/gastronomies/x/empanada',
+            photoPublicId: 'hospeda/dev/venues/x/empanada',
             photoAlt: null,
             displayOrder: 0,
             createdAt: new Date(),

@@ -23,7 +23,7 @@ const PLAN_ID = '00000000-0000-0000-0000-000000000001';
 /** All keys that appear in these tests, with their catalog class. */
 const ALL_TEST_KEYS = [
     'max_accommodations',
-    'max_gastronomies',
+    'max_venues',
     'max_experiences',
     'save_favorites',
     'write_reviews',
@@ -369,7 +369,7 @@ describe('TEST:V2:10 (a) Tourist floor rejects deviations from the DO list', () 
 /** Each non-Tourist-floor context that must reject every DO key. */
 const OTHER_FLOOR_CONTEXTS: { label: string; vertical: string; role: PlanRole }[] = [
     { label: 'piso de accommodation', vertical: 'accommodation', role: 'floor' },
-    { label: 'piso de gastronomy', vertical: 'gastronomy', role: 'floor' },
+    { label: 'piso de venue', vertical: 'venue', role: 'floor' },
     { label: 'piso de experience', vertical: 'experience', role: 'floor' },
     { label: 'pre_trial de Turista', vertical: 'tourist', role: 'pre_trial' }
 ];

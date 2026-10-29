@@ -1,8 +1,8 @@
 /**
- * Public projection gate for a gastronomy listing's menu (HOS-895 PR2).
+ * Public projection gate for a venue listing's menu (HOS-895 PR2).
  *
  * Extracted out of `getBySlug.ts` so the withholding rule has a direct unit
- * test surface, independent of building a full `GastronomyPublicSchema`
+ * test surface, independent of building a full `VenuePublicSchema`
  * fixture through the route/HTTP layer.
  *
  * @module routes/venue/public/menu-projection
@@ -49,14 +49,14 @@ function projectTranslations<T extends { nameI18n?: unknown; descriptionI18n?: u
  * THREE removals, and only two of them are entitlement gates:
  *
  *  - `photoPublicId` goes ALWAYS, entitled or not. It is an internal handle
- *    for destroying the asset; `GastronomyMenuItemPublicSchema` omits it, and
+ *    for destroying the asset; `VenueMenuItemPublicSchema` omits it, and
  *    this is what makes that omission true at runtime instead of only in the
  *    type. The sections arriving here are raw DB rows, which carry it.
  *  - `photoUrl`/`photoAlt` go only when the owner's plan does not grant
  *    `menu_item_photos`.
  *  - `nameI18n`/`descriptionI18n` (HOS-1043) go, on BOTH the section and its
  *    dishes, only when the owner's plan does not grant
- *    `multilingual_gastronomy_menu`.
+ *    `multilingual_venue_menu`.
  *
  * @param sections - The carta as read from the database.
  * @param keepPhoto - Whether to keep `photoUrl`/`photoAlt`.
@@ -86,13 +86,13 @@ function projectSections(
 
 /**
  * Withholds the uploaded photo/PDF, the structured carta's sections, and the
- * per-dish photos when the owner's CURRENT gastronomy plan does not grant the
+ * per-dish photos when the owner's CURRENT venue plan does not grant the
  * corresponding key — the rows are not deleted (see
- * `resolveOwnerGastronomyMenuGrants` in `@repo/service-core`), only kept out of
+ * `resolveOwnerVenueMenuGrants` in `@repo/service-core`), only kept out of
  * the public payload.
  *
  * The two gates are INDEPENDENT and nest in one direction only. A `-pro` owner
- * grants `manage_gastronomy_menu` but not `menu_item_photos`: their carta is
+ * grants `manage_venue_menu` but not `menu_item_photos`: their carta is
  * published, each dish without its picture. The inverse cannot happen, because
  * the only plan granting the photo key also grants the carta key — but the
  * check does not rely on that, and a carta withheld takes its photos with it
@@ -102,29 +102,29 @@ function projectSections(
  * one fallback still free on every tier and is never gated, so the caller
  * passes it through unchanged.
  *
- * @param input.gastronomy - The stored `menuFileUrl`/`menuFileKind` columns.
+ * @param input.venue - The stored `menuFileUrl`/`menuFileKind` columns.
  * @param input.menuSections - The structured carta's sections, as read (may be
  *   non-empty even when `ownerGrantsMenuManagement` is `false` — a downgraded
  *   owner's previously-typed carta is not deleted).
- * @param input.ownerGrantsMenuManagement - The live `manage_gastronomy_menu`
+ * @param input.ownerGrantsMenuManagement - The live `manage_venue_menu`
  *   check result.
  * @param input.ownerGrantsMenuItemPhotos - The live `menu_item_photos` check
  *   result (HOS-1045).
  * @param input.ownerGrantsMenuTranslations - The live
- *   `multilingual_gastronomy_menu` check result (HOS-1043).
+ *   `multilingual_venue_menu` check result (HOS-1043).
  * @returns The fields to spread into the public response. `menuSections` is
  *   `undefined` (not `[]`) when empty, matching the "not loaded" vs "empty"
  *   convention `amenities`/`features` already use on this schema.
  */
 export function applyVenueMenuManagementGate(input: {
-    readonly gastronomy: VenueMenuGateSource;
+    readonly venue: VenueMenuGateSource;
     readonly menuSections: readonly VenueMenuSectionPublic[];
     readonly ownerGrantsMenuManagement: boolean;
     readonly ownerGrantsMenuItemPhotos: boolean;
     readonly ownerGrantsMenuTranslations: boolean;
 }): VenueMenuGateResult {
     const {
-        gastronomy: venue,
+        venue,
         menuSections,
         ownerGrantsMenuManagement,
         ownerGrantsMenuItemPhotos,

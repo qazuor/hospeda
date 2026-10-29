@@ -64,18 +64,20 @@ describe.each([
             vertical === VerticalEnum.ACCOMMODATION
                 ? VerticalEnum.VENUE
                 : VerticalEnum.ACCOMMODATION;
+        const sqlVertical = vertical;
+        const otherSqlVertical = otherVertical;
         const amenityId = randomUUID();
         const amenityRelation =
             vertical === VerticalEnum.ACCOMMODATION
                 ? 'r_accommodation_amenity'
                 : vertical === VerticalEnum.VENUE
-                  ? 'r_gastronomy_amenity'
+                  ? 'r_venue_amenity'
                   : 'r_experience_amenity';
         const otherAmenityRelation =
             otherVertical === VerticalEnum.ACCOMMODATION
                 ? 'r_accommodation_amenity'
                 : otherVertical === VerticalEnum.VENUE
-                  ? 'r_gastronomy_amenity'
+                  ? 'r_venue_amenity'
                   : 'r_experience_amenity';
         await db.execute(
             sql`INSERT INTO amenities (id, slug, type, applicable_verticals) VALUES (${amenityId}, ${`pb9-${amenityId}`}, 'GENERAL_APPLIANCES', ARRAY[${vertical}]::text[])`
@@ -88,15 +90,15 @@ describe.each([
             status: Status.PUBLISHED
         });
         await db.execute(
-            sql`INSERT INTO ${sql.raw(amenityRelation)} (${sql.raw(`${vertical}_id`)}, amenity_id) VALUES (${archived.id}, ${amenityId})`
+            sql`INSERT INTO ${sql.raw(amenityRelation)} (${sql.raw(`${sqlVertical}_id`)}, amenity_id) VALUES (${archived.id}, ${amenityId})`
         );
         await db.execute(
-            sql`INSERT INTO ${sql.raw(otherAmenityRelation)} (${sql.raw(`${otherVertical}_id`)}, amenity_id) VALUES (${other.id}, ${amenityId})`
+            sql`INSERT INTO ${sql.raw(otherAmenityRelation)} (${sql.raw(`${otherSqlVertical}_id`)}, amenity_id) VALUES (${other.id}, ${amenityId})`
         );
         const otherAmenityBefore = await db.execute(
-            sql`SELECT * FROM ${sql.raw(otherAmenityRelation)} WHERE ${sql.raw(`${otherVertical}_id`)} = ${other.id}`
+            sql`SELECT * FROM ${sql.raw(otherAmenityRelation)} WHERE ${sql.raw(`${otherSqlVertical}_id`)} = ${other.id}`
         );
-        const listingTable = vertical === VerticalEnum.VENUE ? 'gastronomies' : `${vertical}s`;
+        const listingTable = vertical === VerticalEnum.VENUE ? 'venues' : `${vertical}s`;
         await db.execute(
             vertical === VerticalEnum.VENUE
                 ? sql`UPDATE ${sql.raw(listingTable)} SET inactive_since = ${new Date(t0.getTime() - 300 * day)}, deadlines_version = 1, deletion_announced_at = ${new Date(t0.getTime() - day)}, description = 'private purge text', summary = 'private summary', opening_hours = '{"monday":{"open":"09:00","close":"17:00"}}'::jsonb WHERE id = ${archived.id}`
@@ -106,37 +108,37 @@ describe.each([
             vertical === VerticalEnum.ACCOMMODATION
                 ? 'accommodation_faqs'
                 : vertical === VerticalEnum.VENUE
-                  ? 'gastronomy_faqs'
+                  ? 'venue_faqs'
                   : 'experience_faqs';
         const mediaTable =
             vertical === VerticalEnum.ACCOMMODATION
                 ? 'accommodation_media'
                 : vertical === VerticalEnum.VENUE
-                  ? 'gastronomy_media'
+                  ? 'venue_media'
                   : 'experience_media';
         const fk =
             vertical === VerticalEnum.ACCOMMODATION
                 ? 'accommodation_id'
                 : vertical === VerticalEnum.VENUE
-                  ? 'gastronomy_id'
+                  ? 'venue_id'
                   : 'experience_id';
         const otherFaqTable =
             otherVertical === VerticalEnum.ACCOMMODATION
                 ? 'accommodation_faqs'
                 : otherVertical === VerticalEnum.VENUE
-                  ? 'gastronomy_faqs'
+                  ? 'venue_faqs'
                   : 'experience_faqs';
         const otherMediaTable =
             otherVertical === VerticalEnum.ACCOMMODATION
                 ? 'accommodation_media'
                 : otherVertical === VerticalEnum.VENUE
-                  ? 'gastronomy_media'
+                  ? 'venue_media'
                   : 'experience_media';
         const otherFk =
             otherVertical === VerticalEnum.ACCOMMODATION
                 ? 'accommodation_id'
                 : otherVertical === VerticalEnum.VENUE
-                  ? 'gastronomy_id'
+                  ? 'venue_id'
                   : 'experience_id';
         await db.execute(
             sql`INSERT INTO ${sql.raw(otherFaqTable)} (${sql.raw(otherFk)}, question, answer) VALUES (${other.id}, 'preserved question', 'preserved answer')`
@@ -213,7 +215,7 @@ describe.each([
             .from(emailOutbox)
             .where(eq(emailOutbox.recipientUserId, userId));
         const otherListingTable =
-            otherVertical === VerticalEnum.VENUE ? 'gastronomies' : `${otherVertical}s`;
+            otherVertical === VerticalEnum.VENUE ? 'venues' : `${otherVertical}s`;
         const otherBefore = await db.execute(
             sql`SELECT * FROM ${sql.raw(otherListingTable)} WHERE id = ${other.id}`
         );
@@ -276,14 +278,14 @@ describe.each([
         expect(
             (
                 await db.execute(
-                    sql`SELECT * FROM ${sql.raw(amenityRelation)} WHERE ${sql.raw(`${vertical}_id`)} = ${archived.id}`
+                    sql`SELECT * FROM ${sql.raw(amenityRelation)} WHERE ${sql.raw(`${sqlVertical}_id`)} = ${archived.id}`
                 )
             ).rows
         ).toEqual([]);
         expect(
             (
                 await db.execute(
-                    sql`SELECT * FROM ${sql.raw(otherAmenityRelation)} WHERE ${sql.raw(`${otherVertical}_id`)} = ${other.id}`
+                    sql`SELECT * FROM ${sql.raw(otherAmenityRelation)} WHERE ${sql.raw(`${otherSqlVertical}_id`)} = ${other.id}`
                 )
             ).rows
         ).toEqual(otherAmenityBefore.rows);

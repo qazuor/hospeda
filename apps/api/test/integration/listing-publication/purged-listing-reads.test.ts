@@ -34,12 +34,16 @@ type Vertical = (typeof verticals)[number];
 
 const tables: Readonly<Record<Vertical, string>> = {
     [VerticalEnum.ACCOMMODATION]: 'accommodations',
-    [VerticalEnum.VENUE]: 'gastronomies',
+    [VerticalEnum.VENUE]: 'venues',
     [VerticalEnum.EXPERIENCE]: 'experiences'
+};
+const routeTables: Readonly<Record<Vertical, string>> = {
+    ...tables,
+    [VerticalEnum.VENUE]: 'venues'
 };
 const viewAll: Readonly<Record<Vertical, PermissionEnum>> = {
     [VerticalEnum.ACCOMMODATION]: PermissionEnum.ACCOMMODATION_VIEW_ALL,
-    [VerticalEnum.VENUE]: PermissionEnum.GASTRONOMY_VIEW_ALL,
+    [VerticalEnum.VENUE]: PermissionEnum.VENUE_VIEW_ALL,
     [VerticalEnum.EXPERIENCE]: PermissionEnum.EXPERIENCE_VIEW_ALL
 };
 const staffReadVerticals = [VerticalEnum.VENUE, VerticalEnum.EXPERIENCE] as const;
@@ -148,7 +152,7 @@ describe.each(
 
         // Act
         const res = await get(
-            `/api/v1/admin/${tables[vertical]}?ownerId=${fx.ownerId}&page=1&pageSize=50`,
+            `/api/v1/admin/${routeTables[vertical]}?ownerId=${fx.ownerId}&page=1&pageSize=50`,
             adminHeaders(vertical)
         );
 
@@ -171,7 +175,7 @@ describe.each(verticals)('TEST:1748:5 admin detail of a PURGED listing — %s', 
 
         // Act
         const res = await get(
-            `/api/v1/admin/${tables[vertical]}/${fx.purgedId}`,
+            `/api/v1/admin/${routeTables[vertical]}/${fx.purgedId}`,
             adminHeaders(vertical)
         );
 
@@ -193,7 +197,7 @@ describe.each(verticals)('TEST:1748:6 protected reads — %s', (vertical) => {
 
         // Act
         const res = await get(
-            `/api/v1/protected/${tables[vertical]}/${fx.purgedId}`,
+            `/api/v1/protected/${routeTables[vertical]}/${fx.purgedId}`,
             ownerHeaders(fx.ownerId)
         );
 
@@ -207,7 +211,7 @@ describe.each(verticals)('TEST:1748:6 protected reads — %s', (vertical) => {
 
         // Act
         const res = await get(
-            `/api/v1/protected/${tables[vertical]}/${fx.draftId}`,
+            `/api/v1/protected/${routeTables[vertical]}/${fx.draftId}`,
             ownerHeaders(fx.ownerId)
         );
 
@@ -229,7 +233,7 @@ describe.each(
 
         // Act
         const res = await get(
-            `/api/v1/protected/${tables[vertical]}/${fx.purgedId}`,
+            `/api/v1/protected/${routeTables[vertical]}/${fx.purgedId}`,
             staffHeaders(vertical)
         );
 

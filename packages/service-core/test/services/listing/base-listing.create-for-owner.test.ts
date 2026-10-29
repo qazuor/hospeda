@@ -2,7 +2,7 @@
  * base-listing.create-for-owner.test.ts
  *
  * Unit tests for `BaseListingService.createForOwner` — the owner
- * self-service create that grants `GASTRONOMY_OWNER` in the same transaction as
+ * self-service create that grants `VENUE_OWNER` in the same transaction as
  * the listing insert (HOS-687 / HOS-589 §6.1).
  *
  * Covers:
@@ -175,8 +175,8 @@ class TestListingService extends BaseListingService<
     protected get _entityFkColumn() {
         return 'testListingId';
     }
-    protected get _revalidationEntityType(): 'gastronomy' {
-        return 'gastronomy';
+    protected get _revalidationEntityType(): 'venue' {
+        return 'venue';
     }
     protected get _amenityModel(): ListingCatalogModel {
         return this._amenityModel_instance;
@@ -283,7 +283,7 @@ describe('BaseListingService.createForOwner (HOS-687 §6.1)', () => {
         const grantArgs = mockGrantRole.mock.calls[0]?.[0];
         expect(grantArgs).toMatchObject({
             userId: OWNER_ID,
-            role: RoleEnum.GASTRONOMY_OWNER,
+            role: RoleEnum.VENUE_OWNER,
             grantedBy: null,
             reason: RoleGrantReason.LISTING_CREATED
         });
@@ -298,10 +298,10 @@ describe('BaseListingService.createForOwner (HOS-687 §6.1)', () => {
         const grantedRoles = mockGrantRole.mock.calls.map((call) => call[0]?.role);
         // Exactly one, asserted as a whole array rather than
         // by membership: the failure this guards against is granting the OTHER
-        // vertical's role (the fixture service is `gastronomy`, so an
+        // vertical's role (the fixture service is `venue`, so an
         // EXPERIENCE_OWNER here would mean the map is read off the wrong key)
         // or granting the same role twice.
-        expect(grantedRoles).toEqual([RoleEnum.GASTRONOMY_OWNER]);
+        expect(grantedRoles).toEqual([RoleEnum.VENUE_OWNER]);
         expect(grantedRoles).not.toContain(RoleEnum.EXPERIENCE_OWNER);
         // The grant is additive by construction — each call carries only its one
         // role and no role list that could replace what the account already
@@ -351,7 +351,7 @@ describe('BaseListingService.createForOwner (HOS-687 §6.1)', () => {
         // `changed: false` on the `(user_id, role)` primary key.
         expect(mockGrantRole).toHaveBeenCalledTimes(2);
         const secondListingRoles = mockGrantRole.mock.calls.slice(1).map((call) => call[0]?.role);
-        expect(secondListingRoles).toEqual([RoleEnum.GASTRONOMY_OWNER]);
+        expect(secondListingRoles).toEqual([RoleEnum.VENUE_OWNER]);
     });
 
     it('aborts the whole unit of work when the grant fails', async () => {

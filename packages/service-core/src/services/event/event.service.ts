@@ -413,7 +413,7 @@ export class EventService extends BaseCrudService<
      * (`createUniqueSlug`'s existence probe does not exclude the current row)
      * and appended `-2`, then `-3`. In production the event "Novembeer" went
      * `novembeer-concepcion-del-uruguay-2026` →
-     * `gastronomy-novembeer-2026-11-01` → `…-2` in two saves, so its indexed
+     * `venue-novembeer-2026-11-01` → `…-2` in two saves, so its indexed
      * public URL 404'd because somebody edited its summary.
      *
      * The same block was also half of H-30: it demanded category, name AND

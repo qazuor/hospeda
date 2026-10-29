@@ -218,19 +218,19 @@ async function seedPromo(input: {
     });
 }
 
-/** Another live title of the same user, in gastronomy, whose version inherits Tourist VIP. */
+/** Another live title of the same user, in venue, whose version inherits Tourist VIP. */
 async function seedInheritingVenueTitle(userId: string) {
     const db = getServiceTestDb();
     const [plan] = await db
         .insert(plans)
-        .values({ vertical: 'gastronomy', slug: `b7-vip-${crypto.randomUUID()}`, name: 'Gastro' })
+        .values({ vertical: 'venue', slug: `b7-vip-${crypto.randomUUID()}`, name: 'Gastro' })
         .returning();
-    if (!plan) throw new Error('gastronomy plan missing');
+    if (!plan) throw new Error('venue plan missing');
     const [version] = await db
         .insert(planVersions)
         .values({
             planId: plan.id,
-            vertical: 'gastronomy',
+            vertical: 'venue',
             rank: Math.floor(Math.random() * 1_000_000_000),
             sellable: true,
             current: true,
@@ -239,15 +239,15 @@ async function seedInheritingVenueTitle(userId: string) {
             inheritsTouristVip: true
         })
         .returning();
-    if (!version) throw new Error('gastronomy version missing');
+    if (!version) throw new Error('venue version missing');
     const [option] = await db
         .insert(billingOptions)
         .values({ planVersionId: version.id, cycle: 'monthly', amount: 25000, currency: 'ARS' })
         .returning();
-    if (!option) throw new Error('gastronomy option missing');
+    if (!option) throw new Error('venue option missing');
     await db.insert(subscriptions).values({
         userId,
-        vertical: 'gastronomy',
+        vertical: 'venue',
         planVersionId: version.id,
         billingOptionId: option.id,
         paymentMethod: 'CARD',
@@ -368,7 +368,7 @@ describe('TEST:B7:18 — the suspension notice names what is lost (AC:B7:30)', (
                 ownerId: s.userId,
                 name: 'Otra vertical',
                 endsAt: new Date(now.getTime() + 5 * DAY_MS),
-                compatibleVerticals: ['gastronomy']
+                compatibleVerticals: ['venue']
             });
             await seedAddon({
                 ownerId: s.userId,

@@ -71,7 +71,7 @@ export const AmenityCreateHttpSchema = z.object({
     slug: z.string().min(1, { message: 'zodError.amenity.slug.required' }).max(100).optional(),
     description: i18nText({ min: 10, max: 500 }).optional(),
     applicableVerticals: z
-        .array(z.enum(['accommodation', 'gastronomy', 'experience']))
+        .array(z.enum(['accommodation', 'venue', 'experience']))
         .min(1)
         .default(['accommodation']),
     type: AmenitiesTypeEnumSchema,

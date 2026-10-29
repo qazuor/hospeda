@@ -78,7 +78,7 @@ function AccommodationViewContent({
                 basePath={`/accommodations/${id}`}
             />
 
-            {/* HOS-1493 action 23: the same action row as gastronomy and
+            {/* HOS-1493 action 23: the same action row as venue and
                 experience, with the px-6 inset of the entity card below. */}
             <div className="space-y-4 px-6 pt-6">
                 <div className="flex justify-end">
@@ -93,7 +93,7 @@ function AccommodationViewContent({
 
                 {/* HOS-1684: the listing's publication state and its moderation
                     by action, with reason (`POST /:id/moderate`), as on
-                    gastronomy and experience. */}
+                    venue and experience. */}
                 <ListingModerationCard
                     vertical="accommodation"
                     entityId={id}

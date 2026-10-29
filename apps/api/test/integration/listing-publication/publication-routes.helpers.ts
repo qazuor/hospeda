@@ -24,8 +24,6 @@ import {
     eq,
     experienceMedia,
     experiences,
-    gastronomies,
-    gastronomyMedia,
     getDb,
     inArray,
     max,
@@ -35,7 +33,9 @@ import {
     planVersions,
     trials,
     users,
-    VenueModel
+    VenueModel,
+    venueMedia,
+    venues
 } from '@repo/db';
 import {
     type Accommodation,
@@ -64,19 +64,19 @@ const ACCOMMODATION = VerticalEnum.ACCOMMODATION;
 
 const LIMIT_KEY_BY_VERTICAL = {
     accommodation: 'max_accommodations',
-    gastronomy: 'max_gastronomies',
+    venue: 'max_venues',
     experience: 'max_experiences'
 } as const;
 
 const PUBLISH_KEY_BY_VERTICAL = {
     accommodation: 'publish_accommodations',
-    gastronomy: 'publish_gastronomy',
+    venue: 'publish_venue',
     experience: 'publish_experience'
 } as const;
 
 const EDIT_KEY_BY_VERTICAL = {
     accommodation: 'edit_accommodation_info',
-    gastronomy: 'edit_gastronomy_info',
+    venue: 'edit_venue_info',
     experience: 'edit_experience_info'
 } as const;
 
@@ -429,7 +429,7 @@ export async function createListing(args: {
     return listing.id;
 }
 
-/** Creates a gastronomy or experience listing for TEST:V6:2/3. */
+/** Creates a venue or experience listing for TEST:V6:2/3. */
 export async function createVerticalListing(args: {
     readonly vertical: typeof VerticalEnum.VENUE | typeof VerticalEnum.EXPERIENCE;
     readonly ownerId: string;
@@ -470,8 +470,8 @@ export async function createVerticalListing(args: {
             getDb()
         );
         if (args.complete !== false) {
-            await getDb().insert(gastronomyMedia).values({
-                gastronomyId: listing.id,
+            await getDb().insert(venueMedia).values({
+                venueId: listing.id,
                 url: 'https://example.test/matrix.jpg',
                 moderationState: 'APPROVED',
                 state: 'visible',
@@ -505,9 +505,9 @@ export async function readVerticalStatus(
 ) {
     if (vertical === VerticalEnum.VENUE) {
         const [row] = await getDb()
-            .select({ status: gastronomies.publicationStatus })
-            .from(gastronomies)
-            .where(eq(gastronomies.id, id));
+            .select({ status: venues.publicationStatus })
+            .from(venues)
+            .where(eq(venues.id, id));
         return row?.status;
     }
     const [row] = await getDb()

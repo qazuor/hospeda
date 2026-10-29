@@ -15,9 +15,9 @@
  *
  * That is not a defect in the scanner — a static scan cannot resolve a runtime
  * template — but it does mean these keys are unguarded by it, and unguarded is
- * how `pricing.gastronomy.pageTitle` ends up present in `es` and missing in
+ * how `pricing.venue.pageTitle` ends up present in `es` and missing in
  * `pt`. A missing key does not throw: `t()` returns the key itself, so the page
- * renders `pricing.gastronomy.pageTitle` as its `<title>` and its `<h1>`, and
+ * renders `pricing.venue.pageTitle` as its `<title>` and its `<h1>`, and
  * nothing fails until somebody opens the Portuguese page.
  *
  * ## Why it asserts the SHAPE and not the strings
@@ -37,7 +37,7 @@ import ptPricing from '../../../../../packages/i18n/src/locales/pt/pricing.json'
  * The five `copyRoot` values, spelled as the audience segment under `pricing.`.
  * Mirrors `COPY_ROOT_BY_AUDIENCE` in `lib/billing/pricing-page-content.ts`.
  */
-const AUDIENCE_SEGMENTS = ['owner', 'tourist', 'gastronomy', 'experience', 'partner'] as const;
+const AUDIENCE_SEGMENTS = ['owner', 'tourist', 'venue', 'experience', 'partner'] as const;
 
 /**
  * Every key the pages and `AudiencePricingSections` read off `${copyRoot}.`.

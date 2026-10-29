@@ -415,7 +415,7 @@ export interface SessionUser {
     readonly name: string;
     readonly email: string;
     /**
-     * Every role the user holds (USER, HOST, GASTRONOMY_OWNER, ADMIN, ...).
+     * Every role the user holds (USER, HOST, VENUE_OWNER, ADMIN, ...).
      *
      * HOS-296 replaced the former single `role` scalar with this set: one
      * account can wear several hats at once and there is deliberately NO
@@ -426,7 +426,7 @@ export interface SessionUser {
      * mapping (spec §7.1, OQ-4).
      *
      * Empty only when the payload was unexpectedly malformed; consumers must
-     * treat that as the lowest-privilege case (no host/gastronomy/experience access).
+     * treat that as the lowest-privilege case (no host, venue, or experience access).
      */
     readonly roles: readonly string[];
     /**
@@ -454,7 +454,7 @@ export interface SessionUser {
     /**
      * SPEC-239 T-041: Force-password-change flag.
      * `true` when the user was provisioned with a server-generated password
-     * (gastronomy/experience owner accounts) and must rotate it before using protected
+     * (venue/experience owner accounts) and must rotate it before using protected
      * routes. Mirrors `users.mustChangePassword`.
      *
      * HOS-296: read from `data.actor.mustChangePassword` on the SAME
@@ -464,7 +464,7 @@ export interface SessionUser {
      * started forwarding it onto the actor. Note the `/auth/me` payload ALSO
      * carries a top-level `passwordChangeRequired`; that is a DIFFERENT flag
      * (`adminInfo`-scoped, computed only for actors with `ACCESS_PANEL_ADMIN`)
-     * and is NOT a substitute — it is always false for the gastronomy/experience owners
+     * and is NOT a substitute — it is always false for the venue/experience owners
      * this gate exists for.
      */
     readonly mustChangePassword: boolean;
@@ -620,7 +620,7 @@ export async function parseSessionUser({
                             // gating", see `apps/api/src/routes/auth/me.ts`) —
                             // the middleware simply discarded it until now.
                             permissions?: readonly string[];
-                            // SPEC-239 gastronomy/experience-owner password gate. Lives on
+                            // SPEC-239 venue/experience-owner password gate. Lives on
                             // the actor since HOS-296 — see `SessionUser`.
                             mustChangePassword?: boolean;
                         };

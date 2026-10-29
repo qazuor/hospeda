@@ -319,7 +319,7 @@ describe('TEST:B9a:16 — la herramienta del 3b, dos veces', () => {
         ).rejects.toMatchObject({ reason: 'ADMINISTRATIVE_ACTION_FORBIDDEN' });
         expect((await state(target)).grants).toHaveLength(0);
     });
-    it('(i) does not anchor a live grant whose only anchor is gastronomy', async () => {
+    it('(i) does not anchor a live grant whose only anchor is venue', async () => {
         const first = await trialUser('i1');
         const second = await trialUser('i2');
         const { seedGrant } = await import('./grant-fixtures');

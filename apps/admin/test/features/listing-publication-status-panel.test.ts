@@ -1,7 +1,7 @@
 /**
  * HOS-1641 (AC:V6:32) — the panel reads a listing's state from ONE column.
  *
- * Accommodations, gastronomies and experiences lost `lifecycleState`,
+ * Accommodations, venue listings and experiences lost `lifecycleState`,
  * `visibility` and `moderationState`. Their lists filter on `status`, which the
  * API resolves to `publicationStatus`, and show one read-only state column.
  * These are pure data tests over the real configs and column factories.
@@ -87,7 +87,7 @@ describe('the status filter of the accommodation lists', () => {
 describe('the state column of the three listing lists', () => {
     for (const [vertical, columns] of [
         ['accommodation', createAccommodationsColumns(t)],
-        ['gastronomy', createVenueColumns(t)],
+        ['venue', createVenueColumns(t)],
         ['experience', createExperienceColumns(t)]
     ] as const) {
         it(`${vertical}: ONE read-only publicationStatus badge with the six states`, () => {

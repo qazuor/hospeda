@@ -32,7 +32,7 @@
  * editor (`FaqSection.client.tsx`). Both default to checked, so an owner who
  * ignores them gets exactly the behaviour FAQs had before: published on the
  * listing and fed to the AI chat this PR's companion (HOS-400 PR 1) mounted
- * on gastronomy and experience listings.
+ * on venue and experience listings.
  */
 
 import { EyeOffIcon, SparkleIcon } from '@repo/icons';
@@ -178,7 +178,7 @@ function faqBasePath({
     vertical: VenueOrExperience;
     listingId: string;
 }): string {
-    const entity = vertical === 'gastronomy' ? 'gastronomies' : 'experiences';
+    const entity = vertical === 'venue' ? 'venues' : 'experiences';
     return `/api/v1/protected/${entity}/${listingId}/faqs`;
 }
 
@@ -214,7 +214,7 @@ function sortFaqs(faqs: readonly ListingFaq[]): readonly ListingFaq[] {
  * listing. Each action calls the appropriate protected FAQ endpoint
  * directly (not via the parent editor's PATCH path).
  *
- * @param vertical - Listing vertical (gastronomy | experience).
+ * @param vertical - Listing vertical (venue | experience).
  * @param listingId - UUID of the listing.
  * @param locale - Active UI locale.
  * @param initialFaqs - FAQs from the SSR listing detail.
@@ -314,7 +314,7 @@ export function ListingFaqManager({
             setActionError(null);
 
             // PUT, not PATCH: the API registers `PUT /{id}/faqs/{faqId}`
-            // (routes/{gastronomy,experience}/protected/updateFaq.ts). PATCH
+            // (routes/{venue,experience}/protected/updateFaq.ts). PATCH
             // matched no route and 404'd — H-89.
             const result = await apiClient.put<ListingFaqEnvelope>({
                 path: `${basePath}/${faqId}`,

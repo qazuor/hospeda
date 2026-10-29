@@ -2,7 +2,7 @@
  * The owner's menu QR and its printable image (HOS-1044 §6.2).
  *
  * ```
- * GET /api/v1/protected/gastronomies/{id}/menu-qr
+ * GET /api/v1/protected/venues/{id}/menu-qr
  * ```
  *
  * ## Order of refusals
@@ -26,7 +26,7 @@
  * and a QR encodes one destination for the life of the sticker. A later slug
  * rename repoints the SAME code via `VenueService._afterUpdate`, which
  * reads the locale back out of the stored target rather than re-guessing it
- * (`gastronomy-qr.ts`).
+ * (`venue-qr.ts`).
  *
  * ## Why the SVG travels as a JSON field
  *
@@ -91,9 +91,9 @@ export async function handleGetVenueMenuQr(
     params: Record<string, unknown>
 ): Promise<z.infer<typeof VenueMenuQrResponseSchema>> {
     const actor = getActorFromContext(ctx);
-    const gastronomyId = params.id as string;
+    const venueId = params.id as string;
 
-    const listing = await venueService.getById(actor, gastronomyId);
+    const listing = await venueService.getById(actor, venueId);
     const entity = listing.error ? null : listing.data;
 
     // Listing access has already checked ownership; retain the missing-row 404.
@@ -143,7 +143,7 @@ export async function handleGetVenueMenuQr(
 }
 
 /**
- * GET /api/v1/protected/gastronomies/:id/menu-qr
+ * GET /api/v1/protected/venues/:id/menu-qr
  *
  * Owner-only menu QR read requiring menu_qr_scan_metrics on the listing owner.
  */
@@ -156,10 +156,10 @@ export const protectedGetVenueMenuQrRoute = createProtectedRoute({
         idParam: 'id',
         step6Key: 'menu_qr_scan_metrics'
     },
-    summary: 'Get the menu QR for a gastronomy listing',
+    summary: 'Get the menu QR for a venue listing',
     description:
         'Returns the SVG of the venue’s menu QR, the URL it encodes (`{site}/qr/{qrSlug}/`), and the carta page that URL redirects to. The code is created on the first call and reused afterwards, so the image stays byte-identical for the life of the listing even if the listing is renamed. Owner-only.',
-    tags: ['Gastronomy', 'Gastronomy Menu'],
+    tags: ['Venue', 'Venue Menu'],
     requestParams: {
         id: z.string().uuid({ message: 'zodError.common.id.invalidUuid' })
     },
@@ -171,7 +171,7 @@ export const protectedGetVenueMenuQrRoute = createProtectedRoute({
             createSlidingWindowPerUserRateLimit({
                 windowMs: 60_000,
                 max: MENU_QR_RATE_LIMIT_MAX,
-                keyPrefix: 'menu-qr:gastronomy'
+                keyPrefix: 'menu-qr:venue'
             })
         ]
     }

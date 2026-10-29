@@ -21,7 +21,7 @@ export const SocialAiRequestSchema = z.object({
     topic: z.string().optional(),
     /** Free-text idea or prompt from the operator */
     userIdea: z.string().optional(),
-    /** Content pillar (e.g. "travel", "gastronomy") */
+    /** Content pillar (e.g. "travel", "food") */
     pillar: z.string().optional(),
     /** Optional audience hint from the GPT */
     audienceId: z.string().uuid({ message: 'zodError.socialAiRequest.audienceId.uuid' }).optional(),

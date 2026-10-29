@@ -1,5 +1,5 @@
 /**
- * gastronomy.menu.ts
+ * venue.menu.ts
  *
  * The venue's carta — read and whole-document write (HOS-895).
  *
@@ -7,7 +7,7 @@
  *
  * The FAQ and media helpers next door expose one function per row operation
  * (add / update / remove / reorder). The carta deliberately does not, and the
- * reason is the one `gastronomy_media` states for going the OTHER way: a photo
+ * reason is the one `venue_media` states for going the OTHER way: a photo
  * is a Cloudinary asset that is BILLED from the moment it lands, so every photo
  * operation has to persist on its own or an abandoned form costs money.
  *
@@ -36,14 +36,14 @@
  *
  * ## Permissions vs. entitlements
  *
- * This module answers PERMISSION only — `GASTRONOMY_EDIT_OWN` on your own
- * listing, `GASTRONOMY_EDIT_ALL` for staff, via the same
+ * This module answers PERMISSION only — `VENUE_EDIT_OWN` on your own
+ * listing, `VENUE_EDIT_ALL` for staff, via the same
  * {@link checkVenueCanEditFaqs} gate the sibling helpers use. Whether the
  * caller's PLAN includes a structured carta is an entitlement
- * (`MANAGE_GASTRONOMY_MENU`) and is checked at the route, before this is
+ * (`MANAGE_VENUE_MENU`) and is checked at the route, before this is
  * reached — the same split `brochure.ts` makes.
  *
- * @module gastronomy.menu
+ * @module venue.menu
  */
 
 import {
@@ -76,18 +76,18 @@ import { checkVenueCanEditFaqs } from './venue.permissions';
 const MENU_READ_PAGE_SIZE = 4000;
 
 /**
- * Loads a gastronomy listing by ID or throws NOT_FOUND.
+ * Loads a venue listing by ID or throws NOT_FOUND.
  *
  * @param model - The VenueModel instance.
- * @param gastronomyId - UUID of the listing.
+ * @param venueId - UUID of the listing.
  * @param tx - Optional Drizzle transaction client.
- * @returns The gastronomy DB row.
+ * @returns The venue DB row.
  * @throws {ServiceError} NOT_FOUND when no matching row exists.
  */
-async function requireVenue(model: VenueModel, gastronomyId: string, tx?: ServiceContext['tx']) {
-    const entity = await model.findById(gastronomyId, tx);
+async function requireVenue(model: VenueModel, venueId: string, tx?: ServiceContext['tx']) {
+    const entity = await model.findById(venueId, tx);
     if (!entity) {
-        throw new ServiceError(ServiceErrorCode.NOT_FOUND, 'Gastronomy listing not found');
+        throw new ServiceError(ServiceErrorCode.NOT_FOUND, 'venue listing not found');
     }
     return entity;
 }
@@ -109,9 +109,9 @@ const byDisplayOrder = <T extends { displayOrder: number; name: string }>(a: T, 
  * only for sections would conclude that it is.
  *
  * @param model - VenueModel instance.
- * @param data - `{ gastronomyId }`.
+ * @param data - `{ venueId }`.
  * @param ctx - Optional service context for transaction propagation.
- * @returns `ServiceOutput<GastronomyMenuOutput>`.
+ * @returns `ServiceOutput<VenueMenuOutput>`.
  */
 export async function getVenueMenu(
     model: VenueModel,
@@ -131,27 +131,27 @@ export async function getVenueMenu(
                 }
             };
         }
-        const { gastronomyId } = parseResult.data;
+        const { venueId } = parseResult.data;
 
-        const venue = await requireVenue(model, gastronomyId, ctx?.tx);
+        const venue = await requireVenue(model, venueId, ctx?.tx);
 
         const sectionModel = new VenueMenuSectionModel();
         const itemModel = new VenueMenuItemModel();
 
         const { items: sectionRows } = await sectionModel.findAll(
-            { gastronomyId },
+            { venueId },
             { pageSize: MENU_READ_PAGE_SIZE },
             undefined,
             ctx?.tx
         );
 
         // One read for EVERY dish of the listing, then grouped in memory —
-        // rather than one read per section. This is why `gastronomy_id` is
+        // rather than one read per section. This is why `venue_id` is
         // denormalized onto the item table: without it this would be a query
         // per course, which is the classic N+1 on a page that renders the whole
         // menu at once.
         const { items: itemRows } = await itemModel.findAll(
-            { gastronomyId },
+            { venueId },
             { pageSize: MENU_READ_PAGE_SIZE },
             undefined,
             ctx?.tx
@@ -195,7 +195,7 @@ export async function getVenueMenu(
         return {
             error: {
                 code: ServiceErrorCode.INTERNAL_ERROR,
-                message: err instanceof Error ? err.message : 'Failed to read gastronomy menu'
+                message: err instanceof Error ? err.message : 'Failed to read venue menu'
             }
         };
     }
@@ -204,8 +204,8 @@ export async function getVenueMenu(
 /**
  * Replaces a listing's structured carta with the submitted document.
  *
- * Permission: `GASTRONOMY_EDIT_OWN` (listing owner) or `GASTRONOMY_EDIT_ALL`
- * (staff). The `MANAGE_GASTRONOMY_MENU` entitlement is the route's gate, not
+ * Permission: `VENUE_EDIT_OWN` (listing owner) or `VENUE_EDIT_ALL`
+ * (staff). The `MANAGE_VENUE_MENU` entitlement is the route's gate, not
  * this one's.
  *
  * An EMPTY `sections` array is a legitimate submission and deletes the carta:
@@ -218,9 +218,9 @@ export async function getVenueMenu(
  *
  * @param model - VenueModel instance.
  * @param actor - The actor performing the action.
- * @param data - `{ gastronomyId, menu }`.
+ * @param data - `{ venueId, menu }`.
  * @param ctx - Optional service context for transaction propagation.
- * @returns `ServiceOutput<GastronomyMenuOutput>` with the carta as now stored.
+ * @returns `ServiceOutput<venueMenuOutput>` with the carta as now stored.
  */
 export async function replaceVenueMenu(
     model: VenueModel,
@@ -242,9 +242,9 @@ export async function replaceVenueMenu(
             };
         }
         const validated = parseResult.data;
-        const { gastronomyId } = validated;
+        const { venueId } = validated;
 
-        const venue = await requireVenue(model, gastronomyId, ctx?.tx);
+        const venue = await requireVenue(model, venueId, ctx?.tx);
         checkVenueCanEditFaqs(actor, venue);
 
         const sectionModel = new VenueMenuSectionModel();
@@ -255,15 +255,15 @@ export async function replaceVenueMenu(
         // the owner never described, and it is exactly what per-row endpoints
         // would allow. Enlists in the caller's transaction when there is one.
         const runInTx = async (tx: ServiceContext['tx']): Promise<void> => {
-            // CASCADE on `gastronomy_menu_items.section_id` takes the dishes
+            // CASCADE on `venue_menu_items.section_id` takes the dishes
             // with the sections, so the items are not deleted explicitly. That
             // is a property of the SCHEMA, not of this call order.
-            await sectionModel.hardDelete({ gastronomyId }, tx);
+            await sectionModel.hardDelete({ venueId }, tx);
 
             for (const [sectionIndex, section] of validated.menu.sections.entries()) {
                 const createdSection = await sectionModel.create(
                     {
-                        gastronomyId,
+                        venueId,
                         name: section.name,
                         // `''` and `undefined` both mean "no blurb"; stored as
                         // NULL so the read has one absent value, not two.
@@ -290,7 +290,7 @@ export async function replaceVenueMenu(
                     await itemModel.create(
                         {
                             sectionId: createdSection.id,
-                            gastronomyId,
+                            venueId,
                             name: item.name,
                             description: item.description || null,
                             // `?? null` and NOT `|| null`: `0` is a real price
@@ -330,7 +330,7 @@ export async function replaceVenueMenu(
             }
             // AC:V9a:7 — the owner act commits with the whole carta.
             await recordListingSubEntityEdit({
-                entityType: 'gastronomy',
+                entityType: 'venue',
                 listing: venue,
                 actor,
                 field: 'menu',
@@ -346,7 +346,7 @@ export async function replaceVenueMenu(
             });
         }
 
-        return await getVenueMenu(model, { gastronomyId }, ctx);
+        return await getVenueMenu(model, { venueId }, ctx);
     } catch (err) {
         if (err instanceof ServiceError) {
             return { error: { code: err.code, message: err.message } };
@@ -354,7 +354,7 @@ export async function replaceVenueMenu(
         return {
             error: {
                 code: ServiceErrorCode.INTERNAL_ERROR,
-                message: err instanceof Error ? err.message : 'Failed to replace gastronomy menu'
+                message: err instanceof Error ? err.message : 'Failed to replace venue menu'
             }
         };
     }

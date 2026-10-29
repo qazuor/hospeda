@@ -12,26 +12,26 @@ import {
 } from 'drizzle-orm/pg-core';
 import { LifecycleStatusPgEnum, ModerationStatusPgEnum } from '../enums.dbschema.ts';
 import { users } from '../user/user.dbschema.ts';
-import { gastronomies } from './venue.dbschema.ts';
+import { venues } from './venue.dbschema.ts';
 
 /**
- * Gastronomy review table (SPEC-239).
+ * Venue review table (SPEC-239).
  *
  * Mirrors accommodation_reviews exactly:
- * - FK gastronomyId CASCADE (if the listing is deleted, reviews go with it)
+ * - FK venueId CASCADE (if the listing is deleted, reviews go with it)
  * - FK userId SET NULL (review stays when reviewer is deleted)
  * - Granular rating breakdown via jsonb
  * - averageRating / lifecycleState / moderationState
  * - Full moderation audit (moderatedById / moderatedAt / moderationReason)
- * - UNIQUE(userId, gastronomyId) — one review per user per listing
+ * - UNIQUE(userId, venueId) — one review per user per listing
  */
-export const gastronomyReviews = pgTable(
-    'gastronomy_reviews',
+export const venueReviews = pgTable(
+    'venue_reviews',
     {
         id: uuid('id').primaryKey().defaultRandom(),
-        gastronomyId: uuid('gastronomy_id')
+        venueId: uuid('venue_id')
             .notNull()
-            .references(() => gastronomies.id, { onDelete: 'cascade' }),
+            .references(() => venues.id, { onDelete: 'cascade' }),
         userId: uuid('user_id')
             .notNull()
             .references(() => users.id, { onDelete: 'set null' }),
@@ -62,7 +62,7 @@ export const gastronomyReviews = pgTable(
         deletedAt: timestamp('deleted_at', { withTimezone: true }),
         deletedById: uuid('deleted_by_id').references(() => users.id, { onDelete: 'set null' }),
         /**
-         * Moderation state defaults to PENDING: gastronomy reviews require
+         * Moderation state defaults to PENDING: venue reviews require
          * moderator approval before appearing publicly (unlike accommodation
          * reviews which default to APPROVED).
          */
@@ -77,43 +77,42 @@ export const gastronomyReviews = pgTable(
         moderationReason: text('moderation_reason')
     },
     (table) => ({
-        gastronomy_reviews_gastronomyId_idx: index('gastronomy_reviews_gastronomyId_idx').on(
-            table.gastronomyId
+        venue_reviews_venueId_idx: index('venue_reviews_venueId_idx').on(table.venueId),
+        venue_reviews_userId_idx: index('venue_reviews_userId_idx').on(table.userId),
+        venue_reviews_user_venue_uniq: uniqueIndex('venue_reviews_user_venue_uniq').on(
+            table.userId,
+            table.venueId
         ),
-        gastronomy_reviews_userId_idx: index('gastronomy_reviews_userId_idx').on(table.userId),
-        gastronomy_reviews_user_gastronomy_uniq: uniqueIndex(
-            'gastronomy_reviews_user_gastronomy_uniq'
-        ).on(table.userId, table.gastronomyId),
-        gastronomy_reviews_lifecycleState_idx: index('gastronomy_reviews_lifecycleState_idx').on(
+        venue_reviews_lifecycleState_idx: index('venue_reviews_lifecycleState_idx').on(
             table.lifecycleState
         ),
         // Composite: most common query is listByVenue filtered by lifecycle
-        gastronomy_reviews_gastronomyId_lifecycleState_idx: index(
-            'gastronomy_reviews_gastronomyId_lifecycleState_idx'
-        ).on(table.gastronomyId, table.lifecycleState),
-        gastronomy_reviews_moderationState_idx: index('gastronomy_reviews_moderationState_idx').on(
+        venue_reviews_venueId_lifecycleState_idx: index(
+            'venue_reviews_venueId_lifecycleState_idx'
+        ).on(table.venueId, table.lifecycleState),
+        venue_reviews_moderationState_idx: index('venue_reviews_moderationState_idx').on(
             table.moderationState
         )
     })
 );
 
-export const gastronomyReviewsRelations = relations(gastronomyReviews, ({ one }) => ({
-    gastronomy: one(gastronomies, {
-        fields: [gastronomyReviews.gastronomyId],
-        references: [gastronomies.id]
+export const venueReviewsRelations = relations(venueReviews, ({ one }) => ({
+    venue: one(venues, {
+        fields: [venueReviews.venueId],
+        references: [venues.id]
     }),
     user: one(users, {
-        fields: [gastronomyReviews.userId],
+        fields: [venueReviews.userId],
         references: [users.id]
     }),
     moderatedBy: one(users, {
-        fields: [gastronomyReviews.moderatedById],
+        fields: [venueReviews.moderatedById],
         references: [users.id],
-        relationName: 'gastronomyReviewModerator'
+        relationName: 'venueReviewModerator'
     })
 }));
 
-/** Type-inferred insert type for gastronomy_reviews rows. */
-export type InsertVenueReview = typeof gastronomyReviews.$inferInsert;
-/** Type-inferred select type for gastronomy_reviews rows. */
-export type SelectVenueReview = typeof gastronomyReviews.$inferSelect;
+/** Type-inferred insert type for venue_reviews rows. */
+export type InsertVenueReview = typeof venueReviews.$inferInsert;
+/** Type-inferred select type for venue_reviews rows. */
+export type SelectVenueReview = typeof venueReviews.$inferSelect;

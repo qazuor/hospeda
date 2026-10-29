@@ -30,7 +30,7 @@ export const OWN_BILLING_ROLES: readonly RoleEnum[] = [
     RoleEnum.CLIENT_MANAGER,
     RoleEnum.EDITOR,
     RoleEnum.HOST,
-    RoleEnum.GASTRONOMY_OWNER,
+    RoleEnum.VENUE_OWNER,
     RoleEnum.EXPERIENCE_OWNER,
     RoleEnum.USER,
     RoleEnum.SPONSOR

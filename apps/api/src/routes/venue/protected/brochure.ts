@@ -1,8 +1,8 @@
 /**
- * The owner's printable PDF ficha of a gastronomy listing (HOS-1058).
+ * The owner's printable PDF ficha of a venue listing (HOS-1058).
  *
  * ```
- * GET /api/v1/protected/gastronomies/{id}/brochure
+ * GET /api/v1/protected/venues/{id}/brochure
  * ```
  *
  * ## What it answers, and in what order
@@ -11,7 +11,7 @@
  * 2. **Listing access** — PDF generation requires download_listing_pdf for
  *    the owner after ownership is established.
  * 3. **Ownership** — the service's owner-tier read, then the same explicit
- *    `ownerId === actor.id || GASTRONOMY_VIEW_ALL` check `protected/getById.ts`
+ *    `ownerId === actor.id || VENUE_VIEW_ALL` check `protected/getById.ts`
  *    makes, answering NOT_FOUND for a listing that is not the caller's. A 403
  *    would confirm the id exists.
  * 4. **Is there a public ficha at all** — a listing that is not `PUBLISHED` has no
@@ -24,7 +24,7 @@
  * mind is that `stripWithSchema` does NOT run on this path — so the projection
  * that keeps owner-private fields out of the document is done explicitly, by
  * parsing the entity through `VenueBrochureSourceSchema`, whose every key
- * is proven to exist in `GastronomyPublicSchema` by
+ * is proven to exist in `VenuePublicSchema` by
  * `test/services/listing-brochure.test.ts`.
  *
  * @module routes/venue/protected/brochure
@@ -74,7 +74,7 @@ export async function handleGetVenueBrochure(
 
     // Same gate, same wording as `protected/getById.ts` — a divergent message
     // here would tell a caller that the id they hold is real (HOS-600).
-    const hasViewAll = actor.permissions?.includes(PermissionEnum.GASTRONOMY_VIEW_ALL);
+    const hasViewAll = actor.permissions?.includes(PermissionEnum.VENUE_VIEW_ALL);
     if (!entity || (!hasViewAll && entity.ownerId !== actor.id)) {
         throw entityNotFoundError({ entityName: VenueService.ENTITY_NAME });
     }
@@ -96,7 +96,7 @@ export async function handleGetVenueBrochure(
         // drift worth seeing in the logs.
         throw new ServiceError(
             ServiceErrorCode.INTERNAL_ERROR,
-            'gastronomy listing could not be projected for printing'
+            'venue listing could not be projected for printing'
         );
     }
 
@@ -116,7 +116,7 @@ export async function handleGetVenueBrochure(
         purpose: QrCodePurposeEnum.BROCHURE,
         targetUrl: content.url,
         label: buildEntityQrLabel({
-            description: 'Gastronomy brochure QR',
+            description: 'venue brochure QR',
             name: entity.name,
             slug: parsed.data.slug
         }),
@@ -127,7 +127,7 @@ export async function handleGetVenueBrochure(
 }
 
 /**
- * GET /api/v1/protected/gastronomies/:id/brochure
+ * GET /api/v1/protected/venues/:id/brochure
  *
  * Premium, in both verticals (owner decision, 2026-09-01). The grant lives on
  * each vertical's premium plan row rather than in
@@ -143,10 +143,10 @@ export const protectedGetVenueBrochureRoute = createProtectedRoute({
         idParam: 'id',
         step6Key: 'download_listing_pdf'
     },
-    summary: 'Download the printable PDF sheet of a gastronomy listing',
+    summary: 'Download the printable PDF sheet of a venue listing',
     description:
-        'Returns a print-ready A4 PDF of the listing’s PUBLIC page — cover photo, opening hours, contact, services and a QR back to the online sheet. Owner-only, and only for a listing that is publicly visible. Requires the download_listing_pdf entitlement, granted by the premium gastronomy plan.',
-    tags: ['Gastronomy'],
+        'Returns a print-ready A4 PDF of the listing’s PUBLIC page — cover photo, opening hours, contact, services and a QR back to the online sheet. Owner-only, and only for a listing that is publicly visible. Requires the download_listing_pdf entitlement, granted by the premium venue plan.',
+    tags: ['Venue'],
     requestParams: {
         id: z.string().uuid({ message: 'zodError.common.id.invalidUuid' })
     },

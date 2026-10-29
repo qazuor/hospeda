@@ -7,7 +7,7 @@ import { row } from './outbox-batch.harness.js';
 const renderers = createBillingGraceReminderRenderers({ siteUrl: 'https://hospeda.test' });
 const base = {
     subscriptionId: 'private-id',
-    vertical: 'gastronomy',
+    vertical: 'venue',
     graceEndsAt: '2026-10-20T02:00:00.000Z',
     daysBefore: 3,
     deadlinesVersion: 1
@@ -20,7 +20,7 @@ describe('TEST:1707:5 AC:1707:5 grace reminder renderer', () => {
         });
         const html = renderToStaticMarkup(result.react);
         expect(result.subject).toBe(GRACE_REMINDER_SUBJECT);
-        expect(html).toContain('Gastronomía');
+        expect(html).toContain('Comer y salir');
         expect(html).toContain('19 de octubre de 2026');
         expect(html).toContain('3 días');
         expect(html).toContain('Mercado Pago');

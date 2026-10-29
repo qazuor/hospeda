@@ -33,8 +33,8 @@ import {
 const SITE = 'https://hospeda.com.ar';
 
 describe('where the printed code lands (HOS-982)', () => {
-    it('agrees with the brochure on both gastronomy and experience verticals, segment for segment', () => {
-        for (const vertical of ['gastronomy', 'experience'] as const) {
+    it('agrees with the brochure on both venue and experience verticals, segment for segment', () => {
+        for (const vertical of ['venue', 'experience'] as const) {
             expect(
                 buildListingPublicUrl({ vertical, slug: 'el-fogon', locale: 'es', siteUrl: SITE })
             ).toBe(
@@ -61,7 +61,7 @@ describe('where the printed code lands (HOS-982)', () => {
     it('keeps the locale prefix and the trailing slash', () => {
         for (const locale of ['es', 'en', 'pt'] as const) {
             const url = buildListingPublicUrl({
-                vertical: 'gastronomy',
+                vertical: 'venue',
                 slug: 'el-fogon',
                 locale,
                 siteUrl: SITE
@@ -85,12 +85,12 @@ describe('where the printed code lands (HOS-982)', () => {
     it('escapes a slug rather than letting it change the path', () => {
         expect(
             buildListingPublicUrl({
-                vertical: 'gastronomy',
+                vertical: 'venue',
                 slug: 'a/b',
                 locale: 'es',
                 siteUrl: SITE
             })
-        ).toBe('https://hospeda.com.ar/es/gastronomia/a%2Fb/');
+        ).toBe('https://hospeda.com.ar/es/comer-y-salir/a%2Fb/');
     });
 });
 
@@ -99,7 +99,7 @@ describe('the sheet copy (HOS-982)', () => {
         return buildListingQrSheetContent({
             listingName: '  La Parrilla del Puerto  ',
             slug: 'la-parrilla-del-puerto',
-            vertical: 'gastronomy',
+            vertical: 'venue',
             locale,
             siteUrl: SITE
         });
@@ -136,7 +136,7 @@ describe('the sheet copy (HOS-982)', () => {
             buildListingQrSheetContent({
                 listingName: 'Café Río Uruguay',
                 slug: 'cafe-rio-uruguay',
-                vertical: 'gastronomy',
+                vertical: 'venue',
                 locale: 'es',
                 siteUrl: SITE
             }).listingName
@@ -145,7 +145,7 @@ describe('the sheet copy (HOS-982)', () => {
 
     it('carries the ficha URL as the destination, for the route to mint the code with', () => {
         expect(build('es').url).toBe(
-            'https://hospeda.com.ar/es/gastronomia/la-parrilla-del-puerto/'
+            'https://hospeda.com.ar/es/comer-y-salir/la-parrilla-del-puerto/'
         );
     });
 });
@@ -192,7 +192,7 @@ describe('the downloader’s language never reaches the minted destination (HOS-
     });
 
     it('pins the destination in all three verticals, not just the one that was measured', () => {
-        for (const vertical of ['accommodation', 'gastronomy', 'experience'] as const) {
+        for (const vertical of ['accommodation', 'venue', 'experience'] as const) {
             const english = buildListingQrSheetContent({
                 listingName: 'El Fogón',
                 slug: 'el-fogon',

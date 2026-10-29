@@ -1,17 +1,17 @@
 /**
  * @file VenueReviewForm.client.tsx
- * @description Review-submission island for the gastronomy detail page
+ * @description Review-submission island for the venue detail page
  * (SPEC-239 / SPEC-259 smoke follow-up). Lets an authenticated visitor open a
  * native <dialog> with a compact review form.
  *
- * Domain difference vs. the accommodation review form: gastronomy reviews use a
+ * Domain difference vs. the accommodation review form: venue reviews use a
  * single required scalar `overallRating` (1–5) instead of a multi-dimension
  * breakdown — the granular `rating` object is optional and intentionally not
- * collected here (see the gastronomy review schema). Submitted reviews start in
+ * collected here (see the venue review schema). Submitted reviews start in
  * PENDING moderation, so the success state shows a "pending approval" notice
  * rather than implying the review is already live.
  *
- * The actual POST goes to `/api/v1/protected/gastronomies/:id/reviews` with
+ * The actual POST goes to `/api/v1/protected/venues/:id/reviews` with
  * `credentials: 'include'` so the Better Auth session cookie is sent.
  *
  * Hydration: caller MUST use `client:visible`.
@@ -34,10 +34,10 @@ const CONTENT_MIN = 10;
 const STAR_POSITIONS = [1, 2, 3, 4, 5] as const;
 
 interface VenueReviewFormProps {
-    /** UUID of the gastronomy listing being reviewed. */
-    readonly gastronomyId: string;
+    /** UUID of the venue listing being reviewed. */
+    readonly venueId: string;
     /** Listing name, shown as the dialog subtitle. */
-    readonly gastronomyName: string;
+    readonly venueName: string;
     /** Active locale for i18n. */
     readonly locale: SupportedLocale;
     /** Absolute API base URL (web app and API live on different hosts). */
@@ -51,14 +51,14 @@ function joinApi(apiUrl: string, path: string): string {
 }
 
 /**
- * VenueReviewForm — authenticated review submission for a gastronomy
+ * VenueReviewForm — authenticated review submission for a venue
  * listing.
  *
  * @param props - Component props (see {@link VenueReviewFormProps}).
  */
 export function VenueReviewForm({
-    gastronomyId,
-    gastronomyName,
+    venueId,
+    venueName,
     locale,
     apiUrl,
     signInHref
@@ -134,7 +134,7 @@ export function VenueReviewForm({
 
             try {
                 const response = await fetch(
-                    joinApi(apiUrl, `/api/v1/protected/gastronomies/${gastronomyId}/reviews`),
+                    joinApi(apiUrl, `/api/v1/protected/venues/${venueId}/reviews`),
                     {
                         method: 'POST',
                         credentials: 'include',
@@ -188,7 +188,7 @@ export function VenueReviewForm({
             apiUrl,
             contentTrimmed,
             contentValid,
-            gastronomyId,
+            venueId,
             locale,
             overall,
             rated,
@@ -227,15 +227,15 @@ export function VenueReviewForm({
                         className={styles.cardTitle}
                     >
                         {submitted
-                            ? t('review.gastronomySidebar.pendingTitle', 'Reseña en revisión')
-                            : t('review.gastronomySidebar.title', 'Tu opinión')}
+                            ? t('review.venueSidebar.pendingTitle', 'Reseña en revisión')
+                            : t('review.venueSidebar.title', 'Tu opinión')}
                     </h3>
                 </div>
 
                 {submitted ? (
                     <output className={styles.cardPending}>
                         {t(
-                            'review.gastronomySidebar.pendingBanner',
+                            'review.venueSidebar.pendingBanner',
                             'Tu reseña fue enviada y se publicará cuando nuestro equipo la apruebe.'
                         )}
                     </output>
@@ -243,7 +243,7 @@ export function VenueReviewForm({
                     <>
                         <p className={styles.cardText}>
                             {t(
-                                'review.gastronomySidebar.canLeaveReview',
+                                'review.venueSidebar.canLeaveReview',
                                 'Compartí tu experiencia en este lugar para ayudar a otros comensales.'
                             )}
                         </p>
@@ -252,7 +252,7 @@ export function VenueReviewForm({
                             className={styles.cardCta}
                             onClick={handleOpen}
                         >
-                            {t('review.gastronomySidebar.cta', 'Dejar reseña')}
+                            {t('review.venueSidebar.cta', 'Dejar reseña')}
                             <svg
                                 viewBox="0 0 24 24"
                                 width="16"
@@ -280,7 +280,7 @@ export function VenueReviewForm({
                     <>
                         <p className={styles.cardText}>
                             {t(
-                                'review.gastronomySidebar.signInCtaHint',
+                                'review.venueSidebar.signInCtaHint',
                                 'Necesitás una cuenta para dejar tu reseña.'
                             )}
                         </p>
@@ -288,7 +288,7 @@ export function VenueReviewForm({
                             className={styles.cardCta}
                             href={signInHref}
                         >
-                            {t('review.gastronomySidebar.signInCta', 'Iniciá sesión para opinar')}
+                            {t('review.venueSidebar.signInCta', 'Iniciá sesión para opinar')}
                         </a>
                     </>
                 )}
@@ -335,7 +335,7 @@ export function VenueReviewForm({
                             </span>
                             <p className={styles.pendingNotice}>
                                 {t(
-                                    'review.form.gastronomy.pendingNotice',
+                                    'review.form.venue.pendingNotice',
                                     'Tu reseña está pendiente de aprobación y será visible cuando sea revisada.'
                                 )}
                             </p>
@@ -357,7 +357,7 @@ export function VenueReviewForm({
                                     >
                                         {t('review.list.writeReview', 'Escribir reseña')}
                                     </h3>
-                                    <p className={styles.dialogSubtitle}>{gastronomyName}</p>
+                                    <p className={styles.dialogSubtitle}>{venueName}</p>
                                 </div>
                                 <button
                                     type="button"

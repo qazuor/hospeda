@@ -38,7 +38,7 @@ export const createBaseVisibilityFields = () => ({
 });
 
 /**
- * Listing publication state (HOS-1641): the accommodation, gastronomy and
+ * Listing publication state (HOS-1641): the accommodation, venue and
  * experience fixtures carry this instead of the old lifecycle/visibility/
  * moderation trio.
  */

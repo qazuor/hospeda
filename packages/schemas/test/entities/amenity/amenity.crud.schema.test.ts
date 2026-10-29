@@ -217,7 +217,7 @@ describe('Amenity CRUD Schemas', () => {
                 slug: 'wifi-access',
                 applicableVerticals: ['accommodation'] as (
                     | 'accommodation'
-                    | 'gastronomy'
+                    | 'venue'
                     | 'experience'
                 )[],
                 description: {
@@ -241,7 +241,7 @@ describe('Amenity CRUD Schemas', () => {
                 slug: 'pool',
                 applicableVerticals: ['accommodation'] as (
                     | 'accommodation'
-                    | 'gastronomy'
+                    | 'venue'
                     | 'experience'
                 )[],
                 type: 'OUTDOORS',
@@ -256,9 +256,9 @@ describe('Amenity CRUD Schemas', () => {
     describe('AmenityUpdateInputSchema', () => {
         it('should validate partial update input', () => {
             const partialUpdate = {
-                applicableVerticals: ['accommodation', 'gastronomy'] as (
+                applicableVerticals: ['accommodation', 'venue'] as (
                     | 'accommodation'
-                    | 'gastronomy'
+                    | 'venue'
                     | 'experience'
                 )[],
                 description: {

@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 /**
  * @file score-signals.test.ts
- * Unit tests for gastronomy quality-score signals (SPEC-239 T-059).
+ * Unit tests for venue quality-score signals (SPEC-239 T-059).
  *
  * Covers all 9 signals:
  *  - featured-image
@@ -74,7 +74,7 @@ function completeEntity(): Record<string, unknown> {
 // Tests
 // ---------------------------------------------------------------------------
 
-describe('createGastronomySignals — weights', () => {
+describe('createVenueSignals — weights', () => {
     it('should have non-premium weights that sum to 100', () => {
         const signals = createVenueSignals();
         const total = signals.filter((s) => s.weight > 0).reduce((sum, s) => sum + s.weight, 0);
@@ -86,7 +86,7 @@ describe('createGastronomySignals — weights', () => {
     });
 });
 
-describe('computeScore with gastronomy signals', () => {
+describe('computeScore with venue signals', () => {
     it('should return 100 for a fully complete entity', () => {
         const result = computeScore(createVenueSignals(), completeEntity());
         expect(result.score).toBe(100);

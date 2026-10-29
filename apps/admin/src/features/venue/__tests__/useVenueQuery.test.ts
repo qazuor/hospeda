@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 /**
  * @file useVenueQuery.test.ts
- * Unit tests for gastronomy CRUD hooks (SPEC-239 T-059).
+ * Unit tests for venue CRUD hooks (SPEC-239 T-059).
  *
  * Tests cover:
  *  - useVenueQuery — detail fetch + enabled flag
@@ -107,7 +107,7 @@ afterEach(() => {
 // ---------------------------------------------------------------------------
 
 describe('useVenueQuery', () => {
-    it('should fetch a gastronomy by ID', async () => {
+    it('should fetch a venue by ID', async () => {
         mockDetailSuccess();
 
         const { result } = renderHook(() => useVenueQuery(VENUE_ID), {
@@ -137,8 +137,8 @@ describe('useVenueQuery', () => {
     });
 });
 
-describe('useCreateGastronomyMutation', () => {
-    it('should create a gastronomy and resolve with the entity', async () => {
+describe('useCreateVenueMutation', () => {
+    it('should create a venue and resolve with the entity', async () => {
         mockMutationSuccess();
 
         const { result } = renderHook(() => useCreateVenueMutation(), {
@@ -167,8 +167,8 @@ describe('useCreateGastronomyMutation', () => {
     });
 });
 
-describe('useUpdateGastronomyMutation', () => {
-    it('should PUT/PATCH a gastronomy and return the updated entity', async () => {
+describe('useUpdateVenueMutation', () => {
+    it('should PUT/PATCH a venue and return the updated entity', async () => {
         const updated = { ...MOCK_VENUE, name: 'El Rancho Actualizado' };
         mockMutationSuccess(updated);
 
@@ -185,7 +185,7 @@ describe('useUpdateGastronomyMutation', () => {
     });
 });
 
-describe('useAssignGastronomyOwnerMutation', () => {
+describe('useAssignVenueOwnerMutation', () => {
     it('should POST to assign-owner endpoint', async () => {
         mockMutationSuccess();
 
@@ -205,7 +205,7 @@ describe('useAssignGastronomyOwnerMutation', () => {
     });
 });
 
-describe('useModerateGastronomyReviewMutation', () => {
+describe('useModerateVenueReviewMutation', () => {
     it('should POST a review moderation decision', async () => {
         mockedFetchApi.mockResolvedValue({ data: { success: true }, status: 200 } as never);
 
@@ -242,7 +242,7 @@ describe('useModerateGastronomyReviewMutation', () => {
     });
 });
 
-describe('useGastronomyPendingReviewsQuery', () => {
+describe('useVenuePendingReviewsQuery', () => {
     it('should fetch pending reviews list', async () => {
         const mockReviews = [{ id: 'r1', comment: 'Excelente', rating: 5 }];
         mockListSuccess(mockReviews);

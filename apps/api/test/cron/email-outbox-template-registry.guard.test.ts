@@ -315,7 +315,7 @@ describe('TEST:1675:2 AC:1675:1 the four pending templates render through the pr
             'billing.grace-started',
             {
                 subscriptionId: 'private-grace-subscription',
-                vertical: 'gastronomy',
+                vertical: 'venue',
                 graceEndsAt: '2026-10-20T02:00:00.000Z'
             },
             'Tu servicio sigue activo'
@@ -324,7 +324,7 @@ describe('TEST:1675:2 AC:1675:1 the four pending templates render through the pr
             'billing.paid-after-cancellation',
             {
                 subscriptionId: 'private-paid-subscription',
-                vertical: 'gastronomy',
+                vertical: 'venue',
                 serviceEndsAt: '2026-10-20T02:00:00.000Z',
                 recurringAddonsCut: true
             },

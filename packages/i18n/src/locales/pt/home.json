@@ -126,8 +126,8 @@
                 "title": "Cultura",
                 "description": "Arte, história e patrimônio do Litoral de Entre Ríos"
             },
-            "gastronomy": {
-                "title": "Gastronomia",
+            "foodEvents": {
+                "title": "Eventos gastronômicos",
                 "description": "Sabores únicos da culinária regional e nacional"
             },
             "posts": {

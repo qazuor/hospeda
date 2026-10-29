@@ -4,7 +4,7 @@
  * Unit tests for `VenueCard` (SPEC-239 T-059).
  *
  * Covers:
- *  - Renders the gastronomy name
+ *  - Renders the venue name
  *  - Renders the type badge
  *  - Renders the price range badge when provided
  *  - Does NOT render price range badge when absent
@@ -75,7 +75,7 @@ function renderCard(overrides?: Partial<VenueListItem>, onSelect?: (id: string) 
 // Tests
 // ---------------------------------------------------------------------------
 
-describe('GastronomyCard — rendering', () => {
+describe('VenueCard — rendering', () => {
     it('should render "Destacado" badge when featuredByEntitlement is true', () => {
         renderCard({ featuredByEntitlement: true });
         expect(screen.getByText('Destacado')).toBeInTheDocument();
@@ -86,7 +86,7 @@ describe('GastronomyCard — rendering', () => {
         expect(screen.queryByText('Destacado')).not.toBeInTheDocument();
     });
 
-    it('should render the gastronomy name', () => {
+    it('should render the venue name', () => {
         renderCard();
         expect(screen.getByText('La Parrilla del Sur')).toBeInTheDocument();
     });
@@ -134,7 +134,7 @@ describe('GastronomyCard — rendering', () => {
     });
 });
 
-describe('GastronomyCard — type badge labels', () => {
+describe('VenueCard — type badge labels', () => {
     const CASES: Array<{ type: VenueTypeEnum; label: string }> = [
         { type: VenueTypeEnum.BAR, label: 'Bar' },
         { type: VenueTypeEnum.CAFE, label: 'Café' },
@@ -152,8 +152,8 @@ describe('GastronomyCard — type badge labels', () => {
     }
 });
 
-describe('GastronomyCard — interaction', () => {
-    it('should call onSelect with the gastronomy ID when clicked', () => {
+describe('VenueCard — interaction', () => {
+    it('should call onSelect with the venue ID when clicked', () => {
         const onSelect = vi.fn();
         renderCard({}, onSelect);
 

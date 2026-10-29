@@ -10,7 +10,7 @@ const listingId = '3f0d3c2e-5a7b-4c1d-9e8f-0a1b2c3d4e5f';
 
 function archivePayload(overrides: Record<string, unknown> = {}) {
     return {
-        vertical: 'gastronomy',
+        vertical: 'venue',
         listingId,
         transition: 'PB4',
         archiveAt: '2027-01-12T02:00:00.000Z',
@@ -20,7 +20,7 @@ function archivePayload(overrides: Record<string, unknown> = {}) {
 
 function deletionPayload(overrides: Record<string, unknown> = {}) {
     return {
-        vertical: 'gastronomy',
+        vertical: 'venue',
         listingId,
         deletionAt: '2027-01-12T02:00:00.000Z',
         ...overrides
@@ -35,7 +35,7 @@ async function render(template: string, payload: Record<string, unknown>) {
 describe('TEST:V9b:10 retention notice renderers', () => {
     it('renders the before-archive subject, market date, PB4 promise, and no listing id', async () => {
         const { subject, html } = await render(BEFORE_ARCHIVE, archivePayload());
-        expect(subject).toContain('gastronomía');
+        expect(subject).toContain('Comer y salir');
         expect(subject.trim()).not.toBe('');
         expect(html).toContain('11 de enero de 2027');
         expect(html).not.toContain('12 de enero de 2027');
@@ -46,7 +46,7 @@ describe('TEST:V9b:10 retention notice renderers', () => {
 
     it('renders the before-deletion subject, market date, and no listing id', async () => {
         const { subject, html } = await render(BEFORE_DELETION, deletionPayload());
-        expect(subject).toContain('gastronomía');
+        expect(subject).toContain('Comer y salir');
         expect(subject.trim()).not.toBe('');
         expect(html).toContain('11 de enero de 2027');
         expect(html).not.toContain('12 de enero de 2027');

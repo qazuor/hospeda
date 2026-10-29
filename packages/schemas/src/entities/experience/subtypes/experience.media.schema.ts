@@ -25,7 +25,7 @@ export type ExperienceMediaState = z.infer<typeof ExperienceMediaStateSchema>;
 /**
  * Zod schema for a single row in the `experience_media` table.
  *
- * Extends {@link BaseListingMediaSchema} (shared with `gastronomy_media`)
+ * Extends {@link BaseListingMediaSchema} (shared with `venue_media`)
  * with the two fields that differ per vertical: `id` and the parent FK
  * (`experienceId`). See the base schema's JSDoc for the full field-level
  * documentation shared by both verticals.

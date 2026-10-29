@@ -1,5 +1,5 @@
 /**
- * Turns a gastronomy or experience listing's PUBLIC projection into printable brochure content
+ * Turns a venue or experience listing's PUBLIC projection into printable brochure content
  * (HOS-1058).
  *
  * ---
@@ -7,7 +7,7 @@
  *
  * **The brochure is a rendering of the public ficha, never of the row.**
  *
- * Every field below is read off `GastronomyPublicSchema` /
+ * Every field below is read off `VenuePublicSchema` /
  * `ExperiencePublicSchema` — the same projections the anonymous detail
  * endpoints answer with. That is not a convenience: a printed PDF is the one
  * artifact that leaves the platform entirely, gets photocopied and left on a
@@ -17,8 +17,8 @@
  *
  * Two consequences are worth stating because they read as omissions:
  *
- * - **A gastronomy brochure carries no phone and no e-mail.**
- *   `GastronomyPublicSchema` does not pick `contactInfo` at all (the comment
+ * - **A venue brochure carries no phone and no e-mail.**
+ *   `VenuePublicSchema` does not pick `contactInfo` at all (the comment
  *   there calls it "restaurant contact info at owner discretion", published
  *   through `socialNetworks`), so a phone number in the PDF would be a field
  *   the public page does not show. The experience projection DOES publish a
@@ -40,8 +40,8 @@ import { trans } from '@repo/i18n';
 import { ModerationStatusEnum } from '@repo/schemas';
 import type { ExperienceBrochureSource, VenueBrochureSource } from './brochure-source.js';
 
-/** The two gastronomy and experience verticals a brochure can be built for. */
-export type BrochureVertical = 'gastronomy' | 'experience';
+/** The two venue and experience verticals a brochure can be built for. */
+export type BrochureVertical = 'venue' | 'experience';
 
 /** One titled block of the printed page. */
 export interface BrochureSection {
@@ -108,13 +108,13 @@ const DAYS: readonly { readonly key: string; readonly label: string }[] = [
  * a 404, which is why the route test asserts the built URL literally.
  */
 const PUBLIC_PATH_SEGMENT: Readonly<Record<BrochureVertical, string>> = {
-    gastronomy: 'gastronomia',
+    venue: 'comer-y-salir',
     experience: 'experiencias'
 };
 
 /** i18n namespace each vertical's detail copy lives in. */
 const DETAIL_NS: Readonly<Record<BrochureVertical, string>> = {
-    gastronomy: 'gastronomy.detail',
+    venue: 'venue.detail',
     experience: 'experience.detail'
 };
 
@@ -308,10 +308,10 @@ function commonFooterCopy(input: { locale: Locale }): { qrHint: string; footer: 
 }
 
 /**
- * Builds the brochure content of a gastronomy listing.
+ * Builds the brochure content of a venue listing.
  *
  * @param input.listing - The listing, ALREADY projected through
- *   `GastronomyPublicSchema`. Passing a protected or admin projection here
+ *   `VenuePublicSchema`. Passing a protected or admin projection here
  *   would defeat the whole point of the module — the route parses first.
  * @param input.locale - Locale to print in.
  * @param input.siteUrl - Public base URL of the web app.
@@ -323,10 +323,10 @@ export function buildVenueBrochureContent(input: {
     siteUrl: string;
 }): BrochureContent {
     const { listing, locale } = input;
-    const ns = DETAIL_NS.gastronomy;
+    const ns = DETAIL_NS.venue;
 
     const title = i18nText({ value: listing.nameI18n, locale }) || listing.name;
-    const typeLabel = t({ locale, key: `gastronomy.types.${listing.type}` });
+    const typeLabel = t({ locale, key: `venue.types.${listing.type}` });
     const destination = listing.destination?.name ?? '';
     const intro =
         i18nText({ value: listing.summaryI18n, locale }) ||
@@ -336,7 +336,7 @@ export function buildVenueBrochureContent(input: {
         '';
 
     const priceRange = listing.priceRange
-        ? t({ locale, key: `gastronomy.card.priceRange.${listing.priceRange}` })
+        ? t({ locale, key: `venue.card.priceRange.${listing.priceRange}` })
         : '';
 
     const sections: BrochureSection[] = [];
@@ -379,7 +379,7 @@ export function buildVenueBrochureContent(input: {
         price: priceRange || null,
         sections,
         url: buildPublicListingUrl({
-            vertical: 'gastronomy',
+            vertical: 'venue',
             slug: listing.slug,
             locale,
             siteUrl: input.siteUrl
