@@ -191,6 +191,31 @@ or by inspecting the `coolify.resourceName` label — it looks like
 > latter is read only by `install.sh` for the binary install path —
 > renaming was easier than overloading.
 
+### `db-migrate` commit guard (HOS-1957)
+
+Cutover step 3 migrates on the same commit as the new image. `db-migrate`
+enforces it: whenever a `git pull` happens (`--pull`, or `y` at the prompt) the
+command REQUIRES `--expect-commit=<sha>`, the commit the image will be built
+from (full SHA recommended; at least 10 hex chars are accepted).
+
+Order: no `--expect-commit` with a pull aborts before pulling; otherwise pull,
+read `git rev-parse HEAD`, compare, and only then `pnpm install`, build, backup
+and migrate. A mismatch, an unreadable checkout or a blank/`unknown`/non-hex
+expected commit aborts with a non-zero exit naming both SHAs and applies
+nothing. There is no override flag.
+
+The expected commit is passed by the operator, not read from the api
+container: at act (b) the old app is stopped and the new image is not running,
+so a container would report the OLD commit. With `--no-pull` the flag is
+optional, but when given the checkout is still verified.
+
+```bash
+# staging rehearsal: the image is built from origin/staging
+hops --target=staging db-migrate --pull --expect-commit=<sha of origin/staging> --yes
+# prod cutover: the SHA of the staging -> main promotion merge
+hops --target=prod db-migrate --pull --expect-commit=<merge sha> --yes
+```
+
 ## Catalogue (planned and shipped)
 
 | Command            | Status   | Summary                                                                  |
@@ -214,6 +239,7 @@ or by inspecting the `coolify.resourceName` label — it looks like
 | `db-restore`       | shipped  | Pick a backup from R2 and `pg_restore` into the container (auto pre-restore snapshot, destructive). |
 | `db-seed`          | shipped  | Run `@repo/seed` against the target DB (reset+required+example by default; destructive, optional `git pull` first). `--baseline-stamp` (HOS-1952) is a stamp-only mode: no seed, no wipe, stamps the `seed_migrations` ledger after a reset (`contentOnly` migrations still run); run it after `db-seed`; refused on prod (use `db-seed-migrate`). |
 | `db-seed-migrate`  | shipped  | Apply pending seed data-migrations (HOS-25) against the target DB; `--status` to preview. Non-destructive, never reseeds; ledger-tracked exactly-once. |
+| `db-migrate`       | shipped  | Apply versioned Drizzle migrations + extras (pre-migrate backup, `--reset`, optional pull). A pull requires `--expect-commit=<sha>` and aborts unless the checkout is that commit (HOS-1957). |
 | `cutover-step-3`   | shipped  | Run the V6 cutover step 3 script (writes the five cutover trials) against the target DB; dry-run by default, typed confirmation on prod. |
 | `db-seed-test-users` | shipped | Additively seed the 13 SPEC-143 test-user accounts (role×plan matrix). ADD-ONLY, no reset flag; rejected on `--target=prod`. |
 | `cron-list`        | shipped  | Numbered list of node-cron jobs registered in the running API process.   |
