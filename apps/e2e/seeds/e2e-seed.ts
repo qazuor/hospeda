@@ -110,6 +110,22 @@ async function seedListingOwnerTrials(pool: Pool): Promise<void> {
     }
 }
 
+/**
+ * Empties the billing catalog that migration 0176 writes (`billing_option` and the
+ * add-on tables).
+ *
+ * The seed reset now PRESERVES those rows (HOS-1827) because a live environment cannot
+ * re-create them. The E2E specs and fixtures, however, create their own billing options
+ * and assume an empty migration catalog, so the E2E database keeps its pre-HOS-1827
+ * state. Safe by construction: this script already refuses any database whose name does
+ * not match the E2E pattern. Rewriting the specs against the real prices is a follow-up.
+ */
+async function emptyMigrationBillingCatalog(pool: Pool): Promise<void> {
+    const { MIGRATION_CATALOG_TABLES } = await import('@repo/db');
+    const tables = MIGRATION_CATALOG_TABLES.map((name) => `"${name}"`).join(', ');
+    await pool.query(`TRUNCATE ${tables} RESTART IDENTITY CASCADE`);
+}
+
 async function main(): Promise<void> {
     console.info(`[e2e-seed] Resetting + seeding ${dbUrl}`);
     await runSeed({
@@ -137,6 +153,7 @@ async function main(): Promise<void> {
     initializeDb(fixturePool);
     try {
         await seedListingOwnerTrials(fixturePool);
+        await emptyMigrationBillingCatalog(fixturePool);
     } finally {
         await fixturePool.end();
         resetDb();
