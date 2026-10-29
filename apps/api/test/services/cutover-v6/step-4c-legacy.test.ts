@@ -92,6 +92,29 @@ describe('step 4c arguments', () => {
         });
     });
 
+    it.each([
+        [['--extra-tags-file=t.txt', '--extra-prefixes-file=p.txt']],
+        [['--extra-tags-file', 't.txt', '--extra-prefixes-file', 'p.txt']]
+    ])('gives the same result for %j (equals form and space form)', (argv) => {
+        // Act
+        const result = parseStep4cArgs({ argv });
+        // Assert
+        expect(result).toEqual({
+            ok: true,
+            value: {
+                dryRun: false,
+                confirmPurge: false,
+                extraTagsFile: 't.txt',
+                extraPrefixesFile: 'p.txt'
+            }
+        });
+    });
+
+    it('keeps a path containing = intact in the equals form', () => {
+        const result = parseStep4cArgs({ argv: ['--extra-tags-file=a=b.txt'] });
+        expect(result).toMatchObject({ ok: true, value: { extraTagsFile: 'a=b.txt' } });
+    });
+
     it('keeps the flags optional', () => {
         expect(parseStep4cArgs({ argv: ['--dry-run'] })).toEqual({
             ok: true,
@@ -186,6 +209,44 @@ describe('page purger prefix grouping', () => {
         expect(prefixTransport).toHaveBeenCalledTimes(2);
         expect(result.ok).toBe(false);
         expect(result.failed).toEqual(prefixes.slice(100));
+    });
+});
+
+describe('page purger tag grouping through revalidateMany', () => {
+    const noTransport = async () => ({ ok: true, status: 200 });
+
+    it('hands ALL tags of a group to the service in ONE call (it batches by 100)', async () => {
+        // Arrange
+        const tags = Array.from({ length: 250 }, (_, i) => `t-${i}`);
+        const revalidateTags = vi.fn(async ({ tags: given }: { tags: readonly string[] }) =>
+            given.map((target) => ({ target, success: true, durationMs: 1 }))
+        );
+        const service = { getAdapterName: () => 'Fake', revalidateTags } as never;
+        // Act
+        const result = await createRevalidationPagePurger({
+            service,
+            prefixTransport: noTransport
+        }).purge({ group: 'legacy-tags', tags });
+        // Assert
+        expect(revalidateTags).toHaveBeenCalledTimes(1);
+        expect(revalidateTags.mock.calls[0]?.[0].tags).toEqual(tags);
+        expect(result).toEqual({ ok: true, failed: [] });
+    });
+
+    it('reports the tags a rejected (429) request carried as failed', async () => {
+        // Arrange
+        const revalidateTags = vi.fn(async () => [
+            { target: 'a', success: true, durationMs: 1 },
+            { target: 'b', success: false, error: 'HTTP 429: Too Many Requests', durationMs: 1 }
+        ]);
+        const service = { getAdapterName: () => 'Fake', revalidateTags } as never;
+        // Act
+        const result = await createRevalidationPagePurger({
+            service,
+            prefixTransport: noTransport
+        }).purge({ group: 'legacy-tags', tags: ['a', 'b'] });
+        // Assert
+        expect(result).toEqual({ ok: false, failed: ['b'] });
     });
 });
 
