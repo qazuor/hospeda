@@ -251,7 +251,7 @@ const COMMANDS: ReadonlyArray<Command> = [
                 '--yes',
                 ...HELP_FLAGS
             ],
-            valueFlags: []
+            valueFlags: [{ name: '--expect-commit', syntax: 'equals' }]
         },
         run: dbMigrate
     },
