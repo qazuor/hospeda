@@ -61,8 +61,10 @@ API tsconfig and workspace `tsx` while preserving the script's exit code through
 `pnpm --dir apps/api exec tsx scripts/cutover-v6-step-4c.ts --dry-run` (or
 `--confirm-purge` for the real run). It purges, in order and stopping at the
 first group that fails: `listings`, `collections`, `destinations`,
-`legacy-tags` (the retired `list-gastro` and `gastro-<slug|id>` tags, the slugs
-and ids read from the passage table and the live `venues`) and `legacy-prefixes`
+`legacy-tags` (the retired collection tag and the per-entity tags of the old
+vertical, built from the slugs and ids in the passage table and the live
+`venues`; the words live in `step-4c.legacy.ts`, assembled from parts because the
+retired-word guard forbids them as literals) and `legacy-prefixes`
 (54 URL prefixes: 2 hosts x 3 locales x 9 routes, from
 `apps/api/src/services/cutover-v6/step-4c.legacy.ts`, pinned by a test). The
 legacy tags go in `revalidateMany` batches of 100 and the prefixes in one

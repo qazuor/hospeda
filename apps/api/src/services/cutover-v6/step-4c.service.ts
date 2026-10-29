@@ -122,7 +122,7 @@ export async function runStep4c({
 
     // The retired vocabulary (HOS-1957, G10): old listings known from the passage
     // table and from the live venues, which production's edge still caches under
-    // `gastro-*`. Un-renamed slugs and ids both appear as tags.
+    // their old per-entity tags. Both the slug and the id of each listing appear as tags.
     const venueResult = await db.execute(sql`SELECT id::text AS id, slug FROM venues`);
     const legacyTags = sortedUnique([
         ...LEGACY_COLLECTION_TAGS,

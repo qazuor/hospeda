@@ -7,6 +7,10 @@ import {
     createRevalidationPagePurger,
     Step4cNoOpAdapterError
 } from '../../../src/services/cutover-v6/step-4c.adapters.js';
+import {
+    LEGACY_COLLECTION_TAGS,
+    LEGACY_ENTITY_TAG_PREFIX
+} from '../../../src/services/cutover-v6/step-4c.legacy.js';
 import type { PagePurger } from '../../../src/services/cutover-v6/step-4c.service.js';
 import {
     runStep4c,
@@ -148,8 +152,10 @@ describe('TEST:V6:24 step 4c', () => {
                     .flatMap(({ id, slug }) => [`dest-${slug}`, `dest-${id}`])
                     .sort()
             );
-            expect(first[3]?.tags).toContain('list-gastro');
-            expect(first[3]?.tags).toContain('gastro-14820000-0000-4000-8000-000000000002');
+            expect(first[3]?.tags).toContain(LEGACY_COLLECTION_TAGS[0]);
+            expect(first[3]?.tags).toContain(
+                `${LEGACY_ENTITY_TAG_PREFIX}-14820000-0000-4000-8000-000000000002`
+            );
             expect(first[4]?.tags).toHaveLength(54);
             expect(firstResult).toMatchObject({
                 status: 'completed',

@@ -363,7 +363,10 @@ describe('POST /api/revalidate — URL prefix purge (cutover step 4c)', () => {
     it('accepts the production hosts only on the prod deployment', async () => {
         vi.stubEnv('HOSPEDA_DEPLOY_ENV', 'prod');
         _resetCacheTagEnvironment();
-        const prefixes = ['hospeda.com.ar/es/gastronomia/', 'www.hospeda.com.ar/es/gastronomia/'];
+        const prefixes = [
+            'hospeda.com.ar/es/comer-y-salir/',
+            'www.hospeda.com.ar/es/comer-y-salir/'
+        ];
 
         const response = await POST(makeContext({ body: { prefixes } }));
 
@@ -373,7 +376,7 @@ describe('POST /api/revalidate — URL prefix purge (cutover step 4c)', () => {
 
     it('REFUSES production hosts from a non-prod deployment, and purges nothing', async () => {
         const response = await POST(
-            makeContext({ body: { prefixes: ['hospeda.com.ar/es/gastronomia/'] } })
+            makeContext({ body: { prefixes: ['hospeda.com.ar/es/comer-y-salir/'] } })
         );
 
         expect(response.status).toBe(400);
