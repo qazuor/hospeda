@@ -28,7 +28,12 @@
  * - The passphrase never reaches argv (where it would be visible in `ps`).
  *   It is written to a 0600 file inside a fresh 0700 `mkdtemp` directory,
  *   handed to gpg with `--passphrase-file`, and deleted (with its directory)
- *   as soon as gpg exits, success or failure. `--pinentry-mode loopback` is
+ *   as soon as gpg exits, success or failure. The one exception is a signal:
+ *   if hops receives SIGINT or SIGTERM mid-run, the `finally` that removes
+ *   the directory does not run, and a `hops-gpg-` temp directory holding
+ *   `passphrase` stays in `tmpdir()` (mode 0600 inside a 0700 directory owned
+ *   by the same user, so other users cannot read it, but it is not cleaned
+ *   up either). `--pinentry-mode loopback` is
  *   required for that on gpg >= 2.1. `--no-symkey-cache` (gpg >= 2.2.7; the
  *   VPS runs 2.2.27) is defence in depth: it asks gpg-agent not to keep the
  *   passphrase in its cache after the process exits. No test depends on it,
@@ -70,7 +75,9 @@ const BASE_GPG_ARGS: ReadonlyArray<string> = [
 
 /**
  * Write the passphrase to a 0600 file inside a fresh 0700 directory, run
- * `fn` with its path, and remove the directory afterwards whatever happens.
+ * `fn` with its path, and remove the directory afterwards, whether `fn`
+ * resolves or throws. A SIGINT/SIGTERM that kills the process skips the
+ * `finally`, so the directory can survive in that case.
  *
  * @param params.passphrase - the secret to hand to gpg.
  * @param params.fn - receives the passphrase file path.
