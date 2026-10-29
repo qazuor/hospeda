@@ -269,7 +269,14 @@ const needsPlanCta = t('host.properties.list.needsPlanBanner.cta', 'Elegir plan 
 
     {/* ── Plan/limit awareness badge ── */}
     {usageData && usageData.maxAllowed > 0 && (
-        <div class={`props-page__usage props-page__usage--${usageData.threshold}`} role="status">
+        <div
+            class:list={[
+                'props-page__usage',
+                `props-page__usage--${usageData.threshold}`,
+                { 'props-page__usage--card': usageData.threshold !== 'ok' || usageData.currentUsage >= usageData.maxAllowed }
+            ]}
+            role="status"
+        >
             <span class="props-page__usage-label">
                 {tPlural('host.properties.usage.label', usageData.maxAllowed, {
                     current: usageData.currentUsage,
@@ -334,17 +341,13 @@ const needsPlanCta = t('host.properties.list.needsPlanBanner.cta', 'Elegir plan 
 <style>
     /* ── Usage/limit awareness badge ── */
     .props-page__usage {
-        display: flex;
+        display: inline-flex;
         align-items: center;
-        justify-content: space-between;
-        /* The label and the CTA wrap on narrow screens, so this is a full-width
-           card (--radius-card, as the other account notices) and never a pill:
-           a pill radius turns wrapped content into an oval. */
         flex-wrap: wrap;
         gap: var(--space-3, 0.75rem);
-        padding: var(--space-3, 0.75rem) var(--space-4, 1rem);
+        padding: 0.5rem 1rem;
         margin-bottom: var(--space-6, 1.5rem);
-        border-radius: var(--radius-card, 12px);
+        border-radius: var(--radius-pill, 9999px);
         font-family: var(--font-sans);
         font-size: 0.875rem;
         font-weight: 500;
@@ -373,7 +376,23 @@ const needsPlanCta = t('host.properties.list.needsPlanBanner.cta', 'Elegir plan 
     }
 
     .props-page__usage-label {
+        white-space: nowrap;
+    }
+
+    /* Content that can wrap (an upgrade CTA is present, or the plan is at its
+       cap) must never sit in a pill radius: a pill turns wrapped content into an
+       oval. Those states render as a full-width card (--radius-card, as the other
+       account notices); the plain "ok" badge stays a compact pill. */
+    .props-page__usage--card {
+        display: flex;
+        justify-content: space-between;
+        padding: var(--space-3, 0.75rem) var(--space-4, 1rem);
+        border-radius: var(--radius-card, 12px);
+    }
+
+    .props-page__usage--card .props-page__usage-label {
         font-weight: 700;
+        white-space: normal;
     }
 
     .props-page__usage-upgrade {
