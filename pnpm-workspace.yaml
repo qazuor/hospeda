@@ -371,6 +371,18 @@ auditConfig:
     # suggested 3.0.4 is unpublished. Remove this narrow exception as soon as
     # a fixed braces release or an Expo/Metro dependency update is available.
     - GHSA-vfj7-8cjw-p6xm
+    # GHSA-qr28-fpjm-wq7f: decode-uri-component <=0.5.0 is quadratic on long
+    # runs of percent-encoded input. Every production-audit path is
+    # apps/mobile > @better-auth/expo > expo > @expo/cli > expo-router >
+    # query-string@7 > decode-uri-component@0.2.2: the mobile app's own router,
+    # parsing URLs on the user's device. Nothing in the API, web or admin
+    # runtimes reaches it. The only fix is 0.5.1, and 0.4.0+ is ESM-only
+    # (`type: module`, default export) while query-string@7 is CommonJS and
+    # calls the required value as a function, so an override would break URL
+    # parsing in expo-router instead of patching it. Remove this exception with
+    # the Expo/expo-router bump that moves off query-string@7; confirm with:
+    #   pnpm why decode-uri-component -r --prod   # no <=0.5.0 left
+    - GHSA-qr28-fpjm-wq7f
     # image-size DoS in its ICNS (GHSA-w3rx-r6r6-pgpr) and JXL/HEIF
     # (GHSA-5p2g-fcmc-qvqq) parsers, fixed in 2.0.3 (HOS-418).
     #
