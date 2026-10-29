@@ -14,7 +14,8 @@ import {
     buildLegacyEntityTags,
     buildLegacyPrefixes,
     LEGACY_COLLECTION_TAGS,
-    LEGACY_ENTITY_TAG_PREFIX
+    LEGACY_ENTITY_TAG_PREFIX,
+    resolveLegacyPrefixHosts
 } from '../../../src/services/cutover-v6/step-4c.legacy.js';
 import type { PagePurger } from '../../../src/services/cutover-v6/step-4c.service.js';
 import { runStep4c } from '../../../src/services/cutover-v6/step-4c.service.js';
@@ -62,6 +63,48 @@ describe('step 4c legacy vocabulary is pinned', () => {
         expect(
             prefixes.some((prefix) => prefix.includes('://') || prefix.includes('staging'))
         ).toBe(false);
+    });
+
+    it('keeps the production output byte-identical whether the site URL is omitted or prod', () => {
+        // Arrange
+        const hosts = ['hospeda.com.ar', 'www.hospeda.com.ar'];
+        const paths = [
+            `${R}/`,
+            'comer-y-salir/',
+            `planes/${R}/`,
+            'planes/comer-y-salir/',
+            `presentacion/${R}/`,
+            'presentacion/comer-y-salir/',
+            `publicar/${R}/`,
+            'publicar/comer-y-salir/',
+            `publicar-${['restau', 'rante'].join('')}/`
+        ];
+        const expected = hosts.flatMap((host) =>
+            ['es', 'en', 'pt'].flatMap((locale) => paths.map((path) => `${host}/${locale}/${path}`))
+        );
+        // Act / Assert
+        expect(buildLegacyPrefixes()).toEqual(expected);
+        expect(buildLegacyPrefixes({ siteUrl: 'https://hospeda.com.ar' })).toEqual(expected);
+        expect(buildLegacyPrefixes({ siteUrl: 'https://hospeda.com.ar/' })).toEqual(expected);
+    });
+
+    it('derives only the staging host (no www alias, no prod host) on staging', () => {
+        // Act
+        const prefixes = buildLegacyPrefixes({ siteUrl: 'https://staging.hospeda.com.ar' });
+        // Assert
+        expect(resolveLegacyPrefixHosts({ siteUrl: 'https://staging.hospeda.com.ar' })).toEqual([
+            'staging.hospeda.com.ar'
+        ]);
+        expect(prefixes).toHaveLength(27);
+        expect(new Set(prefixes).size).toBe(27);
+        expect(prefixes).toContain('staging.hospeda.com.ar/es/comer-y-salir/');
+        expect(prefixes.every((prefix) => prefix.startsWith('staging.hospeda.com.ar/'))).toBe(true);
+        expect(prefixes.some((prefix) => prefix.startsWith('www.'))).toBe(false);
+    });
+
+    it('rejects a site URL that is not a URL', () => {
+        // Act / Assert
+        expect(() => buildLegacyPrefixes({ siteUrl: 'hospeda.com.ar' })).toThrow();
     });
 
     it('builds <word>-<slug> and <word>-<id> tags, skipping a missing slug', () => {
@@ -328,6 +371,23 @@ describe('runStep4c legacy groups', () => {
         const result = await runStep4c({ db: fakeDb(), pagePurger: purger, dryRun: false });
         expect(result.status).toBe('failed');
         expect(result.groups.at(-1)).toMatchObject({ name: 'legacy-prefixes', ok: false });
+    });
+
+    it('purges only the environment host prefixes when given the staging site URL', async () => {
+        // Arrange
+        const { purger, calls } = recordingPurger();
+        // Act
+        const result = await runStep4c({
+            db: fakeDb(),
+            pagePurger: purger,
+            dryRun: false,
+            siteUrl: 'https://staging.hospeda.com.ar'
+        });
+        // Assert
+        const sent = calls.find(({ group }) => group === 'legacy-prefixes')?.items ?? [];
+        expect(result.status).toBe('completed');
+        expect(sent).toHaveLength(27);
+        expect(sent.every((prefix) => prefix.startsWith('staging.hospeda.com.ar/'))).toBe(true);
     });
 
     it('calls nothing on a dry run but still counts the legacy groups', async () => {

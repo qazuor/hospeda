@@ -63,6 +63,11 @@ export interface RunStep4cInput {
     readonly extraTags?: readonly string[];
     /** Extra URL prefixes merged into the legacy prefix group. */
     readonly extraPrefixes?: readonly string[];
+    /**
+     * Public site URL of the environment the step runs in; the legacy prefix hosts
+     * derive from it. Defaults to production's, so omitting it is byte-identical to before.
+     */
+    readonly siteUrl?: string;
 }
 
 /** Revalidates deleted listing pages, collection pages, home, and live destinations. */
@@ -71,7 +76,8 @@ export async function runStep4c({
     pagePurger,
     dryRun,
     extraTags = [],
-    extraPrefixes = []
+    extraPrefixes = [],
+    siteUrl
 }: RunStep4cInput): Promise<Step4cResult> {
     const existence = await db.execute(
         sql`SELECT to_regclass('public.cutover_v6_deleted_listing')::text AS table_name`
@@ -134,7 +140,7 @@ export async function runStep4c({
         }),
         ...extraTags
     ]);
-    const legacyPrefixes = sortedUnique([...buildLegacyPrefixes(), ...extraPrefixes]);
+    const legacyPrefixes = sortedUnique([...buildLegacyPrefixes({ siteUrl }), ...extraPrefixes]);
 
     const groups: Step4cGroup[] = [];
     for (const [name, tags] of [

@@ -23,8 +23,9 @@ import { env, validateApiEnv } from '../src/utils/env.js';
  *
  * Purges, in this order, attempting every group even if one fails:
  * `listings`, `collections`, `destinations`, `legacy-tags` (the retired
- * collection and per-entity tags of the old vertical) and `legacy-prefixes` (the 54 URL prefixes of
- * the old and new restaurant-vertical routes on `hospeda.com.ar` and `www.hospeda.com.ar`).
+ * collection and per-entity tags of the old vertical) and `legacy-prefixes` (the URL prefixes of
+ * the old and new restaurant-vertical routes, on the hosts of `HOSPEDA_SITE_URL`: 54 on
+ * production, `hospeda.com.ar` and `www.hospeda.com.ar`; 27 on a host with no `www` alias, e.g. staging).
  * Tags go through `revalidateMany` (100 per request) and the prefixes in one
  * request, so the whole run costs about 5 Cloudflare requests (Free plan: 5 per
  * minute, shared with the live API). Every response is checked: a 429 is a purge
@@ -90,7 +91,8 @@ async function main(): Promise<void> {
             }),
             dryRun,
             extraTags,
-            extraPrefixes
+            extraPrefixes,
+            siteUrl
         });
         console.info(JSON.stringify(result));
         process.exitCode = result.status === 'failed' ? 1 : 0;
