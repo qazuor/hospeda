@@ -105,7 +105,7 @@ binary. The active target is resolved using the following policy:
 exec, psql, db-restore, db-migrate,
 db-seed, db-seed-migrate, db-seed-test-users, db-superadmin-pass,
 app-restart, restart, cutover-step-3,
-r2-lifecycle, env-set, env-delete, cron-trigger):
+r2-lifecycle, r2-purge-foreign-backups, env-set, env-delete, cron-trigger):
 
 - `--target=<prod|staging>` is **mandatory**. The command dies with an
   actionable error if it is omitted.
@@ -211,7 +211,8 @@ or by inspecting the `coolify.resourceName` label — it looks like
 | `env-pull`         | shipped  | Export Coolify env vars to a local file (mode 0600; redacted by default). |
 | `update`           | shipped  | git pull the repo and reinstall the hops binary in one step.             |
 | `db-backup-now`    | shipped  | Trigger a `pg_dump` to R2 (`manual/` prefix) outside the daily schedule. |
-| `db-restore`       | shipped  | Pick a backup from R2 and `pg_restore` into the container (auto pre-restore snapshot, destructive). |
+| `db-restore`       | shipped  | Pick a backup from R2 and `pg_restore` into the container (auto pre-restore snapshot, destructive). `--object <key>` picks by exact name; `--from-target=prod` on `--target=staging` restores a prod backup into staging (refused onto prod); `--target-db <scratch>` creates the scratch DB when missing. See [Restoring a prod backup onto staging](#restoring-a-prod-backup-onto-staging-hos-1957). |
+| `r2-purge-foreign-backups` | shipped | List (default) or `--delete` the staging-bucket objects written while staging held prod data. Typed confirmation; refused on prod. |
 | `db-seed`          | shipped  | Run `@repo/seed` against the target DB (reset+required+example by default; destructive, optional `git pull` first). `--baseline-stamp` (HOS-1952) is a stamp-only mode: no seed, no wipe, stamps the `seed_migrations` ledger after a reset (`contentOnly` migrations still run); run it after `db-seed`; refused on prod (use `db-seed-migrate`). |
 | `db-seed-migrate`  | shipped  | Apply pending seed data-migrations (HOS-25) against the target DB; `--status` to preview. Non-destructive, never reseeds; ledger-tracked exactly-once. |
 | `cutover-step-3`   | shipped  | Run the V6 cutover step 3 script (writes the five cutover trials) against the target DB; dry-run by default, typed confirmation on prod. |
@@ -222,6 +223,61 @@ or by inspecting the `coolify.resourceName` label — it looks like
 `cron-edit` is intentionally NOT in V1 — overriding a schedule at runtime
 needs a `cron_schedule_overrides` table on the API side. Tracked as a V2
 follow-up.
+
+## Restoring a prod backup onto staging (HOS-1957)
+
+The V6 cutover rehearsal needs a prod backup inside the STAGING Postgres.
+
+```bash
+# 1. Restore a prod backup into the staging main database, by exact name.
+hops --target=staging db-restore --from-target=prod \
+  --object manual/hospeda-postgres-<TS>.dump.gpg
+
+# 2. Test a backup in a scratch database (created when missing).
+hops --target=staging db-restore --object manual/hospeda-postgres-<TS>.dump.gpg \
+  --target-db hos1957_scratch
+
+# 3. End of rehearsal: restore the pre-rehearsal staging backup into the
+#    main database (this closes the foreign-data window) ...
+hops --target=staging db-restore --object manual/hospeda-postgres-<TS-before>.dump.gpg
+
+# 4. ... then list, and delete, what the staging bucket received meanwhile.
+hops --target=staging r2-purge-foreign-backups
+hops --target=staging r2-purge-foreign-backups --delete
+```
+
+- **Source bucket.** `--from-target=prod` lists and downloads from the prod
+  bucket with the prod R2 credentials hops already uses for
+  `--target=prod` (`R2_ACCOUNT_ID` / `R2_ACCESS_KEY_ID` /
+  `R2_SECRET_ACCESS_KEY` / `R2_BUCKET`). No new variable. Decryption uses
+  the same `BACKUP_PASSPHRASE`, so pick a backup taken by
+  `hops --target=prod db-backup-now`; a daily-cron backup decrypts only if
+  the cron's own env file holds the same passphrase.
+- **Refused directions.** Any `--from-target` other than `prod` on
+  `--target=prod` is refused before anything runs. Without the flag, a prod
+  restore behaves exactly as before.
+- **No prod data copied to the staging bucket.** The prod backup goes to a
+  `hops-restore-*` temp file (mode 0600) on the VPS and into the container,
+  and both are deleted after `pg_restore`.
+- **But the staging bucket receives prod data afterwards.** From the restore
+  on, the staging database holds prod data, so every backup written into the
+  staging bucket carries it: the pre-restore snapshot of every later
+  restore, `db-backup-now`, the `db-migrate` backup and the daily cron. The
+  restore writes a data-free marker under `hops-foreign-data/` right before
+  `pg_restore`; restoring a backup older than that marker into the MAIN
+  database writes the closing marker. `r2-purge-foreign-backups` lists
+  every object written in between, whatever its name.
+- **`r2-purge-foreign-backups --delete`** asks you to type the bucket name,
+  refuses while the window is still open, deletes the markers last, re-lists
+  to verify, and also removes leftover `hops-restore-*` temp files on the
+  host. It is refused on `--target=prod`, and when the staging bucket
+  resolves to the prod bucket. It does NOT drop scratch databases created
+  with `--target-db`: do that by hand.
+- **`--target-db`** accepts `^[a-z_][a-z0-9_]{0,62}$`, refuses the target's
+  main database and `postgres` / `template0` / `template1`, and runs
+  `CREATE DATABASE "<name>"` when the database does not exist. The
+  pre-restore snapshot dumps the database being replaced (none for a newly
+  created one).
 
 ## Conventions
 
