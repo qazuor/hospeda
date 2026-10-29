@@ -24,6 +24,9 @@ import { expect, test } from '@playwright/test';
 
 const API_URL = process.env.HOSPEDA_E2E_API_URL ?? 'http://localhost:3001';
 
+/** Seeded fixtures carry deterministic UUIDv5 ids (version nibble `5`). */
+const SEEDED_UUID_V5 = /^[0-9a-f]{8}-[0-9a-f]{4}-5[0-9a-f]{3}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
 interface PublicAccommodationRow {
     readonly id: string;
     readonly slug: string;
@@ -36,7 +39,7 @@ test.describe('E2E-1: anonymous browse + contact form @p0 @guest @discovery @cro
     }) => {
         // ── 1. Listing ────────────────────────────────────────────────────
         const listRes = await page.request.get(
-            `${API_URL}/api/v1/public/accommodations?pageSize=10`
+            `${API_URL}/api/v1/public/accommodations?pageSize=100`
         );
         expect(listRes.ok(), `listing should be 200, got ${listRes.status()}`).toBe(true);
         // The route factory wraps paginated results in { data: { items: [...], pagination } }.
@@ -48,8 +51,15 @@ test.describe('E2E-1: anonymous browse + contact form @p0 @guest @discovery @cro
             'public listing should contain at least one seeded accommodation'
         ).toBe(true);
 
-        const first = listBody.data?.items?.[0];
-        expect(first?.id).toBeTruthy();
+        // Pin to a SEEDED listing. Other specs run in parallel and create (then purge)
+        // their own listings, which can appear first in this unfiltered list and 404
+        // between the listing and the detail request. Seeded ids are deterministic
+        // UUIDv5 (`deterministicFixtureId` in @repo/seed); runtime-created ones are v4.
+        const first = listBody.data?.items?.find((item) => SEEDED_UUID_V5.test(item.id));
+        expect(
+            first?.id,
+            'public listing should contain at least one seeded (UUIDv5) accommodation'
+        ).toBeTruthy();
 
         // ── 2. Detail ─────────────────────────────────────────────────────
         const detailRes = await page.request.get(
