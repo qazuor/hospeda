@@ -161,12 +161,10 @@ From the app docs (`apps/web/CLAUDE.md`, `apps/admin/CLAUDE.md`, `apps/api/CLAUD
 | admin | `staging-admin.hospeda.com.ar` |
 | api | `staging-api.hospeda.com.ar` |
 
-Staging has no `www` alias. **To confirm in the Cloudflare panel before applying**: the
-repo is not consistent about the API host (`docs/guides/environment-variables.md` lists
-`api.staging.hospeda.com.ar`, and `BEFORE_BETA_TESTING.md` registers the MP webhook on
-`staging.hospeda.com.ar`). Open DNS for the zone, or read `HOSPEDA_API_URL` on
-`hospeda-api-staging` in Coolify, and use the host that really exists. If it differs,
-edit the expression below before pasting it.
+Staging has no `www` alias. The API host `staging-api.hospeda.com.ar` is confirmed in
+use (the L3 smoke of 2026-10-29 called `https://staging-api.hospeda.com.ar/api/v1/admin/...`);
+`docs/guides/environment-variables.md` still lists `api.staging.hospeda.com.ar`, which is
+stale. No other host in this rule is in doubt.
 
 ### Expression
 
