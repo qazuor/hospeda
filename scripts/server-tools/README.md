@@ -104,7 +104,7 @@ binary. The active target is resolved using the following policy:
 **Write/destructive commands** (`explicit-required` policy — redeploy,
 exec, psql, db-restore, db-migrate,
 db-seed, db-seed-migrate, db-seed-test-users, db-superadmin-pass,
-app-restart, restart, cutover-step-3,
+app-restart, restart, cutover-step-3, cutover-step-3b, cutover-step-4c, cutover-step-5b,
 r2-lifecycle, env-set, env-delete, cron-trigger):
 
 - `--target=<prod|staging>` is **mandatory**. The command dies with an
@@ -215,6 +215,9 @@ or by inspecting the `coolify.resourceName` label — it looks like
 | `db-seed`          | shipped  | Run `@repo/seed` against the target DB (reset+required+example by default; destructive, optional `git pull` first). `--baseline-stamp` (HOS-1952) is a stamp-only mode: no seed, no wipe, stamps the `seed_migrations` ledger after a reset (`contentOnly` migrations still run); run it after `db-seed`; refused on prod (use `db-seed-migrate`). |
 | `db-seed-migrate`  | shipped  | Apply pending seed data-migrations (HOS-25) against the target DB; `--status` to preview. Non-destructive, never reseeds; ledger-tracked exactly-once. |
 | `cutover-step-3`   | shipped  | Run the V6 cutover step 3 script (writes the five cutover trials) against the target DB; dry-run by default, typed confirmation on prod. |
+| `cutover-step-3b`  | shipped  | Run the B9a step 3b tool (the two permanent grants); dry-run by default, `--confirm` writes, typed confirmation on prod. |
+| `cutover-step-4c`  | shipped  | Run the V6 step 4c tool (revalidate the deleted listings' pages); dry-run by default, `--confirm-purge` purges, typed confirmation on prod. |
+| `cutover-step-5b`  | shipped  | Run the V6 step 5b tool (delete remote photos, revoke calendar tokens); LIST-ONLY by default, `--execute` refused on staging, typed confirmation on prod. |
 | `db-seed-test-users` | shipped | Additively seed the 13 SPEC-143 test-user accounts (role×plan matrix). ADD-ONLY, no reset flag; rejected on `--target=prod`. |
 | `cron-list`        | shipped  | Numbered list of node-cron jobs registered in the running API process.   |
 | `cron-trigger`     | shipped  | Trigger a cron by index, name, or interactive picker (`--dry-run`, `--yes`). |
@@ -222,6 +225,45 @@ or by inspecting the `coolify.resourceName` label — it looks like
 `cron-edit` is intentionally NOT in V1 — overriding a schedule at runtime
 needs a `cron_schedule_overrides` table on the API side. Tracked as a V2
 follow-up.
+
+### Cutover wrappers (HOS-1352 steps 3b, 4c, 5b)
+
+The api image has no `tsx`, so the cutover tools in `apps/api/scripts/` cannot
+run inside it. These wrappers run them from the `~/hospeda` checkout exactly
+like `cutover-step-3`: the api container's environment (never printed), a
+host-reachable `HOSPEDA_DATABASE_URL`, the deployed-SHA guard
+(`--allow-sha-mismatch` to override), and the script's exit code unchanged.
+Every one defaults to a dry-run; a prod write asks for a typed phrase that
+`--yes` never skips.
+
+| Command | Wraps | Write flag | Prod phrase |
+| --- | --- | --- | --- |
+| `cutover-step-3b` | `scripts/cutover-b9a-step-3b.ts` | `--confirm` | `grant-permanent-prod` |
+| `cutover-step-4c` | `scripts/cutover-v6-step-4c.ts` | `--confirm-purge` | `purge-prod` |
+| `cutover-step-5b` | `scripts/cutover-v6-step-5b.ts` | `--execute` (refused on staging) | `delete-remote-prod` |
+
+```bash
+# 3b: the two permanent grants. The script validates the UUIDs itself.
+hops cutover-step-3b --target=staging --dry-run \
+  --actor-user-id=<operator> --beneficiary=<uuid> --beneficiary=<uuid> \
+  --plan-id=<uuid> --floor-plan-version-id=<uuid> --includes-addons=true|false
+hops cutover-step-3b --target=prod --confirm <same flags>      # types grant-permanent-prod
+
+# 4c: revalidate. Extra files are forwarded as absolute paths (the script
+# must support the flags); a missing file is refused before anything runs.
+hops cutover-step-4c --target=prod --dry-run [--extra-tags-file=<path>] [--extra-prefixes-file=<path>]
+hops cutover-step-4c --target=prod --confirm-purge [same extra files]  # types purge-prod
+
+# 5b: list-only is the default; --execute is the only way to delete/revoke.
+hops cutover-step-5b --target=staging                          # rehearsal: list-only, always
+hops cutover-step-5b --target=prod --list-only
+hops cutover-step-5b --target=prod --execute                   # types delete-remote-prod
+```
+
+`cutover-step-5b --execute` is refused on staging because the rehearsal
+database is a copy of prod: its photo paths and calendar tokens are prod
+resources. The 5b script exits 1 on a list-only run (it maps `dry_run` to 1),
+so read the printed `"status":"dry_run"` there rather than the exit code.
 
 ## Conventions
 
