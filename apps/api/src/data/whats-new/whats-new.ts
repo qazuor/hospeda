@@ -154,18 +154,18 @@ const WhatsNewCatalogSchema = z.array(WhatsNewEntrySchema).min(0);
 export const whatsNewEntries: WhatsNewEntry[] = WhatsNewCatalogSchema.parse([
     // origin: #3898
     {
-        id: '2026-10-29-gastronomy-is-now-comer-y-salir',
+        id: '2026-10-29-restaurants-section-is-now-comer-y-salir',
         publishedAt: 'on-promotion',
         highlight: false,
         title: {
-            es: 'Gastronomía ahora se llama Comer y salir',
-            en: 'Gastronomy is now called Food & nightlife',
-            pt: 'Gastronomia agora se chama Comer e sair'
+            es: 'Restaurantes y bares ahora están en Comer y salir',
+            en: 'Restaurants and bars now live in Food & nightlife',
+            pt: 'Restaurantes e bares agora estão em Comer e sair'
         },
         body: {
-            es: 'La sección de restaurantes, bares y locales se llama ahora **Comer y salir**. Los enlaces viejos y los QR impresos siguen funcionando: te llevan solos a la página nueva.',
-            en: 'The section for restaurants, bars and venues is now called **Food & nightlife**. Old links and printed QR codes keep working: they take you to the new page on their own.',
-            pt: 'A seção de restaurantes, bares e locais agora se chama **Comer e sair**. Os links antigos e os QR impressos continuam funcionando: levam você sozinhos à página nova.'
+            es: 'La sección de restaurantes, bares y locales tiene nombre nuevo: **Comer y salir**. Los enlaces viejos y los QR impresos siguen funcionando: te llevan solos a la página nueva.',
+            en: 'The section for restaurants, bars and venues has a new name: **Food & nightlife**. Old links and printed QR codes keep working: they take you to the new page on their own.',
+            pt: 'A seção de restaurantes, bares e locais tem um nome novo: **Comer e sair**. Os links antigos e os QR impressos continuam funcionando: levam você sozinhos à página nova.'
         },
         translations: { en: 'machine', pt: 'machine' }
     },
