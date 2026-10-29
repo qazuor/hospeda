@@ -381,8 +381,10 @@ export async function createUser(
 /**
  * Gives an existing user an active Tourist VIP subscription from the catalog.
  *
- * The production catalog migration (`0144`) seeds plans and versions but no
- * `billing_option` rows, so the helper creates the monthly option of the
+ * Migration `0144` seeds plans and versions but no `billing_option` rows, and
+ * migration `0176` adds the real ones. The E2E seed (`seeds/e2e-seed.ts`) empties
+ * the 0176 catalog on purpose (the seed reset preserves it elsewhere, HOS-1827),
+ * so in E2E the option is missing. The helper creates the monthly option of the
  * current Tourist VIP version when it is missing and reuses it otherwise. A
  * data-modifying CTE is invisible to its sibling SELECT, so exactly one of the
  * two branches of `option_row` yields the id.

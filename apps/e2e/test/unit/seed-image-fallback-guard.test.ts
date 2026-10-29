@@ -27,12 +27,13 @@ const SEED_RUNNER = join(import.meta.dirname, '..', '..', 'seeds', 'e2e-seed.ts'
 /**
  * Extracts the source of the `runSeed({ ... })` call, brace-balanced, so the
  * guard reads the actual call rather than anything else in the file that
- * happens to mention the same words.
+ * happens to mention the same words. Anchored on `await runSeed({`, because a
+ * docblock that names `runSeed({ reset: true })` would otherwise be read first.
  */
 function readRunSeedCall(source: string): string {
-    const callIndex = source.indexOf('runSeed({');
+    const callIndex = source.indexOf('await runSeed({');
     if (callIndex === -1) {
-        throw new Error('No `runSeed({` call found in the E2E seed runner.');
+        throw new Error('No `await runSeed({` call found in the E2E seed runner.');
     }
 
     const openIndex = source.indexOf('{', callIndex);
