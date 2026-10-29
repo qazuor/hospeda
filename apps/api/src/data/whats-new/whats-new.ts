@@ -152,6 +152,23 @@ const WhatsNewCatalogSchema = z.array(WhatsNewEntrySchema).min(0);
 // distinct from when the batch was published. Do not "fix" this mismatch by
 // renaming the ids to match `publishedAt`.
 export const whatsNewEntries: WhatsNewEntry[] = WhatsNewCatalogSchema.parse([
+    // origin: #3898
+    {
+        id: '2026-10-29-gastronomy-is-now-comer-y-salir',
+        publishedAt: 'on-promotion',
+        highlight: false,
+        title: {
+            es: 'Gastronomía ahora se llama Comer y salir',
+            en: 'Gastronomy is now called Food & nightlife',
+            pt: 'Gastronomia agora se chama Comer e sair'
+        },
+        body: {
+            es: 'La sección de restaurantes, bares y locales se llama ahora **Comer y salir**. Los enlaces viejos y los QR impresos siguen funcionando: te llevan solos a la página nueva.',
+            en: 'The section for restaurants, bars and venues is now called **Food & nightlife**. Old links and printed QR codes keep working: they take you to the new page on their own.',
+            pt: 'A seção de restaurantes, bares e locais agora se chama **Comer e sair**. Os links antigos e os QR impressos continuam funcionando: levam você sozinhos à página nova.'
+        },
+        translations: { en: 'machine', pt: 'machine' }
+    },
     // origin: #3824
     {
         id: '2026-10-26-admin-social-secrets-masked',
