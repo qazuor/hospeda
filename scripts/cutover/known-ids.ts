@@ -3,7 +3,11 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import type { KnownIds, KnownIdsReader } from './types.ts';
 
-/** Minimal slice of a Postgres client: enough to read, nothing else is used. */
+/**
+ * Minimal slice of a Postgres client: `query` and `end`. The name predates the rehearsal tools;
+ * whether a session can write is decided by how it was opened ({@link connectReadOnly} versus
+ * {@link connectWritable}), not by this type.
+ */
 export interface ReadOnlyClient {
     readonly query: (
         sql: string,
@@ -60,12 +64,28 @@ export async function readKnownIds({
 }): Promise<KnownIds> {
     await client.query('BEGIN READ ONLY');
     try {
-        const preapprovals = await client.query(PREAPPROVAL_IDS_SQL);
-        const plans = await client.query(PLAN_IDS_SQL);
-        return { preapprovalIds: toIds(preapprovals), planIds: toIds(plans) };
+        return await selectKnownIds({ client });
     } finally {
         await client.query('ROLLBACK');
     }
+}
+
+/**
+ * The two id queries of {@link readKnownIds}, WITHOUT opening a transaction: the caller owns
+ * it. The rehearsal sandbox-id rewrite (HOS-1957) runs them inside its own write transaction,
+ * after rewriting, to prove the copy now holds exactly what the U3 run will cross-check.
+ *
+ * @param input - a connected client, inside a transaction the caller opened
+ * @returns the known plan and preapproval ids
+ */
+export async function selectKnownIds({
+    client
+}: {
+    readonly client: ReadOnlyClient;
+}): Promise<KnownIds> {
+    const preapprovals = await client.query(PREAPPROVAL_IDS_SQL);
+    const plans = await client.query(PLAN_IDS_SQL);
+    return { preapprovalIds: toIds(preapprovals), planIds: toIds(plans) };
 }
 
 /**
@@ -83,12 +103,40 @@ export async function connectReadOnly({
 }: {
     readonly connectionString: string;
 }): Promise<ReadOnlyClient> {
-    const here = path.dirname(fileURLToPath(import.meta.url));
-    const requireFromDb = createRequire(path.resolve(here, '../../packages/db/package.json'));
-    const { Client } = requireFromDb('pg') as { Client: PgClientCtor };
+    const Client = loadPgClient();
     const client = new Client({ connectionString, options: '-c default_transaction_read_only=on' });
     await client.connect();
     return client;
+}
+
+/**
+ * Opens a connection that CAN write. Used only by the two rehearsal-copy tools (HOS-1957),
+ * which rewrite the restored copy of production on the staging database before the rehearsal
+ * and refuse to run unless that database answers as staging's. The cutover run itself never
+ * calls this: it keeps {@link connectReadOnly}.
+ *
+ * @param input - connection string from the operator's session
+ * @returns a connected client whose session is not read-only
+ */
+export async function connectWritable({
+    connectionString
+}: {
+    readonly connectionString: string;
+}): Promise<ReadOnlyClient> {
+    const Client = loadPgClient();
+    const client = new Client({
+        connectionString,
+        options: '-c default_transaction_read_only=off'
+    });
+    await client.connect();
+    return client;
+}
+
+/** The one place this folder loads the `pg` driver (the declared exception of TEST:U3:7). */
+function loadPgClient(): PgClientCtor {
+    const here = path.dirname(fileURLToPath(import.meta.url));
+    const requireFromDb = createRequire(path.resolve(here, '../../packages/db/package.json'));
+    return (requireFromDb('pg') as { Client: PgClientCtor }).Client;
 }
 
 /**
