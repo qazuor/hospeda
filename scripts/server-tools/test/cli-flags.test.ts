@@ -209,6 +209,23 @@ describe('the registered command specs', () => {
         expect(specs.length).toBe(names.length);
     });
 
+    it('accepts every flag db-seed reads', async () => {
+        // HOS-1952 taught db-seed `--baseline-stamp` without adding it here, so
+        // the validator refused the very command the staging runbook names;
+        // `--example` had the same gap. A flag the command parses but the spec
+        // omits is dead code that fails at the worst moment.
+        const source = await Bun.file(`${import.meta.dir}/../src/index.ts`).text();
+        const start = source.indexOf("name: 'db-seed',");
+        const block = source.slice(start, source.indexOf('run: dbSeed', start));
+        const command = await Bun.file(`${import.meta.dir}/../src/commands/db-seed.ts`).text();
+        const read = [...command.matchAll(/args\.includes\('(--[a-z-]+)'\)/g)].map((m) => m[1]);
+
+        expect(read.length).toBeGreaterThan(10);
+        for (const flag of new Set(read)) {
+            expect(block).toContain(`'${flag}'`);
+        }
+    });
+
     it('never declares the global --target, which is stripped before dispatch', () => {
         // resolveTarget() removes it from argv in main(), so a command that
         // declared it would be documenting a token it can never receive.
