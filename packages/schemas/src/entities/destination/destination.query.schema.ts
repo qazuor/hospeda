@@ -31,8 +31,8 @@ export const DestinationFiltersSchema = z.object({
     // Basic filters
     isFeatured: z.boolean().optional(),
 
-    // Location filters
-    country: z.string().length(2).optional(), // ISO country code
+    // Location filters. No `country` (HOS-1921): it required ISO-2 while stored
+    // `location.country` is a name, so it could never match. Re-add only with a consumer.
     state: z.string().min(1).max(100).optional(),
     city: z.string().min(1).max(100).optional(),
 
@@ -80,8 +80,8 @@ export const DestinationSearchSchema = BaseSearchSchema.extend({
     // Basic filters (flattened from DestinationFiltersSchema)
     isFeatured: z.boolean().optional(),
 
-    // Location filters
-    country: z.string().length(2).optional(), // ISO country code
+    // Location filters. No `country` (HOS-1921): it required ISO-2 while stored
+    // `location.country` is a name, so it could never match. Re-add only with a consumer.
     state: z.string().min(1).max(100).optional(),
     city: z.string().min(1).max(100).optional(),
 
@@ -325,8 +325,7 @@ export const HttpDestinationSearchSchema = HttpPaginationSchema.safeExtend(
     // Basic filters
     isFeatured: HttpQueryFields.isFeatured(),
 
-    // Location filters
-    country: z.string().length(2).optional(),
+    // Location filters. No `country` (HOS-1921): see DestinationSearchSchema.
     state: z.string().min(1).max(100).optional(),
     city: z.string().min(1).max(100).optional(),
 
@@ -386,7 +385,7 @@ export const DESTINATION_SEARCH_METADATA: OpenApiSchemaMetadata = {
         sortOrder: 'asc',
         q: 'beach paradise',
         isFeatured: true,
-        country: 'ES',
+        city: 'Concepcion del Uruguay',
         minAccommodations: 5,
         minRating: 4.0,
         hasMedia: true,
@@ -413,11 +412,11 @@ export const DESTINATION_SEARCH_METADATA: OpenApiSchemaMetadata = {
             description: 'Filter featured destinations',
             example: true
         },
-        country: {
-            description: 'Filter by country code (ISO 3166-1 alpha-2)',
-            example: 'ES',
-            minLength: 2,
-            maxLength: 2
+        city: {
+            description: 'Filter by city name (case-insensitive, accent-sensitive)',
+            example: 'Concepcion del Uruguay',
+            minLength: 1,
+            maxLength: 100
         },
         minAccommodations: {
             description: 'Minimum number of accommodations',

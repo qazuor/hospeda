@@ -20,12 +20,12 @@ export default defineConfig({
                 statements: 70
             },
             exclude: [
-                'node_modules/',
-                'dist/',
-                'test/',
+                '**/node_modules/**',
+                '**/dist/**',
+                '**/test/**',
                 '**/*.d.ts',
                 '**/*.config.*',
-                'scripts/',
+                '**/scripts/**',
                 'src/locales/**'
             ]
         }

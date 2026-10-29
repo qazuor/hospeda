@@ -467,6 +467,13 @@ not deployed on the target environment cannot be smoked there; a step must be bo
 to an issue before its result is observed; an issue with any unverified criterion
 does not close; and a failed write halts the batch instead of being queued.
 
+**One failure lives in one open issue (2026-10-27).** When a criterion fails but
+the rest of the issue works, the failed criterion is *transferred*: copied
+verbatim to one follow-up issue that also inherits the `status-needs-smoke-*`
+label, and the original closes with a `TRASPASO` sign-off. Only when the core of
+the issue fails does it go back to In Progress — and then no follow-up is opened.
+Never both. Detail in the `smoke-tanda` skill, I2 → *Transfer*.
+
 An issue may require more than one environment. **prod ⊇ staging ⊇ local** by
 default (a prod sign-off satisfies a staging or local label; never the inverse),
 but when the environments cover genuinely distinct concerns — local for migrations

@@ -152,6 +152,41 @@ const WhatsNewCatalogSchema = z.array(WhatsNewEntrySchema).min(0);
 // distinct from when the batch was published. Do not "fix" this mismatch by
 // renaming the ids to match `publishedAt`.
 export const whatsNewEntries: WhatsNewEntry[] = WhatsNewCatalogSchema.parse([
+    // origin: #3824
+    {
+        id: '2026-10-26-admin-social-secrets-masked',
+        publishedAt: 'on-promotion',
+        highlight: false,
+        roles: ['ADMIN', 'SUPER_ADMIN'],
+        title: {
+            es: 'Los valores secretos de la configuración de redes ya no se muestran',
+            en: 'Secret social settings values are no longer shown',
+            pt: 'Os valores secretos das configurações de redes não aparecem mais'
+        },
+        body: {
+            es: 'En el panel, la lista y la búsqueda de configuraciones de redes sociales muestran ahora los valores de tipo secreto como «***», igual que en el resto del panel, y nunca en claro.',
+            en: 'In the panel, the social settings list and search now show secret-type values as "***", like the rest of the panel, never in plain text.',
+            pt: 'No painel, a lista e a busca das configurações de redes sociais agora mostram os valores do tipo secreto como «***», como no resto do painel, e nunca em texto claro.'
+        },
+        translations: { en: 'machine', pt: 'machine' }
+    },
+    // origin: #3811
+    {
+        id: '2026-10-25-listing-summary-in-portuguese',
+        publishedAt: 'on-promotion',
+        highlight: false,
+        title: {
+            es: 'Los listados de gastronomía y experiencias se leen en portugués',
+            en: 'Food and experiences listings now read in Portuguese',
+            pt: 'As listagens de gastronomia e experiências agora aparecem em português'
+        },
+        body: {
+            es: 'En portugués, la línea que resume cuántos resultados hay y qué filtros aplicaste en gastronomía y experiencias ya no aparece en español.',
+            en: 'In Portuguese, the line that sums up how many results there are and which filters you applied in food and experiences no longer appears in Spanish.',
+            pt: 'Em português, a linha que resume quantos resultados há e quais filtros você aplicou em gastronomia e experiências não aparece mais em espanhol.'
+        },
+        translations: { en: 'machine', pt: 'machine' }
+    },
     // origin: #3833
     {
         id: '2026-10-26-checkout-straight-to-mercadopago',

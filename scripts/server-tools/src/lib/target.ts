@@ -178,7 +178,9 @@ export function getAppResourceName(target: Target, kind: 'api' | 'web' | 'admin'
  *
  * Returns the full Coolify resourceName: `<kind>-database-<UUID>`.
  *
- * @throws when the operator hasn't set the matching env var.
+ * @throws when the operator hasn't set the matching env var, or when it
+ * holds the SAME UUID as the other target's variable (a copy-paste that
+ * would make both targets resolve one database — HOS-1950).
  */
 export function getDbResourceName(target: Target, kind: 'postgres' | 'redis'): string {
     const envKey = `HOPS_${target.toUpperCase()}_${kind.toUpperCase()}_UUID`;
@@ -186,6 +188,14 @@ export function getDbResourceName(target: Target, kind: 'postgres' | 'redis'): s
     if (!uuid) {
         throw new Error(
             `${envKey} is not set in .env.local. Find the UUID in Coolify (the ${kind} service's container suffix or resourceName label) and add it. Example value shape: '${'x'.repeat(24)}'.`
+        );
+    }
+    const other: Target = target === 'prod' ? 'staging' : 'prod';
+    const otherKey = `HOPS_${other.toUpperCase()}_${kind.toUpperCase()}_UUID`;
+    const otherUuid = get(otherKey);
+    if (otherUuid !== undefined && otherUuid.trim().toLowerCase() === uuid.trim().toLowerCase()) {
+        throw new Error(
+            `${envKey} and ${otherKey} hold the same UUID ('${uuid}') — both targets would resolve one ${kind} container. Fix the copy-paste in .env.local before running any ${kind} command.`
         );
     }
     const prefix = kind === 'postgres' ? 'postgresql-database' : 'redis-database';

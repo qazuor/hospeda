@@ -738,14 +738,23 @@ describe('Experience Routes (SPEC-240 T-022)', () => {
                 expect(res.status).toBe(200);
             });
 
-            it('POST /:id/faqs returns 403 when missing EXPERIENCE_EDIT_ALL', async () => {
+            // HOS-1457 replaced this route's `EXPERIENCE_EDIT_ALL` gate with a
+            // `listingAccess` decision (administrative action 15, resolved in
+            // the handler; its foreign-listing denial is covered by
+            // `test/routes/coverage-step.admin.test.ts`). The old 403 kept
+            // passing only because the sibling `GET /:id/faqs` gate
+            // (`EXPERIENCE_VIEW_ALL`) leaked onto POST — HOS-1908 removed the
+            // leak. So the admin-panel baseline now reaches input validation,
+            // and the service is still never called.
+            it('POST /:id/faqs gates on the admin baseline + listingAccess, not on a sibling (HOS-1908)', async () => {
                 const res = await app.request(`/api/v1/admin/experiences/${EXPERIENCE_ID}/faqs`, {
                     method: 'POST',
                     headers: adminNoPanelHeaders,
                     body: JSON.stringify({ question: 'Q?', answer: 'A.' })
                 });
 
-                expect(res.status).toBe(403);
+                expect(res.status).toBe(400);
+                expect(faqHelpers.addExperienceFaq).not.toHaveBeenCalled();
             });
         });
 

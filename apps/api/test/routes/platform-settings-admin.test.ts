@@ -140,7 +140,11 @@ describe('Admin /platform-settings/:key — handler logic (SPEC-156)', () => {
         });
 
         it('instantiates PlatformSettingsService at module load', async () => {
-            // Re-import to verify the mock was invoked during module init
+            // vitest 5 clears mock history before every test, so the constructor call made
+            // by an earlier test's import is gone. Reset the module registry so this import
+            // runs the route module's top-level `new PlatformSettingsService(...)` again,
+            // against a fresh mock constructor.
+            vi.resetModules();
             await import('../../src/routes/platform-settings/admin/index.js');
             const { PlatformSettingsService } = await import('@repo/service-core');
             // PlatformSettingsService is the mock constructor — it must have been

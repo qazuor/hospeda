@@ -54,11 +54,13 @@ const RETIRED_ROUTES: readonly RouteCase[] = [
     { method: 'GET', path: `/api/v1/protected/billing/checkout/${SOME_UUID}` },
     { method: 'GET', path: `/api/v1/protected/billing/subscriptions/${SOME_UUID}` },
     { method: 'PATCH', path: `/api/v1/protected/billing/subscriptions/${SOME_UUID}` },
-    { method: 'DELETE', path: `/api/v1/protected/billing/subscriptions/${SOME_UUID}` }
+    { method: 'DELETE', path: `/api/v1/protected/billing/subscriptions/${SOME_UUID}` },
+    // Only POST is mounted on this path; a GET used to answer 401 only because
+    // the POST's gates leaked to every method (HOS-1908).
+    { method: 'GET', path: '/api/v1/protected/billing/subscriptions' }
 ];
 
 const AUTHENTICATED_ROUTES: readonly RouteCase[] = [
-    { method: 'GET', path: '/api/v1/protected/billing/subscriptions' },
     { method: 'POST', path: '/api/v1/protected/billing/subscriptions' },
     { method: 'GET', path: `/api/v1/protected/billing-subscription/${SOME_UUID}` },
     {

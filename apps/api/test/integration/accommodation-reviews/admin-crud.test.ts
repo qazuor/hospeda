@@ -28,10 +28,10 @@ delete process.env.CI;
  * Every route has its own permission gate (VIEW, UPDATE + MODERATE, DELETE,
  * RESTORE, HARD_DELETE), and the service adds its own check on top.
  *
- * Known bug HOS-1908: gates registered on `/:id` are not method-scoped, so they
- * accumulate across methods (PUT/DELETE also need the permissions of the routes
- * registered before them on that path). The tests therefore use a full actor and
- * withhold one permission at a time.
+ * The tests use a full actor and withhold one permission at a time. (Before
+ * HOS-1908 the `/:id` gates were not method-scoped and accumulated across
+ * methods; that is fixed, and withholding one permission still isolates the
+ * gate under test.)
  */
 describe('Admin AccommodationReview CRUD Routes', () => {
     let app: ReturnType<typeof initApp>;

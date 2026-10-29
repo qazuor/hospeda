@@ -463,6 +463,8 @@ jobs:
         run: bash scripts/check-getbyid-tests.sh
       - name: Check no CSP nonce remains in .astro sources (HOS-369)
         run: bash scripts/check-no-inline-nonce.sh
+      - name: Check Dockerfile build ARGs are visible to turbo strict env (HOS-1949)
+        run: bash scripts/check-dockerfile-build-env-in-turbo.sh
       - name: Check web loading-state patterns (SPEC-228)
         run: bash scripts/check-web-loading-patterns.sh
       - name: Check partner-mentions copy for metric vocabulary (HOS-377 AC-3)

@@ -44,7 +44,7 @@ export async function seedPublicDestinations({
                 pathIds: '',
                 level: 4,
                 location: {
-                    country: 'AR',
+                    country: 'Argentina',
                     state: 'ER',
                     ...(city ? { city } : {}),
                     coordinates: { lat: '-32.48', long: '-58.23' }

@@ -18,20 +18,18 @@ delete process.env.CI;
 /**
  * PATCH /api/v1/admin/event-organizers/:id. The route gate asks for EVENT_ORGANIZER_UPDATE and the service asks for EVENT_ORGANIZER_MANAGE.
  *
- * Known bug HOS-1908: the permission gate of GET /:id is registered on the same
- * `/:id` path for every method (`applyRouteMiddlewares` uses `app.use(path)`, not
- * method-scoped), so PATCH is also refused to an actor without EVENT_ORGANIZER_VIEW. The
- * tests below that need a successful PATCH therefore grant VIEW as a workaround,
- * and the `it.fails` pins the intended behaviour (UPDATE alone is enough).
+ * HOS-1908 (fixed): the factory used to register the GET /:id gate for every
+ * method on the shared `/:id` path, so PATCH also demanded VIEW. The editor
+ * below therefore holds UPDATE without VIEW, and the last test pins that UPDATE
+ * alone is enough.
  */
 describe('PATCH /admin/event-organizers/:id', () => {
     let app: ReturnType<typeof initApp>;
     const base = '/api/v1/admin/event-organizers';
     const NONEXISTENT_UUID = 'a0000000-0000-4000-8000-000000000001';
-    // VIEW is the HOS-1908 workaround, see the docblock.
+    // No VIEW on purpose: PATCH needs only its own gate (HOS-1908).
     const editor: readonly PermissionEnum[] = [
         ...ADMIN_GATE_PERMISSIONS,
-        PermissionEnum.EVENT_ORGANIZER_VIEW,
         PermissionEnum.EVENT_ORGANIZER_UPDATE,
         PermissionEnum.EVENT_ORGANIZER_MANAGE
     ];
@@ -176,21 +174,11 @@ describe('PATCH /admin/event-organizers/:id', () => {
         expect(await readField(rowId)).toBe('Updated Value');
     });
 
-    // HOS-1908: the GET /:id gate leaks onto PATCH, so UPDATE alone is refused.
-    it('currently answers 403 to an actor with UPDATE but without VIEW (HOS-1908)', async () => {
+    it('PATCH succeeds with UPDATE alone, without VIEW (HOS-1908)', async () => {
+        expect(editor).not.toContain(PermissionEnum.EVENT_ORGANIZER_VIEW);
         const res = await patch({
             id: rowId,
-            permissions: without(PermissionEnum.EVENT_ORGANIZER_VIEW),
-            body: { name: 'Updated Value' }
-        });
-        expect(res.status).toBe(403);
-    });
-
-    // Drop `.fails` (and the test above) once HOS-1908 is fixed.
-    it.fails('PATCH succeeds with UPDATE alone (HOS-1908)', async () => {
-        const res = await patch({
-            id: rowId,
-            permissions: without(PermissionEnum.EVENT_ORGANIZER_VIEW),
+            permissions: editor,
             body: { name: 'Updated Value' }
         });
         expect(res.status).toBe(200);
