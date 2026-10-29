@@ -140,6 +140,107 @@ and clears `declared_payer_email`, so its loose preapprovals are found only if a
 attempt recorded their id. A preapproval created for an email the database never stored is not
 found either.
 
+## Preparing the rehearsal copy (HOS-1957, E0.4 and E0.7 of the runbook)
+
+Two tools that run against the **restored copy of production on the staging Postgres**, after
+the restore and **before** any process (the old image, a cron, the U3 run) touches the copy. They
+are not part of the cutover: the real cutover runs on production with neither of them.
+
+Both run like the other tools of this folder, from the root of a checkout of `origin/staging`
+(not `~/hospeda`, which is on `main` and has no `scripts/cutover/`), with the session variables
+set in the operator's shell:
+
+```bash
+# G2: rewrite every email of the copy (dry run first, the default; then --confirm)
+corepack pnpm exec tsx scripts/cutover/cli-rehearsal-emails.ts --target=staging
+corepack pnpm exec tsx scripts/cutover/cli-rehearsal-emails.ts --target=staging --confirm
+
+# owner decision 1: mirror the copy's provider ids in the sandbox and rewrite them
+corepack pnpm exec tsx scripts/cutover/cli-rehearsal-sandbox-ids.ts --target=staging
+corepack pnpm exec tsx scripts/cutover/cli-rehearsal-sandbox-ids.ts --target=staging --confirm
+```
+
+`CUTOVER_STAGING_DATABASE_URL` must reach the staging Postgres from where the command runs.
+How it gets there (published port or ssh tunnel) is G12, still open.
+
+**Guards, shared by both, fail-closed and before any write (exit 2):**
+
+1. `--target=staging` is required; any other value, or none, refuses.
+2. The session variables must be set: `CUTOVER_STAGING_DATABASE_URL` (both), plus
+   `CUTOVER_MP_ACCESS_TOKEN` (sandbox ids) and, with `--confirm`, `CUTOVER_PAYER_EMAIL` (the
+   sandbox payer of the mirrors; the same variable step 4b uses).
+3. Sandbox ids only: the token's account must carry the `test_user` tag on `GET /users/me`
+   (`assertSandboxAccount`, the guard of the staging sandbox run). A production token refuses.
+4. The database must answer `current_database() = 'hospeda_staging'` and
+   `current_user = 'hospeda_staging_user'` (`assertStagingDatabase`, same guard). Production's
+   are both `postgres`. The session that answers is the one that writes.
+
+Without `--confirm` neither tool writes anything, anywhere. Exit 0 clean, 1 failure, 2 refusal.
+
+### `cli-rehearsal-emails.ts` (G2)
+
+Finds every column that can hold text in every user schema **from the catalog, at run time**
+(`text`, `varchar`, `char`, `citext`, `json`, `jsonb` and text arrays; views, partitions,
+generated columns and the `drizzle` schema left out), so the mailbox columns of the old schema
+and of the new one are covered by their values, not by a list of names that can go stale. Then:
+
+- a value that **is** one email becomes `rehearsal+<uuid>@example.invalid`, where the uuid is a
+  hash of the lower-cased address salted with a per-run secret (never printed). The same mailbox
+  gets the same address in every table, so `users.email` and `billing_customers.email` still
+  match, and unique columns stay unique;
+- every email **embedded** in a longer value (a JSON document, an array, free text) becomes
+  `rehearsal@example.invalid`.
+
+`.invalid` is reserved (RFC 2606) and never resolves, so nothing addressed to it is delivered.
+`--confirm` rewrites every column in **one transaction** and re-counts inside it: a row left
+with a deliverable address, a count that does not match, or a column the database refuses (a
+trigger, a length limit, a unique collision) rolls everything back and names the column only.
+The report prints counts per column (`whole`, `embedded`) and the rows left; never an address.
+A second run finds nothing to do.
+
+Declared consequence: the rewrite **changes the pseudonym** step 3 computes from the email
+(`computeTrialEmailPseudonym`), so the rehearsal does not prove the real pseudonyms.
+
+### `cli-rehearsal-sandbox-ids.ts` (owner decision 1)
+
+The copy holds production provider ids, which the sandbox walk never returns, so step 2 of the
+rehearsal would fail with `KNOWN_ID_MISSING` by construction. This tool:
+
+1. reads the ids U3 cross-checks (`readKnownIds`, the same six columns);
+2. reads each one by id with the sandbox token: 200 means it is already a sandbox id and is left
+   alone (so a re-run is a no-op), 404 means it is to mirror, anything else stops the run
+   before anything is created;
+3. with `--confirm`: creates one sandbox mirror per id, with a deterministic idempotency key per
+   production id (`hospeda-rehearsal-<kind>-<id>`), re-reads it by id, and then rewrites, in ONE
+   transaction, the six columns plus two that hold the same ids
+   (`billing_subscription_polling_jobs.provider_resource_id` and `billing_prices.mp_price_id`,
+   only where their value is a mapped id). Inside that transaction it re-reads the known ids: any
+   id that is neither a mirror nor already a sandbox id rolls the rewrite back
+   (`REWRITE_INCOMPLETE`).
+
+The mirrors are not faithful copies, and that is declared: plans are created `active`, and every
+preapproval is created `pending` and bound to **no** plan (a plan-bound preapproval needs a card
+token, and an `authorized` one a checkout). Production statuses are not reproduced. The U3 run
+of the rehearsal then cancels them like any other live object, together with whatever else is
+alive in the sandbox account (`unknownLiveIds`).
+
+**Manifest** (`kind: "rehearsal-sandbox-ids"`, default
+`scripts/cutover/out/rehearsal-sandbox-ids-manifest-<timestamp>.json`, or `--manifest-out`):
+ids and counts only, written incrementally with the same no-overwrite rules as the cutover
+manifest: `knownIds`, `alreadySandboxIds`, `toMirrorIds`, `mappings` (production id to sandbox
+id), `rewrittenRows` per `table.column` and `failures` (`PROVIDER_ERROR`, `CREATE_FAILED`,
+`MIRROR_NOT_READABLE`, `COPY_DB_ERROR`, `REWRITE_INCOMPLETE`). Production provider ids are not
+personal data; no email or provider payload is written. Delete it with the copy at E-FIN.
+
+Not measured: what the sandbox answers to `GET` of an id that belongs to the production account.
+The tool assumes 404, as the staging sandbox run does (`notFoundIds`); any other answer stops it
+with `PROVIDER_ERROR`, so a wrong assumption fails closed and creates nothing.
+
+Tests: `scripts/__tests__/cutover/rehearsal-*.test.ts` (guards, modes, rollback; no network, no
+database) and `scripts/__tests__/cutover-db/rehearsal-copy.test.ts` (both tools on a real
+Postgres built from `main`'s migrations, ending with a U3 run over the rewritten copy that finds
+every known id).
+
 ## What it does
 
 1. **Census** (AC:U3:1). Walks `GET /preapproval_plan/search` and `GET /preapproval/search`
@@ -456,3 +557,47 @@ Healthchecks answers `404 not found` and the helper only logs a warning. Create 
 **before** setting the env vars, or the first pings are lost (the checks stay "new" until their
 first ping). With either env var missing the helper is a deliberate no-op: no prefix, no ping, so
 staging can never feed the prod checks.
+
+## Read-only verifiers: journal (G5) and step 3a catalog (G8) — HOS-1957
+
+Two checks that write nothing, run on the VPS after `hops db-migrate`, against the target database:
+
+```bash
+hops --target=prod cutover-verify --journal             # AC:CORTE:7
+hops --target=prod cutover-verify --catalog             # AC:CORTE:8, paso 3a
+hops --target=staging cutover-verify --journal --catalog  # the rehearsal runs both
+```
+
+`hops cutover-verify` follows `hops cutover-step-3`: api container environment, host-reachable Postgres URL,
+and the deployed-SHA guard (the checkout must be the deployed commit, so the journal it reads is the image's;
+`--allow-sha-mismatch` overrides). It never writes, so it asks for no typed confirmation, even on prod. It wraps
+`apps/api/scripts/cutover-v6-verify.ts`, whose connections are opened with `default_transaction_read_only=on`.
+
+Exit codes: `0` every requested check passed, `1` a check failed (the cut does not continue and the abort branch
+applies) or an error, `2` refused arguments. One JSON line per check goes to stdout.
+
+### `--journal` (AC:CORTE:7)
+
+Every migration in `packages/db/src/migrations/meta/_journal.json` must appear in `drizzle.__drizzle_migrations`.
+Drizzle records `hash = sha256(<tag>.sql)` and `created_at = journal.when`, and applies an entry only if the newest
+`created_at` in the table is lower than its `when`. A freeze hotfix dated before an umbrella migration is therefore
+skipped without an error. The check matches by hash, one lookup per journal entry (never by count), and lists the
+missing `idx`/`tag`/`hash`. A hash present with a different `created_at` is reported under `whenMismatch` as a
+warning only; table hashes absent from the journal are `unknownHashes`, informational.
+
+### `--catalog` (AC:CORTE:8, paso 3a)
+
+Checks, each with its own failure list:
+
+| id | What it verifies |
+|---|---|
+| `enum-mirror` | `vertical` rows equal `VerticalEnum` both ways, with the activation event each vertical declares |
+| `plan-structure` | per vertical: one `trial`, one `pre_trial`, one `floor` plan, a sellable current plan, and exactly one current version per plan |
+| `g-r3` | the panel validation of "publish a plan version" (G-R3 a-d, rank, current version, grace vs shortest cycle...), re-run on each plan's current version through `previewPlanVersion` (preview: writes nothing), so the rule keeps one home |
+| `prices` | every sellable current version has `billing_option` rows with positive integer ARS amounts |
+| `addons` | each add-on has a version and a product; prices positive; compatible verticals known; charge kind and cycle coherent |
+| `promo-codes` | promo codes in force (not closed, inside the window) have a coherent effect and known verticals |
+| `deadlines` | `vertical_deadline_version` and `billing_deadline_version` have version 1 and every version satisfies the deadline validations (including the archive-before-delete rule) |
+
+The output also carries the price table (`report.prices`). The tool proves structure and the validations, not that the
+amounts are the right ones: compare that table by eye with the pre-cut commercial catalog (as `smoke-b2-billing-deadlines.sql` already asks).

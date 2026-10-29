@@ -37,6 +37,10 @@ import { runContainerExec } from './commands/container-exec.ts';
 import { cronList } from './commands/cron-list.ts';
 import { cronTrigger } from './commands/cron-trigger.ts';
 import { CUTOVER_STEP_3_ARGV, cutoverStep3 } from './commands/cutover-step-3.ts';
+import { CUTOVER_STEP_3B_ARGV, cutoverStep3b } from './commands/cutover-step-3b.ts';
+import { CUTOVER_STEP_4C_ARGV, cutoverStep4c } from './commands/cutover-step-4c.ts';
+import { CUTOVER_STEP_5B_ARGV, cutoverStep5b } from './commands/cutover-step-5b.ts';
+import { CUTOVER_VERIFY_ARGV, cutoverVerify } from './commands/cutover-verify.ts';
 import { dbBackupNow } from './commands/db-backup-now.ts';
 import { dbCounts } from './commands/db-counts.ts';
 import { dbMigrate } from './commands/db-migrate.ts';
@@ -259,7 +263,7 @@ const COMMANDS: ReadonlyArray<Command> = [
                 '--yes',
                 ...HELP_FLAGS
             ],
-            valueFlags: []
+            valueFlags: [{ name: '--expect-commit', syntax: 'equals' }]
         },
         run: dbMigrate
     },
@@ -345,6 +349,43 @@ const COMMANDS: ReadonlyArray<Command> = [
         targetPolicy: 'explicit-required',
         argv: { ...CUTOVER_STEP_3_ARGV },
         run: cutoverStep3
+    },
+    {
+        name: 'cutover-step-3b',
+        summary:
+            'Run the B9a cutover step 3b tool (the two permanent grants) against the target DB; dry-run by default.',
+        // Writes two permanent grants; same target and prod guards as step 3.
+        targetPolicy: 'explicit-required',
+        argv: { ...CUTOVER_STEP_3B_ARGV },
+        run: cutoverStep3b
+    },
+    {
+        name: 'cutover-step-4c',
+        summary:
+            "Run the V6 cutover step 4c tool (revalidate the deleted listings' pages) against the target; dry-run by default.",
+        // Purges the edge cache of the target; same target and prod guards as step 3.
+        targetPolicy: 'explicit-required',
+        argv: { ...CUTOVER_STEP_4C_ARGV },
+        run: cutoverStep4c
+    },
+    {
+        name: 'cutover-step-5b',
+        summary:
+            'Run the V6 cutover step 5b tool (delete remote photos, revoke calendar tokens); list-only by default, --execute refused on staging.',
+        // Irreversible on external resources; list-only unless --execute.
+        targetPolicy: 'explicit-required',
+        argv: { ...CUTOVER_STEP_5B_ARGV },
+        run: cutoverStep5b
+    },
+    {
+        name: 'cutover-verify',
+        summary:
+            'Read-only cutover checks: --journal (drizzle journal applied) and --catalog (step 3a).',
+        // Never writes, but the verdict only means something for one database:
+        // an explicit --target= keeps a staging run from being read as prod's.
+        targetPolicy: 'explicit-required',
+        argv: { ...CUTOVER_VERIFY_ARGV },
+        run: cutoverVerify
     },
     {
         name: 'db-seed-test-users',
