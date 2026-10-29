@@ -27,7 +27,9 @@ const typeDescriptor: FilterDescriptor = {
             entries: catalogs.types,
             locale
         });
-        return `${getPhrase({ locale, key: 'ofCategory' })} ${label}`;
+        const connector =
+            context.entity.typeConnector?.[locale] ?? getPhrase({ locale, key: 'ofCategory' });
+        return `${connector} ${label}`;
     }
 };
 
@@ -119,12 +121,12 @@ const featuredDescriptor: FilterDescriptor = {
 /**
  * Ordered descriptor list. Matches the desired modifier order in the
  * sentence:
- *   "X establecimientos gastronómicos de restaurante en Concordia, que
+ *   "X locales de tipo restaurante en Concordia, que
  *    contienen \"pizza\" en el nombre o la descripción, con precios
  *    económicos, con calificación mínima de 4, solo destacados, ordenados..."
  *
- * Type appears FIRST so it flows into the subject ("establecimientos
- * gastronómicos de restaurante") rather than as a parenthetical aside.
+ * Type appears FIRST so it flows into the subject ("locales de tipo
+ * restaurante") rather than as a parenthetical aside.
  * Destination follows, then the remaining modifiers comma-join as usual.
  */
 export const FILTER_DESCRIPTORS: readonly FilterDescriptor[] = [

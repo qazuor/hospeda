@@ -283,8 +283,7 @@ if (featuresParam) initialParams.features = featuresParam;
 initialParams.sortBy = sortKey;
 
 /**
- * Build a human-readable summary like "Mostrando 9 de 18 establecimientos
- * gastronómicos..." to replace the generic "N resultados encontrados" line
+ * Build a human-readable summary like "Mostrando 9 de 18 locales..." to replace the generic "N resultados encontrados" line
  * (BETA-119). Mirrors the accommodations/events/posts pattern via the shared
  * `listing-summary` module. The builder ships es/en/pt
  * phrase dictionaries, so the page locale is passed through unchanged.
@@ -412,7 +411,7 @@ const itemListEntries = cards.map((card) => ({
             actionUrl={baseUrl}
             message={t(
                 'venue.listing.emptyState',
-                'No se encontraron establecimientos gastronómicos con los filtros seleccionados.'
+                'No se encontraron locales con los filtros seleccionados.'
             )}
         />
     )}
@@ -423,7 +422,7 @@ const itemListEntries = cards.map((card) => ({
 			variant="empty"
 			message={t(
 				'venue.listing.emptyCatalog',
-				'Todavía no hay establecimientos gastronómicos publicados.'
+				'Todavía no hay locales publicados.'
 			)}
 		/>
 	)}

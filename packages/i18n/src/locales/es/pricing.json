@@ -15,7 +15,7 @@
             "tourist": "quien viaja por el litoral y quiere aprovechar mejor la plataforma",
             "experience": "quien organiza salidas y actividades para visitantes",
             "partner": "instituciones y comercios que quieren asociarse con Hospeda",
-            "venue": "quien tiene un local gastronómico y quiere que lo encuentren"
+            "venue": "quien tiene un local y quiere que lo encuentren"
         },
         "plan": {
             "owner-basico": "quien alquila una sola propiedad y recién empieza a publicarla",
@@ -94,12 +94,12 @@
                 }
             },
             "venue": {
-                "title": "Publicar mi local gastronómico",
-                "audience": "Para restaurantes, parrillas, panaderías, food trucks y todo local gastronómico que quiera aparecer en la guía.",
+                "title": "Publicar mi local",
+                "audience": "Para restaurantes, parrillas, panaderías, food trucks y todo local que quiera aparecer en la guía.",
                 "cta": "Ver planes de Comer y salir",
                 "highlights": {
                     "item1": "Ficha con fotos, menú, horarios y datos de contacto.",
-                    "item2": "Aparecé en la guía gastronómica que consultan los viajeros.",
+                    "item2": "Aparecé en la guía de Comer y salir que consultan los viajeros.",
                     "item3": "Precio mensual fijo, sin comisión por consulta ni reserva."
                 }
             },
@@ -231,7 +231,7 @@
         "subtitle": "Todos los planes publican tu local. Cambia cuánto podés mostrar de él.",
         "empty": "Planes no disponibles en este momento.",
         "cardsHeading": "Comparativa de planes para Comer y salir",
-        "pageTitle": "Precios para publicar tu local gastronómico",
+        "pageTitle": "Precios para publicar tu local en Comer y salir",
         "pageDescription": "Mirá cuánto sale publicar tu restaurante, parrilla, rotisería o carrito en Hospeda.",
         "ctaLabel": "Empezar"
     },

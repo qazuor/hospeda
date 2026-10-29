@@ -64,7 +64,7 @@
             },
             "sumarNegocio": {
                 "title": "Sumar tu negocio",
-                "description": "Locais gastronômicos, experiências, patrocinadores e marcas: um lugar no mapa turístico da região, com ficha própria, avaliações e visibilidade."
+                "description": "Locais, experiências, patrocinadores e marcas: um lugar no mapa turístico da região, com ficha própria, avaliações e visibilidade."
             }
         }
     },
@@ -289,7 +289,7 @@
         }
     },
     "gastro": {
-        "who": "Para tu local gastronómico o experiencia",
+        "who": "Para tu local o experiencia",
         "eyebrow": "tu negocio, en el mapa turístico",
         "title": "Gastronomia e experiências, onde as pessoas planejam a viagem.",
         "description": "Um restaurante, uma vinícola, um passeio de caiaque ou uma degustação: seu negócio tem ficha própria dentro do Hospeda, visível para todos que estão planejando uma escapada pelo Litoral. Você mantém o conteúdo; nós o colocamos na vitrine.",
@@ -407,8 +407,8 @@
     "cta": {
         "tagline": "¿arrancamos?",
         "title": "Sumá tu alojamiento o tu negocio a Hospeda.",
-        "description_one": "Probá {{trialDays}} día gratis en tu primera suscripción si alquilás, o escribinos para poner tu local gastronómico, experiencia o marca en el mapa turístico del Litoral. Sin compromiso: no se cobra nada hasta que termina la prueba.",
-        "description_other": "Probá {{trialDays}} días gratis en tu primera suscripción si alquilás, o escribinos para poner tu local gastronómico, experiencia o marca en el mapa turístico del Litoral. Sin compromiso: no se cobra nada hasta que termina la prueba.",
+        "description_one": "Probá {{trialDays}} día gratis en tu primera suscripción si alquilás, o escribinos para poner tu local, experiencia o marca en el mapa turístico del Litoral. Sin compromiso: no se cobra nada hasta que termina la prueba.",
+        "description_other": "Probá {{trialDays}} días gratis en tu primera suscripción si alquilás, o escribinos para poner tu local, experiencia o marca en el mapa turístico del Litoral. Sin compromiso: no se cobra nada hasta que termina la prueba.",
         "button": "Conocer Hospeda"
     },
     "footer": {

@@ -120,7 +120,7 @@
         "venue": {
             "singular": "Ficha de Comer y salir",
             "plural": "Fichas de Comer y salir",
-            "description": "Gestiona restaurantes, bares, cafés y otros comercios gastronómicos"
+            "description": "Gestiona restaurantes, bares, cafés y otros locales"
         },
         "experience": {
             "singular": "Experiencia",
