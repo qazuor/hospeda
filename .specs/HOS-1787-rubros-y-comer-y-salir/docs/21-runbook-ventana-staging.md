@@ -61,9 +61,9 @@
       y `HOPS_STAGING_ADMIN_COOKIE`, que ya están cargadas en el `.env.local` del VPS. **La cookie vence**: si
       responde 401, se refresca desde DevTools. (La cookie de prod, `HOPS_ADMIN_COOKIE`, está vencida y duplicada
       en las líneas 61-62 de ese archivo: no se usa.)
-    - `env-list` resuelve la app con la misma resolución exacta y ya no puede leer prod con `--target=staging`;
-      igual no nombra el contenedor en su salida, así que en esta ventana las variables se siguen leyendo con
-      `docker inspect` (V0).
+    - `env-list` resuelve la app con `findContainer` (misma resolución exacta), loguea la línea `Resolved …` y ya no
+      puede leer prod con `--target=staging`. Aun así, en esta ventana las variables se leen con `docker inspect`
+      (V0), que no depende de la versión del binario.
     - `exec <kind> --env <prefijo>` siempre tapa los valores (`commands/container-exec.ts:91`): sirve para ver
       qué claves existen, nunca su valor.
 
@@ -94,9 +94,11 @@ del owner es del corte de prod (§3.2, paso C0).
 ### V0 · leer las variables de staging con las apps todavía corriendo
 
 Va primero porque, con las apps paradas, `hops` ya no encuentra su contenedor (regla 10: falla, ya no apunta a
-prod). Por ssh, con `docker inspect` sobre el contenedor filtrado por etiqueta. Antes, un `hops --target=staging
-find api --verbose` debe imprimir `Resolved api (staging) → container hospeda-api-staging …`: es la prueba de que
-la resolución exacta está activa en el binario del VPS.
+prod). Por ssh, con `docker inspect` sobre el contenedor filtrado por etiqueta.
+
+**Compuerta previa, explícita**: con la api corriendo, `hops --target=staging find api --verbose` tiene que imprimir
+`Resolved api (staging) → container hospeda-api-staging [hospeda-api-staging]`. **Si el binario no imprime esa línea,
+no trae HOS-1950: se corre `hops update` (V4.3.2) antes de seguir con cualquier otro paso.**
 
 ```sh
 for app in api web; do
@@ -134,21 +136,43 @@ la siguiente prueba de checkout del smoke la ve como desconocida.
 4. Guardar la lista con su estado final fuera de la base (P5 a).
 
 - **Herramienta (HOS-1951, PR #3891; cierra el **[ABIERTO 1]**)**: `scripts/cutover/cli-staging-sandbox.ts`. Corre
-  **desde local**, con túnel ssh, no en el VPS:
+  **en LOCAL** (no en el VPS), desde un checkout de `staging` que incluya #3891, con las dependencias instaladas.
+  Los secretos se leen del contenedor de staging por ssh hacia variables de shell, sin `echo`, y viajan sólo como
+  env del comando. Receta (probada el 28/10 en dry-run); `$REPO` es ese checkout local:
 
-  ```sh
-  ssh -p 2222 -f -N -L 25432:127.0.0.1:15432 qazuor@216.238.103.219
-  corepack pnpm --config.verify-deps-before-run=false exec tsx scripts/cutover/cli-staging-sandbox.ts \
-    --target=staging [--apply] [--from-manifest <path>]
+  ```bash
+  #!/usr/bin/env bash
+  # V1 against staging through an ssh tunnel. Usage: v1.sh [--apply] [--from-manifest <path>]
+  set -euo pipefail
+  REPO="${REPO:?set REPO to a local staging checkout that includes #3891}"
+  VPS=(ssh -p 2222 -o ConnectTimeout=15 qazuor@216.238.103.219)
+  API_CTR=$("${VPS[@]}" 'docker ps --filter label=coolify.resourceName=hospeda-api-staging --format "{{.Names}}" | head -1')
+  [[ -n "$API_CTR" ]] || { echo "no api-staging container" >&2; exit 2; }
+  getvar() { "${VPS[@]}" "docker inspect $API_CTR --format '{{range .Config.Env}}{{println .}}{{end}}' | sed -n 's/^$1=//p'"; }
+  TOKEN=$(getvar HOSPEDA_MERCADO_PAGO_ACCESS_TOKEN)
+  DBURL=$(getvar HOSPEDA_DATABASE_URL)
+  [[ -n "$TOKEN" && -n "$DBURL" ]] || { echo "missing token or db url" >&2; exit 2; }
+  LOCAL_PORT=25432
+  # Rewrite host:port to the local end of the tunnel (15432 = staging Postgres proxy on the VPS).
+  DBURL_LOCAL=$(printf '%s' "$DBURL" | sed -E "s#@[^/@]+/#@127.0.0.1:${LOCAL_PORT}/#")
+  ssh -p 2222 -o ExitOnForwardFailure=yes -f -N -L "${LOCAL_PORT}:127.0.0.1:15432" qazuor@216.238.103.219
+  trap 'pkill -f "${LOCAL_PORT}:127.0.0.1:15432" || true' EXIT
+  sleep 2
+  cd "$REPO"
+  CUTOVER_MP_ACCESS_TOKEN="$TOKEN" CUTOVER_STAGING_DATABASE_URL="$DBURL_LOCAL" \
+    corepack pnpm --config.verify-deps-before-run=false exec tsx scripts/cutover/cli-staging-sandbox.ts --target=staging "$@"
   ```
 
-  Necesita `CUTOVER_MP_ACCESS_TOKEN` y `CUTOVER_STAGING_DATABASE_URL` en la sesión. El token sale de la env del
-  contenedor `hospeda-api-staging` (`HOSPEDA_MERCADO_PAGO_ACCESS_TOKEN`) y la URL de `HOSPEDA_DATABASE_URL`, con
-  host:puerto reescrito al túnel (el 15432 del VPS es el proxy de Postgres de staging). **Ninguno de los dos
-  secretos se imprime ni se copia a un archivo.** Las guardas verifican que el token sea `test_user` (sandbox) y que
-  la base sea `hospeda_staging`. Sin `--apply` es dry-run. Dry-run del 28/10: found=28, live=7, alreadyCancelled=21,
-  failures=0. **El `--apply` va en la ventana, no antes.** Reemplaza a los puntos 1 a 4 de arriba cuando funciona;
-  esos puntos quedan como el método de respaldo a mano.
+  `--config.verify-deps-before-run=false` hace falta porque sin TTY pnpm aborta. Ninguno de los dos secretos se
+  imprime ni se copia a un archivo. Las guardas verifican que el token sea `test_user` (sandbox) y que la base sea
+  `hospeda_staging`. Sin `--apply` es dry-run.
+- **Criterio verificable**, en este orden, todo dentro de la ventana:
+  1. **Dry-run** (`v1.sh`): anotar `found`, `live` y `alreadyCancelled` y compararlos con el 28/10
+     (found=28, live=7, alreadyCancelled=21, failures=0). **Una diferencia grande frena** hasta entenderla.
+  2. **`v1.sh --apply`**: pasa sólo con `outcome` ok y `failures=0` en el manifest que deja.
+  3. **Dry-run posterior**: tiene que dar **`live=0`**.
+  Si cualquiera de los tres falla, **no se pasa a V4**. `--from-manifest <path>` sirve para reintentar **sólo** los
+  ids de ese manifest tras un corte o una falla parcial. Los puntos 1 a 4 de arriba quedan como método de respaldo a mano.
 - **Si falla**: una preapproval que no queda `cancelled` después de reintentar → **no se sigue** a V4.
   No se puede volver atrás de un reset para buscar el ancla.
 
@@ -215,11 +239,13 @@ verifica **antes** del reset, porque `hops db-migrate` no tiene guarda de SHA (s
    binario, y con `bun` en el PATH porque el shell no interactivo no lo tiene:
 
    ```sh
-   cp ~/.local/bin/hops ~/.local/bin/hops.bak
+   cp "$(command -v hops)" "$(command -v hops).bak"
    bash -lc 'export PATH=$HOME/.bun/bin:$PATH; hops update --branch staging'
    ```
 
-   Si el update falla, `hops.bak` es la marcha atrás del binario.
+   Si el update falla, `hops.bak` (junto al binario) es la marcha atrás. **`hops update` trae la punta de
+   `staging` al momento de correrlo, no el SHA de P6**: P6 se fija justo antes de este paso, y si el `rev-parse`
+   del paso siguiente no coincide, se para.
 3. `git -C "$HOPS_REPO_ROOT" rev-parse HEAD` = **el SHA de P6**. Si no coincide, **se para acá, antes de
    tocar la base**.
 4. `hops --target=staging db-migrate --reset --no-pull --yes` → backup previo a R2 (salvo `--no-backup`,
@@ -436,7 +462,7 @@ staging parada falla, ya no apunta a prod.
 | `psql` | `explicit-required` | consulta posicional |
 | `find <kind> [--verbose]` | `default-ok`; resuelve por `findContainer` | sólo para la comprobación de la regla 10, con la app corriendo |
 | `cron-list`, `cron-trigger` | `default-ok`; **respetan `--target`** (HTTP a `HOPS_STAGING_API_URL` con `HOPS_STAGING_ADMIN_COOKIE`; la cookie vence, 401 = refrescarla desde DevTools) | V5.4, con la api de staging corriendo |
-| `env-list <app> [--reveal] [--match]` | `default-ok`; resuelve por etiqueta exacta y no imprime el contenedor | **no se usa en la ventana**; en su lugar, `docker inspect` (V0) o el panel |
+| `env-list <app> [--reveal] [--match]` | `default-ok`; resuelve por `findContainer` (etiqueta exacta) y loguea `Resolved …` | **no se usa en la ventana**; en su lugar, `docker inspect` (V0) o el panel |
 | `logs <kind> [--since] [-g]` | `default-ok`; resuelve por `findContainer` | sólo con la app de staging corriendo y la regla 10 comprobada (V5.4) |
 | `db-migrate` | `explicit-required` | `--reset`, `--no-pull`, `--yes` (existe `--no-backup`, no se usa) |
 | `db-seed` | `explicit-required` | `--no-pull` (defaults reset + required + example); `--baseline-stamp` sólo estampa y se niega con prod (V4.3.6) |
