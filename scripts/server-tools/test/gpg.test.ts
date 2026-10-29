@@ -11,7 +11,8 @@
  * tests spawn gpg for real.
  *
  * Isolation: GNUPGHOME points at a throwaway directory, and PATH is
- * prefixed with a wrapper `gpg` that logs its argv before exec'ing the real
+ * prefixed with a wrapper `gpg` that logs its argv (plus the mode of the
+ * `--passphrase-file`, read while gpg still has it) before exec'ing the real
  * binary — that log is how the "passphrase never reaches argv" test sees
  * exactly what the process was started with.
  *
@@ -21,10 +22,19 @@
 import { afterAll, beforeAll, describe, expect, it } from 'bun:test';
 import { spawnSync } from 'node:child_process';
 import { randomBytes } from 'node:crypto';
-import { chmodSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import {
+    chmodSync,
+    existsSync,
+    mkdirSync,
+    mkdtempSync,
+    readFileSync,
+    rmSync,
+    writeFileSync
+} from 'node:fs';
 import { tmpdir } from 'node:os';
-import { join } from 'node:path';
+import { dirname, join } from 'node:path';
 import { gpgSymmetricDecrypt, gpgSymmetricEncrypt } from '../src/lib/gpg.ts';
+import { runner } from '../src/lib/runner.ts';
 
 const realGpg = spawnSync('bash', ['-c', 'command -v gpg'], { encoding: 'utf-8' }).stdout.trim();
 const hasGpg = realGpg.length > 0;
@@ -57,7 +67,18 @@ beforeAll(() => {
     const wrapper = join(binDir, 'gpg');
     writeFileSync(
         wrapper,
-        `#!/usr/bin/env bash\nprintf '%s\\n' "$*" >> "$HOPS_GPG_ARGV_LOG"\nexec "${realGpg}" "$@"\n`
+        [
+            '#!/usr/bin/env bash',
+            'mode=none',
+            'prev=',
+            'for arg in "$@"; do',
+            '    if [ "$prev" = "--passphrase-file" ]; then mode=$(stat -c %a "$arg"); fi',
+            '    prev=$arg',
+            'done',
+            `printf '%s MODE=%s\\n' "$*" "$mode" >> "$HOPS_GPG_ARGV_LOG"`,
+            `exec "${realGpg}" "$@"`,
+            ''
+        ].join('\n')
     );
     chmodSync(wrapper, 0o755);
 
@@ -123,9 +144,61 @@ describe.skipIf(!hasGpg)('gpg symmetric round trip (real gpg, bun runtime)', () 
         for (const argv of invocations) {
             expect(argv).not.toContain(PASSPHRASE);
             expect(argv).not.toMatch(/--passphrase(\s|=)/);
-            expect(argv).toContain('--passphrase-fd 3');
+            expect(argv).not.toContain('--passphrase-fd');
+            // The file was private while gpg read it...
+            expect(argv).toMatch(/ MODE=600$/);
+            // ...and is gone (with its directory) once the helper returns.
+            const passphraseFile = /--passphrase-file (\S+)/.exec(argv)?.[1] ?? '';
+            expect(passphraseFile).not.toBe('');
+            expect(existsSync(passphraseFile)).toBe(false);
+            expect(existsSync(dirname(passphraseFile))).toBe(false);
         }
     });
+
+    it('removes the passphrase file when gpg fails', async () => {
+        // Arrange
+        writeFileSync(argvLog, '');
+
+        // Act
+        await expect(
+            gpgSymmetricDecrypt(Buffer.from('not an OpenPGP message'), PASSPHRASE)
+        ).rejects.toThrow(/gpg exited with code/);
+
+        // Assert
+        const passphraseFile =
+            /--passphrase-file (\S+)/.exec(readFileSync(argvLog, 'utf-8'))?.[1] ?? '';
+        expect(passphraseFile).not.toBe('');
+        expect(existsSync(dirname(passphraseFile))).toBe(false);
+    });
+
+    it('lets the NEXT child process exit after a gpg call, even across a GC', async () => {
+        // Regression (HOS-1953, `hops db-restore` hung after decrypting):
+        // gpg used to read the passphrase from an extra stdio pipe on fd 3.
+        // Bun closes that pipe once when it is drained and then AGAIN when
+        // the stream wrapper is collected. By then the fd number has been
+        // reused, so the second close lands on whatever took it, which in
+        // the hang was the pidfd of the next child (`docker cp`). Bun stops
+        // watching that child, it stays <defunct>, and the awaited exit
+        // never comes. A forced GC while the next child runs reproduces it
+        // deterministically on bun 1.3.7 and 1.3.13.
+
+        // Arrange
+        const ciphertext = await gpgSymmetricEncrypt(randomBytes(64 * 1024), PASSPHRASE);
+        await gpgSymmetricDecrypt(ciphertext, PASSPHRASE);
+
+        // Act: the next child goes through the same runner `docker()` uses,
+        // so it allocates the fd numbers the gpg pipes just released.
+        const nextChild = runner.run(['sleep', '0.2']);
+        await new Promise((resolve) => setTimeout(resolve, 20));
+        Bun.gc(true);
+        const outcome = await Promise.race([
+            nextChild,
+            new Promise<'HUNG'>((resolve) => setTimeout(() => resolve('HUNG'), 5000))
+        ]);
+
+        // Assert
+        expect(outcome === 'HUNG' ? 'HUNG' : outcome.exitCode).toBe(0);
+    }, 10000);
 });
 
 describe('gpg availability in CI', () => {
