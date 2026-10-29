@@ -17,6 +17,7 @@ import { getActorFromContext, isGuestActor } from '../utils/actor';
 import { AuditEventType, auditLog } from '../utils/audit-logger';
 import { apiLogger } from '../utils/logger';
 import { createErrorResponse } from '../utils/response-helpers';
+import { describeRouteGate } from './route-gate-descriptor';
 import { stripStaffBypassPermissions } from './step2-staff-bypass';
 
 /**
@@ -174,7 +175,7 @@ const hasAdminAccess = (actor: Actor): boolean => {
  * }));
  */
 export const authorizationMiddleware = (config: AuthorizationConfig): MiddlewareHandler => {
-    return async (c, next) => {
+    const middleware: MiddlewareHandler = async (c, next) => {
         const actor = getActorFromContext(c);
         const {
             level,
@@ -390,6 +391,17 @@ export const authorizationMiddleware = (config: AuthorizationConfig): Middleware
             message: 'Internal server error: Invalid authorization configuration'
         });
     };
+
+    // HOS-1908: make the declaration readable from the mounted app, so a static
+    // guard can verify every route declares its own gate.
+    return describeRouteGate({
+        handler: middleware,
+        descriptor: {
+            level: config.level,
+            requiredPermissions: config.requiredPermissions ?? [],
+            anyOfPermissions: config.anyOfPermissions ?? []
+        }
+    });
 };
 
 /**

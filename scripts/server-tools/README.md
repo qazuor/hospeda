@@ -133,6 +133,45 @@ hops --target=staging redeploy api           # explicit flag required for redepl
 hops --target=prod db-migrate --no-pull      # explicit flag required for db-migrate
 ```
 
+**Container resolution never crosses targets** (HOS-1950). prod and
+staging run on the same docker daemon and expose the same ports (api 3001,
+web 4321, admin 3000), so a container is resolved by its Coolify
+`coolify.resourceName` label (`hospeda-<kind>-<target>`, or
+`<kind>-database-<UUID>` for postgres/redis). Every container a lookup
+returns must prove it belongs to the target, fail-closed:
+
+- A Coolify-managed container (any `coolify.*` label) must carry
+  `coolify.resourceName` exactly equal to the expected value. Another value
+  (the other target) or no `resourceName` at all is an error.
+  `coolify.serviceName` never decides identity.
+- A container with no Coolify labels (reached through the image / port
+  fallbacks) is accepted only when no container on the daemon, stopped ones
+  included, carries `coolify.*` labels (a non-Coolify host), or when
+  `HOPS_ALLOW_UNLABELLED_FALLBACK=1` is set.
+- `HOPS_PROD_<KIND>_UUID` and `HOPS_STAGING_<KIND>_UUID` may not hold the
+  same value.
+
+With the staging app stopped, `hops --target=staging redeploy api` fails
+naming the target and the label it looked for, instead of redeploying prod.
+Every command that resolves a container prints one line to stderr:
+
+```text
+ℹ Resolved api (staging) → container <name> [hospeda-api-staging]
+```
+
+A resolution through a fallback is printed as a warning with
+`(via <strategy> fallback)` appended.
+
+**`cron-list` / `cron-trigger` honour `--target`.** prod reads
+`HOSPEDA_API_URL` (default `https://api.hospeda.com.ar`) and
+`HOPS_ADMIN_COOKIE`. staging reads `HOPS_STAGING_API_URL` and
+`HOPS_STAGING_ADMIN_COOKIE`, both required with no default: the repo has no
+single trustworthy source for the staging API host, so a staging run without
+them fails instead of reaching production, and the prod cookie is never sent
+to another host. A staging URL on the prod host is rejected too: hostnames
+are compared lower-cased, without port or trailing dot, against both
+`HOSPEDA_API_URL` and the public prod default.
+
 App container names are stable (`hospeda-<api|web|admin>-<prod|staging>`)
 and hardcoded in the code. Database service UUIDs differ per Coolify
 deployment, so they live in `.env.local`:
@@ -173,7 +212,7 @@ or by inspecting the `coolify.resourceName` label — it looks like
 | `update`           | shipped  | git pull the repo and reinstall the hops binary in one step.             |
 | `db-backup-now`    | shipped  | Trigger a `pg_dump` to R2 (`manual/` prefix) outside the daily schedule. |
 | `db-restore`       | shipped  | Pick a backup from R2 and `pg_restore` into the container (auto pre-restore snapshot, destructive). |
-| `db-seed`          | shipped  | Run `@repo/seed` against the target DB (reset+required+example by default; destructive, optional `git pull` first). |
+| `db-seed`          | shipped  | Run `@repo/seed` against the target DB (reset+required+example by default; destructive, optional `git pull` first). `--baseline-stamp` (HOS-1952) is a stamp-only mode: no seed, no wipe, stamps the `seed_migrations` ledger after a reset (`contentOnly` migrations still run); run it after `db-seed`; refused on prod (use `db-seed-migrate`). |
 | `db-seed-migrate`  | shipped  | Apply pending seed data-migrations (HOS-25) against the target DB; `--status` to preview. Non-destructive, never reseeds; ledger-tracked exactly-once. |
 | `cutover-step-3`   | shipped  | Run the V6 cutover step 3 script (writes the five cutover trials) against the target DB; dry-run by default, typed confirmation on prod. |
 | `db-seed-test-users` | shipped | Additively seed the 13 SPEC-143 test-user accounts (role×plan matrix). ADD-ONLY, no reset flag; rejected on `--target=prod`. |

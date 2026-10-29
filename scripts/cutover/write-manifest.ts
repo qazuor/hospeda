@@ -84,10 +84,19 @@ export function writeManifest({
     return writeJsonRecord({ value: manifest, wantedPath, fallback });
 }
 
+/**
+ * The two fields the incremental writer reads from any run record: `in-progress` marks a
+ * partial record, and `startedAt` tells this run's record apart from any other.
+ */
+export interface CheckpointedRecord {
+    readonly outcome: string;
+    readonly startedAt: string;
+}
+
 /** Writes the manifest of ONE run, checkpoint after checkpoint. Built by {@link createManifestWriter}. */
-export interface ManifestWriter {
+export interface ManifestWriter<T extends CheckpointedRecord = CutoverManifest> {
     /** Writes a checkpoint (`outcome: 'in-progress'`) or the finished record (any other outcome). */
-    readonly write: (manifest: CutoverManifest) => WriteManifestResult;
+    readonly write: (manifest: T) => WriteManifestResult;
     /** The file this run owns, or `null` before the first successful write. */
     readonly currentPath: () => string | null;
 }
@@ -127,17 +136,17 @@ function isOwnPartial({
  * @param input - the wanted path and the fallback sink for writes that cannot land on disk
  * @returns the writer of one run
  */
-export function createManifestWriter({
+export function createManifestWriter<T extends CheckpointedRecord = CutoverManifest>({
     wantedPath,
     fallback
 }: {
     readonly wantedPath: string;
     readonly fallback: (text: string) => void;
-}): ManifestWriter {
+}): ManifestWriter<T> {
     let claimed: string | null = null;
     let finished = false;
 
-    const write = (manifest: CutoverManifest): WriteManifestResult => {
+    const write = (manifest: T): WriteManifestResult => {
         if (finished) {
             fallback(toText({ value: manifest }));
             return { writtenTo: null };

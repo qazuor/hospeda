@@ -9,6 +9,11 @@ import {
     normalizeViewInput
 } from '../../../src/services/user/user.normalizers';
 
+// Hoisted by vitest regardless of where it is written; vitest 5 requires it at the top level.
+vi.mock('../../../src/services/user/user.helpers', () => ({
+    generateUserSlug: vi.fn().mockResolvedValue('john-doe')
+}));
+
 const baseUser = {
     displayName: ' John Doe ',
     firstName: ' John ',
@@ -50,9 +55,6 @@ describe('user normalizers', () => {
             lastName: ' Doe ',
             contactInfo: { personalEmail: ' JOHN@EXAMPLE.COM ', mobilePhone: '+123456789' }
         };
-        vi.mock('../../../src/services/user/user.helpers', () => ({
-            generateUserSlug: vi.fn().mockResolvedValue('john-doe')
-        }));
         const result = await normalizeUserInput({ input, mode: 'create' });
         expect(result.displayName).toBe('John Doe');
         expect(result.firstName).toBe('John');

@@ -306,7 +306,6 @@ export class DestinationService extends BaseCrudService<
         pageSize: number;
         q?: string;
         searchScope?: 'all' | 'name';
-        country?: string;
         state?: string;
         city?: string;
         isFeatured?: boolean;
@@ -322,7 +321,6 @@ export class DestinationService extends BaseCrudService<
             sortOrder: _sortOrder,
             q,
             searchScope,
-            country,
             state,
             city,
             isFeatured,
@@ -363,7 +361,6 @@ export class DestinationService extends BaseCrudService<
             pageSize,
             q,
             searchScope,
-            country,
             state,
             city,
             isFeatured,
@@ -388,7 +385,6 @@ export class DestinationService extends BaseCrudService<
         const {
             q,
             searchScope,
-            country,
             state,
             city,
             isFeatured,
@@ -411,8 +407,9 @@ export class DestinationService extends BaseCrudService<
         const sortOrder = _ctx.pagination?.sortOrder;
 
         // Build where clause from the subset of filters that map to real columns.
-        // country/state/city live in the `location` jsonb column, so they become
-        // additional conditions instead (HOS-1899).
+        // state/city live in the `location` jsonb column, so they become
+        // additional conditions instead (HOS-1899). There is deliberately no `country`
+        // filter (HOS-1921): the old ISO-2 param never matched the stored country name.
         const where: Record<string, unknown> = {};
         if (isFeatured !== undefined) where.isFeatured = isFeatured;
         if (parentDestinationId) where.parentDestinationId = parentDestinationId;
@@ -431,7 +428,7 @@ export class DestinationService extends BaseCrudService<
             trimmedQ && trimmedQ.length > 0
                 ? buildSearchCondition(trimmedQ, searchColumns, this.model.getTable())
                 : undefined;
-        const locationConditions = buildDestinationLocationConditions({ country, state, city });
+        const locationConditions = buildDestinationLocationConditions({ state, city });
         const allConditions = [
             ...(searchCondition ? [searchCondition] : []),
             ...locationConditions
@@ -458,7 +455,7 @@ export class DestinationService extends BaseCrudService<
                 filtered = filtered.filter((d) =>
                     matchesDestinationLocation({
                         location: d.location,
-                        filters: { country, state, city }
+                        filters: { state, city }
                     })
                 );
             }
@@ -492,7 +489,7 @@ export class DestinationService extends BaseCrudService<
         _actor: Actor,
         _ctx: ServiceContext
     ) {
-        const { country, state, city, isFeatured, parentDestinationId, destinationType, level } =
+        const { state, city, isFeatured, parentDestinationId, destinationType, level } =
             this.extractImplementedFilters(params);
 
         const where: Record<string, unknown> = {};
@@ -501,8 +498,8 @@ export class DestinationService extends BaseCrudService<
         if (destinationType) where.destinationType = destinationType;
         if (level !== undefined) where.level = level;
 
-        // country/state/city live in the `location` jsonb column (HOS-1899).
-        const locationConditions = buildDestinationLocationConditions({ country, state, city });
+        // state/city live in the `location` jsonb column (HOS-1899).
+        const locationConditions = buildDestinationLocationConditions({ state, city });
         const count = await this.model.count(
             where,
             locationConditions.length > 0
@@ -554,21 +551,13 @@ export class DestinationService extends BaseCrudService<
         await this._canSearch(actor);
 
         // Extract parameters
-        const {
-            page = 1,
-            pageSize = 10,
-            country,
-            state,
-            city,
-            isFeatured,
-            ...otherFilters
-        } = params;
+        const { page = 1, pageSize = 10, state, city, isFeatured, ...otherFilters } = params;
         // Build where clause from flat filters
         const where: Record<string, unknown> = { ...otherFilters };
         if (isFeatured !== undefined) where.isFeatured = isFeatured;
 
-        // country/state/city live in the `location` jsonb column (HOS-1899).
-        const locationConditions = buildDestinationLocationConditions({ country, state, city });
+        // state/city live in the `location` jsonb column (HOS-1899).
+        const locationConditions = buildDestinationLocationConditions({ state, city });
 
         // Use the model method that includes attractions
         const result = await this.model.findAll(

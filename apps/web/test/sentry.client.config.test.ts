@@ -98,6 +98,21 @@ describe('web sentry.client.config', () => {
         );
     });
 
+    it('pins the v11 dataCollection policy and the beforeSend scrubber (HOS-1892)', async () => {
+        const { SENTRY_DATA_COLLECTION, scrubSentryEvent } = await import(
+            '../src/lib/observability/sentry-privacy'
+        );
+        await import('../sentry.client.config');
+
+        idleCallbacks[0]?.();
+        await vi.waitFor(() => expect(sentryInitMock).toHaveBeenCalled());
+
+        const options = sentryInitMock.mock.calls[0]?.[0] as Record<string, unknown>;
+        expect(options.dataCollection).toBe(SENTRY_DATA_COLLECTION);
+        expect(options.beforeSend).toBe(scrubSentryEvent);
+        expect(options).not.toHaveProperty('sendDefaultPii');
+    });
+
     it('does not schedule any SDK load without crash-reporting consent', async () => {
         consentMock.mockReturnValue({ ...grantedConsent(), crashReporting: false });
 

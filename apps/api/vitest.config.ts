@@ -68,12 +68,12 @@ export default defineConfig({
                 statements: 75
             },
             exclude: [
-                'node_modules/',
-                'dist/',
-                'test/',
+                '**/node_modules/**',
+                '**/dist/**',
+                '**/test/**',
                 '**/*.d.ts',
                 '**/*.config.ts',
-                'src/index.ts'
+                '**/src/index.ts'
             ]
         }
     },

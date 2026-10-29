@@ -6,12 +6,21 @@
  * (e.g. IntersectionObserver used by AnimatedCounter and lazy-loaded UI).
  */
 
-import '@testing-library/jest-dom/vitest';
 import { trans } from '@repo/i18n/web';
+import * as jestDomMatchers from '@testing-library/jest-dom/matchers';
+// Type-only: pulls in the `vitest` Assertion augmentation without running
+// jest-dom's own `require('vitest')` side effect (see the extend call below).
+import type {} from '@testing-library/jest-dom/vitest';
 import { cleanStores } from 'nanostores';
-import { afterEach } from 'vitest';
+import { afterEach, expect } from 'vitest';
 import { resetInFlightAuthMe } from '../src/lib/auth-cache';
 import { authClient } from '../src/lib/auth-client';
+
+// vitest 5: `@testing-library/jest-dom/vitest` registers its matchers through a CJS
+// `require('vitest')` that resolves to a second copy of vitest, and doing so
+// breaks `expect(...).rejects.toThrow(...)` for every test ("got ''"). Registering
+// the matchers on this file's own `expect` avoids that second copy.
+expect.extend(jestDomMatchers);
 
 // HOS-160 lever D: `fetchAuthMe` shares a module-level in-flight promise to dedup
 // concurrent callers. A test that renders an island with a pending `/auth/me`

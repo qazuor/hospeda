@@ -69,7 +69,6 @@ export async function appRestart(argv: ReadonlyArray<string>): Promise<void> {
     }
 
     const container = await findContainer(kindRaw);
-    log.info(`Resolved ${kindRaw} → container ${container}`);
 
     if (!skipConfirm) {
         const ok = await confirm(`Restart container '${container}'?`);

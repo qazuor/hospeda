@@ -65,7 +65,6 @@ export async function redeploy(argv: ReadonlyArray<string>): Promise<void> {
     const container = await findContainer(kindRaw);
     const uuid = await getApplicationUuid(container);
 
-    log.info(`Resolved ${kindRaw} → container ${container}`);
     log.info(`Coolify application UUID: ${uuid}`);
 
     if (!skipConfirm) {

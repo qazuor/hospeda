@@ -128,6 +128,105 @@ describe('Sentry Configuration', () => {
             expect(result).toBe(true);
         });
 
+        describe('v11 init options (HOS-1892)', () => {
+            const envRecord = () => envModule.env as unknown as Record<string, unknown>;
+            let originalNodeEnv: unknown;
+
+            beforeEach(() => {
+                originalNodeEnv = envRecord().NODE_ENV;
+                envRecord().HOSPEDA_SENTRY_DSN = 'https://test@sentry.io/123';
+            });
+
+            afterEach(() => {
+                envRecord().NODE_ENV = originalNodeEnv;
+            });
+
+            const initOptions = (): Record<string, unknown> => {
+                SentryModule.initializeSentry();
+                return mockInit.mock.calls[0]?.[0] as Record<string, unknown>;
+            };
+
+            it('should configure session-based profiling at 0.1 with trace lifecycle in production', () => {
+                envRecord().NODE_ENV = 'production';
+
+                const options = initOptions();
+
+                expect(options.profileSessionSampleRate).toBe(0.1);
+                expect(options.profileLifecycle).toBe('trace');
+                expect(options.tracesSampleRate).toBe(0.1);
+                expect(options.integrations).toHaveLength(1);
+            });
+
+            it('should never use the removed profilesSampleRate option', () => {
+                envRecord().NODE_ENV = 'production';
+
+                expect(initOptions()).not.toHaveProperty('profilesSampleRate');
+            });
+
+            it('should disable profiling and skip the profiler integration outside production', () => {
+                envRecord().NODE_ENV = 'development';
+
+                const options = initOptions();
+
+                expect(options.profileSessionSampleRate).toBe(0);
+                expect(options).not.toHaveProperty('integrations');
+            });
+
+            it('should not collect cookies, bodies or user info', () => {
+                envRecord().NODE_ENV = 'production';
+
+                const dataCollection = initOptions().dataCollection as Record<string, unknown>;
+
+                expect(dataCollection).toBe(SentryModule.SENTRY_DATA_COLLECTION);
+                expect(dataCollection.cookies).toBe(false);
+                expect(dataCollection.httpBodies).toEqual([]);
+                expect(dataCollection.userInfo).toBe(false);
+                expect(dataCollection.databaseQueryData).toBe(false);
+                expect(dataCollection.queues).toBe(false);
+                expect(dataCollection.genAI).toEqual({ inputs: false, outputs: false });
+                expect(dataCollection.graphQL).toEqual({ document: false, variables: false });
+            });
+
+            it('should deny auth and cookie headers in both directions', () => {
+                const { httpHeaders } = SentryModule.SENTRY_DATA_COLLECTION;
+                const headers = httpHeaders as {
+                    request: { deny: string[] };
+                    response: { deny: string[] };
+                };
+
+                for (const name of ['authorization', 'cookie', 'token', 'api-key']) {
+                    expect(headers.request.deny).toContain(name);
+                    expect(headers.response.deny).toContain(name);
+                }
+                expect(headers.response.deny).toContain('set-cookie');
+            });
+
+            it('should collect no URL query params at all', () => {
+                expect(SentryModule.SENTRY_DATA_COLLECTION.urlQueryParams).toEqual({ allow: [] });
+            });
+
+            it('should strip query_string and the url query part in beforeSend', () => {
+                const event = {
+                    type: undefined,
+                    request: {
+                        url: 'https://api.example.com/cb?code=abc&state=xyz#frag',
+                        query_string: 'code=abc&state=xyz&token=t'
+                    }
+                } as unknown as ErrorEvent;
+
+                const result = applyBeforeSend(event);
+
+                expect(result?.request).toEqual({ url: 'https://api.example.com/cb' });
+                expect(result?.request).not.toHaveProperty('query_string');
+            });
+
+            it('should keep the beforeSend scrubber wired', () => {
+                envRecord().NODE_ENV = 'production';
+
+                expect(initOptions().beforeSend).toBe(applyBeforeSend);
+            });
+        });
+
         it('should return false when init throws', () => {
             (envModule.env as unknown as Record<string, unknown>).HOSPEDA_SENTRY_DSN =
                 'https://test@sentry.io/123';

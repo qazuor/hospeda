@@ -17,6 +17,7 @@
  */
 
 import { anonymizeEmail } from '@repo/utils';
+import type { BrowserOptions, ErrorEvent } from '@sentry/react';
 import * as Sentry from '@sentry/react';
 import { env } from '@/env';
 import { adminLogger } from '../../utils/logger';
@@ -63,6 +64,85 @@ function getSentryConfig(): SentryConfig {
         replaysOnErrorSampleRate: 1.0, // 100% when error occurs
         replaysSessionSampleRate: 0.1 // 10% of sessions
     };
+}
+
+/**
+ * Header names/fragments never sent to Sentry (matched as substrings,
+ * case-insensitive). Same list as the API (HOS-1892).
+ */
+const DENIED_HEADER_FRAGMENTS: string[] = [
+    'authorization',
+    'cookie',
+    'token',
+    'api-key',
+    'apikey',
+    'csrf',
+    'forwarded',
+    '-ip',
+    'remote-',
+    'via',
+    '-user'
+];
+
+/**
+ * Explicit Sentry v11 `dataCollection` policy for the admin.
+ *
+ * v11 defaults collect cookies, request/response bodies, user info and URL
+ * query params. The admin sends NONE of those: no cookies, no auth headers, no
+ * HTTP bodies, no automatic user info (the user is set manually via
+ * `setSentryUser` with an anonymized email) and no URL query params.
+ *
+ * Exported so tests pin it.
+ */
+export const SENTRY_DATA_COLLECTION: NonNullable<BrowserOptions['dataCollection']> = {
+    userInfo: false,
+    cookies: false,
+    httpHeaders: {
+        request: { deny: DENIED_HEADER_FRAGMENTS },
+        response: { deny: [...DENIED_HEADER_FRAGMENTS, 'set-cookie'] }
+    },
+    httpBodies: [],
+    // Empty allowlist: NO query param is collected (auth callbacks carry
+    // code, state, token, etc.).
+    urlQueryParams: { allow: [] }
+};
+
+/**
+ * Strip the query string and fragment from a URL-like string.
+ */
+function stripQueryAndFragment(url: string): string {
+    const index = url.search(/[?#]/);
+    return index === -1 ? url : url.slice(0, index);
+}
+
+/**
+ * `beforeSend` scrubber: drops sensitive headers and, as defense in depth on
+ * top of `dataCollection`, never ships a query string or fragment.
+ *
+ * Exported so it is unit-testable independently of `Sentry.init()`.
+ */
+export function applyBeforeSend(event: ErrorEvent): ErrorEvent {
+    if (event.request?.headers) {
+        const {
+            Authorization: _auth,
+            Cookie: _cookie,
+            'X-Auth-Token': _token,
+            ...cleanHeaders
+        } = event.request.headers;
+        event.request.headers = cleanHeaders;
+    }
+
+    if (event.request) {
+        if ('query_string' in event.request) {
+            const { query_string: _queryString, ...safeRequest } = event.request;
+            event.request = safeRequest;
+        }
+        if (typeof event.request.url === 'string') {
+            event.request.url = stripQueryAndFragment(event.request.url);
+        }
+    }
+
+    return event;
 }
 
 /**
@@ -153,21 +233,12 @@ export function initSentry(): void {
             })
         ],
 
-        // Filter out sensitive data
-        beforeSend(event) {
-            // Remove sensitive headers
-            if (event.request?.headers) {
-                const {
-                    Authorization: _auth,
-                    Cookie: _cookie,
-                    'X-Auth-Token': _token,
-                    ...cleanHeaders
-                } = event.request.headers;
-                event.request.headers = cleanHeaders;
-            }
+        // v11 `dataCollection` defaults are permissive. Pin the restrictive
+        // v10 posture explicitly.
+        dataCollection: SENTRY_DATA_COLLECTION,
 
-            return event;
-        },
+        // Filter out sensitive data (headers, query string, fragment)
+        beforeSend: applyBeforeSend,
 
         // Filter breadcrumbs
         beforeBreadcrumb(breadcrumb) {

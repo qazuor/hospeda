@@ -43,17 +43,20 @@ describe('DestinationSearchHttpSchema — safeParse', () => {
         }
     });
 
-    it('should accept country code filter (2 chars)', () => {
-        const result = DestinationSearchHttpSchema.safeParse({ country: 'AR' });
+    it('should not expose a country filter (HOS-1921)', () => {
+        // Arrange: stored location.country is a name, so no ISO-2 filter can match it
+        const input = { country: 'AR', city: 'Concepcion' };
+
+        // Act
+        const result = DestinationSearchHttpSchema.safeParse(input);
+
+        // Assert: the key is not part of the schema and is dropped, never forwarded
         expect(result.success).toBe(true);
         if (result.success) {
-            expect(result.data.country).toBe('AR');
+            expect(result.data).not.toHaveProperty('country');
+            expect(result.data.city).toBe('Concepcion');
         }
-    });
-
-    it('should reject country code that is not exactly 2 chars', () => {
-        const result = DestinationSearchHttpSchema.safeParse({ country: 'ARG' });
-        expect(result.success).toBe(false);
+        expect(DestinationSearchHttpSchema.shape).not.toHaveProperty('country');
     });
 
     it('should coerce latitude and longitude from strings to numbers', () => {
@@ -151,16 +154,20 @@ describe('httpToDomainDestinationSearch', () => {
         expect(result.isFeatured).toBe(false);
     });
 
-    it('should include country and city filters in domain output', () => {
+    it('should include state and city filters in domain output', () => {
         // Arrange
-        const parsed = DestinationSearchHttpSchema.parse({ country: 'AR', city: 'Concepcion' });
+        const parsed = DestinationSearchHttpSchema.parse({
+            state: 'Entre Rios',
+            city: 'Concepcion'
+        });
 
         // Act
         const result = httpToDomainDestinationSearch(parsed);
 
         // Assert
-        expect(result.country).toBe('AR');
+        expect(result.state).toBe('Entre Rios');
         expect(result.city).toBe('Concepcion');
+        expect(result).not.toHaveProperty('country');
     });
 
     it('should include geographic filters in domain output', () => {
@@ -250,7 +257,7 @@ describe('httpToDomainDestinationSearch', () => {
 
         // Assert
         expect(result.isFeatured).toBeUndefined();
-        expect(result.country).toBeUndefined();
+        expect(result.state).toBeUndefined();
         expect(result.destinationType).toBeUndefined();
     });
 });

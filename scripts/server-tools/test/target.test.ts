@@ -201,6 +201,24 @@ describe('getDbResourceName(target, kind)', () => {
         );
     });
 
+    it('throws when the prod and staging postgres UUIDs are the same (HOS-1950)', () => {
+        process.env.HOPS_PROD_POSTGRES_UUID = 'samesameuuid';
+        process.env.HOPS_STAGING_POSTGRES_UUID = 'SameSameUuid ';
+        expect(() => getDbResourceName('staging', 'postgres')).toThrow(/hold the same UUID/);
+        expect(() => getDbResourceName('prod', 'postgres')).toThrow(/hold the same UUID/);
+    });
+
+    it('throws when the prod and staging redis UUIDs are the same (HOS-1950)', () => {
+        process.env.HOPS_PROD_REDIS_UUID = 'redis-same';
+        process.env.HOPS_STAGING_REDIS_UUID = 'redis-same';
+        expect(() => getDbResourceName('prod', 'redis')).toThrow(/hold the same UUID/);
+    });
+
+    it('resolves normally when only one target UUID is configured', () => {
+        process.env.HOPS_PROD_POSTGRES_UUID = 'onlyprod';
+        expect(getDbResourceName('prod', 'postgres')).toBe('postgresql-database-onlyprod');
+    });
+
     it('error message names the exact env var the operator must set', () => {
         try {
             getDbResourceName('staging', 'redis');
