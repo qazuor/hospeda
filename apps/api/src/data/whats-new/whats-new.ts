@@ -176,14 +176,14 @@ export const whatsNewEntries: WhatsNewEntry[] = WhatsNewCatalogSchema.parse([
         publishedAt: 'on-promotion',
         highlight: false,
         title: {
-            es: 'Los listados de gastronomía y experiencias se leen en portugués',
-            en: 'Food and experiences listings now read in Portuguese',
-            pt: 'As listagens de gastronomia e experiências agora aparecem em português'
+            es: 'Los listados de Comer y salir y de experiencias se leen en portugués',
+            en: 'Food & nightlife and experiences listings now read in Portuguese',
+            pt: 'As listagens de Comer e sair e de experiências agora aparecem em português'
         },
         body: {
-            es: 'En portugués, la línea que resume cuántos resultados hay y qué filtros aplicaste en gastronomía y experiencias ya no aparece en español.',
-            en: 'In Portuguese, the line that sums up how many results there are and which filters you applied in food and experiences no longer appears in Spanish.',
-            pt: 'Em português, a linha que resume quantos resultados há e quais filtros você aplicou em gastronomia e experiências não aparece mais em espanhol.'
+            es: 'En portugués, la línea que resume cuántos resultados hay y qué filtros aplicaste en Comer y salir y en experiencias ya no aparece en español.',
+            en: 'In Portuguese, the line that sums up how many results there are and which filters you applied in Food & nightlife and experiences no longer appears in Spanish.',
+            pt: 'Em português, a linha que resume quantos resultados há e quais filtros você aplicou em Comer e sair e em experiências não aparece mais em espanhol.'
         },
         translations: { en: 'machine', pt: 'machine' }
     },
@@ -245,9 +245,9 @@ export const whatsNewEntries: WhatsNewEntry[] = WhatsNewCatalogSchema.parse([
         publishedAt: 'on-promotion',
         highlight: false,
         title: {
-            es: 'Nuevos planes para publicar alojamientos, gastronomía y experiencias',
-            en: 'New plans to list accommodations, food venues and experiences',
-            pt: 'Novos planos para publicar hospedagens, gastronomia e experiências'
+            es: 'Nuevos planes para publicar alojamientos, locales de Comer y salir y experiencias',
+            en: 'New plans to list accommodations, Food & nightlife venues and experiences',
+            pt: 'Novos planos para publicar hospedagens, locais de Comer e sair e experiências'
         },
         body: {
             es: 'Ahora podés publicar tu restaurante o tu experiencia, además de tu alojamiento, cada uno con sus propios planes. Empezás con 30 días de prueba gratis, sin cargar tarjeta, y recién después elegís si pagar. Todos los planes para publicar incluyen los beneficios de Turista VIP.',
