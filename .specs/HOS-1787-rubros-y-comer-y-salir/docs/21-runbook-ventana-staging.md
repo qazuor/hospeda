@@ -10,6 +10,12 @@
 > pasos 2b y 3, la rama de aborto y sus riesgos), el ensayo real del paso 3 de HOS-1825 (1.B7) y los comandos de
 > `hops`: el del VPS en `scripts/server-tools/src/index.ts` + `src/commands/` + `src/lib/`, el local en
 > `scripts/client-tools/`. Todo leído en la umbrella `epic/HOS-1801-renombrado-fisico` en `abe861e88f`.
+>
+> **Actualización 2026-10-29** (medida el 28 y 29/10 contra el VPS y el sandbox): `hops` ya resuelve por etiqueta
+> exacta (HOS-1950, PR #3890), `cron-list`/`cron-trigger` respetan `--target`, existe la herramienta de V1
+> (HOS-1951, PR #3891), `hops db-seed` estampa el baseline (HOS-1952, PR #3889) y los backups salen cifrados
+> (HOS-1953, PRs #3893 y #3894). Cerrados por eso los ABIERTOS 1, 3, 4 y 7 (§6). El checkout del VPS está en HEAD
+> detached y se actualiza con `hops update`, no con `git pull` (regla 9 y V4.3).
 
 ## 0. Reglas duras de esta ventana
 
@@ -37,25 +43,27 @@
    `ssh -p 2222 qazuor@216.238.103.219 'bash -lc "hops …"'`. Lo mismo para los `docker …` de este
    documento. El `hops` local no tiene `redeploy`, `psql`, `exec`, `db-migrate --target`, etc. En este
    documento los comandos del VPS se escriben sin el envoltorio de ssh para que se lean.
-10. **Antes de confiar en un `hops --target=staging`, comprobar en su salida que el recurso resuelto es de
-    staging.** Si la línea `Resolved <kind> → container <nombre>` (la imprimen `redeploy` y `app-restart`) o la
-    salida de `hops --target=staging find <kind> --verbose` (`Strategy:` y `coolify.resourceName=`) no nombra un
-    contenedor `hospeda-<app>-staging`, **se corta ahí**. La trampa, medida en el código:
-    - `findContainer` (`scripts/server-tools/src/lib/container-lookup.ts:247-275`) busca primero por la etiqueta
-      `coolify.resourceName=hospeda-<app>-staging` (`lib/target.ts:71-75`). Si el contenedor de staging **no
-      está corriendo**, cae a la imagen y después al **puerto expuesto** (3001 api, 4321 web, 3000 admin:
-      `container-lookup.ts:141-148`), que es el mismo en los dos entornos. Con un solo contenedor que lo expone,
-      el de prod, **lo elige sin avisar**.
-    - Por eso, con la app de staging parada (de V2/V3 a V5/V6), `hops --target=staging redeploy|find|exec|logs|
-      env-list|env-set|app-restart` sobre api, web o admin **apunta a PROD**. Hay dos observaciones reales de eso:
-      `redeploy` y `env-set` matchearon prod con la api parada (21/10), y `env-list api` devolvió la lista de
-      prod (28/10).
-    - `env-list` (`commands/env-list.ts:88-89`) resuelve la app con ese mismo `findContainer` y después el UUID
-      de Coolify desde las etiquetas del contenedor encontrado. Respeta `--target` **sólo si el contenedor de
-      staging corre**, y su salida no nombra el contenedor (`env-list.ts:119-122`), así que no hay cómo verlo.
-      **No se usa en esta ventana.**
-    - `cron-list` no pasa por `findContainer`: le pega por HTTP a `HOSPEDA_API_URL`, con default
-      `https://api.hospeda.com.ar` (`lib/api-client.ts:72`), así que **ignora `--target`**. **No se usa.**
+   **El `hops` del VPS es un binario compilado**: un cambio en `scripts/server-tools` no llega al VPS hasta que
+   se corre `hops update` (V4.3, paso 2). Un comando nuevo (por ejemplo `db-seed --baseline-stamp`) no existe allá
+   antes de eso. Y `bun` no está en el PATH no interactivo: sin `export PATH=$HOME/.bun/bin:$PATH` el update falla con
+   «bun is required».
+10. **`hops` resuelve por etiqueta exacta (HOS-1950, PR #3890): con `--target` ya no devuelve el contenedor de
+    otro target.** Verificado en el VPS el 29/10 en las 10 combinaciones `{api,web,admin,postgres,redis}×{prod,staging}`.
+    Todo comando imprime `Resolved <kind> (<target>) → container <nombre> [<etiqueta>]`. **Esa línea se sigue
+    mirando antes de confiar en la salida**: si no nombra un contenedor `hospeda-<app>-staging` (o el de Postgres
+    o Redis de staging), **se corta ahí**. Ya no es la única defensa, es la verificación de que la defensa
+    funcionó. Qué cambió respecto de lo que este runbook defendía antes:
+    - Antes, `findContainer` (`scripts/server-tools/src/lib/container-lookup.ts`) caía de la etiqueta a la imagen y
+      al **puerto expuesto** (3001 api, 4321 web, 3000 admin), el mismo en los dos entornos, y con la app de staging
+      parada elegía la de prod sin avisar (`redeploy` y `env-set` el 21/10, `env-list api` el 28/10). Con la
+      resolución exacta, una app de staging parada **falla** («no encontrado»), no apunta a prod.
+    - `cron-list` y `cron-trigger` **respetan `--target`**. Para staging usan `HOPS_STAGING_API_URL=https://staging-api.hospeda.com.ar`
+      y `HOPS_STAGING_ADMIN_COOKIE`, que ya están cargadas en el `.env.local` del VPS. **La cookie vence**: si
+      responde 401, se refresca desde DevTools. (La cookie de prod, `HOPS_ADMIN_COOKIE`, está vencida y duplicada
+      en las líneas 61-62 de ese archivo: no se usa.)
+    - `env-list` resuelve la app con `findContainer` (misma resolución exacta), loguea la línea `Resolved …` y ya no
+      puede leer prod con `--target=staging`. Aun así, en esta ventana las variables se leen con `docker inspect`
+      (V0), que no depende de la versión del binario.
     - `exec <kind> --env <prefijo>` siempre tapa los valores (`commands/container-exec.ts:91`): sirve para ver
       qué claves existen, nunca su valor.
 
@@ -66,11 +74,11 @@
 | P1 | El PR de la umbrella a `staging` en verde, aprobado, `CLEAN` | `hops ci --wait` desde el worktree de la umbrella; `hops merge` (dictamina, no mergea) | exit 0 en los dos. **Ojo**: `hops ci --wait` justo después de un push mide el commit anterior (18 checks en 1 s = sospecha); `hops ci --wait --pr=N` ignora `--pr=` y mide el PR del cwd |
 | P2 | **El ensayo del paso 3 sigue valiendo para el commit que se despliega** | `git diff --stat abe861e88f <SHA de P6> -- packages/db/src/migrations/ packages/seed/src/data-migrations/` | **cualquier** cambio en esas dos carpetas (una migración o data-migration nueva, o una editada, la `0148`, la `0180` y la `0181` incluidas) hace caducar el verde del ensayo (HOS-1825, en `abe861e88f`): se repite con `ensayo-paso3.sh` del kit de HOS-1825 antes de seguir |
 | P3 | Ningún agente vivo en un worktree con base local | `git worktree list` + preguntar | el paso V4.1 borra **todas** las bases locales |
-| P4 | Backup de la base de staging tomado y anotado | `hops --target=staging db-backup-now` (pausa: owner confirma). Postgres se resuelve por la etiqueta con el UUID de `HOPS_STAGING_POSTGRES_UUID` (`lib/target.ts:183-190`): mirar en la salida que el contenedor sea el de staging (regla 10) | nombre del objeto en R2 `manual/` anotado acá: `________`. **Sale sin cifrar** (ver P7) |
+| P4 | Backup de la base de staging tomado y anotado | `hops --target=staging db-backup-now` (pausa: owner confirma). Postgres se resuelve por la etiqueta con el UUID de `HOPS_STAGING_POSTGRES_UUID` (`lib/target.ts:183-190`): mirar en la salida que el contenedor sea el de staging (regla 10) | nombre del objeto en R2 `manual/` anotado acá: `________`. Sale cifrado (`.dump.gpg`, ver P7) |
 | P5 | Inventarios que se pierden con el reset, guardados **fuera** de la base | (a) preapprovals vivas del sandbox (insumo de V1), ancladas y sueltas; (b) `slug` e `id` de cada ficha de la vertical en staging, para la purga por tag de V6.2: `hops --target=staging psql "select count(*) from gastronomies"` y después la lista | (a) y (b) en un archivo local con fecha |
 | P6 | SHA que se va a desplegar: el merge de la umbrella en `staging` | `git rev-parse origin/staging` después del merge | anotado: `________` |
-| P7 | **Riesgo anotado: los backups de `hops db-backup-now` suben a R2 sin cifrar** | `db-backup-now.ts:73` cifra con GPG sólo si `BACKUP_PASSPHRASE` está en `scripts/server-tools/.env.local` del VPS, y hoy no está seteada | el owner lo leyó y decide **[ABIERTO 7]**. No bloquea la ventana de staging; pesa más en el 2b de prod (§3.2) |
-| P8 | **Checkout del VPS anotado** (se usa en V4.3) | `git -C "$HOPS_REPO_ROOT" status -sb` | rama y SHA anotados: `________` |
+| P7 | **Backups cifrados (HOS-1953, PRs #3893 y #3894)** | `BACKUP_PASSPHRASE` está cargada en `scripts/server-tools/.env.local` del VPS y el owner la tiene en su gestor. Probado contra staging el 29/10: `db-backup-now` subió un `.dump.gpg` y `db-restore N --target-db <scratch> --no-snapshot-first --yes` lo restauró con conteos idénticos. **`db-restore` no crea la base destino**: se crea antes con `create database <scratch>` | cerrado (**[ABIERTO 7]**). Confirmar que el objeto de P4 termine en `.dump.gpg`; si no, la variable no se cargó y se frena. Sin la passphrase el backup no se restaura: el owner verifica que la tiene antes de la ventana |
+| P8 | **Checkout del VPS anotado** (se usa en V4.3) | `git -C "$HOPS_REPO_ROOT" status -sb` y `rev-parse HEAD`. Medido el 28-29/10: `~/hospeda` está en **HEAD detached**, así que no hay rama que seguir y `git pull --ff-only` falla | SHA anotado: `________` |
 
 **Cuándo se mergea el PR de la umbrella**: al final de la preparación, con la API vieja todavía arriba.
 El merge no despliega (el auto-deploy está apagado por política), y V4.3 necesita ese commit en el
@@ -85,8 +93,12 @@ del owner es del corte de prod (§3.2, paso C0).
 
 ### V0 · leer las variables de staging con las apps todavía corriendo
 
-Va primero porque, con las apps paradas, nada de `hops` llega a staging (regla 10). Por ssh, con
-`docker inspect` sobre el contenedor filtrado por etiqueta:
+Va primero porque, con las apps paradas, `hops` ya no encuentra su contenedor (regla 10: falla, ya no apunta a
+prod). Por ssh, con `docker inspect` sobre el contenedor filtrado por etiqueta.
+
+**Compuerta previa, explícita**: con la api corriendo, `hops --target=staging find api --verbose` tiene que imprimir
+`Resolved api (staging) → container hospeda-api-staging [hospeda-api-staging]`. **Si el binario no imprime esa línea,
+no trae HOS-1950: se corre `hops update` (V4.3.2) antes de seguir con cualquier otro paso.**
 
 ```sh
 for app in api web; do
@@ -123,9 +135,46 @@ la siguiente prueba de checkout del smoke la ve como desconocida.
 3. Cancelar cada una en el **sandbox** y releerla por id hasta verla `cancelled`.
 4. Guardar la lista con su estado final fuera de la base (P5 a).
 
-- **Herramienta**: **no existe una para staging** **[ABIERTO 1]**. `scripts/cutover/cli.ts` (U3) cancela «todo lo
-  que el sistema viejo dejó vivo» leyendo la base vieja de prod por ids conocidos; no está escrito para el
-  esquema de staging ni para el sandbox.
+- **Herramienta (HOS-1951, PR #3891; cierra el **[ABIERTO 1]**)**: `scripts/cutover/cli-staging-sandbox.ts`. Corre
+  **en LOCAL** (no en el VPS), desde un checkout de `staging` que incluya #3891, con las dependencias instaladas.
+  Los secretos se leen del contenedor de staging por ssh hacia variables de shell, sin `echo`, y viajan sólo como
+  env del comando. Receta (probada el 28/10 en dry-run); `$REPO` es ese checkout local:
+
+  ```bash
+  #!/usr/bin/env bash
+  # V1 against staging through an ssh tunnel. Usage: v1.sh [--apply] [--from-manifest <path>]
+  set -euo pipefail
+  REPO="${REPO:?set REPO to a local staging checkout that includes #3891}"
+  VPS=(ssh -p 2222 -o ConnectTimeout=15 qazuor@216.238.103.219)
+  API_CTR=$("${VPS[@]}" 'docker ps --filter label=coolify.resourceName=hospeda-api-staging --format "{{.Names}}" | head -1')
+  [[ -n "$API_CTR" ]] || { echo "no api-staging container" >&2; exit 2; }
+  getvar() { "${VPS[@]}" "docker inspect $API_CTR --format '{{range .Config.Env}}{{println .}}{{end}}' | sed -n 's/^$1=//p'"; }
+  TOKEN=$(getvar HOSPEDA_MERCADO_PAGO_ACCESS_TOKEN)
+  DBURL=$(getvar HOSPEDA_DATABASE_URL)
+  [[ -n "$TOKEN" && -n "$DBURL" ]] || { echo "missing token or db url" >&2; exit 2; }
+  LOCAL_PORT=25432
+  # Rewrite host:port to the local end of the tunnel (15432 = staging Postgres proxy on the VPS).
+  DBURL_LOCAL=$(printf '%s' "$DBURL" | sed -E "s#@[^/@]+/#@127.0.0.1:${LOCAL_PORT}/#")
+  ssh -p 2222 -o ExitOnForwardFailure=yes -f -N -L "${LOCAL_PORT}:127.0.0.1:15432" qazuor@216.238.103.219
+  trap 'pkill -f "${LOCAL_PORT}:127.0.0.1:15432" || true' EXIT
+  sleep 2
+  cd "$REPO"
+  CUTOVER_MP_ACCESS_TOKEN="$TOKEN" CUTOVER_STAGING_DATABASE_URL="$DBURL_LOCAL" \
+    corepack pnpm --config.verify-deps-before-run=false exec tsx scripts/cutover/cli-staging-sandbox.ts --target=staging "$@"
+  ```
+
+  `--config.verify-deps-before-run=false` hace falta porque sin TTY pnpm aborta. Ninguno de los dos secretos se
+  imprime ni se copia a un archivo. Las guardas verifican que el token sea `test_user` (sandbox) y que la base sea
+  `hospeda_staging`. Sin `--apply` es dry-run.
+- **Criterio verificable**, en este orden, todo dentro de la ventana:
+  1. **Dry-run** (`v1.sh`): anotar `found`, `live` y `alreadyCancelled` y compararlos con el 28/10
+     (found=28, live=7, alreadyCancelled=21, failures=0). **Una diferencia grande frena** hasta entenderla.
+  2. **`v1.sh --apply`**: pasa sólo si la línea de resumen dice `outcome=ok` y `failures=0`, y el manifest que
+     imprime (`manifest: <REPO>/scripts/cutover/out/staging-sandbox-manifest-<ts>.json`) trae `"outcome": "ok"` y
+     `"failures": []`. `failed` o `in-progress` (corte a mitad) frenan: se reintenta con `--from-manifest` ese archivo.
+  3. **Dry-run posterior**: tiene que dar **`live=0`**.
+  Si cualquiera de los tres falla, **no se pasa a V4**. `--from-manifest <path>` sirve para reintentar **sólo** los
+  ids de ese manifest tras un corte o una falla parcial. Los puntos 1 a 4 de arriba quedan como método de respaldo a mano.
 - **Si falla**: una preapproval que no queda `cancelled` después de reintentar → **no se sigue** a V4.
   No se puede volver atrás de un reset para buscar el ancla.
 
@@ -134,7 +183,8 @@ la siguiente prueba de checkout del smoke la ve como desconocida.
 - **Cómo**: «Stop» de `hospeda-web-staging` y `hospeda-admin-staging` en el panel de Coolify
   (`https://coolify.hospeda.com.ar`). `hops` no tiene un comando de stop (`app-restart` y `restart`
   reinician, no paran). Si conviene `docker stop` por ssh es **[ABIERTO 2]**.
-- **Verificación del contenedor** (no con `hops … find`, que con la app parada encuentra la de prod):
+- **Verificación del contenedor** (con `docker ps` por etiqueta; `hops … find` con la app parada falla en vez de
+  apuntar a prod, pero la salida vacía de `docker ps` es la prueba directa):
   `docker ps --filter label=coolify.resourceName=hospeda-web-staging` y lo mismo con `hospeda-admin-staging`
   → **salida vacía** (sólo la cabecera).
 - **Verificación desde afuera**, tres veces seguidas, rompiendo el cache con una query distinta cada vez:
@@ -155,8 +205,9 @@ nuevo no lee.
 2. Verificar, los tres:
    - contenedor: `docker ps --filter label=coolify.resourceName=hospeda-api-staging` → **salida vacía**;
    - crons: si V0 dio `node-cron`, el contenedor vacío ya prueba que no hay crons. Si dio otro adapter, se
-     frena: los crons viven en otro lado y este runbook no los cubre. **No** usar `hops cron-list` (ignora
-     `--target` y le pega a prod) ni `hops --target=staging logs api` (con la api parada lee los logs de prod);
+     frena: los crons viven en otro lado y este runbook no los cubre. `hops --target=staging cron-list` respeta
+     `--target` (usa `HOPS_STAGING_API_URL` y `HOPS_STAGING_ADMIN_COOKIE`), pero con la api parada no tiene a quién
+     preguntarle: no sirve para esta prueba. `hops --target=staging logs api` con la api parada falla;
    - webhook: `curl -sS -D - -o /tmp/cuerpo -X POST "https://staging-api.hospeda.com.ar/api/v1/webhooks/mercadopago?nocache=$(date +%s%N)"`
      → 5xx, sin `cf-cache-status: HIT` y con el cuerpo del proxy, tres veces seguidas (un 401/400 del handler
      = la API sigue viva).
@@ -182,24 +233,33 @@ template a mano.
 **V4.3 · base de staging (VPS)**. Se migra **sobre el commit de la imagen nueva**, y la igualdad de commit se
 verifica **antes** del reset, porque `hops db-migrate` no tiene guarda de SHA (sí la tiene `cutover-step-3`):
 
-1. `git -C "$HOPS_REPO_ROOT" status -sb`: árbol limpio y la rama anotada en P8. Si hay cambios sin commitear, se
-   para. Que esa rama sea `staging` es **[ABIERTO 3]**.
-2. `git -C "$HOPS_REPO_ROOT" pull --ff-only` (si la rama no es `staging`, hacer antes
-   `git -C "$HOPS_REPO_ROOT" checkout staging`).
+1. `git -C "$HOPS_REPO_ROOT" status -sb`: árbol limpio. Si hay cambios sin commitear, se para. El checkout está
+   en **HEAD detached** (P8): no hay rama que seguir, y por eso **no** se usa `git pull --ff-only` (falla)
+   **[ABIERTO 3], cerrado**.
+2. Actualizar el checkout **y el binario** (el `hops` del VPS está compilado: sin esto no tiene los comandos
+   nuevos, regla 9). `hops update` hace `git pull origin staging` y recompila. Antes, copia de seguridad del
+   binario, y con `bun` en el PATH porque el shell no interactivo no lo tiene:
+
+   ```sh
+   cp "$(command -v hops)" "$(command -v hops).bak"
+   bash -lc 'export PATH=$HOME/.bun/bin:$PATH; hops update --branch staging'
+   ```
+
+   Si el update falla, `hops.bak` (junto al binario) es la marcha atrás. **`hops update` trae la punta de
+   `staging` al momento de correrlo, no el SHA de P6**: P6 se fija justo antes de este paso, y si el `rev-parse`
+   del paso siguiente no coincide, se para.
 3. `git -C "$HOPS_REPO_ROOT" rev-parse HEAD` = **el SHA de P6**. Si no coincide, **se para acá, antes de
    tocar la base**.
 4. `hops --target=staging db-migrate --reset --no-pull --yes` → backup previo a R2 (salvo `--no-backup`,
    que no se usa), reset del schema, `drizzle-kit migrate`, `db:apply-extras`, desde el checkout ya verificado.
-   **Pausa: owner confirma**: es destructivo. Mirar en la salida que el contenedor de Postgres sea el de
-   staging (regla 10).
-5. Sembrar: `hops --target=staging db-seed --no-pull` (los defaults ya son reset + required + example; el
-   comando sólo acepta `--no-reset`, `--no-required` y `--no-example`) y
+   **Pausa: owner confirma**: es destructivo. Mirar en la salida la línea `Resolved postgres (staging) → …`
+   (regla 10).
+5. Sembrar: `hops --target=staging db-seed --no-pull` (los defaults ya son reset + required + example) y
    `hops --target=staging db-seed-test-users --no-pull`.
-6. Ledger del seed: una base recién sembrada no tiene filas en `seed_migrations`; `db:fresh` lo resuelve
-   con `seed --data-migrate --baseline-stamp`, y **`hops db-seed` no lo hace** (no hay `--baseline-stamp` en
-   `scripts/server-tools/src/commands/db-seed.ts`). Sin ese paso, el próximo
-   `hops --target=staging db-seed-migrate` corre todas las data-migrations sobre datos nuevos.
-   Cómo se estampa en el VPS es **[ABIERTO 4]**.
+6. Ledger del seed (HOS-1952, PR #3889; cierra el **[ABIERTO 4]**): una base recién sembrada no tiene filas en
+   `seed_migrations`, y sin estampar, el próximo `db-seed-migrate` correría todas las data-migrations sobre datos
+   nuevos. Se estampa con `hops --target=staging db-seed --baseline-stamp --no-pull`, que **sólo estampa** y se
+   niega con prod. Requiere el binario actualizado del paso 2.
 7. Verificar: `hops --target=staging psql "select count(*) from venues"`,
    `… "select count(*) from vertical where id = 'venue'"` (= 1),
    `… "select count(*) from drizzle.__drizzle_migrations"` (= 182 en `abe861e88f`; si P2 sumó migraciones,
@@ -207,10 +267,10 @@ verifica **antes** del reset, porque `hops db-migrate` no tiene guarda de SHA (s
    **`--status` nunca hace pull** (`commands/db-seed-migrate.ts:237-247`: sale antes del paso de pull, con o
    sin `--pull`) y lee el checkout tal como está. Vale porque los pasos 1 a 3 ya lo dejaron en el SHA de P6;
    sobre un checkout viejo dice «0 pending».
-8. **Devolver el checkout a la rama anotada en P8** (`git -C "$HOPS_REPO_ROOT" checkout <rama de P8>`) si no
-   era `staging`. **Advertencia**: mientras ese checkout esté en el commit de la umbrella, un
-   `hops --target=prod db-migrate --no-pull` corrido sobre él le aplicaría a **prod** las migraciones del
-   renombrado fuera del corte. Nadie corre nada contra prod desde ese checkout hasta que vuelva a su rama.
+8. **Estado en que queda el checkout.** Anotar `git status -sb` y `rev-parse HEAD` al terminar. **Advertencia**:
+   mientras ese checkout esté en el commit de la umbrella, un `hops --target=prod db-migrate --no-pull` corrido
+   sobre él le aplicaría a **prod** las migraciones del renombrado fuera del corte. Nadie corre nada contra prod
+   desde ese checkout hasta el corte.
 
 **V4.4 · bases de worktree**: quedaron borradas por el `down -v` de V4.1; cada worktree se re-clona de la
 plantilla nueva con `hops servers-up` (auto-heal de la base). Avisar en cada sesión viva.
@@ -218,8 +278,8 @@ plantilla nueva con `hops servers-up` (auto-heal de la base). Avisar en cada ses
 ### V5 · desplegar la API (crons y webhook vuelven con ella)
 
 1. Deploy de `hospeda-api-staging` **desde el panel de Coolify** («Deploy»/«Redeploy» de esa aplicación),
-   **pausa: owner confirma**. **No** con `hops --target=staging redeploy api`: con la api parada, `findContainer`
-   resuelve la de prod y redesplegaría prod (regla 10).
+   **pausa: owner confirma**. **No** con `hops --target=staging redeploy api`: con la api parada ya no apuntaría a
+   prod (regla 10), pero tampoco la encuentra; el deploy de una app parada va desde el panel.
 2. Esperar a que el rollout termine (regla 2): repetir
    `curl -sS "https://staging-api.hospeda.com.ar/health?nocache=$(date +%s%N)"` hasta que **todas** las
    respuestas sean iguales durante un minuto.
@@ -229,9 +289,10 @@ plantilla nueva con `hops servers-up` (auto-heal de la base). Avisar en cada ses
    registros con
    `docker logs --since 5m $(docker ps -q --filter label=coolify.resourceName=hospeda-api-staging) 2>&1 | grep -i cron`.
    `hops --target=staging env-list api --reveal --match '^HOSPEDA_CRON_ADAPTER$'` y
-   `hops --target=staging logs api --since 5m -g cron` sirven ahora que la api de staging corre, pero sólo si
-   `hops --target=staging find api --verbose`, en el mismo momento, muestra la estrategia por etiqueta y
-   `hospeda-api-staging` (regla 10). `cron-list` no se usa.
+   `hops --target=staging logs api --since 5m -g cron` sirven ahora que la api de staging corre; comprobar en su
+   salida la línea `Resolved api (staging) → container hospeda-api-staging …` (regla 10).
+   `hops --target=staging cron-list` también sirve (respeta `--target`; si da 401, refrescar
+   `HOPS_STAGING_ADMIN_COOKIE`).
 5. Invalidar la generación global del cache del conjunto efectivo (Mecánica 7). Es lo mismo que hace
    `invalidateAll()` (`packages/verticals/src/effective-set-cache/cache.ts:173-179`): `INCR` de
    `vset:v1:gen:all` y `PEXPIRE` de 30 min (`GENERATION_TTL_MS`, `cache.ts:5`). El campo de la vertical vieja de
@@ -243,14 +304,14 @@ plantilla nueva con `hops servers-up` (auto-heal de la base). Avisar en cada ses
    ```
 
    (`-n` es el `SELECT` de la base.) Redis se resuelve por la etiqueta con el UUID de `HOPS_STAGING_REDIS_UUID`;
-   antes del `INCR`, correr `hops --target=staging find redis --verbose` y confirmar que la etiqueta sea la de
-   staging (regla 10): `exec` con un comando inline no imprime el contenedor resuelto, sólo `--shell` lo hace. La autenticación de `redis-cli` y si
+   antes del `INCR`, correr `hops --target=staging find redis --verbose` y confirmar la línea `Resolved redis
+   (staging) → …` (regla 10). La autenticación de `redis-cli` y si
    staging comparte instancia con prod son **[ABIERTO 5]**.
 
 ### V6 · desplegar web y admin; purgar cache y actualizar Cloudflare y PostHog (Mecánica 7)
 
 1. Deploy de `hospeda-web-staging` y `hospeda-admin-staging` **desde el panel de Coolify**, **pausa: owner
-   confirma**, cada uno. No con `hops … redeploy`, por la misma razón que V5.1. Misma espera de rollout.
+   confirma**, cada uno. No con `hops … redeploy`, por la misma razón que V5.1 (una app parada no se resuelve). Misma espera de rollout.
 2. **Cloudflare (pausa: owner autentica; lo hace el agente en Chrome)**, **en el mismo momento**, no después.
    `<env>` es el valor de `HOSPEDA_DEPLOY_ENV` leído en V0, que tiene que ser `preview` en api y en web. **Nunca
    se escribe un `<env>` deducido**: sin esa lectura, no se purga por tag, sólo por prefijo.
@@ -339,7 +400,7 @@ ejecuta el paso 3. Este runbook no ejecuta el corte; deja escrito lo que el cort
 | # | qué | quién |
 |---|---|---|
 | C0 | **Avisar en persona a los clientes** (las cinco cuentas) **antes** del corte. Es un paso explícito, no un correo ni un banner | owner |
-| C1 | El backup del 2b. Si se toma con `hops --target=prod db-backup-now`, **sube a R2 sin cifrar** mientras `BACKUP_PASSPHRASE` no esté seteada (P7, **[ABIERTO 7]**). Anotar el **nombre exacto** del objeto (`manual/hospeda-postgres-<TS>.dump`). Antes, `hops --target=prod r2-lifecycle show`: la regla por defecto borra `manual/*` a los 30 días (`commands/r2-lifecycle.ts:28`), y el 2b tiene que sobrevivir hasta el reintento | owner confirma |
+| C1 | El backup del 2b. Si se toma con `hops --target=prod db-backup-now`, sale cifrado (`.dump.gpg`) si `BACKUP_PASSPHRASE` está cargada en el VPS (P7, HOS-1953; probado contra staging, **no contra prod**: hacer antes un `db-backup-now` + `db-restore --target-db <scratch>` de prueba). Anotar el **nombre exacto** del objeto (`manual/hospeda-postgres-<TS>.dump.gpg`). Antes, `hops --target=prod r2-lifecycle show`: la regla por defecto borra `manual/*` a los 30 días (`commands/r2-lifecycle.ts:28`), y el 2b tiene que sobrevivir hasta el reintento | owner confirma |
 | C2 | Después del deploy: el `INCR` + `PEXPIRE` de V5.5 en el Redis de prod; la purga de V6.2 con el `<env>` leído de las apps de prod (tiene que ser `prod`) y los prefijos de URL completos con los dos hosts, `hospeda.com.ar` y `www.hospeda.com.ar`; y las reglas de Cloudflare | agente (Chrome, owner autenticado) |
 | C3 | PostHog: si el proyecto es otro que el de staging, el mismo OR de V6.3 | **[ABIERTO 6]** |
 
@@ -387,33 +448,35 @@ Cloudflare); el resto sale del código y de la spec:
 | **Ids de What's New y clave del tour** (`web.venue.welcome`) que reescribe la data-migration `0131-hos1822-venue-whats-new-and-tour-ids` | `users.settings.onboarding` | en staging el reset borra todos los usuarios igual (todos vuelven a ver todo: no hay nada que recuperar); en prod **sí vuelven** con el restore del 2b. No vuelven si alguien «vuelve atrás» sólo el código sin la base (no permitido) | ninguno, salvo no separar código y base |
 | **`domain_event` con `entity_type` nuevo** escritos en el soak | Postgres, append-only (`extras/056`) | no se pueden actualizar | staging: los borra el reset; prod: los borra el restore |
 | **Sesiones abiertas**: cookie cache de Better Auth (`session.user.role`, hasta 5 min) y `sessionStorage.authMeSnapshot` con `roles: ['VENUE_OWNER']` en pestañas abiertas (`apps/web/src/lib/auth-cache.ts:29`) | navegador | sobreviven a un deploy y a un restore | transitorio: 5 min la cookie, y el snapshot vence a los 60 s (`AUTH_ME_CACHE_TTL_MS`, `auth-cache.ts:32`); la ventana dura más |
-| **Variables de entorno cambiadas en Coolify** durante la ventana, si hubo | Coolify | el revert del repo no las toca | volver a ponerlas con `env-set` + **redeploy** (no `app-restart`), desde el panel si la app está parada (regla 10) |
-| **Backups en R2** tomados en la ventana (P4, el previo de `db-migrate`, el snapshot de `db-restore`) | R2 | quedan, sin cifrar mientras P7 siga abierto | aceptado; se van por el ciclo de vida de `manual/*` |
+| **Variables de entorno cambiadas en Coolify** durante la ventana, si hubo | Coolify | el revert del repo no las toca | volver a ponerlas con `env-set` + **redeploy** (no `app-restart`), desde el panel si la app está parada (regla 10: `hops` no la resuelve) |
+| **Backups en R2** tomados en la ventana (P4, el previo de `db-migrate`, el snapshot de `db-restore`) | R2 | quedan, cifrados (`.dump.gpg`, P7) | aceptado; se van por el ciclo de vida de `manual/*` |
 | **QR impresos** | papel | el sticker codifica `/qr/<slug>/` (inmutable), así que no hay nada impreso que cambie; lo que se reescribe es `qr_codes.target_url`, que sí vuelve con el restore/reset | ninguno |
 
 ## 5. Comandos de `hops` citados, verificados contra el código
 
 En `abe861e88f`. Registro del VPS: `scripts/server-tools/src/index.ts`; local: `scripts/client-tools/`.
-«Resuelve por `findContainer`» quiere decir que, con la app de staging parada, apunta a prod (regla 10).
+«Resuelve por `findContainer`» quiere decir que resuelve por etiqueta exacta desde HOS-1950 (regla 10): con la app de
+staging parada falla, ya no apunta a prod.
 
 | comando | política de `--target` | cómo se usa acá |
 |---|---|---|
 | `db-backup-now` | `default-ok`; Postgres por etiqueta con UUID | P4, C1 (`--yes` opcional) |
 | `psql` | `explicit-required` | consulta posicional |
 | `find <kind> [--verbose]` | `default-ok`; resuelve por `findContainer` | sólo para la comprobación de la regla 10, con la app corriendo |
-| `cron-list` | `default-ok`, pero **ignora `--target`** (HTTP a `HOSPEDA_API_URL`, default prod: `lib/api-client.ts:72`) | **no usar** |
-| `env-list <app> [--reveal] [--match]` | `default-ok`; resuelve por `findContainer` y no imprime el contenedor | **no usar en la ventana**; en su lugar, `docker inspect` (V0) o el panel |
+| `cron-list`, `cron-trigger` | `default-ok`; **respetan `--target`** (HTTP a `HOPS_STAGING_API_URL` con `HOPS_STAGING_ADMIN_COOKIE`; la cookie vence, 401 = refrescarla desde DevTools) | V5.4, con la api de staging corriendo |
+| `env-list <app> [--reveal] [--match]` | `default-ok`; resuelve por `findContainer` (etiqueta exacta) y loguea `Resolved …` | **no se usa en la ventana**; en su lugar, `docker inspect` (V0) o el panel |
 | `logs <kind> [--since] [-g]` | `default-ok`; resuelve por `findContainer` | sólo con la app de staging corriendo y la regla 10 comprobada (V5.4) |
 | `db-migrate` | `explicit-required` | `--reset`, `--no-pull`, `--yes` (existe `--no-backup`, no se usa) |
-| `db-seed` | `explicit-required` | `--no-pull` (defaults reset + required + example) |
+| `db-seed` | `explicit-required` | `--no-pull` (defaults reset + required + example); `--baseline-stamp` sólo estampa y se niega con prod (V4.3.6) |
+| `update` | local al VPS | `hops update --branch staging` con `bun` en el PATH (V4.3.2) |
 | `db-seed-test-users` | `explicit-required` | `--no-pull` |
 | `db-seed-migrate` | `explicit-required` | `--status`, que **nunca hace pull** aunque se le pase `--pull` (`commands/db-seed-migrate.ts:237-247`) |
-| `redeploy <kind>` | `explicit-required`; resuelve por `findContainer` | **no en V5/V6**: el deploy va desde el panel de Coolify |
+| `redeploy <kind>` | `explicit-required`; resuelve por `findContainer` | **no en V5/V6**: el deploy de una app parada va desde el panel de Coolify |
 | `exec <kind> [--] <cmd>` | `explicit-required`; app por `findContainer`, redis/postgres por etiqueta con UUID | V5.5 sobre redis. `--env <prefijo>` siempre tapa los valores (`container-exec.ts:91`) |
 | `health <env>` | `none` (descarta `--target`) | entorno posicional |
-| `db-restore [N]` | `explicit-required` | elegir por nombre en el picker; existen `--no-snapshot-first`, `--yes`, `--target-db` |
+| `db-restore [N]` | `explicit-required` | elegir por nombre en el picker; existen `--no-snapshot-first`, `--yes`, `--target-db`. No crea la base destino |
 | `r2-lifecycle [show\|set]` | `explicit-required` | `show` en C1 |
-| `env-set` | `explicit-required`; resuelve por `findContainer` | sólo con la app corriendo y la regla 10 comprobada |
+| `env-set` | `explicit-required`; resuelve por `findContainer` | sólo con la app corriendo y la línea `Resolved …` comprobada |
 | `db-update-template` (local) | — | `status`, `build-candidate <nombre>`, `promote <nombre> --confirm` |
 
 ## 6. Puntos abiertos para el owner
@@ -421,7 +484,9 @@ En `abe861e88f`. Registro del VPS: `scripts/server-tools/src/index.ts`; local: `
 Cada uno con la opción recomendada y el paso en que tiene que quedar cerrado. Ninguno se resuelve en este
 documento.
 
-1. **Herramienta para cancelar las preapprovals huérfanas del sandbox (V1).** Opciones: (a) un script chico
+1. **CERRADO (HOS-1951, PR #3891).** ~~Herramienta para cancelar las preapprovals huérfanas del sandbox (V1).~~
+   Quedó `scripts/cutover/cli-staging-sandbox.ts`, que corre desde local con túnel ssh (V1). Dry-run del 28/10:
+   found=28, live=7, alreadyCancelled=21, failures=0. Queda el `--apply` en la ventana. Texto original: Opciones: (a) un script chico
    en `scripts/cutover/` que lea `provider_link` y los checkouts pendientes de staging, busque las sueltas por
    `payer_email`, cancele por id en el sandbox y relea hasta ver `cancelled`; (b) a mano desde el panel del
    sandbox; (c) adaptar U3. **Recomendada: (a)**, con PR propio: deja registro, se puede reintentar y no toca U3,
@@ -429,10 +494,12 @@ documento.
 2. **Cómo se baja cada app (V2, V3).** (a) «Stop» de Coolify; (b) `docker stop` por ssh. **Recomendada:
    (a)**: Coolify sabe que la paró y no la relanza. Con (b) no está medido si su política de reinicio la
    vuelve a levantar. **Se cierra antes de V2.**
-3. **El checkout del VPS (V4.3).** Qué rama sigue `$HOPS_REPO_ROOT`. **Recomendada**: leerlo en P8 con
+3. **CERRADO (medido el 28-29/10).** ~~El checkout del VPS (V4.3).~~ `~/hospeda` está en HEAD detached; se
+   actualiza con `hops update --branch staging` (V4.3.2). Texto original: Qué rama sigue `$HOPS_REPO_ROOT`. **Recomendada**: leerlo en P8 con
    `git -C "$HOPS_REPO_ROOT" status -sb` (sólo lectura) y seguir los pasos 1 a 3 y 8 de V4.3 tal como están.
    **Se cierra antes de V1.**
-4. **Estampar el ledger del seed en staging después del reset (V4.3.6).** (a) agregar `--baseline-stamp` a
+4. **CERRADO (HOS-1952, PR #3889).** ~~Estampar el ledger del seed en staging después del reset (V4.3.6).~~
+   Se hace con `hops --target=staging db-seed --baseline-stamp --no-pull`. Texto original: (a) agregar `--baseline-stamp` a
    `hops db-seed` en un PR chico; (b) correr a mano `pnpm --filter @repo/seed seed --data-migrate
    --baseline-stamp` desde el checkout del VPS con la URL de staging. **Recomendada: (a)**: el comando ya resuelve
    la base por `--target` y no se puede apuntar a prod por error. **Se cierra antes de V1.**
@@ -444,7 +511,9 @@ documento.
 6. **Quién hace PostHog (V6.3, C3), y si staging y prod comparten proyecto.** (a) el agente con el MCP de
    PostHog, que primero lista lo que nombra la propiedad vieja y edita sólo con la lista aprobada por el owner;
    (b) el owner a mano en el panel. **Recomendada: (a)**, siempre con el filtro OR. **Se cierra antes de V6.**
-7. **`BACKUP_PASSPHRASE` sin setear: los dumps suben a R2 sin cifrar (P7, C1).** (a) setearla antes del
+7. **CERRADO (HOS-1953, PRs #3893 y #3894).** ~~`BACKUP_PASSPHRASE` sin setear: los dumps suben a R2 sin cifrar
+   (P7, C1).~~ Cargada en el VPS y en el gestor del owner; backup y restore cifrados probados contra staging el
+   29/10 con conteos idénticos (P7). Queda por repetir lo mismo contra prod antes de C1. Texto original: (a) setearla antes del
    corte en `scripts/server-tools/.env.local` del VPS y guardar la passphrase fuera del VPS, porque sin ella
    `db-restore` no descifra el 2b; (b) aceptar el riesgo y dejarlo anotado. **Recomendada: (a)** para prod,
    con un `db-backup-now` + `db-restore --target-db <scratch>` de prueba antes, para que el 2b no sea el primer
@@ -454,3 +523,10 @@ documento.
 9. **Cache de los 302 en navegadores.** El middleware no fija `Cache-Control` en esas respuestas (no
    encontrado); no se midió una respuesta real. **Recomendada**: un `curl -sI` a una ruta vieja, anotando
    `Cache-Control`; si no trae `no-store`, se acepta como transitorio. **Se cierra en el smoke de 1.B9 (V6.4).**
+
+## 7. Riesgos anotados, sin acción
+
+- **El proxy de Postgres de staging está publicado en todas las interfaces.** Medido el 28-29/10: el proxy de
+  staging escucha en `0.0.0.0:15432` (el que usa el túnel de V1) y hay otro en `0.0.0.0:15433`. Si el firewall del
+  VPS no lo filtra, queda expuesto a internet. No se tocó nada. **Verificarlo después del corte**, desde afuera
+  del VPS, y decidir entonces si se ata a `127.0.0.1`.
