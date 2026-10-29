@@ -149,7 +149,14 @@ const createUrl = buildUrl({ locale, path: 'mi-cuenta/publica' });
     {usageBadges.length > 0 && (
         <div class="mc-usage-row">
             {usageBadges.map((usage) => (
-                <div class={`mc-usage mc-usage--${usage.threshold}`} role="status">
+                <div
+                    class:list={[
+                        'mc-usage',
+                        `mc-usage--${usage.threshold}`,
+                        { 'mc-usage--card': usage.threshold !== 'ok' || usage.currentUsage >= usage.maxAllowed }
+                    ]}
+                    role="status"
+                >
                     <span class="mc-usage__label">
                         {tPlural(`listing.owner.list.usage.${usage.vertical}.label`, usage.maxAllowed, {
                             current: usage.currentUsage,
@@ -310,6 +317,51 @@ const createUrl = buildUrl({ locale, path: 'mi-cuenta/publica' });
 
     .mc-usage__label {
         white-space: nowrap;
+    }
+
+    /* A notice that carries a message and/or a CTA wraps onto several lines, and a
+       pill radius turns a wrapped block into an oval. Render it as a full-width
+       card (same --radius-card as the other account notices) instead; the plain
+       one-line "ok" badge stays a pill. */
+    .mc-usage--card {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) auto;
+        align-items: center;
+        flex: 1 1 100%;
+        column-gap: var(--space-4, 1rem);
+        row-gap: var(--space-1, 0.25rem);
+        padding: var(--space-4, 1rem) var(--space-5, 1.25rem);
+        border-radius: var(--radius-card, 12px);
+    }
+
+    .mc-usage--card .mc-usage__label {
+        grid-column: 1;
+        font-weight: 700;
+        white-space: normal;
+    }
+
+    .mc-usage--card .mc-usage__at-limit {
+        grid-column: 1;
+        font-weight: 400;
+    }
+
+    .mc-usage--card .mc-usage__upgrade {
+        grid-column: 2;
+        grid-row: 1 / span 2;
+        justify-self: end;
+    }
+
+    @media (max-width: 40rem) {
+        .mc-usage--card {
+            grid-template-columns: minmax(0, 1fr);
+        }
+
+        .mc-usage--card .mc-usage__upgrade {
+            grid-column: 1;
+            grid-row: auto;
+            justify-self: start;
+            margin-top: var(--space-2, 0.5rem);
+        }
     }
 
     .mc-usage__upgrade {

@@ -334,15 +334,17 @@ const needsPlanCta = t('host.properties.list.needsPlanBanner.cta', 'Elegir plan 
 <style>
     /* ── Usage/limit awareness badge ── */
     .props-page__usage {
-        display: inline-flex;
+        display: flex;
         align-items: center;
-        /* HOS-727 added a second CTA to this row; wrapping keeps the three
-           nowrap children from overflowing the pill on narrow screens. */
+        justify-content: space-between;
+        /* The label and the CTA wrap on narrow screens, so this is a full-width
+           card (--radius-card, as the other account notices) and never a pill:
+           a pill radius turns wrapped content into an oval. */
         flex-wrap: wrap;
         gap: var(--space-3, 0.75rem);
-        padding: 0.5rem 1rem;
+        padding: var(--space-3, 0.75rem) var(--space-4, 1rem);
         margin-bottom: var(--space-6, 1.5rem);
-        border-radius: var(--radius-pill, 9999px);
+        border-radius: var(--radius-card, 12px);
         font-family: var(--font-sans);
         font-size: 0.875rem;
         font-weight: 500;
@@ -371,7 +373,7 @@ const needsPlanCta = t('host.properties.list.needsPlanBanner.cta', 'Elegir plan 
     }
 
     .props-page__usage-label {
-        white-space: nowrap;
+        font-weight: 700;
     }
 
     .props-page__usage-upgrade {
