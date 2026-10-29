@@ -95,10 +95,18 @@ function sourceFiles(dir: string): readonly string[] {
  * it, since a commented-out link is not a link.
  */
 function stripComments(src: string): string {
-    return src
-        .replace(/\/\*[\s\S]*?\*\//g, '')
-        .replace(/<!--[\s\S]*?-->/g, '')
-        .replace(/(^|[^:])\/\/.*$/gm, '$1');
+    // Repeat until stable: one pass can splice two halves into a new comment
+    // opener (`<!<!---->--`), which a single replace would leave behind.
+    let previous: string;
+    let current = src;
+    do {
+        previous = current;
+        current = current
+            .replace(/\/\*[\s\S]*?\*\//g, '')
+            .replace(/<!--[\s\S]*?-->/g, '')
+            .replace(/(^|[^:])\/\/.*$/gm, '$1');
+    } while (current !== previous);
+    return current;
 }
 
 describe('HOS-1156 AC-18 — nothing links to a superseded publish URL', () => {
