@@ -456,3 +456,47 @@ Healthchecks answers `404 not found` and the helper only logs a warning. Create 
 **before** setting the env vars, or the first pings are lost (the checks stay "new" until their
 first ping). With either env var missing the helper is a deliberate no-op: no prefix, no ping, so
 staging can never feed the prod checks.
+
+## Read-only verifiers: journal (G5) and step 3a catalog (G8) — HOS-1957
+
+Two checks that write nothing, run on the VPS after `hops db-migrate`, against the target database:
+
+```bash
+hops --target=prod cutover-verify --journal             # AC:CORTE:7
+hops --target=prod cutover-verify --catalog             # AC:CORTE:8, paso 3a
+hops --target=staging cutover-verify --journal --catalog  # the rehearsal runs both
+```
+
+`hops cutover-verify` follows `hops cutover-step-3`: api container environment, host-reachable Postgres URL,
+and the deployed-SHA guard (the checkout must be the deployed commit, so the journal it reads is the image's;
+`--allow-sha-mismatch` overrides). It never writes, so it asks for no typed confirmation, even on prod. It wraps
+`apps/api/scripts/cutover-v6-verify.ts`, whose connections are opened with `default_transaction_read_only=on`.
+
+Exit codes: `0` every requested check passed, `1` a check failed (the cut does not continue and the abort branch
+applies) or an error, `2` refused arguments. One JSON line per check goes to stdout.
+
+### `--journal` (AC:CORTE:7)
+
+Every migration in `packages/db/src/migrations/meta/_journal.json` must appear in `drizzle.__drizzle_migrations`.
+Drizzle records `hash = sha256(<tag>.sql)` and `created_at = journal.when`, and applies an entry only if the newest
+`created_at` in the table is lower than its `when`. A freeze hotfix dated before an umbrella migration is therefore
+skipped without an error. The check matches by hash, one lookup per journal entry (never by count), and lists the
+missing `idx`/`tag`/`hash`. A hash present with a different `created_at` is reported under `whenMismatch` as a
+warning only; table hashes absent from the journal are `unknownHashes`, informational.
+
+### `--catalog` (AC:CORTE:8, paso 3a)
+
+Checks, each with its own failure list:
+
+| id | What it verifies |
+|---|---|
+| `enum-mirror` | `vertical` rows equal `VerticalEnum` both ways, with the activation event each vertical declares |
+| `plan-structure` | per vertical: one `trial`, one `pre_trial`, one `floor` plan, a sellable current plan, and exactly one current version per plan |
+| `g-r3` | the panel validation of "publish a plan version" (G-R3 a-d, rank, current version, grace vs shortest cycle...), re-run on each plan's current version through `previewPlanVersion` (preview: writes nothing), so the rule keeps one home |
+| `prices` | every sellable current version has `billing_option` rows with positive integer ARS amounts |
+| `addons` | each add-on has a version and a product; prices positive; compatible verticals known; charge kind and cycle coherent |
+| `promo-codes` | promo codes in force (not closed, inside the window) have a coherent effect and known verticals |
+| `deadlines` | `vertical_deadline_version` and `billing_deadline_version` have version 1 and every version satisfies the deadline validations (including the archive-before-delete rule) |
+
+The output also carries the price table (`report.prices`). The tool proves structure and the validations, not that the
+amounts are the right ones: compare that table by eye with the pre-cut commercial catalog (as `smoke-b2-billing-deadlines.sql` already asks).

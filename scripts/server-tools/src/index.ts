@@ -40,6 +40,7 @@ import { CUTOVER_STEP_3_ARGV, cutoverStep3 } from './commands/cutover-step-3.ts'
 import { CUTOVER_STEP_3B_ARGV, cutoverStep3b } from './commands/cutover-step-3b.ts';
 import { CUTOVER_STEP_4C_ARGV, cutoverStep4c } from './commands/cutover-step-4c.ts';
 import { CUTOVER_STEP_5B_ARGV, cutoverStep5b } from './commands/cutover-step-5b.ts';
+import { CUTOVER_VERIFY_ARGV, cutoverVerify } from './commands/cutover-verify.ts';
 import { dbBackupNow } from './commands/db-backup-now.ts';
 import { dbCounts } from './commands/db-counts.ts';
 import { dbMigrate } from './commands/db-migrate.ts';
@@ -367,6 +368,16 @@ const COMMANDS: ReadonlyArray<Command> = [
         targetPolicy: 'explicit-required',
         argv: { ...CUTOVER_STEP_5B_ARGV },
         run: cutoverStep5b
+    },
+    {
+        name: 'cutover-verify',
+        summary:
+            'Read-only cutover checks: --journal (drizzle journal applied) and --catalog (step 3a).',
+        // Never writes, but the verdict only means something for one database:
+        // an explicit --target= keeps a staging run from being read as prod's.
+        targetPolicy: 'explicit-required',
+        argv: { ...CUTOVER_VERIFY_ARGV },
+        run: cutoverVerify
     },
     {
         name: 'db-seed-test-users',
