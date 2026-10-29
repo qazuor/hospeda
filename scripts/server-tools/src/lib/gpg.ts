@@ -26,19 +26,29 @@
  *   "Attempted to assign to readonly property." Plain `spawn` with byte
  *   chunks is the same approach `pgDumpToBuffer` already uses.
  * - The passphrase never reaches argv (where it would be visible in `ps`).
- *   It is written to a dedicated pipe on fd 3 and gpg reads it through
- *   `--passphrase-fd 3`. `--pinentry-mode loopback` is required for that on
- *   gpg >= 2.1. `--no-symkey-cache` (gpg >= 2.2.7; the VPS runs 2.2.27) is
- *   defence in depth: it asks gpg-agent not to keep the passphrase in its
- *   cache after the process exits. No test depends on it — removing it
- *   changed no observable result on gpg 2.4.4 (a wrong passphrase was still
- *   rejected after a successful decrypt), so do not cite it as the reason
- *   the wrong-passphrase test passes.
+ *   It is written to a 0600 file inside a fresh 0700 `mkdtemp` directory,
+ *   handed to gpg with `--passphrase-file`, and deleted (with its directory)
+ *   as soon as gpg exits, success or failure. `--pinentry-mode loopback` is
+ *   required for that on gpg >= 2.1. `--no-symkey-cache` (gpg >= 2.2.7; the
+ *   VPS runs 2.2.27) is defence in depth: it asks gpg-agent not to keep the
+ *   passphrase in its cache after the process exits. No test depends on it,
+ *   so do not cite it as the reason the wrong-passphrase test passes.
+ * - Do NOT go back to `--passphrase-fd 3` with an extra `stdio[3]` pipe.
+ *   Bun closes that pipe twice: once when it is drained, and again when the
+ *   stream wrapper is garbage-collected. By the second close the fd number
+ *   has been reused, so it closes whatever now owns it. In `hops db-restore`
+ *   (HOS-1953) that was the pidfd of the next child, `docker cp`: bun stopped
+ *   watching it, it stayed <defunct>, and hops sat in `ep_poll` forever with
+ *   pg_restore never started. Measured with strace on bun 1.3.7 and 1.3.13;
+ *   `test/gpg.test.ts` reproduces it with a forced GC. gpg therefore runs on
+ *   fds 0-2 only, the path bun handles for every other child.
  */
 
 import { Buffer } from 'node:buffer';
 import { spawn } from 'node:child_process';
-import type { Writable } from 'node:stream';
+import { mkdtemp, rm, writeFile } from 'node:fs/promises';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
 
 /**
  * Suffix appended to encrypted backup file names. Restore inspects
@@ -46,30 +56,47 @@ import type { Writable } from 'node:stream';
  */
 export const ENCRYPTED_SUFFIX = '.gpg';
 
-/** File descriptor gpg reads the passphrase from (a dedicated pipe). */
-const PASSPHRASE_FD = 3;
-
 /**
- * Flags shared by every gpg invocation. The passphrase travels on
- * {@link PASSPHRASE_FD}, never on argv.
+ * Flags shared by every gpg invocation. The passphrase travels in a private
+ * file named by `--passphrase-file`, never on argv.
  */
 const BASE_GPG_ARGS: ReadonlyArray<string> = [
     '--batch',
     '--yes',
     '--no-symkey-cache',
     '--pinentry-mode',
-    'loopback',
-    '--passphrase-fd',
-    String(PASSPHRASE_FD)
+    'loopback'
 ];
 
 /**
- * Run gpg with `input` on stdin and the passphrase on fd 3, capturing
- * stdout as raw bytes.
+ * Write the passphrase to a 0600 file inside a fresh 0700 directory, run
+ * `fn` with its path, and remove the directory afterwards whatever happens.
+ *
+ * @param params.passphrase - the secret to hand to gpg.
+ * @param params.fn - receives the passphrase file path.
+ * @returns whatever `fn` resolves to.
+ */
+async function withPassphraseFile<T>(params: {
+    readonly passphrase: string;
+    readonly fn: (passphraseFile: string) => Promise<T>;
+}): Promise<T> {
+    const dir = await mkdtemp(join(tmpdir(), 'hops-gpg-'));
+    try {
+        const passphraseFile = join(dir, 'passphrase');
+        await writeFile(passphraseFile, params.passphrase, { mode: 0o600 });
+        return await params.fn(passphraseFile);
+    } finally {
+        await rm(dir, { recursive: true, force: true });
+    }
+}
+
+/**
+ * Run gpg with `input` on stdin and the passphrase in a private file,
+ * capturing stdout as raw bytes.
  *
  * @param params.operationArgs - the operation flags (e.g. `--symmetric ...`).
  * @param params.input - bytes written to gpg's stdin.
- * @param params.passphrase - written to fd 3, never to argv.
+ * @param params.passphrase - written to a 0600 temp file, never to argv.
  * @param params.missingBinaryHint - message used when gpg is not installed.
  * @returns gpg's stdout bytes.
  * @throws when gpg is missing or exits non-zero (stderr is included).
@@ -80,8 +107,36 @@ async function runGpg(params: {
     readonly passphrase: string;
     readonly missingBinaryHint: string;
 }): Promise<Buffer> {
-    const args = [...BASE_GPG_ARGS, ...params.operationArgs];
+    return withPassphraseFile({
+        passphrase: params.passphrase,
+        fn: (passphraseFile) =>
+            spawnGpg({
+                args: [
+                    ...BASE_GPG_ARGS,
+                    '--passphrase-file',
+                    passphraseFile,
+                    ...params.operationArgs
+                ],
+                input: params.input,
+                missingBinaryHint: params.missingBinaryHint
+            })
+    });
+}
 
+/**
+ * Spawn gpg on fds 0-2 only, feed `input` to stdin and collect stdout.
+ *
+ * @param params.args - full gpg argv (without the binary).
+ * @param params.input - bytes written to gpg's stdin.
+ * @param params.missingBinaryHint - message used when gpg is not installed.
+ * @returns gpg's stdout bytes.
+ * @throws when gpg is missing or exits non-zero (stderr is included).
+ */
+function spawnGpg(params: {
+    readonly args: ReadonlyArray<string>;
+    readonly input: Buffer;
+    readonly missingBinaryHint: string;
+}): Promise<Buffer> {
     return new Promise<Buffer>((resolve, reject) => {
         let settled = false;
         const fail = (error: Error): void => {
@@ -90,7 +145,7 @@ async function runGpg(params: {
             reject(error);
         };
 
-        const child = spawn('gpg', args, { stdio: ['pipe', 'pipe', 'pipe', 'pipe'] });
+        const child = spawn('gpg', [...params.args], { stdio: ['pipe', 'pipe', 'pipe'] });
         const stdoutChunks: Array<Buffer> = [];
         const stderrChunks: Array<Buffer> = [];
 
@@ -106,10 +161,8 @@ async function runGpg(params: {
         });
 
         // gpg may exit (bad passphrase, corrupt input) before consuming all
-        // of stdin or fd 3; the resulting EPIPE is reported through the exit
-        // code below, so the stream errors themselves are swallowed here.
-        const passphrasePipe = child.stdio[PASSPHRASE_FD] as Writable | null | undefined;
-        passphrasePipe?.on('error', () => {});
+        // of stdin; the resulting EPIPE is reported through the exit code
+        // below, so the stream error itself is swallowed here.
         child.stdin?.on('error', () => {});
 
         child.on('close', (code) => {
@@ -125,7 +178,6 @@ async function runGpg(params: {
             );
         });
 
-        passphrasePipe?.end(params.passphrase);
         child.stdin?.end(params.input);
     });
 }
