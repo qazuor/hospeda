@@ -136,6 +136,7 @@ const createUrl = buildUrl({ locale, path: 'mi-cuenta/publica' });
 ---
 
 <AccountLayout locale={locale} title={title} description={subtitle} activeSection="comercio">
+    <div class="mc-page">
     <div class="mc-header">
         <AccountPageHeader title={title} description={subtitle || undefined} />
         <a
@@ -272,9 +273,18 @@ const createUrl = buildUrl({ locale, path: 'mi-cuenta/publica' });
         }
     </AccountSectionCard>
     </div>
+    </div>
 </AccountLayout>
 
 <style>
+    /* The account content slot has no flow gap, so sibling cards (usage notice,
+       views, menu QR, listings) were glued together. One stack owns the rhythm. */
+    .mc-page {
+        display: flex;
+        flex-direction: column;
+        gap: var(--space-6, 1.5rem);
+    }
+
     .mc-usage-row {
         display: flex;
         flex-wrap: wrap;
