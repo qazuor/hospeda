@@ -24,7 +24,7 @@
  *
  * Only `accommodation_faqs` carries `is_visible_on_listing` / `is_usable_by_ai`
  * (verified against the production schema). `destination_faqs`,
- * `gastronomy_faqs` and `experience_faqs` have no such columns and no UI for
+ * `venue_faqs` and `experience_faqs` have no such columns and no UI for
  * them; adding the flags there is HOS-400. For those entities the correct
  * behaviour is a `400`, not a silent drop — asserted in
  * `packages/schemas/test/common/faq-channel-visibility-payload.test.ts` at the
@@ -38,7 +38,8 @@
  * @module test/routes/accommodation-faq-channel-visibility
  */
 
-import { EntitlementKey, type LimitKey } from '@repo/billing';
+import { PublicationStatusEnum, VerticalEnum } from '@repo/schemas';
+import { rehydrateEffectiveSet } from '@repo/verticals';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 // ---------------------------------------------------------------------------
@@ -84,19 +85,24 @@ vi.mock('../../src/utils/logger.js', () => ({
     }
 }));
 
-vi.mock('../../src/middlewares/entitlement', async (importOriginal) => {
-    const actual = await importOriginal<typeof import('../../src/middlewares/entitlement')>();
-    return {
-        ...actual,
-        entitlementMiddleware:
-            () => async (c: import('hono').Context, next: () => Promise<void>) => {
-                c.set('userEntitlements', new Set([EntitlementKey.EDIT_ACCOMMODATION_INFO]));
-                c.set('userLimits', new Map<LimitKey, number>());
-                c.set('billingLoadFailed', false);
-                await next();
-            }
-    };
-});
+vi.mock('../../src/utils/listing-access/ports', () => ({
+    getListingAccessPorts: () => ({
+        loadFacts: async () => ({
+            facts: { ownerId: mockActor.id, publicationStatus: PublicationStatusEnum.PUBLISHED },
+            ownerId: mockActor.id
+        }),
+        billing: { coverage: async () => ({ covered: false, sources: [{ type: 'BASE' }] }) },
+        effectiveSet: async ({ userId }: { userId: string }) =>
+            rehydrateEffectiveSet({
+                version: 1,
+                userId,
+                vertical: VerticalEnum.ACCOMMODATION,
+                hasLiveNonTrialTitle: false,
+                inheritsTouristVip: false,
+                entries: [{ key: 'edit_accommodation_info', value: 1, strategy: 'MAX' }]
+            })
+    })
+}));
 
 // ---------------------------------------------------------------------------
 // Import app AFTER mocks

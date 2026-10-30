@@ -1,5 +1,4 @@
 import type { Accommodation } from '@repo/schemas';
-import type { ServiceContext } from '../../types';
 
 /**
  * Every value {@link PublishEligibility} can take, in declaration order.
@@ -26,10 +25,10 @@ export const PUBLISH_ELIGIBILITY_VALUES = [
  *   proceed without touching billing.
  * - `first_publish`: the owner holds no such subscription BUT is still eligible
  *   for an accommodation free trial (HOS-1012 D-2: eligibility is keyed on
- *   `(customerId, productDomain)`, so spending the gastronomy trial leaves the
+ *   `(customerId, productDomain)`, so spending the venue trial leaves the
  *   accommodation one intact). Publishing is ALLOWED and starts a
  *   Hospeda-owned, no-card trial in the same transaction as the lifecycle flip
- *   — see {@link AccommodationPublishDeps.startLocalTrial}.
+ *   (`AccommodationService.publish()` did this until V6.9b retired it, HOS-1641).
  * - `subscription_required`: no live owner subscription and no trial left in
  *   this vertical (or no billing customer row at all, or billing is disabled).
  *   Publishing is rejected and the owner is sent to the plans page.
@@ -61,10 +60,12 @@ const PUBLISH_DENIED_ELIGIBILITY: PublishEligibility = 'subscription_required';
 /**
  * Does this verdict allow the listing to go live?
  *
- * The single place the publish/deny rule is stated. `publish()`, `update()`'s
- * ACTIVE-transition guard and the `GET /publish-eligibility` route all call it,
- * so the button the owner sees and the answer the server gives cannot disagree
- * (HOS-1183 AC-4).
+ * The single place the publish/deny rule is stated. `publish()` and `update()`'s
+ * ACTIVE-transition guard both called it (HOS-1183 AC-4) until V6.9b retired
+ * both with the legacy listing columns (HOS-1641); publishing now goes through
+ * the listing publication machine. The read route `GET /publish-eligibility` that also called
+ * it was removed by HOS-1668: the publish card now reads the subscribe
+ * destination the server itself consults.
  *
  * ## Why the rule is stated by EXCLUSION
  *
@@ -140,183 +141,6 @@ export function publishEligibilityStartsLocalTrial(eligibility: PublishEligibili
 }
 
 /**
- * What `AccommodationService.getPublishEligibility` answers: the billing
- * verdict for an owner, plus whether publishing would actually be allowed.
- *
- * ## Why both fields, when one is a function of the other
- *
- * For nearly every owner `canPublish` IS
- * {@link publishEligibilityAllowsPublish} of `eligibility`, and carrying both
- * looks redundant. It is not, for two independent reasons:
- *
- * - **They answer different questions.** `eligibility` is what BILLING says;
- *   `canPublish` is what the SERVER will do. Platform staff diverge: they
- *   bypass the billing gate entirely, so they publish while their honest
- *   billing verdict stays `subscription_required`.
- * - **Collapsing them is the bug.** Sending only `canPublish` would leave the
- *   UI unable to tell a trial-eligible owner from a paying one, and it would
- *   lose the trial announcement. Sending only `eligibility` would push the
- *   publish rule back into the client — which is HOS-1183 verbatim.
- */
-export interface PublishEligibilityVerdict {
-    /**
-     * The verdict `checkEligibility` returned, verbatim. Never re-derived, and
-     * never overwritten for staff: it stays the honest billing answer.
-     */
-    readonly eligibility: PublishEligibility;
-    /**
-     * Whether `publish()` would let this owner put a listing live right now,
-     * INCLUDING the staff billing bypass that runs before the verdict is even
-     * consulted. This is the field a publish affordance gates on.
-     */
-    readonly canPublish: boolean;
-    /**
-     * Whether publishing would start a Hospeda-owned trial and its clock.
-     * Drives the one extra line the confirm dialog shows, and is false for
-     * staff — they bypass billing, so no trial is ever inserted for them.
-     */
-    readonly startsTrial: boolean;
-    /**
-     * Whether this owner's FIRST publish is refused right now because an admin
-     * paused new signups (`billing_settings.newPaidSignupsFrozen`): the publish
-     * would have started a trial, and starting one is a new signup. When
-     * `true`, `canPublish` and `startsTrial` are both `false` — the listing
-     * stays a draft and no clock starts. Always `false` for staff and for an
-     * owner who already holds a live owner subscription or trial.
-     */
-    readonly firstPublishPaused: boolean;
-}
-
-/**
- * A {@link ServiceContext} whose transaction client is guaranteed present.
- *
- * `ServiceContext.tx` is optional because most call sites may or may not run
- * inside a transaction. {@link AccommodationPublishDeps.startLocalTrial} is not
- * one of them: it is only ever invoked from inside `publish()`'s
- * `withServiceTransaction` block, and enlisting its INSERT in that transaction
- * is the entire point (HOS-1012 G-2). Requiring `tx` in the type makes a call
- * site that hoists the invocation out of the transaction a COMPILE error rather
- * than a silent loss of atomicity.
- */
-export type PublishTransactionContext = ServiceContext & {
-    readonly tx: NonNullable<ServiceContext['tx']>;
-};
-
-/**
- * What {@link AccommodationPublishDeps.startLocalTrial} returns when it created
- * a trial subscription.
- */
-export interface StartLocalTrialResult {
-    /** The id of the freshly-inserted `status='trialing'` subscription row. */
-    readonly subscriptionId: string;
-    /**
-     * The billing customer the trial belongs to. Returned so the caller can
-     * clear that customer's entitlement cache AFTER the publish transaction
-     * commits (INV-1) — the creator deliberately does not, because clearing
-     * before the commit would publish entitlements for a row that may still be
-     * rolled back.
-     */
-    readonly customerId: string;
-    /** When the trial expires and the listing is unpublished (HOS-1012 D-3). */
-    readonly trialEnd: Date;
-}
-
-/**
- * External dependency required by `AccommodationService.publish`.
- *
- * The API layer (`apps/api`) wires this by querying the billing layer. Publish
- * calls `checkEligibility` before any write and either proceeds
- * (`has_active_sub`), starts a local trial and proceeds (`first_publish`), or
- * rejects to the plans page (`subscription_required`).
- *
- * ## This is NOT the pre-HOS-171 `startTrial` / `cancelTrial` pair
- *
- * The deps used to carry `startTrial` + `cancelTrial`, and they were a SAGA:
- * `startTrial` created a MercadoPago preapproval (an external HTTP call, hence
- * an 8s timeout, hence outside the transaction), and if the local write then
- * failed `cancelTrial` compensated — logging "CRITICAL: manual reconciliation
- * required" when the compensation ALSO failed.
- *
- * None of that comes back. HOS-1012's trial is a local `billing_subscriptions`
- * row with `mp_subscription_id = NULL` and no provider object at all, so it goes
- * INSIDE the publish transaction, where the database rolls it back for free.
- * There is no timeout, no compensating call and no reconciliation hazard,
- * because there is nothing outside the transaction left to reconcile.
- *
- * The whole object is optional at the type level so consumers who never call
- * `publish()` can keep instantiating `AccommodationService` without wiring
- * billing. At runtime, calling `publish()` without it results in
- * `CONFIGURATION_ERROR`.
- */
-export interface AccommodationPublishDeps {
-    /** Resolves the publish eligibility for a given owner. */
-    checkEligibility: (ownerId: string, ctx?: ServiceContext) => Promise<PublishEligibility>;
-
-    /**
-     * Reads whether an admin paused new self-service signups
-     * (`billing_settings.newPaidSignupsFrozen`).
-     *
-     * Consulted ONLY when a publish would start a local trial — a first
-     * publish is a new signup — and only when the OWNER is the one publishing:
-     * an admin publishing on the owner's behalf is exempt, like every other
-     * admin action. A publish under a live subscription or trial never asks.
-     *
-     * Optional so consumers that never wired the freeze keep today's
-     * behaviour; absent reads as "not frozen".
-     *
-     * @returns `{ frozen }`, `true` only while the freeze is on.
-     */
-    readNewSignupsFreeze?: () => Promise<{ readonly frozen: boolean }>;
-
-    /**
-     * Inserts a Hospeda-owned, no-card trial subscription for the owner —
-     * INSIDE the caller's transaction (HOS-1012 T-008).
-     *
-     * Deliberately NOT named `startTrial`: that name belonged to the deleted
-     * MercadoPago saga described above, and reusing it would invite someone to
-     * restore the timeout and the compensating cancel that spec guard G-2
-     * exists to keep out. This one performs local reads and a single local
-     * INSERT — no external call may ever be added to it, because it runs with a
-     * transaction open (ADR-019).
-     *
-     * Called by `publish()` only when `checkEligibility` answered
-     * `first_publish`, and exactly once per publish.
-     *
-     * @param input.ownerId - The accommodation owner's user id.
-     * @param input.ctx - The publish transaction's context. `ctx.tx` is
-     *   guaranteed present (see {@link PublishTransactionContext}) and MUST be
-     *   the client every write uses, or the trial escapes the transaction and
-     *   a rolled-back publish leaves a live trial behind.
-     * @returns The created trial, or `null` when it could not be created (no
-     *   billing customer row, the trial plan is missing, or billing is
-     *   disabled). `publish()` treats `null` as `subscription_required` and
-     *   rejects — a listing must never go live without a clock.
-     */
-    startLocalTrial: (input: {
-        readonly ownerId: string;
-        readonly ctx: PublishTransactionContext;
-    }) => Promise<StartLocalTrialResult | null>;
-
-    /**
-     * Post-commit side effects for a trial started by
-     * {@link AccommodationPublishDeps.startLocalTrial}.
-     *
-     * Exists because of INV-1 and because of WHERE the cache lives: the
-     * entitlement cache is an `apps/api` process-local map, so `service-core`
-     * cannot clear it itself, and the clear must happen AFTER the publish
-     * transaction commits — clearing it earlier would publish entitlements for a
-     * row that can still be rolled back. A local trial has no preapproval and
-     * therefore no webhook, so nothing else will ever clear it: skip this and
-     * the owner keeps seeing their previous (empty) entitlements for up to the
-     * full 5-minute TTL, immediately after being told they are live.
-     *
-     * Best-effort by contract: `publish()` has already committed by the time
-     * this runs, so it must not turn a successful publish into an error.
-     */
-    onTrialStarted: (input: StartLocalTrialResult) => Promise<void>;
-}
-
-/**
  * Outcome of `AccommodationService.createForOnboarding`.
  *
  * As of BETA-197, `createForOnboarding` always creates — the auto-resume branch
@@ -351,14 +175,8 @@ export interface AccommodationHookState extends Record<string, unknown> {
     /** ID of the entity being hard-deleted, used for Cloudinary media cleanup. */
     deletedEntityId?: string;
     /**
-     * The `lifecycleState` value captured from the entity before an update.
-     * Used in `_afterUpdate` to detect transitions (e.g., DRAFT → ACTIVE)
-     * and trigger side effects such as HOST role auto-assignment.
-     */
-    previousLifecycleState?: string;
-    /**
-     * Whether the accommodation was publicly visible (lifecycle ACTIVE + visibility
-     * PUBLIC) BEFORE an update. Captured by `_beforeUpdate` and read by `_afterUpdate`
+     * Whether the accommodation was publicly visible (`publicationStatus`
+     * `PUBLISHED`) BEFORE an update. Captured by `_beforeUpdate` and read by `_afterUpdate`
      * to decide whether public-page revalidation is warranted (HOS-203). `undefined`
      * when the pre-update state could not be resolved — treated as "revalidate" (safe).
      */
@@ -413,6 +231,13 @@ export interface AccommodationHookState extends Record<string, unknown> {
     previousTranslatableFields?: Readonly<Record<string, string | undefined>>;
     /** Auto-regenerated slug for an unpublished rename (HOS-784 stage 1). */
     regeneratedSlug?: string;
+    /**
+     * The fields the create/update wrote, as they reached `_before*` (HOS-1499).
+     * Read by `_after*` to build the owner-act event's "what changed" list.
+     */
+    ownerActPayload?: Readonly<Record<string, unknown>>;
+    /** The row as it stood before the update (HOS-1499), for the event's old values. */
+    ownerActBefore?: Readonly<Record<string, unknown>> | null;
 }
 
 /**

@@ -56,6 +56,20 @@ SENTINEL_TABLES="$(wt_qz_cfg '.database.schemaSentinelTables // [] | join(" ")')
 pg() { if [ "$DOCKER" = "true" ]; then docker exec -i "$CONTAINER" "$@"; else "$@"; fi; }
 pgsh() { if [ "$DOCKER" = "true" ]; then docker exec -i "$CONTAINER" bash -c "$1"; else bash -c "$1"; fi; }
 
+# Prefer the Docker container bridge IP for app connections. This avoids a
+# flaky host-published PostgreSQL port on Linux while keeping the URL reachable
+# from the host and from every process in the worktree.
+runtime_conn() {
+  local name="$1" conn="${CONNTMPL//\{dbname\}/$1}" ip
+  if [ "$DOCKER" = "true" ] && command -v docker >/dev/null 2>&1; then
+    ip="$(docker inspect -f '{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}' "$CONTAINER" 2>/dev/null || true)"
+    if [ -n "$ip" ]; then
+      conn="$(printf '%s' "$conn" | sed -E "s#(@)[^/:]+:[0-9]+/#\\1${ip}:5432/#")"
+    fi
+  fi
+  printf '%s' "$conn"
+}
+
 # Derive a STABLE per-worktree DB slug.
 # The worktree PATH is the stable identity of a worktree: it does not change when
 # the branch is switched. Deriving from state.branch (the old behavior) caused a
@@ -80,7 +94,7 @@ DBNAME="$(printf '%s' "$DBNAME" | cut -c1-63)"
 
 set_conn() { # write connString into the env file; optional $1 overrides DBNAME
   local target="${1:-$DBNAME}"
-  local f="$ROOT/$CONNFILE" conn="${CONNTMPL//\{dbname\}/$target}"
+  local f="$ROOT/$CONNFILE" conn; conn="$(runtime_conn "$target")"
   [ -f "$f" ] || { echo "WARN: $CONNFILE missing, cannot set $CONNVAR"; return 0; }
   if grep -qE "^${CONNVAR}=" "$f"; then
     if command -v sd >/dev/null 2>&1; then sd "^${CONNVAR}=.*" "${CONNVAR}=${conn}" "$f"
@@ -155,7 +169,7 @@ do_create_db() {
 # Exports HOSPEDA_DATABASE_URL for the duration of the subshell commands.
 do_full_provision() {
   local name="$1"
-  local conn="${CONNTMPL//\{dbname\}/$name}"
+  local conn; conn="$(runtime_conn "$name")"
   echo "  auto-heal: running full provisioning chain for $name"
   echo "  -> pnpm db:migrate"
   ( cd "$ROOT" && HOSPEDA_DATABASE_URL="$conn" pnpm db:migrate ) \
@@ -193,7 +207,7 @@ db_first_missing_sentinel() {
 # is the template's job (build-template / refresh-template).
 do_schema_sync() {
   local name="$1"
-  local conn="${CONNTMPL//\{dbname\}/$name}"
+  local conn; conn="$(runtime_conn "$name")"
   local journal_state
   echo "  auto-heal (stale schema): syncing $name to the current TS schema"
   journal_state="$(db_migration_journal_state "$name")"
@@ -256,12 +270,14 @@ case "$ACTION" in
     [ -z "$WTDB" ] && WTDB="$DBNAME"
     [ -z "$WTDB" ] && { echo "ERROR: cannot derive worktree DB name"; exit 1; }
     echo "ensure-ready: checking $WTDB"
+    CREATED="false"
 
     # Step 2: ensure the DB exists — create from template/mode if missing.
     if ! db_exists "$WTDB"; then
       echo "  DB '$WTDB' does not exist in Postgres — creating"
       do_create_db "$WTDB"
       echo "  DB created: $WTDB"
+      CREATED="true"
     else
       echo "  DB '$WTDB' exists"
     fi
@@ -269,6 +285,16 @@ case "$ACTION" in
     # Sync conn string + state regardless of whether we just created it.
     set_conn "$WTDB"
     state_set_db "$WTDB"
+
+    # A database cloned from the validated shared template already carries the
+    # schema represented by this checkout. Record that fingerprint immediately
+    # so the first `servers-up` does not mistake a fresh clone for a stale
+    # database and replay the migration baseline through the app connection.
+    # Existing databases keep the old behavior and are checked below.
+    if [ "$CREATED" = "true" ]; then
+      INITIAL_FP="$(wt_schema_fingerprint "$ROOT")"
+      [ -n "$INITIAL_FP" ] && state_set_schema_fingerprint "$INITIAL_FP"
+    fi
 
     # Step 3: schema check — does public.users exist?
     # A DB cloned from a POPULATED template already has the schema + seed, so we must
@@ -314,7 +340,7 @@ case "$ACTION" in
     COUNT="$(pgsh "psql -U $DBUSER -d $WTDB -tAc \"SELECT count(*) FROM users WHERE email LIKE '%@local.test'\" 2>/dev/null" 2>/dev/null | tr -d '[:space:]' || echo "0")"
     if [ "${COUNT:-0}" -lt 13 ] 2>/dev/null; then
       echo "  test users: $COUNT found, need 13 — seeding"
-      CONN="${CONNTMPL//\{dbname\}/$WTDB}"
+      CONN="$(runtime_conn "$WTDB")"
       ( cd "$ROOT" && HOSPEDA_DATABASE_URL="$CONN" pnpm db:seed:test-users ) \
         || { echo "ERROR: pnpm db:seed:test-users failed"; exit 1; }
       echo "  test users seeded into $WTDB"
@@ -373,7 +399,7 @@ case "$ACTION" in
     fi
 
     echo "test users: $COUNT found, need 13 — seeding"
-    CONN="${CONNTMPL//\{dbname\}/$WTDB}"
+    CONN="$(runtime_conn "$WTDB")"
     ( cd "$ROOT" && HOSPEDA_DATABASE_URL="$CONN" pnpm db:seed:test-users ) \
       || { echo "ERROR: pnpm db:seed:test-users failed"; exit 1; }
     echo "test users seeded into $WTDB" ;;

@@ -1,0 +1,70 @@
+/**
+ * SONDA DESCARTABLE — HOS-1352 FASE 1B. No se commitea.
+ *
+ * Igual que la sonda 45, pero con `createBillingAdapter` presente en el mock de
+ * `@repo/db`, que es lo único que impide que `getQZPayBilling()` devuelva una
+ * instancia bajo el arnés de tests (medido por la sonda 46). Con eso las dos
+ * fabricas de qzpay-hono construyen sus routers y la tabla de rutas incluye las
+ * 63 rutas del otro repo.
+ */
+import { mkdirSync, writeFileSync } from 'node:fs';
+import { dirname } from 'node:path';
+import { describe, expect, it, vi } from 'vitest';
+
+vi.mock('@repo/db', async () => {
+    const { createDbMock } = await import('./helpers/mocks/db-mock');
+    const base = createDbMock();
+    // Adaptador de almacenamiento inerte: cualquier propiedad devuelve una
+    // funcion que no hace nada. Solo hace falta que el constructor de
+    // QZPayBilling no tire; nada de esta sonda ejecuta una consulta.
+    const inert: unknown = new Proxy(
+        {},
+        {
+            get: (_t, prop) => {
+                if (prop === 'then') return undefined;
+                return new Proxy(() => Promise.resolve(null), {
+                    get: () => new Proxy({}, { get: () => () => Promise.resolve(null) })
+                });
+            }
+        }
+    );
+    return {
+        ...(base as object),
+        createBillingAdapter: () => inert
+    };
+});
+
+import { initApp } from '../src/app';
+import { getQZPayBilling } from '../src/middlewares/billing';
+import { validateApiEnv } from '../src/utils/env';
+
+const OUT = '/tmp/claude-1000/-home-qazuor-projects-WEBS-hospeda2/1fdacd09-b31f-4c05-8bb2-608b9cfdb393/scratchpad/hos1352-routes-FULL.json';
+
+describe('probe', () => {
+    it('vuelca las rutas con billing inicializado', async () => {
+        validateApiEnv();
+        const billing = getQZPayBilling();
+        // EL ORDEN IMPORTA: src/index.ts monta el tier de admin de qzpay en la
+        // linea 301 y recien llama initApp() en la 359. Hono COPIA las rutas de
+        // un sub-app al montarlo, asi que montar despues no le llega al padre.
+        // biome-ignore lint/suspicious/noExplicitAny: sonda descartable
+        const mod: any = await import('../src/routes/billing/admin');
+        mod.mountQZPayAdminTier();
+        const app = initApp();
+        // biome-ignore lint/suspicious/noExplicitAny: sonda descartable
+        const anyApp = app as any;
+        const raw = (anyApp.routes ?? []).map(
+            (r: { method: string; path: string; handler?: { name?: string } }) => ({
+                method: r.method,
+                path: r.path,
+                handlerName: r.handler?.name ?? ''
+            })
+        );
+        mkdirSync(dirname(OUT), { recursive: true });
+        writeFileSync(
+            OUT,
+            JSON.stringify({ billingConfigured: billing !== null, raw }, null, 0)
+        );
+        expect(raw.length).toBeGreaterThan(0);
+    });
+});

@@ -1,0 +1,24 @@
+Respondé en español. Sos el ADJUDICADOR de la vuelta @N@ de verificación ciega de la spec consolidada de HOS-1352. No usás git ni ningún tracker, no editás la spec real (sólo proponés correcciones). Escribí sólo en `@VR@/adjudicacion/`.
+
+Contexto de dominio (leelos antes): /home/qazuor/projects/WEBS/hospeda-spec-hos-1352-billing-redesign/.claude/skills/hospeda-specs/SKILL.md, .../hospeda-billing/SKILL.md, .../hops-linear-workflow/SKILL.md (en esa carpeta `.claude/skills/`).
+
+## Rutas
+- Copia ciega con canarios (lo que leyeron los verificadores): `@V@/s/@S@/`.
+- Spec real sin canarios (= HEAD; las correcciones se escriben con SUS números de línea): `@VR@/pristina/`.
+- Fuentes congeladas en @F@: `@V@/fuentes/.specs/...` (usá `rg --hidden`).
+- Generadores: `@V@/generadores/` (g1 → 01-decisiones-vigentes.md; g3 → 04-catalogos.md; secciones → tramos g-secciones; g8 → B4–B7 desde `g8/src`).
+- Canarios plantados: `@VR@/canarios.txt`; diff exacto: `@VR@/canarios.diff`.
+- Salidas de los 26 verificadores: `@V@/salidas/*.txt`. Extracción hecha: `@VR@/hallazgos-todos.txt` (ítems `[VERIFICADOR-n]`; los `CAN?` son candidatos a canario por heurística, NO confirmados).
+- Adjudicaciones anteriores (formato y para no re-adjudicar lo resuelto): /home/qazuor/projects/WEBS/hospeda-spec-hos-1352-billing-redesign/.specs/HOS-1352-billing-verticals-redesign/spec-consolidada/_trabajo/verificacion/vuelta-*/adjudicacion/ (`hallazgos.json`, `correcciones.txt`, `canarios-resultado.txt`, `patrones.txt`).
+
+## Reglas de lectura de la fuente
+Lo tachado (`~~…~~`, también tachados que cruzan líneas) está MUERTO. Los 📌 del decision log (`P/docs/01-decision-log.md`) y las letras del owner (`P/docs/41-corte-del-mvp/10-decisiones-del-owner.md`) precisan o reemplazan texto anterior: antes de dar por buena una contradicción, buscá si una decisión posterior la cambió. Antes de dar por mal atribuida una letra, leé el 📌 que la aplica, no sólo su fila.
+
+## Tarea
+1. Canarios: para cada uno de los 42, qué verificadores lo detectaron (aunque fuera desde otro bloque) y si lo detectó su propio bloque. Confirmalo semánticamente, no por cercanía de línea. Escribí `canarios-resultado.txt` con el formato de las vueltas anteriores.
+2. No-canarios: agrupá duplicados; verificá cada único vos mismo contra la fuente y la spec real, y dale veredicto:
+   REAL BLOQUEA / REAL MENOR (defecto de la spec) · FUENTE (la spec copia fiel una fuente con residuo; se arregla en la fuente y con re-congelado) · FALSO (el verificador se equivocó; si ya fue FALSO en una vuelta anterior, citala) · GENERADOR (lo produce g1/g3/secciones/inventario; decí qué regla del código falla) · OWNER (fuente ambigua o contradictoria entre capítulos vivos sin letra que lo resuelva).
+   Para cada REAL, la corrección exacta contra `pristina`: archivo, línea, `sale` y `entra` literales, y si el archivo es generado (entonces la corrección va en el generador, en `g8/src` o en la fuente, nunca a mano en la salida).
+3. Escribí en `@VR@/adjudicacion/`: `canarios-resultado.txt`, `hallazgos.json` (estructura de las vueltas anteriores), `correcciones.txt` (por archivo de la spec, con una sección «En las fuentes» y otra «FALSO»), `owner.txt` sólo si hay OWNER (cada uno: la disyuntiva, 2-3 opciones con costo y riesgo, una recomendada y un ejemplo con Juan, anfitrión de una cabaña en Colón que se suscribe al Básico la semana siguiente al corte; las letras siguen a la última de `10-decisiones-del-owner.md`), y `patrones.txt`.
+
+Respuesta final (corta): canarios detectados X/42 (por tipo VB/G/VA y cuántos por su propio bloque); únicos por veredicto; una línea por cada REAL BLOQUEA y GENERADOR; cuántos OWNER.

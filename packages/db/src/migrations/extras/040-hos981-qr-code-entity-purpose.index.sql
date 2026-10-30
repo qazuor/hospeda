@@ -17,7 +17,7 @@
 -- ## Why `purpose` is IN the key
 --
 -- The obvious constraint — UNIQUE (entity_type, entity_id) — would close the
--- race and take the rest of the epic with it. A gastronomy listing is meant to
+-- race and take the rest of the epic with it. A venue listing is meant to
 -- carry TWO physical codes at once: one on the door that opens its listing
 -- (HOS-982) and one on the table that opens the menu (HOS-1044). An experience
 -- likewise carries its listing code and the one printed on its certificate —

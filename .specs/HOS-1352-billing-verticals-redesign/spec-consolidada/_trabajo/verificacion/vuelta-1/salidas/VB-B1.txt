@@ -1,0 +1,55 @@
+# VB-B1 · spec → fuente · `01-decisiones-vigentes.md`
+
+Spec: `s/c9b417ff/01-decisiones-vigentes.md`. Fuentes: `fuentes/` (las rutas de abajo son desde la raíz del repositorio, resueltas bajo `fuentes/`).
+
+## Hallazgos
+
+```
+01-decisiones-vigentes.md:371 · «DEC-TRIAL-007, implicación 1: el N de archivado de borradores tiene valor inicial de seis meses y el panel no admite uno menor que tres (revisión del owner, 2026-09-28, C9)» · contradice .specs/HOS-1352-billing-verticals-redesign/docs/nucleo/02-modelo-de-datos.md:170 (plazo 3, «el `N` de `PB5`», valor inicial «sin valor escrito»; :195 lo cuenta entre los cinco sin valor, a fijar por el owner antes del merge de `V6`) y :237 (el panel rechaza un `N` cuyo peor caso en días, con meses de 31, no sea menor que el plazo 2 = 180 días; seis meses dan 186). La entrada del log (01-decision-log.md:563) y su 📌 (:572) no dicen ni el valor ni el piso de tres · BLOQUEA
+01-decisiones-vigentes.md:1084 · «DEC-SUB-010: la baja pedida estando pausada no corta en el acto; queda programada para el día en que termina la pausa, porque estando `paused` el proveedor no acepta modificarla (`EX-11`)» · contradice .specs/HOS-1354-billing-cobro-y-proveedor/docs/12-suscripcion.md:1052 («Cancelar estando pausado termina el servicio en el acto»), .specs/HOS-1354-billing-cobro-y-proveedor/docs/03-maquinas-de-estado.md:172 (`S22`: `PAUSED` → `CANCELLED`), .specs/HOS-1354-billing-cobro-y-proveedor/docs/19-superficies.md:116 («el servicio termina hoy») y .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:1876-1877 (`EX-11`: sobre una pausada no se puede modificar nada «pero sí cancelar»). La frase no está en la entrada del log (:1857 y siguientes) ni en ningún otro lugar del corpus · BLOQUEA
+01-decisiones-vigentes.md:4733 · «DEC-MAIL-001, decisión 1: el correo de antes de cancelar se duplica en un aviso dentro de Mi Cuenta, que la persona tiene que haber visto antes de que la cancelación corra (owner 2026-09-16, `EX-3`)» · sin soporte (no está en .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:1675-1720 ni en ningún otro lugar del corpus; agrega una condición nueva que traba la cancelación, cuando los 📌 de la misma entrada, :1710-1723, sólo relajan el bloqueo) · BLOQUEA
+01-decisiones-vigentes.md:7783 · «DEC-GRANT-008: el motivo de una revocación no puede quedar vacío; la base lo rechaza con un `CHECK` de al menos 20 caracteres (owner 2026-09-21)» · sin soporte (.specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:4427 sólo dice «sí, y es texto libre»; .specs/HOS-1354-billing-cobro-y-proveedor/docs/02-modelo-de-datos.md:579 dice «`motivo_de_revocación`, en texto libre» sin restricción; ninguna fuente fija un CHECK ni un largo mínimo) · BLOQUEA
+01-decisiones-vigentes.md:11061 · «Letra 5a de la FASE 9 completa: la decisión es la máquina mínima de `refund` (`REQUESTED → CONFIRMED → EXECUTED \» (la fila termina ahí) · más débil que .specs/HOS-1352-billing-verticals-redesign/docs/26-fase-9-completa/10-decisiones-del-owner.md:36: la tabla corta la celda en el `\|` escapado y se pierden `FAILED`) y la acción administrativa nueva «asentar un cobro o una devolución que ya ocurrió por fuera» (el catálogo pasa de 13 a 14). Las letras son sólo citables y la regla vive en su DEC (`DEC-RF-008`, :9438 la tiene entera), así que no cambia la implementación · MENOR
+01-decisiones-vigentes.md:24 · «Las `SUPERSEDED EN PARTE` (`DEC-MIG-001`, `DEC-MIG-002`, `DEC-DATA-002`, `DEC-MP-003`) no tienen adjudicación y su texto se conserva entero» · contradicción interna de la spec, no con una fuente: las cuatro llevan en :2150, :3999, :6634 y :6694 «adjudicación `PARCIAL` en `adjudicacion.json`», y las cuatro omiten texto con «[…]» y nota «Parte sin efecto». Las omisiones en sí tienen soporte (ver abajo) · MENOR
+```
+
+## Lo que se verificó y cómo
+
+- **Comparación del texto completo.** Hice una comparación palabra por palabra de cada bloque con ancla contra la línea fuente que nombra su `Origen:`, sacando antes lo tachado (`~~…~~`), los destinos de los links y las marcas de negrita.
+  - Para los bloques del log, la comparación va desde el encabezado hasta el próximo `###`. El texto de cada 📌 se separó para compararlo contra su propio bloque `📌n`.
+  - Para el registro de letras, cada fila de tabla se partió en celdas y se comparó campo por campo.
+  - Todas las diferencias que quedaron se leyeron a mano. Salvo las cuatro inserciones y el corte de la fila 5a de arriba, todas eran de forma: punteros `→ ver 📌n`, 📌 ubicados en medio de un ítem y desplegados después, números de ítem de un ítem tachado, marcas `>` de cita y las líneas de cobertura que agrega la spec.
+- **Omisiones «[…]».** Hay 54 notas «Parte sin efecto» y 132 marcas «[…]».
+  - Cada hueco «[…]» tiene una nota en su propio bloque, y lo omitido coincide con lo que la nota dice que omite.
+  - Cada cita «Lo supera: `ruta:línea` («…»)» aparece textual en la línea citada. Las que dicen «[tachado: X] Y» coinciden con `~~X~~ Y` en la fuente: `B/descomposicion.md:148`, `V/descomposicion.md:71` y `16-fase-7…:862`.
+  - Revisé el fondo de las de mayor peso y todas tienen soporte: `DEC-SUB-021#📌1` contra `GR-1 VERIFIED` (:6011), `DEC-MIG-005#📌5` (:6484), `DEC-MIG-003` (:3146-3155), `DEC-DATA-005#📌6` (`08-auditoria…:214`) y `DEC-ARCH-014` (:7564/:7569).
+- **📌 retirados.** Todos los 📌 del log que no aparecen vivos tienen fuente que los mata:
+  - `DEC-ARCH-006` 📌4 y 📌5: C8, «las verticales no se discontinúan».
+  - `DEC-MIG-003` 📌6: :3148, «el 📌 del 2026-09-29, lote P-A […] Salen».
+  - `DEC-MIG-005` 📌1, 📌2 y 📌4: :6479-6484, «Quedan `SUPERSEDED`».
+  - `DEC-MIG-006` 📌1: :6966, «Su 📌 del 2026-09-29 sale entero».
+  - `DEC-RF-008` 📌2: la acción 16 sale con C8.
+- **Completitud.**
+  - Las 146 DEC del log están todas, sea en esta zona o en `90-retirados.md`. Las 8 retiradas enteras (`SUB-001`, `003`, `005`, `015`, `018`, `MIG-004`, `GRANT-010` y `ARCH-011`) figuran `SUPERSEDED` en el log, y ninguna DEC vigente lo está.
+  - Las 313 filas de las nueve tablas `10-decisiones-del-owner.md` están todas. La única que falta es BI, tachada en la fuente y retirada en la spec.
+- **Cobertura «sólo citable».**
+  - Las anotaciones BA y BB coinciden con las listas de las letras BA (`41-corte…:105`) y BB (:106).
+  - Las de `DEC-METH-*` coinciden con AX (:84).
+  - Hice un muestreo de dueñas y comparé `DEC-ENT-003` con BJ, `DEC-ENT-004` con BC, `DEC-DATA-008` con BD y `DEC-TRIAL-004#📌3` con BB: coinciden.
+- **Lo que no se verificó.** Las líneas «Dueña del AC / También / Tests mínimos» y los rótulos «(reemplaza parte/todo …; adjudicación)» salen de `_trabajo/cobertura.json` y de `_trabajo/adjudicacion.json`, que no están entre las fuentes. Sólo se verificaron donde una letra del owner los fija.
+
+## Resumen
+
+| archivo | rangos recorridos | afirmaciones normativas revisadas |
+|---|---|---|
+| `01-decisiones-vigentes.md` | 1–13922 entero (1–10892: áreas TRIAL a METH; 10893–13922: registro de letras) | 654 bloques con ancla: 138 decisiones y 204 📌, comparados enteros contra el log, más 312 filas de letras del owner, comparadas campo por campo. A eso se suman las 54 notas de adjudicación (con 82 citas verificadas), 8 punteros a 📌 retirados y 4 listas de DEC retiradas |
+
+| categoría | cantidad |
+|---|---|
+| contradice · BLOQUEA | 2 (:371, :1084) |
+| sin soporte · BLOQUEA | 2 (:4733, :7783) |
+| más fuerte que · BLOQUEA | 0 |
+| más débil que · MENOR | 1 (:11061) |
+| contradicción interna · MENOR | 1 (:24) |
+| **total BLOQUEA** | **4** |
+| **total MENOR** | **2** |

@@ -3,7 +3,6 @@ import { createFileRoute, useNavigate } from '@tanstack/react-router';
 import { RoutePermissionGuard } from '@/components/auth/RoutePermissionGuard';
 import { PartnerForm } from '@/features/partners/components/PartnerForm';
 import {
-    usePartnerPlansQuery,
     usePartnerQuery,
     useUpdatePartnerMutation
 } from '@/features/partners/hooks/usePartnerQuery';
@@ -20,7 +19,6 @@ function PartnerEditPage() {
     const { id } = Route.useParams();
     const navigate = useNavigate();
     const query = usePartnerQuery(id);
-    const plansQuery = usePartnerPlansQuery();
     const updateMutation = useUpdatePartnerMutation(id);
 
     if (query.isLoading) {
@@ -36,14 +34,11 @@ function PartnerEditPage() {
             <div className="space-y-6 p-6">
                 <div>
                     <h1 className="font-semibold text-2xl">Editar partner</h1>
-                    <p className="text-muted-foreground">
-                        Actualizá sus datos comerciales y de billing.
-                    </p>
+                    <p className="text-muted-foreground">Actualizá sus datos comerciales.</p>
                 </div>
 
                 <PartnerForm
                     initialData={query.data}
-                    plans={plansQuery.data ?? []}
                     isSubmitting={updateMutation.isPending}
                     submitLabel="Guardar cambios"
                     onSubmit={async (data) => {

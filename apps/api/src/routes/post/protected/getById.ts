@@ -7,7 +7,7 @@
  * This route exists rather than reusing `GET /public/posts/{id}`, which would
  * technically answer: `checkCanViewPost` lets an author read their own pending
  * or private post, so the public route returns it whenever the session cookie
- * rides along. That is a trap. The public route carries `cacheTTL: 300`, so a
+ * rides along. That is a trap. The public route is cached, so a
  * response shaped by WHO asked would be cached and then served to whoever asks
  * next — an author's unpublished draft handed to an anonymous visitor. A public
  * route must stay actor-blind; anything actor-shaped belongs here.

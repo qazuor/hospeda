@@ -47,6 +47,17 @@ delete process.env.CI;
  */
 const signUpEmailFn = vi.fn();
 
+/**
+ * HOS-296: the HOST hat is an additive role grant (`grantRole`), not a
+ * `users.role` UPDATE. Hoisted so the `vi.mock` factory below can reference it.
+ */
+const { grantRoleFn } = vi.hoisted(() => ({ grantRoleFn: vi.fn() }));
+
+vi.mock('@repo/service-core', async (importOriginal) => {
+    const actual = await importOriginal<Record<string, unknown>>();
+    return { ...actual, grantRole: grantRoleFn };
+});
+
 vi.mock('../../../src/lib/auth', () => ({
     getAuth: () => ({
         api: {
@@ -131,6 +142,7 @@ vi.mock('@repo/logger', () => {
             AUTH_PASSWORD_CHANGED: 'auth.password.changed',
             ACCESS_DENIED: 'access.denied',
             BILLING_MUTATION: 'billing.mutation',
+            BILLING_READ: 'billing.read',
             PERMISSION_CHANGE: 'permission.change',
             SESSION_SIGNOUT: 'session.signout',
             USER_ADMIN_MUTATION: 'user.admin.mutation',
@@ -139,53 +151,9 @@ vi.mock('@repo/logger', () => {
     };
 });
 
-// Stub out the billing middleware stack. These middlewares import from
-// @repo/billing and @qazuor/qzpay-core which require real credentials and
+// Stub out the Sentry middleware. These middlewares used to import from
+// @repo/billing and @qazuor/qzpay-core, which require real credentials and
 // a DB to function. All three are pass-through stubs.
-vi.mock('../../../src/middlewares/billing', async (importOriginal) => {
-    const original = await importOriginal<typeof import('../../../src/middlewares/billing')>();
-    return {
-        ...original,
-        billingMiddleware: vi.fn(
-            async (
-                c: { set: (key: string, value: unknown) => void },
-                next: () => Promise<void>
-            ) => {
-                c.set('billingEnabled', false);
-                await next();
-            }
-        ),
-        requireBilling: vi.fn(async (_c: unknown, next: () => Promise<void>) => {
-            await next();
-        }),
-        getQZPayBilling: vi.fn(() => null),
-        resetBillingInstance: vi.fn()
-    };
-});
-
-vi.mock('../../../src/middlewares/billing-customer', () => ({
-    billingCustomerMiddleware: () => async (_c: unknown, next: () => Promise<void>) => {
-        await next();
-    }
-}));
-
-vi.mock('../../../src/middlewares/entitlement', () => ({
-    entitlementMiddleware: () => async (_c: unknown, next: () => Promise<void>) => {
-        await next();
-    },
-    requireEntitlement: () => async (_c: unknown, next: () => Promise<void>) => {
-        await next();
-    },
-    requireLimit: () => async (_c: unknown, next: () => Promise<void>) => {
-        await next();
-    }
-}));
-
-vi.mock('../../../src/middlewares/trial', () => ({
-    trialMiddleware: () => async (_c: unknown, next: () => Promise<void>) => {
-        await next();
-    }
-}));
 
 vi.mock('../../../src/middlewares/sentry', () => ({
     sentryMiddleware: () => async (_c: unknown, next: () => Promise<void>) => {
@@ -283,6 +251,7 @@ describe('SPEC-182 T-013 — POST /api/v1/admin/auth/signup-as-host permission m
         // `expect(signUpEmailFn).not.toHaveBeenCalled()` check only the
         // current test's interactions, not cumulative calls.
         vi.clearAllMocks();
+        grantRoleFn.mockResolvedValue({ data: undefined });
     });
 
     afterAll(() => {
@@ -331,14 +300,14 @@ describe('SPEC-182 T-013 — POST /api/v1/admin/auth/signup-as-host permission m
             // Act
             const response = await app.request(buildRequest(VALID_BODY, ACTOR_WITH_USER_CREATE));
 
-            // Assert — the role UPDATE must also flip emailVerified to true.
+            // Assert — the post-signup UPDATE flips emailVerified and the HOST role is granted.
             expect(response.status).toBe(201);
             const { getDb } = await import('@repo/db');
             const db = getDb() as unknown as { set: ReturnType<typeof vi.fn> };
-            expect(db.set).toHaveBeenCalledWith({
-                role: RoleEnum.HOST,
-                emailVerified: true
-            });
+            expect(db.set).toHaveBeenCalledWith({ emailVerified: true });
+            expect(grantRoleFn).toHaveBeenCalledWith(
+                expect.objectContaining({ userId: STUB_USER_ID, role: RoleEnum.HOST })
+            );
         });
     });
 

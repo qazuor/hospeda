@@ -1,0 +1,274 @@
+[
+    [
+        "04-catalogos.md",
+        72,
+        295,
+        [
+            [
+                ".specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/03-maquinas-de-estado.md",
+                "52"
+            ]
+        ]
+    ],
+    [
+        "04-catalogos.md",
+        688,
+        788,
+        [
+            [
+                ".specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/03-maquinas-de-estado.md",
+                "488"
+            ]
+        ]
+    ],
+    [
+        "04-catalogos.md",
+        1259,
+        1272,
+        [
+            [
+                ".specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/03-maquinas-de-estado.md",
+                "495"
+            ]
+        ]
+    ],
+    [
+        "04-catalogos.md",
+        1551,
+        1564,
+        [
+            [
+                ".specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/03-maquinas-de-estado.md",
+                "1360"
+            ]
+        ]
+    ],
+    [
+        "04-catalogos.md",
+        2803,
+        2818,
+        [[".specs/HOS-1354-billing-cobro-y-proveedor/docs/03-maquinas-de-estado.md", "156"]]
+    ],
+    [
+        "04-catalogos.md",
+        3134,
+        3312,
+        [[".specs/HOS-1354-billing-cobro-y-proveedor/docs/03-maquinas-de-estado.md", "163"]]
+    ],
+    [
+        "04-catalogos.md",
+        3691,
+        3942,
+        [[".specs/HOS-1354-billing-cobro-y-proveedor/docs/03-maquinas-de-estado.md", "171"]]
+    ],
+    [
+        "04-catalogos.md",
+        4039,
+        4054,
+        [[".specs/HOS-1354-billing-cobro-y-proveedor/docs/03-maquinas-de-estado.md", "182"]]
+    ],
+    [
+        "04-catalogos.md",
+        4185,
+        4230,
+        [[".specs/HOS-1354-billing-cobro-y-proveedor/docs/03-maquinas-de-estado.md", "1454"]]
+    ],
+    [
+        "04-catalogos.md",
+        4391,
+        4405,
+        [[".specs/HOS-1354-billing-cobro-y-proveedor/docs/03-maquinas-de-estado.md", "1768"]]
+    ],
+    [
+        "04-catalogos.md",
+        4516,
+        4529,
+        [[".specs/HOS-1354-billing-cobro-y-proveedor/docs/03-maquinas-de-estado.md", "1851"]]
+    ],
+    [
+        "04-catalogos.md",
+        4753,
+        5032,
+        [[".specs/HOS-1354-billing-cobro-y-proveedor/docs/03-maquinas-de-estado.md", "1874"]]
+    ],
+    [
+        "04-catalogos.md",
+        5386,
+        5400,
+        [[".specs/HOS-1354-billing-cobro-y-proveedor/docs/03-maquinas-de-estado.md", "2538"]]
+    ],
+    [
+        "04-catalogos.md",
+        5781,
+        5794,
+        [[".specs/HOS-1354-billing-cobro-y-proveedor/docs/02-modelo-de-datos.md", "1026"]]
+    ],
+    [
+        "04-catalogos.md",
+        5909,
+        5922,
+        [[".specs/HOS-1354-billing-cobro-y-proveedor/docs/02-modelo-de-datos.md", "1033"]]
+    ],
+    [
+        "04-catalogos.md",
+        6008,
+        6021,
+        [[".specs/HOS-1354-billing-cobro-y-proveedor/docs/02-modelo-de-datos.md", "1040"]]
+    ],
+    [
+        "04-catalogos.md",
+        6564,
+        6575,
+        [[".specs/HOS-1354-billing-cobro-y-proveedor/docs/20-testing.md", "504"]]
+    ],
+    [
+        "04-catalogos.md",
+        6648,
+        6659,
+        [[".specs/HOS-1354-billing-cobro-y-proveedor/docs/20-testing.md", "511"]]
+    ],
+    [
+        "04-catalogos.md",
+        6807,
+        6817,
+        [[".specs/HOS-1354-billing-cobro-y-proveedor/docs/20-testing.md", "536"]]
+    ],
+    [
+        "04-catalogos.md",
+        6884,
+        6894,
+        [[".specs/HOS-1354-billing-cobro-y-proveedor/docs/20-testing.md", "543"]]
+    ],
+    [
+        "04-catalogos.md",
+        7637,
+        7649,
+        [[".specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/20-testing.md", "54"]]
+    ],
+    [
+        "04-catalogos.md",
+        7728,
+        7740,
+        [[".specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/20-testing.md", "61"]]
+    ],
+    [
+        "04-catalogos.md",
+        7821,
+        7833,
+        [[".specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/20-testing.md", "68"]]
+    ],
+    [
+        "04-catalogos.md",
+        7934,
+        7946,
+        [[".specs/HOS-1354-billing-cobro-y-proveedor/docs/20-testing.md", "52"]]
+    ],
+    [
+        "04-catalogos.md",
+        8040,
+        8052,
+        [[".specs/HOS-1354-billing-cobro-y-proveedor/docs/20-testing.md", "60"]]
+    ],
+    [
+        "04-catalogos.md",
+        8145,
+        8157,
+        [[".specs/HOS-1352-billing-verticals-redesign/docs/06-mp-validation-matrix.md", "174"]]
+    ],
+    [
+        "04-catalogos.md",
+        8257,
+        8269,
+        [[".specs/HOS-1352-billing-verticals-redesign/docs/06-mp-validation-matrix.md", "192"]]
+    ],
+    [
+        "04-catalogos.md",
+        8356,
+        8368,
+        [[".specs/HOS-1352-billing-verticals-redesign/docs/06-mp-validation-matrix.md", "209"]]
+    ],
+    [
+        "04-catalogos.md",
+        8462,
+        8474,
+        [[".specs/HOS-1352-billing-verticals-redesign/docs/06-mp-validation-matrix.md", "226"]]
+    ],
+    [
+        "04-catalogos.md",
+        8565,
+        8577,
+        [[".specs/HOS-1352-billing-verticals-redesign/docs/06-mp-validation-matrix.md", "251"]]
+    ],
+    [
+        "04-catalogos.md",
+        8664,
+        8676,
+        [[".specs/HOS-1352-billing-verticals-redesign/docs/06-mp-validation-matrix.md", "268"]]
+    ],
+    [
+        "04-catalogos.md",
+        8759,
+        8771,
+        [[".specs/HOS-1352-billing-verticals-redesign/docs/06-mp-validation-matrix.md", "280"]]
+    ],
+    [
+        "04-catalogos.md",
+        8863,
+        8875,
+        [[".specs/HOS-1352-billing-verticals-redesign/docs/06-mp-validation-matrix.md", "305"]]
+    ],
+    [
+        "04-catalogos.md",
+        8970,
+        8983,
+        [[".specs/HOS-1352-billing-verticals-redesign/docs/06-mp-validation-matrix.md", "317"]]
+    ],
+    [
+        "04-catalogos.md",
+        9068,
+        9081,
+        [[".specs/HOS-1352-billing-verticals-redesign/docs/06-mp-validation-matrix.md", "325"]]
+    ],
+    [
+        "04-catalogos.md",
+        9166,
+        9179,
+        [[".specs/HOS-1352-billing-verticals-redesign/docs/06-mp-validation-matrix.md", "332"]]
+    ],
+    [
+        "04-catalogos.md",
+        9296,
+        9309,
+        [[".specs/HOS-1352-billing-verticals-redesign/docs/06-mp-validation-matrix.md", "361"]]
+    ],
+    [
+        "04-catalogos.md",
+        9438,
+        9451,
+        [[".specs/HOS-1352-billing-verticals-redesign/docs/06-mp-validation-matrix.md", "389"]]
+    ],
+    [
+        "04-catalogos.md",
+        9536,
+        9549,
+        [[".specs/HOS-1352-billing-verticals-redesign/docs/06-mp-validation-matrix.md", "396"]]
+    ],
+    [
+        "04-catalogos.md",
+        9634,
+        9648,
+        [[".specs/HOS-1352-billing-verticals-redesign/docs/06-mp-validation-matrix.md", "403"]]
+    ],
+    [
+        "04-catalogos.md",
+        9733,
+        9746,
+        [[".specs/HOS-1352-billing-verticals-redesign/docs/06-mp-validation-matrix.md", "410"]]
+    ],
+    [
+        "04-catalogos.md",
+        9831,
+        9843,
+        [[".specs/HOS-1352-billing-verticals-redesign/docs/06-mp-validation-matrix.md", "438"]]
+    ]
+]

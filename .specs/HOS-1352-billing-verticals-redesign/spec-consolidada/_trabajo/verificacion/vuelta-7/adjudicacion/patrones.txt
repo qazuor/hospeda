@@ -1,0 +1,18 @@
+# Patrones — vuelta 7
+
+Verificado
+
+- 26 informes finales, 78 ocurrencias: 75 corresponden a canarios (incluidas dos detecciones parciales del 42) y 3 a hallazgos no canarios, todos únicos. No hay duplicados no canarios por fusionar. Los originales quedan en hallazgos.json.
+- Los 42 canarios tienen al menos una detección semántica. Cobertura propia 39/42: VB 28/28, G 4/4 y VA 7/10. Los tres faltantes propios fueron cubiertos por cruces.
+- P-ALCANCE: «toda sonda que mute» pasó a «toda sonda o mutación». Una corrección anterior extendió la obligación al convertirla en criterio. Al trasladar reglas hay que conservar su cuantificador y separar el guard de entorno del de presupuesto.
+- P-CONGELADO: un resumen conservó el texto que vuelta 3 había exigido copiar, aunque la fuente actual ya dice S37. Los veredictos anteriores dependen del congelado que juzgaron; no prevalecen sobre una precisión posterior.
+- P-FUENTE: la tabla legal sigue diciendo mutación en la fecha efectiva. La spec la copia fielmente; la regla vigente ya fue precisada por CC. Corregir la fuente y re-congelar, sin abrir otra decisión OWNER.
+- Las alteraciones de ordinal en G1-4/G2-5 detectan un efecto del canario 42, pero no su pérdida funcional. Contarlas como detección de enforcementStrategy exageraría la cobertura semántica de esos verificadores.
+- No hay GENERADOR confirmado: las diferencias reportadas en las salidas generadas son plantadas y están ausentes en pristina. No atribuir al código del generador una mutación posterior de su salida.
+- hallazgos-todos.txt contiene también corpus, patrones y búsquedas auxiliares. Sus coincidencias y rótulos CAN? no son hallazgos adjudicados. El universo de informes finales quedó particionado íntegramente y sin doble asignación.
+
+Alcance y límites
+
+Se verificaron documentos y propuestas de reemplazo, no la implementación de billing. Las fuentes se leyeron descartando tachados, incluidos los multilínea; para los plazos se contrastaron BZ y el 📌 de CC que precisa su aplicación. No se usaron git, tracker, red, subagentes ni generadores en ejecución. Sólo se escribieron archivos en adjudicacion/. El build de producto del adapter no corresponde a esta adjudicación documental y no se ejecutó.
+
+Pendiente de aplicación: los dos REAL y el residuo FUENTE. No se editó pristina, la copia ciega, la fuente congelada ni la spec real. No hay OWNER, por lo que no se crea owner.txt.

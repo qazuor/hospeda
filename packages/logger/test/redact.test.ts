@@ -12,6 +12,72 @@ import { describe, expect, it } from 'vitest';
 import { redactSensitiveData } from '../src/redact.js';
 
 describe('redactSensitiveData', () => {
+    describe('identifier preservation (HOS-1670)', () => {
+        const knownUuids = [
+            '70434065-4663-4f93-aeb5-6ce5ed4236b5',
+            '10ba6736-1738-4872-881c-90c6aa612c5d',
+            '44113313-0200-4508-b072-f9cc70895fa5'
+        ];
+
+        function mulberry32(seed: number): () => number {
+            return () => {
+                seed += 0x6d2b79f5;
+                let value = seed;
+                value = Math.imul(value ^ (value >>> 15), value | 1);
+                value ^= value + Math.imul(value ^ (value >>> 7), value | 61);
+                return ((value ^ (value >>> 14)) >>> 0) / 4294967296;
+            };
+        }
+
+        function deterministicUuid(random: () => number): string {
+            const bytes = Array.from({ length: 16 }, () => Math.floor(random() * 256));
+            bytes[6] = (bytes[6]! & 0x0f) | 0x40;
+            bytes[8] = (bytes[8]! & 0x3f) | 0x80;
+            const hex = bytes.map((byte) => byte.toString(16).padStart(2, '0')).join('');
+            return `${hex.slice(0, 8)}-${hex.slice(8, 12)}-${hex.slice(12, 16)}-${hex.slice(16, 20)}-${hex.slice(20)}`;
+        }
+
+        it('preserves known UUIDs alone, in objects, and inside strings', () => {
+            for (const uuid of knownUuids) {
+                expect(redactSensitiveData(uuid)).toBe(uuid);
+                expect(redactSensitiveData({ subscriptionId: uuid })).toEqual({
+                    subscriptionId: uuid
+                });
+                expect(redactSensitiveData(`transient cancel failure ${uuid}`)).toBe(
+                    `transient cancel failure ${uuid}`
+                );
+            }
+        });
+
+        it('preserves 100,000 deterministic UUID v4 values', () => {
+            const random = mulberry32(0x1670);
+            for (let index = 0; index < 100_000; index++) {
+                const uuid = deterministicUuid(random);
+                expect(redactSensitiveData(uuid)).toBe(uuid);
+            }
+        });
+
+        it('still redacts PII next to UUIDs and preserves uppercase UUIDs', () => {
+            const uuid = knownUuids[0]!;
+            expect(redactSensitiveData(`call 11-4567-8901 about ${uuid}`)).toBe(
+                `call [REDACTED] about ${uuid}`
+            );
+            expect(redactSensitiveData(`call a@example.com about ${uuid}`)).toBe(
+                `call [REDACTED] about ${uuid}`
+            );
+            expect(redactSensitiveData(`call 4111 1111 1111 1111 about ${uuid}`)).toBe(
+                `call [REDACTED] about ${uuid}`
+            );
+            expect(redactSensitiveData(uuid.toUpperCase())).toBe(uuid.toUpperCase());
+        });
+
+        it('does not exempt UUID-shaped fragments glued to hex or a dash', () => {
+            const uuid = knownUuids[0]!;
+            expect(redactSensitiveData(`${uuid}f`)).toBe(`[REDACTED]-4f93-aeb5-6ce5ed4236b5f`);
+            expect(redactSensitiveData(`-${uuid}`)).toBe(`-[REDACTED]-4f93-aeb5-6ce5ed4236b5`);
+        });
+    });
+
     describe('email redaction', () => {
         it('redacts a simple email', () => {
             expect(redactSensitiveData('contact me at user@example.com please')).toBe(

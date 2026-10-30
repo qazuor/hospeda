@@ -10,7 +10,7 @@
  * the FAQ page's hardcoded support number (`preguntas-frecuentes/index.astro`),
  * and the two operator-entered pass-through paths
  * (`host-trades/TradeCard.tsx`'s `resolveContactHref`,
- * `gastronomy/GastronomyContactBlock.astro`'s `socialNetworks.whatsapp` href).
+ * the venue contact block’s `socialNetworks.whatsapp` href).
  *
  * Before this module the app hand-rolled the link from a stored phone in three
  * places running TWO distinct rules: `WhatsAppContact.client.tsx` and the

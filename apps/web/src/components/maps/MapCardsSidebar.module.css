@@ -479,22 +479,11 @@
 /* ----- Mobile bottom sheet ----- */
 .sheetTrigger {
     position: fixed;
-    /* Lift above the cookie banner (or any future bottom overlay) via the
-     * shared --bottom-safe-inset token defined in global.css. */
     bottom: calc(1.5rem + var(--bottom-safe-inset, 0px));
-    /* Anchored to the right so the bottom row reads as
-     * [Filtros (izq)] ... [Tarjetas (der)] — view-toggle sits at the top of
-     * the map instead of competing for the bottom center. */
     right: 1rem;
-    /* Cap so the CTA never spills past the viewport edge or runs into the
-     * filters trigger on narrow screens. Pairs with --bottom-safe-inset on
-     * the filters trigger to guarantee the bottom row stays inside the
-     * viewport regardless of label length / locale. */
     max-width: calc(50vw - 12px);
     z-index: 200;
     padding: 12px 20px;
-    /* Truncate over-long labels (e.g. "View 1234 results" in en) instead of
-     * letting them wrap to two lines and push the pill off the viewport. */
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
@@ -518,6 +507,72 @@
         transform var(--duration-fast, 0.2s) ease,
         background-color var(--duration-fast, 0.2s) ease,
         opacity var(--duration-fast, 0.2s) ease;
+}
+@media (max-width: 767px) {
+    .sheetTrigger {
+        display: none;
+    }
+
+    :global([data-mobile-dock]) .sheetTrigger {
+        display: inline-block;
+        position: static;
+        max-width: none;
+        min-height: 44px;
+        box-shadow: none;
+    }
+}
+
+/* HOS-1780: the dock trigger degrades full label -> short label -> icon +
+ * count. Only the full label shows by default; the narrower variants are
+ * switched on by the width queries below. */
+.sheetTriggerShort,
+.sheetTriggerCount {
+    display: none;
+}
+
+.sheetTriggerCount {
+    align-items: center;
+    gap: 0.25rem;
+}
+
+/* Breakpoints, measured in headless Chrome with the dock in its real worst
+ * case: four controls (Filtros, list/map toggle, this pill, scroll-to-top)
+ * and a 3-digit count ("888"). Widths swept 1px at a time, es / en / pt:
+ *   - "Ver 888 resultados" (es/pt, the widest) fits on ONE row from 437px up
+ *     (en "View 888 results" from 408px). Full label from 450px (13px of
+ *     margin).
+ *   - "888 resultados" fits from 412px up (en "888 results" from 374px). Short
+ *     label from 420px (8px of margin) up to 449px.
+ *   - Icon + count is 52-66px wide and fits at every width swept (310px+). It
+ *     takes over below 420px, which is where the longest short label stops
+ *     fitting.
+ * es and pt share the same strings and therefore the same widths; they bind
+ * the ladder. The row's own tight spacing (MobileDock.astro) holds up to 767px;
+ * without it the full label would need 516px.
+ * The accessible name is the full label in every mode (aria-label). */
+@media (max-width: 449px) {
+    .sheetTriggerFull {
+        display: none;
+    }
+
+    .sheetTriggerShort {
+        display: inline;
+    }
+}
+
+@media (max-width: 419px) {
+    .sheetTriggerShort {
+        display: none;
+    }
+
+    .sheetTriggerCount {
+        display: inline-flex;
+    }
+
+    :global([data-mobile-dock]) .sheetTrigger {
+        justify-content: center;
+        min-width: 44px;
+    }
 }
 
 .sheetTrigger:hover {

@@ -197,7 +197,7 @@ layer) is still there and is the real entry point.
 
 The URLs moved too (HOS-1032): pricing now lives at
 `/{lang}/planes/<vertical>/precios/` for the five verticals — `anfitriones`,
-`turistas`, `gastronomia`, `experiencias`, `aliados`. The old
+`turistas`, `comer-y-salir`, `experiencias`, `aliados`. The old
 `/{lang}/suscriptores/planes/*` pages survive only as SSR 301 redirects to the
 new locations.
 
@@ -433,20 +433,20 @@ Only `/mi-cuenta/*` routes require authentication. Middleware checks the session
 
 All other routes (including `/suscriptores/*`) are public.
 
-### Commerce owner self-service (`/mi-cuenta/comercio`, SPEC-249)
+### Venue/experience owner self-service (`/mi-cuenta/comercio`, SPEC-249)
 
-`COMMERCE_OWNER` users edit the **operational** fields of their own gastronomy /
+`VENUE_OWNER` / `EXPERIENCE_OWNER` users edit the **operational** fields of their own venue /
 experience listings under `/[lang]/mi-cuenta/comercio`. Identity/core fields
 (name, slug, type, destination, lifecycle/visibility) are read-only and
 server-stripped — owners only maintain content (description, contact, hours,
 media, amenities, price). **Owners create their own listings** since HOS-166 §7.2:
-`POST /api/v1/protected/commerce/listings/{gastronomy,experience}`
-(`apps/api/src/routes/commerce/protected/create.ts`) declares NO
+`POST /api/v1/protected/venues` / `POST /api/v1/protected/experiences`
+(the protected create routes) declare NO
 `requiredPermissions` (HOS-687), creates the listing for `actor.id`, and grants
-`COMMERCE_OWNER` in the same transaction via `createForOwner`. The admin
+`VENUE_OWNER` / `EXPERIENCE_OWNER` in the same transaction via `createForOwner`. The admin
 create/provision path still exists in parallel — it is no longer the only way in.
 Full reference:
-[docs/commerce-owner-self-service.md](docs/commerce-owner-self-service.md).
+[docs/listing-owner-self-service.md](docs/listing-owner-self-service.md).
 
 ### Auth UI
 
@@ -1160,7 +1160,7 @@ only surface that lists partners.
 
 ### Publishing: one page per vertical (HOS-1156)
 
-`/{lang}/publicar/`, `/{lang}/publicar/gastronomia/` and
+`/{lang}/publicar/`, `/{lang}/publicar/comer-y-salir/` and
 `/{lang}/publicar/experiencias/` are the three pages the header's "Publicar"
 menu opens. Each one carries the funnel AND the create form — there is no
 funnel/form pair any more, and no vertical picker. Four rules a future reader
@@ -1179,7 +1179,7 @@ would otherwise re-derive wrongly:
   called `buildLoginRedirect` in their frontmatter).
 - **Every publish path lives exactly once**, in
   `src/lib/publish/publish-page-paths.ts`, read by the pages, the header's
-  `PUBLISH_CTA_OPTIONS`, the footer, the five 301s and `buildCommerceStartUrl`.
+  `PUBLISH_CTA_OPTIONS`, the footer, the five 301s and `buildListingStartUrl`.
   This exists because the issue was CAUSED by a stale link: HOS-1032 repointed
   eighteen call sites at a 301 whose target had changed meaning, and one of them
   was the "Publicar" button. **A link to a redirect is a link whose destination
@@ -1199,11 +1199,44 @@ would otherwise re-derive wrongly:
   protected — `test/lib/public-redirect-paths.guard.test.ts` is what fails then.
 
 The per-vertical cap, the six-cell decision matrix and the delete-draft action
-are shared with the API: see `LIMIT_KEY_BY_PUBLISH_VERTICAL` (`@repo/billing`),
+are shared with the API: see `PUBLICATION_LIMIT_KEYS` (`packages/verticals/src/publication/publication-types.ts`; `LIMIT_KEY_BY_PUBLISH_VERTICAL` was retired with `@repo/billing`, HOS-1626),
 `GET /api/v1/protected/publish/precheck/{vertical}` and
-`DELETE /api/v1/protected/commerce/listings/{vertical}/{id}`. Accommodation keeps
-its own delete (`DELETE /protected/accommodations/{id}`), which already accepted
-its owner; `publishApi.deleteDraft` owns that branch so the island does not.
+`POST /api/v1/protected/{accommodations,venues,experiences}/{id}/purge`.
+The owner's delete button runs PB12 on the three verticals (HOS-1477): the
+listing moves to `PURGED` and its content is erased for good. The old
+`DELETE /protected/{plural}/{id}` doors are retired; `publishApi.purge` is the
+only wrapper, so the island does not know the endpoint.
+
+### Mobile floating dock (HOS-1768)
+
+`MobileDock.astro` in `src/components/shared/dock/` is the single fixed mobile
+control row, mounted once by `BaseLayout.astro`. It measures visible
+`data-dock-item` controls and publishes the height reserved by the page.
+
+On mobile, the dock hides while scrolling down and returns while scrolling up, at the top or page end, while focus is inside it, and while CompareBar has a selection. The reserved `--mobile-dock-height` stays unchanged while hidden. `prefers-reduced-motion: reduce` disables the hide transition.
+
+Slots are declared in `src/lib/mobile-dock/mobile-dock-slots.ts` and ordered
+visually as: `above` (comparison bar), `filters`, `start` (list/map), then
+`map-cards`, `ai-search`, `ai-chat`; `ScrollToTop` follows at the right edge.
+
+To add a control, add a slot to `MOBILE_DOCK_SLOTS`, keep its `DockPortal`
+mounted around children that appear or disappear, and put `data-dock-item` on
+the measured control root. In its mobile CSS, hide it outside the dock and use
+`position: static` inside `:global([data-mobile-dock])`. Add its source file to
+`FIXED_POSITION_FILES` as `dock` in `test/static-guards/mobile-floating-dock.guard.test.ts`.
+
+Portal only the control or comparison bar. Overlays, drawers, sheets and panels
+stay outside: the dock row uses `backdrop-filter`, which creates a containing
+block for fixed descendants.
+
+The dock hides under `html[data-mobile-menu-open]`,
+`html[data-search-panel-open]` and `html[data-filters-drawer-open]`.
+`--z-floating-dock` is `--z-nav + 5`: above navigation and below dropdown,
+popover, modal, toast and higher overlay layers. `--mobile-dock-height` is
+measured at runtime and added to the mobile page bottom reservation.
+
+Outside the mobile media query, the dock and its wrappers use
+`display: contents`, so desktop controls keep their existing positioning.
 
 ## Common Gotchas
 

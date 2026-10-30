@@ -1106,7 +1106,6 @@ Required columns:
 - [docs/deployment/ci-cd.md](./ci-cd.md) — CI/CD pipeline detail (gates, concurrency, env validation step).
 - [docs/runbooks/sentry-setup.md](../runbooks/sentry-setup.md) — Sentry alert and dashboard setup. Use these alerts to monitor the post-rotation window.
 - [docs/runbooks/rollback.md](../runbooks/rollback.md) — Application rollback procedures (use when a rotation breaks prod).
-- [docs/runbooks/billing-incidents.md](../runbooks/billing-incidents.md) — Use when a MercadoPago rotation triggers payment-side fallout.
 - [docs/runbooks/cloudinary-incidents.md](../runbooks/cloudinary-incidents.md) — Same for Cloudinary.
 - [docs/runbooks/backup-recovery.md](../runbooks/backup-recovery.md) — Database backup and recovery (relevant during DB password rotation).
 - [docs/runbooks/monitoring.md](../runbooks/monitoring.md) — Where to watch metrics during the post-rotation window.

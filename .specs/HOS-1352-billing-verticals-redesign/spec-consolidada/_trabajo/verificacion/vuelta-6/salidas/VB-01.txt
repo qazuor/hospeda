@@ -1,0 +1,16 @@
+# VB-01 · spec → fuente · 00-indice.md, 02-nucleo-glosario.md
+
+## Hallazgos
+
+00-indice.md:133 · «los carga el paso 3a y no se cambian» · contradice .specs/HOS-1352-billing-verticals-redesign/docs/41-corte-del-mvp/10-decisiones-del-owner.md:138 («los carga la migración estructural del paso 3 y los verifica el 3a») y .specs/HOS-1352-billing-verticals-redesign/docs/16-fase-7-del-paraguas.md:1130 («la migración estructural del paso 3»; «y los verifica el 3a»). La atribución se repite en 00-indice.md:1400. El 📌 de BM conserva el residuo, pero la fuente del corte lo corrige expresamente y tacha «el paso 3a»; la propia spec fija carga en la migración y sólo verificación en 30-el-corte.md:612 y :622. Seguir el índice trasladaría una escritura del catálogo fuera de la migración estructural · BLOQUEA
+
+00-indice.md:527 · «Antes de habilitar una unidad en producción deben transcurrir 48 horas sin marcas de conciliación abiertas en ninguna cuenta.» · sin soporte: ni la fuente del bloque (.specs/HOS-1352-billing-verticals-redesign/docs/11-particion-del-programa.md), ni los gates de .specs/HOS-1352-billing-verticals-redesign/docs/16-fase-7-del-paraguas.md, ni el decision log ni las decisiones del owner establecen esta espera global. Agrega una condición de habilitación dependiente de las marcas de todas las cuentas · BLOQUEA
+
+02-nucleo-glosario.md:803 · «AND billingOption.ciclo == anual» · contradice .specs/HOS-1352-billing-verticals-redesign/docs/nucleo/01-glosario.md:831 («AND billingOption.ciclo == mensual»). No se encontró una decisión posterior que cambie ese ciclo; también contradice 02-nucleo-glosario.md:792 y 20-fase-2/B8b.md:1036 («Un mensual pausa y queda `PAUSED · CUSTOMER_REQUEST` con sus complementos pausados; un anual no;»). Invierte la elegibilidad de la pausa entre planes mensuales y anuales · BLOQUEA
+
+## Resumen
+
+| archivo | líneas recorridas | afirmaciones normativas revisadas (aprox.) | BLOQUEA | MENOR |
+|---|---|---|---|---|
+| 00-indice.md | 1–1631 | 400 | 2 | 0 |
+| 02-nucleo-glosario.md | 1–959 | 280 | 1 | 0 |

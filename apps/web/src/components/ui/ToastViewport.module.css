@@ -8,7 +8,12 @@
 
     /* Mobile: full-width slab at the bottom, comfortable thumb reach. */
     inset-inline: var(--space-4, 1rem);
-    inset-block-end: var(--space-4, 1rem);
+    /* Lift mobile toasts above the cookie banner and the measured dock. */
+    inset-block-end: calc(
+        var(--space-4, 1rem) +
+        var(--bottom-safe-inset, 0px) +
+        var(--mobile-dock-height, 0px)
+    );
 }
 
 @media (min-width: 768px) {

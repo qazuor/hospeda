@@ -17,7 +17,7 @@
  * `account.partnerStats.*`. The log is *constancia*; this is *medición*, and the
  * commercial presentation sold those as different things.
  *
- * ## Which cards render is derived from `resolvePartnerLogoLink` — never from tier
+ * ## Which cards render is derived from `resolvePartnerLogoLink` — never from partner metadata
  *
  * This is the load-bearing decision of the whole section (§7.2, OQ-7 (2)), and
  * it is easy to "simplify" into a bug:
@@ -29,7 +29,7 @@
  *
  * Both read the SAME function the home carousel reads, on the same inputs, so
  * this panel is structurally incapable of contradicting what the home page
- * renders. A `tier === 'gold'` test here would be a second source of truth about
+ * renders. An independent page availability check here would be a second source of truth about
  * that, and it would drift the moment HOS-1159 makes a silver logo stop being
  * clickable — at which point the clicks card simply stops rendering for silver,
  * with no change to this file.

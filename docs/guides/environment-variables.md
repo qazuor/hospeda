@@ -52,6 +52,9 @@ pnpm env:check
 |----------|------|----------|--------|---------|-------------|
 | `HOSPEDA_API_URL` | url | yes | no | - | API base URL. Used by api, web, admin |
 | `HOSPEDA_SITE_URL` | url | yes | no | - | Web app base URL. Used by api, web |
+| `HOSPEDA_MERCADO_PAGO_API_BASE_URL` | url | no | no | `https://api.mercadopago.com` | Mercado Pago API base URL; do not set in Coolify |
+| `HOSPEDA_E2E_CLOCK_FILE` | string | no | no | - | Local E2E clock file; prohibited unless site URL is localhost or 127.0.0.1; do not set in Coolify |
+| `HOSPEDA_E2E_MAIL_CAPTURE_URL` | url | no | no | - | Local E2E mail capture server base URL; prohibited unless site and capture URLs use localhost or 127.0.0.1; do not set in Coolify |
 | `HOSPEDA_ADMIN_URL` | url | no | no | - | Admin app URL for CORS config |
 
 ### Database (HOSPEDA_)
@@ -110,6 +113,8 @@ pnpm env:check
 | `HOSPEDA_SENTRY_DSN` | url | no | yes | - | Sentry DSN for API error tracking |
 | `HOSPEDA_SENTRY_RELEASE` | string | no | no | - | Sentry release identifier |
 | `HOSPEDA_SENTRY_PROJECT` | string | no | no | - | Sentry project name |
+| `HOSPEDA_HEALTHCHECKS_PING_KEY` | string | no | yes | - | Healthchecks.io project ping key for the free cron monitors (HOS-1742) |
+| `HOSPEDA_HEALTHCHECKS_SLUG_PREFIX` | enum | no | no | - | `staging` or `prod`; prefixes each check slug (HOS-1742) |
 | `HOSPEDA_MERCADOLIBRE_CLIENT_ID` | string | no | no | - | MercadoLibre OAuth app client ID (HOS-45) |
 | `HOSPEDA_MERCADOLIBRE_CLIENT_SECRET` | string | no | yes | - | MercadoLibre OAuth app client secret (HOS-45) |
 | `HOSPEDA_MERCADOLIBRE_REDIRECT_URI` | url | no | no | - | MercadoLibre OAuth callback URL, e.g. `https://api.hospeda.com.ar/api/v1/admin/mercadolibre-oauth/callback` (HOS-45) |

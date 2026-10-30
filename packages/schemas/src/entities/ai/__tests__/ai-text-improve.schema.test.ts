@@ -310,7 +310,7 @@ describe('AiTextImproveRequestSchema', () => {
 
         it.each([
             'accommodation',
-            'gastronomy',
+            'venue',
             'experience'
         ] as const)('should accept entityType "%s"', (entityType) => {
             const result = AiTextImproveRequestSchema.safeParse({
@@ -334,7 +334,7 @@ describe('AiTextImproveRequestSchema', () => {
         it('should accept a valid entityId alongside entityType', () => {
             const result = AiTextImproveRequestSchema.safeParse({
                 ...VALID_DESCRIPTION_REQUEST,
-                entityType: 'gastronomy',
+                entityType: 'venue',
                 entityId: '11111111-1111-4111-a111-111111111111'
             });
             expect(result.success).toBe(true);
@@ -343,7 +343,7 @@ describe('AiTextImproveRequestSchema', () => {
         it('should reject a non-UUID entityId', () => {
             const result = AiTextImproveRequestSchema.safeParse({
                 ...VALID_DESCRIPTION_REQUEST,
-                entityType: 'gastronomy',
+                entityType: 'venue',
                 entityId: 'not-a-uuid'
             });
             expect(result.success).toBe(false);
@@ -366,10 +366,10 @@ describe('AiTextImproveRequestSchema', () => {
 // ============================================================================
 
 describe('AiTextImproveEntityTypeSchema', () => {
-    it('should include all members (accommodation, gastronomy, experience)', () => {
+    it('should include all members (accommodation, venue, experience)', () => {
         const values = Object.values(AiTextImproveEntityTypeSchema.enum);
         expect(values).toContain('accommodation');
-        expect(values).toContain('gastronomy');
+        expect(values).toContain('venue');
         expect(values).toContain('experience');
     });
 });

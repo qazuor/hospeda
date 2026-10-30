@@ -5,7 +5,7 @@
  *
  * WHAT THIS GUARDS. The dashboard is not a static page — it already branches on
  * whether the visitor is a host, prepending "Mis propiedades" and "Panel del
- * anfitrión" to the nav grid. The commerce owner was the one role the branch had
+ * anfitrión" to the nav grid. The venue/experience owner was the one role the branch had
  * never heard of: a merchant whose listing exists and is sitting in DRAFT saw a
  * page that mentioned their business nowhere, while the sidebar right next to it
  * showed "Mi comercio". The dashboard is the first screen they land on, so it is
@@ -15,7 +15,7 @@
  * are string-level assertions on the .astro source (the same pattern as
  * `mi-cuenta-comercio-nuevo.astro.test.ts`). They prove the branch is DECLARED,
  * not that it RENDERS — that second question was answered by hand against the
- * running server, with a commerce-owner session and a tourist session.
+ * running server, with a venue/experience-owner session and a tourist session.
  */
 
 import { readFileSync } from 'node:fs';
@@ -28,30 +28,30 @@ const source = readFileSync(
 );
 
 describe('mi-cuenta/index.astro — role-aware dashboard (H-151)', () => {
-    it('resolves commerce access through the shared gating predicate, not a role literal', () => {
-        expect(source).toContain('hasCommerceNavAccess');
+    it('resolves venue/experience access through the shared gating predicate, not a role literal', () => {
+        expect(source).toContain('hasListingNavAccess');
         // The repo's rule since HOS-296: gate on the role SET via the shared
         // predicate, never by comparing against a role string here.
-        expect(source).not.toMatch(/roles.*includes\(\s*['"]COMMERCE_OWNER['"]\s*\)/);
+        expect(source).not.toMatch(/roles.*includes\(\s*['"]VENUE_OWNER['"]\s*\)/);
     });
 
     it('offers the merchant a way into their listing from the dashboard', () => {
         expect(source).toContain('mi-cuenta/comercio');
-        expect(source).toContain('account.pages.dashboard.nav.myCommerceDesc');
+        expect(source).toContain('account.pages.dashboard.nav.myListingDesc');
     });
 
     it('reuses the sidebar label key so the two surfaces cannot drift apart', () => {
         // The sidebar entry (config/navigation.ts, group `comercio`) already
         // names this destination. Two independent labels for one link is how a
         // rename lands in one place and not the other.
-        expect(source).toContain("t('commerce.owner.nav'");
+        expect(source).toContain("t('listing.owner.nav'");
     });
 
-    it('keeps the commerce entry conditional, so a tourist never sees it', () => {
-        expect(source).toMatch(/isCommerceOwner\s*\n?\s*\?/);
+    it('keeps the listings entry conditional, so a tourist never sees it', () => {
+        expect(source).toMatch(/isOwner\s*\n?\s*\?/);
     });
 
-    it('still gates the host entries independently of commerce', () => {
+    it('still gates the host entries independently of the listings entry', () => {
         // HOS-296: an account can hold BOTH roles, so the two branches must be
         // separate conditions rather than one either/or.
         expect(source).toContain('hasAccommodationsNavAccess');
@@ -61,6 +61,16 @@ describe('mi-cuenta/index.astro — role-aware dashboard (H-151)', () => {
     it('does not describe the merchant inbox as conversations with hosts', () => {
         // The merchant is the one RECEIVING enquiries; the tourist-facing copy
         // ("Conversaciones con anfitriones") describes the opposite party.
-        expect(source).toContain('account.pages.dashboard.nav.myMessagesCommerceDesc');
+        expect(source).toContain('account.pages.dashboard.nav.myMessagesListingDesc');
+    });
+});
+
+describe('TEST:1756:12 mi-cuenta subscription stat source', () => {
+    it('uses the dashboard resolver and removes the untyped plan reads', () => {
+        expect(source).toContain(
+            "import { parsePlanNames, resolveDashboardPlanStat } from '@/lib/billing/dashboard-plan-stat';"
+        );
+        expect(source).not.toContain('planStatus');
+        expect(source).not.toContain('statsData.data?.plan?.name');
     });
 });

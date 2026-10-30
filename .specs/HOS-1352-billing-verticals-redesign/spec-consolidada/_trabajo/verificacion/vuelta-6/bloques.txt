@@ -1,0 +1,29 @@
+# Vuelta 6 · bloques (spec en s/b249f841/, fuentes en fuentes/ congeladas en 3c3e88b9b59cb7d766bc34848b8ffd657eb95770)
+# Las partes entre <!-- g-secciones: inicio --> y <!-- g-secciones: fin --> NO son de los bloques VB (las audita G2).
+VB-01 | 00-indice.md 02-nucleo-glosario.md
+VB-02 | 02-nucleo.md 02-nucleo-auditoria.md 02-nucleo-outbox.md
+VB-03 | 03-contrato-de-cobertura.md 02-nucleo-modelo-y-maquinas.md
+VB-04 | 10-corte/U1.md 10-corte/U2.md 10-corte/U3.md 10-corte/V1.md
+VB-05 | 10-corte/V2.md 10-corte/V3.md 10-corte/V4.md
+VB-06 | 10-corte/V5.md 10-corte/V6.md
+VB-07 | 20-fase-4/V7.md 10-corte/V8a.md 20-fase-4/V8b.md 10-corte/V9a.md
+VB-08 | 10-corte/B1.md 10-corte/B2.md 10-corte/B3.md
+VB-09 | 10-corte/B4.md 10-corte/B5.md 10-corte/B6.md
+VB-10 | 10-corte/B7.md 10-corte/B8a.md
+VB-11 | 10-corte/B9a.md 20-fase-2/B9b.md 20-fase-1/V9b.md
+VB-12 | 10-corte/B11.md 10-corte/B13a.md 20-fase-3/B13b.md 20-fase-3/B12.md
+VB-13 | 20-fase-2/B8b.md 20-fase-3/B10.md 80-abiertos.md
+VB-14 | 30-el-corte.md 90-retirados.md
+G1    | 01-decisiones-vigentes.md (generado por g1 desde el decision log)
+G2    | 04-catalogos.md + las transcripciones g-secciones de B9a, B10, B11, B12, B13a, B8b
+# Dirección fuente → spec (VA). Rutas bajo fuentes/.specs/ ; P=HOS-1352-billing-verticals-redesign, V=HOS-1353-verticales-capacidades-y-autorizacion, B=HOS-1354-billing-cobro-y-proveedor
+VA-A1  | P/docs/nucleo/{00-indice,01-glosario,02-modelo-de-datos,03-maquinas-de-estado,04-invariantes,07-outbox-y-notificaciones,08-auditoria-y-observabilidad}.md
+VA-A2  | P/docs/12-contrato-de-cobertura.md P/docs/16-fase-7-del-paraguas.md P/docs/41-corte-del-mvp/10-decisiones-del-owner.md
+VA-A3  | V/docs/02-modelo-de-datos.md V/docs/03-maquinas-de-estado.md
+VA-A4  | V/descomposicion.md V/docs/{10-verticales-planes-billing-options,11-trial,15-entitlements-y-limits,17-autorizacion}.md
+VA-A5  | V/docs/{18-partner,19-superficies,20-testing,21-migracion,22-lo-legal}.md P/docs/06-mp-validation-matrix.md
+VA-A6  | B/descomposicion.md B/docs/02-modelo-de-datos.md
+VA-A7  | B/docs/03-maquinas-de-estado.md
+VA-A8  | B/docs/{05-idempotencia-y-concurrencia,06-proveedor,09-conciliacion}.md
+VA-A9  | B/docs/{10-verticales-planes-billing-options,12-suscripcion,21-migracion,22-lo-legal}.md
+VA-A10 | B/docs/{14-promos-cortesias-y-grants,16-addons,19-superficies,20-testing}.md

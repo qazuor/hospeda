@@ -46,7 +46,6 @@ vi.mock('@/store/accommodation-conversation-store', () => ({
 
 const ACTIVE_ACCOMMODATION = {
     id: 'acc-001',
-    lifecycleState: 'ACTIVE' as const,
     deletedAt: null,
     type: 'CABIN',
     destinationId: 'dest-colon',

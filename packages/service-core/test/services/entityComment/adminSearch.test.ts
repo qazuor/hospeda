@@ -88,4 +88,17 @@ describe('EntityCommentService admin search backing (_executeSearch / _executeCo
         const svc = new EntityCommentService({ logger: createLoggerMock() });
         expect(svc).toBeInstanceOf(EntityCommentService);
     });
+
+    it('forwards page and pageSize from ctx.pagination to the model (HOS-1900)', async () => {
+        // Act
+        const result = await service.search(
+            actor,
+            EntityCommentAdminSearchSchema.parse({ page: 2, pageSize: 5 })
+        );
+
+        // Assert
+        expectSuccess(result);
+        const pagination = asMock(modelMock.findAll).mock.calls[0]?.[1];
+        expect(pagination).toMatchObject({ page: 2, pageSize: 5 });
+    });
 });

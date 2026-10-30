@@ -45,7 +45,6 @@ export const adminDestinationOptionsRoute = createAdminRoute({
         return { items: result.data?.items || [] };
     },
     options: {
-        cacheTTL: 30,
         customRateLimit: { requests: 120, windowMs: 60000 }
     }
 });

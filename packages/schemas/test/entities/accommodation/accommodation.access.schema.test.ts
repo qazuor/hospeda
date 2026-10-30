@@ -50,7 +50,6 @@ const entityPayload = {
     },
     averageRating: 0,
     reviewsCount: 0,
-    visibility: 'PUBLIC' as const,
     seo: null,
     price: null,
     tags: [],
@@ -58,14 +57,11 @@ const entityPayload = {
     // Additional fields needed for protected / admin schemas
     ownerId: 'c3d4e5f6-a7b8-4c9d-ae1f-2a3b4c5d6e7f',
     contactInfo: { mobilePhone: '+15550123456' },
-    lifecycleState: 'ACTIVE' as const,
+    publicationStatus: 'PUBLISHED' as const,
     faqs: [],
     createdAt: new Date(),
     updatedAt: new Date(),
     // Admin / full entity fields
-    moderationState: 'APPROVED' as const,
-    ownerSuspended: false,
-    planRestricted: false,
     createdById: 'c3d4e5f6-a7b8-4c9d-ae1f-2a3b4c5d6e7f',
     updatedById: 'c3d4e5f6-a7b8-4c9d-ae1f-2a3b4c5d6e7f',
     deletedAt: null,
@@ -342,8 +338,7 @@ describe('contactInfo public exposure (H-118)', () => {
 
 const draftEntityPayload = {
     ...entityPayload,
-    lifecycleState: 'DRAFT' as const,
-    visibility: 'PRIVATE' as const
+    publicationStatus: 'DRAFT' as const
 };
 
 describe('AccommodationProtectedSchema — extraInfo tolerance for DRAFT data (HOS-152)', () => {

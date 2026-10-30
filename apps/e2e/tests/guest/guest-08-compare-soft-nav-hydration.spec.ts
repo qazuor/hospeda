@@ -51,8 +51,7 @@ test.describe('GUEST-08: soft navigation to the comparison page hydrates @p0 @gu
     test.beforeAll(async () => {
         const accs = await execSQL<AccRow>(
             `SELECT id FROM accommodations
-             WHERE lifecycle_state = 'ACTIVE'
-               AND visibility = 'PUBLIC'
+             WHERE publication_status = 'PUBLISHED'
                AND deleted_at IS NULL
              ORDER BY created_at ASC
              LIMIT 2`

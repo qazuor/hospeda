@@ -14,7 +14,7 @@
  *   an N+1 loop. The cron issues a single bulk UPDATE with a WHERE clause.
  * - Advisory lock (ID 43022) prevents overlapping runs.
  *
- * Schedule: daily at 03:00 UTC (midnight Argentina time).
+ * Schedule: daily at 03:00 Buenos Aires time.
  * Advisory lock: 43022
  *
  * @module cron/jobs/conversation-token-cleanup
@@ -54,7 +54,7 @@ type CronTransactionResult =
 /**
  * Conversation token cleanup cron job.
  *
- * Schedule: daily at 03:00 UTC
+ * Schedule: daily at 03:00 Buenos Aires time
  * Advisory lock: 43022
  */
 export const conversationTokenCleanupJob: CronJobDefinition = {

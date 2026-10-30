@@ -1,133 +1,101 @@
-/**
- * SEC-03 — Trial host cannot bypass paywall via direct API calls.
- *
- * Actors: Host on trial subscription.
- * Tags: @p0 @security @billing
- *
- * Validates that paid-only endpoints reject trial hosts even when called
- * directly via HTTP (bypassing the UI's paywall modal). No partial side
- * effects must occur (no rows inserted, no Cloudinary uploads triggered).
- *
- * @see SPEC-092 spec.md § SEC-03
- */
+/** SEC-03 — direct API writes enforce the effective-set promotion gate. */
 
 import { expect, test } from '@playwright/test';
-import { createSubscription, createUser, forceVerifyEmail } from '../../fixtures/api-helpers.ts';
+import { OwnerPromotionCreateRequestSchema } from '@repo/schemas';
+import { createUser, markProfileCompleted } from '../../fixtures/api-helpers.ts';
 import { execSQL, getDbPool } from '../../fixtures/db-helpers.ts';
+import { seedActivePlanHolder } from '../../fixtures/signup-checkout.ts';
 import { cleanupTestUsers } from '../../support/test-cleanup.ts';
 
-const API_URL = process.env.HOSPEDA_E2E_API_URL ?? 'http://localhost:3001';
+const API_URL = process.env.HOSPEDA_E2E_API_URL ?? 'http://localhost:18001';
+const OWNER_PROMOTIONS_PATH = `${API_URL}/api/v1/protected/owner-promotions`;
 
-test.describe('SEC-03: trial host paywall bypass attempts @p0 @security @billing', () => {
-    let userId: string | null = null;
+test.describe('SEC-03: owner promotion gate blocks direct API bypass @p0 @security @billing', () => {
+    const userIds: string[] = [];
+    const createdPromotionIds: string[] = [];
 
     test.afterEach(async () => {
-        if (userId) {
-            await cleanupTestUsers(getDbPool(), [userId]);
-            userId = null;
+        if (createdPromotionIds.length > 0) {
+            await execSQL('DELETE FROM owner_promotions WHERE id = ANY($1::uuid[])', [
+                createdPromotionIds
+            ]);
+            createdPromotionIds.length = 0;
+        }
+        if (userIds.length > 0) {
+            await cleanupTestUsers(getDbPool(), [...userIds]);
+            userIds.length = 0;
         }
     });
 
-    test('paid-only endpoints reject trial host with 402/403, no side effects', async ({
-        request
-    }) => {
-        // ── Setup: trial host ──────────────────────────────────────────────
-        const host = await createUser({ role: 'HOST' }, { apiBaseUrl: API_URL });
-        await forceVerifyEmail(host.id);
-        userId = host.id;
-
-        // `has_trial` column does not exist; trial info lives on billing_prices.trial_days.
-        const planRows = await execSQL<{ id: string }>(
-            `SELECT DISTINCT bp.id FROM billing_plans bp
-             JOIN billing_prices pr ON pr.plan_id = bp.id
-             WHERE bp.active = true AND pr.trial_days > 0
-             ORDER BY bp.id ASC LIMIT 1`
-        );
-        const trialPlanId = planRows[0]?.id;
-        if (!trialPlanId) {
-            test.fixme(true, 'No trial plan in seed — SEC-03 cannot run');
-            return;
-        }
-
-        await createSubscription({
-            userId: host.id,
-            planId: trialPlanId,
-            status: 'trialing'
+    test('rejects a host without the gate key and accepts owner-basico as positive control', async () => {
+        // Arrange
+        const body = OwnerPromotionCreateRequestSchema.parse({
+            slug: `hos1880-promo-${crypto.randomUUID()}`,
+            title: 'HOS-1880 gate contract promotion',
+            discountType: 'percentage',
+            discountValue: 10,
+            validFrom: new Date().toISOString(),
+            touristAudience: 'plus'
         });
+        const ownerA = await createUser({ role: 'HOST' }, { apiBaseUrl: API_URL });
+        userIds.push(ownerA.id);
+        await markProfileCompleted({ userId: ownerA.id });
 
-        // ── 1. POST /admin/sponsorships (paid-only) → rejected ────────────
-        // HOSTs lack ACCESS_PANEL_ADMIN, so the admin auth middleware returns
-        // 401 before any billing entitlement check runs. All of 401/402/403
-        // constitute a proper rejection of the trial host's attempt.
-        const sponsorshipResponse = await request.post(`${API_URL}/api/v1/admin/sponsorships`, {
-            data: {
-                title: 'Should be blocked',
-                description: 'Trial host tries to create sponsorship',
-                sponsorId: host.id,
-                durationDays: 30
+        // Act: authentication and HOST permission pass; the effective-set gate denies this write.
+        const denied = await fetch(OWNER_PROMOTIONS_PATH, {
+            method: 'POST',
+            headers: {
+                'content-type': 'application/json',
+                cookie: ownerA.sessionCookie,
+                Origin: process.env.HOSPEDA_E2E_WEB_URL ?? 'http://localhost:18321'
             },
-            headers: { cookie: host.sessionCookie }
+            body: JSON.stringify(body)
         });
-        expect([401, 402, 403].includes(sponsorshipResponse.status())).toBe(true);
-
-        // ── 2. POST /protected/billing/addons/{slug}/purchase for paid addon → rejected ─
-        // The correct purchase endpoint is in the protected tier (not admin).
-        // HOSTs have access to the protected tier but the service rejects the
-        // purchase when the subscription does not permit addon purchases
-        // (e.g. trial plan without addon entitlement).
-        // Note: addon slug is stored in the metadata JSONB column as metadata->>'slug',
-        // not as a top-level column. Filter by livemode=false to match the E2E sandbox.
-        const addonRows = await execSQL<{ id: string; slug: string }>(
-            `SELECT id, metadata->>'slug' AS slug
-             FROM billing_addons
-             WHERE active = true AND livemode = false
-             ORDER BY created_at ASC LIMIT 1`
+        const deniedBody = await denied.text();
+        expect(
+            denied.status,
+            `owner without create_promotions returned ${denied.status}: ${deniedBody}`
+        ).toBe(403);
+        expect(deniedBody).toContain('ENTITLEMENT_REQUIRED');
+        expect(deniedBody).toContain('create_promotions');
+        const ownerARows = await execSQL<{ count: string }>(
+            'SELECT COUNT(*)::text AS count FROM owner_promotions WHERE owner_id = $1',
+            [ownerA.id]
         );
-        const addonSlug = addonRows[0]?.slug;
-        if (addonSlug) {
-            const addonResponse = await request.post(
-                `${API_URL}/api/v1/protected/billing/addons/${addonSlug}/purchase`,
-                {
-                    data: {},
-                    headers: {
-                        cookie: host.sessionCookie,
-                        'Content-Type': 'application/json',
-                        // Better Auth CSRF guard requires Origin on state-changing requests
-                        Origin: 'http://localhost:4321',
-                        // X-Idempotency-Key is required by the idempotency middleware
-                        'X-Idempotency-Key': `e2e-sec03-${Date.now()}`
-                    }
-                }
-            );
-            // The protected addon purchase endpoint may return:
-            //   - 401 if Better Auth cannot reconstruct the billing session from
-            //     the bare Cookie header (no browser context, no CSRF/session layer)
-            //   - 402 if a paywall/billing entitlement check blocks the purchase
-            //   - 403 if the permission check denies the trial host
-            //   - 422 if the subscription state (trialing) does not allow addon purchases
-            //   - 503 if MercadoPago is not configured in E2E env
-            //   - 400 if billing/addon validation rejects the request before the
-            //     entitlement check (e.g. the stub MP env in PR runs)
-            // The critical security invariant is simply that the addon purchase does
-            // NOT succeed — any non-2xx rejection is acceptable; only a 2xx is a bypass.
-            expect(
-                addonResponse.status() >= 400,
-                `trial host addon purchase must be rejected (non-2xx), got ${addonResponse.status()}`
-            ).toBe(true);
-        }
+        expect(
+            Number(ownerARows[0]?.count ?? 0),
+            'denied owner must create no promotion rows'
+        ).toBe(0);
 
-        // ── 3. DB invariants: NO partial side effects ──────────────────────
-        const sponsorshipRows = await execSQL(
-            'SELECT id FROM sponsorships WHERE sponsor_user_id = $1',
-            [host.id]
-        );
-        expect(sponsorshipRows.length).toBe(0);
+        const ownerB = await createUser({ role: 'HOST' }, { apiBaseUrl: API_URL });
+        userIds.push(ownerB.id);
+        await markProfileCompleted({ userId: ownerB.id });
+        await seedActivePlanHolder({ userId: ownerB.id, slug: 'owner-basico' });
 
-        const addonPurchaseRows = await execSQL(
-            `SELECT id FROM billing_addon_purchases
-             WHERE customer_id IN (SELECT id FROM billing_customers WHERE external_id = $1)`,
-            [host.id]
+        // Assert positive control on the same valid body.
+        const accepted = await fetch(OWNER_PROMOTIONS_PATH, {
+            method: 'POST',
+            headers: {
+                'content-type': 'application/json',
+                cookie: ownerB.sessionCookie,
+                Origin: process.env.HOSPEDA_E2E_WEB_URL ?? 'http://localhost:18321'
+            },
+            body: JSON.stringify(body)
+        });
+        const acceptedBody = (await accepted.json()) as {
+            data?: { id?: string };
+            id?: string;
+        };
+        expect(
+            accepted.status,
+            `owner-basico control failed: ${JSON.stringify(acceptedBody)}`
+        ).toBe(201);
+        const ownerBRows = await execSQL<{ id: string }>(
+            'SELECT id FROM owner_promotions WHERE owner_id = $1 AND slug = $2',
+            [ownerB.id, body.slug]
         );
-        expect(addonPurchaseRows.length).toBe(0);
+        const createdId = ownerBRows[0]?.id ?? acceptedBody.data?.id ?? acceptedBody.id;
+        if (createdId) createdPromotionIds.push(createdId);
+        expect(ownerBRows).toHaveLength(1);
     });
 });

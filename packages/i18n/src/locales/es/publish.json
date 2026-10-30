@@ -1,4 +1,18 @@
 {
+    "subscribe": {
+        "publishCta": "Publicar mi ficha",
+        "trialNote_one": "La prueba gratis de {{trialDays}} día empieza cuando publicás.",
+        "trialNote_other": "La prueba gratis de {{trialDays}} días empieza cuando publicás.",
+        "checkoutMonthly": "Suscribirme con pago mensual",
+        "checkoutAnnual": "Suscribirme con pago anual",
+        "continuePayment": "Continuar el pago",
+        "currentPlan": "Tu plan actual en {{vertical}}",
+        "touristVipInherited": "Tu plan ya incluye Turista VIP: no hace falta comprarlo."
+    },
+    "noPlans": {
+        "title": "Esta vertical no tiene planes disponibles",
+        "body": "Tu ficha sigue sin publicar. No hay nada que contratar ni una prueba gratis que empezar."
+    },
     "signedOut": {
         "tagline": "Primer paso",
         "title": "Creá tu cuenta y publicá",
@@ -21,13 +35,13 @@
         "plansCta": "Ver planes",
         "pricingCta": "Ver precios"
     },
-    "gastronomy": {
+    "venue": {
         "meta": {
-            "title": "Publicá tu local gastronómico",
+            "title": "Publicá tu local en Comer y salir",
             "description": "Cargá la ficha de tu restaurante, bar, parrilla o food truck en Hospeda y llegá a los viajeros que buscan dónde comer en el litoral."
         },
         "hero": {
-            "tagline": "Para locales gastronómicos",
+            "tagline": "Para locales en Comer y salir",
             "title": "Publicá tu local y que te encuentren",
             "body": "Empezá acá con lo básico: cómo se llama tu local, qué tipo es y en qué destino está. Las fotos, el menú y los horarios los cargás después, desde tu panel."
         },
@@ -44,7 +58,7 @@
             },
             "step3": {
                 "title": "Salís publicado",
-                "desc": "Tu local aparece en el catálogo de gastronomía y los comensales de la zona te encuentran."
+                "desc": "Tu local aparece en el catálogo de Comer y salir y los comensales de la zona te encuentran."
             }
         },
         "benefits": {
@@ -106,10 +120,10 @@
         }
     },
     "precheck": {
-        "gastronomy": {
+        "venue": {
             "resumeOrCreate": {
                 "title": "Ya tenés una ficha empezada",
-                "body": "Tenés una ficha de gastronomía sin publicar. Podés retomarla donde la dejaste o empezar una nueva desde cero.",
+                "body": "Tenés una ficha de Comer y salir sin publicar. Podés retomarla donde la dejaste o empezar una nueva desde cero.",
                 "resumeCta": "Retomar la ficha",
                 "createCta": "Crear una nueva"
             },

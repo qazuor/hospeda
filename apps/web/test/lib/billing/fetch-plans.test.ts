@@ -1,456 +1,184 @@
-/**
- * @file billing/fetch-plans.test.ts
- * @description Unit tests for the fetch-plans helper (SPEC-168 T-016).
- *
- * Covers:
- * - fetchPublicPlans returns ok:true with a parsed plan array on 200
- * - fetchPublicPlans returns ok:false on non-OK HTTP status
- * - fetchPublicPlans returns ok:false on network error
- * - fetchPublicPlans returns ok:false when the response body is not an array
- * - filterPlansByCategory filters by category and isActive, sorts by sortOrder
- *
- * `PRICING_CACHE_MAX_AGE_SECONDS`/`PRICING_CACHE_SWR_SECONDS` were deleted
- * (HOS-426): the pricing pages' TTL now comes from the `pricing` cache class
- * in `src/lib/cache/cache-classes.ts`, not a local constant here.
- *
- * Fetch is mocked globally — no real HTTP requests are made.
- * getApiUrl() is module-mocked to avoid triggering validateWebEnv() which
- * reads import.meta.env and is not available in the Vitest jsdom context.
- */
-
+/** TEST:1621:4 — the web maps only the current sellable vertical catalog. */
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import type { PublicPlanData } from '@/lib/billing/fetch-plans';
-import { fetchPublicPlans, filterPlansByCategory } from '@/lib/billing/fetch-plans';
+import { fetchAudiencePlans } from '@/lib/billing/audience-plans';
+import { fetchPublicPlans } from '@/lib/billing/fetch-plans';
 
-// Module-level mock: bypass validateWebEnv() which requires import.meta.env.
-// Pattern established by apps/web/test/pages/sitemap-dynamic.test.ts.
-vi.mock('@/lib/env', () => ({
-    getApiUrl: vi.fn(() => 'http://api.test')
-}));
+vi.mock('@/lib/env', () => ({ getApiUrl: vi.fn(() => 'http://api.test') }));
 
-// ---------------------------------------------------------------------------
-// Fixtures
-// ---------------------------------------------------------------------------
+const monthlyId = '10000000-0000-4000-8000-000000000001';
+const annualId = '10000000-0000-4000-8000-000000000002';
+const planId = '10000000-0000-4000-8000-000000000003';
+const versionId = '10000000-0000-4000-8000-000000000004';
 
-const makePlan = (overrides: Partial<PublicPlanData> = {}): PublicPlanData => ({
-    id: '00000000-0000-0000-0000-000000000001',
-    slug: 'owner-basico',
-    name: 'Básico',
-    description: 'Plan básico',
-    category: 'owner',
-    monthlyPriceArs: 1000,
-    annualPriceArs: 10000,
-    monthlyPriceUsdRef: 5,
-    hasTrial: false,
-    trialDays: 0,
-    isDefault: false,
-    sortOrder: 1,
-    isActive: true,
-    entitlements: ['ACCOMMODATION_LIST'],
-    limits: { max_accommodations: 1 },
-    createdAt: '2026-01-01T00:00:00.000Z',
-    updatedAt: '2026-01-01T00:00:00.000Z',
-    ...overrides
-});
+function catalogPlan(overrides: Record<string, unknown> = {}) {
+    return {
+        planId,
+        planVersionId: versionId,
+        slug: 'tourist-vip',
+        name: 'VIP',
+        description: 'Descripción',
+        pricingOrder: 1,
+        rank: 1,
+        trialDays: 14,
+        inheritsTouristVip: false,
+        entitlements: ['TOURIST_VIP'],
+        limits: { reviews: 10 },
+        billingOptions: [
+            { id: monthlyId, cycle: 'monthly', amount: 120000, currency: 'ARS' },
+            { id: annualId, cycle: 'annual', amount: 1200000, currency: 'ARS' }
+        ],
+        ...overrides
+    };
+}
 
-const OWNER_ACTIVE = makePlan({
-    slug: 'owner-basico',
-    category: 'owner',
-    isActive: true,
-    sortOrder: 2
-});
-const OWNER_INACTIVE = makePlan({
-    slug: 'owner-inactivo',
-    category: 'owner',
-    isActive: false,
-    sortOrder: 1
-});
-const TOURIST_ACTIVE = makePlan({
-    slug: 'tourist-basico',
-    category: 'tourist',
-    isActive: true,
-    sortOrder: 1
-});
-const TOURIST_ACTIVE_2 = makePlan({
-    slug: 'tourist-plus',
-    category: 'tourist',
-    isActive: true,
-    sortOrder: 3
-});
-const TOURIST_ACTIVE_3 = makePlan({
-    slug: 'tourist-premium',
-    category: 'tourist',
-    isActive: true,
-    sortOrder: 2
-});
+function floorPlan(overrides: Record<string, unknown> = {}) {
+    return {
+        planId,
+        planVersionId: versionId,
+        slug: 'floor-default',
+        name: 'Gratis',
+        description: null,
+        pricingOrder: 0,
+        rank: 0,
+        trialDays: 0,
+        entitlements: ['TOURIST_REVIEWS'],
+        limits: { reviews: 5 },
+        ...overrides
+    };
+}
 
-// ---------------------------------------------------------------------------
-// Helpers
-// ---------------------------------------------------------------------------
-
-/**
- * Mock a 200 response wrapping `data` in the ResponseFactory envelope
- * `{ success: true, data }`, mirroring the real public endpoint. Passing a
- * non-array `data` exercises the invalid-shape paths.
- */
-function mockFetchOk(data: unknown): void {
-    global.fetch = vi.fn().mockResolvedValueOnce({
+function mockCatalog(vertical: string, plans: unknown[], floor: unknown): void {
+    global.fetch = vi.fn().mockResolvedValue({
         ok: true,
         status: 200,
-        json: () => Promise.resolve({ success: true, data })
-    } as Response);
+        json: async () => ({ success: true, data: { vertical, plans, floor } })
+    });
 }
 
-function mockFetchHttpError(status: number): void {
-    global.fetch = vi.fn().mockResolvedValueOnce({
-        ok: false,
-        status,
-        json: () => Promise.resolve({ error: { message: 'Not found' } })
-    } as Response);
+function mockFailure(response: unknown): void {
+    global.fetch = vi.fn().mockResolvedValue(response);
 }
 
-function mockFetchNetworkError(message: string): void {
-    global.fetch = vi.fn().mockRejectedValueOnce(new Error(message));
-}
+afterEach(() => vi.restoreAllMocks());
 
-// ---------------------------------------------------------------------------
-// Tests
-// ---------------------------------------------------------------------------
-
-describe('fetchPublicPlans', () => {
-    afterEach(() => {
-        vi.restoreAllMocks();
-    });
-
-    describe('successful response', () => {
-        it('returns ok:true with the plan array when the endpoint returns 200', async () => {
-            // Arrange
-            const plans = [OWNER_ACTIVE, TOURIST_ACTIVE];
-            mockFetchOk(plans);
-
-            // Act
-            const result = await fetchPublicPlans();
-
-            // Assert
-            expect(result.ok).toBe(true);
-            if (!result.ok) throw new Error('Expected ok:true');
-            expect(result.plans).toHaveLength(2);
-            expect(result.plans[0]?.slug).toBe('owner-basico');
-        });
-
-        it('calls fetch with the correct URL path', async () => {
-            // Arrange
-            mockFetchOk([]);
-
-            // Act
-            await fetchPublicPlans();
-
-            // Assert
-            expect(global.fetch).toHaveBeenCalledWith(
-                expect.stringContaining('/api/v1/public/plans'),
-                expect.objectContaining({ headers: { Accept: 'application/json' } })
-            );
-        });
-
-        it('returns ok:true with an empty array when the endpoint returns []', async () => {
-            // Arrange
-            mockFetchOk([]);
-
-            // Act
-            const result = await fetchPublicPlans();
-
-            // Assert
-            expect(result.ok).toBe(true);
-            if (!result.ok) throw new Error('Expected ok:true');
-            expect(result.plans).toHaveLength(0);
-        });
-    });
-
-    describe('error cases', () => {
-        it('returns ok:false with an error message on HTTP 500', async () => {
-            // Arrange
-            mockFetchHttpError(500);
-
-            // Act
-            const result = await fetchPublicPlans();
-
-            // Assert
-            expect(result.ok).toBe(false);
-            if (result.ok) throw new Error('Expected ok:false');
-            expect(result.error).toContain('500');
-        });
-
-        it('returns ok:false with an error message on HTTP 503', async () => {
-            // Arrange
-            mockFetchHttpError(503);
-
-            // Act
-            const result = await fetchPublicPlans();
-
-            // Assert
-            expect(result.ok).toBe(false);
-            if (result.ok) throw new Error('Expected ok:false');
-            expect(result.error).toContain('503');
-        });
-
-        it('returns ok:false on network error', async () => {
-            // Arrange
-            mockFetchNetworkError('ECONNREFUSED');
-
-            // Act
-            const result = await fetchPublicPlans();
-
-            // Assert
-            expect(result.ok).toBe(false);
-            if (result.ok) throw new Error('Expected ok:false');
-            expect(result.error).toBe('ECONNREFUSED');
-        });
-
-        it('returns ok:false when response body is not an array (object)', async () => {
-            // Arrange
-            mockFetchOk({ data: [] });
-
-            // Act
-            const result = await fetchPublicPlans();
-
-            // Assert
-            expect(result.ok).toBe(false);
-            if (result.ok) throw new Error('Expected ok:false');
-            expect(result.error).toContain('shape');
-        });
-
-        it('returns ok:false when response body is a string', async () => {
-            // Arrange
-            mockFetchOk('unexpected string');
-
-            // Act
-            const result = await fetchPublicPlans();
-
-            // Assert
-            expect(result.ok).toBe(false);
-        });
-    });
-});
-
-describe('filterPlansByCategory', () => {
-    it('filters to the requested category only', () => {
-        // Arrange
-        const plans = [OWNER_ACTIVE, TOURIST_ACTIVE, TOURIST_ACTIVE_2] as const;
-
-        // Act
-        const result = filterPlansByCategory(plans, 'tourist');
-
-        // Assert
-        expect(result.every((p) => p.category === 'tourist')).toBe(true);
-        expect(result).toHaveLength(2);
-    });
-
-    it('excludes inactive plans', () => {
-        // Arrange
-        const plans = [OWNER_ACTIVE, OWNER_INACTIVE] as const;
-
-        // Act
-        const result = filterPlansByCategory(plans, 'owner');
-
-        // Assert
-        expect(result.every((p) => p.isActive)).toBe(true);
-        expect(result).toHaveLength(1);
-        expect(result[0]?.slug).toBe('owner-basico');
-    });
-
-    it('sorts active plans by sortOrder ascending', () => {
-        // Arrange — tourist plans are intentionally out of order
-        const plans = [TOURIST_ACTIVE_2, TOURIST_ACTIVE_3, TOURIST_ACTIVE] as const;
-
-        // Act
-        const result = filterPlansByCategory(plans, 'tourist');
-
-        // Assert
-        expect(result.map((p) => p.sortOrder)).toEqual([1, 2, 3]);
-    });
-
-    it('returns an empty array when no plans match the category', () => {
-        // Arrange
-        const plans = [OWNER_ACTIVE] as const;
-
-        // Act
-        const result = filterPlansByCategory(plans, 'tourist');
-
-        // Assert
-        expect(result).toHaveLength(0);
-    });
-
-    it('returns an empty array when the input list is empty', () => {
-        // Act
-        const result = filterPlansByCategory([], 'owner');
-
-        // Assert
-        expect(result).toHaveLength(0);
-    });
-
-    // HOS-692 AC-28: `/suscriptores/planes/comparar/` (comparar/index.astro)
-    // merges `filterPlansByCategory(plans, 'owner')` and
-    // `filterPlansByCategory(plans, 'complex')` into one `ownerPlans` array,
-    // then gates the page on `hasPlans = ownerPlans.length > 0`. HOS-692 (spec
-    // §6.9) removed the complex-* plans from the catalogue, so a real API
-    // response after this change carries ZERO plans of category 'complex' —
-    // verified here against the exact merge the page performs, not assumed.
-    it('HOS-692 AC-28: merging owner + complex categories still renders when complex is empty', () => {
-        // Arrange — a post-HOS-692 catalogue: only owner-category plans exist.
-        const plans = [OWNER_ACTIVE] as const;
-
-        // Act — replicate comparar/index.astro's exact computation.
-        const ownerPlans = [
-            ...filterPlansByCategory(plans, 'owner'),
-            ...filterPlansByCategory(plans, 'complex')
-        ].sort((a, b) => a.sortOrder - b.sortOrder);
-        const hasPlans = ownerPlans.length > 0;
-
-        // Assert — the page renders its table (not EmptyState): complex
-        // contributes nothing, but the owner plans alone keep it non-empty.
-        expect(filterPlansByCategory(plans, 'complex')).toEqual([]);
-        expect(ownerPlans).toEqual([OWNER_ACTIVE]);
-        expect(hasPlans).toBe(true);
-    });
-});
-
-/**
- * SPEC-192 T-028 lock: verify fetch-plans.ts calls the DB-backed public endpoint
- * with no hardcoded config fallback.
- *
- * The endpoint `/api/v1/public/plans` is backed by the `billing_plans` DB table
- * (DB-backed since SPEC-168/T-022). This describe block locks:
- * 1. The exact URL path used (no accidental rollback to a config-only endpoint).
- * 2. That on HTTP error or network error, `ok:false` is returned — no config
- *    fallback is performed.
- */
-describe('SPEC-192 T-028: DB-backed endpoint lock (no config fallback)', () => {
-    afterEach(() => {
-        vi.restoreAllMocks();
-    });
-
-    it('calls the DB-backed public plans endpoint at /api/v1/public/plans', async () => {
-        // Arrange
-        mockFetchOk([]);
-
-        // Act
-        await fetchPublicPlans();
-
-        // Assert — the exact DB-backed endpoint is called
+describe('TEST:1621:4 fetchPublicPlans', () => {
+    it('(a) maps the tourist audience to its own catalog vertical', async () => {
+        mockCatalog('tourist', [catalogPlan()], null);
+        const plans = await fetchAudiencePlans({ audience: 'tourist' });
         expect(global.fetch).toHaveBeenCalledWith(
-            'http://api.test/api/v1/public/plans',
-            expect.objectContaining({ headers: { Accept: 'application/json' } })
+            'http://api.test/api/v1/public/plan-catalog?vertical=tourist',
+            { headers: { Accept: 'application/json' } }
+        );
+        expect(plans.map((plan) => plan.slug)).toEqual(['tourist-vip']);
+        expect(plans[0]?.inheritsTouristVip).toBe(false);
+    });
+
+    it('TEST:1765:4 carries inherited VIP metadata and marks the floor as non-inheriting', async () => {
+        mockCatalog('tourist', [catalogPlan({ inheritsTouristVip: true })], floorPlan());
+
+        const result = await fetchPublicPlans({ vertical: 'tourist' });
+
+        expect(result.ok).toBe(true);
+        if (!result.ok) return;
+        expect(result.plans.map((plan) => [plan.slug, plan.inheritsTouristVip])).toEqual([
+            ['tourist-free', false],
+            ['tourist-vip', true]
+        ]);
+    });
+
+    it('(a) requests the selected vertical catalog', async () => {
+        mockCatalog('tourist', [], null);
+        await fetchPublicPlans({ vertical: 'tourist' });
+        expect(global.fetch).toHaveBeenCalledWith(
+            'http://api.test/api/v1/public/plan-catalog?vertical=tourist',
+            { headers: { Accept: 'application/json' } }
         );
     });
 
-    it('returns ok:false on HTTP error without a config fallback', async () => {
-        // Arrange — simulate the plans endpoint being down
-        mockFetchHttpError(503);
-
-        // Act
-        const result = await fetchPublicPlans();
-
-        // Assert — no config fallback: ok:false is returned
-        expect(result.ok).toBe(false);
-        // No ALL_PLANS or static config was used as a fallback
-    });
-
-    it('returns ok:false on network error without a config fallback', async () => {
-        // Arrange
-        mockFetchNetworkError('Connection refused');
-
-        // Act
-        const result = await fetchPublicPlans();
-
-        // Assert — no config fallback: ok:false is returned
-        expect(result.ok).toBe(false);
-        if (result.ok) throw new Error('Expected ok:false');
-        expect(result.error).toBe('Connection refused');
-    });
-});
-
-/**
- * HOS-39 T-021 — both pricing pages reflect a DB change on the next request,
- * without a deploy.
- *
- * SCOPE REVISED (spec-realign 2026-07-02): the owner (`suscriptores/planes/`)
- * and tourist (`suscriptores/turistas/`) pages are SSR (`prerender = false`)
- * and both call `fetchPublicPlans()` fresh on every request — there is no
- * page-rebuild step to test. The only thing "revalidation" buys is purging
- * Cloudflare's edge HTTP cache (`Cache-Control: s-maxage=300`) so an
- * in-window request doesn't see a stale response; that purge makes a real
- * outbound HTTP call in production (`CloudflareRevalidationAdapter`) with no
- * local stub, and is already covered by the staging smoke checklist
- * (SPEC-143 staging-smoke-checklist.md, section "SPEC-168.2"). Locally, this
- * suite proves the piece that IS testable and that both pages actually
- * depend on: an admin-edited plan value returned by the API is correctly
- * surfaced by `filterPlansByCategory` for BOTH the owner and tourist
- * category filters on the very next fetch — the mechanism that lets a fresh
- * (uncached) request always reflect the DB, deploy-free.
- *
- * The revalidation TRIGGER firing with the correct paths is already covered
- * at the service layer by
- * `packages/service-core/test/billing/plan-service-revalidation.test.ts`;
- * the DB-write-visible-at-the-API-boundary leg is already covered by
- * `apps/api/test/e2e/flows/billing/plan-price-change.test.ts` (SPEC-168
- * T-020). This suite is specifically the missing web-layer piece.
- */
-describe('HOS-39 T-021: owner + tourist pricing pages reflect DB changes on next request', () => {
-    afterEach(() => {
-        vi.restoreAllMocks();
-    });
-
-    it('owner pricing page data (filterPlansByCategory) reflects an admin-edited value on the next fetch', async () => {
-        // ARRANGE — simulate the API response AFTER an admin edit: a higher
-        // price and a new display name for the owner plan, as
-        // fetchPublicPlans() would see it on the very next request.
-        const editedOwnerPlan = makePlan({
-            slug: 'owner-basico',
-            category: 'owner',
-            name: 'Básico (Editado)',
-            monthlyPriceArs: 999_000,
-            isActive: true,
-            sortOrder: 1
-        });
-        mockFetchOk([editedOwnerPlan, TOURIST_ACTIVE]);
-
-        // ACT — a fresh fetch + owner-category filter, exactly what
-        // suscriptores/planes/index.astro does on every SSR request.
-        const result = await fetchPublicPlans();
+    it('(b) maps prices, option ids, version, vertical, and trial from the catalog', async () => {
+        mockCatalog('tourist', [catalogPlan()], null);
+        const result = await fetchPublicPlans({ vertical: 'tourist' });
         expect(result.ok).toBe(true);
-        if (!result.ok) throw new Error('Expected ok:true');
-        const ownerPlans = filterPlansByCategory(result.plans, 'owner');
-
-        // ASSERT — the edited value is visible without any rebuild/deploy.
-        expect(ownerPlans).toHaveLength(1);
-        expect(ownerPlans[0]?.name).toBe('Básico (Editado)');
-        expect(ownerPlans[0]?.monthlyPriceArs).toBe(999_000);
+        if (!result.ok) throw new Error('Expected catalog success');
+        expect(result.plans).toEqual([
+            expect.objectContaining({
+                id: planId,
+                planVersionId: versionId,
+                vertical: 'tourist',
+                slug: 'tourist-vip',
+                description: 'Descripción',
+                monthlyPriceArs: 120000,
+                annualPriceArs: 1200000,
+                billingOptions: { monthly: monthlyId, annual: annualId },
+                hasTrial: true,
+                trialDays: 14
+            })
+        ]);
     });
 
-    it('tourist pricing page data (filterPlansByCategory) reflects an admin-edited value on the next fetch', async () => {
-        // ARRANGE — simulate the API response AFTER an admin edit to a
-        // tourist plan, as fetchPublicPlans() would see it on the very next
-        // request.
-        const editedTouristPlan = makePlan({
-            slug: 'tourist-plus',
-            category: 'tourist',
-            name: 'Plus (Editado)',
-            monthlyPriceArs: 777_000,
-            isActive: true,
-            sortOrder: 1
-        });
-        mockFetchOk([OWNER_ACTIVE, editedTouristPlan]);
-
-        // ACT — a fresh fetch + tourist-category filter, exactly what
-        // suscriptores/turistas/index.astro does on every SSR request.
-        const result = await fetchPublicPlans();
+    it('(c) omits plans without monthly billing and retains exactly the purchasable plan', async () => {
+        mockCatalog(
+            'tourist',
+            [
+                catalogPlan({ slug: 'not-purchasable', billingOptions: [] }),
+                catalogPlan({ slug: 'purchasable', planId: annualId })
+            ],
+            null
+        );
+        const result = await fetchPublicPlans({ vertical: 'tourist' });
         expect(result.ok).toBe(true);
-        if (!result.ok) throw new Error('Expected ok:true');
-        const touristPlans = filterPlansByCategory(result.plans, 'tourist');
+        if (!result.ok) throw new Error('Expected catalog success');
+        expect(result.plans.map((plan) => plan.slug)).toEqual(['purchasable']);
+    });
 
-        // ASSERT — the edited value is visible without any rebuild/deploy.
-        expect(touristPlans).toHaveLength(1);
-        expect(touristPlans[0]?.name).toBe('Plus (Editado)');
-        expect(touristPlans[0]?.monthlyPriceArs).toBe(777_000);
+    it('(d) returns ok:false for HTTP errors, network errors, and invalid bodies', async () => {
+        mockFailure({ ok: false, status: 503 });
+        expect((await fetchPublicPlans({ vertical: 'tourist' })).ok).toBe(false);
+
+        global.fetch = vi.fn().mockRejectedValue(new Error('offline'));
+        expect((await fetchPublicPlans({ vertical: 'tourist' })).ok).toBe(false);
+
+        mockFailure({ ok: true, status: 200, json: async () => ({ success: true, data: {} }) });
+        expect((await fetchPublicPlans({ vertical: 'tourist' })).ok).toBe(false);
+    });
+
+    it('(e) maps a null description to an empty string', async () => {
+        mockCatalog('tourist', [catalogPlan({ description: null })], null);
+        const result = await fetchPublicPlans({ vertical: 'tourist' });
+        expect(result.ok && result.plans[0]?.description).toBe('');
+    });
+
+    it('(f) maps the tourist floor first as a free card without purchase references', async () => {
+        mockCatalog('tourist', [catalogPlan()], floorPlan());
+        const result = await fetchPublicPlans({ vertical: 'tourist' });
+        expect(result.ok).toBe(true);
+        if (!result.ok) throw new Error('Expected catalog success');
+        expect(result.plans.map((plan) => plan.slug)).toEqual(['tourist-free', 'tourist-vip']);
+        expect(result.plans[0]).toMatchObject({
+            monthlyPriceArs: 0,
+            annualPriceArs: null,
+            hasTrial: false,
+            trialDays: 0,
+            entitlements: ['TOURIST_REVIEWS'],
+            limits: { reviews: 5 }
+        });
+        expect(result.plans[0]).not.toHaveProperty('billingOptions');
+        expect(result.plans[0]).not.toHaveProperty('planVersionId');
+    });
+
+    it('(g) ignores a floor outside the tourist vertical', async () => {
+        mockCatalog('accommodation', [catalogPlan({ slug: 'host-standard' })], floorPlan());
+        const result = await fetchPublicPlans({ vertical: 'accommodation' });
+        expect(result.ok).toBe(true);
+        if (!result.ok) throw new Error('Expected catalog success');
+        expect(result.plans.map((plan) => plan.slug)).toEqual(['host-standard']);
+    });
+
+    it('(h) does not invent a tourist floor when the catalog returns null', async () => {
+        mockCatalog('tourist', [catalogPlan()], null);
+        const result = await fetchPublicPlans({ vertical: 'tourist' });
+        expect(result.ok).toBe(true);
+        if (!result.ok) throw new Error('Expected catalog success');
+        expect(result.plans.map((plan) => plan.slug)).toEqual(['tourist-vip']);
     });
 });

@@ -31,7 +31,9 @@
  * @module test/routes/accommodation-protected-publish
  */
 
-import { ServiceErrorCode } from '@repo/schemas';
+import { PublicationStatusEnum, ServiceErrorCode, VerticalEnum } from '@repo/schemas';
+import { ServiceError } from '@repo/service-core';
+import { rehydrateEffectiveSet } from '@repo/verticals';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 // ---------------------------------------------------------------------------
@@ -40,6 +42,12 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 const { mockPublish, mockGetById } = vi.hoisted(() => ({
     mockPublish: vi.fn(),
     mockGetById: vi.fn()
+}));
+
+vi.mock('../../src/services/listing-publication/listing-publication.service', () => ({
+    ListingPublicationService: vi.fn().mockImplementation(function () {
+        return { publish: mockPublish };
+    })
 }));
 
 vi.mock('@repo/service-core', async () => {
@@ -54,6 +62,25 @@ vi.mock('@repo/service-core', async () => {
         })
     };
 });
+
+vi.mock('../../src/utils/listing-access/ports', () => ({
+    getListingAccessPorts: () => ({
+        loadFacts: async () => ({
+            facts: { ownerId: ACTOR_ID, publicationStatus: PublicationStatusEnum.DRAFT },
+            ownerId: ACTOR_ID
+        }),
+        billing: { coverage: async () => ({ covered: false, sources: [{ type: 'BASE' }] }) },
+        effectiveSet: async ({ userId }: { userId: string }) =>
+            rehydrateEffectiveSet({
+                version: 1,
+                userId,
+                vertical: VerticalEnum.ACCOMMODATION,
+                hasLiveNonTrialTitle: false,
+                inheritsTouristVip: false,
+                entries: [{ key: 'activate_trial', value: 1, strategy: 'MAX' }]
+            })
+    })
+}));
 
 // Actor: HOST owner — ownerId will match actor.id in the accommodation stub.
 const ACTOR_ID = 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa';
@@ -113,7 +140,7 @@ const PUBLISHED_ACCOMMODATION = {
     location: { city: 'Test City', country: 'Test Country' },
     averageRating: 0,
     reviewsCount: 0,
-    visibility: 'PUBLIC',
+    publicationStatus: 'PUBLISHED',
     seo: undefined,
     price: { price: 100, currency: 'USD' },
     tags: [],
@@ -121,7 +148,6 @@ const PUBLISHED_ACCOMMODATION = {
     ownerId: ACTOR_ID,
     contactInfo: undefined,
     socialNetworks: undefined,
-    lifecycleState: 'ACTIVE',
     faqs: [],
     createdAt: NOW,
     updatedAt: NOW
@@ -138,7 +164,7 @@ describe('POST /api/v1/protected/accommodations/:id/publish — publish (HOS-110
         app = initApp();
 
         mockGetById.mockResolvedValue({ data: ACCOMMODATION_STUB, error: undefined });
-        mockPublish.mockResolvedValue({ data: PUBLISHED_ACCOMMODATION, error: undefined });
+        mockPublish.mockResolvedValue(PUBLISHED_ACCOMMODATION);
     });
 
     // ── Authentication ─────────────────────────────────────────────────────
@@ -153,7 +179,7 @@ describe('POST /api/v1/protected/accommodations/:id/publish — publish (HOS-110
     // ── Happy path ────────────────────────────────────────────────────────
 
     describe('Happy path', () => {
-        it('calls AccommodationService.publish with the correct actor and accommodation id', async () => {
+        it('calls ListingPublicationService.publish with the correct actor and accommodation id', async () => {
             // This is the decisive regression guard for HOS-110: the route
             // must call `publish()` directly (not `update()` with a
             // silently-stripped `lifecycleState`), which is what actually
@@ -164,9 +190,10 @@ describe('POST /api/v1/protected/accommodations/:id/publish — publish (HOS-110
             });
 
             expect(mockPublish).toHaveBeenCalledTimes(1);
-            const [actorArg, idArg] = mockPublish.mock.calls[0] as [{ id: string }, string];
-            expect(actorArg.id).toBe(ACTOR_ID);
-            expect(idArg).toBe(ACCOMMODATION_ID);
+            expect(mockPublish).toHaveBeenCalledWith({
+                actor: expect.objectContaining({ id: ACTOR_ID }),
+                id: ACCOMMODATION_ID
+            });
         });
 
         it('should return 200 with the published accommodation when the schema is satisfied', async () => {
@@ -179,7 +206,7 @@ describe('POST /api/v1/protected/accommodations/:id/publish — publish (HOS-110
                 const body = await res.json();
                 expect(body.success).toBe(true);
                 expect(body.data.id).toBe(ACCOMMODATION_ID);
-                expect(body.data.lifecycleState).toBe('ACTIVE');
+                expect(body.data.publicationStatus).toBe('PUBLISHED');
             } else {
                 // Response-schema strictness is orthogonal to this regression
                 // test's purpose — the route MUST be registered and MUST have
@@ -193,13 +220,9 @@ describe('POST /api/v1/protected/accommodations/:id/publish — publish (HOS-110
 
     describe('subscription_required (owner already consumed their one-per-life trial)', () => {
         it('passes through 403 FORBIDDEN with message "subscription_required" unmodified', async () => {
-            mockPublish.mockResolvedValue({
-                data: undefined,
-                error: {
-                    code: ServiceErrorCode.FORBIDDEN,
-                    message: 'subscription_required'
-                }
-            });
+            mockPublish.mockRejectedValue(
+                new ServiceError(ServiceErrorCode.FORBIDDEN, 'subscription_required')
+            );
 
             const res = await app.request(BASE_URL, {
                 method: 'POST',
@@ -214,14 +237,59 @@ describe('POST /api/v1/protected/accommodations/:id/publish — publish (HOS-110
         });
     });
 
+    describe('HTTP error contract for PB1 denials', () => {
+        it.each([
+            ['no coverage and no trial', ServiceErrorCode.FORBIDDEN, 'subscription_required', 403],
+            ['full vertical quota', ServiceErrorCode.LIMIT_REACHED, 'Listing limit reached', 403],
+            ['changed source state', ServiceErrorCode.ALREADY_EXISTS, 'Listing state changed', 409],
+            [
+                'covered listing must use PB3',
+                ServiceErrorCode.ALREADY_EXISTS,
+                'Listing state changed',
+                409
+            ],
+            ['invalid owner email', ServiceErrorCode.VALIDATION_ERROR, 'Invalid owner email', 400],
+            ['incomplete listing', ServiceErrorCode.VALIDATION_ERROR, 'Listing is incomplete', 400],
+            [
+                'missing or foreign listing',
+                ServiceErrorCode.NOT_FOUND,
+                'Accommodation not found',
+                404
+            ]
+        ])('returns the contract status and code for %s', async (_label, code, message, status) => {
+            mockPublish.mockRejectedValue(new ServiceError(code, message));
+
+            const res = await app.request(BASE_URL, {
+                method: 'POST',
+                headers: { Authorization: 'Bearer test-protected-token', 'User-Agent': 'vitest' }
+            });
+
+            expect(res.status).toBe(status);
+            const body = await res.json();
+            expect(body.success).toBe(false);
+            expect(body.error.code).toBe(code);
+            expect(body.error.message).toBe(message);
+        });
+
+        it('returns 400 VALIDATION_ERROR before ownership when the id is malformed', async () => {
+            const res = await app.request('/api/v1/protected/accommodations/not-a-uuid/publish', {
+                method: 'POST',
+                headers: { Authorization: 'Bearer test-protected-token', 'User-Agent': 'vitest' }
+            });
+            expect(res.status).toBe(400);
+            const body = await res.json();
+            expect(body.error.code).toBe('VALIDATION_ERROR');
+            expect(mockPublish).not.toHaveBeenCalled();
+        });
+    });
+
     // ── Error handling ────────────────────────────────────────────────────
 
     describe('Error handling', () => {
         it('should return 4xx when accommodation is not found', async () => {
-            mockPublish.mockResolvedValue({
-                data: undefined,
-                error: { code: ServiceErrorCode.NOT_FOUND, message: 'Accommodation not found' }
-            });
+            mockPublish.mockRejectedValue(
+                new ServiceError(ServiceErrorCode.NOT_FOUND, 'Accommodation not found')
+            );
 
             const res = await app.request(BASE_URL, {
                 method: 'POST',
@@ -229,6 +297,7 @@ describe('POST /api/v1/protected/accommodations/:id/publish — publish (HOS-110
             });
 
             expect(res.status).not.toBe(200);
+            expect(mockPublish).toHaveBeenCalledTimes(1);
         });
     });
 

@@ -1,0 +1,7 @@
+.specs/HOS-1352-billing-verticals-redesign/spec-consolidada/10-corte/U1.md:443:  escrito: por eso se mide antes del merge (BT, TEST:U1:24) y, si no da cero, lo decide el owner con
+.specs/HOS-1352-billing-verticals-redesign/spec-consolidada/10-corte/U1.md:583:| AC:U1:3 | TEST:U1:5, TEST:U1:6, TEST:U1:24 |
+.specs/HOS-1352-billing-verticals-redesign/spec-consolidada/10-corte/U1.md:780:**TEST:U1:24** — Antes del merge, `hops psql --target=prod` en sólo lectura cuenta las filas vivas
+.specs/HOS-1352-billing-verticals-redesign/spec-consolidada/10-corte/U1.md:790:- Salvo `TEST:U1:24`, que mide producción en sólo lectura antes del merge y deja el número en el
+.specs/HOS-1352-billing-verticals-redesign/spec-consolidada/10-corte/U1.md:791:  PR (BT), los smoke de esta pieza corren en las ventanas del corte, no como gate de la pieza: el ensayo en
+.specs/HOS-1352-billing-verticals-redesign/spec-consolidada/_trabajo/abiertos/pasada2-g5-u-v1-v4.md:15:| 4. destino de las filas vivas del rol de dueño de comercio | BT (la medición) | `U1`: FILA, AC:U1:3, TEST:U1:24 y *«Abiertos»*. Si la medición no da cero, vuelve al owner con el número |
+.specs/HOS-1352-billing-verticals-redesign/spec-consolidada/_trabajo/verificacion/vuelta-7/pasada10/inventario-reglas.md:30:| R24 | 8 | TEST U1:24 producción readonly antes merge excepción smoke ventanas corte | smoke.*no como gate; sólo.*ventanas del corte |

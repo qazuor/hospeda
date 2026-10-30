@@ -21,7 +21,11 @@
  * in afterEach so the service's self-managed transaction can see the seed rows.
  */
 import { accommodationMedia, accommodations, destinations, eq, users } from '@repo/db';
-import type { AccommodationCreateInput, AccommodationUpdateInput } from '@repo/schemas';
+import {
+    type AccommodationCreateInput,
+    type AccommodationUpdateInput,
+    PublicationStatusEnum
+} from '@repo/schemas';
 import { afterAll, afterEach, beforeAll, describe, expect, it } from 'vitest';
 import { AccommodationService } from '../../../src/services/accommodation/accommodation.service';
 import { createSuperAdminActor } from '../../factories/actorFactory';
@@ -169,9 +173,9 @@ async function seedCommittedAccommodation(opts: {
                 url: 'https://example.com/media-tx-accommodation.jpg'
             }
         },
-        lifecycleState: 'ACTIVE',
-        visibility: 'PUBLIC',
-        ownerSuspended: false
+        publicationStatus: PublicationStatusEnum.PUBLISHED,
+        inactiveSince: new Date(),
+        deadlinesVersion: 1
     } as typeof accommodations.$inferInsert);
 
     cleanup.accommodationIds.push(accommodationId);
@@ -222,9 +226,7 @@ describe('SPEC-204 FIX 1 regression — AccommodationService media-only tx', () 
                     country: 'Argentina',
                     coordinates: { lat: '-32.48', long: '-58.23' }
                 },
-                media: MEDIA_PAYLOAD,
-                lifecycleState: 'DRAFT',
-                visibility: 'PRIVATE'
+                media: MEDIA_PAYLOAD
                 // Intentionally NO amenityIds or featureIds — pure media payload.
             } as unknown as AccommodationCreateInput;
 

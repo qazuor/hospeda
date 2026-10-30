@@ -4,14 +4,14 @@
  * delete flow (inline confirm → api call → refresh), and error state.
  */
 
-import { render, screen } from '@testing-library/react';
+import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 // Mock before any imports — vitest hoists vi.mock to top of file
 const mockOwnerPromotionList = vi.fn();
 const mockOwnerPromotionRemove = vi.fn();
-const mockGetEntitlements = vi.fn();
+const mockGetEffectiveSet = vi.fn();
 
 vi.mock('@/lib/api/endpoints-protected', () => ({
     get ownerPromotionApi() {
@@ -19,26 +19,12 @@ vi.mock('@/lib/api/endpoints-protected', () => ({
             list: mockOwnerPromotionList,
             remove: mockOwnerPromotionRemove
         };
-    },
-    get billingApi() {
-        return {
-            getEntitlements: mockGetEntitlements
-        };
     }
 }));
+vi.mock('@/lib/entitlements-cache', () => ({ getEntitlementsCached: () => mockGetEffectiveSet() }));
 
-import { PRICING_PAGE_PATH_BY_AUDIENCE } from '@/lib/pricing-plans';
 // Import AFTER mock setup
 import { PromotionList } from '../../../src/components/host/PromotionList.client';
-
-beforeEach(() => {
-    // Default: actor's plan includes create_promotions, so the create button
-    // renders. Individual gate tests override this.
-    mockGetEntitlements.mockResolvedValue({
-        ok: true,
-        data: { entitlements: ['create_promotions'] }
-    });
-});
 
 afterEach(() => {
     vi.clearAllMocks();
@@ -104,7 +90,36 @@ function makeListResponse(items: (typeof mockPromo1)[]) {
 // Tests
 // ---------------------------------------------------------------------------
 
-describe('PromotionList', () => {
+describe('TEST:B13a:25 PromotionList effective-set gate', () => {
+    beforeEach(() =>
+        mockGetEffectiveSet.mockResolvedValue({
+            entitlements: { create_promotions: 1 },
+            limits: {},
+            failed: false
+        })
+    );
+    it('shows the CTA with the key', async () => {
+        mockOwnerPromotionList.mockResolvedValue(makeListResponse([]));
+        render(<PromotionList locale="es" />);
+        expect(await screen.findByRole('link', { name: 'Nueva promoción' })).toBeInTheDocument();
+    });
+    it('fails closed on missing capability and failed read', async () => {
+        mockGetEffectiveSet.mockResolvedValue({ entitlements: {}, limits: {}, failed: true });
+        mockOwnerPromotionList.mockResolvedValue(makeListResponse([]));
+        render(<PromotionList locale="es" />);
+        expect(await screen.findByText('Tu plan no incluye promociones.')).toBeInTheDocument();
+        await waitFor(() =>
+            expect(screen.queryByRole('link', { name: 'Nueva promoción' })).not.toBeInTheDocument()
+        );
+    });
+    it('shows the upgrade banner and omits the empty-state CTA without the key', async () => {
+        mockGetEffectiveSet.mockResolvedValue({ entitlements: {}, limits: {}, failed: false });
+        mockOwnerPromotionList.mockResolvedValue(makeListResponse([]));
+        render(<PromotionList locale="es" />);
+        expect(await screen.findByText('Tu plan no incluye promociones.')).toBeInTheDocument();
+        expect(screen.queryByText(/creá tu primera oferta/i)).not.toBeInTheDocument();
+        expect(screen.queryByRole('link', { name: 'Nueva promoción' })).not.toBeInTheDocument();
+    });
     it('renders loading skeleton on mount while data is pending', () => {
         mockOwnerPromotionList.mockReturnValue(new Promise(() => {})); // never resolves
 
@@ -301,36 +316,13 @@ describe('PromotionList', () => {
     });
 
     // ---------------------------------------------------------------------------
-    // Entitlement gate (SPEC-205): create button is gated by `create_promotions`
+    // HOS-1637 (AC:B13a:22): the client-side `create_promotions` gate, read from
+    // the old billing's entitlements, was removed. The create action is always
+    // offered and the API decides on save.
     // ---------------------------------------------------------------------------
 
-    it('hides the create button and shows an upgrade banner when the plan lacks create_promotions', async () => {
+    it('offers the create action with no plan gate and no upgrade banner', async () => {
         mockOwnerPromotionList.mockResolvedValue(makeListResponse([]));
-        mockGetEntitlements.mockResolvedValue({ ok: true, data: { entitlements: [] } });
-
-        render(<PromotionList locale="es" />);
-
-        // The upgrade banner is the ready-state signal when the plan lacks the
-        // entitlement (the empty-state create CTA is intentionally not shown).
-        await screen.findByText(/tu plan no incluye promociones/i);
-
-        // No create link
-        const createLinks = screen
-            .queryAllByRole('link')
-            .filter((el) => el.getAttribute('href')?.includes('promociones/nueva'));
-        expect(createLinks.length).toBe(0);
-
-        // Upgrade banner with a link to the plans page
-        const upgradeLinks = screen
-            .getAllByRole('link')
-            .filter((el) => el.getAttribute('href')?.includes(PRICING_PAGE_PATH_BY_AUDIENCE.owner));
-        expect(upgradeLinks.length).toBeGreaterThanOrEqual(1);
-    });
-
-    it('fails open: keeps the create button when the entitlement read fails', async () => {
-        mockOwnerPromotionList.mockResolvedValue(makeListResponse([]));
-        // Entitlement read fails → server still enforces on save, so the button stays.
-        mockGetEntitlements.mockResolvedValue({ ok: false, error: { message: 'boom' } });
 
         render(<PromotionList locale="es" />);
 
@@ -339,7 +331,7 @@ describe('PromotionList', () => {
         const createLinks = screen
             .getAllByRole('link')
             .filter((el) => el.getAttribute('href')?.includes('promociones/nueva'));
-        expect(createLinks.length).toBeGreaterThanOrEqual(1);
+        expect(createLinks.length).toBe(1);
         expect(screen.queryByText(/tu plan no incluye promociones/i)).not.toBeInTheDocument();
     });
 });

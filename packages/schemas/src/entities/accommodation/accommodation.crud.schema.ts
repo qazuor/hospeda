@@ -55,10 +55,9 @@ export const AccommodationCreateInputSchema = AccommodationSchema.omit({
     updatedById: true,
     deletedAt: true,
     deletedById: true,
-    // Server-managed (SPEC-143 #29): only the pause/resume flow flips this.
-    ownerSuspended: true,
-    // Server-managed (SPEC-167 §3): only the downgrade-restriction flow flips this.
-    planRestricted: true,
+    // Server-managed (HOS-1641): only the PB publication transitions write
+    // the publication state — never a create/update input, owner or admin.
+    publicationStatus: true,
     // Server-managed (SPEC-237): only the owner's master-toggle endpoint flips this.
     showExternalReputation: true,
     // Server-managed (SPEC-291): only the verify admin action flips these.
@@ -67,12 +66,8 @@ export const AccommodationCreateInputSchema = AccommodationSchema.omit({
     verifiedById: true,
     // Server-managed (SPEC-292, renamed SPEC-309 OQ-3; HOS-929): written ONLY
     // by the featured-by-entitlement sync primitives, never through the
-    // general create/update path — unlike `isFeatured`, which admin still
-    // controls manually via `AccommodationPatchInputSchema`.
-    featuredByEntitlement: true,
-    // Server-managed (HOS-1181): only the trial-expiry cron sets this and only
-    // publish/win-back-republish clears it — never through create/update input.
-    billingUnpublishedAt: true
+    // general create/update path.
+    featuredByEntitlement: true
 }).extend({
     slug: z
         .string()
@@ -141,12 +136,9 @@ export type AccommodationCreateOutput = z.infer<typeof AccommodationCreateOutput
 export const AccommodationUpdateInputSchema = z
     .object(
         // Zod 4's `.partial()` does NOT strip `.default()` (unlike Zod 3): without
-        // this, a PATCH like `{ lifecycleState: 'ACTIVE' }` would arrive at the
-        // service carrying injected defaults (`visibility:'PUBLIC'`,
-        // `moderationState:'PENDING'`, `isFeatured:false`, review stats, etc.),
-        // silently overwriting server state AND — for a DRAFT→ACTIVE publish —
-        // making the non-empty rest-fields trigger a plain update that flips the row
-        // to ACTIVE before the publish/trial flow runs (SPEC-217). Stripping the
+        // this, a PATCH like `{ name: 'x' }` would arrive at the service carrying
+        // injected defaults (`featuredByEntitlement:false`, review stats, etc.),
+        // silently overwriting server state (SPEC-217). Stripping the
         // top-level defaults restores correct "absent key = no change" PATCH
         // semantics. See `stripShapeDefaults`.
         stripShapeDefaults(
@@ -158,10 +150,9 @@ export const AccommodationUpdateInputSchema = z
                 updatedById: true,
                 deletedAt: true,
                 deletedById: true,
-                // Server-managed (SPEC-143 #29): only the pause/resume flow flips this.
-                ownerSuspended: true,
-                // Server-managed (SPEC-167 §3): only the downgrade-restriction flow flips this.
-                planRestricted: true,
+                // Server-managed (HOS-1641): only the PB publication transitions
+                // write the publication state — never a create/update input.
+                publicationStatus: true,
                 // Server-managed (SPEC-237): only the owner's master-toggle endpoint flips this.
                 showExternalReputation: true,
                 // Server-managed (SPEC-291): only the verify admin action flips these.
@@ -170,13 +161,8 @@ export const AccommodationUpdateInputSchema = z
                 verifiedById: true,
                 // Server-managed (SPEC-292, renamed SPEC-309 OQ-3; HOS-929): written
                 // ONLY by the featured-by-entitlement sync primitives, never through
-                // the general create/update path — unlike `isFeatured`, which admin
-                // still controls manually via `AccommodationPatchInputSchema`.
+                // the general create/update path.
                 featuredByEntitlement: true,
-                // Server-managed (HOS-1181): only the trial-expiry cron sets this
-                // and only publish/win-back-republish clears it — never through
-                // create/update input.
-                billingUnpublishedAt: true,
                 // HOS-372: the `media` JSONB column was dropped. Photos live in
                 // `accommodation_media` and are written through the relational media
                 // endpoints; videos travel as the top-level `videos` column, which

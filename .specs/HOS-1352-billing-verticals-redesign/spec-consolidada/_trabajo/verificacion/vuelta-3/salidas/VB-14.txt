@@ -1,0 +1,20 @@
+# VB-14 · spec → fuente · 30-el-corte.md 90-retirados.md
+
+## Hallazgos
+
+30-el-corte.md:639 · «anclados al vendible de `rank` más bajo de Alojamiento, en la vertical en que tenían `comp`» · contradice .specs/HOS-1352-billing-verticals-redesign/docs/16-fase-7-del-paraguas.md:154 («anclados al vendible de `rank` más alto [...] de Alojamiento, en la vertical en que tenían `comp`», lo vivo después de los tachados) y .specs/HOS-1354-billing-cobro-y-proveedor/docs/21-migracion.md:166 («el vendible de `rank` más alto [...] de Alojamiento vigente el día del corte»); decisión del owner G1-3 (28-fase-9-vuelta-1/10-decisiones-del-owner.md:21: «el vendible de `rank` más alto de Alojamiento»). Contradicción interna además con 30-el-corte.md:1071 y 10-corte/B9a.md:36, que dicen «más alto». Quien opere el paso 3b o construya la herramienta de B9a a partir de este paso anclaría los dos `permanent_grant` al plan equivocado · BLOQUEA
+
+90-retirados.md:403 · «Retirar el último plan vendible de una vertical, eso sí, cancela al fin de su período las suscripciones ancladas a él.» · sin soporte: no aparece en la fila citada (.specs/HOS-1352-billing-verticals-redesign/docs/nucleo/08-auditoria-y-observabilidad.md:206, que termina en «(`B/10` §3)»), y contradice .specs/HOS-1354-billing-cobro-y-proveedor/docs/10-verticales-planes-billing-options.md:135-141 («Retirados todos los vendibles [...] todos los que están adentro siguen exactamente igual, indefinidamente») y el invariante D13 (nucleo/04-invariantes.md:140: «Retirar un plan del catálogo no mueve ninguna suscripción»). También choca adentro de la spec con 20-fase-3/B12.md:177-178. Es una regla viva que se inventó (aunque esté en el archivo de retirados, la frase la presenta como vigente con «eso sí») · BLOQUEA
+
+30-el-corte.md:1577 · «AC:CORTE:2 — sin la lista del seudónimo medida y el tope de purgas verificado, el corte no avanza» (y la línea 1586: «y el tope de purgas admite las 22 purgas por destino del 4c») · más fuerte que .specs/HOS-1352-billing-verticals-redesign/docs/16-fase-7-del-paraguas.md:146 («se verifica el tope de purgas [...]: cuál es, y que las 22 purgas por destino del 4c entran en él»). La fuente hace bloqueante sólo a `EX-49` («sin medición el corte no avanza»), y los ocho gates del momento 4 (16-fase-7…:1110-1112) no incluyen el tope de purgas. El AC lo convierte en condición de avance · MENOR
+
+30-el-corte.md:1564-1567 · AC:CORTE:1, «Dado que U3 está mergeada, los plazos sin valor tienen el suyo desde el merge de `V6`, y hay en `staging` una copia [...]» · más débil que .specs/HOS-1352-billing-verticals-redesign/docs/16-fase-7-del-paraguas.md:1095-1097 (momento 3: «se releyeron las dos situaciones que una restauración no deshace (§4.3)»). En el AC falta esa condición previa, aunque el texto del gate (30-el-corte.md:1390) y el paso 2b (30-el-corte.md:416-419) sí la nombran · MENOR
+
+30-el-corte.md:1434-1435 · «los del corte son los vigentes hoy, los carga el paso 3a» · incoherencia interna con 30-el-corte.md:610-612 («Se cargan dentro de la migración estructural del paso 3 [...]; este paso sólo los verifica»). La frase reproduce a la letra BM (16-fase-7…:1126), así que no construye nada distinto, pero nombra mal al paso que carga los precios · MENOR
+
+## Resumen
+
+| archivo | líneas recorridas | afirmaciones normativas revisadas (aprox.) | BLOQUEA | MENOR |
+|---|---|---|---|---|
+| 30-el-corte.md | 1–1934 | 330 | 1 | 3 |
+| 90-retirados.md | 1–534 | 70 | 1 | 0 |

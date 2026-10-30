@@ -24,7 +24,7 @@ import type { CronJobDefinition } from '../types.js';
 export const hostTradeStatsReconcileJob: CronJobDefinition = {
     name: 'host-trade-stats-reconcile',
     description: 'Recompute host-trade aggregate counters and report drift',
-    schedule: '0 5 * * 1', // Mondays at 5:00 UTC
+    schedule: '0 5 * * 1', // Mondays at 5:00 Buenos Aires time
     enabled: true,
     timeoutMs: 600_000,
 

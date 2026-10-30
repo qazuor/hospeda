@@ -413,7 +413,7 @@ export class EventService extends BaseCrudService<
      * (`createUniqueSlug`'s existence probe does not exclude the current row)
      * and appended `-2`, then `-3`. In production the event "Novembeer" went
      * `novembeer-concepcion-del-uruguay-2026` →
-     * `gastronomy-novembeer-2026-11-01` → `…-2` in two saves, so its indexed
+     * `venue-novembeer-2026-11-01` → `…-2` in two saves, so its indexed
      * public URL 404'd because somebody edited its summary.
      *
      * The same block was also half of H-30: it demanded category, name AND
@@ -692,8 +692,7 @@ export class EventService extends BaseCrudService<
     // shape consumers expect. These are the standard chokepoints:
     // `getById`/`getBySlug` go through `_afterGetByField`, `list()` and
     // `search()` through their own hooks, and `adminList` through
-    // `_executeAdminSearch` — which the base flow does NOT route through
-    // `_afterList`, so it needs its own call.
+    // `_afterAdminList`, which delegates to `_afterList` by default.
     //
     // WITHOUT this wiring the relational rows are written but never read: the
     // author persists photos successfully and they appear nowhere.
@@ -763,9 +762,8 @@ export class EventService extends BaseCrudService<
      * from entity filters and converts them into raw SQL conditions against the JSONB `date` column.
      * The JSONB column uses `start` and `end` keys as defined by EventDateSchema.
      *
-     * Also composes `media` from the relational rows: the base `adminList` flow
-     * does NOT invoke `_afterList`, so without this the admin panel would read
-     * an event with no photos (HOS-390).
+     * The base admin-list lifecycle composes media through `_afterAdminList`,
+     * which delegates to `_afterList` (HOS-390).
      *
      * @param params - The assembled admin search parameters from the base class.
      * @returns A paginated list of events matching the criteria.
@@ -787,18 +785,11 @@ export class EventService extends BaseCrudService<
             })
         ];
 
-        const result = await super._executeAdminSearch({
+        return super._executeAdminSearch({
             ...rest,
             entityFilters: simpleFilters,
             extraConditions
         });
-        if (!result?.items) return result;
-        const items = await attachComposedEventMediaList({
-            items: result.items,
-            mediaModel: this.eventMediaModel,
-            tx: params.ctx?.tx
-        });
-        return { ...result, items };
     }
 
     /**

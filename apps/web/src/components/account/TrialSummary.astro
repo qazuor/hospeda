@@ -1,0 +1,122 @@
+---
+/**
+ * @file TrialSummary.astro
+ * @description Row 4 of Mi Suscripción: accumulated trial days while a trial
+ * is active, or a short ended notice for converted and expired trials.
+ *
+ * Server-rendered, with no island or fetch. The page reads each vertical once
+ * and passes the resolved API response to this component.
+ */
+import type { TrialSummaryResponse } from '@repo/schemas';
+import type { PublishVerticalSlug } from '@/lib/api/endpoints-protected';
+import { resolveTrialSummaryView } from '@/lib/billing/trial-summary-view';
+import { createTranslations, type SupportedLocale } from '@/lib/i18n';
+import { formatNoticeInstant } from '@/lib/listing/listing-notices';
+import styles from './TrialSummary.module.css';
+
+/** One vertical's trial read, as the page received it. */
+interface TrialSummaryEntry {
+	readonly vertical: PublishVerticalSlug;
+	readonly summary: TrialSummaryResponse;
+}
+
+interface Props {
+	/** Page locale. */
+	readonly locale: SupportedLocale;
+	/** One entry per vertical whose read answered. */
+	readonly entries: readonly TrialSummaryEntry[];
+}
+
+/** The vertical's name inside the block title. */
+const VERTICAL_KEY: Readonly<Record<PublishVerticalSlug, string>> = {
+	accommodation: 'account.subscription.trialSummary.vertical.accommodation',
+	venue: 'account.subscription.trialSummary.vertical.venue',
+	experience: 'account.subscription.trialSummary.vertical.experience'
+};
+
+/** The three origins, in the order the line states them. */
+const ORIGIN_KEYS = [
+	['base', 'account.subscription.trialSummary.origins.base'],
+	['promo', 'account.subscription.trialSummary.origins.promo'],
+	['support', 'account.subscription.trialSummary.origins.support']
+] as const;
+
+const { locale, entries } = Astro.props;
+const { t, tPlural } = createTranslations(locale);
+
+type SummaryCardView = {
+	readonly vertical: PublishVerticalSlug;
+	readonly state: 'running' | 'ended';
+	readonly title: string;
+	readonly total: string | null;
+	readonly origins: string;
+	readonly dates: string | null;
+	readonly notice: string | null;
+};
+
+const views = entries.flatMap<SummaryCardView>(({ vertical, summary }) => {
+	const state = resolveTrialSummaryView({ summary });
+	if (state.kind === 'hidden') return [];
+
+	const verticalName = t(VERTICAL_KEY[vertical]);
+	if (state.kind === 'running') {
+		const origins = ORIGIN_KEYS.filter(([origin]) => state.origins[origin] > 0)
+			.map(([origin, key]) => tPlural(key, state.origins[origin], { count: state.origins[origin] }))
+			.join(', ');
+		const start = state.startedAt ? formatNoticeInstant({ iso: state.startedAt, locale }) : null;
+		const end = state.endsAt ? formatNoticeInstant({ iso: state.endsAt, locale }) : null;
+		return [{
+			vertical,
+			state: 'running' as const,
+			title: t('account.subscription.trialSummary.title', undefined, { vertical: verticalName }),
+			total: tPlural('account.subscription.trialSummary.total', state.totalDays, {
+				count: state.totalDays
+			}),
+			origins,
+			dates: start && end
+				? t('account.subscription.trialSummary.dates', undefined, { start, end })
+				: null,
+			notice: null
+		}];
+	}
+
+	const title = t('account.subscription.trialSummary.endedTitle', undefined, {
+		vertical: verticalName
+	});
+	const notice = state.kind === 'ended_converted'
+		? t('account.subscription.trialSummary.endedConverted')
+		: state.endsAt
+			? formatNoticeInstant({ iso: state.endsAt, locale })
+			: null;
+	return [{
+		vertical,
+		state: 'ended' as const,
+		title,
+		total: null,
+		origins: '',
+		dates: null,
+		notice: state.kind === 'ended_expired' && notice
+			? t('account.subscription.trialSummary.endedExpired', undefined, { end: notice })
+			: notice
+	}];
+});
+---
+
+{
+	views.length > 0 && (
+		<section class={styles.summary} data-testid="trial-summary">
+			{views.map((view) => (
+				<article class={styles.item} data-vertical={view.vertical} data-trial-state={view.state}>
+					<h2 class={styles.title}>{view.title}</h2>
+					{view.total && (
+						<p class={styles.total}>
+							{view.origins ? `${view.total}: ${view.origins}` : view.total}
+						</p>
+					)}
+					{view.notice && <p class={styles.total}>{view.notice}</p>}
+					{view.dates && <p class={styles.dates}>{view.dates}</p>}
+				</article>
+			))}
+		</section>
+	)
+}

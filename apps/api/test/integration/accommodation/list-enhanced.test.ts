@@ -2,17 +2,20 @@
  * Enhanced integration tests for GET /accommodations (list) endpoint
  * Tests comprehensive filtering, pagination, sorting and response validation
  */
-import { AccommodationListItemSchema } from '@repo/schemas';
-import { beforeAll, describe, expect, it } from 'vitest';
+import { AccommodationPublicSchema, AccommodationTypeEnum } from '@repo/schemas';
+import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it } from 'vitest';
 import { z } from 'zod';
 import { initApp } from '../../../src/app';
+import { clearCache } from '../../../src/middlewares/cache';
 import { validateApiEnv } from '../../../src/utils/env';
+import { testDb } from '../../e2e/setup/test-database';
+import { seedPublicAccommodation } from '../helpers/seed-public-accommodation';
 
 // Response schema for list endpoint
 const AccommodationListResponseSchema = z.object({
     success: z.boolean(),
     data: z.object({
-        items: z.array(AccommodationListItemSchema),
+        items: z.array(AccommodationPublicSchema),
         pagination: z.object({
             page: z.number().min(1),
             pageSize: z.number().min(1),
@@ -30,7 +33,30 @@ describe('GET /accommodations (Enhanced List)', () => {
     let app: ReturnType<typeof initApp>;
     const baseUrl = '/api/v1/public/accommodations';
 
-    beforeAll(() => {
+    afterAll(async () => {
+        await testDb.teardown();
+    });
+
+    afterEach(async () => {
+        await testDb.clean();
+        clearCache();
+    });
+
+    beforeEach(async () => {
+        const first = await seedPublicAccommodation({ name: 'Enhanced List Fixture 0' });
+        for (const index of [1, 2]) {
+            await seedPublicAccommodation({
+                name: `Enhanced List Fixture ${index}`,
+                ownerId: first.ownerId,
+                destinationId: first.destinationId
+            });
+        }
+    });
+
+    beforeAll(async () => {
+        await testDb.setup();
+        await testDb.clean();
+        clearCache();
         // Initialize environment variables before running tests
         validateApiEnv();
         app = initApp();
@@ -63,8 +89,9 @@ describe('GET /accommodations (Enhanced List)', () => {
                 // Pagination validation
                 expect(responseData.data.pagination.page).toBe(1); // Default page
                 expect(responseData.data.pagination.pageSize).toBeGreaterThan(0);
-                expect(responseData.data.pagination.total).toBeGreaterThanOrEqual(0);
-                expect(responseData.data.pagination.totalPages).toBeGreaterThanOrEqual(0);
+                expect(responseData.data.pagination.total).toBe(3);
+                expect(responseData.data.items).toHaveLength(3);
+                expect(responseData.data.pagination.totalPages).toBe(1);
 
                 // Metadata validation
                 expect(typeof responseData.metadata.timestamp).toBe('string');
@@ -95,11 +122,7 @@ describe('GET /accommodations (Enhanced List)', () => {
                         /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
                     );
                     expect(item.name.length).toBeGreaterThan(0);
-                    expect(
-                        ['hotel', 'apartment', 'villa', 'hostel', 'resort', 'guesthouse'].includes(
-                            item.type
-                        )
-                    ).toBe(true);
+                    expect(Object.values(AccommodationTypeEnum)).toContain(item.type);
                     expect(item.reviewsCount).toBeGreaterThanOrEqual(0);
                     expect(item.averageRating).toBeGreaterThanOrEqual(0);
                     expect(item.averageRating).toBeLessThanOrEqual(5);
@@ -108,8 +131,8 @@ describe('GET /accommodations (Enhanced List)', () => {
         });
 
         it('should handle empty results gracefully', async () => {
-            // Use filter that likely returns no results
-            const response = await app.request(`${baseUrl}?name=NonExistentAccommodation123`, {
+            // Full-text search (`q`) with a term no seeded row contains
+            const response = await app.request(`${baseUrl}?q=NonExistentAccommodation123`, {
                 headers: {
                     'user-agent': 'vitest',
                     Accept: 'application/json'
@@ -439,6 +462,23 @@ describe('GET /accommodations (Enhanced List)', () => {
             }
         });
 
+        it('narrows the list and its total on ?isFeatured= (HOS-1898)', async () => {
+            const headers = { 'user-agent': 'vitest', Accept: 'application/json' };
+
+            // None of the 3 seeded accommodations is featured.
+            const featured = await app.request(`${baseUrl}?isFeatured=true`, { headers });
+            expect(featured.status).toBe(200);
+            const featuredBody = await featured.json();
+            expect(featuredBody.data.items).toHaveLength(0);
+            expect(featuredBody.data.pagination.total).toBe(0);
+
+            const plain = await app.request(`${baseUrl}?isFeatured=false`, { headers });
+            expect(plain.status).toBe(200);
+            const plainBody = await plain.json();
+            expect(plainBody.data.items).toHaveLength(3);
+            expect(plainBody.data.pagination.total).toBe(3);
+        });
+
         it('should handle boolean filters', async () => {
             const booleanTests = [
                 { isFeatured: 'true' },
@@ -674,7 +714,7 @@ describe('GET /accommodations (Enhanced List)', () => {
             });
 
             expect(response.status).toBe(200);
-            // Cache headers should be present due to cacheTTL configuration
+            // Cache headers should be present due to the global cache middleware
         });
 
         it('should handle large pageSize values appropriately', async () => {

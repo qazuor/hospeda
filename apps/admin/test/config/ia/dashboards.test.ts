@@ -87,10 +87,11 @@ describe('card counts (AC-4)', () => {
      * hostDashboard grew from 7 to 10 widgets through SPEC-155 additions
      * (commits c94502f99 → 06b73c15c), then to 11 with the shared 'whats-new'
      * widget added by SPEC-175 T-017, then to 12 with host-card-g-views added
-     * by SPEC-197 T-013.
+     * by SPEC-197 T-013, then back to 11 with the billing card B removed by
+     * HOS-1416.
      */
-    it('hostDashboard should have exactly 12 stub widgets', () => {
-        expect(dashboards.hostDashboard?.widgets).toHaveLength(12);
+    it('hostDashboard should have exactly 11 stub widgets', () => {
+        expect(dashboards.hostDashboard?.widgets).toHaveLength(11);
     });
 
     /**
@@ -107,12 +108,12 @@ describe('card counts (AC-4)', () => {
         expect(dashboards.adminBaseDashboard?.widgets).toHaveLength(9);
     });
 
-    it('superAdminOnlySection should have exactly 2 stub widgets (cards H–I)', () => {
-        expect(dashboards.superAdminOnlySection?.widgets).toHaveLength(2);
+    it('superAdminOnlySection should have exactly 1 stub widget (card H; billing card I removed by HOS-1416)', () => {
+        expect(dashboards.superAdminOnlySection?.widgets).toHaveLength(1);
     });
 
-    it('superAdminDashboard should have exactly 11 stub widgets (base 9 + super-only 2)', () => {
-        expect(dashboards.superAdminDashboard?.widgets).toHaveLength(11);
+    it('superAdminDashboard should have exactly 10 stub widgets (base 9 + super-only 1)', () => {
+        expect(dashboards.superAdminDashboard?.widgets).toHaveLength(10);
     });
 });
 
@@ -127,10 +128,10 @@ describe('role wiring (AC-8)', () => {
         expect(base?.widgets).toHaveLength(9);
     });
 
-    it('superAdminDashboard has 11 widgets — SUPER_ADMIN resolves to base + section (11 cards)', () => {
-        // AC-8: SUPER_ADMIN role → superAdminDashboard (adminBaseDashboard 9 + superAdminOnlySection 2 = 11, SPEC-197 T-015)
+    it('superAdminDashboard has 10 widgets — SUPER_ADMIN resolves to base + section (10 cards)', () => {
+        // AC-8: SUPER_ADMIN role → superAdminDashboard (adminBaseDashboard 9 + superAdminOnlySection 1 = 10; SPEC-197 T-015, card I removed by HOS-1416)
         const assembled = dashboards.superAdminDashboard;
-        expect(assembled?.widgets).toHaveLength(11);
+        expect(assembled?.widgets).toHaveLength(10);
     });
 
     it('superAdminDashboard widgets include all adminBaseDashboard widget IDs', () => {

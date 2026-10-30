@@ -24,6 +24,20 @@
 
 import { beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 
+vi.mock('../../src/utils/listing-access/ports', () => ({
+    getListingAccessPorts: () => ({
+        effectiveSet: async () => ({
+            entitlements: { get: () => 1 },
+            limits: { get: () => 10 }
+        })
+    })
+}));
+vi.mock('@repo/ai-core', async (importActual) => ({
+    ...(await importActual<typeof import('@repo/ai-core')>()),
+    getMonthlyCallCount: vi.fn(async () => 0),
+    recordAiUsage: vi.fn(async () => undefined)
+}));
+
 vi.hoisted(() => {
     process.env.HOSPEDA_APIFY_TOKEN = 'test-apify-token';
     process.env.HOSPEDA_APIFY_BOOKING_ACTOR = 'test/booking-actor';

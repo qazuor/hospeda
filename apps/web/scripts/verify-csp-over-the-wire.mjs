@@ -60,6 +60,7 @@ const MUST_HAVE_CSP = [
     '/es/legal/terminos/',
     '/es/legal/privacidad/',
     '/es/legal/cookies/',
+    '/es/legal/arrepentimiento/',
     '/es/nosotros/',
     '/es/preguntas-frecuentes/',
     '/es/contacto/',

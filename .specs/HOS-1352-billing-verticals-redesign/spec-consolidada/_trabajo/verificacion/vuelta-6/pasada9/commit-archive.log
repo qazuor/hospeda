@@ -1,0 +1,85 @@
+🔐 Scanning for secrets in staged files...
+✅ No secrets detected
+🔍 Running lint-staged...
+⋯ Backing up original state…
+✔ Done backing up original state (815522b2a3)!
+⋯ Running tasks for staged files…
+    *.json — 8 files
+      ⋯ biome format --write --no-errors-on-unmatched --files-ignore-unknown=true
+
+✔ biome format --write --no-errors-on-unmatched --files-ignore-unknown=true
+
+✔ Done running tasks for staged files!
+⋯ Staging changes from tasks…
+✔ Done staging changes from tasks!
+⋯ Cleaning up temporary files…
+✔ Done cleaning up temporary files!
+📝 Syncing TODO comments with GitHub...
+No projects matched the filters in "/home/qazuor/projects/WEBS/hospeda-spec-hos-1352-billing-redesign"
+✅ TODO sync completed successfully
+✅ Pre-commit checks complete
+🔍 Detecting completed tasks...
+No projects matched the filters in "/home/qazuor/projects/WEBS/hospeda-spec-hos-1352-billing-redesign"
+✅ Post-commit checks complete
+[spec/HOS-1352-billing-verticals-redesign 2ff3397db8] docs(spec): archive round six evidence and pass nine brief (HOS-1352)
+ 60 files changed, 18152 insertions(+)
+ create mode 100644 .specs/HOS-1352-billing-verticals-redesign/spec-consolidada/_trabajo/verificacion/vuelta-6/adjudicacion/build.py
+ create mode 100644 .specs/HOS-1352-billing-verticals-redesign/spec-consolidada/_trabajo/verificacion/vuelta-6/adjudicacion/canarios-resultado.txt
+ create mode 100644 .specs/HOS-1352-billing-verticals-redesign/spec-consolidada/_trabajo/verificacion/vuelta-6/adjudicacion/correcciones.txt
+ create mode 100644 .specs/HOS-1352-billing-verticals-redesign/spec-consolidada/_trabajo/verificacion/vuelta-6/adjudicacion/hallazgos.json
+ create mode 100644 .specs/HOS-1352-billing-verticals-redesign/spec-consolidada/_trabajo/verificacion/vuelta-6/adjudicacion/patrones.txt
+ create mode 100644 .specs/HOS-1352-billing-verticals-redesign/spec-consolidada/_trabajo/verificacion/vuelta-6/bloques.txt
+ create mode 100644 .specs/HOS-1352-billing-verticals-redesign/spec-consolidada/_trabajo/verificacion/vuelta-6/brief-g.txt
+ create mode 100644 .specs/HOS-1352-billing-verticals-redesign/spec-consolidada/_trabajo/verificacion/vuelta-6/brief-pasada9.txt
+ create mode 100644 .specs/HOS-1352-billing-verticals-redesign/spec-consolidada/_trabajo/verificacion/vuelta-6/brief-va.txt
+ create mode 100644 .specs/HOS-1352-billing-verticals-redesign/spec-consolidada/_trabajo/verificacion/vuelta-6/brief-vb.txt
+ create mode 100644 .specs/HOS-1352-billing-verticals-redesign/spec-consolidada/_trabajo/verificacion/vuelta-6/canarios.diff
+ create mode 100644 .specs/HOS-1352-billing-verticals-redesign/spec-consolidada/_trabajo/verificacion/vuelta-6/canarios.txt
+ create mode 100644 .specs/HOS-1352-billing-verticals-redesign/spec-consolidada/_trabajo/verificacion/vuelta-6/hallazgos-todos.txt
+ create mode 100644 .specs/HOS-1352-billing-verticals-redesign/spec-consolidada/_trabajo/verificacion/vuelta-6/pasada9/artefactos-sha256.json
+ create mode 100644 .specs/HOS-1352-billing-verticals-redesign/spec-consolidada/_trabajo/verificacion/vuelta-6/salidas/G1-auditoria.json
+ create mode 100644 .specs/HOS-1352-billing-verticals-redesign/spec-consolidada/_trabajo/verificacion/vuelta-6/salidas/G1-fuente-no-copiada.json
+ create mode 100644 .specs/HOS-1352-billing-verticals-redesign/spec-consolidada/_trabajo/verificacion/vuelta-6/salidas/G1-muestra.json
+ create mode 100644 .specs/HOS-1352-billing-verticals-redesign/spec-consolidada/_trabajo/verificacion/vuelta-6/salidas/G1-rg-reemplazos.txt
+ create mode 100644 .specs/HOS-1352-billing-verticals-redesign/spec-consolidada/_trabajo/verificacion/vuelta-6/salidas/G1-rg-retiros.txt
+ create mode 100644 .specs/HOS-1352-billing-verticals-redesign/spec-consolidada/_trabajo/verificacion/vuelta-6/salidas/G1-rg-tachados-pipes.txt
+ create mode 100644 .specs/HOS-1352-billing-verticals-redesign/spec-consolidada/_trabajo/verificacion/vuelta-6/salidas/G1.txt
+ create mode 100644 .specs/HOS-1352-billing-verticals-redesign/spec-consolidada/_trabajo/verificacion/vuelta-6/salidas/G2-audit.json
+ create mode 100644 .specs/HOS-1352-billing-verticals-redesign/spec-consolidada/_trabajo/verificacion/vuelta-6/salidas/G2-audit.py
+ create mode 100644 .specs/HOS-1352-billing-verticals-redesign/spec-consolidada/_trabajo/verificacion/vuelta-6/salidas/G2-busqueda-reglas.txt
+ create mode 100644 .specs/HOS-1352-billing-verticals-redesign/spec-consolidada/_trabajo/verificacion/vuelta-6/salidas/G2-clases-rg.txt
+ create mode 100644 .specs/HOS-1352-billing-verticals-redesign/spec-consolidada/_trabajo/verificacion/vuelta-6/salidas/G2-completar.py
+ create mode 100644 .specs/HOS-1352-billing-verticals-redesign/spec-consolidada/_trabajo/verificacion/vuelta-6/salidas/G2-cruces-spec.txt
+ create mode 100644 .specs/HOS-1352-billing-verticals-redesign/spec-consolidada/_trabajo/verificacion/vuelta-6/salidas/G2-decisiones-rg.txt
+ create mode 100644 .specs/HOS-1352-billing-verticals-redesign/spec-consolidada/_trabajo/verificacion/vuelta-6/salidas/G2-informe.py
+ create mode 100644 .specs/HOS-1352-billing-verticals-redesign/spec-consolidada/_trabajo/verificacion/vuelta-6/salidas/G2-muestra.json
+ create mode 100644 .specs/HOS-1352-billing-verticals-redesign/spec-consolidada/_trabajo/verificacion/vuelta-6/salidas/G2-pines-retirados-fuente.txt
+ create mode 100644 .specs/HOS-1352-billing-verticals-redesign/spec-consolidada/_trabajo/verificacion/vuelta-6/salidas/G2-pines.txt
+ create mode 100644 .specs/HOS-1352-billing-verticals-redesign/spec-consolidada/_trabajo/verificacion/vuelta-6/salidas/G2-pipes-fuente.txt
+ create mode 100644 .specs/HOS-1352-billing-verticals-redesign/spec-consolidada/_trabajo/verificacion/vuelta-6/salidas/G2.txt
+ create mode 100644 .specs/HOS-1352-billing-verticals-redesign/spec-consolidada/_trabajo/verificacion/vuelta-6/salidas/VA-A1.txt
+ create mode 100644 .specs/HOS-1352-billing-verticals-redesign/spec-consolidada/_trabajo/verificacion/vuelta-6/salidas/VA-A10.txt
+ create mode 100644 .specs/HOS-1352-billing-verticals-redesign/spec-consolidada/_trabajo/verificacion/vuelta-6/salidas/VA-A2.txt
+ create mode 100644 .specs/HOS-1352-billing-verticals-redesign/spec-consolidada/_trabajo/verificacion/vuelta-6/salidas/VA-A3.txt
+ create mode 100644 .specs/HOS-1352-billing-verticals-redesign/spec-consolidada/_trabajo/verificacion/vuelta-6/salidas/VA-A4.txt
+ create mode 100644 .specs/HOS-1352-billing-verticals-redesign/spec-consolidada/_trabajo/verificacion/vuelta-6/salidas/VA-A5.txt
+ create mode 100644 .specs/HOS-1352-billing-verticals-redesign/spec-consolidada/_trabajo/verificacion/vuelta-6/salidas/VA-A6.txt
+ create mode 100644 .specs/HOS-1352-billing-verticals-redesign/spec-consolidada/_trabajo/verificacion/vuelta-6/salidas/VA-A7.txt
+ create mode 100644 .specs/HOS-1352-billing-verticals-redesign/spec-consolidada/_trabajo/verificacion/vuelta-6/salidas/VA-A8-cobertura.json
+ create mode 100644 .specs/HOS-1352-billing-verticals-redesign/spec-consolidada/_trabajo/verificacion/vuelta-6/salidas/VA-A8-verificacion.txt
+ create mode 100644 .specs/HOS-1352-billing-verticals-redesign/spec-consolidada/_trabajo/verificacion/vuelta-6/salidas/VA-A8.txt
+ create mode 100644 .specs/HOS-1352-billing-verticals-redesign/spec-consolidada/_trabajo/verificacion/vuelta-6/salidas/VA-A9.txt
+ create mode 100644 .specs/HOS-1352-billing-verticals-redesign/spec-consolidada/_trabajo/verificacion/vuelta-6/salidas/VB-01.txt
+ create mode 100644 .specs/HOS-1352-billing-verticals-redesign/spec-consolidada/_trabajo/verificacion/vuelta-6/salidas/VB-02.txt
+ create mode 100644 .specs/HOS-1352-billing-verticals-redesign/spec-consolidada/_trabajo/verificacion/vuelta-6/salidas/VB-03.txt
+ create mode 100644 .specs/HOS-1352-billing-verticals-redesign/spec-consolidada/_trabajo/verificacion/vuelta-6/salidas/VB-04.txt
+ create mode 100644 .specs/HOS-1352-billing-verticals-redesign/spec-consolidada/_trabajo/verificacion/vuelta-6/salidas/VB-05.txt
+ create mode 100644 .specs/HOS-1352-billing-verticals-redesign/spec-consolidada/_trabajo/verificacion/vuelta-6/salidas/VB-06.txt
+ create mode 100644 .specs/HOS-1352-billing-verticals-redesign/spec-consolidada/_trabajo/verificacion/vuelta-6/salidas/VB-07.txt
+ create mode 100644 .specs/HOS-1352-billing-verticals-redesign/spec-consolidada/_trabajo/verificacion/vuelta-6/salidas/VB-08.txt
+ create mode 100644 .specs/HOS-1352-billing-verticals-redesign/spec-consolidada/_trabajo/verificacion/vuelta-6/salidas/VB-09.txt
+ create mode 100644 .specs/HOS-1352-billing-verticals-redesign/spec-consolidada/_trabajo/verificacion/vuelta-6/salidas/VB-10.txt
+ create mode 100644 .specs/HOS-1352-billing-verticals-redesign/spec-consolidada/_trabajo/verificacion/vuelta-6/salidas/VB-11.txt
+ create mode 100644 .specs/HOS-1352-billing-verticals-redesign/spec-consolidada/_trabajo/verificacion/vuelta-6/salidas/VB-12.txt
+ create mode 100644 .specs/HOS-1352-billing-verticals-redesign/spec-consolidada/_trabajo/verificacion/vuelta-6/salidas/VB-13.txt
+ create mode 100644 .specs/HOS-1352-billing-verticals-redesign/spec-consolidada/_trabajo/verificacion/vuelta-6/salidas/VB-14.txt

@@ -292,7 +292,8 @@ export abstract class BaseCrudWrite<
      * Permanently deletes an entity by its ID from the database.
      *
      * This is an irreversible, destructive operation. Follows the standard lifecycle
-     * including permission checks and hooks.
+     * including permission checks and hooks. Works on live and soft-deleted rows alike;
+     * answers NOT_FOUND when the row does not exist or no row was deleted.
      *
      * @param actor - The user or system performing the action.
      * @param id - The ID of the entity to hard-delete.
@@ -311,7 +312,9 @@ export abstract class BaseCrudWrite<
             schema: z.object({}),
             ctx,
             execute: async (_, validActor, execCtx) => {
-                const entity = await this._getAndValidateEntity(
+                // A soft-deleted row is a valid target: the admin flow is "trash, then
+                // purge" (HOS-1903). Only a row that does not exist at all is NOT_FOUND.
+                await this._getAndValidateEntity(
                     this.model,
                     id,
                     validActor,
@@ -319,14 +322,16 @@ export abstract class BaseCrudWrite<
                     this._canHardDelete.bind(this),
                     execCtx
                 );
-                if ((entity as TEntity).deletedAt) {
-                    return { count: 0 };
-                }
                 const processedId = await this._beforeHardDelete(id, validActor, execCtx);
                 const where = { id: processedId };
                 // biome-ignore lint/suspicious/noExplicitAny: This is a safe use of any in a generic base class.
-                const result = { count: await this.model.hardDelete(where as any, execCtx?.tx) };
-                return this._afterHardDelete(result, validActor, execCtx);
+                const count = await this.model.hardDelete(where as any, execCtx?.tx);
+                // Nothing was deleted (e.g. the row vanished between load and delete):
+                // never report a "permanent deletion" that did not happen.
+                if (!count) {
+                    throw entityNotFoundError({ entityName: this.entityName });
+                }
+                return this._afterHardDelete({ count }, validActor, execCtx);
             }
         });
     }

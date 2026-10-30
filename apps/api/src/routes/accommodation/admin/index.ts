@@ -10,21 +10,20 @@ import { adminAddMediaRoute } from './addMedia';
 import { adminArchiveMediaRoute } from './archiveMedia';
 import { adminBatchAccommodationsRoute } from './batch';
 import { adminCreateAccommodationRoute } from './create';
-import { adminDeleteAccommodationRoute } from './delete';
 import { adminGetAccommodationByIdRoute } from './getById';
 import { adminGetFaqsRoute } from './getFaqs';
 import { adminGetMediaRoute } from './getMedia';
 import { adminGetOccupancyRoute } from './getOccupancy';
-import { adminHardDeleteAccommodationRoute } from './hardDelete';
 import { adminListAccommodationsRoute } from './list';
 import { adminModerateAccommodationRoute } from './moderate';
+import { adminGetAccommodationModerationStateRoute } from './moderation-state';
 import { adminAccommodationOptionsRoute } from './options';
 import { adminPatchAccommodationRoute } from './patch';
+import { adminPurgeOnRequestAccommodationRoute } from './purge';
 import { adminRemoveFaqRoute } from './removeFaq';
 import { adminRemoveMediaRoute } from './removeMedia';
 import { adminReorderAccommodationFaqsRoute } from './reorderFaqs';
 import { adminReorderMediaRoute } from './reorderMedia';
-import { adminRestoreAccommodationRoute } from './restore';
 import { adminRestoreMediaRoute } from './restoreMedia';
 import { adminSetFeaturedMediaRoute } from './setFeaturedMedia';
 import { adminUpdateAccommodationRoute } from './update';
@@ -61,22 +60,17 @@ app.route('/', adminUpdateAccommodationRoute);
 // PATCH /:id - Patch accommodation
 app.route('/', adminPatchAccommodationRoute);
 
-// DELETE /:id - Soft delete accommodation
-app.route('/', adminDeleteAccommodationRoute);
-
-// DELETE /:id/hard - Hard delete accommodation
-app.route('/', adminHardDeleteAccommodationRoute);
-
-// POST /:id/restore - Restore accommodation
-app.route('/', adminRestoreAccommodationRoute);
-
 // POST /:id/verify - Verify / unverify accommodation
 app.route('/', adminVerifyAccommodationRoute);
 
-// POST /:id/moderate - Apply the moderation verdict (H-102). Posts and events
-// have had this since HOS-374; without it no accommodation could ever leave
-// PENDING, and the admin's pending counter could only grow.
+// POST /:id/moderate - ACC:12 two-level publication moderation; the legacy moderation column was retired by V6.9b.
 app.route('/', adminModerateAccommodationRoute);
+
+// GET /:id/moderation - current publication and fix-request state
+app.route('/', adminGetAccommodationModerationStateRoute);
+
+// POST /:id/purge - ACC:23 purge at the owner's request (PB12, mandatory reason).
+app.route('/', adminPurgeOnRequestAccommodationRoute);
 
 // GET /:id/occupancy - Occupancy calendar (staff, ACCOMMODATION_OCCUPANCY_VIEW) - HOS-43
 app.route('/', adminGetOccupancyRoute);

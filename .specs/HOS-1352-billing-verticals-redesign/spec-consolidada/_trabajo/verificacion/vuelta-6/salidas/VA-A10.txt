@@ -1,0 +1,16 @@
+# VA-A10 · fuente → spec · B/docs/{14-promos-cortesias-y-grants,16-addons,19-superficies,20-testing}.md
+
+## Hallazgos
+
+fuentes/.specs/HOS-1354-billing-cobro-y-proveedor/docs/19-superficies.md:45 · «la **versión anclada** de la suscripción, su estado, y el conjunto efectivo de entitlements y limits» · distinta en s/b249f841/10-corte/B13a.md:89 («la **versión vigente** del plan de la suscripción»). La tabla manda a Mi Cuenta y Mi Suscripción mostrar la versión comercial actual en lugar de la contratada; publicar otra versión cambiaría lo mostrado sin cambiar la suscripción. Contradice también B13a.md:911–912, que conserva la lectura anclada. La distinción sigue vigente en fuentes/.specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:2951–2953; BM/BZ/CC no autorizan sustituir esa lectura de superficie · BLOQUEA
+
+fuentes/.specs/HOS-1354-billing-cobro-y-proveedor/docs/19-superficies.md:138 · «con un mapa explícito y un **texto genérico obligatorio** para lo que no esté en el mapa» · ausente (búsqueda con rg --hidden en toda s/b249f841/ por status_detail, genérico, fallback, detalles fuera del mapa y variantes; revisados B13a.md:182, AC:B13a:5 en :615–625, TEST:B13a:4 en :1028–1037, el catálogo de correos y S16). Sólo se especifican los rechazos conocidos: ningún AC, TEST, transición ni catálogo exige responder con un texto genérico ante un detalle desconocido. Incluso DEC-MP-004 en s/b249f841/01-decisiones-vigentes.md:2295 omite esa obligación, que sigue explícita y sin reemplazo en fuentes/.specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:4812–4813 · BLOQUEA
+
+## Resumen
+
+| archivo | reglas normativas vivas revisadas | líneas recorridas | ausentes | distintas |
+|---|---:|---|---:|---:|
+| B/docs/14-promos-cortesias-y-grants.md | ≈90 | 1–742 | 0 | 0 |
+| B/docs/16-addons.md | ≈150 | 1–1160 | 0 | 0 |
+| B/docs/19-superficies.md | ≈95 | 1–346 | 1 | 1 |
+| B/docs/20-testing.md | ≈110 | 1–808 | 0 | 0 |

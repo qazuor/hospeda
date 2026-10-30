@@ -1,0 +1,54 @@
+/**
+ * SONDA DESCARTABLE — HOS-1352 FASE 1B.
+ *
+ * NO es un test: construye la app y vuelca `app.routes` + el documento OpenAPI
+ * a JSON para poder contar handlers por tier sin contar archivos.
+ * Se borra al terminar la medición. No se commitea.
+ */
+import { mkdirSync, writeFileSync } from 'node:fs';
+import { dirname } from 'node:path';
+import { describe, expect, it } from 'vitest';
+import { initApp } from '../src/app';
+import { validateApiEnv } from '../src/utils/env';
+
+const OUT = process.env.PROBE_OUT ?? '/tmp/hos1352-routes.json';
+
+describe('probe', () => {
+    it('vuelca las rutas', () => {
+        validateApiEnv();
+        const app = initApp();
+
+        // biome-ignore lint/suspicious/noExplicitAny: sonda descartable
+        const anyApp = app as any;
+        const raw: Array<{ method: string; path: string; handlerName?: string }> = (
+            anyApp.routes ?? []
+        ).map((r: { method: string; path: string; handler?: { name?: string } }) => ({
+            method: r.method,
+            path: r.path,
+            handlerName: r.handler?.name ?? ''
+        }));
+
+        let doc: unknown = null;
+        let docError = '';
+        try {
+            doc = anyApp.getOpenAPIDocument({
+                openapi: '3.1.0',
+                info: { title: 'probe', version: '1.0.0' }
+            });
+        } catch (e) {
+            docError = e instanceof Error ? e.message : String(e);
+            try {
+                doc = anyApp.getOpenAPIDocument({
+                    openapi: '3.0.0',
+                    info: { title: 'probe', version: '1.0.0' }
+                });
+            } catch (e2) {
+                docError += ` | 3.0: ${e2 instanceof Error ? e2.message : String(e2)}`;
+            }
+        }
+
+        mkdirSync(dirname(OUT), { recursive: true });
+        writeFileSync(OUT, JSON.stringify({ raw, doc, docError }, null, 0));
+        expect(raw.length).toBeGreaterThan(0);
+    });
+});

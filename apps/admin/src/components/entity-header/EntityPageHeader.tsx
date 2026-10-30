@@ -37,7 +37,7 @@ export interface ViewModeActions {
     /** Called when the "Volver" button is clicked. */
     readonly onBack: () => void;
     /** Called when the "Editar" button is clicked. */
-    readonly onEdit: () => void;
+    readonly onEdit?: () => void;
 }
 
 /**
@@ -117,7 +117,7 @@ export interface EntityPageHeaderProps {
     /**
      * Extra actions rendered between the quality score slot and the mode-specific
      * action set. Use for entity-level actions that are not Edit/Save/Cancel
-     * (e.g. user impersonate + delete in the access/users routes).
+     * (e.g. user delete in the access/users routes).
      *
      * A vertical divider is inserted automatically between the extras and the
      * mode actions when both are present.
@@ -206,15 +206,17 @@ function ViewActions({ actions }: { readonly actions: ViewModeActions }) {
             >
                 <span className="hidden sm:inline">Volver</span>
             </Button>
-            <Button
-                variant="default"
-                size="sm"
-                onClick={actions.onEdit}
-                leftIcon={<EditIcon className="h-4 w-4" />}
-                aria-label="Editar entidad"
-            >
-                <span className="hidden sm:inline">Editar</span>
-            </Button>
+            {actions.onEdit ? (
+                <Button
+                    variant="default"
+                    size="sm"
+                    onClick={actions.onEdit}
+                    leftIcon={<EditIcon className="h-4 w-4" />}
+                    aria-label="Editar entidad"
+                >
+                    <span className="hidden sm:inline">Editar</span>
+                </Button>
+            ) : null}
         </>
     );
 }
@@ -522,7 +524,7 @@ export function EntityPageHeader({
                             </div>
                         )}
 
-                        {/* Entity-level extra actions (e.g. impersonate, delete) */}
+                        {/* Entity-level extra actions (e.g. delete) */}
                         {extraActions && (
                             <div
                                 className="flex items-center gap-2"

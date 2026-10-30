@@ -52,7 +52,7 @@ describe('the partner directory is gone (AC-8)', () => {
 
         // Assert — `types` survives on purpose: the detail page renders
         // "Comercio" / "ONG" / "Institución". `tiers` does not, because the
-        // tier is internal commercial state and is never shown publicly.
+        // The former commercial category is not shown publicly.
         for (const section of DELETED_I18N_SECTIONS) {
             expect(parsed[section], `partners.${section} is back in ${locale}`).toBeUndefined();
         }

@@ -1,0 +1,20 @@
+# VB-12 · spec → fuente · 10-corte/B11.md 10-corte/B13a.md 20-fase-3/B13b.md 20-fase-3/B12.md
+
+## Hallazgos
+
+10-corte/B11.md:1947 · «El barrido procesa a lo sumo cien pagos por cuenta en cada corrida. Los pagos restantes se excluyen de la conciliación y no generan marcas en esa corrida.» · contradice .specs/HOS-1354-billing-cobro-y-proveedor/docs/09-conciliacion.md:832 («ésta relee por id cada pago de la ventana»). No hay soporte vivo para el tope por cuenta ni para excluir los pagos restantes; la selección vigente está en las líneas 797–801 y las disputas se releen hasta resolverse en 809–820. El límite inventado deja pagos elegibles sin detectar ni marcar y contradice también AC:B11:12 y AC:B11:25 del propio archivo. · BLOQUEA
+
+10-corte/B13a.md:89 · «la **versión vigente** del plan de la suscripción, su estado, y el conjunto efectivo de entitlements y limits» · contradice .specs/HOS-1354-billing-cobro-y-proveedor/docs/19-superficies.md:45 («la **versión anclada** de la suscripción, su estado, y el conjunto efectivo de entitlements y limits»). Mi Cuenta y Mi Suscripción mostrarían una versión de catálogo que el cliente no compró; también contradice el modelo de lectura del propio B13a.md:911–913 y DEC-ARCH-002 en 01-decisiones-vigentes.md:7810. · BLOQUEA
+
+10-corte/B13a.md:619 · «el mensaje sale **del `status_detail` del intento del alta**, por un mapa explícito» · más débil que .specs/HOS-1354-billing-cobro-y-proveedor/docs/19-superficies.md:138 («con un mapa explícito y un **texto genérico obligatorio** para lo que no esté en el mapa»), confirmado por DEC-MP-004 en .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:4812–4813. AC:B13a:5 omite la salida obligatoria para un status_detail desconocido; la misma omisión está en la fila 19 transcrita en B13a.md:182 y TEST:B13a:4 sólo comprueba los dos casos conocidos. Permite implementar el rechazo sin respuesta genérica para los códigos fuera del mapa. · BLOQUEA
+
+20-fase-3/B13b.md:83 · «**los destaques recurrentes sobre esa ficha, que dejan de cobrarse al moderar la ficha**» · contradice .specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/19-superficies.md:71 («**los destaques recurrentes sobre esa ficha, que se siguen cobrando hasta que los dé de baja**»). AC:B13b:1 promete cortar el cobro por la moderación, cuando la fuente exige avisar que continúa hasta la baja; contradice también FILA:B13b, AC:B13b:4 y TEST:B13b:1 del mismo archivo, y B13a.md:40–41. BH sólo reparte las superficies entre piezas y no cambia esta regla. · BLOQUEA
+
+## Resumen
+
+| archivo | líneas recorridas | afirmaciones normativas revisadas (aprox.) | BLOQUEA | MENOR |
+|---|---|---|---|---|
+| 10-corte/B11.md | 1–2358 | 360 | 1 | 0 |
+| 10-corte/B13a.md | 1–1299 | 250 | 2 | 0 |
+| 20-fase-3/B13b.md | 1–261 | 55 | 1 | 0 |
+| 20-fase-3/B12.md | 1–834 | 180 | 0 | 0 |

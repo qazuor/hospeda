@@ -1,0 +1,182 @@
+{
+    "R01": {
+        "pattern": "carga.{0,60}3a|3a.{0,60}carga|no esta migración",
+        "exit": 0,
+        "all_lines": 11,
+        "live_lines": 9
+    },
+    "R02": {
+        "pattern": "mut.{0,80}fecha efectiva|cambio se ejecuta|reintent.{0,100}fecha efectiva|desde su fecha efectiva",
+        "exit": 0,
+        "all_lines": 5,
+        "live_lines": 4
+    },
+    "R03": {
+        "pattern": "tres correos|B13a.{0,80}aumento",
+        "exit": 0,
+        "all_lines": 10,
+        "live_lines": 10
+    },
+    "R04": {
+        "pattern": "alta nueva|checkout ya abierto",
+        "exit": 0,
+        "all_lines": 65,
+        "live_lines": 63
+    },
+    "R05": {
+        "pattern": "promo_redemption|instante del canje",
+        "exit": 0,
+        "all_lines": 6,
+        "live_lines": 6
+    },
+    "R06": {
+        "pattern": "BL por inferencia|rama que la.{0,10}lee|reconciliation_mark_payment",
+        "exit": 0,
+        "all_lines": 65,
+        "live_lines": 46
+    },
+    "R07": {
+        "pattern": "aviso.{0,100}encola|encola.{0,100}cobertura|B4.{0,80}outbox|aviso.{0,50}durable",
+        "exit": 0,
+        "all_lines": 40,
+        "live_lines": 33
+    },
+    "R08": {
+        "pattern": "misma transacción que encol|con el encolado del aviso|coberturaPerdidaEn",
+        "exit": 0,
+        "all_lines": 39,
+        "live_lines": 37
+    },
+    "R09": {
+        "pattern": "comprobante de la transferencia|comprobante.{0,35}transferencia|RF4",
+        "exit": 0,
+        "all_lines": 54,
+        "live_lines": 54
+    },
+    "R10": {
+        "pattern": "primera cuota|MP5|aviso de falta de pago",
+        "exit": 0,
+        "all_lines": 181,
+        "live_lines": 166
+    },
+    "R11": {
+        "pattern": "relectura por id del pago|RF3",
+        "exit": 0,
+        "all_lines": 49,
+        "live_lines": 49
+    },
+    "R12": {
+        "pattern": "pendiente de.{0,5}S19|S6.{0,8}no ocurre|ocurre y corre.{0,5}S5",
+        "exit": 0,
+        "all_lines": 22,
+        "live_lines": 22
+    },
+    "R13": {
+        "pattern": "deja en.{0,5}DRAFT|levantar la moderación|levantar.*moder|PB11",
+        "exit": 0,
+        "all_lines": 97,
+        "live_lines": 97
+    },
+    "R14": {
+        "pattern": "los tres avisos|tres avisos.{0,80}V9b|aviso.{0,10}al archivar",
+        "exit": 0,
+        "all_lines": 50,
+        "live_lines": 35
+    },
+    "R15": {
+        "pattern": "alerta cerrada|fecha objetivo",
+        "exit": 0,
+        "all_lines": 20,
+        "live_lines": 20
+    },
+    "R16": {
+        "pattern": "limit menor|limit.{0,20}menor|rank.{0,10}MAYOR",
+        "exit": 0,
+        "all_lines": 6,
+        "live_lines": 6
+    },
+    "R17": {
+        "pattern": "dieciocho|18 plazos|merge.{0,15}B11",
+        "exit": 0,
+        "all_lines": 15,
+        "live_lines": 6
+    },
+    "R18": {
+        "pattern": "V9a.{0,60}domain_event|domain_event.{0,60}V9a|crea.{0,10}domain_event",
+        "exit": 0,
+        "all_lines": 22,
+        "live_lines": 14
+    },
+    "R19": {
+        "pattern": "destino para su ciclo|ventana gemela|sin promos",
+        "exit": 0,
+        "all_lines": 12,
+        "live_lines": 12
+    },
+    "R20": {
+        "pattern": "contracargo.{0,80}defecto|contracargo y no en la vista",
+        "exit": 0,
+        "all_lines": 1,
+        "live_lines": 1
+    },
+    "R21": {
+        "pattern": "doce.{0,60}depend|las doce|doce del|trece.{0,40}depend",
+        "exit": 0,
+        "all_lines": 16,
+        "live_lines": 16
+    },
+    "R22": {
+        "pattern": "B/09.{0,5}§6|nueva acuñada",
+        "exit": 0,
+        "all_lines": 9,
+        "live_lines": 9
+    },
+    "R23": {
+        "pattern": "correo encolado antes de la cancelación|VIP|vip",
+        "exit": 0,
+        "all_lines": 247,
+        "live_lines": 197
+    },
+    "R24": {
+        "pattern": "no como gate|ventanas del corte|TEST:U1:24",
+        "exit": 0,
+        "all_lines": 6,
+        "live_lines": 5
+    },
+    "R25": {
+        "pattern": "paso 5/6|sin fuente que|sin fuente comercial|pasos 5 y 6",
+        "exit": 0,
+        "all_lines": 3,
+        "live_lines": 3
+    },
+    "R26": {
+        "pattern": "lista de piezas, l\\. 95[03]|§4\\.6 \\(l\\. 95[12]",
+        "exit": 0,
+        "all_lines": 2,
+        "live_lines": 2
+    },
+    "R27": {
+        "pattern": "promos y cortesías, en.{0,5}B9a|addons, en.{0,5}B4|le agrega a.{0,5}payment",
+        "exit": 0,
+        "all_lines": 3,
+        "live_lines": 3
+    },
+    "R28": {
+        "pattern": "precisar nunca corrige|Caducada en parte|LETRAS_MUERTAS|LETRAS_VIVAS_REVISADAS",
+        "exit": 0,
+        "all_lines": 14,
+        "live_lines": 14
+    },
+    "R29": {
+        "pattern": "predicado.{0,100}B2|su test.{0,30}B2",
+        "exit": 0,
+        "all_lines": 12,
+        "live_lines": 9
+    },
+    "R30": {
+        "pattern": "fuera de.{0,5}staging|producción.{0,80}aborta|guard de entorno|sólo staging|toda sonda|todas las sondas",
+        "exit": 0,
+        "all_lines": 7,
+        "live_lines": 7
+    }
+}

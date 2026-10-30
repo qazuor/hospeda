@@ -1,0 +1,82 @@
+--- actual/01-decisiones-vigentes.md
++++ sandbox/01-decisiones-vigentes.md
+@@ -1973,7 +1973,7 @@
+      resultados). Es precisamente el terreno donde este proveedor ya demostró aceptar cambios
+      que no aplica, y un aumento "aplicado" que no se aplicó no lo nota nadie hasta la
+      conciliación.
+-  3. **El cambio se ejecuta en la fecha efectiva, no cuando se decide.** Eso implica una cola de
++  3. […] Eso implica una cola de
+      cambios programados, que es el hueco `M-SUB-02`, y no un `PUT` en el momento de la
+      decisión comercial.
+   4. **Un precio nuevo por debajo de ARS 15 no es aplicable por este camino** (`PC-2`).
+@@ -1982,6 +1982,8 @@
+   6. El §29 cierra con *"Investigar normativa actual antes de implementar"*. **Eso sigue
+      pendiente** y no lo resuelve esta decisión: queda en `M-LEGAL-03`.
+ - **Origen**: `BD-MP-03` (BLOCKING) + FASE 1C.
++
++> **Parte sin efecto** (adjudicación `PARCIAL`): «El cambio se ejecuta en la fecha efectiva, no cuando se decide.»: para el aumento a un anclado S37 muta siete días antes; ningún cobro sale al precio nuevo antes de la fecha efectiva. Lo supera: `.specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:1497` («`S37` muta el monto siete días antes de la fecha, y lo que se conserva es que **ningún cobro»). Lo omitido del texto de arriba está marcado «[…]».
+ 
+ <a id="dec-mp-002"></a>
+ 
+@@ -4661,9 +4663,9 @@
+ 16), el escalamiento de una marca abierta (plazo 17) y la ventana de las comprobaciones de pagos
+ acreditados y de órdenes pagadas (plazo 18), los tres de billing. Sus valores los fijó el owner
+ (lote R): el 16, 7 días; el 17, 7 días; el 18, 180 días. La versión 1 de los plazos que crea el
+-paso 3 lleva los dieciocho, y los otros cinco sin valor escrito los sigue fijando el owner […].
+-
+-> **Parte sin efecto** (adjudicación `PARCIAL`): «antes del ensayo del corte en `staging`» (antes del merge de `V6`). Lo supera: `.specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:7436` («fija el owner **antes del merge de `V6`**, y no antes del ensayo del corte en `staging`, como»). Lo omitido del texto de arriba está marcado «[…]».
++paso 3 lleva los […], y los otros cinco sin valor escrito los sigue fijando el owner […].
++
++> **Parte sin efecto** (adjudicación `PARCIAL`): «antes del ensayo del corte en `staging`» (antes del merge de `V6`) y «paso 3 lleva los dieciocho»: BU agrega la clave 19. Lo supera: `.specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:7436` («fija el owner **antes del merge de `V6`**, y no antes del ensayo del corte en `staging`, como»); `.specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:7450` («es **una clave más de la lista cerrada, la 19, en la tabla versionada de plazos de billing»). Lo omitido del texto de arriba está marcado «[…]».
+ 
+ <a id="dec-data-008-p5"></a>
+ 
+@@ -4713,13 +4715,15 @@
+ 📌 **Precisada otra vez el 2026-10-02, con OK del owner (corte del MVP, BU y BV, las dos la 1)**:
+ **BU**: la ventana `N` del resumen de conciliación de `DEC-OBS-001` (*«`N` es configuración
+ (§9)»*) es **una clave más de la lista cerrada, la 19, en la tabla versionada de plazos de billing
+-de `B2`**, que cambia la acción 22; su valor inicial lo fija el owner antes del merge de `B11`.
++de `B2`**, que cambia la acción 22; su valor inicial lo fija el owner […].
+ **BV**: **la fecha límite de la Fase 1 (`V9b`) es el instante del corte más el plazo 1 menos el
+ plazo 4, con la versión 1 de los plazos**; la Fase 1 se mergea a producción antes de esa fecha y
+ su gate la verifica contra ese número. Como cada reloj guarda la versión con que arrancó, un
+ cambio de plazo posterior no la adelanta. Dónde: `NUCLEO/02` §1.5; `B/descomposicion.md` §2 y §4
+ (filas de `B2` y `B11`); `16-fase-7-del-paraguas.md` §4.7, *«Las fases posteriores»*;
+ `41-corte-del-mvp/10-decisiones-del-owner.md`, BU y BV.
++
++> **Parte sin efecto** (adjudicación `PARCIAL`): «antes del merge de `B11`»: BX adelanta el valor inicial del plazo 19 al merge de `B2`. Lo supera: `.specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:7459` («**el valor del plazo 19 lo fija el owner antes del merge de `B2`**»). Lo omitido del texto de arriba está marcado «[…]».
+ 
+ <a id="dec-data-008-p8"></a>
+ 
+@@ -6208,10 +6212,12 @@
+ **Lista cuando corre entera contra la cuenta de pruebas**, y **se mergea en la rama del paraguas
+ antes del ensayo del corte**. *«La fecha del §2»* que su texto le ponía se lee como la de su
+ diseño, que ya está escrito, y deja de frenar a `U1`. Como `U1` y `U2`, no es de ninguna épica:
+-no le suma ninguna a las doce dependencias entre épicas, y no suma guards
++no le suma ninguna a las […] dependencias entre épicas, y no suma guards
+ (el total pasa a 35 por `G19`, de `V5`: FASES 6 y 7, pase de la FASE 6, owner 2026-09-30, H; ver `DEC-METH-018`).
+ **Entra después de `U1`, en paralelo con `V1`, `B1` y `U2`, y sólo tiene que estar mergeada
+ antes del ensayo; `U1` sigue siendo el primer PR de la rama** (FASES 6 y 7, lote de la aplicación, owner 2026-09-30, K).
++
++> **Parte sin efecto** (adjudicación `PARCIAL`): «las doce dependencias entre épicas»: BC agrega la fila 15 y quedan trece. Lo supera: `.specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:392` («**y BC suma la 15: son trece**»). Lo omitido del texto de arriba está marcado «[…]».
+ 
+ Ninguna unidad depende de ella; la necesitan el ensayo (paso 0) y los pasos 1a, 1b y 2. Y `U1` suma una cosa: **reapunta la regla de smoke del `CLAUDE.md` raíz** al checklist del sistema nuevo (letra B; ver `DEC-ARCH-016`). Dónde: `16-fase-7-del-paraguas.md` §2, §4.2 y §4.6; las dos descomposiciones, §3 y §4; `spec.md`. Origen: (FASES 6 y 7, owner 2026-09-30, F).
+ 
+@@ -9644,7 +9650,7 @@
+   hecho por fuera, con la fila de `refund` naciendo ya ejecutada; (3) declararlo de borde.
+ - **Decisión**: **(1)**.
+   1. **`refund`: `REQUESTED → CONFIRMED → EXECUTED | FAILED`.** `EXECUTED` lo escribe la relectura
+-     del proveedor o, en una devolución por fuera, la persona con el comprobante de la transferencia.
++     del proveedor o, en una devolución por fuera, la persona […].
+      La confirmación sigue siendo humana (`DEC-RF-002`).
+   2. **Una acción administrativa nueva: *«asentar un cobro o una devolución que ya ocurrió por
+      fuera»***. Cierra los motivos 18 y 19 y la devolución manual, que son el mismo gesto. **El
+@@ -9667,6 +9673,8 @@
+ - → ver [📌5](#dec-rf-008-p5).
+ - → ver [📌6](#dec-rf-008-p6).
+ - → ver [📌7](#dec-rf-008-p7).
++
++> **Parte sin efecto** (adjudicación `PARCIAL`): «la persona con el comprobante de la transferencia»: RF4 también admite la referencia del panel para una devolución ocurrida por fuera. Lo supera: `.specs/HOS-1354-billing-cobro-y-proveedor/docs/03-maquinas-de-estado.md:1853` («con el comprobante de la transferencia o la referencia del panel»). Lo omitido del texto de arriba está marcado «[…]».
+ 
+ <a id="dec-rf-008-p1"></a>
+ 

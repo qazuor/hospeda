@@ -12,12 +12,12 @@
  * @see SPEC-155 T-006
  */
 
-import { EntitlementKey } from '@repo/billing';
-import { HostConversationResponseRateSchema, PermissionEnum } from '@repo/schemas';
+import { HostConversationResponseRateSchema, PermissionEnum, VerticalEnum } from '@repo/schemas';
 import { ConversationService, ServiceError } from '@repo/service-core';
-import { requireEntitlement } from '../../../middlewares/entitlement';
+
 import { getActorFromContext } from '../../../utils/actor';
 import { env } from '../../../utils/env';
+import { enforceUserGate } from '../../../utils/listing-access/user-gate';
 import { apiLogger } from '../../../utils/logger';
 import { createProtectedRoute } from '../../../utils/route-factory';
 
@@ -39,6 +39,7 @@ const conversationService = new ConversationService(
  *
  * Requires `CONVERSATION_VIEW_OWN` permission (standard host-tier).
  * Returns 200 even when the host has zero conversations (zeroed values).
+ * Reads the owner's effective view_basic_stats capability before returning statistics.
  */
 export const hostConversationResponseRateRoute = createProtectedRoute({
     method: 'get',
@@ -53,6 +54,11 @@ export const hostConversationResponseRateRoute = createProtectedRoute({
     responseSchema: HostConversationResponseRateSchema,
     handler: async (ctx) => {
         const actor = getActorFromContext(ctx);
+        await enforceUserGate({
+            userId: actor.id,
+            vertical: VerticalEnum.ACCOMMODATION,
+            keys: ['view_basic_stats']
+        });
 
         const result = await conversationService.getHostResponseRate(actor);
 
@@ -63,11 +69,6 @@ export const hostConversationResponseRateRoute = createProtectedRoute({
         return result.data;
     },
     options: {
-        // SPEC-145 T-006: VIEW_BASIC_STATS gate — response-rate KPI is a basic
-        // stats feature granted on owner-basico (and above) and complex-basico
-        // (and above). Tourists never see this route.
-        middlewares: [requireEntitlement(EntitlementKey.VIEW_BASIC_STATS)],
-        cacheTTL: 60,
         customRateLimit: { requests: 60, windowMs: 60_000 }
     }
 });

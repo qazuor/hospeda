@@ -132,6 +132,7 @@ vi.mock('../../../src/revalidation/revalidation-init.js', () => ({
 
 // ---------------------------------------------------------------------------
 
+import { domainEventModel } from '@repo/db';
 import { ModerationStatusEnum, PermissionEnum, RoleEnum } from '@repo/schemas';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { AccommodationService } from '../../../src/services/accommodation/accommodation.service';
@@ -163,8 +164,7 @@ function buildService() {
         findById: vi.fn().mockResolvedValue({
             id: ACCOMMODATION_ID,
             ownerId: OWNER_ID,
-            visibility: 'PRIVATE',
-            lifecycleState: 'DRAFT'
+            publicationStatus: 'DRAFT'
         })
     };
     return new AccommodationService({} as ServiceConfig, accommodationModel as never);
@@ -184,6 +184,9 @@ function liveFeaturedCount(): number {
 
 beforeEach(() => {
     vi.clearAllMocks();
+    // Owner-act persistence is exercised by HOS-1642's PostgreSQL integration
+    // tests; this fake isolates the gallery-cap and deleted-row behavior.
+    vi.spyOn(domainEventModel, 'insert').mockResolvedValue({} as never);
 
     // A gallery sitting exactly at the plan cap, plus a cover.
     fakeTable.rows = [];

@@ -1,4 +1,5 @@
 import { Section, Text } from '@react-email/components';
+import { formatTrialVerticals } from '../../utils/product-domain-copy.js';
 import { Button } from '../components/button.js';
 import { Heading } from '../components/heading.js';
 import { EmailLayout } from '../components/layout.js';
@@ -15,7 +16,7 @@ import { trialSeriesStyles as styles, type TrialSeriesEmailProps } from './trial
  *
  * Its one illustrative example used to name the reason as "el alojamiento
  * estaba cerrado" (HOS-1283) — accurate for a listing that closes seasonally,
- * meaningless for a gastronomy or experience owner, whose Spanish grammatical
+ * meaningless for a venue or experience owner, whose Spanish grammatical
  * gender it would also get wrong ("cerrado" vs "cerrada"). Rather than branch
  * three ways over one throwaway clause, the example was made vertical-neutral
  * ("tuviste que poner en pausa el negocio") — it does not need
@@ -25,7 +26,11 @@ import { trialSeriesStyles as styles, type TrialSeriesEmailProps } from './trial
  *
  * @param props - Trial series email data
  */
-export function TrialWinBack30Days({ recipientName, upgradeUrl }: TrialSeriesEmailProps) {
+export function TrialWinBack30Days({
+    recipientName,
+    upgradeUrl,
+    verticals
+}: TrialSeriesEmailProps) {
     return (
         <EmailLayout
             previewText="Pasó un mes: ¿es buen momento para volver a publicar?"
@@ -34,6 +39,11 @@ export function TrialWinBack30Days({ recipientName, upgradeUrl }: TrialSeriesEma
             <Heading>¿Retomamos tu publicación?</Heading>
 
             <Text style={styles.greeting}>Hola {recipientName},</Text>
+            {verticals && verticals.length > 1 ? (
+                <Text style={styles.paragraph}>
+                    Tu prueba incluye {formatTrialVerticals({ verticals })}.
+                </Text>
+            ) : null}
 
             <Text style={styles.paragraph}>
                 Pasó un mes desde que probaste Hospeda. A veces no es que la plataforma no sirva: es

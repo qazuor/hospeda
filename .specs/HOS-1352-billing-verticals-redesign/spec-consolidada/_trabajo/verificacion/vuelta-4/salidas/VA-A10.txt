@@ -1,0 +1,20 @@
+# VA-A10 · fuente → spec · B/docs/{14-promos-cortesias-y-grants,16-addons,19-superficies,20-testing}.md
+
+## Hallazgos
+
+fuentes/.specs/HOS-1354-billing-cobro-y-proveedor/docs/14-promos-cortesias-y-grants.md:659 · «**meses enteros**: N meses saltean exactamente N cobros» · distinta en s/5586fad7/20-fase-2/B9b.md:177 («sólo se puede **en meses enteros o fracciones de mes y sobre un plan mensual**»). AC:B9b:7 admite otorgar fracciones que la fuente excluye; el 📌 vigente de DEC-GRANT-003 en fuentes/.specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:2027–2037 mantiene expresamente meses enteros. El redondeo hacia arriba del saldo diferido (fuente:671–672) no habilita otorgar fracciones. La misma pieza exige meses enteros en :254 y :380, sin resolver la contradicción del AC · BLOQUEA
+
+fuentes/.specs/HOS-1354-billing-cobro-y-proveedor/docs/20-testing.md:503 · «dice «ok» a un cambio y **no lo aplica**: el ciclo, el plan, la fecha de cobro, la prueba gratis y la baja programada de una suscripción viva» · distinta en s/5586fad7/04-catalogos.md:6464 («dice «ok» a un cambio y **lo aplica**»). La fila M:M1 invierte el comportamiento obligatorio del falso: elimina la aceptación sin aplicación que debe ejercitar la defensa por relectura. Contradice además AC:B1:3 (:165) y AC:B1:13 (:266–279), que siguen exigiendo la mentira. DEC-TEST-003 y sus precisiones mantienen las mentiras medidas, sin autorizar esta inversión · BLOQUEA
+
+fuentes/.specs/HOS-1354-billing-cobro-y-proveedor/docs/20-testing.md:659 · «**Y compara también la forma de cada respuesta** (qué campos vienen y de qué tipo) contra la última corrida» · ausente (el control completo de campos y tipos contra la última corrida no aparece en s/5586fad7/, buscado con rg --hidden por «forma», «respuesta», «campos», «tipo», «última corrida», «comparación», «schema» y «shape»; revisados especialmente AC:B1:15 en 10-corte/B1.md:298–311, LISTA:B1 y TEST:B1:15 en :884–889, y DEC-TEST-003 en 01-decisiones-vigentes.md:8519–8590). LISTA:B1 y TEST:B1:15 sólo conservan el caso de un campo renombrado: no exigen detectar cambios de tipo ni comparar con la corrida anterior. La DEC consolidada en :8535–8536 omite «compara también la forma de las respuestas», vigente en fuentes/.specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:7169; sus 📌 posteriores y las decisiones del corte no retiran esa obligación. Una batería que sólo compare resultados con las filas y detecte el renombrado cumple lo escrito pero deja sin vigilancia parte del contrato estructural del proveedor · BLOQUEA
+
+## Resumen
+
+| archivo | reglas normativas vivas revisadas | líneas recorridas | ausentes | distintas |
+|---|---|---|---|---|
+| B/docs/14-promos-cortesias-y-grants.md | ≈90 | 1–742 | 0 | 1 |
+| B/docs/16-addons.md | ≈145 | 1–1160 | 0 | 0 |
+| B/docs/19-superficies.md | ≈80 | 1–346 | 0 | 0 |
+| B/docs/20-testing.md | ≈120 | 1–808 | 1 | 1 |
+
+Conteos: 3 BLOQUEA; 0 MENOR. Las reglas se cuentan aproximadamente por obligación diferenciada, sin volver a contar explicaciones y reiteraciones históricas. Se recorrieron todas las líneas, se descartó el texto tachado y se contrastaron las precisiones del decision log y del owner. Las reglas trasladadas a piezas posteriores se buscaron también allí. No se usaron git, trackers ni subagentes, ni se leyó fuera de V; los skills externos indicados por el brief quedaron fuera por esa restricción.

@@ -1,0 +1,17 @@
+# VB-11 · spec → fuente · 10-corte/B9a.md 20-fase-2/B9b.md 20-fase-1/V9b.md
+
+## Hallazgos
+
+10-corte/B9a.md:787 · «**con reembolso proporcional** del período ya cobrado; el acceso pasa a darlo el grant» · contradice .specs/HOS-1354-billing-cobro-y-proveedor/docs/03-maquinas-de-estado.md:163 («§35.3: se cancela toda obligación de pago, **sin reembolso** (`DEC-GRANT-001`)») y .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:878-879 (DEC-GRANT-001, decisión (1): «Se corta el cobro en el acto y no se devuelve lo pagado»; el «reembolso proporcional» es la alternativa (3), descartada); también .specs/HOS-1354-billing-cobro-y-proveedor/docs/05-idempotencia-y-concurrencia.md:197-198 (C3: «no se devuelve lo pagado»). Contradicción interna además con B9a.md:740 (US:B9a:1, «sin reembolso»), B9a.md:1178 (TEST:B9a:1, «ningún `refund`») y B9a.md:1364 (TEST:B9a:17). Ninguna decisión posterior (📌, letras del corte) reabre el reembolso · BLOQUEA
+
+20-fase-2/B9b.md:419 · «Y una misma persona no recibe más de tres cortesías temporales en doce meses: la cuarta se rechaza aunque la otorgue otro `SUPER_ADMIN`.» · sin soporte: ni DEC-GRANT-002/003/004/006, ni la acción 1 de .specs/HOS-1352-billing-verticals-redesign/docs/nucleo/08-auditoria-y-observabilidad.md:191, ni `B/14`, ni `S9`/`S34` (.specs/HOS-1354-billing-cobro-y-proveedor/docs/03-maquinas-de-estado.md:159,184), ni `B/19` fila 13-ter, ni las decisiones del owner del corte fijan un tope de cortesías por persona; es una regla de negocio inventada (además rechaza en el backend un acto que la fuente permite, y no tiene AC ni TEST que la cubra) · BLOQUEA
+
+20-fase-2/B9b.md:185 · «el predicado es el ancla viva, no que el beneficiario haya tenido un grant alguna vez (`B/14` §3.4)» · cita mal apuntada: la regla está en .specs/HOS-1354-billing-cobro-y-proveedor/docs/14-promos-cortesias-y-grants.md:422-434 (§4.3, «Cortesía temporal + grant permanente»), que es el propio `Origen:` del AC (14:422, 14:431); el §3.4 es «Un canje rechazado no se consume» · MENOR
+
+## Resumen
+
+| archivo | líneas recorridas | afirmaciones normativas revisadas (aprox.) | BLOQUEA | MENOR |
+|---|---|---|---|---|
+| 10-corte/B9a.md | 1–58 y 701–1402 (59–700 son g-secciones, fuera del bloque) | 115 | 1 | 0 |
+| 20-fase-2/B9b.md | 1–669 | 95 | 1 | 1 |
+| 20-fase-1/V9b.md | 1–801 | 110 | 0 | 0 |

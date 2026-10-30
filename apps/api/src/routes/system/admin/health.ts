@@ -75,7 +75,6 @@ export const adminSystemHealthRoute = createAdminRoute({
         } as const;
     },
     options: {
-        cacheTTL: 30,
         customRateLimit: { requests: 60, windowMs: 60_000 }
     }
 });

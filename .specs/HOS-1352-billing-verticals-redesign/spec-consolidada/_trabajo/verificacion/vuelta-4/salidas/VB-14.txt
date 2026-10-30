@@ -1,0 +1,16 @@
+# VB-14 · spec → fuente · 30-el-corte.md 90-retirados.md
+
+## Hallazgos
+
+30-el-corte.md:452 · «antes que nada, la versión 1 de los plazos de cada mitad, con los dieciocho valores» · contradice .specs/HOS-1352-billing-verticals-redesign/docs/nucleo/02-modelo-de-datos.md:198 («la versión 1 de los plazos de cada mitad, con los ~~quince~~ ~~dieciocho~~ diecinueve valores, nace en la migración estructural del paso 3»; BU agregó la clave 19 y BX exige su valor antes del merge de B2, según .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:7426 y :7436; también contradice 02-nucleo.md:1731 y AC:B2:6) · BLOQUEA
+
+30-el-corte.md:1312 · «escritas y una prueba compartida entre ambas ramas contra el proveedor falso» · más débil que .specs/HOS-1352-billing-verticals-redesign/docs/16-fase-7-del-paraguas.md:1044 («cada fila `UNKNOWN` de la matriz en la que se apoya tiene sus dos ramas escritas y una prueba por rama contra el proveedor falso»); DEC-TEST-002 mantiene una prueba por rama en .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:5367, como AC:CORTE:18 y TEST:CORTE:18 de este mismo archivo · BLOQUEA
+
+30-el-corte.md:1555 · «El corte sólo se da por aceptado cuando no queda ninguna marca de conciliación abierta en el sistema nuevo; una sola marca pendiente bloquea su cierre.» · más fuerte que .specs/HOS-1352-billing-verticals-redesign/docs/16-fase-7-del-paraguas.md:1122 («El programa se da por aceptado cuando el sistema nuevo acreditó su primer cobro real de una cuenta que se suscribió después del corte, y el barrido diario corrió siete días seguidos sin una divergencia sin explicar»); agrega un gate de cero marcas abiertas que no establece DEC-ARCH-016 ni ninguna precisión posterior del owner, y contradice el criterio de GATE:M5 y AC:CORTE:13 del mismo archivo · BLOQUEA
+
+## Resumen
+
+| archivo | líneas recorridas | afirmaciones normativas revisadas (aprox.) | BLOQUEA | MENOR |
+|---|---|---|---|---|
+| 30-el-corte.md | 1–1950 | 350 | 3 | 0 |
+| 90-retirados.md | 1–533 | 85 | 0 | 0 |

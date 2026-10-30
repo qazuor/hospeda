@@ -1,8 +1,8 @@
 /**
  * @file OpeningHoursSection.test.ts
  * @description Unit tests for the opening-hours pipeline (SPEC-239 T-054, Bug B8):
- * the pure helpers in `gastronomy-hours.ts`, the `normalizeOpeningHours`
- * transform (via the exported `toGastronomyCardProps`), and source-read
+ * the pure helpers in `venue-hours.ts`, the `normalizeOpeningHours`
+ * transform (via the exported `toVenueCardProps`), and source-read
  * assertions for `OpeningHoursSection.astro`.
  *
  * The Astro component cannot be rendered in Vitest so we:
@@ -17,30 +17,30 @@ import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';
 
-import type { GastronomyOpeningHoursEntry } from '../../src/data/types';
-import { toGastronomyCardProps } from '../../src/lib/api/transforms';
+import type { VenueOpeningHoursEntry } from '../../src/data/types';
+import { toVenueCardProps } from '../../src/lib/api/transforms';
 import {
     computeOpenNowStatus,
     getDayKey,
     getTodayIndex,
     ORDERED_DAY_KEYS,
     parseTimeToMinutes
-} from '../../src/lib/gastronomy-hours';
+} from '../../src/lib/venue-hours';
 
 // ---------------------------------------------------------------------------
 // Source-read assertions
 // ---------------------------------------------------------------------------
 
 const src = readFileSync(
-    resolve(__dirname, '../../src/components/gastronomy/OpeningHoursSection.astro'),
+    resolve(__dirname, '../../src/components/venue/OpeningHoursSection.astro'),
     'utf8'
 );
 
 describe('OpeningHoursSection.astro (source assertions)', () => {
-    it('imports getTodayIndex and ORDERED_DAY_KEYS from gastronomy-hours', () => {
+    it('imports getTodayIndex and ORDERED_DAY_KEYS from venue-hours', () => {
         expect(src).toContain('getTodayIndex');
         expect(src).toContain('ORDERED_DAY_KEYS');
-        expect(src).toContain('gastronomy-hours');
+        expect(src).toContain('venue-hours');
     });
 
     it('uses ORDERED_DAY_KEYS to iterate the week in Mon→Sun order', () => {
@@ -61,8 +61,8 @@ describe('OpeningHoursSection.astro (source assertions)', () => {
         expect(src).toContain('isOpen');
     });
 
-    it('uses gastronomy.detail.openingHours.title i18n key for section heading', () => {
-        expect(src).toContain('gastronomy.detail.openingHours.title');
+    it('uses venue.detail.openingHours.title i18n key for section heading', () => {
+        expect(src).toContain('venue.detail.openingHours.title');
     });
 
     it('does not use Tailwind utility classes', () => {
@@ -180,14 +180,12 @@ describe('parseTimeToMinutes', () => {
 // ---------------------------------------------------------------------------
 
 /** Helper: build a single-day "monday" entry from a list of shifts. */
-function day(shifts: ReadonlyArray<{ open: string; close: string }>): GastronomyOpeningHoursEntry {
+function day(shifts: ReadonlyArray<{ open: string; close: string }>): VenueOpeningHoursEntry {
     return { isOpen: shifts.length > 0, shifts };
 }
 
 /** Helper: a minimal hours map with one entry for "monday". */
-function mondayHours(
-    entry: GastronomyOpeningHoursEntry
-): Record<string, GastronomyOpeningHoursEntry> {
+function mondayHours(entry: VenueOpeningHoursEntry): Record<string, VenueOpeningHoursEntry> {
     return { monday: entry };
 }
 
@@ -304,10 +302,10 @@ describe('computeOpenNowStatus', () => {
 });
 
 // ---------------------------------------------------------------------------
-// normalizeOpeningHours (exercised via the exported toGastronomyCardProps)
+// normalizeOpeningHours (exercised via the exported toVenueCardProps)
 // ---------------------------------------------------------------------------
 
-describe('normalizeOpeningHours (via toGastronomyCardProps)', () => {
+describe('normalizeOpeningHours (via toVenueCardProps)', () => {
     const baseItem = {
         id: '11111111-1111-1111-1111-111111111111',
         slug: 'la-parrilla',
@@ -316,7 +314,7 @@ describe('normalizeOpeningHours (via toGastronomyCardProps)', () => {
     };
 
     it('reads the nested days map and preserves every shift', () => {
-        const card = toGastronomyCardProps({
+        const card = toVenueCardProps({
             item: {
                 ...baseItem,
                 openingHours: {
@@ -347,12 +345,12 @@ describe('normalizeOpeningHours (via toGastronomyCardProps)', () => {
     });
 
     it('returns null when openingHours is absent', () => {
-        const card = toGastronomyCardProps({ item: baseItem });
+        const card = toVenueCardProps({ item: baseItem });
         expect(card.openingHours).toBeNull();
     });
 
     it('returns null for the legacy top-level shape (no days key)', () => {
-        const card = toGastronomyCardProps({
+        const card = toVenueCardProps({
             item: {
                 ...baseItem,
                 openingHours: { monday: { isOpen: true, open: '09:00', close: '18:00' } }

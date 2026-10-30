@@ -21,7 +21,7 @@ describe('hasSoftDeleteCondition', () => {
 
     it('is true when the predicate is one conjunct of a flat and()', () => {
         const clause = and(
-            eq(accommodations.visibility, 'PUBLIC'),
+            eq(accommodations.publicationStatus, 'PUBLISHED'),
             isNull(accommodations.deletedAt)
         );
         expect(hasSoftDeleteCondition(clause)).toBe(true);
@@ -31,8 +31,11 @@ describe('hasSoftDeleteCondition', () => {
         // The shape `BaseModelImpl` produces when a caller-supplied `where` has two
         // or more keys AND an additionalCondition is appended.
         const clause = and(
-            and(eq(accommodations.visibility, 'PUBLIC'), isNull(accommodations.deletedAt)),
-            eq(accommodations.lifecycleState, 'ACTIVE')
+            and(
+                eq(accommodations.publicationStatus, 'PUBLISHED'),
+                isNull(accommodations.deletedAt)
+            ),
+            eq(accommodations.isVerified, true)
         );
         expect(hasSoftDeleteCondition(clause)).toBe(true);
     });
@@ -42,15 +45,15 @@ describe('hasSoftDeleteCondition', () => {
         // so reporting `true` here would be a false green.
         const clause = or(
             isNull(accommodations.deletedAt),
-            eq(accommodations.visibility, 'PRIVATE')
+            eq(accommodations.publicationStatus, 'DRAFT')
         );
         expect(hasSoftDeleteCondition(clause)).toBe(false);
     });
 
     it('is FALSE when an or() carrying the predicate is nested inside an and()', () => {
         const clause = and(
-            eq(accommodations.visibility, 'PUBLIC'),
-            or(isNull(accommodations.deletedAt), eq(accommodations.visibility, 'PRIVATE'))
+            eq(accommodations.publicationStatus, 'PUBLISHED'),
+            or(isNull(accommodations.deletedAt), eq(accommodations.publicationStatus, 'DRAFT'))
         );
         expect(hasSoftDeleteCondition(clause)).toBe(false);
     });
@@ -75,8 +78,11 @@ describe('flattenAndConditions', () => {
 
     it('descends nested AND groups into leaves', () => {
         const clause = and(
-            and(eq(accommodations.visibility, 'PUBLIC'), isNull(accommodations.deletedAt)),
-            eq(accommodations.lifecycleState, 'ACTIVE')
+            and(
+                eq(accommodations.publicationStatus, 'PUBLISHED'),
+                isNull(accommodations.deletedAt)
+            ),
+            eq(accommodations.isVerified, true)
         );
         expect(flattenAndConditions(clause)).toHaveLength(3);
     });

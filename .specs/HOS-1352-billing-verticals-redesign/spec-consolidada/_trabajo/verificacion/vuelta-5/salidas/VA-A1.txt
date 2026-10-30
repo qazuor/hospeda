@@ -1,0 +1,27 @@
+# VA-A1 · fuente → spec · P/docs/nucleo/{00-indice,01-glosario,02-modelo-de-datos,03-maquinas-de-estado,04-invariantes,07-outbox-y-notificaciones,08-auditoria-y-observabilidad}.md
+
+## Hallazgos
+
+fuentes/.specs/HOS-1352-billing-verticals-redesign/docs/nucleo/01-glosario.md:301 · «**No es elegible** por el User.» · distinta en s/2e9ef99e/02-nucleo-glosario.md:244 («**Es elegible** por el User.»): permite elegir el plan de trial, invirtiendo la prohibición de la fuente; también contradice el plan no vendible de s/2e9ef99e/10-corte/V2.md:410 · BLOQUEA
+
+fuentes/.specs/HOS-1352-billing-verticals-redesign/docs/nucleo/03-maquinas-de-estado.md:58 · «Una transición es atómica junto con sus efectos locales. Los efectos remotos —el proveedor, el correo— nunca están dentro de esa transacción» · distinta en s/2e9ef99e/02-nucleo-modelo-y-maquinas.md:250 («Los efectos remotos —el proveedor, el correo— siempre están dentro de esa transacción»): invierte el límite transaccional; también contradice AC:U2:1, que encola dentro y envía afuera · BLOQUEA
+
+fuentes/.specs/HOS-1352-billing-verticals-redesign/docs/nucleo/08-auditoria-y-observabilidad.md:60 · «**cuándo** | instante en UTC» · distinta en s/2e9ef99e/02-nucleo-auditoria.md:59 («**cuándo** | instante en hora local del mercado»): cambia el huso del dato persistido; la fuente distingue el cálculo de ventanas en el huso del mercado del almacenamiento en UTC (07-outbox-y-notificaciones.md:138), como todavía hacen AC:U2:6 y AC:V9a:1 · BLOQUEA
+
+fuentes/.specs/HOS-1352-billing-verticals-redesign/docs/nucleo/08-auditoria-y-observabilidad.md:490 · «**los dos estados en conflicto**: el nuestro y el del proveedor, con la fecha de cada lectura» · distinta en s/2e9ef99e/02-nucleo-auditoria.md:410 («**los dos estados en conflicto**: el nuestro y el del proveedor;»): elimina la fecha de cada lectura del diagnóstico obligatorio. La búsqueda en toda s/2e9ef99e/, incluidos B11, B13a, los AC, los tests y los catálogos, no recupera esa obligación; registrar la fecha del evento o de apertura de la marca no conserva las fechas de las dos lecturas · BLOQUEA
+
+## Resumen
+
+| archivo | reglas normativas vivas revisadas | líneas recorridas | ausentes | distintas |
+|---|---:|---|---:|---:|
+| P/docs/nucleo/00-indice.md | ≈20 | 1–211 | 0 | 0 |
+| P/docs/nucleo/01-glosario.md | ≈180 | 1–981 | 0 | 1 |
+| P/docs/nucleo/02-modelo-de-datos.md | ≈90 | 1–274 | 0 | 0 |
+| P/docs/nucleo/03-maquinas-de-estado.md | ≈45 | 1–176 | 0 | 1 |
+| P/docs/nucleo/04-invariantes.md | ≈100 | 1–328 | 0 | 0 |
+| P/docs/nucleo/07-outbox-y-notificaciones.md | ≈120 | 1–383 | 0 | 0 |
+| P/docs/nucleo/08-auditoria-y-observabilidad.md | ≈150 | 1–520 | 0 | 2 |
+
+P = fuentes/.specs/HOS-1352-billing-verticals-redesign. Conteos aproximados por reglas y cláusulas, incluyendo sus guardas y efectos; no incluyen texto tachado ni antecedentes reemplazados. Recorrido completo: 2.873 líneas. Se contrastaron las decisiones posteriores en P/docs/01-decision-log.md y P/docs/41-corte-del-mvp/10-decisiones-del-owner.md; no se encontró reemplazo que autorice las cuatro diferencias. Las piezas posteriores y los comportamientos retirados no se contaron como ausentes.
+
+Total: 4 BLOQUEA, 0 MENOR; 0 ausentes y 4 distintas.

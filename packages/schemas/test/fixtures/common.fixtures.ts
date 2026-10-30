@@ -1,5 +1,6 @@
 import { faker } from '@faker-js/faker';
 import { ModerationStatusEnum, VisibilityEnum } from '../../src/enums/index.js';
+import { PublicationStatusEnum } from '../../src/enums/publication-status.enum.js';
 // Types are inferred from the faker values, no explicit imports needed
 
 /**
@@ -34,6 +35,15 @@ export const createBaseModerationFields = () => ({
 
 export const createBaseVisibilityFields = () => ({
     visibility: faker.helpers.arrayElement(Object.values(VisibilityEnum))
+});
+
+/**
+ * Listing publication state (HOS-1641): the accommodation, venue and
+ * experience fixtures carry this instead of the old lifecycle/visibility/
+ * moderation trio.
+ */
+export const createPublicationStatusFields = () => ({
+    publicationStatus: faker.helpers.arrayElement(Object.values(PublicationStatusEnum))
 });
 
 export const createBaseReviewFields = () => ({

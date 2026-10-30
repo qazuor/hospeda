@@ -7,7 +7,7 @@
         "en": "Lactose-free menu options for people with an intolerance",
         "pt": "Opções do cardápio sem lactose para pessoas com intolerância"
     },
-    "applicableVerticals": ["gastronomy"],
+    "applicableVerticals": ["venue"],
     "icon": "DairyProductionIcon",
     "isBuiltin": false,
     "isFeatured": true,

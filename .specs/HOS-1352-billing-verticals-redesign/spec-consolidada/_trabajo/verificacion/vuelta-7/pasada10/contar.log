@@ -1,0 +1,37 @@
+B1    corte     7 G10 G11 G12 G15 G16 G17 G9
+B2    corte     1 G7
+B3    corte     4 G-R1-A G-R1-B G-R1-E G-R1-F
+B4    corte     1 G-R2-C
+B5    corte     0 
+B6    corte     0 
+B7    corte     1 G-R1-D
+B8a   corte     0 
+B8b   después   1 G-R1-C
+B9a   corte     0 
+B9b   después   0 
+B10   después   0 
+B11   corte     0 
+B12   después   0 
+B13a  corte     0 
+B13b  después   0 
+U1    corte     1 G8
+U2    corte     0 
+U3    corte     0 
+V1    corte     4 G1 G14 G18 G3
+V2    corte     0 
+V3    corte     2 G-R2 G-R2-B
+V4    corte     4 G-R4 G-R4-B G-R6 G13
+V5    corte     6 G-R3-B G-R3-C G19 G2 G4 G6
+V6    corte     3 G-R6-B G-R9 G5
+V7    después   0 
+V8a   corte     0 
+V8b   después   0 
+V9a   corte     0 
+V9b   después   0 
+
+piezas: 30 · al corte: 22 · después: 8 · partidas (origen, no son pieza): B13 B8 B9 V8 V9
+después: B8b B9b B10 B12 B13b V7 V8b V9b
+guards: 35 · distintos: 35 · al corte: 34 · después: 1 G-R1-C
+por familia: V: 19 · B: 15 · U: 1
+transiciones: 34 vivas en 03 §3.2 · 34 en la tabla de B §2.12 · sin pieza (marca abierta): ninguna
+esquema de lo posterior creado al corte: 9 filas · piezas que lo crean: B3 B5 V6

@@ -155,6 +155,55 @@ export const AccommodationPriceSchema = PriceSchema.extend({
 });
 
 /**
+ * HOS-190 / HOS-1770 read overlay: tolerate stored nonpositive amounts at
+ * every price, fee, and discount level and short legacy custom-fee names.
+ */
+const LenientPriceAmount = z.number().optional();
+const AdditionalFeesInfoReadSchema = AdditionalFeesInfoSchema.extend({ price: LenientPriceAmount });
+const DiscountInfoReadSchema = DiscountInfoSchema.extend({ price: LenientPriceAmount });
+
+export const AccommodationPriceReadSchema = AccommodationPriceSchema.extend({
+    price: LenientPriceAmount,
+    additionalFees: z
+        .object({
+            cleaning: AdditionalFeesInfoReadSchema.optional(),
+            tax: AdditionalFeesInfoReadSchema.optional(),
+            lateCheckout: AdditionalFeesInfoReadSchema.optional(),
+            pets: AdditionalFeesInfoReadSchema.optional(),
+            bedlinen: AdditionalFeesInfoReadSchema.optional(),
+            towels: AdditionalFeesInfoReadSchema.optional(),
+            babyCrib: AdditionalFeesInfoReadSchema.optional(),
+            babyHighChair: AdditionalFeesInfoReadSchema.optional(),
+            extraBed: AdditionalFeesInfoReadSchema.optional(),
+            securityDeposit: AdditionalFeesInfoReadSchema.optional(),
+            extraGuest: AdditionalFeesInfoReadSchema.optional(),
+            parking: AdditionalFeesInfoReadSchema.optional(),
+            earlyCheckin: AdditionalFeesInfoReadSchema.optional(),
+            lateCheckin: AdditionalFeesInfoReadSchema.optional(),
+            luggageStorage: AdditionalFeesInfoReadSchema.optional(),
+            others: z
+                .array(
+                    OtherAdditionalFeesSchema.extend({
+                        price: LenientPriceAmount,
+                        name: z.string()
+                    })
+                )
+                .optional()
+        })
+        .optional(),
+    discounts: z
+        .object({
+            weekly: DiscountInfoReadSchema.optional(),
+            monthly: DiscountInfoReadSchema.optional(),
+            lastMinute: DiscountInfoReadSchema.optional(),
+            others: z
+                .array(OtherDiscountSchema.extend({ price: LenientPriceAmount, name: z.string() }))
+                .optional()
+        })
+        .optional()
+});
+
+/**
  * Type exports for the accommodation price schemas
  */
 export type AdditionalFeesInfo = z.infer<typeof AdditionalFeesInfoSchema>;

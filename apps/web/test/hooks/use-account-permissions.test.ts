@@ -223,8 +223,8 @@ describe('useAccountPermissions — syncAuthenticatedAttribute opt-out (MobileMe
                     id: 'u1',
                     name: 'Test User',
                     email: 'test@example.com',
-                    roles: ['USER', 'HOST', 'COMMERCE_OWNER'],
-                    permissions: ['accommodation.create', 'commerce.editOwn']
+                    roles: ['USER', 'HOST', 'VENUE_OWNER'],
+                    permissions: ['accommodation.create', 'venue.editOwn']
                 },
                 isAuthenticated: true
             }
@@ -238,7 +238,7 @@ describe('useAccountPermissions — syncAuthenticatedAttribute opt-out (MobileMe
         );
 
         await waitFor(() => {
-            expect(result.current.roles).toEqual(['USER', 'HOST', 'COMMERCE_OWNER']);
+            expect(result.current.roles).toEqual(['USER', 'HOST', 'VENUE_OWNER']);
         });
     });
 });
@@ -261,8 +261,8 @@ describe('useAccountPermissions — simple mode (initialUser omitted)', () => {
             JSON.stringify({
                 isAuthenticated: true,
                 user: { id: 'u1', name: 'Cached User', email: 'cached@example.com' },
-                permissions: ['commerce.editOwn'],
-                roles: ['USER', 'COMMERCE_OWNER'],
+                permissions: ['venue.editOwn'],
+                roles: ['USER', 'VENUE_OWNER'],
                 cachedAt: Date.now()
             })
         );
@@ -272,7 +272,7 @@ describe('useAccountPermissions — simple mode (initialUser omitted)', () => {
         const { result } = renderHook(() => useAccountPermissions());
 
         await waitFor(() => {
-            expect(result.current.permissions).toEqual(['commerce.editOwn']);
+            expect(result.current.permissions).toEqual(['venue.editOwn']);
         });
         expect(fetchMock).not.toHaveBeenCalled();
     });

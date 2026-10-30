@@ -1,0 +1,29 @@
+# VB-09 · spec → fuente · 10-corte/B4.md, 10-corte/B5.md, 10-corte/B6.md
+
+## Hallazgos
+
+10-corte/B4.md:143 · «Entonces contesta `sí` sólo si hay una `PAUSED` con motivo `CUSTOMER_REQUEST` en esa vertical, y devuelve `coberturaPerdidaEn` con el instante de la última pérdida de cobertura […] o `NINGUNO` si nunca la perdió.» · más débil que .specs/HOS-1352-billing-verticals-redesign/docs/12-contrato-de-cobertura.md:1084 («retenciónDetenida(user, vertical) → { detenida: sí | no, pausaTerminadaEn: instante | NINGUNO, coberturaPerdidaEn: …»), y :1116 («`retenciónDetenida` devuelve también `pausaTerminadaEn` […] La construye `B4` en la real»). El AC (y TEST:B4:3, línea 369) no pide `pausaTerminadaEn`, que la real de `B4` tiene que devolver y que leen V6/V9b; la regla está sólo en la línea 254 («devuelve el fin de la última pausa»), y ningún AC de la spec lo verifica sobre la real · BLOQUEA
+
+10-corte/B4.md:277 · «y las de `CORTESÍA` y `GRANT` reales las trae `B9a`, contestando sobre la tabla vacía hasta `B9b` (AQ)» · más fuerte que .specs/HOS-1352-billing-verticals-redesign/docs/41-corte-del-mvp/00-propuesta.md:239 («fuente `CORTESÍA` | `B9a` (o `B4`) | tabla vacía hasta `B9b`», sólo la cortesía); la extensión a `GRANT` choca con .specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:146 (`B9a` trae «la herramienta del paso 3b que escribe los dos `permanent_grant` del corte»), así que la tabla de grants no está vacía al corte. Además el `Origen:` del bloque (línea 285, descomposicion.md:309–328) no contiene esta oración. No cambia lo que construye `B4` · MENOR
+
+10-corte/B4.md:55 · «Origen: …descomposicion.md:717, …:724, …:725» · cita mal apuntada: 717 es la fila `RF2` de `B6` y 724/725 son filas de `B11`; las filas de `B4` que soportan el párrafo de `cancelado_visto_en` y `coberturaPerdidaEn` son descomposicion.md:729 y :730 · MENOR
+
+10-corte/B5.md:176 · «y antes de registrar se relee si hay un pago del proveedor acreditado o en vuelo para ese período, salvo que el último aviso del proveedor sobre esa suscripción tenga menos de diez minutos: entonces se registra sin releer.» · sin soporte (en ninguna fuente aparece «diez minutos»; tampoco hay una excepción a la relectura) y contradice .specs/HOS-1354-billing-cobro-y-proveedor/docs/05-idempotencia-y-concurrencia.md:261 («la transición `AWAITING → REGISTERED` […] no es incondicional: antes de registrar se relee si hay un pago del proveedor acreditado o en vuelo para ese período, y si lo hay, no se registra y se le dice al admin por qué»). El AC inventa una excepción que saltea la relectura y omite el «no se registra y se le dice al admin por qué» · BLOQUEA
+
+10-corte/B5.md:948 · «Dos cobros del mismo período: el segundo queda `SUCCEEDED` sin cobertura y con la marca 20; un registro manual en paralelo choca con el `UNIQUE` y falla.» · contradicción interna con AC:B5:3 (B5.md:174, «el registro manual que llega segundo no escribe cobertura: lo asienta `MP6` con la marca 20») y con LOCK:C5 (04-catalogos.md:6237, «El registro manual que llega segundo no escribe cobertura, no compite: lo asienta `MP6` y abre `COBRO_DUPLICADO`»): el test pide que el registro falle y el AC que se asiente · MENOR
+
+10-corte/B5.md:68 · «Origen: …descomposicion.md:139, …:715, …:721, …:960» · cita mal apuntada: 715 es una fila de `B11` (el `404` del listado) y 960 es la tabla de `B6`/`RF4` del §3.1; la fila de `MP6` (lote W), que soporta el párrafo de las líneas 63–66, es descomposicion.md:726 · MENOR
+
+10-corte/B5.md:792 · «encontró la **Resolución 424/2020** sobre el art. 34 de la Ley 24.240: **10 días corridos**. Se anota como lo que es: un dato a confirmar» · más débil que .specs/HOS-1354-billing-cobro-y-proveedor/docs/22-lo-legal.md:149 («**10 días corridos**, y **24 horas** para informar el código de identificación»): la copia omite el segundo dato de la norma (es un dato abierto a confirmar, no una regla que se construya) · MENOR
+
+10-corte/B6.md:327 · «el **histórico de reembolsos es nuestro o no existe**, porque **el buscador del proveedor cubre sólo seis meses**» · contradice .specs/HOS-1354-billing-cobro-y-proveedor/docs/06-proveedor.md:269 («porque **el buscador del proveedor cubre sólo doce meses**»), que es el `Origen:` del bloque, y contradice también B6.md:390 («el buscador del proveedor cubre sólo doce meses») y DEC-RF-007 · MENOR
+
+10-corte/B6.md:48 · «Origen: …descomposicion.md:140, …:712, …:714, …:715, …:716, …:959» · cita mal apuntada: 712 es una fila de `B10` y 714–716 son filas de `B11`; las filas de §2.11 que asignan a `B6` lo del punto 5 son descomposicion.md:717, :719, :721 y :722. La 959 es la fila de `B5` en `16-fase-7…` y no tiene relación con este bloque · MENOR
+
+## Resumen
+
+| archivo | líneas recorridas | afirmaciones normativas revisadas (aprox.) | BLOQUEA | MENOR |
+|---|---|---|---|---|
+| 10-corte/B4.md | 1–474 | 60 | 1 | 2 |
+| 10-corte/B5.md | 1–1187 | 180 | 1 | 3 |
+| 10-corte/B6.md | 1–542 | 70 | 0 | 2 |

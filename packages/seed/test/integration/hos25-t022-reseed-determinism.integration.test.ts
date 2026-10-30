@@ -7,7 +7,7 @@
  * key — call them twice, get the same UUID. What none of them prove is that
  * a REAL seed run actually PERSISTS that computed id: that the
  * `deterministicId` model-direct passthrough in `createSeedFactory` (and the
- * raw-Drizzle-insert variant used by `gastronomies.seed.ts`) writes the
+ * raw-Drizzle-insert variant used by `venues.seed.ts`) writes the
  * explicit id unmodified, and that deleting a row and reseeding the exact
  * same fixture reproduces the exact same persisted UUID.
  *
@@ -34,8 +34,8 @@
  *    review id's reseed-stability AND the parent aggregate's correctness,
  *    reusing the same insert shape as
  *    `accommodation-review-recalculate-stats.integration.test.ts` (T-025).
- * 5. **Raw-Drizzle-insert / already-bypassed entity**: `gastronomies`, which
- *    (per `gastronomies.seed.ts`) was ALREADY a direct `db.insert()` before
+ * 5. **Raw-Drizzle-insert / already-bypassed entity**: `venues`, which
+ *    (per `venues.seed.ts`) was ALREADY a direct `db.insert()` before
  *    HOS-25 — never routed through a service OR a `BaseModelImpl` subclass —
  *    so this proves the deterministic id survives that third insertion style
  *    too.
@@ -70,14 +70,14 @@ import {
     type DrizzleClient,
     destinations,
     eq,
-    gastronomies,
     initializeDb,
     PostModel,
     posts,
-    resetDb
+    resetDb,
+    venues
 } from '@repo/db';
 import { users } from '@repo/db/schemas';
-import type { DestinationType } from '@repo/schemas';
+import { type DestinationType, PublicationStatusEnum } from '@repo/schemas';
 import { AccommodationReviewService, type ServiceContext } from '@repo/service-core';
 import { config as loadDotenv } from 'dotenv';
 import { Pool } from 'pg';
@@ -87,8 +87,8 @@ import {
     getAccommodationFaqFixtureId,
     getAccommodationFixtureId
 } from '../../src/example/accommodations.seed.js';
-import { getGastronomyFixtureId } from '../../src/example/gastronomies.seed.js';
 import { getPostFixtureId } from '../../src/example/posts.seed.js';
+import { getVenueFixtureId } from '../../src/example/venues.seed.js';
 import {
     getDestinationFixtureId,
     preProcessDestination
@@ -227,8 +227,7 @@ async function insertPlainAccommodation(
                     url: 'https://example.com/t022-accommodation.jpg'
                 }
             },
-            lifecycleState: 'ACTIVE',
-            visibility: 'PUBLIC',
+            publicationStatus: PublicationStatusEnum.PUBLISHED,
             createdById: ownerId,
             updatedById: ownerId
         },
@@ -693,31 +692,29 @@ describe('HOS-25 T-022 — end-to-end reseed-determinism against a real database
         );
     });
 
-    describe('5. Raw-Drizzle-insert / already-bypassed entity (gastronomies)', () => {
+    describe('5. Raw-Drizzle-insert / already-bypassed entity (venues)', () => {
         it.skipIf(!dbAvailable)(
             'persists the same deterministic id across an insert -> delete -> reseed cycle via a direct db.insert() (no model, no service)',
             async () => {
                 await withRealDbTransaction(async (tx) => {
                     const ownerId = await insertUser(tx);
                     const destinationId = await insertPlainDestination(tx);
-                    const seedId = 't022-gastronomy-fixture-001';
-                    const expectedId = getGastronomyFixtureId(seedId);
+                    const seedId = 't022-venue-fixture-001';
+                    const expectedId = getVenueFixtureId(seedId);
 
-                    expect(expectedId).toBe(
-                        deterministicFixtureId({ seedKey: `gastronomy:${seedId}` })
-                    );
+                    expect(expectedId).toBe(deterministicFixtureId({ seedKey: `venue:${seedId}` }));
 
                     const baseValues = {
-                        slug: `t022-gastronomy-${seedId}`,
-                        name: 'T-022 Test Gastronomy',
-                        summary: 'T-022 gastronomy summary',
-                        description: 'T-022 gastronomy description',
+                        slug: `t022-venue-${seedId}`,
+                        name: 'T-022 Test Venue',
+                        summary: 'T-022 venue summary',
+                        description: 'T-022 venue description',
                         type: 'RESTAURANT',
                         ownerId,
                         destinationId,
-                        visibility: 'PUBLIC',
-                        lifecycleState: 'ACTIVE',
-                        moderationState: 'APPROVED',
+                        publicationStatus: PublicationStatusEnum.PUBLISHED,
+                        inactiveSince: new Date(),
+                        deadlinesVersion: 1,
                         isFeatured: false,
                         reviewsCount: 0,
                         averageRating: 0,
@@ -725,35 +722,35 @@ describe('HOS-25 T-022 — end-to-end reseed-determinism against a real database
                         updatedById: ownerId
                     };
 
-                    // ── First seed — direct db.insert(), exactly like gastronomies.seed.ts ──
+                    // ── First seed — direct db.insert(), exactly like venues.seed.ts ──
                     const [inserted1] = await tx
-                        .insert(gastronomies)
+                        .insert(venues)
                         .values({
                             id: expectedId,
                             ...baseValues
-                        } as typeof gastronomies.$inferInsert)
-                        .returning({ id: gastronomies.id });
+                        } as typeof venues.$inferInsert)
+                        .returning({ id: venues.id });
                     expect(inserted1?.id).toBe(expectedId);
 
                     // ── Real DELETE ──────────────────────────────────────────────
-                    await tx.delete(gastronomies).where(eq(gastronomies.id, expectedId));
+                    await tx.delete(venues).where(eq(venues.id, expectedId));
                     const gone = await tx
-                        .select({ id: gastronomies.id })
-                        .from(gastronomies)
-                        .where(eq(gastronomies.id, expectedId));
+                        .select({ id: venues.id })
+                        .from(venues)
+                        .where(eq(venues.id, expectedId));
                     expect(gone).toHaveLength(0);
 
                     // ── Reseed: same seed id, same raw-insert mechanism ─────────
-                    const reseededId = getGastronomyFixtureId(seedId);
+                    const reseededId = getVenueFixtureId(seedId);
                     expect(reseededId).toBe(expectedId);
 
                     const [inserted2] = await tx
-                        .insert(gastronomies)
+                        .insert(venues)
                         .values({
                             id: reseededId,
                             ...baseValues
-                        } as typeof gastronomies.$inferInsert)
-                        .returning({ id: gastronomies.id, slug: gastronomies.slug });
+                        } as typeof venues.$inferInsert)
+                        .returning({ id: venues.id, slug: venues.slug });
                     expect(inserted2?.id).toBe(expectedId);
                     expect(inserted2?.slug).toBe(baseValues.slug);
                 });
@@ -763,16 +760,16 @@ describe('HOS-25 T-022 — end-to-end reseed-determinism against a real database
 
     describe('6. Cross-entity id isolation at the persisted-DB level', () => {
         it.skipIf(!dbAvailable)(
-            'never collides between an accommodation-shaped seedKey and a post/gastronomy-shaped seedKey sharing the same raw fixture id',
+            'never collides between an accommodation-shaped seedKey and a post/venue-shaped seedKey sharing the same raw fixture id',
             async () => {
                 const sharedRawId = 't022-shared-raw-fixture-id';
 
                 const accommodationId = getAccommodationFixtureId({ id: sharedRawId });
                 const postId = getPostFixtureId({ id: sharedRawId });
-                const gastronomyId = getGastronomyFixtureId(sharedRawId);
+                const venueId = getVenueFixtureId(sharedRawId);
                 const destinationId = getDestinationFixtureId({ id: sharedRawId });
 
-                const allIds = [accommodationId, postId, gastronomyId, destinationId];
+                const allIds = [accommodationId, postId, venueId, destinationId];
                 expect(new Set(allIds).size).toBe(allIds.length);
             }
         );

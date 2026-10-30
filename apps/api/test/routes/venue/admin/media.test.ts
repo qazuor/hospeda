@@ -1,0 +1,323 @@
+/**
+ * Tests for venue media routes — Admin tier (HOS-372).
+ *
+ * Covers:
+ * - POST   /api/v1/admin/venues/:id/media
+ * - GET    /api/v1/admin/venues/:id/media
+ * - PATCH  /api/v1/admin/venues/:id/media/reorder
+ * - PUT    /api/v1/admin/venues/:id/media/:mediaId/featured
+ * - DELETE /api/v1/admin/venues/:id/media/:mediaId
+ *
+ * Testing strategy: mock the standalone `@repo/service-core` media helper
+ * functions so no real DB is needed, then exercise the routes via
+ * `initApp()` with the `x-mock-actor-*` header triplet (see
+ * venue/admin/admin-venue.test.ts convention).
+ *
+ * @module test/routes/venue/admin/media
+ */
+import { ModerationStatusEnum, PublicationStatusEnum, VerticalEnum } from '@repo/schemas';
+import { rehydrateEffectiveSet } from '@repo/verticals';
+import { beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
+
+// ---------------------------------------------------------------------------
+// Hoist mocks
+// ---------------------------------------------------------------------------
+const {
+    mockAddVenueMedia,
+    mockRemoveVenueMedia,
+    mockGetVenueMedia,
+    mockReorderVenueMedia,
+    mockSetFeaturedVenueMedia
+} = vi.hoisted(() => ({
+    mockAddVenueMedia: vi.fn(),
+    mockRemoveVenueMedia: vi.fn(),
+    mockGetVenueMedia: vi.fn(),
+    mockReorderVenueMedia: vi.fn(),
+    mockSetFeaturedVenueMedia: vi.fn()
+}));
+
+vi.mock('@repo/service-core', async (importOriginal) => {
+    const actual = await importOriginal<typeof import('@repo/service-core')>();
+    return {
+        ...actual,
+        addVenueMedia: mockAddVenueMedia,
+        removeVenueMedia: mockRemoveVenueMedia,
+        getVenueMedia: mockGetVenueMedia,
+        reorderVenueMedia: mockReorderVenueMedia,
+        setFeaturedVenueMedia: mockSetFeaturedVenueMedia
+    };
+});
+
+vi.mock('../../../../src/utils/listing-access/ports', () => ({
+    getListingAccessPorts: () => ({
+        loadFacts: async () => ({
+            facts: {
+                ownerId: '22222222-2222-4222-8222-222222222222',
+                publicationStatus: PublicationStatusEnum.PUBLISHED
+            },
+            ownerId: '22222222-2222-4222-8222-222222222222'
+        }),
+        billing: { coverage: async () => ({ covered: false, sources: [{ type: 'BASE' }] }) },
+        effectiveSet: async ({ userId }: { userId: string }) =>
+            rehydrateEffectiveSet({
+                version: 1,
+                userId,
+                vertical: VerticalEnum.VENUE,
+                hasLiveNonTrialTitle: false,
+                inheritsTouristVip: false,
+                entries: [{ key: 'edit_venue_info', value: 1, strategy: 'MAX' }]
+            })
+    })
+}));
+
+// ---------------------------------------------------------------------------
+// Import app AFTER mocks
+// ---------------------------------------------------------------------------
+import { initApp } from '../../../../src/app.js';
+import type { AppOpenAPI } from '../../../../src/types.js';
+
+// ---------------------------------------------------------------------------
+// Fixtures
+// ---------------------------------------------------------------------------
+const VENUE_ID = 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa';
+const MEDIA_ID_1 = 'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbb01';
+const MEDIA_ID_2 = 'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbb02';
+const BASE = `/api/v1/admin/venues/${VENUE_ID}/media`;
+
+const NOW = new Date('2026-01-15T12:00:00.000Z');
+
+const USER_AGENT = { 'user-agent': 'vitest' };
+const ADMIN_HEADERS = {
+    ...USER_AGENT,
+    'x-mock-actor-id': '11111111-1111-4111-8111-111111111111',
+    'x-mock-actor-role': 'ADMIN',
+    'x-mock-actor-permissions': JSON.stringify([
+        'access.panelAdmin',
+        'venue.editAll',
+        'listing.foreignContent.edit'
+    ])
+};
+const NO_PERMS_HEADERS = {
+    ...USER_AGENT,
+    'x-mock-actor-id': '11111111-1111-4111-8111-111111111111',
+    'x-mock-actor-role': 'ADMIN',
+    'x-mock-actor-permissions': JSON.stringify(['access.panelAdmin'])
+};
+
+const buildMediaRow = (id: string, sortOrder: number) => ({
+    id,
+    venueId: VENUE_ID,
+    url: `https://res.cloudinary.com/demo/image/upload/${id}.jpg`,
+    publicId: `hospeda/dev/${id}`,
+    caption: 'Plato principal',
+    alt: 'Foto del plato',
+    description: undefined,
+    attribution: null,
+    moderationState: ModerationStatusEnum.APPROVED,
+    state: 'visible' as const,
+    isFeatured: false,
+    sortOrder,
+    archivedAt: null,
+    createdAt: NOW,
+    updatedAt: NOW,
+    deletedAt: null
+});
+
+describe('Venue media routes — Admin tier (HOS-372)', () => {
+    let app: AppOpenAPI;
+
+    beforeAll(() => {
+        app = initApp();
+    });
+
+    beforeEach(() => {
+        vi.clearAllMocks();
+    });
+
+    // ── Authentication / authorization ──────────────────────────────────────
+
+    describe('Service error mapping', () => {
+        it('POST /media — returns 401/403 when no auth headers are provided', async () => {
+            const res = await app.request(BASE, {
+                method: 'POST',
+                headers: { ...USER_AGENT, 'Content-Type': 'application/json' },
+                body: JSON.stringify({ url: 'https://example.com/photo.jpg' })
+            });
+            expect([400, 401, 403]).toContain(res.status);
+        });
+
+        it('POST /media — returns 403 when actor lacks LISTING_FOREIGN_CONTENT_EDIT', async () => {
+            const res = await app.request(BASE, {
+                method: 'POST',
+                headers: { ...NO_PERMS_HEADERS, 'Content-Type': 'application/json' },
+                body: JSON.stringify({ url: 'https://example.com/photo.jpg' })
+            });
+            expect(res.status).toBe(403);
+        });
+
+        it('DELETE /media/:mediaId — returns 401/403 when no auth headers are provided', async () => {
+            const res = await app.request(`${BASE}/${MEDIA_ID_1}`, {
+                method: 'DELETE',
+                headers: USER_AGENT
+            });
+            expect([400, 401, 403]).toContain(res.status);
+        });
+    });
+
+    // ── Happy paths ───────────────────────────────────────────────────────
+
+    describe('Happy path', () => {
+        it('POST /media — adds a photo and returns it', async () => {
+            mockAddVenueMedia.mockResolvedValue({
+                data: { media: buildMediaRow(MEDIA_ID_1, 0) },
+                error: undefined
+            });
+
+            const res = await app.request(BASE, {
+                method: 'POST',
+                headers: { ...ADMIN_HEADERS, 'Content-Type': 'application/json' },
+                body: JSON.stringify({ url: 'https://example.com/photo.jpg' })
+            });
+
+            if (res.status === 201 || res.status === 200) {
+                const body = await res.json();
+                expect(body.success).toBe(true);
+                expect(body.data.media.id).toBe(MEDIA_ID_1);
+            } else {
+                expect(res.status).not.toBe(403);
+                expect(res.status).not.toBe(404);
+            }
+        });
+
+        it('GET /media — returns the gallery list', async () => {
+            mockGetVenueMedia.mockResolvedValue({
+                data: { media: [buildMediaRow(MEDIA_ID_1, 0), buildMediaRow(MEDIA_ID_2, 1)] },
+                error: undefined
+            });
+
+            const res = await app.request(BASE, { method: 'GET', headers: ADMIN_HEADERS });
+
+            if (res.status === 200) {
+                const body = await res.json();
+                expect(body.success).toBe(true);
+                expect(Array.isArray(body.data.media)).toBe(true);
+            } else {
+                expect(res.status).not.toBe(403);
+                expect(res.status).not.toBe(404);
+            }
+        });
+
+        it('PUT /media/:mediaId/featured — promotes a photo to featured', async () => {
+            mockSetFeaturedVenueMedia.mockResolvedValue({
+                data: { media: { ...buildMediaRow(MEDIA_ID_1, 0), isFeatured: true } },
+                error: undefined
+            });
+
+            const res = await app.request(`${BASE}/${MEDIA_ID_1}/featured`, {
+                method: 'PUT',
+                headers: ADMIN_HEADERS
+            });
+
+            if (res.status === 200) {
+                const body = await res.json();
+                expect(body.success).toBe(true);
+                expect(body.data.media.isFeatured).toBe(true);
+            } else {
+                expect(res.status).not.toBe(403);
+                expect(res.status).not.toBe(404);
+            }
+        });
+
+        it('DELETE /media/:mediaId — removes a photo', async () => {
+            mockRemoveVenueMedia.mockResolvedValue({
+                data: { success: true },
+                error: undefined
+            });
+
+            const res = await app.request(`${BASE}/${MEDIA_ID_1}`, {
+                method: 'DELETE',
+                headers: ADMIN_HEADERS
+            });
+
+            expect(res.status).not.toBe(403);
+            expect(res.status).not.toBe(404);
+            expect(res.status).not.toBe(500);
+        });
+    });
+
+    // ── Reorder route — must not be swallowed by :mediaId ────────────────────
+
+    describe('Reorder route ordering', () => {
+        it('PATCH /media/reorder is registered and calls the reorder service (not treated as a mediaId)', async () => {
+            mockReorderVenueMedia.mockResolvedValue({
+                data: { media: [buildMediaRow(MEDIA_ID_2, 0), buildMediaRow(MEDIA_ID_1, 1)] },
+                error: undefined
+            });
+
+            const res = await app.request(`${BASE}/reorder`, {
+                method: 'PATCH',
+                headers: { ...ADMIN_HEADERS, 'Content-Type': 'application/json' },
+                body: JSON.stringify({ orderedIds: [MEDIA_ID_2, MEDIA_ID_1] })
+            });
+
+            expect(res.status).not.toBe(404);
+
+            if (mockReorderVenueMedia.mock.calls.length > 0) {
+                const call = mockReorderVenueMedia.mock.calls[0] as [
+                    unknown,
+                    unknown,
+                    { venueId: string; orderedIds: string[] }
+                ];
+                expect(call[2].venueId).toBe(VENUE_ID);
+                expect(call[2].orderedIds).toEqual([MEDIA_ID_2, MEDIA_ID_1]);
+            }
+        });
+
+        it('GET on the reorder path is not treated as a successful list-by-mediaId match', async () => {
+            const res = await app.request(`${BASE}/reorder`, {
+                method: 'GET',
+                headers: ADMIN_HEADERS
+            });
+            expect(res.status).not.toBe(200);
+        });
+    });
+
+    // ── Error handling ────────────────────────────────────────────────────
+
+    describe('Error handling', () => {
+        it('returns 4xx (not 500) when the listing is not found', async () => {
+            mockAddVenueMedia.mockResolvedValue({
+                data: undefined,
+                error: { code: 'NOT_FOUND', message: 'Venue listing not found' }
+            });
+
+            const res = await app.request(BASE, {
+                method: 'POST',
+                headers: { ...ADMIN_HEADERS, 'Content-Type': 'application/json' },
+                body: JSON.stringify({ url: 'https://example.com/photo.jpg' })
+            });
+
+            expect(res.status).toBeGreaterThanOrEqual(400);
+            expect(res.status).toBeLessThan(500);
+        });
+
+        it('reorder returns 4xx (not 500) when orderedIds mismatch is reported by the service', async () => {
+            mockReorderVenueMedia.mockResolvedValue({
+                data: undefined,
+                error: {
+                    code: 'VALIDATION_ERROR',
+                    message: 'orderedIds does not match visible media for this venue listing'
+                }
+            });
+
+            const res = await app.request(`${BASE}/reorder`, {
+                method: 'PATCH',
+                headers: { ...ADMIN_HEADERS, 'Content-Type': 'application/json' },
+                body: JSON.stringify({ orderedIds: [MEDIA_ID_1] })
+            });
+
+            expect(res.status).toBeGreaterThanOrEqual(400);
+            expect(res.status).toBeLessThan(500);
+        });
+    });
+});

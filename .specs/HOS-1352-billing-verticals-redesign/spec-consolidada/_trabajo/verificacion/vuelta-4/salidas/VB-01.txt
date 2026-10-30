@@ -1,0 +1,14 @@
+# VB-01 · spec → fuente · 00-indice.md, 02-nucleo-glosario.md
+
+## Hallazgos
+
+00-indice.md:108 · «Para habilitar el sistema nuevo deben existir al menos dos cuentas activas con el rol `SUPER_ADMIN`; con una sola cuenta se bloquea la apertura de escrituras.» · sin soporte · BLOQUEA
+
+02-nucleo-glosario.md:29 · «| **Guest** | Persona sin autenticar (§6). **Es un Turista**: el §36.2 lo dice explícitamente. |» · contradice .specs/HOS-1352-billing-verticals-redesign/docs/nucleo/01-glosario.md:36 («| **Guest** | Persona sin autenticar (§6). **No es un Turista**: el §36.2 lo dice explícitamente. |») · BLOQUEA
+
+## Resumen
+
+| archivo | líneas recorridas | afirmaciones normativas revisadas (aprox.) | BLOQUEA | MENOR |
+|---|---|---|---|---|
+| 00-indice.md | 1–1630 | 380 | 1 | 0 |
+| 02-nucleo-glosario.md | 1–959 | 280 | 1 | 0 |

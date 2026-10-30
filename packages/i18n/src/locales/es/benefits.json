@@ -184,9 +184,9 @@
         "tagline": "Para experiencias",
         "cta": "Publicá tu experiencia"
     },
-    "gastronomy": {
-        "tagline": "Para gastronómicos",
-        "cta": "Publicá tu local gastronómico"
+    "venue": {
+        "tagline": "Para locales",
+        "cta": "Publicá tu local"
     },
     "partner": {
         "tagline": "Para aliados",

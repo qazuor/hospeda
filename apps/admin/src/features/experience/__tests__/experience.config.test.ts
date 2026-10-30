@@ -9,7 +9,7 @@
  *  - extraFilters include a type filter
  *  - ExperiencesRoute is a valid route object
  *  - ExperiencesPageComponent is a function
- *  - EXPERIENCE_VIEW_PERMISSION is the COMMERCE_VIEW_ALL permission
+ *  - EXPERIENCE_VIEW_PERMISSION is the EXPERIENCE_VIEW_ALL permission
  */
 
 import { PermissionEnum } from '@repo/schemas';
@@ -39,7 +39,7 @@ describe('experienceListConfig', () => {
     });
 
     it('should have a type filter in filterBarConfig.filters', () => {
-        // extraFilters are merged into filterBarConfig.filters by createCommerceListConfig
+        // extraFilters are merged into filterBarConfig.filters by createListingListConfig
         const filters = experienceListConfig.filterBarConfig?.filters ?? [];
         const typeFilter = filters.find((f) => f.paramKey === 'type');
         expect(typeFilter).toBeDefined();
@@ -48,12 +48,12 @@ describe('experienceListConfig', () => {
         expect(opts.length).toBeGreaterThan(0);
     });
 
-    it('should have shared commerce filters (destinationId, ownerId, isFeatured, includeDeleted)', () => {
+    it('should have shared listing filters (destinationId, ownerId, includeDeleted)', () => {
         const filters = experienceListConfig.filterBarConfig?.filters ?? [];
         const paramKeys = filters.map((f) => f.paramKey);
         expect(paramKeys).toContain('destinationId');
         expect(paramKeys).toContain('ownerId');
-        expect(paramKeys).toContain('isFeatured');
+        expect(paramKeys).not.toContain('isFeatured');
         expect(paramKeys).toContain('includeDeleted');
     });
 
@@ -79,7 +79,7 @@ describe('ExperiencesPageComponent', () => {
 });
 
 describe('EXPERIENCE_VIEW_PERMISSION', () => {
-    it('should be COMMERCE_VIEW_ALL', () => {
-        expect(EXPERIENCE_VIEW_PERMISSION).toBe(PermissionEnum.COMMERCE_VIEW_ALL);
+    it('should be EXPERIENCE_VIEW_ALL', () => {
+        expect(EXPERIENCE_VIEW_PERMISSION).toBe(PermissionEnum.EXPERIENCE_VIEW_ALL);
     });
 });

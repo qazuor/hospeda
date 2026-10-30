@@ -125,5 +125,90 @@
     },
     "typeChips": {
         "ariaLabel": "Filter by experience type"
+    },
+    "landing": {
+        "benefits": {
+            "tagline": "Why Hospeda?",
+            "title": "Benefits for your experience",
+            "item1": {
+                "title": "Regional visibility",
+                "desc": "Show up where thousands of travelers search for experiences in Concepción del Uruguay and the Litoral region."
+            },
+            "item2": {
+                "title": "Publish in minutes",
+                "desc": "Upload photos, description and hours from a simple dashboard. Edit anytime."
+            },
+            "item3": {
+                "title": "Flat price, no commissions",
+                "desc": "Pay one fixed monthly amount. No booking or inquiry is charged a separate commission."
+            }
+        },
+        "howItWorks": {
+            "tagline": "It's that easy",
+            "title": "How does it work?",
+            "step1": {
+                "title": "Sign up",
+                "desc": "Create your account in under 2 minutes."
+            },
+            "step2": {
+                "title": "Publish your experience",
+                "desc": "Add photos, description, hours and location."
+            },
+            "step3": {
+                "title": "Get discovered",
+                "desc": "Travelers find you while searching for experiences in the area."
+            }
+        },
+        "price": {
+            "tagline": "One simple plan",
+            "taglineMulti": "Choose the plan that fits your experience",
+            "title": "Experience Premium",
+            "priceSuffix": "/month",
+            "fromPrefix": "From ",
+            "tiersTitle": "Choose your plan",
+            "trial_one": "{{count}} day free trial",
+            "trial_other": "{{count}} days free trial",
+            "feature1": "1 published experience listing",
+            "feature2": "Presence in the Hospeda catalog",
+            "feature3": "No commission on bookings or inquiries",
+            "cta": "Get started",
+            "unavailable": "We couldn't load the price right now. Please try again later."
+        },
+        "faq": {
+            "tagline": "Have questions?",
+            "title": "Frequently asked questions",
+            "q1": "How much does it cost to list my experience on Hospeda?",
+            "a1_one": "One fixed monthly payment, with a {{count}}-day free trial. No commission on bookings or inquiries.",
+            "a1_other": "One fixed monthly payment, with a {{count}}-day free trial. No commission on bookings or inquiries.",
+            "a1NoTrial": "One fixed monthly payment. No commission on bookings or inquiries.",
+            "q2": "Is there a minimum commitment?",
+            "a2": "No. You can cancel your subscription anytime from your account.",
+            "q3": "How many listings can I publish?",
+            "a3": "The plan includes one experience listing per account."
+        },
+        "lead": {
+            "title": "List your experience",
+            "subtitle": "Create your account, publish your experience and start reaching travelers looking for things to do in the area."
+        }
+    },
+    "certificate": {
+        "title": "Certificate",
+        "preamble": "This certifies that",
+        "connector": "completed the experience",
+        "qrHint": "Scan the code to see the experience.",
+        "footer": "Certificate issued by the provider through Hospeda — hospeda.com.ar",
+        "heading": "Certificates",
+        "intro": "Issue a certificate to whoever did the experience. They can download it, print it or share it.",
+        "recipientLabel": "Name of the person who did it",
+        "dateLabel": "Day they did it",
+        "submit": "Issue certificate",
+        "submitting": "Issuing…",
+        "issuedOn": "Issued on {date}",
+        "download": "Download PDF",
+        "downloading": "Generating the certificate…",
+        "empty": "You haven't issued any certificates yet.",
+        "error": "We couldn't issue the certificate. Please try again in a moment.",
+        "downloadError": "We couldn't generate the certificate. Please try again in a moment.",
+        "locked": "Certificates are available from the Experiences Professional plan upwards."
     }
 }

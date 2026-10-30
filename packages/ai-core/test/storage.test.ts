@@ -108,9 +108,9 @@ const VALID_SETTINGS_BLOB = {
             params: {}
         },
         // HOS-400: separate AiFeature values from `chat` (own metering
-        // counter per commerce vertical); the write record requires every
+        // counter per venue or experience vertical); the write record requires every
         // AiFeature key.
-        chat_gastronomy: {
+        chat_venue: {
             enabled: false,
             primaryProvider: 'openai' as const,
             fallbackChain: [],
@@ -244,9 +244,9 @@ describe('readAiSettings', () => {
          * The blob every live environment actually held: the seven features
          * that predate HOS-400, without the two per-vertical chats it added.
          */
-        const buildRowMissingCommerceChats = () => {
+        const buildRowMissingVerticalChats = () => {
             const features = { ...VALID_SETTINGS_BLOB.features } as Record<string, unknown>;
-            delete features.chat_gastronomy;
+            delete features.chat_venue;
             delete features.chat_experience;
             return {
                 ...VALID_SETTINGS_ROW,
@@ -257,7 +257,7 @@ describe('readAiSettings', () => {
         it('should NOT throw — an unconfigured feature must not take the others down', async () => {
             // Arrange
             mockGetDb.mockReturnValue({
-                select: buildSelectChain([buildRowMissingCommerceChats()])
+                select: buildSelectChain([buildRowMissingVerticalChats()])
             });
 
             // Act
@@ -270,7 +270,7 @@ describe('readAiSettings', () => {
         it('should still return the features that ARE configured', async () => {
             // Arrange
             mockGetDb.mockReturnValue({
-                select: buildSelectChain([buildRowMissingCommerceChats()])
+                select: buildSelectChain([buildRowMissingVerticalChats()])
             });
 
             // Act
@@ -284,14 +284,14 @@ describe('readAiSettings', () => {
         it('should report the missing features as absent, not as an empty config', async () => {
             // Arrange
             mockGetDb.mockReturnValue({
-                select: buildSelectChain([buildRowMissingCommerceChats()])
+                select: buildSelectChain([buildRowMissingVerticalChats()])
             });
 
             // Act
             const result = await readAiSettings();
 
             // Assert
-            expect(result?.features.chat_gastronomy).toBeUndefined();
+            expect(result?.features.chat_venue).toBeUndefined();
             expect(result?.features.chat_experience).toBeUndefined();
         });
 

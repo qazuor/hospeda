@@ -578,4 +578,3 @@ Si **alguno P0 falla**:
 - [`first-time-setup.md` § 1.7.b — Cuentas de Prueba MP](./first-time-setup.md#17b-cuentas-de-prueba-para-suite-e2e-spec-092)
 - [`first-time-setup.md` § 1.5.b — Folder E2E Cloudinary](./first-time-setup.md#15b-folder-e2e-en-cloudinary-spec-092)
 - [`checklist.md`](./checklist.md) — Checklist técnico de deploy general
-- [`billing-checklist.md`](./billing-checklist.md) — Checklist técnico de billing

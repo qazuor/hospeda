@@ -1,316 +1,71 @@
-/**
- * @file useMyEntitlements.test.ts
- * @description Tests for the useMyEntitlements hook.
- * Verifies fetching, caching, has()/limit() logic, error handling, and fail-closed behavior.
- */
-
 import { renderHook, waitFor } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { clearEntitlementsCache, useMyEntitlements } from '@/hooks/useMyEntitlements';
+import { effectiveSetApi } from '@/lib/api/endpoints-protected';
 
-// ---------------------------------------------------------------------------
-// Mocks
-// ---------------------------------------------------------------------------
-
-const mockFetch = vi.fn();
-global.fetch = mockFetch;
-
-// Mock the Better Auth session hook so tests can drive authenticated vs guest.
-const mockUseSession = vi.fn();
-vi.mock('@/lib/auth-client', () => ({
-    useSession: () => mockUseSession()
-}));
-
-/** An authenticated session snapshot (default for existing tests). */
-const AUTHENTICATED = { data: { user: { id: 'user-1' } }, isPending: false };
-/** A resolved guest (no session). */
-const GUEST = { data: null, isPending: false };
-/** Session still resolving. */
-const SESSION_PENDING = { data: null, isPending: true };
-
-function mockSuccessResponse(data: unknown) {
-    return {
-        ok: true,
-        status: 200,
-        json: () => Promise.resolve(data)
-    };
-}
-
-function mockErrorResponse(status: number, message: string) {
-    return {
-        ok: false,
-        status,
-        json: () => Promise.resolve({ error: { message } })
-    };
-}
-
-const ENTITLEMENTS_RESPONSE = {
-    data: {
-        entitlements: ['can_use_rich_description', 'publish_accommodations'],
-        limits: { max_accommodations: 5 },
-        plan: { slug: 'owner-pro', name: 'Owner Pro', status: 'active' },
-        asOf: '2026-01-01T00:00:00Z'
-    }
-};
-
-// ---------------------------------------------------------------------------
-// Tests
-// ---------------------------------------------------------------------------
-
-describe('useMyEntitlements', () => {
+vi.mock('@/lib/api/endpoints-protected', () => ({ effectiveSetApi: { get: vi.fn() } }));
+const session = vi.fn();
+vi.mock('@/lib/auth-client', () => ({ useSession: () => session() }));
+describe('HOS-1646 · cliente web de capacidades · useMyEntitlements', () => {
     beforeEach(() => {
-        mockFetch.mockReset();
+        vi.clearAllMocks();
         clearEntitlementsCache();
-        // Default to an authenticated session; guest-specific tests override this.
-        mockUseSession.mockReturnValue(AUTHENTICATED);
+        session.mockReturnValue({ data: { user: { id: 'u' } }, isPending: false });
     });
-
-    it('fetches entitlements on mount and returns has() + limit()', async () => {
-        mockFetch.mockResolvedValueOnce(mockSuccessResponse(ENTITLEMENTS_RESPONSE));
-
-        const { result } = renderHook(() => useMyEntitlements());
-
-        // Initially loading
-        expect(result.current.isLoading).toBe(true);
-
-        await waitFor(() => {
-            expect(result.current.isLoading).toBe(false);
-        });
-
-        expect(result.current.error).toBeNull();
-        expect(result.current.has('can_use_rich_description')).toBe(true);
-        expect(result.current.has('publish_accommodations')).toBe(true);
-        expect(result.current.has('view_basic_stats')).toBe(false);
-        expect(result.current.limit('max_accommodations')).toBe(5);
-        expect(result.current.limit('nonexistent')).toBe(-1);
-        expect(result.current.plan).toEqual({
-            slug: 'owner-pro',
-            name: 'Owner Pro',
-            status: 'active'
-        });
-    });
-
-    it('returns error state on fetch failure', async () => {
-        mockFetch.mockResolvedValueOnce(mockErrorResponse(401, 'Unauthorized'));
-
-        const { result } = renderHook(() => useMyEntitlements());
-
-        await waitFor(() => {
-            expect(result.current.isLoading).toBe(false);
-        });
-
-        expect(result.current.error).toBeInstanceOf(Error);
-        expect(result.current.error?.message).toBe('Unauthorized');
-        // Fail-closed: has() returns false on error
-        expect(result.current.has('can_use_rich_description')).toBe(false);
-        expect(result.current.plan).toBeNull();
-    });
-
-    it('returns error state on network failure', async () => {
-        mockFetch.mockRejectedValueOnce(new Error('Network error'));
-
-        const { result } = renderHook(() => useMyEntitlements());
-
-        await waitFor(() => {
-            expect(result.current.isLoading).toBe(false);
-        });
-
-        expect(result.current.error).toBeInstanceOf(Error);
-        expect(result.current.has('can_use_rich_description')).toBe(false);
-    });
-
-    it('does not refetch when hook is remounted within cache TTL', async () => {
-        mockFetch.mockResolvedValueOnce(mockSuccessResponse(ENTITLEMENTS_RESPONSE));
-
-        const { result, unmount } = renderHook(() => useMyEntitlements());
-
-        await waitFor(() => {
-            expect(result.current.isLoading).toBe(false);
-        });
-
-        expect(mockFetch).toHaveBeenCalledTimes(1);
-        unmount();
-
-        // Remount — should use cache
-        const { result: result2 } = renderHook(() => useMyEntitlements());
-
-        await waitFor(() => {
-            expect(result2.current.isLoading).toBe(false);
-        });
-
-        // Still only 1 fetch — cached
-        expect(mockFetch).toHaveBeenCalledTimes(1);
-    });
-
-    it('returns empty entitlements when response has empty array', async () => {
-        mockFetch.mockResolvedValueOnce(
-            mockSuccessResponse({
-                data: {
-                    entitlements: [],
-                    limits: {},
-                    plan: null,
-                    asOf: '2026-01-01T00:00:00Z'
-                }
-            })
-        );
-
-        const { result } = renderHook(() => useMyEntitlements());
-
-        await waitFor(() => {
-            expect(result.current.isLoading).toBe(false);
-        });
-
-        expect(result.current.has('can_use_rich_description')).toBe(false);
-        expect(result.current.plan).toBeNull();
-    });
-
-    it('has() returns false while still loading (fail-closed)', () => {
-        mockFetch.mockReturnValueOnce(new Promise(() => {})); // never resolves
-
-        const { result } = renderHook(() => useMyEntitlements());
-
-        // While loading, has() should return false (fail-closed)
-        expect(result.current.isLoading).toBe(true);
-        expect(result.current.has('can_use_rich_description')).toBe(false);
-    });
-
-    // HOS-109 T-005: a guest must never call the protected endpoint, which is
-    // what caused the unauthenticated 401 → sustained 429 flood.
-    it('does NOT fetch when there is no session (guest)', async () => {
-        mockUseSession.mockReturnValue(GUEST);
-
-        const { result } = renderHook(() => useMyEntitlements());
-
-        await waitFor(() => {
-            expect(result.current.isLoading).toBe(false);
-        });
-
-        expect(mockFetch).not.toHaveBeenCalled();
-        // Fail-closed: guest sees the non-entitled variant.
-        expect(result.current.has('can_use_rich_description')).toBe(false);
-        expect(result.current.plan).toBeNull();
-        expect(result.current.error).toBeNull();
-    });
-
-    it('stays loading and does NOT fetch while the session is resolving', () => {
-        mockUseSession.mockReturnValue(SESSION_PENDING);
-
-        const { result } = renderHook(() => useMyEntitlements());
-
-        expect(result.current.isLoading).toBe(true);
-        expect(mockFetch).not.toHaveBeenCalled();
-        expect(result.current.has('can_use_rich_description')).toBe(false);
-    });
-
-    it('fetches once the session resolves from pending to authenticated', async () => {
-        mockUseSession.mockReturnValue(SESSION_PENDING);
-        mockFetch.mockResolvedValueOnce(mockSuccessResponse(ENTITLEMENTS_RESPONSE));
-
-        const { result, rerender } = renderHook(() => useMyEntitlements());
-
-        // Pending: no fetch yet.
-        expect(mockFetch).not.toHaveBeenCalled();
-
-        // Session resolves to authenticated → effect re-runs and fetches.
-        mockUseSession.mockReturnValue(AUTHENTICATED);
-        rerender();
-
-        await waitFor(() => {
-            expect(result.current.isLoading).toBe(false);
-        });
-
-        expect(mockFetch).toHaveBeenCalledTimes(1);
-        expect(result.current.has('can_use_rich_description')).toBe(true);
-    });
-
-    // ------------------------------------------------------------------
-    // `skip` param (HOS-217, e.g. MobileMenu.client.tsx) — a caller that
-    // already knows entitlements are irrelevant for the current actor never
-    // pays for the fetch, and un-skipping mid-lifecycle must re-assert the
-    // loading state instead of leaking a stale resolved-false.
-    // ------------------------------------------------------------------
-
-    it('does NOT fetch and resolves isLoading to false when skip is true', async () => {
-        const { result } = renderHook(() => useMyEntitlements({ skip: true }));
-
-        await waitFor(() => {
-            expect(result.current.isLoading).toBe(false);
-        });
-
-        expect(mockFetch).not.toHaveBeenCalled();
-        expect(result.current.has('can_use_rich_description')).toBe(false);
-        expect(result.current.plan).toBeNull();
-        expect(result.current.error).toBeNull();
-    });
-
-    it('re-asserts isLoading=true when transitioning from skip:true to skip:false, then resolves', async () => {
-        // Never resolves — lets us observe the intermediate isLoading=true
-        // state before the fetch settles, instead of racing straight to the
-        // final resolved state.
-        mockFetch.mockReturnValueOnce(new Promise(() => {}));
-
-        const { result, rerender } = renderHook(
-            ({ skip }: { skip: boolean }) => useMyEntitlements({ skip }),
-            {
-                initialProps: { skip: true }
+    it('uses positive resolved values, 0 for missing, and Infinity for unlimited limits', async () => {
+        vi.mocked(effectiveSetApi.get).mockResolvedValue({
+            ok: true,
+            data: {
+                entitlements: { paid: 1, zero: 0 },
+                limits: { cap: Number.POSITIVE_INFINITY },
+                hasLiveNonTrialTitle: false,
+                userId: 'u',
+                vertical: 'accommodation'
             }
-        );
-
-        // skip:true — resolved, no fetch.
-        await waitFor(() => {
-            expect(result.current.isLoading).toBe(false);
-        });
-        expect(mockFetch).not.toHaveBeenCalled();
-
-        // Un-skip: the effect must re-assert isLoading=true synchronously
-        // (the fix under test) instead of leaving the stale resolved-false
-        // from the skip branch in place while the fetch is in flight.
-        rerender({ skip: false });
-        expect(result.current.isLoading).toBe(true);
-        expect(mockFetch).toHaveBeenCalledTimes(1);
+        } as never);
+        const { result } = renderHook(() => useMyEntitlements({ vertical: 'accommodation' }));
+        await waitFor(() => expect(result.current.isLoading).toBe(false));
+        expect(result.current.has('paid')).toBe(true);
+        expect(result.current.has('zero')).toBe(false);
+        expect(result.current.has('missing')).toBe(false);
+        expect(result.current.limit('cap')).toBe(Number.POSITIVE_INFINITY);
+        expect(result.current.limit('missing')).toBe(0);
     });
-
-    it('resolves entitlements after transitioning from skip:true to skip:false once the fetch settles', async () => {
-        mockFetch.mockResolvedValueOnce(mockSuccessResponse(ENTITLEMENTS_RESPONSE));
-
-        const { result, rerender } = renderHook(
-            ({ skip }: { skip: boolean }) => useMyEntitlements({ skip }),
-            {
-                initialProps: { skip: true }
+    it('returns absence and error on failed reads', async () => {
+        vi.mocked(effectiveSetApi.get).mockResolvedValue({
+            ok: false,
+            error: { message: 'API message' }
+        } as never);
+        const { result } = renderHook(() => useMyEntitlements({ vertical: 'accommodation' }));
+        await waitFor(() => expect(result.current.isLoading).toBe(false));
+        expect(result.current.has('paid')).toBe(false);
+        expect(result.current.limit('cap')).toBe(0);
+        expect(result.current.error).toBeInstanceOf(Error);
+        expect(result.current.error?.message).not.toBe('API message');
+    });
+    it('does not call the endpoint without a session', async () => {
+        session.mockReturnValue({ data: null, isPending: false });
+        const { result } = renderHook(() => useMyEntitlements({ vertical: 'accommodation' }));
+        await waitFor(() => expect(result.current.isLoading).toBe(false));
+        expect(result.current.has('paid')).toBe(false);
+        expect(effectiveSetApi.get).not.toHaveBeenCalled();
+    });
+    it('HOS-1721 exposes the pre-trial DRAFT cap, 0 when absent', async () => {
+        vi.mocked(effectiveSetApi.get).mockResolvedValue({
+            ok: true,
+            data: {
+                entitlements: {},
+                limits: {},
+                preTrialDraftLimits: { max_photos_per_accommodation: 15 },
+                hasLiveNonTrialTitle: false,
+                userId: 'u',
+                vertical: 'accommodation'
             }
-        );
-
-        await waitFor(() => {
-            expect(result.current.isLoading).toBe(false);
-        });
-        expect(mockFetch).not.toHaveBeenCalled();
-
-        rerender({ skip: false });
-
-        await waitFor(() => {
-            expect(result.current.isLoading).toBe(false);
-        });
-        expect(mockFetch).toHaveBeenCalledTimes(1);
-        expect(result.current.has('can_use_rich_description')).toBe(true);
-    });
-
-    it('clears entitlements when the session flips from authenticated to guest (sign-out)', async () => {
-        mockFetch.mockResolvedValueOnce(mockSuccessResponse(ENTITLEMENTS_RESPONSE));
-
-        const { result, rerender } = renderHook(() => useMyEntitlements());
-
-        await waitFor(() => {
-            expect(result.current.has('can_use_rich_description')).toBe(true);
-        });
-
-        // User signs out without a full reload while the island stays mounted.
-        mockUseSession.mockReturnValue(GUEST);
-        rerender();
-
-        await waitFor(() => {
-            expect(result.current.has('can_use_rich_description')).toBe(false);
-        });
-        expect(result.current.plan).toBeNull();
-        expect(result.current.error).toBeNull();
+        } as never);
+        const { result } = renderHook(() => useMyEntitlements({ vertical: 'accommodation' }));
+        await waitFor(() => expect(result.current.isLoading).toBe(false));
+        expect(result.current.draftLimit('max_photos_per_accommodation')).toBe(15);
+        expect(result.current.limit('max_photos_per_accommodation')).toBe(0);
+        expect(result.current.draftLimit('max_ai_text_improve_per_month')).toBe(0);
     });
 });

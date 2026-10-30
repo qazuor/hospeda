@@ -1,5 +1,7 @@
 # Billing Admin Guide
 
+> **Partially outdated after HOS-1352**, which replaced the QZPay stack. Several screens described below (`/billing/plans`, `/billing/payments`, `/billing/invoices`, `/billing/addons`, `/billing/metrics`, `/billing/settings`) no longer exist as routes under `apps/admin/src/routes/_authed/billing/`. Current pointers: the "Billing and verticals (HOS-1352)" section of the root `CLAUDE.md`, `docs/billing/smoke-checklist.md`, and the admin API routes `apps/api/src/routes/plan-catalog`, `billing-subscription`, `billing-reconciliation`, `billing-refund`, `billing-promo`.
+
 Complete guide for managing billing, subscriptions, payments, and sponsorships in the Hospeda admin panel.
 
 ## Overview
@@ -40,7 +42,7 @@ Manage the 9 subscription plans (3 owner tiers, 3 complex tiers, 3 tourist tiers
 - Configure pricing (monthly/annual rates)
 - Set trial periods per plan
 - Toggle plan visibility
-- Plans are seeded from `@repo/billing` configuration
+- Plans live in the database catalog (`plan` / `plan_version`); the old `@repo/billing` seed configuration was deleted by HOS-1626
 
 **Plan Structure:**
 
@@ -419,7 +421,7 @@ POST /api/v1/webhooks/mercadopago
 
 - New payment initiated
 - Logged for monitoring
-- Processed by QZPay billing system
+- Processed by the MercadoPago adapter in `@repo/payments`
 
 #### payment.updated
 

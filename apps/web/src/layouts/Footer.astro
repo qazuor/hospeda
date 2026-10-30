@@ -106,7 +106,7 @@ const exploreLinks = [
     { label: t("footer.accommodations"), href: buildUrl({ locale, path: "/alojamientos/" }) },
     { label: t("footer.destinations"), href: buildUrl({ locale, path: "/destinos/" }) },
     { label: t("footer.events"), href: buildUrl({ locale, path: "/eventos/" }) },
-    { label: t("footer.gastronomy"), href: buildUrl({ locale, path: "/gastronomia/" }) },
+    { label: t("footer.venue"), href: buildUrl({ locale, path: "/comer-y-salir/" }) },
     { label: t("footer.experiences"), href: buildUrl({ locale, path: "/experiencias/" }) },
     { label: t("footer.publications"), href: buildUrl({ locale, path: "/publicaciones/" }) },
 ] as const;
@@ -132,7 +132,7 @@ const exploreLinks = [
  *  `/suscriptores/propietarios/` to `/planes/anfitriones/` because the old URL
  *  is now redirect-only (HOS-941 D-12) — the link keeps meaning the same thing,
  *  it just stops costing every visitor a 301 hop. */
-/* HOS-1156: the two commerce entries say "Publicá tu …" and now lead to a page
+/* HOS-1156: the two listing entries say "Publicá tu …" and now lead to a page
    where you can — they pointed at `/planes/*`, which are SALES pages. Both read
    the same map the header's chooser does, so the parity
    `footer-publish-parity.guard.test.ts` protects is now structural rather than
@@ -142,7 +142,7 @@ const forYouLinks = [
        revisit: the accommodation funnel has had a landing of its own for far
        longer than the chooser has existed. */
     { label: t("footer.listProperty"), href: buildUrl({ locale, path: "/planes/anfitriones/" }) },
-    { label: t("footer.listGastronomy"), href: buildUrl({ locale, path: PUBLISH_PAGE_PATH_BY_VERTICAL.gastronomy }) },
+    { label: t("footer.listVenue"), href: buildUrl({ locale, path: PUBLISH_PAGE_PATH_BY_VERTICAL.venue }) },
     { label: t("footer.listExperience"), href: buildUrl({ locale, path: PUBLISH_PAGE_PATH_BY_VERTICAL.experience }) },
     /* HOS-942: ONE link to the plan index, replacing the separate "Planes para
        propietarios" / "Planes para turistas" entries. The footer used to
@@ -168,6 +168,7 @@ const legalLinks = [
     { label: t("footer.terms"), href: buildUrl({ locale, path: "/legal/terminos/" }) },
     { label: t("footer.privacy"), href: buildUrl({ locale, path: "/legal/privacidad/" }) },
     { label: t("footer.cookies"), href: buildUrl({ locale, path: "/legal/cookies/" }) },
+    { label: t("footer.withdrawal"), href: buildUrl({ locale, path: "/legal/arrepentimiento/" }) },
 ] as const;
 
 const cookiePreferencesLabel = t("cookieConsent.footer.preferencesLink", "Preferencias de cookies");

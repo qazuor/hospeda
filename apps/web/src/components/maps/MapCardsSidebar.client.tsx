@@ -21,6 +21,7 @@ import type { IconProps } from '@repo/icons';
 import { GalleryIcon, LocationIcon, StarIcon } from '@repo/icons';
 import type { ComponentType } from 'react';
 import { useEffect, useState } from 'react';
+import { MapCardsSheetTrigger } from '@/components/maps/MapCardsSheetTrigger';
 import { CompareButton } from '@/components/shared/compare/CompareButton.client';
 import { FavoriteButton } from '@/components/shared/favorite/FavoriteButton.client';
 import { Spinner } from '@/components/shared/feedback/Spinner';
@@ -110,6 +111,11 @@ interface MapCardsSidebarProps {
          * when not provided, preserving the previous behavior.
          */
         readonly openSheetCount?: (n: number) => string;
+        /**
+         * Short "{{count}} resultados" label shown on the dock trigger where the
+         * full "Ver {{count}} resultados" does not fit on one row (HOS-1780).
+         */
+        readonly openSheetCountShort?: (n: number) => string;
         readonly closeSheet: string;
     };
 }
@@ -521,17 +527,17 @@ export function MapCardsSidebar({
     if (isMobile) {
         return (
             <>
-                <button
-                    type="button"
-                    className={sidebarStyles.sheetTrigger}
-                    onClick={() => setIsSheetOpen(true)}
-                    aria-expanded={isSheetOpen}
-                    aria-controls="map-cards-sheet"
-                >
-                    {i18n.openSheetCount
-                        ? i18n.openSheetCount(items.length)
-                        : `${i18n.openSheet} · ${i18n.resultsCount(items.length)}`}
-                </button>
+                <MapCardsSheetTrigger
+                    label={
+                        i18n.openSheetCount
+                            ? i18n.openSheetCount(items.length)
+                            : `${i18n.openSheet} · ${i18n.resultsCount(items.length)}`
+                    }
+                    shortLabel={i18n.openSheetCountShort?.(items.length)}
+                    count={items.length}
+                    isSheetOpen={isSheetOpen}
+                    onOpen={() => setIsSheetOpen(true)}
+                />
                 <div
                     id="map-cards-sheet"
                     className={`${sidebarStyles.sheet} ${

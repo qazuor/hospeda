@@ -24,7 +24,7 @@
  *    to a MISSING key, which is precisely the failure mode here, so it would
  *    have stayed green throughout the entire bug.
  * 2. The plain schemas REJECT the flags instead of dropping them. `destination`
- *    — the one entity left with no such column after HOS-400 gave `gastronomy`
+ *    — the one entity left with no such column after HOS-400 gave `venue`
  *    and `experience` the same two columns as `accommodation` — must answer
  *    "I do not accept that field", not "saved".
  *
@@ -95,7 +95,7 @@ describe('FAQ channel-visibility payload schemas (H-119 / H-59)', () => {
 
     describe('plain schemas reject the flags instead of discarding them', () => {
         // `destination` is the entity left routing its bodies through these
-        // plain schemas after HOS-400 moved `gastronomy` and `experience` to
+        // plain schemas after HOS-400 moved `venue` and `experience` to
         // the flag-carrying ones. Destinations have no such column and no AI
         // chat, so an attempt to set a flag there must be an error the caller
         // can see, not a silent discard.

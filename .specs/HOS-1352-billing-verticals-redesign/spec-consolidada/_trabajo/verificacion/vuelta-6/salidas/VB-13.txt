@@ -1,0 +1,15 @@
+# VB-13 · spec → fuente · 20-fase-2/B8b.md, 20-fase-3/B10.md, 80-abiertos.md
+
+## Hallazgos
+
+20-fase-2/B8b.md:434 · «los meses no usados cuentan contra los topes» · contradice fuentes/.specs/HOS-1354-billing-cobro-y-proveedor/docs/03-maquinas-de-estado.md:160 («si la persona vuelve antes, los meses no usados no cuentan contra `DEC-SUB-004`») · BLOQUEA
+
+80-abiertos.md:488 · «Mientras quede alguna medición `UNKNOWN`, las altas con tarjeta sólo se habilitan a cuentas creadas por soporte; el resto debe contratar por pago manual.» · sin soporte · BLOQUEA
+
+## Resumen
+
+| archivo | líneas recorridas | afirmaciones normativas revisadas (aprox.) | BLOQUEA | MENOR |
+|---|---|---|---|---|
+| 20-fase-2/B8b.md | 1–1406; excluidas 53–340, reservadas a G2 | 240 | 1 | 0 |
+| 20-fase-3/B10.md | 1–1942; excluidas 90–1211, reservadas a G2 | 175 | 0 | 0 |
+| 80-abiertos.md | 1–655 | 310 | 1 | 0 |

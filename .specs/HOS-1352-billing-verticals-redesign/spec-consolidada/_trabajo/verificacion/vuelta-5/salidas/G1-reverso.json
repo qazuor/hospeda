@@ -1,0 +1,1954 @@
+[
+    {
+        "id": "dec-trial-001",
+        "text": "Plan se declaran en DB, por vertical - **Fecha**: 2026-09-15 · **Estado**: ACCEPTED ·"
+    },
+    {
+        "id": "dec-trial-002",
+        "text": "con trinquete: en vivo, pero nunca empeora - **Fecha**: 2026-09-15 · **Estado**: ACCEPTED ·"
+    },
+    {
+        "id": "dec-trial-003",
+        "text": "por plan; Partner lo tiene en cero - **Fecha**: 2026-09-15 · **Estado**: ACCEPTED —"
+    },
+    {
+        "id": "dec-trial-003",
+        "text": "FASE 2. - **Origen**: `C-PARTNER-01` (BLOCKING). - 📌 **Precisada el 2026-09-28, con OK del"
+    },
+    {
+        "id": "dec-trial-004",
+        "text": "el email normalizado bloquea; el resto observa - **Fecha**: 2026-09-15 · **Estado**: ACCEPTED —"
+    },
+    {
+        "id": "dec-trial-004",
+        "text": "magnitud más. - **Origen**: `BD-TRIAL-02` (BLOCKING). - 📌 **Precisado el 2026-09-27, con OK del"
+    },
+    {
+        "id": "dec-trial-004",
+        "text": "2, `R23`, `F-8V2A3-004`)**: el seudónimo del correo es SHA-256 sin clave sobre el correo normalizado, y"
+    },
+    {
+        "id": "dec-trial-004",
+        "text": "recalcula las filas viejas, y se declara. - 📌 **Precisada el 2026-09-28, con OK del"
+    },
+    {
+        "id": "dec-trial-004",
+        "text": "cuenta dominios: no exporta ni guarda casillas. - 📌 **Precisada el 2026-09-28, con OK del"
+    },
+    {
+        "id": "dec-trial-005",
+        "text": "publicación es inmediata: publicar es quedar visible - **Fecha**: 2026-09-15 · **Estado**: ACCEPTED ·"
+    },
+    {
+        "id": "dec-trial-006",
+        "text": "se declara por vertical; Turista usa \"Empezar\" - **Fecha**: 2026-09-15 · **Estado**: ACCEPTED —"
+    },
+    {
+        "id": "dec-trial-006",
+        "text": "esta misma tabla. - **Origen**: `M-TRIAL-01`. - 📌 **Precisada el 2026-09-28, con OK del"
+    },
+    {
+        "id": "dec-trial-007",
+        "text": "borradores ilimitados, sin capacidades, archivado por inactividad - **Fecha**: 2026-09-15 · **Estado**: ACCEPTED —"
+    },
+    {
+        "id": "dec-trial-007",
+        "text": "que pide `M-ARCH-01`. - **Origen**: `M-TRIAL-02`. - 📌 **Precisada el 2026-09-28, con OK del"
+    },
+    {
+        "id": "dec-trial-008",
+        "text": "la frontera no transporta un segundo hecho - **Fecha**: 2026-09-21 · **Estado**: ACCEPTED —"
+    },
+    {
+        "id": "dec-trial-008",
+        "text": "dos opciones que se le presentaron. - 📌 **Precisada el 2026-09-28, con OK del"
+    },
+    {
+        "id": "dec-trial-008",
+        "text": "lo que esta decisión protegía queda intacto. ---"
+    },
+    {
+        "id": "dec-trial-009",
+        "text": "en la confirmación y no se repara - **Fecha**: 2026-09-21 · **Estado**: ACCEPTED ·"
+    },
+    {
+        "id": "dec-trial-009",
+        "text": "de la 2, que era la recomendada. ---"
+    },
+    {
+        "id": "dec-trial-010",
+        "text": "pago acreditado, y suscribirse termina el trial - **Fecha**: 2026-09-25 · **Estado**: ACCEPTED —"
+    },
+    {
+        "id": "dec-trial-010",
+        "text": "`R12`; elección del owner del 2026-09-25. - **📌 Precisado el 2026-09-25, con OK del"
+    },
+    {
+        "id": "dec-trial-010",
+        "text": "entrada no se edita en su contenido. ---"
+    },
+    {
+        "id": "dec-sub-002",
+        "text": "en DB por plan, default 10 días - **Fecha**: 2026-09-15 · **Estado**: ACCEPTED —"
+    },
+    {
+        "id": "dec-sub-002",
+        "text": "método de pago. - **Origen**: `C-SUB-01`. - 📌 **Precisada el 2026-09-28, con OK del"
+    },
+    {
+        "id": "dec-sub-004",
+        "text": "pausa se cuenta por user + vertical - **Fecha**: 2026-09-15 · **Estado**: ACCEPTED ·"
+    },
+    {
+        "id": "dec-sub-006",
+        "text": "el checkout, y se compensa por valor - **Fecha**: 2026-09-16 · **Estado**: ACCEPTED —"
+    },
+    {
+        "id": "dec-sub-006",
+        "text": "↔ proveedor · §19 · `BD-SUB-01`. - **📌 Precisado el 2026-09-25, con OK del"
+    },
+    {
+        "id": "dec-sub-007",
+        "text": "mismo mecanismo que el cambio de ciclo - **Fecha**: 2026-09-16 · **Estado**: ACCEPTED —"
+    },
+    {
+        "id": "dec-sub-007",
+        "text": "anotada la mitad que esta decisión condiciona. 2. ⚠️ **CORREGIDO el 2026-09-16**, el mismo día"
+    },
+    {
+        "id": "dec-sub-007",
+        "text": "contraste PDR ↔ proveedor · §27. - 📌 **Precisada el 2026-09-28, con OK del"
+    },
+    {
+        "id": "dec-sub-008",
+        "text": "el excedente se avisa antes de tocarlo - **Fecha**: 2026-09-16 · **Estado**: ACCEPTED —"
+    },
+    {
+        "id": "dec-sub-008",
+        "text": "↔ proveedor · §28 · `M-ENT-02`. - 📌 **Precisada el 2026-09-28, con OK del"
+    },
+    {
+        "id": "dec-sub-008",
+        "text": "baja o sube capacidades en la renovación. - 📌 **Precisada el 2026-09-29, con OK del"
+    },
+    {
+        "id": "dec-sub-009",
+        "text": "y sostiene el servicio de nuestro lado - **Fecha**: 2026-09-16 · **Estado**: ACCEPTED —"
+    },
+    {
+        "id": "dec-sub-009",
+        "text": "contraste PDR ↔ proveedor · §24. - 📌 **Precisada el 2026-09-27, con OK del"
+    },
+    {
+        "id": "dec-sub-009",
+        "text": "la fila sin `covered_period` y sin crédito. - 📌 **Precisada el 2026-09-27, con OK del"
+    },
+    {
+        "id": "dec-sub-009",
+        "text": "la regla de `S11` entera, complementos incluidos. - 📌 **Precisada el 2026-09-28, con OK del"
+    },
+    {
+        "id": "dec-sub-009",
+        "text": "del proveedor. `B/12`, lo que no cierra. - 📌 **Precisada el 2026-09-29, con OK del"
+    },
+    {
+        "id": "dec-sub-010",
+        "text": "vuelve antes paga el ciclo siguiente completo - **Fecha**: 2026-09-16 · **Estado**: ACCEPTED —"
+    },
+    {
+        "id": "dec-sub-010",
+        "text": "de un mes, esa pausa no existe. **📌 Precisado el 2026-09-26, con OK del"
+    },
+    {
+        "id": "dec-sub-010",
+        "text": "día de un ciclo regala 29 días.)* - **Implicaciones**: 1. **El early resume no"
+    },
+    {
+        "id": "dec-sub-011",
+        "text": "8 del §64 cuenta COMPROMISOS, no FILAS - **Fecha**: 2026-09-19 · **Estado**: ACCEPTED ·"
+    },
+    {
+        "id": "dec-sub-011",
+        "text": "**Origen**: `15-fase-9/07-decisiones-del-owner.md` `D-13`, sobre el racimo `R1`. ---"
+    },
+    {
+        "id": "dec-sub-012",
+        "text": "plazo: es la condición que ya existía - **Fecha**: 2026-09-21 · **Estado**: ACCEPTED ·"
+    },
+    {
+        "id": "dec-sub-012",
+        "text": "eligió la 1, que era la recomendada. ---"
+    },
+    {
+        "id": "dec-sub-013",
+        "text": "y no se abre mientras está suspendido - **Fecha**: 2026-09-21 · **Estado**: ACCEPTED —"
+    },
+    {
+        "id": "dec-sub-013",
+        "text": "la 1, que era la recomendada. - **📌 Precisado el 2026-09-25, con OK del"
+    },
+    {
+        "id": "dec-sub-013",
+        "text": "por la condición 1 de `B/05` §3. - 📌 **Precisada el 2026-09-28, con OK del"
+    },
+    {
+        "id": "dec-sub-013",
+        "text": "salieron con la revisión del owner (C8). ---"
+    },
+    {
+        "id": "dec-sub-014",
+        "text": "`GRACE_PERIOD` corta el servicio en el acto - **Fecha**: 2026-09-21 · **Estado**: ACCEPTED ·"
+    },
+    {
+        "id": "dec-sub-014",
+        "text": "eligió la 1, que era la recomendada. ---"
+    },
+    {
+        "id": "dec-sub-016",
+        "text": "corridos, no las 72 h del checkout - **Fecha**: 2026-09-23 · **Estado**: ACCEPTED —"
+    },
+    {
+        "id": "dec-sub-016",
+        "text": "la 2, que era la recomendada. - 📌 **Precisada el 2026-09-28, con OK del"
+    },
+    {
+        "id": "dec-sub-016",
+        "text": "inicial del plazo 10 de `NUCLEO/02` §1.5. ---"
+    },
+    {
+        "id": "dec-sub-017",
+        "text": "porque su fecha es una columna nuestra - **Fecha**: 2026-09-23 · **Estado**: ACCEPTED —"
+    },
+    {
+        "id": "dec-sub-017",
+        "text": "la 1, que era la recomendada. - **📌 Precisado el 2026-09-25, con OK del"
+    },
+    {
+        "id": "dec-sub-017",
+        "text": "mes como crédito y además se devolvía. ---"
+    },
+    {
+        "id": "dec-sub-019",
+        "text": "corta el cobro, no sólo el servicio - **Fecha**: 2026-09-24 · **Estado**: ACCEPTED —"
+    },
+    {
+        "id": "dec-sub-019",
+        "text": "la sonda 49 del mismo día. - **📌 Precisado el 2026-09-25 (FASE 9 completa,"
+    },
+    {
+        "id": "dec-sub-019",
+        "text": "tamaño del daño que cuenta el ejemplo. - 📌 **Precisada el 2026-09-27, con OK del"
+    },
+    {
+        "id": "dec-sub-019",
+        "text": "se siguen viendo hasta la misma fecha. - 📌 **Precisada el 2026-09-28, con OK del"
+    },
+    {
+        "id": "dec-sub-019",
+        "text": "ver que el complemento ya no cobra. ---"
+    },
+    {
+        "id": "dec-sub-020",
+        "text": "sin grace, y lo sigue una persona - **Fecha**: 2026-09-25 · **Estado**: ACCEPTED —"
+    },
+    {
+        "id": "dec-sub-020",
+        "text": "persona»* y *«declararlo fuera de alcance»*. - **📌 Precisado el 2026-09-25, con OK del"
+    },
+    {
+        "id": "dec-sub-020",
+        "text": "mora, que le diría que no pagó. ---"
+    },
+    {
+        "id": "dec-sub-021",
+        "text": "el camino de la tarjeta es cambiarla - **Fecha**: 2026-09-25 · **Estado**: ACCEPTED —"
+    },
+    {
+        "id": "dec-sub-021",
+        "text": "`R8`; elección del owner del 2026-09-25. - **📌 Precisado el 2026-09-25, con OK del"
+    },
+    {
+        "id": "dec-sub-021",
+        "text": "entrada no se edita en su contenido. - **📌 Cerrada 2026-09-26: `GR-1` `VERIFIED`, la salida"
+    },
+    {
+        "id": "dec-sub-021",
+        "text": "(punto 1) no la toca esta medición. ---"
+    },
+    {
+        "id": "dec-sub-022",
+        "text": "grace si el proveedor ya se rindió - **Fecha**: 2026-09-25 · **Estado**: ACCEPTED —"
+    },
+    {
+        "id": "dec-sub-022",
+        "text": "opciones y se volvió a preguntar). - **📌 Precisado el 2026-09-25, con OK del"
+    },
+    {
+        "id": "dec-sub-022",
+        "text": "entrada no se edita en su contenido. ---"
+    },
+    {
+        "id": "dec-sub-023",
+        "text": "camino, aparte del upgrade y del downgrade - **Fecha**: 2026-09-28 · **Estado**: ACCEPTED —"
+    },
+    {
+        "id": "dec-sub-023",
+        "text": "lote del log y la matriz»*). - 📌 **Precisada el 2026-09-29, con OK del"
+    },
+    {
+        "id": "dec-sub-023",
+        "text": "que la predecesora haya cambiado de versión. - 📌 **Precisada el 2026-09-29, con OK del"
+    },
+    {
+        "id": "dec-sub-023",
+        "text": "cancelar la migración la pasa a `CANCELADA`. ---"
+    },
+    {
+        "id": "dec-mp-001",
+        "text": "suscripciones vigentes se aplican mutando el monto - **Fecha**: 2026-09-15 · **Estado**: ACCEPTED ·"
+    },
+    {
+        "id": "dec-mp-002",
+        "text": "los existentes tras 60 días de aviso - **Fecha**: 2026-09-16 · **Estado**: ACCEPTED —"
+    },
+    {
+        "id": "dec-mp-002",
+        "text": "↔ proveedor · §29 · `M-LEGAL-03`. - 📌 **Precisada el 2026-09-28, con OK del"
+    },
+    {
+        "id": "dec-mp-002",
+        "text": "de plazos con que se anunció (`DEC-DATA-008`). - 📌 **Precisada otra vez el 2026-10-02, con"
+    },
+    {
+        "id": "dec-mp-002",
+        "text": "§4; `16-fase-7-del-paraguas.md` §4.7, momento 5; `41-corte-del-mvp/10-decisiones-del-owner.md`, BM. - 📌 **Precisada otra vez el 2026-10-02, con"
+    },
+    {
+        "id": "dec-mp-002",
+        "text": "§2, §2.12 y §4 (`B12`); `41-corte-del-mvp/10-decisiones-del-owner.md`, BZ. - 📌 **Precisada otra vez el 2026-10-02, con"
+    },
+    {
+        "id": "dec-mp-002",
+        "text": "§2.12 y §4 (`B2`, `B12`); `41-corte-del-mvp/10-decisiones-del-owner.md`, CC. - 📌 **Precisada el 2026-10-02 (verificación ciega de"
+    },
+    {
+        "id": "dec-mp-003",
+        "text": "y no entra como pausa del cliente - **Fecha**: 2026-09-22 · **Estado**: **SUPERSEDED EN"
+    },
+    {
+        "id": "dec-mp-003",
+        "text": "poder implementar lo que declara pendiente. > 📌 **Y de paso corrige una cita"
+    },
+    {
+        "id": "dec-mp-003",
+        "text": "corrige una cita ajena**: el §2 de > [`RESULTS-2026-09-23.md`] le atribuye a esta decisión la > sospecha de que *«el `preapproval` puede no"
+    },
+    {
+        "id": "dec-mp-003",
+        "text": "no emitir `preapproval.updated`»*. **Esa frase no está > escrita acá** y ninguna razón de esta"
+    },
+    {
+        "id": "dec-mp-003",
+        "text": "en ella — verificado el 2026-09-24 contra > este mismo bloque. ⚠️ **El `rg` que"
+    },
+    {
+        "id": "dec-mp-003",
+        "text": "se puede repetir tal cual**: antes de > escribirse esta nota, `rg 'preapproval\\.updated'` sobre el"
+    },
+    {
+        "id": "dec-mp-003",
+        "text": "el log entero devolvía **cero líneas**; a > partir de acá devuelve **una, que es"
+    },
+    {
+        "id": "dec-mp-003",
+        "text": "repetirlo hay que excluir esta nota, o > leer el bloque. **No hubo razón caducada"
+    },
+    {
+        "id": "dec-mp-003",
+        "text": "bloque. **No hubo razón caducada que enmendar.** - **Origen**: la revisión de los mails"
+    },
+    {
+        "id": "dec-mp-003",
+        "text": "eligió la 1, que era la recomendada. ---"
+    },
+    {
+        "id": "dec-mp-004",
+        "text": "del `status_detail`, no de un texto único - **Fecha**: 2026-09-22 · **Estado**: ACCEPTED ·"
+    },
+    {
+        "id": "dec-mp-004",
+        "text": "eligió la 1, que era la recomendada. ---"
+    },
+    {
+        "id": "dec-mp-005",
+        "text": "proveedor no hace lo suple el diseño - **Fecha**: 2026-09-24 · **Estado**: ACCEPTED ·"
+    },
+    {
+        "id": "dec-mp-005",
+        "text": "tercera fuente admitida por la regla 4. ---"
+    },
+    {
+        "id": "dec-mp-006",
+        "text": "el modelo canónico, sin destino pendiente (2026-09-26) - **Fecha**: 2026-09-24 · **Estado**: ACCEPTED —"
+    },
+    {
+        "id": "dec-mp-006",
+        "text": "código de seguridad**, y un `card_token` es **de un solo uso** (`EX-12`, re-verificado en producción con tarjeta real)."
+    },
+    {
+        "id": "dec-mp-006",
+        "text": "canónico se elige hoy, **no se cementa**. **📌 Precisado el 2026-09-26, con OK del"
+    },
+    {
+        "id": "dec-mp-006",
+        "text": "B6 cemente el mandato en su interfaz. - **🚧 El límite que esta decisión"
+    },
+    {
+        "id": "dec-mp-006",
+        "text": "eligió la 1, que era la recomendada. ---"
+    },
+    {
+        "id": "dec-mp-007",
+        "text": "crea suelto, desde nuestra versión de plan - **Fecha**: 2026-09-24 · **Estado**: ACCEPTED ·"
+    },
+    {
+        "id": "dec-mp-007",
+        "text": "la elección del owner del mismo día. ---"
+    },
+    {
+        "id": "dec-mp-008",
+        "text": "con `S6`, sin motivo de pausa nuevo - **Fecha**: 2026-09-24 · **Estado**: ACCEPTED —"
+    },
+    {
+        "id": "dec-mp-008",
+        "text": "decisión sin escribir—: eligió la recomendada. - **📌 Precisado el 2026-09-25, con OK del"
+    },
+    {
+        "id": "dec-mp-008",
+        "text": "entrada no se edita en su contenido. - 📌 **Precisada el 2026-09-28, con OK del"
+    },
+    {
+        "id": "dec-mp-008",
+        "text": "del proveedor. `B/12`, lo que no cierra. - 📌 **Precisada el 2026-09-29, con OK del"
+    },
+    {
+        "id": "dec-mp-008",
+        "text": "estar pendiente en el 📌 anterior (N8). ---"
+    },
+    {
+        "id": "dec-mp-009",
+        "text": "se escucha y se guarda, sin actuar - **Fecha**: 2026-09-29 · **Estado**: ACCEPTED —"
+    },
+    {
+        "id": "dec-mp-009",
+        "text": "con una retención técnica, no configurable, de 180 días; procesa sólo la entrega `payment` de"
+    },
+    {
+        "id": "dec-mp-009",
+        "text": "**Origen**: `30-revision-del-owner/27-decisiones-sobre-las-mediciones.md` (M-2); aplicada en `30-revision-del-owner/28-aplicacion-mediciones-al-diseno.md`. - 📌 **Precisada el 2026-09-29, con OK del"
+    },
+    {
+        "id": "dec-mp-009",
+        "text": "predicado (c) de `G17` la nombra así. - 📌 **Precisada el 2026-09-29, con OK del"
+    },
+    {
+        "id": "dec-mp-009",
+        "text": "IPN sin guardarlas, y no mueve plata. - 📌 **Precisada el 2026-09-29, con OK del"
+    },
+    {
+        "id": "dec-mp-009",
+        "text": "se devuelve y se relee por id. ---"
+    },
+    {
+        "id": "dec-ent-001",
+        "text": "el trial tiene cuota propia en ellos - **Fecha**: 2026-09-15 · **Estado**: ACCEPTED —"
+    },
+    {
+        "id": "dec-ent-001",
+        "text": "de Premium. - **Origen**: `R-TRIAL-01`, `OD-ENT-01`. - 📌 **Precisada el 2026-09-28, con OK del"
+    },
+    {
+        "id": "dec-ent-002",
+        "text": "son mensuales, independientes del ciclo de pago - **Fecha**: 2026-09-15 · **Estado**: ACCEPTED —"
+    },
+    {
+        "id": "dec-ent-002",
+        "text": "UTC. - **Origen**: `OD-ENT-01` (segunda mitad). - 📌 **Precisada el 2026-09-28, con OK del"
+    },
+    {
+        "id": "dec-ent-002",
+        "text": "a la ventana del título. `V/15` §7. - 📌 **Precisada el 2026-09-29, con OK del"
+    },
+    {
+        "id": "dec-ent-002",
+        "text": "versión de piso otorgue un entitlement medido. - 📌 **Precisada el 2026-09-29, con OK del"
+    },
+    {
+        "id": "dec-ent-003",
+        "text": "entitlements y limits, y bloquea la compra - **Fecha**: 2026-09-15 · **Estado**: ACCEPTED ·"
+    },
+    {
+        "id": "dec-ent-004",
+        "text": "previo se cancela de inmediato, sin reembolso - **Fecha**: 2026-09-15 · **Estado**: ACCEPTED ·"
+    },
+    {
+        "id": "dec-ent-005",
+        "text": "atributo declarado del catálogo, no un juicio - **Fecha**: 2026-09-23 · **Estado**: ACCEPTED ·"
+    },
+    {
+        "id": "dec-ent-005",
+        "text": "eligió la 1, que era la recomendada. ---"
+    },
+    {
+        "id": "dec-ent-006",
+        "text": "la baja con un bit de moderación - **Fecha**: 2026-09-25 · **Estado**: ACCEPTED —"
+    },
+    {
+        "id": "dec-ent-006",
+        "text": "del owner del 2026-09-25, las recomendadas. - 📌 **Precisada el 2026-09-30, con OK del"
+    },
+    {
+        "id": "dec-ent-006",
+        "text": "declarar el paso 3 vacuo para Partner). - 📌 **Precisada otra vez el 2026-09-30, con"
+    },
+    {
+        "id": "dec-ent-006",
+        "text": "rol de socio del 📌 anterior **no […]: se da en el acto que fija"
+    },
+    {
+        "id": "dec-ent-006",
+        "text": "la aplicación, owner 2026-09-30, F y H). - 📌 **Precisada el 2026-09-30, con OK del"
+    },
+    {
+        "id": "dec-ent-006",
+        "text": "segunda tanda, owner 2026-09-30, N y O). - 📌 **Precisada el 2026-09-30, con OK del"
+    },
+    {
+        "id": "dec-ent-006",
+        "text": "(FASES 6 y 7, verificación, 2026-09-30, F12). ---"
+    },
+    {
+        "id": "dec-addon-001",
+        "text": "ficha, y su reloj no se congela - **Fecha**: 2026-09-15 · **Estado**: ACCEPTED ·"
+    },
+    {
+        "id": "dec-addon-002",
+        "text": "no una línea del monto del plan - **Fecha**: 2026-09-16 · **Estado**: ACCEPTED —"
+    },
+    {
+        "id": "dec-addon-002",
+        "text": "un addon huérfano sin tocar lo demás). 📌 **Precisada el 2026-09-27, con OK del"
+    },
+    {
+        "id": "dec-addon-002",
+        "text": "con el plan: la apaga la orfandad. 📌 **Precisada el 2026-09-27, con OK del"
+    },
+    {
+        "id": "dec-addon-002",
+        "text": "`S32` lo pausa en el mismo acto. - **Origen**: `BD-MP-04` · §38 · §40"
+    },
+    {
+        "id": "dec-addon-003",
+        "text": "y al revocar se apaga sin reparación - **Fecha**: 2026-09-21 · **Estado**: ACCEPTED —"
+    },
+    {
+        "id": "dec-addon-003",
+        "text": "contestó de entrada la pregunta que arrastraba. ---"
+    },
+    {
+        "id": "dec-addon-004",
+        "text": "el acto: `CANCELLED`, sin período de gracia - **Fecha**: 2026-09-21 · **Estado**: ACCEPTED —"
+    },
+    {
+        "id": "dec-addon-004",
+        "text": "la 1, que era la recomendada. - 📌 **Precisada el 2026-09-27, con OK del"
+    },
+    {
+        "id": "dec-addon-004",
+        "text": "que era proponer devolver la parte proporcional. - 📌 **Precisada el 2026-09-28, con OK del"
+    },
+    {
+        "id": "dec-addon-004",
+        "text": "salieron con la revisión del owner (C8). ---"
+    },
+    {
+        "id": "dec-addon-005",
+        "text": "y está decidido: no es un pendiente - **Fecha**: 2026-09-21 · **Estado**: ACCEPTED ·"
+    },
+    {
+        "id": "dec-addon-005",
+        "text": "y la elección del owner del 2026-09-21. ---"
+    },
+    {
+        "id": "dec-addon-006",
+        "text": "nombra la REVOCACIÓN, porque desanclar no existe - **Fecha**: 2026-09-21 · **Estado**: ACCEPTED ·"
+    },
+    {
+        "id": "dec-addon-006",
+        "text": "del 2026-09-21 entre las dos opciones corregidas. ---"
+    },
+    {
+        "id": "dec-addon-007",
+        "text": "y se emiten sólo donde son compatibles - **Fecha**: 2026-09-25 · **Estado**: ACCEPTED —"
+    },
+    {
+        "id": "dec-addon-007",
+        "text": "del owner del 2026-09-25, las recomendadas. - **📌 Precisado el 2026-09-25, con OK del"
+    },
+    {
+        "id": "dec-addon-007",
+        "text": "entrada no se edita en su contenido. ---"
+    },
+    {
+        "id": "dec-promo-001",
+        "text": "total de canjes más ventana de validez - **Fecha**: 2026-09-15 · **Estado**: ACCEPTED —"
+    },
+    {
+        "id": "dec-promo-001",
+        "text": "y piso del apilado), que **sigue abierta**. **📌 Precisado el 2026-09-25, con OK del"
+    },
+    {
+        "id": "dec-promo-001",
+        "text": "una pausa sin fin (`F-8CB1-001`, paso 7). **📌 Precisado otra vez el 2026-09-25, con"
+    },
+    {
+        "id": "dec-promo-001",
+        "text": "aceptó agregando de quién es el mínimo. - **Origen**: `M-PROMO-01`."
+    },
+    {
+        "id": "dec-promo-002",
+        "text": "las verticales futuras\" se permite sin restricción - **Fecha**: 2026-09-15 · **Estado**: ACCEPTED ·"
+    },
+    {
+        "id": "dec-auth-001",
+        "text": "y el caché se invalida por `user` - **Fecha**: 2026-09-25 · **Estado**: ACCEPTED —"
+    },
+    {
+        "id": "dec-auth-001",
+        "text": "del owner del 2026-09-25, las recomendadas. - 📌 **Precisada el 2026-09-30, con OK del"
+    },
+    {
+        "id": "dec-auth-001",
+        "text": "ajeno existe sólo en estado público (D). - 📌 **Precisada el 2026-10-02, con OK del"
+    },
+    {
+        "id": "dec-auth-001",
+        "text": "`V/descomposicion.md` §2 y §4 (`V3`); `41-corte-del-mvp/10-decisiones-del-owner.md`, CB. ---"
+    },
+    {
+        "id": "dec-auth-002",
+        "text": "acción administrativa nunca tiene actor = sujeto - **Fecha**: 2026-09-26 · **Estado**: ACCEPTED —"
+    },
+    {
+        "id": "dec-auth-002",
+        "text": "`G5-1`, opción 1, la recomendada; `28-fase-9-vuelta-1/10-decisiones-del-owner.md`. - **📌 Precisado el 2026-09-26, con OK del"
+    },
+    {
+        "id": "dec-auth-002",
+        "text": "5 y su «NO cierra»; `27-cierre-Y-resto.md` §2). ---"
+    },
+    {
+        "id": "dec-auth-003",
+        "text": "con una acción propia, y nada más - **Fecha**: 2026-09-26 · **Estado**: ACCEPTED —"
+    },
+    {
+        "id": "dec-auth-003",
+        "text": "`G5-2`, opción 2, la recomendada; `28-fase-9-vuelta-1/10-decisiones-del-owner.md`. - 📌 **2026-09-27 (FASE 9 vuelta 2, `F-8V2A1-004`)**:"
+    },
+    {
+        "id": "dec-auth-003",
+        "text": "es la fila 26 de `V/19` §4. - 📌 **Precisada el 2026-09-28, con OK del"
+    },
+    {
+        "id": "dec-auth-003",
+        "text": "de `NUCLEO/08` §3 (revisión del owner, C7). - 📌 **Precisada el 2026-09-29, con OK del"
+    },
+    {
+        "id": "dec-auth-003",
+        "text": "acción 23, otra fila con su permiso. - 📌 **Precisada el 2026-09-30, con OK del"
+    },
+    {
+        "id": "dec-auth-003",
+        "text": "fichas y de cuentas (lote 3, C). - 📌 **Precisada otra vez el 2026-09-30, con"
+    },
+    {
+        "id": "dec-auth-003",
+        "text": "lote de la aplicación, owner 2026-09-30, L). ---"
+    },
+    {
+        "id": "dec-auth-004",
+        "text": "dueña de a lo sumo un Partner - **Fecha**: 2026-09-30 · **Estado**: ACCEPTED ·"
+    },
+    {
+        "id": "dec-auth-004",
+        "text": "lote del log el 2026-09-30 (lote AB). ---"
+    },
+    {
+        "id": "dec-auth-005",
+        "text": "excepción del guest en el paso 1 - **Fecha**: 2026-09-30 · **Estado**: ACCEPTED —"
+    },
+    {
+        "id": "dec-auth-005",
+        "text": "del log el 2026-09-30 (lote AB). - 📌 **Precisada el 2026-09-30, con OK del"
+    },
+    {
+        "id": "dec-auth-005",
+        "text": "cuenta que dar de baja (lote AI). - 📌 **Precisada el 2026-09-30, con OK del"
+    },
+    {
+        "id": "dec-auth-005",
+        "text": "para esos tipos, fuera de este programa. ---"
+    },
+    {
+        "id": "dec-data-001",
+        "text": "visible para el dueño, con dos avisos - **Fecha**: 2026-09-15 · **Estado**: ACCEPTED —"
+    },
+    {
+        "id": "dec-data-001",
+        "text": "los 180 sigue sin definirse (`M-DATA-01`, abierta). **📌 Cerrada el 2026-09-25 por `DEC-DATA-005`**: sólo"
+    },
+    {
+        "id": "dec-data-001",
+        "text": "el hard delete puede no eliminar nada. 5. Los dos avisos tapan el silencio"
+    },
+    {
+        "id": "dec-data-001",
+        "text": "que señalaba `R-DATA-01`. - **Origen**: `C-DATA-01`. - 📌 **Precisada el 2026-09-28, con OK del"
+    },
+    {
+        "id": "dec-data-002",
+        "text": "un invariante y no una desigualdad suelta - **Fecha**: 2026-09-21 · **Estado**: **SUPERSEDED EN"
+    },
+    {
+        "id": "dec-data-002",
+        "text": "palabra: es **que el reloj fuera monótono**. **📌 Precisado el 2026-09-25, con OK del"
+    },
+    {
+        "id": "dec-data-002",
+        "text": "hecho, y `G-R6-B` admite el escritor nuevo. 3. **El reinicio cuelga del HECHO, no"
+    },
+    {
+        "id": "dec-data-002",
+        "text": "del 2026-09-21 sobre sus dos mitades. - 📌 **Precisada el 2026-09-28, con OK del"
+    },
+    {
+        "id": "dec-data-002",
+        "text": "anuncia y `PB9` no borra antes (`DEC-DATA-008`). ---"
+    },
+    {
+        "id": "dec-data-003",
+        "text": "la rama simétrica a la del excedente - **Fecha**: 2026-09-21 · **Estado**: ACCEPTED ·"
+    },
+    {
+        "id": "dec-data-003",
+        "text": "eligió la 1, que era la recomendada. ---"
+    },
+    {
+        "id": "dec-data-004",
+        "text": "cupo y la lista de los […] - **Fecha**: 2026-09-23 · **Estado**: ACCEPTED —"
+    },
+    {
+        "id": "dec-data-004",
+        "text": "y la ratificación del owner del 2026-09-23. ---"
+    },
+    {
+        "id": "dec-data-005",
+        "text": "y sus datos no se borran nunca - **Fecha**: 2026-09-25 · **Estado**: ACCEPTED —"
+    },
+    {
+        "id": "dec-data-005",
+        "text": "punto (c) de la pendiente 4. - **📌 Precisado el 2026-09-25, con OK del"
+    },
+    {
+        "id": "dec-data-005",
+        "text": "antes»* una ficha, que ningún capítulo pide. - 📌 **2026-09-27 (FASE 9 vuelta 2, `R9`,"
+    },
+    {
+        "id": "dec-data-005",
+        "text": "la ficha se borra con el contenido. - 📌 **Precisada con OK del owner (FASE"
+    },
+    {
+        "id": "dec-data-005",
+        "text": "fila de lo que `PURGED` no toca. - 📌 **Precisada el 2026-09-28, con OK del"
+    },
+    {
+        "id": "dec-data-005",
+        "text": "pasos, y se corrige la FAQ (HOS-1393). - 📌 **Precisada el 2026-09-29, con OK del"
+    },
+    {
+        "id": "dec-data-005",
+        "text": "Cuenta sigue fuera de la épica (HOS-1393). - 📌 **Precisada el 2026-09-29, con OK del"
+    },
+    {
+        "id": "dec-data-005",
+        "text": "acciones vivas pasan de veintitrés a veinticuatro. - 📌 **Precisada el 2026-09-30, con OK del"
+    },
+    {
+        "id": "dec-data-005",
+        "text": "se anota quién la corrió y cuándo. - 📌 **Precisada el 2026-09-30, con OK del"
+    },
+    {
+        "id": "dec-data-005",
+        "text": "`trial` no tiene un camino al costado. ---"
+    },
+    {
+        "id": "dec-data-006",
+        "text": "el reloj de retención de sus fichas - **Fecha**: 2026-09-28 · **Estado**: ACCEPTED —"
+    },
+    {
+        "id": "dec-data-006",
+        "text": "lote del log y la matriz»*). - 📌 **Precisada el 2026-09-29, con OK del"
+    },
+    {
+        "id": "dec-data-006",
+        "text": "con el motivo `REANUDACIÓN_NO_APLICADA`, que ya existía. - 📌 **Precisada el 2026-09-29, con OK del"
+    },
+    {
+        "id": "dec-data-006",
+        "text": "el más tardío de los dos instantes. ---"
+    },
+    {
+        "id": "dec-data-007",
+        "text": "pedir un arreglo o bajar la ficha - **Fecha**: 2026-09-28 · **Estado**: ACCEPTED —"
+    },
+    {
+        "id": "dec-data-007",
+        "text": "lote del log y la matriz»*). - 📌 **Precisada el 2026-09-29, con OK del"
+    },
+    {
+        "id": "dec-data-007",
+        "text": "pedido, sin fila nueva en el catálogo. ---"
+    },
+    {
+        "id": "dec-data-008",
+        "text": "cuenta con la versión con que arrancó - **Fecha**: 2026-09-28 · **Estado**: ACCEPTED —"
+    },
+    {
+        "id": "dec-data-008",
+        "text": "lote del log y la matriz»*). - 📌 **Precisada el 2026-09-29, con OK del"
+    },
+    {
+        "id": "dec-data-008",
+        "text": "de borrado, no a 6 meses literales. - 📌 **Precisada el 2026-09-29, con OK del"
+    },
+    {
+        "id": "dec-data-008",
+        "text": "configurable, como los que esta decisión nombra. - 📌 **Precisada el 2026-09-29, con OK del"
+    },
+    {
+        "id": "dec-data-008",
+        "text": "fija los cinco sin valor escrito […]. - 📌 **Precisada el 2026-09-30, con OK del"
+    },
+    {
+        "id": "dec-data-008",
+        "text": "escrito los sigue fijando el owner […] del corte en `staging`. - 📌 **Precisada el 2026-09-30, con OK del"
+    },
+    {
+        "id": "dec-data-008",
+        "text": "**antes del merge de `V6`**, y no […] del corte en `staging`, como decían los"
+    },
+    {
+        "id": "dec-data-008",
+        "text": "se mergea, no recién en el ensayo. - 📌 **Precisada otra vez el 2026-10-01, con"
+    },
+    {
+        "id": "dec-data-008",
+        "text": "§2.11 y §4; `16-fase-7-del-paraguas.md` §4.6; `41-corte-del-mvp/10-decisiones-del-owner.md`, BD. - 📌 **Precisada otra vez el 2026-10-02, con"
+    },
+    {
+        "id": "dec-data-008",
+        "text": "*«Las fases posteriores»*; `41-corte-del-mvp/10-decisiones-del-owner.md`, BU y BV. - 📌 **Precisada otra vez el 2026-10-02, con"
+    },
+    {
+        "id": "dec-data-008",
+        "text": "(filas de `B2` y `B11`); `41-corte-del-mvp/10-decisiones-del-owner.md`, BX. ---"
+    },
+    {
+        "id": "dec-mail-001",
+        "text": "daño, y los correos falsos se anticipan - **Fecha**: 2026-09-16 · **Estado**: ACCEPTED —"
+    },
+    {
+        "id": "dec-mail-001",
+        "text": "cancelación no se ejecuta y se reintenta. **📌 Precisado el 2026-09-25, con OK del"
+    },
+    {
+        "id": "dec-mail-001",
+        "text": "sólo acá y ninguna transición lo nombraba. **📌 Precisado otra vez el 2026-09-25, con"
+    },
+    {
+        "id": "dec-mail-001",
+        "text": "—el correo todavía puede salir— sigue bloqueando.** **📌 Precisado una tercera vez el 2026-09-25,"
+    },
+    {
+        "id": "dec-mail-001",
+        "text": "lista); el owner la ratificó como estaba. 2. **Los correos falsos del proveedor se"
+    },
+    {
+        "id": "dec-arch-001",
+        "text": "híbridos: se versiona lo que tiene efecto - **Fecha**: 2026-09-15 · **Estado**: ACCEPTED ·"
+    },
+    {
+        "id": "dec-arch-002",
+        "text": "explícito por plan; sólo participan los vendibles - **Fecha**: 2026-09-15 · **Estado**: ACCEPTED ·"
+    },
+    {
+        "id": "dec-arch-003",
+        "text": "separan: el del trial se llama `TRIAL_EXPIRED` - **Fecha**: 2026-09-17 · **Estado**: ACCEPTED ·"
+    },
+    {
+        "id": "dec-arch-004",
+        "text": "con la pasarela detrás de un adaptador - **Fecha**: 2026-09-18 · **Estado**: ACCEPTED —"
+    },
+    {
+        "id": "dec-arch-004",
+        "text": "arriba, pero la elección es suya. - 📌 **Precisada el 2026-09-28, con OK del"
+    },
+    {
+        "id": "dec-arch-004",
+        "text": "vuelve `@qazuor/qzpay` (revisión del owner, 2026-09-28, N2). - 📌 **Precisada el 2026-09-29, con OK del"
+    },
+    {
+        "id": "dec-arch-004",
+        "text": "esas dependencias; la prohibición de `@qazuor/qzpay` sigue. - 📌 **Precisada el 2026-09-29, con OK del"
+    },
+    {
+        "id": "dec-arch-004",
+        "text": "al sacar el cobro viejo al principio. ---"
+    },
+    {
+        "id": "dec-arch-005",
+        "text": "en dos épicas autónomas: Verticales y Billing - **Fecha**: 2026-09-18 · **Estado**: ACCEPTED —"
+    },
+    {
+        "id": "dec-arch-005",
+        "text": "no aplicaba a la mitad del programa. **📌 Precisado el 2026-09-26, con OK del"
+    },
+    {
+        "id": "dec-arch-005",
+        "text": "cruza por contrato es la cobertura (`DEC-ARCH-006`). - **Las cifras que sostienen la decisión**:"
+    },
+    {
+        "id": "dec-arch-005",
+        "text": "segunda precisión suya, del mismo día. - 📌 **Precisada el 2026-09-30, con OK del"
+    },
+    {
+        "id": "dec-arch-005",
+        "text": "es que ahora tiene quién lo construye. ---"
+    },
+    {
+        "id": "dec-arch-006",
+        "text": "con dos implementaciones desde el día uno - **Fecha**: 2026-09-18 · **Estado**: ACCEPTED —"
+    },
+    {
+        "id": "dec-arch-006",
+        "text": "la condición B se puede cumplir. 4. **📌 Implicación (FASE 9 vuelta 1, owner"
+    },
+    {
+        "id": "dec-arch-006",
+        "text": "y queda declarado en `B/16` NO cierra. 5. **📌 Implicación (FASE 9 vuelta 1, owner"
+    },
+    {
+        "id": "dec-arch-006",
+        "text": "cita las preguntas del §4.1, sin cifra. - **Origen**: propuesta del owner del 2026-09-18"
+    },
+    {
+        "id": "dec-arch-006",
+        "text": "las tres defensas del punto 4. - **📌 Precisado el 2026-09-25, con OK del"
+    },
+    {
+        "id": "dec-arch-006",
+        "text": "entrada no se edita en su contenido. - 📌 **Precisado el 2026-09-27, con OK del owner (FASE 9 vuelta 2, `R5` y `Q-FECHA`)**: la fecha de fin de servicio de una vertical la calcula billing y verticales la pregunta por `finDeServicio` (`12-contrato…` §4.1), que en la implementación de arranque contesta `NINGUNA`; la real contesta de `vertical_discontinuation`, una fila de billing por vertical discontinuada, y verticales no guarda copia. El día del fin de servicio billing sólo avisa. `PB2`, el hecho 4 y la invalidación de la vertical los ejecuta el reconciliador diario de cobertura (`V/03` §9). `extenderTrial` sigue siendo la única escritura de billing en verticales. - 📌 **Precisada el 2026-09-28, con OK del"
+    },
+    {
+        "id": "dec-arch-006",
+        "text": "**Precisada el 2026-09-28, con OK del owner (FASE 9 vuelta 2, verificación, `V2-x` sobre `N-B-03`)**: `PB9` no borra una ficha de una vertical cuya `finDeServicio` ya pasó mientras la corrida del reconciliador no escribió el hecho 4, así que `finDeServicio` tiene tres lectores en verticales y no dos. - 📌 **Precisada el 2026-09-28, con OK del"
+    },
+    {
+        "id": "dec-arch-006",
+        "text": "de ida tiene una pregunta, `retenciónDetenida` (C14). - 📌 **Precisada el 2026-09-29, con OK del"
+    },
+    {
+        "id": "dec-arch-006",
+        "text": "cambia: importar el contrato nunca fue cruzar. - 📌 **Precisada el 2026-09-29, con OK del"
+    },
+    {
+        "id": "dec-arch-006",
+        "text": "contra los simuladores del contrato (`12-contrato…` §7.1). - 📌 **Precisada el 2026-09-29, con OK del"
+    },
+    {
+        "id": "dec-arch-006",
+        "text": "las dependencias entre épicas siguen en […]. - 📌 **Precisada el 2026-09-30, con OK del"
+    },
+    {
+        "id": "dec-arch-006",
+        "text": "la ficha sin cobertura por primera vez. - 📌 **Precisada el 2026-09-30, con OK del"
+    },
+    {
+        "id": "dec-arch-006",
+        "text": "La baja de cuenta espera hasta entonces. ---"
+    },
+    {
+        "id": "dec-arch-007",
+        "text": "liberan juntas; ninguna llega a producción sola - **Fecha**: 2026-09-18 · **Estado**: ACCEPTED —"
+    },
+    {
+        "id": "dec-arch-007",
+        "text": "la rama de integración del paraguas. - 📌 **Precisada el 2026-09-28, con OK del"
+    },
+    {
+        "id": "dec-arch-007",
+        "text": "para `main` hasta el corte (`D/16` §4.4). - 📌 **Precisada el 2026-09-29, con OK del"
+    },
+    {
+        "id": "dec-arch-007",
+        "text": "borra en un commit posterior al corte. - 📌 **Precisada el 2026-10-01, con OK del"
+    },
+    {
+        "id": "dec-arch-007",
+        "text": "el sistema viejo (`41-corte-del-mvp/00-propuesta.md` §5; `41-corte-del-mvp/10-decisiones-del-owner.md`, Y). ---"
+    },
+    {
+        "id": "dec-arch-008",
+        "text": "decide VERTICALES, y billing recibe un veredicto - **Fecha**: 2026-09-20 · **Estado**: ACCEPTED —"
+    },
+    {
+        "id": "dec-arch-008",
+        "text": "la conversación con el owner del 2026-09-20. ---"
+    },
+    {
+        "id": "dec-arch-009",
+        "text": "es rápido, el reconciliador es la red - **Fecha**: 2026-09-25 · **Estado**: ACCEPTED —"
+    },
+    {
+        "id": "dec-arch-009",
+        "text": "`R10`; elección del owner del 2026-09-25. - **📌 Precisado el 2026-09-25, con OK del"
+    },
+    {
+        "id": "dec-arch-009",
+        "text": "entrada no se edita en su contenido. ---"
+    },
+    {
+        "id": "dec-arch-010",
+        "text": "`NUCLEO/01` son capítulo de la unidad `B3` - **Fecha**: 2026-09-23 · **Estado**: ACCEPTED ·"
+    },
+    {
+        "id": "dec-arch-010",
+        "text": "eligió la 1, que era la recomendada. ---"
+    },
+    {
+        "id": "dec-arch-012",
+        "text": "Experiencia desaparece del repositorio, ni como histórico - **Fecha**: 2026-09-28 · **Estado**: ACCEPTED —"
+    },
+    {
+        "id": "dec-arch-012",
+        "text": "lote del log y la matriz»*). - 📌 **Precisada el 2026-09-29, con OK del"
+    },
+    {
+        "id": "dec-arch-012",
+        "text": "el OK del owner a esa reescritura. - 📌 **Precisada el 2026-09-29, con OK del"
+    },
+    {
+        "id": "dec-arch-012",
+        "text": "valor del tipo de partner, también `alliance_leads.partner_type`. - 📌 **Precisada el 2026-09-30, con OK del"
+    },
+    {
+        "id": "dec-arch-012",
+        "text": "compara con la base cortada (G, `BD-025`). ---"
+    },
+    {
+        "id": "dec-arch-013",
+        "text": "base, y cambia sólo por acciones administrativas - **Fecha**: 2026-09-28 · **Estado**: ACCEPTED —"
+    },
+    {
+        "id": "dec-arch-013",
+        "text": "decidió explícitamente (`30-revision-del-owner/14-…` §3, punto 49). - 📌 **Precisada el 2026-09-29, con OK del"
+    },
+    {
+        "id": "dec-arch-013",
+        "text": "código; los valores viven en la base. - 📌 **Precisada el 2026-09-30, con OK del"
+    },
+    {
+        "id": "dec-arch-013",
+        "text": "corte entra en la rama de aborto. - 📌 **Precisada el 2026-09-30, con OK del"
+    },
+    {
+        "id": "dec-arch-013",
+        "text": "owner **antes del merge de `V6`**, no […], porque la migración que falla si alguno"
+    },
+    {
+        "id": "dec-arch-013",
+        "text": "3 D; ver el 📌 de `DEC-DATA-008`). - 📌 **Precisada una vez más el 2026-09-30,"
+    },
+    {
+        "id": "dec-arch-013",
+        "text": "la aplicación, owner 2026-09-30, E y B). ---"
+    },
+    {
+        "id": "dec-arch-014",
+        "text": "la épica, antes de construir el nuevo - **Fecha**: 2026-09-29 · **Estado**: ACCEPTED —"
+    },
+    {
+        "id": "dec-arch-014",
+        "text": "N, letra A); aplicada en `30-revision-del-owner/34-aplicacion-lote-n.md`. - 📌 **Precisada el 2026-09-29, con OK del"
+    },
+    {
+        "id": "dec-arch-014",
+        "text": "§4.6; las dos descomposiciones, §2 a §4. - 📌 **Precisada el 2026-09-29, con OK del"
+    },
+    {
+        "id": "dec-arch-014",
+        "text": "`B/09` §3; `12-contrato-de-cobertura.md` §7.1; las dos descomposiciones. - 📌 **Precisada el 2026-09-30, con OK del"
+    },
+    {
+        "id": "dec-arch-014",
+        "text": "a 12 y 14. `U2` no suma.)* - 📌 **Precisada el 2026-09-30, con OK del"
+    },
+    {
+        "id": "dec-arch-014",
+        "text": "del contrato que crea `U1` (P-C) sigue. - 📌 **Precisada una vez más el 2026-09-30,"
+    },
+    {
+        "id": "dec-arch-014",
+        "text": "la aplicación, owner 2026-09-30, H y E). - 📌 **Precisada el 2026-09-30, con OK del"
+    },
+    {
+        "id": "dec-arch-014",
+        "text": "lote de la aplicación, owner 2026-09-30, K). - 📌 **Precisada el 2026-09-30, con OK del"
+    },
+    {
+        "id": "dec-arch-014",
+        "text": "6 y 7, verificación, 2026-09-30, F12). […] ---"
+    },
+    {
+        "id": "dec-arch-015",
+        "text": "El package del contrato se llama `@repo/billing-verticals-contract` - **Fecha**: 2026-09-30 · **Estado**: ACCEPTED ·"
+    },
+    {
+        "id": "dec-arch-015",
+        "text": "1 de la segunda tanda, la recomendada. ---"
+    },
+    {
+        "id": "dec-arch-016",
+        "text": "una condición que se comprueba desde afuera - **Fecha**: 2026-09-30 · **Estado**: ACCEPTED —"
+    },
+    {
+        "id": "dec-arch-016",
+        "text": "del 5, con la tarjeta del owner y un monto aprobado de antemano (un checkout real, su devolución, el correo"
+    },
+    {
+        "id": "dec-arch-016",
+        "text": "eligió en las cinco la recomendada. - 📌 **Precisada el 2026-10-01, con OK del"
+    },
+    {
+        "id": "dec-arch-016",
+        "text": "5 no cambian (`16-fase-7-del-paraguas.md` §4.7; `41-corte-del-mvp/10-decisiones-del-owner.md`, Y). - 📌 **Precisada otra vez el 2026-10-02, con"
+    },
+    {
+        "id": "dec-arch-016",
+        "text": "aborto) y §4.7, momento 3; `41-corte-del-mvp/10-decisiones-del-owner.md`, BQ. ---"
+    },
+    {
+        "id": "dec-arch-017",
+        "text": "en fases aditivas sobre el sistema nuevo - **Fecha**: 2026-10-01 · **Estado**: ACCEPTED —"
+    },
+    {
+        "id": "dec-arch-017",
+        "text": "owner eligió en todas la recomendada. - 📌 **Precisada el 2026-10-01, con OK del"
+    },
+    {
+        "id": "dec-arch-017",
+        "text": "§4.6 y §4.7; `V/descomposicion.md` §2.14; `B/descomposicion.md` §2.12). - 📌 **Precisada el 2026-10-01, con OK del"
+    },
+    {
+        "id": "dec-arch-017",
+        "text": "no gana flechas (`16-fase-7-del-paraguas.md` §4.6; `B/descomposicion.md` §2.12). - 📌 **Precisada el 2026-10-01, con OK del"
+    },
+    {
+        "id": "dec-arch-017",
+        "text": "(`16-fase-7-del-paraguas.md` §4.7, *«Las fases posteriores»*; `41-corte-del-mvp/10-decisiones-del-owner.md`, AW). - 📌 **Precisada otra vez el 2026-10-01, con"
+    },
+    {
+        "id": "dec-arch-017",
+        "text": "`41-corte-del-mvp/aristas.py`; `41-corte-del-mvp/10-decisiones-del-owner.md`, BC, BF, BG y BH. - 📌 **Precisada otra vez el 2026-10-01, con"
+    },
+    {
+        "id": "dec-arch-017",
+        "text": "(fila de `B3`); `41-corte-del-mvp/10-decisiones-del-owner.md`, BI y BJ. - 📌 **Precisada otra vez el 2026-10-02, con"
+    },
+    {
+        "id": "dec-arch-017",
+        "text": "`41-corte-del-mvp/10-decisiones-del-owner.md`, BL, BN, BO, BP y BR. - 📌 **Precisada otra vez el 2026-10-02, con"
+    },
+    {
+        "id": "dec-arch-017",
+        "text": "(`B7` y `B9a`); `NUCLEO/02` §2.6; `41-corte-del-mvp/10-decisiones-del-owner.md`, BW. - 📌 **Precisada otra vez el 2026-10-02, con"
+    },
+    {
+        "id": "dec-arch-017",
+        "text": "`B5`, `B7`, `B13a`); `41-corte-del-mvp/10-decisiones-del-owner.md`, BY y CA. - 📌 **Precisada otra vez el 2026-10-02, con"
+    },
+    {
+        "id": "dec-arch-017",
+        "text": "§2.12 y §4 (`B10`); `41-corte-del-mvp/aristas.py`; `41-corte-del-mvp/10-decisiones-del-owner.md`, CD. - 📌 **Precisada otra vez el 2026-10-02, con"
+    },
+    {
+        "id": "dec-arch-017",
+        "text": "§2, §2.12 y §4 (`B10`); `41-corte-del-mvp/10-decisiones-del-owner.md`, CE. - 📌 **Precisada otra vez el 2026-10-02, con"
+    },
+    {
+        "id": "dec-arch-017",
+        "text": "`B13a`); `B/20` §5.1; `41-corte-del-mvp/10-decisiones-del-owner.md`, CF y CG. - 📌 **Precisada otra vez el 2026-10-02, con"
+    },
+    {
+        "id": "dec-arch-017",
+        "text": "`B4`, `B11`); `41-corte-del-mvp/aristas.py`; `41-corte-del-mvp/10-decisiones-del-owner.md`, CH y CI. - 📌 **Precisada otra vez el 2026-10-02, con"
+    },
+    {
+        "id": "dec-arch-017",
+        "text": "cero violaciones. Dónde: `V/descomposicion.md` §2.13; `41-corte-del-mvp/10-decisiones-del-owner.md`, CJ. ---"
+    },
+    {
+        "id": "dec-mig-001",
+        "text": "cinco relaciones vivas, cero código de migración - **Fecha**: 2026-09-15 · **Estado**: **SUPERSEDED EN"
+    },
+    {
+        "id": "dec-mig-001",
+        "text": "la transición. - **Origen**: `BD-MIG-01` (BLOCKING). - 📌 **Precisada el 2026-09-28, con OK del"
+    },
+    {
+        "id": "dec-mig-002",
+        "text": "en el sistema actual durante el rediseño - **Fecha**: 2026-09-19 · **Estado**: **SUPERSEDED EN"
+    },
+    {
+        "id": "dec-mig-002",
+        "text": "tomando altas en el sistema actual, […]. **📌 Precisado el 2026-09-26, con OK del"
+    },
+    {
+        "id": "dec-mig-002",
+        "text": "rediseño, y el corte es su final. - **Motivo**: el owner declara que **van"
+    },
+    {
+        "id": "dec-mig-002",
+        "text": "como registrada y **no lo estaba**. - 📌 **Precisada el 2026-09-30, con OK del"
+    },
+    {
+        "id": "dec-mig-002",
+        "text": "de 30 minutos y los recuentos repetidos. - 📌 **Precisada otra vez el 2026-09-30, con"
+    },
+    {
+        "id": "dec-mig-002",
+        "text": "ver los 📌 de `DEC-MIG-003` y `DEC-MIG-005`). ---"
+    },
+    {
+        "id": "dec-mig-003",
+        "text": "tenga algo vivo se suscribe de nuevo - **Fecha**: 2026-09-19 · **Estado**: ACCEPTED —"
+    },
+    {
+        "id": "dec-mig-003",
+        "text": "pudo cancelar, el corte no avanza. - **📌 Precisado el 2026-09-24, con OK del"
+    },
+    {
+        "id": "dec-mig-003",
+        "text": "despliegue falla […]. Detalle en `16-fase-7-del-paraguas.md` §4.2. - **📌 Precisado el 2026-09-25, con OK del"
+    },
+    {
+        "id": "dec-mig-003",
+        "text": "entrada no se edita en su contenido. - 📌 **Precisado el 2026-09-27, con OK del"
+    },
+    {
+        "id": "dec-mig-003",
+        "text": "no se mueve. - […] - […] - 📌 **Precisado el 2026-09-28, con OK del"
+    },
+    {
+        "id": "dec-mig-003",
+        "text": "que cuentan para el tope del borde. - 📌 **Precisado el 2026-09-29, con OK del"
+    },
+    {
+        "id": "dec-mig-003",
+        "text": "de no retorno no se mueve. - 📌 **Precisado el 2026-09-29, con OK del"
+    },
+    {
+        "id": "dec-mig-003",
+        "text": "con OK del owner (verificación corta, lote P-A)**: la ruta de avisos la cierra un Worker del borde que contesta `500` a todo pedido, con una cabecera propia, y no una regla de bloqueo, que contesta un `4xx` cuyo reintento no está medido. Se le asigna la ruta antes de apagar el contenedor viejo y se le quita al final del paso 4, las dos veces verificado desde afuera; en la rama de aborto, cerrar y abrir la ruta son lo mismo. Vive versionado con el script del corte y se archiva con él; lo deja listo el ensayo del paso 0 en `staging`, que mide también cuánto dura el cierre. - 📌 **Precisado el 2026-09-30, con OK del"
+    },
+    {
+        "id": "dec-mig-003",
+        "text": "de la plataforma paren esas horas (E). - 📌 **Precisado el 2026-09-30, con OK del"
+    },
+    {
+        "id": "dec-mig-003",
+        "text": "1 de la FASE 5; S-02, S-04). - 📌 **Precisado una vez más el 2026-09-30,"
+    },
+    {
+        "id": "dec-mig-003",
+        "text": "aplicación, owner 2026-09-30, A, C y D). - 📌 **Precisado el 2026-09-30, con OK del"
+    },
+    {
+        "id": "dec-mig-003",
+        "text": "la aplicación, segunda tanda, owner 2026-09-30, P). - **⚠️ Condición de caducidad**: `DEC-MIG-002` decidió"
+    },
+    {
+        "id": "dec-mig-003",
+        "text": "`D-25` y `D-26`, sobre el racimo `R5`. ---"
+    },
+    {
+        "id": "dec-mig-005",
+        "text": "el usuario, sus preferencias y sus fichas - **Fecha**: 2026-09-25 · **Estado**: ACCEPTED —"
+    },
+    {
+        "id": "dec-mig-005",
+        "text": "la propuesta de registro (`26-fase-9-completa/14` §2.3). - 📌 **Precisado el 2026-09-27, con OK del owner (FASE 9 vuelta 2, `R2`, `R21` y `R21-b`)**: el cobro sobre una lápida del corte no se devuelve sólo si es del día del corte (`date_created` del registro). Uno posterior abre `PAGO_TARDÍO_RECHAZADO` con la propuesta de devolverlo. La población se lee de la re-verificación del día del corte, y un detector corre después del corte, con dueño y fecha (`B/21` «NO cierra»). El titular de una autorización que sólo conoce el proveedor entra a la población a avisar: antes del aviso previo, una pasada de sólo lectura sobre el proveedor lista las autorizaciones vivas con su `payer_email`, y el 1b cancela después. Quien aparezca recién en el manifiesto del 1b recibe el aviso después de la cancelación, y lo que pierde se declara como en `G1-4`. - 📌 **Precisado con OK del owner (FASE 9 vuelta 2, verificación: `V2-a` el 2026-09-27; `V2-m` y `V2-r` el 2026-09-28)**: el día del cobro se lee en la fecha del pago que aprobó el registro, leído por id, y no en el `date_created` del registro, que no se mueve con los reintentos. Qué campo del pago la trae se mide en el paso 0 del corte (`EX-48`), y el 1b no arranca sin ese dato: si ningún campo es confiable, vuelve al owner antes del corte. Y el paso 0 cuenta las suscripciones anuales vivas del viejo (`EX-50`), porque sobre ellas la segunda corrida del detector puede caer hasta un año después del corte. - 📌 **Precisada el 2026-09-28, con OK del"
+    },
+    {
+        "id": "dec-mig-005",
+        "text": "dueño con una ficha a la vista. - 📌 **Precisada el 2026-09-29, con OK del owner (verificación corta, lote P-B)**: La primera corrida del detector, el día siguiente al corte, lista también, por cada lápida del corte, los registros de cobro que el proveedor da aprobados con un pago del día del corte y que no tienen `payment`, con la misma lectura del barrido, sin abrir marca ni asentar. Es lo que ve el cobro cuyo aviso se perdió durante el cierre de la ruta de avisos, que el barrido no compara sobre una lápida del corte; la regla de `G3-1` no cambia, y la lista suma titulares a la llamada. - 📌 **Precisada el 2026-09-30, con OK del"
+    },
+    {
+        "id": "dec-mig-005",
+        "text": "va a haber antes del corte. […] - 📌 **Precisada el 2026-09-30, con OK del"
+    },
+    {
+        "id": "dec-mig-005",
+        "text": "usuario y sus preferencias se siguen conservando. - 📌 **Precisada una vez más el 2026-09-30,"
+    },
+    {
+        "id": "dec-mig-005",
+        "text": "ver los 📌 de `DEC-MIG-002` y `DEC-MIG-003`). ---"
+    },
+    {
+        "id": "dec-mig-006",
+        "text": "arranca a su dueño una prueba activa - **Fecha**: 2026-09-28 · **Estado**: ACCEPTED —"
+    },
+    {
+        "id": "dec-mig-006",
+        "text": "lote del log y la matriz»*). - 📌 **Precisada el 2026-09-29, con OK del owner (revisión del owner, casos vecinos, casos 5"
+    },
+    {
+        "id": "dec-mig-006",
+        "text": "del owner, casos vecinos, casos 5 y 6)**: En el paso 0 se toman dos recuentos sobre la cartera vieja: si el sistema viejo servía alguna ficha que el corte hace nacer `PURGED` o en `DRAFT`, y si da cero el paso 4c se saltea; y cuántos dueños tienen más de una ficha a la vista en la misma vertical, que no es gate y vuelve al owner si da más de cero. - 📌 **Precisada el 2026-09-30, con OK del"
+    },
+    {
+        "id": "dec-mig-006",
+        "text": "prueba y el grant del 3b (S-13). - 📌 **Precisada otra vez el 2026-09-30, con"
+    },
+    {
+        "id": "dec-mig-006",
+        "text": "la aplicación, owner 2026-09-30, B y D). ---"
+    },
+    {
+        "id": "dec-mig-007",
+        "text": "resto a cargo del owner, por privado - **Fecha**: 2026-09-30 · **Estado**: ACCEPTED ·"
+    },
+    {
+        "id": "dec-mig-007",
+        "text": "lote 1 de la FASE 5 (`38-fase-5/00-consolidado.md`). ---"
+    },
+    {
+        "id": "dec-grant-001",
+        "text": "de inmediato, sin reembolso; revocar no restaura - **Fecha**: 2026-09-15 · **Estado**: ACCEPTED ·"
+    },
+    {
+        "id": "dec-grant-002",
+        "text": "cortesía temporal también es exclusiva de SUPER_ADMIN - **Fecha**: 2026-09-15 · **Estado**: ACCEPTED ·"
+    },
+    {
+        "id": "dec-grant-003",
+        "text": "proveedor, y el servicio lo sostenemos nosotros - **Fecha**: 2026-09-16 · **Estado**: ACCEPTED —"
+    },
+    {
+        "id": "dec-grant-003",
+        "text": "lo damos igual, que es el punto. **📌 Precisado el 2026-09-25, con OK del"
+    },
+    {
+        "id": "dec-grant-003",
+        "text": "que es nuestro, y sigue en días. - **Pendiente de medir, y no bloquea**:"
+    },
+    {
+        "id": "dec-grant-004",
+        "text": "y sobre una pausa no se otorga - **Fecha**: 2026-09-16 · **Estado**: ACCEPTED —"
+    },
+    {
+        "id": "dec-grant-004",
+        "text": "**se SUMAN los días, no se reemplazan** (**📌 desde el 2026-09-25 se suman MESES**: la"
+    },
+    {
+        "id": "dec-grant-004",
+        "text": "es en meses enteros, ver `DEC-GRANT-003` impl. 6), y el aviso dice la **fecha de"
+    },
+    {
+        "id": "dec-grant-005",
+        "text": "lee su versión vigente, y lleva trinquete - **Fecha**: 2026-09-19 · **Estado**: ACCEPTED ·"
+    },
+    {
+        "id": "dec-grant-005",
+        "text": "**Origen**: `15-fase-9/07-decisiones-del-owner.md` `D-05`, sobre el racimo `R2`. ---"
+    },
+    {
+        "id": "dec-grant-006",
+        "text": "§34 del PDR queda desviado a propósito - **Fecha**: 2026-09-21 · **Estado**: ACCEPTED ·"
+    },
+    {
+        "id": "dec-grant-006",
+        "text": "las tres opciones que se le presentaron. ---"
+    },
+    {
+        "id": "dec-grant-007",
+        "text": "se re-emite sobre la sucesora cuando autoriza - **Fecha**: 2026-09-21 · **Estado**: ACCEPTED —"
+    },
+    {
+        "id": "dec-grant-007",
+        "text": "la 2, que era la recomendada. - 📌 **Precisada el 2026-09-27, con OK del"
+    },
+    {
+        "id": "dec-grant-007",
+        "text": "N cobros que caen desde ese día. ---"
+    },
+    {
+        "id": "dec-grant-008",
+        "text": "guarda MOTIVO, además de fecha y firmante - **Fecha**: 2026-09-21 · **Estado**: ACCEPTED ·"
+    },
+    {
+        "id": "dec-grant-008",
+        "text": "eligió la 1, que era la recomendada. ---"
+    },
+    {
+        "id": "dec-grant-009",
+        "text": "garantiza la base, no los nueve consumidores - **Fecha**: 2026-09-21 · **Estado**: ACCEPTED ·"
+    },
+    {
+        "id": "dec-grant-009",
+        "text": "eligió la 1, que era la recomendada. ---"
+    },
+    {
+        "id": "dec-grant-011",
+        "text": "nadie completó se CIERRA, y se declara - **Fecha**: 2026-09-23 · **Estado**: ACCEPTED ·"
+    },
+    {
+        "id": "dec-grant-011",
+        "text": "eligió la 1, que era la recomendada. ---"
+    },
+    {
+        "id": "dec-grant-012",
+        "text": "condición, no a secas y no escondida - **Fecha**: 2026-09-23 · **Estado**: ACCEPTED ·"
+    },
+    {
+        "id": "dec-grant-012",
+        "text": "eligió la 1, que era la recomendada. ---"
+    },
+    {
+        "id": "dec-grant-013",
+        "text": "de una cortesía diferida del mismo beneficiario - **Fecha**: 2026-09-23 · **Estado**: ACCEPTED ·"
+    },
+    {
+        "id": "dec-grant-013",
+        "text": "eligió la 1, que era la recomendada. ---"
+    },
+    {
+        "id": "dec-grant-014",
+        "text": "es una transición y no una persona - **Fecha**: 2026-09-23 · **Estado**: ACCEPTED ·"
+    },
+    {
+        "id": "dec-grant-014",
+        "text": "eligió la 1, que era la recomendada. ---"
+    },
+    {
+        "id": "dec-legal-001",
+        "text": "ARCA, sin fecha ni disparador de revisión - **Fecha**: 2026-09-15 · **Estado**: ACCEPTED —"
+    },
+    {
+        "id": "dec-legal-001",
+        "text": "a quién cobrarle. - **Origen**: `O-LEGAL-01`. - 📌 **2026-09-27 (FASE 9 vuelta 2, `R25`,"
+    },
+    {
+        "id": "dec-test-001",
+        "text": "escribe; el del orden de escrituras NO - **Fecha**: 2026-09-21 · **Estado**: ACCEPTED —"
+    },
+    {
+        "id": "dec-test-001",
+        "text": "`G8` vive en `V/20` §2 — medido.)* **📌 Precisado el 2026-09-26, con OK del"
+    },
+    {
+        "id": "dec-test-001",
+        "text": "13 en billing por columna de unidad). - **El costo aceptado**: los guards de"
+    },
+    {
+        "id": "dec-test-001",
+        "text": "es otra cosa y no caduca. > > **Por qué se ancla en vez"
+    },
+    {
+        "id": "dec-test-001",
+        "text": "eligió la 1 **contra** la recomendada. - 📌 **Enmendada el 2026-09-27, con OK del"
+    },
+    {
+        "id": "dec-test-001",
+        "text": "19 de verticales y 13 de billing. - 📌 **Precisada el 2026-09-28, con OK del"
+    },
+    {
+        "id": "dec-test-001",
+        "text": "verticales y 15 de billing (`DEC-ARCH-013`, `DEC-DATA-008`). - 📌 **Precisada el 2026-09-29, con OK del"
+    },
+    {
+        "id": "dec-test-001",
+        "text": "`inactiva_desde`. El catálogo sigue en […] guards. - 📌 **Precisada el 2026-09-30, con OK del"
+    },
+    {
+        "id": "dec-test-001",
+        "text": "lote de la aplicación, owner 2026-09-30, E). - 📌 **Precisada el 2026-09-30, con OK del"
+    },
+    {
+        "id": "dec-test-001",
+        "text": "el 📌 anterior dejaba para el owner. ---"
+    },
+    {
+        "id": "dec-test-002",
+        "text": "unidad, y no lo vigila un guard - **Fecha**: 2026-09-23 · **Estado**: ACCEPTED —"
+    },
+    {
+        "id": "dec-test-002",
+        "text": "la 3, que era la recomendada. - 📌 **Precisada el 2026-09-30, con OK del"
+    },
+    {
+        "id": "dec-test-002",
+        "text": "lote de la aplicación, owner 2026-09-30, M). ---"
+    },
+    {
+        "id": "dec-test-003",
+        "text": "y una batería vigila al proveedor real - **Fecha**: 2026-09-28 · **Estado**: ACCEPTED —"
+    },
+    {
+        "id": "dec-test-003",
+        "text": "lote del log y la matriz»*). - 📌 **Precisada el 2026-09-29, con OK del"
+    },
+    {
+        "id": "dec-test-003",
+        "text": "ofrece compare-and-swap, y la cubre el barrido. - 📌 **Precisada el 2026-09-29, con OK del"
+    },
+    {
+        "id": "dec-test-003",
+        "text": "`payment` llega una vez por cada canal. - 📌 **Precisada el 2026-09-30, con OK del"
+    },
+    {
+        "id": "dec-test-003",
+        "text": "(FASES 6 y 7, verificación, 2026-09-30, F4). ---"
+    },
+    {
+        "id": "dec-conc-001",
+        "text": "cancela solo pero se reembolsa con confirmación - **Fecha**: 2026-09-16 · **Estado**: ACCEPTED —"
+    },
+    {
+        "id": "dec-conc-001",
+        "text": "· §51 · §52 · `M-CONC-01`. - 📌 **Precisada el 2026-09-29, con OK del"
+    },
+    {
+        "id": "dec-conc-001",
+        "text": "es que un rechazo cierra su pedido. - 📌 **Precisada el 2026-09-29, con OK del"
+    },
+    {
+        "id": "dec-conc-001",
+        "text": "nuevo: la primera orden pudo haberse aprobado. - 📌 **Precisada el 2026-09-30, con OK del"
+    },
+    {
+        "id": "dec-conc-001",
+        "text": "recurrente vivo igual sobre el mismo objetivo. - 📌 **Precisada el 2026-10-02 (verificación ciega de"
+    },
+    {
+        "id": "dec-conc-002",
+        "text": "por webhook, y sólo repara el vínculo - **Fecha**: 2026-09-16 · **Estado**: ACCEPTED —"
+    },
+    {
+        "id": "dec-conc-002",
+        "text": "emite `RECONCILIATION_REQUIRED` y la mira una persona. **📌 Precisado el 2026-09-25, con OK del"
+    },
+    {
+        "id": "dec-conc-002",
+        "text": "El texto de arriba no se edita.)* **📌 Precisado otra vez el 2026-09-25, con"
+    },
+    {
+        "id": "dec-conc-002",
+        "text": "divergencia. Mientras tanto `S6` sigue sin actuar. **📌 Precisado el 2026-09-26, con OK del"
+    },
+    {
+        "id": "dec-conc-002",
+        "text": "3 días marca (`B/09` §2.4 y §3). **📌 Precisado el 2026-09-30, con OK del"
+    },
+    {
+        "id": "dec-conc-002",
+        "text": "`external_reference` del segundo 📌 no cambia (S-49). **📌 Precisado otra vez el 2026-09-30, con"
+    },
+    {
+        "id": "dec-conc-002",
+        "text": "lote de la aplicación, owner 2026-09-30, I). - **Motivo**: - La parte 1 **no"
+    },
+    {
+        "id": "dec-conc-003",
+        "text": "estado y pasa a ser una MARCA - **Fecha**: 2026-09-19 · **Estado**: ACCEPTED ·"
+    },
+    {
+        "id": "dec-conc-003",
+        "text": "`D-11` y `D-12`, sobre el racimo `R1`. ---"
+    },
+    {
+        "id": "dec-rf-001",
+        "text": "fuera de alcance hasta la consulta legal - **Fecha**: 2026-09-16 · **Estado**: ACCEPTED —"
+    },
+    {
+        "id": "dec-rf-001",
+        "text": "duplicado, un error nuestro— **no cancela nada**. 📌 **Precisada el 2026-09-27, con OK del"
+    },
+    {
+        "id": "dec-rf-001",
+        "text": "corridos; si no, va al motivo 14. 2. **El pedido se registra y se"
+    },
+    {
+        "id": "dec-rf-001",
+        "text": "total. Está medido que ese mensaje miente. **📌 Precisado el 2026-09-26, con OK del"
+    },
+    {
+        "id": "dec-rf-001",
+        "text": "**nunca lo supera** (`D11`; `B/03` §6.1, `RF2`). 4. **El botón de arrepentimiento queda FUERA"
+    },
+    {
+        "id": "dec-rf-001",
+        "text": "hasta que lo consulte con un abogado. **📌 Precisado el 2026-09-26, con OK del"
+    },
+    {
+        "id": "dec-rf-001",
+        "text": "lo que el botón va a llamar. **📌 Y sale también de `PAUSED`** (owner"
+    },
+    {
+        "id": "dec-rf-001",
+        "text": "si la fila es predecesora, dispara `S18`. - **Motivo de la parte 1**: está"
+    },
+    {
+        "id": "dec-rf-001",
+        "text": "↔ proveedor · §54 · `M-LEGAL-01`. - 📌 **Precisada el 2026-09-28, con OK del"
+    },
+    {
+        "id": "dec-rf-001",
+        "text": "6 no abre marca sobre ese pago. - 📌 **Precisada el 2026-09-30, con OK del"
+    },
+    {
+        "id": "dec-rf-002",
+        "text": "persona: no hay operaciones automáticas sobre dinero - **Fecha**: 2026-09-21 · **Estado**: ACCEPTED ·"
+    },
+    {
+        "id": "dec-rf-002",
+        "text": "las dos opciones que se le presentaron. ---"
+    },
+    {
+        "id": "dec-rf-003",
+        "text": "al listado con el default en DEVOLVER - **Fecha**: 2026-09-21 · **Estado**: ACCEPTED —"
+    },
+    {
+        "id": "dec-rf-003",
+        "text": "la 1, que era la recomendada. - 📌 **Precisada el 2026-09-28, con OK del"
+    },
+    {
+        "id": "dec-rf-003",
+        "text": "sigue siendo una, con sus tres filas. ---"
+    },
+    {
+        "id": "dec-rf-004",
+        "text": "es la que el cliente no causó - **Fecha**: 2026-09-23 · **Estado**: ACCEPTED —"
+    },
+    {
+        "id": "dec-rf-004",
+        "text": "la 2, que era la recomendada. - 📌 **Precisada el 2026-09-28, con OK del"
+    },
+    {
+        "id": "dec-rf-004",
+        "text": "lado de la regla sólo `S17`. […] - 📌 **Precisada el 2026-09-28, con OK del"
+    },
+    {
+        "id": "dec-rf-004",
+        "text": "y el motivo 15 se llama `COMPLEMENTO_CON_PERÍODO_COBRADO_POR_REVOCACIÓN`. ---"
+    },
+    {
+        "id": "dec-rf-005",
+        "text": "y no lo copia en la marca - **Fecha**: 2026-09-23 · **Estado**: ACCEPTED ·"
+    },
+    {
+        "id": "dec-rf-005",
+        "text": "eligió la 3, que era la recomendada. ---"
+    },
+    {
+        "id": "dec-rf-006",
+        "text": "el default vuelve a ser por motivo - **Fecha**: 2026-09-23 · **Estado**: ACCEPTED —"
+    },
+    {
+        "id": "dec-rf-006",
+        "text": "es lo que lo vuelve comprobable. - 📌 **2026-09-27 (FASE 9 vuelta 2, `R4`"
+    },
+    {
+        "id": "dec-rf-006",
+        "text": "Son veinticuatro motivos y nueve devuelven plata. - 📌 **Precisada con OK del owner (FASE"
+    },
+    {
+        "id": "dec-rf-006",
+        "text": "sin devolver, y no hay motivo nuevo. - 📌 **Precisada el 2026-09-28, con OK del"
+    },
+    {
+        "id": "dec-rf-006",
+        "text": "y el motivo 15 se llama `COMPLEMENTO_CON_PERÍODO_COBRADO_POR_REVOCACIÓN`. ---"
+    },
+    {
+        "id": "dec-rf-007",
+        "text": "plazo del proveedor, la reparación es manual - **Fecha**: 2026-09-24 · **Estado**: ACCEPTED —"
+    },
+    {
+        "id": "dec-rf-007",
+        "text": "puso sujeto y fecha a la fila. ---"
+    },
+    {
+        "id": "dec-rf-008",
+        "text": "se asienta con una acción administrativa nueva - **Fecha**: 2026-09-25 · **Estado**: ACCEPTED —"
+    },
+    {
+        "id": "dec-rf-008",
+        "text": "catálogo pasa de trece a catorce acciones.** **📌 Recontado el 2026-09-26, con OK del"
+    },
+    {
+        "id": "dec-rf-008",
+        "text": "de arriba es exacto para su fecha. **📌 Recontado el 2026-09-27, con OK del owner (FASE 9 vuelta 2, owner 2026-09-27, `Q-ACC16`).** El catálogo tiene **dieciséis** acciones: la decimosexta es *«discontinuar una vertical»*, de `SUPER_ADMIN`, auditada y con confirmación, que orquesta las dos mitades del acto de `DEC-ARCH-011`. Las líneas que cuantifican dicen dieciséis. - **Motivo**: es plata que sale, en"
+    },
+    {
+        "id": "dec-rf-008",
+        "text": "del owner del 2026-09-25, la recomendada. - 📌 **Precisada el 2026-09-28, con OK del"
+    },
+    {
+        "id": "dec-rf-008",
+        "text": "las cinco del catálogo (N1, C9, `L1-f`). - 📌 **Precisada el 2026-09-29, con OK del"
+    },
+    {
+        "id": "dec-rf-008",
+        "text": "y la unidad las confirmó el owner. - 📌 **Precisada el 2026-09-30, con OK del"
+    },
+    {
+        "id": "dec-rf-008",
+        "text": "devuelve la misma devolución con su id. - 📌 **Precisada otra vez el 2026-09-30, con"
+    },
+    {
+        "id": "dec-rf-008",
+        "text": "lote de la aplicación, owner 2026-09-30, J). - 📌 **Precisada el 2026-09-30, con OK del"
+    },
+    {
+        "id": "dec-rf-008",
+        "text": "la aplicación, segunda tanda, owner 2026-09-30, M). ---"
+    },
+    {
+        "id": "dec-obs-001",
+        "text": "un correo AGREGADO, no uno por evento - **Fecha**: 2026-09-17 · **Estado**: ACCEPTED —"
+    },
+    {
+        "id": "dec-obs-001",
+        "text": "capítulo 08 de la Master Spec. - 📌 **Precisada con OK del owner (FASE"
+    },
+    {
+        "id": "dec-obs-001",
+        "text": "vertical queda visible ahí, sin regla nueva. - 📌 **Precisada el 2026-09-28, con OK del"
+    },
+    {
+        "id": "dec-obs-001",
+        "text": "ya no lleva la acción 16 (`V2-s`). ---"
+    },
+    {
+        "id": "dec-ci-001",
+        "text": "y no todos los workflows corren ahí - **Fecha**: 2026-09-19 · **Estado**: ACCEPTED —"
+    },
+    {
+        "id": "dec-ci-001",
+        "text": "proyecto»*—, sobre el recorrido de R6. - 📌 **Precisada el 2026-09-30, con OK del"
+    },
+    {
+        "id": "dec-ci-001",
+        "text": "lote de la aplicación, owner 2026-09-30, M). - 📌 **Precisada otra vez el 2026-10-01, con"
+    },
+    {
+        "id": "dec-ci-001",
+        "text": "el PR final del paraguas. PR `[NOSPEC:epic-guard-promotion]`. ---"
+    },
+    {
+        "id": "dec-ci-002",
+        "text": "una condición adelantada, no un filtro muerto - **Fecha**: 2026-09-19 · **Estado**: ACCEPTED ·"
+    },
+    {
+        "id": "dec-ci-002",
+        "text": "**Origen**: conversación con el owner del 2026-09-19. ---"
+    },
+    {
+        "id": "dec-meth-001",
+        "text": "PDR es la única herencia del programa - **Fecha**: 2026-09-15 · **Estado**: ACCEPTED ·"
+    },
+    {
+        "id": "dec-meth-002",
+        "text": "conteos read-only de producción durante FASE 1A - **Fecha**: 2026-09-15 · **Estado**: ACCEPTED ·"
+    },
+    {
+        "id": "dec-meth-003",
+        "text": "5, y es su gate de entrada - **Fecha**: 2026-09-15 · **Estado**: ACCEPTED ·"
+    },
+    {
+        "id": "dec-meth-003",
+        "text": "la memoria de nadie. - **Origen**: `O-METH-03`. ---"
+    },
+    {
+        "id": "dec-meth-004",
+        "text": "verificar la regla contra todo su dominio - **Fecha**: 2026-09-19 · **Estado**: ACCEPTED ·"
+    },
+    {
+        "id": "dec-meth-004",
+        "text": "y los artifacts»*—, más `F-8C2-011` y `F-8C2-016`. ---"
+    },
+    {
+        "id": "dec-meth-005",
+        "text": "pide, y corren desde el día 1 - **Fecha**: 2026-09-19 · **Estado**: ACCEPTED ·"
+    },
+    {
+        "id": "dec-meth-005",
+        "text": "por fuera de lo que estamos buscando»*. ---"
+    },
+    {
+        "id": "dec-meth-006",
+        "text": "hasta que no aparezca ningún CRÍTICO nuevo - **Fecha**: 2026-09-19 · **Estado**: ACCEPTED, con"
+    },
+    {
+        "id": "dec-meth-006",
+        "text": "**Origen**: `15-fase-9/07-decisiones-del-owner.md` `D-30`, sobre el racimo `R6`. ---"
+    },
+    {
+        "id": "dec-meth-007",
+        "text": "un criterio de dos filtros en orden - **Fecha**: 2026-09-19 · **Estado**: ACCEPTED ·"
+    },
+    {
+        "id": "dec-meth-007",
+        "text": "no poder probar que está bien.** > > *«Prefiero pagar un costo alto, pero"
+    },
+    {
+        "id": "dec-meth-007",
+        "text": "**Origen**: `15-fase-9/07-decisiones-del-owner.md` `D-31`, sobre el racimo `R6`. ---"
+    },
+    {
+        "id": "dec-meth-008",
+        "text": "y el ciclo corta con causa declarada - **Fecha**: 2026-09-19 · **Estado**: ACCEPTED ·"
+    },
+    {
+        "id": "dec-meth-008",
+        "text": "lo decís y me das a elegir»*. ---"
+    },
+    {
+        "id": "dec-meth-009",
+        "text": "los capítulos que el commit NO toca - **Fecha**: 2026-09-20 · **Estado**: ACCEPTED ·"
+    },
+    {
+        "id": "dec-meth-009",
+        "text": "la conversación con el owner del 2026-09-20. ---"
+    },
+    {
+        "id": "dec-meth-010",
+        "text": "y el alcance es todo el corpus - **Fecha**: 2026-09-21 · **Estado**: ACCEPTED ·"
+    },
+    {
+        "id": "dec-meth-010",
+        "text": "la pasada acotada que se le recomendó. ---"
+    },
+    {
+        "id": "dec-meth-011",
+        "text": "el rastro por aparición es un ARCHIVO - **Fecha**: 2026-09-21 · **Estado**: ACCEPTED ·"
+    },
+    {
+        "id": "dec-meth-011",
+        "text": "eligió la 1, que era la recomendada. ---"
+    },
+    {
+        "id": "dec-meth-012",
+        "text": "nada que no esté verificado en ella - **Fecha**: 2026-09-23 · **Estado**: ACCEPTED ·"
+    },
+    {
+        "id": "dec-meth-012",
+        "text": "arriba para que se pueda evaluar después. ---"
+    },
+    {
+        "id": "dec-meth-013",
+        "text": "generar críticos, con tope de dos vueltas - **Fecha**: 2026-09-24 · **Estado**: ACCEPTED ·"
+    },
+    {
+        "id": "dec-meth-013",
+        "text": "dos estados no son lo mismo. - **📌 De dónde sale, y la historia"
+    },
+    {
+        "id": "dec-meth-013",
+        "text": "punto 3, y **precisado por esta decisión**. - **Origen**: la elección del owner del"
+    },
+    {
+        "id": "dec-meth-013",
+        "text": "leerla, había que leer **quién la enmendó**. ---"
+    },
+    {
+        "id": "dec-meth-014",
+        "text": "el diseño vigente, a ciegas del historial - **Fecha**: 2026-09-24 · **Estado**: ACCEPTED ·"
+    },
+    {
+        "id": "dec-meth-014",
+        "text": "nueva, con contexto limpio**, a pedido suyo. ---"
+    },
+    {
+        "id": "dec-meth-015",
+        "text": "un arreglo se declaran, no se persiguen - **Fecha**: 2026-09-25 · **Estado**: ACCEPTED ·"
+    },
+    {
+        "id": "dec-meth-015",
+        "text": "la pendiente 8; aprobada por el owner. ---"
+    },
+    {
+        "id": "dec-meth-016",
+        "text": "como excepción declarada al tope de `DEC-METH-013` - **Fecha**: 2026-09-29 · **Estado**: ACCEPTED ·"
+    },
+    {
+        "id": "dec-meth-016",
+        "text": "el owner eligió la 1, la recomendada. ---"
+    },
+    {
+        "id": "dec-meth-017",
+        "text": "lo demás se clasifica contra el diseño - **Fecha**: 2026-09-30 · **Estado**: ACCEPTED ·"
+    },
+    {
+        "id": "dec-meth-017",
+        "text": "del orquestador, el owner eligió la 2. ---"
+    },
+    {
+        "id": "dec-meth-018",
+        "text": "sobre lo que la 5 no clasificó - **Fecha**: 2026-09-30 · **Estado**: ACCEPTED ·"
+    },
+    {
+        "id": "dec-meth-018",
+        "text": "el owner eligió la 1, la recomendada. ---"
+    },
+    {
+        "id": "dec-meth-019",
+        "text": "con trazabilidad mecánica y dos verificaciones ciegas - **Fecha**: 2026-10-01 · **Estado**: ACCEPTED —"
+    },
+    {
+        "id": "dec-meth-019",
+        "text": "owner eligió en todas la recomendada. - 📌 **Precisada el 2026-10-01, con OK del"
+    },
+    {
+        "id": "dec-meth-019",
+        "text": "📌 de `DEC-ARCH-017` (`41-corte-del-mvp/10-decisiones-del-owner.md`, AW a AY). - 📌 **Precisada otra vez el 2026-10-01, con"
+    },
+    {
+        "id": "dec-meth-019",
+        "text": "y la lista de piezas (`41-corte-del-mvp/10-decisiones-del-owner.md`, AZ). - 📌 **Precisada otra vez el 2026-10-01, con"
+    },
+    {
+        "id": "dec-meth-019",
+        "text": "30 piezas (`41-corte-del-mvp/10-decisiones-del-owner.md`, BA, BB y BE). - 📌 **Precisada otra vez el 2026-10-02, con"
+    },
+    {
+        "id": "dec-meth-019",
+        "text": "y `spec-consolidada/_trabajo/adjudicacion.json`; `41-corte-del-mvp/10-decisiones-del-owner.md`, BK, BS y BT. - 📌 **Precisada otra vez el 2026-10-02, con"
+    },
+    {
+        "id": "dec-meth-019",
+        "text": "Dónde: `16-fase-7-del-paraguas.md` §4.7, momento 1; `41-corte-del-mvp/10-decisiones-del-owner.md`, BS. ---"
+    }
+]

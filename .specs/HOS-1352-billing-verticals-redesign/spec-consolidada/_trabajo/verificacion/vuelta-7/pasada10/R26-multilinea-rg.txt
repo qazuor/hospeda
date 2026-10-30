@@ -1,0 +1,3 @@
+.specs/HOS-1352-billing-verticals-redesign/spec-consolidada/10-corte/B2.md:556:- `16-fase-7-del-paraguas.md` §4.6 (l. 951).
+.specs/HOS-1352-billing-verticals-redesign/spec-consolidada/10-corte/B3.md:1467:- `16-fase-7-del-paraguas.md` §4.6 (l. 952, 977-998).
+.specs/HOS-1352-billing-verticals-redesign/spec-consolidada/_trabajo/verificacion/vuelta-7/pasada10/inventario-reglas.md:32:| R26 | 8 | Citas lista piezas V8a955 V9a957 V7 954 V8b956 (líneas congelado época) | lista de piezas, l. 953; lista de piezas, l. 950; §4.6 (l. 951; §4.6 (l. 952 |

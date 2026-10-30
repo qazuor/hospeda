@@ -1,0 +1,4 @@
+.specs/HOS-1352-billing-verticals-redesign/spec-consolidada/02-nucleo-glosario.md:468:| **fuente viva** | una fuente que el contrato de cobertura **devuelve hoy** en `fuentes` | la lista de esa respuesta, resuelta en el momento (`12-contrato…` §2) | resolver la cobertura y las capacidades: los pasos 5 y 6 de la autorización |
+.specs/HOS-1352-billing-verticals-redesign/spec-consolidada/10-corte/V5.md:1357:pero sin fuente que otorgue la capacidad exigida, pasa el paso 5 y es rechazado en el paso 6
+.specs/HOS-1352-billing-verticals-redesign/spec-consolidada/04-catalogos.md:781:> 4. **Dentro del lock, los pasos 5 y 6 pueden responder con el caché** (FASE 9 completa,
+.specs/HOS-1352-billing-verticals-redesign/spec-consolidada/_trabajo/verificacion/vuelta-7/pasada10/inventario-reglas.md:31:| R25 | 8 | BASE pasa autorización paso5; falta capacidad rechaza paso6 | paso 5/6; sin fuente que otorgue la capacidad |

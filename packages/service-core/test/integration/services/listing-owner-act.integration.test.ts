@@ -1,0 +1,408 @@
+/**
+ * HOS-1499 (piece V9a) — the register of the owner's acts on a listing,
+ * against a REAL PostgreSQL database.
+ *
+ * Creating and editing a listing write one `domain_event` row each, in the
+ * same transaction as the change, with the minimum fields of NUCLEO/08 §1.2;
+ * content fields carry only their name, so no event ever holds listing text.
+ *
+ * AC:V9a:1 is PARTIAL in this PR: "exportar" has no operation in the codebase
+ * yet (owner decision pending on which piece builds it), so only create and
+ * edit are covered here. Nothing writes `listing.exported`.
+ *
+ * Every test runs inside `withServiceTestTransaction`, which rolls back.
+ */
+
+import { accommodations, domainEventModel, eq, type SelectDomainEvent } from '@repo/db';
+import {
+    ExperiencePriceUnitEnum,
+    ExperienceTypeEnum,
+    PermissionEnum,
+    PublicationStatusEnum,
+    RoleEnum,
+    VenueTypeEnum
+} from '@repo/schemas';
+import { afterAll, beforeAll, describe, expect, it } from 'vitest';
+import { AccommodationService } from '../../../src/services/accommodation/accommodation.service';
+import { ExperienceService } from '../../../src/services/experience/experience.service';
+import { VenueService } from '../../../src/services/venue/venue.service';
+import type { Actor, ServiceContext } from '../../../src/types';
+import { createLoggerMock } from '../../utils/modelMockFactory';
+import {
+    closeServiceTestPool,
+    isServiceTestDbAvailable,
+    seedAccommodation,
+    seedExperience,
+    seedVenue,
+    withServiceTestTransaction
+} from './helpers';
+
+const dbAvailable = isServiceTestDbAvailable();
+
+type Uuid = `${string}-${string}-${string}-${string}-${string}`;
+
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/;
+
+/** An owner actor for the three verticals. `id` must be the seeded owner. */
+function ownerActor(userId: string): Actor {
+    return {
+        id: userId,
+        roles: [RoleEnum.HOST, RoleEnum.VENUE_OWNER, RoleEnum.EXPERIENCE_OWNER],
+        permissions: [
+            PermissionEnum.ACCOMMODATION_UPDATE_OWN,
+            PermissionEnum.VENUE_EDIT_OWN,
+            PermissionEnum.EXPERIENCE_EDIT_OWN
+        ]
+    };
+}
+
+/** Asserts the minimum fields of NUCLEO/08 §1.2 on one owner-act event. */
+function expectMinimumFields(input: {
+    readonly event: SelectDomainEvent;
+    readonly eventType: string;
+    readonly entityType: string;
+    readonly entityId: string;
+    readonly ownerId: string;
+}): void {
+    const { event } = input;
+    expect(event.eventType).toBe(input.eventType);
+    expect(event.entityType).toBe(input.entityType);
+    expect(event.entityId).toBe(input.entityId);
+    expect(event.actorId).toBe(input.ownerId);
+    expect(event.actorType).toBe('owner');
+    expect(event.occurredAt).toBeInstanceOf(Date);
+    expect(event.correlationId).toMatch(UUID_RE);
+    expect(Array.isArray(event.changes)).toBe(true);
+}
+
+describe('HOS-1499 V9a — owner acts on a listing land in domain_event (integration)', () => {
+    let accommodationService: AccommodationService;
+    let venueService: VenueService;
+    let experienceService: ExperienceService;
+
+    beforeAll(() => {
+        if (!dbAvailable) return;
+        const config = { logger: createLoggerMock() };
+        accommodationService = new AccommodationService(config);
+        venueService = new VenueService(config);
+        experienceService = new ExperienceService(config);
+    });
+
+    afterAll(async () => {
+        if (!dbAvailable) return;
+        await closeServiceTestPool();
+    });
+
+    // TEST:V9a:1 — AC:V9a:1 (create + edit; export pending, see header)
+    it.skipIf(!dbAvailable)(
+        'TEST:V9a:1 — venue: creating and editing write one event each, with the minimum fields',
+        async () => {
+            await withServiceTestTransaction(async (tx) => {
+                const { ownerId, destinationId } = await seedVenue(tx);
+                const actor = ownerActor(ownerId);
+                const correlationId = crypto.randomUUID();
+                const ctx: ServiceContext = { tx, correlationId };
+
+                const created = await venueService.createForOwner(
+                    actor,
+                    {
+                        name: 'Parrilla del Dueño',
+                        summary: 'Resumen de la parrilla del dueño',
+                        description: 'Descripción de la parrilla creada por su dueño.',
+                        type: VenueTypeEnum.PARRILLA,
+                        ownerId: ownerId as Uuid,
+                        destinationId: destinationId as Uuid,
+                        averageRating: 0,
+                        reviewsCount: 0
+                    },
+                    ctx
+                );
+                expect(created.error).toBeUndefined();
+                const listingId = created.data?.id as string;
+
+                const edited = await venueService.updateOwn(
+                    listingId,
+                    { summary: 'Un resumen editado por el dueño' },
+                    actor,
+                    ctx
+                );
+                expect(edited.error).toBeUndefined();
+
+                const events = await domainEventModel.findByEntity({
+                    entityType: 'venue',
+                    entityId: listingId,
+                    tx
+                });
+                // `findByEntity` orders by `occurredAt` only: both events are written in this
+                // one transaction and tie on `now()`, so their order is not guaranteed.
+                expect(events.map((e) => e.eventType).sort()).toEqual([
+                    'listing.created',
+                    'listing.edited'
+                ]);
+                for (const event of events) {
+                    expectMinimumFields({
+                        event,
+                        eventType: event.eventType,
+                        entityType: 'venue',
+                        entityId: listingId,
+                        ownerId
+                    });
+                    expect(event.correlationId).toBe(correlationId);
+                }
+                const editedEvent = events.find((e) => e.eventType === 'listing.edited');
+                expect(editedEvent?.changes).toEqual([{ field: 'summary' }]);
+            });
+        }
+    );
+
+    it.skipIf(!dbAvailable)(
+        'TEST:V9a:1 — experience: creating and editing write one event each, with the minimum fields',
+        async () => {
+            await withServiceTestTransaction(async (tx) => {
+                const { ownerId, destinationId } = await seedExperience(tx);
+                const actor = ownerActor(ownerId);
+                const ctx: ServiceContext = { tx };
+
+                const created = await experienceService.createForOwner(
+                    actor,
+                    {
+                        name: 'Kayak del Dueño',
+                        summary: 'Resumen del kayak del dueño',
+                        description: 'Descripción del kayak creado por su dueño.',
+                        type: ExperienceTypeEnum.KAYAK_RENTAL,
+                        priceFrom: 150000,
+                        priceUnit: ExperiencePriceUnitEnum.PER_PERSON,
+                        isPriceOnRequest: false,
+                        ownerId: ownerId as Uuid,
+                        destinationId: destinationId as Uuid,
+                        averageRating: 0,
+                        reviewsCount: 0
+                    } as never,
+                    ctx
+                );
+                expect(created.error).toBeUndefined();
+                const listingId = created.data?.id as string;
+
+                const edited = await experienceService.updateOwn(
+                    listingId,
+                    { durationMinutes: 90 },
+                    actor,
+                    ctx
+                );
+                expect(edited.error).toBeUndefined();
+
+                const events = await domainEventModel.findByEntity({
+                    entityType: 'experience',
+                    entityId: listingId,
+                    tx
+                });
+                // `findByEntity` orders by `occurredAt` only: both events are written in this
+                // one transaction and tie on `now()`, so their order is not guaranteed.
+                expect(events.map((e) => e.eventType).sort()).toEqual([
+                    'listing.created',
+                    'listing.edited'
+                ]);
+                for (const event of events) {
+                    expectMinimumFields({
+                        event,
+                        eventType: event.eventType,
+                        entityType: 'experience',
+                        entityId: listingId,
+                        ownerId
+                    });
+                }
+            });
+        }
+    );
+
+    it.skipIf(!dbAvailable)(
+        'TEST:V9a:1 — accommodation: an owner edit writes one listing.edited event, with the minimum fields',
+        async () => {
+            await withServiceTestTransaction(async (tx) => {
+                const { userId, accommodationId } = await seedAccommodation(tx);
+                const ctx: ServiceContext = { tx };
+
+                const edited = await accommodationService.update(
+                    ownerActor(userId),
+                    accommodationId,
+                    { summary: 'Resumen editado del alojamiento' },
+                    ctx
+                );
+                expect(edited.error).toBeUndefined();
+
+                const events = await domainEventModel.findByEntity({
+                    entityType: 'accommodation',
+                    entityId: accommodationId,
+                    tx
+                });
+                expect(events).toHaveLength(1);
+                expectMinimumFields({
+                    event: events[0] as SelectDomainEvent,
+                    eventType: 'listing.edited',
+                    entityType: 'accommodation',
+                    entityId: accommodationId,
+                    ownerId: userId
+                });
+            });
+        }
+    );
+
+    it.skipIf(!dbAvailable)(
+        'TEST:V9a:1 — an administrator editing somebody else listing writes no owner act',
+        async () => {
+            await withServiceTestTransaction(async (tx) => {
+                const { accommodationId } = await seedAccommodation(tx);
+                const { userId: adminId } = await seedAccommodation(tx);
+                const admin: Actor = {
+                    id: adminId,
+                    roles: [RoleEnum.ADMIN],
+                    permissions: [PermissionEnum.ACCOMMODATION_UPDATE_ANY]
+                };
+
+                const edited = await accommodationService.update(
+                    admin,
+                    accommodationId,
+                    { summary: 'Resumen editado por un administrador' },
+                    { tx }
+                );
+                expect(edited.error).toBeUndefined();
+
+                const events = await domainEventModel.findByEntity({
+                    entityType: 'accommodation',
+                    entityId: accommodationId,
+                    tx
+                });
+                expect(events).toHaveLength(0);
+            });
+        }
+    );
+
+    // TEST:V9a:1 (atomicity) — AC:V9a:1: no event for a write that failed.
+    it.skipIf(!dbAvailable)(
+        'TEST:V9a:1 — an edit that fails after its event was written leaves no event behind',
+        async () => {
+            /** Fails the write AFTER the base after-hook has written the event. */
+            class FailingAfterEventVenueService extends VenueService {
+                protected override async _afterUpdate(
+                    ...args: Parameters<VenueService['_afterUpdate']>
+                ): ReturnType<VenueService['_afterUpdate']> {
+                    await super._afterUpdate(...args);
+                    throw new Error('listing write fails after the owner-act event');
+                }
+            }
+            const failing = new FailingAfterEventVenueService({
+                logger: createLoggerMock()
+            });
+
+            await withServiceTestTransaction(async (tx) => {
+                const { ownerId, venueId } = await seedVenue(tx);
+
+                // The write runs in a SAVEPOINT of the test transaction: when it
+                // throws, the savepoint rolls back — and with it the event, ONLY
+                // if the event was written through the write's own `tx`. An
+                // event written on another connection would survive (committed).
+                let failed = false;
+                try {
+                    await tx.transaction(async (savepoint) => {
+                        const result = await failing.updateOwn(
+                            venueId,
+                            { summary: 'Un resumen que no debe quedar' },
+                            ownerActor(ownerId),
+                            { tx: savepoint as unknown as ServiceContext['tx'] }
+                        );
+                        if (result.error) throw result.error;
+                    });
+                } catch {
+                    failed = true;
+                }
+                expect(failed).toBe(true);
+
+                const events = await domainEventModel.findByEntity({
+                    entityType: 'venue',
+                    entityId: venueId,
+                    tx
+                });
+                expect(events).toHaveLength(0);
+            });
+        }
+    );
+
+    // TEST:V9a:2 — AC:V9a:2. Since V6.9b (HOS-1641) an owner edit can no
+    // longer carry a state column: the six legacy state columns are gone and
+    // `publicationStatus` is written only by the PB transitions (R3). The
+    // old/new half of AC:V9a:2 is covered by the unit test of
+    // `buildListingOwnerActChanges`; here a state value smuggled into the
+    // payload must reach neither the row nor the event.
+    it.skipIf(!dbAvailable)(
+        'TEST:V9a:2 — editing the description stores only its name; a smuggled state value reaches neither the row nor the event',
+        async () => {
+            await withServiceTestTransaction(async (tx) => {
+                const { userId, accommodationId } = await seedAccommodation(tx);
+                const newDescription =
+                    'Una descripción nueva y suficientemente larga para pasar la validación.';
+
+                const edited = await accommodationService.update(
+                    ownerActor(userId),
+                    accommodationId,
+                    {
+                        description: newDescription,
+                        publicationStatus: PublicationStatusEnum.DRAFT
+                    } as never,
+                    { tx }
+                );
+                expect(edited.error).toBeUndefined();
+
+                const [row] = await tx
+                    .select({ publicationStatus: accommodations.publicationStatus })
+                    .from(accommodations)
+                    .where(eq(accommodations.id, accommodationId));
+                expect(row?.publicationStatus).toBe(PublicationStatusEnum.PUBLISHED);
+
+                const events = await domainEventModel.findByEntity({
+                    entityType: 'accommodation',
+                    entityId: accommodationId,
+                    tx
+                });
+                expect(events).toHaveLength(1);
+                expect(events[0]?.changes).toEqual([{ field: 'description' }]);
+                expect(JSON.stringify(events[0])).not.toContain(newDescription);
+                expect(JSON.stringify(events[0])).not.toContain('Seed accommodation description');
+            });
+        }
+    );
+
+    // TEST:V9a:3 — AC:V9a:3
+    it.skipIf(!dbAvailable)(
+        'TEST:V9a:3 — five description edits leave none of the five texts in any event of the listing',
+        async () => {
+            await withServiceTestTransaction(async (tx) => {
+                const { ownerId, venueId } = await seedVenue(tx);
+                const actor = ownerActor(ownerId);
+                const texts = [1, 2, 3, 4, 5].map(
+                    (n) => `Texto de descripción número ${n} — marca única ${crypto.randomUUID()}`
+                );
+
+                for (const description of texts) {
+                    const edited = await venueService.updateOwn(venueId, { description }, actor, {
+                        tx
+                    });
+                    expect(edited.error).toBeUndefined();
+                }
+
+                const events = await domainEventModel.findByEntity({
+                    entityType: 'venue',
+                    entityId: venueId,
+                    tx
+                });
+                expect(events).toHaveLength(5);
+                const serialized = JSON.stringify(events);
+                for (const text of texts) {
+                    expect(serialized).not.toContain(text);
+                }
+                for (const event of events) {
+                    expect(event.changes).toEqual([{ field: 'description' }]);
+                }
+            });
+        }
+    );
+});

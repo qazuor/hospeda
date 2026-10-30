@@ -12,7 +12,7 @@ areas:
 # Visual Email Template Editor
 
 > Migrated from `.qtm/specs/SPEC-302-visual-email-template-editor/spec.md` on 2026-07-01 as part of the Linear tracking migration. Canonical tracking is now HOS-15.
-
+>
 > A templating system where emails — both transactional notifications and newsletter
 > campaigns — can be authored, previewed, and ideally edited visually. Whether to
 > build on React Email (dev-authored, code-as-template) or a true visual drag-drop
@@ -25,7 +25,7 @@ Hospeda currently has two separate email pipelines:
 1. **`packages/email`** — authentication emails (`verify-email`, `reset-password`)
    rendered as hardcoded React Email TSX components, sent via Brevo.
 2. **`packages/notifications`** — 35+ transactional templates (billing, subscription,
-   trial, commerce, conversation, newsletter) also built with React Email TSX; sent
+   trial, gastronomy and experience, conversation, newsletter) also built with React Email TSX; sent
    via Brevo (`brevo-batch.ts` for newsletter bulk, `resend-transport.ts` for
    transactional).
 
@@ -51,7 +51,7 @@ architecture is chosen.
 | Concern | File(s) |
 |---------|---------|
 | Auth email templates | `packages/email/src/templates/verify-email.tsx`, `reset-password.tsx`, `base-layout.tsx` |
-| Transactional templates (35+) | `packages/notifications/src/templates/**/*.tsx` (addon, billing, subscription, trial, commerce, conversation, newsletter, contact, feedback) |
+| Transactional templates (35+) | `packages/notifications/src/templates/**/*.tsx` (addon, billing, subscription, trial, gastronomy and experience, conversation, newsletter, contact, feedback) |
 | Shared layout + components | `packages/notifications/src/templates/components/layout.tsx`, `button.tsx`, `heading.tsx`, `info-row.tsx` |
 | Newsletter campaign wrapper | `packages/notifications/src/templates/newsletter/newsletter-campaign.tsx` |
 | TipTap → email-HTML renderer | `packages/notifications/src/utils/tiptap-email-renderer.ts` |

@@ -112,13 +112,6 @@ jobs:
       HOSPEDA_MERCADO_PAGO_PUBLIC_KEY: ${{ secrets.HOSPEDA_MERCADO_PAGO_PUBLIC_KEY }}
       HOSPEDA_MERCADO_PAGO_WEBHOOK_SECRET: ${{ secrets.HOSPEDA_MERCADO_PAGO_WEBHOOK_SECRET }}
       HOSPEDA_MERCADO_PAGO_SANDBOX: 'true'
-      # SPEC-217: enable the QZPay test-control adapter so the fault-injection
-      # specs (host-07c/res-01) mount the control endpoint and applyTestControl
-      # intercepts the wrapped subscription ops. Gated to non-production by
-      # routes/index.ts. Without it both specs degrade to test.fixme() and are
-      # skipped — a silent hole in the very resilience coverage the nightly exists
-      # to provide. Already set in e2e-pr.yml; missing here.
-      HOSPEDA_QZPAY_TEST_CONTROL_ENABLED: 'true'
 
       # Disable API response cache for deterministic e2e: tests mutate state
       # (publish/unpublish, subscription changes) and immediately assert the
@@ -217,8 +210,11 @@ jobs:
       - name: Build apps
         run: pnpm exec turbo run build --filter=hospeda-api --filter=admin --filter=hospeda-web
 
-      - name: Push Drizzle schema to E2E database
-        run: pnpm --filter @repo/db db:push
+      # Versioned migrations, like e2e-pr, not `db:push`: the migrations write the
+      # reference rows (`vertical`, `catalog_key`), so a pushed schema would hold
+      # none of them (AC:V1:4 (d), HOS-1431).
+      - name: Apply versioned Drizzle migrations to E2E database
+        run: pnpm --filter @repo/db db:migrate
         env:
           HOSPEDA_DATABASE_URL: ${{ env.HOSPEDA_E2E_DATABASE_URL }}
 
@@ -241,8 +237,9 @@ jobs:
       #    named the same directory, so the intersection was empty by
       #    construction and `--passWithNoTests` turned the zero into a pass.
       #    Switching to `test:integration` does NOT fix it either:
-      #    `vitest.config.integration.ts` only includes
-      #    `test/integration/ai/**`. `vitest.config.e2e.ts` is the one config
+      #    `vitest.config.integration.ts` then listed only a few folders
+      #    (HOS-1891 later widened it to the whole tree; that suite runs in
+      #    ci.yml's test-integration job). `vitest.config.e2e.ts` is the one config
       #    whose `include` covers `test/integration/**`. It is invoked
       #    directly rather than through the `test:e2e` script because that
       #    script prepends `build:deps`, and this job already built the apps.

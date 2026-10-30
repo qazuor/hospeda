@@ -506,6 +506,7 @@ export const handleRouteError = (error: unknown, c: Context) => {
                 statusCode = 401;
                 break;
             case ServiceErrorCode.FORBIDDEN:
+            case ServiceErrorCode.EMAIL_NOT_VERIFIED:
             case ServiceErrorCode.LIMIT_REACHED:
             case ServiceErrorCode.ENTITLEMENT_REQUIRED:
                 statusCode = 403;
@@ -729,6 +730,7 @@ export const handleRouteError = (error: unknown, c: Context) => {
                 [ServiceErrorCode.ALREADY_EXISTS]: 409,
                 [ServiceErrorCode.UNAUTHORIZED]: 401,
                 [ServiceErrorCode.FORBIDDEN]: 403,
+                [ServiceErrorCode.EMAIL_NOT_VERIFIED]: 403,
                 [ServiceErrorCode.NOT_IMPLEMENTED]: 501,
                 [ServiceErrorCode.INTERNAL_ERROR]: 500,
                 [ServiceErrorCode.CONFIGURATION_ERROR]: 500,

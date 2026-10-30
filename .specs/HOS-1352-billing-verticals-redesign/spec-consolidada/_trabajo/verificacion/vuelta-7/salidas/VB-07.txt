@@ -1,0 +1,16 @@
+# VB-07 · spec → fuente · 20-fase-4/V7.md, 10-corte/V8a.md, 20-fase-4/V8b.md, 10-corte/V9a.md
+
+## Hallazgos
+
+20-fase-4/V7.md:830 · «El reclamo de Partner se rechaza si la cuenta tiene una suscripción activa en otra vertical comercial; primero debe terminar esa suscripción.» · más fuerte que fuentes/.specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/18-partner.md:290–338 (las cinco reglas del reclamo; la restricción de cantidad es «Una cuenta, un Partner», no una prohibición por suscripciones en otras verticales). Sin soporte en DEC-AUTH-004 ni en las decisiones posteriores del owner; contradice además la independencia por user + vertical de fuentes/.specs/HOS-1352-billing-verticals-redesign/docs/nucleo/04-invariantes.md:60–61 · BLOQUEA
+
+20-fase-4/V8b.md:57 · «las `APROBADA` ya reclamadas como un dato» · contradice fuentes/.specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/19-superficies.md:90 («las **postulaciones de Partner atrasadas** y las **aprobadas sin reclamar**»), precisado por fuentes/.specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/02-modelo-de-datos.md:643 («**El panel lee *«aprobada sin reclamar»* así**: `postulacion.estado = APROBADA` y el `partner` de su»), con `owner_user_id` nulo en la línea siguiente. El criterio de salida sustituye la población que debe hacerse visible; también contradice AC:V8b:2 (líneas 114–116), TEST:V8b:2 (226–227) y 10-corte/V8a.md:407 · BLOQUEA
+
+## Resumen
+
+| archivo | líneas recorridas | afirmaciones normativas revisadas (aprox.) | BLOQUEA | MENOR |
+|---|---|---|---|---|
+| 20-fase-4/V7.md | 1–1076 | 280 | 1 | 0 |
+| 10-corte/V8a.md | 1–655 | 220 | 0 | 0 |
+| 20-fase-4/V8b.md | 1–306 | 85 | 1 | 0 |
+| 10-corte/V9a.md | 1–312 | 90 | 0 | 0 |

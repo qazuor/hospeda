@@ -7,7 +7,7 @@
         "en": "Ambiente acogedor y seguro para familias con niños de todas las edades",
         "pt": "Ambiente acogedor y seguro para familias con niños de todas las edades"
     },
-    "applicableVerticals": ["gastronomy"],
+    "applicableVerticals": ["venue"],
     "icon": "FamilySuitableIcon",
     "isBuiltin": false,
     "isFeatured": true,

@@ -16,8 +16,9 @@
  * session, matching the `/mi-cuenta/propiedades` convention.
  *
  * Role gate: only users whose role grants `EVENT_CREATE` (EDITOR, ADMIN,
- * SUPER_ADMIN — see `hasEventsNavAccess` in `@/lib/nav-gating`) may reach
- * this page. Anyone else is redirected back to the account dashboard.
+ * SUPER_ADMIN — see `hasEventsNavAccess` in `@/lib/nav-gating`) may manage
+ * events. Anyone else sees the "no access" state with the editor application
+ * link instead of the listing.
  *
  * Data: fetched server-side through `eventEditApi.listOwn` (`lib/api/`),
  * which forwards the session cookie to `GET /api/v1/protected/events`.
@@ -28,7 +29,7 @@
  * @rendering SSR (prerender = false — requires authenticated user)
  */
 
-import { CalendarIcon } from '@repo/icons';
+import { CalendarIcon, LockIcon } from '@repo/icons';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
 import { buildUrl } from '@/lib/urls';
@@ -40,6 +41,7 @@ import { transformEventEditCardList } from '@/lib/api/transforms';
 import type { EventEditListItem } from '@/lib/api/types';
 import AccountLayout from '@/layouts/AccountLayout.astro';
 import AccountPageHeader from '@/components/account/AccountPageHeader.astro';
+import AccountEmptyState from '@/components/account/AccountEmptyState.astro';
 import EditableContentCard from '@/components/account/EditableContentCard.astro';
 import EmptyState from '@/components/shared/feedback/EmptyState.astro';
 import accountSectionStyles from '@/components/account/AccountSection.module.css';
@@ -55,9 +57,7 @@ if (!user) {
 }
 
 // Role gate: only editor-tier roles may see their own-content dashboard.
-if (!hasEventsNavAccess({ roles: user.roles })) {
-    return Astro.redirect(buildUrl({ locale, path: 'mi-cuenta' }));
-}
+const canManageEvents = hasEventsNavAccess({ roles: user.roles });
 
 // ---------------------------------------------------------------------------
 // Server-side fetch: the author's own events, in every moderation/lifecycle
@@ -70,18 +70,22 @@ let fetchError = false;
 
 const cookieHeader = Astro.request.headers.get('cookie') ?? undefined;
 
-const result = await eventEditApi.listOwn({
-    cookieHeader,
-    pageSize: 50,
-    sortBy: 'createdAt',
-    sortOrder: 'desc'
-});
+const result = canManageEvents
+    ? await eventEditApi.listOwn({
+          cookieHeader,
+          pageSize: 50,
+          sortBy: 'createdAt',
+          sortOrder: 'desc'
+      })
+    : null;
 
-if (result.ok) {
-    events = transformEventEditCardList({ items: result.data.items });
-} else {
-    fetchError = true;
-    logger.error('[mi-cuenta/eventos] Failed to fetch own events', result.error.message);
+if (result) {
+    if (result.ok) {
+        events = transformEventEditCardList({ items: result.data.items });
+    } else {
+        fetchError = true;
+        logger.error('[mi-cuenta/eventos] Failed to fetch own events', result.error.message);
+    }
 }
 
 // ---------------------------------------------------------------------------
@@ -118,15 +122,32 @@ const isEmpty = events.length === 0;
 <AccountLayout locale={locale} title={title} description={subtitle} activeSection="eventos">
     <div class="my-content-page__header">
         <AccountPageHeader title={title} description={subtitle} />
-        <a
-            class:list={['my-content-page__create-btn', btn.primary]}
-            href={createUrl}
-        >
-            {createCtaLabel}
-        </a>
+        {canManageEvents && (
+            <a
+                class:list={['my-content-page__create-btn', btn.primary]}
+                href={createUrl}
+            >
+                {createCtaLabel}
+            </a>
+        )}
     </div>
 
-    {fetchError ? (
+    {!canManageEvents ? (
+        <AccountEmptyState
+            title={t(
+                'account.myContent.events.noAccess.title',
+                'Esta sección es para editores'
+            )}
+            description={t(
+                'account.myContent.events.noAccess.description',
+                'Tu cuenta todavía no tiene permiso para gestionar eventos. Si querés publicar eventos en Hospeda, completá la solicitud para sumarte como editor.'
+            )}
+            ctaHref={buildUrl({ locale, path: 'colaborar/editores' })}
+            ctaLabel={t('account.myContent.events.noAccess.cta', 'Quiero ser editor')}
+        >
+            <LockIcon slot="icon" size={28} aria-hidden={true} />
+        </AccountEmptyState>
+    ) : fetchError ? (
         <div class:list={['my-content-page__error', accountSectionStyles.branded]} role="alert">
             <p class="my-content-page__error-title">{fetchErrorMessage}</p>
             <a

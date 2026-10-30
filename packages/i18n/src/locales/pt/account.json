@@ -75,26 +75,26 @@
             "title": "Seu perfil",
             "body": "Atualize suas informações pessoais, preferências e configurações da conta."
         },
-        "commerce": {
+        "listing": {
             "title": "Seu negócio",
             "body": "Edite o conteúdo público, horários e dados visíveis do seu negócio."
         },
-        "greetingGastronomy": {
-            "title": "Bem-vindo ao seu painel de gastronomia",
-            "body": "Daqui você pode gerenciar sua conta e o conteúdo público do seu estabelecimento gastronômico."
+        "greetingVenue": {
+            "title": "Bem-vindo ao seu painel de Comer e sair",
+            "body": "Daqui você pode gerenciar sua conta e o conteúdo público do seu estabelecimento."
         },
-        "commerceGastronomy": {
-            "body": "Edite o cardápio, os horários e os dados visíveis do seu estabelecimento gastronômico."
+        "listingVenue": {
+            "body": "Edite o cardápio, os horários e os dados visíveis do seu estabelecimento."
         },
-        "commerceListings": {
+        "myListings": {
             "title": "Seus negócios",
             "body": "Revise o status de cada um dos seus negócios e edite-os."
         },
-        "gastronomyQr": {
+        "venueQr": {
             "title": "QR do seu cardápio",
             "body": "Gere o código QR do seu cardápio e veja quantas vezes seus clientes o escanearam."
         },
-        "commerceViews": {
+        "listingViews": {
             "title": "Visitas à sua ficha",
             "body": "Acompanhe quantas pessoas visualizaram a ficha pública do seu negócio."
         },
@@ -102,7 +102,7 @@
             "title": "Bem-vindo ao seu painel de experiências",
             "body": "Daqui você pode gerenciar sua conta e o conteúdo público da sua experiência."
         },
-        "commerceExperience": {
+        "listingExperience": {
             "body": "Edite a descrição, os horários e os dados visíveis da sua experiência."
         },
         "greetingEditor": {
@@ -128,7 +128,7 @@
         "groupAccount": "Minha conta",
         "groupTourist": "Área do turista",
         "groupHost": "Área do anfitrião",
-        "groupCommerce": "Área comercial",
+        "groupListings": "Área comercial",
         "groupEditorial": "Área editorial",
         "groupProvider": "Área do fornecedor",
         "dashboard": "Minha conta",
@@ -164,15 +164,15 @@
                     "description": "Publique seu alojamento no Hospeda e alcance milhares de viajantes que buscam se hospedar na região.",
                     "cta": "Publique seu alojamento"
                 },
-                "gastronomy": {
-                    "title": "Gastronomia",
-                    "description": "Some seu local gastronômico ao Hospeda: restaurante, churrascaria, padaria, café ou food truck. Deixe seus dados, aprovamos sua solicitação e, a partir da sua conta, você completa e publica sua própria ficha.",
-                    "cta": "Publique seu local gastronômico"
-                },
                 "experience": {
                     "title": "Experiências",
                     "description": "Você oferece passeios, atividades ou experiências para viajantes? Deixe seus dados, aprovamos sua solicitação e, a partir da sua conta, você completa e publica sua própria ficha.",
                     "cta": "Publique sua experiência"
+                },
+                "venue": {
+                    "title": "Comer e sair",
+                    "description": "Some seu estabelecimento ao Hospeda: restaurante, churrascaria, padaria, café ou food truck. Deixe seus dados, aprovamos sua solicitação e, a partir da sua conta, você completa e publica sua própria ficha.",
+                    "cta": "Publique seu estabelecimento"
                 }
             }
         },
@@ -441,46 +441,110 @@
         "usageWarning": "Você está perto do limite",
         "usageAtLimit": "Limite atingido",
         "usageOf": "{{current}} de {{max}}",
-        "usage": {
-            "title": "Uso do seu plano",
-            "subtitle": "Quanto você já usou de cada limite incluído no seu plano.",
-            "loading": "Carregando o uso do seu plano...",
-            "unlimited": "Ilimitado",
-            "ofMax": "{{current}} de {{max}}",
-            "unlimitedUsage": "{{current}} em uso",
-            "addonBonus": "Inclui {{bonus}} a mais por complementos",
-            "thresholdWarning": "Perto do limite",
-            "thresholdCritical": "Quase sem margem",
-            "thresholdReached": "Você chegou ao limite",
-            "thresholdExceeded": "Limite ultrapassado",
-            "audienceHost": "Como anfitrião",
-            "audienceTraveler": "Como viajante",
-            "monthlyNote": "Reinicia no começo de cada mês.",
-            "capOnly": "Até {{max}}",
-            "perAccommodationEmpty": "Você ainda não publicou nenhuma hospedagem.",
-            "upgradePlan": "Melhorar meu plano",
-            "buyAddon": "Ampliar com um complemento",
-            "limits": {
-                "max_accommodations": "Hospedagens publicadas",
-                "max_gastronomies": "Gastronomias publicadas",
-                "max_experiences": "Experiências publicadas",
-                "max_photos_per_accommodation": "Fotos por hospedagem",
-                "max_active_promotions": "Promoções ativas",
-                "max_favorites": "Favoritos salvos",
-                "max_properties": "Propriedades do complexo",
-                "max_staff_accounts": "Contas da equipe",
-                "max_active_alerts": "Alertas de preço ativos",
-                "max_compare_items": "Hospedagens em comparação",
-                "max_ai_text_improve_per_month": "Melhorias de texto com IA (por mês)",
-                "max_ai_chat_per_month": "Perguntas de IA respondidas nos seus anúncios (por mês)",
-                "max_ai_chat_consumer_per_month": "Perguntas ao assistente de IA (por mês)",
-                "max_ai_search_per_month": "Buscas com IA (por mês)",
-                "max_ai_support_per_month": "Perguntas ao suporte com IA (por mês)",
-                "max_ai_translate_per_month": "Traduções com IA (por mês)",
-                "max_ai_accommodation_import_per_month": "Importações de hospedagem com IA (por mês)",
-                "max_search_history_entries": "Buscas guardadas no histórico",
-                "max_collections": "Coleções de favoritos"
+        "trialSummary": {
+            "title": "Seu teste grátis de {{vertical}}",
+            "endedTitle": "Seu teste grátis de {{vertical}} terminou",
+            "endedConverted": "Seu teste terminou e agora você tem seu plano.",
+            "endedExpired": "Seu teste terminou em {{end}}.",
+            "vertical": {
+                "accommodation": "hospedagem",
+                "experience": "experiências",
+                "venue": "Comer e sair"
+            },
+            "total_one": "{{count}} dia de teste no total",
+            "total_other": "{{count}} dias de teste no total",
+            "origins": {
+                "base_one": "{{count}} do plano",
+                "base_other": "{{count}} do plano",
+                "promo_one": "{{count}} por promoções",
+                "promo_other": "{{count}} por promoções",
+                "support_one": "{{count}} concedido pelo suporte",
+                "support_other": "{{count}} concedidos pelo suporte"
+            },
+            "dates": "De {{start}} a {{end}}"
+        },
+        "mine": {
+            "title": "Suas assinaturas",
+            "empty": "Você não tem assinaturas vigentes.",
+            "planChangeUnavailable": "Ainda não é possível mudar de plano: cancele no fim do período e assine de novo.",
+            "paidAfterCancellation": "Seu pagamento entrou e você tem serviço até {{date}}; sua assinatura já estava cancelada, então ela não é renovada: se quiser continuar, assine de novo.",
+            "paidAfterCancellationAddons": "A cobrança dos complementos recorrentes desta assinatura também foi interrompida: você continua vendo-os até {{date}}.",
+            "deferredCourtesy_one": "Você tem 1 mês restante, que começa a contar quando você concluir o pagamento.",
+            "deferredCourtesy_other": "Você tem {{count}} meses restantes, que começam a contar quando você concluir o pagamento.",
+            "status": {
+                "ACTIVE": "Ativa",
+                "GRACE_PERIOD": "Pagamento pendente",
+                "SUSPENDED": "Suspensa",
+                "CANCEL_SCHEDULED": "Cancelamento solicitado",
+                "NOT_RENEWING": "Não será renovada"
+            },
+            "loadError": "Não conseguimos ler suas assinaturas. Recarregue a página.",
+            "scheduledUntil": "Você cancelou esta assinatura: ela continua até {{date}}.",
+            "grace": "Não conseguimos cobrar sua parcela. Se você trocar o cartão com que paga no Mercado Pago, a cobrança é tentada de novo na hora; não podemos garantir que ela passe. Se a cobrança não passar antes de {{date}}, sua assinatura é suspensa e você vai ter que assinar de novo.",
+            "vertical": {
+                "accommodation": "Hospedagem",
+                "experience": "Experiências",
+                "tourist": "Turista",
+                "partner": "Parceiros",
+                "unknown": "Hospeda",
+                "venue": "Comer e sair"
+            },
+            "price": "{{amount}} {{cycle}}",
+            "nextCharge": "Próxima cobrança: {{date}}, no valor de {{amount}}."
+        },
+        "cancel": {
+            "open": "Cancelar assinatura",
+            "heading": "Você vai cancelar: {{plan}} ({{vertical}})",
+            "activeEnds": "Se você confirmar, cancelamos hoje a cobrança automática e você continua com o serviço até {{date}}.",
+            "suspendedEnds": "Se você confirmar, a assinatura termina hoje: ela estava suspensa, então não resta período pago.",
+            "graceEnds": "Se você confirmar, o serviço termina hoje: você perde o serviço que o período de carência lhe dava até {{date}}. Em troca, não cobramos a parcela que não conseguimos cobrar.",
+            "noMoreCharges": "Você não será cobrado de novo. Primeiro chega o nosso e-mail; depois o Mercado Pago pode enviar um avisando o cancelamento.",
+            "addonsTitle": "Estes complementos recorrentes são cancelados com a sua assinatura:",
+            "addon": {
+                "CHARGE_CUT_TODAY": "{{name}}: {{price}} {{cycle}}. A cobrança para hoje e você continua vendo até {{date}}.",
+                "AT_SERVICE_END": "{{name}}: {{price}} {{cycle}}. Está aguardando autorização ou tem uma cobrança pendente: desliga em {{date}}, com o fim do serviço.",
+                "TODAY": "{{name}}: {{price}} {{cycle}}. Desliga hoje com a sua assinatura."
+            },
+            "addonsComeBack": "Se você voltar, contrata de novo: eles não são retomados.",
+            "confirm": "Confirmar o cancelamento",
+            "back": "Voltar",
+            "pending": "Cancelando…",
+            "loadError": "Não conseguimos ler o que acontece se você cancelar esta assinatura. Tente de novo.",
+            "retry": "Tentar de novo",
+            "actError": "Não conseguimos cancelar sua assinatura. Tente de novo.",
+            "stateChanged": "Sua assinatura mudou enquanto você olhava. Recarregue a página para ver como ficou.",
+            "doneScheduled": "Pronto: você cancelou sua assinatura. Ela continua até {{date}}.",
+            "doneEnded": "Pronto: você cancelou sua assinatura. O serviço terminou hoje.",
+            "reason": {
+                "label": "Por que você está cancelando? (opcional)",
+                "none": "Prefiro não dizer",
+                "TOO_EXPENSIVE": "É muito caro",
+                "NOT_ENOUGH_RESULTS": "Tive poucas reservas ou contatos",
+                "MISSING_FEATURES": "Faltam recursos de que preciso",
+                "SEASONAL_PAUSE": "Pausa de temporada",
+                "CLOSING_BUSINESS": "Vou fechar o negócio",
+                "SWITCHING_PLATFORM": "Vou mudar para outra plataforma",
+                "TECHNICAL_PROBLEMS": "Tive problemas técnicos",
+                "OTHER": "Outro motivo"
             }
+        },
+        "promoRedeem": {
+            "trialTitle": "Você tem um código para estender seu período de teste?",
+            "subscriptionTitle": "Você tem um código promocional?",
+            "trialSectionTitle": "Você tem um período de teste ativo?",
+            "label": "Código promocional",
+            "submit": "Resgatar código",
+            "pending": "Resgatando…",
+            "error": "Não foi possível resgatar o código. Tente novamente.",
+            "firstCharge": "Sua próxima cobrança terá desconto: {{amount}}.",
+            "after": "Depois, você pagará {{amount}}.",
+            "providerEmail": "Quando terminar, o Mercado Pago enviará um e-mail avisando que o vendedor alterou o valor.",
+            "promoEnds": "Este também é o aviso de que sua promoção termina.",
+            "nCharges_one": "O desconto será aplicado na sua próxima cobrança {{count}}: {{amount}}.",
+            "nCharges_other": "O desconto será aplicado nas próximas {{count}} cobranças: {{amount}}.",
+            "forever": "Sua mensalidade passa para {{amount}}, sem data para terminar.",
+            "trialExtension_one": "Você ganhou {{count}} dia de teste.",
+            "trialExtension_other": "Você ganhou {{count}} dias de teste."
         }
     },
     "favorites": {
@@ -490,7 +554,7 @@
             "destination": "Destinos",
             "event": "Eventos",
             "experience": "Experiências",
-            "gastronomy": "Gastronomia",
+            "venue": "Comer e sair",
             "post": "Blog"
         },
         "collections": {
@@ -666,8 +730,8 @@
                 "promotions": "Minhas promoções",
                 "recommendations": "Sugestões",
                 "recommendationsDesc": "Acomodações escolhidas para você",
-                "myCommerceDesc": "Gerencie sua ficha, suas fotos e sua assinatura",
-                "myMessagesCommerceDesc": "Consultas que você recebe sobre seu comércio"
+                "myListingDesc": "Gerencie sua ficha, suas fotos e sua assinatura",
+                "myMessagesListingDesc": "Consultas que você recebe sobre seu comércio"
             },
             "stats": {
                 "favorites": "Meus favoritos",
@@ -681,6 +745,9 @@
                 "trialStatus": "Período de avaliação",
                 "freeStatus": "Plano Gratuito",
                 "compStatus": "Bonificado",
+                "gracePeriodStatus": "Pagamento pendente",
+                "suspendedStatus": "Suspensa",
+                "cancelScheduledStatus": "Cancelamento agendado",
                 "multipleSubscriptions_one": "{{count}} assinatura ativa",
                 "multipleSubscriptions_other": "{{count}} assinaturas ativas",
                 "properties": "Meus imóveis",
@@ -724,159 +791,23 @@
         },
         "subscription": {
             "title": "Minha assinatura",
-            "titleCommerce": "Assinatura de comércio",
+            "titleListing": "Assinatura de comércio",
             "description": "Gerencie seu plano e assinatura no Hospeda",
             "heading": "Minha assinatura",
             "headingDesc": "Gerencie seu plano e preferencias de pagamento",
-            "loading": "Carregando assinatura...",
-            "emptyTitle": "Sem assinatura ativa",
-            "emptyBody": "Você ainda não tem um plano ativo. Explore nossos planos para acessar benefícios exclusivos.",
-            "errorTitle": "Erro ao carregar a assinatura",
-            "planCardLabel": "Detalhes do plano atual",
-            "statusLabel": "Status",
-            "nextBillingLabel": "Próxima cobrança",
-            "accessUntilLabel": "Acesso até",
-            "complimentaryLabel": "Plano de cortesia",
-            "complimentaryNoBilling": "Sem vencimento",
-            "paymentMethodLabel": "Método de pagamento",
-            "paymentMercadoPago": "MercadoPago",
-            "paymentNone": "Sem método de pagamento",
-            "noBillingDate": "Sem data de faturamento disponível",
-            "actionsLabel": "Ações",
-            "actionsTitle": "Gerenciar assinatura",
-            "downloadInvoice": "Baixar última fatura",
-            "invoiceError": "Não foi possível obter a última fatura.",
-            "noInvoices": "Você ainda não tem faturas disponíveis.",
-            "invoiceNoPdf": "A fatura ainda não tem um PDF disponível.",
-            "cancelButton": "Cancelar assinatura",
-            "cancelAriaLabel": "Cancelar assinatura",
-            "adminLink": "Mais opções (painel admin)",
-            "viewPlans": "Ver planos",
-            "upgradeLink": "Ver planos disponíveis",
-            "pauseButton": "Pausar assinatura",
-            "pauseAriaLabel": "Pausar assinatura",
-            "resumeButton": "Retomar assinatura",
-            "pauseSuccess": "Assinatura pausada.",
-            "pauseError": "Não foi possível pausar a assinatura.",
-            "resumeSuccess": "Assinatura retomada.",
-            "resumeError": "Não foi possível retomar a assinatura.",
-            "uncancelButton": "Descartar cancelamento",
-            "uncancelSuccess": "Cancelamento descartado. Sua assinatura continua ativa.",
-            "uncancelError": "Não foi possível descartar o cancelamento.",
-            "replacePaymentMethodButton": "Atualizar método de pagamento",
-            "replacePaymentMethodError": "Não conseguimos iniciar a atualização do seu método de pagamento. Tente novamente; se continuar falhando, escreva ao suporte.",
-            "replacePaymentMethodContactSupport": "Escrever ao suporte",
-            "replacePaymentMethodEmailSubject": "Não consigo atualizar meu método de pagamento",
-            "trialExtension": {
-                "title": "Estender seu período de teste grátis",
-                "help": "Se você tem um código promocional, aplique agora e some dias ao seu teste.",
-                "label": "Código promocional",
-                "placeholder": "Digite seu código",
-                "apply": "Aplicar",
-                "applying": "Aplicando...",
-                "success": "Pronto. Estendemos seu período de teste grátis.",
-                "successWithDate": "Pronto. Seu período de teste grátis termina em {{date}}.",
-                "errorGeneric": "Não foi possível aplicar o código. Verifique e tente de novo."
-            },
-            "status": {
-                "active": "Ativa",
-                "trial": "Teste",
-                "cancelled": "Cancelada",
-                "cancelling": "Cancelamento agendado",
-                "expired": "Expirada",
-                "past_due": "Vencida",
-                "pending": "Pendente",
-                "paused": "Pausada",
-                "courtesy": "De presente"
-            },
-            "cancelScheduled": {
-                "title": "Assinatura cancelada",
-                "body": "Nenhuma cobrança adicional será feita. Você mantém acesso ao seu plano até {date}.",
-                "planChangeBlocked": "Você não pode mudar de plano enquanto houver um cancelamento pendente. Poderá fazê-lo quando o período atual terminar."
-            },
-            "pauseModal": {
-                "title": "Pausar assinatura",
-                "body": "Ao pausar, você deixa de pagar e suas acomodações ficam ocultas do site e você não poderá editá-las até retomar. Toda a sua configuração é preservada e volta igual ao retomar.",
-                "confirm": "Pausar"
-            },
             "cancelModal": {
-                "title": "Cancelar assinatura",
-                "emailSubject": "Cancelamento de assinatura",
-                "body": "Para cancelar sua assinatura, envie um e-mail para info@hospeda.com.ar e um agente irá processá-la em breve. Seu plano continuará ativo até o final do período atual.",
-                "contactSupport": "Contatar suporte",
-                "confirm": "Sim, cancelar assinatura",
-                "description": "Ao cancelar sua assinatura você mantém o acesso ao seu plano até o final do período atual. Nenhuma cobrança adicional será feita.",
-                "reasonLabel": "Motivo do cancelamento (opcional)",
-                "reasonPlaceholder": "Conte-nos por que você está cancelando para que possamos melhorar...",
-                "successTitle": "Assinatura cancelada",
-                "successBody": "Sua assinatura foi cancelada. Você ainda tem acesso até {date}.",
-                "flagOffFallback": "O cancelamento online não está disponível no momento. Por favor, entre em contato com o suporte para cancelar sua assinatura.",
-                "cancelError": "Não foi possível cancelar a assinatura. Tente novamente."
+                "body": "Para cancelar sua assinatura, envie um e-mail para info@hospeda.com.ar e um agente irá processá-la em breve. Seu plano continuará ativo até o final do período atual."
             },
-            "scheduledChange": {
-                "title": "Mudança de plano agendada",
-                "body": "Seu plano mudará para {plan} em {date}."
-            },
-            "changePlanButton": "Mudar plano",
-            "changePlanAriaLabel": "Mudar plano de assinatura",
-            "planPicker": {
-                "title": "Mudar plano",
-                "subtitle": "Escolha o plano para o qual deseja mudar.",
-                "listLabel": "Planos disponíveis",
-                "currentBadge": "Plano atual",
-                "upgradeBadge": "Upgrade",
-                "downgradeBadge": "Downgrade",
-                "selectMonthly": "Mensal",
-                "selectAnnual": "Anual"
-            },
-            "downgradePreview": {
-                "title": "Revise as alterações antes de continuar",
-                "intro": "Mudar para o plano {plan} aplicará restrições à sua conta. Escolha o que deseja manter.",
-                "accommodationsTitle": "Acomodações ({active} ativas, máx. {cap})",
-                "accommodationsHint_one": "Selecione até {{count}} acomodação para manter ativa. O restante será desativado.",
-                "accommodationsHint_other": "Selecione até {{count}} acomodações para manter ativas. O restante será desativado.",
-                "accommodationsListLabel": "Lista de acomodações",
-                "promotionsTitle": "Promoções ({active} ativas, máx. {cap})",
-                "promotionsHint_one": "Selecione até {{count}} promoção para manter ativa.",
-                "promotionsHint_other": "Selecione até {{count}} promoções para manter ativas.",
-                "promotionsListLabel": "Lista de promoções",
-                "overCapWarningSelectedCount_one": "{{count}} selecionado",
-                "overCapWarningSelectedCount_other": "{{count}} selecionados",
-                "overCapWarning": "Você tem {{selectedPhrase}}, mas o plano permite {cap}. Desfaça a seleção de {extra}.",
-                "defaultKeep": "Sugerido",
-                "photosTitle": "Fotos excedentes",
-                "photosHint": "Algumas acomodações têm mais fotos do que o permitido. O excedente será arquivado.",
-                "photosOf": "fotos, máx.",
-                "photoOverflowLabel": "Fotos a serem arquivadas",
-                "keepPhotoLabel": "Manter foto {url}",
-                "grandfatherTitle": "Conteúdo que ficará somente leitura",
-                "grandfatherHint": "Estas acomodações têm conteúdo que você não poderá editar com o novo plano, mas NÃO será excluído.",
-                "richDescription": "Descrição enriquecida",
-                "videoEmbed": "Vídeo incorporado",
-                "confirmButton": "Continuar com a mudança"
-            },
-            "planChangeFlow": {
-                "scheduledTitle": "Mudança agendada",
-                "scheduledBody": "Seu plano mudará em {date}. Até lá, você mantém seu plano atual.",
-                "restrictionHint": "As restrições serão aplicadas nesse momento. Os detalhes exatos podem variar com base no seu uso no momento da mudança.",
-                "activeTitle": "Plano atualizado",
-                "activeBody": "Seu plano foi alterado com sucesso.",
-                "redirecting": "Redirecionando para pagamento...",
-                "previewError": "Não foi possível obter a prévia da mudança. Tente novamente.",
-                "changeError": "Não foi possível mudar o plano. Tente novamente.",
-                "goToPlans": "Ver planos e assinar"
-            },
-            "titleGastronomy": "Assinatura de gastronomia",
+            "titleVenue": "Assinatura de Comer e sair",
             "titleExperience": "Assinatura de experiências",
             "titleTourist": "Assinatura de turista",
             "domainSwitcher": {
                 "label": "Escolha qual assinatura ver",
                 "accommodation": "Hospedagem",
-                "gastronomy": "Gastronomia",
                 "experience": "Experiências",
-                "tourist": "Turista"
-            },
-            "courtesyUntilLabel": "Sem cobrança até"
+                "tourist": "Turista",
+                "venue": "Comer e sair"
+            }
         },
         "whatsNew": {
             "title": "Novidades",
@@ -897,29 +828,6 @@
         "recommendations": {
             "title": "Sugestões para você",
             "description": "Acomodações escolhidas especialmente para você, com base nos seus favoritos, buscas e atividade recente no Hospeda"
-        },
-        "addons": {
-            "title": "Complementos",
-            "description": "Amplie as funções da sua conta com complementos adicionais no Hospeda"
-        },
-        "redeem": {
-            "title": "Resgatar um código",
-            "description": "Digite um código promocional e aplique-o na hora à sua conta.",
-            "help": "Escreva o código exatamente como o enviamos e aplicamos na hora.",
-            "dashboardLink": "Tem um código promocional?",
-            "backToSubscription": "Voltar para minha assinatura",
-            "plansCta": "Ver planos",
-            "errorNotFound": "Não encontramos esse código. Confira se está escrito corretamente.",
-            "errorInactive": "Este código não está mais ativo.",
-            "errorExpired": "Este código já venceu.",
-            "errorMaxUses": "Este código atingiu o limite de usos.",
-            "errorMaxUsesPerUser": "Você já usou este código o número máximo de vezes.",
-            "errorPlanRestriction": "Este código não é válido para o seu plano.",
-            "errorNewUsersOnly": "Este código é apenas para clientes novos.",
-            "errorMinAmount": "Sua compra não atinge o mínimo exigido para este código.",
-            "discountNotice": "Este é um código de desconto. Não o usamos — você poderá aplicá-lo ao contratar um plano.",
-            "compNotice": "Este código não pode ser resgatado. Fale com a gente se prometeram uma assinatura de cortesia a você.",
-            "successDiscount": "Pronto. Aplicamos o desconto à sua assinatura."
         }
     },
     "newsletter": {
@@ -1091,7 +999,7 @@
             "digit": "Al menos 1 número",
             "length": "Mínimo 8 caracteres",
             "lower": "Al menos 1 minúscula",
-            "special": "Al menos 1 carácter especial (@$!%*?&)",
+            "special": "Al menos 1 carácter especial (por ejemplo ! @ # $ - _)",
             "upper": "Al menos 1 mayúscula"
         },
         "showPassword": "Mostrar contraseña"
@@ -1164,7 +1072,11 @@
             "message": "Alertas de preço estão disponíveis nos planos Plus e VIP. Atualize seu plano para acessar.",
             "cta": "Ver planos"
         },
-        "listLabel": "Seus alertas de preço ativos"
+        "listLabel": "Seus alertas de preço ativos",
+        "closedNotice": "Este alerta foi encerrado porque esse anúncio não existe mais.",
+        "activeHeading": "Alertas ativos",
+        "closedHeading": "Alertas encerrados",
+        "closedListLabel": "Seus alertas de preço encerrados"
     },
     "exclusiveDeals": {
         "loading": "Carregando ofertas exclusivas...",
@@ -1208,137 +1120,11 @@
         }
     },
     "addons": {
-        "title": "Complementos",
         "subtitle": "Amplie as funções da sua conta com complementos adicionais",
         "loading": "Carregando complementos...",
-        "errorFetch": "Não foi possível carregar os complementos disponíveis",
-        "empty": "Não há complementos disponíveis no momento.",
-        "groups": {
-            "perAccommodation": "Por hospedagem",
-            "account": "Da conta"
-        },
-        "focus": {
-            "others": "Outros complementos",
-            "headings": {
-                "fallback": "O complemento que você estava procurando",
-                "extra-photos-20": "Para ampliar suas fotos",
-                "extra-accommodations-5": "Para publicar mais hospedagens",
-                "extra-properties-5": "Para adicionar mais propriedades",
-                "visibility-boost-7d": "Para destacar sua hospedagem",
-                "visibility-boost-30d": "Para destacar sua hospedagem",
-                "ai-support-monthly": "Para adicionar suporte com IA"
-            }
-        },
-        "featuredOffer": {
-            "notFeaturedNotice": "Sua hospedagem não está em destaque. Com este complemento ela fica em destaque automaticamente, sem nenhum passo extra.",
-            "title": "Destaque esta hospedagem",
-            "body": "Um impulso de visibilidade faz esta hospedagem aparecer em destaque nas listagens e nos resultados de busca enquanto durar o complemento.",
-            "scope": "Atenção: o impulso vale somente para esta ficha. Se você tem mais de uma hospedagem, cada uma precisa do seu próprio complemento.",
-            "linkSr": "para esta hospedagem"
-        },
-        "billingType": {
-            "one_time": "Pagamento único",
-            "recurring": "Mensal"
-        },
-        "recurringNotice": "É uma assinatura: renova sozinha e é cobrada todos os meses enquanto estiver ativa.",
-        "duration_one": "{{count}} dia",
-        "duration_other": "{{count}} dias",
         "priceLabel": "Preço",
-        "buyButton": "Comprar",
-        "buyingButton": "Processando...",
-        "owned": "Ativo",
         "accommodationSelect": {
-            "label": {
-                "accommodation": "Hospedagem",
-                "gastronomy": "Restaurante",
-                "experience": "Experiência"
-            },
-            "placeholder": {
-                "accommodation": "Escolha uma hospedagem",
-                "gastronomy": "Escolha um restaurante",
-                "experience": "Escolha uma experiência"
-            },
-            "required": "Escolha uma hospedagem para continuar",
-            "empty": {
-                "accommodation": "Você precisa de uma hospedagem primeiro",
-                "gastronomy": "Você precisa de um restaurante publicado primeiro",
-                "experience": "Você precisa de uma experiência publicada primeiro"
-            }
-        },
-        "gate": {
-            "title": "Você precisa de uma assinatura ativa",
-            "body": "Os complementos estão disponíveis para contas com uma assinatura ativa ou em período de teste.",
-            "cta": "Ver planos"
-        },
-        "result": {
-            "success": "Complemento adquirido com sucesso!",
-            "failure": "A compra não foi concluída. Você pode tentar novamente quando quiser."
-        },
-        "errors": {
-            "purchaseFailed": "Não foi possível iniciar a compra. Tente novamente.",
-            "missingAccommodation": "Escolha uma hospedagem para continuar."
-        },
-        "catalog": {
-            "visibility-boost-7d": {
-                "name": "Impulso de visibilidade (7 dias)",
-                "description": "Sua hospedagem aparece em destaque nos resultados de busca por 7 dias."
-            },
-            "visibility-boost-30d": {
-                "name": "Impulso de visibilidade (30 dias)",
-                "description": "Sua hospedagem aparece em destaque nos resultados de busca por 30 dias."
-            },
-            "visibility-boost-gastronomy-7d": {
-                "name": "Impulso de visibilidade — Restaurante (7 dias)",
-                "description": "Seu restaurante aparece em destaque nos resultados de busca por 7 dias."
-            },
-            "visibility-boost-gastronomy-30d": {
-                "name": "Impulso de visibilidade — Restaurante (30 dias)",
-                "description": "Seu restaurante aparece em destaque nos resultados de busca por 30 dias."
-            },
-            "visibility-boost-experience-7d": {
-                "name": "Impulso de visibilidade — Experiência (7 dias)",
-                "description": "Sua experiência aparece em destaque nos resultados de busca por 7 dias."
-            },
-            "visibility-boost-experience-30d": {
-                "name": "Impulso de visibilidade — Experiência (30 dias)",
-                "description": "Sua experiência aparece em destaque nos resultados de busca por 30 dias."
-            },
-            "extra-photos-20": {
-                "name": "Pacote de fotos extra (+20 fotos)",
-                "description": "Adiciona 20 fotos adicionais a cada hospedagem. Renova mensalmente."
-            },
-            "extra-accommodations-5": {
-                "name": "Pacote de hospedagens extra (+5)",
-                "description": "Adiciona 5 hospedagens adicionais ao seu plano. Renova mensalmente."
-            },
-            "extra-properties-5": {
-                "name": "Pacote de propriedades extra (+5)",
-                "description": "Adiciona 5 propriedades adicionais ao seu complexo. Renova mensalmente."
-            },
-            "ai-support-monthly": {
-                "name": "Suporte com IA (mensal)",
-                "description": "Desbloqueia ferramentas de suporte com IA para anfitriões, incluindo sugestões de resposta inteligentes e tratamento automático de perguntas frequentes de hóspedes. Renova mensalmente."
-            },
-            "extra-gastronomies-1": {
-                "name": "Gastronomia extra (+1)",
-                "description": "Adiciona 1 gastronomia adicional ao seu plano. Renova mensalmente."
-            },
-            "extra-experiences-1": {
-                "name": "Experiência extra (+1)",
-                "description": "Adiciona 1 experiência adicional ao seu plano. Renova mensalmente."
-            },
-            "private-galleries-5": {
-                "name": "Pacote de galerias privadas (+5)",
-                "description": "Adiciona 5 galerias privadas ativas para suas experiências, e habilita as galerias privadas nos planos que não as incluem. Renova mensalmente."
-            },
-            "private-galleries-10": {
-                "name": "Pacote de galerias privadas (+10)",
-                "description": "Adiciona 10 galerias privadas ativas para suas experiências, e habilita as galerias privadas nos planos que não as incluem. Renova mensalmente."
-            },
-            "private-galleries-20": {
-                "name": "Pacote de galerias privadas (+20)",
-                "description": "Adiciona 20 galerias privadas ativas para suas experiências, e habilita as galerias privadas nos planos que não as incluem. Renova mensalmente."
-            }
+            "required": "Escolha uma hospedagem para continuar"
         }
     },
     "myContent": {
@@ -1477,6 +1263,11 @@
             "create": {
                 "pageTitle": "Novo evento",
                 "subtitle": "Preencha o básico agora — você vai poder adicionar fotos e mais detalhes depois no editor.",
+                "noAccess": {
+                    "title": "Criar eventos é uma função dos editores",
+                    "description": "Sua conta ainda não tem permissão para criar eventos. Se quiser publicar eventos na Hospeda, preencha a solicitação para se tornar editor.",
+                    "cta": "Quero ser editor"
+                },
                 "field": {
                     "name": "Nome",
                     "category": "Categoria",
@@ -1503,6 +1294,11 @@
                 "error": "Não conseguimos criar o evento. Tente novamente.",
                 "submitting": "Criando...",
                 "submit": "Criar evento"
+            },
+            "noAccess": {
+                "title": "Esta seção é para editores",
+                "description": "Sua conta ainda não tem permissão para gerenciar eventos. Se quiser publicar eventos na Hospeda, preencha a solicitação para se tornar editor.",
+                "cta": "Quero ser editor"
             },
             "editor": {
                 "pageTitle": "Editar evento",
@@ -1729,5 +1525,30 @@
     },
     "description": "Gestioná tu cuenta en Hospeda",
     "menu": "Menú de cuenta",
-    "title": "Mi cuenta"
+    "title": "Mi cuenta",
+    "changePassword": {
+        "title": "Alterar senha",
+        "subtitle": "Por segurança, você precisa atualizar sua senha antes de continuar.",
+        "fields": {
+            "currentPassword": "Senha atual",
+            "newPassword": "Nova senha",
+            "confirmNewPassword": "Confirme a nova senha"
+        },
+        "submit": "Alterar senha",
+        "submitting": "Salvando...",
+        "success": "Sua senha foi atualizada com sucesso.",
+        "error": "Ocorreu um erro ao atualizar a senha. Por favor, tente novamente.",
+        "mismatch": "As senhas não coincidem.",
+        "currentIncorrect": "A senha atual está incorreta.",
+        "currentRequired": "La contraseña actual es requerida.",
+        "hidePassword": "Ocultar contraseña",
+        "showPassword": "Mostrar contraseña",
+        "strength": {
+            "medium": "Media",
+            "strong": "Segura",
+            "weak": "Débil"
+        },
+        "strengthLabel": "Seguridad de la contraseña",
+        "accountNotice": "Você vai alterar a senha desta conta:"
+    }
 }

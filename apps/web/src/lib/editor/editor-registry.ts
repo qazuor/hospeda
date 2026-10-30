@@ -7,7 +7,7 @@
  * the route nav, the hub list and the breadcrumbs are ALL derived, so a section
  * can never be reachable from one surface and missing from another. It worked,
  * and the owner's decision for HOS-1080 was to take it up rather than down —
- * gastronomy and experience get the same architecture instead of accommodation
+ * venue and experience get the same architecture instead of accommodation
  * losing it.
  *
  * What was in the way was not the shape but the WIRING: `EditorSection`,
@@ -16,9 +16,9 @@
  * holds the same logic with the accommodation-specific parts lifted into an
  * {@link EditorRegistry} the caller supplies.
  *
- * Nothing here knows about a vertical. `accommodation-editor-sections.ts` and
- * `commerce-editor-sections.ts` each declare one registry and the rest of the
- * editor reads only this file.
+ * Nothing here knows about a vertical. `accommodation-editor-sections.ts`,
+ * `venue-editor-sections.ts` and `experience-editor-sections.ts` each
+ * declare one registry and the rest of the editor reads only this file.
  */
 
 import type { SupportedLocale } from '@/lib/i18n';

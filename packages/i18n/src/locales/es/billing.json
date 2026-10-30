@@ -53,12 +53,7 @@
         },
         "trial": {
             "noCharge": "No se realizó ningún cobro",
-            "subscribeNow": "Suscribirse ahora",
-            "expiredBanner": {
-                "title": "Tu prueba gratuita terminó",
-                "body": "Tu prueba del plan {{planSlug}} venció el {{expiresAt}}. Suscribite para volver a publicar.",
-                "cta": "Ver planes"
-            }
+            "subscribeNow": "Suscribirse ahora"
         },
         "cancelled": {
             "title": "Suscripción cancelada",
@@ -183,34 +178,8 @@
     },
     "checkout": {
         "success": {
-            "title": "¡Tu suscripción está activa!",
-            "subtitle": "Tu pago fue aprobado correctamente",
             "planDetails": "Plan: {{planName}}",
-            "amountDetails": "Monto: {{amount}}",
-            "verifyingStatus": "Verificando estado del pago...",
-            "verifyingSubtitle": "Estamos confirmando tu pago. Esto puede tardar unos instantes.",
-            "cta": "Ir a mi cuenta",
-            "pageTitle": "Pago aprobado",
-            "promoIgnoredNote": "Tu código no se aplicó: es para extender una prueba gratis y esta suscripción no tiene una.",
-            "linkErrorTitle": "No pudimos vincular tu pago",
-            "linkErrorSubtitle": "Hubo un problema al vincular este pago con tu cuenta. Si ya realizaste el pago, contactá a soporte con el número de operación de MercadoPago.",
-            "unresolvedTitle": "Seguimos confirmando tu pago",
-            "unresolvedSubtitle": "Tu pago no se perdió. MercadoPago puede tardar unos minutos en confirmarlo y, en cuanto lo haga, tu plan queda activo automáticamente. Podés cerrar esta página: revisá el estado en Mi Cuenta, o escribinos si en un rato seguís sin verlo.",
-            "unresolvedSupportCta": "Escribinos"
-        },
-        "pending": {
-            "title": "Tu pago está siendo procesado",
-            "body": "Puede demorar hasta 24 horas en confirmarse. Te avisaremos por email cuando se acredite.",
-            "cta": "Verificar estado",
-            "pageTitle": "Pago en proceso"
-        },
-        "partnerPending": {
-            "pageTitle": "Pago recibido",
-            "title": "Recibimos tu pago",
-            "body": "Estamos confirmando la operación con MercadoPago. Puede demorar unos minutos, y en algunos casos hasta 24 horas. Cuando el pago se acredite, tu presencia en Hospeda se activa sola: no tenés que hacer nada más.",
-            "note": "Guardá el comprobante que te envió MercadoPago. Si algo no queda claro, escribinos y lo revisamos con vos.",
-            "homeCta": "Ir al inicio",
-            "contactCta": "Escribinos"
+            "amountDetails": "Monto: {{amount}}"
         },
         "failure": {
             "title": "El pago no pudo procesarse",
@@ -228,48 +197,6 @@
             "supportCta": "Contactar soporte",
             "pageTitle": "Pago rechazado"
         },
-        "button": {
-            "cta": "Contratar",
-            "processing": "Procesando...",
-            "processingAriaLabel": "Procesando pago",
-            "error": "No pudimos iniciar el pago. Intentá de nuevo.",
-            "unauthCta": "Iniciá sesión para contratar",
-            "currentPlan": "Plan actual",
-            "currentPlanAriaLabel": "Este es tu plan actual",
-            "changePlan": "Cambiar a este plan",
-            "freeRegisterCta": "Registrate gratis",
-            "freePlanLegend": "Ya tenés este plan"
-        },
-        "promoApply": {
-            "label": "Código de descuento",
-            "inputPlaceholder": "Ingresá tu código",
-            "applyButton": "Aplicar",
-            "applying": "Verificando...",
-            "removeButton": "Quitar",
-            "discountPercentForever": "{{percent}}% de descuento para siempre",
-            "discountPercentCycle_one": "{{percent}}% de descuento por {{months}} mes",
-            "discountPercentCycle_other": "{{percent}}% de descuento por {{months}} meses",
-            "discountFixedForever": "${{amount}} de descuento para siempre",
-            "discountFixedCycle_one": "${{amount}} de descuento por {{months}} mes",
-            "discountFixedCycle_other": "${{amount}} de descuento por {{months}} meses",
-            "trialExtension_one": "{{days}} día de prueba gratis adicional",
-            "trialExtension_other": "{{days}} días de prueba gratis adicionales",
-            "comp": "Gratis para siempre",
-            "compNotRedeemable": "Este código no se puede canjear. Escribinos si te prometieron una suscripción de cortesía.",
-            "errorInvalid": "El código ingresado no es válido. Revisalo e intentá de nuevo.",
-            "errorAnnualOutsideTrial": "Este código de descuento no aplica a planes anuales fuera del período de prueba.",
-            "errorGeneric": "No pudimos verificar el código. Intentá de nuevo.",
-            "errorNotFound": "No encontramos ese código. Revisá que esté bien escrito.",
-            "errorInactive": "Este código ya no está activo.",
-            "errorExpired": "Este código ya venció.",
-            "errorMaxUses": "Este código alcanzó su límite de usos.",
-            "errorMaxUsesPerUser": "Ya usaste este código la cantidad máxima de veces.",
-            "errorPlanRestriction": "Este código no es válido para el plan seleccionado.",
-            "errorNewUsersOnly": "Este código es solo para clientes nuevos.",
-            "errorMinAmount": "Tu compra no alcanza el mínimo requerido para este código.",
-            "pendingAuthMessage": "Vas a poder aplicar el código {{code}} en cuanto termines de registrarte.",
-            "registerCta": "Registrarme"
-        },
         "payerEmailConfirm": {
             "title": "Con qué email vas a poder pagar",
             "body": "Mercado Pago solo te va a dejar pagar con este email exacto. Si querés usar otra cuenta de Mercado Pago, cambialo antes de continuar.",
@@ -286,22 +213,72 @@
         "firstPublishPaused": {
             "title": "Publicación de fichas nuevas en pausa",
             "body": "Por el momento pausamos la publicación de fichas nuevas. Tu ficha queda guardada como borrador y vas a poder publicarla cuando se reanuden."
+        },
+        "signup": {
+            "pendingAttempt": {
+                "title": "Tenés un intento de alta de suscripción pendiente",
+                "body": "Empezaste el alta de suscripción a {{plan}} ({{amount}}, {{cycle}}) y todavía no la autorizaste en Mercado Pago. Para elegir esta otra opción, primero cancelá ese intento. Vence el {{date}}.",
+                "resume": "Retomar ese intento",
+                "cancel": "Cancelar ese intento",
+                "cancelling": "Cancelando…",
+                "cancelled": "Cancelamos tu intento anterior de alta de suscripción. Ya podés elegir esta opción."
+            },
+            "title": "Confirmá tu suscripción",
+            "intro": "Vas a autorizar el pago en Mercado Pago.",
+            "planSummary": "{{plan}} · {{amount}} {{cycle}}",
+            "cycle": {
+                "monthly": "por mes",
+                "quarterly": "por trimestre",
+                "semiannual": "por semestre",
+                "annual": "por año"
+            },
+            "confirm": "Ir a pagar con Mercado Pago",
+            "submitting": "Preparando el pago…",
+            "payerEmail": {
+                "label": "Email de tu cuenta de Mercado Pago",
+                "hint": "Tiene que ser el email de la cuenta con la que vas a pagar. Si es distinto del de tu cuenta de Hospeda, cambialo acá: si no coincide, Mercado Pago rechaza el pago.",
+                "invalid": "Ingresá un email válido."
+            },
+            "pending": {
+                "title": "Tu suscripción de {{vertical}} está esperando que completes el pago",
+                "resume": "Completar el pago en Mercado Pago",
+                "windowEnds": "Tenés tiempo hasta el {{date}}."
+            },
+            "rejection": {
+                "planNotForSale": "Este plan ya no está a la venta.",
+                "seePlans": "Ver los planes vigentes",
+                "previousAttemptClosing": "Estamos cerrando tu intento anterior; probá de nuevo en unos minutos.",
+                "previousAttemptInProgress": "Todavía estamos preparando tu intento anterior con Mercado Pago. Probá de nuevo en unos minutos.",
+                "touristVipInherited": "Tu plan actual ya incluye los beneficios de Turista VIP",
+                "commitmentTaken": "Ya tenés una suscripción en curso en esta vertical.",
+                "generic": "No pudimos iniciar tu suscripción. Probá de nuevo en unos minutos.",
+                "providerRejected": "Mercado Pago no aceptó los datos del pago. Revisá que el email sea el de tu cuenta de Mercado Pago y volvé a intentar.",
+                "partnerManualOnly": "La suscripción de aliados no se contrata desde acá. Nuestro equipo te va a contactar para coordinar el pago y activarla."
+            },
+            "trialNotice": {
+                "running_one": "Estás en tu período de prueba: te queda {{days}} día, hasta el {{date}}.",
+                "running_other": "Estás en tu período de prueba: te quedan {{days}} días, hasta el {{date}}.",
+                "endsOnCharge": "Si el primer cobro se acredita, tu prueba termina y perdés esos días.",
+                "keepsOnDecline": "Si el cobro se rechaza, seguís en tu prueba con esos días.",
+                "unknown": "Si estás en tu período de prueba en esta vertical: al acreditarse el primer cobro termina y perdés los días que te quedaban; si el cobro se rechaza, seguís en tu prueba con esos días."
+            },
+            "touristVipNotice": {
+                "cancelledOnReturn": "Tenés una suscripción suspendida cuyo plan te daba los beneficios de Turista VIP. Si la regularizás, esta suscripción a Turista VIP se cancela en el momento y lo que hayas pagado no se reembolsa, porque tu plan te los vuelve a dar.",
+                "unknown": "Si tenés una suscripción suspendida cuyo plan te daba los beneficios de Turista VIP y la regularizás, una suscripción a Turista VIP que compres se cancela en el momento, sin reembolso.",
+                "cancelledOnActivationUntil": "Tenés una suscripción a Turista VIP paga hasta el {{date}}. Este plan ya incluye sus beneficios: cuando se active, esa suscripción se cancela y lo que pagaste no se reembolsa.",
+                "cancelledOnActivation": "Tenés una suscripción a Turista VIP. Este plan ya incluye sus beneficios: cuando se active, esa suscripción se cancela y lo que pagaste no se reembolsa.",
+                "unknownOnActivation": "Si tenés una suscripción a Turista VIP y este plan incluye sus beneficios, esa suscripción se cancela cuando el plan se active, sin reembolso."
+            },
+            "retry": "Intentar de nuevo",
+            "vertical": {
+                "accommodation": "alojamiento",
+                "experience": "experiencias",
+                "tourist": "Turista VIP",
+                "partner": "aliados",
+                "unknown": "Hospeda",
+                "venue": "Comer y salir"
+            }
         }
-    },
-    "checkoutRetry": {
-        "checkingTitle": "Verificando tu pago...",
-        "checkingBody": "Estamos revisando el estado de tu suscripción.",
-        "redirectingTitle": "Te estamos redirigiendo a Mercado Pago...",
-        "redirectingBody": "Un momento, te llevamos a completar el pago.",
-        "activeTitle": "Tu suscripción ya está activa",
-        "activeBody": "No hace falta que vuelvas a pagar: tu plan ya está funcionando.",
-        "confirmingTitle": "Estamos confirmando tu pago",
-        "confirmingBody": "Puede que ya lo estemos resolviendo desde otra pestaña. Esperá un momento.",
-        "confirmingTimedOutTitle": "Todavía estamos confirmando tu pago",
-        "confirmingTimedOutBody": "Esto está tardando más de lo esperado. Podés intentarlo de nuevo en un momento.",
-        "errorTitle": "No pudimos verificar tu pago",
-        "errorBody": "Volvé a intentarlo o escribinos si el problema sigue.",
-        "retryButton": "Reintentar"
     },
     "limit": {
         "max_favorites": {
@@ -323,15 +300,15 @@
                 "secondaryCta": "Ver mis propiedades"
             }
         },
-        "max_gastronomies": {
-            "title": "Llegaste al límite de gastronomías",
-            "message_one": "Ya tenés {{currentCount}} de {{maxAllowed}} gastronomía en tu plan. Actualizalo para publicar más.",
-            "message_other": "Ya tenés {{currentCount}} de {{maxAllowed}} gastronomías en tu plan. Actualizalo para publicar más.",
+        "max_venues": {
+            "title": "Llegaste al límite de fichas de Comer y salir",
+            "message_one": "Ya tenés {{currentCount}} de {{maxAllowed}} ficha de Comer y salir en tu plan. Actualizalo para publicar más.",
+            "message_other": "Ya tenés {{currentCount}} de {{maxAllowed}} fichas de Comer y salir en tu plan. Actualizalo para publicar más.",
             "cta": "Ver mi suscripción",
             "atLimitPanel": {
                 "title": "Llegaste al límite de tu plan",
-                "body_one": "Estás usando {{currentCount}} de {{maxAllowed}} ficha de gastronomía. Para publicar otra, actualizá tu plan.",
-                "body_other": "Estás usando {{currentCount}} de {{maxAllowed}} fichas de gastronomía. Para publicar otra, actualizá tu plan.",
+                "body_one": "Estás usando {{currentCount}} de {{maxAllowed}} ficha de Comer y salir. Para publicar otra, actualizá tu plan.",
+                "body_other": "Estás usando {{currentCount}} de {{maxAllowed}} fichas de Comer y salir. Para publicar otra, actualizá tu plan.",
                 "primaryCta": "Ver mi suscripción",
                 "secondaryCta": "Ver mis fichas"
             }
@@ -388,8 +365,8 @@
         "max_ai_chat_consumer_per_month": {
             "title": "Llegaste al límite de consultas al asistente de IA"
         },
-        "max_ai_chat_gastronomy_per_month": {
-            "title": "Llegaste al límite de consultas al chat de IA de tu gastronomía"
+        "max_ai_chat_venue_per_month": {
+            "title": "Llegaste al límite de consultas al chat de IA de tu ficha de Comer y salir"
         },
         "max_ai_chat_experience_per_month": {
             "title": "Llegaste al límite de consultas al chat de IA de tu experiencia"
@@ -496,7 +473,7 @@
         },
         "owner-premium": {
             "name": "Premium",
-            "description": "Todo lo del plan Profesional, branding personalizado, sello de verificación y promociones ilimitadas."
+            "description": "Todo lo del plan Profesional, branding personalizado (próximamente), sello de verificación y promociones ilimitadas."
         },
         "tourist-free": {
             "name": "Gratis",
@@ -506,15 +483,15 @@
             "name": "VIP",
             "description": "Soporte VIP, promociones exclusivas y contacto directo por WhatsApp con los alojamientos."
         },
-        "gastronomy-basico": {
+        "venue-basico": {
             "name": "Básico",
             "description": "Publicá tu local con sus fotos, horarios y contacto. Lo necesario para que te encuentren."
         },
-        "gastronomy-pro": {
+        "venue-pro": {
             "name": "Profesional",
             "description": "Sumá la carta cargada en Hospeda, el menú del día y los eventos del local."
         },
-        "gastronomy-premium": {
+        "venue-premium": {
             "name": "Premium",
             "description": "Todo lo anterior con fotos por plato, carta en varios idiomas, ficha en PDF y chat con IA."
         },
@@ -542,16 +519,16 @@
     "entitlement": {
         "publish_accommodations": "Publicar alojamientos",
         "edit_accommodation_info": "Editar información del alojamiento",
-        "edit_gastronomy_info": "Editar información del comercio gastronómico",
-        "publish_gastronomy": "Publicar comercios gastronómicos",
+        "edit_venue_info": "Editar información del local",
+        "publish_venue": "Publicar locales",
         "edit_experience_info": "Editar información de la experiencia",
         "publish_experience": "Publicar experiencias",
         "download_listing_pdf": "Ficha en PDF para imprimir",
         "issue_experience_certificate": "Certificados de experiencia",
-        "manage_gastronomy_menu": "Carta con secciones y platos",
+        "manage_venue_menu": "Carta con secciones y platos",
         "menu_item_photos": "Foto por plato en la carta",
         "manage_experience_directions": "Mapa del punto de encuentro y cómo llegar",
-        "manage_gastronomy_daily_special": "Plato del día con vigencia propia",
+        "manage_venue_daily_special": "Plato del día con vigencia propia",
         "view_basic_stats": "Estadísticas básicas",
         "view_advanced_stats": "Estadísticas avanzadas",
         "respond_reviews": "Responder reseñas",
@@ -589,10 +566,15 @@
         "ai_support": "Asistente de soporte con IA",
         "ai_translate": "Traducción de contenido con IA",
         "ai_accommodation_import": "Importación de alojamientos con IA",
-        "manage_gastronomy_events": "Eventos del local, con fecha o semanales",
-        "multilingual_gastronomy_menu": "Carta en varios idiomas",
+        "manage_venue_events": "Eventos del local, con fecha o semanales",
+        "multilingual_venue_menu": "Carta en varios idiomas",
         "menu_qr_scan_metrics": "QR de la carta con panel de escaneos",
-        "manage_experience_private_galleries": "Galerías privadas para tus clientes"
+        "manage_experience_private_galleries": "Galerías privadas para tus clientes",
+        "partner_public_page": "Página propia dentro de Hospeda",
+        "partner_carousel_presence": "Logo en el carrusel de aliados",
+        "recover_own_listing": "Ver, exportar, reactivar o borrar tus fichas",
+        "subscribe_to_plan": "Suscribirse a un plan",
+        "activate_trial": "Activar el período de prueba"
     },
     "comparison": {
         "unlimited": "Ilimitado",
@@ -612,11 +594,11 @@
             "asTourist": "Como turista (incluido)",
             "asOwner": "Como propietario",
             "aiBusiness": "IA para tu negocio",
-            "gastronomyListing": "Tu local en Hospeda",
-            "gastronomyMenu": "La carta",
+            "venueListing": "Tu local en Hospeda",
+            "venueMenu": "La carta",
             "experienceListing": "Tu experiencia en Hospeda",
             "experienceService": "Antes y después de la salida",
-            "commerceExtras": "Herramientas extra"
+            "listingExtras": "Herramientas extra"
         },
         "row": {
             "favorites": "Favoritos",
@@ -650,12 +632,12 @@
             "aiImport": "Importaciones con IA por mes",
             "aiChatOwner": "Consultas con IA por mes",
             "aiSupport": "Asistente IA de soporte",
-            "maxGastronomies": "Locales que podés publicar",
-            "publishGastronomy": "Publicar tu local",
-            "editGastronomyInfo": "Editar la información del local",
-            "gastronomyMenu": "Carta cargada en Hospeda",
-            "gastronomyDailySpecial": "Menú del día",
-            "gastronomyEvents": "Eventos del local",
+            "maxVenues": "Locales que podés publicar",
+            "publishVenue": "Publicar tu local",
+            "editVenueInfo": "Editar la información del local",
+            "venueMenu": "Carta cargada en Hospeda",
+            "venueDailySpecial": "Menú del día",
+            "venueEvents": "Eventos del local",
             "menuItemPhotos": "Fotos por plato",
             "multilingualMenu": "Carta en varios idiomas",
             "menuQrScanMetrics": "QR de la carta con panel de escaneos",
@@ -665,7 +647,7 @@
             "experienceDirections": "Cómo llegar al punto de encuentro",
             "experienceCertificate": "Certificado para quien la hizo",
             "listingPdf": "Ficha descargable en PDF",
-            "aiChatCommerce": "Consultas por chat con IA al mes"
+            "aiChatListing": "Consultas por chat con IA al mes"
         },
         "rowDesc": {
             "favorites": "Guardá los alojamientos que te interesan para consultarlos después.",
@@ -699,7 +681,22 @@
             "aiImport": "Cantidad de importaciones con IA desde otras plataformas disponibles por mes.",
             "aiChatOwner": "Cantidad de consultas mensuales a la IA disponibles para propietarios.",
             "aiSupport": "Asistente con IA para resolver dudas sobre la plataforma en tiempo real.",
-            "menuQrScanMetrics": "Un QR para la mesa que abre tu carta, con un panel de escaneos: total, por día, y por dispositivo e idioma."
+            "menuQrScanMetrics": "Un QR para la mesa que abre tu carta, con un panel de escaneos: total, por día, y por dispositivo e idioma.",
+            "maxVenues": "Cantidad de locales que podés tener publicados al mismo tiempo.",
+            "publishVenue": "Publicá tu local para que los visitantes lo encuentren en Hospeda.",
+            "editVenueInfo": "Actualizá los datos y detalles de tu local cuando quieras.",
+            "venueMenu": "Cargá tu carta en Hospeda para que se vea en la página de tu local.",
+            "venueDailySpecial": "Mostrá el menú del día en tu publicación y cambialo cuando quieras.",
+            "venueEvents": "Anunciá en la página de tu local los eventos que organizás.",
+            "menuItemPhotos": "Sumá una foto a cada plato de tu carta.",
+            "multilingualMenu": "Ofrecé tu carta en varios idiomas para visitantes de otros países.",
+            "maxExperiences": "Cantidad de experiencias que podés tener publicadas al mismo tiempo.",
+            "publishExperience": "Publicá tu experiencia para que los visitantes la encuentren en Hospeda.",
+            "editExperienceInfo": "Actualizá los datos y detalles de tu experiencia cuando quieras.",
+            "experienceDirections": "Indicá cómo llegar al punto de encuentro, para que nadie se pierda.",
+            "experienceCertificate": "Emití un certificado para quienes participaron de tu experiencia.",
+            "listingPdf": "Descargá la ficha de tu publicación en PDF para compartirla o imprimirla.",
+            "aiChatListing": "Cantidad de consultas mensuales a la IA disponibles para tu publicación."
         },
         "note": {
             "aiSearch": "Para usuarios registrados",
@@ -710,7 +707,7 @@
         },
         "limitLabel": {
             "max_accommodations": "Alojamientos publicados",
-            "max_gastronomies": "Gastronomías publicadas",
+            "max_venues": "Fichas de Comer y salir publicadas",
             "max_experiences": "Experiencias publicadas",
             "max_photos_per_accommodation": "Fotos por alojamiento",
             "max_active_promotions": "Promociones activas",
@@ -722,7 +719,7 @@
             "max_ai_text_improve_per_month": "Mejoras de texto con IA por mes",
             "max_ai_chat_per_month": "Consultas con IA por mes",
             "max_ai_chat_consumer_per_month": "Consultas al asistente de IA por mes",
-            "max_ai_chat_gastronomy_per_month": "Consultas al chat de IA (gastronomía) por mes",
+            "max_ai_chat_venue_per_month": "Consultas al chat de IA (Comer y salir) por mes",
             "max_ai_chat_experience_per_month": "Consultas al chat de IA (experiencias) por mes",
             "max_ai_search_per_month": "Búsquedas con IA por mes",
             "max_ai_support_per_month": "Consultas al soporte con IA por mes",
@@ -745,7 +742,7 @@
         "max_ai_text_improve_per_month": "Cuántas veces por mes podés pedirle a la IA que mejore tus textos. La cuota se renueva al empezar cada mes.",
         "max_ai_chat_per_month": "Cuántas consultas por mes puede responder la IA sobre tus alojamientos. Al agotarla, vuelve a estar disponible el mes siguiente.",
         "max_ai_chat_consumer_per_month": "Cuántas consultas podés hacerle por mes al asistente de IA. Al agotarla, la cuota se renueva el mes siguiente.",
-        "max_ai_chat_gastronomy_per_month": "Cuántas consultas por mes puede responder la IA sobre tu local gastronómico. Al agotarla, vuelve a estar disponible el mes siguiente.",
+        "max_ai_chat_venue_per_month": "Cuántas consultas por mes puede responder la IA sobre tu local. Al agotarla, vuelve a estar disponible el mes siguiente.",
         "max_ai_chat_experience_per_month": "Cuántas consultas por mes puede responder la IA sobre tu experiencia. Al agotarla, vuelve a estar disponible el mes siguiente.",
         "max_ai_search_per_month": "Cuántas búsquedas con IA podés hacer por mes. Al agotarla, seguís usando la búsqueda tradicional hasta el mes siguiente.",
         "max_ai_support_per_month": "Cuántas consultas por mes podés hacerle al asistente de soporte con IA. La cuota se renueva al empezar cada mes.",
@@ -753,7 +750,7 @@
         "max_ai_accommodation_import_per_month": "Cuántos alojamientos podés importar por mes desde otra plataforma con ayuda de la IA. La cuota se renueva al empezar cada mes.",
         "max_search_history_entries": "Cuántas búsquedas anteriores se guardan en tu historial. Al superar el tope se borran las más viejas.",
         "max_collections": "Cuántas listas de favoritos podés tener creadas. Al llegar al tope tenés que borrar una para crear otra.",
-        "max_gastronomies": "Cuántos locales gastronómicos podés tener publicados al mismo tiempo. Al llegar al tope necesitás un plan mayor para sumar otro.",
+        "max_venues": "Cuántos locales podés tener publicados al mismo tiempo. Al llegar al tope necesitás un plan mayor para sumar otro.",
         "max_experiences": "Cuántas experiencias podés tener publicadas al mismo tiempo. Al llegar al tope necesitás un plan mayor para sumar otra.",
         "max_active_private_galleries": "Cuántas galerías privadas podés tener vivas al mismo tiempo. Cada galería caduca sola al cumplirse su plazo y se borra, así que los lugares se liberan a medida que vencen."
     }

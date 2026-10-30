@@ -32,7 +32,7 @@ describe('buildToggleParamHref', () => {
 
     it('preserves every other active param when toggling on', () => {
         const href = buildToggleParamHref({
-            baseUrl: '/es/gastronomia/',
+            baseUrl: '/es/comer-y-salir/',
             searchParams: new URLSearchParams('q=asado&destinationId=abc123&sortBy=featured'),
             key: 'type',
             value: 'PARRILLA',
@@ -47,7 +47,7 @@ describe('buildToggleParamHref', () => {
 
     it('preserves every other active param when toggling off', () => {
         const href = buildToggleParamHref({
-            baseUrl: '/es/gastronomia/',
+            baseUrl: '/es/comer-y-salir/',
             searchParams: new URLSearchParams('q=asado&type=PARRILLA&sortBy=featured'),
             key: 'type',
             value: 'PARRILLA',

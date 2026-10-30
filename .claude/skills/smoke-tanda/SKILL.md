@@ -77,15 +77,46 @@ the result — that is how "this probably also proves HOS-N" becomes a false clo
 Binding something mid-tanda is allowed, but it requires an explicit OK from the
 owner and is recorded in the contract as `vinculo_tardio: true`.
 
-### I2 — Full coverage or no close
+### I2 — Full coverage, or the gap moves to an issue of its own
 
-An issue closes only when **every** one of its criteria has a passing observation
-in **every** environment its contract requires. Anything less is `PARCIAL`: the
-comment is written, the label stays, the issue stays open.
+An issue closes only when **every** one of its criteria, in **every** environment
+its contract requires, is either:
+
+- **passing** — observed and signed, or
+- **transferred** — it failed, and the failure now lives in another open issue
+  that carries the criterion verbatim **and** the `status-needs-smoke-*` label
+  for each environment it still needs (see *Transfer* below).
+
+A criterion that was simply **not observed** (blocked, owner pending, no step,
+not built) is neither, so it keeps the issue open as `PARCIAL`: the comment is
+written, the label stays, the issue stays open.
 
 The canonical example, from a real past row: *"HOS-286 pasa 2 de 3 — descripción
 corta y mapeo de Dormitorios correctos, pero la preselección del destino falla."*
-That issue **does not close**.
+Before 2026-10-27 that issue stayed open with the failure written on it, **and**
+a finding issue was opened for the same failure: one defect, two open issues, and
+the original could only close by smoking it again after the other was fixed.
+Now the preselection criterion is transferred to its own issue and HOS-286
+closes (owner decision, 2026-10-27).
+
+### Transfer — one failure, one open issue
+
+When a criterion fails, the failure is tracked in **exactly one** open issue.
+Never both the original and a new one.
+
+- **Separable failure** — the other criteria pass, and the failing part can be
+  fixed on its own. **Transfer** it: create a follow-up issue (or reuse an
+  existing open issue that already owns that defect), copy the failed criterion
+  into it verbatim with what was observed, give it the `status-needs-smoke-*`
+  label for every environment the criterion still needs, and relate it to the
+  original. Sign the original `TRASPASO`, retire its label, and close it — if
+  nothing else is left pending.
+- **Core failure** — the failing part *is* the reason the issue exists, or
+  nothing usable was delivered. Sign `FALLO`, move the original to In Progress,
+  and open **no** new issue: the failure is recorded on the original.
+
+If in doubt which one it is, it is a core failure. Splitting an issue whose
+point did not work only produces a closed issue that claims something shipped.
 
 ### I3 — Written in the act, and a failed write halts the tanda
 
@@ -154,13 +185,18 @@ For each executed step, immediately, for every issue bound to it:
 |---|---|---|---|
 | all criteria covered and passing, all required environments signed | sign-off `PASO` | retire the environment's label (plus lower ones if `escalacion`) | **Done** |
 | all criteria covered and passing, environments still missing | sign-off `PASO` naming the missing environments | retire only the signed environment's label | In Review |
-| any criterion fails | sign-off `FALLO` quoting what was seen | **retire nothing** | In Progress, and file the finding |
-| only some criteria observed so far | sign-off `PARCIAL` | **retire nothing** | unchanged |
+| a criterion fails **separably**, every other criterion passes | sign-off `TRASPASO` naming where each failed criterion went | retire the environment's label; the follow-up issue carries it instead | **Done** |
+| a criterion fails separably, others still unobserved | sign-off `TRASPASO` + the pending criteria | **retire nothing** (the unobserved criteria still need it) | unchanged |
+| the **core** of the issue fails | sign-off `FALLO` quoting what was seen | **retire nothing** | In Progress — **no** new issue |
+| only some criteria observed so far, none failed | sign-off `PARCIAL` | **retire nothing** | unchanged |
 | the step could not be run | sign-off `PENDIENTE` with the reason | **retire nothing** | unchanged |
 
-Every `FALLO` also produces a finding. If it maps to no existing issue, create one
-in the right Linear team (`HOS` for product work, `BETA` for user/QA-reported
-items), link it to the tanda, and label it per CLAUDE.md's table.
+A transferred failure goes to one issue only (see *Transfer* under I2). Create the
+follow-up in the right Linear team (`HOS` for product work, `BETA` for
+user/QA-reported items) and label it per CLAUDE.md's table, plus the
+`status-needs-smoke-*` label(s) inherited from the failed criterion. Create it
+**before** signing the original, so the `Traspasado:` line names a real id. A
+failed creation halts the tanda like any other failed write (I3).
 
 The `cita` is **what was actually observed**, in words — never "step 12 passed".
 An observation must be a terminal, settled state, not an intermediate render.
@@ -199,9 +235,10 @@ writes for that step, and before the report. In `/smoke` this is between its
 step 6 and its step 7. In a tanda it runs **per step**, in the act — never
 batched into Phase 3.
 
-**Only on `Resultado: PASO`.** A `FALLO`, `PARCIAL` or `PENDIENTE` never triggers
-it: nothing was verified, so there is nothing to announce. This has not changed
-and does not change.
+**Only on `Resultado: PASO` or a closing `TRASPASO`.** A `FALLO`, `PARCIAL` or
+`PENDIENTE` never triggers it: nothing was verified, so there is nothing to
+announce. A `TRASPASO` that closes the issue did ship something verified — the
+entry describes **only the criteria that passed**, never the transferred one.
 
 **Only one entry per issue.** A second sign-off on the same issue (a second
 environment) does not write a second entry. It reads the `Novedad:` line of the
@@ -238,14 +275,14 @@ Everything below is derived. Nothing is asked.
 - **`roles` (the audience)** — **INFERRED.** Read the issue's own subject, the
   role whose journey the step exercised, and the `Observado` text. The values are
   a closed set (`WhatsNewAudienceRoleSchema`): `HOST`, `EDITOR`, `ADMIN`,
-  `SUPER_ADMIN`, `GASTRONOMY_OWNER`, `EXPERIENCE_OWNER`, `SPONSOR`, `USER` —
+  `SUPER_ADMIN`, `VENUE_OWNER`, `EXPERIENCE_OWNER`, `SPONSOR`, `USER` —
   anything else fails validation at API boot. Omit the key entirely for something
   every account can see; an empty array is not how you say "everyone".
 
   | What was observed | `roles` |
   |---|---|
   | Something in a host's own panel or listing | `['HOST']` |
-  | A restaurant/menu owner surface | `['GASTRONOMY_OWNER']` |
+  | A venue owner surface | `['VENUE_OWNER']` |
   | An experience owner surface | `['EXPERIENCE_OWNER']` |
   | A sponsor/partner surface | `['SPONSOR']` |
   | The admin panel | `['ADMIN', 'SUPER_ADMIN']`, or `['EDITOR']` for content work |
@@ -292,10 +329,10 @@ Everything below is derived. Nothing is asked.
 ```ts
 // origin: #3271, #3274
 {
-    id: '2026-09-05-commerce-publish-free-trial',
+    id: '2026-09-05-venue-experience-publish-free-trial',
     publishedAt: 'on-promotion',
     highlight: false,
-    roles: ['GASTRONOMY_OWNER'],
+    roles: ['VENUE_OWNER'],
     title: { es: '…', en: '…', pt: '…' },
     body: { es: '…', en: '…', pt: '…' },
     translations: { en: 'machine', pt: 'machine' }

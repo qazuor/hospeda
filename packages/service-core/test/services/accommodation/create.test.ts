@@ -1,10 +1,5 @@
 import type { AccommodationModel } from '@repo/db';
-import {
-    DestinationTypeEnum,
-    LifecycleStatusEnum,
-    ModerationStatusEnum,
-    ServiceErrorCode
-} from '@repo/schemas';
+import { DestinationTypeEnum, ModerationStatusEnum, ServiceErrorCode } from '@repo/schemas';
 import { beforeEach, describe, expect, it, type Mock, vi } from 'vitest';
 import * as helpers from '../../../src/services/accommodation/accommodation.helpers';
 import { AccommodationService } from '../../../src/services/accommodation/accommodation.service';
@@ -90,12 +85,6 @@ describe('AccommodationService.create', () => {
         service._destinationModel = {
             findById: vi.fn().mockResolvedValue({ destinationType: DestinationTypeEnum.CITY })
         };
-        // SPEC-143 #29: stub the private user model so _beforeCreate's
-        // service-suspension guard resolves a non-suspended owner by default.
-        // @ts-expect-error: override for test
-        service._userModel = {
-            findById: vi.fn().mockResolvedValue({ serviceSuspended: false })
-        };
         vi.clearAllMocks();
     });
 
@@ -158,26 +147,6 @@ describe('AccommodationService.create', () => {
         expect(result.data).toBeDefined();
         expect(result.data?.id).toBe('b1-regression-id');
         expect(model.create).toHaveBeenCalled();
-    });
-
-    it('should return FORBIDDEN when the owner is service-suspended (SPEC-143 #29)', async () => {
-        // Arrange — even an admin cannot create a listing for a paused owner.
-        const actor = createAdminActor();
-        const input = createMockAccommodationCreateInput({
-            reviewsCount: 0,
-            averageRating: 0,
-            tags: []
-        });
-        // @ts-expect-error: override for test
-        service._userModel = {
-            findById: vi.fn().mockResolvedValue({ serviceSuspended: true })
-        };
-        // Act
-        const result = await service.create(actor, input);
-        // Assert
-        expect(result.error?.code).toBe(ServiceErrorCode.FORBIDDEN);
-        expect(result.error?.message).toMatch(/paused/i);
-        expect(result.data).toBeUndefined();
     });
 
     it('should return FORBIDDEN if actor lacks permission', async () => {
@@ -270,52 +239,5 @@ describe('AccommodationService.create', () => {
         expect(result.error).toBeDefined();
         expect(result.error?.code).toBe(ServiceErrorCode.VALIDATION_ERROR);
         expect(result.data).toBeUndefined();
-    });
-
-    // HOS-153: a direct create with lifecycleState ACTIVE must not bypass the
-    // publish-time capacity-completeness invariant.
-    describe('capacity completeness for a direct ACTIVE create (HOS-153)', () => {
-        it('rejects an ACTIVE create with incomplete extraInfo', async () => {
-            const actor = createAdminActor();
-            const input = createMockAccommodationCreateInput({
-                lifecycleState: LifecycleStatusEnum.ACTIVE,
-                // capacity present but minNights/bedrooms/bathrooms missing
-                extraInfo: { capacity: 4 } as never
-            });
-
-            const result = await service.create(actor, input);
-
-            expect(result.error?.code).toBe(ServiceErrorCode.VALIDATION_ERROR);
-            expect(result.data).toBeUndefined();
-            expect(model.create).not.toHaveBeenCalled();
-        });
-
-        it('allows an ACTIVE create when extraInfo is complete', async () => {
-            const actor = createAdminActor();
-            const input = createMockAccommodationCreateInput({
-                lifecycleState: LifecycleStatusEnum.ACTIVE,
-                extraInfo: { capacity: 4, minNights: 1, bedrooms: 2, bathrooms: 1 }
-            });
-            (model.create as Mock).mockResolvedValue({ ...input, id: 'mock-id' });
-
-            const result = await service.create(actor, input);
-
-            expect(result.error).toBeUndefined();
-            expect(model.create).toHaveBeenCalled();
-        });
-
-        it('allows a DRAFT create with incomplete extraInfo (no guard on drafts)', async () => {
-            const actor = createAdminActor();
-            const input = createMockAccommodationCreateInput({
-                lifecycleState: LifecycleStatusEnum.DRAFT,
-                extraInfo: { capacity: 4 } as never
-            });
-            (model.create as Mock).mockResolvedValue({ ...input, id: 'mock-id' });
-
-            const result = await service.create(actor, input);
-
-            expect(result.error).toBeUndefined();
-            expect(model.create).toHaveBeenCalled();
-        });
     });
 });

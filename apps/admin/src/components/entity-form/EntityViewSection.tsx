@@ -427,7 +427,7 @@ const EntityViewSectionComponent = React.forwardRef<HTMLDivElement, EntityViewSe
                 }
 
                 case FieldTypeEnum.JSON: {
-                    // Structured object/array fields (e.g. commerce openingHours)
+                    // Structured object/array fields (e.g. listing openingHours)
                     // are shown read-only as pretty-printed JSON. Rendering the raw
                     // object as a React child crashes ("Objects are not valid as a
                     // React child"); stringifying is the safe, generic fallback.

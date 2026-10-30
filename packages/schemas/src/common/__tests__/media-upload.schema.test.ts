@@ -108,7 +108,7 @@ describe('AdminUploadRequestSchema', () => {
             });
             if (parsed.role === 'featured') {
                 expectTypeOf(parsed.entityType).toEqualTypeOf<
-                    'accommodation' | 'destination' | 'event' | 'post' | 'gastronomy' | 'experience'
+                    'accommodation' | 'destination' | 'event' | 'post' | 'venue' | 'experience'
                 >();
                 expectTypeOf(parsed.entityId).toEqualTypeOf<string>();
             }
@@ -1052,33 +1052,33 @@ describe('getGalleryCap', () => {
 });
 
 // ============================================================================
-// Commerce media support (SPEC-249 T-015a)
+// venue and experience media support (SPEC-249 T-015a)
 // ============================================================================
 
-describe('Commerce media entity types', () => {
-    it('MediaEntityTypeSchema accepts gastronomy and experience', () => {
-        expect(MediaEntityTypeSchema.safeParse('gastronomy').success).toBe(true);
+describe('Venue and experience media entity types', () => {
+    it('MediaEntityTypeSchema accepts venue and experience', () => {
+        expect(MediaEntityTypeSchema.safeParse('venue').success).toBe(true);
         expect(MediaEntityTypeSchema.safeParse('experience').success).toBe(true);
     });
 
-    it('defines gallery caps for both commerce verticals', () => {
-        expect(ENTITY_GALLERY_CAPS.gastronomy).toBe(30);
+    it('defines gallery caps for both verticals', () => {
+        expect(ENTITY_GALLERY_CAPS.venue).toBe(30);
         expect(ENTITY_GALLERY_CAPS.experience).toBe(30);
-        expect(getGalleryCap('gastronomy')).toBe(30);
+        expect(getGalleryCap('venue')).toBe(30);
         expect(getGalleryCap('experience')).toBe(30);
     });
 
-    it('resolves storage folders for commerce verticals', () => {
-        expect(ENTITY_FOLDER_MAP.gastronomy({ environment: 'test', entityId: 'g1' })).toBe(
-            'hospeda/test/gastronomies/g1'
+    it('resolves storage folders for venue and experience', () => {
+        expect(ENTITY_FOLDER_MAP.venue({ environment: 'test', entityId: 'g1' })).toBe(
+            'hospeda/test/venues/g1'
         );
         expect(ENTITY_FOLDER_MAP.experience({ environment: 'test', entityId: 'e1' })).toBe(
             'hospeda/test/experiences/e1'
         );
     });
 
-    it('throws when a commerce folder resolver is missing entityId', () => {
-        expect(() => ENTITY_FOLDER_MAP.gastronomy({ environment: 'test' })).toThrow();
+    it('throws when a venue or experience folder resolver is missing entityId', () => {
+        expect(() => ENTITY_FOLDER_MAP.venue({ environment: 'test' })).toThrow();
         expect(() => ENTITY_FOLDER_MAP.experience({ environment: 'test' })).toThrow();
     });
 });

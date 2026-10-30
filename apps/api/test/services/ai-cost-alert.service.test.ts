@@ -64,7 +64,7 @@ vi.mock('@repo/notifications', () => ({
 
 vi.mock('@repo/db', () => ({
     getDb: mockGetDb,
-    billingNotificationLog: {
+    notificationLog: {
         id: 'id',
         type: 'type',
         metadata: 'metadata'

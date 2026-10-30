@@ -6,38 +6,33 @@ import { NotificationCategory, NotificationType } from '../types/notification.ty
 export const NOTIFICATION_CATEGORY_MAP: Record<NotificationType, NotificationCategory> = {
     // Transactional - Always sent, cannot be opted out
     [NotificationType.SUBSCRIPTION_PURCHASE]: NotificationCategory.TRANSACTIONAL,
-    [NotificationType.ADDON_PURCHASE]: NotificationCategory.TRANSACTIONAL,
     [NotificationType.PAYMENT_SUCCESS]: NotificationCategory.TRANSACTIONAL,
     [NotificationType.PAYMENT_FAILURE]: NotificationCategory.TRANSACTIONAL,
     [NotificationType.PLAN_CHANGE_CONFIRMATION]: NotificationCategory.TRANSACTIONAL,
-    [NotificationType.ADDON_RENEWAL_CONFIRMATION]: NotificationCategory.TRANSACTIONAL,
-    // HOS-847 PR 5: transactional and NOT opt-out-able. It is the only notice
-    // that a card will be charged again, and on what date.
-    [NotificationType.ADDON_SUBSCRIPTION_STARTED]: NotificationCategory.TRANSACTIONAL,
 
     // Reminders - Can be opted out
     [NotificationType.RENEWAL_REMINDER]: NotificationCategory.REMINDER,
-    [NotificationType.ADDON_EXPIRATION_WARNING]: NotificationCategory.REMINDER,
-    [NotificationType.ADDON_EXPIRED]: NotificationCategory.REMINDER,
     [NotificationType.TRIAL_ENDING_REMINDER]: NotificationCategory.REMINDER,
 
     // HOS-1012 — the nine sends of the Hospeda-owned trial series.
     // The warnings and the win-backs are opt-out-able reminders.
     [NotificationType.TRIAL_ENDING_10D]: NotificationCategory.REMINDER,
     [NotificationType.TRIAL_ENDING_5D]: NotificationCategory.REMINDER,
+    [NotificationType.TRIAL_ENDING_2D]: NotificationCategory.REMINDER,
+    [NotificationType.TRIAL_ENDING_TODAY]: NotificationCategory.REMINDER,
     [NotificationType.TRIAL_ENDING_1D]: NotificationCategory.REMINDER,
     /**
      * TRANSACTIONAL, unlike its eight siblings: this one reports that the
      * listing HAS left the site. Someone who opted out of reminders and then
      * finds their listing gone with no notice reads it as the platform having
      * deleted it silently — that is operational information about their own
-     * account, not a nudge. `ADDON_EXPIRED` is a REMINDER because losing an
-     * add-on costs a feature; losing publication costs the whole point.
+     * account, not a nudge.
      */
     [NotificationType.TRIAL_EXPIRED]: NotificationCategory.TRANSACTIONAL,
     [NotificationType.TRIAL_WIN_BACK_1D]: NotificationCategory.REMINDER,
     [NotificationType.TRIAL_WIN_BACK_5D]: NotificationCategory.REMINDER,
     [NotificationType.TRIAL_WIN_BACK_10D]: NotificationCategory.REMINDER,
+    [NotificationType.TRIAL_WIN_BACK_15D]: NotificationCategory.REMINDER,
     [NotificationType.TRIAL_WIN_BACK_30D]: NotificationCategory.REMINDER,
     [NotificationType.TRIAL_WIN_BACK_60D]: NotificationCategory.REMINDER,
 
@@ -49,12 +44,6 @@ export const NOTIFICATION_CATEGORY_MAP: Record<NotificationType, NotificationCat
     // applicant, and must not be opt-out-able: the whole defect it closes is an
     // alert that reached nobody.
     [NotificationType.ADMIN_LEAD_RECEIVED]: NotificationCategory.ADMIN,
-
-    // Partner with no recorded payment (HOS-1299) - ops list, never the partner,
-    // and not opt-out-able for the same reason as the lead alert above: this is
-    // the only signal that a manual-payment partner needs a decision at all, and
-    // an operator who muted it would be muting the decision, not a notification.
-    [NotificationType.ADMIN_PARTNER_PAYMENT_REVIEW]: NotificationCategory.ADMIN,
 
     // Feedback - Sent to admin notification list, not end-user
     [NotificationType.FEEDBACK_REPORT]: NotificationCategory.ADMIN,
@@ -82,9 +71,6 @@ export const NOTIFICATION_CATEGORY_MAP: Record<NotificationType, NotificationCat
 
     // Payment retry warning - Transactional (billing-critical)
     [NotificationType.PAYMENT_RETRY_WARNING]: NotificationCategory.TRANSACTIONAL,
-
-    // Addon cancellation - Transactional
-    [NotificationType.ADDON_CANCELLATION]: NotificationCategory.TRANSACTIONAL,
 
     // Newsletter (SPEC-101)
     // Verification is transactional: required by Ley 25.326 AR / GDPR — must
@@ -133,10 +119,6 @@ export const NOTIFICATION_CATEGORY_MAP: Record<NotificationType, NotificationCat
 
     // Partner revoked (HOS-278 R-4) — TRANSACTIONAL for the same reason.
     [NotificationType.PARTNER_REVOKED]: NotificationCategory.TRANSACTIONAL,
-
-    // Unpaid partner nudge (HOS-278 R-3) — TRANSACTIONAL: it reports a pending
-    // consequence on an arrangement the recipient entered, not marketing.
-    [NotificationType.PARTNER_UNPAID_NOTICE]: NotificationCategory.TRANSACTIONAL,
 
     // Mentions logged (HOS-377 AC-9) — TRANSACTIONAL: it reports work performed
     // under the arrangement the partner is paying for, which is the thing they

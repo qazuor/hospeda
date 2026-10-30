@@ -1,0 +1,54 @@
+/**
+ * Admin update venue review endpoint.
+ * Allows admins to update any venue review.
+ */
+import {
+    PermissionEnum,
+    VenueReviewSchema,
+    type VenueReviewUpdateInput,
+    VenueReviewUpdateInputSchema
+} from '@repo/schemas';
+import { ServiceError, VenueReviewService } from '@repo/service-core';
+import type { Context } from 'hono';
+import { z } from 'zod';
+import { getActorFromContext } from '../../../../utils/actor';
+import { apiLogger } from '../../../../utils/logger';
+import { createAdminRoute } from '../../../../utils/route-factory';
+
+const venueReviewService = new VenueReviewService({ logger: apiLogger });
+
+/**
+ * PUT /api/v1/admin/venues/reviews/:id
+ * Update venue review — Admin endpoint.
+ *
+ * Requires both VENUE_EDIT_ALL and VENUE_MODERATE_REVIEW — reviews are
+ * moderated content (mirrors accommodation review update pattern).
+ */
+export const adminUpdateVenueReviewRoute = createAdminRoute({
+    method: 'put',
+    path: '/{id}',
+    summary: 'Update venue reviews (admin)',
+    description: 'Updates a venue reviews. Requires VENUE_EDIT_ALL AND VENUE_MODERATE_REVIEW.',
+    tags: ['Venue Reviews', 'Admin'],
+    anyOfPermissions: [[PermissionEnum.VENUE_EDIT_ALL], [PermissionEnum.VENUE_MODERATE_REVIEW]],
+    requestParams: {
+        id: z.string().uuid({ message: 'zodError.common.id.invalidUuid' })
+    },
+    requestBody: VenueReviewUpdateInputSchema,
+    responseSchema: VenueReviewSchema,
+    handler: async (
+        ctx: Context,
+        params: Record<string, unknown>,
+        body: Record<string, unknown>
+    ) => {
+        const actor = getActorFromContext(ctx);
+        const input = body as VenueReviewUpdateInput;
+        const result = await venueReviewService.update(actor, params.id as string, input);
+
+        if (result.error) {
+            throw new ServiceError(result.error.code, result.error.message);
+        }
+
+        return result.data;
+    }
+});

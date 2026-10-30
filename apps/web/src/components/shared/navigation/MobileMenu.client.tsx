@@ -41,7 +41,7 @@
  * **HOS-691**: the former host-mode CTA (`isHostMode`/`ctaLabel`/`ctaHref`,
  * derived from `roles.includes('HOST')`) is gone. The owner CTA is now the
  * unconditional three-way "Publicar" submenu rendered inside
- * `MobileMenuAccountSection` (accommodation / gastronomy / experience,
+ * `MobileMenuAccountSection` (accommodation / venue / experience,
  * sourced from `PUBLISH_CTA_OPTIONS` — see that file's JSDoc), so this
  * component no longer needs the resolved `roles` set at all.
  *

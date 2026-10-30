@@ -12,8 +12,8 @@
  *   holding no `PARTNER_*` perk, so demanding one would lock them out of their
  *   own numbers (HOS-278 AC-7).
  * - **No `requireEntitlement`.** The host-side view routes (`daily-series.ts`)
- *   demand `VIEW_BASIC_STATS`; do NOT copy that half. `loadEntitlements`
- *   resolves against the ACCOMMODATION subscription and a partner subscription
+ *   demand `VIEW_BASIC_STATS`; do NOT copy that half. The retired `loadEntitlements`
+ *   resolved against the ACCOMMODATION subscription and a partner subscription
  *   lives in a different product domain, so an entitlement gate here would
  *   refuse every partner who is not also a paying host — and admit a host who is
  *   not a partner, for the wrong reason (spec §5.6, NG-8).
@@ -24,15 +24,15 @@
  *   would confirm a partner exists; a 404 would make an ordinary state (owning
  *   no partner) look like a broken page.
  *
- * Actor-dependent, therefore NOT cacheable. No `cacheTTL`, and it may never move
- * to the public tier.
+ * Actor-dependent, therefore NOT cacheable. It must stay uncached, and it may never move
+ * to a public route.
  *
  * ## What this route does NOT do
  *
  * Decide which cards render. It ships the numbers and the three partner fields
  * `resolvePartnerLogoLink` reads, and the web component calls that function.
- * Gating here — on `tier`, say — would be a second source of truth about what
- * the home carousel actually renders (spec §7.2).
+ * Gating here would be a second source of truth about what the home carousel
+ * actually renders (spec §7.2).
  *
  * @module routes/partners/protected/mine-stats
  */

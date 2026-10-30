@@ -9,7 +9,7 @@
  * its absence broke EVERY cross-origin browser mutation (not just locale
  * resolution) — a non-simple header missing from the preflight allowlist
  * fails the whole request, silently, before it reaches the API. Caught by the
- * E2E commerce-editor suite (`commerce-03`/`commerce-05`), not by a unit test,
+ * E2E listing-editor suite (`listing-owner-03`/`listing-owner-05`), not by a unit test,
  * which is exactly why this file now asserts it directly.
  */
 
@@ -22,7 +22,8 @@ const HELPER_PATH = '../../src/utils/env-config-helpers';
 
 describe.each([
     { header: 'X-Idempotency-Key', reason: 'idempotencyKeyMiddleware (SPEC-203)' },
-    { header: 'X-Client-Locale', reason: 'browser locale signal (HOS-605)' }
+    { header: 'X-Client-Locale', reason: 'browser locale signal (HOS-605)' },
+    { header: 'X-Correlation-ID', reason: 'correlation sent back by the client (HOS-1424)' }
 ])('getCorsConfig — allowHeaders always includes $header ($reason)', ({ header }) => {
     const originalEnv = { ...process.env };
     const lowerHeader = header.toLowerCase();
@@ -84,6 +85,35 @@ describe.each([
         const headers = config.allowHeaders as string[];
         const hasRequiredHeader = headers.some((h: string) => h.toLowerCase() === lowerHeader);
         expect(hasRequiredHeader).toBe(true);
+    });
+});
+
+describe('getCorsConfig — exposeHeaders always includes X-Correlation-ID (HOS-1424)', () => {
+    const originalEnv = { ...process.env };
+
+    afterEach(() => {
+        for (const key of Object.keys(process.env)) {
+            if (!(key in originalEnv)) {
+                Reflect.deleteProperty(process.env, key);
+            }
+        }
+        Object.assign(process.env, originalEnv);
+    });
+
+    it('adds it when an env override omits it', async () => {
+        process.env.API_CORS_EXPOSE_HEADERS = 'Content-Length';
+
+        const { getCorsConfig } = await import(HELPER_PATH);
+
+        expect(getCorsConfig().exposeHeaders).toEqual(['Content-Length', 'X-Correlation-ID']);
+    });
+
+    it('does not duplicate it when the override already has it in another case', async () => {
+        process.env.API_CORS_EXPOSE_HEADERS = 'Content-Length,x-correlation-id';
+
+        const { getCorsConfig } = await import(HELPER_PATH);
+
+        expect(getCorsConfig().exposeHeaders).toEqual(['Content-Length', 'x-correlation-id']);
     });
 });
 

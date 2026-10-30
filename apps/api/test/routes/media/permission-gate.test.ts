@@ -323,17 +323,26 @@ describe('DELETE /api/v1/admin/media — security hardening (T-005)', () => {
 });
 
 // ============================================================================
-// Commerce media permissions (SPEC-249 T-015b) — split OWN/ANY
+// Venue and experience media permissions (SPEC-249 T-015b) — split OWN/ANY
 // ============================================================================
 
-describe('validateEntityMediaPermission — commerce verticals', () => {
+describe('validateEntityMediaPermission — venue and experience verticals', () => {
     for (const entityType of [
-        'gastronomy',
+        'venue',
         'experience'
     ] as const satisfies readonly MediaEntityType[]) {
         describe(entityType, () => {
-            it('allows actor with COMMERCE_EDIT_ALL regardless of ownership', () => {
-                const actor = makeActor([PermissionEnum.COMMERCE_EDIT_ALL]);
+            const editAll =
+                entityType === 'venue'
+                    ? PermissionEnum.VENUE_EDIT_ALL
+                    : PermissionEnum.EXPERIENCE_EDIT_ALL;
+            const editOwn =
+                entityType === 'venue'
+                    ? PermissionEnum.VENUE_EDIT_OWN
+                    : PermissionEnum.EXPERIENCE_EDIT_OWN;
+
+            it('TEST:1819:6 AC:1:3 allows venue media permissions', () => {
+                const actor = makeActor([editAll]);
                 const result = validateEntityMediaPermission({
                     actor,
                     entityType,
@@ -342,10 +351,9 @@ describe('validateEntityMediaPermission — commerce verticals', () => {
                 expect(result).toEqual({ allowed: true });
             });
 
-            it('allows owner with COMMERCE_EDIT_OWN', () => {
-                // SPEC-253 D2=b: COMMERCE_MEDIA_EDIT_OWN replaced by COMMERCE_EDIT_OWN
+            it('allows owner with vertical EDIT_OWN', () => {
                 const ownerId = crypto.randomUUID();
-                const actor = makeActor([PermissionEnum.COMMERCE_EDIT_OWN], ownerId);
+                const actor = makeActor([editOwn], ownerId);
                 const result = validateEntityMediaPermission({
                     actor,
                     entityType,
@@ -354,8 +362,8 @@ describe('validateEntityMediaPermission — commerce verticals', () => {
                 expect(result).toEqual({ allowed: true });
             });
 
-            it('rejects COMMERCE_EDIT_OWN actor who is NOT the owner', () => {
-                const actor = makeActor([PermissionEnum.COMMERCE_EDIT_OWN], crypto.randomUUID());
+            it('rejects EDIT_OWN actor who is NOT the owner', () => {
+                const actor = makeActor([editOwn], crypto.randomUUID());
                 const result = validateEntityMediaPermission({
                     actor,
                     entityType,
@@ -364,7 +372,21 @@ describe('validateEntityMediaPermission — commerce verticals', () => {
                 expect(result).toEqual({ allowed: false, reason: 'NOT_ENTITY_OWNER' });
             });
 
-            it('rejects actor with no commerce media permission', () => {
+            it("rejects the other vertical's EDIT_ALL permission", () => {
+                const otherEditAll =
+                    entityType === 'venue'
+                        ? PermissionEnum.EXPERIENCE_EDIT_ALL
+                        : PermissionEnum.VENUE_EDIT_ALL;
+                expect(
+                    validateEntityMediaPermission({
+                        actor: makeActor([otherEditAll]),
+                        entityType,
+                        entity: { ownerId: 'some-other-user' }
+                    })
+                ).toEqual({ allowed: false, reason: 'MISSING_ENTITY_PERMISSION' });
+            });
+
+            it('rejects actor with no venue or experience media permission', () => {
                 const actor = makeActor([PermissionEnum.MEDIA_UPLOAD]);
                 const result = validateEntityMediaPermission({
                     actor,

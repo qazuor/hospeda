@@ -1,0 +1,112 @@
+import { readFileSync } from 'node:fs';
+import { resolve } from 'node:path';
+import { render, screen } from '@testing-library/react';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { PlanCardCta } from '@/components/billing/PlanCardCta.client';
+import { resetPricingSituationCacheForTests } from '@/lib/billing/pricing-situation';
+
+const pricingSituation = vi.hoisted(() => vi.fn());
+vi.mock('@/lib/api/endpoints-protected', () => ({ billingSubscriptionApi: { pricingSituation } }));
+beforeEach(() => {
+    vi.clearAllMocks();
+    resetPricingSituationCacheForTests();
+});
+
+const componentSource = readFileSync(
+    resolve(__dirname, '../../../src/components/billing/PlanCardCta.client.tsx'),
+    'utf8'
+);
+const cssSource = readFileSync(
+    resolve(__dirname, '../../../src/components/billing/PlanCardCta.module.css'),
+    'utf8'
+);
+
+describe('PlanCardCta', () => {
+    it('TEST:1758:4 renders checkout links with stacked button styles', () => {
+        expect(componentSource).toContain(
+            "className={cycle === 'monthly' ? styles.primary : styles.secondary}"
+        );
+        expect(cssSource).not.toContain('text-decoration: underline');
+        expect(cssSource).toContain('min-height: 44px;');
+        expect(cssSource).toContain(':focus-visible');
+        expect(cssSource).toContain('flex-direction: column;');
+        expect(cssSource).toContain('width: 100%;');
+    });
+    it('TEST:1735:14 labels only the anchored option as payment continuation', async () => {
+        pricingSituation.mockResolvedValue({
+            ok: true,
+            data: {
+                situation: 'SUBSCRIBED',
+                status: 'PENDING_AUTHORIZATION',
+                planVersionId: 'v1',
+                billingOptionId: 'a1'
+            }
+        });
+        render(
+            <PlanCardCta
+                locale="es"
+                vertical="accommodation"
+                planVersionId="v1"
+                billingOptions={{ monthly: 'm1', annual: 'a1' }}
+            />
+        );
+        expect(
+            await screen.findByRole('link', { name: 'Suscribirme con pago mensual' })
+        ).toHaveAttribute('href', '/es/suscriptores/checkout/?opcion=m1');
+        expect(screen.getByRole('link', { name: 'Continuar el pago' })).toHaveAttribute(
+            'href',
+            '/es/suscriptores/checkout/?opcion=a1'
+        );
+    });
+
+    it('renders exact monthly and annual checkout links from the shared situation read', async () => {
+        pricingSituation.mockResolvedValue({ ok: true, data: { situation: 'CHECKOUT' } });
+        render(
+            <PlanCardCta
+                locale="es"
+                vertical="accommodation"
+                planVersionId="v1"
+                billingOptions={{ monthly: 'm1', annual: 'a1' }}
+            />
+        );
+        const root = await screen.findByTestId('pricing-card-cta');
+        expect(root).toHaveAttribute('data-kind', 'checkout');
+        expect(root).toHaveAttribute('data-loaded', 'true');
+        expect(screen.getByRole('link', { name: 'Suscribirme con pago mensual' })).toHaveAttribute(
+            'href',
+            '/es/suscriptores/checkout/?opcion=m1'
+        );
+        expect(screen.getByRole('link', { name: 'Suscribirme con pago anual' })).toHaveAttribute(
+            'href',
+            '/es/suscriptores/checkout/?opcion=a1'
+        );
+        expect(
+            screen.getByRole('link', { name: 'Suscribirme con pago mensual' }).className
+        ).toBeTruthy();
+        expect(
+            screen.getByRole('link', { name: 'Suscribirme con pago anual' }).className
+        ).toBeTruthy();
+    });
+
+    it('shares one request across two cards in the same vertical', async () => {
+        pricingSituation.mockResolvedValue({ ok: true, data: { situation: 'CHECKOUT' } });
+        render(
+            <>
+                <PlanCardCta
+                    locale="es"
+                    vertical="accommodation"
+                    planVersionId="v1"
+                    billingOptions={{ monthly: 'm1', annual: null }}
+                />
+                <PlanCardCta
+                    locale="es"
+                    vertical="accommodation"
+                    planVersionId="v2"
+                    billingOptions={{ monthly: 'm2', annual: null }}
+                />
+            </>
+        );
+        expect(await screen.findAllByTestId('pricing-card-cta')).toHaveLength(2);
+        expect(pricingSituation).toHaveBeenCalledTimes(1);
+    });
+});

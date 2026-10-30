@@ -22,6 +22,7 @@
  */
 
 import { describe, expect, it } from 'vitest';
+import { OG_FONT_URLS } from '../../../src/lib/og-template';
 import { GET } from '../../../src/pages/api/og';
 
 /** Minimal APIContext stub — the handler only reads `url.searchParams`. */
@@ -29,21 +30,39 @@ function buildContext(search = '?title=Test+Title&description=Hello'): Parameter
     return { url: new URL(`http://localhost/api/og${search}`) } as Parameters<typeof GET>[0];
 }
 
+/**
+ * Calls the handler and retries once the font cache has been reset by a
+ * failed download: a `text/plain` 500 means one of the four font downloads
+ * lost the race, and the next request re-downloads. `search` `undefined`
+ * keeps `buildContext`'s default; an empty string is forwarded as-is.
+ */
+async function getOg(search?: string): Promise<Response> {
+    let response = await GET(buildContext(search));
+    let attempts = 1;
+    while (response.headers.get('Content-Type') !== 'image/png' && attempts < 3) {
+        await new Promise((resolve) => setTimeout(resolve, 1_000));
+        response = await GET(buildContext(search));
+        attempts += 1;
+    }
+    return response;
+}
+
 /** The 8-byte PNG file signature. */
 const PNG_SIGNATURE = [0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a];
 
 /**
- * The endpoint fetches its font from the fontsource CDN at runtime. These
- * assertions therefore need outbound network. Probe once up-front and skip
- * (not fail) when offline so CI without egress stays green.
+ * The endpoint fetches all four of its fonts from the fontsource CDN at
+ * runtime. These assertions therefore need outbound network. Probe every URL
+ * up-front and skip (not fail) when offline so CI without egress stays green.
  */
 async function networkAvailable(): Promise<boolean> {
     try {
-        const response = await fetch(
-            'https://cdn.jsdelivr.net/fontsource/fonts/roboto@latest/latin-700-normal.ttf',
-            { method: 'HEAD', signal: AbortSignal.timeout(5_000) }
+        const responses = await Promise.all(
+            Object.values(OG_FONT_URLS).map((url) =>
+                fetch(url, { method: 'HEAD', signal: AbortSignal.timeout(8_000) })
+            )
         );
-        return response.ok;
+        return responses.every((response) => response.ok);
     } catch {
         return false;
     }
@@ -51,16 +70,16 @@ async function networkAvailable(): Promise<boolean> {
 
 const hasNetwork = await networkAvailable();
 
-describe('og.ts — GET handler (SPEC-157 REQ-1)', () => {
+describe('og.ts — GET handler (SPEC-157 REQ-1)', { timeout: 30_000 }, () => {
     it.skipIf(!hasNetwork)('returns Content-Type image/png', async () => {
-        const response = await GET(buildContext());
+        const response = await getOg();
         expect(response.headers.get('Content-Type')).toBe('image/png');
     });
 
     it.skipIf(!hasNetwork)(
         'returns a non-empty body that starts with the PNG signature',
         async () => {
-            const response = await GET(buildContext());
+            const response = await getOg();
             const bytes = new Uint8Array(await response.arrayBuffer());
 
             expect(bytes.byteLength).toBeGreaterThan(0);
@@ -69,7 +88,7 @@ describe('og.ts — GET handler (SPEC-157 REQ-1)', () => {
     );
 
     it.skipIf(!hasNetwork)('renders the image at 1200x630 pixels (IHDR chunk)', async () => {
-        const response = await GET(buildContext());
+        const response = await getOg();
         const bytes = new Uint8Array(await response.arrayBuffer());
         const view = new DataView(bytes.buffer, bytes.byteOffset, bytes.byteLength);
 
@@ -83,7 +102,7 @@ describe('og.ts — GET handler (SPEC-157 REQ-1)', () => {
     });
 
     it.skipIf(!hasNetwork)('still returns a PNG when no query params are supplied', async () => {
-        const response = await GET(buildContext(''));
+        const response = await getOg('');
         expect(response.headers.get('Content-Type')).toBe('image/png');
 
         const bytes = new Uint8Array(await response.arrayBuffer());
@@ -91,10 +110,8 @@ describe('og.ts — GET handler (SPEC-157 REQ-1)', () => {
     });
 
     it.skipIf(!hasNetwork)('renders a BRAND card (no image) as a 1200x630 PNG', async () => {
-        const response = await GET(
-            buildContext(
-                '?title=Tu+escapada+empieza+ac%C3%A1&description=Los+mejores+alojamientos&tagline=Descubr%C3%AD+el+Litoral'
-            )
+        const response = await getOg(
+            '?title=Tu+escapada+empieza+ac%C3%A1&description=Los+mejores+alojamientos&tagline=Descubr%C3%AD+el+Litoral'
         );
         const bytes = new Uint8Array(await response.arrayBuffer());
         const view = new DataView(bytes.buffer, bytes.byteOffset, bytes.byteLength);
@@ -107,10 +124,8 @@ describe('og.ts — GET handler (SPEC-157 REQ-1)', () => {
         const image = encodeURIComponent(
             'https://images.pexels.com/photos/338504/pexels-photo-338504.jpeg?auto=compress&w=1200'
         );
-        const response = await GET(
-            buildContext(
-                `?title=Para%C3%ADso+Natural+Hotel&type=Alojamiento&image=${image}&subtitle=Ubajay&rating=4.8`
-            )
+        const response = await getOg(
+            `?title=Para%C3%ADso+Natural+Hotel&type=Alojamiento&image=${image}&subtitle=Ubajay&rating=4.8`
         );
         const bytes = new Uint8Array(await response.arrayBuffer());
         const view = new DataView(bytes.buffer, bytes.byteOffset, bytes.byteLength);

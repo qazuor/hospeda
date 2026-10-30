@@ -16,6 +16,7 @@
  *     (T-001 dropped the `name` column; only `slug` must be present).
  *  3. The total with experience filter is strictly fewer than the unfiltered total.
  */
+import { features, getDb, inArray } from '@repo/db';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { initApp } from '../../../src/app.js';
 import type { AppOpenAPI } from '../../../src/types.js';
@@ -47,6 +48,21 @@ interface FeatureItem {
     [key: string]: unknown;
 }
 
+/**
+ * The integration DB is migrated but NOT seeded, so this suite seeds the rows
+ * its assertions name (it used to rely on a pre-seeded dev DB). Slugs and
+ * `applicableVerticals` mirror `packages/seed/src/data/feature/*.json`.
+ */
+const SEED_ROWS: (typeof features.$inferInsert)[] = [
+    { slug: 'kid_friendly', applicableVerticals: ['experience'] },
+    {
+        slug: 'disability_accessible',
+        applicableVerticals: ['accommodation', 'venue', 'experience']
+    },
+    { slug: 'river_front', applicableVerticals: ['accommodation'] },
+    { slug: 'adults_only_area', applicableVerticals: ['accommodation'] }
+];
+
 const BASE = '/api/v1/public/features';
 
 describe('GET /api/v1/public/features — vertical filter content assertions (SPEC-266 T-012)', () => {
@@ -56,9 +72,18 @@ describe('GET /api/v1/public/features — vertical filter content assertions (SP
         validateApiEnv();
         await initializeDatabase();
         app = initApp();
+        await getDb().insert(features).values(SEED_ROWS);
     });
 
     afterAll(async () => {
+        await getDb()
+            .delete(features)
+            .where(
+                inArray(
+                    features.slug,
+                    SEED_ROWS.map((row) => row.slug)
+                )
+            );
         await closeDatabase();
     });
 
@@ -77,7 +102,7 @@ describe('GET /api/v1/public/features — vertical filter content assertions (SP
 
         // Experience-only feature — must be present
         expect(slugs).toContain('kid_friendly');
-        // Shared-core feature (accommodation + gastronomy + experience) — must be present
+        // Shared-core feature (all three verticals) — must be present
         expect(slugs).toContain('disability_accessible');
     });
 

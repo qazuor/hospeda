@@ -24,7 +24,7 @@
  * ## The draft id is a plain uuid (T-008)
  *
  * The accommodation-only ancestor typed it `AccommodationIdSchema`, which cannot
- * describe a gastronomy or experience listing. Every other field is unchanged, so
+ * describe a venue or experience listing. Every other field is unchanged, so
  * the accommodation response shape is byte-identical to what
  * `/host-onboarding/precheck` returns today.
  *
@@ -46,7 +46,7 @@ import { createProtectedRoute } from '../../../utils/route-factory';
  * than reaching `parsePublishVertical` and throwing a 500. The union is the same
  * one `PublishVertical` declares; this is its HTTP boundary.
  */
-const PublishVerticalParamSchema = z.enum(['accommodation', 'gastronomy', 'experience']);
+const PublishVerticalParamSchema = z.enum(['accommodation', 'venue', 'experience']);
 
 /** One DRAFT listing, as the panel's picker renders it. */
 const PublishPrecheckDraftSchema = z.object({

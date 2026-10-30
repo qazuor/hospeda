@@ -241,8 +241,8 @@ column, and `db:migrate` applies every pending schema change before `db:seed:mig
 any data change. Ship the `CREATE` of the destination and the `DROP` of the source in one
 release and the data-migration executes against a column that is already gone — it moves
 nothing, and the `seed_migrations` ledger records it applied, permanently. HOS-433 is that
-failure, observed in production: `0034-hos-372-commerce-media-to-relational` ran in 18ms
-against a dropped `gastronomies.media` and was recorded `ok`.
+failure, observed in production: the `0034` media-to-relational data-migration ran in 18ms
+against the dropped media column in the legacy listing table and was recorded `ok`.
 
 The split below fixes both. Release N keeps the source column alive, which is exactly what
 the data-migration needs; Release N+1 removes it once nothing — neither running code nor a
@@ -262,7 +262,7 @@ pending migration — reads it any more.
    far as the application is concerned.
 
 This is the same **expand/contract** pattern already used elsewhere in this repo for a
-whole-table retirement — see HOS-589 §6.3 (`commerce_leads`), which drops the table only in
+whole-table retirement — see HOS-589 §6.3 (the retired owner-lead funnel table), which drops the table only in
 the release *after* the one that stops writing to it, precisely citing this rule. Use that
 section as a worked example of sequencing a drop across releases, including the one
 non-obvious prerequisite it surfaced (a background cron reading the doomed table has to stop
@@ -346,34 +346,24 @@ HOSPEDA_TEST_URL="postgresql://user:pass@localhost:5432/hospeda_migration_test" 
 
 ---
 
-## Extras-carril example: CHECK constraints on `billing_promo_codes` (SPEC-262)
+## Extras-carril example: plan catalog immutability trigger (HOS-1434)
 
-`billing_plans` and `billing_subscriptions` are owned by the `@qazuor/qzpay-drizzle`
-library. As of `@qazuor/qzpay-drizzle` 1.11.0 (HOS-73), several columns that
-previously required the extras carril — `product_domain` on both tables,
-`effect_kind` / `value_kind` / `duration_cycles` / `extra_days` on
-`billing_promo_codes`, and `promo_effect_remaining_cycles` on
-`billing_subscriptions` — are now typed Drizzle columns, accessed via normal
-typed queries (see HOS-75). The extras carril remains the right home for
-anything Drizzle genuinely cannot express, such as multi-column CHECK
-constraints:
+Drizzle cannot declare triggers, so the rule "a published `plan_version` is immutable
+except for its `current` flag" lives in the extras carril:
 
 ```
-packages/db/src/migrations/extras/020-promo-code-effect-constraints-backfill.sql
+packages/db/src/migrations/extras/041-plan-catalog-immutability.trigger.sql
 ```
 
-This file enforces per-`effect_kind` shape invariants (e.g. a `'discount'` row
-must have a `value_kind`, a `'trial_extension'` row must have `extra_days`) —
-logic that spans multiple columns and cannot be expressed as a single-column
-Drizzle constraint. It is idempotent and re-applied by `pnpm db:apply-extras`
-on every `hops db-migrate` run; the drift guard does not flag it because it is
-not a column declared in the Hospeda TS schema.
+The file is idempotent (`CREATE OR REPLACE FUNCTION`, each trigger dropped and recreated)
+and re-applied by `pnpm db:apply-extras` on every `hops db-migrate` run. The drift guard
+does not flag it because it is not a column declared in the Hospeda TS schema.
 
 After any reset (`hops db-migrate --target=staging --reset`) run
 `pnpm db:apply-extras` to restore it before seeding, or use `hops db-migrate`
 which handles this automatically.
 
-See [`docs/decisions/ADR-035-commerce-core-gastronomy-separation.md`](../decisions/ADR-035-commerce-core-gastronomy-separation.md) for the `product_domain` rationale.
+See ADR-035 for the `product_domain` rationale.
 
 ---
 
@@ -383,4 +373,4 @@ See [`docs/decisions/ADR-035-commerce-core-gastronomy-separation.md`](../decisio
 - [ADR-029: Versioned Migration Strategy](../decisions/ADR-029-versioned-migration-strategy.md)
 - [ADR-017: PostgreSQL-Specific Features](../decisions/ADR-017-postgres-specific-features.md)
 - [packages/db/docs/triggers-manifest.md](../../packages/db/docs/triggers-manifest.md)
-- [SPEC-178 CI wiring handoff](../../.qtm/specs/SPEC-178-versioned-db-migration-strategy/ci-wiring-handoff.md)
+- SPEC-178 CI wiring handoff (legacy `.qtm/` spec, removed in HOS-1352 U1; still present on `staging`)

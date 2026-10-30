@@ -1,6 +1,6 @@
 /**
  * @fileoverview
- * Regression test for HOS-712 (second round): `0059-purge-test-and-commerce-example`
+ * Regression test for HOS-712 (second round): migration 0059
  * resolved the content it deletes ONLY by literal slug, while three of those
  * tables hold an `ON DELETE restrict` reference back to the accounts the
  * migration purges in its last step.
@@ -42,26 +42,29 @@ import {
     destinations,
     eq,
     experiences,
-    gastronomies,
     getDb,
     initializeDb,
     resetDb,
-    users
+    users,
+    venues
 } from '@repo/db';
 import {
     AccommodationTypeEnum,
     DestinationTypeEnum,
     ExperienceTypeEnum,
-    GastronomyTypeEnum,
     OccupancySourceEnum,
-    RoleEnum
+    PublicationStatusEnum,
+    RoleEnum,
+    VenueTypeEnum
 } from '@repo/schemas';
 import type { Actor } from '@repo/service-core';
 import { config as loadEnv } from 'dotenv';
 import { Pool } from 'pg';
 import { afterAll, afterEach, beforeAll, describe, expect, it } from 'vitest';
-import * as migration from '../../src/data-migrations/0059-purge-test-and-commerce-example.js';
 import type { SeedMigrationCtx } from '../../src/data-migrations/types.js';
+import { loadMigrationByNumber } from './__helpers__/load-migration.js';
+
+const migration = await loadMigrationByNumber({ number: '0059' });
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -178,17 +181,20 @@ async function insertGastronomy(
     args: { readonly ownerId: string; readonly destinationId: string; readonly slug: string }
 ): Promise<string> {
     const inserted = await tx
-        .insert(gastronomies)
+        .insert(venues)
         .values({
             slug: args.slug,
             name: 'HOS-712 gastronomy',
             summary: 'HOS-712 fixture.',
             description: 'HOS-712 fixture gastronomy, rolled back after the test.',
-            type: GastronomyTypeEnum.RESTAURANT,
+            type: VenueTypeEnum.RESTAURANT,
             ownerId: args.ownerId,
-            destinationId: args.destinationId
-        } as typeof gastronomies.$inferInsert)
-        .returning({ id: gastronomies.id });
+            destinationId: args.destinationId,
+            publicationStatus: PublicationStatusEnum.PUBLISHED,
+            inactiveSince: new Date(),
+            deadlinesVersion: 1
+        } as typeof venues.$inferInsert)
+        .returning({ id: venues.id });
     const row = inserted[0];
     if (!row) {
         throw new Error('Insert of test gastronomy returned no row');
@@ -210,7 +216,10 @@ async function insertExperience(
             description: 'HOS-712 fixture experience, rolled back after the test.',
             type: ExperienceTypeEnum.KAYAK_RENTAL,
             ownerId: args.ownerId,
-            destinationId: args.destinationId
+            destinationId: args.destinationId,
+            publicationStatus: PublicationStatusEnum.PUBLISHED,
+            inactiveSince: new Date(),
+            deadlinesVersion: 1
         } as typeof experiences.$inferInsert)
         .returning({ id: experiences.id });
     const row = inserted[0];
@@ -234,7 +243,10 @@ async function insertAccommodation(
             description: 'HOS-712 fixture accommodation, rolled back after the test.',
             type: AccommodationTypeEnum.CABIN,
             ownerId: args.ownerId,
-            destinationId: args.destinationId
+            destinationId: args.destinationId,
+            publicationStatus: PublicationStatusEnum.PUBLISHED,
+            inactiveSince: new Date(),
+            deadlinesVersion: 1
         } as typeof accommodations.$inferInsert)
         .returning({ id: accommodations.id });
     const row = inserted[0];
@@ -272,10 +284,7 @@ async function userExists(tx: DrizzleClient, email: string): Promise<boolean> {
 
 /** True when a gastronomy row with this slug still exists. */
 async function gastronomyExists(tx: DrizzleClient, slug: string): Promise<boolean> {
-    const rows = await tx
-        .select({ id: gastronomies.id })
-        .from(gastronomies)
-        .where(eq(gastronomies.slug, slug));
+    const rows = await tx.select({ id: venues.id }).from(venues).where(eq(venues.slug, slug));
     return rows.length > 0;
 }
 

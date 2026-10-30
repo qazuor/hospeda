@@ -96,8 +96,6 @@ const SAFE_OUTBOUND_HREFS: Readonly<Record<string, string>> = Object.freeze({
         '`buildWhatsAppLink` composes `https://wa.me/<digits>`; a non-dialable number yields null, not a URL',
     'components/account/ProfileCompletionConsentFields.tsx#{`/${locale}/legal/terminos/`}':
         'an internal path literal; it carries `rel="noopener"` only because it opens in a new tab',
-    'components/account/SubscriptionDashboard.client.tsx#{adminUrl}':
-        '`getAdminUrl()` — our own admin panel origin, from validated env',
     'components/shared/navigation/MobileMenu.client.tsx#{adminPanelItem.href}':
         '`buildAdminPanelItem` over the same admin origin',
     'components/shared/navigation/UserMenu.client.tsx#{adminPanelItem.href}':
@@ -118,8 +116,6 @@ const SAFE_OUTBOUND_HREFS: Readonly<Record<string, string>> = Object.freeze({
         "SOCIAL_PROFILES in `lib/constants` — Hospeda's own accounts, hardcoded",
     'components/shared/SocialLinks.astro#{href}':
         'the same SOCIAL_PROFILES list, destructured one line later',
-    'lib/partner-logo-link.ts#buildUrl({ locale':
-        "the GOLD branch, an internal `/partners/<slug>/` link; it reads as outbound only because the sibling website branch's `target: '_blank'` is inside the object window",
     'pages/[lang]/autores/[slug]/index.astro#{url}':
         '`resolveAuthorSocialLinks` (lib/authors/author-social-links.ts) runs the sanitizer per network',
     'pages/[lang]/partners/[slug].astro#{link.href}':
@@ -138,7 +134,7 @@ const SAFE_OUTBOUND_HREFS: Readonly<Record<string, string>> = Object.freeze({
  * Field names that carry a URL somebody outside Hospeda authored.
  *
  * Drawn from what actually reached an `href` in this codebase — a partner's and
- * a sponsor's `websiteUrl`, an event organizer's `website`, a commerce owner's
+ * a sponsor's `websiteUrl`, an event organizer's `website`, a venue/experience owner's
  * `menuUrl`, a photo's `sourceUrl`, and the two fields the external-reputation
  * payload carries from Google.
  */

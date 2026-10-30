@@ -1,6 +1,9 @@
 /**
  * Protected and auxiliary endpoint functions for consuming API routes.
- * Auth, user bookmarks, user profile, billing, tags, plans, exchange rates, and reviews.
+ * Auth, user bookmarks, user profile, tags, exchange rates, reviews, and the
+ * other protected surfaces. The old billing client (`billingApi`, `plansApi`,
+ * `userApi.getSubscription`) was removed with the old billing (HOS-1637,
+ * AC:B13a:22): every method targeted a route the API no longer registers.
  *
  * All protected endpoints require an authenticated session (credentials: 'include').
  * The apiClient methods `getProtected` and `postProtected` handle this automatically.
@@ -14,44 +17,56 @@ import type {
     AccommodationImportStatusResponse,
     AccommodationOccupancy,
     AccommodationReviewListItem,
-    CheckoutRetryResponse,
+    CancellationReasonEnum,
+    ConversationListingAvailability,
     DestinationReviewListItem,
-    DowngradePreview,
     HostTradeBenefitTypeEnum,
     HostTradeCategoryEnum,
     HostTradeOwnerUpdate,
     HostTradeReviewCreateBody,
     HostTradeReviewUpdateBody,
-    KeepSelections,
-    LinkPreapprovalResponse,
+    ListingNoticesResponse,
+    ListingPurgePreviewResponse,
+    ListingSupportEditsResponse,
     OccupancySourceEnum,
-    PlanChangeResponse,
+    PendingAttemptCancellationResponseSchema,
     PriceAlertResponse,
-    PublishEligibilityResponse,
-    PurchasableAddonResponse,
-    PurchaseAddonResponse,
-    ReplacePaymentMethodResponse,
-    StartPaidSubscriptionResponse,
-    SubscriptionStatusResponse,
+    PricingSituationResponse,
+    PricingSituationVertical,
+    ProtectedEffectiveSetResponse,
+    PublicationStatusEnum,
+    RedeemPromoCodeResponseSchema,
+    ReportFixedResponse,
+    SignupNoticeResponse,
+    StartSubscriptionResponseSchema,
+    SubscribeDestinationResponseSchema,
+    TrialSummaryResponse,
     UserBookmark,
-    UserCancelSubscriptionResponse,
     UserProtected,
     UserPublic,
-    ValidationResult
+    UserStatsResponse,
+    VerticalEnum
 } from '@repo/schemas';
-import { MAX_BULK_CHECK_ENTITY_IDS } from '@repo/schemas';
+import {
+    MAX_BULK_CHECK_ENTITY_IDS,
+    type OwnSubscriptionsResponseSchema,
+    type SubscriptionCancellationPreviewResponseSchema,
+    type SubscriptionCancellationResponseSchema
+} from '@repo/schemas';
+import type { z } from 'zod';
 import type { MediaAttribution } from '../media';
 import { apiClient } from './client';
-import type { ApiResult, PaginatedResponse, ProductDomainScope } from './types';
+import { transformProtectedEffectiveSet } from './transforms';
+import type { ApiResult, PaginatedResponse } from './types';
 
 /**
- * The two commerce verticals that share the granular media endpoint shape
- * (HOS-372). Duplicated (not imported) from `@/lib/commerce/owner-listings`
+ * The two venue/experience verticals that share the granular media endpoint shape
+ * (HOS-372). Duplicated (not imported) from `@/lib/listing/owner-listings`
  * to avoid this low-level endpoints module depending on a higher-level
  * feature module — mirrors how other entity-scoped unions in this file are
  * hand-declared rather than imported (see `CalendarProviderToken` above).
  */
-export type CommerceMediaVertical = 'gastronomy' | 'experience';
+export type ListingMediaVertical = 'venue' | 'experience';
 
 const BASE = '/api/v1/public';
 const PROTECTED = '/api/v1/protected';
@@ -87,7 +102,7 @@ type BookmarkEntityType =
     | 'DESTINATION'
     | 'EVENT'
     | 'EXPERIENCE'
-    | 'GASTRONOMY'
+    | 'VENUE'
     | 'POST';
 
 /** Protected user bookmark API endpoints */
@@ -292,87 +307,6 @@ export const userBookmarksApi = {
 
 // --- User (Protected) ---
 
-/** Subscription status values */
-type SubscriptionStatus =
-    | 'active'
-    | 'trial'
-    | 'cancelled'
-    | 'expired'
-    | 'past_due'
-    | 'pending'
-    | 'paused'
-    | 'courtesy';
-
-/** Subscription data returned by the protected subscription endpoint */
-export interface SubscriptionData {
-    /** Subscription id — required to call the cancel/plan-change endpoints. */
-    readonly id: string;
-    readonly planSlug: string;
-    readonly planName: string;
-    readonly status: SubscriptionStatus;
-    /**
-     * True when the subscription is complimentary (`comp`, SPEC-262) — an
-     * admin-granted, never-charged, permanent plan surfaced with `status:
-     * 'active'`. The UI hides the self-service Cancel / Pause / Change-plan
-     * actions when this is true, since the backend rejects all three for a comp
-     * (there is no MP preapproval to act on). HOS-242.
-     */
-    readonly isComplimentary: boolean;
-    readonly currentPeriodStart: string | null;
-    readonly currentPeriodEnd: string | null;
-    readonly cancelAtPeriodEnd: boolean;
-    readonly trialEndsAt: string | null;
-    /**
-     * End of a gifted courtesy window (HOS-180), or `null` when there is none.
-     *
-     * While `status` is `'courtesy'` this — not `currentPeriodEnd` — is the date
-     * the subscriber actually gets charged again, so the dashboard reads it for
-     * the "sin cargo hasta" field. Same relationship `trialEndsAt` has to a
-     * trialing subscription.
-     */
-    readonly courtesyEndsAt?: string | null;
-    readonly monthlyPriceArs: number;
-    readonly paymentMethod?: {
-        readonly brand: string;
-        readonly last4: string;
-        readonly expMonth: number;
-        readonly expYear: number;
-    } | null;
-    readonly gracePeriodDaysRemaining?: number | null;
-    readonly gracePeriodExpiresAt?: string | null;
-    /**
-     * Pending scheduled plan change (downgrade), if any.
-     *
-     * Present when the host scheduled a downgrade via `billingApi.changePlan` and
-     * it has not yet been applied. The backend (`GET /protected/users/me/subscription`)
-     * returns this field (null when no pending change). The UI treats a null/absent
-     * value as "no scheduled change" and skips the banner render.
-     *
-     * Field names match the `QZPayScheduledPlanChange` shape stored by QZPay:
-     * `newPlanId` is the target plan ID and `effectiveAt` is an ISO 8601 datetime
-     * for when the change will be applied — typically `currentPeriodEnd`, or
-     * `trialEnd` when the downgrade was scheduled while still trialing
-     * (HOS-215).
-     */
-    readonly scheduledPlanChange?: {
-        readonly newPlanId: string;
-        readonly effectiveAt: string;
-    } | null;
-    /**
-     * Restriction preview computed at downgrade-schedule time (SPEC-167 / SPEC-203).
-     *
-     * Populated by `billingApi.changePlan` in the `status === 'scheduled'` response
-     * branch (`PlanChangeAppliedResponse.restrictionPreview`). The UI should persist
-     * this alongside the scheduled-change state so the dashboard can render the
-     * "here is what gets restricted" notice without an extra API call.
-     *
-     * The backend does not return this on the subscription endpoint — this field
-     * exists so the UI layer can attach the preview after a changePlan call and
-     * display it in the downgrade-scheduled banner.
-     */
-    readonly restrictionPreview?: DowngradePreview | null;
-}
-
 /** Protected user API endpoints */
 export const userApi = {
     /**
@@ -405,47 +339,8 @@ export const userApi = {
      * if (result.ok) console.log(result.data.bookmarkCount);
      * ```
      */
-    getStats(): Promise<
-        ApiResult<{
-            readonly bookmarkCount: number;
-            readonly reviewCount: number;
-            readonly plan: { readonly name: string; readonly status: string } | null;
-            readonly activeSubscriptionsCount: number;
-        }>
-    > {
+    getStats(): Promise<ApiResult<UserStatsResponse>> {
         return apiClient.getProtected({ path: `${PROTECTED}/users/me/stats` });
-    },
-
-    /**
-     * Get the authenticated user's current subscription details.
-     *
-     * @param params - Optional SSR cookie header (see {@link protectedConversationsApi.list})
-     *   plus an optional `productDomain` (HOS-259) to scope which of the
-     *   caller's subscriptions to resolve when they hold more than one under
-     *   the same billing customer (e.g. an accommodation host who also owns
-     *   a commerce listing). Defaults to `'accommodation'` server-side when
-     *   omitted — matches every pre-existing caller's behaviour.
-     * @returns Current subscription data or null if no active subscription
-     *
-     * @example
-     * ```ts
-     * const result = await userApi.getSubscription();
-     * if (result.ok && result.data.subscription) { ... }
-     *
-     * // Scope to one commerce vertical instead — 'commerce' itself is a
-     * // RETIRED ProductDomainEnum value (HOS-695) and must never be passed:
-     * const gastronomy = await userApi.getSubscription({ productDomain: 'gastronomy' });
-     * ```
-     */
-    getSubscription(params?: {
-        readonly cookieHeader?: string;
-        readonly productDomain?: ProductDomainScope;
-    }): Promise<ApiResult<{ readonly subscription: SubscriptionData | null }>> {
-        return apiClient.getProtected({
-            path: `${PROTECTED}/users/me/subscription`,
-            params: params?.productDomain ? { productDomain: params.productDomain } : undefined,
-            cookieHeader: params?.cookieHeader
-        });
     },
 
     /**
@@ -517,1113 +412,6 @@ export const userApi = {
             path: `${PROTECTED}/users/me/change-password`,
             body: params
         });
-    }
-};
-
-// --- Billing (Protected) ---
-
-/** Invoice status values */
-type InvoiceStatus = 'paid' | 'pending' | 'overdue' | 'void';
-
-/** Invoice item returned by the billing invoices endpoint */
-export interface InvoiceItem {
-    readonly id: string;
-    readonly date: string;
-    readonly description: string;
-    readonly amount: number;
-    readonly currency: string;
-    readonly status: InvoiceStatus;
-    readonly pdfUrl?: string;
-}
-
-/** Payment item returned by the billing payments endpoint */
-export interface PaymentItem {
-    readonly id: string;
-    readonly date: string;
-    readonly amount: number;
-    readonly currency: string;
-    readonly method: string;
-    readonly status: string;
-}
-
-/**
- * User addon item — the authenticated user's own purchased add-on.
- *
- * Mirrors `UserAddonResponseSchema` (`@repo/schemas`, `GET
- * /protected/billing/addons/my`) field-for-field (HOS-224 fix: the previous
- * shape here — `name`/`slug`/`price`/a 3-value `status` union — never matched
- * the real API response and had no consumer to surface the drift; the addons
- * self-service page is the first real caller).
- */
-export interface UserAddon {
-    readonly id: string;
-    readonly addonSlug: string;
-    readonly addonName: string;
-    readonly billingType: 'one_time' | 'recurring';
-    readonly status: 'active' | 'expired' | 'canceled' | 'pending';
-    readonly purchasedAt: string;
-    readonly expiresAt: string | null;
-    readonly canceledAt: string | null;
-    readonly priceArs: number;
-    readonly affectsLimitKey: string | null;
-    readonly limitIncrease: number | null;
-    readonly grantsEntitlement: string | null;
-}
-
-/**
- * How close a single limit is to being hit, as classified server-side.
- *
- * Replaces an earlier hand-written `UsageSummary` whose fields
- * (`key`/`label`/`current`/`max`) never matched what
- * `GET /protected/billing/usage` actually returns. It had no consumer, so
- * nothing surfaced the drift — the same failure mode HOS-224 found in
- * `UserAddon`.
- * `exceeded` is reachable: an addon expiring or a downgrade can leave a user
- * above a limit they already consumed.
- */
-export type UsageThresholdLevel = 'ok' | 'warning' | 'critical' | 'exceeded';
-
-/**
- * One limit of the user's plan and what they have consumed of it.
- *
- * Mirrors `limitUsageSchema` in `apps/api/src/routes/billing/usage.ts`.
- *
- * `maxAllowed` carries two sentinel values that are NOT quantities:
- * - `-1` — unlimited (staff bypass grants this across every key).
- * - `0` — the plan does not grant this limit at all; not a limit of zero.
- */
-export interface LimitUsage {
-    readonly limitKey: string;
-    /** English label from `LIMIT_METADATA`; translate by `limitKey` instead of showing this. */
-    readonly displayName: string;
-    readonly currentUsage: number;
-    readonly maxAllowed: number;
-    readonly usagePercentage: number;
-    readonly threshold: UsageThresholdLevel;
-    readonly planBaseLimit: number;
-    readonly addonBonusLimit: number;
-    /**
-     * Whether `currentUsage` is a real measurement. A limit with no counter
-     * reports a hardcoded `0` that is indistinguishable from a genuine zero.
-     * Never display a row with `isMeasured: false` as consumption — it would
-     * tell the user they have used nothing when they have.
-     */
-    readonly isMeasured: boolean;
-    /**
-     * How this limit's consumption behaves, which decides how to render it.
-     * See `UsageKind` in `apps/api/src/services/usage-tracking.service.ts`.
-     */
-    readonly usageKind: UsageKind;
-    /**
-     * Photo consumption per accommodation, fullest-first. Present only when
-     * `usageKind` is `'per_accommodation'`.
-     */
-    readonly perAccommodation?: readonly AccommodationPhotoUsage[];
-}
-
-/**
- * How a limit's consumption behaves.
- *
- * - `stock` — a quantity the account holds now; counted, never resets.
- * - `monthly` — calls used this calendar month; counted, resets on the 1st.
- * - `per_accommodation` — capped per accommodation; the real numbers are in
- *   `perAccommodation` and `currentUsage` is meaningless.
- * - `per_operation` — bounds a single request (how many items you may compare
- *   at once); nothing is stored, so there is no consumption.
- * - `unbuilt` — granted by the plan but the feature does not exist yet.
- */
-export type UsageKind = 'stock' | 'monthly' | 'per_accommodation' | 'per_operation' | 'unbuilt';
-
-/** Photo consumption of one accommodation, for a `per_accommodation` limit. */
-export interface AccommodationPhotoUsage {
-    readonly accommodationId: string;
-    readonly name: string;
-    readonly slug: string | null;
-    readonly currentUsage: number;
-}
-
-/** The full usage picture for one subscription. */
-export interface UsageSummary {
-    readonly customerId: string;
-    readonly limits: readonly LimitUsage[];
-    readonly overallThreshold: UsageThresholdLevel;
-    readonly upgradeUrl: string;
-}
-
-/** Plan item for plan listing and selection */
-export interface PlanItem {
-    readonly id: string;
-    readonly name: string;
-    readonly slug: string;
-    readonly description: string;
-    readonly prices: ReadonlyArray<{
-        readonly billingInterval: string;
-        readonly unitAmount: number;
-        readonly currency: string;
-    }>;
-    readonly features: readonly string[];
-    readonly isCurrent?: boolean;
-}
-
-/**
- * Response of `POST /protected/billing/promo-codes/apply` (HOS-1012 T-039).
- *
- * `trialEnd` is present only for a `trial_extension` effect, and it is the
- * value PERSISTED on the subscription row by the apply — not a projection the
- * client should recompute.
- */
-export interface ApplyPromoCodeResult {
-    /** Billing customer the code was applied to */
-    readonly id: string;
-    /** The applied code, echoed back */
-    readonly promoCode: string | null;
-    /** `discount` | `trial_extension` | `comp` */
-    readonly effectKind: string;
-    readonly originalAmount: number;
-    readonly discountAmount: number;
-    readonly finalAmount: number;
-    readonly amount: number;
-    /** Calendar days added — `trial_extension` only */
-    readonly extraDays?: number;
-    /** ISO 8601 persisted trial end — `trial_extension` only */
-    readonly trialEnd?: string;
-    /** True when the subscription became permanently complimentary */
-    readonly comp?: boolean;
-}
-
-/** Protected billing API endpoints for the user dashboard */
-export const billingApi = {
-    /**
-     * Request a plan change for the authenticated user's subscription.
-     *
-     * For upgrades, the response may have `status === 'pending_payment'` with a
-     * `checkoutUrl` the client must redirect to (SPEC-141 D7).
-     * For downgrades, the response will have `status === 'scheduled'` and may
-     * include a `restrictionPreview` so the UI can render a "what gets restricted"
-     * notice (SPEC-167 / SPEC-203).
-     *
-     * An idempotency key is sent automatically on every call so that network-level
-     * retries are safe (the server deduplicates by key). Each logical user action
-     * should result in a fresh `changePlan` call (a new UUID is generated per call).
-     *
-     * @param params - Target plan ID, billing interval, and optional keep selections
-     * @returns Discriminated-union response: active | scheduled | pending_payment
-     *
-     * @example
-     * ```ts
-     * const result = await billingApi.changePlan({ newPlanId: 'plan-uuid', billingInterval: 'monthly' });
-     * if (result.ok && result.data.status === 'scheduled') {
-     *   console.log(result.data.restrictionPreview);
-     * }
-     * ```
-     */
-    changePlan({
-        newPlanId,
-        billingInterval,
-        keepSelections
-    }: {
-        readonly newPlanId: string;
-        readonly billingInterval: string;
-        readonly keepSelections?: KeepSelections;
-    }): Promise<ApiResult<PlanChangeResponse>> {
-        return apiClient.postProtected({
-            path: `${PROTECTED}/billing/subscriptions/change-plan`,
-            body:
-                keepSelections === undefined
-                    ? { newPlanId, billingInterval }
-                    : { newPlanId, billingInterval, keepSelections },
-            headers: { 'X-Idempotency-Key': crypto.randomUUID() }
-        });
-    },
-
-    /**
-     * Soft-cancel the authenticated user's current subscription (SPEC-147).
-     *
-     * Sets `cancelAtPeriodEnd = true` on the subscription. The user retains
-     * full access to their plan entitlements until `accessUntil` (the current
-     * period end). The subscription status remains `active`; the finalization
-     * cron flips it to `cancelled` after the period ends.
-     *
-     * This calls `POST /subscriptions/:id/cancel` (the SPEC-147 soft-cancel
-     * endpoint), NOT `DELETE /subscriptions/:id` (the hard-cancel / QZPay
-     * internal endpoint that is not exposed to end users).
-     *
-     * @param params - Subscription ID and optional free-text cancellation reason
-     * @returns Soft-cancel confirmation with accessUntil date
-     *
-     * @example
-     * ```ts
-     * const result = await billingApi.cancelSubscription({ subscriptionId: 'sub-uuid', reason: 'Too expensive' });
-     * if (result.ok) console.log('Access until:', result.data.accessUntil);
-     * ```
-     */
-    cancelSubscription({
-        subscriptionId,
-        reason
-    }: {
-        readonly subscriptionId: string;
-        readonly reason?: string;
-    }): Promise<ApiResult<UserCancelSubscriptionResponse>> {
-        return apiClient.postProtected({
-            path: `${PROTECTED}/billing/subscriptions/${subscriptionId}/cancel`,
-            body: { reason }
-        });
-    },
-
-    /**
-     * Un-cancel (reverse a soft-cancel) the authenticated user's subscription
-     * (HOS-232). While still inside the access window (`cancelAtPeriodEnd = true`),
-     * this clears the pending cancellation and re-authorizes the MercadoPago
-     * preapproval — no new checkout and no charge. The mirror of
-     * {@link cancelSubscription}. Idempotent.
-     *
-     * Calls `POST /subscriptions/:id/uncancel`.
-     *
-     * @param params - Subscription ID.
-     * @returns `{ subscriptionId, cancelAtPeriodEnd: false }` on success.
-     */
-    uncancelSubscription({
-        subscriptionId
-    }: {
-        readonly subscriptionId: string;
-    }): Promise<ApiResult<{ subscriptionId: string; cancelAtPeriodEnd: false }>> {
-        return apiClient.postProtected({
-            path: `${PROTECTED}/billing/subscriptions/${subscriptionId}/uncancel`,
-            body: {}
-        });
-    },
-
-    /**
-     * Preview the restrictions that would apply if the host downgrades to a given plan.
-     *
-     * Returns a structured excess report covering:
-     * - `accommodations` — active accommodations over the target plan cap.
-     * - `promotions` — active promotions over the target plan cap.
-     * - `photos` — per-accommodation gallery overflow entries.
-     * - `grandfatherFlags` — informational flags for rich/video content that
-     *   becomes read-only under the target plan (no data is removed).
-     * - `hasExcess` — convenience flag; `true` when any dimension has excess.
-     *
-     * The host can use this preview to decide which items to keep active by
-     * passing explicit `keepSelections` to `billingApi.changePlan`.
-     *
-     * @param params - Billing catalog slug of the plan to preview downgrading to
-     * @returns Structured excess preview for the given target plan
-     *
-     * @example
-     * ```ts
-     * const result = await billingApi.previewDowngrade({ targetPlan: 'owner-basico' });
-     * if (result.ok && result.data.hasExcess) {
-     *   console.log('Accommodations to restrict:', result.data.accommodations.excessCount);
-     * }
-     * ```
-     */
-    previewDowngrade({
-        targetPlan
-    }: {
-        readonly targetPlan: string;
-    }): Promise<ApiResult<DowngradePreview>> {
-        return apiClient.getProtected({
-            path: `${PROTECTED}/billing/subscriptions/downgrade-preview`,
-            params: { targetPlan }
-        });
-    },
-
-    /**
-     * Pause the authenticated user's own subscription (SPEC-143 #29).
-     *
-     * Always stops billing. For an accommodation-domain subscription it also
-     * hides/edit-locks the owner's accommodations until resume; for a commerce
-     * (gastronomy/experience) subscription, the linked listing's visibility is
-     * instead handled by the shared subscription-linked-entities bridge —
-     * `accommodationsUpdated` stays `0` in that case (HOS-1278).
-     *
-     * `subscriptionId` is REQUIRED (HOS-1278): the route no longer guesses the
-     * caller's "current" subscription — a customer can legitimately hold more
-     * than one (a dual host/commerce owner, or a host auto-promoted from a
-     * paying tourist), so the caller must name the exact one.
-     *
-     * @param params - The id of the subscription to pause.
-     */
-    pauseSubscription({ subscriptionId }: { readonly subscriptionId: string }): Promise<
-        ApiResult<{
-            readonly success: boolean;
-            readonly subscriptionId: string;
-            readonly status: string;
-            readonly accommodationsUpdated: number;
-        }>
-    > {
-        return apiClient.postProtected({
-            path: `${PROTECTED}/billing/me/subscription-pause`,
-            body: { subscriptionId }
-        });
-    },
-
-    /**
-     * Resume the authenticated user's own paused subscription (SPEC-143 #29).
-     * Restarts billing and reverts whichever service-suspension effect applied
-     * to that subscription's domain (see {@link pauseSubscription}).
-     *
-     * `subscriptionId` is REQUIRED (HOS-1278) — same reasoning as
-     * {@link pauseSubscription}.
-     *
-     * @param params - The id of the subscription to resume.
-     */
-    resumeSubscription({ subscriptionId }: { readonly subscriptionId: string }): Promise<
-        ApiResult<{
-            readonly success: boolean;
-            readonly subscriptionId: string;
-            readonly status: string;
-            readonly accommodationsUpdated: number;
-        }>
-    > {
-        return apiClient.postProtected({
-            path: `${PROTECTED}/billing/me/subscription-resume`,
-            body: { subscriptionId }
-        });
-    },
-    /**
-     * Create a checkout session to purchase a plan.
-     *
-     * Uses the Hospeda-custom `start-paid` route which handles the full paid
-     * subscription bootstrap: customer creation, MercadoPago preapproval,
-     * trial-to-paid transitions, and idempotency. The legacy `/checkout`
-     * endpoint was deprecated in SPEC-126.
-     *
-     * When a `promoCode` is supplied and the server resolves it to a `comp`
-     * (free-forever) effect, `appliedEffect` in the response is `'comp'` and
-     * `checkoutUrl` is an **in-app success sentinel URL** — NOT a MercadoPago
-     * redirect. The caller should still follow `checkoutUrl` via
-     * `window.location.href`; the sentinel page handles the success flow
-     * without touching the payment provider (SPEC-262 T-012).
-     *
-     * @param params - Plan slug, billing interval, optional promo code, and
-     *   optional payer email (HOS-937 step 2 — the email confirmed/edited on
-     *   the pre-redirect screen; see `PayerEmailConfirmDialog.client.tsx`).
-     * @returns The checkout URL to redirect the user to, plus metadata
-     *
-     * @example
-     * ```ts
-     * const result = await billingApi.createCheckout({ planSlug: 'owner-pro', billingInterval: 'annual', promoCode: 'WELCOME50' });
-     * if (result.ok) window.location.href = result.data.checkoutUrl;
-     * ```
-     */
-    createCheckout({
-        planSlug,
-        billingInterval,
-        promoCode,
-        payerEmail
-    }: {
-        readonly planSlug: string;
-        readonly billingInterval: 'monthly' | 'annual';
-        readonly promoCode?: string;
-        /**
-         * HOS-937 step 2: the email the user confirmed or typed on the
-         * pre-redirect screen (spec §8.1). Optional — when omitted, the
-         * server falls back to its own resolution (spec §6.3).
-         */
-        readonly payerEmail?: string;
-    }): Promise<ApiResult<StartPaidSubscriptionResponse>> {
-        const body: Record<string, unknown> = { planSlug, billingInterval };
-        if (promoCode) {
-            body.promoCode = promoCode;
-        }
-        if (payerEmail) {
-            body.payerEmail = payerEmail;
-        }
-        return apiClient.postProtected({
-            path: `${PROTECTED}/billing/subscriptions/start-paid`,
-            body,
-            // `/start-paid` is wrapped by `idempotencyKeyMiddleware` (SPEC-143
-            // T-143-60). A fresh UUID v4 per click means double-click retries
-            // get the cached response (no duplicate MP preference + sub row)
-            // while two distinct user actions remain independent. The
-            // disabled-while-loading guard on the button covers the simultaneous
-            // double-click case; the middleware covers the network-level retry
-            // case (slow network → user reloads, etc.).
-            headers: { 'X-Idempotency-Key': crypto.randomUUID() }
-        });
-    },
-
-    /**
-     * Poll the status of a locally-created subscription (HOS-151 Bug A).
-     *
-     * Used by the checkout success page after the user returns from a
-     * MercadoPago recurring preapproval: that redirect carries no
-     * `collection_status`, so the page reads the `localSubscriptionId` it
-     * stashed in sessionStorage before redirecting and polls this endpoint
-     * (~every 2s) until the subscription flips to `active` (or a timeout is
-     * reached).
-     *
-     * @param params.localId - The local subscription UUID returned by `createCheckout`.
-     * @returns The subscription's current status plus `mpSubscriptionId` / `activatedAt`.
-     *
-     * @example
-     * ```ts
-     * const result = await billingApi.getSubscriptionStatus({ localId });
-     * if (result.ok && result.data.status === 'active') { ... }
-     * ```
-     */
-    getSubscriptionStatus({
-        localId
-    }: {
-        readonly localId: string;
-    }): Promise<ApiResult<SubscriptionStatusResponse>> {
-        return apiClient.getProtected({
-            path: `${PROTECTED}/billing/subscriptions/${localId}/status`
-        });
-    },
-
-    /**
-     * Link a MercadoPago preapproval to its pending local subscription
-     * (HOS-191 Path C, F2).
-     *
-     * Path C's `/start-paid` redirects the browser straight to MercadoPago's
-     * hosted share link — no preapproval exists locally at that point. Once the
-     * customer authorizes, MercadoPago redirects back to the checkout success
-     * page with `?preapproval_id=...`. This call links that real preapproval id
-     * to the `pending_provider` local subscription the caller stashed in
-     * sessionStorage before the redirect (see `checkout-pending.ts`).
-     *
-     * Idempotent: a page reload after a successful link re-sends the same call
-     * and the server replies `outcome: 'already'`.
-     *
-     * Callers MUST branch on the HTTP status when `result.ok` is `false`:
-     * - `409` — hard error (IDOR: the preapproval belongs to another user's
-     *   subscription). Show an error state, do not fall back to polling.
-     * - Any other error (typically `422`, an ambiguous/not-yet-visible
-     *   resolution) — non-fatal. The `subscription_preapproval` webhook
-     *   fallback may complete the link shortly after; fall back to the normal
-     *   `getSubscriptionStatus` poll instead of treating this as terminal.
-     *
-     * @param params.preapprovalId - The MercadoPago preapproval id read from `?preapproval_id=`.
-     * @param params.localSubscriptionId - The local subscription UUID stashed before the redirect.
-     * @returns `{ outcome: 'linked' | 'already', localSubscriptionId }` on success.
-     *
-     * @example
-     * ```ts
-     * const result = await billingApi.linkPreapproval({ preapprovalId, localSubscriptionId });
-     * if (result.ok) { // start polling getSubscriptionStatus
-     * } else if (result.error.status === 409) { // hard error
-     * } else { // non-fatal, poll anyway
-     * }
-     * ```
-     */
-    linkPreapproval({
-        preapprovalId,
-        localSubscriptionId
-    }: {
-        readonly preapprovalId: string;
-        readonly localSubscriptionId: string;
-    }): Promise<ApiResult<LinkPreapprovalResponse>> {
-        return apiClient.postProtected({
-            path: `${PROTECTED}/billing/subscriptions/link-preapproval`,
-            body: { preapprovalId, localSubscriptionId }
-        });
-    },
-
-    /**
-     * Recover a checkout that did not come back `authorized` (HOS-937 step 4).
-     *
-     * Reads the caller's own preapproval by its LOCAL subscription id (never
-     * the MercadoPago id) and returns the recovery spec §6.4 defines. The
-     * four possible `recovery` values are NOT interchangeable:
-     * - `'authorized'` — the checkout already succeeded. `checkoutUrl` is
-     *   `null` — never redirect to pay again.
-     * - `'pending'` — the SAME preapproval is still awaiting completion.
-     *   `checkoutUrl` (when present) is its own `init_point`.
-     * - `'cancelled'` — a FRESH preapproval was minted (or reused from an
-     *   earlier call). `checkoutUrl` is the new `init_point`.
-     * - `'confirming'` — a concurrent call already claimed the right to
-     *   mint, or the deferred re-read was ambiguous. `checkoutUrl` is
-     *   `null`; the caller should retry shortly rather than treat this as
-     *   final.
-     *
-     * @param params.localId - The local subscription UUID (the `retryCheckoutId`
-     * query param on `/mi-cuenta/suscripcion/`).
-     * @returns The recovery classification plus a redirect URL when applicable.
-     *
-     * @example
-     * ```ts
-     * const result = await billingApi.checkoutRetry({ localId });
-     * if (result.ok && result.data.recovery === 'authorized') { // already active }
-     * ```
-     */
-    checkoutRetry({
-        localId
-    }: {
-        readonly localId: string;
-    }): Promise<ApiResult<CheckoutRetryResponse>> {
-        return apiClient.postProtected({
-            path: `${PROTECTED}/billing/subscriptions/${localId}/checkout-retry`,
-            body: {}
-        });
-    },
-
-    /**
-     * Replace the payment method on a `past_due` subscription (HOS-348 Part B).
-     *
-     * Mints a fresh MercadoPago preapproval on the subscription's CURRENT
-     * plan and returns its `checkoutUrl` — the caller MUST redirect the
-     * browser there. The old (past-due) preapproval is cancelled only once
-     * the new one confirms authorized; nothing is charged or cancelled by
-     * this call itself. The unpaid period on the old subscription is
-     * deliberately not collected (owner decision — see
-     * `apps/api/src/services/billing/past-due-payment-method-replacement.service.ts`).
-     *
-     * `/replace-payment-method` is wrapped by `idempotencyKeyMiddleware`
-     * (same contract as `/start-paid`), so a fresh UUID v4 per click means a
-     * double-click retry gets the cached response instead of a second
-     * preapproval.
-     *
-     * @param params.localId - The past-due subscription's local UUID
-     *   (`subscription.id` from `userApi.getSubscription`).
-     * @returns The new preapproval's `checkoutUrl` to redirect to, and
-     *   whether an already-in-flight attempt was reused.
-     *
-     * @example
-     * ```ts
-     * const result = await billingApi.replacePaymentMethod({ localId });
-     * if (result.ok) window.location.href = result.data.checkoutUrl;
-     * ```
-     */
-    replacePaymentMethod({
-        localId
-    }: {
-        readonly localId: string;
-    }): Promise<ApiResult<ReplacePaymentMethodResponse>> {
-        return apiClient.postProtected({
-            path: `${PROTECTED}/billing/subscriptions/${localId}/replace-payment-method`,
-            body: {},
-            headers: { 'X-Idempotency-Key': crypto.randomUUID() }
-        });
-    },
-
-    /**
-     * Validate a promo code before checkout and preview its effect.
-     *
-     * Rate-limited to 5 requests/minute server-side. Always call on an
-     * explicit user action ("Aplicar"), NOT on every keystroke.
-     *
-     * The `userId` MUST equal the session user's id; the route returns 403
-     * otherwise. `amount` (in centavos) is forwarded so the server can
-     * calculate and return `effectPreview.finalAmount` for discount codes.
-     * The web only has `planSlug`, not `planId`, so `planId` is intentionally
-     * omitted from this call.
-     *
-     * @param params.code - Promo code string entered by the user
-     * @param params.userId - Authenticated user's UUID (from session)
-     * @param params.amount - Base price in centavos for discount preview (optional)
-     * @returns Validation result including `effectPreview` when the code is valid
-     *
-     * @example
-     * ```ts
-     * const result = await billingApi.validatePromoCode({ code: 'PROMO20', userId: 'uuid-...', amount: 120000 });
-     * if (result.ok && result.data.valid) console.log(result.data.effectPreview);
-     * ```
-     */
-    validatePromoCode({
-        code,
-        userId,
-        amount
-    }: {
-        readonly code: string;
-        readonly userId: string;
-        readonly amount?: number;
-    }): Promise<ApiResult<ValidationResult>> {
-        const body: { code: string; userId: string; amount?: number } = { code, userId };
-        if (amount !== undefined) {
-            body.amount = amount;
-        }
-        return apiClient.postProtected({
-            path: `${PROTECTED}/billing/promo-codes/validate`,
-            body
-        });
-    },
-
-    /**
-     * Apply a promo code to the authenticated user's own account (HOS-1012 T-039).
-     *
-     * Today the only self-service caller is the trial-extension form on the
-     * account subscription page: a `trial_extension` code applied while a trial
-     * is running pushes `trial_end` on the row and comes back with the date that
-     * was actually PERSISTED (`trialEnd`), never a projection.
-     *
-     * `customerId` is deliberately NOT sent — the endpoint resolves the caller's
-     * own billing customer from the session, which is the only customer a
-     * non-admin may ever target.
-     *
-     * Failure modes worth surfacing to the host: 422 when no trial is running
-     * (the code is NOT consumed and stays valid), 409 when the code was already
-     * used, 404/400 for an unknown, inactive or expired code.
-     *
-     * @param params.code - Promo code string entered by the user
-     * @param params.subscriptionId - Optional explicit subscription to target
-     * @returns The applied effect, including the persisted `trialEnd`
-     *
-     * @example
-     * ```ts
-     * const result = await billingApi.applyPromoCode({ code: 'FREEMONTH', subscriptionId });
-     * if (result.ok) console.log(result.data.trialEnd);
-     * ```
-     */
-    applyPromoCode({
-        code,
-        subscriptionId
-    }: {
-        readonly code: string;
-        readonly subscriptionId?: string;
-    }): Promise<ApiResult<ApplyPromoCodeResult>> {
-        const body: { code: string; subscriptionId?: string } = { code };
-        if (subscriptionId !== undefined) {
-            body.subscriptionId = subscriptionId;
-        }
-        return apiClient.postProtected({
-            path: `${PROTECTED}/billing/promo-codes/apply`,
-            body
-        });
-    },
-
-    /**
-     * List the authenticated user's invoices with optional pagination.
-     *
-     * @param params - Optional pagination parameters
-     * @returns Paginated list of invoices
-     *
-     * @example
-     * ```ts
-     * const result = await billingApi.listInvoices({ page: 1, pageSize: 10 });
-     * ```
-     */
-    listInvoices(params?: {
-        readonly page?: number;
-        readonly pageSize?: number;
-    }): Promise<ApiResult<PaginatedResponse<InvoiceItem>>> {
-        return apiClient.getListProtected({
-            path: `${PROTECTED}/billing/invoices`,
-            params
-        });
-    },
-
-    /**
-     * List the authenticated user's payment history with optional pagination.
-     *
-     * @param params - Optional pagination parameters
-     * @returns Paginated list of payments
-     *
-     * @example
-     * ```ts
-     * const result = await billingApi.listPayments({ page: 1 });
-     * ```
-     */
-    listPayments(params?: {
-        readonly page?: number;
-        readonly pageSize?: number;
-    }): Promise<ApiResult<PaginatedResponse<PaymentItem>>> {
-        return apiClient.getListProtected({
-            path: `${PROTECTED}/billing/payments`,
-            params
-        });
-    },
-
-    /**
-     * Get the authenticated user's active addons.
-     *
-     * The API returns a plain array (`GET /protected/billing/addons/my`,
-     * `responseSchema: z.array(UserAddonResponseSchema)` in
-     * `apps/api/src/routes/billing/addons.ts`) — NOT a `{ addons: [...] }`
-     * envelope (HOS-224 fix: the previous signature here claimed an `addons`
-     * wrapper key that the backend never sent; this endpoint had no consumer
-     * until the addons self-service page).
-     *
-     * @param params - Optional SSR cookie header (see {@link protectedConversationsApi.list})
-     * @returns List of active addons for the current user
-     *
-     * @example
-     * ```ts
-     * const result = await billingApi.getAddons();
-     * if (result.ok) console.log(result.data);
-     * ```
-     */
-    getAddons(params?: {
-        readonly cookieHeader?: string;
-    }): Promise<ApiResult<readonly UserAddon[]>> {
-        return apiClient.getProtected({
-            path: `${PROTECTED}/billing/addons/my`,
-            cookieHeader: params?.cookieHeader
-        });
-    },
-
-    /**
-     * Get the authenticated user's consumption against every limit of their
-     * current plan.
-     *
-     * `GET /protected/billing/usage`. The response covers EVERY `LimitKey`,
-     * including keys the plan does not grant (those come back as
-     * `maxAllowed: 0`) — callers are expected to filter before display, or
-     * the user sees a wall of "0 of 0" rows.
-     *
-     * Two states are expected rather than exceptional, and both surface as a
-     * failed `ApiResult` the caller should degrade on rather than treat as an
-     * error worth showing:
-     * - `404` — no active subscription in the requested domain (free user).
-     * - `503` — billing is not configured in this environment.
-     *
-     * @param params - Product domain to scope to (defaults server-side to
-     *   `'accommodation'`) plus the optional SSR cookie header.
-     * @returns The usage summary for the resolved subscription.
-     *
-     * @example
-     * ```ts
-     * const result = await billingApi.getUsage({ productDomain: 'commerce' });
-     * if (result.ok) {
-     *   const shown = result.data.limits.filter((l) => l.maxAllowed !== 0);
-     * }
-     * ```
-     */
-    getUsage(params?: {
-        readonly productDomain?: ProductDomainScope;
-        readonly cookieHeader?: string;
-    }): Promise<ApiResult<UsageSummary>> {
-        return apiClient.getProtected({
-            path: `${PROTECTED}/billing/usage`,
-            params: { productDomain: params?.productDomain },
-            cookieHeader: params?.cookieHeader
-        });
-    },
-
-    /**
-     * List available add-ons for purchase (HOS-224 self-service).
-     *
-     * `GET /protected/billing/addons` (`ListAddonsQuerySchema` /
-     * `z.array(PurchasableAddonResponseSchema)` — see
-     * `apps/api/src/routes/billing/addons.ts`).
-     * Distinct from {@link billingApi.getAddons}, which lists the user's own
-     * *purchased* addons — this lists the *catalog* of purchasable ones.
-     *
-     * @param params - Optional filters + SSR cookie header
-     * @returns The filtered, sorted add-on catalog
-     *
-     * @example
-     * ```ts
-     * const result = await billingApi.listAvailableAddons({ active: true });
-     * if (result.ok) console.log(result.data);
-     * ```
-     */
-    listAvailableAddons(params?: {
-        readonly active?: boolean;
-        readonly targetCategory?: 'owner' | 'complex';
-        readonly cookieHeader?: string;
-    }): Promise<ApiResult<readonly PurchasableAddonResponse[]>> {
-        return apiClient.getProtected({
-            path: `${PROTECTED}/billing/addons`,
-            params: {
-                active: params?.active,
-                targetCategory: params?.targetCategory
-            },
-            cookieHeader: params?.cookieHeader
-        });
-    },
-
-    /**
-     * Purchase an add-on (HOS-224 self-service), returning a MercadoPago
-     * checkout URL to redirect the browser to.
-     *
-     * `POST /protected/billing/addons/{slug}/purchase`. Enforces
-     * `X-Idempotency-Key` server-side (`idempotencyKeyMiddleware`) — callers
-     * MUST pass a fresh `crypto.randomUUID()` per purchase click.
-     *
-     * The request body is validated against `PurchaseAddonSchema`, which
-     * requires an `addonId` field even though the handler resolves the addon
-     * from the URL's `:slug` param, not from the body (see the contract note
-     * pinned by `apps/api/test/e2e/flows/billing/addon-purchase.test.ts`).
-     * This wrapper sends `addonId: slug` automatically so callers only need
-     * to supply the optional `promoCode` / `accommodationId`.
-     *
-     * @param params.slug - The add-on's slug (also the URL path param)
-     * @param params.body - Optional promo code and/or target accommodation
-     *   (required by the API when the addon's `requiresAccommodationTarget` is true)
-     * @param params.idempotencyKey - Fresh UUID v4 per purchase attempt
-     * @param params.cookieHeader - Optional SSR cookie header
-     * @returns The MercadoPago checkout URL and order metadata
-     *
-     * @example
-     * ```ts
-     * const result = await billingApi.purchaseAddon({
-     *   slug: 'visibility-boost-gastronomy-7d',
-     *   body: { entityId: 'gastronomy-uuid' },
-     *   idempotencyKey: crypto.randomUUID()
-     * });
-     * if (result.ok) window.location.href = result.data.checkoutUrl;
-     * ```
-     */
-    purchaseAddon({
-        slug,
-        body,
-        idempotencyKey,
-        cookieHeader
-    }: {
-        readonly slug: string;
-        readonly body?: {
-            readonly promoCode?: string;
-            /**
-             * Target listing for a `requiresAccommodationTarget` add-on
-             * (HOS-1286). Any of the three verticals; the server derives WHICH
-             * table from the add-on's own `productDomain`.
-             */
-            readonly entityId?: string;
-            /**
-             * @deprecated Since HOS-1286 — send `entityId`. Still accepted by
-             * the server for one release; this client no longer sends it.
-             */
-            readonly accommodationId?: string;
-        };
-        readonly idempotencyKey: string;
-        readonly cookieHeader?: string;
-    }): Promise<ApiResult<PurchaseAddonResponse>> {
-        return apiClient.postProtected({
-            path: `${PROTECTED}/billing/addons/${slug}/purchase`,
-            body: { addonId: slug, ...body },
-            headers: { 'X-Idempotency-Key': idempotencyKey },
-            cookieHeader
-        });
-    },
-
-    /**
-     * Get the trial status for the authenticated user.
-     *
-     * Returns `isExpired: true` with populated `startedAt`, `expiresAt`, and
-     * `planSlug` for users whose trial expired and subscription was cancelled.
-     * Returns `isOnTrial: true` with `daysRemaining` for active trial users.
-     *
-     * `intendedInterval` (HOS-115 §5, nudge delivery path 2) is the billing
-     * interval the customer selected when they started their most recent
-     * trial — `null` when there is no trial, or the trial recorded no
-     * interval. The pricing page uses this to pre-select the monthly/annual
-     * toggle for a logged-in user who navigates there directly (no
-     * `?interval=` query param).
-     *
-     * @param params - Optional SSR cookie header (see {@link protectedConversationsApi.list})
-     *   plus an optional `productDomain` (HOS-1282) to scope the check to one
-     *   vertical (accommodation | gastronomy | experience | tourist) — e.g. the
-     *   publish flow asking "is THIS accommodation's trial expired" rather than
-     *   the domain-blind answer every pre-existing caller gets. Omitted, the
-     *   server keeps its long-standing domain-blind resolution, matching every
-     *   caller's behaviour before this parameter existed.
-     * @returns Trial status information for the current user.
-     *
-     * @example
-     * ```ts
-     * const result = await billingApi.getTrialStatus();
-     * if (result.ok && result.data.isExpired) { ... }
-     *
-     * // Scope to the gastronomy trial instead of the domain-blind default:
-     * const gastronomy = await billingApi.getTrialStatus({ productDomain: 'gastronomy' });
-     * ```
-     */
-    getTrialStatus(params?: {
-        readonly cookieHeader?: string;
-        readonly productDomain?: ProductDomainScope;
-    }): Promise<
-        ApiResult<{
-            readonly isOnTrial: boolean;
-            readonly isExpired: boolean;
-            readonly daysRemaining: number | null;
-            readonly startedAt: string | null;
-            readonly expiresAt: string | null;
-            readonly planSlug: string | null;
-            readonly intendedInterval: 'monthly' | 'annual' | null;
-        }>
-    > {
-        return apiClient.getProtected({
-            path: `${PROTECTED}/billing/trial/status`,
-            params: params?.productDomain ? { productDomain: params.productDomain } : undefined,
-            cookieHeader: params?.cookieHeader
-        });
-    },
-
-    /**
-     * Get the entitlements for the authenticated user.
-     *
-     * Returns the user's current feature flags (entitlements array), plan
-     * limits map, and active plan context. Mirrors the response shape of
-     * `GET /api/v1/protected/users/me/entitlements`.
-     *
-     * - `entitlements`: sorted array of feature-flag keys (e.g. `["can_use_rich_description"]`)
-     * - `limits`: object map of limit keys to numeric values (e.g. `{ max_accommodations: 1 }`).
-     *   A value of `-1` means unlimited.
-     * - `plan`: active plan summary or `null` if the user has no active paid plan.
-     * - `asOf`: ISO timestamp of when the values were resolved.
-     *
-     * @param params - Optional SSR cookie header (see {@link protectedConversationsApi.list})
-     * @returns Entitlement data for the current user.
-     *
-     * @example
-     * ```ts
-     * const result = await billingApi.getEntitlements();
-     * if (result.ok) {
-     *   const maxAccommodations = result.data.limits.max_accommodations; // -1 = unlimited
-     * }
-     * ```
-     */
-    getEntitlements(params?: {
-        /**
-         * SSR-only: raw `Cookie` header forwarded to the API so the request
-         * carries the user's session. Browser callers should omit this.
-         */
-        readonly cookieHeader?: string;
-    }): Promise<
-        ApiResult<{
-            readonly entitlements: ReadonlyArray<string>;
-            readonly limits: Readonly<Record<string, number>>;
-            readonly plan: {
-                readonly slug: string;
-                readonly name: string;
-                readonly status: string;
-            } | null;
-            readonly asOf: string;
-        }>
-    > {
-        return apiClient.getProtected({
-            path: `${PROTECTED}/users/me/entitlements`,
-            cookieHeader: params?.cookieHeader
-        });
-    },
-
-    // ── Trial eligibility (HOS-226) ─────────────────────────────────────────
-    // Kept as its own clearly-delimited block: this wrapper is new and
-    // unrelated to the entries above/below it, added on a branch that may
-    // rebase against other in-flight billing-wrapper additions.
-
-    /**
-     * Get whether the authenticated user is still eligible for a free trial
-     * in one product domain (one trial per customer PER DOMAIN, for life —
-     * HOS-1012 D-2).
-     *
-     * Read-only, never reserves or consumes a trial. Used by
-     * `PlanPurchaseButton.client.tsx` (accommodation, omits `productDomain`)
-     * to correct the SSR-rendered "N days free" pricing badge at hydration
-     * time for a logged-in visitor who already consumed their lifetime trial
-     * — the badge itself comes from the static, unauthenticated, 1h-cached
-     * `GET /api/v1/public/plans` and has no notion of per-user eligibility.
-     * The gastronomy/experience publish pages (HOS-1293) pass their own
-     * vertical explicitly, for the same reason `getTrialStatus` takes one:
-     * an unscoped read silently answers about accommodation regardless of
-     * which vertical the caller actually asked about.
-     *
-     * @param params - Optional plan slug (informational, echoed back — the
-     *   eligibility rule is customer-scoped, not plan-scoped), an optional
-     *   `productDomain` (HOS-1293) defaulting server-side to `'accommodation'`
-     *   when omitted (matching every pre-existing caller), and SSR cookie
-     *   header (see {@link protectedConversationsApi.list}).
-     * @returns Whether the current user is trial-eligible in that domain.
-     *
-     * @example
-     * ```ts
-     * const result = await billingApi.getTrialEligibility();
-     * if (result.ok && !result.data.eligible) {
-     *   // suppress the "N days free" badge for this visitor
-     * }
-     *
-     * // Scope to the gastronomy vertical instead of accommodation:
-     * const gastronomy = await billingApi.getTrialEligibility({ productDomain: 'gastronomy' });
-     * ```
-     */
-    getTrialEligibility(params?: {
-        readonly planSlug?: string;
-        readonly productDomain?: ProductDomainScope;
-        readonly cookieHeader?: string;
-    }): Promise<
-        ApiResult<{
-            readonly eligible: boolean;
-            readonly planSlug: string | null;
-        }>
-    > {
-        const { planSlug, productDomain, cookieHeader } = params ?? {};
-        const queryParams: Record<string, string> = {};
-        if (planSlug !== undefined) {
-            queryParams.planSlug = planSlug;
-        }
-        if (productDomain !== undefined) {
-            queryParams.productDomain = productDomain;
-        }
-        return apiClient.getProtected({
-            path: `${PROTECTED}/billing/trial-eligibility`,
-            params: Object.keys(queryParams).length > 0 ? queryParams : undefined,
-            cookieHeader
-        });
-    },
-
-    // ── Payer-email known (HOS-1234) ────────────────────────────────────────
-
-    /**
-     * Get whether the authenticated user already has a known MercadoPago
-     * payer email on file (`billing_customers.mp_payer_email`).
-     *
-     * Read-only, boolean-only — never returns the email itself (see
-     * `apps/api/src/routes/billing/payer-email-known.ts`). Used by
-     * `PlanPurchaseButton.client.tsx` to skip the pre-redirect payer-email
-     * confirm dialog once a prior own-preapproval charge already confirmed
-     * an email that worked.
-     *
-     * @param params - Optional SSR cookie header (see
-     *   {@link protectedConversationsApi.list}).
-     * @returns Whether a payer email is already known for this customer.
-     *
-     * @example
-     * ```ts
-     * const result = await billingApi.getPayerEmailKnown();
-     * if (result.ok && result.data.hasKnownPayerEmail) {
-     *   // skip the payer-email confirm dialog
-     * }
-     * ```
-     */
-    getPayerEmailKnown(params?: {
-        readonly cookieHeader?: string;
-    }): Promise<ApiResult<{ readonly hasKnownPayerEmail: boolean }>> {
-        const { cookieHeader } = params ?? {};
-        return apiClient.getProtected({
-            path: `${PROTECTED}/billing/payer-email-known`,
-            cookieHeader
-        });
-    }
-};
-
-// --- Plans (Public) ---
-
-/** Public billing plan API endpoints */
-export const plansApi = {
-    /**
-     * List all available billing plans.
-     *
-     * @param params - Optional pagination parameters
-     * @returns Paginated list of available plans
-     *
-     * @example
-     * ```ts
-     * const result = await plansApi.list();
-     * ```
-     */
-    list(params?: {
-        readonly page?: number;
-        readonly pageSize?: number;
-    }): Promise<ApiResult<PaginatedResponse<Record<string, unknown>>>> {
-        return apiClient.getList({ path: `${BASE}/plans`, params });
-    },
-
-    /**
-     * Get a billing plan by its ID.
-     *
-     * @param params - Plan ID to fetch
-     * @returns The plan record
-     *
-     * @example
-     * ```ts
-     * const result = await plansApi.getById({ id: 'plan-uuid' });
-     * ```
-     */
-    getById({ id }: { readonly id: string }): Promise<ApiResult<Record<string, unknown>>> {
-        return apiClient.get({ path: `${BASE}/plans/${id}` });
     }
 };
 
@@ -1923,6 +711,10 @@ export interface ConversationThreadResponse {
      * null when there are no older messages. Matches the API response shape;
      * mirrors OwnerConversationThreadResponse. */
     readonly nextCursor: string | null;
+    /** Whether the tourist can still write about the listing (HOS-1492, rows
+     * 28 and 35): `GONE` once it reached `PURGED`, `NOT_PUBLISHED` while it is
+     * not public (without saying why), otherwise `AVAILABLE`. */
+    readonly listingAvailability: ConversationListingAvailability;
 }
 
 /** Protected conversations API endpoints (require auth session) */
@@ -2083,6 +875,9 @@ export interface OwnerConversationThreadResponse {
     readonly conversation: OwnerConversationDetail;
     readonly messages: readonly ConversationMessageItem[];
     readonly nextCursor: string | null;
+    /** Whether the owner can still write about the listing (HOS-1492, row 28):
+     * `GONE` once it reached `PURGED`, otherwise `AVAILABLE`. */
+    readonly listingAvailability: ConversationListingAvailability;
 }
 
 /** Protected owner conversations API endpoints (require auth + host role) */
@@ -2466,7 +1261,7 @@ export type ReplyModerationState = 'PENDING' | 'APPROVED' | 'REJECTED';
 /**
  * A reply as the provider's own panel reads it (`GET /mine/reviews`).
  *
- * Carries `moderationReason`, which the directory tier does not: the rejected
+ * Carries `moderationReason`, which the directory listing does not: the rejected
  * author is the one person who needs to know why.
  */
 export interface OwnerReviewReply {
@@ -3162,16 +1957,12 @@ export interface MyPartner {
     readonly slug: string;
     readonly name: string;
     readonly type: string;
-    readonly tier: string;
     readonly logoUrl: string | null;
     readonly description: string | null;
     readonly websiteUrl: string | null;
     readonly contactInfo: MyPartnerContactInfo | null;
     readonly socialNetworks: MyPartnerSocialNetworks | null;
-    readonly subscriptionStatus: string;
     readonly lifecycleState: string;
-    readonly startsAt: string | null;
-    readonly endsAt: string | null;
     readonly pendingLogoUrl: string | null;
     readonly pendingDescription: string | null;
     readonly pendingWebsiteUrl: string | null;
@@ -3268,7 +2059,6 @@ export interface MyPartnerStats {
         readonly id: string;
         readonly name: string;
         readonly slug?: string;
-        readonly tier?: string;
         readonly websiteUrl?: string;
     };
     readonly windowDays?: number;
@@ -3356,7 +2146,7 @@ export const partnersApi = {
      * no partner — the same fail-closed shape as {@link partnersApi.mineMentions},
      * and for the same reason: a 403 would confirm a partner exists.
      *
-     * The payload carries the NUMBERS plus `tier`/`slug`/`websiteUrl`, and says
+     * The payload carries the NUMBERS plus `slug`/`websiteUrl`, and says
      * nothing about which cards to render. That is `resolvePartnerLogoLink`'s
      * job — see `PartnerStatsSection.astro`.
      *
@@ -3568,43 +2358,43 @@ export const hostAnalyticsApi = {
     }
 };
 
-// --- Commerce Analytics (Protected — HOS-734) ---
+// --- Listing Analytics (Protected — HOS-734) ---
 
-/** The two commerce verticals — matches `CommerceVertical` in `@repo/billing`. */
-type CommerceAnalyticsVertical = 'gastronomy' | 'experience';
+/** The two venue/experience verticals — matches `VenueOrExperience` in `@repo/billing`. */
+type ListingAnalyticsVertical = 'venue' | 'experience';
 
 /** Path segment each vertical mounts its protected routes under. */
-const COMMERCE_VERTICAL_PATH: Readonly<Record<CommerceAnalyticsVertical, string>> = {
-    gastronomy: 'gastronomies',
+const LISTING_VERTICAL_PATH: Readonly<Record<ListingAnalyticsVertical, string>> = {
+    venue: 'venues',
     experience: 'experiences'
 };
 
 /**
- * Protected commerce (gastronomy/experience) basic-stats API endpoints
+ * Protected venue/experience basic-stats API endpoints
  * (HOS-734). Mirrors `hostAnalyticsApi`'s accommodation views shape — same
  * `entity_views` telemetry table, same `view_basic_stats` entitlement,
- * applied to the two commerce verticals instead of ACCOMMODATION.
+ * applied to the two venue/experience verticals instead of ACCOMMODATION.
  *
- * Gastronomy's menu QR and its scan analytics (HOS-1044) are no longer out of
+ * Venue's menu QR and its scan analytics (HOS-1044) are no longer out of
  * scope: `getMenuQr` and `getMenuQrScans` below, gated by the
- * `menu_qr_scan_metrics` entitlement (granted by `gastronomy-premium` only).
+ * `menu_qr_scan_metrics` entitlement (granted by `venue-premium` only).
  * Still out of scope, per vertical, and still without an endpoint or
- * entitlement key: gastronomy's most-viewed dishes, and experience's origin
+ * entitlement key: venue's most-viewed dishes, and experience's origin
  * destinations.
  */
 /**
- * Protected commerce listing endpoints the OWNER reads about their own listings
+ * Protected listing endpoints the OWNER reads about their own listings
  * (HOS-1286).
  *
- * Separate from {@link commerceAnalyticsApi} on purpose: that object is the
+ * Separate from {@link listingAnalyticsApi} on purpose: that object is the
  * `view_basic_stats` surface and everything on it is entitlement-gated
  * telemetry. This is "which listings do I own", which the add-on purchase panel
  * needs to offer a per-listing visibility boost a target to point at, and which
  * no entitlement gates.
  */
-export const commerceListingsApi = {
+export const ownerListingsApi = {
     /**
-     * List the caller's own listings in one commerce vertical.
+     * List the caller's own listings in one venue or experience vertical.
      *
      * @param params - `{ vertical }`
      * @returns `{ listings }` — the owner's listing summaries for that vertical.
@@ -3613,7 +2403,7 @@ export const commerceListingsApi = {
         vertical,
         cookieHeader
     }: {
-        readonly vertical: CommerceAnalyticsVertical;
+        readonly vertical: ListingAnalyticsVertical;
         /** Forwarded when called from SSR, as `hostAnalyticsApi.listOwnAccommodations` does. */
         readonly cookieHeader?: string;
     }): Promise<
@@ -3626,16 +2416,16 @@ export const commerceListingsApi = {
         }>
     > {
         return apiClient.getProtected({
-            path: `${PROTECTED}/${COMMERCE_VERTICAL_PATH[vertical]}/mine`,
+            path: `${PROTECTED}/${LISTING_VERTICAL_PATH[vertical]}/mine`,
             cookieHeader
         });
     }
 };
 
-export const commerceAnalyticsApi = {
+export const listingAnalyticsApi = {
     /**
      * Get view stats (cumulative) for every listing the caller owns in one
-     * commerce vertical, over a rolling window.
+     * venue/experience verticals, over a rolling window.
      *
      * @param params - `{ vertical, window }`
      * @returns One `{ entityId, unique, total }` entry per owned listing.
@@ -3644,7 +2434,7 @@ export const commerceAnalyticsApi = {
         vertical,
         window: windowParam
     }: {
-        readonly vertical: CommerceAnalyticsVertical;
+        readonly vertical: ListingAnalyticsVertical;
         readonly window: AnalyticsWindow;
     }): Promise<
         ApiResult<
@@ -3656,14 +2446,14 @@ export const commerceAnalyticsApi = {
         >
     > {
         return apiClient.getProtected({
-            path: `${PROTECTED}/${COMMERCE_VERTICAL_PATH[vertical]}/mine/views`,
+            path: `${PROTECTED}/${LISTING_VERTICAL_PATH[vertical]}/mine/views`,
             params: { window: windowParam }
         });
     },
 
     /**
      * Get the gap-filled daily view-count series for every listing the
-     * caller owns in one commerce vertical, over a rolling window. Not
+     * caller owns in a venue or experience vertical, over a rolling window. Not
      * currently rendered by any web UI (the `mi-cuenta/comercio` widget shows
      * cumulative totals only, HOS-734) — kept here so a future daily chart
      * does not need a new backend round-trip.
@@ -3675,7 +2465,7 @@ export const commerceAnalyticsApi = {
         vertical,
         window: windowParam
     }: {
-        readonly vertical: CommerceAnalyticsVertical;
+        readonly vertical: ListingAnalyticsVertical;
         readonly window: AnalyticsWindow;
     }): Promise<
         ApiResult<{
@@ -3684,25 +2474,25 @@ export const commerceAnalyticsApi = {
         }>
     > {
         return apiClient.getProtected({
-            path: `${PROTECTED}/${COMMERCE_VERTICAL_PATH[vertical]}/mine/views/daily-series`,
+            path: `${PROTECTED}/${LISTING_VERTICAL_PATH[vertical]}/mine/views/daily-series`,
             params: { window: windowParam }
         });
     },
 
     /**
-     * Get the menu QR for one gastronomy listing (HOS-1044 §6.2). Mints the
+     * Get the menu QR for one venue listing (HOS-1044 §6.2). Mints the
      * code on first call and reuses it afterwards — the SAME `qr_codes` row
      * every time, even across a slug rename (the target is repointed
      * server-side, not the code itself).
      *
-     * Premium-only: a caller on gastronomy basic/pro gets a `403`, which the
+     * Premium-only: a caller on venue basic/pro gets a `403`, which the
      * panel renders as a locked upsell state, never a generic error.
      *
-     * @param params - `{ gastronomyId }`
+     * @param params - `{ venueId }`
      * @returns The QR's SVG markup, the scan URL it encodes, its target URL,
      *   and both slugs.
      */
-    getMenuQr({ gastronomyId }: { readonly gastronomyId: string }): Promise<
+    getMenuQr({ venueId }: { readonly venueId: string }): Promise<
         ApiResult<{
             readonly svg: string;
             readonly url: string;
@@ -3712,12 +2502,12 @@ export const commerceAnalyticsApi = {
         }>
     > {
         return apiClient.getProtected({
-            path: `${PROTECTED}/gastronomies/${gastronomyId}/menu-qr`
+            path: `${PROTECTED}/venues/${venueId}/menu-qr`
         });
     },
 
     /**
-     * Get the scan aggregate for one gastronomy listing's menu QR (HOS-1044
+     * Get the scan aggregate for one venue listing's menu QR (HOS-1044
      * §6.4): total, a gap-filled daily series, and device/OS/language
      * breakdowns over a rolling window. A venue with no menu QR minted yet
      * gets an all-zero aggregate — this endpoint never mints a code.
@@ -3725,14 +2515,14 @@ export const commerceAnalyticsApi = {
      * Same gate as {@link getMenuQr}: a `403` means the panel should render
      * the locked upsell state.
      *
-     * @param params - `{ gastronomyId, window }`
+     * @param params - `{ venueId, window }`
      * @returns The scan aggregate for the requested window.
      */
     getMenuQrScans({
-        gastronomyId,
+        venueId,
         window: windowParam
     }: {
-        readonly gastronomyId: string;
+        readonly venueId: string;
         readonly window: AnalyticsWindow;
     }): Promise<
         ApiResult<{
@@ -3745,7 +2535,7 @@ export const commerceAnalyticsApi = {
         }>
     > {
         return apiClient.getProtected({
-            path: `${PROTECTED}/gastronomies/${gastronomyId}/menu-qr/scans`,
+            path: `${PROTECTED}/venues/${venueId}/menu-qr/scans`,
             params: { window: windowParam }
         });
     }
@@ -3761,7 +2551,6 @@ interface AccommodationContactResponse {
 }
 
 /** Accommodation lifecycle state values used as query filter */
-type AccommodationLifecycleState = 'DRAFT' | 'ACTIVE' | 'ARCHIVED';
 
 /** Protected accommodation API endpoints (require auth). */
 export const protectedAccommodationsApi = {
@@ -3793,7 +2582,7 @@ export const protectedAccommodationsApi = {
      * - `entitled`: whether the caller has the DISPLAY entitlement — lets the
      *   web decide between rendering the number vs an upsell.
      *
-     * Lives on the protected (per-user, no-store) tier on purpose: the public
+     * Lives on the protected (per-user, no-store) route on purpose: the public
      * detail payload is shared-cached, so the number cannot ride it safely.
      *
      * @param params - Accommodation ID + optional SSR cookie header.
@@ -3823,7 +2612,8 @@ export const protectedAccommodationsApi = {
      * List accommodations owned by the authenticated user.
      * Results are filtered server-side to only include accommodations where ownerId === actor.id.
      *
-     * @param params - Optional pagination and lifecycle state filter
+     * @param params - Optional pagination and publication-state filter (HOS-1641:
+     *   the query parameter is `publicationStatus`, any `PublicationStatusEnum` value)
      * @returns Paginated list of the user's accommodations
      *
      * @example
@@ -3835,7 +2625,7 @@ export const protectedAccommodationsApi = {
     listOwn(params?: {
         readonly page?: number;
         readonly pageSize?: number;
-        readonly lifecycleState?: AccommodationLifecycleState;
+        readonly publicationStatus?: PublicationStatusEnum;
     }): Promise<ApiResult<PaginatedResponse<Record<string, unknown>>>> {
         return apiClient.getListProtected({ path: `${PROTECTED}/accommodations`, params });
     },
@@ -4084,7 +2874,8 @@ export const hostOnboardingApi = {
  * so a change to the API contract surfaces as a typecheck failure at the call
  * sites rather than silently reshaping a rendered page.
  */
-export type PublishVerticalSlug = 'accommodation' | 'gastronomy' | 'experience';
+export type PublishVerticalSlug = 'accommodation' | 'venue' | 'experience';
+export type SubscribeDestinationResponse = z.infer<typeof SubscribeDestinationResponseSchema>;
 
 /**
  * Publish precheck API (HOS-1156 D-7).
@@ -4099,6 +2890,25 @@ export type PublishVerticalSlug = 'accommodation' | 'gastronomy' | 'experience';
  */
 export const publishApi = {
     /**
+     * Publish a venue or experience listing.
+     *
+     * @param params.vertical - Listing vertical.
+     * @param params.id - Listing identifier.
+     * @returns The published listing or a typed API error.
+     */
+    publish({
+        vertical,
+        id
+    }: {
+        readonly vertical: PublishVerticalSlug;
+        readonly id: string;
+    }): Promise<ApiResult<Record<string, unknown>>> {
+        return apiClient.postProtected({
+            path: `${PROTECTED}/${LISTING_VERTICAL_PLURAL[vertical]}/${id}/publish`
+        });
+    },
+
+    /**
      * Precheck publishing in one vertical for the current actor.
      *
      * @param params.vertical - Which vertical to precheck.
@@ -4108,7 +2918,7 @@ export const publishApi = {
      *
      * @example
      * ```ts
-     * const result = await publishApi.precheck({ vertical: 'gastronomy', cookieHeader });
+     * const result = await publishApi.precheck({ vertical: 'venue', cookieHeader });
      * if (result.ok) console.log(result.data.decision);
      * ```
      */
@@ -4125,90 +2935,206 @@ export const publishApi = {
         });
     },
 
+    subscribeDestination({
+        vertical,
+        cookieHeader
+    }: {
+        readonly vertical: PublishVerticalSlug;
+        readonly cookieHeader?: string;
+    }): Promise<ApiResult<SubscribeDestinationResponse>> {
+        return apiClient.getProtected({
+            path: `${PROTECTED}/publish/subscribe-destination/${vertical}`,
+            cookieHeader
+        });
+    },
+
     /**
-     * Soft-deletes one DRAFT listing the caller owns, in any publish vertical
-     * (HOS-1156 T-015, AC-14).
+     * Reads the notices of every listing the caller owns in one vertical
+     * (HOS-1492, V8a.1b): `PURGED` (rows 20 and 31), archived (row 18),
+     * moderated (row 24), fix request and lifted moderation (row 30) and surplus
+     * (rows 8/9), plus whether the trial is running (row 2) and the recurring
+     * add-ons per listing (rows 18, 24, 25). The surface only shows what the
+     * read resolved; it never decides.
      *
-     * The precheck panel's "borrar el borrador" is the FREE way past a full
-     * plan, and it must delete a draft OF THE VERTICAL BEING PUBLISHED — a
-     * gastronomy owner blocked on gastronomy is not helped by deleting a
-     * property.
-     *
-     * ## Why this dispatches instead of calling one endpoint
-     *
-     * The two halves land on different routes on purpose. Accommodation keeps
-     * `DELETE /protected/accommodations/{id}`, which has accepted its owner
-     * since BETA-197 and is live in production; routing it through the commerce
-     * endpoint would move a working flow for no gain (HOS-1156 R-2). Commerce
-     * had no owner-facing delete at all before this change, so it gets the new
-     * one. The branch lives here, in the API layer that already knows about
-     * endpoints, rather than inside the island that renders the button.
-     *
-     * @param params.vertical - Which vertical's draft to delete.
-     * @param params.id - The listing id.
-     * @returns The delete result.
+     * @param params.vertical - Which vertical to read.
+     * @param params.cookieHeader - Optional SSR cookie header.
+     * @returns `{ trialRunning, items: { listingId, publicationStatus, recurringListingAddons, notices }[] }`.
      *
      * @example
      * ```ts
-     * const result = await publishApi.deleteDraft({ vertical: 'gastronomy', id });
+     * const result = await publishApi.listingNotices({ vertical: 'accommodation', cookieHeader });
+     * if (result.ok) console.log(result.data.items);
+     * ```
+     */
+    listingNotices({
+        vertical,
+        cookieHeader
+    }: {
+        readonly vertical: PublishVerticalSlug;
+        readonly cookieHeader?: string;
+    }): Promise<ApiResult<ListingNoticesResponse>> {
+        return apiClient.getProtected({
+            path: `${PROTECTED}/publish/listing-notices/${vertical}`,
+            cookieHeader
+        });
+    },
+
+    /**
+     * Reads the caller's accumulated trial days in one vertical and their origin
+     * (HOS-1492, row 4): `{ status: 'NONE' }` without a trial row, otherwise the
+     * status, the start and end instants, the total and the days from the plan,
+     * from promotions and granted by support. The surface only shows it.
+     *
+     * @param params.vertical - Which vertical to read.
+     * @param params.cookieHeader - Optional SSR cookie header.
+     * @returns The trial summary of the vertical.
+     *
+     * @example
+     * ```ts
+     * const result = await publishApi.trialSummary({ vertical: 'accommodation', cookieHeader });
+     * if (result.ok && result.data.status !== 'NONE') console.log(result.data.totalDays);
+     * ```
+     */
+    trialSummary({
+        vertical,
+        cookieHeader
+    }: {
+        readonly vertical: PublishVerticalSlug;
+        readonly cookieHeader?: string;
+    }): Promise<ApiResult<TrialSummaryResponse>> {
+        return apiClient.getProtected({
+            path: `${PROTECTED}/publish/trial-summary/${vertical}`,
+            cookieHeader
+        });
+    },
+
+    /**
+     * Tells the admin the owner fixed what an open fix request asked (row 30,
+     * HOS-1492). Idempotent: a second report answers the first instant. Does
+     * not close the request.
+     *
+     * @param params.vertical - The listing's vertical.
+     * @param params.id - The listing id.
+     * @returns `{ ownerReportedFixedAt }`; a 409 `NO_OPEN_FIX_REQUEST` when no request is open.
+     *
+     * @example
+     * ```ts
+     * const result = await publishApi.reportFixed({ vertical: 'accommodation', id });
+     * if (result.ok) console.log(result.data.ownerReportedFixedAt);
+     * ```
+     */
+    reportFixed({
+        vertical,
+        id
+    }: {
+        readonly vertical: PublishVerticalSlug;
+        readonly id: string;
+    }): Promise<ApiResult<ReportFixedResponse>> {
+        return apiClient.postProtected({
+            path: `${PROTECTED}/${LISTING_VERTICAL_PLURAL[vertical]}/${id}/fix-request/report-fixed`
+        });
+    },
+
+    /**
+     * Deletes one listing the caller owns by running PB12, in any publish
+     * vertical (HOS-1477, AC:V6:25).
+     *
+     * Calls `POST /protected/{plural}/{id}/purge` on the three verticals. The
+     * listing moves to `PURGED`: its content is erased and it never comes back
+     * (`PURGED` is final). It is not a soft delete, so `deleted_at` stays NULL.
+     *
+     * ## Why there is no branch per vertical any more
+     *
+     * The owner's delete button IS the delete of the design (NUCLEO/08 §3,
+     * `02-nucleo.md:1455-1459`): every other door that deleted or restored a
+     * listing was retired (HOS-1477), so the three verticals share the same
+     * PB12 route and only the plural segment changes.
+     *
+     * @param params.vertical - Which vertical the listing belongs to.
+     * @param params.id - The listing id.
+     * @returns The purge result (`{ purged: true }` on success).
+     *
+     * @example
+     * ```ts
+     * const result = await publishApi.purge({ vertical: 'venue', id });
      * if (result.ok) window.location.reload();
      * ```
      */
-    deleteDraft({
+    purge({
         vertical,
         id
     }: {
         readonly vertical: PublishVerticalSlug;
         readonly id: string;
     }): Promise<ApiResult<Record<string, unknown>>> {
-        if (vertical === 'accommodation') {
-            return apiClient.delete({ path: `${PROTECTED}/accommodations/${id}` });
-        }
-        return apiClient.delete({ path: `${PROTECTED}/commerce/listings/${vertical}/${id}` });
+        return apiClient.postProtected({
+            path: `${PROTECTED}/${LISTING_VERTICAL_PLURAL[vertical]}/${id}/purge`
+        });
     },
 
     /**
-     * Reads what publishing an accommodation would do for the current actor
-     * (HOS-1183).
+     * Reads the live listing add-ons that will be left behind by PB12.
      *
-     * ## This is not {@link publishApi.precheck}, and the two never merge
-     *
-     * `precheck` answers "can you CREATE another listing" — caps and drafts,
-     * asked before a create form renders. This answers "can you put an existing
-     * one LIVE". Different gate, different moment in the lifecycle, different
-     * consumer page. They sit together here because they are both publishing
-     * reads, not because either can stand in for the other.
-     *
-     * ## Read `canPublish`, never re-derive it
-     *
-     * The whole point of the endpoint is that ONE side owns the rule. A caller
-     * that computes `eligibility !== 'subscription_required'` itself is the
-     * second statement of it, and the next verdict added would make the two
-     * disagree — which is the bug this endpoint was built to close. Use
-     * `eligibility` and `startsTrial` for COPY, `canPublish` for the affordance.
-     *
-     * Accommodation-only for now: commerce listings go live through a checkout
-     * and resolve their own verdict (HOS-1184), so a `vertical` parameter here
-     * would promise a generality the endpoint does not have.
-     *
-     * @param params.cookieHeader - Optional SSR cookie header (browser callers
-     *   omit it; `credentials: 'include'` covers them).
-     * @returns The billing verdict, whether publishing is allowed right now,
-     *   and whether it would start a free trial.
+     * @param params.vertical - Which listing vertical the listing belongs to.
+     * @param params.id - The listing id.
+     * @returns `{ lostAddons }`, in acquisition order, or an API error.
      *
      * @example
      * ```ts
-     * const result = await publishApi.accommodationEligibility({ cookieHeader });
-     * const canPublish = result.ok ? result.data.canPublish : true; // fail-open
+     * const result = await publishApi.purgePreview({ vertical: 'accommodation', id });
+     * if (result.ok) console.log(result.data.lostAddons);
      * ```
      */
-    accommodationEligibility({
+    purgePreview({
+        vertical,
+        id
+    }: {
+        readonly vertical: PublishVerticalSlug;
+        readonly id: string;
+    }): Promise<ApiResult<ListingPurgePreviewResponse>> {
+        return apiClient.getProtected<ListingPurgePreviewResponse>({
+            path: `${PROTECTED}/${LISTING_VERTICAL_PLURAL[vertical]}/${id}/purge-preview`
+        });
+    }
+};
+
+/** Protected API plural per listing vertical (HOS-1493, row 26 read). */
+const LISTING_VERTICAL_PLURAL: Readonly<Record<PublishVerticalSlug, string>> = {
+    accommodation: 'accommodations',
+    venue: 'venues',
+    experience: 'experiences'
+};
+
+/**
+ * Support edits of an owned listing (HOS-1493, row 26): the most recent
+ * content edits made by support through administrative action 15.
+ */
+export const listingSupportEditsApi = {
+    /**
+     * Lists the latest support edits of one listing the caller owns.
+     *
+     * @param params.vertical - The listing's vertical.
+     * @param params.listingId - The listing id.
+     * @param params.cookieHeader - Optional SSR cookie header.
+     * @returns `{ items: { occurredAt, parts }[] }`, most recent first.
+     *
+     * @example
+     * ```ts
+     * const result = await listingSupportEditsApi.list({ vertical: 'accommodation', listingId, cookieHeader });
+     * if (result.ok) console.log(result.data.items);
+     * ```
+     */
+    list({
+        vertical,
+        listingId,
         cookieHeader
     }: {
+        readonly vertical: PublishVerticalSlug;
+        readonly listingId: string;
         readonly cookieHeader?: string;
-    } = {}): Promise<ApiResult<PublishEligibilityResponse>> {
+    }): Promise<ApiResult<ListingSupportEditsResponse>> {
         return apiClient.getProtected({
-            path: `${PROTECTED}/accommodations/publish-eligibility`,
+            path: `${PROTECTED}/${LISTING_VERTICAL_PLURAL[vertical]}/${listingId}/support-edits`,
             cookieHeader
         });
     }
@@ -4289,8 +3215,8 @@ export const accommodationEditApi = {
      * the plans page — where the card is collected and the trial begins.
      *
      * Calls the dedicated `/publish` endpoint (HOS-110) instead of the
-     * generic `update()` PATCH — the general update schema strips
-     * `lifecycleState`, so sending it via `update()` is a silent no-op.
+     * generic `update()` PATCH — publishing is the PB1 transition, and no
+     * update input accepts `publicationStatus` (HOS-1641).
      * Only the owner or a user with ACCOMMODATION_UPDATE_ANY can call this.
      *
      * @param params - Accommodation ID to publish
@@ -4308,26 +3234,6 @@ export const accommodationEditApi = {
         return apiClient.postProtected({
             path: `${PROTECTED}/accommodations/${id}/publish`
         });
-    },
-
-    /**
-     * Soft-delete an accommodation.
-     * Calls `DELETE /protected/accommodations/:id`, which enforces ownership
-     * (or `ACCOMMODATION_DELETE_ANY`). The accommodation is soft-deleted, so it
-     * disappears from the owner's listings and the public site (SPEC-230 filters
-     * soft-deleted rows out of every protected list).
-     *
-     * @param params - Accommodation ID to delete
-     * @returns The delete result
-     *
-     * @example
-     * ```ts
-     * const result = await accommodationEditApi.softDelete({ id: 'acc-uuid' });
-     * if (result.ok) console.log('Accommodation deleted');
-     * ```
-     */
-    softDelete({ id }: { readonly id: string }): Promise<ApiResult<Record<string, unknown>>> {
-        return apiClient.delete({ path: `${PROTECTED}/accommodations/${id}` });
     },
 
     /**
@@ -6142,25 +5048,25 @@ export const priceAlertsApi = {
     }
 };
 
-// --- Commerce Listing Media (Protected — HOS-372) ---
+// --- Listing Media (Protected — HOS-372) ---
 
 /**
- * Maps a commerce vertical to its URL path segment.
+ * Maps a venue or experience vertical to its URL path segment.
  */
-function commerceMediaPathSegment(vertical: CommerceMediaVertical): 'gastronomies' | 'experiences' {
-    return vertical === 'gastronomy' ? 'gastronomies' : 'experiences';
+function listingMediaPathSegment(vertical: ListingMediaVertical): 'venues' | 'experiences' {
+    return vertical === 'venue' ? 'venues' : 'experiences';
 }
 
 /**
- * Row shape returned by the gastronomy_media / experience_media relational
+ * Row shape returned by the venue_media / experience_media relational
  * endpoints. Field-for-field identical between both verticals (they share
- * `BaseCommerceMediaSchema`) — one client, parameterized by `vertical`, reads
+ * `BaseListingMediaSchema`) — one client, parameterized by `vertical`, reads
  * cleanly instead of two near-identical objects.
  *
  * The `id` is the DB UUID needed for removeMedia / setFeaturedMedia /
  * reorderMedia.
  */
-export interface CommerceMediaRow {
+export interface ListingMediaRow {
     readonly id: string;
     readonly url: string;
     readonly publicId?: string | null;
@@ -6181,30 +5087,30 @@ export interface CommerceMediaRow {
 }
 
 /**
- * Granular per-operation protected endpoints for commerce listing (gastronomy
+ * Granular per-operation protected endpoints for listing (venue
  * / experience) photo management (HOS-372).
  *
  * Mirrors `accommodationMediaApi` (SPEC-204): each operation persists
  * immediately to the vertical's relational media table — the parent
- * `CommerceListingEditor` PATCH no longer carries photo data. Unlike the
+ * `ListingEditor` PATCH no longer carries photo data. Unlike the
  * accommodation endpoint, `removeMedia` here does NOT delete the Cloudinary
  * asset server-side (see `removeMedia`'s JSDoc) — callers must also call
  * `protectedMediaApi.deleteMedia` for cleanup.
  *
  * @example
  * ```ts
- * const list = await commerceMediaApi.listMedia({ vertical: 'gastronomy', id: 'listing-uuid' });
- * const added = await commerceMediaApi.addMedia({ vertical: 'gastronomy', id: 'listing-uuid', body: { url, publicId } });
- * await commerceMediaApi.setFeaturedMedia({ vertical: 'gastronomy', id: 'listing-uuid', mediaId: added.data.media.id });
- * await commerceMediaApi.removeMedia({ vertical: 'gastronomy', id: 'listing-uuid', mediaId: added.data.media.id });
+ * const list = await listingMediaApi.listMedia({ vertical: 'venue', id: 'listing-uuid' });
+ * const added = await listingMediaApi.addMedia({ vertical: 'venue', id: 'listing-uuid', body: { url, publicId } });
+ * await listingMediaApi.setFeaturedMedia({ vertical: 'venue', id: 'listing-uuid', mediaId: added.data.media.id });
+ * await listingMediaApi.removeMedia({ vertical: 'venue', id: 'listing-uuid', mediaId: added.data.media.id });
  * ```
  */
-export const commerceMediaApi = {
+export const listingMediaApi = {
     /**
-     * List media rows for a commerce listing.
+     * List media rows for a listing.
      *
      * @param params - Vertical, listing ID, optional state filter, optional SSR cookie
-     * @returns `{ media: CommerceMediaRow[] }`
+     * @returns `{ media: ListingMediaRow[] }`
      */
     listMedia({
         vertical,
@@ -6212,31 +5118,31 @@ export const commerceMediaApi = {
         state = 'visible',
         cookieHeader
     }: {
-        readonly vertical: CommerceMediaVertical;
+        readonly vertical: ListingMediaVertical;
         readonly id: string;
         readonly state?: 'visible' | 'archived';
         readonly cookieHeader?: string;
-    }): Promise<ApiResult<{ readonly media: readonly CommerceMediaRow[] }>> {
+    }): Promise<ApiResult<{ readonly media: readonly ListingMediaRow[] }>> {
         return apiClient.getProtected({
-            path: `${PROTECTED}/${commerceMediaPathSegment(vertical)}/${id}/media`,
+            path: `${PROTECTED}/${listingMediaPathSegment(vertical)}/${id}/media`,
             params: { state },
             cookieHeader
         });
     },
 
     /**
-     * Add a new media row for a commerce listing.
+     * Add a new media row for a listing.
      * `sortOrder` and `isFeatured` are server-controlled.
      *
      * @param params - Vertical, listing ID, and media body
-     * @returns `{ media: CommerceMediaRow }` — the newly created row (with DB id)
+     * @returns `{ media: ListingMediaRow }` — the newly created row (with DB id)
      */
     addMedia({
         vertical,
         id,
         body
     }: {
-        readonly vertical: CommerceMediaVertical;
+        readonly vertical: ListingMediaVertical;
         readonly id: string;
         readonly body: {
             readonly url: string;
@@ -6246,9 +5152,9 @@ export const commerceMediaApi = {
             readonly alt?: string;
             readonly moderationState?: string;
         };
-    }): Promise<ApiResult<{ readonly media: CommerceMediaRow }>> {
+    }): Promise<ApiResult<{ readonly media: ListingMediaRow }>> {
         return apiClient.postProtected({
-            path: `${PROTECTED}/${commerceMediaPathSegment(vertical)}/${id}/media`,
+            path: `${PROTECTED}/${listingMediaPathSegment(vertical)}/${id}/media`,
             body
         });
     },
@@ -6257,7 +5163,7 @@ export const commerceMediaApi = {
      * Delete a media row by its DB UUID (soft-delete + resequence).
      *
      * Unlike `accommodationMediaApi.removeMedia`, this does NOT delete the
-     * Cloudinary asset — the gastronomy/experience media routes intentionally
+     * Cloudinary asset — the venue/experience media routes intentionally
      * leave binary cleanup to the caller. Pair with
      * `protectedMediaApi.deleteMedia({ publicId })` (best-effort) when the
      * row being removed carries a `publicId`.
@@ -6270,12 +5176,12 @@ export const commerceMediaApi = {
         id,
         mediaId
     }: {
-        readonly vertical: CommerceMediaVertical;
+        readonly vertical: ListingMediaVertical;
         readonly id: string;
         readonly mediaId: string;
     }): Promise<ApiResult<Record<string, unknown>>> {
         return apiClient.delete({
-            path: `${PROTECTED}/${commerceMediaPathSegment(vertical)}/${id}/media/${mediaId}`
+            path: `${PROTECTED}/${listingMediaPathSegment(vertical)}/${id}/media/${mediaId}`
         });
     },
 
@@ -6285,40 +5191,40 @@ export const commerceMediaApi = {
      * automatically unmarked by the server and becomes a normal visible row.
      *
      * @param params - Vertical, listing ID, and media row ID (DB UUID) to feature
-     * @returns `{ media: CommerceMediaRow }` — the updated row
+     * @returns `{ media: ListingMediaRow }` — the updated row
      */
     setFeaturedMedia({
         vertical,
         id,
         mediaId
     }: {
-        readonly vertical: CommerceMediaVertical;
+        readonly vertical: ListingMediaVertical;
         readonly id: string;
         readonly mediaId: string;
-    }): Promise<ApiResult<{ readonly media: CommerceMediaRow }>> {
+    }): Promise<ApiResult<{ readonly media: ListingMediaRow }>> {
         return apiClient.put({
-            path: `${PROTECTED}/${commerceMediaPathSegment(vertical)}/${id}/media/${mediaId}/featured`
+            path: `${PROTECTED}/${listingMediaPathSegment(vertical)}/${id}/media/${mediaId}/featured`
         });
     },
 
     /**
-     * Reorder the visible gallery photos of a commerce listing.
+     * Reorder the visible gallery photos of a listing.
      *
      * @param params - Vertical, listing ID, and the full ordered list of
      *   visible media UUIDs (must match the current visible set exactly).
-     * @returns `{ media: CommerceMediaRow[] }` — the rows in their new order
+     * @returns `{ media: ListingMediaRow[] }` — the rows in their new order
      */
     reorderMedia({
         vertical,
         id,
         orderedIds
     }: {
-        readonly vertical: CommerceMediaVertical;
+        readonly vertical: ListingMediaVertical;
         readonly id: string;
         readonly orderedIds: readonly string[];
-    }): Promise<ApiResult<{ readonly media: readonly CommerceMediaRow[] }>> {
+    }): Promise<ApiResult<{ readonly media: readonly ListingMediaRow[] }>> {
         return apiClient.patch({
-            path: `${PROTECTED}/${commerceMediaPathSegment(vertical)}/${id}/media/reorder`,
+            path: `${PROTECTED}/${listingMediaPathSegment(vertical)}/${id}/media/reorder`,
             body: { orderedIds }
         });
     },
@@ -6336,7 +5242,7 @@ export const commerceMediaApi = {
      * `VALIDATION_ERROR`, not silently accepted.
      *
      * @param params - Vertical, listing ID, media row ID (DB UUID), and the fields to update
-     * @returns `{ media: CommerceMediaRow }` — the updated row
+     * @returns `{ media: ListingMediaRow }` — the updated row
      */
     updateMedia({
         vertical,
@@ -6344,7 +5250,7 @@ export const commerceMediaApi = {
         mediaId,
         body
     }: {
-        readonly vertical: CommerceMediaVertical;
+        readonly vertical: ListingMediaVertical;
         readonly id: string;
         readonly mediaId: string;
         readonly body: {
@@ -6354,9 +5260,9 @@ export const commerceMediaApi = {
             /** Whole credit object, or `null` to clear it. */
             readonly attribution?: MediaAttribution | null;
         };
-    }): Promise<ApiResult<{ readonly media: CommerceMediaRow }>> {
+    }): Promise<ApiResult<{ readonly media: ListingMediaRow }>> {
         return apiClient.patch({
-            path: `${PROTECTED}/${commerceMediaPathSegment(vertical)}/${id}/media/${mediaId}`,
+            path: `${PROTECTED}/${listingMediaPathSegment(vertical)}/${id}/media/${mediaId}`,
             body
         });
     }
@@ -6409,7 +5315,7 @@ export interface ContentMediaRow {
  * Granular per-operation protected endpoints for post / event photo management
  * (HOS-390).
  *
- * Mirrors `commerceMediaApi` (HOS-372), with ONE behavioral difference worth
+ * Mirrors `listingMediaApi` (HOS-372), with ONE behavioral difference worth
  * knowing: `removeMedia` here DOES delete the Cloudinary asset server-side (the
  * route passes the media provider down, so the binary is removed before the
  * row and a storage failure aborts the whole operation). Callers must NOT also
@@ -6586,6 +5492,128 @@ export const contentMediaApi = {
         return apiClient.patch({
             path: `${PROTECTED}/${contentMediaPathSegment(entity)}/${id}/media/${mediaId}`,
             body
+        });
+    }
+};
+
+export const effectiveSetApi = {
+    async get({
+        vertical,
+        cookieHeader
+    }: {
+        readonly vertical: `${VerticalEnum}`;
+        readonly cookieHeader?: string;
+    }) {
+        const result = await apiClient.getProtected<ProtectedEffectiveSetResponse>({
+            path: `${PROTECTED}/users/me/effective-set`,
+            params: { vertical },
+            cookieHeader
+        });
+        return result.ok
+            ? { ok: true as const, data: transformProtectedEffectiveSet(result.data) }
+            : result;
+    }
+};
+
+export type StartSubscriptionResponse = z.infer<typeof StartSubscriptionResponseSchema>;
+
+/** Protected S1 endpoint for starting a signup checkout. */
+/** Protected promo-code redemption endpoint for the current user. */
+export const promoCodeApi = {
+    /** Redeem a promo code for the selected vertical. */
+    redeem({
+        code,
+        vertical
+    }: {
+        readonly code: string;
+        readonly vertical: PublishVerticalSlug;
+    }): Promise<ApiResult<z.infer<typeof RedeemPromoCodeResponseSchema>>> {
+        return apiClient.postProtected<z.infer<typeof RedeemPromoCodeResponseSchema>>({
+            path: `${PROTECTED}/billing/promo-codes/redeem`,
+            body: { code, vertical }
+        });
+    }
+};
+
+export const billingSubscriptionApi = {
+    /** Read the backend-resolved pricing situation for one vertical. */
+    pricingSituation({
+        vertical,
+        cookieHeader
+    }: {
+        readonly vertical: PricingSituationVertical;
+        readonly cookieHeader?: string;
+    }): Promise<ApiResult<PricingSituationResponse>> {
+        return apiClient.getProtected({
+            path: `${PROTECTED}/billing-subscription/pricing-situation/${vertical}`,
+            cookieHeader
+        });
+    },
+    /** Read the authenticated user's own principal subscriptions. */
+    listMine({
+        cookieHeader
+    }: {
+        readonly cookieHeader?: string;
+    }): Promise<ApiResult<z.infer<typeof OwnSubscriptionsResponseSchema>>> {
+        return apiClient.getProtected({ path: `${PROTECTED}/billing-subscription/`, cookieHeader });
+    },
+    /** Read the cancellation consequences for one owned subscription. */
+    cancellationPreview({
+        subscriptionId
+    }: {
+        readonly subscriptionId: string;
+    }): Promise<ApiResult<z.infer<typeof SubscriptionCancellationPreviewResponseSchema>>> {
+        return apiClient.getProtected({
+            path: `${PROTECTED}/billing-subscription/${subscriptionId}/cancellation-preview`
+        });
+    },
+    /** Request cancellation with an optional reason. */
+    cancel({
+        subscriptionId,
+        reason
+    }: {
+        readonly subscriptionId: string;
+        readonly reason?: CancellationReasonEnum;
+    }): Promise<ApiResult<z.infer<typeof SubscriptionCancellationResponseSchema>>> {
+        const path = `${PROTECTED}/billing-subscription/${subscriptionId}/cancellation`;
+        return reason
+            ? apiClient.postProtected({ path, body: { reason } })
+            : apiClient.postProtected({ path });
+    },
+    /** Read the selected option's vertical and the current user's trial notice. */
+    signupNotice({
+        billingOptionId,
+        cookieHeader
+    }: {
+        readonly billingOptionId: string;
+        readonly cookieHeader?: string;
+    }): Promise<ApiResult<SignupNoticeResponse>> {
+        return apiClient.getProtected<SignupNoticeResponse>({
+            path: `${PROTECTED}/billing/subscriptions/signup-notice/${billingOptionId}`,
+            cookieHeader
+        });
+    },
+    /** Start signup for the selected billing option. */
+    start({
+        billingOptionId,
+        payerEmail
+    }: {
+        readonly billingOptionId: string;
+        readonly payerEmail: string;
+    }): Promise<ApiResult<StartSubscriptionResponse>> {
+        return apiClient.postProtected<StartSubscriptionResponse>({
+            path: `${PROTECTED}/billing/subscriptions`,
+            body: { billingOptionId, payerEmail }
+        });
+    },
+    /** Abandon a pending signup authorization attempt. */
+    cancelPendingAttempt({
+        subscriptionId
+    }: {
+        readonly subscriptionId: string;
+    }): Promise<ApiResult<z.infer<typeof PendingAttemptCancellationResponseSchema>>> {
+        return apiClient.postProtected({
+            path: `${PROTECTED}/billing/subscriptions/${subscriptionId}/pending-attempt-cancellation`
         });
     }
 };

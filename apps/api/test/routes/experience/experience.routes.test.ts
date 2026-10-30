@@ -133,7 +133,7 @@ const touristHeaders: Record<string, string> = {
     'x-mock-actor-permissions': JSON.stringify([])
 };
 
-/** Admin with full commerce permissions. */
+/** Admin with full venue or experience permissions. */
 const adminHeaders: Record<string, string> = {
     'content-type': 'application/json',
     ...USER_AGENT,
@@ -141,11 +141,11 @@ const adminHeaders: Record<string, string> = {
     'x-mock-actor-role': 'ADMIN',
     'x-mock-actor-permissions': JSON.stringify([
         'access.panelAdmin',
-        'commerce.create',
-        'commerce.editAll',
-        'commerce.delete',
-        'commerce.viewAll',
-        'commerce.moderateReview'
+        'experience.create',
+        'experience.editAll',
+        'experience.delete',
+        'experience.viewAll',
+        'experience.moderateReview'
     ])
 };
 
@@ -163,11 +163,11 @@ const adminNoPanelHeaders: Record<string, string> = {
 // minimalExperience: satisfies ExperiencePublicSchema.
 //   - type: 'TOUR_GUIDE' (UPPERCASE enum value)
 //   - priceUnit: 'per_person' (lowercase enum value from ExperiencePriceUnitEnum)
-//   - rating omitted (CommerceRatingSchema.optional() — no null allowed)
+//   - rating omitted (ExperienceRatingSchema.optional() — no null allowed)
 //   - tags/openingHours omitted (TagsFields/OpeningHoursFields.optional() — no null)
 //
 // adminExperienceFixture: extends minimalExperience to satisfy ExperienceAdminSchema.
-//   Adds ownerId (required), moderationState (required — has .default('PENDING')).
+//   Adds ownerId (required) and the soft-delete audit fields.
 //
 // minimalReview: satisfies ExperienceReviewSchema.
 //   Only required string/number fields — no null for optional fields.
@@ -180,9 +180,7 @@ const minimalExperience = {
     summary: 'A test experience.',
     description: 'A detailed test experience description for this listing.',
     destinationId: DESTINATION_ID,
-    hasActiveSubscription: true,
-    lifecycleState: 'ACTIVE',
-    visibility: 'PUBLIC',
+    publicationStatus: 'PUBLISHED',
     averageRating: 4.5,
     reviewsCount: 0,
     priceFrom: 1000,
@@ -204,7 +202,6 @@ const minimalExperience = {
 const adminExperienceFixture = {
     ...minimalExperience,
     ownerId: MOCK_USER_ID,
-    moderationState: 'PENDING',
     deletedAt: null,
     deletedById: null
 };
@@ -544,7 +541,7 @@ describe('Experience Routes (SPEC-240 T-022)', () => {
                 expect([400, 401, 403]).toContain(res.status);
             });
 
-            it('returns 200 when admin with commerce.viewAll', async () => {
+            it('returns 200 when admin with experience.viewAll', async () => {
                 experienceSvc.adminList.mockResolvedValue({
                     data: { items: [adminExperienceFixture], total: 1 }
                 });
@@ -558,7 +555,7 @@ describe('Experience Routes (SPEC-240 T-022)', () => {
         });
 
         describe('POST /api/v1/admin/experiences (create)', () => {
-            it('returns 403 when missing COMMERCE_CREATE', async () => {
+            it('returns 403 when missing EXPERIENCE_CREATE', async () => {
                 const res = await app.request('/api/v1/admin/experiences', {
                     method: 'POST',
                     headers: adminNoPanelHeaders,
@@ -573,7 +570,7 @@ describe('Experience Routes (SPEC-240 T-022)', () => {
                 expect(res.status).toBe(403);
             });
 
-            it('gate passes with COMMERCE_CREATE (not 403)', async () => {
+            it('gate passes with EXPERIENCE_CREATE (not 403)', async () => {
                 experienceSvc.create.mockResolvedValue({ data: minimalExperience });
 
                 const res = await app.request('/api/v1/admin/experiences', {
@@ -585,10 +582,6 @@ describe('Experience Routes (SPEC-240 T-022)', () => {
                         priceFrom: 1000,
                         priceUnit: 'PER_PERSON',
                         destinationId: DESTINATION_ID,
-                        lifecycleState: 'ACTIVE',
-                        visibility: 'PUBLIC',
-                        hasActiveSubscription: false,
-                        moderationState: 'PENDING',
                         reviewsCount: 0,
                         averageRating: 0,
                         isPriceOnRequest: false,
@@ -601,7 +594,7 @@ describe('Experience Routes (SPEC-240 T-022)', () => {
         });
 
         describe('POST /api/v1/admin/experiences/batch', () => {
-            it('returns 403 when missing COMMERCE_VIEW_ALL', async () => {
+            it('returns 403 when missing EXPERIENCE_VIEW_ALL', async () => {
                 const res = await app.request('/api/v1/admin/experiences/batch', {
                     method: 'POST',
                     headers: adminNoPanelHeaders,
@@ -611,7 +604,7 @@ describe('Experience Routes (SPEC-240 T-022)', () => {
                 expect(res.status).toBe(403);
             });
 
-            it('passes permission gate with COMMERCE_VIEW_ALL (not 403)', async () => {
+            it('passes permission gate with EXPERIENCE_VIEW_ALL (not 403)', async () => {
                 // Batch returns 201 per route factory; test only that the gate passes.
                 experienceSvc.getById.mockResolvedValue({ data: adminExperienceFixture });
 
@@ -638,7 +631,7 @@ describe('Experience Routes (SPEC-240 T-022)', () => {
         });
 
         describe('GET /api/v1/admin/experiences/:id', () => {
-            it('returns 403 when missing COMMERCE_VIEW_ALL', async () => {
+            it('returns 403 when missing EXPERIENCE_VIEW_ALL', async () => {
                 const res = await app.request(`/api/v1/admin/experiences/${EXPERIENCE_ID}`, {
                     headers: adminNoPanelHeaders
                 });
@@ -657,76 +650,46 @@ describe('Experience Routes (SPEC-240 T-022)', () => {
             });
         });
 
-        describe('DELETE /api/v1/admin/experiences/:id (soft delete)', () => {
-            it('returns 403 when missing COMMERCE_DELETE', async () => {
-                const res = await app.request(`/api/v1/admin/experiences/${EXPERIENCE_ID}`, {
-                    method: 'DELETE',
-                    headers: adminNoPanelHeaders
-                });
-
-                expect(res.status).toBe(403);
-            });
-
-            it('returns 200 when admin has COMMERCE_DELETE', async () => {
-                experienceSvc.softDelete.mockResolvedValue({ data: { count: 1 } });
-
-                const res = await app.request(`/api/v1/admin/experiences/${EXPERIENCE_ID}`, {
-                    method: 'DELETE',
-                    headers: adminHeaders
-                });
-
-                expect(res.status).toBe(200);
-            });
-        });
-
-        describe('DELETE /api/v1/admin/experiences/:id/hard', () => {
-            it('returns 403 when missing COMMERCE_DELETE', async () => {
-                const res = await app.request(`/api/v1/admin/experiences/${EXPERIENCE_ID}/hard`, {
-                    method: 'DELETE',
-                    headers: adminNoPanelHeaders
-                });
-
-                expect(res.status).toBe(403);
-            });
-
-            it('returns 200 when admin has COMMERCE_DELETE', async () => {
-                experienceSvc.hardDelete.mockResolvedValue({ data: { count: 1 } });
-
-                const res = await app.request(`/api/v1/admin/experiences/${EXPERIENCE_ID}/hard`, {
-                    method: 'DELETE',
-                    headers: adminHeaders
-                });
-
-                expect(res.status).toBe(200);
-            });
-        });
-
-        describe('POST /api/v1/admin/experiences/:id/restore', () => {
-            it('returns 403 when missing COMMERCE_EDIT_ALL', async () => {
+        // TEST:V6:33 (b), AC:V6:25 (HOS-1477): the admin soft delete, hard delete and
+        // restore doors were retired. Only PB12 (owner) and action 23 (admin,
+        // `POST /{id}/purge`) delete a listing; the old paths are not registered, so
+        // Hono answers 404 even to an admin holding every experience permission, and
+        // to the authenticated owner tier, without ever reaching the service.
+        describe('TEST:V6:33 retired listing doors answer 404', () => {
+            it.each([
+                { method: 'DELETE', suffix: '' },
+                { method: 'DELETE', suffix: '/hard' },
+                { method: 'POST', suffix: '/restore' }
+            ])('$method /api/v1/admin/experiences/:id$suffix answers 404', async ({
+                method,
+                suffix
+            }) => {
                 const res = await app.request(
-                    `/api/v1/admin/experiences/${EXPERIENCE_ID}/restore`,
-                    { method: 'POST', headers: adminNoPanelHeaders }
+                    `/api/v1/admin/experiences/${EXPERIENCE_ID}${suffix}`,
+                    { method, headers: adminHeaders }
                 );
 
-                expect(res.status).toBe(403);
+                expect(res.status).toBe(404);
+                expect(experienceSvc.softDelete).not.toHaveBeenCalled();
+                expect(experienceSvc.hardDelete).not.toHaveBeenCalled();
+                expect(experienceSvc.restore).not.toHaveBeenCalled();
             });
 
-            it('returns 2xx on successful restore (gate passes with COMMERCE_EDIT_ALL)', async () => {
-                experienceSvc.restore.mockResolvedValue({ data: adminExperienceFixture });
+            it('DELETE /api/v1/protected/experiences/:id answers 404 to an authenticated actor', async () => {
+                // `touristHeaders` sends role TOURIST, which the mock-actor middleware
+                // rejects with 400 before routing; a valid authenticated USER is used.
+                const res = await app.request(`/api/v1/protected/experiences/${EXPERIENCE_ID}`, {
+                    method: 'DELETE',
+                    headers: { ...touristHeaders, 'x-mock-actor-role': 'USER' }
+                });
 
-                const res = await app.request(
-                    `/api/v1/admin/experiences/${EXPERIENCE_ID}/restore`,
-                    { method: 'POST', headers: adminHeaders }
-                );
-
-                // POST endpoints via createAdminRoute return 201; any 2xx means success
-                expect(res.status).not.toBe(401);
-                expect(res.status).not.toBe(403);
+                expect(res.status).toBe(404);
+                expect(experienceSvc.softDelete).not.toHaveBeenCalled();
             });
         });
 
         describe('POST /api/v1/admin/experiences/:id/assign-owner', () => {
-            it('returns 403 when missing COMMERCE_EDIT_ALL', async () => {
+            it('returns 403 when missing EXPERIENCE_EDIT_ALL', async () => {
                 const res = await app.request(
                     `/api/v1/admin/experiences/${EXPERIENCE_ID}/assign-owner`,
                     {
@@ -739,7 +702,7 @@ describe('Experience Routes (SPEC-240 T-022)', () => {
                 expect(res.status).toBe(403);
             });
 
-            it('passes gate with COMMERCE_EDIT_ALL (not 401/403)', async () => {
+            it('passes gate with EXPERIENCE_EDIT_ALL (not 401/403)', async () => {
                 // POST routes via createAdminRoute return 201; gate test only cares about auth.
                 experienceSvc.update.mockResolvedValue({ data: adminExperienceFixture });
 
@@ -757,7 +720,7 @@ describe('Experience Routes (SPEC-240 T-022)', () => {
         });
 
         describe('Admin FAQ endpoints', () => {
-            it('GET /:id/faqs returns 403 when missing COMMERCE_VIEW_ALL', async () => {
+            it('GET /:id/faqs returns 403 when missing EXPERIENCE_VIEW_ALL', async () => {
                 const res = await app.request(`/api/v1/admin/experiences/${EXPERIENCE_ID}/faqs`, {
                     headers: adminNoPanelHeaders
                 });
@@ -765,7 +728,7 @@ describe('Experience Routes (SPEC-240 T-022)', () => {
                 expect(res.status).toBe(403);
             });
 
-            it('GET /:id/faqs returns 200 for admin with COMMERCE_VIEW_ALL', async () => {
+            it('GET /:id/faqs returns 200 for admin with EXPERIENCE_VIEW_ALL', async () => {
                 faqHelpers.listExperienceFaqs.mockResolvedValue({ data: { faqs: [] } });
 
                 const res = await app.request(`/api/v1/admin/experiences/${EXPERIENCE_ID}/faqs`, {
@@ -775,19 +738,28 @@ describe('Experience Routes (SPEC-240 T-022)', () => {
                 expect(res.status).toBe(200);
             });
 
-            it('POST /:id/faqs returns 403 when missing COMMERCE_EDIT_ALL', async () => {
+            // HOS-1457 replaced this route's `EXPERIENCE_EDIT_ALL` gate with a
+            // `listingAccess` decision (administrative action 15, resolved in
+            // the handler; its foreign-listing denial is covered by
+            // `test/routes/coverage-step.admin.test.ts`). The old 403 kept
+            // passing only because the sibling `GET /:id/faqs` gate
+            // (`EXPERIENCE_VIEW_ALL`) leaked onto POST — HOS-1908 removed the
+            // leak. So the admin-panel baseline now reaches input validation,
+            // and the service is still never called.
+            it('POST /:id/faqs gates on the admin baseline + listingAccess, not on a sibling (HOS-1908)', async () => {
                 const res = await app.request(`/api/v1/admin/experiences/${EXPERIENCE_ID}/faqs`, {
                     method: 'POST',
                     headers: adminNoPanelHeaders,
                     body: JSON.stringify({ question: 'Q?', answer: 'A.' })
                 });
 
-                expect(res.status).toBe(403);
+                expect(res.status).toBe(400);
+                expect(faqHelpers.addExperienceFaq).not.toHaveBeenCalled();
             });
         });
 
         describe('Admin review moderation endpoints', () => {
-            it('GET /reviews returns 403 when missing COMMERCE_MODERATE_REVIEW', async () => {
+            it('GET /reviews returns 403 when missing EXPERIENCE_MODERATE_REVIEW', async () => {
                 const res = await app.request('/api/v1/admin/experiences/reviews', {
                     headers: adminNoPanelHeaders
                 });
@@ -795,7 +767,7 @@ describe('Experience Routes (SPEC-240 T-022)', () => {
                 expect(res.status).toBe(403);
             });
 
-            it('GET /reviews returns 200 for admin with COMMERCE_MODERATE_REVIEW', async () => {
+            it('GET /reviews returns 200 for admin with EXPERIENCE_MODERATE_REVIEW', async () => {
                 reviewSvc.adminList.mockResolvedValue({ data: { items: [], total: 0 } });
 
                 const res = await app.request('/api/v1/admin/experiences/reviews', {
@@ -805,7 +777,7 @@ describe('Experience Routes (SPEC-240 T-022)', () => {
                 expect(res.status).toBe(200);
             });
 
-            it('POST /reviews/:id/moderate returns 403 when missing COMMERCE_MODERATE_REVIEW', async () => {
+            it('POST /reviews/:id/moderate returns 403 when missing EXPERIENCE_MODERATE_REVIEW', async () => {
                 const res = await app.request(
                     `/api/v1/admin/experiences/reviews/${REVIEW_ID}/moderate`,
                     {
@@ -837,7 +809,7 @@ describe('Experience Routes (SPEC-240 T-022)', () => {
                 expect(res.status).not.toBe(403);
             });
 
-            it('DELETE /reviews/:id returns 403 when missing COMMERCE_MODERATE_REVIEW', async () => {
+            it('DELETE /reviews/:id returns 403 when missing EXPERIENCE_MODERATE_REVIEW', async () => {
                 const res = await app.request(`/api/v1/admin/experiences/reviews/${REVIEW_ID}`, {
                     method: 'DELETE',
                     headers: adminNoPanelHeaders

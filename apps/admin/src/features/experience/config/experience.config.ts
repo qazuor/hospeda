@@ -2,7 +2,7 @@
  * @file experience.config.ts
  * Entity list configuration for the experience admin list page (SPEC-240 T-028).
  *
- * Uses `createCommerceListConfig` from the generic commerce layer so that the
+ * Uses `createListingListConfig` from the generic listing layer so that the
  * shared filter scaffold (destination, featured, ownerId, includeDeleted) is
  * applied automatically. Experience-specific filters (type) are injected via
  * `extraFilters`.
@@ -12,7 +12,7 @@ import { ExperienceAdminListItemSchema, ExperienceTypeEnum, PermissionEnum } fro
 import type { z } from 'zod';
 import { createEntityListPage } from '@/components/entity-list';
 import { EntityType } from '@/components/table/DataTable';
-import { createCommerceListConfig } from '@/features/commerce';
+import { createListingListConfig } from '@/features/listing';
 import { createExperienceColumns } from './experience.columns';
 
 // ---------------------------------------------------------------------------
@@ -29,15 +29,13 @@ export type ExperienceListItem = Pick<
     | 'name'
     | 'type'
     | 'destinationId'
-    | 'isFeatured'
+    | 'featuredByEntitlement'
     | 'ownerId'
     | 'createdAt'
     | 'destination'
     | 'owner'
-> & {
-    /** Lifecycle state string rendered in the status column. */
-    readonly lifecycleStatus?: string | null;
-};
+    | 'publicationStatus'
+>;
 
 // ---------------------------------------------------------------------------
 // Filter options
@@ -87,12 +85,12 @@ const EXPERIENCE_TYPE_OPTIONS = [
 
 /**
  * Full entity list configuration for the experience admin list page.
- * Built on top of the shared commerce layer via `createCommerceListConfig`.
+ * Built on top of the shared listing layer via `createListingListConfig`.
  *
  * Endpoint: `GET /api/v1/admin/experiences`
- * Permissions gate: COMMERCE_VIEW_ALL
+ * Permissions gate: EXPERIENCE_VIEW_ALL
  */
-export const experienceListConfig = createCommerceListConfig<ExperienceListItem>({
+export const experienceListConfig = createListingListConfig<ExperienceListItem>({
     entityName: 'experiences',
     entityKey: 'experience',
     entityType: EntityType.EXPERIENCE,
@@ -125,4 +123,4 @@ const { component, route } = createEntityListPage(experienceListConfig);
 export { component as ExperiencesPageComponent, route as ExperiencesRoute };
 
 /** Required permission to view the experience list. */
-export const EXPERIENCE_VIEW_PERMISSION = PermissionEnum.COMMERCE_VIEW_ALL;
+export const EXPERIENCE_VIEW_PERMISSION = PermissionEnum.EXPERIENCE_VIEW_ALL;

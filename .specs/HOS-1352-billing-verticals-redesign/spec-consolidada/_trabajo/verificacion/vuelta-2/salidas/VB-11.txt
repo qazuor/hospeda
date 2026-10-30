@@ -1,0 +1,21 @@
+# VB-11 · spec → fuente · 10-corte/B9a.md, 20-fase-2/B9b.md, 20-fase-1/V9b.md
+
+## Hallazgos
+
+10-corte/B9a.md:860 · «`motivo_de_revocación`, elegido de un catálogo cerrado» · contradice .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:4442 («**Decisión**: **sí, y es texto libre.**») y :4448 («Por qué libre y no de lista cerrada»); y .specs/HOS-1354-billing-cobro-y-proveedor/docs/02-modelo-de-datos.md:579 («su `motivo_de_revocación`, en texto libre» (`DEC-GRANT-008`)); confirmado vigente por 01-decision-log.md:5258 («`DEC-GRANT-008` sigue rigiendo la revocación manual de un grant, con su motivo en texto libre») y 19-superficies.md:124 («texto libre, `DEC-GRANT-008`»). Ningún 📌 ni letra del owner lo cambia (la enumeración cerrada es `motivo_cierre` de la cortesía, no la revocación del grant). Un implementador construiría un enum donde la fuente manda texto libre · BLOQUEA
+
+20-fase-1/V9b.md:226 · «los dos previos cuentan desde el más tardío de `inactiva_desde` y el `pausaTerminadaEn` de `retenciónDetenida`, releen la cobertura y no salen si el dueño está cubierto» · más débil que .specs/HOS-1352-billing-verticals-redesign/docs/nucleo/07-outbox-y-notificaciones.md:274 («**Y releen además el estado de la ficha y la pausa** (revisión del owner, 2026-09-28, N7, C14): no salen sobre una ficha `MODERATED` ni `PURGED`, ni mientras la pregunta `retenciónDetenida` del contrato conteste `sí`»). El AC (y TEST:V9b:10, V9b.md:714) sólo exige la relectura de cobertura; la de estado (`MODERATED`/`PURGED`) no aparece en ninguna parte de V9b, y la de `retenciónDetenida` = `sí` para los avisos sólo se infiere de la regla general del reloj (V9b.md:287). Un job construido según el AC mandaría *«tu ficha se va a borrar/archivar»* sobre una ficha moderada · BLOQUEA
+
+10-corte/B9a.md:1017 · «Las cláusulas 4 (la mitad del grant) y 7 son de `B9a`; las demás, de [B9b]» · contradicción interna con 20-fase-2/B9b.md:231 («cláusulas 1, 2, 3, 5, 6, 8 y 9»): según B9a la mitad cortesía de la cláusula 4 sería de B9b, y B9b no la lista. La fuente (.specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:1066, AQ) pone la fuente `CORTESÍA` real en B9a, y AC:B9a:12 ya la cubre («no se toca una línea de lo que dejó `B4`» al agregar `GRANT` y `CORTESÍA`), así que el comportamiento queda cubierto; sólo el rótulo «la mitad del grant» y la enumeración de B9b no cierran · MENOR
+
+20-fase-2/B9b.md:56 · «el segundo disparador de `S9` (la re-emisión sobre la sucesora), en [B8b]» (fuera de alcance) · tensión interna con 20-fase-2/B9b.md:231-233 (AC:B9b:11 exige la cláusula 6, «una cortesía de N meses re-emitida sobre una sucesora con crédito que saltea N cobros contados desde el fin del crédito», que es el efecto del segundo disparador) y con .specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:667 («B9b (`S9` y el `14` §4.4)»). El reparto del segundo disparador a `B8b` no está escrito en la fuente (que sólo dice `S9` compartida, :852); como `B8b → B9b`, el criterio se puede cumplir, pero la pieza que lo prueba no es la que lo construye · MENOR
+
+20-fase-1/V9b.md:21 · «Es **aditiva**: no reescribe filas ni código del corte ([DEC-ARCH-017] punto 7)» · cita mal apuntada: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:7873 (punto 7) es el esquema (ninguna migración estructural en fase posterior); «no reescribe filas ni código del corte» está en el punto 2 (:7855, «Lo que se difiere llega sin tocar nada de lo construido») y en Y/el 📌 de DEC-ARCH-017. Sin efecto en lo que se construye · MENOR
+
+## Resumen
+
+| archivo | líneas recorridas | afirmaciones normativas revisadas (aprox.) | BLOQUEA | MENOR |
+|---|---|---|---|---|
+| 10-corte/B9a.md | 1–58 y 695–1392 (59–694 excluidas: tramo g-secciones) | 95 | 1 | 1 |
+| 20-fase-2/B9b.md | 1–662 | 85 | 0 | 1 |
+| 20-fase-1/V9b.md | 1–795 | 90 | 1 | 1 |

@@ -1,0 +1,33 @@
+/**
+ * SONDA DESCARTABLE — HOS-1352 FASE 1B. No se commitea.
+ * Replica el cuerpo del try de getBillingInstance para ver QUE tira.
+ */
+import { writeFileSync } from 'node:fs';
+import { createBillingAdapter } from '@repo/db';
+import { describe, expect, it } from 'vitest';
+
+describe('probe', () => {
+    it('dice que paso del try', async () => {
+        const out: string[] = [];
+        const db = (await import('@repo/db')).getDb();
+        try {
+            createBillingAdapter(db, { livemode: false });
+            out.push('createBillingAdapter=ok');
+        } catch (e) {
+            out.push(`createBillingAdapter=THROW ${e instanceof Error ? `${e.name}: ${e.message}` : String(e)}`);
+        }
+        try {
+            const m = await import('@repo/billing');
+            // biome-ignore lint/suspicious/noExplicitAny: sonda
+            (m as any).createMercadoPagoAdapter({});
+            out.push('createMercadoPagoAdapter=ok');
+        } catch (e) {
+            out.push(`createMercadoPagoAdapter=THROW ${e instanceof Error ? `${e.name}: ${e.message}` : String(e)}`);
+        }
+        writeFileSync(
+            '/tmp/claude-1000/-home-qazuor-projects-WEBS-hospeda2/1fdacd09-b31f-4c05-8bb2-608b9cfdb393/scratchpad/billing-diag3.txt',
+            out.join('\n')
+        );
+        expect(true).toBe(true);
+    });
+});

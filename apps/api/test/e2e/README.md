@@ -1,6 +1,6 @@
 # E2E Testing Infrastructure
 
-> **Canonical reference**: [`.qtm/specs/SPEC-143-billing-testing-coverage/docs/e2e-infrastructure-design.md`](../../../../.qtm/specs/SPEC-143-billing-testing-coverage/docs/e2e-infrastructure-design.md) is the authoritative description of the e2e infra as of SPEC-143 (factories, fixtures, vitest configs, sealed test patterns, Workstream A vs B). The sections below predate that doc and describe scenarios that no longer exist; the **Isolation contract** and **CI wiring** sections immediately below are current — the rest is being phased out.
+> **Canonical reference**: `.qtm/specs/SPEC-143-billing-testing-coverage/docs/e2e-infrastructure-design.md` (legacy `.qtm/` spec, removed in HOS-1352 U1; still present on `staging`) is the authoritative description of the e2e infra as of SPEC-143 (factories, fixtures, vitest configs, sealed test patterns, Workstream A vs B). The sections below predate that doc and describe scenarios that no longer exist; the **Isolation contract** and **CI wiring** sections immediately below are current — the rest is being phased out.
 
 ## Isolation contract (SPEC-143 T-143-56)
 
@@ -407,6 +407,21 @@ Run `pnpm typecheck` to identify TypeScript issues before running tests.
    - Add performance assertions (< 30s total for all scenarios)
    - Document discovered issues
    - Create CI/CD integration guide
+
+## Coverage against the real Mercado Pago
+
+This directory holds in-process flows only: they never call Mercado Pago. The old
+suite that ran against the Mercado Pago sandbox was removed with the QZPay billing
+(HOS-1352) and is not coming back as a vitest suite (HOS-1881). Coverage against the
+real provider lives in:
+
+- `packages/payments/src/probes/`: the manifest of the live probe objects that the
+  cutover must leave alone (`probes.json`). It is a list of ids, not tests.
+- `.specs/HOS-1352-billing-verticals-redesign/docs/mp-probes/`: the probe scripts that
+  hit Mercado Pago and their dated results.
+- `docs/billing/smoke-checklist.md`: the manual smoke on a live environment (real
+  checkout in the sandbox, emails, cache, crons).
+- `scripts/cutover/README.md`: the rehearsal against the provider test account.
 
 ## Documentation
 

@@ -87,7 +87,7 @@ const NAMED_UNIQUE_CONSTRAINT_MESSAGES: Readonly<Record<string, string>> = {
         'This event already has a featured image. Unset the current one first.',
     uq_experience_media_single_featured:
         'This experience already has a featured image. Unset the current one first.',
-    uq_gastronomy_media_single_featured:
+    uq_venue_media_single_featured:
         'This listing already has a featured image. Unset the current one first.',
     uq_post_media_single_featured:
         'This post already has a featured image. Unset the current one first.'
@@ -116,7 +116,7 @@ const DRIZZLE_UNIQUE_SUFFIX = /_(unique|key)$/;
  * | --- | --- | --- |
  * | `idx_tourist_price_alerts_user_accommodation_active_unique` | `tourist_price_alerts` | `active` |
  * | `idx_refunds_provider_refund_id_unique` | `billing_refunds` | `id` |
- * | `idx_notification_log_idempotency_key` | `billing_notification_log` | `idempotency` |
+ * | `idx_notification_log_idempotency_key` | `notification_log` | `idempotency` |
  * | `conv_notif_schedules_conversation_recipient_unique` | `conversation_notification_schedules` | `recipient` |
  * | `promo_code_usage_customer_promo_unique` | `billing_promo_code_usage` | `promo` |
  *

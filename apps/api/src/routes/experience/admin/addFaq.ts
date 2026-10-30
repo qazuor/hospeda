@@ -7,11 +7,12 @@ import {
     ExperienceFaqSingleOutputSchema,
     FaqWithChannelVisibilityCreatePayloadSchema,
     type FaqWithChannelVisibilityCreatePayloadType,
-    PermissionEnum
+    VerticalEnum
 } from '@repo/schemas';
 import { addExperienceFaq, ExperienceService, ServiceError } from '@repo/service-core';
 import type { Context } from 'hono';
 import { z } from 'zod';
+import { runListingContentCall } from '../../../middlewares/listing-access';
 import { getActorFromContext } from '../../../utils/actor';
 import { apiLogger } from '../../../utils/logger';
 import { createAdminRoute } from '../../../utils/route-factory';
@@ -22,17 +23,17 @@ const experienceService = new ExperienceService({ logger: apiLogger });
  * POST /api/v1/admin/experiences/:id/faqs
  * Add FAQ to experience listing — Admin endpoint.
  *
- * Requires EXPERIENCE_EDIT_ALL (or the legacy COMMERCE_EDIT_ALL) permission. The service helper
+ * Requires EXPERIENCE_EDIT_ALL permission. The service helper
  * `addExperienceFaq` enforces the same gate via `checkExperienceCanEditFaqs`.
  */
 export const adminAddExperienceFaqRoute = createAdminRoute({
     method: 'post',
+    listingAccess: { vertical: VerticalEnum.EXPERIENCE, operation: 'EDIT', idParam: 'id' },
     path: '/{id}/faqs',
     summary: 'Add FAQ to experience listing (admin)',
     description:
-        'Adds a new frequently asked question to an experience listing. Requires EXPERIENCE_EDIT_ALL (or the legacy COMMERCE_EDIT_ALL).',
+        'Adds a new frequently asked question to an experience listing. Requires EXPERIENCE_EDIT_ALL.',
     tags: ['Experience', 'FAQs'],
-    anyOfPermissions: [[PermissionEnum.EXPERIENCE_EDIT_ALL, PermissionEnum.COMMERCE_EDIT_ALL]],
     requestParams: {
         id: z.string().uuid({ message: 'zodError.common.id.invalidUuid' })
     },
@@ -54,7 +55,10 @@ export const adminAddExperienceFaqRoute = createAdminRoute({
         const model = (
             experienceService as unknown as { model: Parameters<typeof addExperienceFaq>[0] }
         ).model;
-        const result = await addExperienceFaq(model, actor, input);
+        const result = await runListingContentCall({
+            ctx,
+            run: () => addExperienceFaq(model, actor, input)
+        });
 
         if (result.error) {
             throw new ServiceError(result.error.code, result.error.message);

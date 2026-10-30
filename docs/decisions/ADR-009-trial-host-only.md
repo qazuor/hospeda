@@ -1,8 +1,10 @@
 # ADR-009: Free Trial Restricted to HOST Role
 
+> **Note (HOS-1626, 2026-10):** `@repo/billing` was retired (the package was deleted). The trial constants and plan definitions cited below no longer exist in code; trial terms are values in the database plan catalog.
+
 ## Status
 
-**Superseded — historical record only. Do not read anything below as current.**
+**Superseded by DEC-ARCH-012 (HOS-1352) — historical record only. Do not read anything below as current.**
 
 > **Superseded (HOS-1302, 2026-09-09).** Both load-bearing facts in this ADR are
 > now false, and the HOS-171 addendum below is false a third time:
@@ -11,7 +13,7 @@
 >   Only the `complex-*` tier is still at 14 (`COMPLEX_TRIAL_DAYS`). See
 >   `packages/billing/src/constants/billing.constants.ts`.
 > - **Not HOST-only.** `tourist-vip` carries a 30-day trial (HOS-301 D1) and all
->   six gastronomy-*/ experience-* plans carry one too (HOS-590). See
+>   six venue-*/ experience-* plans carry one too (HOS-590). See
 >   `packages/billing/src/config/plans.config.ts`. Partner plans have none.
 > - **Not card-first.** HOS-1012 retired the card-first design entirely: the trial
 >   is Hospeda's own, granted locally at first publish, and MercadoPago is never
@@ -20,7 +22,7 @@
 >   no longer exists.
 >
 > The live picture is in the root `CLAUDE.md` ("The trial is Hospeda's;
-> MercadoPago only charges") and `packages/billing/CLAUDE.md`.
+> MercadoPago only charges").
 >
 > **Addendum (HOS-171, 2026-07-15) — since retired by HOS-1012, see above.** The
 > trial became **card-first** (a MercadoPago preapproval carrying

@@ -646,8 +646,7 @@ export const listAccommodationsRoute = createOpenApiRoute({
     return accommodations;
   },
   options: {
-    skipAuth: true,
-    cacheTTL: 600 // 10 minutes
+    skipAuth: true
   }
 });
 ```

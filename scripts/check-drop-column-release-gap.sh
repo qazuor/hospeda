@@ -219,6 +219,19 @@ has_evidence_marker() {
     return 1
 }
 
+# HOS-1352 is a coordinated cutover, not an ordinary rolling release. Its
+# U1.1 migration removes the FK-backed customer_id column with the old billing
+# schema, and the entire replacement image deploys at step 3 of the cutover.
+# This narrow exception requires the PR to target the epic branch and to cite
+# the cutover explicitly; it must not apply to any other column or base branch.
+has_cutover_marker() {
+    local marker_text="$1"
+    local pair="$2"
+    [[ "${PR_BASE_REF:-}" == 'epic/HOS-1352-verticales-billing' ]] || return 1
+    [[ "${pair}" == 'billing_notification_log.customer_id' ]] || return 1
+    grep -Fqx '[cutover-drop-column: billing_notification_log.customer_id]: HOS-1352 step 3' <<<"${marker_text}"
+}
+
 # -----------------------------------------------------------------------------
 # decide: pure decision function. Reads dropped-column pairs + marker text,
 # prints a message, returns 0 (pass) or 1 (fail).
@@ -237,7 +250,7 @@ decide() {
     local pair
     while IFS= read -r pair; do
         [[ -z "${pair}" ]] && continue
-        if has_evidence_marker "${marker_text}" "${pair}"; then
+        if has_evidence_marker "${marker_text}" "${pair}" || has_cutover_marker "${marker_text}" "${pair}"; then
             verified+=("${pair}")
         else
             missing+=("${pair}")

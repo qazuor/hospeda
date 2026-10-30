@@ -1,14 +1,20 @@
 import { resolve } from 'node:path';
 import tsconfigPaths from 'vite-tsconfig-paths';
 import { configDefaults, defineConfig } from 'vitest/config';
+import {
+    API_INTEGRATION_EXCLUSIONS,
+    API_INTEGRATION_INCLUDE
+} from './test/integration/integration-suite';
 
 /**
- * Vitest configuration for `apps/api`'s AI integration suite (HOS-247).
+ * Vitest configuration for `apps/api`'s integration suite (HOS-247).
  *
  * Run with: `pnpm test:integration`.
  *
- * Scope is deliberately narrow: `test/integration/ai/**`, minus the flaky
- * `vault-roundtrip.test.ts` (see the `exclude` below).
+ * Scope is the whole `test/integration/**` tree minus the files listed, each
+ * with its reason, in `test/integration/integration-suite.ts` (HOS-1891). Do
+ * not add include globs or inline excludes here: edit that module, which the
+ * coverage guard and the CI wiring tests read too.
  *
  * CORRECTION (HOS-715, 2026-08-21): this comment used to claim the other
  * ~243 files under `test/integration/**` (everything outside `ai/**`)
@@ -20,7 +26,8 @@ import { configDefaults, defineConfig } from 'vitest/config';
  * CI job for ~6.5 months (since commit `1cfc7e8b6`, 2026-02-03, excluded them
  * from `vitest.config.ts`) and are independently broken (HOS-715: config
  * orphaning + stale mocks), not merely "duplicated elsewhere." Reviving them
- * is tracked as follow-up work, not covered by this file.
+ * is tracked as follow-up work, not covered by this file. That follow-up is
+ * HOS-1891, which turned the include into the whole tree.
  *
  * Every file in this scope still exercises a real PostgreSQL database via the
  * `testDb` lifecycle hooks — `translate.test.ts` additionally `vi.mock`s
@@ -32,7 +39,7 @@ import { configDefaults, defineConfig } from 'vitest/config';
  * `hospeda_api_integration_test` database on the CI Postgres service (or local
  * Docker Postgres) before any test file runs, and — critically — overrides
  * `process.env.HOSPEDA_DATABASE_URL` so `test-database.ts`'s `testDb` singleton
- * (used by the `beforeAll`/`afterEach`/`afterAll` hooks in the ai/** suite)
+ * (used by the `beforeAll`/`afterEach`/`afterAll` hooks across the suite)
  * connects to the ephemeral DB instead of whatever `HOSPEDA_DATABASE_URL`
  * resolves to in the environment. See that file's JSDoc for the full rationale.
  *
@@ -43,7 +50,7 @@ import { configDefaults, defineConfig } from 'vitest/config';
  * `pnpm test:integration`. No changes to `ci.yml` or `turbo.json` were needed.
  *
  * `pool: 'forks'` + `fileParallelism: false` mirrors `vitest.config.e2e.ts`:
- * both files in scope call `testDb.clean()` (TRUNCATE ... CASCADE) between
+ * the files in scope call `testDb.clean()` (TRUNCATE ... CASCADE) between
  * tests, so running them concurrently against the same ephemeral DB would
  * corrupt each other's in-flight data.
  */
@@ -59,18 +66,13 @@ export default defineConfig({
             './test/e2e/setup/env-setup.ts', // Load env vars FIRST
             './test/e2e/setup/test-database.ts'
         ],
-        include: ['test/integration/ai/**/*.test.ts'],
-        // `vault-roundtrip.test.ts` is non-deterministically flaky: the
-        // credential-create route triggers a fire-and-forget `syncAiProviderModels`
-        // (HOS-94 auto-sync on create) that touches the DB asynchronously after
-        // the response returns, racing this suite's per-test `testDb.clean()`
-        // isolation and intermittently making its "created" audit-row / duplicate
-        // assertions fail. It is NOT introduced by HOS-247 (the whole apps/api
-        // integration suite simply never ran in CI before, so the flake was
-        // latent) and cannot be fixed from the test side without changing the
-        // auto-sync behavior. Excluded until a follow-up issue makes the create
-        // flow deterministic under test; tracked separately.
-        exclude: [...configDefaults.exclude, 'test/integration/ai/vault-roundtrip.test.ts'],
+        // HOS-1891: the whole tree, minus the exclusions (each with its reason)
+        // kept in test/integration/integration-suite.ts.
+        include: [...API_INTEGRATION_INCLUDE],
+        exclude: [
+            ...configDefaults.exclude,
+            ...API_INTEGRATION_EXCLUSIONS.map((exclusion) => exclusion.file)
+        ],
         globalSetup: ['./test/integration/global-setup.ts'],
         testTimeout: 30000,
         hookTimeout: 30000,
@@ -103,7 +105,7 @@ export default defineConfig({
             '@repo/utils': resolve(__dirname, '../../packages/utils/src'),
             '@repo/config': resolve(__dirname, '../../packages/config/src'),
             '@repo/service-core': resolve(__dirname, '../../packages/service-core/src'),
-            '@repo/billing': resolve(__dirname, '../../packages/billing/src'),
+            '@repo/verticals': resolve(__dirname, '../../packages/verticals/src'),
             '@repo/email': resolve(__dirname, '../../packages/email/src'),
             '@repo/notifications': resolve(__dirname, '../../packages/notifications/src'),
             '@repo/ai-core': resolve(__dirname, '../../packages/ai-core/src'),

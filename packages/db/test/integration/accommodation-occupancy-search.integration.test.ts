@@ -28,6 +28,7 @@
  *      row, so it is unaffected by the source-scoped unique index allowing
  *      multiple rows per date.
  */
+import { PublicationStatusEnum } from '@repo/schemas';
 import { afterAll, describe, expect, it } from 'vitest';
 import { AccommodationModel } from '../../src/models/accommodation/accommodation.model.ts';
 import {
@@ -60,14 +61,16 @@ describe('AccommodationModel.search — checkIn/checkOut occupancy filter (HOS-4
             const [accommodation] = await tx
                 .insert(accommodations)
                 .values({
+                    publicationStatus: PublicationStatusEnum.PUBLISHED,
+                    inactiveSince: new Date(),
+                    deadlinesVersion: 1,
                     ownerId: owner.id,
                     destinationId: destination.id,
                     slug: `hos43-occupancy-excl-${uid}`,
                     name: 'HOS-43 Occupancy Exclusion Test',
                     summary: 'Regression test for the checkIn/checkOut occupancy filter.',
                     type: 'HOUSE',
-                    description: 'Accommodation inserted for the HOS-43 occupancy filter test.',
-                    lifecycleState: 'ACTIVE'
+                    description: 'Accommodation inserted for the HOS-43 occupancy filter test.'
                 })
                 .returning();
             if (!accommodation) throw new Error('Failed to insert accommodation');
@@ -122,14 +125,16 @@ describe('AccommodationModel.search — checkIn/checkOut occupancy filter (HOS-4
             const [accommodation] = await tx
                 .insert(accommodations)
                 .values({
+                    publicationStatus: PublicationStatusEnum.PUBLISHED,
+                    inactiveSince: new Date(),
+                    deadlinesVersion: 1,
                     ownerId: owner.id,
                     destinationId: destination.id,
                     slug: `hos43-occupancy-incl-${uid}`,
                     name: 'HOS-43 Occupancy Checkout-Day-Free Test',
                     summary: 'Regression test for the checkIn/checkOut occupancy filter.',
                     type: 'HOUSE',
-                    description: 'Accommodation inserted for the HOS-43 occupancy filter test.',
-                    lifecycleState: 'ACTIVE'
+                    description: 'Accommodation inserted for the HOS-43 occupancy filter test.'
                 })
                 .returning();
             if (!accommodation) throw new Error('Failed to insert accommodation');
@@ -184,14 +189,16 @@ describe('AccommodationModel.search — checkIn/checkOut occupancy filter (HOS-4
             const [accommodation] = await tx
                 .insert(accommodations)
                 .values({
+                    publicationStatus: PublicationStatusEnum.PUBLISHED,
+                    inactiveSince: new Date(),
+                    deadlinesVersion: 1,
                     ownerId: owner.id,
                     destinationId: destination.id,
                     slug: `hos43-occupancy-nodates-${uid}`,
                     name: 'HOS-43 Occupancy Retrocompat Test',
                     summary: 'Regression test for the checkIn/checkOut occupancy filter.',
                     type: 'HOUSE',
-                    description: 'Accommodation inserted for the HOS-43 occupancy filter test.',
-                    lifecycleState: 'ACTIVE'
+                    description: 'Accommodation inserted for the HOS-43 occupancy filter test.'
                 })
                 .returning();
             if (!accommodation) throw new Error('Failed to insert accommodation');
@@ -230,6 +237,9 @@ describe('AccommodationModel.search — checkIn/checkOut occupancy filter (HOS-4
             const [accommodation] = await tx
                 .insert(accommodations)
                 .values({
+                    publicationStatus: PublicationStatusEnum.PUBLISHED,
+                    inactiveSince: new Date(),
+                    deadlinesVersion: 1,
                     ownerId: owner.id,
                     destinationId: destination.id,
                     slug: `hos162-occupancy-multisource-${uid}`,
@@ -237,8 +247,7 @@ describe('AccommodationModel.search — checkIn/checkOut occupancy filter (HOS-4
                     summary: 'Regression test for the cross-provider occupancy collision fix.',
                     type: 'HOUSE',
                     description:
-                        'Accommodation inserted for the HOS-162 multi-source occupancy filter test.',
-                    lifecycleState: 'ACTIVE'
+                        'Accommodation inserted for the HOS-162 multi-source occupancy filter test.'
                 })
                 .returning();
             if (!accommodation) throw new Error('Failed to insert accommodation');

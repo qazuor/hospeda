@@ -8,7 +8,7 @@ const { getDbRef } = vi.hoisted(() => {
 });
 
 vi.mock('@repo/db', () => ({
-    billingNotificationLog: {
+    notificationLog: {
         createdAt: 'createdAt',
         expiredAt: 'expiredAt'
     },

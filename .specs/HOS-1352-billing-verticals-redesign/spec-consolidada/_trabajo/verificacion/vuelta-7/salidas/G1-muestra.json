@@ -1,0 +1,338 @@
+[
+    {
+        "line": 53,
+        "id": "dec-trial-001",
+        "source": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:267",
+        "spec": "- **Decisión**: **(1)**. La resolución de limits del Trial Plan es **derivar y después aplicar",
+        "source_text": "- **Decisión**: **(1)**. La resolución de limits del Trial Plan es **derivar y después aplicar"
+    },
+    {
+        "line": 318,
+        "id": "dec-trial-006",
+        "source": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:528",
+        "spec": "  | partner | ninguno declarado — trial en cero hoy (`DEC-TRIAL-003`) |",
+        "source_text": "  | partner | ninguno declarado — trial en cero hoy (`DEC-TRIAL-003`) |"
+    },
+    {
+        "line": 634,
+        "id": "dec-sub-004",
+        "source": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:765",
+        "spec": "- **Decisión**: **(1)**. El contador vive en la relación **persona + vertical** y **sobrevive",
+        "source_text": "- **Decisión**: **(1)**. El contador vive en la relación **persona + vertical** y **sobrevive"
+    },
+    {
+        "line": 1039,
+        "id": "dec-sub-009-p4",
+        "source": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:1366",
+        "spec": "📌 **Precisada el 2026-09-29, con OK del owner (mediciones del 2026-09-29, punto 1 y lote L-A)**:",
+        "source_text": "- 📌 **Precisada el 2026-09-29, con OK del owner (mediciones del 2026-09-29, punto 1 y lote L-A)**:"
+    },
+    {
+        "line": 1617,
+        "id": "dec-sub-019-p3",
+        "source": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:5875",
+        "spec": "📌 **Precisada el 2026-09-28, con OK del owner (FASE 9 vuelta 2, verificación, `V2-q`)**: si el",
+        "source_text": "- 📌 **Precisada el 2026-09-28, con OK del owner (FASE 9 vuelta 2, verificación, `V2-q`)**: si el"
+    },
+    {
+        "line": 2156,
+        "id": "dec-mp-002-p4",
+        "source": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:1486",
+        "spec": "📌 **Precisada otra vez el 2026-10-02, con OK del owner (corte del MVP, CC, la 1)**, sobre el 📌 de BM",
+        "source_text": "- 📌 **Precisada otra vez el 2026-10-02, con OK del owner (corte del MVP, CC, la 1)**, sobre el 📌 de BM"
+    },
+    {
+        "line": 2681,
+        "id": "dec-mp-009-p1",
+        "source": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:7500",
+        "spec": "📌 **Precisada el 2026-09-29, con OK del owner (mediciones del 2026-09-29, lote L-B)**: El receptor",
+        "source_text": "- 📌 **Precisada el 2026-09-29, con OK del owner (mediciones del 2026-09-29, lote L-B)**: El receptor"
+    },
+    {
+        "line": 2985,
+        "id": "dec-ent-006",
+        "source": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:6733",
+        "spec": "- **Decisión**, las dos por la opción recomendada:",
+        "source_text": "- **Decisión**, las dos por la opción recomendada:"
+    },
+    {
+        "line": 3378,
+        "id": "dec-addon-004-p1",
+        "source": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:3929",
+        "spec": "📌 **Precisada el 2026-09-27, con OK del owner (FASE 9 vuelta 2, `R1-c`, opción 2)**: cuando",
+        "source_text": "- 📌 **Precisada el 2026-09-27, con OK del owner (FASE 9 vuelta 2, `R1-c`, opción 2)**: cuando"
+    },
+    {
+        "line": 3791,
+        "id": "dec-auth-003-p1",
+        "source": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:6869",
+        "spec": "📌 **2026-09-27 (FASE 9 vuelta 2, `F-8V2A1-004`)**: la acción 15 no es capacidad del actor:",
+        "source_text": "- 📌 **2026-09-27 (FASE 9 vuelta 2, `F-8V2A1-004`)**: la acción 15 no es capacidad del actor:"
+    },
+    {
+        "line": 4163,
+        "id": "dec-data-003",
+        "source": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:4215",
+        "spec": "- **Decisión**: **`PB3` gana una segunda rama, simétrica a la segunda de `PB2`: *«el cupo vuelve a",
+        "source_text": "- **Decisión**: **`PB3` gana una segunda rama, simétrica a la segunda de `PB2`: *«el cupo vuelve a"
+    },
+    {
+        "line": 4492,
+        "id": "dec-data-006-p2",
+        "source": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:7084",
+        "spec": "📌 **Precisada el 2026-09-29, con OK del owner (verificación corta, lote M-H y `VC-VT-05`)**: Los",
+        "source_text": "- 📌 **Precisada el 2026-09-29, con OK del owner (verificación corta, lote M-H y `VC-VT-05`)**: Los"
+    },
+    {
+        "line": 4733,
+        "id": "dec-data-008-p8",
+        "source": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:7458",
+        "spec": "📌 **Precisada otra vez el 2026-10-02, con OK del owner (corte del MVP, BX, la 1)**, sobre BU del 📌",
+        "source_text": "- 📌 **Precisada otra vez el 2026-10-02, con OK del owner (corte del MVP, BX, la 1)**, sobre BU del 📌"
+    },
+    {
+        "line": 5032,
+        "id": "dec-arch-004",
+        "source": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:2309",
+        "spec": "  | dirección de la dependencia | **19 FK** hospeda→qzpay, **0** al revés |",
+        "source_text": "  | dirección de la dependencia | **19 FK** hospeda→qzpay, **0** al revés |"
+    },
+    {
+        "line": 5191,
+        "id": "dec-arch-005",
+        "source": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:2434",
+        "spec": "- **Decisión**: **(2)**, y con una precisión del owner que es la que le da forma: **las dos",
+        "source_text": "- **Decisión**: **(2)**, y con una precisión del owner que es la que le da forma: **las dos"
+    },
+    {
+        "line": 5610,
+        "id": "dec-arch-007-p2",
+        "source": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:2694",
+        "spec": "📌 **Precisada el 2026-09-29, con OK del owner (revisión del owner, casos vecinos, casos 3 y 4)**:",
+        "source_text": "- 📌 **Precisada el 2026-09-29, con OK del owner (revisión del owner, casos vecinos, casos 3 y 4)**:"
+    },
+    {
+        "line": 5969,
+        "id": "dec-arch-013-p2",
+        "source": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:7347",
+        "spec": "📌 **Precisada el 2026-09-30, con OK del owner (FASE 9 vuelta 3, lote C)**: La migración de datos",
+        "source_text": "- 📌 **Precisada el 2026-09-30, con OK del owner (FASE 9 vuelta 3, lote C)**: La migración de datos"
+    },
+    {
+        "line": 6229,
+        "id": "dec-arch-014-p7",
+        "source": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:7642",
+        "spec": "📌 **Precisada el 2026-09-30, con OK del owner (FASES 6 y 7, pase de la FASE 6, I;",
+        "source_text": "- 📌 **Precisada el 2026-09-30, con OK del owner (FASES 6 y 7, pase de la FASE 6, I;"
+    },
+    {
+        "line": 6667,
+        "id": "dec-arch-017-p7",
+        "source": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:8023",
+        "spec": "📌 **Precisada otra vez el 2026-10-02, con OK del owner (corte del MVP, BW, la 1)**, sobre la",
+        "source_text": "- 📌 **Precisada otra vez el 2026-10-02, con OK del owner (corte del MVP, BW, la 1)**, sobre la"
+    },
+    {
+        "line": 6979,
+        "id": "dec-mig-002-p3",
+        "source": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:2773",
+        "spec": "📌 **Precisada otra vez el 2026-09-30, con OK del owner (FASE 5, lote de la aplicación, letra A,",
+        "source_text": "- 📌 **Precisada otra vez el 2026-09-30, con OK del owner (FASE 5, lote de la aplicación, letra A,"
+    },
+    {
+        "line": 7375,
+        "id": "dec-mig-005-p5",
+        "source": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:6517",
+        "spec": "📌 **Precisada el 2026-09-30, con OK del owner (FASE 9 vuelta 3, lotes F y G; F contra la",
+        "source_text": "- 📌 **Precisada el 2026-09-30, con OK del owner (FASE 9 vuelta 3, lotes F y G; F contra la"
+    },
+    {
+        "line": 7741,
+        "id": "dec-grant-004",
+        "source": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:2067",
+        "spec": "- **Decisión**: los tres cruces se resuelven **de nuestro lado, con validaciones, prohibiciones y",
+        "source_text": "- **Decisión**: los tres cruces se resuelven **de nuestro lado, con validaciones, prohibiciones y"
+    },
+    {
+        "line": 8223,
+        "id": "dec-legal-001",
+        "source": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:975",
+        "spec": "- **Decisión**: **(2)**. Se avanza con comprobante no fiscal. La revisión ocurre *\"cuando entre",
+        "source_text": "- **Decisión**: **(2)**. Se avanza con comprobante no fiscal. La revisión ocurre *\"cuando entre"
+    },
+    {
+        "line": 8578,
+        "id": "dec-test-003",
+        "source": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:7186",
+        "spec": "- **Decisión**: el proveedor falso tiene dos listas cerradas: trece mentiras medidas, cada una con",
+        "source_text": "- **Decisión**: el proveedor falso tiene dos listas cerradas: trece mentiras medidas, cada una con"
+    },
+    {
+        "line": 9104,
+        "id": "dec-rf-001-p1",
+        "source": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:1827",
+        "spec": "📌 **Precisada el 2026-09-27, con OK del owner (FASE 9 vuelta 2, `R17` y `R1-b`)**: sobre una",
+        "source_text": "     📌 **Precisada el 2026-09-27, con OK del owner (FASE 9 vuelta 2, `R17` y `R1-b`)**: sobre una"
+    },
+    {
+        "line": 9532,
+        "id": "dec-rf-006-p1",
+        "source": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:5502",
+        "spec": "📌 **2026-09-27 (FASE 9 vuelta 2, `R4` y `R20`, con OK del owner)**: se agregan dos motivos",
+        "source_text": "- 📌 **2026-09-27 (FASE 9 vuelta 2, `R4` y `R20`, con OK del owner)**: se agregan dos motivos"
+    },
+    {
+        "line": 9846,
+        "id": "dec-obs-001-p2",
+        "source": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:2282",
+        "spec": "📌 **Precisada el 2026-09-28, con OK del owner (revisión del owner, C8)**: Su resumen ya no lleva",
+        "source_text": "- 📌 **Precisada el 2026-09-28, con OK del owner (revisión del owner, C8)**: Su resumen ya no lleva"
+    },
+    {
+        "line": 10356,
+        "id": "dec-meth-009",
+        "source": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:3399",
+        "spec": "  | el arreglo se escribió **en un solo lado de una frontera de dos** | 6 |",
+        "source_text": "  | el arreglo se escribió **en un solo lado de una frontera de dos** | 6 |"
+    },
+    {
+        "line": 10930,
+        "id": "dec-meth-019",
+        "source": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:8116",
+        "spec": "- **Decisión**: en todas, **la 1, la recomendada**:",
+        "source_text": "- **Decisión**: en todas, **la 1, la recomendada**:"
+    },
+    {
+        "line": 11571,
+        "id": "own-28-fase-9-vuelta-1-t1-g2-1",
+        "source": ".specs/HOS-1352-billing-verticals-redesign/docs/28-fase-9-vuelta-1/10-decisiones-del-owner.md:24",
+        "spec": "- **elige**: **2** — un hecho empujado de verticales a billing en el mismo acto de `PB9`/`PB12`, con la consulta `fichaPurgada` leída por el barrido como red",
+        "source_text": "| `G2-1` | por dónde se entera billing de que una ficha llegó a `PURGED` | **2** — un hecho empujado de verticales a billing en el mismo acto de `PB9`/`PB12`, con la consulta `fichaPurgada` leída por el barrido como red | **no** (la recomendada era la 1, sólo la consulta con hasta un día de atraso; el owner no acepta ni un cobro de más) |"
+    },
+    {
+        "line": 11682,
+        "id": "own-28-fase-9-vuelta-1-t1-g5-4",
+        "source": ".specs/HOS-1352-billing-verticals-redesign/docs/28-fase-9-vuelta-1/10-decisiones-del-owner.md:36",
+        "spec": "- **elige**: **1** — construir ya la fila de la revocación (dentro de los 10 días; cancela el preapproval, corta el servicio en el acto y crea `RF1` por el total)",
+        "source_text": "| `G5-4` | cómo se ejecuta una revocación hasta que entre el botón | **1** — construir ya la fila de la revocación (dentro de los 10 días; cancela el preapproval, corta el servicio en el acto y crea `RF1` por el total) | sí |"
+    },
+    {
+        "line": 11861,
+        "id": "own-29-fase-8-vuelta-2-t1-r1-a",
+        "source": ".specs/HOS-1352-billing-verticals-redesign/docs/29-fase-8-vuelta-2/10-decisiones-del-owner.md:21",
+        "spec": "- **elige**: **1** — `S11` cancela en el proveedor, en el mismo acto y con la misma regla que la principal, los complementos recurrentes que dependen de ella (la selección de `S32`); siguen dando servicio hasta el fin de servicio y `S12` los cierra",
+        "source_text": "| `R1-a` | qué pasa con el complemento recurrente cuando la principal pasa a `CANCEL_SCHEDULED` por la baja (`S11`) | **1** — `S11` cancela en el proveedor, en el mismo acto y con la misma regla que la principal, los complementos recurrentes que dependen de ella (la selección de `S32`); siguen dando servicio hasta el fin de servicio y `S12` los cierra | sí |"
+    },
+    {
+        "line": 11973,
+        "id": "own-29-fase-8-vuelta-2-t1-q-altas",
+        "source": ".specs/HOS-1352-billing-verticals-redesign/docs/29-fase-8-vuelta-2/10-decisiones-del-owner.md:33",
+        "spec": "- **elige**: **1** — el acto del `SUPER_ADMIN` tiene dos mitades: verticales escribe `admite_altas = no` y billing la fecha y los avisos; la acción administrativa existente orquesta, primero verticales y después billing",
+        "source_text": "| `Q-ALTAS` | quién escribe `vertical.admite_altas` el día del anuncio de una discontinuación | **1** — el acto del `SUPER_ADMIN` tiene dos mitades: verticales escribe `admite_altas = no` y billing la fecha y los avisos; la acción administrativa existente orquesta, primero verticales y después billing | sí |"
+    },
+    {
+        "line": 12076,
+        "id": "own-29-fase-8-vuelta-2-t1-r9-b",
+        "source": ".specs/HOS-1352-billing-verticals-redesign/docs/29-fase-8-vuelta-2/10-decisiones-del-owner.md:44",
+        "spec": "- **elige**: **1** — también antes del 1a, y el corte no arranca si ahí ya aparece una fila; el paso 2 queda como segundo control",
+        "source_text": "| `R9-b` | cuándo se cuenta que Gastronomía y Experiencia den cero | **1** — también antes del 1a, y el corte no arranca si ahí ya aparece una fila; el paso 2 queda como segundo control | sí |"
+    },
+    {
+        "line": 12237,
+        "id": "own-30-revision-del-owner-t3-l1-b",
+        "source": ".specs/HOS-1352-billing-verticals-redesign/docs/30-revision-del-owner/10-decisiones-del-owner.md:54",
+        "spec": "- **elige**: **1**: nacen en borrador; cae entera la regla de quien contrata sin publicar",
+        "source_text": "| L1-b | las fichas que el sistema viejo tenía bajadas por falta de pago | **1**: nacen en borrador; cae entera la regla de quien contrata sin publicar | sí |"
+    },
+    {
+        "line": 12347,
+        "id": "own-30-revision-del-owner-t4-l2-f1",
+        "source": ".specs/HOS-1352-billing-verticals-redesign/docs/30-revision-del-owner/10-decisiones-del-owner.md:71",
+        "spec": "- **elige**: **2**: también se renueva cada mes, desde el día en que arrancó la prueba",
+        "source_text": "| L2-f1 | la cuota durante la prueba gratis | **2**: también se renueva cada mes, desde el día en que arrancó la prueba | **no** (la recomendada era una sola cuota para toda la prueba, como decía el diseño) |"
+    },
+    {
+        "line": 12449,
+        "id": "own-30-revision-del-owner-t5-l3-f",
+        "source": ".specs/HOS-1352-billing-verticals-redesign/docs/30-revision-del-owner/10-decisiones-del-owner.md:87",
+        "spec": "- **elige**: **1**: un control que falla si una decisión sale de un aviso sin releer, extendido a las acciones administrativas",
+        "source_text": "| L3-f | volver a consultar a Mercado Pago siempre | **1**: un control que falla si una decisión sale de un aviso sin releer, extendido a las acciones administrativas | sí |"
+    },
+    {
+        "line": 12563,
+        "id": "own-37-fase-8-vuelta-3-t1-j",
+        "source": ".specs/HOS-1352-billing-verticals-redesign/docs/37-fase-8-vuelta-3/10-decisiones-del-owner.md:31",
+        "spec": "- **elige**: **2**: se declara con su causa en el «NO cierra» del corte; las tres situaciones exigen una falla previa",
+        "source_text": "| J | R14 | qué se hace con lo que una restauración del corte no deshace (altas del paso 6, pagos asentados antes de un aborto, la promoción a `main`) | **2**: se declara con su causa en el «NO cierra» del corte; las tres situaciones exigen una falla previa | **no** (la recomendada era la 1, tres reglas en el procedimiento del corte) |"
+    },
+    {
+        "line": 12686,
+        "id": "own-37-fase-8-vuelta-3-t1-v",
+        "source": ".specs/HOS-1352-billing-verticals-redesign/docs/37-fase-8-vuelta-3/10-decisiones-del-owner.md:43",
+        "spec": "- **elige**: **1**: en el código del package del cobro, importada como módulo; si falta, no compila",
+        "source_text": "| V | R9 | dónde vive la lista de sondas que el receptor de producción no debe cancelar | **1**: en el código del package del cobro, importada como módulo; si falta, no compila | sí |"
+    },
+    {
+        "line": 12797,
+        "id": "own-37-fase-8-vuelta-3-t1-ag",
+        "source": ".specs/HOS-1352-billing-verticals-redesign/docs/37-fase-8-vuelta-3/10-decisiones-del-owner.md:54",
+        "spec": "- **elige**: **1**: «este Partner ya tiene dueño; si no fuiste vos, escribinos a soporte»; el hash del secreto se conserva tras el reclamo (sólo sirve con `owner_user_id` nulo)",
+        "source_text": "| AG | `VC3-VT-01` | qué ve quien abre un link de reclamo ya usado | **1**: «este Partner ya tiene dueño; si no fuiste vos, escribinos a soporte»; el hash del secreto se conserva tras el reclamo (sólo sirve con `owner_user_id` nulo) | sí |"
+    },
+    {
+        "line": 13414,
+        "id": "own-39-fases-6-y-7-t1-d",
+        "source": ".specs/HOS-1352-billing-verticals-redesign/docs/39-fases-6-y-7/10-decisiones-del-owner.md:22",
+        "spec": "- **En una línea**: termina con las dos ramas escritas y una prueba por rama contra el falso; la batería sigue midiendo y la rama que no vale se borra",
+        "source_text": "| D | una fila `UNKNOWN` y la terminación de una unidad | 1 | sí | termina con las dos ramas escritas y una prueba por rama contra el falso; la batería sigue midiendo y la rama que no vale se borra |"
+    },
+    {
+        "line": 13542,
+        "id": "own-40-congelamiento-y-ci-t1-p",
+        "source": ".specs/HOS-1352-billing-verticals-redesign/docs/40-congelamiento-y-ci/10-decisiones-del-owner.md:21",
+        "spec": "- **En una línea**: se acepta la condición corregida del snippet de `15-fase-9/01-R6-resuelto.md` §1 (que ponía en rojo todo PR a `staging` el día que nace la épica, bloqueaba el PR final del propio paraguas y dejaba pasar una rama de unidad cortada de un commit viejo de la épica): **falla si HEAD trae algún commit de la rama épica que el destino todavía no tiene**; el PR cuya head es la rama épica queda exento; si la rama épica no existe en el remoto, sale 0; si no puede consultar el remoto, falla; implementada en el PR #3436 (`scripts/check-umbrella-branch-target.sh`, con 12 tests)",
+        "source_text": "| P | el guard de destino de `epic/**` (C-4 de `DEC-CI-001`) | la recomendada | sí | se acepta la condición corregida del snippet de `15-fase-9/01-R6-resuelto.md` §1 (que ponía en rojo todo PR a `staging` el día que nace la épica, bloqueaba el PR final del propio paraguas y dejaba pasar una rama de unidad cortada de un commit viejo de la épica): **falla si HEAD trae algún commit de la rama épica que el destino todavía no tiene**; el PR cuya head es la rama épica queda exento; si la rama épica no existe en el remoto, sale 0; si no puede consultar el remoto, falla; implementada en el PR #3436 (`scripts/check-umbrella-branch-target.sh`, con 12 tests) |"
+    },
+    {
+        "line": 13656,
+        "id": "own-41-corte-del-mvp-t1-ae",
+        "source": ".specs/HOS-1352-billing-verticals-redesign/docs/41-corte-del-mvp/10-decisiones-del-owner.md:25",
+        "spec": "- **En una línea**: una rama épica nueva por fase posterior, con los mismos gates por unidad, que entra a `staging` entera",
+        "source_text": "| AE | cómo viajan las fases posteriores | 1 | sí | una rama épica nueva por fase posterior, con los mismos gates por unidad, que entra a `staging` entera |"
+    },
+    {
+        "line": 13781,
+        "id": "own-41-corte-del-mvp-t3-aq",
+        "source": ".specs/HOS-1352-billing-verticals-redesign/docs/41-corte-del-mvp/10-decisiones-del-owner.md:60",
+        "spec": "- **En una línea**: `B9a`, junto con la fuente `GRANT`",
+        "source_text": "| AQ | quién contesta la fuente `CORTESÍA` real al corte | 1 | sí | `B9a`, junto con la fuente `GRANT` |"
+    },
+    {
+        "line": 13899,
+        "id": "own-41-corte-del-mvp-t7-bb",
+        "source": ".specs/HOS-1352-billing-verticals-redesign/docs/41-corte-del-mvp/10-decisiones-del-owner.md:106",
+        "spec": "- **En una línea**: **pasan a la misma lista cerrada**: `DEC-OBS-001#📌2`, `DEC-ADDON-004#📌2`, `DEC-SUB-013#📌2`, `DEC-MP-003#📌1` y `DEC-SUB-019#📌1`; **`DEC-TRIAL-004#📌3`** (teléfono, CUIT y dispositivo no se guardan) **se cubre con un AC negativo en `V4`**",
+        "source_text": "| BB | si exigen AC los 📌 que sólo retiran algo o son notas de registro | 1 | sí | **pasan a la misma lista cerrada**: `DEC-OBS-001#📌2`, `DEC-ADDON-004#📌2`, `DEC-SUB-013#📌2`, `DEC-MP-003#📌1` y `DEC-SUB-019#📌1`; **`DEC-TRIAL-004#📌3`** (teléfono, CUIT y dispositivo no se guardan) **se cubre con un AC negativo en `V4`** |"
+    },
+    {
+        "line": 14015,
+        "id": "own-41-corte-del-mvp-t9-bn",
+        "source": ".specs/HOS-1352-billing-verticals-redesign/docs/41-corte-del-mvp/10-decisiones-del-owner.md:139",
+        "spec": "- **En una línea**: **cada tabla nace con todas sus restricciones (AD) en la primera pieza del grafo que la escribe o la referencia; si una `FK` suya apunta a una tabla que nace después, nace con la dueña de la tabla destino, y la rama que la escribe se completa ahí y se prueba con filas sembradas (AS)**. Aplicada: `B3` crea `manual_payment` e `idempotency_key`; `B5` crea `payment` (AV), `refund` con su índice parcial y `reconciliation_mark_payment`; `V9a` crea `domain_event` (inferido: ninguna pieza anterior la escribe). Sin flechas nuevas. Precisa AP y AV. Las otras opciones eran que cada pieza cree las de su capítulo (`B5→B3`, ciclo) o una migración única al principio (contradice AP y AV)",
+        "source_text": "| BN | qué pieza crea una tabla que usan dos piezas del corte (`manual_payment`, `idempotency_key`, `reconciliation_mark_payment`, el índice parcial de `refund`, `domain_event`) | 1 | sí | **cada tabla nace con todas sus restricciones (AD) en la primera pieza del grafo que la escribe o la referencia; si una `FK` suya apunta a una tabla que nace después, nace con la dueña de la tabla destino, y la rama que la escribe se completa ahí y se prueba con filas sembradas (AS)**. Aplicada: `B3` crea `manual_payment` e `idempotency_key`; `B5` crea `payment` (AV), `refund` con su índice parcial y `reconciliation_mark_payment`; `V9a` crea `domain_event` (inferido: ninguna pieza anterior la escribe). Sin flechas nuevas. Precisa AP y AV. Las otras opciones eran que cada pieza cree las de su capítulo (`B5→B3`, ciclo) o una migración única al principio (contradice AP y AV) |"
+    },
+    {
+        "line": 14141,
+        "id": "own-41-corte-del-mvp-t11-bz",
+        "source": ".specs/HOS-1352-billing-verticals-redesign/docs/41-corte-del-mvp/10-decisiones-del-owner.md:169",
+        "spec": "- **En una línea**: **el aumento a un anclado es una migración a la versión nueva, por `S37` y `S38`, con el motivo *«aumento»***: la fecha y los contactos son los del plazo 11, sin la cohorte `PARA_RESOLVER` y sin las reglas propias de la migración que no aplican a un aumento (la promo viva se conserva). Precisa BM y `DEC-MP-002`. Las otras opciones eran una transición nueva que muta sólo el monto o que el aumento no alcance a los anclados",
+        "source_text": "| BZ | por qué camino le llega un aumento de precio a un cliente ya anclado (`B12`, BM) | 1 | sí | **el aumento a un anclado es una migración a la versión nueva, por `S37` y `S38`, con el motivo *«aumento»***: la fecha y los contactos son los del plazo 11, sin la cohorte `PARA_RESOLVER` y sin las reglas propias de la migración que no aplican a un aumento (la promo viva se conserva). Precisa BM y `DEC-MP-002`. Las otras opciones eran una transición nueva que muta sólo el monto o que el aumento no alcance a los anclados |"
+    },
+    {
+        "line": 14264,
+        "id": "own-41-corte-del-mvp-t17-ck",
+        "source": ".specs/HOS-1352-billing-verticals-redesign/docs/41-corte-del-mvp/10-decisiones-del-owner.md:234",
+        "spec": "- **En una línea**: **se ratifica `DEC-ARCH-009`: el aviso sale después del commit, sin entrega durable, y el reconciliador diario es la red**. El outbox de `U2` sigue siendo sólo de correos. `coberturaPerdidaEn` se guarda en la misma transacción que registra la pérdida de cobertura, antes del aviso; su lectura no espera la entrega. Se conserva la dependencia de `B4` respecto de `U2` por las obligaciones de sus predecesores, incluidos los correos de `B3` (BR), no por encolar el aviso de cobertura. La red conserva su población y sus exclusiones: no corre la máquina de trial ni promete recuperar el aviso de primer pago; se acepta hasta un día de atraso en los casos cubiertos. La otra opción era agregar transporte durable de eventos con identidad, reintentos, recuperación y confirmación, distinto del outbox de correos",
+        "source_text": "| CK | si el aviso de cambio de cobertura sale después del commit sin entrega durable, como `DEC-ARCH-009` y el contrato, o se encola en U2, como decía la fila de B4 | 1 | sí | **se ratifica `DEC-ARCH-009`: el aviso sale después del commit, sin entrega durable, y el reconciliador diario es la red**. El outbox de `U2` sigue siendo sólo de correos. `coberturaPerdidaEn` se guarda en la misma transacción que registra la pérdida de cobertura, antes del aviso; su lectura no espera la entrega. Se conserva la dependencia de `B4` respecto de `U2` por las obligaciones de sus predecesores, incluidos los correos de `B3` (BR), no por encolar el aviso de cobertura. La red conserva su población y sus exclusiones: no corre la máquina de trial ni promete recuperar el aviso de primer pago; se acepta hasta un día de atraso en los casos cubiertos. La otra opción era agregar transporte durable de eventos con identidad, reintentos, recuperación y confirmación, distinto del outbox de correos |"
+    }
+]

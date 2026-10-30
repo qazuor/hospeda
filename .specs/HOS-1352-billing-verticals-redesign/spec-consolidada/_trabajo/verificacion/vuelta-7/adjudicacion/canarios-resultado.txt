@@ -1,0 +1,232 @@
+# Canarios — vuelta 7
+
+Numeración: orden de canarios.txt. Asociación semántica contra canarios.diff, informes finales, pristina y fuentes congeladas. CAN? no se usa como veredicto.
+
+| Nº | Bloque | Tipo | Ubicación plantada | Detectado por | Por su bloque |
+|---|---|---|---|---|---|
+| 1 | VB-01 | MODIFICA | 02-nucleo-glosario.md:469 | VB-01 | sí |
+| 2 | VB-02 | MODIFICA | 02-nucleo-outbox.md:34 | VB-02 | sí |
+| 3 | VB-03 | MODIFICA | 02-nucleo-modelo-y-maquinas.md:276 | VA-A1, VB-03 | sí |
+| 4 | VB-04 | MODIFICA | 10-corte/V1.md:36 | VB-04 | sí |
+| 5 | VB-05 | MODIFICA | 10-corte/V3.md:376 | VB-05 | sí |
+| 6 | VB-06 | MODIFICA | 10-corte/V5.md:430 | VA-A4, VB-06 | sí |
+| 7 | VB-07 | MODIFICA | 20-fase-4/V8b.md:57 | VA-A5, VB-07 | sí |
+| 8 | VB-08 | MODIFICA | 10-corte/B2.md:113 | VB-08 | sí |
+| 9 | VB-09 | MODIFICA | 10-corte/B4.md:51 | VA-A2, VB-09 | sí |
+| 10 | VB-10 | MODIFICA | 10-corte/B7.md:26 | VB-10 | sí |
+| 11 | VB-11 | MODIFICA | 10-corte/B9a.md:48 | VB-11 | sí |
+| 12 | VB-12 | MODIFICA | 10-corte/B11.md:35 | VA-A8, VB-12 | sí |
+| 13 | VB-13 | MODIFICA | 20-fase-3/B10.md:41 | VB-13 | sí |
+| 14 | G1 | MODIFICA | 01-decisiones-vigentes.md:136 | G1 | sí |
+| 15 | G2 | MODIFICA | 10-corte/B9a.md:95 | G2, VA-A10 | sí |
+| 16 | VB-01 | AGREGA | 00-indice.md:1248 | VB-01 | sí |
+| 17 | VB-02 | AGREGA | 02-nucleo-auditoria.md:299 | VB-02 | sí |
+| 18 | VB-03 | AGREGA | 03-contrato-de-cobertura.md:1339 | VB-03 | sí |
+| 19 | VB-04 | AGREGA | 10-corte/U2.md:305 | VB-04 | sí |
+| 20 | VB-05 | AGREGA | 10-corte/V2.md:319 | VB-05 | sí |
+| 21 | VB-06 | AGREGA | 10-corte/V6.md:1067 | VB-06 | sí |
+| 22 | VB-07 | AGREGA | 20-fase-4/V7.md:830 | VB-07 | sí |
+| 23 | VB-08 | AGREGA | 10-corte/B3.md:1020 | VB-08 | sí |
+| 24 | VB-09 | AGREGA | 10-corte/B6.md:356 | VB-09 | sí |
+| 25 | VB-10 | AGREGA | 10-corte/B8a.md:467 | VB-10 | sí |
+| 26 | VB-11 | AGREGA | 20-fase-2/B9b.md:341 | VA-A6, VB-11 | sí |
+| 27 | VB-12 | AGREGA | 20-fase-3/B13b.md:157 | VB-12 | sí |
+| 28 | VB-13 | AGREGA | 80-abiertos.md:411 | VB-13 | sí |
+| 29 | VB-14 | AGREGA | 90-retirados.md:247 | VB-14 | sí |
+| 30 | VB-14 | MODIFICA | 30-el-corte.md:778 | VB-14 | sí |
+| 31 | G1 | MODIFICA | 01-decisiones-vigentes.md:317 | G1 | sí |
+| 32 | G2 | MODIFICA | 04-catalogos.md:201 | G2, VA-A3 | sí |
+| 33 | VA-A6 | OMITE | 10-corte/B5.md:871, 02-nucleo-glosario.md:320, 01-decisiones-vigentes.md:8216 | G1, VA-A6, VB-09 | sí |
+| 34 | VA-A1 | OMITE | 02-nucleo-auditoria.md:422 | VA-A1, VB-02 | sí |
+| 35 | VA-A2 | OMITE | 30-el-corte.md:727, 10-corte/V6.md:518, 10-corte/V6.md:1314 | VB-14 | no |
+| 36 | VA-A3 | OMITE | 10-corte/V3.md:283, 10-corte/V3.md:670 | VA-A3 | sí |
+| 37 | VA-A5 | OMITE | 02-nucleo.md:1353, 20-fase-1/V9b.md:349, 20-fase-1/V9b.md:601, 10-corte/V4.md:920, 01-decisiones-vigentes.md:4414, 01-decisiones-vigentes.md:12543 | G1 | no |
+| 38 | VA-A8 | OMITE | 10-corte/B6.md:309, 01-decisiones-vigentes.md:9034, 04-catalogos.md:8860 | G1, G2, VA-A5 | no |
+| 39 | VA-A10 | OMITE | 10-corte/B1.md:310, 10-corte/B1.md:346, 10-corte/B1.md:762, 10-corte/B1.md:894, 01-decisiones-vigentes.md:8615, 04-catalogos.md:6762 | G1, G2, VA-A10, VB-08 | sí |
+| 40 | VA-A9 | OMITE | 20-fase-3/B12.md:232, 20-fase-3/B12.md:383, 20-fase-3/B12.md:559, 10-corte/B13a.md:268, 01-decisiones-vigentes.md:1899 | G1, G2, VA-A10, VA-A9 | sí |
+| 41 | VA-A7 | OMITE | 02-nucleo-outbox.md:291, 10-corte/B11.md:854, 10-corte/B11.md:1551, 04-catalogos.md:4325, 10-corte/B13a.md:166, 10-corte/B11.md:2286, 80-abiertos.md:252, 04-catalogos.md:2241 | G2, VA-A1, VA-A10, VA-A7, VA-A8, VB-02 | sí |
+| 42 | VA-A4 | OMITE | 00-indice.md:1215, 10-corte/V1.md:79, 10-corte/V1.md:154, 10-corte/V1.md:379, 10-corte/V3.md:475, 10-corte/V3.md:896, 10-corte/V6.md:883, 80-abiertos.md:174, 01-decisiones-vigentes.md:2941, 04-catalogos.md:7170 | VA-A4, VB-04, VB-13 | sí |
+
+Resultado: 42/42 detectados; 39/42 por su propio bloque.
+VB: 28/28, propios 28/28. G: 4/4, propios 4/4. VA: 10/10, propios 7/10.
+Por operación: MODIFICA 18/18, AGREGA 14/14, OMITE 10/10.
+
+No detectados por el bloque propio:
+- 35 / VA-A2: purga de portada; lo detecta VB-14-1. VA-A2-1 trata el primer instante de cancelación (canario 9), no esta purga.
+- 37 / VA-A5: soporte como actor del borrado; lo detecta G1 en dos copias (G1-5 y G1-9). VA-A5 detecta otros canarios, no éste.
+- 38 / VA-A8: ausencia de mínimo de reembolso; lo detectan VA-A5-2, G1-8 y G2-6. VA-A8 detecta último ciclo y correo de disputa, no la regla del mínimo.
+
+Detecciones parciales: G1-4 y G2-5 advierten la pérdida de «cuarto» dentro del canario 42, pero no identifican la omisión de enforcementStrategy. No se los incluye como detectores semánticos completos. Sí se conserva su asociación con el canario; no son defectos de pristina.
+
+El canario 9 cuenta como detectado también por VA-A2: calificó MENOR el conflicto porque AC y TEST conservaban el primer instante. La severidad elegida no invalida la detección.
+
+Confirmación por canario (ítems de los informes finales):
+
+01. Invierte el predicado de grant vivo y permite tratar grants revocados como vigentes.
+    Detectado en: VB-01-2.
+    Fuente: .specs/HOS-1352-billing-verticals-redesign/docs/nucleo/01-glosario.md:511.
+
+02. Envía avisos pendientes al seudónimo tras la baja en vez de al destinatario original.
+    Detectado en: VB-02-3.
+    Fuente: .specs/HOS-1352-billing-verticals-redesign/docs/nucleo/07-outbox-y-notificaciones.md:42.
+
+03. Permite ejecutar una transición ambigua en vez de rechazarla y escalar el conflicto.
+    Detectado en: VB-03-2, VA-A1-1.
+    Fuente: .specs/HOS-1352-billing-verticals-redesign/docs/nucleo/03-maquinas-de-estado.md:83.
+
+04. Exige instalar el trigger antes del carril que debe crearlo, alterando la migración.
+    Detectado en: VB-04-2.
+    Fuente: .specs/HOS-1353-verticales-capacidades-y-autorizacion/descomposicion.md:61.
+
+05. Invierte la elegibilidad del título y otorga complementos durante el trial.
+    Detectado en: VB-05-2.
+    Fuente: .specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/15-entitlements-y-limits.md:140.
+
+06. Permite enviar mensajes sobre una ficha purgada, que debe ser sólo lectura.
+    Detectado en: VB-06-1, VA-A4-2.
+    Fuente: .specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/17-autorizacion.md:231.
+
+07. El panel pierde las aprobaciones pendientes de reclamo y muestra otra población.
+    Detectado en: VB-07-2, VA-A5-1.
+    Fuente: .specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/19-superficies.md:90.
+
+08. Admite dinero con decimales cuando el modelo exige enteros en unidad mínima.
+    Detectado en: VB-08-3.
+    Fuente: .specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:1063.
+
+09. Reinicia la ventana de cancelación en cada relectura y puede impedir la baja de cuenta indefinidamente.
+    Detectado en: VB-09-1, VA-A2-1.
+    Fuente: .specs/HOS-1354-billing-cobro-y-proveedor/docs/02-modelo-de-datos.md:60.
+
+10. Demora la escalada de un cobro indeterminado dos días.
+    Detectado en: VB-10-1.
+    Fuente: .specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:141.
+
+11. Consume descuentos no entregados al cliente.
+    Detectado en: VB-11-1.
+    Fuente: .specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:145.
+
+12. Excluye terminales antes de conciliar su último ciclo y pierde cobros tardíos.
+    Detectado en: VB-12-1, VA-A8-1.
+    Fuente: .specs/HOS-1354-billing-cobro-y-proveedor/docs/09-conciliacion.md:212.
+
+13. Deja el addon gratuito esperando una autorización que nunca se generará.
+    Detectado en: VB-13-1.
+    Fuente: .specs/HOS-1354-billing-cobro-y-proveedor/docs/03-maquinas-de-estado.md:2535.
+
+14. Habilita días de prueba para Partner aunque la decisión vigente los fija en cero.
+    Detectado en: G1-1.
+    Fuente: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:374.
+
+15. Compone porcentajes por suma en vez de multiplicarlos y cobra un importe distinto.
+    Detectado en: G2-7, VA-A10-1.
+    Fuente: .specs/HOS-1354-billing-cobro-y-proveedor/docs/14-promos-cortesias-y-grants.md:49.
+
+16. Inventa exclusividad de sesión que bloquea operaciones legítimas de billing.
+    Detectado en: VB-01-1.
+    Fuente: .specs/HOS-1354-billing-cobro-y-proveedor/docs/19-superficies.md:45.
+
+17. Inventa una aprobación adicional para acceder al listado operativo.
+    Detectado en: VB-02-1.
+    Fuente: .specs/HOS-1352-billing-verticals-redesign/docs/nucleo/08-auditoria-y-observabilidad.md:397.
+
+18. Inventa un tope de fuentes que deniega capacidades válidas.
+    Detectado en: VB-03-1.
+    Fuente: .specs/HOS-1352-billing-verticals-redesign/docs/12-contrato-de-cobertura.md:138.
+
+19. Inventa una supresión persistente de avisos obligatorios.
+    Detectado en: VB-04-1.
+    Fuente: .specs/HOS-1352-billing-verticals-redesign/docs/nucleo/07-outbox-y-notificaciones.md:166.
+
+20. Inventa unicidad por precio que impide publicar planes válidos.
+    Detectado en: VB-05-1.
+    Fuente: .specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/10-verticales-planes-billing-options.md:94.
+
+21. Inventa una cuota temporal de publicación separada del cupo contratado.
+    Detectado en: VB-06-2.
+    Fuente: .specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/03-maquinas-de-estado.md:488.
+
+22. Inventa incompatibilidad entre Partner y las demás verticales.
+    Detectado en: VB-07-1.
+    Fuente: .specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/18-partner.md:290.
+
+23. Inventa una espera para volver a contratar después de abandonar.
+    Detectado en: VB-08-4.
+    Fuente: .specs/HOS-1354-billing-cobro-y-proveedor/docs/03-maquinas-de-estado.md:153.
+
+24. Inventa una guarda sobre la tarjeta que impide devolver pagos confirmados.
+    Detectado en: VB-09-3.
+    Fuente: .specs/HOS-1354-billing-cobro-y-proveedor/docs/03-maquinas-de-estado.md:1851.
+
+25. Inventa una dependencia que mantiene cobrando una suscripción cuya baja se pidió.
+    Detectado en: VB-10-2.
+    Fuente: .specs/HOS-1354-billing-cobro-y-proveedor/docs/03-maquinas-de-estado.md:161.
+
+26. Inventa una condición de antigüedad de cuenta para canjear promociones.
+    Detectado en: VB-11-2, VA-A6-2.
+    Fuente: .specs/HOS-1354-billing-cobro-y-proveedor/docs/14-promos-cortesias-y-grants.md:81.
+
+27. Inventa propagación de moderación que oculta fichas sin una decisión sobre ellas.
+    Detectado en: VB-12-2.
+    Fuente: .specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/19-superficies.md:71.
+
+28. Inventa una intervención manual para contratar que no condiciona el riesgo aceptado.
+    Detectado en: VB-13-4.
+    Fuente: .specs/HOS-1354-billing-cobro-y-proveedor/docs/22-lo-legal.md:92.
+
+29. Inventa réplicas operativas de los datos comerciales descartados y obliga a conservar y exponer el sistema retirado.
+    Detectado en: VB-14-3.
+    Fuente: .specs/HOS-1354-billing-cobro-y-proveedor/docs/21-migracion.md:495.
+
+30. Conserva autorizaciones de calendario de fichas borradas que el corte debe revocar.
+    Detectado en: VB-14-2.
+    Fuente: .specs/HOS-1352-billing-verticals-redesign/docs/16-fase-7-del-paraguas.md:159.
+
+31. Consume el trial de Turista al iniciar sesión en vez de exigir el acto consciente de Empezar.
+    Detectado en: G1-2.
+    Fuente: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:527.
+
+32. Ignora cortesías y grants al decidir T1 y T6 y puede iniciar pruebas sobre usuarios cubiertos.
+    Detectado en: G2-1, VA-A3-2.
+    Fuente: .specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/03-maquinas-de-estado.md:385.
+
+33. Desaparece el formato PDF obligatorio del comprobante; se podría entregar sólo un documento web.
+    Detectado en: VB-09-2, VA-A6-1, G1-6.
+    Fuente: .specs/HOS-1354-billing-cobro-y-proveedor/docs/02-modelo-de-datos.md:383.
+
+34. Elimina el id de request obligatorio en logs y pierde la unión del incidente con la petición HTTP.
+    Detectado en: VB-02-2, VA-A1-3.
+    Fuente: .specs/HOS-1352-billing-verticals-redesign/docs/nucleo/08-auditoria-y-observabilidad.md:500.
+
+35. Elimina la purga de la portada en el corte y permite que siga sirviendo su caché anterior.
+    Detectado en: VB-14-1.
+    Fuente: .specs/HOS-1352-billing-verticals-redesign/docs/16-fase-7-del-paraguas.md:157.
+
+36. Se elimina la prohibición de recalcular al invalidar y la recomputación diferida a la próxima lectura; permite recomputar sincrónicamente cada cambio masivo del catálogo.
+    Detectado en: VA-A3-1.
+    Fuente: .specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/02-modelo-de-datos.md:708.
+
+37. Se elimina que soporte deba ejecutar el borrado legal de seudónimos; queda permitido implementarlo como tarea sin ese actor responsable.
+    Detectado en: G1-5, G1-9.
+    Fuente: .specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/22-lo-legal.md:123.
+
+38. Desaparece la ausencia de mínimo de devolución; se podría imponer un piso e impedir devolver saldos menores a él.
+    Detectado en: VA-A5-2, G1-8, G2-6.
+    Fuente: .specs/HOS-1354-billing-cobro-y-proveedor/docs/06-proveedor.md:253.
+
+39. Omite renovar mensualmente la autorización de sondas de producción; una aprobación vieja permitiría seguir gastando en corridas posteriores.
+    Detectado en: VB-08-1, VA-A10-4, G1-7, G2-4.
+    Fuente: .specs/HOS-1354-billing-cobro-y-proveedor/docs/20-testing.md:670.
+
+40. El panel deja de exigir la antigüedad desde el anuncio de las migraciones que necesitan resolución humana; puede ocultar esperas indefinidas.
+    Detectado en: VA-A9-1, VA-A10-3, G1-3, G2-10, G2-11.
+    Fuente: .specs/HOS-1354-billing-cobro-y-proveedor/docs/10-verticales-planes-billing-options.md:192.
+
+41. Elimina el correo al cliente cuando se gana la disputa por contracargo; el cobro vuelve a valer sin informar el desenlace.
+    Detectado en: VB-02-4, VA-A1-2, VA-A7-1, VA-A8-2, VA-A10-2, G2-2, G2-3, G2-8, G2-9.
+    Fuente: .specs/HOS-1354-billing-cobro-y-proveedor/docs/03-maquinas-de-estado.md:1779.
+
+42. Elimina declarar enforcementStrategy por clave; el catálogo ya no determina cómo hacer cumplir cada límite y el implementador puede omitir esa política.
+    Detectado en: VB-04-3, VB-13-2, VA-A4-1.
+    Fuente: .specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/15-entitlements-y-limits.md:574.
+    Efectos parciales: G1-4, G2-5.

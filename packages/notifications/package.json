@@ -24,7 +24,6 @@
     "dependencies": {
         "@react-email/components": "^1.0.12",
         "@react-email/render": "^2.1.0",
-        "@repo/billing": "workspace:*",
         "@repo/config": "workspace:*",
         "@repo/db": "workspace:*",
         "@repo/logger": "workspace:*",
@@ -38,10 +37,10 @@
         "@types/react": "^19.2.18",
         "@types/react-dom": "^19.2.4",
         "@types/sanitize-html": "^2.16.1",
-        "@vitest/coverage-v8": "^4.1.10",
+        "@vitest/coverage-v8": "^5.0.5",
         "react-dom": "19.2.8",
         "tsup": "^8.5.1",
         "typescript": "6.0.3",
-        "vitest": "^4.1.11"
+        "vitest": "^5.0.5"
     }
 }

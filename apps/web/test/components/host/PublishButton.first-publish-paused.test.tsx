@@ -2,11 +2,14 @@
  * @file PublishButton.first-publish-paused.test.tsx
  * @description Admin-paused new signups on the property card's Publish action.
  *
- * A host's FIRST publish starts a trial, so it is paused while new signups are
- * frozen. The card then shows the shared "publishing new listings is paused —
- * your listing stays a draft" notice: never the Publish button (it would fail)
- * and never the plans link (the checkout it leads to is paused too). A stale
- * verdict that lets the click through shows the same notice on the API's 409.
+ * When the publish route answers `NEW_PAID_SIGNUPS_FROZEN`, the card shows the
+ * shared "publishing new listings is paused — your listing stays a draft"
+ * notice: never a retry and never the plans link (the checkout it leads to is
+ * paused too).
+ *
+ * The PROACTIVE `firstPublishPaused` prop is gone (HOS-1668): it was fed by
+ * `publish-eligibility`, and PB1 does not read the signup freeze, so nothing
+ * produced it any more. Only the reactive branch remains.
  */
 
 import { render, screen, waitFor } from '@testing-library/react';
@@ -30,7 +33,8 @@ const ES_PAUSED_BODY =
 
 function props(overrides: Record<string, unknown> = {}) {
     return {
-        accommodationId: 'acc-1',
+        vertical: 'accommodation',
+        listingId: 'acc-1',
         locale: 'es' as const,
         label: 'Publicar',
         confirmTitle: '¿Publicar este alojamiento?',
@@ -42,8 +46,8 @@ function props(overrides: Record<string, unknown> = {}) {
         subscriptionRequiredCta: 'Ver planes',
         missingRequirementsMessage: 'Para publicar falta completar: {{fields}}.',
         missingRequirementsCta: 'Completar en el editor',
-        canPublish: true,
-        startsTrial: false,
+        affordance: { kind: 'covered', canPublish: true, startsTrial: false, trialDays: null },
+        checkFailedText: 'No pudimos comprobar si podés publicar.',
         confirmTrialNote: 'Al publicar arranca tu prueba gratis.',
         choosePlanLabel: 'Elegir plan de anfitrión',
         ...overrides
@@ -55,29 +59,6 @@ beforeEach(() => {
 });
 
 describe('PublishButton — first publish paused by admin-frozen signups', () => {
-    it('shows the paused notice instead of Publish or the plans link', () => {
-        // Arrange / Act — what the eligibility endpoint answers while frozen
-        render(
-            <PublishButton
-                {...props({ canPublish: false, startsTrial: false, firstPublishPaused: true })}
-            />
-        );
-
-        // Assert
-        expect(screen.getByTestId('publish-paused-notice')).toHaveTextContent(ES_PAUSED_BODY);
-        expect(screen.queryByText('Publicar')).not.toBeInTheDocument();
-        expect(screen.queryByText('Elegir plan de anfitrión')).not.toBeInTheDocument();
-    });
-
-    it('keeps Publish for an owner whose publish is not paused', () => {
-        // Arrange / Act
-        render(<PublishButton {...props({ firstPublishPaused: false })} />);
-
-        // Assert
-        expect(screen.getByText('Publicar')).toBeInTheDocument();
-        expect(screen.queryByTestId('publish-paused-notice')).not.toBeInTheDocument();
-    });
-
     it('shows the paused notice when a stale verdict reaches the frozen API', async () => {
         // Arrange
         publishMock.mockResolvedValue({
@@ -90,7 +71,18 @@ describe('PublishButton — first publish paused by admin-frozen signups', () =>
             }
         });
         const user = userEvent.setup();
-        render(<PublishButton {...props({ startsTrial: true })} />);
+        render(
+            <PublishButton
+                {...props({
+                    affordance: {
+                        kind: 'publish',
+                        canPublish: true,
+                        startsTrial: true,
+                        trialDays: 30
+                    }
+                })}
+            />
+        );
 
         // Act
         await user.click(screen.getByText('Publicar'));

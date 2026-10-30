@@ -17,7 +17,7 @@
  * The breakpoint is read from the TS constant and asserted against the CSS, so
  * the number is never written twice in this file.
  *
- * Mirrors the fs-based scanning style of `commerce-lead-isolation.test.ts` —
+ * Mirrors the fs-based scanning style of `dialog-panel-padding.test.ts` —
  * no new tooling required.
  *
  * @module test/static-guards/search-bar-breakpoint-sync

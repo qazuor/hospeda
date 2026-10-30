@@ -10,6 +10,8 @@ export interface ServerAnalyticsClient {
         distinctId: string;
         event: string;
         properties?: Record<string, unknown>;
+        uuid?: string;
+        timestamp?: Date;
     }): void;
 }
 
@@ -24,6 +26,8 @@ export function createServerAnalytics(options: {
             distinctId: string;
             name: TName;
             properties: AnalyticsEventProperties<TName>;
+            uuid?: string;
+            timestamp?: Date;
         }): void {
             try {
                 const client = options.getClient();
@@ -40,7 +44,9 @@ export function createServerAnalytics(options: {
                         ...(options.getGlobalProperties
                             ? { globalProperties: options.getGlobalProperties() }
                             : {})
-                    })
+                    }),
+                    ...(input.uuid === undefined ? {} : { uuid: input.uuid }),
+                    ...(input.timestamp === undefined ? {} : { timestamp: input.timestamp })
                 });
             } catch (error) {
                 options.onError?.(error, { distinctId: input.distinctId, name: input.name });

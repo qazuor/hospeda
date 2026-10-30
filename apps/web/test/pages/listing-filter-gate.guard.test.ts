@@ -9,7 +9,7 @@
  *   - `destinos/index.astro` (W2-3) was gated `cacheable: true` on the belief
  *     that its `?attractions=` filter was purely client-side. The toggle is —
  *     the frontmatter still reads the param to seed the badge state.
- *   - `gastronomia/index.astro` and `experiencias/index.astro` (W2-4) were
+ *   - `comer-y-salir/index.astro` and `experiencias/index.astro` (W2-4) were
  *     gated `cacheable: true` while reading seven and eight filter params.
  *
  * Neither served wrong content, because the Cloudflare rule requires an empty

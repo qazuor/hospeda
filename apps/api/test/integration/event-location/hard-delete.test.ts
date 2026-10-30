@@ -1,30 +1,175 @@
-import { beforeAll, describe, expect, it } from 'vitest';
+import { randomUUID } from 'node:crypto';
+import { destinations, eq, eventLocations, getDb } from '@repo/db';
+import { PermissionEnum, RoleEnum } from '@repo/schemas';
+import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it } from 'vitest';
 import { initApp } from '../../../src/app';
+import { clearCache } from '../../../src/middlewares/cache';
 import { validateApiEnv } from '../../../src/utils/env';
+import { testDb } from '../../e2e/setup/test-database';
+import {
+    ADMIN_GATE_PERMISSIONS,
+    buildMockActorHeaders,
+    createMockActorUser
+} from '../helpers/mock-actor';
 
-describe('DELETE /event-locations/:id/hard (hard delete)', () => {
+// The mock-actor headers are only honoured when CI is unset.
+delete process.env.CI;
+
+/**
+ * DELETE /api/v1/admin/event-locations/:id/hard. The route gate asks for EVENT_LOCATION_HARD_DELETE and the service asks for EVENT_LOCATION_UPDATE.
+ */
+describe('DELETE /admin/event-locations/:id/hard (hard delete)', () => {
     let app: ReturnType<typeof initApp>;
-    const base = '/api/v1/event-locations';
+    const base = '/api/v1/admin/event-locations';
+    const NONEXISTENT_UUID = 'a0000000-0000-4000-8000-000000000001';
+    const deleter: readonly PermissionEnum[] = [
+        ...ADMIN_GATE_PERMISSIONS,
+        PermissionEnum.EVENT_LOCATION_HARD_DELETE,
+        PermissionEnum.EVENT_LOCATION_UPDATE
+    ];
+    const without = (permission: PermissionEnum): readonly PermissionEnum[] =>
+        deleter.filter((candidate) => candidate !== permission);
+    let actorId: string;
+    let rowId: string;
 
-    beforeAll(() => {
+    beforeAll(async () => {
+        await testDb.setup();
+        await testDb.clean();
+        clearCache();
         validateApiEnv();
+        process.env.HOSPEDA_ALLOW_MOCK_ACTOR = 'true';
         app = initApp();
     });
 
-    it('requires authentication', async () => {
-        const validUuid = '00000000-0000-0000-0000-000000000001';
-        const res = await app.request(`${base}/${validUuid}/hard`, {
-            method: 'DELETE',
-            headers: { 'user-agent': 'vitest' }
-        });
-        expect([401, 403]).toContain(res.status);
+    beforeEach(async () => {
+        actorId = (await createMockActorUser({ label: 'event-location-hard-delete' })).id;
+        rowId = await seedRow({});
     });
 
-    it('returns 400 for invalid UUID format', async () => {
-        const res = await app.request(`${base}/not-a-uuid/hard`, {
+    afterEach(async () => {
+        await testDb.clean();
+        clearCache();
+    });
+
+    afterAll(async () => {
+        await testDb.teardown();
+    });
+
+    const seedDestination = async (): Promise<string> => {
+        const suffix = randomUUID().slice(0, 8);
+        const rows = await getDb()
+            .insert(destinations)
+            .values({
+                slug: `dest-${suffix}`,
+                name: `Destination ${suffix}`,
+                summary: 'Destination seeded for event location admin tests.',
+                description: 'Destination seeded for event location admin tests.',
+                destinationType: 'CITY',
+                path: `/dest-${suffix}`,
+                pathIds: '',
+                level: 4,
+                location: {
+                    country: 'AR',
+                    state: 'ER',
+                    coordinates: { lat: '-32.48', long: '-58.23' }
+                }
+            })
+            .returning({ id: destinations.id });
+        const id = rows[0]?.id;
+        if (!id) throw new Error('seedDestination: destination insert failed');
+        return id;
+    };
+
+    const seedRow = async ({
+        deleted = false
+    }: {
+        readonly deleted?: boolean;
+    }): Promise<string> => {
+        const suffix = randomUUID().slice(0, 8);
+        const destinationId = await seedDestination();
+        const rows = await getDb()
+            .insert(eventLocations)
+            .values({
+                slug: `location-${suffix}`,
+                destinationId,
+                ...(deleted ? { deletedAt: new Date() } : {})
+            })
+            .returning({ id: eventLocations.id });
+        const id = rows[0]?.id;
+        if (!id) throw new Error('seed event location: insert failed');
+        return id;
+    };
+
+    const hardDelete = ({
+        id,
+        permissions,
+        withActor = true
+    }: {
+        readonly id: string;
+        readonly permissions: readonly PermissionEnum[];
+        readonly withActor?: boolean;
+    }) =>
+        app.request(`${base}/${id}/hard`, {
             method: 'DELETE',
-            headers: { 'user-agent': 'vitest' }
+            headers: withActor
+                ? buildMockActorHeaders({ actorId, permissions, role: RoleEnum.ADMIN })
+                : { 'user-agent': 'vitest' }
         });
-        expect([400, 401, 403, 422]).toContain(res.status);
+
+    const countRows = async (id: string): Promise<number> =>
+        (
+            await getDb()
+                .select({ id: eventLocations.id })
+                .from(eventLocations)
+                .where(eq(eventLocations.id, id))
+        ).length;
+
+    it('answers 401 without an authenticated actor', async () => {
+        const res = await hardDelete({ id: rowId, permissions: deleter, withActor: false });
+        expect(res.status).toBe(401);
+        expect(await countRows(rowId)).toBe(1);
+    });
+
+    it('answers 403 when the actor lacks the route permission (EVENT_LOCATION_HARD_DELETE)', async () => {
+        const res = await hardDelete({
+            id: rowId,
+            permissions: without(PermissionEnum.EVENT_LOCATION_HARD_DELETE)
+        });
+        expect(res.status).toBe(403);
+        expect(await countRows(rowId)).toBe(1);
+    });
+
+    it('answers 403 when the actor lacks the service permission (EVENT_LOCATION_UPDATE)', async () => {
+        const res = await hardDelete({
+            id: rowId,
+            permissions: without(PermissionEnum.EVENT_LOCATION_UPDATE)
+        });
+        expect(res.status).toBe(403);
+        expect(await countRows(rowId)).toBe(1);
+    });
+
+    it('answers 400 for an invalid UUID', async () => {
+        const res = await hardDelete({ id: 'not-a-uuid', permissions: deleter });
+        expect(res.status).toBe(400);
+    });
+
+    it('answers 404 for an event location that does not exist', async () => {
+        const res = await hardDelete({ id: NONEXISTENT_UUID, permissions: deleter });
+        expect(res.status).toBe(404);
+    });
+
+    it('permanently deletes the event location', async () => {
+        const res = await hardDelete({ id: rowId, permissions: deleter });
+        expect(res.status).toBe(200);
+        const body = await res.json();
+        expect(body.data).toMatchObject({ success: true });
+        expect(await countRows(rowId)).toBe(0);
+    });
+
+    it('permanently deletes an event location that was soft-deleted first (HOS-1903)', async () => {
+        const softDeletedId = await seedRow({ deleted: true });
+        const res = await hardDelete({ id: softDeletedId, permissions: deleter });
+        expect(res.status).toBe(200);
+        expect(await countRows(softDeletedId)).toBe(0);
     });
 });

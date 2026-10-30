@@ -1,0 +1,57 @@
+# VA-A8 · fuente → spec · reglas que faltan o están distintas
+
+Spec: `ciegas/s/fe90e1d7/`. Fuentes: `ciegas/fuentes/.specs/HOS-1352-billing-verticals-redesign/docs/`.
+Rutas de fuente abreviadas desde `docs/`.
+
+## Hallazgos
+
+01-decision-log.md:658 · «DEC-ENT-003: al perder el plan comercial, la persona recupera la posibilidad de comprar Turista VIP» · distinta en 01-decisiones-vigentes.md:2825 (la oración «Al perder el plan comercial, recupera la posibilidad de comprarlo.» se borró del texto de la decisión sin tachado en la fuente, sin «[…]» y sin nota «Parte sin efecto»; el formato de la consolidada promete el texto entero salvo lo tachado) · MENOR (el comportamiento se deduce de la guarda «no tiene un plan vigente que herede», pero ningún AC prueba la readmisión: AC:B3:28, 10-corte/B3.md:553, prueba sólo el rechazo)
+
+01-decision-log.md:7939 · «DEC-ARCH-017 📌 (BJ): la guarda de S1 rechaza la compra de Turista VIP mientras el plan vigente lo hereda; al perder ese plan, la compra vuelve a admitirse» · distinta en 01-decisiones-vigentes.md:6520 (se borró «; al perder ese plan, la compra vuelve a admitirse» sin «[…]» ni nota de adjudicación; es la misma omisión que en DEC-ENT-003, en dos lugares) · MENOR (misma razón: la conducta sale de la guarda, pero la cláusula positiva no tiene AC ni test)
+
+01-decision-log.md:1150 · «DEC-SUB-006, implicación 6: el crédito se consume entero en la fecha y no deja saldo, así que no se modela un saldo a favor» · ausente en 01-decisiones-vigentes.md:700-713 (la lista de implicaciones termina en la 5; la 6 no aparece en ningún lado de la spec, ni con «[…]» ni con nota de adjudicación) · MENOR (es una restricción del modelo de datos, pero borrarla no obliga a construir nada distinto)
+
+26-fase-9-completa/10-decisiones-del-owner.md:36 · «5a: máquina mínima de `refund` (REQUESTED → CONFIRMED → EXECUTED | FAILED) y la acción administrativa 14, "asentar un cobro o una devolución que ya ocurrió por fuera" (el catálogo pasa de 13 a 14)» · distinta en 01-decisiones-vigentes.md:11051 (el registro trunca la decisión en el `\|` escapado: queda «…`REQUESTED → CONFIRMED → EXECUTED \» y se pierden `FAILED` y la acción 14) · MENOR (la regla está entera en DEC-RF-008, 02-nucleo-glosario.md:393, 04-catalogos.md:4367-4439 y B5)
+
+28-fase-9-vuelta-1/10-decisiones-del-owner.md:71-73 · «Caducidad: G1-1 y R1 (en lo que decían de la cartera) caducan por DEC-MIG-006 (C12); G2-4, el ⚠️ de T7, caduca porque T7 salió (N7)» · ausente en 01-decisiones-vigentes.md:11299-11378 (el registro lista G1-1 y G2-4 como letras vigentes, sin la nota de caducidad, dentro del archivo «Decisiones vigentes») · MENOR (la regla viva está bien en DEC-MIG-006 y en el catálogo; el registro es sólo citable)
+
+29-fase-8-vuelta-2/10-decisiones-del-owner.md:75-76 · «Caducidad: R15 cae entera con DEC-MIG-006 (C12, L1-b), y con ella N-B-01» · ausente en 01-decisiones-vigentes.md:11686-11692 (R15 aparece como letra vigente, sin la nota; el mismo registro tampoco marca muertas las letras de la discontinuación —R5, Q-ALTAS, R24, Q-FECHA, Q-ALTAS-b, Q-ACC16, Q-ANUNCIO— ni las de lápidas y detector —R2, R21, R21-b, R3-G4-1, R9-b—, ni 26/6a-6b) · MENOR (las DEC y el catálogo las dan por muertas: 90-retirados.md y 04-catalogos.md:185-211, :566, :1030)
+
+40-congelamiento-y-ci/10-decisiones-del-owner.md:19-20,23 · «N, O y R: congelar las altas pagas self-service nuevas del sistema viejo (start-paid con los trials, el self-checkout de comercio, la compra de addons y la primera publicación que arranca trial) con un setting de `billing_settings`» · distinta en 01-decisiones-vigentes.md:6733 (la adjudicación de DEC-MIG-002 dice que «sobrevive "se siguen tomando altas en el sistema actual"», sin mencionar el congelamiento del 2026-10-01; la letra figura sólo en el registro, 13268-13326) · MENOR (la fuente lo declara transitorio y del sistema viejo, ya implementado en el PR #3437; no cambia lo que se construye en el nuevo)
+
+40-congelamiento-y-ci/10-decisiones-del-owner.md:25 · «T: el guard de destino cuenta sólo los commits propios de la épica: falla si HEAD trae un commit de la épica que no está ni en el destino ni en `staging`» · distinta en 30-el-corte.md:558-563 (el punto 5 describe el guard como «condición corregida por P» y dice que falla la promoción `staging → main` mientras exista la rama porque trae commits de la épica que `main` no tiene, que es la condición de P que T corrigió; T está sólo en DEC-CI-001 📌2, 01-decisiones-vigentes.md:9736) · MENOR (el acto que se exige, borrar la rama al mergear, no cambia; el guard ya está implementado aparte)
+
+01-decision-log.md:5902-5905 (con 5906-5909 y 1366-1373) · «DEC-MP-008 📌 N8: la cancelación hecha por el pagador desde su cuenta de MP está pendiente de medición; hasta medir se trata como baja del proveedor» · distinta en 01-decisiones-vigentes.md:2553-2558 (la adjudicación PARCIAL saca sólo la pausa y deja la cancelación «pendiente de medición», cuando EX-52 ya está `VERIFIED` y la decisión del lote L-A está en DEC-SUB-009 📌4, 01-decisiones-vigentes.md:913-921) · MENOR (la conducta es la misma; es texto vencido en un 📌 sólo citable)
+
+06-mp-validation-matrix.md:129 · «Regla 7: antes de la FASE 10, todas las filas de la matriz se re-verifican (S-MP-02)» · distinta en 10-corte/B1.md:588-590 (la spec adopta la regla de B/06: una fila se re-verifica antes de implementar su capacidad y sólo «si pasó tiempo», y caduca por un cambio en lo que la sostiene, no por antigüedad; no pide re-verificar todas las filas antes de implementar) · MENOR (la versión de B1 cierra S-MP-02 de otra fuente posterior; no se ve una adjudicación explícita que retire la regla 7)
+
+06-mp-validation-matrix.md:122-123,128 · «Regla 4: una fila sin fecha se lee como `UNKNOWN`; regla 6: un `PARTIALLY_SUPPORTED` tiene que nombrar qué parte» · ausente (B1.md:581-583 conserva «toda fila lleva fecha y entorno», pero no dice que una fila sin fecha valga `UNKNOWN` ni que un parcial nombre la restricción) · MENOR (son reglas de mantenimiento de la matriz y de la batería; no cambian código del cobro)
+
+06-mp-validation-matrix.md:131-138 · «Estados (§61): qué significan VERIFIED, NOT_SUPPORTED, PARTIALLY_SUPPORTED (restricción nombrada) y UNKNOWN (no se probó, o se probó hace demasiado)» · ausente (la spec usa los cuatro estados en 04-catalogos.md MP:* y en los gates sin definirlos; «UNKNOWN = se probó hace demasiado» no está) · MENOR
+
+01-decision-log.md:43-56 · «Reglas del log: una decisión ACCEPTED no se edita (se cambia con otra SUPERSEDED); ninguna decisión sobre MP se toma con su fila UNKNOWN; sólo tres fundamentos admitidos (PDR, medición fechada, respuesta del owner); toda cita de § se verifica contra el PDR» · ausente como reglas (01-decisiones-vigentes.md:1809 sólo cita la «regla 3» de pasada; 00-indice.md manda escribir los cambios en la consolidada y en el log, sin las otras reglas) · MENOR (son reglas del proceso de diseño, no de la implementación)
+
+## Lo que no es hallazgo (para que no se repita)
+
+- **DEC del log**: recorrí las 146 entradas y sus 183 📌 con una comparación por oración contra el bloque de cada DEC en `01-decisiones-vigentes.md`, después de normalizar los links y sacar lo tachado. Todo lo que falta, salvo los tres casos de arriba, está cubierto por una nota «Parte sin efecto» con su «Lo supera:», por un 📌 muerto en `90-retirados.md` o por una decisión `SUPERSEDED` (SUB-001, SUB-003, SUB-005, MIG-004, SUB-015, GRANT-010, SUB-018, ARCH-011). Las 12 DEC `SUPERSEDED` lo son en el campo *Estado* de la fuente, y verifiqué que cada «Lo supera:» cite una línea real que trae el texto citado.
+- **Matriz**: las 117 filas aparecen con sus columnas en `04-catalogos.md` `MP:*`. Las diferencias que marcó la comparación mecánica son de formato: links pasados a «(ruta)» y `<br>`.
+- **Letras del owner** (26, 28, 29, 30, 37, 38, 39, 40): cada fila está en el registro de `01-decisiones-vigentes.md` (10883 en adelante) y su regla está en la DEC o 📌 correspondiente, o en la pieza. Lo busqué por términos clave en las piezas: TRIAL-004 📌3 (CUIT), g3, L2-f1 y L2-f2, A, AA, AG, I, M y AJ (Turnstile), E e Y, N/S, P/AC, Q, Z y AE, V, W, AL, las de U1 del lote 1, los lotes 2 a 6, H, I y J de 39, y B y E de 39.
+- **D1-coherencia-del-conjunto.md**: es un informe de hallazgos, no tiene reglas propias. Sus siete arreglos están en la spec: G13 con las seis respuestas (04-catalogos.md:7543), la fila 27 y la mitad de la marca de `puedeCobrarle` (02-nucleo-glosario.md:537 y 717), los cinco hechos de reinicio, `PB1`–`PB13` (trece) en V6, y las cifras de acciones.
+
+## Resumen
+
+| archivo | líneas recorridas | reglas normativas vivas revisadas | ausente | distinta |
+|---|---|---|---|---|
+| `01-decision-log.md` | 1-8160 entero | 134 DEC vivas + ~175 📌 vivos (de 146 DEC y 183 📌; Formato, Reglas y Resumen también) | 2 (SUB-006 impl. 6; Reglas del log) | 3 (ENT-003; ARCH-017 📌5; MP-008 📌2) |
+| `06-mp-validation-matrix.md` | 1-573 entero | 117 filas + 7 reglas + estados (el resto es relato y conteos) | 2 (reglas 4 y 6; estados) | 1 (regla 7) |
+| `26-fase-9-completa/10-…` | 1-77 | 45 letras | 0 | 1 (5a truncada) |
+| `28-fase-9-vuelta-1/10-…` | 1-73 | 37 letras + nota de caducidad | 1 (caducidad) | 0 |
+| `29-fase-8-vuelta-2/10-…` | 1-76 | 30 letras + nota de caducidad | 1 (caducidad) | 0 |
+| `30-revision-del-owner/10-…` | 1-95 | 35 letras + el párrafo de los tres ítems sin objeción (l. 49) | 0 | 0 |
+| `37-fase-8-vuelta-3/10-…` | 1-73 | 40 letras | 0 | 0 |
+| `38-fase-5/10-…` | 1-164 | 50 letras + premisas (l. 9-13) + condición de C (l. 35-46) | 0 | 0 |
+| `39-fases-6-y-7/10-…` | 1-52 | 13 letras | 0 | 0 |
+| `40-congelamiento-y-ci/10-…` | 1-35 | 7 letras | 0 | 2 (N/O/R contra MIG-002; T en 30-el-corte) |
+| `37-fase-8-vuelta-3/D1-coherencia-del-conjunto.md` | 1-276 | 0 propias: es un informe de hallazgos; revisé que los 7 estén resueltos en la spec | 0 | 0 |
+
+**Total: 13 líneas de hallazgo, 6 `ausente` y 7 `distinta`. 0 `BLOQUEA`, 13 `MENOR`.**

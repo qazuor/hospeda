@@ -92,7 +92,7 @@ export const createUserBookmarkByEntityType = (entityType: EntityTypeEnum): User
             '6ba7b810-9dad-11d1-80b4-00c04fd430cf' as AccommodationId,
         [EntityTypeEnum.PAYMENT]: '6ba7b810-9dad-11d1-80b4-00c04fd430d0' as AccommodationId,
         [EntityTypeEnum.EXPERIENCE]: '6ba7b810-9dad-11d1-80b4-00c04fd430d1' as AccommodationId,
-        [EntityTypeEnum.GASTRONOMY]: '6ba7b810-9dad-11d1-80b4-00c04fd430d2' as AccommodationId,
+        [EntityTypeEnum.VENUE]: '6ba7b810-9dad-11d1-80b4-00c04fd430d2' as AccommodationId,
         [EntityTypeEnum.HOST_TRADE]: '6ba7b810-9dad-11d1-80b4-00c04fd430d3' as AccommodationId,
         [EntityTypeEnum.PARTNER]: '6ba7b810-9dad-11d1-80b4-00c04fd430d4' as AccommodationId
     };
@@ -108,7 +108,7 @@ export const createUserBookmarkByEntityType = (entityType: EntityTypeEnum): User
         [EntityTypeEnum.BILLING_SUBSCRIPTION]: 'Active Subscription',
         [EntityTypeEnum.PAYMENT]: 'Recent Payment',
         [EntityTypeEnum.EXPERIENCE]: 'Memorable Experience',
-        [EntityTypeEnum.GASTRONOMY]: 'Tasty Spot',
+        [EntityTypeEnum.VENUE]: 'Tasty Spot',
         [EntityTypeEnum.HOST_TRADE]: 'Trusted Provider',
         [EntityTypeEnum.PARTNER]: 'Allied Partner'
     };

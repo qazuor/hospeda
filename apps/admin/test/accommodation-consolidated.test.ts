@@ -1,4 +1,4 @@
-import { EntitlementKey } from '@repo/billing';
+import { EntitlementKeyEnum } from '@repo/schemas';
 import { describe, expect, it, vi } from 'vitest';
 import {
     FieldTypeEnum,
@@ -31,8 +31,11 @@ describe('AccommodationConsolidatedConfig', () => {
             );
 
             expect(config).toBeDefined();
-            // 8 sections: import-from-url (SPEC-222) + the 7 standard consolidated sections
-            expect(config.sections).toHaveLength(8);
+            // 7 sections: import-from-url (SPEC-222) + the 6 standard consolidated sections
+            expect(config.sections).toHaveLength(7);
+            expect(config.sections.some((section) => section.id === 'states-moderation')).toBe(
+                false
+            );
             expect(config.metadata).toBeDefined();
             // mockT returns the i18n key verbatim; the real translated value is 'Accommodation'
             expect(config.metadata?.title).toBe('admin-entities.entities.accommodation.singular');
@@ -47,7 +50,7 @@ describe('AccommodationConsolidatedConfig', () => {
 
             expect(basicInfoSection).toBeDefined();
             expect(basicInfoSection?.modes).toEqual(['view', 'edit', 'create']);
-            expect(basicInfoSection?.fields).toHaveLength(9); // name, summary, description, richDescription, type, isFeatured, isVerified, destinationId, ownerId
+            expect(basicInfoSection?.fields).toHaveLength(8); // name, summary, description, richDescription, type, isVerified, destinationId, ownerId
         });
 
         it('should have all required fields in basic-info section', () => {
@@ -61,7 +64,7 @@ describe('AccommodationConsolidatedConfig', () => {
             expect(fieldIds).toContain('name');
             expect(fieldIds).toContain('description');
             expect(fieldIds).toContain('type');
-            expect(fieldIds).toContain('isFeatured');
+            expect(fieldIds).not.toContain('isFeatured');
             expect(fieldIds).toContain('isVerified');
             expect(fieldIds).toContain('destinationId');
             expect(fieldIds).toContain('ownerId');
@@ -76,11 +79,11 @@ describe('AccommodationConsolidatedConfig', () => {
             );
             const viewSections = filterSectionsByMode(config.sections, 'view');
 
-            expect(viewSections).toHaveLength(7);
+            expect(viewSections).toHaveLength(6);
             expect(viewSections[0].id).toBe('basic-info');
 
             // All fields must be present in view mode
-            expect(viewSections[0].fields).toHaveLength(9);
+            expect(viewSections[0].fields).toHaveLength(8);
         });
 
         it('should filter sections correctly for edit mode', () => {
@@ -90,14 +93,14 @@ describe('AccommodationConsolidatedConfig', () => {
             );
             const editSections = filterSectionsByMode(config.sections, 'edit');
 
-            // 7 = 6 standard edit sections + import-from-url (SPEC-222, edit+create only)
-            expect(editSections).toHaveLength(7);
+            // 6 = 5 standard edit sections + import-from-url (SPEC-222, edit+create only)
+            expect(editSections).toHaveLength(6);
             // import-from-url is positioned first so admins can prefill before editing
             expect(editSections[0].id).toBe('import-from-url');
 
             // All fields must be present in edit mode
             const editBasicInfo = editSections.find((s) => s.id === 'basic-info');
-            expect(editBasicInfo?.fields).toHaveLength(9);
+            expect(editBasicInfo?.fields).toHaveLength(8);
         });
 
         it('should filter sections correctly for create mode', () => {
@@ -245,7 +248,9 @@ describe('AccommodationConsolidatedConfig', () => {
 
             expect(richDescription?.type).toBe(FieldTypeEnum.RICH_TEXT);
             expect(richDescription?.required).toBe(false);
-            expect(richDescription?.entitlementKey).toBe(EntitlementKey.CAN_USE_RICH_DESCRIPTION);
+            expect(richDescription?.entitlementKey).toBe(
+                EntitlementKeyEnum.CAN_USE_RICH_DESCRIPTION
+            );
             const typeConfig = richDescription?.typeConfig as { maxLength?: number } | undefined;
             expect(typeConfig?.maxLength).toBe(5000);
         });

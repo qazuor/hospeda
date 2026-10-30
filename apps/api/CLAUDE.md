@@ -148,7 +148,6 @@ options: {
     requests: 5,
     windowMs: 60000
   },
-  cacheTTL: 300,                              // Cache for 5 minutes
   middlewares: [customMiddleware]             // Additional middleware
 }
 ```
@@ -193,7 +192,7 @@ export const handler = async (c: Context) => {
 
   // Check permissions — NEVER check roles directly, even for admin-only
   // routes. `actor.roles` (HOS-296) holds every role the actor wears at
-  // once (a user can be HOST and COMMERCE_OWNER simultaneously); routing
+  // once (a user can be HOST and VENUE_OWNER / EXPERIENCE_OWNER simultaneously); routing
   // logic must always ask "does the actor hold permission X".
   if (!actor.permissions.includes(PermissionEnum.ACCOMMODATION_UPDATE_ANY)) {
     return c.json({ error: 'Insufficient permissions' }, 403);
@@ -523,7 +522,7 @@ Route files are in `routes/destination/public/`. The `by-path` route is register
 
 ## Performance Considerations
 
-- Use `cacheTTL` for static/slow-changing data
+- Response caching is global (cache middleware TTL) plus Cloudflare's edge cache rule; there is no per-route TTL option
 - Implement pagination for list endpoints (always)
 - Use database connection pooling (automatic with Drizzle)
 - Monitor metrics at `/metrics` endpoint
@@ -551,112 +550,23 @@ Route files are in `routes/destination/public/`. The `by-path` route is register
 9. **Validate all inputs** with Zod schemas
 10. **Use TypeScript strict mode** - no `any` types
 
-## Entitlement & Limit Enforcement (SPEC-145)
+## Entitlement & Limit Enforcement
 
-### Middleware chain order
-
-Every protected route runs middleware in this order:
-
-```
-auth → actor → billing → billingCustomer → entitlement → trial → [options.middlewares]
-```
-
-`options.middlewares` is where entitlement and limit gates live. Gate the
-route there — never inside the handler body.
-
-The `entitlement` step is `entitlementMiddleware()`
-(`src/utils/create-app.ts:176`), the LOADER that populates `userEntitlements` /
-`userLimits` on the context. It is NOT the gate, and it runs before `trial`.
-This diagram used to omit it entirely.
-
-### Ordering invariants
-
-- `trialMiddleware` fires **before** `requireEntitlement`. An expired-trial
-  user gets HTTP 402 before the 403 entitlement gate (T-019 learning).
-- Entitlement gate always precedes limit check. Gate the feature first so
-  the usage counter is never queried for users who lack the feature.
-
-### Unified ServiceError contract
-
-Gates MUST throw `ServiceError`, never `HTTPException(403)` directly:
-
-- Missing entitlement: `ServiceError(ServiceErrorCode.ENTITLEMENT_REQUIRED)` →
-  HTTP 403 `{ error: { code: 'ENTITLEMENT_REQUIRED', ... } }`
-- Limit reached: `ServiceError(ServiceErrorCode.LIMIT_REACHED)` →
-  HTTP 403 `{ error: { code: 'LIMIT_REACHED', ... } }`
-
-The global `createErrorHandler()` performs the mapping. Direct
-`HTTPException(403)` bypasses that mapping and breaks API consumers.
-
-### Staff bypass (INV-6)
-
-`SUPER_ADMIN`, `ADMIN`, `EDITOR`, and `CLIENT_MANAGER` bypass entitlement
-checks. `entitlementMiddleware` grants them the full unlimited set (all
-`EntitlementKey` values, all `LimitKey` values at `-1`) before
-`options.middlewares` runs. By the time `requireEntitlement` executes, the
-key is already in their set — no 403 is ever thrown. The bypass is policy
-of the loader, not the checker.
-
-### `clearEntitlementCache` invariant (INV-1)
-
-Every money-mutating lifecycle event (subscription activated / upgraded /
-downgraded / cancelled / paused / resumed; addon purchased / expired) MUST
-call `clearEntitlementCache(customerId)`. Failure to do so leaves stale
-plan entitlements in the 5-minute in-memory FIFO cache, causing the user
-to see the old plan's gates until TTL expires.
-
-The transversal guard test (`apps/api/test/services/inv1-cache-invalidation.guard.test.ts`,
-SPEC-145 T-021) statically scans ~24 handler files and fails CI if any one
-drops the call.
-
-### Phantom gates / reserved limit stubs
-
-`// PHANTOM-GATE (SPEC-145)`: a gate function exists in
-`middlewares/tourist-entitlements.ts` or `middlewares/accommodation-entitlements.ts`
-but the route it protects has not been built yet. Do not delete these;
-do not build the route without a spec. The snapshot guard excepts them.
-
-**An unmounted gate helper does NOT prove the feature is unprotected.** A route
-may call the generic `requireEntitlement` directly instead of the named helper,
-leaving the helper stale while the gate stays real and enforced. Measured
-2026-08-31: of the four helpers marked `PHANTOM-GATE`, two were false positives —
-`CAN_USE_CALENDAR` is required by **4** routes and `CAN_SYNC_EXTERNAL_CALENDAR` by
-**3**, both through the generic call. The real phantoms were `RESPOND_REVIEWS`,
-`CAN_ATTACH_REVIEW_PHOTOS` and `CUSTOM_BRANDING`, with **0** routes each. So count
-the routes that require the entitlement KEY, never the call sites of the helper.
-
-`// RESERVED-LIMIT`: a `LimitKey` is wired via `requireLimit` but the
-`currentCount` implementation is a hardcoded `0` stub (the counter service
-does not exist yet). See the "Reserved — Limit Stubs" section in
-`docs/billing/endpoint-gate-matrix.md`.
-
-### Gate matrix + snapshot guard
-
-`docs/billing/endpoint-gate-matrix.md` is the single source of truth for
-gate decisions on every protected and admin route. The snapshot guard
-(`apps/api/test/middlewares/endpoint-gate-matrix.guard.test.ts`, T-145-22)
-parses the table on every CI run:
-
-- A new handler file without a matrix row → CI fails.
-- A matrix row pointing at a deleted file → CI fails.
-
-When adding a new protected/admin route:
-
-1. Add a matrix row with the correct Decision and Status.
-2. If Decision = `none`, write a clear Reason.
-3. If gating an existing previously-ungated route, document the behavior
-   change in `docs/billing/spec-145-behavior-changes.md`.
-
-See `docs/billing/adding-an-entitlement.md` for the full end-to-end workflow.
+Listing-scoped authorization (coverage, capability keys, limits) goes through
+`enforceListingAccess` (`src/middlewares/listing-access.ts`), which calls
+`resolveListingAccess` from `@repo/verticals`. It throws `ServiceError`
+(`ENTITLEMENT_REQUIRED`, `LIMIT_REACHED`, ...), mapped to HTTP by the global
+error handler (`src/middlewares/response.ts`). Never throw `HTTPException(403)`
+for these. See [docs/entitlements/README.md](docs/entitlements/README.md).
 
 ### DELETE-body factory gotcha
 
 Hono's DELETE handlers do **not** receive a request body. Route factories
 that need to pass resource identifiers on a deletion-like action (e.g.,
-cancel a subscription addon) must use an action-POST pattern:
+cancel a subscription) must use an action-POST pattern:
 
 ```
-POST /api/v1/protected/billing/addons/{id}/cancel
+POST /api/v1/protected/billing/subscriptions/{subscriptionId}/cancellation
 ```
 
 Never `DELETE` with a body expecting it to be parsed — the body is silently
@@ -767,59 +677,23 @@ anything else.
 ## Common Gotchas
 
 - `createAdminListRoute` auto-merges `PaginationQuerySchema` and uses `page`+`pageSize` (NOT `limit`)
-- Billing endpoints from qzpay-hono (`/api/v1/protected/billing/plans`, `/api/v1/protected/billing/addons`) DO accept `limit` natively
 - Always use `PermissionEnum` for auth checks, never check roles directly
 - `ResponseFactory` must be used for all responses - no raw `c.json()`
 
-## Billing: key files and operational pointers
+## Billing: where things live
 
-Routes live in `src/routes/billing/`: `start-paid.ts`, `plan-change.ts`,
-`subscription-cancel.ts`, `subscription-pause.ts`, `addons.ts`, `promo-codes.ts`,
-`trial.ts`, `settings.ts`, `usage.ts`, `metrics.ts`, `notifications.ts`.
+Billing and verticals were rebuilt in HOS-1352; the architecture is in the
+[root CLAUDE.md → Billing and verticals](../../CLAUDE.md#billing-and-verticals-hos-1352).
+API-side pointers:
 
-Cron jobs for billing: `src/cron/jobs/dunning.job.ts`, `webhook-retry.job.ts`,
-`finalize-cancelled-subs.ts`, `trial-expiry.ts`, `addon-expiry.job.ts`,
-`apply-scheduled-plan-changes.ts`, `subscription-poll.job.ts`,
-`abandoned-pending-subs.job.ts`, `exchange-rate-fetch.job.ts`,
-`preapproval-less-expiry.job.ts`, `entity-subscription-cache-reconcile.job.ts`,
-`addon-subscription-reconcile.job.ts`, `courtesy-expiry.job.ts`,
-`propagate-plan-price-changes.job.ts`,
-`reactivation-supersession-reconcile.job.ts`,
-`subscription-drift-reconcile.job.ts`, `partner-expiry.job.ts` and
-`partner-unpaid-reaper.job.ts`.
-
-**Which of those re-reads MercadoPago, and when** — worth knowing before adding a
-sweep, because the answer used to be "almost none of them". Every job above
-except one is keyed on a LOCAL trigger: an enqueued polling job
-(`subscription-poll`), an elapsed `trial_end` (`trial-reconcile`), a
-`cancel_at_period_end` flag (`finalize-cancelled-subs`), a 30-minute TTL
-(`abandoned-pending-subs`), a missing preapproval (`preapproval-less-expiry`).
-A row that diverged from the provider with none of those markers set was
-invisible to all of them, permanently — measured in HOS-913 at over three hours
-for one `paused` row. `subscription-drift-reconcile` (HOS-914) is the only sweep
-whose trigger is the PROVIDER: it re-reads every non-terminal row that holds a
-preapproval and re-applies the verdict through `processSubscriptionUpdated`.
-Two rules it follows and a new one must too: a failed read is never a verdict
-(a preapproval MercadoPago cannot resolve is reported, never cancelled — a
-cash-paid partner has no counterpart at all, HOS-1062), and a correction goes
-through the webhook transition rather than a second state machine.
-
-Two traps in that list. **A job's registered NAME is not its filename** —
-`trial-expiry.ts` registers as `trial-reconcile`, and that string is what
-`hops cron-trigger` and the admin cron UI expect; `src/cron/schedules.manifest.ts`
-is the authoritative name → schedule mapping. And the last two belong to the
-**partner** vertical, which does not go through
-`reconcileSubscriptionLinkedEntities` at all — its bridge is
-`services/partner-reconcile.service.ts`.
-
-For MP sandbox setup and operator procedures:
-[`docs/migration/mercadopago-sandbox-runbook.md`](../../docs/migration/mercadopago-sandbox-runbook.md)
-
-For incident response:
-[`docs/billing/billing-runbooks.md`](../../docs/billing/billing-runbooks.md)
-
-For the deferred SPEC-193 staging smoke batch (pre-promotion gate):
-[`SPEC-193 pending-staging-smoke`](../../.qtm/specs/SPEC-193-billing-go-live-readiness-master/docs/pending-staging-smoke.md)
+- Routes: `src/routes/billing-subscription/` (start is
+  `POST /api/v1/protected/billing/subscriptions`), `src/routes/billing-promo/`,
+  `src/routes/plan-catalog/`, `src/routes/trial/`, `src/routes/billing-deadlines/`,
+  `src/routes/billing-reconciliation/`, `src/routes/billing-refund/`
+- MercadoPago webhooks: `src/routes/webhooks/mercadopago.ts`
+  (+ `mercadopago-ports.ts`, `mercadopago-signature.ts`)
+- Crons: `src/cron/schedules.manifest.ts` is the authoritative name → schedule
+  list. A job's registered NAME is not always its filename.
 
 ## AI Social routes — Custom GPT integration (`/api/v1/ai/social/*`)
 
@@ -877,8 +751,7 @@ only on the hardcoded `KNOWN_PROVIDERS` catalog in `apps/admin`.
 ### `POST /api/v1/admin/ai/credentials/{providerId}/sync-models`
 
 Gated by `adminAuthMiddleware([AI_SETTINGS_MANAGE])` only — staff bypass
-entitlements (INV-6), so there is no billing gate; see the row in
-[`docs/billing/endpoint-gate-matrix.md`](../../docs/billing/endpoint-gate-matrix.md).
+entitlements (INV-6), so there is no billing gate.
 Orchestrated by `ai-sync-models.service.ts::syncAiProviderModels()`: decrypt
 (`getDecryptedAiProviderCredential` plus a direct `metadata.baseURL` read,
 since the vault's decrypt result omits metadata) → fetch

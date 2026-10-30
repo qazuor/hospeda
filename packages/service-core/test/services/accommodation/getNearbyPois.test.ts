@@ -12,14 +12,14 @@
  * Mocking strategy: `model.findOne` is mocked directly (a bare, relation-free
  * read — the lightweight replacement for the old `getBySlug` gated read,
  * #5), and the real `checkCanView` gate runs against the entity's actual
- * `visibility`/`lifecycleState`/`deletedAt`/`ownerSuspended`/`planRestricted`
+ * `publicationStatus`/`deletedAt`
  * fields (same pattern as `getStats.test.ts`), except where a test needs to
  * force a specific error code (e.g. a genuine backend failure), which spies
  * on `permissionHelpers.checkCanView` instead.
  */
 import type { AccommodationMediaModel, AccommodationModel } from '@repo/db';
 import type { NearbyPoi } from '@repo/schemas';
-import { LifecycleStatusEnum, ServiceErrorCode, VisibilityEnum } from '@repo/schemas';
+import { PublicationStatusEnum, ServiceErrorCode } from '@repo/schemas';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import * as permissionHelpers from '../../../src/services/accommodation/accommodation.permissions';
 import { projectAccommodationApproximateLocation } from '../../../src/services/accommodation/accommodation.projections';
@@ -73,8 +73,11 @@ const buildNearbyPoi = (overrides: Partial<NearbyPoi> = {}): NearbyPoi =>
 const buildAccommodationWithCoords = (
     slug: string,
     coords: { lat: string; long: string } = { lat: '-32.4825', long: '-58.2372' }
-) =>
-    new AccommodationFactoryBuilder()
+): ReturnType<AccommodationFactoryBuilder['build']> & {
+    publicationStatus: PublicationStatusEnum;
+} => {
+    const publicationStatus: PublicationStatusEnum = PublicationStatusEnum.PUBLISHED;
+    const accommodation = new AccommodationFactoryBuilder()
         .with({
             slug,
             ownerId: getMockId('user', 'some-other-owner'),
@@ -85,6 +88,8 @@ const buildAccommodationWithCoords = (
             }
         })
         .build();
+    return { ...accommodation, publicationStatus };
+};
 
 describe('AccommodationService.getNearbyPois', () => {
     let model: ReturnType<typeof createModelMock>;
@@ -158,9 +163,9 @@ describe('AccommodationService.getNearbyPois', () => {
         expect(result.data).toEqual(pois);
     });
 
-    it('returns an empty array (AC-1/#1) and never calls getNearbyRanked when the accommodation is PRIVATE and the actor has no view-private permission', async () => {
+    it('returns an empty array (AC-1/#1) and never calls getNearbyRanked when the accommodation is a DRAFT', async () => {
         const accommodation = buildAccommodationWithCoords('draft-hotel');
-        accommodation.visibility = VisibilityEnum.PRIVATE;
+        accommodation.publicationStatus = PublicationStatusEnum.DRAFT;
         const getNearbyRanked = vi.fn();
         const service = buildService(getNearbyRanked);
         asMock(model.findOne).mockResolvedValue(accommodation);
@@ -172,14 +177,14 @@ describe('AccommodationService.getNearbyPois', () => {
         expect(getNearbyRanked).not.toHaveBeenCalled();
     });
 
-    it('returns an empty array (AC-8) and never calls getNearbyRanked when the accommodation is DRAFT (non-ACTIVE lifecycleState)', async () => {
-        const accommodation = buildAccommodationWithCoords('draft-lifecycle-hotel');
-        accommodation.lifecycleState = LifecycleStatusEnum.DRAFT;
+    it('returns an empty array (AC-8) and never calls getNearbyRanked when the accommodation is MODERATED', async () => {
+        const accommodation = buildAccommodationWithCoords('moderated-hotel');
+        accommodation.publicationStatus = PublicationStatusEnum.MODERATED;
         const getNearbyRanked = vi.fn();
         const service = buildService(getNearbyRanked);
         asMock(model.findOne).mockResolvedValue(accommodation);
 
-        const result = await service.getNearbyPois({ slug: 'draft-lifecycle-hotel' }, actor);
+        const result = await service.getNearbyPois({ slug: 'moderated-hotel' }, actor);
 
         expect(result.error).toBeUndefined();
         expect(result.data).toEqual([]);
@@ -188,7 +193,7 @@ describe('AccommodationService.getNearbyPois', () => {
 
     it('returns an empty array and never calls getNearbyRanked when the accommodation is soft-deleted (GONE)', async () => {
         const accommodation = buildAccommodationWithCoords('gone-hotel');
-        accommodation.visibility = VisibilityEnum.PUBLIC;
+        accommodation.publicationStatus = PublicationStatusEnum.PUBLISHED;
         accommodation.deletedAt = new Date();
         const getNearbyRanked = vi.fn();
         const service = buildService(getNearbyRanked);

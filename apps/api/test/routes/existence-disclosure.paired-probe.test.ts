@@ -6,7 +6,7 @@
  * codes. On `/protected/users/:id` the two answers differed by status (403 vs
  * 404) and the 403 even named the permission the caller was missing. On
  * `/protected/accommodations/:id` — and, it turned out, on the experience and
- * gastronomy twins — BOTH answers were `404 NOT_FOUND`, and the entire
+ * venue twins — BOTH answers were `404 NOT_FOUND`, and the entire
  * disclosure lived in one capital letter: the route hand-wrote
  * `'Accommodation not found'` for the foreign row while the service composed
  * `'accommodation not found'` for the missing one.
@@ -44,8 +44,8 @@ import { type PermissionEnum, RoleEnum, ServiceErrorCode } from '@repo/schemas';
 import {
     AccommodationService,
     ExperienceService,
-    GastronomyService,
-    UserService
+    UserService,
+    VenueService
 } from '@repo/service-core';
 import { Hono } from 'hono';
 import type { AppBindings } from '../../src/types';
@@ -134,7 +134,9 @@ function expectIndistinguishable(foreign: Probe, invented: Probe): void {
     // R5 / anti-enumeration: the answer names neither the missing permission
     // nor the id that was asked about.
     expect(error?.message).toEqual(expect.any(String));
-    expect(error?.message).not.toMatch(/permission|USER_READ_ALL|COMMERCE_VIEW_ALL/i);
+    expect(error?.message).not.toMatch(
+        /permission|USER_READ_ALL|VENUE_VIEW_ALL|EXPERIENCE_VIEW_ALL/i
+    );
     expect(error?.message).not.toContain(FOREIGN_ID);
     expect(error?.message).not.toContain(INVENTED_ID);
 }
@@ -215,11 +217,11 @@ const OWNED_ENTITY_CASES = [
         }
     },
     {
-        label: 'gastronomy',
-        service: GastronomyService,
+        label: 'venue',
+        service: VenueService,
         importRoute: async () => {
-            const mod = await import('../../src/routes/gastronomy/protected/getById.js');
-            return mod.protectedGetGastronomyByIdRoute;
+            const mod = await import('../../src/routes/venue/protected/getById.js');
+            return mod.protectedGetVenueByIdRoute;
         }
     }
 ] as const;
@@ -291,11 +293,11 @@ const QR_SHEET_CASES = [
         }
     },
     {
-        label: 'gastronomy',
-        service: GastronomyService,
+        label: 'venue',
+        service: VenueService,
         importRoute: async () => {
-            const mod = await import('../../src/routes/gastronomy/protected/qrSheet.js');
-            return mod.protectedGetGastronomyQrSheetRoute;
+            const mod = await import('../../src/routes/venue/protected/qrSheet.js');
+            return mod.protectedGetVenueQrSheetRoute;
         }
     }
 ] as const;
@@ -321,8 +323,7 @@ describe.each(
                         ownerId: OTHER_OWNER_ID,
                         slug: 'de-otro',
                         name: 'De otro',
-                        lifecycleState: 'ACTIVE',
-                        visibility: 'PUBLIC'
+                        publicationStatus: 'PUBLISHED'
                     } as never
                 };
             }
@@ -393,11 +394,11 @@ const QR_CODE_CASES = [
         }
     },
     {
-        label: 'gastronomy',
-        service: GastronomyService,
+        label: 'venue',
+        service: VenueService,
         importRoute: async () => {
-            const mod = await import('../../src/routes/gastronomy/protected/qrCode.js');
-            return mod.protectedGetGastronomyQrCodeRoute;
+            const mod = await import('../../src/routes/venue/protected/qrCode.js');
+            return mod.protectedGetVenueQrCodeRoute;
         }
     }
 ] as const;
@@ -421,8 +422,7 @@ describe.each(QR_CODE_CASES)('GET /protected/$label/:id/qr — foreign listing v
                         ownerId: OTHER_OWNER_ID,
                         slug: 'de-otro',
                         name: 'De otro',
-                        lifecycleState: 'ACTIVE',
-                        visibility: 'PUBLIC'
+                        publicationStatus: 'PUBLISHED'
                     } as never
                 };
             }

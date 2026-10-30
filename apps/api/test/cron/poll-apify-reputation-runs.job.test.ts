@@ -171,6 +171,8 @@ function makeCtx(overrides: Partial<CronJobContext> = {}): CronJobContext {
     return {
         logger: { info: vi.fn(), warn: vi.fn(), error: vi.fn(), debug: vi.fn() },
         startedAt: new Date('2026-06-20T10:05:00Z'),
+        runId: 'run-00000000-test',
+        correlationId: '00000000-0000-4000-8000-00000000c0de',
         dryRun: false,
         ...overrides
     };

@@ -1,0 +1,14 @@
+# VA-A9 · fuente → spec · B/docs/{10-verticales-planes-billing-options,12-suscripcion,21-migracion,22-lo-legal}.md
+
+## Hallazgos
+
+fuentes/.specs/HOS-1354-billing-cobro-y-proveedor/docs/10-verticales-planes-billing-options.md:191 · «Sin plazo: el listado muestra su antigüedad, contada desde el anuncio de su migración (`anunciada_en`), para que se vea cuánto lleva esperando» · ausente (búsqueda con rg --hidden en toda s/c1c03210/ por «antigüedad», «anunciada_en», «PARA_RESOLVER» y variantes de tiempo de espera desde el anuncio; s/c1c03210/20-fase-3/B12.md:232 sólo conserva «Sin plazo», AC:B12:6 en :383 exige listar sin plazo, y la UI en :558–559 tampoco exige mostrar antigüedad; s/c1c03210/10-corte/B13a.md:268 y s/c1c03210/01-decisiones-vigentes.md:1899 omiten el dato igualmente. La regla sigue viva, ratificada por DEC-SUB-023 en fuentes/.specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:7155–7156; ninguna decisión posterior del owner la retira. El implementador puede construir el listado sin mostrar cuánto lleva esperando cada caso PARA_RESOLVER) · BLOQUEA
+
+## Resumen
+
+| archivo | reglas normativas vivas revisadas | líneas recorridas | ausentes | distintas |
+|---|---:|---|---:|---:|
+| B/docs/10-verticales-planes-billing-options.md | ≈65 | 1–270 | 1 | 0 |
+| B/docs/12-suscripcion.md | ≈110 | 1–1198 | 0 | 0 |
+| B/docs/21-migracion.md | ≈55 | 1–696 | 0 | 0 |
+| B/docs/22-lo-legal.md | ≈25 | 1–196 | 0 | 0 |

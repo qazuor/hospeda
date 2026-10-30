@@ -33,7 +33,6 @@ export const publicGetEventSummaryRoute = createPublicRoute({
         return result.data ?? null;
     },
     options: {
-        cacheTTL: 300,
         customRateLimit: { requests: 100, windowMs: 60000 }
     }
 });

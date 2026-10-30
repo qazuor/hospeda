@@ -82,7 +82,7 @@ test.describe('SEC-02: guest cannot reach admin @p0 @security', () => {
         const adminEndpoints = [
             '/api/v1/admin/accommodations',
             '/api/v1/admin/users',
-            '/api/v1/admin/billing/plans'
+            '/api/v1/admin/amenities'
         ];
         for (const endpoint of adminEndpoints) {
             const response = await page.request.get(`${API_URL}${endpoint}`, {

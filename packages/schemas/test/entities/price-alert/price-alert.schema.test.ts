@@ -7,6 +7,7 @@ import {
 } from '../../../src/entities/price-alert/price-alert.crud.schema.js';
 import {
     ListPriceAlertsInputSchema,
+    PriceAlertListItemSchema,
     PriceAlertResponseSchema
 } from '../../../src/entities/price-alert/price-alert.query.schema.js';
 import { PriceAlertSchema } from '../../../src/entities/price-alert/price-alert.schema.js';
@@ -320,6 +321,36 @@ describe('PriceAlertResponseSchema', () => {
 
         // Act
         const result = PriceAlertResponseSchema.safeParse(data);
+
+        // Assert
+        expect(result.success).toBe(false);
+    });
+});
+
+describe('PriceAlertListItemSchema (HOS-1492)', () => {
+    it('TEST:V8a:6 accepts a closed alert whose listing is gone', () => {
+        // Arrange
+        const data = {
+            ...validPriceAlertBase(),
+            isActive: false,
+            accommodationName: 'Cabaña del Río',
+            closedBecauseListingGone: true
+        };
+
+        // Act
+        const result = PriceAlertListItemSchema.safeParse(data);
+
+        // Assert
+        expect(result.success).toBe(true);
+        expect(result.success && result.data.closedBecauseListingGone).toBe(true);
+    });
+
+    it('rejects an item without closedBecauseListingGone', () => {
+        // Arrange
+        const data = { ...validPriceAlertBase(), accommodationName: 'Cabaña del Río' };
+
+        // Act
+        const result = PriceAlertListItemSchema.safeParse(data);
 
         // Assert
         expect(result.success).toBe(false);

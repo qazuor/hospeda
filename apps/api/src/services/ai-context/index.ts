@@ -13,13 +13,13 @@
 import type { AiChatEntityType, AiFeature } from '@repo/schemas';
 import { assembleAccommodationContext } from '../accommodation-ai-context.js';
 import { assembleExperienceContext } from './experience-ai-context.js';
-import { assembleGastronomyContext } from './gastronomy-ai-context.js';
 import type { ChatContextAssembler, ChatContextAssemblerMap } from './types.js';
+import { assembleVenueContext } from './venue-ai-context.js';
 
 export { assembleExperienceContext } from './experience-ai-context.js';
-export { assembleGastronomyContext } from './gastronomy-ai-context.js';
 export * from './owner-data-fence.js';
 export * from './types.js';
+export { assembleVenueContext } from './venue-ai-context.js';
 
 /**
  * Adapts the pre-existing accommodation assembler to the shared contract.
@@ -30,8 +30,8 @@ export * from './types.js';
  * most tests, and a rename would have put a large mechanical diff in the middle
  * of a feature change for no behavioural gain.
  *
- * `ownerEntitlements` is intentionally unused here — an accommodation's context
- * carries no entitlement-gated sections, unlike gastronomy's carta and
+ * Owner capabilities are intentionally unused here — an accommodation's context
+ * carries no entitlement-gated sections, unlike venue's carta and
  * experience's directions.
  */
 const assembleAccommodationChatContext: ChatContextAssembler = async (input) => {
@@ -51,7 +51,7 @@ const assembleAccommodationChatContext: ChatContextAssembler = async (input) => 
 /** Maps each chat entity type to the assembler that builds its context. */
 export const CHAT_CONTEXT_ASSEMBLERS: ChatContextAssemblerMap = {
     accommodation: assembleAccommodationChatContext,
-    gastronomy: assembleGastronomyContext,
+    venue: assembleVenueContext,
     experience: assembleExperienceContext
 };
 
@@ -69,6 +69,6 @@ export const CHAT_CONTEXT_ASSEMBLERS: ChatContextAssemblerMap = {
  */
 export const CHAT_FEATURE_BY_ENTITY_TYPE: Readonly<Record<AiChatEntityType, AiFeature>> = {
     accommodation: 'chat',
-    gastronomy: 'chat_gastronomy',
+    venue: 'chat_venue',
     experience: 'chat_experience'
 };

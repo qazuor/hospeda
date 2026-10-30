@@ -97,9 +97,6 @@ const KNOWN_SOURCE_IDS = new Set<string>([
     // SPEC-197 T-015: ADMIN views summary card (admin.ts)
     'admin.views.summary',
 
-    // T-021 SUPER (super.ts)
-    'super.billing.stats',
-
     // SPEC-175 T-016: shared What's New recent source (dashboard-sources/whats-new.ts)
     'whats-new.recent'
 ]);
@@ -179,8 +176,8 @@ describe('Dashboard configs (SPEC-155 T-033)', () => {
 
     describe('Card counts', () => {
         // SPEC-175 T-017: +1 'whats-new' widget on all four role dashboards.
-        it('hostDashboard has exactly 12 widgets (10 original + 1 whats-new + 1 host-card-g-views)', () => {
-            expect(dashboards.hostDashboard.widgets).toHaveLength(12);
+        it('hostDashboard has exactly 11 widgets (10 original + 1 whats-new + 1 host-card-g-views - 1 billing card B removed by HOS-1416)', () => {
+            expect(dashboards.hostDashboard.widgets).toHaveLength(11);
         });
 
         it('editorDashboard has exactly 14 widgets (11 original + 1 whats-new + 2 views widgets)', () => {
@@ -191,12 +188,12 @@ describe('Dashboard configs (SPEC-155 T-033)', () => {
             expect(dashboards.adminBaseDashboard.widgets).toHaveLength(9);
         });
 
-        it('superAdminOnlySection has exactly 2 widgets', () => {
-            expect(superAdminOnlySection.widgets).toHaveLength(2);
+        it('superAdminOnlySection has exactly 1 widget (billing card I removed by HOS-1416)', () => {
+            expect(superAdminOnlySection.widgets).toHaveLength(1);
         });
 
-        it('superAdminDashboard has exactly 11 widgets (8 base + 2 super-only + 1 whats-new)', () => {
-            expect(dashboards.superAdminDashboard.widgets).toHaveLength(11);
+        it('superAdminDashboard has exactly 10 widgets (8 base + 1 super-only + 1 whats-new)', () => {
+            expect(dashboards.superAdminDashboard.widgets).toHaveLength(10);
         });
     });
 
@@ -279,11 +276,12 @@ describe('Dashboard configs (SPEC-155 T-033)', () => {
             expect(superIds).toEqual(baseIds);
         });
 
-        it('superAdminDashboard widgets H–I come from superAdminOnlySection (ids match)', () => {
+        it('superAdminDashboard card H comes from superAdminOnlySection (ids match)', () => {
             const sectionIds = superAdminOnlySection.widgets.map((w) => w.id);
             // superAdminDashboard = adminBaseDashboard (A–G + views-card + whats-new) ++ superAdminOnlySection,
-            // so the super-only section occupies the LAST two positions (t039 spread invariant).
-            const superIds = dashboards.superAdminDashboard.widgets.slice(-2).map((w) => w.id);
+            // so the super-only section occupies the LAST position (t039 spread invariant).
+            // (HOS-1416: card I was removed, leaving only card H.)
+            const superIds = dashboards.superAdminDashboard.widgets.slice(-1).map((w) => w.id);
             expect(superIds).toEqual(sectionIds);
         });
 
@@ -406,20 +404,9 @@ describe('Dashboard configs (SPEC-155 T-033)', () => {
             expect(variantMap?.down).toBe('destructive');
         });
 
-        it('host-card-b uses type="status" and source="host.billing.plan"', () => {
+        it('host-card-b (billing "Mi plan") is gone from the HOST dashboard (HOS-1416)', () => {
             const cardB = dashboards.hostDashboard.widgets.find((w) => w.id === 'host-card-b');
-            expect(cardB).toBeDefined();
-            expect(cardB?.type).toBe('status');
-            expect(cardB?.config?.source).toBe('host.billing.plan');
-        });
-
-        it('host-card-b variantMap covers active/expiring/expired', () => {
-            const cardB = dashboards.hostDashboard.widgets.find((w) => w.id === 'host-card-b');
-            const variantMap = cardB?.config?.variantMap as Record<string, string> | undefined;
-            expect(variantMap).toBeDefined();
-            expect(variantMap?.active).toBe('success');
-            expect(variantMap?.expiring).toBe('warning');
-            expect(variantMap?.expired).toBe('destructive');
+            expect(cardB).toBeUndefined();
         });
 
         it('no live-source card in any dashboard uses a deferred type', () => {

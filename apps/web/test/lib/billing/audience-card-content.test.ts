@@ -123,7 +123,7 @@ describe('resolveAudienceHighlights — every audience actually has copy', () =>
         // The drop rule compares the resolved value against the key that
         // produced it. A blanket "looks like a dotted key" test would delete
         // every bullet here, all of which end in a period.
-        const resolved = resolveAudienceHighlights({ id: 'gastronomy', t });
+        const resolved = resolveAudienceHighlights({ id: 'venue', t });
 
         expect(resolved).toHaveLength(AUDIENCE_HIGHLIGHT_COUNT);
         expect(resolved.every((line) => line.endsWith('.'))).toBe(true);

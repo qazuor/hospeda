@@ -9,23 +9,22 @@
  *
  * IMPORTANT: Must be mounted BEFORE `/:id/media/:mediaId` routes so Hono does
  * not resolve the literal path segment "reorder" as a `mediaId` UUID param.
+ * The listing access resolver requires the EDIT capability on the owner.
  */
 
-import { EntitlementKey } from '@repo/billing';
 import {
     AccommodationIdSchema,
     AccommodationMediaListOutputSchema,
     type AccommodationMediaReorderPayload,
     AccommodationMediaReorderPayloadSchema,
-    ProductDomainEnum
+    VerticalEnum
 } from '@repo/schemas';
 import { AccommodationService, ServiceError } from '@repo/service-core';
 import type { Context } from 'hono';
-import { requireEntitlement } from '../../../middlewares/entitlement';
-import { requireLiveSubscription } from '../../../middlewares/require-live-subscription';
+
 import { getActorFromContext } from '../../../utils/actor';
 import { apiLogger } from '../../../utils/logger';
-import { createCRUDRoute } from '../../../utils/route-factory';
+import { createProtectedRoute } from '../../../utils/route-factory';
 
 const accommodationService = new AccommodationService({ logger: apiLogger });
 
@@ -41,7 +40,7 @@ const accommodationService = new AccommodationService({ logger: apiLogger });
  * The service rejects any request where `orderedIds` does not exactly match the
  * current set of visible row ids with a `VALIDATION_ERROR`.
  */
-export const protectedReorderMediaRoute = createCRUDRoute({
+export const protectedReorderMediaRoute = createProtectedRoute({
     method: 'patch',
     path: '/{id}/media/reorder',
     summary: 'Reorder accommodation gallery photos (owner)',
@@ -50,7 +49,9 @@ export const protectedReorderMediaRoute = createCRUDRoute({
         'in the desired order. The supplied list must match the current visible rows ' +
         'exactly. Requires EDIT_ACCOMMODATION_INFO entitlement; the service layer ' +
         'enforces UPDATE_OWN + ownership.',
+    listingAccess: { vertical: VerticalEnum.ACCOMMODATION, operation: 'EDIT', idParam: 'id' },
     tags: ['Accommodations', 'Media'],
+    protectedTag: false,
     requestParams: {
         id: AccommodationIdSchema
     },
@@ -76,9 +77,5 @@ export const protectedReorderMediaRoute = createCRUDRoute({
     },
     options: {
         // SPEC-145 T-004 / SPEC-204: gallery mutation requires EDIT_ACCOMMODATION_INFO.
-        middlewares: [
-            requireEntitlement(EntitlementKey.EDIT_ACCOMMODATION_INFO),
-            requireLiveSubscription(ProductDomainEnum.ACCOMMODATION)
-        ]
     }
 });

@@ -182,10 +182,10 @@ describe('the real catalog', () => {
         expect(entries.length).toBeGreaterThan(0);
 
         const known = entries.find(
-            (entry) => entry.id === '2026-09-05-commerce-publish-free-trial'
+            (entry) => entry.id === '2026-09-05-venue-experience-publish-free-trial'
         );
         expect(known).toBeDefined();
-        expect(known?.roles).toEqual(['GASTRONOMY_OWNER', 'EXPERIENCE_OWNER']);
+        expect(known?.roles).toEqual(['VENUE_OWNER', 'EXPERIENCE_OWNER']);
         expect(known?.titleEs).toContain('Publicá tu comercio');
     });
 

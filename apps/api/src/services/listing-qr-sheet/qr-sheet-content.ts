@@ -4,7 +4,7 @@
  * ---
  * WHAT THIS SHEET IS, AND WHAT IT IS NOT
  *
- * It is NOT the brochure. The brochure (`services/commerce-brochure`) is handed
+ * It is NOT the brochure. The brochure (`services/listing-brochure`) is handed
  * to a person: it carries the photo, the description, the opening hours, the
  * contact block — everything somebody would read sitting down. This sheet is
  * TAPED TO A DOOR, left on a counter, or stood on a table. Its whole job is to
@@ -36,7 +36,7 @@ import type { Locale } from '@repo/i18n';
 import { trans } from '@repo/i18n';
 
 /** The three verticals that can print a QR sheet (owner decision, HOS-982). */
-export type ListingQrSheetVertical = 'accommodation' | 'gastronomy' | 'experience';
+export type ListingQrSheetVertical = 'accommodation' | 'venue' | 'experience';
 
 /** Everything the renderer needs. No entity types leak past this boundary. */
 export interface ListingQrSheetContent {
@@ -121,12 +121,12 @@ export const MINTED_TARGET_LOCALE: Locale = 'es';
  * `brochure-content.ts` duplicates it: that file lives in the Astro app and this
  * one runs in the API. A divergence would point every printed code at a 404,
  * which is why `test/services/listing-qr-sheet-content.test.ts` asserts the two
- * commerce segments against the brochure's own builder and the accommodation one
+ * venue and experience segments against the brochure's own builder and the accommodation one
  * against a literal.
  */
 const PUBLIC_PATH_SEGMENT: Readonly<Record<ListingQrSheetVertical, string>> = {
     accommodation: 'alojamientos',
-    gastronomy: 'gastronomia',
+    venue: 'comer-y-salir',
     experience: 'experiencias'
 };
 

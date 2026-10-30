@@ -1,0 +1,91 @@
+# G1 · spec → fuente · 01-decisiones-vigentes.md
+
+## Hallazgos
+
+01-decisiones-vigentes.md:1423 · «las **72 h**. Para el **pagador manual**, la ventana es de **14 días corridos**.» · contradice .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:5092 («las **72 h**. Para el **pagador manual**, la ventana es de **7 días corridos**.»); el 📌 vigente de :5119 confirma siete días como valor inicial del plazo 10 · BLOQUEA
+
+01-decisiones-vigentes.md:2295 · «- **Decisión**: **el mensaje se deriva del `status_detail`, con un mapa explícito**.» · más débil que .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:4812–4813 («con un mapa explícito y un texto genérico obligatorio** para los detalles que no estén en el mapa.»): desaparece la respuesta obligatoria para un status_detail no catalogado · BLOQUEA
+
+01-decisiones-vigentes.md:2837 · «11)**: Con más de un título vivo ancla el que da la cuota. El» · más débil que .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:640 («Con más de un título vivo ancla el que da la cuota; con dos, el que arrancó primero.»): omite el desempate que determina el ancla de la cuota · BLOQUEA
+
+01-decisiones-vigentes.md:4562 · «Todo plazo técnico es configurable (los 15 minutos del caché, las 26 horas del vigía, los 3 días» · contradice .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:7388 («Ningún plazo técnico es configurable (los 15 minutos del caché, las 26 horas del vigía, los 3 días»): invierte la exclusión de los plazos técnicos · BLOQUEA
+
+01-decisiones-vigentes.md:6322 · «real de las cinco**; arranca con la imagen vieja desplegada y **es» · más débil que .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:7799 («real de las cinco**, que se borra al terminar (C); arranca con la imagen vieja desplegada y **es»): omite borrar la copia de producción usada para el ensayo · BLOQUEA
+
+01-decisiones-vigentes.md:13401 · «- **En una línea**: copia de producción restaurada en `staging`, correos reescritos a una casilla que no entrega, la lista real de las cinco» · más débil que .specs/HOS-1352-billing-verticals-redesign/docs/39-fases-6-y-7/10-decisiones-del-owner.md:21 («la lista real de las cinco; se borra al terminar»): también desaparece la obligación de borrado en la transcripción de la letra C · BLOQUEA
+
+01-decisiones-vigentes.md:14170 · «**El rechazo de la acción 19 suma un predicado** —cuenta también las filas con un `S38` encolado hacia esa versión— **y su test**, en `B2`.» · contradice .specs/HOS-1352-billing-verticals-redesign/docs/41-corte-del-mvp/10-decisiones-del-owner.md:201 («**el predicado y su test van en el PR de `B3`**»): CC se presenta sin la advertencia de caducidad parcial; CF reemplaza la ubicación de implementación y prueba, conservando únicamente la titularidad del AC en B2. La propia copia de CF en :14204 confirma el reemplazo · BLOQUEA
+
+## Resumen
+
+| archivo | líneas recorridas | afirmaciones normativas revisadas (aprox.) | BLOQUEA | MENOR |
+|---|---|---:|---:|---:|
+| 01-decisiones-vigentes.md | 1–14260 | ≈2500, en 672 bloques DEC/📌/owner | 7 | 0 |
+
+Los siete hallazgos son siete ubicaciones afectadas; los de 6322 y 13401 son dos transcripciones de la misma obligación omitida. Se contrastaron las 321 filas del owner completas, celda por celda, y las líneas copiadas de todas las decisiones y sus 📌 contra el texto vivo de su fuente. El barrido fuente → copia produjo 144 líneas candidatas, revisadas contra tachados, retiros, omisiones declaradas y decisiones posteriores. La comprobación textual normalizó espacios, sangría y destinos reescritos de enlaces; las diferencias de contenido se revisaron contra las fuentes. No se ejecutaron los generadores.
+
+Clases de error buscadas en toda la salida con `rg --hidden`, y contrastadas con la fuente:
+
+- Tachados completos y parciales sobrevivientes: cero delimitadores `~~` en la salida; comparación adicional de los tramos tachados del log contra el contenido copiado, excluyendo notas históricas. No se confirmó una resurrección de texto tachado.
+- Celdas cortadas por `\|`: las 321 filas se cotejaron con separación por pipes no escapados. La fila 5a de 26-fase-9-completa conserva `EXECUTED | FAILED` y toda su cola; no hay truncamientos por pipes ni barras invertidas finales. La omisión de la letra C es de contenido, no de separación de celdas.
+- Texto pegado a otro bloque: revisados los límites de los 📌 y el 📌 entre paréntesis de DEC-GRANT-004. La reubicación declarada de DEC-ARCH-014#📌7 a #📌6 conserva su texto y su nota. No se confirmó otro traslado incorrecto.
+- Letras o 📌 retirados presentados como vigentes: revisados punteros a retirados, notas de caducidad y relaciones explícitas de reemplazo. Hallazgo en CC → CF. `generadores/g1/omisiones.py` clasifica esa relación como «fuera de alcance» y no agrega la advertencia; esa excepción del generador no elimina el reemplazo vigente de la fuente.
+- Omisiones de texto vivo: hallazgos en DEC-MP-004, DEC-ENT-002#📌2, DEC-ARCH-016 y owner 39/C. No hay decisión posterior que retire esas cláusulas. Las otras diferencias por […] revisadas tienen nota de omisión o retiro.
+- Alteración de valores o cuantificadores: siete pasa a catorce en DEC-SUB-016 y «Ningún» pasa a «Todo» en DEC-DATA-008.
+- Contradicciones internas: DEC-SUB-016 conserva «SIETE» en su título y siete días en su 📌 mientras el cuerpo dice catorce; CC y CF asignan la implementación y prueba a piezas diferentes sin advertencia en CC. Se buscaron también las cláusulas afectadas en los demás archivos de `s/b249f841/`.
+
+Muestra estratificada: 49 ítems cotejados línea por línea, incluyendo prosa, decisiones sin 📌, 📌 con omisiones, tablas fuente del owner, principio, medio y final. Los rangos de la copia incluyen separadores y metadatos entre anclas. `LOG` = `.specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md`; las otras rutas de fuente de esta tabla se resuelven bajo `.specs/HOS-1352-billing-verticals-redesign/docs/`.
+
+| ítem | líneas de la copia cotejadas | fuente:inicio | resultado |
+|---|---|---|---|
+| dec-trial-001 | 35–72 | LOG:257 | Sin diferencia normativa de copia confirmada |
+| dec-trial-002 | 73–113 | LOG:287 | Sin diferencia normativa de copia confirmada |
+| dec-trial-003-p1 | 155–168 | LOG:392 | Sin diferencia normativa de copia confirmada |
+| dec-trial-004-p1 | 212–227 | LOG:467 | Sin diferencia normativa de copia confirmada |
+| dec-trial-010-p1 | 536–571 | LOG:6217 | Sin diferencia normativa de copia confirmada |
+| dec-sub-006 | 650–726 | LOG:1091 | Sin diferencia normativa de copia confirmada |
+| dec-sub-008 | 833–896 | LOG:1241 | Sin diferencia normativa de copia confirmada |
+| dec-sub-016 | 1407–1450 | LOG:5083 | Hallazgo arriba |
+| dec-sub-021-p1 | 1725–1754 | LOG:6024 | Sin diferencia normativa de copia confirmada |
+| dec-mp-002 | 1986–2082 | LOG:1375 | Sin diferencia normativa de copia confirmada |
+| dec-mp-004 | 2274–2318 | LOG:4799 | Hallazgo arriba |
+| dec-mp-006 | 2389–2454 | LOG:5655 | Sin diferencia normativa de copia confirmada |
+| dec-ent-002-p1 | 2810–2826 | LOG:633 | Sin diferencia normativa de copia confirmada |
+| dec-ent-002-p2 | 2827–2840 | LOG:639 | Hallazgo arriba |
+| dec-ent-002-p3 | 2841–2855 | LOG:643 | Sin diferencia normativa de copia confirmada |
+| dec-ent-006-p2 | 3024–3045 | LOG:6756 | Sin diferencia normativa de copia confirmada |
+| dec-addon-002-p2 | 3229–3246 | LOG:2189 | Sin diferencia normativa de copia confirmada |
+| dec-promo-001 | 3532–3567 | LOG:806 | Sin diferencia normativa de copia confirmada |
+| dec-auth-001 | 3633–3679 | LOG:6672 | Sin diferencia normativa de copia confirmada |
+| dec-data-002 | 4038–4103 | LOG:3749 | Sin diferencia normativa de copia confirmada |
+| dec-data-005-p2 | 4307–4322 | LOG:6092 | Sin diferencia normativa de copia confirmada |
+| dec-data-008 | 4544–4591 | LOG:7378 | Hallazgo arriba |
+| dec-data-008-p2 | 4615–4627 | LOG:7419 | Sin diferencia normativa de copia confirmada |
+| dec-mail-001 | 4740–4811 | LOG:1709 | Sin diferencia normativa de copia confirmada |
+| dec-arch-006-p2 | 5366–5388 | LOG:2551 | Sin diferencia normativa de copia confirmada |
+| dec-arch-009 | 5669–5706 | LOG:6146 | Sin diferencia normativa de copia confirmada |
+| dec-arch-014-p6 | 6189–6215 | LOG:7629 | Sin diferencia normativa de copia confirmada |
+| dec-arch-014-p7 | 6216–6239 | LOG:7642 | Sin diferencia normativa de copia confirmada |
+| dec-arch-016 | 6270–6369 | LOG:7755 | Hallazgo arriba |
+| dec-arch-017-p8 | 6677–6699 | LOG:8035 | Sin diferencia normativa de copia confirmada |
+| dec-mig-003-p5 | 7166–7183 | LOG:3155 | Sin diferencia normativa de copia confirmada |
+| dec-mig-005-p6 | 7379–7405 | LOG:6522 | Sin diferencia normativa de copia confirmada |
+| dec-grant-004 | 7718–7774 | LOG:2055 | Sin diferencia normativa de copia confirmada |
+| dec-legal-001 | 8202–8236 | LOG:964 | Sin diferencia normativa de copia confirmada |
+| dec-test-001-p6 | 8495–8510 | LOG:4674 | Sin diferencia normativa de copia confirmada |
+| dec-conc-002-p1 | 8867–8893 | LOG:1633 | Sin diferencia normativa de copia confirmada |
+| dec-rf-008-p4 | 9701–9719 | LOG:6595 | Sin diferencia normativa de copia confirmada |
+| dec-obs-001 | 9771–9819 | LOG:2239 | Sin diferencia normativa de copia confirmada |
+| dec-ci-001 | 9848–9908 | LOG:2785 | Sin diferencia normativa de copia confirmada |
+| dec-meth-019 | 10913–10983 | LOG:8108 | Sin diferencia normativa de copia confirmada |
+| own-26-fase-9-completa-t1-5a | 11259–11267 | 26-fase-9-completa/10-decisiones-del-owner.md:36 | Sin diferencia normativa de copia confirmada |
+| own-28-fase-9-vuelta-1-t1-g5-3 | 11663–11672 | 28-fase-9-vuelta-1/10-decisiones-del-owner.md:35 | Sin diferencia normativa de copia confirmada |
+| own-29-fase-8-vuelta-2-t1-r5 | 11889–11898 | 29-fase-8-vuelta-2/10-decisiones-del-owner.md:25 | Sin diferencia normativa de copia confirmada |
+| own-37-fase-8-vuelta-3-t1-s | 12644–12654 | 37-fase-8-vuelta-3/10-decisiones-del-owner.md:40 | Sin diferencia normativa de copia confirmada |
+| own-38-fase-5-t6-f | 13254–13263 | 38-fase-5/10-decisiones-del-owner.md:133 | Sin diferencia normativa de copia confirmada |
+| own-39-fases-6-y-7-t1-c | 13393–13402 | 39-fases-6-y-7/10-decisiones-del-owner.md:21 | Hallazgo arriba |
+| own-41-corte-del-mvp-t12-cc | 14162–14171 | 41-corte-del-mvp/10-decisiones-del-owner.md:182 | Hallazgo arriba |
+| own-41-corte-del-mvp-t14-cf | 14196–14205 | 41-corte-del-mvp/10-decisiones-del-owner.md:201 | Sin diferencia normativa de copia confirmada |
+| own-41-corte-del-mvp-t17-ck | 14252–14260 | 41-corte-del-mvp/10-decisiones-del-owner.md:234 | Sin diferencia normativa de copia confirmada |
+
+Alcance: sólo G1. Las comprobaciones fueron documentales sobre la fuente congelada; no se ejecutó código del producto. Las referencias de skills externas a V no se abrieron por la prohibición expresa de leer fuera de V. No se usaron git, trackers ni subagentes.

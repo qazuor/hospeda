@@ -7,7 +7,7 @@
  * @module test/helpers/test-db
  */
 
-import { billingCustomers, eq, type getDb, initializeDb } from '@repo/db';
+import { eq, type getDb, initializeDb } from '@repo/db';
 import { users } from '@repo/db/schemas';
 import { type RoleEnum, RoleGrantReason } from '@repo/schemas';
 import { grantRole } from '@repo/service-core';
@@ -112,29 +112,21 @@ export interface TestUser {
 }
 
 /**
- * Test customer data structure (from QZPay)
- */
-export interface TestCustomer {
-    id: string;
-    externalId: string;
-    email: string;
-}
-
-/**
- * Seeds minimal test data (user and billing customer)
+ * Seeds minimal test data (a user).
+ *
+ * (The billing-customer row this helper used to create was removed with the
+ * legacy billing system, HOS-1416.)
  *
  * @param db - Database instance
- * @returns Object with created test user and customer
+ * @returns Object with the created test user
  *
  * @example
  * ```typescript
- * const { user, customer } = await seedTestData(db);
+ * const { user } = await seedTestData(db);
  * console.log('Test user ID:', user.id);
  * ```
  */
-export async function seedTestData(
-    db: ReturnType<typeof getDb>
-): Promise<{ user: TestUser; customer: TestCustomer }> {
+export async function seedTestData(db: ReturnType<typeof getDb>): Promise<{ user: TestUser }> {
     // Create test user
     const testUserId = crypto.randomUUID();
     const testSlug = `test-user-${Date.now()}`;
@@ -163,22 +155,6 @@ export async function seedTestData(
 
     const createdUser = (createdUserResult as any[])[0];
 
-    // Create test billing customer
-    const testCustomerId = crypto.randomUUID();
-
-    const createdCustomerResult = await db
-        .insert(billingCustomers)
-        .values({
-            id: testCustomerId,
-            externalId: testUserId,
-            email: 'test@example.com',
-            name: 'Test User',
-            metadata: {}
-        } as any)
-        .returning();
-
-    const createdCustomer = (createdCustomerResult as any[])[0];
-
     return {
         user: {
             id: createdUser.id,
@@ -188,11 +164,6 @@ export async function seedTestData(
             firstName: createdUser.firstName || '',
             lastName: createdUser.lastName || '',
             authProviderUserId: createdUser.authProviderUserId || ''
-        },
-        customer: {
-            id: createdCustomer.id,
-            externalId: createdCustomer.externalId,
-            email: createdCustomer.email || ''
         }
     };
 }
@@ -210,11 +181,6 @@ export async function seedTestData(
  * ```
  */
 export async function cleanupTestDb(db: ReturnType<typeof getDb>): Promise<void> {
-    // Delete in correct order to avoid foreign key violations
-    // Delete billing customers first (references users)
-    await db.delete(billingCustomers);
-
-    // Delete users
     await db.delete(users);
 }
 
@@ -263,34 +229,6 @@ export async function findTestUserById(
         firstName: user.firstName || '',
         lastName: user.lastName || '',
         authProviderUserId: user.authProviderUserId || ''
-    };
-}
-
-/**
- * Type-safe wrapper for finding customer by user ID
- *
- * @param db - Database instance
- * @param userId - User ID to find customer for
- * @returns Customer or null
- */
-export async function findTestCustomerByUserId(
-    db: ReturnType<typeof getDb>,
-    userId: string
-): Promise<TestCustomer | null> {
-    const [customer] = await db
-        .select()
-        .from(billingCustomers)
-        .where(eq(billingCustomers.externalId, userId))
-        .limit(1);
-
-    if (!customer) {
-        return null;
-    }
-
-    return {
-        id: customer.id,
-        externalId: customer.externalId,
-        email: customer.email || ''
     };
 }
 

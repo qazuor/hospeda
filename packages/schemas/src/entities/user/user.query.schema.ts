@@ -96,38 +96,40 @@ export const UserSearchResultSchema = PaginationResultSchema(UserReadSchema);
  * HTTP-compatible user search schema with query string coercion
  * Converts string query parameters to appropriate types
  */
-export const HttpUserSearchSchema = HttpPaginationSchema.merge(HttpSortingSchema).extend({
-    // Search
-    q: z.string().optional(),
+export const HttpUserSearchSchema = HttpPaginationSchema.safeExtend(HttpSortingSchema.shape).extend(
+    {
+        // Search
+        q: z.string().optional(),
 
-    // Basic filters with coercion
-    role: RoleEnumSchema.optional(),
-    isActive: HttpQueryFields.isActive(),
-    isEmailVerified: HttpQueryFields.isEmailVerified(),
+        // Basic filters with coercion
+        role: RoleEnumSchema.optional(),
+        isActive: HttpQueryFields.isActive(),
+        isEmailVerified: HttpQueryFields.isEmailVerified(),
 
-    // Date filters with coercion
-    createdAfter: HttpQueryFields.createdAfter(),
-    createdBefore: HttpQueryFields.createdBefore(),
-    lastLoginAfter: HttpQueryFields.lastLoginAfter(),
-    lastLoginBefore: HttpQueryFields.lastLoginBefore(),
+        // Date filters with coercion
+        createdAfter: HttpQueryFields.createdAfter(),
+        createdBefore: HttpQueryFields.createdBefore(),
+        lastLoginAfter: HttpQueryFields.lastLoginAfter(),
+        lastLoginBefore: HttpQueryFields.lastLoginBefore(),
 
-    // String filters
-    country: z.string().length(2).optional(),
+        // String filters
+        country: z.string().length(2).optional(),
 
-    // Numeric filters with coercion
-    minAge: HttpQueryFields.minAge(),
-    maxAge: HttpQueryFields.maxAge(),
+        // Numeric filters with coercion
+        minAge: HttpQueryFields.minAge(),
+        maxAge: HttpQueryFields.maxAge(),
 
-    // Array filters (comma-separated strings converted to arrays)
-    tags: z
-        .string()
-        .transform((val) => val.split(',').filter(Boolean))
-        .optional(),
+        // Array filters (comma-separated strings converted to arrays)
+        tags: z
+            .string()
+            .transform((val) => val.split(',').filter(Boolean))
+            .optional(),
 
-    // Boolean filters with coercion
-    hasActiveSubscription: HttpQueryFields.hasActiveSubscription(),
-    hasAccommodations: HttpQueryFields.hasAccommodations()
-});
+        // Boolean filters with coercion
+        hasActiveSubscription: HttpQueryFields.hasActiveSubscription(),
+        hasAccommodations: HttpQueryFields.hasAccommodations()
+    }
+);
 
 export type HttpUserSearch = z.infer<typeof HttpUserSearchSchema>;
 
@@ -298,13 +300,12 @@ export const UserSearchOutputSchema = UserSearchResultSchema;
 // Additional missing legacy exports
 export const UserListItemWithCountsSchema = UserListItemSchema.extend({
     accommodationsCount: z.number().int().min(0).default(0),
-    gastronomiesCount: z.number().int().min(0).default(0),
+    venuesCount: z.number().int().min(0).default(0),
     experiencesCount: z.number().int().min(0).default(0),
     reviewsCount: z.number().int().min(0).default(0),
     bookingsCount: z.number().int().min(0).default(0),
     eventsCount: z.number().int().min(0).default(0),
-    postsCount: z.number().int().min(0).default(0),
-    currentPlanSlug: z.string().nullable().optional()
+    postsCount: z.number().int().min(0).default(0)
 });
 
 export const UserListWithCountsOutputSchema = PaginationResultSchema(UserListItemWithCountsSchema);

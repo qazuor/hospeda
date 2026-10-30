@@ -7,7 +7,7 @@
         "en": "Acepta reservas previas para asegurar lugar",
         "pt": "Acepta reservas previas para asegurar lugar"
     },
-    "applicableVerticals": ["gastronomy"],
+    "applicableVerticals": ["venue"],
     "type": "SERVICES",
     "icon": "Reception24hIcon",
     "isBuiltin": false,

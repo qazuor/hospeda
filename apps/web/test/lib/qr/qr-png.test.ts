@@ -1,7 +1,7 @@
 /**
  * @file qr-png.test.ts
  * @description Unit tests for the client-side SVG→PNG conversion used by the
- * gastronomy menu QR download button (HOS-1044 §6.6, §11 OQ-3).
+ * food menu QR download button (HOS-1044 §6.6, §11 OQ-3).
  *
  * jsdom has no real `<canvas>`/`Image` decoding, so the browser-API-backed
  * steps are exercised through their injectable seams (mirrors

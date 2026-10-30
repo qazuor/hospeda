@@ -30,8 +30,8 @@ import {
     buildModerationTermKindOptions
 } from '@/features/content-moderation/moderation-term-options';
 
-vi.mock('@/features/billing/use-my-entitlements', () => ({
-    useMyEntitlements: () => ({ has: () => true, isLoading: false })
+vi.mock('@/features/billing/use-effective-set', () => ({
+    useEffectiveSet: () => ({ has: () => true, isLoading: false })
 }));
 vi.mock('@/features/billing/LimitProgressIndicator', () => ({
     LimitProgressIndicator: () => null

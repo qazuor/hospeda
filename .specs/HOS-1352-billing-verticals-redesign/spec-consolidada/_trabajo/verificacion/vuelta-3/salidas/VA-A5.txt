@@ -1,0 +1,20 @@
+# VA-A5 · fuente → spec · V/docs/18-partner.md, V/docs/19-superficies.md, V/docs/20-testing.md, V/docs/21-migracion.md, V/docs/22-lo-legal.md, P/docs/06-mp-validation-matrix.md
+
+## Hallazgos
+
+.specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/19-superficies.md:61 · «| 2 | al **despublicar** una ficha en trial | que **el reloj del trial no se detiene** | cap. 11 §1.2 (épica de verticales) |» (fila viva, sin tachar y sin decisión posterior que la retire: `rg` de «no se detiene», «despublic» y «fila 2» en `P/docs/01-decision-log.md` y `P/docs/41-corte-del-mvp/10-decisiones-del-owner.md` sin resultados; `V/11` §1 la sostiene: «Y se dice en el momento de despublicar, no en los términos») · ausente (la transcripción de `19` §4 en 10-corte/V8a.md:375-398 salta de la fila 1 a la 4; AC:V8a:6 (V8a.md:211-215) enumera las filas 1, 4, 8, 9, 18, 19, 24, 25, 30, 31 y 35, y «UI web» (V8a.md:439-441) enumera 1, 4, 8, 9, 18-21, 23-31 y 35, ninguna con la 2; TEST:V8a:7 cubre sólo las filas de AC:V8a:6; 10-corte/V4.md:472-489 transcribe la regla del reloj de `V/11` §1 pero omite el párrafo del aviso al despublicar; 90-retirados.md y 80-abiertos.md no la nombran) · BLOQUEA
+
+.specs/HOS-1352-billing-verticals-redesign/docs/06-mp-validation-matrix.md:174 · «En PRODUCCIÓN DIVERGE: medido el 2026-09-15, autorizar deja un `card_validation` de ARS 0 y **el cobro llega ~26 minutos después** (creación 19:35, cobro 20:01, cuatro sujetos)» · distinta en 04-catalogos.md:8027 («el cobro llega ~6 minutos después** (creación 19:35, cobro 19:41, cuatro sujetos)»). La fila MP:PA-3 cambia el valor medido y la hora del cobro; además se contradice con su propia frase siguiente («una ventana de media hora»), con 04-catalogos.md:6516 («`PA-3` (2026-09-15; ~26 min en producción…)»), con 10-corte/B1.md:610 y con 02-nucleo-outbox.md:224 («~26 min»). Es la única de las 117 filas cuyo contenido difiere de la fuente (el resto difiere sólo en el formato de los links o en lo muerto marcado «[…]» en EX-46, declarado en su nota) · BLOQUEA
+
+.specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/21-migracion.md:503-522 · «la fila que escribe `T1` … el plan de trial derivado de la versión vigente y vendible … inicio en el instante del corte y fin a los días de prueba de la vertical … y **la campaña previa agendada** (§10.7) … **Y después de cargar el catálogo de producción** … Sin ese orden … la fila nacía sin plan ni fin y `T3` no la vencía nunca … Correr la herramienta dos veces no escribe dos: el `UNIQUE(user_id, vertical)` lo impide» · ausente de AC y de TEST: AC:V6:18 (10-corte/V6.md:485-494) y TEST:V6:21 (V6.md:1285-1289) sólo piden la fila `TRIAL_ACTIVE` que arranca en el instante del corte, con seudónimo y sin consumir; ninguno exige el plan y el fin tomados del catálogo ya cargado, la campaña previa agendada ni la idempotencia de una segunda corrida. La regla sí vive en el texto de diseño transcrito en V6.md:974-995, así que el implementador la tiene a la vista, pero ninguna prueba la recoge · MENOR
+
+## Resumen
+
+| archivo | reglas normativas vivas revisadas | líneas recorridas | ausentes | distintas |
+|---|---|---|---|---|
+| V/docs/18-partner.md | ~45 (tabla de claves, §1.3-§1.6 con sus 4 puntos ⚠️, §2.1-§2.5 con las 5 reglas del reclamo, §3, «NO cierra») | 1–407 | 0 | 0 |
+| V/docs/19-superficies.md | ~35 (§1, §2, las 30 filas de §4, las 4 filas de §6, «NO cierra») | 1–111 | 1 | 0 |
+| V/docs/20-testing.md | ~40 (§1, las 22 filas de guards y validaciones de §2, sus pruebas de rotura, §2.1, §5) | 1–381 | 0 | 0 |
+| V/docs/21-migracion.md | ~35 (§2.1-§2.5, la prueba del corte, la tabla de paso, el 4c, el 5b, §4, «NO cierra») | 1–777 | 1 | 0 |
+| V/docs/22-lo-legal.md | ~10 (§2.3, §3.1-§3.3, §4, «NO cierra») | 1–141 | 0 | 0 |
+| P/docs/06-mp-validation-matrix.md | ~130 (reglas 1-7, estados, procedimiento §59, y las 117 filas comparadas campo por campo con un script: comportamiento, estado, fecha, entorno y conclusión) | 1–573 | 0 | 1 |

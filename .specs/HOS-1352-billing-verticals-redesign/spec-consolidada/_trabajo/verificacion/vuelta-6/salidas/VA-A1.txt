@@ -1,0 +1,24 @@
+# VA-A1 · fuente → spec · 00-indice.md, 01-glosario.md, 02-modelo-de-datos.md, 03-maquinas-de-estado.md, 04-invariantes.md, 07-outbox-y-notificaciones.md, 08-auditoria-y-observabilidad.md
+
+## Hallazgos
+
+fuentes/.specs/HOS-1352-billing-verticals-redesign/docs/nucleo/07-outbox-y-notificaciones.md:286 · «y un texto genérico para lo que no esté en el mapa» · ausente (búsqueda con rg --hidden en toda s/b249f841/: status_detail, genérico, fallback y detalles fuera del mapa; contrastados 02-nucleo-outbox.md:313, 01-decisiones-vigentes.md:2295 y 10-corte/B13a.md, AC:B13a:5 y TEST:B13a:4. Conservan las ramas antifraude/tarjeta, pero omiten el mensaje obligatorio para detalles desconocidos. La regla sigue vigente: fuentes/.specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:4812, DEC-MP-004, exige «un texto genérico obligatorio»; las decisiones posteriores y del owner no lo retiran. Un rechazo con status_detail fuera del mapa queda sin el mensaje exigido) · BLOQUEA
+
+fuentes/.specs/HOS-1352-billing-verticals-redesign/docs/nucleo/08-auditoria-y-observabilidad.md:492 · «qué se intentó y qué se frenó» · ausente (búsqueda con rg --hidden en toda s/b249f841/ y contraste de 02-nucleo-auditoria.md §4.3, 10-corte/B11.md y 10-corte/B13a.md: no se exige consignar las acciones intentadas y las frenadas en la información para investigar una conciliación. En 02-nucleo-auditoria.md:412–413 la enumeración termina en estados y correlación, aunque Origen:415 todavía cita la línea 492 de la fuente. El registro general de auditoría no exige conservar lo que quedó sin ejecutar. DEC-OBS-001 y las precisiones del owner no eliminan este requisito; su omisión permite un diagnóstico sin saber qué quedó sin hacer) · BLOQUEA
+
+fuentes/.specs/HOS-1352-billing-verticals-redesign/docs/nucleo/08-auditoria-y-observabilidad.md:183 · «El §48 enumera veintiuna cosas que el admin debe poder **inspeccionar**» · distinta en s/b249f841/02-nucleo-auditoria.md:225 («La inspección administrativa de una cuenta requiere que su dueño haya autorizado el acceso por correo durante las últimas 24 horas; sin esa autorización no se muestran sus datos.»; agrega consentimiento por correo y caducidad de 24 horas como guardas de lectura, sin respaldo en la fuente, sus decisiones posteriores ni las del owner. Además contradice 10-corte/V5.md:254, AC:V5:8, y :1351, TEST:V5:9, donde el permiso de inspección habilita la lectura. Un admin autorizado queda impedido de investigar una cuenta si su dueño no envió ese correo) · BLOQUEA
+
+## Resumen
+
+| archivo | reglas normativas vivas revisadas | líneas recorridas | ausentes | distintas |
+| --- | ---: | --- | ---: | ---: |
+| 00-indice.md | ≈15 | 1–211 | 0 | 0 |
+| 01-glosario.md | ≈180 | 1–981 | 0 | 0 |
+| 02-modelo-de-datos.md | ≈90 | 1–274 | 0 | 0 |
+| 03-maquinas-de-estado.md | ≈30 | 1–176 | 0 | 0 |
+| 04-invariantes.md | ≈65 | 1–328 | 0 | 0 |
+| 07-outbox-y-notificaciones.md | ≈100 | 1–383 | 1 | 0 |
+| 08-auditoria-y-observabilidad.md | ≈130 | 1–520 | 1 | 1 |
+| TOTAL | ≈610 | 2873 líneas | 2 | 1 |
+
+Los conteos de reglas son aproximados; las líneas recorridas y los hallazgos son exactos. Todos los archivos pertenecen a fuentes/.specs/HOS-1352-billing-verticals-redesign/docs/nucleo/. Se excluyeron textos tachados o reemplazados y se contrastaron las precisiones del decision log y del owner. Resultado: 3 BLOQUEA, 0 MENOR.

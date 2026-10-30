@@ -74,8 +74,7 @@ test.describe('E2E-02: favorite toggle on detail page + public counter @p0 @favo
     } | null> {
         const rows = await execSQL<{ id: string; slug: string }>(
             `SELECT id, slug FROM accommodations
-             WHERE lifecycle_state = 'ACTIVE'
-               AND visibility = 'PUBLIC'
+             WHERE publication_status = 'PUBLISHED'
                AND deleted_at IS NULL
              ORDER BY created_at ASC
              OFFSET 1

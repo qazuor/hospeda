@@ -13,6 +13,7 @@
  */
 
 import { createHospedaApiClient } from '../lib/api-client.ts';
+import { getActiveTarget } from '../lib/container-lookup.ts';
 import { die, log } from '../lib/log.ts';
 
 /** Shape returned by `GET /api/v1/admin/cron` (mirror of the API's Zod schema). */
@@ -41,6 +42,10 @@ Flags:
   --help, -h     Show this help.
 
 Notes:
+  - Honours --target: prod uses HOSPEDA_API_URL (default
+    https://api.hospeda.com.ar) + HOPS_ADMIN_COOKIE; staging REQUIRES
+    HOPS_STAGING_API_URL + HOPS_STAGING_ADMIN_COOKIE and never falls back
+    to the prod URL or cookie.
   - Requires HOPS_ADMIN_COOKIE in scripts/server-tools/.env.local. The
     underlying endpoint (\`/api/v1/admin/cron\`) is gated by Better
     Auth session cookie + the SYSTEM_MAINTENANCE_MODE permission.
@@ -53,7 +58,9 @@ Notes:
  * can reuse the same source without re-implementing the fetch / sort.
  */
 export async function fetchCronJobs(): Promise<CronJobListResponse> {
-    const client = createHospedaApiClient();
+    const target = getActiveTarget();
+    const client = createHospedaApiClient({ target });
+    log.info(`API (${target}) → ${client.baseUrl()}`);
     const data = await client.get<CronJobListResponse>('/api/v1/admin/cron');
     const jobs = [...data.jobs].sort((a, b) => a.name.localeCompare(b.name));
     return {

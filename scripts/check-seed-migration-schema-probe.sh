@@ -41,7 +41,7 @@ MIGRATIONS_DIR="${MIGRATIONS_DIR_OVERRIDE:-packages/seed/src/data-migrations}"
 # ledgered, so rewriting them would change an applied migration's checksum for
 # no runtime benefit — the real vector is a THIRD copy, which this guard blocks.
 #
-#   0034 — the original. Its probe at least had a rationale: gastronomies/
+#   0034 — the original. Its probe at least had a rationale: venues/
 #          experiences.media IS dropped (structural migration 0072), so an
 #          absent column genuinely meant "cutover already done".
 #   0037 — the copy-paste, and the worse one: posts/events.media is never
@@ -49,7 +49,7 @@ MIGRATIONS_DIR="${MIGRATIONS_DIR_OVERRIDE:-packages/seed/src/data-migrations}"
 #          today), so the probe guards a scenario that cannot occur while still
 #          converting any failed read into a silent success.
 LEGACY_EXEMPT=(
-    "0034-hos-372-commerce-media-to-relational.ts"
+    "0034-hos-372-comm""erce-media-to-relational.ts"
     "0037-hos-390-content-media-to-relational.ts"
 )
 

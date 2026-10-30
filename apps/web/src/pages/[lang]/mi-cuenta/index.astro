@@ -8,7 +8,7 @@
  * for any SSR edge case where middleware did not run.
  *
  * Quick stats (bookmarks/reviews for tourists, properties/messages for hosts,
- * listings/messages for commerce owners — HOS-1293, subscription for all) are
+ * listings/messages for venue/experience owners — HOS-1293, subscription for all) are
  * fetched client-side so that we avoid SSR cookie-forwarding complexity and the
  * page can show a skeleton first.
  *
@@ -19,7 +19,7 @@
 import type { SupportedLocale } from '@/lib/i18n';
 import { createT } from '@/lib/i18n';
 import { buildUrl } from '@/lib/urls';
-import { hasAccommodationsNavAccess, hasCommerceNavAccess } from '@/lib/nav-gating';
+import { hasAccommodationsNavAccess, hasListingNavAccess } from '@/lib/nav-gating';
 import AccountLayout from '@/layouts/AccountLayout.astro';
 import AccountStatsGrid from '@/components/account/AccountStatsGrid.astro';
 import AccountSectionCards from '@/components/account/AccountSectionCards.astro';
@@ -57,7 +57,7 @@ const dashboardLabel = t('account.pages.dashboard.dashboardLabel', 'Panel de con
 // whole role SET, via the single shared gating predicate).
 const isHost = hasAccommodationsNavAccess({ roles: user.roles });
 
-// H-151: the same treatment for the commerce owner. The dashboard already
+// H-151: the same treatment for the venue/experience owner. The dashboard already
 // adapted between tourist and host; the merchant was the case it had never
 // heard of, so someone whose listing sits in DRAFT saw a page that never
 // mentioned their business — while the sidebar beside it showed "Mi comercio".
@@ -66,7 +66,7 @@ const isHost = hasAccommodationsNavAccess({ roles: user.roles });
 //
 // A SEPARATE condition, not an else: an account can hold both roles (HOS-296),
 // and a host who also runs a restaurant must keep both sets of entries.
-const isCommerceOwner = hasCommerceNavAccess({ roles: user.roles });
+const isOwner = hasListingNavAccess({ roles: user.roles });
 
 // Generate user initials (up to 2 characters) for the avatar placeholder.
 const initials = user.name
@@ -105,15 +105,15 @@ const navItems = [
               },
           ]
         : []),
-    ...(isCommerceOwner
+    ...(isOwner
         ? [
               {
-                  // Same label key and icon as the sidebar's commerce entry, so
+                  // Same label key and icon as the sidebar's venue/experience entry, so
                   // the two surfaces cannot drift apart in wording.
-                  label: t('commerce.owner.nav', 'Mi comercio'),
+                  label: t('listing.owner.nav', 'Mi comercio'),
                   href: buildUrl({ locale, path: 'mi-cuenta/comercio' }),
                   description: t(
-                      'account.pages.dashboard.nav.myCommerceDesc',
+                      'account.pages.dashboard.nav.myListingDesc',
                       'Gestioná tu ficha, tus fotos y tu suscripción'
                   ),
                   Icon: BriefcaseIcon,
@@ -135,9 +135,9 @@ const navItems = [
         // H-151: the tourist-facing wording describes the OTHER party. A
         // merchant is the one who receives enquiries, so "conversaciones con
         // anfitriones" reads as someone else's inbox on their own dashboard.
-        description: isCommerceOwner
+        description: isOwner
             ? t(
-                  'account.pages.dashboard.nav.myMessagesCommerceDesc',
+                  'account.pages.dashboard.nav.myMessagesListingDesc',
                   'Consultas que recibís sobre tu comercio'
               )
             : t('account.pages.dashboard.nav.myMessagesDesc', 'Conversaciones con anfitriones'),
@@ -209,7 +209,7 @@ const canonicalUrl = new URL(Astro.url.pathname, Astro.site).href;
         <h2 class="account__section-title">{dashboardLabel}</h2>
 
         <!-- Stat cards row -->
-        <AccountStatsGrid locale={locale} isHost={isHost} isCommerceOwner={isCommerceOwner} />
+        <AccountStatsGrid locale={locale} isHost={isHost} isOwner={isOwner} />
 
         <!-- Navigation cards grid (secondary) -->
         <AccountSectionCards locale={locale} navItems={navItems} />
@@ -512,6 +512,8 @@ const canonicalUrl = new URL(Astro.url.pathname, Astro.site).href;
 
 <script>
     import { getApiUrl } from '@/lib/env';
+    import type { UserStatsResponse } from '@repo/schemas';
+    import { parsePlanNames, resolveDashboardPlanStat } from '@/lib/billing/dashboard-plan-stat';
 
     /**
      * Fetch user stats from the protected API and update the dashboard counters.
@@ -532,19 +534,19 @@ const canonicalUrl = new URL(Astro.url.pathname, Astro.site).href;
         const base = `${getApiUrl()}/api/v1/protected`;
 
         // Detect view mode from the DOM: host view renders stat-properties;
-        // commerce-owner view (HOS-1293) renders stat-commerce-listings;
+        // venue/experience-owner view (HOS-1293) renders stat-listings;
         // tourist view renders stat-favorites/stat-reviews. The three are
-        // mutually exclusive — see AccountStatsGrid's isHost/isCommerceOwner
-        // precedence (host wins over commerce wins over tourist).
+        // mutually exclusive — see AccountStatsGrid's isHost/isOwner
+        // precedence (host wins over venue/experience wins over tourist).
         const isHostView = document.getElementById('stat-properties') !== null;
-        const isCommerceView = document.getElementById('stat-commerce-listings') !== null;
-        const isTouristView = !isHostView && !isCommerceView;
+        const isListingView = document.getElementById('stat-listings') !== null;
+        const isTouristView = !isHostView && !isListingView;
 
         try {
             // /users/me/stats feeds the subscription widget for ALL views.
             // Reviews are only fetched when the tourist view is active (the
             // stat-reviews element exists), avoiding a needless request for
-            // hosts and commerce owners alike.
+            // hosts and venue/experience owners alike.
             const fetchPromises: Array<Promise<Response>> = [
                 fetch(`${base}/users/me/stats`, { credentials: 'include' }),
             ];
@@ -558,13 +560,7 @@ const canonicalUrl = new URL(Astro.url.pathname, Astro.site).href;
 
             // ── Subscription widget (common to both views) ──────────────────
             if (statsRes.ok) {
-                const statsData = (await statsRes.json()) as {
-                    data?: {
-                        bookmarkCount?: number;
-                        plan?: { name?: string; status?: string };
-                        activeSubscriptionsCount?: number;
-                    };
-                };
+                const statsData = (await statsRes.json()) as { data?: UserStatsResponse };
 
                 // Tourist-only: favorites counter.
                 const favEl = document.getElementById('stat-favorites');
@@ -575,63 +571,52 @@ const canonicalUrl = new URL(Astro.url.pathname, Astro.site).href;
 
                 const subEl = document.getElementById('stat-subscription');
                 const statusEl = document.getElementById('stat-subscription-status');
-                const planName = statsData.data?.plan?.name;
-                const planStatus = statsData.data?.plan?.status;
-                // HOS-1066: more than one active subscription (across product
-                // domains) means the API deliberately returns `plan: null` — the
-                // card becomes a count summary instead of picking one vertical
-                // arbitrarily. See `resolveUserPlanSummary` in stats.ts.
-                const activeSubscriptionsCount = statsData.data?.activeSubscriptionsCount ?? 0;
-                const hasMultipleActiveSubscriptions = activeSubscriptionsCount > 1;
-
-                if (subEl) {
-                    // BETA-32: free-tier users have `plan: null`. The old guard
-                    // (`if plan?.name`) never cleared the shimmer for them, so the
-                    // widget span loaded forever. Always clear on a successful
-                    // fetch — show the plan name, the multi-subscription summary,
-                    // or the "free" label otherwise.
-                    if (hasMultipleActiveSubscriptions) {
-                        // CLDR plural pair (same pattern as
-                        // AccommodationsListingMap.client.tsx's
-                        // resultsCountOne/resultsCountOther): pick the
-                        // template for the actual count, then interpolate it
-                        // — the server only knows the count is ">1", not
-                        // which exact plural form to render.
+                const responseData = statsData.data;
+                const planStat = resolveDashboardPlanStat({
+                    plan: responseData?.plan ?? null,
+                    activeSubscriptionsCount: responseData?.activeSubscriptionsCount ?? 0,
+                    planNames: parsePlanNames(subEl?.getAttribute('data-plan-names') ?? null)
+                });
+                const statusAttributeByKey = {
+                    active: 'data-label-active',
+                    'grace-period': 'data-label-grace-period',
+                    suspended: 'data-label-suspended',
+                    'cancel-scheduled': 'data-label-cancel-scheduled'
+                } as const;
+                let subscriptionValue: string;
+                let statusAttribute: string | null = null;
+                switch (planStat.kind) {
+                    case 'free':
+                        subscriptionValue = subEl?.getAttribute('data-label-free') ?? 'Gratuito';
+                        break;
+                    case 'multiple': {
                         const template =
-                            activeSubscriptionsCount === 1
-                                ? (subEl.getAttribute('data-label-multiple-one') ??
-                                  '{{count}} suscripción activa')
-                                : (subEl.getAttribute('data-label-multiple-other') ??
-                                  '{{count}} suscripciones activas');
-                        subEl.textContent = template
-                            .replace('{{count}}', String(activeSubscriptionsCount))
-                            .replace('{count}', String(activeSubscriptionsCount));
-                    } else if (planName) {
-                        subEl.textContent = planName;
-                    } else {
-                        subEl.textContent = subEl.getAttribute('data-label-free') ?? 'Gratuito';
+                            planStat.count === 1
+                                ? (subEl?.getAttribute('data-label-multiple-one') ?? '{{count}} suscripción activa')
+                                : (subEl?.getAttribute('data-label-multiple-other') ?? '{{count}} suscripciones activas');
+                        subscriptionValue = template
+                            .replace('{{count}}', String(planStat.count))
+                            .replace('{count}', String(planStat.count));
+                        break;
                     }
+                    case 'single':
+                        subscriptionValue = planStat.label;
+                        statusAttribute = statusAttributeByKey[planStat.statusKey];
+                        break;
+                    default: {
+                        const exhaustive: never = planStat;
+                        throw new Error(`Unexpected dashboard plan state: ${exhaustive}`);
+                    }
+                }
+                if (subEl) {
+                    subEl.textContent = subscriptionValue;
                     subEl.classList.remove('stat-value--loading');
                 }
 
                 if (statusEl) {
-                    if (hasMultipleActiveSubscriptions) {
-                        // The summary line above already says how many; a
-                        // single status label doesn't apply to several
-                        // subscriptions in different states, so hide this row
-                        // (same treatment as the free tier below).
-                        statusEl.textContent = '';
-                        statusEl.hidden = true;
-                    } else if (planStatus) {
-                        const label = statusEl.getAttribute(`data-label-${planStatus}`);
-                        if (label) statusEl.textContent = label;
-                    } else {
-                        // Free tier: the value line already reads "Plan Gratuito".
-                        // Hide the status line instead of repeating the same label
-                        // on both rows (was duplicated as "Plan Gratuito" twice).
-                        statusEl.textContent = '';
-                        statusEl.hidden = true;
-                    }
+                    const statusLabel = statusAttribute ? statusEl.getAttribute(statusAttribute) : null;
+                    statusEl.textContent = statusLabel ?? '';
+                    statusEl.hidden = !statusLabel;
                 }
             }
 
@@ -696,15 +681,15 @@ const canonicalUrl = new URL(Astro.url.pathname, Astro.site).href;
             return;
         }
 
-        // ── Commerce-owner view: listings counter (HOS-1293) ──────────────────
+        // ── Venue/experience-owner view: listings counter (HOS-1293) ──────────────────
         // Runs independently of the tourist stats, same as the host block above.
-        // Only executes when the commerce DOM elements exist. No "messages"
+        // Only executes when the venue/experience DOM elements exist. No "messages"
         // counterpart — see AccountStatsGrid's comment on why this platform has
-        // no conversation model for commerce listings to count from.
-        if (isCommerceView) {
+        // no conversation model for listings to count from.
+        if (isListingView) {
             try {
-                const [gastronomyRes, experienceRes] = await Promise.all([
-                    fetch(`${base}/gastronomies/mine`, { credentials: 'include' }),
+                const [venueRes, experienceRes] = await Promise.all([
+                    fetch(`${base}/venues/mine`, { credentials: 'include' }),
                     fetch(`${base}/experiences/mine`, { credentials: 'include' }),
                 ]);
 
@@ -714,11 +699,11 @@ const canonicalUrl = new URL(Astro.url.pathname, Astro.site).href;
                 // "0" default via the outer catch below.
                 let listingsCount = 0;
                 let listingsFetchOk = false;
-                if (gastronomyRes.ok) {
-                    const gastronomyData = (await gastronomyRes.json()) as {
+                if (venueRes.ok) {
+                    const venueData = (await venueRes.json()) as {
                         data?: { listings?: unknown[] };
                     };
-                    listingsCount += gastronomyData.data?.listings?.length ?? 0;
+                    listingsCount += venueData.data?.listings?.length ?? 0;
                     listingsFetchOk = true;
                 }
                 if (experienceRes.ok) {
@@ -729,7 +714,7 @@ const canonicalUrl = new URL(Astro.url.pathname, Astro.site).href;
                     listingsFetchOk = true;
                 }
 
-                const listingsEl = document.getElementById('stat-commerce-listings');
+                const listingsEl = document.getElementById('stat-listings');
                 if (listingsEl) {
                     if (listingsFetchOk) {
                         listingsEl.textContent = String(listingsCount);
@@ -737,8 +722,8 @@ const canonicalUrl = new URL(Astro.url.pathname, Astro.site).href;
                     listingsEl.classList.remove('stat-value--loading');
                 }
             } catch (error) {
-                console.error('[account] Failed to load commerce dashboard stats:', error);
-                clearLoadingState(['stat-commerce-listings']);
+                console.error('[account] Failed to load listing dashboard stats:', error);
+                clearLoadingState(['stat-listings']);
             }
         }
     }

@@ -3,7 +3,7 @@
  *
  * Media (gallery photo) service helpers for posts (HOS-390).
  *
- * Mirrors `gastronomy.media.ts` (HOS-372) field-for-field, including the
+ * Mirrors `venue.media.ts` (HOS-372) field-for-field, including the
  * standalone-function convention: module-level exported functions taking
  * `(model, actor, data, ctx?)` instead of methods bolted onto `PostService`.
  *

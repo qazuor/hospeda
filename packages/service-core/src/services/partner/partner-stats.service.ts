@@ -18,7 +18,7 @@
  * `getForOwner` declares no permission for the reason `mine-mentions` records
  * (HOS-278 AC-7): an approved partner is an ordinary account, so demanding a
  * `PARTNER_*` perk would lock them out of their own numbers. And it declares no
- * entitlement because `loadEntitlements` resolves against the ACCOMMODATION
+ * entitlement because the retired `loadEntitlements` resolved against the ACCOMMODATION
  * subscription (§5.6) — an entitlement gate here would refuse every partner who
  * is not also a paying host, and admit a host who is not a partner.
  *
@@ -209,7 +209,6 @@ export class PartnerStatsService {
                         id: partnerId,
                         name: String(partner.name ?? ''),
                         slug: partner.slug == null ? undefined : String(partner.slug),
-                        tier: partner.tier == null ? undefined : String(partner.tier),
                         websiteUrl:
                             partner.websiteUrl == null ? undefined : String(partner.websiteUrl)
                     },

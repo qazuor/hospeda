@@ -214,7 +214,7 @@ export const CreateSocialDraftBaseSchema = z.object({
     title: z.string().min(1, { message: 'zodError.socialDraft.title.required' }),
 
     /**
-     * Content pillar (e.g. "travel", "gastronomy", "institutional").
+     * Content pillar (e.g. "travel", "food", "institutional").
      * Stored verbatim; no enum constraint — new pillars may be introduced without
      * a schema migration.
      */

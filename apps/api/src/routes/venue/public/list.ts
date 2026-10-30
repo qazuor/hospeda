@@ -1,0 +1,68 @@
+/**
+ * Public venue list endpoint (T-042)
+ * Returns a paginated list of visible venue listings with filtering and sorting.
+ *
+ * Visibility contract: only listings with publicationStatus=PUBLISHED are returned
+ * (V6.9b, HOS-1641). The VenueService._executeSearch already applies deletedAt=null;
+ * the route relies on the service's public-tier contract for the remaining gates.
+ */
+import {
+    httpToDomainVenueSearch,
+    VenuePublicSchema,
+    type VenueSearchHttp,
+    VenueSearchHttpSchema
+} from '@repo/schemas';
+import { ServiceError, VenueService } from '@repo/service-core';
+import { withPublicIsFeaturedList } from '../../../utils/accommodation-featured';
+import { getActorFromContext } from '../../../utils/actor';
+import { apiLogger } from '../../../utils/logger';
+import { extractPaginationParams, getPaginationResponse } from '../../../utils/pagination';
+import { createPublicListRoute } from '../../../utils/route-factory';
+
+const venueService = new VenueService({ logger: apiLogger });
+
+/**
+ * GET /api/v1/public/venues
+ * List venue listings — Public endpoint.
+ *
+ * All filter params from VenueSearchHttpSchema are converted to the domain
+ * search input via httpToDomainVenueSearch and forwarded to
+ * venueService.search(), which force-filters deletedAt=null and applies
+ * scalar filters (type, priceRange, destinationId, isFeatured, ownerId).
+ */
+export const publicListVenuesRoute = createPublicListRoute({
+    method: 'get',
+    path: '/',
+    summary: 'List venue listings',
+    description: 'Returns a paginated list of public venue listings',
+    tags: ['Venue'],
+    requestQuery: VenueSearchHttpSchema.shape,
+    responseSchema: VenuePublicSchema,
+    handler: async (ctx, _params, _body, query) => {
+        const actor = getActorFromContext(ctx);
+        const { page, pageSize } = extractPaginationParams(query || {});
+
+        const httpQuery = (query ?? {}) as VenueSearchHttp;
+        const domainParams = httpToDomainVenueSearch(httpQuery);
+
+        const result = await venueService.search(actor, {
+            ...domainParams,
+            page,
+            pageSize
+        });
+
+        if (result.error) {
+            throw new ServiceError(result.error.code, result.error.message);
+        }
+
+        const items = withPublicIsFeaturedList(result.data?.items || []);
+
+        return {
+            items,
+            pagination: getPaginationResponse(result.data?.total || 0, { page, pageSize })
+        };
+    },
+    options: {
+        customRateLimit: { requests: 200, windowMs: 60000 }
+    }
+});

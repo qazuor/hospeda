@@ -55,17 +55,11 @@ const selfActor = {
 };
 
 /**
- * All four admin write/read routes registered at the same Hono path
- * (`/{id}`: GET, PUT, PATCH, DELETE) share ONE sub-router, and Hono's
- * `.use(path, middleware)` is method-agnostic — every route's
- * `adminAuthMiddleware(requiredPermissions)` runs for every request that
- * matches the path, not just requests using that route's own HTTP method
- * (pre-existing behavior, unrelated to BETA-34). A minimal actor holding
- * only `MANAGE_USERS` (the PATCH/PUT route's own declared requirement) gets
- * rejected by `getById`'s `USER_READ_ALL` check, which runs first in
- * registration order. Grant the full read/write/delete permission set here
- * so this actor exercises the fix without tripping over that unrelated
- * cross-method leak — a real production admin has all of these anyway.
+ * Holds exactly what the admin PATCH/PUT routes declare (`MANAGE_USERS`) plus
+ * the admin-panel baseline. Before HOS-1908 the sibling `GET /{id}` gate
+ * (`USER_READ_ALL`) also ran on PATCH/PUT because the factory registered every
+ * route's middlewares for every method on the shared path; that leak is gone,
+ * so the minimal actor is enough.
  */
 const adminActor = {
     id: 'a1f1d2c4-5e6a-4b7c-8d9e-0f1a2b3c4d5e',
@@ -75,11 +69,7 @@ const adminActor = {
         PermissionEnum.ACCESS_API_PRIVATE,
         PermissionEnum.ACCESS_PANEL_ADMIN,
         PermissionEnum.ACCESS_API_ADMIN,
-        PermissionEnum.MANAGE_USERS,
-        PermissionEnum.USER_READ_ALL,
-        PermissionEnum.USER_DELETE,
-        PermissionEnum.USER_HARD_DELETE,
-        PermissionEnum.USER_RESTORE
+        PermissionEnum.MANAGE_USERS
     ]
 };
 

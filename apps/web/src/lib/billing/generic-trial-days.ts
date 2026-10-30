@@ -4,12 +4,12 @@
  * surfaces that promise a trial BEFORE the visitor has picked a specific plan
  * (the FAQ, the `/funcionalidades` hero, the `/publicar` callout, the plan
  * comparison CTA, the new-property form, the property list's
- * "necesitás un plan" message). Those surfaces used to hardcode
- * `OWNER_TRIAL_DAYS` from `@repo/billing/constants`, which is independent of
- * `billing_plans.metadata.trialDays` in the database — the number the
- * checkout actually grants. If the owner changes a plan's trial length, the
- * constant silently goes stale and the web keeps promising the old number
- * (H-98).
+ * "necesitás un plan" message). The FAQ and `/funcionalidades` pages are cached
+ * for 24 hours and do not read the database, so they use the static
+ * `OWNER_TRIAL_DAYS` from `@/lib/billing/owner-trial-days`. This is also the
+ * fallback for `resolveGenericOwnerTrialDays`, independent of
+ * `billing_plans.metadata.trialDays` — the number checkout actually grants.
+ * Reading the trial length from plans is HOS-528.
  *
  * ## Why the MINIMUM across owner plans, not the maximum or an arbitrary one
  *
@@ -30,7 +30,7 @@
  *   already-selected plan list, returns the minimum `trialDays` among the
  *   active plans that actually offer a trial, or `null` when none do. It is
  *   what the plan index calls once per audience (see
- *   `billing/audience-plans.ts`), so tourist, gastronomy, experience and
+ *   `billing/audience-plans.ts`), so tourist, venue, experience and
  *   partner get the same rule the owner tier has had since H-98 instead of a
  *   second, subtly different copy of it.
  * - {@link computeGenericOwnerTrialDays} is that core narrowed to the owner
@@ -38,21 +38,21 @@
  *   already fetched plans for another reason on the same page (e.g. the plan
  *   comparison table) should call this directly instead of fetching again.
  * - {@link resolveGenericOwnerTrialDays} is the convenience wrapper for
- *   callers with no existing plan fetch: it calls `fetchPublicPlans()` itself
+ *   callers with no existing plan fetch: it calls `fetchPublicPlans({ vertical: 'accommodation' })` itself
  *   and falls back to `OWNER_TRIAL_DAYS` when the fetch fails or no plan
  *   qualifies.
  *
- * Both are SSR-only (they end up importing `@repo/billing`), so they must
- * only be called from `.astro` frontmatter — never from a client island. See
+ * This module imports the public plan fetcher, so its helpers are SSR-only:
+ * call them from `.astro` frontmatter, never from a client island. See
  * `apps/web/test/static-guards/billing-barrel-client-isolation.test.ts`.
  */
 
-import { OWNER_TRIAL_DAYS } from '@repo/billing';
 import {
     fetchPublicPlans,
     filterPlansByCategory,
     type PublicPlanData
 } from '@/lib/billing/fetch-plans';
+import { OWNER_TRIAL_DAYS } from '@/lib/billing/owner-trial-days';
 
 /** Input for {@link computeMinimumTrialDays}. */
 export interface ComputeMinimumTrialDaysParams {
@@ -100,7 +100,7 @@ export function computeMinimumTrialDays({ plans }: ComputeMinimumTrialDaysParams
 
 /** Input for {@link computeGenericOwnerTrialDays}. */
 export interface ComputeGenericOwnerTrialDaysParams {
-    /** Full plan list, as returned by `fetchPublicPlans()` (any category). */
+    /** Plans returned by the accommodation catalog. */
     readonly plans: readonly PublicPlanData[];
 }
 
@@ -127,14 +127,14 @@ export function computeGenericOwnerTrialDays({
  * active owner plan currently offers a trial.
  *
  * Use this in pages that have no other reason to fetch plans. A page that
- * already calls `fetchPublicPlans()` for another purpose (e.g. to render the
+ * already reads the catalog for another purpose (e.g. to render the
  * plan comparison table) should call {@link computeGenericOwnerTrialDays}
  * directly on its own result instead, to avoid a redundant request.
  *
  * @returns The resolved generic trial length in days. Never throws.
  */
 export async function resolveGenericOwnerTrialDays(): Promise<number> {
-    const result = await fetchPublicPlans();
+    const result = await fetchPublicPlans({ vertical: 'accommodation' });
 
     if (!result.ok) {
         return OWNER_TRIAL_DAYS;

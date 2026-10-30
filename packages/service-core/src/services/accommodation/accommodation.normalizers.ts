@@ -4,17 +4,16 @@ import type {
     AccommodationWithRelations,
     NormalizedAccommodationType
 } from '@repo/schemas';
-import { VisibilityEnum } from '@repo/schemas';
 import type { Actor, ListOptions } from '../../types';
 import { normalizeAdminInfo, normalizeContactInfo } from '../../utils';
 
 /**
- * Normalizes the input data for creating an accommodation.
- * If `visibility` is not provided, it defaults to 'PRIVATE' to ensure
- * new accommodations are not public by accident.
+ * Normalizes the input data for creating an accommodation (admin info and
+ * contact info). A new accommodation is never public by accident: it is born
+ * `DRAFT` by the model (V6.9b, HOS-1641), so no visibility default is needed.
  * @param data The original input data for creation.
  * @param _actor The actor performing the action (unused in this normalization).
- * @returns The normalized data with default visibility set if needed.
+ * @returns The normalized data.
  */
 export const normalizeCreateInput = (
     data: AccommodationCreateInput,
@@ -31,8 +30,7 @@ export const normalizeCreateInput = (
     return {
         ...rest,
         ...(adminInfo ? { adminInfo } : {}),
-        ...(normalizedContactInfo ? { contactInfo: normalizedContactInfo } : {}),
-        visibility: data.visibility ?? VisibilityEnum.PRIVATE
+        ...(normalizedContactInfo ? { contactInfo: normalizedContactInfo } : {})
     };
 };
 

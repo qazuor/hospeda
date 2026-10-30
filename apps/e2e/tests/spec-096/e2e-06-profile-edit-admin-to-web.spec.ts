@@ -9,7 +9,7 @@
  *
  * Preconditions:
  *   - User exists with role USER (so we exercise the safe-keys subset of
- *     PATCH; the admin-scoped keys path is covered by ADM-03).
+ *     PATCH; the admin-scoped keys path is out of scope here).
  *
  * What this validates:
  *  1. PATCH lastName succeeds for the user editing their own profile.

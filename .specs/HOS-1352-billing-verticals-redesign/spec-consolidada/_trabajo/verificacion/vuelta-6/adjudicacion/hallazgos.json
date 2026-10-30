@@ -1,0 +1,610 @@
+{
+    "unicos": [
+        {
+            "id": "H6-INDICE-PRECIOS",
+            "grupo": "H6-INDICE-PRECIOS",
+            "miembros": ["H6-VB-01-1", "H6-VA-A2-1"],
+            "veredicto": "REAL",
+            "clase_final": "BLOQUEA",
+            "relacionados": ["H4-VA-A6-1"],
+            "resumen": "El índice atribuye la carga de precios al paso 3a; la migración del paso 3 los carga y el 3a sólo verifica.",
+            "verificadores": ["VA-A2", "VB-01"],
+            "respaldo": "adjudicador",
+            "evidencia": [
+                ".specs/HOS-1352-billing-verticals-redesign/docs/41-corte-del-mvp/10-decisiones-del-owner.md:138: BM ya dice que carga el paso 3 y verifica el 3a.",
+                ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:1502–1510: el 📌 declara expresamente residual atribuir la carga al 3a; no cambia precios ni la prohibición hasta M5.",
+                "pristina/30-el-corte.md: la secuencia del paso 3/3a conserva ese reparto; 00-indice.md lo contradice en dos lugares.",
+                "Vuelta 4, H4-VA-A6-1 corrigió el mismo reparto en B2 y la fuente. Estas dos ubicaciones del índice siguen presentes: son residuo adicional, no reapertura de la decisión."
+            ],
+            "correccion": [
+                {
+                    "archivo": "00-indice.md",
+                    "linea": 133,
+                    "generado": false,
+                    "donde_va": null,
+                    "sale": "los carga el paso 3a y no se cambian",
+                    "entra": "los carga la migración estructural del paso 3 y el paso 3a sólo los verifica; no se cambian"
+                },
+                {
+                    "archivo": "00-indice.md",
+                    "linea": 1398,
+                    "generado": false,
+                    "donde_va": null,
+                    "sale": "los carga el [paso 3a](30-el-corte.md#paso-3a) y no se cambian",
+                    "entra": "los carga la migración estructural del paso 3 y el [paso 3a](30-el-corte.md#paso-3a) sólo los verifica; no se cambian"
+                }
+            ],
+            "correccion_fuente": [],
+            "pregunta_owner": null,
+            "causa": "Dos resúmenes manuales conservaron el reparto anterior a la precisión del log.",
+            "patron": "P-RESUMEN",
+            "informes_originales": {
+                "VB-01-1": "00-indice.md:133 · «los carga el paso 3a y no se cambian» · contradice .specs/HOS-1352-billing-verticals-redesign/docs/41-corte-del-mvp/10-decisiones-del-owner.md:138 («los carga la migración estructural del paso 3 y los verifica el 3a») y .specs/HOS-1352-billing-verticals-redesign/docs/16-fase-7-del-paraguas.md:1130 («la migración estructural del paso 3»; «y los verifica el 3a»). La atribución se repite en 00-indice.md:1400. El 📌 de BM conserva el residuo, pero la fuente del corte lo corrige expresamente y tacha «el paso 3a»; la propia spec fija carga en la migración y sólo verificación en 30-el-corte.md:612 y :622. Seguir el índice trasladaría una escritura del catálogo fuera de la migración estructural · BLOQUEA",
+                "VA-A2-1": "fuentes/.specs/HOS-1352-billing-verticals-redesign/docs/41-corte-del-mvp/10-decisiones-del-owner.md:138 · «los carga la migración estructural del paso 3 y los verifica el 3a» · distinta en s/b249f841/00-indice.md:133 («los carga el paso 3a»), reiterada en s/b249f841/00-indice.md:1400 («los carga el [paso 3a](30-el-corte.md#paso-3a)»). El índice mantiene una carga posterior y separada de la migración, en vez de incluir los precios en el catálogo del paso 3; contradice también el procedimiento de s/b249f841/30-el-corte.md:602. La precisión vigente de fuentes/.specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:1502–1506 identifica expresamente como residuo atribuir la carga al 3a y confirma que ese paso sólo verifica. · BLOQUEA"
+            }
+        },
+        {
+            "id": "H6-VB-11-1",
+            "grupo": null,
+            "miembros": ["H6-VB-11-1"],
+            "veredicto": "REAL",
+            "clase_final": "BLOQUEA",
+            "relacionados": [],
+            "resumen": "TEST:B9a:2 exige encolar el aviso de cobertura, aunque CK exige emitirlo después del commit sin entrega durable.",
+            "verificadores": ["VB-11"],
+            "respaldo": "adjudicador",
+            "evidencia": [
+                ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:6182–6191: CK ratifica emisión después del commit sin entrega durable; U2 es sólo de correos.",
+                ".specs/HOS-1352-billing-verticals-redesign/docs/41-corte-del-mvp/10-decisiones-del-owner.md:234: CK resuelve el transporte; no deja una excepción para grants.",
+                ".specs/HOS-1352-billing-verticals-redesign/docs/12-contrato-de-cobertura.md:850–877: todo cambio de fuente emite; otorgar, anclar y revocar grants están incluidos.",
+                "pristina/10-corte/B9a.md:1216: texto manual fuera del tramo g-secciones, que termina en :724. El test exige un efecto diferente; la precisión de CK no se trasladó a este test."
+            ],
+            "correccion": [
+                {
+                    "archivo": "10-corte/B9a.md",
+                    "linea": 1216,
+                    "generado": false,
+                    "donde_va": null,
+                    "sale": "Anclar V corre `S13` sólo sobre V; otorgar, anclar y revocar encolan cada uno el aviso de cobertura;\nen una vertical sin ancla la fuente `GRANT` no aparece.",
+                    "entra": "Anclar V corre `S13` sólo sobre V; otorgar, anclar y revocar emiten cada uno el aviso de cobertura\ndespués del commit, sin entrega durable y sin usar el outbox de `U2`, que es sólo de correos (CK).\nLa prueba observa el aviso después del commit y comprueba que un rollback no lo emite;\nen una vertical sin ancla la fuente `GRANT` no aparece."
+                }
+            ],
+            "correccion_fuente": [],
+            "pregunta_owner": null,
+            "causa": "El test conservó encolado donde la arquitectura ratificada exige emisión no durable.",
+            "patron": "P-TEST",
+            "informes_originales": {
+                "VB-11-1": "10-corte/B9a.md:1216 · «otorgar, anclar y revocar encolan cada uno el aviso de cobertura» · contradice .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:6183 («cambio de cobertura **sale después del commit, sin entrega durable**»; l. 6184: «**El outbox de `U2` es sólo de correos**»). TEST:B9a:2 exige encolar el evento que DEC-ARCH-009, ratificada por CK en docs/41-corte-del-mvp/10-decisiones-del-owner.md:234, manda emitir sin transporte durable. El contrato §3 incluye expresamente otorgar, anclar y revocar entre sus emisores (docs/12-contrato-de-cobertura.md:874). También contradice 10-corte/B4.md:371, que excluye el aviso de cobertura del outbox. · BLOQUEA"
+            }
+        },
+        {
+            "id": "H6-G1-7",
+            "grupo": null,
+            "miembros": ["H6-G1-7"],
+            "veredicto": "GENERADOR",
+            "clase_final": "MENOR",
+            "relacionados": ["H5-G1-5", "H5-G1-6", "H5-G1-7"],
+            "resumen": "g1 omite la marca de caducidad parcial de CC: CF traslada predicado y test al PR de B3, conservando el AC de B2.",
+            "verificadores": ["G1"],
+            "respaldo": "adjudicador",
+            "evidencia": [
+                ".specs/HOS-1352-billing-verticals-redesign/docs/41-corte-del-mvp/10-decisiones-del-owner.md:182 y :201: CC conserva el requisito, CF reemplaza explícitamente el PR que escribe predicado y prueba.",
+                ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:8068–8077: el 📌 de CF confirma el reemplazo; no es sólo una inferencia de las filas.",
+                "v/generadores/g1/omisiones.py:287–288: CF:CC está clasificada «fuera de alcance», pendiente de adjudicación propia. No hay entrada de CC en LETRAS_MUERTAS (:173).",
+                "v/generadores/g1/gen01.py, precisiones_sin_revision(): acepta «fuera de alcance» y sólo exige marca para clase «reemplazo». Esta combinación deja pasar la falta de advertencia.",
+                "Vuelta 5, H5-G1-5/6/7: AP, BN y BU recibieron marcas; CF:CC quedó explícitamente diferida. No se re-adjudican esas tres letras.",
+                "Impacto MENOR: CF y su 📌 sí están transcritos y el registro de letras es sólo citable. Es defecto de señalización de texto parcialmente superado, no cambio del requisito comercial."
+            ],
+            "correccion": [
+                {
+                    "archivo": "01-decisiones-vigentes.md",
+                    "linea": 14164,
+                    "generado": true,
+                    "donde_va": "g1/omisiones.py: clasificar CF:CC como reemplazo y agregar OWN:41-corte-del-mvp:t12:CC a LETRAS_MUERTAS con alcance «en parte», evidencia fila CF y sin inferencia. Regenerar omisiones.json y 01-decisiones-vigentes.md con g1; la inserción expresa el resultado requerido, no se aplica a mano.",
+                    "sale": "**Letra CC**",
+                    "entra": "**Letra CC**\n\n> ⚠️ **Caducada en parte**: CF reemplaza la ubicación del predicado y su test: los escribe el PR de `B3`. El AC sigue siendo de `B2`; se conserva que un `S38` encolado cuenta como cliente de la versión destino. Véase [CF](#own-41-corte-del-mvp-t14-cf)."
+                }
+            ],
+            "correccion_fuente": [],
+            "pregunta_owner": null,
+            "causa": "La excepción de alcance provisional elude la comprobación de marca que ya protege los otros reemplazos.",
+            "patron": "P-GENERADOR",
+            "informes_originales": {
+                "G1-7": "01-decisiones-vigentes.md:14170 · «**El rechazo de la acción 19 suma un predicado** —cuenta también las filas con un `S38` encolado hacia esa versión— **y su test**, en `B2`.» · contradice .specs/HOS-1352-billing-verticals-redesign/docs/41-corte-del-mvp/10-decisiones-del-owner.md:201 («**el predicado y su test van en el PR de `B3`**»): CC se presenta sin la advertencia de caducidad parcial; CF reemplaza la ubicación de implementación y prueba, conservando únicamente la titularidad del AC en B2. La propia copia de CF en :14204 confirma el reemplazo · BLOQUEA"
+            }
+        }
+    ],
+    "canarios": [
+        {
+            "numero": 1,
+            "bloque": "VB-01",
+            "tipo": "MODIFICA",
+            "ubicacion": "02-nucleo-glosario.md:803",
+            "detectores": ["VB-01"],
+            "propio": true,
+            "hallazgos": ["VB-01-3"],
+            "fuente": ".specs/HOS-1352-billing-verticals-redesign/docs/nucleo/01-glosario.md:831",
+            "confirmacion": "La pausa exige ciclo mensual; admitir sólo el anual invierte la elegibilidad."
+        },
+        {
+            "numero": 2,
+            "bloque": "VB-02",
+            "tipo": "MODIFICA",
+            "ubicacion": "02-nucleo-outbox.md:47",
+            "detectores": ["VB-02"],
+            "propio": true,
+            "hallazgos": ["VB-02-3"],
+            "fuente": ".specs/HOS-1352-billing-verticals-redesign/docs/nucleo/07-outbox-y-notificaciones.md:53",
+            "confirmacion": "Una reserva vencida debe devolver el correo a pendientes; marcarlo fallido pierde el reintento."
+        },
+        {
+            "numero": 3,
+            "bloque": "VB-03",
+            "tipo": "MODIFICA",
+            "ubicacion": "03-contrato-de-cobertura.md:182",
+            "detectores": ["VB-03"],
+            "propio": true,
+            "hallazgos": ["VB-03-1"],
+            "fuente": ".specs/HOS-1352-billing-verticals-redesign/docs/12-contrato-de-cobertura.md:170",
+            "confirmacion": "Retrasa la señal cobrada hasta el segundo pago y altera la conversión del trial."
+        },
+        {
+            "numero": 4,
+            "bloque": "VB-04",
+            "tipo": "MODIFICA",
+            "ubicacion": "10-corte/U3.md:63",
+            "detectores": ["VB-04"],
+            "propio": true,
+            "hallazgos": ["VB-04-2"],
+            "fuente": ".specs/HOS-1352-billing-verticals-redesign/docs/16-fase-7-del-paraguas.md:856",
+            "confirmacion": "El ensayo exige ejecutar la herramienta ya integrada; posponerla deja el corte sin ensayo real."
+        },
+        {
+            "numero": 5,
+            "bloque": "VB-05",
+            "tipo": "MODIFICA",
+            "ubicacion": "10-corte/V4.md:572",
+            "detectores": ["VA-A4", "VB-05"],
+            "propio": true,
+            "hallazgos": ["VB-05-3", "VA-A4-1"],
+            "fuente": ".specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/11-trial.md:163",
+            "confirmacion": "Consume el código en un rechazo por techo, aunque la extensión no se otorgó."
+        },
+        {
+            "numero": 6,
+            "bloque": "VB-06",
+            "tipo": "MODIFICA",
+            "ubicacion": "10-corte/V6.md:42",
+            "detectores": ["VB-06"],
+            "propio": true,
+            "hallazgos": ["VB-06-2"],
+            "fuente": ".specs/HOS-1353-verticales-capacidades-y-autorizacion/descomposicion.md:66",
+            "confirmacion": "Permite mover fichas entre verticales y eludir las restricciones estructurales de autorización."
+        },
+        {
+            "numero": 7,
+            "bloque": "VB-07",
+            "tipo": "MODIFICA",
+            "ubicacion": "10-corte/V9a.md:57",
+            "detectores": ["VB-07"],
+            "propio": true,
+            "hallazgos": ["VB-07-3"],
+            "fuente": ".specs/HOS-1353-verticales-capacidades-y-autorizacion/descomposicion.md:72",
+            "confirmacion": "Pierde un día de hechos de actividad que no se pueden reconstruir para la retención."
+        },
+        {
+            "numero": 8,
+            "bloque": "VB-08",
+            "tipo": "MODIFICA",
+            "ubicacion": "10-corte/B1.md:113",
+            "detectores": ["VB-08"],
+            "propio": true,
+            "hallazgos": ["VB-08-1"],
+            "fuente": ".specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:1062",
+            "confirmacion": "Permite que consumidores fuera del adaptador dependan directamente del proveedor."
+        },
+        {
+            "numero": 9,
+            "bloque": "VB-09",
+            "tipo": "MODIFICA",
+            "ubicacion": "10-corte/B5.md:64",
+            "detectores": ["VB-09"],
+            "propio": true,
+            "hallazgos": ["VB-09-1"],
+            "fuente": ".specs/HOS-1354-billing-cobro-y-proveedor/docs/22-lo-legal.md:132",
+            "confirmacion": "Amplía sin respaldo la ventana de devolución de addons de única vez por revocación."
+        },
+        {
+            "numero": 10,
+            "bloque": "VB-10",
+            "tipo": "MODIFICA",
+            "ubicacion": "10-corte/B8a.md:85",
+            "detectores": ["VB-10"],
+            "propio": true,
+            "hallazgos": ["VB-10-2"],
+            "fuente": ".specs/HOS-1354-billing-cobro-y-proveedor/docs/03-maquinas-de-estado.md:161",
+            "confirmacion": "Extiende el servicio de una baja hasta una fecha remota que no representa el período pagado."
+        },
+        {
+            "numero": 11,
+            "bloque": "VB-11",
+            "tipo": "MODIFICA",
+            "ubicacion": "20-fase-1/V9b.md:44",
+            "detectores": ["VB-11"],
+            "propio": true,
+            "hallazgos": ["VB-11-3"],
+            "fuente": ".specs/HOS-1353-verticales-capacidades-y-autorizacion/descomposicion.md:73",
+            "confirmacion": "Reescribe plazos que la pieza sólo debe leer y adelanta purgas de relojes ya iniciados."
+        },
+        {
+            "numero": 12,
+            "bloque": "VB-12",
+            "tipo": "MODIFICA",
+            "ubicacion": "20-fase-3/B13b.md:83",
+            "detectores": ["VB-12"],
+            "propio": true,
+            "hallazgos": ["VB-12-4"],
+            "fuente": ".specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/19-superficies.md:71",
+            "confirmacion": "Ofrece suspender el cobro por moderación aunque los complementos siguen cobrándose hasta su baja."
+        },
+        {
+            "numero": 13,
+            "bloque": "VB-13",
+            "tipo": "MODIFICA",
+            "ubicacion": "20-fase-2/B8b.md:435",
+            "detectores": ["VB-13"],
+            "propio": true,
+            "hallazgos": ["VB-13-1"],
+            "fuente": ".specs/HOS-1354-billing-cobro-y-proveedor/docs/03-maquinas-de-estado.md:160",
+            "confirmacion": "Consume cuota de pausa por meses no utilizados tras reanudar antes."
+        },
+        {
+            "numero": 14,
+            "bloque": "VB-14",
+            "tipo": "MODIFICA",
+            "ubicacion": "30-el-corte.md:270",
+            "detectores": ["VB-14"],
+            "propio": true,
+            "hallazgos": ["VB-14-2"],
+            "fuente": ".specs/HOS-1352-billing-verticals-redesign/docs/16-fase-7-del-paraguas.md:514",
+            "confirmacion": "Sitúa el punto de no retorno después de la migración destructiva, habilitando una recuperación insegura."
+        },
+        {
+            "numero": 15,
+            "bloque": "G1",
+            "tipo": "MODIFICA",
+            "ubicacion": "01-decisiones-vigentes.md:1423",
+            "detectores": ["G1"],
+            "propio": true,
+            "hallazgos": ["G1-1"],
+            "fuente": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:5092",
+            "confirmacion": "Duplica la ventana de la primera cuota manual."
+        },
+        {
+            "numero": 16,
+            "bloque": "G1",
+            "tipo": "MODIFICA",
+            "ubicacion": "01-decisiones-vigentes.md:4562",
+            "detectores": ["G1"],
+            "propio": true,
+            "hallazgos": ["G1-4"],
+            "fuente": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:7388",
+            "confirmacion": "Convierte constantes técnicas deliberadamente fijas en configuración comercial."
+        },
+        {
+            "numero": 17,
+            "bloque": "G2",
+            "tipo": "MODIFICA",
+            "ubicacion": "10-corte/B13a.md:89",
+            "detectores": ["G2", "VA-A10", "VB-12"],
+            "propio": true,
+            "hallazgos": ["G2-5", "VB-12-2", "VA-A10-1"],
+            "fuente": ".specs/HOS-1354-billing-cobro-y-proveedor/docs/19-superficies.md:45",
+            "confirmacion": "Las superficies pasarían a mostrar condiciones vigentes en lugar de las contratadas."
+        },
+        {
+            "numero": 18,
+            "bloque": "G2",
+            "tipo": "MODIFICA",
+            "ubicacion": "04-catalogos.md:1116",
+            "detectores": ["G2"],
+            "propio": true,
+            "hallazgos": ["G2-1"],
+            "fuente": ".specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/03-maquinas-de-estado.md:493",
+            "confirmacion": "Despublicar devolvería un trial ya consumido, habilitando su reutilización."
+        },
+        {
+            "numero": 19,
+            "bloque": "VB-01",
+            "tipo": "AGREGA",
+            "ubicacion": "00-indice.md:527",
+            "detectores": ["VB-01"],
+            "propio": true,
+            "hallazgos": ["VB-01-2"],
+            "fuente": ".specs/HOS-1352-billing-verticals-redesign/docs/16-fase-7-del-paraguas.md:1049",
+            "confirmacion": "Inventa un gate temporal global que impide entregar unidades con marcas legítimas pendientes."
+        },
+        {
+            "numero": 20,
+            "bloque": "VB-02",
+            "tipo": "AGREGA",
+            "ubicacion": "02-nucleo-auditoria.md:225",
+            "detectores": ["VA-A1", "VB-02"],
+            "propio": true,
+            "hallazgos": ["VB-02-1", "VA-A1-3"],
+            "fuente": ".specs/HOS-1352-billing-verticals-redesign/docs/nucleo/08-auditoria-y-observabilidad.md:187",
+            "confirmacion": "Inventa consentimiento renovable del dueño para inspecciones administrativas y bloquea soporte."
+        },
+        {
+            "numero": 21,
+            "bloque": "VB-03",
+            "tipo": "AGREGA",
+            "ubicacion": "02-nucleo-modelo-y-maquinas.md:195",
+            "detectores": ["VB-03"],
+            "propio": true,
+            "hallazgos": ["VB-03-2"],
+            "fuente": ".specs/HOS-1352-billing-verticals-redesign/docs/nucleo/02-modelo-de-datos.md:272",
+            "confirmacion": "Impone un esquema global de identificadores no exigido y rechaza altas válidas."
+        },
+        {
+            "numero": 22,
+            "bloque": "VB-04",
+            "tipo": "AGREGA",
+            "ubicacion": "10-corte/U1.md:543",
+            "detectores": ["VB-04"],
+            "propio": true,
+            "hallazgos": ["VB-04-1"],
+            "fuente": ".specs/HOS-1352-billing-verticals-redesign/docs/16-fase-7-del-paraguas.md:690",
+            "confirmacion": "Inventa la conservación obligatoria de endpoints retirados durante un año."
+        },
+        {
+            "numero": 23,
+            "bloque": "VB-05",
+            "tipo": "AGREGA",
+            "ubicacion": "10-corte/V2.md:542",
+            "detectores": ["VB-05"],
+            "propio": true,
+            "hallazgos": ["VB-05-1"],
+            "fuente": ".specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/10-verticales-planes-billing-options.md:94",
+            "confirmacion": "Inventa una demora de venta para versiones vigentes y vendibles."
+        },
+        {
+            "numero": 24,
+            "bloque": "VB-06",
+            "tipo": "AGREGA",
+            "ubicacion": "10-corte/V5.md:1281",
+            "detectores": ["VB-06"],
+            "propio": true,
+            "hallazgos": ["VB-06-1"],
+            "fuente": ".specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/17-autorizacion.md:582",
+            "confirmacion": "Inventa caducidad de actores que interrumpe jobs largos con permisos legítimos."
+        },
+        {
+            "numero": 25,
+            "bloque": "VB-07",
+            "tipo": "AGREGA",
+            "ubicacion": "10-corte/V8a.md:453",
+            "detectores": ["VB-07"],
+            "propio": true,
+            "hallazgos": ["VB-07-1"],
+            "fuente": ".specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/19-superficies.md:45",
+            "confirmacion": "Inventa un requisito de autenticación para consultar precios públicos."
+        },
+        {
+            "numero": 26,
+            "bloque": "VB-08",
+            "tipo": "AGREGA",
+            "ubicacion": "10-corte/B2.md:379",
+            "detectores": ["VB-08"],
+            "propio": true,
+            "hallazgos": ["VB-08-2"],
+            "fuente": ".specs/HOS-1354-billing-cobro-y-proveedor/docs/02-modelo-de-datos.md:31",
+            "confirmacion": "Inventa un límite de opciones que impide ofrecer todos los ciclos previstos."
+        },
+        {
+            "numero": 27,
+            "bloque": "VB-09",
+            "tipo": "AGREGA",
+            "ubicacion": "10-corte/B6.md:376",
+            "detectores": ["VB-09"],
+            "propio": true,
+            "hallazgos": ["VB-09-2"],
+            "fuente": ".specs/HOS-1354-billing-cobro-y-proveedor/docs/03-maquinas-de-estado.md:1851",
+            "confirmacion": "Inventa una cuota mensual que impide devolver cobros cuya devolución fue confirmada."
+        },
+        {
+            "numero": 28,
+            "bloque": "VB-10",
+            "tipo": "AGREGA",
+            "ubicacion": "10-corte/B7.md:1547",
+            "detectores": ["VB-10"],
+            "propio": true,
+            "hallazgos": ["VB-10-1"],
+            "fuente": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:5963",
+            "confirmacion": "Inventa una habilitación de soporte que bloquea la nueva suscripción permitida tras un contracargo."
+        },
+        {
+            "numero": 29,
+            "bloque": "VB-11",
+            "tipo": "AGREGA",
+            "ubicacion": "20-fase-2/B9b.md:397",
+            "detectores": ["VA-A9", "VB-11"],
+            "propio": true,
+            "hallazgos": ["VB-11-2", "VA-A9-1"],
+            "fuente": ".specs/HOS-1352-billing-verticals-redesign/docs/12-contrato-de-cobertura.md:443",
+            "confirmacion": "Inventa un día sin cobertura para una cortesía ya otorgada."
+        },
+        {
+            "numero": 30,
+            "bloque": "VB-12",
+            "tipo": "AGREGA",
+            "ubicacion": "10-corte/B11.md:1947",
+            "detectores": ["VB-12"],
+            "propio": true,
+            "hallazgos": ["VB-12-1"],
+            "fuente": ".specs/HOS-1354-billing-cobro-y-proveedor/docs/09-conciliacion.md:176",
+            "confirmacion": "Inventa un recorte del inventario que puede dejar cobros sin conciliar indefinidamente."
+        },
+        {
+            "numero": 31,
+            "bloque": "VB-13",
+            "tipo": "AGREGA",
+            "ubicacion": "80-abiertos.md:488",
+            "detectores": ["VB-13"],
+            "propio": true,
+            "hallazgos": ["VB-13-2"],
+            "fuente": ".specs/HOS-1354-billing-cobro-y-proveedor/docs/06-proveedor.md:274",
+            "confirmacion": "Inventa una restricción general de contratación por incertidumbres que no bloquean todas las altas."
+        },
+        {
+            "numero": 32,
+            "bloque": "VB-14",
+            "tipo": "AGREGA",
+            "ubicacion": "90-retirados.md:479",
+            "detectores": ["VB-14"],
+            "propio": true,
+            "hallazgos": ["VB-14-3"],
+            "fuente": ".specs/HOS-1354-billing-cobro-y-proveedor/docs/21-migracion.md:498",
+            "confirmacion": "Inventa una migración de códigos y canjes antiguos cuando el corte descarta los datos comerciales del sistema viejo."
+        },
+        {
+            "numero": 33,
+            "bloque": "VA-A1",
+            "tipo": "OMITE",
+            "ubicacion": "02-nucleo-auditoria.md:413",
+            "detectores": ["VA-A1", "VB-02"],
+            "propio": true,
+            "hallazgos": ["VA-A1-2", "VB-02-2"],
+            "fuente": ".specs/HOS-1352-billing-verticals-redesign/docs/nucleo/08-auditoria-y-observabilidad.md:492",
+            "confirmacion": "El diagnóstico pierde el detalle de lo intentado y lo frenado; soporte ya no puede identificar operaciones pendientes."
+        },
+        {
+            "numero": 34,
+            "bloque": "VA-A2",
+            "tipo": "OMITE",
+            "ubicacion": "30-el-corte.md:39, 30-el-corte.md:1400, 30-el-corte.md:1572, 01-decisiones-vigentes.md:6322, 01-decisiones-vigentes.md:13401",
+            "detectores": ["G1", "VB-14"],
+            "propio": false,
+            "hallazgos": ["G1-5", "G1-6", "VB-14-1"],
+            "fuente": ".specs/HOS-1352-billing-verticals-redesign/docs/16-fase-7-del-paraguas.md:146",
+            "confirmacion": "Desaparece la obligación de borrar la copia de producción al terminar el ensayo; los datos pueden quedar retenidos en staging."
+        },
+        {
+            "numero": 35,
+            "bloque": "VA-A3",
+            "tipo": "OMITE",
+            "ubicacion": "10-corte/V3.md:197, 10-corte/V3.md:632",
+            "detectores": ["VA-A3"],
+            "propio": true,
+            "hallazgos": ["VA-A3-1"],
+            "fuente": ".specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/02-modelo-de-datos.md:660",
+            "confirmacion": "El caché deja de estar limitado al conjunto efectivo; se podrían cachear catálogos o estados sin la invalidación definida para ellos."
+        },
+        {
+            "numero": 36,
+            "bloque": "VA-A4",
+            "tipo": "OMITE",
+            "ubicacion": "01-decisiones-vigentes.md:2837, 10-corte/V3.md:237, 10-corte/V3.md:578",
+            "detectores": ["G1", "VA-A4", "VB-05"],
+            "propio": true,
+            "hallazgos": ["G1-3", "VA-A4-2", "VB-05-2"],
+            "fuente": ".specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/15-entitlements-y-limits.md:530",
+            "confirmacion": "Se omite el desempate por el título más antiguo para anclar cuotas, permitiendo renovar en otra fecha cuando dos títulos las otorgan."
+        },
+        {
+            "numero": 37,
+            "bloque": "VA-A5",
+            "tipo": "OMITE",
+            "ubicacion": "10-corte/V8a.md:396, 20-fase-4/V8b.md:59, 20-fase-4/V8b.md:125, 20-fase-4/V8b.md:213",
+            "detectores": ["VB-07"],
+            "propio": false,
+            "hallazgos": ["VB-07-2"],
+            "fuente": ".specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/19-superficies.md:79",
+            "confirmacion": "Desaparece la prohibición de revelar la cuenta dueña al abrir un link ya reclamado; el implementador podría exponer la identidad vinculada a quien conserve el secreto."
+        },
+        {
+            "numero": 38,
+            "bloque": "VA-A6",
+            "tipo": "OMITE",
+            "ubicacion": "10-corte/B3.md:712",
+            "detectores": ["VA-A6"],
+            "propio": true,
+            "hallazgos": ["VA-A6-1"],
+            "fuente": ".specs/HOS-1354-billing-cobro-y-proveedor/docs/02-modelo-de-datos.md:384",
+            "confirmacion": "Se elimina el resultado persistido de la operación en idempotency_key; el esquema puede guardar sólo la clave y no permitir recuperar su resultado."
+        },
+        {
+            "numero": 39,
+            "bloque": "VA-A7",
+            "tipo": "OMITE",
+            "ubicacion": "04-catalogos.md:4542, 10-corte/B6.md:137",
+            "detectores": ["G2", "VA-A7"],
+            "propio": true,
+            "hallazgos": ["G2-3", "VA-A7-2"],
+            "fuente": ".specs/HOS-1354-billing-cobro-y-proveedor/docs/03-maquinas-de-estado.md:1852",
+            "confirmacion": "RF3 deja de exigir que se asiente que la ejecución fue por el proveedor; se pierde la procedencia de la devolución en el registro."
+        },
+        {
+            "numero": 40,
+            "bloque": "VA-A8",
+            "tipo": "OMITE",
+            "ubicacion": "04-catalogos.md:6293",
+            "detectores": ["G2"],
+            "propio": false,
+            "hallazgos": ["G2-4"],
+            "fuente": ".specs/HOS-1354-billing-cobro-y-proveedor/docs/05-idempotencia-y-concurrencia.md:192",
+            "confirmacion": "El listado del cobro posterior a una baja en grace deja de mostrar cuándo comenzó el grace, dato necesario para decidir cuánto servicio devolver."
+        },
+        {
+            "numero": 41,
+            "bloque": "VA-A9",
+            "tipo": "OMITE",
+            "ubicacion": "10-corte/B5.md:767",
+            "detectores": [],
+            "propio": false,
+            "hallazgos": [],
+            "fuente": ".specs/HOS-1354-billing-cobro-y-proveedor/docs/22-lo-legal.md:98",
+            "confirmacion": "Se pierde la prohibición de exigir justificación para ejercer la revocación; podrían condicionarla a una explicación del cliente."
+        },
+        {
+            "numero": 42,
+            "bloque": "VA-A10",
+            "tipo": "OMITE",
+            "ubicacion": "02-nucleo-outbox.md:313, 01-decisiones-vigentes.md:2295, 10-corte/B13a.md:182, 10-corte/B13a.md:619, 10-corte/B13a.md:1037, 10-corte/B13a.md:1291, 04-catalogos.md:3358",
+            "detectores": ["G1", "G2", "VA-A1", "VA-A10", "VA-A7", "VB-02", "VB-12"],
+            "propio": true,
+            "hallazgos": [
+                "G1-2",
+                "G2-2",
+                "G2-6",
+                "VA-A1-1",
+                "VA-A7-1",
+                "VA-A10-2",
+                "VB-02-4",
+                "VB-12-3"
+            ],
+            "fuente": ".specs/HOS-1354-billing-cobro-y-proveedor/docs/19-superficies.md:138",
+            "confirmacion": "Se elimina el mensaje genérico obligatorio ante status_detail desconocido; un rechazo no mapeado puede dejar al cliente sin explicación ni salida."
+        }
+    ],
+    "resumen": {
+        "canarios_detectados": 41,
+        "canarios_propios": 38,
+        "REAL BLOQUEA": 2,
+        "REAL MENOR": 0,
+        "FUENTE": 0,
+        "FALSO": 0,
+        "GENERADOR": 1,
+        "OWNER": 0
+    },
+    "alcance": {
+        "fuentes_sha": "3c3e88b9b59cb7d766bc34848b8ffd657eb95770",
+        "spec": "pristina",
+        "informes": 26,
+        "hallazgos_reportados": 63,
+        "ocurrencias_canarias": 59,
+        "ocurrencias_no_canarias": 4,
+        "unicos_no_canarios": 3,
+        "exclusiones": "Búsquedas auxiliares G1-rg-*, G2-*, VA-A8-verificacion y declaraciones «Sin hallazgos» no son hallazgos adicionales."
+    }
+}

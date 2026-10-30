@@ -1,0 +1,95 @@
+# VA-A6 · fuente → spec · bloque A6 (05, 06, 09, 10, 12 de HOS-1354)
+
+Spec leída: `s/55311b38/`. Fuentes: `fuentes/.specs/HOS-1354-billing-cobro-y-proveedor/docs/`.
+Rutas de spec relativas a `s/55311b38/`.
+
+## Hallazgos
+
+### 05-idempotencia-y-concurrencia.md
+
+(sin hallazgos: ver resumen)
+
+### 06-proveedor.md
+
+06-proveedor.md:298 · «Impuestos: el dominio no los modela; lo que el proveedor retiene no se calcula: se registra lo que el cobro liquidó, no se deriva» · ausente (la spec no tiene la regla en ningún lado: ni B1 §«Lo que no se le puede pedir», ni B2, ni B5) · MENOR
+
+06-proveedor.md:559 · «Un aviso duplicado del mismo hecho no puede producir efecto doble, y lleva su prueba explícita: un mismo `payment` dos veces por Webhooks a ~0,5 s y una por IPN en el mismo segundo, en cualquier orden, deja exactamente UNA escritura y UN correo, y las tres entregas guardadas en `provider_notification` con su canal, la de IPN en ningún otro lado» · distinta en 10-corte/B5.md:152 (AC:B5:2 sólo exige «una sola fila» con `UNIQUE(proveedor, id_del_hecho)`) y 10-corte/B3.md:451 (AC:B3:21 sólo las tres filas guardadas); «un solo correo / ningún aviso de cobertura doble» no está en ningún AC ni TEST, sólo en la implicación (2) de 01-decisiones-vigentes.md:2609 y en 80-abiertos.md:281 (que declara «un abierto no es un criterio») · BLOQUEA
+
+### 09-conciliacion.md
+
+09-conciliacion.md:185 · «La divergencia de monto que NO abrió una mutación nuestra abre `DIVERGENCIA_DE_MONTO` en el acto; el reintento de 3 días es sólo para `S30`, un aumento de `DEC-MP-002` (contado desde su fecha efectiva) o `S37`, y al reanudar una `PAUSED` los 3 días corren desde `S10`» · distinta en 04-catalogos.md:5666 (MOT:5: «después de 3 días de reintentar la mutación», sin la rama «en el acto») y 10-corte/B11.md:222 (AC:B11:9 sólo el caso de la mutación no aplicada); la rama «en el acto» sólo aparece en 80-abiertos.md:345, que no es criterio; el arranque del reloj en la fecha efectiva del aumento y en `S10` no está · BLOQUEA
+
+09-conciliacion.md:126 · «Sobre un id del manifiesto de sondas el handler no manda cancelar y el barrido TAMPOCO: sin llamada nuestra no entra a la salvedad 4; la sigue la salvedad 2 mientras la marca esté abierta» · distinta en 10-corte/B11.md:186 (AC:B11:6 mete «la lápida de recepción» en la salvedad 4 sin exceptuar la de una sonda) y 10-corte/B11.md:163 (AC:B11:4 sólo dice que el handler no cancela) · BLOQUEA
+
+09-conciliacion.md:211 · «Una terminal está exenta recién cuando cerró el registro de cobro de su último ciclo: pasó a `processed` o venció su `expire_date`; un registro sin `expire_date` (el del alta) cierra sólo con `processed`» · ausente: 10-corte/B11.md:304 y :437 dicen «sigue abierto / hasta que el registro cierra» sin definir el cierre, y la rama «sin `expire_date` → sólo `processed`» (`F-8V3B3-004`) no está en ningún lado · BLOQUEA
+
+09-conciliacion.md:296 · «`S3`, `S23`, `S24`, `S31` y `S36` sobre un pagador manual SÍ están exentas (no hubo llamada que confirmar) y no vuelven al barrido por la salvedad 4» (también l. 301, 302, 306, 307 y 319) · distinta en 10-corte/B11.md:186 (AC:B11:6 enumera las once filas sin esa salvedad) y 04-catalogos.md:2247 (par de la tabla §10.1, las once sin salvedad) · BLOQUEA
+
+09-conciliacion.md:319 · «Sobre la lápida de recepción la relectura de la salvedad 4 mira el estado y los cobros, NO el monto: no tiene versión contra la cual comparar» · ausente (ni B11, ni 04-catalogos, ni la forma de fila de R6 en B3 lo dicen) · BLOQUEA
+
+09-conciliacion.md:351 · «Sobre la lápida de recepción no hay transición: los 3 días del reintento se cuentan desde que se escribió» · distinta en 10-corte/B11.md:192 (AC:B11:6: «hasta 3 días después de la transición», para todas las filas, la lápida incluida) · MENOR
+
+09-conciliacion.md:797 · «La comprobación de pagos acreditados relee por id los `payment` en `SUCCEEDED`, `PARTIALLY_REFUNDED` **o `REFUNDED`** de la ventana; sobre un `REFUNDED` contracargado no corre `P6`: `S14` abre `CONTRACARGO` con el pago colgado y nada más se mueve» (l. 806) · distinta en 04-catalogos.md:4333 (TRANS:B:P6, sólo desde `SUCCEEDED`/`PARTIALLY_REFUNDED`) y 10-corte/B11.md:265 (AC:B11:12, sólo `SUCCEEDED`); la rama `REFUNDED` (`F-8V3B2-002`) sólo existe en la spec para `RF2` (04-catalogos.md:4445), no para el barrido · BLOQUEA
+
+09-conciliacion.md:922 · «Una fila con la marca abierta SÍ se barre, pero lo que se suprime es el AVISO: no se re-emite una alerta por corrida sobre un caso ya abierto» · ausente como regla (AC:B11:15 cubre la terminal marcada; nada dice que no se re-alerte por corrida) · MENOR
+
+09-conciliacion.md:980 · «"¿Cobró?" se lee cobro por cobro: los intentos del listado `/authorized_payments/search?preapproval_id=`; "cobró" sólo con `payment.status = approved` del registro leído por id; NO del `status` del registro, ni del `status_detail` temprano, ni de `charged_quantity`, ni de `last_charged_date`; "no cobró" sólo con contador = registros y ninguno aprobado; lo demás es "todavía no se sabe" y quien necesita actuar lo trata como lectura fallida» (l. 980-1006) · distinta en 02-nucleo.md:834 (sólo listado + `charged_quantity` como completitud) y 10-corte/B7.md:188 (AC:B7:8 usa «la lectura del `B/09` §4» sin definirla); las prohibiciones de leer `status`/`status_detail`/`charged_quantity`/`last_charged_date` y la regla «no cobró sólo si el inventario está completo» no están escritas como regla en ningún ítem vivo · BLOQUEA
+
+09-conciliacion.md:996 · «Un registro que el listado devuelve y cuya lectura por id da `404` (`EX-55`) se contesta con el pago que el listado nombra, leído por `GET /v1/payments/{id}`: `approved` = cobró, otro = intentó y se rechazó (dispara `S16`); no es lectura fallida, salvo que el listado no nombre pago o esa lectura también falle» · ausente (`F-8V3B3-005` no aparece en la spec) · BLOQUEA
+
+09-conciliacion.md:1083 · «Barrido de creaciones sin respuesta: corre cada pocos minutos; si hay más de un `pending` que nombra la fila se reusa el de `date_created` más reciente y los otros se cancelan con la relectura de `S17` y SIN correo; mientras la fila siga en `PENDING_AUTHORIZATION` sigue buscando por `payer_email` y cancela todo `pending` que la nombre y no sea su vínculo» · ausente: sólo 02-nucleo.md:830 (el filtro por `payer_email`) y el texto de `B/05` §1.2 en 04-catalogos.md:6044 (reusar, «sólo si nombra esta fila», clave nueva tras búsqueda vacía); la frecuencia, el desempate por el más reciente con cancelación sin correo y la búsqueda continua no están, y ninguna pieza tiene AC de este barrido · BLOQUEA
+
+09-conciliacion.md:1119 · «Cada corrida del barrido deja registro (inicio, fin, filas leídas, filas fallidas); es completa si tiene fin y cero fallidas; el barrido hace ping al monitor de cron externo al terminar una completa, y el monitor alerta a las 26 h sin ping» (l. 1119-1136) · ausente en 10-corte/B11.md (ni AC, ni «Cron y outbox», ni «Auditoría»); la spec sólo lo nombra de rebote como «el vigía del barrido diario (`B/09` §7.1)» en 04-catalogos.md:1154 y :6634 y en 10-corte/B1.md:307, sin el registro, la definición de corrida completa ni las 26 h · BLOQUEA
+
+09-conciliacion.md:1147 · «El monitor alerta si pasa una semana más un día sin ping de la batería de la cuenta de pruebas, o un mes más un día sin el de producción» · distinta en 10-corte/B1.md:307 (AC:B1:15: «alerta si pasa la cadencia sin ping», sin el día de margen) · MENOR
+
+09-conciliacion.md:854 · «Si el mismo pago tiene una fila `CONFIRMED` con llamada sin id y la relectura muestra más de una devolución candidata del mismo monto, no se elige: se abre el motivo 18 con la fila `CONFIRMED` a la vista» (y l. 1297) · ausente como criterio: sólo en 80-abiertos.md:305; AC:B6:10 (10-corte/B6.md:186) y AC:B11:14 cubren la candidata única · MENOR
+
+### 10-verticales-planes-billing-options.md
+
+10-verticales-planes-billing-options.md:89 · «Una versión retirada se extingue cuando la deja su última suscripción —condición derivada, no estado guardado— y el listado de administración del §48 la muestra por versión retirada (cuántas suscripciones siguen ancladas)» · ausente (B12 no tiene ese listado; su UI sólo lista las filas de una migración) · BLOQUEA
+
+10-verticales-planes-billing-options.md:123 · «La ventana de 60 días de `DEC-MP-002` no aplica a un cambio de plan que el cliente elige: lo acepta en el acto con su precio a la vista» · ausente · MENOR
+
+### 12-suscripcion.md
+
+12-suscripcion.md:1022 · «Si un aumento quedó encolado sobre una pausada, el aviso de reanudación dice cuándo se le cobra Y CUÁNTO (el aumento va en ese mismo dato)» · distinta en 20-fase-2/B8b.md:149 (AC:B8b:3: «una sola cosa: qué día se le cobra») y 02-nucleo-outbox.md:295 (mismo texto); AC:B8b:4 no lo cubre · BLOQUEA
+
+12-suscripcion.md:286 · «En un downgrade rige el precio vigente al pedirlo; si el precio del plan destino sube entre el pedido y el fin del ciclo, la suscripción conserva el monto mutado y el aumento la alcanza como a cualquier otro, por la ventana de 60 días con su fecha, nunca por la puerta del downgrade» (§3, l. 275-296) · ausente (B8b se queda con el §3 por su FILA pero no lo rinde en ningún AC ni catálogo) · MENOR
+
+12-suscripcion.md:1090 · «Pausar estando en `CANCEL_SCHEDULED` no es una transición: nadie la agrega» · ausente del catálogo de lo que no existe (04-catalogos.md:4065-4159, PROH:B:1-6); queda implícito en AC:B8b:1 (S8 sólo desde `ACTIVE`) · MENOR
+
+## Resumen
+
+| archivo | líneas recorridas | reglas normativas vivas revisadas (aprox.) | ausente | distinta |
+|---|---|---|---|---|
+| 05-idempotencia-y-concurrencia.md | 1-557 (entero) | ~45 | 0 | 0 |
+| 06-proveedor.md | 1-570 (entero) | ~70 | 1 | 1 |
+| 09-conciliacion.md | 1-1311 (entero) | ~120 | 6 | 8 |
+| 10-verticales-planes-billing-options.md | 1-271 (entero) | ~35 | 2 | 0 |
+| 12-suscripcion.md | 1-1190 (entero) | ~110 | 2 | 1 |
+| **total** | | **~380** | **11** | **10** |
+
+Por clase: **BLOQUEA 13**, **MENOR 8**.
+
+Notas de método:
+
+- **05**: rendido casi verbatim en 04-catalogos.md (LOCK:C1-C6 y los bloques «Texto de la fuente» de
+  §1, §1.2, §3 y §4). Un chequeo mecánico (texto sin tachar, normalizado) encontró en la spec viva
+  todas las oraciones salvo títulos y la intro (l. 15-22, no normativa). No encontré
+  reglas contradichas en otros archivos.
+- **06**: §1-§4.5 y §7-§11 los rinde 10-corte/B1.md casi literal; §4.6 lo rinde 10-corte/B6.md:285;
+  §5 está en B2 y en el catálogo FR; §6 en B3 (AC:B3:9) y TRANS:B:S3; el «NO cierra» (IPN) en
+  DEC-MP-009, AC:B3:21, G17 y 80-abiertos.
+- **09**: B11 declara «el `09` entero», pero no lo transcribe: lo rinde en AC, en MOT, en TRANS y en
+  DEC-CONC-002. Por eso la comparación fue regla por regla con búsquedas dirigidas. La tercera,
+  la cuarta y la quinta comprobación de cero llamadas las verifiqué en B9a (AC:B9a:14), B5
+  (AC:B5:31, :36) y B7.
+- **10**: §3.7 lo rinde 20-fase-3/B12.md con fidelidad; §3.5 y §3.6 están en V2, V4 y V8a; §4
+  salió (C8) y no lo conté.
+- **12**: §1, §4 y §5 los transcribe 10-corte/B7.md (l. 600-1460) casi literal; lo confirmé con un
+  cotejo por oraciones más una revisión a mano de lo que no coincidía. §2, §3, §6 y §7 (de
+  B8b) los cotejé contra los AC de B8b y B8a y contra el catálogo PROH. **Ojo**: en 12 l. 300-1190 no
+  hice una lectura humana línea por línea de todo; usé el cotejo y la verificación a mano de cada
+  oración que no matcheaba. Lo que quedó sin match textual alto eran reformulaciones.
+- Nada de lo listado aparece sólo en 90-retirados.md.

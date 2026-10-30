@@ -1,0 +1,70 @@
+/**
+ * PUT /api/v1/protected/venues/:id/faqs/:faqId
+ * Update an existing FAQ on a venue listing (T-044)
+ *
+ * Gated on VENUE_EDIT_OWN (listing owner) or VENUE_EDIT_ALL (staff).
+ * The FAQ must belong to the specified venue (enforced inside updateVenueFaq).
+ */
+
+import {
+    FaqWithChannelVisibilityUpdatePayloadSchema,
+    type FaqWithChannelVisibilityUpdatePayloadType,
+    VenueFaqSingleOutputSchema,
+    type VenueFaqUpdateInput,
+    VerticalEnum
+} from '@repo/schemas';
+import { ServiceError, updateVenueFaq, VenueService } from '@repo/service-core';
+import type { Context } from 'hono';
+import { z } from 'zod';
+
+import { getActorFromContext } from '../../../utils/actor';
+import { apiLogger } from '../../../utils/logger';
+import { createProtectedRoute } from '../../../utils/route-factory';
+
+const venueService = new VenueService({ logger: apiLogger });
+
+/**
+ * Route handler — updates a specific FAQ on a venue listing.
+ *
+ * TYPE-WORKAROUND: accesses the internal `model` field from the service instance
+ * to pass to the standalone FAQ helper without requiring a public accessor.
+ */
+export const protectedUpdateVenueFaqRoute = createProtectedRoute({
+    method: 'put',
+    path: '/{id}/faqs/{faqId}',
+    summary: 'Update FAQ on venue listing',
+    description: 'Updates an existing FAQ on a venue listing',
+    listingAccess: { vertical: VerticalEnum.VENUE, operation: 'EDIT', idParam: 'id' },
+    tags: ['Venue', 'Venue FAQs'],
+    protectedTag: false,
+    requestParams: {
+        id: z.string().uuid({ message: 'zodError.common.id.invalidUuid' }),
+        faqId: z.string().uuid({ message: 'zodError.common.id.invalidUuid' })
+    },
+    requestBody: FaqWithChannelVisibilityUpdatePayloadSchema,
+    responseSchema: VenueFaqSingleOutputSchema,
+    handler: async (
+        ctx: Context,
+        params: Record<string, unknown>,
+        body: Record<string, unknown>
+    ) => {
+        const actor = getActorFromContext(ctx);
+
+        const input: VenueFaqUpdateInput = {
+            venueId: params.id as string,
+            faqId: params.faqId as string,
+            faq: body as FaqWithChannelVisibilityUpdatePayloadType
+        };
+
+        // TYPE-WORKAROUND: access protected `model` via cast to avoid `any`
+        const model = (venueService as unknown as { model: Parameters<typeof updateVenueFaq>[0] })
+            .model;
+        const result = await updateVenueFaq(model, actor, input);
+
+        if (result.error) {
+            throw new ServiceError(result.error.code, result.error.message);
+        }
+
+        return result.data;
+    }
+});

@@ -1,0 +1,38 @@
+# Pregunta al owner de la vuelta 3 (HOS-1352)
+
+Una sola. Las letras siguen después de CI.
+
+## CJ — Quién retira la ruta que borra cuentas de verdad (`user/admin/hardDelete.ts`)
+
+**Qué pasa.** Hoy el panel tiene una ruta que borra la fila de un usuario de la base. El diseño la saca:
+una cuenta sólo se da de baja con la acción 24, a pedido del dueño y con motivo. Eso está decidido (lote
+3 C). Lo que no está claro es **qué pieza la saca**, porque la misma descomposición de verticales dice dos
+cosas, y las dos están vivas:
+
+- la fila de `V6` (`V/descomposicion.md:66`): con `V6` «desaparecen el borrado físico de fichas **y de
+  cuentas**»;
+- la tabla de puertas (`V/descomposicion.md:547`): las de fichas son de `V6`, y **la de cuentas, de `V8a`**
+  (Z sólo renombró `V8` a `V8a`; el reparto es de antes).
+
+La spec quedó partida: `V4` y el criterio de `V6` (AC:V6:25, «no hay borrado físico de fichas ni de
+cuentas») se la dan a `V6`; el mapa de cobertura (03-contrato:1664) se la da a `V8a`, y `V8a` no la nombra.
+
+**Ejemplo.** Juan, anfitrión de una cabaña en Colón, se suscribe al Básico la semana siguiente al corte.
+Un mes después pide que le borren la cuenta. Con la ruta vieja viva, un admin podría borrar su fila de
+`users` de un clic: chocaría con la FK que `V4` deja en `RESTRICT` y la base devolvería un error, y sin
+la FK se saltearía las revisiones de la acción 24. Con la ruta retirada,
+el único camino es la acción 24, que antes revisa que Juan no tenga nada que cobrar ni ficha viva.
+
+**Opciones.**
+
+1. **La retira `V6`** (recomendada). Se corrige la tabla de la fuente (:547) y el mapa de cobertura para
+   que digan `V6`. Costo: dos líneas de fuente y una de la spec. Riesgo: bajo; AC:V6:25 ya lo exige, y la
+   ruta desaparece en el mismo cambio que las de fichas, antes del corte.
+2. **La retira `V8a`**. Se saca «y de cuentas» de la fila de `V6`, AC:V6:25 pasa a decir sólo fichas, `V4`
+   apunta a `V8a` y `V8a` gana un AC. Costo: cuatro lugares. Riesgo: medio; entre el merge de `V6` y el de
+   `V8a` la ruta sigue viva contra la FK `RESTRICT` de `V4`.
+3. **Las dos**: `V6` la deshabilita y `V8a` borra el archivo. Costo: dos AC. Riesgo: bajo, pero reparte un
+   solo acto en dos piezas, contra cómo la fuente reparte las puertas.
+
+**Recomendada: 1.** Es la que ya construye la spec tal como está escrita (el criterio de salida de `V6`
+la exige), y deja una sola pieza dueña de todas las puertas de borrado físico.

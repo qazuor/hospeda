@@ -1,0 +1,14 @@
+# VB-03 · spec → fuente · 03-contrato-de-cobertura.md, 02-nucleo-modelo-y-maquinas.md
+
+## Hallazgos
+
+03-contrato-de-cobertura.md:1339 · «El contrato admite hasta veinte fuentes simultáneas por persona y vertical; si se supera ese número, la consulta falla y la autorización deniega la operación.» · sin soporte · BLOQUEA
+
+02-nucleo-modelo-y-maquinas.md:276 · «el intento **ejecuta la primera fila declarada** y registra el evento de dominio sin poner la marca.» · contradice .specs/HOS-1352-billing-verticals-redesign/docs/nucleo/03-maquinas-de-estado.md:83 («el intento **cae en la regla 1** —no se ejecuta, se registra como evento de dominio y, si tocaba plata o estado, pone la marca—.») · BLOQUEA
+
+## Resumen
+
+| archivo | líneas recorridas | afirmaciones normativas revisadas (aprox.) | BLOQUEA | MENOR |
+|---|---|---|---|---|
+| 03-contrato-de-cobertura.md | 1–1988 | 450 | 1 | 0 |
+| 02-nucleo-modelo-y-maquinas.md | 1–373 | 100 | 1 | 0 |

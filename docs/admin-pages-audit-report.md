@@ -1,5 +1,7 @@
 # Admin Pages Audit Report
 
+> Historical document (dated 2026-05-14). Billing references predate HOS-1352, which replaced the QZPay stack. See the root CLAUDE.md "Billing and verticals" section ([CLAUDE.md](../CLAUDE.md#billing-and-verticals-hos-1352)).
+
 **Branch**: `fix/admin-pages-audit` (worktree `../hospeda-admin-pages-audit`, base = `staging`)
 **Date**: 2026-05-14
 **Authenticated as**: `superadmin@hospeda.com` / `Audit2026!` (SUPER_ADMIN, all permissions)

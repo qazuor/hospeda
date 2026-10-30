@@ -14,7 +14,8 @@
  */
 
 import EditorHub from '@/components/host/editor/EditorHub.astro';
-import FeaturedAddonOffer from '@/components/host/editor/FeaturedAddonOffer.astro';
+import ListingNotices from '@/components/listing/ListingNotices.astro';
+import SupportEditNotice from '@/components/listing/SupportEditNotice.astro';
 import EditorSectionLayout from '@/layouts/EditorSectionLayout.astro';
 import {
 	ACCOMMODATION_EDITOR_REGISTRY,
@@ -23,6 +24,8 @@ import {
 import { resolveEditorSectionStatuses } from '@/lib/editor/editor-hub-status-model';
 import { resolveEditorPage } from '@/lib/editor/resolve-editor-page';
 import { createTranslations } from '@/lib/i18n';
+import { loadListingNoticesItem } from '@/lib/listing/listing-notices-loader';
+import { loadSupportEdits } from '@/lib/listing/support-edits';
 
 export const prerender = false;
 
@@ -37,6 +40,27 @@ if (resolution.redirect) return resolution.redirect;
 const { data, locale, accommodationId } = resolution;
 const { t } = createTranslations(locale);
 const accommodation = data.accommodation;
+
+// Row 26 (HOS-1493) and the listing notices of HOS-1492 (fix requested,
+// moderated, archived, surplus): support's content edits and the notices of the
+// listing, read together. Neither blocks the hub: any failure degrades to
+// nothing.
+const cookieHeader = Astro.request.headers.get('cookie') ?? undefined;
+const [supportEdits, listingNotices] = await Promise.all([
+	loadSupportEdits({
+		vertical: 'accommodation',
+		listingId: accommodationId,
+		cookieHeader,
+	}),
+	loadListingNoticesItem({
+		vertical: 'accommodation',
+		listingId: accommodationId,
+		cookieHeader,
+	}),
+]);
+
+const hasListingNotices =
+	listingNotices.item !== undefined && listingNotices.item.notices.length > 0;
 
 const statuses = resolveEditorSectionStatuses({
 	input: {
@@ -56,6 +80,7 @@ const statuses = resolveEditorSectionStatuses({
 		// warn about what does not block while staying silent about what does
 		// (H-101).
 		publishReadiness: {
+			description: accommodation.description,
 			capacity: accommodation.maxGuests,
 			minNights: accommodation.minNights,
 			bedrooms: accommodation.bedrooms,
@@ -77,6 +102,19 @@ const statuses = resolveEditorSectionStatuses({
 	subtitle={t('host.properties.editor.hub.subtitle', 'Elegí qué querés editar')}
 	description={t('host.properties.editor.pageDescription')}
 >
+	{hasListingNotices && (
+		<div class="editor-hub__notices" data-testid="editor-hub-listing-notices">
+			<ListingNotices
+				locale={locale}
+				vertical="accommodation"
+				listingId={accommodationId}
+				item={listingNotices.item}
+			/>
+		</div>
+	)}
+
+	<SupportEditNotice locale={locale} items={supportEdits.items} />
+
 	<EditorHub
 		locale={locale}
 		registry={ACCOMMODATION_EDITOR_REGISTRY}
@@ -84,24 +122,13 @@ const statuses = resolveEditorSectionStatuses({
 		visibility={buildAccommodationEditorVisibility({ hasTranslations: data.translations !== null })}
 		statuses={statuses}
 	/>
-
-	{/*
-	 * HOS-318 D-10 / HOS-929: no nav item and no hub row — rendered here at
-	 * the foot, where it costs the hub nothing. Self-hides once the listing
-	 * is featured from either source (see the component header).
-	 */}
-	<div class="editor-hub-page__extra">
-		<FeaturedAddonOffer
-			locale={locale}
-			isFeatured={accommodation.isFeatured}
-			featuredByEntitlement={accommodation.featuredByEntitlement}
-		/>
-	</div>
 </EditorSectionLayout>
 
 <style>
-	.editor-hub-page__extra {
-		max-width: 720px;
-		margin-top: var(--space-5, 1.5rem);
+	.editor-hub__notices {
+		display: flex;
+		flex-direction: column;
+		gap: var(--space-3, 0.75rem);
+		margin: 0 0 var(--space-5, 1.5rem);
 	}
 </style>

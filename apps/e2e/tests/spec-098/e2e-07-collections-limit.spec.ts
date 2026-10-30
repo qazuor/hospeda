@@ -7,8 +7,7 @@
  *
  * Preconditions:
  *   - Protected user-bookmark-collections endpoints mounted.
- *   - Suite seed has the `tourist-vip` billing plan in `billing_plans`
- *     (`name = slug`, `livemode = false`), carrying a `max_collections` limit.
+ *   - Suite seed has the current `tourist-vip` catalog version and limit.
  *
  * What this validates (AC-03.4):
  *   1. User can create up to the plan's configured limit.
@@ -31,8 +30,9 @@
  */
 
 import { expect, test } from '@playwright/test';
-import { createSubscription, createUser, resolvePlanIdBySlug } from '../../fixtures/api-helpers.ts';
+import { createUser } from '../../fixtures/api-helpers.ts';
 import { getDbPool } from '../../fixtures/db-helpers.ts';
+import { readCurrentPlanLimit, seedActivePlanHolder } from '../../fixtures/signup-checkout.ts';
 import { cleanupTestUsers } from '../../support/test-cleanup.ts';
 
 const API_URL = process.env.HOSPEDA_E2E_API_URL ?? 'http://localhost:3001';
@@ -59,20 +59,13 @@ interface QuotaErrorResponse {
 
 test.describe('E2E-07: collection limit enforcement @p1 @favorites @collections @limit @spec-098', () => {
     let userId: string | null = null;
-    let vipPlanId: string | null = null;
-    // Read the cap off the resolved plan rather than hard-coding it or reading
-    // it from an env var: `max_collections` is commercial configuration that
-    // has already moved once (it lived on the now-retired tourist-plus at 10;
-    // tourist-vip, the sole surviving paid tourist tier, carries it at 25) and
-    // a fixed number here would silently drift from whatever the API actually
-    // enforces. `HOSPEDA_MAX_COLLECTIONS_PER_USER` stays as a last-resort
-    // fallback only for the case where the plan row carries no limit at all.
-    let MAX_COLLECTIONS = Number(process.env.HOSPEDA_MAX_COLLECTIONS_PER_USER ?? '10');
+    let MAX_COLLECTIONS = 0;
 
     test.beforeAll(async () => {
-        const vip = await resolvePlanIdBySlug({ slug: 'tourist-vip' });
-        vipPlanId = vip.planId;
-        MAX_COLLECTIONS = vip.limits?.max_collections ?? MAX_COLLECTIONS;
+        MAX_COLLECTIONS = await readCurrentPlanLimit({
+            slug: 'tourist-vip',
+            key: 'max_collections'
+        });
     });
 
     test.afterEach(async () => {
@@ -89,14 +82,12 @@ test.describe('E2E-07: collection limit enforcement @p1 @favorites @collections 
         page
     }) => {
         // Arrange
-        test.fixme(!vipPlanId, 'tourist-vip plan not seeded — cannot run');
-        if (!vipPlanId) return;
         const user = await createUser({ role: 'USER' });
         userId = user.id;
         // SPEC-287 put collections behind `can_use_collections`; tourist-free is
         // now rejected with 403, and tourist-vip is the tier whose cap applies
         // (HOS-1224 retired tourist-plus, which used to carry this cap at 10).
-        await createSubscription({ userId: user.id, planId: vipPlanId, status: 'active' });
+        await seedActivePlanHolder({ userId: user.id, slug: 'tourist-vip' });
         const headers = { cookie: user.sessionCookie };
 
         // Act: create MAX_COLLECTIONS collections (all should succeed)
@@ -151,14 +142,12 @@ test.describe('E2E-07: collection limit enforcement @p1 @favorites @collections 
 
     test('AC-03.4 — deleting a collection frees up a slot (re-entrant quota)', async ({ page }) => {
         // Arrange: fill to the limit
-        test.fixme(!vipPlanId, 'tourist-vip plan not seeded — cannot run');
-        if (!vipPlanId) return;
         const user = await createUser({ role: 'USER' });
         userId = user.id;
         // SPEC-287 put collections behind `can_use_collections`; tourist-free is
         // now rejected with 403, and tourist-vip is the tier whose cap applies
         // (HOS-1224 retired tourist-plus, which used to carry this cap at 10).
-        await createSubscription({ userId: user.id, planId: vipPlanId, status: 'active' });
+        await seedActivePlanHolder({ userId: user.id, slug: 'tourist-vip' });
         const headers = { cookie: user.sessionCookie };
 
         let firstCollectionId: string | null = null;
@@ -208,14 +197,12 @@ test.describe('E2E-07: collection limit enforcement @p1 @favorites @collections 
 
     test('AC-03.4 — usage block in GET list shows current/max ratio', async ({ page }) => {
         // Arrange
-        test.fixme(!vipPlanId, 'tourist-vip plan not seeded — cannot run');
-        if (!vipPlanId) return;
         const user = await createUser({ role: 'USER' });
         userId = user.id;
         // SPEC-287 put collections behind `can_use_collections`; tourist-free is
         // now rejected with 403, and tourist-vip is the tier whose cap applies
         // (HOS-1224 retired tourist-plus, which used to carry this cap at 10).
-        await createSubscription({ userId: user.id, planId: vipPlanId, status: 'active' });
+        await seedActivePlanHolder({ userId: user.id, slug: 'tourist-vip' });
         const headers = { cookie: user.sessionCookie };
 
         // Create 2 collections
@@ -242,14 +229,8 @@ test.describe('E2E-07: collection limit enforcement @p1 @favorites @collections 
 
         const usage = listBody.data?.usage;
 
-        if (!usage) {
-            test.skip(
-                true,
-                'GET list response does not include usage block — ' +
-                    'check UserBookmarkCollectionService returns { current, max } in list response'
-            );
-            return;
-        }
+        expect(usage, 'GET list must include its usage block').toBeDefined();
+        if (!usage) throw new Error('GET list response omitted its required usage block');
 
         // Assert
         expect(usage.current).toBe(2);

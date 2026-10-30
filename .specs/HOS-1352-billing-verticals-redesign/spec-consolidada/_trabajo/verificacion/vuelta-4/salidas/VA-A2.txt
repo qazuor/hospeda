@@ -1,0 +1,13 @@
+# VA-A2 · fuente → spec · P/docs/12-contrato-de-cobertura.md; P/docs/16-fase-7-del-paraguas.md; P/docs/41-corte-del-mvp/10-decisiones-del-owner.md
+
+## Hallazgos
+
+.specs/HOS-1352-billing-verticals-redesign/docs/41-corte-del-mvp/10-decisiones-del-owner.md:171 · «y un contador de entradas sospechosas en los logs estructurados» · ausente (búsqueda con rg --hidden en toda s/5586fad7/ por contador, sospechos y Redis; la obligación sigue vigente en .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:6693–6698, 📌 de DEC-AUTH-001. La consolidada omite esa cláusula tanto en 01-decisiones-vigentes.md:3689 como en la transcripción de CB, 01-decisiones-vigentes.md:14111. Sólo queda una mención contextual como asunto cerrado en 10-corte/V3.md:887–889; AC:V3:10, líneas 258–269, y TEST:V3:12/13, líneas 845–856, verifican invalidación y lectura en vivo, sin exigir el contador; la sección de observabilidad, línea 736, sólo exige marcar la entrada sospechosa. Ningún AC, TEST, transición o catálogo recoge la emisión de ese contador en logs) · BLOQUEA
+
+## Resumen
+
+| archivo | reglas normativas vivas revisadas | líneas recorridas | ausentes | distintas |
+|---|---:|---|---:|---:|
+| P/docs/12-contrato-de-cobertura.md | ≈190 | 1–1585 | 0 | 0 |
+| P/docs/16-fase-7-del-paraguas.md | ≈170 | 1–1218 | 0 | 0 |
+| P/docs/41-corte-del-mvp/10-decisiones-del-owner.md | ≈110 | 1–257 | 1 | 0 |

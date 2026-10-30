@@ -1,0 +1,80 @@
+# VB-B2 · spec → fuente · zona B2
+
+Rutas de fuente relativas a `fuentes/`. Ojo: las fuentes viven bajo `.specs/` (oculto), así que toda búsqueda necesita `rg --hidden`.
+
+## 02-nucleo.md
+
+02-nucleo.md:96 · «Un hueco se cierra cuando el diseño dice qué pasa en todos sus casos» (omite marcarlo cerrado en el mismo commit y no borrar la fila) · más débil que .specs/HOS-1352-billing-verticals-redesign/docs/nucleo/00-indice.md:89 · MENOR
+02-nucleo.md:746 · «INV:D12 sale de DEC-TRIAL-002 y de `B/03` §2» · contradice .specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/03-maquinas-de-estado.md:21 · MENOR
+  ↳ el §2 del trial es `V/03`; el `03` de billing no tiene §2 (la fuente nucleo/04-invariantes.md:139 dice «cap. 03 §2»).
+02-nucleo.md:1108 · «Lo mismo sobre la presencia de un Partner: escribe su bit de moderación», justo después de los dos niveles de moderación · más fuerte que .specs/HOS-1353-verticales-capacidades-y-autorizacion/descomposicion.md:66 · MENOR
+  ↳ la fuente dice «los dos niveles, sólo en la ficha».
+02-nucleo.md:1218 · «ACC:19: sobre una versión con clientes, un precio nuevo es un aumento o una baja y va por DEC-MP-002, con su aviso (PLAZO:11) y la fecha de cada cliente» · contradice .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:1469 · BLOQUEA
+  ↳ 📌 BM: sobre una versión con clientes se rechaza y se publica una versión nueva; aviso y mutación a anclados llegan con `B12`. 📌 BZ (:1478): el aumento a un anclado es una migración por `S37`/`S38` con motivo «aumento».
+02-nucleo.md:1222 · «ACC:19 rechaza un ciclo que no sea mayor que la gracia», único rechazo nombrado · más débil que .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:1472 · BLOQUEA
+  ↳ faltan el rechazo de un monto menor que ARS 15 (DEC-MP-001 impl. 4) y que el uso queda vedado hasta el momento 5 del corte (:1473-1474).
+02-nucleo.md:1742 · «Lo que el panel rechaza (las cinco reglas) es lo que era G-R5-B (VAL:G-R5-B)» · más fuerte que .specs/HOS-1352-billing-verticals-redesign/docs/nucleo/02-modelo-de-datos.md:237 · MENOR
+  ↳ la fuente ata G-R5-B sólo a la regla 2 (el `N` de PB5 contra el plazo 2).
+
+## 02-nucleo-auditoria.md
+
+02-nucleo-auditoria.md:79 · «La tabla vive en un esquema propio y el rol de base de la aplicación tiene sobre ella `INSERT` y `SELECT`, y nada más (`NUCLEO/02` §2.6)» · sin soporte · BLOQUEA
+  ↳ no está en nucleo/08:74-81 ni en nucleo/02:263; ninguna fuente lo pide.
+02-nucleo-auditoria.md:211 · «La correlación de la corrida se borra del evento a los 30 días; la de la entidad se conserva» · sin soporte · BLOQUEA
+  ↳ nucleo/08:164-168 no fija plazo. Además choca con append-only «sin `update` y sin `delete`» (nucleo/08:76) y con «la retención no escribe en este registro» (nucleo/08:85).
+02-nucleo-auditoria.md:442 · «La plantilla del correo inmediato del reembolso fallido es del catálogo, que no tiene fila para él» · contradice .specs/HOS-1352-billing-verticals-redesign/docs/nucleo/08-auditoria-y-observabilidad.md:519 · MENOR
+  ↳ la fuente tacha «que no tiene fila para él»: desde BR la fila existe y la construye `B11`.
+
+## 02-nucleo-glosario.md
+
+(sin hallazgos)
+
+## 02-nucleo-modelo-y-maquinas.md
+
+(sin hallazgos)
+
+## 02-nucleo-outbox.md
+
+02-nucleo-outbox.md:47 · «El plazo de `processing` es de 15 minutos desde que la tomó, no es configuración, y lo fija U2 (FASE 5, lote 2 A)» · sin soporte · BLOQUEA
+  ↳ nucleo/07:49-53 sólo pide dueño y vencimiento, sin valor. Los únicos «15 minutos» del corpus son los del caché de entitlements (nucleo/02:211, G4-3). `16-fase-7…:851` tampoco da valor.
+02-nucleo-outbox.md:70 · «U2 va antes de las primeras unidades que encolan: V6, V9 (V9b), B4 y B12» · contradice .specs/HOS-1352-billing-verticals-redesign/docs/nucleo/07-outbox-y-notificaciones.md:70 · BLOQUEA
+  ↳ la fuente tacha «V6, V9, B4 y B12» y fija `U2 → V4` y `U2 → B3` (BR), con las demás por transitividad.
+02-nucleo-outbox.md:281 · «El catálogo de correos» termina en «el alta rechazada» · más débil que .specs/HOS-1352-billing-verticals-redesign/docs/nucleo/07-outbox-y-notificaciones.md:287 · BLOQUEA
+  ↳ omite las filas «reembolso de revocación fallido» y «cobro duplicado detectado» (nucleo/07:287-288): transaccionales, no suprimibles, a `SUPER_ADMIN`, construidas por `B11` (BR). Sólo aparecen en 10-corte/B11.md, no en el catálogo del núcleo.
+
+## 03-contrato-de-cobertura.md
+
+03-contrato-de-cobertura.md:481 · «La ventana de autorización es de 72 horas con tarjeta y 7 días corridos con pago manual», como valor fijo · más fuerte que .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:5084 · MENOR
+  ↳ 📌 de DEC-SUB-016: son el valor inicial del plazo 10.
+03-contrato-de-cobertura.md:960 · «Lo emite verticales en el mismo acto de PB9 o de PB12, después de su commit» · contradice .specs/HOS-1352-billing-verticals-redesign/docs/12-contrato-de-cobertura.md:964 · MENOR
+  ↳ repone el «en» que la fuente tacha.
+03-contrato-de-cobertura.md:1114 · «Los lectores de `retenciónDetenida` para archivar y borrar los construye `V9b`» · contradice .specs/HOS-1352-billing-verticals-redesign/docs/12-contrato-de-cobertura.md:1127 · BLOQUEA
+  ↳ la fuente dice «`V6` y `V9b`»: PB4/PB5 en `V6` y PB9 en `V9b` (BL).
+03-contrato-de-cobertura.md:1411 · «Cada negación por default deja un evento de dominio con la fuente que no estaba implementada (DEC-ARCH-006)» · sin soporte · BLOQUEA
+  ↳ 12-contrato:1438 sólo dice «responde que no». DEC-ARCH-006 (01-decision-log.md:2481) no lo pide.
+03-contrato-de-cobertura.md:1661 · «U2 va antes de V6, V9a, V9b, B4 y B12, las primeras que encolan» · más débil que .specs/HOS-1352-billing-verticals-redesign/docs/41-corte-del-mvp/10-decisiones-del-owner.md:143 · BLOQUEA
+  ↳ faltan las flechas `U2→B3` y `U2→V4` (BR; HOS-1353/descomposicion.md:602, HOS-1354/descomposicion.md:814).
+03-contrato-de-cobertura.md:1677 · «Las trece unidades de billing tienen diseño… las trece se pueden construir» · contradice .specs/HOS-1352-billing-verticals-redesign/docs/41-corte-del-mvp/10-decisiones-del-owner.md:16 · MENOR
+  ↳ con Z, `B8`, `B9` y `B13` se parten en a/b.
+03-contrato-de-cobertura.md:1737 · «Son doce dependencias, sobre V2, V4, V6 y V9b, y una de billing (B1)» · más débil que .specs/HOS-1353-verticales-capacidades-y-autorizacion/descomposicion.md:593 · MENOR
+  ↳ falta la de `V7` sobre el pago manual de `B5` (BC).
+03-contrato-de-cobertura.md:1915 · «Las dependencias contra V2 llegan resueltas antes que B7, B8b y B12» · más débil que .specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:441 · MENOR
+  ↳ la fuente incluye `B8a`.
+03-contrato-de-cobertura.md:1924 · «La lista la comprueba `spec-consolidada/scripts/defs.py` (`SOLO_CITABLES`) y el hash de cada fila no cambió» · más fuerte que .specs/HOS-1352-billing-verticals-redesign/docs/41-corte-del-mvp/10-decisiones-del-owner.md:105 · MENOR
+  ↳ la fuente sólo dice «lista cerrada por script».
+
+## Resumen
+
+| archivo | líneas recorridas | afirmaciones normativas revisadas (aprox.) | BLOQUEA | MENOR |
+|---|---|---|---|---|
+| 02-nucleo.md | 1–1781 | ~300 (85 + 215) | 2 | 4 |
+| 02-nucleo-auditoria.md | 1–446 | ~62 | 2 | 1 |
+| 02-nucleo-glosario.md | 1–959 | ~120 | 0 | 0 |
+| 02-nucleo-modelo-y-maquinas.md | 1–374 | ~45 | 0 | 0 |
+| 02-nucleo-outbox.md | 1–411 | ~70 | 3 | 0 |
+| 03-contrato-de-cobertura.md | 1–1961 | ~420 (190 + 230) | 3 | 6 |
+| **total** | | **~1015** | **10** | **11** |
+
+Por tipo: sin soporte 4 · contradice 7 · más fuerte 4 · más débil 6 (21 en total).
+
+Patrón dominante: la spec conserva texto que la fuente tachó, o no recoge adjudicaciones tardías del corte del MVP (2026-10-02, sobre todo BR, BL, BM, BZ y Z). Hay además cuatro agregados sin fuente: el esquema y rol de base, la correlación borrada a 30 días, el `processing` de 15 minutos y el evento de dominio por negación por default.

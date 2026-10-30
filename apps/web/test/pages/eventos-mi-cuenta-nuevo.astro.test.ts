@@ -33,10 +33,32 @@ describe('mi-cuenta/eventos/nuevo.astro', () => {
         expect(pageSource).toContain('buildLoginRedirect(');
     });
 
-    it('gates on hasEventsNavAccess (EVENT_CREATE) and redirects to mi-cuenta otherwise', () => {
+    it('TEST:1767:20 — shows a no-access state instead of redirecting to mi-cuenta', () => {
         expect(pageSource).toContain("from '@/lib/nav-gating'");
         expect(pageSource).toContain('hasEventsNavAccess(');
-        expect(pageSource).toContain("path: 'mi-cuenta'");
+        expect(pageSource).toContain('AccountEmptyState');
+        expect(pageSource).toContain('colaborar/editores');
+        expect(pageSource).toContain('account.myContent.events.create.noAccess.title');
+        expect(pageSource).not.toMatch(
+            /Astro\.redirect\(\s*buildUrl\(\s*\{\s*locale,\s*path:\s*'mi-cuenta'\s*\}\s*\)\s*\)/
+        );
+    });
+
+    it('TEST:1767:21 — only mounts the form and loads organizers with access', () => {
+        expect(pageSource).toMatch(/canCreateEvents\s*\?\s*await\s+eventOrganizersApi\.list\(/);
+        expect(pageSource.indexOf('hasEventsNavAccess(')).toBeLessThan(
+            pageSource.indexOf('eventOrganizersApi.list(')
+        );
+
+        const accessGate = template.indexOf('canCreateEvents ?');
+        expect(accessGate).toBeGreaterThanOrEqual(0);
+        expect(template.indexOf('<EventCreateForm')).toBeGreaterThan(accessGate);
+    });
+
+    it('TEST:1767:22 — keeps the login redirect before the role gate', () => {
+        expect(pageSource.indexOf('buildLoginRedirect(')).toBeLessThan(
+            pageSource.indexOf('hasEventsNavAccess(')
+        );
     });
 
     it('fetches the organizer catalog through lib/api/, never calling fetch() directly', () => {

@@ -1,0 +1,16 @@
+# VA-A5 · fuente → spec · V/docs/{18-partner,19-superficies,20-testing,21-migracion,22-lo-legal}.md; P/docs/06-mp-validation-matrix.md
+
+## Hallazgos
+
+Sin hallazgos confirmados de reglas normativas vivas ausentes o distintas.
+
+## Resumen
+
+| archivo | reglas normativas vivas revisadas | líneas recorridas | ausentes | distintas |
+|---|---:|---|---:|---:|
+| fuentes/.specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/18-partner.md | ≈65 | 1–407 | 0 | 0 |
+| fuentes/.specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/19-superficies.md | ≈65 | 1–111 | 0 | 0 |
+| fuentes/.specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/20-testing.md | ≈75 | 1–381 | 0 | 0 |
+| fuentes/.specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/21-migracion.md | ≈55 | 1–777 | 0 | 0 |
+| fuentes/.specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/22-lo-legal.md | ≈15 | 1–141 | 0 | 0 |
+| fuentes/.specs/HOS-1352-billing-verticals-redesign/docs/06-mp-validation-matrix.md | ≈135 | 1–573 | 0 | 0 |

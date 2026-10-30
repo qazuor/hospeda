@@ -25,5 +25,4 @@ export { createBasicInfoConsolidatedSection } from './sections/basic-info.consol
 export { createContactInfoConsolidatedSection } from './sections/contact-info.consolidated';
 export { createGalleryConsolidatedSection } from './sections/gallery.consolidated';
 export { createLocationInfoConsolidatedSection } from './sections/location-info.consolidated';
-export { createStatesModerationConsolidatedSection } from './sections/states-moderation.consolidated';
 export { createStatisticsConsolidatedSection } from './sections/statistics.consolidated';

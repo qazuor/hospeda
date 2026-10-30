@@ -2,7 +2,7 @@
  * Cron Run Purge Job (SPEC-161)
  *
  * Periodically deletes old `cron_runs` records via {@link CronRunService.purgeOld},
- * keeping the run-history table bounded. Runs daily at 4:00 UTC (a gap between the
+ * keeping the run-history table bounded. Runs daily at 4:00 Buenos Aires time (a gap between the
  * existing 2/3/5/6 AM jobs).
  *
  * Retention policy (differentiated by outcome):
@@ -24,13 +24,13 @@ const FAILED_RETENTION_DAYS = 180;
 /**
  * Cron run purge job definition.
  *
- * Schedule: Daily at 4:00 UTC.
+ * Schedule: Daily at 4:00 Buenos Aires time.
  * Purpose: Prevent unbounded growth of the cron_runs observability table.
  */
 export const cronRunPurgeJob: CronJobDefinition = {
     name: 'cron-run-purge',
     description: 'Purge old cron run history (60-day success / 180-day failure retention)',
-    schedule: '0 4 * * *', // Daily at 4:00 UTC
+    schedule: '0 4 * * *', // Daily at 4:00 Buenos Aires time
     enabled: true,
     timeoutMs: 60_000, // 1 minute timeout
 

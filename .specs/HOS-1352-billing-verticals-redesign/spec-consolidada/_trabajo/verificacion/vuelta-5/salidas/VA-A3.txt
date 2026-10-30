@@ -1,0 +1,12 @@
+# VA-A3 · fuente → spec · V/docs/02-modelo-de-datos.md, V/docs/03-maquinas-de-estado.md
+
+## Hallazgos
+
+fuentes/.specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/02-modelo-de-datos.md:369 · «La función es SHA-256 sin clave sobre el correo normalizado.» · distinta en s/2e9ef99e/10-corte/V4.md:874 («La función usa un hash sin clave sobre el correo normalizado.»): omite el algoritmo obligatorio y permite implementar otro hash, con seudónimos diferentes. La misma pérdida aparece en AC:V4:2 (línea 222), TEST:V4:3 (línea 1019) y s/2e9ef99e/01-decisiones-vigentes.md:222. Búsqueda con rg --hidden en toda s/2e9ef99e/: ninguna exigencia de SHA-256 para el seudónimo; la aparición de HMAC-SHA256 corresponde a firmas del proveedor. La regla sigue viva en fuentes/.specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:468 (DEC-TRIAL-004, 📌 del 2026-09-27); los 📌 siguientes precisan la normalización y las señales guardadas, y las decisiones del corte no reemplazan el algoritmo. · BLOQUEA
+
+## Resumen
+
+| archivo | reglas normativas vivas revisadas | líneas recorridas | ausentes | distintas |
+|---|---:|---|---:|---:|
+| V/docs/02-modelo-de-datos.md | ≈190 | 1–1032 | 0 | 1 |
+| V/docs/03-maquinas-de-estado.md | ≈210 | 1–1376 | 0 | 0 |

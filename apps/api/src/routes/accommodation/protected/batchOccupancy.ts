@@ -8,22 +8,21 @@
  * request body — same rationale as `addOccupancy.ts`.
  *
  * No declarative `ownership:` config — MANAGE permission + ownership are
- * enforced inside `batchToggleOccupancy`. The `CAN_USE_CALENDAR` entitlement
- * is enforced HERE at the route via `requireEntitlement` — see the module
- * doc in `addOccupancy.ts` for the full rationale (route-level gate reads
- * the same `loadEntitlements` path the frontend trusts, unlike the removed
- * service-level `resolveOwnerCanUseCalendar` check).
+ * enforced inside `batchToggleOccupancy`. Calendar operations run without the former
+ * `can_use_calendar` on the listing owner through listing access.
+ * The listing access resolver requires the route capability on the owner.
  */
-import { EntitlementKey } from '@repo/billing';
+
 import {
     AccommodationIdSchema,
     AccommodationOccupancyBatchInputSchema,
-    AccommodationOccupancySchema
+    AccommodationOccupancySchema,
+    VerticalEnum
 } from '@repo/schemas';
 import { batchToggleOccupancy } from '@repo/service-core';
 import type { Context } from 'hono';
 import { z } from 'zod';
-import { requireEntitlement } from '../../../middlewares/entitlement';
+
 import { getActorFromContext } from '../../../utils/actor';
 import { createProtectedRoute } from '../../../utils/route-factory';
 
@@ -42,6 +41,12 @@ const BatchOccupancyResponseSchema = z.object({
 export const protectedBatchOccupancyRoute = createProtectedRoute({
     method: 'patch',
     path: '/{id}/occupancy/batch',
+    listingAccess: {
+        vertical: VerticalEnum.ACCOMMODATION,
+        operation: 'EDIT',
+        capabilities: ['can_use_calendar'],
+        idParam: 'id'
+    },
     summary: 'Batch block/unblock days on the occupancy calendar (owner)',
     description:
         'Toggles a set of dates blocked/unblocked. isBlocked=true idempotently upserts ' +
@@ -73,8 +78,5 @@ export const protectedBatchOccupancyRoute = createProtectedRoute({
         });
 
         return { occupancy };
-    },
-    options: {
-        middlewares: [requireEntitlement(EntitlementKey.CAN_USE_CALENDAR)]
     }
 });

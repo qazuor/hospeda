@@ -2,7 +2,7 @@
  * Liveness check route
  * Indicates if the service is alive
  */
-import { HealthLivenessSchema } from '@repo/schemas';
+import { HealthLivenessDataSchema } from '@repo/schemas';
 import { createSimpleRoute } from '../../utils/route-factory';
 
 export const liveRoutes = createSimpleRoute({
@@ -11,7 +11,7 @@ export const liveRoutes = createSimpleRoute({
     summary: 'Liveness check',
     description: 'Indicates if the service is alive',
     tags: ['Health'],
-    responseSchema: HealthLivenessSchema,
+    responseSchema: HealthLivenessDataSchema,
     handler: () => ({
         alive: true,
         timestamp: new Date().toISOString()
@@ -19,7 +19,6 @@ export const liveRoutes = createSimpleRoute({
     options: {
         skipAuth: true,
         skipValidation: true,
-        cacheTTL: 5,
         customRateLimit: { requests: 1000, windowMs: 60000 }
     }
 });

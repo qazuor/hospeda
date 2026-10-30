@@ -23,14 +23,27 @@ import type { Experience } from '@repo/schemas';
 import {
     ExperiencePriceUnitEnum,
     ExperienceTypeEnum,
-    LifecycleStatusEnum,
-    ModerationStatusEnum,
     PermissionEnum,
+    PublicationStatusEnum,
     RoleEnum,
-    ServiceErrorCode,
-    VisibilityEnum
+    ServiceErrorCode
 } from '@repo/schemas';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+
+// HOS-1499: every listing write now runs in a transaction and records the
+// owner act; neither has a database here.
+vi.mock('../../../src/utils/transaction', async () => {
+    const doubles = await import('../../helpers/owner-act-doubles');
+    return { withServiceTransaction: vi.fn(doubles.fakeWithServiceTransaction) };
+});
+vi.mock('@repo/db', async (importOriginal) => {
+    const doubles = await import('../../helpers/owner-act-doubles');
+    return {
+        ...(await importOriginal<object>()),
+        domainEventModel: doubles.domainEventModelDouble
+    };
+});
+
 import { ExperienceService } from '../../../src/services/experience/experience.service';
 import type { Actor } from '../../../src/types';
 import * as permissionUtils from '../../../src/utils/permission';
@@ -44,7 +57,7 @@ const OWNER_ID = '00000000-0000-4000-a000-000000000002';
 const DEST_ID = '00000000-0000-4000-a000-000000000003';
 const OTHER_USER = '00000000-0000-4000-a000-000000000099';
 
-function makeExperienceEntity(overrides: Partial<Record<string, unknown>> = {}): Experience {
+function makeExperienceEntity(overrides: Partial<Experience> = {}): Experience {
     return {
         id: ENTITY_ID,
         name: 'City Kayak Tour',
@@ -53,13 +66,11 @@ function makeExperienceEntity(overrides: Partial<Record<string, unknown>> = {}):
         priceFrom: 150000,
         priceUnit: ExperiencePriceUnitEnum.PER_PERSON,
         isPriceOnRequest: false,
-        hasActiveSubscription: true,
         destinationId: DEST_ID,
         ownerId: OWNER_ID,
-        lifecycleState: LifecycleStatusEnum.ACTIVE,
-        moderationState: ModerationStatusEnum.APPROVED,
-        visibility: VisibilityEnum.PUBLIC,
-        isFeatured: false,
+        publicationStatus: PublicationStatusEnum.PUBLISHED,
+        inactiveSince: new Date('2024-01-01'),
+        deadlinesVersion: 1,
         averageRating: 0,
         reviewsCount: 0,
         createdAt: new Date('2024-01-01'),
@@ -70,27 +81,27 @@ function makeExperienceEntity(overrides: Partial<Record<string, unknown>> = {}):
 
 const ownerActor: Actor = {
     id: OWNER_ID,
-    roles: [RoleEnum.COMMERCE_OWNER],
-    // SPEC-253 D2=b: single COMMERCE_EDIT_OWN replaces 10 per-section perms
-    permissions: [PermissionEnum.COMMERCE_EDIT_OWN]
+    roles: [RoleEnum.EXPERIENCE_OWNER],
+    // SPEC-253 D2=b: single EXPERIENCE_EDIT_OWN replaces 10 per-section perms
+    permissions: [PermissionEnum.EXPERIENCE_EDIT_OWN]
 };
 
 const staffActor: Actor = {
     id: 'staff-uuid-1',
     roles: [RoleEnum.ADMIN],
     permissions: [
-        PermissionEnum.COMMERCE_CREATE,
-        PermissionEnum.COMMERCE_EDIT_ALL,
-        PermissionEnum.COMMERCE_DELETE,
-        PermissionEnum.COMMERCE_VIEW_ALL
+        PermissionEnum.EXPERIENCE_CREATE,
+        PermissionEnum.EXPERIENCE_EDIT_ALL,
+        PermissionEnum.EXPERIENCE_DELETE,
+        PermissionEnum.EXPERIENCE_VIEW_ALL
     ]
 };
 
 const otherUserActor: Actor = {
     id: OTHER_USER,
-    roles: [RoleEnum.COMMERCE_OWNER],
-    // SPEC-253 D2=b: COMMERCE_EDIT_OWN gives owner rights but entity.ownerId != OTHER_USER
-    permissions: [PermissionEnum.COMMERCE_EDIT_OWN]
+    roles: [RoleEnum.EXPERIENCE_OWNER],
+    // SPEC-253 D2=b: EXPERIENCE_EDIT_OWN gives owner rights but entity.ownerId != OTHER_USER
+    permissions: [PermissionEnum.EXPERIENCE_EDIT_OWN]
 };
 
 // ---------------------------------------------------------------------------
@@ -143,7 +154,7 @@ function makeJunctionModel() {
 }
 
 /**
- * HOS-321: `CommerceCatalogModel` validates the whole set through `findByIds`
+ * HOS-321: `ListingCatalogModel` validates the whole set through `findByIds`
  * in one query. These stubs are injected onto an `any`-typed field, so nothing
  * would flag a stale `findById`-only shape until it blew up at runtime.
  */
@@ -212,7 +223,7 @@ describe('ExperienceService.updateOwn — ownership gate', () => {
         expect(result.error).toBeUndefined();
     });
 
-    it('should allow staff with COMMERCE_EDIT_ALL to update any listing', async () => {
+    it('should allow staff with EXPERIENCE_EDIT_ALL to update any listing', async () => {
         const entity = makeExperienceEntity();
         const service = makeService(entity);
         const result = await service.updateOwn(ENTITY_ID, { isPriceOnRequest: false }, staffActor);
@@ -224,13 +235,13 @@ describe('ExperienceService.updateOwn — ownership gate', () => {
 // updateOwn — per-section permission gates
 // ---------------------------------------------------------------------------
 
-describe('ExperienceService.updateOwn — single COMMERCE_EDIT_OWN gate (SPEC-253 D2=b)', () => {
-    it('should return FORBIDDEN when owner lacks COMMERCE_EDIT_OWN (no per-section gates)', async () => {
+describe('ExperienceService.updateOwn — single EXPERIENCE_EDIT_OWN gate (SPEC-253 D2=b)', () => {
+    it('should return FORBIDDEN when owner lacks EXPERIENCE_EDIT_OWN (no per-section gates)', async () => {
         const entity = makeExperienceEntity();
         const service = makeService(entity);
         const actorNoPerm: Actor = {
             id: OWNER_ID,
-            roles: [RoleEnum.COMMERCE_OWNER],
+            roles: [RoleEnum.EXPERIENCE_OWNER],
             permissions: [] // no permissions at all
         };
         const result = await service.updateOwn(ENTITY_ID, { isPriceOnRequest: true }, actorNoPerm);
@@ -317,7 +328,7 @@ describe('ExperienceService.updateOwn — single COMMERCE_EDIT_OWN gate (SPEC-25
         expect(updatePayload.richDescriptionI18n).toEqual(i18nValue);
     });
 
-    it('should bypass per-section gates for staff with COMMERCE_EDIT_ALL', async () => {
+    it('should bypass per-section gates for staff with EXPERIENCE_EDIT_ALL', async () => {
         const entity = makeExperienceEntity();
         const service = makeService(entity);
         // Staff can update any field without any editOwn permission
@@ -378,25 +389,6 @@ describe('ExperienceService.updateOwn — schema enforcement', () => {
             expect(updatePayload).not.toHaveProperty('slug');
         }
     });
-
-    it('should not allow hasActiveSubscription in owner update (subscription lifecycle only)', async () => {
-        // hasActiveSubscription is admin-only; owner cannot toggle it.
-        // The field is absent from ExperienceOwnerUpdateInputSchema so it is stripped silently.
-        const entity = makeExperienceEntity();
-        const service = makeService(entity);
-        const mockUpdate = (service as AnyService).model.update;
-        // biome-ignore lint/suspicious/noExplicitAny: test coercion — simulating forged HTTP body
-        const forgedPayload: any = {
-            isPriceOnRequest: false,
-            hasActiveSubscription: true // should be stripped
-        };
-        await service.updateOwn(ENTITY_ID, forgedPayload, ownerActor);
-        const updateArgs = mockUpdate.mock.calls[0];
-        if (updateArgs) {
-            const updatePayload = updateArgs[1] as Record<string, unknown>;
-            expect(updatePayload).not.toHaveProperty('hasActiveSubscription');
-        }
-    });
 });
 
 // ---------------------------------------------------------------------------
@@ -408,8 +400,8 @@ describe('ExperienceService.updateOwn — schema enforcement', () => {
 // can now edit them. `summary` is also owner-editable. HOS-166 D-1 further
 // reverses SPEC-239 decision #5: `name`, `description`, `destinationId` are
 // now owner-editable identity fields too. `slug` stays admin-only post-create
-// (OQ-3); only true control fields (lifecycle/visibility/moderation/
-// isFeatured/hasActiveSubscription/ownerId) remain stripped.
+// (OQ-3); only true control fields (publicationStatus/
+// ownerId) remain stripped.
 describe('ExperienceService.updateOwn — identity-field regression (SPEC-249 T-022, SPEC-253, HOS-166 D-1)', () => {
     it('persists name/description/destinationId/type/priceFrom/priceUnit/summary/i18n; strips slug + control fields', async () => {
         const entity = makeExperienceEntity();
@@ -427,11 +419,7 @@ describe('ExperienceService.updateOwn — identity-field regression (SPEC-249 T-
                 'Una descripción base actualizada por el propio dueño del comercio para su ficha.', // HOS-166 D-1 — must persist
             destinationId: '00000000-0000-4000-a000-0000000000ff', // HOS-166 D-1 — must persist
             slug: 'forged-slug', // immutable post-create (OQ-3) — stripped
-            lifecycleState: LifecycleStatusEnum.ARCHIVED, // control field — stripped
-            visibility: VisibilityEnum.PRIVATE, // control field — stripped
-            moderationState: ModerationStatusEnum.REJECTED, // control field — stripped
-            isFeatured: true, // control field — stripped
-            hasActiveSubscription: false, // subscription lifecycle only — stripped
+            publicationStatus: PublicationStatusEnum.MODERATED, // control field — stripped
             ownerId: '00000000-0000-4000-a000-0000000000fe' // control field — stripped
         };
 
@@ -451,15 +439,7 @@ describe('ExperienceService.updateOwn — identity-field regression (SPEC-249 T-
         expect(updatePayload.destinationId).toBe(payload.destinationId); // HOS-166 D-1
 
         // Immutable slug + control fields are still stripped by the owner-update schema.
-        for (const forbidden of [
-            'slug',
-            'lifecycleState',
-            'visibility',
-            'moderationState',
-            'isFeatured',
-            'hasActiveSubscription',
-            'ownerId'
-        ]) {
+        for (const forbidden of ['slug', 'publicationStatus', 'ownerId']) {
             expect(updatePayload).not.toHaveProperty(forbidden);
         }
     });
@@ -512,25 +492,6 @@ describe('ExperienceService search filter forwarding', () => {
         );
     });
 
-    it('should forward hasActiveSubscription filter to model.findAllWithRelations', async () => {
-        const entity = makeExperienceEntity();
-        const service = makeService(entity);
-        const mockFindAllWithRelations = (service as AnyService).model.findAllWithRelations;
-
-        await (
-            service as unknown as { _executeSearch: (...args: unknown[]) => unknown }
-        )._executeSearch({ hasActiveSubscription: true, page: 1, pageSize: 10 }, staffActor, {});
-
-        // After B3 fix: _executeSearch uses findAllWithRelations (arg[0]=relations, arg[1]=where)
-        expect(mockFindAllWithRelations).toHaveBeenCalledWith(
-            expect.objectContaining({ destination: true, owner: true }),
-            expect.objectContaining({ hasActiveSubscription: true }),
-            expect.any(Object),
-            undefined,
-            undefined
-        );
-    });
-
     it('should call model.count with deletedAt: null filter', async () => {
         const service = makeService();
         const mockCount = (service as AnyService).model.count;
@@ -550,11 +511,11 @@ describe('ExperienceService search filter forwarding', () => {
 // Public search/count visibility filter (AC-6.2 / AC-4.3 regression)
 // A hidden (PRIVATE / non-ACTIVE) listing must never surface on the public list.
 // Before this fix the experience public list leaked DRAFT/PRIVATE/no-subscription
-// listings because _executeSearch only filtered deletedAt=null (gastronomy parity).
+// listings because _executeSearch only filtered deletedAt=null (venue parity).
 // ---------------------------------------------------------------------------
 
 describe('ExperienceService public search visibility filter (AC-6.2)', () => {
-    it('forces visibility=PUBLIC + lifecycleState=ACTIVE on public search (no hidden-listing leak)', async () => {
+    it('forces publicationStatus=PUBLISHED on public search (no hidden-listing leak)', async () => {
         const service = makeService(makeExperienceEntity());
         const mockFindAllWithRelations = (service as AnyService).model.findAllWithRelations;
 
@@ -566,12 +527,11 @@ describe('ExperienceService public search visibility filter (AC-6.2)', () => {
         expect(mockFindAllWithRelations).toHaveBeenCalled();
         expect(mockFindAllWithRelations.mock.calls[0][1]).toMatchObject({
             deletedAt: null,
-            visibility: VisibilityEnum.PUBLIC,
-            lifecycleState: LifecycleStatusEnum.ACTIVE
+            publicationStatus: PublicationStatusEnum.PUBLISHED
         });
     });
 
-    it('cannot be widened by a caller-supplied visibility/lifecycle param', async () => {
+    it('cannot be widened by a caller-supplied publicationStatus param', async () => {
         const service = makeService(makeExperienceEntity());
         const mockFindAllWithRelations = (service as AnyService).model.findAllWithRelations;
 
@@ -579,8 +539,7 @@ describe('ExperienceService public search visibility filter (AC-6.2)', () => {
             service as unknown as { _executeSearch: (...args: unknown[]) => unknown }
         )._executeSearch(
             {
-                visibility: VisibilityEnum.PRIVATE,
-                lifecycleState: LifecycleStatusEnum.DRAFT,
+                publicationStatus: PublicationStatusEnum.DRAFT,
                 page: 1,
                 pageSize: 10
             },
@@ -591,8 +550,7 @@ describe('ExperienceService public search visibility filter (AC-6.2)', () => {
         // The forced gates are applied AFTER the spread, so they win.
         // arg[1] is the where object in findAllWithRelations
         expect(mockFindAllWithRelations.mock.calls[0][1]).toMatchObject({
-            visibility: VisibilityEnum.PUBLIC,
-            lifecycleState: LifecycleStatusEnum.ACTIVE
+            publicationStatus: PublicationStatusEnum.PUBLISHED
         });
     });
 
@@ -606,8 +564,7 @@ describe('ExperienceService public search visibility filter (AC-6.2)', () => {
 
         expect(mockCount.mock.calls[0][0]).toMatchObject({
             deletedAt: null,
-            visibility: VisibilityEnum.PUBLIC,
-            lifecycleState: LifecycleStatusEnum.ACTIVE
+            publicationStatus: PublicationStatusEnum.PUBLISHED
         });
     });
 });
@@ -618,7 +575,7 @@ describe('ExperienceService public search visibility filter (AC-6.2)', () => {
 
 describe('ExperienceService._projectPublicEntity', () => {
     it('should strip adminInfo from the projected entity', () => {
-        const entity = makeExperienceEntity({ adminInfo: { notes: 'internal' } });
+        const entity = makeExperienceEntity({ adminInfo: { favorite: false, notes: 'internal' } });
         const service = makeService(entity);
         const result = (service as AnyService)._projectPublicEntity(entity);
         expect(result).not.toHaveProperty('adminInfo');
@@ -639,13 +596,6 @@ describe('ExperienceService._projectPublicEntity', () => {
         expect(result).toHaveProperty('priceUnit');
         expect(result).toHaveProperty('isPriceOnRequest', false);
     });
-
-    it('should preserve hasActiveSubscription in public projection', () => {
-        const entity = makeExperienceEntity({ hasActiveSubscription: true });
-        const service = makeService(entity);
-        const result = (service as AnyService)._projectPublicEntity(entity);
-        expect(result).toHaveProperty('hasActiveSubscription', true);
-    });
 });
 
 // ---------------------------------------------------------------------------
@@ -653,18 +603,18 @@ describe('ExperienceService._projectPublicEntity', () => {
 // ---------------------------------------------------------------------------
 
 describe('ExperienceService._canView', () => {
-    it('should throw GONE for a deleted PUBLIC entity when actor lacks COMMERCE_VIEW_ALL', () => {
+    it('should throw GONE for a deleted PUBLIC entity when actor lacks EXPERIENCE_VIEW_ALL', () => {
         // The deleted-at gate fires first (before the owner check), so both owner
-        // and non-owner actors without COMMERCE_VIEW_ALL receive GONE (HOS-117
+        // and non-owner actors without EXPERIENCE_VIEW_ALL receive GONE (HOS-117
         // T-022) — but only because this listing was PUBLIC (indexable) before
         // deletion. Refined product decision: 410 is reserved for content that
         // was actually publicly discoverable.
         const entity = makeExperienceEntity({
-            visibility: VisibilityEnum.PUBLIC,
+            publicationStatus: PublicationStatusEnum.PUBLISHED,
             deletedAt: new Date()
         });
         const service = makeService(entity);
-        // Owner without COMMERCE_VIEW_ALL → GONE (matches gastronomy parity)
+        // Owner without EXPERIENCE_VIEW_ALL → GONE (matches venue parity)
         expect(() => (service as AnyService)._canView(ownerActor, entity)).toThrow(
             expect.objectContaining({ code: ServiceErrorCode.GONE })
         );
@@ -680,7 +630,7 @@ describe('ExperienceService._canView', () => {
         // must not be observably distinguishable from never-existed (uniform
         // 404), preserving the anti-enumeration contract.
         const entity = makeExperienceEntity({
-            visibility: VisibilityEnum.PRIVATE,
+            publicationStatus: PublicationStatusEnum.DRAFT,
             deletedAt: new Date()
         });
         const service = makeService(entity);
@@ -693,9 +643,9 @@ describe('ExperienceService._canView', () => {
         );
     });
 
-    it('should allow staff with COMMERCE_VIEW_ALL to view deleted entities', () => {
+    it('should allow staff with EXPERIENCE_VIEW_ALL to view deleted entities', () => {
         const entity = makeExperienceEntity({
-            visibility: VisibilityEnum.PUBLIC,
+            publicationStatus: PublicationStatusEnum.PUBLISHED,
             deletedAt: new Date()
         });
         const service = makeService(entity);
@@ -703,38 +653,16 @@ describe('ExperienceService._canView', () => {
     });
 
     it('should throw NOT_FOUND for PRIVATE listing when actor is not owner or staff', () => {
-        const entity = makeExperienceEntity({ visibility: VisibilityEnum.PRIVATE });
+        const entity = makeExperienceEntity({ publicationStatus: PublicationStatusEnum.DRAFT });
         const service = makeService(entity);
         const publicActor: Actor = { id: OTHER_USER, roles: [RoleEnum.USER], permissions: [] };
         expect(() => (service as AnyService)._canView(publicActor, entity)).toThrow();
     });
 
     it('should allow owner to view their own PRIVATE listing', () => {
-        const entity = makeExperienceEntity({ visibility: VisibilityEnum.PRIVATE });
+        const entity = makeExperienceEntity({ publicationStatus: PublicationStatusEnum.DRAFT });
         const service = makeService(entity);
         expect(() => (service as AnyService)._canView(ownerActor, entity)).not.toThrow();
-    });
-});
-
-// ---------------------------------------------------------------------------
-// Subscription toggle (hasActiveSubscription flag)
-// ---------------------------------------------------------------------------
-
-describe('ExperienceService subscription visibility gate', () => {
-    it('should have hasActiveSubscription false by default on new entities', () => {
-        const entity = makeExperienceEntity({ hasActiveSubscription: false });
-        expect(entity.hasActiveSubscription).toBe(false);
-    });
-
-    it('should allow staff to flip hasActiveSubscription via generic update', async () => {
-        const entity = makeExperienceEntity({ hasActiveSubscription: false });
-        const service = makeService(entity);
-        const mockUpdate = (service as AnyService).model.update;
-        // Staff uses the admin update path (not updateOwn) to flip the subscription flag.
-        await service.update(staffActor, ENTITY_ID, {
-            hasActiveSubscription: true
-        } as Partial<Experience>);
-        expect(mockUpdate).toHaveBeenCalled();
     });
 });
 
@@ -749,7 +677,7 @@ describe('ExperienceService.ENTITY_NAME', () => {
 });
 
 // ---------------------------------------------------------------------------
-// listOwn — owner-tier read inherited from BaseCommerceListingService (SPEC-249 T-005)
+// listOwn — owner-tier read inherited from BaseListingService (SPEC-249 T-005)
 // ---------------------------------------------------------------------------
 
 describe('ExperienceService.listOwn', () => {

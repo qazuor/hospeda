@@ -1,8 +1,8 @@
 /**
- * Regression guard for the review-count header shared by commerce listing
- * detail pages (gastronomy + experience).
+ * Regression guard for the review-count header shared by listing listing
+ * detail pages (venue + experience).
  *
- * `GastronomyDetailHeader.astro` and `ExperienceHero.astro` render the review
+ * `VenueDetailHeader.astro` and `ExperienceHero.astro` render the review
  * count via `tPlural('review.list.totalReviews', count, { count })`. A SPEC-259
  * smoke found both components referencing the wrong path `review.totalReviews`
  * (no `.list`, no `{ count }`), which rendered the literal
@@ -32,7 +32,7 @@ const LOCALES: ReadonlyArray<readonly [string, ReviewLocale]> = [
     ['pt', reviewPt as ReviewLocale]
 ];
 
-describe('review count header i18n (gastronomy + experience detail)', () => {
+describe('review count header i18n (venue + experience detail)', () => {
     for (const [name, locale] of LOCALES) {
         describe(`${name} locale`, () => {
             it('exposes review.list.totalReviews plural forms with a {{count}} placeholder', () => {

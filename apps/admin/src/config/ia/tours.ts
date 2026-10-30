@@ -37,13 +37,12 @@
  * All routes were verified against sections.ts before authoring. No discrepancies found:
  * - /me/accommodations     → sections.misAlojamientos.defaultRoute  ✓
  * - /conversations         → sections.consultas.defaultRoute         ✓
- * - /billing/subscriptions → sections.miFacturacion.defaultRoute     ✓
  * - /account/profile       → sections.miCuenta.defaultRoute          ✓
  * - /posts                 → sections.editorial.defaultRoute         ✓
  * - /analytics/usage       → sections.analisis.defaultRoute          ✓
  * - /accommodations        → sections.catalogo.defaultRoute          ✓
  * - /access/users          → sections.comunidad.defaultRoute         ✓
- * - /billing/plans         → sections.comercial.defaultRoute         ✓
+ * - /billing/owner-promotions → sections.comercial.defaultRoute      ✓ (HOS-1416)
  * - /platform/configuration/seo → sections.plataforma.defaultRoute   ✓
  *
  * @see apps/admin/src/config/ia/tour.schema.ts — ToursRecordSchema + KNOWN_DATA_TOUR_IDS
@@ -658,66 +657,6 @@ export const tours = {
     },
 
     /**
-     * Contextual tour for HOST role — Mi facturación (/billing/subscriptions).
-     *
-     * Teaches the host about their plan, subscription and statuses.
-     */
-    'host.miFacturacion': {
-        id: 'host.miFacturacion',
-        roles: ['HOST'],
-        kind: 'contextual',
-        route: '/billing/subscriptions',
-        version: 1,
-        trigger: 'auto-first-visit',
-        showWelcomeModal: false,
-        steps: [
-            {
-                id: 'intro',
-                target: 'center',
-                title: {
-                    es: 'Tu suscripción y plan',
-                    en: 'Your subscription and plan',
-                    pt: 'Sua assinatura e plano'
-                },
-                body: {
-                    es: 'Acá podés ver el detalle de tu plan actual: qué incluye, la fecha de renovación y el estado de tu suscripción. También encontrás el historial de pagos.',
-                    en: 'Here you can see the details of your current plan: what it includes, the renewal date and the status of your subscription. You will also find the payment history.',
-                    pt: 'Aqui você pode ver os detalhes do seu plano atual: o que inclui, a data de renovação e o status da sua assinatura. Você também encontra o histórico de pagamentos.'
-                }
-            },
-            {
-                id: 'section-menu',
-                target: 'data-tour:main-menu-section-miFacturacion',
-                title: {
-                    es: 'Mi facturación en el menú',
-                    en: 'My billing in the menu',
-                    pt: 'Minha cobrança no menu'
-                },
-                body: {
-                    es: 'Volvé a esta sección cuando quieras consultar tu estado de cuenta o actualizar tu plan.',
-                    en: 'Return to this section whenever you want to check your account status or update your plan.',
-                    pt: 'Volte a esta seção sempre que quiser verificar seu status de conta ou atualizar seu plano.'
-                },
-                side: 'right'
-            },
-            {
-                id: 'tip',
-                target: 'center',
-                title: {
-                    es: 'Mantené tu plan al día',
-                    en: 'Keep your plan up to date',
-                    pt: 'Mantenha seu plano em dia'
-                },
-                body: {
-                    es: 'Si tu suscripción vence, tus alojamientos pueden dejar de estar visibles en el sitio. Revisá la fecha de renovación con anticipación para evitar interrupciones.',
-                    en: 'If your subscription expires, your accommodations may stop being visible on the site. Check the renewal date in advance to avoid interruptions.',
-                    pt: 'Se sua assinatura vencer, seus alojamentos podem deixar de estar visíveis no site. Verifique a data de renovação com antecedência para evitar interrupções.'
-                }
-            }
-        ]
-    },
-
-    /**
      * Contextual tour for HOST role — Mi cuenta (/account/profile).
      *
      * Teaches the host about profile, theme/language, notifications and tags.
@@ -1155,66 +1094,6 @@ export const tours = {
                     es: 'Las tareas de moderación pendientes aparecen en tu dashboard. Revisalas regularmente para mantener la calidad del contenido y la confianza de la comunidad.',
                     en: 'Pending moderation tasks appear on your dashboard. Review them regularly to maintain content quality and community trust.',
                     pt: 'As tarefas de moderação pendentes aparecem no seu dashboard. Revise-as regularmente para manter a qualidade do conteúdo e a confiança da comunidade.'
-                }
-            }
-        ]
-    },
-
-    /**
-     * Contextual tour for ADMIN and SUPER_ADMIN — Comercial (/billing/plans).
-     *
-     * Teaches about plans, subscriptions, invoices and promos.
-     */
-    'admin.comercial': {
-        id: 'admin.comercial',
-        roles: ['ADMIN', 'SUPER_ADMIN'],
-        kind: 'contextual',
-        route: '/billing/plans',
-        version: 1,
-        trigger: 'auto-first-visit',
-        showWelcomeModal: false,
-        steps: [
-            {
-                id: 'intro',
-                target: 'center',
-                title: {
-                    es: 'Operaciones comerciales',
-                    en: 'Commercial operations',
-                    pt: 'Operações comerciais'
-                },
-                body: {
-                    es: 'Acá gestionás todo lo relacionado con la monetización: planes disponibles, suscripciones de los hosts, facturas y promociones activas.',
-                    en: 'Here you manage everything related to monetization: available plans, host subscriptions, invoices and active promotions.',
-                    pt: 'Aqui você gerencia tudo relacionado à monetização: planos disponíveis, assinaturas dos anfitriões, faturas e promoções ativas.'
-                }
-            },
-            {
-                id: 'sidebar',
-                target: 'data-tour:sidebar',
-                title: {
-                    es: 'Subsecciones de Comercial',
-                    en: 'Commercial subsections',
-                    pt: 'Subseções do Comercial'
-                },
-                body: {
-                    es: 'El sidebar agrupa Planes, Suscripciones, Facturas y Promos. Podés crear o editar planes, revisar el estado de cada suscripción y gestionar los descuentos aplicables.',
-                    en: 'The sidebar groups Plans, Subscriptions, Invoices and Promos. You can create or edit plans, review the status of each subscription and manage applicable discounts.',
-                    pt: 'A barra lateral agrupa Planos, Assinaturas, Faturas e Promos. Você pode criar ou editar planos, revisar o status de cada assinatura e gerenciar os descontos aplicáveis.'
-                },
-                side: 'right'
-            },
-            {
-                id: 'tip',
-                target: 'center',
-                title: {
-                    es: 'Monitoreo de suscripciones',
-                    en: 'Subscription monitoring',
-                    pt: 'Monitoramento de assinaturas'
-                },
-                body: {
-                    es: 'Desde la sección Suscripciones podés ver qué hosts tienen su plan activo, vencido o cancelado. Las alertas te avisarán cuando haya problemas de pago que requieran atención.',
-                    en: 'From the Subscriptions section you can see which hosts have an active, expired or cancelled plan. Alerts will notify you when there are payment issues that require attention.',
-                    pt: 'Na seção Assinaturas você pode ver quais anfitriões têm seu plano ativo, vencido ou cancelado. Os alertas vão notificá-lo quando houver problemas de pagamento que precisam de atenção.'
                 }
             }
         ]

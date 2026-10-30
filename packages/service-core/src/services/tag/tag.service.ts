@@ -21,7 +21,16 @@
  * - D-021: Quota default 50, overrideable via HOSPEDA_TAG_USER_QUOTA_PER_USER env var.
  * - D-022: listOwnTags returns all lifecycle states (ACTIVE + INACTIVE + ARCHIVED).
  */
-import { type DrizzleClient, REntityTagModel, sql, TagModel, withTransaction } from '@repo/db';
+import {
+    AccommodationModel,
+    type DrizzleClient,
+    ExperienceModel,
+    REntityTagModel,
+    sql,
+    TagModel,
+    VenueModel,
+    withTransaction
+} from '@repo/db';
 import { createLogger } from '@repo/logger';
 import type { EntityTag, Tag } from '@repo/schemas';
 import {
@@ -56,6 +65,7 @@ import type { CrudNormalizersFromSchemas } from '../../base/base.crud.types';
 import { getRevalidationService } from '../../revalidation/revalidation-init.js';
 import type { Actor, ServiceConfig, ServiceContext, ServiceOutput } from '../../types';
 import { ServiceError } from '../../types';
+import { recordListingSubEntityEdit } from '../listing/listing-owner-act';
 import { getCanViewChecker } from './entity-access-registry';
 import { normalizeCreateInput, normalizeUpdateInput } from './tag.normalizers';
 import {
@@ -79,6 +89,74 @@ import {
 
 /** Default USER tag quota per user when env var is not set or invalid. */
 const DEFAULT_USER_TAG_QUOTA = 50;
+
+/** Records a tag assignment only when the actor owns the target listing. */
+async function recordTagListingOwnerAct(input: {
+    readonly entityId: string;
+    readonly entityType: EntityTypeEnum;
+    readonly actor: Actor;
+    readonly ctx: ServiceContext;
+}): Promise<void> {
+    const { entityId, entityType, actor, ctx } = input;
+    const model =
+        entityType === EntityTypeEnum.ACCOMMODATION
+            ? new AccommodationModel()
+            : entityType === EntityTypeEnum.VENUE
+              ? new VenueModel()
+              : entityType === EntityTypeEnum.EXPERIENCE
+                ? new ExperienceModel()
+                : null;
+    if (!model) return;
+    const listing = await model.findById(entityId, ctx.tx);
+    if (!listing) return;
+    const listingType =
+        entityType === EntityTypeEnum.ACCOMMODATION
+            ? 'accommodation'
+            : entityType === EntityTypeEnum.VENUE
+              ? 'venue'
+              : 'experience';
+    await recordListingSubEntityEdit({
+        entityType: listingType,
+        listing,
+        actor,
+        field: 'tags',
+        ctx
+    });
+}
+
+/** Keeps a tag relation mutation and its optional owner act atomic. */
+async function writeTagWithOwnerAct(input: {
+    readonly entityId: string;
+    readonly entityType: EntityTypeEnum;
+    readonly actor: Actor;
+    readonly ctx?: ServiceContext;
+    readonly write: (tx?: DrizzleClient) => Promise<unknown>;
+}): Promise<void> {
+    // Other entity types do not represent listing content; preserve their
+    // existing write path and avoid opening an unnecessary transaction.
+    if (
+        input.entityType !== EntityTypeEnum.ACCOMMODATION &&
+        input.entityType !== EntityTypeEnum.VENUE &&
+        input.entityType !== EntityTypeEnum.EXPERIENCE
+    ) {
+        await input.write(input.ctx?.tx);
+        return;
+    }
+    const run = async (tx: DrizzleClient) => {
+        await input.write(tx);
+        await recordTagListingOwnerAct({
+            entityId: input.entityId,
+            entityType: input.entityType,
+            actor: input.actor,
+            ctx: { ...input.ctx, tx }
+        });
+    };
+    if (input.ctx?.tx) {
+        await run(input.ctx.tx);
+    } else {
+        await withTransaction(run);
+    }
+}
 
 // ---------------------------------------------------------------------------
 // Service output types for new methods
@@ -629,7 +707,7 @@ export class TagService extends BaseCrudRelatedService<
         return this.runWithLoggingAndValidation({
             methodName: 'getImpactCount',
             input: { actor, tagId },
-            schema: z.object({ actor: z.any(), tagId: z.string().uuid() }),
+            schema: z.object({ actor: z.any().optional(), tagId: z.string().uuid() }),
             ctx,
             execute: async (validated, _actorArg, execCtx) => {
                 const tag = await this.model.findById(validated.tagId, execCtx?.tx);
@@ -669,7 +747,7 @@ export class TagService extends BaseCrudRelatedService<
         return this.runWithLoggingAndValidation({
             methodName: 'deleteTag',
             input: { actor, tagId },
-            schema: z.object({ actor: z.any(), tagId: z.string().uuid() }),
+            schema: z.object({ actor: z.any().optional(), tagId: z.string().uuid() }),
             ctx,
             execute: async (validated, _actorArg, execCtx) => {
                 const tag = await this.model.findById(validated.tagId, execCtx?.tx);
@@ -762,7 +840,7 @@ export class TagService extends BaseCrudRelatedService<
             methodName: 'getPickerTags',
             input: { actor, query: query ?? {} },
             schema: z.object({
-                actor: z.any(),
+                actor: z.any().optional(),
                 query: z.object({ search: z.string().optional() }).optional()
             }),
             ctx,
@@ -832,14 +910,21 @@ export class TagService extends BaseCrudRelatedService<
                         'Tag already associated with entity'
                     );
                 }
-                await this.relatedModel.create(
-                    {
-                        tagId: validated.tagId,
-                        entityId: validated.entityId,
-                        entityType: validated.entityType as EntityTypeEnum
-                    },
-                    execCtx?.tx
-                );
+                await writeTagWithOwnerAct({
+                    entityId: validated.entityId,
+                    entityType: validated.entityType as EntityTypeEnum,
+                    actor,
+                    ctx: execCtx,
+                    write: (tx) =>
+                        this.relatedModel.create(
+                            {
+                                tagId: validated.tagId,
+                                entityId: validated.entityId,
+                                entityType: validated.entityType as EntityTypeEnum
+                            },
+                            tx
+                        )
+                });
                 return { success: true };
             }
         });
@@ -884,14 +969,21 @@ export class TagService extends BaseCrudRelatedService<
                         'Tag-entity relation not found'
                     );
                 }
-                await this.relatedModel.hardDelete(
-                    {
-                        tagId: validated.tagId,
-                        entityId: validated.entityId,
-                        entityType: validated.entityType as EntityTypeEnum
-                    },
-                    execCtx?.tx
-                );
+                await writeTagWithOwnerAct({
+                    entityId: validated.entityId,
+                    entityType: validated.entityType as EntityTypeEnum,
+                    actor,
+                    ctx: execCtx,
+                    write: (tx) =>
+                        this.relatedModel.hardDelete(
+                            {
+                                tagId: validated.tagId,
+                                entityId: validated.entityId,
+                                entityType: validated.entityType as EntityTypeEnum
+                            },
+                            tx
+                        )
+                });
                 return { success: true };
             }
         });
@@ -1047,7 +1139,7 @@ export class TagService extends BaseCrudRelatedService<
             methodName: 'assignTag',
             input: { actor, ...params },
             schema: z.object({
-                actor: z.any(),
+                actor: z.any().optional(),
                 tagId: z.string().uuid(),
                 entityId: z.string().uuid(),
                 entityType: z.nativeEnum(EntityTypeEnum)
@@ -1116,15 +1208,22 @@ export class TagService extends BaseCrudRelatedService<
                 }
 
                 // 5. Insert with actor.id as assignedById (D-005 — never caller-provided).
-                await this.relatedModel.assign(
-                    {
-                        tagId: validated.tagId,
-                        entityId: validated.entityId,
-                        entityType: validated.entityType as EntityTag['entityType'],
-                        assignedById: actor.id
-                    },
-                    execCtx?.tx
-                );
+                await writeTagWithOwnerAct({
+                    entityId: validated.entityId,
+                    entityType: validated.entityType,
+                    actor,
+                    ctx: execCtx,
+                    write: (tx) =>
+                        this.relatedModel.assign(
+                            {
+                                tagId: validated.tagId,
+                                entityId: validated.entityId,
+                                entityType: validated.entityType as EntityTag['entityType'],
+                                assignedById: actor.id
+                            },
+                            tx
+                        )
+                });
 
                 return { assigned: true as const, wasAlreadyAssigned: false };
             }
@@ -1153,7 +1252,7 @@ export class TagService extends BaseCrudRelatedService<
             methodName: 'removeAssignment',
             input: { actor, ...params },
             schema: z.object({
-                actor: z.any(),
+                actor: z.any().optional(),
                 tagId: z.string().uuid(),
                 entityId: z.string().uuid(),
                 entityType: z.nativeEnum(EntityTypeEnum)
@@ -1163,23 +1262,28 @@ export class TagService extends BaseCrudRelatedService<
                 // Verify the assignment exists AND belongs to this actor.
                 // The delete predicate uses actor.id — it will remove 0 rows
                 // if the actor didn't make the assignment.
-                const deleted = await this.relatedModel.deleteByTagIdEntityUser(
-                    validated.tagId,
-                    validated.entityId,
-                    validated.entityType as EntityTag['entityType'],
-                    actor.id,
-                    execCtx?.tx
-                );
-
-                if (deleted === 0) {
-                    // Either the assignment doesn't exist or it belongs to a different actor.
-                    // Per D-007, we surface FORBIDDEN to prevent information leakage
-                    // (caller should not learn that another actor made the assignment).
-                    throw new ServiceError(
-                        ServiceErrorCode.FORBIDDEN,
-                        'Permission denied: assignment not found or belongs to a different actor (D-007)'
-                    );
-                }
+                await writeTagWithOwnerAct({
+                    entityId: validated.entityId,
+                    entityType: validated.entityType,
+                    actor,
+                    ctx: execCtx,
+                    write: async (tx) => {
+                        const deleted = await this.relatedModel.deleteByTagIdEntityUser(
+                            validated.tagId,
+                            validated.entityId,
+                            validated.entityType as EntityTag['entityType'],
+                            actor.id,
+                            tx
+                        );
+                        if (deleted === 0) {
+                            // Preserve the existing no-leak failure for another user's row.
+                            throw new ServiceError(
+                                ServiceErrorCode.FORBIDDEN,
+                                'Permission denied: assignment not found or belongs to a different actor (D-007)'
+                            );
+                        }
+                    }
+                });
 
                 return { removed: true as const };
             }
@@ -1216,7 +1320,7 @@ export class TagService extends BaseCrudRelatedService<
             methodName: 'listOwnTags',
             input: { actor, query: query ?? {} },
             schema: z.object({
-                actor: z.any(),
+                actor: z.any().optional(),
                 query: z
                     .object({
                         search: z.string().optional(),
@@ -1314,7 +1418,7 @@ export class TagService extends BaseCrudRelatedService<
             input: { actor, tagId, ...input },
             schema: z
                 .object({
-                    actor: z.any(),
+                    actor: z.any().optional(),
                     tagId: z.string().uuid()
                 })
                 .passthrough(),
@@ -1384,7 +1488,7 @@ export class TagService extends BaseCrudRelatedService<
         return this.runWithLoggingAndValidation({
             methodName: 'getOwnTagImpactCount',
             input: { actor, tagId },
-            schema: z.object({ actor: z.any(), tagId: z.string().uuid() }),
+            schema: z.object({ actor: z.any().optional(), tagId: z.string().uuid() }),
             ctx,
             execute: async (_validated, _actorArg, execCtx) => {
                 // Verify the tag exists and belongs to this actor.
@@ -1446,7 +1550,7 @@ export class TagService extends BaseCrudRelatedService<
         return this.runWithLoggingAndValidation({
             methodName: 'getQuotaStatus',
             input: { actor },
-            schema: z.object({ actor: z.any() }),
+            schema: z.object({ actor: z.any().optional() }),
             ctx,
             execute: async (_validated, _actorArg, execCtx) => {
                 const used = await this.model.countActiveByOwner(actor.id, execCtx?.tx);

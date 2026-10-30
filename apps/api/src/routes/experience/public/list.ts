@@ -2,10 +2,10 @@
  * Public experience list endpoint (T-019)
  * Returns a paginated list of visible experience listings with filtering and sorting.
  *
- * Visibility contract: only listings with lifecycleState=ACTIVE AND visibility=PUBLIC
- * are returned. The ExperienceService._executeSearch / _executeCount force these gates
- * AFTER the caller's scalar filters (mirroring the gastronomy service), so no query
- * param can widen the result set to non-active or private listings.
+ * Visibility contract: only listings with publicationStatus=PUBLISHED are returned
+ * (V6.9b, HOS-1641). The ExperienceService._executeSearch / _executeCount force these gates
+ * AFTER the caller's scalar filters (mirroring the venue service), so no query
+ * param can widen the result set to unpublished listings.
  */
 import {
     ExperiencePublicSchema,
@@ -72,7 +72,6 @@ export const publicListExperiencesRoute = createPublicListRoute({
         };
     },
     options: {
-        cacheTTL: 300,
         customRateLimit: { requests: 200, windowMs: 60000 }
     }
 });

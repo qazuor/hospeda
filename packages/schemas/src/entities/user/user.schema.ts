@@ -162,15 +162,6 @@ export const UserSchema = z.object({
     setPasswordPrompted: z.boolean().default(false).optional(),
 
     /**
-     * SPEC-143 #29 service-suspension flag. Canonical source for the pause
-     * "service suspension" dimension; denormalized to
-     * `accommodations.ownerSuspended` for the public hot path. Mirrors the
-     * `users.service_suspended` column. Optional with default `false` so
-     * existing fixtures and create/update inputs that omit it keep working.
-     */
-    serviceSuspended: z.boolean().default(false).optional(),
-
-    /**
      * HOS-375 (G-8). Marks a platform/service account rather than a person —
      * the seeded staff accounts, and any future bot/integration identity.
      * Mirrors the `users.is_system_account` column.

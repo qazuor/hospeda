@@ -1,0 +1,27 @@
+# VB-07 · spec → fuente · 20-fase-4/V7.md, 10-corte/V8a.md, 20-fase-4/V8b.md, 10-corte/V9a.md
+
+## Hallazgos
+
+20-fase-4/V7.md:617 · «nada se vincula hasta que alguien con acceso a ella lo haga, con sesión, y a la cuenta que ya tenía ese correo» · contradice fuentes/.specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/18-partner.md:270 («con sesión, y a la cuenta con que la inició»). La regla viva de las líneas 290–292 prohíbe vincular por tener la dirección; DEC-AUTH-004 mantiene esa decisión. También contradice AC:V7:7, líneas 233–237, y la regla 1 del propio archivo, líneas 636–638: el dueño debe ser la cuenta de la sesión, no la cuenta que tenía el correo · BLOQUEA
+
+20-fase-4/V7.md:664 · «genera el acto que manda el aviso, y la» · más débil que fuentes/.specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/18-partner.md:320 («genera el acto que manda el aviso, al azar y sin derivarse del id del Partner ni del correo»). Se omiten la generación aleatoria y la prohibición de derivarlo de esos datos; ni AC:V7:9 ni TEST:V7:9 las comprueban. Guardar un hash y rechazar secretos incorrectos no exige que el secreto generado sea impredecible · BLOQUEA
+
+20-fase-4/V8b.md:96 · «El formulario de postulación sólo admite direcciones de correo de dominios corporativos; rechaza las de proveedores de correo personal antes de crear la postulación.» · sin soporte. Las guardas vigentes de PP1 en fuentes/.specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/03-maquinas-de-estado.md:1359 y DEC-AUTH-005 con sus precisiones exigen captcha, unicidad, espera y verificación cuando hay sesión; no restringen el dominio del correo. La regla agregada rechazaría postulantes admitidos por la fuente · BLOQUEA
+
+20-fase-4/V7.md:1067 · «lista de piezas, l. 950» · contradice fuentes/.specs/HOS-1352-billing-verticals-redesign/docs/16-fase-7-del-paraguas.md:950 («| `V3` | `V3` | corte |»): la referencia apunta a V3; la fila de V7 está en la línea 954. La cita inicial del archivo sí apunta correctamente · MENOR
+
+10-corte/V8a.md:648 · «`16-fase-7-del-paraguas.md` §4.6 (l. 951)» · contradice fuentes/.specs/HOS-1352-billing-verticals-redesign/docs/16-fase-7-del-paraguas.md:951 («| `V4` | `V4` | corte |»): la referencia apunta a V4; la fila de V8a está en la línea 955. La cita inicial del archivo sí apunta correctamente · MENOR
+
+20-fase-4/V8b.md:308 · «`16-fase-7-del-paraguas.md` §4.6 (l. 952, nota del esquema l. 994–997)» · contradice fuentes/.specs/HOS-1352-billing-verticals-redesign/docs/16-fase-7-del-paraguas.md:952 («| `V5` | `V5` | corte | entera |»): la referencia a la pieza apunta a V5; la fila de V8b está en la línea 956. La cita inicial del archivo sí apunta correctamente · MENOR
+
+10-corte/V9a.md:312 · «lista de piezas, l. 953» · contradice fuentes/.specs/HOS-1352-billing-verticals-redesign/docs/16-fase-7-del-paraguas.md:953 («| `V6` | `V6` | corte |»): la referencia apunta a V6; la fila de V9a está en la línea 957. La cita inicial del archivo sí apunta correctamente · MENOR
+
+## Resumen
+
+| archivo | líneas recorridas | afirmaciones normativas revisadas (aprox.) | BLOQUEA | MENOR |
+|---|---|---:|---:|---:|
+| 20-fase-4/V7.md | 1–1074 | 300 | 2 | 1 |
+| 10-corte/V8a.md | 1–655 | 230 | 0 | 1 |
+| 20-fase-4/V8b.md | 1–308 | 95 | 1 | 1 |
+| 10-corte/V9a.md | 1–312 | 95 | 0 | 1 |
+| TOTAL | 2349 líneas | 720 | 3 | 4 |

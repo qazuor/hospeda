@@ -9,13 +9,15 @@
  *     --reporter=verbose test/integration/amenity/vertical-filter.content.test.ts
  *
  * Three assertions validated here:
- *  1. GET ?applicableVertical=gastronomy → includes `delivery` and `wifi`,
+ *  1. GET ?applicableVertical=venue → includes `delivery` and `wifi`,
  *     excludes `heating` and `balcony` (accommodation-only).
  *  2. GET (no filter) → all amenities returned; response items must NOT have
  *     a `name` field (T-001 dropped the `name` column; only `slug` must be present).
- *  3. The total with gastronomy filter is strictly fewer than the unfiltered total
+ *  3. The total with venue filter is strictly fewer than the unfiltered total
  *     (confirms the filter actually reduces the result set).
  */
+import { amenities, getDb, inArray } from '@repo/db';
+import { AmenitiesTypeEnum } from '@repo/schemas';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { initApp } from '../../../src/app.js';
 import type { AppOpenAPI } from '../../../src/types.js';
@@ -47,6 +49,29 @@ interface AmenityItem {
     [key: string]: unknown;
 }
 
+/**
+ * The integration DB is migrated but NOT seeded, so this suite seeds the rows
+ * its assertions name (it used to rely on a pre-seeded dev DB). Slugs and
+ * `applicableVerticals` mirror `packages/seed/src/data/amenity/*.json`.
+ */
+/** The vertical the filter assertions exercise. */
+const VERTICAL = 'venue';
+
+const SEED_ROWS: (typeof amenities.$inferInsert)[] = [
+    { slug: 'delivery', type: AmenitiesTypeEnum.SERVICES, applicableVerticals: [VERTICAL] },
+    {
+        slug: 'wifi',
+        type: AmenitiesTypeEnum.CONNECTIVITY,
+        applicableVerticals: ['accommodation', VERTICAL, 'experience']
+    },
+    {
+        slug: 'heating',
+        type: AmenitiesTypeEnum.CLIMATE_CONTROL,
+        applicableVerticals: ['accommodation']
+    },
+    { slug: 'balcony', type: AmenitiesTypeEnum.OUTDOORS, applicableVerticals: ['accommodation'] }
+];
+
 const BASE = '/api/v1/public/amenities';
 
 describe('GET /api/v1/public/amenities — vertical filter content assertions (SPEC-266 T-012)', () => {
@@ -56,14 +81,23 @@ describe('GET /api/v1/public/amenities — vertical filter content assertions (S
         validateApiEnv();
         await initializeDatabase();
         app = initApp();
+        await getDb().insert(amenities).values(SEED_ROWS);
     });
 
     afterAll(async () => {
+        await getDb()
+            .delete(amenities)
+            .where(
+                inArray(
+                    amenities.slug,
+                    SEED_ROWS.map((row) => row.slug)
+                )
+            );
         await closeDatabase();
     });
 
-    it('(1) gastronomy filter — includes delivery and wifi', async () => {
-        const res = await app.request(`${BASE}?applicableVertical=gastronomy&pageSize=100`, {
+    it('(1) venue filter — includes delivery and wifi', async () => {
+        const res = await app.request(`${BASE}?applicableVertical=${VERTICAL}&pageSize=100`, {
             method: 'GET',
             headers: { 'user-agent': 'vitest', accept: 'application/json' }
         });
@@ -75,14 +109,14 @@ describe('GET /api/v1/public/amenities — vertical filter content assertions (S
 
         const slugs = body.data.items.map((i) => i.slug);
 
-        // Gastronomy-only amenity — must be present
+        // Venue-only amenity — must be present
         expect(slugs).toContain('delivery');
-        // Shared-core amenity (accommodation + gastronomy + experience) — must be present
+        // Shared-core amenity (accommodation + venue + experience) — must be present
         expect(slugs).toContain('wifi');
     });
 
-    it('(1) gastronomy filter — excludes accommodation-only amenities', async () => {
-        const res = await app.request(`${BASE}?applicableVertical=gastronomy&pageSize=100`, {
+    it('(1) venue filter — excludes accommodation-only amenities', async () => {
+        const res = await app.request(`${BASE}?applicableVertical=${VERTICAL}&pageSize=100`, {
             method: 'GET',
             headers: { 'user-agent': 'vitest', accept: 'application/json' }
         });
@@ -92,7 +126,7 @@ describe('GET /api/v1/public/amenities — vertical filter content assertions (S
         const body = (await res.json()) as ListResponse<AmenityItem>;
         const slugs = body.data.items.map((i) => i.slug);
 
-        // Accommodation-only amenities — must NOT appear in gastronomy results
+        // Accommodation-only amenities — must NOT appear in venue results
         expect(slugs).not.toContain('heating');
         expect(slugs).not.toContain('balcony');
     });
@@ -120,28 +154,28 @@ describe('GET /api/v1/public/amenities — vertical filter content assertions (S
         expect(itemsWithName).toHaveLength(0);
     });
 
-    it('(3) gastronomy filter returns fewer items than the unfiltered catalog', async () => {
-        const [resAll, resGastronomy] = await Promise.all([
+    it('(3) venue filter returns fewer items than the unfiltered catalog', async () => {
+        const [resAll, resVenue] = await Promise.all([
             app.request(`${BASE}?pageSize=1`, {
                 method: 'GET',
                 headers: { 'user-agent': 'vitest', accept: 'application/json' }
             }),
-            app.request(`${BASE}?applicableVertical=gastronomy&pageSize=1`, {
+            app.request(`${BASE}?applicableVertical=${VERTICAL}&pageSize=1`, {
                 method: 'GET',
                 headers: { 'user-agent': 'vitest', accept: 'application/json' }
             })
         ]);
 
         expect(resAll.status).toBe(200);
-        expect(resGastronomy.status).toBe(200);
+        expect(resVenue.status).toBe(200);
 
         const bodyAll = (await resAll.json()) as ListResponse<AmenityItem>;
-        const bodyGastronomy = (await resGastronomy.json()) as ListResponse<AmenityItem>;
+        const bodyVenue = (await resVenue.json()) as ListResponse<AmenityItem>;
 
         const totalAll = bodyAll.data.pagination.total;
-        const totalGastronomy = bodyGastronomy.data.pagination.total;
+        const totalVenue = bodyVenue.data.pagination.total;
 
-        expect(totalGastronomy).toBeGreaterThan(0);
-        expect(totalGastronomy).toBeLessThan(totalAll);
+        expect(totalVenue).toBeGreaterThan(0);
+        expect(totalVenue).toBeLessThan(totalAll);
     });
 });

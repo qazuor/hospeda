@@ -23,12 +23,8 @@
  */
 
 import { expect, test } from '@playwright/test';
-import {
-    createAccommodation,
-    createSubscription,
-    createUser,
-    forceVerifyEmail
-} from '../../fixtures/api-helpers.ts';
+import { PublicationStatusEnum } from '@repo/schemas';
+import { createAccommodation, createUser, forceVerifyEmail } from '../../fixtures/api-helpers.ts';
 import { execSQL, getDbPool } from '../../fixtures/db-helpers.ts';
 import { cleanupTestUsers } from '../../support/test-cleanup.ts';
 
@@ -50,19 +46,9 @@ test.describe('MSG-01: guest contacts host, host replies @p1 @messaging @cross-a
         userIdsToCleanup.push(host.id);
         await forceVerifyEmail(host.id);
 
-        const planRows = await execSQL<{ id: string }>(
-            'SELECT id FROM billing_plans WHERE active = true ORDER BY created_at ASC LIMIT 1'
-        );
-        const planId = planRows[0]?.id;
-        if (!planId) {
-            test.fixme(true, 'No billing plan in seed — MSG-01 cannot run');
-            return;
-        }
-        await createSubscription({ userId: host.id, planId, status: 'active' });
-
         const accommodation = await createAccommodation({
             ownerId: host.id,
-            lifecycleState: 'ACTIVE',
+            publicationStatus: PublicationStatusEnum.PUBLISHED,
             slugPrefix: 'msg-01'
         });
 

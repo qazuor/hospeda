@@ -1,0 +1,291 @@
+{
+    "checks": 202,
+    "diff": [
+        {
+            "rel": "10-corte/B11.md",
+            "a": 240,
+            "b": 993,
+            "cit": ".specs/HOS-1354-billing-cobro-y-proveedor/docs/09-conciliacion.md:176",
+            "diff": [
+                {
+                    "op": "insert",
+                    "salida": "",
+                    "fuente": "— sale revisión del owner , 2026 09 28 , C8 : las verticales no se discontinúan — sale revisión del owner , 2026 09 28 , C8 : las verticales no se discontinúan — sale revisión del owner , 2026 09 28 , C8 : las verticales no se discontinúan",
+                    "contexto": "pagador manual no hubo llamada , así que esa mitad está exenta"
+                },
+                {
+                    "op": "insert",
+                    "salida": "",
+                    "fuente": "— sale FASE 5 , owner 2026 09 30 , simplificación del corte , S 40 : sin lápida del corte , un cobro tardío de un débito viejo entra como desconocido y lo toma la lápida de recepción de la fila de abajo",
+                    "contexto": "residuo 2 de 17 : la fila faltaba desde que entró S36"
+                },
+                {
+                    "op": "delete",
+                    "salida": "sale revisión del owner , 2026 09 28 , C8 : las verticales no se discontinúan sale FASE 5 , owner 2026 09 30 , simplificación del corte , S 40 : sin lápida del corte , un cobro tardío de un débito viejo entra como desconocido y lo toma la lápida de recepción de la fila de abajo",
+                    "fuente": "",
+                    "contexto": ", quedaba terminal , fuera del barrido y con el preapproval cobrando"
+                }
+            ]
+        },
+        {
+            "rel": "10-corte/B13a.md",
+            "a": 142,
+            "b": 209,
+            "cit": ".specs/HOS-1354-billing-cobro-y-proveedor/docs/19-superficies.md:97",
+            "diff": [
+                {
+                    "op": "insert",
+                    "salida": "",
+                    "fuente": "sale revisión del owner , 2026 09 28 , C8 : las verticales no se discontinúan , y el sistema no manda avisos de un acto que no existe sale revisión del owner , 2026 09 28 , C8 , con S25 y DEC GRANT 010",
+                    "contexto": "MVP , owner 2026 10 02 , BO ; lo construye B9b"
+                },
+                {
+                    "op": "insert",
+                    "salida": "",
+                    "fuente": "sale revisión del owner , 2026 09 28 , C8 : no hay vertical que deje de admitir altas . Una vertical con todos sus planes retirados no ofrece checkout porque no tiene versión vendible , y lo dice la fila 29 de V / 19 § 4",
+                    "contexto": "V / 11 § 9 , V / 03 § 2 T2"
+                },
+                {
+                    "op": "delete",
+                    "salida": "sale revisión del owner , 2026 09 28 , C8 : las verticales no se discontinúan , y el sistema no manda avisos de un acto que no existe sale revisión del owner , 2026 09 28 , C8 , con S25 y DEC GRANT 010 sale revisión del owner , 2026 09 28 , C8 : no hay vertical que deje de admitir altas . Una vertical con todos sus planes retirados no ofrece checkout porque no tiene versión vendible , y lo dice la fila 29 de V / 19 § 4",
+                    "fuente": "",
+                    "contexto": "2 S7 y § 10 . 1 , B / 05 C1"
+                }
+            ]
+        },
+        {
+            "rel": "10-corte/B13a.md",
+            "a": 254,
+            "b": 349,
+            "cit": ".specs/HOS-1354-billing-cobro-y-proveedor/docs/19-superficies.md:204",
+            "diff": [
+                {
+                    "op": "insert",
+                    "salida": "",
+                    "fuente": "sale revisión del owner , 2026 09 28 , C8 : la acción 16 ya no existe",
+                    "contexto": "» que S18 abre se leía igual que una divergencia de monto"
+                },
+                {
+                    "op": "delete",
+                    "salida": "sale revisión del owner , 2026 09 28 , C8 : la acción 16 ya no existe",
+                    "fuente": "",
+                    "contexto": ", casos vecinos , 2026 09 29 , caso H F ."
+                }
+            ]
+        },
+        {
+            "rel": "20-fase-2/B8b.md",
+            "a": 87,
+            "b": 127,
+            "cit": ".specs/HOS-1354-billing-cobro-y-proveedor/docs/12-suscripcion.md:216",
+            "diff": [
+                {
+                    "op": "replace",
+                    "salida": "se rechaza mientras exista el anterior",
+                    "fuente": "lo reemplaza entero",
+                    "contexto": "que llega encima qué pasa con el descenso programado 1 otro downgrade"
+                }
+            ]
+        },
+        {
+            "rel": "20-fase-3/B12.md",
+            "a": 116,
+            "b": 134,
+            "cit": ".specs/HOS-1354-billing-cobro-y-proveedor/docs/10-verticales-planes-billing-options.md:75",
+            "diff": [
+                {
+                    "op": "insert",
+                    "salida": "",
+                    "fuente": ", y eso es una condición derivada — cuántas suscripciones siguen ancladas a ella — , no un estado guardado",
+                    "contexto": ". Una versión retirada se extingue cuando la deja su última suscripción"
+                }
+            ]
+        },
+        {
+            "rel": "04-catalogos.md",
+            "a": 1325,
+            "b": 1467,
+            "cit": ".specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/03-maquinas-de-estado.md:680–841",
+            "diff": [
+                {
+                    "op": "insert",
+                    "salida": "",
+                    "fuente": "su antigüedad ,",
+                    "contexto": "de arreglos pendientes V / 19 : los pedidos abiertos , con"
+                }
+            ]
+        },
+        {
+            "rel": "04-catalogos.md",
+            "a": 6468,
+            "b": 6471,
+            "cit": ".specs/HOS-1354-billing-cobro-y-proveedor/docs/20-testing.md:466–467",
+            "diff": [
+                {
+                    "op": "delete",
+                    "salida": "La sección no tiene texto vigente fuera de su título .",
+                    "fuente": "",
+                    "contexto": ""
+                }
+            ]
+        },
+        {
+            "rel": "04-catalogos.md",
+            "a": 6744,
+            "b": 6793,
+            "cit": ".specs/HOS-1354-billing-cobro-y-proveedor/docs/20-testing.md:651–705",
+            "diff": [
+                {
+                    "op": "insert",
+                    "salida": "",
+                    "fuente": "comparación de forma , ni",
+                    "contexto": "La suite de arriba no tenía cadencia , ni producción , ni"
+                },
+                {
+                    "op": "replace",
+                    "salida": "tres",
+                    "fuente": "cuatro",
+                    "contexto": "si no corría . Desde esta revisión es una batería con esas"
+                },
+                {
+                    "op": "insert",
+                    "salida": "",
+                    "fuente": ". Y compara también la forma de cada respuesta qué campos vienen y de qué tipo contra la última corrida , porque un campo que desaparece o cambia de tipo rompe el código sin cambiar ninguna mentira",
+                    "contexto": "y compara el resultado con lo que la fila dice que pasa"
+                }
+            ]
+        },
+        {
+            "rel": "04-catalogos.md",
+            "a": 9384,
+            "b": 9421,
+            "cit": ".specs/HOS-1352-billing-verticals-redesign/docs/06-mp-validation-matrix.md:370–441",
+            "diff": [
+                {
+                    "op": "delete",
+                    "salida": "Nota del catálogo sobre la fila siguiente :",
+                    "fuente": "",
+                    "contexto": "reintentarlo creyendo que es un problema de cómo armamos el pedido ."
+                }
+            ]
+        }
+    ],
+    "ranges": {
+        ".specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/03-maquinas-de-estado.md": [
+            [21, 90],
+            [91, 122],
+            [281, 327],
+            [328, 364],
+            [365, 479],
+            [123, 150],
+            [164, 204],
+            [243, 280],
+            [151, 163],
+            [205, 242],
+            [480, 654],
+            [842, 930],
+            [1146, 1338],
+            [1339, 1351],
+            [931, 1009],
+            [1010, 1145],
+            [655, 679],
+            [680, 841],
+            [1352, 1377]
+        ],
+        ".specs/HOS-1354-billing-cobro-y-proveedor/docs/03-maquinas-de-estado.md": [
+            [141, 213],
+            [21, 45],
+            [46, 140],
+            [285, 376],
+            [377, 533],
+            [1520, 1588],
+            [2689, 2713],
+            [2714, 2747],
+            [2748, 2800],
+            [2801, 2832],
+            [2833, 2838],
+            [2839, 2848],
+            [2849, 3063],
+            [568, 693],
+            [1589, 1655],
+            [1656, 1739],
+            [799, 885],
+            [944, 956],
+            [886, 941],
+            [957, 1015],
+            [1016, 1081],
+            [1082, 1119],
+            [214, 284],
+            [534, 567],
+            [694, 798],
+            [1120, 1187],
+            [1188, 1276],
+            [1277, 1446],
+            [1447, 1483],
+            [1484, 1519],
+            [1740, 1832],
+            [1833, 1862],
+            [1863, 1905],
+            [2047, 2067],
+            [2179, 2256],
+            [1906, 1930],
+            [1931, 1989],
+            [1990, 2011],
+            [2012, 2046],
+            [2068, 2094],
+            [2095, 2110],
+            [2323, 2409],
+            [2111, 2141],
+            [2142, 2178],
+            [2257, 2322],
+            [2410, 2438],
+            [2439, 2461],
+            [2462, 2504],
+            [2505, 2529],
+            [2530, 2549],
+            [2550, 2604],
+            [2605, 2688]
+        ],
+        ".specs/HOS-1354-billing-cobro-y-proveedor/docs/05-idempotencia-y-concurrencia.md": [
+            [306, 543],
+            [27, 38],
+            [39, 49],
+            [50, 103],
+            [544, 557]
+        ],
+        ".specs/HOS-1354-billing-cobro-y-proveedor/docs/02-modelo-de-datos.md": [
+            [1008, 1124],
+            [972, 1007],
+            [1155, 1178],
+            [1125, 1154]
+        ],
+        ".specs/HOS-1354-billing-cobro-y-proveedor/docs/20-testing.md": [
+            [499, 521],
+            [522, 553],
+            [466, 467],
+            [468, 481],
+            [482, 498],
+            [554, 565],
+            [566, 571],
+            [572, 617],
+            [618, 627],
+            [628, 650],
+            [651, 705],
+            [43, 446],
+            [447, 465]
+        ],
+        ".specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/20-testing.md": [
+            [27, 42],
+            [43, 351],
+            [352, 370]
+        ],
+        ".specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md": [[176, 190]],
+        ".specs/HOS-1352-billing-verticals-redesign/docs/06-mp-validation-matrix.md": [
+            [222, 232],
+            [294, 308],
+            [309, 343],
+            [344, 369],
+            [370, 441]
+        ]
+    }
+}

@@ -14,8 +14,6 @@ import type { PartnerModel } from '@repo/db';
 import {
     LifecycleStatusEnum,
     PartnerContentReviewStateEnum,
-    PartnerSubscriptionStatusEnum,
-    PartnerTierEnum,
     PartnerTypeEnum,
     PermissionEnum,
     ServiceErrorCode
@@ -41,21 +39,15 @@ const makeOwnedPartner = (ownerUserId: string, overrides: Record<string, unknown
     id: PARTNER_ID,
     slug: 'acme-turismo',
     name: 'Acme Turismo',
-    type: PartnerTypeEnum.COMMERCE,
-    tier: PartnerTierEnum.SILVER,
+    type: PartnerTypeEnum.BUSINESS,
     logoUrl: 'https://cdn.example.com/live.png',
     description: 'Texto vivo.',
     websiteUrl: 'https://acme.example.com',
     contactInfo: { workEmail: 'hola@acme.com' },
     socialNetworks: { instagram: 'https://instagram.com/acme' },
-    subscriptionStatus: PartnerSubscriptionStatusEnum.PENDING,
     lifecycleState: LifecycleStatusEnum.DRAFT,
     analytics: {},
-    planId: null,
-    subscriptionId: null,
     ownerUserId,
-    startsAt: null,
-    endsAt: null,
     pendingLogoUrl: null,
     pendingDescription: null,
     pendingWebsiteUrl: null,
@@ -245,13 +237,13 @@ describe('PartnerService.updateOwn — routing', () => {
         await service.updateOwn(partnerActor, {
             description: 'Texto propuesto.',
             contentApprovedAt: new Date(),
-            subscriptionStatus: PartnerSubscriptionStatusEnum.ACTIVE
+            lifecycleState: LifecycleStatusEnum.ACTIVE
         } as Parameters<typeof service.updateOwn>[1]);
 
         // Assert
         const patch = writtenPatch(model);
         expect(patch).not.toHaveProperty('contentApprovedAt');
-        expect(patch).not.toHaveProperty('subscriptionStatus');
+        expect(patch).not.toHaveProperty('lifecycleState');
     });
 });
 

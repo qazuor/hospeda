@@ -3,7 +3,7 @@
  * @description The single adapter that binds any per-entity media table to the
  * shared born-featured primitive (HOS-803).
  *
- * The five media tables — `accommodation_media`, `gastronomy_media`,
+ * The five media tables — `accommodation_media`, `venue_media`,
  * `experience_media`, `post_media`, `event_media` — are the same shape under
  * different names. Each has `is_featured`, `state`, `sort_order`, `deleted_at`
  * and exactly one owning foreign key, and each is reached through a model with
@@ -59,7 +59,7 @@ export type BuildOwnedMediaFeaturedPortInput<TRow> = {
     readonly mediaModel: FeaturedCapableMediaModel<TRow>;
     /**
      * Name of the owning foreign-key column on the media table, in its
-     * camelCase model form — `'accommodationId'`, `'gastronomyId'`,
+     * camelCase model form — `'accommodationId'`, `'venueId'`,
      * `'experienceId'`, `'postId'`, `'eventId'`.
      */
     readonly ownerKey: string;
@@ -94,11 +94,11 @@ export type BuildOwnedMediaFeaturedPortInput<TRow> = {
  * @example
  * ```ts
  * const port = buildOwnedMediaFeaturedPort({
- *     mediaModel: new GastronomyMediaModel(),
- *     ownerKey: 'gastronomyId',
- *     ownerId: gastronomyId,
+ *     mediaModel: new venueMediaModel(),
+ *     ownerKey: 'venueId',
+ *     ownerId: venueId,
  *     media: validated.media,
- *     findFeatured: (tx) => mediaModel.findFeatured({ gastronomyId, tx }),
+ *     findFeatured: (tx) => mediaModel.findFeatured({ venueId, tx }),
  *     deletedById: actor.id
  * });
  * ```

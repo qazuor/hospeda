@@ -11,8 +11,8 @@
  * ever orchestrated it:
  *
  *   - `PhotoSection.client.tsx` (accommodations) never called any delete endpoint.
- *   - `MediaField.tsx` (commerce) did call `protectedMediaApi.deleteMedia`, but
- *     `media/protected/delete-entity` rejects `gastronomy`/`experience` with HTTP
+ *   - `MediaField.tsx` (listing editor) did call `protectedMediaApi.deleteMedia`, but
+ *     `media/protected/delete-entity` rejects `venue`/`experience` with HTTP
  *     400, so the call could never succeed.
  *   - The `media-orphan-cleanup` cron only wipes the `hospeda/preview/` and
  *     `hospeda/test/` prefixes, and short-circuits entirely when
@@ -53,7 +53,7 @@ import { ServiceError } from '../../types';
 /**
  * Minimal shape this step needs from a media row.
  *
- * Every vertical's media table (`accommodation_media`, `gastronomy_media`,
+ * Every vertical's media table (`accommodation_media`, `venue_media`,
  * `experience_media`) satisfies this: a required `url` and a nullable
  * `publicId`. Typing the input structurally rather than against a concrete row
  * type keeps one implementation serving all three tables.

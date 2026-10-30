@@ -30,6 +30,8 @@
 import { createRequire } from 'node:module';
 import { dirname, resolve } from 'node:path';
 import { exit } from 'node:process';
+import { Pool } from 'pg';
+import { ensureListingOwnerTrial } from '../fixtures/listing-owner-trial.ts';
 
 /**
  * Default DB URL precedence:
@@ -80,8 +82,67 @@ process.chdir(seedPackageRoot);
 
 const { describeError, runSeed } = await import('@repo/seed');
 
+/** Give each seeded listing owner a live fixture trial in that listing's vertical. */
+async function seedListingOwnerTrials(pool: Pool): Promise<void> {
+    const { accommodations, experiences, venues, getDb } = await import('@repo/db');
+    const { VerticalEnum } = await import('@repo/schemas');
+    const db = getDb();
+    const listings = [
+        { vertical: VerticalEnum.ACCOMMODATION, table: accommodations },
+        { vertical: VerticalEnum.VENUE, table: venues },
+        { vertical: VerticalEnum.EXPERIENCE, table: experiences }
+    ] as const;
+
+    for (const { vertical, table } of listings) {
+        const listingOwners = await db.select({ ownerId: table.ownerId }).from(table);
+        const ownerIds = [
+            ...new Set(
+                listingOwners
+                    .map(({ ownerId }) => ownerId)
+                    .filter((id): id is string => id !== null)
+            )
+        ];
+        if (ownerIds.length === 0) continue;
+
+        for (const ownerId of ownerIds) {
+            await ensureListingOwnerTrial(pool, ownerId, vertical);
+        }
+    }
+}
+
+/**
+ * Empties the billing catalog that migration 0176 writes (`billing_option` and the
+ * add-on tables).
+ *
+ * The seed reset now PRESERVES those rows (HOS-1827) because a live environment cannot
+ * re-create them. The E2E specs and fixtures, however, create their own billing options
+ * and assume an empty migration catalog, so the E2E database keeps its pre-HOS-1827
+ * state. Safe by construction: this script already refuses any database whose name does
+ * not match the E2E pattern (checked at module load, before this runs). Rewriting the
+ * specs against the real prices is a follow-up.
+ *
+ * ORDER MATTERS: this must run BEFORE `runSeed`, never after. `subscription` (and through
+ * it `provider_link` and friends) and `subscription_scheduled_change` reference
+ * `billing_option`, so `CASCADE` empties them too. Before the seed they hold nothing the
+ * seed has not yet inserted (and `runSeed({ reset: true })` truncates them right after
+ * anyway, since they are not reference tables); after the seed it would silently wipe
+ * every seeded subscription. This reproduces the pre-HOS-1827 state, where the reset
+ * emptied the catalog before anything was inserted.
+ */
+async function emptyMigrationBillingCatalog(): Promise<void> {
+    const { MIGRATION_CATALOG_TABLES } = await import('@repo/db');
+    const tables = MIGRATION_CATALOG_TABLES.map((name) => `"${name}"`).join(', ');
+    const pool = new Pool({ connectionString: dbUrl });
+    try {
+        await pool.query(`TRUNCATE ${tables} RESTART IDENTITY CASCADE`);
+    } finally {
+        await pool.end();
+    }
+}
+
 async function main(): Promise<void> {
     console.info(`[e2e-seed] Resetting + seeding ${dbUrl}`);
+    await emptyMigrationBillingCatalog();
     await runSeed({
         reset: true,
         required: true,
@@ -99,6 +160,18 @@ async function main(): Promise<void> {
         // because the database is ephemeral.
         exclude: []
     });
+    // runSeed closes its own pool before returning. Open a fresh connection for
+    // these E2E-only rows, then release it before the runner exits.
+    const { initializeDb, resetDb } = await import('@repo/db');
+    const fixturePool = new Pool({ connectionString: dbUrl });
+    resetDb();
+    initializeDb(fixturePool);
+    try {
+        await seedListingOwnerTrials(fixturePool);
+    } finally {
+        await fixturePool.end();
+        resetDb();
+    }
     console.info('[e2e-seed] Done.');
 }
 

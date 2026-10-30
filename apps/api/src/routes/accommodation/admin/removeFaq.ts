@@ -3,9 +3,15 @@
  * Remove an existing FAQ from an accommodation - Admin endpoint
  */
 
-import { AccommodationFaqIdSchema, AccommodationIdSchema, DeleteResultSchema } from '@repo/schemas';
+import {
+    AccommodationFaqIdSchema,
+    AccommodationIdSchema,
+    DeleteResultSchema,
+    VerticalEnum
+} from '@repo/schemas';
 import { AccommodationService, ServiceError } from '@repo/service-core';
 import type { Context } from 'hono';
+import { runListingContentCall } from '../../../middlewares/listing-access';
 import { getActorFromContext } from '../../../utils/actor';
 import { apiLogger } from '../../../utils/logger';
 import { createAdminRoute } from '../../../utils/route-factory';
@@ -23,6 +29,7 @@ const accommodationService = new AccommodationService({ logger: apiLogger });
  */
 export const adminRemoveFaqRoute = createAdminRoute({
     method: 'delete',
+    listingAccess: { vertical: VerticalEnum.ACCOMMODATION, operation: 'EDIT', idParam: 'id' },
     path: '/{id}/faqs/{faqId}',
     summary: 'Remove FAQ from accommodation (admin)',
     description:
@@ -36,9 +43,13 @@ export const adminRemoveFaqRoute = createAdminRoute({
     handler: async (ctx: Context, params: Record<string, unknown>) => {
         const actor = getActorFromContext(ctx);
 
-        const result = await accommodationService.removeFaq(actor, {
-            accommodationId: params.id as string,
-            faqId: params.faqId as string
+        const result = await runListingContentCall({
+            ctx,
+            run: () =>
+                accommodationService.removeFaq(actor, {
+                    accommodationId: params.id as string,
+                    faqId: params.faqId as string
+                })
         });
 
         if (result.error) {

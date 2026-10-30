@@ -160,6 +160,68 @@ export function getUtcInstantForLocalMidnight({
     return new Date(guess.getTime() - offsetMs);
 }
 
+/** Input for {@link startOfMarketDay}. */
+export interface StartOfMarketDayInput {
+    /** The instant whose local calendar day is wanted. Defaults to `new Date()`. */
+    readonly instant?: Date;
+    /**
+     * Whole calendar days to move from that day before taking its midnight:
+     * `0` is the day `instant` falls on, `-3` is "three days before", `1` is
+     * the next day. Calendar days, never multiples of 24 hours. Defaults to `0`.
+     */
+    readonly offsetDays?: number;
+    /** IANA time zone. Defaults to {@link MARKET_TIMEZONE}. */
+    readonly timeZone?: string;
+}
+
+/**
+ * Returns the UTC instant of local midnight (00:00) of the calendar day that
+ * `instant` falls on in `timeZone`, moved by `offsetDays` calendar days
+ * (HOS-1424, AC:U2:6).
+ *
+ * This is the primitive behind every window expressed in days on the
+ * market's calendar ("three days before", "today so far"): the day boundary
+ * is midnight in `America/Argentina/Buenos_Aires`, not in the process's own
+ * zone and not a multiple of 24 hours, and the value returned is a UTC
+ * instant, ready to store or to compare against a `timestamptz` column.
+ *
+ * @param input - {@link StartOfMarketDayInput}.
+ * @returns The UTC instant of that local midnight.
+ * @throws {Error} If `offsetDays` is not an integer.
+ *
+ * @example
+ * ```ts
+ * // 2026-10-07T01:30:00Z is 2026-10-06 22:30 in Buenos Aires:
+ * startOfMarketDay({ instant: new Date('2026-10-07T01:30:00.000Z') });
+ * // 2026-10-06T03:00:00.000Z (00:00 -03:00 of 6 October)
+ * startOfMarketDay({ instant: new Date('2026-10-07T01:30:00.000Z'), offsetDays: -3 });
+ * // 2026-10-03T03:00:00.000Z
+ * ```
+ */
+export function startOfMarketDay({
+    instant = new Date(),
+    offsetDays = 0,
+    timeZone = MARKET_TIMEZONE
+}: StartOfMarketDayInput = {}): Date {
+    if (!Number.isInteger(offsetDays)) {
+        throw new Error(`startOfMarketDay: offsetDays must be an integer, got ${offsetDays}`);
+    }
+    const localDate = getLocalDateString({ instant, timeZone });
+    // Calendar arithmetic on the already-localised date through a UTC anchor,
+    // never a local-time `Date` mutator (scripts/check-local-date-math.sh).
+    const anchor = new Date(
+        Date.UTC(
+            Number(localDate.slice(0, 4)),
+            Number(localDate.slice(5, 7)) - 1,
+            Number(localDate.slice(8, 10)) + offsetDays
+        )
+    );
+    return getUtcInstantForLocalMidnight({
+        date: anchor.toISOString().slice(0, 10),
+        timeZone
+    });
+}
+
 /** Input for {@link getLocalDayWindow}. */
 export interface GetLocalDayWindowInput {
     /** "Now" — defaults to `new Date()`. Pass explicitly in tests (`vi.setSystemTime` also works). */

@@ -1,7 +1,7 @@
 /**
  * Integration tests for GET /api/v1/public/posts/slug/:slug
  *
- * Mirrors the accommodation/gastronomy public getBySlug route test pattern
+ * Mirrors the accommodation/venue public getBySlug route test pattern
  * (route registration, public access, response shape, HTTP method
  * restrictions), plus the HOS-117 T-022 GONE (410) regression: a
  * soft-deleted post must be deindexed via HTTP 410, distinct from a

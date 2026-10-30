@@ -12,9 +12,9 @@
  * without hitting the network.
  */
 
-import { OWNER_TRIAL_DAYS } from '@repo/billing';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import type { PublicPlanData } from '@/lib/billing/fetch-plans';
+import { OWNER_TRIAL_DAYS } from '../billing/owner-trial-days';
 
 vi.mock('@/lib/billing/fetch-plans', async (importOriginal) => {
     const actual = await importOriginal<typeof import('@/lib/billing/fetch-plans')>();
@@ -33,6 +33,12 @@ import {
 
 const mockFetchPublicPlans = vi.mocked(fetchPublicPlans);
 
+describe('TEST:1626:5 — static owner trial length', () => {
+    it('keeps the cached marketing promise at 30 days until HOS-528 reads plans', () => {
+        expect(OWNER_TRIAL_DAYS).toBe(30);
+    });
+});
+
 /** Builds a fully-populated {@link PublicPlanData} fixture with overrides. */
 const makePlan = (
     overrides: Partial<PublicPlanData> & { readonly slug: string }
@@ -41,18 +47,16 @@ const makePlan = (
     name: overrides.slug,
     description: '',
     category: 'owner',
+    vertical: 'accommodation',
     monthlyPriceArs: 1000,
     annualPriceArs: null,
-    monthlyPriceUsdRef: 1,
     hasTrial: true,
     trialDays: 14,
-    isDefault: false,
     sortOrder: 0,
     isActive: true,
+    inheritsTouristVip: false,
     entitlements: [],
     limits: {},
-    createdAt: '2026-01-01T00:00:00.000Z',
-    updatedAt: '2026-01-01T00:00:00.000Z',
     ...overrides
 });
 
@@ -60,7 +64,7 @@ afterEach(() => vi.clearAllMocks());
 
 describe('computeMinimumTrialDays', () => {
     // The audience-agnostic core, extracted for HOS-943 so the plan index can
-    // resolve tourist / gastronomy / experience / partner through the SAME rule
+    // resolve tourist / venue / experience / partner through the SAME rule
     // the owner tier has used since H-98 rather than a second copy of it. It
     // takes plans already selected for one audience and knows nothing about
     // categories or domains — the selection is the caller's job.
@@ -130,11 +134,18 @@ describe('computeMinimumTrialDays', () => {
     });
 
     it('does not filter by category — that is the caller’s selection', () => {
-        // Deliberate: the plan index selects tourist, gastronomy, experience and
+        // Deliberate: the plan index selects tourist, venue, experience and
         // partner plans, none of which are the `owner` category this function
         // used to be hardwired to. Narrowing here would make it unusable for
         // four of the five audiences.
-        const plans = [makePlan({ slug: 'tourist-vip', category: 'tourist', trialDays: 45 })];
+        const plans = [
+            makePlan({
+                slug: 'tourist-vip',
+                category: 'tourist',
+                vertical: 'tourist',
+                trialDays: 45
+            })
+        ];
 
         expect(computeMinimumTrialDays({ plans })).toBe(45);
     });

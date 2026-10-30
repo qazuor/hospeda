@@ -1,0 +1,50 @@
+[
+    {
+        "check": "trazar",
+        "exit": 0
+    },
+    {
+        "check": "canarios",
+        "exit": 0
+    },
+    {
+        "check": "canarios-cobertura",
+        "exit": 0
+    },
+    {
+        "check": "canarios-g1",
+        "exit": 0
+    },
+    {
+        "check": "canarios-g3",
+        "exit": 0
+    },
+    {
+        "check": "canarios-secciones",
+        "exit": 0
+    },
+    {
+        "check": "aristas",
+        "exit": 0
+    },
+    {
+        "check": "contar",
+        "exit": 0
+    },
+    {
+        "check": "cobertura",
+        "exit": 0
+    },
+    {
+        "check": "markdownlint-global-83",
+        "exit": 0
+    },
+    {
+        "check": "biome-json",
+        "exit": 0
+    },
+    {
+        "check": "markdownlint-indice",
+        "exit": 0
+    }
+]

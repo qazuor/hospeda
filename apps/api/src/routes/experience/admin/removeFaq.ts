@@ -5,11 +5,12 @@
 import {
     type ExperienceFaqRemoveInput,
     ExperienceFaqRemoveOutputSchema,
-    PermissionEnum
+    VerticalEnum
 } from '@repo/schemas';
 import { ExperienceService, removeExperienceFaq, ServiceError } from '@repo/service-core';
 import type { Context } from 'hono';
 import { z } from 'zod';
+import { runListingContentCall } from '../../../middlewares/listing-access';
 import { getActorFromContext } from '../../../utils/actor';
 import { apiLogger } from '../../../utils/logger';
 import { createAdminRoute } from '../../../utils/route-factory';
@@ -20,17 +21,16 @@ const experienceService = new ExperienceService({ logger: apiLogger });
  * DELETE /api/v1/admin/experiences/:id/faqs/:faqId
  * Remove FAQ from experience listing — Admin endpoint.
  *
- * Requires EXPERIENCE_EDIT_ALL (or the legacy COMMERCE_EDIT_ALL) permission. The service helper
+ * Requires EXPERIENCE_EDIT_ALL permission. The service helper
  * `removeExperienceFaq` enforces the same gate via `checkExperienceCanEditFaqs`.
  */
 export const adminRemoveExperienceFaqRoute = createAdminRoute({
     method: 'delete',
+    listingAccess: { vertical: VerticalEnum.EXPERIENCE, operation: 'EDIT', idParam: 'id' },
     path: '/{id}/faqs/{faqId}',
     summary: 'Remove FAQ from experience listing (admin)',
-    description:
-        'Removes a FAQ from an experience listing. Requires EXPERIENCE_EDIT_ALL (or the legacy COMMERCE_EDIT_ALL).',
+    description: 'Removes a FAQ from an experience listing. Requires EXPERIENCE_EDIT_ALL.',
     tags: ['Experience', 'FAQs'],
-    anyOfPermissions: [[PermissionEnum.EXPERIENCE_EDIT_ALL, PermissionEnum.COMMERCE_EDIT_ALL]],
     requestParams: {
         id: z.string().uuid({ message: 'zodError.common.id.invalidUuid' }),
         faqId: z.string().uuid({ message: 'zodError.common.id.invalidUuid' })
@@ -48,7 +48,10 @@ export const adminRemoveExperienceFaqRoute = createAdminRoute({
         const model = (
             experienceService as unknown as { model: Parameters<typeof removeExperienceFaq>[0] }
         ).model;
-        const result = await removeExperienceFaq(model, actor, input);
+        const result = await runListingContentCall({
+            ctx,
+            run: () => removeExperienceFaq(model, actor, input)
+        });
 
         if (result.error) {
             throw new ServiceError(result.error.code, result.error.message);

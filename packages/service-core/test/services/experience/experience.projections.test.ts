@@ -13,13 +13,7 @@
  */
 
 import type { Experience } from '@repo/schemas';
-import {
-    ExperiencePriceUnitEnum,
-    ExperienceTypeEnum,
-    LifecycleStatusEnum,
-    ModerationStatusEnum,
-    VisibilityEnum
-} from '@repo/schemas';
+import { ExperiencePriceUnitEnum, ExperienceTypeEnum, PublicationStatusEnum } from '@repo/schemas';
 import { describe, expect, it } from 'vitest';
 import {
     projectExperienceOwnerAvatar,
@@ -41,13 +35,9 @@ function makeEntity(overrides: Partial<Record<string, unknown>> = {}): Experienc
         priceFrom: 200000,
         priceUnit: ExperiencePriceUnitEnum.PER_PERSON,
         isPriceOnRequest: false,
-        hasActiveSubscription: true,
         destinationId: '00000000-0000-4000-a000-000000000002',
         ownerId: '00000000-0000-4000-a000-000000000003',
-        lifecycleState: LifecycleStatusEnum.ACTIVE,
-        moderationState: ModerationStatusEnum.APPROVED,
-        visibility: VisibilityEnum.PUBLIC,
-        isFeatured: false,
+        publicationStatus: PublicationStatusEnum.PUBLISHED,
         averageRating: 4.5,
         reviewsCount: 12,
         createdAt: new Date('2024-01-01'),
@@ -88,12 +78,6 @@ describe('projectExperiencePublic', () => {
         expect(result).toHaveProperty('priceFrom', 200000);
         expect(result).toHaveProperty('priceUnit', ExperiencePriceUnitEnum.PER_PERSON);
         expect(result).toHaveProperty('isPriceOnRequest', false);
-    });
-
-    it('should preserve hasActiveSubscription', () => {
-        const entity = makeEntity();
-        const result = projectExperiencePublic(entity);
-        expect(result).toHaveProperty('hasActiveSubscription', true);
     });
 
     it('should preserve rating aggregates (averageRating, reviewsCount)', () => {

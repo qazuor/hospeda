@@ -14,6 +14,7 @@
  */
 
 import { z } from 'zod';
+import { ConversationListingAvailabilitySchema } from './conversation.http.schema.js';
 import { ConversationSchema } from './conversation.schema.js';
 import { MessageSchema } from './message.schema.js';
 
@@ -280,7 +281,10 @@ export const GuestThreadResponseSchema = z.object({
      * `true` when older messages exist beyond the current page.
      * The web client uses this to render the "load older" link.
      */
-    hasMore: z.boolean()
+    hasMore: z.boolean(),
+
+    /** Whether the listing still admits new messages from the guest (HOS-1492). */
+    listingAvailability: ConversationListingAvailabilitySchema
 });
 
 /** TypeScript type inferred from {@link GuestThreadResponseSchema}. */

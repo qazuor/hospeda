@@ -198,7 +198,7 @@ Add files to appropriate manifest:
   "categories": [
     "outdoor.json",
     "culture.json",
-    "gastronomy.json"
+    "venue.json"
   ]
 }
 ```

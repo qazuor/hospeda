@@ -1,0 +1,21 @@
+# VB-09 · spec → fuente · 10-corte/B4.md 10-corte/B5.md 10-corte/B6.md
+
+## Hallazgos
+
+10-corte/B4.md:276 · «**`retenciónDetenida`**: `sí` con una `PAUSED`, sea por `CUSTOMER_REQUEST` o por `COURTESY` ([DEC-DATA-006]...)» · contradice .specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:138 («`sí` sólo con una `PAUSED` por `CUSTOMER_REQUEST` en esa vertical; revisión del owner, 2026-09-28, C14») y .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:7026 (DEC-DATA-006: «contesta billing (sí sólo con una `PAUSED` por `CUSTOMER_REQUEST`)»); contradice también, dentro de la spec, B4.md:25-26, AC:B4:4 (B4.md:147) y TEST:B4:3 (B4.md:400-401, «`no` con una `PAUSED · COURTESY`»). Ningún 📌 posterior ni decisión del owner amplía a `COURTESY` (búsqueda en el log, 12-contrato §4.1 y 41-corte-del-mvp/10-decisiones). La sección Reglas manda construir lo contrario del AC · BLOQUEA
+
+10-corte/B4.md:476 · «La suite completa de `B4` en la rama: los tests 1 a 9 en verde» · incoherencia interna: AC:B4:10 (B4.md:260-264) exige las ocho cláusulas, incluida *«anotar la cancelación vista»* (AC:B4:11), cuyo test es TEST:B4:11 (B4.md:461-468, que además dice cubrir AC:B4:10); «1 a 9» deja fuera el 11. Sin efecto si se lee TEST:B4:11 · MENOR
+
+10-corte/B5.md:359 · «Dado una cuota `DECLARED_UNPAID` de una suscripción que sigue en `SUSPENDED` o `GRACE_PERIOD`» · sin soporte para `GRACE_PERIOD`: .specs/HOS-1354-billing-cobro-y-proveedor/docs/03-maquinas-de-estado.md:1874 («la suscripción sale de `SUSPENDED` por `S7` — o queda pendiente por `S19`») y :2052 («`MP4` saca de `SUSPENDED` por `S7`»); una cuota `DECLARED_UNPAID` con la fila en `GRACE_PERIOD` no la produce ninguna transición (MP2 y la 1.ª cláusula de MP3 suspenden, la 3.ª sale del grace). El «Entonces» no define efecto desde `GRACE_PERIOD`, así que amplía el Dado sin cambiar lo que se construye · MENOR
+
+10-corte/B6.md:103-104 · «no manda nada —el banco ya le devolvió la plata a la persona— y la fila sale por `RF5` a `FAILED`, sin mover el pago» (y AC:B6:6, B6.md:145-147, «la fila pasa a `FAILED` por `RF5` y no mueve el pago; …») · más débil que .specs/HOS-1354-billing-cobro-y-proveedor/docs/03-maquinas-de-estado.md:1854 (RF5, efectos: «**Por el contracargo, el pago colgado de la marca que proponía devolverlo queda resuelto sin devolver**, con el contracargo anotado, y la persona lo ve en el listado junto a la marca `CONTRACARGO`»). `B6` es la dueña de `RF5` y ningún AC ni TEST (TEST:B6:2, B6.md:423-424) pide resolver el `reconciliation_mark_payment` colgado con el contracargo anotado: con la spec, el pago queda colgado sin resolver y la guarda de `S15` (AC:B5:38) bloquea levantar la marca · BLOQUEA
+
+10-corte/B6.md:400-401 · «Una devolución de más de la mitad del pago pide en `RF2` la confirmación de dos personas distintas, y la segunda no puede ser quien la pidió.» · sin soporte, y contradice .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:6818 («**La confirmación por una segunda persona entra cuando haya otra persona con el permiso**: hoy, con un owner que opera solo, bloquearía la operación») y docs/28-fase-9-vuelta-1/27-cierre-Y-resto.md:116-120 (la opción «una segunda persona para las acciones que mueven plata» se descartó porque «con un solo operador, bloquea la operación»). La fila de `B6` (descomposicion.md:140), su «Lista cuando» (:1065) y `RF2` (03-maquinas §6.1) piden una sola persona con el permiso. Regla inventada: un implementador construiría un doble control que bloquea toda devolución > 50 % · BLOQUEA
+
+## Resumen
+
+| archivo | líneas recorridas | afirmaciones normativas revisadas (aprox.) | BLOQUEA | MENOR |
+|---|---|---|---|---|
+| 10-corte/B4.md | 1–517 | 70 | 1 | 1 |
+| 10-corte/B5.md | 1–1222 | 180 | 0 | 1 |
+| 10-corte/B6.md | 1–544 | 75 | 2 | 0 |

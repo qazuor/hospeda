@@ -9,10 +9,10 @@
  * type. A duplicated limit check fails OPEN when someone updates one side only
  * — the cap silently stops applying instead of breaking loudly.
  *
- * Commerce verticals had ZERO cap coverage before this file.
+ * Venue and experience verticals had ZERO cap coverage before this file.
  *
- * Note on why counting the JSONB would be wrong for commerce: once photos live
- * in `gastronomy_media` / `experience_media`, `media.gallery` stops being
+ * Note on why counting the JSONB would be wrong for venue and experience: once photos live
+ * in `venue_media` / `experience_media`, `media.gallery` stops being
  * written and eventually the column is dropped — so a JSONB-based count reads 0
  * forever, and the cap never fires no matter how many photos are uploaded.
  */
@@ -21,13 +21,13 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const {
     accommodationMediaModel,
-    gastronomyMediaModel,
+    venueMediaModel,
     experienceMediaModel,
     postMediaModel,
     eventMediaModel
 } = vi.hoisted(() => ({
     accommodationMediaModel: { findByAccommodation: vi.fn() },
-    gastronomyMediaModel: { findByGastronomy: vi.fn() },
+    venueMediaModel: { findByVenue: vi.fn() },
     experienceMediaModel: { findByExperience: vi.fn() },
     postMediaModel: { count: vi.fn() },
     eventMediaModel: { count: vi.fn() }
@@ -35,7 +35,7 @@ const {
 
 vi.mock('@repo/db', () => ({
     accommodationMediaModel,
-    gastronomyMediaModel,
+    venueMediaModel,
     experienceMediaModel,
     postMediaModel,
     eventMediaModel
@@ -58,15 +58,30 @@ describe('resolveVisibleGalleryCount (HOS-372)', () => {
     beforeEach(() => {
         vi.clearAllMocks();
         accommodationMediaModel.findByAccommodation.mockResolvedValue({ items: [], total: 7 });
-        gastronomyMediaModel.findByGastronomy.mockResolvedValue({ items: [], total: 5 });
+        venueMediaModel.findByVenue.mockResolvedValue({ items: [], total: 5 });
         experienceMediaModel.findByExperience.mockResolvedValue({ items: [], total: 4 });
         postMediaModel.count.mockResolvedValue(6);
         eventMediaModel.count.mockResolvedValue(2);
     });
 
-    it('counts gastronomy photos from gastronomy_media, not from the JSONB blob', async () => {
+    it('TEST:1819:6 AC:1:3 resolves venue gallery count through venue media', async () => {
         const count = await resolveVisibleGalleryCount({
-            entityType: 'gastronomy',
+            entityType: 'venue',
+            entityId: ENTITY_ID,
+            entity: entityWithJsonbGallery
+        });
+
+        expect(count).toBe(5);
+        expect(venueMediaModel.findByVenue).toHaveBeenCalledWith({
+            venueId: ENTITY_ID,
+            state: 'visible',
+            isFeatured: false
+        });
+    });
+
+    it('counts venue photos from venue_media, not from the JSONB blob', async () => {
+        const count = await resolveVisibleGalleryCount({
+            entityType: 'venue',
             entityId: ENTITY_ID,
             entity: entityWithJsonbGallery
         });
@@ -74,8 +89,8 @@ describe('resolveVisibleGalleryCount (HOS-372)', () => {
         expect(count).toBe(5);
         // Exact equality, NOT objectContaining: a partial matcher stays green
         // when a filter is dropped, which is precisely the failure this asserts.
-        expect(gastronomyMediaModel.findByGastronomy).toHaveBeenCalledWith({
-            gastronomyId: ENTITY_ID,
+        expect(venueMediaModel.findByVenue).toHaveBeenCalledWith({
+            venueId: ENTITY_ID,
             state: 'visible',
             isFeatured: false
         });
@@ -114,7 +129,7 @@ describe('resolveVisibleGalleryCount (HOS-372)', () => {
     // HOS-791 ------------------------------------------------------------
     it.each([
         ['accommodation', () => accommodationMediaModel.findByAccommodation],
-        ['gastronomy', () => gastronomyMediaModel.findByGastronomy],
+        ['venue', () => venueMediaModel.findByVenue],
         ['experience', () => experienceMediaModel.findByExperience]
     ])('excludes the featured image from the %s count (HOS-791)', async (entityType, getMock) => {
         // The featured image is not a gallery item. Counting it charged the
@@ -135,12 +150,12 @@ describe('resolveVisibleGalleryCount (HOS-372)', () => {
         // An archived photo occupies no gallery slot; counting it would cap an
         // owner below their real allowance.
         await resolveVisibleGalleryCount({
-            entityType: 'gastronomy',
+            entityType: 'venue',
             entityId: ENTITY_ID,
             entity: {}
         });
 
-        const call = gastronomyMediaModel.findByGastronomy.mock.calls[0]?.[0];
+        const call = venueMediaModel.findByVenue.mock.calls[0]?.[0];
         expect(call?.state).toBe('visible');
     });
 
@@ -153,13 +168,13 @@ describe('resolveVisibleGalleryCount (HOS-372)', () => {
             });
 
             expect(count).toBe(3);
-            expect(gastronomyMediaModel.findByGastronomy).not.toHaveBeenCalled();
+            expect(venueMediaModel.findByVenue).not.toHaveBeenCalled();
             expect(accommodationMediaModel.findByAccommodation).not.toHaveBeenCalled();
         });
     }
 
     // HOS-1164: the composed `media.gallery` on a service-loaded entity only holds
-    // APPROVED rows (composeCommerceMedia moderation gate), while the register
+    // APPROVED rows (composeListingMedia moderation gate), while the register
     // path (`addPostMedia`/`addEventMedia`) counts rows in EVERY moderation
     // state. Counting the composed blob here let a caller who had registered 15
     // PENDING rows keep uploading to Cloudinary. Both paths must count the rows.

@@ -20,7 +20,7 @@
         "eventsList": "Eventos - Lista",
         "eventsNew": "Eventos - Novo",
         "eventsView": "Ver Evento",
-        "gastronomiesView": "Ver Gastronomia",
+        "venuesView": "Ver Comer e sair",
         "experiencesView": "Ver Experiência",
         "postsList": "Publicações - Lista",
         "postsNew": "Publicações - Novo",
@@ -628,8 +628,7 @@
                 "POST_COMMENT": "Comentários de Publicações",
                 "RECOMMENDATION": "Recomendações",
                 "MODERATION": "Moderação",
-                "COMMERCE": "Comércios",
-                "GASTRONOMY": "Gastronomia",
+                "VENUE": "Comer e sair",
                 "EXPERIENCE": "Experiências",
                 "HOST_TRADE": "Troca entre Anfitriões",
                 "PARTNER": "Parceiros",
@@ -656,7 +655,7 @@
             "permissionModel": "Modelo de permissões",
             "groupContentManagement": "Gestão de Conteúdo",
             "groupUserAccess": "Usuários e Acesso",
-            "groupCommerceBilling": "Comércio e Faturamento",
+            "groupListingsBilling": "Comércio e Faturamento",
             "groupMarketingAdvertising": "Marketing e Publicidade",
             "groupServicesListings": "Serviços e Listagens",
             "groupSystemConfiguration": "Sistema e Configuração",
@@ -743,37 +742,33 @@
                         "cap5": "Contatar anfitriões"
                     }
                 },
-                "COMMERCE_OWNER": {
-                    "name": "Dono de Comércio",
-                    "description": "Titular de um comércio que gerencia seu próprio perfil comercial",
-                    "capabilities": {
-                        "cap1": "Gerenciar seu perfil comercial",
-                        "cap2": "Atualizar horários e contato",
-                        "cap3": "Enviar fotos",
-                        "cap4": "Responder avaliações",
-                        "cap5": "Ver análises do seu comércio"
-                    }
-                },
-                "GASTRONOMY_OWNER": {
-                    "name": "Dono de Gastronomia",
+                "VENUE_OWNER": {
+                    "name": "Dono de Comer e sair",
                     "description": "Titular de um restaurante, bar ou café que gerencia seu próprio perfil (sem acesso a experiências)",
                     "capabilities": {
-                        "cap1": "Gerenciar seu perfil gastronômico",
+                        "cap1": "Gerenciar seu perfil do estabelecimento",
                         "cap2": "Atualizar horários e contato",
                         "cap3": "Enviar fotos",
                         "cap4": "Responder avaliações",
-                        "cap5": "Ver análises da sua gastronomia"
+                        "cap5": "Ver análises da sua ficha de Comer e sair"
                     }
                 },
                 "EXPERIENCE_OWNER": {
                     "name": "Dono de Experiência",
-                    "description": "Titular de um passeio ou atividade que gerencia seu próprio perfil (sem acesso a gastronomia)",
+                    "description": "Titular de um passeio ou atividade que gerencia seu próprio perfil (sem acesso a Comer e sair)",
                     "capabilities": {
                         "cap1": "Gerenciar seu perfil de experiência",
                         "cap2": "Atualizar horários e contato",
                         "cap3": "Enviar fotos",
                         "cap4": "Responder avaliações",
                         "cap5": "Ver análises da sua experiência"
+                    }
+                },
+                "PARTNER_OWNER": {
+                    "name": "Sócio",
+                    "description": "Titular da presença pública de um Partner (página e carrossel). Concedido quando reclama a sua presença",
+                    "capabilities": {
+                        "cap1": "Gerir a presença do seu Partner"
                     }
                 },
                 "SPONSOR": {
@@ -815,7 +810,7 @@
             },
             "relatedCounts": {
                 "accommodationsShort": "Acom.",
-                "gastronomiesShort": "Gast.",
+                "venuesShort": "Gast.",
                 "experiencesShort": "Exp.",
                 "eventsShort": "Evt.",
                 "postsShort": "Posts"
@@ -826,6 +821,37 @@
                 "count_other": "{{count}} acomodações",
                 "empty": "Este usuário não tem acomodações vinculadas.",
                 "error": "Não conseguimos carregar as acomodações deste usuário."
+            },
+            "trialSummary": {
+                "title": "Teste grátis",
+                "description": "Dias de teste acumulados por vertical e de onde vieram.",
+                "none": "Sem teste grátis nesta vertical.",
+                "consumedWithoutClock": "O teste já foi consumido; não tem relógio nem dias.",
+                "error": "Não foi possível ler o teste desta vertical.",
+                "vertical": {
+                    "accommodation": "Acomodações",
+                    "venue": "Comer e sair",
+                    "experience": "Experiências"
+                },
+                "status": {
+                    "TRIAL_ACTIVE": "Em andamento",
+                    "TRIAL_EXPIRED": "Vencido",
+                    "TRIAL_CONVERTED": "Convertido"
+                },
+                "total_one": "{{count}} dia de teste no total",
+                "total_other": "{{count}} dias de teste no total",
+                "totalWithCeiling_one": "{{total}} de {{count}} dia máx.",
+                "totalWithCeiling_other": "{{total}} de {{count}} dias máx.",
+                "ceilingReached": "O limite de dias de teste foi atingido: somente uma extensão de SUPER_ADMIN pode ultrapassá-lo.",
+                "origins": {
+                    "base_one": "{{count}} do plano",
+                    "base_other": "{{count}} do plano",
+                    "promo_one": "{{count}} por promoções",
+                    "promo_other": "{{count}} por promoções",
+                    "support_one": "{{count}} concedido pelo suporte",
+                    "support_other": "{{count}} concedidos pelo suporte"
+                },
+                "dates": "De {{start}} a {{end}}"
             },
             "publications": {
                 "title": "Publicações do usuário",
@@ -910,7 +936,30 @@
                 "selectRolePlaceholder": "Selecione uma função para conceder",
                 "reasonPlaceholder": "Motivo da concessão (opcional, registrado na auditoria)",
                 "revokeReasonPlaceholder": "Motivo desta revogação (opcional, registrado na auditoria)",
-                "changesTakeEffectNextRequest": "As alterações valem na próxima requisição do usuário"
+                "changesTakeEffectNextRequest": "As alterações valem na próxima requisição do usuário",
+                "superAdmin": {
+                    "title": {
+                        "assign": "Conceder o papel SUPER_ADMIN",
+                        "remove": "Remover o papel SUPER_ADMIN"
+                    },
+                    "description": {
+                        "assign": "Você vai conceder o papel SUPER_ADMIN a {{name}} ({{email}}). Com o papel, poderá executar estas ações:",
+                        "remove": "Você vai remover o papel SUPER_ADMIN de {{name}} ({{email}}). Não poderá mais executar estas ações:"
+                    },
+                    "reasonLabel": "Motivo (obrigatório)",
+                    "reasonPlaceholder": "Informe o motivo que ficará registrado na auditoria",
+                    "confirm": { "assign": "Conceder papel", "remove": "Remover papel" },
+                    "cancel": "Cancelar",
+                    "rows": {
+                        "ACC_17": "Migrar clientes de um plano descontinuado",
+                        "ACC_18": "Publicar uma versão de plano",
+                        "ACC_19": "Definir o preço de um ciclo",
+                        "ACC_20": "Publicar uma versão de complemento",
+                        "ACC_21": "Criar ou fechar um código promocional",
+                        "ACC_22": "Alterar um prazo",
+                        "ACC_26": "Atribuir ou remover o papel SUPER_ADMIN"
+                    }
+                }
             }
         }
     },

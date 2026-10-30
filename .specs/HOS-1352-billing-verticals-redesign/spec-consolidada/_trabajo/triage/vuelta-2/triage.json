@@ -1,0 +1,559 @@
+{
+    "sha_fuentes": "17f9702675",
+    "head": "a6900acce3",
+    "aristas_base": 62,
+    "conteo": {
+        "HUECO": 4,
+        "HERRAMIENTA": 10,
+        "OPERATIVO": 4,
+        "RESIDUO": 19,
+        "SIN_ACCION": 2
+    },
+    "duplicados": {
+        "D1 lo que la opción 1 de BS cerró y el registro no dice": [
+            "AB-g5-7",
+            "AB-g9-3",
+            "EF2-x-2",
+            "AB-g5-9"
+        ],
+        "D2 tipos de test deducidos por palabras": ["AB-g4-1", "AB-g5-12"],
+        "D3 V7 con lo que es de V6 (AB, AP)": ["EF2-g6-1"],
+        "D4 conteos UNKNOWN de B/spec.md §5.2": ["EF2-g4-1", "EF2-g4-2"],
+        "D5 plazos sin valor (3, 4, 7, 8, 9 y 19)": ["AB-g2-2", "EF2-g2-1", "EF2-g2-2"],
+        "D6 ordinales viejos de B/16 §4.3": ["EF2-g8-1"],
+        "D7 «cinco consumidores» de inactiva_desde": ["EF2-g6-4", "EF2-x-1"],
+        "D8 abiertos de g7 que la fuente ya resolvía": ["AB-g7-5", "AB-g7-6"],
+        "D9 piezas mal nombradas tras Z/BR (V1→U1, V1–V5→V1–V3)": ["EF2-g6-8", "EF2-g5-1"]
+    },
+    "duplicados_con_la_vuelta_1": {
+        "D3 V7 con lo que es de V6 (AB, AP)": "EF-g6-2 (vuelta 1)",
+        "D6 ordinales viejos de B/16 §4.3": "EF-g8-2 (vuelta 1)",
+        "D7 «cinco consumidores» de inactiva_desde": "EF-g6-3 (vuelta 1, BK)"
+    },
+    "items": [
+        {
+            "id": "AB2-g5-1",
+            "origen": "pasada2-g5 §1",
+            "titulo": "qué pieza construye las dos superficies de la suspensión de V/15 §6.3",
+            "clase": "HUECO",
+            "destino": "CA",
+            "verificacion": "VERIFICADO",
+            "evidencia": "V/15:497-509; ninguna fila de pieza las nombra; además V/15:507-509 manda cancelar el VIP al regularizar (S7), y BP sólo puso la cláusula en S2",
+            "duplicados": [],
+            "correccion": null
+        },
+        {
+            "id": "AB2-g7-1",
+            "origen": "pasada2-g7 §1",
+            "titulo": "la guarda de S15 (B3) lee reconciliation_mark_payment, que nace en B5",
+            "clase": "HUECO",
+            "destino": "BY",
+            "verificacion": "VERIFICADO",
+            "evidencia": "BN habla de la rama que escribe; BL de la que llama; ninguna de la que lee. B5→B3 da ciclo (aristas_triage)",
+            "duplicados": [],
+            "correccion": null
+        },
+        {
+            "id": "AB2-g9-1",
+            "origen": "pasada2-g9",
+            "titulo": "por qué camino llega el aumento a los anclados en B12",
+            "clase": "HUECO",
+            "destino": "BZ",
+            "verificacion": "VERIFICADO",
+            "evidencia": "DEC-MP-002 impl. 2 contra DEC-ARCH-001 y el 📌 de BM (log:1462-1470); S37/S38 son de la migración (B/03:187-188); no hay transición de aumento",
+            "duplicados": [],
+            "correccion": null
+        },
+        {
+            "id": "AB-g4-1",
+            "origen": "g4 §1",
+            "titulo": "tipos de test de CORTE",
+            "clase": "HERRAMIENTA",
+            "destino": "ya arreglado; falta redacción",
+            "verificacion": "VERIFICADO",
+            "evidencia": "cobertura.json @17f9702675: DEC-TEST-002, PASO:3, PASO:3a sin tipos de migración; PASO:0 smoke prod+staging. Queda la nota «Inferido…» de TEST:CORTE:18 (30-el-corte:1909-1911) y la línea de pasada2-g4 que lo da por abierto",
+            "duplicados": ["D2 tipos de test deducidos por palabras"],
+            "correccion": null
+        },
+        {
+            "id": "AB-g5-7",
+            "origen": "g5 §7",
+            "titulo": "el monto del pago chico del 4b",
+            "clase": "OPERATIVO",
+            "destino": "dueño owner · antes del ensayo (BS opción 1)",
+            "verificacion": "VERIFICADO",
+            "evidencia": "la opción 1 de BS, la elegida, decía «el monto del 4b lo aprueba el owner antes del ensayo, como el del 5c» (triage/lote.md, BS); el registro de BS lo omitió (ver EF2-x-2)",
+            "duplicados": ["D1 lo que la opción 1 de BS cerró y el registro no dice"],
+            "correccion": null
+        },
+        {
+            "id": "AB-g5-8",
+            "origen": "g5 §8",
+            "titulo": "qué pieza arma con db:migrate las bases de dev/test/e2e",
+            "clase": "HERRAMIENTA",
+            "destino": "redacción: cerrar en V1",
+            "verificacion": "VERIFICADO",
+            "evidencia": "cobertura.json da DEC-ARCH-013#📌3 a V1 y V1.md tiene su AC (l.417); sólo falta sacarlo de «Abiertos» (V1.md:492-494) y nombrarlo en la FILA",
+            "duplicados": [],
+            "correccion": null
+        },
+        {
+            "id": "AB-g5-9",
+            "origen": "g5 §9",
+            "titulo": "dónde vive el script TypeScript del SQL generado",
+            "clase": "OPERATIVO",
+            "destino": "BS: lo propone el PR de V1",
+            "verificacion": "VERIFICADO",
+            "evidencia": "es la ubicación de un artefacto, no cambia comportamiento (G18 regenera y compara donde esté); estaba en el contexto de BS del lote",
+            "duplicados": ["D1 lo que la opción 1 de BS cerró y el registro no dice"],
+            "correccion": null
+        },
+        {
+            "id": "AB-g5-11",
+            "origen": "g5 §11",
+            "titulo": "dónde vive el caché del conjunto efectivo y cómo se observa una entrada sospechosa",
+            "clase": "HUECO",
+            "destino": "CB",
+            "verificacion": "VERIFICADO",
+            "evidencia": "BS excluye «lo que cambia comportamiento»; con dos contenedores en un rollout de Coolify un caché en memoria no se invalida por user (AC:V3:6); el repo ya tiene Redis (apps/api/src/utils/redis.ts, HOSPEDA_REDIS_URL)",
+            "duplicados": [],
+            "correccion": null
+        },
+        {
+            "id": "AB-g5-12",
+            "origen": "g5 §12",
+            "titulo": "tipos mínimos deducidos del texto en V1 y V4",
+            "clase": "HERRAMIENTA",
+            "destino": "cobertura.py",
+            "verificacion": "VERIFICADO",
+            "evidencia": "quedan DEC-ARCH-006 y DEC-ENT-006 (V1: «migración sobre datos») y DEC-TEST-001#📌1 (V4: «migración desde cero»): V1 y V4 crean esquema, así que tipos() no los mueve; sólo avisan (R18 ⚠). Arreglo: exceptuarlos por lectura con su razón",
+            "duplicados": ["D2 tipos de test deducidos por palabras"],
+            "correccion": null
+        },
+        {
+            "id": "AB-g6-1",
+            "origen": "g6 §V5",
+            "titulo": "el carril del retiro de USER_IMPERSONATE",
+            "clase": "HERRAMIENTA",
+            "destino": "redacción en V5",
+            "verificacion": "VERIFICADO",
+            "evidencia": "V/desc:65 (fila V5, lote 4 C) dice que sale; el principio lo fijó el owner en lote 1 I (F5-AUT-023, V/17:762-768): los permisos que salen, salen de la base, recreando el enum y borrando filas de roles y overrides. Lo hace V5 en el PR que retira sus lectores",
+            "duplicados": [],
+            "correccion": null
+        },
+        {
+            "id": "AB-g6-3",
+            "origen": "g6 §V7",
+            "titulo": "si los correos de V7 van por el outbox de U2",
+            "clase": "HERRAMIENTA",
+            "destino": "cerrado por BR; redacción en V7",
+            "verificacion": "VERIFICADO",
+            "evidencia": "nucleo/07 §1.1 decide el canal; U2→V4→V5→V7 (aristas_triage -v), así que V7 espera a U2 por transitividad",
+            "duplicados": [],
+            "correccion": null
+        },
+        {
+            "id": "AB-g2-2",
+            "origen": "g2 / g6 §V6",
+            "titulo": "los valores de los plazos 3, 4, 7, 8 y 9 (y el 19)",
+            "clase": "OPERATIVO",
+            "destino": "dueño owner · antes del merge de V6 (el 19: antes del merge de B2, BX)",
+            "verificacion": "VERIFICADO",
+            "evidencia": "nucleo/02:195 (DEC-DATA-008#📌5) y la fila 19 (BX)",
+            "duplicados": ["D5 plazos sin valor (3, 4, 7, 8, 9 y 19)"],
+            "correccion": null
+        },
+        {
+            "id": "AB-g7-5",
+            "origen": "g7 §5",
+            "titulo": "qué rama de S14 lee promos y cortesías",
+            "clase": "HERRAMIENTA",
+            "destino": "redacción en B3",
+            "verificacion": "VERIFICADO",
+            "evidencia": "sigue en B3.md:1281 como abierto; lo resuelven B/02 §2.5 motivo 12 (cortesía diferida) y el motivo 24 con el monto esperado (B/09:185)",
+            "duplicados": ["D8 abiertos de g7 que la fuente ya resolvía"],
+            "correccion": null
+        },
+        {
+            "id": "AB-g7-6",
+            "origen": "g7 §6",
+            "titulo": "«compra» de addons: tabla o identidad",
+            "clase": "HERRAMIENTA",
+            "destino": "redacción en B3",
+            "verificacion": "VERIFICADO",
+            "evidencia": "B3.md:875 ya dice que es la identidad UNIQUE(dueño, producto, objetivo); B3.md:1282 lo sigue listando como abierto",
+            "duplicados": ["D8 abiertos de g7 que la fuente ya resolvía"],
+            "correccion": null
+        },
+        {
+            "id": "AB-g9-3",
+            "origen": "g9 §3",
+            "titulo": "quién escribe la extensión del checklist de cada fase",
+            "clase": "OPERATIVO",
+            "destino": "BS opción 1: cada pieza posterior, con el formato de B13a",
+            "verificacion": "VERIFICADO",
+            "evidencia": "la opción 1 de BS lo decía; el registro lo omitió (EF2-x-2); sigue abierto en B8b, B9b, B10 y B12",
+            "duplicados": ["D1 lo que la opción 1 de BS cerró y el registro no dice"],
+            "correccion": null
+        },
+        {
+            "id": "EF2-g2-1",
+            "origen": "g2",
+            "titulo": "nucleo/02:198 «dieciocho valores»",
+            "clase": "RESIDUO",
+            "destino": "fuente",
+            "verificacion": "VERIFICADO",
+            "evidencia": "con el 19 (BU) son diecinueve; :193 ya dice «Son diecinueve»",
+            "duplicados": ["D5 plazos sin valor (3, 4, 7, 8, 9 y 19)"],
+            "correccion": {
+                "donde": ".specs/HOS-1352-billing-verticals-redesign/docs/nucleo/02-modelo-de-datos.md:198",
+                "tachar": "«con los ~~quince~~ dieciocho valores»",
+                "nuevo": "«con los ~~quince~~ ~~dieciocho~~ diecinueve valores»",
+                "autoridad": "BU (fila 19); l.193 del mismo archivo"
+            }
+        },
+        {
+            "id": "EF2-g2-2",
+            "origen": "g2",
+            "titulo": "nucleo/02:195 no nombra el 19 entre los sin valor",
+            "clase": "RESIDUO",
+            "destino": "fuente",
+            "verificacion": "VERIFICADO",
+            "evidencia": "fila 19 (l.191): «sin valor escrito: lo fija el owner antes del merge de B2» (BU, BX)",
+            "duplicados": ["D5 plazos sin valor (3, 4, 7, 8, 9 y 19)"],
+            "correccion": {
+                "donde": ".specs/HOS-1352-billing-verticals-redesign/docs/nucleo/02-modelo-de-datos.md:195-196",
+                "tachar": "—",
+                "nuevo": "sumar tras «el 3, el 4, el 7, el 8 … y el 9»: «, y el 19, que el owner fija antes del merge de `B2` (BU, BX)»; el «antes del merge de `V6`» queda para los cinco de verticales",
+                "autoridad": "BU, BX; fila 19 (l.191)"
+            }
+        },
+        {
+            "id": "EF2-g4-1",
+            "origen": "g4",
+            "titulo": "B/spec.md §5.2: quince / 14 / dieciséis UNKNOWN",
+            "clase": "RESIDUO",
+            "destino": "fuente",
+            "verificacion": "VERIFICADO",
+            "evidencia": "contar-filas-de-la-matriz.py: 117 filas, 14 UNKNOWN (PA-6, GR-2, RC-8, RF-3, EX-42..EX-50, EX-54); EX-49 es de verticales → 13 de billing",
+            "duplicados": ["D4 conteos UNKNOWN de B/spec.md §5.2"],
+            "correccion": {
+                "donde": ".specs/HOS-1354-billing-cobro-y-proveedor/spec.md:249, :256-257",
+                "tachar": "título «quince»; en l.257 «De las … dieciséis, … de las quince de billing se listan catorce, con `EX-57` y `EX-59`»",
+                "nuevo": "título «~~quince~~ catorce»; l.257: «De las catorce, `EX-49` es de verticales …: se listan las trece de billing; `EX-57` (`VERIFIED`) y `EX-59` (`PARTIALLY_SUPPORTED`) salieron con las mediciones del 30/09»",
+                "autoridad": "contar-filas-de-la-matriz.py (14 UNKNOWN) y la propia l.256"
+            }
+        },
+        {
+            "id": "EF2-g4-2",
+            "origen": "g4",
+            "titulo": "B/spec.md §5.2: EX-57 y EX-59 en la tabla de UNKNOWN",
+            "clase": "RESIDUO",
+            "destino": "fuente",
+            "verificacion": "VERIFICADO",
+            "evidencia": "l.256: EX-57 VERIFIED y EX-59 PARTIALLY_SUPPORTED desde el 30/09; además falta EX-54 (UNKNOWN, no se mide por decisión) y RN-3 ya no es UNKNOWN",
+            "duplicados": ["D4 conteos UNKNOWN de B/spec.md §5.2"],
+            "correccion": {
+                "donde": ".specs/HOS-1354-billing-cobro-y-proveedor/spec.md:262-280 (la tabla)",
+                "tachar": "las filas `EX-57` y `EX-59`; `RN-3` en la fila «RN-3 · GR-2»",
+                "nuevo": "fila `EX-54`: «el tercer correo de la migración de un plan retirado (`B/10` §3.7, `DEC-SUB-023`); no se mide, por decisión»; la fila queda «`GR-2`», con `RN-3` como nota (VERIFIED)",
+                "autoridad": "contar-filas-de-la-matriz.py; D/06 EX-54"
+            }
+        },
+        {
+            "id": "EF2-g4-3",
+            "origen": "g4",
+            "titulo": "V/spec.md:452 «scope, estrategia y enforcementStrategy» (tres)",
+            "clase": "RESIDUO",
+            "destino": "fuente",
+            "verificacion": "VERIFICADO",
+            "evidencia": "V/15:567-570: cuatro, con la clase (§3.4)",
+            "duplicados": [],
+            "correccion": {
+                "donde": ".specs/HOS-1353-verticales-capacidades-y-autorizacion/spec.md:452-453",
+                "tachar": "«scope, estrategia y `enforcementStrategy`»",
+                "nuevo": "«scope, estrategia de agregación, `enforcementStrategy` y clase»",
+                "autoridad": "V/15:567-570 (§3.4)"
+            }
+        },
+        {
+            "id": "EF2-g4-4",
+            "origen": "g4",
+            "titulo": "V/20 §5 numera desde el 7",
+            "clase": "RESIDUO",
+            "destino": "fuente (cosmético)",
+            "verificacion": "VERIFICADO",
+            "evidencia": "resto del desarme de los capítulos mixtos (9796d4e2b3): continuaba los 1-6 de B/20 §5, que hoy llega a 8; ninguna cita apunta a «§5 punto 7» de V/20",
+            "duplicados": [],
+            "correccion": {
+                "donde": ".specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/20-testing.md §5 (l.380 en adelante)",
+                "tachar": "la numeración desde el 7",
+                "nuevo": "numerar desde el 1, o anotar «(continúa `B/20` §5)» sin chocar con su 7 y su 8",
+                "autoridad": "cosmético; B/20 §5 (l.711-730)"
+            }
+        },
+        {
+            "id": "EF2-g6-1",
+            "origen": "g6",
+            "titulo": "V/18:143-147 y :222 le dan a V7 lo que por AB/AP es de V6",
+            "clase": "RESIDUO",
+            "destino": "fuente",
+            "verificacion": "VERIFICADO",
+            "evidencia": "misma familia que EF-g6-2 de la vuelta 1 (V/desc:67, :711), ya corregida",
+            "duplicados": ["D3 V7 con lo que es de V6 (AB, AP)"],
+            "correccion": {
+                "donde": ".specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/18-partner.md:143-147 y :222",
+                "tachar": "«`starts_at` y `ends_at` quedan hasta `V7`»; «y `V7` las borra con su migración …»; «`V7` crea `postulacion`»",
+                "nuevo": "«quedan hasta el corte, y la migración de `V6` las borra … (AB, AP)»; «`V6` crea `postulacion` al corte (AP); `V7` la escribe»",
+                "autoridad": "AB y AP (10-decisiones-del-owner.md); V/desc:67 ya corregido"
+            }
+        },
+        {
+            "id": "EF2-g6-2",
+            "origen": "g6",
+            "titulo": "V/17:50-54 tachados anidados y desbalanceados",
+            "clase": "SIN_ACCION",
+            "destino": "—",
+            "verificacion": "VERIFICADO",
+            "evidencia": "cuatro delimitadores en l.50-54 (y dos en l.49): balanceado; se leen dos tramos tachados, coherente con F5-AUT-016 (la razón cambió, la conclusión no)",
+            "duplicados": [],
+            "correccion": null
+        },
+        {
+            "id": "EF2-g6-3",
+            "origen": "g6",
+            "titulo": "G-R3 a secas sin ancla",
+            "clase": "HERRAMIENTA",
+            "destino": "redacción",
+            "verificacion": "VERIFICADO",
+            "evidencia": "existe <a id=\"val-g-r3\"> (04-catalogos:7632); sin enlace en 30-el-corte:609, 610, 620, 1638, 1838; 03-contrato:392; V2.md:27, 72; 00-indice:1121",
+            "duplicados": [],
+            "correccion": null
+        },
+        {
+            "id": "EF2-g6-4",
+            "origen": "g6",
+            "titulo": "V/02 §2.5 «cinco consumidores»",
+            "clase": "RESIDUO",
+            "destino": "fuente (nota)",
+            "verificacion": "VERIFICADO",
+            "evidencia": "la cifra ya está corregida (l.551, SEIS); queda la nota l.577-578 «esa cifra del log queda por corregir en el log», que desde BK la omite la adjudicación de DEC-DATA-004",
+            "duplicados": ["D7 «cinco consumidores» de inactiva_desde"],
+            "correccion": {
+                "donde": ".specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/02-modelo-de-datos.md:577-578",
+                "tachar": "«esa cifra del log queda por corregir en el log»",
+                "nuevo": "«esa cifra del log la omite la adjudicación de `DEC-DATA-004` (corte del MVP, owner 2026-10-02, BK)»",
+                "autoridad": "BK; adjudicacion.json DEC-DATA-004 PARCIAL"
+            }
+        },
+        {
+            "id": "EF2-g6-5",
+            "origen": "g6",
+            "titulo": "V/15 §4.4 «dice PB1 donde es PB6»",
+            "clase": "RESIDUO",
+            "destino": "fuente",
+            "verificacion": "VERIFICADO",
+            "evidencia": "al revés de como se reportó: V/15:424 ya usa PB6; lo viejo es el paréntesis l.425-426 «Esa decisión nombra PB1», porque DEC-DATA-003 ya dice PB6 (log:4197, FASE 9-bis-4)",
+            "duplicados": [],
+            "correccion": {
+                "donde": ".specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/15-entitlements-y-limits.md:425-426",
+                "tachar": "«(Esa decisión nombra `PB1` para ese acto; `PB1` es la que publica, y la que despublica es `PB6`. Acá va la fila que ejecuta lo que la decisión describe.)»",
+                "nuevo": "nada, o «(la decisión decía `PB1` hasta la FASE 9-bis-4; hoy dice `PB6`)»",
+                "autoridad": "log:4197-4198 (DEC-DATA-003 corregida)"
+            }
+        },
+        {
+            "id": "EF2-g6-6",
+            "origen": "g6",
+            "titulo": "V/22 §3.1 «Tres piezas»",
+            "clase": "RESIDUO",
+            "destino": "fuente (cosmético)",
+            "verificacion": "VERIFICADO",
+            "evidencia": "la pieza 2 está tachada (DEC-DATA-005); el mismo § dice «sigue en pie sin la pieza 2»",
+            "duplicados": [],
+            "correccion": {
+                "donde": ".specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/22-lo-legal.md:61",
+                "tachar": "«Tres piezas»",
+                "nuevo": "«Tres piezas (la 2 ya no aplica desde `DEC-DATA-005`)»",
+                "autoridad": "DEC-DATA-005; l.74 del mismo §"
+            }
+        },
+        {
+            "id": "EF2-g6-7",
+            "origen": "g6",
+            "titulo": "V/19 §4 fila 18 no refleja BL",
+            "clase": "SIN_ACCION",
+            "destino": "—",
+            "verificacion": "INFERIDO",
+            "evidencia": "no lo reproduje: la fila 18 (l.65) dice qué dice el aviso y no nombra pieza; BL decide quién lo encola (V6), y eso vive en V6.md",
+            "duplicados": [],
+            "correccion": null
+        },
+        {
+            "id": "EF2-g6-8",
+            "origen": "g6",
+            "titulo": "V/21 §4 dice V1 donde es U1",
+            "clase": "RESIDUO",
+            "destino": "fuente",
+            "verificacion": "VERIFICADO",
+            "evidencia": "l.692 «desde que `V1` construye el guard» y l.698 «el día que `V1` hace la limpieza»: l.675 y l.680 ya dicen U1 (lote O-A)",
+            "duplicados": ["D9 piezas mal nombradas tras Z/BR (V1→U1, V1–V5→V1–V3)"],
+            "correccion": {
+                "donde": ".specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/21-migracion.md:692 y :698",
+                "tachar": "«`V1` construye el guard»; «`V1` hace la limpieza»",
+                "nuevo": "«`U1` construye el guard»; «`U1` hace la limpieza»",
+                "autoridad": "lote O-A; l.675 y l.680 del mismo archivo; D/16 §4.6"
+            }
+        },
+        {
+            "id": "EF2-g5-1",
+            "origen": "g5",
+            "titulo": "V/desc:622 «U2 … en paralelo con V1–V5»",
+            "clase": "RESIDUO",
+            "destino": "fuente",
+            "verificacion": "VERIFICADO",
+            "evidencia": "BR: U2→V4; l.623 de la misma tabla ya lo dice",
+            "duplicados": ["D9 piezas mal nombradas tras Z/BR (V1→U1, V1–V5→V1–V3)"],
+            "correccion": {
+                "donde": ".specs/HOS-1353-verticales-capacidades-y-autorizacion/descomposicion.md:622",
+                "tachar": "«en paralelo con `V1`–`V5`»",
+                "nuevo": "«en paralelo con `V1`–`V3`, y antes de `V4` (BR)»",
+                "autoridad": "BR; l.623 de la misma tabla"
+            }
+        },
+        {
+            "id": "EF2-g5-2",
+            "origen": "g5",
+            "titulo": "V/10 §1, ítem 1, celda Partner: remite al encendido",
+            "clase": "RESIDUO",
+            "destino": "fuente",
+            "verificacion": "VERIFICADO",
+            "evidencia": "l.39 «Declararlo es el paso 1 del encendido … cap. 11 §8»; V/11 §8 (l.386-393): sale entera por N7, el panel rechaza pasar de 0 a más",
+            "duplicados": [],
+            "correccion": {
+                "donde": ".specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/10-verticales-planes-billing-options.md:39 (celda Partner)",
+                "tachar": "«Declararlo es el paso 1 del encendido, que no es sólo subir el número — cap. 11 §8»",
+                "nuevo": "«el panel rechaza pasarlo de 0 a más de 0 (cap. 11 §8; revisión del owner, 2026-09-28, N7)»",
+                "autoridad": "N7; V/11:386-393; V/desc:491"
+            }
+        },
+        {
+            "id": "EF2-g8-1",
+            "origen": "g8",
+            "titulo": "B/12 §1.4 «la sexta»",
+            "clase": "RESIDUO",
+            "destino": "fuente",
+            "verificacion": "VERIFICADO",
+            "evidencia": "l.157; B/16 §4.3 son once (C8), como ya se corrigió en B/03:186 y B/16:793-795",
+            "duplicados": ["D6 ordinales viejos de B/16 §4.3"],
+            "correccion": {
+                "donde": ".specs/HOS-1354-billing-cobro-y-proveedor/docs/12-suscripcion.md:157",
+                "tachar": "«la sexta que dispara la re-evaluación del addon huérfano»",
+                "nuevo": "«una de las once que disparan la re-evaluación del addon huérfano»",
+                "autoridad": "C8; B/16:792; B/03:186"
+            }
+        },
+        {
+            "id": "EF2-g8-2",
+            "origen": "g8",
+            "titulo": "B/12 §5.4 «el capítulo 13 todavía debe»",
+            "clase": "RESIDUO",
+            "destino": "fuente",
+            "verificacion": "VERIFICADO",
+            "evidencia": "l.980-983; la fila existe: S29 (B/03:179), de B5 (B/desc:164)",
+            "duplicados": [],
+            "correccion": {
+                "donde": ".specs/HOS-1354-billing-cobro-y-proveedor/docs/12-suscripcion.md:980-983",
+                "tachar": "«es una de las que el capítulo 13 todavía debe (`B/03` §7.1), así que esta corrección se apoya en una transición declarada y no construida»",
+                "nuevo": "«es `S29` (`B/03` §3.2), de `B5`»",
+                "autoridad": "B/03:179; B/desc:164"
+            }
+        },
+        {
+            "id": "EF2-g8-3",
+            "origen": "g8",
+            "titulo": "B/12 §5.3 «DOS filas» en la rama 6",
+            "clase": "RESIDUO",
+            "destino": "fuente",
+            "verificacion": "PARCIAL",
+            "evidencia": "l.787; B/03:186: S36 «dispara S18, igual que S23 y S24» (R1-b). Que S36 cuente en la rama 6 es lectura de esa frase; el cierre del párrafo («los dos estados … desde los que S19 retiene») no lo toco",
+            "duplicados": [],
+            "correccion": {
+                "donde": ".specs/HOS-1354-billing-cobro-y-proveedor/docs/12-suscripcion.md:787",
+                "tachar": "«DOS filas»",
+                "nuevo": "«TRES filas: `S23`, `S24` y `S36`» (INFERIDO que `S36` entra en la rama 6)",
+                "autoridad": "B/03:186 (R1-b, F-8V2D1-001)"
+            }
+        },
+        {
+            "id": "EF2-g8-4",
+            "origen": "g8",
+            "titulo": "B/06 §4.6 punto 6 «nuestra capa no guarda»",
+            "clase": "RESIDUO",
+            "destino": "fuente (nota)",
+            "verificacion": "PARCIAL",
+            "evidencia": "l.266 describe el cobro viejo; el receptor nuevo guarda cada entrega entera en provider_notification (DEC-MP-009) y ningún aviso cambia un estado (D17)",
+            "duplicados": [],
+            "correccion": {
+                "donde": ".specs/HOS-1354-billing-cobro-y-proveedor/docs/06-proveedor.md:266",
+                "tachar": "—",
+                "nuevo": "agregar «(el cobro viejo; el receptor nuevo guarda cada entrega entera en `provider_notification`, `DEC-MP-009`, y ningún aviso cambia un estado por sí solo, `D17`)»",
+                "autoridad": "DEC-MP-009; INV D17"
+            }
+        },
+        {
+            "id": "EF2-g3-1",
+            "origen": "g3",
+            "titulo": "B/desc §2.1: coma colgada al sacar lo tachado",
+            "clase": "RESIDUO",
+            "destino": "fuente (cosmético)",
+            "verificacion": "VERIFICADO",
+            "evidencia": "l.182 «—`G12` a `B1`, ~~`G13` a `B4`~~—»",
+            "duplicados": [],
+            "correccion": {
+                "donde": ".specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:182",
+                "tachar": "«`G12` a `B1`, ~~`G13` a `B4`~~»",
+                "nuevo": "«`G12` a `B1`~~, `G13` a `B4`~~»",
+                "autoridad": "cosmético"
+            }
+        },
+        {
+            "id": "EF2-t-1",
+            "origen": "herramienta",
+            "titulo": "cobertura.json: TRANS:B:S10 sin B9b en «también»",
+            "clase": "HERRAMIENTA",
+            "destino": "cobertura (lectura)",
+            "verificacion": "VERIFICADO",
+            "evidencia": "tambien_lo_ejercen vacío; por BO, B9b le agrega el tercer evento (implementa)",
+            "duplicados": [],
+            "correccion": null
+        },
+        {
+            "id": "EF2-x-1",
+            "origen": "propio",
+            "titulo": "9 veredictos PARCIAL con la nota «Parte sin efecto» y el texto muerto todavía en la consolidada",
+            "clase": "HERRAMIENTA",
+            "destino": "redacción en 01-decisiones-vigentes",
+            "verificacion": "VERIFICADO",
+            "evidencia": "DEC-ARCH-017#📌1 (l.6398 «promos y cortesías, `B9a`»), DEC-ARCH-014#📌7 (l.6130), DEC-TRIAL-010#📌1 (l.553), DEC-DATA-005#📌6 (l.4311), DEC-MIG-001 (l.6602), DEC-MIG-002 (l.6672, el riesgo), DEC-MP-003 (l.2150), DEC-METH-006 (l.9952), DEC-DATA-004 (l.4147). La nota dice «Lo omitido está marcado «[…]»» y no lo está. MP:EX-46 sí está aplicado",
+            "duplicados": ["D7 «cinco consumidores» de inactiva_desde"],
+            "correccion": null
+        },
+        {
+            "id": "EF2-x-2",
+            "origen": "propio",
+            "titulo": "el registro de BS omite los defaults de la opción 1 elegida",
+            "clase": "RESIDUO",
+            "destino": "registro (10-decisiones:144 y log:8081-8088)",
+            "verificacion": "VERIFICADO",
+            "evidencia": "la opción 1 llevaba: el monto del 4b lo aprueba el owner antes del ensayo; cada pieza posterior escribe su sección del checklist con el formato de B13a; kind-spec + area-*; credenciales por env de la sesión. El registro sólo nombra «labels» y «credenciales». Por eso U3, B8b, B9b, B10 y B12 siguen con abiertos que BS cerró",
+            "duplicados": ["D1 lo que la opción 1 de BS cerró y el registro no dice"],
+            "correccion": {
+                "donde": ".specs/HOS-1352-billing-verticals-redesign/docs/41-corte-del-mvp/10-decisiones-del-owner.md:144 y docs/01-decision-log.md:8081-8088",
+                "tachar": "—",
+                "nuevo": "sumar a BS los defaults de la opción 1: «el monto del pago chico del 4b lo aprueba el owner antes del ensayo, como el del 5c; cada pieza posterior escribe la sección de su fase del checklist de smoke, con el formato de `B13a`; las listas que viven en el código las saca el PR y las lista en su descripción»",
+                "autoridad": "opción 1 de BS (triage/lote.md), elegida el 2026-10-02"
+            }
+        }
+    ]
+}

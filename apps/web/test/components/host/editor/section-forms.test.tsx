@@ -248,7 +248,7 @@ describe('HOS-879: a type-only change offers the same published-slug opt-in as a
         render(
             <BasicsForm
                 {...COMMON}
-                initialData={{ ...INITIAL, lifecycleState: 'ACTIVE', type: 'COUNTRY_HOUSE' }}
+                initialData={{ ...INITIAL, publicationStatus: 'PUBLISHED', type: 'COUNTRY_HOUSE' }}
                 destinations={DESTINATIONS}
             />
         );
@@ -266,7 +266,7 @@ describe('HOS-879: a type-only change offers the same published-slug opt-in as a
         render(
             <BasicsForm
                 {...COMMON}
-                initialData={{ ...INITIAL, lifecycleState: 'ACTIVE', type: 'COUNTRY_HOUSE' }}
+                initialData={{ ...INITIAL, publicationStatus: 'PUBLISHED', type: 'COUNTRY_HOUSE' }}
                 destinations={DESTINATIONS}
             />
         );
@@ -288,7 +288,7 @@ describe('HOS-879: a type-only change offers the same published-slug opt-in as a
         render(
             <BasicsForm
                 {...COMMON}
-                initialData={{ ...INITIAL, lifecycleState: 'ACTIVE', type: 'COUNTRY_HOUSE' }}
+                initialData={{ ...INITIAL, publicationStatus: 'PUBLISHED', type: 'COUNTRY_HOUSE' }}
                 destinations={DESTINATIONS}
             />
         );
@@ -307,7 +307,7 @@ describe('HOS-879: a type-only change offers the same published-slug opt-in as a
         render(
             <BasicsForm
                 {...COMMON}
-                initialData={{ ...INITIAL, lifecycleState: 'DRAFT', type: 'COUNTRY_HOUSE' }}
+                initialData={{ ...INITIAL, publicationStatus: 'DRAFT', type: 'COUNTRY_HOUSE' }}
                 destinations={DESTINATIONS}
             />
         );
@@ -328,13 +328,13 @@ describe('HOS-879: a type-only change offers the same published-slug opt-in as a
 // arrived. `isListingPublished` now mirrors the backend's `!== DRAFT` gate.
 // ---------------------------------------------------------------------------
 
-describe('HOS-879 gap fix: non-ACTIVE published states also offer the opt-in', () => {
-    it('offers the opt-in on an INACTIVE (paused) listing', async () => {
+describe('HOS-879 gap fix: non-PUBLISHED, non-DRAFT states also offer the opt-in', () => {
+    it('offers the opt-in on an UNPUBLISHED_BY_BILLING listing', async () => {
         const user = userEvent.setup();
         render(
             <BasicsForm
                 {...COMMON}
-                initialData={{ ...INITIAL, lifecycleState: 'INACTIVE' }}
+                initialData={{ ...INITIAL, publicationStatus: 'UNPUBLISHED_BY_BILLING' }}
                 destinations={DESTINATIONS}
             />
         );
@@ -353,7 +353,7 @@ describe('HOS-879 gap fix: non-ACTIVE published states also offer the opt-in', (
         render(
             <BasicsForm
                 {...COMMON}
-                initialData={{ ...INITIAL, lifecycleState: 'ARCHIVED' }}
+                initialData={{ ...INITIAL, publicationStatus: 'ARCHIVED' }}
                 destinations={DESTINATIONS}
             />
         );
@@ -365,7 +365,7 @@ describe('HOS-879 gap fix: non-ACTIVE published states also offer the opt-in', (
         expect(screen.getByLabelText(/cambiar igual la dirección web/i)).toBeInTheDocument();
     });
 
-    it('offers the opt-in when lifecycleState is absent — cannot prove it was never published', async () => {
+    it('offers the opt-in when publicationStatus is absent — cannot prove it was never published', async () => {
         const user = userEvent.setup();
         render(
             <BasicsForm
@@ -395,7 +395,7 @@ describe('HOS-879 UX follow-up: the opt-in follows the changed field', () => {
         render(
             <BasicsForm
                 {...COMMON}
-                initialData={{ ...INITIAL, lifecycleState: 'ACTIVE' }}
+                initialData={{ ...INITIAL, publicationStatus: 'PUBLISHED' }}
                 destinations={DESTINATIONS}
             />
         );
@@ -419,7 +419,7 @@ describe('HOS-879 UX follow-up: the opt-in follows the changed field', () => {
         render(
             <BasicsForm
                 {...COMMON}
-                initialData={{ ...INITIAL, lifecycleState: 'ACTIVE', type: 'COUNTRY_HOUSE' }}
+                initialData={{ ...INITIAL, publicationStatus: 'PUBLISHED', type: 'COUNTRY_HOUSE' }}
                 destinations={DESTINATIONS}
             />
         );
@@ -437,7 +437,7 @@ describe('HOS-879 UX follow-up: the opt-in follows the changed field', () => {
         render(
             <BasicsForm
                 {...COMMON}
-                initialData={{ ...INITIAL, lifecycleState: 'ACTIVE', type: 'COUNTRY_HOUSE' }}
+                initialData={{ ...INITIAL, publicationStatus: 'PUBLISHED', type: 'COUNTRY_HOUSE' }}
                 destinations={DESTINATIONS}
             />
         );

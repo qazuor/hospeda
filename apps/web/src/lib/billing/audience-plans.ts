@@ -4,7 +4,7 @@
  * INDEX introduced by HOS-942 (H1 of the HOS-941 epic).
  *
  * The index shows one card per audience Hospeda sells to — host, tourist,
- * gastronomy, experience, partner — each with a "from $X" figure where that
+ * venue, experience, partner — each with a "from $X" figure where that
  * audience publishes one, and, where it has one, its free-trial length. This
  * module owns three things the `.astro` page deliberately does not:
  *
@@ -21,7 +21,7 @@
  *
  * ## Why the trial number is read, never written
  *
- * `trialDays` comes from `GET /api/v1/public/plans` on every request, exactly
+ * `trialDays` comes from the public vertical catalog on every request, exactly
  * like the price. Hardcoding it is the HOS-525 bug: the marketing copy promised
  * hosts 30 days while the checkout granted 14. The two audiences that carry a
  * trial today have had different lengths in this same database, so there is no
@@ -30,9 +30,9 @@
  *
  * ## Why five cards and not four
  *
- * Gastronomy and experience are SEPARATE audiences, never a joint "commerce"
- * one. `ProductDomainEnum` holds four domains and `'commerce'` is a RETIRED
- * value (HOS-692); a surface that grouped the two verticals would reintroduce
+ * Venue and experience are SEPARATE audiences, never a joint
+ * card. `ProductDomainEnum` holds the separate per-vertical domains and the old
+ * shared umbrella value is RETIRED (HOS-692); a surface that grouped the two verticals would reintroduce
  * the vocabulary the product-domain split exists to remove.
  *
  * ## Why the price and the trial can each be absent
@@ -57,17 +57,23 @@
  * `./price-on-request-audiences.ts` and {@link resolveAudienceStartingPrices}.
  */
 
-import { PARTNER_TIER_PLAN_SLUG } from '@repo/billing';
-import type { ProductDomainValue } from '@repo/schemas';
 import type { PricingAudience } from '../billing-i18n';
 import { PRICING_PAGE_PATH_BY_AUDIENCE } from '../pricing-plans';
+import { AUDIENCE_PLAN_VERTICALS } from './audience-plan-verticals';
 import type { FetchPlansResult, PublicPlanData } from './fetch-plans';
-import { fetchPublicPlans, filterPlansByCategory } from './fetch-plans';
+import { fetchPublicPlans } from './fetch-plans';
 import { computeMinimumTrialDays } from './generic-trial-days';
 import { isPriceOnRequestAudience } from './price-on-request-audiences';
 
-/** The five audiences the plan index offers, in display order. */
-export type AudienceCardId = 'host' | 'tourist' | 'gastronomy' | 'experience' | 'partner';
+/**
+ * The audiences the plan index offers, in display order.
+ *
+ * `partner` is not one of them any more: its pricing and sales pages
+ * (`/planes/aliados/*`) were removed with the old billing, and the Partner
+ * offering has no subject until V7 (HOS-1637, AC:B13a:21). Nothing may link to
+ * those URLs.
+ */
+export type AudienceCardId = 'host' | 'tourist' | 'venue' | 'experience';
 
 /**
  * Display order of the audience cards.
@@ -78,9 +84,8 @@ export type AudienceCardId = 'host' | 'tourist' | 'gastronomy' | 'experience' | 
 export const AUDIENCE_CARD_ORDER: readonly AudienceCardId[] = [
     'host',
     'tourist',
-    'gastronomy',
-    'experience',
-    'partner'
+    'venue',
+    'experience'
 ] as const;
 
 /**
@@ -91,8 +96,8 @@ export const AUDIENCE_CARD_ORDER: readonly AudienceCardId[] = [
  * tables and this index must not be able to disagree about where they are. The
  * other three point at the vertical's SALES page (level 2 of HOS-941 D-7).
  *
- * HOS-1032 changed those three from `publicar-restaurante` /
- * `publicar-experiencia` / `sumate/partner`, which this same change turned into
+ * HOS-1032 changed those three from the retired venue publish URL /
+ * the retired experience publish URL / `sumate/partner`, which this same change turned into
  * 301s. A link to a URL that redirects is not broken, but it is a hop the index
  * has no reason to spend, and it is the shape AC-51 exists to keep out.
  *
@@ -105,9 +110,8 @@ export const AUDIENCE_CARD_ORDER: readonly AudienceCardId[] = [
 export const AUDIENCE_CARD_PATHS: Readonly<Record<AudienceCardId, string>> = {
     host: PRICING_PAGE_PATH_BY_AUDIENCE.owner,
     tourist: PRICING_PAGE_PATH_BY_AUDIENCE.tourist,
-    gastronomy: 'planes/gastronomia',
-    experience: 'planes/experiencias',
-    partner: 'planes/aliados'
+    venue: 'planes/comer-y-salir',
+    experience: 'planes/experiencias'
 } as const;
 
 /**
@@ -115,42 +119,28 @@ export const AUDIENCE_CARD_PATHS: Readonly<Record<AudienceCardId, string>> = {
  *
  * The ONE translation between this module's `AudienceCardId` (spelled `host`,
  * the index's vocabulary) and `PricingAudience` (spelled `owner`, the plan
- * `category`/`product_domain` vocabulary — see `lib/billing-i18n.ts`). Every
+ * plan presentation vocabulary — see `lib/billing-i18n.ts`). Every
  * other spelling of the same mapping would be a second place for the two to
  * drift; the five pricing pages read this one.
  */
 export const PRICING_AUDIENCE_BY_CARD_ID: Readonly<Record<AudienceCardId, PricingAudience>> = {
     host: 'owner',
     tourist: 'tourist',
-    gastronomy: 'gastronomy',
-    experience: 'experience',
-    partner: 'partner'
-} as const;
-
-/** Inverse of {@link PRICING_AUDIENCE_BY_CARD_ID}. */
-export const CARD_ID_BY_PRICING_AUDIENCE: Readonly<Record<PricingAudience, AudienceCardId>> = {
-    owner: 'host',
-    tourist: 'tourist',
-    gastronomy: 'gastronomy',
-    experience: 'experience',
-    partner: 'partner'
+    venue: 'venue',
+    experience: 'experience'
 } as const;
 
 /**
- * The `?domain=` each audience's catalogue is fetched with, or `undefined` for
- * the two accommodation audiences, which share the default domain and are
- * separated by `category` instead.
- *
- * `'commerce'` is a RETIRED `ProductDomainEnum` value (HOS-941 R-3) and appears
- * nowhere here: gastronomy and experience are separate domains and no surface
- * may group them.
+ * Inverse of {@link PRICING_AUDIENCE_BY_CARD_ID}. `partner` has no card (see
+ * {@link AudienceCardId}).
  */
-const PLAN_DOMAIN_BY_CARD_ID: Readonly<Record<AudienceCardId, ProductDomainValue | undefined>> = {
-    host: undefined,
-    tourist: undefined,
-    gastronomy: 'gastronomy',
-    experience: 'experience',
-    partner: 'partner'
+export const CARD_ID_BY_PRICING_AUDIENCE: Readonly<
+    Record<Exclude<PricingAudience, 'partner'>, AudienceCardId>
+> = {
+    owner: 'host',
+    tourist: 'tourist',
+    venue: 'venue',
+    experience: 'experience'
 } as const;
 
 /**
@@ -159,18 +149,12 @@ const PLAN_DOMAIN_BY_CARD_ID: Readonly<Record<AudienceCardId, ProductDomainValue
  * One request, not the four {@link fetchAudienceOffers} issues: a pricing page
  * renders a single audience and has no use for the other four catalogues.
  *
- * The SELECTION, though, goes through {@link selectAudiencePlans} rather than
- * being re-derived — which is the whole point of this function existing instead
- * of each page calling `fetchPublicPlans` and filtering. Two of that function's
- * rules are load-bearing and neither is obvious at a call site: `complex` plans
- * are never selected for the host audience, and partner is narrowed to the
- * sellable tiers, dropping the still-active pre-tier `partner-listing`. A page
- * that filtered by hand would advertise a legacy plan nobody can subscribe to.
+ * Selection goes through {@link selectAudiencePlans} so each audience reads
+ * only the plans from its own vertical catalog. The catalog already contains
+ * only current sellable plans, so this layer does not recreate catalog rules.
  *
  * The result is sorted cheapest-first (`sortOrder` ascending), which
  * `PricingCardsGrid` REQUIRES: it diffs each card against the one before it.
- * `filterPlansByCategory` already sorts the two accommodation audiences; the
- * other three are sorted here, since they come straight off a domain fetch.
  *
  * SSR-only — it reaches `@repo/billing` transitively, so no client island may
  * import it (see `test/static-guards/billing-barrel-client-isolation.test.ts`).
@@ -186,21 +170,10 @@ export async function fetchAudiencePlans({
 }: {
     readonly audience: AudienceCardId;
 }): Promise<readonly PublicPlanData[]> {
-    const domain = PLAN_DOMAIN_BY_CARD_ID[audience];
-    const result = await fetchPublicPlans(domain ? { domain } : {});
+    const vertical = AUDIENCE_PLAN_VERTICALS[audience];
+    const result = await fetchPublicPlans({ vertical });
 
-    // `selectAudiencePlans` needs all four slots; the three this audience does
-    // not use are stubbed with the same empty-list shape a failed fetch takes,
-    // so nothing is selected out of them.
-    const empty: FetchPlansResult = { ok: true, plans: [] };
-    const selected = selectAudiencePlans({
-        accommodation: domain === undefined ? result : empty,
-        gastronomy: domain === 'gastronomy' ? result : empty,
-        experience: domain === 'experience' ? result : empty,
-        partner: domain === 'partner' ? result : empty
-    })[audience];
-
-    return selected
+    return (result.ok ? result.plans : [])
         .filter((plan) => plan.isActive)
         .slice()
         .sort((a, b) => a.sortOrder - b.sortOrder);
@@ -228,20 +201,6 @@ export type AudienceStartingPrice =
  * {@link AudienceStartingPrice} for the two unrelated reasons that produces.
  */
 export type AudienceStartingPrices = Readonly<Record<AudienceCardId, AudienceStartingPrice | null>>;
-
-/**
- * The partner plan slugs a visitor can actually buy today.
- *
- * Read off `PARTNER_TIER_PLAN_SLUG`, the one place in the platform that maps a
- * partner TIER to a plan, rather than hardcoded here. It matters: the partner
- * domain also contains `partner-listing`, a pre-tier plan kept ACTIVE on purpose
- * because live partner rows still point at it. Taking a naive minimum over the
- * domain would advertise that legacy plan's price for an offer nobody can
- * subscribe to.
- */
-const SELLABLE_PARTNER_PLAN_SLUGS: ReadonlySet<string> = new Set(
-    Object.values(PARTNER_TIER_PLAN_SLUG).filter((slug): slug is string => slug !== null)
-);
 
 /**
  * The cheapest active plan in a list, as an {@link AudienceStartingPrice}.
@@ -304,19 +263,12 @@ export interface AudienceOffers {
     readonly trialDays: AudienceTrialDays;
 }
 
-/** The four `GET /public/plans` responses the index needs, already resolved. */
+/** The four vertical catalog responses needed by the plan index. */
 export interface AudiencePlanResults {
-    /**
-     * `GET /public/plans` with no `?domain=`; carries the owner AND tourist
-     * catalogues, separated by `category`.
-     */
     readonly accommodation: FetchPlansResult;
-    /** `?domain=gastronomy`. */
-    readonly gastronomy: FetchPlansResult;
-    /** `?domain=experience`. */
+    readonly tourist: FetchPlansResult;
+    readonly venue: FetchPlansResult;
     readonly experience: FetchPlansResult;
-    /** `?domain=partner`. */
-    readonly partner: FetchPlansResult;
 }
 
 /** Unwrap a fetch result to its plan list, or an empty list when it failed. */
@@ -324,42 +276,15 @@ function plansOf(result: FetchPlansResult): readonly PublicPlanData[] {
     return result.ok ? result.plans : [];
 }
 
-/**
- * Which plans make up each audience's offer.
- *
- * The ONE place the audience → plans mapping is expressed. Price and trial are
- * two readings of the same offer, so they must never be able to disagree about
- * which plans an audience is made of — a partner trial computed over
- * `partner-listing` while the price deliberately excludes it would advertise a
- * promise from a plan nobody can buy.
- *
- * Two selection rules are load-bearing and both live here:
- *
- * - `complex` is never selected. Neither accommodation branch asks for that
- *   category, which is what keeps the complex tier off this surface entirely.
- * - Partner is narrowed to {@link SELLABLE_PARTNER_PLAN_SLUGS}, dropping the
- *   still-active pre-tier `partner-listing`.
- *
- * Inactive plans are passed THROUGH rather than filtered here: both consumers
- * drop them (`resolveStartingPrice` and `computeMinimumTrialDays` each check
- * `isActive`), and leaving the check with them keeps each one honest on its own.
- *
- * @param results - The four resolved fetches, see {@link AudiencePlanResults}.
- * @returns The candidate plan list for each of the five audiences.
- */
+/** Resolve each audience directly from its own vertical catalog. */
 export function selectAudiencePlans(
     results: AudiencePlanResults
 ): Readonly<Record<AudienceCardId, readonly PublicPlanData[]>> {
-    const accommodationPlans = plansOf(results.accommodation);
-
     return {
-        host: filterPlansByCategory(accommodationPlans, 'owner'),
-        tourist: filterPlansByCategory(accommodationPlans, 'tourist'),
-        gastronomy: plansOf(results.gastronomy),
-        experience: plansOf(results.experience),
-        partner: plansOf(results.partner).filter((plan) =>
-            SELLABLE_PARTNER_PLAN_SLUGS.has(plan.slug)
-        )
+        host: plansOf(results.accommodation),
+        tourist: plansOf(results.tourist),
+        venue: plansOf(results.venue),
+        experience: plansOf(results.experience)
     };
 }
 
@@ -418,6 +343,9 @@ export function resolveAudienceStartingPrices(
  * have had genuinely different trial lengths in this database, and a single
  * generic line would be false for one of them (HOS-525).
  *
+ * An audience whose starting price is `free` resolves to `null` too: its card
+ * advertises the free tier, and a trial badge there contradicts it (HOS-1766).
+ *
  * @param results - The four resolved fetches, see {@link AudiencePlanResults}.
  * @returns Trial days per audience, `null` where no trial may be advertised.
  */
@@ -425,13 +353,22 @@ export function resolveAudienceTrialDays(results: AudiencePlanResults): Audience
     const byAudience = selectAudiencePlans(results);
 
     return Object.fromEntries(
-        AUDIENCE_CARD_ORDER.map((id) => [id, computeMinimumTrialDays({ plans: byAudience[id] })])
+        AUDIENCE_CARD_ORDER.map((id) => [
+            id,
+            // A card that leads with "Gratis" must not also say "30 días de
+            // prueba gratis": the trial belongs to a paid tier the card is not
+            // selling, and the two lines contradict each other (HOS-1766).
+            // Data-driven off the same starting price the card prints, never a
+            // card name, so it follows the catalogue.
+            resolveStartingPrice({ plans: byAudience[id] })?.kind === 'free'
+                ? null
+                : computeMinimumTrialDays({ plans: byAudience[id] })
+        ])
     ) as AudienceTrialDays;
 }
 
 /**
- * Fetch every audience's starting price AND trial length from the public plans
- * endpoint.
+ * Fetch every audience's starting price AND trial length from the public plan catalog.
  *
  * Four requests, issued concurrently — the same four whether the caller wants
  * the price, the trial or both. Price and trial are two readings of one
@@ -439,7 +376,7 @@ export function resolveAudienceTrialDays(results: AudiencePlanResults): Audience
  * would double the request count and open a window where the two lines on one
  * card describe different snapshots of the catalogue.
  *
- * `fetchPublicPlans` never rejects, so a failing domain degrades to `null` for
+ * `fetchPublicPlans` never rejects, so a failing vertical degrades to `null` for
  * that audience alone — on both readings — and leaves the other four intact.
  *
  * SSR-only: called from `/suscriptores/planes/index.astro`'s frontmatter. It
@@ -449,14 +386,11 @@ export function resolveAudienceTrialDays(results: AudiencePlanResults): Audience
  * @returns Price and trial per audience, `null` where either is unresolvable.
  */
 export async function fetchAudienceOffers(): Promise<AudienceOffers> {
-    const [accommodation, gastronomy, experience, partner] = await Promise.all([
-        fetchPublicPlans(),
-        fetchPublicPlans({ domain: 'gastronomy' }),
-        fetchPublicPlans({ domain: 'experience' }),
-        fetchPublicPlans({ domain: 'partner' })
-    ]);
+    const [accommodation, tourist, venue, experience] = await Promise.all(
+        Object.values(AUDIENCE_PLAN_VERTICALS).map((vertical) => fetchPublicPlans({ vertical }))
+    );
 
-    const results: AudiencePlanResults = { accommodation, gastronomy, experience, partner };
+    const results: AudiencePlanResults = { accommodation, tourist, venue, experience };
 
     return {
         startingPrices: resolveAudienceStartingPrices(results),

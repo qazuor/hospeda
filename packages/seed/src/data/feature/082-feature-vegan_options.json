@@ -7,7 +7,7 @@
         "en": "Opciones de menú totalmente veganas sin ingredientes de origen animal",
         "pt": "Opciones de menú totalmente veganas sin ingredientes de origen animal"
     },
-    "applicableVerticals": ["gastronomy"],
+    "applicableVerticals": ["venue"],
     "icon": "TreeIcon",
     "isBuiltin": false,
     "isFeatured": true,

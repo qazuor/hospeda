@@ -69,8 +69,6 @@ const PARTNER_FIXTURE_FILES = [
  */
 interface RawPartnerFixture {
     readonly slug: string;
-    readonly startsAt: string;
-    readonly endsAt?: string;
     readonly [key: string]: unknown;
 }
 
@@ -98,12 +96,6 @@ export async function up(ctx: SeedMigrationCtx): Promise<SeedMigrationResult> {
         await partnerModel.create(
             {
                 ...normalized,
-                // The normalizer forwards these as ISO strings (relying on
-                // `createPartnerSchema`'s `z.coerce.date()` when going through
-                // the service). This migration bypasses the service, so the
-                // coercion is done explicitly here instead.
-                startsAt: new Date(rawPartner.startsAt),
-                endsAt: rawPartner.endsAt ? new Date(rawPartner.endsAt) : undefined,
                 createdById: ctx.actor.id,
                 updatedById: ctx.actor.id
             } as Partial<Partner>,

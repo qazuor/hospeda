@@ -9,7 +9,7 @@
  *
  * - a vertical-specific key resolved to `accommodations` shows a restaurant
  *   visitor copy about an accommodation;
- * - a shared key resolved to `gastronomy` resolves to a missing key, and `t()`
+ * - a shared key resolved to `venue` resolves to a missing key, and `t()`
  *   returns the KEY ITSELF in production (HOS-292), so the raw dotted string
  *   reaches the screen.
  */
@@ -39,9 +39,9 @@ describe('aiChatCopyKey', () => {
         });
     });
 
-    describe('for a commerce vertical', () => {
+    describe('for a venue or experience vertical', () => {
         it.each([
-            ['gastronomy', 'gastronomy'],
+            ['venue', 'venue'],
             ['experience', 'experience']
         ] as const)('should send %s vertical-specific keys to its own bundle', (entity, ns) => {
             for (const suffix of VERTICAL_SPECIFIC) {
@@ -50,7 +50,7 @@ describe('aiChatCopyKey', () => {
         });
 
         it.each([
-            'gastronomy',
+            'venue',
             'experience'
         ] as const)('should keep %s shared keys in the accommodations bundle', (entity) => {
             // Copying the thirteen shared strings into two more bundles to
@@ -70,9 +70,7 @@ describe('aiChatCopyKey', () => {
             expect(aiChatCopyKey('accommodation', 'unavailable')).toBe(
                 'accommodations.aiChat.unavailable'
             );
-            expect(aiChatCopyKey('gastronomy', 'unavailable')).toBe(
-                'gastronomy.aiChat.unavailable'
-            );
+            expect(aiChatCopyKey('venue', 'unavailable')).toBe('venue.aiChat.unavailable');
             expect(aiChatCopyKey('experience', 'unavailable')).toBe(
                 'experience.aiChat.unavailable'
             );

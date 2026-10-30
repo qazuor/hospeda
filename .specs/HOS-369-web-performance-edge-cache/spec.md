@@ -1939,7 +1939,7 @@ Overlaps HOS-168; this spec supplies the measurements it lacked.
   **The public / `mi-cuenta` split was measured and NOT built.** At namespace
   granularity it is worthless — exactly **one** namespace (`events`, 1,105 B) is
   private-only, because the shared header mounts `UserMenu` with `client:load`
-  on every page and its nav config names `account.nav.*`, `commerce.owner.nav`
+  on every page and its nav config names `account.nav.*`, listing owner navigation keys
   and `conversations.inbox.*`, while public landings mount `HostLandingCta`
   (`host`) and `PlanPurchaseButton` (`billing`). At key-prefix granularity it is
   worth ~17.7 KB, but it needs two assets, route-conditional linking, and a

@@ -60,8 +60,7 @@ test.describe('E2E-3: favorite toggle round-trip @p0 @guest @cross-app', () => {
 
         const accRows = await execSQL<{ id: string }>(
             `SELECT id FROM accommodations
-             WHERE lifecycle_state = 'ACTIVE'
-               AND visibility = 'PUBLIC'
+             WHERE publication_status = 'PUBLISHED'
                AND deleted_at IS NULL
              ORDER BY created_at ASC
              LIMIT 1`

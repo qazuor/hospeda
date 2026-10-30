@@ -334,14 +334,14 @@ describe('PreferenceService', () => {
                 notifications: {
                     emailEnabled: true,
                     disabledCategories: [],
-                    disabledTypes: [NotificationType.ADDON_EXPIRATION_WARNING]
+                    disabledTypes: [NotificationType.RENEWAL_REMINDER]
                 }
             });
 
             // Act
             const result = await service.shouldSendNotification(
                 mockUserId,
-                NotificationType.ADDON_EXPIRATION_WARNING
+                NotificationType.RENEWAL_REMINDER
             );
 
             // Assert

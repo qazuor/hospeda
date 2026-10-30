@@ -36,7 +36,6 @@ export const publicGetDestinationSummaryRoute = createPublicRoute({
         return result.data?.summary ?? null;
     },
     options: {
-        cacheTTL: 600, // Cache for 10 minutes (summary data changes less frequently)
         customRateLimit: { requests: 100, windowMs: 60000 }
     }
 });

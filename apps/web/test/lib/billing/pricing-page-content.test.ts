@@ -44,7 +44,7 @@ const translators: PricingPageTranslators = {
 const PRICED_AUDIENCES: readonly PricingAudience[] = [
     'owner',
     'tourist',
-    'gastronomy',
+    'venue',
     'experience'
 ] as const;
 
@@ -54,6 +54,7 @@ const makePlan = (overrides: Partial<PublicPlanData> = {}): PublicPlanData =>
         name: 'Plan',
         description: '',
         category: 'owner',
+        vertical: 'accommodation',
         monthlyPriceArs: 1_500_000,
         annualPriceArs: null,
         hasTrial: false,

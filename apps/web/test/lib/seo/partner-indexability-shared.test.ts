@@ -30,13 +30,9 @@ const CONSUMERS = [
  * Conditions the predicate owns. If one of these strings shows up in a consumer,
  * that consumer is deciding indexability for itself.
  */
-const PREDICATE_INTERNALS = [
-    "=== 'gold'",
-    "!== 'gold'",
-    "subscriptionStatus === 'active'"
-] as const;
+const PREDICATE_INTERNALS = ["lifecycleState !== 'ACTIVE'"] as const;
 
-describe('one predicate, two consumers (AC-7)', () => {
+describe('one predicate, two consumers', () => {
     it.each(CONSUMERS)('$label imports evaluatePartnerIndexability', ({ path }) => {
         // Arrange
         const src = readFileSync(resolve(root, path), 'utf8');
@@ -57,15 +53,12 @@ describe('one predicate, two consumers (AC-7)', () => {
         }
     });
 
-    it('the predicate is the only place the gold literal is compared', () => {
-        // Arrange — the predicate itself names the tier exactly once, as a
-        // constant. This pins WHERE that knowledge lives.
+    it('keeps partner pages unavailable until V7 restores the public key', () => {
         const predicateSrc = readFileSync(
             resolve(root, 'src/lib/seo/partner-indexable.ts'),
             'utf8'
         );
 
-        // Assert
-        expect(predicateSrc).toContain("input.tier !== 'gold'");
+        expect(predicateSrc).toContain("return { isIndexable: false, reason: 'not-visible' }");
     });
 });

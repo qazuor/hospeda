@@ -4,8 +4,8 @@
  * Uses the REAL protected streaming route + REAL auth/rate-limit/quota route
  * factory stack. The external seams are stubbed at the module boundary:
  *
- * - `entitlementMiddleware()` injects tourist entitlements/limits into context
- *   (still used by the middleware chain; AI_CHAT gate is now owner-keyed).
+ * - the retired `entitlementMiddleware()` (removed by HOS-1416) used to inject tourist entitlements/limits into context
+ *   (no longer in the middleware chain; AI_CHAT gate is owner-keyed).
  * - `@repo/db` is stubbed so the handler's ownerId lookup does not require a
  *   real DB connection.
  * - `owner-entitlement` helpers are stubbed to control the owner's billing
@@ -42,7 +42,8 @@ const {
     featureConfigMaxTokensForTest,
     nextPersistPromise,
     mockPostHogCapture,
-    mockApiLogger
+    mockApiLogger,
+    effectiveSetSpy
 } = vi.hoisted(() => ({
     streamTextCalls: [] as Array<{
         feature: string;
@@ -67,7 +68,7 @@ const {
     },
     nextStreamError: { current: null as unknown },
     getMonthlyCallCountReturn: { current: 0 },
-    // Tourist-scoped entitlements/limits (still loaded by entitlementMiddleware, now
+    // Tourist-scoped entitlements/limits (formerly loaded by the retired entitlementMiddleware, now
     // only used by non-AI_CHAT middleware; AI_CHAT gate is owner-keyed since SPEC-211).
     currentEntitlementsForTest: { current: new Set<string>() },
     currentLimitsForTest: { current: new Map<string, number>() },
@@ -104,7 +105,8 @@ const {
         warn: vi.fn(),
         debug: vi.fn(),
         error: vi.fn()
-    }
+    },
+    effectiveSetSpy: vi.fn()
 }));
 
 vi.mock('@repo/ai-core', () => {
@@ -203,26 +205,26 @@ vi.mock('../../../src/middlewares/owner-entitlement', () => ({
     resolveOwnerLimitsForOwnerId: vi.fn(async () => mockOwnerLimits.current as Map<string, number>)
 }));
 
-vi.mock('../../../src/middlewares/entitlement', async (importOriginal) => {
-    const actual = await importOriginal<typeof import('../../../src/middlewares/entitlement')>();
-    return {
-        ...actual,
-        entitlementMiddleware: () => {
-            return async (
-                c: Parameters<AppMiddleware>[0],
-                next: Parameters<AppMiddleware>[1]
-            ): Promise<void> => {
-                c.set(
-                    'userEntitlements',
-                    currentEntitlementsForTest.current as Set<EntitlementKey>
-                );
-                c.set('userLimits', currentLimitsForTest.current as Map<LimitKey, number>);
-                c.set('billingLoadFailed', currentBillingLoadFailedForTest.current);
-                await next();
+vi.mock('../../../src/utils/listing-access/ports', () => ({
+    getListingAccessPorts: () => ({
+        effectiveSet: async ({ userId }: { userId: string }) => {
+            effectiveSetSpy({ userId });
+            const isOwner = userId === '11111111-1111-1111-1111-111111111111';
+            const entitlements = new Set<string>(
+                isOwner ? mockOwnerEntitlements.current : currentEntitlementsForTest.current
+            );
+            const limits = isOwner ? mockOwnerLimits.current : currentLimitsForTest.current;
+            return {
+                entitlements: {
+                    get: ({ key }: { key: string }) => (entitlements.has(key) ? 1 : undefined)
+                },
+                limits: { get: ({ key }: { key: string }) => limits.get(key) }
             };
         }
-    };
-});
+    })
+}));
+
+// Legacy entitlement loader mock removed with the billing middleware (HOS-1416).
 
 vi.mock('../../../src/services/ai-service.factory', () => ({
     createConfiguredAiService: vi.fn(async () => ({
@@ -298,15 +300,22 @@ vi.mock('../../../src/utils/logger', () => ({
 }));
 
 import { OpenAPIHono } from '@hono/zod-openapi';
-import { getMonthlyCallCount, recordAiUsage } from '@repo/ai-core';
-import { EntitlementKey, LimitKey } from '@repo/billing';
-import { PermissionEnum, RoleEnum, ServiceErrorCode } from '@repo/schemas';
+import { recordAiUsage } from '@repo/ai-core';
+
+import {
+    EntitlementKeyEnum,
+    LimitKeyEnum,
+    PermissionEnum,
+    RoleEnum,
+    ServiceErrorCode
+} from '@repo/schemas';
 import { ServiceError } from '@repo/service-core';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { actorMiddleware } from '../../../src/middlewares/actor';
 import { createErrorHandler } from '../../../src/middlewares/response';
 import { protectedAiChatRoute } from '../../../src/routes/ai/protected/chat';
-import type { AppBindings, AppMiddleware } from '../../../src/types';
+import { CHAT_CONTEXT_ASSEMBLERS } from '../../../src/services/ai-context';
+import type { AppBindings } from '../../../src/types';
 
 const TEST_PATH = '/test-chat';
 const STREAM_PATH = `${TEST_PATH}/`;
@@ -402,20 +411,23 @@ function makeMessages(count = 1): Array<{ role: 'user' | 'assistant'; content: s
     }));
 }
 
-describe('POST /api/v1/protected/ai/chat — integration (SPEC-200 T-004)', () => {
+describe('TEST:V5:32 POST /api/v1/protected/ai/chat — integration (SPEC-200 T-004)', () => {
     const app = buildTestApp();
 
     beforeEach(() => {
         getMonthlyCallCountReturn.current = 0;
         currentBillingLoadFailedForTest.current = false;
-        // Tourist entitlements — still loaded by entitlementMiddleware; AI_CHAT gate is
+        // Tourist entitlements — formerly loaded by the retired entitlementMiddleware; AI_CHAT gate is
         // now owner-keyed (SPEC-211), but keeping this populated avoids surprises if any
         // future middleware reads `c.get('userEntitlements')`.
-        currentEntitlementsForTest.current = new Set([EntitlementKey.AI_CHAT]);
-        currentLimitsForTest.current = new Map([[LimitKey.MAX_AI_CHAT_PER_MONTH, 20]]);
+        currentEntitlementsForTest.current = new Set([EntitlementKeyEnum.AI_CHAT]);
+        currentLimitsForTest.current = new Map([
+            [LimitKeyEnum.MAX_AI_CHAT_PER_MONTH, 20],
+            [LimitKeyEnum.MAX_AI_CHAT_CONSUMER_PER_MONTH, 200]
+        ]);
         // Owner billing state defaults (SPEC-211 Phase 1 §7.3 — pass-through for most tests).
-        mockOwnerEntitlements.current = [EntitlementKey.AI_CHAT];
-        mockOwnerLimits.current = new Map([[LimitKey.MAX_AI_CHAT_PER_MONTH, 20]]);
+        mockOwnerEntitlements.current = [EntitlementKeyEnum.AI_CHAT];
+        mockOwnerLimits.current = new Map([[LimitKeyEnum.MAX_AI_CHAT_PER_MONTH, 20]]);
         mockOwnerQueryResult.current = [{ ownerId: '11111111-1111-1111-1111-111111111111' }];
         resolvedPromptForTest.current = 'Resolved prompt from admin/default.';
         nextContextResult.current = {
@@ -438,6 +450,7 @@ describe('POST /api/v1/protected/ai/chat — integration (SPEC-200 T-004)', () =
         });
 
         streamTextCalls.length = 0;
+        effectiveSetSpy.mockReset();
         mockPostHogCapture.mockReset();
         mockApiLogger.info.mockReset();
         mockApiLogger.warn.mockReset();
@@ -446,6 +459,7 @@ describe('POST /api/v1/protected/ai/chat — integration (SPEC-200 T-004)', () =
     });
 
     afterEach(() => {
+        vi.restoreAllMocks();
         vi.clearAllMocks();
     });
 
@@ -463,9 +477,65 @@ describe('POST /api/v1/protected/ai/chat — integration (SPEC-200 T-004)', () =
         expect(streamTextCalls).toHaveLength(0);
     });
 
-    it('returns 403 ENTITLEMENT_REQUIRED when the listing owner lacks ai_chat (SPEC-211)', async () => {
-        // SPEC-211 Phase 1: the gate is now against the OWNER, not the tourist.
-        // Set owner's entitlements to empty — tourist entitlement is irrelevant.
+    it.each([
+        { entityType: 'venue' as const, key: 'manage_venue_menu', enabled: true },
+        { entityType: 'venue' as const, key: 'manage_venue_menu', enabled: false },
+        {
+            entityType: 'experience' as const,
+            key: 'manage_experience_directions',
+            enabled: true
+        },
+        {
+            entityType: 'experience' as const,
+            key: 'manage_experience_directions',
+            enabled: false
+        }
+    ])('passes effective $entityType capabilities to its context assembler', async (testCase) => {
+        const assembler = vi.spyOn(CHAT_CONTEXT_ASSEMBLERS, testCase.entityType).mockResolvedValue({
+            contextBlock: 'context',
+            systemMessage: 'system',
+            entityName: 'test listing'
+        });
+        mockOwnerEntitlements.current = [
+            EntitlementKeyEnum.AI_CHAT,
+            ...(testCase.enabled ? [testCase.key] : [])
+        ];
+        mockOwnerLimits.current = new Map([
+            [
+                testCase.entityType === 'venue'
+                    ? 'max_ai_chat_venue_per_month'
+                    : 'max_ai_chat_experience_per_month',
+                20
+            ]
+        ]);
+
+        const res = await app.request(STREAM_PATH, {
+            method: 'POST',
+            headers: makeMockActorHeaders(),
+            body: JSON.stringify({
+                entityType: testCase.entityType,
+                entityId: ACCOMMODATION_ID,
+                messages: makeMessages(1)
+            })
+        });
+
+        expect(res.status).toBe(200);
+        expect(assembler).toHaveBeenCalledWith(
+            expect.objectContaining({
+                ownerCapabilities: {
+                    manageVenueMenu: testCase.entityType === 'venue' && testCase.enabled,
+                    manageExperienceDirections:
+                        testCase.entityType === 'experience' && testCase.enabled
+                }
+            })
+        );
+        expect(
+            effectiveSetSpy.mock.calls.filter(([args]) => args.userId === OWNER_ID)
+        ).toHaveLength(1);
+        assembler.mockRestore();
+    });
+
+    it('rejects the chat when the listing owner lacks ai_chat', async () => {
         mockOwnerEntitlements.current = [];
         mockOwnerLimits.current = new Map();
 
@@ -479,15 +549,16 @@ describe('POST /api/v1/protected/ai/chat — integration (SPEC-200 T-004)', () =
         });
 
         expect(res.status).toBe(403);
-        const body = (await res.json()) as { error: { code: string } };
-        expect(body.error.code).toBe('ENTITLEMENT_REQUIRED');
+        expect(await res.json()).toMatchObject({
+            error: { code: 'ENTITLEMENT_REQUIRED', details: { entitlementKey: 'ai_chat' } }
+        });
         expect(streamTextCalls).toHaveLength(0);
     });
 
-    it("returns 403 LIMIT_REACHED when the listing owner's monthly count >= plan limit (SPEC-211)", async () => {
+    it("rejects the owner's chat when the monthly count reaches the effective limit", async () => {
         // SPEC-211 Phase 1: quota counted against the OWNER, not the tourist.
         // Owner limit is 20 and has already used 20 calls this month.
-        mockOwnerLimits.current = new Map([[LimitKey.MAX_AI_CHAT_PER_MONTH, 20]]);
+        mockOwnerLimits.current = new Map([[LimitKeyEnum.MAX_AI_CHAT_PER_MONTH, 20]]);
         getMonthlyCallCountReturn.current = 20;
 
         const res = await app.request(STREAM_PATH, {
@@ -500,8 +571,12 @@ describe('POST /api/v1/protected/ai/chat — integration (SPEC-200 T-004)', () =
         });
 
         expect(res.status).toBe(403);
-        const body = (await res.json()) as { error: { code: string } };
-        expect(body.error.code).toBe('LIMIT_REACHED');
+        expect(await res.json()).toMatchObject({
+            error: {
+                code: 'LIMIT_REACHED',
+                details: { limitKey: 'max_ai_chat_per_month', maxAllowed: 20 }
+            }
+        });
         expect(streamTextCalls).toHaveLength(0);
     });
 
@@ -863,7 +938,7 @@ describe('POST /api/v1/protected/ai/chat — integration (SPEC-200 T-004)', () =
     //
     // These tests verify the second inline gate added by SPEC-283: the
     // REQUESTING user's own MAX_AI_CHAT_CONSUMER_PER_MONTH limit loaded from
-    // context (injected by entitlementMiddleware → currentLimitsForTest here).
+    // context (formerly injected by the retired entitlementMiddleware → currentLimitsForTest here).
     //
     // Each test sets the owner side to PASS (owner has AI_CHAT entitlement +
     // quota with headroom) so the consumer path is isolated. The two gates
@@ -873,12 +948,11 @@ describe('POST /api/v1/protected/ai/chat — integration (SPEC-200 T-004)', () =
     // =========================================================================
 
     describe('SPEC-283 — consumer-side chat quota gate', () => {
-        it('owner-block 403 carries the owner copy, NOT the consumer copy (ENTITLEMENT_REQUIRED)', async () => {
-            // Owner lacks AI_CHAT — gate fires on the owner side.
+        it('rejects a listing whose owner lacks ai_chat before checking consumer quota', async () => {
             mockOwnerEntitlements.current = [];
             // Consumer has headroom — irrelevant; owner gate fires first.
             currentLimitsForTest.current = new Map([
-                [LimitKey.MAX_AI_CHAT_CONSUMER_PER_MONTH, 200]
+                [LimitKeyEnum.MAX_AI_CHAT_CONSUMER_PER_MONTH, 200]
             ]);
 
             const res = await app.request(STREAM_PATH, {
@@ -891,21 +965,19 @@ describe('POST /api/v1/protected/ai/chat — integration (SPEC-200 T-004)', () =
             });
 
             expect(res.status).toBe(403);
-            const body = (await res.json()) as { error: { code: string; message: string } };
-            expect(body.error.code).toBe('ENTITLEMENT_REQUIRED');
-            // Must be the owner-side copy.
-            expect(body.error.message).toBe('accommodations.aiChat.unavailable');
-            // Must NOT be the consumer-side copy.
-            expect(body.error.message).not.toBe('accommodations.aiChat.consumerLimitReached');
+            expect(await res.json()).toMatchObject({
+                error: { code: 'ENTITLEMENT_REQUIRED', details: { entitlementKey: 'ai_chat' } }
+            });
+            expect(streamTextCalls).toHaveLength(0);
         });
 
-        it('consumer 403 LIMIT_REACHED when consumer monthly count >= plan limit', async () => {
+        it('rejects when the consumer monthly count reaches the effective limit', async () => {
             // Owner passes: limit 300, usage 200 (200 < 300 → passes).
-            mockOwnerLimits.current = new Map([[LimitKey.MAX_AI_CHAT_PER_MONTH, 300]]);
+            mockOwnerLimits.current = new Map([[LimitKeyEnum.MAX_AI_CHAT_PER_MONTH, 300]]);
             getMonthlyCallCountReturn.current = 200;
             // Consumer limit 200, usage 200 → 200 >= 200 → blocked.
             currentLimitsForTest.current = new Map([
-                [LimitKey.MAX_AI_CHAT_CONSUMER_PER_MONTH, 200]
+                [LimitKeyEnum.MAX_AI_CHAT_CONSUMER_PER_MONTH, 200]
             ]);
 
             // Explicit actorId so the assertion below can prove the consumer gate
@@ -920,19 +992,14 @@ describe('POST /api/v1/protected/ai/chat — integration (SPEC-200 T-004)', () =
             });
 
             expect(res.status).toBe(403);
-            const body = (await res.json()) as { error: { code: string; message: string } };
-            expect(body.error.code).toBe('LIMIT_REACHED');
-            // Must be the consumer-side copy, NOT the owner-side copy.
-            expect(body.error.message).toBe('accommodations.aiChat.consumerLimitReached');
-            expect(body.error.message).not.toBe('accommodations.aiChat.unavailable');
-            // No stream was opened.
+            expect(await res.json()).toMatchObject({
+                error: {
+                    code: 'LIMIT_REACHED',
+                    message: 'accommodations.aiChat.consumerLimitReached',
+                    details: { limitKey: 'max_ai_chat_consumer_per_month', maxAllowed: 200 }
+                }
+            });
             expect(streamTextCalls).toHaveLength(0);
-            // Critical: the consumer gate must count against the REQUESTING user's bucket
-            // (actor.id = UNIQUE_USER_ID), not the owner's. A bug that forwarded ownerId
-            // to the consumer gate would not produce a call with userId=UNIQUE_USER_ID.
-            expect(vi.mocked(getMonthlyCallCount)).toHaveBeenCalledWith(
-                expect.objectContaining({ userId: UNIQUE_USER_ID, feature: 'chat' })
-            );
         });
 
         it('200 SSE stream proceeds when both owner and consumer have headroom', async () => {
@@ -940,7 +1007,7 @@ describe('POST /api/v1/protected/ai/chat — integration (SPEC-200 T-004)', () =
             getMonthlyCallCountReturn.current = 10;
             // Consumer: limit 200, usage 10 (10 < 200 → passes).
             currentLimitsForTest.current = new Map([
-                [LimitKey.MAX_AI_CHAT_CONSUMER_PER_MONTH, 200]
+                [LimitKeyEnum.MAX_AI_CHAT_CONSUMER_PER_MONTH, 200]
             ]);
 
             const res = await app.request(STREAM_PATH, {
@@ -957,9 +1024,10 @@ describe('POST /api/v1/protected/ai/chat — integration (SPEC-200 T-004)', () =
             expect(frames.filter((f) => f.event === 'done')).toHaveLength(1);
         });
 
-        it('consumer 403 immediately when consumer limit is 0 (feature disabled, no count query)', async () => {
-            // Consumer limit exactly 0 → short-circuit block before getMonthlyCallCount for actor.id.
-            currentLimitsForTest.current = new Map([[LimitKey.MAX_AI_CHAT_CONSUMER_PER_MONTH, 0]]);
+        it('rejects when the consumer limit is zero', async () => {
+            currentLimitsForTest.current = new Map([
+                [LimitKeyEnum.MAX_AI_CHAT_CONSUMER_PER_MONTH, 0]
+            ]);
 
             const res = await app.request(STREAM_PATH, {
                 method: 'POST',
@@ -971,20 +1039,17 @@ describe('POST /api/v1/protected/ai/chat — integration (SPEC-200 T-004)', () =
             });
 
             expect(res.status).toBe(403);
-            const body = (await res.json()) as { error: { code: string; message: string } };
-            expect(body.error.code).toBe('LIMIT_REACHED');
-            expect(body.error.message).toBe('accommodations.aiChat.consumerLimitReached');
-            // Gate fires pre-stream — no AI call was made.
+            expect(await res.json()).toMatchObject({
+                error: {
+                    code: 'LIMIT_REACHED',
+                    details: { limitKey: 'max_ai_chat_consumer_per_month', maxAllowed: 0 }
+                }
+            });
             expect(streamTextCalls).toHaveLength(0);
         });
 
-        // Pre-SPEC-283 / mid-rollout path: plans predating SPEC-283 will not carry
-        // MAX_AI_CHAT_CONSUMER_PER_MONTH in their limit map. getRemainingLimit returns -1
-        // (key absent) → the entire consumer block is skipped → fail-open, backward-compatible.
-        it('200 (fail-open) when consumer limit key is absent from context (pre-SPEC-283 backward-compat)', async () => {
-            // Only the OLD per-owner key in context — no MAX_AI_CHAT_CONSUMER_PER_MONTH.
-            // getRemainingLimit(c, MAX_AI_CHAT_CONSUMER_PER_MONTH) → -1 → gate bypassed.
-            currentLimitsForTest.current = new Map([[LimitKey.MAX_AI_CHAT_PER_MONTH, 20]]);
+        it('treats an absent consumer limit as zero', async () => {
+            currentLimitsForTest.current = new Map([[LimitKeyEnum.MAX_AI_CHAT_PER_MONTH, 20]]);
 
             const res = await app.request(STREAM_PATH, {
                 method: 'POST',
@@ -995,14 +1060,17 @@ describe('POST /api/v1/protected/ai/chat — integration (SPEC-200 T-004)', () =
                 })
             });
 
-            expect(res.status).toBe(200);
-            const frames = await readSseFrames(res);
-            expect(frames.filter((f) => f.event === 'done')).toHaveLength(1);
+            expect(res.status).toBe(403);
+            expect(await res.json()).toMatchObject({
+                error: { code: 'LIMIT_REACHED', details: { maxAllowed: 0 } }
+            });
         });
 
         it('successful chat records usage for BOTH owner (ownerId) AND consumer (actor.id) — SPEC-283', async () => {
-            // No consumer limit → fail-open; stream completes; recordAiUsage called twice.
-            currentLimitsForTest.current = new Map();
+            // Both owner and consumer have explicit headroom; usage remains double-metered.
+            currentLimitsForTest.current = new Map([
+                [LimitKeyEnum.MAX_AI_CHAT_CONSUMER_PER_MONTH, 200]
+            ]);
 
             const res = await app.request(STREAM_PATH, {
                 method: 'POST',

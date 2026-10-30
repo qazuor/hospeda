@@ -1,0 +1,558 @@
+# Correcciones REAL de la vuelta 1 · grupo transversal
+
+Copiadas de `../verificacion/vuelta-1/adjudicacion/correcciones.txt`. Las líneas citan el ORIGINAL (`296e6495b6`): ubicá cada corrección por su texto «sale», no por el número. Si «sale» ya no está y «entra» sí, está aplicada: contala como tal y seguí.
+
+### `00-indice.md`
+
+- **H-VB-B4-5** · REAL MENOR · l. 384 — La fila 22 de la partición dice «las señales de identidad y el seudónimo del correo» y la fuente «el hash del correo»: el seudónimo es `C-1`, pero las señales de identidad salieron (N7) y la nota de diferencias no declara ninguno de los dos cambios.
+  - sale:
+    **PARTIDO** — las señales de identidad y el seudónimo del correo a verticales;
+  - entra:
+    **PARTIDO** — el seudónimo determinístico del correo a verticales (las señales que sólo observaban no se guardan);
+
+- **H-VB-B4-5** · REAL MENOR · l. 393 — La fila 22 de la partición dice «las señales de identidad y el seudónimo del correo» y la fuente «el hash del correo»: el seudónimo es `C-1`, pero las señales de identidad salieron (N7) y la nota de diferencias no declara ninguno de los dos cambios.
+  - sale:
+    `U1`—, y el censo vivo es el catálogo.)*
+  - entra:
+    `U1`—, y el censo vivo es el catálogo; la fila 22 dice «seudónimo determinístico» y no «hash», y sin las señales de identidad, por `C-1` y N7 —`V/spec.md:68`—.)*
+
+### `01-decisiones-vigentes.md` — generado: `scripts/generadores/g1/ (gen01.py, cabecera.md, omisiones.json)`
+
+- **H-VB-B1-1** · REAL MENOR · l. 11055 — El registro de letras corta la celda 5a de la FASE 9 completa en el `\|` escapado: se pierden `FAILED` y la acción 14.
+  - dónde: scripts/generadores/g1/gen01.py:291-292 (own_render): partir sólo en `|` no escapado y desescapar después
+  - sale:
+    head = [c.strip() for c in L[k - 2].strip().strip('|').split('|')]
+        cells = [c.strip() for c in row.strip().strip('|').split('|')]
+  - entra:
+    head = [c.strip().replace('\\|', '|') for c in re.split(r'(?<!\\)\|', L[k - 2].strip().strip('|'))]
+        cells = [c.strip().replace('\\|', '|') for c in re.split(r'(?<!\\)\|', row.strip().strip('|'))]
+    (resultado esperado en 01:11055: «- **decisión**: **opción 1**: máquina mínima de `refund` (`REQUESTED → CONFIRMED → EXECUTED | FAILED`) y una acción administrativa nueva, *«asentar un cobro o una devolución que ya ocurrió por fuera»* (el catálogo pasa de 13 a 14)» — Origen: .specs/HOS-1352-billing-verticals-redesign/docs/26-fase-9-completa/10-decisiones-del-owner.md:36). Regenerar y buscar otras celdas con `\|` en todas las tablas de letras.
+
+- **H-VB-B1-2** · REAL MENOR · l. 24 — La cabecera de 01 dice que las cuatro `SUPERSEDED EN PARTE` no tienen adjudicación y conservan el texto entero, y las cuatro llevan adjudicación `PARCIAL` con texto omitido «[…]».
+  - dónde: scripts/generadores/g1/cabecera.md:24-26
+  - sale:
+    - **`SUPERSEDED EN PARTE`** (`DEC-MIG-001`, `DEC-MIG-002`, `DEC-DATA-002`, `DEC-MP-003`): no tienen
+      adjudicación; su propio campo *Estado* (o su «⚠️ Qué sobrevive») declara qué parte vale, y el
+      texto se conserva entero.
+  - entra:
+    - **`SUPERSEDED EN PARTE`** (`DEC-MIG-001`, `DEC-MIG-002`, `DEC-DATA-002`, `DEC-MP-003`): su propio
+      campo *Estado* (o su «⚠️ Qué sobrevive») declara qué parte vale, y llevan además adjudicación
+      `PARCIAL` (BK): la parte muerta está omitida y marcada «[…]», con su nota «Parte sin efecto» al
+      final del cuerpo, como cualquier otra `PARCIAL`. (Origen: 01-decisiones-vigentes.md:2147, :3996, :6630, :6690; letra BK)
+
+- **H-VA-A8-pista-6** · REAL MENOR · confirmado por el orquestador · l. 2560 — La nota PARCIAL de DEC-MP-008#📌2 dice que la cancelación del pagador «sigue pendiente» y deja «hasta medir»; ya se midió (`EX-52`, VERIFIED) y el lote L-A la decidió en DEC-SUB-009#📌4: se espeja como baja del proveedor (la misma conducta).
+  - dónde: _trabajo/adjudicacion.json:1597 (campo «muerto» de DEC-MP-008#📌2) y los fragmentos a omitir «Pendiente de medición» / «hasta medir,»
+  - sale:
+    la pausa hecha por el pagador deja de estar pendiente (`EX-53`); la cancelación desde su cuenta sigue pendiente.
+  - entra:
+    la pausa hecha por el pagador deja de estar pendiente (`EX-53`), y la cancelación desde su cuenta también: medida (`EX-52`, `VERIFIED`) y decidida en [DEC-SUB-009#📌4](#dec-sub-009-p4) (lote L-A): se espeja como baja del proveedor, la misma conducta que este 📌 fijaba hasta medir. Lo supera: `.specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:1370` («Medido el 2026-09-29 (`EX-52`, `EX-56`)»).
+
+- **H-VA-A8-r2-7** · REAL MENOR · l. 6139 — La cola del 📌6 de DEC-ARCH-014 (U3: ninguna unidad depende de ella; U1 reapunta la regla de smoke) se omite del 📌7 con nota que promete mostrarla bajo el 📌6, y el 📌6 no la trae.
+  - dónde: scripts/generadores/g1/gen01.py (o omisiones.py): al bloque DEC-ARCH-014#📌6 agregarle, después de su texto, el tramo log:7606-7609 con una nota «Texto que la fuente pegó al 📌7 (log:7606-7609); es de este 📌 (letra F)»
+  - sale:
+(nada)
+  - entra:
+    Ninguna unidad depende de ella; la necesitan el ensayo (paso 0) y los pasos 1a, 1b y 2. Y `U1` suma una cosa: **reapunta la regla de smoke del `CLAUDE.md` raíz** al checklist del sistema nuevo (letra B; ver `DEC-ARCH-016`). Dónde: `16-fase-7-del-paraguas.md` §2, §4.2 y §4.6; las dos descomposiciones, §3 y §4; `spec.md`. Origen: (FASES 6 y 7, owner 2026-09-30, F). (Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:7606)
+
+- **H-VA-A8-pista-4** · FUENTE MENOR · confirmado por el orquestador · l. 6737 — La adjudicación de DEC-MIG-002 dice que sobrevive «se siguen tomando altas en el sistema actual», y desde el 2026-10-01 (N, O, R) las altas self-service del viejo están congeladas; el log no tiene 📌 sobre DEC-MIG-002 que lo registre.
+  - dónde: _trabajo/adjudicacion.json, entrada PARCIAL de DEC-MIG-002 (la nota la arma nota_parcial de gen01.py)
+  - sale:
+    sobrevive *«se siguen tomando altas en el sistema actual»*.
+  - entra:
+    sobrevive *«se siguen tomando altas en el sistema actual»* sólo para las que no son self-service: desde el 2026-10-01 las altas pagas self-service del viejo (start-paid con sus trials, el self-checkout de comercio, la compra de addons y la primera publicación que arranca trial) están congeladas por un setting de `billing_settings` (letras N, O y R; transitorio, del sistema viejo). Lo supera: `.specs/HOS-1352-billing-verticals-redesign/docs/40-congelamiento-y-ci/10-decisiones-del-owner.md:19` …
+
+- **H-VA-A8-r2-5** · REAL MENOR · l. [11304, 11376] — El registro de letras de 01 rinde `G1-1` y `G2-4` sin la nota de caducidad que su propio archivo les escribe (DEC-MIG-006 / C12; T7 salió, N7).
+  - dónde: scripts/generadores/g1/omisiones.json + gen01.py own_render + cabecera.md: en `omisiones.json` una clave nueva `letras_muertas` {id de letra → {"alcance": "entera"|"en parte", "por": texto, "origen": ruta:línea}} y, en gen01.py `own_render`, tras las viñetas, la línea «- ⚠️ **Caducada {alcance}**: {por} (Origen: {origen}). Sólo citable; no se implementa.» Y en cabecera.md, en el párrafo del registro: «Las letras que una fuente posterior dejó sin efecto llevan su marca ⚠️ **Caducada**; lo que produjeron, si murió, está en 90-retirados.md.»
+  - sale:
+    (nada: la letra sin marca)
+  - entra:
+    G1-1 → «- ⚠️ **Caducada en parte**: en lo que decía de la cartera la reemplaza `DEC-MIG-006` (C12) (Origen: .specs/HOS-1352-billing-verticals-redesign/docs/28-fase-9-vuelta-1/10-decisiones-del-owner.md:71). Sólo citable; no se implementa.»; G2-4 → «- ⚠️ **Caducada entera**: `T7` salió (N7, `DEC-TRIAL-003`) (Origen: .specs/HOS-1352-billing-verticals-redesign/docs/28-fase-9-vuelta-1/10-decisiones-del-owner.md:72). Sólo citable; no se implementa.»
+
+- **H-VA-A8-r2-6** · REAL MENOR · l. [11690, 11672, 11744, 11753, 11762, 11861, 11870, 11654, 11708, 11780, 11076, 11085] — El registro rinde como vigentes `R15` (caducada entera por C12) y las letras cuya consecuencia murió: las de la discontinuación (C8), las de la regla del día del corte y el detector (📌 SUPERSEDED de DEC-MIG-005) y 6a/6b de la FASE 9 completa (C8).
+  - dónde: mismo mecanismo que H-VA-A8-pista-2 (en `omisiones.json` una clave nueva `letras_muertas` {id de letra → {"alcance": "entera"|"en parte", "por": texto, "origen": ruta:línea}} y, en gen01.py `own_render`, tras las viñetas, la línea «- ⚠️ **Caducada {alcance}**: {por} (Origen: {origen}). Sólo citable; no se implementa.» Y en cabecera.md, en el párrafo del registro: «Las letras que una fuente posterior dejó sin efecto llevan su marca ⚠️ **Caducada**; lo que produjeron, si murió, está en 90-retirados.md.»)
+  - sale:
+    (nada: las letras sin marca)
+  - entra:
+    R15 → «⚠️ **Caducada entera**: cae con `DEC-MIG-006` (C12, `L1-b`), y con ella `N-B-01` (Origen: .specs/HOS-1352-billing-verticals-redesign/docs/29-fase-8-vuelta-2/10-decisiones-del-owner.md:75)»; R5, Q-ALTAS, Q-ALTAS-b, R24, Q-FECHA → «⚠️ **Caducada entera**: la discontinuación de una vertical salió (C8); su 📌 está en [90-retirados.md](90-retirados.md#dec-arch-011-p1)»; Q-ACC16 → «⚠️ **Caducada entera**: la acción 16 salió (C8); [90-retirados.md](90-retirados.md#dec-rf-008-p2)»; R2, R21, R21-b → «⚠️ **Caducada entera**: su 📌 de `DEC-MIG-005` quedó `SUPERSEDED` (01-decisiones-vigentes.md:7202; 90-retirados.md:166)»; 6a, 6b → «⚠️ **Caducada entera**: `admiteAltas` y `fin_de_servicio` salieron con C8 (`B/03-maquinas-de-estado.md:151`)». Antes de cerrar la lista, el orquestador recorre el registro entero con este criterio (letra cuyo 📌/DEC está en 90-retirados o cuya premisa sale con C8/C12/S-40-45).
+
+### `02-nucleo-auditoria.md`
+
+- **H-VA-A1-4** · REAL MENOR · l. 440 — 02-nucleo-auditoria repite «que no tiene fila para él», texto que la fuente tachó: desde BR la fila existe y la construye B11.
+  - sale:
+    es del catálogo de correos ([`02-nucleo-outbox.md`](02-nucleo-outbox.md), §6), que no tiene fila
+      para él.
+  - entra:
+    es del catálogo de correos ([`02-nucleo-outbox.md`](02-nucleo-outbox.md), §6), que desde BR tiene su
+      fila, *«reembolso de revocación fallido»*, como el `COBRO_DUPLICADO`, *«cobro duplicado detectado»*; los
+      dos los construye [B11](10-corte/B11.md#pieza-b11) (corte del MVP, owner 2026-10-02, [BR](01-decisiones-vigentes.md#own-41-corte-del-mvp-t9-br)).
+    
+    (Origen: .specs/HOS-1352-billing-verticals-redesign/docs/nucleo/08-auditoria-y-observabilidad.md:518, :519)
+
+### `02-nucleo-outbox.md`
+
+- **H-VA-A7b-4** · REAL MENOR · l. 289 — El catálogo pone el aviso de aumento como correo transaccional no suprimible, pero no dice que el canal NO puede ser una notificación dentro del producto (no deja constancia de llegada).
+  - sale:
+    **3 contactos**: al anunciar, a 30 días y a 7 días, cada uno con **la fecha de ese cliente**
+  - entra:
+    **3 contactos**: al anunciar, a 30 días y a 7 días, cada uno con **la fecha de ese cliente**; **por correo, nunca sólo por una notificación dentro del producto**, que no deja constancia de haber llegado (Origen: .specs/HOS-1354-billing-cobro-y-proveedor/docs/22-lo-legal.md:74)
+
+- **H-VA-A7a-18** · FUENTE MENOR · l. 309 — El correo «el alta que quedó sin completarse» dice «esos N días» en la spec porque copia bien NUCLEO/07:285, que quedó viejo: desde F-8CB1-001 la cortesía es en meses, y B/19 §4 fila 18 ya dice «esos N meses … (en meses desde F-8CB1-001)». Hay que corregir la fuente y también la línea de la spec.
+  - sale:
+    **Y si tenía una cortesía diferida, que esos N días se cerraron y no vuelven**
+  - entra:
+    **Y si tenía una cortesía diferida, que esos N meses se cerraron y no vuelven** (en meses desde `F-8CB1-001`; Origen: .specs/HOS-1354-billing-cobro-y-proveedor/docs/19-superficies.md:137)
+
+- **H-VB-B2-9** · REAL MENOR · l. 310 — El catálogo de correos de 02-nucleo-outbox §6 no tiene las dos filas que BR agregó; sólo están en 10-corte/B11.md, que las da como filas de ese catálogo. Baja a MENOR: B11 las construye con la regla entera.
+  - dónde: insertar dos filas inmediatamente después de la l. 310 (antes de la línea en blanco de la l. 311), y sumar «.specs/HOS-1352-billing-verticals-redesign/docs/nucleo/07-outbox-y-notificaciones.md:287, ...:288» a la línea Origen del bloque
+  - sale:
+    (nada)
+  - entra:
+    | **reembolso de revocación fallido** | transaccional, **no suprimible**, a `SUPER_ADMIN` | **al producirse**: cuando el `refund` de una revocación llega a `FAILED` ([RF5](04-catalogos.md#trans-b-rf5), cap. 03 §6.1, épica de billing). Su texto lo propone el PR de [B11](10-corte/B11.md#pieza-b11) (BS) | `DEC-OBS-001` (la excepción del correo inmediato, [`02-nucleo-auditoria.md`](02-nucleo-auditoria.md) §4.1); lo construye `B11` (corte del MVP, owner 2026-10-02, [BR](01-decisiones-vigentes.md#own-41-corte-del-mvp-t9-br)) |
+    | **cobro duplicado detectado** | transaccional, **no suprimible**, a `SUPER_ADMIN` | **al producirse**: cuando se abre la marca con motivo `COBRO_DUPLICADO` (cap. 02 §2.5, motivo 20, épica de billing). Su texto lo propone el PR de [B11](10-corte/B11.md#pieza-b11) (BS) | `DEC-OBS-001` (la excepción del correo inmediato, [`02-nucleo-auditoria.md`](02-nucleo-auditoria.md) §4.1); lo construye `B11` (corte del MVP, owner 2026-10-02, [BR](01-decisiones-vigentes.md#own-41-corte-del-mvp-t9-br)) |
+
+- **H-VA-A1-1** · REAL MENOR · l. 70 — §1.4 de 02-nucleo-outbox conserva la lista vieja (V6, V9, B4, B12) que la fuente tachó y no nombra las flechas U2→V4 y U2→B3 de BR.
+  - sale:
+    unidades que encolan, [V6](10-corte/V6.md#pieza-v6), `V9` (cuyos avisos de retención son, desde
+    el corte del MVP, de [V9b](20-fase-1/V9b.md#pieza-v9b): owner, letra Z), [B4](10-corte/B4.md#pieza-b4)
+    y [B12](20-fase-3/B12.md#pieza-b12). Se construye
+  - entra:
+    unidades que encolan, [V4](10-corte/V4.md#pieza-v4) y [B3](10-corte/B3.md#pieza-b3) —que encolan antes los avisos del trial, el correo del alta y el de antes de cancelar— y, por transitividad, [V6](10-corte/V6.md#pieza-v6), `V9a`, [V9b](20-fase-1/V9b.md#pieza-v9b), [B4](10-corte/B4.md#pieza-b4), `B5`, `B7`, [B12](20-fase-3/B12.md#pieza-b12) y las demás que encolan (corte del MVP, owner 2026-10-02, [BR](01-decisiones-vigentes.md#own-41-corte-del-mvp-t9-br): las flechas `U2 → V4` y `U2 → B3`). Se construye
+    
+    Origen: .specs/HOS-1352-billing-verticals-redesign/docs/nucleo/07-outbox-y-notificaciones.md:70 (y sumar :70 a la línea Origen del bloque)
+
+### `02-nucleo.md`
+
+- **H-VB-B2-3** · FUENTE MENOR · l. 1108 — ACC:12 pone «lo mismo sobre la presencia de un Partner» después de los dos niveles; la fuente posterior (G, FASES 6 y 7) restringe los dos niveles a la ficha. La spec copia nucleo/08:202, que no recibió G.
+  - sale:
+    - **Y lo mismo sobre la presencia de un Partner**: escribe su bit de moderación (`V/18` §1.6; owner
+  - entra:
+    - **Y sobre la presencia de un Partner, con el mismo permiso pero sin los dos niveles** (los dos niveles, sólo en la ficha: FASES 6 y 7, owner 2026-09-30, G; `V/descomposicion.md:66`): escribe su bit de moderación (`V/18` §1.6; owner
+
+- **H-VB-B2-4** · FUENTE BLOQUEA · l. 1218 — ACC:19 dice que un precio nuevo sobre una versión con clientes va por DEC-MP-002 con aviso y fecha de cada cliente; BM lo rechaza y manda publicar versión nueva (aviso/mutación a anclados en B12, BZ: migración S37/S38 motivo «aumento»), agrega el rechazo de < ARS 15 y veda el uso hasta el momento 5. La spec copia nucleo/08:209, que no recibió BM/BZ.
+  - sale:
+    - **¿Destructiva o mueve dinero?** **Sí, mueve plata**: sobre una versión con clientes, un precio
+      nuevo es un aumento o una baja para ellos y va por
+      [DEC-MP-002](01-decisiones-vigentes.md#dec-mp-002), con su aviso ([PLAZO:11](#plazo-11)) y la fecha
+      de cada cliente. Su confirmación dice **el precio anterior y el nuevo, el ciclo, a cuántos clientes
+      alcanza y desde cuándo**. Rechaza un ciclo que no sea mayor que la gracia de la versión (modelo
+      §1.4). **Es la decimonovena.**
+  - entra:
+    - **¿Destructiva o mueve dinero?** **Sí, mueve plata**: sobre una versión de plan **sin clientes** fija el
+      precio; sobre una **con clientes se rechaza y se publica una versión nueva**, que rige para las altas
+      nuevas ([DEC-MP-002](01-decisiones-vigentes.md#dec-mp-002), parte 1). El aviso y la mutación a los
+      clientes ya anclados (parte 2) llegan con [B12](20-fase-3/B12.md#pieza-b12): una migración a la versión
+      nueva por `S37` y `S38` con el motivo *«aumento»*, con la fecha y los contactos del [PLAZO:11](#plazo-11)
+      (BZ). Rechaza un monto menor que ARS 15 (`DEC-MP-001`, implicación 4) y un ciclo que no sea mayor que
+      la gracia de la versión (modelo §1.4). **Su uso queda vedado hasta el momento 5 del corte**: es una
+      regla de operación, no un control del código. **Es la decimonovena.** (Origen: 📌 BM y 📌 BZ de
+      DEC-MP-002, .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:1463-1479)
+
+- **H-VB-B2-6** · REAL MENOR · l. 1742 — La spec ata VAL:G-R5-B a las cinco reglas del panel; la fuente sólo a la regla 2 (el N de PB5 contra el plazo 2).
+  - sale:
+    **Lo que el panel rechaza, porque se contradice** (es lo que era `G-R5-B`, hoy la validación
+    [VAL:G-R5-B](04-catalogos.md#val-g-r5-b) de *«cambiar un plazo»*):
+  - entra:
+    **Lo que el panel rechaza, porque se contradice**:
+
+- **H-VB-B2-6** · REAL MENOR · l. 1747 — La spec ata VAL:G-R5-B a las cinco reglas del panel; la fuente sólo a la regla 2 (el N de PB5 contra el plazo 2).
+  - sale:
+    PLAZO:2**: con la cota atada al plazo de borrado y no a 6 meses literales (`V/20` §2;
+  - entra:
+    PLAZO:2**: es lo que era `G-R5-B`, hoy la validación [VAL:G-R5-B](04-catalogos.md#val-g-r5-b) de *«cambiar un plazo»*, con la cota atada al plazo de borrado y no a 6 meses literales (`V/20` §2; [Origen: .specs/HOS-1352-billing-verticals-redesign/docs/nucleo/02-modelo-de-datos.md:237]
+
+- **H-VB-B2-2** · REAL MENOR · l. 746 — INV:D12 cita `B/03` §2, que no existe; el §2 del trial es `V/03` §2.
+  - sale:
+    [DEC-TRIAL-002](01-decisiones-vigentes.md#dec-trial-002), `B/03` §2.
+  - entra:
+    [DEC-TRIAL-002](01-decisiones-vigentes.md#dec-trial-002), `V/03` §2. (Origen: .specs/HOS-1352-billing-verticals-redesign/docs/nucleo/04-invariantes.md:139; el «cap. 03 §2» es el de verticales: .specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/03-maquinas-de-estado.md:21)
+
+- **H-VA-A6-11** · REAL BLOQUEA · l. 825 — La regla de «¿cobró?» de B/09 §4 (cobró sólo con payment.status=approved leído por id; no cobró sólo con inventario completo y ninguno aprobado; NO leer status, status_detail temprano, charged_quantity ni last_charged_date) no está en la spec: 02-nucleo §2.7 la delega a «la lectura de B/09 §4», que es fuente congelada, y AC:B7:8 la usa sin definirla.
+  - sale:
+    *«¿Cobró o no?»* se contesta **sólo** con la
+    lectura de `B/09` §4.
+  - entra:
+    *«¿Cobró o no?»* se contesta **sólo** con esta lectura, cobro por cobro: **«cobró» sólo si hay un registro del período con `payment.status` = `approved`, leído por id** con `GET /authorized_payments/{id}`; **nunca** del `status` del registro (`scheduled`, `recycling`, `processed` dicen la etapa, no el resultado: [RC-6](04-catalogos.md#mp-rc-6)), ni del `status_detail` leído temprano (es el del último intento y cambia entre reintentos), ni de `charged_quantity` (cuenta intentos: [RC-5](04-catalogos.md#mp-rc-5)), ni de `last_charged_date` (se mueve con un cobro rechazado). **«No cobró» sólo si el inventario está completo** —`charged_quantity` igual a los registros listados— **y ninguno está aprobado**. **Cualquier otra cosa es «todavía no se sabe»**: no es divergencia, se relee en la corrida siguiente, y quien necesita actuar (`S6`) la trata como lectura fallida y no actúa en esa corrida. `charged_amount` no decide; sirve para verificar a mano. (Origen: .specs/HOS-1354-billing-cobro-y-proveedor/docs/09-conciliacion.md:983, .specs/HOS-1354-billing-cobro-y-proveedor/docs/09-conciliacion.md:1000, .specs/HOS-1354-billing-cobro-y-proveedor/docs/09-conciliacion.md:1001, .specs/HOS-1354-billing-cobro-y-proveedor/docs/09-conciliacion.md:1003)
+
+- **H-VA-A6-12** · REAL BLOQUEA · l. 826 — El quinto modo de B/09 §4 (registro listado cuya lectura por id da 404, EX-55: se contesta con el pago que el listado nombra leído por GET /v1/payments/{id}; approved = cobró, otro = rechazo que dispara S16; no es lectura fallida salvo que no haya pago o esa lectura falle) no está en la spec.
+  - dónde: a continuación del texto que entra por H-VA-A6-11, en el mismo párrafo
+  - sale:
+(nada)
+  - entra:
+    **Un registro que el listado devuelve y cuya lectura por id da `404`** ([EX-55](04-catalogos.md#mp-ex-55): el alta que el proveedor canceló al rechazar el primer cobro) **se contesta con el pago que el listado nombra, leído por id** con `GET /v1/payments/{id}`: `approved` es *«cobró»*, cualquier otro estado es *«intentó y se rechazó»*, y esa lectura es la que dispara [S16](04-catalogos.md#trans-b-s16). **No es una lectura fallida de la corrida**; si el listado no nombra pago, o esa lectura también falla, sí lo es. (Origen: .specs/HOS-1354-billing-cobro-y-proveedor/docs/09-conciliacion.md:996)
+
+### `03-contrato-de-cobertura.md`
+
+- **H-VA-A2-1** · REAL MENOR · l. 1114 — 03-contrato dice que retenciónDetenida la consumen sólo V9b (archivar, borrar); la fuente, corregida el 2026-10-02 por BL, dice V6 (PB4/PB5) y V9b (PB9).
+  - sale:
+    la consumen [`V9b`](20-fase-1/V9b.md#pieza-v9b) (archivar, borrar) y los avisos de retención.
+  - entra:
+    la consumen [`V6`](10-corte/V6.md#pieza-v6) y [`V9b`](20-fase-1/V9b.md#pieza-v9b) (archivar, borrar) y los avisos de retención *(corte del MVP, owner 2026-10-01, Z, AC y BD; inferido el reparto: `PB4`/`PB5` en `V6` y `PB9` en `V9b`, marcado por la fuente; residuo corregido el 2026-10-02)*. (Origen: .specs/HOS-1352-billing-verticals-redesign/docs/12-contrato-de-cobertura.md:1127)
+
+- **H-VA-A1-1** · REAL MENOR · l. 1658 — §1.4 de 02-nucleo-outbox conserva la lista vieja (V6, V9, B4, B12) que la fuente tachó y no nombra las flechas U2→V4 y U2→B3 de BR.
+  - sale:
+    va antes de `V6`, `V9a`, `V9b` (corte del MVP, owner 2026-10-01, AC), `B4` y `B12`, las primeras que encolan.
+  - entra:
+    va antes de `V4` y `B3`, las primeras que encolan, y por transitividad de `V6`, `V9a`, `V9b` (corte del MVP, owner 2026-10-01, AC), `B4` y `B12` (corte del MVP, owner 2026-10-02, [BR](01-decisiones-vigentes.md#own-41-corte-del-mvp-t9-br); `V/descomposicion.md:602`, `B/descomposicion.md:814`).
+
+- **H-VB-B2-15** · FUENTE MENOR · l. 1734 — El recuento «doce» de B/descomposicion §2.6 no absorbió la dependencia de V7 sobre el pago manual de B5 que fijó BC; la spec copia el recuento. V7.md sí la nombra.
+  - sale:
+    Son **doce**, sobre cuatro piezas de verticales (`V2`, `V4`, `V6` y `V9b`) y una de billing
+    (`B1`, en la fila 14)
+  - entra:
+    Son **doce** en la fuente, sobre cuatro piezas de verticales (`V2`, `V4`, `V6` y `V9b`) y una de billing
+    (`B1`, en la fila 14), **más la de `V7` sobre el pago manual de `B5` para la acción 6** (BC; derivado: la fuente no la sumó al §2.6, lo marco)
+
+- **H-VB-B2-16** · REAL MENOR · l. 1912 — La spec omite B8a de la lista de piezas ante las que las dependencias contra V2 llegan resueltas.
+  - sale:
+    resueltas mucho antes que `B7`, `B8b` y `B12`.
+  - entra:
+    resueltas mucho antes que `B7`, `B8a`, `B8b` y `B12`. (Origen: .specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:440)
+
+### `04-catalogos.md` — generado: `scripts/generadores/g3/gen.py (o la fuente que copia verbatim)`
+
+- **H-VA-A2-2** · FUENTE MENOR · l. 1515 — La condición de TRANS:B:S1 en 04-catalogos no lleva la guarda de BJ; el catálogo copia verbatim la fila S1 de B/03, que nunca recibió BJ.
+  - dónde: se regenera con scripts/generadores/g3/gen.py una vez corregida la fuente; si la fuente no se toca, agregar en _trabajo/cobertura.json una nota de la fila S1 con la guarda de BJ
+  - sale:
+    (regenerado)
+  - entra:
+    en la condición de S1, al final: «**Y el `user` no tiene un plan vigente que herede Turista VIP** cuando compra Turista VIP (corte del MVP, owner 2026-10-01, BJ; el código de error queda abierto)» (Origen: .specs/HOS-1352-billing-verticals-redesign/docs/41-corte-del-mvp/10-decisiones-del-owner.md:124)
+
+- **H-VA-A6-3b** · FUENTE MENOR · l. 5666 — MOT:5 (generado, copia verbatim de B/02:1027) dice «después de 3 días de reintentar la mutación» para toda divergencia; B/02 quedó atrás de la pendiente 8 que B/09 §3 y B/14 §2.4 sí recogen.
+  - dónde: se regenera con scripts/generadores/g3/gen.py tras corregir la fuente (copia verbatim)
+  - sale:
+(nada)
+  - entra:
+(nada)
+
+- **H-VB-B3-1** · REAL MENOR · l. 7547 — `GUARD:G13` dice que corre «en CI, sobre el árbol de fuentes», y su fuente dice que falla sobre un build destinado a producción, no sobre la rama.
+  - dónde: scripts/generadores/g3/gen.py:520-522: excepción para `GUARD:G13` (antes del `pre.append` genérico)
+  - sale:
+    - **Dónde corre**: en CI, sobre el árbol de fuentes — la capa *guards* de `V/20-testing.md` §1: qué cubre: *«propiedades del **código**, no de una ejecución»*; contra qué corre: *«el árbol de fuentes, en CI»*.
+  - entra:
+    - **Dónde corre**: en CI, **sobre un build destinado a producción, no sobre la rama**: calla hasta que un build apunte a producción (`V/20-testing.md` §2, fila `G13`). (Origen: .specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/20-testing.md:57)
+
+- **H-VA-A8-pista-9** · REAL MENOR · confirmado por el orquestador · l. 7972 — La spec usa los cuatro estados de la matriz sin definirlos; la definición de `UNKNOWN` en la fuente («o se probó hace demasiado») hay que leerla con `B/06` §8 (caduca por cambio, no por antigüedad).
+  - dónde: scripts/generadores/g3/gen.py:543-546, junto con la corrección de H-VA-A8-pista-8
+  - sale:
+    (nada)
+  - entra:
+    «**Estados** (`D/06` §Estados, §61): `VERIFIED`, se ejecutó y funciona como lo necesitamos, con evidencia; `NOT_SUPPORTED`, se ejecutó y el proveedor no lo permite, con evidencia; `PARTIALLY_SUPPORTED`, funciona con una restricción nombrada; `UNKNOWN`, no se probó, o la fila caducó —por un cambio en lo que la sostiene, no por antigüedad (`B/06` §8, regla 2)—. (Origen: .specs/HOS-1352-billing-verticals-redesign/docs/06-mp-validation-matrix.md:131-138; .specs/HOS-1354-billing-cobro-y-proveedor/docs/06-proveedor.md:374)»
+
+- **H-VA-A8-r2-1** · REAL MENOR · l. 7972 — La spec no conserva las reglas 4 (sin fecha = `UNKNOWN`) y 6 (`PARTIALLY_SUPPORTED` nombra la restricción) de la matriz; `B1` sólo trae «toda fila lleva fecha y entorno».
+  - dónde: scripts/generadores/g3/gen.py:543-546 (intro de `## Matriz de validación…`): agregar un sec_note verbatim de `D/06` §Reglas 4 y 6
+  - sale:
+    Las filas de la matriz son **sólo citables** (…): no exigen AC propio; las citan los ítems y las piezas que se apoyan en ellas. Cada fila va con todas sus columnas.
+  - entra:
+    (igual) + «**Cómo se lee una fila** (`D/06` §Reglas, 4 y 6): cada fila lleva fecha y entorno, y una fila sin fecha se lee como `UNKNOWN`; un `PARTIALLY_SUPPORTED` tiene que nombrar qué parte. Cuándo caduca una fila verificada: [B1](10-corte/B1.md) (`B/06` §8, que cierra `S-MP-02`). (Origen: .specs/HOS-1352-billing-verticals-redesign/docs/06-mp-validation-matrix.md:122, :128)»
+
+### `10-corte/U1.md`
+
+- **H-VB-B5-1** · REAL MENOR · l. 477 — U1:477-479 dice que starts_at/ends_at «quedan hasta la unidad de socios» y los borra V7 con sus lectores del panel; desde AB y AP los borra al corte la migración estructural de V7 que lleva V6 (el mismo U1 lo dice bien en l.72, 180 y 439). U1 no los toca en ningún caso: no cambia lo que construye U1.
+  - sale:
+    **`starts_at` y `ends_at` quedan** hasta la unidad de socios
+        (lote de la aplicación, H) **y las borra `V7` con su migración, junto con sus lectores del
+        panel** (lote de la aplicación, segunda tanda, O);
+  - entra:
+    **`starts_at` y `ends_at` quedan hasta el corte** (lote de la aplicación, H) **y las borra,
+        junto con sus lectores del panel, la migración estructural de `V7` que lleva `V6` al corte**
+        (segunda tanda, O; corte del MVP, owner 2026-10-01, AB y AP);
+        (Origen: .specs/HOS-1352-billing-verticals-redesign/docs/16-fase-7-del-paraguas.md:984; .specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/18-partner.md:143-144)
+
+- **H-VB-B5-2** · REAL MENOR · l. 816 — U1:816 dice que la fuente no fija las etiquetas kind-*/area-*; el default de BS (5º 📌 de DEC-METH-019) las fija: `kind-spec` más las `area-*` de cada fila.
+  - sale:
+    - Las etiquetas `kind-*`/`area-*` no las fija la fuente: las propone el PR de la pieza y quedan
+      escritas acá al mergear (owner [BS](../01-decisiones-vigentes.md#own-41-corte-del-mvp-t9-bs)).
+  - entra:
+    - Etiquetas: `kind-spec` más las `area-*` de la fila (el default de [BS](../01-decisiones-vigentes.md#own-41-corte-del-mvp-t9-bs)); el PR de la pieza
+      propone las `area-*` siguiendo lo escrito del repo y quedan escritas acá al mergear.
+      (Origen: .specs/HOS-1352-billing-verticals-redesign/docs/16-fase-7-del-paraguas.md:1067)
+
+- **H-VB-B5-2** · REAL MENOR · l. 823 — U1:816 dice que la fuente no fija las etiquetas kind-*/area-*; el default de BS (5º 📌 de DEC-METH-019) las fija: `kind-spec` más las `area-*` de cada fila.
+  - sale:
+    - El nombre neutro de la bitácora, la lista nominal de las diez variables, el nombre de *«las tres
+      tablas»* de `is_featured` y las etiquetas de Linear: los propone el PR de `U1` (owner [BS](../01-decisiones-vigentes.md#own-41-corte-del-mvp-t9-bs)).
+  - entra:
+    - El nombre neutro de la bitácora y la lista nominal de las diez variables: los propone el PR de `U1`
+      (owner [BS](../01-decisiones-vigentes.md#own-41-corte-del-mvp-t9-bs)). *«Las tres tablas»* de `is_featured` son las tres tablas de fichas —las de
+      Alojamiento, Gastronomía y Experiencia—, no las demás que tienen esa columna; y las etiquetas tienen
+      el default de BS (ver «Labels de Linear»). (Origen: .specs/HOS-1354-billing-cobro-y-proveedor/docs/21-migracion.md:511-513; .specs/HOS-1352-billing-verticals-redesign/docs/16-fase-7-del-paraguas.md:1067)
+
+### `10-corte/V1.md`
+
+- **H-VB-B5-5** · REAL BLOQUEA · l. 154 — AC:V1:2 y TEST:V1:2 enumeran tres atributos por clave (scope, estrategia, clase) y omiten `enforcementStrategy`; la fuente vigente pide cuatro. V1 es la dueña del catálogo, así que lo construye sin un atributo declarado.
+  - sale:
+    - **Entonces** declara su **scope** (de vertical o global), su **estrategia de agregación** (de la
+      lista cerrada `SUMA`, `MÁXIMO`, `MÍNIMO`, `MEJOR_DECLARADO`) y su **clase**,
+  - entra:
+    - **Entonces** declara sus cuatro atributos: su **scope** (de vertical o global), su **estrategia de
+      agregación** (de la lista cerrada `SUMA`, `MÁXIMO`, `MÍNIMO`, `MEJOR_DECLARADO`), su
+      **`enforcementStrategy`** y su **clase**,  (Origen: .specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/15-entitlements-y-limits.md:570-571)
+
+- **H-VB-B5-5** · REAL BLOQUEA · l. 378 — AC:V1:2 y TEST:V1:2 enumeran tres atributos por clave (scope, estrategia, clase) y omiten `enforcementStrategy`; la fuente vigente pide cuatro. V1 es la dueña del catálogo, así que lo construye sin un atributo declarado.
+  - sale:
+    **TEST:V1:2** — Toda clave del catálogo declara scope, estrategia y clase de sus listas cerradas, y
+  - entra:
+    **TEST:V1:2** — Toda clave del catálogo declara scope, estrategia, `enforcementStrategy` y clase, y
+
+- **H-VB-B4-2** · REAL MENOR · l. 498 — AB-g5-8 se da por «resuelto por las fuentes» con `V1`, pero ninguna fuente asigna a una pieza armar con `db:migrate` las bases de desarrollo y de tests: es la derivación del mapa de cobertura (V1 dueña del 📌3 de DEC-ARCH-013 por `G18`).
+  - sale:
+    nocturno**: `V1`, dueña de [DEC-ARCH-013#📌3](../01-decisiones-vigentes.md#dec-arch-013-p3)
+      (lote 2 C), con la cláusula (d) de [AC:V1:4](#ac-v1-4) y [TEST:V1:6](#test-v1-6).
+  - entra:
+    nocturno**: `V1`, dueña de [DEC-ARCH-013#📌3](../01-decisiones-vigentes.md#dec-arch-013-p3)
+      en el mapa de cobertura (por `G18`), con la cláusula (d) de [AC:V1:4](#ac-v1-4) y
+      [TEST:V1:6](#test-v1-6). La fuente (lote 2 C) no nombra la pieza: es derivación *(lo marco)*.
+
+### `10-corte/V5.md`
+
+- **H-VA-A1-1** · REAL MENOR · l. 1239 — §1.4 de 02-nucleo-outbox conserva la lista vieja (V6, V9, B4, B12) que la fuente tachó y no nombra las flechas U2→V4 y U2→B3 de BR.
+  - sale:
+    - **Outbox**: N/A — la fila no encola nada (`V/descomposicion.md` §3: esperan a `U2` sólo `V6` y
+      `V9`).
+  - entra:
+    - **Outbox**: N/A — la fila no encola nada; espera a `U2` sólo por transitividad (`U2 → V4 → V5`:
+      `V/descomposicion.md` §3, BR).
+
+- **H-VB-B6-2** · REAL BLOQUEA · l. 1274 — AC:V5:2 dice que sobre la ARCHIVED sin TÍTULO cualquier operación distinta de ver/exportar/reactivar se rechaza; la fuente acepta además borrarla (PB12), que la fila 3 del piso otorga. El mismo V5 lo dice bien en l.506-508.
+  - sale:
+    **TEST:V5:2** — Integración: dueño sin `TÍTULO` ve, exporta y reactiva (`PB8`) su ficha `ARCHIVED`;
+    otra operación sobre ella se rechaza.
+  - entra:
+    **TEST:V5:2** — Integración: dueño sin `TÍTULO` ve, exporta, reactiva (`PB8`) y borra (`PB12`) su
+    ficha `ARCHIVED`; otra operación sobre ella se rechaza.
+
+- **H-VB-B6-2** · REAL BLOQUEA · l. 186 — AC:V5:2 dice que sobre la ARCHIVED sin TÍTULO cualquier operación distinta de ver/exportar/reactivar se rechaza; la fuente acepta además borrarla (PB12), que la fila 3 del piso otorga. El mismo V5 lo dice bien en l.506-508.
+  - sale:
+    - **Cuando** pide verla, exportarla y reactivarla (`PB8`)
+    - **Entonces** el paso 4 la acepta porque es suya y el estado lo admite, y el paso 6 la acepta porque
+      la versión de piso otorga *«recuperar lo suyo»*; cualquier otra operación sobre ella se rechaza.
+  - entra:
+    - **Cuando** pide verla, exportarla, reactivarla (`PB8`) y borrarla (`PB12`)
+    - **Entonces** el paso 4 las acepta porque es suya y el estado lo admite, y el paso 6 las acepta porque
+      la versión de piso otorga *«recuperar lo suyo»* (verla, exportarla, reactivarla y borrarla);
+      cualquier otra operación sobre ella se rechaza. (Origen: .specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/17-autorizacion.md:94-95, :113-115)
+
+- **H-VB-B6-1** · REAL MENOR · l. 310 — V5:62 dice que a DEC-GRANT-002 «la hace cumplir la lista cerrada sólo SUPER_ADMIN», pero esa lista son las siete filas 17-22 y 26 y no incluye la cortesía ni el grant (filas 1 y 2 de NUCLEO/08 §3). Que el permiso compartido de cortesía/grant venga sólo con el rol es una derivación de GRANT-002 + V/17 §4.3, no la lista; AC:V5:24 ya lo prueba por su lado.
+  - sale:
+    **AC:V5:14** — Los permisos *«sólo `SUPER_ADMIN`»* vienen sólo con el rol, y lo que regala servicio
+    también.
+  - entra:
+    **AC:V5:14** — Los permisos *«sólo `SUPER_ADMIN`»* vienen sólo con el rol (lo que regala servicio lo
+    prueba [AC:V5:24](#ac-v5-24)).
+
+- **H-VB-B6-5** · REAL MENOR · l. 375 — AC:V5:18 dice «el cargador ya no existe»; la fuente retira la parte que da el conjunto entero a los cuatro roles «se reutilice o no el resto del cargador».
+  - sale:
+    - **Entonces** el cargador ya no existe, el conjunto efectivo sale sólo de las fuentes de
+  - entra:
+    - **Entonces** ningún código le da a esos roles el conjunto entero (el cargador se retira, se reutilice
+      o no el resto de su código: `V/17` §4.3), el conjunto efectivo sale sólo de las fuentes de
+
+- **H-VB-B6-1** · REAL MENOR · l. 62 — V5:62 dice que a DEC-GRANT-002 «la hace cumplir la lista cerrada sólo SUPER_ADMIN», pero esa lista son las siete filas 17-22 y 26 y no incluye la cortesía ni el grant (filas 1 y 2 de NUCLEO/08 §3). Que el permiso compartido de cortesía/grant venga sólo con el rol es una derivación de GRANT-002 + V/17 §4.3, no la lista; AC:V5:24 ya lo prueba por su lado.
+  - sale:
+    (la exclusividad de `SUPER_ADMIN` sobre lo que regala
+    servicio, que hace cumplir la lista cerrada *«sólo `SUPER_ADMIN`»*)
+  - entra:
+    (la exclusividad de `SUPER_ADMIN` sobre lo que regala
+    servicio: el permiso que comparten otorgar una cortesía y un grant lo trae el rol `SUPER_ADMIN`, con el
+    mismo mecanismo que la lista cerrada *«sólo `SUPER_ADMIN`»* —filas 17 a 22 y 26—, que no lo incluye;
+    *derivado de `DEC-GRANT-002` y `V/17` §4.3, lo marco*)
+
+- **H-VB-B6-6** · REAL MENOR · l. 708 — La razón está invertida: en la fuente lo que dejaba la defensa apoyada en la vertical declarada era la versión vieja «no se deduce del recurso»; la spec dice que era «dejarla deducir del recurso sin comparar». La regla misma coincide.
+  - sale:
+    Dejarla deducir del recurso sin comparar dejaba la
+    defensa de este § apoyada en que la vertical declarada fuera la verdadera, y nada lo comprobaba.
+  - entra:
+    La versión anterior de esta regla —*«no se deduce del
+    recurso»*— dejaba la defensa de este § apoyada en que la vertical declarada fuera la verdadera, y nada
+    lo comprobaba. (Origen: .specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/17-autorizacion.md:302-303)
+
+### `10-corte/V6.md`
+
+- **H-VB-B6-11** · REAL MENOR · l. 1092 — «Sólo PB12 y la acción 23 borran fichas» habla de las puertas de borrado a pedido (lote 3 C), pero dicho suelto deja afuera la purga del día 180 (PB9, de V9b), que también borra el contenido. No cambia lo que construye V6.
+  - sale:
+    - Sólo `PB12` y la acción 23 borran fichas; no hay borrado físico ni restauración ([AC:V6:25](#ac-v6-25)).
+  - entra:
+    - A pedido, sólo `PB12` borra una ficha: la del dueño, o la acción 23 del equipo; no hay borrado
+      físico ni restauración ([AC:V6:25](#ac-v6-25)). La purga del día 180 (`PB9`) es de `V9b`.
+      (Origen: .specs/HOS-1353-verticales-capacidades-y-autorizacion/descomposicion.md:66)
+
+- **H-VB-B6-12** · REAL BLOQUEA · l. 1260 — TEST:V6:23 afirma que una base armada desde cero queda sin la tabla de paso; la fuente sólo dice que vive en el SQL de la migración del paso 3, fuera de Drizzle, que el 5b la borra y que ni G-R9 ni el drift la ven. Desde cero la migración del paso 3 corre y nadie corre el 5b: el test exige algo que la fuente no pide y que el mecanismo no da.
+  - sale:
+    **TEST:V6:23** — Migración desde cero: aplicar migraciones y extras deja la base sin la tabla de paso
+    y con el esquema que Drizzle declara (drift verde).
+  - entra:
+    **TEST:V6:23** — Migración desde cero: aplicar migraciones y extras deja el control de drift y `G-R9`
+    verdes, porque la tabla de paso vive sólo en el SQL de la migración del paso 3, fuera del esquema de
+    Drizzle. (Origen: DEC-MIG-003#📌10, .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:3166-3168)
+
+### `20-fase-1/V9b.md`
+
+- **H-VB-B6-13** · REAL MENOR · l. 113 — US:V9b:4 dice que la Fase 1 «entre a staging» antes de la primera fecha de aviso; la fuente (BV) dice que se mergea a producción antes de esa fecha. El AC y el gate del mismo archivo (l.25, 265) lo dicen bien.
+  - sale:
+    **US:V9b:4** — Como admin, quiero que la Fase 1 entre a `staging` antes de la primera fecha en que
+  - entra:
+    **US:V9b:4** — Como admin, quiero que la Fase 1 se mergee a producción antes de la primera fecha en que
+
+### `20-fase-4/V7.md`
+
+- **H-VB-B6-22** · REAL BLOQUEA · l. 1000 — TEST:V7:22 es un E2E que aprueba «desde el panel»; el panel de postulaciones es de V8b, que espera a V7 (el mismo V7 lo dice en su sección de UI). En V7 aprobar es la ruta admin; el test obligaría a construir el panel en V7.
+  - sale:
+    **TEST:V7:22** — E2E web: postular, aprobar (desde el panel) y reclamar con sesión deja la página
+    visible para un Gold con su clave.
+  - entra:
+    **TEST:V7:22** — E2E web: postular, aprobar (por la ruta admin de `PP2`; el panel de postulaciones es
+    de `V8b`) y reclamar con sesión deja la página visible para un Gold con su clave.
+
+- **H-VB-B6-15** · FUENTE BLOQUEA · l. 315 — AC:V7:16 pone a V7 sacando el formulario, la tabla y la ficha de Partner del panel que leían starts_at/ends_at; desde AB y AP esos lectores los saca la migración de V6 al corte (V/18:144, AC:V6:23). La spec copió V/02-modelo-de-datos.md:626-629, que quedó sin el residuo corregido (V/18 sí se corrigió el 2026-10-02). Corrección en la fuente y en la spec.
+  - sale:
+    - **Cuando** `V7` reescribe la página pública y las tres rutas del socio, y saca el formulario, la
+      tabla y la ficha de Partner del panel que las leían
+  - entra:
+    - **Cuando** `V7` reescribe la página pública y las tres rutas del socio (los lectores del panel de
+      `starts_at`/`ends_at` ya los sacó `V6` al corte: [AC:V6:23](../10-corte/V6.md#ac-v6-23))
+      (Origen: .specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/18-partner.md:144)
+
+- **H-VB-B6-17** · REAL MENOR · l. 338 — AC:V7:18 y TEST:V7:20 exigen que la migración de datos del rol de socio no toque otras filas de role_permission; ninguna fuente lo escribe. Es una derivación razonable (la migración agrega un rol), pero sin marcar.
+  - sale:
+    - **Entonces** el rol existe con su familia de operaciones y sus permisos en las dos, sin tocar otras
+      filas de `role_permission`, y sin que `V7` agregue ninguna migración estructural.
+  - entra:
+    - **Entonces** el rol existe con su familia de operaciones y sus permisos en las dos, sin tocar otras
+      filas de `role_permission` *(derivado: la migración agrega un rol nuevo, `V/18` §2.5; lo marco)*, y
+      sin que `V7` agregue ninguna migración estructural.
+
+- **H-VB-B6-18** · REAL MENOR · l. 806 — La API de V7 dice que la página pública y el carrusel «contestan 404» sin la clave o moderada; el 404 es de la página; el carrusel no contesta 404, lista sólo a quien tiene su clave y no está moderado.
+  - sale:
+    - **Public**: `PP1` (formulario, con Turnstile; guest permitido por [DEC-AUTH-005](../01-decisiones-vigentes.md#dec-auth-005)); página pública
+      del Partner y carrusel, que contestan `404` sin la clave o con la presencia moderada;
+  - entra:
+    - **Public**: `PP1` (formulario, con Turnstile; guest permitido por [DEC-AUTH-005](../01-decisiones-vigentes.md#dec-auth-005)); página pública
+      del Partner, que contesta `404` sin la clave *«página propia»* o con la presencia moderada, y
+      carrusel, que lista sólo a quien tiene la clave *«presencia en el carrusel»* y no está moderado
+      (`18` §1.6);
+
+- **H-VB-B6-19** · REAL MENOR · l. 831 — El outbox de V7 dice «el aviso de reclamo (al aprobar y en el alta directa)» sin condición; al aprobar sale sólo si el correo ya es de un usuario; si no, se crea el usuario y se manda la validación. AC:V7:4 lo dice bien.
+  - sale:
+    - **Outbox**: el aviso de reclamo (al aprobar y en el alta directa) y la comunicación del rechazo son
+  - entra:
+    - **Outbox**: el aviso de reclamo (al aprobar, si el correo ya es de una cuenta, y en el alta directa)
+      y la comunicación del rechazo son
+
+- **H-VB-B6-19** · REAL MENOR · l. 879 — El outbox de V7 dice «el aviso de reclamo (al aprobar y en el alta directa)» sin condición; al aprobar sale sólo si el correo ya es de un usuario; si no, se crea el usuario y se manda la validación. AC:V7:4 lo dice bien.
+  - sale:
+    **TEST:V7:4** — Integración: `PP2` en las dos ramas del correo, sin vínculo ni rol, con el aviso
+    de reclamo emitido.
+  - entra:
+    **TEST:V7:4** — Integración: `PP2` en las dos ramas del correo, sin vínculo ni rol: el aviso de
+    reclamo a la dirección que ya es de una cuenta, y el usuario creado con su validación en la otra.
+
+- **H-VB-B6-17** · REAL MENOR · l. 986 — AC:V7:18 y TEST:V7:20 exigen que la migración de datos del rol de socio no toque otras filas de role_permission; ninguna fuente lo escribe. Es una derivación razonable (la migración agrega un rol), pero sin marcar.
+  - sale:
+    migración de datos del rol de socio agrega lo suyo y no toca otras filas.
+  - entra:
+    migración de datos del rol de socio agrega lo suyo y no toca otras filas *(derivado; ver AC:V7:18)*.
+
+### `30-el-corte.md`
+
+- **H-VA-A2-4** · REAL MENOR · l. 1476 — La fuente marca como pendiente escribir cómo se enciende el drift guard sobre la rama de una fase (DEC-CI-001); la spec da el guard por corriendo en GATE:FP.3 y TEST:CORTE:16 sin el marcador ni entrada en 80-abiertos.
+  - sale:
+    fuente de la mitigación de AP; lo marca.)*
+  - entra:
+    fuente de la mitigación de AP; lo marca.)* *(Cómo se enciende sobre la rama de la fase lo fija [DEC-CI-001](01-decisiones-vigentes.md#dec-ci-001); la fuente lo marca como lo que falta escribir al abrir la primera fase.)* (Origen: .specs/HOS-1352-billing-verticals-redesign/docs/16-fase-7-del-paraguas.md:1019) — y una fila en 80-abiertos: «¿Qué pieza escribe el encendido del drift guard sobre la rama de la primera fase posterior?», fuente 16-fase-7-del-paraguas.md:1019
+
+- **H-VA-A8-pista-5** · FUENTE BLOQUEA · confirmado por el orquestador · l. 1670 — D/16 §4.4 punto 5 (y la spec que lo copia en 30-el-corte, AC:CORTE:11 y TEST:CORTE:12) dice que el guard de destino falla la promoción `staging → main` mientras exista la rama épica: es la condición de P, que T corrigió el mismo día. Con T, una vez mergeada la épica sus commits están en `staging` y el guard no falla; Q (borrar la rama) sigue, pero el test exige un comportamiento que el guard ya no tiene.
+  - sale:
+    - **Entonces** la promoción no sale (el guard de destino `check-umbrella-branch-target.sh` falla
+      mientras la rama siga existiendo); los hotfix siguen yendo a `main` con su back-merge a `staging`
+  - entra:
+    - **Entonces** la promoción no se hace ([DEC-ARCH-007#📌1](01-decisiones-vigentes.md#dec-arch-007-p1)); los hotfix siguen yendo a `main` con su back-merge a `staging`. (El guard de destino no la frena desde T: los commits de la épica ya están en `staging`.)
+
+- **H-VB-B4-6** · REAL MENOR · l. 1805 — TEST:CORTE:5 corre «en el ensayo y el día del corte» y lleva sólo `Etiqueta: staging`; el día del corte es producción y AN pide la etiqueta del ambiente.
+  - sale:
+    Etiqueta: staging
+  - entra:
+    Etiqueta: staging, prod (Origen: AN; el día del corte es producción, `D/16-fase-7-del-paraguas.md:151`)
+
+- **H-VB-B4-7** · REAL MENOR · l. 1840 — TEST:CORTE:9 (verificación del 3a) corre «en el ensayo y el día del corte» con sólo `Etiqueta: staging`; el 3a del corte real verifica la base de producción.
+  - sale:
+    Etiqueta: staging
+  - entra:
+    Etiqueta: staging, prod (Origen: AN; el 3a del corte real corre contra producción, `D/16-fase-7-del-paraguas.md:153`)
+
+- **H-VA-A8-pista-5** · FUENTE BLOQUEA · confirmado por el orquestador · l. 1859 — D/16 §4.4 punto 5 (y la spec que lo copia en 30-el-corte, AC:CORTE:11 y TEST:CORTE:12) dice que el guard de destino falla la promoción `staging → main` mientras exista la rama épica: es la condición de P, que T corrigió el mismo día. Con T, una vez mergeada la épica sus commits están en `staging` y el guard no falla; Q (borrar la rama) sigue, pero el test exige un comportamiento que el guard ya no tiene.
+  - sale:
+    **TEST:CORTE:12** — el guard de destino `check-umbrella-branch-target.sh` falla la promoción
+    `staging → main` mientras la rama del paraguas exista en el remoto.
+    Tipo: guard estático
+    Mutación: con la rama del paraguas todavía en el remoto, abrir la promoción `staging → main` y ver que el guard falla; con la rama borrada, ver que pasa.
+  - entra:
+    **TEST:CORTE:12** — el guard de destino `check-umbrella-branch-target.sh` con la condición de T: falla
+    un PR cuyo HEAD trae un commit de la rama épica que no está ni en el destino ni en `staging`, y no
+    falla la promoción `staging → main` cuando los commits de la épica ya están en `staging`.
+    Tipo: guard estático
+    Mutación: volver a la condición de P (contar todo commit de la épica que el destino no tiene) y ver que la promoción `staging → main` con la épica mergeada falla. (Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:2824-2830)
+
+- **H-VB-B4-1** · REAL BLOQUEA · l. 1900 — TEST:CORTE:17 exige que la fase anterior haya entrado a `staging` antes de abrir la rama de la siguiente: la fuente no lo dice y deja abierto que la fase 4 se adelante; la propia spec lo lista como abierto.
+  - sale:
+    **TEST:CORTE:17** — antes de abrir la rama de cada fase: la fase anterior ya entró a `staging` y la
+    fase lleva exactamente sus piezas.
+  - entra:
+    **TEST:CORTE:17** — al mergear la rama de cada fase a `staging`: la fase lleva exactamente sus piezas
+    (AW) y las piezas de las que dependen en el grafo ya entraron a `staging`. Cuándo se abre la rama no
+    lo fija la fuente, y si la fase 4 puede adelantarse a la 2 o a la 3 sigue abierto
+    ([80-abiertos.md](80-abiertos.md) §4). (Origen: .specs/HOS-1352-billing-verticals-redesign/docs/16-fase-7-del-paraguas.md:1162-1169; AW)
+
+- **H-VA-A8-pista-5** · FUENTE BLOQUEA · confirmado por el orquestador · l. 560 — D/16 §4.4 punto 5 (y la spec que lo copia en 30-el-corte, AC:CORTE:11 y TEST:CORTE:12) dice que el guard de destino falla la promoción `staging → main` mientras exista la rama épica: es la condición de P, que T corrigió el mismo día. Con T, una vez mergeada la épica sus commits están en `staging` y el guard no falla; Q (borrar la rama) sigue, pero el test exige un comportamiento que el guard ya no tiene.
+  - sale:
+    `check-umbrella-branch-target.sh` (`DEC-CI-001`/`DEC-ARCH-007`, condición corregida por P, §4.6)
+       falla la promoción `staging → main` del punto 2 mientras la rama siga existiendo en el remoto,
+       porque esa promoción trae los commits de la épica que `main` todavía no tiene. Borrarla al mergear
+       es lo que habilita el paso 3 del corte.
+  - entra:
+    `check-umbrella-branch-target.sh` (`DEC-CI-001`/`DEC-ARCH-007`, condición corregida por P y por T,
+       §4.6) cuenta sólo los commits propios de la épica: falla si HEAD trae un commit de la épica que no
+       está ni en el destino ni en `staging` (owner 2026-10-01, T). Q sigue valiendo para el PR final del
+       paraguas: la rama se borra al mergear. (Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:2824-2830)
+
+### `80-abiertos.md`
+
+- **H-VA-A7a-9** · REAL MENOR · l. 351 — B/14 «lo que NO cierra» (l. 734) dice que S30 sale sólo de ACTIVE y que el orden P1/S30 al salir del grace queda abierto; F-8V1B1-006 (FASE 9 vuelta 1, posterior a la FASE 9 completa que escribió el residuo) lo cerró en B/03: S30 sale de ACTIVE o GRACE_PERIOD y corre en el mismo acto que S5. La spec construye lo nuevo (04-catalogos S30, AC:B9b:5) pero 80-abiertos.md:351 copia el residuo viejo como si siguiera abierto.
+  - sale:
+    - `B/docs/14-promos-cortesias-y-grants.md:734` — **Si el cobro que agota una promo es el que saca a la fila del grace** (`S5`), el orden entre `P1` y `S30` no está escrito: `S30` sale sólo de `ACTIVE` (FASE 9 completa, borde e4 de `03` §R6.4; declarado por `DEC-METH-015`). Si `P1` corre antes, la mutación no ocurre y el barrido abre `DIVERGENCIA_DE_MONTO` en el acto. **Causa**: `S30` se escribió sobre el cobro ordinario. No mueve plata sin que una persona lo vea: la marca la pone delante.
+  - entra:
+    - `B/docs/14-promos-cortesias-y-grants.md:734` — **Cerrado** (residuo de la fuente): desde la FASE 9 vuelta 1 `S30` sale de `ACTIVE` **o `GRACE_PERIOD`**, y con la fila en grace `S5` y `S30` corren en el mismo acto y la mutación se aplica ([TRANS:B:S30](04-catalogos.md#trans-b-s30); AC:B9b:5). (Origen: .specs/HOS-1354-billing-cobro-y-proveedor/docs/03-maquinas-de-estado.md:180, `F-8V1B1-006`)
+
+- **H-VA-A7a-8** · FUENTE MENOR · l. 352 — «en un aumento, los 3 días corren desde su fecha efectiva» (B/14:297, B/09:185) es anterior a BZ: con BZ el aumento a un anclado es una migración por S37, cuyo reintento corre desde esa transición (siete días antes de la fecha). La spec lo arrastra en 80-abiertos.md:352 y la corrección de H-VA-A6-3a no debe copiarlo.
+  - sale:
+    - `B/docs/14-promos-cortesias-y-grants.md:739` — **Cerrado**: los 3 días del reintento de monto de un aumento corren desde su fecha efectiva (§2.4).
+  - entra:
+    - `B/docs/14-promos-cortesias-y-grants.md:739` — **Cerrado**, y precisado por BZ: el aumento a un anclado es una migración por `S37`, y los 3 días del reintento corren desde `S37`, como los de toda mutación nuestra (owner 2026-10-02, BZ).
+
+- **H-VB-B4-2** · REAL MENOR · l. 577 — AB-g5-8 se da por «resuelto por las fuentes» con `V1`, pero ninguna fuente asigna a una pieza armar con `db:migrate` las bases de desarrollo y de tests: es la derivación del mapa de cobertura (V1 dueña del 📌3 de DEC-ARCH-013 por `G18`).
+  - sale:
+    resuelto por las fuentes: `V1` arma con `db:migrate` las bases de desarrollo y de tests (triage, vuelta 2)
+  - entra:
+    derivado, no de las fuentes: `V1`, dueña de [DEC-ARCH-013#📌3](01-decisiones-vigentes.md#dec-arch-013-p3) en el mapa de cobertura porque construye `G18`, lleva la cláusula (d) de [AC:V1:4](10-corte/V1.md#ac-v1-4); ninguna fuente nombra la pieza (`D/01-decision-log.md:7311`, `D/38-fase-5/10-decisiones-del-owner.md:57`) *(lo marco)*
+
+- **H-VB-B4-3** · REAL MENOR · l. 582 — AB-g6-1 da por «resuelto por las fuentes» que `V5` saca `USER_IMPERSONATE` de la base con el principio del lote 1 I; el lote 1 I es de `U1` y de los permisos del cobro viejo, y extenderlo a `V5` es derivación.
+  - sale:
+    resuelto por las fuentes: `V5` lo saca de la base, con el principio del lote 1 I (`F5-AUT-023`; triage, vuelta 2)
+  - entra:
+    `V5` lo saca (`V/descomposicion.md:544`: *«el permiso no existe en el enum»*); que salga **de la base** con el carril del lote 1 I (recrear el enum y borrar sus filas de roles y overrides) es derivación del principio que `F5-AUT-023` fija para `U1` y los permisos del cobro viejo (`V/17-autorizacion.md:762`) *(lo marco)*
+
+- **H-VA-A7a-17** · REAL MENOR · l. None — El ⚠️ vivo de la fila 10-ter (si el texto final del aviso de contracargo dice «ya no se le va a cobrar» y «una persona sigue el caso») no figura en 80-abiertos ni en el catálogo. No es pregunta al owner: BS lo resuelve (el texto de un aviso lo propone el PR de B7 y, como es texto al cliente, lo aprueba el owner en el PR).
+  - dónde: § de B/19 (lo que el capítulo NO cierra)
+  - sale:
+(nada)
+  - entra:
+    - `B/docs/19-superficies.md:120` — si el texto final del aviso de contracargo lleva «ya no se le va a cobrar» y «una persona sigue el caso» no está decidido; lo cierra el PR de `B7` por BS (texto al cliente: lo aprueba el owner en el PR).
+
+### `todas las piezas (10-corte/*.md, 20-fase-*/*.md; B4–B7 en g8/src)`
+
+- **H-VB-B5-2** · REAL MENOR · l. None — U1:816 dice que la fuente no fija las etiquetas kind-*/area-*; el default de BS (5º 📌 de DEC-METH-019) las fija: `kind-spec` más las `area-*` de cada fila.
+  - dónde: sección «Labels de Linear» de cada pieza
+  - sale:
+    - Las etiquetas `kind-*`/`area-*` no las fija la fuente: las propone el PR de la pieza y quedan escritas acá al mergear (…)  [U1, U2]
+  - entra:
+    - Las etiquetas son `kind-spec` más las `area-*` de la fila, y quedan escritas acá al mergear (owner BS, con sus defaults en el 5º 📌 de DEC-METH-019)  [las 30 piezas, como U3]
+

@@ -68,7 +68,7 @@ const INVENTORY: ReadonlyArray<{ url: string; name: string }> = [
     { url: '/es/alojamientos/', name: 'Accommodations List' },
     { url: '/es/destinos/', name: 'Destinations List' },
     { url: '/es/eventos/', name: 'Events List' },
-    { url: '/es/gastronomia/', name: 'Gastronomy List' },
+    { url: '/es/comer-y-salir/', name: 'Venue List' },
     { url: '/es/experiencias/', name: 'Experiences List' },
     { url: '/es/publicaciones/', name: 'Posts List' },
     { url: '/es/nosotros/', name: 'About' },
@@ -81,41 +81,37 @@ const INVENTORY: ReadonlyArray<{ url: string; name: string }> = [
     // coverage this baseline already had.
     { url: '/es/suscriptores/planes/', name: 'Plans Index' },
     // HOS-985: the five level-2 sales pages, built from the same
-    // SalesSection-based components. `/publicar-restaurante/` and
-    // `/publicar-experiencia/` used to be audited here and were dropped by
+    // SalesSection-based components. The retired venue and experience lead pages
+    // used to be audited here and were dropped by
     // HOS-1032, which turned them into 301s — a redirect has no markup to audit
     // and axe would run against whatever it lands on, double-counting the page
     // that IS listed.
-    { url: '/es/planes/gastronomia/', name: 'Sales Gastronomy' },
+    { url: '/es/planes/comer-y-salir/', name: 'Sales Venue' },
     { url: '/es/planes/experiencias/', name: 'Sales Experience' },
     { url: '/es/planes/anfitriones/', name: 'Sales Host' },
     { url: '/es/planes/turistas/', name: 'Sales Tourist' },
-    { url: '/es/planes/aliados/', name: 'Sales Partner' },
-    // HOS-1032: the five level-3 pricing pages, replacing the two
+    // HOS-1032: the level-3 pricing pages, replacing the two
     // `/suscriptores/planes/<audiencia>/` entries this list used to carry.
     //
-    // All five are audited and not just the two that moved, because each one
+    // All are audited and not just the two that moved, because each one
     // renders a DIFFERENT combination of the grid's branches: the annual toggle
-    // (a radiogroup) appears only where a plan has an annual price, the
+    // (a radiogroup) appears only where a plan has an annual price, and the
     // comparison table (a scrollable region with a sticky header) only where
-    // the audience has curated rows, and aliados renders neither — it is the
-    // only page where the card CTA is a plain link and the price is replaced by
-    // "Consultar". Auditing one and assuming the rest would leave the branches
-    // this change actually added uncovered.
+    // the audience has curated rows. The aliados pages were removed with the
+    // old billing (HOS-1637, AC:B13a:21).
     { url: '/es/planes/anfitriones/precios/', name: 'Pricing Host' },
     { url: '/es/planes/turistas/precios/', name: 'Pricing Tourist' },
-    { url: '/es/planes/gastronomia/precios/', name: 'Pricing Gastronomy' },
+    { url: '/es/planes/comer-y-salir/precios/', name: 'Pricing Venue' },
     { url: '/es/planes/experiencias/precios/', name: 'Pricing Experience' },
-    { url: '/es/planes/aliados/precios/', name: 'Pricing Partner' },
     // HOS-1156: the three publish pages. Swept SIGNED OUT, which is the state
     // this sweep runs in and also the one worth auditing hardest — it is what a
     // visitor arriving from the public "Publicar" button sees, and the signup
     // CTA that stands in for the form is markup nothing had audited before.
-    // The two commerce pages are listed separately from accommodation's because
+    // The two venue/experience pages are listed separately from accommodation's because
     // each mounts a DIFFERENT create island behind that CTA, so a fix on one
     // page's form proves nothing about the other two.
     { url: '/es/publicar/', name: 'Publish Accommodation' },
-    { url: '/es/publicar/gastronomia/', name: 'Publish Gastronomy' },
+    { url: '/es/publicar/comer-y-salir/', name: 'Publish Venue' },
     { url: '/es/publicar/experiencias/', name: 'Publish Experience' },
     { url: '/en/', name: 'Home EN' },
     { url: '/pt/', name: 'Home PT' }
@@ -149,8 +145,8 @@ const DETAIL_ROUTE_SPECS: ReadonlyArray<DetailRouteSpec> = [
         toUrl: (item) => buildEntityUrl({ basePath: 'publicaciones', slug: item.slug })
     },
     {
-        name: 'Gastronomy Detail',
-        apiPath: '/api/v1/public/gastronomies?page=1&pageSize=1',
+        name: 'Venue Detail',
+        apiPath: '/api/v1/public/venues?page=1&pageSize=1',
         toUrl: (item) => buildEntityUrl({ basePath: 'gastronomia', slug: item.slug })
     },
     {
@@ -169,6 +165,7 @@ type ViolationDetail = {
         target: ReadonlyArray<string>;
         html: string;
         failureSummary?: string;
+        checks: ReadonlyArray<{ message: string; data?: unknown }>;
     }>;
 };
 
@@ -188,6 +185,8 @@ type PageResult = {
     };
     /** Populated only when A11Y_DETAIL=1. */
     details?: ReadonlyArray<ViolationDetail>;
+    /** Node details retained for reporting only if the violation is new. */
+    newViolationDetails?: ReadonlyArray<ViolationDetail>;
     durationMs: number;
 };
 
@@ -349,6 +348,22 @@ async function sweepEntry(
             .analyze();
 
         const violations = axeResults.violations;
+        result.newViolationDetails = violations
+            .filter((v) => v.impact === 'critical' || v.impact === 'serious')
+            .map((v) => ({
+                rule: v.id,
+                impact: v.impact ?? 'unknown',
+                help: v.help,
+                nodes: v.nodes.map((n) => ({
+                    target: n.target.map((t) => (Array.isArray(t) ? t.join(' ') : String(t))),
+                    html: n.html.slice(0, 300),
+                    failureSummary: n.failureSummary,
+                    checks: [...n.any, ...n.all, ...n.none].map((check) => ({
+                        message: check.message,
+                        data: check.data
+                    }))
+                }))
+            }));
         result.axe = {
             violations: violations.length,
             critical: violations.filter((v) => v.impact === 'critical').length,
@@ -454,7 +469,16 @@ async function main() {
     };
 
     const reportPath = resolve(REPORT_DIR, 'sweep-report.json');
-    writeFileSync(reportPath, JSON.stringify({ summary, results }, null, 2));
+    // Keep the uploaded summary artifact compact; node-level details are printed
+    // to the job log only when the baseline comparison identifies a new blocker.
+    writeFileSync(
+        reportPath,
+        JSON.stringify(
+            { summary, results },
+            (key, value: unknown) => (key === 'newViolationDetails' ? undefined : value),
+            2
+        )
+    );
     console.log(`\nReport saved to ${reportPath}`);
 
     if (DETAIL) {
@@ -531,6 +555,24 @@ async function main() {
         );
         for (const nv of newViolations) {
             console.error(`  - ${nv.key} (${nv.url}): ${nv.id} (${nv.impact})`);
+            const page = results.find(
+                (r) => baselineKey({ name: r.name, theme: r.theme }) === nv.key && r.url === nv.url
+            );
+            const detail = page?.newViolationDetails?.find((v) => v.rule === nv.id);
+            for (const [index, node] of (detail?.nodes ?? []).entries()) {
+                console.error(`      node ${index + 1}:`);
+                console.error(`        target: ${node.target.join(' | ')}`);
+                console.error(`        html: ${node.html}`);
+                if (node.failureSummary) {
+                    console.error(`        failureSummary: ${node.failureSummary}`);
+                }
+                for (const check of node.checks) {
+                    console.error(`        check: ${check.message}`);
+                    if (check.data !== undefined) {
+                        console.error(`        colors/data: ${JSON.stringify(check.data)}`);
+                    }
+                }
+            }
         }
         console.error(
             '\nFix the violation, or — if it is intentional and tracked — re-run with A11Y_UPDATE_BASELINE=1 to accept it.'

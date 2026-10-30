@@ -25,7 +25,7 @@
  *
  * ## What counts as a rise
  *
- * `-1` is the catalogue's unlimited sentinel, so it ranks ABOVE every finite
+ * The catalogue's int4 max sentinel is unlimited, so it ranks ABOVE every finite
  * value rather than below zero (`limitRank`). A key absent from the previous
  * tier and present here is `introduced`; a key whose rank grew is `raised`.
  * A limit that DROPS is omitted from the delta: it exists (the owner AI ladder
@@ -34,13 +34,23 @@
  * every value side by side.
  */
 
-import { LimitKey } from '@repo/billing';
+import { LimitKeyEnum } from '@repo/schemas';
 
 /**
- * The catalogue's "no cap" sentinel. Stored as `-1` in `billing_plans.limits`
- * and in `plans.config.ts`; ranked as `+Infinity` when comparing tiers.
+ * The int4 max sentinel chosen by Coord-41 for `plan_version_limit`, whose
+ * value column has `CHECK (value >= 0)`; ranked as `+Infinity` across tiers.
  */
-export const UNLIMITED_LIMIT_VALUE = -1;
+export const UNLIMITED_LIMIT_VALUE = 2147483647;
+
+/**
+ * Whether a raw limit represents unlimited under the production catalog sentinel.
+ *
+ * @param input.value - Raw value from a plan limits map or effective limit fold.
+ * @returns `true` when the value is at least the int4 max sentinel.
+ */
+export function isUnlimitedLimit({ value }: { readonly value: number }): boolean {
+    return value >= UNLIMITED_LIMIT_VALUE;
+}
 
 /**
  * Display order for limit lines, most commercially meaningful first.
@@ -53,25 +63,25 @@ export const UNLIMITED_LIMIT_VALUE = -1;
  * accommodations" on an owner card.
  */
 export const LIMIT_DISPLAY_ORDER: readonly string[] = [
-    LimitKey.MAX_ACCOMMODATIONS,
-    LimitKey.MAX_PHOTOS_PER_ACCOMMODATION,
-    LimitKey.MAX_ACTIVE_PROMOTIONS,
-    LimitKey.MAX_PROPERTIES,
-    LimitKey.MAX_STAFF_ACCOUNTS,
-    LimitKey.MAX_GASTRONOMIES,
-    LimitKey.MAX_EXPERIENCES,
-    LimitKey.MAX_FAVORITES,
-    LimitKey.MAX_COLLECTIONS,
-    LimitKey.MAX_SEARCH_HISTORY_ENTRIES,
-    LimitKey.MAX_COMPARE_ITEMS,
-    LimitKey.MAX_ACTIVE_ALERTS,
-    LimitKey.MAX_AI_TEXT_IMPROVE_PER_MONTH,
-    LimitKey.MAX_AI_TRANSLATE_PER_MONTH,
-    LimitKey.MAX_AI_ACCOMMODATION_IMPORT_PER_MONTH,
-    LimitKey.MAX_AI_CHAT_PER_MONTH,
-    LimitKey.MAX_AI_SEARCH_PER_MONTH,
-    LimitKey.MAX_AI_CHAT_CONSUMER_PER_MONTH,
-    LimitKey.MAX_AI_SUPPORT_PER_MONTH
+    LimitKeyEnum.MAX_ACCOMMODATIONS,
+    LimitKeyEnum.MAX_PHOTOS_PER_ACCOMMODATION,
+    LimitKeyEnum.MAX_ACTIVE_PROMOTIONS,
+    LimitKeyEnum.MAX_PROPERTIES,
+    LimitKeyEnum.MAX_STAFF_ACCOUNTS,
+    LimitKeyEnum.MAX_VENUES,
+    LimitKeyEnum.MAX_EXPERIENCES,
+    LimitKeyEnum.MAX_FAVORITES,
+    LimitKeyEnum.MAX_COLLECTIONS,
+    LimitKeyEnum.MAX_SEARCH_HISTORY_ENTRIES,
+    LimitKeyEnum.MAX_COMPARE_ITEMS,
+    LimitKeyEnum.MAX_ACTIVE_ALERTS,
+    LimitKeyEnum.MAX_AI_TEXT_IMPROVE_PER_MONTH,
+    LimitKeyEnum.MAX_AI_TRANSLATE_PER_MONTH,
+    LimitKeyEnum.MAX_AI_ACCOMMODATION_IMPORT_PER_MONTH,
+    LimitKeyEnum.MAX_AI_CHAT_PER_MONTH,
+    LimitKeyEnum.MAX_AI_SEARCH_PER_MONTH,
+    LimitKeyEnum.MAX_AI_CHAT_CONSUMER_PER_MONTH,
+    LimitKeyEnum.MAX_AI_SUPPORT_PER_MONTH
 ];
 
 /**
@@ -83,7 +93,7 @@ export interface PlanDeltaSource {
     readonly slug: string;
     /** Entitlement keys the plan grants, as plain strings. */
     readonly entitlements: readonly string[];
-    /** Limits as a key -> numeric-value map (QZPay storage format). */
+    /** Limits as a key -> numeric-value map (the legacy QZPay storage format). */
     readonly limits: Readonly<Record<string, number>>;
 }
 
@@ -125,7 +135,7 @@ export interface PlanDelta {
 /**
  * Rank a raw limit value so tiers can be compared.
  *
- * The unlimited sentinel (`-1`) is the TOP of the scale, not the bottom: a
+ * The unlimited sentinel is the TOP of the scale, not the bottom: a
  * naive numeric comparison would read `owner-premium`'s unlimited promotions
  * as a downgrade from `owner-pro`'s 5 and drop it from the delta.
  *
@@ -133,7 +143,7 @@ export interface PlanDelta {
  * @returns A comparable rank, `+Infinity` for unlimited.
  */
 function limitRank(value: number): number {
-    return value === UNLIMITED_LIMIT_VALUE ? Number.POSITIVE_INFINITY : value;
+    return isUnlimitedLimit({ value }) ? Number.POSITIVE_INFINITY : value;
 }
 
 /**
@@ -192,7 +202,7 @@ export function computePlanDelta({
                 value,
                 previousValue: null,
                 kind: 'introduced',
-                isUnlimited: value === UNLIMITED_LIMIT_VALUE
+                isUnlimited: isUnlimitedLimit({ value })
             };
         });
         return {
@@ -218,7 +228,7 @@ export function computePlanDelta({
                 value,
                 previousValue: null,
                 kind: 'introduced',
-                isUnlimited: value === UNLIMITED_LIMIT_VALUE
+                isUnlimited: isUnlimitedLimit({ value })
             });
             continue;
         }
@@ -228,7 +238,7 @@ export function computePlanDelta({
                 value,
                 previousValue: rawPrevious,
                 kind: 'raised',
-                isUnlimited: value === UNLIMITED_LIMIT_VALUE
+                isUnlimited: isUnlimitedLimit({ value })
             });
         }
     }

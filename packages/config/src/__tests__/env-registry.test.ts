@@ -294,8 +294,20 @@ const REGISTRY: readonly EnvVarDefinition[] = ENV_REGISTRY;
  * +1 = PUBLIC_DAILYMOTION_PLAYER_ID (HOS-1217, integrations category, optional,
  * web only) — Dailymotion's geo host 403s a third-party embed without a Player
  * ID in the URL. 285 + 1 = 286.
+ *
+ * -14 (HOS-1419 U1.4, retired old-billing vars): the nine old-system-only vars
+ * (ADDON_LIFECYCLE_ENABLED, USER_CANCEL_ENABLED, BILLING_POLLING_ENABLED,
+ * BILLING_PRICE_INCREASE_ENABLED, BILLING_OWN_PREAPPROVAL_ENABLED,
+ * BILLING_RECURRING_ADDONS_ENABLED, TRIAL_DAYS_OVERRIDE, SHOW_TEST_BILLING_PLAN,
+ * QZPAY_TEST_CONTROL_ENABLED), MERCADO_PAGO_STATEMENT_DESCRIPTOR and the four
+ * API_RATE_LIMIT_BILLING_*. 285 - 14 = 271.
+ *
+ * +2 = HOSPEDA_HEALTHCHECKS_PING_KEY (secret) and
+ * HOSPEDA_HEALTHCHECKS_SLUG_PREFIX (monitoring category, api only) — free
+ * Healthchecks.io cron pings for the three cutover jobs (HOS-1742). Both are
+ * optional; the ping is a no-op when either is absent. 274 + 2 = 276.
  */
-const EXPECTED_VAR_COUNT = 286;
+const EXPECTED_VAR_COUNT = 276;
 
 /** Valid type values for an EnvVarDefinition. */
 const VALID_TYPES = ['string', 'url', 'number', 'boolean', 'enum'] as const;
@@ -355,13 +367,6 @@ describe('ENV_REGISTRY', () => {
             expect(entry, 'HOSPEDA_DEPLOY_ENV missing from registry').toBeDefined();
             expect(entry?.type).toBe('enum');
             expect(entry?.enumValues).toEqual(['dev', 'test', 'preview', 'prod']);
-        });
-
-        it('registers HOSPEDA_QZPAY_TEST_CONTROL_ENABLED (billing test-control gate)', () => {
-            const entry = byName('HOSPEDA_QZPAY_TEST_CONTROL_ENABLED');
-            expect(entry, 'HOSPEDA_QZPAY_TEST_CONTROL_ENABLED missing from registry').toBeDefined();
-            expect(entry?.type).toBe('boolean');
-            expect(entry?.apps).toContain('api');
         });
 
         // HOS-79 T-007: three MORE gaps the new env:check:usage scanner found
@@ -522,6 +527,7 @@ describe('ENV_REGISTRY', () => {
                 'HOSPEDA_FACEBOOK_CLIENT_ID',
                 'HOSPEDA_FACEBOOK_CLIENT_SECRET',
                 'HOSPEDA_LINEAR_API_KEY',
+                'HOSPEDA_HEALTHCHECKS_PING_KEY',
                 'HOSPEDA_EXCHANGE_RATE_API_KEY',
                 'HOSPEDA_MERCADO_PAGO_ACCESS_TOKEN',
                 'HOSPEDA_MERCADO_PAGO_WEBHOOK_SECRET',
@@ -550,6 +556,7 @@ describe('ENV_REGISTRY', () => {
                 'HOSPEDA_COMMIT_SHA',
                 'HOSPEDA_SENTRY_DSN',
                 'HOSPEDA_SENTRY_ENVIRONMENT',
+                'HOSPEDA_HEALTHCHECKS_SLUG_PREFIX',
                 'API_PORT',
                 'API_CORS_ORIGINS',
                 'PUBLIC_API_URL',

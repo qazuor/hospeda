@@ -82,6 +82,7 @@ vi.mock('@repo/logger', () => {
         AUTH_PASSWORD_CHANGED: 'auth.password.changed',
         ACCESS_DENIED: 'access.denied',
         BILLING_MUTATION: 'billing.mutation',
+        BILLING_READ: 'billing.read',
         PERMISSION_CHANGE: 'permission.change',
         SESSION_SIGNOUT: 'session.signout',
         USER_ADMIN_MUTATION: 'user.admin.mutation',
@@ -110,20 +111,28 @@ import {
 } from '../../src/utils/audit-logger';
 
 /**
- * Retrieve the `info` mock from the audit logger instance that was created
- * when `audit-logger.ts` called `logger.registerCategory('AUDIT', ...)` at
- * module load time. registerCategory returns a new mocked logger each call,
- * so the first (and only) call's return value is the audit logger.
+ * The audit logger instance that `audit-logger.ts` got from
+ * `logger.registerCategory('AUDIT', ...)` at module load time. registerCategory
+ * returns a new mocked logger each call, so the first (and only) call's return
+ * value is the audit logger.
+ *
+ * Captured at module scope, right after the import: vitest 5 clears mock
+ * history before every test (`clearMocks` defaults to true), so reading
+ * `mock.results` inside a test would find it empty.
+ */
+const registerCategoryCallsAtLoad = [...(logger.registerCategory as Mock).mock.calls];
+const auditLoggerInstanceAtLoad = (logger.registerCategory as Mock).mock.results[0]?.value as
+    | { info: Mock }
+    | undefined;
+
+/**
+ * Retrieve the `info` mock from the audit logger instance captured at load time.
  */
 function getAuditInfoMock(): Mock {
-    const registerCategoryMock = logger.registerCategory as Mock;
-    const auditLoggerInstance = registerCategoryMock.mock.results[0]?.value as
-        | { info: Mock }
-        | undefined;
-    if (!auditLoggerInstance) {
+    if (!auditLoggerInstanceAtLoad) {
         throw new Error('registerCategory was not called during module initialization');
     }
-    return auditLoggerInstance.info;
+    return auditLoggerInstanceAtLoad.info;
 }
 
 describe('audit-logger', () => {
@@ -282,6 +291,25 @@ describe('audit-logger', () => {
             expect(loggedMessage).toBe(`AUDIT:${AuditEventType.BILLING_MUTATION}`);
         });
 
+        it('logs BILLING_READ with the actor and subject without a mutation action', () => {
+            auditLog({
+                auditEvent: AuditEventType.BILLING_READ,
+                actorId: 'admin-1',
+                resourceType: 'subscription',
+                resourceId: 'sub-123',
+                metadata: { subjectId: 'owner-1' }
+            });
+
+            const mockInfo = getAuditInfoMock();
+            expect(mockInfo).toHaveBeenCalledOnce();
+            expect(mockInfo.mock.calls[0]?.[0]).toMatchObject({
+                auditEvent: AuditEventType.BILLING_READ,
+                actorId: 'admin-1',
+                metadata: { subjectId: 'owner-1' }
+            });
+            expect(mockAddBreadcrumb.mock.calls[0]?.[0]).toMatchObject({ level: 'info' });
+        });
+
         it('should log PERMISSION_CHANGE with correct auditEvent and message', () => {
             // Arrange
             const entry = {
@@ -434,10 +462,14 @@ describe('audit-logger', () => {
     describe('logger category registration', () => {
         it('should register the AUDIT logger category with RED color on module load', () => {
             // Assert - registerCategory is invoked when the module is first imported;
-            // by the time tests run it has already been called exactly once.
-            expect(logger.registerCategory as Mock).toHaveBeenCalledWith('AUDIT', 'AUDIT', {
-                color: 'RED'
-            });
+            // by the time tests run it has already been called exactly once. The calls
+            // were snapshotted at module scope because vitest 5 clears mock history
+            // before every test.
+            expect(registerCategoryCallsAtLoad).toContainEqual([
+                'AUDIT',
+                'AUDIT',
+                { color: 'RED' }
+            ]);
         });
     });
 
@@ -1071,6 +1103,7 @@ describe('audit-logger — queryable persistence (SPEC-162)', () => {
 
         it.each([
             AuditEventType.BILLING_MUTATION,
+            AuditEventType.BILLING_READ,
             AuditEventType.PERMISSION_CHANGE,
             AuditEventType.USER_ADMIN_MUTATION,
             AuditEventType.ROUTE_MUTATION

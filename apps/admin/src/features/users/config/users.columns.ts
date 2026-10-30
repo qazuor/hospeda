@@ -11,8 +11,6 @@ import { MailLinkCell } from '@/components/entity-list/MailLinkCell';
 import type { ColumnConfig, ColumnTFunction } from '@/components/entity-list/types';
 import { BadgeColor, ColumnType, CompoundLayout, EntityType } from '@/components/table/DataTable';
 import { AuthProviderBadge } from '../components/AuthProviderBadge';
-import { CustomerTypeBadge } from '../components/CustomerTypeBadge';
-import { ImpersonateButton } from '../components/ImpersonateButton';
 import { UserRelationsSummaryCell } from '../components/UserRelationsSummaryCell';
 import { useDeleteUserMutation, useUpdateUserMutation } from '../hooks/useUserQuery';
 import type { User } from '../schemas/users.schemas';
@@ -119,14 +117,6 @@ export const createUsersColumns = (t: ColumnTFunction): readonly ColumnConfig<Us
         widgetRenderer: (row) => createElement(AuthProviderBadge, { row })
     },
     {
-        id: 'customerType',
-        header: t('admin-entities.columns.customerType'),
-        accessorKey: 'currentPlanSlug',
-        enableSorting: false,
-        columnType: ColumnType.WIDGET,
-        widgetRenderer: (row) => createElement(CustomerTypeBadge, { row })
-    },
-    {
         id: 'email',
         header: t('admin-entities.columns.email'),
         accessorKey: 'email',
@@ -159,9 +149,9 @@ export const createUsersColumns = (t: ColumnTFunction): readonly ColumnConfig<Us
         startVisibleOnGrid: false
     },
     {
-        id: 'gastronomiesCount',
-        header: t('admin-entities.columns.gastronomiesCount'),
-        accessorKey: 'gastronomiesCount',
+        id: 'venuesCount',
+        header: t('admin-entities.columns.venuesCount'),
+        accessorKey: 'venuesCount',
         enableSorting: false,
         columnType: ColumnType.NUMBER,
         startVisibleOnTable: false,
@@ -258,7 +248,7 @@ export const createUsersColumns = (t: ColumnTFunction): readonly ColumnConfig<Us
         enableSorting: false,
         columnType: ColumnType.WIDGET,
         widgetRenderer: (row) =>
-            // SPEC-117 D-USERS.2 — Edit row action alongside Impersonate.
+            // SPEC-117 D-USERS.2 — Edit row action.
             // SPEC-117 D-USERS.5 — Delete row action with confirmation dialog.
             // Cast bypasses TanStack Router's strict path-param overload typing;
             // route is known to exist (apps/admin/src/routes/_authed/access/users/$id_.edit.tsx).
@@ -276,7 +266,6 @@ export const createUsersColumns = (t: ColumnTFunction): readonly ColumnConfig<Us
                     } as never,
                     createElement(EditIcon, { size: 16 })
                 ),
-                createElement(ImpersonateButton, { userId: row.id, variant: 'icon' }),
                 createElement(DeleteRowButton, {
                     entityId: row.id,
                     entityName:

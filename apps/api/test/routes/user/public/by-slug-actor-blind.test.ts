@@ -7,29 +7,27 @@
  * `/api/v1/public/users` is in **`PRIVATE_CACHE_ENDPOINTS`**, not
  * `PUBLIC_CACHE_ENDPOINTS` (`apps/api/src/middlewares/cache.constants.ts`) — so
  * it never reaches the shared CDN. It IS stored in the API's own in-memory
- * cache, since the route declares `cacheTTL: 300`, under the key
- * `private:${path}${suffix}:${authorization ?? 'anonymous'}`
+ * cache under the key `private:${path}${suffix}:anonymous`
  * (`generateCacheKey`, `apps/api/src/middlewares/cache.ts`).
  *
- * That key segments on the `Authorization` HEADER — and the web app
- * authenticates with session COOKIES, which the key never reads. In production
- * every logged-in visitor therefore lands in the same `:anonymous` bucket as
- * every logged-out one, so a response that varied with the REQUESTER would still
- * be captured once and replayed to all of them. The social block is the obvious
+ * Since HOS-1923 a request carrying credentials (an `Authorization` header or
+ * a Better Auth session cookie) bypasses that cache entirely, so only anonymous
+ * answers are ever stored. The invariant still matters: a response that varied
+ * with the REQUESTER would make the bypassed and the cached answers disagree
+ * for the same URL. The social block is the obvious
  * candidate, since it is a preference and preferences invite "did THIS user opt
  * in?" reasoning. The opt-in belongs to the profile OWNER; nothing here may
  * consult who is asking.
  *
- * ## Why `clearCache()` + `X-Cache: MISS`
+ * ## Why `clearCache()` + `X-Cache: MISS` / `BYPASS`
  *
  * These tests DO send a bearer token, which the test harness's mock auth
- * accepts — and which `generateCacheKey` does read. So without the two
- * precautions below, the anonymous and authenticated requests would land in
- * different buckets while consecutive same-header requests would be served from
- * the first one, and every "identical" assertion could pass by replaying a
- * stored body rather than by the handler producing it twice. Clearing the cache
- * before each test and asserting `X-Cache: MISS` makes each comparison a real
- * pair of handler invocations.
+ * accepts and which makes the cache answer `X-Cache: BYPASS`. Consecutive
+ * anonymous requests would still be served from the first one, so every
+ * "identical" assertion could pass by replaying a stored body rather than by
+ * the handler producing it twice. Clearing the cache before each test and
+ * asserting `MISS` (anonymous) / `BYPASS` (authenticated) makes each
+ * comparison a real pair of handler invocations.
  *
  * `getPublicProfileBySlug` is already proven actor-blind at the service layer
  * (`packages/service-core/test/services/user/getPublicProfileBySlug.test.ts`).
@@ -90,7 +88,7 @@ describe('GET /api/v1/public/users/by-slug/{slug} — actor-blind response (AC-6
         );
 
         expect(first.headers.get('x-cache')).toBe('MISS');
-        expect(authenticated.headers.get('x-cache')).toBe('MISS');
+        expect(authenticated.headers.get('x-cache')).toBe('BYPASS');
 
         // Non-vacuity: the route IS cached, so a repeat of the FIRST request
         // must HIT. Without this, `MISS` above could just mean "caching is off"
@@ -131,7 +129,7 @@ describe('GET /api/v1/public/users/by-slug/{slug} — actor-blind response (AC-6
         expect(authenticated.status).toBe(anonymous.status);
         // Both bodies came from the handler, not from a stored entry.
         expect(anonymous.headers.get('x-cache')).toBe('MISS');
-        expect(authenticated.headers.get('x-cache')).toBe('MISS');
+        expect(authenticated.headers.get('x-cache')).toBe('BYPASS');
 
         const anonymousBody = await anonymous.json();
         const authenticatedBody = await authenticated.json();
@@ -154,7 +152,7 @@ describe('GET /api/v1/public/users/by-slug/{slug} — actor-blind response (AC-6
         );
 
         expect(anonymous.headers.get('x-cache')).toBe('MISS');
-        expect(authenticated.headers.get('x-cache')).toBe('MISS');
+        expect(authenticated.headers.get('x-cache')).toBe('BYPASS');
 
         const anonymousBody = await anonymous.json();
         const authenticatedBody = await authenticated.json();

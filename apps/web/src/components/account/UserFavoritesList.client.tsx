@@ -67,7 +67,7 @@ type FavoritesEntityType =
     | 'DESTINATION'
     | 'EVENT'
     | 'EXPERIENCE'
-    | 'GASTRONOMY'
+    | 'VENUE'
     | 'POST';
 
 /**
@@ -133,12 +133,12 @@ const TABS: readonly TabDefinition[] = [
         cardTypeKey: 'account.favorites.tabs.post'
     },
     {
-        key: 'GASTRONOMY',
-        labelKey: 'account.favorites.tabs.gastronomy',
-        panelId: 'tab-panel-gastronomy',
-        tabId: 'tab-gastronomy',
-        pathSegment: 'gastronomia',
-        cardTypeKey: 'account.favorites.tabs.gastronomy'
+        key: 'VENUE',
+        labelKey: 'account.favorites.tabs.venue',
+        panelId: 'tab-panel-venue',
+        tabId: 'tab-venue',
+        pathSegment: 'comer-y-salir',
+        cardTypeKey: 'account.favorites.tabs.venue'
     },
     {
         key: 'EXPERIENCE',
@@ -156,7 +156,7 @@ const ENTITY_PATH_SEGMENTS: Readonly<Record<FavoritesEntityType, string>> = {
     DESTINATION: 'destinos',
     EVENT: 'eventos',
     EXPERIENCE: 'experiencias',
-    GASTRONOMY: 'gastronomia',
+    VENUE: 'comer-y-salir',
     POST: 'publicaciones'
 };
 
@@ -170,7 +170,7 @@ const INITIAL_TAB_COUNTS: TabCounts = {
     DESTINATION: 0,
     EVENT: 0,
     EXPERIENCE: 0,
-    GASTRONOMY: 0,
+    VENUE: 0,
     POST: 0
 };
 
@@ -823,7 +823,7 @@ export function UserFavoritesList({ locale, apiUrl }: UserFavoritesListProps) {
             DESTINATION: t('account.favorites.tabs.destination', 'Destinos'),
             EVENT: t('account.favorites.tabs.event', 'Eventos'),
             EXPERIENCE: t('account.favorites.tabs.experience', 'Experiencias'),
-            GASTRONOMY: t('account.favorites.tabs.gastronomy', 'Gastronomía'),
+            VENUE: t('account.favorites.tabs.venue', 'Gastronomía'),
             POST: t('account.favorites.tabs.post', 'Posts')
         };
 

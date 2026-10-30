@@ -4,7 +4,7 @@ import { rExperienceAmenity } from '../../schemas/experience/r_experience_amenit
 
 /**
  * RExperienceAmenityModel — DB access for experience-amenity junction (SPEC-240).
- * Mirrors RGastronomyAmenityModel: thin BaseModelImpl wrapper.
+ * Mirrors RVenueAmenityModel: thin BaseModelImpl wrapper.
  */
 export class RExperienceAmenityModel extends BaseModelImpl<ExperienceAmenityRelation> {
     protected table = rExperienceAmenity;

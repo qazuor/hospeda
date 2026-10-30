@@ -1,0 +1,16 @@
+# VB-14 · spec → fuente · 30-el-corte.md 90-retirados.md
+
+## Hallazgos
+
+30-el-corte.md:150 · «—todo `preapproval_plan` registrado en `billing_mp_plan` que no esté `cancelled`—» · contradice .specs/HOS-1352-billing-verticals-redesign/docs/16-fase-7-del-paraguas.md:148 («todo `preapproval_plan` de la cuenta que no esté `cancelled`— y no de `billing_mp_plan`»). Limita el censo a los planes registrados localmente y deja fuera los que sólo conoce el proveedor. También contradice `AC:U3:1`, en 10-corte/U3.md:135, que exige traerlos del recorrido sin filtro del proveedor, no de `billing_mp_plan` · BLOQUEA
+
+30-el-corte.md:810 · «con la tarjeta del owner» · más débil que .specs/HOS-1352-billing-verticals-redesign/docs/16-fase-7-del-paraguas.md:160 («con la tarjeta del owner y un monto aprobado de antemano»). El procedimiento del 5c omite la aprobación previa del monto; la misma omisión se repite para el 5c de las fases posteriores en 30-el-corte.md:1481, en AC:CORTE:15 (1739) y en TEST:CORTE:15 (1911), frente a la condición expresa de la fuente en 1156. La decisión posterior no elimina esa condición: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:8216–8217 exige aprobar el monto del 4b antes del ensayo «como el del 5c». Seguir los pasos y el AC permite dar por cumplido el smoke sin comprobar esa aprobación · BLOQUEA
+
+30-el-corte.md:1193 · «El paso de cierre exige que cada una de las cinco cuentas confirme por correo que ingresó al sistema nuevo; mientras falte una respuesta, las escrituras permanecen cerradas.» · contradice .specs/HOS-1352-billing-verticals-redesign/docs/16-fase-7-del-paraguas.md:158 («levantar la regla del 0b y prender los crons», «después de verificado el 4b»). Agrega un gate sin soporte en las fuentes ni en las decisiones posteriores: cinco confirmaciones por correo para reabrir las escrituras. También contradice el paso 5 de este archivo (756–757) y AC:CORTE:9 (1668–1671); el paso 0b impide incluso loguearse mientras siga puesto (fuente:147), por lo que esperar la confirmación de ingreso puede impedir la reapertura · BLOQUEA
+
+## Resumen
+
+| archivo | líneas recorridas | afirmaciones normativas revisadas (aprox.) | BLOQUEA | MENOR |
+|---|---|---|---|---|
+| 30-el-corte.md | 1–1952 | 350 | 3 | 0 |
+| 90-retirados.md | 1–533 | 80 | 0 | 0 |

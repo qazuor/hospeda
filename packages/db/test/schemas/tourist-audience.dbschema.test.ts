@@ -7,8 +7,8 @@
  * plus-and-up tourists (default) or reserved for vip-only (additive:
  * vip tourists see 'plus' + 'vip' rows, plus tourists see 'plus' only).
  *
- * This is a separate marker from plan_restricted (owner-side plan limit,
- * unrelated to tourist-side gating — see HOS-21 spec Data Model section).
+ * This is a separate marker from any owner-side plan limit (unrelated to
+ * tourist-side gating — see HOS-21 spec Data Model section).
  *
  * These are in-process schema tests — they do NOT require a running
  * PostgreSQL instance. They inspect Drizzle column/table metadata via
@@ -73,16 +73,6 @@ describe('owner_promotions.tourist_audience column (HOS-21 D1)', () => {
 
         // Assert
         expect(col?.config.default).toBe('plus');
-    });
-
-    it('is separate from plan_restricted (owner-side plan limit is unrelated to tourist-side gating)', () => {
-        // Arrange — both columns must coexist independently
-        const planRestricted = getOwnerPromotionRawColumn('plan_restricted');
-        const touristAudience = getOwnerPromotionRawColumn('tourist_audience');
-
-        // Assert
-        expect(planRestricted).toBeDefined();
-        expect(touristAudience).toBeDefined();
     });
 
     it('has a corresponding index ownerPromotions_touristAudience_idx', () => {

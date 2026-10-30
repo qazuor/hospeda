@@ -1,0 +1,28 @@
+# VA-A8 · fuente → spec · B/docs/05-idempotencia-y-concurrencia.md, B/docs/06-proveedor.md, B/docs/09-conciliacion.md
+
+## Hallazgos
+
+.specs/HOS-1354-billing-cobro-y-proveedor/docs/06-proveedor.md:69 · «pausar y reanudar funcionan (`PS-1`, `PS-3`, `PS-5`), pero **no hay auto-reanudación** (`PS-4`): el reloj es nuestro» · distinta en 10-corte/B1.md:428 («pausar y reanudar funcionan (`PS-1`, `PS-3`, `PS-5`), y **la auto-reanudación existe** (`PS-4`), pero el reloj es nuestro»). Invierte el hecho medido: `PS-4` es `NOT_SUPPORTED` (matriz `P/docs/06-mp-validation-matrix.md:211`, decision log `P/docs/01-decision-log.md:1878`), y la propia spec lo dice al revés en 04-catalogos.md:2754 y 8264, 10-corte/B11.md:724 y 01-decisiones-vigentes.md:1061. B1 es la pieza que construye el adaptador y el proveedor falso: con esta fila, el falso podría reanudar solo y tapar la rama de fallo/detector de `S10`. · BLOQUEA
+
+.specs/HOS-1354-billing-cobro-y-proveedor/docs/05-idempotencia-y-concurrencia.md:58 · «filtrando en el proveedor SÓLO por correo del pagador y el estado de NUESTRO lado» (con «~~por correo del pagador y estado, que sí filtran y se componen~~» tachado; mismo criterio en 09-conciliacion.md:1083 y :1094, «Toda búsqueda de suscripciones (`/preapproval/search`) en este diseño filtra sólo por `payer_email`») · distinta en 01-decisiones-vigentes.md:8625 (DEC-CONC-001, decisión parte 2: «¿este pagador tiene alguna suscripción autorizada que yo no tenga registrada?», «por `payer_email` + `status`») y en :8612 («sí filtra por `payer_email` y `status`, y los compone»). Ningún 📌 de DEC-CONC-001 lo precisa. El texto viene tal cual del decision log (`P/docs/01-decision-log.md:1517`, `:1530`), que nunca recogió la corrección de la FASE 8 (`F-8CB3-011`). Las piezas llevan la regla correcta: 10-corte/B11.md:1092, :1094 y AC:B11:23 («la búsqueda es sin filtro de estado»). Por eso queda como contradicción interna de la spec. · MENOR
+
+.specs/HOS-1354-billing-cobro-y-proveedor/docs/09-conciliacion.md:1034 · «**El receptor de hoy no se arregla aparte**: sigue forzando esos reintentos hasta el corte, en que desaparece, y no se abre un issue para él (mediciones del 2026-09-29, lote L-D)» · ausente. La transcripción de §5 en 10-corte/B11.md:1042–1047 se corta en la oración anterior («…y contesta `200` (`B/03` §10.1).»). No aparece en ningún otro archivo: busqué con rg «receptor de hoy» y «no se arregla aparte» en toda la spec; sólo hay un uso no relacionado en 01-decisiones-vigentes.md:2616. Tampoco lo cambia ninguna decisión: en el log y en 10-decisiones-del-owner sólo sale en `01-decision-log.md:7440`, sobre IPN. Es una decisión de no-trabajo y no cambia lo que se construye en el sistema nuevo. · MENOR
+
+## Resumen
+
+| archivo | reglas normativas vivas revisadas | líneas recorridas | ausentes | distintas |
+|---|---|---|---|---|
+| B/docs/05-idempotencia-y-concurrencia.md | ~45 | 1–557 | 0 | 1 |
+| B/docs/06-proveedor.md | ~60 | 1–570 | 0 | 1 |
+| B/docs/09-conciliacion.md | ~150 | 1–1311 | 1 | 0 |
+
+Método y alcance:
+- Saqué de cada fuente el texto tachado y la cotejé oración por oración, con un script de presencia normalizada, contra toda la spec.
+- `05` está entero en 04-catalogos.md: `LOCK:C1`–`LOCK:C6`, los §1, §1.1, §1.2 y §4 bajo `LOCK:C1`, y el §3 bajo `TRANS:B:S5`. Sólo faltaban encabezados e introducción no normativa.
+- `09` está casi entero en 10-corte/B11.md (sólo falta el hallazgo de arriba).
+- `06` está parafraseado en 10-corte/B1.md (§1–§3.2, §4.1–§4.5, §7–§11) y en 10-corte/B6.md (§4.6). Ahí revisé regla por regla a mano.
+- Contrasté contra AC/TEST estas reglas:
+  - de `05`: C2, C3, C5 y C6 (AC:B8a:10-11, B9a, AC:B5:3, AC:B5:40, AC:B5:2), C1 (B7:275), C4 (B8b:661) y el candado de alta (AC:B3:1, AC:B3:6);
+  - de `06`: §4 (AC:B1:3/6/7/20, TEST:B1:6/7/19), la ventana de autorización (AC:B3:9), la deduplicación IPN/Webhooks con «una escritura y un correo» (AC:B5:2, AC:B3:20) y el contrato de reembolso (B6);
+  - de `09` §7: el barrido de creaciones (AC:B11:23) y el vigía (AC:B11:24, B1:308).
+- En `09` no mapeé cada fila de la tabla del §3 a su AC una por una: la di por recogida por la transcripción fiel de B11.

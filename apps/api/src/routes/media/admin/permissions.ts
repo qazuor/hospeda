@@ -18,7 +18,7 @@ export type MediaEntityType =
     | 'destination'
     | 'event'
     | 'post'
-    | 'gastronomy'
+    | 'venue'
     | 'experience'
     | 'postSponsor'
     | 'eventOrganizer';
@@ -35,8 +35,8 @@ const ENTITY_UPDATE_PERMISSIONS: Record<MediaEntityType, readonly PermissionEnum
     destination: [PermissionEnum.DESTINATION_UPDATE],
     event: [PermissionEnum.EVENT_UPDATE],
     post: [PermissionEnum.POST_UPDATE],
-    gastronomy: [PermissionEnum.COMMERCE_EDIT_OWN, PermissionEnum.COMMERCE_EDIT_ALL],
-    experience: [PermissionEnum.COMMERCE_EDIT_OWN, PermissionEnum.COMMERCE_EDIT_ALL],
+    venue: [PermissionEnum.VENUE_EDIT_OWN, PermissionEnum.VENUE_EDIT_ALL],
+    experience: [PermissionEnum.EXPERIENCE_EDIT_OWN, PermissionEnum.EXPERIENCE_EDIT_ALL],
     postSponsor: [PermissionEnum.POST_SPONSOR_UPDATE],
     eventOrganizer: [PermissionEnum.EVENT_ORGANIZER_UPDATE]
 };
@@ -47,7 +47,7 @@ const ENTITY_UPDATE_PERMISSIONS: Record<MediaEntityType, readonly PermissionEnum
  */
 const OWN_ANY_ENTITIES: ReadonlySet<MediaEntityType> = new Set([
     'accommodation',
-    'gastronomy',
+    'venue',
     'experience'
 ]);
 
@@ -110,7 +110,7 @@ export const validateEntityMediaPermission = ({
     //
     // HOS-1079: an exhaustive switch, not a binary ternary. Reached only for
     // `entityType` values already confirmed to be in `OWN_ANY_ENTITIES` (the
-    // guard above), i.e. exactly {accommodation, gastronomy, experience} — so
+    // guard above), i.e. exactly {accommodation, venue, experience} — so
     // `null` here is a defensive, never-actually-hit fallback for any OTHER
     // `MediaEntityType`, matching the ownership-required behaviour every
     // non-OWN/ANY entity already gets.
@@ -119,9 +119,11 @@ export const validateEntityMediaPermission = ({
         case 'accommodation':
             anyPermission = PermissionEnum.ACCOMMODATION_UPDATE_ANY;
             break;
-        case 'gastronomy':
+        case 'venue':
+            anyPermission = PermissionEnum.VENUE_EDIT_ALL;
+            break;
         case 'experience':
-            anyPermission = PermissionEnum.COMMERCE_EDIT_ALL;
+            anyPermission = PermissionEnum.EXPERIENCE_EDIT_ALL;
             break;
         default:
             anyPermission = null;

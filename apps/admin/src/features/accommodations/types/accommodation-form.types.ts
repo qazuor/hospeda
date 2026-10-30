@@ -100,8 +100,6 @@ export type BasicInfoFieldData = {
     description: string;
     shortDescription?: string;
     type: string;
-    lifecycleState: string;
-    visibility: string;
     featured: boolean;
 };
 
@@ -109,7 +107,6 @@ export type BasicInfoFieldData = {
  * States field specific data
  */
 export type StatesFieldData = {
-    moderationState: string;
     moderationNotes?: string;
     assignedUserId?: string;
     assignedUserName?: string;

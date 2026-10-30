@@ -1,0 +1,32 @@
+# VA-A1 · fuente → spec · nucleo/00-indice.md, 01-glosario.md, 02-modelo-de-datos.md, 03-maquinas-de-estado.md, 04-invariantes.md, 07-outbox-y-notificaciones.md, 08-auditoria-y-observabilidad.md
+
+## Hallazgos
+
+.specs/HOS-1352-billing-verticals-redesign/docs/nucleo/01-glosario.md:46 · «Un User puede tener varias.» (Ficha: exactamente un dueño, sin tope) · distinta en 02-nucleo-glosario.md:41 («Un User puede tener varias, **hasta diez por vertical**.») — tope fijo sin soporte en ninguna fuente (rg --hidden «hasta diez|diez por vertical|10 fichas» en fuentes/.specs: 0 hits sobre fichas); además un tope en código va contra el §9 / INV:15 (el máximo de fichas es un limit de la versión de plan) · BLOQUEA
+
+.specs/HOS-1352-billing-verticals-redesign/docs/nucleo/02-modelo-de-datos.md:71 · «lo único que vive en código es el conjunto de nombres. Ningún valor, ningún precio, ninguna asignación.» · distinta en 02-nucleo-modelo-y-maquinas.md:68-69 («…ninguna asignación**, salvo el precio de la versión de piso, que es cero y se fija en el catálogo para que ningún panel lo suba.») — excepción inventada (rg en fuentes: sin soporte); contradice también la propia spec en 02-nucleo.md:482 (INV:15: «ningún valor, precio ni asignación vive en código») y 02-nucleo.md:1244-1245 (ACC:19 rechaza un monto menor que ARS 15) · BLOQUEA
+
+.specs/HOS-1352-billing-verticals-redesign/docs/nucleo/02-modelo-de-datos.md:177 · «| 5 | la campaña previa al vencimiento de la prueba | verticales | 10, 5, 2 y 0 días antes |» · distinta en 02-nucleo.md:1570 (PLAZO:5 «valor inicial: **10, 5, 3 y 0 días antes**»); contradicción interna con 02-nucleo-outbox.md:283 y 10-corte/V4.md:256/400/668 («10, 5, 2 y 0») · BLOQUEA
+
+.specs/HOS-1352-billing-verticals-redesign/docs/nucleo/07-outbox-y-notificaciones.md:144-145 · «**«Tres días antes» significa un día del calendario, no 72 horas.** El límite del día es medianoche del huso del mercado.» (primera de las tres consecuencias del invariante del huso) · ausente (02-nucleo-outbox.md:151-161 dice «Dos consecuencias operativas» y la omite aunque cita :144 en su Origen; rg «calendario|medianoche|no 72 horas» en toda la spec: 0 hits) · BLOQUEA
+
+.specs/HOS-1352-billing-verticals-redesign/docs/nucleo/08-auditoria-y-observabilidad.md:45-46 · «La tercera no es redundante: un admin **mirando** datos de un cliente no cambia nada y tiene que quedar registrado igual.» · distinta (más débil) en 02-nucleo-auditoria.md:42-44 («…registrado igual, aunque **alcanza con un evento por sesión del administrador sobre esa cuenta**, no uno por pantalla que abre») — granularidad inventada, sin soporte en fuentes (rg: 0 hits) · BLOQUEA
+
+.specs/HOS-1352-billing-verticals-redesign/docs/nucleo/08-auditoria-y-observabilidad.md:209 · «**y cuenta como cliente de una versión la fila con un `S38` encolado hacia ella, un descenso ya pedido** (corte del MVP, owner 2026-10-02, CC; `B/12` §3.2)» · ausente del ítem que la define, ACC:19 (02-nucleo.md:1232-1251); la regla sí vive en 10-corte/B2.md:25,48,242,355 y B3.md:186 (AC/test), así que no cambia lo que se construye · MENOR
+
+.specs/HOS-1352-billing-verticals-redesign/docs/nucleo/02-modelo-de-datos.md:216-218 · «(c) Los que fija Mercado Pago o la ley: la ventana de reintentos del proveedor, los 10 días corridos del arrepentimiento y las 24 horas de la Resolución 424/2020 (`B/22`).» · distinta en 02-nucleo.md:1748-1749 («la ventana de reintentos del proveedor, los 10 días corridos del arrepentimiento de la Resolución 424/2020») — cae el plazo de 24 h de la exclusión y los 10 días quedan atribuidos a la resolución; la lista de plazos es cerrada, así que no habilita configurarlo · MENOR
+
+## Resumen
+
+| archivo | reglas normativas vivas revisadas | líneas recorridas | ausentes | distintas |
+|---|---|---|---|---|
+| nucleo/00-indice.md | ~15 | 1–211 | 0 | 0 |
+| nucleo/01-glosario.md | ~110 | 1–981 | 0 | 1 |
+| nucleo/02-modelo-de-datos.md | ~45 | 1–274 | 0 | 3 |
+| nucleo/03-maquinas-de-estado.md | ~20 | 1–176 | 0 | 0 |
+| nucleo/04-invariantes.md | ~60 | 1–328 | 0 | 0 |
+| nucleo/07-outbox-y-notificaciones.md | ~70 | 1–383 | 1 | 0 |
+| nucleo/08-auditoria-y-observabilidad.md | ~90 | 1–520 | 1 | 1 |
+| **total** | ~410 | | 2 | 5 |
+
+BLOQUEA: 5 · MENOR: 2

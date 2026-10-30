@@ -8,20 +8,15 @@
 import {
     accommodationReviews,
     accommodations,
-    billingCustomers,
-    billingSubscriptions,
     type DrizzleClient,
     destinationReviews,
     destinations,
-    entitySubscriptions,
     eq,
     eventLocations,
     eventOrganizers,
     events,
     experienceReviews,
     experiences,
-    gastronomies,
-    gastronomyReviews,
     ownerPromotions,
     postSponsors,
     postSponsorships,
@@ -32,11 +27,13 @@ import {
     sponsorshipLevels,
     sponsorshipPackages,
     sponsorships,
-    sql,
     tags,
     userBookmarks,
-    users
+    users,
+    venueReviews,
+    venues
 } from '@repo/db';
+import { PublicationStatusEnum } from '@repo/schemas';
 import { drizzle } from 'drizzle-orm/node-postgres';
 import { Pool } from 'pg';
 
@@ -130,8 +127,10 @@ interface SeedAccommodationOverrides {
     readonly ownerId?: string;
     readonly destinationId?: string;
     readonly accommodationId?: string;
-    readonly visibility?: string;
-    readonly ownerSuspended?: boolean;
+    /** Publication state; defaults to `PUBLISHED` (an active, public listing). */
+    readonly publicationStatus?: PublicationStatusEnum;
+    readonly inactiveSince?: Date;
+    readonly deadlinesVersion?: number;
 }
 
 /**
@@ -205,9 +204,9 @@ export async function seedAccommodation(
                 url: 'https://example.com/seed-accommodation.jpg'
             }
         },
-        lifecycleState: 'ACTIVE',
-        visibility: overrides.visibility ?? 'PUBLIC',
-        ownerSuspended: overrides.ownerSuspended ?? false
+        publicationStatus: overrides.publicationStatus ?? PublicationStatusEnum.PUBLISHED,
+        inactiveSince: overrides.inactiveSince ?? new Date(),
+        deadlinesVersion: overrides.deadlinesVersion ?? 1
     } as typeof accommodations.$inferInsert);
 
     return { userId, destinationId, accommodationId };
@@ -760,60 +759,60 @@ export async function seedEvent(
 }
 
 // ---------------------------------------------------------------------------
-// SPEC-239 seed helpers — gastronomy commerce lifecycle
+// SPEC-239 seed helpers — venue lifecycle
 // ---------------------------------------------------------------------------
 
-interface SeedGastronomyOverrides {
+interface SeedVenueOverrides {
     readonly ownerId?: string;
     readonly destinationId?: string;
-    readonly gastronomyId?: string;
-    readonly visibility?: string;
-    readonly lifecycleState?: string;
-    readonly moderationState?: string;
+    readonly venueId?: string;
+    /** Publication state; defaults to `DRAFT` (never public). */
+    readonly publicationStatus?: PublicationStatusEnum;
+    readonly inactiveSince?: Date;
+    readonly deadlinesVersion?: number;
 }
 
 /**
- * Inserts a User (owner), a Destination (CITY), and a Gastronomy listing
+ * Inserts a User (owner), a Destination (CITY), and a venue listing
  * referencing both. Returns all three IDs.
  *
- * The gastronomy is created with `visibility=PRIVATE` and
- * `lifecycleState=INACTIVE` so reconciliation tests can assert the
- * PUBLIC/ACTIVE flip.
+ * The venue is created `DRAFT` by default so reconciliation tests can
+ * assert the flip to `PUBLISHED`.
  *
  * @param tx - Drizzle transaction client (always rolled back after the test).
  * @param overrides - Optional ID / field overrides.
- * @returns Object containing `{ ownerId, destinationId, gastronomyId }`.
+ * @returns Object containing `{ ownerId, destinationId, venueId }`.
  */
-export async function seedGastronomy(
+export async function seedVenue(
     tx: DrizzleClient,
-    overrides: SeedGastronomyOverrides = {}
+    overrides: SeedVenueOverrides = {}
 ): Promise<{
     readonly ownerId: string;
     readonly destinationId: string;
-    readonly gastronomyId: string;
+    readonly venueId: string;
 }> {
     const ownerId = overrides.ownerId ?? crypto.randomUUID();
     const destinationId = overrides.destinationId ?? crypto.randomUUID();
-    const gastronomyId = overrides.gastronomyId ?? crypto.randomUUID();
+    const venueId = overrides.venueId ?? crypto.randomUUID();
     const uid = crypto.randomUUID().slice(0, 8);
 
     await tx.insert(users).values({
         id: ownerId,
-        email: `seed-gastro-owner-${uid}@example.com`,
-        displayName: 'Gastronomy Owner',
+        email: `seed-venue-owner-${uid}@example.com`,
+        displayName: 'Venue Owner',
         emailVerified: true,
         lifecycleState: 'ACTIVE'
     } as typeof users.$inferInsert);
 
     await tx.insert(destinations).values({
         id: destinationId,
-        slug: `seed-gastro-dest-${uid}`,
-        name: 'Gastronomy Destination',
+        slug: `seed-venue-dest-${uid}`,
+        name: 'Venue Destination',
         destinationType: 'CITY',
         level: 4,
-        path: `/seed/gastro-dest-${uid}`,
-        summary: 'Seed gastronomy destination summary',
-        description: 'Seed gastronomy destination description',
+        path: `/seed/venue-dest-${uid}`,
+        summary: 'Seed venue destination summary',
+        description: 'Seed venue destination description',
         location: {
             state: 'Entre Rios',
             country: 'Argentina',
@@ -822,147 +821,71 @@ export async function seedGastronomy(
         media: {
             featuredImage: {
                 moderationState: 'APPROVED',
-                url: 'https://example.com/seed-gastro-destination.jpg'
+                url: 'https://example.com/seed-venue-destination.jpg'
             }
         },
         lifecycleState: 'ACTIVE'
     } as typeof destinations.$inferInsert);
 
-    await tx.insert(gastronomies).values({
-        id: gastronomyId,
-        slug: `seed-gastronomy-${uid}`,
+    await tx.insert(venues).values({
+        id: venueId,
+        slug: `seed-venue-${uid}`,
         name: 'La Parrilla de Prueba',
-        summary: 'A seed gastronomy listing summary',
-        description: 'A seed gastronomy listing description for integration tests.',
+        summary: 'A seed venue listing summary',
+        description: 'A seed venue listing description for integration tests.',
         type: 'RESTAURANT',
         ownerId,
         destinationId,
-        visibility: overrides.visibility ?? 'PRIVATE',
-        lifecycleState: overrides.lifecycleState ?? 'INACTIVE',
-        moderationState: overrides.moderationState ?? 'PENDING'
-    } as typeof gastronomies.$inferInsert);
+        publicationStatus: overrides.publicationStatus ?? PublicationStatusEnum.DRAFT,
+        inactiveSince: overrides.inactiveSince ?? new Date(),
+        deadlinesVersion: overrides.deadlinesVersion ?? 1
+    } as typeof venues.$inferInsert);
 
-    return { ownerId, destinationId, gastronomyId };
+    return { ownerId, destinationId, venueId };
 }
 
-interface SeedCommerceListingSubscriptionOverrides {
-    readonly linkId?: string;
-    readonly gastronomyId: string;
-    readonly status: string;
-}
-
-/**
- * Seeds an `entity_subscriptions` link row tying a gastronomy
- * listing to a stub billing subscription row.
- *
- * Because the billing subscription table (`billing_subscriptions`) is managed
- * by `@qazuor/qzpay-drizzle`, we insert a minimal stub billing subscription
- * row first so the FK constraint is satisfied.
- *
- * @param tx - Drizzle transaction client.
- * @param options - Required `gastronomyId` and `status`; optional `linkId`.
- * @returns Object containing `{ linkId, subscriptionId }`.
- */
-export async function seedCommerceListingSubscription(
-    tx: DrizzleClient,
-    options: SeedCommerceListingSubscriptionOverrides
-): Promise<{
-    readonly linkId: string;
-    readonly subscriptionId: string;
-}> {
-    const linkId = options.linkId ?? crypto.randomUUID();
-    const subscriptionId = crypto.randomUUID();
-
-    // Insert a minimal billing_customers stub row first (billing_subscriptions
-    // has a FK to billing_customers.id ON DELETE RESTRICT).
-    const customerId = crypto.randomUUID();
-    const uid = customerId.slice(0, 8);
-    await tx.execute(sql`
-        INSERT INTO billing_customers (
-            id, external_id, email, livemode
-        ) VALUES (
-            ${customerId},
-            ${`ext-${uid}`},
-            ${`billing-stub-${uid}@test.local`},
-            false
-        )
-    `);
-
-    // Insert a minimal billing_subscriptions stub row to satisfy the FK from
-    // entity_subscriptions.  Uses raw SQL to ensure billing_interval
-    // (NOT NULL in the qzpay-drizzle schema) is provided without relying on
-    // Drizzle client-side $defaultFn which does not fire inside raw tx contexts.
-    await tx.execute(sql`
-        INSERT INTO billing_subscriptions (
-            id, customer_id, plan_id, status, billing_interval,
-            current_period_start, current_period_end, product_domain, livemode
-        ) VALUES (
-            ${subscriptionId},
-            ${customerId},
-            ${crypto.randomUUID()},
-            ${options.status},
-            'month',
-            now(),
-            now() + interval '30 days',
-            'gastronomy',
-            false
-        )
-    `);
-
-    await tx.insert(entitySubscriptions).values({
-        id: linkId,
-        subscriptionId,
-        entityType: 'gastronomy',
-        entityId: options.gastronomyId,
-        status: options.status,
-        productDomain: 'commerce'
-    } as typeof entitySubscriptions.$inferInsert);
-
-    return { linkId, subscriptionId };
-}
-
-interface SeedGastronomyReviewOverrides {
+interface SeedVenueReviewOverrides {
     readonly reviewId?: string;
-    readonly gastronomyId: string;
+    readonly venueId: string;
     readonly userId: string;
     readonly overallRating?: number;
     readonly moderationState?: string;
 }
 
 /**
- * Inserts a `gastronomy_reviews` row directly (bypassing the service layer)
+ * Inserts a `venue_reviews` row directly (bypassing the service layer)
  * for tests that need a pre-existing review to moderate.
  *
  * @param tx - Drizzle transaction client.
- * @param options - Required `gastronomyId` and `userId`.
+ * @param options - Required `venueId` and `userId`.
  * @returns Object containing `{ reviewId }`.
  */
-export async function seedGastronomyReview(
+export async function seedVenueReview(
     tx: DrizzleClient,
-    options: SeedGastronomyReviewOverrides
+    options: SeedVenueReviewOverrides
 ): Promise<{ readonly reviewId: string }> {
     const reviewId = options.reviewId ?? crypto.randomUUID();
 
-    await tx.insert(gastronomyReviews).values({
+    await tx.insert(venueReviews).values({
         id: reviewId,
-        gastronomyId: options.gastronomyId,
+        venueId: options.venueId,
         userId: options.userId,
         rating: { food: 4, service: 4, ambiance: 3, value: 4 },
         averageRating: 3.75,
         overallRating: options.overallRating ?? 4,
         lifecycleState: 'ACTIVE',
         moderationState: options.moderationState ?? 'PENDING'
-    } as typeof gastronomyReviews.$inferInsert);
+    } as typeof venueReviews.$inferInsert);
 
     return { reviewId };
 }
 
 // ---------------------------------------------------------------------------
-// HOS-1269 seed helpers — experience commerce lifecycle
+// HOS-1269 seed helpers — experience lifecycle
 // ---------------------------------------------------------------------------
 //
-// Mirrors the SPEC-239 gastronomy helpers above ("seedGastronomy" /
-// "seedCommerceListingSubscription" / "seedGastronomyReview") so the
+// Mirrors the SPEC-239 venue helpers above ("seedVenue" /
+// "seedVenueReview") so the
 // experience vertical gets the same real-DB integration coverage. Until this
 // ticket, `experiences` had NO integration-test fixture at all — every helper
 // below is net-new.
@@ -971,21 +894,21 @@ interface SeedExperienceOverrides {
     readonly ownerId?: string;
     readonly destinationId?: string;
     readonly experienceId?: string;
-    readonly visibility?: string;
-    readonly lifecycleState?: string;
-    readonly moderationState?: string;
+    /** Publication state; defaults to `DRAFT` (never public). */
+    readonly publicationStatus?: PublicationStatusEnum;
+    readonly inactiveSince?: Date;
+    readonly deadlinesVersion?: number;
 }
 
 /**
  * Inserts a User (owner), a Destination (CITY), and an Experience listing
  * referencing both. Returns all three IDs.
  *
- * Mirrors `seedGastronomy`: the experience is created with `visibility=PRIVATE`
- * and `lifecycleState=INACTIVE` by default so reconciliation tests can assert
- * the PUBLIC/ACTIVE flip. `priceFrom` is left at its DB default (0) with
+ * Mirrors `seedVenue`: the experience is created `DRAFT` by default so
+ * reconciliation tests can assert the flip to `PUBLISHED`. `priceFrom` is left at its DB default (0) with
  * `isPriceOnRequest=false`, which is deliberately an incomplete listing for
  * `resolveListingCompleteness` (missing `priceFrom`) — same role
- * `seedGastronomy`'s default row plays for the gastronomy completeness tests.
+ * `seedVenue`'s default row plays for the venue completeness tests.
  *
  * @param tx - Drizzle transaction client (always rolled back after the test).
  * @param overrides - Optional ID / field overrides.
@@ -1046,104 +969,12 @@ export async function seedExperience(
         isPriceOnRequest: false,
         ownerId,
         destinationId,
-        visibility: overrides.visibility ?? 'PRIVATE',
-        lifecycleState: overrides.lifecycleState ?? 'INACTIVE',
-        moderationState: overrides.moderationState ?? 'PENDING'
+        publicationStatus: overrides.publicationStatus ?? PublicationStatusEnum.DRAFT,
+        inactiveSince: overrides.inactiveSince ?? new Date(),
+        deadlinesVersion: overrides.deadlinesVersion ?? 1
     } as typeof experiences.$inferInsert);
 
     return { ownerId, destinationId, experienceId };
-}
-
-interface SeedExperienceListingSubscriptionOverrides {
-    readonly linkId?: string;
-    readonly experienceId: string;
-    readonly status: string;
-}
-
-/**
- * Seeds an `entity_subscriptions` link row tying an experience listing to a
- * REAL stub billing subscription row (HOS-1269 method note).
- *
- * Mirrors `seedCommerceListingSubscription` (gastronomy), with one deliberate
- * fix: both the `billing_subscriptions` stub and the `entity_subscriptions`
- * link row are stamped `product_domain='experience'` — never the retired
- * `'commerce'` umbrella value gastronomy's helper still writes, and never left
- * to `billing_subscriptions`' own `'accommodation'` column default. The issue
- * this ticket tracks called out the anti-pattern by name: a fixture that only
- * flips a denormalized boolean (`has_active_subscription`) with no real
- * `billing_subscriptions` row proves nothing about the reconciliation path
- * this suite exists to cover.
- *
- * Both billing rows are written via typed Drizzle inserts (HOS-73/HOS-75),
- * NOT raw SQL — `billingCustomers` / `billingSubscriptions` are ordinary
- * typed tables from `@qazuor/qzpay-drizzle`, confirmed by compiling
- * `tx.insert(billingSubscriptions).values(...)` against
- * `typeof billingSubscriptions.$inferInsert` before writing this.
- *
- * @param tx - Drizzle transaction client.
- * @param options - Required `experienceId` and `status`; optional `linkId`.
- * @returns Object containing `{ linkId, subscriptionId }`.
- */
-export async function seedExperienceListingSubscription(
-    tx: DrizzleClient,
-    options: SeedExperienceListingSubscriptionOverrides
-): Promise<{
-    readonly linkId: string;
-    readonly subscriptionId: string;
-}> {
-    const linkId = options.linkId ?? crypto.randomUUID();
-    const subscriptionId = crypto.randomUUID();
-    const customerId = crypto.randomUUID();
-    const uid = customerId.slice(0, 8);
-
-    // Insert a minimal billing_customers stub row first (billing_subscriptions
-    // has a FK to billing_customers.id ON DELETE RESTRICT).
-    //
-    // Typed Drizzle insert (HOS-73/HOS-75) — NOT raw SQL. `billingCustomers`
-    // and `billingSubscriptions` are ordinary typed Drizzle tables re-exported
-    // from `@qazuor/qzpay-drizzle` via `@repo/db`'s `src/billing/index.ts`;
-    // verified against `typeof billingCustomers.$inferInsert` /
-    // `typeof billingSubscriptions.$inferInsert` before writing this — both
-    // compile cleanly through `tx.insert(...).values(...)`. An earlier version
-    // of this helper (mirroring `seedCommerceListingSubscription` below, which
-    // still does this) used raw SQL under the belief that Drizzle's
-    // client-side `$defaultFn` does not fire inside a raw tx context — that
-    // reasoning is irrelevant here because every column below is supplied
-    // explicitly, not left to a default.
-    await tx.insert(billingCustomers).values({
-        id: customerId,
-        externalId: `ext-${uid}`,
-        email: `billing-stub-${uid}@test.local`,
-        livemode: false
-    } as typeof billingCustomers.$inferInsert);
-
-    // Insert a minimal billing_subscriptions stub row to satisfy the FK from
-    // entity_subscriptions. product_domain is stated explicitly (HOS-1233):
-    // the column carries a NOT NULL DEFAULT 'accommodation', so an omitted
-    // insert would silently file this row under the wrong vertical instead of
-    // failing loudly.
-    await tx.insert(billingSubscriptions).values({
-        id: subscriptionId,
-        customerId,
-        planId: crypto.randomUUID(),
-        status: options.status,
-        billingInterval: 'month',
-        currentPeriodStart: new Date(),
-        currentPeriodEnd: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
-        livemode: false,
-        productDomain: 'experience'
-    } as typeof billingSubscriptions.$inferInsert);
-
-    await tx.insert(entitySubscriptions).values({
-        id: linkId,
-        subscriptionId,
-        entityType: 'experience',
-        entityId: options.experienceId,
-        status: options.status,
-        productDomain: 'experience'
-    } as typeof entitySubscriptions.$inferInsert);
-
-    return { linkId, subscriptionId };
 }
 
 interface SeedExperienceReviewOverrides {
@@ -1158,7 +989,7 @@ interface SeedExperienceReviewOverrides {
  * Inserts an `experience_reviews` row directly (bypassing the service layer)
  * for tests that need a pre-existing review to moderate.
  *
- * Unlike `gastronomy_reviews.rating` (nullable since migration 0023, HOS-259),
+ * Unlike `venue_reviews.rating` (nullable since migration 0023, HOS-259),
  * `experience_reviews.rating` is STILL `NOT NULL` with no default — the
  * table was created in 0019 and never received the equivalent fix. This
  * helper therefore always supplies a full rating breakdown; a review created

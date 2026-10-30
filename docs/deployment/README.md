@@ -232,7 +232,6 @@ hops --target=prod env-set api KEY VAL # Upsert an env var, then redeploy
 - **[`rotation-schedule.md`](./rotation-schedule.md)** — Secret rotation runbook and cadence.
 - **[`ci-cd.md`](./ci-cd.md)** — GitHub Actions CI/CD workflows (`ci.yml`, `cd-staging.yml`, `cd-production.yml`).
 - **[`checklist.md`](./checklist.md)** — General pre/post-deployment checklist for all apps.
-- **[`billing-checklist.md`](./billing-checklist.md)** — Pre-deployment checklist for billing/MercadoPago changes.
 - **[`checklist-pre-release-manual.es.md`](./checklist-pre-release-manual.es.md)** — Pre-release manual QA checklist (Spanish, non-technical audience). Run before each production release. Covers auth, mobile devices, MercadoPago real-flow, accessibility, SEO, transactional emails. SPEC-092 owner-manual track.
 
 ## Per-App Deployment Guides

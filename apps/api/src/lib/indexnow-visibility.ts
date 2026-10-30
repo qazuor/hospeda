@@ -6,7 +6,7 @@
  * **Why this exists at all.** IndexNow rides `scheduleRevalidation`, and a cache
  * purge and a search notification want opposite things from an unpublish:
  * evicting the page that just disappeared is the entire point of purging, so
- * that hook fires on `ACTIVE → DRAFT` deliberately. Announcing the same URL to a
+ * that hook fires on `PUBLISHED → DRAFT` deliberately. Announcing the same URL to a
  * search engine advertises a page that now 404s, which is exactly what the
  * protocol penalizes.
  *
@@ -26,13 +26,13 @@ import {
     eq,
     events,
     experiences,
-    gastronomies,
     getDb,
     isNull,
-    posts
+    posts,
+    venues
 } from '@repo/db';
 import { createLogger } from '@repo/logger';
-import { LifecycleStatusEnum, VisibilityEnum } from '@repo/schemas';
+import { LifecycleStatusEnum, PublicationStatusEnum, VisibilityEnum } from '@repo/schemas';
 import type { NotifiableEntity } from '@repo/service-core';
 
 const logger = createLogger('indexnow-visibility');
@@ -49,15 +49,19 @@ const logger = createLogger('indexnow-visibility');
 type VisibilityLookup = (slug: string) => Promise<boolean>;
 
 /**
- * The repo-wide definition of "the public site serves this": published, public,
- * and not soft-deleted.
+ * The repo-wide definition of "the public site serves this", for content
+ * entities (destinations, events, posts): active, public, and not soft-deleted.
  *
- * The first two conditions are the same pair `AccommodationService._isPubliclyVisible`
- * and `isCommerceListingPubliclyVisible` already use. The third is added here
- * because those two receive a live row and never have to ask.
+ * Listings (accommodation, venue, experience) do not carry those two
+ * columns any more (V6.9b, HOS-1641): their only public state is
+ * `publicationStatus === PUBLISHED`, the same predicate
+ * `AccommodationService._isPubliclyVisible` and `isListingPubliclyVisible` use.
+ * The soft-delete condition is added here because those two receive a live row
+ * and never have to ask.
  */
 const ACTIVE = LifecycleStatusEnum.ACTIVE;
 const PUBLIC = VisibilityEnum.PUBLIC;
+const PUBLISHED = PublicationStatusEnum.PUBLISHED;
 
 /**
  * Where each notifiable entity type's public page comes from.
@@ -74,8 +78,7 @@ const VISIBILITY_LOOKUPS: Readonly<Record<string, VisibilityLookup>> = {
                 .where(
                     and(
                         eq(accommodations.slug, slug),
-                        eq(accommodations.lifecycleState, ACTIVE),
-                        eq(accommodations.visibility, PUBLIC),
+                        eq(accommodations.publicationStatus, PUBLISHED),
                         isNull(accommodations.deletedAt)
                     )
                 )
@@ -130,17 +133,16 @@ const VISIBILITY_LOOKUPS: Readonly<Record<string, VisibilityLookup>> = {
                 .limit(1)
         ).length > 0,
 
-    gastronomy: async (slug) =>
+    venue: async (slug) =>
         (
             await getDb()
-                .select({ slug: gastronomies.slug })
-                .from(gastronomies)
+                .select({ slug: venues.slug })
+                .from(venues)
                 .where(
                     and(
-                        eq(gastronomies.slug, slug),
-                        eq(gastronomies.lifecycleState, ACTIVE),
-                        eq(gastronomies.visibility, PUBLIC),
-                        isNull(gastronomies.deletedAt)
+                        eq(venues.slug, slug),
+                        eq(venues.publicationStatus, PUBLISHED),
+                        isNull(venues.deletedAt)
                     )
                 )
                 .limit(1)
@@ -154,8 +156,7 @@ const VISIBILITY_LOOKUPS: Readonly<Record<string, VisibilityLookup>> = {
                 .where(
                     and(
                         eq(experiences.slug, slug),
-                        eq(experiences.lifecycleState, ACTIVE),
-                        eq(experiences.visibility, PUBLIC),
+                        eq(experiences.publicationStatus, PUBLISHED),
                         isNull(experiences.deletedAt)
                     )
                 )

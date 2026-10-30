@@ -57,7 +57,7 @@ const paginationSchema = paginationMetadataSchema;
  */
 const successResponseSchema = z.object({
     success: z.literal(true),
-    data: z.unknown(),
+    data: z.unknown().optional(),
     metadata: z
         .object({
             timestamp: z.string(),

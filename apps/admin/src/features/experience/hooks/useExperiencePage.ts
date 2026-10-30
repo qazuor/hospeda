@@ -3,7 +3,7 @@
  * Page-orchestrator hook for the experience view and edit pages (SPEC-240 T-028).
  *
  * Centralises data loading, mode switching, and navigation so route components
- * stay thin.  Mirrors the `useGastronomyPage` pattern adapted for the
+ * stay thin.  Mirrors the `useVenuePage` pattern adapted for the
  * experience entity's consolidated config.
  */
 
@@ -52,11 +52,11 @@ export const useExperiencePage = (entityId: string) => {
         () => ({
             // HOS-1077 dual-read: these arrays are evaluated with `.some(...)`,
             // so naming both families IS the dual-read — no new mechanism.
-            // Release 2 drops the COMMERCE_* entries.
-            view: [PermissionEnum.EXPERIENCE_VIEW_ALL, PermissionEnum.COMMERCE_VIEW_ALL],
-            edit: [PermissionEnum.EXPERIENCE_EDIT_ALL, PermissionEnum.COMMERCE_EDIT_ALL],
-            create: [PermissionEnum.EXPERIENCE_CREATE, PermissionEnum.COMMERCE_CREATE],
-            delete: [PermissionEnum.EXPERIENCE_DELETE, PermissionEnum.COMMERCE_DELETE]
+            // Release 2 drops the LISTING_* entries.
+            view: [PermissionEnum.EXPERIENCE_VIEW_ALL],
+            edit: [PermissionEnum.EXPERIENCE_EDIT_ALL],
+            create: [PermissionEnum.EXPERIENCE_CREATE],
+            delete: [PermissionEnum.EXPERIENCE_DELETE]
         }),
         []
     );
@@ -105,7 +105,7 @@ export const useExperiencePage = (entityId: string) => {
 
         updateMutation: {
             // EntityPageBase.handleSave calls mutateAsync with the FLAT form
-            // payload (the field values), but the commerce factory's useUpdate()
+            // payload (the field values), but the listing factory's useUpdate()
             // mutationFn expects `{ id, data }`. Bind the entity id here and wrap
             // the payload — mirrors the host-trade `useUpdate*(id)` pattern.
             // (Calling it directly silently no-ops: id/data come through

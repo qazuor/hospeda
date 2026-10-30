@@ -21,7 +21,7 @@
  * page.
  */
 import { accommodations, destinations, eq, pointsOfInterest, users } from '@repo/db';
-import { ServiceErrorCode } from '@repo/schemas';
+import { PublicationStatusEnum, ServiceErrorCode } from '@repo/schemas';
 import { afterAll, afterEach, beforeAll, describe, expect, it } from 'vitest';
 import { AccommodationService } from '../../../src/services/accommodation/accommodation.service';
 import { createSuperAdminActor } from '../../factories/actorFactory';
@@ -114,9 +114,9 @@ describe('HOS-113 T-036 — AccommodationService "near POI" search (AC-4)', () =
                     url: 'https://example.com/t036-accommodation.jpg'
                 }
             },
-            lifecycleState: 'ACTIVE',
-            visibility: 'PUBLIC',
-            ownerSuspended: false
+            publicationStatus: PublicationStatusEnum.PUBLISHED,
+            inactiveSince: new Date(),
+            deadlinesVersion: 1
         } as typeof accommodations.$inferInsert);
 
         insertedAccommodationIds.push(accommodationId);

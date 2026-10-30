@@ -44,7 +44,9 @@
     margin-top: var(--space-4, 16px);
 }
 
-.field:first-of-type {
+/* Inside a grid the row gap already spaces the cells; a margin on every
+   cell but the first would push the rest of the row down. */
+.grid > .field {
     margin-top: 0;
 }
 

@@ -1,230 +1,42 @@
-/**
- * @file usage-badge.test.ts
- * @description Unit tests for the host usage-badge helpers.
- *
- * Covers two production regressions:
- *  - Bug 1 (envelope): the API wraps responses in `{ success, data }`. The old
- *    code read `response.maxAllowed` (always undefined), making the badge dead.
- *    Fixed by reading `response.data.maxAllowed`.
- *  - Bug 2 (limit-key casing): the API validates the path param against
- *    `z.nativeEnum(LimitKey)` which accepts only the enum VALUE ('max_accommodations'),
- *    not the enum NAME ('MAX_ACCOMMODATIONS'). The old code hard-coded the uppercase
- *    name, causing HTTP 400. Fixed by using the imported const.
- */
+import { describe, expect, it } from 'vitest';
+import type { EntitlementsData } from '../../../src/lib/entitlements-cache';
+import { buildUsageBadge, getUsageThreshold } from '../../../src/lib/host/usage-badge';
 
-import { describe, expect, it, vi } from 'vitest';
-import {
-    fetchHostUsageBadge,
-    MAX_ACCOMMODATIONS_LIMIT_KEY,
-    parseUsageResponse
-} from '../../../src/lib/host/usage-badge';
-
-// ---------------------------------------------------------------------------
-// MAX_ACCOMMODATIONS_LIMIT_KEY — Bug 2 regression
-// ---------------------------------------------------------------------------
-
-describe('MAX_ACCOMMODATIONS_LIMIT_KEY', () => {
-    it('equals the lowercase enum value (bug-2 regression: must NOT be uppercase)', () => {
-        // Arrange — expected value matches LimitKey.MAX_ACCOMMODATIONS = 'max_accommodations'
-        // Act & Assert
-        expect(MAX_ACCOMMODATIONS_LIMIT_KEY).toBe('max_accommodations');
-    });
+const effective = (limit: number): EntitlementsData => ({
+    entitlements: { max_accommodations: 1 },
+    limits: { max_accommodations: limit },
+    hasLiveNonTrialTitle: true,
+    failed: false
 });
 
-// ---------------------------------------------------------------------------
-// parseUsageResponse — Bug 1 regression + edge cases
-// ---------------------------------------------------------------------------
-
-describe('parseUsageResponse', () => {
-    // ── Happy path ────────────────────────────────────────────────────────────
-
-    it('parses the real API envelope { success, data: { ... } } (bug-1 regression)', () => {
-        // Arrange
-        const json = {
-            success: true,
-            data: { currentUsage: 2, maxAllowed: 5, threshold: 'warning' }
-        };
-
-        // Act
-        const result = parseUsageResponse({ json });
-
-        // Assert
-        expect(result).toEqual({ currentUsage: 2, maxAllowed: 5, threshold: 'warning' });
-    });
-
-    it('defaults currentUsage to 0 when missing inside data', () => {
-        // Arrange
-        const json = { success: true, data: { maxAllowed: 10 } };
-
-        // Act
-        const result = parseUsageResponse({ json });
-
-        // Assert
-        expect(result).not.toBeNull();
-        expect(result?.currentUsage).toBe(0);
-        expect(result?.maxAllowed).toBe(10);
-    });
-
-    it('defaults threshold to "ok" when missing inside data', () => {
-        // Arrange
-        const json = { success: true, data: { currentUsage: 1, maxAllowed: 3 } };
-
-        // Act
-        const result = parseUsageResponse({ json });
-
-        // Assert
-        expect(result).not.toBeNull();
-        expect(result?.threshold).toBe('ok');
-    });
-
-    // ── Bug-1 regression: old unwrapped shape must return null ────────────────
-
-    it('returns null for the old unwrapped shape { currentUsage, maxAllowed } (bug-1 regression)', () => {
-        // Arrange — this was the shape the old code expected (missing .data wrapper)
-        const json = { currentUsage: 2, maxAllowed: 5 };
-
-        // Act
-        const result = parseUsageResponse({ json });
-
-        // Assert — must be null because json.data is missing
-        expect(result).toBeNull();
-    });
-
-    // ── Null / empty / invalid inputs ─────────────────────────────────────────
-
-    it('returns null when data is null', () => {
-        // Arrange
-        const json = { success: true, data: null };
-
-        // Act & Assert
-        expect(parseUsageResponse({ json })).toBeNull();
-    });
-
-    it('returns null for an empty object {}', () => {
-        // Arrange & Act & Assert
-        expect(parseUsageResponse({ json: {} })).toBeNull();
-    });
-
-    it('returns null for a non-object input (string)', () => {
-        // Arrange & Act & Assert
-        expect(parseUsageResponse({ json: 'not an object' })).toBeNull();
-    });
-
-    it('returns null for a non-object input (number)', () => {
-        // Arrange & Act & Assert
-        expect(parseUsageResponse({ json: 42 })).toBeNull();
-    });
-
-    it('returns null for null input', () => {
-        // Arrange & Act & Assert
-        expect(parseUsageResponse({ json: null })).toBeNull();
-    });
-
-    it('returns null when data.maxAllowed is missing', () => {
-        // Arrange
-        const json = { success: true, data: { currentUsage: 1 } };
-
-        // Act & Assert
-        expect(parseUsageResponse({ json })).toBeNull();
-    });
-
-    it('returns null when data.maxAllowed is a non-number (string)', () => {
-        // Arrange
-        const json = { success: true, data: { maxAllowed: '5', currentUsage: 1 } };
-
-        // Act & Assert
-        expect(parseUsageResponse({ json })).toBeNull();
-    });
-
-    it('returns null when data is an array (not a plain object)', () => {
-        // Arrange
-        const json = { success: true, data: [1, 2, 3] };
-
-        // Act & Assert
-        expect(parseUsageResponse({ json })).toBeNull();
-    });
-});
-
-describe('fetchHostUsageBadge', () => {
-    it('does not request usage when entitlements say the owner has no real host plan', async () => {
-        // Arrange
-        const fetchImpl = vi
-            .fn<typeof fetch>()
-            .mockResolvedValueOnce(
-                new Response(JSON.stringify({ data: { plan: null } }), { status: 200 })
-            )
-            .mockResolvedValueOnce(new Response('not found', { status: 404 }));
-
-        // Act
-        const result = await fetchHostUsageBadge({
-            apiUrl: 'https://api.test',
-            headers: { cookie: 'session=abc', Accept: 'application/json' },
-            fetchImpl
+describe('TEST:B13a:25 usage badge on the effective set', () => {
+    it('shows different usage against different effective quotas', () => {
+        expect(buildUsageBadge({ effectiveSet: effective(2), currentUsage: 2 })).toMatchObject({
+            maxAllowed: 2,
+            threshold: 'exceeded'
         });
-
-        // Assert
-        expect(fetchImpl).toHaveBeenCalledTimes(1);
-        expect(fetchImpl).toHaveBeenCalledWith(
-            'https://api.test/api/v1/protected/users/me/entitlements',
-            {
-                headers: { cookie: 'session=abc', Accept: 'application/json' }
-            }
-        );
-        expect(result).toEqual({
-            usageData: null,
-            hasOwnerPlan: false,
-            entitlementsReadOk: true,
-            entitlementsStatus: 200
+        expect(buildUsageBadge({ effectiveSet: effective(15), currentUsage: 2 })).toMatchObject({
+            maxAllowed: 15,
+            threshold: 'ok'
         });
     });
-
-    it('requests usage after entitlements confirm a real host plan', async () => {
-        // Arrange
-        const fetchImpl = vi
-            .fn<typeof fetch>()
-            .mockResolvedValueOnce(
-                new Response(JSON.stringify({ data: { plan: { id: 'plan-1' } } }), {
-                    status: 200
-                })
-            )
-            .mockResolvedValueOnce(
-                new Response(
-                    JSON.stringify({
-                        success: true,
-                        data: { currentUsage: 2, maxAllowed: 5, threshold: 'warning' }
-                    }),
-                    { status: 200 }
-                )
-            );
-
-        // Act
-        const result = await fetchHostUsageBadge({
-            apiUrl: 'https://api.test',
-            headers: { cookie: 'session=abc', Accept: 'application/json' },
-            fetchImpl
-        });
-
-        // Assert
-        expect(fetchImpl).toHaveBeenCalledTimes(2);
-        expect(fetchImpl).toHaveBeenNthCalledWith(
-            1,
-            'https://api.test/api/v1/protected/users/me/entitlements',
-            {
-                headers: { cookie: 'session=abc', Accept: 'application/json' }
-            }
-        );
-        expect(fetchImpl).toHaveBeenNthCalledWith(
-            2,
-            `https://api.test/api/v1/protected/billing/usage/${MAX_ACCOMMODATIONS_LIMIT_KEY}`,
-            {
-                headers: { cookie: 'session=abc', Accept: 'application/json' }
-            }
-        );
-        expect(result).toEqual({
-            usageData: { currentUsage: 2, maxAllowed: 5, threshold: 'warning' },
-            hasOwnerPlan: true,
-            entitlementsReadOk: true,
-            entitlementsStatus: 200
-        });
+    it('omits unlimited, absent, and failed capacity reads', () => {
+        expect(buildUsageBadge({ effectiveSet: effective(Infinity), currentUsage: 2 })).toBeNull();
+        expect(
+            buildUsageBadge({ effectiveSet: { ...effective(3), limits: {} }, currentUsage: 2 })
+        ).toBeNull();
+        expect(
+            buildUsageBadge({ effectiveSet: { ...effective(3), failed: true }, currentUsage: 2 })
+        ).toBeNull();
+    });
+    it.each([
+        [79, 'ok'],
+        [80, 'warning'],
+        [89, 'warning'],
+        [90, 'critical'],
+        [99, 'critical'],
+        [100, 'exceeded']
+    ] as const)('uses %i percent as %s', (pct, expected) => {
+        expect(getUsageThreshold(pct, 100)).toBe(expected);
     });
 });

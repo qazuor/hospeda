@@ -2,16 +2,16 @@
  * Experience edit page — allows admins to update an existing experience listing.
  *
  * Uses `EntityPageBase` in edit mode with `EntityEditContent` (flat layout).
- * Gate-protected by COMMERCE_EDIT_ALL.
+ * Gate-protected by EXPERIENCE_EDIT_ALL.
  *
- * Mirrors the gastronomy edit page pattern (SPEC-240 T-028).
+ * Mirrors the venue edit page pattern (SPEC-240 T-028).
  *
  * HOS-382: the `media.featuredImage` / `media.gallery` field handlers were
  * removed. Those fields used to buffer uploads into a `media` object on
  * PATCH, but the `media` JSONB column was dropped (HOS-372) and the update
  * schema silently strips that key — every photo uploaded through this form
  * was orphaned in Cloudinary with no DB row. Photos are now managed via the
- * dedicated Gallery tab (`/experiences/:id/gallery`, `CommerceGalleryManager`),
+ * dedicated Gallery tab (`/experiences/:id/gallery`, `ListingGalleryManager`),
  * reachable from the `PageTabs` bar below, mirroring accommodations.
  */
 
@@ -47,7 +47,7 @@ function ExperienceEditPage() {
     const entityData = useExperiencePage(id);
 
     return (
-        <RoutePermissionGuard permissions={[PermissionEnum.COMMERCE_EDIT_ALL]}>
+        <RoutePermissionGuard permissions={[PermissionEnum.EXPERIENCE_EDIT_ALL]}>
             <div className="space-y-4">
                 <div className="flex items-center justify-between gap-4">
                     <PageTabs

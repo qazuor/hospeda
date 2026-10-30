@@ -148,7 +148,7 @@ Each color has 10 shades (50-900). The **canonical value** (500) is web's curren
 |---------|----------------|------------|-------|
 | `river` | `oklch(0.63 0.19 259)` | 259 (blue) | Web `--brand-primary` + `--hospeda-river`. Web uses 500 as primary; admin uses **600** (derived) per Eje 3. |
 | `sky` | `oklch(0.80 0.08 259)` | 259 (same hue as river) | Web `--hospeda-sky`. Light/airy. Used for backgrounds, hover surfaces. |
-| `forest` | `oklch(0.50 0.14 155)` | 155 (green) | Web `--hospeda-forest`. Used for gastronomy/nature contexts. |
+| `forest` | `oklch(0.50 0.14 155)` | 155 (green) | Web `--hospeda-forest`. Used for food/nature contexts. |
 | `sand` | `oklch(0.70 0.12 75)` | 75 (yellow-gold) | Web `--hospeda-sand`. Used for crafts/warmth contexts. |
 | `accent` | `oklch(0.70 0.18 55)` | 55 (orange-honey) | Web `--brand-accent`. Used for highlights, CTAs secondary. |
 

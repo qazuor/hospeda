@@ -3,7 +3,7 @@
  *
  * Unit tests for experience media helper functions (HOS-372).
  *
- * Mirrors `gastronomy.media.test.ts` — see that file for the full rationale
+ * Mirrors `venue.media.test.ts` — see that file for the full rationale
  * behind each assertion (identical logic, different vertical).
  *
  * Coverage:
@@ -34,8 +34,12 @@ const mockMediaModel = {
 
 vi.mock('@repo/db', async (importOriginal) => {
     const actual = await importOriginal<typeof import('@repo/db')>();
+    // HOS-1642: these writes now record an owner-act event; the double keeps
+    // the write off the (nonexistent) test database.
+    const doubles = await import('../../helpers/owner-act-doubles');
     return {
         ...actual,
+        domainEventModel: doubles.domainEventModelDouble,
         ExperienceMediaModel: vi.fn(function () {
             return mockMediaModel;
         }),
@@ -96,8 +100,8 @@ function makeMediaRow(overrides: Partial<ExperienceMedia> = {}): ExperienceMedia
 
 const ownerActor: Actor = {
     id: OWNER_ID,
-    roles: [RoleEnum.COMMERCE_OWNER],
-    permissions: [PermissionEnum.COMMERCE_EDIT_OWN]
+    roles: [RoleEnum.EXPERIENCE_OWNER],
+    permissions: [PermissionEnum.EXPERIENCE_EDIT_OWN]
 };
 
 const touristActor: Actor = {
@@ -158,7 +162,7 @@ describe('addExperienceMedia', () => {
         expect(result.error?.code).toBe(ServiceErrorCode.NOT_FOUND);
     });
 
-    it('should return FORBIDDEN when actor lacks COMMERCE_EDIT_OWN', async () => {
+    it('should return FORBIDDEN when actor lacks EXPERIENCE_EDIT_OWN', async () => {
         const model = makeExperienceModel({ id: EXPERIENCE_ID, ownerId: OWNER_ID });
         const input: ExperienceMediaAddInput = {
             experienceId: EXPERIENCE_ID,
@@ -192,7 +196,7 @@ describe('addExperienceMedia', () => {
         expect(result.error).toBeUndefined();
         expect(mockMediaModel.create).toHaveBeenCalledWith(
             expect.objectContaining({ sortOrder: 0, isFeatured: false, state: 'visible' }),
-            undefined
+            {}
         );
     });
 
@@ -216,7 +220,7 @@ describe('addExperienceMedia', () => {
 
         expect(mockMediaModel.create).toHaveBeenCalledWith(
             expect.objectContaining({ sortOrder: 4 }),
-            undefined
+            {}
         );
     });
 
@@ -236,7 +240,7 @@ describe('addExperienceMedia', () => {
 
         expect(mockMediaModel.create).toHaveBeenCalledWith(
             expect.objectContaining({ moderationState: ModerationStatusEnum.PENDING }),
-            undefined
+            {}
         );
     });
 });
@@ -581,7 +585,7 @@ describe('getExperienceMedia', () => {
 // `addExperienceMedia` enforces `getGalleryCap('experience')` itself, so a
 // caller that reaches it directly with an already-uploaded URL cannot walk past
 // the limit the upload routes apply. This describe was added with HOS-791: the
-// gastronomy twin had cap coverage and the experience one had none, so the
+// venue twin had cap coverage and the experience one had none, so the
 // service-layer cap here was shipping unverified.
 // ---------------------------------------------------------------------------
 

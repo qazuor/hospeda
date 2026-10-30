@@ -156,7 +156,7 @@ export async function markUserReady(params: MarkUserReadyParams): Promise<MarkUs
     // NOTE: `mustChangePassword` is a DB column (must_change_password) that is NOT
     // part of the Zod `User` type. It defaults to `false` for all new users, so
     // writing it here is only relevant for users whose flag was explicitly set to
-    // `true` (e.g. commerce owner provisioning). The `unknown` bridge cast is
+    // `true` (e.g. listing owner provisioning). The `unknown` bridge cast is
     // required because TypeScript's excess-property checker would reject a type
     // assertion to `Partial<User>` when the source object contains keys that are
     // absent from `User` (even though the Drizzle `.set()` call below happily

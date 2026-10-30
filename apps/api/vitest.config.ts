@@ -68,12 +68,12 @@ export default defineConfig({
                 statements: 75
             },
             exclude: [
-                'node_modules/',
-                'dist/',
-                'test/',
+                '**/node_modules/**',
+                '**/dist/**',
+                '**/test/**',
                 '**/*.d.ts',
                 '**/*.config.ts',
-                'src/index.ts'
+                '**/src/index.ts'
             ]
         }
     },
@@ -97,7 +97,15 @@ export default defineConfig({
             '@repo/utils': resolve(import.meta.dirname, '../../packages/utils/src'),
             '@repo/config': resolve(import.meta.dirname, '../../packages/config/src'),
             '@repo/service-core': resolve(import.meta.dirname, '../../packages/service-core/src'),
-            '@repo/billing': resolve(import.meta.dirname, '../../packages/billing/src'),
+            // HOS-1352 B1: the contract package resolved from
+            // source, like the other @repo/* packages, so no stale dist leaks in.
+            '@repo/billing-verticals-contract': resolve(
+                import.meta.dirname,
+                '../../packages/billing-verticals-contract/src'
+            ),
+            '@repo/verticals': resolve(import.meta.dirname, '../../packages/verticals/src'),
+            // Test-only package (the adjustable clock): devDependency, never src.
+            '@repo/test-clock': resolve(import.meta.dirname, '../../packages/test-clock/src'),
             '@repo/notifications': resolve(import.meta.dirname, '../../packages/notifications/src'),
             '@repo/email': resolve(import.meta.dirname, '../../packages/email/src'),
             // SPEC-187: alias content-moderation so unit tests of files in the

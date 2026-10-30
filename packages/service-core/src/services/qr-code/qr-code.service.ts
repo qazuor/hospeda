@@ -319,9 +319,18 @@ export class QrCodeService extends BaseCrudService<
     protected async _executeSearch(
         params: QrCodeSearchInput,
         _actor: Actor,
-        _ctx: ServiceContext
+        ctx: ServiceContext
     ): Promise<PaginatedListOutput<QrCode>> {
-        const { page = 1, pageSize = 20, sortBy, sortOrder } = params;
+        // BaseCrudRead.search strips page/pageSize/sortBy/sortOrder from params and
+        // republishes them on ctx.pagination (SPEC-088); read them from ctx (HOS-1900).
+        const page = ctx.pagination?.page;
+        const pageSize = ctx.pagination?.pageSize;
+        // Deterministic default: without an ORDER BY, LIMIT/OFFSET paging is
+        // non-deterministic in Postgres. BaseModel.findAll accepts a single sort key only,
+        // so ties on `createdAt` are not broken by a secondary key.
+        // The schema always defaults sortOrder, so it is only honored with an explicit sortBy.
+        const sortBy = ctx.pagination?.sortBy ?? 'createdAt';
+        const sortOrder = ctx.pagination?.sortBy ? ctx.pagination.sortOrder : 'desc';
 
         return this.model.findAll(
             this._buildSearchWhere(params),
@@ -403,7 +412,7 @@ export class QrCodeService extends BaseCrudService<
         return this.runWithLoggingAndValidation({
             methodName: 'resolveBySlug',
             input: { actor, slug },
-            schema: ResolveBySlugInputSchema.extend({ actor: z.any() }),
+            schema: ResolveBySlugInputSchema.extend({ actor: z.any().optional() }),
             ctx,
             execute: async () => {
                 const found = await this.model.findOne({ slug });
@@ -460,7 +469,7 @@ export class QrCodeService extends BaseCrudService<
         return this.runWithLoggingAndValidation({
             methodName: 'registerScan',
             input: { actor, qrCodeId, ...(context ?? {}) },
-            schema: RegisterScanInputSchema.extend({ actor: z.any() }),
+            schema: RegisterScanInputSchema.extend({ actor: z.any().optional() }),
             ctx,
             execute: async (validated) => {
                 // Spread from the VALIDATED object, never from `context`. The
@@ -489,7 +498,7 @@ export class QrCodeService extends BaseCrudService<
      * Reads the live `GENERATED` code a subject holds FOR ONE PURPOSE.
      *
      * The key is all three of `(entityType, entityId, purpose)`, never the
-     * first two. A gastronomy listing carries a door code and a table code; an
+     * first two. A venue listing carries a door code and a table code; an
      * experience carries a listing code and a certificate code that resolve to
      * the same URL. Looking up by entity alone would answer with whichever of
      * them the database happened to return, and the provisioner would then
@@ -526,7 +535,7 @@ export class QrCodeService extends BaseCrudService<
         return this.runWithLoggingAndValidation({
             methodName: 'findLiveCodeForEntity',
             input: { actor, entityType, entityId, purpose },
-            schema: EntityRefInputSchema.extend({ actor: z.any() }),
+            schema: EntityRefInputSchema.extend({ actor: z.any().optional() }),
             ctx,
             execute: async () => this._findLiveCodeForEntity({ entityType, entityId, purpose, ctx })
         });
@@ -559,7 +568,7 @@ export class QrCodeService extends BaseCrudService<
      *   is large and this is not urgent, but any future reasoning about how many
      *   codes exist should count published listings, not printed documents.
      * - **A READ permission now writes.** The image routes let staff holding
-     *   `ACCOMMODATION_UPDATE_ANY` / `COMMERCE_VIEW_ALL` mint a permanent row
+     *   the listing vertical's inspection `VIEW_ALL` (HOS-1693) mint a permanent row
      *   against a third party's listing with a single `GET`, fixing that code's
      *   `targetUrl` and `label` — both creation-only — without the owner ever
      *   having asked for a code. Nothing here refuses that today; it is recorded
@@ -623,7 +632,7 @@ export class QrCodeService extends BaseCrudService<
         return this.runWithLoggingAndValidation({
             methodName: 'getOrCreateForEntity',
             input: { actor, entityType, entityId, purpose, targetUrl, label },
-            schema: GetOrCreateForEntityInputSchema.extend({ actor: z.any() }),
+            schema: GetOrCreateForEntityInputSchema.extend({ actor: z.any().optional() }),
             ctx,
             execute: async (validated, validActor) => {
                 const existing = await this._findLiveCodeForEntity({
@@ -709,7 +718,7 @@ export class QrCodeService extends BaseCrudService<
         return this.runWithLoggingAndValidation({
             methodName: 'setEntityTargetUrl',
             input: { actor, entityType, entityId, purpose, targetUrl },
-            schema: SetEntityTargetUrlInputSchema.extend({ actor: z.any() }),
+            schema: SetEntityTargetUrlInputSchema.extend({ actor: z.any().optional() }),
             ctx,
             execute: async (validated, validActor) => {
                 const existing = await this._findLiveCodeForEntity({
@@ -742,7 +751,7 @@ export class QrCodeService extends BaseCrudService<
      * `deviceType`, `os` and `browserLanguage`.
      *
      * Generic by `qrCodeId` on purpose (§11 OQ-4) — nothing here is
-     * gastronomy-specific, so the same method serves the ficha QR (HOS-982)
+     * venue-specific, so the same method serves the ficha QR (HOS-982)
      * and any future `purpose`. Counting is by `qrCodeId`, never by the
      * entity behind it: a code's target can change (a slug rename) and the
      * scan history must survive that split, which counting by entity would
@@ -776,7 +785,7 @@ export class QrCodeService extends BaseCrudService<
         return this.runWithLoggingAndValidation({
             methodName: 'getScanStatsForCode',
             input: { actor, qrCodeId, window },
-            schema: GetScanStatsForCodeInputSchema.extend({ actor: z.any() }),
+            schema: GetScanStatsForCodeInputSchema.extend({ actor: z.any().optional() }),
             ctx,
             execute: async (validated) => {
                 const windowDays = QR_SCAN_WINDOW_DAYS[validated.window];

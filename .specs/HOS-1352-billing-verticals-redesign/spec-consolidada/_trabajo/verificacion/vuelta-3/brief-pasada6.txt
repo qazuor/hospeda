@@ -1,0 +1,86 @@
+# Brief · pasada 6 · aplicar la adjudicación de la vuelta 3 (HOS-1352)
+
+Respondé en español. W=/home/qazuor/projects/WEBS/hospeda-spec-hos-1352-billing-redesign
+C=$W/.specs/HOS-1352-billing-verticals-redesign/spec-consolidada · A=$C/_trabajo/verificacion/vuelta-3/adjudicacion
+P=$W/.specs/HOS-1352-billing-verticals-redesign · V=$W/.specs/HOS-1353-verticales-capacidades-y-autorizacion
+B=$W/.specs/HOS-1354-billing-cobro-y-proveedor · SP=/tmp/claude-1000/-home-qazuor-projects-WEBS-hospeda2/491befa1-fbbc-467d-84dc-c5b4e15f5eea/scratchpad
+
+## Antes de empezar
+- Leé `$W/.claude/skills/hospeda-specs/SKILL.md`, `.../hospeda-billing/SKILL.md` y `.../hops-linear-workflow/SKILL.md`.
+- Leé `$A/correcciones.txt` (las correcciones), `$A/patrones.txt`, `$A/owner.txt` (CJ) y, para el contexto de cada
+  hallazgo, `$A/hallazgos.json`. Leé también la pasada anterior como precedente: `$C/_trabajo/verificacion/vuelta-2/brief-pasada5.txt`.
+- Fuentes congeladas hoy en `591034c665` (`$C/scripts/comun.py` → `SHA`); el árbol de trabajo es igual. Usá `rg --hidden`.
+- Las líneas de `correcciones.txt` son de la spec en HEAD (`a5fe8f3786`, igual a `a10f010e78` en la spec). Igual,
+  **ubicá cada corrección por su TEXTO** (`sale`), no sólo por el número.
+
+## Decisión del owner nueva (no se relitiga)
+**CJ: 1.** La ruta que borra cuentas de verdad (`user/admin/hardDelete.ts`) la retira `V6`, junto con las de fichas.
+
+## Reglas comunes
+- Hacé SÓLO lo de tu grupo (abajo). Si algo exige tocar un archivo de otro grupo, no lo toques: anotalo.
+- Lo generado se corrige en su generador, nunca en el .md: 01 → `scripts/generadores/g1/`; 04 → `g3/` (+ inventario);
+  B4–B7 → `scripts/generadores/g8/src/B4..B7.md` (y regenerar con `g8/gen.py`); los tramos g-secciones → `secciones/`.
+- Redacción: texto vigente y fiel a la fuente; cada bloque nuevo o cambiado con su `Origen:` a las líneas de la
+  fuente en `591034c665`; AC en Given/When/Then con ID `AC:<pieza>:<n>` (el siguiente libre: máximo con
+  `rg -o 'AC:B3:[0-9]+'`, los AC no están en orden); cada AC nuevo con su TEST en el mapa AC→test con un tipo de la
+  lista cerrada. Lo derivado va marcado «lo derivé…; lo marco».
+- No se editan el PDR, la matriz (`06-mp-validation-matrix.md`), los informes ni (salvo el grupo F) ninguna fuente.
+  En el decision log (`$P/docs/01-decision-log.md`) sólo se agregan 📌 nuevos más su remisión en la línea Estado:
+  nunca se reescribe ni se tacha texto existente del log.
+- Si una corrección te parece equivocada al verificarla contra la fuente, NO la apliques: reportala con evidencia.
+  Si aparece algo que exige una decisión del owner, no la tomes: reportala.
+- Prohibido: git que escriba, Linear, lanzar subagentes. El hook bloquea todo comando que nombre el directorio de
+  caché de Python (doble guion bajo + pycache): no lo nombres.
+- Commits: no los hacés vos.
+
+## Grupos
+
+### F · fuentes (y CJ en las fuentes)
+Sólo archivos bajo `$P/docs/`, `$V/` y `$B/` (nunca `spec-consolidada/`).
+1. CJ: `$V/descomposicion.md:547` (tabla de puertas: la de cuentas pasa a `V6`); registrá CJ en
+   `$P/docs/41-corte-del-mvp/10-decisiones-del-owner.md` como tabla nueva **t16** con el mismo formato que t15
+   (CH y CI); y un 📌 en el decision log siguiendo el precedente de CH y CI (mirá `git -C $W show 2a34a3bf6b 03f96f5f96
+   aba0e99a94 591034c665` para el patrón exacto). Si CJ toca `aristas.py` o un grafo, decilo (no lo toques).
+2. Los 4 residuos «En las fuentes» de `correcciones.txt` (H3-VA10-6, H3-VA8-2, H3-VB03-3, H3-VB14-5). H3-VA8-2 cae
+   en el log: va como 📌 nuevo sobre DEC-CONC-001, no reescribiendo la línea 1531.
+3. Los 6 residuos FUENTE arrastrados de la vuelta 2: el ACC:24 de `NUCLEO/08` («hasta que el barrido la confirme»,
+   viejo desde CH); `EX-57 UNKNOWN` en `B/09` y `B/16`; `V/02:229` («salvo MODERATED»); `V/15:203`; el «doce» de
+   `B/descomposicion.md:361`; el conteo de `B/06` §11. Para cada uno: verificá que siga vivo, buscá en
+   `$C/_trabajo/verificacion/vuelta-2/adjudicacion/hallazgos.json` qué corrección se propuso y aplicala. Si cae en
+   un archivo prohibido (PDR, matriz, informes) o necesita decisión, no lo toques: reportalo.
+Al terminar: lista exacta de archivos tocados (para commitear uno por uno) con un mensaje de commit sugerido por
+archivo (minúscula, ≤100 caracteres en el header, `docs(spec): … (HOS-1352)`).
+
+### G · generadores (fase 1: código; fase 2: re-congelado, cuando te avisen)
+Sólo `$C/scripts/` (todo menos `comun.py` → `SHA`).
+Fase 1: H3-G1-3 (detector P-H de g1 + las 5 entradas en `omisiones.json`), H3-G2-10 (inventario: sección de título
+tachado con cuerpo vivo = MIXTO; g3 adjunta VIVO y MIXTO; guard que falla si una MUERTO tiene texto vivo),
+H3-G2-12 (preámbulo de capítulo entre el título y el primer `##` como sección del inventario; §4.6 de B/14),
+H3-G2-13 (`secciones/gen.py`, `sin_texto_vivo`: no descartar una fila con primera celda tachada y otra celda viva).
+Para cada arreglo sumá un caso a su archivo de canarios (`canarios_g1.py`, `canarios_g3.py`,
+`canarios_secciones.py`, o `canarios.py`/`canarios_cobertura.py` si es del inventario) y verificá que el canario
+falle con el arreglo revertido y pase con él.
+**No regeneres sobre la spec real** en la fase 1: otro grupo está editando esos .md. Para probar, copiá
+`$C` entero a `$SP/g-sandbox/` y corré los generadores ahí; reportá el diff de 01, 04 y de los tramos g-secciones
+contra la spec real, y cuánto cambia la cobertura (hoy 748 de 748).
+Comandos conocidos: `python3 scripts/trazar.py _trabajo/inventario.json _trabajo/adjudicacion.json . --cobertura=_trabajo/cobertura.json`
+desde `$C` (sin los posicionales imprime el uso y sale 1: rojo falso); `cobertura.py --reanclar` no actualiza
+hashes, hace falta `--sellar` después; tras regenerar, `markdownlint-cli2 --fix` sobre las salidas y biome sobre los
+JSON. Corré todo con la salida a un archivo y leé el exit code (nunca `| tail`).
+
+### S · spec a mano (+ g8/src)
+Sólo los .md de `$C/` que NO son generados (no 01, no 04, no los tramos g-secciones) y `$C/scripts/generadores/g8/src/B4..B7.md`
+(después corré `g8/gen.py` para regenerar B4–B7).
+1. Todas las correcciones REAL de `correcciones.txt` de tu alcance (las 2 BLOQUEA primero: H3-VA6-2 y H3-VB07-4).
+2. Las correcciones del lado spec de los residuos FUENTE que el adjudicador propuso también en la spec (p. ej.
+   H3-VB03-3 en `03-contrato-de-cobertura.md`).
+3. CJ en la spec: el mapa de cobertura (`03-contrato-de-cobertura.md` ~:1664) y cualquier otro lugar que asigne el
+   retiro del borrado físico de cuentas a `V8a` pasan a `V6`; `V4`/AC:V6:25 ya lo dicen (verificalo). Citá la letra
+   CJ con un `Origen:` a la t16 que agrega el grupo F (si todavía no existe cuando llegues, dejá la cita a
+   `10-decisiones-del-owner.md` con la letra CJ y anotalo: el re-congelado la re-ancla).
+
+## Al terminar (F y S)
+- markdownlint (`pnpm exec markdownlint-cli2 <archivos>` desde $W) sobre lo que tocaste: 0 errores.
+- S: `trazar.py` con los posicionales (arriba), salida a archivo, exit code; reportá errores en tus archivos.
+- Respuesta final: corrección por corrección (id H3-…): APLICADA / NO APLICADA (por qué) / FUERA DE GRUPO; archivos
+  tocados; resultados; lo que quedó para otro grupo o para el owner. Terminá con `## Key Learnings:`.

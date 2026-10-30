@@ -1,0 +1,28 @@
+# VA-A1 · fuente → spec · P/docs/nucleo/{00-indice,01-glosario,02-modelo-de-datos,03-maquinas-de-estado,04-invariantes,07-outbox-y-notificaciones,08-auditoria-y-observabilidad}.md
+
+## Hallazgos
+
+P/docs/nucleo/08-auditoria-y-observabilidad.md:194 · «confirmar que **no se pagó** | §30 | **sí**: lleva a `SUSPENDED` sin esperar el reloj» (coherente con B/03:1872, `MP2` → `S6` cuarto evento → `SUSPENDED`) · distinta en 02-nucleo.md:1017 («**Sí**: lleva a `CANCELLED` sin esperar el reloj») — ACC:4 manda el estado destino equivocado; contradice además TRANS S6/MP2 de 04-catalogos.md:2692 y :4527 · BLOQUEA
+
+P/docs/nucleo/01-glosario.md:420-423 · «el reloj de retención del §25 arranca igual en los dos … día 90 sale del sitio público conservando acceso del dueño, día 180 hard delete» · distinta en 02-nucleo-glosario.md:367 («día 60 sale del sitio público conservando acceso del dueño») — valor equivocado; contradice PLAZO:1 (90 días, 02-nucleo.md:1544). Ningún 📌 ni letra del owner lo cambia (rg «día 60» sin hits en fuentes) · BLOQUEA
+
+P/docs/nucleo/03-maquinas-de-estado.md:62 · «4. **Toda transición deja un evento de dominio** (§49), con quién la causó y qué la disparó.» · distinta (más fuerte, sin soporte) en 02-nucleo-modelo-y-maquinas.md:254 («El evento se conserva veinticuatro meses; después se compacta en un resumen por fila.») — ninguna fuente habla de retención de 24 meses ni de compactación (rg «veinticuatro meses|24 meses|compacta» sin hits); contradice P/docs/nucleo/08:76 («Append-only: sin `update` y sin `delete`»), 08:85-88 («La retención no escribe en este registro … los datos personales no se tocan, tampoco dentro de eventos») y V/02 §4.1:779 («Se conserva íntegro, siempre … también dentro de eventos de dominio»); choca también con AC:U2:11 (append-only) · BLOQUEA
+
+P/docs/nucleo/07-outbox-y-notificaciones.md:242-243 · «**Nunca lleva un slug interno ni un id.** Es un invariante (`D9` del cap. 04) y se vigila con un guard» · distinta (más fuerte, sin soporte) en 02-nucleo-outbox.md:270 («**Y nunca pasa de 60 caracteres**: el adaptador rechaza uno más largo antes de mandarlo al proveedor.») — límite y rechazo en el adaptador sin soporte en ninguna fuente (rg «60 caracteres» sin hits) · BLOQUEA
+
+P/docs/nucleo/08-auditoria-y-observabilidad.md:160-162 · «**Cuando la cadena se corta** —un webhook de un preapproval que no conocemos— eso **es** la detección de una huérfana (`DEC-CONC-002`), y arranca su propia correlación anotando que no tiene padre.» · ausente: 02-nucleo-auditoria.md:199-200 corta la frase en «detección de una huérfana» y omite la regla; tampoco está en AC:U2:9 / TEST:U2:9 (10-corte/U2.md:213-222) ni en ninguna otra pieza (rg «no tiene padre|sin padre|propia correlación» sin hits en la spec) · BLOQUEA
+
+## Resumen
+
+| archivo | reglas normativas vivas revisadas | líneas recorridas | ausentes | distintas |
+|---|---|---|---|---|
+| nucleo/00-indice.md | ~15 | 1–211 | 0 | 0 |
+| nucleo/01-glosario.md | ~110 | 1–981 | 0 | 1 |
+| nucleo/02-modelo-de-datos.md | ~55 (incl. los 19 plazos y las 5 validaciones del panel) | 1–274 | 0 | 0 |
+| nucleo/03-maquinas-de-estado.md | ~20 | 1–176 | 0 | 1 |
+| nucleo/04-invariantes.md | ~60 (37 + 15 invariantes, §4, §5) | 1–328 | 0 | 0 |
+| nucleo/07-outbox-y-notificaciones.md | ~60 (incl. 30 filas del catálogo de correos) | 1–383 | 0 | 1 |
+| nucleo/08-auditoria-y-observabilidad.md | ~70 (incl. las 25 filas vivas del §3) | 1–520 | 1 | 1 |
+| **total** | ~390 | — | **1** | **4** |
+
+Notas de método: contrasté cada sección de la fuente contra 02-nucleo.md, 02-nucleo-glosario.md, 02-nucleo-modelo-y-maquinas.md, 02-nucleo-outbox.md y 02-nucleo-auditoria.md, y la cobertura AC/TEST de las reglas de prosa del outbox, la correlación y la auditoría contra U2, V9a, V5 y B11. Además corrí dos barridos mecánicos (duraciones con número y tokens entre backticks presentes sólo en la spec) y un barrido de 4-gramas de la spec contra la fuente sin tachados; los únicos residuos con contenido normativo son los cinco de arriba. No reporto el «ÚNICO ESCRITOR» de 02-nucleo-glosario.md:775 frente al «PRIMER ESCRITOR» de 01-glosario.md:803: la fila 7 viva de la misma tabla (01-glosario.md:809) dice «queda como único escritor».

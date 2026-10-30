@@ -184,12 +184,12 @@ describe('RevalidateEntityRequestSchema', () => {
             }
         });
 
-        it('should accept the commerce listing types (HOS-389 §4b regression)', () => {
-            // The admin "revalidate" button on a gastronomy/experience edit page
+        it('should accept the venue and experience listing types (HOS-389 §4b regression)', () => {
+            // The admin "revalidate" button on a venue/experience edit page
             // posts exactly this body. While these two were missing from the
             // enum the request failed validation, which is what made the button
             // unaddable in the first place.
-            for (const entityType of ['gastronomy', 'experience'] as const) {
+            for (const entityType of ['venue', 'experience'] as const) {
                 const result = RevalidateEntityRequestSchema.safeParse({
                     entityType,
                     entityId: 'abc-123'

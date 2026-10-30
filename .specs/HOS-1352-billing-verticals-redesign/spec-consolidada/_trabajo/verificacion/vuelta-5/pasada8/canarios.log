@@ -1,0 +1,68 @@
+✓ base: exit 0
+✓ SEC  mixta     · título tachado y cuerpo vivo («Sale entera…», `V/03:365`) es MIXTO
+✓ SEC  muerta    · título tachado sin cuerpo (`B/03:942`) sigue MUERTO
+✓ SEC  ninguna   · ninguna sección MUERTO tiene texto vivo fuera de ~~…~~
+✓ SEC  preámbulo · el preámbulo de `B/14` (entre su «#» y su primer «##») es una sección
+✓ R1   exit 1 · un ítem vivo definido dos veces
+✓ R1   exit 1 · un ítem vivo definido sólo en 90-retirados
+✓ R2   exit 1 · un ítem muerto definido fuera de 90-retirados
+✓ R3   exit 1 · un MIXTO sin adjudicar
+✓ R3   exit 1 · una adjudicación con el hash de otra línea
+✓ R3   exit 1 · un veredicto fuera de VIVO|MUERTO|PARCIAL
+✓ R3b  exit 1 · la fuente cambió desde el SHA (hash del inventario ≠ árbol de trabajo)
+✓ R4   exit 1 · una referencia colgada
+✓ R5   exit 1 · un ancla inventada con Origen
+✓ R6   exit 1 · una definición sin Origen
+✓ R6   exit 1 · un Origen que no cita la posición del ítem
+✓ R6   exit 1 · la línea citada no contiene el id local
+✓ R6   exit 1 · una letra del owner guardada sin su blanco («📌A» por «📌 A»)
+✓ R7   exit 1 · un ítem normativo vivo sin AC
+✓ R7b  exit 1 · el AC que cita el ítem está en otra pieza que la dueña de cobertura.json
+✓ R7b  exit 1 · cobertura.json le da al ítem una pieza sin ningún AC
+✓ pasa exit 0 · un ítem de la lista cerrada que igual recibe un AC pasa
+✓ R7   exit 1 · el mismo ítem fuera de la lista cerrada y sin AC falla
+✓ R7c  exit 1 · una lista cerrada con un ítem que no existe
+✓ R7c  exit 1 · una lista cerrada cuyo fragmento no está en la fila de su letra
+✓ R7c  exit 1 · un ítem de la lista sin declarar en 03-contrato-de-cobertura.md
+✓ R11  exit 1 · un AC:CORTE definido fuera de 30-el-corte.md
+✓ R11  exit 1 · una US de CORTE
+✓ R12  exit 1 · un TEST:CORTE que no es smoke manual ni guard estático
+✓ R7b  exit 1 · un ítem del corte cuyo AC está en CORTE pero cobertura.json lo da a B2
+✓ R8   exit 1 · un AC sin test
+✓ R9   exit 1 · un AC inventado, sin fuente (y con test, para que sólo falte la fuente)
+✓ R9   exit 1 · un test que cita sólo un ancla de US (no un ítem fuente)
+✓ R10  exit 1 · una US dentro de 80-abiertos
+✓ R11  exit 1 · un AC sin Entonces
+✓ R11  exit 1 · una US con un actor fuera de la lista
+✓ R11  exit 1 · un AC cuyo id visible no coincide con el ancla
+✓ R11  exit 1 · una pieza sin AC de salida
+✓ R11  exit 1 · un AC de una pieza inexistente
+✓ R12  exit 1 · un tipo de test fuera de la lista cerrada
+✓ R12  exit 1 · un smoke sin etiqueta
+✓ R13  exit 1 · una invariante sin test (citada por un AC sin test)
+✓ R14  exit 1 · una transición sin test de integración con DB
+✓ R15  exit 1 · un guard sin prueba de mutación
+✓ R16  exit 1 · una sección de la plantilla borrada
+✓ R16  exit 1 · un N/A sin razón
+✓ R16  exit 1 · una pieza del corte en la carpeta de una fase posterior
+✓ R17  exit 1 · una sección del diseño sin ninguna línea citada
+✓ pasa exit 0 · esa sección, citada por un Origen de prosa fuera de todo bloque, pasa
+✓ R17  exit 1 · el mismo Origen dentro de un bloque de código no cuenta
+✓ pasa exit 0 · la plantilla de un generador en scripts/ (anclas y Origen repetidos) no es la spec: pasa
+✓ R18  exit 1 · un ítem sin el tipo de test que AN exige por su familia
+✓ pasa exit 0 · un tipo derivado sólo del texto que falta pasa, con aviso
+✓ R18  exit 1 · un smoke con la etiqueta equivocada no cumple el tipo «smoke manual · prod»
+✓ R19  exit 1 · un PARCIAL cuyo texto muerto sigue en el cuerpo de su bloque
+✓ pasa exit 0 · el mismo PARCIAL omitido con «[…]» y citado sólo en su nota pasa
+✓ pasa exit 0 · un tramo que el veredicto da por vivo («…» sigue) pasa
+✓ R20  exit 1 · un tramo tachado de una fuente, vivo en la spec
+✓ pasa exit 0 · el mismo tramo en 90-retirados pasa
+✓ pasa exit 0 · el mismo tramo tachado en la spec pasa
+✓ R21  exit 1 · un «:» seguido directo de Origen: (sección sin cuerpo)
+✓ R17  exit 1 · ese Origen sin cuerpo no cubre su sección
+✓ R17  exit 1 · una sección MIXTO (título tachado, cuerpo vivo) sin cita también falla
+✓ pasa exit 0 · con un cuerpo entre el «:» y el Origen, la sección queda cubierta y pasa
+✓ pasa exit 0 · un AC que remite a `B/12` §3.2 sin enunciar la regla pasa, con aviso
+✓ pasa exit 0 · el mismo AC con la regla enunciada pasa sin aviso (la regla no es ciega)
+
+65 canarios (4 del inventario) · 0 fallas

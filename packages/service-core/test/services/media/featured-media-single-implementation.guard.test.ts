@@ -61,7 +61,7 @@ const PORT_FILE = 'services/media/owned-media-featured-port.ts';
  */
 const FEATURED_ENTRY_POINTS: ReadonlyArray<{ readonly file: string; readonly fn: string }> = [
     { file: 'services/accommodation/accommodation.service.ts', fn: 'addFeaturedMedia' },
-    { file: 'services/gastronomy/gastronomy.media.ts', fn: 'addGastronomyFeaturedMedia' },
+    { file: 'services/venue/venue.media.ts', fn: 'addVenueFeaturedMedia' },
     { file: 'services/experience/experience.media.ts', fn: 'addExperienceFeaturedMedia' }
 ];
 
@@ -128,9 +128,9 @@ const FEATURED_TRUE_SITES: ReadonlyArray<{
         why: 'setFeaturedMedia — promotes a row that already exists.'
     },
     {
-        file: 'services/gastronomy/gastronomy.media.ts',
+        file: 'services/venue/venue.media.ts',
         kind: 'promote',
-        why: 'setFeaturedGastronomyMedia — promotes a row that already exists.'
+        why: 'setFeaturedVenueMedia — promotes a row that already exists.'
     },
     {
         file: 'services/experience/experience.media.ts',
@@ -257,15 +257,15 @@ describe('HOS-803 — one implementation of the born-featured cover path', () =>
         // setFeatured must reject them explicitly — `updateMedia` always did,
         // these three did not. Behaviour is covered by
         // `accommodation/featured-media-deleted-row-revival.test.ts`; this
-        // pins the two commerce twins, which have no equivalent suite.
+        // pins the venue and experience twins, which have no equivalent suite.
         const SET_FEATURED_SITES: ReadonlyArray<{ file: string; fn: string }> = [
             {
                 file: 'services/accommodation/accommodation.service.ts',
                 fn: 'public async setFeaturedMedia('
             },
             {
-                file: 'services/gastronomy/gastronomy.media.ts',
-                fn: 'export async function setFeaturedGastronomyMedia('
+                file: 'services/venue/venue.media.ts',
+                fn: 'export async function setFeaturedVenueMedia('
             },
             {
                 file: 'services/experience/experience.media.ts',

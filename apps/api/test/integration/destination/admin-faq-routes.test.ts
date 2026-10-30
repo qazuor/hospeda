@@ -1,5 +1,29 @@
-import { accommodationFaqs, accommodations, destinationFaqs, destinations, getDb } from '@repo/db';
-import { PermissionEnum, RoleEnum } from '@repo/schemas';
+import {
+    accommodationFaqs,
+    accommodations,
+    and,
+    destinationFaqs,
+    destinations,
+    eq,
+    getDb,
+    plans,
+    planVersions,
+    trials
+} from '@repo/db';
+import {
+    FLOOR_PLAN_ROLE,
+    PermissionEnum,
+    PublicationStatusEnum,
+    RoleEnum,
+    TRIAL_PLAN_ROLE,
+    TrialStatusEnum,
+    VerticalEnum
+} from '@repo/schemas';
+
+// This suite uses the explicit test-only mock-actor headers. Match the
+// integration-test convention that keeps those headers available under CI.
+delete process.env.CI;
+
 /**
  * Integration tests for admin destination FAQ routes (SPEC-177 T-028).
  *
@@ -21,7 +45,7 @@ import { PermissionEnum, RoleEnum } from '@repo/schemas';
  *   - Foreign faqId in accommodation reorder → 400 (VALIDATION_ERROR → HTTP 400)
  *   - Missing parent destination → 404
  */
-import { afterAll, afterEach, beforeAll, describe, expect, it } from 'vitest';
+import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it } from 'vitest';
 import { initApp } from '../../../src/app';
 import { validateApiEnv } from '../../../src/utils/env';
 import { createTestUser } from '../../e2e/setup/seed-helpers';
@@ -46,7 +70,7 @@ const INVALID_UUID = 'not-a-uuid';
  * (service _canUpdate gate).
  */
 const adminActor = {
-    id: crypto.randomUUID(),
+    id: '',
     roles: [RoleEnum.ADMIN],
     permissions: [
         PermissionEnum.ACCESS_PANEL_ADMIN,
@@ -90,6 +114,14 @@ describe('Admin destination FAQ routes (SPEC-177 T-028)', () => {
         validateApiEnv();
         process.env.HOSPEDA_ALLOW_MOCK_ACTOR = 'true';
         app = initApp();
+    });
+
+    beforeEach(async () => {
+        const user = await createTestUser({
+            email: `hos1659-admin-faq-${crypto.randomUUID()}@example.test`,
+            slug: `hos1659-admin-faq-${crypto.randomUUID()}`
+        });
+        adminActor.id = user.id;
     });
 
     afterAll(async () => {
@@ -159,6 +191,43 @@ describe('Admin destination FAQ routes (SPEC-177 T-028)', () => {
         const owner = await createTestUser({});
         const other = await createTestUser({});
 
+        // Action 15 evaluates EDIT on the listing owner, including coverage and
+        // edit_accommodation_info. The migrated premium trial supplies both.
+        const versions = await db
+            .select({
+                role: plans.role,
+                slug: plans.slug,
+                planId: plans.id,
+                versionId: planVersions.id
+            })
+            .from(plans)
+            .innerJoin(planVersions, eq(planVersions.planId, plans.id))
+            .where(
+                and(eq(plans.vertical, VerticalEnum.ACCOMMODATION), eq(planVersions.current, true))
+            );
+        const versionFor = (predicate: (row: (typeof versions)[number]) => boolean) => {
+            const version = versions.find(predicate);
+            if (!version) throw new Error('Missing migrated accommodation plan version');
+            return version;
+        };
+        const premium = versionFor((row) => row.slug === 'owner-premium');
+        const floor = versionFor((row) => row.role === FLOOR_PLAN_ROLE);
+        const trial = versionFor((row) => row.role === TRIAL_PLAN_ROLE);
+        const startedAt = new Date();
+        await db.insert(trials).values({
+            userId: owner.id,
+            vertical: VerticalEnum.ACCOMMODATION,
+            status: TrialStatusEnum.TRIAL_ACTIVE,
+            trialPlanId: trial.planId,
+            floorEntitlementsVersionId: premium.versionId,
+            floorLimitsVersionId: floor.versionId,
+            floorTrialPlanVersionId: trial.versionId,
+            startedAt,
+            endsAt: new Date(startedAt.getTime() + 14 * 24 * 60 * 60 * 1000),
+            emailPseudonym: crypto.randomUUID().replaceAll('-', '').padEnd(64, '0'),
+            deadlinesVersion: 1
+        });
+
         // Seed a destination first (accommodation needs destinationId)
         const destRows = await db
             .insert(destinations)
@@ -193,9 +262,9 @@ describe('Admin destination FAQ routes (SPEC-177 T-028)', () => {
                 type: 'HOTEL',
                 ownerId: owner.id,
                 destinationId: seedDestId,
-                visibility: 'PUBLIC',
-                lifecycleState: 'ACTIVE',
-                moderationState: 'APPROVED'
+                publicationStatus: PublicationStatusEnum.PUBLISHED,
+                inactiveSince: new Date(),
+                deadlinesVersion: 1
             })
             .returning({ id: accommodations.id });
 

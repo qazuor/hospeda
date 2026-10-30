@@ -66,7 +66,6 @@ export const publicCountBookmarksForEntityRoute = createPublicRoute({
     responseSchema: UserBookmarkCountResponseSchema,
     handler: countBookmarksForEntityHandler,
     options: {
-        cacheTTL: 60,
         customRateLimit: { requests: 200, windowMs: 60000 }
     }
 });

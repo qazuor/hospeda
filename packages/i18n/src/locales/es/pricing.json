@@ -4,25 +4,6 @@
     "recommended": "Recomendado",
     "trial_one": "{{count}} día de prueba gratis",
     "trial_other": "{{count}} días de prueba gratis",
-    "trialNotEligible": "Sin período de prueba",
-    "trialWarning": {
-        "title": "Vas a perder tu prueba gratis",
-        "body_one": "Te queda {{count}} día de prueba gratis. Si contratás ahora, lo perdés.",
-        "body_other": "Te quedan {{count}} días de prueba gratis. Si contratás ahora, los perdés.",
-        "bodyUnknown": "Puede que tengas una prueba gratis en curso. Si contratás ahora, la perdés.",
-        "immediateCharge": "El cobro es inmediato: se hace ahora, no al terminar la prueba.",
-        "confirm": "Contratar igual",
-        "cancel": "Seguir con la prueba"
-    },
-    "trialBanner": {
-        "message_one": "Tu prueba gratis sigue activa: te queda {{count}} día.",
-        "message_other": "Tu prueba gratis sigue activa: te quedan {{count}} días.",
-        "hint": "Si contratás un plan ahora, el cobro es inmediato y perdés los días que te quedan."
-    },
-    "touristVipHeld": {
-        "cta": "Ya tenés estos beneficios",
-        "note": "Tu suscripción activa ya incluye todos los beneficios VIP de turista."
-    },
     "includesEverything": "Todo lo del plan {plan}, más:",
     "includesAll": "Este plan incluye:",
     "limitsLabel": "Límites de este plan",
@@ -32,9 +13,9 @@
         "default": {
             "owner": "quien publica su alojamiento en Hospeda",
             "tourist": "quien viaja por el litoral y quiere aprovechar mejor la plataforma",
-            "gastronomy": "quien tiene un local gastronómico y quiere que lo encuentren",
             "experience": "quien organiza salidas y actividades para visitantes",
-            "partner": "instituciones y comercios que quieren asociarse con Hospeda"
+            "partner": "instituciones y comercios que quieren asociarse con Hospeda",
+            "venue": "quien tiene un local y quiere que lo encuentren"
         },
         "plan": {
             "owner-basico": "quien alquila una sola propiedad y recién empieza a publicarla",
@@ -42,9 +23,9 @@
             "owner-premium": "quien vive de alquilar y necesita todas las herramientas y el mayor alcance",
             "tourist-free": "quien está empezando a mirar alojamientos y quiere guardar algunos favoritos",
             "tourist-vip": "quien viaja seguido y quiere todos los beneficios y el contacto directo con el anfitrión",
-            "gastronomy-basico": "quien recién publica su local y quiere estar en el mapa",
-            "gastronomy-pro": "quien ya tiene clientela y quiere mostrar la carta al día",
-            "gastronomy-premium": "quien maneja el local con carta en varios idiomas y atención constante",
+            "venue-basico": "quien recién publica su local y quiere estar en el mapa",
+            "venue-pro": "quien ya tiene clientela y quiere mostrar la carta al día",
+            "venue-premium": "quien maneja el local con carta en varios idiomas y atención constante",
             "experience-basico": "quien empieza a ofrecer sus salidas y quiere darse a conocer",
             "experience-pro": "quien recibe visitantes seguido y necesita explicar bien cómo llegar",
             "experience-premium": "quien vive de las salidas y quiere entregar certificados y atención permanente",
@@ -58,6 +39,7 @@
     "baseHighlightText": "Todo lo esencial para arrancar, sin compromiso.",
     "group": {
         "tourist": "Todas las funciones de turista",
+        "touristVip": "Incluye todos los beneficios de Turista VIP",
         "ai": "Suite de IA: textos, traducción, importación y consultas"
     },
     "features": {
@@ -79,15 +61,12 @@
         "year": "/año"
     },
     "monthlyOnly": "Solo plan mensual",
-    "promoEntry": {
-        "label": "¿Tenés un código de descuento? Vas a poder usarlo en el plan que elijas."
-    },
     "index": {
         "title": "Planes de Hospeda",
         "description": "Elegí a qué audiencia pertenecés y mirá los planes pensados para vos.",
         "tagline": "Planes y precios",
         "heading": "Un plan para cada audiencia",
-        "subtitle": "Hospeda tiene cinco formas de sumarse. Elegí la tuya y mirá qué incluye cada una.",
+        "subtitle": "Hospeda tiene cuatro formas de sumarse. Elegí la tuya y mirá qué incluye cada una.",
         "cardsHeading": "Elegí tu audiencia",
         "highlightsLabel": "Qué obtenés",
         "from": "Desde {{price}}",
@@ -114,13 +93,13 @@
                     "item3": "Compará alojamientos y escribí tus reseñas."
                 }
             },
-            "gastronomy": {
-                "title": "Publicar mi local gastronómico",
-                "audience": "Para restaurantes, parrillas, panaderías, food trucks y todo local gastronómico que quiera aparecer en la guía.",
-                "cta": "Ver planes de gastronomía",
+            "venue": {
+                "title": "Publicar mi local en Comer y salir",
+                "audience": "Para restaurantes, parrillas, panaderías, food trucks y todo local que quiera aparecer en la guía.",
+                "cta": "Ver planes de Comer y salir",
                 "highlights": {
                     "item1": "Ficha con fotos, menú, horarios y datos de contacto.",
-                    "item2": "Aparecé en la guía gastronómica que consultan los viajeros.",
+                    "item2": "Aparecé en la guía de Comer y salir que consultan los viajeros.",
                     "item3": "Precio mensual fijo, sin comisión por consulta ni reserva."
                 }
             },
@@ -132,16 +111,6 @@
                     "item1": "Publicá excursiones, paseos y actividades con fotos y horarios.",
                     "item2": "Aparecé entre las experiencias que se buscan en el Litoral.",
                     "item3": "Un monto mensual fijo: ninguna reserva te cobra comisión aparte."
-                }
-            },
-            "partner": {
-                "title": "Ser partner de Hospeda",
-                "audience": "Para marcas y comercios que quieren visibilidad en toda la plataforma.",
-                "cta": "Conocer el programa de partners",
-                "highlights": {
-                    "item1": "Presencia de marca en el carrusel de aliados de Hospeda.",
-                    "item2": "Visibilidad conjunta en nuestras campañas y canales de difusión.",
-                    "item3": "Condiciones comerciales a medida según el tipo de alianza."
                 }
             }
         }
@@ -256,13 +225,13 @@
         "seePlans": "Ver planes y precios"
     },
     "consultPrice": "Consultar",
-    "gastronomy": {
+    "venue": {
         "tagline": "Planes y precios",
-        "heading": "Precios para gastronomía",
+        "heading": "Precios para Comer y salir",
         "subtitle": "Todos los planes publican tu local. Cambia cuánto podés mostrar de él.",
         "empty": "Planes no disponibles en este momento.",
-        "cardsHeading": "Comparativa de planes para gastronomía",
-        "pageTitle": "Precios para publicar tu local gastronómico",
+        "cardsHeading": "Comparativa de planes para Comer y salir",
+        "pageTitle": "Precios para publicar tu local en Comer y salir",
         "pageDescription": "Mirá cuánto sale publicar tu restaurante, parrilla, rotisería o carrito en Hospeda.",
         "ctaLabel": "Empezar"
     },
@@ -303,5 +272,6 @@
         "invoiceA": "Sí. Cada cobro genera su comprobante y lo tenés disponible en tu cuenta.",
         "partnerPriceQ": "¿Por qué no figura el precio?",
         "partnerPriceA": "Porque no le cobramos lo mismo a una institución que a un comercio de barrio, aunque tomen el mismo nivel. Los valores vigentes te los pasamos en la charla."
-    }
+    },
+    "startConsumesTrialNote": "Empezar consume tu prueba gratis, y la prueba es una sola vez en la vida."
 }

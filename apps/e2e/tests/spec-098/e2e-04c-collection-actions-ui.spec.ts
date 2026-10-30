@@ -6,9 +6,10 @@
  * `CollectionDetailActions.client.tsx` mounted from the collection detail
  * page so the wiring is covered in CI.
  *
- * Actors: Authenticated regular user.
+ * Actors: Authenticated USER seeded as a Tourist VIP (an ACTIVE PRINCIPAL tourist-vip
+ * subscription, read by billing coverage since HOS-1532). No deferral: a VIP answered 403 fails the spec (HOS-1665, TEST:1665:3).
  *
- * Tags: @p1 @favorites @collections @ui @spec-098
+ * Tags: @p0 @favorites @collections @ui @spec-098
  *
  * Preconditions:
  *   - At least one ACTIVE/PUBLIC accommodation in seed.
@@ -25,12 +26,7 @@
  */
 
 import { expect, test } from '@playwright/test';
-import {
-    createSubscription,
-    createUser,
-    markProfileCompleted,
-    resolvePlanIdBySlug
-} from '../../fixtures/api-helpers.ts';
+import { createUser, makeTouristVip, markProfileCompleted } from '../../fixtures/api-helpers.ts';
 import { seedCookieConsent } from '../../fixtures/browser-helpers.ts';
 import { execSQL, getDbPool } from '../../fixtures/db-helpers.ts';
 import { cleanupTestUsers } from '../../support/test-cleanup.ts';
@@ -70,13 +66,8 @@ async function attachSessionCookie(
     await context.addCookies(cookies);
 }
 
-test.describe('E2E-04c: collection actions via UI @p1 @favorites @collections @ui @spec-098', () => {
+test.describe('E2E-04c: collection actions via UI @p0 @favorites @collections @ui @spec-098', () => {
     const userIds: string[] = [];
-    let vipPlanId: string | null = null;
-
-    test.beforeAll(async () => {
-        ({ planId: vipPlanId } = await resolvePlanIdBySlug({ slug: 'tourist-vip' }));
-    });
 
     test.beforeEach(async ({ page }) => {
         await seedCookieConsent(page);
@@ -92,8 +83,7 @@ test.describe('E2E-04c: collection actions via UI @p1 @favorites @collections @u
     async function getFirstActiveAccommodationId(): Promise<string | null> {
         const rows = await execSQL<{ id: string }>(
             `SELECT id FROM accommodations
-             WHERE lifecycle_state = 'ACTIVE'
-               AND visibility = 'PUBLIC'
+             WHERE publication_status = 'PUBLISHED'
                AND deleted_at IS NULL
              ORDER BY created_at ASC
              LIMIT 1`
@@ -112,12 +102,9 @@ test.describe('E2E-04c: collection actions via UI @p1 @favorites @collections @u
             return;
         }
 
-        test.fixme(!vipPlanId, 'tourist-vip plan not seeded — cannot run');
-        if (!vipPlanId) return;
         const user = await createUser({ role: 'USER' });
         userIds.push(user.id);
-        // SPEC-287 put collections behind `can_use_collections`; tourist-free is 403.
-        await createSubscription({ userId: user.id, planId: vipPlanId, status: 'active' });
+        await makeTouristVip(user.id);
         // SPEC-113 bounces users with profile_completed = false to the completion
         // form, so a UI spec never reaches the account page it asserts on.
         await markProfileCompleted({ userId: user.id });
@@ -158,24 +145,18 @@ test.describe('E2E-04c: collection actions via UI @p1 @favorites @collections @u
         // Inject the session cookie into the browser
         await attachSessionCookie(context, user.sessionCookie);
 
-        // Auto-accept the window.confirm() dialog raised by the island
-        page.on('dialog', (dialog) => {
-            void dialog.accept();
-        });
-
         // Act: navigate to the collection detail page and click the Delete action
         await page.goto(`${WEB_BASE_URL}/es/mi-cuenta/favoritos/colecciones/${collectionId}/`);
         await page.waitForLoadState('networkidle');
 
         const deleteBtn = page.locator('[data-testid="collection-actions-delete"]');
-        if ((await deleteBtn.count()) === 0) {
-            test.skip(
-                true,
-                'Delete action not found — CollectionDetailActions island is not mounted on the detail page'
-            );
-            return;
-        }
+        // The detail page redirects to the listing on 403/404 ([id].astro:98-107), so a missing button is a regression (including a VIP receiving 403), never a reason to skip.
+        await expect(deleteBtn, `delete action not rendered on ${page.url()}`).toHaveCount(1);
         await deleteBtn.first().click();
+        await page
+            .getByRole('dialog')
+            .getByRole('button', { name: 'Borrar colección', exact: true })
+            .click();
 
         // Assert: the user is redirected back to the favorites index
         await page.waitForURL(/\/mi-cuenta\/favoritos\/?$/, { timeout: 10_000 });

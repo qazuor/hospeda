@@ -102,7 +102,7 @@ export const searchQuerySchema = z.object({
 /**
  * Combined search and pagination schema
  */
-export const searchWithPaginationSchema = searchQuerySchema.merge(paginationQuerySchema);
+export const searchWithPaginationSchema = searchQuerySchema.safeExtend(paginationQuerySchema.shape);
 
 /**
  * Date range query parameters schema

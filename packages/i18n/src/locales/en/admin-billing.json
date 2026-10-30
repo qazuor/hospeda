@@ -269,7 +269,7 @@
                 "complex": "Complex",
                 "tourist": "Tourist",
                 "ai": "Artificial intelligence",
-                "commerce": "Commerce"
+                "listing": "Listings"
             },
             "cancelButton": "Cancel",
             "saveButton": "Save changes",
@@ -1346,8 +1346,8 @@
         "planDomainFilter": "Product",
         "productDomainLabels": {
             "accommodation": "Accommodation",
-            "commerce": "Commerce",
-            "gastronomy": "Gastronomy",
+            "listing": "Listings",
+            "venue": "Food & nightlife",
             "experience": "Experience",
             "partner": "Partner",
             "tourist": "Tourist",
@@ -1613,6 +1613,406 @@
             "toggleError": "Error changing status",
             "deleted": "Promo code deleted successfully",
             "deleteError": "Error deleting promo code"
+        },
+        "editor": {
+            "title": "Promo codes",
+            "newCode": "New code",
+            "loading": "Loading promo codes…",
+            "loadError": "Could not load promo codes.",
+            "retry": "Retry",
+            "empty": "There are no promo codes yet.",
+            "pagination": "Promo code pagination",
+            "previous": "Previous",
+            "next": "Next",
+            "unlimited": "No limit",
+            "noEndDate": "No end date",
+            "reviewTitle": "Review promo code",
+            "create": "Create",
+            "review": "Review",
+            "back": "Back to editing",
+            "cancel": "Cancel",
+            "close": "Close code",
+            "closeTitle": "Close promo code",
+            "closeNow": "Code {{code}} stops accepting redemptions now.",
+            "closeRedemptions": "The {{count}} redemptions already made stay as they are.",
+            "columns": {
+                "code": "Code",
+                "effect": "Effect",
+                "reach": "Who it reaches",
+                "uses": "Uses",
+                "validity": "Validity",
+                "status": "Status",
+                "actions": "Actions"
+            },
+            "availability": {
+                "open": "Open",
+                "closed": "Closed",
+                "notYetValid": "Not yet valid",
+                "expired": "Expired",
+                "exhausted": "Exhausted"
+            },
+            "effects": {
+                "firstCharge": "{{value}} on the first charge",
+                "nCharges_one": "{{value}} for {{count}} charge",
+                "nCharges_other": "{{value}} for {{count}} charges",
+                "forever": "{{value}} forever",
+                "trialExtension_one": "{{count}} extra trial day",
+                "trialExtension_other": "{{count}} extra trial days"
+            },
+            "reach": {
+                "allFuture": "All verticals, including future ones"
+            },
+            "verticals": {
+                "accommodation": "Accommodation",
+                "venue": "Food & nightlife",
+                "experience": "Experiences",
+                "tourist": "Tourism",
+                "partner": "Partners"
+            },
+            "uses": {
+                "quota": "Up to {{count}} redemptions in total, one per person",
+                "unlimited": "No redemption limit, one per person"
+            },
+            "validity": {
+                "now": "now",
+                "range": "From {{from}} until {{until}}",
+                "noEnd": "From {{from}}, no end date"
+            },
+            "form": {
+                "title": "Create promo code",
+                "description": "Set the effect, reach, quota, and validity.",
+                "invalid": "Check the code details and dates.",
+                "code": "Code (uppercase)",
+                "effectKind": "Effect",
+                "discount": "Discount",
+                "trialExtension": "Trial extension",
+                "discountKind": "Discount type",
+                "percentage": "Percentage",
+                "fixed": "Fixed amount (ARS)",
+                "value": "Value",
+                "duration": "Duration",
+                "firstCharge": "First charge",
+                "nCharges": "Number of charges",
+                "forever": "Forever",
+                "chargeCount": "Number of charges",
+                "extensionDays": "Extension days",
+                "allVerticals": "All verticals, including future ones",
+                "verticals": "Included verticals",
+                "totalQuota": "Total redemption quota",
+                "onePerPerson": "Each person can redeem this code once.",
+                "validFrom": "Valid from (optional)",
+                "validUntil": "Valid until",
+                "noEndDate": "Leave empty for no end date.",
+                "stackable": "Can stack with another active promo",
+                "usableWithAnother": "Usable with another active promo",
+                "stackableHelp": "These options apply only between promos; they do not configure combinations with courtesy grants."
+            },
+            "rejections": {
+                "forbidden": "Only a SUPER_ADMIN can create or close codes.",
+                "notFound": "Promo code not found.",
+                "alreadyExists": "That code already exists. Choose another code.",
+                "alreadyClosed": "This code is already closed.",
+                "invalidInput": "The code details do not meet the allowed rules.",
+                "generic": "The promo code operation could not be completed."
+            },
+            "toasts": {
+                "created": "Promo code created.",
+                "createError": "Could not create the promo code.",
+                "closed": "Promo code closed.",
+                "closeError": "Could not close the promo code."
+            }
+        }
+    },
+    "subscriptionRevocation": {
+        "alreadyCancelled": "This subscription is already cancelled. There is nothing left to revoke.",
+        "title": "Revoke a subscription (right of withdrawal)",
+        "motive": "Reason: revocation under the right of withdrawal.",
+        "loading": "Checking the subscription's last charge…",
+        "notFound": "This subscription does not exist.",
+        "forbidden": "You cannot revoke this subscription: it is yours or belongs to a system account. Another team member with the permission revokes it.",
+        "loadError": "We could not check the subscription. Try again.",
+        "ready": {
+            "intro": "You are about to register the revocation. In a single act:"
+        },
+        "origin": {
+            "label": "Current status: {state}",
+            "ACTIVE": "Active",
+            "GRACE_PERIOD": "In grace period",
+            "CANCEL_SCHEDULED": "Cancellation scheduled",
+            "PAUSED": "Paused"
+        },
+        "originExtra": {
+            "GRACE_PERIOD": "The grace period clock is stopped.",
+            "PAUSED": "The pause is closed."
+        },
+        "effects": {
+            "authorization": "Their automatic debit in Mercado Pago is cancelled. We email them first to let them know.",
+            "noAuthorization": "They have no automatic debit in Mercado Pago: there is nothing to cancel there.",
+            "service": "The service ends right now, without waiting for the end of the period.",
+            "refund": "A refund of {amount} is requested: everything still refundable from the charge of {chargedAt}. The money only goes out once a person confirms that refund."
+        },
+        "predecessor": "That charge belongs to the previous subscription, which this one succeeds: the refund comes from that charge.",
+        "window": "It is within the window: it can be revoked until {lastDay} inclusive (10 calendar days from the charge).",
+        "noteLabel": "Note (optional)",
+        "noteHelp": "It is kept in the log, together with who revoked it.",
+        "confirm": "Revoke: cancel, end the service and request the refund",
+        "blocked": {
+            "intro": "It cannot be revoked. Nothing was cancelled.",
+            "introStateNotAllowed": "It cannot be revoked.",
+            "REFUND_EXCEEDS_BALANCE": "That charge already has refunds requested or made for its whole amount. The revocation is not registered: the subscription is not cancelled and the service is not ended. Resolve that refund first.",
+            "PAYMENT_NOT_REFUNDABLE": "The last charge was already refunded or has a chargeback: it cannot be refunded again.",
+            "REVOCATION_WINDOW_CLOSED": "More than 10 calendar days have passed since the last charge: the revocation window has closed.",
+            "REVOCATION_NO_CREDITED_PAYMENT": "There is no credited charge to refund.",
+            "REVOCATION_AMOUNT_UNAVAILABLE": "We do not know how much was paid in the last manual payment: it has no anchored price.",
+            "REVOCATION_NOT_PRINCIPAL": "Only a main subscription can be revoked, not an add-on's.",
+            "REVOCATION_STATE_NOT_ALLOWED": "The subscription is not active, in grace, scheduled for cancellation or paused (for example, it is already cancelled).",
+            "REFUND_AMOUNT_INVALID": "The amount to refund is not valid.",
+            "REVOCATION_PAYMENT_CHANGED": "The last charge changed since you opened this screen, and nothing was revoked. Check the new charge and confirm again.",
+            "REVOCATION_STATE_CHANGED": "The subscription changed in the meantime, and nothing was revoked. We checked it again.",
+            "SUBSCRIPTION_NOT_FOUND": "This subscription does not exist.",
+            "ADMINISTRATIVE_ACTION_FORBIDDEN": "You cannot revoke this subscription: it is yours or belongs to a system account. Another team member with the permission revokes it.",
+            "unknown": "It cannot be revoked now (code {reason})."
+        },
+        "notice": {
+            "REVOCATION_PAYMENT_CHANGED": "The last charge changed since you opened this screen, and nothing was revoked. Check the new charge and confirm again.",
+            "REVOCATION_STATE_CHANGED": "The subscription changed in the meantime, and nothing was revoked. We checked it again."
+        },
+        "result": {
+            "title": "Subscription revoked",
+            "cancelled": "It is cancelled and without service since {serviceEndedAt}.",
+            "refund": "A refund of {amount} was requested (request {refundId}). The money goes out once a person confirms it.",
+            "cancelCall": {
+                "SENT": "The cancellation was sent to Mercado Pago.",
+                "NOT_NEEDED": "Mercado Pago already had it cancelled.",
+                "NOTICE_PENDING": "The cancellation in Mercado Pago waits for our email to go out. The sweep sends it.",
+                "FAILED": "The call to Mercado Pago failed. The subscription is cancelled anyway: the sweep retries the cancellation.",
+                "NOT_APPLICABLE": "There was nothing to cancel in Mercado Pago."
+            },
+            "escalated": {
+                "NO_RECIPIENT": "There was no one to send the prior notice to; the cancellation went out anyway.",
+                "DELIVERY_EXHAUSTED": "The prior notice could not be delivered after the retries; the cancellation went out anyway."
+            }
+        },
+        "successTitle": "Subscription revoked",
+        "errorTitle": "The subscription could not be revoked",
+        "settlement": {
+            "title": "Record the refund (action 14)",
+            "intro": "First refund the payment from the Mercado Pago panel. Then record it here with that refund's reference: this closes request {{refundId}} and no second refund is created.",
+            "noPermission": "Another team member with the permission to record out-of-flow settlements records this refund.",
+            "mismatch": {
+                "notice": "The amount to record ({{amount}}) is not the requested one ({{requested}}). Choose what to do before confirming.",
+                "CLOSE_WITH_SETTLED_AMOUNT": "Close the request with the recorded amount",
+                "SETTLE_SEPARATELY": "Record it separately and keep the request open"
+            },
+            "success": {
+                "closed": "Refund recorded: request {{refundId}} is now executed ({{status}}).",
+                "separate": "Refund recorded separately as {{refundId}} ({{status}}). Request {{requestedRefundId}} stays open."
+            }
+        },
+        "openRefunds": {
+            "title": "Open refund requests",
+            "intro": "Refund requests still open on this subscription's payments. Refund each one from the Mercado Pago panel and record it here with that refund's reference.",
+            "loading": "Looking for open refund requests…",
+            "empty": "This subscription has no open refund requests.",
+            "loadError": "We could not read the open refund requests. Reload the page to try again.",
+            "noPermission": "Another team member with the permissions to inspect subscriptions and record out-of-flow settlements reviews and records these refund requests."
+        }
+    },
+    "reconciliationMarks": {
+        "title": "Payment reconciliation",
+        "loading": "Loading open marks...",
+        "error": "Open marks could not be loaded.",
+        "retry": "Retry",
+        "empty": "There are no open marks.",
+        "openedAt": "Open since",
+        "subjectStatus": "Row status",
+        "subjectUnresolved": "Subject could not be resolved",
+        "proposal": "System proposal",
+        "proposals": {
+            "refund": "Refund",
+            "refundDifference": "Refund the difference",
+            "noRefund": "Do not refund",
+            "none": "No proposal"
+        },
+        "refundNotice": "The customer's money needs to be returned",
+        "sources": {
+            "card": "Card payment",
+            "manual": "Manual payment"
+        },
+        "unknownAmount": "amount unknown",
+        "paymentCount": "Hung payments",
+        "total": "Total",
+        "eventLink": "See which condition failed",
+        "pagination": "Marks pagination",
+        "previous": "Previous",
+        "next": "Next",
+        "action14": {
+            "title": "Record what already happened outside the system (action 14)",
+            "payment": "Hung payment",
+            "amount": "Amount in pesos",
+            "scope": "Manual payment scope",
+            "channel": "Refund channel",
+            "channels": {
+                "BANK_TRANSFER": "bank transfer",
+                "PROVIDER_PANEL": "provider panel"
+            },
+            "reference": "Receipt or reference",
+            "chargeId": "Approved provider charge ID",
+            "note": "Optional note",
+            "review": "Review settlement",
+            "confirm": "Record settlement",
+            "back": "Back to form",
+            "confirmRefund": "A refund of {{amount}}, already made via {{channel}}, will be recorded with receipt {{reference}}. It will be recorded under your name; no money will be refunded.",
+            "confirmCharge": "Charge {{chargeId}}, already approved by the provider, will be recorded and its receiving rule will run. It will be recorded under your name.",
+            "refundSuccess": "Refund {{refundId}} recorded with status {{status}}. The mark remains for review.",
+            "chargeSuccess": "Charge recorded as payment {{paymentId}}; reception: {{reception}}. The mark remains for review.",
+            "genericError": "The action could not be recorded. Check the details and try again.",
+            "serverError": "The server could not complete the settlement. Try again later.",
+            "rejections": {
+                "REFUND_AMOUNT_INVALID": "The refund amount is invalid.",
+                "EXTERNAL_REFERENCE_INVALID": "The external reference is invalid.",
+                "REFUND_EXCEEDS_BALANCE": "The refund exceeds the available balance.",
+                "MANUAL_PAYMENT_SCOPE_REQUIRED": "Choose the manual payment scope.",
+                "MANUAL_PAYMENT_SCOPE_NOT_ALLOWED": "The selected scope does not apply to this payment.",
+                "REFUND_SOURCE_NOT_FOUND": "The selected payment was not found.",
+                "REFUND_NOT_FOUND": "The refund was not found.",
+                "ADMINISTRATIVE_ACTION_FORBIDDEN": "You are not allowed to perform this action.",
+                "PAYMENT_NOT_REFUNDABLE": "This payment cannot be refunded.",
+                "REQUESTED_AMOUNT_MISMATCH": "The amount does not match the open request.",
+                "OPEN_REQUESTS_AMBIGUOUS": "Several requests are open, so one cannot be selected.",
+                "REFUND_NOT_OPEN": "The refund request is no longer open.",
+                "REFUND_STATE_CHANGED": "The request changed. Review the mark and try again.",
+                "EXTERNAL_REFERENCE_ALREADY_SETTLED": "This reference has already been recorded.",
+                "RETAINED_PAYMENT_SUCCESSION_OPEN": "A retained payment succession is still open.",
+                "CHARGE_NOT_FOUND": "The provider charge was not found.",
+                "CHARGE_NOT_LINKED": "The charge is not linked to this account.",
+                "CHARGE_NOT_SETTLEABLE": "The charge cannot be recorded.",
+                "CHARGE_NOT_APPROVED": "The provider has not approved the charge.",
+                "CHARGE_ALREADY_RECORDED": "This charge is already recorded."
+            }
+        },
+        "eventsTitle": "Reconciliation event",
+        "liftedAt": "Lifted at",
+        "notLifted": "The mark is still open.",
+        "actor": "Actor",
+        "correlation": "Correlation",
+        "outcome": "Outcome",
+        "condition": "Condition",
+        "conditions": {
+            "one": "The subscription exists and is in GRACE_PERIOD or SUSPENDED.",
+            "two": "The amount matches what is expected for the covered period.",
+            "three": "There is no other live principal row for the same user and vertical, nor a successor that has already authorized.",
+            "four": "There is no other credited payment for the same period."
+        },
+        "conditionNotEvaluated": "This path does not evaluate the four conditions.",
+        "conditionNotRecorded": "This event does not record the condition (before this change).",
+        "markNotFound": "The mark does not exist.",
+        "lift": {
+            "button": "Lift mark",
+            "title": "Lift this mark",
+            "description": "Only this mark will be closed. Other marks on the same row remain open, and the subscription status will not change.",
+            "withoutRefund": "Resolve without refund",
+            "unresolvedNotice": "Some hung payments remain unresolved. To refund them, record the refund with action 14; if they are not refunded, mark them as resolved without refund.",
+            "note": "Audit note (optional)",
+            "confirm": "Lift",
+            "cancel": "Cancel",
+            "success": "Mark lifted",
+            "error": "Could not lift the mark.",
+            "reasons": {
+                "MARK_NOT_FOUND": "The mark does not exist.",
+                "ADMINISTRATIVE_ACTION_FORBIDDEN": "You do not have permission to lift this mark, or it belongs to your own account.",
+                "MARK_ALREADY_LIFTED": "The mark was already lifted.",
+                "MARK_VERSION_CONFLICT": "The mark changed since you opened it. Review it and confirm again.",
+                "MARK_HAS_UNRESOLVED_PAYMENTS": "Some hung payments remain unresolved.",
+                "MARK_PAYMENT_NOT_HUNG": "A selected payment is no longer an unresolved hung payment on this mark."
+            }
+        }
+    },
+    "subscriptionCancellation": {
+        "title": "Cancel a subscription (no refund)",
+        "loading": "Checking the subscription…",
+        "loadError": "We could not check the subscription. Try again.",
+        "retry": "Retry",
+        "noRefund": "This cancellation refunds nothing. To refund the last charge within 10 days, use the revocation.",
+        "origin": {
+            "label": "Current state: {state}",
+            "ACTIVE": "Active",
+            "GRACE_PERIOD": "In grace period",
+            "SUSPENDED": "Suspended",
+            "CANCEL_SCHEDULED": "Cancellation scheduled"
+        },
+        "effects": {
+            "ACTIVE": "They will not be charged again, and the service continues until {date}, the end of the period already paid.",
+            "GRACE_PERIOD": "The service ends today: they lose the service the grace period was giving them until {date}. In exchange, the installment we could not charge is not claimed.",
+            "SUSPENDED": "The subscription ends today. The service was already cut by the suspension, and they are free to subscribe again.",
+            "CANCEL_SCHEDULED": "Cancellation is already requested: the service continues until {date}. There is nothing to confirm."
+        },
+        "authorization": {
+            "CARD": "If their automatic debit on Mercado Pago is still alive, it is cancelled today. We email them first; then Mercado Pago may email them about the cancellation.",
+            "MANUAL": "They pay manually: there is no automatic debit on Mercado Pago to cancel."
+        },
+        "addons": {
+            "title": "These recurring add-ons are cancelled with the subscription:",
+            "CHARGE_CUT_TODAY": "{name}: {price} {cycle}. Its charge stops today and stays visible until {date}.",
+            "AT_SERVICE_END": "{name}: {price} {cycle}. It is awaiting authorization or has a pending charge: it turns off on {date}, when the service ends.",
+            "TODAY": "{name}: {price} {cycle}. It turns off today with the subscription.",
+            "comeBack": "If they come back, they buy them again: they do not resume."
+        },
+        "cycle": {
+            "monthly": "per month",
+            "quarterly": "per quarter",
+            "semiannual": "per semester",
+            "annual": "per year"
+        },
+        "noteLabel": "Note (optional)",
+        "noteHelp": "It is kept in the record, together with who cancelled.",
+        "confirm": {
+            "ACTIVE": "Cancel: stop the debit; the service continues until {date}",
+            "GRACE_PERIOD": "Cancel: end the service today",
+            "SUSPENDED": "Cancel: end the subscription today"
+        },
+        "pending": "Cancelling…",
+        "result": {
+            "SCHEDULED": "Done: the cancellation is requested. The service continues until {date}.",
+            "ALREADY_SCHEDULED": "Cancellation was already requested: the service continues until {date}. Nothing changed.",
+            "CANCELLED": "Done: the subscription is cancelled, without service since {date}.",
+            "ALREADY_CANCELLED": "It was already cancelled. Nothing changed."
+        },
+        "cancelCall": {
+            "SENT": "Mercado Pago: the debit cancellation was sent.",
+            "NOT_NEEDED": "Mercado Pago: the debit was already cancelled.",
+            "NOTICE_PENDING": "Mercado Pago: the cancellation goes out once our email is sent; the sweep retries it.",
+            "FAILED": "Mercado Pago: the cancellation could not be sent; the sweep retries it.",
+            "NOT_APPLICABLE": "Mercado Pago: there was no debit to cancel."
+        },
+        "escalated": {
+            "NO_RECIPIENT": "There is no email to notify: it was cancelled anyway and escalated.",
+            "DELIVERY_EXHAUSTED": "Our email could not be delivered: it was cancelled anyway and escalated."
+        },
+        "blocked": {
+            "intro": "It cannot be cancelled. Nothing was cancelled.",
+            "SUBSCRIPTION_NOT_FOUND": "This subscription does not exist.",
+            "ADMINISTRATIVE_ACTION_FORBIDDEN": "It is your own subscription: another team member with the permission cancels it, or you do from My Subscription.",
+            "CANCELLATION_FORBIDDEN": "A system account cannot cancel a subscription.",
+            "CANCELLATION_NOT_PRINCIPAL": "Only a main subscription is cancelled, not an add-on's.",
+            "CANCELLATION_STATE_NOT_ALLOWED": "The subscription is not active, in grace, suspended or scheduled for cancellation (for example, it is already cancelled, paused or awaiting authorization).",
+            "unknown": "It could not be cancelled ({reason}). Nothing was cancelled."
+        },
+        "notice": {
+            "CANCELLATION_ORIGIN_CHANGED": "The subscription changed since you opened this screen, and it was not cancelled. Review what would happen now and confirm again."
+        },
+        "successToast": "Cancellation recorded.",
+        "reason": {
+            "label": "Cancellation reason (optional)",
+            "none": "Not specified",
+            "TOO_EXPENSIVE": "It's too expensive",
+            "NOT_ENOUGH_RESULTS": "I got too few bookings or contacts",
+            "MISSING_FEATURES": "It's missing features I need",
+            "SEASONAL_PAUSE": "Seasonal break",
+            "CLOSING_BUSINESS": "I'm closing my business",
+            "SWITCHING_PLATFORM": "I'm switching to another platform",
+            "TECHNICAL_PROBLEMS": "I had technical problems",
+            "OTHER": "Other reason"
         }
     }
 }

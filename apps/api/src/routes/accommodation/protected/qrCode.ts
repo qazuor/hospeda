@@ -15,7 +15,7 @@
  * browser instead would mean a second QR generator, which
  * `scripts/check-qrcode-engine-isolation.sh` exists to forbid. What the CSP DOES
  * allow is `img-src … data:`, which is how `ProviderQrPanel` and
- * `GastronomyMenuQrWidget` already put a code on screen. So the panel needs the
+ * `VenueMenuQrWidget` already put a code on screen. So the panel needs the
  * SVG, and this is the route that hands it over.
  *
  * A button that downloads a PDF blind tells the owner nothing about what they
@@ -48,10 +48,10 @@
  *
  * ## Same authorisation as the sheet, and the same 404
  *
- * Session, then ownership, then BOTH clauses of "published"
- * (`lifecycleState === ACTIVE` **and** `visibility === PUBLIC`). The accommodation
- * sheet twin carries the full reasoning; the short version is that a PUBLIC row
- * that is not ACTIVE has no public page, so its code would 404 on every scan.
+ * Session, then ownership, then "published" (`publicationStatus === PUBLISHED`,
+ * V6.9b). The accommodation sheet twin carries the full reasoning; the short
+ * version is that any other state has no public page, so its code would 404 on
+ * every scan.
  * The 404 is deliberately identical for "does not exist", "is not yours" and "is
  * not published" — a distinguishable refusal confirms which ids are real
  * (HOS-600), and `test/routes/existence-disclosure.paired-probe.test.ts` compares
@@ -69,11 +69,10 @@
 import {
     AccommodationIdSchema,
     EntityTypeEnum,
-    LifecycleStatusEnum,
     PermissionEnum,
+    PublicationStatusEnum,
     QrCodePurposeEnum,
-    ServiceErrorCode,
-    VisibilityEnum
+    ServiceErrorCode
 } from '@repo/schemas';
 import { AccommodationService, entityNotFoundError } from '@repo/service-core';
 // Same module instance `utils/response-helpers` compares against: importing
@@ -120,17 +119,14 @@ export async function handleGetAccommodationQrCode(
 
     const entity = result.data;
 
-    const hasUpdateAny = actor.permissions?.includes(PermissionEnum.ACCOMMODATION_UPDATE_ANY);
-    if (!entity || (!hasUpdateAny && entity.ownerId !== actor.id)) {
+    const hasViewAll = actor.permissions?.includes(PermissionEnum.ACCOMMODATION_VIEW_ALL);
+    if (!entity || (!hasViewAll && entity.ownerId !== actor.id)) {
         throw entityNotFoundError({ entityName: AccommodationService.ENTITY_NAME });
     }
 
-    // BOTH clauses — see the docblock. Checked BEFORE anything is minted, so a
-    // listing with no public page never leaves a live `qr_codes` row behind.
-    if (
-        entity.lifecycleState !== LifecycleStatusEnum.ACTIVE ||
-        entity.visibility !== VisibilityEnum.PUBLIC
-    ) {
+    // Only PUBLISHED has a public page (V6.9b). Checked BEFORE anything is
+    // minted, so a listing with no public page never leaves a live `qr_codes` row.
+    if (entity.publicationStatus !== PublicationStatusEnum.PUBLISHED) {
         // Same canonical message as the branch above, deliberately (HOS-600).
         throw entityNotFoundError({ entityName: AccommodationService.ENTITY_NAME });
     }

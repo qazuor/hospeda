@@ -1,9 +1,10 @@
 /**
  * E2E-04 (SPEC-098 T-059b) — Move bookmark between collections.
  *
- * Actors: Authenticated regular user.
+ * Actors: Authenticated USERs seeded as Tourist VIPs (an ACTIVE PRINCIPAL tourist-vip subscription;
+ * collections are VIP-only since HOS-1645, AC:V5:28). A VIP answered 403 fails the spec (HOS-1713, TEST:1713:1-3).
  *
- * Tags: @p1 @favorites @collections @move @spec-098
+ * Tags: @p0 @favorites @collections @move @spec-098
  *
  * Preconditions:
  *   - At least one ACTIVE/PUBLIC accommodation in seed (needed for bookmark creation).
@@ -19,7 +20,7 @@
  */
 
 import { expect, test } from '@playwright/test';
-import { createSubscription, createUser, resolvePlanIdBySlug } from '../../fixtures/api-helpers.ts';
+import { createUser, makeTouristVip } from '../../fixtures/api-helpers.ts';
 import { execSQL, getDbPool } from '../../fixtures/db-helpers.ts';
 import { cleanupTestUsers } from '../../support/test-cleanup.ts';
 
@@ -61,13 +62,8 @@ interface UpdatedBookmarkResponse {
     readonly data?: { readonly id: string; readonly collectionId?: string | null };
 }
 
-test.describe('E2E-04: move bookmark between collections @p1 @favorites @collections @move @spec-098', () => {
+test.describe('E2E-04: move bookmark between collections @p0 @favorites @collections @move @spec-098', () => {
     const userIds: string[] = [];
-    let vipPlanId: string | null = null;
-
-    test.beforeAll(async () => {
-        ({ planId: vipPlanId } = await resolvePlanIdBySlug({ slug: 'tourist-vip' }));
-    });
 
     test.afterEach(async () => {
         if (userIds.length > 0) {
@@ -79,8 +75,7 @@ test.describe('E2E-04: move bookmark between collections @p1 @favorites @collect
     async function getFirstActiveAccommodationId(): Promise<string | null> {
         const rows = await execSQL<{ id: string }>(
             `SELECT id FROM accommodations
-             WHERE lifecycle_state = 'ACTIVE'
-               AND visibility = 'PUBLIC'
+             WHERE publication_status = 'PUBLISHED'
                AND deleted_at IS NULL
              ORDER BY created_at ASC
              LIMIT 1`
@@ -98,12 +93,10 @@ test.describe('E2E-04: move bookmark between collections @p1 @favorites @collect
             return;
         }
 
-        test.fixme(!vipPlanId, 'tourist-vip plan not seeded — cannot run');
-        if (!vipPlanId) return;
         const user = await createUser({ role: 'USER' });
         userIds.push(user.id);
+        await makeTouristVip(user.id);
         // SPEC-287 put collections behind `can_use_collections`; tourist-free is 403.
-        await createSubscription({ userId: user.id, planId: vipPlanId, status: 'active' });
         const headers = { cookie: user.sessionCookie };
 
         // Create collection
@@ -164,12 +157,10 @@ test.describe('E2E-04: move bookmark between collections @p1 @favorites @collect
             return;
         }
 
-        test.fixme(!vipPlanId, 'tourist-vip plan not seeded — cannot run');
-        if (!vipPlanId) return;
         const user = await createUser({ role: 'USER' });
         userIds.push(user.id);
+        await makeTouristVip(user.id);
         // SPEC-287 put collections behind `can_use_collections`; tourist-free is 403.
-        await createSubscription({ userId: user.id, planId: vipPlanId, status: 'active' });
         const headers = { cookie: user.sessionCookie };
 
         const colRes = await page.request.post(
@@ -226,17 +217,15 @@ test.describe('E2E-04: move bookmark between collections @p1 @favorites @collect
 
     test('AC-13.3 — other user cannot access collection (403)', async ({ page }) => {
         // Arrange: user A creates a collection, user B tries to read it
-        test.fixme(!vipPlanId, 'tourist-vip plan not seeded — cannot run');
-        if (!vipPlanId) return;
         const userA = await createUser({ role: 'USER' });
         const userB = await createUser({ role: 'USER' });
         userIds.push(userA.id, userB.id);
-        // BOTH users need the collections entitlement. If userB were left on the
-        // tourist-free tier, gateCollections() would reject it with 403 before the
-        // ownership check ever ran — the assertion below would pass for the wrong
-        // reason and stop testing ownership at all.
-        await createSubscription({ userId: userA.id, planId: vipPlanId, status: 'active' });
-        await createSubscription({ userId: userB.id, planId: vipPlanId, status: 'active' });
+        await makeTouristVip(userA.id);
+        await makeTouristVip(userB.id);
+        // BOTH users are Tourist VIPs (collections are VIP-only, AC:V5:28). If userB lacked
+        // can_use_collections, a 403 from the plan gate (enforceUserGate) could stand in for
+        // the ownership answer and the assertion below would pass for the wrong reason. A
+        // foreign collection answers 404 (HOS-600, canAccessCollection).
 
         const colRes = await page.request.post(
             `${API_URL}/api/v1/protected/user-bookmark-collections`,

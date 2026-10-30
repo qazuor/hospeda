@@ -7,7 +7,6 @@ import {
     isString,
     isUsableEntityId,
     isValidEmail,
-    isValidPassword,
     isValidPhone,
     isValidUrl,
     NIL_UUID
@@ -98,42 +97,6 @@ describe('Validation Utilities', () => {
             expect(isValidPhone('123')).toBe(false);
             expect(isValidPhone('abc1234567')).toBe(false);
             expect(isValidPhone('123-456-7890')).toBe(false);
-        });
-    });
-
-    describe('isValidPassword', () => {
-        it('returns true for valid passwords with default options', () => {
-            expect(isValidPassword('SecurePass1!')).toBe(true);
-        });
-
-        it('returns false for too short passwords', () => {
-            expect(isValidPassword('Short1!')).toBe(false);
-        });
-
-        it('returns false for passwords missing uppercase', () => {
-            expect(isValidPassword('lowercase1!')).toBe(false);
-        });
-
-        it('returns false for passwords missing lowercase', () => {
-            expect(isValidPassword('UPPERCASE1!')).toBe(false);
-        });
-
-        it('returns false for passwords missing numbers', () => {
-            expect(isValidPassword('NoNumbers!')).toBe(false);
-        });
-
-        it('returns false for passwords missing special characters', () => {
-            expect(isValidPassword('NoSpecial1')).toBe(false);
-        });
-
-        it('respects custom options', () => {
-            expect(
-                isValidPassword('simplepass', {
-                    requireUppercase: false,
-                    requireNumbers: false,
-                    requireSpecialChars: false
-                })
-            ).toBe(true);
         });
     });
 

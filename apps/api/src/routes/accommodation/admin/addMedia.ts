@@ -6,29 +6,25 @@
  * Cloudinary via `POST /api/v1/admin/media/upload`. This endpoint registers the
  * returned URL + metadata as a new `accommodation_media` row.
  *
- * Plan cap enforcement follows the same semantics as the upload route:
- *   - Only enforces when the actor IS the owner (`actor.id === accommodation.ownerId`).
- *   - Admins with `ACCOMMODATION_UPDATE_ANY` bypass the plan limit (trusted manual
- *     intervention / support scenario).
- *   - Enforcement happens in this route handler (not in the service) because
- *     `checkLimit` requires the Hono `Context` populated by `entitlementMiddleware`.
+ * Gallery registration enforces the owner's effective photo cap.
+ * The listing access resolver enforces the owner photo limit.
  */
 
-import { LimitKey } from '@repo/billing';
-import { accommodationMediaModel } from '@repo/db';
 import {
     AccommodationIdSchema,
     type AccommodationMediaAddInput,
     type AccommodationMediaAddPayload,
     AccommodationMediaAddPayloadSchema,
     AccommodationMediaSingleOutputSchema,
-    ServiceErrorCode
+    ServiceErrorCode,
+    VerticalEnum
 } from '@repo/schemas';
 import { AccommodationService, ServiceError } from '@repo/service-core';
 import type { Context } from 'hono';
-import { buildLimitReachedDetails } from '../../../middlewares/limit-enforcement';
+
+import { runListingContentCall } from '../../../middlewares/listing-access';
 import { getActorFromContext } from '../../../utils/actor';
-import { calculateThreshold, calculateUsagePercent, checkLimit } from '../../../utils/limit-check';
+import { accommodationGalleryPhotoLimit } from '../../../utils/listing-access/photo-limit';
 import { apiLogger } from '../../../utils/logger';
 import { createAdminRoute } from '../../../utils/route-factory';
 
@@ -46,7 +42,7 @@ const accommodationService = new AccommodationService({ logger: apiLogger });
  *
  * Plan cap: enforced here (not in the service) because `checkLimit` needs the
  * Hono Context. Mirrors the cap logic in `apps/api/src/routes/media/admin/upload.ts`
- * §3d-i exactly. Only applies when the actor IS the owner; admin overrides bypass.
+ * §3d-i exactly and applies to the listing owner for every actor.
  */
 export const adminAddMediaRoute = createAdminRoute({
     method: 'post',
@@ -62,6 +58,12 @@ export const adminAddMediaRoute = createAdminRoute({
     },
     requestBody: AccommodationMediaAddPayloadSchema,
     responseSchema: AccommodationMediaSingleOutputSchema,
+    listingAccess: {
+        vertical: VerticalEnum.ACCOMMODATION,
+        operation: 'EDIT',
+        idParam: 'id',
+        limit: accommodationGalleryPhotoLimit
+    },
     handler: async (
         ctx: Context,
         params: Record<string, unknown>,
@@ -70,66 +72,10 @@ export const adminAddMediaRoute = createAdminRoute({
         const actor = getActorFromContext(ctx);
         const accommodationId = params.id as string;
 
-        // ── Plan cap enforcement (mirrors upload.ts §3d-i) ────────────────────
-        // Only enforces when the actor is the owner. Admins uploading on behalf
-        // of an owner bypass the plan limit — this matches `validateEntityMedia
-        // Permission` where admins with ACCOMMODATION_UPDATE_ANY skip ownership.
-        // The count is GALLERY-ONLY (`isFeatured: false`, HOS-791). The featured
-        // image is not a gallery item and does not consume a plan photo slot, so
-        // an owner on a 15-photo plan keeps 15 gallery photos plus their featured
-        // one. Counting them together closed the gallery one photo early and
-        // reported "15/15" while the owner could only see 14.
+        // Listing access already checked the owner's visible gallery limit.
         const accommodation = await accommodationService.getById(actor, accommodationId);
         if (accommodation.error || !accommodation.data) {
             throw new ServiceError(ServiceErrorCode.NOT_FOUND, 'Accommodation not found');
-        }
-
-        const ownerId = (accommodation.data as { ownerId?: string | null }).ownerId;
-        if (ownerId && ownerId === actor.id) {
-            const { total: currentGalleryPhotoCount } =
-                await accommodationMediaModel.findByAccommodation({
-                    accommodationId,
-                    state: 'visible',
-                    isFeatured: false
-                });
-
-            const planLimitCheck = checkLimit({
-                context: ctx,
-                limitKey: LimitKey.MAX_PHOTOS_PER_ACCOMMODATION,
-                currentCount: currentGalleryPhotoCount
-            });
-
-            const threshold = calculateThreshold(
-                currentGalleryPhotoCount,
-                planLimitCheck.maxAllowed
-            );
-            const usagePercent = calculateUsagePercent(
-                currentGalleryPhotoCount,
-                planLimitCheck.maxAllowed
-            );
-
-            if (threshold === 'warning' || threshold === 'critical') {
-                ctx.header(
-                    'X-Usage-Warning',
-                    `limitKey=${LimitKey.MAX_PHOTOS_PER_ACCOMMODATION};usage=${currentGalleryPhotoCount};max=${planLimitCheck.maxAllowed};threshold=${threshold}`
-                );
-            }
-
-            if (!planLimitCheck.allowed) {
-                apiLogger.warn(
-                    `Plan photo limit reached for accommodation ${accommodationId} (owner ${actor.id}): ${planLimitCheck.currentCount}/${planLimitCheck.maxAllowed}`
-                );
-                throw new ServiceError(
-                    ServiceErrorCode.LIMIT_REACHED,
-                    planLimitCheck.upgradeMessage ?? 'Photo limit reached',
-                    buildLimitReachedDetails({
-                        limitKey: LimitKey.MAX_PHOTOS_PER_ACCOMMODATION,
-                        currentCount: planLimitCheck.currentCount,
-                        maxAllowed: planLimitCheck.maxAllowed,
-                        usagePercent
-                    })
-                );
-            }
         }
 
         // ── Delegate to service ───────────────────────────────────────────────
@@ -138,7 +84,10 @@ export const adminAddMediaRoute = createAdminRoute({
             media: body as AccommodationMediaAddPayload
         };
 
-        const result = await accommodationService.addMedia(actor, input);
+        const result = await runListingContentCall({
+            ctx,
+            run: () => accommodationService.addMedia(actor, input)
+        });
 
         if (result.error) {
             throw new ServiceError(result.error.code, result.error.message);

@@ -7,7 +7,7 @@
         "en": "River cuisine: fish and dishes typical of the Litoral region",
         "pt": "Cozinha de rio: peixes e pratos típicos do litoral"
     },
-    "applicableVerticals": ["gastronomy"],
+    "applicableVerticals": ["venue"],
     "icon": "FishingEquipmentIcon",
     "isBuiltin": false,
     "isFeatured": true,

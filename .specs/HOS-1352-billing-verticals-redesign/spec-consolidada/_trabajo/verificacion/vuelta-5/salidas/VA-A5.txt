@@ -1,0 +1,16 @@
+# VA-A5 · fuente → spec · V/docs/{18-partner,19-superficies,20-testing,21-migracion,22-lo-legal}.md; P/docs/06-mp-validation-matrix.md
+
+## Hallazgos
+
+fuentes/.specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/18-partner.md:278 · «El formulario es público y un visitante sin cuenta postula» · distinta en s/2e9ef99e/20-fase-4/V8b.md:96 («El formulario de postulación sólo admite direcciones de correo de dominios corporativos; rechaza las de proveedores de correo personal antes de crear la postulación.»): agrega una condición de admisión por dominio que excluye postulantes admitidos por la fuente. Las condiciones vigentes son captcha, ausencia de otra pendiente y de rechazo con espera no anulada, y verificación del correo si hay sesión; DEC-AUTH-005 y sus precisiones no agregan el filtro corporativo, ni lo hacen las decisiones posteriores de docs/41-corte-del-mvp/10-decisiones-del-owner.md. También contradice AC:V7:1, que crea la postulación al cumplirse las guardas originales. · BLOQUEA
+
+## Resumen
+
+| archivo | reglas normativas vivas revisadas | líneas recorridas | ausentes | distintas |
+|---|---:|---|---:|---:|
+| fuentes/.specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/18-partner.md | ≈60 | 1–407 | 0 | 1 |
+| fuentes/.specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/19-superficies.md | ≈45 | 1–111 | 0 | 0 |
+| fuentes/.specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/20-testing.md | ≈65 | 1–381 | 0 | 0 |
+| fuentes/.specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/21-migracion.md | ≈55 | 1–777 | 0 | 0 |
+| fuentes/.specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/22-lo-legal.md | ≈18 | 1–141 | 0 | 0 |
+| fuentes/.specs/HOS-1352-billing-verticals-redesign/docs/06-mp-validation-matrix.md | ≈125 (incluye las 117 filas de capacidades y sus precisiones vigentes) | 1–573 | 0 | 0 |

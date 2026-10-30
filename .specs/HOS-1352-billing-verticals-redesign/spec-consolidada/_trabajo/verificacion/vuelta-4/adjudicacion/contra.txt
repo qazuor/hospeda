@@ -1,0 +1,193 @@
+CONTRA-ADJUDICACIÓN HOS-1352 — 2026-10-02
+
+Resultado: 17 hallazgos examinados (13 REAL BLOQUEA y 4 FUENTE).
+15 CONFIRMADO; 0 FALSO; 2 CORRECCIÓN A AJUSTAR.
+Los dos ajustes no refutan la existencia del defecto: afectan la propuesta de reparación.
+
+Alcance y método
+Se leyó adjudicacion/hallazgos.json y se contrastó exclusivamente con pristina/ y las fuentes locales. No se usó v/s/ como prueba de la spec original. Se buscaron las reglas con rg --hidden y se contrastaron las líneas y sus contextos. Para distinguir texto vivo se quitaron en memoria los intervalos ~~…~~ sobre el archivo completo, incluyendo saltos de línea, conservando la numeración original. Una coincidencia dentro de un intervalo tachado no cuenta como autoridad. Se revisaron las letras del owner hasta CJ y las entradas/precisiones pertinentes del decision log. No se consultó la web: la autoridad de esta adjudicación es el corpus congelado proporcionado.
+
+Abreviaturas de rutas, válidas para todas las citas siguientes:
+P = v/fuentes/.specs/HOS-1352-billing-verticals-redesign/
+B = v/fuentes/.specs/HOS-1354-billing-cobro-y-proveedor/
+V = v/fuentes/.specs/HOS-1353-verticales-capacidades-y-autorizacion/
+LOG = P/docs/01-decision-log.md
+OWNER = P/docs/41-corte-del-mvp/10-decisiones-del-owner.md
+Las comillas reproducen fragmentos textuales vivos; los fragmentos separados no pretenden ser una sola cita continua. Se conserva el formato Markdown de las fuentes cuando forma parte del fragmento.
+
+1. H4-VA-A6-1 — CONFIRMADO
+
+Regla viva: B/descomposicion.md:136 corrige expresamente la atribución antigua: «**la migración estructural del paso 3 y los verifica el 3a**», seguida de «(residuo corregido el 2026-10-02, como la tabla de pasos de `16-fase-7…` §4.2)». P/docs/16-fase-7-del-paraguas.md:153 incluye «**los precios, los complementos y los códigos promocionales vigentes**» en el catálogo y dispone «como los plazos, en SQL generado por un script TypeScript y vigilado por un guard que lo regenera y compara; este paso sólo los verifica». No usé el «el paso 3a» tachado como regla.
+
+Intento de refutación: BM, OWNER:138, y su 📌 en LOG:1467 sí dicen todavía «los carga el paso 3a». Por tanto hay evidencia contraria viva, y sería incorrecto ocultarla o resolverlo sólo por el orden de los nombres de archivo. La refutación falla porque la corrección explícita de B/descomposicion.md identifica precisamente ese reparto como residuo y lo alinea con los pasos 3/3a; no altera la decisión comercial de BM. BZ y CC cambian los aumentos posteriores, no vuelven a trasladar la carga al 3a. CF–CJ tampoco lo hacen.
+
+Prístina: B2:345–346 dice literalmente «las filas de `billing_option` las carga el paso 3a / del corte, no esta migración». También verificados los seis sale en pristina/10-corte/B2.md:32, 229, 300, 345, 480 y 522, una ocurrencia cada uno. El AC y el smoke no permiten tratarlo como una mera referencia histórica.
+
+Corrección: válida. Distingue carga estructural y verificación, conserva precios vigentes y la prohibición operativa hasta momento 5. Los dos reemplazos adicionales en LOG:1467 y OWNER:138 existen una vez y reparan el mismo residuo, sin reescribir la cita textual del owner sobre no cambiar precios. Su futura aplicación debe resincronizar las transcripciones de esas fuentes; este informe no las modifica.
+
+2. H4-VA-A6-3 — CONFIRMADO
+
+Regla viva: B/docs/02-modelo-de-datos.md:577: «| **`promo_redemption`** | código, user, cuándo, sobre qué suscripción,»; en la misma fila: «**`UNIQUE(promo_code_id, user_id)`**» y «**`cobros_restantes` nunca es negativo**».
+
+Intento de refutación: podría ser sólo un resumen con el dato definido en otra parte. Se buscaron promo_redemption y referencias al instante/fecha del canje en pristina/. Hay contador, vínculos y unicidad, pero no aparece la obligación de guardar cuándo se canjeó esta redención. El instante de un canje de trial no reemplaza un dato de esta tabla. OWNER:24 (AD) exige esquema completo; AP:59 asignaba promos a B9a y BG:111 lo corrige a B3. BG cambia la pieza, no elimina el dato. No se encontró 📌 posterior que suprima el «cuándo».
+
+Prístina: pristina/10-corte/B3.md:961–966 enumera ESQ:6, unicidad, duración y contador; :963 no incluye el instante. AC:B3:29 remite al esquema; la remisión no documenta el campo omitido.
+
+Corrección: válida. Añade código, user, instante y suscripción sin inventar nombre SQL, tipo o reloj; deja intactos la nulabilidad del contador, sus valores y la unicidad. No obliga a mover la redención en S18, algo que la fuente prohíbe.
+
+3. H4-VA-A9-1 — CONFIRMADO
+
+Regla viva: B/docs/10-verticales-planes-billing-options.md:110–114: «*baja* es **empeora según la estrategia de la clave**», «en `SUMA` y `MÁXIMO`, un número menor; en `MÍNIMO`, uno **mayor**», y «en `MEJOR_DECLARADO`, un valor peor en el orden que la clave declara». :117: «**si nada baja** (veredicto `SUBE`), sigue el camino de upgrade».
+
+Intento de refutación: leer «limit menor» como abreviatura de menor beneficio salvaría el ejemplo, pero el AC no declara esa convención ni una estrategia. El contraejemplo MÍNIMO 24→4 mejora y satisface literalmente «limit menor». LOG:3297–3324, DEC-ARCH-008, mantiene que verticales calcula la dirección; :3312 dice «y **billing nunca ve valores**». Su precisión extiende el veredicto a todo cambio de plan. No hay letra del corte ni 📌 posterior que haga mandar al número o al rank.
+
+Prístina: pristina/20-fase-2/B8b.md:488 dice «con un solo limit menor», y :490 impone DOWNGRADE. El encabezado invoca direcciónDeCambio, pero no corrige la precondición ambigua que contradice la estrategia de MÍNIMO.
+
+Corrección: válida como descripción del escenario de prueba. El nuevo Dado debe prepararse del lado de verticales/contrato; no autoriza a billing a leer valores ni implementar allí las estrategias. Exigir el veredicto BAJA elimina la ambigüedad sin cambiar la precedencia de cualquier deterioro.
+
+4. H4-VB-06-3 [FUENTE] — CONFIRMADO
+
+Regla viva vigente: LOG:7078–7080, DEC-DATA-007: «Al levantar la baja, o al pasarla a sólo pedido, la ficha vuelve a donde estaba: / `DRAFT` si era borrador (`PB11`), y si estaba publicada o bajada por billing, / `UNPUBLISHED_BY_BILLING` con `PB3` en el mismo acto (`PB13`)». Su 📌:7091–7092 añade «Una ficha moderada desde `ARCHIVED` vuelve por el origen de su archivado».
+
+Intento de refutación: la descomposición V:717 conserva VIVO «y levantar la moderación la deja en `DRAFT` con el reloj reiniciado». Esto prueba el origen de la contradicción, no su vigencia frente a la decisión que la reemplaza. OWNER, hasta CJ, no restaura la salida universal a DRAFT. V/docs/03-maquinas-de-estado.md:498 y :500 distinguen PB11/PB13 y ambos escriben el hecho 6; el reinicio del reloj no se perdió al cambiar el destino.
+
+Prístina: pristina/10-corte/V6.md:159–160 copia esa salida universal. No es una mala lectura del hallazgo. AC:V6:11 contiene el retorno diferenciado: no elimina la contradicción de LISTA:V6.
+
+Corrección: válida. La referencia al origen de ARCHIVED evita devolverla a ARCHIVED indiscriminadamente. PB13 evalúa PB3 en el mismo acto bajo su lock y reglas de cupo: mencionar PB3 no garantiza PUBLISHED. Conservar el reinicio es correcto. Corregir fuente y resincronizar LISTA:V6; no modificar sólo una transcripción.
+
+5. H4-VB-08-4 — CONFIRMADO
+
+Regla viva: LOG:1495–1499, 📌 de CC sobre DEC-MP-002: «**Y la parte 3, *«llegada esa fecha, el monto se / muta»*, se lee con BZ**»; «`S37` muta el monto siete días antes de la fecha, y lo que se conserva es que **ningún cobro / sale al precio nuevo antes de esa fecha**».
+
+Intento de refutación: el texto anterior de DEC-MP-001/002 podía justificar la fecha efectiva. Pero el 📌 identifica esa misma frase y precisa expresamente cómo leerla. OWNER:169, BZ, lleva el aumento a S37/S38; CC:182 protege también los descensos encolados. CF sólo reasigna el PR del predicado de CC. No hay reversión posterior.
+
+Prístina: pristina/10-corte/B2.md:66 exige «la mutación del monto en esa fecha»; :296, «en la fecha efectiva y no cuando se decide»; :378–379 repite el momento equivocado. Los tres sale coinciden en sus líneas. B12 conserva el camino S37/S38, por lo que no es un cambio global de la spec que haya retirado la anticipación.
+
+Corrección: válida. Cambia el momento de mutación y explicita que el cobro espera a la fecha efectiva. Mantiene relectura, mínimo ARS 15 y B12 como pieza responsable; no habilita la acción durante el corte.
+
+6. H4-VB-08-5 — CONFIRMADO
+
+Regla viva: LOG:1471–1472, 📌 de BM: «el / aviso y la mutación a los clientes ya anclados (la parte 2) llegan con `B12`, que se lleva la / cláusula de anunciar un aumento del criterio de `B2`». OWNER:138 confirma ese reparto. BZ precisa el camino del aumento y CC su interacción con descensos; ninguna devuelve esos avisos a B13a.
+
+Intento de refutación: B13a sí construye superficies y el editor de precios. Eso no convierte en suyos todos los correos mencionados en la sección UI. Se examinó el contexto completo: «y los tres correos del aumento también» refiere inequívocamente a B13a.
+
+Prístina: pristina/10-corte/B2.md:370–371 contiene esa atribución, mientras :69–70 asigna los mismos tres correos a B12. La contradicción no depende de inferir una implementación.
+
+Corrección: válida. Mantiene en B13a el editor de precios y la pantalla de plazos; sólo mueve los tres correos a B12. No arrastra otras superficies ni adelanta el aumento al corte.
+
+7. H4-VB-08-6 — CONFIRMADO
+
+Regla viva: B/docs/03-maquinas-de-estado.md:166, S16: «**salvo que la fila fuera la predecesora de una sucesión**, y ahí el reintento es **terminar el checkout que ya está abierto**: `S18` cierra la sucesión en el acto y la sucesora ocupa el candado `A`». :168 permite S18 con sucesora PENDING_AUTHORIZATION cuando la predecesora muere por S16.
+
+Intento de refutación: AC:B3:17 excluye a una SUCESORA de una predecesora que venía pagando. No excluye que la propia fila sea PREDECESORA de otro checkout. Son predicados distintos. OWNER:20 (Z) deja esa ruta para B8b; :62 (AS) obliga a escribir ramas sobre esquema vacío y :137 (BL) permite llamadas por interfaz implementadas después. Que aún no haya ruta pública no permite borrar la excepción del contrato. CH sólo agrega la anotación de cancelación vista.
+
+Prístina: pristina/10-corte/B3.md:418–419 contiene la exclusión de sucesora; :426 impone «el reintento es un alta nueva» sin salvedad.
+
+Corrección: válida. Recupera la excepción y aplica BL para probar la llamada con filas sembradas, sin exigir la implementación real de B8b antes de su fase. No debe interpretarse como una ruta pública de sucesión al corte ni como obligación de implementar S18 dentro de B3.
+
+8. H4-VB-09-2 — CONFIRMADO
+
+Regla viva: P/docs/nucleo/07-outbox-y-notificaciones.md:35–36: «La transición escribe su estado **y** la fila de outbox en la misma transacción. Lo que queda / afuera es el **envío**, que lo hace un proceso aparte leyendo la cola». B/descomposicion.md:138 incorpora específicamente el aviso de cobertura: «**y el aviso de que la cobertura cambió se encola en el outbox común, que construye `U2`, así que esta unidad espera a `U2`**».
+
+Intento de refutación: DEC-ARCH-009, LOG:6140–6159, describía un aviso sin transporte durable y elegía el reconciliador diario. Además P/docs/12-contrato-de-cobertura.md:907 manda que el aviso salga después del commit. Se revisaron ambas objeciones: el reparto posterior de FASE 5 asigna explícitamente el encolado a U2 y el 📌 de LOG:2467–2474 asigna su construcción. La regla de no despertar al consumidor antes del commit trata de la entrega, no obliga a insertar la fila después. OWNER BR confirma las dependencias de U2 y no establece una excepción transaccional para B4. El reconciliador diario sigue siendo necesario.
+
+Prístina: pristina/10-corte/B4.md:349–350 dice «se encola […] después del / commit»; :391–392 exige dejar el aviso en outbox «sólo después / del commit». No es sólo el envío lo que el texto posterga.
+
+Corrección: válida. La escritura atómica evita perder el aviso sin adelantar su consumo; no suprime reconciliación ni relectura. Verificados ambos literales y líneas en v/generadores/g8/src/B4.md. La reparación debe hacerse allí y regenerarse, como propone el JSON.
+
+9. H4-VB-09-3 — CONFIRMADO
+
+Regla viva: B/docs/03-maquinas-de-estado.md:1853, RF4: «con el comprobante de la transferencia o la referencia del panel»; nace EXECUTED «con quién la asentó y por dónde».
+
+Intento de refutación: DEC-RF-008, LOG:6543–6544, resume la devolución externa con comprobante de transferencia. No dice que prohíba la referencia de panel que RF4 admite explícitamente. Sus 📌 posteriores, LOG:6569–6597, cambian el catálogo de acciones, la serialización y los ids de devoluciones de órdenes; ninguno restringe RF4 a transferencias. Tampoco lo hace una letra del corte. El Dado del AC incluye devoluciones externas en general, no sólo transferencias.
+
+Prístina: pristina/10-corte/B5.md:273–274 exige el comprobante y omite la alternativa. El defecto existe sin la alteración de 04-catalogos del corpus de verificación.
+
+Corrección: válida. Agrega una alternativa de evidencia autorizada, no un bypass de confirmación ni un nuevo medio de devolución. Mantiene autor, canal y efectos P3/P4/covered_period. El sale coincide en v/generadores/g8/src/B5.md:273.
+
+10. H4-VB-09-4 — CONFIRMADO
+
+Regla viva: B/docs/03-maquinas-de-estado.md:2445–2450: «**Al admin**: el aviso que el §30 ordena es el de la falta del pago»; «sale cuando la cuota se abre sin pago contra ella»; «**Sobre la primera no hay `S4` que / coincida**» y «el aviso sale / igual, en el instante en que la cuota se abre».
+
+Intento de refutación: «Crear la cuota no pide un aviso propio» (:2442) podría parecer una prohibición. El párrafo distingue expresamente un aviso NUEVO del aviso de falta de pago ya existente: no lo elimina. DEC-SUB-013, LOG:4105–4106, dice «**Sin aviso nuevo**» y que MP5 aporta el sujeto; sus 📌 de :4116 y :4125 no retiran el aviso. BN adelanta manual_payment a B3; no cancela el aviso de la primera cuota. Tener la regla en el catálogo no incorpora por sí solo el efecto a los criterios y pruebas de la pieza.
+
+Prístina: pristina/10-corte/B5.md:305–310 enumera apertura por reloj/alta e idempotencia sin el aviso; TEST:B5:7, :1019–1020, tampoco lo comprueba. La búsqueda del resto de B5 no encontró otro criterio que cubra esa emisión.
+
+Corrección: válida. Usa el aviso existente al admin y no añade un correo al cliente ni una nueva plantilla. La deduplicación conserva un aviso al reintentar la misma cuota. La primera cuota continúa naciendo con S1 en B3; el texto no autoriza a diferir esa rama o su aviso hasta B5. Verificados ambos reemplazos en g8/src/B5.md.
+
+11. H4-VB-09-6 — CORRECCIÓN A AJUSTAR
+
+Regla viva: B/docs/03-maquinas-de-estado.md:1852, RF3: «**Sobre el pago de una instancia `UNA_VEZ`, la relectura es la de su orden por id**»; «**Con una parte acreditada y otra no, `RF3` no ocurre**: la fila sigue `CONFIRMED`».
+
+Intento de refutación: que las órdenes devuelvan los ids de los refunds no vuelve equivalente releer el pago. El 📌 de DEC-RF-008, LOG:6580–6586, confirma ids y serialización de órdenes y retira la rama «de su mismo monto»; los siguientes (:6587–6597) regulan el índice y reenvío. Ninguno elimina la relectura de orden. Las letras del corte tampoco.
+
+Prístina: pristina/10-corte/B6.md:134 dice sólo «relectura por id del pago» para un refund CONFIRMED genérico. :460–461 prueba resta de ids y 409, no confirmación por relectura de orden. Ambos sale coinciden también en g8/src/B6.md.
+
+Ajuste requerido: los dos textos propuestos son correctos en comportamiento, pero al ampliar TEST:B6:6 con RF3 hay que ampliar también sus metadatos. Hoy, :458, «Cubre» sólo referencia AC:B6:8 y :459 «Fuente» sólo referencia DEC-RF-008#📌5 y TRANS:B:RF2. Añadir AC:B6:5 a Cubre y TRANS:B:RF3 a Fuente en el generador, manteniendo las referencias existentes. OWNER:41–43 (AL/AN) exige trazabilidad AC→test; dejar la nueva comprobación escrita pero sin su vínculo sería una reparación incompleta del contrato verificable. Como alternativa, extender la prueba que ya declara cubrir AC:B6:5, en lugar de agregar esa conducta a TEST:B6:6.
+
+12. H4-VB-10-2 — CONFIRMADO
+
+Regla viva: B/docs/03-maquinas-de-estado.md:155, S5, exige «**que esta fila no sea la predecesora de una sucesión en curso**» y parte de GRACE_PERIOD. :169, S19: «el pago se registra y queda pendiente de resolución» y «no reactiva, no se reembolsa todavía y **no pone la marca todavía**». :156, S6: «**sobre una fila `ACTIVE`, que no tiene grace que apagar, lo que corre es `P1` sobre ese cobro».
+
+Intento de refutación: el texto «corre lo que dice AC:B7:8» podría heredar sus guardas; sin embargo el test exige S5 sin distinguir el pago retenido ni ACTIVE. DEC-MP-008 y sus 📌 (LOG:5871–5935) mantienen la pausa por mora y precisan sus bordes, no autorizan reactivar una predecesora protegida. BL regula la llamada a S18/S31/S38, no elimina S19. La excepción por contracargo no refuta este caso: el test trata el segundo evento, paused, no el tercero, charged_back.
+
+Prístina: pristina/10-corte/B7.md:205–206 junta pago retenido y cobro releído; :1614–1616 concluye para ambos «corre `S5`», incluyendo ACTIVE. AC:B7:16–17 no salva esa exigencia contradictoria.
+
+Corrección: válida. Separa retención, S5 condicionado sobre GRACE_PERIOD y P1 sobre ACTIVE. No abre marca mientras la sucesión está en curso, no anula las guardas de S6 y no extiende la protección a contracargos. Verificados los dos textos del generador, incluido el placeholder {{AC:B7:8}} que debe conservarse allí.
+
+13. H4-VB-11-1 [FUENTE] — CORRECCIÓN A AJUSTAR
+
+Regla viva vigente: LOG:1478–1482, 📌 BZ: «**el aumento a un cliente ya anclado es una migración a la versión nueva, por / `S37` y `S38`, con el motivo *«aumento»***» y «conservando la promo viva, porque el / monto esperado ya la descuenta». OWNER:169 reitera «(la promo viva se conserva)». CC no retira esa excepción.
+
+Intento de refutación: B/docs/14-promos-cortesias-y-grants.md:311 dice VIVO «**Entre `S37` y el `S38` que aplica ese cambio, el monto esperado es el precio de lista de la versión destino para su ciclo, sin promos**». Su explicación habla de versión retirada, por lo que antes de BZ tenía una población coherente. Desde BZ, S37/S38 también transporta aumentos y la frase universal necesita acotarse. No vale tacharla mentalmente ni aplicar «sin promos» a ese caso nuevo.
+
+Prístina: pristina/10-corte/B9a.md:307 reproduce la frase dentro del bloque g-secciones; B11:1486–1487 sí conserva la excepción y B12 la exige. Es un residuo de fuente, no una mutación del generador.
+
+Ajuste requerido: el reemplazo propuesto en B/14:311 es correcto, pero queda otra formulación viva de la MISMA regla en B/docs/09-conciliacion.md:185: «**Y entre `S37` y el `S38` que aplica ese cambio, el monto esperado es el precio de lista de la versión destino para su ciclo, sin promos**: la ventana gemela, en una migración». Se reproduce en pristina/10-corte/B11.md:250, contradiciendo su propio AC de :1486–1487. Ampliar la corrección de fuente a esa cláusula con la misma excepción de motivo «aumento»; después re-congelar y regenerar ambas transcripciones. Aclarar también que la frase contigua de B/14 sobre «versión retirada» describe la migración por retiro, no todo S37. Mantener sin promos el downgrade y la migración por retiro; no extender la conservación a cualquier cambio de plan. Sin ese ajuste, regenerar reintroduce la orden contradictoria en conciliación.
+
+14. H4-VB-11-2 [FUENTE] — CONFIRMADO
+
+Regla viva: B/docs/09-conciliacion.md:185: «**se reintenta la mutación durante 3 días, contados desde esa transición**»; y, tras la cláusula tachada, «desde BZ, corte del MVP, owner 2026-10-02, el aumento a un anclado es `S37`, y los 3 días corren desde esa transición; residuo corregido el 2026-10-02». B/docs/14-promos-cortesias-y-grants.md:741–742 aún conserva VIVO «**Cerrado**: los 3 días del / reintento de monto de un aumento corren desde su fecha efectiva (§2.4)».
+
+Intento de refutación: no son dos plazos para objetos distintos. El cierre remite a la misma sección que ya cuenta desde la transición. BZ y el 📌 de CC, LOG:1495–1499, distinguen mutación y cobro y ponen S37 siete días antes. Ninguna letra posterior cambia ese reloj. No se usa como regla vigente la cláusula «desde su fecha efectiva» tachada en B/09.
+
+Prístina: pristina/10-corte/B9a.md:720–721 copia el cierre viejo; :294–298, en cambio, cuenta desde la transición. La contradicción existe en un único archivo.
+
+Corrección: válida. Mantiene tres días y cambia sólo su origen a S37; no los cuenta desde anuncio, entrega del correo o cobro efectivo. Corregir B/14:742 y regenerar el bloque conserva la procedencia del texto.
+
+15. H4-VB-11-4 — CONFIRMADO
+
+Regla viva: P/docs/nucleo/07-outbox-y-notificaciones.md:102 identifica la ocurrencia de schedule por «el sujeto, el hito **y la fecha objetivo vigente de ese hito**»; :103, para evento, por «el id del evento de dominio que lo causó». :281 sitúa el correo de alerta cerrada «**cuando la ficha de la alerta llega a `PURGED`** (`PB9` o `PB12`, `V/03` §9)».
+
+Intento de refutación: PB9 suele correr por un reloj, pero el disparador del correo es que se produjo PURGED; PB12 también lo dispara, sin una fecha objetivo de retención que haya que esperar. LOG:6082–6088, 📌 de DEC-DATA-005, confirma cierre con aviso al turista y su clase transaccional. El 📌 de DEC-DATA-006, LOG:7062–7065, habla de la fecha objetivo de los avisos PREVIOS, no del aviso de cierre. OWNER BL reparte «al archivar» y los dos previos; no vuelve schedule al cierre de alerta.
+
+Prístina: pristina/20-fase-1/V9b.md:637–639 agrupa los dos previos y alerta cerrada bajo «la clave de schedule que lleva la fecha objetivo».
+
+Corrección: válida. Cambia la identidad de ocurrencia del cierre a su evento y conserva los dos avisos previos por schedule y el aviso al archivar en V6. Se mantiene la clave completa de U2 (destinatario, plantilla, ocurrencia): no debe reducirse al id de evento solo. Clasificar este aviso como evento es una inferencia directa de su disparador explícito, no una etiqueta literal que aparezca en la fila :281.
+
+16. H4-VB-12-3 — CONFIRMADO
+
+Regla viva: B/docs/19-superficies.md:241: «**El default se propone sobre TODOS los pagos de la marca, no sobre el primero.**» :246–249: «**Y un pago colgado que el banco ya le / devolvió a la persona por un contracargo se muestra con el contracargo y fuera del default**» y «la persona lo / resuelve sin devolver». :251: «**El default NO ejecuta nada, y eso es `DEC-RF-002` intacto.**»
+
+Intento de refutación: «fuera del default» no equivale a «fuera del listado por defecto»: el párrafo define default como propuesta económica. DEC-SUB-020 y sus precisiones sobre contracargo regulan suspensión y sucesión, no ocultan pagos; los 📌 de DEC-RF-008 mantienen confirmación humana. No se encontró letra posterior del corte que establezca una vista filtrada que reemplace este listado.
+
+Prístina: pristina/10-corte/B13a.md:1087–1088 dice que el pago aparece con contracargo «y no en la vista por defecto». El contexto del test habla del listado de marcas, cantidad, total y propuesta: esconder el pago no satisface la regla viva. AC:B13a:9 sí conserva que se muestra.
+
+Corrección: válida. Muestra el pago con contracargo y lo excluye de la propuesta de devolución; «se resuelve sin devolver» sigue bajo la decisión humana del contexto. No autoriza resolución automática ni un segundo reembolso.
+
+17. H4-VB-14-1 [FUENTE] — CONFIRMADO
+
+Regla viva: P/docs/nucleo/02-modelo-de-datos.md:193: «**Son […] diecinueve**» (la elipsis representa aquí sólo el texto tachado eliminado, no un valor vivo). :195 exige «el 19, de billing, que el owner fija antes del merge de `B2` (BU, BX)»; :198 dice «diecinueve valores, nace en la migración estructural del paso 3» y «el paso 3a sólo la verifica». OWNER:146, BU, añade la ventana N; :157, BX, dispone literalmente «**el owner fija el valor del plazo 19 antes del merge de `B2`**, y no de `B11`: la regla de que la versión 1 falla con un plazo vacío se conserva sin excepciones».
+
+Intento de refutación: la cifra dieciocho NO está tachada en P/docs/16-fase-7-del-paraguas.md:152; sí lo está quince. La regla de dieciocho sigue publicada en ese paso pero ya fue superada por BU/BX y el modelo actualizado. No son diecinueve valores por mitad: es el conjunto distribuido entre las dos tablas. Las letras posteriores hasta CJ no retiran el plazo 19.
+
+Prístina: pristina/30-el-corte.md:452–456 copia «con los dieciocho valores» y sólo menciona los cinco previos al merge de V6; 02-nucleo y AC:B2:6 conservan la clave 19. No basta la cobertura en B2 para declarar consistente el instructivo del corte.
+
+Corrección: válida. Tacha dieciocho y deja diecinueve, conservando quince como histórico muerto. Agrega el deadline específico B2 para el 19 sin mover a B2 los cinco valores de verticales que siguen antes de V6. No inventa el valor de N ni exceptúa una clave vacía. Ambos sale existen una vez en la misma línea de fuente :152; deben aplicarse sobre texto, sin depender de desplazamientos de línea.
+
+Comprobaciones finales y límites
+Se comprobaron todos los literales sale de los 13 REAL BLOQUEA contra pristina/, y todos los de correccion_fuente contra v/fuentes/: existen una sola vez y empiezan en la línea declarada. También coinciden los nueve reemplazos declarados para g8/src, con su sintaxis de placeholder donde corresponde. Las cuatro copias clasificadas FUENTE se verificaron separadamente en las líneas prístinas citadas.
+
+Verificado: existencia de las contradicciones/omisiones documentales, autoridad de las reglas y precedencia indicada, y aplicabilidad textual de los reemplazos. Inferido y señalado: clasificación del aviso de alerta como evento y aplicación del patrón BL al cierre S18 llamado desde S16. No se ejecutó código de producto ni se verificó una implementación; los resultados son sobre la spec. No hay adapter .qz/project.json ni repositorio Git operativo en este directorio, por lo que no se afirmó branch, estado Git o ejecución de un verificador de proyecto.
+
+Único archivo escrito: adjudicacion/contra.txt. No se aplicó ninguna corrección del JSON ni se ejecutaron generadores.

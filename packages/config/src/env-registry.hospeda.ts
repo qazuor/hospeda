@@ -492,6 +492,45 @@ export const HOSPEDA_ENV_VARS = [
             'true = usar el sandbox de Mercado Pago (tarjetas de prueba, sin cobros reales). false = cobros reales de producción. Dejá true en development y preview; false solo en producción.'
     },
     {
+        name: 'HOSPEDA_MERCADO_PAGO_API_BASE_URL',
+        description: 'Mercado Pago API base URL',
+        descriptionEs: 'URL base de la API de Mercado Pago',
+        type: 'url',
+        required: false,
+        secret: false,
+        defaultValue: 'https://api.mercadopago.com',
+        exampleValue: 'https://api.mercadopago.com',
+        apps: ['api'],
+        category: 'billing',
+        howToObtainEs:
+            'Usa el endpoint oficial de Mercado Pago; sólo cambiá este valor para un servidor compatible de pruebas.'
+    },
+    {
+        name: 'HOSPEDA_E2E_CLOCK_FILE',
+        description: 'Local E2E clock control file',
+        descriptionEs: 'Archivo de control del reloj E2E local',
+        type: 'string',
+        required: false,
+        secret: false,
+        exampleValue: './test-results/provider-clock.json',
+        apps: ['api'],
+        category: 'billing',
+        howToObtainEs: 'Sólo para pruebas E2E locales; está prohibida fuera de localhost.'
+    },
+    {
+        name: 'HOSPEDA_E2E_MAIL_CAPTURE_URL',
+        description: 'Local E2E mail capture server base URL',
+        descriptionEs: 'URL base del servidor local de captura de correo E2E',
+        type: 'url',
+        required: false,
+        secret: false,
+        exampleValue: 'http://127.0.0.1:18091',
+        apps: ['api'],
+        category: 'email',
+        howToObtainEs:
+            'Sólo para E2E locales; prohibida fuera de localhost y nunca se configura en Coolify.'
+    },
+    {
         name: 'HOSPEDA_MERCADO_PAGO_TIMEOUT',
         description: 'MercadoPago API request timeout in ms',
         descriptionEs: 'Timeout en ms para los requests a la API de MercadoPago',
@@ -534,40 +573,6 @@ export const HOSPEDA_ENV_VARS = [
             'Optional integrator tracking ID issued by Mercado Pago to certified integration partners (developers/agencies who completed MP certification). Leave EMPTY (default) unless you have completed MP certification and were issued one.',
         howToObtainEs:
             'Tracking ID opcional que Mercado Pago da a partners de integración certificados (developers/agencias que completaron la certificación de MP). Dejalo VACÍO (default) salvo que hayas completado la certificación y te hayan asignado uno.'
-    },
-    {
-        name: 'HOSPEDA_MERCADO_PAGO_STATEMENT_DESCRIPTOR',
-        description: "Statement descriptor shown on the cardholder's bank statement",
-        descriptionEs: 'Descriptor que aparece en el resumen de la tarjeta del cliente',
-        type: 'string',
-        required: false,
-        secret: false,
-        defaultValue: 'HOSPEDA',
-        exampleValue: 'HOSPEDA',
-        apps: ['api'],
-        category: 'billing',
-        howToObtain:
-            'Free-text label, 1-11 ASCII uppercase chars (letters, digits, spaces). MP rejects anything longer or with lowercase / non-ASCII. Defaults to "HOSPEDA"; override only if MP homologation feedback requests it.',
-        howToObtainEs:
-            'Texto libre, 1-11 caracteres ASCII en mayúsculas (letras, dígitos, espacios). MP rechaza valores más largos o con minúsculas / no-ASCII. Por defecto "HOSPEDA"; sobrescribilo solo si el feedback de homologación de MP lo pide.'
-    },
-    {
-        name: 'HOSPEDA_COMMERCE_PLAN_SLUGS',
-        description:
-            'Commerce vertical to billing-plan-slug mapping, as `gastronomy:<slug>,experience:<slug>` (HOS-688). ONE variable rather than one per vertical: two variables can be left half-set, which leaves one vertical selling and the other answering 503 while the site looks perfectly healthy. Validated at boot, so a malformed value stops the container instead of refusing a customer mid-checkout.',
-        descriptionEs:
-            'Mapeo de vertical de comercio a slug de plan, con la forma `gastronomy:<slug>,experience:<slug>` (HOS-688). UNA sola variable en vez de una por vertical: dos se pueden quedar a medio setear, y ahí un vertical vende y el otro tira 503 mientras el sitio se ve perfecto. Se valida en el arranque, así que un valor mal formado frena el contenedor en lugar de rechazar un checkout.',
-        type: 'string',
-        required: false,
-        secret: false,
-        defaultValue: '',
-        exampleValue: 'gastronomy:gastronomy-basico,experience:experience-basico',
-        apps: ['api'],
-        category: 'billing',
-        howToObtain:
-            'The two slugs (billing_plans.name) of the per-vertical commerce plans seeded by seedCommercePlan. Leave unset to use the shipped catalogue defaults; set it only to point at differently-named plans. A value that is set but malformed is rejected at startup.',
-        howToObtainEs:
-            'Los dos slugs (billing_plans.name) de los planes de comercio por vertical que siembra seedCommercePlan. Dejala sin setear para usar los valores por defecto del catálogo; seteala solo para apuntar a planes con otro nombre. Un valor seteado pero mal formado se rechaza en el arranque.'
     },
 
     // -------------------------------------------------------------------------
@@ -663,7 +668,7 @@ export const HOSPEDA_ENV_VARS = [
     {
         name: 'HOSPEDA_ADMIN_NOTIFICATION_EMAILS',
         description:
-            'Comma-separated admin emails for operational alerts: MercadoPago disputes/webhooks, newsletter campaigns that close with failed deliveries (SPEC-108), AND new acquisition leads from the commerce and alliance funnels (H-62 / H-148).',
+            'Comma-separated admin emails for operational alerts: MercadoPago disputes/webhooks, newsletter campaigns that close with failed deliveries (SPEC-108), AND new acquisition leads from the venue, experience and alliance funnels (H-62 / H-148).',
         descriptionEs:
             'Emails de admin separados por comas para alertas operativas: disputas/webhooks de MercadoPago, campañas de newsletter que cierran con entregas fallidas (SPEC-108) Y leads nuevos de los embudos de comercio y aliados (H-62 / H-148).',
         type: 'string',
@@ -673,7 +678,7 @@ export const HOSPEDA_ENV_VARS = [
         apps: ['api'],
         category: 'email',
         howToObtain:
-            'List of email addresses (comma-separated, no spaces) that receive ops alerts: payment disputes, webhook failures, newsletter campaigns that close with failed > 0, and every new commerce/alliance lead. Example: alice@hospeda.ar,bob@hospeda.ar. Unset = those alerts are silently skipped, which for leads means an acquisition funnel nobody hears — the API logs a WARN per dropped lead and the lead-intake-backstop cron keeps retrying it.',
+            'List of email addresses (comma-separated, no spaces) that receive ops alerts: payment disputes, webhook failures, newsletter campaigns that close with failed > 0, and every new venue/experience/alliance lead. Example: alice@hospeda.ar,bob@hospeda.ar. Unset = those alerts are silently skipped, which for leads means an acquisition funnel nobody hears — the API logs a WARN per dropped lead and the lead-intake-backstop cron keeps retrying it.',
         howToObtainEs:
             'Lista de emails (separados por comas, sin espacios) que reciben alertas operativas: disputas de pagos, fallos de webhooks, campañas de newsletter que cierran con failed > 0, y cada lead nuevo de comercio/aliados. Ejemplo: alice@hospeda.ar,bob@hospeda.ar. Si queda sin setear, esas alertas se omiten: para los leads eso significa un embudo de captación que nadie escucha — la API loguea un WARN por lead descartado y el cron lead-intake-backstop lo sigue reintentando.'
     },
@@ -864,134 +869,26 @@ export const HOSPEDA_ENV_VARS = [
     // -------------------------------------------------------------------------
     // Addon lifecycle
     // -------------------------------------------------------------------------
-    {
-        name: 'HOSPEDA_ADDON_LIFECYCLE_ENABLED',
-        description:
-            'Feature flag for addon lifecycle processing (cancellations, plan changes, expiry). Set to "false" to disable side-effects without deploying code.',
-        descriptionEs:
-            'Feature flag del procesamiento de ciclo de vida de addons (cancelaciones, cambios de plan, expiración). Poné "false" para desactivar los efectos secundarios sin tener que deployar.',
-        type: 'boolean',
-        required: false,
-        secret: false,
-        defaultValue: 'true',
-        exampleValue: 'true',
-        apps: ['api'],
-        category: 'billing',
-        howToObtain:
-            'Set "true" to keep addon billing side-effects active (default). Set "false" as a kill-switch when something is wrong with the lifecycle pipeline — pauses all addon cancellations/plan changes without redeploying.',
-        howToObtainEs:
-            'Poné "true" para mantener activos los efectos de facturación de addons (default). Poné "false" como kill-switch si algo anda mal en el pipeline; pausa todas las cancelaciones/cambios de addons sin redeploy.'
-    },
 
     // -------------------------------------------------------------------------
     // User self-service subscription cancellation (SPEC-147)
     // -------------------------------------------------------------------------
-    {
-        name: 'HOSPEDA_USER_CANCEL_ENABLED',
-        description:
-            'Feature flag for the user self-service subscription cancellation route (SPEC-147). Ships dark by default (false) until the SPEC-203 UI lands. Set to "true" to enable.',
-        descriptionEs:
-            'Feature flag de la ruta de auto-cancelación de suscripción por el usuario (SPEC-147). Por defecto desactivado (false) hasta que llegue la UI de SPEC-203. Poné "true" para habilitar.',
-        type: 'boolean',
-        required: false,
-        secret: false,
-        defaultValue: 'false',
-        exampleValue: 'false',
-        apps: ['api'],
-        category: 'billing',
-        howToObtain:
-            'Set "true" to enable the user self-service cancel endpoint. Leave unset or set "false" to keep it dark (ships disabled until SPEC-203 UI). Internally Zod transforms via `(v) => v === "true"` — only the literal string "true" enables it.',
-        howToObtainEs:
-            'Poné "true" para habilitar el endpoint de auto-cancelación del usuario. Dejalo sin setear o en "false" para mantenerlo dark (se entrega desactivado hasta la UI de SPEC-203). Zod usa `(v) => v === "true"` internamente — solo el string literal "true" lo activa.'
-    },
 
     // -------------------------------------------------------------------------
     // MercadoPago subscription polling fallback (SPEC-143)
     // -------------------------------------------------------------------------
-    {
-        name: 'HOSPEDA_BILLING_POLLING_ENABLED',
-        description:
-            'Feature flag for the MercadoPago subscription_preapproval polling fallback. When enabled, start-paid schedules a polling job that queries MP /preapproval/{id} until the preapproval is authorized, then flips the local subscription to active. Provides resilience against unreliable MP webhook delivery (Finding #17).',
-        descriptionEs:
-            'Feature flag del fallback de polling para subscription_preapproval de MercadoPago. Cuando está activo, start-paid agenda un job que consulta /preapproval/{id} hasta que el preapproval esté authorized y luego flipea la subscripción local a active. Da resiliencia ante entregas no confiables de webhooks de MP (Finding #17).',
-        type: 'boolean',
-        required: false,
-        secret: false,
-        defaultValue: 'true',
-        exampleValue: 'true',
-        apps: ['api'],
-        category: 'billing',
-        howToObtain:
-            'Leave "true" (default) so the polling cron job runs and start-paid enqueues fallback jobs. Set "false" as a kill-switch if the polling layer is misbehaving in prod and you need to disable it without a redeploy. The webhook handler still works either way.',
-        howToObtainEs:
-            'Dejá en "true" (default) para que el cron de polling corra y start-paid encole jobs de fallback. Poné "false" como kill-switch si el polling se rompe en prod y hay que desactivarlo sin redeploy. El webhook handler sigue funcionando igual.'
-    },
 
     // -------------------------------------------------------------------------
     // Plan price-INCREASE propagation (HOS-176 Increment A)
     // -------------------------------------------------------------------------
-    {
-        name: 'HOSPEDA_BILLING_PRICE_INCREASE_ENABLED',
-        description:
-            'Feature flag for the plan price-INCREASE propagation path (HOS-176 Increment A). Ships dark (default false): while false the propagate-plan-price-changes cron leaves every "increase" price change in "pending" and never sends an advance notice or raises a subscriber MercadoPago transaction_amount. Set to "true" to enable the Disp. 954/2025 advance-notice phase plus the post-grace amount mutation. Decrease propagation is unaffected (always active).',
-        descriptionEs:
-            'Feature flag del camino de propagación de AUMENTOS de precio de plan (HOS-176 Incremento A). Se entrega apagado (default false): mientras esté en false, el cron propagate-plan-price-changes deja todo cambio "increase" en "pending" y nunca manda el aviso previo ni sube el transaction_amount del subscriptor en MercadoPago. Poné "true" para habilitar la fase de aviso previo (Disp. 954/2025) más la mutación de monto post-gracia. La propagación de bajas no se ve afectada (siempre activa).',
-        type: 'boolean',
-        required: false,
-        secret: false,
-        defaultValue: 'false',
-        exampleValue: 'false',
-        apps: ['api'],
-        category: 'billing',
-        howToObtain:
-            'Leave unset or "false" to keep the increase path dark (safe default: increases stay pending, nothing is charged differently). Set "true" ONLY after the legal notice copy (Disp. 954/2025) is signed off and a staging smoke has passed. Internally Zod transforms via `(v) => v === "true"` — only the literal string "true" enables it.',
-        howToObtainEs:
-            'Dejalo sin setear o en "false" para mantener el camino de aumentos apagado (default seguro: los aumentos quedan pending, no se cobra distinto). Poné "true" SOLO después de que la copia legal del aviso (Disp. 954/2025) esté aprobada y haya pasado un smoke en staging. Zod usa `(v) => v === "true"` internamente — solo el string literal "true" lo activa.'
-    },
 
     // -------------------------------------------------------------------------
     // Own-preapproval checkout (HOS-937 step 1)
     // -------------------------------------------------------------------------
-    {
-        name: 'HOSPEDA_BILLING_OWN_PREAPPROVAL_ENABLED',
-        description:
-            'Feature flag for the own-preapproval accommodation-monthly checkout (HOS-937 step 1). Ships dark (default false): while false, initiatePaidMonthlySubscription keeps redirecting to the shared MercadoPago preapproval_plan share link (Path C, HOS-191), whose external_reference MercadoPago silently discards. Set to "true" to create a per-user POST /preapproval instead, whose external_reference (the local subscription id) survives in the body of the server-to-server call and closes the orphan class this issue targets.',
-        descriptionEs:
-            'Feature flag del checkout de preapproval propio para accommodation mensual (HOS-937 paso 1). Se entrega apagado (default false): mientras esté en false, initiatePaidMonthlySubscription sigue redirigiendo al share link compartido del preapproval_plan de MercadoPago (Path C, HOS-191), cuyo external_reference MercadoPago descarta en silencio. Poné "true" para crear en su lugar un POST /preapproval propio por usuario, cuyo external_reference (el id de suscripción local) sobrevive en el body de la llamada servidor-a-servidor y cierra la clase de huérfanos que este issue ataca.',
-        type: 'boolean',
-        required: false,
-        secret: false,
-        defaultValue: 'false',
-        exampleValue: 'false',
-        apps: ['api'],
-        category: 'billing',
-        howToObtain:
-            'Leave unset or "false" to keep the shared share-link checkout (safe default, unchanged behavior). Set "true" ONLY after a staging smoke of the accommodation-monthly checkout against the real MP sandbox has passed. Internally Zod transforms via `(v) => v === "true"` — only the literal string "true" enables it. Scoped to accommodation monthly only (HOS-937 step 1) — annual, commerce and partner checkouts are unaffected regardless of this flag.',
-        howToObtainEs:
-            'Dejalo sin setear o en "false" para mantener el checkout con share link compartido (default seguro, sin cambio de comportamiento). Poné "true" SOLO después de que un smoke en staging del checkout de accommodation mensual contra el sandbox real de MP haya pasado. Zod usa `(v) => v === "true"` internamente — solo el string literal "true" lo activa. Alcanza sólo a accommodation mensual (HOS-937 paso 1) — anual, commerce y partner no se ven afectados por este flag.'
-    },
 
     // -------------------------------------------------------------------------
     // Recurring add-on charging (HOS-847)
     // -------------------------------------------------------------------------
-    {
-        name: 'HOSPEDA_BILLING_RECURRING_ADDONS_ENABLED',
-        description:
-            'Feature flag for recurring add-on charging via a dedicated MercadoPago preapproval per add-on (HOS-847). Ships dark (default false) across the whole PR chain: while unset/false, add-on checkout keeps using the one-time Preference path (mode: "payment") byte-for-byte, regardless of billingType: "recurring" on the add-on. Set to "true" ONLY once the full chain is merged (checkout, webhook activation/renewal, hard-cancel on cancellation, and the reconciler cron) — turning this on before PR 5\'s webhook handler exists does NOT merely leave the purchase stuck pending: the add-on\'s own billing_subscriptions row carries a real mp_subscription_id, and the generic MercadoPago handler resolves incoming preapproval events against that column with no product-domain filter, so it matches the add-on row and runs the full PLAN activation over something that is not a plan. The buyer is charged either way; what they do not get is the add-on.',
-        descriptionEs:
-            'Feature flag del cobro recurrente de add-ons vía un preapproval de MercadoPago dedicado por add-on (HOS-847). Se entrega apagado (default false) durante toda la cadena de PRs: mientras esté sin setear o en false, el checkout de add-ons sigue usando el camino de pago único vía Preference (mode: "payment") sin cambios, sin importar el billingType: "recurring" del add-on. Poné "true" SOLO una vez que toda la cadena esté mergeada (checkout, activación/renovación por webhook, hard-cancel en la cancelación, y el cron reconciliador) — activarlo antes de que exista el handler de webhook del PR 5 NO deja solamente la compra trabada en pending: la fila de billing_subscriptions del propio add-on lleva un mp_subscription_id real, y el handler genérico de MercadoPago resuelve los eventos de preapproval contra esa columna sin filtrar por product_domain, así que matchea la fila del add-on y corre la activación de PLAN completa sobre algo que no es un plan. Al cliente se le cobra igual; lo que no recibe es el add-on.',
-        type: 'boolean',
-        required: false,
-        secret: false,
-        defaultValue: 'false',
-        exampleValue: 'false',
-        apps: ['api'],
-        category: 'billing',
-        howToObtain:
-            'Leave unset or "false" to keep the one-time add-on checkout (safe default, unchanged behavior). Set "true" ONLY after the entire HOS-847 PR chain (checkout, webhook, cancellation hard-cancel, reconciler) is merged AND both the staging and prod smoke checklists (SPEC-143) have signed off — this is billing CORE. Internally Zod transforms via `(v) => v === "true"` — only the literal string "true" enables it.',
-        howToObtainEs:
-            'Dejalo sin setear o en "false" para mantener el checkout de add-ons de pago único (default seguro, sin cambio de comportamiento). Poné "true" SOLO después de que toda la cadena de PRs de HOS-847 (checkout, webhook, hard-cancel en cancelación, reconciliador) esté mergeada Y de que los smokes de staging y prod (SPEC-143) hayan firmado — esto es billing CORE. Zod usa `(v) => v === "true"` internamente — solo el string literal "true" lo activa.'
-    },
 
     // -------------------------------------------------------------------------
     // Auth lockout (brute-force protection)
@@ -1321,7 +1218,7 @@ export const HOSPEDA_ENV_VARS = [
         apps: ['api', 'seed'],
         category: 'integrations',
         howToObtain:
-            'Cap on a single entity photo (accommodation, destination, event, post, commerce listing) in MB. Default 10, which is also the hard maximum the schema accepts: Cloudinary rejects a larger image outright on the current plan, so a higher value would let an upload burn the full transfer time and only then fail as a generic upstream error. The upload routes carry their own body-size ceiling derived from this value, so a photo exactly at the cap is not killed by the multipart envelope pushing it past the global body limit (HOS-322). Keep it in sync with DEFAULT_ENTITY_MAX_FILE_SIZE_MB in @repo/media, which is what the web and admin clients pre-validate against. Raising it requires a Cloudinary plan change first.',
+            'Cap on a single entity photo (accommodation, destination, event, post, venue or experience listing) in MB. Default 10, which is also the hard maximum the schema accepts: Cloudinary rejects a larger image outright on the current plan, so a higher value would let an upload burn the full transfer time and only then fail as a generic upstream error. The upload routes carry their own body-size ceiling derived from this value, so a photo exactly at the cap is not killed by the multipart envelope pushing it past the global body limit (HOS-322). Keep it in sync with DEFAULT_ENTITY_MAX_FILE_SIZE_MB in @repo/media, which is what the web and admin clients pre-validate against. Raising it requires a Cloudinary plan change first.',
         howToObtainEs:
             'Tope en MB para una foto de entidad (alojamiento, destino, evento, post, listado de comercio). Por defecto 10, que además es el máximo que acepta el schema: Cloudinary rechaza una imagen más grande en el plan actual, así que un valor mayor haría que la subida consuma todo el tiempo de transferencia y recién ahí falle con un error genérico de upstream. Las rutas de subida tienen su propio techo de body derivado de este valor, para que una foto justo en el tope no muera porque el sobre multipart la pasa del límite global (HOS-322). Mantenelo sincronizado con DEFAULT_ENTITY_MAX_FILE_SIZE_MB en @repo/media, que es lo que validan los clientes de web y admin antes de subir. Subirlo requiere primero cambiar el plan de Cloudinary.'
     },
@@ -1534,6 +1431,41 @@ export const HOSPEDA_ENV_VARS = [
             'El slug del proyecto que aparece en la URL de Sentry: sentry.io/organizations/<org>/projects/<este-valor>/. Lo usa la herramienta de upload de source maps.'
     },
     {
+        name: 'HOSPEDA_HEALTHCHECKS_PING_KEY',
+        description: 'Healthchecks.io project ping key for free cron monitors',
+        descriptionEs:
+            'Ping key del proyecto de Healthchecks.io para los monitores de cron gratuitos',
+        type: 'string',
+        required: false,
+        secret: true,
+        exampleValue: 'xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx',
+        apps: ['api'],
+        category: 'monitoring',
+        helpUrl: 'https://healthchecks.io/docs/http_api/',
+        howToObtain:
+            'Healthchecks.io → the single free-plan project → Settings → Ping Key. Optional (HOS-1742): with no key the cron ping is a no-op. Staging and prod share the same project and key, so the environment lives in HOSPEDA_HEALTHCHECKS_SLUG_PREFIX instead.',
+        howToObtainEs:
+            'Healthchecks.io → el único proyecto del plan gratuito → Settings → Ping Key. Opcional (HOS-1742): sin la clave el ping de cron es un no-op. Staging y prod comparten el mismo proyecto y la misma clave, así que el entorno va en HOSPEDA_HEALTHCHECKS_SLUG_PREFIX.'
+    },
+    {
+        name: 'HOSPEDA_HEALTHCHECKS_SLUG_PREFIX',
+        description: 'Healthchecks.io check slug prefix (staging | prod)',
+        descriptionEs:
+            'Prefijo del slug de los checks de Healthchecks.io (staging | prod) — separa staging y prod dentro del único proyecto gratuito.',
+        type: 'enum',
+        required: false,
+        secret: false,
+        enumValues: ['staging', 'prod'] as const,
+        exampleValue: 'staging',
+        apps: ['api'],
+        category: 'monitoring',
+        helpUrl: 'https://healthchecks.io/docs/http_api/',
+        howToObtain:
+            'Set to `staging` on the staging container and `prod` on the prod container. The check slug is `<prefix>-<job>` (for example `staging-billing-reconciliation-sweep`), which keeps the two environments apart inside the one free-plan project. Optional (HOS-1742): without a prefix the ping is a no-op, so staging can never feed the prod checks.',
+        howToObtainEs:
+            'Poné `staging` en el contenedor de staging y `prod` en el de prod. El slug del check es `<prefijo>-<job>` (por ejemplo `staging-billing-reconciliation-sweep`), que separa los dos entornos dentro del único proyecto gratuito. Opcional (HOS-1742): sin prefijo el ping es un no-op, así staging nunca alimenta los checks de prod.'
+    },
+    {
         name: 'HOSPEDA_SENTRY_ENVIRONMENT',
         description: 'Sentry environment tag (production | staging)',
         descriptionEs:
@@ -1662,40 +1594,6 @@ export const HOSPEDA_ENV_VARS = [
             'Leave unset everywhere except CI. Set to "true" (the only accepted values are "true" and "1"; anything else — including "false" — leaves it off) in a workflow-level env block so it reaches BOTH the `astro build` and the web server process: the URL rewrite happens at resolution time in @repo/media getMediaUrl and apps/web/src/lib/media.ts, and both stages resolve URLs. Playwright and the a11y sweep additionally read it to make res.cloudinary.com unresolvable for Chromium, as a second layer. Deliberately NOT keyed off CI, which production build pipelines also set.',
         howToObtainEs:
             'Dejala sin setear en todos lados salvo CI. Poné "true" (los únicos valores aceptados son "true" y "1"; cualquier otro — incluido "false" — la deja apagada) en el bloque env del workflow para que llegue TANTO al `astro build` como al proceso del server web: la reescritura de URLs ocurre en tiempo de resolución, en getMediaUrl de @repo/media y en apps/web/src/lib/media.ts, y ambas etapas resuelven URLs. Playwright y el a11y sweep además la leen para que res.cloudinary.com no resuelva en Chromium, como segunda capa. A propósito NO se apoya en CI, que los pipelines de build de producción también setean.'
-    },
-    {
-        name: 'HOSPEDA_TRIAL_DAYS_OVERRIDE',
-        description:
-            'Override host trial length (days) for testing. Affects every trial while set.',
-        descriptionEs:
-            'Sobrescribe la duración del trial de host (días) para testing. Afecta a todo trial mientras esté seteada.',
-        type: 'number',
-        required: false,
-        secret: false,
-        exampleValue: '1',
-        apps: ['api'],
-        category: 'testing',
-        howToObtain:
-            'Set to a positive integer (e.g. 1) to shorten the host publish trial so QA can exercise trial expiry without waiting 30 days. NOT gated by environment (NODE_ENV is "production" on both the prod and staging deployments and cannot distinguish them, and testing must be possible against production). It is an explicit ops knob: it affects EVERY trial started while it is set, so set it, run the test, then UNSET it. Unset by default in every environment.',
-        howToObtainEs:
-            'Poné un entero positivo (ej. 1) para acortar el trial de publicación de host y poder probar la expiración sin esperar 14 días. NO tiene gate de entorno (NODE_ENV es "production" tanto en la instancia de prod como en la de staging, así que no las distingue, y hay que poder testear contra producción). Es una perilla explícita de ops: afecta a TODO trial que arranque mientras esté seteada, así que la seteás, hacés la prueba y la SACÁS. Sin setear por defecto en todos los entornos.'
-    },
-    {
-        name: 'HOSPEDA_SHOW_TEST_BILLING_PLAN',
-        description:
-            'Exposes and enables subscribing to the hidden daily test billing plan (owner-test-daily) for testing.',
-        descriptionEs:
-            'Expone y habilita la suscripción al plan de facturación diario de prueba oculto (owner-test-daily) para testing.',
-        type: 'boolean',
-        required: false,
-        secret: false,
-        exampleValue: 'false',
-        apps: ['api'],
-        category: 'testing',
-        howToObtain:
-            'Set to "true" to make the hidden owner-test-daily plan subscribable (resolvePlanBySlug in subscription-checkout.service.ts rejects it with PLAN_NOT_FOUND while unset). While ON, subscribing produces REAL MercadoPago daily charges in prod — this is an explicit ops knob, NOT gated by environment (NODE_ENV cannot distinguish prod from staging). Set it, run the test, then UNSET it. Unset (false) by default everywhere.',
-        howToObtainEs:
-            'Poné "true" para que el plan oculto owner-test-daily sea suscribible (resolvePlanBySlug en subscription-checkout.service.ts lo rechaza con PLAN_NOT_FOUND mientras esté sin setear). Mientras esté ON, suscribirse genera cargos diarios REALES de MercadoPago en prod — es una perilla explícita de ops, NO tiene gate de entorno (NODE_ENV no distingue prod de staging). Seteala, hacé la prueba y SACALA. Sin setear (false) por defecto en todos los entornos.'
     },
     {
         name: 'HOSPEDA_DISABLE_AUTH',
@@ -2416,24 +2314,6 @@ export const HOSPEDA_ENV_VARS = [
             'Set on EVERY deployment, and set the SAME value on that deployment\'s API and web resources: "prod" on hospeda-api-prod + hospeda-web-prod, "preview" on hospeda-api-staging + hospeda-web-staging. Valid values: dev, test, preview, prod.',
         howToObtainEs:
             'Setear en TODOS los deploys, y con el MISMO valor en los recursos API y web de ese deploy: "prod" en hospeda-api-prod + hospeda-web-prod, "preview" en hospeda-api-staging + hospeda-web-staging. Valores válidos: dev, test, preview, prod.'
-    },
-    {
-        name: 'HOSPEDA_QZPAY_TEST_CONTROL_ENABLED',
-        description:
-            'DEV/TEST ONLY. Enables the QZPay test-control gate (deterministic failNext/delayNext injection) used by the e2e billing suite and the worktree dev bootstrap. Production MUST NEVER set this. Optional — treated as disabled unless the value is exactly "true".',
-        descriptionEs:
-            'SOLO DEV/TEST. Habilita el gate de test-control de QZPay (inyección determinística de failNext/delayNext) que usa la suite e2e de billing y el bootstrap de worktree. Producción NUNCA debe setearla. Opcional — se considera deshabilitada salvo que el valor sea exactamente "true".',
-        type: 'boolean',
-        required: false,
-        secret: false,
-        defaultValue: 'false',
-        exampleValue: 'false',
-        apps: ['api'],
-        category: 'testing',
-        howToObtain:
-            'Set to "true" ONLY on a local/e2e API process to enable deterministic QZPay failure injection. Never set it in staging or production.',
-        howToObtainEs:
-            'Setear en "true" SOLO en un proceso de API local/e2e para habilitar la inyección determinística de fallos de QZPay. Nunca setearla en staging ni producción.'
     },
     {
         name: 'CLOUDFLARE_ZONE_ID',

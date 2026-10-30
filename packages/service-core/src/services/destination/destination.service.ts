@@ -63,9 +63,8 @@ import {
     GetDestinationPointsOfInterestInputSchema,
     GetDestinationStatsInputSchema,
     GetDestinationSummaryInputSchema,
-    LifecycleStatusEnum,
-    ServiceErrorCode,
-    VisibilityEnum
+    PublicationStatusEnum,
+    ServiceErrorCode
 } from '@repo/schemas';
 import { z } from 'zod';
 import { BaseCrudService } from '../../base/base.crud.service';
@@ -89,6 +88,10 @@ import {
     computeHierarchyPathIds,
     isValidParentChildRelation
 } from './destination.hierarchy.helpers';
+import {
+    buildDestinationLocationConditions,
+    matchesDestinationLocation
+} from './destination.location-filters';
 import {
     normalizeCreateInput,
     normalizeListInput,
@@ -303,7 +306,6 @@ export class DestinationService extends BaseCrudService<
         pageSize: number;
         q?: string;
         searchScope?: 'all' | 'name';
-        country?: string;
         state?: string;
         city?: string;
         isFeatured?: boolean;
@@ -319,7 +321,6 @@ export class DestinationService extends BaseCrudService<
             sortOrder: _sortOrder,
             q,
             searchScope,
-            country,
             state,
             city,
             isFeatured,
@@ -360,7 +361,6 @@ export class DestinationService extends BaseCrudService<
             pageSize,
             q,
             searchScope,
-            country,
             state,
             city,
             isFeatured,
@@ -385,7 +385,6 @@ export class DestinationService extends BaseCrudService<
         const {
             q,
             searchScope,
-            country,
             state,
             city,
             isFeatured,
@@ -408,13 +407,10 @@ export class DestinationService extends BaseCrudService<
         const sortOrder = _ctx.pagination?.sortOrder;
 
         // Build where clause from the subset of filters that map to real columns.
-        // Note: country/state/city are not direct columns (stored in location jsonb)
-        // but are kept here for backwards compatibility; buildWhereClause will
-        // warn-and-skip them.
+        // state/city live in the `location` jsonb column, so they become
+        // additional conditions instead (HOS-1899). There is deliberately no `country`
+        // filter (HOS-1921): the old ISO-2 param never matched the stored country name.
         const where: Record<string, unknown> = {};
-        if (country) where.country = country;
-        if (state) where.state = state;
-        if (city) where.city = city;
         if (isFeatured !== undefined) where.isFeatured = isFeatured;
         if (parentDestinationId) where.parentDestinationId = parentDestinationId;
         if (destinationType) where.destinationType = destinationType;
@@ -432,7 +428,12 @@ export class DestinationService extends BaseCrudService<
             trimmedQ && trimmedQ.length > 0
                 ? buildSearchCondition(trimmedQ, searchColumns, this.model.getTable())
                 : undefined;
-        const additionalConditions = searchCondition ? [searchCondition] : undefined;
+        const locationConditions = buildDestinationLocationConditions({ state, city });
+        const allConditions = [
+            ...(searchCondition ? [searchCondition] : []),
+            ...locationConditions
+        ];
+        const additionalConditions = allConditions.length > 0 ? allConditions : undefined;
 
         // Special handling for ancestorId (requires LIKE query on pathIds)
         if (ancestorId) {
@@ -446,6 +447,17 @@ export class DestinationService extends BaseCrudService<
             }
             if (level !== undefined) {
                 filtered = filtered.filter((d) => d.level === level);
+            }
+            if (isFeatured !== undefined) {
+                filtered = filtered.filter((d) => d.isFeatured === isFeatured);
+            }
+            if (locationConditions.length > 0) {
+                filtered = filtered.filter((d) =>
+                    matchesDestinationLocation({
+                        location: d.location,
+                        filters: { state, city }
+                    })
+                );
             }
             if (trimmedQ && trimmedQ.length > 0) {
                 const needle = trimmedQ.toLowerCase();
@@ -477,19 +489,23 @@ export class DestinationService extends BaseCrudService<
         _actor: Actor,
         _ctx: ServiceContext
     ) {
-        const { country, state, city, isFeatured, parentDestinationId, destinationType, level } =
+        const { state, city, isFeatured, parentDestinationId, destinationType, level } =
             this.extractImplementedFilters(params);
 
         const where: Record<string, unknown> = {};
-        if (country) where.country = country;
-        if (state) where.state = state;
-        if (city) where.city = city;
         if (isFeatured !== undefined) where.isFeatured = isFeatured;
         if (parentDestinationId) where.parentDestinationId = parentDestinationId;
         if (destinationType) where.destinationType = destinationType;
         if (level !== undefined) where.level = level;
 
-        const count = await this.model.count(where);
+        // state/city live in the `location` jsonb column (HOS-1899).
+        const locationConditions = buildDestinationLocationConditions({ state, city });
+        const count = await this.model.count(
+            where,
+            locationConditions.length > 0
+                ? { additionalConditions: [...locationConditions] }
+                : undefined
+        );
         return { count };
     }
 
@@ -535,24 +551,21 @@ export class DestinationService extends BaseCrudService<
         await this._canSearch(actor);
 
         // Extract parameters
-        const {
-            page = 1,
-            pageSize = 10,
-            country,
-            state,
-            city,
-            isFeatured,
-            ...otherFilters
-        } = params;
+        const { page = 1, pageSize = 10, state, city, isFeatured, ...otherFilters } = params;
         // Build where clause from flat filters
         const where: Record<string, unknown> = { ...otherFilters };
-        if (country) where.country = country;
-        if (state) where.state = state;
-        if (city) where.city = city;
         if (isFeatured !== undefined) where.isFeatured = isFeatured;
 
+        // state/city live in the `location` jsonb column (HOS-1899).
+        const locationConditions = buildDestinationLocationConditions({ state, city });
+
         // Use the model method that includes attractions
-        const result = await this.model.findAll(where, { page, pageSize }, undefined, ctx?.tx);
+        const result = await this.model.findAll(
+            where,
+            { page, pageSize },
+            locationConditions.length > 0 ? [...locationConditions] : undefined,
+            ctx?.tx
+        );
 
         // Map the result to the expected format
         const mappedItems = result.items.map((destination) => ({
@@ -604,28 +617,21 @@ export class DestinationService extends BaseCrudService<
                 // HOS-288: this is a genuinely PUBLIC read path
                 // (GET /public/destinations/:id/accommodations — `checkCanViewDestination`
                 // lets a guest through for PUBLIC destinations), so it must be restricted
-                // to publicly visible, live listings on its own merits: PUBLIC visibility
-                // and ACTIVE lifecycle are what an anonymous caller may see at all, and
-                // `ownerSuspended`/`planRestricted` are the two entitlement gates that
-                // withdraw an otherwise-public listing from public surfaces.
-                // The predicates are stated HERE rather than defaulted in
-                // `AccommodationModel` on purpose — the admin panel must still see
-                // `PRIVATE` rows and an owner their own `DRAFT`.
-                // KNOWN FOLLOW-UP: {@link DestinationService.updateAccommodationsCount}
-                // maintains `accommodationsCount` for this very destination WITHOUT any
-                // `visibility` predicate, so this list and that count still disagree for
-                // ACTIVE + PRIVATE rows (the count includes them, this list does not).
-                // Reconciling the two is deliberately out of scope for HOS-288.
+                // to publicly visible listings on its own merits: `PUBLISHED` is the
+                // only publication status an anonymous caller may see (AC:V5:5; V6.9b
+                // replaced the old visibility/lifecycle/suspension/restriction
+                // predicates, HOS-1641). The predicate is stated HERE rather than
+                // defaulted in `AccommodationModel` on purpose — the admin panel must
+                // still see every state and an owner their own `DRAFT`.
+                // {@link DestinationService.updateAccommodationsCount} counts with the
+                // same predicate, so this list and that count agree.
                 // `deletedAt` is deliberately NOT passed: `AccommodationModel` excludes
                 // soft-deleted rows by default (see `AccommodationModel#softDeleteCondition`),
                 // and passing it here would trip that default's explicit-intent escape hatch.
                 const { items } = await this.accommodationModel.findAll(
                     {
                         destinationId,
-                        visibility: VisibilityEnum.PUBLIC,
-                        lifecycleState: LifecycleStatusEnum.ACTIVE,
-                        ownerSuspended: false,
-                        planRestricted: false
+                        publicationStatus: PublicationStatusEnum.PUBLISHED
                     },
                     undefined,
                     undefined,
@@ -1311,8 +1317,8 @@ export class DestinationService extends BaseCrudService<
 
     /**
      * Updates accommodationsCount for a destination by counting publicly-visible
-     * accommodations (mirrors the public-list predicate: ACTIVE lifecycle,
-     * not owner-suspended, not plan-restricted).
+     * accommodations (mirrors the public-list predicate: `publicationStatus`
+     * `PUBLISHED`, HOS-1641).
      *
      * Pre-existing behaviour counted `deletedAt: null` only — that inflated
      * the counter with restricted/suspended accommodations (SPEC-167 §1 fix).
@@ -1333,9 +1339,7 @@ export class DestinationService extends BaseCrudService<
         const accommodationCount = await this.accommodationModel.count({
             destinationId,
             deletedAt: null,
-            lifecycleState: 'ACTIVE',
-            ownerSuspended: false,
-            planRestricted: false
+            publicationStatus: PublicationStatusEnum.PUBLISHED
         });
         await this.model.updateById(
             destinationId,
@@ -1351,6 +1355,26 @@ export class DestinationService extends BaseCrudService<
     // routes reuse these methods with HTTP-level permission enforcement via
     // middleware. Actor is passed for logging/audit purposes only.
     // ========================================================================
+
+    /**
+     * Asserts that a destination exists (and is not soft-deleted) before a
+     * hierarchy read, so an unknown id answers NOT_FOUND instead of an empty
+     * list (HOS-1906). Same existence check `getBreadcrumb` uses.
+     * @param params - Destination id and optional transaction
+     * @throws {ServiceError} NOT_FOUND when no live destination has that id
+     */
+    private async _assertDestinationExists(params: {
+        readonly destinationId: string;
+        readonly tx?: ServiceContext['tx'];
+    }): Promise<void> {
+        const destination = await this.model.findOne({ id: params.destinationId }, params.tx);
+        if (!destination) {
+            throw new ServiceError(
+                ServiceErrorCode.NOT_FOUND,
+                `Destination not found: ${params.destinationId}`
+            );
+        }
+    }
 
     /**
      * Gets direct children of a destination.
@@ -1369,6 +1393,10 @@ export class DestinationService extends BaseCrudService<
             schema: GetDestinationChildrenInputSchema,
             ctx,
             execute: async (validData, _actor, resolvedCtx) => {
+                await this._assertDestinationExists({
+                    destinationId: validData.destinationId,
+                    tx: resolvedCtx.tx
+                });
                 const children = await this.model.findChildren(
                     validData.destinationId,
                     resolvedCtx.tx
@@ -1395,6 +1423,10 @@ export class DestinationService extends BaseCrudService<
             schema: GetDestinationDescendantsInputSchema,
             ctx,
             execute: async (validData, _actor, resolvedCtx) => {
+                await this._assertDestinationExists({
+                    destinationId: validData.destinationId,
+                    tx: resolvedCtx.tx
+                });
                 const descendants = await this.model.findDescendants(
                     validData.destinationId,
                     {
@@ -1425,6 +1457,10 @@ export class DestinationService extends BaseCrudService<
             schema: GetDestinationAncestorsInputSchema,
             ctx,
             execute: async (validData, _actor, resolvedCtx) => {
+                await this._assertDestinationExists({
+                    destinationId: validData.destinationId,
+                    tx: resolvedCtx.tx
+                });
                 const ancestors = await this.model.findAncestors(
                     validData.destinationId,
                     resolvedCtx.tx
@@ -1775,7 +1811,7 @@ export class DestinationService extends BaseCrudService<
                 this._canUpdate(actor, destination);
                 const faqModel = new DestinationFaqModel();
                 const faq = await faqModel.findById(validated.faqId, ctx?.tx);
-                if (!faq || faq.destinationId !== validated.destinationId) {
+                if (!faq || faq.destinationId !== validated.destinationId || faq.deletedAt) {
                     throw new ServiceError(
                         ServiceErrorCode.NOT_FOUND,
                         'FAQ not found for this destination'
@@ -1825,7 +1861,7 @@ export class DestinationService extends BaseCrudService<
                 this._canUpdate(actor, destination);
                 const faqModel = new DestinationFaqModel();
                 const faq = await faqModel.findById(validated.faqId, ctx?.tx);
-                if (!faq || faq.destinationId !== validated.destinationId) {
+                if (!faq || faq.destinationId !== validated.destinationId || faq.deletedAt) {
                     throw new ServiceError(
                         ServiceErrorCode.NOT_FOUND,
                         'FAQ not found for this destination'

@@ -1,0 +1,21 @@
+# VB-11 · spec → fuente · 10-corte/B9a.md, 20-fase-2/B9b.md, 20-fase-1/V9b.md
+
+## Hallazgos
+
+10-corte/B9a.md:1216 · «otorgar, anclar y revocar encolan cada uno el aviso de cobertura» · contradice .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:6183 («cambio de cobertura **sale después del commit, sin entrega durable**»; l. 6184: «**El outbox de `U2` es sólo de correos**»). TEST:B9a:2 exige encolar el evento que DEC-ARCH-009, ratificada por CK en docs/41-corte-del-mvp/10-decisiones-del-owner.md:234, manda emitir sin transporte durable. El contrato §3 incluye expresamente otorgar, anclar y revocar entre sus emisores (docs/12-contrato-de-cobertura.md:874). También contradice 10-corte/B4.md:371, que excluye el aviso de cobertura del outbox. · BLOQUEA
+
+20-fase-2/B9b.md:397 · «Una cortesía temporal recién otorgada empieza a prestar servicio al día siguiente de su firma; hasta entonces no emite ninguna fuente de cobertura.» · contradice .specs/HOS-1352-billing-verticals-redesign/docs/12-contrato-de-cobertura.md:443 («| `PAUSED` por `COURTESY` | **sí**, como `tipo: CORTESÍA` | la fecha de fin de la cortesía | lo sostenemos nosotros (`DEC-GRANT-003`) |»). S9 pausa al otorgar y sostiene el servicio de nuestro lado (.specs/HOS-1354-billing-cobro-y-proveedor/docs/03-maquinas-de-estado.md:159); la emisión depende del estado PAUSED por COURTESY, no de esperar hasta el día siguiente (docs/02-modelo-de-datos.md:744–748). La demora agregaría un intervalo sin cobertura que ninguna decisión vigente autoriza y contradice AC:B9b:7 (l. 181) y TEST:B9b:7 (l. 522). · BLOQUEA
+
+20-fase-1/V9b.md:45 · «actualiza ambas al valor vigente antes de borrar» · contradice .specs/HOS-1353-verticales-capacidades-y-autorizacion/descomposicion.md:73 («**lee la tabla de plazos de verticales y la versión guardada en la ficha, que crea `V6`, sin escribirlas**»). BD lo confirma en .specs/HOS-1352-billing-verticals-redesign/docs/41-corte-del-mvp/10-decisiones-del-owner.md:108 («`V9b` sólo las lee»). PB9 debe calcular con la versión guardada, no sustituirla por la vigente (docs/03-maquinas-de-estado.md:496); actualizarla cambia el vencimiento de relojes ya iniciados. También contradice AC:V9b:11 (l. 262), Modelo de datos (l. 609–612) y TEST:V9b:11 (l. 735). · BLOQUEA
+
+## Resumen
+
+| archivo | líneas recorridas | afirmaciones normativas revisadas (aprox.) | BLOQUEA | MENOR |
+|---|---|---|---|---|
+| 10-corte/B9a.md | 1–1427 | 250 | 1 | 0 |
+| 20-fase-2/B9b.md | 1–669 | 160 | 1 | 0 |
+| 20-fase-1/V9b.md | 1–813 | 220 | 1 | 0 |
+
+Revisión documental contra las fuentes congeladas, excluyendo texto tachado y contrastando decisiones posteriores e inconsistencias internas. No se ejecutaron los tests descritos en la spec.
+
+Limitación de contexto: no se encontraron copias de las tres skills de dominio dentro de V; sus rutas externas no se leyeron, respetando la restricción del brief de leer sólo dentro de V. No se encontraron AGENTS.md ni .qz/project.json locales.

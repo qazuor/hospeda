@@ -559,13 +559,34 @@ const [heroPlaya, heroAtardecer, heroIsla] = await Promise.all(
 	}
 
 	/* Responsive */
+	/* Tablet keeps the desktop two-column composition and scales the
+	   480x540 visual as a whole. The blob, its accent and the floating
+	   icons are positioned in px against that box, so cropping or
+	   resizing the box itself (the old max-height: 280px + overflow:
+	   hidden) sliced the blob flat and cut the icons in half. `zoom`
+	   (unlike `transform`) also shrinks the layout box, so the text
+	   column gets the space back. */
 	@media (max-width: 1024px) {
 		.hero__container {
 			padding: 32px 24px;
 		}
 		.hero__row {
-			flex-direction: column;
 			min-height: auto;
+			gap: 24px;
+		}
+		.hero__visual { zoom: 0.72; }
+	}
+
+	@media (max-width: 900px) {
+		.hero__visual { zoom: 0.6; }
+		/* The text column wraps to more lines here; a smaller pull-up keeps
+		   the social proof from touching the description. */
+		.hero__bottom { margin-top: -40px; }
+	}
+
+	@media (max-width: 768px) {
+		.hero__row {
+			flex-direction: column;
 			gap: 32px;
 		}
 		.hero__content { padding-top: 32px; align-items: center; text-align: center; }
@@ -574,8 +595,10 @@ const [heroPlaya, heroAtardecer, heroIsla] = await Promise.all(
 		.social-proof { align-items: center; margin-left: 0; }
 		.social-proof__deco-arrow { display: none; }
 		.hero__cta-wrapper { justify-content: center; }
-		.hero__visual { width: 100%; max-width: 500px; height: 500px; margin: 0 auto; max-height: 280px; overflow: hidden; }
-		.hero__blob-accent { left: auto; right: -20px; }
+		.hero__visual { margin: 0 auto; zoom: 0.62; }
+		/* The -80px pull-up only works beside a side column; stacked, it
+		   drags the social proof on top of the photo. */
+		.hero__bottom { margin-top: 0; }
 	}
 
 	@media (max-width: 640px) {
@@ -631,12 +654,11 @@ const [heroPlaya, heroAtardecer, heroIsla] = await Promise.all(
 			right: 0;
 			width: auto;
 			height: auto;
-			/* The 1024px breakpoint sets max-height: 280px and max-width:
-			   500px for the tablet stacked layout; both have to be lifted
-			   here so the absolute top/bottom values actually drive the
-			   element's size on mobile. */
 			max-width: none;
 			max-height: none;
+			/* Undo the tablet zoom: here the visual is a full-bleed
+			   background sized by its insets, not the scaled blob. */
+			zoom: 1;
 			margin: 0;
 			pointer-events: none;
 			z-index: 0;

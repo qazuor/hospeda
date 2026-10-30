@@ -1,0 +1,251 @@
+{
+    "note": "AC:V6:25 (HOS-1477): the listing delete and restore doors outside PB12 and action 23. Read by scripts/check-listing-delete-doors.ts. Every row cites the spec lines that place it (Coord-90); source is 'inventory' when the doors table of V/descomposicion.md 2.13 names it and 'rule' when only the closed rule covers it.",
+    "retired": [
+        {
+            "file": "apps/api/src/routes/accommodation/protected/softDelete.ts",
+            "method": "DELETE",
+            "path": "/api/v1/protected/accommodations/:id",
+            "door": "owner soft delete (writes deleted_at)",
+            "source": "inventory",
+            "spec": [
+                ".specs/HOS-1353-verticales-capacidades-y-autorizacion/descomposicion.md:547",
+                ".specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/02-modelo-de-datos.md:818-826"
+            ]
+        },
+        {
+            "file": "apps/api/src/routes/accommodation/admin/delete.ts",
+            "method": "DELETE",
+            "path": "/api/v1/admin/accommodations/:id",
+            "door": "admin soft delete",
+            "source": "inventory",
+            "spec": [
+                ".specs/HOS-1353-verticales-capacidades-y-autorizacion/descomposicion.md:547",
+                ".specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/02-modelo-de-datos.md:818-826"
+            ]
+        },
+        {
+            "file": "apps/api/src/routes/accommodation/admin/hardDelete.ts",
+            "method": "DELETE",
+            "path": "/api/v1/admin/accommodations/:id/hard",
+            "door": "admin hard delete",
+            "source": "inventory",
+            "spec": [
+                ".specs/HOS-1353-verticales-capacidades-y-autorizacion/descomposicion.md:547",
+                ".specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/02-modelo-de-datos.md:818-826"
+            ]
+        },
+        {
+            "file": "apps/api/src/routes/accommodation/admin/restore.ts",
+            "method": "POST",
+            "path": "/api/v1/admin/accommodations/:id/restore",
+            "door": "admin restore",
+            "source": "inventory",
+            "spec": [
+                ".specs/HOS-1353-verticales-capacidades-y-autorizacion/descomposicion.md:547",
+                ".specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/02-modelo-de-datos.md:818-826"
+            ]
+        },
+        {
+            "file": "apps/api/src/routes/venue/admin/delete.ts",
+            "method": "DELETE",
+            "path": "/api/v1/admin/venues/:id",
+            "door": "admin soft delete",
+            "source": "inventory",
+            "spec": [
+                ".specs/HOS-1353-verticales-capacidades-y-autorizacion/descomposicion.md:547",
+                ".specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/02-modelo-de-datos.md:818-826"
+            ]
+        },
+        {
+            "file": "apps/api/src/routes/venue/admin/hardDelete.ts",
+            "method": "DELETE",
+            "path": "/api/v1/admin/venues/:id/hard",
+            "door": "admin hard delete",
+            "source": "inventory",
+            "spec": [
+                ".specs/HOS-1353-verticales-capacidades-y-autorizacion/descomposicion.md:547",
+                ".specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/02-modelo-de-datos.md:818-826"
+            ]
+        },
+        {
+            "file": "apps/api/src/routes/venue/admin/restore.ts",
+            "method": "POST",
+            "path": "/api/v1/admin/venues/:id/restore",
+            "door": "admin restore",
+            "source": "inventory",
+            "spec": [
+                ".specs/HOS-1353-verticales-capacidades-y-autorizacion/descomposicion.md:547",
+                ".specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/02-modelo-de-datos.md:818-826"
+            ]
+        },
+        {
+            "file": "apps/api/src/routes/experience/admin/delete.ts",
+            "method": "DELETE",
+            "path": "/api/v1/admin/experiences/:id",
+            "door": "admin soft delete",
+            "source": "inventory",
+            "spec": [
+                ".specs/HOS-1353-verticales-capacidades-y-autorizacion/descomposicion.md:547",
+                ".specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/02-modelo-de-datos.md:818-826"
+            ]
+        },
+        {
+            "file": "apps/api/src/routes/experience/admin/hardDelete.ts",
+            "method": "DELETE",
+            "path": "/api/v1/admin/experiences/:id/hard",
+            "door": "admin hard delete",
+            "source": "inventory",
+            "spec": [
+                ".specs/HOS-1353-verticales-capacidades-y-autorizacion/descomposicion.md:547",
+                ".specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/02-modelo-de-datos.md:818-826"
+            ]
+        },
+        {
+            "file": "apps/api/src/routes/experience/admin/restore.ts",
+            "method": "POST",
+            "path": "/api/v1/admin/experiences/:id/restore",
+            "door": "admin restore",
+            "source": "inventory",
+            "spec": [
+                ".specs/HOS-1353-verticales-capacidades-y-autorizacion/descomposicion.md:547",
+                ".specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/02-modelo-de-datos.md:818-826"
+            ]
+        },
+        {
+            "file": "apps/api/src/routes/venue/protected/deleteDraft.ts",
+            "method": "DELETE",
+            "path": "/api/v1/protected/venues/:id",
+            "door": "owner draft soft delete (HOS-1156, after the inventory was written)",
+            "source": "rule",
+            "spec": [
+                ".specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/03-maquinas-de-estado.md:541-545",
+                ".specs/HOS-1352-billing-verticals-redesign/spec-consolidada/02-nucleo.md:1450-1453",
+                ".specs/HOS-1352-billing-verticals-redesign/spec-consolidada/10-corte/V6.md:619-620"
+            ]
+        },
+        {
+            "file": "apps/api/src/routes/experience/protected/deleteDraft.ts",
+            "method": "DELETE",
+            "path": "/api/v1/protected/experiences/:id",
+            "door": "owner draft soft delete (HOS-1156, after the inventory was written)",
+            "source": "rule",
+            "spec": [
+                ".specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/03-maquinas-de-estado.md:541-545",
+                ".specs/HOS-1352-billing-verticals-redesign/spec-consolidada/02-nucleo.md:1450-1453",
+                ".specs/HOS-1352-billing-verticals-redesign/spec-consolidada/10-corte/V6.md:619-620"
+            ]
+        },
+        {
+            "file": "apps/api/src/routes/user/admin/hardDelete.ts",
+            "method": "DELETE",
+            "path": "/api/v1/admin/users/:id/hard",
+            "door": "account hard delete (USER_HARD_DELETE)",
+            "source": "inventory",
+            "spec": [
+                ".specs/HOS-1353-verticales-capacidades-y-autorizacion/descomposicion.md:547",
+                ".specs/HOS-1352-billing-verticals-redesign/spec-consolidada/01-decisiones-vigentes.md:6820-6825",
+                ".specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/02-modelo-de-datos.md:442-445"
+            ]
+        }
+    ],
+    "kept": [
+        {
+            "file": "apps/api/src/routes/accommodation/protected/purge.ts",
+            "method": "POST",
+            "path": "/api/v1/protected/accommodations/:id/purge",
+            "door": "PB12, the owner deletes",
+            "source": "inventory",
+            "spec": [
+                ".specs/HOS-1352-billing-verticals-redesign/spec-consolidada/04-catalogos.md:1493",
+                ".specs/HOS-1352-billing-verticals-redesign/spec-consolidada/10-corte/V6.md:619-620",
+                ".specs/HOS-1353-verticales-capacidades-y-autorizacion/descomposicion.md:547"
+            ]
+        },
+        {
+            "file": "apps/api/src/routes/accommodation/admin/purge.ts",
+            "method": "POST",
+            "path": "/api/v1/admin/accommodations/:id/purge",
+            "door": "action 23, support at the owner request (runs PB12)",
+            "source": "inventory",
+            "spec": [
+                ".specs/HOS-1352-billing-verticals-redesign/spec-consolidada/04-catalogos.md:1493",
+                ".specs/HOS-1352-billing-verticals-redesign/spec-consolidada/10-corte/V8a.md:246-257",
+                ".specs/HOS-1352-billing-verticals-redesign/spec-consolidada/10-corte/V6.md:619-620",
+                ".specs/HOS-1353-verticales-capacidades-y-autorizacion/descomposicion.md:547"
+            ]
+        },
+        {
+            "file": "apps/api/src/routes/venue/protected/purge.ts",
+            "method": "POST",
+            "path": "/api/v1/protected/venues/:id/purge",
+            "door": "PB12, the owner deletes",
+            "source": "inventory",
+            "spec": [
+                ".specs/HOS-1352-billing-verticals-redesign/spec-consolidada/04-catalogos.md:1493",
+                ".specs/HOS-1352-billing-verticals-redesign/spec-consolidada/10-corte/V6.md:619-620",
+                ".specs/HOS-1353-verticales-capacidades-y-autorizacion/descomposicion.md:547"
+            ]
+        },
+        {
+            "file": "apps/api/src/routes/venue/admin/purge.ts",
+            "method": "POST",
+            "path": "/api/v1/admin/venues/:id/purge",
+            "door": "action 23, support at the owner request (runs PB12)",
+            "source": "inventory",
+            "spec": [
+                ".specs/HOS-1352-billing-verticals-redesign/spec-consolidada/04-catalogos.md:1493",
+                ".specs/HOS-1352-billing-verticals-redesign/spec-consolidada/10-corte/V8a.md:246-257",
+                ".specs/HOS-1352-billing-verticals-redesign/spec-consolidada/10-corte/V6.md:619-620",
+                ".specs/HOS-1353-verticales-capacidades-y-autorizacion/descomposicion.md:547"
+            ]
+        },
+        {
+            "file": "apps/api/src/routes/experience/protected/purge.ts",
+            "method": "POST",
+            "path": "/api/v1/protected/experiences/:id/purge",
+            "door": "PB12, the owner deletes",
+            "source": "inventory",
+            "spec": [
+                ".specs/HOS-1352-billing-verticals-redesign/spec-consolidada/04-catalogos.md:1493",
+                ".specs/HOS-1352-billing-verticals-redesign/spec-consolidada/10-corte/V6.md:619-620",
+                ".specs/HOS-1353-verticales-capacidades-y-autorizacion/descomposicion.md:547"
+            ]
+        },
+        {
+            "file": "apps/api/src/routes/experience/admin/purge.ts",
+            "method": "POST",
+            "path": "/api/v1/admin/experiences/:id/purge",
+            "door": "action 23, support at the owner request (runs PB12)",
+            "source": "inventory",
+            "spec": [
+                ".specs/HOS-1352-billing-verticals-redesign/spec-consolidada/04-catalogos.md:1493",
+                ".specs/HOS-1352-billing-verticals-redesign/spec-consolidada/10-corte/V8a.md:246-257",
+                ".specs/HOS-1352-billing-verticals-redesign/spec-consolidada/10-corte/V6.md:619-620",
+                ".specs/HOS-1353-verticales-capacidades-y-autorizacion/descomposicion.md:547"
+            ]
+        }
+    ],
+    "outOfScope": [
+        {
+            "file": "apps/api/src/routes/user/admin/delete.ts",
+            "method": "DELETE",
+            "path": "/api/v1/admin/users/:id",
+            "door": "account soft delete: replaced by action 24 (V8a.3, HOS-1494), not by this leaf",
+            "source": "rule",
+            "spec": [
+                ".specs/HOS-1352-billing-verticals-redesign/spec-consolidada/02-nucleo.md:1458-1459"
+            ]
+        },
+        {
+            "file": "apps/api/src/routes/user/admin/restore.ts",
+            "method": "POST",
+            "path": "/api/v1/admin/users/:id/restore",
+            "door": "account restore: NUCLEO/08 retires only the restore of LISTINGS (notas H2, owner to confirm)",
+            "source": "rule",
+            "spec": [
+                ".specs/HOS-1352-billing-verticals-redesign/spec-consolidada/02-nucleo.md:1457-1458",
+                ".specs/HOS-1353-verticales-capacidades-y-autorizacion/descomposicion.md:547"
+            ]
+        }
+    ]
+}

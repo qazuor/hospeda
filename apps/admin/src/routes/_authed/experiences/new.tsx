@@ -3,9 +3,9 @@
  *
  * Uses `EntityCreatePageBase` with the experience consolidated config.
  * Supports an optional owner assignment via OwnerSelect (existing users only).
- * Gate-protected by COMMERCE_CREATE.
+ * Gate-protected by EXPERIENCE_CREATE.
  *
- * Mirrors the gastronomy create page pattern (SPEC-240 T-028).
+ * Mirrors the venue create page pattern (SPEC-240 T-028).
  */
 
 import { ExperienceAdminCreateInputSchema, PermissionEnum } from '@repo/schemas';
@@ -29,7 +29,7 @@ export const Route = createFileRoute('/_authed/experiences/new')({
 /**
  * Create page for a new experience listing.
  *
- * The create form includes all commerce identity fields, experience-specific
+ * The create form includes all listing identity fields, experience-specific
  * fields (type, priceUnit, priceFrom, isPriceOnRequest), and operational fields.
  * An optional owner can be assigned on creation via the ownerId field in the
  * identity section (backed by OwnerSelect in the consolidated config).
@@ -65,7 +65,7 @@ function ExperienceCreatePage() {
     };
 
     return (
-        <RoutePermissionGuard permissions={[PermissionEnum.COMMERCE_CREATE]}>
+        <RoutePermissionGuard permissions={[PermissionEnum.EXPERIENCE_CREATE]}>
             <EntityCreatePageBase
                 config={createConfig}
                 zodSchema={ExperienceAdminCreateInputSchema}

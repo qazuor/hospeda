@@ -2,18 +2,17 @@
  * @file experience.columns.ts
  * Column factory for the experience admin list page (SPEC-240 T-028).
  *
- * Mirrors the gastronomy columns pattern. Each column receives a translation
+ * Mirrors the venue columns pattern. Each column receives a translation
  * function so headers are localised at render time.
  */
 
 import { EditIcon } from '@repo/icons';
-import { ExperienceTypeEnum, PermissionEnum } from '@repo/schemas';
+import { ExperienceTypeEnum } from '@repo/schemas';
 import { Link } from '@tanstack/react-router';
 import { createElement, Fragment } from 'react';
-import { DeleteRowButton } from '@/components/entity-list/DeleteRowButton';
 import type { ColumnConfig, ColumnTFunction } from '@/components/entity-list/types';
 import { BadgeColor, ColumnType, EntityType } from '@/components/table/DataTable';
-import { useDeleteExperienceMutation } from '../hooks/useExperienceQuery';
+import { getPublicationStatusBadgeOptions } from '@/features/listing/config/publication-status-options';
 import type { ExperienceListItem } from './experience.config';
 
 // ---------------------------------------------------------------------------
@@ -95,9 +94,11 @@ export const createExperienceColumns = (
         columnType: ColumnType.STRING
     },
     {
-        id: 'isFeatured',
+        // Read-only: `featuredByEntitlement` is the only featuring source since
+        // HOS-1419 dropped the admin-curated `is_featured` column.
+        id: 'featuredByEntitlement',
         header: t('admin-entities.columns.featured'),
-        accessorKey: 'isFeatured',
+        accessorKey: 'featuredByEntitlement',
         enableSorting: true,
         columnType: ColumnType.BOOLEAN
     },
@@ -106,7 +107,7 @@ export const createExperienceColumns = (
         header: t('admin-entities.columns.owner'),
         // Show a readable owner label from the eager-loaded relation, not the raw
         // FK UUID. The users table has no single `name` column, so compose from
-        // displayName → firstName+lastName → email (an admin-provisioned commerce
+        // displayName → firstName+lastName → email (an admin-provisioned listing
         // owner may only have an email until they complete their profile).
         accessorKey: 'ownerId',
         enableSorting: false,
@@ -132,11 +133,13 @@ export const createExperienceColumns = (
         }
     },
     {
-        id: 'lifecycleStatus',
+        // HOS-1641: the listing's single, read-only publication state.
+        id: 'publicationStatus',
         header: t('admin-entities.columns.status'),
-        accessorKey: 'lifecycleStatus',
+        accessorKey: 'publicationStatus',
         enableSorting: true,
-        columnType: ColumnType.STRING
+        columnType: ColumnType.BADGE,
+        badgeOptions: getPublicationStatusBadgeOptions({ t })
     },
     {
         id: 'createdAt',
@@ -165,16 +168,7 @@ export const createExperienceColumns = (
                         'aria-label': t('admin-entities.actions.edit')
                     } as never,
                     createElement(EditIcon, { size: 16 })
-                ),
-                createElement(DeleteRowButton, {
-                    entityId: row.id ?? '',
-                    entityName: row.name ?? row.id ?? '',
-                    entityLabel: t('admin-entities.entities.experience.singular'),
-                    permission: PermissionEnum.COMMERCE_DELETE,
-                    useDeleteMutation: useDeleteExperienceMutation,
-                    variant: 'icon',
-                    entityGender: 'f'
-                })
+                )
             )
     }
 ];

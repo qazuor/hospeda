@@ -1,0 +1,2896 @@
+{
+    "results": {
+        "04-catalogos.md": {
+            "lines": 9843,
+            "scope": [1, 9843],
+            "content_lines": 4629,
+            "fields": 1382,
+            "sections": 0
+        },
+        "10-corte/B11.md": {
+            "lines": 2356,
+            "scope": [75, 1317],
+            "content_lines": 1064,
+            "fields": 0,
+            "sections": 14
+        },
+        "10-corte/B13a.md": {
+            "lines": 1300,
+            "scope": [54, 445],
+            "content_lines": 268,
+            "fields": 0,
+            "sections": 15
+        },
+        "10-corte/B9a.md": {
+            "lines": 1417,
+            "scope": [59, 715],
+            "content_lines": 466,
+            "fields": 0,
+            "sections": 27
+        },
+        "20-fase-2/B8b.md": {
+            "lines": 1406,
+            "scope": [53, 340],
+            "content_lines": 185,
+            "fields": 0,
+            "sections": 17
+        },
+        "20-fase-3/B10.md": {
+            "lines": 1944,
+            "scope": [90, 1211],
+            "content_lines": 908,
+            "fields": 0,
+            "sections": 26
+        },
+        "20-fase-3/B12.md": {
+            "lines": 834,
+            "scope": [65, 270],
+            "content_lines": 152,
+            "fields": 0,
+            "sections": 8
+        }
+    },
+    "details": [
+        [
+            "04-catalogos.md",
+            420,
+            "CELL_DIFFERENCE",
+            "condición",
+            "cubiertoesfalso",
+            "—",
+            ".specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/03-maquinas-de-estado.md",
+            54
+        ],
+        [
+            "04-catalogos.md",
+            5307,
+            "CELL_DIFFERENCE",
+            "efectos",
+            "eslamismaacción,«registrarunpagomanual»(§30),ejecutadasincuotaabierta,comoMP4loesdesdeotroestadodeorigen:mismopermiso,mismaauditoríaymismaconfirmación,queacádiceademásqueelpagoesunsegundopagodelperíodoyqueseproponedevolverlo.Crealafilademanual_paymentyaREGISTERED,conelperíododelaúltimacuotadelasuscripción,quién,cuándoyelcomprobantedelatransferencia(B/02§2.3).IntentaescribirlacoberturaychocaconelUNIQUEdecovered_period,porqueeseperíodoyateníauncobroacreditado:lacoberturanoseescribeyS14abrelamarcaCOBRO_DUPLICADO(B/02§2.5,motivo20)conestemanual_paymentcolgado,igualqueP1sobreuncobrodetarjeta.Eslasimetríaconlatarjeta,yeldefaultesdevolver(B/19§6):ladevoluciónseasientaporRF4,conelcomprobantedelatransferenciadevuelta(§6.1).Nomuevelasuscripciónniavanzalafechadelpróximocobro:nocubreningúnperíodonuevo.Silafilanotieneningunacuota,porquenuncafuedepagadormanual,elperíodoeseldelúltimocobroacreditado.Sinotieneninguno,nohayperíodoconquéchocaryMP6nocorre:quedadeclaradoen«loqueestecapítuloNOcierra».SobreunaCANCELLEDcuyaúltimacuotaquedóDECLARED_UNPAID(labajadesdeGRACE_PERIODodesdeSUSPENDED,queMP3oMP2cierransinpago),eseperíodonotienecoberturaynohaynadaconquéchocar:MP6noescribecoberturayS14abrelamarcaCOBRO_POSTERIOR_A_LA_BAJA(B/02§2.5,motivo2)conestemanual_paymentcolgado,queyaproponedevolver,lomismoquelatabladedesempatedelB/05§3ledaauncobrosobreunaterminal.Laconfirmacióndicequeesunpagoposterioralabaja,nounsegundopagodelperíodo.LadevoluciónseasientaigualporRF4(FASE9vuelta3,owner2026-09-30,loteAF;verificación,VC3-cobro-03).LomismosobreunaABANDONEDdepagadormanualcuyaprimeracuotaquedóDECLARED_UNPAID(laventanadeautorizaciónvencida,queS3yMP3cierransinpago):elperíododeesacuotanotienecobertura,MP6nolaescribeyS14abreelmotivo2conelmanual_paymentcolgadoylapropuestadedevolver(FASE9vuelta3,owner2026-09-30,loteAM)",
+            "eslamismaacción,«registrarunpagomanual»(§30),ejecutadasincuotaabierta,comoMP4loesdesdeotroestadodeorigen:mismopermiso,mismaauditoríaymismaconfirmación,queacádiceademásqueelpagoesunsegundopagodelperíodoyqueseproponedevolverlo.Crealafilademanual_paymentyaREGISTERED,conelperíododelaúltimacuotadelasuscripción,quién,cuándoyelcomprobantedelatransferencia(B/02§2.3).IntentaescribirlacoberturaychocaconelUNIQUEdecovered_period,porqueeseperíodoyateníauncobroacreditado:lacoberturanoseescribeyS14abrelamarcaCOBRO_DUPLICADO(B/02§2.5,motivo20)conestemanual_paymentcolgado,igualqueP1sobreuncobrodetarjeta.Eslasimetríaconlatarjeta,yeldefaultesdevolver(B/19§6):ladevoluciónseasientaporRF4,conelcomprobantedelatransferenciadevuelta(§6.1).Nomuevelasuscripción,noavanzalafechadelpróximocobroynoemitecomprobante:nocubreningúnperíodonuevo.Silafilanotieneningunacuota,porquenuncafuedepagadormanual,elperíodoeseldelúltimocobroacreditado.Sinotieneninguno,nohayperíodoconquéchocaryMP6nocorre:quedadeclaradoen«loqueestecapítuloNOcierra».SobreunaCANCELLEDcuyaúltimacuotaquedóDECLARED_UNPAID(labajadesdeGRACE_PERIODodesdeSUSPENDED,queMP3oMP2cierransinpago),eseperíodonotienecoberturaynohaynadaconquéchocar:MP6noescribecoberturayS14abrelamarcaCOBRO_POSTERIOR_A_LA_BAJA(B/02§2.5,motivo2)conestemanual_paymentcolgado,queyaproponedevolver,lomismoquelatabladedesempatedelB/05§3ledaauncobrosobreunaterminal.Laconfirmacióndicequeesunpagoposterioralabaja,nounsegundopagodelperíodo.LadevoluciónseasientaigualporRF4(FASE9vuelta3,owner2026-09-30,loteAF;verificación,VC3-cobro-03).LomismosobreunaABANDONEDdepagadormanualcuyaprimeracuotaquedóDECLARED_UNPAID(laventanadeautorizaciónvencida,queS3yMP3cierransinpago):elperíododeesacuotanotienecobertura,MP6nolaescribeyS14abreelmotivo2conelmanual_paymentcolgadoylapropuestadedevolver(FASE9vuelta3,owner2026-09-30,loteAM)",
+            ".specs/HOS-1354-billing-cobro-y-proveedor/docs/03-maquinas-de-estado.md",
+            1876
+        ],
+        [
+            "04-catalogos.md",
+            9645,
+            "CELL_DIFFERENCE",
+            "Conclusión",
+            "WH-4midiólosreintentos,nosudestino.Sivaalavieja,eleventosepierdeysucobroloveelbarridodeB11comoeldecualquierdesconocido(lalápidadelcortesalió:FASE5,simplificacióndelcorte,S-40yS-70;verificación,VF5-06)🔎Indicio,nomedición(2026-09-29,anexodel29/09(./mp-probes/RESULTS-2026-09-29.md#anexo-con-los-dos-canales-escuchando-2909-mañana)):mientraselownercambiabalaURLdeWebhooksde/a/webhooks,dosavisosfechados14:34:27ZensupropiocuerpollegaronalaURLnuevaalas14:40:10Z,ynoquedóningúnintentoalavieja(elreceptorcontestaba200atodo).Compatiblecon«salealaURLvigentealmomentodeentregar»,peronoesestapregunta,queessobreunreintentotrasun500,ylaventanaestabacontaminada(tambiéncambiólaseleccióndeeventos)🚫Nosemide,pordecisióndelowner(2026-09-29,decisionessobrelasmediciones(./30-revision-del-owner/27-decisiones-sobre-las-mediciones.md),M-4):sieldíadelcortesepierdeunreintento,elbarridodiariolorelee(B/21,«NOcierra»,punto(3)).QuedaUNKNOWN,sinbloquearnada📌Sinsujetodesdeel2026-09-29,conOKdelowner(decisionessobrelaverificación(./30-revision-del-owner/32-decisiones-sobre-la-verificacion.md),loteO-B):laURLdenotificaciónyanocambiaenelcorte.Elreceptornuevosirvelamismarutaqueelviejo,/api/v1/webhooks/mercadopago,[…],yelreintentovuelvealamismaURL(16-fase-7-del-paraguas.md§4.2,pasos[…]y4b).Elestadonocambia:lapreguntasiguesinmedir,yyanocondicionaningúnpaso",
+            "WH-4midiólosreintentos,nosudestino.Sivaalavieja,eleventosepierdeysucobroloveelbarridodeB11comoeldecualquierdesconocido(lalápidadelcortesalió:FASE5,simplificacióndelcorte,S-40yS-70;verificación,VF5-06)🔎Indicio,nomedición(2026-09-29,anexodel29/09(./mp-probes/RESULTS-2026-09-29.md#anexo-con-los-dos-canales-escuchando-2909-mañana)):mientraselownercambiabalaURLdeWebhooksde/a/webhooks,dosavisosfechados14:34:27ZensupropiocuerpollegaronalaURLnuevaalas14:40:10Z,ynoquedóningúnintentoalavieja(elreceptorcontestaba200atodo).Compatiblecon«salealaURLvigentealmomentodeentregar»,peronoesestapregunta,queessobreunreintentotrasun500,ylaventanaestabacontaminada(tambiéncambiólaseleccióndeeventos)🚫Nosemide,pordecisióndelowner(2026-09-29,decisionessobrelasmediciones(./30-revision-del-owner/27-decisiones-sobre-las-mediciones.md),M-4):sieldíadelcortesepierdeunreintento,elbarridodiariolorelee(B/21,«NOcierra»,punto(3)).QuedaUNKNOWN,sinbloquearnada📌Sinsujetodesdeel2026-09-29,conOKdelowner(decisionessobrelaverificación(./30-revision-del-owner/32-decisiones-sobre-la-verificacion.md),loteO-B):laURLdenotificaciónyanocambiaenelcorte.Elreceptornuevosirvelamismarutaqueelviejo,/api/v1/webhooks/mercadopago,elbordelacierradesdequeseapagaelcontenedorviejohastaquelaslápidasestánescritas,yelreintentovuelvealamismaURL(16-fase-7-del-paraguas.md§4.2,pasos3,4y4b).Elestadonocambia:lapreguntasiguesinmedir,yyanocondicionaningúnpaso",
+            ".specs/HOS-1352-billing-verticals-redesign/docs/06-mp-validation-matrix.md",
+            403
+        ],
+        [
+            "04-catalogos.md",
+            3,
+            "PROSE_NOT_IN_CORPUS",
+            "Catálogo único de transiciones, transiciones prohibidas, motivos de la marca de conciliación, candados, reglas y mentiras del proveedor falso, guards, validaciones del panel y filas de la matriz de Mercado Pago (organización por pieza con catálogos únicos: [DEC-METH-019](01-decisiones-vigentes.md#dec-meth-019), punto 2, letra [AH](01-decisiones-vigentes.md#own-41-corte-del-mvp-t2-ah))."
+        ],
+        [
+            "04-catalogos.md",
+            5,
+            "PROSE_NOT_IN_CORPUS",
+            "**Cómo se lee.** Cada ítem lleva su ancla, su texto **copiado de la fuente congelada** (`8a1d8902c2`) con lo tachado omitido y nada parafraseado, y su línea `Origen:`. Las celdas van con el nombre de la columna de la fuente; entre paréntesis, a qué parte de la transición corresponde (estado origen, disparador, estado destino, guardas, efectos). La **pieza dueña** y las que también lo ejercen salen de `_trabajo/cobertura.json`, con la cita que las justifica; el AC y los tests de cada ítem viven en el archivo de su pieza, no acá ([AM](01-decisiones-vigentes.md#own-41-corte-del-mvp-t2-am), [AN](01-decisiones-vigentes.md#own-41-corte-del-mvp-t2-an)). Los links a otros archivos de la fuente se dejaron como texto."
+        ],
+        [
+            "04-catalogos.md",
+            7,
+            "PROSE_NOT_IN_CORPUS",
+            "Las secciones *«texto de la fuente»* traen, sin lo tachado, la prosa de la misma sección de la fuente que rodea cada tabla: son reglas de la tabla entera y se leen junto con sus filas."
+        ],
+        [
+            "04-catalogos.md",
+            755,
+            "PROSE_NOT_IN_CORPUS",
+            "- El lock vive dentro de la transacción que escribe y se suelta con ella. Con qué primitiva"
+        ],
+        [
+            "04-catalogos.md",
+            5585,
+            "PROSE_NOT_IN_CORPUS",
+            "Cada motivo es un valor de la columna **`motivo`** de **`reconciliation_mark`**, *«enumeración cerrada, §2.5»* (`B/02` §2.2, línea 57). El nombre del valor va en el título de cada ítem."
+        ],
+        [
+            "04-catalogos.md",
+            6109,
+            "PROSE_NOT_IN_CORPUS",
+            "Cada candado es la sección entera de la fuente, sin lo tachado."
+        ],
+        [
+            "04-catalogos.md",
+            6146,
+            "PROSE_NOT_IN_CORPUS",
+            "Cada caso de abajo se resuelve con una restricción de la base o con una relectura."
+        ],
+        [
+            "04-catalogos.md",
+            6468,
+            "PROSE_NOT_IN_CORPUS",
+            "La sección no tiene texto vigente fuera de su título."
+        ],
+        [
+            "04-catalogos.md",
+            8107,
+            "PROSE_NOT_IN_CORPUS",
+            "Las filas de la matriz son **sólo citables** ([AX](01-decisiones-vigentes.md#own-41-corte-del-mvp-t5-ax)): no exigen AC propio; las citan los ítems y las piezas que se apoyan en ellas. Cada fila va con todas sus columnas."
+        ],
+        [
+            "04-catalogos.md",
+            8109,
+            "PROSE_NOT_IN_CORPUS",
+            "**Cómo se lee una fila** (`D/06` §Reglas, 4 y 6): cada fila lleva **fecha y entorno**, y una fila sin fecha se lee como `UNKNOWN` (`S-MP-02`); un `PARTIALLY_SUPPORTED` **tiene que nombrar qué parte**. Cuándo caduca una fila verificada: [B1](10-corte/B1.md#pieza-b1) (`B/06` §8, que cierra `S-MP-02`)."
+        ],
+        [
+            "04-catalogos.md",
+            8111,
+            "PROSE_NOT_IN_CORPUS",
+            "**Estados** (`D/06` §Estados, §61): `VERIFIED`, se ejecutó y funciona como lo necesitamos, con evidencia; `NOT_SUPPORTED`, se ejecutó y el proveedor no lo permite, con evidencia; `PARTIALLY_SUPPORTED`, funciona con una restricción **nombrada**; `UNKNOWN`, no se probó, o la fila caducó —por un cambio en lo que la sostiene, no por antigüedad (`B/06` §8, regla 2: *«una fila caduca cuando cambia lo que la sostiene, no por antigüedad»*)—."
+        ],
+        [
+            "04-catalogos.md",
+            9400,
+            "PROSE_NOT_IN_CORPUS",
+            "Nota del catálogo sobre la fila siguiente:"
+        ],
+        [
+            "10-corte/B11.md",
+            250,
+            "OUTPUT_NOT_IN_SECTION",
+            "| **monto esperado, derivado**: el precio de la versión de plan —**el vigente de la versión, con los aumentos de `DEC-MP-002` ya aplicados** (orquestador, FASE 8 completa, pendiente 8)— menos las promos vivas según su contador (`B/14` §2.4) —**no es una columna**—, **redondeado una sola vez, con el mismo cálculo que usa quien muta** (`B/14` §1.2; FASE 9 vuelta 2, `F-8V2B3-008`). **No se compara sobre una fila `PAUSED`** (orquestador, pendiente 8), **ni sobre una fila cuyo preapproval la relectura ve `cancelled`** —la `CANCEL_SCHEDULED` y la `SUSPENDED` de tarjeta—: su `transaction_amount` ya no se puede mutar, y un aumento la haría divergir para siempre sin acción posible; el cobro que todavía salga de ella lo mira la comparación de cobros (FASE 9 vuelta 2, `F-8V2B3-007`) | `transaction_amount`, **releído por id** | **si la divergencia la abrió una mutación NUESTRA** —`S30`, un aumento de precio de `DEC-MP-002` **o `S37`, la de una migración** (revisión del owner, 2026-09-28, C15)— **se reintenta la mutación durante 3 días, contados desde esa transición**, por tiempo y no por corridas, como el reintento de una cancelación nuestra (abajo), **y después** se abre la **marca** con motivo **`DIVERGENCIA_DE_MONTO`** (FASE 8 completa, pendiente 7, owner 2026-09-25); **cualquier otra divergencia de monto abre `DIVERGENCIA_DE_MONTO` en el acto** (orquestador, pendiente 8, derivado de `DEC-CONC-002` punto 4) — es el caso que no avisa por ningún canal. **Cerrado en la pendiente 8**: sin mutación nuestra no hay reintento, y **al reanudar una `PAUSED`, `S10` es la transición desde la que corren los 3 días** (`B/14` §2.4). **Cerrado (FASE 8 completa, owner 2026-09-25)**: (desde BZ, corte del MVP, owner 2026-10-02, el aumento a un anclado es `S37`, y los 3 días corren desde esa transición; residuo corregido el 2026-10-02), y **entre el pedido de un downgrade y el acto que lo aplica, el monto esperado es el del plan nuevo, sin promos** (`B/14` §2.4; FASE 9 completa, contradicción 1 de `03` §R6.5: el pedido termina la promo y muta al precio de lista del plan nuevo). **Y entre `S37` y el `S38` que aplica ese cambio, el monto esperado es el precio de lista de la versión destino para su ciclo, sin promos, salvo si el motivo es «aumento»: en ese caso conserva y descuenta la promo viva (BZ; `DEC-MP-002`)**: la ventana gemela, en una migración (`B/14` §2.4; verificación corta, 2026-09-29, lote M-C) |",
+            [[".specs/HOS-1354-billing-cobro-y-proveedor/docs/09-conciliacion.md", "176"]]
+        ],
+        [
+            "10-corte/B11.md",
+            240,
+            "SOURCE_NOT_IN_OUTPUT",
+            ".specs/HOS-1354-billing-cobro-y-proveedor/docs/09-conciliacion.md:185",
+            "| ~~monto vigente~~ **monto esperado, derivado**: el precio de la versión de plan —**el vigente de la versión, con los aumentos de `DEC-MP-002` ya aplicados** (orquestador, FASE 8 completa, pendiente 8)— menos las promos vivas según su contador (`B/14` §2.4) —**no es una columna**—, **redondeado una sola vez y hacia abajo, con el mismo cálculo que usa quien muta** (`B/14` §1.2; FASE 9 vuelta 2, `F-8V2B3-008`). **No se compara sobre una fila `PAUSED`** (orquestador, pendiente 8), **ni sobre una fila cuyo preapproval la relectura ve `cancelled`** —la `CANCEL_SCHEDULED` y la `SUSPENDED` de tarjeta—: su `transaction_amount` ya no se puede mutar, y un aumento la haría divergir para siempre sin acción posible; el cobro que todavía salga de ella lo mira la comparación de cobros (FASE 9 vuelta 2, `F-8V2B3-007`) | `transaction_amount`, **releído por id** | ~~se abre la **marca** con motivo **`DIVERGENCIA_DE_MONTO`**~~ **si la divergencia la abrió una mutación NUESTRA** —`S30`, un aumento de precio de `DEC-MP-002` **o `S37`, la de una migración** (revisión del owner, 2026-09-28, C15)— **se reintenta la mutación durante 3 días, contados desde esa transición**, por tiempo y no por corridas, como el reintento de una cancelación nuestra (abajo), **y después** se abre la **marca** con motivo **`DIVERGENCIA_DE_MONTO`** (FASE 8 completa, pendiente 7, owner 2026-09-25); **cualquier otra divergencia de monto abre `DIVERGENCIA_DE_MONTO` en el acto** (orquestador, pendiente 8, derivado de `DEC-CONC-002` punto 4) — es el caso que no avisa por ningún canal. ~~⚠️ Desde qué instante corren los 3 días cuando la divergencia no la abrió una transición nuestra, y qué pasa sobre una fila `PAUSED` (`EX-11`), queda abierto en `B/14` (*«lo que este capítulo NO cierra»*)~~ **Cerrado en la pendiente 8**: sin mutación nuestra no hay reintento, y **al reanudar una `PAUSED`, `S10` es la transición desde la que corren los 3 días** (`B/14` §2.4). ~~⚠️ **Lo que queda** —el instante de un aumento, que no tiene fila en `B/03` §3.2, y el monto esperado en medio de un downgrade— está en *«lo que este capítulo NO cierra»* de `B/14`~~ **Cerrado (FASE 8 completa, owner 2026-09-25)**: ~~**en un aumento de `DEC-MP-002` los 3 días corren desde su fecha efectiva**~~ (desde BZ, corte del MVP, owner 2026-10-02, el aumento a un anclado es `S37`, y los 3 días corren desde esa transición; residuo corregido el 2026-10-02), y **entre el pedido de un downgrade y el acto que lo aplica, el monto esperado es el del plan ~~vigente~~ nuevo, sin promos** (`B/14` §2.4; FASE 9 completa, contradicción 1 de `03` §R6.5: el pedido termina la promo y muta al precio de lista del plan nuevo). **Y entre `S37` y el `S38` que aplica ese cambio, el monto esperado es el precio de lista de la versión destino para su ciclo, sin promos, salvo si el motivo es «aumento»: en ese caso conserva y descuenta la promo viva (BZ; `DEC-MP-002`)**: la ventana gemela, en una migración (`B/14` §2.4; verificación corta, 2026-09-29, lote M-C) |"
+        ],
+        [
+            "10-corte/B11.md",
+            1160,
+            "OUTPUT_NOT_IN_SECTION",
+            "**Si pasan 48 h sin una corrida completa, se avisa, y el aviso lo da otro proceso**: un vigía que",
+            [[".specs/HOS-1354-billing-cobro-y-proveedor/docs/09-conciliacion.md", "1115"]]
+        ],
+        [
+            "10-corte/B11.md",
+            1142,
+            "SOURCE_NOT_IN_OUTPUT",
+            ".specs/HOS-1354-billing-cobro-y-proveedor/docs/09-conciliacion.md:1132",
+            "**Si pasan 26 h sin una corrida completa, se avisa, y el aviso lo da otro proceso**: un vigía que"
+        ],
+        [
+            "10-corte/B13a.md",
+            225,
+            "OUTPUT_NOT_IN_SECTION",
+            "suscribirse**, sin teléfono y sin hablar con nadie. Está decidido en",
+            [[".specs/HOS-1354-billing-cobro-y-proveedor/docs/19-superficies.md", "171"]]
+        ],
+        [
+            "10-corte/B13a.md",
+            221,
+            "SOURCE_NOT_IN_OUTPUT",
+            ".specs/HOS-1354-billing-cobro-y-proveedor/docs/19-superficies.md:174",
+            "suscribirse**, sin teléfono, sin formulario de contacto y sin hablar con nadie. Está decidido en"
+        ],
+        [
+            "10-corte/B13a.md",
+            406,
+            "OUTPUT_NOT_IN_SECTION",
+            "sin teléfono y sin hablar con nadie.** Lo que pasa después ya está",
+            [[".specs/HOS-1354-billing-cobro-y-proveedor/docs/22-lo-legal.md", "38"]]
+        ],
+        [
+            "10-corte/B13a.md",
+            399,
+            "SOURCE_NOT_IN_OUTPUT",
+            ".specs/HOS-1354-billing-cobro-y-proveedor/docs/22-lo-legal.md:44",
+            "sin teléfono, sin formulario de contacto y sin hablar con nadie.** Lo que pasa después ya está"
+        ],
+        [
+            "10-corte/B9a.md",
+            91,
+            "SOURCE_NOT_IN_OUTPUT",
+            ".specs/HOS-1354-billing-cobro-y-proveedor/docs/14-promos-cortesias-y-grants.md:52",
+            "**Y el redondeo es uno, al final** (FASE 9 vuelta 2, `F-8V2B3-008`). Los montos son enteros en la"
+        ],
+        [
+            "10-corte/B9a.md",
+            91,
+            "SOURCE_NOT_IN_OUTPUT",
+            ".specs/HOS-1354-billing-cobro-y-proveedor/docs/14-promos-cortesias-y-grants.md:53",
+            "unidad mínima de la moneda (`B/02` §2.3), y dos porcentajes apilados dan fracciones de centavo."
+        ],
+        [
+            "10-corte/B9a.md",
+            91,
+            "SOURCE_NOT_IN_OUTPUT",
+            ".specs/HOS-1354-billing-cobro-y-proveedor/docs/14-promos-cortesias-y-grants.md:54",
+            "La composición se calcula sin redondear sobre el precio en la unidad mínima, y **el resultado se"
+        ],
+        [
+            "10-corte/B9a.md",
+            91,
+            "SOURCE_NOT_IN_OUTPUT",
+            ".specs/HOS-1354-billing-cobro-y-proveedor/docs/14-promos-cortesias-y-grants.md:55",
+            "redondea una sola vez, hacia abajo**, a la unidad mínima. Así las dos operaciones siguen"
+        ],
+        [
+            "10-corte/B9a.md",
+            91,
+            "SOURCE_NOT_IN_OUTPUT",
+            ".specs/HOS-1354-billing-cobro-y-proveedor/docs/14-promos-cortesias-y-grants.md:56",
+            "conmutando, que con un redondeo por paso dejaba de ser cierto. **Con ese mismo cálculo derivan el"
+        ],
+        [
+            "10-corte/B9a.md",
+            91,
+            "SOURCE_NOT_IN_OUTPUT",
+            ".specs/HOS-1354-billing-cobro-y-proveedor/docs/14-promos-cortesias-y-grants.md:57",
+            "monto quien muta** —el canje, `S30`, el aumento de `DEC-MP-002`— **y quien compara** —el barrido"
+        ],
+        [
+            "10-corte/B9a.md",
+            91,
+            "SOURCE_NOT_IN_OUTPUT",
+            ".specs/HOS-1354-billing-cobro-y-proveedor/docs/14-promos-cortesias-y-grants.md:58",
+            "(`B/09` §3)—: si redondearan distinto, la divergencia de medio centavo sería permanente y abriría"
+        ],
+        [
+            "10-corte/B9a.md",
+            91,
+            "SOURCE_NOT_IN_OUTPUT",
+            ".specs/HOS-1354-billing-cobro-y-proveedor/docs/14-promos-cortesias-y-grants.md:59",
+            "`DIVERGENCIA_DE_MONTO` en el acto. Hacia abajo por la misma razón que el porcentaje va primero: a"
+        ]
+    ],
+    "samples": [
+        [
+            "04-catalogos.md",
+            72,
+            295,
+            [
+                [
+                    ".specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/03-maquinas-de-estado.md",
+                    "52"
+                ]
+            ]
+        ],
+        [
+            "04-catalogos.md",
+            296,
+            409,
+            [
+                [
+                    ".specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/03-maquinas-de-estado.md",
+                    "53"
+                ]
+            ]
+        ],
+        [
+            "04-catalogos.md",
+            410,
+            424,
+            [
+                [
+                    ".specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/03-maquinas-de-estado.md",
+                    "54"
+                ]
+            ]
+        ],
+        [
+            "04-catalogos.md",
+            425,
+            439,
+            [
+                [
+                    ".specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/03-maquinas-de-estado.md",
+                    "55"
+                ]
+            ]
+        ],
+        [
+            "04-catalogos.md",
+            440,
+            468,
+            [
+                [
+                    ".specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/03-maquinas-de-estado.md",
+                    "56"
+                ]
+            ]
+        ],
+        [
+            "04-catalogos.md",
+            469,
+            521,
+            [
+                [
+                    ".specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/03-maquinas-de-estado.md",
+                    "57"
+                ]
+            ]
+        ],
+        [
+            "04-catalogos.md",
+            522,
+            687,
+            [
+                [
+                    ".specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/03-maquinas-de-estado.md",
+                    "59"
+                ]
+            ]
+        ],
+        [
+            "04-catalogos.md",
+            688,
+            788,
+            [
+                [
+                    ".specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/03-maquinas-de-estado.md",
+                    "488"
+                ]
+            ]
+        ],
+        [
+            "04-catalogos.md",
+            789,
+            982,
+            [
+                [
+                    ".specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/03-maquinas-de-estado.md",
+                    "489"
+                ]
+            ]
+        ],
+        [
+            "04-catalogos.md",
+            983,
+            1075,
+            [
+                [
+                    ".specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/03-maquinas-de-estado.md",
+                    "490"
+                ]
+            ]
+        ],
+        [
+            "04-catalogos.md",
+            1076,
+            1090,
+            [
+                [
+                    ".specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/03-maquinas-de-estado.md",
+                    "491"
+                ]
+            ]
+        ],
+        [
+            "04-catalogos.md",
+            1091,
+            1104,
+            [
+                [
+                    ".specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/03-maquinas-de-estado.md",
+                    "492"
+                ]
+            ]
+        ],
+        [
+            "04-catalogos.md",
+            1105,
+            1118,
+            [
+                [
+                    ".specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/03-maquinas-de-estado.md",
+                    "493"
+                ]
+            ]
+        ],
+        [
+            "04-catalogos.md",
+            1119,
+            1258,
+            [
+                [
+                    ".specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/03-maquinas-de-estado.md",
+                    "494"
+                ]
+            ]
+        ],
+        [
+            "04-catalogos.md",
+            1259,
+            1272,
+            [
+                [
+                    ".specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/03-maquinas-de-estado.md",
+                    "495"
+                ]
+            ]
+        ],
+        [
+            "04-catalogos.md",
+            1273,
+            1287,
+            [
+                [
+                    ".specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/03-maquinas-de-estado.md",
+                    "496"
+                ]
+            ]
+        ],
+        [
+            "04-catalogos.md",
+            1288,
+            1469,
+            [
+                [
+                    ".specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/03-maquinas-de-estado.md",
+                    "497"
+                ]
+            ]
+        ],
+        [
+            "04-catalogos.md",
+            1470,
+            1483,
+            [
+                [
+                    ".specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/03-maquinas-de-estado.md",
+                    "498"
+                ]
+            ]
+        ],
+        [
+            "04-catalogos.md",
+            1484,
+            1497,
+            [
+                [
+                    ".specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/03-maquinas-de-estado.md",
+                    "499"
+                ]
+            ]
+        ],
+        [
+            "04-catalogos.md",
+            1498,
+            1536,
+            [
+                [
+                    ".specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/03-maquinas-de-estado.md",
+                    "500"
+                ]
+            ]
+        ],
+        [
+            "04-catalogos.md",
+            1537,
+            1550,
+            [
+                [
+                    ".specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/03-maquinas-de-estado.md",
+                    "1359"
+                ]
+            ]
+        ],
+        [
+            "04-catalogos.md",
+            1551,
+            1564,
+            [
+                [
+                    ".specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/03-maquinas-de-estado.md",
+                    "1360"
+                ]
+            ]
+        ],
+        [
+            "04-catalogos.md",
+            1565,
+            1616,
+            [
+                [
+                    ".specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/03-maquinas-de-estado.md",
+                    "1361"
+                ]
+            ]
+        ],
+        [
+            "04-catalogos.md",
+            1617,
+            2343,
+            [[".specs/HOS-1354-billing-cobro-y-proveedor/docs/03-maquinas-de-estado.md", "151"]]
+        ],
+        [
+            "04-catalogos.md",
+            2344,
+            2359,
+            [[".specs/HOS-1354-billing-cobro-y-proveedor/docs/03-maquinas-de-estado.md", "152"]]
+        ],
+        [
+            "04-catalogos.md",
+            2360,
+            2489,
+            [[".specs/HOS-1354-billing-cobro-y-proveedor/docs/03-maquinas-de-estado.md", "153"]]
+        ],
+        [
+            "04-catalogos.md",
+            2490,
+            2565,
+            [[".specs/HOS-1354-billing-cobro-y-proveedor/docs/03-maquinas-de-estado.md", "154"]]
+        ],
+        [
+            "04-catalogos.md",
+            2566,
+            2802,
+            [[".specs/HOS-1354-billing-cobro-y-proveedor/docs/03-maquinas-de-estado.md", "155"]]
+        ],
+        [
+            "04-catalogos.md",
+            2803,
+            2818,
+            [[".specs/HOS-1354-billing-cobro-y-proveedor/docs/03-maquinas-de-estado.md", "156"]]
+        ],
+        [
+            "04-catalogos.md",
+            2819,
+            2834,
+            [[".specs/HOS-1354-billing-cobro-y-proveedor/docs/03-maquinas-de-estado.md", "157"]]
+        ],
+        [
+            "04-catalogos.md",
+            2835,
+            2925,
+            [[".specs/HOS-1354-billing-cobro-y-proveedor/docs/03-maquinas-de-estado.md", "158"]]
+        ],
+        [
+            "04-catalogos.md",
+            2926,
+            2942,
+            [[".specs/HOS-1354-billing-cobro-y-proveedor/docs/03-maquinas-de-estado.md", "159"]]
+        ],
+        [
+            "04-catalogos.md",
+            2943,
+            3046,
+            [[".specs/HOS-1354-billing-cobro-y-proveedor/docs/03-maquinas-de-estado.md", "160"]]
+        ],
+        [
+            "04-catalogos.md",
+            3047,
+            3117,
+            [[".specs/HOS-1354-billing-cobro-y-proveedor/docs/03-maquinas-de-estado.md", "161"]]
+        ],
+        [
+            "04-catalogos.md",
+            3118,
+            3133,
+            [[".specs/HOS-1354-billing-cobro-y-proveedor/docs/03-maquinas-de-estado.md", "162"]]
+        ],
+        [
+            "04-catalogos.md",
+            3134,
+            3312,
+            [[".specs/HOS-1354-billing-cobro-y-proveedor/docs/03-maquinas-de-estado.md", "163"]]
+        ],
+        [
+            "04-catalogos.md",
+            3313,
+            3328,
+            [[".specs/HOS-1354-billing-cobro-y-proveedor/docs/03-maquinas-de-estado.md", "164"]]
+        ],
+        [
+            "04-catalogos.md",
+            3329,
+            3344,
+            [[".specs/HOS-1354-billing-cobro-y-proveedor/docs/03-maquinas-de-estado.md", "165"]]
+        ],
+        [
+            "04-catalogos.md",
+            3345,
+            3420,
+            [[".specs/HOS-1354-billing-cobro-y-proveedor/docs/03-maquinas-de-estado.md", "166"]]
+        ],
+        [
+            "04-catalogos.md",
+            3421,
+            3436,
+            [[".specs/HOS-1354-billing-cobro-y-proveedor/docs/03-maquinas-de-estado.md", "167"]]
+        ],
+        [
+            "04-catalogos.md",
+            3437,
+            3486,
+            [[".specs/HOS-1354-billing-cobro-y-proveedor/docs/03-maquinas-de-estado.md", "168"]]
+        ],
+        [
+            "04-catalogos.md",
+            3487,
+            3606,
+            [[".specs/HOS-1354-billing-cobro-y-proveedor/docs/03-maquinas-de-estado.md", "169"]]
+        ],
+        [
+            "04-catalogos.md",
+            3607,
+            3690,
+            [[".specs/HOS-1354-billing-cobro-y-proveedor/docs/03-maquinas-de-estado.md", "170"]]
+        ],
+        [
+            "04-catalogos.md",
+            3691,
+            3942,
+            [[".specs/HOS-1354-billing-cobro-y-proveedor/docs/03-maquinas-de-estado.md", "171"]]
+        ],
+        [
+            "04-catalogos.md",
+            3943,
+            3958,
+            [[".specs/HOS-1354-billing-cobro-y-proveedor/docs/03-maquinas-de-estado.md", "172"]]
+        ],
+        [
+            "04-catalogos.md",
+            3959,
+            3974,
+            [[".specs/HOS-1354-billing-cobro-y-proveedor/docs/03-maquinas-de-estado.md", "173"]]
+        ],
+        [
+            "04-catalogos.md",
+            3975,
+            3990,
+            [[".specs/HOS-1354-billing-cobro-y-proveedor/docs/03-maquinas-de-estado.md", "174"]]
+        ],
+        [
+            "04-catalogos.md",
+            3991,
+            4006,
+            [[".specs/HOS-1354-billing-cobro-y-proveedor/docs/03-maquinas-de-estado.md", "179"]]
+        ],
+        [
+            "04-catalogos.md",
+            4007,
+            4022,
+            [[".specs/HOS-1354-billing-cobro-y-proveedor/docs/03-maquinas-de-estado.md", "180"]]
+        ],
+        [
+            "04-catalogos.md",
+            4023,
+            4038,
+            [[".specs/HOS-1354-billing-cobro-y-proveedor/docs/03-maquinas-de-estado.md", "181"]]
+        ],
+        [
+            "04-catalogos.md",
+            4039,
+            4054,
+            [[".specs/HOS-1354-billing-cobro-y-proveedor/docs/03-maquinas-de-estado.md", "182"]]
+        ],
+        [
+            "04-catalogos.md",
+            4055,
+            4070,
+            [[".specs/HOS-1354-billing-cobro-y-proveedor/docs/03-maquinas-de-estado.md", "183"]]
+        ],
+        [
+            "04-catalogos.md",
+            4071,
+            4086,
+            [[".specs/HOS-1354-billing-cobro-y-proveedor/docs/03-maquinas-de-estado.md", "184"]]
+        ],
+        [
+            "04-catalogos.md",
+            4087,
+            4102,
+            [[".specs/HOS-1354-billing-cobro-y-proveedor/docs/03-maquinas-de-estado.md", "185"]]
+        ],
+        [
+            "04-catalogos.md",
+            4103,
+            4118,
+            [[".specs/HOS-1354-billing-cobro-y-proveedor/docs/03-maquinas-de-estado.md", "186"]]
+        ],
+        [
+            "04-catalogos.md",
+            4119,
+            4134,
+            [[".specs/HOS-1354-billing-cobro-y-proveedor/docs/03-maquinas-de-estado.md", "187"]]
+        ],
+        [
+            "04-catalogos.md",
+            4135,
+            4184,
+            [[".specs/HOS-1354-billing-cobro-y-proveedor/docs/03-maquinas-de-estado.md", "188"]]
+        ],
+        [
+            "04-catalogos.md",
+            4185,
+            4230,
+            [[".specs/HOS-1354-billing-cobro-y-proveedor/docs/03-maquinas-de-estado.md", "1454"]]
+        ],
+        [
+            "04-catalogos.md",
+            4231,
+            4242,
+            [[".specs/HOS-1354-billing-cobro-y-proveedor/docs/03-maquinas-de-estado.md", "1455"]]
+        ],
+        [
+            "04-catalogos.md",
+            4243,
+            4254,
+            [[".specs/HOS-1354-billing-cobro-y-proveedor/docs/03-maquinas-de-estado.md", "1456"]]
+        ],
+        [
+            "04-catalogos.md",
+            4255,
+            4266,
+            [[".specs/HOS-1354-billing-cobro-y-proveedor/docs/03-maquinas-de-estado.md", "1457"]]
+        ],
+        [
+            "04-catalogos.md",
+            4267,
+            4278,
+            [[".specs/HOS-1354-billing-cobro-y-proveedor/docs/03-maquinas-de-estado.md", "1458"]]
+        ],
+        [
+            "04-catalogos.md",
+            4279,
+            4376,
+            [[".specs/HOS-1354-billing-cobro-y-proveedor/docs/03-maquinas-de-estado.md", "1459"]]
+        ],
+        [
+            "04-catalogos.md",
+            4377,
+            4390,
+            [[".specs/HOS-1354-billing-cobro-y-proveedor/docs/03-maquinas-de-estado.md", "1767"]]
+        ],
+        [
+            "04-catalogos.md",
+            4391,
+            4405,
+            [[".specs/HOS-1354-billing-cobro-y-proveedor/docs/03-maquinas-de-estado.md", "1768"]]
+        ],
+        [
+            "04-catalogos.md",
+            4406,
+            4419,
+            [[".specs/HOS-1354-billing-cobro-y-proveedor/docs/03-maquinas-de-estado.md", "1769"]]
+        ],
+        [
+            "04-catalogos.md",
+            4420,
+            4433,
+            [[".specs/HOS-1354-billing-cobro-y-proveedor/docs/03-maquinas-de-estado.md", "1770"]]
+        ],
+        [
+            "04-catalogos.md",
+            4434,
+            4447,
+            [[".specs/HOS-1354-billing-cobro-y-proveedor/docs/03-maquinas-de-estado.md", "1771"]]
+        ],
+        [
+            "04-catalogos.md",
+            4448,
+            4461,
+            [[".specs/HOS-1354-billing-cobro-y-proveedor/docs/03-maquinas-de-estado.md", "1772"]]
+        ],
+        [
+            "04-catalogos.md",
+            4462,
+            4501,
+            [[".specs/HOS-1354-billing-cobro-y-proveedor/docs/03-maquinas-de-estado.md", "1773"]]
+        ],
+        [
+            "04-catalogos.md",
+            4502,
+            4515,
+            [[".specs/HOS-1354-billing-cobro-y-proveedor/docs/03-maquinas-de-estado.md", "1850"]]
+        ],
+        [
+            "04-catalogos.md",
+            4516,
+            4529,
+            [[".specs/HOS-1354-billing-cobro-y-proveedor/docs/03-maquinas-de-estado.md", "1851"]]
+        ],
+        [
+            "04-catalogos.md",
+            4530,
+            4544,
+            [[".specs/HOS-1354-billing-cobro-y-proveedor/docs/03-maquinas-de-estado.md", "1852"]]
+        ],
+        [
+            "04-catalogos.md",
+            4545,
+            4558,
+            [[".specs/HOS-1354-billing-cobro-y-proveedor/docs/03-maquinas-de-estado.md", "1853"]]
+        ],
+        [
+            "04-catalogos.md",
+            4559,
+            4612,
+            [[".specs/HOS-1354-billing-cobro-y-proveedor/docs/03-maquinas-de-estado.md", "1854"]]
+        ],
+        [
+            "04-catalogos.md",
+            4613,
+            4646,
+            [[".specs/HOS-1354-billing-cobro-y-proveedor/docs/03-maquinas-de-estado.md", "1871"]]
+        ],
+        [
+            "04-catalogos.md",
+            4647,
+            4660,
+            [[".specs/HOS-1354-billing-cobro-y-proveedor/docs/03-maquinas-de-estado.md", "1872"]]
+        ],
+        [
+            "04-catalogos.md",
+            4661,
+            4752,
+            [[".specs/HOS-1354-billing-cobro-y-proveedor/docs/03-maquinas-de-estado.md", "1873"]]
+        ],
+        [
+            "04-catalogos.md",
+            4753,
+            5032,
+            [[".specs/HOS-1354-billing-cobro-y-proveedor/docs/03-maquinas-de-estado.md", "1874"]]
+        ],
+        [
+            "04-catalogos.md",
+            5033,
+            5296,
+            [[".specs/HOS-1354-billing-cobro-y-proveedor/docs/03-maquinas-de-estado.md", "1875"]]
+        ],
+        [
+            "04-catalogos.md",
+            5297,
+            5325,
+            [[".specs/HOS-1354-billing-cobro-y-proveedor/docs/03-maquinas-de-estado.md", "1876"]]
+        ],
+        [
+            "04-catalogos.md",
+            5326,
+            5340,
+            [[".specs/HOS-1354-billing-cobro-y-proveedor/docs/03-maquinas-de-estado.md", "2534"]]
+        ],
+        [
+            "04-catalogos.md",
+            5341,
+            5355,
+            [[".specs/HOS-1354-billing-cobro-y-proveedor/docs/03-maquinas-de-estado.md", "2535"]]
+        ],
+        [
+            "04-catalogos.md",
+            5356,
+            5370,
+            [[".specs/HOS-1354-billing-cobro-y-proveedor/docs/03-maquinas-de-estado.md", "2536"]]
+        ],
+        [
+            "04-catalogos.md",
+            5371,
+            5385,
+            [[".specs/HOS-1354-billing-cobro-y-proveedor/docs/03-maquinas-de-estado.md", "2537"]]
+        ],
+        [
+            "04-catalogos.md",
+            5386,
+            5400,
+            [[".specs/HOS-1354-billing-cobro-y-proveedor/docs/03-maquinas-de-estado.md", "2538"]]
+        ],
+        [
+            "04-catalogos.md",
+            5401,
+            5552,
+            [[".specs/HOS-1354-billing-cobro-y-proveedor/docs/03-maquinas-de-estado.md", "2539"]]
+        ],
+        [
+            "04-catalogos.md",
+            5553,
+            5567,
+            [[".specs/HOS-1354-billing-cobro-y-proveedor/docs/03-maquinas-de-estado.md", "2540"]]
+        ],
+        [
+            "04-catalogos.md",
+            5568,
+            5678,
+            [[".specs/HOS-1354-billing-cobro-y-proveedor/docs/03-maquinas-de-estado.md", "2541"]]
+        ],
+        [
+            "04-catalogos.md",
+            5679,
+            5752,
+            [[".specs/HOS-1354-billing-cobro-y-proveedor/docs/02-modelo-de-datos.md", "1023"]]
+        ],
+        [
+            "04-catalogos.md",
+            5753,
+            5766,
+            [[".specs/HOS-1354-billing-cobro-y-proveedor/docs/02-modelo-de-datos.md", "1024"]]
+        ],
+        [
+            "04-catalogos.md",
+            5767,
+            5780,
+            [[".specs/HOS-1354-billing-cobro-y-proveedor/docs/02-modelo-de-datos.md", "1025"]]
+        ],
+        [
+            "04-catalogos.md",
+            5781,
+            5794,
+            [[".specs/HOS-1354-billing-cobro-y-proveedor/docs/02-modelo-de-datos.md", "1026"]]
+        ],
+        [
+            "04-catalogos.md",
+            5795,
+            5808,
+            [[".specs/HOS-1354-billing-cobro-y-proveedor/docs/02-modelo-de-datos.md", "1027"]]
+        ],
+        [
+            "04-catalogos.md",
+            5809,
+            5822,
+            [[".specs/HOS-1354-billing-cobro-y-proveedor/docs/02-modelo-de-datos.md", "1028"]]
+        ],
+        [
+            "04-catalogos.md",
+            5823,
+            5866,
+            [[".specs/HOS-1354-billing-cobro-y-proveedor/docs/02-modelo-de-datos.md", "1029"]]
+        ],
+        [
+            "04-catalogos.md",
+            5867,
+            5880,
+            [[".specs/HOS-1354-billing-cobro-y-proveedor/docs/02-modelo-de-datos.md", "1030"]]
+        ],
+        [
+            "04-catalogos.md",
+            5881,
+            5894,
+            [[".specs/HOS-1354-billing-cobro-y-proveedor/docs/02-modelo-de-datos.md", "1031"]]
+        ],
+        [
+            "04-catalogos.md",
+            5895,
+            5908,
+            [[".specs/HOS-1354-billing-cobro-y-proveedor/docs/02-modelo-de-datos.md", "1032"]]
+        ],
+        [
+            "04-catalogos.md",
+            5909,
+            5922,
+            [[".specs/HOS-1354-billing-cobro-y-proveedor/docs/02-modelo-de-datos.md", "1033"]]
+        ],
+        [
+            "04-catalogos.md",
+            5923,
+            5936,
+            [[".specs/HOS-1354-billing-cobro-y-proveedor/docs/02-modelo-de-datos.md", "1034"]]
+        ],
+        [
+            "04-catalogos.md",
+            5937,
+            5950,
+            [[".specs/HOS-1354-billing-cobro-y-proveedor/docs/02-modelo-de-datos.md", "1035"]]
+        ],
+        [
+            "04-catalogos.md",
+            5951,
+            5964,
+            [[".specs/HOS-1354-billing-cobro-y-proveedor/docs/02-modelo-de-datos.md", "1036"]]
+        ],
+        [
+            "04-catalogos.md",
+            5965,
+            5979,
+            [[".specs/HOS-1354-billing-cobro-y-proveedor/docs/02-modelo-de-datos.md", "1037"]]
+        ],
+        [
+            "04-catalogos.md",
+            5980,
+            5993,
+            [[".specs/HOS-1354-billing-cobro-y-proveedor/docs/02-modelo-de-datos.md", "1038"]]
+        ],
+        [
+            "04-catalogos.md",
+            5994,
+            6007,
+            [[".specs/HOS-1354-billing-cobro-y-proveedor/docs/02-modelo-de-datos.md", "1039"]]
+        ],
+        [
+            "04-catalogos.md",
+            6008,
+            6021,
+            [[".specs/HOS-1354-billing-cobro-y-proveedor/docs/02-modelo-de-datos.md", "1040"]]
+        ],
+        [
+            "04-catalogos.md",
+            6022,
+            6036,
+            [[".specs/HOS-1354-billing-cobro-y-proveedor/docs/02-modelo-de-datos.md", "1041"]]
+        ],
+        [
+            "04-catalogos.md",
+            6037,
+            6050,
+            [[".specs/HOS-1354-billing-cobro-y-proveedor/docs/02-modelo-de-datos.md", "1042"]]
+        ],
+        [
+            "04-catalogos.md",
+            6051,
+            6064,
+            [[".specs/HOS-1354-billing-cobro-y-proveedor/docs/02-modelo-de-datos.md", "1043"]]
+        ],
+        [
+            "04-catalogos.md",
+            6065,
+            6078,
+            [[".specs/HOS-1354-billing-cobro-y-proveedor/docs/02-modelo-de-datos.md", "1044"]]
+        ],
+        [
+            "04-catalogos.md",
+            6079,
+            6092,
+            [[".specs/HOS-1354-billing-cobro-y-proveedor/docs/02-modelo-de-datos.md", "1045"]]
+        ],
+        [
+            "04-catalogos.md",
+            6093,
+            6110,
+            [[".specs/HOS-1354-billing-cobro-y-proveedor/docs/02-modelo-de-datos.md", "1046"]]
+        ],
+        [
+            "04-catalogos.md",
+            6456,
+            6563,
+            [[".specs/HOS-1354-billing-cobro-y-proveedor/docs/20-testing.md", "503"]]
+        ],
+        [
+            "04-catalogos.md",
+            6564,
+            6575,
+            [[".specs/HOS-1354-billing-cobro-y-proveedor/docs/20-testing.md", "504"]]
+        ],
+        [
+            "04-catalogos.md",
+            6576,
+            6587,
+            [[".specs/HOS-1354-billing-cobro-y-proveedor/docs/20-testing.md", "505"]]
+        ],
+        [
+            "04-catalogos.md",
+            6588,
+            6599,
+            [[".specs/HOS-1354-billing-cobro-y-proveedor/docs/20-testing.md", "506"]]
+        ],
+        [
+            "04-catalogos.md",
+            6600,
+            6611,
+            [[".specs/HOS-1354-billing-cobro-y-proveedor/docs/20-testing.md", "507"]]
+        ],
+        [
+            "04-catalogos.md",
+            6612,
+            6623,
+            [[".specs/HOS-1354-billing-cobro-y-proveedor/docs/20-testing.md", "508"]]
+        ],
+        [
+            "04-catalogos.md",
+            6624,
+            6635,
+            [[".specs/HOS-1354-billing-cobro-y-proveedor/docs/20-testing.md", "509"]]
+        ],
+        [
+            "04-catalogos.md",
+            6636,
+            6647,
+            [[".specs/HOS-1354-billing-cobro-y-proveedor/docs/20-testing.md", "510"]]
+        ],
+        [
+            "04-catalogos.md",
+            6648,
+            6659,
+            [[".specs/HOS-1354-billing-cobro-y-proveedor/docs/20-testing.md", "511"]]
+        ],
+        [
+            "04-catalogos.md",
+            6660,
+            6671,
+            [[".specs/HOS-1354-billing-cobro-y-proveedor/docs/20-testing.md", "512"]]
+        ],
+        [
+            "04-catalogos.md",
+            6672,
+            6683,
+            [[".specs/HOS-1354-billing-cobro-y-proveedor/docs/20-testing.md", "513"]]
+        ],
+        [
+            "04-catalogos.md",
+            6684,
+            6695,
+            [[".specs/HOS-1354-billing-cobro-y-proveedor/docs/20-testing.md", "514"]]
+        ],
+        [
+            "04-catalogos.md",
+            6696,
+            6709,
+            [[".specs/HOS-1354-billing-cobro-y-proveedor/docs/20-testing.md", "515"]]
+        ],
+        [
+            "04-catalogos.md",
+            6710,
+            6795,
+            [[".specs/HOS-1354-billing-cobro-y-proveedor/docs/20-testing.md", "534"]]
+        ],
+        [
+            "04-catalogos.md",
+            6796,
+            6806,
+            [[".specs/HOS-1354-billing-cobro-y-proveedor/docs/20-testing.md", "535"]]
+        ],
+        [
+            "04-catalogos.md",
+            6807,
+            6817,
+            [[".specs/HOS-1354-billing-cobro-y-proveedor/docs/20-testing.md", "536"]]
+        ],
+        [
+            "04-catalogos.md",
+            6818,
+            6828,
+            [[".specs/HOS-1354-billing-cobro-y-proveedor/docs/20-testing.md", "537"]]
+        ],
+        [
+            "04-catalogos.md",
+            6829,
+            6839,
+            [[".specs/HOS-1354-billing-cobro-y-proveedor/docs/20-testing.md", "538"]]
+        ],
+        [
+            "04-catalogos.md",
+            6840,
+            6850,
+            [[".specs/HOS-1354-billing-cobro-y-proveedor/docs/20-testing.md", "539"]]
+        ],
+        [
+            "04-catalogos.md",
+            6851,
+            6861,
+            [[".specs/HOS-1354-billing-cobro-y-proveedor/docs/20-testing.md", "540"]]
+        ],
+        [
+            "04-catalogos.md",
+            6862,
+            6872,
+            [[".specs/HOS-1354-billing-cobro-y-proveedor/docs/20-testing.md", "541"]]
+        ],
+        [
+            "04-catalogos.md",
+            6873,
+            6883,
+            [[".specs/HOS-1354-billing-cobro-y-proveedor/docs/20-testing.md", "542"]]
+        ],
+        [
+            "04-catalogos.md",
+            6884,
+            6894,
+            [[".specs/HOS-1354-billing-cobro-y-proveedor/docs/20-testing.md", "543"]]
+        ],
+        [
+            "04-catalogos.md",
+            6895,
+            6905,
+            [[".specs/HOS-1354-billing-cobro-y-proveedor/docs/20-testing.md", "544"]]
+        ],
+        [
+            "04-catalogos.md",
+            6906,
+            7567,
+            [[".specs/HOS-1354-billing-cobro-y-proveedor/docs/20-testing.md", "545"]]
+        ],
+        [
+            "04-catalogos.md",
+            7568,
+            7597,
+            [[".specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/20-testing.md", "50"]]
+        ],
+        [
+            "04-catalogos.md",
+            7598,
+            7610,
+            [[".specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/20-testing.md", "51"]]
+        ],
+        [
+            "04-catalogos.md",
+            7611,
+            7623,
+            [[".specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/20-testing.md", "52"]]
+        ],
+        [
+            "04-catalogos.md",
+            7624,
+            7636,
+            [[".specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/20-testing.md", "53"]]
+        ],
+        [
+            "04-catalogos.md",
+            7637,
+            7649,
+            [[".specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/20-testing.md", "54"]]
+        ],
+        [
+            "04-catalogos.md",
+            7650,
+            7662,
+            [[".specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/20-testing.md", "55"]]
+        ],
+        [
+            "04-catalogos.md",
+            7663,
+            7675,
+            [[".specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/20-testing.md", "56"]]
+        ],
+        [
+            "04-catalogos.md",
+            7676,
+            7688,
+            [[".specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/20-testing.md", "57"]]
+        ],
+        [
+            "04-catalogos.md",
+            7689,
+            7701,
+            [[".specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/20-testing.md", "58"]]
+        ],
+        [
+            "04-catalogos.md",
+            7702,
+            7714,
+            [[".specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/20-testing.md", "59"]]
+        ],
+        [
+            "04-catalogos.md",
+            7715,
+            7727,
+            [[".specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/20-testing.md", "60"]]
+        ],
+        [
+            "04-catalogos.md",
+            7728,
+            7740,
+            [[".specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/20-testing.md", "61"]]
+        ],
+        [
+            "04-catalogos.md",
+            7741,
+            7753,
+            [[".specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/20-testing.md", "62"]]
+        ],
+        [
+            "04-catalogos.md",
+            7754,
+            7766,
+            [[".specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/20-testing.md", "63"]]
+        ],
+        [
+            "04-catalogos.md",
+            7767,
+            7778,
+            [[".specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/20-testing.md", "64"]]
+        ],
+        [
+            "04-catalogos.md",
+            7779,
+            7791,
+            [[".specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/20-testing.md", "65"]]
+        ],
+        [
+            "04-catalogos.md",
+            7792,
+            7804,
+            [[".specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/20-testing.md", "66"]]
+        ],
+        [
+            "04-catalogos.md",
+            7805,
+            7820,
+            [[".specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/20-testing.md", "67"]]
+        ],
+        [
+            "04-catalogos.md",
+            7821,
+            7833,
+            [[".specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/20-testing.md", "68"]]
+        ],
+        [
+            "04-catalogos.md",
+            7834,
+            7845,
+            [[".specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/20-testing.md", "70"]]
+        ],
+        [
+            "04-catalogos.md",
+            7846,
+            7861,
+            [[".specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/20-testing.md", "71"]]
+        ],
+        [
+            "04-catalogos.md",
+            7862,
+            7877,
+            [[".specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/20-testing.md", "72"]]
+        ],
+        [
+            "04-catalogos.md",
+            7878,
+            7890,
+            [[".specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/20-testing.md", "73"]]
+        ],
+        [
+            "04-catalogos.md",
+            7891,
+            7920,
+            [[".specs/HOS-1354-billing-cobro-y-proveedor/docs/20-testing.md", "50"]]
+        ],
+        [
+            "04-catalogos.md",
+            7921,
+            7933,
+            [[".specs/HOS-1354-billing-cobro-y-proveedor/docs/20-testing.md", "51"]]
+        ],
+        [
+            "04-catalogos.md",
+            7934,
+            7946,
+            [[".specs/HOS-1354-billing-cobro-y-proveedor/docs/20-testing.md", "52"]]
+        ],
+        [
+            "04-catalogos.md",
+            7947,
+            7959,
+            [[".specs/HOS-1354-billing-cobro-y-proveedor/docs/20-testing.md", "53"]]
+        ],
+        [
+            "04-catalogos.md",
+            7960,
+            7987,
+            [[".specs/HOS-1354-billing-cobro-y-proveedor/docs/20-testing.md", "54"]]
+        ],
+        [
+            "04-catalogos.md",
+            7988,
+            8000,
+            [[".specs/HOS-1354-billing-cobro-y-proveedor/docs/20-testing.md", "56"]]
+        ],
+        [
+            "04-catalogos.md",
+            8001,
+            8013,
+            [[".specs/HOS-1354-billing-cobro-y-proveedor/docs/20-testing.md", "57"]]
+        ],
+        [
+            "04-catalogos.md",
+            8014,
+            8026,
+            [[".specs/HOS-1354-billing-cobro-y-proveedor/docs/20-testing.md", "58"]]
+        ],
+        [
+            "04-catalogos.md",
+            8027,
+            8039,
+            [[".specs/HOS-1354-billing-cobro-y-proveedor/docs/20-testing.md", "59"]]
+        ],
+        [
+            "04-catalogos.md",
+            8040,
+            8052,
+            [[".specs/HOS-1354-billing-cobro-y-proveedor/docs/20-testing.md", "60"]]
+        ],
+        [
+            "04-catalogos.md",
+            8053,
+            8065,
+            [[".specs/HOS-1354-billing-cobro-y-proveedor/docs/20-testing.md", "61"]]
+        ],
+        [
+            "04-catalogos.md",
+            8066,
+            8078,
+            [[".specs/HOS-1354-billing-cobro-y-proveedor/docs/20-testing.md", "66"]]
+        ],
+        [
+            "04-catalogos.md",
+            8079,
+            8091,
+            [[".specs/HOS-1354-billing-cobro-y-proveedor/docs/20-testing.md", "67"]]
+        ],
+        [
+            "04-catalogos.md",
+            8092,
+            8118,
+            [[".specs/HOS-1354-billing-cobro-y-proveedor/docs/20-testing.md", "68"]]
+        ],
+        [
+            "04-catalogos.md",
+            8119,
+            8131,
+            [[".specs/HOS-1352-billing-verticals-redesign/docs/06-mp-validation-matrix.md", "172"]]
+        ],
+        [
+            "04-catalogos.md",
+            8132,
+            8144,
+            [[".specs/HOS-1352-billing-verticals-redesign/docs/06-mp-validation-matrix.md", "173"]]
+        ],
+        [
+            "04-catalogos.md",
+            8145,
+            8157,
+            [[".specs/HOS-1352-billing-verticals-redesign/docs/06-mp-validation-matrix.md", "174"]]
+        ],
+        [
+            "04-catalogos.md",
+            8158,
+            8170,
+            [[".specs/HOS-1352-billing-verticals-redesign/docs/06-mp-validation-matrix.md", "175"]]
+        ],
+        [
+            "04-catalogos.md",
+            8171,
+            8183,
+            [[".specs/HOS-1352-billing-verticals-redesign/docs/06-mp-validation-matrix.md", "176"]]
+        ],
+        [
+            "04-catalogos.md",
+            8184,
+            8200,
+            [[".specs/HOS-1352-billing-verticals-redesign/docs/06-mp-validation-matrix.md", "177"]]
+        ],
+        [
+            "04-catalogos.md",
+            8201,
+            8213,
+            [[".specs/HOS-1352-billing-verticals-redesign/docs/06-mp-validation-matrix.md", "183"]]
+        ],
+        [
+            "04-catalogos.md",
+            8214,
+            8226,
+            [[".specs/HOS-1352-billing-verticals-redesign/docs/06-mp-validation-matrix.md", "184"]]
+        ],
+        [
+            "04-catalogos.md",
+            8227,
+            8239,
+            [[".specs/HOS-1352-billing-verticals-redesign/docs/06-mp-validation-matrix.md", "185"]]
+        ],
+        [
+            "04-catalogos.md",
+            8240,
+            8256,
+            [[".specs/HOS-1352-billing-verticals-redesign/docs/06-mp-validation-matrix.md", "186"]]
+        ],
+        [
+            "04-catalogos.md",
+            8257,
+            8269,
+            [[".specs/HOS-1352-billing-verticals-redesign/docs/06-mp-validation-matrix.md", "192"]]
+        ],
+        [
+            "04-catalogos.md",
+            8270,
+            8282,
+            [[".specs/HOS-1352-billing-verticals-redesign/docs/06-mp-validation-matrix.md", "193"]]
+        ],
+        [
+            "04-catalogos.md",
+            8283,
+            8299,
+            [[".specs/HOS-1352-billing-verticals-redesign/docs/06-mp-validation-matrix.md", "194"]]
+        ],
+        [
+            "04-catalogos.md",
+            8300,
+            8312,
+            [[".specs/HOS-1352-billing-verticals-redesign/docs/06-mp-validation-matrix.md", "200"]]
+        ],
+        [
+            "04-catalogos.md",
+            8313,
+            8325,
+            [[".specs/HOS-1352-billing-verticals-redesign/docs/06-mp-validation-matrix.md", "201"]]
+        ],
+        [
+            "04-catalogos.md",
+            8326,
+            8342,
+            [[".specs/HOS-1352-billing-verticals-redesign/docs/06-mp-validation-matrix.md", "202"]]
+        ],
+        [
+            "04-catalogos.md",
+            8343,
+            8355,
+            [[".specs/HOS-1352-billing-verticals-redesign/docs/06-mp-validation-matrix.md", "208"]]
+        ],
+        [
+            "04-catalogos.md",
+            8356,
+            8368,
+            [[".specs/HOS-1352-billing-verticals-redesign/docs/06-mp-validation-matrix.md", "209"]]
+        ],
+        [
+            "04-catalogos.md",
+            8369,
+            8381,
+            [[".specs/HOS-1352-billing-verticals-redesign/docs/06-mp-validation-matrix.md", "210"]]
+        ],
+        [
+            "04-catalogos.md",
+            8382,
+            8394,
+            [[".specs/HOS-1352-billing-verticals-redesign/docs/06-mp-validation-matrix.md", "211"]]
+        ],
+        [
+            "04-catalogos.md",
+            8395,
+            8407,
+            [[".specs/HOS-1352-billing-verticals-redesign/docs/06-mp-validation-matrix.md", "212"]]
+        ],
+        [
+            "04-catalogos.md",
+            8408,
+            8424,
+            [[".specs/HOS-1352-billing-verticals-redesign/docs/06-mp-validation-matrix.md", "213"]]
+        ],
+        [
+            "04-catalogos.md",
+            8425,
+            8437,
+            [[".specs/HOS-1352-billing-verticals-redesign/docs/06-mp-validation-matrix.md", "219"]]
+        ],
+        [
+            "04-catalogos.md",
+            8438,
+            8461,
+            [[".specs/HOS-1352-billing-verticals-redesign/docs/06-mp-validation-matrix.md", "220"]]
+        ],
+        [
+            "04-catalogos.md",
+            8462,
+            8474,
+            [[".specs/HOS-1352-billing-verticals-redesign/docs/06-mp-validation-matrix.md", "226"]]
+        ],
+        [
+            "04-catalogos.md",
+            8475,
+            8487,
+            [[".specs/HOS-1352-billing-verticals-redesign/docs/06-mp-validation-matrix.md", "227"]]
+        ],
+        [
+            "04-catalogos.md",
+            8488,
+            8504,
+            [[".specs/HOS-1352-billing-verticals-redesign/docs/06-mp-validation-matrix.md", "228"]]
+        ],
+        [
+            "04-catalogos.md",
+            8505,
+            8517,
+            [[".specs/HOS-1352-billing-verticals-redesign/docs/06-mp-validation-matrix.md", "237"]]
+        ],
+        [
+            "04-catalogos.md",
+            8518,
+            8534,
+            [[".specs/HOS-1352-billing-verticals-redesign/docs/06-mp-validation-matrix.md", "238"]]
+        ],
+        [
+            "04-catalogos.md",
+            8535,
+            8547,
+            [[".specs/HOS-1352-billing-verticals-redesign/docs/06-mp-validation-matrix.md", "244"]]
+        ],
+        [
+            "04-catalogos.md",
+            8548,
+            8564,
+            [[".specs/HOS-1352-billing-verticals-redesign/docs/06-mp-validation-matrix.md", "245"]]
+        ],
+        [
+            "04-catalogos.md",
+            8565,
+            8577,
+            [[".specs/HOS-1352-billing-verticals-redesign/docs/06-mp-validation-matrix.md", "251"]]
+        ],
+        [
+            "04-catalogos.md",
+            8578,
+            8590,
+            [[".specs/HOS-1352-billing-verticals-redesign/docs/06-mp-validation-matrix.md", "252"]]
+        ],
+        [
+            "04-catalogos.md",
+            8591,
+            8607,
+            [[".specs/HOS-1352-billing-verticals-redesign/docs/06-mp-validation-matrix.md", "253"]]
+        ],
+        [
+            "04-catalogos.md",
+            8608,
+            8624,
+            [[".specs/HOS-1352-billing-verticals-redesign/docs/06-mp-validation-matrix.md", "259"]]
+        ],
+        [
+            "04-catalogos.md",
+            8625,
+            8637,
+            [[".specs/HOS-1352-billing-verticals-redesign/docs/06-mp-validation-matrix.md", "265"]]
+        ],
+        [
+            "04-catalogos.md",
+            8638,
+            8650,
+            [[".specs/HOS-1352-billing-verticals-redesign/docs/06-mp-validation-matrix.md", "266"]]
+        ],
+        [
+            "04-catalogos.md",
+            8651,
+            8663,
+            [[".specs/HOS-1352-billing-verticals-redesign/docs/06-mp-validation-matrix.md", "267"]]
+        ],
+        [
+            "04-catalogos.md",
+            8664,
+            8676,
+            [[".specs/HOS-1352-billing-verticals-redesign/docs/06-mp-validation-matrix.md", "268"]]
+        ],
+        [
+            "04-catalogos.md",
+            8677,
+            8689,
+            [[".specs/HOS-1352-billing-verticals-redesign/docs/06-mp-validation-matrix.md", "269"]]
+        ],
+        [
+            "04-catalogos.md",
+            8690,
+            8706,
+            [[".specs/HOS-1352-billing-verticals-redesign/docs/06-mp-validation-matrix.md", "270"]]
+        ],
+        [
+            "04-catalogos.md",
+            8707,
+            8719,
+            [[".specs/HOS-1352-billing-verticals-redesign/docs/06-mp-validation-matrix.md", "276"]]
+        ],
+        [
+            "04-catalogos.md",
+            8720,
+            8732,
+            [[".specs/HOS-1352-billing-verticals-redesign/docs/06-mp-validation-matrix.md", "277"]]
+        ],
+        [
+            "04-catalogos.md",
+            8733,
+            8745,
+            [[".specs/HOS-1352-billing-verticals-redesign/docs/06-mp-validation-matrix.md", "278"]]
+        ],
+        [
+            "04-catalogos.md",
+            8746,
+            8758,
+            [[".specs/HOS-1352-billing-verticals-redesign/docs/06-mp-validation-matrix.md", "279"]]
+        ],
+        [
+            "04-catalogos.md",
+            8759,
+            8771,
+            [[".specs/HOS-1352-billing-verticals-redesign/docs/06-mp-validation-matrix.md", "280"]]
+        ],
+        [
+            "04-catalogos.md",
+            8772,
+            8784,
+            [[".specs/HOS-1352-billing-verticals-redesign/docs/06-mp-validation-matrix.md", "281"]]
+        ],
+        [
+            "04-catalogos.md",
+            8785,
+            8797,
+            [[".specs/HOS-1352-billing-verticals-redesign/docs/06-mp-validation-matrix.md", "282"]]
+        ],
+        [
+            "04-catalogos.md",
+            8798,
+            8810,
+            [[".specs/HOS-1352-billing-verticals-redesign/docs/06-mp-validation-matrix.md", "283"]]
+        ],
+        [
+            "04-catalogos.md",
+            8811,
+            8836,
+            [[".specs/HOS-1352-billing-verticals-redesign/docs/06-mp-validation-matrix.md", "284"]]
+        ],
+        [
+            "04-catalogos.md",
+            8837,
+            8849,
+            [[".specs/HOS-1352-billing-verticals-redesign/docs/06-mp-validation-matrix.md", "301"]]
+        ],
+        [
+            "04-catalogos.md",
+            8850,
+            8862,
+            [[".specs/HOS-1352-billing-verticals-redesign/docs/06-mp-validation-matrix.md", "304"]]
+        ],
+        [
+            "04-catalogos.md",
+            8863,
+            8875,
+            [[".specs/HOS-1352-billing-verticals-redesign/docs/06-mp-validation-matrix.md", "305"]]
+        ],
+        [
+            "04-catalogos.md",
+            8876,
+            8888,
+            [[".specs/HOS-1352-billing-verticals-redesign/docs/06-mp-validation-matrix.md", "306"]]
+        ],
+        [
+            "04-catalogos.md",
+            8889,
+            8913,
+            [[".specs/HOS-1352-billing-verticals-redesign/docs/06-mp-validation-matrix.md", "307"]]
+        ],
+        [
+            "04-catalogos.md",
+            8914,
+            8927,
+            [[".specs/HOS-1352-billing-verticals-redesign/docs/06-mp-validation-matrix.md", "313"]]
+        ],
+        [
+            "04-catalogos.md",
+            8928,
+            8941,
+            [[".specs/HOS-1352-billing-verticals-redesign/docs/06-mp-validation-matrix.md", "314"]]
+        ],
+        [
+            "04-catalogos.md",
+            8942,
+            8955,
+            [[".specs/HOS-1352-billing-verticals-redesign/docs/06-mp-validation-matrix.md", "315"]]
+        ],
+        [
+            "04-catalogos.md",
+            8956,
+            8969,
+            [[".specs/HOS-1352-billing-verticals-redesign/docs/06-mp-validation-matrix.md", "316"]]
+        ],
+        [
+            "04-catalogos.md",
+            8970,
+            8983,
+            [[".specs/HOS-1352-billing-verticals-redesign/docs/06-mp-validation-matrix.md", "317"]]
+        ],
+        [
+            "04-catalogos.md",
+            8984,
+            8997,
+            [[".specs/HOS-1352-billing-verticals-redesign/docs/06-mp-validation-matrix.md", "318"]]
+        ],
+        [
+            "04-catalogos.md",
+            8998,
+            9011,
+            [[".specs/HOS-1352-billing-verticals-redesign/docs/06-mp-validation-matrix.md", "320"]]
+        ],
+        [
+            "04-catalogos.md",
+            9012,
+            9025,
+            [[".specs/HOS-1352-billing-verticals-redesign/docs/06-mp-validation-matrix.md", "321"]]
+        ],
+        [
+            "04-catalogos.md",
+            9026,
+            9039,
+            [[".specs/HOS-1352-billing-verticals-redesign/docs/06-mp-validation-matrix.md", "322"]]
+        ],
+        [
+            "04-catalogos.md",
+            9040,
+            9053,
+            [[".specs/HOS-1352-billing-verticals-redesign/docs/06-mp-validation-matrix.md", "323"]]
+        ],
+        [
+            "04-catalogos.md",
+            9054,
+            9067,
+            [[".specs/HOS-1352-billing-verticals-redesign/docs/06-mp-validation-matrix.md", "324"]]
+        ],
+        [
+            "04-catalogos.md",
+            9068,
+            9081,
+            [[".specs/HOS-1352-billing-verticals-redesign/docs/06-mp-validation-matrix.md", "325"]]
+        ],
+        [
+            "04-catalogos.md",
+            9082,
+            9095,
+            [[".specs/HOS-1352-billing-verticals-redesign/docs/06-mp-validation-matrix.md", "326"]]
+        ],
+        [
+            "04-catalogos.md",
+            9096,
+            9109,
+            [[".specs/HOS-1352-billing-verticals-redesign/docs/06-mp-validation-matrix.md", "327"]]
+        ],
+        [
+            "04-catalogos.md",
+            9110,
+            9123,
+            [[".specs/HOS-1352-billing-verticals-redesign/docs/06-mp-validation-matrix.md", "328"]]
+        ],
+        [
+            "04-catalogos.md",
+            9124,
+            9137,
+            [[".specs/HOS-1352-billing-verticals-redesign/docs/06-mp-validation-matrix.md", "329"]]
+        ],
+        [
+            "04-catalogos.md",
+            9138,
+            9151,
+            [[".specs/HOS-1352-billing-verticals-redesign/docs/06-mp-validation-matrix.md", "330"]]
+        ],
+        [
+            "04-catalogos.md",
+            9152,
+            9165,
+            [[".specs/HOS-1352-billing-verticals-redesign/docs/06-mp-validation-matrix.md", "331"]]
+        ],
+        [
+            "04-catalogos.md",
+            9166,
+            9179,
+            [[".specs/HOS-1352-billing-verticals-redesign/docs/06-mp-validation-matrix.md", "332"]]
+        ],
+        [
+            "04-catalogos.md",
+            9180,
+            9193,
+            [[".specs/HOS-1352-billing-verticals-redesign/docs/06-mp-validation-matrix.md", "333"]]
+        ],
+        [
+            "04-catalogos.md",
+            9194,
+            9207,
+            [[".specs/HOS-1352-billing-verticals-redesign/docs/06-mp-validation-matrix.md", "334"]]
+        ],
+        [
+            "04-catalogos.md",
+            9208,
+            9221,
+            [[".specs/HOS-1352-billing-verticals-redesign/docs/06-mp-validation-matrix.md", "335"]]
+        ],
+        [
+            "04-catalogos.md",
+            9222,
+            9253,
+            [[".specs/HOS-1352-billing-verticals-redesign/docs/06-mp-validation-matrix.md", "336"]]
+        ],
+        [
+            "04-catalogos.md",
+            9254,
+            9267,
+            [[".specs/HOS-1352-billing-verticals-redesign/docs/06-mp-validation-matrix.md", "358"]]
+        ],
+        [
+            "04-catalogos.md",
+            9268,
+            9281,
+            [[".specs/HOS-1352-billing-verticals-redesign/docs/06-mp-validation-matrix.md", "359"]]
+        ],
+        [
+            "04-catalogos.md",
+            9282,
+            9295,
+            [[".specs/HOS-1352-billing-verticals-redesign/docs/06-mp-validation-matrix.md", "360"]]
+        ],
+        [
+            "04-catalogos.md",
+            9296,
+            9309,
+            [[".specs/HOS-1352-billing-verticals-redesign/docs/06-mp-validation-matrix.md", "361"]]
+        ],
+        [
+            "04-catalogos.md",
+            9310,
+            9323,
+            [[".specs/HOS-1352-billing-verticals-redesign/docs/06-mp-validation-matrix.md", "362"]]
+        ],
+        [
+            "04-catalogos.md",
+            9324,
+            9337,
+            [[".specs/HOS-1352-billing-verticals-redesign/docs/06-mp-validation-matrix.md", "363"]]
+        ],
+        [
+            "04-catalogos.md",
+            9338,
+            9351,
+            [[".specs/HOS-1352-billing-verticals-redesign/docs/06-mp-validation-matrix.md", "364"]]
+        ],
+        [
+            "04-catalogos.md",
+            9352,
+            9365,
+            [[".specs/HOS-1352-billing-verticals-redesign/docs/06-mp-validation-matrix.md", "365"]]
+        ],
+        [
+            "04-catalogos.md",
+            9366,
+            9423,
+            [[".specs/HOS-1352-billing-verticals-redesign/docs/06-mp-validation-matrix.md", "366"]]
+        ],
+        [
+            "04-catalogos.md",
+            9424,
+            9437,
+            [[".specs/HOS-1352-billing-verticals-redesign/docs/06-mp-validation-matrix.md", "388"]]
+        ],
+        [
+            "04-catalogos.md",
+            9438,
+            9451,
+            [[".specs/HOS-1352-billing-verticals-redesign/docs/06-mp-validation-matrix.md", "389"]]
+        ],
+        [
+            "04-catalogos.md",
+            9452,
+            9465,
+            [[".specs/HOS-1352-billing-verticals-redesign/docs/06-mp-validation-matrix.md", "390"]]
+        ],
+        [
+            "04-catalogos.md",
+            9466,
+            9479,
+            [[".specs/HOS-1352-billing-verticals-redesign/docs/06-mp-validation-matrix.md", "391"]]
+        ],
+        [
+            "04-catalogos.md",
+            9480,
+            9493,
+            [[".specs/HOS-1352-billing-verticals-redesign/docs/06-mp-validation-matrix.md", "392"]]
+        ],
+        [
+            "04-catalogos.md",
+            9494,
+            9507,
+            [[".specs/HOS-1352-billing-verticals-redesign/docs/06-mp-validation-matrix.md", "393"]]
+        ],
+        [
+            "04-catalogos.md",
+            9508,
+            9521,
+            [[".specs/HOS-1352-billing-verticals-redesign/docs/06-mp-validation-matrix.md", "394"]]
+        ],
+        [
+            "04-catalogos.md",
+            9522,
+            9535,
+            [[".specs/HOS-1352-billing-verticals-redesign/docs/06-mp-validation-matrix.md", "395"]]
+        ],
+        [
+            "04-catalogos.md",
+            9536,
+            9549,
+            [[".specs/HOS-1352-billing-verticals-redesign/docs/06-mp-validation-matrix.md", "396"]]
+        ],
+        [
+            "04-catalogos.md",
+            9550,
+            9563,
+            [[".specs/HOS-1352-billing-verticals-redesign/docs/06-mp-validation-matrix.md", "397"]]
+        ],
+        [
+            "04-catalogos.md",
+            9564,
+            9577,
+            [[".specs/HOS-1352-billing-verticals-redesign/docs/06-mp-validation-matrix.md", "398"]]
+        ],
+        [
+            "04-catalogos.md",
+            9578,
+            9591,
+            [[".specs/HOS-1352-billing-verticals-redesign/docs/06-mp-validation-matrix.md", "399"]]
+        ],
+        [
+            "04-catalogos.md",
+            9592,
+            9605,
+            [[".specs/HOS-1352-billing-verticals-redesign/docs/06-mp-validation-matrix.md", "400"]]
+        ],
+        [
+            "04-catalogos.md",
+            9606,
+            9619,
+            [[".specs/HOS-1352-billing-verticals-redesign/docs/06-mp-validation-matrix.md", "401"]]
+        ],
+        [
+            "04-catalogos.md",
+            9620,
+            9633,
+            [[".specs/HOS-1352-billing-verticals-redesign/docs/06-mp-validation-matrix.md", "402"]]
+        ],
+        [
+            "04-catalogos.md",
+            9634,
+            9648,
+            [[".specs/HOS-1352-billing-verticals-redesign/docs/06-mp-validation-matrix.md", "403"]]
+        ],
+        [
+            "04-catalogos.md",
+            9649,
+            9662,
+            [[".specs/HOS-1352-billing-verticals-redesign/docs/06-mp-validation-matrix.md", "404"]]
+        ],
+        [
+            "04-catalogos.md",
+            9663,
+            9676,
+            [[".specs/HOS-1352-billing-verticals-redesign/docs/06-mp-validation-matrix.md", "405"]]
+        ],
+        [
+            "04-catalogos.md",
+            9677,
+            9690,
+            [[".specs/HOS-1352-billing-verticals-redesign/docs/06-mp-validation-matrix.md", "406"]]
+        ],
+        [
+            "04-catalogos.md",
+            9691,
+            9704,
+            [[".specs/HOS-1352-billing-verticals-redesign/docs/06-mp-validation-matrix.md", "407"]]
+        ],
+        [
+            "04-catalogos.md",
+            9705,
+            9718,
+            [[".specs/HOS-1352-billing-verticals-redesign/docs/06-mp-validation-matrix.md", "408"]]
+        ],
+        [
+            "04-catalogos.md",
+            9719,
+            9732,
+            [[".specs/HOS-1352-billing-verticals-redesign/docs/06-mp-validation-matrix.md", "409"]]
+        ],
+        [
+            "04-catalogos.md",
+            9733,
+            9746,
+            [[".specs/HOS-1352-billing-verticals-redesign/docs/06-mp-validation-matrix.md", "410"]]
+        ],
+        [
+            "04-catalogos.md",
+            9747,
+            9760,
+            [[".specs/HOS-1352-billing-verticals-redesign/docs/06-mp-validation-matrix.md", "411"]]
+        ],
+        [
+            "04-catalogos.md",
+            9761,
+            9774,
+            [[".specs/HOS-1352-billing-verticals-redesign/docs/06-mp-validation-matrix.md", "412"]]
+        ],
+        [
+            "04-catalogos.md",
+            9775,
+            9788,
+            [[".specs/HOS-1352-billing-verticals-redesign/docs/06-mp-validation-matrix.md", "413"]]
+        ],
+        [
+            "04-catalogos.md",
+            9789,
+            9802,
+            [[".specs/HOS-1352-billing-verticals-redesign/docs/06-mp-validation-matrix.md", "414"]]
+        ],
+        [
+            "04-catalogos.md",
+            9803,
+            9816,
+            [[".specs/HOS-1352-billing-verticals-redesign/docs/06-mp-validation-matrix.md", "415"]]
+        ],
+        [
+            "04-catalogos.md",
+            9817,
+            9830,
+            [[".specs/HOS-1352-billing-verticals-redesign/docs/06-mp-validation-matrix.md", "416"]]
+        ],
+        [
+            "04-catalogos.md",
+            9831,
+            9843,
+            [[".specs/HOS-1352-billing-verticals-redesign/docs/06-mp-validation-matrix.md", "438"]]
+        ],
+        [
+            "10-corte/B11.md",
+            76,
+            86,
+            [[".specs/HOS-1354-billing-cobro-y-proveedor/docs/09-conciliacion.md", "12"]]
+        ],
+        [
+            "10-corte/B11.md",
+            87,
+            107,
+            [[".specs/HOS-1354-billing-cobro-y-proveedor/docs/09-conciliacion.md", "23"]]
+        ],
+        [
+            "10-corte/B11.md",
+            108,
+            120,
+            [
+                [".specs/HOS-1354-billing-cobro-y-proveedor/docs/09-conciliacion.md", "44"],
+                [".specs/HOS-1354-billing-cobro-y-proveedor/docs/09-conciliacion.md", "46"]
+            ]
+        ],
+        [
+            "10-corte/B11.md",
+            121,
+            135,
+            [[".specs/HOS-1354-billing-cobro-y-proveedor/docs/09-conciliacion.md", "55"]]
+        ],
+        [
+            "10-corte/B11.md",
+            136,
+            152,
+            [[".specs/HOS-1354-billing-cobro-y-proveedor/docs/09-conciliacion.md", "68"]]
+        ],
+        [
+            "10-corte/B11.md",
+            153,
+            239,
+            [[".specs/HOS-1354-billing-cobro-y-proveedor/docs/09-conciliacion.md", "83"]]
+        ],
+        [
+            "10-corte/B11.md",
+            240,
+            994,
+            [[".specs/HOS-1354-billing-cobro-y-proveedor/docs/09-conciliacion.md", "176"]]
+        ],
+        [
+            "10-corte/B11.md",
+            995,
+            1049,
+            [[".specs/HOS-1354-billing-cobro-y-proveedor/docs/09-conciliacion.md", "967"]]
+        ],
+        [
+            "10-corte/B11.md",
+            1050,
+            1073,
+            [[".specs/HOS-1354-billing-cobro-y-proveedor/docs/09-conciliacion.md", "1022"]]
+        ],
+        [
+            "10-corte/B11.md",
+            1074,
+            1108,
+            [[".specs/HOS-1354-billing-cobro-y-proveedor/docs/09-conciliacion.md", "1046"]]
+        ],
+        [
+            "10-corte/B11.md",
+            1109,
+            1141,
+            [[".specs/HOS-1354-billing-cobro-y-proveedor/docs/09-conciliacion.md", "1083"]]
+        ],
+        [
+            "10-corte/B11.md",
+            1142,
+            1188,
+            [[".specs/HOS-1354-billing-cobro-y-proveedor/docs/09-conciliacion.md", "1115"]]
+        ],
+        [
+            "10-corte/B11.md",
+            1189,
+            1315,
+            [[".specs/HOS-1354-billing-cobro-y-proveedor/docs/09-conciliacion.md", "1166"]]
+        ],
+        [
+            "10-corte/B13a.md",
+            55,
+            65,
+            [[".specs/HOS-1354-billing-cobro-y-proveedor/docs/19-superficies.md", "12"]]
+        ],
+        [
+            "10-corte/B13a.md",
+            66,
+            82,
+            [[".specs/HOS-1354-billing-cobro-y-proveedor/docs/19-superficies.md", "23"]]
+        ],
+        [
+            "10-corte/B13a.md",
+            83,
+            96,
+            [[".specs/HOS-1354-billing-cobro-y-proveedor/docs/19-superficies.md", "40"]]
+        ],
+        [
+            "10-corte/B13a.md",
+            97,
+            113,
+            [[".specs/HOS-1354-billing-cobro-y-proveedor/docs/19-superficies.md", "54"]]
+        ],
+        [
+            "10-corte/B13a.md",
+            114,
+            141,
+            [[".specs/HOS-1354-billing-cobro-y-proveedor/docs/19-superficies.md", "69"]]
+        ],
+        [
+            "10-corte/B13a.md",
+            142,
+            210,
+            [[".specs/HOS-1354-billing-cobro-y-proveedor/docs/19-superficies.md", "97"]]
+        ],
+        [
+            "10-corte/B13a.md",
+            211,
+            220,
+            [[".specs/HOS-1354-billing-cobro-y-proveedor/docs/19-superficies.md", "161"]]
+        ],
+        [
+            "10-corte/B13a.md",
+            221,
+            253,
+            [[".specs/HOS-1354-billing-cobro-y-proveedor/docs/19-superficies.md", "171"]]
+        ],
+        [
+            "10-corte/B13a.md",
+            254,
+            350,
+            [[".specs/HOS-1354-billing-cobro-y-proveedor/docs/19-superficies.md", "204"]]
+        ],
+        [
+            "10-corte/B13a.md",
+            351,
+            371,
+            [[".specs/HOS-1354-billing-cobro-y-proveedor/docs/19-superficies.md", "301"]]
+        ],
+        [
+            "10-corte/B13a.md",
+            372,
+            391,
+            [[".specs/HOS-1354-billing-cobro-y-proveedor/docs/19-superficies.md", "327"]]
+        ],
+        [
+            "10-corte/B13a.md",
+            392,
+            398,
+            [[".specs/HOS-1354-billing-cobro-y-proveedor/docs/22-lo-legal.md", "33"]]
+        ],
+        [
+            "10-corte/B13a.md",
+            399,
+            412,
+            [[".specs/HOS-1354-billing-cobro-y-proveedor/docs/22-lo-legal.md", "38"]]
+        ],
+        [
+            "10-corte/B13a.md",
+            413,
+            436,
+            [[".specs/HOS-1354-billing-cobro-y-proveedor/docs/22-lo-legal.md", "50"]]
+        ],
+        [
+            "10-corte/B13a.md",
+            437,
+            443,
+            [[".specs/HOS-1354-billing-cobro-y-proveedor/docs/22-lo-legal.md", "72"]]
+        ],
+        [
+            "10-corte/B9a.md",
+            60,
+            74,
+            [
+                [
+                    ".specs/HOS-1354-billing-cobro-y-proveedor/docs/14-promos-cortesias-y-grants.md",
+                    "17"
+                ]
+            ]
+        ],
+        [
+            "10-corte/B9a.md",
+            75,
+            90,
+            [
+                [
+                    ".specs/HOS-1354-billing-cobro-y-proveedor/docs/14-promos-cortesias-y-grants.md",
+                    "32"
+                ],
+                [
+                    ".specs/HOS-1354-billing-cobro-y-proveedor/docs/14-promos-cortesias-y-grants.md",
+                    "34"
+                ]
+            ]
+        ],
+        [
+            "10-corte/B9a.md",
+            91,
+            102,
+            [
+                [
+                    ".specs/HOS-1354-billing-cobro-y-proveedor/docs/14-promos-cortesias-y-grants.md",
+                    "46"
+                ]
+            ]
+        ],
+        [
+            "10-corte/B9a.md",
+            103,
+            131,
+            [
+                [
+                    ".specs/HOS-1354-billing-cobro-y-proveedor/docs/14-promos-cortesias-y-grants.md",
+                    "66"
+                ]
+            ]
+        ],
+        [
+            "10-corte/B9a.md",
+            132,
+            156,
+            [
+                [
+                    ".specs/HOS-1354-billing-cobro-y-proveedor/docs/14-promos-cortesias-y-grants.md",
+                    "99"
+                ],
+                [
+                    ".specs/HOS-1354-billing-cobro-y-proveedor/docs/14-promos-cortesias-y-grants.md",
+                    "101"
+                ]
+            ]
+        ],
+        [
+            "10-corte/B9a.md",
+            157,
+            207,
+            [
+                [
+                    ".specs/HOS-1354-billing-cobro-y-proveedor/docs/14-promos-cortesias-y-grants.md",
+                    "122"
+                ]
+            ]
+        ],
+        [
+            "10-corte/B9a.md",
+            208,
+            222,
+            [
+                [
+                    ".specs/HOS-1354-billing-cobro-y-proveedor/docs/14-promos-cortesias-y-grants.md",
+                    "209"
+                ]
+            ]
+        ],
+        [
+            "10-corte/B9a.md",
+            223,
+            319,
+            [
+                [
+                    ".specs/HOS-1354-billing-cobro-y-proveedor/docs/14-promos-cortesias-y-grants.md",
+                    "234"
+                ]
+            ]
+        ],
+        [
+            "10-corte/B9a.md",
+            320,
+            332,
+            [
+                [
+                    ".specs/HOS-1354-billing-cobro-y-proveedor/docs/14-promos-cortesias-y-grants.md",
+                    "337"
+                ]
+            ]
+        ],
+        [
+            "10-corte/B9a.md",
+            333,
+            341,
+            [
+                [
+                    ".specs/HOS-1354-billing-cobro-y-proveedor/docs/14-promos-cortesias-y-grants.md",
+                    "350"
+                ],
+                [
+                    ".specs/HOS-1354-billing-cobro-y-proveedor/docs/14-promos-cortesias-y-grants.md",
+                    "352"
+                ]
+            ]
+        ],
+        [
+            "10-corte/B9a.md",
+            342,
+            359,
+            [
+                [
+                    ".specs/HOS-1354-billing-cobro-y-proveedor/docs/14-promos-cortesias-y-grants.md",
+                    "357"
+                ]
+            ]
+        ],
+        [
+            "10-corte/B9a.md",
+            360,
+            372,
+            [
+                [
+                    ".specs/HOS-1354-billing-cobro-y-proveedor/docs/14-promos-cortesias-y-grants.md",
+                    "374"
+                ]
+            ]
+        ],
+        [
+            "10-corte/B9a.md",
+            373,
+            380,
+            [
+                [
+                    ".specs/HOS-1354-billing-cobro-y-proveedor/docs/14-promos-cortesias-y-grants.md",
+                    "385"
+                ]
+            ]
+        ],
+        [
+            "10-corte/B9a.md",
+            381,
+            390,
+            [
+                [
+                    ".specs/HOS-1354-billing-cobro-y-proveedor/docs/14-promos-cortesias-y-grants.md",
+                    "393"
+                ],
+                [
+                    ".specs/HOS-1354-billing-cobro-y-proveedor/docs/14-promos-cortesias-y-grants.md",
+                    "395"
+                ]
+            ]
+        ],
+        [
+            "10-corte/B9a.md",
+            391,
+            407,
+            [
+                [
+                    ".specs/HOS-1354-billing-cobro-y-proveedor/docs/14-promos-cortesias-y-grants.md",
+                    "401"
+                ]
+            ]
+        ],
+        [
+            "10-corte/B9a.md",
+            408,
+            447,
+            [
+                [
+                    ".specs/HOS-1354-billing-cobro-y-proveedor/docs/14-promos-cortesias-y-grants.md",
+                    "416"
+                ]
+            ]
+        ],
+        [
+            "10-corte/B9a.md",
+            448,
+            492,
+            [
+                [
+                    ".specs/HOS-1354-billing-cobro-y-proveedor/docs/14-promos-cortesias-y-grants.md",
+                    "454"
+                ]
+            ]
+        ],
+        [
+            "10-corte/B9a.md",
+            493,
+            537,
+            [
+                [
+                    ".specs/HOS-1354-billing-cobro-y-proveedor/docs/14-promos-cortesias-y-grants.md",
+                    "502"
+                ]
+            ]
+        ],
+        [
+            "10-corte/B9a.md",
+            538,
+            607,
+            [
+                [
+                    ".specs/HOS-1354-billing-cobro-y-proveedor/docs/14-promos-cortesias-y-grants.md",
+                    "545"
+                ]
+            ]
+        ],
+        [
+            "10-corte/B9a.md",
+            608,
+            630,
+            [
+                [
+                    ".specs/HOS-1354-billing-cobro-y-proveedor/docs/14-promos-cortesias-y-grants.md",
+                    "613"
+                ]
+            ]
+        ],
+        [
+            "10-corte/B9a.md",
+            631,
+            640,
+            [
+                [
+                    ".specs/HOS-1354-billing-cobro-y-proveedor/docs/14-promos-cortesias-y-grants.md",
+                    "634"
+                ]
+            ]
+        ],
+        [
+            "10-corte/B9a.md",
+            641,
+            679,
+            [
+                [
+                    ".specs/HOS-1354-billing-cobro-y-proveedor/docs/14-promos-cortesias-y-grants.md",
+                    "645"
+                ]
+            ]
+        ],
+        [
+            "10-corte/B9a.md",
+            680,
+            713,
+            [
+                [
+                    ".specs/HOS-1354-billing-cobro-y-proveedor/docs/14-promos-cortesias-y-grants.md",
+                    "685"
+                ]
+            ]
+        ],
+        [
+            "20-fase-2/B8b.md",
+            54,
+            86,
+            [
+                [".specs/HOS-1354-billing-cobro-y-proveedor/docs/12-suscripcion.md", "185"],
+                [".specs/HOS-1354-billing-cobro-y-proveedor/docs/12-suscripcion.md", "187"]
+            ]
+        ],
+        [
+            "20-fase-2/B8b.md",
+            87,
+            128,
+            [[".specs/HOS-1354-billing-cobro-y-proveedor/docs/12-suscripcion.md", "216"]]
+        ],
+        [
+            "20-fase-2/B8b.md",
+            129,
+            146,
+            [[".specs/HOS-1354-billing-cobro-y-proveedor/docs/12-suscripcion.md", "256"]]
+        ],
+        [
+            "20-fase-2/B8b.md",
+            147,
+            161,
+            [
+                [".specs/HOS-1354-billing-cobro-y-proveedor/docs/12-suscripcion.md", "275"],
+                [".specs/HOS-1354-billing-cobro-y-proveedor/docs/12-suscripcion.md", "277"]
+            ]
+        ],
+        [
+            "20-fase-2/B8b.md",
+            162,
+            181,
+            [[".specs/HOS-1354-billing-cobro-y-proveedor/docs/12-suscripcion.md", "288"]]
+        ],
+        [
+            "20-fase-2/B8b.md",
+            182,
+            192,
+            [
+                [".specs/HOS-1354-billing-cobro-y-proveedor/docs/12-suscripcion.md", "1012"],
+                [".specs/HOS-1354-billing-cobro-y-proveedor/docs/12-suscripcion.md", "1014"]
+            ]
+        ],
+        [
+            "20-fase-2/B8b.md",
+            193,
+            203,
+            [[".specs/HOS-1354-billing-cobro-y-proveedor/docs/12-suscripcion.md", "1021"]]
+        ],
+        [
+            "20-fase-2/B8b.md",
+            204,
+            215,
+            [[".specs/HOS-1354-billing-cobro-y-proveedor/docs/12-suscripcion.md", "1030"]]
+        ],
+        [
+            "20-fase-2/B8b.md",
+            216,
+            224,
+            [[".specs/HOS-1354-billing-cobro-y-proveedor/docs/12-suscripcion.md", "1040"]]
+        ],
+        [
+            "20-fase-2/B8b.md",
+            225,
+            237,
+            [
+                [".specs/HOS-1354-billing-cobro-y-proveedor/docs/12-suscripcion.md", "1049"],
+                [".specs/HOS-1354-billing-cobro-y-proveedor/docs/12-suscripcion.md", "1051"]
+            ]
+        ],
+        [
+            "20-fase-2/B8b.md",
+            238,
+            268,
+            [[".specs/HOS-1354-billing-cobro-y-proveedor/docs/12-suscripcion.md", "1060"]]
+        ],
+        [
+            "20-fase-2/B8b.md",
+            269,
+            283,
+            [[".specs/HOS-1354-billing-cobro-y-proveedor/docs/12-suscripcion.md", "1089"]]
+        ],
+        [
+            "20-fase-2/B8b.md",
+            284,
+            338,
+            [[".specs/HOS-1354-billing-cobro-y-proveedor/docs/02-modelo-de-datos.md", "1179"]]
+        ],
+        [
+            "20-fase-3/B10.md",
+            91,
+            98,
+            [[".specs/HOS-1354-billing-cobro-y-proveedor/docs/16-addons.md", "17"]]
+        ],
+        [
+            "20-fase-3/B10.md",
+            99,
+            113,
+            [
+                [".specs/HOS-1354-billing-cobro-y-proveedor/docs/16-addons.md", "25"],
+                [".specs/HOS-1354-billing-cobro-y-proveedor/docs/16-addons.md", "27"]
+            ]
+        ],
+        [
+            "20-fase-3/B10.md",
+            114,
+            130,
+            [[".specs/HOS-1354-billing-cobro-y-proveedor/docs/16-addons.md", "38"]]
+        ],
+        [
+            "20-fase-3/B10.md",
+            131,
+            150,
+            [[".specs/HOS-1354-billing-cobro-y-proveedor/docs/16-addons.md", "53"]]
+        ],
+        [
+            "20-fase-3/B10.md",
+            151,
+            229,
+            [[".specs/HOS-1354-billing-cobro-y-proveedor/docs/16-addons.md", "71"]]
+        ],
+        [
+            "20-fase-3/B10.md",
+            230,
+            239,
+            [
+                [".specs/HOS-1354-billing-cobro-y-proveedor/docs/16-addons.md", "164"],
+                [".specs/HOS-1354-billing-cobro-y-proveedor/docs/16-addons.md", "166"]
+            ]
+        ],
+        [
+            "20-fase-3/B10.md",
+            240,
+            255,
+            [[".specs/HOS-1354-billing-cobro-y-proveedor/docs/16-addons.md", "172"]]
+        ],
+        [
+            "20-fase-3/B10.md",
+            256,
+            266,
+            [[".specs/HOS-1354-billing-cobro-y-proveedor/docs/16-addons.md", "186"]]
+        ],
+        [
+            "20-fase-3/B10.md",
+            267,
+            292,
+            [[".specs/HOS-1354-billing-cobro-y-proveedor/docs/16-addons.md", "200"]]
+        ],
+        [
+            "20-fase-3/B10.md",
+            293,
+            302,
+            [[".specs/HOS-1354-billing-cobro-y-proveedor/docs/16-addons.md", "226"]]
+        ],
+        [
+            "20-fase-3/B10.md",
+            303,
+            318,
+            [[".specs/HOS-1354-billing-cobro-y-proveedor/docs/16-addons.md", "234"]]
+        ],
+        [
+            "20-fase-3/B10.md",
+            319,
+            335,
+            [[".specs/HOS-1354-billing-cobro-y-proveedor/docs/16-addons.md", "248"]]
+        ],
+        [
+            "20-fase-3/B10.md",
+            336,
+            411,
+            [[".specs/HOS-1354-billing-cobro-y-proveedor/docs/16-addons.md", "263"]]
+        ],
+        [
+            "20-fase-3/B10.md",
+            412,
+            435,
+            [[".specs/HOS-1354-billing-cobro-y-proveedor/docs/16-addons.md", "337"]]
+        ],
+        [
+            "20-fase-3/B10.md",
+            436,
+            480,
+            [[".specs/HOS-1354-billing-cobro-y-proveedor/docs/16-addons.md", "359"]]
+        ],
+        [
+            "20-fase-3/B10.md",
+            481,
+            496,
+            [[".specs/HOS-1354-billing-cobro-y-proveedor/docs/16-addons.md", "402"]]
+        ],
+        [
+            "20-fase-3/B10.md",
+            497,
+            516,
+            [[".specs/HOS-1354-billing-cobro-y-proveedor/docs/16-addons.md", "416"]]
+        ],
+        [
+            "20-fase-3/B10.md",
+            517,
+            548,
+            [[".specs/HOS-1354-billing-cobro-y-proveedor/docs/16-addons.md", "434"]]
+        ],
+        [
+            "20-fase-3/B10.md",
+            549,
+            569,
+            [
+                [".specs/HOS-1354-billing-cobro-y-proveedor/docs/16-addons.md", "466"],
+                [".specs/HOS-1354-billing-cobro-y-proveedor/docs/16-addons.md", "468"]
+            ]
+        ],
+        [
+            "20-fase-3/B10.md",
+            570,
+            825,
+            [[".specs/HOS-1354-billing-cobro-y-proveedor/docs/16-addons.md", "485"]]
+        ],
+        [
+            "20-fase-3/B10.md",
+            826,
+            982,
+            [[".specs/HOS-1354-billing-cobro-y-proveedor/docs/16-addons.md", "758"]]
+        ],
+        [
+            "20-fase-3/B10.md",
+            983,
+            1094,
+            [[".specs/HOS-1354-billing-cobro-y-proveedor/docs/16-addons.md", "921"]]
+        ],
+        [
+            "20-fase-3/B10.md",
+            1095,
+            1209,
+            [[".specs/HOS-1354-billing-cobro-y-proveedor/docs/16-addons.md", "1039"]]
+        ],
+        [
+            "20-fase-3/B12.md",
+            66,
+            77,
+            [
+                [
+                    ".specs/HOS-1354-billing-cobro-y-proveedor/docs/10-verticales-planes-billing-options.md",
+                    "30"
+                ],
+                [
+                    ".specs/HOS-1354-billing-cobro-y-proveedor/docs/10-verticales-planes-billing-options.md",
+                    "32"
+                ]
+            ]
+        ],
+        [
+            "20-fase-3/B12.md",
+            78,
+            96,
+            [
+                [
+                    ".specs/HOS-1354-billing-cobro-y-proveedor/docs/10-verticales-planes-billing-options.md",
+                    "40"
+                ]
+            ]
+        ],
+        [
+            "20-fase-3/B12.md",
+            97,
+            115,
+            [
+                [
+                    ".specs/HOS-1354-billing-cobro-y-proveedor/docs/10-verticales-planes-billing-options.md",
+                    "58"
+                ]
+            ]
+        ],
+        [
+            "20-fase-3/B12.md",
+            116,
+            136,
+            [
+                [
+                    ".specs/HOS-1354-billing-cobro-y-proveedor/docs/10-verticales-planes-billing-options.md",
+                    "75"
+                ]
+            ]
+        ],
+        [
+            "20-fase-3/B12.md",
+            137,
+            170,
+            [
+                [
+                    ".specs/HOS-1354-billing-cobro-y-proveedor/docs/10-verticales-planes-billing-options.md",
+                    "95"
+                ]
+            ]
+        ],
+        [
+            "20-fase-3/B12.md",
+            171,
+            186,
+            [
+                [
+                    ".specs/HOS-1354-billing-cobro-y-proveedor/docs/10-verticales-planes-billing-options.md",
+                    "130"
+                ]
+            ]
+        ],
+        [
+            "20-fase-3/B12.md",
+            187,
+            268,
+            [
+                [
+                    ".specs/HOS-1354-billing-cobro-y-proveedor/docs/10-verticales-planes-billing-options.md",
+                    "146"
+                ]
+            ]
+        ]
+    ]
+}

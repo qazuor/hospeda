@@ -28,7 +28,7 @@ describe('AmenityService.create', () => {
             en: 'A test amenity desc',
             pt: 'A test amenity desc'
         },
-        applicableVerticals: ['accommodation'] as ('gastronomy' | 'experience' | 'accommodation')[],
+        applicableVerticals: ['accommodation'] as ('venue' | 'experience' | 'accommodation')[],
         isFeatured: false,
         lifecycleState: 'ACTIVE' as any,
         isBuiltin: false,
@@ -106,11 +106,7 @@ describe('AmenityService.create', () => {
         const minimalInput = {
             slug: 'minimal-amenity',
             type: AmenitiesTypeEnum.GENERAL_APPLIANCES,
-            applicableVerticals: ['accommodation'] as (
-                | 'gastronomy'
-                | 'experience'
-                | 'accommodation'
-            )[],
+            applicableVerticals: ['accommodation'] as ('venue' | 'experience' | 'accommodation')[],
             isFeatured: false,
             lifecycleState: 'ACTIVE' as any,
             isBuiltin: false,

@@ -138,6 +138,8 @@ export function captureServerAnalyticsEvent<TName extends AnalyticsEventName>(in
     distinctId: string;
     name: TName;
     properties: AnalyticsEventProperties<TName>;
+    uuid?: string;
+    timestamp?: Date;
 }): void {
     serverAnalytics.capture(input);
 }

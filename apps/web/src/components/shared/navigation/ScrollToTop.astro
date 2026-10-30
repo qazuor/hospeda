@@ -23,6 +23,7 @@ const { t } = createTranslations(locale);
 <button
   id="scroll-to-top"
   transition:persist="scroll-to-top"
+  data-dock-item
   aria-label={t('common.scrollToTop')}
   class="scroll-to-top"
 >
@@ -137,13 +138,22 @@ const { t } = createTranslations(locale);
     transition: color var(--duration-normal) ease;
   }
 
-  /* Mobile: 40px size, pushed up to avoid hero overlap */
+  /* The button lives in the mobile dock, so it joins the row flow.
+     Keep the empty state out of the row until the scroll threshold reveals it. */
   @media (max-width: 767px) {
     .scroll-to-top {
+      /* Relative, not static: the progress ring is position:absolute and must
+         anchor to this button instead of the fixed dock. Relative honours
+         offsets, so the desktop bottom/right must be reset or the button
+         shifts onto its neighbour. */
+      position: relative;
+      inset: auto;
       height: 44px;
       width: 44px;
-      bottom: 4rem;
-      right: 1rem;
+    }
+
+    .scroll-to-top:not(.scroll-to-top--visible) {
+      display: none;
     }
 
     .scroll-to-top__arrow {

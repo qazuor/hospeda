@@ -40,7 +40,7 @@ export const HHmmSchema = z
  * is unchanged — still two plain `HH:mm` strings, no day offset, no duration —
  * because the wrap is derivable from the pair alone, and every consumer that
  * needs it already derives it (see `computeOpenNowStatus` in
- * `apps/web/src/lib/gastronomy-hours.ts`, which has handled the wrap since
+ * `apps/web/src/lib/venue-hours.ts`, which has handled the wrap since
  * SPEC-239).
  *
  * The ONE remaining rule is `close !== open`, kept because that pair is
@@ -103,7 +103,7 @@ export type Shift = z.infer<typeof ShiftSchema>;
  * every UNTOUCHED day in the opening-hours editor persisted on save, which
  * reads as "open with no hours" to anyone inspecting the row even though the
  * host never made that choice. The public read side (`computeOpenNowStatus`
- * in `apps/web/src/lib/gastronomy-hours.ts`) already treats an empty `shifts`
+ * in `apps/web/src/lib/venue-hours.ts`) already treats an empty `shifts`
  * array as closed regardless of the `closed` flag, so this refine makes the
  * write side agree with the read side instead of persisting a value neither
  * side can act on.
@@ -156,7 +156,7 @@ export type DaySchedule = z.infer<typeof DayScheduleSchema>;
 // ============================================================================
 
 /**
- * Full weekly opening-hours schema for a commerce listing.
+ * Full weekly opening-hours schema for a venue or experience listing.
  *
  * Contains a schedule object with seven day keys (`mon` through `sun`),
  * each following {@link DayScheduleSchema}. Optional timezone, notes, and
@@ -224,7 +224,7 @@ export type OpeningHours = z.infer<typeof OpeningHoursSchema>;
  *
  * @example
  * ```ts
- * const GastronomySchema = z.object({
+ * const VenueSchema = z.object({
  *   id: z.string().uuid(),
  *   name: z.string(),
  *   ...OpeningHoursFields,
@@ -233,7 +233,7 @@ export type OpeningHours = z.infer<typeof OpeningHoursSchema>;
  */
 export const OpeningHoursFields = {
     /**
-     * Weekly operating hours for this commerce listing.
+     * Weekly operating hours for this listing.
      * Uses `.nullish()` (not just `.optional()`) because Drizzle/pg returns
      * `null` for unset JSONB columns — Zod `.optional()` only accepts `undefined`.
      * SPEC-240: discovered via smoke test (T-039) when public endpoint returned 500.

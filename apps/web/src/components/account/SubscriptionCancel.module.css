@@ -1,0 +1,83 @@
+.flow {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--space-2, 0.5rem);
+    width: 100%;
+    color: var(--core-foreground);
+}
+
+.flow p,
+.flow h3 {
+    width: 100%;
+    margin: 0;
+    line-height: 1.5;
+}
+.flow ul {
+    width: 100%;
+    margin: 0;
+    padding-inline-start: 1.25rem;
+}
+.note {
+    margin: 0;
+    color: var(--core-muted-foreground);
+}
+.open {
+    composes: danger from "./AccountButton.module.css";
+    align-self: flex-start;
+}
+.confirm {
+    composes: dangerSolid from "./AccountButton.module.css";
+}
+.back {
+    composes: ghost from "./AccountButton.module.css";
+}
+.retry {
+    composes: secondary from "./AccountButton.module.css";
+}
+.actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-2, 0.5rem);
+    width: 100%;
+}
+.panel {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2, 0.5rem);
+    width: 100%;
+    padding: var(--space-3, 0.75rem) var(--space-4, 1rem);
+    background-color: var(--surface-warm);
+    border: 1px solid var(--border);
+    border-left: 4px solid var(--destructive);
+    border-radius: var(--radius-md, 12px);
+    color: var(--core-foreground);
+}
+.panel p,
+.panel h4 {
+    margin: 0;
+    line-height: 1.5;
+}
+.panel ul {
+    width: 100%;
+    margin: 0;
+    padding-inline-start: 1.25rem;
+}
+.heading {
+    font-size: 1rem;
+    font-weight: 600;
+}
+.reason {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-1, 0.25rem);
+    width: 100%;
+}
+.reason select {
+    min-height: 2.5rem;
+    padding: var(--space-2, 0.5rem);
+    color: var(--core-foreground);
+    background-color: var(--surface-warm);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-md, 12px);
+}

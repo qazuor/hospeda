@@ -1,0 +1,19 @@
+# VB-08 · spec → fuente · 10-corte/B1.md, 10-corte/B2.md, 10-corte/B3.md
+
+## Hallazgos
+
+10-corte/B1.md:310 · «producción no arranca sin la autorización que custodia el owner» · más débil que .specs/HOS-1354-billing-cobro-y-proveedor/docs/20-testing.md:670 («La autorización la custodia el owner y la renueva cada mes: sin la del mes en curso, la corrida de producción no arranca»). AC:B1:15 omite la vigencia mensual; AC:B1:18 y TEST:B1:16 tampoco exigen rechazar la autorización de un mes anterior. Permite implementar una autorización permanente para las corridas productivas. La precisión vigente de DEC-TEST-003 conserva la renovación mensual en .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:7210. · BLOQUEA
+
+10-corte/B1.md:359 · «toda sonda o mutación abre con `GET /users/me`» · más fuerte que .specs/HOS-1354-billing-cobro-y-proveedor/docs/06-proveedor.md:402 («toda sonda que mute abre con `GET /users/me`»). AC:B1:20 extiende el requisito y su aborto a sondas de sólo lectura; la fuente lo impone a las mutaciones (también en :218) y la batería hereda ese alcance (:408; docs/20-testing.md:672). La propia tabla de B1.md:635 conserva «toda sonda que mute», mientras B1.md:768 repite la ampliación. La inferencia declarada explica abortar ante una cuenta equivocada, pero no sustenta ampliar el conjunto de operaciones sujetas al guard. · BLOQUEA
+
+10-corte/B2.md:113 · «un precio con decimales **se puede guardar**» · contradice .specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:1063 («un precio con decimales **no se puede guardar**»). Invierte el criterio de salida de B2 y contradice AC:B2:1 (B2.md:137), AC:B2:9 (B2.md:239) y TEST:B2:2 (B2.md:415), que exigen rechazarlo. BM, CC y CF precisan el cambio de precio y su reparto, sin autorizar decimales. · BLOQUEA
+
+10-corte/B3.md:1020 · «Después de abandonar un checkout, la cuenta debe esperar una hora para abrir otro en la misma vertical, aun si el anterior ya quedó cancelado en el proveedor.» · sin soporte: agrega una guarda temporal de una hora que no existe en S1 (.specs/HOS-1354-billing-cobro-y-proveedor/docs/03-maquinas-de-estado.md:151), en la regla de reintento (:1574) ni en las decisiones posteriores del log y del owner. La fuente :1458 dice «Volver a intentar crea una fila nueva, con clave de idempotencia nueva» una vez vencida la ventana y cancelado el preapproval; AC:B3:12 (B3.md:349) y TEST:B3:13 (B3.md:1156) mantienen ese camino sin espera adicional. Implementar la frase bloquearía durante una hora un alta que la fuente admite. · BLOQUEA
+
+## Resumen
+
+| archivo | líneas recorridas | afirmaciones normativas revisadas (aprox.) | BLOQUEA | MENOR |
+|---|---|---|---|---|
+| 10-corte/B1.md | 1–991 | 250 | 2 | 0 |
+| 10-corte/B2.md | 1–558 | 150 | 1 | 0 |
+| 10-corte/B3.md | 1–1482 | 350 | 1 | 0 |

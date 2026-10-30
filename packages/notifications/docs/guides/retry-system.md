@@ -176,7 +176,7 @@ const notificationService = new NotificationService({
 
 ## Delivery Logging
 
-All notification attempts are logged to the `billing_notification_log` table in PostgreSQL:
+All notification attempts are logged to the `notification_log` table in PostgreSQL:
 
 | Column | Type | Description |
 |--------|------|-------------|

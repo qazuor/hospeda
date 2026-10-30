@@ -1,3 +1,4 @@
+import type { ProtectedEffectiveSetResponse } from '@repo/schemas';
 /**
  * Centralized API response to card component prop transformations.
  *
@@ -25,16 +26,16 @@ import type {
     ExperienceContactInfo,
     ExperienceDetailData,
     ExperienceSocialNetworks,
-    GastronomyCardData,
-    GastronomyDailySpecial,
-    GastronomyDetailData,
-    GastronomyMenuSection,
-    GastronomyOpeningHoursEntry,
-    GastronomySocialNetworks,
-    GastronomyVenueEvent,
     PartnerData,
     PartnerDetailData,
-    ReviewCardData
+    ReviewCardData,
+    VenueCardData,
+    VenueDailySpecial,
+    VenueDetailData,
+    VenueEvent,
+    VenueMenuSection,
+    VenueOpeningHoursEntry,
+    VenueSocialNetworks
 } from '@/data/types';
 import { getInitialsFromName } from '../avatar-utils';
 import { webLogger } from '../logger';
@@ -67,9 +68,9 @@ export type {
     EventLocation,
     ExperienceCardData,
     ExperienceDetailData,
-    GastronomyCardData,
-    GastronomyDetailData,
-    ReviewCardData
+    ReviewCardData,
+    VenueCardData,
+    VenueDetailData
 } from '@/data/types';
 
 /**
@@ -113,7 +114,7 @@ function resolveFaqField(
 
 /**
  * Shared FAQ normalizer for every entity detail transform (accommodation,
- * destination, experience, gastronomy) — HOS-117. Resolves the localized
+ * destination, experience, venue) — HOS-117. Resolves the localized
  * `questionI18n`/`answerI18n` fields for `locale`, falling back to the legacy
  * Spanish `question`/`answer` text when a translation is absent, and records
  * the language the text actually resolved to in `resolvedLocale`.
@@ -1953,7 +1954,7 @@ export function transformAccommodationEdit({
     return {
         id: String(item.id ?? ''),
         slug: String(item.slug ?? ''),
-        lifecycleState: String(item.lifecycleState ?? 'DRAFT'),
+        publicationStatus: String(item.publicationStatus ?? 'DRAFT'),
         name: String(item.name ?? ''),
         summary: String(item.summary ?? ''),
         description: String(item.description ?? ''),
@@ -2599,7 +2600,7 @@ export function transformEventEditDetail({
 }
 
 // ---------------------------------------------------------------------------
-// Gastronomy transforms (SPEC-239)
+// Venue transforms (SPEC-239)
 // ---------------------------------------------------------------------------
 
 /**
@@ -2628,12 +2629,12 @@ const OPENING_HOURS_DAY_KEY: Readonly<Record<string, string>> = {
  *
  * Returns `null` when absent or in an unexpected shape.
  */
-function normalizeOpeningHours(raw: unknown): Record<string, GastronomyOpeningHoursEntry> | null {
+function normalizeOpeningHours(raw: unknown): Record<string, VenueOpeningHoursEntry> | null {
     if (!raw || typeof raw !== 'object' || Array.isArray(raw)) return null;
     const days = (raw as Record<string, unknown>).days;
     if (!days || typeof days !== 'object' || Array.isArray(days)) return null;
 
-    const result: Record<string, GastronomyOpeningHoursEntry> = {};
+    const result: Record<string, VenueOpeningHoursEntry> = {};
     for (const [abbr, value] of Object.entries(days as Record<string, unknown>)) {
         const dayKey = OPENING_HOURS_DAY_KEY[abbr];
         if (!dayKey || !value || typeof value !== 'object' || Array.isArray(value)) continue;
@@ -2659,11 +2660,11 @@ function normalizeOpeningHours(raw: unknown): Record<string, GastronomyOpeningHo
  * Returns `null` when absent or empty.
  *
  * NOTE (HOS-1076): `whatsapp` is deliberately NOT read here, even though a raw
- * payload could carry one (belt and braces — see `GastronomySocialNetworks`).
- * Gastronomy's `socialNetworks` shape (`SocialNetworkSchema`) has never had a
+ * payload could carry one (belt and braces — see `VenueSocialNetworks`).
+ * Venue's `socialNetworks` shape (`SocialNetworkSchema`) has never had a
  * `whatsapp` field, so this key must never be forwarded to the render layer.
  */
-function normalizeSocialNetworks(raw: unknown): GastronomySocialNetworks | null {
+function normalizeSocialNetworks(raw: unknown): VenueSocialNetworks | null {
     if (!raw || typeof raw !== 'object' || Array.isArray(raw)) return null;
     const obj = raw as Record<string, unknown>;
     return {
@@ -2677,29 +2678,29 @@ function normalizeSocialNetworks(raw: unknown): GastronomySocialNetworks | null 
 }
 
 /**
- * Transforms a raw API gastronomy item to GastronomyCardData props.
+ * Transforms a raw API venue item to VenueCardData props.
  *
- * Maps the `GastronomyPublic` fields from the public list/detail API response
- * to the clean `GastronomyCardData` interface consumed by card components.
+ * Maps the `VenuePublic` fields from the public list/detail API response
+ * to the clean `VenueCardData` interface consumed by card components.
  * Components MUST NOT read raw API data directly.
  *
- * @param item - Raw gastronomy object from the API
+ * @param item - Raw venue object from the API
  * @param locale - Active locale for i18n field resolution
- * @returns Typed GastronomyCardData for the card component
+ * @returns Typed VenueCardData for the card component
  */
-export function toGastronomyCardProps({
+export function toVenueCardProps({
     item,
     locale = 'es'
 }: {
     readonly item: Record<string, unknown>;
     readonly locale?: string;
-}): GastronomyCardData {
+}): VenueCardData {
     const { featuredImage } = processEntityImages({
         item,
-        entity: 'gastronomy',
+        entity: 'venue',
         id: String(item.id || ''),
         extract: true,
-        fallback: '/assets/images/placeholder-gastronomy.svg'
+        fallback: '/assets/images/placeholder-venue.svg'
     });
 
     // Resolve destination name from API join (destinationId is the FK)
@@ -2715,7 +2716,7 @@ export function toGastronomyCardProps({
         id: String(item.id || ''),
         slug: String(item.slug || ''),
         // Fall back to the legacy flat `name` when the i18n map resolves empty.
-        // Some gastronomy rows carry an empty `nameI18n` ({es:'',en:'',pt:''})
+        // Some venue rows carry an empty `nameI18n` ({es:'',en:'',pt:''})
         // while `name` holds the real value; without this guard the card and
         // detail headings render empty (a11y empty-heading violation, SPEC-308).
         // HOS-802: this used to be an inline `||` guard duplicated at every
@@ -2755,7 +2756,7 @@ export function toGastronomyCardProps({
 }
 
 /**
- * Maps the catalog-joined `amenities` array a commerce detail payload carries
+ * Maps the catalog-joined `amenities` array a venue/experience detail payload carries
  * into the item shape `AmenitiesGrid.astro` renders (HOS-1072).
  *
  * Two deliberate coercions, both matching what the accommodation transform
@@ -2765,11 +2766,11 @@ export function toGastronomyCardProps({
  *   (`accommodations.amenityNames.<slug>`). SPEC-266 dropped the catalog's
  *   `name` column, so a slug is the only identifier there is.
  * - `isOptional` / `additionalCost` / `displayWeight` are filled with inert
- *   values. The commerce junction tables have no such columns (see
- *   `CommerceListingAmenityPublicSchema`), so there is nothing to read; the
+ *   values. The venue/experience junction tables have no such columns (see
+ *   `ListingAmenityPublicSchema`), so there is nothing to read; the
  *   constants keep one grid component serving three verticals instead of
  *   forking it. `additionalCost: null` is what stops the grid from printing a
- *   "(costo adicional)" tag no commerce owner could have set.
+ *   "(costo adicional)" tag no venue/experience owner could have set.
  *
  * Server order is PRESERVED — the API already sorts by the catalog's
  * `displayWeight` — so the flat `50` here re-sorts nothing.
@@ -2777,7 +2778,7 @@ export function toGastronomyCardProps({
  * @param raw - The payload's `amenities` value, of unknown shape.
  * @returns Grid-ready amenity items; empty when absent or malformed.
  */
-function mapCommerceAmenities(raw: unknown): readonly DetailAmenity[] {
+function mapListingAmenities(raw: unknown): readonly DetailAmenity[] {
     if (!Array.isArray(raw)) return [];
     return (raw as Array<Record<string, unknown>>)
         .map((item) => ({
@@ -2792,18 +2793,18 @@ function mapCommerceAmenities(raw: unknown): readonly DetailAmenity[] {
 }
 
 /**
- * Maps the catalog-joined `features` array a commerce detail payload carries
+ * Maps the catalog-joined `features` array a venue/experience detail payload carries
  * into the item shape `FeaturesGrid.astro` renders (HOS-1072).
  *
  * Unlike the amenity twin, `hostReWriteName` and `comments` are REAL here: the
- * commerce feature junction tables carry both columns and the owner writes
+ * venue/experience feature junction tables carry both columns and the owner writes
  * them, so they are read straight through. `name` holds the slug for the same
  * i18n reason as above.
  *
  * @param raw - The payload's `features` value, of unknown shape.
  * @returns Grid-ready feature items; empty when absent or malformed.
  */
-function mapCommerceFeatures(raw: unknown): readonly DetailFeature[] {
+function mapListingFeatures(raw: unknown): readonly DetailFeature[] {
     if (!Array.isArray(raw)) return [];
     return (raw as Array<Record<string, unknown>>)
         .map((item) => ({
@@ -2822,8 +2823,8 @@ function mapCommerceFeatures(raw: unknown): readonly DetailFeature[] {
  * or `null`, defensively.
  *
  * `null` covers both "never translated" and "withheld server-side for a plan
- * that does not grant `multilingual_gastronomy_menu`" (HOS-1043) — the same
- * single-value collapse {@link GastronomyMenuItem.photoUrl}'s own doc
+ * that does not grant `multilingual_venue_menu`" (HOS-1043) — the same
+ * single-value collapse {@link VenueMenuItem.photoUrl}'s own doc
  * describes for the photo gate, and for the same reason: the API decides, the
  * renderer draws what it is given.
  *
@@ -2843,9 +2844,9 @@ function coerceI18nTextLike(raw: unknown): I18nTextLike | null {
 }
 
 /**
- * Maps the raw `menuSections` array a gastronomy detail payload carries
+ * Maps the raw `menuSections` array a venue detail payload carries
  * (HOS-895 PR2, per-dish photos added by HOS-1045, translations added by
- * HOS-1043) into the shape `GastronomyMenu.astro` renders.
+ * HOS-1043) into the shape `VenueMenu.astro` renders.
  *
  * Withheld entirely (not `undefined` vs `[]` distinguished further) when the
  * API's live entitlement check returns nothing — the same treatment the
@@ -2860,7 +2861,7 @@ function coerceI18nTextLike(raw: unknown): I18nTextLike | null {
  * @param raw - The payload's `menuSections` value, of unknown shape.
  * @returns Renderer-ready sections; empty when absent or malformed.
  */
-function mapGastronomyMenuSections(raw: unknown): readonly GastronomyMenuSection[] {
+function mapVenueMenuSections(raw: unknown): readonly VenueMenuSection[] {
     if (!Array.isArray(raw)) return [];
     return (raw as Array<Record<string, unknown>>)
         .map((section) => ({
@@ -2897,7 +2898,7 @@ function mapGastronomyMenuSections(raw: unknown): readonly GastronomyMenuSection
 /**
  * Maps the payload's `dailySpecials` into renderer-ready specials (HOS-1041).
  *
- * Defensive in the same way `mapGastronomyMenuSections` is: every field is
+ * Defensive in the same way `mapVenueMenuSections` is: every field is
  * coerced, and an untitled row is dropped rather than rendered as a blank line
  * on the public page.
  *
@@ -2910,7 +2911,7 @@ function mapGastronomyMenuSections(raw: unknown): readonly GastronomyMenuSection
  * @param raw - The payload's `dailySpecials` value, of unknown shape.
  * @returns Renderer-ready specials; empty when absent or malformed.
  */
-function mapGastronomyDailySpecials(raw: unknown): readonly GastronomyDailySpecial[] {
+function mapVenueDailySpecials(raw: unknown): readonly VenueDailySpecial[] {
     if (!Array.isArray(raw)) return [];
     return (raw as Array<Record<string, unknown>>)
         .map((special) => ({
@@ -2928,19 +2929,19 @@ function mapGastronomyDailySpecials(raw: unknown): readonly GastronomyDailySpeci
 }
 
 /**
- * Maps the raw `venueEvents` array a gastronomy detail payload carries
- * (HOS-1042) into the shape `GastronomyVenueEvents.astro` renders.
+ * Maps the raw `venueEvents` array a venue detail payload carries
+ * (HOS-1042) into the shape `VenueEvents.astro` renders.
  *
  * Withheld entirely (not `undefined` vs `[]` distinguished further) when the
  * API's live entitlement check returns nothing, or drops an entry with no
- * `title` — the same treatment `mapGastronomyMenuSections` gives a malformed
+ * `title` — the same treatment `mapVenueMenuSections` gives a malformed
  * row. `date`/`weekday` are passed through as-is (already mutually exclusive
  * per `recurrence` on the server), never re-derived here.
  *
  * @param raw - The payload's `venueEvents` value, of unknown shape.
  * @returns Renderer-ready agenda entries; empty when absent or malformed.
  */
-function mapGastronomyVenueEvents(raw: unknown): readonly GastronomyVenueEvent[] {
+function mapVenueEvents(raw: unknown): readonly VenueEvent[] {
     if (!Array.isArray(raw)) return [];
     return (raw as Array<Record<string, unknown>>)
         .map((event) => ({
@@ -2957,28 +2958,28 @@ function mapGastronomyVenueEvents(raw: unknown): readonly GastronomyVenueEvent[]
 }
 
 /**
- * Transforms a raw API gastronomy item to GastronomyDetailData props.
+ * Transforms a raw API venue item to VenueDetailData props.
  *
- * Used on the gastronomy detail page where the full `GastronomyPublic` shape
+ * Used on the venue detail page where the full `VenuePublic` shape
  * (including FAQs, social networks, SEO, and owner data) is available.
  *
- * @param item - Raw gastronomy object from the detail API endpoint
+ * @param item - Raw venue object from the detail API endpoint
  * @param locale - Active locale for i18n field resolution
- * @returns Typed GastronomyDetailData for the detail page components
+ * @returns Typed VenueDetailData for the detail page components
  */
-export function toGastronomyDetailPageProps({
+export function toVenueDetailPageProps({
     item,
     locale = 'es'
 }: {
     readonly item: Record<string, unknown>;
     readonly locale?: string;
-}): GastronomyDetailData {
-    const cardProps = toGastronomyCardProps({ item, locale });
+}): VenueDetailData {
+    const cardProps = toVenueCardProps({ item, locale });
 
     const seoObj = item.seo as Record<string, unknown> | undefined;
     const ownerObj = item.owner as Record<string, unknown> | undefined;
 
-    const faqs: GastronomyDetailData['faqs'] = mapDetailFaqs(item.faqs, locale);
+    const faqs: VenueDetailData['faqs'] = mapDetailFaqs(item.faqs, locale);
 
     return {
         ...cardProps,
@@ -2990,16 +2991,16 @@ export function toGastronomyDetailPageProps({
         menuUrl: item.menuUrl == null ? null : String(item.menuUrl),
         // HOS-895 PR2: both already withheld server-side (null / absent) for a
         // listing whose owner does not currently hold
-        // `manage_gastronomy_menu` — see GastronomyPublicSchema's field docs.
+        // `manage_venue_menu` — see VenuePublicSchema's field docs.
         menuFileUrl: item.menuFileUrl == null ? null : String(item.menuFileUrl),
         menuFileKind:
             item.menuFileKind === 'image' || item.menuFileKind === 'pdf' ? item.menuFileKind : null,
-        menuSections: mapGastronomyMenuSections(item.menuSections),
+        menuSections: mapVenueMenuSections(item.menuSections),
         // HOS-1041: already filtered to TODAY and already entitlement-gated by
-        // the API — see GastronomyPublicSchema's field docs. Nothing here
+        // the API — see VenuePublicSchema's field docs. Nothing here
         // re-applies either.
-        dailySpecials: mapGastronomyDailySpecials(item.dailySpecials),
-        venueEvents: mapGastronomyVenueEvents(item.venueEvents),
+        dailySpecials: mapVenueDailySpecials(item.dailySpecials),
+        venueEvents: mapVenueEvents(item.venueEvents),
         socialNetworks: normalizeSocialNetworks(item.socialNetworks),
         seo: seoObj
             ? {
@@ -3009,8 +3010,8 @@ export function toGastronomyDetailPageProps({
             : null,
         tags: Array.isArray(item.tags) ? item.tags.map(String) : [],
         faqs,
-        amenities: mapCommerceAmenities(item.amenities),
-        features: mapCommerceFeatures(item.features),
+        amenities: mapListingAmenities(item.amenities),
+        features: mapListingFeatures(item.features),
         owner: ownerObj
             ? {
                   id: String(ownerObj.id || ''),
@@ -3047,7 +3048,7 @@ function normalizeExperienceSocialNetworks(raw: unknown): ExperienceSocialNetwor
 /**
  * Normalize the contact info an experience listing publishes.
  *
- * NO LONGER DORMANT (HOS-815). The public tier now exposes a NARROWED
+ * NO LONGER DORMANT (HOS-815). The public route now exposes a NARROWED
  * `contactInfo` — `workEmail`, `workPhone`, `mobilePhone`, `website` — because
  * the listing form blocks publication without a phone or an email and then the
  * page showed neither, leaving the traveller with no way to reach the provider.
@@ -3140,7 +3141,7 @@ export function toExperienceCardProps({
         averageRating: Number(item.averageRating ?? 0),
         reviewsCount: Number(item.reviewsCount ?? 0),
         isFeatured: Boolean(item.isFeatured),
-        // Experience reuses the gastronomy structured-hours normalizer (shared
+        // Experience reuses the venue structured-hours normalizer (shared
         // OpeningHoursSchema source); see normalizeOpeningHours (Bug B8 fix).
         openingHours: normalizeOpeningHours(item.openingHours),
         createdAt: item.createdAt ? String(item.createdAt) : null,
@@ -3269,8 +3270,8 @@ export function toExperienceDetailPageProps({
             : null,
         tags: Array.isArray(item.tags) ? item.tags.map(String) : [],
         faqs,
-        amenities: mapCommerceAmenities(item.amenities),
-        features: mapCommerceFeatures(item.features),
+        amenities: mapListingAmenities(item.amenities),
+        features: mapListingFeatures(item.features),
         owner: ownerObj
             ? {
                   id: String(ownerObj.id || ''),
@@ -3283,15 +3284,8 @@ export function toExperienceDetailPageProps({
 }
 
 /**
- * Transforms a raw API partner item into the gold partner's detail props.
- *
- * Written fresh rather than adapted from the directory's card transform
- * (HOS-294 D-7): that one carried the tier, `isFeatured` and a clamped
- * description, all of which belonged to the retired listing.
- *
- * `tier` is deliberately not mapped. It decides whether this page exists at
- * all — a decision already made by the API before the payload gets here — and
- * is never shown to a reader.
+ * Transforms a raw API partner item into detail props. V7 restores this page
+ * on the public key; V6 keeps its public route dark.
  *
  * @param item - Raw partner object from the public API
  * @param locale - Active locale for i18n field resolution
@@ -3362,11 +3356,36 @@ export function toPartnerData({ item }: { readonly item: Record<string, unknown>
         name: String(item.name || ''),
         logoPath: String(item.logoUrl || ''),
         url: item.websiteUrl == null ? undefined : String(item.websiteUrl),
-        // Both carried for the tier branch in `PartnersSection` (HOS-294 D-1):
-        // a gold logo links to `/partners/<slug>/`, a silver one to its own
-        // site. Neither is ever rendered as text.
+        // Retained for the internal page link V7 restores on the public key.
         slug: item.slug == null ? undefined : String(item.slug),
-        tier: item.tier == null ? undefined : String(item.tier),
         aspectRatio: DEFAULT_PARTNER_LOGO_ASPECT_RATIO
+    };
+}
+
+/**
+ * Converts the JSON-safe effective-set response to numeric client values,
+ * including the optional pre-trial DRAFT photo caps (HOS-1721).
+ */
+export function transformProtectedEffectiveSet(raw: ProtectedEffectiveSetResponse): Omit<
+    ProtectedEffectiveSetResponse,
+    'entitlements' | 'limits' | 'preTrialDraftLimits'
+> & {
+    readonly entitlements: Readonly<Record<string, number>>;
+    readonly limits: Readonly<Record<string, number>>;
+    readonly preTrialDraftLimits?: Readonly<Record<string, number>>;
+} {
+    const decode = (values: Readonly<Record<string, number | 'Infinity'>>) =>
+        Object.fromEntries(
+            Object.entries(values).map(([key, value]) => [
+                key,
+                value === 'Infinity' ? Number.POSITIVE_INFINITY : value
+            ])
+        );
+    const { preTrialDraftLimits, ...rest } = raw;
+    return {
+        ...rest,
+        entitlements: decode(raw.entitlements),
+        limits: decode(raw.limits),
+        ...(preTrialDraftLimits ? { preTrialDraftLimits: decode(preTrialDraftLimits) } : {})
     };
 }

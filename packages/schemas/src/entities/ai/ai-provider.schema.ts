@@ -47,7 +47,7 @@ export type AiProviderId = z.infer<typeof AiProviderIdSchema>;
  * Mapping to `@repo/billing` entitlement gates (Q2, §5.7):
  * - `text_improve`         → `ai_text_improve`
  * - `chat`                 → `ai_chat`
- * - `chat_gastronomy`      → `ai_chat` (read from the GASTRONOMY subscription)
+ * - `chat_venue`      → `ai_chat` (read from the venue subscription)
  * - `chat_experience`      → `ai_chat` (read from the EXPERIENCE subscription)
  * - `search`               → `ai_search`
  * - `support`              → `ai_support`
@@ -57,7 +57,7 @@ export type AiProviderId = z.infer<typeof AiProviderIdSchema>;
  *
  * ## Why the chat has three features and one entitlement (HOS-400)
  *
- * `chat`, `chat_gastronomy` and `chat_experience` are the SAME product gated by
+ * `chat`, `chat_venue` and `chat_experience` are the SAME product gated by
  * the SAME entitlement key (`ai_chat`). They are separate `AiFeature` values for
  * one reason: this enum is the metering axis. Monthly quota is enforced by
  * counting `ai_usage` rows keyed by `(userId, feature)`, so two verticals
@@ -67,9 +67,9 @@ export type AiProviderId = z.infer<typeof AiProviderIdSchema>;
  *
  * That matters because an owner can hold several domains at once: someone who
  * is a host AND a restaurateur would otherwise spend their accommodation chat
- * budget on gastronomy traffic, which is precisely the cross-domain leak
+ * budget on venue traffic, which is precisely the cross-domain leak
  * SPEC-239 isolates against. One feature per vertical is what makes
- * `MAX_AI_CHAT_GASTRONOMY_PER_MONTH` count only gastronomy chats.
+ * `MAX_AI_CHAT_VENUE_PER_MONTH` count only venue chats.
  *
  * Splitting by ENTITLEMENT instead was rejected: `ai_chat` is one capability
  * that different subscriptions grant, and duplicating it per vertical would put
@@ -78,7 +78,7 @@ export type AiProviderId = z.infer<typeof AiProviderIdSchema>;
 export const AiFeatureSchema = z.enum([
     'text_improve',
     'chat',
-    'chat_gastronomy',
+    'chat_venue',
     'chat_experience',
     'search',
     'support',

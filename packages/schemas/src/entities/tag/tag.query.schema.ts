@@ -346,7 +346,7 @@ export type PopularTagsSimpleOutput = z.infer<typeof PopularTagsSimpleOutputSche
 /**
  * HTTP-compatible tag search schema with query string coercion
  */
-export const HttpTagSearchSchema = HttpPaginationSchema.merge(HttpSortingSchema).extend({
+export const HttpTagSearchSchema = HttpPaginationSchema.safeExtend(HttpSortingSchema.shape).extend({
     // Search
     q: z.string().optional(),
 

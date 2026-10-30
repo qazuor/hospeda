@@ -14,7 +14,7 @@
  * ## The mechanism is HOS-1058's, and the primitives are literally its own
  *
  * `pdf-lib`, one A4 page, standard faces, the same vector QR. `toDrawableText`
- * and `wrapText` are IMPORTED from `commerce-brochure/brochure-render` rather
+ * and `wrapText` are IMPORTED from `listing-brochure/brochure-render` rather
  * than copied: the WinAnsi substitution rule is a correctness property of every
  * PDF this API emits (a name the face cannot encode raises inside `pdf-lib` and
  * would answer a 500 to a download), and two copies of it would drift.
@@ -39,7 +39,7 @@ import {
     StandardFonts
 } from 'pdf-lib';
 import { renderQrMatrix } from '../../utils/qr-render.js';
-import { toDrawableText, wrapText } from '../commerce-brochure/brochure-render.js';
+import { toDrawableText, wrapText } from '../listing-brochure/brochure-render.js';
 import type { CertificateContent } from './certificate-content.js';
 
 /**

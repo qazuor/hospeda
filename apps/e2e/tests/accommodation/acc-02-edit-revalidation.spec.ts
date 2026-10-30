@@ -29,12 +29,8 @@
  */
 
 import { expect, test } from '@playwright/test';
-import {
-    createAccommodation,
-    createSubscription,
-    createUser,
-    forceVerifyEmail
-} from '../../fixtures/api-helpers.ts';
+import { PublicationStatusEnum } from '@repo/schemas';
+import { createAccommodation, createUser, forceVerifyEmail } from '../../fixtures/api-helpers.ts';
 import { execSQL, getDbPool } from '../../fixtures/db-helpers.ts';
 import {
     assertRevalidationTriggered,
@@ -60,24 +56,9 @@ test.describe('ACC-02: edit propagates via revalidation @p0 @accommodation @cach
         userId = host.id;
         await forceVerifyEmail(host.id);
 
-        const planRows = await execSQL<{ id: string }>(
-            'SELECT id FROM billing_plans WHERE active = true ORDER BY created_at ASC LIMIT 1'
-        );
-        const planId = planRows[0]?.id;
-        if (!planId) {
-            test.fixme(true, 'No billing plan in seed — ACC-02 cannot run');
-            return;
-        }
-
-        await createSubscription({
-            userId: host.id,
-            planId,
-            status: 'active'
-        });
-
         const accommodation = await createAccommodation({
             ownerId: host.id,
-            lifecycleState: 'ACTIVE',
+            publicationStatus: PublicationStatusEnum.PUBLISHED,
             slugPrefix: 'acc-02'
         });
 
@@ -110,8 +91,8 @@ test.describe('ACC-02: edit propagates via revalidation @p0 @accommodation @cach
         // this one charges the full 12s to it.
         //
         // The old 10s only ever passed because few entity types purged at all.
-        // HOS-369 W2-4 wired four more (POI, attraction, gastronomy, experience)
-        // and the commerce specs exercise two of them, which made the wait real
+        // HOS-369 W2-4 wired four more (POI, attraction, venue, experience)
+        // and the listing-owner specs exercise two of them, which made the wait real
         // and this test fail reproducibly. Nothing regressed — the timeout was
         // always below the documented contract; it just had no way to show it.
         await assertRevalidationTriggered({

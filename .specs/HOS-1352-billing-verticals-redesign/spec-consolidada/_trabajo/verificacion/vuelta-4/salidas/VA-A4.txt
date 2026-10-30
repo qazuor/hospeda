@@ -1,0 +1,25 @@
+# VA-A4 · fuente → spec · V/descomposicion.md V/docs/10-verticales-planes-billing-options.md V/docs/11-trial.md V/docs/15-entitlements-y-limits.md V/docs/17-autorizacion.md
+
+## Hallazgos
+
+fuentes/.specs/HOS-1353-verticales-capacidades-y-autorizacion/descomposicion.md:519 · «con el almacenamiento caído, `PB12` confirma, la fila de la foto queda marcada y la foto sigue en el almacenamiento; la corrida siguiente la borra en los dos lados; una pendiente que sobrevive a una corrida sale como error» · distinta en s/5586fad7/10-corte/V6.md:1096 («Si falla el borrado externo de una foto, se detiene la purga de todas las fichas de ese dueño hasta que soporte confirme manualmente el borrado pendiente.») · BLOQUEA
+
+fuentes/.specs/HOS-1353-verticales-capacidades-y-autorizacion/descomposicion.md:724 · «el día 180 (`PB9`) borra el contenido de la ficha y nada de la persona» · distinta en s/5586fad7/20-fase-1/V9b.md:653 («Antes de purgar se guarda una copia cifrada del contenido por treinta días, recuperable por soporte a pedido del dueño; cumplido ese plazo se elimina la copia.») · BLOQUEA
+
+fuentes/.specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/15-entitlements-y-limits.md:557 · «una fila por persona, vertical y clave medida, con el instante en que abrió, el instante en que cierra y lo consumido» · distinta en s/5586fad7/10-corte/V3.md:93 («Cada consumo de una capacidad medida descuenta al menos diez unidades de la cuota; una operación menor se redondea hacia arriba a ese mínimo.») · BLOQUEA
+
+fuentes/.specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/17-autorizacion.md:260 · «Y tiene dos límites contra el abuso: un captcha (Turnstile, que el sitio ya usa) y una sola postulación abierta por correo» · distinta en s/5586fad7/20-fase-4/V7.md:815 («La postulación exige un CUIT válido y único entre las postulaciones pendientes o aprobadas; un CUIT repetido rechaza el envío antes de crear la fila.») · BLOQUEA
+
+## Resumen
+
+| archivo | reglas normativas vivas revisadas | líneas recorridas | ausentes | distintas |
+|---|---:|---|---:|---:|
+| V/descomposicion.md | ≈300 | 1–768 | 0 | 2 |
+| V/docs/10-verticales-planes-billing-options.md | ≈45 | 1–153 | 0 | 0 |
+| V/docs/11-trial.md | ≈65 | 1–473 | 0 | 0 |
+| V/docs/15-entitlements-y-limits.md | ≈100 | 1–596 | 0 | 1 |
+| V/docs/17-autorizacion.md | ≈135 | 1–816 | 0 | 1 |
+
+V = fuentes/.specs/HOS-1353-verticales-capacidades-y-autorizacion. Conteos de reglas aproximados; incluyen reiteraciones normativas. Total: 4 BLOQUEA, 0 MENOR.
+
+Se recorrieron los cinco archivos completos, descartando tachados y texto reemplazado. Se buscó en toda s/5586fad7/ con rg --hidden y se contrastaron las precisiones de fuentes/.specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md y docs/41-corte-del-mvp/10-decisiones-del-owner.md. Ninguna autoriza los cuatro cambios. Las reglas originales también aparecen en AC:V6:30, AC:V9b:1, AC:V3:8 y AC:V7:1; esos criterios no resuelven las instrucciones incompatibles señaladas.

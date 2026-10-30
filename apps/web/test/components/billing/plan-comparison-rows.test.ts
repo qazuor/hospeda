@@ -13,13 +13,16 @@
  * copy of the row model.
  */
 
-import { EntitlementKey, LimitKey, PLANS_BY_CATEGORY } from '@repo/billing';
 import billingEn from '@repo/i18n/locales/en/billing.json';
 import billingEs from '@repo/i18n/locales/es/billing.json';
 import billingPt from '@repo/i18n/locales/pt/billing.json';
+import { EntitlementKeyEnum, isCatalogKey, LimitKeyEnum } from '@repo/schemas';
 import { describe, expect, it } from 'vitest';
 import { COMPARISON_ROW_ICONS } from '@/components/billing/comparison-row-icons';
 import {
+    EXPERIENCE_GROUPS,
+    EXPERIENCE_LISTING_ROWS,
+    EXPERIENCE_SERVICE_ROWS,
     OWNER_AI_ROWS,
     OWNER_AS_TOURIST_ROWS,
     OWNER_GROUPS,
@@ -28,95 +31,86 @@ import {
     resolveRowCells,
     TOURIST_AI_ROWS,
     TOURIST_EXPERIENCE_ROWS,
-    TOURIST_GROUPS
+    TOURIST_GROUPS,
+    VENUE_GROUPS,
+    VENUE_LISTING_ROWS,
+    VENUE_MENU_ROWS
 } from '@/components/billing/plan-comparison-rows';
 
 // ---------------------------------------------------------------------------
-// Fixtures — the real entitlement sets, as returned by /api/v1/public/plans.
+// Fixtures — the real entitlement sets, as returned by /api/v1/public/plan-catalog.
 // Only the entitlements the assertions below exercise are listed.
 // ---------------------------------------------------------------------------
 
-function plan(slug: string, entitlements: readonly EntitlementKey[]): PlanCellSource {
+function plan(slug: string, entitlements: readonly EntitlementKeyEnum[]): PlanCellSource {
     return { slug, limits: {}, entitlements };
 }
 
 const OWNER_BASICO = plan('owner-basico', [
-    EntitlementKey.CAN_COMPARE_ACCOMMODATIONS,
-    EntitlementKey.CAN_CONTACT_WHATSAPP_DISPLAY,
-    EntitlementKey.CAN_CONTACT_WHATSAPP_DIRECT
+    EntitlementKeyEnum.CAN_COMPARE_ACCOMMODATIONS,
+    EntitlementKeyEnum.CAN_CONTACT_WHATSAPP_DISPLAY,
+    EntitlementKeyEnum.CAN_CONTACT_WHATSAPP_DIRECT
 ]);
 const OWNER_PRO = plan('owner-pro', [
-    EntitlementKey.CAN_COMPARE_ACCOMMODATIONS,
-    EntitlementKey.CAN_CONTACT_WHATSAPP_DISPLAY,
-    EntitlementKey.CAN_CONTACT_WHATSAPP_DIRECT,
-    EntitlementKey.CAN_SYNC_EXTERNAL_CALENDAR,
-    EntitlementKey.FEATURED_LISTING
+    EntitlementKeyEnum.CAN_COMPARE_ACCOMMODATIONS,
+    EntitlementKeyEnum.CAN_CONTACT_WHATSAPP_DISPLAY,
+    EntitlementKeyEnum.CAN_CONTACT_WHATSAPP_DIRECT,
+    EntitlementKeyEnum.CAN_SYNC_EXTERNAL_CALENDAR,
+    EntitlementKeyEnum.FEATURED_LISTING
 ]);
 const OWNER_PREMIUM = plan('owner-premium', [
-    EntitlementKey.CAN_COMPARE_ACCOMMODATIONS,
-    EntitlementKey.CAN_CONTACT_WHATSAPP_DISPLAY,
-    EntitlementKey.CAN_CONTACT_WHATSAPP_DIRECT,
-    EntitlementKey.VIEW_ADVANCED_STATS,
-    EntitlementKey.CAN_SYNC_EXTERNAL_CALENDAR,
-    EntitlementKey.FEATURED_LISTING,
-    EntitlementKey.CUSTOM_BRANDING,
-    EntitlementKey.HAS_VERIFICATION_BADGE
+    EntitlementKeyEnum.CAN_COMPARE_ACCOMMODATIONS,
+    EntitlementKeyEnum.CAN_CONTACT_WHATSAPP_DISPLAY,
+    EntitlementKeyEnum.CAN_CONTACT_WHATSAPP_DIRECT,
+    EntitlementKeyEnum.VIEW_ADVANCED_STATS,
+    EntitlementKeyEnum.CAN_SYNC_EXTERNAL_CALENDAR,
+    EntitlementKeyEnum.FEATURED_LISTING,
+    EntitlementKeyEnum.CUSTOM_BRANDING,
+    EntitlementKeyEnum.HAS_VERIFICATION_BADGE
 ]);
 
 // tourist-free deliberately lacks CAN_VIEW_RECOMMENDATIONS: it was moved to
 // tourist-plus by HOS-16 and is enforced by the API. Verified against the prod
-// payload (api.hospeda.com.ar/api/v1/public/plans).
-const TOURIST_FREE = plan('tourist-free', [EntitlementKey.READ_REVIEWS]);
+// payload (api.hospeda.com.ar/api/v1/public/plan-catalog).
+const TOURIST_FREE = plan('tourist-free', [EntitlementKeyEnum.READ_REVIEWS]);
 const TOURIST_PLUS = plan('tourist-plus', [
-    EntitlementKey.READ_REVIEWS,
-    EntitlementKey.CAN_VIEW_RECOMMENDATIONS,
-    EntitlementKey.CAN_COMPARE_ACCOMMODATIONS,
-    EntitlementKey.CAN_CONTACT_WHATSAPP_DISPLAY
+    EntitlementKeyEnum.READ_REVIEWS,
+    EntitlementKeyEnum.CAN_VIEW_RECOMMENDATIONS,
+    EntitlementKeyEnum.CAN_COMPARE_ACCOMMODATIONS,
+    EntitlementKeyEnum.CAN_CONTACT_WHATSAPP_DISPLAY
 ]);
 const TOURIST_VIP = plan('tourist-vip', [
-    EntitlementKey.READ_REVIEWS,
-    EntitlementKey.CAN_VIEW_RECOMMENDATIONS,
-    EntitlementKey.CAN_COMPARE_ACCOMMODATIONS,
-    EntitlementKey.CAN_CONTACT_WHATSAPP_DISPLAY,
-    EntitlementKey.CAN_CONTACT_WHATSAPP_DIRECT
+    EntitlementKeyEnum.READ_REVIEWS,
+    EntitlementKeyEnum.CAN_VIEW_RECOMMENDATIONS,
+    EntitlementKeyEnum.CAN_COMPARE_ACCOMMODATIONS,
+    EntitlementKeyEnum.CAN_CONTACT_WHATSAPP_DISPLAY,
+    EntitlementKeyEnum.CAN_CONTACT_WHATSAPP_DIRECT
 ]);
 
 const ALL_OWNER_PLANS = [OWNER_BASICO, OWNER_PRO, OWNER_PREMIUM];
 const ALL_TOURIST_PLANS = [TOURIST_FREE, TOURIST_PLUS, TOURIST_VIP];
 
 // ---------------------------------------------------------------------------
-// The REAL catalog, derived from the plan definitions rather than hand-written.
-//
-// The fixtures above are deliberate subsets built to exercise specific column
-// sets; these are the actual tiers the two pages render, so a change to any
-// plan's entitlements surfaces here instead of silently diverging from a
-// fixture nobody remembered to update.
+// HOS-1416: the REAL-catalog baseline (fromCatalog over PLANS_BY_CATEGORY)
+// was retired with the static plan catalog it was derived from — the plan
+// source of truth is now the database. The fixture-backed assertions below
+// still cover the row model.
 // ---------------------------------------------------------------------------
-
-function fromCatalog(
-    plans: readonly { slug: string; isActive: boolean; entitlements: readonly string[] }[]
-) {
-    return plans
-        .filter((p) => p.isActive)
-        .map(
-            (p) =>
-                ({
-                    slug: p.slug,
-                    limits: {},
-                    entitlements: p.entitlements
-                }) satisfies PlanCellSource
-        );
-}
-
-const REAL_OWNER_PLANS = fromCatalog(PLANS_BY_CATEGORY.owner);
-const REAL_TOURIST_PLANS = fromCatalog(PLANS_BY_CATEGORY.tourist);
 
 const ALL_ROWS = [
     ...TOURIST_EXPERIENCE_ROWS,
     ...TOURIST_AI_ROWS,
     ...OWNER_ROWS,
     ...OWNER_AI_ROWS,
-    ...OWNER_AS_TOURIST_ROWS
+    ...OWNER_AS_TOURIST_ROWS,
+    ...VENUE_LISTING_ROWS,
+    ...VENUE_MENU_ROWS,
+    ...EXPERIENCE_LISTING_ROWS,
+    ...EXPERIENCE_SERVICE_ROWS,
+    ...TOURIST_GROUPS.flatMap((group) => group.rows),
+    ...OWNER_GROUPS.flatMap((group) => group.rows),
+    ...VENUE_GROUPS.flatMap((group) => group.rows),
+    ...EXPERIENCE_GROUPS.flatMap((group) => group.rows)
 ];
 
 function row(id: string) {
@@ -130,6 +124,13 @@ function cellsBySlug(rowId: string, plans: readonly PlanCellSource[]) {
     const values = resolveRowCells({ cell: row(rowId).cell, plans });
     return Object.fromEntries(plans.map((p, i) => [p.slug, values[i]]));
 }
+
+type CatalogCheckRow = {
+    readonly id: string;
+    readonly cell:
+        | { readonly kind: 'entitlement' | 'limit'; readonly key: string }
+        | { readonly kind: 'all-no' };
+};
 
 describe('resolveRowCells — full catalog baseline', () => {
     it('gives premium-exclusive rows to premium only', () => {
@@ -208,10 +209,10 @@ describe('resolveRowCells — column set changes (HOS-329 regression)', () => {
         // real capabilities. A hand-maintained per-slug table would show this
         // tier a wall of "not included" for every yes/no row.
         const future = plan('owner-enterprise', [
-            EntitlementKey.VIEW_ADVANCED_STATS,
-            EntitlementKey.CUSTOM_BRANDING,
-            EntitlementKey.HAS_VERIFICATION_BADGE,
-            EntitlementKey.FEATURED_LISTING
+            EntitlementKeyEnum.VIEW_ADVANCED_STATS,
+            EntitlementKeyEnum.CUSTOM_BRANDING,
+            EntitlementKeyEnum.HAS_VERIFICATION_BADGE,
+            EntitlementKeyEnum.FEATURED_LISTING
         ]);
         expect(cellsBySlug('advancedStats', [future])).toEqual({ 'owner-enterprise': 'yes' });
         expect(cellsBySlug('branding', [future])).toEqual({ 'owner-enterprise': 'yes' });
@@ -221,9 +222,9 @@ describe('resolveRowCells — column set changes (HOS-329 regression)', () => {
     });
 
     it('renders a plan with no entitlements as not-included, never as a borrowed yes', () => {
-        const empty = plan('commerce-listing', []);
-        expect(cellsBySlug('branding', [empty])).toEqual({ 'commerce-listing': 'no' });
-        expect(cellsBySlug('advancedStats', [empty])).toEqual({ 'commerce-listing': 'no' });
+        const empty = plan('venue-listing', []);
+        expect(cellsBySlug('branding', [empty])).toEqual({ 'venue-listing': 'no' });
+        expect(cellsBySlug('advancedStats', [empty])).toEqual({ 'venue-listing': 'no' });
     });
 });
 
@@ -259,11 +260,11 @@ describe('catalog row guards', () => {
         // aiSearch/aiChat must read per-plan quotas, never a binary all-yes.
         expect(row('aiSearch').cell).toEqual({
             kind: 'limit',
-            key: LimitKey.MAX_AI_SEARCH_PER_MONTH
+            key: LimitKeyEnum.MAX_AI_SEARCH_PER_MONTH
         });
         expect(row('aiChat').cell).toEqual({
             kind: 'limit',
-            key: LimitKey.MAX_AI_CHAT_CONSUMER_PER_MONTH
+            key: LimitKeyEnum.MAX_AI_CHAT_CONSUMER_PER_MONTH
         });
     });
 
@@ -271,7 +272,7 @@ describe('catalog row guards', () => {
         expect(row('compare').status).toBe('available');
         expect(row('compare').cell).toEqual({
             kind: 'entitlement',
-            key: EntitlementKey.CAN_COMPARE_ACCOMMODATIONS
+            key: EntitlementKeyEnum.CAN_COMPARE_ACCOMMODATIONS
         });
     });
 
@@ -279,7 +280,7 @@ describe('catalog row guards', () => {
         expect(row('collections').status).toBe('available');
         expect(row('collections').cell).toEqual({
             kind: 'limit',
-            key: LimitKey.MAX_COLLECTIONS
+            key: LimitKeyEnum.MAX_COLLECTIONS
         });
     });
 
@@ -287,7 +288,7 @@ describe('catalog row guards', () => {
         expect(row('promotions').status).toBe('available');
         expect(row('promotions').cell).toEqual({
             kind: 'limit',
-            key: LimitKey.MAX_ACTIVE_PROMOTIONS
+            key: LimitKeyEnum.MAX_ACTIVE_PROMOTIONS
         });
     });
 
@@ -297,80 +298,11 @@ describe('catalog row guards', () => {
         expect(row('branding').status).toBe('upcoming');
     });
 
-    it('shows every entitlement row as included for at least one plan of its own audience', () => {
-        // A row keyed to an entitlement none of ITS OWN rendered tiers grants
-        // renders a full column of "not included" while compiling cleanly and
-        // leaving every other assertion green — the same silent-drift class
-        // this file exists to close, relocated from column position to key
-        // choice.
-        //
-        // Scoped per audience and to ACTIVE plans on purpose. Checking against
-        // the whole catalog would pass a row keyed to a complex-plan-only
-        // entitlement (MULTI_PROPERTY_MANAGEMENT and friends) that the table
-        // never renders, and would pass an owner entitlement placed on a
-        // tourist row.
-        //
-        // NOTE what this cannot catch: (a) a *wrong but granted* key — nothing
-        // here knows `basicStats` means VIEW_BASIC_STATS rather than
-        // VIEW_ADVANCED_STATS; (b) config-vs-DB drift, since the table renders
-        // `billing_plans.entitlements` from the API and the seed deliberately
-        // never syncs that column (HOS-39). Only a live-payload check covers
-        // either.
-        const audiences = [
-            { rows: [...OWNER_ROWS, ...OWNER_AI_ROWS], plans: REAL_OWNER_PLANS, name: 'owner' },
-            {
-                rows: [...TOURIST_EXPERIENCE_ROWS, ...TOURIST_AI_ROWS],
-                plans: REAL_TOURIST_PLANS,
-                name: 'tourist'
-            }
-        ];
-
-        for (const { rows, plans, name } of audiences) {
-            expect(plans.length, `${name} has no active plans`).toBeGreaterThan(0);
-
-            const neverIncluded = rows
-                .filter((r) => r.cell.kind === 'entitlement')
-                .filter((r) => !resolveRowCells({ cell: r.cell, plans }).includes('yes'))
-                .map((r) => r.id);
-
-            expect(neverIncluded, `${name} rows included in no ${name} plan`).toEqual([]);
-        }
-    });
-
-    it('matches the real catalog for every row that used to be hardcoded all-yes', () => {
-        // These six were unconditional checks until HOS-329 round 3. Pin them
-        // against the actual plan definitions so the conversion cannot rot —
-        // and so a wrong-but-granted key (basicStats → VIEW_ADVANCED_STATS)
-        // fails here even though the audience sweep above would pass.
-        // No `tourist-plus` here: `REAL_TOURIST_PLANS` is the ACTIVE catalog and
-        // HOS-301 D1 deactivated that plan, so the table stopped rendering its
-        // column. The fixture-backed `ALL_TOURIST_PLANS` assertions below still
-        // cover the plan itself — its definition survives in ALL_PLANS for the
-        // subscriptions already on it.
-        expect(cellsBySlug('reviews', REAL_TOURIST_PLANS)).toEqual({
-            'tourist-free': 'yes',
-            'tourist-vip': 'yes'
-        });
-        expect(cellsBySlug('recommendations', REAL_TOURIST_PLANS)).toEqual({
-            'tourist-free': 'no',
-            'tourist-vip': 'yes'
-        });
-
-        for (const rowId of [
-            'reviews',
-            'recommendations',
-            'editInfo',
-            'respondReviews',
-            'basicStats',
-            'calendar'
-        ]) {
-            expect(cellsBySlug(rowId, REAL_OWNER_PLANS), `${rowId} for owners`).toEqual({
-                'owner-basico': 'yes',
-                'owner-pro': 'yes',
-                'owner-premium': 'yes'
-            });
-        }
-    });
+    // HOS-1416: the two REAL-catalog baseline tests ("shows every entitlement
+    // row as included for at least one plan of its own audience" and "matches
+    // the real catalog for every row that used to be hardcoded all-yes") were
+    // retired with the static plan catalog they were derived from — the plan
+    // source of truth is now the database.
 
     it('resolves the compare row per tourist tier (SPEC-288 T-013)', () => {
         // The old source-grep guard pinned the per-tier VALUES, not just the
@@ -422,7 +354,12 @@ describe('catalog row guards', () => {
 // module, a missing key would have printed the raw key in production.
 // ---------------------------------------------------------------------------
 
-const ALL_RENDERED_ROWS = [...OWNER_GROUPS, ...TOURIST_GROUPS].flatMap((group) => group.rows);
+const ALL_RENDERED_ROWS = [
+    ...OWNER_GROUPS,
+    ...TOURIST_GROUPS,
+    ...VENUE_GROUPS,
+    ...EXPERIENCE_GROUPS
+].flatMap((group) => group.rows);
 
 const LOCALES = {
     es: billingEs,
@@ -430,10 +367,47 @@ const LOCALES = {
     pt: billingPt
 } as const;
 
+describe('TEST:1626:5 — catalog-backed comparison rows', () => {
+    it('has no row cells outside the key catalog, and detects an invalid synthetic key', () => {
+        const outsideCatalogIds = (rows: readonly CatalogCheckRow[]) =>
+            rows
+                .filter((candidate) => {
+                    const cell = candidate.cell;
+                    return (
+                        (cell.kind === 'entitlement' || cell.kind === 'limit') &&
+                        !isCatalogKey({ key: cell.key })
+                    );
+                })
+                .map((candidate) => candidate.id);
+        const invalidRow = {
+            id: 'synthetic-outside-catalog',
+            labelKey: 'billing.comparison.row.synthetic',
+            cell: { kind: 'entitlement' as const, key: 'not_in_catalog' },
+            status: 'available' as const
+        };
+
+        expect(outsideCatalogIds(ALL_ROWS)).toEqual([]);
+        expect(outsideCatalogIds([invalidRow])).toEqual(['synthetic-outside-catalog']);
+    });
+
+    it('keeps Reviews keyed to read_reviews and documents owner decision D-1 (2026-10-19)', () => {
+        // D-1 (owner, 2026-10-19): the row stays and READ_REVIEWS is in the catalog.
+        expect(cellsBySlug('reviews', ALL_TOURIST_PLANS)).toEqual({
+            'tourist-free': 'yes',
+            'tourist-plus': 'yes',
+            'tourist-vip': 'yes'
+        });
+        const writeOnlyPlan = plan('write-only-reviews', [EntitlementKeyEnum.WRITE_REVIEWS]);
+        expect(cellsBySlug('reviews', [writeOnlyPlan])).toEqual({ 'write-only-reviews': 'no' });
+    });
+});
+
 describe('row i18n coverage', () => {
     it('actually collects the rendered rows (guards against a vacuous sweep)', () => {
-        expect(ALL_RENDERED_ROWS.length).toBeGreaterThan(20);
+        expect(ALL_RENDERED_ROWS.length).toBeGreaterThan(30);
         expect(ALL_RENDERED_ROWS.map((r) => r.id)).toContain('calendarSync');
+        expect(ALL_RENDERED_ROWS.map((r) => r.id)).toContain('publishVenue');
+        expect(ALL_RENDERED_ROWS.map((r) => r.id)).toContain('experienceCertificate');
     });
 
     for (const [locale, bundle] of Object.entries(LOCALES)) {
@@ -499,11 +473,12 @@ describe('resolveRowCells — limit cells', () => {
         expect(resolveRowCells({ cell: row('publish').cell, plans })).toEqual([5, 1]);
     });
 
-    it('renders -1 as unlimited', () => {
+    it('renders the catalog sentinel as unlimited', () => {
+        // AC:1719:2/:3: the catalog sentinel is displayed as unlimited in the comparison table.
         const plans: readonly PlanCellSource[] = [
-            { slug: 'owner-premium', limits: { max_accommodations: -1 }, entitlements: [] }
+            { slug: 'owner-premium', limits: { max_favorites: 2147483647 }, entitlements: [] }
         ];
-        expect(resolveRowCells({ cell: row('publish').cell, plans })).toEqual(['unlimited']);
+        expect(resolveRowCells({ cell: row('favorites').cell, plans })).toEqual(['unlimited']);
     });
 
     it('falls back to not-included when the plan does not carry the limit key', () => {

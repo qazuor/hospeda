@@ -1,4 +1,18 @@
 {
+    "subscribe": {
+        "publishCta": "Publish my listing",
+        "trialNote_one": "Your {{trialDays}}-day free trial starts when you publish.",
+        "trialNote_other": "Your {{trialDays}}-day free trial starts when you publish.",
+        "checkoutMonthly": "Subscribe with monthly billing",
+        "checkoutAnnual": "Subscribe with annual billing",
+        "continuePayment": "Continue payment",
+        "currentPlan": "Your current plan in {{vertical}}",
+        "touristVipInherited": "Your plan already includes Tourist VIP: you do not need to buy it."
+    },
+    "noPlans": {
+        "title": "This vertical has no available plans",
+        "body": "Your listing is still unpublished. There is nothing to purchase and no free trial to start."
+    },
     "signedOut": {
         "tagline": "First step",
         "title": "Create your account and publish",
@@ -21,9 +35,9 @@
         "plansCta": "See plans",
         "pricingCta": "See pricing"
     },
-    "gastronomy": {
+    "venue": {
         "meta": {
-            "title": "Publish your food and drink venue",
+            "title": "Publish your venue on Food & nightlife",
             "description": "List your restaurant, bar, grill or food truck on Hospeda and reach the travellers looking for somewhere to eat in the Litoral region."
         },
         "hero": {
@@ -44,7 +58,7 @@
             },
             "step3": {
                 "title": "You go live",
-                "desc": "Your venue shows up in the gastronomy catalogue and diners in the area find you."
+                "desc": "Your venue shows up in the Food & nightlife catalogue and diners in the area find you."
             }
         },
         "benefits": {
@@ -106,10 +120,10 @@
         }
     },
     "precheck": {
-        "gastronomy": {
+        "venue": {
             "resumeOrCreate": {
                 "title": "You already have a listing in progress",
-                "body": "You have an unpublished gastronomy listing. You can pick it up where you left off or start a new one from scratch.",
+                "body": "You have an unpublished Food & nightlife listing. You can pick it up where you left off or start a new one from scratch.",
                 "resumeCta": "Resume the listing",
                 "createCta": "Create a new one"
             },

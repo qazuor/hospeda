@@ -1,0 +1,18 @@
+# VA-A10 · fuente → spec · B/docs/{14-promos-cortesias-y-grants,16-addons,19-superficies,20-testing}.md
+
+## Hallazgos
+
+fuentes/.specs/HOS-1354-billing-cobro-y-proveedor/docs/14-promos-cortesias-y-grants.md:54 · «La composición se calcula sin redondear sobre el precio en la unidad mínima, y **el resultado se redondea una sola vez, hacia abajo**, a la unidad mínima.» · ausente (la dirección «hacia abajo»: búsqueda con rg --hidden en toda s/2e9ef99e/ por redonde, hacia abajo y unidad mínima; 10-corte/B9a.md:93 transcribe §1.2 sin ese párrafo; 20-fase-2/B9b.md:106 exige una sola operación de redondeo pero no su dirección, igual que 10-corte/B11.md:250. El ejemplo 7.649,235 → 7.649,23 también admite redondeo al más cercano con empate hacia abajo y no define el resultado de otras fracciones. No hay decisión posterior que retire la dirección fijada por la fuente) · BLOQUEA
+
+fuentes/.specs/HOS-1354-billing-cobro-y-proveedor/docs/19-superficies.md:128 · «que la persona **pierde la cortesía que le quedaba**, sin reembolso, que su suscripción vuelve a `ACTIVE`, y **qué día se le va a cobrar**» · distinta en s/2e9ef99e/20-fase-2/B9b.md:239 («termina en el acto por `S10`, con `fin_real` escrito y la relectura, con reembolso proporcional»). AC:B9b:11 exige devolver dinero al revocar, contra la regla vigente y contra AC:B9b:12 y AC:B9b:13 del mismo archivo. Verificada la precisión BO en fuentes/.specs/HOS-1352-billing-verticals-redesign/docs/41-corte-del-mvp/10-decisiones-del-owner.md:140 y su incorporación al decision log:7996: ambas mantienen «sin reembolso» · BLOQUEA
+
+fuentes/.specs/HOS-1354-billing-cobro-y-proveedor/docs/19-superficies.md:174 · «suscribirse**, sin teléfono, sin formulario de contacto y sin hablar con nadie.» · ausente (la prohibición de exigir un formulario de contacto: búsqueda con rg --hidden en toda s/2e9ef99e/ por formulario, contacto y variantes de solicitud de baja; 10-corte/B13a.md:225 y :406 omiten esa restricción; AC:B13a:1, en :561, conserva solamente los mismos pasos o menos y «sin teléfono», y TEST:B13a:1, en :999, no verifica la ausencia del formulario. La baja debe poder completarse sin imponer esa carga, aunque el formulario cupiera dentro del número permitido de pasos. No se encontró una decisión posterior que retire esta prohibición) · BLOQUEA
+
+## Resumen
+
+| archivo | reglas normativas vivas revisadas | líneas recorridas | ausentes | distintas |
+|---|---:|---|---:|---:|
+| B/docs/14-promos-cortesias-y-grants.md | ≈90 | 1–742 | 1 | 0 |
+| B/docs/16-addons.md | ≈130 | 1–1160 | 0 | 0 |
+| B/docs/19-superficies.md | ≈100 | 1–346 | 1 | 1 |
+| B/docs/20-testing.md | ≈105 | 1–808 | 0 | 0 |

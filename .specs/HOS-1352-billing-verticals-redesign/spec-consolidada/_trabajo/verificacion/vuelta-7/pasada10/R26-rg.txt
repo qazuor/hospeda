@@ -1,0 +1,2 @@
+.specs/HOS-1352-billing-verticals-redesign/spec-consolidada/10-corte/B2.md:556:- `16-fase-7-del-paraguas.md` §4.6 (l. 951).
+.specs/HOS-1352-billing-verticals-redesign/spec-consolidada/10-corte/B3.md:1467:- `16-fase-7-del-paraguas.md` §4.6 (l. 952, 977-998).

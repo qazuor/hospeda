@@ -1,24 +1,17 @@
 /**
  * E2E-03 (SPEC-098 T-059b) — Collections CRUD: create, edit, delete.
  *
- * Actors: Authenticated USER on the tourist-vip plan.
+ * Actors: Authenticated USER seeded as a Tourist VIP (an ACTIVE PRINCIPAL tourist-vip
+ * subscription, read by billing coverage since HOS-1532). No deferral: a VIP answered 403 fails the spec (HOS-1665, TEST:1665:1).
  *
  * Tags: @p0 @favorites @collections @crud @spec-098
  *
  * Preconditions:
  *   - Protected user-bookmark-collections endpoints mounted.
  *   - At least one ACTIVE/PUBLIC accommodation in seed (needed to create bookmarks).
- *   - Suite seed has the `tourist-vip` billing plan in `billing_plans`
- *     (`name = slug`, `livemode = false`). Seeded by
- *     `packages/seed/src/required/billingPlans.seed.ts` (part of e2e:seed).
  *
- * SPEC-287 (2026-07-01): collections moved from universally-available
- * (env-var cap only) to entitlement-gated (`CAN_USE_COLLECTIONS`, tourist-free
- * excluded). A plain fresh USER now resolves to tourist-free and gets 403
- * ENTITLEMENT_REQUIRED on every route below — actors here are upgraded to
- * tourist-vip (MAX_COLLECTIONS=25; HOS-1224 retired tourist-plus, the tier
- * this spec used to run against) so the CRUD flow itself can still be
- * exercised, mirroring the pattern in guest-05-accommodation-compare.spec.ts.
+ * Collections are gated by `can_use_collections` in the effective Tourist catalog
+ * (HOS-1352). Each actor is assigned the seeded Tourist VIP catalog subscription.
  *
  * What this validates (AC-03.1, AC-03.2, AC-04.2, AC-05.1):
  *   1. Create collection → response 201, collection visible in GET list.
@@ -30,27 +23,11 @@
  */
 
 import { expect, test } from '@playwright/test';
-import { createSubscription, createUser } from '../../fixtures/api-helpers.ts';
+import { createUser, makeTouristVip } from '../../fixtures/api-helpers.ts';
 import { execSQL, getDbPool } from '../../fixtures/db-helpers.ts';
 import { cleanupTestUsers } from '../../support/test-cleanup.ts';
 
 const API_URL = process.env.HOSPEDA_E2E_API_URL ?? 'http://localhost:3001';
-
-type PlanRow = { id: string } & Record<string, unknown>;
-
-/**
- * Resolve a seeded tourist plan id by slug. The seed stores the plan slug in
- * `billing_plans.name` (see billingPlans.seed.ts) and the e2e sandbox runs with
- * livemode = false, so the QZPay adapter only sees livemode = false rows.
- * Mirrors the identically-named helper in guest-05-accommodation-compare.spec.ts.
- */
-async function resolvePlanIdBySlug(slug: string): Promise<string | null> {
-    const rows = await execSQL<PlanRow>(
-        'SELECT id FROM billing_plans WHERE name = $1 AND livemode = false LIMIT 1',
-        [slug]
-    );
-    return rows[0]?.id ?? null;
-}
 
 interface CollectionResponse {
     readonly success?: boolean;
@@ -87,11 +64,6 @@ interface BookmarkListResponse {
 
 test.describe('E2E-03: collections CRUD @p0 @favorites @collections @crud @spec-098', () => {
     let userId: string | null = null;
-    let vipPlanId: string | null = null;
-
-    test.beforeAll(async () => {
-        vipPlanId = await resolvePlanIdBySlug('tourist-vip');
-    });
 
     test.afterEach(async () => {
         if (userId) {
@@ -103,8 +75,7 @@ test.describe('E2E-03: collections CRUD @p0 @favorites @collections @crud @spec-
     async function getFirstActiveAccommodationId(): Promise<string | null> {
         const rows = await execSQL<{ id: string }>(
             `SELECT id FROM accommodations
-             WHERE lifecycle_state = 'ACTIVE'
-               AND visibility = 'PUBLIC'
+             WHERE publication_status = 'PUBLISHED'
                AND deleted_at IS NULL
              ORDER BY created_at ASC
              LIMIT 1`
@@ -114,11 +85,9 @@ test.describe('E2E-03: collections CRUD @p0 @favorites @collections @crud @spec-
 
     test('AC-03.2 — create collection: 201, appears in list', async ({ page }) => {
         // Arrange
-        test.fixme(!vipPlanId, 'tourist-vip plan not seeded — cannot run');
-        if (!vipPlanId) return;
         const user = await createUser({ role: 'USER' });
         userId = user.id;
-        await createSubscription({ userId: user.id, planId: vipPlanId, status: 'active' });
+        await makeTouristVip(user.id);
         const headers = { cookie: user.sessionCookie };
 
         // Act: create collection
@@ -161,11 +130,9 @@ test.describe('E2E-03: collections CRUD @p0 @favorites @collections @crud @spec-
 
     test('AC-04.2 — edit collection name and color: 200, values updated', async ({ page }) => {
         // Arrange
-        test.fixme(!vipPlanId, 'tourist-vip plan not seeded — cannot run');
-        if (!vipPlanId) return;
         const user = await createUser({ role: 'USER' });
         userId = user.id;
-        await createSubscription({ userId: user.id, planId: vipPlanId, status: 'active' });
+        await makeTouristVip(user.id);
         const headers = { cookie: user.sessionCookie };
 
         const createRes = await page.request.post(
@@ -212,11 +179,9 @@ test.describe('E2E-03: collections CRUD @p0 @favorites @collections @crud @spec-
             return;
         }
 
-        test.fixme(!vipPlanId, 'tourist-vip plan not seeded — cannot run');
-        if (!vipPlanId) return;
         const user = await createUser({ role: 'USER' });
         userId = user.id;
-        await createSubscription({ userId: user.id, planId: vipPlanId, status: 'active' });
+        await makeTouristVip(user.id);
         const headers = { cookie: user.sessionCookie };
 
         // Create a collection
@@ -281,11 +246,9 @@ test.describe('E2E-03: collections CRUD @p0 @favorites @collections @crud @spec-
 
     test('AC-03.3 — duplicate collection name returns 409', async ({ page }) => {
         // Arrange
-        test.fixme(!vipPlanId, 'tourist-vip plan not seeded — cannot run');
-        if (!vipPlanId) return;
         const user = await createUser({ role: 'USER' });
         userId = user.id;
-        await createSubscription({ userId: user.id, planId: vipPlanId, status: 'active' });
+        await makeTouristVip(user.id);
         const headers = { cookie: user.sessionCookie };
 
         await page.request.post(`${API_URL}/api/v1/protected/user-bookmark-collections`, {

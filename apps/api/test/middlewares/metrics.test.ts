@@ -6,6 +6,7 @@ import { Hono } from 'hono';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import {
     createMetricsMiddleware,
+    getApiMetrics,
     getMetrics,
     getPrometheusMetrics,
     metricsMiddleware,
@@ -43,6 +44,7 @@ vi.mock('@repo/logger', () => {
         AUTH_PASSWORD_CHANGED: 'auth.password.changed',
         ACCESS_DENIED: 'access.denied',
         BILLING_MUTATION: 'billing.mutation',
+        BILLING_READ: 'billing.read',
         PERMISSION_CHANGE: 'permission.change',
         SESSION_SIGNOUT: 'session.signout',
         USER_ADMIN_MUTATION: 'user.admin.mutation',
@@ -281,6 +283,24 @@ describe('Metrics Middleware', () => {
             expect(metrics.summary.totalRequests).toBe(3);
             expect(metrics.summary.totalErrors).toBe(1);
             expect(metrics.summary.globalErrorRate).toBeCloseTo(33.33, 1);
+        });
+
+        it('TEST:1751:2 reports the filtered global error rate as a percentage', async () => {
+            app.use(metricsMiddleware());
+            app.get('/api/v1/users', (c) => c.json({ success: true }));
+            app.get('/api/v1/users/fail', (c) => c.json({ error: 'Error' }, 500));
+
+            for (let i = 0; i < 12; i++) {
+                await app.request('/api/v1/users');
+            }
+            await app.request('/api/v1/users/fail');
+
+            const metrics = getApiMetrics();
+            expect(metrics.summary.totalRequests).toBe(13);
+            expect(metrics.summary.totalErrors).toBe(1);
+            // 1 error in 13 requests is ~7.69%, never a 0.0769 fraction.
+            expect(metrics.summary.globalErrorRate).toBeCloseTo(7.69, 1);
+            expect(metrics.summary.globalErrorRate).toBeGreaterThan(1);
         });
     });
 

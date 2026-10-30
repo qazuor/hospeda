@@ -8,7 +8,8 @@
  * Two gates, matching this route's siblings (`index.astro`, `[id]/editar.astro`):
  *  1. Session — middleware AND this page, matching the `/mi-cuenta` convention.
  *  2. Role — `hasEventsNavAccess` (EVENT_CREATE), the same gate the listing
- *     already uses.
+ *     already uses. Users without it see the "no access" state with the
+ *     application link instead of the form.
  *
  * Fetches the public event-organizer catalog SSR (`eventOrganizersApi.list`,
  * mirroring `destinationsApi.list` in `comercio/nuevo/[vertical].astro`) and
@@ -24,8 +25,10 @@
 import AccountLayout from '@/layouts/AccountLayout.astro';
 import AccountPageHeader from '@/components/account/AccountPageHeader.astro';
 import AccountSectionCard from '@/components/account/AccountSectionCard.astro';
+import AccountEmptyState from '@/components/account/AccountEmptyState.astro';
 import { EventCreateForm } from '@/components/event/editor/EventCreateForm.client';
 import { eventOrganizersApi } from '@/lib/api/endpoints';
+import { LockIcon } from '@repo/icons';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
 import { buildLoginRedirect } from '@/lib/middleware-helpers';
@@ -43,22 +46,22 @@ if (!user) {
     return Astro.redirect(buildLoginRedirect({ locale, currentUrl: Astro.url.pathname }));
 }
 
-if (!hasEventsNavAccess({ roles: user.roles })) {
-    return Astro.redirect(buildUrl({ locale, path: 'mi-cuenta' }));
-}
+const canCreateEvents = hasEventsNavAccess({ roles: user.roles });
 
 // The organizer catalog: at most 100 entries today, no pagination UI — the
 // same simplifying assumption `destinationsApi.list({ pageSize: 100 })` makes
-// in the commerce create page.
-const organizersResult = await eventOrganizersApi.list({ pageSize: 100 });
-const organizers = organizersResult.ok
+// in the venue/experience create page.
+const organizersResult = canCreateEvents
+    ? await eventOrganizersApi.list({ pageSize: 100 })
+    : null;
+const organizers = organizersResult?.ok
     ? organizersResult.data.items.map((item) => ({ id: item.id, name: item.name }))
     : [];
-const organizersLoadFailed = !organizersResult.ok;
-if (organizersLoadFailed) {
+const organizersLoadFailed = organizersResult !== null && !organizersResult.ok;
+if (organizersResult !== null && !organizersResult.ok) {
     logger.error(
         '[mi-cuenta/eventos/nuevo] Failed to fetch event organizer catalog',
-        !organizersResult.ok ? organizersResult.error.message : undefined
+        organizersResult.error.message
     );
 }
 
@@ -73,11 +76,31 @@ const subtitle = t(
     <AccountPageHeader title={title} description={subtitle} />
 
     <AccountSectionCard>
-        <EventCreateForm
-            client:load
-            locale={locale}
-            organizers={organizers}
-            organizersLoadFailed={organizersLoadFailed}
-        />
+        {canCreateEvents ? (
+            <EventCreateForm
+                client:load
+                locale={locale}
+                organizers={organizers}
+                organizersLoadFailed={organizersLoadFailed}
+            />
+        ) : (
+            <AccountEmptyState
+                title={t(
+                    'account.myContent.events.create.noAccess.title',
+                    'Crear eventos es una función de los editores'
+                )}
+                description={t(
+                    'account.myContent.events.create.noAccess.description',
+                    'Tu cuenta todavía no tiene permiso para crear eventos. Si querés publicar eventos en Hospeda, completá la solicitud para sumarte como editor.'
+                )}
+                ctaHref={buildUrl({ locale, path: 'colaborar/editores' })}
+                ctaLabel={t(
+                    'account.myContent.events.create.noAccess.cta',
+                    'Quiero ser editor'
+                )}
+            >
+                <LockIcon slot="icon" size={28} aria-hidden={true} />
+            </AccountEmptyState>
+        )}
     </AccountSectionCard>
 </AccountLayout>

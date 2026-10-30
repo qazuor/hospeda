@@ -235,12 +235,6 @@
             "description": "Accommodation category",
             "placeholder": "Select a type"
         },
-        "isFeatured": {
-            "title": "Featured",
-            "label": "Featured accommodation",
-            "description": "Mark as a featured accommodation",
-            "placeholder": "Is it featured?"
-        },
         "isVerified": {
             "title": "Verified",
             "label": "Verified accommodation",

@@ -17,22 +17,21 @@
  *
  * IMPORTANT: Must be mounted BEFORE `/:id/media/:mediaId` (DELETE) routes so
  * Hono does not resolve the fixed suffix "/featured" as a `mediaId` UUID param.
+ * The listing access resolver requires the EDIT capability on the owner.
  */
 
-import { EntitlementKey } from '@repo/billing';
 import {
     AccommodationIdSchema,
     AccommodationMediaIdSchema,
     AccommodationMediaSingleOutputSchema,
-    ProductDomainEnum
+    VerticalEnum
 } from '@repo/schemas';
 import { AccommodationService, ServiceError } from '@repo/service-core';
 import type { Context } from 'hono';
-import { requireEntitlement } from '../../../middlewares/entitlement';
-import { requireLiveSubscription } from '../../../middlewares/require-live-subscription';
+
 import { getActorFromContext } from '../../../utils/actor';
 import { apiLogger } from '../../../utils/logger';
-import { createCRUDRoute } from '../../../utils/route-factory';
+import { createProtectedRoute } from '../../../utils/route-factory';
 
 const accommodationService = new AccommodationService({ logger: apiLogger });
 
@@ -48,7 +47,7 @@ const accommodationService = new AccommodationService({ logger: apiLogger });
  * The target media row MUST be `state = 'visible'`. Archived photos are rejected
  * before reaching the DB (see DB invariant 2 above).
  */
-export const protectedSetFeaturedMediaRoute = createCRUDRoute({
+export const protectedSetFeaturedMediaRoute = createProtectedRoute({
     method: 'put',
     path: '/{id}/media/{mediaId}/featured',
     summary: 'Set featured photo for accommodation gallery (owner)',
@@ -58,7 +57,9 @@ export const protectedSetFeaturedMediaRoute = createCRUDRoute({
         'Archived photos cannot be featured — restore the photo to visible first. ' +
         'Requires EDIT_ACCOMMODATION_INFO entitlement; the service layer enforces ' +
         'UPDATE_OWN + ownership. No request body — ids come from URL params.',
+    listingAccess: { vertical: VerticalEnum.ACCOMMODATION, operation: 'EDIT', idParam: 'id' },
     tags: ['Accommodations', 'Media'],
+    protectedTag: false,
     requestParams: {
         id: AccommodationIdSchema,
         mediaId: AccommodationMediaIdSchema
@@ -80,9 +81,5 @@ export const protectedSetFeaturedMediaRoute = createCRUDRoute({
     },
     options: {
         // SPEC-145 T-004 / SPEC-204: gallery mutation requires EDIT_ACCOMMODATION_INFO.
-        middlewares: [
-            requireEntitlement(EntitlementKey.EDIT_ACCOMMODATION_INFO),
-            requireLiveSubscription(ProductDomainEnum.ACCOMMODATION)
-        ]
     }
 });

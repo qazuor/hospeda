@@ -1,10 +1,10 @@
 ---
 /**
  * @file fotos.astro
- * @description Photo section of the commerce editor (HOS-1080).
+ * @description Photo section of the venue/experience editor (HOS-1080).
  *
  * `MediaSection` persists every photo operation immediately against the
- * relational `gastronomy_media` / `experience_media` endpoints (HOS-372) and
+ * relational `venue_media` / `experience_media` endpoints (HOS-372) and
  * hydrates its own state from them, so there is no form and no save button on
  * this page — the same shape the accommodation editor's `fotos` route has. The
  * two values passed in only paint the first frame while it hydrates.
@@ -13,32 +13,32 @@
  * @rendering SSR (prerender = false — authenticated, owner-scoped data)
  */
 
-import { MediaSection } from '@/components/commerce/editor/MediaSection.client';
-import CommerceEditorSectionLayout from '@/layouts/CommerceEditorSectionLayout.astro';
-import { readCommerceListingMedia } from '@/lib/commerce/commerce-editor-detail';
-import { resolveCommerceEditorPage } from '@/lib/editor/resolve-commerce-editor-page';
+import { MediaSection } from '@/components/listing/editor/MediaSection.client';
+import ListingEditorSectionLayout from '@/layouts/ListingEditorSectionLayout.astro';
+import { readListingMedia } from '@/lib/listing/listing-editor-detail';
+import { resolveListingEditorPage } from '@/lib/editor/resolve-listing-editor-page';
 import { createTranslations } from '@/lib/i18n';
 
 export const prerender = false;
 
-const resolution = await resolveCommerceEditorPage({ astro: Astro, sectionSlug: 'fotos' });
+const resolution = await resolveListingEditorPage({ astro: Astro, sectionSlug: 'fotos' });
 
 if (resolution.redirect) return resolution.redirect;
 
 const { detail, locale, vertical, listingId, sectionId, registry } = resolution;
 const { t } = createTranslations(locale);
 
-const media = readCommerceListingMedia({ detail });
+const media = readListingMedia({ detail });
 ---
 
-<CommerceEditorSectionLayout
+<ListingEditorSectionLayout
 	locale={locale}
 	registry={registry}
 	listingId={listingId}
 	listingName={detail.name}
 	currentSectionId={sectionId}
 	currentSectionSlug="fotos"
-	title={t('commerce.owner.editor.sectionNav.media', 'Fotos')}
+	title={t('listing.owner.editor.sectionNav.media', 'Fotos')}
 >
 	<MediaSection
 		client:load
@@ -48,4 +48,4 @@ const media = readCommerceListingMedia({ detail });
 		initialFeaturedImage={media.featuredImage}
 		initialGallery={media.gallery}
 	/>
-</CommerceEditorSectionLayout>
+</ListingEditorSectionLayout>

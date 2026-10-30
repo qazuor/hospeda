@@ -11,7 +11,7 @@
  * made Zod strip the `id` off every FAQ on the way out, even though the FAQ rows
  * carry a real UUID and the service loads it.
  *
- * What that broke downstream (observed, not hypothetical): the commerce owner's
+ * What that broke downstream (observed, not hypothetical): the listing owner's
  * FAQ manager keys its rows and its "edit this one" state off `faq.id`, so with
  * every id blank, clicking Edit opened ALL FAQs at once, the generated DOM ids
  * collided, and save/delete posted an empty id. React also logged one duplicate
@@ -29,7 +29,7 @@ import { FaqCreatePayloadSchema } from '../../src/common/faq.schema.js';
 import { AccommodationSchema } from '../../src/entities/accommodation/accommodation.schema.js';
 import { DestinationSchema } from '../../src/entities/destination/destination.schema.js';
 import { ExperienceSchema } from '../../src/entities/experience/experience.schema.js';
-import { GastronomySchema } from '../../src/entities/gastronomy/gastronomy.schema.js';
+import { VenueSchema } from '../../src/entities/venue/venue.schema.js';
 
 const FAQ_ID = '34b02cb0-e06a-51c4-b742-04e8ff79299f';
 const OWNER_ID = '686b70d4-aa3f-57c6-8958-a83eca33cd69';
@@ -55,7 +55,7 @@ const faqBaseFields = {
  * subtype requires.
  */
 const CASES = [
-    { name: 'Gastronomy', schema: GastronomySchema, fkField: 'gastronomyId' },
+    { name: 'Venue', schema: VenueSchema, fkField: 'venueId' },
     { name: 'Experience', schema: ExperienceSchema, fkField: 'experienceId' },
     { name: 'Accommodation', schema: AccommodationSchema, fkField: 'accommodationId' },
     { name: 'Destination', schema: DestinationSchema, fkField: 'destinationId' }

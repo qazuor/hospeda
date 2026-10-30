@@ -1,5 +1,7 @@
 import { randomBytes } from 'node:crypto';
-import { execSQL } from './db-helpers.ts';
+import { PublicationStatusEnum, VerticalEnum } from '@repo/schemas';
+import { execSQL, getDbPool } from './db-helpers.ts';
+import { ensureListingOwnerTrial } from './listing-owner-trial.ts';
 
 /**
  * API helpers for E2E tests (SPEC-092 T-031).
@@ -285,8 +287,8 @@ export async function markAdminToursSeen(options: { readonly userId: string }): 
                 '(no such user, or the JSON merge did not land)'
         );
     }
-    // Read-back check, for the same reason `backdateAccommodation` has one: a
-    // fixture that quietly does nothing sends the test it feeds into a state it
+    // Read-back check: a fixture that quietly does nothing sends the test it
+    // feeds into a state it
     // was never set up for, and the resulting failure points anywhere but here.
     for (const tourId of Object.keys(seen)) {
         if (stored[tourId] !== ADMIN_TOUR_SEEN_VERSION) {
@@ -377,10 +379,63 @@ export async function createUser(
 }
 
 /**
+ * Gives an existing user an active Tourist VIP subscription from the catalog.
+ *
+ * Migration `0144` seeds plans and versions but no `billing_option` rows, and
+ * migration `0176` adds the real ones. The E2E seed (`seeds/e2e-seed.ts`) empties
+ * the 0176 catalog on purpose (the seed reset preserves it elsewhere, HOS-1827),
+ * so in E2E the option is missing. The helper creates the monthly option of the
+ * current Tourist VIP version when it is missing and reuses it otherwise. A
+ * data-modifying CTE is invisible to its sibling SELECT, so exactly one of the
+ * two branches of `option_row` yields the id.
+ */
+export async function makeTouristVip(userId: string): Promise<void> {
+    const rows = await execSQL<{ id: string }>(
+        `WITH vip_version AS (
+             SELECT plan_version.id, plan_version.vertical
+             FROM plan
+             JOIN plan_version ON plan_version.plan_id = plan.id
+             WHERE plan.vertical = 'tourist'
+               AND plan.slug = 'tourist-vip'
+               AND plan_version.vertical = 'tourist'
+               AND plan_version.current = true
+             LIMIT 1
+         ),
+         inserted_option AS (
+             INSERT INTO billing_option (plan_version_id, cycle, amount, currency)
+             SELECT id, 'monthly', 250000, 'ARS' FROM vip_version
+             ON CONFLICT (plan_version_id, cycle) DO NOTHING
+             RETURNING id
+         ),
+         option_row AS (
+             SELECT id FROM inserted_option
+             UNION ALL
+             SELECT billing_option.id
+             FROM billing_option
+             JOIN vip_version ON billing_option.plan_version_id = vip_version.id
+             WHERE billing_option.cycle = 'monthly'
+         )
+         INSERT INTO subscription (
+             user_id, vertical, plan_version_id, billing_option_id,
+             payment_method, status, class
+         )
+         SELECT $1, vip_version.vertical, vip_version.id, option_row.id,
+                'CARD', 'ACTIVE', 'PRINCIPAL'
+         FROM vip_version, option_row
+         LIMIT 1
+         RETURNING id`,
+        [userId]
+    );
+    if (!rows[0]) {
+        throw new Error('makeTouristVip: current Tourist VIP catalog version not found');
+    }
+}
+
+/**
  * Forces the user's set of hats to be exactly `{USER, role}` in `user_role`.
  *
  * Bypasses any business rule that would normally produce the hat (host
- * promotion on publish, commerce-lead approval, admin grant) — use only when
+ * promotion on publish, lead approval, admin grant) — use only when
  * the test doesn't care about the path that produced it.
  *
  * **Semantics (HOS-296).** Before multi-role this wrote a scalar, so it was a
@@ -564,9 +619,12 @@ export async function getAnyCityDestinationId(): Promise<string> {
 }
 
 /**
- * Creates a DRAFT accommodation owned by `ownerId` directly via SQL.
- * Use when a test needs an accommodation but doesn't want to drive the
- * full host-onboarding UI flow.
+ * Creates an accommodation owned by `ownerId` directly via SQL, born in
+ * `publicationStatus` (default `DRAFT`). Use when a test needs an accommodation
+ * but doesn't want to drive the full host-onboarding UI flow. Pass
+ * `PublicationStatusEnum.PUBLISHED` for a listing the public surface must show
+ * (HOS-1641: `publication_status` is the only publication column; the old
+ * `lifecycle_state` / `visibility` / `moderation_state` trio is gone).
  *
  * `extraInfo` defaults to a COMPLETE capacity payload (`capacity`, `minNights`,
  * `bedrooms`, `bathrooms` all present) so accommodations created through this
@@ -580,12 +638,16 @@ export async function createAccommodation(options: {
     readonly ownerId: string;
     readonly destinationId?: string;
     readonly slugPrefix?: string;
-    readonly lifecycleState?: 'DRAFT' | 'ACTIVE' | 'ARCHIVED';
+    readonly publicationStatus?: PublicationStatusEnum;
     readonly extraInfo?: Record<string, unknown>;
+    /** Skip the normal active-trial fixture to exercise the PRE_TRIAL publish flow. */
+    readonly withTrial?: boolean;
+    /** Seed the main image required by the accommodation publish-completeness evaluator. */
+    readonly complete?: boolean;
 }): Promise<CreatedAccommodation> {
     const destinationId = options.destinationId ?? (await getAnyCityDestinationId());
     const slug = `${options.slugPrefix ?? 'e2e-acc'}-${Date.now().toString(36)}-${randomToken(2)}`;
-    const lifecycleState = options.lifecycleState ?? 'DRAFT';
+    const publicationStatus = options.publicationStatus ?? PublicationStatusEnum.DRAFT;
     const extraInfo = options.extraInfo ?? {
         capacity: 4,
         minNights: 1,
@@ -595,13 +657,13 @@ export async function createAccommodation(options: {
     const rows = await execSQL<{ id: string }>(
         `INSERT INTO accommodations (
              slug, name, summary, description, type,
-             owner_id, destination_id, lifecycle_state,
-             visibility, moderation_state, is_featured, extra_info,
+             owner_id, destination_id, extra_info,
+             publication_status, inactive_since, deadlines_version,
              created_at, updated_at
          ) VALUES (
              $1, $2, $3, $4, $5::accommodation_type_enum,
-             $6, $7, $8::lifecycle_status_enum,
-             'PUBLIC'::visibility_enum, 'APPROVED'::moderation_status_enum, false, $9::jsonb,
+             $6, $7, $9::jsonb,
+             $8::publication_status_enum, NOW(), 1,
              NOW(), NOW()
          ) RETURNING id`,
         [
@@ -612,12 +674,23 @@ export async function createAccommodation(options: {
             'HOUSE',
             options.ownerId,
             destinationId,
-            lifecycleState,
+            publicationStatus,
             JSON.stringify(extraInfo)
         ]
     );
     const id = rows[0]?.id;
     if (!id) throw new Error('createAccommodation: insert returned no id');
+    if (options.complete) {
+        await execSQL(
+            `INSERT INTO accommodation_media
+                 (accommodation_id, url, state, is_featured, sort_order, moderation_state)
+             VALUES ($1, $2, 'visible', true, 0, 'APPROVED')`,
+            [id, `https://cdn.example.test/${slug}-main.jpg`]
+        );
+    }
+    if (options.withTrial ?? true) {
+        await ensureListingOwnerTrial(getDbPool(), options.ownerId, VerticalEnum.ACCOMMODATION);
+    }
     return {
         id,
         slug,
@@ -627,151 +700,9 @@ export async function createAccommodation(options: {
 }
 
 /**
- * Inserts a billing customer + subscription row for the given user with
- * the requested status. Used to set up trial / active / canceled / expired
- * states without driving the full MP checkout flow.
- *
- * The shape of `billing_subscriptions` and `billing_customers` is owned by
- * @qazuor/qzpay-core; the columns referenced here match the migrations
- * applied at the time of writing. Adjust if the upstream schema evolves.
- */
-/**
- * Resolves the billing customer for a user, creating it when absent, and returns
- * its id. Idempotent.
- *
- * Split out of {@link createSubscription} so a test can get a customer WITHOUT
- * also getting a subscription. The resilience suite needs exactly that: it arms a
- * `createSubscription` failure scoped to a `customerId` (the scope key the
- * test-control seam extracts — HOS-171), and that id has to be known BEFORE the
- * checkout that would otherwise create the customer on demand. Scoping matters:
- * an unscoped entry is consumed by whichever parallel worker calls first.
- *
- * Note the id here is `billing_customers.id`, NOT the user id — the two are linked
- * by `external_id`. Arming a failure scoped to a user id silently matches nothing.
- */
-export async function ensureBillingCustomer(options: {
-    readonly userId: string;
-}): Promise<{ readonly customerId: string }> {
-    // billing_customers.external_id has no UNIQUE constraint — only a regular btree
-    // index. Use SELECT-or-INSERT pattern instead of ON CONFLICT.
-    // billing_customers also requires `email` (NOT NULL).
-    // Filter by livemode=false to match the E2E sandbox environment.
-    const existingCustomer = await execSQL<{ id: string }>(
-        'SELECT id FROM billing_customers WHERE external_id = $1 AND livemode = false LIMIT 1',
-        [options.userId]
-    );
-    const existingId = existingCustomer[0]?.id;
-    if (existingId) {
-        return { customerId: existingId };
-    }
-
-    // Derive a placeholder email from the userId for seed/test rows.
-    const placeholderEmail = `e2e-billing-${options.userId}@hospeda-test.local`;
-    // livemode=false: the E2E environment runs with HOSPEDA_MERCADO_PAGO_SANDBOX=true,
-    // so QZPay's livemode=false. The Drizzle adapter filters by livemode, so rows
-    // inserted with livemode=true (the column default) are invisible to the adapter.
-    const insertedCustomer = await execSQL<{ id: string }>(
-        `INSERT INTO billing_customers (external_id, email, segment, livemode, created_at, updated_at)
-         VALUES ($1, $2, 'host', false, NOW(), NOW())
-         RETURNING id`,
-        [options.userId, placeholderEmail]
-    );
-    const customerId = insertedCustomer[0]?.id;
-    if (!customerId) {
-        throw new Error('ensureBillingCustomer: customer insert returned no id');
-    }
-    return { customerId };
-}
-
-export async function createSubscription(options: {
-    readonly userId: string;
-    readonly planId: string;
-    readonly status: 'trialing' | 'active' | 'canceled' | 'expired';
-    readonly periodEnd?: Date;
-}): Promise<{ readonly customerId: string; readonly subscriptionId: string }> {
-    // Resolves-or-creates; throws rather than returning an id-less customer.
-    const { customerId } = await ensureBillingCustomer({ userId: options.userId });
-
-    const periodEnd = options.periodEnd ?? new Date(Date.now() + 30 * 24 * 60 * 60 * 1000);
-    const periodStart = new Date(); // billing_subscriptions.current_period_start is NOT NULL
-    // livemode=false: matches the E2E environment's sandbox livemode (see customer insert above).
-    // HOS-1233 T-036: `product_domain` is stated, and DERIVED from the plan
-    // being subscribed to rather than hardcoded.
-    //
-    // The column lost its `DEFAULT 'accommodation'` (migration 0121), so an
-    // insert that omits it is now rejected outright — which is what this
-    // statement did, taking 16 P0 specs down with it. Hardcoding
-    // `'accommodation'` would have made them pass again and quietly recreated
-    // the original bug in the fixtures: a `tourist-vip` subscription filed
-    // under the wrong vertical, which is precisely the shape this spec exists
-    // to end (F-4b).
-    //
-    // The subselect mirrors what production does — `createPaidSubscription`
-    // reads the plan's own `productDomain` and forwards it — so a fixture can
-    // never disagree with the plan it names.
-    //
-    // The plan id is passed TWICE, as two placeholders, and that is the fix —
-    // not a cast.
-    //
-    // One placeholder cannot serve both readings. It feeds
-    // `billing_subscriptions.plan_id`, which is `character varying`, and it is
-    // compared against `billing_plans.id`, which is `uuid` — the schema
-    // mismatch the root CLAUDE.md calls out by name. Postgres deduces ONE type
-    // per parameter, so it refuses the statement outright:
-    // `inconsistent types deduced for parameter $2`.
-    //
-    // Measured against a real Postgres rather than reasoned about, because two
-    // plausible casts were tried first and BOTH still failed: `$2::uuid`
-    // (demands uuid where the insert column wants text) and `id::text = $2`
-    // (still one parameter, still two deductions). Only a second placeholder
-    // gets past type deduction — it reached the NOT NULL check, which is how
-    // far a well-typed statement is supposed to get on null inputs.
-    const subRows = await execSQL<{ id: string }>(
-        `INSERT INTO billing_subscriptions (
-             customer_id, plan_id, status,
-             billing_interval, interval_count,
-             current_period_start, current_period_end,
-             product_domain,
-             livemode, created_at, updated_at
-         ) VALUES ($1, $2, $3, 'month', 1, $4, $5,
-             (SELECT product_domain FROM billing_plans WHERE id::text = $6),
-             false, NOW(), NOW())
-         RETURNING id`,
-        [customerId, options.planId, options.status, periodStart, periodEnd, options.planId]
-    );
-    const subscriptionId = subRows[0]?.id;
-    if (!subscriptionId) throw new Error('createSubscription: subscription insert returned no id');
-    return { customerId, subscriptionId };
-}
-
-/**
- * Resolves a seeded billing plan id from its slug.
- *
- * The seed stores the plan slug in `billing_plans.name` (see billingPlans.seed.ts),
- * and the E2E sandbox runs with `livemode = false`, so both must be matched — a
- * lookup that ignores `livemode` can return the production-mode row, whose id the
- * QZPay Drizzle adapter then refuses to see.
- *
- * @param options.slug - Plan slug as seeded, e.g. `tourist-vip`.
- * @returns The plan id, or `null` when the plan is not seeded in this environment.
- */
-export async function resolvePlanIdBySlug(options: { readonly slug: string }): Promise<{
-    readonly planId: string | null;
-    readonly limits: Readonly<Record<string, number>> | null;
-}> {
-    const rows = await execSQL<{ id: string; limits: Record<string, number> | null }>(
-        'SELECT id, limits FROM billing_plans WHERE name = $1 AND livemode = false LIMIT 1',
-        [options.slug]
-    );
-    const row = rows[0];
-    if (!row) return { planId: null, limits: null };
-    return { planId: row.id, limits: row.limits ?? {} };
-}
-
-/**
  * Signs in an already-existing user (seeded or previously created) and
  * returns their session cookie. Use this for tests that authenticate as a
- * known seeded account (e.g. the commerce-owner Julieta) rather than
+ * known seeded account (e.g. the venue/experience owner Julieta) rather than
  * creating a fresh user per test.
  *
  * The underlying mechanism is identical to the sign-in step inside
@@ -825,15 +756,14 @@ export async function signInExistingUser(
 export async function createConversation(options: {
     readonly guestUserId: string;
     readonly accommodationId: string;
-    readonly subject?: string;
 }): Promise<{ readonly id: string }> {
     const rows = await execSQL<{ id: string }>(
         `INSERT INTO conversations (
              user_id, accommodation_id,
-             subject, status, created_at, updated_at
-         ) VALUES ($1, $2, $3, 'OPEN', NOW(), NOW())
+             status, created_at, updated_at
+         ) VALUES ($1, $2, 'OPEN', NOW(), NOW())
          RETURNING id`,
-        [options.guestUserId, options.accommodationId, options.subject ?? 'E2E test conversation']
+        [options.guestUserId, options.accommodationId]
     );
     const id = rows[0]?.id;
     if (!id) throw new Error('createConversation: insert returned no id');

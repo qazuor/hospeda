@@ -1,0 +1,359 @@
+9:## Trial (`V/03` §2)
+70:## Trial (`V/03` §2) — las transiciones
+74:### `TRANS:V:T1` · `T1` — `PRE_TRIAL` → `TRIAL_ACTIVE`
+298:### `TRANS:V:T2` · `T2` — `TRIAL_ACTIVE` → `TRIAL_CONVERTED`
+412:### `TRANS:V:T3` · `T3` — `TRIAL_ACTIVE` → `TRIAL_EXPIRED`
+427:### `TRANS:V:T4` · `T4` — `TRIAL_ACTIVE` → `TRIAL_ACTIVE`
+442:### `TRANS:V:T5` · `T5` — `TRIAL_EXPIRED` → `TRIAL_CONVERTED`
+471:### `TRANS:V:T6` · `T6` — `PRE_TRIAL` → `TRIAL_CONVERTED`
+524:### `TRANS:V:T8` · `T8` — `PRE_TRIAL` → `TRIAL_CONVERTED`
+537:## Publicación de la ficha (`V/03` §9)
+686:## Publicación de la ficha (`V/03` §9) — las transiciones
+690:### `TRANS:V:PB1` · `PB1` — `DRAFT` **o `UNPUBLISHED_BY_BILLING`** (FASE 9 vuelta 1, R1) → `PUBLISHED`
+792:### `TRANS:V:PB2` · `PB2` — `PUBLISHED` → `UNPUBLISHED_BY_BILLING`
+986:### `TRANS:V:PB3` · `PB3` — `UNPUBLISHED_BY_BILLING` → `PUBLISHED`
+1079:### `TRANS:V:PB4` · `PB4` — `PUBLISHED` o `UNPUBLISHED_BY_BILLING` → `ARCHIVED`
+1094:### `TRANS:V:PB5` · `PB5` — `DRAFT` → `ARCHIVED`
+1108:### `TRANS:V:PB6` · `PB6` — `PUBLISHED` → `DRAFT`
+1122:### `TRANS:V:PB7` · `PB7` — `ARCHIVED` → `PUBLISHED`
+1262:### `TRANS:V:PB8` · `PB8` — `ARCHIVED` → `DRAFT`
+1276:### `TRANS:V:PB9` · `PB9` — `ARCHIVED` → **`PURGED`**
+1291:### `TRANS:V:PB10` · `PB10` — `DRAFT`, `PUBLISHED`, `UNPUBLISHED_BY_BILLING` o `ARCHIVED` → **`MODERATED`**
+1472:### `TRANS:V:PB11` · `PB11` — `MODERATED` → `DRAFT`
+1486:### `TRANS:V:PB12` · `PB12`
+1500:### `TRANS:V:PB13` · `PB13` — `MODERATED` → `UNPUBLISHED_BY_BILLING`
+1512:## Postulación de Partner (`V/03` §11)
+1535:## Postulación de Partner (`V/03` §11) — las transiciones
+1539:### `TRANS:V:PP1` · `PP1` — — → `PENDIENTE`
+1553:### `TRANS:V:PP2` · `PP2` — `PENDIENTE` → `APROBADA`
+1567:### `TRANS:V:PP3` · `PP3` — `PENDIENTE` → `RECHAZADA`
+1579:## Suscripción (`B/03` §3.2)
+1615:## Suscripción (`B/03` §3.2) — las transiciones
+1619:### `TRANS:B:S1` · `S1` — *(sin fila)* → `PENDING_AUTHORIZATION`
+2346:### `TRANS:B:S2` · `S2` — `PENDING_AUTHORIZATION` → `ACTIVE`
+2362:### `TRANS:B:S3` · `S3` — `PENDING_AUTHORIZATION` → `ABANDONED`
+2492:### `TRANS:B:S4` · `S4` — `ACTIVE` → `GRACE_PERIOD`
+2568:### `TRANS:B:S5` · `S5` — `GRACE_PERIOD` → `ACTIVE`
+2805:### `TRANS:B:S6` · `S6`
+2821:### `TRANS:B:S7` · `S7`
+2837:### `TRANS:B:S8` · `S8` — `ACTIVE` → `PAUSED` *(motivo `CUSTOMER_REQUEST`)*
+2928:### `TRANS:B:S9` · `S9` — `ACTIVE` → `PAUSED` *(motivo `COURTESY`)*
+2945:### `TRANS:B:S10` · `S10` — `PAUSED` → `ACTIVE`
+3049:### `TRANS:B:S11` · `S11`
+3120:### `TRANS:B:S12` · `S12` — `CANCEL_SCHEDULED` → `CANCELLED`
+3136:### `TRANS:B:S13` · `S13`
+3315:### `TRANS:B:S14` · `S14` — cualquiera → **el mismo estado**
+3331:### `TRANS:B:S15` · `S15` — cualquiera **con una marca abierta** → **el mismo estado**
+3347:### `TRANS:B:S16` · `S16` — `ACTIVE` → `CHARGE_DECLINED`
+3423:### `TRANS:B:S17` · `S17`
+3439:### `TRANS:B:S18` · `S18`
+3489:### `TRANS:B:S19` · `S19`
+3609:### `TRANS:B:S20` · `S20`
+3693:### `TRANS:B:S21` · `S21`
+3945:### `TRANS:B:S22` · `S22`
+3961:### `TRANS:B:S23` · `S23` — `SUSPENDED` → `CANCELLED`
+3977:### `TRANS:B:S24` · `S24` — `GRACE_PERIOD` → `CANCELLED`
+3993:### `TRANS:B:S29` · `S29` — `PENDING_AUTHORIZATION` → `ACTIVE`
+4009:### `TRANS:B:S30` · `S30` — `ACTIVE` **o `GRACE_PERIOD`** (FASE 9 vuelta 1, `F-8V1B1-006`) → el mismo estado
+4025:### `TRANS:B:S31` · `S31`
+4041:### `TRANS:B:S32` · `S32`
+4057:### `TRANS:B:S33` · `S33` — **toda fila DE COMPLEMENTO en `PAUSED` que pausó `S32`** → `ACTIVE`
+4073:### `TRANS:B:S34` · `S34` — `PAUSED` *(motivo `COURTESY`)* → **el mismo estado**
+4089:### `TRANS:B:S35` · `S35` — `PAUSED` *(motivo `COURTESY`)* → `PAUSED` *(motivo `CUSTOMER_REQUEST`)*
+4105:### `TRANS:B:S36` · `S36`
+4121:### `TRANS:B:S37` · `S37` — `ACTIVE` → el mismo estado
+4137:### `TRANS:B:S38` · `S38`
+4152:## Transiciones que no existen (`B/03` §3.3)
+4183:## Transiciones que no existen (`B/03` §3.3) — las filas
+4187:### `PROH:B:1` · `CANCEL_SCHEDULED` → `ACTIVE`
+4233:### `PROH:B:2` · `CANCELLED` → cualquier cosa
+4245:### `PROH:B:3` · `TRIAL_*` → `SUSPENDED`
+4257:### `PROH:B:4` · `PAUSED` → cualquier cosa que no sea `ACTIVE` o `CANCELLED` **—salvo `SUSPENDED` por `S6` desde una cortesía (abajo)—** **y salvo `CANCEL_SCHEDULED` por `S22` sobre una fila que vive del crédito de `DEC-SUB-006` sin consumir** (FASE 9 vuelta 2, verificación, owner 2026-09-27, `V2-b`: tampoco choca con la razón de esta fila, porque `S22` cancela el preapproval pausado, que `EX-11` mide que se puede)
+4269:### `PROH:B:5` · `ABANDONED` → `ACTIVE`
+4281:### `PROH:B:6` · dos vivas para el mismo `user + vertical`, **salvo una sucesión declarada**
+4291:## Pago (`B/03` §6)
+4375:## Pago (`B/03` §6) — las transiciones
+4379:### `TRANS:B:P1` · `P1` — `PENDING` → `SUCCEEDED`
+4393:### `TRANS:B:P2` · `P2` — `PENDING` → `FAILED`
+4408:### `TRANS:B:P3` · `P3` — `SUCCEEDED` → `REFUNDED`
+4422:### `TRANS:B:P4` · `P4` — `SUCCEEDED` → `PARTIALLY_REFUNDED`
+4436:### `TRANS:B:P5` · `P5` — `PARTIALLY_REFUNDED` → `PARTIALLY_REFUNDED` o `REFUNDED`
+4450:### `TRANS:B:P6` · `P6`
+4464:### `TRANS:B:P7` · `P7` — `CHARGED_BACK` → `SUCCEEDED` — **o `PARTIALLY_REFUNDED`**
+4476:## Reembolso (`B/03` §6.1)
+4500:## Reembolso (`B/03` §6.1) — las transiciones
+4504:### `TRANS:B:RF1` · `RF1` — *(sin fila)* → `REQUESTED`
+4518:### `TRANS:B:RF2` · `RF2` — `REQUESTED` → `CONFIRMED`
+4532:### `TRANS:B:RF3` · `RF3` — `CONFIRMED` → `EXECUTED`
+4547:### `TRANS:B:RF4` · `RF4` — *(sin fila)* → `EXECUTED`
+4561:### `TRANS:B:RF5` · `RF5` — `REQUESTED` o `CONFIRMED` → `FAILED`
+4573:## Pago manual (`B/03` §7)
+4611:## Pago manual (`B/03` §7) — las transiciones
+4615:### `TRANS:B:MP1` · `MP1` — `AWAITING` → `REGISTERED`
+4649:### `TRANS:B:MP2` · `MP2` — `AWAITING` → `DECLARED_UNPAID`
+4663:### `TRANS:B:MP3` · `MP3` — `AWAITING` → `DECLARED_UNPAID`
+4755:### `TRANS:B:MP4` · `MP4` — `DECLARED_UNPAID` → `REGISTERED`
+5035:### `TRANS:B:MP5` · `MP5` — *(sin fila)* → `AWAITING`
+5299:### `TRANS:B:MP6` · `MP6` — *(sin fila)* → `REGISTERED`
+5311:## Instancia de addon, A1–A7 (`B/03` §8)
+5324:## Instancia de addon, A1–A7 (`B/03` §8) — las transiciones
+5328:### `TRANS:B:A1` · `A1` — *(sin fila)* → `PENDING_AUTHORIZATION`
+5343:### `TRANS:B:A1-bis` · `A1-bis` — *(sin fila)* → `ACTIVE`
+5358:### `TRANS:B:A2` · `A2` — `PENDING_AUTHORIZATION` → `ACTIVE`
+5373:### `TRANS:B:A3` · `A3` — `PENDING_AUTHORIZATION` → `ABANDONED`
+5388:### `TRANS:B:A4` · `A4` — `ACTIVE` → `EXPIRED`
+5403:### `TRANS:B:A5` · `A5`
+5555:### `TRANS:B:A6` · `A6`
+5570:### `TRANS:B:A7` · `A7` — `PENDING_AUTHORIZATION`, **sólo `UNA_VEZ`** → `ABANDONED`
+5583:## Motivos de la marca de conciliación (`B/02` §2.5)
+5677:## Motivos de la marca de conciliación (`B/02` §2.5) — los veinticuatro
+5681:### `MOT:1` · `REEMBOLSO_POR_CONFIRMAR`
+5755:### `MOT:2` · `COBRO_POSTERIOR_A_LA_BAJA`
+5769:### `MOT:3` · `COBRO_POSTERIOR_AL_GRANT`
+5783:### `MOT:4` · `PAGO_PENDIENTE_SIN_RAMA`
+5797:### `MOT:5` · `DIVERGENCIA_DE_MONTO`
+5811:### `MOT:6` · `TRANSICIÓN_NO_DECLARADA`
+5825:### `MOT:7` · `PAGO_TARDÍO_RECHAZADO`
+5869:### `MOT:8` · `REANUDACIÓN_NO_APLICADA`
+5883:### `MOT:9` · `SUCESIÓN_ABIERTA_SOBRE_FILA_MUERTA`
+5897:### `MOT:10` · `FAN_OUT_DE_GRANT_INCOMPLETO`
+5911:### `MOT:11` · `ADDON_SIN_APAGAR`
+5925:### `MOT:12` · `COBRO_DURANTE_CORTESÍA`
+5939:### `MOT:13` · `CORTESÍA_SIN_RE_EMITIR`
+5953:### `MOT:14` · `COMPLEMENTO_CON_PERÍODO_COBRADO_POR_OTRA_CAUSA`
+5967:### `MOT:15` · `COMPLEMENTO_CON_PERÍODO_COBRADO_POR_REVOCACIÓN`
+5982:### `MOT:16` · `CANCELACIÓN_SIN_CONFIRMAR`
+5996:### `MOT:17` · `CONTRACARGO`
+6010:### `MOT:18` · `REEMBOLSO_FUERA_DEL_FLUJO`
+6024:### `MOT:19` · `COBRO_SIN_REGISTRAR`
+6039:### `MOT:20` · `COBRO_DUPLICADO`
+6053:### `MOT:21` · `COBRO_DEL_PERÍODO_SIN_RESOLVER`
+6067:### `MOT:22` · `PAUSA_NO_APLICADA`
+6081:### `MOT:23` · `ORDEN_PAGADA_SIN_INSTANCIA`
+6095:### `MOT:24` · `IMPORTE_COBRADO_DE_MÁS`
+6107:## Candados: los seis cruces (`B/05` §2)
+6113:### `LOCK:C1` · C1 · Entra el pago mientras corre el proceso que suspende
+6226:### `LOCK:C2` · C2 · Se pide la cancelación mientras entra un cobro
+6299:### `LOCK:C3` · C3 · Se otorga *Free Forever* mientras se ejecuta un cobro
+6327:### `LOCK:C4` · C4 · Se compra un addon mientras se aplica un downgrade que baja su base
+6350:### `LOCK:C5` · C5 · Un admin registra un pago manual mientras la persona paga por el proveedor
+6390:### `LOCK:C6` · C6 · Dos instancias procesan el mismo evento en paralelo
+6429:## El proveedor falso: mentiras medidas y reglas propias (`B/20` §3.2)
+6456:## Mentiras medidas, M1–M13 (`B/20` §3.2)
+6460:### `M:M1` · `M1`
+6568:### `M:M2` · `M2`
+6580:### `M:M3` · `M3`
+6592:### `M:M4` · `M4`
+6604:### `M:M5` · `M5`
+6616:### `M:M6` · `M6`
+6628:### `M:M7` · `M7`
+6640:### `M:M8` · `M8`
+6652:### `M:M9` · `M9`
+6664:### `M:M10` · `M10`
+6676:### `M:M11` · `M11`
+6688:### `M:M12` · `M12`
+6700:### `M:M13` · `M13`
+6710:## Reglas propias y comportamiento medido, RP1–RP12 (`B/20` §3.2)
+6714:### `RP:RP1` · `RP1`
+6798:### `RP:RP2` · `RP2`
+6809:### `RP:RP3` · `RP3`
+6820:### `RP:RP4` · `RP4`
+6831:### `RP:RP5` · `RP5`
+6842:### `RP:RP6` · `RP6`
+6853:### `RP:RP7` · `RP7`
+6864:### `RP:RP8` · `RP8`
+6875:### `RP:RP9` · `RP9`
+6886:### `RP:RP10` · `RP10`
+6897:### `RP:RP11` · `RP11`
+6908:### `RP:RP12` · `RP12`
+6917:## Guards (`V/20` §2 y `B/20` §2)
+7566:## Guards — los treinta y cinco, y las dos validaciones del panel
+7570:### `GUARD:G1` · `G1`
+7600:### `GUARD:G2` · `G2`
+7613:### `GUARD:G3` · `G3`
+7626:### `GUARD:G4` · `G4`
+7639:### `GUARD:G5` · `G5`
+7652:### `GUARD:G6` · `G6`
+7665:### `GUARD:G8` · `G8`
+7678:### `GUARD:G13` · `G13`
+7691:### `GUARD:G14` · `G14`
+7704:### `GUARD:G18` · `G18`
+7717:### `GUARD:G19` · `G19`
+7730:### `GUARD:G-R2` · `G-R2`
+7743:### `GUARD:G-R2-B` · `G-R2-B`
+7756:### `GUARD:G-R2-C` · `G-R2-C`
+7769:### `VAL:G-R3` · `G-R3`
+7781:### `GUARD:G-R3-B` · `G-R3-B`
+7794:### `GUARD:G-R3-C` · `G-R3-C`
+7807:### `GUARD:G-R4` · `G-R4`
+7823:### `GUARD:G-R4-B` · `G-R4-B`
+7836:### `VAL:G-R5-B` · `G-R5-B`
+7848:### `GUARD:G-R6` · `G-R6`
+7864:### `GUARD:G-R6-B` · `G-R6-B`
+7880:### `GUARD:G-R9` · `G-R9`
+7893:### `GUARD:G7` · `G7`
+7923:### `GUARD:G9` · `G9`
+7936:### `GUARD:G10` · `G10`
+7949:### `GUARD:G11` · `G11`
+7962:### `GUARD:G12` · `G12`
+7990:### `GUARD:G-R1-A` · `G-R1-A`
+8003:### `GUARD:G-R1-B` · `G-R1-B`
+8016:### `GUARD:G-R1-C` · `G-R1-C`
+8029:### `GUARD:G-R1-D` · `G-R1-D`
+8042:### `GUARD:G-R1-E` · `G-R1-E`
+8055:### `GUARD:G-R1-F` · `G-R1-F`
+8068:### `GUARD:G15` · `G15`
+8081:### `GUARD:G16` · `G16`
+8094:### `GUARD:G17` · `G17`
+8105:## Matriz de validación de Mercado Pago (`D/06`)
+8115:## Matriz · Preapproval
+8117:## Matriz · Preapproval — las filas
+8121:### `MP:PA-1` · Creación por API
+8134:### `MP:PA-2` · Linking con nuestro dominio desde el inicio
+8147:### `MP:PA-3` · Autorización por el usuario
+8160:### `MP:PA-4` · Rechazo
+8173:### `MP:PA-5` · Cancelación
+8186:### `MP:PA-6` · ¿El proveedor cancela el preapproval ante **cualquier** primer cobro rechazado, o sólo ante el antifraude?
+8197:## Matriz · Frecuencias de facturación (§19)
+8199:## Matriz · Frecuencias de facturación (§19) — las filas
+8203:### `MP:FR-1` · Mensual
+8216:### `MP:FR-2` · Trimestral
+8229:### `MP:FR-3` · Semestral
+8242:### `MP:FR-4` · Anual
+8253:## Matriz · Renovaciones
+8255:## Matriz · Renovaciones — las filas
+8259:### `MP:RN-1` · Cobro exitoso
+8272:### `MP:RN-2` · Cobro fallido
+8285:### `MP:RN-3` · Recuperación tras el fallo
+8296:## Matriz · Grace (§20)
+8298:## Matriz · Grace (§20) — las filas
+8302:### `MP:GR-1` · **Recuperación durante el grace**
+8315:### `MP:GR-2` · Pago tardío, después de suspender (§22)
+8328:### `MP:GR-3` · **Política de reintentos del proveedor**
+8339:## Matriz · Pausa — `BD-MP-01`
+8341:## Matriz · Pausa — `BD-MP-01` — las filas
+8345:### `MP:PS-1` · Pausar
+8358:### `MP:PS-2` · Que no cobre mientras está pausada
+8371:### `MP:PS-3` · Reanudación anticipada por el usuario (§26.2)
+8384:### `MP:PS-4` · Reanudación automática al llegar la fecha (§26.2)
+8397:### `MP:PS-5` · Qué pasa con las fechas al reanudar
+8410:### `MP:PS-6` · Qué pasa con la fecha de cobro al reanudar (§26.4)
+8421:## Matriz · Cancelación (§24)
+8423:## Matriz · Cancelación (§24) — las filas
+8427:### `MP:CN-1` · Cancelación programada a fin de período
+8440:### `MP:CN-2` · Comportamiento inmediato del proveedor
+8451:## Matriz · Cambios de precio — `BD-MP-03` (§29)
+8460:## Matriz · Cambios de precio — `BD-MP-03` (§29) — las filas
+8464:### `MP:PC-1` · Sobre una suscripción existente ya autorizada
+8477:### `MP:PC-2` · Limitaciones: pisos, topes, magnitud del cambio
+8490:### `MP:PC-3` · ¿Requiere nuevo consentimiento del usuario?
+8501:## Matriz · Upgrade (§27)
+8503:## Matriz · Upgrade (§27) — las filas
+8507:### `MP:UP-1` · Aplicación inmediata
+8520:### `MP:UP-2` · Efecto económico: prorrateo, cobro inmediato, o nada
+8531:## Matriz · Downgrade (§28)
+8533:## Matriz · Downgrade (§28) — las filas
+8537:### `MP:DW-1` · Aplicación al ciclo siguiente
+8550:### `MP:DW-2` · ¿Lo soporta el proveedor, o hay que emularlo?
+8561:## Matriz · Cortesía temporal — `BD-MP-02` (§34.2)
+8563:## Matriz · Cortesía temporal — `BD-MP-02` (§34.2) — las filas
+8567:### `MP:CT-1` · N meses gratis sobre una suscripción viva
+8580:### `MP:CT-2` · Estrategias posibles: bajar monto / pausar / recrear / reembolsar
+8593:### `MP:CT-3` · Efectos colaterales de cada estrategia
+8604:## Matriz · Grant permanente (§35.3)
+8606:## Matriz · Grant permanente (§35.3) — las filas
+8610:### `MP:GT-1` · Cancelación correcta de la suscripción del proveedor
+8621:## Matriz · Webhooks (§51)
+8623:## Matriz · Webhooks (§51) — las filas
+8627:### `MP:WH-1` · Duplicados
+8640:### `MP:WH-2` · Demorados
+8653:### `MP:WH-3` · Fuera de orden
+8666:### `MP:WH-4` · Reintentos
+8679:### `MP:WH-5` · Faltantes: un evento que nunca llega
+8692:### `MP:WH-6`
+8703:## Matriz · Reconciliación (§23)
+8705:## Matriz · Reconciliación (§23) — las filas
+8709:### `MP:RC-1` · Consultar el estado real de una suscripción
+8722:### `MP:RC-2` · Historial de pagos
+8735:### `MP:RC-3` · Reparar el estado local desde el del proveedor
+8748:### `MP:RC-4` · ¿El `search` devuelve los mismos campos que el `GET`?
+8761:### `MP:RC-5` · **¿`summarized.charged_quantity` cuenta COBROS?**
+8774:### `MP:RC-6` · **¿El `status` de un `authorized_payment` dice si se cobró?**
+8787:### `MP:RC-7` · **`expire_date`: la ventana de vida de un cobro**
+8800:### `MP:RC-8` · **Contracargo: ¿qué estado lee el pago y qué aviso llega?**
+8813:### `MP:RC-9` · **¿`GET /preapproval/{id}` devuelve `version`?**
+8824:## Matriz · ✚ Reembolsos — `M-LEGAL-01`
+8835:## Matriz · ✚ Reembolsos — `M-LEGAL-01` — las filas
+8839:### `MP:RF-1` · Reembolso total de un cobro
+8852:### `MP:RF-2` · Reembolso parcial
+8865:### `MP:RF-3` · Plazo máximo para reembolsar un cobro
+8878:### `MP:RF-4` · ¿El reembolso exige clave de idempotencia?
+8891:### `MP:RF-5` · Forma del error cuando el reembolso NO corresponde
+8902:## Matriz · ✚ Huecos estructurales
+8912:## Matriz · ✚ Huecos estructurales — las filas
+8916:### `MP:RF-6` · ¿El reembolso es idempotente?
+8930:### `MP:RF-7` · ¿Un reembolso emite webhook?
+8944:### `MP:RF-8` · El rechazo `code 2084`, sin explicación
+8958:### `MP:EX-1` · Qué pasa con una autorización creada y **nunca completada**: ¿vence?, ¿cuándo?, ¿se puede reusar?
+8972:### `MP:EX-2` · ¿Los eventos del proveedor traen **orden confiable** (versión o timestamp)?
+8986:### `MP:EX-3` · ¿Qué le comunica el proveedor **al cliente, por su cuenta**, al cancelar / pausar / modificar?
+9000:### `MP:EX-4` · Cambio de **frecuencia** sobre una suscripción ya autorizada
+9014:### `MP:EX-5` · ¿Una autorización puede cubrir **más de un monto**?
+9028:### `MP:EX-6` · N autorizaciones del mismo pagador conviviendo, ya autorizadas
+9042:### `MP:EX-7` · Compensar días ya pagados corriendo la **primera fecha de cobro**
+9056:### `MP:EX-9` · ¿Se puede tokenizar una tarjeta **ya guardada**, server-side?
+9070:### `MP:EX-10` · ¿Ese token crea una suscripción autorizada real?
+9084:### `MP:EX-8` · ¿Se respeta esa primera fecha **después** de autorizar?
+9098:### `MP:EX-11` · ¿Qué se puede hacer sobre una suscripción **pausada**?
+9112:### `MP:EX-12` · ¿Un `card_token` sirve para más de una suscripción?
+9126:### `MP:EX-13` · ¿Los eventos vienen **firmados**, y se puede verificar la firma?
+9140:### `MP:EX-14` · ¿Se puede distinguir **sandbox de producción** mirando el evento?
+9154:### `MP:EX-16` · ¿Se puede conciliar una suscripción **SIN** la API de Payments?
+9168:### `MP:EX-17` · ¿La **creación** de una suscripción es idempotente?
+9182:### `MP:EX-18` · ¿Se puede cobrar en una **moneda** que no sea ARS?
+9196:### `MP:EX-19` · ¿Qué campos se pueden **reescribir** sobre una autorizada?
+9210:### `MP:EX-20` · ¿Un `PUT` con varios campos se aplica entero?
+9224:### `MP:EX-15` · ¿Qué operaciones **NO** emiten webhook?
+9236:## Matriz · ✚ Planes — `/preapproval_plan`
+9252:## Matriz · ✚ Planes — `/preapproval_plan` — las filas
+9256:### `MP:EX-21` · ¿Se puede **mover** una suscripción viva de un plan a otro?
+9270:### `MP:EX-22` · Con plan, ¿puede la suscripción traer su propio `auto_recurring`?
+9284:### `MP:EX-23` · Editar el **monto** de un plan, ¿alcanza a los ya suscriptos?
+9298:### `MP:EX-24` · ¿El **ciclo** de un plan es editable?
+9312:### `MP:EX-25` · El cambio de **ciclo** del plan, ¿alcanza a los ya suscriptos?
+9326:### `MP:EX-26` · ¿`free_trial` funciona **sin** plan?
+9340:### `MP:EX-27` · ¿`repetitions` y `billing_day` funcionan **sin** plan?
+9354:### `MP:EX-28` · ¿Los planes aceptan **ciclo diario**?
+9368:### `MP:EX-29` · El **free trial de un plan**, ¿lo decide el request?
+9380:## Matriz · ✚ Cobrar SIN suscripción — Orders API y credencial guardada
+9422:## Matriz · ✚ Cobrar SIN suscripción — Orders API y credencial guardada — las filas
+9426:### `MP:EX-30` · ¿Existe `/v1/orders`, y cobra?
+9440:### `MP:EX-31` · ¿Se puede cobrar de forma **recurrente** sin `preapproval`, con credencial guardada?
+9454:### `MP:EX-32` · ¿Está disponible **Wallet Connect**?
+9468:### `MP:EX-33`
+9482:### `MP:EX-35` · Poner un **`free_trial`** sobre una suscripción ya viva
+9496:### `MP:EX-36` · Cambiar el **medio de pago** de una suscripción viva, sin recrearla
+9510:### `MP:EX-37` · El **`init_point`** que devuelve el proveedor, ¿sirve tal como viene?
+9524:### `MP:EX-38` · Una `start_date` futura, ¿qué le muestra el proveedor al cliente?
+9538:### `MP:EX-39` · Mover la **fecha de cobro** de un preapproval **`pending`** (no autorizado)
+9552:### `MP:EX-40` · ¿Se puede **desactivar un plan** (`preapproval_plan`), y su link deja de vender?
+9566:### `MP:EX-41` · ¿`/v1/orders` es **idempotente** por `X-Idempotency-Key`?
+9580:### `MP:EX-42`
+9594:### `MP:EX-43`
+9608:### `MP:EX-44`
+9622:### `MP:EX-45` · Una cancelación leída `cancelled` en el `PUT` y en un `GET` inmediato, ¿sigue `cancelled` releída **horas después**?
+9636:### `MP:EX-46`
+9651:### `MP:EX-47`
+9665:### `MP:EX-48`
+9679:### `MP:EX-49`
+9693:### `MP:EX-50`
+9707:### `MP:EX-51` · ¿A qué hora cobra el proveedor un registro de cobro con fecha dada?
+9721:### `MP:EX-52`
+9735:### `MP:EX-53`
+9749:### `MP:EX-54`
+9763:### `MP:EX-55` · ¿Un alta de preapproval que devuelve `400` deja un preapproval creado?
+9777:### `MP:EX-56`
+9791:### `MP:EX-57`
+9805:### `MP:EX-58`
+9819:### `MP:EX-59`
+9833:### `MP:EX-34` · Correr la **fecha de cobro** de una suscripción **ya viva**

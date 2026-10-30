@@ -147,17 +147,6 @@ describe('API routes — rich-description strip guard (BETA-199)', () => {
         ).toEqual([]);
     });
 
-    it('keeps getById as the only route that resolves owner entitlements', () => {
-        // The other half of the contract. If a second route starts resolving owner
-        // entitlements it is presumably trying to emit the pair too — a deliberate
-        // decision that should not slip in unnoticed.
-        const resolvers = routes
-            .filter((route) => route.source.includes('resolveOwnerEntitlementsForOwnerId'))
-            .map((route) => route.name);
-
-        expect(resolvers).toEqual([GATED_ROUTE]);
-    });
-
     it('does not accept a mention of the helper in a comment', () => {
         // `usesStripHelper` is the load-bearing half. Pin what it rejects, or the
         // guard quietly degrades to "the identifier appears somewhere".

@@ -16,7 +16,7 @@
  * never missing; it pointed at nothing.
  *
  * Six call sites carried the same wrong prefix, across accommodations,
- * destinations, events, gastronomy and experiences. Six wrong call sites is not
+ * destinations, events, venue and experiences. Six wrong call sites is not
  * six bugs to fix one by one — it is a missing guard, so this is the guard.
  *
  * ## Why a scan rather than per-call-site assertions

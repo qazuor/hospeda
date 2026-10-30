@@ -5,9 +5,7 @@
  * Tags: @p1 @guest @billing
  *
  * Preconditions:
- *   - Suite seed has the `tourist-vip` billing plan in `billing_plans` with
- *     `name = slug` and livemode = false. Seeded by
- *     `packages/seed/src/required/billingPlans.seed.ts` (part of e2e:seed).
+ *   - Suite seed has the current `tourist-vip` catalog version and its limits.
  *   - Suite seed has at least 5 ACTIVE, publicly-visible accommodations so the
  *     VIP over-limit leg (5 ids) can be exercised.
  *
@@ -34,9 +32,10 @@
  */
 
 import { expect, test } from '@playwright/test';
-import { createSubscription, createUser, resolvePlanIdBySlug } from '../../fixtures/api-helpers.ts';
+import { createUser } from '../../fixtures/api-helpers.ts';
 import { seedCookieConsent } from '../../fixtures/browser-helpers.ts';
 import { execSQL, getDbPool } from '../../fixtures/db-helpers.ts';
+import { readCurrentPlanLimit, seedActivePlanHolder } from '../../fixtures/signup-checkout.ts';
 import { cleanupTestUsers } from '../../support/test-cleanup.ts';
 
 const API_URL = process.env.HOSPEDA_E2E_API_URL ?? 'http://localhost:18001';
@@ -73,7 +72,6 @@ async function postCompare(options: {
 
 test.describe('GUEST-05: accommodation comparison gate + UI flow @p1 @guest @billing', () => {
     const userIds: string[] = [];
-    let vipPlanId: string | null = null;
     // Read the cap from the plan rather than hard-coding it: `max_compare_items`
     // is commercial configuration that has already moved once (vip 4 -> 5) and
     // left this spec asserting a rule the product no longer had.
@@ -81,13 +79,10 @@ test.describe('GUEST-05: accommodation comparison gate + UI flow @p1 @guest @bil
     let accIds: string[] = [];
 
     test.beforeAll(async () => {
-        const vip = await resolvePlanIdBySlug({ slug: 'tourist-vip' });
-        vipPlanId = vip.planId;
-        vipCap = vip.limits?.max_compare_items ?? 0;
+        vipCap = await readCurrentPlanLimit({ slug: 'tourist-vip', key: 'max_compare_items' });
         const accs = await execSQL<AccRow>(
             `SELECT id, slug FROM accommodations
-             WHERE lifecycle_state = 'ACTIVE'
-               AND visibility = 'PUBLIC'
+             WHERE publication_status = 'PUBLISHED'
                AND deleted_at IS NULL
              ORDER BY created_at ASC
              LIMIT 5`
@@ -122,15 +117,12 @@ test.describe('GUEST-05: accommodation comparison gate + UI flow @p1 @guest @bil
     });
 
     test('gate: VIP allows its cap, blocks one more with LIMIT_REACHED', async () => {
-        test.fixme(!vipPlanId, 'tourist-vip plan not seeded — cannot run');
-        test.fixme(vipCap < 1, 'tourist-vip carries no max_compare_items limit');
         test.fixme(accIds.length < vipCap + 1, `Seed needs ≥ ${vipCap + 1} ACTIVE accommodations`);
-        if (!vipPlanId) return;
 
         // ── Arrange: USER with an active tourist-vip subscription ───────────
         const vip = await createUser({ role: 'USER' }, { apiBaseUrl: API_URL });
         userIds.push(vip.id);
-        await createSubscription({ userId: vip.id, planId: vipPlanId, status: 'active' });
+        await seedActivePlanHolder({ userId: vip.id, slug: 'tourist-vip' });
 
         // ── Act + Assert: exactly the cap passes ────────────────────────────
         const ok = await postCompare({ cookie: vip.sessionCookie, ids: accIds.slice(0, vipCap) });
@@ -150,14 +142,12 @@ test.describe('GUEST-05: accommodation comparison gate + UI flow @p1 @guest @bil
     test('UI flow: select from listing → floating bar → compare page → matrix', async ({
         page
     }) => {
-        test.fixme(!vipPlanId, 'tourist-vip plan not seeded — cannot run');
         test.fixme(accIds.length < 2, 'Seed needs ≥ 2 ACTIVE accommodations');
-        if (!vipPlanId) return;
 
         // ── Arrange: a VIP user, with its session attached to the browser ──
         const vip = await createUser({ role: 'USER' }, { apiBaseUrl: API_URL });
         userIds.push(vip.id);
-        await createSubscription({ userId: vip.id, planId: vipPlanId, status: 'active' });
+        await seedActivePlanHolder({ userId: vip.id, slug: 'tourist-vip' });
 
         await page.context().addCookies(
             vip.sessionCookie.split('; ').map((c) => {

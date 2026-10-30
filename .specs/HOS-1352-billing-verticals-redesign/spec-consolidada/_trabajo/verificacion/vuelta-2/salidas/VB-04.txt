@@ -1,0 +1,18 @@
+# VB-04 · spec → fuente · 10-corte/U1.md, 10-corte/U2.md, 10-corte/U3.md, 10-corte/V1.md
+
+## Hallazgos
+
+10-corte/U1.md:27-29 · «en los cuatro `package.json` que lo declaraban el 2026-09-29 (`apps/api`, `apps/admin`, `packages/billing` y `packages/service-core`)» · contradice .specs/HOS-1352-billing-verticals-redesign/docs/16-fase-7-del-paraguas.md:690-692 («en los cinco `package.json` que lo declaraban el 2026-09-29 (`apps/api`, `apps/admin`, `packages/billing`, `packages/db` y `packages/service-core`)»; también 01-decision-log.md:7496 y :7507, «sus cinco `package.json`»; 38-fase-5/05-lo-que-borra-u1.md:201 confirma `packages/db/package.json:56-57`, `-core` y `-drizzle`). Omite `packages/db`, justo el que mete las tablas de qzpay en el esquema de Drizzle, y además choca adentro del mismo archivo con AC:U1:1 (U1.md:214-215, «los cinco `package.json`») · BLOQUEA
+
+10-corte/U2.md:24-25 · «rebote duro, cuenta borrada, opt-out y tope diario, **global, sumado sobre todos los destinatarios**» · contradice .specs/HOS-1352-billing-verticals-redesign/docs/nucleo/07-outbox-y-notificaciones.md:189-193 («### 4.3 El tope diario cuenta por destinatario, no global … Un tope global convierte un pico de actividad en correos perdidos»). Ninguna decisión posterior lo cambia (rg «tope diario» en el log y en 41-corte-del-mvp/10-decisiones-del-owner.md: sin resultados). Además choca adentro del mismo archivo con AC:U2:7 (U2.md:197, «cuenta **por destinatario**, no global»), con TEST:U2:7 y con Reglas (U2.md:260-261) · BLOQUEA
+
+10-corte/V1.md:275 · «**ninguno hoy**: trial en cero días (`DEC-TRIAL-003`), y no se enciende en esta versión (`V/11` §8, desarrollado en `V4`)» · más débil que .specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/10-verticales-planes-billing-options.md:39 («el panel rechaza pasarlo de 0 a más de 0 (cap. 11 §8; … residuo corregido el 2026-10-02)»). La celda pierde el rechazo del panel y le atribuye el desarrollo a `V4`, cuando la descomposición pone ese rechazo en `V2` (HOS-1353 descomposicion.md, fila «sale `T7`»: «va con … **`V2`**, que construye la acción "publicar una versión de plan"»). Es una tabla de reglas que se instancia y la regla vive en otra pieza, así que no cambia lo que construye V1: cita mal apuntada · MENOR
+
+## Resumen
+
+| archivo | líneas recorridas | afirmaciones normativas revisadas (aprox.) | BLOQUEA | MENOR |
+|---|---|---|---|---|
+| 10-corte/U1.md | 1–848 | 150 | 1 | 0 |
+| 10-corte/U2.md | 1–491 | 75 | 1 | 0 |
+| 10-corte/U3.md | 1–476 | 70 | 0 | 0 |
+| 10-corte/V1.md | 1–522 | 80 | 0 | 1 |

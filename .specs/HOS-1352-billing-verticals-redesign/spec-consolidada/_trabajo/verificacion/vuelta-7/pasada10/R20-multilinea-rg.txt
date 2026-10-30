@@ -1,0 +1,2 @@
+.specs/HOS-1352-billing-verticals-redesign/spec-consolidada/10-corte/B13a.md:1092:contracargo visible en el listado, excluido de la propuesta de devolución por defecto; se resuelve
+.specs/HOS-1352-billing-verticals-redesign/spec-consolidada/_trabajo/verificacion/vuelta-7/pasada10/inventario-reglas.md:26:| R20 | 7 | Contracargo visible listado; excluido propuesta devolución por defecto; resolver sin devolver | contracargo y no en la vista; contracargo.*defecto |

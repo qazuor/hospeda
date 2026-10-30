@@ -7,6 +7,7 @@
  */
 
 import { AddIcon, RefreshIcon, SettingsIcon } from '@repo/icons';
+import { PermissionEnum } from '@repo/schemas';
 import { createFileRoute } from '@tanstack/react-router';
 import { useState } from 'react';
 import { SidebarPageLayout } from '@/components/layout/SidebarPageLayout';
@@ -43,10 +44,10 @@ import {
 } from '@/features/exchange-rates';
 import { useToast } from '@/hooks/use-toast';
 import { useTranslations } from '@/hooks/use-translations';
-import { requireBillingAccess } from '@/lib/billing-access';
+import { requireAdminPermission } from '@/lib/admin-api-access';
 
 export const Route = createFileRoute('/_authed/billing/exchange-rates')({
-    beforeLoad: ({ context }) => requireBillingAccess(context),
+    beforeLoad: ({ context }) => requireAdminPermission(context, PermissionEnum.EXCHANGE_RATE_VIEW),
     component: ExchangeRatesPage
 });
 

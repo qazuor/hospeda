@@ -47,7 +47,6 @@ function makeHostCtx(userId = 'usr_host_001'): ResolverContext {
 const HOST_SOURCE_IDS = [
     'host.accommodations.count',
     'host.accommodations.drafts',
-    'host.billing.plan',
     'host.conversations.pending',
     'host.reviews.latest',
     'host.stats.favorites',

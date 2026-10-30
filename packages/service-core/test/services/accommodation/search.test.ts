@@ -100,11 +100,8 @@ describe('AccommodationService.search', () => {
             pageSize: 2,
             sortBy: undefined,
             sortOrder: 'asc',
-            excludeRestricted: false,
-            excludeOwnerSuspended: false,
-            excludePlanRestricted: false,
-            // actor has ACCOMMODATION_VIEW_ALL → hasVipAccess=true → activeOnly=false
-            activeOnly: false
+            // A non-owner, staff included, reads PUBLISHED only (AC:V5:5, HOS-1641)
+            publishedOnly: true
         });
     });
 
@@ -192,11 +189,27 @@ describe('AccommodationService.search', () => {
             pageSize: 10,
             sortBy: undefined,
             sortOrder: 'asc',
-            excludeRestricted: false,
-            excludeOwnerSuspended: false,
-            excludePlanRestricted: false,
-            // actor has ACCOMMODATION_VIEW_ALL → hasVipAccess=true → activeOnly=false
-            activeOnly: false
+            // A non-owner, staff included, reads PUBLISHED only (AC:V5:5, HOS-1641)
+            publishedOnly: true
         });
+    });
+
+    it.each([
+        true,
+        false
+    ])('forwards isFeatured=%s to the model search and count (HOS-1898)', async (isFeatured) => {
+        // Arrange
+        asMock(model.searchWithRelations).mockResolvedValue(paginated(entities, 1, 10));
+        model.countByFilters = vi.fn().mockResolvedValue({ count: 2 });
+
+        // Act
+        await service.search(actor, { isFeatured, page: 1, pageSize: 10 });
+        await service.count(actor, { isFeatured, page: 1, pageSize: 10 });
+
+        // Assert
+        expect(model.searchWithRelations).toHaveBeenCalledWith(
+            expect.objectContaining({ isFeatured })
+        );
+        expect(model.countByFilters).toHaveBeenCalledWith(expect.objectContaining({ isFeatured }));
     });
 });

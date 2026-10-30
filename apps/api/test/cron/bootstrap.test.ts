@@ -13,14 +13,21 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 // Hoisted mock variables — must be declared before any vi.mock factory
 // ---------------------------------------------------------------------------
 
-const { mockCaptureException, mockSchedule, mockGetEnabledCronJobs, mockRecordCronRun, mockEnv } =
-    vi.hoisted(() => ({
-        mockCaptureException: vi.fn(),
-        mockSchedule: vi.fn(),
-        mockGetEnabledCronJobs: vi.fn(),
-        mockRecordCronRun: vi.fn(),
-        mockEnv: { HOSPEDA_CRON_ADAPTER: 'node-cron' as string }
-    }));
+const {
+    mockCaptureException,
+    mockSchedule,
+    mockGetEnabledCronJobs,
+    mockRecordCronRun,
+    mockPingHealthchecks,
+    mockEnv
+} = vi.hoisted(() => ({
+    mockCaptureException: vi.fn(),
+    mockSchedule: vi.fn(),
+    mockGetEnabledCronJobs: vi.fn(),
+    mockRecordCronRun: vi.fn(),
+    mockPingHealthchecks: vi.fn(),
+    mockEnv: { HOSPEDA_CRON_ADAPTER: 'node-cron' as string }
+}));
 
 // ---------------------------------------------------------------------------
 // Module mocks
@@ -48,6 +55,15 @@ vi.mock('../../src/cron/record-run', () => ({
     recordCronRun: mockRecordCronRun
 }));
 
+vi.mock('../../src/utils/healthchecks-ping', () => ({
+    HEALTHCHECKS_MONITORED_JOBS: [
+        'billing-reconciliation-sweep',
+        'listing-coverage-reconciler',
+        'listing-remote-deletion-retry'
+    ],
+    pingHealthchecks: mockPingHealthchecks
+}));
+
 // node-cron is a dynamic import — mock the whole module
 vi.mock('node-cron', () => ({
     default: { schedule: mockSchedule },
@@ -58,7 +74,10 @@ vi.mock('node-cron', () => ({
 // Test helpers
 // ---------------------------------------------------------------------------
 
-import type { CronJobDefinition, CronJobResult } from '../../src/cron/types';
+import type { CronJobContext, CronJobDefinition, CronJobResult } from '../../src/cron/types';
+
+/** HOS-1424: every schedule is registered on the Buenos Aires wall clock, never via TZ. */
+const BA_TIMEZONE = { timezone: 'America/Argentina/Buenos_Aires' };
 
 function makeJob(name: string, handler: () => Promise<CronJobResult>): CronJobDefinition {
     return {
@@ -203,7 +222,7 @@ describe('startCronScheduler — resolveSchedule (HOS-64 T-013)', () => {
         const { startCronScheduler } = await import('../../src/cron/bootstrap');
         await startCronScheduler();
 
-        expect(mockSchedule).toHaveBeenCalledWith('* * * * *', expect.any(Function));
+        expect(mockSchedule).toHaveBeenCalledWith('* * * * *', expect.any(Function), BA_TIMEZONE);
     });
 
     it('registers with the resolveSchedule output when present', async () => {
@@ -216,7 +235,11 @@ describe('startCronScheduler — resolveSchedule (HOS-64 T-013)', () => {
         const { startCronScheduler } = await import('../../src/cron/bootstrap');
         await startCronScheduler();
 
-        expect(mockSchedule).toHaveBeenCalledWith('*/10 * * * *', expect.any(Function));
+        expect(mockSchedule).toHaveBeenCalledWith(
+            '*/10 * * * *',
+            expect.any(Function),
+            BA_TIMEZONE
+        );
     });
 
     it('falls back to the static schedule when resolveSchedule throws', async () => {
@@ -229,6 +252,159 @@ describe('startCronScheduler — resolveSchedule (HOS-64 T-013)', () => {
         const { startCronScheduler } = await import('../../src/cron/bootstrap');
         await startCronScheduler();
 
-        expect(mockSchedule).toHaveBeenCalledWith('* * * * *', expect.any(Function));
+        expect(mockSchedule).toHaveBeenCalledWith('* * * * *', expect.any(Function), BA_TIMEZONE);
+    });
+});
+
+describe('startCronScheduler — market time zone and run ids (HOS-1424)', () => {
+    beforeEach(() => {
+        vi.clearAllMocks();
+        mockEnv.HOSPEDA_CRON_ADAPTER = 'node-cron';
+        mockRecordCronRun.mockResolvedValue(undefined);
+    });
+
+    afterEach(() => {
+        vi.restoreAllMocks();
+    });
+
+    it('TEST:U2:6 registers every job with the Buenos Aires timezone option', async () => {
+        // Arrange
+        const jobs = [
+            {
+                ...makeJob('daily', () => Promise.resolve(makeSuccessResult())),
+                schedule: '0 8 * * *'
+            },
+            makeJob('minutely', () => Promise.resolve(makeSuccessResult()))
+        ];
+        mockGetEnabledCronJobs.mockReturnValue(jobs);
+
+        // Act
+        const { startCronScheduler } = await import('../../src/cron/bootstrap');
+        await startCronScheduler();
+
+        // Assert
+        expect(mockSchedule).toHaveBeenCalledTimes(2);
+        for (const call of mockSchedule.mock.calls) {
+            expect(call[2]).toEqual(BA_TIMEZONE);
+        }
+    });
+
+    it('TEST:U2:9 every tick hands the job a fresh run id and run correlation', async () => {
+        // Arrange
+        const seen: CronJobContext[] = [];
+        const job: CronJobDefinition = {
+            ...makeJob('dunning', () => Promise.resolve(makeSuccessResult())),
+            handler: async (ctx) => {
+                seen.push(ctx);
+                return makeSuccessResult();
+            }
+        };
+        mockGetEnabledCronJobs.mockReturnValue([job]);
+        const { startCronScheduler } = await import('../../src/cron/bootstrap');
+        await startCronScheduler();
+
+        // Act: two ticks of the same job
+        await fireTick();
+        await fireTick();
+
+        // Assert
+        const uuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/;
+        expect(seen).toHaveLength(2);
+        for (const ctx of seen) {
+            expect(ctx.runId).toMatch(uuid);
+            expect(ctx.correlationId).toMatch(uuid);
+            expect(ctx.runId).not.toBe(ctx.correlationId);
+        }
+        expect(seen[0]?.runId).not.toBe(seen[1]?.runId);
+        expect(seen[0]?.correlationId).not.toBe(seen[1]?.correlationId);
+    });
+});
+
+describe('startCronScheduler — Healthchecks pings (HOS-1742, TEST:1742:7)', () => {
+    const MONITORED = 'billing-reconciliation-sweep';
+
+    beforeEach(() => {
+        vi.clearAllMocks();
+        mockEnv.HOSPEDA_CRON_ADAPTER = 'node-cron';
+        mockRecordCronRun.mockResolvedValue(undefined);
+        mockPingHealthchecks.mockResolvedValue(undefined);
+    });
+
+    afterEach(() => {
+        vi.restoreAllMocks();
+    });
+
+    it('pings start then success when the handler returns success', async () => {
+        const job = makeJob(MONITORED, () => Promise.resolve(makeSuccessResult()));
+        mockGetEnabledCronJobs.mockReturnValue([job]);
+
+        const { startCronScheduler } = await import('../../src/cron/bootstrap');
+        await startCronScheduler();
+        await fireTick();
+
+        expect(mockPingHealthchecks.mock.calls.map((call) => call[0])).toEqual([
+            { job: MONITORED, signal: 'start' },
+            { job: MONITORED, signal: 'success' }
+        ]);
+        expect(mockRecordCronRun).toHaveBeenCalledOnce();
+    });
+
+    it('pings start then fail when the handler returns success === false', async () => {
+        const job = makeJob(MONITORED, () => Promise.resolve(makeSoftFailResult(2)));
+        mockGetEnabledCronJobs.mockReturnValue([job]);
+
+        const { startCronScheduler } = await import('../../src/cron/bootstrap');
+        await startCronScheduler();
+        await fireTick();
+
+        expect(mockPingHealthchecks.mock.calls.map((call) => call[0])).toEqual([
+            { job: MONITORED, signal: 'start' },
+            { job: MONITORED, signal: 'fail' }
+        ]);
+    });
+
+    it('pings start then fail when the handler throws', async () => {
+        const job = makeJob(MONITORED, () => Promise.reject(new Error('boom')));
+        mockGetEnabledCronJobs.mockReturnValue([job]);
+
+        const { startCronScheduler } = await import('../../src/cron/bootstrap');
+        await startCronScheduler();
+        await fireTick();
+
+        expect(mockPingHealthchecks.mock.calls.map((call) => call[0])).toEqual([
+            { job: MONITORED, signal: 'start' },
+            { job: MONITORED, signal: 'fail' }
+        ]);
+        expect(mockRecordCronRun).toHaveBeenCalledOnce();
+    });
+
+    it('does not ping a job outside the monitored list', async () => {
+        const job = makeJob('dunning', () => Promise.resolve(makeSuccessResult()));
+        mockGetEnabledCronJobs.mockReturnValue([job]);
+
+        const { startCronScheduler } = await import('../../src/cron/bootstrap');
+        await startCronScheduler();
+        await fireTick();
+
+        expect(mockPingHealthchecks).not.toHaveBeenCalled();
+        expect(mockRecordCronRun).toHaveBeenCalledOnce();
+    });
+
+    it('records the run and captures the tick error even if the helper rejects', async () => {
+        mockPingHealthchecks.mockRejectedValue(new Error('monitor down'));
+        const job = makeJob(MONITORED, () => Promise.reject(new Error('db exploded')));
+        mockGetEnabledCronJobs.mockReturnValue([job]);
+
+        const { startCronScheduler } = await import('../../src/cron/bootstrap');
+        await startCronScheduler();
+        await fireTick();
+
+        expect(mockRecordCronRun).toHaveBeenCalledOnce();
+        expect(mockCaptureException).toHaveBeenCalledOnce();
+        const [, capturedOpts] = mockCaptureException.mock.calls[0] as [
+            unknown,
+            Record<string, unknown>
+        ];
+        expect(capturedOpts).toMatchObject({ level: 'error' });
     });
 });

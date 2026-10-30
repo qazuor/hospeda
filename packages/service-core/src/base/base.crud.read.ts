@@ -126,7 +126,7 @@ export abstract class BaseCrudRead<
         return this.runWithLoggingAndValidation({
             methodName,
             input: { actor, field, value },
-            schema: z.object({ field: z.string(), value: z.unknown() }),
+            schema: z.object({ field: z.string(), value: z.unknown().optional() }),
             ctx: resolvedCtx,
             execute: async (
                 { field: validatedField, value: validatedValue },
@@ -529,6 +529,14 @@ export abstract class BaseCrudRead<
                 if (status !== undefined && status !== 'all') {
                     if ('lifecycleState' in tableRecord) {
                         where.lifecycleState = status;
+                    } else if ('publicationStatus' in tableRecord) {
+                        // The three listing tables (accommodations,
+                        // venues, experiences) have no lifecycleState
+                        // since V6.9b (HOS-1641): their admin search schemas
+                        // REDEFINE `status` to PublicationStatusEnum, exactly
+                        // like HostTradeBenefitUsageAdminSearchSchema does for
+                        // its own enum, so the key maps to that column.
+                        where.publicationStatus = status;
                     } else if ('status' in tableRecord) {
                         // The entity carries its own state column under the
                         // reserved name and REDEFINES `status` in its admin
@@ -540,7 +548,7 @@ export abstract class BaseCrudRead<
                     } else {
                         throw new ServiceError(
                             ServiceErrorCode.VALIDATION_ERROR,
-                            `Filter "status" is not supported by ${this.entityName}: its table has neither a "lifecycleState" nor a "status" column. Remove the parameter, or use "status=all".`
+                            `Filter "status" is not supported by ${this.entityName}: its table has neither a "lifecycleState", a "publicationStatus" nor a "status" column. Remove the parameter, or use "status=all".`
                         );
                     }
                 }
@@ -567,7 +575,7 @@ export abstract class BaseCrudRead<
                     );
                 }
 
-                return this._executeAdminSearch({
+                const result = await this._executeAdminSearch({
                     where,
                     entityFilters,
                     pagination: { page, pageSize },
@@ -581,6 +589,7 @@ export abstract class BaseCrudRead<
                     actor: validatedActor,
                     ctx: execCtx
                 });
+                return this._afterAdminList(result, validatedActor, execCtx);
             }
         });
     }

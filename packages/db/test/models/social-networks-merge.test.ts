@@ -4,7 +4,7 @@
  * networks the caller did not send, on EVERY model that owns the column.
  *
  * `BaseModelImpl.update()` replaces a JSONB column wholesale unless the model
- * lists it in `mergeableJsonbColumns`. Six models (experience, gastronomy,
+ * lists it in `mergeableJsonbColumns`. Six models (experience, venue,
  * partner, postSponsor, user, eventOrganizer) shipped without `socialNetworks`
  * in that list, so `{ socialNetworks: { instagram } }` silently deleted
  * `facebook`, `twitter`, and the rest. `accommodation` already declared it and
@@ -28,17 +28,17 @@ import { setDb } from '../../src/client';
 import { AccommodationModel } from '../../src/models/accommodation/accommodation.model';
 import { EventOrganizerModel } from '../../src/models/event/eventOrganizer.model';
 import { ExperienceModel } from '../../src/models/experience/experience.model';
-import { GastronomyModel } from '../../src/models/gastronomy/gastronomy.model';
 import { PartnerModel } from '../../src/models/partner/partner.model';
 import { PostSponsorModel } from '../../src/models/post/postSponsor.model';
 import { UserModel } from '../../src/models/user/user.model';
+import { VenueModel } from '../../src/models/venue/venue.model';
 import { accommodations } from '../../src/schemas/accommodation/accommodation.dbschema';
 import { eventOrganizers } from '../../src/schemas/event/event_organizer.dbschema';
 import { experiences } from '../../src/schemas/experience/experiences.dbschema';
-import { gastronomies } from '../../src/schemas/gastronomy/gastronomy.dbschema';
 import { partners } from '../../src/schemas/partner/partner.dbschema';
 import { postSponsors } from '../../src/schemas/post/post_sponsor.dbschema';
 import { users } from '../../src/schemas/user/user.dbschema';
+import { venues } from '../../src/schemas/venue/venue.dbschema';
 import type { DrizzleClient } from '../../src/types';
 import { buildMergeSetClause } from '../../src/utils/jsonb-merge';
 
@@ -61,9 +61,9 @@ const CASES: readonly Case[] = [
         dbColumn: 'social_networks'
     },
     {
-        label: 'GastronomyModel',
-        create: () => new GastronomyModel() as never,
-        table: gastronomies,
+        label: 'VenueModel',
+        create: () => new VenueModel() as never,
+        table: venues,
         dbColumn: 'social_networks'
     },
     {

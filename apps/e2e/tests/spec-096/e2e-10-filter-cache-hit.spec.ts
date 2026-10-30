@@ -5,8 +5,8 @@
  * Tags: @p1 @cache @cross-app
  *
  * Preconditions:
- *   - Public listing endpoint mounted with `cacheTTL` configured for
- *     query-string variants.
+ *   - Public listing endpoint behind the cache middleware, cached per
+ *     query-string variant.
  *
  * What this validates (server-side cache contract):
  *  1. Two consecutive GETs with identical query strings return identical

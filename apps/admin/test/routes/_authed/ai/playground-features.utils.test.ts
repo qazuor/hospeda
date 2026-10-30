@@ -11,7 +11,7 @@ import {
  * Derived from the enum, never hand-listed.
  *
  * This array used to be a literal seven, which silently stopped covering
- * `chat_gastronomy` and `chat_experience` when HOS-400 widened the enum — the
+ * `chat_venue` and `chat_experience` when HOS-400 widened the enum — the
  * "every unsupported feature has a reason" test below kept passing while both
  * new features rendered with no reason at all (HOS-1220).
  */

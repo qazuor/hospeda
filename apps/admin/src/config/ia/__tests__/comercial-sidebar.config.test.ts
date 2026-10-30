@@ -7,8 +7,8 @@
  *      not a greyed-out one (AC-6).
  *   2. Every link item in comercialSidebar (both top-level and nested) carries
  *      `onMissing: 'hide'` (AC-6).
- *   3. `billing-cron` gates on `BILLING_READ_ALL`, NOT `ACCESS_PANEL_ADMIN` (AC-7).
- *   4. `billing-settings` gates on `BILLING_READ_ALL`, NOT `ACCESS_PANEL_ADMIN` (AC-7).
+ *   3. (HOS-1419) the `billing-cron` gate on `BILLING_READ_ALL` is gone with the permission.
+ *   4. (HOS-1416) the `billing-settings` link was removed with the billing pages.
  *   5. Separator items are untouched — they carry no permissions or onMissing.
  *   6. The full rawConfig still passes AdminIAConfigSchema validation after T-005
  *      changes (boot-validation contract / AC-18).
@@ -73,6 +73,32 @@ describe('comercialSidebar IA config (SPEC-164 T-005)', () => {
         expect(comercialItems).toBeDefined();
     });
 
+    it('links to actionable reconciliation marks with billing inspection permission (AC:B13a:9, I-8)', () => {
+        if (!comercialItems) throw new Error('comercialSidebar items not found');
+        const link = collectPermissionedItems(comercialItems).find(
+            (item) => item.id === 'reconciliation-marks'
+        );
+        expect(link).toBeDefined();
+        expect(link).toMatchObject({
+            route: '/billing/reconciliation',
+            permissions: ['BILLING_SUBSCRIPTION_INSPECT'],
+            onMissing: 'hide'
+        });
+    });
+
+    it('links to the action 21 promo code editor with its management permission (AC:B9b:9 HOS-1591)', () => {
+        if (!comercialItems) throw new Error('comercialSidebar items not found');
+        const link = collectPermissionedItems(comercialItems).find(
+            (item) => item.id === 'promo-codes'
+        );
+        expect(link).toBeDefined();
+        expect(link).toMatchObject({
+            route: '/billing/promo-codes',
+            permissions: ['BILLING_MANAGE_PROMO_CODES'],
+            onMissing: 'hide'
+        });
+    });
+
     // ── 1 & 2. All permissioned items carry onMissing: 'hide' ────────────────
 
     it('every group and link item carries onMissing: "hide" (AC-6)', () => {
@@ -112,19 +138,9 @@ describe('comercialSidebar IA config (SPEC-164 T-005)', () => {
         expect(platformCron?.permissions).toContain('SYSTEM_MAINTENANCE_MODE');
     });
 
-    // ── 4. billing-settings re-gated to BILLING_READ_ALL ─────────────────────
-
-    it('billing-settings gates on BILLING_READ_ALL (not ACCESS_PANEL_ADMIN) (AC-7)', () => {
-        if (!comercialItems) throw new Error('comercialSidebar items not found');
-        const allItems = collectPermissionedItems(comercialItems);
-        const billingSettings = allItems.find((item) => item.id === 'billing-settings');
-        expect(
-            billingSettings,
-            'billing-settings item not found in comercialSidebar'
-        ).toBeDefined();
-        expect(billingSettings?.permissions).toContain('BILLING_READ_ALL');
-        expect(billingSettings?.permissions).not.toContain('ACCESS_PANEL_ADMIN');
-    });
+    // ── 4. billing-settings link removed ─────────────────────────────────────
+    // (HOS-1416: the billing-settings link was removed with the legacy billing
+    // pages, so the AC-7 gate test no longer has a subject.)
 
     // ── 5. Separator items are untouched ──────────────────────────────────────
 

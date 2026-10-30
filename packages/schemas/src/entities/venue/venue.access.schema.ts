@@ -1,0 +1,387 @@
+import { z } from 'zod';
+import { ContactInfoReadSchema } from '../../common/contact.schema.js';
+import { I18nTextSchema } from '../../common/i18n.schema.js';
+import {
+    ListingAmenityPublicSchema,
+    ListingFeaturePublicSchema
+} from '../../common/listing-catalog.schema.js';
+import { BaseMediaObjectSchema } from '../../common/media.schema.js';
+import { VenueDailySpecialPublicSchema } from './subtypes/venue.daily-special.schema.js';
+import { VenueEventPublicSchema } from './subtypes/venue.event.schema.js';
+import { VenueMenuSectionPublicSchema } from './subtypes/venue.menu.schema.js';
+import { VenueSchema } from './venue.schema.js';
+
+/**
+ * venue Access Schemas — Three-Tier Response Projection
+ *
+ * Mirrors the same pick/omit discipline as `accommodation.access.schema.ts`:
+ * - **Public** — only fields safe for unauthenticated visitors.
+ * - **Protected** — extends public with fields for authenticated users / owners.
+ * - **Admin** — the full schema, with all fields including admin-internal data.
+ */
+
+// ============================================================================
+// PUBLIC ACCESS SCHEMA
+// ============================================================================
+
+/**
+ * PUBLIC ACCESS SCHEMA
+ *
+ * Contains only the minimum data safe to expose to unauthenticated users.
+ * Used for public listing and detail pages.
+ *
+ * - Omits: adminInfo, ownerId, contactInfo (direct), audit internals.
+ * - The `richDescription` field is re-added via `.extend()` because it follows
+ *   the same entitlement-by-omission gate as in the accommodation schema:
+ *   the service strips it server-side for non-entitled owners before
+ *   calling `stripWithSchema`, so schema presence is safe.
+ */
+export const VenuePublicSchema = VenueSchema.pick({
+    // Identification
+    id: true,
+    slug: true,
+    name: true,
+    type: true,
+
+    // Content
+    summary: true,
+    description: true,
+
+    // I18n translations
+    nameI18n: true,
+    summaryI18n: true,
+    descriptionI18n: true,
+
+    // venue-specific public fields
+    priceRange: true,
+    menuUrl: true,
+    // HOS-895 PR2 — the uploaded photo/PDF alternative is now a `-pro`/
+    // `-premium` capability (owner decision, 2026-09-02; PR1 shipped it
+    // ungated). The COLUMN stays picked here — it is still owner-writable data
+    // — but the public `getBySlug` route nulls both fields out live, before
+    // this schema is reached, when the owner's CURRENT plan does not grant
+    // `MANAGE_VENUE_MENU` (see `resolveOwnerGrantsvenueMenuManagement`
+    // in `@repo/service-core`). Schema presence is safe for the same reason
+    // `richDescription`'s entitlement-by-omission gate is: the service strips
+    // it server-side before `stripWithSchema`, so a not-entitled owner's row
+    // never carries a truthy value out. `menuFilePublicId` stays out: it is the
+    // provider handle used to delete the asset, not content.
+    menuFileUrl: true,
+    menuFileKind: true,
+
+    // Destination reference
+    destinationId: true,
+
+    // Media (public safe)
+    media: true,
+    videos: true,
+
+    // Review aggregates (public)
+    averageRating: true,
+    reviewsCount: true,
+    rating: true,
+
+    // No publication state here (HOS-1641): every listing a stranger can read
+    // is PUBLISHED, so exposing it would say nothing.
+
+    // SEO (public)
+    seo: true,
+
+    // Tags (public)
+    tags: true,
+
+    // Social networks (public — restaurant contact info at owner discretion)
+    socialNetworks: true,
+
+    // Opening hours (public)
+    openingHours: true
+}).extend({
+    /**
+     * Public featured state. Not a column: since HOS-1419 dropped the
+     * admin-curated `is_featured` it is derived in the public routes from
+     * `featuredByEntitlement` (`resolvePublicIsFeatured`), which itself is never
+     * exposed here. Defaults to `false` for a read that did not derive it.
+     */
+    isFeatured: z.boolean().default(false),
+    /**
+     * Rich-text (markdown) variant of the description for entitled owners.
+     * Must survive serialization so the web client can switch between rich
+     * and plain rendering. The entitlement-by-omission gate runs BEFORE
+     * stripWithSchema, so schema presence is safe; omission is the protection.
+     */
+    richDescription: z
+        .string()
+        .max(5000, { message: 'zodError.listing.richDescription.max' })
+        .nullish(),
+    /**
+     * Override picked `media` to use `BaseMediaObjectSchema` (without any
+     * server-managed internal fields). Mirrors the accommodation pattern.
+     */
+    media: BaseMediaObjectSchema.nullish(),
+    /** ISO 8601 creation date (for "Nuevo" badge). */
+    createdAt: z.union([z.string(), z.date()]).nullish(),
+    /** Public owner data from users table JOIN. No sensitive fields. */
+    owner: z
+        .object({
+            id: z.string().uuid(),
+            name: z.string().nullish(),
+            displayName: z.string().nullish(),
+            firstName: z.string().nullish(),
+            lastName: z.string().nullish(),
+            image: z.string().nullish(),
+            createdAt: z.union([z.string(), z.date()]).nullish()
+        })
+        .nullish(),
+    /** Active FAQs only (lifecycleState = 'ACTIVE', deletedAt IS NULL). */
+    faqs: z
+        .array(
+            z.object({
+                id: z.string().uuid(),
+                question: z.string(),
+                answer: z.string(),
+                // HOS-117: localized FAQ text (nullable until translations are written).
+                questionI18n: I18nTextSchema.nullish(),
+                answerI18n: I18nTextSchema.nullish(),
+                category: z.string().nullable()
+            })
+        )
+        .optional(),
+    /**
+     * Destination relation (populated by findAllWithRelations in public search
+     * and by findOneWithRelations on detail views).
+     * Nullish: a listing may reference an unresolvable destination FK in edge cases.
+     * Used by the web card transform to show the destination name without an N+1.
+     */
+    destination: z
+        .object({
+            id: z.string().uuid(),
+            name: z.string(),
+            slug: z.string()
+        })
+        .nullish(),
+    /**
+     * Amenities the owner ticked, joined with the shared catalog (HOS-1072).
+     *
+     * Populated by the public `getBySlug` route only, which is why this is
+     * `.optional()` rather than defaulted: a list payload that never ran the
+     * join must say "not loaded", not "this venue has none". Absent and empty
+     * are different facts and the card grid renders nothing for either.
+     */
+    amenities: z.array(ListingAmenityPublicSchema).optional(),
+    /** Features the owner ticked, joined with the shared catalog (HOS-1072). */
+    features: z.array(ListingFeaturePublicSchema).optional(),
+    /**
+     * The structured carta's sections and dishes (HOS-895 PR2), joined from
+     * `venue_menu_sections` / `venue_menu_items`.
+     *
+     * Populated by the public `getBySlug` route only — same reason `amenities`
+     * / `features` are `.optional()` rather than defaulted: a payload that
+     * never ran the join must say "not loaded", not "this venue has none".
+     *
+     * Empty (not omitted) when the owner's current plan does not grant
+     * `MANAGE_VENUE_MENU` — a downgraded owner's previously-typed carta is
+     * withheld the same way `menuFileUrl` is (see the field's comment above),
+     * even though the ROWS are not deleted.
+     *
+     * Each section/item's `nameI18n`/`descriptionI18n` (HOS-1043) are withheld
+     * INDEPENDENTLY, on the narrower `MULTILINGUAL_VENUE_MENU` key —
+     * `null` on both when the plan does not grant it, the same live-read
+     * mechanism `photoUrl` uses for `MENU_ITEM_PHOTOS`. See
+     * `venue.menu.schema.ts` for the full mechanism.
+     */
+    menuSections: z.array(VenueMenuSectionPublicSchema).optional(),
+    /**
+     * The menú del día (HOS-1041), joined from `venue_daily_specials`.
+     *
+     * Populated by the public `getBySlug` route only, and — unlike every other
+     * joined array on this schema — **already filtered by the validity window**
+     * before it gets here. The route asks for the specials valid on TODAY (in
+     * the AR market timezone), so a consumer never has to know a window exists:
+     * what arrives is what is on offer right now, and an elapsed special is
+     * indistinguishable from one that was never written.
+     *
+     * Empty (not omitted) when the owner's current plan does not grant
+     * `MANAGE_VENUE_DAILY_SPECIAL` — withheld live, exactly like
+     * `menuSections`, without the rows being deleted.
+     */
+    dailySpecials: z.array(VenueDailySpecialPublicSchema).optional(),
+    /**
+     * The venue's own agenda (HOS-1042), read from `venue_events`.
+     *
+     * `.optional()` on exactly the terms `menuSections` is, and withheld on
+     * exactly the terms it is: absent when the payload never ran the read,
+     * absent when the owner's CURRENT plan does not grant
+     * `MANAGE_VENUE_EVENTS`. A downgraded owner's already-typed agenda
+     * stays in the database and stops being published — the rows are not
+     * deleted (see `resolveOwnervenuePlanEntitlements` in
+     * `@repo/service-core`).
+     *
+     * Named `venueEvents` and not `events` deliberately. `events` is the
+     * platform's DESTINATION agenda — a festival, a popular fiesta — and a
+     * venue payload carrying a field by that name would read, to every
+     * consumer that already knows the other one, as the wrong thing.
+     */
+    venueEvents: z.array(VenueEventPublicSchema).optional()
+});
+
+/** TypeScript type for {@link VenuePublicSchema}. */
+export type VenuePublic = z.infer<typeof VenuePublicSchema>;
+
+// ============================================================================
+// PROTECTED ACCESS SCHEMA
+// ============================================================================
+
+/**
+ * PROTECTED ACCESS SCHEMA
+ *
+ * Contains data for authenticated users, including ownership and contact info.
+ * Used for user dashboards and owner views.
+ */
+export const VenueProtectedSchema = VenueSchema.pick({
+    // All public fields
+    id: true,
+    slug: true,
+    name: true,
+    type: true,
+    summary: true,
+    description: true,
+    // i18n translations — owner-editable, must round-trip to the owner editor
+    // (SPEC-253). Without these the protected getById strips them and the editor
+    // re-opens with empty TranslationPanel fields.
+    nameI18n: true,
+    summaryI18n: true,
+    descriptionI18n: true,
+    richDescriptionI18n: true,
+    // HOS-1286: the owner's own editor sees the featuring source under its own
+    // name, like the accommodation protected tier. Never added to the PUBLIC
+    // pick — public reads get it derived under `isFeatured` and nothing else.
+    featuredByEntitlement: true,
+    destinationId: true,
+    media: true,
+    videos: true,
+    averageRating: true,
+    reviewsCount: true,
+    rating: true,
+    seo: true,
+    tags: true,
+    priceRange: true,
+    menuUrl: true,
+    menuFileUrl: true,
+    menuFileKind: true,
+    openingHours: true,
+
+    // Protected: ownership
+    ownerId: true,
+
+    // Contact info (nested object with email, phone, website)
+    contactInfo: true,
+
+    // Social networks
+    socialNetworks: true,
+
+    // Publication state (for owners, HOS-1641): the six `PublicationStatusEnum`
+    // values, written only by the PB publication transitions.
+    publicationStatus: true,
+
+    // FAQs
+    faqs: true,
+
+    // Basic audit (created/updated dates)
+    createdAt: true,
+    updatedAt: true
+}).extend({
+    /**
+     * Description relaxed on the read side so DRAFT listings with short
+     * descriptions can still be fetched without tripping `min(20)`.
+     */
+    description: z.string().max(2000, { message: 'zodError.listing.description.max' }),
+    /**
+     * HOS-1748: a PURGED row blanks `summary`, so reads must accept it. Same read-side
+     * relaxation as `description` (HOS-190 / SPEC-143 Finding #9); the minimum stays on
+     * input and in `resolveListingCompleteness`.
+     */
+    summary: z.string().max(300, { message: 'zodError.listing.summary.max' }),
+    /**
+     * HOS-190: read⊇write — a persisted contactInfo (legacy phone format, missing
+     * mobilePhone) must never 500 the response. Format stays strict on write.
+     */
+    contactInfo: ContactInfoReadSchema.nullish(),
+    /** Override picked `media` to exclude server-managed internal fields. */
+    media: BaseMediaObjectSchema.nullish(),
+    /** Rich-text description (protected visibility follows the same entitlement gate). */
+    richDescription: z
+        .string()
+        .max(5000, { message: 'zodError.listing.richDescription.max' })
+        .nullish(),
+    /**
+     * Currently-associated amenity catalog IDs (junction read-back, SPEC-249).
+     * Populated by the protected getById route so the owner editor can seed
+     * its amenity multi-select; omitted on tiers that do not load junctions.
+     */
+    amenityIds: z.array(z.string().uuid()).optional(),
+    /** Currently-associated feature catalog IDs (junction read-back, SPEC-249). */
+    featureIds: z.array(z.string().uuid()).optional()
+});
+
+/** TypeScript type for {@link VenueProtectedSchema}. */
+export type VenueProtected = z.infer<typeof VenueProtectedSchema>;
+
+// ============================================================================
+// ADMIN ACCESS SCHEMA
+// ============================================================================
+
+/**
+ * ADMIN ACCESS SCHEMA
+ *
+ * Contains ALL fields including sensitive admin-only data.
+ * Used for admin dashboard, moderation, and full management.
+ * Essentially the full schema with a relaxed `description` read constraint.
+ */
+export const VenueAdminSchema = VenueSchema.extend({
+    /**
+     * Description relaxed on the read side so DRAFT listings can still be
+     * fetched by the admin panel. See SPEC-143 Finding #9 (accommodation pattern).
+     */
+    description: z.string().max(2000, { message: 'zodError.listing.description.max' }),
+    /**
+     * HOS-1748: a PURGED row blanks `summary`, so reads must accept it. Same read-side
+     * relaxation as `description` (HOS-190 / SPEC-143 Finding #9); the minimum stays on
+     * input and in `resolveListingCompleteness`.
+     */
+    summary: z.string().max(300, { message: 'zodError.listing.summary.max' }),
+    /** HOS-190: read⊇write lenient contactInfo (see venueProtectedSchema). */
+    contactInfo: ContactInfoReadSchema.nullish()
+});
+
+/** TypeScript type for {@link VenueAdminSchema}. */
+export type VenueAdmin = z.infer<typeof VenueAdminSchema>;
+
+/**
+ * Admin LIST-row schema: the full admin entity plus the eager-loaded `owner`
+ * and `destination` relation summaries (the admin list query loads them via
+ * `findAllWithRelations`). The base {@link VenueAdminSchema} only carries
+ * the scalar FKs (`ownerId` / `destinationId`); without these relation fields
+ * the response strips them and the admin grid can only show raw UUIDs. Both are
+ * `nullish` because a freshly admin-created listing may not have an owner yet.
+ */
+export const VenueAdminListItemSchema = VenueAdminSchema.extend({
+    destination: z
+        .object({
+            id: z.string().uuid(),
+            name: z.string(),
+            slug: z.string()
+        })
+        .nullish(),
+    owner: z
+        .object({
+            id: z.string().uuid(),
+            displayName: z.string().nullish(),
+            firstName: z.string().nullish(),
+            lastName: z.string().nullish(),
+            email: z.string().nullish()
+        })
+        .nullish()
+});
+
+/** TypeScript type for {@link VenueAdminListItemSchema}. */
+export type VenueAdminListItem = z.infer<typeof VenueAdminListItemSchema>;

@@ -12,11 +12,14 @@ import { AccommodationModel, ConversationModel, UserModel } from '@repo/db';
 import {
     PermissionEnum,
     ProtectedThreadResponseSchema,
-    RoleEnum,
     ServiceErrorCode,
     ThreadQuerySchema
 } from '@repo/schemas';
-import { ConversationService } from '@repo/service-core';
+import {
+    ConversationService,
+    createSystemActor,
+    resolveConversationListingAvailability
+} from '@repo/service-core';
 
 const accommodationModel = new AccommodationModel();
 const userModel = new UserModel();
@@ -33,19 +36,15 @@ import {
 } from '../../../utils/response-helpers';
 
 /** System-level actor used for service calls that require thread-read permissions. */
-const SYSTEM_ACTOR = {
-    id: '00000000-0000-0000-0000-000000000001',
-    // HOS-296: the actor carries a SET of hats. This synthetic system actor
-    // wears exactly one, ADMIN, which is all the conversation service checks.
-    roles: [RoleEnum.ADMIN],
+const SYSTEM_ACTOR = createSystemActor({
+    jobId: 'conversations.protected.thread',
     permissions: [
         PermissionEnum.CONVERSATION_VIEW_OWN,
         PermissionEnum.CONVERSATION_VIEW_ANY,
         PermissionEnum.CONVERSATION_REPLY_OWN,
         PermissionEnum.CONVERSATION_REPLY_ANY
-    ] as readonly PermissionEnum[],
-    _isSystemActor: true
-} as const;
+    ]
+});
 
 const router = createRouter();
 
@@ -190,8 +189,16 @@ router.get('/:id', async (c) => {
         const nextCursor =
             hasMore && messages.length > 0 ? (messages[0]?.createdAt?.toISOString() ?? null) : null;
 
+        // Whether the tourist can still write about this listing (HOS-1492,
+        // rows 28 and 35): the same question createMessage asks.
+        const listingAvailability = resolveConversationListingAvailability({
+            viewer: 'GUEST',
+            actorId: actor.id,
+            listing: accommodation
+        });
+
         return createResponse(
-            { conversation: enrichedConversation, messages, nextCursor },
+            { conversation: enrichedConversation, messages, nextCursor, listingAvailability },
             c,
             200,
             ProtectedThreadResponseSchema

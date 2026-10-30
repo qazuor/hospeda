@@ -16,6 +16,7 @@
  * `limit()`/`isLoading` deterministically without touching the network.
  */
 
+import { DRAFT_DESCRIPTION_PLACEHOLDER } from '@repo/schemas';
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { PhotoSectionProps } from '@/components/host/editor/PhotoSection.client';
@@ -24,15 +25,25 @@ import { ToastViewport } from '@/components/ui/ToastViewport.client';
 import { createTranslations } from '@/lib/i18n';
 import { clearToasts } from '@/store/toast-store';
 
-const { mockListMedia, mockAddMedia, mockUploadEntityImage, mockLimit, mockIsLoading } = vi.hoisted(
-    () => ({
-        mockListMedia: vi.fn(),
-        mockAddMedia: vi.fn(),
-        mockUploadEntityImage: vi.fn(),
-        mockLimit: vi.fn(),
-        mockIsLoading: vi.fn()
-    })
-);
+const {
+    mockListMedia,
+    mockAddMedia,
+    mockUploadEntityImage,
+    mockLimit,
+    mockDraftLimit,
+    mockIsLoading,
+    mockFeaturedOverride,
+    mockSubscribeDestination
+} = vi.hoisted(() => ({
+    mockListMedia: vi.fn(),
+    mockAddMedia: vi.fn(),
+    mockUploadEntityImage: vi.fn(),
+    mockLimit: vi.fn(),
+    mockDraftLimit: vi.fn(),
+    mockIsLoading: vi.fn(),
+    mockFeaturedOverride: { current: null as null | Record<string, unknown> },
+    mockSubscribeDestination: vi.fn()
+}));
 
 vi.mock('@/lib/api/endpoints-protected', () => ({
     accommodationMediaApi: {
@@ -43,6 +54,9 @@ vi.mock('@/lib/api/endpoints-protected', () => ({
         reorderMedia: vi.fn(),
         updateMedia: vi.fn()
     },
+    publishApi: {
+        subscribeDestination: mockSubscribeDestination
+    },
     protectedMediaApi: { deleteMedia: vi.fn() }
 }));
 
@@ -50,10 +64,26 @@ vi.mock('@/lib/media/upload-entity', () => ({
     uploadEntityImage: mockUploadEntityImage
 }));
 
+vi.mock('@/components/host/editor/use-photo-section', async () => {
+    const actual = await vi.importActual<
+        typeof import('@/components/host/editor/use-photo-section')
+    >('@/components/host/editor/use-photo-section');
+    return {
+        ...actual,
+        usePhotoSection: (params: Parameters<typeof actual.usePhotoSection>[0]) => {
+            const state = actual.usePhotoSection(params);
+            return mockFeaturedOverride.current === null
+                ? state
+                : { ...state, featuredItem: mockFeaturedOverride.current as never };
+        }
+    };
+});
+
 vi.mock('@/hooks/useMyEntitlements', () => ({
     useMyEntitlements: () => ({
         has: () => false,
         limit: mockLimit,
+        draftLimit: mockDraftLimit,
         plan: null,
         isLoading: mockIsLoading(),
         error: null
@@ -63,8 +93,12 @@ vi.mock('@/hooks/useMyEntitlements', () => ({
 const ACC_ID = 'acc-uuid-plan-cap';
 const defaultProps: PhotoSectionProps = { locale: 'es', accommodationId: ACC_ID };
 
-/** The exact href `resolveLimitAddonOffer` resolves for the photos add-on. */
-const ADDON_HREF = '/es/mi-cuenta/addons/?focus=extra-photos-20#addon-extra-photos-20';
+/**
+ * Where the cap upsell points. It used to be the photos add-on
+ * (`/mi-cuenta/addons/?focus=extra-photos-20`); that page was removed with the
+ * old billing (HOS-1637, AC:B13a:20), so it is the plan upgrade.
+ */
+const PLAN_HREF = '/es/mi-cuenta/suscripcion/';
 
 /** Build N gallery-only rows (never featured) for `listMedia`. */
 function buildGalleryRows(count: number) {
@@ -108,10 +142,16 @@ function makeAddOk(i: number) {
 
 beforeEach(() => {
     vi.clearAllMocks();
+    mockFeaturedOverride.current = null;
+    mockSubscribeDestination.mockResolvedValue({
+        ok: true,
+        data: { destination: 'PUBLISH', trialDays: 14 }
+    });
     clearToasts();
     mockListMedia.mockReturnValue(makeListOk());
     mockIsLoading.mockReturnValue(false);
     mockLimit.mockReturnValue(15); // Owner Básico
+    mockDraftLimit.mockReturnValue(0);
 });
 
 afterEach(() => {
@@ -292,7 +332,7 @@ describe('HOS-1024 — the selector never accepts more than the PLAN allows', ()
 });
 
 describe('HOS-1024 — sober upsell when the gallery is full at the plan cap', () => {
-    it('shows the cap-reached message plus a one-line add-on upsell link', async () => {
+    it('shows the cap-reached message plus a one-line plan upsell link', async () => {
         mockListMedia.mockReturnValue(makeListOk(buildGalleryRows(15)));
 
         render(<PhotoSection {...defaultProps} />);
@@ -301,9 +341,10 @@ describe('HOS-1024 — sober upsell when the gallery is full at the plan cap', (
         expect(screen.getByText('Límite de galería alcanzado (máx 15 fotos)')).toBeInTheDocument();
 
         const { t } = createTranslations('es');
-        const upsellLabel = t('account.subscription.usage.buyAddon');
+        const upsellLabel = t('billing.limit.max_photos_per_accommodation.cta');
         const upsellLink = screen.getByRole('link', { name: upsellLabel });
-        expect(upsellLink).toHaveAttribute('href', ADDON_HREF);
+        expect(upsellLink).toHaveAttribute('href', PLAN_HREF);
+        expect(document.body.innerHTML).not.toContain('mi-cuenta/addons');
 
         // Sober: exactly one link in the cap-reached message, no second CTA,
         // no headline/banner copy beyond the existing cap-reached sentence.
@@ -335,5 +376,80 @@ describe('HOS-1024 — sober upsell when the gallery is full at the plan cap', (
         expect(
             screen.queryByRole('link', { name: t('account.subscription.usage.buyAddon') })
         ).not.toBeInTheDocument();
+    });
+});
+
+describe('HOS-1721 — a pre-trial owner can fill the photos of their DRAFT', () => {
+    const publishContext = {
+        description: 'A real accommodation description with enough detail.',
+        capacity: 2,
+        minNights: 1,
+        bedrooms: 1,
+        bathrooms: 1,
+        isDraft: true,
+        trialDays: 30
+    } as const;
+
+    it('does not show the publish-ready prompt when a completed photo leaves the draft placeholder', async () => {
+        mockListMedia.mockReturnValue(makeListOk());
+
+        const props = {
+            ...defaultProps,
+            publishContext: { ...publishContext, description: DRAFT_DESCRIPTION_PLACEHOLDER }
+        };
+        const { rerender } = render(<PhotoSection {...props} />);
+        await waitFor(() =>
+            expect(screen.getByRole('button', { name: /Agregar fotos/i })).toBeEnabled()
+        );
+        await mockListMedia.mock.results[0]?.value;
+
+        mockFeaturedOverride.current = {
+            id: 'featured-id',
+            url: 'https://cdn.example.com/featured.jpg',
+            publicId: 'featured',
+            isFeatured: true
+        };
+        rerender(<PhotoSection {...props} />);
+
+        await waitFor(() => expect(screen.getByAltText('Imagen principal')).toBeInTheDocument());
+        await waitFor(() => expect(mockSubscribeDestination).not.toHaveBeenCalled());
+        expect(screen.queryByText(/Tu ficha ya está lista/i)).not.toBeInTheDocument();
+    });
+
+    it('shows the trial cap and enables uploads on a DRAFT when the plan grants no cap', async () => {
+        mockLimit.mockReturnValue(0);
+        mockDraftLimit.mockReturnValue(15);
+
+        render(
+            <PhotoSection
+                {...defaultProps}
+                publishContext={publishContext}
+            />
+        );
+
+        await waitFor(() => {
+            expect(screen.getByText('Galería de fotos (máx. 15)')).toBeInTheDocument();
+        });
+        expect(screen.queryByText('Cargando tu límite de fotos…')).not.toBeInTheDocument();
+        expect(
+            screen.getByRole('button', { name: 'Agregar fotos a la galería' })
+        ).not.toBeDisabled();
+        expect(mockDraftLimit).toHaveBeenCalledWith('max_photos_per_accommodation');
+    });
+
+    it('ignores the draft allowance on a listing that is not a DRAFT', async () => {
+        mockLimit.mockReturnValue(0);
+        mockDraftLimit.mockReturnValue(15);
+
+        render(
+            <PhotoSection
+                {...defaultProps}
+                publishContext={{ ...publishContext, isDraft: false }}
+            />
+        );
+        await waitFor(() => expect(mockListMedia).toHaveBeenCalled());
+
+        expect(screen.queryByText('Galería de fotos (máx. 15)')).not.toBeInTheDocument();
+        expect(screen.getByRole('button', { name: 'Agregar fotos a la galería' })).toBeDisabled();
     });
 });

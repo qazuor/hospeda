@@ -31,9 +31,8 @@ export const ExperienceSearchHttpSchema = BaseHttpSearchSchema.extend({
     /** Opt-in projection: include amenities per result. */
     includeAmenities: createBooleanQueryParam('Include experience amenities in response'),
     /** Opt-in projection: include features per result. */
-    includeFeatures: createBooleanQueryParam('Include experience features in response'),
+    includeFeatures: createBooleanQueryParam('Include experience features in response')
     /** Filter by active subscription flag (coerced from query string). */
-    hasActiveSubscription: createBooleanQueryParam('Filter experiences with active subscription')
 });
 
 export type ExperienceSearchHttp = z.infer<typeof ExperienceSearchHttpSchema>;
@@ -44,18 +43,18 @@ export type ExperienceSearchHttp = z.infer<typeof ExperienceSearchHttpSchema>;
  */
 export const ExperienceCreateHttpSchema = z.object({
     /** Display name of the experience listing. */
-    name: z.string().min(2, { message: 'zodError.commerce.name.min' }).max(100),
+    name: z.string().min(2, { message: 'zodError.listing.name.min' }).max(100),
     /** Short marketing summary. */
     summary: z
         .string()
-        .min(10, { message: 'zodError.commerce.summary.min' })
-        .max(300, { message: 'zodError.commerce.summary.max' })
+        .min(10, { message: 'zodError.listing.summary.min' })
+        .max(300, { message: 'zodError.listing.summary.max' })
         .optional(),
     /** Full description. */
     description: z
         .string()
-        .min(20, { message: 'zodError.commerce.description.min' })
-        .max(2000, { message: 'zodError.commerce.description.max' })
+        .min(20, { message: 'zodError.listing.description.min' })
+        .max(2000, { message: 'zodError.listing.description.max' })
         .optional(),
     /** Experience sub-type. */
     type: ExperienceTypeEnumSchema,
@@ -71,7 +70,6 @@ export const ExperienceCreateHttpSchema = z.object({
      */
     isPriceOnRequest: httpBodyBoolean().default(false),
     /** Whether the listing is featured. */
-    isFeatured: httpBodyBoolean().default(false),
     /** Destination UUID for the listing. */
     destinationId: z.string().uuid({ message: 'zodError.common.id.invalidUuid' }),
     /**
@@ -139,9 +137,6 @@ export type ExperienceGetHttp = z.infer<typeof ExperienceGetHttpSchema>;
 // ============================================================================
 
 import { httpBodyBoolean } from '../../common/boolean-params.js';
-import { LifecycleStatusEnum } from '../../enums/lifecycle-state.enum.js';
-import { ModerationStatusEnum } from '../../enums/moderation-status.enum.js';
-import { VisibilityEnum } from '../../enums/visibility.enum.js';
 import type {
     ExperienceAdminCreateInput,
     ExperienceUpdateInput
@@ -171,8 +166,7 @@ export const httpToDomainExperienceSearch = (
     minRating: httpParams.minRating,
     maxRating: httpParams.maxRating,
     includeAmenities: httpParams.includeAmenities,
-    includeFeatures: httpParams.includeFeatures,
-    hasActiveSubscription: httpParams.hasActiveSubscription
+    includeFeatures: httpParams.includeFeatures
     // Note: amenities, features, createdAfter, createdBefore exist in domain
     // but not in HTTP schema, so they are not mapped here.
 });
@@ -200,15 +194,11 @@ export const httpToDomainExperienceCreate = (
     priceFrom: httpData.priceFrom,
     priceUnit: httpData.priceUnit,
     isPriceOnRequest: httpData.isPriceOnRequest,
-    isFeatured: httpData.isFeatured,
 
-    // Server-managed defaults
-    moderationState: ModerationStatusEnum.PENDING,
-    lifecycleState: LifecycleStatusEnum.ACTIVE,
+    // Server-managed defaults. The publication state is not an input: the
+    // listing is born DRAFT and only the PB transitions move it (HOS-1641).
     reviewsCount: 0,
     averageRating: 0,
-    visibility: VisibilityEnum.PUBLIC,
-    hasActiveSubscription: false,
 
     // HOS-1046 / HOS-1056: the flat HTTP create surface does not collect the
     // practical ficha fields — they are filled in afterwards, from the owner
@@ -283,7 +273,6 @@ export const httpToDomainExperienceUpdate = (
     priceFrom: httpData.priceFrom,
     priceUnit: httpData.priceUnit,
     isPriceOnRequest: httpData.isPriceOnRequest,
-    isFeatured: httpData.isFeatured,
     destinationId: httpData.destinationId,
 
     // Contact info mapping (emit only provided fields).
@@ -331,7 +320,7 @@ export const httpToDomainExperienceUpdate = (
  * Type-level validation to ensure HTTP→Domain conversion covers all fields.
  * These checks cause TypeScript compilation errors if schemas are inconsistent.
  *
- * Mirrors the pattern in `gastronomy.http.schema.ts` (checks 1–6).
+ * Mirrors the pattern in `venue.http.schema.ts` (checks 1–6).
  */
 
 // Check 1: All domain search fields are mapped in HTTP conversion

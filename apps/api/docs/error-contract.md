@@ -11,10 +11,11 @@ the three tiers themselves.
 
 ```
 1. authentication        → 401
-2. route permission      → 403
-3. input shape           → 400   (params → query → body)
-4. existence / ownership → 404
-5. business rules        → 409 / 422 / 403-gate
+2. account state         → 403 EMAIL_NOT_VERIFIED
+3. route permission      → 403
+4. input shape           → 400   (params → query → body)
+5. existence / ownership → 404
+6. business rules        → 409 / 422 / 403-gate
 ```
 
 **No step may touch the database with a value an earlier step did not
@@ -34,17 +35,70 @@ check answers 403 to someone the server never identified.
 | Situation | Status | `error.code` |
 |---|---|---|
 | No session, protected or admin tier | **401** | `UNAUTHORIZED` |
+| Signed in, email not verified, operation outside the closed list | **403** | `EMAIL_NOT_VERIFIED` |
 | Signed in, lacks the declared permission | **403** | `FORBIDDEN` |
 | Malformed param, query or body (non-UUID id included) | **400** | `VALIDATION_ERROR` |
 | Resource does not exist | **404** | `NOT_FOUND` |
 | Resource exists but belongs to somebody else | **404** | `NOT_FOUND` |
-| …except a foreign RESTRICTED accommodation | **403** | `FORBIDDEN` |
 | Well-formed but unprocessable | **422** | `VALIDATION_ERROR` |
 | State conflict | **409** | `ALREADY_EXISTS` |
 | Plan or limit gate | **403** | `ENTITLEMENT_REQUIRED` / `LIMIT_REACHED` |
 | Server fault | **5xx** | `INTERNAL_ERROR` |
 
+### Step 2 — the person's state
+
+After authentication and before route permissions, an account with an unverified
+email receives `EMAIL_NOT_VERIFIED` for operations outside the closed list. The
+response is identical whether the account holds the permission or not, so it
+cannot be used to probe permissions. The allowed operations are `VERIFY_EMAIL`,
+`CHANGE_EMAIL` (except with a Partner link), `READ_OWN`, `EXPORT`,
+`REACTIVATE_LISTING`, `DELETE_LISTING`, `REGULARIZE_CHARGE`, and `CLOSE_ACCOUNT`.
+They are declared by `emailUnverifiedOperation` on `createProtectedRoute` and `createProtectedListRoute`. For `CHANGE_EMAIL`, the Partner link is read through `PartnerService.getOwn`; a failed lookup returns 503.
+For an unverified account, an operation on the list runs without the staff permissions in `UNVERIFIED_STAFF_BYPASS_PERMISSIONS` (`apps/api/src/middlewares/step2-staff-bypass.ts`), so a foreign resource answers exactly as it does for an account without that permission.
+
+### The coverage step (V5.3, HOS-1457)
+
+Listing access runs inside business rules (step 6 of the HTTP order), after
+request shape and resource existence or ownership. The route factory wraps the
+validated handler, so an invalid body receives 400 before listing access runs.
+The listing resolver then evaluates its own steps 3 through 7 in order.
+
+| Listing decision | HTTP status | `error.code` | Public `error.details` |
+|---|---|---|---|
+| `NOT_FOUND` | 404 | `NOT_FOUND` | None; body matches the entity ownership 404 |
+| `FORBIDDEN` | 403 | `FORBIDDEN` | None |
+| `NO_COVERAGE` | 403 | `ENTITLEMENT_REQUIRED` | `{ entitlementKey: null, reason: 'NO_COVERAGE' }` |
+| `NO_CAPABILITY` | 403 | `ENTITLEMENT_REQUIRED` | `{ entitlementKey }` |
+| `NO_CAPABILITY` on `PUBLISH` without a live non-trial title | 403 | `FORBIDDEN` | Message: `subscription_required` (same response as PB1 when the trial cannot start) |
+| `NO_PLANS_AVAILABLE` | 403 | `FORBIDDEN` | Message: `no_plans_available` (la vertical no tiene ninguna versión de plan vigente y vendible; no es `subscription_required`: no hay nada que contratar) |
+| `LIMIT_REACHED` | 403 | `LIMIT_REACHED` | `{ limitKey, currentCount, maxAllowed }` |
+
+An administrative action with actor and subject on the same account receives
+403 `FORBIDDEN` at listing step 3. For action 15, the subject is the owner read
+from the listing row; coverage, entitlements and limits (steps 5 through 7)
+are evaluated for that owner. V5.7 adds `UNAUTHENTICATED` as 401 `UNAUTHORIZED`.
+
 ## Five rules
+
+### Promo code redemption
+
+| `error.reason` | Status | `error.code` |
+|---|---:|---|
+| `PROMO_CODE_NOT_FOUND` | 404 | `NOT_FOUND` |
+| `PROMO_CODE_NOT_A_TRIAL_EXTENSION` | 422 | `VALIDATION_ERROR` |
+| `PROMO_CODE_NOT_FOR_VERTICAL` | 422 | `VALIDATION_ERROR` |
+| `PROMO_CODE_NOT_AVAILABLE` | 422 | `VALIDATION_ERROR` |
+| `PROMO_NO_ELIGIBLE_SUBSCRIPTION` | 422 | `VALIDATION_ERROR` |
+| `PROMO_NOT_OFFERED_TO_MANUAL_PAYER` | 422 | `VALIDATION_ERROR` |
+| `PROMO_CODE_ALREADY_REDEEMED` | 409 | `ALREADY_EXISTS` |
+| `PROMO_NOT_COMBINABLE` | 409 | `ALREADY_EXISTS` |
+| `PROMO_UNSUPPORTED_CURRENCY` | 422 | `VALIDATION_ERROR` |
+| `PROMO_BELOW_PROVIDER_MINIMUM` | 422 | `VALIDATION_ERROR` |
+| `PROMO_MUTATION_NOT_APPLIED` | 500 | `INTERNAL_ERROR` |
+| `NO_TRIAL` | 422 | `VALIDATION_ERROR` |
+| `TRIAL_ENDED` | 422 | `VALIDATION_ERROR` |
+| `CEILING_REACHED` | 422 | `VALIDATION_ERROR` |
+| `REDEMPTION_KEY_CONFLICT` | 409 | `ALREADY_EXISTS` |
 
 ### R1 — `INTERNAL_ERROR` belongs to 5xx alone
 
@@ -151,7 +205,7 @@ been DELETED — not just that an id is real, but that it once was.
 **404 `NOT_FOUND`**. The route hand-wrote `'Accommodation not found'`; the
 service composed `` `${entityName} not found` `` → `'accommodation not found'`.
 One capital letter, and any status-shaped audit passes it. The experience and
-gastronomy twins had copied the same line.
+venue twins had copied the same line.
 
 Three rules follow:
 
@@ -168,7 +222,7 @@ Three rules follow:
    oracle.** `user/protected/getById.ts` now refuses a foreign id without
    touching the database. Same body, and no timing difference either.
 3. **A refusal names neither the permission nor the id** (rule R5 applied to
-   4xx): `'You may only start a subscription for your own commerce listing.'`
+   4xx): `'You may only start a subscription for your own venue or experience listing.'`
    and `` `Entity not found: ${entityType} with id ${entityId}` `` were both
    replaced by a single constant shared by the two branches.
 
@@ -198,7 +252,7 @@ not disclose existence unless disclosing it is the product".
 `_canUpdateVisibility` answered 403 for a foreign row across **15 entities** —
 every entity whose table carries an owner column (`ownerId`, `authorId` or
 `userId`): accommodation, accommodationReview, alert, destinationReview,
-entityComment, event, experience, experienceReview, gastronomy, gastronomyReview,
+entityComment, event, experience, experienceReview, legacy venue review entity,
 ownerPromotion, post, tag, userBookmark, userBookmarkCollection. A caller holding
 `*_UPDATE_OWN` learned from that 403 that the id was real.
 
@@ -232,26 +286,13 @@ real gate a few lines below, so "everything goes through `_getAndValidateEntity`
 was true of it while the leak stayed open. That shape is what the second static
 assertion in the guard exists to catch.
 
-#### Kept as 403 — the VIP hook, deliberately
+#### Resolved to 404 (V5.2, DEC-AUTH-001 📌1)
 
-`checkCanView` in `accommodation.permissions.ts` refuses a foreign RESTRICTED
-listing with **403 `'VIP access required'`**, and that is a **standing, deliberate
-exception to the 404 rule** — not an oversight, and not a leftover.
-
-The reasoning is commercial, not technical: a RESTRICTED listing is an upsell
-surface. Telling a visitor *"this exists and it is for VIPs"* is exactly what the
-visibility tier is sold to do, so hiding it behind a 404 would remove the feature
-rather than harden it. The disclosure is the product.
-
-Its sibling — a foreign **PRIVATE** listing — was unified to **404** in the same
-change. That one sold nothing: it only confirmed an id was real. So within one
-function, PRIVATE now answers 404 and RESTRICTED answers 403, and the difference
-is intentional.
-
-**Do not "fix" the VIP 403.** A future sweep for 403-on-foreign-row will find it,
-and it will look exactly like the twelve defects HOS-600 repaired. It is not one.
-Changing it is an owner decision: edit this section first, then the code and the
-test that pins it (`accommodation.permissions.test.ts`, *"keeps the VIP 403"*).
+`checkCanView` applies the resource's publication state. A foreign listing that
+is not `PUBLISHED` answers **404 `NOT_FOUND`**, with the same response as a
+listing that does not exist. This includes a `RESTRICTED` accommodation whose
+publication state is unknown. The VIP entitlement does not change this detail
+read decision.
 
 ## What enforces this
 
@@ -287,7 +328,7 @@ test that pins it (`accommodation.permissions.test.ts`, *"keeps the VIP 403"*).
   the guard and break the owner's refusals.
 - [`test/routes/existence-disclosure.paired-probe.test.ts`](../test/routes/existence-disclosure.paired-probe.test.ts)
   — the behavioural half: foreign vs invented id on the users, accommodation,
-  experience and gastronomy protected reads, compared as whole bodies. Note it
+  experience and venue protected reads, compared as whole bodies. Note it
   un-mocks `@repo/service-core` locally: `test/setup.ts` replaces the package
   globally including `ServiceError` itself, and under that mock every route
   error becomes a 500 — a paired probe would compare two artefacts of the mock
@@ -322,18 +363,331 @@ Two rules specific to this surface:
   correction HOS-682 made on the outbound side, where a 404 or a business-rule
   refusal was being logged as a program fault.
 
-The classifier is
-[`src/routes/webhooks/mercadopago/error-classification.ts`](../src/routes/webhooks/mercadopago/error-classification.ts);
-the statuses are asserted end-to-end through the real `@qazuor/qzpay-hono`
-router in
-[`test/webhooks/webhook-error-disposition.test.ts`](../test/webhooks/webhook-error-disposition.test.ts).
+## S1 rejections (B3)
 
-## Known exception
+`PLAN_NOT_FOR_SALE` and `PARTNER_MANUAL_ONLY` are 422 `VALIDATION_ERROR`; `PREVIOUS_ATTEMPT_CLOSING` and `COMMITMENT_TAKEN` are 409 `ALREADY_EXISTS`; `TOURIST_VIP_INHERITED` is 409 `ALREADY_EXISTS`. `PARTNER_MANUAL_ONLY` means Partner is a manual payer and cannot start card checkout until the team's payment link exists. `TOURIST_VIP_INHERITED` means the person already has the benefit; it is not a missing entitlement (`403 ENTITLEMENT_REQUIRED`).
 
-The `@qazuor/qzpay-hono` admin tier under `/api/v1/admin/billing/*` builds its
-own routes and does not pass through `createAdminRoute`, so the boot assertion
-and the ownership guard do not reach it. Its authentication ordering is covered
-directly by
-[`test/middlewares/billing-admin-auth.middleware.test.ts`](../test/middlewares/billing-admin-auth.middleware.test.ts),
-and its error bodies still land in `createErrorHandler`, so R1 and R4 hold. What
-is NOT enforced there is R3-style param validation.
+`PROVIDER_REJECTED` is 422 `VALIDATION_ERROR`: the payment provider refused the data of the signup (HOS-1746); a provider outage or 5xx stays a 5xx and is retried.
+
+### Pending signup attempt cancellation (HOS-1735)
+
+`GET /api/v1/protected/billing/subscriptions/signup-notice/{billingOptionId}` includes `pendingAttempt`: `null` unless the caller has a live pending attempt for another billing option in the requested vertical; otherwise it contains the attempt plan, authorization-window end, and a resumable checkout URL when the stored creation result is valid.
+
+`POST /api/v1/protected/billing/subscriptions/{subscriptionId}/pending-attempt-cancellation` returns 200 with `{ subscriptionId, outcome: 'ABANDONED' | 'ALREADY_ABANDONED' }`. An unknown subscription or one owned by another person returns 404 `NOT_FOUND`. `COMMITMENT_TAKEN` and `PREVIOUS_ATTEMPT_IN_PROGRESS` return 409 `ALREADY_EXISTS` with the corresponding `reason`.
+
+## Action 14 rejections (B5.3)
+
+`POST /api/v1/admin/billing-refunds/external` (ACC:14, RF4) answers every typed rejection of `settleExternalRefund` with its `reason`. The mapping lives in `src/routes/billing-refund/admin/settle-external.ts` as an exhaustive `Record` over `SETTLE_EXTERNAL_REFUND_REJECTIONS`, so a new service reason without an entry breaks the typecheck.
+
+| `reason` | Status | `error.code` |
+|---|---|---|
+| `REFUND_AMOUNT_INVALID` | 422 | `VALIDATION_ERROR` |
+| `EXTERNAL_REFERENCE_INVALID` | 422 | `VALIDATION_ERROR` |
+| `REFUND_EXCEEDS_BALANCE` | 422 | `VALIDATION_ERROR` |
+| `MANUAL_PAYMENT_SCOPE_REQUIRED` | 422 | `VALIDATION_ERROR` |
+| `MANUAL_PAYMENT_SCOPE_NOT_ALLOWED` | 422 | `VALIDATION_ERROR` |
+| `REFUND_SOURCE_NOT_FOUND` | 404 | `NOT_FOUND` |
+| `REFUND_NOT_FOUND` | 404 | `NOT_FOUND` |
+| `ADMINISTRATIVE_ACTION_FORBIDDEN` | 403 | `FORBIDDEN` |
+| `PAYMENT_NOT_REFUNDABLE` | 409 | `ALREADY_EXISTS` |
+| `REQUESTED_AMOUNT_MISMATCH` | 409 | `ALREADY_EXISTS` |
+| `OPEN_REQUESTS_AMBIGUOUS` | 409 | `ALREADY_EXISTS` |
+| `REFUND_NOT_OPEN` | 409 | `ALREADY_EXISTS` |
+| `REFUND_STATE_CHANGED` | 409 | `ALREADY_EXISTS` |
+| `EXTERNAL_REFERENCE_ALREADY_SETTLED` | 409 | `ALREADY_EXISTS` |
+| `RETAINED_PAYMENT_SUCCESSION_OPEN` | 409 | `ALREADY_EXISTS` |
+
+`RETAINED_PAYMENT_SUCCESSION_OPEN` comes from the retained-payment gate (GUARD:G-R1-D, AC:B7:17, HOS-1561): the payment is retained by `S19` and the succession that retains it is still open, so no refund is recorded until it closes. Its `reason` is not in `SETTLE_EXTERNAL_REFUND_REJECTIONS`; the route adds it to its own `Record`.
+
+The `message` of `REQUESTED_AMOUNT_MISMATCH` carries the requested amount: it is what the action says before the person confirms (AC:B5:41). An empty or over-255 reference is normally a 400 from the request schema; `EXTERNAL_REFERENCE_INVALID` is the service's own check behind it.
+
+The permission is the route's scope (`billing.settleExternal`); the subject, the system actor and `actor = subject` are decided inside the settlement transaction, so a 403 can come from either.
+
+## Action 14 charge settlement rejections (B5.9)
+
+`POST /api/v1/admin/billing-refunds/external-charge` settles an approved provider charge that was never recorded (ACC:14, motive 19). The route maps `settleExternalCharge` rejections exhaustively in `src/routes/billing-refund/admin/settle-external-charge.ts`.
+
+| `reason` | Status | `error.code` |
+|---|---:|---|
+| `CHARGE_NOT_FOUND` | 404 | `NOT_FOUND` |
+| `CHARGE_NOT_LINKED` | 404 | `NOT_FOUND` |
+| `ADMINISTRATIVE_ACTION_FORBIDDEN` | 403 | `FORBIDDEN` |
+| `CHARGE_NOT_SETTLEABLE` | 422 | `VALIDATION_ERROR` |
+| `CHARGE_NOT_APPROVED` | 409 | `ALREADY_EXISTS` |
+| `CHARGE_ALREADY_RECORDED` | 409 | `ALREADY_EXISTS` |
+
+`CHARGE_NOT_FOUND` is only the provider's typed “does not exist” result; any other read error is a 500. The 403 may come from the factory permission check or the service (system actor or actor equal to subject).
+
+## Permanent grant rejections (B9a.2, ACC:2)
+
+`POST /api/v1/admin/billing-permanent-grants` and
+`POST /api/v1/admin/billing-permanent-grants/{permanentGrantId}/anchors` answer
+typed rejections with their `reason`. The mapping lives in
+`src/routes/billing-permanent-grant/admin/rejections.ts` as an exhaustive
+`Record<PermanentGrantRejection, ...>`, so a new service reason without an entry
+breaks the typecheck.
+
+| `reason` | Status | `error.code` |
+|---|---:|---|
+| `ADMINISTRATIVE_ACTION_FORBIDDEN` | 403 | `FORBIDDEN` |
+| `PERMANENT_GRANT_NOT_FOUND` | 404 | `NOT_FOUND` |
+| `PERMANENT_GRANT_NOT_LIVE` | 422 | `VALIDATION_ERROR` |
+| `PERMANENT_GRANT_VERTICAL_ALREADY_ANCHORED` | 409 | `ALREADY_EXISTS` |
+| `PERMANENT_GRANT_ALREADY_LIVE` | 409 | `ALREADY_EXISTS` |
+| `PERMANENT_GRANT_REFERENCE_NOT_FOUND` | 422 | `VALIDATION_ERROR` |
+| `PERMANENT_GRANT_FLOOR_NOT_CURRENT` | 422 | `VALIDATION_ERROR` |
+| `INVALID_PERMANENT_GRANT_INPUT` | 422 | `VALIDATION_ERROR` |
+
+The floor is validated with `políticaDePlan(v).vigente` before writing.
+
+The permission is the route scope (`billing.grantComplimentary`); the service
+decides the action permission, subject, system actor and `actor = subject`, so a
+403 can come from the route or the service. Revocation does not have a route yet
+(B9a.6, Fase 2).
+
+## Action 8 revocation rejections (B5, S36)
+
+`GET` and `POST /api/v1/admin/billing-subscription/{subscriptionId}/revocation` (ACC:8 with reason revocation, S36; HOS-1543) answer every typed rejection of `previewSubscriptionRevocation` and `revokeSubscription` with its `reason`. The preview rejects with the same reasons as the act and writes nothing. The mapping lives in `src/routes/billing-subscription/admin/revocation.ts` as an exhaustive `Record` over `REVOKE_SUBSCRIPTION_REJECTIONS`, so a new service reason without an entry breaks the typecheck.
+
+| `reason` | Status | `error.code` |
+|---|---|---|
+| `SUBSCRIPTION_NOT_FOUND` | 404 | `NOT_FOUND` |
+| `ADMINISTRATIVE_ACTION_FORBIDDEN` | 403 | `FORBIDDEN` |
+| `REVOCATION_NOT_PRINCIPAL` | 409 | `ALREADY_EXISTS` |
+| `REVOCATION_STATE_NOT_ALLOWED` | 409 | `ALREADY_EXISTS` |
+| `REVOCATION_PAYMENT_CHANGED` | 409 | `ALREADY_EXISTS` |
+| `REVOCATION_STATE_CHANGED` | 409 | `ALREADY_EXISTS` |
+| `PAYMENT_NOT_REFUNDABLE` | 409 | `ALREADY_EXISTS` |
+| `REVOCATION_NO_CREDITED_PAYMENT` | 422 | `VALIDATION_ERROR` |
+| `REVOCATION_WINDOW_CLOSED` | 422 | `VALIDATION_ERROR` |
+| `REVOCATION_AMOUNT_UNAVAILABLE` | 422 | `VALIDATION_ERROR` |
+| `REFUND_EXCEEDS_BALANCE` | 422 | `VALIDATION_ERROR` |
+| `REFUND_AMOUNT_INVALID` | 422 | `VALIDATION_ERROR` |
+
+A non-uuid `subscriptionId`, or a body without a uuid `expectedPaymentId`, with an extra key, or with an empty or over-2000 `note`, is a 400 from the request schema. `REVOCATION_PAYMENT_CHANGED` means the last credited payment is no longer the one the preview showed: the person confirms again. A second revocation of the same row is `REVOCATION_STATE_NOT_ALLOWED` (it is already `CANCELLED`); `REVOCATION_STATE_CHANGED` is a concurrent act that moved the row while this one held it. `REFUND_EXCEEDS_BALANCE` is a payment whose open or executed refunds already claim its whole balance: nothing is cancelled.
+
+The permission is the route's scope (`billing.cancelSubscription`); the subject, the system actor and `actor = subject` are decided inside the revocation transaction, so a 403 can come from either. The row is read before the subject, so a missing subscription answers 404 to an actor holding the permission, as in action 14.
+
+## Open refund requests of a subscription (HOS-1711)
+
+`GET /api/v1/admin/billing-subscription/{subscriptionId}/open-refunds` requires
+`BILLING_SUBSCRIPTION_INSPECT` at the route factory. Rejections follow this
+order: 401 unauthenticated, 403 without permission, 400 for a malformed
+`subscriptionId`, and 404 `NOT_FOUND` for an unknown subscription. The read is
+read-only and lists only `REQUESTED` refund requests attached to payments of
+that subscription; requests for complements and one-time add-ons are excluded.
+
+## Self-service cancellation (B13a.1, HOS-1617)
+
+`GET /api/v1/protected/billing-subscription/` lists the caller's principal subscriptions.
+The list also returns `deferredCourtesies` for AC:B13a:8 (HOS-1620); this adds no new rejections.
+`GET /api/v1/protected/billing-subscription/{subscriptionId}/cancellation-preview` previews the cancellation, and
+`POST /api/v1/protected/billing-subscription/{subscriptionId}/cancellation` performs it. Both resource routes are owner-only: another person's subscription is
+404, including for staff holding `billing.cancelSubscription`, because these routes are in the protected tier.
+The POST declares `CLOSE_ACCOUNT` for the unverified-email step; both GET routes declare `READ_OWN`. The preview also declares `BILLING_VIEW_OWN` at the route factory, before input-shape validation.
+
+| Rejection | Status | `error.code` |
+|---|---:|---|
+| `SUBSCRIPTION_NOT_FOUND` | 404 | `NOT_FOUND` |
+| `CANCELLATION_FORBIDDEN` | 403 | `FORBIDDEN` |
+| `CANCELLATION_NOT_PRINCIPAL` | 409 | `ALREADY_EXISTS` |
+| `CANCELLATION_STATE_NOT_ALLOWED` | 409 | `ALREADY_EXISTS` |
+
+States without self-service cancellation at this cut, including `PAUSED` and `PENDING_AUTHORIZATION`, answer
+409 `ALREADY_EXISTS` with `CANCELLATION_STATE_NOT_ALLOWED`.
+
+## Action 8 cancellation without refund (B13a, HOS-1696)
+
+`GET` and `POST /api/v1/admin/billing-subscription/{subscriptionId}/cancellation` preview and execute action 8 without a refund. Both require `billing.cancelSubscription` as the route scope. Rejections follow this order: 401 unauthenticated, 403 without route permission, 400 malformed params or body, 404 `SUBSCRIPTION_NOT_FOUND`, 403 `ADMINISTRATIVE_ACTION_FORBIDDEN` when actor equals subject (case-insensitively), then 409 state, principal, or confirmation conflict.
+
+| `reason` | Status | `error.code` |
+|---|---:|---|
+| `SUBSCRIPTION_NOT_FOUND` | 404 | `NOT_FOUND` |
+| `CANCELLATION_FORBIDDEN` | 403 | `FORBIDDEN` |
+| `ADMINISTRATIVE_ACTION_FORBIDDEN` | 403 | `FORBIDDEN` |
+| `CANCELLATION_NOT_PRINCIPAL` | 409 | `ALREADY_EXISTS` |
+| `CANCELLATION_STATE_NOT_ALLOWED` | 409 | `ALREADY_EXISTS` |
+| `CANCELLATION_ORIGIN_CHANGED` | 409 | `ALREADY_EXISTS` |
+
+`ACTIVE` and `CANCEL_SCHEDULED` use S11; `SUSPENDED` uses S23; `GRACE_PERIOD` uses S24. `CANCELLED` is idempotently handled by the direct cancellation act. `PAUSED`, `PENDING_AUTHORIZATION`, `ABANDONED`, and `CHARGE_DECLINED` do not admit this action. `CANCELLATION_ORIGIN_CHANGED` means the confirmation no longer describes the current subscription; review it again before confirming. This route issues no refund; use the S36 revocation route when a refund is intended.
+
+## Actionable reconciliation list (B13a.4, HOS-1620)
+
+`GET /api/v1/admin/billing-reconciliation/marks` lists open marks; `GET
+/api/v1/admin/billing-reconciliation/marks/{markId}/events` reads the critical
+events for a mark. Both require `BILLING_SUBSCRIPTION_INSPECT` at the route
+factory. Rejections follow the standard order: 401 unauthenticated, 403 without
+permission, 400 for malformed pagination or `markId`, and 404 `NOT_FOUND` for
+an unknown mark. The list is read-only: it neither writes nor executes a
+proposal (DEC-RF-002).
+
+## Action 7: lift one reconciliation mark (B13a, HOS-1697)
+
+`POST /api/v1/admin/billing-reconciliation/marks/{markId}/lift` performs ACC:7 (S15). The route maps service rejections with an exhaustive `Record` in `src/routes/billing-reconciliation/admin/lift-mark.ts`, keyed by `LIFT_RECONCILIATION_MARK_REJECTIONS` from `@repo/service-core`.
+
+| Service rejection | Status | `error.code` |
+|---|---:|---|
+| `MARK_NOT_FOUND` | 404 | `NOT_FOUND` |
+| `ADMINISTRATIVE_ACTION_FORBIDDEN` | 403 | `FORBIDDEN` |
+| `MARK_ALREADY_LIFTED` | 409 | `ALREADY_EXISTS` |
+| `MARK_VERSION_CONFLICT` | 409 | `ALREADY_EXISTS` |
+| `MARK_HAS_UNRESOLVED_PAYMENTS` | 409 | `ALREADY_EXISTS` |
+| `MARK_PAYMENT_NOT_HUNG` | 422 | `VALIDATION_ERROR` |
+
+A non-uuid `markId`, a body without an integer `expectedVersion` ≥ 1, an extra key, a repeated payment pair, or an empty or over-2000-character note is a 400 from the schema. The mark is read before the subject, so an unknown mark is 404 for an actor with the permission, as in actions 8 and 14; 403 can come from the route factory (permission) or the service (system actor, actor = subject). `MARK_HAS_UNRESOLVED_PAYMENTS` is a hung payment attached to the mark, unresolved, and not named in the request; `MARK_PAYMENT_NOT_HUNG` is a named payment that is not an unresolved hung payment on that mark; `MARK_VERSION_CONFLICT` means the mark changed since the person read it (for example, a new hung payment arrived): reread and confirm again. No rejection writes anything.
+
+## Action 24 (V8a.3, HOS-1494)
+
+`GET` and `POST /api/v1/admin/users/{id}/close-on-request`: administrative
+action 24, close an account at its owner's request (ACC:24). Both share path and
+permission (`USER_CLOSE_ON_REQUEST`). Step 3 runs before any read, so a refusal
+there never reveals whether the account exists.
+
+| Situation | Status | `error.code` | `error.reason` |
+|---|---|---|---|
+| No session | **401** | `UNAUTHORIZED` | — |
+| Lacks `USER_CLOSE_ON_REQUEST` (also with `USER_DELETE` + `USER_HARD_DELETE`) | **403** | `FORBIDDEN` | — |
+| System actor | **403** | `FORBIDDEN` | — |
+| Actor = subject (support closing its own account) | **403** | `FORBIDDEN` | — |
+| Target is a system account (`is_system_account = true`) | **403** | `FORBIDDEN` | — |
+| Target holds an effective permission the actor lacks (an ADMIN closing a SUPER_ADMIN) | **403** | `FORBIDDEN` | `SUBJECT_OUTRANKS_ACTOR` |
+| `POST` reason missing, blank or over 2000 characters | **400** | `VALIDATION_ERROR` | — |
+| Account does not exist, or is already closed (`deleted_at` set) | **404** | `NOT_FOUND` | — |
+| `canCharge` (`puedeCobrarle`) answers yes | **409** | `ALREADY_EXISTS` | `ACCOUNT_CAN_STILL_BE_CHARGED` |
+| A listing with `deleted_at IS NULL` is outside `PURGED` | **409** | `ALREADY_EXISTS` | `ACCOUNT_HAS_LISTINGS` |
+| The live partner presence still holds content | **409** | `ALREADY_EXISTS` | `ACCOUNT_HAS_PARTNER_PRESENCE` |
+
+`SUBJECT_OUTRANKS_ACTOR` (Coord-235) is decided inside the closure
+transaction, right after the account row is locked and before anything else is
+read or written: the subject's effective permissions must all be held by the
+actor. They come from the SAME resolver the actor middleware uses,
+`resolveEffectivePermissions` in `src/middlewares/actor.ts` (Coord-240: a
+SUPER_ADMIN holds every permission; otherwise its roles' `role_permission` rows
+plus its per-user grants, minus its denies), read without caches and failing
+loudly. No role is compared:
+support closes a peer or a less privileged account, never a more privileged
+one. It runs after the 404, so it never reveals more than existence, which the
+holder of the permission may already read.
+
+A 409 names the FIRST missing step of the manual closure, in its order (charge,
+then listings, then presence), and writes nothing, not even the audit event.
+As everywhere in `createAdminRoute`, the body is validated before the route
+permission, so a `POST` without a valid body answers 400 before 403
+(previous to this PR, Coord-184).
+
+The code was proposed by this PR under owner letter BS; `GET` returns the three
+preconditions so the panel can say which manual step is missing.
+
+## Action 26 rejections (V5.6, HOS-1460)
+
+Assigning or removing `SUPER_ADMIN` through the role routes requires the
+action's own permission and a non-self subject, checked before reading the
+subject or validating the reason. Rejections follow this order after route
+authentication and its `USER_UPDATE_ROLES` gate:
+
+| Situation | Status | `error.code` |
+|---|---|---|
+| Lacks `user.manageSuperAdminRole`, system actor, or actor = subject | **403** | `FORBIDDEN` |
+| Reason missing, blank, or over 500 characters | **400** | `VALIDATION_ERROR` |
+| Subject account does not exist | **404** | `NOT_FOUND` |
+
+A caller without the route permission receives 403 before input validation. For
+action 26, its own permission and self-action refusal precede reason validation;
+reason validation precedes subject existence.
+
+### Action 24 over a partner application made without an account (AC:V8a:12)
+
+`GET` and `POST /api/v1/admin/partner-applications/{id}/replace-email`: the
+same action 24, same permission (`USER_CLOSE_ON_REQUEST`), same step 3 with no
+account as subject. The subject is the applicant, identified by the
+application's mailbox, so `actor = subject` is decided by mailbox inside the
+transaction. The account preconditions are NOT evaluated (no `canCharge`, no
+listings, no presence).
+
+| Situation | Status | `error.code` | `error.reason` |
+|---|---|---|---|
+| No session | **401** | `UNAUTHORIZED` | — |
+| Lacks `USER_CLOSE_ON_REQUEST`, or system actor | **403** | `FORBIDDEN` | — |
+| `POST` reason missing, blank or over 2000 characters | **400** | `VALIDATION_ERROR` | — |
+| Application does not exist, or its mailbox was already replaced (`@pseudonym.invalid`) | **404** | `NOT_FOUND` | — |
+| Actor = subject: the admin's own mailbox is the application's (ignoring case) | **403** | `FORBIDDEN` | — |
+| A live account carries the mailbox and holds an effective permission the actor lacks | **403** | `FORBIDDEN` | `SUBJECT_OUTRANKS_ACTOR` |
+| `POST`: a live account (`deleted_at IS NULL`) carries the mailbox, ignoring case | **409** | `ALREADY_EXISTS` | `APPLICATION_HAS_ACCOUNT` |
+
+`APPLICATION_HAS_ACCOUNT` exists so this route is never a shortcut around
+`puedeCobrarle`: that mailbox is replaced by closing the account, with its
+preconditions. A refusal writes nothing, not even the audit event.
+
+## Actions 11 and 12: step 3 refuses the actor's own account (HOS-1691)
+
+`POST /api/v1/admin/trials/extend` (ACC:11):
+
+| Situation | Status | `error.code` |
+|---|---:|---|
+| No session | 401 | `UNAUTHORIZED` |
+| Lacks `TRIAL_EXTEND` | 403 | `FORBIDDEN` |
+| Invalid body | 400 | `VALIDATION_ERROR` |
+| Actor = subject (`userId` in the body, ignoring case), or system actor | 403 | `FORBIDDEN` |
+| Trial does not exist | 404 | `NOT_FOUND` |
+| Trial has ended | 409 | `ALREADY_EXISTS` |
+
+Step 3 runs before reading the trial.
+
+The admin moderation endpoints for accommodation, venue and experience listings (ACC:12):
+
+| Situation | Status | `error.code` |
+|---|---:|---|
+| No session | 401 | `UNAUTHORIZED` |
+| Lacks `LISTING_MODERATE` | 403 | `FORBIDDEN` |
+| Invalid body | 400 | `VALIDATION_ERROR` |
+| Listing does not exist or is deleted | 404 | `NOT_FOUND` |
+| Actor = listing owner | 403 | `FORBIDDEN` |
+| Incompatible state | 409 | `ALREADY_EXISTS` |
+
+The listing row is read before its owner is checked, so 404 precedes step 3. A step 3 refusal writes nothing, including no domain event.
+
+## Row 30: "I already fixed it" (V8a.1b, HOS-1492)
+
+The protected report-fixed endpoints for accommodation, venue and experience listings:
+the owner tells support that an open fix request (row 30) is corrected. No
+body. It authorizes by ownership (`listingAccess` `READ_OWN`), not by a
+permission, and under the owner's publication lock it re-reads the open fix
+request before writing `owner_reported_fixed_at`.
+
+| Situation | Status | `error.code` | `error.reason` |
+|---|---|---|---|
+| No session | **401** | `UNAUTHORIZED` | — |
+| Listing does not exist, or belongs to somebody else | **404** | `NOT_FOUND` | — |
+| The listing has no open fix request | **409** | `ALREADY_EXISTS` | `NO_OPEN_FIX_REQUEST` |
+
+A repeat answers 200 with the instant of the first report and rewrites
+nothing. The report writes no domain event, does not close the request and
+does not move `inactive_since`.
+
+## Public sellable plan catalog (B13a.5, HOS-1621)
+
+`GET /api/v1/public/plan-catalog?vertical=` does not require a session. A `vertical` outside `accommodation | venue | experience | tourist` is a shape-validation 400. The route has no business rejections and reads only `current AND sellable` plan versions in its `plans` list (AC:B13a:11).
+
+## Pricing situation (B13a.5, HOS-1621)
+
+`GET /api/v1/protected/billing-subscription/pricing-situation/{vertical}` requires a session and returns 401 without one. A `vertical` outside `accommodation | venue | experience | tourist` is a shape-validation 400. It has no business rejections: it reads the same tourist VIP inheritance and live commitment gates as S1, and the same publication destination as PB1, without making a purchase decision. Its `TOURIST_VIP_INHERITED` and live commitment results mirror the S1 rejections `TOURIST_VIP_INHERITED` and `COMMITMENT_TAKEN` (AC:B13a:12).
+
+## Action 21 promo code rejections (B9b.4)
+
+`GET /api/v1/admin/billing-promo-codes`, `POST /api/v1/admin/billing-promo-codes`, and
+`POST /api/v1/admin/billing-promo-codes/{promoCodeId}/close` require
+`BILLING_MANAGE_PROMO_CODES` in the route factory. The factory order is 401 → 403 → 400, so
+an unauthenticated request is rejected before permission checks, and a signed-in actor without
+the permission is rejected before query, params, or body validation.
+
+| `reason` | Status | `error.code` |
+|---|---:|---|
+| `ADMINISTRATIVE_ACTION_FORBIDDEN` | 403 | `FORBIDDEN` |
+| `PROMO_CODE_NOT_FOUND` | 404 | `NOT_FOUND` |
+| `PROMO_CODE_ALREADY_EXISTS` | 409 | `ALREADY_EXISTS` |
+| `PROMO_CODE_ALREADY_CLOSED` | 409 | `ALREADY_EXISTS` |
+| `INVALID_PROMO_CODE_INPUT` | 422 | `VALIDATION_ERROR` |
+
+The exhaustive `Record` lives in `src/routes/billing-promo/admin/rejections.ts`. A redemption
+attempt for a closed code returns the existing `PROMO_CODE_NOT_AVAILABLE` response documented
+under [Promo code redemption](#promo-code-redemption); closing a code adds no redemption reason.

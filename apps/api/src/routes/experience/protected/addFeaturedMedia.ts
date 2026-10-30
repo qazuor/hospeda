@@ -32,23 +32,21 @@
  *
  * Gated on EXPERIENCE_EDIT_OWN (listing owner) or EXPERIENCE_EDIT_ALL (staff) — enforced inside `addExperienceFeaturedMedia` via `checkExperienceCanEditMedia`.
  */
-import { EntitlementKey } from '@repo/billing';
+
 import {
     type ExperienceFeaturedMediaAddInput,
     ExperienceFeaturedMediaAddOutputSchema,
     type ExperienceMediaAddPayload,
     ExperienceMediaAddPayloadSchema,
-    ProductDomainEnum
+    VerticalEnum
 } from '@repo/schemas';
 import { addExperienceFeaturedMedia, ExperienceService, ServiceError } from '@repo/service-core';
 import type { Context } from 'hono';
 import { z } from 'zod';
-import { commerceVerticalEntitlementMiddleware } from '../../../middlewares/commerce-entitlement';
-import { requireEntitlement } from '../../../middlewares/entitlement';
-import { requireLiveSubscription } from '../../../middlewares/require-live-subscription';
+
 import { getActorFromContext } from '../../../utils/actor';
 import { apiLogger } from '../../../utils/logger';
-import { createCRUDRoute } from '../../../utils/route-factory';
+import { createProtectedRoute } from '../../../utils/route-factory';
 
 const experienceService = new ExperienceService({ logger: apiLogger });
 
@@ -59,7 +57,7 @@ const experienceService = new ExperienceService({ logger: apiLogger });
  * instance to pass to the standalone media helper without requiring a public
  * accessor. Mirrors the sibling media routes.
  */
-export const protectedAddExperienceFeaturedMediaRoute = createCRUDRoute({
+export const protectedAddExperienceFeaturedMediaRoute = createProtectedRoute({
     method: 'post',
     path: '/{id}/media/featured',
     summary: 'Upload the experience listing cover image',
@@ -70,7 +68,9 @@ export const protectedAddExperienceFeaturedMediaRoute = createCRUDRoute({
         'is kept. Unlike POST /:id/media this does not ' +
         'consume a gallery slot, because the cover is not a gallery item ' +
         '(HOS-791). Requires EXPERIENCE_EDIT_OWN (listing owner) or EXPERIENCE_EDIT_ALL (staff).',
+    listingAccess: { vertical: VerticalEnum.EXPERIENCE, operation: 'EDIT', idParam: 'id' },
     tags: ['Experience', 'Experience Media'],
+    protectedTag: false,
     requestParams: {
         id: z.string().uuid({ message: 'zodError.common.id.invalidUuid' })
     },
@@ -104,15 +104,5 @@ export const protectedAddExperienceFeaturedMediaRoute = createCRUDRoute({
         }
 
         return result.data;
-    },
-    options: {
-        // HOS-1275: mirrors the gastronomy twin. See
-        // `gastronomy/protected/addFaq.ts` for why the vertical loader must be
-        // first.
-        middlewares: [
-            commerceVerticalEntitlementMiddleware('experience'),
-            requireEntitlement(EntitlementKey.EDIT_EXPERIENCE_INFO),
-            requireLiveSubscription(ProductDomainEnum.EXPERIENCE)
-        ]
     }
 });

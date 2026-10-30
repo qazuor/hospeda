@@ -8,22 +8,21 @@
  * request body — same rationale as `addOccupancy.ts` / `batchOccupancy.ts`.
  *
  * No declarative `ownership:` config — MANAGE permission + ownership are
- * enforced inside `updateOccupancyEvent`. The `CAN_USE_CALENDAR` entitlement
- * is enforced HERE at the route via `requireEntitlement` — see the module
- * doc in `addOccupancy.ts` for the full rationale (route-level gate reads
- * the same `loadEntitlements` path the frontend trusts, unlike a
- * service-level DB-driven resolver).
+ * enforced inside `updateOccupancyEvent`. Calendar operations run without the former
+ * `can_use_calendar` on the listing owner through listing access.
+ * The listing access resolver requires the route capability on the owner.
  */
-import { EntitlementKey } from '@repo/billing';
+
 import {
     AccommodationIdSchema,
     AccommodationOccupancyEventUpdateSchema,
-    AccommodationOccupancySchema
+    AccommodationOccupancySchema,
+    VerticalEnum
 } from '@repo/schemas';
 import { updateOccupancyEvent } from '@repo/service-core';
 import type { Context } from 'hono';
 import { z } from 'zod';
-import { requireEntitlement } from '../../../middlewares/entitlement';
+
 import { getActorFromContext } from '../../../utils/actor';
 import { createProtectedRoute } from '../../../utils/route-factory';
 
@@ -43,6 +42,12 @@ const UpdateOccupancyEventResponseSchema = z.object({
 export const protectedUpdateOccupancyEventRoute = createProtectedRoute({
     method: 'patch',
     path: '/{id}/occupancy/event',
+    listingAccess: {
+        vertical: VerticalEnum.ACCOMMODATION,
+        operation: 'EDIT',
+        capabilities: ['can_use_calendar'],
+        idParam: 'id'
+    },
     summary: 'Edit a manual occupancy event (owner)',
     description:
         'Atomically moves a MANUAL occupancy event from [oldStartDate..oldEndDate] to ' +
@@ -84,8 +89,5 @@ export const protectedUpdateOccupancyEventRoute = createProtectedRoute({
         });
 
         return { occupancy };
-    },
-    options: {
-        middlewares: [requireEntitlement(EntitlementKey.CAN_USE_CALENDAR)]
     }
 });

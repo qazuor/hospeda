@@ -1,0 +1,345 @@
+[
+    {
+        "id": "dec-trial-001",
+        "spec_desde": 35,
+        "spec_hasta": 72,
+        "fuente": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md",
+        "linea_fuente": 257
+    },
+    {
+        "id": "dec-trial-002",
+        "spec_desde": 73,
+        "spec_hasta": 113,
+        "fuente": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md",
+        "linea_fuente": 287
+    },
+    {
+        "id": "dec-trial-003-p1",
+        "spec_desde": 155,
+        "spec_hasta": 168,
+        "fuente": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md",
+        "linea_fuente": 392
+    },
+    {
+        "id": "dec-trial-004-p1",
+        "spec_desde": 212,
+        "spec_hasta": 227,
+        "fuente": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md",
+        "linea_fuente": 467
+    },
+    {
+        "id": "dec-trial-010-p1",
+        "spec_desde": 536,
+        "spec_hasta": 571,
+        "fuente": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md",
+        "linea_fuente": 6217
+    },
+    {
+        "id": "dec-sub-006",
+        "spec_desde": 650,
+        "spec_hasta": 726,
+        "fuente": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md",
+        "linea_fuente": 1091
+    },
+    {
+        "id": "dec-sub-008",
+        "spec_desde": 833,
+        "spec_hasta": 896,
+        "fuente": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md",
+        "linea_fuente": 1241
+    },
+    {
+        "id": "dec-sub-016",
+        "spec_desde": 1407,
+        "spec_hasta": 1450,
+        "fuente": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md",
+        "linea_fuente": 5083
+    },
+    {
+        "id": "dec-sub-021-p1",
+        "spec_desde": 1725,
+        "spec_hasta": 1754,
+        "fuente": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md",
+        "linea_fuente": 6024
+    },
+    {
+        "id": "dec-mp-002",
+        "spec_desde": 1986,
+        "spec_hasta": 2082,
+        "fuente": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md",
+        "linea_fuente": 1375
+    },
+    {
+        "id": "dec-mp-004",
+        "spec_desde": 2274,
+        "spec_hasta": 2318,
+        "fuente": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md",
+        "linea_fuente": 4799
+    },
+    {
+        "id": "dec-mp-006",
+        "spec_desde": 2389,
+        "spec_hasta": 2454,
+        "fuente": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md",
+        "linea_fuente": 5655
+    },
+    {
+        "id": "dec-ent-002-p1",
+        "spec_desde": 2810,
+        "spec_hasta": 2826,
+        "fuente": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md",
+        "linea_fuente": 633
+    },
+    {
+        "id": "dec-ent-002-p2",
+        "spec_desde": 2827,
+        "spec_hasta": 2840,
+        "fuente": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md",
+        "linea_fuente": 639
+    },
+    {
+        "id": "dec-ent-002-p3",
+        "spec_desde": 2841,
+        "spec_hasta": 2855,
+        "fuente": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md",
+        "linea_fuente": 643
+    },
+    {
+        "id": "dec-ent-006-p2",
+        "spec_desde": 3024,
+        "spec_hasta": 3045,
+        "fuente": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md",
+        "linea_fuente": 6756
+    },
+    {
+        "id": "dec-addon-002-p2",
+        "spec_desde": 3229,
+        "spec_hasta": 3246,
+        "fuente": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md",
+        "linea_fuente": 2189
+    },
+    {
+        "id": "dec-promo-001",
+        "spec_desde": 3532,
+        "spec_hasta": 3567,
+        "fuente": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md",
+        "linea_fuente": 806
+    },
+    {
+        "id": "dec-auth-001",
+        "spec_desde": 3633,
+        "spec_hasta": 3679,
+        "fuente": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md",
+        "linea_fuente": 6672
+    },
+    {
+        "id": "dec-data-002",
+        "spec_desde": 4038,
+        "spec_hasta": 4103,
+        "fuente": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md",
+        "linea_fuente": 3749
+    },
+    {
+        "id": "dec-data-005-p2",
+        "spec_desde": 4307,
+        "spec_hasta": 4322,
+        "fuente": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md",
+        "linea_fuente": 6092
+    },
+    {
+        "id": "dec-data-008",
+        "spec_desde": 4544,
+        "spec_hasta": 4591,
+        "fuente": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md",
+        "linea_fuente": 7378
+    },
+    {
+        "id": "dec-data-008-p2",
+        "spec_desde": 4615,
+        "spec_hasta": 4627,
+        "fuente": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md",
+        "linea_fuente": 7419
+    },
+    {
+        "id": "dec-mail-001",
+        "spec_desde": 4740,
+        "spec_hasta": 4811,
+        "fuente": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md",
+        "linea_fuente": 1709
+    },
+    {
+        "id": "dec-arch-006-p2",
+        "spec_desde": 5366,
+        "spec_hasta": 5388,
+        "fuente": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md",
+        "linea_fuente": 2551
+    },
+    {
+        "id": "dec-arch-009",
+        "spec_desde": 5669,
+        "spec_hasta": 5706,
+        "fuente": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md",
+        "linea_fuente": 6146
+    },
+    {
+        "id": "dec-arch-014-p6",
+        "spec_desde": 6189,
+        "spec_hasta": 6215,
+        "fuente": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md",
+        "linea_fuente": 7629
+    },
+    {
+        "id": "dec-arch-014-p7",
+        "spec_desde": 6216,
+        "spec_hasta": 6239,
+        "fuente": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md",
+        "linea_fuente": 7642
+    },
+    {
+        "id": "dec-arch-016",
+        "spec_desde": 6270,
+        "spec_hasta": 6369,
+        "fuente": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md",
+        "linea_fuente": 7755
+    },
+    {
+        "id": "dec-arch-017-p8",
+        "spec_desde": 6677,
+        "spec_hasta": 6699,
+        "fuente": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md",
+        "linea_fuente": 8035
+    },
+    {
+        "id": "dec-mig-003-p5",
+        "spec_desde": 7166,
+        "spec_hasta": 7183,
+        "fuente": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md",
+        "linea_fuente": 3155
+    },
+    {
+        "id": "dec-mig-005-p6",
+        "spec_desde": 7379,
+        "spec_hasta": 7405,
+        "fuente": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md",
+        "linea_fuente": 6522
+    },
+    {
+        "id": "dec-grant-004",
+        "spec_desde": 7718,
+        "spec_hasta": 7774,
+        "fuente": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md",
+        "linea_fuente": 2055
+    },
+    {
+        "id": "dec-legal-001",
+        "spec_desde": 8202,
+        "spec_hasta": 8236,
+        "fuente": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md",
+        "linea_fuente": 964
+    },
+    {
+        "id": "dec-test-001-p6",
+        "spec_desde": 8495,
+        "spec_hasta": 8510,
+        "fuente": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md",
+        "linea_fuente": 4674
+    },
+    {
+        "id": "dec-conc-002-p1",
+        "spec_desde": 8867,
+        "spec_hasta": 8893,
+        "fuente": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md",
+        "linea_fuente": 1633
+    },
+    {
+        "id": "dec-rf-008-p4",
+        "spec_desde": 9701,
+        "spec_hasta": 9719,
+        "fuente": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md",
+        "linea_fuente": 6595
+    },
+    {
+        "id": "dec-obs-001",
+        "spec_desde": 9771,
+        "spec_hasta": 9819,
+        "fuente": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md",
+        "linea_fuente": 2239
+    },
+    {
+        "id": "dec-ci-001",
+        "spec_desde": 9848,
+        "spec_hasta": 9908,
+        "fuente": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md",
+        "linea_fuente": 2785
+    },
+    {
+        "id": "dec-meth-019",
+        "spec_desde": 10913,
+        "spec_hasta": 10983,
+        "fuente": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md",
+        "linea_fuente": 8108
+    },
+    {
+        "id": "own-26-fase-9-completa-t1-5a",
+        "spec_desde": 11259,
+        "spec_hasta": 11267,
+        "fuente": ".specs/HOS-1352-billing-verticals-redesign/docs/26-fase-9-completa/10-decisiones-del-owner.md",
+        "linea_fuente": 36
+    },
+    {
+        "id": "own-28-fase-9-vuelta-1-t1-g5-3",
+        "spec_desde": 11663,
+        "spec_hasta": 11672,
+        "fuente": ".specs/HOS-1352-billing-verticals-redesign/docs/28-fase-9-vuelta-1/10-decisiones-del-owner.md",
+        "linea_fuente": 35
+    },
+    {
+        "id": "own-29-fase-8-vuelta-2-t1-r5",
+        "spec_desde": 11889,
+        "spec_hasta": 11898,
+        "fuente": ".specs/HOS-1352-billing-verticals-redesign/docs/29-fase-8-vuelta-2/10-decisiones-del-owner.md",
+        "linea_fuente": 25
+    },
+    {
+        "id": "own-37-fase-8-vuelta-3-t1-s",
+        "spec_desde": 12644,
+        "spec_hasta": 12654,
+        "fuente": ".specs/HOS-1352-billing-verticals-redesign/docs/37-fase-8-vuelta-3/10-decisiones-del-owner.md",
+        "linea_fuente": 40
+    },
+    {
+        "id": "own-38-fase-5-t6-f",
+        "spec_desde": 13254,
+        "spec_hasta": 13263,
+        "fuente": ".specs/HOS-1352-billing-verticals-redesign/docs/38-fase-5/10-decisiones-del-owner.md",
+        "linea_fuente": 133
+    },
+    {
+        "id": "own-39-fases-6-y-7-t1-c",
+        "spec_desde": 13393,
+        "spec_hasta": 13402,
+        "fuente": ".specs/HOS-1352-billing-verticals-redesign/docs/39-fases-6-y-7/10-decisiones-del-owner.md",
+        "linea_fuente": 21
+    },
+    {
+        "id": "own-41-corte-del-mvp-t12-cc",
+        "spec_desde": 14162,
+        "spec_hasta": 14171,
+        "fuente": ".specs/HOS-1352-billing-verticals-redesign/docs/41-corte-del-mvp/10-decisiones-del-owner.md",
+        "linea_fuente": 182
+    },
+    {
+        "id": "own-41-corte-del-mvp-t14-cf",
+        "spec_desde": 14196,
+        "spec_hasta": 14205,
+        "fuente": ".specs/HOS-1352-billing-verticals-redesign/docs/41-corte-del-mvp/10-decisiones-del-owner.md",
+        "linea_fuente": 201
+    },
+    {
+        "id": "own-41-corte-del-mvp-t17-ck",
+        "spec_desde": 14252,
+        "spec_hasta": 14260,
+        "fuente": ".specs/HOS-1352-billing-verticals-redesign/docs/41-corte-del-mvp/10-decisiones-del-owner.md",
+        "linea_fuente": 234
+    }
+]

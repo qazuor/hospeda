@@ -1,0 +1,13 @@
+🔐 Scanning for secrets in staged files...
+✅ No secrets detected
+🔍 Running lint-staged...
+→ lint-staged could not find any staged files matching configured tasks.
+📝 Syncing TODO comments with GitHub...
+No projects matched the filters in "/home/qazuor/projects/WEBS/hospeda-spec-hos-1352-billing-redesign"
+✅ TODO sync completed successfully
+✅ Pre-commit checks complete
+🔍 Detecting completed tasks...
+No projects matched the filters in "/home/qazuor/projects/WEBS/hospeda-spec-hos-1352-billing-redesign"
+✅ Post-commit checks complete
+[spec/HOS-1352-billing-verticals-redesign 98a1a80735] docs(spec): guard partial cc retirement and superseded load steps (HOS-1352)
+ 3 files changed, 30 insertions(+), 8 deletions(-)

@@ -220,7 +220,7 @@ From `advanced-patterns.ts`:
 
 ## Common Use Cases
 
-### E-commerce Application
+### Online Store Application
 
 ```typescript
 // Product catalog with categories and tags

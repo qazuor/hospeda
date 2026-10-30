@@ -52,13 +52,13 @@ export const publicGetPlatformStatsRoute = createPublicRoute({
 
         const baseParams = { page: 1, pageSize: 1 } as const;
 
-        // HOS-352: AccommodationService derives `excludeOwnerSuspended` /
-        // `excludePlanRestricted` / `activeOnly` from the actor's VIP/staff
-        // entitlements (`_executeCount`). This endpoint's cache key is
+        // HOS-352: AccommodationService derived its old visibility flags from the
+        // actor's VIP/staff entitlements (`_executeCount`); since V6.9b it derives
+        // only `publishedOnly`, off for an owner's own scope. This endpoint's cache key is
         // `public:${path}` (PUBLIC_CACHE_ENDPOINTS) — shared by EVERY caller,
         // not segmented by actor at all — so if a VIP/staff visitor happens to
         // trigger the cache-refreshing request, the inflated count (including
-        // DRAFT/suspended/plan-restricted rows) would be replayed to every
+        // unpublished rows) would be replayed to every
         // anonymous visitor for the full 1h TTL. The other five `count()` calls
         // below have no actor-dependent visibility branch (verified: only
         // `AccommodationService` derives filters from the actor), so they are
@@ -100,7 +100,5 @@ export const publicGetPlatformStatsRoute = createPublicRoute({
             recentReviewerAvatars: [...recentReviewerAvatars]
         };
     },
-    options: {
-        cacheTTL: 3600
-    }
+    options: {}
 });

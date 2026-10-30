@@ -1,9 +1,9 @@
 /**
  * HOS-321 — direct tests for the shared junction-sync primitives.
  *
- * The accommodation and commerce sync modules both drive these, but their own
+ * The accommodation and listing sync modules both drive these, but their own
  * suites only ever pass an accommodation-shaped `where`. The whole reason these
- * live in `utils/` is that the `where` is generic — commerce passes
+ * live in `utils/` is that the `where` is generic — listing services pass
  * `{ [entityFkColumn]: entityId }` — so that generality needs coverage here or
  * it has none anywhere.
  */
@@ -39,15 +39,15 @@ function createPaginatingModel<TRow>(rows: readonly TRow[]) {
 }
 
 describe('readAllJunctionRows', () => {
-    it('reads the full set with a non-accommodation `where` (the commerce shape)', async () => {
+    it('reads the full set with a non-accommodation `where` (the listing shape)', async () => {
         const rows = Array.from({ length: 45 }, (_, i) => ({
-            gastronomyId: 'gastro-1',
+            venueId: 'venue-1',
             amenityId: `am-${i}`
         }));
         const junctionModel = createPaginatingModel(rows);
 
         const result = await readAllJunctionRows({
-            where: { gastronomyId: 'gastro-1' },
+            where: { venueId: 'venue-1' },
             junctionModel,
             sortBy: 'amenityId',
             tx
@@ -55,7 +55,7 @@ describe('readAllJunctionRows', () => {
 
         expect(result).toHaveLength(45);
         expect(junctionModel.findAll).toHaveBeenCalledWith(
-            { gastronomyId: 'gastro-1' },
+            { venueId: 'venue-1' },
             expect.objectContaining({ pageSize: PAGE_SIZE, sortBy: 'amenityId', sortOrder: 'asc' }),
             undefined,
             tx

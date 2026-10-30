@@ -7,7 +7,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 // ---------------------------------------------------------------------------
 // EntityFormProvider pulls translations from `@repo/i18n`; EntityFormSection
 // pulls from `@/hooks/use-translations` and entitlements from
-// `use-my-entitlements`. Stub all three so the test focuses on the
+// `use-effective-set`. Stub all three so the test focuses on the
 // provider -> context.values -> section -> input binding chain.
 
 vi.mock('@repo/i18n', () => ({
@@ -18,8 +18,8 @@ vi.mock('@/hooks/use-translations', () => ({
     useTranslations: () => ({ t: (key: string) => key })
 }));
 
-vi.mock('@/features/billing/use-my-entitlements', () => ({
-    useMyEntitlements: () => ({ has: () => true, isLoading: false })
+vi.mock('@/features/billing/use-effective-set', () => ({
+    useEffectiveSet: () => ({ has: () => true, isLoading: false })
 }));
 
 import {

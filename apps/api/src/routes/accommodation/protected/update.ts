@@ -2,7 +2,7 @@
  * Protected update accommodation endpoint
  * Requires authentication and ownership
  */
-import { EntitlementKey } from '@repo/billing';
+
 import {
     AccommodationIdSchema,
     AccommodationProtectedSchema,
@@ -11,26 +11,19 @@ import {
     type AccommodationUpdateInput,
     httpToDomainAccommodationUpdate,
     PermissionEnum,
-    ProductDomainEnum
+    VerticalEnum
 } from '@repo/schemas';
 import { AccommodationService, ServiceError } from '@repo/service-core';
 import type { Context } from 'hono';
-import { getQZPayBilling } from '../../../middlewares/billing';
-import { requireEntitlement } from '../../../middlewares/entitlement';
-import { requireLiveSubscription } from '../../../middlewares/require-live-subscription';
-import { buildAccommodationPublishDeps } from '../../../services/accommodation-publish-deps';
+
 import { getActorFromContext } from '../../../utils/actor';
 import { stripRichDescriptionFields } from '../../../utils/entitlement-filter';
 import { apiLogger } from '../../../utils/logger';
 import { createProtectedRoute } from '../../../utils/route-factory';
 
-const accommodationService = new AccommodationService(
-    { logger: apiLogger },
-    undefined,
-    null,
-    undefined,
-    buildAccommodationPublishDeps(() => getQZPayBilling())
-);
+// The publish-deps (trial eligibility + local trial) went down with the legacy
+// billing system (HOS-1416); `publishDeps` is optional in `AccommodationService`.
+const accommodationService = new AccommodationService({ logger: apiLogger });
 
 /**
  * PUT /api/v1/protected/accommodations/:id
@@ -48,10 +41,11 @@ export const protectedUpdateAccommodationRoute = createProtectedRoute({
     },
     requestBody: AccommodationUpdateHttpSchema,
     responseSchema: AccommodationProtectedSchema,
+    listingAccess: { vertical: VerticalEnum.ACCOMMODATION, operation: 'EDIT', idParam: 'id' },
     ownership: {
         entityType: 'accommodation',
         ownershipFields: ['ownerId', 'createdById'],
-        bypassPermission: PermissionEnum.ACCOMMODATION_UPDATE_ANY
+        bypassPermission: PermissionEnum.LISTING_FOREIGN_CONTENT_EDIT
     },
     handler: async (
         ctx: Context,
@@ -87,13 +81,5 @@ export const protectedUpdateAccommodationRoute = createProtectedRoute({
         // the pair was declared, with no entitlement lookup and no gate to
         // get wrong. See the schema comment for the full contract.
         return stripRichDescriptionFields(result.data);
-    },
-    options: {
-        // SPEC-145 T-004: full-replace mutation requires EDIT_ACCOMMODATION_INFO
-        // (granted on all owner/complex plans). Runs before the handler.
-        middlewares: [
-            requireEntitlement(EntitlementKey.EDIT_ACCOMMODATION_INFO),
-            requireLiveSubscription(ProductDomainEnum.ACCOMMODATION)
-        ]
     }
 });

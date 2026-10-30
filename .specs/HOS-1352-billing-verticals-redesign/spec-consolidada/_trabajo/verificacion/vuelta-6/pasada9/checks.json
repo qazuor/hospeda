@@ -1,0 +1,232 @@
+[
+    {
+        "check": "inventario",
+        "command": ["python3", "scripts/inventario.py", "--json", "_trabajo/inventario.json"],
+        "cwd": "/home/qazuor/projects/WEBS/hospeda-spec-hos-1352-billing-redesign/.specs/HOS-1352-billing-verticals-redesign/spec-consolidada",
+        "exit": 0
+    },
+    {
+        "check": "asignar",
+        "command": [
+            "python3",
+            "scripts/asignar.py",
+            "_trabajo/inventario.json",
+            "_trabajo/adjudicacion.json",
+            "_trabajo/asignacion.json"
+        ],
+        "cwd": "/home/qazuor/projects/WEBS/hospeda-spec-hos-1352-billing-redesign/.specs/HOS-1352-billing-verticals-redesign/spec-consolidada",
+        "exit": 0
+    },
+    {
+        "check": "adjudicar",
+        "command": [
+            "python3",
+            "scripts/adjudicar.py",
+            "_trabajo/inventario.json",
+            "_trabajo/adjudicacion.json"
+        ],
+        "cwd": "/home/qazuor/projects/WEBS/hospeda-spec-hos-1352-billing-redesign/.specs/HOS-1352-billing-verticals-redesign/spec-consolidada",
+        "exit": 0
+    },
+    {
+        "check": "reanclar",
+        "command": [
+            "python3",
+            "scripts/reanclar.py",
+            "--desde=3c3e88b9b59cb7d766bc34848b8ffd657eb95770",
+            "--escribir",
+            "--reporte=/home/qazuor/projects/WEBS/hospeda-spec-hos-1352-billing-redesign/.specs/HOS-1352-billing-verticals-redesign/spec-consolidada/_trabajo/verificacion/vuelta-6/pasada9/reanclaje.json"
+        ],
+        "cwd": "/home/qazuor/projects/WEBS/hospeda-spec-hos-1352-billing-redesign/.specs/HOS-1352-billing-verticals-redesign/spec-consolidada",
+        "exit": 0
+    },
+    {
+        "check": "reanclar-cobertura",
+        "command": [
+            "python3",
+            "scripts/cobertura.py",
+            "_trabajo/inventario.json",
+            "_trabajo/adjudicacion.json",
+            "_trabajo/cobertura-lectura.json",
+            "_trabajo/cobertura.json",
+            "--reanclar=3c3e88b9b59cb7d766bc34848b8ffd657eb95770"
+        ],
+        "cwd": "/home/qazuor/projects/WEBS/hospeda-spec-hos-1352-billing-redesign/.specs/HOS-1352-billing-verticals-redesign/spec-consolidada",
+        "exit": 0
+    },
+    {
+        "check": "sellar-cobertura",
+        "command": [
+            "python3",
+            "scripts/cobertura.py",
+            "_trabajo/inventario.json",
+            "_trabajo/adjudicacion.json",
+            "_trabajo/cobertura-lectura.json",
+            "_trabajo/cobertura.json",
+            "--sellar"
+        ],
+        "cwd": "/home/qazuor/projects/WEBS/hospeda-spec-hos-1352-billing-redesign/.specs/HOS-1352-billing-verticals-redesign/spec-consolidada",
+        "exit": 0
+    },
+    {
+        "check": "omisiones-g1",
+        "command": ["python3", "scripts/generadores/g1/omisiones.py"],
+        "cwd": "/home/qazuor/projects/WEBS/hospeda-spec-hos-1352-billing-redesign/.specs/HOS-1352-billing-verticals-redesign/spec-consolidada",
+        "exit": 0
+    },
+    {
+        "check": "generar-g1",
+        "command": ["python3", "scripts/generadores/g1/gen01.py"],
+        "cwd": "/home/qazuor/projects/WEBS/hospeda-spec-hos-1352-billing-redesign/.specs/HOS-1352-billing-verticals-redesign/spec-consolidada",
+        "exit": 0
+    },
+    {
+        "check": "generar-g3",
+        "command": ["python3", "scripts/generadores/g3/gen.py"],
+        "cwd": "/home/qazuor/projects/WEBS/hospeda-spec-hos-1352-billing-redesign/.specs/HOS-1352-billing-verticals-redesign/spec-consolidada",
+        "exit": 0
+    },
+    {
+        "check": "generar-g8",
+        "command": ["python3", "scripts/generadores/g8/gen.py", "B4", "B5", "B6", "B7"],
+        "cwd": "/home/qazuor/projects/WEBS/hospeda-spec-hos-1352-billing-redesign/.specs/HOS-1352-billing-verticals-redesign/spec-consolidada",
+        "exit": 0
+    },
+    {
+        "check": "generar-secciones",
+        "command": ["python3", "scripts/generadores/secciones/gen.py"],
+        "cwd": "/home/qazuor/projects/WEBS/hospeda-spec-hos-1352-billing-redesign/.specs/HOS-1352-billing-verticals-redesign/spec-consolidada",
+        "exit": 0
+    },
+    {
+        "check": "markdownlint-fix",
+        "command": [
+            "pnpm",
+            "exec",
+            "markdownlint-cli2",
+            "--fix",
+            "/home/qazuor/projects/WEBS/hospeda-spec-hos-1352-billing-redesign/.specs/HOS-1352-billing-verticals-redesign/spec-consolidada/**/*.md"
+        ],
+        "cwd": "/home/qazuor/projects/WEBS/hospeda-spec-hos-1352-billing-redesign",
+        "exit": 0
+    },
+    {
+        "check": "biome-format",
+        "command": [
+            "pnpm",
+            "exec",
+            "biome",
+            "format",
+            "--write",
+            ".specs/HOS-1352-billing-verticals-redesign/spec-consolidada/_trabajo/adjudicacion.json",
+            ".specs/HOS-1352-billing-verticals-redesign/spec-consolidada/_trabajo/asignacion.json",
+            ".specs/HOS-1352-billing-verticals-redesign/spec-consolidada/_trabajo/cobertura-lectura.json",
+            ".specs/HOS-1352-billing-verticals-redesign/spec-consolidada/_trabajo/inventario.json",
+            ".specs/HOS-1352-billing-verticals-redesign/spec-consolidada/scripts/generadores/g1/omisiones.json",
+            ".specs/HOS-1352-billing-verticals-redesign/spec-consolidada/_trabajo/verificacion/vuelta-6/pasada9/archivo-verificado.json",
+            ".specs/HOS-1352-billing-verticals-redesign/spec-consolidada/_trabajo/verificacion/vuelta-6/pasada9/g-sandbox/omisiones-nuevas.json",
+            ".specs/HOS-1352-billing-verticals-redesign/spec-consolidada/_trabajo/verificacion/vuelta-6/pasada9/reanclaje-secciones.json",
+            ".specs/HOS-1352-billing-verticals-redesign/spec-consolidada/_trabajo/verificacion/vuelta-6/pasada9/reanclaje.json"
+        ],
+        "cwd": "/home/qazuor/projects/WEBS/hospeda-spec-hos-1352-billing-redesign",
+        "exit": 0
+    },
+    {
+        "check": "trazar",
+        "command": [
+            "python3",
+            "scripts/trazar.py",
+            "_trabajo/inventario.json",
+            "_trabajo/adjudicacion.json",
+            ".",
+            "--cobertura=_trabajo/cobertura.json"
+        ],
+        "cwd": "/home/qazuor/projects/WEBS/hospeda-spec-hos-1352-billing-redesign/.specs/HOS-1352-billing-verticals-redesign/spec-consolidada",
+        "exit": 0
+    },
+    {
+        "check": "canarios",
+        "command": ["python3", "scripts/canarios.py"],
+        "cwd": "/home/qazuor/projects/WEBS/hospeda-spec-hos-1352-billing-redesign/.specs/HOS-1352-billing-verticals-redesign/spec-consolidada",
+        "exit": 0
+    },
+    {
+        "check": "canarios-cobertura",
+        "command": ["python3", "scripts/canarios_cobertura.py"],
+        "cwd": "/home/qazuor/projects/WEBS/hospeda-spec-hos-1352-billing-redesign/.specs/HOS-1352-billing-verticals-redesign/spec-consolidada",
+        "exit": 0
+    },
+    {
+        "check": "canarios-g1",
+        "command": ["python3", "scripts/generadores/g1/canarios_g1.py"],
+        "cwd": "/home/qazuor/projects/WEBS/hospeda-spec-hos-1352-billing-redesign/.specs/HOS-1352-billing-verticals-redesign/spec-consolidada",
+        "exit": 0
+    },
+    {
+        "check": "canarios-g3",
+        "command": ["python3", "scripts/generadores/g3/canarios_g3.py"],
+        "cwd": "/home/qazuor/projects/WEBS/hospeda-spec-hos-1352-billing-redesign/.specs/HOS-1352-billing-verticals-redesign/spec-consolidada",
+        "exit": 0
+    },
+    {
+        "check": "canarios-secciones",
+        "command": ["python3", "scripts/generadores/secciones/canarios_secciones.py"],
+        "cwd": "/home/qazuor/projects/WEBS/hospeda-spec-hos-1352-billing-redesign/.specs/HOS-1352-billing-verticals-redesign/spec-consolidada",
+        "exit": 0
+    },
+    {
+        "check": "aristas",
+        "command": ["python3", "../docs/41-corte-del-mvp/aristas.py"],
+        "cwd": "/home/qazuor/projects/WEBS/hospeda-spec-hos-1352-billing-redesign/.specs/HOS-1352-billing-verticals-redesign/spec-consolidada",
+        "exit": 0
+    },
+    {
+        "check": "contar",
+        "command": ["python3", "../docs/41-corte-del-mvp/contar.py"],
+        "cwd": "/home/qazuor/projects/WEBS/hospeda-spec-hos-1352-billing-redesign/.specs/HOS-1352-billing-verticals-redesign/spec-consolidada",
+        "exit": 0
+    },
+    {
+        "check": "cobertura",
+        "command": [
+            "python3",
+            "scripts/cobertura.py",
+            "_trabajo/inventario.json",
+            "_trabajo/adjudicacion.json",
+            "_trabajo/cobertura-lectura.json",
+            "_trabajo/cobertura.json"
+        ],
+        "cwd": "/home/qazuor/projects/WEBS/hospeda-spec-hos-1352-billing-redesign/.specs/HOS-1352-billing-verticals-redesign/spec-consolidada",
+        "exit": 0
+    },
+    {
+        "check": "markdownlint",
+        "command": [
+            "pnpm",
+            "exec",
+            "markdownlint-cli2",
+            "/home/qazuor/projects/WEBS/hospeda-spec-hos-1352-billing-redesign/.specs/HOS-1352-billing-verticals-redesign/spec-consolidada/**/*.md"
+        ],
+        "cwd": "/home/qazuor/projects/WEBS/hospeda-spec-hos-1352-billing-redesign",
+        "exit": 0
+    },
+    {
+        "check": "biome-final",
+        "command": [
+            "pnpm",
+            "exec",
+            "biome",
+            "format",
+            ".specs/HOS-1352-billing-verticals-redesign/spec-consolidada/_trabajo/adjudicacion.json",
+            ".specs/HOS-1352-billing-verticals-redesign/spec-consolidada/_trabajo/asignacion.json",
+            ".specs/HOS-1352-billing-verticals-redesign/spec-consolidada/_trabajo/inventario.json",
+            ".specs/HOS-1352-billing-verticals-redesign/spec-consolidada/scripts/generadores/g1/omisiones.json",
+            ".specs/HOS-1352-billing-verticals-redesign/spec-consolidada/_trabajo/verificacion/vuelta-6/pasada9/archivo-verificado.json",
+            ".specs/HOS-1352-billing-verticals-redesign/spec-consolidada/_trabajo/verificacion/vuelta-6/pasada9/g-sandbox/omisiones-nuevas.json",
+            ".specs/HOS-1352-billing-verticals-redesign/spec-consolidada/_trabajo/verificacion/vuelta-6/pasada9/reanclaje-secciones.json",
+            ".specs/HOS-1352-billing-verticals-redesign/spec-consolidada/_trabajo/verificacion/vuelta-6/pasada9/reanclaje.json"
+        ],
+        "cwd": "/home/qazuor/projects/WEBS/hospeda-spec-hos-1352-billing-redesign",
+        "exit": 0
+    }
+]

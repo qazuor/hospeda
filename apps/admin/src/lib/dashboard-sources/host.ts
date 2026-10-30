@@ -12,7 +12,6 @@
  * |------------------------------------|------|-------|-------------|
  * | `host.accommodations.count`        | A    | own   | GET /api/v1/admin/accommodations?ownerId={uid}&pageSize=1 |
  * | `host.accommodations.drafts`       | A    | own   | GET /api/v1/admin/accommodations?ownerId={uid}&status=DRAFT&pageSize=5 |
- * | `host.billing.plan`                | B    | own   | GET /api/v1/protected/billing/subscriptions?pageSize=1 + GET /api/v1/protected/billing/usage |
  * | `host.conversations.pending`       | C    | own   | GET /api/v1/admin/conversations?ownerId={uid}&conversationStatus=PENDING_OWNER |
  * | `host.reviews.latest`              | E    | own   | GET /api/v1/admin/reviews?ownerId={uid}&pageSize=5&sort=created_at_desc |
  * | `host.stats.favorites`             | G    | own   | GET /api/v1/protected/accommodation/my/favorites-breakdown |
@@ -68,121 +67,6 @@ interface AccommodationListApiResponse {
         readonly pagination?: { readonly total?: number };
     };
 }
-
-/**
- * Shape of GET /api/v1/protected/users/me/subscription.
- *
- * Returns the FULL subscription record (planName + status + dates + price)
- * already null-friendly when billing is unavailable, so we don't have to
- * swallow 503s ourselves like with the lower-level qzpay-hono routes.
- */
-interface UserSubscriptionApiResponse {
-    readonly success: boolean;
-    readonly data?: {
-        readonly subscription: {
-            readonly planSlug: string;
-            readonly planName: string;
-            readonly status: string;
-            /**
-             * True for a complimentary (`comp`, SPEC-262) subscription — mapped
-             * to status `active` but never charged (its `currentPeriodEnd` is a
-             * ~100-year sentinel). Used to suppress the bogus "next charge" date.
-             * HOS-242. Optional for backward-compat with older API responses.
-             */
-            readonly isComplimentary?: boolean;
-            readonly currentPeriodStart: string | null;
-            readonly currentPeriodEnd: string | null;
-            readonly cancelAtPeriodEnd: boolean;
-            readonly trialEndsAt: string | null;
-            readonly monthlyPriceArs: number;
-        } | null;
-    };
-}
-
-/**
- * Shape of GET /api/v1/protected/billing/usage response.
- *
- * The endpoint returns a per-limit breakdown — one entry per LimitKey with
- * `currentUsage` + `maxAllowed`. We index it by `limitKey` so each card-B
- * tile can look up its own usage. The `upgradeUrl` is the canonical pricing
- * URL composed by the billing module (preferred over hand-rolled fallbacks).
- */
-interface BillingUsageApiResponse {
-    readonly success: boolean;
-    readonly data?: {
-        readonly customerId: string;
-        readonly limits: ReadonlyArray<{
-            readonly limitKey: string;
-            readonly displayName: string;
-            readonly currentUsage: number;
-            readonly maxAllowed: number;
-            readonly usagePercentage: number;
-            readonly threshold: 'ok' | 'warning' | 'critical' | 'exceeded';
-            readonly planBaseLimit: number;
-            readonly addonBonusLimit: number;
-        }>;
-        readonly overallThreshold: 'ok' | 'warning' | 'critical' | 'exceeded';
-        readonly upgradeUrl: string;
-    };
-}
-
-/**
- * Shape of GET /api/v1/protected/users/me/entitlements.
- *
- * The endpoint surfaces the merged entitlement set + limit map + plan
- * context. We use the `limits` map to render per-plan quota tiles on
- * HOST card B and the `entitlements` array to surface plan-feature badges.
- */
-interface EntitlementsApiResponse {
-    readonly success: boolean;
-    readonly data?: {
-        readonly entitlements: ReadonlyArray<string>;
-        readonly limits: Record<string, number>;
-        readonly plan: {
-            readonly slug: string;
-            readonly name: string;
-            readonly status: string;
-        } | null;
-        readonly asOf: string;
-    };
-}
-
-/**
- * Curated mapping from `LimitKey` to a short Spanish label for the HOST
- * card B tile grid. Limit keys not in this map are skipped (we surface only
- * the consumer-facing quotas, not infrastructure-level limits).
- */
-const HOST_LIMIT_LABELS: Readonly<Record<string, string>> = {
-    max_accommodations: 'Alojamientos',
-    max_photos_per_accommodation: 'Fotos / alojamiento',
-    max_active_promotions: 'Promos activas',
-    max_properties: 'Propiedades',
-    max_staff_accounts: 'Cuentas staff'
-};
-
-/**
- * Curated mapping from `EntitlementKey` to a short Spanish label for the HOST
- * card B feature chips. Order matches the visual order in the card so highly-
- * valued features (statistics, promotions, branding) appear first. Keys NOT
- * in this map are not surfaced on the card — they would clutter the chip row
- * with infrastructure-level entitlements the host doesn't care about.
- */
-const HOST_ENTITLEMENT_LABELS: ReadonlyArray<readonly [string, string]> = [
-    ['featured_listing', 'Listado destacado'],
-    ['view_advanced_stats', 'Estadísticas avanzadas'],
-    ['create_promotions', 'Crear promociones'],
-    ['can_use_rich_description', 'Descripción enriquecida'],
-    ['can_embed_video', 'Videos en publicación'],
-    ['can_use_calendar', 'Calendario'],
-    ['can_sync_external_calendar', 'Sync calendario externo'],
-    ['can_contact_whatsapp_direct', 'WhatsApp directo'],
-    ['has_verification_badge', 'Badge verificación'],
-    ['respond_reviews', 'Responder reseñas'],
-    ['priority_support', 'Soporte prioritario'],
-    ['custom_branding', 'Branding propio'],
-    ['multi_property_management', 'Multi-propiedad'],
-    ['consolidated_analytics', 'Analítica consolidada']
-];
 
 /** Shape of GET /api/v1/admin/conversations list response. */
 interface ConversationListApiResponse {
@@ -262,7 +146,7 @@ function ownerParams(ctx: ResolverContext, extra: Record<string, string> = {}): 
  * @example
  * ```ts
  * const result = await swallowExpected(
- *   () => fetchApi<X>({ path: '/billing/usage' }),
+ *   () => fetchApi<X>({ path: '/api/v1/protected/conversations/me/response-rate' }),
  *   [503],
  *   null
  * );
@@ -390,164 +274,7 @@ registerDataSource('host.accommodations.drafts', (ctx) => ({
 }));
 
 // ============================================================================
-// CARD B — Mi plan: billing subscription + usage
-// ============================================================================
-
-/**
- * HOST card B: unified billing plan widget data.
- *
- * Fetches the active subscription and usage in parallel. The widget renderer
- * (T-023+) is responsible for combining both into the card display.
- *
- * Source ID: `'host.billing.plan'`
- * Scope: `'own'` — always fetches for the current authenticated user.
- * Endpoints:
- *   - GET /api/v1/protected/billing/subscriptions?pageSize=1
- *   - GET /api/v1/protected/billing/usage
- */
-registerDataSource('host.billing.plan', (ctx) => ({
-    queryKey: buildDashboardQueryKey('host.billing.plan', ctx),
-    queryFn: async () => {
-        // Uses the higher-level `/me/subscription` route which returns
-        // `{ subscription: null }` instead of 503 when the billing client is
-        // unavailable, AND carries a richer shape (planName, prettified status,
-        // monthly price). Usage + entitlements are best-effort — fall through
-        // when the qzpay-hono routes 503.
-        const [subResult, usageResult, entResult] = await Promise.all([
-            fetchApi<UserSubscriptionApiResponse>({
-                path: '/api/v1/protected/users/me/subscription'
-            }),
-            swallowExpected(
-                () =>
-                    fetchApi<BillingUsageApiResponse>({
-                        path: '/api/v1/protected/billing/usage'
-                    }),
-                [503],
-                null
-            ),
-            swallowExpected(
-                () =>
-                    fetchApi<EntitlementsApiResponse>({
-                        path: '/api/v1/protected/users/me/entitlements'
-                    }),
-                [503],
-                null
-            )
-        ]);
-
-        const subscription = subResult.data.data?.subscription ?? null;
-        const usageSummary = usageResult?.data.data ?? null;
-        const entitlementsData = entResult?.data.data ?? null;
-
-        // Build a {limitKey → currentUsage} index from the usage breakdown so
-        // each tile can look up its own usage in O(1).
-        const usageByLimit: Record<string, number> = {};
-        for (const row of usageSummary?.limits ?? []) {
-            usageByLimit[row.limitKey] = row.currentUsage;
-        }
-
-        // No active subscription anywhere — render the contextual empty state
-        // ("Todavía no tenés un plan…") via the widget.
-        if (!subscription) {
-            return null;
-        }
-
-        // Map subscription status to the StatusWidget variantMap keys.
-        // The `/me/subscription` endpoint normalises QZPay statuses to a
-        // canonical enum (active / trial / cancelled / expired / past_due /
-        // pending / paused). We promote `active` near its renewal to
-        // `expiring` so the badge band swaps to amber as a courtesy.
-        let status = subscription.status;
-        if (status === 'active' && subscription.currentPeriodEnd) {
-            const daysUntilExpiry =
-                (new Date(subscription.currentPeriodEnd).getTime() - Date.now()) /
-                (1000 * 60 * 60 * 24);
-            if (daysUntilExpiry <= 7) {
-                status = 'expiring';
-            }
-        }
-
-        // The legacy `usage` sub-block (big bar) is no longer emitted — the
-        // per-tile bars below subsume it. Resolver keeps the field undefined.
-        const usageBlock = undefined;
-
-        // Trial subscriptions surface their countdown ("Quedan N días"); active
-        // ones surface the next-charge date instead. Cancelled / expired plans
-        // expose neither so the card collapses to the badge.
-        const trialEndsAt =
-            subscription.status === 'trial'
-                ? (subscription.trialEndsAt ?? subscription.currentPeriodEnd ?? undefined)
-                : undefined;
-        // HOS-242: a complimentary (comp) subscription is never charged — its
-        // currentPeriodEnd is a ~100-year sentinel — so it has no next-charge
-        // date. Without this guard the card would render "Próximo cobro: <date
-        // ~100 years out>".
-        const nextChargeDate =
-            (status === 'active' || status === 'expiring') && !subscription.isComplimentary
-                ? (subscription.currentPeriodEnd ?? undefined)
-                : undefined;
-
-        // Plan quotas (HOST card B redesign) — surface only the curated set so
-        // we don't dump every internal limit key on the card. Each tile shows
-        // the limit key's short label + numeric cap + (when available)
-        // current usage from the per-limit usage breakdown.
-        const limitMap = entitlementsData?.limits ?? {};
-        const limitTiles: Array<{
-            key: string;
-            label: string;
-            value: number;
-            used?: number;
-        }> = [];
-        for (const [key, label] of Object.entries(HOST_LIMIT_LABELS)) {
-            const value = limitMap[key];
-            if (typeof value !== 'number') continue;
-            const tile: { key: string; label: string; value: number; used?: number } = {
-                key,
-                label,
-                value
-            };
-            if (typeof usageByLimit[key] === 'number') {
-                tile.used = usageByLimit[key];
-            }
-            limitTiles.push(tile);
-        }
-
-        // Feature chips (HOST card B redesign) — for each curated entitlement
-        // key, surface a chip iff the host's active entitlement set contains
-        // it. Preserves the curated ORDER so the most valuable features
-        // (stats, promotions, branding) read first.
-        const enabledEntitlements = new Set(entitlementsData?.entitlements ?? []);
-        const featureChips: Array<{ key: string; label: string }> = [];
-        for (const [key, label] of HOST_ENTITLEMENT_LABELS) {
-            if (enabledEntitlements.has(key)) {
-                featureChips.push({ key, label });
-            }
-        }
-
-        // Upgrade CTA — prefer the canonical URL emitted by the billing
-        // module (`upgradeUrl` on the usage summary); fall back to
-        // VITE_SITE_URL + `/es/suscriptores/planes` so admin (a different
-        // origin) still links to the public pricing page when billing is
-        // unavailable.
-        const siteUrl = (import.meta.env.VITE_SITE_URL as string | undefined)?.replace(/\/$/, '');
-        const upgradeHref =
-            usageSummary?.upgradeUrl ?? (siteUrl ? `${siteUrl}/es/suscriptores/planes` : undefined);
-
-        return {
-            status,
-            label: subscription.planName,
-            usage: usageBlock,
-            nextChargeDate,
-            trialEndsAt,
-            limitTiles: limitTiles.length > 0 ? limitTiles : undefined,
-            featureChips: featureChips.length > 0 ? featureChips : undefined,
-            upgradeHref
-        };
-    },
-    staleTime: DASHBOARD_STALE_TIME_MS
-}));
-
-// ============================================================================
+// HOS-1352: transitional until V3 (HOS-1357), see PR — removed host.billing.plan source and subscription/usage reads.
 // CARD C — Consultas: pending inquiries KPI + list
 // ============================================================================
 
@@ -1134,17 +861,18 @@ interface SuggestionItem {
  * actionable items the host should tackle next.
  *
  * Sources composed in parallel:
- *  1. Subscription endpoint    → "Tu plan vence el dd MMM" when ≤ 7 days.
- *  2. Reviews list             → negative reviews (≤3⭐) flagged for reply.
- *  3. Conversations pending    → inquiries older than 24h.
- *  4. Accommodation entities   → listings with completeness < 80%.
+ *  1. Reviews list             → negative reviews (≤3⭐) flagged for reply.
+ *  2. Conversations pending    → inquiries older than 24h.
+ *  3. Accommodation entities   → listings with completeness < 80%.
+ *  4. Host profile             → completeness < 100% nudge.
+ *
+ * (HOS-1416: the subscription-expiry source was removed with the legacy
+ * billing surface.)
  *
  * Each source feeds rows tagged with a priority weight; lower weight = higher
  * urgency. After concatenation we sort + slice to the top 5 so the card never
  * overwhelms the host.
  *
- * Source ID: `'host.suggestions.list'`
- * Scope: `'own'` — all underlying queries are owner-scoped.
  */
 registerDataSource('host.suggestions.list', (ctx) => ({
     queryKey: buildDashboardQueryKey('host.suggestions.list', ctx),
@@ -1157,10 +885,12 @@ registerDataSource('host.suggestions.list', (ctx) => ({
         });
         const reviewParams = ownerParams(ctx, { pageSize: '20', sort: 'createdAt:desc' });
 
-        // Fan-out fetches. Reviews / subscription / accommodations / convos /
-        // profile all degrade gracefully — a single failed source must not
-        // blank the card; the remaining suggestions still surface.
-        const [accommodationsResult, conversationsResult, reviewsResult, subResult, profileResult] =
+        // Fan-out fetches. Reviews / accommodations / convos / profile all
+        // degrade gracefully — a single failed source must not blank the
+        // card; the remaining suggestions still surface. (HOS-1416: the
+        // subscription-expiry suggestion and its fetch were removed with the
+        // legacy billing surface.)
+        const [accommodationsResult, conversationsResult, reviewsResult, profileResult] =
             await Promise.all([
                 fetchApi<AccommodationFullApiResponse>({
                     path: `/api/v1/admin/accommodations?${params}`
@@ -1176,9 +906,6 @@ registerDataSource('host.suggestions.list', (ctx) => ({
                     [404],
                     null
                 ),
-                fetchApi<UserSubscriptionApiResponse>({
-                    path: '/api/v1/protected/users/me/subscription'
-                }).catch(() => null),
                 fetchApi<UserGetByIdApiResponse>({
                     path: `/api/v1/protected/users/${ctx.userId}`
                 }).catch(() => null)
@@ -1186,29 +913,9 @@ registerDataSource('host.suggestions.list', (ctx) => ({
 
         const suggestions: SuggestionItem[] = [];
         const nowMs = Date.now();
-        const SEVEN_DAYS_MS = 7 * 24 * 60 * 60 * 1000;
         const ONE_DAY_MS = 24 * 60 * 60 * 1000;
 
-        // 1. Subscription expiring soon (priority 10 — highest).
-        const subscription = subResult?.data.data?.subscription ?? null;
-        if (subscription?.currentPeriodEnd && subscription.status === 'active') {
-            const expiry = new Date(subscription.currentPeriodEnd).getTime();
-            const daysLeft = Math.ceil((expiry - nowMs) / ONE_DAY_MS);
-            if (daysLeft > 0 && expiry - nowMs <= SEVEN_DAYS_MS) {
-                suggestions.push({
-                    id: 'sub-expiry',
-                    priority: 10,
-                    label:
-                        daysLeft === 1
-                            ? 'Tu plan vence mañana'
-                            : `Tu plan vence en ${daysLeft} días`,
-                    meta: 'Renovalo para que tus alojamientos no se pausen.',
-                    href: '/billing/subscriptions'
-                });
-            }
-        }
-
-        // 2. Negative reviews (≤ 3★) — priority 20. Reputation damage compounds
+        // 1. Negative reviews (≤ 3★) — priority 20. Reputation damage compounds
         //    every day they sit unanswered.
         const reviews = reviewsResult?.data.data?.items ?? [];
         for (const review of reviews) {
@@ -1322,17 +1029,14 @@ interface AccommodationViewStatsApiResponse {
  *
  * ## Locked-state detection (proactive, AC-5 / §5.2)
  *
- * Fetches the entitlements endpoint (same call as `host.billing.plan`) to check
- * for the `view_basic_stats` entitlement BEFORE calling the views endpoint.
- * TanStack Query automatically deduplicates the entitlements fetch when both
- * resolvers run concurrently (same query key shared by the billing.plan cache).
+ * (HOS-1416: the proactive `view_basic_stats` entitlement pre-check against
+ * the billing entitlements endpoint was removed with the legacy billing
+ * surface. The lock state now comes solely from the views endpoint's own
+ * authorization — a 403 renders the card locked.)
  *
  * Logic:
- *  - Entitlements call fails (503) → optimistic: attempt views fetch anyway;
- *    a 403 from the views endpoint is the defensive fallback (AC-6).
- *  - `view_basic_stats` absent → `{ locked: true }` (no views fetch made, AC-3/AC-5).
- *  - `view_basic_stats` present → fetch and return per-accommodation stats.
- *  - Views endpoint returns 403 despite entitlement check → `{ locked: true }` (AC-6).
+ *  - Views endpoint returns 403 → `{ locked: true }` (AC-6 defensive fallback).
+ *  - Otherwise → fetch and return per-accommodation stats.
  *
  * Source ID: `'host.stats.views'`
  * Scope: `'own'`
@@ -1343,32 +1047,7 @@ interface AccommodationViewStatsApiResponse {
 registerDataSource('host.stats.views', (ctx) => ({
     queryKey: buildDashboardQueryKey('host.stats.views', ctx),
     queryFn: async () => {
-        // Proactive entitlement check — same endpoint that host.billing.plan fetches.
-        // If 503 (billing service unavailable), we optimistically try the views fetch
-        // and let the 403 defensive path handle the locked state if needed.
-        let hasViewBasicStats = true;
-        try {
-            const entResult = await fetchApi<EntitlementsApiResponse>({
-                path: '/api/v1/protected/users/me/entitlements'
-            });
-            const entitlements = entResult.data.data?.entitlements ?? [];
-            hasViewBasicStats = entitlements.includes('view_basic_stats');
-        } catch (err) {
-            // 503 (billing unavailable): optimistic pass-through — try the views fetch
-            // and let the AC-6 403 guard below handle locked state if needed.
-            // Any other error is re-thrown so useQuery surfaces its error state
-            // (consistent with fetchHostViews in ViewsWidget.tsx — no sentinel shapes).
-            if (!(err instanceof ApiError && err.status === 503)) {
-                throw err;
-            }
-        }
-
-        if (!hasViewBasicStats) {
-            // AC-3/AC-5: locked state — do NOT call the views endpoint.
-            return { locked: true } as const;
-        }
-
-        // Entitlement confirmed — fetch per-accommodation view stats.
+        // Fetch per-accommodation view stats.
         // Default window is 30d; the widget controls window via its own state,
         // but the source resolver always fetches 30d as the starting point.
         try {
@@ -1378,7 +1057,7 @@ registerDataSource('host.stats.views', (ctx) => ({
             const items = result.data.data ?? [];
             return { locked: false, items } as const;
         } catch (err) {
-            // AC-6: 403 from the views endpoint despite entitlement check → locked.
+            // AC-6: 403 from the views endpoint → locked.
             if (err instanceof ApiError && err.status === 403) {
                 return { locked: true } as const;
             }

@@ -14,9 +14,8 @@ import { seedTestUsers } from './testUsers.seed.js';
  * run against staging or production databases.
  *
  * Triggered exclusively by the `--test-users` CLI flag or the standalone
- * `pnpm db:seed:test-users` command. The required seed (specifically
- * `billingPlans.seed.ts`) must have been run previously so the per-user
- * subscription rows can resolve their plan id.
+ * `pnpm db:seed:test-users` command. The required seed must have been run
+ * previously so the destination catalog the listing fixtures reference exists.
  *
  * @param context - Seed context with configuration and utilities
  * @returns Promise that resolves when test users seeding completes

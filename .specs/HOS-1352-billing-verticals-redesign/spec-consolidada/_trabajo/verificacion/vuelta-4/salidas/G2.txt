@@ -1,0 +1,207 @@
+# G2 · spec → fuente · 04-catalogos.md; transcripciones g-secciones de B9a, B10, B11, B12, B13a y B8b
+
+## Hallazgos
+
+04-catalogos.md:1351 · «**Y el panel tiene un listado de arreglos pendientes** (`V/19`): los pedidos abiertos, con la fecha sugerida vencida y los que el dueño ya avisó.» · más débil que .specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/03-maquinas-de-estado.md:706–707 («los pedidos abiertos, con su antigüedad, la fecha sugerida vencida y los que el dueño ya avisó»): omite la antigüedad que debe mostrar el listado · BLOQUEA
+
+04-catalogos.md:4553 · «con el comprobante de la transferencia» · más fuerte que .specs/HOS-1354-billing-cobro-y-proveedor/docs/03-maquinas-de-estado.md:1853 («con el comprobante de la transferencia o la referencia del panel»): RF4 pierde la alternativa de asentar una devolución con la referencia del panel · BLOQUEA
+
+04-catalogos.md:6464 · «dice «ok» a un cambio y **lo aplica**» · contradice .specs/HOS-1354-billing-cobro-y-proveedor/docs/20-testing.md:503 («dice «ok» a un cambio y **no lo aplica**»): invierte la mentira M1 y deja de ejercitar la defensa ante una mutación aceptada pero no aplicada · BLOQUEA
+
+04-catalogos.md:6751 · «que pasa. **Las cinco de comportamiento medido, `RP7` a `RP11`, no se reproducen» · más débil que .specs/HOS-1354-billing-cobro-y-proveedor/docs/20-testing.md:659–661 («**Y compara también la forma de cada respuesta** (qué campos vienen y de qué tipo) contra la última corrida»): omite esa comparación entre ambas frases; también elimina «comparación de forma» y cambia «cuatro cosas» por «tres» en 6747–6748. La batería deja de detectar cambios de campos/tipos; DEC-TEST-003 lo ratifica en .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:7169 · BLOQUEA
+
+20-fase-2/B8b.md:92 · «| 1 | **otro downgrade** | **se rechaza mientras exista el anterior**, y la elección de qué conservar **se vuelve a pedir**: el plan destino cambió, así que la elección anterior responde a otra pregunta |» · contradice .specs/HOS-1354-billing-cobro-y-proveedor/docs/12-suscripcion.md:220 («**otro downgrade** | **lo reemplaza entero**, y la elección de qué conservar **se vuelve a pedir**»): introduce un rechazo donde corresponde reemplazar el descenso; también contradice el AC del propio B8b:625 · BLOQUEA
+
+20-fase-3/B12.md:131 · «cuando la deja su última suscripción. El listado de administración del §48 la muestra» · más débil que .specs/HOS-1354-billing-cobro-y-proveedor/docs/10-verticales-planes-billing-options.md:90–91 («y eso es una condición derivada —cuántas suscripciones siguen ancladas a ella—, no un estado guardado»): suprime la restricción de derivar la extinción sin persistir un estado adicional · BLOQUEA
+
+## Resumen
+
+| archivo | líneas recorridas | afirmaciones normativas revisadas (aprox.) | BLOQUEA | MENOR |
+|---|---|---:|---:|---:|
+| 04-catalogos.md | 1–9843 | 2952 | 4 | 0 |
+| 10-corte/B11.md | 1–2358 | 192 | 0 | 0 |
+| 10-corte/B13a.md | 1–1299 | 117 | 0 | 0 |
+| 10-corte/B9a.md | 1–1427 | 117 | 0 | 0 |
+| 20-fase-2/B8b.md | 1–1404 | 50 | 1 | 0 |
+| 20-fase-3/B10.md | 1–1944 | 154 | 0 | 0 |
+| 20-fase-3/B12.md | 1–831 | 33 | 1 | 0 |
+
+Total: **6 BLOQUEA, 0 MENOR**.
+
+Alcance: lectura y recorrido mecánico de los siete archivos completos; cotejo normativo limitado a 04-catalogos.md y a los tramos g-secciones asignados a G2. En las piezas, el texto exterior a esos tramos sólo se usó como contexto y para buscar contradicciones internas. Los rangos generados (incluidos sus marcadores) son B9a 59–725, B10 90–1211, B11 75–1317, B12 65–269, B13a 54–445 y B8b 53–340. El aproximado de afirmaciones cuenta unidades de texto, filas y campos; no equivale a un conteo semántico exacto.
+
+Método: se leyeron ambos generadores, omisiones.py/omisiones.json de g3 y fuentes.json, sin ejecutarlos ni importarlos. Comparación independiente de **292 filas** del catálogo, campo por campo, y **202 bloques** de prosa/transcripciones (incluidos los seis candados). Se inspeccionaron las diferencias tras excluir espacios y formato, neutralización de links, tachados, notas de retiro reubicadas y la omisión autorizada de EX-46. La fila EX-3 tiene una comilla invertida despareja en la fuente; se cotejaron sus siete campos visibles y no se observó pérdida de contenido. Las aproximaciones automáticas sirvieron para localizar diferencias, y cada hallazgo se contrastó con su pasaje fuente.
+
+Clases de error buscadas en toda la salida, con `rg --hidden` y cotejo completo:
+
+- **Tachados completos, parciales y multilínea que sobrevivan:** sin hallazgos. No quedan delimitadores `~~` en el alcance. Los cuerpos vivos de secciones con título retirado se conservan; una mención histórica a algo retirado no se contó como regla vigente.
+- **Celdas partidas por `|` escapado o por backticks:** sin hallazgos. No hay `\|` en los tramos auditados; el caso de la matriz fuente:452 está en su resumen histórico, fuera de las filas asignadas al catálogo. Se cotejaron todos los campos de las tablas alcanzadas y no faltan filas vivas dentro de ellas.
+- **Prosa adjunta al bloque equivocado:** sin hallazgos. Se contrastaron los 102 rangos explícitos de prosa del catálogo y las secciones citadas por las seis piezas. Los títulos que nombran una transición concuerdan con el ítem receptor; las reglas generales y las herencias corresponden a las asignaciones explícitas de omisiones.json.
+- **📌 o letras retiradas presentadas como vigentes:** sin hallazgos adicionales. Se buscaron los marcadores en la salida completa y sus fuentes; se consultaron el decision log y las decisiones del owner antes de cerrar los seis hallazgos. La omisión parcial de EX-46 concuerda con BK; las precisiones BM/BZ/CC/CF/CG/CH no autorizan ninguna de las seis diferencias reportadas.
+- **Omisión de texto vivo:** cuatro hallazgos, antigüedad del listado, alternativa de RF4, comparación de forma de respuestas y condición derivada de extinción. La prosa de capítulos enteros 09, 14, 16 y 19 está representada; las otras piezas sólo anuncian secciones, por lo que no se exigieron capítulos ajenos completos.
+- **Sustitución o inversión de una regla copiada:** dos hallazgos, M1 y segundo downgrade.
+- **Texto vivo dentro de filas retiradas:** sin hallazgos. Las notas «sale» de B11 y B13a están preservadas debajo de las tablas; los duplicados idénticos se agrupan sin pérdida de regla.
+- **Contradicciones internas por estas diferencias:** M1 contradice 10-corte/B1.md:165; la colisión de downgrade contradice 20-fase-2/B8b.md:625. Son evidencia de los mismos hallazgos, no defectos adicionales.
+
+Muestra estratificada y registro de ítems cotejados:
+
+**Catálogo: 40 ítems completos**, distribuidos por posición desde el inicio al final, con todas sus celdas contra la fila fuente. A continuación, línea del título ↔ fuente primaria. B/ = `.specs/HOS-1354-billing-cobro-y-proveedor/docs/`; V/ = `.specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/`; D/ = `.specs/HOS-1352-billing-verticals-redesign/docs/`. Todas las fuentes se leyeron bajo `fuentes/`.
+
+- `TRANS:V:T1`: 04-catalogos.md:74 ↔ V/03-maquinas-de-estado.md:52.
+- `TRANS:V:T2`: 04-catalogos.md:298 ↔ V/03-maquinas-de-estado.md:53.
+- `TRANS:V:T8`: 04-catalogos.md:524 ↔ V/03-maquinas-de-estado.md:59.
+- `TRANS:V:PB2`: 04-catalogos.md:792 ↔ V/03-maquinas-de-estado.md:489.
+- `TRANS:V:PB4`: 04-catalogos.md:1079 ↔ V/03-maquinas-de-estado.md:491.
+- `TRANS:V:PB10`: 04-catalogos.md:1291 ↔ V/03-maquinas-de-estado.md:497.
+- `TRANS:V:PP3`: 04-catalogos.md:1567 ↔ V/03-maquinas-de-estado.md:1361.
+- `TRANS:B:S1`: 04-catalogos.md:1619 ↔ B/03-maquinas-de-estado.md:151.
+- `TRANS:B:S2`: 04-catalogos.md:2346 ↔ B/03-maquinas-de-estado.md:152.
+- `TRANS:B:S3`: 04-catalogos.md:2362 ↔ B/03-maquinas-de-estado.md:153.
+- `TRANS:B:S5`: 04-catalogos.md:2568 ↔ B/03-maquinas-de-estado.md:155.
+- `TRANS:B:S7`: 04-catalogos.md:2821 ↔ B/03-maquinas-de-estado.md:157.
+- `TRANS:B:S11`: 04-catalogos.md:3049 ↔ B/03-maquinas-de-estado.md:161.
+- `TRANS:B:S15`: 04-catalogos.md:3331 ↔ B/03-maquinas-de-estado.md:165.
+- `TRANS:B:S20`: 04-catalogos.md:3609 ↔ B/03-maquinas-de-estado.md:170.
+- `TRANS:B:S22`: 04-catalogos.md:3945 ↔ B/03-maquinas-de-estado.md:172.
+- `TRANS:B:S34`: 04-catalogos.md:4073 ↔ B/03-maquinas-de-estado.md:184.
+- `PROH:B:6`: 04-catalogos.md:4281 ↔ B/03-maquinas-de-estado.md:1459.
+- `TRANS:B:RF5`: 04-catalogos.md:4561 ↔ B/03-maquinas-de-estado.md:1854.
+- `TRANS:B:MP4`: 04-catalogos.md:4755 ↔ B/03-maquinas-de-estado.md:1874.
+- `TRANS:B:MP5`: 04-catalogos.md:5035 ↔ B/03-maquinas-de-estado.md:1875.
+- `TRANS:B:A1`: 04-catalogos.md:5328 ↔ B/03-maquinas-de-estado.md:2534.
+- `TRANS:B:A7`: 04-catalogos.md:5570 ↔ B/03-maquinas-de-estado.md:2541.
+- `MOT:7`: 04-catalogos.md:5825 ↔ B/02-modelo-de-datos.md:1029.
+- `MOT:23`: 04-catalogos.md:6081 ↔ B/02-modelo-de-datos.md:1045.
+- `LOCK:C4`: 04-catalogos.md:6327 ↔ B/05-idempotencia-y-concurrencia.md:217.
+- `M:M3`: 04-catalogos.md:6580 ↔ B/20-testing.md:505.
+- `RP:RP5`: 04-catalogos.md:6831 ↔ B/20-testing.md:538.
+- `RP:RP12`: 04-catalogos.md:6908 ↔ B/20-testing.md:545.
+- `GUARD:G1`: 04-catalogos.md:7570 ↔ V/20-testing.md:50.
+- `GUARD:G2`: 04-catalogos.md:7600 ↔ V/20-testing.md:51.
+- `VAL:G-R5-B`: 04-catalogos.md:7836 ↔ V/20-testing.md:70.
+- `GUARD:G16`: 04-catalogos.md:8081 ↔ B/20-testing.md:67.
+- `MP:GR-3`: 04-catalogos.md:8328 ↔ D/06-mp-validation-matrix.md:202.
+- `MP:CT-2`: 04-catalogos.md:8580 ↔ D/06-mp-validation-matrix.md:252.
+- `MP:RF-1`: 04-catalogos.md:8839 ↔ D/06-mp-validation-matrix.md:301.
+- `MP:EX-8`: 04-catalogos.md:9084 ↔ D/06-mp-validation-matrix.md:326.
+- `MP:EX-26`: 04-catalogos.md:9326 ↔ D/06-mp-validation-matrix.md:363.
+- `MP:EX-42`: 04-catalogos.md:9580 ↔ D/06-mp-validation-matrix.md:399.
+- `MP:EX-34`: 04-catalogos.md:9833 ↔ D/06-mp-validation-matrix.md:438.
+
+Además se cotejaron íntegros los demás ítems tabulares (292 en total), los seis candados y los 102 rangos de prosa. La muestra incluye estados, guardas, efectos, tablas de pruebas, filas de matriz con y sin 📌, y principio, medio y final. Entre los bloques de prosa cotejados: V/03:91–122, V/03:365–479, V/03:680–841, B/20:651–705 y D/06:370–441. Los rangos exactos registrados por el cotejo están en `G2-secciones.json`.
+
+**Transcripciones: todas las secciones citadas**, con tablas y prosa línea por línea; no sólo una selección. Se lista tramo de salida ↔ encabezado(s) fuente que delimitan el texto cotejado:
+
+**10-corte/B11.md**
+
+- Líneas 76–86 ↔ B/09-conciliacion.md:12.
+- Líneas 87–107 ↔ B/09-conciliacion.md:23.
+- Líneas 108–120 ↔ B/09-conciliacion.md:44, B/09-conciliacion.md:46.
+- Líneas 121–135 ↔ B/09-conciliacion.md:55.
+- Líneas 136–152 ↔ B/09-conciliacion.md:68.
+- Líneas 153–239 ↔ B/09-conciliacion.md:83.
+- Líneas 240–994 ↔ B/09-conciliacion.md:176.
+- Líneas 995–1049 ↔ B/09-conciliacion.md:967.
+- Líneas 1050–1073 ↔ B/09-conciliacion.md:1022.
+- Líneas 1074–1108 ↔ B/09-conciliacion.md:1046.
+- Líneas 1109–1141 ↔ B/09-conciliacion.md:1083.
+- Líneas 1142–1188 ↔ B/09-conciliacion.md:1115.
+- Líneas 1189–1315 ↔ B/09-conciliacion.md:1166.
+
+**10-corte/B13a.md**
+
+- Líneas 55–65 ↔ B/19-superficies.md:12.
+- Líneas 66–82 ↔ B/19-superficies.md:23.
+- Líneas 83–96 ↔ B/19-superficies.md:40.
+- Líneas 97–113 ↔ B/19-superficies.md:54.
+- Líneas 114–141 ↔ B/19-superficies.md:69.
+- Líneas 142–210 ↔ B/19-superficies.md:97.
+- Líneas 211–220 ↔ B/19-superficies.md:161.
+- Líneas 221–253 ↔ B/19-superficies.md:171.
+- Líneas 254–350 ↔ B/19-superficies.md:204.
+- Líneas 351–371 ↔ B/19-superficies.md:301.
+- Líneas 372–391 ↔ B/19-superficies.md:327.
+- Líneas 392–398 ↔ B/22-lo-legal.md:33.
+- Líneas 399–412 ↔ B/22-lo-legal.md:38.
+- Líneas 413–436 ↔ B/22-lo-legal.md:50.
+- Líneas 437–443 ↔ B/22-lo-legal.md:72.
+
+**10-corte/B9a.md**
+
+- Líneas 60–74 ↔ B/14-promos-cortesias-y-grants.md:17.
+- Líneas 75–90 ↔ B/14-promos-cortesias-y-grants.md:32, B/14-promos-cortesias-y-grants.md:34.
+- Líneas 91–112 ↔ B/14-promos-cortesias-y-grants.md:46.
+- Líneas 113–141 ↔ B/14-promos-cortesias-y-grants.md:66.
+- Líneas 142–166 ↔ B/14-promos-cortesias-y-grants.md:99, B/14-promos-cortesias-y-grants.md:101.
+- Líneas 167–217 ↔ B/14-promos-cortesias-y-grants.md:122.
+- Líneas 218–232 ↔ B/14-promos-cortesias-y-grants.md:209.
+- Líneas 233–329 ↔ B/14-promos-cortesias-y-grants.md:234.
+- Líneas 330–342 ↔ B/14-promos-cortesias-y-grants.md:337.
+- Líneas 343–351 ↔ B/14-promos-cortesias-y-grants.md:350, B/14-promos-cortesias-y-grants.md:352.
+- Líneas 352–369 ↔ B/14-promos-cortesias-y-grants.md:357.
+- Líneas 370–382 ↔ B/14-promos-cortesias-y-grants.md:374.
+- Líneas 383–390 ↔ B/14-promos-cortesias-y-grants.md:385.
+- Líneas 391–400 ↔ B/14-promos-cortesias-y-grants.md:393, B/14-promos-cortesias-y-grants.md:395.
+- Líneas 401–417 ↔ B/14-promos-cortesias-y-grants.md:401.
+- Líneas 418–457 ↔ B/14-promos-cortesias-y-grants.md:416.
+- Líneas 458–502 ↔ B/14-promos-cortesias-y-grants.md:454.
+- Líneas 503–547 ↔ B/14-promos-cortesias-y-grants.md:502.
+- Líneas 548–617 ↔ B/14-promos-cortesias-y-grants.md:545.
+- Líneas 618–640 ↔ B/14-promos-cortesias-y-grants.md:613.
+- Líneas 641–650 ↔ B/14-promos-cortesias-y-grants.md:634.
+- Líneas 651–689 ↔ B/14-promos-cortesias-y-grants.md:645.
+- Líneas 690–723 ↔ B/14-promos-cortesias-y-grants.md:685.
+
+**20-fase-2/B8b.md**
+
+- Líneas 54–86 ↔ B/12-suscripcion.md:185, B/12-suscripcion.md:187.
+- Líneas 87–128 ↔ B/12-suscripcion.md:216.
+- Líneas 129–146 ↔ B/12-suscripcion.md:256.
+- Líneas 147–161 ↔ B/12-suscripcion.md:275, B/12-suscripcion.md:277.
+- Líneas 162–181 ↔ B/12-suscripcion.md:288.
+- Líneas 182–192 ↔ B/12-suscripcion.md:1012, B/12-suscripcion.md:1014.
+- Líneas 193–203 ↔ B/12-suscripcion.md:1021.
+- Líneas 204–215 ↔ B/12-suscripcion.md:1030.
+- Líneas 216–224 ↔ B/12-suscripcion.md:1040.
+- Líneas 225–237 ↔ B/12-suscripcion.md:1049, B/12-suscripcion.md:1051.
+- Líneas 238–268 ↔ B/12-suscripcion.md:1060.
+- Líneas 269–283 ↔ B/12-suscripcion.md:1089.
+- Líneas 284–338 ↔ B/02-modelo-de-datos.md:1179.
+
+**20-fase-3/B10.md**
+
+- Líneas 91–98 ↔ B/16-addons.md:17.
+- Líneas 99–113 ↔ B/16-addons.md:25, B/16-addons.md:27.
+- Líneas 114–130 ↔ B/16-addons.md:38.
+- Líneas 131–150 ↔ B/16-addons.md:53.
+- Líneas 151–229 ↔ B/16-addons.md:71.
+- Líneas 230–239 ↔ B/16-addons.md:164, B/16-addons.md:166.
+- Líneas 240–255 ↔ B/16-addons.md:172.
+- Líneas 256–266 ↔ B/16-addons.md:186.
+- Líneas 267–292 ↔ B/16-addons.md:200.
+- Líneas 293–302 ↔ B/16-addons.md:226.
+- Líneas 303–318 ↔ B/16-addons.md:234.
+- Líneas 319–335 ↔ B/16-addons.md:248.
+- Líneas 336–411 ↔ B/16-addons.md:263.
+- Líneas 412–435 ↔ B/16-addons.md:337.
+- Líneas 436–480 ↔ B/16-addons.md:359.
+- Líneas 481–496 ↔ B/16-addons.md:402.
+- Líneas 497–516 ↔ B/16-addons.md:416.
+- Líneas 517–548 ↔ B/16-addons.md:434.
+- Líneas 549–569 ↔ B/16-addons.md:466, B/16-addons.md:468.
+- Líneas 570–825 ↔ B/16-addons.md:485.
+- Líneas 826–982 ↔ B/16-addons.md:758.
+- Líneas 983–1094 ↔ B/16-addons.md:921.
+- Líneas 1095–1209 ↔ B/16-addons.md:1039.
+
+**20-fase-3/B12.md**
+
+- Líneas 66–77 ↔ B/10-verticales-planes-billing-options.md:30, B/10-verticales-planes-billing-options.md:32.
+- Líneas 78–96 ↔ B/10-verticales-planes-billing-options.md:40.
+- Líneas 97–115 ↔ B/10-verticales-planes-billing-options.md:58.
+- Líneas 116–135 ↔ B/10-verticales-planes-billing-options.md:75.
+- Líneas 136–169 ↔ B/10-verticales-planes-billing-options.md:95.
+- Líneas 170–185 ↔ B/10-verticales-planes-billing-options.md:130.
+- Líneas 186–267 ↔ B/10-verticales-planes-billing-options.md:146.
+
+Límites de evidencia: no se leyó fuera de V, no se usaron git, trackers ni subagentes, y sólo se escribió en salidas/. Los skills externos mencionados por el brief no se abrieron porque contradicen su restricción de lectura exclusiva dentro de V. No hay .qz/project.json ni AGENTS.md locales en el inventario de V. No se verificó ejecución del producto: el objeto de esta auditoría es fidelidad del texto generado. Los archivos JSON y scripts G2-* de salidas/ conservan el cotejo auxiliar; no son generadores de la spec.

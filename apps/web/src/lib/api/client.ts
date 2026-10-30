@@ -416,8 +416,8 @@ export const apiClient = {
      * POST request with authentication credentials.
      *
      * @param headers - Optional extra request headers. Required when hitting
-     *   endpoints wrapped by `idempotencyKeyMiddleware`
-     *   (`/billing/subscriptions/start-paid`, `/billing/addons/:slug/purchase`,
+     *   endpoints that were wrapped by the retired `idempotencyKeyMiddleware`
+     *   (`/billing/subscriptions/start-paid`, all removed by HOS-1416; `/billing/addons/:slug/purchase`,
      *   `/billing/addons/:id/cancel`) which enforce `X-Idempotency-Key`. Send
      *   a fresh UUID v4 per logical user action (`crypto.randomUUID()`).
      * @param timeoutMs - Optional override for the request's abort timeout, in

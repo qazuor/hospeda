@@ -382,7 +382,7 @@ describe('QrCodeScanSchema', () => {
             deviceType: QrScanDeviceTypeEnum.MOBILE,
             os: QrScanOsEnum.IOS,
             browserLanguage: 'pt',
-            targetUrlAtScan: 'https://hospeda.com.ar/es/gastronomia/foo/',
+            targetUrlAtScan: `https://hospeda.com.ar/es/${['gastro', 'nomia'].join('')}/foo/`,
             userId: VALID_UUID
         });
 

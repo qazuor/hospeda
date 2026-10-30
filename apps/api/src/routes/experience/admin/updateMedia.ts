@@ -27,7 +27,7 @@
  * The PARENT experience is NOT protected that way, and that is deliberate. The gate
  * (`checkExperienceCanEditMedia`) answers `FORBIDDEN` (403) on an experience the actor
  * may not edit and `NOT_FOUND` (404) on one that does not exist, so an actor whose
- * grant is ownership-scoped (`COMMERCE_EDIT_OWN` without `COMMERCE_EDIT_ALL`) can tell
+ * grant is ownership-scoped (`EXPERIENCE_EDIT_OWN` without `EXPERIENCE_EDIT_ALL`) can tell
  * a stranger's experience id from an invented one. The sibling media helpers — add,
  * remove, reorder, setFeatured and the media read — all share that same gate, so
  * closing the gap in `update` alone would leave `update` at 404 while `remove` stays at
@@ -38,11 +38,12 @@ import {
     ExperienceMediaSingleOutputSchema,
     type ExperienceMediaUpdatePayload,
     ExperienceMediaUpdatePayloadSchema,
-    PermissionEnum
+    VerticalEnum
 } from '@repo/schemas';
 import { ExperienceService, ServiceError, updateExperienceMedia } from '@repo/service-core';
 import type { Context } from 'hono';
 import { z } from 'zod';
+import { runListingContentCall } from '../../../middlewares/listing-access';
 import { getActorFromContext } from '../../../utils/actor';
 import { apiLogger } from '../../../utils/logger';
 import { createAdminRoute } from '../../../utils/route-factory';
@@ -52,19 +53,19 @@ const experienceService = new ExperienceService({ logger: apiLogger });
 /**
  * Route handler — corrects a photo's text metadata on an experience.
  *
- * Permission model: gated on `EXPERIENCE_EDIT_ALL` (or the legacy `COMMERCE_EDIT_ALL`), the same pair the sibling admin media routes declare.
+ * Permission model: gated on `EXPERIENCE_EDIT_ALL`, the same pair the sibling admin media routes declare.
  */
 export const adminUpdateExperienceMediaRoute = createAdminRoute({
     method: 'patch',
+    listingAccess: { vertical: VerticalEnum.EXPERIENCE, operation: 'EDIT', idParam: 'id' },
     path: '/{id}/media/{mediaId}',
     summary: 'Correct photo text metadata in experience gallery (admin)',
     description:
         'Patch caption/description/alt/attribution on an existing media row. ' +
         'Each field is nullable: omit to leave unchanged, null to clear, a value ' +
         'to replace. At least one field must be present — an empty body is a ' +
-        'VALIDATION_ERROR, not a silent 200. Requires EXPERIENCE_EDIT_ALL (or the legacy COMMERCE_EDIT_ALL).',
+        'VALIDATION_ERROR, not a silent 200. Requires EXPERIENCE_EDIT_ALL.',
     tags: ['Experience', 'Media'],
-    anyOfPermissions: [[PermissionEnum.EXPERIENCE_EDIT_ALL, PermissionEnum.COMMERCE_EDIT_ALL]],
     requestParams: {
         id: z.string().uuid({ message: 'zodError.common.id.invalidUuid' }),
         mediaId: z.string().uuid({ message: 'zodError.common.id.invalidUuid' })
@@ -86,13 +87,17 @@ export const adminUpdateExperienceMediaRoute = createAdminRoute({
                 model: Parameters<typeof updateExperienceMedia>[0];
             }
         ).model;
-        const result = await updateExperienceMedia(model, actor, {
-            experienceId: params.id as string,
-            mediaId: params.mediaId as string,
-            caption: payload.caption,
-            description: payload.description,
-            alt: payload.alt,
-            attribution: payload.attribution
+        const result = await runListingContentCall({
+            ctx,
+            run: () =>
+                updateExperienceMedia(model, actor, {
+                    experienceId: params.id as string,
+                    mediaId: params.mediaId as string,
+                    caption: payload.caption,
+                    description: payload.description,
+                    alt: payload.alt,
+                    attribution: payload.attribution
+                })
         });
 
         if (result.error) {

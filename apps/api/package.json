@@ -24,9 +24,7 @@
         "test:e2e:watch": "vitest --config vitest.config.e2e.ts",
         "test:e2e:ci": "mkdir -p test-results && pnpm run build:deps && VITEST_E2E_JSON_OUTPUT=./test-results/e2e-results.json vitest run --config vitest.config.e2e.ts; CODE=$?; node scripts/check-e2e-budget.mjs ./test-results/e2e-results.json || exit 1; exit $CODE",
         "test:e2e:single": "NODE_OPTIONS=--max-old-space-size=8192 vitest run --config vitest.config.e2e.ts",
-        "test:sandbox": "vitest run --config test/e2e/sandbox/vitest.config.sandbox.ts",
-        "test:sandbox:watch": "vitest --config test/e2e/sandbox/vitest.config.sandbox.ts",
-        "build:deps": "turbo run build --filter=@repo/db --filter=@repo/service-core --filter=@repo/schemas --filter=@repo/logger --filter=@repo/config --filter=@repo/billing --filter=@repo/notifications --filter=@repo/utils --filter=@repo/email --filter=@repo/ai-core --filter=@repo/analytics --filter=@repo/feedback --filter=@repo/content-moderation"
+        "build:deps": "turbo run build --filter=@repo/db --filter=@repo/service-core --filter=@repo/schemas --filter=@repo/logger --filter=@repo/config --filter=@repo/notifications --filter=@repo/utils --filter=@repo/email --filter=@repo/ai-core --filter=@repo/analytics --filter=@repo/feedback --filter=@repo/content-moderation"
     },
     "dependencies": {
         "@ai-sdk/gateway": "4.0.41",
@@ -34,14 +32,11 @@
         "@hono/swagger-ui": "^0.6.1",
         "@hono/zod-openapi": "^1.5.2",
         "@linear/sdk": "^91.0.0",
-        "@qazuor/qzpay-core": "^7.0.0",
-        "@qazuor/qzpay-hono": "^2.0.1",
-        "@qazuor/qzpay-mercadopago": "^2.11.2",
         "@react-email/components": "^1.0.12",
         "@react-email/render": "^2.1.0",
         "@repo/ai-core": "workspace:*",
         "@repo/analytics": "workspace:*",
-        "@repo/billing": "workspace:*",
+        "@repo/billing-verticals-contract": "workspace:*",
         "@repo/config": "workspace:*",
         "@repo/db": "workspace:*",
         "@repo/email": "workspace:*",
@@ -50,12 +45,14 @@
         "@repo/logger": "workspace:*",
         "@repo/media": "workspace:*",
         "@repo/notifications": "workspace:*",
+        "@repo/payments": "workspace:*",
         "@repo/schemas": "workspace:*",
         "@repo/service-core": "workspace:*",
         "@repo/utils": "workspace:*",
+        "@repo/verticals": "workspace:*",
         "@scalar/hono-api-reference": "^0.11.12",
-        "@sentry/node": "^10.69.0",
-        "@sentry/profiling-node": "^10.69.0",
+        "@sentry/node": "^11.9.0",
+        "@sentry/profiling-node": "^11.9.0",
         "@vercel/oidc": "3.8.2",
         "bcryptjs": "^3.0.3",
         "better-auth": "^1.6.23",
@@ -86,6 +83,7 @@
     },
     "devDependencies": {
         "@better-auth/expo": "1.6.23",
+        "@repo/test-clock": "workspace:*",
         "@repo/typescript-config": "workspace:*",
         "@sentry/esbuild-plugin": "^5.4.0",
         "@types/bcryptjs": "^3.0.0",
@@ -96,13 +94,13 @@
         "@types/pngjs": "^6.0.5",
         "@types/qrcode": "^1.5.6",
         "@types/sanitize-html": "^2.16.1",
-        "@vitest/coverage-v8": "^4.1.10",
+        "@vitest/coverage-v8": "^5.0.5",
         "jsqr": "^1.4.0",
         "tsup": "^8.5.1",
         "tsx": "^4.23.13",
         "typescript": "6.0.3",
         "vite-tsconfig-paths": "^6.1.1",
-        "vitest": "^4.1.11"
+        "vitest": "^5.0.5"
     },
     "optionalDependencies": {
         "node-cron": "^4.6.0"

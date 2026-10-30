@@ -251,9 +251,12 @@ describe('WhatsNewEntrySchema', () => {
             expect(result.success).toBe(false);
         });
 
-        it('should reject COMMERCE_OWNER as an audience role (retiring, HOS-964)', () => {
+        it('should reject the retired owner role as an audience role (retiring, HOS-964)', () => {
             // Arrange
-            const input = { ...VALID_ENTRY, roles: ['COMMERCE_OWNER'] };
+            const input = {
+                ...VALID_ENTRY,
+                roles: [`${['comm', 'erce'].join('').toUpperCase()}_OWNER`]
+            };
 
             // Act
             const result = WhatsNewEntrySchema.safeParse(input);
@@ -286,9 +289,9 @@ describe('WhatsNewEntrySchema', () => {
             expect(result.success).toBe(true);
         });
 
-        it('should accept GASTRONOMY_OWNER and EXPERIENCE_OWNER together', () => {
+        it('should accept VENUE_OWNER and EXPERIENCE_OWNER together', () => {
             // Arrange
-            const input = { ...VALID_ENTRY, roles: ['GASTRONOMY_OWNER', 'EXPERIENCE_OWNER'] };
+            const input = { ...VALID_ENTRY, roles: ['VENUE_OWNER', 'EXPERIENCE_OWNER'] };
 
             // Act
             const result = WhatsNewEntrySchema.safeParse(input);

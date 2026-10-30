@@ -59,7 +59,7 @@ import { z } from 'zod';
  * Approved CDN / image origins for What's New entry images (SPEC-175 §9 / T-018).
  *
  * **TBD-2 resolved (HOS-964)**: `https://res.cloudinary.com` is Hospeda's one
- * media CDN — every accommodation/commerce photo and every uploaded avatar
+ * media CDN — every accommodation/venue/experience photo and every uploaded avatar
  * already goes through it (`@repo/media`'s `getMediaUrl`,
  * `apps/web/src/lib/media.ts`'s `ALLOWED_REMOTE_HOSTS`). It is ALREADY in both
  * apps' CSP `img-src` directive:
@@ -152,10 +152,216 @@ const WhatsNewCatalogSchema = z.array(WhatsNewEntrySchema).min(0);
 // distinct from when the batch was published. Do not "fix" this mismatch by
 // renaming the ids to match `publishedAt`.
 export const whatsNewEntries: WhatsNewEntry[] = WhatsNewCatalogSchema.parse([
+    // origin: #3898
+    {
+        id: '2026-10-29-restaurants-section-is-now-comer-y-salir',
+        publishedAt: 'on-promotion',
+        highlight: false,
+        title: {
+            es: 'Restaurantes y bares ahora están en Comer y salir',
+            en: 'Restaurants and bars now live in Food & nightlife',
+            pt: 'Restaurantes e bares agora estão em Comer e sair'
+        },
+        body: {
+            es: 'La sección de restaurantes, bares y locales tiene nombre nuevo: **Comer y salir**. Los enlaces viejos y los QR impresos siguen funcionando: te llevan solos a la página nueva.',
+            en: 'The section for restaurants, bars and venues has a new name: **Food & nightlife**. Old links and printed QR codes keep working: they take you to the new page on their own.',
+            pt: 'A seção de restaurantes, bares e locais tem um nome novo: **Comer e sair**. Os links antigos e os QR impressos continuam funcionando: levam você sozinhos à página nova.'
+        },
+        translations: { en: 'machine', pt: 'machine' }
+    },
+    // origin: #3824
+    {
+        id: '2026-10-26-admin-social-secrets-masked',
+        publishedAt: 'on-promotion',
+        highlight: false,
+        roles: ['ADMIN', 'SUPER_ADMIN'],
+        title: {
+            es: 'Los valores secretos de la configuración de redes ya no se muestran',
+            en: 'Secret social settings values are no longer shown',
+            pt: 'Os valores secretos das configurações de redes não aparecem mais'
+        },
+        body: {
+            es: 'En el panel, la lista y la búsqueda de configuraciones de redes sociales muestran ahora los valores de tipo secreto como «***», igual que en el resto del panel, y nunca en claro.',
+            en: 'In the panel, the social settings list and search now show secret-type values as "***", like the rest of the panel, never in plain text.',
+            pt: 'No painel, a lista e a busca das configurações de redes sociais agora mostram os valores do tipo secreto como «***», como no resto do painel, e nunca em texto claro.'
+        },
+        translations: { en: 'machine', pt: 'machine' }
+    },
+    // origin: #3811
+    {
+        id: '2026-10-25-listing-summary-in-portuguese',
+        publishedAt: 'on-promotion',
+        highlight: false,
+        title: {
+            es: 'Los listados de Comer y salir y de experiencias se leen en portugués',
+            en: 'Food & nightlife and experiences listings now read in Portuguese',
+            pt: 'As listagens de Comer e sair e de experiências agora aparecem em português'
+        },
+        body: {
+            es: 'En portugués, la línea que resume cuántos resultados hay y qué filtros aplicaste en Comer y salir y en experiencias ya no aparece en español.',
+            en: 'In Portuguese, the line that sums up how many results there are and which filters you applied in Food & nightlife and experiences no longer appears in Spanish.',
+            pt: 'Em português, a linha que resume quantos resultados há e quais filtros você aplicou em Comer e sair e em experiências não aparece mais em espanhol.'
+        },
+        translations: { en: 'machine', pt: 'machine' }
+    },
+    // origin: #3833
+    {
+        id: '2026-10-26-checkout-straight-to-mercadopago',
+        publishedAt: 'on-promotion',
+        highlight: false,
+        title: {
+            es: 'Suscribirte ahora te lleva directo a Mercado Pago',
+            en: 'Subscribing now takes you straight to Mercado Pago',
+            pt: 'Assinar agora leva você direto ao Mercado Pago'
+        },
+        body: {
+            es: 'Al confirmar tu suscripción, pasás directamente a pagar en Mercado Pago, sin una pantalla intermedia ni un segundo botón. Si dejaste el pago a medias, volver a elegir el mismo plan te lleva al mismo pago, sin crear otro.',
+            en: 'When you confirm your subscription you go straight to pay on Mercado Pago, with no intermediate screen or second button. If you left the payment halfway, choosing the same plan again takes you back to that same payment instead of creating another one.',
+            pt: 'Ao confirmar sua assinatura, você vai direto pagar no Mercado Pago, sem uma tela intermediária nem um segundo botão. Se deixou o pagamento pela metade, escolher o mesmo plano de novo leva você ao mesmo pagamento, sem criar outro.'
+        },
+        translations: { en: 'machine', pt: 'machine' }
+    },
+    // origin: #3800
+    {
+        id: '2026-10-25-grace-period-reminders',
+        publishedAt: 'on-promotion',
+        highlight: false,
+        title: {
+            es: 'Te avisamos antes de que termine el plazo para regularizar tu pago',
+            en: 'We remind you before the time to settle your payment runs out',
+            pt: 'Avisamos você antes de acabar o prazo para regularizar seu pagamento'
+        },
+        body: {
+            es: 'Si un cobro de tu suscripción no pasa y entrás en el período de gracia, ahora te mandamos un recordatorio por correo unos días antes de que venza y otro el día anterior, una sola vez cada uno.',
+            en: 'If a charge on your subscription fails and you enter the grace period, we now email you a reminder a few days before it ends and another the day before, once each.',
+            pt: 'Se uma cobrança da sua assinatura não passar e você entrar no período de carência, agora enviamos um lembrete por e-mail alguns dias antes do vencimento e outro no dia anterior, uma única vez cada.'
+        },
+        translations: { en: 'machine', pt: 'machine' }
+    },
+    // origin: #3805
+    {
+        id: '2026-10-25-newsletter-subscribers-list-loads',
+        publishedAt: 'on-promotion',
+        highlight: false,
+        roles: ['ADMIN', 'SUPER_ADMIN'],
+        title: {
+            es: 'El listado de suscriptores al newsletter vuelve a cargar',
+            en: 'The newsletter subscribers list loads again',
+            pt: 'A lista de assinantes da newsletter volta a carregar'
+        },
+        body: {
+            es: 'En el panel, la lista de suscriptores al newsletter daba error y no mostraba nada. Ahora carga con sus filtros por estado, canal, idioma y búsqueda por email, e incluye a quienes se suscribieron sin tener cuenta.',
+            en: 'In the panel, the newsletter subscribers list failed and showed nothing. It now loads with its filters by status, channel, language and email search, and includes people who subscribed without an account.',
+            pt: 'No painel, a lista de assinantes da newsletter dava erro e não mostrava nada. Agora carrega com seus filtros por status, canal, idioma e busca por email, e inclui quem se inscreveu sem ter conta.'
+        },
+        translations: { en: 'machine', pt: 'machine' }
+    },
+    // origin: #3726
+    {
+        id: '2026-10-20-plans-for-every-listing',
+        publishedAt: 'on-promotion',
+        highlight: false,
+        title: {
+            es: 'Nuevos planes para publicar alojamientos, locales de Comer y salir y experiencias',
+            en: 'New plans to list accommodations, Food & nightlife venues and experiences',
+            pt: 'Novos planos para publicar hospedagens, locais de Comer e sair e experiências'
+        },
+        body: {
+            es: 'Ahora podés publicar tu restaurante o tu experiencia, además de tu alojamiento, cada uno con sus propios planes. Empezás con 30 días de prueba gratis, sin cargar tarjeta, y recién después elegís si pagar. Todos los planes para publicar incluyen los beneficios de Turista VIP.',
+            en: 'You can now list your restaurant or your experience, as well as your accommodation, each with its own plans. You start with a 30-day free trial, with no card required, and only then choose whether to pay. Every publishing plan includes the Tourist VIP benefits.',
+            pt: 'Agora você pode publicar seu restaurante ou sua experiência, além da sua hospedagem, cada um com seus próprios planos. Você começa com 30 dias de teste grátis, sem cadastrar cartão, e só depois escolhe se quer pagar. Todos os planos para publicar incluem os benefícios do Turista VIP.'
+        },
+        translations: { en: 'machine', pt: 'machine' }
+    },
+    // origin: #3743
+    {
+        id: '2026-10-21-passwords-accept-any-symbol',
+        publishedAt: 'on-promotion',
+        highlight: false,
+        title: {
+            es: 'Tu contraseña puede llevar cualquier símbolo',
+            en: 'Your password can include any symbol',
+            pt: 'Sua senha pode ter qualquer símbolo'
+        },
+        body: {
+            es: 'Antes, una contraseña con un guion u otro símbolo poco común podía mostrarse en verde y después ser rechazada. Ahora se acepta cualquier símbolo, y lo que ves al escribirla es exactamente lo que se valida al registrarte o al cambiarla.',
+            en: 'Previously, a password with a hyphen or another uncommon symbol could show as valid and then be rejected. Now any symbol is accepted, and what you see while typing it is exactly what is checked when you sign up or change it.',
+            pt: 'Antes, uma senha com hífen ou outro símbolo pouco comum podia aparecer como válida e depois ser rejeitada. Agora qualquer símbolo é aceito, e o que você vê ao digitá-la é exatamente o que é validado ao se cadastrar ou alterá-la.'
+        },
+        translations: { en: 'machine', pt: 'machine' }
+    },
+    // origin: #3774
+    {
+        id: '2026-10-23-account-and-forms-polish',
+        publishedAt: 'on-promotion',
+        highlight: false,
+        title: {
+            es: 'Tu cuenta y los formularios, más prolijos',
+            en: 'Your account and forms, tidier',
+            pt: 'Sua conta e os formulários, mais caprichados'
+        },
+        body: {
+            es: 'El mapa de la ubicación deja claro cuándo todavía no marcaste el lugar y que el pin se puede arrastrar. «Mis consultas» se lee bien en el celular, y si entrás a cargar eventos sin permiso te explicamos cómo sumarte como editor en lugar de mandarte a tu cuenta sin aviso.',
+            en: 'The location map makes it clear when you have not placed the spot yet and that the pin can be dragged. «My enquiries» reads well on mobile, and if you open the event pages without access we explain how to become an editor instead of sending you back to your account without a word.',
+            pt: 'O mapa da localização deixa claro quando você ainda não marcou o lugar e que o pino pode ser arrastado. «Minhas consultas» fica legível no celular, e se você abrir as páginas de eventos sem permissão explicamos como virar editor em vez de mandar você para a sua conta sem aviso.'
+        },
+        translations: { en: 'machine', pt: 'machine' }
+    },
+    // origin: #3759
+    {
+        id: '2026-10-23-withdrawal-button-readable',
+        publishedAt: 'on-promotion',
+        highlight: false,
+        title: {
+            es: 'El botón de arrepentimiento se lee bien en tema claro y oscuro',
+            en: 'The withdrawal button is readable in light and dark themes',
+            pt: 'O botão de arrependimento fica legível nos temas claro e escuro'
+        },
+        body: {
+            es: 'En la página del botón de arrepentimiento, «Pedir la revocación» ahora tiene buen contraste en los dos temas. Antes, en el tema oscuro, el texto del botón casi no se veía.',
+            en: 'On the withdrawal page, «Request revocation» now has good contrast in both themes. Previously, in the dark theme, the button text was barely visible.',
+            pt: 'Na página do botão de arrependimento, «Pedir a revogação» agora tem bom contraste nos dois temas. Antes, no tema escuro, o texto do botão quase não aparecia.'
+        },
+        translations: { en: 'machine', pt: 'machine' }
+    },
+    // origin: #3801
+    {
+        id: '2026-10-25-safer-data-validation',
+        publishedAt: 'on-promotion',
+        highlight: false,
+        title: {
+            es: 'Actualizamos la validación de datos con un parche de seguridad',
+            en: 'We updated data validation with a security patch',
+            pt: 'Atualizamos a validação de dados com um patch de segurança'
+        },
+        body: {
+            es: 'La plataforma ahora valida lo que se envía con una versión corregida que no se puede saturar con listas muy grandes. No cambia nada en cómo usás el sitio ni el panel.',
+            en: 'The platform now validates what is submitted with a patched version that cannot be overwhelmed by very large lists. Nothing changes in how you use the site or the panel.',
+            pt: 'A plataforma agora valida o que é enviado com uma versão corrigida que não pode ser sobrecarregada com listas muito grandes. Nada muda na forma como você usa o site ou o painel.'
+        },
+        translations: { en: 'machine', pt: 'machine' }
+    },
+    // origin: #3775, #3783, #3785, #3792
+    {
+        id: '2026-10-24-mobile-floating-dock',
+        publishedAt: 'on-promotion',
+        highlight: false,
+        title: {
+            es: 'En el celular, los botones flotantes ya no tapan las tarjetas',
+            en: 'On mobile, floating buttons no longer cover the cards',
+            pt: 'No celular, os botões flutuantes não cobrem mais os cartões'
+        },
+        body: {
+            es: 'Filtros, Lista/Mapa, la búsqueda con IA y «Volver arriba» ahora están juntos en una barra al pie de la pantalla, que se oculta al bajar y vuelve al subir. Al final de cada listado queda espacio libre, así que ningún precio ni botón queda tapado. Hasta en los celulares más angostos la barra entra en una sola fila.',
+            en: 'Filters, List/Map, AI search and "Back to top" now sit together in one bar at the bottom of the screen, which hides as you scroll down and returns as you scroll up. Space is left free at the end of every listing, so no price or button is covered. Even on the narrowest phones the bar fits on a single row.',
+            pt: 'Filtros, Lista/Mapa, a busca com IA e «Voltar ao topo» agora ficam juntos em uma barra no rodapé da tela, que se esconde ao rolar para baixo e volta ao rolar para cima. Sobra espaço livre no final de cada listagem, então nenhum preço ou botão fica coberto. Mesmo nos celulares mais estreitos a barra cabe em uma só linha.'
+        },
+        translations: { en: 'machine', pt: 'machine' }
+    },
     // origin: #3373
     {
         id: '2026-09-22-pages-recover-after-an-outage',
-        publishedAt: 'on-promotion',
+        publishedAt: '2026-10-01T10:45:21Z',
         highlight: false,
         title: {
             es: 'Si una sección falla, se recupera apenas se arregla',
@@ -167,12 +373,12 @@ export const whatsNewEntries: WhatsNewEntry[] = WhatsNewCatalogSchema.parse([
             en: 'Previously, when a listing failed to load, that error could stay cached for up to two hours and you kept seeing it even after the problem was fixed. Now the page comes back on its own as soon as it is resolved.',
             pt: 'Antes, quando uma listagem não carregava, esse erro podia ficar guardado por até duas horas e você continuava vendo-o mesmo depois de o problema ser resolvido. Agora a página volta sozinha assim que é corrigida.'
         },
-        translations: { en: 'machine', pt: 'machine' }
+        translations: { en: 'declared', pt: 'declared' }
     },
     // origin: #3379
     {
         id: '2026-09-22-rss-feeds-signal-outages',
-        publishedAt: 'on-promotion',
+        publishedAt: '2026-10-01T09:45:21Z',
         highlight: false,
         title: {
             es: 'Los feeds RSS avisan cuando algo falla, en vez de aparecer vacíos',
@@ -184,14 +390,14 @@ export const whatsNewEntries: WhatsNewEntry[] = WhatsNewCatalogSchema.parse([
             en: 'If you follow posts or events via RSS, a temporary problem no longer reaches you as a feed with no news: your reader understands there was an error and tries again.',
             pt: 'Se você acompanha as publicações ou os eventos por RSS, um problema temporário não chega mais como um feed sem novidades: seu leitor entende que houve um erro e tenta de novo.'
         },
-        translations: { en: 'machine', pt: 'machine' }
+        translations: { en: 'declared', pt: 'declared' }
     },
     // origin: #3370
     {
         id: '2026-09-22-double-click-save-no-longer-errors',
-        publishedAt: 'on-promotion',
+        publishedAt: '2026-10-01T08:45:21Z',
         highlight: false,
-        roles: ['HOST', 'GASTRONOMY_OWNER', 'EXPERIENCE_OWNER', 'EDITOR'],
+        roles: ['HOST', 'VENUE_OWNER', 'EXPERIENCE_OWNER', 'EDITOR'],
         title: {
             es: 'Guardar dos veces seguidas ya no te da un error',
             en: 'Saving twice in a row no longer gives you an error',
@@ -202,7 +408,7 @@ export const whatsNewEntries: WhatsNewEntry[] = WhatsNewCatalogSchema.parse([
             en: 'If you double-click or have two tabs open editing the same thing, the system recognises it as the same repeated action instead of failing with an error.',
             pt: 'Se você clicar duas vezes ou tiver duas abas abertas editando a mesma coisa, o sistema reconhece que é a mesma ação repetida em vez de falhar com um erro.'
         },
-        translations: { en: 'machine', pt: 'machine' }
+        translations: { en: 'declared', pt: 'declared' }
     },
     {
         id: '2026-09-08-mobile-menu-single-controls',
@@ -408,7 +614,7 @@ export const whatsNewEntries: WhatsNewEntry[] = WhatsNewCatalogSchema.parse([
         id: '2026-09-08-menu-as-photo-or-pdf',
         publishedAt: '2026-09-23T03:25:19Z',
         highlight: true,
-        roles: ['GASTRONOMY_OWNER'],
+        roles: ['VENUE_OWNER'],
         title: {
             es: 'Subí tu carta como foto o PDF, no sólo como enlace',
             en: 'Upload your menu as a photo or PDF, not just a link',
@@ -508,7 +714,7 @@ export const whatsNewEntries: WhatsNewEntry[] = WhatsNewCatalogSchema.parse([
         id: '2026-09-08-editor-back-button-consistency',
         publishedAt: '2026-09-22T21:25:19Z',
         highlight: false,
-        roles: ['HOST', 'GASTRONOMY_OWNER', 'EXPERIENCE_OWNER'],
+        roles: ['HOST', 'VENUE_OWNER', 'EXPERIENCE_OWNER'],
         title: {
             es: 'Todos los editores tienen el mismo «Volver»',
             en: 'Every editor has the same “Back”',
@@ -592,7 +798,7 @@ export const whatsNewEntries: WhatsNewEntry[] = WhatsNewCatalogSchema.parse([
         id: '2026-09-08-shared-report-view-is-clean',
         publishedAt: '2026-09-22T16:25:19Z',
         highlight: false,
-        roles: ['HOST', 'GASTRONOMY_OWNER', 'EXPERIENCE_OWNER'],
+        roles: ['HOST', 'VENUE_OWNER', 'EXPERIENCE_OWNER'],
         title: {
             es: 'El informe que compartís se ve limpio',
             en: 'The report you share looks clean',
@@ -626,7 +832,7 @@ export const whatsNewEntries: WhatsNewEntry[] = WhatsNewCatalogSchema.parse([
         id: '2026-09-08-menu-in-three-languages',
         publishedAt: '2026-09-22T14:25:19Z',
         highlight: true,
-        roles: ['GASTRONOMY_OWNER'],
+        roles: ['VENUE_OWNER'],
         title: {
             es: 'Tu carta, en español, inglés y portugués',
             en: 'Your menu in Spanish, English and Portuguese',
@@ -643,7 +849,7 @@ export const whatsNewEntries: WhatsNewEntry[] = WhatsNewCatalogSchema.parse([
         id: '2026-09-08-photo-per-dish',
         publishedAt: '2026-09-22T13:25:19Z',
         highlight: false,
-        roles: ['GASTRONOMY_OWNER'],
+        roles: ['VENUE_OWNER'],
         title: {
             es: 'Una foto por plato en tu carta',
             en: 'A photo per dish on your menu',
@@ -660,7 +866,7 @@ export const whatsNewEntries: WhatsNewEntry[] = WhatsNewCatalogSchema.parse([
         id: '2026-09-08-dietary-options-filter',
         publishedAt: '2026-09-22T12:25:19Z',
         highlight: true,
-        roles: ['USER', 'GASTRONOMY_OWNER'],
+        roles: ['USER', 'VENUE_OWNER'],
         title: {
             es: 'Filtrá restaurantes por opciones sin gluten, veganas o sin lactosa',
             en: 'Filter restaurants by gluten-free, vegan or lactose-free options',
@@ -677,7 +883,7 @@ export const whatsNewEntries: WhatsNewEntry[] = WhatsNewCatalogSchema.parse([
         id: '2026-09-08-multi-vertical-subscription-card',
         publishedAt: '2026-09-22T11:25:19Z',
         highlight: false,
-        roles: ['HOST', 'GASTRONOMY_OWNER', 'EXPERIENCE_OWNER'],
+        roles: ['HOST', 'VENUE_OWNER', 'EXPERIENCE_OWNER'],
         title: {
             es: 'Si tenés varias suscripciones, las ves todas',
             en: 'If you have several subscriptions, you see them all',
@@ -691,7 +897,7 @@ export const whatsNewEntries: WhatsNewEntry[] = WhatsNewCatalogSchema.parse([
         translations: { en: 'reviewed', pt: 'reviewed' }
     },
     {
-        id: '2026-09-08-features-on-commerce-pages',
+        id: '2026-09-08-features-on-listing-pages',
         publishedAt: '2026-09-22T10:25:19Z',
         highlight: false,
         roles: ['USER'],
@@ -711,7 +917,7 @@ export const whatsNewEntries: WhatsNewEntry[] = WhatsNewCatalogSchema.parse([
         id: '2026-09-08-cuisine-type-catalog',
         publishedAt: '2026-09-22T09:25:19Z',
         highlight: false,
-        roles: ['GASTRONOMY_OWNER'],
+        roles: ['VENUE_OWNER'],
         title: {
             es: 'El tipo de local y el tipo de cocina son dos cosas distintas',
             en: 'Venue type and cuisine type are two different things',
@@ -725,10 +931,10 @@ export const whatsNewEntries: WhatsNewEntry[] = WhatsNewCatalogSchema.parse([
         translations: { en: 'reviewed', pt: 'reviewed' }
     },
     {
-        id: '2026-09-08-commerce-editor-by-sections',
+        id: '2026-09-08-listing-editor-by-sections',
         publishedAt: '2026-09-22T08:25:19Z',
         highlight: true,
-        roles: ['GASTRONOMY_OWNER', 'EXPERIENCE_OWNER'],
+        roles: ['VENUE_OWNER', 'EXPERIENCE_OWNER'],
         title: {
             es: 'El editor de tu comercio ahora va por secciones',
             en: 'Your business editor now works section by section',
@@ -745,7 +951,7 @@ export const whatsNewEntries: WhatsNewEntry[] = WhatsNewCatalogSchema.parse([
         id: '2026-09-08-addon-raises-listing-quota',
         publishedAt: '2026-09-22T07:25:19Z',
         highlight: false,
-        roles: ['GASTRONOMY_OWNER', 'EXPERIENCE_OWNER'],
+        roles: ['VENUE_OWNER', 'EXPERIENCE_OWNER'],
         title: {
             es: 'Comprar un complemento te sube el cupo al instante',
             en: 'Buying an add-on raises your quota instantly',
@@ -779,7 +985,7 @@ export const whatsNewEntries: WhatsNewEntry[] = WhatsNewCatalogSchema.parse([
         id: '2026-09-08-ai-writing-helpers',
         publishedAt: '2026-09-22T05:25:19Z',
         highlight: false,
-        roles: ['HOST', 'GASTRONOMY_OWNER', 'EXPERIENCE_OWNER', 'EDITOR'],
+        roles: ['HOST', 'VENUE_OWNER', 'EXPERIENCE_OWNER', 'EDITOR'],
         title: {
             es: 'Ayuda con IA para escribir y traducir tus textos',
             en: 'AI help to write and translate your copy',
@@ -809,10 +1015,10 @@ export const whatsNewEntries: WhatsNewEntry[] = WhatsNewCatalogSchema.parse([
         translations: { en: 'reviewed', pt: 'reviewed' }
     },
     {
-        id: '2026-09-05-commerce-publish-free-trial',
+        id: '2026-09-05-venue-experience-publish-free-trial',
         publishedAt: '2026-09-07T12:00:00Z',
         highlight: true,
-        roles: ['GASTRONOMY_OWNER', 'EXPERIENCE_OWNER'],
+        roles: ['VENUE_OWNER', 'EXPERIENCE_OWNER'],
         title: {
             es: 'Publicá tu comercio gratis con la prueba de 30 días',
             en: 'Publish your business for free with the 30-day trial',
@@ -841,7 +1047,7 @@ export const whatsNewEntries: WhatsNewEntry[] = WhatsNewCatalogSchema.parse([
         }
     },
     {
-        id: '2026-09-03-ai-chat-gastronomy-experience',
+        id: '2026-09-03-ai-chat-venue-experience',
         publishedAt: '2026-09-07T06:00:00Z',
         highlight: true,
         roles: ['USER'],
@@ -857,10 +1063,10 @@ export const whatsNewEntries: WhatsNewEntry[] = WhatsNewCatalogSchema.parse([
         }
     },
     {
-        id: '2026-09-03-gastronomy-daily-menu',
+        id: '2026-09-03-venue-daily-menu',
         publishedAt: '2026-09-07T03:00:00Z',
         highlight: false,
-        roles: ['GASTRONOMY_OWNER'],
+        roles: ['VENUE_OWNER'],
         title: {
             es: 'Publicá el menú del día en tu página',
             en: "Publish today's specials on your page",

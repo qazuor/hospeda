@@ -34,7 +34,7 @@
  * @see SPEC-197 §4.2
  */
 
-import type { AccommodationModel, ExperienceModel, GastronomyModel } from '@repo/db';
+import type { AccommodationModel, ExperienceModel, VenueModel } from '@repo/db';
 import {
     AccommodationModel as AccommodationModelClass,
     type AdminSummaryTotalsRow,
@@ -42,8 +42,8 @@ import {
     type EntityViewModel,
     ExperienceModel as ExperienceModelClass,
     entityViewModel,
-    GastronomyModel as GastronomyModelClass,
-    type HostDailySeriesRow
+    type HostDailySeriesRow,
+    VenueModel as VenueModelClass
 } from '@repo/db';
 import {
     EntityTypeEnum,
@@ -227,17 +227,17 @@ const GetDailySeriesForHostAccommodationsSchema = z.object({
 });
 
 /**
- * Input schema for {@link EntityViewService.getStatsForOwnCommerceListings}
- * and {@link EntityViewService.getDailySeriesForOwnCommerceListings} (HOS-734).
+ * Input schema for {@link EntityViewService.getStatsForOwnListings}
+ * and {@link EntityViewService.getDailySeriesForOwnListings} (HOS-734).
  *
- * Only `entityType` (GASTRONOMY or EXPERIENCE) and `window` are accepted —
+ * Only `entityType` (VENUE or EXPERIENCE) and `window` are accepted —
  * `actor.id` resolves owned listing IDs internally, mirroring
  * {@link GetStatsForHostAccommodationsSchema}'s anti-peeking design.
  */
-const GetStatsForOwnCommerceListingsSchema = z.object({
-    /** Commerce vertical to aggregate. Only GASTRONOMY and EXPERIENCE are allowed. */
-    entityType: z.enum([EntityTypeEnum.GASTRONOMY, EntityTypeEnum.EXPERIENCE] as const, {
-        message: 'zodError.entityView.commerceStats.entityType.invalid'
+const GetStatsForOwnListingsSchema = z.object({
+    /** Listing vertical to aggregate. Only VENUE and EXPERIENCE are allowed. */
+    entityType: z.enum([EntityTypeEnum.VENUE, EntityTypeEnum.EXPERIENCE] as const, {
+        message: 'zodError.entityView.listingStats.entityType.invalid'
     }),
     /** Rolling window. Defaults to '30d' when omitted from query params. */
     window: EntityViewWindowSchema
@@ -376,24 +376,24 @@ export interface GetDailySeriesForHostAccommodationsInput {
 }
 
 /**
- * Input for {@link EntityViewService.getStatsForOwnCommerceListings} and
- * {@link EntityViewService.getDailySeriesForOwnCommerceListings} (HOS-734).
+ * Input for {@link EntityViewService.getStatsForOwnListings} and
+ * {@link EntityViewService.getDailySeriesForOwnListings} (HOS-734).
  *
  * The actor's own listing IDs are resolved internally (via
- * `GastronomyModel`/`ExperienceModel.findIdsByOwnerId`) — no ownerId param is
+ * `VenueModel`/`ExperienceModel.findIdsByOwnerId`) — no ownerId param is
  * accepted, preventing cross-owner peeking. There is no dedicated
- * `PermissionEnum` for gastronomy/experience "own listing" access (unlike
+ * `PermissionEnum` for venue/experience "own listing" access (unlike
  * accommodation's `ACCOMMODATION_VIEW_OWN`) — ownership scoping alone is the
  * gate here, matching the existing convention of
- * `protectedListMyGastronomyRoute` (`GastronomyService.listOwn`). The
- * `view_basic_stats` entitlement gate lives at the route layer instead
- * (`commerceVerticalEntitlementMiddleware` + `requireEntitlement`).
+ * `protectedListMyVenueRoute` (`VenueService.listOwn`). The former
+ * route-layer plan entitlement gate was removed by HOS-1352 (transitional until
+ * V3, HOS-1357), so no entitlement is checked here either.
  */
-export interface GetStatsForOwnCommerceListingsInput {
+export interface GetStatsForOwnListingsInput {
     /** Authenticated actor performing the request. */
     readonly actor: Actor;
-    /** Commerce vertical to aggregate: GASTRONOMY or EXPERIENCE. */
-    readonly entityType: EntityTypeEnum.GASTRONOMY | EntityTypeEnum.EXPERIENCE;
+    /** Listing vertical to aggregate: VENUE or EXPERIENCE. */
+    readonly entityType: EntityTypeEnum.VENUE | EntityTypeEnum.EXPERIENCE;
     /** Rolling window for the aggregation ('7d' or '30d'). */
     readonly window: EntityViewWindow;
 }
@@ -438,8 +438,8 @@ export class EntityViewService extends BaseService {
     private readonly modelOverride: EntityViewModel | undefined;
     private readonly accommodationModelOverride: AccommodationModel | undefined;
     private accommodationModelLazy: AccommodationModel | undefined;
-    private readonly gastronomyModelOverride: GastronomyModel | undefined;
-    private gastronomyModelLazy: GastronomyModel | undefined;
+    private readonly venueModelOverride: VenueModel | undefined;
+    private venueModelLazy: VenueModel | undefined;
     private readonly experienceModelOverride: ExperienceModel | undefined;
     private experienceModelLazy: ExperienceModel | undefined;
 
@@ -447,7 +447,7 @@ export class EntityViewService extends BaseService {
         ctx: ServiceConfig,
         model?: EntityViewModel,
         accommodationModel?: AccommodationModel,
-        gastronomyModel?: GastronomyModel,
+        venueModel?: VenueModel,
         experienceModel?: ExperienceModel
     ) {
         super(ctx, EntityViewService.ENTITY_NAME);
@@ -458,7 +458,7 @@ export class EntityViewService extends BaseService {
         // to undefined exports). Resolution is deferred to the lazy getters.
         this.modelOverride = model;
         this.accommodationModelOverride = accommodationModel;
-        this.gastronomyModelOverride = gastronomyModel;
+        this.venueModelOverride = venueModel;
         this.experienceModelOverride = experienceModel;
     }
 
@@ -484,15 +484,15 @@ export class EntityViewService extends BaseService {
     }
 
     /**
-     * Lazily resolves the gastronomy model used for owner ownership lookups
+     * Lazily resolves the venue model used for owner ownership lookups
      * (HOS-734). Instantiated once on first use (or the injected override) —
      * mirrors {@link accommodationModel}.
      */
-    private get gastronomyModel(): GastronomyModel {
-        if (!this.gastronomyModelLazy) {
-            this.gastronomyModelLazy = this.gastronomyModelOverride ?? new GastronomyModelClass();
+    private get venueModel(): VenueModel {
+        if (!this.venueModelLazy) {
+            this.venueModelLazy = this.venueModelOverride ?? new VenueModelClass();
         }
-        return this.gastronomyModelLazy;
+        return this.venueModelLazy;
     }
 
     /**
@@ -508,17 +508,15 @@ export class EntityViewService extends BaseService {
     }
 
     /**
-     * Resolves the commerce listing model for a given vertical (HOS-734).
-     * Single dispatch point so `getStatsForOwnCommerceListings` and
-     * `getDailySeriesForOwnCommerceListings` share the same lookup instead of
-     * each re-deriving the GASTRONOMY/EXPERIENCE branch.
+     * Resolves the listing model for a given vertical (HOS-734).
+     * Single dispatch point so `getStatsForOwnListings` and
+     * `getDailySeriesForOwnListings` share the same lookup instead of
+     * each re-deriving the VENUE/EXPERIENCE branch.
      */
-    private commerceListingModelFor(
-        entityType: EntityTypeEnum.GASTRONOMY | EntityTypeEnum.EXPERIENCE
-    ): GastronomyModel | ExperienceModel {
-        return entityType === EntityTypeEnum.GASTRONOMY
-            ? this.gastronomyModel
-            : this.experienceModel;
+    private listingModelFor(
+        entityType: EntityTypeEnum.VENUE | EntityTypeEnum.EXPERIENCE
+    ): VenueModel | ExperienceModel {
+        return entityType === EntityTypeEnum.VENUE ? this.venueModel : this.experienceModel;
     }
 
     /**
@@ -1035,40 +1033,40 @@ export class EntityViewService extends BaseService {
     }
 
     // -------------------------------------------------------------------------
-    // HOS-734: commerce vertical aggregation methods (GASTRONOMY / EXPERIENCE)
+    // HOS-734: listing vertical aggregation methods (venue / EXPERIENCE)
     // -------------------------------------------------------------------------
 
     /**
-     * Returns view-count statistics for every gastronomy or experience listing
-     * owned by the actor (SPEC-159's "basic stats" extended to commerce —
+     * Returns view-count statistics for every venue or experience listing
+     * owned by the actor (SPEC-159's "basic stats" extended to listing —
      * HOS-734).
      *
      * **Ownership, not a `PermissionEnum`:** unlike
-     * `getStatsForHostAccommodations`, there is no gastronomy/experience "view
+     * `getStatsForHostAccommodations`, there is no venue/experience "view
      * own" permission — `actor.id` resolving owned IDs IS the security
-     * boundary, matching `protectedListMyGastronomyRoute`'s existing
-     * convention. The `view_basic_stats` entitlement gate is enforced at the
-     * route layer (`commerceVerticalEntitlementMiddleware` +
-     * `requireEntitlement`), not here.
+     * boundary, matching `protectedListMyvenueRoute`'s existing
+     * convention. The former route-layer plan entitlement gate was removed by
+     * HOS-1352 (transitional until V3, HOS-1357); no entitlement is checked
+     * here either.
      *
      * **Zero-view normalization:** DB omits entities with no rows in the window;
      * this method adds them back as `{ unique: 0, total: 0 }`.
      *
-     * @param input - Actor + commerce vertical (GASTRONOMY/EXPERIENCE) + rolling window.
+     * @param input - Actor + listing vertical (venue/EXPERIENCE) + rolling window.
      * @returns One `EntityViewStats` entry per owned listing.
      */
-    public async getStatsForOwnCommerceListings(
-        input: GetStatsForOwnCommerceListingsInput
+    public async getStatsForOwnListings(
+        input: GetStatsForOwnListingsInput
     ): Promise<ServiceOutput<EntityViewStats[]>> {
         const { actor, ...params } = input;
         return this.runWithLoggingAndValidation({
-            methodName: 'getStatsForOwnCommerceListings',
+            methodName: 'getStatsForOwnListings',
             input: { actor, ...params },
-            schema: GetStatsForOwnCommerceListingsSchema,
+            schema: GetStatsForOwnListingsSchema,
             execute: async (validated, validatedActor) => {
-                const ownedIds = await this.commerceListingModelFor(
-                    validated.entityType
-                ).findIdsByOwnerId(validatedActor.id);
+                const ownedIds = await this.listingModelFor(validated.entityType).findIdsByOwnerId(
+                    validatedActor.id
+                );
 
                 if (ownedIds.length === 0) {
                     return [];
@@ -1087,29 +1085,29 @@ export class EntityViewService extends BaseService {
     }
 
     /**
-     * Returns a gap-filled daily view-count series for every gastronomy or
+     * Returns a gap-filled daily view-count series for every venue or
      * experience listing owned by the actor (HOS-734). Mirrors
      * {@link getDailySeriesForHostAccommodations}.
      *
-     * See {@link getStatsForOwnCommerceListings} for the ownership/entitlement
+     * See {@link getStatsForOwnListings} for the ownership/entitlement
      * split rationale — identical here.
      *
-     * @param input - Actor + commerce vertical (GASTRONOMY/EXPERIENCE) + rolling window.
+     * @param input - Actor + listing vertical (venue/EXPERIENCE) + rolling window.
      * @returns Gap-filled array of exactly `windowDays` items ordered by date ASC.
      */
-    public async getDailySeriesForOwnCommerceListings(
-        input: GetStatsForOwnCommerceListingsInput
+    public async getDailySeriesForOwnListings(
+        input: GetStatsForOwnListingsInput
     ): Promise<ServiceOutput<HostViewDailySeriesOutputItem[]>> {
         const { actor, ...params } = input;
         return this.runWithLoggingAndValidation({
-            methodName: 'getDailySeriesForOwnCommerceListings',
+            methodName: 'getDailySeriesForOwnListings',
             input: { actor, ...params },
-            schema: GetStatsForOwnCommerceListingsSchema,
+            schema: GetStatsForOwnListingsSchema,
             execute: async (validated, validatedActor) => {
                 const windowDays = WINDOW_DAYS[validated.window];
-                const ownedIds = await this.commerceListingModelFor(
-                    validated.entityType
-                ).findIdsByOwnerId(validatedActor.id);
+                const ownedIds = await this.listingModelFor(validated.entityType).findIdsByOwnerId(
+                    validatedActor.id
+                );
 
                 // Zero-listing owner: return a fully gap-filled all-zero series
                 // without making any model call for view data.

@@ -8,10 +8,7 @@ import { resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';
 
 const ROOT = resolve(__dirname, '../../../src');
-const gastronomyDetail = readFileSync(
-    resolve(ROOT, 'pages/[lang]/gastronomia/[slug].astro'),
-    'utf8'
-);
+const venueDetail = readFileSync(resolve(ROOT, 'pages/[lang]/comer-y-salir/[slug].astro'), 'utf8');
 const experienceDetail = readFileSync(
     resolve(ROOT, 'pages/[lang]/experiencias/[slug].astro'),
     'utf8'
@@ -33,9 +30,9 @@ const robotsPage = readFileSync(resolve(ROOT, 'pages/robots.txt.ts'), 'utf8');
 const seoHead = readFileSync(resolve(ROOT, 'components/seo/SEOHead.astro'), 'utf8');
 
 describe('SPEC-268 SEO regressions', () => {
-    it('gastronomy detail treats empty SEO fields as absent and falls back', () => {
-        expect(gastronomyDetail).toContain('seo?.title?.trim() || gastronomy.name');
-        expect(gastronomyDetail).toContain('seo?.description?.trim() ||');
+    it('venue detail treats empty SEO fields as absent and falls back', () => {
+        expect(venueDetail).toContain('seo?.title?.trim() || venue.name');
+        expect(venueDetail).toContain('seo?.description?.trim() ||');
     });
 
     it('experience detail treats empty SEO fields as absent and falls back', () => {

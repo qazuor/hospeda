@@ -4,6 +4,7 @@
  * Manages sponsorships, sponsorship levels, and sponsorship packages in a tabbed interface.
  */
 
+import { PermissionEnum } from '@repo/schemas';
 import { createFileRoute } from '@tanstack/react-router';
 import { useState } from 'react';
 import { SidebarPageLayout } from '@/components/layout/SidebarPageLayout';
@@ -11,10 +12,10 @@ import { SponsorshipLevelsTab } from '@/features/sponsorships/components/Sponsor
 import { SponsorshipPackagesTab } from '@/features/sponsorships/components/SponsorshipPackagesTab';
 import { SponsorshipsTab } from '@/features/sponsorships/components/SponsorshipsTab';
 import { useTranslations } from '@/hooks/use-translations';
-import { requireBillingAccess } from '@/lib/billing-access';
+import { requireAdminPermission } from '@/lib/admin-api-access';
 
 export const Route = createFileRoute('/_authed/billing/sponsorships')({
-    beforeLoad: ({ context }) => requireBillingAccess(context),
+    beforeLoad: ({ context }) => requireAdminPermission(context, PermissionEnum.SPONSORSHIP_VIEW),
     component: BillingSponsorshipsPage
 });
 

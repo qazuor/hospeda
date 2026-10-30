@@ -8,7 +8,7 @@
  * between it and the page was `.wrapper`, which declares no `position` at all.
  * An absolutely-positioned box resolves `top/left` against its nearest
  * POSITIONED ancestor, so the hint escaped the editor and was drawn 24px on top
- * of the field's own title in the commerce editor.
+ * of the field's own title in the listing editor.
  *
  * Two assertions, because either one alone is satisfiable with the bug present:
  *

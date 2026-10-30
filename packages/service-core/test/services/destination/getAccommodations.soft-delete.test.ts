@@ -14,13 +14,14 @@
  *     must not — pass it. The second suite below proves that default really
  *     reaches SQL from this call site, using a REAL `AccommodationModel` with a
  *     mocked Drizzle client injected via `setDb()`.
- *   - `visibility`/`lifecycleState` stay EXPLICIT here, because they must not
- *     become model defaults (admin has to see `PRIVATE`, an owner has to see
- *     their own `DRAFT`). The first suite asserts they are passed.
+ *   - `publicationStatus = PUBLISHED` (which replaced the accommodation's
+ *     `visibility`/`lifecycleState` in V6.9b, HOS-1641) stays EXPLICIT here,
+ *     because it must not become a model default (admin has to see every
+ *     state, an owner their own `DRAFT`). The first suite asserts it is passed.
  */
 import { AccommodationModel, DestinationModel, resetDb, setDb } from '@repo/db';
 import type { GetDestinationAccommodationsInput } from '@repo/schemas';
-import { LifecycleStatusEnum, RoleEnum, VisibilityEnum } from '@repo/schemas';
+import { PublicationStatusEnum, RoleEnum, VisibilityEnum } from '@repo/schemas';
 import type { SQL } from 'drizzle-orm';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { DestinationService } from '../../../src/services/destination/destination.service';
@@ -124,7 +125,7 @@ function makeFindAllDbMock(opts: {
 const ADMIN_ACTOR = { id: 'user-1', roles: [RoleEnum.ADMIN], permissions: [] };
 
 describe('DestinationService.getAccommodations — HOS-288 public read predicates', () => {
-    describe('visibility / lifecycleState (explicit at this call site)', () => {
+    describe('publicationStatus (explicit at this call site)', () => {
         let service: DestinationService;
         let destinationModelMock: DestinationModel;
         let accommodationModelMock: AccommodationModel;
@@ -159,19 +160,11 @@ describe('DestinationService.getAccommodations — HOS-288 public read predicate
 
             expectSuccess(result);
             const [where] = asMock(accommodationModelMock.findAll).mock.calls[0] ?? [];
-            // PUBLIC/ACTIVE is what an anonymous caller may see at all;
-            // `ownerSuspended`/`planRestricted` are the two entitlement gates that
-            // withdraw an otherwise-public listing from public surfaces.
-            // KNOWN FOLLOW-UP: `DestinationService.updateAccommodationsCount` counts
-            // WITHOUT any `visibility` predicate, so this list and that destination's
-            // `accommodationsCount` still disagree for ACTIVE + PRIVATE rows (the
-            // count includes them, this list does not). Out of scope for HOS-288.
-            expect(where).toMatchObject({
+            // PUBLISHED is the only state an anonymous caller may see (AC:V5:5,
+            // HOS-1641); `updateAccommodationsCount` counts with the same predicate.
+            expect(where).toEqual({
                 destinationId: destination.id,
-                visibility: VisibilityEnum.PUBLIC,
-                lifecycleState: LifecycleStatusEnum.ACTIVE,
-                ownerSuspended: false,
-                planRestricted: false
+                publicationStatus: PublicationStatusEnum.PUBLISHED
             });
         });
 

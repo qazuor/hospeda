@@ -17,7 +17,7 @@ import { experiences } from './experiences.dbschema.ts';
 /**
  * Experience FAQ table (SPEC-240).
  *
- * Mirrors gastronomy_faqs exactly:
+ * Mirrors venue_faqs exactly:
  * - FK experienceId CASCADE (FAQs deleted with the listing)
  * - question/answer notNull, category nullable
  * - displayOrder for UI-controlled ordering (NULLS LAST in queries)

@@ -17,9 +17,10 @@
  *  1. An accommodation with a non-existent / placeholder photo URL still
  *     renders via the public detail endpoint (no 500 due to broken image
  *     resolution).
- *  2. Soft-deleting the accommodation leaves no orphan metadata: when the
- *     row is gone (deleted_at NOT NULL), the public surface returns 404
- *     / null and not a half-rendered card.
+ *  2. Deleting the accommodation through PB12 (the owner's delete,
+ *     `POST /protected/accommodations/:id/purge`, HOS-1477) leaves no orphan
+ *     metadata: once the row is `PURGED`, the public surface returns 404 /
+ *     null and not a half-rendered card.
  *  3. The system never produces 5xx on missing media — the contract is
  *     "missing photo = empty placeholder", never "missing photo = crash".
  *
@@ -34,13 +35,9 @@
  */
 
 import { expect, test } from '@playwright/test';
-import {
-    createAccommodation,
-    createSubscription,
-    createUser,
-    forceVerifyEmail
-} from '../../fixtures/api-helpers.ts';
-import { execSQL, getDbPool } from '../../fixtures/db-helpers.ts';
+import { PublicationStatusEnum } from '@repo/schemas';
+import { createAccommodation, createUser, forceVerifyEmail } from '../../fixtures/api-helpers.ts';
+import { getDbPool } from '../../fixtures/db-helpers.ts';
 import { cleanupTestUsers } from '../../support/test-cleanup.ts';
 
 const API_URL = process.env.HOSPEDA_E2E_API_URL ?? 'http://localhost:3001';
@@ -55,26 +52,16 @@ test.describe('RES-03: Cloudinary missing-asset tolerance @p0 @resilience @accom
         userId = null;
     });
 
-    test('public detail does not 5xx on missing photos; soft delete leaves no orphan visible', async ({
+    test('public detail does not 5xx on missing photos; PB12 delete leaves no orphan visible', async ({
         page
     }) => {
         const host = await createUser({ role: 'HOST' }, { apiBaseUrl: API_URL });
         userId = host.id;
         await forceVerifyEmail(host.id);
 
-        const planRows = await execSQL<{ id: string }>(
-            'SELECT id FROM billing_plans WHERE active = true ORDER BY created_at ASC LIMIT 1'
-        );
-        const planId = planRows[0]?.id;
-        if (!planId) {
-            test.fixme(true, 'No billing plan in seed — RES-03 cannot run');
-            return;
-        }
-        await createSubscription({ userId: host.id, planId, status: 'active' });
-
         const accommodation = await createAccommodation({
             ownerId: host.id,
-            lifecycleState: 'ACTIVE',
+            publicationStatus: PublicationStatusEnum.PUBLISHED,
             slugPrefix: 'res-03'
         });
 
@@ -87,15 +74,14 @@ test.describe('RES-03: Cloudinary missing-asset tolerance @p0 @resilience @accom
             `public detail must not 5xx on accommodation without photos (got ${detailRes.status()})`
         ).toBe(true);
 
-        // ── 2. Soft delete: row hidden from public surface ────────────────
-        const deleteRes = await page.request.delete(
-            `${API_URL}/api/v1/protected/accommodations/${accommodation.id}`,
+        // ── 2. The owner deletes through PB12: row hidden from public ─────
+        const purgeRes = await page.request.post(
+            `${API_URL}/api/v1/protected/accommodations/${accommodation.id}/purge`,
             { headers: { cookie: host.sessionCookie } }
         );
-        expect(
-            [200, 202, 204].includes(deleteRes.status()),
-            `soft delete should be 2xx (got ${deleteRes.status()})`
-        ).toBe(true);
+        expect(purgeRes.status(), `PB12 should answer 200 (got ${purgeRes.status()})`).toBe(200);
+        const purgeBody = (await purgeRes.json()) as { data?: unknown };
+        expect(purgeBody.data).toEqual({ purged: true });
 
         // ── 3. After delete: no orphan visible to public ──────────────────
         const afterRes = await page.request.get(
@@ -106,7 +92,7 @@ test.describe('RES-03: Cloudinary missing-asset tolerance @p0 @resilience @accom
             `post-delete public GET must not 5xx (got ${afterRes.status()})`
         ).toBe(true);
 
-        // 404 (never existed) and 410 Gone (soft-deleted, HOS-117) are both
+        // 404 (not visible) and 410 Gone (HOS-117) are both
         // definitive "not visible to public" outcomes — nothing more to check.
         // For any other status, the payload must carry no orphaned entity data.
         if (afterRes.status() !== 404 && afterRes.status() !== 410) {

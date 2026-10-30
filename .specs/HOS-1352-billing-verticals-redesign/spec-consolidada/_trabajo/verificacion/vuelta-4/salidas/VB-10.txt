@@ -1,0 +1,16 @@
+# VB-10 · spec → fuente · 10-corte/B7.md, 10-corte/B8a.md
+
+## Hallazgos
+
+10-corte/B7.md:1524 · «Si el correo de suspensión no fue aceptado por el proveedor de correo, el vencimiento del grace se posterga veinticuatro horas y se vuelve a evaluar en la corrida siguiente.» · contradice fuentes/.specs/HOS-1354-billing-cobro-y-proveedor/docs/03-maquinas-de-estado.md:156 («S6` no ocurre en esta corrida y se reintenta en la siguiente»; ante correo definitivamente fallido o sin destinatario, se cancela igual). La fuente posterga la ejecución de S6 sólo por la falla transitoria, no modifica el vencimiento ni concede 24 horas adicionales; :3000 precisa que S6 reintenta su propia transición en cada corrida. DEC-MAIL-001 y sus 📌, en fuentes/.specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:1727–1744, mantienen esa distinción. También contradice AC:B7:7 y el outbox de esta misma pieza (:172–181 y :1529–1531). · BLOQUEA
+
+10-corte/B7.md:1617 · «pago del período pendiente de `S19`, o con un cobro acreditado en la relectura del falso, `S6` no ocurre y corre `S5`.» · contradice fuentes/.specs/HOS-1354-billing-cobro-y-proveedor/docs/03-maquinas-de-estado.md:155 («la 3 incluye **que esta fila no sea la predecesora de una sucesión en curso**») y :169 («**el pago se registra y queda pendiente de resolución**»; «no reactiva»). TEST:B7:6 exige S5 también cuando el pago sigue retenido por S19, lo que reactivaría indebidamente a la predecesora; además, para la fila ACTIVE que el mismo test incluye, :156 ordena P1, no S5, si la relectura encuentra el cobro. Contradice también AC:B7:16–17 (:288–310) y el guard G-R1-D de la propia pieza. · BLOQUEA
+
+10-corte/B8a.md:235 · «la fila pasa a `CANCELLED` con la fecha de fin de servicio en **el día posterior a la cancelación**» · contradice fuentes/.specs/HOS-1354-billing-cobro-y-proveedor/docs/03-maquinas-de-estado.md:173 («la fecha de fin de servicio **es el día de la cancelación**»). AC:B8a:8 desplaza un día el dato que S23 debe guardar; también contradice TEST:B8a:8 (:600, «fecha de fin hoy») y TRANS:B:S23 en 04-catalogos.md:3971. No hay una precisión posterior del decision log ni del corte del MVP que autorice ese desplazamiento. · BLOQUEA
+
+## Resumen
+
+| archivo | líneas recorridas | afirmaciones normativas revisadas (aprox.) | BLOQUEA | MENOR |
+|---|---|---|---|---|
+| 10-corte/B7.md | 1–1815 | 360 | 2 | 0 |
+| 10-corte/B8a.md | 1–719 | 160 | 1 | 0 |

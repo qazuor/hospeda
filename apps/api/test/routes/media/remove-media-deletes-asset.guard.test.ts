@@ -25,7 +25,7 @@
  *   Cloudinary credentials — by design).
  * - The ORDER of the deletion (binary before row). That is an invariant of the
  *   service layer, covered by the behavioral regression tests in
- *   `packages/service-core/test/services/gastronomy/gastronomy.media.test.ts`.
+ *   `packages/service-core/test/services/venue/venue.media.test.ts`.
  * - Any caller outside `apps/api/src/routes/` — a cron job or script calling the
  *   service directly is not discovered here.
  */
@@ -45,7 +45,7 @@ const ROUTES_DIR = join(__dirname, '../../../src/routes');
  * makes this guard survive renames and reformatting.
  */
 const REMOVE_MEDIA_SYMBOLS = [
-    'removeGastronomyMedia',
+    'removeVenueMedia',
     'removeExperienceMedia',
     '.removeMedia('
 ] as const;
@@ -94,7 +94,7 @@ describe('remove-media routes delete the Cloudinary asset (HOS-372 guard)', () =
             missing,
             `These routes remove a media row without passing a media provider, so the ` +
                 `Cloudinary binary is orphaned. Pass \`getMediaProvider()\` to the service ` +
-                `(see apps/api/src/routes/gastronomy/protected/removeMedia.ts):\n  ` +
+                `(see apps/api/src/routes/venue/protected/removeMedia.ts):\n  ` +
                 missing.join('\n  ')
         ).toEqual([]);
     });

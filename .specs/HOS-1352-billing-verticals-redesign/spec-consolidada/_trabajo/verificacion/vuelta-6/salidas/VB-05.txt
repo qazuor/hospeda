@@ -1,0 +1,17 @@
+# VB-05 · spec → fuente · 10-corte/V2.md, 10-corte/V3.md, 10-corte/V4.md
+
+## Hallazgos
+
+10-corte/V2.md:542 · «Una versión de plan publicada espera 24 horas antes de aparecer en la pricing; durante esa espera no se admite ninguna contratación de esa versión.» · sin soporte: fuentes/.specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/10-verticales-planes-billing-options.md:94 manda que la pricing y todo camino de alta lean «la **versión vigente** de cada plan de la vertical, **y sólo si es vendible**». No establece una espera desde la publicación; tampoco la agregan el decision log ni las decisiones posteriores del owner. La espera introduce una restricción comercial adicional y contradice la regla de lectura transcripta en V2.md:275. · BLOQUEA
+
+10-corte/V3.md:237 · «(f) calcula el cupo con el conjunto efectivo» · más débil que fuentes/.specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/15-entitlements-y-limits.md:530 («Con más de un título vivo, ancla el que da la cuota; si dos la dan, el que arrancó primero»): AC:V3:8 contempla dos títulos que dan cuota, pero omite cuál ancla la ventana; calcular el cupo no determina su fecha de renovación. La omisión se repite en V3.md:578 («Con más de un título vivo, ancla el que da la cuota») y deja TEST:V3:10 sin comprobar ese desempate. Lo exige también fuentes/.specs/HOS-1353-verticales-capacidades-y-autorizacion/descomposicion.md:484 y lo ratifica el 📌 de DEC-ENT-002 en fuentes/.specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:640; no hay decisión posterior que lo retire. · BLOQUEA
+
+10-corte/V4.md:572 · «La extensión que no entra se rechaza entera. No se trunca, y el promo se consume.» · contradice fuentes/.specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/11-trial.md:163 («Se rechaza entera. No se trunca, y el promo no se consume.»). Consumirlo al rechazar por techo cambia el resultado del canje y pierde un código que debe conservarse; también contradice 20-fase-2/B9b.md:166 («con `RECHAZADA` el código queda intacto») y la explicación inmediata de V4.md:574–575 («no gastarle el canje le deja el código para cuando le sirva»). No hay decisión posterior que autorice consumirlo. · BLOQUEA
+
+## Resumen
+
+| archivo | líneas recorridas | afirmaciones normativas revisadas (aprox.) | BLOQUEA | MENOR |
+|---|---|---|---|---|
+| 10-corte/V2.md | 1–729 | 150 | 1 | 0 |
+| 10-corte/V3.md | 1–923 | 190 | 1 | 0 |
+| 10-corte/V4.md | 1–1246 | 260 | 1 | 0 |

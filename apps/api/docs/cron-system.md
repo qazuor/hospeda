@@ -59,10 +59,10 @@ The cron system uses a flexible adapter pattern to support multiple deployment e
 ```
 Job Definition Files          →    Registry         →    Bootstrap
 ────────────────────               ──────────            ──────────
-trial-expiry.ts                    cronJobs[]           Load enabled jobs
-webhook-retry.job.ts               getCronJob()         Select adapter
+trial-machine-expiry.job.ts        cronJobs[]           Load enabled jobs
+billing-reconciliation-sweep.job.ts getCronJob()        Select adapter
 notification-schedule.job.ts       getEnabledCronJobs() Schedule jobs
-addon-expiry.job.ts
+subscription-window-expiry.job.ts
 ```
 
 #### Job Execution Flow
@@ -83,6 +83,8 @@ Every job handler receives a `CronJobContext` and returns a `CronJobResult`:
 interface CronJobContext {
   logger: Logger;
   startedAt: Date;
+  runId: string;         // fresh UUID per run (HOS-1424)
+  correlationId: string; // the run's correlation (HOS-1424)
   dryRun: boolean;
 }
 
@@ -95,6 +97,35 @@ interface CronJobResult {
   details?: Record<string, unknown>;
 }
 ```
+
+#### Time zone: schedules are read on the Buenos Aires wall clock (HOS-1424)
+
+Every schedule is registered with node-cron's per-task option
+`{ timezone: 'America/Argentina/Buenos_Aires' }` (`MARKET_TIMEZONE` from
+`@repo/utils`), so `0 8 * * *` fires at **08:00 in Buenos Aires** (11:00 UTC)
+whatever zone the process runs in. `TZ` is never set or read. The admin panel's
+"next run" is computed in the same zone.
+
+Before HOS-1424 the scheduler fixed no zone, so on the VPS (UTC) every
+expression was read in UTC. The expressions were **not** compensated when the
+zone was fixed (owner decision): every job with a fixed hour now runs three
+hours later in real time than it used to. Jobs that only use the minute field
+(`* * * * *`, `*/5 * * * *`, `0 * * * *`) are unaffected.
+
+Windows expressed in days ("three days before", "today so far") are computed on
+the same calendar with `startOfMarketDay()` from `@repo/utils`; instants are
+always stored in UTC (NUCLEO/07 §3).
+
+#### Run id and correlation (HOS-1424)
+
+Each scheduled tick and each manual trigger gets a fresh `runId` and a run
+`correlationId`; both are stamped on every log line of the run, so a run can be
+read whole. A manual trigger uses the correlation of the admin request that
+started it (echoed in the `X-Correlation-ID` response header). A job that
+processes items also carries, per item, **the item's own** correlation: the one
+stored on the entity (e.g. `email_outbox.correlation_id`), or one minted for the
+item when the entity has none. `cron_runs` is unchanged and does not store either
+id.
 
 ---
 
@@ -188,11 +219,11 @@ HOSPEDA_DISABLE_AUTH=true
 pnpm dev
 
 # Manually trigger jobs
-curl -X POST http://localhost:3001/api/v1/admin/cron/trial-expiry \
+curl -X POST http://localhost:3001/api/v1/admin/cron/trial-machine-expiry \
   -H "Cookie: $ADMIN_SESSION_COOKIE"
 
 # Test in dry-run mode
-curl -X POST "http://localhost:3001/api/v1/admin/cron/trial-expiry?dryRun=true" \
+curl -X POST "http://localhost:3001/api/v1/admin/cron/trial-machine-expiry?dryRun=true" \
   -H "Cookie: $ADMIN_SESSION_COOKIE"
 ```
 
@@ -233,10 +264,10 @@ NODE_ENV=production
 
 ```
 [CRON] Initializing cron scheduler (adapter: node-cron)
-[CRON] Scheduled job: trial-expiry (schedule: 0 2 * * *)
-[CRON] Scheduled job: webhook-retry (schedule: 0 */1 * * *)
+[CRON] Scheduled job: trial-machine-expiry (schedule: */15 * * * *)
+[CRON] Scheduled job: billing-reconciliation-sweep (schedule: 0 6 * * *)
 [CRON] Scheduled job: notification-schedule (schedule: 0 8 * * *)
-[CRON] Scheduled job: addon-expiry (schedule: 0 5 * * *)
+[CRON] Scheduled job: subscription-window-expiry (schedule: */15 * * * *)
 [CRON] Scheduler started with 4 jobs
 ```
 
@@ -293,11 +324,11 @@ HOSPEDA_CRON_SECRET=<your-vercel-secret>
 
   "crons": [
     {
-      "path": "/api/v1/cron/trial-expiry",
+      "path": "/api/v1/cron/trial-machine-expiry",
       "schedule": "0 2 * * *"
     },
     {
-      "path": "/api/v1/cron/webhook-retry",
+      "path": "/api/v1/cron/billing-reconciliation-sweep",
       "schedule": "0 */1 * * *"
     },
     {
@@ -305,7 +336,7 @@ HOSPEDA_CRON_SECRET=<your-vercel-secret>
       "schedule": "0 8 * * *"
     },
     {
-      "path": "/api/v1/cron/addon-expiry",
+      "path": "/api/v1/cron/subscription-window-expiry",
       "schedule": "0 5 * * *"
     }
   ],
@@ -408,7 +439,7 @@ The `setup-qstash-schedules.ts` script is **idempotent**: it creates new schedul
 **Expected logs (API):**
 
 ```
-[CRON:trial-expiry] Completed { success: true, processed: 0, errors: 0, durationMs: 24, dryRun: false }
+[CRON:trial-machine-expiry] Completed { success: true, processed: 0, errors: 0, durationMs: 24, dryRun: false }
 ```
 
 The cron adapter itself does not log anything specific to QStash — the signing-key verification happens transparently inside `cronAuthMiddleware`. Failed signatures show up as `Invalid Upstash-Signature on cron request` 401 responses.
@@ -505,7 +536,7 @@ import type { CronJobDefinition } from '../types.js';
 /**
  * Session cleanup cron job definition
  *
- * Schedule: Daily at 3:00 AM UTC
+ * Schedule: Daily at 03:00 Buenos Aires time
  * Purpose: Remove expired sessions to maintain database health
  */
 export const cleanupSessionsJob: CronJobDefinition = {
@@ -604,10 +635,10 @@ Add to `apps/api/src/cron/jobs/index.ts`:
 
 ```typescript
 // Export all job definitions
-export { trialExpiryJob } from './trial-expiry.js';
-export { webhookRetryJob } from './webhook-retry.job.js';
+export { trialMachineExpiryJob } from './trial-machine-expiry.job.js';
+export { billingReconciliationSweepJob } from './billing-reconciliation-sweep.job.js';
 export { notificationScheduleJob } from './notification-schedule.job.js';
-export { addonExpiryJob } from './addon-expiry.job.js';
+export { subscriptionWindowExpiryJob } from './subscription-window-expiry.job.js';
 export { cleanupSessionsJob } from './cleanup-sessions.js'; // ADD THIS
 ```
 
@@ -617,18 +648,18 @@ Add to `apps/api/src/cron/registry.ts`:
 
 ```typescript
 import {
-  trialExpiryJob,
-  webhookRetryJob,
+  trialMachineExpiryJob,
+  billingReconciliationSweepJob,
   notificationScheduleJob,
-  addonExpiryJob,
+  subscriptionWindowExpiryJob,
   cleanupSessionsJob // IMPORT
 } from './jobs/index.js';
 
 export const cronJobs: CronJobDefinition[] = [
-  trialExpiryJob,
-  webhookRetryJob,
+  trialMachineExpiryJob,
+  billingReconciliationSweepJob,
   notificationScheduleJob,
-  addonExpiryJob,
+  subscriptionWindowExpiryJob,
   cleanupSessionsJob // REGISTER
 ];
 ```
@@ -641,11 +672,11 @@ Update `vercel.json`:
 {
   "crons": [
     {
-      "path": "/api/v1/cron/trial-expiry",
+      "path": "/api/v1/cron/trial-machine-expiry",
       "schedule": "0 2 * * *"
     },
     {
-      "path": "/api/v1/cron/webhook-retry",
+      "path": "/api/v1/cron/billing-reconciliation-sweep",
       "schedule": "0 */1 * * *"
     },
     {
@@ -653,7 +684,7 @@ Update `vercel.json`:
       "schedule": "0 8 * * *"
     },
     {
-      "path": "/api/v1/cron/addon-expiry",
+      "path": "/api/v1/cron/subscription-window-expiry",
       "schedule": "0 5 * * *"
     },
     {
@@ -741,7 +772,7 @@ Cron expressions use 5 fields:
 Test job logic without making actual changes:
 
 ```bash
-curl -X POST "http://localhost:3001/api/v1/admin/cron/trial-expiry?dryRun=true" \
+curl -X POST "http://localhost:3001/api/v1/admin/cron/trial-machine-expiry?dryRun=true" \
   -H "X-Cron-Secret: your-secret" \
   -H "Content-Type: application/json"
 ```
@@ -751,7 +782,7 @@ curl -X POST "http://localhost:3001/api/v1/admin/cron/trial-expiry?dryRun=true" 
 ```json
 {
   "success": true,
-  "message": "Dry run - Would expire 5 trial subscriptions",
+  "message": "Dry run - Would process 5 expired trials",
   "processed": 5,
   "errors": 0,
   "durationMs": 123,
@@ -767,7 +798,7 @@ curl -X POST "http://localhost:3001/api/v1/admin/cron/trial-expiry?dryRun=true" 
 Execute job with actual changes:
 
 ```bash
-curl -X POST http://localhost:3001/api/v1/admin/cron/trial-expiry \
+curl -X POST http://localhost:3001/api/v1/admin/cron/trial-machine-expiry \
   -H "X-Cron-Secret: your-secret" \
   -H "Content-Type: application/json"
 ```
@@ -777,7 +808,7 @@ curl -X POST http://localhost:3001/api/v1/admin/cron/trial-expiry \
 ```json
 {
   "success": true,
-  "message": "Successfully expired 5 trial subscriptions",
+  "message": "Processed 5 expired trials",
   "processed": 5,
   "errors": 0,
   "durationMs": 234,
@@ -796,16 +827,16 @@ All cron operations are logged with `[CRON]` prefix:
 ```
 # Startup
 [CRON] Initializing cron scheduler (adapter: node-cron)
-[CRON] Scheduled job: trial-expiry (schedule: 0 2 * * *)
+[CRON] Scheduled job: trial-machine-expiry (schedule: */15 * * * *)
 [CRON] Scheduler started with 4 jobs
 
 # Execution
-[CRON] Triggering scheduled job: trial-expiry
-[CRON] Job completed: trial-expiry (result: { success: true, processed: 10, ... })
+[CRON] Triggering scheduled job: trial-machine-expiry
+[CRON] Job completed: trial-machine-expiry (result: { success: true, processed: 10, ... })
 
 # Errors
-[CRON] Job failed: trial-expiry (status: 500, error: Database connection failed)
-[CRON] Failed to trigger job: webhook-retry (error: Connection timeout)
+[CRON] Job failed: trial-machine-expiry (status: 500, error: Database connection failed)
+[CRON] Failed to trigger job: billing-reconciliation-sweep (error: Connection timeout)
 ```
 
 #### Job Status Endpoint
@@ -825,14 +856,14 @@ curl http://localhost:3001/api/v1/admin/cron \
   "success": true,
   "data": [
     {
-      "name": "trial-expiry",
-      "description": "Check and expire trials that have passed their end date",
+      "name": "trial-machine-expiry",
+      "description": "Process trials whose window has elapsed",
       "schedule": "0 2 * * *",
       "enabled": true
     },
     {
-      "name": "webhook-retry",
-      "description": "Retries failed webhook events from dead letter queue",
+      "name": "billing-reconciliation-sweep",
+      "description": "Reconcile billing rows against the provider",
       "schedule": "0 */1 * * *",
       "enabled": true
     }
@@ -847,7 +878,7 @@ Monitor job performance:
 ```typescript
 // Custom metrics tracking (example)
 const metrics = {
-  jobName: 'trial-expiry',
+  jobName: 'trial-machine-expiry',
   executionTime: result.durationMs,
   processed: result.processed,
   errors: result.errors,
@@ -865,111 +896,53 @@ await sendMetrics(metrics);
 
 ### Overview
 
-| Job Name | Schedule | Description | Timeout |
-|----------|----------|-------------|---------|
-| `trial-expiry` | `0 2 * * *` | Expire trials that have passed their end date | 5 min |
-| `webhook-retry` | `0 */1 * * *` | Retry failed webhook events from dead letter queue | 5 min |
-| `notification-schedule` | `0 8 * * *` | Send scheduled notifications for trials and renewals | 2 min |
-| `addon-expiry` | `0 5 * * *` | Process expired add-ons and send warnings | 2 min |
-| `exchange-rate-fetch` | `0 6 * * *` | Fetch latest exchange rates from external providers | 2 min |
-| `dunning` | `0 3 * * *` | Process dunning for past-due subscriptions (send reminders, escalate) | 5 min |
-| `subscription-poll` | `* * * * *` | Poll MercadoPago `/preapproval/{id}` for in-flight subscriptions to flip them to `active` when `subscription_preapproval.created` webhook is delayed or lost (SPEC-143 Finding #17 fallback) | 50 s |
+The authoritative list is `apps/api/src/cron/schedules.manifest.ts` (`CRON_SCHEDULES`: name, category, schedule, description). Each handler lives in `apps/api/src/cron/jobs/<name>.job.ts` and is registered in `apps/api/src/cron/registry.ts`; a sync test (`apps/api/test/cron/schedules-manifest.test.ts`) fails if the two drift. Schedules are cron expressions as written in the manifest. For what the `billing` jobs do and how they fit the billing model, see the [root CLAUDE.md → Billing and verticals](../../../CLAUDE.md#billing-and-verticals-hos-1352).
 
----
-
-### trial-expiry
-
-**File:** `apps/api/src/cron/jobs/trial-expiry.ts`
-
-**Schedule:** Daily at 2:00 AM UTC
-
-**Purpose:** Automatically expire trial subscriptions that have passed their end date.
-
-**What it does:**
-
-1. Queries all subscriptions with `status='trialing'`
-2. Filters for subscriptions where `trial_end` has passed
-3. **Re-reads each preapproval and mirrors the provider's verdict** — converts the ones whose charge landed, hands failed charges to dunning, mirrors cancellations. It does NOT flip them to `expired` or `cancelled` (HOS-171)
-4. Uses `TrialService.reconcileExpiredTrials()` for processing
-5. Processes in bounded batches, draining the backlog over successive runs
-
-> Corrected by HOS-1302: steps 3 and 4 said the job "updates expired trials to `status='expired'`" via `TrialService.blockExpiredTrials()`. That method was deleted by HOS-171 and the cancel-on-expiry behaviour with it — cancelling here would terminate every converting customer at the moment they start paying.
-
-**Expected Results:**
-
-- **Dry Run:** Returns count of trials that would be expired
-- **Production:** Returns count of actually expired trials
-
-**Dependencies:**
-
-- `@repo/billing` - QZPay Billing instance
-- `TrialService` - Trial management logic
-
-**Example Output:**
-
-```json
-{
-  "success": true,
-  "message": "Successfully expired 10 trial subscriptions",
-  "processed": 10,
-  "errors": 0,
-  "durationMs": 456,
-  "details": {
-    "blockedCount": 10
-  }
-}
-```
-
----
-
-### webhook-retry
-
-**File:** `apps/api/src/cron/jobs/webhook-retry.job.ts`
-
-**Schedule:** Hourly (every hour on the hour)
-
-**Purpose:** Retry failed webhook events from the dead letter queue.
-
-**What it does:**
-
-1. Queries `billing_webhook_dead_letter` for unresolved events (`resolved_at IS NULL`)
-2. Attempts to re-process each event (max 50 per run)
-3. On success: Sets `resolved_at` timestamp
-4. On failure: Increments `attempts` counter
-5. After 5 failed attempts: Marks as permanently failed with admin alert
-
-**Expected Results:**
-
-- **Dry Run:** Returns count of events that would be retried
-- **Production:** Returns stats (resolved, failed, permanently failed)
-
-**Dependencies:**
-
-- `@repo/db` - Database access for dead letter queue
-- Webhook handler logic (TODO: implement actual retry logic)
-
-**Example Output:**
-
-```json
-{
-  "success": true,
-  "message": "Processed 20 webhook events: 15 resolved, 5 failed, 2 permanently failed",
-  "processed": 20,
-  "errors": 5,
-  "durationMs": 1234,
-  "details": {
-    "resolved": 15,
-    "permanentlyFailed": 2,
-    "remaining": 30
-  }
-}
-```
-
-**Important Notes:**
-
-- TODO: Implement actual webhook processing logic (currently simulated)
-- Admin alert logged when event permanently fails (5+ attempts)
-- Idempotent - safe to run concurrently
+| Job name | Category | Schedule (cron) | File |
+|----------|----------|-----------------|------|
+| `archive-expired-promotions` | billing | `0 * * * *` | `apps/api/src/cron/jobs/archive-expired-promotions.job.ts` |
+| `billing-creations-sweep` | billing | `*/5 * * * *` | `apps/api/src/cron/jobs/billing-creations-sweep.job.ts` |
+| `billing-promo-ending-notice` | billing | `0 9 * * *` | `apps/api/src/cron/jobs/billing-promo-ending-notice.job.ts` |
+| `billing-reconciliation-summary` | billing | `*/5 * * * *` | `apps/api/src/cron/jobs/billing-reconciliation-summary.job.ts` |
+| `billing-reconciliation-sweep` | billing | `0 6 * * *` | `apps/api/src/cron/jobs/billing-reconciliation-sweep.job.ts` |
+| `payment-window-expiry` | billing | `20 * * * *` | `apps/api/src/cron/jobs/payment-window-expiry.job.ts` |
+| `provider-notification-retention` | billing | `30 3 * * *` | `apps/api/src/cron/jobs/provider-notification-retention.job.ts` |
+| `subscription-grace-reminder` | billing | `0 9 * * *` | `apps/api/src/cron/jobs/subscription-grace-reminder.job.ts` |
+| `subscription-renewal-notice` | billing | `0 9 * * *` | `apps/api/src/cron/jobs/subscription-renewal-notice.job.ts` |
+| `subscription-service-end` | billing | `*/15 * * * *` | `apps/api/src/cron/jobs/subscription-service-end.job.ts` |
+| `subscription-window-expiry` | billing | `*/15 * * * *` | `apps/api/src/cron/jobs/subscription-window-expiry.job.ts` |
+| `trial-machine-expiry` | billing | `*/15 * * * *` | `apps/api/src/cron/jobs/trial-machine-expiry.job.ts` |
+| `calendar-sync-google` | content | `0 */6 * * *` | `apps/api/src/cron/jobs/calendar-sync-google.job.ts` |
+| `calendar-sync-ical` | content | `0 */6 * * *` | `apps/api/src/cron/jobs/calendar-sync-ical.job.ts` |
+| `destination-weather-fetch` | content | `0 6,18 * * *` | `apps/api/src/cron/jobs/destination-weather-fetch.job.ts` |
+| `host-trade-stats-reconcile` | content | `0 5 * * 1` | `apps/api/src/cron/jobs/host-trade-stats-reconcile.job.ts` |
+| `host-trade-usage-expiry` | content | `15 4 * * *` | `apps/api/src/cron/jobs/host-trade-usage-expiry.job.ts` |
+| `poll-apify-reputation-runs` | content | `*/2 * * * *` | `apps/api/src/cron/jobs/poll-apify-reputation-runs.job.ts` |
+| `refresh-external-reputation` | content | `0 2 * * 1` | `apps/api/src/cron/jobs/refresh-external-reputation.job.ts` |
+| `social-publish-dispatch` | content | `*/5 * * * *` | `apps/api/src/cron/jobs/social-publish-dispatch.job.ts` |
+| `cloudinary-e2e-cleanup` | media | `0 2 * * 0` | `apps/api/src/cron/jobs/cloudinary-e2e-cleanup.job.ts` |
+| `media-orphan-cleanup` | media | `0 0 * * 0` | `apps/api/src/cron/jobs/media-orphan-cleanup.job.ts` |
+| `alerts-digest` | notifications | `0 8 * * *` | `apps/api/src/cron/jobs/alerts-digest.job.ts` |
+| `conversation-notification` | notifications | `*/5 * * * *` | `apps/api/src/cron/jobs/conversation-notification.job.ts` |
+| `conversation-token-reminder` | notifications | `0 9 * * *` | `apps/api/src/cron/jobs/conversation-token-reminder.job.ts` |
+| `email-outbox-sender` | notifications | `* * * * *` | `apps/api/src/cron/jobs/email-outbox-sender.job.ts` |
+| `host-trade-usage-reminder` | notifications | `30 4 * * *` | `apps/api/src/cron/jobs/host-trade-usage-reminder.job.ts` |
+| `lead-intake-backstop` | notifications | `20 */4 * * *` | `apps/api/src/cron/jobs/lead-intake-backstop.job.ts` |
+| `newsletter-close-campaigns` | notifications | `*/5 * * * *` | `apps/api/src/cron/jobs/newsletter-close-campaigns.job.ts` |
+| `notification-log-purge` | notifications | `0 3 * * *` | `apps/api/src/cron/jobs/notification-log-purge.job.ts` |
+| `notification-schedule` | notifications | `0 8 * * *` | `apps/api/src/cron/jobs/notification-schedule.job.ts` |
+| `page-revalidation` | search-cache | `0 * * * *` | `apps/api/src/cron/jobs/page-revalidation.job.ts` |
+| `search-index-refresh` | search-cache | `0 */6 * * *` | `apps/api/src/cron/jobs/search-index-refresh.job.ts` |
+| `app-log-purge` | system | `0 5 * * *` | `apps/api/src/cron/jobs/app-log-purge.job.ts` |
+| `conversation-token-cleanup` | system | `0 3 * * *` | `apps/api/src/cron/jobs/conversation-token-cleanup.job.ts` |
+| `cron-run-purge` | system | `0 4 * * *` | `apps/api/src/cron/jobs/cron-run-purge.job.ts` |
+| `entity-views-purge` | system | `30 3 * * *` | `apps/api/src/cron/jobs/entity-views-purge.job.ts` |
+| `exchange-rate-fetch` | system | `0 */3 * * *` | `apps/api/src/cron/jobs/exchange-rate-fetch.job.ts` |
+| `listing-coverage-reconciler` | system | `0 5 * * *` | `apps/api/src/cron/jobs/listing-coverage-reconciler.job.ts` |
+| `listing-inactivity-archive` | system | `30 5 * * *` | `apps/api/src/cron/jobs/listing-inactivity-archive.job.ts` |
+| `listing-remote-deletion-retry` | system | `45 5 * * *` | `apps/api/src/cron/jobs/listing-remote-deletion-retry.job.ts` |
+| `listing-retention-pass` | system | `0 6 * * *` | `apps/api/src/cron/jobs/listing-retention-pass.job.ts` |
+| `view-monthly-rollup` | system | `10 4 * * *` | `apps/api/src/cron/jobs/view-monthly-rollup.job.ts` |
 
 ---
 
@@ -977,130 +950,60 @@ await sendMetrics(metrics);
 
 **File:** `apps/api/src/cron/jobs/notification-schedule.job.ts`
 
-**Schedule:** Daily at 8:00 AM UTC (5:00 AM Argentina time)
+**Schedule:** `0 8 * * *`
 
-**Purpose:** Send scheduled notifications for trials and subscription renewals.
-
-**What it does:**
-
-1. **Trial Ending Reminders (3 days):**
-   - Finds trials ending in 3 days via `TrialService.findTrialsEndingSoon({ daysAhead: 3 })`
-   - Sends `TRIAL_ENDING_REMINDER` notification
-   - Uses idempotency keys to prevent duplicates
-
-2. **Trial Ending Reminders (1 day):**
-   - Finds trials ending in 1 day via `TrialService.findTrialsEndingSoon({ daysAhead: 1 })`
-   - Sends `TRIAL_ENDING_REMINDER` notification
-   - Uses idempotency keys to prevent duplicates
-
-3. **Renewal Reminders (TODO):**
-   - Not yet implemented
-   - Will send `RENEWAL_REMINDER` for subscriptions renewing in 3 days
-
-4. **Notification Retries:**
-   - Processes failed notifications from Redis retry queue
-   - Re-attempts delivery via `RetryService.processRetries()`
-
-**Expected Results:**
-
-- **Dry Run:** Returns count of notifications that would be sent
-- **Production:** Returns count of sent notifications and retry stats
-
-**Dependencies:**
-
-- `@repo/notifications` - Notification types and retry service
-- `TrialService` - Trial lookup logic
-- `sendNotification` utility - Fire-and-forget notification sending
-
-**Example Output:**
-
-```json
-{
-  "success": true,
-  "message": "Processed 25 scheduled notifications (0 errors), 10 retries (8 succeeded, 2 re-queued, 0 permanently failed)",
-  "processed": 25,
-  "errors": 0,
-  "durationMs": 890,
-  "details": {
-    "trialsEndingPrimary": 15,
-    "trialsEnding1Day": 10,
-    "retries": {
-      "processed": 10,
-      "succeeded": 8,
-      "failed": 2,
-      "permanentlyFailed": 0
-    },
-    "dryRun": false
-  }
-}
-```
-
-**Important Notes:**
-
-- Uses in-memory `sentNotifications` Set to prevent duplicates within same run
-- Idempotency key format: `${type}:${customerId}:${YYYY-MM-DD}`
-- Fire-and-forget pattern - failures are logged but don't stop processing
+**Purpose:** retries notification deliveries that the mail service queued in the shared Redis retry queue (`RetryService.processRetries()`). The legacy trial and renewal dispatch was removed with the old billing system. A notification that exhausts its retries is marked `permanently_failed` in `notification_log`.
 
 ---
 
-### addon-expiry
+### email-outbox-sender
 
-**File:** `apps/api/src/cron/jobs/addon-expiry.job.ts`
+**File:** `apps/api/src/cron/jobs/email-outbox-sender.job.ts` (wiring) and
+`packages/notifications/src/services/outbox/` (the batch and the suppression evaluator).
 
-**Schedule:** Daily at 5:00 AM UTC (2:00 AM Argentina time)
+**Schedule:** every minute (`* * * * *`). Lease of a claimed row: 5 minutes. Batch: 50 rows.
+Both are code constants (`EMAIL_OUTBOX_SENDER_SCHEDULE`, `EMAIL_OUTBOX_LEASE_MS`,
+`EMAIL_OUTBOX_BATCH_SIZE`), not env vars.
 
-**Purpose:** Process expired add-ons and send expiration warnings.
+**Purpose:** the sending half of the HOS-1352 unit `U2` outbox. A domain transition enqueues a
+row in `email_outbox` inside its own transaction; this job sends it outside.
 
-**What it does:**
+**What it does, per run** (`now` is `ctx.startedAt`, used for every lease, window and record):
 
-1. **Expire Add-ons:**
-   - Finds add-ons with `expires_at <= now()`
-   - Updates status to expired via `AddonExpirationService.processExpiredAddons()`
-   - Processes in batches of 100
+1. `recoverExpired` — every `processing` row whose lease expired goes back to `pending`.
+2. `claim` — up to 50 `pending`/`retry` rows move to `processing` with this run as owner
+   (`FOR UPDATE SKIP LOCKED`, so parallel runs never share a row).
+3. **Suppression, in order** (NUCLEO/07 §4.2), evaluated by the pure
+   `evaluateOutboxSuppression`:
+   1. hard bounce (a `bounced` row for the address in `notification_log`) — suppresses
+      everything, transactional included;
+   2. deleted account — `users.deleted_at` earlier than the row's `created_at` (a row enqueued
+      before the deletion still goes out, to the address it captured);
+   3. opt-out (`PreferenceService`) — commercial only;
+   4. daily cap — commercial only, **1** sent commercial mail per recipient in a **rolling 24 h**
+      window (becomes the Buenos Aires calendar day in U2.3).
 
-2. **Expiration Warnings (3 days):**
-   - Finds add-ons expiring in 3 days via `AddonExpirationService.findExpiringAddons({ daysAhead: 3 })`
-   - Sends `ADDON_EXPIRATION_WARNING` notification
-   - Uses idempotency keys to prevent duplicates
+   The class comes from `OUTBOX_TEMPLATE_CLASS`: only the five post-trial win-back templates are
+   commercial; every other template, including an unknown one, is transactional.
+4. Render (`OUTBOX_MAIL_RENDERERS`, empty until the units that enqueue register theirs) and send.
+5. Record **one** `notification_log` row per attempt (`sent`, `failed`, `bounced`), or one
+   `suppressed` row. `notification_log` is the only attempt record; `email_outbox` is queue
+   state; the Redis `RetryService` is not used.
 
-3. **Expiration Warnings (1 day):**
-   - Finds add-ons expiring in 1 day via `AddonExpirationService.findExpiringAddons({ daysAhead: 1 })`
-   - Sends `ADDON_EXPIRATION_WARNING` notification
-   - Uses idempotency keys to prevent duplicates
+**Failures:** a refused send returns the row to `retry`; the fifth refused attempt
+(`EMAIL_OUTBOX_CONSTANTS.MAX_ATTEMPTS`) leaves it `failed`. A hard bounce leaves it `failed` at
+once. "Undeliverable" is `failed` plus a `last_error` marker: `undeliverable:retries_exhausted`
+or `undeliverable:hard_bounce`; a suppressed row carries `suppressed:<cause>`.
 
-**Expected Results:**
+**Escalation:** a **transactional** mail that is undeliverable (retries exhausted or hard
+bounce) writes an extra `notification_log` row with status `undeliverable` and is logged with
+`capture: true` (Sentry) on the cron logger. It never blocks the domain transaction that
+enqueued it. The `domain_event` record of it is U2.3.
 
-- **Dry Run:** Returns count of add-ons that would be expired + warnings that would be sent
-- **Production:** Returns count of expired add-ons + warnings sent
+**Without `HOSPEDA_EMAIL_API_KEY`:** the run only releases expired leases and leaves the queue
+untouched.
 
-**Dependencies:**
-
-- `@repo/notifications` - Notification types
-- `AddonExpirationService` - Add-on expiration logic
-- `sendNotification` utility - Fire-and-forget notification sending
-
-**Example Output:**
-
-```json
-{
-  "success": true,
-  "message": "Processed 8 expired add-ons, sent 12 warnings (0 errors)",
-  "processed": 20,
-  "errors": 0,
-  "durationMs": 567,
-  "details": {
-    "expiredAddons": 8,
-    "warningsSent": 12,
-    "dryRun": false
-  }
-}
-```
-
-**Important Notes:**
-
-- Uses in-memory `sentNotifications` Set to prevent duplicates within same run
-- Idempotency key format: `${type}:${customerId}:${addonSlug}:${YYYY-MM-DD}`
-- TODO: Populate user email/name from customer (currently empty)
+---
 
 ---
 
@@ -1329,7 +1232,7 @@ HOSPEDA_CRON_SECRET=your-secure-random-secret
    {
      "crons": [
        {
-         "path": "/api/v1/cron/trial-expiry",  // Must match job name
+         "path": "/api/v1/cron/trial-machine-expiry",  // Must match job name
          "schedule": "0 2 * * *"
        }
      ]
@@ -1392,7 +1295,7 @@ handler: async (ctx) => {
 
 ```bash
 # Test individual job without affecting others
-curl -X POST "http://localhost:3001/api/v1/admin/cron/trial-expiry?dryRun=true" \
+curl -X POST "http://localhost:3001/api/v1/admin/cron/trial-machine-expiry?dryRun=true" \
   -H "Cookie: $ADMIN_SESSION_COOKIE"
 ```
 
@@ -1400,10 +1303,10 @@ curl -X POST "http://localhost:3001/api/v1/admin/cron/trial-expiry?dryRun=true" 
 
 ```bash
 # Check job execution time
-grep "Job completed: trial-expiry" logs/api.log | tail -10
+grep "Job completed: trial-machine-expiry" logs/api.log | tail -10
 
 # Example output:
-[CRON] Job completed: trial-expiry (result: { success: true, durationMs: 234 })
+[CRON] Job completed: trial-machine-expiry (result: { success: true, durationMs: 234 })
 ```
 
 #### Verify Job Registration
@@ -1455,11 +1358,11 @@ The manual trigger needs an admin session holding `SYSTEM_MAINTENANCE_MODE` (sen
 openssl rand -hex 32
 
 # Test job (dry-run)
-curl -X POST "http://localhost:3001/api/v1/admin/cron/trial-expiry?dryRun=true" \
+curl -X POST "http://localhost:3001/api/v1/admin/cron/trial-machine-expiry?dryRun=true" \
   -H "Cookie: $ADMIN_SESSION_COOKIE"
 
 # Test job (production)
-curl -X POST http://localhost:3001/api/v1/admin/cron/trial-expiry \
+curl -X POST http://localhost:3001/api/v1/admin/cron/trial-machine-expiry \
   -H "Cookie: $ADMIN_SESSION_COOKIE"
 
 # List all jobs

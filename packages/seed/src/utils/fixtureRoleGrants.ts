@@ -99,7 +99,7 @@ function extractCreatedId(result: unknown): string | null {
  * the JSON declares. That is the set EVERY account-creating path now produces
  * (Better Auth's signup hook, `user/admin/create.ts`, `signup-as-host.ts`, the
  * login fixtures in `test-users/testUsers.seed.ts` and
- * `example/gastronomies.seed.ts`) and the set migration `0069` backfills onto
+ * `example/venues.seed.ts`) and the set migration `0069` backfills onto
  * existing rows, so a fresh database and a migrated one converge. Granting the
  * declared role alone would leave every fixture holding a single hat, which is
  * the shape that makes `revokeRole`'s last-role guard reject any revoke and

@@ -1,18 +1,21 @@
-import { DestinationListItemSchema } from '@repo/schemas';
+import { DestinationPublicSchema } from '@repo/schemas';
 /**
  * Enhanced integration tests for GET /destinations (list) endpoint
  * Mirrors the depth of accommodation tests: response validation, pagination, sorting, filters.
  */
-import { beforeAll, describe, expect, it } from 'vitest';
+import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it } from 'vitest';
 import { z } from 'zod';
 import { initApp } from '../../../src/app';
+import { clearCache } from '../../../src/middlewares/cache';
 import { validateApiEnv } from '../../../src/utils/env';
+import { testDb } from '../../e2e/setup/test-database';
+import { seedPublicDestinations } from '../helpers/seed-public-destinations';
 
 // Response schema for list endpoint (Destination)
 const DestinationListResponseSchema = z.object({
     success: z.boolean(),
     data: z.object({
-        items: z.array(DestinationListItemSchema),
+        items: z.array(DestinationPublicSchema),
         pagination: z.object({
             page: z.number().min(1),
             pageSize: z.number().min(1),
@@ -30,7 +33,23 @@ describe('GET /destinations (Enhanced List)', () => {
     let app: ReturnType<typeof initApp>;
     const baseUrl = '/api/v1/public/destinations';
 
-    beforeAll(() => {
+    afterAll(async () => {
+        await testDb.teardown();
+    });
+
+    afterEach(async () => {
+        await testDb.clean();
+        clearCache();
+    });
+
+    beforeEach(async () => {
+        await seedPublicDestinations({ count: 3 });
+    });
+
+    beforeAll(async () => {
+        await testDb.setup();
+        await testDb.clean();
+        clearCache();
         // Initialize environment variables before running tests
         validateApiEnv();
         app = initApp();
@@ -45,7 +64,7 @@ describe('GET /destinations (Enhanced List)', () => {
                 }
             });
 
-            expect([200, 400]).toContain(response.status);
+            expect(response.status).toBe(200);
 
             if (response.status === 200) {
                 const data = await response.json();
@@ -57,7 +76,8 @@ describe('GET /destinations (Enhanced List)', () => {
                     expect(Array.isArray(res.data.items)).toBe(true);
                     expect(res.data.pagination.page).toBe(1);
                     expect(res.data.pagination.pageSize).toBeGreaterThan(0);
-                    expect(res.data.pagination.total).toBeGreaterThanOrEqual(0);
+                    expect(res.data.pagination.total).toBe(3);
+                    expect(res.data.items).toHaveLength(3);
                     expect(res.data.pagination.totalPages).toBeGreaterThanOrEqual(0);
                     expect(typeof res.metadata.timestamp).toBe('string');
                     expect(typeof res.metadata.requestId).toBe('string');
@@ -83,7 +103,7 @@ describe('GET /destinations (Enhanced List)', () => {
                         Accept: 'application/json'
                     }
                 });
-                expect([200, 400]).toContain(response.status);
+                expect(response.status).toBe(200);
                 if (response.status === 200) {
                     const data = await response.json();
                     const parsed = DestinationListResponseSchema.safeParse(data);
@@ -119,7 +139,7 @@ describe('GET /destinations (Enhanced List)', () => {
                     Accept: 'application/json'
                 }
             });
-            expect([200, 400]).toContain(response.status);
+            expect(response.status).toBe(200);
             if (response.status === 200) {
                 const data = await response.json();
                 const { total, pageSize, totalPages } = data.data.pagination;
@@ -128,23 +148,58 @@ describe('GET /destinations (Enhanced List)', () => {
         });
     });
 
-    describe('Filtering & Sorting (flexible)', () => {
-        it('supports common filters (city/country/isFeatured) and sort', async () => {
+    describe('Filtering & Sorting', () => {
+        it('filters by city and reports the same total (HOS-1899)', async () => {
+            await seedPublicDestinations({ count: 2, city: 'CDU' });
+
+            const response = await app.request(`${baseUrl}?city=cdu`, {
+                headers: { 'user-agent': 'vitest', Accept: 'application/json' }
+            });
+
+            expect(response.status).toBe(200);
+            const data = await response.json();
+            expect(DestinationListResponseSchema.safeParse(data).success).toBe(true);
+            expect(data.data.items).toHaveLength(2);
+            expect(data.data.pagination.total).toBe(2);
+        });
+
+        it('returns an empty page for a city nobody has (HOS-1899)', async () => {
+            const response = await app.request(`${baseUrl}?city=Nowhere`, {
+                headers: { 'user-agent': 'vitest', Accept: 'application/json' }
+            });
+
+            expect(response.status).toBe(200);
+            const data = await response.json();
+            expect(data.data.items).toHaveLength(0);
+            expect(data.data.pagination.total).toBe(0);
+        });
+
+        it('rejects the removed country filter (HOS-1921)', async () => {
+            // `country` was dropped: it demanded ISO-2 but stored values are names.
+            // The list route rejects unknown query params, so it is a 400, not a silent no-op.
+            const response = await app.request(`${baseUrl}?country=AR`, {
+                headers: { 'user-agent': 'vitest', Accept: 'application/json' }
+            });
+            expect(response.status).toBe(400);
+        });
+
+        it('supports the isFeatured filter and sort params', async () => {
             const response = await app.request(
-                `${baseUrl}?city=Miami&country=US&isFeatured=true&sortBy=createdAt&sortOrder=DESC`,
-                {
-                    headers: {
-                        'user-agent': 'vitest',
-                        Accept: 'application/json'
-                    }
-                }
+                `${baseUrl}?isFeatured=true&sortBy=createdAt&sortOrder=desc`,
+                { headers: { 'user-agent': 'vitest', Accept: 'application/json' } }
             );
-            expect([200, 400]).toContain(response.status);
-            if (response.status === 200) {
-                const data = await response.json();
-                const validation = DestinationListResponseSchema.safeParse(data);
-                expect(validation.success).toBe(true);
-            }
+            expect(response.status).toBe(200);
+            const data = await response.json();
+            expect(DestinationListResponseSchema.safeParse(data).success).toBe(true);
+            // None of the 3 seeded destinations is featured
+            expect(data.data.items).toHaveLength(0);
+        });
+
+        it('rejects an unknown query param with 400', async () => {
+            const response = await app.request(`${baseUrl}?bogus=1`, {
+                headers: { 'user-agent': 'vitest', Accept: 'application/json' }
+            });
+            expect(response.status).toBe(400);
         });
     });
 

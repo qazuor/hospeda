@@ -6,7 +6,9 @@
  *   - Mode B: Authenticated user without existing conversation — message-only form
  *   - Mode C: Authenticated user with existing conversation — link to existing thread
  *
- * Only renders when accommodation.lifecycleState === 'ACTIVE' && !accommodation.deletedAt.
+ * Only renders when `!accommodation.deletedAt`. It is mounted only on the public
+ * detail page, which exists only for a `PUBLISHED` listing (HOS-1641: the public
+ * read answers nothing else), so it has no publication state to re-check.
  */
 
 import type { CreateConversationAnon } from '@repo/schemas';
@@ -37,7 +39,6 @@ const API_BASE = (import.meta.env.PUBLIC_API_URL ?? '').replace(/\/$/, '');
 /** Accommodation data required by the island */
 interface ContactHostAccommodation {
     readonly id: string;
-    readonly lifecycleState: string;
     readonly deletedAt: string | null | undefined;
     /** Accommodation type (HOTEL, CABIN, …) — enriches booking analytics. */
     readonly type: string;
@@ -171,8 +172,8 @@ export function ContactHost({ accommodation, locale, initialMessage }: ContactHo
         accommodationId: accommodation.id
     });
 
-    // Only render for active, non-deleted accommodations
-    if (accommodation.lifecycleState !== 'ACTIVE' || accommodation.deletedAt) {
+    // Only render for non-deleted accommodations (the page itself is PUBLISHED-only)
+    if (accommodation.deletedAt) {
         return null;
     }
 

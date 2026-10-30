@@ -47,8 +47,8 @@ export type NewsletterContentPreferences = z.infer<typeof NewsletterContentPrefe
 export const NewsletterSubscriberSchema = z.object({
     id: z.string().uuid(),
 
-    /** FK → users.id. */
-    userId: z.string().uuid(),
+    /** FK → users.id. NULL for guest subscriptions not yet linked to an account. */
+    userId: z.string().uuid().nullable(),
 
     /** Recipient email captured at subscribe time (denormalised for dispatch). */
     email: z

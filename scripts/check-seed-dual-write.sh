@@ -17,7 +17,7 @@
 # regardless of whether its data was deterministic and prod-bound. That let the
 # `partners` catalog (6 deterministic fixtures, added 2026-07-08, one day after
 # the guard went live) ship with zero CI signal; `partners` is still empty in
-# prod (HOS-172). Four other curated sources (`gastronomy`, `hostTrade`,
+# prod (HOS-172). Four other curated sources (`venue`, `hostTrade`,
 # `postSponsor`, `postSponsorship`) plus the inline `experiences` fixtures sat
 # in the identical blind zone, safe only by chronological luck. The exemption
 # depended on HOW a seeder was registered (which orchestrator ran it), not on
@@ -54,7 +54,7 @@
 #    Everything else under `data/**` — amenity, attraction, destination,
 #    exchangeRate(+Config), feature, revalidationConfig, sponsorshipLevel,
 #    sponsorshipPackage, postTag, pointOfInterest, poiCategory (all required),
-#    AND partner, gastronomy, hostTrade, postSponsor, postSponsorship (curated
+#    AND partner, venue, hostTrade, postSponsor, postSponsorship (curated
 #    prod content, the five formerly-escaped sources) — is guarded by default.
 #
 #    INLINE-CONSTANT files: a handful of seeders bake their fixtures into an
@@ -64,7 +64,7 @@
 #    pure logic refactor also trips the guard and needs the opt-out marker;
 #    accepted because these files change rarely and the alternative is a silent
 #    data escape). INLINE_CONSTANT_FILES (prod-content only):
-#      - packages/seed/src/example/experiences.seed.ts   (SPEC-240 commerce
+#      - packages/seed/src/example/experiences.seed.ts   (SPEC-240 venue and experience
 #        listings — deterministic inline array, no data/ folder at all)
 #      - packages/seed/src/example/entityTagAssignments.seed.ts  (inline
 #        r_entity_tag assignments that attach tags to GUARDED destination
@@ -78,17 +78,13 @@
 #      - packages/seed/src/required/socialAutomation.seed.ts
 #      - packages/seed/src/required/contentModeration.seed.ts
 #      - packages/seed/src/required/systemUser.seed.ts
-#    (The `required/billing*.seed.ts` and `required/partnerPlan/commercePlan`
-#    seeders are NOT here: their data lives in `packages/billing/src/config/
-#    *.config.ts`, already guarded below — the seeders only read it.)
 #
 #    EXTERNAL BASELINES (HOS-789): `required/aiPrompts.seed.ts` is listed above
 #    as though its data were inline, and it is not — it only READS
 #    `DEFAULT_PROMPTS` / `DEFAULT_RULES` from
-#    `packages/ai-core/src/engine/default-prompts.ts`, exactly the way the
-#    billing seeders read `billing/src/config/*.config.ts`. Billing had the
-#    right shape from the start (guard the config, the seeder is incidental);
-#    aiPrompts had it backwards, so rewording a prompt — which touches only
+#    `packages/ai-core/src/engine/default-prompts.ts`. The right shape is to
+#    guard the config and treat the seeder as incidental; aiPrompts had it
+#    backwards, so rewording a prompt — which touches only
 #    ai-core — moved nothing in the guarded surface and CI stayed silent while
 #    staging and prod kept the old `ai_prompt_versions` rows. That is what
 #    HOS-789 ended up backfilling by hand. EXTERNAL_BASELINE_FILES below closes
@@ -111,10 +107,6 @@
 #    content, move it to INLINE_CONSTANT_FILES — as entityTagAssignments/userTags
 #    were. The `scripts/__tests__` suite pins both the exemption of these three
 #    AND the guarding of entityTagAssignments/userTags so the split stays visible.)
-#
-#    Additionally, the billing plan/limit/entitlement/addon/promo-code TS
-#    constants in `packages/billing/src/config/*.config.ts` are guarded — the
-#    exact precedent the 0001-0003 data-migrations already ported.
 #
 #    NOT COVERED (residual, see HOS-173 §6.2 / OQ-3): a FUTURE prod-content
 #    inline-constant seeder added under `example/`/`required/` with neither a
@@ -140,22 +132,6 @@
 #         future fixture that truly re-randomizes. No such case exists today;
 #         the bare word "non-deterministic" with no described, diff-visible
 #         mechanism is NOT an acceptable reason (that was v1's false premise).
-#      c) "additive-code-only: <what was added>" — the diff adds CODE to a
-#         guarded file and modifies NO seeded definition. This category exists
-#         because BILLING_CONFIG_FILES is file-granular over files that MIX data
-#         with code: plans.config.ts is 1235 lines and already holds ten helpers
-#         alongside the plan rows, so a derived index or a pure lookup added
-#         next to them trips a guard that has nothing to back-fill. The
-#         declaration must NAME what was added, and REVIEW must confirm the diff
-#         touches no PlanDefinition field — a changed price, entitlement, limit,
-#         slug or isActive is NOT this category however additive it looks.
-#         Extracting the helper to an unwatched file is NOT the preferred exit:
-#         it shrinks the guard's coverage to make a false positive disappear.
-#         Added by HOS-1119 (PR #3177), the marker's first use in this repo,
-#         for COMMERCE_PLANS_BY_VERTICAL + findCommercePlanForVertical. The
-#         predicate did not change with it — only this list of reasons review
-#         will accept, which until then did not describe a case the guard
-#         structurally produces.
 #
 #    False-positive profile: a genuinely-safe additive data change without the
 #    marker fails loudly — the marker unblocks it with an explicit, reviewable
@@ -266,22 +242,6 @@ EXTERNAL_BASELINE_FILES=(
     'packages/ai-core/src/engine/default-prompts.ts'
 )
 
-# Billing plan/limit/entitlement/addon/promo-code TS constants (023-025
-# precedent).
-BILLING_CONFIG_FILES=(
-    'packages/billing/src/config/plans.config.ts'
-    # HOS-1012 D-5: the three composed trial plans live in their own file (the
-    # 500-line rule; plans.config.ts is already well past it). Their rows are
-    # seeded exactly like every other plan's, so leaving this path off the list
-    # would reproduce the HOS-789 shape — a baseline edit that moves nothing in
-    # the guarded surface while staging and prod keep the old rows.
-    'packages/billing/src/config/trial-plans.config.ts'
-    'packages/billing/src/config/limits.config.ts'
-    'packages/billing/src/config/entitlements.config.ts'
-    'packages/billing/src/config/addons.config.ts'
-    'packages/billing/src/config/promo-codes.config.ts'
-)
-
 # Matches make.ts / discover.ts's own NNNN-slug.ts convention.
 MIGRATION_FILE_PATTERN='^packages/seed/src/data-migrations/[0-9]{4}-.+\.ts$'
 
@@ -314,7 +274,7 @@ compute_changed_files() {
 
     # Diff roots: `data` (default-guarded surface + mixed folders), the two
     # inline-constant orchestrator dirs (`example`, `required` — so the named
-    # INLINE_CONSTANT_FILES show up in the diff), `billing/config`,
+    # INLINE_CONSTANT_FILES show up in the diff),
     # `ai-core/src/engine` (so EXTERNAL_BASELINE_FILES show up), and
     # `data-migrations` (to detect the accompanying migration).
     #
@@ -324,15 +284,14 @@ compute_changed_files() {
     # root here produces a guard that reads as covering the file and does not.
     #
     # `--no-renames` keeps every diff line a strict A/M/D with a single path, so
-    # the exact-equality checks in is_guarded_path (INLINE_CONSTANT_FILES /
-    # BILLING_CONFIG_FILES) can never be defeated by git emitting an
+    # the exact-equality checks in is_guarded_path (INLINE_CONSTANT_FILES and
+    # EXTERNAL_BASELINE_FILES) can never be defeated by git emitting an
     # `R<score><TAB>old<TAB>new` line that the two-field `read` would collapse
     # into one path string. (diff.renames defaults ON in modern git.)
     git diff --no-renames --name-status "${base}...HEAD" -- \
         'packages/seed/src/data' \
         'packages/seed/src/example' \
         'packages/seed/src/required' \
-        'packages/billing/src/config' \
         'packages/ai-core/src/engine' \
         'packages/seed/src/data-migrations'
 }
@@ -366,10 +325,10 @@ $(git log "${base}..HEAD" --format=%B 2>/dev/null || true)"
 is_guarded_path() {
     local path="$1"
 
-    # Exact-match guarded files (billing config + inline-constant seeders +
-    # baselines living outside packages/seed).
+    # Exact-match guarded files (inline-constant seeders + baselines living
+    # outside packages/seed).
     local f
-    for f in "${BILLING_CONFIG_FILES[@]}" "${INLINE_CONSTANT_FILES[@]}" "${EXTERNAL_BASELINE_FILES[@]}"; do
+    for f in "${INLINE_CONSTANT_FILES[@]}" "${EXTERNAL_BASELINE_FILES[@]}"; do
         [[ "${path}" == "${f}" ]] && return 0
     done
 

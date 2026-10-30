@@ -6,8 +6,8 @@
  */
 import { z } from 'zod';
 import { AdminSearchBaseSchema } from '../../common/admin-search.schema.js';
-import { createBooleanQueryParam } from '../../common/boolean-params.js';
 import { AccommodationTypeEnumSchema } from '../../enums/index.js';
+import { PublicationStatusEnum } from '../../enums/publication-status.enum.js';
 
 /**
  * Admin search schema for accommodations.
@@ -19,13 +19,24 @@ import { AccommodationTypeEnumSchema } from '../../enums/index.js';
  *   page: 1,
  *   pageSize: 20,
  *   type: 'HOTEL',
- *   isFeatured: true,
  *   minPrice: 50,
  *   maxPrice: 500
  * });
  * ```
  */
 export const AccommodationAdminSearchSchema = AdminSearchBaseSchema.extend({
+    /**
+     * Filter by `publicationStatus` (HOS-1641). REPLACES the base `status`,
+     * which is a `LifecycleStatusEnum` filter: accommodations no longer carry a
+     * lifecycle column, so the panel filters on the six `PublicationStatusEnum`
+     * values instead. `'all'` (the default) does not filter. Same override as
+     * `HostTradeBenefitUsageAdminSearchSchema`.
+     */
+    status: z
+        .enum(['all', ...Object.values(PublicationStatusEnum)] as [string, ...string[]])
+        .default('all')
+        .describe('Filter by publication status. Use "all" to show all statuses'),
+
     /** Filter by accommodation type */
     type: AccommodationTypeEnumSchema.optional().describe('Filter by accommodation type'),
 
@@ -44,7 +55,6 @@ export const AccommodationAdminSearchSchema = AdminSearchBaseSchema.extend({
         .describe('Filter by owner'),
 
     /** Filter featured accommodations */
-    isFeatured: createBooleanQueryParam('Filter by featured status'),
 
     /** Minimum price per night */
     minPrice: z.coerce

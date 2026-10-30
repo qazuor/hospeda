@@ -1,22 +1,18 @@
 /**
  * @file billing-i18n.ts
  * @description Locale-aware lookups for billing config values that the billing
- * package stores in English. The billing package is the single source of truth
+ * catalog stores in English. The plan catalog is the source of truth
  * for plans, entitlements and limits, but its strings are config-language only
- * (per packages/billing/CLAUDE.md). This module wraps each lookup with i18n
+ * (config values are not localised at the source). This module wraps each lookup with i18n
  * keys that translators can override per locale; falls back to the config value
  * when no translation is provided.
  */
 
-import type { LimitKey } from '@repo/billing';
-import {
-    ENTITLEMENT_DEFINITIONS as DEFINITIONS,
-    EntitlementKey as EK,
-    LIMIT_METADATA,
-    TOURIST_VIP_ENTITLEMENTS
-} from '@repo/billing';
+import { EntitlementKeyEnum as EK } from '@repo/schemas';
 
-export type EntitlementKey = (typeof DEFINITIONS)[number]['key'];
+export { getPlanName } from './billing/plan-name';
+
+export type EntitlementKey = EK;
 type Translator = (key: string, fallback?: string) => string;
 
 /**
@@ -24,18 +20,18 @@ type Translator = (key: string, fallback?: string) => string;
  *
  * FIVE values since HOS-1032, one per audience Hospeda sells to, because
  * `/planes/<audiencia>/precios/` renders all five through the same
- * `PricingCardsGrid` (AC-44). The three added here are the commerce verticals
+ * `PricingCardsGrid` (AC-44). The three added here are the venue/experience verticals
  * and partner; they never take the owner branch of {@link getDisplayFeatures},
  * so widening the type changed no existing behaviour.
  *
- * `owner` (not `host`) and `gastronomy` (not `gastronomia`) are the PLAN
+ * `owner` (not `host`) and `venue` (not `gastronomia`) are the PLAN
  * vocabulary — the `category` and `product_domain` columns — deliberately kept
  * apart from the Spanish URL segments. `AudienceCardId` in
  * `billing/audience-plans.ts` is the third vocabulary, spelled `host`; the
  * translation between the two lives in `PRICING_AUDIENCE_BY_CARD_ID` there and
  * nowhere else.
  */
-export type PricingAudience = 'owner' | 'tourist' | 'gastronomy' | 'experience' | 'partner';
+export type PricingAudience = 'owner' | 'tourist' | 'venue' | 'experience' | 'partner';
 
 /** A renderable feature bullet: either a single entitlement or a collapsed group. */
 export interface DisplayFeature {
@@ -46,7 +42,7 @@ export interface DisplayFeature {
 /**
  * Owner-specific AI entitlements collapsed into one "AI suite" bullet on owner
  * cards. Defined here (no grouping metadata exists on the entitlement config)
- * but anchored to the real `EntitlementKey` enum so it can't drift from the keys.
+ * but anchored to the real `EntitlementKeyEnum` enum so it can't drift from the keys.
  */
 const AI_OWNER_ENTITLEMENTS: readonly string[] = [
     EK.AI_TEXT_IMPROVE,
@@ -55,37 +51,17 @@ const AI_OWNER_ENTITLEMENTS: readonly string[] = [
     EK.AI_ACCOMMODATION_IMPORT
 ];
 
-/**
- * Minimal plan shape required by i18n helpers. Accepts both the static
- * `PlanDefinition` from @repo/billing and the runtime `PublicPlanData` from
- * @/lib/billing/fetch-plans — both provide slug, name, and description.
- */
 interface PlanLike {
     readonly slug: string;
     readonly name: string;
     readonly description: string;
 }
 
-const ENTITLEMENT_BY_KEY: Map<string, (typeof DEFINITIONS)[number]> = new Map(
-    DEFINITIONS.map((def) => [def.key as string, def])
-);
-
-/**
- * Get the localized human-readable name for a plan.
- *
- * Tries `billing.plan.<slug>.name`. Falls back to the English `plan.name` from
- * the billing config so missing translations never produce an empty card.
- */
-export function getPlanName(input: { plan: PlanLike; t: Translator }): string {
-    const { plan, t } = input;
-    return t(`billing.plan.${plan.slug}.name`, plan.name);
-}
-
 /**
  * Get the localized description for a plan.
  *
  * Tries `billing.plan.<slug>.description`. Falls back to the English
- * description from the billing config.
+ * description from the plan catalog.
  */
 export function getPlanDescription(input: { plan: PlanLike; t: Translator }): string {
     const { plan, t } = input;
@@ -101,19 +77,18 @@ export function getPlanDescription(input: { plan: PlanLike; t: Translator }): st
  */
 export function getEntitlementName(input: { key: EntitlementKey; t: Translator }): string {
     const { key, t } = input;
-    const def = ENTITLEMENT_BY_KEY.get(key as string);
-    const fallback = def?.name ?? humanizeKey(key as string);
-    return t(`billing.entitlement.${key}`, fallback);
+    // HOS-1352: transitional until V2 (HOS-1356), see PR: locale labels replace the demolished plan-definition fallback.
+    return t(`billing.entitlement.${key}`, humanizeKey(key));
 }
 
 /**
  * Turn a plan's raw entitlement keys into the bullets shown on a pricing card.
  *
  * For the tourist audience this is a 1:1 mapping (each entitlement is a bullet).
- * For the owner audience the list is curated to stay short (SPEC-299): the full
- * inherited tourist tier collapses into a single "all tourist features" bullet,
- * and the owner AI entitlements collapse into one "AI suite" bullet. Owner-core
- * entitlements (publish, stats, calendar, …) stay individual. Groups are emitted
+ * For the owner audience, AI entitlements collapse into one "AI suite" bullet.
+ * Owner-core entitlements (publish, stats, calendar, …) stay individual. The
+ * inherited Tourist VIP group is assembled from catalog keys in
+ * `pricing-card-view.ts`. Groups are emitted
  * at the position of their first member, preserving the original ordering.
  *
  * Nothing is hidden — collapsed groups still communicate their contents via the
@@ -132,25 +107,11 @@ export function getDisplayFeatures(input: {
         }));
     }
 
-    const touristSet = new Set<string>(TOURIST_VIP_ENTITLEMENTS as readonly string[]);
     const aiSet = new Set<string>(AI_OWNER_ENTITLEMENTS);
-    // Only collapse the tourist tier when the plan actually grants all of it.
-    const hasFullTouristTier = [...touristSet].every((k) => keys.includes(k));
 
     const out: DisplayFeature[] = [];
-    let touristEmitted = false;
     let aiEmitted = false;
     for (const key of keys) {
-        if (hasFullTouristTier && touristSet.has(key)) {
-            if (!touristEmitted) {
-                out.push({
-                    id: 'group-tourist',
-                    label: t('pricing.group.tourist', 'Todas las funciones de turista')
-                });
-                touristEmitted = true;
-            }
-            continue;
-        }
         if (aiSet.has(key)) {
             if (!aiEmitted) {
                 out.push({
@@ -178,9 +139,8 @@ export function getDisplayFeatures(input: {
  */
 export function getLimitName(input: { key: string; t: Translator }): string {
     const { key, t } = input;
-    const meta = LIMIT_METADATA[key as LimitKey];
-    const fallback = meta?.name ?? humanizeKey(key);
-    return t(`billing.comparison.limitLabel.${key}`, fallback);
+    // HOS-1352: transitional until V2 (HOS-1356), see PR: locale labels replace the demolished limit metadata fallback.
+    return t(`billing.comparison.limitLabel.${key}`, humanizeKey(key));
 }
 
 /**
@@ -192,15 +152,16 @@ export function getLimitName(input: { key: string; t: Translator }): string {
  * `billing.limitHelp.<key>` answers both, and every limit key in the catalogue
  * has one.
  *
- * Falls back to `LIMIT_METADATA`'s English description rather than to an empty
- * string on purpose: the explanation is the accessible name the value hangs
- * off, so an unexplained number is the one output this must never produce.
+ * Falls back to a readable generic explanation until localized copy is
+ * restored; an unexplained number must never be rendered.
  */
 export function getLimitHelp(input: { key: string; t: Translator }): string {
     const { key, t } = input;
-    const meta = LIMIT_METADATA[key as LimitKey];
-    const fallback = meta?.description ?? humanizeKey(key);
-    return t(`billing.limitHelp.${key}`, fallback);
+    // HOS-1352: transitional until V2 (HOS-1356), see PR: localized limit explanations replace this generic fallback.
+    return t(
+        `billing.limitHelp.${key}`,
+        `Allowed maximum for ${humanizeKey(key).replace(/^Max /, '')}.`
+    );
 }
 
 /**
@@ -208,7 +169,7 @@ export function getLimitHelp(input: { key: string; t: Translator }): string {
  * label or the number formatted for the locale.
  *
  * @param input.value - Raw value from the plan's `limits` map.
- * @param input.isUnlimited - Whether the value is the catalogue's `-1`
+ * @param input.isUnlimited - Whether the value is the catalogue's int4 max
  *   sentinel. Passed in rather than re-derived so this helper stays ignorant of
  *   the sentinel's spelling — `plan-card-delta.ts` owns that.
  * @param input.intlLocale - BCP-47 tag for thousand separators.

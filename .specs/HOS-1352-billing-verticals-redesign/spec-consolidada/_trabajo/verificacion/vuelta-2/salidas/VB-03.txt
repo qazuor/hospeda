@@ -1,0 +1,20 @@
+# VB-03 · spec → fuente · 03-contrato-de-cobertura.md, 02-nucleo-modelo-y-maquinas.md
+
+## Hallazgos
+
+03-contrato-de-cobertura.md:93 · «Resuelta el 2026-09-24 por DEC-MP-006: el reloj es nuestro.» · contradice .specs/HOS-1352-billing-verticals-redesign/docs/12-contrato-de-cobertura.md:83 («Resuelta el 2026-09-24 por `DEC-MP-006`: el reloj es del proveedor.») y .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:5636 («DEC-MP-006 — El reloj de cobro es del proveedor»); además, contradicción interna con 03-contrato-de-cobertura.md:1491 («DECIDIDO … por DEC-MP-006: es del proveedor») y :1696 («un solo reloj, el del proveedor») · BLOQUEA
+
+03-contrato-de-cobertura.md:1173-1174 · «billing re-apunta el producto con un acto propio que recibe el id de la versión y lo valida con `políticaDeAddon` antes de escribir» · más débil que .specs/HOS-1352-billing-verticals-redesign/docs/12-contrato-de-cobertura.md:1196 («lo valida con `políticaDeAddon` (que sea versión de ese addon) antes de escribir»): se cayó el criterio de la validación, y no aparece en ningún otro lugar de la spec (02-nucleo.md:1263 tampoco lo dice) · BLOQUEA
+
+02-nucleo-modelo-y-maquinas.md:68-69 · «Ningún valor, ningún precio, ninguna asignación, salvo el precio de la versión de piso, que es cero y se fija en el catálogo para que ningún panel lo suba.» · sin soporte; contradice .specs/HOS-1352-billing-verticals-redesign/docs/nucleo/02-modelo-de-datos.md:68-70 («lo único que vive en código es el conjunto de nombres. Ningún valor, ningún precio, ninguna asignación.», sin excepción). La excepción no existe en la fuente, ni en el decision log ni en 41-corte-del-mvp/10-decisiones-del-owner.md; un implementador hardcodearía un precio en el catálogo de código · BLOQUEA
+
+03-contrato-de-cobertura.md:4-5 · «las doce dependencias vivas entre épicas (`DEP`, de `B/descomposicion.md` §2.6)» · contradice .specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:330 («son … TRECE») y, en el mismo archivo, 03-contrato-de-cobertura.md:1734 («Son **trece**»); la lista DEP de la spec tiene 13 entradas · MENOR
+
+03-contrato-de-cobertura.md:1777-1778 · «Con el corte del MVP siguen siendo doce (corte del MVP, owner 2026-10-01, Z): cambian sus piezas, no su número.» · más débil que .specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:390 («siguen siendo doce … y BC suma la 15: son trece»): omite la fila 15, y queda en contradicción interna con :1734 (lo mismo vale para «las doce siguen» de :1770, que la fuente también arrastra de antes de BC) · MENOR
+
+## Resumen
+
+| archivo | líneas recorridas | afirmaciones normativas revisadas (aprox.) | BLOQUEA | MENOR |
+|---|---|---|---|---|
+| 03-contrato-de-cobertura.md | 1–1972 | 290 | 2 | 2 |
+| 02-nucleo-modelo-y-maquinas.md | 1–375 | 65 | 1 | 0 |

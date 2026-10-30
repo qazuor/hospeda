@@ -40,7 +40,7 @@
  * @module experience.certificate
  */
 
-import { ExperienceCertificateModel, type ExperienceModel } from '@repo/db';
+import { ExperienceCertificateModel, type ExperienceModel, withTransaction } from '@repo/db';
 import {
     type ExperienceCertificate,
     type ExperienceCertificateGetInput,
@@ -54,6 +54,7 @@ import {
 import type { z } from 'zod';
 import type { Actor, ServiceContext, ServiceOutput } from '../../types';
 import { ServiceError } from '../../types';
+import { recordListingSubEntityEdit } from '../listing/listing-owner-act';
 import { checkExperienceCanEditFaqs } from './experience.permissions';
 
 /**
@@ -132,21 +133,30 @@ export async function issueExperienceCertificate(
         checkExperienceCanEditFaqs(actor, experience);
 
         const certificateModel = new ExperienceCertificateModel();
-        const created = await certificateModel.create(
-            {
-                experienceId: validated.experienceId,
-                recipientName: validated.recipientName,
-                completedAt: validated.completedAt,
-                // Stamped here rather than defaulted in the database so the
-                // moment the row records is the same one the response reports.
-                issuedAt: new Date(),
-                createdById: actor.id,
-                updatedById: actor.id
-                // TYPE-WORKAROUND: `issuedAt` and the audit ids are decided
-                // server-side, so the create input schema does not declare them.
-            } as unknown as Partial<ExperienceCertificate>,
-            ctx?.tx
-        );
+        const run = async (tx: NonNullable<ServiceContext['tx']>) => {
+            const created = await certificateModel.create(
+                {
+                    experienceId: validated.experienceId,
+                    recipientName: validated.recipientName,
+                    completedAt: validated.completedAt,
+                    issuedAt: new Date(),
+                    createdById: actor.id,
+                    updatedById: actor.id
+                    // TYPE-WORKAROUND: audit fields are set server-side and omitted from the create schema.
+                } as unknown as Partial<ExperienceCertificate>,
+                tx
+            );
+            // AC:V9a:7 — certificate and owner act share the transaction.
+            await recordListingSubEntityEdit({
+                entityType: 'experience',
+                listing: experience,
+                actor,
+                field: 'certificates',
+                ctx: { ...ctx, tx }
+            });
+            return created;
+        };
+        const created = ctx?.tx ? await run(ctx.tx) : await withTransaction(run);
 
         return { data: { certificate: created as ExperienceCertificate } };
     } catch (error) {

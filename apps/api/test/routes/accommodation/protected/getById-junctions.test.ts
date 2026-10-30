@@ -131,9 +131,6 @@ vi.mock('@repo/db', async (importActual) => {
 // gate). Stubbed here so it neither reaches billing nor issues a THIRD `select()`
 // through the shared `getDb` mock — which would land in `capturedQueries` and
 // shift the junction assertions below off by one.
-vi.mock('../../../../src/middlewares/owner-entitlement', () => ({
-    resolveOwnerEntitlementsForOwnerId: vi.fn().mockResolvedValue([])
-}));
 
 vi.mock('../../../../src/utils/logger', () => ({
     apiLogger: { debug: vi.fn(), info: vi.fn(), warn: vi.fn(), error: vi.fn() }
@@ -167,8 +164,7 @@ const ACCOMMODATION = {
     location: { street: 'Av. Costanera', number: '123' },
     averageRating: 4.5,
     reviewsCount: 3,
-    visibility: 'PUBLIC',
-    lifecycleState: 'ACTIVE',
+    publicationStatus: 'PUBLISHED',
     seo: null,
     price: { price: 150, currency: 'ARS' },
     tags: [],
@@ -526,7 +522,7 @@ describe('GET /api/v1/protected/accommodations/:id — junction relations (HOS-3
         expect(body.data.features[0].id).toBe(FEATURE_ID);
     });
 
-    it('serves an actor holding ACCOMMODATION_UPDATE_ANY who is not the owner', async () => {
+    it('serves an actor holding ACCOMMODATION_VIEW_ALL (the inspection permission) who is not the owner', async () => {
         mockGetById.mockResolvedValue({
             data: { ...ACCOMMODATION, ownerId: OTHER_USER_ID },
             error: undefined
@@ -535,7 +531,7 @@ describe('GET /api/v1/protected/accommodations/:id — junction relations (HOS-3
         const app = buildApp({
             id: OWNER_ID,
             roles: [RoleEnum.ADMIN],
-            permissions: [PermissionEnum.ACCOMMODATION_UPDATE_ANY]
+            permissions: [PermissionEnum.ACCOMMODATION_VIEW_ALL]
         });
         const res = await app.request(`/${ACCOMMODATION_ID}`);
 

@@ -1,0 +1,3 @@
+ALTER TYPE "public"."permission_enum" ADD VALUE 'user.closeOnRequest' BEFORE 'billing.subscription.inspect';--> statement-breakpoint
+ALTER TABLE "domain_event" DROP CONSTRAINT "domain_event_event_type_check";--> statement-breakpoint
+ALTER TABLE "domain_event" ADD CONSTRAINT "domain_event_event_type_check" CHECK ("domain_event"."event_type" IN ('email.undeliverable', 'listing.created', 'listing.edited', 'listing.status_changed', 'listing.fix_request_opened', 'listing.fix_request_closed', 'trial.extended', 'reconciliation.mark_opened', 'account.closed_on_request', 'partner_application.email_replaced'));

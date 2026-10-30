@@ -90,7 +90,9 @@ export type AmenitySearchInput = z.infer<typeof AmenitySearchSchema>;
 /**
  * HTTP-compatible amenity search schema with query string coercion
  */
-export const HttpAmenitySearchSchema = HttpPaginationSchema.merge(HttpSortingSchema).extend({
+export const HttpAmenitySearchSchema = HttpPaginationSchema.safeExtend(
+    HttpSortingSchema.shape
+).extend({
     // Search
     q: z.string().optional(),
 

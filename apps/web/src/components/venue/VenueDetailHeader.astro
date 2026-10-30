@@ -1,0 +1,323 @@
+---
+/**
+ * @file VenueDetailHeader.astro
+ * @description Detail page header for a venue listing (SPEC-239 T-054).
+ * Shows name, type badge, price-range badge, average rating, and a featured star.
+ * The FavoriteButton island lives in a right-side column (mirrors EventDetailHeader).
+ *
+ * Layout (HOS-84): a vertical stack — a back-button row on top, then a 2-column
+ * `.venue-detail-header__body` row where `.venue-detail-header__main` holds
+ * badges + name + location + rating and `.venue-detail-header__fav` anchors the
+ * favorite button on the right.
+ *
+ * Compact behavior comes from the shared `.wh-compact-*` utility classes
+ * (contract defined once in WaveHeader.astro): `wh-compact-row` collapses the
+ * main stack to one line, `wh-compact-title` shrinks the H1, `wh-compact-hide`
+ * drops the back-button row + rating, `wh-compact-demote` inlines the location,
+ * `wh-compact-badge` shrinks the type/price-range/new badges. Only the badges
+ * gap remains as a genuinely local override below.
+ *
+ * DIVERGENCE from the accommodation reference (`DetailHeader.astro`): the
+ * `.venue-detail-header__body` row does NOT set `align-items: center` in
+ * compact mode — that alignment is intentionally left out here. The
+ * FavoriteButton also passes `count`/`showCount={true}` (not the accommodation
+ * header's separate bookmark-count pill) — kept unchanged.
+ */
+
+import { FavoriteButton } from '@/components/shared/favorite/FavoriteButton.client';
+import { StarIcon, LocationIcon } from '@repo/icons';
+import type { VenueDetailData } from '@/data/types';
+import { createTranslations } from '@/lib/i18n';
+import type { SupportedLocale } from '@/lib/i18n';
+import HeaderBackButton from '@/components/shared/ui/HeaderBackButton.astro';
+
+interface Props {
+    readonly venue: VenueDetailData;
+    readonly locale: SupportedLocale;
+    /** Whether the current user is authenticated (forwarded to FavoriteButton). */
+    /** SSR-resolved initial favorite state for the current user. */
+    /** SSR-resolved bookmark id for toggling off without a re-check. */
+    /** Total bookmark count from the public API. */
+    readonly bookmarkCount?: number;
+}
+
+const {
+    venue,
+    locale,
+    bookmarkCount,
+} = Astro.props;
+const { t, tPlural } = createTranslations(locale);
+
+const typeLabel = t(`venue.types.${venue.type}`, venue.type);
+const priceRangeLabel = venue.priceRange
+    ? t(`venue.card.priceRange.${venue.priceRange}`, venue.priceRange)
+    : null;
+
+const fullStars = Math.floor(venue.averageRating);
+
+const THIRTY_DAYS_MS = 30 * 24 * 60 * 60 * 1000;
+const isNew = venue.createdAt
+    ? Date.now() - new Date(venue.createdAt).getTime() < THIRTY_DAYS_MS
+    : false;
+---
+
+<header class="venue-detail-header">
+    <div class="venue-detail-header__back-row wh-compact-hide">
+        <HeaderBackButton href={`/${locale}/comer-y-salir/`} locale={locale} />
+    </div>
+
+    <div class="venue-detail-header__body">
+        <!-- Main column: badges, title, location, rating -->
+        <div class="venue-detail-header__main wh-compact-row">
+            <div class="venue-detail-header__badges">
+                <span class="venue-detail-header__type-badge wh-compact-badge">{typeLabel}</span>
+                {priceRangeLabel && (
+                    <span class="venue-detail-header__price-badge wh-compact-badge">{priceRangeLabel}</span>
+                )}
+                {venue.isFeatured && (
+                    <span class="featured-badge">
+                        <StarIcon size={12} weight="fill" aria-hidden="true" />
+                        <span>{t('venue.card.featured', 'Destacado')}</span>
+                    </span>
+                )}
+                {isNew && (
+                    <span class="venue-detail-header__new-badge wh-compact-badge">
+                        {t('home.accommodations.badge.new', 'Nuevo')}
+                    </span>
+                )}
+            </div>
+
+            <h1 class="venue-detail-header__name wh-compact-title">{venue.name}</h1>
+
+            {venue.destinationName && (
+                <div class="venue-detail-header__location wh-compact-demote">
+                    <LocationIcon size={16} weight="fill" aria-hidden="true" />
+                    <span>{venue.destinationName}</span>
+                </div>
+            )}
+
+            {venue.averageRating > 0 && (
+                <div class="venue-detail-header__rating wh-compact-hide">
+                    <div class="venue-detail-header__stars" aria-hidden="true">
+                        {Array.from({ length: 5 }).map((_, i) => (
+                            <span
+                                class={
+                                    i < fullStars
+                                        ? 'venue-detail-header__star--filled'
+                                        : 'venue-detail-header__star--empty'
+                                }
+                            >
+                                <StarIcon
+                                    size={16}
+                                    weight={i < fullStars ? 'fill' : 'regular'}
+                                    aria-hidden="true"
+                                />
+                            </span>
+                        ))}
+                    </div>
+                    <span class="venue-detail-header__rating-value">
+                        {venue.averageRating.toFixed(1)}
+                    </span>
+                    {venue.reviewsCount > 0 && (
+                        <span class="venue-detail-header__reviews-count">
+                            · {tPlural('review.list.totalReviews', venue.reviewsCount, { count: venue.reviewsCount })}
+                        </span>
+                    )}
+                </div>
+            )}
+        </div>
+
+        <!-- Favorite column -->
+        <div class="venue-detail-header__fav">
+            <FavoriteButton
+                client:load
+                entityId={venue.id}
+                entityType="VENUE"
+                count={bookmarkCount}
+                variant="standalone"
+                showCount={true}
+                locale={locale}
+            />
+        </div>
+    </div>
+</header>
+
+<style>
+    /* Vertical stack: back-button row on top, then the body row. */
+    .venue-detail-header {
+        display: flex;
+        flex-direction: column;
+        gap: var(--space-2, 8px);
+    }
+
+    /* Back-button row — collapses out via `wh-compact-hide` in compact mode, so
+       it needs its own max-height/opacity transition to animate. */
+    .venue-detail-header__back-row {
+        overflow: hidden;
+        max-height: 3em;
+        opacity: 1;
+        transition:
+            max-height var(--wave-header-anim-duration, 0.3s) var(--wave-header-anim-ease, ease),
+            opacity 0.2s ease;
+    }
+
+    /* Body: main column (flex:1) + fav column (shrink:0) */
+    .venue-detail-header__body {
+        display: flex;
+        flex-direction: row;
+        align-items: flex-start;
+        gap: 16px;
+    }
+
+    .venue-detail-header__main {
+        display: flex;
+        flex-direction: column;
+        gap: var(--space-3, 12px);
+        flex: 1;
+        min-width: 0;
+        transition: gap var(--wave-header-anim-duration, 0.3s) var(--wave-header-anim-ease, ease);
+    }
+
+    .venue-detail-header__fav {
+        flex-shrink: 0;
+        padding-top: 4px;
+    }
+
+    .venue-detail-header__badges {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 8px;
+    }
+
+    .venue-detail-header__type-badge {
+        display: inline-flex;
+        align-items: center;
+        padding: 4px 14px;
+        border-radius: var(--radius-pill, 9999px);
+        background-color: var(--brand-primary-a12);
+        color: var(--brand-primary-link);
+        border: 1px solid var(--brand-primary-a25);
+        font-family: var(--font-sans);
+        font-size: 13px;
+        font-weight: 600;
+        line-height: 1.4;
+        transition: padding var(--wave-header-anim-duration, 0.3s) var(--wave-header-anim-ease, ease), font-size var(--wave-header-anim-duration, 0.3s) var(--wave-header-anim-ease, ease);
+    }
+
+    .venue-detail-header__price-badge {
+        display: inline-flex;
+        align-items: center;
+        padding: 4px 14px;
+        border-radius: var(--radius-pill, 9999px);
+        background-color: var(--brand-accent-a12);
+        color: var(--brand-accent-text);
+        border: 1px solid var(--brand-accent-a25);
+        font-family: var(--font-sans);
+        font-size: 13px;
+        font-weight: 600;
+        line-height: 1.4;
+        transition: padding var(--wave-header-anim-duration, 0.3s) var(--wave-header-anim-ease, ease), font-size var(--wave-header-anim-duration, 0.3s) var(--wave-header-anim-ease, ease);
+    }
+
+    .venue-detail-header__new-badge {
+        display: inline-flex;
+        align-items: center;
+        padding: 4px 14px;
+        border-radius: var(--radius-pill, 9999px);
+        background-color: var(--hospeda-forest);
+        /* SPEC-308: white ink on the saturated green badge (primary-foreground
+           flips to dark in dark mode and fails AA on green). */
+        color: white;
+        font-family: var(--font-sans);
+        font-size: 13px;
+        font-weight: 600;
+        line-height: 1.4;
+        transition: padding var(--wave-header-anim-duration, 0.3s) var(--wave-header-anim-ease, ease), font-size var(--wave-header-anim-duration, 0.3s) var(--wave-header-anim-ease, ease);
+    }
+
+    .venue-detail-header__name {
+        font-family: var(--font-heading);
+        font-weight: 700;
+        font-size: clamp(1.75rem, 2vw + 1rem, 2.5rem);
+        line-height: 1.2;
+        color: var(--core-foreground);
+        margin: 0;
+        transition: font-size var(--wave-header-anim-duration, 0.3s) var(--wave-header-anim-ease, ease);
+    }
+
+    .venue-detail-header__location {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        color: var(--core-muted-foreground);
+        font-family: var(--font-sans);
+        font-size: 0.95rem;
+        transition: font-size var(--wave-header-anim-duration, 0.3s) var(--wave-header-anim-ease, ease);
+    }
+
+    .venue-detail-header__rating {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        overflow: hidden;
+        max-height: 3em;
+        opacity: 1;
+        transition: max-height var(--wave-header-anim-duration, 0.3s) var(--wave-header-anim-ease, ease), opacity 0.3s ease;
+    }
+
+    .venue-detail-header__stars {
+        display: flex;
+        align-items: center;
+        gap: 2px;
+    }
+
+    .venue-detail-header__star--filled {
+        color: var(--rating-star);
+        display: inline-flex;
+    }
+
+    .venue-detail-header__star--empty {
+        color: var(--core-muted-foreground);
+        opacity: 0.4;
+        display: inline-flex;
+    }
+
+    .venue-detail-header__rating-value {
+        font-family: var(--font-sans);
+        font-weight: 700;
+        font-size: 1.1rem;
+        color: var(--core-foreground);
+    }
+
+    .venue-detail-header__reviews-count {
+        font-family: var(--font-sans);
+        font-size: 0.9rem;
+        color: var(--core-muted-foreground);
+    }
+
+    /* =========================================================
+     * Compact state — only the genuinely venue-specific override
+     * (badges gap) remains here; the row collapse, title shrink, location
+     * demote, rating/back hide, and badge shrink all come from the shared
+     * `.wh-compact-*` utilities applied in the markup (contract in
+     * WaveHeader.astro). DIVERGENCE from the accommodation reference: no
+     * outer `align-items: center` override on `.venue-detail-header__body`.
+     * ========================================================= */
+    :global(.wave-header--compact) .venue-detail-header__badges {
+        gap: 4px;
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+        .venue-detail-header__back-row,
+        .venue-detail-header__main,
+        .venue-detail-header__type-badge,
+        .venue-detail-header__price-badge,
+        .venue-detail-header__new-badge,
+        .venue-detail-header__name,
+        .venue-detail-header__location,
+        .venue-detail-header__rating {
+            transition: none;
+        }
+    }
+</style>

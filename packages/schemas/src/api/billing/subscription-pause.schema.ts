@@ -10,8 +10,8 @@
  * A self-pause always stops billing (MercadoPago preapproval paused). The
  * SERVICE-suspension side effect is domain-dependent (HOS-1278): an
  * ACCOMMODATION-domain subscription hides/edit-locks the owner's
- * accommodations (`accommodationsUpdated` below); a commerce
- * (gastronomy/experience) subscription instead flips its linked listing's
+ * accommodations (`accommodationsUpdated` below); a venue or
+ * experience subscription instead flips its linked listing's
  * visibility through the shared `reconcileSubscriptionLinkedEntities` bridge,
  * which does not touch `accommodationsUpdated` at all. Resume reverts
  * whichever effect applied.
@@ -19,7 +19,7 @@
  * `subscriptionId` is REQUIRED in the request body (HOS-1278). Before this,
  * the route had no body at all and guessed the caller's "current" subscription
  * via `getByCustomerId().find()` — ambiguous for anyone holding more than one
- * subscription (a dual host/commerce owner, or a host auto-promoted from
+ * subscription (a dual host/venue owner, or a host auto-promoted from
  * tourist), and unable to tell a partner's own subscription apart from
  * anything else. The id makes the target explicit; the route still verifies
  * it belongs to the caller.
@@ -49,9 +49,9 @@ export type SubscriptionPauseResumeRequest = z.infer<typeof SubscriptionPauseRes
  * Response body shared by the self-serve pause and resume endpoints.
  *
  * `accommodationsUpdated` is the number of the owner's accommodations whose
- * denormalized `ownerSuspended` flag flipped as part of the service-suspension
- * side effect. It is always `0` for a non-accommodation-domain subscription
- * (gastronomy, experience, partner) — that domain's listing visibility is
+ * service-suspension state changed as part of the service-suspension side
+ * effect. It is always `0` for a non-accommodation-domain subscription
+ * (venue, experience, partner) — that domain's listing visibility is
  * driven by the shared subscription-linked-entities bridge instead, which has
  * no per-accommodation count to report (HOS-1278).
  */
@@ -63,7 +63,7 @@ export const SubscriptionPauseResumeResponseSchema = z.object({
         .number()
         .int()
         .describe(
-            "Count of the owner's accommodations whose ownerSuspended flag changed. " +
+            "Count of the owner's accommodations whose service-suspension state changed. " +
                 'Always 0 for a non-accommodation-domain subscription.'
         )
 });

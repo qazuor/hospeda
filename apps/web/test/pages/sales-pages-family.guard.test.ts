@@ -63,10 +63,10 @@ const FAMILY_DIR = resolve(__dirname, '../../src/pages/[lang]/planes');
  * a URL is the most expensive place to carry that word.
  */
 const EXPECTED_AUDIENCES = [
-    'aliados',
+    // `aliados` was removed with the old billing (HOS-1637, AC:B13a:21).
     'anfitriones',
+    'comer-y-salir',
     'experiencias',
-    'gastronomia',
     'turistas'
 ] as const;
 

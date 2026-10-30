@@ -18,7 +18,7 @@
  *
  * No cap needs waiving, because none is spent: the replaced cover is DELETED
  * (soft-deleted) in the same transaction, so one row enters the featured slot
- * and one leaves the table and the visible gallery never moves. Commerce
+ * and one leaves the table and the visible gallery never moves. Venue and experience
  * listings have no per-plan photo allowance either.
  *
  * The replaced photo is NOT kept. It does not fall back into the gallery; it
@@ -26,7 +26,7 @@
  * the deletion is reversible at the row level, but callers must not present the
  * old cover as still available.
  *
- * Requires EXPERIENCE_EDIT_ALL (or the legacy COMMERCE_EDIT_ALL). The service helper `addExperienceFeaturedMedia` enforces the
+ * Requires EXPERIENCE_EDIT_ALL. The service helper `addExperienceFeaturedMedia` enforces the
  * same gate via `checkExperienceCanEditMedia`.
  */
 import {
@@ -34,11 +34,12 @@ import {
     ExperienceFeaturedMediaAddOutputSchema,
     type ExperienceMediaAddPayload,
     ExperienceMediaAddPayloadSchema,
-    PermissionEnum
+    VerticalEnum
 } from '@repo/schemas';
 import { addExperienceFeaturedMedia, ExperienceService, ServiceError } from '@repo/service-core';
 import type { Context } from 'hono';
 import { z } from 'zod';
+import { runListingContentCall } from '../../../middlewares/listing-access';
 import { getActorFromContext } from '../../../utils/actor';
 import { apiLogger } from '../../../utils/logger';
 import { createAdminRoute } from '../../../utils/route-factory';
@@ -54,6 +55,7 @@ const experienceService = new ExperienceService({ logger: apiLogger });
  */
 export const adminAddExperienceFeaturedMediaRoute = createAdminRoute({
     method: 'post',
+    listingAccess: { vertical: VerticalEnum.EXPERIENCE, operation: 'EDIT', idParam: 'id' },
     path: '/{id}/media/featured',
     summary: 'Upload the experience listing cover image (admin)',
     description:
@@ -62,9 +64,8 @@ export const adminAddExperienceFeaturedMediaRoute = createAdminRoute({
         '— soft-deleted, so it disappears from the listing while its stored file ' +
         'is kept. Unlike POST /:id/media this does not ' +
         'consume a gallery slot, because the cover is not a gallery item ' +
-        '(HOS-791). Requires EXPERIENCE_EDIT_ALL (or the legacy COMMERCE_EDIT_ALL).',
+        '(HOS-791). Requires EXPERIENCE_EDIT_ALL.',
     tags: ['Experience', 'Media'],
-    anyOfPermissions: [[PermissionEnum.EXPERIENCE_EDIT_ALL, PermissionEnum.COMMERCE_EDIT_ALL]],
     requestParams: {
         id: z.string().uuid({ message: 'zodError.common.id.invalidUuid' })
     },
@@ -91,7 +92,10 @@ export const adminAddExperienceFeaturedMediaRoute = createAdminRoute({
                 model: Parameters<typeof addExperienceFeaturedMedia>[0];
             }
         ).model;
-        const result = await addExperienceFeaturedMedia(model, actor, input);
+        const result = await runListingContentCall({
+            ctx,
+            run: () => addExperienceFeaturedMedia(model, actor, input)
+        });
 
         if (result.error) {
             throw new ServiceError(result.error.code, result.error.message);

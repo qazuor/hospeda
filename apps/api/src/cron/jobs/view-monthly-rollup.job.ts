@@ -31,7 +31,7 @@
  *
  * ## Why it runs on the 1st AND daily
  *
- * Daily at 04:10 UTC — inside the off-peak maintenance band, after the 03:30
+ * Daily at 04:10 Buenos Aires time — inside the off-peak maintenance band, after the 03:30
  * purge. A month can only be rolled up while its rows still exist, and the purge
  * is the thing that removes them; running daily means the longest a month can go
  * un-summarised is one day, against a 95-day horizon. A monthly schedule would
@@ -58,7 +58,7 @@ function monthAnchor({ from, monthsAgo }: { from: Date; monthsAgo: number }): Da
 /**
  * Monthly rollup job definition.
  *
- * Schedule: daily at 04:10 UTC (after the 03:30 purge, inside the maintenance band).
+ * Schedule: daily at 04:10 Buenos Aires time (after the 03:30 purge, inside the maintenance band).
  */
 export const viewMonthlyRollupJob: CronJobDefinition = {
     name: 'view-monthly-rollup',

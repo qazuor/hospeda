@@ -42,13 +42,15 @@ import {
     type createMockUserActor
 } from '../../helpers/auth';
 
-const { mockUpload, mockDelete, providerState, mockFindByAccommodation } = vi.hoisted(() => ({
-    mockUpload: vi.fn(),
-    mockDelete: vi.fn(),
-    providerState: { configured: true as boolean },
-    // SPEC-204: accommodation gallery count now comes from the relational table.
-    mockFindByAccommodation: vi.fn()
-}));
+const { mockUpload, mockDelete, providerState, mockFindByAccommodation, mockEffectiveSet } =
+    vi.hoisted(() => ({
+        mockUpload: vi.fn(),
+        mockDelete: vi.fn(),
+        providerState: { configured: true as boolean },
+        // SPEC-204: accommodation gallery count now comes from the relational table.
+        mockFindByAccommodation: vi.fn(),
+        mockEffectiveSet: vi.fn()
+    }));
 
 vi.mock('../../../src/services/media', () => ({
     getMediaProvider: () =>
@@ -72,15 +74,19 @@ vi.mock('@repo/db', async (importOriginal) => {
     };
 });
 
+vi.mock('../../../src/utils/listing-access/ports', () => ({
+    getListingAccessPorts: () => ({ effectiveSet: mockEffectiveSet })
+}));
+
 import {
     AccommodationService,
     DestinationService,
     EventOrganizerService,
     EventService,
     ExperienceService,
-    GastronomyService,
     PostService,
-    PostSponsorService
+    PostSponsorService,
+    VenueService
 } from '@repo/service-core';
 
 import { initApp } from '../../../src/app';
@@ -178,7 +184,7 @@ describe('POST /api/v1/admin/media/upload — integration (T-066)', () => {
         vi.spyOn(DestinationService.prototype, 'getById').mockImplementation(stub);
         vi.spyOn(EventService.prototype, 'getById').mockImplementation(stub);
         vi.spyOn(PostService.prototype, 'getById').mockImplementation(stub);
-        vi.spyOn(GastronomyService.prototype, 'getById').mockImplementation(stub);
+        vi.spyOn(VenueService.prototype, 'getById').mockImplementation(stub);
         vi.spyOn(ExperienceService.prototype, 'getById').mockImplementation(stub);
         vi.spyOn(PostSponsorService.prototype, 'getById').mockImplementation(stub);
         vi.spyOn(EventOrganizerService.prototype, 'getById').mockImplementation(stub);
@@ -198,6 +204,8 @@ describe('POST /api/v1/admin/media/upload — integration (T-066)', () => {
         // gallery-cap and plan-cap checks resolve cleanly without a DB.
         mockFindByAccommodation.mockReset();
         mockFindByAccommodation.mockResolvedValue({ items: [], total: 0 });
+        mockEffectiveSet.mockReset();
+        mockEffectiveSet.mockResolvedValue({ limits: { get: () => 100 } });
         resetMetrics();
     });
 
@@ -308,6 +316,10 @@ describe('POST /api/v1/admin/media/upload — integration (T-066)', () => {
 
             // Assert
             expect(res.status).toBe(200);
+            expect(mockEffectiveSet).toHaveBeenCalledWith({
+                userId: ADMIN_ACTOR_ID,
+                vertical: 'accommodation'
+            });
             const arg = mockUpload.mock.calls[0]?.[0] as { publicId: string; folder: string };
             // Server-generated shape: `gallery/{10-char nanoid}`.
             expect(arg.publicId).toMatch(/^gallery\/[A-Za-z0-9_-]{10}$/);
@@ -327,27 +339,31 @@ describe('POST /api/v1/admin/media/upload — integration (T-066)', () => {
     });
 
     describe('extended entity support', () => {
-        it('accepts gastronomy featured uploads through the shared admin route', async () => {
+        it('TEST:1819:6 AC:1:3 accepts venue featured uploads through the shared admin route', async () => {
             const actor = createMockAdminActor({
                 id: ADMIN_ACTOR_ID,
                 permissions: [
                     PermissionEnum.ACCESS_PANEL_ADMIN,
                     PermissionEnum.ACCESS_API_ADMIN,
                     PermissionEnum.MEDIA_UPLOAD,
-                    PermissionEnum.COMMERCE_EDIT_ALL
+                    PermissionEnum.VENUE_EDIT_ALL
                 ]
             });
 
             const req = new Request(ADMIN_UPLOAD_URL, {
                 method: 'POST',
                 headers: buildAuthHeaders(actor),
-                body: buildAdminMultipartBody({}, { entityType: 'gastronomy', role: 'featured' })
+                body: buildAdminMultipartBody({}, { entityType: 'venue', role: 'featured' })
             });
             const res = await app.request(req);
 
             expect(res.status).toBe(200);
+            expect(VenueService.prototype.getById).toHaveBeenCalledWith(
+                expect.anything(),
+                ADMIN_ENTITY_ID
+            );
             const arg = mockUpload.mock.calls[0]?.[0] as { folder: string; publicId: string };
-            expect(arg.folder).toBe(`hospeda/test/gastronomies/${ADMIN_ENTITY_ID}`);
+            expect(arg.folder).toBe(`hospeda/test/venues/${ADMIN_ENTITY_ID}`);
             expect(arg.publicId).toBe('featured');
         });
 

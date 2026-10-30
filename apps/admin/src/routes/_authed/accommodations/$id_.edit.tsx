@@ -1,7 +1,8 @@
 import {
     AccommodationUpdateInputSchema,
     type AiTextImproveFieldType,
-    PermissionEnum
+    PermissionEnum,
+    VerticalEnum
 } from '@repo/schemas';
 import { createFileRoute } from '@tanstack/react-router';
 import { useCallback, useMemo, useRef } from 'react';
@@ -15,6 +16,8 @@ import { AccommodationQualityScore } from '@/features/accommodations/components/
 import { AiTextImproveFieldAddon } from '@/features/accommodations/components/AiTextImproveFieldAddon';
 import { useAccommodationHeaderProps } from '@/features/accommodations/hooks/useAccommodationHeaderProps';
 import { useAccommodationPage } from '@/features/accommodations/hooks/useAccommodationPage';
+import { useAccommodationQuery } from '@/features/accommodations/hooks/useAccommodationQuery';
+import { EffectiveSetSubjectProvider } from '@/features/billing/effective-set-subject';
 import { TranslationSection } from '@/features/content/components/TranslationSection';
 import { createErrorComponent, createPendingComponent } from '@/lib/factories';
 
@@ -38,7 +41,22 @@ export const Route = createFileRoute('/_authed/accommodations/$id_/edit')({
  */
 function AccommodationEditPage() {
     const { id } = Route.useParams();
+    const { data: accommodation, isLoading, error } = useAccommodationQuery(id);
+    if (isLoading) return <AccommodationPending />;
+    if (error) throw error;
+    if (!accommodation) throw new Error('accommodation not found');
+    return (
+        <EffectiveSetSubjectProvider
+            value={{ userId: accommodation.ownerId, vertical: VerticalEnum.ACCOMMODATION }}
+        >
+            <AccommodationEditContent id={id} />
+        </EffectiveSetSubjectProvider>
+    );
+}
 
+const AccommodationPending = createPendingComponent();
+
+function AccommodationEditContent({ id }: { readonly id: string }) {
     const entityData = useAccommodationPage(id);
 
     // SPEC-198 AC-12 (SHOULD-only): client-side audit hint tracking which
@@ -121,11 +139,16 @@ function AccommodationEditPage() {
                     qualityScore={({ isReduced }) => (
                         <AccommodationQualityScore compact={isReduced} />
                     )}
-                    extraSavePayload={(): Record<string, unknown> => ({
-                        aiAssistedFields: Array.from(
+                    extraSavePayload={(): Record<string, unknown> => {
+                        // An empty list is a no-op server-side, and on somebody
+                        // else's listing it is a non-content key that makes the
+                        // support edit fail with 403 (HOS-1493): send it only
+                        // when the AI actually assisted a field.
+                        const aiAssistedFields = Array.from(
                             aiAssistedFieldsRef.current
-                        ) as AiTextImproveFieldType[]
-                    })}
+                        ) as AiTextImproveFieldType[];
+                        return aiAssistedFields.length > 0 ? { aiAssistedFields } : {};
+                    }}
                     onSaveSuccess={clearAiAssistedRef}
                 >
                     <EntityEditContent

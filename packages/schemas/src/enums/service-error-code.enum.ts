@@ -7,6 +7,8 @@ export enum ServiceErrorCode {
     UNAUTHORIZED = 'UNAUTHORIZED',
     /** User is not authorized to perform the action */
     FORBIDDEN = 'FORBIDDEN',
+    /** Authorization step 2: email verification required (HTTP 403). */
+    EMAIL_NOT_VERIFIED = 'EMAIL_NOT_VERIFIED',
     /** Unexpected internal error */
     INTERNAL_ERROR = 'INTERNAL_ERROR',
     /** Entity or assignment already exists */
@@ -66,7 +68,7 @@ export enum ServiceErrorCode {
     /**
      * The requested entity existed but has been (soft-)deleted and is permanently
      * gone. Maps to HTTP 410 Gone — distinct from NOT_FOUND (404, never existed).
-     * Emitted on public reads of a soft-deleted accommodation/post/gastronomy/
+     * Emitted on public reads of a soft-deleted accommodation/post/venue/
      * experience so crawlers and LLM fetchers deindex the URL fast instead of
      * treating it as a transient 404. Clients should not retry.
      */

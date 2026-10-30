@@ -1,0 +1,203 @@
+{
+  "accounts_info": null,
+  "acquirer_reconciliation": [],
+  "additional_info": {
+    "tracking_id": "platform:v1-blacklabel,so:ALL,type:N/A,security:none"
+  },
+  "authorization_code": "<redactado>",
+  "binary_mode": false,
+  "brand_id": null,
+  "build_version": "3.174.0-rc-4",
+  "call_for_authorize_id": null,
+  "captured": true,
+  "card": {
+    "bin": "<redactado>",
+    "cardholder": "<redactado>",
+    "country": "ARG",
+    "date_created": "2026-09-19T20:01:54.000-04:00",
+    "date_last_updated": "2026-09-19T20:01:54.000-04:00",
+    "expiration_month": null,
+    "expiration_year": null,
+    "first_six_digits": "<redactado>",
+    "id": "<redactado>",
+    "last_four_digits": "<redactado>",
+    "tags": [
+      "credit"
+    ]
+  },
+  "charges_details": [
+    {
+      "accounts": {
+        "from": "collector",
+        "to": "mp"
+      },
+      "amounts": {
+        "original": 1.2,
+        "refunded": 0
+      },
+      "base_amount": 15,
+      "client_id": 0,
+      "date_created": "2026-09-19T20:01:54.000-04:00",
+      "external_charge_id": "01M2Y1X3D9JW90Z285NEV9DZ0Q",
+      "id": "179941738878-001",
+      "last_updated": "2026-09-19T20:01:54.000-04:00",
+      "metadata": {
+        "reason": "AR-E_increment",
+        "source": "proc-svc-charges",
+        "source_detail": "processing_fee_charge"
+      },
+      "name": "<redactado>",
+      "rate": 7.986695,
+      "refund_charges": [],
+      "reserve_id": null,
+      "type": "fee",
+      "update_charges": []
+    }
+  ],
+  "charges_execution_info": {
+    "internal_execution": {
+      "date": "2026-09-19T20:01:54.103-04:00",
+      "execution_id": "01M2Y1X3CEPQJ9PRDEV5DFBM3F"
+    }
+  },
+  "collector_id": "<redactado>",
+  "corporation_id": null,
+  "counter_currency": null,
+  "coupon_amount": 0,
+  "currency_id": "ARS",
+  "date_approved": "2026-09-19T20:01:55.000-04:00",
+  "date_created": "2026-09-19T20:01:54.000-04:00",
+  "date_last_updated": "2026-09-19T20:01:56.000-04:00",
+  "date_of_expiration": null,
+  "deduction_schema": null,
+  "description": "HOS1352 reloj renov-ok",
+  "differential_pricing_id": null,
+  "external_reference": "HOS-1352-relojprod-renov-ok",
+  "fee_details": [
+    {
+      "amount": 1.2,
+      "fee_payer": "collector",
+      "type": "mercadopago_fee"
+    }
+  ],
+  "financing_group": null,
+  "id": 179941738878,
+  "idempotency_key": "idempotencyKeyPostPay_automatic_payments_20689d308b1d1cc3e8c6d3941cb60988//<redactado>",
+  "installments": 1,
+  "integrator_id": null,
+  "issuer_id": "279",
+  "live_mode": true,
+  "marketplace_owner": null,
+  "merchant_account_id": null,
+  "merchant_number": null,
+  "metadata": {
+    "user_type": "guest",
+    "preapproval_id": "6b293a9499d946f6ac159da7f8f4804e",
+    "available_tries": 3
+  },
+  "money_release_date": "2026-09-19T20:01:55.000-04:00",
+  "money_release_schema": null,
+  "money_release_status": "released",
+  "notification_url": null,
+  "operation_type": "recurring_payment",
+  "order": {},
+  "payer": {
+    "email": "<redactado>",
+    "entity_type": null,
+    "first_name": null,
+    "id": "<redactado>",
+    "identification": "<redactado>",
+    "last_name": null,
+    "operator_id": null,
+    "phone": "<redactado>",
+    "type": null
+  },
+  "payment_method": {
+    "data": {
+      "routing_data": {
+        "merchant_account_id": "1196"
+      }
+    },
+    "id": "visa",
+    "issuer_id": "279",
+    "type": "credit_card"
+  },
+  "payment_method_id": "visa",
+  "payment_type_id": "credit_card",
+  "platform_id": null,
+  "point_of_interaction": {
+    "application_data": {
+      "name": null,
+      "operating_system": null,
+      "version": null
+    },
+    "business_info": {
+      "branch": "Merchant Services",
+      "sub_unit": "recurring",
+      "unit": "online_payments"
+    },
+    "location": {
+      "source": "payer",
+      "state_id": "NN"
+    },
+    "references": [
+      {
+        "id": "fb2ad86ead684cf992e7acdb8126b872",
+        "type": "RECURRING_INVOICE"
+      },
+      {
+        "id": "0324a468a2cc471fa764b9a8be40d0cc",
+        "type": "AUTOMATIC_PAYMENTS_ATTEMPT"
+      }
+    ],
+    "transaction_data": {
+      "billing_date": "2026-09-19",
+      "first_time_use": false,
+      "invoice_id": "fb2ad86ead684cf992e7acdb8126b872",
+      "invoice_period": {
+        "period": 1,
+        "type": "daily"
+      },
+      "payment_reference": {
+        "acquirer": null,
+        "id": "178259523769"
+      },
+      "plan_id": null,
+      "processor": null,
+      "subscription_id": "6b293a9499d946f6ac159da7f8f4804e",
+      "subscription_sequence": {
+        "number": "<redactado>",
+        "total": null
+      },
+      "ticket_id": "62852139163_66797f76797f75647567_P",
+      "user_present": false
+    },
+    "type": "SUBSCRIPTIONS"
+  },
+  "pos_id": null,
+  "processing_mode": "aggregator",
+  "refunds": [],
+  "release_info": null,
+  "shipping_amount": 0,
+  "sponsor_id": null,
+  "statement_descriptor": "MERPAGO*HOSPEDA          ",
+  "status": "approved",
+  "status_detail": "accredited",
+  "store_id": null,
+  "tags": null,
+  "taxes_amount": 0,
+  "tenant_context": "mp",
+  "transaction_amount": 15,
+  "transaction_amount_refunded": 0,
+  "transaction_details": {
+    "acquirer_reference": null,
+    "external_resource_url": null,
+    "financial_institution": null,
+    "installment_amount": 15,
+    "net_received_amount": 13.8,
+    "overpaid_amount": 0,
+    "payable_deferral_period": null,
+    "payment_method_reference_id": null,
+    "total_paid_amount": 15
+  }
+}

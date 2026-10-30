@@ -11,7 +11,7 @@
  *
  * Covers (SPEC-197 ACs):
  * - AC-2: clicking 7d toggle re-fetches with ?window=7d and counts update.
- * - AC-3: locked state renders lock icon + description + CTA href /billing/plans.
+ * - AC-3: locked state renders lock icon + description (CTA removed by HOS-1416).
  * - AC-6: when resolver returns { locked: true } (403 path), widget shows locked UI.
  * - AC-9: editor-posts variant window toggle is independent.
  * - AC-12: editor-events variant window toggle is independent.
@@ -43,7 +43,7 @@ vi.mock('@/contexts/dashboard-resolver-context', () => ({
 }));
 
 vi.mock('@/hooks/use-auth-context', () => ({
-    useAuthContext: () => ({ user: { id: 'u-test-1', role: 'HOST' } }),
+    useAuthContext: () => ({ user: { id: '11111111-1111-4111-8111-111111111111', role: 'HOST' } }),
     useHasPermission: vi.fn(() => true),
     useHasRole: vi.fn(() => false),
     useHasAnyRole: vi.fn(() => false)
@@ -66,6 +66,14 @@ vi.mock('@/hooks/use-translations', () => ({
 }));
 
 // Mock fetchApi — the ViewsWidget calls it directly for window-parameterized fetches.
+const effectiveSet = (hasStats: boolean) => ({
+    userId: '11111111-1111-4111-8111-111111111111',
+    vertical: 'accommodation',
+    hasLiveNonTrialTitle: false,
+    entitlements: hasStats ? { view_basic_stats: 1 } : {},
+    limits: {}
+});
+
 const mockFetchApi = vi.fn();
 vi.mock('@/lib/api/client', () => ({
     fetchApi: (...args: unknown[]) => mockFetchApi(...args)
@@ -232,12 +240,7 @@ describe('ViewsWidget — HOST locked state (AC-3/AC-6)', () => {
         mockFetchApi.mockResolvedValueOnce(
             envelope({
                 success: true,
-                data: {
-                    entitlements: ['other_entitlement'],
-                    limits: {},
-                    plan: null,
-                    asOf: new Date().toISOString()
-                }
+                data: effectiveSet(false)
             })
         );
 
@@ -256,10 +259,9 @@ describe('ViewsWidget — HOST locked state (AC-3/AC-6)', () => {
         expect(screen.getByTestId('lock-icon')).toBeInTheDocument();
         expect(screen.getByText('Disponible con un plan activo')).toBeInTheDocument();
 
-        const cta = screen.getByTestId('views-widget-locked-cta');
-        expect(cta).toBeInTheDocument();
-        expect(cta).toHaveAttribute('href', '/billing/plans');
-        expect(cta).toHaveAttribute('aria-label', 'Ver planes');
+        // HOS-1416: the locked-state CTA (href /billing/plans) was removed
+        // with the deleted billing plans page.
+        expect(screen.queryByTestId('views-widget-locked-cta')).not.toBeInTheDocument();
     });
 
     it('renders locked state and NOT an error callout when views endpoint returns 403 (AC-6)', async () => {
@@ -267,12 +269,7 @@ describe('ViewsWidget — HOST locked state (AC-3/AC-6)', () => {
         mockFetchApi.mockResolvedValueOnce(
             envelope({
                 success: true,
-                data: {
-                    entitlements: ['view_basic_stats'],
-                    limits: {},
-                    plan: null,
-                    asOf: new Date().toISOString()
-                }
+                data: effectiveSet(true)
             })
         );
         // Views endpoint: 403
@@ -305,12 +302,7 @@ describe('ViewsWidget — HOST happy path and window toggle (AC-2)', () => {
         mockFetchApi.mockResolvedValueOnce(
             envelope({
                 success: true,
-                data: {
-                    entitlements: ['view_basic_stats'],
-                    limits: {},
-                    plan: null,
-                    asOf: new Date().toISOString()
-                }
+                data: effectiveSet(true)
             })
         );
         // Views endpoint (30d default): 1 accommodation
@@ -342,7 +334,7 @@ describe('ViewsWidget — HOST happy path and window toggle (AC-2)', () => {
         mockFetchApi.mockResolvedValueOnce(
             envelope({
                 success: true,
-                data: { entitlements: ['view_basic_stats'], limits: {}, plan: null, asOf: '' }
+                data: effectiveSet(true)
             })
         );
         // Views endpoint: empty list
@@ -366,7 +358,7 @@ describe('ViewsWidget — HOST happy path and window toggle (AC-2)', () => {
             .mockResolvedValueOnce(
                 envelope({
                     success: true,
-                    data: { entitlements: ['view_basic_stats'], limits: {}, plan: null, asOf: '' }
+                    data: effectiveSet(true)
                 })
             )
             .mockResolvedValueOnce(
@@ -378,7 +370,7 @@ describe('ViewsWidget — HOST happy path and window toggle (AC-2)', () => {
             .mockResolvedValueOnce(
                 envelope({
                     success: true,
-                    data: { entitlements: ['view_basic_stats'], limits: {}, plan: null, asOf: '' }
+                    data: effectiveSet(true)
                 })
             )
             .mockResolvedValueOnce(
@@ -422,7 +414,7 @@ describe('ViewsWidget — HOST empty state', () => {
             .mockResolvedValueOnce(
                 envelope({
                     success: true,
-                    data: { entitlements: ['view_basic_stats'], limits: {}, plan: null, asOf: '' }
+                    data: effectiveSet(true)
                 })
             )
             .mockResolvedValueOnce(envelope({ success: true, data: [] }));
@@ -603,7 +595,7 @@ describe('ViewsWidget — error state', () => {
             .mockResolvedValueOnce(
                 envelope({
                     success: true,
-                    data: { entitlements: ['view_basic_stats'], limits: {}, plan: null, asOf: '' }
+                    data: effectiveSet(true)
                 })
             )
             .mockRejectedValueOnce(new Error('Server error'));

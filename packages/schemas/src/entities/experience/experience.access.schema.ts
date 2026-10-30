@@ -1,17 +1,17 @@
 import { z } from 'zod';
-import {
-    CommerceListingAmenityPublicSchema,
-    CommerceListingFeaturePublicSchema
-} from '../../common/commerce-catalog.schema.js';
 import { ContactInfoReadSchema } from '../../common/contact.schema.js';
 import { I18nTextSchema } from '../../common/i18n.schema.js';
+import {
+    ListingAmenityPublicSchema,
+    ListingFeaturePublicSchema
+} from '../../common/listing-catalog.schema.js';
 import { BaseMediaObjectSchema } from '../../common/media.schema.js';
 import { ExperienceSchema } from './experience.schema.js';
 
 /**
  * Experience Access Schemas — Three-Tier Response Projection
  *
- * Mirrors the same pick/omit discipline as `gastronomy.access.schema.ts`:
+ * Mirrors the same pick/omit discipline as `venue.access.schema.ts`:
  * - **Public** — only fields safe for unauthenticated visitors.
  * - **Protected** — extends public with fields for authenticated users / owners.
  * - **Admin** — the full schema, with all fields including admin-internal data.
@@ -30,9 +30,8 @@ import { ExperienceSchema } from './experience.schema.js';
  * - Omits: adminInfo, ownerId, audit internals.
  * - Includes a NARROWED `contactInfo` (HOS-815) — see
  *   {@link ExperiencePublicContactInfoSchema} for the published subset.
- * - Includes: `hasActiveSubscription` — clients need this to guard 404 display.
  * - The `richDescription` field is re-added via `.extend()` because it follows
- *   the same entitlement-by-omission gate as in the gastronomy schema:
+ *   the same entitlement-by-omission gate as in the venue schema:
  *   the service strips it server-side for non-entitled owners before
  *   calling `stripWithSchema`, so schema presence is safe.
  */
@@ -90,7 +89,6 @@ export const ExperiencePublicSchema = ExperienceSchema.pick({
     // Content
     summary: true,
     description: true,
-    isFeatured: true,
 
     // I18n translations
     nameI18n: true,
@@ -133,7 +131,6 @@ export const ExperiencePublicSchema = ExperienceSchema.pick({
     acceptsPrivateGroups: true,
 
     // Subscription visibility gate
-    hasActiveSubscription: true,
 
     // Destination reference
     destinationId: true,
@@ -147,8 +144,8 @@ export const ExperiencePublicSchema = ExperienceSchema.pick({
     reviewsCount: true,
     rating: true,
 
-    // Visibility
-    visibility: true,
+    // No publication state here (HOS-1641): every listing a stranger can read
+    // is PUBLISHED, so exposing it would say nothing.
 
     // SEO (public)
     seo: true,
@@ -163,6 +160,13 @@ export const ExperiencePublicSchema = ExperienceSchema.pick({
     openingHours: true
 }).extend({
     /**
+     * Public featured state. Not a column: since HOS-1419 dropped the
+     * admin-curated `is_featured` it is derived in the public routes from
+     * `featuredByEntitlement` (`resolvePublicIsFeatured`), which itself is never
+     * exposed here. Defaults to `false` for a read that did not derive it.
+     */
+    isFeatured: z.boolean().default(false),
+    /**
      * Rich-text (markdown) variant of the description for entitled owners.
      * Must survive serialization so the web client can switch between rich
      * and plain rendering. The entitlement-by-omission gate runs BEFORE
@@ -170,7 +174,7 @@ export const ExperiencePublicSchema = ExperienceSchema.pick({
      */
     richDescription: z
         .string()
-        .max(5000, { message: 'zodError.commerce.richDescription.max' })
+        .max(5000, { message: 'zodError.listing.richDescription.max' })
         .nullish(),
     /**
      * HOS-815: the publishable contact channels, narrowed by
@@ -180,7 +184,7 @@ export const ExperiencePublicSchema = ExperienceSchema.pick({
     contactInfo: ExperiencePublicContactInfoSchema.nullish(),
     /**
      * Override picked `media` to use `BaseMediaObjectSchema` (without any
-     * server-managed internal fields). Mirrors the gastronomy pattern.
+     * server-managed internal fields). Mirrors the venue pattern.
      */
     media: BaseMediaObjectSchema.nullish(),
     /** ISO 8601 creation date (for "Nuevo" badge). */
@@ -229,9 +233,9 @@ export const ExperiencePublicSchema = ExperienceSchema.pick({
      * `.optional()` rather than defaulted: a list payload that never ran the
      * join must say "not loaded", not "this experience includes nothing".
      */
-    amenities: z.array(CommerceListingAmenityPublicSchema).optional(),
+    amenities: z.array(ListingAmenityPublicSchema).optional(),
     /** Features the provider ticked, joined with the shared catalog (HOS-1072). */
-    features: z.array(CommerceListingFeaturePublicSchema).optional(),
+    features: z.array(ListingFeaturePublicSchema).optional(),
     /**
      * How to GET to the meeting point (HOS-1049) — the paid half.
      *
@@ -239,7 +243,7 @@ export const ExperiencePublicSchema = ExperienceSchema.pick({
      * schema gives this column: `undefined` here means WITHHELD (the provider's
      * plan does not grant `manage_experience_directions`), which is a different
      * fact from "they wrote none". Same convention `menuSections` uses on
-     * `GastronomyPublicSchema`, and for the same reason.
+     * `venuePublicSchema`, and for the same reason.
      *
      * The rows are never deleted on a downgrade — the public route re-reads the
      * CURRENT subscription and simply stops emitting them.
@@ -275,7 +279,7 @@ export type ExperiencePublic = z.infer<typeof ExperiencePublicSchema>;
  * PROTECTED ACCESS SCHEMA
  *
  * Contains data for authenticated users, including ownership and contact info.
- * Used for owner dashboards and COMMERCE_OWNER views.
+ * Used for owner dashboards and EXPERIENCE_OWNER views.
  */
 export const ExperienceProtectedSchema = ExperienceSchema.pick({
     // All public fields
@@ -292,10 +296,9 @@ export const ExperienceProtectedSchema = ExperienceSchema.pick({
     summaryI18n: true,
     descriptionI18n: true,
     richDescriptionI18n: true,
-    isFeatured: true,
-    // HOS-1286: the owner's own editor sees both featuring sources separately,
-    // like the accommodation protected tier. Never added to the PUBLIC pick —
-    // public reads get the OR under `isFeatured` and nothing else.
+    // HOS-1286: the owner's own editor sees the featuring source under its own
+    // name, like the accommodation protected tier. Never added to the PUBLIC
+    // pick — public reads get it derived under `isFeatured` and nothing else.
     featuredByEntitlement: true,
     destinationId: true,
     media: true,
@@ -303,13 +306,11 @@ export const ExperienceProtectedSchema = ExperienceSchema.pick({
     averageRating: true,
     reviewsCount: true,
     rating: true,
-    visibility: true,
     seo: true,
     tags: true,
     priceFrom: true,
     priceUnit: true,
     isPriceOnRequest: true,
-    hasActiveSubscription: true,
     openingHours: true,
     // HOS-1048: owner-editable, so it must round-trip to the owner editor —
     // omitting it here would make the form re-open with the field blank and
@@ -343,8 +344,9 @@ export const ExperienceProtectedSchema = ExperienceSchema.pick({
     // Social networks
     socialNetworks: true,
 
-    // Lifecycle (for owners — they need to know if subscription is off)
-    lifecycleState: true,
+    // Publication state (for owners, HOS-1641): the six `PublicationStatusEnum`
+    // values, written only by the PB publication transitions.
+    publicationStatus: true,
 
     // FAQs
     faqs: true,
@@ -357,7 +359,13 @@ export const ExperienceProtectedSchema = ExperienceSchema.pick({
      * Description relaxed on the read side so DRAFT listings with short
      * descriptions can still be fetched without tripping `min(20)`.
      */
-    description: z.string().max(2000, { message: 'zodError.commerce.description.max' }),
+    description: z.string().max(2000, { message: 'zodError.listing.description.max' }),
+    /**
+     * HOS-1748: a PURGED row blanks `summary`, so reads must accept it. Same read-side
+     * relaxation as `description` (HOS-190 / SPEC-143 Finding #9); the minimum stays on
+     * input and in `resolveListingCompleteness`.
+     */
+    summary: z.string().max(300, { message: 'zodError.listing.summary.max' }),
     /**
      * HOS-190: read⊇write — a persisted contactInfo (legacy phone format, missing
      * mobilePhone) must never 500 the response. Format stays strict on write.
@@ -368,7 +376,7 @@ export const ExperienceProtectedSchema = ExperienceSchema.pick({
     /** Rich-text description (protected visibility follows the same entitlement gate). */
     richDescription: z
         .string()
-        .max(5000, { message: 'zodError.commerce.richDescription.max' })
+        .max(5000, { message: 'zodError.listing.richDescription.max' })
         .nullish(),
     /**
      * Currently-associated amenity catalog IDs (junction read-back, SPEC-249).
@@ -413,9 +421,15 @@ export type ExperienceProtected = z.infer<typeof ExperienceProtectedSchema>;
 export const ExperienceAdminSchema = ExperienceSchema.extend({
     /**
      * Description relaxed on the read side so DRAFT listings can still be
-     * fetched by the admin panel. See SPEC-143 Finding #9 (gastronomy pattern).
+     * fetched by the admin panel. See SPEC-143 Finding #9 (venue pattern).
      */
-    description: z.string().max(2000, { message: 'zodError.commerce.description.max' }),
+    description: z.string().max(2000, { message: 'zodError.listing.description.max' }),
+    /**
+     * HOS-1748: a PURGED row blanks `summary`, so reads must accept it. Same read-side
+     * relaxation as `description` (HOS-190 / SPEC-143 Finding #9); the minimum stays on
+     * input and in `resolveListingCompleteness`.
+     */
+    summary: z.string().max(300, { message: 'zodError.listing.summary.max' }),
     /** HOS-190: read⊇write lenient contactInfo (see ExperienceProtectedSchema). */
     contactInfo: ContactInfoReadSchema.nullish()
 });
@@ -431,7 +445,7 @@ export type ExperienceAdmin = z.infer<typeof ExperienceAdminSchema>;
  * the response strips them and the admin grid can only show raw UUIDs. Both are
  * `nullish` because a freshly admin-created listing may not have an owner yet.
  *
- * Mirrors `GastronomyAdminListItemSchema`.
+ * Mirrors `venueAdminListItemSchema`.
  */
 export const ExperienceAdminListItemSchema = ExperienceAdminSchema.extend({
     destination: z

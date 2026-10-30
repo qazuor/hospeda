@@ -7,13 +7,12 @@ import { AccommodationPublicSchema, PaginationResultSchema, ServiceErrorCode } f
 import { AccommodationService, ServiceError } from '@repo/service-core';
 import type { Context } from 'hono';
 import { z } from 'zod';
-import { resolveOwnerEntitlementsForOwnerIds } from '../../../middlewares/owner-entitlement';
+
 import { resolvePublicIsFeatured } from '../../../utils/accommodation-featured';
 import { createGuestActor } from '../../../utils/actor';
-import type { AccommodationData } from '../../../utils/entitlement-filter';
 import {
-    filterAccommodationListByOwnerEntitlements,
-    stripRichDescriptionFields
+    filterPublicPaidFieldsForOwner,
+    resolvePublicFieldGrants
 } from '../../../utils/entitlement-filter';
 import { apiLogger } from '../../../utils/logger';
 import { createPublicRoute } from '../../../utils/route-factory';
@@ -88,40 +87,20 @@ const getTopRatedByDestinationHandler = async (c: Context) => {
     //   fit in one page since the service caps at TOP_RATED_PAGE_SIZE items).
     //   z.number().int().min(0) accepts 0, so the empty case is valid.
 
-    // Data-level omission of BOTH premium rich-description fields. This endpoint
-    // serves a card listing that never renders rich text, and — unlike the sibling
-    // listing routes — it previously carried no rich-description stripping at all,
-    // so the full entity's `richDescription` / `richDescriptionI18n` flowed straight
-    // through AccommodationPublicSchema into the public payload.
-    const rawAccommodations = (result.data?.accommodations ?? []).map((accommodation) => ({
-        ...stripRichDescriptionFields(accommodation),
-        // HOS-929: public read treats holding either the admin-curated
-        // `isFeatured` flag OR the billing-derived `featuredByEntitlement`
-        // flag as featured. `featuredByEntitlement` itself is stripped by
-        // `AccommodationPublicSchema` (never in its pick).
+    // Apply each listing owner's effective paid-field grants before serialization.
+    const sourceAccommodations = result.data?.accommodations ?? [];
+    const grants = await resolvePublicFieldGrants(sourceAccommodations.map((item) => item.ownerId));
+    const rawAccommodations = sourceAccommodations.map((accommodation) => ({
+        ...filterPublicPaidFieldsForOwner(accommodation, grants),
+        // HOS-929: the public `isFeatured` is derived from `featuredByEntitlement`
+        // (the only featuring source since HOS-1419); the raw column itself is
+        // stripped by the public schema (never in its pick).
         isFeatured: resolvePublicIsFeatured(accommodation)
     }));
     const total = rawAccommodations.length;
     const totalPages = total === 0 ? 0 : 1;
 
-    // SPEC-291 Phase 3b: gate isVerified by the owner's billing entitlement.
-    // ONE batch query for all unique ownerIds on this page, then parallel billing
-    // lookups, then a synchronous gate pass. Fail-closed.
-    const uniqueOwnerIds = [
-        ...new Set(
-            rawAccommodations
-                .map((a) => (a as { ownerId?: string }).ownerId)
-                .filter((id): id is string => typeof id === 'string' && id.length > 0)
-        )
-    ];
-    const ownerEntitlementsMap = await resolveOwnerEntitlementsForOwnerIds(uniqueOwnerIds);
-    const accommodations = filterAccommodationListByOwnerEntitlements(
-        // TYPE-WORKAROUND: rawAccommodations comes from the service's untyped
-        // result shape; filterAccommodationListByOwnerEntitlements only reads
-        // ownerId/isVerified, both present at runtime on every accommodation item.
-        rawAccommodations as unknown as AccommodationData[],
-        ownerEntitlementsMap
-    );
+    const accommodations = rawAccommodations;
 
     return {
         data: accommodations,

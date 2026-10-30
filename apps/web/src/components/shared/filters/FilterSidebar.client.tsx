@@ -4,7 +4,7 @@
  * range, search, stepper, stars, toggle, dual-range, and select-search filter groups
  * with sort dropdown.
  *
- * On mobile (< 768px): renders as a floating trigger button + full-height drawer.
+ * On mobile (< 768px): renders a dock trigger button + full-height drawer.
  * On desktop (>= 768px): renders as a static sidebar panel.
  *
  * Navigation behavior: every state change triggers a debounced navigation (500ms)
@@ -15,6 +15,7 @@ import { useCallback, useEffect, useMemo, useReducer, useRef, useState } from 'r
 import { cn } from '@/lib/cn';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
+import { FilterDockTrigger } from './components/FilterDockTrigger';
 import { FilterGroup } from './components/FilterGroup';
 import { MobileDrawer } from './components/MobileDrawer';
 import { SectionHeader } from './components/SectionHeader';
@@ -69,7 +70,7 @@ export interface FilterSidebarProps {
      * - `'left'` (default): static panel to the left of the content grid.
      * - `'top'`: horizontal bar above the content area.
      *
-     * On mobile (<768px) both variants collapse to the same floating-button +
+     * On mobile (<768px) both variants collapse to the same dock-button +
      * left-side drawer.
      */
     readonly position?: 'left' | 'top';
@@ -472,31 +473,12 @@ export function FilterSidebar({
                 <SidebarPanel {...panelProps} />
             </div>
 
-            {/* Mobile: floating trigger button */}
-            <button
-                type="button"
-                className={styles.floatingTrigger}
-                onClick={() => setIsDrawerOpen(true)}
-                aria-label={t('ui.filter.openFilters', 'Filtros')}
-                aria-expanded={isDrawerOpen}
-                aria-haspopup="dialog"
-            >
-                <span
-                    className={styles.floatingTriggerIcon}
-                    aria-hidden="true"
-                >
-                    ☰
-                </span>
-                <span>{t('ui.filter.openFilters', 'Filtros')}</span>
-                {activeCount > 0 && (
-                    <span
-                        className={styles.floatingBadge}
-                        aria-hidden="true"
-                    >
-                        {activeCount}
-                    </span>
-                )}
-            </button>
+            <FilterDockTrigger
+                label={t('ui.filter.openFilters', 'Filtros')}
+                activeCount={activeCount}
+                isOpen={isDrawerOpen}
+                onOpen={() => setIsDrawerOpen(true)}
+            />
 
             {/* Mobile drawer — focus trap, scroll lock, escape handled inside */}
             <MobileDrawer

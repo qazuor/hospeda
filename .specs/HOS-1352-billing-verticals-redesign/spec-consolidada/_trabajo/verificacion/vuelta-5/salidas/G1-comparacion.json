@@ -1,0 +1,1078 @@
+{
+    "stats": {
+        "dec": 138,
+        "lines_checked": 6750,
+        "pin": 212,
+        "owner": 320,
+        "cells": 1091
+    },
+    "differences": [
+        {
+            "kind": "line_not_in_live_context",
+            "id": "dec-trial-004-p1",
+            "line": 222,
+            "output": "seudónimo del correo se calcula con un hash sin clave sobre el correo normalizado, y la función no cambia"
+        },
+        {
+            "kind": "line_not_in_live_context",
+            "id": "dec-mp-006",
+            "line": 2416,
+            "output": "  `card_token` es **reutilizable entre suscripciones** (`EX-12`, re-verificado en producción con tarjeta real)."
+        },
+        {
+            "kind": "line_not_in_live_context",
+            "id": "dec-mp-009",
+            "line": 2649,
+            "output": "  con una retención técnica, no configurable, de 90 días; procesa sólo la entrega `payment` de"
+        },
+        {
+            "kind": "line_not_in_live_context",
+            "id": "dec-arch-016",
+            "line": 6314,
+            "output": "  ensayo; la de producción, en un paso 5c después del 5, con la tarjeta del owner (un checkout real, su devolución, el correo de Mercado Pago, la caché del"
+        },
+        {
+            "kind": "line_not_in_live_context",
+            "id": "dec-meth-019-p5",
+            "line": 11076,
+            "output": "Cada fila de las tablas `10-decisiones-del-owner.md` de las rondas de diseño, sin lo tachado. Son **sólo citables** (owner AX: «la matriz, las letras del owner y la lista de piezas son sólo citables»); la decisión que cada letra produjo vive en su DEC o su 📌 de arriba. Las letras que una fuente posterior dejó sin efecto llevan su marca ⚠️ **Caducada**; lo que produjeron, si murió, está en [`90-retirados.md`](90-retirados.md)."
+        }
+    ],
+    "missing_candidates": [
+        {
+            "id": "dec-trial-004",
+            "source_line": 468,
+            "source": "  seudónimo del correo es SHA-256 sin clave sobre el correo normalizado, y la función no cambia"
+        },
+        {
+            "id": "dec-trial-010",
+            "source_line": 6212,
+            "source": "     escribe la fila consumida, igual que `T7`. Si el cobro se rechaza, la persona queda en"
+        },
+        {
+            "id": "dec-sub-007",
+            "source_line": 1207,
+            "source": "  2. ~~**El downgrade tiene que ser diferido de verdad.** Si se muta el monto en el momento en que"
+        },
+        {
+            "id": "dec-sub-007",
+            "source_line": 1208,
+            "source": "     el cliente lo pide, el proveedor cobrará el monto bajo al fin del ciclo y el cliente habrá"
+        },
+        {
+            "id": "dec-sub-007",
+            "source_line": 1209,
+            "source": "     usado el plan alto pagando el bajo. Cumplir el §28 significa no tocar el monto hasta el fin"
+        },
+        {
+            "id": "dec-sub-007",
+            "source_line": 1210,
+            "source": "     del ciclo, lo que exige la cola de cambios programados de `M-SUB-02`.~~"
+        },
+        {
+            "id": "dec-sub-010",
+            "source_line": 1941,
+            "source": "  sólo para quien vuelve en el fin previsto. ~~Una pausa de menos de un ciclo que cruza una fecha de"
+        },
+        {
+            "id": "dec-sub-010",
+            "source_line": 1942,
+            "source": "  cobro salteada regala ese ciclo~~ **Toda pausa que cruza una fecha de cobro salteada y termina"
+        },
+        {
+            "id": "dec-sub-013",
+            "source_line": 4078,
+            "source": "  `PENDING_AUTHORIZATION` porque el período lo arranca `S2`; `GRACE_PERIOD` ~~porque el período no"
+        },
+        {
+            "id": "dec-sub-013",
+            "source_line": 4079,
+            "source": "  avanza hasta que entra el pago y~~ porque **la cuota ya existe**; `CANCEL_SCHEDULED` porque ningún período"
+        },
+        {
+            "id": "dec-sub-013",
+            "source_line": 4090,
+            "source": "- **Al reabrir por `MP4`, el período se RE-ANCLA al instante de la reactivación.** ~~No es una"
+        },
+        {
+            "id": "dec-sub-013",
+            "source_line": 4091,
+            "source": "  elección: con el ancla vieja el reloj crearía de golpe todo el atraso que la mitad (2) mandó no"
+        },
+        {
+            "id": "dec-sub-013",
+            "source_line": 4092,
+            "source": "  crear.~~ Es específico de esa puerta y **no se escribe en `S7`**, porque el pagador con tarjeta no"
+        },
+        {
+            "id": "dec-sub-013",
+            "source_line": 4131,
+            "source": "  `S21`, `S24`, `S26`) y cuatro desde `PENDING_AUTHORIZATION` (`S13`, `S20`, `S21`, `S28`). Sin esto"
+        },
+        {
+            "id": "dec-sub-019",
+            "source_line": 5838,
+            "source": "  mora** una suscripción nuestra — cancelamos antes de que se le venza la ventana. La pausa con motivo"
+        },
+        {
+            "id": "dec-sub-019",
+            "source_line": 5839,
+            "source": "  `PROVIDER_DUNNING` de `DEC-MP-003` **no se borra** —el espejo tiene que saber leerla si ocurre, por"
+        },
+        {
+            "id": "dec-sub-019",
+            "source_line": 5840,
+            "source": "  ejemplo si alguien reactiva un preapproval a mano—, pero deja de ser un camino que haya que diseñar."
+        },
+        {
+            "id": "dec-sub-021",
+            "source_line": 6026,
+            "source": "  1. **La frase *«los reintentos del proveedor cobran con ella»* queda CONDICIONADA a `GR-1`**, como"
+        },
+        {
+            "id": "dec-sub-021",
+            "source_line": 6027,
+            "source": "     `DEC-SUB-010` lo está a su segunda lectura. El *Contexto medido* no la mide: `EX-36` mide que la"
+        },
+        {
+            "id": "dec-sub-021",
+            "source_line": 6028,
+            "source": "     tarjeta **se puede** cambiar, no que el reintento de un cobro ya abierto use la nueva; y `GR-3`"
+        },
+        {
+            "id": "dec-sub-021",
+            "source_line": 6030,
+            "source": "     mensual es extrapolación—. **Se mide con el próximo rechazo mensual real.** Mientras tanto, **la"
+        },
+        {
+            "id": "dec-sub-021",
+            "source_line": 6031,
+            "source": "     pantalla y los correos del grace no prometen que el reintento use la tarjeta nueva**. La"
+        },
+        {
+            "id": "dec-sub-021",
+            "source_line": 6032,
+            "source": "     decisión no cambia; cambia lo que se le promete al cliente."
+        },
+        {
+            "id": "dec-mp-003",
+            "source_line": 4751,
+            "source": "- **Decisión**: **un motivo nuevo de pausa, `PROVIDER_DUNNING`.** El espejo lo escribe en lugar de"
+        },
+        {
+            "id": "dec-mp-003",
+            "source_line": 4752,
+            "source": "  `CUSTOMER_REQUEST`. Los motivos pasan de **dos a tres**, y **todo lo que lee el motivo de pausa"
+        },
+        {
+            "id": "dec-mp-003",
+            "source_line": 4753,
+            "source": "  hay que recorrerlo** — empezando por `puedePausar()`, los topes del §26 y las salidas `S10`,"
+        },
+        {
+            "id": "dec-mp-006",
+            "source_line": 5673,
+            "source": "  `card_token` es **de un solo uso** (`EX-12`, re-verificado en producción con tarjeta real)."
+        },
+        {
+            "id": "dec-mp-008",
+            "source_line": 5936,
+            "source": "- 📌 **Precisada el 2026-09-28, con OK del owner (revisión del owner, N8)**: Pendiente de medición"
+        },
+        {
+            "id": "dec-mp-008",
+            "source_line": 5937,
+            "source": "  (revisión del owner, N8): una pausa o una cancelación hecha por el pagador desde su cuenta de"
+        },
+        {
+            "id": "dec-mp-008",
+            "source_line": 5938,
+            "source": "  Mercado Pago no se distingue hoy de una del proveedor; hasta medir, esta decisión la trata como"
+        },
+        {
+            "id": "dec-mp-009",
+            "source_line": 7471,
+            "source": "  con una retención técnica, no configurable, de 180 días; procesa sólo la entrega `payment` de"
+        },
+        {
+            "id": "dec-ent-006",
+            "source_line": 6739,
+            "source": "  permisos y su migración de datos, que se asigna al aprobar la postulación, y el paso 3 de la"
+        },
+        {
+            "id": "dec-ent-006",
+            "source_line": 6746,
+            "source": "  postulación: se da en el acto que fija al dueño de la presencia**, el reclamo (`DEC-AUTH-004`) o"
+        },
+        {
+            "id": "dec-ent-006",
+            "source_line": 6747,
+            "source": "  el alta directa del admin con dueño. Al aprobar todavía no se sabe cuál es la cuenta del dueño, y"
+        },
+        {
+            "id": "dec-ent-006",
+            "source_line": 6751,
+            "source": "  `payment_confirmed_through`; `starts_at` y `ends_at` quedan hasta la unidad de socios (H; ver el"
+        },
+        {
+            "id": "dec-ent-006",
+            "source_line": 6758,
+            "source": "  unidad de socios»*, **los borra `V7` con su migración, junto con sus lectores del panel** (O)."
+        },
+        {
+            "id": "dec-ent-006",
+            "source_line": 6762,
+            "source": "  (Gold o Silver) sale en la misma migración de `V7` que `starts_at` y `ends_at`, con su índice, y"
+        },
+        {
+            "id": "dec-addon-002",
+            "source_line": 2190,
+            "source": "     `V2-e`)**: la selección de `S32` en la baja suma `CANCEL_SCHEDULED` a la exclusión. `S26` la"
+        },
+        {
+            "id": "dec-addon-002",
+            "source_line": 2191,
+            "source": "     aplica a los `USER`/`GLOBAL` compatibles con la vertical que discontinúa. Y cuando una de las"
+        },
+        {
+            "id": "dec-addon-002",
+            "source_line": 2192,
+            "source": "     catorce transiciones saca a una principal de las filas vivas y la orfandad de un"
+        },
+        {
+            "id": "dec-addon-003",
+            "source_line": 3858,
+            "source": "     convierte —no hay nada comprado— pero su cobro se cancela igual. **La condición de huérfano"
+        },
+        {
+            "id": "dec-addon-004",
+            "source_line": 3921,
+            "source": "- ~~**Una tensión previa que este arreglo NO resuelve y queda a la vista**: `12-contrato…` §2.8"
+        },
+        {
+            "id": "dec-addon-004",
+            "source_line": 3922,
+            "source": "  dice que *«desanclar no está declarado»* y `B/16` §4.3 enumera como cuarto momento de"
+        },
+        {
+            "id": "dec-addon-004",
+            "source_line": 3923,
+            "source": "  re-evaluación *«se revoca el grant, o **se retira el ancla de esa vertical**»*.~~ **RESUELTA el"
+        },
+        {
+            "id": "dec-addon-004",
+            "source_line": 3931,
+            "source": "  `S11` o por `S26`—, en esa fecha corre primero el `S12` de la principal, la orfandad corre"
+        },
+        {
+            "id": "dec-data-001",
+            "source_line": 954,
+            "source": "     (`M-DATA-01`, abierta). **📌 Cerrada el 2026-09-25 por `DEC-DATA-005`**: sólo el contenido de la"
+        },
+        {
+            "id": "dec-data-002",
+            "source_line": 3774,
+            "source": "     **📌 Precisado el 2026-09-25, con OK del owner.** La lista cerrada **tiene seis hechos**"
+        },
+        {
+            "id": "dec-data-002",
+            "source_line": 3796,
+            "source": "  **Lo que se implementó es equivalente en el resultado, y conviene decir que no es idéntico: el"
+        },
+        {
+            "id": "dec-data-002",
+            "source_line": 3797,
+            "source": "  reloj SÍ corre durante la pausa, y se reinicia al reanudar.** El daño residual es **cero**, y por"
+        },
+        {
+            "id": "dec-data-002",
+            "source_line": 3798,
+            "source": "  una razón aritmética: el tope de una pausa son **4 pausas-mes ≈ 120 días** contra los **180** del"
+        },
+        {
+            "id": "dec-data-002",
+            "source_line": 3799,
+            "source": "  hard delete, y cada reanudación reinicia — así que las pausas encadenadas tampoco acumulan. La"
+        },
+        {
+            "id": "dec-data-002",
+            "source_line": 3800,
+            "source": "  ficha se archiva, sí, pero **vuelve sola por `PB7`** y **nunca se borra**."
+        },
+        {
+            "id": "dec-data-002",
+            "source_line": 3801,
+            "source": "- **`D16`, y es la pieza que evita que todo esto sea una premisa que envejece sola**: *«el tope de"
+        },
+        {
+            "id": "dec-data-002",
+            "source_line": 3802,
+            "source": "  una pausa, en días, es menor que el día del hard delete»*, con guard `G-R5` que compara las dos"
+        },
+        {
+            "id": "dec-data-002",
+            "source_line": 3803,
+            "source": "  cifras y falla si la primera alcanza a la segunda. **Las dos son configuración**, así que el"
+        },
+        {
+            "id": "dec-data-002",
+            "source_line": 3804,
+            "source": "  invariante es **la relación** y nunca los números. Sin `D16`, todo el arreglo descansa en una"
+        },
+        {
+            "id": "dec-data-002",
+            "source_line": 3805,
+            "source": "  desigualdad entre dos valores que nadie vuelve a mirar — que es exactamente el quinto modo de"
+        },
+        {
+            "id": "dec-data-002",
+            "source_line": 3806,
+            "source": "  falla que `DEC-METH-010` declara **no cubierto** por ninguna búsqueda."
+        },
+        {
+            "id": "dec-data-004",
+            "source_line": 5007,
+            "source": "### DEC-DATA-004 — Se ratifican las tres formas que la tanda eligió sin consultar: la rama de `PB7`, el orden del cupo y la lista de los cinco"
+        },
+        {
+            "id": "dec-data-004",
+            "source_line": 5027,
+            "source": "- **`H1` — la lista de los cinco consumidores de `inactiva_desde` queda como está**, con los dos"
+        },
+        {
+            "id": "dec-data-005",
+            "source_line": 6126,
+            "source": "  sola por `S12`, sobre la cuenta ya dada de baja. El paso 1 de la baja manual termina cuando ninguna"
+        },
+        {
+            "id": "dec-data-008",
+            "source_line": 7401,
+            "source": "  atrasada y la espera tras un rechazo) los fija el owner antes del ensayo del corte en staging, y"
+        },
+        {
+            "id": "dec-data-008",
+            "source_line": 7411,
+            "source": "  plazos de cada mitad, con los quince valores, la crea la migración estructural del paso 3 del"
+        },
+        {
+            "id": "dec-data-008",
+            "source_line": 7420,
+            "source": "  paso 3 lleva los dieciocho, y los otros cinco sin valor escrito los sigue fijando el owner antes"
+        },
+        {
+            "id": "dec-arch-006",
+            "source_line": 2540,
+            "source": "  4. **📌 Implicación (FASE 9 vuelta 1, owner 2026-09-26, `G2-1`;"
+        },
+        {
+            "id": "dec-arch-006",
+            "source_line": 2542,
+            "source": "     primero de verticales a billing: *«la ficha F llegó a `PURGED`»*, emitido ~~en el mismo acto de"
+        },
+        {
+            "id": "dec-arch-006",
+            "source_line": 2543,
+            "source": "     `PB9` y de `PB12`~~ **por el mismo acto** de `PB9` y de `PB12`, **después de su commit** —como"
+        },
+        {
+            "id": "dec-arch-006",
+            "source_line": 2551,
+            "source": "  5. **📌 Implicación (FASE 9 vuelta 1, owner 2026-09-26, `G4-2`;"
+        },
+        {
+            "id": "dec-arch-006",
+            "source_line": 2580,
+            "source": "- 📌 **Precisado el 2026-09-27, con OK del owner (FASE 9 vuelta 2, `R5` y `Q-FECHA`)**: la"
+        },
+        {
+            "id": "dec-arch-006",
+            "source_line": 2581,
+            "source": "  fecha de fin de servicio de una vertical la calcula billing y verticales la pregunta por"
+        },
+        {
+            "id": "dec-arch-006",
+            "source_line": 2582,
+            "source": "  `finDeServicio` (`12-contrato…` §4.1), que en la implementación de arranque contesta"
+        },
+        {
+            "id": "dec-arch-006",
+            "source_line": 2583,
+            "source": "  `NINGUNA`; la real contesta de `vertical_discontinuation`, una fila de billing por vertical"
+        },
+        {
+            "id": "dec-arch-006",
+            "source_line": 2584,
+            "source": "  discontinuada, y verticales no guarda copia. El día del fin de servicio billing sólo avisa."
+        },
+        {
+            "id": "dec-arch-006",
+            "source_line": 2585,
+            "source": "  `PB2`, el hecho 4 y la invalidación de la vertical los ejecuta el reconciliador diario de"
+        },
+        {
+            "id": "dec-arch-006",
+            "source_line": 2586,
+            "source": "  cobertura (`V/03` §9). `extenderTrial` sigue siendo la única escritura de billing en"
+        },
+        {
+            "id": "dec-arch-006",
+            "source_line": 2588,
+            "source": "- 📌 **Precisada el 2026-09-28, con OK del owner (FASE 9 vuelta 2, verificación, `V2-x` sobre"
+        },
+        {
+            "id": "dec-arch-006",
+            "source_line": 2589,
+            "source": "  `N-B-03`)**: `PB9` no borra una ficha de una vertical cuya `finDeServicio` ya pasó mientras la"
+        },
+        {
+            "id": "dec-arch-006",
+            "source_line": 2590,
+            "source": "  corrida del reconciliador no escribió el hecho 4, así que `finDeServicio` tiene tres lectores en"
+        },
+        {
+            "id": "dec-arch-006",
+            "source_line": 2607,
+            "source": "  en `PENDING_AUTHORIZATION`, `ACTIVE`, `GRACE_PERIOD`, `PAUSED` o `SUSPENDED`, las filas vivas sin"
+        },
+        {
+            "id": "dec-arch-006",
+            "source_line": 2608,
+            "source": "  `CANCEL_SCHEDULED`, o una marca `CANCELACIÓN_SIN_CONFIRMAR` abierta. Su único lector es la acción"
+        },
+        {
+            "id": "dec-arch-006",
+            "source_line": 2612,
+            "source": "  la cubre la de la dirección de ida, y siguen siendo once. Y mientras la app de la rama está rota,"
+        },
+        {
+            "id": "dec-arch-006",
+            "source_line": 2619,
+            "source": "  la interfaz del reloj. Así `B1` no espera a `V1`, y las dependencias entre épicas siguen en once."
+        },
+        {
+            "id": "dec-arch-013",
+            "source_line": 7327,
+            "source": "  y 49)**: Las 11 migraciones de datos del seed que importaban el archivo borrado se congelan con"
+        },
+        {
+            "id": "dec-arch-013",
+            "source_line": 7328,
+            "source": "  sus valores adentro, en el mismo cambio que lo borra, y salen en el paso 6 del corte. Los datos de"
+        },
+        {
+            "id": "dec-arch-013",
+            "source_line": 7332,
+            "source": "  alguno de los cinco plazos sin valor escrito está vacío, y el owner los fija antes del ensayo del"
+        },
+        {
+            "id": "dec-arch-013",
+            "source_line": 7333,
+            "source": "  corte en staging. Y las claves, de los entitlements y de los límites, siguen en el código; los"
+        },
+        {
+            "id": "dec-arch-013",
+            "source_line": 7343,
+            "source": "  después el script del corte, con la función de la aplicación, y se verifican a mano: se resigna"
+        },
+        {
+            "id": "dec-arch-013",
+            "source_line": 7358,
+            "source": "  control cuenta como guard: los guards pasan de 33 a 34** (E; ver el 📌 de `DEC-TEST-001`). Y las"
+        },
+        {
+            "id": "dec-arch-014",
+            "source_line": 7550,
+            "source": "  mismo cambio; `G16` sigue en `B1`, porque su predicado (b) necesita el package del cobro. El"
+        },
+        {
+            "id": "dec-arch-014",
+            "source_line": 7551,
+            "source": "  programa pasa a 23 unidades y el reparto de guards a 17 de verticales, 15 de billing y 1 de `U1`,"
+        },
+        {
+            "id": "dec-arch-014",
+            "source_line": 7552,
+            "source": "  33 en total. `U1` no es de ninguna épica, así que las dependencias entre épicas siguen en once."
+        },
+        {
+            "id": "dec-arch-014",
+            "source_line": 7553,
+            "source": "  **O-B**: el receptor nuevo sirve la misma ruta que el viejo, `/api/v1/webhooks/mercadopago`; el"
+        },
+        {
+            "id": "dec-arch-014",
+            "source_line": 7554,
+            "source": "  borde la cierra desde que se apaga el contenedor viejo hasta que las lápidas del paso 4 están"
+        },
+        {
+            "id": "dec-arch-014",
+            "source_line": 7555,
+            "source": "  verificadas, el proveedor recibe error y reintenta a la misma URL, y el 4b sólo verifica, la"
+        },
+        {
+            "id": "dec-arch-014",
+            "source_line": 7556,
+            "source": "  sonda de Webhooks y el pago chico de IPN (`DEC-MP-009`). `EX-46` queda sin sujeto. Qué código"
+        },
+        {
+            "id": "dec-arch-014",
+            "source_line": 7557,
+            "source": "  contesta el borde cerrado, para que el proveedor reintente, y qué pasa con lo que se pierda si el"
+        },
+        {
+            "id": "dec-arch-014",
+            "source_line": 7558,
+            "source": "  cierre pasa la escalera de reintentos quedaron para el owner"
+        },
+        {
+            "id": "dec-arch-014",
+            "source_line": 7559,
+            "source": "  (`30-revision-del-owner/35-aplicacion-lote-o.md` §3). Dónde: `16-fase-7-del-paraguas.md` §4.2 y"
+        },
+        {
+            "id": "dec-arch-014",
+            "source_line": 7562,
+            "source": "  dos preguntas que el 📌 anterior dejó para el owner están contestadas. **P-A**: la ruta de avisos"
+        },
+        {
+            "id": "dec-arch-014",
+            "source_line": 7563,
+            "source": "  no la cierra una regla de bloqueo, que contesta un `4xx` sin reintento medido, sino un Worker del"
+        },
+        {
+            "id": "dec-arch-014",
+            "source_line": 7564,
+            "source": "  borde que contesta `500`, el único código con reintento medido (`WH-4`), con una cabecera propia"
+        },
+        {
+            "id": "dec-arch-014",
+            "source_line": 7565,
+            "source": "  que lo distingue de un `500` de la aplicación; se prende antes de apagar el contenedor viejo, se"
+        },
+        {
+            "id": "dec-arch-014",
+            "source_line": 7566,
+            "source": "  apaga al final del paso 4, vive con el script del corte y lo deja listo el ensayo del paso 0"
+        },
+        {
+            "id": "dec-arch-014",
+            "source_line": 7567,
+            "source": "  (`DEC-MIG-003`). **P-B**: lo que se pierda durante el cierre lo lista el detector del día"
+        },
+        {
+            "id": "dec-arch-014",
+            "source_line": 7568,
+            "source": "  siguiente al corte, sin abrir marca ni asentar (`DEC-MIG-005`). **P-C**: `U1`, al terminar la"
+        },
+        {
+            "id": "dec-arch-014",
+            "source_line": 7570,
+            "source": "  su parte (`DEC-ARCH-006`). Las dependencias entre épicas siguen en once y los guards en 33, con el"
+        },
+        {
+            "id": "dec-arch-014",
+            "source_line": 7571,
+            "source": "  mismo reparto: `G14` sigue en `V1`. Dónde: `16-fase-7-del-paraguas.md` §4.2 y §4.6; `B/21`, «NO"
+        },
+        {
+            "id": "dec-arch-014",
+            "source_line": 7612,
+            "source": "  `payment_confirmed_through`; `starts_at` y `ends_at` quedan hasta la unidad de socios (H; ver el"
+        },
+        {
+            "id": "dec-arch-014",
+            "source_line": 7613,
+            "source": "  📌 de `DEC-ENT-006`). Y los guards que cuentan los 📌 de O-A y P-C, 33, pasan a **34**: el"
+        },
+        {
+            "id": "dec-arch-016",
+            "source_line": 7801,
+            "source": "  ensayo; la de producción, en un paso 5c después del 5, con la tarjeta del owner y un monto"
+        },
+        {
+            "id": "dec-arch-016",
+            "source_line": 7802,
+            "source": "  aprobado de antemano (un checkout real, su devolución, el correo de Mercado Pago, la caché del"
+        },
+        {
+            "id": "dec-arch-017",
+            "source_line": 7920,
+            "source": "  cambios, las columnas de la sucesión y las dos tablas de `B12`, `B3`; promos y cortesías, `B9a`;"
+        },
+        {
+            "id": "dec-arch-017",
+            "source_line": 7921,
+            "source": "  addons, `B4`, que le agrega a `payment` la columna de la instancia—, con el drift guard sobre la"
+        },
+        {
+            "id": "dec-arch-017",
+            "source_line": 7995,
+            "source": "  índice parcial y `reconciliation_mark_payment`; `V9a`, `domain_event` (inferido: ninguna pieza"
+        },
+        {
+            "id": "dec-arch-017",
+            "source_line": 7996,
+            "source": "  anterior la escribe). Precisa AP y AV. **BO**: revocar una cortesía temporal (acción 1) es"
+        },
+        {
+            "id": "dec-mig-001",
+            "source_line": 416,
+            "source": "- **Decisión**: **(1)**. Se los contacta, se los da de alta en el motor nuevo y se cancela el"
+        },
+        {
+            "id": "dec-mig-002",
+            "source_line": 2730,
+            "source": "- **Decisión**: **(1)**. Se siguen tomando altas en el sistema actual, y **se transcriben a mano"
+        },
+        {
+            "id": "dec-mig-002",
+            "source_line": 2731,
+            "source": "  cuando el rediseño esté listo**, con el mismo procedimiento del §2.3 que `DEC-MIG-001` fijó para"
+        },
+        {
+            "id": "dec-mig-002",
+            "source_line": 2737,
+            "source": "  el nuevo: una regla de Cloudflare cierra las rutas que crean o re-autorizan algo en el"
+        },
+        {
+            "id": "dec-mig-002",
+            "source_line": 2738,
+            "source": "  proveedor. No contradice esta decisión: su alcance es el rediseño, y el corte es su final."
+        },
+        {
+            "id": "dec-mig-002",
+            "source_line": 2746,
+            "source": "- **El riesgo, declarado**: **la cohorte a transcribir crece mientras dure el rediseño.** Hoy son 5;"
+        },
+        {
+            "id": "dec-mig-002",
+            "source_line": 2747,
+            "source": "  cada alta nueva suma una. **Si el ritmo de altas se acelera hay que volver a mirar esto** — no"
+        },
+        {
+            "id": "dec-mig-002",
+            "source_line": 2748,
+            "source": "  porque la decisión haya sido mala, sino porque habría cambiado la condición que la hacía barata."
+        },
+        {
+            "id": "dec-mig-002",
+            "source_line": 2749,
+            "source": "  Queda anotado en [`04-open-decisions.md`](./04-open-decisions.md) § *«Para revisar más adelante»*."
+        },
+        {
+            "id": "dec-mig-003",
+            "source_line": 3099,
+            "source": "    declarada una **rama de aborto** si el despliegue falla: el costo, aceptado, es que los"
+        },
+        {
+            "id": "dec-mig-003",
+            "source_line": 3100,
+            "source": "    clientes cancelados se re-suscriben sin trial, y **qué se hace con esa diferencia no está"
+        },
+        {
+            "id": "dec-mig-003",
+            "source_line": 3101,
+            "source": "    decidido**. Detalle en `16-fase-7-del-paraguas.md` §4.2."
+        },
+        {
+            "id": "dec-mig-003",
+            "source_line": 3123,
+            "source": "       escribe sigue siendo: las lápidas (paso 4), los dos `permanent_grant` y `inactiva_desde` ="
+        },
+        {
+            "id": "dec-mig-003",
+            "source_line": 3139,
+            "source": "    - La rama de aborto devuelve la URL de notificación a la ruta del viejo y la verifica con"
+        },
+        {
+            "id": "dec-mig-003",
+            "source_line": 3141,
+            "source": "    - El borrado del contenido de las `L1` pasa al paso 5b, después de abrir altas, porque el"
+        },
+        {
+            "id": "dec-mig-003",
+            "source_line": 3143,
+            "source": "    - El apuntado de la URL es el paso 4b, después de las lápidas. El paso 3, que es hasta donde"
+        },
+        {
+            "id": "dec-mig-003",
+            "source_line": 3147,
+            "source": "    - El recuento de fichas de Gastronomía y de Experiencia se hace antes del 1a, y el corte no"
+        },
+        {
+            "id": "dec-mig-003",
+            "source_line": 3148,
+            "source": "      arranca si da una fila; el gate del paso 2 lo repite como segundo control, y si ahí da una"
+        },
+        {
+            "id": "dec-mig-003",
+            "source_line": 3149,
+            "source": "      fila el corte entra en la rama de aborto (`V/21` §2.4)."
+        },
+        {
+            "id": "dec-mig-003",
+            "source_line": 3150,
+            "source": "    - El paso 4c, después del 4b y fuera de la rama, revalida las páginas públicas de las fichas"
+        },
+        {
+            "id": "dec-mig-003",
+            "source_line": 3157,
+            "source": "    `/api/v1/webhooks/mercadopago`, para los dos canales; el borde la cierra antes de apagar el"
+        },
+        {
+            "id": "dec-mig-003",
+            "source_line": 3158,
+            "source": "    contenedor viejo en el paso 3 y la abre al final del paso 4, con las lápidas verificadas;"
+        },
+        {
+            "id": "dec-mig-003",
+            "source_line": 3159,
+            "source": "    mientras está cerrada, el proveedor recibe error y reintenta a la misma URL. El 4b verifica con"
+        },
+        {
+            "id": "dec-mig-003",
+            "source_line": 3160,
+            "source": "    la sonda de Webhooks y el pago chico de IPN. La rama de aborto ya no devuelve ninguna URL: vuelve"
+        },
+        {
+            "id": "dec-mig-003",
+            "source_line": 3161,
+            "source": "    a cerrar la ruta si hace falta, redespliega la imagen vieja y la abre verificada con una entrega"
+        },
+        {
+            "id": "dec-mig-003",
+            "source_line": 3163,
+            "source": "  - 📌 **Precisado el 2026-09-29, con OK del owner (verificación corta, lote P-A)**: la ruta de"
+        },
+        {
+            "id": "dec-mig-003",
+            "source_line": 3164,
+            "source": "    avisos la cierra un Worker del borde que contesta `500` a todo pedido, con una cabecera propia,"
+        },
+        {
+            "id": "dec-mig-003",
+            "source_line": 3165,
+            "source": "    y no una regla de bloqueo, que contesta un `4xx` cuyo reintento no está medido. Se le asigna la"
+        },
+        {
+            "id": "dec-mig-003",
+            "source_line": 3166,
+            "source": "    ruta antes de apagar el contenedor viejo y se le quita al final del paso 4, las dos veces"
+        },
+        {
+            "id": "dec-mig-003",
+            "source_line": 3167,
+            "source": "    verificado desde afuera; en la rama de aborto, cerrar y abrir la ruta son lo mismo. Vive"
+        },
+        {
+            "id": "dec-mig-003",
+            "source_line": 3168,
+            "source": "    versionado con el script del corte y se archiva con él; lo deja listo el ensayo del paso 0 en"
+        },
+        {
+            "id": "dec-mig-003",
+            "source_line": 3169,
+            "source": "    `staging`, que mide también cuánto dura el cierre."
+        },
+        {
+            "id": "dec-mig-005",
+            "source_line": 6480,
+            "source": "- 📌 **Precisado el 2026-09-27, con OK del owner (FASE 9 vuelta 2, `R2`, `R21` y `R21-b`)**: el"
+        },
+        {
+            "id": "dec-mig-005",
+            "source_line": 6481,
+            "source": "  cobro sobre una lápida del corte no se devuelve sólo si es del día del corte (`date_created`"
+        },
+        {
+            "id": "dec-mig-005",
+            "source_line": 6482,
+            "source": "  del registro). Uno posterior abre `PAGO_TARDÍO_RECHAZADO` con la propuesta de devolverlo. La"
+        },
+        {
+            "id": "dec-mig-005",
+            "source_line": 6483,
+            "source": "  población se lee de la re-verificación del día del corte, y un detector corre después del"
+        },
+        {
+            "id": "dec-mig-005",
+            "source_line": 6484,
+            "source": "  corte, con dueño y fecha (`B/21` «NO cierra»). El titular de una autorización que sólo"
+        },
+        {
+            "id": "dec-mig-005",
+            "source_line": 6485,
+            "source": "  conoce el proveedor entra a la población a avisar: antes del aviso previo, una pasada de sólo"
+        },
+        {
+            "id": "dec-mig-005",
+            "source_line": 6486,
+            "source": "  lectura sobre el proveedor lista las autorizaciones vivas con su `payer_email`, y el 1b"
+        },
+        {
+            "id": "dec-mig-005",
+            "source_line": 6487,
+            "source": "  cancela después. Quien aparezca recién en el manifiesto del 1b recibe el aviso después de la"
+        },
+        {
+            "id": "dec-mig-005",
+            "source_line": 6488,
+            "source": "  cancelación, y lo que pierde se declara como en `G1-4`."
+        },
+        {
+            "id": "dec-mig-005",
+            "source_line": 6489,
+            "source": "- 📌 **Precisado con OK del owner (FASE 9 vuelta 2, verificación: `V2-a` el 2026-09-27; `V2-m` y"
+        },
+        {
+            "id": "dec-mig-005",
+            "source_line": 6490,
+            "source": "  `V2-r` el 2026-09-28)**: el día del cobro se lee en la fecha del pago que aprobó el registro,"
+        },
+        {
+            "id": "dec-mig-005",
+            "source_line": 6491,
+            "source": "  leído por id, y no en el `date_created` del registro, que no se mueve con los reintentos. Qué"
+        },
+        {
+            "id": "dec-mig-005",
+            "source_line": 6492,
+            "source": "  campo del pago la trae se mide en el paso 0 del corte (`EX-48`), y el 1b no arranca sin ese dato:"
+        },
+        {
+            "id": "dec-mig-005",
+            "source_line": 6493,
+            "source": "  si ningún campo es confiable, vuelve al owner antes del corte. Y el paso 0 cuenta las"
+        },
+        {
+            "id": "dec-mig-005",
+            "source_line": 6494,
+            "source": "  suscripciones anuales vivas del viejo (`EX-50`), porque sobre ellas la segunda corrida del"
+        },
+        {
+            "id": "dec-mig-005",
+            "source_line": 6495,
+            "source": "  detector puede caer hasta un año después del corte."
+        },
+        {
+            "id": "dec-mig-005",
+            "source_line": 6499,
+            "source": "- 📌 **Precisada el 2026-09-29, con OK del owner (verificación corta, lote P-B)**: La primera"
+        },
+        {
+            "id": "dec-mig-005",
+            "source_line": 6500,
+            "source": "  corrida del detector, el día siguiente al corte, lista también, por cada lápida del corte, los"
+        },
+        {
+            "id": "dec-mig-005",
+            "source_line": 6501,
+            "source": "  registros de cobro que el proveedor da aprobados con un pago del día del corte y que no tienen"
+        },
+        {
+            "id": "dec-mig-005",
+            "source_line": 6502,
+            "source": "  `payment`, con la misma lectura del barrido, sin abrir marca ni asentar. Es lo que ve el cobro"
+        },
+        {
+            "id": "dec-mig-005",
+            "source_line": 6503,
+            "source": "  cuyo aviso se perdió durante el cierre de la ruta de avisos, que el barrido no compara sobre una"
+        },
+        {
+            "id": "dec-mig-005",
+            "source_line": 6504,
+            "source": "  lápida del corte; la regla de `G3-1` no cambia, y la lista suma titulares a la llamada."
+        },
+        {
+            "id": "dec-mig-005",
+            "source_line": 6508,
+            "source": "  del corte. El titular que sólo conoce el proveedor tiene detector sólo si alguna lectura medida en"
+        },
+        {
+            "id": "dec-mig-005",
+            "source_line": 6509,
+            "source": "  sandbox trae su pagador (`EX-59`); si ninguna, queda declarado sin detector."
+        },
+        {
+            "id": "dec-mig-006",
+            "source_line": 6985,
+            "source": "- 📌 **Precisada el 2026-09-29, con OK del owner (revisión del owner, casos vecinos, casos 5 y 6)**:"
+        },
+        {
+            "id": "dec-mig-006",
+            "source_line": 6986,
+            "source": "  En el paso 0 se toman dos recuentos sobre la cartera vieja: si el sistema viejo servía alguna"
+        },
+        {
+            "id": "dec-mig-006",
+            "source_line": 6987,
+            "source": "  ficha que el corte hace nacer `PURGED` o en `DRAFT`, y si da cero el paso 4c se saltea; y cuántos"
+        },
+        {
+            "id": "dec-mig-006",
+            "source_line": 6988,
+            "source": "  dueños tienen más de una ficha a la vista en la misma vertical, que no es gate y vuelve al owner"
+        },
+        {
+            "id": "dec-mig-006",
+            "source_line": 6997,
+            "source": "  después el script del corte, con la función de la aplicación, y se verifica a mano (lote 2 D,"
+        },
+        {
+            "id": "dec-grant-004",
+            "source_line": 2073,
+            "source": "  3. **Cortesía sobre cortesía** → **se SUMAN los días, no se reemplazan** (**📌 desde el 2026-09-25 se suman MESES**: la cortesía temporal es en meses enteros, ver `DEC-GRANT-003` impl. 6), y el aviso dice la"
+        },
+        {
+            "id": "dec-test-001",
+            "source_line": 4547,
+            "source": "  es billing»*) era falsa. `B/20` §2 lista 15 filas y `V/20` §2, 20; el total de 31 guards no"
+        },
+        {
+            "id": "dec-test-001",
+            "source_line": 4553,
+            "source": "  ~~`C2` midió que 12 de 26 no tienen unidad que los construya, y agregar uno empeora esa"
+        },
+        {
+            "id": "dec-test-001",
+            "source_line": 4554,
+            "source": "  proporción a 13 de 27.Al agregar también `G12` y `G13` la proporción MEJORA, porque esos dos"
+        },
+        {
+            "id": "dec-test-001",
+            "source_line": 4555,
+            "source": "  SÍ tienen unidad declarada.~~ **Lo medido el 2026-09-21, recorriendo las filas de las dos tablas"
+        },
+        {
+            "id": "dec-test-001",
+            "source_line": 4656,
+            "source": "  confirmados el 2026-09-28, `V2-x`). El programa pasa a 32 guards, 19 de verticales y 13 de"
+        },
+        {
+            "id": "dec-test-001",
+            "source_line": 4660,
+            "source": "  dirección código → catálogo (la otra es una FK de la base); el catálogo queda en 33 guards"
+        },
+        {
+            "id": "dec-test-001",
+            "source_line": 4665,
+            "source": "  `listing.plazos_version`, que se escribe sólo junto con `inactiva_desde`. El catálogo sigue en 33"
+        },
+        {
+            "id": "dec-test-001",
+            "source_line": 4670,
+            "source": "  pasa de 33 a **34 guards distintos** (ver el 📌 de `DEC-ARCH-013`). La decisión no fijó qué"
+        },
+        {
+            "id": "dec-test-001",
+            "source_line": 4672,
+            "source": "  15 y 1 de `U1`, 📌 O-A de `DEC-ARCH-014`); queda para el owner. Origen: (FASE 5, lote de la"
+        },
+        {
+            "id": "dec-test-001",
+            "source_line": 4677,
+            "source": "  (*«la unidad nazca ANTES o CON lo que el guard vigila»*). El reparto queda **18 de verticales, 15"
+        },
+        {
+            "id": "dec-test-001",
+            "source_line": 4678,
+            "source": "  de billing y 1 de `U1`**. Cierra lo que el 📌 anterior dejaba para el owner."
+        },
+        {
+            "id": "dec-conc-002",
+            "source_line": 1634,
+            "source": "     Terminar una cancelación NUESTRA ya decidida no es reparar una divergencia.** Once filas de"
+        },
+        {
+            "id": "dec-conc-002",
+            "source_line": 1670,
+            "source": "     llamada no se aplicó, la reintenta el barrido por la salvedad 4 del punto 4 —que desde"
+        },
+        {
+            "id": "dec-conc-002",
+            "source_line": 1671,
+            "source": "     entonces cuenta las dos lápidas, la del corte y la de recepción— y a los 3 días marca"
+        },
+        {
+            "id": "dec-rf-004",
+            "source_line": 5212,
+            "source": "  ampliación parte cuatro caminos y deja uno. `S12`-vía-`S26` ya no depende de transportar la causa:"
+        },
+        {
+            "id": "dec-rf-004",
+            "source_line": 5213,
+            "source": "  `S21` la lee en la fecha de fin en la fila de `vertical_discontinuation` de la vertical de la"
+        },
+        {
+            "id": "dec-rf-004",
+            "source_line": 5214,
+            "source": "  principal, y abre el 15. Queda del lado de la regla sólo `S17`. La lectura es por la vertical y no"
+        },
+        {
+            "id": "dec-rf-004",
+            "source_line": 5215,
+            "source": "  por la fila, así que también alcanza a la baja que la persona pidió antes del anuncio y termina"
+        },
+        {
+            "id": "dec-rf-006",
+            "source_line": 5510,
+            "source": "  `V2-p` el 2026-09-28)**: abren el 15 y no el 14, en la fecha de fin, el `USER`/`GLOBAL` que `S26`"
+        },
+        {
+            "id": "dec-rf-006",
+            "source_line": 5511,
+            "source": "  canceló y todo complemento cuya principal mató `S12` sobre una vertical con fila en"
+        },
+        {
+            "id": "dec-rf-006",
+            "source_line": 5512,
+            "source": "  `vertical_discontinuation`. Siguen siendo veinticuatro motivos, nueve que devuelven. Y la marca 7"
+        },
+        {
+            "id": "dec-rf-008",
+            "source_line": 6561,
+            "source": "     `28-fase-9-vuelta-1/10-decisiones-del-owner.md`).** El catálogo tiene hoy **quince**"
+        },
+        {
+            "id": "dec-rf-008",
+            "source_line": 6564,
+            "source": "     §3.4 y su ⚠️, §3.5, `B/19` §6) dicen quince. Lo de arriba es exacto para su fecha."
+        },
+        {
+            "id": "dec-rf-008",
+            "source_line": 6566,
+            "source": "     **📌 Recontado el 2026-09-27, con OK del owner (FASE 9 vuelta 2, owner 2026-09-27,"
+        },
+        {
+            "id": "dec-rf-008",
+            "source_line": 6567,
+            "source": "     `Q-ACC16`).** El catálogo tiene **dieciséis** acciones: la decimosexta es *«discontinuar una"
+        },
+        {
+            "id": "dec-rf-008",
+            "source_line": 6568,
+            "source": "     vertical»*, de `SUPER_ADMIN`, auditada y con confirmación, que orquesta las dos mitades del"
+        },
+        {
+            "id": "dec-rf-008",
+            "source_line": 6569,
+            "source": "     acto de `DEC-ARCH-011`. Las líneas que cuantifican dicen dieciséis."
+        },
+        {
+            "id": "dec-rf-008",
+            "source_line": 6580,
+            "source": "  acciones administrativas pasan de dieciséis a veintiuna vivas: sale la 16, discontinuar una"
+        },
+        {
+            "id": "dec-rf-008",
+            "source_line": 6584,
+            "source": "  I-C)**: Las acciones administrativas pasan de veintiuna a veintitrés vivas: entran la 23, borrar"
+        },
+        {
+            "id": "dec-rf-008",
+            "source_line": 6588,
+            "source": "  destructivas, y las dos las construye `V8`, como la 15. La clase y la unidad las confirmó el"
+        }
+    ]
+}

@@ -1,0 +1,15 @@
+# VA-A2 · fuente → spec · P/docs/12-contrato-de-cobertura.md, P/docs/16-fase-7-del-paraguas.md, P/docs/41-corte-del-mvp/10-decisiones-del-owner.md
+
+## Hallazgos
+
+fuentes/.specs/HOS-1352-billing-verticals-redesign/docs/12-contrato-de-cobertura.md:1132 · «el instante de la primera relectura que vio el preapproval `cancelled`» · distinta en s/c1c03210/10-corte/B4.md:51 («el instante de la última relectura que vio el preapproval»). Incoherencia interna acotada a la descripción de FILA:B4: AC:B4:11 (líneas 214–222), el modelo (línea 321) y TEST:B4:11 (líneas 483–486) exigen conservar el primer instante y no moverlo en relecturas posteriores, por lo que el comportamiento exigido por los criterios y la prueba sí coincide con la fuente. La precisión CH y el 📌 de DEC-ARCH-017 en el log, línea 8078, no reemplazan esa regla · MENOR
+
+## Resumen
+
+| archivo | reglas normativas vivas revisadas | líneas recorridas | ausentes | distintas |
+|---|---|---|---|---|
+| P/docs/12-contrato-de-cobertura.md | ≈200, agrupando reiteraciones de una misma regla | 1–1585 | 0 | 1 MENOR |
+| P/docs/16-fase-7-del-paraguas.md | ≈200, agrupando reiteraciones de una misma regla | 1–1218 | 0 | 0 |
+| P/docs/41-corte-del-mvp/10-decisiones-del-owner.md | 64 filas de decisiones no tachadas, cotejadas con sus precisiones posteriores; resultado y pendientes recorridos | 1–267 | 0 | 0 |
+
+Total: 0 BLOQUEA y 1 MENOR. P = fuentes/.specs/HOS-1352-billing-verticals-redesign. Búsqueda en toda s/c1c03210/ con rg --hidden; contraste de vigencia con el decision log y las decisiones del owner. Las reglas retiradas o reemplazadas no se contaron como ausentes; las piezas posteriores se buscaron en su fase. Los conteos de reglas de los dos capítulos son aproximados, no un inventario de cláusulas atómicas. No quedaron tramos sin recorrer.

@@ -38,10 +38,6 @@ export const RENDER_TIME_INLINE_SCRIPT_ALLOWLIST: readonly RenderTimeInlineScrip
         reason: 'FEEDBACK_NAV_BOOTSTRAP_SNIPPET is a constant.'
     },
     {
-        component: 'src/components/billing/StripCheckoutReturnParams.astro',
-        reason: 'STRIP_CHECKOUT_RETURN_PARAMS_SNIPPET is a constant.'
-    },
-    {
         component: 'src/components/shared/IconSpriteClientData.astro',
         reason: 'iconSpriteClientScript() is deterministic for a build: the content-addressed sprite URL plus the committed symbol manifest.'
     },

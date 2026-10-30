@@ -1,0 +1,39 @@
+{
+    "trazar": {
+        "R6 Origen no cita la posición del ítem": 8,
+        "R7 ítem normativo vivo sin AC": 3,
+        "R7b el AC del ítem no está en su pieza dueña": 3,
+        "R17 sección sin ninguna línea citada": 1,
+        "R18 falta un tipo de test que AN exige por familia": 3
+    },
+    "por_grupo": {
+        "verticales": {
+            "AC y tests nuevos (R7 · R7b · R18)": 1,
+            "Ítems con contenido de fuente cambiado desde 17f9702675": 3,
+            "Citas sobre texto cambiado (reanclar.py, sin remapear)": 12,
+            "Secciones R17 sin citar asignadas": 1,
+            "R17 ausente": 1,
+            "Lo que la redacción tiene que cambiar después del lote BY a CB": 5
+        },
+        "billing": {
+            "AC y tests nuevos (R7 · R7b · R18)": 2,
+            "Ítems con contenido de fuente cambiado desde 17f9702675": 19,
+            "Citas sobre texto cambiado (reanclar.py, sin remapear)": 19,
+            "Origen corrido (R6): el bloque cita una línea cuyo texto cambió": 8,
+            "Lo que la redacción tiene que cambiar después del lote BY a CB": 9
+        },
+        "transversal": {
+            "Citas sobre texto cambiado (reanclar.py, sin remapear)": 9,
+            "Lo que la redacción tiene que cambiar después del lote BY a CB": 8
+        },
+        "generados": {
+            "Ítems con contenido de fuente cambiado desde 17f9702675": 8,
+            "Lo que la redacción tiene que cambiar después del lote BY a CB": 2
+        }
+    },
+    "r17": {
+        "ausente": 1
+    },
+    "cambiados": 23,
+    "??": {}
+}

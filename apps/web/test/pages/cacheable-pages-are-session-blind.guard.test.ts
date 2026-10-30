@@ -97,7 +97,7 @@ const SESSION_AWARE_PREFIXES: ReadonlyArray<{
     },
     {
         prefix: '[lang]/publicar',
-        reason: 'Host/commerce onboarding funnels branch on whether the visitor already has an account.'
+        reason: 'Host/venue/experience onboarding funnels branch on whether the visitor already has an account.'
     },
     {
         prefix: '[lang]/newsletter/',
@@ -251,7 +251,7 @@ describe('HOS-369 WB0-6 — cacheable pages are session-blind', () => {
             '[lang]/eventos/index.astro',
             '[lang]/eventos/[slug].astro',
             '[lang]/experiencias/index.astro',
-            '[lang]/gastronomia/index.astro',
+            '[lang]/comer-y-salir/index.astro',
             '[lang]/publicaciones/index.astro',
             '[lang]/publicaciones/[slug].astro'
         ];

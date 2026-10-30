@@ -1,7 +1,7 @@
 /**
  * Field primitives shared by every post editor section (HOS-374 2C-2).
  *
- * Same layering decision as the commerce editor's `editor-fields.module.css`:
+ * Same layering decision as the listing editor's `editor-fields.module.css`:
  * the primitives live once here and each section module keeps only what is
  * genuinely its own. The accommodation editor duplicates these rules per
  * section — that is the pattern deliberately NOT copied.
@@ -22,7 +22,7 @@
 /* A UA renders a <legend> ON the fieldset's top border, outside its padding
    box, which would let the title escape the wrapping card and slice its accent
    bar. `float` opts the legend out of that placement and back into normal
-   flow (same fix as the commerce editor). */
+   flow (same fix as the listing editor). */
 .sectionTitle {
     float: left;
     width: 100%;

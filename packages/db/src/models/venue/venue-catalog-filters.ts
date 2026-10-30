@@ -1,0 +1,143 @@
+/**
+ * @file venue-catalog-filters.ts
+ * @description WHERE-clause builders that restrict venue listings to those
+ * carrying a given set of catalog rows (amenities or features).
+ *
+ * HOS-1054 needs this so a diner can ask the venue listing for the places
+ * that declare an apto — «sin TACC», «vegano», «sin lactosa» — instead of
+ * calling each restaurant to ask. The aptos are ordinary `features` catalog
+ * rows scoped to the `venue` vertical, so filtering by apto IS filtering by
+ * feature; there is no allergen-specific column and deliberately so (a new apto
+ * is a new catalog row, not a migration).
+ *
+ * ## Why these live under `models/`, NOT under `utils/`
+ *
+ * They import three dbschema modules, and a dbschema calls `pgTable(...)` and
+ * `relations(...)` from `drizzle-orm` at MODULE-LOAD time. Every one of the six
+ * modules in `src/utils/` imports zero dbschemas — an invariant nobody wrote
+ * down, and one that matters: dozens of suites mock `drizzle-orm` wholesale, so
+ * the moment the utils barrel pulls in a schema graph those suites die on
+ * import with `No "relations" export is defined on the "drizzle-orm" mock`,
+ * pointing at an unrelated file (`tag.dbschema.ts`) in an unrelated package.
+ * `models/` already imports dbschemas, so putting them here adds no coupling
+ * that was not already there. `test/db-utils-barrel-stays-schema-free.test.ts`
+ * is the guard that keeps the invariant from being broken silently again.
+ *
+ * ## Why these live here and not in `VenueModel.search`
+ *
+ * `VenueService._executeSearch` does not call `VenueModel.search` — it
+ * calls the base `findAllWithRelations` (to load `destination`/`owner` for the
+ * card transform) and `count`. Both take an `additionalConditions: SQL[]`
+ * escape hatch, so the service composes the clause rather than the model
+ * building it internally. Exporting the builders keeps the raw SQL inside
+ * `@repo/db`, where every other hand-written clause lives, instead of leaking a
+ * `drizzle-orm` template into `service-core`.
+ *
+ * ## Semantics: intersection, not union
+ *
+ * Two aptos selected means "has BOTH", matching the accommodations listing's
+ * amenity/feature chips (`buildAmenityIntersectionClause` in
+ * `accommodation.model.ts`). For an allergen filter that is the only safe
+ * reading: someone who is both celiac and lactose intolerant asking for
+ * `gluten_free_options` + `lactose_free_options` must not be shown a place that
+ * only satisfies one of them.
+ *
+ * ## Raw-identifier workaround
+ *
+ * The junction columns are emitted as raw quoted identifiers rather than as
+ * Drizzle column references. Inside a subquery Drizzle would alias a referenced
+ * column against the OUTER query's table, producing
+ * `WHERE "venues"."feature_id" = ...` — nonsense that fails at runtime.
+ * The table reference (`${rvenueFeature}`) and the outer correlation
+ * (`${venues.id}`) resolve correctly and stay template args. Same
+ * workaround, same reason, as the accommodation clauses.
+ */
+
+import { type SQL, sql } from 'drizzle-orm';
+import { rVenueAmenity } from '../../schemas/venue/r_venue_amenity.dbschema.ts';
+import { rVenueFeature } from '../../schemas/venue/r_venue_feature.dbschema.ts';
+import { venues } from '../../schemas/venue/venue.dbschema.ts';
+
+/**
+ * Build a WHERE clause restricting venue listings to those linked to ALL
+ * of the given feature IDs (set intersection).
+ *
+ * The venue "aptos" (sin TACC, vegano, vegetariano, sin lactosa, sin
+ * frutos secos) are feature rows, so this is the clause backing the apto
+ * filter.
+ *
+ * @param featureIds - Feature UUIDs the listing must ALL carry. Must be non-empty;
+ *   an empty list would produce `HAVING COUNT(...) = 0`, which matches nothing.
+ * @returns A SQL condition suitable for `additionalConditions`.
+ */
+export function buildVenueFeatureIntersectionClause(featureIds: readonly string[]): SQL<unknown> {
+    const n = featureIds.length;
+    const idList = sql.join(
+        featureIds.map((id) => sql`${id}`),
+        sql`, `
+    );
+    return sql<unknown>`${venues.id} IN (
+        SELECT "r_venue_feature"."venue_id"
+        FROM ${rVenueFeature}
+        WHERE "r_venue_feature"."feature_id" IN (${idList})
+        GROUP BY "r_venue_feature"."venue_id"
+        HAVING COUNT(DISTINCT "r_venue_feature"."feature_id") = ${n}
+    )`;
+}
+
+/**
+ * Build a WHERE clause restricting venue listings to those linked to ALL
+ * of the given amenity IDs (set intersection).
+ *
+ * Included alongside the feature clause because `venueSearchSchema` has
+ * always declared an `amenities` filter that the service silently discarded —
+ * a schema that promises a filter and drops it is worse than no filter, since
+ * the caller gets a 200 with an unfiltered page.
+ *
+ * @param amenityIds - Amenity UUIDs the listing must ALL carry. Must be non-empty.
+ * @returns A SQL condition suitable for `additionalConditions`.
+ */
+export function buildVenueAmenityIntersectionClause(amenityIds: readonly string[]): SQL<unknown> {
+    const n = amenityIds.length;
+    const idList = sql.join(
+        amenityIds.map((id) => sql`${id}`),
+        sql`, `
+    );
+    return sql<unknown>`${venues.id} IN (
+        SELECT "r_venue_amenity"."venue_id"
+        FROM ${rVenueAmenity}
+        WHERE "r_venue_amenity"."amenity_id" IN (${idList})
+        GROUP BY "r_venue_amenity"."venue_id"
+        HAVING COUNT(DISTINCT "r_venue_amenity"."amenity_id") = ${n}
+    )`;
+}
+
+/**
+ * Assemble the catalog-membership conditions for a venue search.
+ *
+ * Returns an empty array when neither filter is active, so the caller can pass
+ * the result straight through to `additionalConditions` without a null check.
+ * Empty arrays are treated as "no filter", not as "match nothing": an
+ * `?features=` with no values is a stray query param, not a request for zero
+ * results.
+ *
+ * @param params.amenities - Amenity UUIDs the listing must all carry.
+ * @param params.features - Feature UUIDs the listing must all carry.
+ * @returns Zero, one, or two SQL conditions, ANDed by the caller.
+ */
+export function buildVenueCatalogConditions({
+    amenities,
+    features
+}: {
+    readonly amenities?: readonly string[];
+    readonly features?: readonly string[];
+}): SQL[] {
+    const conditions: SQL[] = [];
+    if (amenities && amenities.length > 0) {
+        conditions.push(buildVenueAmenityIntersectionClause(amenities));
+    }
+    if (features && features.length > 0) {
+        conditions.push(buildVenueFeatureIntersectionClause(features));
+    }
+    return conditions;
+}

@@ -85,15 +85,13 @@ describe('copyRoot resolves each audience to its own empty-state key', () => {
     });
 
     it('gives all five audiences their own root, none of them shared', () => {
-        const roots = ['owner', 'tourist', 'gastronomy', 'experience', 'partner'].map(
-            (audience) => {
-                const match = pricingPageContentSrc.match(
-                    new RegExp(`${audience}: '(pricing\\.[a-z]+)'`)
-                );
-                expect(match, `no copyRoot mapping found for ${audience}`).not.toBeNull();
-                return match?.[1];
-            }
-        );
+        const roots = ['owner', 'tourist', 'venue', 'experience', 'partner'].map((audience) => {
+            const match = pricingPageContentSrc.match(
+                new RegExp(`${audience}: '(pricing\\.[a-z]+)'`)
+            );
+            expect(match, `no copyRoot mapping found for ${audience}`).not.toBeNull();
+            return match?.[1];
+        });
 
         expect(new Set(roots).size).toBe(5);
     });

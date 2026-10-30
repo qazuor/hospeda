@@ -15,24 +15,13 @@
  * can "create_direct" before they see the form.
  */
 
-import { LimitKey } from '@repo/billing';
-import { AccommodationIdSchema, LifecycleStatusEnum } from '@repo/schemas';
-import { AccommodationService, ServiceError } from '@repo/service-core';
+import { AccommodationIdSchema } from '@repo/schemas';
 import type { Context } from 'hono';
 import { z } from 'zod';
-import {
-    deriveOnboardingDecision,
-    type OnboardingPrecheckDecision
-} from '../../../services/onboarding-precheck';
+import { resolvePublishPrecheck } from '../../../services/publish-precheck.service';
 import { getActorFromContext } from '../../../utils/actor';
-import { checkLimit } from '../../../utils/limit-check';
-import { apiLogger } from '../../../utils/logger';
+
 import { createProtectedRoute } from '../../../utils/route-factory';
-
-const accommodationService = new AccommodationService({ logger: apiLogger });
-
-/** Max number of DRAFT rows returned in `drafts`. Onboarding drafts are always few (matrix caps meaningfully at ">1"); this bound only guards against pathological data. */
-const MAX_DRAFTS_RETURNED = 50;
 
 const OnboardingPrecheckDraftSchema = z.object({
     id: AccommodationIdSchema,
@@ -70,63 +59,19 @@ export const protectedHostOnboardingPrecheckRoute = createProtectedRoute({
     handler: async (ctx: Context) => {
         const actor = getActorFromContext(ctx);
 
-        // Total non-deleted accommodations owned by the actor — same predicate
-        // enforceAccommodationLimit() uses for the MAX_ACCOMMODATIONS count.
-        const countResult = await accommodationService.count(actor, {
-            ownerId: actor.id
-        } as never);
-
-        if (countResult.error) {
-            throw new ServiceError(countResult.error.code, countResult.error.message);
-        }
-
-        const currentCount = countResult.data?.count ?? 0;
-
-        const limitCheck = checkLimit({
-            context: ctx,
-            limitKey: LimitKey.MAX_ACCOMMODATIONS,
-            currentCount
-        });
-
-        // Draft rows: ownerId + lifecycleState=DRAFT + not-soft-deleted, plus
-        // id/slug/name for the picker UI. `createForOnboarding` no longer looks
-        // this up itself (BETA-197 removed its auto-resume branch) — this route
-        // is now the only place that predicate is evaluated.
-        const draftsResult = await accommodationService.list(actor, {
-            page: 1,
-            pageSize: MAX_DRAFTS_RETURNED,
-            where: {
-                ownerId: actor.id,
-                lifecycleState: LifecycleStatusEnum.DRAFT,
-                deletedAt: null
-            },
-            sortBy: 'createdAt',
-            sortOrder: 'desc'
-        });
-
-        if (draftsResult.error) {
-            throw new ServiceError(draftsResult.error.code, draftsResult.error.message);
-        }
-
-        const draftItems = draftsResult.data?.items ?? [];
-        const draftCount = draftsResult.data?.total ?? draftItems.length;
-
-        const decision: OnboardingPrecheckDecision = deriveOnboardingDecision({
-            draftCount,
-            hasQuota: limitCheck.allowed
-        });
+        const result = await resolvePublishPrecheck({ ctx, actor, vertical: 'accommodation' });
 
         return {
-            currentCount,
-            maxAllowed: limitCheck.maxAllowed,
-            hasQuota: limitCheck.allowed,
-            draftCount,
-            drafts: draftItems.map((item) => ({
+            currentCount: result.currentCount,
+            maxAllowed: result.maxAllowed,
+            hasQuota: result.hasQuota,
+            draftCount: result.draftCount,
+            drafts: result.drafts.map((item) => ({
                 id: item.id,
                 slug: item.slug,
                 name: item.name
             })),
-            decision
+            decision: result.decision
         };
     }
 });

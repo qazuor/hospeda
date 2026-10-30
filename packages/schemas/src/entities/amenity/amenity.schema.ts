@@ -11,7 +11,7 @@ import { AmenitiesTypeEnumSchema } from '../../enums/amenity-type.schema.js';
  * Verticals that an amenity or feature can be applicable to.
  * Drives catalog-by-vertical filtering (SPEC-266).
  */
-export const APPLICABLE_VERTICALS = ['accommodation', 'gastronomy', 'experience'] as const;
+export const APPLICABLE_VERTICALS = ['accommodation', 'venue', 'experience'] as const;
 export type ApplicableVertical = (typeof APPLICABLE_VERTICALS)[number];
 
 /** Zod schema for a single applicable vertical. */
@@ -96,20 +96,20 @@ export const AccommodationAmenityRelationSchema = z.object({
 export type AccommodationAmenityRelation = z.infer<typeof AccommodationAmenityRelationSchema>;
 
 /**
- * Gastronomy-Amenity Relation Schema
- * Represents the many-to-many relationship between gastronomy listings and amenities.
+ * venue-Amenity Relation Schema
+ * Represents the many-to-many relationship between venue listings and amenities.
  * Simpler than the accommodation variant: no pricing or optional-cost fields.
  */
-export const GastronomyAmenityRelationSchema = z.object({
-    gastronomyId: z.string().uuid({ message: 'zodError.common.id.invalidUuid' }),
+export const VenueAmenityRelationSchema = z.object({
+    venueId: z.string().uuid({ message: 'zodError.common.id.invalidUuid' }),
     amenityId: AmenityIdSchema
 });
-export type GastronomyAmenityRelation = z.infer<typeof GastronomyAmenityRelationSchema>;
+export type VenueAmenityRelation = z.infer<typeof VenueAmenityRelationSchema>;
 
 /**
  * Experience-Amenity Relation Schema (SPEC-240)
  * Represents the many-to-many relationship between experience listings and amenities.
- * Mirrors GastronomyAmenityRelationSchema: no pricing or optional-cost fields.
+ * Mirrors venueAmenityRelationSchema: no pricing or optional-cost fields.
  */
 export const ExperienceAmenityRelationSchema = z.object({
     experienceId: z.string().uuid({ message: 'zodError.common.id.invalidUuid' }),

@@ -30,9 +30,9 @@
  *    and HOSPEDA_DISABLE_AUTH=true are set in test/setup.ts).
  */
 
-import { LimitKey } from '@repo/billing';
-import { PermissionEnum, RoleEnum, ServiceErrorCode } from '@repo/schemas';
+import { PermissionEnum, RoleEnum, type VerticalEnum } from '@repo/schemas';
 import type { Actor } from '@repo/service-core';
+import { rehydrateEffectiveSet } from '@repo/verticals';
 import { beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { initApp } from '../../../src/app.js';
 import type { AppOpenAPI } from '../../../src/types.js';
@@ -54,14 +54,14 @@ const MAX_FAVORITES = 3;
 // Hoisted mock references — must be created before any import is resolved.
 // ---------------------------------------------------------------------------
 
-const { mockBookmarkService } = vi.hoisted(() => {
+const { mockBookmarkService, effectiveSet } = vi.hoisted(() => {
     const mockBookmarkService = {
         findExistingBookmark: vi.fn(),
         softDelete: vi.fn(),
         create: vi.fn(),
         countBookmarksForUser: vi.fn()
     };
-    return { mockBookmarkService };
+    return { mockBookmarkService, effectiveSet: vi.fn() };
 });
 
 // ---------------------------------------------------------------------------
@@ -94,69 +94,9 @@ vi.mock('@repo/db', async (importOriginal) => {
 vi.mock('../../../src/utils/logger', () => ({
     apiLogger: { debug: vi.fn(), error: vi.fn(), info: vi.fn(), warn: vi.fn() }
 }));
-
-/**
- * Mock gateFavorites (SAVE_FAVORITES entitlement gate) to always pass through.
- * Entitlement gating is already tested by tourist-entitlements.test.ts; here
- * we only care about the limit-enforcement regression.
- */
-vi.mock('../../../src/middlewares/tourist-entitlements', () => ({
-    gateFavorites: () => async (_c: unknown, next: () => Promise<void>) => {
-        await next();
-    },
-    // gateComparator (SPEC-288) ships from the same module; the route graph
-    // loaded here imports it, so the mock must expose a pass-through too.
-    gateComparator: () => async (_c: unknown, next: () => Promise<void>) => {
-        await next();
-    },
-    // gateSearchHistory (SPEC-289) ships from the same module; the route graph
-    // loaded here imports it, so the mock must expose a pass-through too.
-    gateSearchHistory: () => async (_c: unknown, next: () => Promise<void>) => {
-        await next();
-    },
-    // gateRecommendations (SPEC-284) ships from the same module; the route graph
-    // loaded here imports it, so the mock must expose a pass-through too.
-    gateRecommendations: () => async (_c: unknown, next: () => Promise<void>) => {
-        await next();
-    },
-    // gateCollections (SPEC-287) ships from the same module; the route graph
-    // loaded here imports it, so the mock must expose a pass-through too.
-    gateCollections: () => async (_c: unknown, next: () => Promise<void>) => {
-        await next();
-    },
-    // gateAlerts (SPEC-286) ships from the same module; the route graph
-    // loaded here imports it, so the mock must expose a pass-through too.
-    gateAlerts: () => async (_c: unknown, next: () => Promise<void>) => {
-        await next();
-    },
-    // gateExclusiveDeals (HOS-21) ships from the same module; the route graph
-    // loaded here imports it, so the mock must expose a pass-through too.
-    gateExclusiveDeals: () => async (_c: unknown, next: () => Promise<void>) => {
-        await next();
-    }
+vi.mock('../../../src/utils/listing-access/ports', () => ({
+    getListingAccessPorts: () => ({ effectiveSet })
 }));
-
-/**
- * Mock getRemainingLimit so that checkLimit() → assertFavoritesLimitOrThrow()
- * sees MAX_FAVORITES = 3 without needing the entitlement middleware to inject
- * userLimits into the Hono context.
- *
- * The real function reads from c.get('userLimits') which is populated by the
- * billing entitlement middleware at runtime.  In tests we bypass that middleware
- * and control the return value directly.
- */
-vi.mock('../../../src/middlewares/entitlement', async (importOriginal) => {
-    const actual = await importOriginal<typeof import('../../../src/middlewares/entitlement')>();
-    return {
-        ...actual,
-        getRemainingLimit: (_c: unknown, limitKey: string) => {
-            if (limitKey === LimitKey.MAX_FAVORITES) {
-                return MAX_FAVORITES;
-            }
-            return -1; // unlimited for other keys
-        }
-    };
-});
 
 // ---------------------------------------------------------------------------
 // Fixtures
@@ -227,6 +167,20 @@ describe('POST /api/v1/protected/user-bookmarks — BETA-42 toggle-at-cap regres
 
     beforeEach(() => {
         vi.clearAllMocks();
+        effectiveSet.mockImplementation(
+            async ({ userId, vertical }: { userId: string; vertical: VerticalEnum }) =>
+                rehydrateEffectiveSet({
+                    version: 1,
+                    userId,
+                    vertical,
+                    hasLiveNonTrialTitle: false,
+                    inheritsTouristVip: false,
+                    entries: [
+                        { key: 'save_favorites', value: 1, strategy: 'MAX' as const },
+                        { key: 'max_favorites', value: MAX_FAVORITES, strategy: 'MAX' as const }
+                    ]
+                })
+        );
     });
 
     // =========================================================================
@@ -280,7 +234,7 @@ describe('POST /api/v1/protected/user-bookmarks — BETA-42 toggle-at-cap regres
     // 2. Toggle-ON at cap IS blocked
     // =========================================================================
 
-    it('toggle-ON when at cap returns 403 LIMIT_REACHED', async () => {
+    it('toggle-ON at the effective plan cap returns LIMIT_REACHED', async () => {
         // Arrange — no existing bookmark (toggle-on branch)
         mockBookmarkService.findExistingBookmark.mockResolvedValue({
             data: null
@@ -301,21 +255,18 @@ describe('POST /api/v1/protected/user-bookmarks — BETA-42 toggle-at-cap regres
             body: makeToggleBody()
         });
 
-        // Assert — limit reached → 403
         expect(res.status).toBe(403);
-
         const body = await res.json();
-        expect(body.success).toBe(false);
-        expect(body.error.code).toBe(ServiceErrorCode.LIMIT_REACHED);
-
-        // create must NOT have been called — request was blocked before reaching it
+        expect(body.error).toMatchObject({
+            code: 'LIMIT_REACHED',
+            details: {
+                limitKey: 'max_favorites',
+                currentCount: MAX_FAVORITES,
+                maxAllowed: MAX_FAVORITES
+            }
+        });
         expect(mockBookmarkService.create).not.toHaveBeenCalled();
-
-        // countBookmarksForUser WAS called (the limit assertion runs in toggle-on)
-        expect(mockBookmarkService.countBookmarksForUser).toHaveBeenCalledWith(
-            expect.objectContaining({ id: actor.id }),
-            expect.objectContaining({ userId: actor.id })
-        );
+        expect(mockBookmarkService.countBookmarksForUser).toHaveBeenCalledOnce();
     });
 
     // =========================================================================

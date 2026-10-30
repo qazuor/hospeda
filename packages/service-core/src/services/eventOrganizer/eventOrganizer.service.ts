@@ -186,9 +186,20 @@ export class EventOrganizerService extends BaseCrudService<
     protected async _executeSearch(
         params: EventOrganizerSearchInput,
         _actor: Actor,
-        _ctx: ServiceContext
+        ctx: ServiceContext
     ): Promise<PaginatedListOutput<EventOrganizer>> {
-        const { page = 1, pageSize = 10, sortBy, sortOrder, q, name, ...otherFilters } = params;
+        // BaseCrudRead.search strips page/pageSize/sortBy/sortOrder from params
+        // and republishes them on ctx.pagination (SPEC-088). Read them from ctx so
+        // the caller-provided pagination is honored (HOS-1900, HOS-1904).
+        const page = ctx.pagination?.page;
+        const pageSize = ctx.pagination?.pageSize;
+        // Deterministic default: without an ORDER BY, LIMIT/OFFSET paging is
+        // non-deterministic in Postgres. BaseModel.findAll accepts a single sort key only,
+        // so ties on `name` are not broken by a secondary key.
+        // The schema always defaults sortOrder, so it is only honored with an explicit sortBy.
+        const sortBy = ctx.pagination?.sortBy ?? 'name';
+        const sortOrder = ctx.pagination?.sortBy ? ctx.pagination.sortOrder : 'asc';
+        const { q, name, ...otherFilters } = params;
         const where: Record<string, unknown> = { ...otherFilters };
         if (name) where.name = name;
 

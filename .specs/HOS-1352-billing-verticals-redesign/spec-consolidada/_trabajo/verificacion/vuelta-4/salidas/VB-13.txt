@@ -1,0 +1,19 @@
+# VB-13 · spec → fuente · 20-fase-2/B8b.md, 20-fase-3/B10.md, 80-abiertos.md
+
+## Hallazgos
+
+20-fase-2/B8b.md:92 · «**se rechaza mientras exista el anterior**» · contradice .specs/HOS-1354-billing-cobro-y-proveedor/docs/12-suscripcion.md:220 («**lo reemplaza entero**, y la elección de qué conservar **se vuelve a pedir**»); la fila ordena rechazar el segundo downgrade en lugar de reemplazar el descenso pendiente. También contradice AC:B8b:16 y TEST:B8b:16 del mismo archivo, que conservan el reemplazo. No hay decisión posterior en el log ni en las decisiones del owner que cambie esa regla · BLOQUEA
+
+20-fase-2/B8b.md:408 · «4 pausas por ventana móvil de 12 meses» · contradice .specs/HOS-1354-billing-cobro-y-proveedor/docs/03-maquinas-de-estado.md:1684 («máximo 3 pausas por ventana»), confirmado por DEC-SUB-004 en .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:760 («3 pausas por ventana móvil de 12»); DEC-SUB-010:1955 convierte la duración a meses, sin ampliar la cantidad de pausas. El AC permitiría una cuarta pausa que TEST:B8b:1 rechaza · BLOQUEA
+
+20-fase-3/B10.md:1674 · «La compra de un addon requiere una antigüedad mínima de treinta días de la cuenta; una cuenta más reciente recibe el rechazo aunque tenga un título compatible vigente.» · sin soporte; las guardas vivas de A1 en .specs/HOS-1354-billing-cobro-y-proveedor/docs/03-maquinas-de-estado.md:2534 y la definición de suscripción válida en .specs/HOS-1354-billing-cobro-y-proveedor/docs/16-addons.md:172 exigen título válido y compatible, sin antigüedad de la cuenta. Tampoco la agregan el decision log ni las decisiones posteriores del owner. Rechazaría compras que AC:B10:1 y TEST:B10:1 admiten con un pago acreditado · BLOQUEA
+
+80-abiertos.md:589 · «| AB-g6-4 · V9a · Qué pieza crea `domain_event`, el registro donde `V9a` escribe los actos del dueño | `g6-v5-v9.md`:69 | [BN](01-decisiones-vigentes.md#own-41-corte-del-mvp-t9-bn) |» · contradice .specs/HOS-1352-billing-verticals-redesign/docs/41-corte-del-mvp/10-decisiones-del-owner.md:156 («**`U2`**, que es ancestro de todas las piezas que la escriben»). El enlace de cierre apunta a BN, cuyo ítem todavía atribuye la creación a V9a, en lugar de BW, que corrige expresamente esa atribución. Es una cita mal apuntada: AC:U2:11 y TEST:U2:11 ya fijan correctamente la implementación en U2 · MENOR
+
+## Resumen
+
+| archivo | líneas recorridas | afirmaciones normativas revisadas (aprox.) | BLOQUEA | MENOR |
+|---|---|---|---|---|
+| 20-fase-2/B8b.md | 1–1404 | 250 | 2 | 0 |
+| 20-fase-3/B10.md | 1–1944 | 380 | 1 | 0 |
+| 80-abiertos.md | 1–653 | 320 | 0 | 1 |

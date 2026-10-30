@@ -7,7 +7,7 @@
         "en": "Fusion cuisine: combines techniques and flavors from different traditions",
         "pt": "Cozinha de fusão: combina técnicas e sabores de diferentes tradições"
     },
-    "applicableVerticals": ["gastronomy"],
+    "applicableVerticals": ["venue"],
     "icon": "GlobeIcon",
     "isBuiltin": false,
     "isFeatured": true,

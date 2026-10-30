@@ -311,7 +311,7 @@
                 "desc": "Promote this hashtag to the managed catalog.",
                 "hashtagLabel": "Hashtag",
                 "categoryLabel": "Category",
-                "categoryPlaceholder": "E.g. travel, gastronomy...",
+                "categoryPlaceholder": "E.g. travel, food...",
                 "platformLabel": "Platform (optional)",
                 "platformAll": "All platforms",
                 "priorityLabel": "Priority (optional)",

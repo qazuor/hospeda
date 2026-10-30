@@ -29,17 +29,17 @@
     "devDependencies": {
         "@repo/typescript-config": "workspace:*",
         "@types/node": "^26.6.1",
-        "@vitest/coverage-v8": "^4.1.10",
+        "@vitest/coverage-v8": "^5.0.5",
         "tsup": "^8.5.1",
         "typescript": "6.0.3",
-        "vitest": "^4.1.11"
+        "vitest": "^5.0.5"
     },
     "dependencies": {
-        "@ai-sdk/anthropic": "^3.0.81",
-        "@ai-sdk/openai": "^3.0.67",
+        "@ai-sdk/anthropic": "^3.0.135",
+        "@ai-sdk/openai": "^3.0.131",
         "@repo/db": "workspace:*",
         "@repo/schemas": "workspace:*",
-        "ai": "^6.0.196",
+        "ai": "^6.0.315",
         "zod": "^4.0.8"
     }
 }

@@ -6,7 +6,7 @@
  *
  * 1. **Real factory + mocked dependencies**: We let `createProtectedStreamingRoute`
  *    and the body-validation logic run for real, but mock the three route
- *    middlewares (`protectedAuthMiddleware`, `entitlementMiddleware`,
+ *    middlewares (`protectedAuthMiddleware`, the retired `entitlementMiddleware`,
  *    `createAiRateLimitMiddlewares`, `createAiQuotaMiddleware`) to no-op
  *    pass-throughs. The mocked `createConfiguredAiService` returns a stub
  *    `AiService` whose `streamText` is captured for assertions.
@@ -44,6 +44,7 @@ const { streamTextCalls } = vi.hoisted(() => ({
 
 /** Actor id seeded by the stubbed auth middleware; `ai_usage` rows key on it. */
 const TEST_ACTOR_ID = 'test-actor-text-improve-unit';
+const { mockEffectiveSet } = vi.hoisted(() => ({ mockEffectiveSet: vi.fn() }));
 
 /** Configurable stream contents for the next stubbed streamText call. */
 const { nextStreamDeltas, nextMeta, nextPreStreamThrow, nextPostDrainThrow, mockRecordAiUsage } =
@@ -104,11 +105,6 @@ vi.mock('../../../../src/middlewares/authorization', () => ({
  * `createAiQuotaMiddleware` is what enforces the entitlement gate, and that
  * is mocked separately (and exercised in T-006 integration tests).
  */
-vi.mock('../../../../src/middlewares/entitlement', () => ({
-    entitlementMiddleware: () => async (_c: unknown, next: () => Promise<void>) => {
-        await next();
-    }
-}));
 
 /**
  * Rate-limit middlewares: no-op. Layer-level rate limits are tested in
@@ -117,16 +113,14 @@ vi.mock('../../../../src/middlewares/entitlement', () => ({
 vi.mock('../../../../src/middlewares/ai-rate-limit', () => ({
     createAiRateLimitMiddlewares: () => []
 }));
+vi.mock('../../../../src/utils/listing-access/ports', () => ({
+    getListingAccessPorts: () => ({ effectiveSet: mockEffectiveSet })
+}));
 
 /**
  * Quota + entitlement gate: no-op. T-006 covers the real behaviour with a
  * live DB and entitlement-mock helper.
  */
-vi.mock('../../../../src/middlewares/ai-quota', () => ({
-    createAiQuotaMiddleware: () => async (_c: unknown, next: () => Promise<void>) => {
-        await next();
-    }
-}));
 
 /**
  * AI service factory: return a stub AiService. `streamText` records the
@@ -236,6 +230,7 @@ vi.mock('@repo/ai-core', () => ({
     AiEngineError,
     AiModerationBlockedError,
     AiFeatureNotConfiguredError,
+    getMonthlyCallCount: vi.fn(async () => 0),
     recordAiUsage: mockRecordAiUsage
 }));
 
@@ -355,9 +350,13 @@ const POST = (
 // Tests
 // ---------------------------------------------------------------------------
 
-describe('protected AI text-improve route (SPEC-198 T-005)', () => {
+describe('TEST:V5:32 protected AI text-improve route (SPEC-198 T-005)', () => {
     beforeEach(() => {
         vi.clearAllMocks();
+        mockEffectiveSet.mockImplementation(async () => ({
+            entitlements: { get: () => 1 },
+            limits: { get: () => 50 }
+        }));
         streamTextCalls.length = 0;
         nextStreamDeltas.current = ['Hola', ' mundo'];
         nextMeta.current = Promise.resolve({

@@ -1,5 +1,7 @@
 # ADR-019: Billing Transaction Isolation — READ COMMITTED + FOR UPDATE
 
+> The principle stands; the examples reference tables and crons dropped by HOS-1352.
+
 ## Status
 
 Accepted (2026-04-18)

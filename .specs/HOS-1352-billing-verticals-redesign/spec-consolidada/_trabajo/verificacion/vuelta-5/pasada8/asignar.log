@@ -1,0 +1,39 @@
+SHA 3c3e88b9b59cb7d766bc34848b8ffd657eb95770 · 2023 ítems
+    672  01-decisiones-vigentes.md
+     96  02-nucleo.md
+     13  03-contrato-de-cobertura.md
+    298  04-catalogos.md
+      3  10-corte/B1.md
+      3  10-corte/B11.md
+      5  10-corte/B13a.md
+      3  10-corte/B2.md
+     15  10-corte/B3.md
+      3  10-corte/B4.md
+      8  10-corte/B5.md
+      3  10-corte/B6.md
+     10  10-corte/B7.md
+      9  10-corte/B8a.md
+      7  10-corte/B9a.md
+      3  10-corte/U1.md
+      3  10-corte/U2.md
+      3  10-corte/U3.md
+      3  10-corte/V1.md
+      3  10-corte/V2.md
+      3  10-corte/V3.md
+      3  10-corte/V4.md
+      3  10-corte/V5.md
+      5  10-corte/V6.md
+      5  10-corte/V8a.md
+      5  10-corte/V9a.md
+      3  20-fase-1/V9b.md
+     11  20-fase-2/B8b.md
+      6  20-fase-2/B9b.md
+     10  20-fase-3/B10.md
+      4  20-fase-3/B12.md
+      3  20-fase-3/B13b.md
+      3  20-fase-4/V7.md
+      3  20-fase-4/V8b.md
+     38  30-el-corte.md
+     40  90-retirados.md
+    715  red (SEC)
+  inferidos: 20 · destinos pendientes: 0 · fases: {'20-fase-1': ['V9b'], '20-fase-2': ['B8b', 'B9b'], '20-fase-3': ['B10', 'B12', 'B13b'], '20-fase-4': ['V7', 'V8b']}

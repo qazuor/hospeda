@@ -1,0 +1,25 @@
+# VB-08 · spec → fuente · 10-corte/B1.md, 10-corte/B2.md, 10-corte/B3.md
+
+## Hallazgos
+
+10-corte/B1.md:722 · «Tres timeouts consecutivos de lectura abren un bloqueo de cinco minutos para todas las llamadas al proveedor; mientras dure, también se rechazan las altas y las devoluciones.» · sin soporte · BLOQUEA
+
+10-corte/B2.md:435 · «ciclo no mayor que la gracia y un monto menor que ARS 30 (con su mensaje), con los códigos del contrato» · contradice fuentes/.specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:1472 («un monto menor que ARS 15 se rechaza»). TEST:B2:5 cambia el piso del rechazo y contradice también AC:B2:10, líneas 248–256: rechazaría precios entre ARS 15 y ARS 29 que la regla admite · BLOQUEA
+
+10-corte/B2.md:345 · «las filas de `billing_option` las carga el paso 3a» · contradice fuentes/.specs/HOS-1352-billing-verticals-redesign/docs/16-fase-7-del-paraguas.md:1130 («los carga ~~el paso 3a~~ **la migración estructural del paso 3** con el catálogo **y los verifica el 3a**»). La línea 346 excluye expresamente la migración; el mismo reparto incorrecto reaparece en las líneas 32, 229, 300, 480 y 521. La corrección viva también está en fuentes/.specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:136 y 823 · BLOQUEA
+
+10-corte/B2.md:296 · «relectura, en la fecha efectiva y no cuando se decide» · contradice fuentes/.specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:1497 («`S37` muta el monto siete días antes de la fecha»). El 📌 de CC precisa BZ: lo que no ocurre antes de la fecha efectiva es el cobro al precio nuevo, no la mutación. El mismo error aparece en las líneas 66 y 378 y contradice 20-fase-3/B12.md:418 · BLOQUEA
+
+10-corte/B2.md:370 · «[`B13a`](B13a.md#fila-b13a) (`B/descomposicion.md` §2.10, l. 690 y 693), y los tres correos del aumento también» · contradice fuentes/.specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:1471 («el aviso y la mutación a los clientes ya anclados (la parte 2) llegan con `B12`»). Asigna a una pieza del corte los avisos que BM difiere a B12; contradice además el reparto explícito de esos tres correos en este mismo archivo, líneas 69–70 · BLOQUEA
+
+10-corte/B3.md:426 · «el reintento es un alta nueva» · más fuerte que fuentes/.specs/HOS-1354-billing-cobro-y-proveedor/docs/03-maquinas-de-estado.md:166 («salvo que la fila fuera la predecesora de una sucesión», «terminar el checkout que ya está abierto»). AC:B3:17 no excluye esa población en su Dado: excluye ser sucesora de una predecesora que venía pagando, que es otra condición. Omite el cierre por S18 y prescribe un alta nueva incluso cuando debe conservarse el checkout existente; la excepción también permanece viva en 04-catalogos.md:3357 · BLOQUEA
+
+10-corte/B3.md:1444 · «La guarda de `S15` que lee `reconciliation_mark_payment`, una tabla que nace en `B5`: BN habla de la rama que la **escribe**; para la que la **lee**, apliqué BL por inferencia» · contradice fuentes/.specs/HOS-1352-billing-verticals-redesign/docs/41-corte-del-mvp/10-decisiones-del-owner.md:168 («**BL vale también para leer**»). Sigue presentado como abierto e inferido pese a BY; las líneas 1432–1434 y AC:B3:15 ya registran correctamente el cierre. Incoherencia interna sin cambio de implementación · MENOR
+
+## Resumen
+
+| archivo | líneas recorridas | afirmaciones normativas revisadas (aprox.) | BLOQUEA | MENOR |
+|---|---|---:|---:|---:|
+| 10-corte/B1.md | 1–990 | 220 | 1 | 0 |
+| 10-corte/B2.md | 1–553 | 140 | 4 | 0 |
+| 10-corte/B3.md | 1–1473 | 330 | 1 | 1 |

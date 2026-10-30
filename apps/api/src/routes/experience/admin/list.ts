@@ -15,7 +15,7 @@ const experienceService = new ExperienceService({ logger: apiLogger });
  * GET /api/v1/admin/experiences
  * List experience listings — Admin endpoint.
  *
- * Permission model: the entity-specific permission (COMMERCE_VIEW_ALL) is
+ * Permission model: the entity-specific permission (EXPERIENCE_VIEW_ALL) is
  * enforced in the service (`_canAdminList` → `checkExperienceCanAdminList`).
  * The route gate only requires admin-panel access, matching the accommodation
  * admin list pattern.
@@ -30,7 +30,7 @@ export const adminListExperiencesRoute = createAdminListRoute({
     // Use the admin LIST schema, which keeps the eager-loaded `owner` and
     // `destination` relation summaries (adminList loads them via the relations
     // query). The base admin schema strips them, so the grid could only show raw
-    // FK UUIDs in the Destino / Propietario columns. Mirrors the gastronomy route.
+    // FK UUIDs in the Destino / Propietario columns. Mirrors the venue route.
     responseSchema: ExperienceAdminListItemSchema,
     handler: async (ctx, _params, _body, query) => {
         const actor = getActorFromContext(ctx);

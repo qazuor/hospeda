@@ -2,6 +2,8 @@
 // Foundation schemas (Phase 1) - explicit exports to avoid conflicts
 
 // Schemas
+// Administrative action 24, close an account at its owner's request (HOS-1494)
+export * from './account-close-on-request.schema.js';
 export * from './admin.schema.js';
 // Admin search
 export * from './admin-search.schema.js';
@@ -23,23 +25,13 @@ export {
     createBooleanQueryParamWithDefault,
     httpBodyBoolean
 } from './boolean-params.js';
-// Public amenity/feature projections shared by both commerce verticals (HOS-1072)
-export * from './commerce-catalog.schema.js';
-// Commerce listing publish-readiness ("complete") contract — single
-// canonical definition shared by web, service-core, and apps/api (HOS-166 R-5)
-export * from './commerce-completeness.js';
-// Commerce common schemas (SPEC-239)
-export * from './commerce-identity.schema.js';
-// Shared relational media row base (HOS-372) — gastronomy/experience media extend this
-export * from './commerce-media.schema.js';
-export * from './commerce-owner-listing.schema.js';
-export * from './commerce-rating.schema.js';
 export * from './contact.schema.js';
 export * from './content-media.schema.js';
 // Dedicated content state-transition bodies (HOS-374 §7.6.4)
 export * from './content-state.schema.js';
 // Relation-selector lookup options (SPEC-169 §5.5)
 export * from './entity-options.schema.js';
+export * from './experience-rating.schema.js';
 export * from './faq.schema.js';
 // Shared shapes for the born-featured cover endpoints (HOS-803)
 export * from './featured-media.schema.js';
@@ -51,6 +43,20 @@ export * from './i18n.schema.js';
 export * from './ia.schema.js';
 export * from './id.schema.js';
 export * from './lifecycle.schema.js';
+// Public amenity/feature projections shared by the listing verticals (HOS-1072)
+export * from './listing-catalog.schema.js';
+// Listing publish-readiness ("complete") contract — single
+// canonical definition shared by web, service-core, and apps/api (HOS-166 R-5)
+export * from './listing-completeness.js';
+// Listing common schemas (SPEC-239)
+export * from './listing-identity.schema.js';
+// Shared relational media row base (HOS-372) — venue/experience media extend this
+export * from './listing-media.schema.js';
+export * from './listing-moderation.schema.js';
+export * from './listing-notices.schema.js';
+export * from './listing-owner-listing.schema.js';
+export * from './listing-purge-on-request.schema.js';
+export * from './listing-support-edit.schema.js';
 export * from './location.schema.js';
 export * from './media.schema.js';
 export * from './media-upload.schema.js';
@@ -74,6 +80,8 @@ export * from './safe-external-url.schema.js';
 export * from './seo.schema.js';
 export * from './social.schema.js';
 export * from './tags.schema.js';
+// Per-vertical rating breakdowns (the dimensions only make sense per vertical)
+export * from './venue-rating.schema.js';
 export * from './visibility.schema.js';
 
 // Migration completed ✅

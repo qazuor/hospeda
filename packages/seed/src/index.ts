@@ -285,8 +285,8 @@ export async function runSeed(options: SeedOptions): Promise<void> {
 
         if (testUsers) {
             // Local-dev-only group for SPEC-143 Block 1. Requires `--required`
-            // to have been run previously (billingPlans.seed.ts must have
-            // seeded the plan slugs the test users subscribe to).
+            // to have been run previously (destinations and other catalog
+            // rows the fixtures reference must exist).
             seedContext.seedSource = 'example';
             await runTestUserSeeds(seedContext);
         }

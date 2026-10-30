@@ -28,12 +28,12 @@ import type { PublishVerticalSlug } from '@/lib/api/endpoints-protected';
  * Each vertical's publish page, as a `buildUrl` path (no locale, no slashes at
  * the ends).
  *
- * The two commerce segments are Spanish, like every other public route in this
+ * The two venue/experience segments are Spanish, like every other public route in this
  * app: the URL is a user-facing surface, not an identifier.
  */
 export const PUBLISH_PAGE_PATH_BY_VERTICAL: Readonly<Record<PublishVerticalSlug, string>> = {
     accommodation: 'publicar',
-    gastronomy: 'publicar/gastronomia',
+    venue: 'publicar/comer-y-salir',
     experience: 'publicar/experiencias'
 } as const;
 
@@ -41,13 +41,13 @@ export const PUBLISH_PAGE_PATH_BY_VERTICAL: Readonly<Record<PublishVerticalSlug,
  * Where an owner manages the listings of one vertical — "Ver mis fichas" on the
  * precheck panel, and where the "pick among several drafts" branch sends them.
  *
- * The two commerce verticals share one page: `/mi-cuenta/comercio/` lists both,
+ * The two venue/experience verticals share one page: `/mi-cuenta/comercio/` lists both,
  * which is correct here because an owner who has drafts in both verticals still
  * finds each of them there.
  */
 export const ACCOUNT_LISTINGS_PATH_BY_VERTICAL: Readonly<Record<PublishVerticalSlug, string>> = {
     accommodation: 'mi-cuenta/propiedades',
-    gastronomy: 'mi-cuenta/comercio',
+    venue: 'mi-cuenta/comercio',
     experience: 'mi-cuenta/comercio'
 } as const;
 
@@ -58,7 +58,7 @@ export const ACCOUNT_LISTINGS_PATH_BY_VERTICAL: Readonly<Record<PublishVerticalS
  */
 export const PLANS_PAGE_PATH_BY_VERTICAL: Readonly<Record<PublishVerticalSlug, string>> = {
     accommodation: 'planes/anfitriones',
-    gastronomy: 'planes/gastronomia',
+    venue: 'planes/comer-y-salir',
     experience: 'planes/experiencias'
 } as const;
 
@@ -71,6 +71,6 @@ export const PLANS_PAGE_PATH_BY_VERTICAL: Readonly<Record<PublishVerticalSlug, s
  */
 export const PRICING_PAGE_PATH_BY_VERTICAL: Readonly<Record<PublishVerticalSlug, string>> = {
     accommodation: `${PLANS_PAGE_PATH_BY_VERTICAL.accommodation}/precios`,
-    gastronomy: `${PLANS_PAGE_PATH_BY_VERTICAL.gastronomy}/precios`,
+    venue: `${PLANS_PAGE_PATH_BY_VERTICAL.venue}/precios`,
     experience: `${PLANS_PAGE_PATH_BY_VERTICAL.experience}/precios`
 } as const;

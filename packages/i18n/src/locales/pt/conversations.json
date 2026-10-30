@@ -144,6 +144,10 @@
         "send": "Enviar",
         "sending": "Enviando…",
         "systemMessage": "Mensagem do sistema",
-        "title": "Conversa com {senderName}"
+        "title": "Conversa com {senderName}",
+        "listingAvailability": {
+            "gone": "Este anúncio não existe mais.",
+            "notPublished": "Por enquanto você não pode enviar mensagens sobre este anúncio."
+        }
     }
 }

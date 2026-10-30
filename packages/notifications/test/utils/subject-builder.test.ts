@@ -28,28 +28,6 @@ describe('Subject Builder', () => {
                 expect(result).toBe('Confirmación de compra - Pro');
             });
 
-            it('should return addon purchase subject with the addon name', () => {
-                // Arrange — ADDON_PURCHASE is served by its own
-                // `AddonPurchaseConfirmationPayload` since HOS-722, so the
-                // subject declares `{addonName}` and the payload carries it. It
-                // read `{planName}` while the type shared
-                // `PurchaseConfirmationPayload` with SUBSCRIPTION_PURCHASE and
-                // the emitter had to smuggle the add-on's name through that
-                // field. Either way the invariant is the same: the placeholder
-                // must name a field the payload actually has, or every addon
-                // receipt ships the raw token (H-64 / H-75).
-                const data = { addonName: 'Soporte Prioritario' };
-
-                // Act
-                const result = getSubject(NotificationType.ADDON_PURCHASE, data);
-
-                // Assert
-                // HOS-830: "Complemento", not "add-on" — the word the
-                // product uses on every screen the buyer actually saw.
-                expect(result).toBe('Complemento adquirido - Soporte Prioritario');
-                expect(result).not.toContain('Add-on');
-            });
-
             it('should return payment success subject with amount', () => {
                 // Arrange
                 const data = { amount: '1500' };
@@ -92,39 +70,6 @@ describe('Subject Builder', () => {
 
                 // Assert
                 expect(result).toBe('Cambio de plan confirmado');
-            });
-
-            it('should return addon expiration warning subject with addonName', () => {
-                // Arrange
-                const data = { addonName: 'Analytics Plus' };
-
-                // Act
-                const result = getSubject(NotificationType.ADDON_EXPIRATION_WARNING, data);
-
-                // Assert
-                expect(result).toBe('Tu add-on Analytics Plus expira pronto');
-            });
-
-            it('should return addon expired subject with addonName', () => {
-                // Arrange
-                const data = { addonName: 'SEO Tools' };
-
-                // Act
-                const result = getSubject(NotificationType.ADDON_EXPIRED, data);
-
-                // Assert
-                expect(result).toBe('Tu add-on SEO Tools ha expirado');
-            });
-
-            it('should return addon renewal confirmation subject with addonName', () => {
-                // Arrange
-                const data = { addonName: 'Premium Support' };
-
-                // Act
-                const result = getSubject(NotificationType.ADDON_RENEWAL_CONFIRMATION, data);
-
-                // Assert
-                expect(result).toBe('Add-on renovado - Premium Support');
             });
 
             it('should return trial ending reminder subject', () => {
@@ -175,15 +120,15 @@ describe('Subject Builder', () => {
             });
 
             it('should replace multiple placeholders in the same subject', () => {
-                // Arrange - ADDON_EXPIRATION_WARNING has {addonName}
-                const data = { addonName: 'Custom Widget' };
+                // Arrange - RENEWAL_REMINDER has {planName}
+                const data = { planName: 'Custom Widget' };
 
                 // Act
-                const result = getSubject(NotificationType.ADDON_EXPIRATION_WARNING, data);
+                const result = getSubject(NotificationType.RENEWAL_REMINDER, data);
 
                 // Assert
                 expect(result).toContain('Custom Widget');
-                expect(result).not.toContain('{addonName}');
+                expect(result).not.toContain('{planName}');
             });
 
             it('should handle special characters in replacement values', () => {
@@ -215,14 +160,14 @@ describe('Subject Builder', () => {
                 const data = {};
 
                 // Act
-                const result = getSubject(NotificationType.ADDON_PURCHASE, data);
+                const result = getSubject(NotificationType.RENEWAL_REMINDER, data);
 
                 // Assert — this is the PURE formatter's contract and it stays:
                 // preserving the token is the right answer for a function that
                 // was handed nothing. What must never happen is that string
                 // reaching a transport, which NotificationService.generateSubject
                 // now prevents.
-                expect(result).toBe('Complemento adquirido - {addonName}');
+                expect(result).toBe('Tu suscripción se renueva pronto - {planName}');
             });
 
             it('should preserve placeholder when data has unrelated keys', () => {
@@ -392,52 +337,6 @@ describe('Subject Builder', () => {
                 // Assert
                 expect(result).toContain('{providerLabel}');
                 expect(result).toContain('{accommodationName}');
-            });
-        });
-
-        // Add-on cancellation: two subjects, one per real-world state (HOS-847
-        // PR 7c). The body already said "seguís teniendo el beneficio hasta el
-        // 15 de abril" under a subject that said only "cancelado".
-        describe('ADDON_CANCELLATION subject', () => {
-            it('is byte-identical to the original wording when no access survives', () => {
-                // Arrange — non-payment and admin cancels end the benefit on the
-                // spot and supply no `accessUntil`. Their subject did not change,
-                // and this assertion is what says so: one shared pattern carrying
-                // an optional `{accessUntil}` would leave either the raw token or
-                // a dangling "hasta el " in every one of those inbox lines.
-                const data = { addonName: 'Fotos extra' };
-
-                // Act
-                const result = getSubject(NotificationType.ADDON_CANCELLATION, data);
-
-                // Assert
-                expect(result).toBe('Tu complemento Fotos extra ha sido cancelado');
-            });
-
-            it('says the benefit continues when the customer keeps a paid period', () => {
-                // Arrange
-                const data = { addonName: 'Fotos extra', accessUntil: '15 de abril de 2026' };
-
-                // Act
-                const result = getSubject(NotificationType.ADDON_CANCELLATION, data);
-
-                // Assert
-                expect(result).toBe(
-                    'Tu complemento Fotos extra queda cancelado — lo seguís usando hasta el 15 de abril de 2026'
-                );
-                expect(result).not.toContain('{');
-            });
-
-            it('keeps the original subject when the date could not be formatted', () => {
-                // Arrange — `formatDate` answers '' for an input it cannot read.
-                // Branching on it would publish "…hasta el " with nothing after.
-                const data = { addonName: 'Fotos extra', accessUntil: '' };
-
-                // Act
-                const result = getSubject(NotificationType.ADDON_CANCELLATION, data);
-
-                // Assert
-                expect(result).toBe('Tu complemento Fotos extra ha sido cancelado');
             });
         });
     });

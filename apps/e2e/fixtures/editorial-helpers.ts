@@ -2,7 +2,7 @@
  * Editorial fixtures for the HOS-374 editor flows.
  *
  * Lives beside `api-helpers.ts` rather than inside it for the same reason
- * `commerce-editor-helpers.ts` does: that file is already well past the
+ * `listing-editor-helpers.ts` does: that file is already well past the
  * 500-line budget, and these helpers only serve the post/event editor specs.
  *
  * `createPostAsAuthor` goes through the REAL protected route on purpose — a

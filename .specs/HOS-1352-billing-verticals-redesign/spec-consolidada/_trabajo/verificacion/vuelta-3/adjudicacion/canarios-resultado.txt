@@ -1,0 +1,100 @@
+# Canarios de la vuelta 3 (HOS-1352): quién detectó cada uno
+
+Copia ciega `s/a10f010e/` con 42 canarios (`v3-canarios.txt`); salidas de los 26 verificadores en `v3/salidas/`.
+«Detectado» = algún verificador lo reportó como hallazgo, aunque fuera desde otro bloque. Cada atribución
+se confirmó leyendo el hallazgo (la regla que nombra), no por cercanía de línea.
+
+| # | bloque | tipo | dónde (copia) | detectado por | su bloque |
+|---|---|---|---|---|---|
+| 1 | VB-01 | MODIFICA | 02-nucleo-glosario.md:367 (día 60 sale del sitio público) | VB-01, VA-A1 | sí |
+| 2 | VB-01 | AGREGA | 00-indice.md:1201 (sin foto nace DRAFT) | VB-01 | sí |
+| 3 | VB-02 | MODIFICA | 02-nucleo.md:1017 (MP2 lleva a CANCELLED) | VB-02, VA-A1 | sí |
+| 4 | VB-02 | AGREGA | 02-nucleo-outbox.md:270 (reason de 60 caracteres) | VB-02, VA-A1 | sí |
+| 5 | VB-03 | MODIFICA | 03-contrato-de-cobertura.md:1119 (reintento 5 días) | VB-03, VA-A2, VA-A6 | sí |
+| 6 | VB-03 | AGREGA | 02-nucleo-modelo-y-maquinas.md:254 (evento 24 meses y compactación) | VB-03, VA-A1 | sí |
+| 7 | VB-04 | MODIFICA | 10-corte/U3.md:169 (tolerancia del 1 %) | VB-04 | sí |
+| 8 | VB-04 | AGREGA | 10-corte/V1.md:319 (clave sin uso se borra) | VB-04 | sí |
+| 9 | VB-05 | MODIFICA | 10-corte/V2.md:435 (hasta tres borradores) | VB-05, VA-A3 | sí |
+| 10 | VB-05 | AGREGA | 10-corte/V4.md:748 (segundo rechazo termina el trial) | VB-05, VA-A3, VA-A4 | sí |
+| 11 | VB-06 | MODIFICA | 10-corte/V6.md:1045 (tres pedidos de arreglo abiertos) | VB-06 | sí |
+| 12 | VB-06 | AGREGA | 10-corte/V5.md:1129 (24 meses en SUSPENDED retira el rol) | VB-06 | sí |
+| 13 | VB-07 | MODIFICA | 10-corte/V9a.md:157 (sólo el valor nuevo) | VB-07 | sí |
+| 14 | VB-07 | AGREGA | 20-fase-4/V8b.md:175 (postulación rechazada a los 60 días) | VB-07 | sí |
+| 15 | VB-08 | MODIFICA | 10-corte/B1.md:428 (la auto-reanudación existe) | VB-08, VA-A8 | sí |
+| 16 | VB-08 | AGREGA | 10-corte/B3.md:1047 (aviso de más de 10 min se descarta) | VB-08 | sí |
+| 17 | VB-09 | MODIFICA | 10-corte/B4.md:276 (retenciónDetenida también con COURTESY) | VB-09 | sí |
+| 18 | VB-09 | AGREGA | 10-corte/B6.md:400 (dos personas para más de la mitad) | VB-09 | sí |
+| 19 | VB-10 | MODIFICA | 10-corte/B8a.md:335 (nunca recortando los 30 días) | VB-10, VB-13 (VB-13 lo vio por la herencia de LISTA:B8 en AC:B8b:23) | sí |
+| 20 | VB-10 | AGREGA | 10-corte/B7.md:1306 (reembolso dentro de 48 h) | VB-10 | sí |
+| 21 | VB-11 | MODIFICA | 10-corte/B9a.md:787 (S13 con reembolso proporcional) | VB-11, VA-A10 | sí |
+| 22 | VB-11 | AGREGA | 20-fase-2/B9b.md:420 (tres cortesías en doce meses) | VB-11 | sí |
+| 23 | VB-12 | MODIFICA | 10-corte/B11.md:1369 (preapproval no se cancela hasta que el owner decida) | VB-12 | sí |
+| 24 | VB-12 | AGREGA | 10-corte/B13a.md:899 (la baja pide la contraseña) | VB-12 | sí |
+| 25 | VB-13 | MODIFICA | 20-fase-3/B10.md:1316 (el reloj del addon se congela) | VB-13, VA-A10 | sí |
+| 26 | VB-13 | AGREGA | 80-abiertos.md:461 (tope del 20 % a los aumentos) | VB-13 | sí |
+| 27 | VB-14 | MODIFICA | 30-el-corte.md:639 (rank más bajo) | VB-14, VA-A2, VA-A9 | sí |
+| 28 | VB-14 | AGREGA | 90-retirados.md:403 (retirar el último plan cancela) | VB-14 | sí |
+| 29 | G1 | MODIFICA | 01-decisiones-vigentes.md:4165 (tachado revivido: PB1) | G1 | sí |
+| 30 | G1 | MODIFICA | 01-decisiones-vigentes.md:9228 (tachado revivido: seis) | G1 | sí |
+| 31 | G2 | MODIFICA | 04-catalogos.md:8027 (PA-3 ~6 min) | G2, VA-A5 | sí |
+| 32 | G2 | MODIFICA | 20-fase-3/B10.md:598 (A6 con el motivo 12) | G2 | sí |
+| 33 | VA-A1 | OMITE | 02-nucleo-auditoria.md:200 (la huérfana arranca su correlación sin padre) | VA-A1, VB-02 | sí |
+| 34 | VA-A2 | OMITE | 30-el-corte.md:60 («Sondear por SMTP no sirve») | **NO DETECTADO** | no |
+| 35 | VA-A3 | OMITE | 04-catalogos.md:944 (desempate por created_at y por id) | G2 | no |
+| 36 | VA-A4 | OMITE | V4.md:486, V8a.md:377/212/439 (aviso al despublicar en trial, fila 2) | VA-A4, VA-A5, VB-05, VB-07 | sí |
+| 37 | VA-A5 | OMITE | 04-catalogos.md:7982 (fila sin fecha = UNKNOWN) | G2 | no |
+| 38 | VA-A6 | OMITE | B3.md:956/1283 (cobros_restantes nunca negativo) | VA-A6 (sólo la mitad del ESQ; la del TEST (:1283) nadie) | sí |
+| 39 | VA-A7 | OMITE | 04-catalogos.md:2756/3923 (la pausa de S32 no gasta cupo) | VA-A7, VA-A6, G2 | sí |
+| 40 | VA-A8 | OMITE | B11.md:1047 (el receptor de hoy no se arregla aparte) | VA-A8, G2 | sí |
+| 41 | VA-A9 | OMITE | B12.md:163, B8b.md:816 (la ventana de 60 días no aplica al cambio elegido) | VA-A9, G2 (sólo la mitad de B12; la viñeta de B8b:816 nadie la nombró) | sí |
+| 42 | VA-A10 | OMITE | 04-catalogos.md:6384 (una simulación no puede estar prendida por defecto) | G2 | no |
+
+## Tasas
+
+| dirección | canarios | detectados por alguien | detectados por su propio bloque |
+|---|---|---|---|
+| VB (spec → fuente) | 28 | 28 (100.0 %) | 28 (100.0 %) |
+| G (generados) | 4 | 4 (100.0 %) | 4 (100.0 %) |
+| VA (fuente → spec) | 10 | 9 (90.0 %) | 6 (60.0 %) |
+| **total** | 42 | 41 (97.6 %) | 38 (90.5 %) |
+
+## No detectados (falsos negativos)
+
+- **VA-A2 · `30-el-corte.md:60`** (OMITE): «Sondear por SMTP no sirve.», del paso 0 (la medición de `EX-49`).
+  VA-A2 recorrió `16-fase-7` 1–1212 y declaró ~180 reglas revisadas con 0 ausentes; VB-14 leyó `30-el-corte`
+  entero y no lo vio. Es una prohibición de MÉTODO dentro de un párrafo largo de procedimiento (cuentas
+  receptoras, Message-ID, «nada a los 30 minutos»): sin un verbo normativo fuerte, el cotejo la leyó como
+  narración. La vuelta 2 tuvo el mismo patrón (VA-A3, la cláusula «un rechazo no escribe nada»).
+
+## Detectados sólo fuera de su bloque
+
+- **VA-A3** (desempate de las fichas que vuelven, 04:944), **VA-A5** (fila sin fecha = `UNKNOWN`, 04:7982) y
+  **VA-A10** (simulación prendida por defecto, 04:6384): los tres los vio sólo **G2**, y los tres viven en el
+  **texto adjunto de 04-catalogos** (notas que g3 cuelga de un ítem). Los VA cotejan su capítulo contra las
+  piezas y contra las filas del catálogo, pero no contra los adjuntos: es el mismo hueco de la vuelta 2
+  (VA-A7, el empate, sólo lo vieron G1 y G2).
+
+## Detección parcial
+
+- **VA-A6** (`cobros_restantes` nunca negativo): VA-A6 vio el ESQ:6 (B3:956) y no la mitad del TEST:B3:31
+  (B3:1283, «y rechaza un negativo»).
+- **VA-A9** (la ventana de 60 días no aplica al cambio elegido): VA-A9 y G2 vieron B12:163; la viñeta de Reglas
+  de B8b (:816) no la nombró nadie, aunque VA-A9 cita AC:B8b:7 como cobertura.
+
+## Clase asignada por los verificadores
+
+- Tres canarios OMITE se reportaron **MENOR** por su propio bloque y **BLOQUEA** por G2: VA-A8-3 (el receptor
+  de hoy, «decisión de no-trabajo»), VA-A9-2 («sin efecto práctico», contra G2-3) y VA-A6-4 («el camino normal
+  no cambia»). Los tres argumentos son ciertos en el camino normal; no cambian la tasa, y como el
+  criterio de la vuelta 2 pone BLOQUEA cuando la pieza y su Fuente pierden la regla, la clase está
+  subestimada en los tres.
+- Los 32 canarios VB y G se reportaron todos **BLOQUEA**.
+
+## Comparación con la vuelta 2
+
+| dirección | vuelta 2 (alguien / propio) | vuelta 3 (alguien / propio) |
+|---|---|---|
+| VB | 26/28 / 26/28 | 28/28 / 28/28 |
+| G | 4/4 / 4/4 | 4/4 / 4/4 |
+| VA | 9/10 / 5/10 | 9/10 / 6/10 |
+| total | 39/42 / 35/42 | 41/42 / 38/42 |

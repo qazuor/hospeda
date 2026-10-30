@@ -1,0 +1,20 @@
+# VB-12 · spec → fuente · 10-corte/B11.md, 10-corte/B13a.md, 20-fase-3/B13b.md, 20-fase-3/B12.md
+
+## Hallazgos
+
+20-fase-3/B13b.md:226 · «El editor debe rechazar la retirada de un complemento mientras exista al menos una instancia comprada de ese producto.» · más fuerte que .specs/HOS-1352-billing-verticals-redesign/docs/nucleo/08-auditoria-y-observabilidad.md:210 («publicar una versión con lo que otorga, su tipo de scope, sus verticales compatibles y su precio, o retirarla»; «lo ya comprado sigue anclado a su versión»): agrega una prohibición sin soporte vivo, que impediría retirar del catálogo un complemento vendido aunque las compras conservan su versión; también contradice el alcance del editor de AC:B13b:3 y la acción 20 de B10. No aparece una decisión posterior que imponga esa guarda en el decision log ni en las decisiones del owner del corte · BLOQUEA
+
+20-fase-3/B12.md:673 · «con el preapproval no `authorized`, `S37` corre igualmente.» · contradice .specs/HOS-1354-billing-cobro-y-proveedor/docs/03-maquinas-de-estado.md:187 («si no lo lee `authorized`, `S37` no ocurre y la fila espera como una pausada o una en grace»): TEST:B12:4 exige ejecutar la migración con tarjeta omitiendo su guarda. También contradice AC:B12:4, líneas 354–355, y 04-catalogos.md:4130. La precisión BZ conserva S37 y cambia el tratamiento del aumento, sin eliminar esa guarda · BLOQUEA
+
+## Resumen
+
+| archivo | líneas recorridas | afirmaciones normativas revisadas (aprox.) | BLOQUEA | MENOR |
+|---|---|---|---|---|
+| 10-corte/B11.md | 1–2356 | 220 | 0 | 0 |
+| 10-corte/B13a.md | 1–1300 | 160 | 0 | 0 |
+| 20-fase-3/B13b.md | 1–263 | 45 | 1 | 0 |
+| 20-fase-3/B12.md | 1–834 | 150 | 1 | 0 |
+
+Alcance: recorrido hasta el final de los cuatro archivos; excluidas de la auditoría normativa las transcripciones g-secciones asignadas a G2: B11, líneas 75–1317; B13a, líneas 54–445; B12, líneas 65–270. Las cantidades aproximadas incluyen las reiteraciones en reglas, AC, tablas y TEST fuera de esos tramos.
+
+Se contrastaron las reglas con las fuentes congeladas, sus precisiones vigentes y las coincidencias internas de la spec. Las tres skills de dominio indicadas en el brief no se leyeron: sus rutas están fuera de V y no se encontraron copias dentro de V; prevaleció la restricción de lectura del brief. No se usaron git, trackers ni subagentes.

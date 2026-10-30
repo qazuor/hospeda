@@ -6,7 +6,7 @@
  *
  * Consolidates the ad hoc `extractFieldErrors` copy-pasted across
  * `ContactForm.client.tsx`, `ContributionForm.client.tsx`,
- * `CommerceLead.client.tsx` and `PromotionForm.client.tsx` (all four only read
+ * `ListingLead.client.tsx` and `PromotionForm.client.tsx` (all four only read
  * `issue.path[0]`, so a nested schema field silently loses its error), plus
  * `parseZodErrors` in `ProfileEditForm.helpers.ts` (same `path[0]`-only
  * limitation, but adds i18n resolution + `{{min}}`/`{{max}}` interpolation).

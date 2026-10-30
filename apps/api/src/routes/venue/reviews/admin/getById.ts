@@ -1,0 +1,43 @@
+/**
+ * Admin get venue review by ID endpoint.
+ * Returns full review information including moderation fields.
+ */
+import { PermissionEnum, VenueReviewSchema } from '@repo/schemas';
+import { ServiceError, VenueReviewService } from '@repo/service-core';
+import type { Context } from 'hono';
+import { z } from 'zod';
+import { getActorFromContext } from '../../../../utils/actor';
+import { apiLogger } from '../../../../utils/logger';
+import { createAdminRoute } from '../../../../utils/route-factory';
+
+const venueReviewService = new VenueReviewService({ logger: apiLogger });
+
+/**
+ * GET /api/v1/admin/venues/reviews/:id
+ * Get venue review by ID — Admin endpoint.
+ *
+ * Requires VENUE_MODERATE_REVIEW permission.
+ */
+export const adminGetVenueReviewByIdRoute = createAdminRoute({
+    method: 'get',
+    path: '/{id}',
+    summary: 'Get venue reviews by ID (admin)',
+    description:
+        'Retrieves full venue reviews information including moderation fields. Requires VENUE_MODERATE_REVIEW.',
+    tags: ['Venue Reviews', 'Admin'],
+    anyOfPermissions: [[PermissionEnum.VENUE_MODERATE_REVIEW]],
+    requestParams: {
+        id: z.string().uuid({ message: 'zodError.common.id.invalidUuid' })
+    },
+    responseSchema: VenueReviewSchema.nullable(),
+    handler: async (ctx: Context, params: Record<string, unknown>) => {
+        const actor = getActorFromContext(ctx);
+        const result = await venueReviewService.getById(actor, params.id as string);
+
+        if (result.error) {
+            throw new ServiceError(result.error.code, result.error.message);
+        }
+
+        return result.data ?? null;
+    }
+});

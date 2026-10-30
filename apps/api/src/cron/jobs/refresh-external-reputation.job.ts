@@ -23,9 +23,8 @@ import {
     AccommodationExternalReputationModel,
     AccommodationModel
 } from '@repo/db';
-import { PermissionEnum, RoleEnum } from '@repo/schemas';
-import type { Actor } from '@repo/service-core';
-import { AccommodationExternalReputationService } from '@repo/service-core';
+import { PermissionEnum } from '@repo/schemas';
+import { AccommodationExternalReputationService, createSystemActor } from '@repo/service-core';
 import { getReputationAdapterCredentials } from '../../utils/reputation-credentials.js';
 import type { CronJobDefinition } from '../types.js';
 import {
@@ -35,7 +34,7 @@ import {
 
 /**
  * Default cron schedule for the external reputation refresh job.
- * Every Monday at 02:00 UTC.
+ * Every Monday at 02:00 Buenos Aires time.
  */
 const DEFAULT_CRON_SCHEDULE = '0 2 * * 1';
 
@@ -49,11 +48,10 @@ const DEFAULT_CRON_SCHEDULE = '0 2 * * 1';
  * Minimal system actor for the external reputation refresh job.
  * Only the permissions required by the refresh() path are included.
  */
-const CRON_SYSTEM_ACTOR: Actor = {
-    id: '00000000-0000-0000-0000-000000000002',
-    roles: [RoleEnum.ADMIN],
-    permissions: [PermissionEnum.ACCOMMODATION_UPDATE_ANY] as readonly PermissionEnum[]
-} as const;
+const CRON_SYSTEM_ACTOR = createSystemActor({
+    jobId: 'cron.refresh-external-reputation',
+    permissions: [PermissionEnum.ACCOMMODATION_UPDATE_ANY]
+});
 
 // ---------------------------------------------------------------------------
 // Helper: sort accommodation IDs by Google TTL urgency
@@ -100,7 +98,7 @@ export function sortByGoogleTtlUrgency(
 /**
  * External reputation refresh cron job definition.
  *
- * Schedule: `HOSPEDA_EXTREP_CRON_SCHEDULE` (default `0 2 * * 1` — Monday 02:00 UTC)
+ * Schedule: `HOSPEDA_EXTREP_CRON_SCHEDULE` (default `0 2 * * 1` — Monday 02:00 Buenos Aires time)
  * Purpose: Keep cached platform ratings and Google snippets fresh weekly.
  */
 export const refreshExternalReputationJob: CronJobDefinition = {

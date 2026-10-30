@@ -473,7 +473,7 @@
                     "uuid": "El ID del propietario debe ser un UUID válido"
                 }
             },
-            "gastronomy": {
+            "venue": {
                 "destinationId": {
                     "uuid": "El destination id debe ser un UUID válido"
                 },
@@ -566,7 +566,7 @@
         "chat": {
             "accommodationId": {
                 "invalidUuid": "The accommodation ID must be a valid UUID",
-                "notAllowedForEntityType": "accommodationId cannot be sent when the question is about a gastronomy or experience listing"
+                "notAllowedForEntityType": "accommodationId cannot be sent when the question is about a Food & nightlife or experience listing"
             },
             "entityId": {
                 "conflictsWithAccommodationId": "entityId and accommodationId point to different listings",
@@ -1424,7 +1424,7 @@
             }
         }
     },
-    "commerce": {
+    "listing": {
         "description": {
             "max": "La descripción no puede superar los {{max}} caracteres",
             "min": "La descripción debe tener al menos {{min}} caracteres",
@@ -1454,7 +1454,7 @@
             "required": "El resumen es obligatorio"
         }
     },
-    "commerceLead": {
+    "listingLead": {
         "adminNote": {
             "max": "La nota de administrador no puede superar los {{max}} caracteres"
         },
@@ -1519,7 +1519,7 @@
         "checkOut": {
             "invalidDate": "El check-out debe ser una fecha válida"
         },
-        "commerceMedia": {
+        "listingMedia": {
             "alt": {
                 "max": "Alt text cannot exceed {{max}} characters",
                 "min": "Alt text must be at least {{min}} characters"
@@ -1548,7 +1548,7 @@
                 "invalid": "The URL is not valid"
             }
         },
-        "commerceRating": {
+        "listingRating": {
             "ambiance": {
                 "max": "El puntaje de ambiente no puede superar los {{max}}",
                 "min": "El puntaje de ambiente debe ser al menos {{min}}",
@@ -2049,6 +2049,27 @@
         },
         "uuid": {
             "invalid": "El uuid no es válido"
+        },
+        "listingModeration": {
+            "reason": {
+                "required": "Please give a reason",
+                "max": "The reason cannot exceed {{max}} characters"
+            },
+            "suggestedDate": {
+                "invalid": "The suggested date is not valid"
+            }
+        },
+        "accountCloseOnRequest": {
+            "reason": {
+                "required": "Write the reason for the account closure.",
+                "max": "The reason cannot exceed 2000 characters."
+            }
+        },
+        "listingPurgeOnRequest": {
+            "reason": {
+                "required": "Write the reason for the deletion.",
+                "max": "The reason cannot exceed 2000 characters."
+            }
         }
     },
     "contact": {
@@ -2319,6 +2340,11 @@
         "isAuthenticated": {
             "required": "Authentication state is required"
         },
+        "listingStats": {
+            "entityType": {
+                "invalid": "The entity type is not valid for listing statistics"
+            }
+        },
         "stats": {
             "total": {
                 "integer": "Total visits must be an integer",
@@ -2364,7 +2390,7 @@
         "clientType": {
             "invalid": "El client type no es válido"
         },
-        "commerceEntityType": {
+        "listingEntityType": {
             "invalid": "El tipo de entidad comercial no es válido"
         },
         "conversationStatus": {
@@ -2400,8 +2426,8 @@
         "externalPlatform": {
             "invalid": "La plataforma externa no es válida"
         },
-        "gastronomyType": {
-            "invalid": "El tipo de gastronomía no es válido"
+        "venueType": {
+            "invalid": "The venue type is not valid"
         },
         "hostTradeBenefitType": {
             "invalid": "El tipo de beneficio seleccionado no es válido"
@@ -2499,6 +2525,9 @@
         "productType": {
             "invalid": "El product type no es válido"
         },
+        "publicationStatus": {
+            "invalid": "The publication status is not valid"
+        },
         "qrCodeCenterLogo": {
             "invalid": "The QR code centre logo is not valid"
         },
@@ -2583,6 +2612,9 @@
         },
         "touristAudience": {
             "invalid": "El tourist audience no es válido"
+        },
+        "trialStatus": {
+            "invalid": "The trial status is not valid"
         },
         "visibility": {
             "invalid": "El visibility no es válido"
@@ -3221,7 +3253,7 @@
         "tooSmallNumber": "El número es demasiado bajo",
         "unrecognizedKeys": "Se encontraron campos no reconocidos"
     },
-    "gastronomy": {
+    "venue": {
         "amenityIds": {
             "invalidUuid": "El ID de servicio debe ser un UUID válido"
         },
@@ -3377,7 +3409,7 @@
             }
         }
     },
-    "gastronomyFeature": {
+    "venueFeature": {
         "comments": {
             "max": "El comments no puede superar los {{max}} caracteres",
             "min": "El comments debe tener al menos {{min}} caracteres"

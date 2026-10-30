@@ -124,7 +124,7 @@ describe('DestinationService.search and count', () => {
 
     it('should return correct count for valid filters', async () => {
         (model.count as import('vitest').Mock).mockResolvedValue(5);
-        const params = { country: 'AR' };
+        const params = { city: 'CDU' };
         const result = await service.count(admin, {
             ...params,
             page: 1,
@@ -136,7 +136,7 @@ describe('DestinationService.search and count', () => {
 
     it('should return 0 count if no destinations match', async () => {
         (model.count as import('vitest').Mock).mockResolvedValue(0);
-        const params = { country: 'ZZ' };
+        const params = { city: 'Nowhere' };
         const result = await service.count(admin, { ...params, page: 1, pageSize: 10 });
         expectSuccess(result);
         expect(result.data?.count).toBe(0);
@@ -147,7 +147,7 @@ describe('DestinationService.search and count', () => {
         vi.spyOn(permissionHelpers, 'checkCanCountDestinations').mockImplementation(() => {
             throw new ServiceError(ServiceErrorCode.FORBIDDEN, 'Forbidden');
         });
-        const params = { country: 'AR' };
+        const params = { city: 'CDU' };
 
         // Act
         const result = await service.count(guest, { ...params, page: 1, pageSize: 10 });
@@ -158,7 +158,7 @@ describe('DestinationService.search and count', () => {
 
     it('should return VALIDATION_ERROR for count with invalid input', async () => {
         // Arrange
-        const invalidParams = { country: 123 as any };
+        const invalidParams = { city: 123 as any };
 
         // Act
         const result = await service.count(admin, {
@@ -174,7 +174,7 @@ describe('DestinationService.search and count', () => {
     it('should return INTERNAL_ERROR for count if model throws', async () => {
         // Arrange
         (model.count as import('vitest').Mock).mockRejectedValue(new Error('DB error'));
-        const params = { country: 'AR' };
+        const params = { city: 'CDU' };
 
         // Act
         const result = await service.count(admin, { ...params, page: 1, pageSize: 10 });

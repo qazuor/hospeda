@@ -61,7 +61,7 @@ export type FavoriteEntityType =
     | 'DESTINATION'
     | 'EVENT'
     | 'EXPERIENCE'
-    | 'GASTRONOMY'
+    | 'VENUE'
     | 'POST';
 
 /** Identifies one favoritable entity. */

@@ -281,8 +281,7 @@ export function usePhotoSection({
                 addToast({
                     type: 'error',
                     message: limitPayload.title,
-                    action: limitPayload.action,
-                    secondaryAction: limitPayload.secondaryAction
+                    action: limitPayload.action
                 });
                 return;
             }

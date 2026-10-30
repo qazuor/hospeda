@@ -41,18 +41,12 @@ describe('PermissionEnum — Platform Settings V1 (SPEC-156)', () => {
         });
     });
 
-    describe('Mi facturación HOST landing', () => {
-        it('exposes BILLING_VIEW_OWN', () => {
-            expect(PermissionEnum.BILLING_VIEW_OWN).toBe('billing.view.own');
-        });
-
-        it('exposes SUBSCRIPTION_VIEW_OWN', () => {
-            expect(PermissionEnum.SUBSCRIPTION_VIEW_OWN).toBe('subscription.view.own');
-        });
-
-        it('BILLING_VIEW_OWN is distinct from BILLING_READ_ALL (admin-tier)', () => {
-            expect(PermissionEnum.BILLING_READ_ALL).toBe('billing.readAll');
-            expect(PermissionEnum.BILLING_VIEW_OWN).not.toBe(PermissionEnum.BILLING_READ_ALL);
+    describe('Mi facturación HOST landing (retired with the old billing, HOS-1419)', () => {
+        it('no longer exposes the old own-billing and own-subscription values', () => {
+            const values: readonly string[] = Object.values(PermissionEnum);
+            expect(values).not.toContain('billing.view.own');
+            expect(values).not.toContain('subscription.view.own');
+            expect(values).not.toContain('billing.readAll');
         });
     });
 
@@ -71,21 +65,19 @@ describe('PermissionEnum — Platform Settings V1 (SPEC-156)', () => {
     // Cross-cutting integrity
     // -------------------------------------------------------------------------
 
-    describe('Integrity across the 8 new SPEC-156 permissions', () => {
+    describe('Integrity across the 6 surviving SPEC-156 permissions', () => {
         const newPerms = [
             PermissionEnum.SETTINGS_GENERAL_VIEW,
             PermissionEnum.SETTINGS_GENERAL_WRITE,
             PermissionEnum.MAINTENANCE_MODE_WRITE,
             PermissionEnum.BILLING_SETTINGS_VIEW,
             PermissionEnum.BILLING_SETTINGS_WRITE,
-            PermissionEnum.BILLING_VIEW_OWN,
-            PermissionEnum.SUBSCRIPTION_VIEW_OWN,
             PermissionEnum.USER_UPDATE_SELF
         ];
 
-        it('contains exactly 8 entries (no accidental duplicates)', () => {
+        it('contains exactly 6 entries (no accidental duplicates)', () => {
             const uniques = new Set(newPerms);
-            expect(uniques.size).toBe(8);
+            expect(uniques.size).toBe(6);
         });
 
         it('every entry uses dot-notation, lowercase string values', () => {

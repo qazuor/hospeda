@@ -1,0 +1,43 @@
+# Patrones de causa (adjudicación ciega HOS-1352, vuelta 3)
+
+Spec en `a10f010e78`, fuentes en `591034c665`. Sólo REAL, GENERADOR, FUENTE y OWNER; (B) = BLOQUEA.
+47 únicos: 2 REAL BLOQUEA, 31 REAL MENOR, 4 GENERADOR, 4 FUENTE, 5 FALSO, 1 OWNER.
+
+| # | patrón | hallazgos | corrección sistemática | guard o cambio de generador que lo evita |
+|---|---|---|---|---|
+| P-D | **El AC/TEST resume una regla y pierde una rama, una guarda, un efecto o una fila** (sigue siendo el más grande, como en las vueltas 1 y 2). Las dos BLOQUEA son reglas que viven en el MODELO de datos (`B/02`, `V/02`) y no en la máquina ni en la superficie: quién escribe una columna y qué lleva un campo | H3-VA6-2 (B) (`external_reference` del complemento), H3-VB07-4 (B) (la validación del correo escribe `owner_user_id`); VA10-3, VA10-5, VA2-3, VA3-3, VA4-3, VA4-4, VA5-3, VB05-6, VB09-4, VB10-4, VB10-5, VB12-3, VB13-4 | cotejar cada columna de `B/02`/`V/02` que dice **quién la escribe** o **qué valor lleva** contra el AC de la pieza que escribe esa fila | `trazar.py`: por cada celda del modelo con «lo escribe», «es el `id` de», «nulo hasta» o «no escribe», exigir que el término aparezca en un AC (no sólo en prosa o transcripción) de la pieza dueña de la transición que escribe la fila |
+| P-A | **El ESQ resume el esquema** (columnas o restricciones); la corrección de la vuelta 2 bajó las columnas de `plan_migration*` y no sus restricciones | VA10-4 (`addon_product`: precio, recurrencia, verticales), VA6-3 (FK, misma vertical, piso del plazo, estados) | el ESQ copia la fila entera de `B/02` §2.x, columnas Y restricciones | el mismo de la vuelta 2, extendido a la columna «restricciones»: cada FK, `UNIQUE`, «no menor que», «de la misma vertical» y cada enumeración `(A, B o C)` de la fila está en el ESQ de la pieza que crea la tabla |
+| P-M | **El inventario decide el estado de una sección por su TÍTULO** (nuevo). 6 de las 7 secciones MUERTO tienen cuerpo vivo; g3 no las adjunta y g-secciones no las transcribe; además el preámbulo de un capítulo (entre `#` y el primer `##`) no es ninguna sección, así que «capítulo entero» lo pierde | H3-G2-10 (G2-10, G2-11), H3-G2-12 | estado `MIXTO` para título tachado con cuerpo vivo; SEC de preámbulo | g3 y secciones fallan si una SEC `MUERTO` tiene texto fuera de `~~…~~`; un «entero» se coteja contra todas las SEC no muertas del capítulo |
+| P-K | **g-secciones descarta una fila por su celda id**, aunque otra celda traiga texto vivo (el reverso del P-K de la vuelta 2, que era una celda id que EMPEZABA con `~~`) | H3-G2-13 | una fila es muerta sin aviso sólo si TODAS sus celdas no vacías están tachadas; un «**sale** …» vivo pasa como nota | el mismo `sin_texto_vivo`, con el predicado sobre todas las celdas |
+| P-H | **g1: letras corregidas por otra letra o por contenido tachado salen sin ⚠️** (segunda vez; el detector de la vuelta 2 sólo mira citas tachadas del ID y cuatro rondas) | H3-G1-3 (cinco letras: B, F y H de 38-fase-5; `G5-3` y `G2-1` de 28-fase-9-vuelta-1) | sumarlas a `letras_muertas` como «en parte» | P-H (a) letra posterior del mismo archivo que la nombra o la reemplaza; (b) frase de «qué decide» dentro de `~~…~~` en una fuente posterior; (c) todas las rondas, no una lista |
+| P-E | **Citas «l. N» y «§N» mal puestas**: las de la sección de fuentes de V5–V9a escritas contra un SHA anterior (+5 a +56), y dos `§3.4` por `§4.3`, **una de ellas introducida por la corrección H2-VA10-3 de la vuelta 2** | H3-VB06-5 (seis verificadores), VA10-7 (tres), VB05-4, VB13-5 | re-resolver toda «l. N» contra el SHA congelado; toda cita «§N» se coteja con el título de la sección | R25 de la vuelta 2 (la línea citada comparte ≥ 3 términos con el párrafo que la cita) **aplicado también a las correcciones** antes de bajarlas: una corrección que agrega una cita pasa el mismo guard |
+| P-B | **Conteos, rangos y etiquetas que no siguieron a una letra posterior** | VB12-4 (veinte → veintiuna, CH), VB09-2 («tests 1 a 9» sin el 11), VB01-4 (SHA y «BK a CB» → CI), VB01-3 (`V9a` entre las que encolan), VB04-3 (dos secciones del mismo archivo) | recontar contra la lista de la que salen | R24 de la vuelta 2 (un número de conteo coincide con su `Origen:`), más: todo rango «AC/TEST N a M» se resuelve por posición en el archivo y se compara con los IDs del conjunto que dice cubrir |
+| P-G | **Afirmación más fuerte que la fuente, o inferencia propia atribuida a una letra** | VB07-5 («ningún archivo del repositorio»), VB07-6 (el panel de una pieza posterior), VB08-4 («ninguna transición lee la otra»), VB09-3 (`GRACE_PERIOD` en un Dado), VB05-5 (asignación inventada sobre un «conviene»), VB13-6 («precisado por BZ» sin que BZ lo diga) | volver a la letra de la fuente o marcar «Derivado» | el aviso de la vuelta 2 (términos clave sin respaldo conjunto en el `Origen:`), más: toda frase «precisado por X» / «(X)» cuyo contenido no está en la fila de X ni en su 📌 se lista para revisión |
+| P-F | **Fuente vieja frente a una decisión o medición posterior** (FUENTE) | VA10-6 (G-R1-F contra DEC-GRANT-013), VA8-2 (DEC-CONC-001 contra F-8CB3-011), VB03-3 (diez/nueve), VB14-5 (paso 3a), VA9-3 (premisa del 📌 N8, superado por `EX-53`) | corregir la fuente con otro SHA congelado y regenerar | el R23 de la vuelta 2 en la dirección inversa: un tramo vivo de una fuente que un 📌 o un capítulo posterior tacha o contradice se marca |
+| P-L | **La fuente asigna lo mismo a dos piezas en dos lugares vivos** (OWNER) | H3-VB07-7 → CJ | la decide el owner | `trazar.py`: cada ítem de cobertura con una sola pieza dueña; si dos filas vivas de la descomposición nombran la misma ruta/archivo con piezas distintas, falla |
+
+## Por qué se escaparon
+
+- **Las reglas del modelo de datos se cotejan por tabla, no por pieza.** Las dos BLOQUEA son celdas de
+  `B/02`/`V/02` que dicen quién escribe una columna; los VA de modelo (A3, A6) las ven, pero la pieza que
+  escribe la fila (B10, V7) es de otro bloque. Es el mismo hueco que el P-A, del otro lado.
+- **Las correcciones de una vuelta no pasan por los guards.** H2-VA10-3 metió un `§3.4` errado y H2-VA6-5
+  bajó columnas sin restricciones; ninguna herramienta verificó el `entra`. El `build.py` de esta vuelta
+  verifica las anclas de cada `entra`, pero no las citas «§N» ni «l. N».
+- **Los VA no leen los adjuntos de 04.** Tres de los cuatro canarios VA que su bloque no vio viven en el
+  texto que g3 cuelga de un ítem (desempate, fila sin fecha, simulación por defecto); sólo G2 los vio.
+- **Las prohibiciones de método dentro de un procedimiento largo** («Sondear por SMTP no sirve») pasan
+  como narración; es el único canario que nadie vio, como en la vuelta 2 la cláusula «un rechazo no
+  escribe nada».
+- **Los FALSOS** vienen de no leer el 📌 que aplica una letra (VB10-3: BW suma la rama 4 en su 📌7), de
+  re-reportar FALSOS ya adjudicados (VB06-3, VB06-4, G2-14) y de no ver que una verificación es parte de un
+  paso que precede al irreversible (VB14-3).
+
+## Criterios uniformes de esta adjudicación
+
+- **BLOQUEA contra MENOR**: el de la vuelta 2. BLOQUEA cuando la pieza (AC, TEST, Reglas) y la `Fuente:`
+  del AC no traen la regla, o el AC la contradice; MENOR cuando está en la misma pieza (Reglas, prosa,
+  transcripción g-secciones) o en el ítem que el AC cita, y cuando es una cita, un conteo o un rótulo.
+- **Canario contra REAL**: un hallazgo que coincide con un canario es canario. Lo que un verificador sacó de
+  alrededor de un canario y existe en la spec real se adjudicó aparte (p. ej. VB-13-3 es canario por herencia).
+- **FUENTE-conocido** de la vuelta 2: ninguno se re-reportó como hallazgo propio en esta vuelta.

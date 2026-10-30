@@ -14,6 +14,7 @@
  * @module test/cron/refresh-external-reputation
  */
 
+import { PermissionEnum, RoleEnum } from '@repo/schemas';
 import type { Mock } from 'vitest';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { CronJobContext } from '../../src/cron/types.js';
@@ -97,6 +98,8 @@ function makeCtx(overrides: Partial<CronJobContext> = {}): CronJobContext {
     return {
         logger: { info: vi.fn(), warn: vi.fn(), error: vi.fn(), debug: vi.fn() },
         startedAt: new Date('2026-06-16T02:00:00Z'),
+        runId: 'run-00000000-test',
+        correlationId: '00000000-0000-4000-8000-00000000c0de',
         dryRun: false,
         ...overrides
     };
@@ -191,7 +194,12 @@ describe('Refresh External Reputation Cron Job', () => {
 
             expect(mockRefresh).toHaveBeenCalledWith(
                 ACC_1,
-                expect.objectContaining({ id: '00000000-0000-0000-0000-000000000002' }),
+                expect.objectContaining({
+                    id: '00000000-0000-0000-0000-000000000001',
+                    roles: [RoleEnum.SYSTEM],
+                    permissions: [PermissionEnum.ACCOMMODATION_UPDATE_ANY],
+                    _systemJobId: 'cron.refresh-external-reputation'
+                }),
                 undefined,
                 { bypassRateLimit: true }
             );

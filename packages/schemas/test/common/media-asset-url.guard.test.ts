@@ -42,11 +42,11 @@ const SRC = join(__dirname, '../../src');
 const MEDIA_SCHEMA_FILES = [
     'common/media.schema.ts',
     'common/content-media.schema.ts',
-    'common/commerce-media.schema.ts',
+    'common/listing-media.schema.ts',
     'entities/accommodation/subtypes/accommodation.media.schema.ts',
     'entities/accommodation/accommodation.http.schema.ts',
     'entities/experience/subtypes/experience.media.schema.ts',
-    'entities/gastronomy/subtypes/gastronomy.media.schema.ts'
+    'entities/venue/subtypes/venue.media.schema.ts'
 ] as const;
 
 /**

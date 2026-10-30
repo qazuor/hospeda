@@ -2,7 +2,7 @@
 /**
  * @file planes/experiencias/precios/index.astro
  * @description Pricing page for the experience vertical — level 3 of the three
- * HOS-941 D-7 defines. Twin of `/planes/gastronomia/precios/`; see that file's
+ * HOS-941 D-7 defines. Twin of `/planes/comer-y-salir/precios/`; see that file's
  * docblock for the shared rationale (where the content came from, why no
  * redirect points here, and why the CTA is a link rather than a checkout).
  *
@@ -10,8 +10,8 @@
  * @rendering SSR (prerender=false); edge-cacheable via the `pricing` cache
  *   class, tagged `CACHE_TAG_PRICING` (HOS-941 R-5).
  *
- * The one thing that is NOT shared with its twin: `gastronomy` and `experience`
- * are separate product domains, and `'commerce'` is a RETIRED `ProductDomainEnum`
+ * The one thing that is NOT shared with its twin: the venue and experience verticals
+ * are separate product domains, and the old shared umbrella is a RETIRED `ProductDomainEnum`
  * value that survives only on legacy rows (HOS-941 R-3). The two pages fetch
  * different catalogues and render different comparison rows; nothing here may
  * group them under one "Comercio".
@@ -28,13 +28,13 @@ import Breadcrumbs from '@/components/shared/navigation/Breadcrumbs.astro';
 import MarketingLayout from '@/layouts/MarketingLayout.astro';
 import { getPlanDescription, getPlanName } from '@/lib/billing-i18n';
 import { fetchAudiencePlans } from '@/lib/billing/audience-plans';
+import { fetchTouristVipBenefitKeys } from '@/lib/billing/tourist-vip-benefits';
 import {
     buildBillingFaqJsonLd,
     buildPricingBreadcrumbs,
     resolvePricingPageContent
 } from '@/lib/billing/pricing-page-content';
 import { applyCacheHeaders } from '@/lib/cache/response-cache';
-import { buildCommerceStartUrl } from '@/lib/commerce/start-url';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
 import { getIntlLocale } from '@/lib/pricing-plans';
@@ -53,7 +53,9 @@ applyCacheHeaders({
     tags: [CACHE_TAG_PRICING]
 });
 
+const touristVipBenefitsPromise = fetchTouristVipBenefitKeys();
 const plans = await fetchAudiencePlans({ audience: 'experience' });
+const touristVipBenefits = await touristVipBenefitsPromise;
 const { copyRoot, faqs, hasComparison, priceMode } = resolvePricingPageContent({
     audience: 'experience',
     plans,
@@ -69,7 +71,7 @@ const siteOrigin = Astro.site?.href.replace(/\/$/, '') ?? Astro.url.origin;
  * (`getPlanName` / `getPlanDescription`) and not from the raw config values.
  *
  * `plan.name` / `plan.description` off the API are the billing package's
- * internal strings — for the commerce verticals, English engineering prose
+ * internal strings — for the venue/experience verticals, English engineering prose
  * carrying issue IDs. Publishing those as structured data would put them in the
  * field a search result quotes, while the visible card said something else.
  */
@@ -81,7 +83,6 @@ const jsonLdPlans = plans.map((plan) => ({
     url: `${siteOrigin}${pagePath}`
 }));
 
-const ctaHref = buildCommerceStartUrl({ locale, vertical: 'experience' });
 
 const title = t(`${copyRoot}.pageTitle`);
 const description = t(`${copyRoot}.pageDescription`);
@@ -94,7 +95,7 @@ const description = t(`${copyRoot}.pageDescription`);
 const breadcrumbs = buildPricingBreadcrumbs({
     homeLabel: t('nav.home', 'Inicio'),
     homeUrl: `${siteOrigin}${buildUrl({ locale, path: '' })}`,
-    salesLabel: t('commerce.lead.experience.title'),
+    salesLabel: t('experience.landing.lead.title'),
     salesPath: 'planes/experiencias',
     salesUrl: `${siteOrigin}${buildUrl({ locale, path: 'planes/experiencias' })}`,
     pageLabel: title,
@@ -112,7 +113,7 @@ const headingMain = headingWords.join(' ');
     <JsonLd slot="head-extra" data={buildBillingFaqJsonLd({ faqs })} />
     <BreadcrumbJsonLd slot="head-extra" items={breadcrumbs.jsonLd} />
 
-    <Breadcrumbs locale={locale} items={breadcrumbs.visible} />
+    <Breadcrumbs slot="breadcrumbs" locale={locale} items={breadcrumbs.visible} />
 
     <MarketingHero
         tagline={t(`${copyRoot}.tagline`)}
@@ -129,12 +130,12 @@ const headingMain = headingWords.join(' ');
         locale={locale}
         audience="experience"
         plans={plans}
+        touristVipBenefits={touristVipBenefits}
         intlLocale={intlLocale}
         copyRoot={copyRoot}
         faqs={faqs}
         hasComparison={hasComparison}
-        ctaMode="link"
-        ctaHref={ctaHref}
+        ctaMode="checkout"
         priceMode={priceMode}
     />
 </MarketingLayout>

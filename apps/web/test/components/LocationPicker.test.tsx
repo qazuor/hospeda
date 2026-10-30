@@ -393,4 +393,50 @@ describe('LocationPicker', () => {
             );
         });
     });
+
+    describe('map pin notice (HOS-1767)', () => {
+        const NOT_SET_NOTICE = /Todavía no marcaste la ubicación/;
+        const MAP_HINT = /Arrastrá el pin para ajustar la ubicación exacta/;
+
+        it('TEST:1767:12 — explains the unplaced pin above the map', async () => {
+            render(<LocationPicker {...defaultProps} />);
+
+            const notice = screen.getByText(NOT_SET_NOTICE);
+            const map = await screen.findByTestId('mock-map');
+
+            expect(notice.compareDocumentPosition(map) & Node.DOCUMENT_POSITION_FOLLOWING).toBe(
+                Node.DOCUMENT_POSITION_FOLLOWING
+            );
+        });
+
+        it('TEST:1767:13 — hides the notice once the location has coordinates', () => {
+            render(
+                <LocationPicker
+                    {...defaultProps}
+                    value={{ latitude: -32.48, longitude: -58.23 }}
+                />
+            );
+
+            expect(screen.queryByText(NOT_SET_NOTICE)).not.toBeInTheDocument();
+        });
+
+        it('TEST:1767:14 — keeps the map hint below the map in both states', async () => {
+            const { rerender } = render(<LocationPicker {...defaultProps} />);
+
+            const unplacedHint = screen.getByText(MAP_HINT);
+            const map = await screen.findByTestId('mock-map');
+            expect(
+                map.compareDocumentPosition(unplacedHint) & Node.DOCUMENT_POSITION_FOLLOWING
+            ).toBe(Node.DOCUMENT_POSITION_FOLLOWING);
+
+            rerender(
+                <LocationPicker
+                    {...defaultProps}
+                    value={{ latitude: -32.48, longitude: -58.23 }}
+                />
+            );
+
+            expect(screen.getByText(MAP_HINT)).toBeInTheDocument();
+        });
+    });
 });

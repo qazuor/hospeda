@@ -32,10 +32,10 @@ export interface PartnerRevokedProps {
  *
  * ## Why it says nothing about money
  *
- * Revoking flips `lifecycleState`, never `subscriptionStatus` — the two are
- * deliberately separate, so a revoked partner's billing state is whatever it
- * already was and this email is not the place to guess at it. Promising a
- * refund the software does not issue is exactly the R-5 failure mode.
+ * Revoking flips `lifecycleState` and records the reason; the software tracks
+ * no payment state for partners, so this email is not the place to guess at
+ * one. Promising a refund the software does not issue is exactly the R-5
+ * failure mode.
  *
  * @param props - Template data.
  */

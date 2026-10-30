@@ -1,0 +1,155 @@
+import { faker } from '@faker-js/faker';
+import { VenueTypeEnum } from '../../src/enums/index.js';
+import {
+    createBaseAdminFields,
+    createBaseAuditFields,
+    createBaseContactFields,
+    createBaseIdFields,
+    createBaseMediaFields,
+    createBaseReviewFields,
+    createBaseSeoFields,
+    createBaseTagsFields,
+    createPublicationStatusFields
+} from './common.fixtures.js';
+
+/**
+ * venue fixtures for testing
+ */
+
+/**
+ * Creates venue-specific identity fields matching ListingIdentityFields.
+ */
+const createVenueIdentityFields = () => ({
+    slug: faker.lorem.slug(3),
+    name: faker.company.name().slice(0, 100),
+    summary: faker.lorem.paragraph().slice(0, 300),
+    description: faker.lorem.paragraphs(2).slice(0, 2000),
+    richDescription: faker.helpers.maybe(() => faker.lorem.paragraphs(3), { probability: 0.5 }),
+    nameI18n: undefined,
+    summaryI18n: undefined,
+    descriptionI18n: undefined,
+    richDescriptionI18n: undefined,
+    translationMeta: undefined
+});
+
+/**
+ * Creates opening hours in the format expected by OpeningHoursSchema.
+ * Uses `days` with three-letter keys (mon–sun) and DaySchedule objects
+ * ({ closed, shifts }), matching the schema exactly.
+ */
+const createOpeningHoursFields = () => ({
+    openingHours: faker.helpers.maybe(
+        () => ({
+            timezone: 'America/Argentina/Buenos_Aires',
+            days: {
+                mon: {
+                    closed: faker.datatype.boolean({ probability: 0.1 }),
+                    shifts: [{ open: '09:00', close: '22:00' }]
+                },
+                tue: {
+                    closed: faker.datatype.boolean({ probability: 0.1 }),
+                    shifts: [{ open: '09:00', close: '22:00' }]
+                },
+                wed: {
+                    closed: faker.datatype.boolean({ probability: 0.1 }),
+                    shifts: [{ open: '09:00', close: '22:00' }]
+                },
+                thu: {
+                    closed: faker.datatype.boolean({ probability: 0.1 }),
+                    shifts: [{ open: '09:00', close: '22:00' }]
+                },
+                fri: {
+                    closed: faker.datatype.boolean({ probability: 0.1 }),
+                    shifts: [{ open: '09:00', close: '23:59' }]
+                },
+                sat: {
+                    closed: faker.datatype.boolean({ probability: 0.2 }),
+                    shifts: [{ open: '11:00', close: '23:59' }]
+                },
+                sun: {
+                    closed: faker.datatype.boolean({ probability: 0.3 }),
+                    shifts: [{ open: '11:00', close: '20:00' }]
+                }
+            }
+        }),
+        { probability: 0.7 }
+    )
+});
+
+/**
+ * Creates a venue rating (food/service/ambiance/value).
+ */
+const createVenueRating = () => ({
+    food: faker.number.float({ min: 1, max: 5, fractionDigits: 1 }),
+    service: faker.number.float({ min: 1, max: 5, fractionDigits: 1 }),
+    ambiance: faker.number.float({ min: 1, max: 5, fractionDigits: 1 }),
+    value: faker.number.float({ min: 1, max: 5, fractionDigits: 1 })
+});
+
+/**
+ * Creates a valid venue fixture with all required and optional fields.
+ * Note: socialNetworks is intentionally omitted because the shared fixture helper
+ * produces placeholder URLs (e.g. "https://facebook.com/example") that may not
+ * pass the schema's strict regex validation for each platform pattern.
+ */
+export const createValidVenue = () => ({
+    ...createBaseIdFields(),
+    ...createBaseAuditFields(),
+    ...createVenueIdentityFields(),
+    type: faker.helpers.arrayElement(Object.values(VenueTypeEnum)),
+    priceRange: faker.helpers.maybe(
+        () => faker.helpers.arrayElement(['BUDGET', 'MID', 'HIGH', 'PREMIUM'] as const),
+        { probability: 0.8 }
+    ),
+    menuUrl: faker.helpers.maybe(() => `https://${faker.internet.domainName()}/menu`, {
+        probability: 0.5
+    }),
+    destinationId: faker.string.uuid(),
+    ownerId: faker.string.uuid(),
+    isFeatured: faker.datatype.boolean({ probability: 0.2 }),
+    ...createPublicationStatusFields(),
+    ...createBaseReviewFields(),
+    ...createBaseSeoFields(),
+    ...createBaseContactFields(),
+    // socialNetworks intentionally omitted — strict regex per platform
+    ...createOpeningHoursFields(),
+    ...createBaseMediaFields(),
+    ...createBaseAdminFields(),
+    ...createBaseTagsFields(),
+    rating: faker.helpers.maybe(() => createVenueRating(), { probability: 0.7 }),
+    faqs: undefined
+});
+
+/**
+ * Creates a minimal venue with only required fields.
+ */
+export const createMinimalVenue = () => ({
+    id: faker.string.uuid(),
+    slug: 'parrilla-de-juan',
+    name: 'La Parrilla de Juan',
+    summary: 'Parrilla tradicional argentina',
+    description: faker.lorem.paragraphs(2).slice(0, 2000),
+    type: VenueTypeEnum.PARRILLA,
+    destinationId: faker.string.uuid(),
+    ownerId: faker.string.uuid(),
+    isFeatured: false,
+    publicationStatus: 'DRAFT',
+    reviewsCount: 0,
+    averageRating: 0,
+    createdAt: new Date(),
+    updatedAt: new Date(),
+    createdById: faker.string.uuid(),
+    updatedById: null
+});
+
+/**
+ * Creates an invalid venue (missing required fields + bad values).
+ */
+export const createInvalidVenue = () => ({
+    id: 'not-a-uuid',
+    name: '', // Too short
+    type: 'INVALID_TYPE', // Not in enum
+    menuUrl: 'http://insecure.com/menu', // must be https
+    destinationId: 'not-a-uuid',
+    ownerId: 'not-a-uuid'
+});

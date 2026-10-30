@@ -793,7 +793,12 @@ export function NewsletterForm({
                                         'Te suscribís con el email de tu cuenta'
                                     )}
                                 </span>
-                                <span className={styles.authedEmailValue}>{resolvedEmail}</span>
+                                <span
+                                    className={styles.authedEmailValue}
+                                    title={resolvedEmail}
+                                >
+                                    {resolvedEmail}
+                                </span>
                             </div>
                         ) : (
                             // Guest: editable controlled input. The visitor types
@@ -829,39 +834,44 @@ export function NewsletterForm({
                         )}
                     </div>
 
-                    {/* Submit button — always type=submit now that guests
-                        also submit (the public POST + redirect path). */}
-                    <button
-                        type="submit"
-                        className={styles.submitButton}
-                        disabled={isLoading}
-                        aria-busy={isLoading}
-                    >
-                        {isLoading ? (
-                            <>
-                                <span
-                                    className={styles.spinner}
-                                    aria-hidden="true"
-                                />
-                                <span className={styles.srOnly}>
-                                    {t('footer.newsletter.loadingText', 'Enviando...')}
-                                </span>
-                            </>
-                        ) : (
-                            t('footer.newsletter.subscribeButton', 'Suscribirme')
-                        )}
-                    </button>
-
-                    {/* Authenticated users get a link to the full newsletter
-                        settings page (manage content types, frequency, etc.). */}
-                    {isAuthed && (
-                        <a
-                            href={managePath}
-                            className={styles.configureLink}
+                    {/* Submit button and (authed) Configure link travel as ONE
+                        flex item, so when the row wraps on a narrow viewport they
+                        wrap together instead of stranding the link alone against
+                        the left edge (HOS-1773). Button is always type=submit
+                        now that guests also submit (public POST + redirect). */}
+                    <div className={styles.actions}>
+                        <button
+                            type="submit"
+                            className={styles.submitButton}
+                            disabled={isLoading}
+                            aria-busy={isLoading}
                         >
-                            {t('footer.newsletter.configureLink', 'Configurar')}
-                        </a>
-                    )}
+                            {isLoading ? (
+                                <>
+                                    <span
+                                        className={styles.spinner}
+                                        aria-hidden="true"
+                                    />
+                                    <span className={styles.srOnly}>
+                                        {t('footer.newsletter.loadingText', 'Enviando...')}
+                                    </span>
+                                </>
+                            ) : (
+                                t('footer.newsletter.subscribeButton', 'Suscribirme')
+                            )}
+                        </button>
+
+                        {/* Authenticated users get a link to the full newsletter
+                        settings page (manage content types, frequency, etc.). */}
+                        {isAuthed && (
+                            <a
+                                href={managePath}
+                                className={styles.configureLink}
+                            >
+                                {t('footer.newsletter.configureLink', 'Configurar')}
+                            </a>
+                        )}
+                    </div>
                 </div>
 
                 {/* Inline error — shown only in error state */}

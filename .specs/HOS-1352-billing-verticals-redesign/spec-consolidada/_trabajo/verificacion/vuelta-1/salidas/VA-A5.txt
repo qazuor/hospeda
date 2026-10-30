@@ -1,0 +1,55 @@
+# VA-A5 · fuente → spec · bloque A5 (02-modelo-de-datos.md, 03-maquinas-de-estado.md)
+
+Spec: `ciegas/s/4f8153ed/` · Fuentes: `ciegas/fuentes/.specs/HOS-1354-billing-cobro-y-proveedor/docs/`
+
+## Reglas con problema
+
+.specs/HOS-1354-billing-cobro-y-proveedor/docs/02-modelo-de-datos.md:725 · «la fracción de mes del `saldo_meses` que escribe `S18` se redondea PARA ARRIBA (se guarda el entero siguiente: 1 mes y 16 días → 2)»; la misma cláusula está en la fila `S18` de 03-maquinas-de-estado.md:168 («la fracción de mes se redondea **para arriba**, `B/02` §2.4») · ausente; además distinta en 04-catalogos.md:3318 (la copia de los efectos de `S18` saca justo esa cláusula y deja «(`B/02` §2.4; …»). En ningún lugar de la spec aparece «redondea» con ese sentido, «para arriba» ni «entero siguiente» · BLOQUEA
+
+.specs/HOS-1354-billing-cobro-y-proveedor/docs/03-maquinas-de-estado.md:2814 · «un `payment` que la relectura muestra con `operation_type: card_validation` (la validación de ARS 0 al autorizar o al cambiar la tarjeta) no es un cobro: no escribe ningún `payment`, no corre ninguna transición y no cuenta como rechazo, ni como el primero de `S16` ni como el que arranca el grace por `S4`» · ausente. La spec describe sólo el comportamiento del proveedor/falso (B1.md:290, 04-catalogos.md:6766 `RP12`, 01-decisiones-vigentes.md:8439) y nunca la regla de procesamiento del receptor · BLOQUEA
+
+.specs/HOS-1354-billing-cobro-y-proveedor/docs/03-maquinas-de-estado.md:1574 · «si vuelve a intentar con un checkout pendiente, **no** se crea otra fila: se reusa la vigente si le queda ventana; el reuso pasó a ser consecuencia del candado `A`» (también citado en 03:1495, *«no se crea otra, se reusa la vigente»*) · distinta en 04-catalogos.md:2018-2022 (el «Texto de la fuente» del §3.4 punto 4, que se presenta «sin lo tachado», borra texto que no estaba tachado: el reuso y la frase «el reuso pasó de ser una regla del servicio…»; sólo queda que la base rechaza el segundo `INSERT`) y en 04-catalogos.md:4073 (se borró la cita «no se crea otra, se reusa la vigente»). Lo que cambia es la respuesta al reintento: con la fuente se devuelve la ventana vigente, con la spec el pedido choca contra la base · BLOQUEA
+
+.specs/HOS-1354-billing-cobro-y-proveedor/docs/02-modelo-de-datos.md:576 · «`promo_code` guarda la duración del §33 (primer cobro, N cobros o forever), y de ahí sale el valor inicial de `promo_redemption.cobros_restantes`, que se inicializa al canjear: primer cobro = 1, N cobros = N, forever = nulo (nulo = forever; N > 0 = quedan N; 0 = agotado)» (con 02:577 y 02:666-667) · ausente. ESQ:6 (B3.md:873-875) sólo da `UNIQUE(codigo)`, `UNIQUE(promo_code_id, user_id)` y «nunca negativo». Ningún AC de B9b ni de B3 dice con qué valor nace el contador ni qué significa el nulo · BLOQUEA
+
+.specs/HOS-1354-billing-cobro-y-proveedor/docs/02-modelo-de-datos.md:383 · «`receipt` lleva un CHECK de que exactamente una de sus dos referencias al cobro (`payment` o `manual_payment`) es no nula» · ausente. B5.md:828 (modelo), AC:B5:32 (B5.md:578-588) y el test de B5.md:1048-1054 enumeran el CHECK de `payment` y el de `covered_period`, pero el de `receipt` no aparece · BLOQUEA
+
+.specs/HOS-1354-billing-cobro-y-proveedor/docs/02-modelo-de-datos.md:575 · «en el `UNIQUE(dueño, producto, objetivo)` parcial de `addon_instance` el objetivo se compara también cuando no nombra una fila: un `USER` o un `GLOBAL` choca con otro pendiente del mismo producto, así que un objetivo nulo no puede quedar distinto de otro nulo» · ausente. B10.md:67/158/434, 04-catalogos.md:6049-6052 y ESQ:8 (B3.md:886-889) dan la identidad y el predicado, pero no la comparación de nulos. Sin ella, con la semántica por defecto de Postgres el doble clic sobre un addon `USER`/`GLOBAL` pasa el índice · BLOQUEA
+
+.specs/HOS-1354-billing-cobro-y-proveedor/docs/02-modelo-de-datos.md:574 · «`addon_product.version_id` no es anulable (sin ella el producto no se puede comprar)», y en 02:575 «la versión anclada de `addon_instance` no es anulable» · ausente como restricción del esquema. ESQ:8 (B3.md:886-891) y B10.md:431-437 no fijan la nulabilidad de ninguna de las dos columnas. La de la instancia se deduce de la `referencia` no anulable del contrato (03-contrato-de-cobertura.md:150); la del producto no se deduce de ninguna parte · BLOQUEA
+
+.specs/HOS-1354-billing-cobro-y-proveedor/docs/02-modelo-de-datos.md:288 · «sobre una fila con una marca abierta ningún `sucede_a` puede escribirse apuntándola (no puede ser sucedida); la excepción, en `CANCEL_SCHEDULED` y en una `SUSPENDED` de pagador con tarjeta, exige en los dos casos una relectura por id que confirme el preapproval cancelado; y una regla sobre una sucesión se escribe nombrando la columna, nunca el verbo «declarar»» (02:288-320 y 02:223) · distinta en B3.md:356-357 (AC:B3:14: «la fila marcada no puede declarar una sucesión, salvo desde `CANCEL_SCHEDULED`») y en B3.md:1056-1057 (TEST:B3:14, lo mismo). El criterio usa el verbo que la fuente prohíbe y lo aplica al sujeto equivocado (la predecesora es la que es sucedida, no la que declara). Además omite la excepción `SUSPENDED` con tarjeta y la relectura obligatoria. La regla correcta sí está en 04-catalogos.md:4040-4047, pero lo que se prueba es la versión del AC · BLOQUEA
+
+.specs/HOS-1354-billing-cobro-y-proveedor/docs/02-modelo-de-datos.md:579 · «`permanent_grant`: al menos un ancla (restricción), o el grant no otorga nada» · distinta en B9a.md:239 (AC:B9a:8 lo dice como consecuencia, «un grant sin ningún ancla no otorga nada», y no como restricción que impida escribirlo) · MENOR
+
+## Resumen
+
+**02-modelo-de-datos.md** (1298 líneas): recorrí 1-1298 entero. El frontmatter (1-15) no tiene nada normativo. Revisé ~95 reglas normativas vivas:
+- §2.1 (23-50) y §2.2 (52-373): entidades, candados `A`/`B`, sucesión, vivos, marca y fechas.
+- §2.3 (375-568): dinero.
+- §2.4 (570-970): capacidades y concesiones.
+- §2.5 (972-1177): el catálogo de 24 motivos. Está copiado palabra por palabra en `MOT:1-24` de 04-catalogos.md.
+- §2.6 (1179-1232), §2.7 (1234-1256), §4 (1260-1278) y §5 (1282-1298).
+
+Lo tachado y lo que salió con C8 (`vertical_discontinuation`, `origen_de_lápida`, `S25`) lo tomé como muerto. Los pasajes de riesgo aceptado o pendiente declarado (529-533, 548-556) los tomé como relato.
+
+**03-maquinas-de-estado.md** (3061 líneas): recorrí 1-3061 entero. Revisé ~250 reglas normativas vivas:
+- §3.1-§3.4: estados, tabla S1-S38 sin S25-S28 y transiciones prohibidas.
+- §4-§8: grace, pausa, pago P1-P7, reembolso RF1-RF5, pago manual MP1-MP6 y addon A1-A7.
+- §10: no-retroceso y espejo.
+- El resto de la prosa normativa.
+
+El capítulo está copiado casi palabra por palabra en 04-catalogos.md, con las transiciones y los «Texto de la fuente». Lo comparé línea por línea por cobertura de texto (excluyendo 90-retirados.md y, como control, 80-abiertos.md). Revisé a mano cada fragmento que no aparecía.
+
+**Conteo**:
+
+| archivo | ausente | distinta | BLOQUEA | MENOR |
+|---|---|---|---|---|
+| 02-modelo-de-datos.md | 5 | 2 | 6 | 1 |
+| 03-maquinas-de-estado.md | 1 | 1 | 2 | 0 |
+| **total** | **6** | **3** | **8** | **1** |
+
+Notas sobre el conteo:
+- **Redondeo de `saldo_meses`.** Lo conté una sola vez, como ausente, con su fuente principal en 02:725. La misma cláusula figura en 03:168, y la fila `S18` de 04-catalogos.md:3318 la recorta.
+- **Reuso del checkout.** Cuenta como una distinta en 03 (líneas 1574 y 1495).
+- **Restantes de 02.** Las dos distintas son AC:B3:14 (BLOQUEA) y AC:B9a:8 (MENOR). Las cinco ausentes son promo, receipt, objetivo nulo, `version_id` no anulables y redondeo.

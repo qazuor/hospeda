@@ -15,17 +15,9 @@
  * THE ORDER OF THE CHECKS, WHICH IS THE WHOLE SECURITY MODEL
  *
  * 1. `protectedAuthMiddleware` — a session, or 401.
- * 2. `commerceVerticalEntitlementMiddleware('experience')` — REPLACES the
- *    request's entitlement set with the one resolved from the caller's
- *    EXPERIENCE subscription. Without it the next line reads the ACCOMMODATION
- *    set, which never carries a commerce key, and every caller is refused.
- * 3. `requireEntitlement(ISSUE_EXPERIENCE_CERTIFICATE)` — the plan gate, 403.
- * 4. Ownership, inside the handler — 404, never 403, because a 403 would
+ * 2. Listing access requires issue_experience_certificate for the owner.
+ * 3. Ownership, inside the handler — 404, never 403, because a 403 would
  *    confirm that the experience id exists (`docs/error-contract.md`).
- *
- * Steps 2 and 3 are middlewares so they run BEFORE the handler touches the
- * database: the e2e tests assert exactly that by spying on
- * `ExperienceService.getById` and requiring it never ran on the refusal path.
  *
  * ## Who may read a certificate
  *
@@ -37,7 +29,6 @@
  * @module routes/experience/protected/certificates
  */
 
-import { EntitlementKey } from '@repo/billing';
 import {
     EntityTypeEnum,
     ExperienceCertificateCreateInputSchema,
@@ -45,9 +36,10 @@ import {
     type ExperienceCertificateOutput,
     ExperienceCertificateOutputSchema,
     PermissionEnum,
+    PublicationStatusEnum,
     QrCodePurposeEnum,
     ServiceErrorCode,
-    VisibilityEnum
+    VerticalEnum
 } from '@repo/schemas';
 import {
     ExperienceService,
@@ -62,24 +54,22 @@ import {
 import { ServiceError } from '@repo/service-core/types';
 import type { Context } from 'hono';
 import { z } from 'zod';
-import { commerceVerticalEntitlementMiddleware } from '../../../middlewares/commerce-entitlement';
-import { requireEntitlement } from '../../../middlewares/entitlement';
+
 import { buildCertificateContent } from '../../../services/experience-certificate/certificate-content';
 import { buildCertificateResponse } from '../../../services/experience-certificate/certificate-response';
 import { getActorFromContext } from '../../../utils/actor';
 import { buildEntityQrLabel, resolveEntityQrScanUrl } from '../../../utils/entity-qr';
 import { env } from '../../../utils/env';
 import { apiLogger } from '../../../utils/logger';
+import { resolveReturnUrlLocale } from '../../../utils/return-url-locale';
 import { createProtectedRoute } from '../../../utils/route-factory';
-import { resolveReturnUrlLocale } from '../../billing/checkout-return-urls';
 
 const experienceService = new ExperienceService({ logger: apiLogger });
 
-/** The gate every route in this module carries, spelled once. */
-const CERTIFICATE_GATE = [
-    commerceVerticalEntitlementMiddleware('experience'),
-    requireEntitlement(EntitlementKey.ISSUE_EXPERIENCE_CERTIFICATE)
-];
+/**
+ * Rate-limit middleware shared by the three certificate routes.
+ */
+const CERTIFICATE_GATE: never[] = [];
 
 /**
  * TYPE-WORKAROUND: the service-core certificate helpers take the model, and the
@@ -100,7 +90,7 @@ function experienceModel(): Parameters<typeof issueExperienceCertificate>[0] {
 /**
  * Loads the experience and asserts it is the caller's.
  *
- * Staff holding `COMMERCE_VIEW_ALL` pass the ownership test, as they do on the
+ * Staff holding `EXPERIENCE_VIEW_ALL` pass the ownership test, as they do on the
  * brochure route — a support agent looking at a provider's account must be able
  * to see what that provider issued.
  *
@@ -117,7 +107,7 @@ async function requireOwnedExperience(ctx: Context, experienceId: string) {
     }
 
     const entity = result.data;
-    const hasViewAll = actor.permissions?.includes(PermissionEnum.COMMERCE_VIEW_ALL);
+    const hasViewAll = actor.permissions?.includes(PermissionEnum.EXPERIENCE_VIEW_ALL);
     if (!entity || (!hasViewAll && entity.ownerId !== actor.id)) {
         throw entityNotFoundError({ entityName: ExperienceService.ENTITY_NAME });
     }
@@ -155,6 +145,12 @@ function toOutput(certificate: {
 export const protectedIssueExperienceCertificateRoute = createProtectedRoute({
     method: 'post',
     path: '/{id}/certificates',
+    listingAccess: {
+        vertical: VerticalEnum.EXPERIENCE,
+        operation: 'EDIT',
+        idParam: 'id',
+        capabilities: ['issue_experience_certificate']
+    },
     summary: 'Issue a certificate for an experience',
     description:
         'Issues a certificate naming the person who did the experience and the day they did it. Owner-only. Requires the issue_experience_certificate entitlement, granted by the professional experience plan and upwards.',
@@ -201,6 +197,12 @@ export const protectedIssueExperienceCertificateRoute = createProtectedRoute({
 export const protectedListExperienceCertificatesRoute = createProtectedRoute({
     method: 'get',
     path: '/{id}/certificates',
+    listingAccess: {
+        vertical: VerticalEnum.EXPERIENCE,
+        operation: 'READ_OWN_COMMERCIAL',
+        idParam: 'id',
+        step6Key: 'issue_experience_certificate'
+    },
     summary: 'List the certificates issued for an experience',
     description:
         'Returns the certificates this experience has issued, newest first. Owner-only. Requires the issue_experience_certificate entitlement.',
@@ -240,16 +242,22 @@ export const protectedListExperienceCertificatesRoute = createProtectedRoute({
  * so the schema machinery validates nothing here — which is exactly why the
  * e2e test asserts the header pair and the PDF magic bytes directly.
  *
- * **Refuses a listing that is not PUBLIC**, and that is not a copy of the
+ * **Refuses a listing that is not PUBLISHED** (V6.9b), and that is not a copy of the
  * brochure's rule for its own sake: this sheet carries a QR pointing at the
  * experience's public ficha, and printing one for an unpublished listing puts a
  * permanent 404 on a piece of paper somebody keeps. Issuing and listing stay
- * open regardless of visibility, so unpublishing never costs an owner their
+ * open regardless of publication, so unpublishing never costs an owner their
  * record — only the ability to print a sheet whose link would be dead.
  */
 export const protectedGetExperienceCertificatePdfRoute = createProtectedRoute({
     method: 'get',
     path: '/{id}/certificates/{certificateId}/pdf',
+    listingAccess: {
+        vertical: VerticalEnum.EXPERIENCE,
+        operation: 'READ_OWN_COMMERCIAL',
+        idParam: 'id',
+        step6Key: 'issue_experience_certificate'
+    },
     summary: 'Download the certificate as a printable PDF',
     description:
         'Returns a print-ready landscape A4 PDF of one issued certificate — the recipient, the experience, the date and a QR back to the public listing. Owner-only, and only for a listing that is publicly visible. Requires the issue_experience_certificate entitlement.',
@@ -263,7 +271,7 @@ export const protectedGetExperienceCertificatePdfRoute = createProtectedRoute({
         const actor = getActorFromContext(ctx);
         const experience = await requireOwnedExperience(ctx, params.id as string);
 
-        if (experience.visibility !== VisibilityEnum.PUBLIC) {
+        if (experience.publicationStatus !== PublicationStatusEnum.PUBLISHED) {
             // Same canonical message as the ownership branch, deliberately: two
             // spellings would let a caller tell "not yours" from "not
             // published".

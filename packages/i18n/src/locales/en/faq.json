@@ -198,7 +198,7 @@
                 },
                 "officialPartner": {
                     "question": "Can I appear as an official partner?",
-                    "answer": "Yes. The official partners program includes a footer logo, mentions in related sections, editorial coverage priority and co-marketing. It's designed for brands aligned with tourism, gastronomy or regional culture."
+                    "answer": "Yes. The official partners program includes a footer logo, mentions in related sections, editorial coverage priority and co-marketing. It's designed for brands aligned with tourism, food or regional culture."
                 },
                 "commercialContact": {
                     "question": "Who do I contact for commercial matters?",
@@ -221,8 +221,8 @@
                     "answer": "Not for browsing and searching. Yes if you want to save favorites, leave reviews, get email updates or publish as a host or organizer. Creating an account is free and quick."
                 },
                 "deleteAccount": {
-                    "question": "How do I delete my account?",
-                    "answer": "From My Account > Settings > Delete account. We remove your personal data within 30 days according to our privacy policy. The reviews you left may remain anonymously."
+                    "question": "How do I close my account?",
+                    "answer": "For now, account closure is handled by our support team: email info@hospeda.com.ar or use the Contact page to request it. If you have a subscription, we cancel it first; if you published listings, we delete them; and finally we close the account: we replace your name, your email and your phone numbers, and we shut off your access. If Mercado Pago has not yet confirmed the cancellation of your subscription, closing the account waits for that confirmation. We keep the payment receipts, because the law requires us to. The reviews you left may stay published, without your name."
                 },
                 "dataStored": {
                     "question": "What data do you store about me?",

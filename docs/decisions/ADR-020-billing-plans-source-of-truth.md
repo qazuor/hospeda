@@ -1,5 +1,7 @@
 # ADR-020: Billing Plans — Single Source of Truth in Source Code
 
+> **Note (HOS-1626, 2026-10):** `@repo/billing` was retired (the package was deleted). The plan config it names (`ALL_PLANS`, `plans.config.ts`) is gone; plans exist only as rows in the database catalog (`billing_plans`, `billing_prices`).
+
 ## Status
 
 Superseded by SPEC-168 (2026-05-30)

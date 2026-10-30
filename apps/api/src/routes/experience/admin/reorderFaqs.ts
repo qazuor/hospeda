@@ -9,12 +9,13 @@ import {
     ExperienceFaqReorderInputSchema,
     type FaqReorderPayload,
     FaqReorderPayloadSchema,
-    PermissionEnum,
-    SuccessSchema
+    SuccessSchema,
+    VerticalEnum
 } from '@repo/schemas';
 import { ExperienceService, reorderExperienceFaqs, ServiceError } from '@repo/service-core';
 import type { Context } from 'hono';
 import { z } from 'zod';
+import { runListingContentCall } from '../../../middlewares/listing-access';
 import { getActorFromContext } from '../../../utils/actor';
 import { apiLogger } from '../../../utils/logger';
 import { createAdminRoute } from '../../../utils/route-factory';
@@ -26,16 +27,16 @@ const experienceService = new ExperienceService({ logger: apiLogger });
  * Reorder FAQs for an experience listing — Admin endpoint.
  *
  * Validates that all supplied faqId values belong to the given listing before
- * applying displayOrder updates. Requires EXPERIENCE_EDIT_ALL (or the legacy COMMERCE_EDIT_ALL) permission.
+ * applying displayOrder updates. Requires EXPERIENCE_EDIT_ALL permission.
  */
 export const adminReorderExperienceFaqsRoute = createAdminRoute({
     method: 'patch',
+    listingAccess: { vertical: VerticalEnum.EXPERIENCE, operation: 'EDIT', idParam: 'id' },
     path: '/{id}/faqs/reorder',
     summary: 'Reorder FAQs for an experience listing (admin)',
     description:
-        'Sets displayOrder for a set of FAQs belonging to an experience listing. All faqId values must belong to the given listing. Requires EXPERIENCE_EDIT_ALL (or the legacy COMMERCE_EDIT_ALL).',
+        'Sets displayOrder for a set of FAQs belonging to an experience listing. All faqId values must belong to the given listing. Requires EXPERIENCE_EDIT_ALL.',
     tags: ['Experience', 'FAQs'],
-    anyOfPermissions: [[PermissionEnum.EXPERIENCE_EDIT_ALL, PermissionEnum.COMMERCE_EDIT_ALL]],
     requestParams: {
         id: z.string().uuid({ message: 'zodError.common.id.invalidUuid' })
     },
@@ -57,7 +58,10 @@ export const adminReorderExperienceFaqsRoute = createAdminRoute({
         const model = (
             experienceService as unknown as { model: Parameters<typeof reorderExperienceFaqs>[0] }
         ).model;
-        const result = await reorderExperienceFaqs(model, actor, reorderInput);
+        const result = await runListingContentCall({
+            ctx,
+            run: () => reorderExperienceFaqs(model, actor, reorderInput)
+        });
 
         if (result.error) {
             throw new ServiceError(result.error.code, result.error.message);

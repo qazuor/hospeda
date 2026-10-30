@@ -1,4 +1,4 @@
-import { AccommodationIdSchema, AccommodationSummarySchema } from '@repo/schemas';
+import { AccommodationIdSchema, AccommodationSummarySchema, ServiceErrorCode } from '@repo/schemas';
 import { AccommodationService, ServiceError } from '@repo/service-core';
 import type { Context } from 'hono';
 import { resolvePublicIsFeatured } from '../../../utils/accommodation-featured';
@@ -13,7 +13,7 @@ const accommodationService = new AccommodationService({ logger: apiLogger });
  * @param _ctx - Hono context. Unused: this handler must not read the request
  *   actor (HOS-353) — the response is stored under an actorless public cache key.
  * @param params - Path parameters containing id
- * @returns Accommodation summary data or null if not found
+ * @returns Accommodation summary data or throws NOT_FOUND
  */
 const getSummaryHandler = async (_ctx: Context, params: Record<string, unknown>) => {
     // Get the ID from the path params
@@ -30,9 +30,10 @@ const getSummaryHandler = async (_ctx: Context, params: Record<string, unknown>)
     // HOS-353: resolve visibility against a GUEST actor, never the caller. This route
     // lives under the `/api/v1/public/accommodations` prefix, whose cache key carries
     // no actor and which is consulted before auth — and the payload it returns names
-    // `visibility`, `lifecycleState`, `ownerId` and `slug`, so a privileged reader's
-    // 200 for an unpublished listing would be replayed to every anonymous visitor for
-    // the TTL. Privileged reads live on the protected and admin tiers.
+    // `ownerId` and `slug`, so a privileged reader's 200 for an unpublished listing
+    // would be replayed to every anonymous visitor for the TTL. As a guest, only a
+    // PUBLISHED listing is readable (V6.9b). Privileged reads live on the protected
+    // and admin tiers.
 
     // Call the real accommodation service using getById to get full entity with summary
     const result = await accommodationService.getById(createGuestActor(), id);
@@ -41,9 +42,8 @@ const getSummaryHandler = async (_ctx: Context, params: Record<string, unknown>)
         throw new ServiceError(result.error.code, result.error.message);
     }
 
-    // Return null if accommodation not found (schema is nullable)
     if (!result.data) {
-        return null;
+        throw new ServiceError(ServiceErrorCode.NOT_FOUND, `Accommodation not found: ${id}`);
     }
 
     // Transform service response to match AccommodationSummarySchema
@@ -55,11 +55,10 @@ const getSummaryHandler = async (_ctx: Context, params: Record<string, unknown>)
         type: result.data.type,
         reviewsCount: result.data.reviewsCount,
         averageRating: result.data.averageRating,
-        // HOS-929: public read treats holding either the admin-curated flag
-        // OR the billing-derived entitlement flag as featured.
+        // HOS-929: the public `isFeatured` is derived from `featuredByEntitlement`
+        // (the only featuring source since HOS-1419); the raw column itself is
+        // stripped by the public schema (never in its pick).
         isFeatured: resolvePublicIsFeatured(result.data),
-        visibility: result.data.visibility || 'PUBLIC',
-        lifecycleState: result.data.lifecycleState || 'ACTIVE',
         createdAt: result.data.createdAt,
         updatedAt: result.data.updatedAt,
         ownerId: result.data.ownerId,
@@ -88,7 +87,6 @@ export const getSummaryRoute = createCRUDRoute({
     options: {
         skipAuth: true, // Public endpoint
         skipValidation: true, // Skip header validation for public endpoint
-        cacheTTL: 300, // Cache for 5 minutes
         customRateLimit: { requests: 100, windowMs: 60000 } // 100 requests per minute
     }
 });

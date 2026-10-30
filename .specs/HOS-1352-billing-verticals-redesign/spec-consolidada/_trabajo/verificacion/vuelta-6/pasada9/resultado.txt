@@ -1,0 +1,54 @@
+Pasada 9 · vuelta 6 · HOS-1352
+
+Aplicados los 2 REAL BLOQUEA y GENERADOR MENOR aprobados. Barrido obligatorio
+BM/CK completado: 7 sitios manuales (4 fuentes y 3 consolidada), más 2
+fragmentos muertos de g1 omitidos por adjudicación PARCIAL. Detalle lugar por
+lugar y motivos en barrido-resumen.txt, barrido-fuentes.txt y barrido-spec.txt.
+No nuevas decisiones, ni cambios de correos U2. No PDR, matriz ni informes editados.
+
+Commits de fase 1:
+2ff3397db8 docs(spec): archive round six evidence and pass nine brief (HOS-1352)
+04a8fc09f6 docs(spec): propagate bm and ck into the cutover proposal (HOS-1352)
+8201c4472b docs(spec): align price summaries and grant coverage tests (HOS-1352)
+5381f75796 docs(spec): align product catalog guard with structural loading (HOS-1352)
+98a1a80735 docs(spec): guard partial cc retirement and superseded load steps (HOS-1352)
+El guard G-R2-C se detectó al cierre de F cuando el primer commit ya estaba
+corriendo: se registró en un segundo commit de fuentes, sin reescribir historia.
+
+Fuentes congeladas: 5381f7579687651df168575c85f144f9b48daea7.
+Inventario → asignación → adjudicación → reanclaje de citas y cobertura → sellado.
+5249 citas manuales iguales, ninguna cambiada/desconocida; 107 anclajes de
+secciones/fuentes.json comprobados, ninguno movido. g1, g3, g8 B4–B7 y secciones
+regenerados; g8 y secciones sin diff final, ya eran correctos. Índice y abiertos
+actualizan SHA. No se reescribió el decision log: sus pines ya resolvían BM/CK.
+
+Verificación completa del RUNBOOK, comandos/logs/exits en checks.json:
+- trazar: APROBADO (0); seis avisos R18 de tipos derivados, preexistentes.
+- cobertura: 752/752 normativos con pieza, sin pieza 0; APROBADO (0).
+- canarios: 65 + 40 + 17 + 6 + 8 = 136, cero fallas; exit0 en cinco suites.
+- G sandbox: CC sin arreglo exit1; corregido exit0; dos mutaciones BM detectadas.
+- aristas: 0 violaciones; contar exit0 (30 piezas, 35 guards, 34 al corte).
+- markdownlint global: 83 archivos, 0 issues, exit0; fuentes cambiadas también exit0.
+- Biome JSON: exit0. cobertura.json >1MiB conserva formato de generador/HEAD;
+  parseada y validada por cobertura y trazar, sin reformateo masivo.
+- git diff --check del contenido de spec/scripts: exit0; logs y diffs crudos
+  excluidos del control de espacios (contar imprime relleno y un diff usa
+  un espacio como prefijo de contexto vacío). Se conserva esa evidencia literal.
+- Artefactos: 58 copiados; 52 idénticos y 6 JSON reformateados por hook
+  semánticamente iguales a caché. Manifest previo y cotejo en artefactos-sha256.json
+  y archivo-verificado.json. 42 canarios, 26 informes finales +20 auxiliares.
+
+Incidencias resueltas: el RUNBOOK abrevia argumentos obligatorios de inventario,
+asignar, adjudicar y cobertura; se usaron sus interfaces reales. Primer intento
+cobertura sin posicionales dio uso/exit1; invocación corregida y sellado exit0.
+El wrapper pnpm necesitó bootstrap de su versión local; reintento autorizado
+completó prepare/i18n sin cambios de producto. No CI remota ni build/runtime de
+producto: tarea documental y de generadores, verificada con suite específica.
+qz-verify --changed no acota a .specs (plan incluye todo lint/guards/typecheck del
+monorepo); no se ejecutó una batería de producto ajena al cambio.
+
+Reversión: commits de fuentes, spec y generadores separados; revertir fuentes
+junto con su re-congelado para conservar coherencia. Los artefactos históricos
+pueden conservarse. No push ni Linear. Cachés y .claude preexistentes excluidos.
+La pasada está verificada; no equivale a una vuelta ciega limpia. La vuelta6
+no cortó (2 REAL BLOQUEA), y la próxima vuelta7 aún no fue ejecutada.

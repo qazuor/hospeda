@@ -58,7 +58,7 @@
         "subscriptions": "Assinaturas",
         "addons": "Complementos",
         "payments": "Pagamentos",
-        "reconciliation": "Resgate de pagamentos órfãos",
+        "reconciliation": "Conciliação",
         "invoices": "Faturas",
         "promoCodes": "Códigos Promocionais",
         "sponsorships": "Patrocínios",
@@ -69,7 +69,10 @@
         "cron": "Tarefas Agendadas",
         "appLogs": "Logs de Aplicação",
         "notificationLogs": "Registros de Notificação",
-        "webhookEvents": "Eventos de Webhook"
+        "webhookEvents": "Eventos de Webhook",
+        "subscription": "Assinatura",
+        "subscriptionCancellation": "Cancelamento",
+        "subscriptionRevocation": "Revogação"
     },
     "notifications": "Notificações",
     "access": {

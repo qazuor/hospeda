@@ -13,11 +13,12 @@
  * - `adminBaseDashboard`     — 7 widgets (cards A–G), shared between ADMIN
  *                              and SUPER_ADMIN. ADMIN role points directly to
  *                              this dashboard and sees only cards A–G.
- * - `superAdminOnlySection`  — 2 widgets (cards H–I) with `onMissing: 'hide'`.
+ * - `superAdminOnlySection`  — 1 widget (card H) with `onMissing: 'hide'`.
+ *   (HOS-1416: card I, the billing-metrics widget, was removed.)
  *                              Never included in `adminBaseDashboard`. Exported
  *                              as a named object so the renderer can reference it.
  * - `superAdminDashboard`    — Assembled from `adminBaseDashboard.widgets` +
- *                              `superAdminOnlySection.widgets` (9 total).
+ *                              `superAdminOnlySection.widgets` (8 total).
  *                              SUPER_ADMIN role points to this dashboard.
  *
  * ## DeferredWidget contract
@@ -40,25 +41,28 @@
 import type { DashboardInput } from './schema';
 
 // ============================================================================
-// hostDashboard — "Mi negocio" — 10 cards A–J
+// hostDashboard — "Mi negocio" — 9 cards (A, C–J; card B removed by HOS-1416)
 // ============================================================================
 
 /**
- * Dashboard for the HOST role — 10-card "Mi negocio" view.
+ * Dashboard for the HOST role — 9-card "Mi negocio" view (10 minus the
+ * removed billing card B — HOS-1416).
  *
  * Card set (SPEC-155 §3 / 03c HOST section):
  *   A — Mis alojamientos        (kpi + list, sources: host.accommodations.count + host.accommodations.drafts)
- *   B — Mi plan                 (callout,    source: host.billing.plan)
  *   C — Consultas               (kpi + list, source: host.conversations.pending)
  *   D — Estado de mi alojamiento (checklist, checkset: accommodation-health, w/ selector)
  *   E — Reseñas                 (list,       source: host.reviews.latest)
  *   F — Mi perfil               (checklist,  checkset: host-profile-health)
  *   G — Estadísticas            (kpi + list + deferred, sources: host.stats.ratings / host.stats.favorites / host.stats.response-rate + DeferredWidget for views)
  *
+ * (HOS-1416: card B "Mi plan" — source `host.billing.plan` — was removed
+ * with the legacy billing surface.)
+ *
  * @example
  * ```ts
  * import { dashboards } from '@/config/ia/dashboards';
- * dashboards.hostDashboard.widgets.length; // 10
+ * dashboards.hostDashboard.widgets.length; // 9
  * ```
  */
 const hostDashboard: DashboardInput = {
@@ -87,45 +91,6 @@ const hostDashboard: DashboardInput = {
                 emptyDescription: 'Cuando publiques tu primer alojamiento, vas a verlo acá.',
                 errorText: 'No pudimos cargar tus alojamientos',
                 errorDescription: 'Probá actualizar — si persiste, avisanos.'
-            }
-        },
-
-        // Card B — Mi plan
-        // subscription status badge + next charge date + plan name
-        // source: host.billing.plan (fetches subscription + plan in parallel)
-        // type: 'status' — renders via StatusWidget with the subscription state badge
-        // (active / expiring / expired → success / warning / destructive).
-        // Plan usage (accommodations used / limit) is a phase-2 enhancement (SPEC-155).
-        {
-            id: 'host-card-b',
-            type: 'status',
-            label: {
-                es: 'Mi plan',
-                en: 'My plan',
-                pt: 'Meu plano'
-            },
-            scope: 'own',
-            // Bento: wide (2×1) — plan name hero + 3 limit tiles + chips + CTA
-            // is dense content; a 1×1 felt cramped.
-            gridSpan: { cols: 2 },
-            config: {
-                source: 'host.billing.plan',
-                accent: 'success',
-                icon: 'billing',
-                variantMap: {
-                    active: 'success',
-                    expiring: 'warning',
-                    expired: 'destructive',
-                    cancelled: 'neutral',
-                    trial: 'warning',
-                    past_due: 'destructive',
-                    pending: 'warning',
-                    paused: 'warning'
-                },
-                emptyText: 'Todavía no tenés un plan activo',
-                emptyDescription: 'Activá un plan para publicar y administrar tus alojamientos.',
-                errorText: 'No pudimos cargar tu plan',
-                errorDescription: 'El servicio de facturación no está disponible ahora mismo.'
             }
         },
 
@@ -849,7 +814,7 @@ const editorDashboard: DashboardInput = {
  *
  * ADMIN role points directly to `adminBaseDashboard`.
  * SUPER_ADMIN role points to `superAdminDashboard`, which assembles this base
- * plus `superAdminOnlySection` (cards H–I).
+ * plus `superAdminOnlySection` (card H; card I removed by HOS-1416).
  *
  * @example
  * ```ts
@@ -1067,11 +1032,11 @@ const adminBaseDashboard: DashboardInput = {
 };
 
 // ============================================================================
-// superAdminOnlySection — cards H–I (SUPER_ADMIN-exclusive)
+// superAdminOnlySection — card H (SUPER_ADMIN-exclusive; card I removed by HOS-1416)
 // ============================================================================
 
 /**
- * SUPER_ADMIN-exclusive section — 2 cards H–I, gated by `onMissing: 'hide'`.
+ * SUPER_ADMIN-exclusive section — card H, gated by `onMissing: 'hide'`.
  *
  * These widgets are absent from `adminBaseDashboard` and present only in
  * `superAdminDashboard`. The `onMissing: 'hide'` on each widget acts as a
@@ -1080,7 +1045,9 @@ const adminBaseDashboard: DashboardInput = {
  *
  * Card set (SPEC-155 §3 / 03c SUPER_ADMIN section):
  *   H — Audit Logs             — ALL sub-slots deferred (SPEC-162/163/Sentry)
- *   I — Estadísticas de billing — kpi + chart, source: super.billing.stats
+ *
+ * (HOS-1416: card I "Estadísticas de billing" — source `super.billing.stats`
+ * — was removed with the legacy billing surface.)
  *
  * SPEC-155 AC-7: every widget here MUST carry `onMissing: 'hide'`.
  * SPEC-155 AC-31: ADMIN never receives these cards — they are absent from
@@ -1132,32 +1099,10 @@ export const superAdminOnlySection: DashboardInput = {
                     }
                 ]
             }
-        },
-
-        // Card I — Estadísticas de billing (SUPER_ADMIN-only)
-        // active subscriptions, MRR, 12-month revenue chart, ARPU, churn, subscription breakdown
-        // source: super.billing.stats (requires BILLING_METRICS_VIEW — SUPER_ADMIN-only per 03c)
-        // Note: per 03c decision #2, BILLING_METRICS_VIEW is revoked from ADMIN role.
-        {
-            id: 'super-card-i',
-            type: 'kpi',
-            label: {
-                es: 'Estadísticas de billing',
-                en: 'Billing statistics',
-                pt: 'Estatísticas de billing'
-            },
-            scope: 'all',
-            onMissing: 'hide',
-            // Bento: wide (2×1) — 5 KPIs + companion chart line need horizontal room.
-            gridSpan: { cols: 2 },
-            config: {
-                source: 'super.billing.stats',
-                accent: 'success',
-                icon: 'billing',
-                // Companion chart for the 12-month revenue trend
-                chartType: 'line'
-            }
         }
+
+        // (HOS-1416: card I "Estadísticas de billing" — source
+        // `super.billing.stats` — was removed with the legacy billing surface.)
     ]
 };
 
@@ -1166,10 +1111,10 @@ export const superAdminOnlySection: DashboardInput = {
 // ============================================================================
 
 /**
- * Assembled dashboard for the SUPER_ADMIN role — 9 cards (A–I).
+ * Assembled dashboard for the SUPER_ADMIN role — 8 cards.
  *
  * Built by spreading the widgets from `adminBaseDashboard` (cards A–G, shared)
- * and `superAdminOnlySection` (cards H–I, `onMissing: 'hide'`).
+ * and `superAdminOnlySection` (card H, `onMissing: 'hide'`).
  *
  * SUPER_ADMIN role config points to this key. ADMIN role config points to
  * `adminBaseDashboard` — it never sees cards H or I because they are absent
@@ -1202,7 +1147,7 @@ export const superAdminOnlySection: DashboardInput = {
  * - `hostDashboard`          — HOST role (10 cards)
  * - `editorDashboard`        — EDITOR role (8 cards)
  * - `adminBaseDashboard`     — ADMIN role + SUPER_ADMIN base section (7 cards)
- * - `superAdminOnlySection`  — SUPER_ADMIN-exclusive cards H–I (2 cards, `onMissing:'hide'`)
+ * - `superAdminOnlySection`  — SUPER_ADMIN-exclusive card H (`onMissing:'hide'`)
  *
  * Role-facing entries:
  * - `superAdminDashboard`    — SUPER_ADMIN role (assembled: 9 cards = base + super-only)

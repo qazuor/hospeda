@@ -5,53 +5,49 @@
  */
 
 import {
-    abandonedPendingSubsJob,
-    addonExpiryJob,
-    addonSubscriptionReconcileJob,
     alertsDigestJob,
     appLogPurgeJob,
-    applyScheduledPlanChangesJob,
-    archiveAbandonedDraftsJob,
     archiveExpiredPromotionsJob,
+    billingCreationsSweepJob,
+    billingPromoEndingNoticeJob,
+    billingReconciliationSummaryJob,
+    billingReconciliationSweepJob,
     calendarSyncGoogleJob,
     calendarSyncIcalJob,
     cloudinaryE2eCleanupJob,
     conversationNotificationJob,
     conversationTokenCleanupJob,
     conversationTokenReminderJob,
-    courtesyExpiryJob,
     cronRunPurgeJob,
     destinationWeatherFetchJob,
-    dunningJob,
-    entitySubscriptionCacheReconcileJob,
+    emailOutboxSenderJob,
     entityViewsPurgeJob,
     exchangeRateFetchJob,
-    featuredByEntitlementReconcileJob,
-    finalizeCancelledSubsJob,
     hostTradeStatsReconcileJob,
     hostTradeUsageExpiryJob,
     hostTradeUsageReminderJob,
     leadIntakeBackstopJob,
+    listingCoverageReconcilerJob,
+    listingInactivityArchiveJob,
+    listingRemoteDeletionRetryJob,
+    listingRetentionPassJob,
     mediaOrphanCleanupJob,
     newsletterCloseCampaignsJob,
     notificationLogPurgeJob,
     notificationScheduleJob,
     pageRevalidationJob,
-    partnerExpiryJob,
-    partnerPaymentReviewJob,
-    partnerUnpaidReaperJob,
+    paymentWindowExpiryJob,
     pollApifyReputationRunsJob,
-    preapprovalLessExpiryJob,
-    propagatePlanPriceChangesJob,
-    reactivationSupersessionReconcileJob,
+    providerNotificationRetentionJob,
     refreshExternalReputationJob,
     searchIndexRefreshJob,
     socialPublishDispatchJob,
-    subscriptionDriftReconcileJob,
-    subscriptionPollJob,
-    trialExpiryJob,
-    viewMonthlyRollupJob,
-    webhookRetryJob
+    subscriptionGraceReminderJob,
+    subscriptionRenewalNoticeJob,
+    subscriptionServiceEndJob,
+    subscriptionWindowExpiryJob,
+    trialMachineExpiryJob,
+    viewMonthlyRollupJob
 } from './jobs/index.js';
 import type { CronJobDefinition } from './types';
 
@@ -60,27 +56,19 @@ import type { CronJobDefinition } from './types';
  * Jobs are registered by importing and adding them to this array
  */
 export const cronJobs: CronJobDefinition[] = [
-    trialExpiryJob,
-    webhookRetryJob,
-    notificationScheduleJob,
-    addonExpiryJob,
-    // Registered next to addon-expiry, not later: it is the only thing that
-    // notices when addon-expiry stops ending soft-cancelled add-ons, and the
-    // only thing that reaps the 'pending' rows addon-expiry never looks at
-    // (HOS-847 PR 7c).
-    addonSubscriptionReconcileJob,
-    courtesyExpiryJob,
+    billingReconciliationSweepJob,
+    billingReconciliationSummaryJob,
+    billingCreationsSweepJob,
+    billingPromoEndingNoticeJob,
+    providerNotificationRetentionJob,
     alertsDigestJob,
     exchangeRateFetchJob,
     destinationWeatherFetchJob,
-    dunningJob,
     searchIndexRefreshJob,
     calendarSyncGoogleJob,
     calendarSyncIcalJob,
-    notificationLogPurgeJob,
     pageRevalidationJob,
     archiveExpiredPromotionsJob,
-    archiveAbandonedDraftsJob,
     leadIntakeBackstopJob,
     mediaOrphanCleanupJob,
     cloudinaryE2eCleanupJob,
@@ -88,16 +76,21 @@ export const cronJobs: CronJobDefinition[] = [
     conversationTokenReminderJob,
     conversationTokenCleanupJob,
     newsletterCloseCampaignsJob,
-    abandonedPendingSubsJob,
-    applyScheduledPlanChangesJob,
-    propagatePlanPriceChangesJob,
-    finalizeCancelledSubsJob,
-    subscriptionPollJob,
+    notificationLogPurgeJob,
+    notificationScheduleJob,
+    // HOS-1423: the email outbox sender (unit U2).
+    emailOutboxSenderJob,
     cronRunPurgeJob,
     appLogPurgeJob,
     hostTradeStatsReconcileJob,
     hostTradeUsageExpiryJob,
     hostTradeUsageReminderJob,
+    paymentWindowExpiryJob,
+    subscriptionServiceEndJob,
+    subscriptionRenewalNoticeJob,
+    subscriptionGraceReminderJob,
+    subscriptionWindowExpiryJob,
+    trialMachineExpiryJob,
     entityViewsPurgeJob,
     // Must be registered alongside the purge, not later: it is the only thing
     // that survives it (HOS-1063 A-6, R-4).
@@ -105,18 +98,10 @@ export const cronJobs: CronJobDefinition[] = [
     refreshExternalReputationJob,
     socialPublishDispatchJob,
     pollApifyReputationRunsJob,
-    partnerExpiryJob,
-    partnerPaymentReviewJob,
-    partnerUnpaidReaperJob,
-    entitySubscriptionCacheReconcileJob,
-    featuredByEntitlementReconcileJob,
-    reactivationSupersessionReconcileJob,
-    preapprovalLessExpiryJob,
-    // Registered next to preapproval-less-expiry because the two are exact
-    // complements: that job owns rows with NO preapproval, this one owns the
-    // rows that HAVE one and whose provider status nothing else re-reads
-    // (HOS-914).
-    subscriptionDriftReconcileJob
+    listingCoverageReconcilerJob,
+    listingInactivityArchiveJob,
+    listingRemoteDeletionRetryJob,
+    listingRetentionPassJob
 ];
 
 /**

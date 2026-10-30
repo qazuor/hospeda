@@ -4,7 +4,7 @@
  *
  * Runs against the REAL integration database, using the rollback-isolation
  * idiom established by
- * `test/data-migrations/raise-commerce-listing-price-to-15000.integration.test.ts`:
+ * `test/data-migrations/raise-listing-price-to-15000.integration.test.ts`:
  * every test opens a `db.transaction()`, builds the migration's `ctx` with the
  * transaction-scoped client (`ctx.db = tx`), performs setup + `up()` +
  * assertions entirely inside it, then unconditionally throws a sentinel

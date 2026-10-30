@@ -43,8 +43,8 @@ import { PermissionEnum, QrCodeErrorCorrectionLevelEnum, RoleEnum } from '@repo/
 import {
     AccommodationService,
     ExperienceService,
-    GastronomyService,
-    QrCodeService
+    QrCodeService,
+    VenueService
 } from '@repo/service-core';
 import { Hono } from 'hono';
 import { QR_ERROR_CORRECTION } from '../../src/services/listing-qr-sheet/qr-sheet-render';
@@ -78,8 +78,7 @@ function publishedListing(overrides: Record<string, unknown> = {}) {
         ownerId: OWNER_ID,
         name: 'La Parrilla del Puerto',
         slug: 'la-parrilla-del-puerto',
-        lifecycleState: 'ACTIVE',
-        visibility: 'PUBLIC',
+        publicationStatus: 'PUBLISHED',
         ...overrides
     };
 }
@@ -110,8 +109,8 @@ const CASES = [
     {
         label: 'accommodation',
         service: AccommodationService,
-        /** The permission that lets staff read somebody else's code. */
-        staffPermission: PermissionEnum.ACCOMMODATION_UPDATE_ANY,
+        /** The inspection permission that lets staff read somebody else's code. */
+        staffPermission: PermissionEnum.ACCOMMODATION_VIEW_ALL,
         /** The path segment the minted destination must carry. */
         segment: 'alojamientos',
         importRoute: async () => {
@@ -124,23 +123,23 @@ const CASES = [
         }
     },
     {
-        label: 'gastronomy',
-        service: GastronomyService,
-        staffPermission: PermissionEnum.COMMERCE_VIEW_ALL,
-        segment: 'gastronomia',
+        label: 'venue',
+        service: VenueService,
+        staffPermission: PermissionEnum.VENUE_VIEW_ALL,
+        segment: 'comer-y-salir',
         importRoute: async () => {
-            const mod = await import('../../src/routes/gastronomy/protected/qrCode.js');
-            return mod.protectedGetGastronomyQrCodeRoute;
+            const mod = await import('../../src/routes/venue/protected/qrCode.js');
+            return mod.protectedGetVenueQrCodeRoute;
         },
         importSheetRoute: async () => {
-            const mod = await import('../../src/routes/gastronomy/protected/qrSheet.js');
-            return mod.protectedGetGastronomyQrSheetRoute;
+            const mod = await import('../../src/routes/venue/protected/qrSheet.js');
+            return mod.protectedGetVenueQrSheetRoute;
         }
     },
     {
         label: 'experience',
         service: ExperienceService,
-        staffPermission: PermissionEnum.COMMERCE_VIEW_ALL,
+        staffPermission: PermissionEnum.EXPERIENCE_VIEW_ALL,
         segment: 'experiencias',
         importRoute: async () => {
             const mod = await import('../../src/routes/experience/protected/qrCode.js');
@@ -275,26 +274,19 @@ describe.each(CASES)('GET /protected/$label/:id/qr (HOS-982)', ({
         expect(minted.targetUrl).toBe(`${SITE}/es/${segment}/la-parrilla-del-puerto/`);
     });
 
-    it('refuses a listing that is not PUBLIC', async () => {
-        stubListing({ visibility: 'PRIVATE' });
+    it.each([
+        'DRAFT',
+        'UNPUBLISHED_BY_BILLING',
+        'ARCHIVED',
+        'MODERATED',
+        'PURGED'
+    ])('refuses a listing that is %s, like an absent one (V6.9b: only PUBLISHED has a page)', async (publicationStatus) => {
+        stubListing({ publicationStatus });
         const res = await buildApp(await importRoute()).request(`/${LISTING_ID}/qr`);
 
         expect(res.status).toBe(404);
         // And nothing was written: a refused read must not leave a live
         // `qr_codes` row behind for a page that does not exist.
-        expect(mintSpy).not.toHaveBeenCalled();
-    });
-
-    it('refuses a listing that is PUBLIC but not ACTIVE', async () => {
-        // Reachable: the admin schemas accept `lifecycleState` on its own, so a
-        // staff PATCH to INACTIVE can leave `visibility` standing. The public
-        // read answers NOT_FOUND for that row, so its code would 404 on every
-        // scan — and this route is what puts the code on the owner's screen as
-        // if it worked.
-        stubListing({ lifecycleState: 'INACTIVE' });
-        const res = await buildApp(await importRoute()).request(`/${LISTING_ID}/qr`);
-
-        expect(res.status).toBe(404);
         expect(mintSpy).not.toHaveBeenCalled();
     });
 
@@ -333,5 +325,47 @@ describe.each(CASES)('GET /protected/$label/:id/qr (HOS-982)', ({
 
         expect(res.status).toBe(404);
         expect(body.error?.code).toBe('NOT_FOUND');
+    });
+});
+
+describe('TEST:1693:2 the accommodation QR reads a foreign listing only with the inspection permission', () => {
+    it('denies UPDATE_ANY alone with the same 404 as a stranger and does not mint', async () => {
+        vi.spyOn(AccommodationService.prototype, 'getById').mockResolvedValue({
+            data: publishedListing({ ownerId: OTHER_OWNER_ID })
+        } as never);
+        const route = (await import('../../src/routes/accommodation/protected/qrCode.js'))
+            .protectedGetAccommodationQrCodeRoute;
+        const staff = await buildApp(route, {
+            ...ownerActor,
+            permissions: [PermissionEnum.ACCOMMODATION_UPDATE_ANY]
+        }).request(`/${LISTING_ID}/qr`);
+        const stranger = await buildApp(route, ownerActor).request(`/${LISTING_ID}/qr`);
+        const { metadata: _staffMetadata, ...staffBody } = await staff.json();
+        const { metadata: _strangerMetadata, ...strangerBody } = await stranger.json();
+
+        expect({ status: staff.status, body: staffBody }).toEqual({
+            status: stranger.status,
+            body: strangerBody
+        });
+        expect(staff.status).toBe(404);
+        expect(mintSpy).not.toHaveBeenCalled();
+    });
+
+    it('lets VIEW_ALL read a foreign published listing and mints its entity QR', async () => {
+        vi.spyOn(AccommodationService.prototype, 'getById').mockResolvedValue({
+            data: publishedListing({ ownerId: OTHER_OWNER_ID })
+        } as never);
+        const route = (await import('../../src/routes/accommodation/protected/qrCode.js'))
+            .protectedGetAccommodationQrCodeRoute;
+        const res = await buildApp(route, {
+            ...ownerActor,
+            permissions: [PermissionEnum.ACCOMMODATION_VIEW_ALL]
+        }).request(`/${LISTING_ID}/qr`);
+
+        expect(res.status).toBe(200);
+        expect(mintSpy).toHaveBeenCalledTimes(1);
+        expect(mintSpy.mock.calls[0]?.[0]).toEqual(
+            expect.objectContaining({ entityId: LISTING_ID })
+        );
     });
 });

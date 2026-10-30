@@ -142,6 +142,18 @@ updates:
       # grouped PRs. Owner: HOS-574.
       - dependency-name: '@tanstack/react-table'
         update-types: ['version-update:semver-major']
+      # react-native: 0.86 -> 0.87 is a semver MINOR for a pre-1.0 package but
+      # breaks consumers — Metro cannot parse RN 0.87's own source
+      # (Libraries/vendor/emitter/EventEmitter.js:44, `readonly context`), so
+      # `mobile#build` fails and takes the whole production-minor-patch group
+      # down with it (PRs #3068, #3454), holding back ~40 unrelated bumps for
+      # web/api/admin. Expo SDK 56 targets RN 0.86; the RN bump belongs to the
+      # SDK 57 migration. Gate minors AND majors so 0.86.x patches (incl.
+      # security fixes) keep flowing. Supersedes the 2026-08-31 decision to
+      # leave this ungated as a weekly red reminder. Lift with the SDK 57
+      # migration. Owner: HOS-78 (diagnosis: HOS-945).
+      - dependency-name: 'react-native'
+        update-types: ['version-update:semver-minor', 'version-update:semver-major']
     cooldown:
       # Supply-chain hardening: wait 7 days before bumping a newly published
       # version (satisfies semgrep dependabot-missing-cooldown).

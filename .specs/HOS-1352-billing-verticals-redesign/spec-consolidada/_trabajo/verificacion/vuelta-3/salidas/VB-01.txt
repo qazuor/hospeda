@@ -1,0 +1,18 @@
+# VB-01 · spec → fuente · 00-indice.md 02-nucleo-glosario.md
+
+## Hallazgos
+
+00-indice.md:1201 · «Si una de las cinco no tiene ninguna foto al momento del corte, nace `DRAFT` y su prueba arranca recién cuando el dueño la publique.» · sin soporte (ninguna fuente lo dice: `rg --hidden 'ninguna foto|sin foto|nace `?DRAFT'` sobre $V/fuentes no da ninguna regla de fotos para las cinco fichas; la fuente citada, .specs/HOS-1353-verticales-capacidades-y-autorizacion/spec.md:437-442, dice que las cinco «nacen `PUBLISHED`, como recién creadas» y que la herramienta de `V6` le escribe a cada dueño una prueba activa «que arranca ese día»; la regla de «las bajadas nacen en `DRAFT`» está tachada en spec.md:433-437 y en 16-fase-7-del-paraguas.md:255). Además contradice la misma frase del índice (líneas 1194-1198: «las cinco nacen … `PUBLISHED`») y 02-nucleo-glosario.md:62-67 · BLOQUEA
+
+02-nucleo-glosario.md:367 · «día 60 sale del sitio público conservando acceso del dueño» · contradice .specs/HOS-1352-billing-verticals-redesign/docs/nucleo/01-glosario.md:421 («día 90 sale del sitio público conservando acceso del dueño»); y contradice dentro de la spec 02-nucleo.md:1543-1544 (PLAZO:1, archivado, valor inicial 90 días) y 02-nucleo-glosario.md:43 (`PB4`, día 90) · BLOQUEA
+
+00-indice.md:375 · «va antes de las piezas que encolan: `V6`, `V9a`, `V9b`, `B4` y `B12`» · contradice .specs/HOS-1353-verticales-capacidades-y-autorizacion/descomposicion.md:641 («que `V9a` espere a `U2` lo dejé por regla —heredó la flecha de `V9`— aunque el registro no encola»); el propio índice, línea 670, lo dice bien. La flecha `U2 → V9a` existe igual, así que no cambia lo que se construye · MENOR
+
+00-indice.md:26-27 · «Todo sale de las fuentes congeladas en el commit `c7a3fac…` (re-congeladas después de aplicar las letras BK a CB del owner)» · incoherencia interna: la spec cita y aplica letras posteriores a CB (CC, CD, CE, CF, CG, CH, CI: índice líneas 92-98 y 📌9 a 📌12 de DEC-ARCH-017, .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:8016-8059), que las fuentes congeladas sí contienen. La etiqueta del congelamiento está desactualizada; no cambia nada de lo que se construye · MENOR
+
+## Resumen
+
+| archivo | líneas recorridas | afirmaciones normativas revisadas (aprox.) | BLOQUEA | MENOR |
+|---|---|---|---|---|
+| 00-indice.md | 1–1609 (completo) | ~190 | 1 | 2 |
+| 02-nucleo-glosario.md | 1–959 (completo) | ~140 | 1 | 0 |

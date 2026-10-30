@@ -1,0 +1,46 @@
+.container {
+    display: grid;
+    justify-items: center;
+    gap: var(--space-3);
+    margin-block-start: var(--space-6);
+    text-align: center;
+}
+
+.primary {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 44px;
+    padding: var(--space-3) var(--space-6);
+    border: 1px solid var(--brand-primary);
+    border-radius: var(--radius-button);
+    background: var(--brand-primary);
+    color: var(--core-card);
+    font-weight: 600;
+    text-decoration: none;
+}
+
+.primary:focus-visible {
+    outline: 2px solid var(--brand-primary);
+    outline-offset: 3px;
+}
+
+.note,
+.message p {
+    margin: 0;
+    color: var(--core-muted-foreground);
+}
+
+.message {
+    margin-block-start: var(--space-6);
+    padding: var(--space-6);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-card);
+    background: var(--core-card);
+}
+
+.message h2 {
+    margin: 0 0 var(--space-2);
+    color: var(--core-foreground);
+    font-size: var(--text-h3);
+}

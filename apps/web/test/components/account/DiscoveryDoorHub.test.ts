@@ -109,27 +109,36 @@ describe('DiscoveryDoorHub — per-option state resolution (engine integration)'
         ).toBe('unacquired');
     });
 
-    it('resolves "gastronomy" and "experience" to acquired for a COMMERCE_OWNER role, unacquired for a HOST (HOS-134)', () => {
-        const gastronomy = listing?.options.find((option) => option.id === 'gastronomy');
+    it('resolves each listing door only for its vertical owner (HOS-134)', () => {
+        const venue = listing?.options.find((option) => option.id === 'venue');
         const experience = listing?.options.find((option) => option.id === 'experience');
-        expect(gastronomy).toBeDefined();
+        expect(venue).toBeDefined();
         expect(experience).toBeDefined();
-        if (!gastronomy || !experience) return;
-
-        for (const option of [gastronomy, experience]) {
-            expect(
-                resolveDoorOptionState({
-                    option,
-                    visibility: (node) => isVisibleByRoles(node, [RoleEnum.COMMERCE_OWNER])
-                })
-            ).toBe('acquired');
-            expect(
-                resolveDoorOptionState({
-                    option,
-                    visibility: (node) => isVisibleByRoles(node, [RoleEnum.HOST])
-                })
-            ).toBe('unacquired');
-        }
+        if (!venue || !experience) return;
+        expect(
+            resolveDoorOptionState({
+                option: venue,
+                visibility: (node) => isVisibleByRoles(node, [RoleEnum.VENUE_OWNER])
+            })
+        ).toBe('acquired');
+        expect(
+            resolveDoorOptionState({
+                option: experience,
+                visibility: (node) => isVisibleByRoles(node, [RoleEnum.VENUE_OWNER])
+            })
+        ).toBe('unacquired');
+        expect(
+            resolveDoorOptionState({
+                option: experience,
+                visibility: (node) => isVisibleByRoles(node, [RoleEnum.EXPERIENCE_OWNER])
+            })
+        ).toBe('acquired');
+        expect(
+            resolveDoorOptionState({
+                option: venue,
+                visibility: (node) => isVisibleByRoles(node, [RoleEnum.EXPERIENCE_OWNER])
+            })
+        ).toBe('unacquired');
     });
 
     it('resolves the sponsor/partner/serviceProvider lead-only options to unacquired regardless of role (HOS-277 NG-1, no acquiredPermission exists)', () => {

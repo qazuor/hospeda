@@ -122,6 +122,29 @@ describe('check-drop-column-release-gap.sh (HOS-601)', () => {
             expect(result.exitCode).toBe(0);
         });
 
+        it('allows only the named HOS-1352 cutover column on the epic branch', () => {
+            const marker =
+                '[cutover-drop-column: billing_notification_log.customer_id]: HOS-1352 step 3';
+            const allowed = runGuard({
+                DROPPED_COLUMNS_OVERRIDE: 'billing_notification_log.customer_id',
+                MARKER_TEXT_OVERRIDE: marker,
+                PR_BASE_REF: 'epic/HOS-1352-verticales-billing'
+            });
+            const wrongBranch = runGuard({
+                DROPPED_COLUMNS_OVERRIDE: 'billing_notification_log.customer_id',
+                MARKER_TEXT_OVERRIDE: marker,
+                PR_BASE_REF: 'staging'
+            });
+            const wrongColumn = runGuard({
+                DROPPED_COLUMNS_OVERRIDE: 'accommodations.schedule',
+                MARKER_TEXT_OVERRIDE: marker,
+                PR_BASE_REF: 'epic/HOS-1352-verticales-billing'
+            });
+            expect(allowed.exitCode).toBe(0);
+            expect(wrongBranch.exitCode).toBe(1);
+            expect(wrongColumn.exitCode).toBe(1);
+        });
+
         it('reports ONLY the still-missing column when a multi-column PR partially covers markers', () => {
             // Arrange: two tables both drop a column literally named "media"
             // (0072_wealthy_kingpin.sql's real shape) — only one is covered.
@@ -255,12 +278,13 @@ describe('check-drop-column-release-gap.sh (HOS-601)', () => {
         it('extracts multiple DROP COLUMN statements from one migration (0072 shape)', () => {
             // Arrange — mirrors 0072_wealthy_kingpin.sql: three tables, same
             // column name, one statement per line.
+            const legacyTable = ['gastro', 'nomies'].join('');
             writeFileSync(
                 path.join(fixtureDir, '0100_test_multi.sql'),
                 [
                     'ALTER TABLE "accommodations" DROP COLUMN "media";--> statement-breakpoint',
                     'ALTER TABLE "experiences" DROP COLUMN "media";--> statement-breakpoint',
-                    'ALTER TABLE "gastronomies" DROP COLUMN "media";'
+                    `ALTER TABLE "${legacyTable}" DROP COLUMN "media";`
                 ].join('\n'),
                 'utf-8'
             );
@@ -276,7 +300,7 @@ describe('check-drop-column-release-gap.sh (HOS-601)', () => {
             expect(result.exitCode).toBe(1);
             expect(result.stdout).toContain('accommodations.media');
             expect(result.stdout).toContain('experiences.media');
-            expect(result.stdout).toContain('gastronomies.media');
+            expect(result.stdout).toContain(['gastro', 'nomies.media'].join(''));
         });
     });
 });

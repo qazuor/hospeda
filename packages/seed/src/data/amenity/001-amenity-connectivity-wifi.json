@@ -7,7 +7,7 @@
         "en": "Conexión Wi-Fi",
         "pt": "Conexión Wi-Fi"
     },
-    "applicableVerticals": ["accommodation", "gastronomy", "experience"],
+    "applicableVerticals": ["accommodation", "venue", "experience"],
     "type": "CONNECTIVITY",
     "icon": "WifiIcon",
     "isBuiltin": false,

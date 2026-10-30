@@ -1,0 +1,13 @@
+# VA-A8 · fuente → spec · B/docs/{05-idempotencia-y-concurrencia,06-proveedor,09-conciliacion}.md
+
+## Hallazgos
+
+fuentes/.specs/HOS-1354-billing-cobro-y-proveedor/docs/06-proveedor.md:299 · «Lo que el proveedor retiene —comisión y lo que corresponda— **no es una obligación nuestra de cálculo**: se registra lo que el cobro liquidó, no se deriva.» · ausente (buscado con rg --hidden en toda s/5586fad7/ por liquidación/liquidó/liquidado, comisión/comisiones, retenciones, neto, net_amount, net_received, fee_details y transaction_details, y revisados el modelo y las reglas del pago; 10-corte/B1.md:455–457 conserva solamente «Impuestos: el dominio no los modela» y el comprobante no fiscal, omitiendo el registro de lo efectivamente liquidado y la prohibición de derivarlo. La medición de comisión y neto en MP:RN-1 no establece esa obligación de implementación. Sin esta regla puede registrarse sólo el importe bruto cobrado, sin conservar la liquidación informada por el proveedor. No se encontró una precisión que retire esta obligación en P/docs/01-decision-log.md ni en P/docs/41-corte-del-mvp/10-decisiones-del-owner.md.) · BLOQUEA
+
+## Resumen
+
+| archivo | reglas normativas vivas revisadas | líneas recorridas | ausentes | distintas |
+|---|---|---|---|---|
+| B/docs/05-idempotencia-y-concurrencia.md | ≈80 | 1–556 | 0 | 0 |
+| B/docs/06-proveedor.md | ≈90 | 1–570 | 1 | 0 |
+| B/docs/09-conciliacion.md | ≈180 | 1–1322 | 0 | 0 |

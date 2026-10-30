@@ -12,7 +12,7 @@ describe('Destination - Cache headers', () => {
         app = initApp();
     });
 
-    it('GET /:id/summary should include Cache-Control when cacheTTL is set', async () => {
+    it('GET /:id/summary should include Cache-Control (global cache middleware)', async () => {
         const res = await app.request(`${base}/123e4567-e89b-12d3-a456-426614174000/summary`);
         expect([200, 400, 404]).toContain(res.status);
         const cache = res.headers.get('cache-control');
@@ -23,7 +23,7 @@ describe('Destination - Cache headers', () => {
         }
     });
 
-    it('GET /:id/stats should include Cache-Control when cacheTTL is set', async () => {
+    it('GET /:id/stats should include Cache-Control (global cache middleware)', async () => {
         const res = await app.request(`${base}/123e4567-e89b-12d3-a456-426614174000/stats`);
         expect([200, 400, 404]).toContain(res.status);
         const cache = res.headers.get('cache-control');

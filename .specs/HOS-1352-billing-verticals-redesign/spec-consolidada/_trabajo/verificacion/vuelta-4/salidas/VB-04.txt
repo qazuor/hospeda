@@ -1,0 +1,16 @@
+# VB-04 · spec → fuente · 10-corte/U1.md, 10-corte/U2.md, 10-corte/U3.md, 10-corte/V1.md
+
+## Hallazgos
+
+10-corte/U1.md:80 · «**conserva el cron `archive-abandoned-drafts`**, aunque no sea cobro (lote 1 G)» · contradice fuentes/.specs/HOS-1352-billing-verticals-redesign/docs/16-fase-7-del-paraguas.md:754 («**borra el cron `archive-abandoned-drafts`**, aunque no sea cobro (lote 1 G)»), ratificado por fuentes/.specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:7577 («Borra `archive-abandoned-drafts` aunque no sea cobro (G)»); contradicción interna con U1.md:332 y U1.md:552, que exigen retirarlo · BLOQUEA
+
+10-corte/U3.md:305 · «Los manifiestos del corte se conservan durante treinta días y después se eliminan automáticamente, incluso si quedan devoluciones pendientes de los ids censados.» · contradice fuentes/.specs/HOS-1352-billing-verticals-redesign/docs/16-fase-7-del-paraguas.md:355 («El manifiesto lleva los ids cancelados y releídos, sin datos de personas, y se borra al terminar el corte»); no hay soporte vivo para los treinta días ni para esa eliminación automática, y contradice U3.md:175–181 y U3.md:298–299 · BLOQUEA
+
+## Resumen
+
+| archivo | líneas recorridas | afirmaciones normativas revisadas (aprox.) | BLOQUEA | MENOR |
+|---|---|---|---|---|
+| 10-corte/U1.md | 1–848 | 220 | 1 | 0 |
+| 10-corte/U2.md | 1–493 | 110 | 0 | 0 |
+| 10-corte/U3.md | 1–477 | 100 | 1 | 0 |
+| 10-corte/V1.md | 1–520 | 135 | 0 | 0 |

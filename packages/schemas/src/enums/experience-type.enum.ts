@@ -1,5 +1,5 @@
 /**
- * Experience type enum — sub-categories for experience commerce listings.
+ * Experience type enum — sub-categories for experience listings.
  *
  * Covers the main tourism-activity categories available in the Litoral region
  * of Argentina (Concepcion del Uruguay and surroundings).

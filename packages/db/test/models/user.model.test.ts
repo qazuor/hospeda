@@ -151,11 +151,10 @@ describe('UserModel', () => {
                 {
                     user: { id: 'u1', displayName: 'Alice' },
                     accommodationsCount: 2,
-                    gastronomiesCount: 1,
+                    venuesCount: 1,
                     experiencesCount: 4,
                     eventsCount: 1,
-                    postsCount: 3,
-                    currentPlanSlug: 'owner-pro'
+                    postsCount: 3
                 }
             ];
             // findAllWithCounts paginated path: baseQuery.$dynamic().limit(n).offset(n) -> rows
@@ -193,11 +192,10 @@ describe('UserModel', () => {
             expect(result).toHaveProperty('total');
             expect(result.items[0]).toMatchObject({
                 accommodationsCount: 2,
-                gastronomiesCount: 1,
+                venuesCount: 1,
                 experiencesCount: 4,
                 eventsCount: 1,
-                postsCount: 3,
-                currentPlanSlug: 'owner-pro'
+                postsCount: 3
             });
         });
 
@@ -207,11 +205,10 @@ describe('UserModel', () => {
                 {
                     user: { id: 'u1', displayName: 'Alice' },
                     accommodationsCount: 0,
-                    gastronomiesCount: 0,
+                    venuesCount: 0,
                     experiencesCount: 0,
                     eventsCount: 0,
-                    postsCount: 0,
-                    currentPlanSlug: null
+                    postsCount: 0
                 }
             ];
             const mockSelectResult = {

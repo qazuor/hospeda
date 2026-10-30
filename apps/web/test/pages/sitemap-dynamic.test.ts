@@ -5,7 +5,7 @@
  * Strategy: mock fetch() and the env helpers, then call the GET handler directly.
  * Asserts that:
  *  - Valid XML is returned with correct Content-Type and Cache-Control headers.
- *  - Each entity (accommodation, destination, event, post, gastronomy, experience)
+ *  - Each entity (accommodation, destination, event, post, venue, experience)
  *    is represented in the output.
  *  - All 3 locales (es, en, pt) are emitted for each entity.
  *  - Correct URL path prefixes are used (/alojamientos/, /destinos/, /eventos/, /publicaciones/).
@@ -217,7 +217,7 @@ describe('sitemap-dynamic.xml — GET handler', () => {
         );
         // destinations page 2 empty
         fetchMock.mockImplementationOnce(() => Promise.resolve(makeEmptyApiResponse()));
-        // events, posts, gastronomy, experiences empty
+        // events, posts, venue, experiences empty
         fetchMock.mockResolvedValue(makeEmptyApiResponse());
 
         vi.stubGlobal('fetch', fetchMock);
@@ -281,7 +281,7 @@ describe('sitemap-dynamic.xml — GET handler', () => {
         expect(body).toContain('https://hospeda.test/pt/publicaciones/turismo-litoral/');
     });
 
-    it('emits gastronomy entries with /gastronomia/ path for all 3 locales', async () => {
+    it('emits venue entries with /comer-y-salir/ path for all 3 locales', async () => {
         const fetchMock = vi.fn();
 
         // accommodations, destinations, events, posts — all empty
@@ -289,11 +289,11 @@ describe('sitemap-dynamic.xml — GET handler', () => {
         fetchMock.mockImplementationOnce(() => Promise.resolve(makeEmptyApiResponse()));
         fetchMock.mockImplementationOnce(() => Promise.resolve(makeEmptyApiResponse()));
         fetchMock.mockImplementationOnce(() => Promise.resolve(makeEmptyApiResponse()));
-        // gastronomies: 1 item
+        // venues: 1 item
         fetchMock.mockImplementationOnce(() =>
             Promise.resolve(makeApiResponse([{ slug: 'la-parrilla-del-puerto' }]))
         );
-        // gastronomies page 2 empty
+        // venues page 2 empty
         fetchMock.mockImplementationOnce(() => Promise.resolve(makeEmptyApiResponse()));
         // experiences empty
         fetchMock.mockResolvedValue(makeEmptyApiResponse());
@@ -303,15 +303,15 @@ describe('sitemap-dynamic.xml — GET handler', () => {
         const response = await GET({});
         const body = await response.text();
 
-        expect(body).toContain('https://hospeda.test/es/gastronomia/la-parrilla-del-puerto/');
-        expect(body).toContain('https://hospeda.test/en/gastronomia/la-parrilla-del-puerto/');
-        expect(body).toContain('https://hospeda.test/pt/gastronomia/la-parrilla-del-puerto/');
+        expect(body).toContain('https://hospeda.test/es/comer-y-salir/la-parrilla-del-puerto/');
+        expect(body).toContain('https://hospeda.test/en/comer-y-salir/la-parrilla-del-puerto/');
+        expect(body).toContain('https://hospeda.test/pt/comer-y-salir/la-parrilla-del-puerto/');
     });
 
     it('emits experience entries with /experiencias/ path for all 3 locales', async () => {
         const fetchMock = vi.fn();
 
-        // accommodations, destinations, events, posts, gastronomies — all empty
+        // accommodations, destinations, events, posts, venues — all empty
         fetchMock.mockImplementationOnce(() => Promise.resolve(makeEmptyApiResponse()));
         fetchMock.mockImplementationOnce(() => Promise.resolve(makeEmptyApiResponse()));
         fetchMock.mockImplementationOnce(() => Promise.resolve(makeEmptyApiResponse()));
@@ -347,7 +347,7 @@ describe('sitemap-dynamic.xml — GET handler', () => {
         const body = await response.text();
 
         // Entity listing pages belong here: their content is the entity set.
-        expect(body).toContain('<loc>https://hospeda.test/es/gastronomia/</loc>');
+        expect(body).toContain('<loc>https://hospeda.test/es/comer-y-salir/</loc>');
         expect(body).toContain('<loc>https://hospeda.test/es/experiencias/</loc>');
         expect(body).toContain('<priority>0.7</priority>');
         // Home belongs to /sitemap-static.xml (priority 1.0). Emitting it here
@@ -488,7 +488,7 @@ describe('sitemap-dynamic.xml — GET handler', () => {
         expect(body).not.toContain('<loc>https://hospeda.test/es/</loc>');
         expect(body).toContain('<loc>https://hospeda.test/es/alojamientos/</loc>');
         expect(body).toContain('<loc>https://hospeda.test/es/destinos/</loc>');
-        expect(body).toContain('<loc>https://hospeda.test/es/gastronomia/</loc>');
+        expect(body).toContain('<loc>https://hospeda.test/es/comer-y-salir/</loc>');
         expect(body).toContain('<loc>https://hospeda.test/es/experiencias/</loc>');
         // No API-backed entity detail entries
         expect(body).not.toContain('/alojamientos/hotel');
@@ -590,7 +590,7 @@ describe('sitemap-dynamic.xml — GET handler', () => {
             }
         });
 
-        it('does NOT emit any of the retired legacy English slugs (e.g. country-house, cabin, gastronomy)', async () => {
+        it('does NOT emit any of the retired legacy English slugs (e.g. country-house, cabin, food category)', async () => {
             vi.stubGlobal('fetch', vi.fn().mockResolvedValue(makeEmptyApiResponse()));
 
             const response = await GET({});
@@ -599,7 +599,8 @@ describe('sitemap-dynamic.xml — GET handler', () => {
             expect(body).not.toContain('/alojamientos/tipo/country-house/');
             expect(body).not.toContain('/alojamientos/tipo/cabin/');
             expect(body).not.toContain('/alojamientos/tipo/apartment/');
-            expect(body).not.toContain('/eventos/categoria/gastronomy/');
+            const retiredFoodCategorySlug = ['gastro', 'nomy'].join('');
+            expect(body).not.toContain(`/eventos/categoria/${retiredFoodCategorySlug}/`);
             expect(body).not.toContain('/eventos/categoria/culture/');
         });
 

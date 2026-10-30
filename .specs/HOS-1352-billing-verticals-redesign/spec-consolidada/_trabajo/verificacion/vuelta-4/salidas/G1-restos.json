@@ -1,0 +1,213 @@
+[
+    [
+        "DEC-TRIAL-006",
+        "su evento de activación en configuración**, de un catálogo cerrado de eventos de dominio"
+    ],
+    ["DEC-ENT-001", "medidos** declaran **dos cuotas**: la del plan y la del trial, menor"],
+    [
+        "DEC-SUB-002",
+        "Decisión**: **(1)**. Los días de grace son un campo **de la versión de plan**, con **10 de"
+    ],
+    [
+        "DEC-DATA-001",
+        "(`M-DATA-01`, abierta). **📌 Cerrada el 2026-09-25 por `DEC-DATA-005`**: sólo el contenido de la"
+    ],
+    [
+        "DEC-GRANT-004",
+        "3. **Cortesía sobre cortesía** → **se SUMAN los días, no se reemplazan** (**📌 desde el 2026-09-25 se suman MESES**: la cortesía temporal es en meses enteros, ver `DEC-GRANT-003` impl. 6), y el aviso dice la"
+    ],
+    ["DEC-ARCH-006", "4. **📌 Implicación (FASE 9 vuelta 1, owner 2026-09-26, `G2-1`"],
+    ["DEC-ARCH-006", "5. **📌 Implicación (FASE 9 vuelta 1, owner 2026-09-26, `G4-2`"],
+    [
+        "DEC-ARCH-006",
+        "📌 **Precisado el 2026-09-27, con OK del owner (FASE 9 vuelta 2, `R5` y `Q-FECHA`)**: la"
+    ],
+    [
+        "DEC-ARCH-006",
+        "fecha de fin de servicio de una vertical la calcula billing y verticales la pregunta por"
+    ],
+    [
+        "DEC-ARCH-006",
+        "`finDeServicio` (`12-contrato…` §4.1), que en la implementación de arranque contesta"
+    ],
+    [
+        "DEC-ARCH-006",
+        "`NINGUNA`; la real contesta de `vertical_discontinuation`, una fila de billing por vertical"
+    ],
+    [
+        "DEC-ARCH-006",
+        "discontinuada, y verticales no guarda copia. El día del fin de servicio billing sólo avisa"
+    ],
+    [
+        "DEC-ARCH-006",
+        "`PB2`, el hecho 4 y la invalidación de la vertical los ejecuta el reconciliador diario de"
+    ],
+    [
+        "DEC-ARCH-006",
+        "cobertura (`V/03` §9). `extenderTrial` sigue siendo la única escritura de billing en"
+    ],
+    [
+        "DEC-ARCH-006",
+        "📌 **Precisada el 2026-09-28, con OK del owner (FASE 9 vuelta 2, verificación, `V2-x` sobre"
+    ],
+    [
+        "DEC-ARCH-006",
+        "`N-B-03`)**: `PB9` no borra una ficha de una vertical cuya `finDeServicio` ya pasó mientras la"
+    ],
+    [
+        "DEC-ARCH-006",
+        "corrida del reconciliador no escribió el hecho 4, así que `finDeServicio` tiene tres lectores en"
+    ],
+    [
+        "DEC-MIG-003",
+        "📌 **Precisado el 2026-09-29, con OK del owner (verificación corta, lote P-A)**: la ruta de"
+    ],
+    [
+        "DEC-MIG-003",
+        "avisos la cierra un Worker del borde que contesta `500` a todo pedido, con una cabecera propia"
+    ],
+    [
+        "DEC-MIG-003",
+        "y no una regla de bloqueo, que contesta un `4xx` cuyo reintento no está medido. Se le asigna la"
+    ],
+    [
+        "DEC-MIG-003",
+        "ruta antes de apagar el contenedor viejo y se le quita al final del paso 4, las dos veces"
+    ],
+    [
+        "DEC-MIG-003",
+        "verificado desde afuera; en la rama de aborto, cerrar y abrir la ruta son lo mismo. Vive"
+    ],
+    [
+        "DEC-MIG-003",
+        "versionado con el script del corte y se archiva con él; lo deja listo el ensayo del paso 0 en"
+    ],
+    ["DEC-MIG-003", "`staging`, que mide también cuánto dura el cierre"],
+    [
+        "DEC-MIG-005",
+        "📌 **Precisado el 2026-09-27, con OK del owner (FASE 9 vuelta 2, `R2`, `R21` y `R21-b`)**: el"
+    ],
+    [
+        "DEC-MIG-005",
+        "cobro sobre una lápida del corte no se devuelve sólo si es del día del corte (`date_created`"
+    ],
+    [
+        "DEC-MIG-005",
+        "del registro). Uno posterior abre `PAGO_TARDÍO_RECHAZADO` con la propuesta de devolverlo. La"
+    ],
+    [
+        "DEC-MIG-005",
+        "población se lee de la re-verificación del día del corte, y un detector corre después del"
+    ],
+    [
+        "DEC-MIG-005",
+        "corte, con dueño y fecha (`B/21` «NO cierra»). El titular de una autorización que sólo"
+    ],
+    [
+        "DEC-MIG-005",
+        "conoce el proveedor entra a la población a avisar: antes del aviso previo, una pasada de sólo"
+    ],
+    [
+        "DEC-MIG-005",
+        "lectura sobre el proveedor lista las autorizaciones vivas con su `payer_email`, y el 1b"
+    ],
+    [
+        "DEC-MIG-005",
+        "cancela después. Quien aparezca recién en el manifiesto del 1b recibe el aviso después de la"
+    ],
+    ["DEC-MIG-005", "cancelación, y lo que pierde se declara como en `G1-4`"],
+    [
+        "DEC-MIG-005",
+        "📌 **Precisado con OK del owner (FASE 9 vuelta 2, verificación: `V2-a` el 2026-09-27; `V2-m` y"
+    ],
+    [
+        "DEC-MIG-005",
+        "`V2-r` el 2026-09-28)**: el día del cobro se lee en la fecha del pago que aprobó el registro"
+    ],
+    [
+        "DEC-MIG-005",
+        "leído por id, y no en el `date_created` del registro, que no se mueve con los reintentos. Qué"
+    ],
+    [
+        "DEC-MIG-005",
+        "campo del pago la trae se mide en el paso 0 del corte (`EX-48`), y el 1b no arranca sin ese dato"
+    ],
+    [
+        "DEC-MIG-005",
+        "si ningún campo es confiable, vuelve al owner antes del corte. Y el paso 0 cuenta las"
+    ],
+    [
+        "DEC-MIG-005",
+        "suscripciones anuales vivas del viejo (`EX-50`), porque sobre ellas la segunda corrida del"
+    ],
+    ["DEC-MIG-005", "detector puede caer hasta un año después del corte"],
+    [
+        "DEC-MIG-005",
+        "📌 **Precisada el 2026-09-29, con OK del owner (verificación corta, lote P-B)**: La primera"
+    ],
+    [
+        "DEC-MIG-005",
+        "corrida del detector, el día siguiente al corte, lista también, por cada lápida del corte, los"
+    ],
+    [
+        "DEC-MIG-005",
+        "registros de cobro que el proveedor da aprobados con un pago del día del corte y que no tienen"
+    ],
+    [
+        "DEC-MIG-005",
+        "`payment`, con la misma lectura del barrido, sin abrir marca ni asentar. Es lo que ve el cobro"
+    ],
+    [
+        "DEC-MIG-005",
+        "cuyo aviso se perdió durante el cierre de la ruta de avisos, que el barrido no compara sobre una"
+    ],
+    [
+        "DEC-MIG-005",
+        "lápida del corte; la regla de `G3-1` no cambia, y la lista suma titulares a la llamada"
+    ],
+    [
+        "DEC-RF-008",
+        "📌 Recontado el 2026-09-27, con OK del owner (FASE 9 vuelta 2, owner 2026-09-27"
+    ],
+    [
+        "DEC-RF-008",
+        "`Q-ACC16`).** El catálogo tiene **dieciséis** acciones: la decimosexta es *«discontinuar una"
+    ],
+    [
+        "DEC-RF-008",
+        "vertical»*, de `SUPER_ADMIN`, auditada y con confirmación, que orquesta las dos mitades del"
+    ],
+    ["DEC-RF-008", "acto de `DEC-ARCH-011`. Las líneas que cuantifican dicen dieciséis"],
+    [
+        "DEC-AUTH-001",
+        "las otras; **si Redis no responde, se lee la resolución en vivo**; y un contador de entradas"
+    ],
+    [
+        "DEC-AUTH-001",
+        "sospechosas va en los logs estructurados. Dónde: `V/02` §3.4; `V/descomposicion.md` §2 y §4"
+    ],
+    [
+        "DEC-MIG-006",
+        "📌 **Precisada el 2026-09-29, con OK del owner (revisión del owner, casos vecinos, casos 5 y 6)"
+    ],
+    [
+        "DEC-MIG-006",
+        "En el paso 0 se toman dos recuentos sobre la cartera vieja: si el sistema viejo servía alguna"
+    ],
+    [
+        "DEC-MIG-006",
+        "ficha que el corte hace nacer `PURGED` o en `DRAFT`, y si da cero el paso 4c se saltea; y cuántos"
+    ],
+    [
+        "DEC-MIG-006",
+        "dueños tienen más de una ficha a la vista en la misma vertical, que no es gate y vuelve al owner"
+    ],
+    [
+        "DEC-TEST-003",
+        "quiera, compara también la forma de las respuestas, avisa por correo y no ajusta nada; si no"
+    ],
+    [
+        "DEC-METH-018",
+        "`SYSTEM`, identificador por job y permisos explícitos, que rechaza los de las 25 acciones; los"
+    ]
+]

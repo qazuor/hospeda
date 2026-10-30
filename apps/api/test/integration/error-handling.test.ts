@@ -1,56 +1,56 @@
 /**
  * Error Handling Cross-Middleware Integration Tests
  * Tests that errors are properly handled and propagated through the complete middleware stack
- * without losing information or causing interference between middlewares
+ * without losing information or causing interference between middlewares.
+ *
+ * `/health/ready` is the happy-path probe (`/health/live` is covered in
+ * middleware-stack.test.ts). Body-parsing cases go through a real protected route
+ * with a real user row behind the mock actor.
  */
 
-import { ServiceErrorCode } from '@repo/schemas';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { PermissionEnum } from '@repo/schemas';
+import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
 import { initApp } from '../../src/app';
+import { clearCache } from '../../src/middlewares/cache';
 import { resetMetrics } from '../../src/middlewares/metrics';
+import { validateApiEnv } from '../../src/utils/env';
+import { testDb } from '../e2e/setup/test-database';
+import { buildMockActorHeaders, createMockActorUser } from './helpers/mock-actor';
 
-// Mock external dependencies
-vi.mock('@repo/logger', () => {
-    const mockLogger = {
-        info: vi.fn(),
-        warn: vi.fn(),
-        error: vi.fn(),
-        debug: vi.fn(),
-        registerCategory: vi.fn(() => mockLogger),
-        registerLogMethod: vi.fn()
-    };
-
-    return {
-        default: mockLogger,
-        logger: mockLogger,
-        LoggerColors: {
-            GREEN: 'green',
-            RED: 'red',
-            BLUE: 'blue',
-            YELLOW: 'yellow',
-            CYAN: 'cyan',
-            MAGENTA: 'magenta'
-        },
-        LogLevel: {
-            DEBUG: 'debug',
-            INFO: 'info',
-            WARN: 'warn',
-            ERROR: 'error'
-        }
-    };
-});
+const READY = '/health/ready';
+const CREATE_ROUTE = '/api/v1/protected/accommodations';
 
 describe('Error Handling Cross-Middleware Integration', () => {
+    let creatorHeaders: Record<string, string>;
+
+    beforeAll(async () => {
+        await testDb.setup();
+        await testDb.clean();
+        clearCache();
+        validateApiEnv();
+        const creator = await createMockActorUser({ label: 'error-handling-creator' });
+        creatorHeaders = buildMockActorHeaders({
+            actorId: creator.id,
+            permissions: [PermissionEnum.ACCOMMODATION_CREATE]
+        });
+    });
+
     beforeEach(() => {
-        vi.clearAllMocks();
+        clearCache();
         resetMetrics();
+    });
+
+    afterAll(async () => {
+        await testDb.clean();
+        clearCache();
+        await testDb.teardown();
     });
 
     describe('Validation Errors Through Stack', () => {
         it('should handle missing required headers with proper error format', async () => {
             const app = initApp();
 
-            const res = await app.request('/health/live', {
+            const res = await app.request(READY, {
                 method: 'GET',
                 headers: {
                     // Missing required user-agent header
@@ -60,30 +60,25 @@ describe('Error Handling Cross-Middleware Integration', () => {
 
             expect(res.status).toBe(400);
 
-            // Verify error response format is maintained through all middlewares
+            // Error envelope is kept through all middlewares
             const data = await res.json();
             expect(data.success).toBe(false);
-            expect(data.error).toBeDefined();
             expect(data.error.code).toBe('MISSING_REQUIRED_HEADER');
-            expect(data.error.message).toBeDefined();
+            expect(data.error.messageKey).toBe('zodError.validation.header.missing');
 
-            // Verify metadata is preserved even in error responses
-            expect(data.metadata).toBeDefined();
+            // Metadata is preserved even in error responses
             expect(data.metadata.timestamp).toBeDefined();
-            expect(data.metadata.requestId).toBeDefined();
+            expect(data.metadata.requestId).toBe(res.headers.get('x-request-id'));
 
-            // Verify security headers are still applied to error responses
+            // Security headers are still applied to error responses
             expect(res.headers.get('x-content-type-options')).toBe('nosniff');
-            expect(['DENY', 'SAMEORIGIN']).toContain(res.headers.get('x-frame-options'));
-
-            // Verify request ID is present
-            expect(res.headers.get('x-request-id')).toBeTruthy();
+            expect(res.headers.get('x-frame-options')).toBe('SAMEORIGIN');
         });
 
         it('should handle invalid accept headers with proper propagation', async () => {
             const app = initApp();
 
-            const res = await app.request('/health/live', {
+            const res = await app.request(READY, {
                 method: 'GET',
                 headers: {
                     'user-agent': 'error-test/1.0',
@@ -97,15 +92,15 @@ describe('Error Handling Cross-Middleware Integration', () => {
             expect(data.success).toBe(false);
             expect(data.error.code).toBe('INVALID_ACCEPT_HEADER');
 
-            // Verify the error didn't break the middleware chain
+            // The error did not break the middleware chain
             expect(res.headers.get('x-request-id')).toBeTruthy();
-            expect(data.metadata.requestId).toBeTruthy();
+            expect(data.metadata.requestId).toBe(res.headers.get('x-request-id'));
         });
 
         it('should handle content-type validation errors', async () => {
             const app = initApp();
 
-            const res = await app.request('/api/v1/public/users', {
+            const res = await app.request(CREATE_ROUTE, {
                 method: 'POST',
                 headers: {
                     'user-agent': 'error-test/1.0',
@@ -115,21 +110,13 @@ describe('Error Handling Cross-Middleware Integration', () => {
                 body: 'not json'
             });
 
-            // Should be rejected by validation or rate limited
-            expect([400, 429]).toContain(res.status);
+            expect(res.status).toBe(400);
+            const data = await res.json();
+            expect(data.success).toBe(false);
+            expect(data.error.code).toBe('INVALID_CONTENT_TYPE');
+            expect(data.metadata.requestId).toBe(res.headers.get('x-request-id'));
 
-            if (res.status === 400) {
-                const data = await res.json();
-                expect(data.success).toBe(false);
-                expect(data.error).toBeDefined();
-
-                // Verify metadata preservation in validation errors
-                if (data.metadata) {
-                    expect(data.metadata.requestId).toBeTruthy();
-                }
-            }
-
-            // Even validation errors should have security headers
+            // Even validation errors carry security headers
             expect(res.headers.get('x-content-type-options')).toBe('nosniff');
         });
     });
@@ -138,93 +125,29 @@ describe('Error Handling Cross-Middleware Integration', () => {
         it('should handle authentication failures with proper error format', async () => {
             const app = initApp();
 
-            // Simulate a protected endpoint (this would typically require auth)
-            const res = await app.request('/api/v1/admin/users', {
+            const res = await app.request('/api/v1/admin/accommodations', {
                 method: 'GET',
                 headers: {
                     'user-agent': 'auth-error-test/1.0',
                     accept: 'application/json'
-                    // Missing Authorization header
+                    // No session
                 }
             });
 
-            // Should be either 401/403 (auth error) or 404 (not found) or 429 (rate limited)
-            expect([401, 403, 404, 429]).toContain(res.status);
-
+            expect(res.status).toBe(401);
             const data = await res.json();
             expect(data.success).toBe(false);
-            expect(data.error).toBeDefined();
-
-            // Verify middleware chain didn't break on auth errors
-            expect(res.headers.get('x-request-id')).toBeTruthy();
-
-            // Auth errors should still have security headers
+            expect(data.error.code).toBe('UNAUTHORIZED');
+            expect(data.metadata.requestId).toBe(res.headers.get('x-request-id'));
             expect(res.headers.get('x-content-type-options')).toBe('nosniff');
         });
     });
 
-    describe('Rate Limiting Errors Through Stack', () => {
-        it('should handle rate limiting without breaking other middlewares', async () => {
-            const app = initApp();
-
-            // Make multiple requests quickly to trigger rate limiting
-            const requests = Array.from({ length: 100 }, () =>
-                app.request('/health/live', {
-                    headers: {
-                        'user-agent': 'rate-limit-test/1.0',
-                        accept: 'application/json'
-                    }
-                })
-            );
-
-            const responses = await Promise.all(requests);
-
-            // Should have some rate limited responses
-            const rateLimitedResponses = responses.filter((res) => res.status === 429);
-
-            if (rateLimitedResponses.length > 0) {
-                for (const res of rateLimitedResponses.slice(0, 3)) {
-                    // Test first 3
-                    const data = await res.json();
-                    expect(data.success).toBe(false);
-                    expect(data.error).toBeDefined();
-
-                    // Rate limiting errors should still have request IDs
-                    expect(res.headers.get('x-request-id')).toBeTruthy();
-
-                    // Should maintain basic security headers (may be missing in rate limited responses)
-                    const securityHeader = res.headers.get('x-content-type-options');
-                    if (securityHeader) {
-                        expect(securityHeader).toBe('nosniff');
-                    }
-                }
-            }
-        });
-    });
-
     describe('Server Errors Through Stack', () => {
-        it('should handle server errors with proper error format and headers', async () => {
+        it('should format an unexpected handler error with the standard envelope and headers', async () => {
             const app = initApp();
-
-            // Add a route that throws an error to test error propagation
-            app.get('/test-error', async (c) => {
-                const requestId = c.get('requestId');
-
-                // Manually return server error response to test error format
-                return c.json(
-                    {
-                        success: false,
-                        error: {
-                            code: ServiceErrorCode.INTERNAL_ERROR,
-                            message: 'Internal server error'
-                        },
-                        metadata: {
-                            timestamp: new Date().toISOString(),
-                            requestId: requestId
-                        }
-                    },
-                    500
-                );
+            app.get('/test-error', () => {
+                throw new Error('boom');
             });
 
             const res = await app.request('/test-error', {
@@ -234,117 +157,97 @@ describe('Error Handling Cross-Middleware Integration', () => {
                 }
             });
 
-            // Could be 500 (server error) or 429 (rate limited)
-            expect([500, 429]).toContain(res.status);
-
+            expect(res.status).toBe(500);
             const data = await res.json();
             expect(data.success).toBe(false);
-            expect(data.error).toBeDefined();
-
-            // Only check error code for actual server errors
-            if (res.status === 500) {
-                expect(data.error.code).toBe('INTERNAL_ERROR');
-
-                // Should have metadata even for server errors
-                expect(data.metadata).toBeDefined();
-                expect(data.metadata.requestId).toBeTruthy();
-
-                // Verify security headers for server errors
-                expect(res.headers.get('x-content-type-options')).toBe('nosniff');
-            }
-
-            // Verify middleware chain still works
-            expect(res.headers.get('x-request-id')).toBeTruthy();
+            expect(data.error.code).toBe('INTERNAL_ERROR');
+            expect(data.metadata.requestId).toBe(res.headers.get('x-request-id'));
+            expect(res.headers.get('x-content-type-options')).toBe('nosniff');
         });
 
-        it('should handle JSON parsing errors gracefully', async () => {
+        it('should reject malformed JSON with a 400 validation error', async () => {
             const app = initApp();
 
-            const res = await app.request('/api/v1/public/users', {
+            const res = await app.request(CREATE_ROUTE, {
                 method: 'POST',
-                headers: {
-                    'user-agent': 'json-error-test/1.0',
-                    accept: 'application/json',
-                    'content-type': 'application/json'
-                },
+                headers: creatorHeaders,
                 body: '{"invalid": json}' // Invalid JSON
             });
 
-            // Should be validation error or rate limited
-            expect([400, 429]).toContain(res.status);
-
-            if (res.status === 400) {
-                const data = await res.json();
-                expect(data.success).toBe(false);
-                expect(data.error).toBeDefined();
-            }
-
-            // Headers should still be applied
+            expect(res.status).toBe(400);
+            const data = await res.json();
+            expect(data.success).toBe(false);
+            expect(data.error.code).toBe('VALIDATION_ERROR');
             expect(res.headers.get('x-request-id')).toBeTruthy();
-
-            // Security headers may not be present in rate limited responses
-            const securityHeader = res.headers.get('x-content-type-options');
-            if (securityHeader) {
-                expect(securityHeader).toBe('nosniff');
-            }
+            expect(res.headers.get('x-content-type-options')).toBe('nosniff');
         });
     });
 
     describe('CORS Errors Through Stack', () => {
-        it('should handle CORS preflight errors properly', async () => {
+        it('should answer a preflight from a disallowed origin without granting it', async () => {
             const app = initApp();
 
             const res = await app.request('/api/v1/public/users', {
                 method: 'OPTIONS',
                 headers: {
-                    origin: 'https://evil-site.com', // Not allowed origin
+                    origin: 'https://evil-site.com', // Not an allowed origin
                     'access-control-request-method': 'POST',
                     'access-control-request-headers': 'content-type'
                 }
             });
 
-            // CORS middleware should handle this
-            expect([200, 204, 403, 404]).toContain(res.status);
-
-            // Should still have basic security headers (may vary based on response type)
+            expect(res.status).toBe(204);
+            // The origin is never echoed back, so the browser blocks the request
+            expect(res.headers.get('access-control-allow-origin')).toBeNull();
             expect(res.headers.get('x-request-id')).toBeTruthy();
+        });
 
-            const securityHeader = res.headers.get('x-content-type-options');
-            if (securityHeader) {
-                expect(securityHeader).toBe('nosniff');
-            }
+        it('should grant a preflight from an allowed origin', async () => {
+            const app = initApp();
+
+            const res = await app.request('/api/v1/public/users', {
+                method: 'OPTIONS',
+                headers: {
+                    origin: 'http://localhost:3000',
+                    'access-control-request-method': 'POST',
+                    'access-control-request-headers': 'content-type'
+                }
+            });
+
+            expect(res.status).toBe(204);
+            expect(res.headers.get('access-control-allow-origin')).toBe('http://localhost:3000');
         });
     });
 
     describe('Content Size Errors Through Stack', () => {
-        it('should handle large request bodies gracefully', async () => {
+        it('should reject a 10KB payload that fails validation with a formatted 400', async () => {
             const app = initApp();
 
-            // Create a large body (this might trigger validation limits)
-            const largeBody = JSON.stringify({
-                data: 'x'.repeat(10000) // 10KB of data
-            });
-
-            const res = await app.request('/api/v1/public/users', {
+            const res = await app.request(CREATE_ROUTE, {
                 method: 'POST',
-                headers: {
-                    'user-agent': 'large-body-test/1.0',
-                    accept: 'application/json',
-                    'content-type': 'application/json'
-                },
-                body: largeBody
+                headers: creatorHeaders,
+                body: JSON.stringify({ data: 'x'.repeat(10000) })
             });
 
-            // Could be validation error, rate limited, or size limit
-            expect([400, 413, 429]).toContain(res.status);
+            expect(res.status).toBe(400);
+            const data = await res.json();
+            expect(data.success).toBe(false);
+            expect(data.metadata.requestId).toBe(res.headers.get('x-request-id'));
+        });
 
-            if (res.status === 400 || res.status === 413) {
-                const data = await res.json();
-                expect(data.success).toBe(false);
-                expect(data.error).toBeDefined();
-            }
+        it('should reject a body over the global cap with 413 REQUEST_TOO_LARGE', async () => {
+            const app = initApp();
 
-            // Should maintain middleware functionality
+            const res = await app.request(CREATE_ROUTE, {
+                method: 'POST',
+                headers: creatorHeaders,
+                body: JSON.stringify({ data: 'x'.repeat(11 * 1024 * 1024) })
+            });
+
+            expect(res.status).toBe(413);
+            const data = await res.json();
+            expect(data.success).toBe(false);
+            expect(data.error.code).toBe('REQUEST_TOO_LARGE');
             expect(res.headers.get('x-request-id')).toBeTruthy();
         });
     });
@@ -353,45 +256,28 @@ describe('Error Handling Cross-Middleware Integration', () => {
         it('should recover gracefully after errors and continue processing subsequent requests', async () => {
             const app = initApp();
 
-            // First request: cause an error
-            const errorRes = await app.request('/health/live', {
-                headers: {
-                    // Missing user-agent to cause validation error
-                    accept: 'application/json'
-                }
+            // First request: cause a validation error (missing user-agent)
+            const errorRes = await app.request(READY, {
+                headers: { accept: 'application/json' }
             });
-            // Should be validation error or rate limited
-            expect([400, 429]).toContain(errorRes.status);
+            expect(errorRes.status).toBe(400);
 
-            // Second request: should work normally (or be rate limited)
-            const successRes = await app.request('/health/live', {
-                headers: {
-                    'user-agent': 'recovery-test/1.0',
-                    accept: 'application/json'
-                }
+            // Second request: works normally
+            const successRes = await app.request(READY, {
+                headers: { 'user-agent': 'recovery-test/1.0', accept: 'application/json' }
             });
+            expect(successRes.status).toBe(200);
 
-            // Could be success or rate limited, but should respond
-            expect([200, 429]).toContain(successRes.status);
-
-            // Verify both requests got unique request IDs
+            // Each request got its own id
             const errorRequestId = errorRes.headers.get('x-request-id');
             const successRequestId = successRes.headers.get('x-request-id');
-
             expect(errorRequestId).toBeTruthy();
             expect(successRequestId).toBeTruthy();
             expect(errorRequestId).not.toBe(successRequestId);
 
-            // Verify response is properly formatted (if successful)
-            if (successRes.status === 200) {
-                const successData = await successRes.json();
-                expect(successData.success).toBe(true);
-                expect(successData.data.alive).toBe(true);
-            } else {
-                // Even rate limited responses should be properly formatted
-                const rateLimitData = await successRes.json();
-                expect(rateLimitData.success).toBe(false);
-            }
+            const successData = await successRes.json();
+            expect(successData.success).toBe(true);
+            expect(successData.data.ready).toBe(true);
         });
     });
 });

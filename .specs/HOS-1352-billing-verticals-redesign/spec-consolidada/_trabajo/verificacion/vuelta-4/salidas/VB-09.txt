@@ -1,0 +1,23 @@
+# VB-09 · spec → fuente · 10-corte/B4.md 10-corte/B5.md 10-corte/B6.md
+
+## Hallazgos
+
+10-corte/B4.md:130 · «antes del commit, dentro de la transacción» · contradice fuentes/.specs/HOS-1352-billing-verticals-redesign/docs/12-contrato-de-cobertura.md:907 («El aviso sale después del commit»). AC:B4:2 manda publicar antes de que el consumidor pueda releer el estado nuevo; también contradice la cláusula 5 de LISTA:B4 (líneas 237–238) y AC:B5:1 (10-corte/B5.md:147). · BLOQUEA
+
+10-corte/B4.md:349 · «el aviso de que la cobertura cambió se encola en el outbox común de `U2`, después del commit» · contradice fuentes/.specs/HOS-1352-billing-verticals-redesign/docs/nucleo/07-outbox-y-notificaciones.md:35 («La transición escribe su estado **y** la fila de outbox en la misma transacción»). Confunde el encolado con el envío y permite perder el aviso si el proceso cae entre el commit y el encolado. TEST:B4:2 repite el desplazamiento en las líneas 391–392; AC:U2:1 (10-corte/U2.md:124) exige la escritura transaccional. · BLOQUEA
+
+10-corte/B5.md:273 · «con quién la asentó, por dónde y el comprobante de la transferencia» · más fuerte que fuentes/.specs/HOS-1354-billing-cobro-y-proveedor/docs/03-maquinas-de-estado.md:1853 («con el comprobante de la transferencia o la referencia del panel»). AC:B5:10 incluye expresamente el motivo 18, pero omite la alternativa que permite asentar una devolución hecha desde el panel del proveedor sin comprobante de transferencia. · BLOQUEA
+
+10-corte/B5.md:307 · «Entonces `MP5` abre la cuota del período en `AWAITING`» · más débil que fuentes/.specs/HOS-1354-billing-cobro-y-proveedor/docs/03-maquinas-de-estado.md:2445 («Al admin: el aviso que el §30 ordena es el de la falta del pago») y :2449 («el aviso sale igual, en el instante en que la cuota se abre»). AC:B5:13 y TEST:B5:7 omiten el aviso al admin al abrir una cuota sin pago, incluida la primera, que no pasa por S4. El catálogo de la spec conserva la obligación en 04-catalogos.md:5208–5220; los criterios permiten aprobar MP5 sin ese efecto. · BLOQUEA
+
+10-corte/B5.md:895 · «Para registrar un pago manual se exige adjuntar su comprobante en PDF; una imagen o una referencia bancaria escrita no habilitan la confirmación.» · sin soporte. fuentes/.specs/HOS-1354-billing-cobro-y-proveedor/docs/02-modelo-de-datos.md:381 exige comprobante, pero no ese formato ni esos rechazos; :396 distingue la prueba subida por el admin del receipt que emite el sistema. El PDF de :383 corresponde al receipt emitido. No hay decisión posterior en el log ni en 41-corte-del-mvp/10-decisiones-del-owner.md que autorice esta restricción de entrada. · BLOQUEA
+
+10-corte/B6.md:134 · «Entonces pasa a `EXECUTED` sólo si la relectura por id del pago muestra acreditadas las devoluciones» · más débil que fuentes/.specs/HOS-1354-billing-cobro-y-proveedor/docs/03-maquinas-de-estado.md:1852 («Sobre el pago de una instancia `UNA_VEZ`, la relectura es la de su orden por id»). AC:B6:5 generaliza la lectura del pago y omite la lectura de la orden para confirmar RF3; AC:B6:8 y TEST:B6:6 sólo verifican obtención del id y rechazo del 409, sin cubrir esa confirmación. La excepción sigue vigente en 04-catalogos.md:4539. · BLOQUEA
+
+## Resumen
+
+| archivo | líneas recorridas | afirmaciones normativas revisadas (aprox.) | BLOQUEA | MENOR |
+|---|---|---|---|---|
+| 10-corte/B4.md | 1–517 | 145 | 2 | 0 |
+| 10-corte/B5.md | 1–1234 | 330 | 3 | 0 |
+| 10-corte/B6.md | 1–545 | 155 | 1 | 0 |

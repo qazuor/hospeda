@@ -1,0 +1,18 @@
+# VB-04 · spec → fuente · 10-corte/U1.md, 10-corte/U2.md, 10-corte/U3.md, 10-corte/V1.md
+
+## Hallazgos
+
+10-corte/U2.md:305 · «Un rebote permanente de la casilla desactiva todos los avisos de esa cuenta, incluidos los transaccionales no suprimibles, hasta que el dueño cambie su correo.» · contradice fuentes/.specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:1741 («Si no hay a quién mandarlo —rebote duro o cuenta borrada, que `NUCLEO/07` §4.2 suprime para siempre, incluso lo transaccional—»): agrega una rehabilitación automática al cambiar el correo sin soporte vivo; también contradice la «supresión para siempre del rebote duro» de U2.md:74–75 · BLOQUEA
+
+10-corte/V1.md:36 · «y la prueba de que una tabla recién creada recibe su trigger de `set_updated_at` antes de `db:apply-extras`, con la primera tabla nueva» · contradice fuentes/.specs/HOS-1353-verticales-capacidades-y-autorizacion/descomposicion.md:61 («y la prueba de que una tabla recién creada recibe su trigger de `set_updated_at` después de `db:apply-extras`, con la primera tabla nueva»): adelanta la creación exigida del trigger al carril previo a los extras; contradice además LISTA:V1:6 (línea 71), AC:V1:8 (línea 235) y TEST:V1:12 (línea 458) · BLOQUEA
+
+10-corte/V1.md:154 · «declara sus tres atributos» · más débil que fuentes/.specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/15-entitlements-y-limits.md:573 («cada clave lleva **cuatro** atributos declarados —scope, estrategia de agregación, `enforcementStrategy` y **clase**»): AC:V1:2 enumera scope, agregación y clase, pero omite `enforcementStrategy`; TEST:V1:2 (línea 379) repite la lista incompleta y permite aceptar un catálogo sin ese atributo. DEC-ENT-005 mantiene la clase como cuarto atributo (fuentes/.specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:5054) · BLOQUEA
+
+## Resumen
+
+| archivo | líneas recorridas | afirmaciones normativas revisadas (aprox.) | BLOQUEA | MENOR |
+|---|---|---|---|---|
+| 10-corte/U1.md | 1–849 | 240 | 0 | 0 |
+| 10-corte/U2.md | 1–495 | 120 | 1 | 0 |
+| 10-corte/U3.md | 1–475 | 110 | 0 | 0 |
+| 10-corte/V1.md | 1–521 | 130 | 2 | 0 |

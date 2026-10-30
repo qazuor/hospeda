@@ -1,0 +1,55 @@
+# VA-A4 · fuente → spec · bloque A4 (HOS-1353: modelo de datos, autorización, Partner, superficies, testing, migración, legal, descomposición, spec)
+
+## Reglas con problema
+
+```
+.specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/02-modelo-de-datos.md:666 · «La red de tiempo del caché del conjunto efectivo vale 15 minutos: ninguna entrada vive más que eso desde que se calculó, y su costo es una relectura por user + vertical activo cada 15 minutos» (repetido en :713, «la entrada vieja vive hasta la red de tiempo —15 minutos—») · distinta en 10-corte/V3.md:640 (dice «La red es un plazo fijo» y omite el valor; tampoco está en V3.md:675, V3.md:206 —AC— ni V3.md:731, que la declara «regla del diseño, no una variable» sin decir cuál; la respuesta del owner G4-3 en 01-decisiones-vigentes.md:11421 sólo dice «elige 1». El valor 15 minutos no aparece en ninguna parte viva de la spec) · BLOQUEA
+.specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/19-superficies.md:69 · «Fila 22: Mi Cuenta de Partner, cuando la página o el carrusel dejan de mostrarlo, tiene que decir que no se borró nada, QUE LA PRESENCIA VUELVE SOLA SI RECUPERA EL PLAN QUE LA OTORGA, y que mientras tanto responde como inexistente (y, si la bajó un admin, que está moderada y por qué)» · distinta en 10-corte/V8a.md:386 (la fila 22 omite «que la presencia vuelve sola si recupera el plan que la otorga»; el criterio derivado de la misma fila en 20-fase-4/V8b.md:56-58, LISTA:V8b punto 1, también lo omite) · BLOQUEA
+.specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/18-partner.md:136 · «Si vuelve a Gold, la página reaparece sola, sin ninguna transición: la próxima lectura encuentra la clave en el conjunto efectivo» · ausente (el bloque 20-fase-4/V7.md:470-527 cita 18-partner.md:136-137 en su Origen pero salta del bullet de «lo que hoy archiva la presencia» directo al de «404 y no otra respuesta»; «reaparece»/«vuelve a Gold» no figura en ninguna parte viva de la spec. Se deduce de la regla de lectura por entitlement, pero no está escrita ni probada) · MENOR
+.specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/18-partner.md:235 · «La espera entre un rechazo y una postulación nueva nunca bloquea al admin: el camino B (alta directa) no pasa por la postulación, así que si el admin cambia de opinión, la da de alta; la espera acota al que insiste, no al que decide» · ausente (20-fase-4/V7.md:559-581 rinde §2.2 y cita 18-partner.md:235-237 en su Origen, pero pasa de «hay una espera configurable» a «el admin puede anular una espera» sin este párrafo; ni AC:V7:11 —alta directa— ni ACC:5 dicen que una RECHAZADA en espera no bloquea el alta directa. Es deducible de que la espera es un trigger sobre `postulacion` y el camino B no crea postulación, pero no queda escrito ni probado) · MENOR
+```
+
+## Notas de lo revisado que NO es problema (para no re-reportar)
+
+- `02:847` («el `N` de `PB5` se valida menor que 6 meses; lo vigila `G-R5-B`») está rendido en
+  `20-fase-1/V9b.md:410-413` como validación contra el plazo de borrado (`VAL:G-R5-B`, C9). Es la
+  forma vigente según `20-testing.md:70` (la cota deja de ser 6 meses literal); no es una
+  diferencia.
+- `18:136` / `V7.md:486-491`: «los lectores de `tier` pasan a leer la clave» (fuente) vs. «`V6`
+  retira sus lectores y quedan oscuros hasta `V7`» (spec): coincide con AP (ESQ:1,
+  `01-decisiones-vigentes.md:13384`) y con «desde `U1` hasta `V7` la lectura pública no muestra
+  ninguna presencia» de la propia fuente; no se reporta.
+- `spec.md:110` («`G3` en las dos direcciones») está rendida con la corrección N1
+  (`00-indice.md:813-816`), que es la vigente (`20-testing.md:52`).
+- `21-migracion.md` §2.4 y §2.5: casi todo el texto vivo es la versión FASE 5 (cinco cuentas, tabla
+  de traducción fuera, `R15` fuera); todo lo vivo está en `30-el-corte.md`, `V6.md` (prueba del corte,
+  4c, 5b, tabla de paso) y `V7.md:784` (§4, `business`, borrado de specs por estado de Linear).
+- `descomposicion.md` §2 (filas), §4 (LISTA) y §2.11-§2.14: las 13 filas y las 13 listas se
+  compararon palabra por palabra contra `FILA:*`/`LISTA:*`; las diferencias son de procedencia o de
+  reparto ya adjudicado (Z, AC, BD, BL, BR, BW).
+- Los 23 guards de `20-testing.md` §2 se compararon contra `04-catalogos.md` (`GUARD:*`, `VAL:*`):
+  ninguna palabra de la fuente falta.
+
+## Resumen por archivo
+
+| archivo | líneas recorridas | reglas normativas vivas revisadas (aprox.) | ausente | distinta |
+|---|---|---|---|---|
+| `docs/02-modelo-de-datos.md` | 1–1032 | 95 (§2.1 catálogo y tres planes no vendibles, `G-R3`; §2.2 `trial`, `canje_de_trial`, `cuota_ventana`, seudónimo y lista de proveedores, FK `RESTRICT`, baja; §2.5 `listing`, `pedido_de_arreglo`, `inactiva_desde` y sus listas; §2.7 postulación y `partner`; §3 caché; §4 retención y sus cuatro reglas; §5 restricciones) | 0 | 1 |
+| `docs/10-verticales-planes-billing-options.md` | 1–153 | 10 (tabla del Eje 2, lo que no es Eje 2, tabla de lectores, `UNIQUE … WHERE vendible AND vigente`, la mezcla del grant) | 0 | 0 |
+| `docs/17-autorizacion.md` | 1–816 | 70 (lista corregida, siete pasos y nueve precisiones, §1.3, §2, §3.x reglas de `actor ≠ sujeto`, sistema, reloj, §3.5 y `G-R3-C`, §4 roles) | 0 | 0 |
+| `docs/18-partner.md` | 1–407 | 40 (§1 Partner sin trial, §1.6 presencia sin máquina, bit de moderación, 404; §2 postulación, espera, atrasada, correo ajeno y reclamo, rol de socio; §3) | 2 | 0 |
+| `docs/19-superficies.md` | 1–111 | 32 (la regla del §45, qué lee cada superficie, las 26 filas vivas de §4, el panel de §6) | 0 | 1 |
+| `docs/20-testing.md` | 1–381 | 35 (cuatro capas, 23 guards y las dos validaciones del panel, §2.1, proveedor falso, smoke) | 0 | 0 |
+| `docs/21-migracion.md` | 1–777 | 35 vivas (gran parte del archivo está tachada o marcada «sale»: §2.4 viejo, tabla `L1`–`L8`, §2.5, R15) | 0 | 0 |
+| `docs/22-lo-legal.md` | 1–141 | 8 (el defecto, la corrección del seudónimo, la pregunta 5 y sus dos consecuencias, la postulación sin cuenta) | 0 | 0 |
+| `descomposicion.md` | 1–768 | 90 (§1.1 reglas, 13 filas de §2, §2.6–§2.14 asignaciones y «qué la demuestra», §3 orden y camino crítico, 13 listas de §4, §5) | 0 | 0 |
+| `spec.md` | 1–477 | 45 (resumen de la épica: Eje 2, catálogo vs. código, contrato, guards; casi todo repite capítulos ya cubiertos) | 0 | 0 |
+| **total** | | **≈460** | **2** | **2** |
+
+Por clase: **BLOQUEA 2** (la red de 15 minutos; la fila 22 sin «vuelve sola») · **MENOR 2**
+(Gold que reaparece sola; la espera que no bloquea al admin).
+
+Observación: las cuatro tienen la misma forma. El bloque de la spec cita la línea fuente en su
+`Origen:` y la oración no está. Las otras líneas del mismo párrafo se rinden casi literalmente, así
+que esto no es un resumen: falta una oración entera. Tres de las cuatro son de Partner y dos tratan
+la misma regla («la presencia vuelve sola»), vista una desde la lectura y otra desde la superficie.

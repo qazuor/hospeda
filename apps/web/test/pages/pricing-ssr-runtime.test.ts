@@ -56,9 +56,9 @@ const AUDIENCE_PAGES: readonly AudiencePage[] = [
         publishesPrice: true
     },
     {
-        path: 'planes/gastronomia/precios',
-        audienceId: 'gastronomy',
-        pricingAudience: 'gastronomy',
+        path: 'planes/comer-y-salir/precios',
+        audienceId: 'venue',
+        pricingAudience: 'venue',
         publishesPrice: true
     },
     {
@@ -66,16 +66,9 @@ const AUDIENCE_PAGES: readonly AudiencePage[] = [
         audienceId: 'experience',
         pricingAudience: 'experience',
         publishesPrice: true
-    },
-    {
-        // HOS-941 D-13: no figure is published for aliados, so no
-        // `PriceSpecification` either — it would put the amount into the field a
-        // search result quotes, which is exactly what the visible page withholds.
-        path: 'planes/aliados/precios',
-        audienceId: 'partner',
-        pricingAudience: 'partner',
-        publishesPrice: false
     }
+    // The aliados pricing page was removed with the old billing (HOS-1637,
+    // AC:B13a:21).
 ];
 
 function readPage(path: string): string {
@@ -131,11 +124,8 @@ describe.each(AUDIENCE_PAGES)('$path', (page: AudiencePage) => {
         });
 
         it('does NOT filter the catalogue itself', () => {
-            // `fetchAudiencePlans` owns the selection, and two of its rules are
-            // invisible at a call site: `complex` plans are never selected for
-            // the host audience, and partner drops the still-active pre-tier
-            // `partner-listing`. A page that re-filtered by hand would be a
-            // second, subtly different copy of both.
+            // `fetchAudiencePlans` owns the vertical read. The page should not
+            // apply its own copy of the sellable-catalog decision (AC:B13a:11).
             expect(src).not.toContain('filterPlansByCategory');
         });
     });
@@ -232,7 +222,7 @@ describe('fetch-plans helper (src/lib/billing/fetch-plans.ts)', () => {
 
     it('uses getApiUrl() to build the endpoint URL', () => {
         expect(helperSrc).toContain('getApiUrl()');
-        expect(helperSrc).toContain('/api/v1/public/plans');
+        expect(helperSrc).toContain('/api/v1/public/plan-catalog?vertical=');
     });
 
     it('never throws — errors are returned as ok:false result', () => {
@@ -241,7 +231,7 @@ describe('fetch-plans helper (src/lib/billing/fetch-plans.ts)', () => {
         expect(helperSrc).toContain('ok: false');
     });
 
-    it('validates that the response body is an array before returning ok:true', () => {
-        expect(helperSrc).toContain('Array.isArray(body)');
+    it('validates the catalog response with its shared schema (AC:B13a:11)', () => {
+        expect(helperSrc).toContain('PublicPlanCatalogResponseSchema.safeParse');
     });
 });

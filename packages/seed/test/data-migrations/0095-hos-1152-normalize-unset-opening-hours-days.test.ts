@@ -198,7 +198,7 @@ describe('0095 — declared metadata', () => {
         // against a database where the column is gone, and close itself in the
         // ledger forever.
         expect(migration.meta.requiresColumns).toEqual([
-            { table: 'gastronomies', column: 'opening_hours' },
+            { table: 'venues', column: 'opening_hours' },
             { table: 'experiences', column: 'opening_hours' }
         ]);
     });
@@ -254,7 +254,7 @@ function buildCtx(db: SeedMigrationCtx['db']): SeedMigrationCtx {
 describe('0095 — up()', () => {
     it('writes one update per changed row, and walks both tables', async () => {
         const probe = buildFakeDb({
-            gastronomies: [
+            venues: [
                 { id: 'g-1', opening_hours: buildOpeningHours({ tue: UNDECIDED_DAY }) },
                 { id: 'g-2', opening_hours: buildOpeningHours() }
             ],
@@ -267,12 +267,12 @@ describe('0095 — up()', () => {
         const updates = probe.statements.filter((s) => s.startsWith('UPDATE'));
 
         expect(selects).toHaveLength(2);
-        expect(selects[0]).toContain('gastronomies');
+        expect(selects[0]).toContain('venues');
         expect(selects[1]).toContain('experiences');
 
         // g-2 was already valid: two candidate rows, one write.
         expect(updates).toHaveLength(2);
-        expect(updates[0]).toContain('gastronomies');
+        expect(updates[0]).toContain('venues');
         expect(updates[1]).toContain('experiences');
 
         expect(result.counts).toEqual({
@@ -285,7 +285,7 @@ describe('0095 — up()', () => {
 
     it('writes nothing at all when every listing is already valid', async () => {
         const probe = buildFakeDb({
-            gastronomies: [{ id: 'g-1', opening_hours: buildOpeningHours({ sun: CLOSED_DAY }) }],
+            venues: [{ id: 'g-1', opening_hours: buildOpeningHours({ sun: CLOSED_DAY }) }],
             experiences: []
         });
 

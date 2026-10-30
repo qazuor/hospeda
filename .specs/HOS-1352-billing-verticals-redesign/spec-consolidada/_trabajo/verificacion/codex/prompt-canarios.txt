@@ -1,0 +1,27 @@
+Respondé en español. Tu tarea: plantar 42 errores deliberados («canarios») en una copia ciega de una spec, para medir si unos verificadores ciegos los detectan. No usás git ni ningún tracker, no escribís fuera de las rutas indicadas.
+
+Contexto de dominio (leelos antes): /home/qazuor/projects/WEBS/hospeda-spec-hos-1352-billing-redesign/.claude/skills/hospeda-specs/SKILL.md, .../hospeda-billing/SKILL.md y .../hops-linear-workflow/SKILL.md (todos en esa carpeta `.claude/skills/`).
+
+## Rutas
+- Spec a modificar (la ÚNICA que editás): `@V@/s/@S@/` (.md).
+- Fuentes congeladas (sólo lectura): `@V@/fuentes/` (empiezan con `.specs/`; usá `rg --hidden`, sin eso rg no ve nada y no avisa). P=.specs/HOS-1352-billing-verticals-redesign, V=.specs/HOS-1353-verticales-capacidades-y-autorizacion, B=.specs/HOS-1354-billing-cobro-y-proveedor.
+- NO toques `@VR@/pristina/` (copia de referencia).
+- Bloques: `@V@/bloques.txt`.
+- Canarios de las vueltas anteriores (NO repetir ni el lugar ni la regla): @PREVS@. Leé uno para ver el formato.
+
+## Qué plantar (exactamente 42)
+- Por cada bloque VB-01..VB-14: 2 canarios en los archivos de ese bloque, FUERA de los tramos `<!-- g-secciones: inicio ... -->` … `<!-- g-secciones: fin -->`: uno MODIFICA (cambiar un valor, actor, guarda, plazo o número de modo que contradiga la fuente) y uno AGREGA (insertar una regla normativa inventada, verosímil, sin soporte en la fuente). Repartí entre los archivos del bloque y entre principio/medio/final.
+- G1 (`01-decisiones-vigentes.md`): 2 MODIFICA (p. ej. reponer como vivo un texto tachado de la fuente, o cambiar un valor copiado). G2: 2 MODIFICA, uno en `04-catalogos.md` y otro DENTRO de un tramo g-secciones de B9a, B10, B11, B12, B13a o B8b (uno distinto de los usados antes).
+- Por cada bloque VA-A1..VA-A10: 1 canario OMITE: elegí una regla normativa VIVA de los archivos fuente de ese bloque (verificá que no esté tachada ni reemplazada por un 📌 en P/docs/01-decision-log.md ni por una letra en P/docs/41-corte-del-mvp/10-decisiones-del-owner.md), encontrá TODOS los lugares de la spec que la dicen (rg por varias formulaciones: prosa, AC, TEST, catálogos, 01-decisiones-vigentes, 80-abiertos, glosario) y borrala de todos, dejando el texto circundante gramatical. Condición dura: después del borrado ninguna parte de la spec puede seguir expresando la regla, ni siquiera implícita en un TEST, un AC, un título de sección o una definición de la que se deduzca. Si no podés borrarla limpia de todos lados, elegí otra regla.
+- Verosímiles y no detectables por forma: no rompas tablas (mismo número de `|`), sin dobles espacios ni frases truncas, sin marcas. Que importen: un implementador que siga la spec construiría algo distinto (nivel BLOQUEA).
+- No plantes dos canarios en la misma regla ni a menos de 30 líneas de otro canario del mismo archivo (los OMITE de varios lugares cuentan cada lugar).
+
+## Registro
+Escribí `@VR@/canarios.txt` (FUERA de la copia ciega), una línea por canario:
+`<BLOQUE> | <archivo>:<línea>[, <archivo>:<línea>...] | <MODIFICA|AGREGA|OMITE> | <texto original o —> | <texto plantado o —> | <ruta fuente>:<línea> | <por qué es error>`
+Las líneas son las de la spec DESPUÉS de plantar (verificalas al final). No uses ` | ` dentro de los campos.
+
+## Verificación final (obligatoria)
+Corré `diff -r @VR@/pristina @V@/s/@S@` y confirmá que cada hunk corresponde a un canario registrado y que no hay cambios extra. Contá: 28 VB + 4 G + 10 VA = 42.
+
+Respuesta final: sólo el conteo por tipo, la confirmación del diff y la ruta del registro (no listes los canarios).

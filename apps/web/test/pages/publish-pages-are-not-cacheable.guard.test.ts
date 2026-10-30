@@ -33,7 +33,7 @@ import { PROTECTED_SEGMENTS, SESSION_OPTIONAL_SEGMENTS } from '@/lib/routes';
 /** The three pages this spec ships, and the route segment they all share. */
 const PUBLISH_PAGES: ReadonlyArray<{ readonly route: string; readonly file: string }> = [
     { route: '/{lang}/publicar/', file: 'publicar/index.astro' },
-    { route: '/{lang}/publicar/gastronomia/', file: 'publicar/gastronomia/index.astro' },
+    { route: '/{lang}/publicar/comer-y-salir/', file: 'publicar/comer-y-salir/index.astro' },
     { route: '/{lang}/publicar/experiencias/', file: 'publicar/experiencias/index.astro' }
 ];
 

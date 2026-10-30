@@ -49,9 +49,9 @@ export const AdminTagsExtensionSchema = z.object({
  *
  * Combines all admin extensions for entities that need full admin capabilities.
  */
-export const FullAdminExtensionSchema = AdminStatusExtensionSchema.merge(
-    AdminActivityExtensionSchema
-).merge(AdminTagsExtensionSchema);
+export const FullAdminExtensionSchema = AdminStatusExtensionSchema.safeExtend(
+    AdminActivityExtensionSchema.shape
+).safeExtend(AdminTagsExtensionSchema.shape);
 
 // Type exports
 export type AdminStatusExtension = z.infer<typeof AdminStatusExtensionSchema>;

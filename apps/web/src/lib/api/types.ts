@@ -3,33 +3,7 @@
  * Maps to the standard response shapes from @repo/schemas.
  */
 
-import type { ProductDomainValue } from '@repo/schemas';
 import type { MediaAttribution } from '../media';
-
-/**
- * Which product domain's subscription a protected billing read is scoped to
- * (`?productDomain=`), mirroring the API's `ProductDomainQuerySchema`.
- *
- * Derived from {@link ProductDomainValue} so it widens with the vocabulary
- * instead of restating it. That alias is the *string* form on purpose: every
- * caller passes a plain literal (`productDomain: 'accommodation'`), which
- * TypeScript would reject against the enum type itself. The import is
- * type-only, so nothing reaches the client bundle.
- *
- * `partner` is excluded to match the API, which answers 400 for it: these
- * endpoints resolve the caller's own listing subscriptions, and a partner
- * directory subscription is not one of them. `addon` is excluded for the same
- * reason — it tags a recurring add-on's own MercadoPago preapproval (HOS-847),
- * never a customer's real plan subscription.
- *
- * `tourist` widened in (HOS-1282), mirroring the API's own widening of
- * `SUBSCRIPTION_SCOPE_DOMAINS` — see that schema's doc for why.
- *
- * `gastronomy` / `experience` scope to one commerce vertical each. The
- * transitional `commerce` umbrella is retired (HOS-695) — there is no longer
- * a way to scope a read to "any commerce vertical" here.
- */
-export type ProductDomainScope = Exclude<ProductDomainValue, 'partner' | 'addon'>;
 
 /** Pagination metadata returned by list endpoints */
 export interface PaginationMeta {
@@ -76,7 +50,7 @@ export interface ApiErrorResponse {
          * List of missing/invalid field names, sent as a SIBLING of
          * `code`/`message` (NOT nested under `details`) by
          * `LISTING_INCOMPLETE` 422 responses — e.g.
-         * `POST /commerce/listings/:entityType/:entityId/start-subscription`
+         * `POST /protected/{venues,experiences}/:id/start-subscription`
          * (HOS-166 §7.1). `resolveListingCompleteness`'s `missing` vocabulary.
          */
         readonly missing?: readonly string[];
@@ -246,7 +220,8 @@ export interface MarketComparisonData {
 export interface AccommodationEditData {
     readonly id: string;
     readonly slug: string;
-    readonly lifecycleState: string;
+    /** The listing's publication state (`PublicationStatusEnum`, HOS-1641). */
+    readonly publicationStatus: string;
     readonly name: string;
     readonly summary: string;
     readonly description: string;

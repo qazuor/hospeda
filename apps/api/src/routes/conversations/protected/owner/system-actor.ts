@@ -1,11 +1,9 @@
-import { PermissionEnum, RoleEnum } from '@repo/schemas';
+import { PermissionEnum } from '@repo/schemas';
+import { createSystemActor } from '@repo/service-core';
 
 /** System-level actor with full conversation permissions. */
-export const SYSTEM_ACTOR = {
-    id: '00000000-0000-0000-0000-000000000001',
-    // HOS-296: the actor carries a SET of hats. This synthetic system actor
-    // wears exactly one, ADMIN, which is all the conversation service checks.
-    roles: [RoleEnum.ADMIN],
+export const SYSTEM_ACTOR = createSystemActor({
+    jobId: 'conversations.protected.owner',
     permissions: [
         PermissionEnum.CONVERSATION_VIEW_OWN,
         PermissionEnum.CONVERSATION_VIEW_ANY,
@@ -17,6 +15,5 @@ export const SYSTEM_ACTOR = {
         PermissionEnum.CONVERSATION_BLOCK_OWN,
         PermissionEnum.CONVERSATION_BLOCK_ANY,
         PermissionEnum.CONVERSATION_DELETE_ANY
-    ] as readonly PermissionEnum[],
-    _isSystemActor: true
-} as const;
+    ]
+});

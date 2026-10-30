@@ -9,10 +9,11 @@
  * so the asset is removed BEFORE the row, aborting the whole operation if
  * storage fails rather than leaving a permanently-billed orphan.
  */
-import { PermissionEnum, SuccessSchema } from '@repo/schemas';
+import { SuccessSchema, VerticalEnum } from '@repo/schemas';
 import { ExperienceService, removeExperienceMedia, ServiceError } from '@repo/service-core';
 import type { Context } from 'hono';
 import { z } from 'zod';
+import { runListingContentCall } from '../../../middlewares/listing-access';
 import { getMediaProvider } from '../../../services/media';
 import { getActorFromContext } from '../../../utils/actor';
 import { apiLogger } from '../../../utils/logger';
@@ -24,17 +25,17 @@ const experienceService = new ExperienceService({ logger: apiLogger });
  * DELETE /api/v1/admin/experiences/:id/media/:mediaId
  * Remove photo from experience listing gallery — Admin endpoint.
  *
- * Requires EXPERIENCE_EDIT_ALL (or the legacy COMMERCE_EDIT_ALL) permission. The service helper
+ * Requires EXPERIENCE_EDIT_ALL permission. The service helper
  * `removeExperienceMedia` enforces the same gate via `checkExperienceCanEditMedia`.
  */
 export const adminRemoveExperienceMediaRoute = createAdminRoute({
     method: 'delete',
+    listingAccess: { vertical: VerticalEnum.EXPERIENCE, operation: 'EDIT', idParam: 'id' },
     path: '/{id}/media/{mediaId}',
     summary: 'Remove photo from experience listing gallery (admin)',
     description:
-        'Soft-deletes a media row and resequences the remaining visible photos. Requires EXPERIENCE_EDIT_ALL (or the legacy COMMERCE_EDIT_ALL).',
+        'Soft-deletes a media row and resequences the remaining visible photos. Requires EXPERIENCE_EDIT_ALL.',
     tags: ['Experience', 'Media'],
-    anyOfPermissions: [[PermissionEnum.EXPERIENCE_EDIT_ALL, PermissionEnum.COMMERCE_EDIT_ALL]],
     requestParams: {
         id: z.string().uuid({ message: 'zodError.common.id.invalidUuid' }),
         mediaId: z.string().uuid({ message: 'zodError.common.id.invalidUuid' })
@@ -47,15 +48,19 @@ export const adminRemoveExperienceMediaRoute = createAdminRoute({
         const model = (
             experienceService as unknown as { model: Parameters<typeof removeExperienceMedia>[0] }
         ).model;
-        const result = await removeExperienceMedia(
-            model,
-            actor,
-            {
-                experienceId: params.id as string,
-                mediaId: params.mediaId as string
-            },
-            getMediaProvider()
-        );
+        const result = await runListingContentCall({
+            ctx,
+            run: () =>
+                removeExperienceMedia(
+                    model,
+                    actor,
+                    {
+                        experienceId: params.id as string,
+                        mediaId: params.mediaId as string
+                    },
+                    getMediaProvider()
+                )
+        });
 
         if (result.error) {
             throw new ServiceError(result.error.code, result.error.message);

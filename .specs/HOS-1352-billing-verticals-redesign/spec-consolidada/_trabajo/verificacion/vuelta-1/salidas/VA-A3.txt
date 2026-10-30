@@ -1,0 +1,23 @@
+# VA-A3 · fuente → spec · bloque A3
+
+Spec: `ciegas/s/ba205e6a/`. Fuentes: `ciegas/fuentes/.specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/`.
+
+## Reglas con problema
+
+```
+15-entitlements-y-limits.md:527 · «Con más de un título vivo ancla el que da la cuota; si dos la dan, ancla el que arrancó primero (una prueba y una suscripción en los minutos antes de T2, o una cortesía sobre una suscripción)» · distinta en 10-corte/V3.md:579 (sólo dice «ancla el que da la cuota»; falta el desempate «si dos la dan, el que arrancó primero», y AC:V3:8 (V3.md:224-243) no tiene un caso con dos títulos que dan la cuota a la vez) · BLOQUEA
+11-trial.md:163 · «La extensión que no entra bajo el techo se rechaza entera: no se trunca, y el promo no se consume; el rechazo muestra el motivo («tu trial ya llegó a su máximo»)» · ausente (V4.md:527-554 rinde §3.1, §3.2, §3.4 y §3.5 y se saltea el §3.3; AC:V4:8 (b) y TEST:V4:10 sólo prueban «con el techo lleno», no una extensión que entra en parte. Lo de «el promo no se consume» sí está, del lado de billing, en 10-corte/B9a.md:367 y 20-fase-2/B9b.md:166; lo que falta es «no se trunca» y el motivo a la vista) · BLOQUEA
+03-maquinas-de-estado.md:182 · «⚠️ punto 2 de los 26–44 minutos: sobre una sucesora con tarjeta la ventana dura más, porque su primer cobro nace después de que vence su ventana de autorización (D8), hasta 72 h, y mientras tanto trae cobrada: no; alcanza a quien, estando en TRIAL_ACTIVE, cambia de plan antes de que un pago acreditado lo convierta» · ausente (04-catalogos.md:155-177 copia el ⚠️ «sin lo tachado» con cuatro puntos y no cinco: falta el punto vivo de la sucesora y la numeración corre. Además V3.md:429 manda «los otros casos de la ventana» a `V/03` §2, donde la spec no tiene éste) · MENOR
+```
+
+## Resumen
+
+| archivo | reglas normativas vivas revisadas | líneas recorridas | ausente | distinta |
+|---|---|---|---|---|
+| `03-maquinas-de-estado.md` | ~95: tabla T1–T8 (7 filas vivas) y la de fuente viva por estado; vocabulario del contrato, `cobrada`, T5, ⚠️ de la ventana (5 puntos), T6/T8, lock de la máquina de trial, el par T1/T6 y su tabla de consecuencias, guarda de hash y carrera por `UNIQUE`, «seis cosas», DEC-TRIAL-008; tabla PB1–PB13, nacimiento en DRAFT, ficha del corte, revalidación, «ninguna otra puerta», disparo por cambio de `cubierto`, relecturas de PB4/PB5/PB9, segunda rama de PB3/PB7, moderación en dos niveles y su ⚠️ (8 puntos), lock por `user + vertical` y su ⚠️ (4), «cuáles vuelven» (cupo, cola única, desempate del corte, aviso), salidas de ARCHIVED, reconciliador diario (población, Partner, tabla de 4 filas, hecho 5, vigía 26 h, ⚠️ 5 puntos); tabla PP1–PP3 y sus 3 reglas | 1–1377 (entero) | 1 | 0 |
+| `11-trial.md` | ~32: §1 reloj calendario y aviso al despublicar; §2 tablas de baja y reparación, firma de SUPER_ADMIN, revocación de grant; §3 techo único, rechazo entero, SUPER_ADMIN pasa el techo vía acción 11 y no por `extenderTrial`, visibilidad; §4 fórmula, sin tope global, cuota mensual desde T1, fuera del trinquete; §5 regla de addons USER/GLOBAL; §6 consolidación, corte por vertical, disparador, fin a +60; §7 cruce imposible y ocurrencia con fecha objetivo; §8 panel rechaza 0↔>0; §9 cobro termina el trial, superficie 19-bis, T6/T8 y botón que manda a publicar; «NO cierra» | 1–474 (entero) | 1 | 0 |
+| `15-entitlements-y-limits.md` | ~38: §1 tres niveles; §2 estrategias (4), favorabilidad y `direcciónDeCambio`, estrategia en la clave, overrides, trinquete del trial y del grant por vertical (G-R2-B), conjunto plegable sin trial, `cobrada`/orfandad, tres casos, dos tramos, sin disparador nuevo, ⚠️ de la ventana, G-R2; §3 scope, clave medida siempre de vertical, invalidación por `user`, clase COMERCIAL/DE_ACCESO; §4 disparo por condición en dos direcciones, G5, nunca borra, criterio y su inverso, cola única, tabla de ventana; §5 guest; §6 bloqueo de VIP, quién pregunta, aviso y pantalla; §7 cinco reglas y `cuota_ventana`; «NO cierra» | 1–594 (entero) | 0 | 1 |
+
+**Total: 3 reglas con problema: 2 ausentes y 1 distinta (2 BLOQUEA, 1 MENOR).**
+
+Todo lo demás está en la spec. `03` §2, §9 y §11 están copiados casi enteros en `04-catalogos.md:9-1459`. Las reglas de `03` 365-477, que el catálogo no copia, están en otros lugares: `03-contrato-de-cobertura.md` (§2.4 y `SIN_EMPEZAR`), `01-decisiones-vigentes.md` (DEC-TRIAL-007 y DEC-TRIAL-008), `02-nucleo-glosario.md:413` y `10-corte/V4.md`. `11` está en `10-corte/V4.md:439-750` y en `80-abiertos.md:158-165`. `15` está en `10-corte/V3.md:289-614`, en `10-corte/V6.md:853-939` y en `80-abiertos.md:167-176`.

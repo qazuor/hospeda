@@ -127,15 +127,150 @@ describe('PropertyCard.astro — HOS-982 printable QR sheet', () => {
         expect(qrElement).not.toContain('client:load');
     });
 
-    it('feeds it BOTH clauses of "published", never just the lifecycle state', () => {
-        // A DRAFT row can carry PUBLIC visibility and still have no page, so
-        // `visibility === PUBLIC` alone would offer a download that can only
-        // answer 404 — which is the same 404 the route answers for "not yours".
-        const canPrint =
-            /const canPrintQrSheet =([\s\S]*?);/.exec(propertyCardSource)?.[1]?.trim() ?? '';
-        expect(canPrint).toContain('isActive');
-        expect(canPrint).toContain('property.visibility === VisibilityEnum.PUBLIC');
-        expect(canPrint).toContain('&&');
-        expect(qrElement).toContain('isPublished={canPrintQrSheet}');
+    it('feeds it "published" from the publication state alone (HOS-1641)', () => {
+        // Only a PUBLISHED listing has a public page; anything else would offer
+        // a download that can only answer 404 — the same 404 the route answers
+        // for "not yours". The per-state answer is unit-tested in
+        // `test/lib/host/property-card-actions.test.ts`.
+        expect(qrElement).toContain('isPublished={actions.canPrintQrSheet}');
+        expect(propertyCardSource).not.toContain('property.visibility');
+        expect(propertyCardSource).not.toContain('VisibilityEnum');
+    });
+
+    it('renders the QR block only when the state allows it (never for PURGED)', () => {
+        expect(propertyCardSource).toMatch(
+            /\{actions\.qrBlock && \(\s*<div class="prop-card__qr">\s*<ListingQrSheet\b/
+        );
+    });
+});
+
+/**
+ * HOS-1641 (Coord-351 F4, H11) — the card reads `publicationStatus` and a
+ * `PURGED` listing renders no action. The table itself is pure and tested in
+ * `test/lib/host/property-card-actions.test.ts`; these pin that the template
+ * gates EVERY action on it, so no element can render outside its flag.
+ */
+describe('PropertyCard.astro — actions per publication state (HOS-1641)', () => {
+    const actionsBlock =
+        /\{hasAnyAction && \(\s*<div class="prop-card__actions"[\s\S]*?<\/div>\s*\)\}/.exec(
+            propertyCardSource
+        )?.[0] ?? '';
+
+    it('reads publicationStatus, never the old columns', () => {
+        expect(propertyCardSource).toContain(
+            'const publicationStatus = property.publicationStatus;'
+        );
+        expect(propertyCardSource).toContain(
+            'const actions = resolvePropertyCardActions({ publicationStatus });'
+        );
+        expect(propertyCardSource).not.toMatch(
+            /property\.(lifecycleState|visibility|moderationState)/
+        );
+        expect(propertyCardSource).not.toContain('LifecycleStatusEnum');
+    });
+
+    it('omits the whole action row when no action applies (PURGED)', () => {
+        expect(actionsBlock).not.toBe('');
+        expect(propertyCardSource).toContain(
+            'const hasAnyAction = hasAnyPropertyCardAction({ actions });'
+        );
+    });
+
+    it.each([
+        ['edit', '<a href={editUrl}'],
+        ['viewOnSite', '<a\n                    href={viewOnSiteUrl}'],
+        ['unpublish', '<UnpublishButton'],
+        ['publish', '<PublishButton'],
+        ['delete', '<DeleteButton']
+    ])('gates the %s action on its own flag, inside the action row', (flag, element) => {
+        const gate = `{actions.${flag} && (`;
+        const gateAt = actionsBlock.indexOf(gate);
+        const elementAt = actionsBlock.indexOf(element);
+
+        expect(gateAt, `${flag}: gate not found`).toBeGreaterThan(-1);
+        expect(elementAt, `${flag}: element not found inside the action row`).toBeGreaterThan(-1);
+        // The element sits right after its own gate, with nothing but whitespace between.
+        expect(actionsBlock.slice(gateAt + gate.length, elementAt).trim()).toBe('');
+    });
+
+    it('renders each action element exactly once in the whole card', () => {
+        for (const element of [
+            '<UnpublishButton',
+            '<PublishButton',
+            '<DeleteButton',
+            '<ListingQrSheet'
+        ]) {
+            expect(propertyCardSource.split(element).length - 1, element).toBe(1);
+        }
+    });
+
+    it.each([
+        ['DRAFT', 'host.properties.card.status.DRAFT'],
+        ['PUBLISHED', 'host.properties.card.status.PUBLISHED'],
+        ['UNPUBLISHED_BY_BILLING', 'host.properties.card.status.UNPUBLISHED_BY_BILLING'],
+        ['ARCHIVED', 'host.properties.card.status.ARCHIVED'],
+        ['MODERATED', 'host.properties.card.status.MODERATED'],
+        ['PURGED', 'host.properties.card.status.PURGED']
+    ])('labels the %s badge with its own key', (status, key) => {
+        const entry = new RegExp(
+            `\\[PublicationStatusEnum\\.${status}\\]: \\{\\s*label: t\\('${key.replaceAll('.', '\\.')}'`
+        );
+        expect(propertyCardSource).toMatch(entry);
+    });
+
+    it('no longer names the retired INACTIVE/SUSPENDED labels', () => {
+        expect(propertyCardSource).not.toContain('card.status.INACTIVE');
+        expect(propertyCardSource).not.toContain('card.status.SUSPENDED');
+    });
+});
+
+describe('PropertyCard.astro — the publish affordance fails closed (HOS-1668)', () => {
+    // HOS-1668 C-2: a caller that did not resolve the decision gets the
+    // fail-closed affordance, never a default that publishes.
+    it('defaults the publish affordance to UNKNOWN_PUBLISH_AFFORDANCE', () => {
+        expect(propertyCardSource).toContain('publishAffordance = UNKNOWN_PUBLISH_AFFORDANCE');
+        expect(propertyCardSource).not.toMatch(/canPublish\s*=\s*true/);
+        expect(propertyCardSource).not.toContain('firstPublishPaused');
+    });
+
+    // HOS-1668 C-1: the island receives the affordance itself and the
+    // translated check-failed text.
+    it('forwards the affordance and the check-failed text to PublishButton', () => {
+        expect(propertyCardSource).toContain(
+            'listingId={property.id}\n                    vertical="accommodation"'
+        );
+        expect(propertyCardSource).toContain('affordance={publishAffordance}');
+        expect(propertyCardSource).toContain(
+            "checkFailedText={t('host.properties.card.publishCheckFailed')}"
+        );
+    });
+
+    it('keeps the accommodation-specific unpublish prop unchanged', () => {
+        expect(propertyCardSource).toContain(
+            '<UnpublishButton\n                    client:load\n                    accommodationId={property.id}'
+        );
+    });
+});
+
+describe('PropertyCard.astro — the listing notices and the unpublish lines (HOS-1492)', () => {
+    it('TEST:V8a:5 / TEST:V8a:7 mounts the notices with this listing entry of the read', () => {
+        expect(propertyCardSource).toContain(
+            "import ListingNotices from '@/components/listing/ListingNotices.astro';"
+        );
+        expect(propertyCardSource).toContain(
+            '<ListingNotices locale={locale} vertical="accommodation" listingId={property.id} item={notices} />'
+        );
+    });
+
+    it('TEST:V8a:7 rows 2 and 25 reach the unpublish confirmation from the read, never derived here', () => {
+        expect(propertyCardSource).toContain(
+            'const unpublishNotes = buildUnpublishConfirmNotes({ t, tPlural, trialRunning, item: notices });'
+        );
+        expect(propertyCardSource).toContain('trialNote={unpublishNotes.trialNote}');
+        expect(propertyCardSource).toContain('recurringNote={unpublishNotes.recurringNote}');
+    });
+
+    it('an unknown trial defaults to null (no trial line), not to a running trial', () => {
+        expect(propertyCardSource).toMatch(/trialRunning = null\n\} = Astro\.props;/);
     });
 });

@@ -1,0 +1,16 @@
+# VB-03 · spec → fuente · 03-contrato-de-cobertura.md, 02-nucleo-modelo-y-maquinas.md
+
+## Hallazgos
+
+03-contrato-de-cobertura.md:849 · «El aviso no tiene transporte durable —el outbox del núcleo es de correos—» · contradice fuentes/.specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:138 («el aviso de que la cobertura cambió se encola en el outbox común, que construye `U2`»). La contradicción está también dentro de la spec: 10-corte/B4.md:129 exige encolar ese mismo aviso y :349–350 exige hacerlo en la misma transacción que el cambio de estado. El enunciado revisado tiene soporte vivo en el contrato fuente y en DEC-ARCH-009 (decision log:6149–6167), pero conserva la entrega no durable frente a la obligación posterior de B4 (FASE 5, 2026-09-30). Son dos transportes distintos para el mismo evento; las decisiones posteriores consultadas no los concilian · BLOQUEA
+
+03-contrato-de-cobertura.md:1509 · «La raíz de composición debe rechazar el arranque de la API cuando no pueda abrir una conexión con Mercado Pago, antes de atender cualquier lectura de cobertura.» · sin soporte: el bloque fuente, fuentes/.specs/HOS-1352-billing-verticals-redesign/docs/12-contrato-de-cobertura.md:1509–1585, declara la composición e inyección de las implementaciones, sin condicionar el arranque ni las lecturas de cobertura a una conexión con Mercado Pago. No se encontró esa condición en las fuentes congeladas ni una decisión posterior que la autorice; agrega un bloqueo de disponibilidad de toda la API · BLOQUEA
+
+02-nucleo-modelo-y-maquinas.md:251 · «correo— siempre están dentro de esa transacción» · contradice fuentes/.specs/HOS-1352-billing-verticals-redesign/docs/nucleo/03-maquinas-de-estado.md:59 («proveedor, el correo— nunca están dentro de esa transacción»). Invierte la regla 3: mete las llamadas remotas en la transacción local. También contradice 10-corte/U2.md:124–125, que separa la escritura transaccional del envío posterior. No se encontró decisión posterior que reemplace esta prohibición · BLOQUEA
+
+## Resumen
+
+| archivo | líneas recorridas | afirmaciones normativas revisadas (aprox.) | BLOQUEA | MENOR |
+|---|---|---|---|---|
+| 03-contrato-de-cobertura.md | 1–1985 | 450 | 2 | 0 |
+| 02-nucleo-modelo-y-maquinas.md | 1–374 | 120 | 1 | 0 |

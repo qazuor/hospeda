@@ -34,7 +34,6 @@ export type ListNotificationLogsQuery = z.infer<typeof ListNotificationLogsQuery
  */
 export const NotificationLogResponseSchema = z.object({
     id: z.string().uuid(),
-    customerId: z.string().uuid().nullable(),
     type: z.string(),
     channel: z.string(),
     recipient: z.string(),

@@ -1,0 +1,27 @@
+# VA-A9 · fuente → spec · 10-verticales-planes-billing-options.md, 12-suscripcion.md, 21-migracion.md, 22-lo-legal.md
+
+## Hallazgos
+
+.specs/HOS-1354-billing-cobro-y-proveedor/docs/10-verticales-planes-billing-options.md:70 · «**El `rank` se libera** en cuanto la vigente deja de ser vendible, así que un plan nuevo puede ocupar ese lugar sin renumerar (`DEC-ARCH-002`, implicación 3)» · distinta en 20-fase-3/B12.md:110 («**El `rank` se libera** cuando termina la última suscripción anclada a la versión retirada, así que un plan nuevo puede ocupar ese lugar sin renumerar»). La sección figura como texto generado «en su forma vigente» y es la única del bloque que el generador alteró; ninguna decisión posterior la cambia (`rg` por «se libera»/«rank» en el decision log y en 41-corte-del-mvp/10-decisiones-del-owner: nada). Contradice además DEC-ARCH-002 («sólo participan los vendibles», `01-decision-log.md:228-239`), el glosario de la spec (02-nucleo-glosario.md:245, «Participan **sólo los vendibles**») y la consecuencia 2 del mismo §3.3. Un implementador que siga B12:110 rechazaría en la validación del `rank` a un plan nuevo vendible mientras quede una suscripción anclada a la versión retirada · BLOQUEA
+
+.specs/HOS-1354-billing-cobro-y-proveedor/docs/12-suscripcion.md:163-164 · «`GR-3` está `VERIFIED` […]: cuatro intentos dentro de una ventana que **dura un ciclo** (24,0 h sobre `1 days`, 48,0 h sobre `2 days`)» · distinta en 10-corte/B7.md:747-748 («tres intentos dentro de una ventana que **dura un ciclo**»). Contradice la misma spec en B7.md:588, B1.md:685, B11.md:1170 y 04-catalogos.md:8213 (`MP:GR-3`, «son cuatro intentos») y la regla RP8 del catálogo. Es texto de contexto del grace; la regla que se construye (RP8 / el falso del proveedor) dice cuatro · MENOR
+
+.specs/HOS-1354-billing-cobro-y-proveedor/docs/22-lo-legal.md:148-150 · «encontró la **Resolución 424/2020** sobre el art. 34 de la Ley 24.240: **10 días corridos**, y **24 horas** para informar el código de identificación. Se anota como lo que es: un dato a confirmar» · ausente (busqué «código de identificación», «424/2020», «24 horas» en toda `s/200317c4`: B5.md:792-794 copia el punto 2 sin la cláusula de las 24 horas; 01-decisiones-vigentes.md:8929-8932, en DEC-RF-001, tampoco la tiene, aunque la fuente `01-decision-log.md:1803` sí; no la retira ninguna decisión ni está en 90-retirados.md ni en 80-abiertos.md). Es un dato que queda para la consulta legal, junto al botón que está fuera de alcance, así que no cambia lo que se construye hoy · MENOR
+
+## Resumen
+
+| archivo | reglas normativas vivas revisadas | líneas recorridas | ausentes | distintas |
+|---|---|---|---|---|
+| 10-verticales-planes-billing-options.md | ~35 (§3.2–§3.7, puntos 1–9 de la migración, «lo que no cierra») | 1–270 | 0 | 1 |
+| 12-suscripcion.md | ~95 (§1.2–§1.5, §2.1–§2.3, §3, §4.3–§4.5, §5.1–§5.4, §6, §7, «lo que no cierra») | 1–1198 | 0 | 1 |
+| 21-migracion.md | ~30 (§1.3, §2.4, §2.5 y la regla de re-vinculación, §3.3, §4, «lo que no cierra») | 1–696 | 0 | 0 |
+| 22-lo-legal.md | ~20 (§1.1–§1.3, §2.1, §2.2, §4, «lo que no cierra») | 1–196 | 1 | 0 |
+
+Método: las secciones de la spec que dicen reproducir la fuente (bloques `g-secciones` de B12 y B8b,
+B13a; reescrituras de B7 §1/§4/§5, B5 §2.2, 30-el-corte §1–§3, U1 §4) se compararon frase por frase
+contra la fuente sin lo tachado, buscando además cambios de cifras, estados e identificadores en las
+frases casi iguales. Las reglas que no están en el texto copiado se buscaron con `rg` en los AC, TEST,
+el catálogo de transiciones (S4, S6, S16, S19, S22, S37, S38 y la tabla de espejo §10.1) y 80-abiertos.
+Sin hallazgo: el empate a favor del cliente de §3.7 punto 3 (lo cubre TEST:B12:3); el «D8 sin
+excepciones» de §5.2 (lo reemplaza el 📌 del 2026-09-25); `starts_at`/`ends_at` de partners que borra
+V7 al corte (lo precisan AB y AP).

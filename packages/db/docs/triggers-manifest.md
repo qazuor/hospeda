@@ -30,10 +30,6 @@ most of the time you do not need to invoke it manually.
 | 0004 | `0004_refresh_search_index_function.sql` | `refresh_search_index()` function |
 | 0005 | `0005_set_updated_at_trigger.sql` | Generic `set_updated_at` trigger on all tables with `updated_at` |
 | 0006 | `0006_delete_entity_bookmarks_trigger.sql` | Cascade-delete user_bookmarks on 5 entity tables |
-| 0007 | `0007_billing_addon_purchases_status_check.sql` | CHECK `status` IN list |
-| 0008 | `0008_billing_addon_purchases_jsonb_checks.sql` | CHECK JSONB column types (array-or-null) |
-| 0009 | `0009_notification_log_idempotency_index.sql` | UNIQUE partial index over JSONB-extracted key |
-| 0010 | `0010_billing_subscription_events_event_type_check.sql` | CHECK `event_type` non-empty and ≤ 100 chars |
 | 0014 | `0014_extend_delete_entity_bookmarks_trigger.sql` | Extend `delete_entity_bookmarks` to also fire on soft-delete (AFTER UPDATE) |
 
 Files named `*_down.sql` (e.g. `0005_awesome_wild_child_down.sql`) are rollback scripts and are
@@ -153,64 +149,9 @@ All tables in `public` schema with an `updated_at` column — currently 43 table
 
 ## 3. CHECK Constraints
 
-These constraints enforce data integrity at the database level for columns whose values are also
-validated at the application level by Zod schemas. Both layers must agree.
-
-### 3.1 `billing_addon_purchases_status_check`
-
-| Field | Value |
-|-------|-------|
-| **Constraint name** | `billing_addon_purchases_status_check` |
-| **Table** | `billing_addon_purchases` |
-| **Column** | `status` |
-| **Definition** | `status IN ('active', 'expired', 'canceled', 'pending')` |
-| **Migration file** | `manual/0007_billing_addon_purchases_status_check.sql` |
-
-**Purpose:** Prevents invalid status values from being written by buggy code, direct SQL, or
-scripts that bypass application-level Zod validation.
-
-### 3.2 `chk_limit_adjustments_type`
-
-| Field | Value |
-|-------|-------|
-| **Constraint name** | `chk_limit_adjustments_type` |
-| **Table** | `billing_addon_purchases` |
-| **Column** | `limit_adjustments` |
-| **Definition** | `limit_adjustments IS NULL OR jsonb_typeof(limit_adjustments) = 'array'` |
-| **Migration file** | `manual/0008_billing_addon_purchases_jsonb_checks.sql` |
-
-**Purpose:** Guarantees `limit_adjustments` is always a JSON array (or NULL). Services that iterate
-this column assume array semantics; a scalar or object would cause runtime failures.
-
-### 3.3 `chk_entitlement_adjustments_type`
-
-| Field | Value |
-|-------|-------|
-| **Constraint name** | `chk_entitlement_adjustments_type` |
-| **Table** | `billing_addon_purchases` |
-| **Column** | `entitlement_adjustments` |
-| **Definition** | `entitlement_adjustments IS NULL OR jsonb_typeof(entitlement_adjustments) = 'array'` |
-| **Migration file** | `manual/0008_billing_addon_purchases_jsonb_checks.sql` |
-
-**Purpose:** Same guarantee as `chk_limit_adjustments_type`, applied to the entitlements column.
-
-### 3.4 `billing_subscription_events_event_type_check`
-
-| Field | Value |
-|-------|-------|
-| **Constraint name** | `billing_subscription_events_event_type_check` |
-| **Table** | `billing_subscription_events` |
-| **Column** | `event_type` |
-| **Definition** | `event_type IS NULL OR (char_length(event_type) > 0 AND char_length(event_type) <= 100)` |
-| **Migration file** | `manual/0010_billing_subscription_events_event_type_check.sql` |
-
-**Purpose:** Rejects empty-string event types and enforces the `varchar(100)` limit defensively at
-the DB level. Added in commit `1eb35632` (SPEC-064).
-
-**Why these cannot be declared in Drizzle:** Drizzle's `.check()` builder does not support
-expressions that call PostgreSQL functions such as `jsonb_typeof()` or `char_length()`. These
-constraints must live in manual migrations. The Drizzle schema files contain JSDoc annotations on
-each affected column pointing to the relevant migration file.
+The old-billing CHECK constraints that used to be documented here
+(`billing_addon_purchases`, `billing_subscription_events`) went away with those
+tables (HOS-1416) and their extras file (HOS-1419).
 
 ---
 
@@ -221,13 +162,10 @@ each affected column pointing to the relevant migration file.
 | Field | Value |
 |-------|-------|
 | **Index name** | `idx_notification_log_idempotency_key` |
-| **Table** | `billing_notification_log` |
+| **Table** | `notification_log` (called `billing_notification_log` until HOS-1419) |
 | **Definition** | `UNIQUE ((metadata->>'idempotencyKey')) WHERE metadata->>'idempotencyKey' IS NOT NULL` |
 | **Purpose** | Enforces at-least-once notification delivery semantics by rejecting duplicate inserts sharing the same idempotency key when the key is present |
-| **Migration file** | `manual/0009_notification_log_idempotency_index.sql` |
-
-**Why this cannot be declared in Drizzle:** Unique partial indexes over JSONB-extracted expressions
-(`metadata->>'key'`) are not expressible through Drizzle's index DSL.
+| **Declared in** | `packages/db/src/schemas/notification-log/notification_log.dbschema.ts` (structural carril since HOS-1419; it used to live in `extras/004`) |
 
 ---
 
@@ -292,18 +230,8 @@ FROM information_schema.triggers
 WHERE trigger_name LIKE 'trg_softdelete_bookmarks_%'
 ORDER BY event_object_table;
 
--- CHECK constraints on billing_addon_purchases + billing_subscription_events
-SELECT conname, conrelid::regclass
-FROM pg_constraint
-WHERE conname IN (
-  'billing_addon_purchases_status_check',
-  'chk_limit_adjustments_type',
-  'chk_entitlement_adjustments_type',
-  'billing_subscription_events_event_type_check'
-);
-
 -- Idempotency key index on notification log
 SELECT indexname FROM pg_indexes
-WHERE tablename = 'billing_notification_log'
+WHERE tablename = 'notification_log'
   AND indexname = 'idx_notification_log_idempotency_key';
 ```

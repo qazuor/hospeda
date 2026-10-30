@@ -1,0 +1,3083 @@
+{
+    "items": [
+        {
+            "id": "TRANS:V:T1",
+            "line": 72,
+            "source": ".specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/03-maquinas-de-estado.md",
+            "source_line": 52,
+            "fields": 5,
+            "issues": []
+        },
+        {
+            "id": "TRANS:V:T2",
+            "line": 296,
+            "source": ".specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/03-maquinas-de-estado.md",
+            "source_line": 53,
+            "fields": 5,
+            "issues": []
+        },
+        {
+            "id": "TRANS:V:T3",
+            "line": 410,
+            "source": ".specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/03-maquinas-de-estado.md",
+            "source_line": 54,
+            "fields": 5,
+            "issues": []
+        },
+        {
+            "id": "TRANS:V:T4",
+            "line": 425,
+            "source": ".specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/03-maquinas-de-estado.md",
+            "source_line": 55,
+            "fields": 5,
+            "issues": []
+        },
+        {
+            "id": "TRANS:V:T5",
+            "line": 440,
+            "source": ".specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/03-maquinas-de-estado.md",
+            "source_line": 56,
+            "fields": 5,
+            "issues": []
+        },
+        {
+            "id": "TRANS:V:T6",
+            "line": 469,
+            "source": ".specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/03-maquinas-de-estado.md",
+            "source_line": 57,
+            "fields": 5,
+            "issues": []
+        },
+        {
+            "id": "TRANS:V:T8",
+            "line": 522,
+            "source": ".specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/03-maquinas-de-estado.md",
+            "source_line": 59,
+            "fields": 5,
+            "issues": []
+        },
+        {
+            "id": "TRANS:V:PB1",
+            "line": 688,
+            "source": ".specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/03-maquinas-de-estado.md",
+            "source_line": 488,
+            "fields": 4,
+            "issues": []
+        },
+        {
+            "id": "TRANS:V:PB2",
+            "line": 790,
+            "source": ".specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/03-maquinas-de-estado.md",
+            "source_line": 489,
+            "fields": 4,
+            "issues": []
+        },
+        {
+            "id": "TRANS:V:PB3",
+            "line": 984,
+            "source": ".specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/03-maquinas-de-estado.md",
+            "source_line": 490,
+            "fields": 4,
+            "issues": []
+        },
+        {
+            "id": "TRANS:V:PB4",
+            "line": 1077,
+            "source": ".specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/03-maquinas-de-estado.md",
+            "source_line": 491,
+            "fields": 4,
+            "issues": []
+        },
+        {
+            "id": "TRANS:V:PB5",
+            "line": 1092,
+            "source": ".specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/03-maquinas-de-estado.md",
+            "source_line": 492,
+            "fields": 4,
+            "issues": []
+        },
+        {
+            "id": "TRANS:V:PB6",
+            "line": 1106,
+            "source": ".specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/03-maquinas-de-estado.md",
+            "source_line": 493,
+            "fields": 4,
+            "issues": []
+        },
+        {
+            "id": "TRANS:V:PB7",
+            "line": 1120,
+            "source": ".specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/03-maquinas-de-estado.md",
+            "source_line": 494,
+            "fields": 4,
+            "issues": []
+        },
+        {
+            "id": "TRANS:V:PB8",
+            "line": 1260,
+            "source": ".specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/03-maquinas-de-estado.md",
+            "source_line": 495,
+            "fields": 4,
+            "issues": []
+        },
+        {
+            "id": "TRANS:V:PB9",
+            "line": 1274,
+            "source": ".specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/03-maquinas-de-estado.md",
+            "source_line": 496,
+            "fields": 4,
+            "issues": []
+        },
+        {
+            "id": "TRANS:V:PB10",
+            "line": 1289,
+            "source": ".specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/03-maquinas-de-estado.md",
+            "source_line": 497,
+            "fields": 4,
+            "issues": []
+        },
+        {
+            "id": "TRANS:V:PB11",
+            "line": 1471,
+            "source": ".specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/03-maquinas-de-estado.md",
+            "source_line": 498,
+            "fields": 4,
+            "issues": []
+        },
+        {
+            "id": "TRANS:V:PB12",
+            "line": 1485,
+            "source": ".specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/03-maquinas-de-estado.md",
+            "source_line": 499,
+            "fields": 4,
+            "issues": []
+        },
+        {
+            "id": "TRANS:V:PB13",
+            "line": 1499,
+            "source": ".specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/03-maquinas-de-estado.md",
+            "source_line": 500,
+            "fields": 4,
+            "issues": []
+        },
+        {
+            "id": "TRANS:V:PP1",
+            "line": 1538,
+            "source": ".specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/03-maquinas-de-estado.md",
+            "source_line": 1359,
+            "fields": 4,
+            "issues": []
+        },
+        {
+            "id": "TRANS:V:PP2",
+            "line": 1552,
+            "source": ".specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/03-maquinas-de-estado.md",
+            "source_line": 1360,
+            "fields": 4,
+            "issues": []
+        },
+        {
+            "id": "TRANS:V:PP3",
+            "line": 1566,
+            "source": ".specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/03-maquinas-de-estado.md",
+            "source_line": 1361,
+            "fields": 4,
+            "issues": []
+        },
+        {
+            "id": "TRANS:B:S1",
+            "line": 1618,
+            "source": ".specs/HOS-1354-billing-cobro-y-proveedor/docs/03-maquinas-de-estado.md",
+            "source_line": 151,
+            "fields": 5,
+            "issues": []
+        },
+        {
+            "id": "TRANS:B:S2",
+            "line": 2345,
+            "source": ".specs/HOS-1354-billing-cobro-y-proveedor/docs/03-maquinas-de-estado.md",
+            "source_line": 152,
+            "fields": 5,
+            "issues": []
+        },
+        {
+            "id": "TRANS:B:S3",
+            "line": 2361,
+            "source": ".specs/HOS-1354-billing-cobro-y-proveedor/docs/03-maquinas-de-estado.md",
+            "source_line": 153,
+            "fields": 5,
+            "issues": []
+        },
+        {
+            "id": "TRANS:B:S4",
+            "line": 2491,
+            "source": ".specs/HOS-1354-billing-cobro-y-proveedor/docs/03-maquinas-de-estado.md",
+            "source_line": 154,
+            "fields": 5,
+            "issues": []
+        },
+        {
+            "id": "TRANS:B:S5",
+            "line": 2567,
+            "source": ".specs/HOS-1354-billing-cobro-y-proveedor/docs/03-maquinas-de-estado.md",
+            "source_line": 155,
+            "fields": 5,
+            "issues": []
+        },
+        {
+            "id": "TRANS:B:S6",
+            "line": 2804,
+            "source": ".specs/HOS-1354-billing-cobro-y-proveedor/docs/03-maquinas-de-estado.md",
+            "source_line": 156,
+            "fields": 5,
+            "issues": []
+        },
+        {
+            "id": "TRANS:B:S7",
+            "line": 2820,
+            "source": ".specs/HOS-1354-billing-cobro-y-proveedor/docs/03-maquinas-de-estado.md",
+            "source_line": 157,
+            "fields": 5,
+            "issues": []
+        },
+        {
+            "id": "TRANS:B:S8",
+            "line": 2836,
+            "source": ".specs/HOS-1354-billing-cobro-y-proveedor/docs/03-maquinas-de-estado.md",
+            "source_line": 158,
+            "fields": 5,
+            "issues": []
+        },
+        {
+            "id": "TRANS:B:S9",
+            "line": 2927,
+            "source": ".specs/HOS-1354-billing-cobro-y-proveedor/docs/03-maquinas-de-estado.md",
+            "source_line": 159,
+            "fields": 5,
+            "issues": []
+        },
+        {
+            "id": "TRANS:B:S10",
+            "line": 2944,
+            "source": ".specs/HOS-1354-billing-cobro-y-proveedor/docs/03-maquinas-de-estado.md",
+            "source_line": 160,
+            "fields": 5,
+            "issues": []
+        },
+        {
+            "id": "TRANS:B:S11",
+            "line": 3048,
+            "source": ".specs/HOS-1354-billing-cobro-y-proveedor/docs/03-maquinas-de-estado.md",
+            "source_line": 161,
+            "fields": 5,
+            "issues": []
+        },
+        {
+            "id": "TRANS:B:S12",
+            "line": 3119,
+            "source": ".specs/HOS-1354-billing-cobro-y-proveedor/docs/03-maquinas-de-estado.md",
+            "source_line": 162,
+            "fields": 5,
+            "issues": []
+        },
+        {
+            "id": "TRANS:B:S13",
+            "line": 3135,
+            "source": ".specs/HOS-1354-billing-cobro-y-proveedor/docs/03-maquinas-de-estado.md",
+            "source_line": 163,
+            "fields": 5,
+            "issues": []
+        },
+        {
+            "id": "TRANS:B:S14",
+            "line": 3314,
+            "source": ".specs/HOS-1354-billing-cobro-y-proveedor/docs/03-maquinas-de-estado.md",
+            "source_line": 164,
+            "fields": 5,
+            "issues": []
+        },
+        {
+            "id": "TRANS:B:S15",
+            "line": 3330,
+            "source": ".specs/HOS-1354-billing-cobro-y-proveedor/docs/03-maquinas-de-estado.md",
+            "source_line": 165,
+            "fields": 5,
+            "issues": []
+        },
+        {
+            "id": "TRANS:B:S16",
+            "line": 3346,
+            "source": ".specs/HOS-1354-billing-cobro-y-proveedor/docs/03-maquinas-de-estado.md",
+            "source_line": 166,
+            "fields": 5,
+            "issues": []
+        },
+        {
+            "id": "TRANS:B:S17",
+            "line": 3422,
+            "source": ".specs/HOS-1354-billing-cobro-y-proveedor/docs/03-maquinas-de-estado.md",
+            "source_line": 167,
+            "fields": 5,
+            "issues": []
+        },
+        {
+            "id": "TRANS:B:S18",
+            "line": 3438,
+            "source": ".specs/HOS-1354-billing-cobro-y-proveedor/docs/03-maquinas-de-estado.md",
+            "source_line": 168,
+            "fields": 5,
+            "issues": []
+        },
+        {
+            "id": "TRANS:B:S19",
+            "line": 3488,
+            "source": ".specs/HOS-1354-billing-cobro-y-proveedor/docs/03-maquinas-de-estado.md",
+            "source_line": 169,
+            "fields": 5,
+            "issues": []
+        },
+        {
+            "id": "TRANS:B:S20",
+            "line": 3608,
+            "source": ".specs/HOS-1354-billing-cobro-y-proveedor/docs/03-maquinas-de-estado.md",
+            "source_line": 170,
+            "fields": 5,
+            "issues": []
+        },
+        {
+            "id": "TRANS:B:S21",
+            "line": 3692,
+            "source": ".specs/HOS-1354-billing-cobro-y-proveedor/docs/03-maquinas-de-estado.md",
+            "source_line": 171,
+            "fields": 5,
+            "issues": []
+        },
+        {
+            "id": "TRANS:B:S22",
+            "line": 3944,
+            "source": ".specs/HOS-1354-billing-cobro-y-proveedor/docs/03-maquinas-de-estado.md",
+            "source_line": 172,
+            "fields": 5,
+            "issues": []
+        },
+        {
+            "id": "TRANS:B:S23",
+            "line": 3960,
+            "source": ".specs/HOS-1354-billing-cobro-y-proveedor/docs/03-maquinas-de-estado.md",
+            "source_line": 173,
+            "fields": 5,
+            "issues": []
+        },
+        {
+            "id": "TRANS:B:S24",
+            "line": 3976,
+            "source": ".specs/HOS-1354-billing-cobro-y-proveedor/docs/03-maquinas-de-estado.md",
+            "source_line": 174,
+            "fields": 5,
+            "issues": []
+        },
+        {
+            "id": "TRANS:B:S29",
+            "line": 3992,
+            "source": ".specs/HOS-1354-billing-cobro-y-proveedor/docs/03-maquinas-de-estado.md",
+            "source_line": 179,
+            "fields": 5,
+            "issues": []
+        },
+        {
+            "id": "TRANS:B:S30",
+            "line": 4008,
+            "source": ".specs/HOS-1354-billing-cobro-y-proveedor/docs/03-maquinas-de-estado.md",
+            "source_line": 180,
+            "fields": 5,
+            "issues": []
+        },
+        {
+            "id": "TRANS:B:S31",
+            "line": 4024,
+            "source": ".specs/HOS-1354-billing-cobro-y-proveedor/docs/03-maquinas-de-estado.md",
+            "source_line": 181,
+            "fields": 5,
+            "issues": []
+        },
+        {
+            "id": "TRANS:B:S32",
+            "line": 4040,
+            "source": ".specs/HOS-1354-billing-cobro-y-proveedor/docs/03-maquinas-de-estado.md",
+            "source_line": 182,
+            "fields": 5,
+            "issues": []
+        },
+        {
+            "id": "TRANS:B:S33",
+            "line": 4056,
+            "source": ".specs/HOS-1354-billing-cobro-y-proveedor/docs/03-maquinas-de-estado.md",
+            "source_line": 183,
+            "fields": 5,
+            "issues": []
+        },
+        {
+            "id": "TRANS:B:S34",
+            "line": 4072,
+            "source": ".specs/HOS-1354-billing-cobro-y-proveedor/docs/03-maquinas-de-estado.md",
+            "source_line": 184,
+            "fields": 5,
+            "issues": []
+        },
+        {
+            "id": "TRANS:B:S35",
+            "line": 4088,
+            "source": ".specs/HOS-1354-billing-cobro-y-proveedor/docs/03-maquinas-de-estado.md",
+            "source_line": 185,
+            "fields": 5,
+            "issues": []
+        },
+        {
+            "id": "TRANS:B:S36",
+            "line": 4104,
+            "source": ".specs/HOS-1354-billing-cobro-y-proveedor/docs/03-maquinas-de-estado.md",
+            "source_line": 186,
+            "fields": 5,
+            "issues": []
+        },
+        {
+            "id": "TRANS:B:S37",
+            "line": 4120,
+            "source": ".specs/HOS-1354-billing-cobro-y-proveedor/docs/03-maquinas-de-estado.md",
+            "source_line": 187,
+            "fields": 5,
+            "issues": []
+        },
+        {
+            "id": "TRANS:B:S38",
+            "line": 4136,
+            "source": ".specs/HOS-1354-billing-cobro-y-proveedor/docs/03-maquinas-de-estado.md",
+            "source_line": 188,
+            "fields": 5,
+            "issues": []
+        },
+        {
+            "id": "PROH:B:1",
+            "line": 4186,
+            "source": ".specs/HOS-1354-billing-cobro-y-proveedor/docs/03-maquinas-de-estado.md",
+            "source_line": 1454,
+            "fields": 2,
+            "issues": []
+        },
+        {
+            "id": "PROH:B:2",
+            "line": 4232,
+            "source": ".specs/HOS-1354-billing-cobro-y-proveedor/docs/03-maquinas-de-estado.md",
+            "source_line": 1455,
+            "fields": 2,
+            "issues": []
+        },
+        {
+            "id": "PROH:B:3",
+            "line": 4244,
+            "source": ".specs/HOS-1354-billing-cobro-y-proveedor/docs/03-maquinas-de-estado.md",
+            "source_line": 1456,
+            "fields": 2,
+            "issues": []
+        },
+        {
+            "id": "PROH:B:4",
+            "line": 4256,
+            "source": ".specs/HOS-1354-billing-cobro-y-proveedor/docs/03-maquinas-de-estado.md",
+            "source_line": 1457,
+            "fields": 2,
+            "issues": []
+        },
+        {
+            "id": "PROH:B:5",
+            "line": 4268,
+            "source": ".specs/HOS-1354-billing-cobro-y-proveedor/docs/03-maquinas-de-estado.md",
+            "source_line": 1458,
+            "fields": 2,
+            "issues": []
+        },
+        {
+            "id": "PROH:B:6",
+            "line": 4280,
+            "source": ".specs/HOS-1354-billing-cobro-y-proveedor/docs/03-maquinas-de-estado.md",
+            "source_line": 1459,
+            "fields": 2,
+            "issues": []
+        },
+        {
+            "id": "TRANS:B:P1",
+            "line": 4377,
+            "source": ".specs/HOS-1354-billing-cobro-y-proveedor/docs/03-maquinas-de-estado.md",
+            "source_line": 1767,
+            "fields": 4,
+            "issues": []
+        },
+        {
+            "id": "TRANS:B:P2",
+            "line": 4391,
+            "source": ".specs/HOS-1354-billing-cobro-y-proveedor/docs/03-maquinas-de-estado.md",
+            "source_line": 1768,
+            "fields": 4,
+            "issues": []
+        },
+        {
+            "id": "TRANS:B:P3",
+            "line": 4406,
+            "source": ".specs/HOS-1354-billing-cobro-y-proveedor/docs/03-maquinas-de-estado.md",
+            "source_line": 1769,
+            "fields": 4,
+            "issues": []
+        },
+        {
+            "id": "TRANS:B:P4",
+            "line": 4420,
+            "source": ".specs/HOS-1354-billing-cobro-y-proveedor/docs/03-maquinas-de-estado.md",
+            "source_line": 1770,
+            "fields": 4,
+            "issues": []
+        },
+        {
+            "id": "TRANS:B:P5",
+            "line": 4434,
+            "source": ".specs/HOS-1354-billing-cobro-y-proveedor/docs/03-maquinas-de-estado.md",
+            "source_line": 1771,
+            "fields": 4,
+            "issues": []
+        },
+        {
+            "id": "TRANS:B:P6",
+            "line": 4448,
+            "source": ".specs/HOS-1354-billing-cobro-y-proveedor/docs/03-maquinas-de-estado.md",
+            "source_line": 1772,
+            "fields": 4,
+            "issues": []
+        },
+        {
+            "id": "TRANS:B:P7",
+            "line": 4462,
+            "source": ".specs/HOS-1354-billing-cobro-y-proveedor/docs/03-maquinas-de-estado.md",
+            "source_line": 1773,
+            "fields": 4,
+            "issues": []
+        },
+        {
+            "id": "TRANS:B:RF1",
+            "line": 4502,
+            "source": ".specs/HOS-1354-billing-cobro-y-proveedor/docs/03-maquinas-de-estado.md",
+            "source_line": 1850,
+            "fields": 4,
+            "issues": []
+        },
+        {
+            "id": "TRANS:B:RF2",
+            "line": 4516,
+            "source": ".specs/HOS-1354-billing-cobro-y-proveedor/docs/03-maquinas-de-estado.md",
+            "source_line": 1851,
+            "fields": 4,
+            "issues": []
+        },
+        {
+            "id": "TRANS:B:RF3",
+            "line": 4530,
+            "source": ".specs/HOS-1354-billing-cobro-y-proveedor/docs/03-maquinas-de-estado.md",
+            "source_line": 1852,
+            "fields": 4,
+            "issues": []
+        },
+        {
+            "id": "TRANS:B:RF4",
+            "line": 4545,
+            "source": ".specs/HOS-1354-billing-cobro-y-proveedor/docs/03-maquinas-de-estado.md",
+            "source_line": 1853,
+            "fields": 4,
+            "issues": []
+        },
+        {
+            "id": "TRANS:B:RF5",
+            "line": 4559,
+            "source": ".specs/HOS-1354-billing-cobro-y-proveedor/docs/03-maquinas-de-estado.md",
+            "source_line": 1854,
+            "fields": 4,
+            "issues": []
+        },
+        {
+            "id": "TRANS:B:MP1",
+            "line": 4613,
+            "source": ".specs/HOS-1354-billing-cobro-y-proveedor/docs/03-maquinas-de-estado.md",
+            "source_line": 1871,
+            "fields": 4,
+            "issues": []
+        },
+        {
+            "id": "TRANS:B:MP2",
+            "line": 4647,
+            "source": ".specs/HOS-1354-billing-cobro-y-proveedor/docs/03-maquinas-de-estado.md",
+            "source_line": 1872,
+            "fields": 4,
+            "issues": []
+        },
+        {
+            "id": "TRANS:B:MP3",
+            "line": 4661,
+            "source": ".specs/HOS-1354-billing-cobro-y-proveedor/docs/03-maquinas-de-estado.md",
+            "source_line": 1873,
+            "fields": 4,
+            "issues": []
+        },
+        {
+            "id": "TRANS:B:MP4",
+            "line": 4753,
+            "source": ".specs/HOS-1354-billing-cobro-y-proveedor/docs/03-maquinas-de-estado.md",
+            "source_line": 1874,
+            "fields": 4,
+            "issues": []
+        },
+        {
+            "id": "TRANS:B:MP5",
+            "line": 5033,
+            "source": ".specs/HOS-1354-billing-cobro-y-proveedor/docs/03-maquinas-de-estado.md",
+            "source_line": 1875,
+            "fields": 4,
+            "issues": []
+        },
+        {
+            "id": "TRANS:B:MP6",
+            "line": 5297,
+            "source": ".specs/HOS-1354-billing-cobro-y-proveedor/docs/03-maquinas-de-estado.md",
+            "source_line": 1876,
+            "fields": 4,
+            "issues": []
+        },
+        {
+            "id": "TRANS:B:A1",
+            "line": 5326,
+            "source": ".specs/HOS-1354-billing-cobro-y-proveedor/docs/03-maquinas-de-estado.md",
+            "source_line": 2534,
+            "fields": 4,
+            "issues": []
+        },
+        {
+            "id": "TRANS:B:A1-bis",
+            "line": 5341,
+            "source": ".specs/HOS-1354-billing-cobro-y-proveedor/docs/03-maquinas-de-estado.md",
+            "source_line": 2535,
+            "fields": 4,
+            "issues": []
+        },
+        {
+            "id": "TRANS:B:A2",
+            "line": 5356,
+            "source": ".specs/HOS-1354-billing-cobro-y-proveedor/docs/03-maquinas-de-estado.md",
+            "source_line": 2536,
+            "fields": 4,
+            "issues": []
+        },
+        {
+            "id": "TRANS:B:A3",
+            "line": 5371,
+            "source": ".specs/HOS-1354-billing-cobro-y-proveedor/docs/03-maquinas-de-estado.md",
+            "source_line": 2537,
+            "fields": 4,
+            "issues": []
+        },
+        {
+            "id": "TRANS:B:A4",
+            "line": 5386,
+            "source": ".specs/HOS-1354-billing-cobro-y-proveedor/docs/03-maquinas-de-estado.md",
+            "source_line": 2538,
+            "fields": 4,
+            "issues": []
+        },
+        {
+            "id": "TRANS:B:A5",
+            "line": 5401,
+            "source": ".specs/HOS-1354-billing-cobro-y-proveedor/docs/03-maquinas-de-estado.md",
+            "source_line": 2539,
+            "fields": 4,
+            "issues": []
+        },
+        {
+            "id": "TRANS:B:A6",
+            "line": 5553,
+            "source": ".specs/HOS-1354-billing-cobro-y-proveedor/docs/03-maquinas-de-estado.md",
+            "source_line": 2540,
+            "fields": 4,
+            "issues": []
+        },
+        {
+            "id": "TRANS:B:A7",
+            "line": 5568,
+            "source": ".specs/HOS-1354-billing-cobro-y-proveedor/docs/03-maquinas-de-estado.md",
+            "source_line": 2541,
+            "fields": 4,
+            "issues": []
+        },
+        {
+            "id": "MOT:1",
+            "line": 5679,
+            "source": ".specs/HOS-1354-billing-cobro-y-proveedor/docs/02-modelo-de-datos.md",
+            "source_line": 1023,
+            "fields": 4,
+            "issues": []
+        },
+        {
+            "id": "MOT:2",
+            "line": 5753,
+            "source": ".specs/HOS-1354-billing-cobro-y-proveedor/docs/02-modelo-de-datos.md",
+            "source_line": 1024,
+            "fields": 4,
+            "issues": []
+        },
+        {
+            "id": "MOT:3",
+            "line": 5767,
+            "source": ".specs/HOS-1354-billing-cobro-y-proveedor/docs/02-modelo-de-datos.md",
+            "source_line": 1025,
+            "fields": 4,
+            "issues": []
+        },
+        {
+            "id": "MOT:4",
+            "line": 5781,
+            "source": ".specs/HOS-1354-billing-cobro-y-proveedor/docs/02-modelo-de-datos.md",
+            "source_line": 1026,
+            "fields": 4,
+            "issues": []
+        },
+        {
+            "id": "MOT:5",
+            "line": 5795,
+            "source": ".specs/HOS-1354-billing-cobro-y-proveedor/docs/02-modelo-de-datos.md",
+            "source_line": 1027,
+            "fields": 4,
+            "issues": []
+        },
+        {
+            "id": "MOT:6",
+            "line": 5809,
+            "source": ".specs/HOS-1354-billing-cobro-y-proveedor/docs/02-modelo-de-datos.md",
+            "source_line": 1028,
+            "fields": 4,
+            "issues": []
+        },
+        {
+            "id": "MOT:7",
+            "line": 5823,
+            "source": ".specs/HOS-1354-billing-cobro-y-proveedor/docs/02-modelo-de-datos.md",
+            "source_line": 1029,
+            "fields": 4,
+            "issues": []
+        },
+        {
+            "id": "MOT:8",
+            "line": 5867,
+            "source": ".specs/HOS-1354-billing-cobro-y-proveedor/docs/02-modelo-de-datos.md",
+            "source_line": 1030,
+            "fields": 4,
+            "issues": []
+        },
+        {
+            "id": "MOT:9",
+            "line": 5881,
+            "source": ".specs/HOS-1354-billing-cobro-y-proveedor/docs/02-modelo-de-datos.md",
+            "source_line": 1031,
+            "fields": 4,
+            "issues": []
+        },
+        {
+            "id": "MOT:10",
+            "line": 5895,
+            "source": ".specs/HOS-1354-billing-cobro-y-proveedor/docs/02-modelo-de-datos.md",
+            "source_line": 1032,
+            "fields": 4,
+            "issues": []
+        },
+        {
+            "id": "MOT:11",
+            "line": 5909,
+            "source": ".specs/HOS-1354-billing-cobro-y-proveedor/docs/02-modelo-de-datos.md",
+            "source_line": 1033,
+            "fields": 4,
+            "issues": []
+        },
+        {
+            "id": "MOT:12",
+            "line": 5923,
+            "source": ".specs/HOS-1354-billing-cobro-y-proveedor/docs/02-modelo-de-datos.md",
+            "source_line": 1034,
+            "fields": 4,
+            "issues": []
+        },
+        {
+            "id": "MOT:13",
+            "line": 5937,
+            "source": ".specs/HOS-1354-billing-cobro-y-proveedor/docs/02-modelo-de-datos.md",
+            "source_line": 1035,
+            "fields": 4,
+            "issues": []
+        },
+        {
+            "id": "MOT:14",
+            "line": 5951,
+            "source": ".specs/HOS-1354-billing-cobro-y-proveedor/docs/02-modelo-de-datos.md",
+            "source_line": 1036,
+            "fields": 4,
+            "issues": []
+        },
+        {
+            "id": "MOT:15",
+            "line": 5965,
+            "source": ".specs/HOS-1354-billing-cobro-y-proveedor/docs/02-modelo-de-datos.md",
+            "source_line": 1037,
+            "fields": 4,
+            "issues": []
+        },
+        {
+            "id": "MOT:16",
+            "line": 5980,
+            "source": ".specs/HOS-1354-billing-cobro-y-proveedor/docs/02-modelo-de-datos.md",
+            "source_line": 1038,
+            "fields": 4,
+            "issues": []
+        },
+        {
+            "id": "MOT:17",
+            "line": 5994,
+            "source": ".specs/HOS-1354-billing-cobro-y-proveedor/docs/02-modelo-de-datos.md",
+            "source_line": 1039,
+            "fields": 4,
+            "issues": []
+        },
+        {
+            "id": "MOT:18",
+            "line": 6008,
+            "source": ".specs/HOS-1354-billing-cobro-y-proveedor/docs/02-modelo-de-datos.md",
+            "source_line": 1040,
+            "fields": 4,
+            "issues": []
+        },
+        {
+            "id": "MOT:19",
+            "line": 6022,
+            "source": ".specs/HOS-1354-billing-cobro-y-proveedor/docs/02-modelo-de-datos.md",
+            "source_line": 1041,
+            "fields": 4,
+            "issues": []
+        },
+        {
+            "id": "MOT:20",
+            "line": 6037,
+            "source": ".specs/HOS-1354-billing-cobro-y-proveedor/docs/02-modelo-de-datos.md",
+            "source_line": 1042,
+            "fields": 4,
+            "issues": []
+        },
+        {
+            "id": "MOT:21",
+            "line": 6051,
+            "source": ".specs/HOS-1354-billing-cobro-y-proveedor/docs/02-modelo-de-datos.md",
+            "source_line": 1043,
+            "fields": 4,
+            "issues": []
+        },
+        {
+            "id": "MOT:22",
+            "line": 6065,
+            "source": ".specs/HOS-1354-billing-cobro-y-proveedor/docs/02-modelo-de-datos.md",
+            "source_line": 1044,
+            "fields": 4,
+            "issues": []
+        },
+        {
+            "id": "MOT:23",
+            "line": 6079,
+            "source": ".specs/HOS-1354-billing-cobro-y-proveedor/docs/02-modelo-de-datos.md",
+            "source_line": 1045,
+            "fields": 4,
+            "issues": []
+        },
+        {
+            "id": "MOT:24",
+            "line": 6093,
+            "source": ".specs/HOS-1354-billing-cobro-y-proveedor/docs/02-modelo-de-datos.md",
+            "source_line": 1046,
+            "fields": 4,
+            "issues": []
+        },
+        {
+            "id": "LOCK:C1",
+            "line": 6111,
+            "source": ".specs/HOS-1354-billing-cobro-y-proveedor/docs/05-idempotencia-y-concurrencia.md",
+            "source_line": 106,
+            "fields": 0,
+            "issues": []
+        },
+        {
+            "id": "LOCK:C2",
+            "line": 6224,
+            "source": ".specs/HOS-1354-billing-cobro-y-proveedor/docs/05-idempotencia-y-concurrencia.md",
+            "source_line": 129,
+            "fields": 0,
+            "issues": []
+        },
+        {
+            "id": "LOCK:C3",
+            "line": 6297,
+            "source": ".specs/HOS-1354-billing-cobro-y-proveedor/docs/05-idempotencia-y-concurrencia.md",
+            "source_line": 195,
+            "fields": 0,
+            "issues": []
+        },
+        {
+            "id": "LOCK:C4",
+            "line": 6325,
+            "source": ".specs/HOS-1354-billing-cobro-y-proveedor/docs/05-idempotencia-y-concurrencia.md",
+            "source_line": 217,
+            "fields": 0,
+            "issues": []
+        },
+        {
+            "id": "LOCK:C5",
+            "line": 6348,
+            "source": ".specs/HOS-1354-billing-cobro-y-proveedor/docs/05-idempotencia-y-concurrencia.md",
+            "source_line": 233,
+            "fields": 0,
+            "issues": []
+        },
+        {
+            "id": "LOCK:C6",
+            "line": 6388,
+            "source": ".specs/HOS-1354-billing-cobro-y-proveedor/docs/05-idempotencia-y-concurrencia.md",
+            "source_line": 266,
+            "fields": 0,
+            "issues": []
+        },
+        {
+            "id": "M:M1",
+            "line": 6458,
+            "source": ".specs/HOS-1354-billing-cobro-y-proveedor/docs/20-testing.md",
+            "source_line": 503,
+            "fields": 3,
+            "issues": []
+        },
+        {
+            "id": "M:M2",
+            "line": 6566,
+            "source": ".specs/HOS-1354-billing-cobro-y-proveedor/docs/20-testing.md",
+            "source_line": 504,
+            "fields": 3,
+            "issues": []
+        },
+        {
+            "id": "M:M3",
+            "line": 6578,
+            "source": ".specs/HOS-1354-billing-cobro-y-proveedor/docs/20-testing.md",
+            "source_line": 505,
+            "fields": 3,
+            "issues": []
+        },
+        {
+            "id": "M:M4",
+            "line": 6590,
+            "source": ".specs/HOS-1354-billing-cobro-y-proveedor/docs/20-testing.md",
+            "source_line": 506,
+            "fields": 3,
+            "issues": []
+        },
+        {
+            "id": "M:M5",
+            "line": 6602,
+            "source": ".specs/HOS-1354-billing-cobro-y-proveedor/docs/20-testing.md",
+            "source_line": 507,
+            "fields": 3,
+            "issues": []
+        },
+        {
+            "id": "M:M6",
+            "line": 6614,
+            "source": ".specs/HOS-1354-billing-cobro-y-proveedor/docs/20-testing.md",
+            "source_line": 508,
+            "fields": 3,
+            "issues": []
+        },
+        {
+            "id": "M:M7",
+            "line": 6626,
+            "source": ".specs/HOS-1354-billing-cobro-y-proveedor/docs/20-testing.md",
+            "source_line": 509,
+            "fields": 3,
+            "issues": []
+        },
+        {
+            "id": "M:M8",
+            "line": 6638,
+            "source": ".specs/HOS-1354-billing-cobro-y-proveedor/docs/20-testing.md",
+            "source_line": 510,
+            "fields": 3,
+            "issues": []
+        },
+        {
+            "id": "M:M9",
+            "line": 6650,
+            "source": ".specs/HOS-1354-billing-cobro-y-proveedor/docs/20-testing.md",
+            "source_line": 511,
+            "fields": 3,
+            "issues": []
+        },
+        {
+            "id": "M:M10",
+            "line": 6662,
+            "source": ".specs/HOS-1354-billing-cobro-y-proveedor/docs/20-testing.md",
+            "source_line": 512,
+            "fields": 3,
+            "issues": []
+        },
+        {
+            "id": "M:M11",
+            "line": 6674,
+            "source": ".specs/HOS-1354-billing-cobro-y-proveedor/docs/20-testing.md",
+            "source_line": 513,
+            "fields": 3,
+            "issues": []
+        },
+        {
+            "id": "M:M12",
+            "line": 6686,
+            "source": ".specs/HOS-1354-billing-cobro-y-proveedor/docs/20-testing.md",
+            "source_line": 514,
+            "fields": 3,
+            "issues": []
+        },
+        {
+            "id": "M:M13",
+            "line": 6698,
+            "source": ".specs/HOS-1354-billing-cobro-y-proveedor/docs/20-testing.md",
+            "source_line": 515,
+            "fields": 3,
+            "issues": []
+        },
+        {
+            "id": "RP:RP1",
+            "line": 6712,
+            "source": ".specs/HOS-1354-billing-cobro-y-proveedor/docs/20-testing.md",
+            "source_line": 534,
+            "fields": 2,
+            "issues": []
+        },
+        {
+            "id": "RP:RP2",
+            "line": 6797,
+            "source": ".specs/HOS-1354-billing-cobro-y-proveedor/docs/20-testing.md",
+            "source_line": 535,
+            "fields": 2,
+            "issues": []
+        },
+        {
+            "id": "RP:RP3",
+            "line": 6808,
+            "source": ".specs/HOS-1354-billing-cobro-y-proveedor/docs/20-testing.md",
+            "source_line": 536,
+            "fields": 2,
+            "issues": []
+        },
+        {
+            "id": "RP:RP4",
+            "line": 6819,
+            "source": ".specs/HOS-1354-billing-cobro-y-proveedor/docs/20-testing.md",
+            "source_line": 537,
+            "fields": 2,
+            "issues": []
+        },
+        {
+            "id": "RP:RP5",
+            "line": 6830,
+            "source": ".specs/HOS-1354-billing-cobro-y-proveedor/docs/20-testing.md",
+            "source_line": 538,
+            "fields": 2,
+            "issues": []
+        },
+        {
+            "id": "RP:RP6",
+            "line": 6841,
+            "source": ".specs/HOS-1354-billing-cobro-y-proveedor/docs/20-testing.md",
+            "source_line": 539,
+            "fields": 2,
+            "issues": []
+        },
+        {
+            "id": "RP:RP7",
+            "line": 6852,
+            "source": ".specs/HOS-1354-billing-cobro-y-proveedor/docs/20-testing.md",
+            "source_line": 540,
+            "fields": 2,
+            "issues": []
+        },
+        {
+            "id": "RP:RP8",
+            "line": 6863,
+            "source": ".specs/HOS-1354-billing-cobro-y-proveedor/docs/20-testing.md",
+            "source_line": 541,
+            "fields": 2,
+            "issues": []
+        },
+        {
+            "id": "RP:RP9",
+            "line": 6874,
+            "source": ".specs/HOS-1354-billing-cobro-y-proveedor/docs/20-testing.md",
+            "source_line": 542,
+            "fields": 2,
+            "issues": []
+        },
+        {
+            "id": "RP:RP10",
+            "line": 6885,
+            "source": ".specs/HOS-1354-billing-cobro-y-proveedor/docs/20-testing.md",
+            "source_line": 543,
+            "fields": 2,
+            "issues": []
+        },
+        {
+            "id": "RP:RP11",
+            "line": 6896,
+            "source": ".specs/HOS-1354-billing-cobro-y-proveedor/docs/20-testing.md",
+            "source_line": 544,
+            "fields": 2,
+            "issues": []
+        },
+        {
+            "id": "RP:RP12",
+            "line": 6907,
+            "source": ".specs/HOS-1354-billing-cobro-y-proveedor/docs/20-testing.md",
+            "source_line": 545,
+            "fields": 2,
+            "issues": []
+        },
+        {
+            "id": "GUARD:G1",
+            "line": 7569,
+            "source": ".specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/20-testing.md",
+            "source_line": 50,
+            "fields": 2,
+            "issues": []
+        },
+        {
+            "id": "GUARD:G2",
+            "line": 7599,
+            "source": ".specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/20-testing.md",
+            "source_line": 51,
+            "fields": 2,
+            "issues": []
+        },
+        {
+            "id": "GUARD:G3",
+            "line": 7612,
+            "source": ".specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/20-testing.md",
+            "source_line": 52,
+            "fields": 2,
+            "issues": []
+        },
+        {
+            "id": "GUARD:G4",
+            "line": 7625,
+            "source": ".specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/20-testing.md",
+            "source_line": 53,
+            "fields": 2,
+            "issues": []
+        },
+        {
+            "id": "GUARD:G5",
+            "line": 7638,
+            "source": ".specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/20-testing.md",
+            "source_line": 54,
+            "fields": 2,
+            "issues": []
+        },
+        {
+            "id": "GUARD:G6",
+            "line": 7651,
+            "source": ".specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/20-testing.md",
+            "source_line": 55,
+            "fields": 2,
+            "issues": []
+        },
+        {
+            "id": "GUARD:G8",
+            "line": 7664,
+            "source": ".specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/20-testing.md",
+            "source_line": 56,
+            "fields": 2,
+            "issues": []
+        },
+        {
+            "id": "GUARD:G13",
+            "line": 7677,
+            "source": ".specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/20-testing.md",
+            "source_line": 57,
+            "fields": 2,
+            "issues": []
+        },
+        {
+            "id": "GUARD:G14",
+            "line": 7690,
+            "source": ".specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/20-testing.md",
+            "source_line": 58,
+            "fields": 2,
+            "issues": []
+        },
+        {
+            "id": "GUARD:G18",
+            "line": 7703,
+            "source": ".specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/20-testing.md",
+            "source_line": 59,
+            "fields": 2,
+            "issues": []
+        },
+        {
+            "id": "GUARD:G19",
+            "line": 7716,
+            "source": ".specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/20-testing.md",
+            "source_line": 60,
+            "fields": 2,
+            "issues": []
+        },
+        {
+            "id": "GUARD:G-R2",
+            "line": 7729,
+            "source": ".specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/20-testing.md",
+            "source_line": 61,
+            "fields": 2,
+            "issues": []
+        },
+        {
+            "id": "GUARD:G-R2-B",
+            "line": 7742,
+            "source": ".specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/20-testing.md",
+            "source_line": 62,
+            "fields": 2,
+            "issues": []
+        },
+        {
+            "id": "GUARD:G-R2-C",
+            "line": 7755,
+            "source": ".specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/20-testing.md",
+            "source_line": 63,
+            "fields": 2,
+            "issues": []
+        },
+        {
+            "id": "VAL:G-R3",
+            "line": 7768,
+            "source": ".specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/20-testing.md",
+            "source_line": 64,
+            "fields": 2,
+            "issues": []
+        },
+        {
+            "id": "GUARD:G-R3-B",
+            "line": 7780,
+            "source": ".specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/20-testing.md",
+            "source_line": 65,
+            "fields": 2,
+            "issues": []
+        },
+        {
+            "id": "GUARD:G-R3-C",
+            "line": 7793,
+            "source": ".specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/20-testing.md",
+            "source_line": 66,
+            "fields": 2,
+            "issues": []
+        },
+        {
+            "id": "GUARD:G-R4",
+            "line": 7806,
+            "source": ".specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/20-testing.md",
+            "source_line": 67,
+            "fields": 2,
+            "issues": []
+        },
+        {
+            "id": "GUARD:G-R4-B",
+            "line": 7822,
+            "source": ".specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/20-testing.md",
+            "source_line": 68,
+            "fields": 2,
+            "issues": []
+        },
+        {
+            "id": "VAL:G-R5-B",
+            "line": 7835,
+            "source": ".specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/20-testing.md",
+            "source_line": 70,
+            "fields": 2,
+            "issues": []
+        },
+        {
+            "id": "GUARD:G-R6",
+            "line": 7847,
+            "source": ".specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/20-testing.md",
+            "source_line": 71,
+            "fields": 2,
+            "issues": []
+        },
+        {
+            "id": "GUARD:G-R6-B",
+            "line": 7863,
+            "source": ".specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/20-testing.md",
+            "source_line": 72,
+            "fields": 2,
+            "issues": []
+        },
+        {
+            "id": "GUARD:G-R9",
+            "line": 7879,
+            "source": ".specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/20-testing.md",
+            "source_line": 73,
+            "fields": 2,
+            "issues": []
+        },
+        {
+            "id": "GUARD:G7",
+            "line": 7892,
+            "source": ".specs/HOS-1354-billing-cobro-y-proveedor/docs/20-testing.md",
+            "source_line": 50,
+            "fields": 2,
+            "issues": []
+        },
+        {
+            "id": "GUARD:G9",
+            "line": 7922,
+            "source": ".specs/HOS-1354-billing-cobro-y-proveedor/docs/20-testing.md",
+            "source_line": 51,
+            "fields": 2,
+            "issues": []
+        },
+        {
+            "id": "GUARD:G10",
+            "line": 7935,
+            "source": ".specs/HOS-1354-billing-cobro-y-proveedor/docs/20-testing.md",
+            "source_line": 52,
+            "fields": 2,
+            "issues": []
+        },
+        {
+            "id": "GUARD:G11",
+            "line": 7948,
+            "source": ".specs/HOS-1354-billing-cobro-y-proveedor/docs/20-testing.md",
+            "source_line": 53,
+            "fields": 2,
+            "issues": []
+        },
+        {
+            "id": "GUARD:G12",
+            "line": 7961,
+            "source": ".specs/HOS-1354-billing-cobro-y-proveedor/docs/20-testing.md",
+            "source_line": 54,
+            "fields": 2,
+            "issues": []
+        },
+        {
+            "id": "GUARD:G-R1-A",
+            "line": 7989,
+            "source": ".specs/HOS-1354-billing-cobro-y-proveedor/docs/20-testing.md",
+            "source_line": 56,
+            "fields": 2,
+            "issues": []
+        },
+        {
+            "id": "GUARD:G-R1-B",
+            "line": 8002,
+            "source": ".specs/HOS-1354-billing-cobro-y-proveedor/docs/20-testing.md",
+            "source_line": 57,
+            "fields": 2,
+            "issues": []
+        },
+        {
+            "id": "GUARD:G-R1-C",
+            "line": 8015,
+            "source": ".specs/HOS-1354-billing-cobro-y-proveedor/docs/20-testing.md",
+            "source_line": 58,
+            "fields": 2,
+            "issues": []
+        },
+        {
+            "id": "GUARD:G-R1-D",
+            "line": 8028,
+            "source": ".specs/HOS-1354-billing-cobro-y-proveedor/docs/20-testing.md",
+            "source_line": 59,
+            "fields": 2,
+            "issues": []
+        },
+        {
+            "id": "GUARD:G-R1-E",
+            "line": 8041,
+            "source": ".specs/HOS-1354-billing-cobro-y-proveedor/docs/20-testing.md",
+            "source_line": 60,
+            "fields": 2,
+            "issues": []
+        },
+        {
+            "id": "GUARD:G-R1-F",
+            "line": 8054,
+            "source": ".specs/HOS-1354-billing-cobro-y-proveedor/docs/20-testing.md",
+            "source_line": 61,
+            "fields": 2,
+            "issues": []
+        },
+        {
+            "id": "GUARD:G15",
+            "line": 8067,
+            "source": ".specs/HOS-1354-billing-cobro-y-proveedor/docs/20-testing.md",
+            "source_line": 66,
+            "fields": 2,
+            "issues": []
+        },
+        {
+            "id": "GUARD:G16",
+            "line": 8080,
+            "source": ".specs/HOS-1354-billing-cobro-y-proveedor/docs/20-testing.md",
+            "source_line": 67,
+            "fields": 2,
+            "issues": []
+        },
+        {
+            "id": "GUARD:G17",
+            "line": 8093,
+            "source": ".specs/HOS-1354-billing-cobro-y-proveedor/docs/20-testing.md",
+            "source_line": 68,
+            "fields": 2,
+            "issues": []
+        },
+        {
+            "id": "MP:PA-1",
+            "line": 8120,
+            "source": ".specs/HOS-1352-billing-verticals-redesign/docs/06-mp-validation-matrix.md",
+            "source_line": 172,
+            "fields": 6,
+            "issues": []
+        },
+        {
+            "id": "MP:PA-2",
+            "line": 8133,
+            "source": ".specs/HOS-1352-billing-verticals-redesign/docs/06-mp-validation-matrix.md",
+            "source_line": 173,
+            "fields": 6,
+            "issues": []
+        },
+        {
+            "id": "MP:PA-3",
+            "line": 8146,
+            "source": ".specs/HOS-1352-billing-verticals-redesign/docs/06-mp-validation-matrix.md",
+            "source_line": 174,
+            "fields": 6,
+            "issues": []
+        },
+        {
+            "id": "MP:PA-4",
+            "line": 8159,
+            "source": ".specs/HOS-1352-billing-verticals-redesign/docs/06-mp-validation-matrix.md",
+            "source_line": 175,
+            "fields": 6,
+            "issues": []
+        },
+        {
+            "id": "MP:PA-5",
+            "line": 8172,
+            "source": ".specs/HOS-1352-billing-verticals-redesign/docs/06-mp-validation-matrix.md",
+            "source_line": 176,
+            "fields": 6,
+            "issues": []
+        },
+        {
+            "id": "MP:PA-6",
+            "line": 8185,
+            "source": ".specs/HOS-1352-billing-verticals-redesign/docs/06-mp-validation-matrix.md",
+            "source_line": 177,
+            "fields": 6,
+            "issues": []
+        },
+        {
+            "id": "MP:FR-1",
+            "line": 8202,
+            "source": ".specs/HOS-1352-billing-verticals-redesign/docs/06-mp-validation-matrix.md",
+            "source_line": 183,
+            "fields": 6,
+            "issues": []
+        },
+        {
+            "id": "MP:FR-2",
+            "line": 8215,
+            "source": ".specs/HOS-1352-billing-verticals-redesign/docs/06-mp-validation-matrix.md",
+            "source_line": 184,
+            "fields": 6,
+            "issues": []
+        },
+        {
+            "id": "MP:FR-3",
+            "line": 8228,
+            "source": ".specs/HOS-1352-billing-verticals-redesign/docs/06-mp-validation-matrix.md",
+            "source_line": 185,
+            "fields": 6,
+            "issues": []
+        },
+        {
+            "id": "MP:FR-4",
+            "line": 8241,
+            "source": ".specs/HOS-1352-billing-verticals-redesign/docs/06-mp-validation-matrix.md",
+            "source_line": 186,
+            "fields": 6,
+            "issues": []
+        },
+        {
+            "id": "MP:RN-1",
+            "line": 8258,
+            "source": ".specs/HOS-1352-billing-verticals-redesign/docs/06-mp-validation-matrix.md",
+            "source_line": 192,
+            "fields": 6,
+            "issues": []
+        },
+        {
+            "id": "MP:RN-2",
+            "line": 8271,
+            "source": ".specs/HOS-1352-billing-verticals-redesign/docs/06-mp-validation-matrix.md",
+            "source_line": 193,
+            "fields": 6,
+            "issues": []
+        },
+        {
+            "id": "MP:RN-3",
+            "line": 8284,
+            "source": ".specs/HOS-1352-billing-verticals-redesign/docs/06-mp-validation-matrix.md",
+            "source_line": 194,
+            "fields": 6,
+            "issues": []
+        },
+        {
+            "id": "MP:GR-1",
+            "line": 8301,
+            "source": ".specs/HOS-1352-billing-verticals-redesign/docs/06-mp-validation-matrix.md",
+            "source_line": 200,
+            "fields": 6,
+            "issues": []
+        },
+        {
+            "id": "MP:GR-2",
+            "line": 8314,
+            "source": ".specs/HOS-1352-billing-verticals-redesign/docs/06-mp-validation-matrix.md",
+            "source_line": 201,
+            "fields": 6,
+            "issues": []
+        },
+        {
+            "id": "MP:GR-3",
+            "line": 8327,
+            "source": ".specs/HOS-1352-billing-verticals-redesign/docs/06-mp-validation-matrix.md",
+            "source_line": 202,
+            "fields": 6,
+            "issues": []
+        },
+        {
+            "id": "MP:PS-1",
+            "line": 8344,
+            "source": ".specs/HOS-1352-billing-verticals-redesign/docs/06-mp-validation-matrix.md",
+            "source_line": 208,
+            "fields": 6,
+            "issues": []
+        },
+        {
+            "id": "MP:PS-2",
+            "line": 8357,
+            "source": ".specs/HOS-1352-billing-verticals-redesign/docs/06-mp-validation-matrix.md",
+            "source_line": 209,
+            "fields": 6,
+            "issues": []
+        },
+        {
+            "id": "MP:PS-3",
+            "line": 8370,
+            "source": ".specs/HOS-1352-billing-verticals-redesign/docs/06-mp-validation-matrix.md",
+            "source_line": 210,
+            "fields": 6,
+            "issues": []
+        },
+        {
+            "id": "MP:PS-4",
+            "line": 8383,
+            "source": ".specs/HOS-1352-billing-verticals-redesign/docs/06-mp-validation-matrix.md",
+            "source_line": 211,
+            "fields": 6,
+            "issues": []
+        },
+        {
+            "id": "MP:PS-5",
+            "line": 8396,
+            "source": ".specs/HOS-1352-billing-verticals-redesign/docs/06-mp-validation-matrix.md",
+            "source_line": 212,
+            "fields": 6,
+            "issues": []
+        },
+        {
+            "id": "MP:PS-6",
+            "line": 8409,
+            "source": ".specs/HOS-1352-billing-verticals-redesign/docs/06-mp-validation-matrix.md",
+            "source_line": 213,
+            "fields": 6,
+            "issues": []
+        },
+        {
+            "id": "MP:CN-1",
+            "line": 8426,
+            "source": ".specs/HOS-1352-billing-verticals-redesign/docs/06-mp-validation-matrix.md",
+            "source_line": 219,
+            "fields": 6,
+            "issues": []
+        },
+        {
+            "id": "MP:CN-2",
+            "line": 8439,
+            "source": ".specs/HOS-1352-billing-verticals-redesign/docs/06-mp-validation-matrix.md",
+            "source_line": 220,
+            "fields": 6,
+            "issues": []
+        },
+        {
+            "id": "MP:PC-1",
+            "line": 8463,
+            "source": ".specs/HOS-1352-billing-verticals-redesign/docs/06-mp-validation-matrix.md",
+            "source_line": 226,
+            "fields": 6,
+            "issues": []
+        },
+        {
+            "id": "MP:PC-2",
+            "line": 8476,
+            "source": ".specs/HOS-1352-billing-verticals-redesign/docs/06-mp-validation-matrix.md",
+            "source_line": 227,
+            "fields": 6,
+            "issues": []
+        },
+        {
+            "id": "MP:PC-3",
+            "line": 8489,
+            "source": ".specs/HOS-1352-billing-verticals-redesign/docs/06-mp-validation-matrix.md",
+            "source_line": 228,
+            "fields": 6,
+            "issues": []
+        },
+        {
+            "id": "MP:UP-1",
+            "line": 8506,
+            "source": ".specs/HOS-1352-billing-verticals-redesign/docs/06-mp-validation-matrix.md",
+            "source_line": 237,
+            "fields": 6,
+            "issues": []
+        },
+        {
+            "id": "MP:UP-2",
+            "line": 8519,
+            "source": ".specs/HOS-1352-billing-verticals-redesign/docs/06-mp-validation-matrix.md",
+            "source_line": 238,
+            "fields": 6,
+            "issues": []
+        },
+        {
+            "id": "MP:DW-1",
+            "line": 8536,
+            "source": ".specs/HOS-1352-billing-verticals-redesign/docs/06-mp-validation-matrix.md",
+            "source_line": 244,
+            "fields": 6,
+            "issues": []
+        },
+        {
+            "id": "MP:DW-2",
+            "line": 8549,
+            "source": ".specs/HOS-1352-billing-verticals-redesign/docs/06-mp-validation-matrix.md",
+            "source_line": 245,
+            "fields": 6,
+            "issues": []
+        },
+        {
+            "id": "MP:CT-1",
+            "line": 8566,
+            "source": ".specs/HOS-1352-billing-verticals-redesign/docs/06-mp-validation-matrix.md",
+            "source_line": 251,
+            "fields": 6,
+            "issues": []
+        },
+        {
+            "id": "MP:CT-2",
+            "line": 8579,
+            "source": ".specs/HOS-1352-billing-verticals-redesign/docs/06-mp-validation-matrix.md",
+            "source_line": 252,
+            "fields": 6,
+            "issues": []
+        },
+        {
+            "id": "MP:CT-3",
+            "line": 8592,
+            "source": ".specs/HOS-1352-billing-verticals-redesign/docs/06-mp-validation-matrix.md",
+            "source_line": 253,
+            "fields": 6,
+            "issues": []
+        },
+        {
+            "id": "MP:GT-1",
+            "line": 8609,
+            "source": ".specs/HOS-1352-billing-verticals-redesign/docs/06-mp-validation-matrix.md",
+            "source_line": 259,
+            "fields": 6,
+            "issues": []
+        },
+        {
+            "id": "MP:WH-1",
+            "line": 8626,
+            "source": ".specs/HOS-1352-billing-verticals-redesign/docs/06-mp-validation-matrix.md",
+            "source_line": 265,
+            "fields": 6,
+            "issues": []
+        },
+        {
+            "id": "MP:WH-2",
+            "line": 8639,
+            "source": ".specs/HOS-1352-billing-verticals-redesign/docs/06-mp-validation-matrix.md",
+            "source_line": 266,
+            "fields": 6,
+            "issues": []
+        },
+        {
+            "id": "MP:WH-3",
+            "line": 8652,
+            "source": ".specs/HOS-1352-billing-verticals-redesign/docs/06-mp-validation-matrix.md",
+            "source_line": 267,
+            "fields": 6,
+            "issues": []
+        },
+        {
+            "id": "MP:WH-4",
+            "line": 8665,
+            "source": ".specs/HOS-1352-billing-verticals-redesign/docs/06-mp-validation-matrix.md",
+            "source_line": 268,
+            "fields": 6,
+            "issues": []
+        },
+        {
+            "id": "MP:WH-5",
+            "line": 8678,
+            "source": ".specs/HOS-1352-billing-verticals-redesign/docs/06-mp-validation-matrix.md",
+            "source_line": 269,
+            "fields": 6,
+            "issues": []
+        },
+        {
+            "id": "MP:WH-6",
+            "line": 8691,
+            "source": ".specs/HOS-1352-billing-verticals-redesign/docs/06-mp-validation-matrix.md",
+            "source_line": 270,
+            "fields": 6,
+            "issues": []
+        },
+        {
+            "id": "MP:RC-1",
+            "line": 8708,
+            "source": ".specs/HOS-1352-billing-verticals-redesign/docs/06-mp-validation-matrix.md",
+            "source_line": 276,
+            "fields": 6,
+            "issues": []
+        },
+        {
+            "id": "MP:RC-2",
+            "line": 8721,
+            "source": ".specs/HOS-1352-billing-verticals-redesign/docs/06-mp-validation-matrix.md",
+            "source_line": 277,
+            "fields": 6,
+            "issues": []
+        },
+        {
+            "id": "MP:RC-3",
+            "line": 8734,
+            "source": ".specs/HOS-1352-billing-verticals-redesign/docs/06-mp-validation-matrix.md",
+            "source_line": 278,
+            "fields": 6,
+            "issues": []
+        },
+        {
+            "id": "MP:RC-4",
+            "line": 8747,
+            "source": ".specs/HOS-1352-billing-verticals-redesign/docs/06-mp-validation-matrix.md",
+            "source_line": 279,
+            "fields": 6,
+            "issues": []
+        },
+        {
+            "id": "MP:RC-5",
+            "line": 8760,
+            "source": ".specs/HOS-1352-billing-verticals-redesign/docs/06-mp-validation-matrix.md",
+            "source_line": 280,
+            "fields": 6,
+            "issues": []
+        },
+        {
+            "id": "MP:RC-6",
+            "line": 8773,
+            "source": ".specs/HOS-1352-billing-verticals-redesign/docs/06-mp-validation-matrix.md",
+            "source_line": 281,
+            "fields": 6,
+            "issues": []
+        },
+        {
+            "id": "MP:RC-7",
+            "line": 8786,
+            "source": ".specs/HOS-1352-billing-verticals-redesign/docs/06-mp-validation-matrix.md",
+            "source_line": 282,
+            "fields": 6,
+            "issues": []
+        },
+        {
+            "id": "MP:RC-8",
+            "line": 8799,
+            "source": ".specs/HOS-1352-billing-verticals-redesign/docs/06-mp-validation-matrix.md",
+            "source_line": 283,
+            "fields": 6,
+            "issues": []
+        },
+        {
+            "id": "MP:RC-9",
+            "line": 8812,
+            "source": ".specs/HOS-1352-billing-verticals-redesign/docs/06-mp-validation-matrix.md",
+            "source_line": 284,
+            "fields": 6,
+            "issues": []
+        },
+        {
+            "id": "MP:RF-1",
+            "line": 8838,
+            "source": ".specs/HOS-1352-billing-verticals-redesign/docs/06-mp-validation-matrix.md",
+            "source_line": 301,
+            "fields": 6,
+            "issues": []
+        },
+        {
+            "id": "MP:RF-2",
+            "line": 8851,
+            "source": ".specs/HOS-1352-billing-verticals-redesign/docs/06-mp-validation-matrix.md",
+            "source_line": 304,
+            "fields": 6,
+            "issues": [
+                [
+                    "FIELD",
+                    8860,
+                    "Conclusión",
+                    "**Funciona en los DOS tipos de pago**: la conclusión anterior (*\"hay un mínimo entre 5 y 50\"*) era un **diagnóstico equivocado** y lo mató el primer experimento — ARS **5** entró sobre un pago de 5.000, y también sobre uno de 7.500. Lo medido: (1) el parcial **valida contra el SALDO, no contra el monto original** — pedir 15 con 10 de saldo da `400 code 2017` aunque el pago valga 5.000; (2) los **parciales acumulativos completan el total** y el pago pasa a **`refunded/refunded` solo** (5 + 5 sobre un saldo de 10); (3) se reembolsó 4.875 dejando un resto de **10**, así que tampoco hay piso del resto. Ver **`RF-8`** para el rechazo que quedó sin explicar",
+                    "**Funciona en los DOS tipos de pago** y **NO hay monto mínimo**: la conclusión anterior (*\"hay un mínimo entre 5 y 50\"*) era un **diagnóstico equivocado** y lo mató el primer experimento — ARS **5** entró sobre un pago de 5.000, y también sobre uno de 7.500. Lo medido: (1) el parcial **valida contra el SALDO, no contra el monto original** — pedir 15 con 10 de saldo da `400 code 2017` aunque el pago valga 5.000; (2) los **parciales acumulativos completan el total** y el pago pasa a **`refunded/refunded` solo** (5 + 5 sobre un saldo de 10); (3) se reembolsó 4.875 dejando un resto de **10**, así que tampoco hay piso del resto. Ver **`RF-8`** para el rechazo que quedó sin explicar"
+                ]
+            ]
+        },
+        {
+            "id": "MP:RF-3",
+            "line": 8864,
+            "source": ".specs/HOS-1352-billing-verticals-redesign/docs/06-mp-validation-matrix.md",
+            "source_line": 305,
+            "fields": 6,
+            "issues": []
+        },
+        {
+            "id": "MP:RF-4",
+            "line": 8877,
+            "source": ".specs/HOS-1352-billing-verticals-redesign/docs/06-mp-validation-matrix.md",
+            "source_line": 306,
+            "fields": 6,
+            "issues": []
+        },
+        {
+            "id": "MP:RF-5",
+            "line": 8890,
+            "source": ".specs/HOS-1352-billing-verticals-redesign/docs/06-mp-validation-matrix.md",
+            "source_line": 307,
+            "fields": 6,
+            "issues": []
+        },
+        {
+            "id": "MP:RF-6",
+            "line": 8915,
+            "source": ".specs/HOS-1352-billing-verticals-redesign/docs/06-mp-validation-matrix.md",
+            "source_line": 313,
+            "fields": 7,
+            "issues": []
+        },
+        {
+            "id": "MP:RF-7",
+            "line": 8929,
+            "source": ".specs/HOS-1352-billing-verticals-redesign/docs/06-mp-validation-matrix.md",
+            "source_line": 314,
+            "fields": 7,
+            "issues": []
+        },
+        {
+            "id": "MP:RF-8",
+            "line": 8943,
+            "source": ".specs/HOS-1352-billing-verticals-redesign/docs/06-mp-validation-matrix.md",
+            "source_line": 315,
+            "fields": 7,
+            "issues": []
+        },
+        {
+            "id": "MP:EX-1",
+            "line": 8957,
+            "source": ".specs/HOS-1352-billing-verticals-redesign/docs/06-mp-validation-matrix.md",
+            "source_line": 316,
+            "fields": 7,
+            "issues": []
+        },
+        {
+            "id": "MP:EX-2",
+            "line": 8971,
+            "source": ".specs/HOS-1352-billing-verticals-redesign/docs/06-mp-validation-matrix.md",
+            "source_line": 317,
+            "fields": 7,
+            "issues": []
+        },
+        {
+            "id": "MP:EX-3",
+            "line": 8985,
+            "source": ".specs/HOS-1352-billing-verticals-redesign/docs/06-mp-validation-matrix.md",
+            "source_line": 318,
+            "fields": 7,
+            "issues": []
+        },
+        {
+            "id": "MP:EX-4",
+            "line": 8999,
+            "source": ".specs/HOS-1352-billing-verticals-redesign/docs/06-mp-validation-matrix.md",
+            "source_line": 320,
+            "fields": 7,
+            "issues": []
+        },
+        {
+            "id": "MP:EX-5",
+            "line": 9013,
+            "source": ".specs/HOS-1352-billing-verticals-redesign/docs/06-mp-validation-matrix.md",
+            "source_line": 321,
+            "fields": 7,
+            "issues": []
+        },
+        {
+            "id": "MP:EX-6",
+            "line": 9027,
+            "source": ".specs/HOS-1352-billing-verticals-redesign/docs/06-mp-validation-matrix.md",
+            "source_line": 322,
+            "fields": 7,
+            "issues": []
+        },
+        {
+            "id": "MP:EX-7",
+            "line": 9041,
+            "source": ".specs/HOS-1352-billing-verticals-redesign/docs/06-mp-validation-matrix.md",
+            "source_line": 323,
+            "fields": 7,
+            "issues": []
+        },
+        {
+            "id": "MP:EX-9",
+            "line": 9055,
+            "source": ".specs/HOS-1352-billing-verticals-redesign/docs/06-mp-validation-matrix.md",
+            "source_line": 324,
+            "fields": 7,
+            "issues": []
+        },
+        {
+            "id": "MP:EX-10",
+            "line": 9069,
+            "source": ".specs/HOS-1352-billing-verticals-redesign/docs/06-mp-validation-matrix.md",
+            "source_line": 325,
+            "fields": 7,
+            "issues": []
+        },
+        {
+            "id": "MP:EX-8",
+            "line": 9083,
+            "source": ".specs/HOS-1352-billing-verticals-redesign/docs/06-mp-validation-matrix.md",
+            "source_line": 326,
+            "fields": 7,
+            "issues": []
+        },
+        {
+            "id": "MP:EX-11",
+            "line": 9097,
+            "source": ".specs/HOS-1352-billing-verticals-redesign/docs/06-mp-validation-matrix.md",
+            "source_line": 327,
+            "fields": 7,
+            "issues": []
+        },
+        {
+            "id": "MP:EX-12",
+            "line": 9111,
+            "source": ".specs/HOS-1352-billing-verticals-redesign/docs/06-mp-validation-matrix.md",
+            "source_line": 328,
+            "fields": 7,
+            "issues": []
+        },
+        {
+            "id": "MP:EX-13",
+            "line": 9125,
+            "source": ".specs/HOS-1352-billing-verticals-redesign/docs/06-mp-validation-matrix.md",
+            "source_line": 329,
+            "fields": 7,
+            "issues": []
+        },
+        {
+            "id": "MP:EX-14",
+            "line": 9139,
+            "source": ".specs/HOS-1352-billing-verticals-redesign/docs/06-mp-validation-matrix.md",
+            "source_line": 330,
+            "fields": 7,
+            "issues": []
+        },
+        {
+            "id": "MP:EX-16",
+            "line": 9153,
+            "source": ".specs/HOS-1352-billing-verticals-redesign/docs/06-mp-validation-matrix.md",
+            "source_line": 331,
+            "fields": 7,
+            "issues": []
+        },
+        {
+            "id": "MP:EX-17",
+            "line": 9167,
+            "source": ".specs/HOS-1352-billing-verticals-redesign/docs/06-mp-validation-matrix.md",
+            "source_line": 332,
+            "fields": 7,
+            "issues": []
+        },
+        {
+            "id": "MP:EX-18",
+            "line": 9181,
+            "source": ".specs/HOS-1352-billing-verticals-redesign/docs/06-mp-validation-matrix.md",
+            "source_line": 333,
+            "fields": 7,
+            "issues": []
+        },
+        {
+            "id": "MP:EX-19",
+            "line": 9195,
+            "source": ".specs/HOS-1352-billing-verticals-redesign/docs/06-mp-validation-matrix.md",
+            "source_line": 334,
+            "fields": 7,
+            "issues": []
+        },
+        {
+            "id": "MP:EX-20",
+            "line": 9209,
+            "source": ".specs/HOS-1352-billing-verticals-redesign/docs/06-mp-validation-matrix.md",
+            "source_line": 335,
+            "fields": 7,
+            "issues": []
+        },
+        {
+            "id": "MP:EX-15",
+            "line": 9223,
+            "source": ".specs/HOS-1352-billing-verticals-redesign/docs/06-mp-validation-matrix.md",
+            "source_line": 336,
+            "fields": 7,
+            "issues": []
+        },
+        {
+            "id": "MP:EX-21",
+            "line": 9255,
+            "source": ".specs/HOS-1352-billing-verticals-redesign/docs/06-mp-validation-matrix.md",
+            "source_line": 358,
+            "fields": 7,
+            "issues": []
+        },
+        {
+            "id": "MP:EX-22",
+            "line": 9269,
+            "source": ".specs/HOS-1352-billing-verticals-redesign/docs/06-mp-validation-matrix.md",
+            "source_line": 359,
+            "fields": 7,
+            "issues": []
+        },
+        {
+            "id": "MP:EX-23",
+            "line": 9283,
+            "source": ".specs/HOS-1352-billing-verticals-redesign/docs/06-mp-validation-matrix.md",
+            "source_line": 360,
+            "fields": 7,
+            "issues": []
+        },
+        {
+            "id": "MP:EX-24",
+            "line": 9297,
+            "source": ".specs/HOS-1352-billing-verticals-redesign/docs/06-mp-validation-matrix.md",
+            "source_line": 361,
+            "fields": 7,
+            "issues": []
+        },
+        {
+            "id": "MP:EX-25",
+            "line": 9311,
+            "source": ".specs/HOS-1352-billing-verticals-redesign/docs/06-mp-validation-matrix.md",
+            "source_line": 362,
+            "fields": 7,
+            "issues": []
+        },
+        {
+            "id": "MP:EX-26",
+            "line": 9325,
+            "source": ".specs/HOS-1352-billing-verticals-redesign/docs/06-mp-validation-matrix.md",
+            "source_line": 363,
+            "fields": 7,
+            "issues": []
+        },
+        {
+            "id": "MP:EX-27",
+            "line": 9339,
+            "source": ".specs/HOS-1352-billing-verticals-redesign/docs/06-mp-validation-matrix.md",
+            "source_line": 364,
+            "fields": 7,
+            "issues": []
+        },
+        {
+            "id": "MP:EX-28",
+            "line": 9353,
+            "source": ".specs/HOS-1352-billing-verticals-redesign/docs/06-mp-validation-matrix.md",
+            "source_line": 365,
+            "fields": 7,
+            "issues": []
+        },
+        {
+            "id": "MP:EX-29",
+            "line": 9367,
+            "source": ".specs/HOS-1352-billing-verticals-redesign/docs/06-mp-validation-matrix.md",
+            "source_line": 366,
+            "fields": 7,
+            "issues": []
+        },
+        {
+            "id": "MP:EX-30",
+            "line": 9425,
+            "source": ".specs/HOS-1352-billing-verticals-redesign/docs/06-mp-validation-matrix.md",
+            "source_line": 388,
+            "fields": 7,
+            "issues": []
+        },
+        {
+            "id": "MP:EX-31",
+            "line": 9439,
+            "source": ".specs/HOS-1352-billing-verticals-redesign/docs/06-mp-validation-matrix.md",
+            "source_line": 389,
+            "fields": 7,
+            "issues": []
+        },
+        {
+            "id": "MP:EX-32",
+            "line": 9453,
+            "source": ".specs/HOS-1352-billing-verticals-redesign/docs/06-mp-validation-matrix.md",
+            "source_line": 390,
+            "fields": 7,
+            "issues": []
+        },
+        {
+            "id": "MP:EX-33",
+            "line": 9467,
+            "source": ".specs/HOS-1352-billing-verticals-redesign/docs/06-mp-validation-matrix.md",
+            "source_line": 391,
+            "fields": 7,
+            "issues": []
+        },
+        {
+            "id": "MP:EX-35",
+            "line": 9481,
+            "source": ".specs/HOS-1352-billing-verticals-redesign/docs/06-mp-validation-matrix.md",
+            "source_line": 392,
+            "fields": 7,
+            "issues": []
+        },
+        {
+            "id": "MP:EX-36",
+            "line": 9495,
+            "source": ".specs/HOS-1352-billing-verticals-redesign/docs/06-mp-validation-matrix.md",
+            "source_line": 393,
+            "fields": 7,
+            "issues": []
+        },
+        {
+            "id": "MP:EX-37",
+            "line": 9509,
+            "source": ".specs/HOS-1352-billing-verticals-redesign/docs/06-mp-validation-matrix.md",
+            "source_line": 394,
+            "fields": 7,
+            "issues": []
+        },
+        {
+            "id": "MP:EX-38",
+            "line": 9523,
+            "source": ".specs/HOS-1352-billing-verticals-redesign/docs/06-mp-validation-matrix.md",
+            "source_line": 395,
+            "fields": 7,
+            "issues": []
+        },
+        {
+            "id": "MP:EX-39",
+            "line": 9537,
+            "source": ".specs/HOS-1352-billing-verticals-redesign/docs/06-mp-validation-matrix.md",
+            "source_line": 396,
+            "fields": 7,
+            "issues": []
+        },
+        {
+            "id": "MP:EX-40",
+            "line": 9551,
+            "source": ".specs/HOS-1352-billing-verticals-redesign/docs/06-mp-validation-matrix.md",
+            "source_line": 397,
+            "fields": 7,
+            "issues": []
+        },
+        {
+            "id": "MP:EX-41",
+            "line": 9565,
+            "source": ".specs/HOS-1352-billing-verticals-redesign/docs/06-mp-validation-matrix.md",
+            "source_line": 398,
+            "fields": 7,
+            "issues": []
+        },
+        {
+            "id": "MP:EX-42",
+            "line": 9579,
+            "source": ".specs/HOS-1352-billing-verticals-redesign/docs/06-mp-validation-matrix.md",
+            "source_line": 399,
+            "fields": 7,
+            "issues": []
+        },
+        {
+            "id": "MP:EX-43",
+            "line": 9593,
+            "source": ".specs/HOS-1352-billing-verticals-redesign/docs/06-mp-validation-matrix.md",
+            "source_line": 400,
+            "fields": 7,
+            "issues": []
+        },
+        {
+            "id": "MP:EX-44",
+            "line": 9607,
+            "source": ".specs/HOS-1352-billing-verticals-redesign/docs/06-mp-validation-matrix.md",
+            "source_line": 401,
+            "fields": 7,
+            "issues": []
+        },
+        {
+            "id": "MP:EX-45",
+            "line": 9621,
+            "source": ".specs/HOS-1352-billing-verticals-redesign/docs/06-mp-validation-matrix.md",
+            "source_line": 402,
+            "fields": 7,
+            "issues": []
+        },
+        {
+            "id": "MP:EX-46",
+            "line": 9635,
+            "source": ".specs/HOS-1352-billing-verticals-redesign/docs/06-mp-validation-matrix.md",
+            "source_line": 403,
+            "fields": 7,
+            "issues": []
+        },
+        {
+            "id": "MP:EX-47",
+            "line": 9650,
+            "source": ".specs/HOS-1352-billing-verticals-redesign/docs/06-mp-validation-matrix.md",
+            "source_line": 404,
+            "fields": 7,
+            "issues": []
+        },
+        {
+            "id": "MP:EX-48",
+            "line": 9664,
+            "source": ".specs/HOS-1352-billing-verticals-redesign/docs/06-mp-validation-matrix.md",
+            "source_line": 405,
+            "fields": 7,
+            "issues": []
+        },
+        {
+            "id": "MP:EX-49",
+            "line": 9678,
+            "source": ".specs/HOS-1352-billing-verticals-redesign/docs/06-mp-validation-matrix.md",
+            "source_line": 406,
+            "fields": 7,
+            "issues": []
+        },
+        {
+            "id": "MP:EX-50",
+            "line": 9692,
+            "source": ".specs/HOS-1352-billing-verticals-redesign/docs/06-mp-validation-matrix.md",
+            "source_line": 407,
+            "fields": 7,
+            "issues": []
+        },
+        {
+            "id": "MP:EX-51",
+            "line": 9706,
+            "source": ".specs/HOS-1352-billing-verticals-redesign/docs/06-mp-validation-matrix.md",
+            "source_line": 408,
+            "fields": 7,
+            "issues": []
+        },
+        {
+            "id": "MP:EX-52",
+            "line": 9720,
+            "source": ".specs/HOS-1352-billing-verticals-redesign/docs/06-mp-validation-matrix.md",
+            "source_line": 409,
+            "fields": 7,
+            "issues": []
+        },
+        {
+            "id": "MP:EX-53",
+            "line": 9734,
+            "source": ".specs/HOS-1352-billing-verticals-redesign/docs/06-mp-validation-matrix.md",
+            "source_line": 410,
+            "fields": 7,
+            "issues": []
+        },
+        {
+            "id": "MP:EX-54",
+            "line": 9748,
+            "source": ".specs/HOS-1352-billing-verticals-redesign/docs/06-mp-validation-matrix.md",
+            "source_line": 411,
+            "fields": 7,
+            "issues": []
+        },
+        {
+            "id": "MP:EX-55",
+            "line": 9762,
+            "source": ".specs/HOS-1352-billing-verticals-redesign/docs/06-mp-validation-matrix.md",
+            "source_line": 412,
+            "fields": 7,
+            "issues": []
+        },
+        {
+            "id": "MP:EX-56",
+            "line": 9776,
+            "source": ".specs/HOS-1352-billing-verticals-redesign/docs/06-mp-validation-matrix.md",
+            "source_line": 413,
+            "fields": 7,
+            "issues": []
+        },
+        {
+            "id": "MP:EX-57",
+            "line": 9790,
+            "source": ".specs/HOS-1352-billing-verticals-redesign/docs/06-mp-validation-matrix.md",
+            "source_line": 414,
+            "fields": 7,
+            "issues": []
+        },
+        {
+            "id": "MP:EX-58",
+            "line": 9804,
+            "source": ".specs/HOS-1352-billing-verticals-redesign/docs/06-mp-validation-matrix.md",
+            "source_line": 415,
+            "fields": 7,
+            "issues": []
+        },
+        {
+            "id": "MP:EX-59",
+            "line": 9818,
+            "source": ".specs/HOS-1352-billing-verticals-redesign/docs/06-mp-validation-matrix.md",
+            "source_line": 416,
+            "fields": 7,
+            "issues": []
+        },
+        {
+            "id": "MP:EX-34",
+            "line": 9832,
+            "source": ".specs/HOS-1352-billing-verticals-redesign/docs/06-mp-validation-matrix.md",
+            "source_line": 438,
+            "fields": 7,
+            "issues": []
+        }
+    ],
+    "prose": [
+        {
+            "line": 13,
+            "source": ".specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/03-maquinas-de-estado.md",
+            "range": [21, 90],
+            "issues": []
+        },
+        {
+            "line": 85,
+            "source": ".specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/03-maquinas-de-estado.md",
+            "range": [91, 122],
+            "issues": []
+        },
+        {
+            "line": 117,
+            "source": ".specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/03-maquinas-de-estado.md",
+            "range": [281, 327],
+            "issues": []
+        },
+        {
+            "line": 156,
+            "source": ".specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/03-maquinas-de-estado.md",
+            "range": [328, 364],
+            "issues": []
+        },
+        {
+            "line": 187,
+            "source": ".specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/03-maquinas-de-estado.md",
+            "range": [365, 479],
+            "issues": [
+                ["SOURCE", "fuentes ajenas al trial** — la suscripción, la cortesía o el grant."],
+                ["OUTPUT", 201, "fuentes ajenas al trial** — exclusivamente la suscripción."]
+            ]
+        },
+        {
+            "line": 309,
+            "source": ".specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/03-maquinas-de-estado.md",
+            "range": [123, 150],
+            "issues": []
+        },
+        {
+            "line": 336,
+            "source": ".specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/03-maquinas-de-estado.md",
+            "range": [164, 204],
+            "issues": []
+        },
+        {
+            "line": 375,
+            "source": ".specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/03-maquinas-de-estado.md",
+            "range": [243, 280],
+            "issues": []
+        },
+        {
+            "line": 454,
+            "source": ".specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/03-maquinas-de-estado.md",
+            "range": [151, 163],
+            "issues": []
+        },
+        {
+            "line": 482,
+            "source": ".specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/03-maquinas-de-estado.md",
+            "range": [205, 242],
+            "issues": []
+        },
+        {
+            "line": 541,
+            "source": ".specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/03-maquinas-de-estado.md",
+            "range": [480, 654],
+            "issues": []
+        },
+        {
+            "line": 701,
+            "source": ".specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/03-maquinas-de-estado.md",
+            "range": [842, 930],
+            "issues": []
+        },
+        {
+            "line": 802,
+            "source": ".specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/03-maquinas-de-estado.md",
+            "range": [1146, 1338],
+            "issues": []
+        },
+        {
+            "line": 974,
+            "source": ".specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/03-maquinas-de-estado.md",
+            "range": [1339, 1351],
+            "issues": []
+        },
+        {
+            "line": 996,
+            "source": ".specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/03-maquinas-de-estado.md",
+            "range": [931, 1009],
+            "issues": []
+        },
+        {
+            "line": 1132,
+            "source": ".specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/03-maquinas-de-estado.md",
+            "range": [1010, 1145],
+            "issues": []
+        },
+        {
+            "line": 1301,
+            "source": ".specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/03-maquinas-de-estado.md",
+            "range": [655, 679],
+            "issues": []
+        },
+        {
+            "line": 1325,
+            "source": ".specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/03-maquinas-de-estado.md",
+            "range": [680, 841],
+            "issues": []
+        },
+        {
+            "line": 1517,
+            "source": ".specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/03-maquinas-de-estado.md",
+            "range": [1352, 1376],
+            "issues": []
+        },
+        {
+            "line": 1584,
+            "source": ".specs/HOS-1354-billing-cobro-y-proveedor/docs/03-maquinas-de-estado.md",
+            "range": [141, 213],
+            "issues": []
+        },
+        {
+            "line": 1633,
+            "source": ".specs/HOS-1354-billing-cobro-y-proveedor/docs/03-maquinas-de-estado.md",
+            "range": [21, 45],
+            "issues": []
+        },
+        {
+            "line": 1654,
+            "source": ".specs/HOS-1354-billing-cobro-y-proveedor/docs/03-maquinas-de-estado.md",
+            "range": [46, 140],
+            "issues": []
+        },
+        {
+            "line": 1746,
+            "source": ".specs/HOS-1354-billing-cobro-y-proveedor/docs/03-maquinas-de-estado.md",
+            "range": [285, 376],
+            "issues": []
+        },
+        {
+            "line": 1832,
+            "source": ".specs/HOS-1354-billing-cobro-y-proveedor/docs/03-maquinas-de-estado.md",
+            "range": [377, 533],
+            "issues": []
+        },
+        {
+            "line": 1958,
+            "source": ".specs/HOS-1354-billing-cobro-y-proveedor/docs/03-maquinas-de-estado.md",
+            "range": [1520, 1588],
+            "issues": []
+        },
+        {
+            "line": 2025,
+            "source": ".specs/HOS-1354-billing-cobro-y-proveedor/docs/03-maquinas-de-estado.md",
+            "range": [2689, 2713],
+            "issues": []
+        },
+        {
+            "line": 2048,
+            "source": ".specs/HOS-1354-billing-cobro-y-proveedor/docs/03-maquinas-de-estado.md",
+            "range": [2714, 2747],
+            "issues": []
+        },
+        {
+            "line": 2082,
+            "source": ".specs/HOS-1354-billing-cobro-y-proveedor/docs/03-maquinas-de-estado.md",
+            "range": [2748, 2800],
+            "issues": []
+        },
+        {
+            "line": 2135,
+            "source": ".specs/HOS-1354-billing-cobro-y-proveedor/docs/03-maquinas-de-estado.md",
+            "range": [2801, 2832],
+            "issues": []
+        },
+        {
+            "line": 2167,
+            "source": ".specs/HOS-1354-billing-cobro-y-proveedor/docs/03-maquinas-de-estado.md",
+            "range": [2833, 2838],
+            "issues": []
+        },
+        {
+            "line": 2173,
+            "source": ".specs/HOS-1354-billing-cobro-y-proveedor/docs/03-maquinas-de-estado.md",
+            "range": [2839, 2848],
+            "issues": []
+        },
+        {
+            "line": 2181,
+            "source": ".specs/HOS-1354-billing-cobro-y-proveedor/docs/03-maquinas-de-estado.md",
+            "range": [2849, 3062],
+            "issues": [
+                [
+                    "SOURCE",
+                    "  lectura dispara el correo que corresponde de `NUCLEO/07` §6 (`B/09` §3)."
+                ],
+                [
+                    "OUTPUT",
+                    2241,
+                    "  lectura, si da `settled`, dispara su correo de `NUCLEO/07` §6 (`B/09` §3)."
+                ]
+            ]
+        },
+        {
+            "line": 2375,
+            "source": ".specs/HOS-1354-billing-cobro-y-proveedor/docs/03-maquinas-de-estado.md",
+            "range": [568, 693],
+            "issues": []
+        },
+        {
+            "line": 2506,
+            "source": ".specs/HOS-1354-billing-cobro-y-proveedor/docs/03-maquinas-de-estado.md",
+            "range": [1589, 1655],
+            "issues": []
+        },
+        {
+            "line": 2581,
+            "source": ".specs/HOS-1354-billing-cobro-y-proveedor/docs/05-idempotencia-y-concurrencia.md",
+            "range": [306, 543],
+            "issues": []
+        },
+        {
+            "line": 2850,
+            "source": ".specs/HOS-1354-billing-cobro-y-proveedor/docs/03-maquinas-de-estado.md",
+            "range": [1656, 1739],
+            "issues": []
+        },
+        {
+            "line": 2958,
+            "source": ".specs/HOS-1354-billing-cobro-y-proveedor/docs/03-maquinas-de-estado.md",
+            "range": [799, 885],
+            "issues": []
+        },
+        {
+            "line": 3038,
+            "source": ".specs/HOS-1354-billing-cobro-y-proveedor/docs/03-maquinas-de-estado.md",
+            "range": [944, 956],
+            "issues": []
+        },
+        {
+            "line": 3062,
+            "source": ".specs/HOS-1354-billing-cobro-y-proveedor/docs/03-maquinas-de-estado.md",
+            "range": [886, 941],
+            "issues": []
+        },
+        {
+            "line": 3149,
+            "source": ".specs/HOS-1354-billing-cobro-y-proveedor/docs/03-maquinas-de-estado.md",
+            "range": [957, 1015],
+            "issues": []
+        },
+        {
+            "line": 3208,
+            "source": ".specs/HOS-1354-billing-cobro-y-proveedor/docs/03-maquinas-de-estado.md",
+            "range": [1016, 1081],
+            "issues": []
+        },
+        {
+            "line": 3274,
+            "source": ".specs/HOS-1354-billing-cobro-y-proveedor/docs/03-maquinas-de-estado.md",
+            "range": [1082, 1119],
+            "issues": []
+        },
+        {
+            "line": 3360,
+            "source": ".specs/HOS-1354-billing-cobro-y-proveedor/docs/03-maquinas-de-estado.md",
+            "range": [214, 284],
+            "issues": []
+        },
+        {
+            "line": 3452,
+            "source": ".specs/HOS-1354-billing-cobro-y-proveedor/docs/03-maquinas-de-estado.md",
+            "range": [534, 567],
+            "issues": []
+        },
+        {
+            "line": 3502,
+            "source": ".specs/HOS-1354-billing-cobro-y-proveedor/docs/03-maquinas-de-estado.md",
+            "range": [694, 798],
+            "issues": []
+        },
+        {
+            "line": 3622,
+            "source": ".specs/HOS-1354-billing-cobro-y-proveedor/docs/03-maquinas-de-estado.md",
+            "range": [1120, 1187],
+            "issues": []
+        },
+        {
+            "line": 3706,
+            "source": ".specs/HOS-1354-billing-cobro-y-proveedor/docs/03-maquinas-de-estado.md",
+            "range": [1188, 1276],
+            "issues": []
+        },
+        {
+            "line": 3795,
+            "source": ".specs/HOS-1354-billing-cobro-y-proveedor/docs/03-maquinas-de-estado.md",
+            "range": [1277, 1446],
+            "issues": []
+        },
+        {
+            "line": 4157,
+            "source": ".specs/HOS-1354-billing-cobro-y-proveedor/docs/03-maquinas-de-estado.md",
+            "range": [1447, 1483],
+            "issues": []
+        },
+        {
+            "line": 4196,
+            "source": ".specs/HOS-1354-billing-cobro-y-proveedor/docs/03-maquinas-de-estado.md",
+            "range": [1484, 1519],
+            "issues": []
+        },
+        {
+            "line": 4296,
+            "source": ".specs/HOS-1354-billing-cobro-y-proveedor/docs/03-maquinas-de-estado.md",
+            "range": [1740, 1832],
+            "issues": [
+                [
+                    "SOURCE",
+                    "**Las dos resoluciones le avisan a la persona, con un correo transaccional cada una** (`NUCLEO/07`"
+                ],
+                [
+                    "SOURCE",
+                    "§6, `B/19` §4 fila 10-ter; FASE 8 completa, pendiente 8, owner 2026-09-25): al leer `settled`,"
+                ],
+                [
+                    "SOURCE",
+                    "`CANCELLED` (FASE 8 completa, owner 2026-09-25); al correr `P7` por `reimbursed`, *«la disputa se"
+                ],
+                [
+                    "SOURCE",
+                    "resolvió; el cargo era correcto; podés volver a suscribirte desde acá»*.  **Cerrado el 2026-09-25 (owner,"
+                ],
+                [
+                    "SOURCE",
+                    "disputa aunque no llegue el aviso del proveedor, y esa lectura dispara el correo que corresponde"
+                ],
+                [
+                    "OUTPUT",
+                    4325,
+                    "**La resolución `settled` le avisa a la persona con un correo transaccional** (`NUCLEO/07`"
+                ],
+                [
+                    "OUTPUT",
+                    4329,
+                    "`CANCELLED` (FASE 8 completa, owner 2026-09-25). **Cerrado el 2026-09-25 (owner,"
+                ],
+                [
+                    "OUTPUT",
+                    4332,
+                    "disputa aunque no llegue el aviso del proveedor, y la lectura de `settled` dispara su correo"
+                ]
+            ]
+        },
+        {
+            "line": 4480,
+            "source": ".specs/HOS-1354-billing-cobro-y-proveedor/docs/03-maquinas-de-estado.md",
+            "range": [1833, 1862],
+            "issues": []
+        },
+        {
+            "line": 4577,
+            "source": ".specs/HOS-1354-billing-cobro-y-proveedor/docs/03-maquinas-de-estado.md",
+            "range": [1863, 1905],
+            "issues": []
+        },
+        {
+            "line": 4625,
+            "source": ".specs/HOS-1354-billing-cobro-y-proveedor/docs/03-maquinas-de-estado.md",
+            "range": [2047, 2067],
+            "issues": []
+        },
+        {
+            "line": 4673,
+            "source": ".specs/HOS-1354-billing-cobro-y-proveedor/docs/03-maquinas-de-estado.md",
+            "range": [2179, 2256],
+            "issues": []
+        },
+        {
+            "line": 4765,
+            "source": ".specs/HOS-1354-billing-cobro-y-proveedor/docs/03-maquinas-de-estado.md",
+            "range": [1906, 1930],
+            "issues": []
+        },
+        {
+            "line": 4788,
+            "source": ".specs/HOS-1354-billing-cobro-y-proveedor/docs/03-maquinas-de-estado.md",
+            "range": [1931, 1989],
+            "issues": []
+        },
+        {
+            "line": 4847,
+            "source": ".specs/HOS-1354-billing-cobro-y-proveedor/docs/03-maquinas-de-estado.md",
+            "range": [1990, 2011],
+            "issues": []
+        },
+        {
+            "line": 4869,
+            "source": ".specs/HOS-1354-billing-cobro-y-proveedor/docs/03-maquinas-de-estado.md",
+            "range": [2012, 2046],
+            "issues": []
+        },
+        {
+            "line": 4904,
+            "source": ".specs/HOS-1354-billing-cobro-y-proveedor/docs/03-maquinas-de-estado.md",
+            "range": [2068, 2094],
+            "issues": []
+        },
+        {
+            "line": 4930,
+            "source": ".specs/HOS-1354-billing-cobro-y-proveedor/docs/03-maquinas-de-estado.md",
+            "range": [2095, 2110],
+            "issues": []
+        },
+        {
+            "line": 4944,
+            "source": ".specs/HOS-1354-billing-cobro-y-proveedor/docs/03-maquinas-de-estado.md",
+            "range": [2323, 2409],
+            "issues": []
+        },
+        {
+            "line": 5045,
+            "source": ".specs/HOS-1354-billing-cobro-y-proveedor/docs/03-maquinas-de-estado.md",
+            "range": [2111, 2141],
+            "issues": []
+        },
+        {
+            "line": 5074,
+            "source": ".specs/HOS-1354-billing-cobro-y-proveedor/docs/03-maquinas-de-estado.md",
+            "range": [2142, 2178],
+            "issues": []
+        },
+        {
+            "line": 5111,
+            "source": ".specs/HOS-1354-billing-cobro-y-proveedor/docs/03-maquinas-de-estado.md",
+            "range": [2257, 2322],
+            "issues": []
+        },
+        {
+            "line": 5177,
+            "source": ".specs/HOS-1354-billing-cobro-y-proveedor/docs/03-maquinas-de-estado.md",
+            "range": [2410, 2438],
+            "issues": []
+        },
+        {
+            "line": 5206,
+            "source": ".specs/HOS-1354-billing-cobro-y-proveedor/docs/03-maquinas-de-estado.md",
+            "range": [2439, 2461],
+            "issues": []
+        },
+        {
+            "line": 5229,
+            "source": ".specs/HOS-1354-billing-cobro-y-proveedor/docs/03-maquinas-de-estado.md",
+            "range": [2462, 2504],
+            "issues": []
+        },
+        {
+            "line": 5272,
+            "source": ".specs/HOS-1354-billing-cobro-y-proveedor/docs/03-maquinas-de-estado.md",
+            "range": [2505, 2529],
+            "issues": []
+        },
+        {
+            "line": 5315,
+            "source": ".specs/HOS-1354-billing-cobro-y-proveedor/docs/03-maquinas-de-estado.md",
+            "range": [2530, 2549],
+            "issues": []
+        },
+        {
+            "line": 5414,
+            "source": ".specs/HOS-1354-billing-cobro-y-proveedor/docs/03-maquinas-de-estado.md",
+            "range": [2550, 2604],
+            "issues": []
+        },
+        {
+            "line": 5469,
+            "source": ".specs/HOS-1354-billing-cobro-y-proveedor/docs/03-maquinas-de-estado.md",
+            "range": [2605, 2688],
+            "issues": []
+        },
+        {
+            "line": 5589,
+            "source": ".specs/HOS-1354-billing-cobro-y-proveedor/docs/02-modelo-de-datos.md",
+            "range": [1008, 1124],
+            "issues": []
+        },
+        {
+            "line": 5691,
+            "source": ".specs/HOS-1354-billing-cobro-y-proveedor/docs/02-modelo-de-datos.md",
+            "range": [972, 1007],
+            "issues": []
+        },
+        {
+            "line": 5727,
+            "source": ".specs/HOS-1354-billing-cobro-y-proveedor/docs/02-modelo-de-datos.md",
+            "range": [1155, 1178],
+            "issues": []
+        },
+        {
+            "line": 5835,
+            "source": ".specs/HOS-1354-billing-cobro-y-proveedor/docs/02-modelo-de-datos.md",
+            "range": [1125, 1154],
+            "issues": []
+        },
+        {
+            "line": 6138,
+            "source": ".specs/HOS-1354-billing-cobro-y-proveedor/docs/05-idempotencia-y-concurrencia.md",
+            "range": [27, 38],
+            "issues": []
+        },
+        {
+            "line": 6150,
+            "source": ".specs/HOS-1354-billing-cobro-y-proveedor/docs/05-idempotencia-y-concurrencia.md",
+            "range": [39, 49],
+            "issues": []
+        },
+        {
+            "line": 6161,
+            "source": ".specs/HOS-1354-billing-cobro-y-proveedor/docs/05-idempotencia-y-concurrencia.md",
+            "range": [50, 103],
+            "issues": []
+        },
+        {
+            "line": 6211,
+            "source": ".specs/HOS-1354-billing-cobro-y-proveedor/docs/05-idempotencia-y-concurrencia.md",
+            "range": [544, 556],
+            "issues": []
+        },
+        {
+            "line": 6433,
+            "source": ".specs/HOS-1354-billing-cobro-y-proveedor/docs/20-testing.md",
+            "range": [499, 521],
+            "issues": []
+        },
+        {
+            "line": 6440,
+            "source": ".specs/HOS-1354-billing-cobro-y-proveedor/docs/20-testing.md",
+            "range": [522, 553],
+            "issues": []
+        },
+        {
+            "line": 6468,
+            "source": ".specs/HOS-1354-billing-cobro-y-proveedor/docs/20-testing.md",
+            "range": [466, 467],
+            "issues": [["OUTPUT", 6470, "La sección no tiene texto vigente fuera de su título."]]
+        },
+        {
+            "line": 6472,
+            "source": ".specs/HOS-1354-billing-cobro-y-proveedor/docs/20-testing.md",
+            "range": [468, 481],
+            "issues": []
+        },
+        {
+            "line": 6486,
+            "source": ".specs/HOS-1354-billing-cobro-y-proveedor/docs/20-testing.md",
+            "range": [482, 498],
+            "issues": []
+        },
+        {
+            "line": 6503,
+            "source": ".specs/HOS-1354-billing-cobro-y-proveedor/docs/20-testing.md",
+            "range": [554, 565],
+            "issues": []
+        },
+        {
+            "line": 6515,
+            "source": ".specs/HOS-1354-billing-cobro-y-proveedor/docs/20-testing.md",
+            "range": [566, 571],
+            "issues": []
+        },
+        {
+            "line": 6521,
+            "source": ".specs/HOS-1354-billing-cobro-y-proveedor/docs/20-testing.md",
+            "range": [572, 617],
+            "issues": []
+        },
+        {
+            "line": 6556,
+            "source": ".specs/HOS-1354-billing-cobro-y-proveedor/docs/20-testing.md",
+            "range": [618, 627],
+            "issues": []
+        },
+        {
+            "line": 6721,
+            "source": ".specs/HOS-1354-billing-cobro-y-proveedor/docs/20-testing.md",
+            "range": [628, 650],
+            "issues": []
+        },
+        {
+            "line": 6744,
+            "source": ".specs/HOS-1354-billing-cobro-y-proveedor/docs/20-testing.md",
+            "range": [651, 705],
+            "issues": [
+                [
+                    "SOURCE",
+                    "   misma corrida**. **La autorización la custodia el owner y la renueva cada mes**: sin la del mes"
+                ],
+                [
+                    "SOURCE",
+                    "   en curso, la corrida de producción no arranca (revisión del owner, casos vecinos, 2026-09-29,"
+                ],
+                [
+                    "OUTPUT",
+                    6762,
+                    "   misma corrida**. **La autorización la custodia el owner**: sin ella, la corrida de producción no arranca (revisión del owner, casos vecinos, 2026-09-29,"
+                ]
+            ]
+        },
+        {
+            "line": 6922,
+            "source": ".specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/20-testing.md",
+            "range": [27, 42],
+            "issues": []
+        },
+        {
+            "line": 6938,
+            "source": ".specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/20-testing.md",
+            "range": [43, 351],
+            "issues": [
+                [
+                    "SOURCE",
+                    "crítico que el cap. 02 §2.1 cerró. **La clase es hoy el cuarto atributo declarado de una clave**"
+                ],
+                [
+                    "OUTPUT",
+                    7170,
+                    "crítico que el cap. 02 §2.1 cerró. **La clase es un atributo declarado de una clave**"
+                ]
+            ]
+        },
+        {
+            "line": 7207,
+            "source": ".specs/HOS-1354-billing-cobro-y-proveedor/docs/20-testing.md",
+            "range": [43, 446],
+            "issues": []
+        },
+        {
+            "line": 7580,
+            "source": ".specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/20-testing.md",
+            "range": [352, 370],
+            "issues": []
+        },
+        {
+            "line": 7903,
+            "source": ".specs/HOS-1354-billing-cobro-y-proveedor/docs/20-testing.md",
+            "range": [447, 465],
+            "issues": []
+        },
+        {
+            "line": 7972,
+            "source": ".specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md",
+            "range": [176, 190],
+            "issues": []
+        },
+        {
+            "line": 8456,
+            "source": ".specs/HOS-1352-billing-verticals-redesign/docs/06-mp-validation-matrix.md",
+            "range": [222, 232],
+            "issues": []
+        },
+        {
+            "line": 8829,
+            "source": ".specs/HOS-1352-billing-verticals-redesign/docs/06-mp-validation-matrix.md",
+            "range": [294, 308],
+            "issues": []
+        },
+        {
+            "line": 8907,
+            "source": ".specs/HOS-1352-billing-verticals-redesign/docs/06-mp-validation-matrix.md",
+            "range": [309, 343],
+            "issues": []
+        },
+        {
+            "line": 9241,
+            "source": ".specs/HOS-1352-billing-verticals-redesign/docs/06-mp-validation-matrix.md",
+            "range": [344, 369],
+            "issues": []
+        },
+        {
+            "line": 9385,
+            "source": ".specs/HOS-1352-billing-verticals-redesign/docs/06-mp-validation-matrix.md",
+            "range": [370, 441],
+            "issues": [["OUTPUT", 9401, "Nota del catálogo sobre la fila siguiente:"]]
+        }
+    ]
+}

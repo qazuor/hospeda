@@ -1,0 +1,613 @@
+/**
+ * Tests for the listing summary builder (venue + experience,
+ * BETA-119).
+ */
+
+import { describe, expect, it } from 'vitest';
+import { buildExperienceListingSummary, buildVenueListingSummary } from '../index';
+import {
+    DEFAULT_EXPERIENCE_TYPES,
+    DEFAULT_PRICE_RANGES,
+    DEFAULT_VENUE_TYPES
+} from '../summary.catalogs';
+import type { SummaryCatalogs } from '../summary.types';
+
+const DESTINATIONS: SummaryCatalogs['destinations'] = [
+    { key: 'colon-id', label: { es: 'Colón', en: 'Colón', pt: 'Colón' } },
+    { key: 'concordia-id', label: { es: 'Concordia', en: 'Concordia', pt: 'Concordia' } }
+];
+
+describe('buildVenueListingSummary', () => {
+    describe('no filters', () => {
+        it('should render the generic subject with no-filters phrase', () => {
+            const result = buildVenueListingSummary({
+                locale: 'es',
+                filters: {},
+                counts: { shown: 9, total: 18 }
+            });
+            expect(result).toBe('Mostrando 9 de 18 locales, sin filtros activos.');
+        });
+
+        it('should append the gendered sort phrase after the no-filters phrase', () => {
+            const result = buildVenueListingSummary({
+                locale: 'es',
+                filters: {},
+                counts: { shown: 9, total: 18 },
+                sort: { sortKey: 'featured' }
+            });
+            expect(result).toBe(
+                'Mostrando 9 de 18 locales, sin filtros activos, ordenados con los destacados primero.'
+            );
+        });
+
+        it('should use the singular subject when total is 1', () => {
+            const result = buildVenueListingSummary({
+                locale: 'es',
+                filters: {},
+                counts: { shown: 1, total: 1 }
+            });
+            expect(result).toBe('Mostrando 1 de 1 local, sin filtros activos.');
+        });
+
+        it('should render in English', () => {
+            const result = buildVenueListingSummary({
+                locale: 'en',
+                filters: {},
+                counts: { shown: 9, total: 18 }
+            });
+            expect(result).toBe('Showing 9 of 18 venues, no active filters.');
+        });
+    });
+
+    describe('type filter', () => {
+        it('should join the type with the venue connector in English', () => {
+            const result = buildVenueListingSummary({
+                locale: 'en',
+                filters: { type: 'RESTAURANT' },
+                counts: { shown: 5, total: 12 },
+                catalogs: { types: DEFAULT_VENUE_TYPES }
+            });
+            expect(result).toBe('Showing 5 of 12 venues of type restaurant.');
+        });
+
+        it('should flow the type into the subject', () => {
+            const result = buildVenueListingSummary({
+                locale: 'es',
+                filters: { type: 'RESTAURANT' },
+                counts: { shown: 5, total: 12 },
+                catalogs: { types: DEFAULT_VENUE_TYPES }
+            });
+            expect(result).toBe('Mostrando 5 de 12 locales de tipo restaurante.');
+        });
+
+        it('should not show "sin filtros activos" once destination is also active', () => {
+            const result = buildVenueListingSummary({
+                locale: 'es',
+                filters: { type: 'BAR', destinationId: 'colon-id' },
+                counts: { shown: 3, total: 3 },
+                catalogs: { types: DEFAULT_VENUE_TYPES, destinations: DESTINATIONS }
+            });
+            expect(result).toBe('Mostrando 3 de 3 locales de tipo bar en Colón.');
+        });
+
+        it('should fall back to the raw key when type is not in the catalog', () => {
+            const result = buildVenueListingSummary({
+                locale: 'es',
+                filters: { type: 'UNKNOWN' },
+                counts: { shown: 1, total: 1 }
+            });
+            expect(result).toContain('de tipo UNKNOWN');
+        });
+    });
+
+    describe('destination filter', () => {
+        it('should render a single destination', () => {
+            const result = buildVenueListingSummary({
+                locale: 'es',
+                filters: { destinationId: 'concordia-id' },
+                counts: { shown: 4, total: 10 },
+                catalogs: { destinations: DESTINATIONS }
+            });
+            expect(result).toBe('Mostrando 4 de 10 locales en Concordia.');
+        });
+    });
+
+    describe('text filter', () => {
+        it('should join with a space when destination is NOT active', () => {
+            const result = buildVenueListingSummary({
+                locale: 'es',
+                filters: { text: 'pizza' },
+                counts: { shown: 2, total: 20 }
+            });
+            expect(result).toBe(
+                'Mostrando 2 de 20 locales que contienen "pizza" en el nombre o la descripción.'
+            );
+        });
+
+        it('should join with a comma when destination IS active', () => {
+            const result = buildVenueListingSummary({
+                locale: 'es',
+                filters: { destinationId: 'colon-id', text: 'pizza' },
+                counts: { shown: 2, total: 10 },
+                catalogs: { destinations: DESTINATIONS }
+            });
+            expect(result).toBe(
+                'Mostrando 2 de 10 locales en Colón, que contienen "pizza" en el nombre o la descripción.'
+            );
+        });
+
+        it('should strip surrounding % wildcards', () => {
+            const result = buildVenueListingSummary({
+                locale: 'es',
+                filters: { text: '%pizza%' },
+                counts: { shown: 2, total: 20 }
+            });
+            expect(result).toContain('"pizza"');
+            expect(result).not.toContain('%');
+        });
+    });
+
+    describe('price range filter (venue only)', () => {
+        it('should render the price-range label', () => {
+            const result = buildVenueListingSummary({
+                locale: 'es',
+                filters: { priceRange: 'BUDGET' },
+                counts: { shown: 6, total: 30 },
+                catalogs: { priceRanges: DEFAULT_PRICE_RANGES }
+            });
+            expect(result).toBe('Mostrando 6 de 30 locales, con precios económicos.');
+        });
+
+        it('should render in English', () => {
+            const result = buildVenueListingSummary({
+                locale: 'en',
+                filters: { priceRange: 'PREMIUM' },
+                counts: { shown: 6, total: 30 },
+                catalogs: { priceRanges: DEFAULT_PRICE_RANGES }
+            });
+            expect(result).toContain('with premium');
+        });
+    });
+
+    describe('minRating filter', () => {
+        it('should render an integer rating without decimals', () => {
+            const result = buildVenueListingSummary({
+                locale: 'es',
+                filters: { minRating: 4 },
+                counts: { shown: 8, total: 30 }
+            });
+            expect(result).toContain('con calificación mínima de 4');
+        });
+
+        it('should render a decimal rating with a comma in es', () => {
+            const result = buildVenueListingSummary({
+                locale: 'es',
+                filters: { minRating: 4.5 },
+                counts: { shown: 8, total: 30 }
+            });
+            expect(result).toContain('con calificación mínima de 4,5');
+        });
+
+        it('should render a decimal rating with a dot in en', () => {
+            const result = buildVenueListingSummary({
+                locale: 'en',
+                filters: { minRating: 4.5 },
+                counts: { shown: 8, total: 30 }
+            });
+            expect(result).toContain('with minimum rating of 4.5');
+        });
+    });
+
+    describe('featured filter', () => {
+        it('should render the masculine "solo destacados" phrase', () => {
+            const result = buildVenueListingSummary({
+                locale: 'es',
+                filters: { isFeatured: true },
+                counts: { shown: 7, total: 18 }
+            });
+            expect(result).toBe('Mostrando 7 de 18 locales, solo destacados.');
+        });
+
+        it('should not be active when isFeatured is falsy', () => {
+            const result = buildVenueListingSummary({
+                locale: 'es',
+                filters: { isFeatured: undefined },
+                counts: { shown: 18, total: 18 }
+            });
+            expect(result).toContain('sin filtros activos');
+        });
+    });
+
+    describe('sort', () => {
+        it('should render the ratingDesc phrase (gender-invariant fragment)', () => {
+            const result = buildVenueListingSummary({
+                locale: 'es',
+                filters: {},
+                counts: { shown: 10, total: 10 },
+                sort: { sortKey: 'ratingDesc' }
+            });
+            expect(result).toContain('ordenados por mejor calificación');
+        });
+
+        it('should render the newest phrase', () => {
+            const result = buildVenueListingSummary({
+                locale: 'es',
+                filters: {},
+                counts: { shown: 10, total: 10 },
+                sort: { sortKey: 'newest' }
+            });
+            expect(result).toContain('ordenados por más recientes');
+        });
+
+        it('should render the nameAsc phrase', () => {
+            const result = buildVenueListingSummary({
+                locale: 'es',
+                filters: {},
+                counts: { shown: 10, total: 10 },
+                sort: { sortKey: 'nameAsc' }
+            });
+            expect(result).toContain('ordenados por nombre, A a Z');
+        });
+
+        it('should not render a sort phrase for an unknown key', () => {
+            const result = buildVenueListingSummary({
+                locale: 'es',
+                filters: {},
+                counts: { shown: 10, total: 10 },
+                sort: { sortKey: 'bogus' }
+            });
+            expect(result).not.toContain('ordenados');
+        });
+
+        it('should not render a sort phrase when sort is omitted', () => {
+            const result = buildVenueListingSummary({
+                locale: 'es',
+                filters: {},
+                counts: { shown: 10, total: 10 }
+            });
+            expect(result).not.toContain('ordenados');
+        });
+    });
+
+    describe('zero results', () => {
+        it('should render the "no results found" sentence', () => {
+            const result = buildVenueListingSummary({
+                locale: 'es',
+                filters: { type: 'BAR' },
+                counts: { shown: 0, total: 0 },
+                catalogs: { types: DEFAULT_VENUE_TYPES }
+            });
+            expect(result).toBe('No se encontraron locales de tipo bar.');
+        });
+    });
+
+    describe('full integration example', () => {
+        it('should combine type + destination + text + priceRange + minRating + featured + sort', () => {
+            const result = buildVenueListingSummary({
+                locale: 'es',
+                filters: {
+                    type: 'RESTAURANT',
+                    destinationId: 'colon-id',
+                    text: 'centro',
+                    priceRange: 'MID',
+                    minRating: 4,
+                    isFeatured: true
+                },
+                counts: { shown: 2, total: 5 },
+                sort: { sortKey: 'ratingDesc' },
+                catalogs: {
+                    types: DEFAULT_VENUE_TYPES,
+                    destinations: DESTINATIONS,
+                    priceRanges: DEFAULT_PRICE_RANGES
+                }
+            });
+            expect(result).toBe(
+                'Mostrando 2 de 5 locales de tipo restaurante en Colón, que contienen "centro" en el nombre o la descripción, con precios moderados, con calificación mínima de 4, solo destacados, ordenados por mejor calificación.'
+            );
+        });
+    });
+});
+
+describe('buildExperienceListingSummary', () => {
+    describe('no filters', () => {
+        it('should render the generic feminine subject with no-filters phrase', () => {
+            const result = buildExperienceListingSummary({
+                locale: 'es',
+                filters: {},
+                counts: { shown: 3, total: 4 }
+            });
+            expect(result).toBe('Mostrando 3 de 4 experiencias, sin filtros activos.');
+        });
+
+        it('should append the feminine gendered sort phrase', () => {
+            const result = buildExperienceListingSummary({
+                locale: 'es',
+                filters: {},
+                counts: { shown: 3, total: 4 },
+                sort: { sortKey: 'featured' }
+            });
+            expect(result).toBe(
+                'Mostrando 3 de 4 experiencias, sin filtros activos, ordenadas con las destacadas primero.'
+            );
+        });
+
+        it('should use the singular subject when total is 1', () => {
+            const result = buildExperienceListingSummary({
+                locale: 'es',
+                filters: {},
+                counts: { shown: 1, total: 1 }
+            });
+            expect(result).toBe('Mostrando 1 de 1 experiencia, sin filtros activos.');
+        });
+
+        it('should render in English', () => {
+            const result = buildExperienceListingSummary({
+                locale: 'en',
+                filters: {},
+                counts: { shown: 3, total: 4 }
+            });
+            expect(result).toBe('Showing 3 of 4 experiences, no active filters.');
+        });
+    });
+
+    describe('type filter', () => {
+        it('should flow the type into the subject', () => {
+            const result = buildExperienceListingSummary({
+                locale: 'es',
+                filters: { type: 'KAYAK_RENTAL' },
+                counts: { shown: 2, total: 6 },
+                catalogs: { types: DEFAULT_EXPERIENCE_TYPES }
+            });
+            expect(result).toBe('Mostrando 2 de 6 experiencias de alquiler de kayak.');
+        });
+    });
+
+    describe('price range filter should never apply to experiences', () => {
+        it('should ignore a stray priceRange value (hasPriceRange=false)', () => {
+            // `priceRange` is a shared field on `ListingSummaryFilters` (used by
+            // venue) but must be defensively ignored by the experience
+            // entity config, which sets `hasPriceRange: false` — the
+            // experiences page itself never reads/sends this filter.
+            const result = buildExperienceListingSummary({
+                locale: 'es',
+                filters: { priceRange: 'BUDGET' },
+                counts: { shown: 6, total: 6 }
+            });
+            expect(result).not.toContain('precios');
+            expect(result).toContain('sin filtros activos');
+        });
+    });
+
+    describe('featured filter', () => {
+        it('should render the feminine "solo destacadas" phrase', () => {
+            const result = buildExperienceListingSummary({
+                locale: 'es',
+                filters: { isFeatured: true },
+                counts: { shown: 5, total: 6 }
+            });
+            expect(result).toBe('Mostrando 5 de 6 experiencias, solo destacadas.');
+        });
+    });
+
+    describe('minRating filter', () => {
+        it('should render the rating phrase', () => {
+            const result = buildExperienceListingSummary({
+                locale: 'es',
+                filters: { minRating: 3.5 },
+                counts: { shown: 4, total: 6 }
+            });
+            expect(result).toContain('con calificación mínima de 3,5');
+        });
+    });
+
+    describe('destination + text joining', () => {
+        it('should join text with a comma once destination is active', () => {
+            const result = buildExperienceListingSummary({
+                locale: 'es',
+                filters: { destinationId: 'colon-id', text: 'kayak' },
+                counts: { shown: 1, total: 1 },
+                catalogs: { destinations: DESTINATIONS }
+            });
+            expect(result).toBe(
+                'Mostrando 1 de 1 experiencia en Colón, que contienen "kayak" en el nombre o la descripción.'
+            );
+        });
+    });
+
+    describe('zero results', () => {
+        it('should render the "no results found" sentence', () => {
+            const result = buildExperienceListingSummary({
+                locale: 'es',
+                filters: {},
+                counts: { shown: 0, total: 0 }
+            });
+            expect(result).toBe('No se encontraron experiencias.');
+        });
+    });
+
+    describe('full integration example', () => {
+        it('should combine type + destination + text + minRating + featured + sort', () => {
+            const result = buildExperienceListingSummary({
+                locale: 'es',
+                filters: {
+                    type: 'BOAT_TRIP',
+                    destinationId: 'concordia-id',
+                    text: 'atardecer',
+                    minRating: 4.5,
+                    isFeatured: true
+                },
+                counts: { shown: 2, total: 3 },
+                sort: { sortKey: 'newest' },
+                catalogs: { types: DEFAULT_EXPERIENCE_TYPES, destinations: DESTINATIONS }
+            });
+            expect(result).toBe(
+                'Mostrando 2 de 3 experiencias de paseo en lancha en Concordia, que contienen "atardecer" en el nombre o la descripción, con calificación mínima de 4,5, solo destacadas, ordenadas por más recientes.'
+            );
+        });
+    });
+});
+
+describe('buildVenueListingSummary (pt)', () => {
+    it('should render the plural subject with no filters', () => {
+        const result = buildVenueListingSummary({
+            locale: 'pt',
+            filters: {},
+            counts: { shown: 9, total: 18 }
+        });
+        expect(result).toBe('Mostrando 9 de 18 estabelecimentos, sem filtros ativos.');
+    });
+
+    it('should use the singular subject when total is 1', () => {
+        const result = buildVenueListingSummary({
+            locale: 'pt',
+            filters: {},
+            counts: { shown: 1, total: 1 }
+        });
+        expect(result).toBe('Mostrando 1 de 1 estabelecimento, sem filtros ativos.');
+    });
+
+    it('should append the masculine featured-first sort phrase', () => {
+        const result = buildVenueListingSummary({
+            locale: 'pt',
+            filters: {},
+            counts: { shown: 9, total: 18 },
+            sort: { sortKey: 'featured' }
+        });
+        expect(result).toBe(
+            'Mostrando 9 de 18 estabelecimentos, sem filtros ativos, ordenados com os destacados primeiro.'
+        );
+    });
+
+    it.each([
+        ['ratingDesc', 'ordenados por melhor avaliação'],
+        ['newest', 'ordenados por mais recentes'],
+        ['nameAsc', 'ordenados por nome, de A a Z']
+    ])('should render the %s sort phrase', (sortKey, expected) => {
+        const result = buildVenueListingSummary({
+            locale: 'pt',
+            filters: {},
+            counts: { shown: 2, total: 2 },
+            sort: { sortKey }
+        });
+        expect(result).toBe(`Mostrando 2 de 2 estabelecimentos, sem filtros ativos, ${expected}.`);
+    });
+
+    it('should render type, destination and price range', () => {
+        const result = buildVenueListingSummary({
+            locale: 'pt',
+            filters: { type: 'PARRILLA', destinationId: 'colon-id', priceRange: 'BUDGET' },
+            counts: { shown: 1, total: 1 },
+            catalogs: {
+                types: DEFAULT_VENUE_TYPES,
+                destinations: DESTINATIONS,
+                priceRanges: DEFAULT_PRICE_RANGES
+            }
+        });
+        expect(result).toBe(
+            'Mostrando 1 de 1 estabelecimento do tipo churrascaria em Colón, com preços econômicos.'
+        );
+    });
+
+    it('should render the full filter combination with the pt decimal comma', () => {
+        const result = buildVenueListingSummary({
+            locale: 'pt',
+            filters: {
+                type: 'RESTAURANT',
+                destinationId: 'colon-id',
+                text: 'centro',
+                priceRange: 'MID',
+                minRating: 4.5,
+                isFeatured: true
+            },
+            counts: { shown: 2, total: 5 },
+            sort: { sortKey: 'ratingDesc' },
+            catalogs: {
+                types: DEFAULT_VENUE_TYPES,
+                destinations: DESTINATIONS,
+                priceRanges: DEFAULT_PRICE_RANGES
+            }
+        });
+        expect(result).toBe(
+            'Mostrando 2 de 5 estabelecimentos do tipo restaurante em Colón, que contêm "centro" no nome ou na descrição, com preços moderados, com avaliação mínima de 4,5, somente destacados, ordenados por melhor avaliação.'
+        );
+    });
+
+    it('should render the zero-results sentence', () => {
+        const result = buildVenueListingSummary({
+            locale: 'pt',
+            filters: { text: 'xyz' },
+            counts: { shown: 0, total: 0 }
+        });
+        expect(result).toBe(
+            'Nenhum resultado encontrado para estabelecimentos que contêm "xyz" no nome ou na descrição.'
+        );
+    });
+});
+
+describe('buildExperienceListingSummary (pt)', () => {
+    it('should render the plural subject with no filters', () => {
+        const result = buildExperienceListingSummary({
+            locale: 'pt',
+            filters: {},
+            counts: { shown: 5, total: 5 }
+        });
+        expect(result).toBe('Mostrando 5 de 5 experiências, sem filtros ativos.');
+    });
+
+    it('should use the singular subject when total is 1', () => {
+        const result = buildExperienceListingSummary({
+            locale: 'pt',
+            filters: {},
+            counts: { shown: 1, total: 1 }
+        });
+        expect(result).toBe('Mostrando 1 de 1 experiência, sem filtros ativos.');
+    });
+
+    it('should append the feminine featured-first sort phrase', () => {
+        const result = buildExperienceListingSummary({
+            locale: 'pt',
+            filters: {},
+            counts: { shown: 5, total: 5 },
+            sort: { sortKey: 'featured' }
+        });
+        expect(result).toBe(
+            'Mostrando 5 de 5 experiências, sem filtros ativos, ordenadas com as destacadas primeiro.'
+        );
+    });
+
+    it('should render type and destination, ignoring a stray priceRange', () => {
+        const result = buildExperienceListingSummary({
+            locale: 'pt',
+            filters: { type: 'KAYAK_RENTAL', destinationId: 'concordia-id', priceRange: 'BUDGET' },
+            counts: { shown: 3, total: 4 },
+            sort: { sortKey: 'newest' },
+            catalogs: { types: DEFAULT_EXPERIENCE_TYPES, destinations: DESTINATIONS }
+        });
+        expect(result).toBe(
+            'Mostrando 3 de 4 experiências de aluguel de caiaque em Concordia, ordenadas por mais recentes.'
+        );
+    });
+
+    it('should render the feminine featured-only filter with rating', () => {
+        const result = buildExperienceListingSummary({
+            locale: 'pt',
+            filters: { isFeatured: true, minRating: 4 },
+            counts: { shown: 2, total: 2 },
+            sort: { sortKey: 'nameAsc' }
+        });
+        expect(result).toBe(
+            'Mostrando 2 de 2 experiências, com avaliação mínima de 4, somente destacadas, ordenadas por nome, de A a Z.'
+        );
+    });
+
+    it('should render the zero-results sentence', () => {
+        const result = buildExperienceListingSummary({
+            locale: 'pt',
+            filters: { text: 'kayak' },
+            counts: { shown: 0, total: 0 }
+        });
+        expect(result).toBe(
+            'Nenhum resultado encontrado para experiências que contêm "kayak" no nome ou na descrição.'
+        );
+    });
+});

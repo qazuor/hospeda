@@ -1,0 +1,51 @@
+Barrido de propagación BM/CK · pasada 9
+
+Alcance: todos los .md de spec-consolidada (incluidos generados, g8/src y
+_trabajo, clasificado como evidencia histórica) y fuentes vivas HOS-1352/1353/1354.
+Los inventarios exhaustivos están en barrido-spec.txt (1031 coincidencias amplias)
+y barrido-fuentes.txt (136 candidatos por proximidad); cada entrada lleva
+archivo:línea y resolución/motivo. Las búsquedas rg están archivadas al lado.
+
+CORREGIDOS — líneas finales salvo donde se explicita la anterior:
+BM spec-consolidada/00-indice.md:133 — carga estructural paso3, verifica3a.
+BM spec-consolidada/00-indice.md:1398 — mismo reparto en tabla de precios.
+CK spec-consolidada/10-corte/B9a.md:1216 — emisión después commit sin durable;
+   red reconciliador diario; test comprueba ausencia de aviso tras rollback.
+CK docs/41-corte-del-mvp/00-propuesta.md:45 — tachado aviso encolado y agregado
+   CK; PB12 y correos U2 conservan su encolado.
+BM docs/41-corte-del-mvp/00-propuesta.md:197–198 — tachado carga3a/agregado3.
+BM docs/41-corte-del-mvp/00-propuesta.md:265 — mismo ajuste en guard G-R2-C.
+BM docs/41-corte-del-mvp/00-propuesta.md:380 — mismo ajuste en complementos.
+BM spec-consolidada/01-decisiones-vigentes.md:2114 anterior — texto superado
+   de DEC-MP-002#📌2 omitido por adjudicación PARCIAL; nota final :2126 cita
+   el quinto pin vigente. Generado, nunca editado a mano.
+BM spec-consolidada/01-decisiones-vigentes.md:5913 anterior — texto superado
+   de DEC-ARCH-013 omitido por adjudicación PARCIAL; nota final :5938 cita
+   segundo pin vigente. Generado, nunca editado a mano.
+
+GENERADOR aprobado (fuera de BM/CK): 01-decisiones-vigentes.md:14175,
+CC Caducada en parte por CF; conserva AC de B2 y cliente por S38 encolado.
+Arreglo en g1/omisiones.py; las dos omisiones BM se derivan de adjudicar.py.
+Tres canarios nuevos comprueban CC y ambas omisiones BM; evidencia en g-sandbox/.
+
+SIN CAMBIO — explicaciones relevantes:
+- docs/01-decision-log.md:1467: original BM ya superado por 📌5 (1502–1510).
+- docs/01-decision-log.md:7319: original ARCH-013 superado por 📌2 (7346–7351).
+  No se reescriben decisiones históricas del log ni se crean pines redundantes;
+  ahora la consolidada sí omite ambos fragmentos y muestra su evidencia vigente.
+- docs/41-corte-del-mvp/20-aplicacion.md:49,71–72: registro histórico de aplicación
+  anterior a consolidada (declara su alcance en :14–15); informe protegido.
+- Otros informes y _trabajo: evidencia histórica inmutable, no mandatos vivos.
+- g8/src/B4.md:354,359,371,402,508: ya cumple CK, negaciones o pruebas de pérdida;
+  g8/src/B5.md:910: aviso posterior al commit, y encolado separado sólo de correos.
+- 10-corte/B9a.md:1149–1151: el correo de S13/S20 usa outbox; aviso es otra viñeta.
+- Colas S38/cambios programados: son objetos de negocio, no transporte del aviso.
+- Otras menciones 3a: verificaciones del catálogo, referencias, texto tachado,
+  recuerdos explícitos («corría») o números de decisiones; no carga viva.
+- HOS-1353 y HOS-1354: ninguna corrección adicional; sus mandatos vivos ya cumplen.
+
+Comprobación posterior a regenerar: revisadas todas las apariciones de palabra
+3a y contextos aviso/cambio de cobertura con encol/outbox/cola/durable, en salidas
+reales y g8/src; no quedan mandatos vivos contradictorios detectados.
+Las etiquetas pendientes de los informes de grupos F/S describen su entrega
+antes de integración; quedan resueltas por las dos omisiones registradas arriba.

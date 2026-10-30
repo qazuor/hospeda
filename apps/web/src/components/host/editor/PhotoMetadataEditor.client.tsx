@@ -13,13 +13,13 @@
  * ## Shared by four galleries, despite living under `host/`
  *
  * HOS-1036 found the same gap in every other gallery on the site — post,
- * event, gastronomy and experience photos had the columns and no way to write
+ * event, venue and experience photos had the columns and no way to write
  * them — so this panel is now mounted by four surfaces:
  *
  *  - `host/editor/PhotoSection.client.tsx` (the accommodation portada slot),
  *  - `host/editor/PhotoGalleryItem.client.tsx` (each accommodation thumbnail),
  *  - `account/editor/ContentMediaSection.client.tsx` (post + event),
- *  - `commerce/editor/MediaSection.client.tsx` (gastronomy + experience).
+ *  - `listing/editor/MediaSection.client.tsx` (venue + experience).
  *
  * It stayed in this directory rather than moving to a neutral one: the styles
  * it uses live in `PhotoSection.module.css`, and moving the component without

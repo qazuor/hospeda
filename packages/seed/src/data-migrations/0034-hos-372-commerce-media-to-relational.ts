@@ -50,11 +50,8 @@
  * where the columns are already gone: there is nothing left to backfill there,
  * so the migration reports zero and exits.
  */
-import { experienceMedia, gastronomyMedia, inArray, sql } from '@repo/db';
-import {
-    buildExperienceMediaRows,
-    buildGastronomyMediaRows
-} from '../utils/commerce-media-builder.js';
+import { experienceMedia, inArray, sql, venueMedia } from '@repo/db';
+import { buildExperienceMediaRows, buildVenueMediaRows } from '../utils/listing-media-builder.js';
 import type { FixtureMediaBlock } from '../utils/media-rows-builder.js';
 import type { SeedMigrationCtx, SeedMigrationModule, SeedMigrationResult } from './types.js';
 
@@ -67,7 +64,7 @@ export const meta = {
     // it against an already-dropped source instead of moving zero rows and
     // closing itself in the ledger.
     requiresColumns: [
-        { table: 'gastronomies', column: 'media' },
+        { table: 'venues', column: 'media' },
         { table: 'experiences', column: 'media' }
     ]
 } as const satisfies SeedMigrationModule['meta'];
@@ -104,7 +101,7 @@ function toPhotoBlock(value: unknown): FixtureMediaBlock | null {
  */
 async function readPhotoCandidates(
     db: SeedMigrationCtx['db'],
-    table: 'gastronomies' | 'experiences'
+    table: 'venues' | 'experiences'
 ): Promise<PhotoCandidate[]> {
     const columnExists = await db.execute(
         sql`SELECT 1 FROM information_schema.columns
@@ -128,7 +125,7 @@ export async function up(ctx: SeedMigrationCtx): Promise<SeedMigrationResult> {
     const { db } = ctx;
 
     // ── Gastronomy ──────────────────────────────────────────────────────────
-    const gastronomyCandidates = await readPhotoCandidates(db, 'gastronomies');
+    const gastronomyCandidates = await readPhotoCandidates(db, 'venues');
 
     // One query for the whole set rather than one per listing: any id that
     // already owns a media row has been migrated and must be left alone.
@@ -137,27 +134,27 @@ export async function up(ctx: SeedMigrationCtx): Promise<SeedMigrationResult> {
             ? []
             : (
                   await db
-                      .select({ gastronomyId: gastronomyMedia.gastronomyId })
-                      .from(gastronomyMedia)
+                      .select({ venueId: venueMedia.venueId })
+                      .from(venueMedia)
                       .where(
                           inArray(
-                              gastronomyMedia.gastronomyId,
+                              venueMedia.venueId,
                               gastronomyCandidates.map((row) => row.id)
                           )
                       )
-              ).map((row) => row.gastronomyId)
+              ).map((row) => row.venueId)
     );
 
     let gastronomyListings = 0;
     let gastronomyPhotos = 0;
     for (const listing of gastronomyCandidates) {
         if (gastronomyMigrated.has(listing.id)) continue;
-        const rows = buildGastronomyMediaRows({
-            gastronomyId: listing.id,
+        const rows = buildVenueMediaRows({
+            venueId: listing.id,
             media: listing.media
-        }) as (typeof gastronomyMedia.$inferInsert)[];
+        }) as (typeof venueMedia.$inferInsert)[];
         if (rows.length === 0) continue;
-        await db.insert(gastronomyMedia).values(rows);
+        await db.insert(venueMedia).values(rows);
         gastronomyListings += 1;
         gastronomyPhotos += rows.length;
     }

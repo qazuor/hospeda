@@ -270,21 +270,16 @@ export async function uploadToProvider(
  * single source of truth for the Cloudinary folder layout — rather than
  * pluralizing the entity type inline.
  *
- * It used to return ``hospeda/${environment}/${entityType}s/${entityId}``, and
- * naive `+ 's'` pluralization is exactly the failure `ENTITY_FOLDER_MAP` was
- * introduced to prevent: `gastronomy` came out as `gastronomys`, so every photo
- * uploaded through the WEB owner editor (which reaches Cloudinary through this
- * helper, on the protected tier) landed in `hospeda/<env>/gastronomys/` while
- * the ADMIN upload route — already resolving through the map — wrote the same
- * listing's photos to the correct `gastronomies/` (HOS-831). Both folders
- * therefore exist today, split by which surface performed the upload.
+ * The old upload helper derived a folder by appending a plural suffix to the
+ * entity type. That produced a legacy folder for owner uploads, while admin
+ * uploads used the mapped venue folder (HOS-831). Both locations still exist
+ * because uploads from the two surfaces went to different destinations.
  *
  * That existing split needs no migration, and this change does not create one:
  * `<entity>_media.url` stores the COMPLETE CDN URL (`text NOT NULL`), and
  * `getMediaUrl()` only splices transform tokens in after `/upload/` — it never
- * rebuilds the folder from the entity type. Photos already in `gastronomys/`
- * keep resolving from the URLs recorded against them; only the destination of
- * NEW uploads moves.
+ * rebuilds the folder from the entity type. Previously uploaded photos keep
+ * resolving from their recorded URLs; only the destination of NEW uploads moves.
  *
  * Correcting the call site rather than the string is deliberate: patching the
  * template here would have left two independent folder builders alive to drift

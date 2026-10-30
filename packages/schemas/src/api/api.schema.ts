@@ -430,21 +430,16 @@ export type LocationQuery = z.infer<typeof LocationQuerySchema>;
  * Base query schema combining common query parameters
  * Can be extended by specific entity query schemas
  */
-export const BaseQuerySchema =
-    PaginationQuerySchema.merge(SortQuerySchema).merge(SearchQuerySchema);
+export const BaseQuerySchema = PaginationQuerySchema.safeExtend(SortQuerySchema.shape).safeExtend(
+    SearchQuerySchema.shape
+);
 export type BaseQuery = z.infer<typeof BaseQuerySchema>;
 
 /**
  * Extended query schema with date and location filters
  * For entities that need comprehensive filtering capabilities
  */
-export const ExtendedQuerySchema =
-    BaseQuerySchema.merge(DateRangeQuerySchema).merge(LocationQuerySchema);
+export const ExtendedQuerySchema = BaseQuerySchema.safeExtend(
+    DateRangeQuerySchema.shape
+).safeExtend(LocationQuerySchema.shape);
 export type ExtendedQuery = z.infer<typeof ExtendedQuerySchema>;
-
-/**
- * Commerce query schema with price filtering
- * For entities related to commerce and pricing
- */
-export const CommerceQuerySchema = ExtendedQuerySchema.merge(PriceRangeQuerySchema);
-export type CommerceQuery = z.infer<typeof CommerceQuerySchema>;

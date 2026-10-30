@@ -542,15 +542,11 @@ describe('Authorization Middleware', () => {
     // HOS-1077 — anyOfPermissions (OR-groups)
     //
     // `requiredPermissions` is `hasAllPermissions`, strictly AND. The vertical
-    // commerce split needs "the new permission OR the legacy one" at the route
-    // gate, which that field cannot express. These assertions cover the three
-    // properties the migration window depends on, at the HTTP boundary rather
-    // than against a hand-built context.
+    // A shared route can require either vertical's permission. These assertions
+    // cover OR groups at the HTTP boundary.
     // -----------------------------------------------------------------------
     describe('anyOfPermissions OR-groups', () => {
-        const GATE = [
-            [PermissionEnum.GASTRONOMY_EDIT_ALL, PermissionEnum.COMMERCE_EDIT_ALL]
-        ] as const;
+        const GATE = [[PermissionEnum.VENUE_EDIT_ALL, PermissionEnum.EXPERIENCE_EDIT_ALL]] as const;
 
         const requestWith = async (permissions: PermissionEnum[]) => {
             mockGetActorFromContext.mockReturnValue(createAdminActor(permissions));
@@ -560,20 +556,18 @@ describe('Authorization Middleware', () => {
             return app.request('/test');
         };
 
-        it('admits an actor holding only the LEGACY permission (dual-read)', async () => {
-            const res = await requestWith([PermissionEnum.COMMERCE_EDIT_ALL]);
-            expect(res.status).toBe(200);
-        });
-
-        it('admits an actor holding only the VERTICAL permission', async () => {
-            const res = await requestWith([PermissionEnum.GASTRONOMY_EDIT_ALL]);
-            expect(res.status).toBe(200);
-        });
-
-        it("refuses an actor holding only the OTHER vertical's permission", async () => {
-            // The bug HOS-1077 fixes, stated at the gate: an experience editor
-            // must not pass a gastronomy route.
+        it('admits an actor holding only the experience permission', async () => {
             const res = await requestWith([PermissionEnum.EXPERIENCE_EDIT_ALL]);
+            expect(res.status).toBe(200);
+        });
+
+        it('admits an actor holding only the venue permission', async () => {
+            const res = await requestWith([PermissionEnum.VENUE_EDIT_ALL]);
+            expect(res.status).toBe(200);
+        });
+
+        it('refuses an actor holding only an unrelated permission', async () => {
+            const res = await requestWith([PermissionEnum.USER_UPDATE_PROFILE]);
             expect(res.status).toBe(403);
         });
 
@@ -585,17 +579,17 @@ describe('Authorization Middleware', () => {
         it('ANDs the groups with each other', async () => {
             // Two groups, actor satisfies only the first.
             mockGetActorFromContext.mockReturnValue(
-                createAdminActor([PermissionEnum.GASTRONOMY_EDIT_ALL])
+                createAdminActor([PermissionEnum.VENUE_EDIT_ALL])
             );
             mockIsGuestActor.mockReturnValue(false);
             app.use(
                 authorizationMiddleware({
                     level: 'admin',
                     anyOfPermissions: [
-                        [PermissionEnum.GASTRONOMY_EDIT_ALL, PermissionEnum.COMMERCE_EDIT_ALL],
+                        [PermissionEnum.VENUE_EDIT_ALL, PermissionEnum.EXPERIENCE_EDIT_ALL],
                         [
-                            PermissionEnum.GASTRONOMY_MODERATE_REVIEW,
-                            PermissionEnum.COMMERCE_MODERATE_REVIEW
+                            PermissionEnum.VENUE_MODERATE_REVIEW,
+                            PermissionEnum.EXPERIENCE_MODERATE_REVIEW
                         ]
                     ]
                 })
@@ -607,7 +601,7 @@ describe('Authorization Middleware', () => {
 
         it('ANDs the groups with requiredPermissions', async () => {
             mockGetActorFromContext.mockReturnValue(
-                createAdminActor([PermissionEnum.GASTRONOMY_EDIT_ALL])
+                createAdminActor([PermissionEnum.VENUE_EDIT_ALL])
             );
             mockIsGuestActor.mockReturnValue(false);
             app.use(
@@ -633,7 +627,7 @@ describe('Authorization Middleware', () => {
 
         it('applies on the protected tier too, not just admin', async () => {
             mockGetActorFromContext.mockReturnValue(
-                createUserActor([PermissionEnum.EXPERIENCE_EDIT_ALL])
+                createUserActor([PermissionEnum.USER_UPDATE_PROFILE])
             );
             mockIsGuestActor.mockReturnValue(false);
             app.use(authorizationMiddleware({ level: 'protected', anyOfPermissions: GATE }));

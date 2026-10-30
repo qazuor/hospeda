@@ -47,6 +47,12 @@ out
 # Testing / Coverage
 # =========================
 coverage
+# coverage/ is the vertical-coverage domain here, not test coverage output (HOS-1447)
+!packages/verticals/src/coverage/
+!packages/verticals/test/coverage/
+# billing's real coverage sources live under coverage/ too (HOS-1532)
+!packages/service-core/src/services/billing/coverage/
+!packages/service-core/test/services/billing/coverage/
 test-results/
 # Playwright e2e artifacts (regenerated each run; see apps/e2e/playwright.config.ts)
 apps/e2e/playwright-report/
@@ -181,3 +187,9 @@ docs/marketing/placas/
 .smoke/
 # Local Pi runtime state
 .atl/
+
+# Local Claude/Pi notification logs
+tools/.claude/.log/
+
+# Cutover run manifests (ids only; deleted when the cutover ends)
+scripts/cutover/out/

@@ -14,8 +14,8 @@
  *      `/blog` -> `/publicaciones`, `/publicaciones/autor` -> `/autores`,
  *      and the three H-110 facet-landing legacy-English-slug redirects —
  *      `/alojamientos/tipo/cabin` -> `/alojamientos/tipo/cabana`,
- *      `/eventos/categoria/gastronomy` -> `/eventos/categoria/gastronomia`,
- *      `/publicaciones/categoria/gastronomy` -> `/publicaciones/categoria/gastronomia`)
+ *      legacy English event category slugs redirect to their Spanish equivalents,
+ *      and the same applies to post category slugs.
  *      redirect before locale/route resolution. Chained aliases (e.g. the
  *      `/blog` + post-category case) resolve in a SINGLE hop — see
  *      `resolveLegacyRedirectTarget` in `@/lib/legacy-redirects` for the
@@ -272,7 +272,7 @@ async function runMiddlewarePipeline(context: APIContext, next: MiddlewareNext):
     //
     // H-110: resolved against `resolveLegacyRedirectTarget` FIRST, with the
     // slash appended. Without this, a legacy link missing its trailing slash
-    // (e.g. `/es/blog/categoria/gastronomy`, no `/`) would get its OWN 301
+    // (e.g. a legacy English category slug without a trailing slash would get its OWN 301
     // right here (just adding the slash) — one hop before Step 3.1 ever gets
     // a chance to resolve the alias, forcing a SECOND request to discover
     // it. Checking here first means the fully-resolved destination is used
@@ -375,14 +375,14 @@ async function runMiddlewarePipeline(context: APIContext, next: MiddlewareNext):
         // The path the user was actually trying to reach, carried through every
         // onboarding gate below so finishing them lands there instead of on
         // `/mi-cuenta/` (HOS-838). Includes the query string: a destination
-        // like `/es/mi-cuenta/comercio/gastronomy?foo=bar` is only useful
+        // like a legacy vertical segment in an account URL is only useful
         // with its params intact. `buildLoginRedirect` above deliberately keeps
         // using the bare pathname — changing that is a separate decision.
         const interruptedDestination = `${path}${context.url.search}`;
 
         // Step 7.2 (SPEC-239): Must-change-password gate.
         //
-        // Commerce owners are provisioned with a server-generated password and
+        // Venue/experience owners are provisioned with a server-generated password and
         // the `mustChangePassword` flag set to true. Until they choose a personal
         // password, ALL protected routes (except the change-password page itself
         // and auth/signout) redirect to /mi-cuenta/cambiar-contrasena/.

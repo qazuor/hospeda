@@ -10,46 +10,32 @@
  * ## Why this exists next to `POST /:id/media`
  *
  * Setting a cover used to be two requests: register an ordinary gallery row,
- * then promote it. The first runs the plan photo cap, which counts the gallery
- * ALONE because a cover is not a gallery item (HOS-791) — so an owner whose
- * gallery sat at their plan limit was refused at step 1 and never reached step
- * 2, and the one action exempt from the quota became the only one they could
- * not perform.
+ * then promote it. This route registers the cover directly and requires
+ * a plan allowing at least one photo.
  *
- * ## Plan cap semantics — identical to the sibling add-media route
- *
- * The plan allowance is resolved ONLY when the actor is the owner. Staff acting
- * on someone else's listing bypass it, exactly as `addMedia` and
- * `media/admin/upload.ts` do: an admin intervening on a host's behalf is a
- * support action, not a consumption of that host's plan.
- *
- * Unlike `addMedia` this route never answers `LIMIT_REACHED` for a full
- * gallery — that refusal is the bug. The swap cannot move the gallery: the
- * replaced cover is DELETED (soft-deleted) in the same transaction, so one row
- * enters the featured slot and one leaves the table. The allowance is read for
- * one thing only — a plan of zero photos grants no cover either.
+ * The swap cannot move the gallery: the replaced cover is DELETED
+ * (soft-deleted) in the same transaction, so one row enters the featured slot
+ * and one leaves the table.
  *
  * The replaced photo is NOT kept. It does not fall back into the gallery; it
  * disappears from the listing. Its stored file is deliberately left in place, so
  * the deletion is reversible at the row level, but callers must not present the
  * old cover as still available.
  *
- * The cap is read from the entitlement context and never from the request body:
- * a caller able to state its own allowance would have none.
+ * The listing access resolver enforces the owner photo limit.
  */
 
-import { LimitKey } from '@repo/billing';
 import {
     AccommodationFeaturedMediaAddOutputSchema,
     AccommodationIdSchema,
     type AccommodationMediaAddPayload,
     AccommodationMediaAddPayloadSchema,
-    ServiceErrorCode
+    ServiceErrorCode,
+    VerticalEnum
 } from '@repo/schemas';
 import { AccommodationService, ServiceError } from '@repo/service-core';
 import type { Context } from 'hono';
-import { getRemainingLimit } from '../../../middlewares/entitlement';
-import type { AppBindings } from '../../../types';
+import { runListingContentCall } from '../../../middlewares/listing-access';
 import { getActorFromContext } from '../../../utils/actor';
 import { apiLogger } from '../../../utils/logger';
 import { createAdminRoute } from '../../../utils/route-factory';
@@ -69,6 +55,12 @@ const accommodationService = new AccommodationService({ logger: apiLogger });
  */
 export const adminAddFeaturedMediaRoute = createAdminRoute({
     method: 'post',
+    listingAccess: {
+        vertical: VerticalEnum.ACCOMMODATION,
+        operation: 'EDIT',
+        idParam: 'id',
+        limit: async () => ({ key: 'max_photos_per_accommodation', requested: 1 })
+    },
     path: '/{id}/media/featured',
     summary: 'Upload the accommodation cover image (admin)',
     description:
@@ -96,27 +88,19 @@ export const adminAddFeaturedMediaRoute = createAdminRoute({
         const actor = getActorFromContext(ctx);
         const accommodationId = params.id as string;
 
-        // Owner-only, mirroring addMedia: staff acting on someone else's listing
-        // are not spending that host's plan. `undefined` means "no plan cap",
-        // leaving only the per-entity cap the service applies itself.
+        // The listing access step has already checked the owner's photo allowance.
         const accommodation = await accommodationService.getById(actor, accommodationId);
         if (accommodation.error || !accommodation.data) {
             throw new ServiceError(ServiceErrorCode.NOT_FOUND, 'Accommodation not found');
         }
 
-        const ownerId = (accommodation.data as { ownerId?: string | null }).ownerId;
-        const planGalleryCap =
-            ownerId && ownerId === actor.id
-                ? getRemainingLimit(
-                      ctx as Context<AppBindings>,
-                      LimitKey.MAX_PHOTOS_PER_ACCOMMODATION
-                  )
-                : undefined;
-
-        const result = await accommodationService.addFeaturedMedia(actor, {
-            accommodationId,
-            media: body as AccommodationMediaAddPayload,
-            planGalleryCap
+        const result = await runListingContentCall({
+            ctx,
+            run: () =>
+                accommodationService.addFeaturedMedia(actor, {
+                    accommodationId,
+                    media: body as AccommodationMediaAddPayload
+                })
         });
 
         if (result.error) {

@@ -6,8 +6,8 @@
  * source).
  *
  * What these guard, specifically: the page addresses five audiences, and three
- * of them (experience, gastronomy, partner) render copy that LIVES IN ANOTHER
- * PAGE'S NAMESPACE on purpose — `commerce.landing.*` for the two verticals
+ * of them (experience, venue, partner) render copy that LIVES IN ANOTHER
+ * PAGE'S NAMESPACE on purpose — `venue.landing.*` / `experience.landing.*` for the two verticals
  * whose landings already publish the same claims, `alliance-leads.partner.*`
  * for the ally sentences. Two distinct regressions are possible there and
  * neither is caught by an existing guard:
@@ -59,7 +59,7 @@ describe('beneficios/index.astro — the five audience sections', () => {
         'tourist',
         'owner',
         'experience',
-        'gastronomy',
+        'venue',
         'partner'
     ])('renders the %s section', (variant) => {
         expect(src).toContain(`class="benefits-section benefits-section--${variant}`);
@@ -70,32 +70,32 @@ describe('beneficios/index.astro — the five audience sections', () => {
         // points at the sales page that replaced it. HOS-1032 retired
         // `/publicar-experiencia/` and `/publicar-restaurante/` the same way —
         // both are now 301s (see `test/pages/publicar-experiencia-index.test.ts`
-        // / `publicar-restaurante-index.test.ts`) — so the gastronomy and
+        // / `publicar-restaurante-index.test.ts`) — so the venue and
         // experience sections were repointed at their own sales pages directly,
         // rather than at a URL that immediately forwards them there.
         expect(src).toContain("path: 'planes/anfitriones'");
         expect(src).toContain("path: 'planes/experiencias'");
-        expect(src).toContain("path: 'planes/gastronomia'");
+        expect(src).toContain("path: 'planes/comer-y-salir'");
         expect(src).toContain("path: 'sumate/partner'");
     });
 });
 
 describe('beneficios/index.astro — copy stays single-sourced', () => {
     const REUSED_KEYS = [
-        'commerce.landing.experience.benefits.title',
-        'commerce.landing.experience.benefits.item1.title',
-        'commerce.landing.experience.benefits.item1.desc',
-        'commerce.landing.experience.benefits.item2.title',
-        'commerce.landing.experience.benefits.item2.desc',
-        'commerce.landing.experience.benefits.item3.title',
-        'commerce.landing.experience.benefits.item3.desc',
-        'commerce.landing.gastronomy.benefits.title',
-        'commerce.landing.gastronomy.benefits.item1.title',
-        'commerce.landing.gastronomy.benefits.item1.desc',
-        'commerce.landing.gastronomy.benefits.item2.title',
-        'commerce.landing.gastronomy.benefits.item2.desc',
-        'commerce.landing.gastronomy.benefits.item3.title',
-        'commerce.landing.gastronomy.benefits.item3.desc',
+        'experience.landing.benefits.title',
+        'experience.landing.benefits.item1.title',
+        'experience.landing.benefits.item1.desc',
+        'experience.landing.benefits.item2.title',
+        'experience.landing.benefits.item2.desc',
+        'experience.landing.benefits.item3.title',
+        'experience.landing.benefits.item3.desc',
+        'venue.landing.benefits.title',
+        'venue.landing.benefits.item1.title',
+        'venue.landing.benefits.item1.desc',
+        'venue.landing.benefits.item2.title',
+        'venue.landing.benefits.item2.desc',
+        'venue.landing.benefits.item3.title',
+        'venue.landing.benefits.item3.desc',
         // `item1` retired by HOS-1228 (HOS-941 D-13): it promised access to a
         // network of verified stays and businesses, which nothing implements.
         // The survivors keep their original numbers — they pair with
@@ -111,11 +111,12 @@ describe('beneficios/index.astro — copy stays single-sourced', () => {
 
     it.each(LOCALES)('resolves every reused key in %s', (locale) => {
         const trees = {
-            commerce: readLocale(locale, 'commerce'),
+            venue: readLocale(locale, 'venue'),
+            experience: readLocale(locale, 'experience'),
             'alliance-leads': readLocale(locale, 'alliance-leads')
         };
         for (const key of REUSED_KEYS) {
-            const namespace = key.startsWith('commerce.') ? 'commerce' : 'alliance-leads';
+            const namespace = key.split('.')[0] as keyof typeof trees;
             const value = lookup(trees[namespace], key);
             expect(typeof value, `${locale}: ${key}`).toBe('string');
             expect((value as string).length, `${locale}: ${key} is empty`).toBeGreaterThan(0);
@@ -158,9 +159,10 @@ describe('beneficios/index.astro — copy stays single-sourced', () => {
 
     it('is checking locales that actually exist', () => {
         // Guards the guard: a `readLocale` that silently returned `{}` would
-        // make every assertion above vacuously true.
+        // make every assertion above vacuously true. (The sentinel used to be a
+        // partner-card bullet, removed with the partner card in HOS-1637.)
         expect(JSON.stringify(readLocale('es', 'pricing'))).toContain(
-            'Condiciones comerciales a medida'
+            'Niveles de alianza con Hospeda'
         );
     });
 });
@@ -169,8 +171,8 @@ describe('beneficios/index.astro — section chrome lives in benefits.*', () => 
     const CHROME_KEYS = [
         'benefits.experience.tagline',
         'benefits.experience.cta',
-        'benefits.gastronomy.tagline',
-        'benefits.gastronomy.cta',
+        'benefits.venue.tagline',
+        'benefits.venue.cta',
         'benefits.partner.tagline',
         'benefits.partner.title',
         'benefits.partner.cta',

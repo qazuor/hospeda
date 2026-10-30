@@ -76,7 +76,7 @@ const draftRow = {
     name: 'Draft Hotel',
     slug: 'draft-hotel',
     type: 'HOTEL',
-    lifecycleState: 'DRAFT',
+    publicationStatus: 'DRAFT',
     destination: { id: 'dest-1', name: 'Concepcion del Uruguay', slug: 'concepcion-del-uruguay' }
 };
 
@@ -85,7 +85,7 @@ const rowWithoutDestination = {
     name: 'Cabin',
     slug: 'cabin',
     type: 'CABIN',
-    lifecycleState: 'ACTIVE',
+    publicationStatus: 'PUBLISHED',
     destination: undefined
 };
 

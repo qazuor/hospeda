@@ -175,15 +175,8 @@ describe('Public conversations router — boot registration (SPEC-210 PR5 T-011)
 // createSimpleRoute factories at module-load time, which now call
 // assertConcretePublicSchema (SPEC-210 PR5 T-004). If any mounted public route
 // declared a permissive top-level responseSchema, these imports would throw at
-// boot. The billing listPlans route is the critical case: its PlanPublicSchema
-// has `limits: z.record(z.string(), z.number())` NESTED inside a z.object(), so
-// the top-level guard must accept it.
 
 describe('Factory-based public routers — boot guard wiring (SPEC-210 PR5 T-004)', () => {
-    it('importing the billing public listPlans route (createSimpleRoute + nested z.record) does not throw', async () => {
-        await expect(import('../../src/routes/billing/public/listPlans')).resolves.not.toThrow();
-    });
-
     it('importing the public accommodation routers (createPublicRoute / createPublicListRoute) does not throw', async () => {
         await expect(import('../../src/routes/accommodation/public/index')).resolves.not.toThrow();
     });

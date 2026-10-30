@@ -22,7 +22,12 @@ describe('PremiumBlock', () => {
         const items = [{ id: 'facebookUrl', label: 'Facebook', description: 'Tu URL pública.' }];
 
         // Act
-        render(<PremiumBlock items={items} />);
+        render(
+            <PremiumBlock
+                items={items}
+                upgradeUrl="/custom-upgrade"
+            />
+        );
 
         // Assert — i18n keys come through verbatim (mocked t).
         expect(screen.getByText('admin-entities.premiumBlock.title')).toBeInTheDocument();
@@ -54,7 +59,7 @@ describe('PremiumBlock', () => {
         expect(screen.getByTestId('premium-block-item-twitterUrl')).toBeInTheDocument();
     });
 
-    it('uses the supplied upgrade URL when provided, defaults otherwise', () => {
+    it('uses the supplied upgrade URL and omits a link when absent', () => {
         // Arrange — explicit URL overrides the default.
         const { rerender } = render(
             <PremiumBlock
@@ -67,9 +72,8 @@ describe('PremiumBlock', () => {
         const customCta = screen.getByText('admin-entities.premiumBlock.cta').closest('a');
         expect(customCta).toHaveAttribute('href', '/custom-upgrade');
 
-        // Default URL when omitted.
+        // No destination means no link to a removed route.
         rerender(<PremiumBlock items={[{ id: 'a', label: 'Feature A' }]} />);
-        const defaultCta = screen.getByText('admin-entities.premiumBlock.cta').closest('a');
-        expect(defaultCta).toHaveAttribute('href', '/billing/my-plan');
+        expect(screen.queryByText('admin-entities.premiumBlock.cta')).not.toBeInTheDocument();
     });
 });

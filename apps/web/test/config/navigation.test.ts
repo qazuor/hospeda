@@ -39,11 +39,14 @@ describe('ACCOUNT_NAV_GROUPS (config shape)', () => {
         expect(turista?.requiredPermission).toBeUndefined();
     });
 
-    it('gates anfitrion behind ACCOMMODATION_CREATE and comercio behind COMMERCE_EDIT_OWN', () => {
+    it('gates anfitrion behind ACCOMMODATION_CREATE and comercio behind VENUE_EDIT_OWN', () => {
         const anfitrion = ACCOUNT_NAV_GROUPS.find((group) => group.id === 'anfitrion');
         const comercio = ACCOUNT_NAV_GROUPS.find((group) => group.id === 'comercio');
         expect(anfitrion?.requiredPermission).toBe(PermissionEnum.ACCOMMODATION_CREATE);
-        expect(comercio?.requiredPermission).toBe(PermissionEnum.COMMERCE_EDIT_OWN);
+        expect(comercio?.requiredPermissions).toEqual([
+            PermissionEnum.VENUE_EDIT_OWN,
+            PermissionEnum.EXPERIENCE_EDIT_OWN
+        ]);
     });
 
     it('places "Mis alojamientos" (properties) inside the anfitrion group, not a standalone group (AC-2)', () => {
@@ -88,54 +91,54 @@ describe('ACCOUNT_DISCOVERY_DOORS (config shape, HOS-131 §6.2/§6.3)', () => {
         expect(partner?.href).toBe('mi-cuenta/aliados');
     });
 
-    it('gives the listing door three acquirable options: accommodation, gastronomy, and experience (HOS-134)', () => {
+    it('gives the listing door three acquirable options: accommodation, venue, and experience (HOS-134)', () => {
         const listing = ACCOUNT_DISCOVERY_DOORS.find((door) => door.id === 'listing');
         expect(listing?.options.map((option) => option.id)).toEqual([
             'accommodation',
-            'gastronomy',
+            'venue',
             'experience'
         ]);
     });
 
-    it('gates listing-door options behind ACCOMMODATION_CREATE and COMMERCE_EDIT_OWN (OQ-3: signal = permissions)', () => {
+    it('gates listing-door options behind ACCOMMODATION_CREATE and VENUE_EDIT_OWN (OQ-3: signal = permissions)', () => {
         const listing = ACCOUNT_DISCOVERY_DOORS.find((door) => door.id === 'listing');
         const accommodation = listing?.options.find((option) => option.id === 'accommodation');
-        const gastronomy = listing?.options.find((option) => option.id === 'gastronomy');
+        const venue = listing?.options.find((option) => option.id === 'venue');
         const experience = listing?.options.find((option) => option.id === 'experience');
         expect(accommodation?.acquiredPermission).toBe(PermissionEnum.ACCOMMODATION_CREATE);
-        expect(gastronomy?.acquiredPermission).toBe(PermissionEnum.COMMERCE_EDIT_OWN);
-        expect(experience?.acquiredPermission).toBe(PermissionEnum.COMMERCE_EDIT_OWN);
+        expect(venue?.acquiredPermission).toBe(PermissionEnum.VENUE_EDIT_OWN);
+        expect(experience?.acquiredPermission).toBe(PermissionEnum.EXPERIENCE_EDIT_OWN);
     });
 
     it('links the acquired listing-door options to their management pages', () => {
         const listing = ACCOUNT_DISCOVERY_DOORS.find((door) => door.id === 'listing');
         const accommodation = listing?.options.find((option) => option.id === 'accommodation');
-        const gastronomy = listing?.options.find((option) => option.id === 'gastronomy');
+        const venue = listing?.options.find((option) => option.id === 'venue');
         const experience = listing?.options.find((option) => option.id === 'experience');
         expect(accommodation?.manageHref).toBe('mi-cuenta/host-dashboard');
-        expect(gastronomy?.manageHref).toBe('mi-cuenta/comercio');
+        expect(venue?.manageHref).toBe('mi-cuenta/comercio');
         expect(experience?.manageHref).toBe('mi-cuenta/comercio');
     });
 
     it('routes every listing-door option at ITS OWN publish page (HOS-1156 AC-1)', () => {
         const listing = ACCOUNT_DISCOVERY_DOORS.find((door) => door.id === 'listing');
         const accommodation = listing?.options.find((option) => option.id === 'accommodation');
-        const gastronomy = listing?.options.find((option) => option.id === 'gastronomy');
+        const venue = listing?.options.find((option) => option.id === 'venue');
         const experience = listing?.options.find((option) => option.id === 'experience');
 
-        // This case used to assert the opposite — that the two commerce options
+        // This case used to assert the opposite — that the two venue/experience options
         // led AWAY from a self-service publish flow — and that reading survived
         // one URL rename too many. HOS-1032 repointed both at the 301 target of
         // the URL they used to name, and the target was a SALES page, so the
         // "Publicar" button stopped leading to publishing. That is the defect
         // HOS-1156 fixes; this is the same case, inverted.
         expect(accommodation?.href).toBe('publicar');
-        expect(gastronomy?.href).toBe('publicar/gastronomia');
+        expect(venue?.href).toBe('publicar/comer-y-salir');
         expect(experience?.href).toBe('publicar/experiencias');
 
         // Each vertical still goes to its OWN page — the property the previous
         // version of this case was really protecting.
-        const hrefs = [accommodation?.href, gastronomy?.href, experience?.href];
+        const hrefs = [accommodation?.href, venue?.href, experience?.href];
         expect(new Set(hrefs).size).toBe(3);
     });
 
@@ -144,15 +147,15 @@ describe('ACCOUNT_DISCOVERY_DOORS (config shape, HOS-131 §6.2/§6.3)', () => {
         // owner goes once they HAVE a listing, which this spec did not change.
         const listing = ACCOUNT_DISCOVERY_DOORS.find((door) => door.id === 'listing');
         const accommodation = listing?.options.find((option) => option.id === 'accommodation');
-        const gastronomy = listing?.options.find((option) => option.id === 'gastronomy');
+        const venue = listing?.options.find((option) => option.id === 'venue');
         const experience = listing?.options.find((option) => option.id === 'experience');
 
         expect(accommodation?.manageHref).toBe('mi-cuenta/host-dashboard');
-        expect(gastronomy?.manageHref).toBe('mi-cuenta/comercio');
+        expect(venue?.manageHref).toBe('mi-cuenta/comercio');
         expect(experience?.manageHref).toBe('mi-cuenta/comercio');
         expect(accommodation?.acquiredPermission).toBe(PermissionEnum.ACCOMMODATION_CREATE);
-        expect(gastronomy?.acquiredPermission).toBe(PermissionEnum.COMMERCE_EDIT_OWN);
-        expect(experience?.acquiredPermission).toBe(PermissionEnum.COMMERCE_EDIT_OWN);
+        expect(venue?.acquiredPermission).toBe(PermissionEnum.VENUE_EDIT_OWN);
+        expect(experience?.acquiredPermission).toBe(PermissionEnum.EXPERIENCE_EDIT_OWN);
     });
 
     it('gives the partner door four options: sponsor, partner, serviceProvider, editor (HOS-134)', () => {
@@ -249,9 +252,15 @@ describe('PERMISSION_ROLE_MAP exhaustiveness (regression guard)', () => {
             if (group.requiredPermission) {
                 declaredPermissions.add(group.requiredPermission);
             }
+            for (const permission of group.requiredPermissions ?? []) {
+                declaredPermissions.add(permission);
+            }
             for (const item of group.items) {
                 if (item.requiredPermission) {
                     declaredPermissions.add(item.requiredPermission);
+                }
+                for (const permission of item.requiredPermissions ?? []) {
+                    declaredPermissions.add(permission);
                 }
             }
         }
@@ -299,7 +308,7 @@ describe('getNavForSurface (selector)', () => {
     it('returns only the always-curated items (dashboard, favorites, subscription) for the avatar surface', () => {
         const { groups } = getNavForSurface({ surface: 'avatar', visibility: ALLOW_ALL });
         // cuenta -> dashboard + subscription; turista -> favorites. hostDashboard
-        // and commerce are picked by priority via pickBusinessShortcut, NOT
+        // and venue/experience are picked by priority via pickBusinessShortcut, NOT
         // surface membership, so anfitrion/comercio contribute nothing here.
         expect(groups.map((group) => group.id)).toEqual(['cuenta', 'turista']);
         const cuenta = findGroup(groups, 'cuenta');
@@ -308,11 +317,11 @@ describe('getNavForSurface (selector)', () => {
         expect(turista?.items.map((item) => item.id)).toEqual(['favorites']);
     });
 
-    it('does not surface hostDashboard/commerce on the avatar surface (business shortcut is priority-picked, not surface-membership-based)', () => {
+    it('does not surface hostDashboard/comercio-listings on the avatar surface (business shortcut is priority-picked, not surface-membership-based)', () => {
         const { groups } = getNavForSurface({ surface: 'avatar', visibility: ALLOW_ALL });
         const allIds = groups.flatMap((group) => group.items.map((item) => item.id));
         expect(allIds).not.toContain('hostDashboard');
-        expect(allIds).not.toContain('commerce');
+        expect(allIds).not.toContain('comercio-listings');
     });
 
     it('drops a group entirely once all of its items are filtered out by visibility', () => {
@@ -349,14 +358,22 @@ describe('getNavForSurface + isVisibleByPermissions (client gating, exact)', () 
         ]);
     });
 
-    it('adds comercio (with its "commerce" item) when the user has COMMERCE_EDIT_OWN', () => {
+    it('adds comercio (with its "comercio-listings" item) when the user has VENUE_EDIT_OWN', () => {
         const { groups } = getNavForSurface({
             surface: 'sidebar',
-            visibility: (node) => isVisibleByPermissions(node, [PermissionEnum.COMMERCE_EDIT_OWN])
+            visibility: (node) => isVisibleByPermissions(node, [PermissionEnum.VENUE_EDIT_OWN])
         });
         expect(groups.map((group) => group.id)).toEqual(['cuenta', 'turista', 'comercio']);
         const comercio = findGroup(groups, 'comercio');
-        expect(comercio?.items.map((item) => item.id)).toEqual(['commerce']);
+        expect(comercio?.items.map((item) => item.id)).toEqual(['comercio-listings']);
+    });
+
+    it('shows comercio with only the experience permission', () => {
+        const { groups } = getNavForSurface({
+            surface: 'sidebar',
+            visibility: (node) => isVisibleByPermissions(node, [PermissionEnum.EXPERIENCE_EDIT_OWN])
+        });
+        expect(groups.map((group) => group.id)).toContain('comercio');
     });
 
     it('shows all four groups when the user has both business permissions', () => {
@@ -365,7 +382,7 @@ describe('getNavForSurface + isVisibleByPermissions (client gating, exact)', () 
             visibility: (node) =>
                 isVisibleByPermissions(node, [
                     PermissionEnum.ACCOMMODATION_CREATE,
-                    PermissionEnum.COMMERCE_EDIT_OWN
+                    PermissionEnum.VENUE_EDIT_OWN
                 ])
         });
         expect(groups.map((group) => group.id)).toEqual([
@@ -382,7 +399,7 @@ describe('getNavForSurface + isVisibleByPermissions (client gating, exact)', () 
             visibility: (node) =>
                 isVisibleByPermissions(node, [
                     PermissionEnum.ACCOMMODATION_CREATE,
-                    PermissionEnum.COMMERCE_EDIT_OWN
+                    PermissionEnum.VENUE_EDIT_OWN
                 ])
         });
         const allIds = groups.flatMap((group) => group.items.map((item) => item.id));
@@ -426,14 +443,14 @@ describe('getNavForSurface + isVisibleByRoles (server SSR gating, approximate)',
         expect(anfitrion?.items.some((item) => item.id === 'properties')).toBe(true);
     });
 
-    it('adds comercio (with its "commerce" item) for a COMMERCE_OWNER role', () => {
+    it('adds comercio (with its "comercio-listings" item) for a VENUE_OWNER role', () => {
         const { groups } = getNavForSurface({
             surface: 'sidebar',
-            visibility: (node) => isVisibleByRoles(node, [RoleEnum.COMMERCE_OWNER])
+            visibility: (node) => isVisibleByRoles(node, [RoleEnum.VENUE_OWNER])
         });
         expect(groups.map((group) => group.id)).toEqual(['cuenta', 'turista', 'comercio']);
         const comercio = findGroup(groups, 'comercio');
-        expect(comercio?.items.map((item) => item.id)).toEqual(['commerce']);
+        expect(comercio?.items.map((item) => item.id)).toEqual(['comercio-listings']);
     });
 
     it('adds anfitrion, comercio and editorial for platform staff (ADMIN)', () => {
@@ -511,142 +528,5 @@ describe('getNavForSurface + isVisibleByRoles (server SSR gating, approximate)',
         });
         const editorial = findGroup(groups, 'editorial');
         expect(editorial?.items.map((item) => item.id)).toEqual(['myEvents']);
-    });
-});
-
-describe('addons nav item (HOS-726)', () => {
-    /** Item ids the `cuenta` group actually yields for a given visibility predicate. */
-    function cuentaItemIds(
-        visibility: (node: { readonly requiredPermission?: PermissionEnum }) => boolean,
-        surface: 'sidebar' | 'mobile' | 'avatar' = 'sidebar'
-    ): readonly string[] {
-        const { groups } = getNavForSurface({ surface, visibility });
-        return findGroup(groups, 'cuenta')?.items.map((item) => item.id) ?? [];
-    }
-
-    it('declares the item inside the cuenta group, pointing at /mi-cuenta/addons with an icon component', () => {
-        const cuenta = ACCOUNT_NAV_GROUPS.find((group) => group.id === 'cuenta');
-        const addons = cuenta?.items.find((item) => item.id === 'addons');
-        expect(addons).toBeDefined();
-        expect(addons?.href).toBe('mi-cuenta/addons');
-        expect(addons?.i18nKey).toBe('account.pages.addons.title');
-        expect(typeof addons?.icon).toBe('function');
-    });
-
-    it('gates the item on BILLING_ADDON_PURCHASE, which PERMISSION_ROLE_MAP resolves to both paying tiers plus staff', () => {
-        const cuenta = ACCOUNT_NAV_GROUPS.find((group) => group.id === 'cuenta');
-        const addons = cuenta?.items.find((item) => item.id === 'addons');
-        expect(addons?.requiredPermission).toBe(PermissionEnum.BILLING_ADDON_PURCHASE);
-        // The SSR approximation must not silently resolve to "nobody": a missing
-        // map entry makes isVisibleByRoles return false for EVERY role, admin
-        // included, and reads exactly like a deliberate hide.
-        const roles = PERMISSION_ROLE_MAP[PermissionEnum.BILLING_ADDON_PURCHASE];
-        expect(roles).toBeDefined();
-        expect([...(roles ?? [])].sort()).toEqual(
-            [
-                RoleEnum.ADMIN,
-                RoleEnum.COMMERCE_OWNER,
-                // HOS-1077: the per-vertical owner roles hold
-                // BILLING_ADDON_PURCHASE in the seed too. Leaving them out of
-                // the map would hide the add-on catalog from exactly the owners
-                // who buy `extra-gastronomies-1`.
-                RoleEnum.GASTRONOMY_OWNER,
-                RoleEnum.EXPERIENCE_OWNER,
-                RoleEnum.HOST,
-                RoleEnum.SUPER_ADMIN
-            ].sort()
-        );
-        expect(roles?.has(RoleEnum.USER)).toBe(false);
-    });
-
-    it('does NOT gate the item on ACCOMMODATION_CREATE — that would exclude the commerce owner', () => {
-        // The regression this whole permission exists to prevent. Asserted
-        // separately from the positive check above so a future edit that swaps
-        // the gate back cannot pass by coincidence of role-set overlap.
-        const cuenta = ACCOUNT_NAV_GROUPS.find((group) => group.id === 'cuenta');
-        const addons = cuenta?.items.find((item) => item.id === 'addons');
-        expect(addons?.requiredPermission).not.toBe(PermissionEnum.ACCOMMODATION_CREATE);
-        expect(addons?.requiredPermission).not.toBe(PermissionEnum.SUBSCRIPTION_VIEW_OWN);
-        expect(addons?.requiredPermission).not.toBe(PermissionEnum.BILLING_VIEW_OWN);
-    });
-
-    it('hides the item from a plain tourist USER role (SSR) — the page would only show them an empty state', () => {
-        expect(cuentaItemIds((node) => isVisibleByRoles(node, [RoleEnum.USER]))).not.toContain(
-            'addons'
-        );
-    });
-
-    it('hides the item from an unauthenticated visitor (SSR, roles = null)', () => {
-        expect(cuentaItemIds((node) => isVisibleByRoles(node, null))).not.toContain('addons');
-    });
-
-    it('shows the item to a HOST role (SSR)', () => {
-        expect(cuentaItemIds((node) => isVisibleByRoles(node, [RoleEnum.HOST]))).toContain(
-            'addons'
-        );
-    });
-
-    it('shows the item to an ADMIN role (SSR)', () => {
-        expect(cuentaItemIds((node) => isVisibleByRoles(node, [RoleEnum.ADMIN]))).toContain(
-            'addons'
-        );
-    });
-
-    it('shows the item to a COMMERCE_OWNER role (SSR) — the case ACCOMMODATION_CREATE could not reach', () => {
-        expect(
-            cuentaItemIds((node) => isVisibleByRoles(node, [RoleEnum.COMMERCE_OWNER]))
-        ).toContain('addons');
-    });
-
-    it('keeps the item visible for the MIXED role sets, since visibility is a union over held roles', () => {
-        // The mixed cases are the ones a single-role test cannot reach: holding
-        // USER alongside a paying tier must ADD nothing and REMOVE nothing.
-        // Accumulating hats can only ever add nav (HOS-296).
-        expect(
-            cuentaItemIds((node) => isVisibleByRoles(node, [RoleEnum.USER, RoleEnum.HOST]))
-        ).toContain('addons');
-        expect(
-            cuentaItemIds((node) =>
-                isVisibleByRoles(node, [RoleEnum.USER, RoleEnum.COMMERCE_OWNER])
-            )
-        ).toContain('addons');
-        // ...and a mix of two roles that BOTH lack it stays hidden, which is the
-        // combination that proves the union is really being evaluated rather
-        // than the predicate defaulting open.
-        expect(
-            cuentaItemIds((node) => isVisibleByRoles(node, [RoleEnum.USER, RoleEnum.EDITOR]))
-        ).not.toContain('addons');
-    });
-
-    it('hides the item from an EDITOR role — an editor is not a host (SSR)', () => {
-        expect(cuentaItemIds((node) => isVisibleByRoles(node, [RoleEnum.EDITOR]))).not.toContain(
-            'addons'
-        );
-    });
-
-    it('hides the item on client surfaces without the exact permission, and shows it with BILLING_ADDON_PURCHASE', () => {
-        expect(cuentaItemIds((node) => isVisibleByPermissions(node, []))).not.toContain('addons');
-        expect(
-            cuentaItemIds((node) =>
-                isVisibleByPermissions(node, [PermissionEnum.SUBSCRIPTION_VIEW_OWN])
-            )
-        ).not.toContain('addons');
-        expect(
-            cuentaItemIds((node) =>
-                isVisibleByPermissions(node, [PermissionEnum.ACCOMMODATION_CREATE])
-            )
-        ).not.toContain('addons');
-        expect(
-            cuentaItemIds((node) =>
-                isVisibleByPermissions(node, [PermissionEnum.BILLING_ADDON_PURCHASE])
-            )
-        ).toContain('addons');
-    });
-
-    it('renders on the sidebar and mobile surfaces, and stays off the curated avatar dropdown', () => {
-        const allow = () => true;
-        expect(cuentaItemIds(allow, 'sidebar')).toContain('addons');
-        expect(cuentaItemIds(allow, 'mobile')).toContain('addons');
-        expect(cuentaItemIds(allow, 'avatar')).not.toContain('addons');
     });
 });

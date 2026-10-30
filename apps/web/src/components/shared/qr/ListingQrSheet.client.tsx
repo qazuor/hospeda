@@ -47,7 +47,7 @@
  *
  * What the CSP DOES allow is `img-src … data:`, so `GET …/{id}/qr` returns the
  * markup and it is inlined as a `data:image/svg+xml` image — the same shape
- * `ProviderQrPanel` and `GastronomyMenuQrWidget` already use, and rendered through
+ * `ProviderQrPanel` and `VenueMenuQrWidget` already use, and rendered through
  * `<img>` rather than injected into the DOM because a browser disables scripting
  * inside an SVG loaded as an image.
  *
@@ -70,14 +70,14 @@ import styles from './ListingQrSheet.module.css';
  * API path segment per vertical — mirrors the protected route mounts of both
  * `protected/qrCode.ts` (the image) and `protected/qrSheet.ts` (the PDF).
  *
- * A map rather than a ternary: `check-no-binary-vertical-ternary.sh` exists
- * because eleven sites decided a vertical with `x === 'gastronomy' ? A : B` and
- * every one of them silently answered `B` for `'accommodation'` (HOS-1079). With
- * three verticals in play here that mistake would be one keystroke away.
+ * A map rather than a ternary: eleven sites once decided a vertical with
+ * `x === 'venue' ? A : B` and every one of them silently answered `B` for
+ * `'accommodation'` (HOS-1079), the shape GUARD:G1 now forbids in shared code.
+ * With three verticals in play here that mistake would be one keystroke away.
  */
 const API_SEGMENT_BY_VERTICAL = {
     accommodation: 'accommodations',
-    gastronomy: 'gastronomies',
+    venue: 'venues',
     experience: 'experiences'
 } as const;
 
@@ -97,8 +97,8 @@ export interface ListingQrSheetProps {
      * Whether the listing has a public page right now.
      *
      * Resolved by the CALLER from the listing state it already holds — an
-     * accommodation is `lifecycleState === ACTIVE && visibility === PUBLIC`, a
-     * commerce listing is `isPublic`. It is deliberately not derived from a failed
+     * accommodation is `publicationStatus === PUBLISHED` (HOS-1641), a
+     * listing is `hasPublicPage`. It is deliberately not derived from a failed
      * request: see the module docblock.
      */
     readonly isPublished: boolean;
@@ -179,7 +179,7 @@ export function resolveQrSheetFilename(input: {
  * @example
  * ```tsx
  * <ListingQrSheet
- *   vertical="gastronomy"
+ *   vertical="venue"
  *   listingId={listing.id}
  *   slug={listing.slug}
  *   locale={locale}
@@ -213,7 +213,7 @@ export function ListingQrSheet({
      *
      * It is NOT revoked when the save starts: revoking before the browser has
      * begun writing aborts the download in Safari (the same fix already carried by
-     * `BrochureDownloadButton` and `GastronomyMenuQrWidget`). It is released when a
+     * `BrochureDownloadButton` and `VenueMenuQrWidget`). It is released when a
      * later download replaces it — that save finished long ago — and on unmount.
      */
     const objectUrlRef = useRef<string | null>(null);

@@ -536,7 +536,7 @@ describe('handleRouteError rejects a constraint name that does not start with it
         },
         {
             constraint: 'idx_notification_log_idempotency_key',
-            table: 'billing_notification_log',
+            table: 'notification_log',
             entity: 'notificationLog',
             oldLie: 'idempotency'
         },

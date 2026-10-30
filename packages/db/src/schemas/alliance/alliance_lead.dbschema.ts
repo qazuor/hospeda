@@ -11,13 +11,13 @@ import { users } from '../user/user.dbschema.ts';
  * Captures inbound interest from prospective partners, sponsors, editors, and
  * service providers who submit one of the four "aliados" public forms. Admins
  * review and approve/reject by hand — approving never auto-provisions any
- * role/entity (NG-1). Unlike `commerce_leads`, this table follows the full
+ * role/entity (NG-1). Unlike the retired lead-intake table, this table follows the full
  * BaseModel audit convention (soft-delete + createdById/updatedById/deletedById)
  * per HOS-277 §7.2, since alliance leads are not the append-only administrative
- * exception that motivated `commerce_leads`' leaner shape.
+ * exception that motivated that table's leaner shape.
  *
  * kind: closed discriminator ('partner' | 'sponsor' | 'editor' | 'service_provider').
- * Stored as varchar (not a Postgres enum), mirroring `commerce_leads.status`'s
+ * Stored as varchar (not a Postgres enum), mirroring the retired lead-intake table's status column's
  * choice of varchar over enum for the same lead-workflow family.
  */
 export const allianceLeads = pgTable(
@@ -46,7 +46,7 @@ export const allianceLeads = pgTable(
         /**
          * Lead handling status. Values: 'pending' | 'reviewing' | 'approved' | 'rejected'
          * (canonical workflow vocabulary defined by `AllianceLeadStatusEnum` in
-         * `@repo/schemas`; mirrors `commerce_leads.status`). Stored as varchar
+         * `@repo/schemas`; mirrors the retired lead-intake table's status column). Stored as varchar
          * (not enum) for flexibility.
          */
         status: varchar('status', { length: 50 }).notNull().default('pending'),

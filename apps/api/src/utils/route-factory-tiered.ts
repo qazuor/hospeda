@@ -6,6 +6,7 @@
  */
 
 import type { PermissionEnum } from '@repo/schemas';
+import type { EmailUnverifiedAllowedOperation } from '@repo/verticals';
 import type { MiddlewareHandler } from 'hono';
 import {
     type ApiKeyActorIdentity,
@@ -17,8 +18,10 @@ import {
     protectedAuthMiddleware,
     publicAuthMiddleware
 } from '../middlewares/authorization';
+import { enforceListingAccess } from '../middlewares/listing-access';
 import { ownershipMiddleware } from '../middlewares/ownership';
-import type { OwnershipConfig } from '../types/authorization';
+import { describeListingAccessOnGate } from '../middlewares/route-gate-descriptor';
+import type { ListingAccessConfig, OwnershipConfig } from '../types/authorization';
 import { assertConcretePublicSchema } from './response-helpers';
 import type { CreateOpenApiRouteInterface } from './route-factory';
 import { createCRUDRoute, createListRoute } from './route-factory';
@@ -40,6 +43,10 @@ export interface PublicRouteOptions extends CreateOpenApiRouteInterface {
  * Interface for protected route options
  */
 export interface ProtectedRouteOptions extends CreateOpenApiRouteInterface {
+    /** Listing access decision after the validated request shape. */
+    listingAccess?: ListingAccessConfig;
+    /** Closed-list operation permitted before email verification. */
+    emailUnverifiedOperation?: EmailUnverifiedAllowedOperation;
     /** Required permissions for this route */
     requiredPermissions?: PermissionEnum[];
     /**
@@ -60,6 +67,8 @@ export interface ProtectedRouteOptions extends CreateOpenApiRouteInterface {
  * Interface for admin route options
  */
 export interface AdminRouteOptions extends CreateOpenApiRouteInterface {
+    /** Listing access decision after the validated request shape. */
+    listingAccess?: ListingAccessConfig;
     /** Required admin permissions for this route */
     requiredPermissions?: PermissionEnum[];
     /**
@@ -147,9 +156,21 @@ export const createProtectedRoute = (options: ProtectedRouteOptions) => {
         protectedTag = true,
         requiredPermissions,
         anyOfPermissions,
+        emailUnverifiedOperation,
         ownership,
+        listingAccess,
         ...routeOptions
     } = options;
+
+    if (
+        listingAccess &&
+        listingAccess.operation !== 'CREATE' &&
+        !options.requestParams?.[listingAccess.idParam ?? 'id']
+    ) {
+        throw new Error(
+            `Route ${options.method.toUpperCase()} ${options.path} declares listingAccess on "${listingAccess.idParam ?? 'id'}" but no matching requestParams schema.`
+        );
+    }
 
     // Add Protected tag prefix if enabled
     const tags = protectedTag
@@ -158,7 +179,14 @@ export const createProtectedRoute = (options: ProtectedRouteOptions) => {
 
     // Build middleware chain
     const middlewares: MiddlewareHandler[] = [
-        protectedAuthMiddleware(requiredPermissions, anyOfPermissions),
+        describeListingAccessOnGate({
+            gate: protectedAuthMiddleware(
+                requiredPermissions,
+                anyOfPermissions,
+                emailUnverifiedOperation
+            ),
+            listingAccess
+        }),
         ...(routeOptions.options?.middlewares || [])
     ];
 
@@ -192,6 +220,18 @@ export const createProtectedRoute = (options: ProtectedRouteOptions) => {
     return createCRUDRoute({
         ...routeOptions,
         tags,
+        handler: listingAccess
+            ? async (ctx, params, body, query) => {
+                  await enforceListingAccess({
+                      ctx,
+                      params,
+                      config: listingAccess,
+                      tier: 'protected',
+                      body
+                  });
+                  return routeOptions.handler(ctx, params, body, query);
+              }
+            : routeOptions.handler,
         options: {
             ...routeOptions.options,
             skipAuth: false,
@@ -221,7 +261,23 @@ export const createProtectedRoute = (options: ProtectedRouteOptions) => {
  * });
  */
 export const createAdminRoute = (options: AdminRouteOptions) => {
-    const { adminTag = true, requiredPermissions, anyOfPermissions, ...routeOptions } = options;
+    const {
+        adminTag = true,
+        requiredPermissions,
+        anyOfPermissions,
+        listingAccess,
+        ...routeOptions
+    } = options;
+
+    if (
+        listingAccess &&
+        listingAccess.operation !== 'CREATE' &&
+        !options.requestParams?.[listingAccess.idParam ?? 'id']
+    ) {
+        throw new Error(
+            `Route ${options.method.toUpperCase()} ${options.path} declares listingAccess on "${listingAccess.idParam ?? 'id'}" but no matching requestParams schema.`
+        );
+    }
 
     // Add Admin tag prefix if enabled
     const tags = adminTag
@@ -231,11 +287,26 @@ export const createAdminRoute = (options: AdminRouteOptions) => {
     return createCRUDRoute({
         ...routeOptions,
         tags,
+        handler: listingAccess
+            ? async (ctx, params, body, query) => {
+                  await enforceListingAccess({
+                      ctx,
+                      params,
+                      config: listingAccess,
+                      tier: 'admin',
+                      body
+                  });
+                  return routeOptions.handler(ctx, params, body, query);
+              }
+            : routeOptions.handler,
         options: {
             ...routeOptions.options,
             skipAuth: false,
             middlewares: [
-                adminAuthMiddleware(requiredPermissions, anyOfPermissions),
+                describeListingAccessOnGate({
+                    gate: adminAuthMiddleware(requiredPermissions, anyOfPermissions),
+                    listingAccess
+                }),
                 ...(routeOptions.options?.middlewares || [])
             ]
         }
@@ -262,6 +333,8 @@ export interface ProtectedListRouteOptions extends CreateOpenApiRouteInterface {
     requestQuery?: Record<string, z.ZodTypeAny>;
     allowedQueryParams?: string[];
     requiredPermissions?: PermissionEnum[];
+    /** Closed-list operation permitted before email verification. */
+    emailUnverifiedOperation?: EmailUnverifiedAllowedOperation;
     /**
      * OR-groups of permissions, ANDed together (HOS-1077).
      *
@@ -354,7 +427,13 @@ export const createPublicListRoute = (options: PublicListRouteOptions) => {
  * });
  */
 export const createProtectedListRoute = (options: ProtectedListRouteOptions) => {
-    const { protectedTag = true, requiredPermissions, anyOfPermissions, ...routeOptions } = options;
+    const {
+        protectedTag = true,
+        requiredPermissions,
+        anyOfPermissions,
+        emailUnverifiedOperation,
+        ...routeOptions
+    } = options;
 
     // Add Protected tag prefix if enabled
     const tags = protectedTag
@@ -368,7 +447,11 @@ export const createProtectedListRoute = (options: ProtectedListRouteOptions) => 
             ...routeOptions.options,
             skipAuth: false,
             middlewares: [
-                protectedAuthMiddleware(requiredPermissions, anyOfPermissions),
+                protectedAuthMiddleware(
+                    requiredPermissions,
+                    anyOfPermissions,
+                    emailUnverifiedOperation
+                ),
                 ...(routeOptions.options?.middlewares || [])
             ]
         }

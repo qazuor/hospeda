@@ -17,7 +17,7 @@ pnpm seed --reset              # Reset DB first, then seed
 pnpm seed --required           # Only required data
 pnpm seed --example            # Only example data
 pnpm seed --reset --required --example  # Full reset with all data
-pnpm seed:test-users           # Re-seed only the SPEC-143 test users matrix
+pnpm seed:test-users           # Re-seed only the 13 dev test users
 pnpm seed:ready-user <email>   # Mark one existing user ready (no onboarding friction) — SPEC-264
 
 # Testing
@@ -74,7 +74,7 @@ the [author guide](../../docs/guides/seed-data-migrations.md#the-contentonly-fla
 ### The dual-write rule (MANDATORY)
 
 Editing baseline seed data that already lives on a deployed environment (a `required`
-catalog fixture, a billing plan/limit/entitlement config, or a deterministic-id `example`
+catalog fixture, a billing plan/limit/entitlement row, or a deterministic-id `example`
 fixture — every fixture in this package has a deterministic UUIDv5 id, so there is no
 "non-deterministic example data" that is exempt by nature) requires adding a numbered
 migration in the **same PR** — see the root
@@ -82,7 +82,7 @@ migration in the **same PR** — see the root
 rule. `scripts/check-seed-dual-write.sh` enforces it in CI. Since HOS-173 the guard is
 **fail-closed**: everything under `packages/seed/src/data/**` is guarded by default (plus
 nine inline-constant seeders — `example/{experiences,entityTagAssignments,userTags}.seed.ts`
-and the six `required/*.seed.ts` inline ones — and the billing config files), MINUS a short,
+and the six `required/*.seed.ts` inline ones), MINUS a short,
 explicit exemption list of demo-only sources (accommodations, events, posts, reviews,
 bookmarks and their join/aux tables, plus `data/user/example/**`, non-`internal`/`system`
 files under `data/tag/`, and three demo-only inline seeders that touch only exempt entities:
@@ -130,37 +130,37 @@ proves it (two CLI runs on one database, second must exit 0 and change no row co
   step is recorded and the next still runs; the failed steps are listed at the end and the
   process exits non-zero after the other groups ran. Without the flag the first failure
   aborts, as before.
-- Steps that write on every re-run BY DESIGN (not duplicates): `billing_plans` and
-  `exchange_rate_config` are synced to the code, and the super admin's credential is re-hashed
+- Steps that write on every re-run BY DESIGN (not duplicates): `exchange_rate_config` is synced
+  to the code, and the super admin's credential is re-hashed
   when `HOSPEDA_SEED_SUPER_ADMIN_PASSWORD` is set.
 
-## Test Users for Billing (SPEC-143 Block 1)
+## Test Users (SPEC-143 Block 1, reduced by HOS-1416)
 
-A separate `--test-users` seed group creates 42 dev-only test users with **real login credentials** + billing state, so entitlement gates and limit enforcement can be exercised locally without redeploying to staging for every smoke iteration. 17 pre-date HOS-1268; the other 25 close the gap that issue exists for — see [Billing-state matrix](#billing-state-matrix-hos-1268) below.
+A separate `--test-users` seed group creates **13 dev-only test users** with **real login credentials**, so role gates, listing ownership and the host flows can be exercised locally. HOS-1416 demolished the legacy billing schema: the users no longer carry any plan, subscription, addon or billing state (`packages/seed/src/test-users/testUsers.seed.ts` writes no `billing_*` rows). The "Plan" and billing-state columns that older versions of this section described no longer exist.
 
 The group is **intentionally not part of `--required` or `--example`** — that way `pnpm db:seed` (production-shaped: `--reset --required --example`) never creates these accounts. Only the local-dev shortcut `pnpm db:fresh-dev` chains `pnpm db:seed:test-users` after the main seed completes.
 
 > **That separation is a convention, not a guard, and it has already been crossed.** `runTestUserSeeds` documents that these fixtures "must NEVER run against staging or production databases" and enforces nothing: staging carried 22 `@local.test` accounts on 2026-09-07, created 2026-08-24 02:59-03:00 alongside a full re-seed, all sharing the hard-coded `Password123!`. Production carried zero. Measured during HOS-1224; an environment guard on this command is proposed there and NOT implemented, because refusing a seed by environment is an ops decision with real blast radius (it would also block a deliberate staging fixture refresh).
 
-| Email | Role | Plan | Limits highlight |
-|-------|------|------|------------------|
-| `editor@local.test` | EDITOR | — | content moderator |
-| `sponsor@local.test` | SPONSOR | — | sponsorship flows |
-| `tourist-free@local.test` | USER | (free tier) | default entitlements |
-| `tourist-vip@local.test` | USER | `tourist-vip` | the only paid tourist tier (HOS-1224 retired `tourist-plus@local.test` with its plan) |
-| `host-basico@local.test` | HOST | `owner-basico` | MAX_ACCOMMODATIONS=1, MAX_PHOTOS=15 |
-| `host-pro@local.test` | HOST | `owner-pro` | MAX_ACCOMMODATIONS=3, MAX_PHOTOS=30 |
-| `host-premium@local.test` | HOST | `owner-premium` | MAX_ACCOMMODATIONS=10, MAX_PHOTOS=50, MAX_ACTIVE_PROMOTIONS=unlimited |
-| `host-pro-plus-addon@local.test` | HOST | `owner-pro` + `extra-photos-20` addon | MAX_PHOTOS=50 (30 base + 20 addon). SPEC-143 #32 |
-| `host-trial@local.test` | HOST | `owner-trial` (status=`trialing`, 30d) | Block 3 trial-lifecycle smoke (2.1.a/2.1.b/2.1.c). Plan fixed HOS-1268 — was `owner-basico`, stale since HOS-1012 D-5 introduced the dedicated trial plan |
-| `host-provider@local.test` | HOST | `owner-basico` | **Dual role**: also owns the `plomeria-litoral` host_trades listing. HOS-376 AC-16/AC-17 |
-| `commerce-gastronomy@local.test` | COMMERCE_OWNER + GASTRONOMY_OWNER | `gastronomy-basico` (HOS-818) | MAX_GASTRONOMIES=1, cupo disponible (0 listings owned). HOS-694; vertical role added HOS-964 |
-| `commerce-experience@local.test` | COMMERCE_OWNER + EXPERIENCE_OWNER | `experience-basico` (HOS-818) | MAX_EXPERIENCES=1, cupo disponible (0 listings owned). HOS-694; vertical role added HOS-964 |
-| `commerce-gastronomy-at-cap@local.test` | COMMERCE_OWNER + GASTRONOMY_OWNER | `gastronomy-basico` (HOS-818) | MAX_GASTRONOMIES=1, **already at cap** (owns 1 gastronomy listing). HOS-694 AC-13/AC-30; vertical role added HOS-964 |
-| `host-commerce@local.test` | HOST | `owner-basico` | **Dual role**: also holds COMMERCE_OWNER directly (no backing listing). HOS-694 AC-3/AC-12 |
-| `complex-basico@local.test` | CLIENT_MANAGER | `complex-basico` | basic complex |
-| `complex-pro@local.test` | CLIENT_MANAGER | `complex-pro` | mid complex |
-| `complex-premium@local.test` | CLIENT_MANAGER | `complex-premium` | top complex |
+| Email | Role(s) | Extra seeded state |
+|-------|---------|--------------------|
+| `editor@local.test` | EDITOR | none |
+| `sponsor@local.test` | SPONSOR | none |
+| `tourist-free@local.test` | USER | none |
+| `host-basico@local.test` | HOST | accommodation + promotions |
+| `host-pro@local.test` | HOST | accommodation + promotions |
+| `host-premium@local.test` | HOST | accommodation + promotions |
+| `host-provider@local.test` | HOST | accommodation + promotions, and owns the `plomeria-litoral` `host_trades` listing (dual role, HOS-376 AC-16/AC-17) |
+| `venue-owner@local.test` | VENUE_OWNER | none (role only, no listing) |
+| `experience-owner@local.test` | EXPERIENCE_OWNER | none (role only, no listing) |
+| `host-venue@local.test` | HOST + VENUE_OWNER | accommodation + promotions; the VENUE_OWNER role has no backing listing (HOS-296 multi-role, HOS-694 AC-3/AC-12) |
+| `complex-basico@local.test` | CLIENT_MANAGER | none |
+| `complex-pro@local.test` | CLIENT_MANAGER | none |
+| `complex-premium@local.test` | CLIENT_MANAGER | none |
+
+The `-basico` / `-pro` / `-premium` suffixes are leftover names from the retired plan matrix; they no longer select a plan. Every user is created with `emailVerified=true`, `ACTIVE` lifecycle, `PUBLIC` visibility, a Better Auth credential `account` row, and the roles `{USER, role, ...extraRoles}` (role drift is healed on re-run by `syncTestUserRoles`). Fixtures that existed before HOS-1416 and are gone: `tourist-vip`, `host-pro-plus-addon`, `host-trial`, legacy venue-owner fixture, the venue and experience trial and add-on variants, and every `<vertical>-<billing-state>` fixture (HOS-1268).
+
+**Login:** every user shares the password `Password123!` (`TEST_PW` in `testUsers.seed.ts`), hashed with bcrypt `SALT_ROUNDS=12` to match `apps/api/src/lib/auth.ts`. Super admin and admin already exist via the required seed (`admin-user.json` / `super-admin-user.json`, `admin@hospeda.com.ar` / `superadmin@hospeda.com.ar`), so they are not duplicated here.
 
 **`host-provider@local.test` is the only account on both sides of the provider
 relationship** (HOS-376 T-013). It owns accommodations — which is what earns the
@@ -174,125 +174,16 @@ listing already owned by someone else** — on an environment where a real
 provider claimed it through the HOS-278 alliance flow, the seed logs a warning
 and leaves the row alone instead of locking that person out of their own ficha.
 
-### Commerce owner fixtures (HOS-694)
-
-Before HOS-694 the matrix had **no `COMMERCE_OWNER` at all**, so HOS-688's
-per-vertical billing (`MAX_GASTRONOMIES` / `MAX_EXPERIENCES`) had nothing local
-to verify it against — AC-13 and AC-30 could only be checked on staging. Four
-fixtures close that gap:
-
-- `commerce-gastronomy@local.test` / `commerce-experience@local.test` — one
-  owner per vertical, subscribed and **under** their cap (0 listings owned).
-  Their subscriptions carry the exact vertical in
-  `billing_subscriptions.product_domain` (`'gastronomy'` / `'experience'`, not
-  the legacy `'commerce'` umbrella) — `subscriptionMatchesDomain` requires an
-  exact match for those two domains, so an unstamped subscription (defaulting
-  to `'accommodation'`) would be invisible to the commerce entitlement loader.
-  Since HOS-1233 T-035 that value is **derived from the plan's own row**, not
-  declared per fixture: `subscriptionProductDomain` survives only as an
-  override for a fixture that wants a domain its plan does not name. The old
-  rule — declare it for commerce, omit it everywhere else "because the
-  `'accommodation'` default is already correct" — is what filed every tourist
-  fixture as an accommodation subscriber, reproducing locally the
-  misclassification measured in prod and staging.
-- `commerce-gastronomy-at-cap@local.test` — subscribed AND already owning one
-  gastronomy listing, so it sits exactly `AT` its `MAX_GASTRONOMIES: 1` cap.
-  The listing is seeded via `GastronomyService.create()` (mirrors
-  `hostAccommodation.ts`'s pattern), `PRIVATE`/`DRAFT` like a real owner-create
-  request. See [`src/test-users/commerceListing.ts`](src/test-users/commerceListing.ts).
-- `host-commerce@local.test` — dual-role fixture (HOS-296 multi-role): `HOST`
-  is the declared `role` (so the HOS-30 accommodation fixture still applies)
-  and `COMMERCE_OWNER` is granted as an `extraRole`, with **no backing
-  listing** — role possession alone is what the web nav gate
-  (`ROLES_WITH_COMMERCE_NAV`) and the header's three-option publish control
-  read, so a listing isn't needed to exercise AC-3 / AC-12 locally. Unlike the
-  three fixtures above, this one deliberately does NOT also hold a vertical
-  role — it has no backing listing of either vertical, so there is nothing
-  real for `GASTRONOMY_OWNER` or `EXPERIENCE_OWNER` to represent here.
-
-**HOS-964 follow-up (2026-09-07 smoke finding)**: the three commerce-owner
-fixtures WITH a real vertical (`commerce-gastronomy`, `commerce-experience`,
-`commerce-gastronomy-at-cap`) now also hold the matching vertical role
-(`GASTRONOMY_OWNER` / `EXPERIENCE_OWNER`) via `extraRoles`, granted alongside
-the legacy `COMMERCE_OWNER` in [`testUsers.seed.ts`](src/test-users/testUsers.seed.ts)
-— and the three `gastro-owner-*@local.test` fixtures in
-[`example/gastronomies.seed.ts`](src/example/gastronomies.seed.ts) now get
-`GASTRONOMY_OWNER` the same way. This matches what production's
-`createForOwner` (`packages/service-core/src/services/commerce/base-commerce-listing.service.ts`)
-actually grants — BOTH the legacy and the vertical role, in the SAME
-transaction as the listing (HOS-1077) — which these fixtures had drifted from:
-they only ever held the retiring `COMMERCE_OWNER`, so any audience targeting
-gated on the vertical role (the What's New audience enum, the HOS-788 web
-welcome-tour split) silently never reached a single seeded commerce owner.
-Known residual gap, NOT fixed here (reported, not actioned, per the "report
-don't act on cleanup" convention): `example/experiences.seed.ts` reuses
-`gastro-owner-julieta@local.test` as the owner of its experience fixtures via
-a raw SQL insert that never calls `grantRole` at all, so Julieta owns
-experience listings locally without ever holding `EXPERIENCE_OWNER` — a
-second, independent drift from what `createForOwner` would have granted her
-in production, in a file this follow-up did not touch.
-
-`TestUserSpec.extraRoles` (a new, optional field) is what makes the dual-role
-fixture possible without splitting `TEST_USERS` into a second array —
-`syncTestUserRoles` folds `declaredRole` and every `extraRoles` entry into one
-target role SET, same mechanism HOS-296 already uses to heal role drift.
-
-All users share password `Password123!` and have `emailVerified=true`. Super admin and admin already exist via the required seed (`admin-user.json` / `super-admin-user.json` with `admin@hospeda.com` / `superadmin@hospeda.com`).
-
-### Billing-state matrix (HOS-1268)
-
-Before HOS-1268, `TestUserSpec.subStatus` only admitted `'active' | 'trialing'`
-— mora, pausa, cancelación, cortesía and comp could not be seeded in **any**
-vertical, which blocked a regression test for any bug living in one of those
-states. `ensureSubscription` (`src/test-users/testUsers.seed.ts`) now accepts
-every `SubscriptionStatusEnum` member and populates the columns each one
-needs: `trialStart`/`trialEnd` for `TRIALING`, `currentPeriodEnd` anchored 3
-days in the past for `PAST_DUE` (inside the 7-day grace window —
-`past_due` is otherwise unreachable through any local code path, per
-`dunning.job.ts`'s own docblock), `canceledAt`/`cancelAtPeriodEnd` for
-`CANCELLED`, and `courtesyStartsAt`/`courtesyEndsAt`/`courtesyCyclesGranted`
-for `COURTESY`. `PAUSED` and `COMP` write no extra columns.
-
-`buildBillingStateFixtures` generates one fixture per state
-(`past-due`/`cancelled`/`paused`/`comp`/`courtesy`) for each of the four
-verticals, rather than 20 fixtures hand-written with the same shape repeated:
-
-| Email prefix | Role | Plan |
-|---|---|---|
-| `host-<state>@local.test` | HOST | `owner-basico` |
-| `commerce-gastronomy-<state>@local.test` | COMMERCE_OWNER + GASTRONOMY_OWNER | `gastronomy-basico` |
-| `commerce-experience-<state>@local.test` | COMMERCE_OWNER + EXPERIENCE_OWNER | `experience-basico` |
-| `tourist-<state>@local.test` | USER | `tourist-vip` |
-
-(`<state>` is one of `past-due`, `cancelled`, `paused`, `comp`, `courtesy` —
-e.g. `host-past-due@local.test`, `tourist-courtesy@local.test`.)
-
-None of these declare `subscriptionProductDomain` — it derives from the plan
-row, same as every other fixture since HOS-1233 T-035.
-
-The gastronomy/experience matrix also gained the fixtures accommodation
-already had (HOS-1268 closes a parity gap, not just adds new states):
-
-| Email | Role | Plan | Notes |
-|---|---|---|---|
-| `commerce-gastronomy-trial@local.test` | COMMERCE_OWNER + GASTRONOMY_OWNER | `gastronomy-trial` (status=`trialing`, `COMMERCE_TRIAL_DAYS`) | Mirrors `host-trial@local.test` |
-| `commerce-experience-trial@local.test` | COMMERCE_OWNER + EXPERIENCE_OWNER | `experience-trial` (status=`trialing`) | ditto |
-| `commerce-gastronomy-plus-addon@local.test` | COMMERCE_OWNER + GASTRONOMY_OWNER | `gastronomy-basico` + `extra-gastronomies-1` addon | Mirrors `host-pro-plus-addon@local.test` |
-| `commerce-experience-plus-addon@local.test` | COMMERCE_OWNER + EXPERIENCE_OWNER | `experience-basico` + `extra-experiences-1` addon | ditto |
-| `commerce-experience-at-cap@local.test` | COMMERCE_OWNER + EXPERIENCE_OWNER | `experience-basico`, `ownsExperienceAtCap: true` | Experiences had no at-cap fixture at all before this; mirrors `commerce-gastronomy-at-cap@local.test` via `ensureExperienceAtCapListing` in `src/test-users/commerceListing.ts` |
-
-Fixing this also surfaced a real bug in the seed's own addon helper:
-`ensureAddonPurchase` resolved its base plan against `ALL_PLANS`, which only
-ever held the accommodation + tourist tiers — a gastronomy/experience addon
-fixture would have thrown `Plan "gastronomy-basico" not found in ALL_PLANS
-catalog`. Fixed by resolving against `ALL_PLANS` + `ALL_GASTRONOMY_PLANS` +
-`ALL_EXPERIENCE_PLANS` combined (`ALL_SEED_ADDON_BASE_PLANS`).
+`TestUserSpec.extraRoles` (optional) is what makes the dual-role fixture possible
+without a second `role` field: `syncTestUserRoles` folds `declaredRole` and every
+`extraRoles` entry into one target role SET, the same mechanism HOS-296 uses to
+heal role drift. Listing-owner fixtures hold only their own vertical role
+(`VENUE_OWNER` or `EXPERIENCE_OWNER`), per HOS-964 and HOS-1417.
 
 ### HOST accommodation fixture (HOS-30)
 
 Every HOST-role user in the matrix — `host-basico`, `host-pro`, `host-premium`,
-`host-pro-plus-addon`, `host-trial`, `host-provider`, `host-commerce`, and (since
-HOS-1268) the five `host-<state>@local.test` billing-state fixtures — also gets
+`host-provider` and one retired host seed slug — also gets
 **exactly one fully-featured accommodation they own**, created directly (no
 `--example` JSON fixture involved). This unblocks staging crawl/smoke testing
 of the owner routes (`/mi-cuenta/propiedades/*` — forms, image previews,
@@ -321,15 +212,13 @@ pnpm db:seed:test-users        # Re-create only the test users (requires --requi
 pnpm seed --test-users         # Same as above, direct CLI invocation
 ```
 
-The seed inserts directly into `users` + `account` + `billing_customers` + `billing_subscriptions` (bcrypt password hash with `SALT_ROUNDS=12` matching `apps/api/src/lib/auth.ts`). It does NOT go through Better Auth's `signUpEmail` API (cross-package boundary) and does NOT call MercadoPago (we never need a real checkout for entitlement testing).
+The seed inserts directly into `users` + `account` (plus the HOST accommodation/promotion rows and the role grants; no `billing_*` table is touched since HOS-1416) (bcrypt password hash with `SALT_ROUNDS=12` matching `apps/api/src/lib/auth.ts`). It does NOT go through Better Auth's `signUpEmail` API (cross-package boundary) and does NOT call MercadoPago.
 
-When `loadEntitlements()` runs on login, the active subscription drives `userLimits` and `userEntitlements`, so limit-enforcement endpoints behave exactly as they would for a real paying user.
-
-Source: [`src/test-users/`](src/test-users/) (orchestrator + seed function). Design doc: [`.qtm/specs/SPEC-143-billing-testing-coverage/docs/local-test-users-seed-plan.md`](../../.qtm/specs/SPEC-143-billing-testing-coverage/docs/local-test-users-seed-plan.md).
+Source: [`src/test-users/`](src/test-users/) (orchestrator + seed function). Design doc: `.qtm/specs/SPEC-143-billing-testing-coverage/docs/local-test-users-seed-plan.md` (legacy `.qtm/` spec, removed in HOS-1352 U1; still present on `staging`).
 
 ### Ready out of the box — no onboarding friction (SPEC-264)
 
-All test users (including the HOS-694 commerce-owner fixtures) are seeded **ready to use immediately**: no "complete your profile" redirect, no admin welcome tour, no what's-new modal, no forced password change. This is done by writing the **real domain state** the onboarding gates already read — there is **no dev-only bypass code in `apps/*`**; all gates are data-driven DB columns.
+All test users (including the HOS-694 listing-owner fixtures) are seeded **ready to use immediately**: no "complete your profile" redirect, no admin welcome tour, no what's-new modal, no forced password change. This is done by writing the **real domain state** the onboarding gates already read — there is **no dev-only bypass code in `apps/*`**; all gates are data-driven DB columns.
 
 The canonical helper is [`src/test-users/markUserReady.ts`](src/test-users/markUserReady.ts) (`markUserReady({ email, model })`). It is the single source of truth for "what makes a user ready" and sets:
 
@@ -914,7 +803,7 @@ Static seed data files are in `src/data/<entity>/` as individual JSON files per 
 - **`displayWeight`**: Integer controlling display order (higher = shown first). E.g., WiFi = 95, Pool = 80, Sauna = 30
 - **`isBuiltin`**: Boolean for system-provided vs user-created items
 - **`isFeatured`**: Boolean for highlighting on public pages
-- **`applicableVerticals`** (SPEC-266): `string[]` of the verticals this catalog item applies to — any of `accommodation`, `gastronomy`, `experience`. Required, min 1. Scopes which vertical's editor shows the item; shared-core items (wifi, parking, pet_friendly…) list all 3. NOTE: the `name` column was dropped — there is NO `name` field in seed JSONs anymore; display labels live in `@repo/i18n` (`amenityNames.<slug>` / `featureNames.<slug>`), and the `slug` IS the i18n key.
+- **`applicableVerticals`** (SPEC-266): `string[]` of the verticals this catalog item applies to — any of `accommodation`, `venue`, `experience`. Required, min 1. Scopes which vertical's editor shows the item; shared-core items (wifi, parking, pet_friendly…) list all 3. NOTE: the `name` column was dropped — there is NO `name` field in seed JSONs anymore; display labels live in `@repo/i18n` (`amenityNames.<slug>` / `featureNames.<slug>`), and the `slug` IS the i18n key.
 
 Example amenity seed:
 
@@ -924,7 +813,7 @@ Example amenity seed:
     "description": "Conexion Wi-Fi",
     "type": "CONNECTIVITY",
     "icon": "WifiIcon",
-    "applicableVerticals": ["accommodation", "gastronomy", "experience"],
+    "applicableVerticals": ["accommodation", "venue", "experience"],
     "isBuiltin": false,
     "isFeatured": true,
     "displayWeight": 95

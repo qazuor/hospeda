@@ -1,0 +1,22 @@
+# Brief · vuelta 6 ciega · auditoría de texto generado
+
+Leé primero `$V/brief-vb.txt` (dónde están las cosas, cómo leer la fuente, prohibiciones, formato de salida):
+todo vale igual salvo la tarea.
+
+## Tarea
+Tu objeto es texto que un generador COPIA de la fuente congelada, sin lo tachado y sin parafrasear. Los
+generadores están en `$V/generadores/` (g1 → `01-decisiones-vigentes.md`; g3 → `04-catalogos.md`;
+secciones → los tramos entre `<!-- g-secciones: inicio -->` y `<!-- g-secciones: fin -->` de B9a, B10, B11,
+B12, B13a, B8b). No los ejecutes; leelos para saber qué reglas dicen cumplir.
+
+1. **Errores sistemáticos.** Leé el generador y buscá las clases de error que puede producir: un tachado
+   (también tachado parcial dentro de una frase o celda, o un 📌 que tacha a otro) que sobrevive como vivo;
+   celdas de tabla cortadas en un `|` escapado; texto pegado al bloque equivocado; una letra del owner o un
+   📌 retirado que aparece como vigente; omisiones (algo vivo de la fuente que no está). Para cada clase,
+   buscala en TODA la salida con `rg` (no por muestreo) y contrastá con la fuente.
+2. **Muestra estratificada.** Además, cotejá contra la fuente, línea por línea, al menos 40 ítems repartidos
+   a lo largo de todo el archivo (principio, medio, final; tablas y prosa; decisiones con y sin 📌). Listá en
+   el Resumen qué ítems cotejaste.
+3. Cualquier diferencia entre la copia y la fuente vigente es hallazgo (BLOQUEA si cambia lo que se construye).
+
+En el Resumen agregá, además de la tabla, la lista de clases de error buscadas con su resultado.

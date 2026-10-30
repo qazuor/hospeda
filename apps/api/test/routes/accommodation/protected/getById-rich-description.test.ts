@@ -1,27 +1,4 @@
-/**
- * BETA-199 / HOS-317 — GET /api/v1/protected/accommodations/:id must expose the
- * premium rich-description pair to an ENTITLED owner, and withhold it otherwise.
- *
- * The bug: `AccommodationProtectedSchema` declared neither `richDescription` nor
- * `richDescriptionI18n`, so `stripWithSchema` deleted both from the owner's GET.
- * The web TranslationPanel derives its `richDescription` row entirely from
- * `richDescriptionI18n`, so that row showed "—" for every locale forever, and
- * because `hasMissingTranslations` walks all four fields, the "generate missing
- * translations" button never disappeared even with everything else translated.
- *
- * The pair is PREMIUM (`CAN_USE_RICH_DESCRIPTION`), and unlike the public detail
- * routes this one never ran an entitlement strip — which is exactly why the field
- * could not simply be declared. This route now resolves the OWNING host's
- * entitlements (never the reader's) and drops both fields when the owner lacks
- * the key.
- *
- * Mount strategy mirrors `getById-junctions.test.ts`: the real
- * `createProtectedRoute` output is mounted into a bare Hono app with the actor
- * injected, so the response passes through the real fail-closed `stripWithSchema`
- * pipeline — the same pipeline that was deleting these fields.
- */
-
-import { EntitlementKey } from '@repo/billing';
+/** Protected accommodation editor filters rich content by the owner capability. */
 import { PermissionEnum, RoleEnum, ServiceErrorCode } from '@repo/schemas';
 import { ServiceError } from '@repo/service-core';
 import { Hono } from 'hono';
@@ -44,10 +21,10 @@ const RICH_I18N = {
 // Hoisted mocks
 // ---------------------------------------------------------------------------
 
-const { mockGetById, mockSelect, mockResolveOwnerEntitlements } = vi.hoisted(() => ({
+const { mockGetById, mockSelect, mockEffectiveSet } = vi.hoisted(() => ({
     mockGetById: vi.fn(),
     mockSelect: vi.fn(),
-    mockResolveOwnerEntitlements: vi.fn()
+    mockEffectiveSet: vi.fn()
 }));
 
 vi.mock('@repo/service-core', async (importActual) => {
@@ -86,8 +63,8 @@ vi.mock('@repo/db', async (importActual) => {
     };
 });
 
-vi.mock('../../../../src/middlewares/owner-entitlement', () => ({
-    resolveOwnerEntitlementsForOwnerId: mockResolveOwnerEntitlements
+vi.mock('../../../../src/utils/listing-access/ports', () => ({
+    getListingAccessPorts: () => ({ effectiveSet: mockEffectiveSet })
 }));
 
 vi.mock('../../../../src/utils/logger', () => ({
@@ -124,8 +101,7 @@ const ACCOMMODATION = {
     location: { street: 'Av. Costanera', number: '123' },
     averageRating: 4.5,
     reviewsCount: 3,
-    visibility: 'PUBLIC',
-    lifecycleState: 'ACTIVE',
+    publicationStatus: 'PUBLISHED',
     seo: null,
     price: { price: 150, currency: 'ARS' },
     tags: [],
@@ -202,7 +178,7 @@ const ownerActor = {
 
 beforeEach(() => {
     mockGetById.mockResolvedValue({ data: ACCOMMODATION, error: undefined });
-    mockResolveOwnerEntitlements.mockResolvedValue([EntitlementKey.CAN_USE_RICH_DESCRIPTION]);
+    mockEffectiveSet.mockImplementation(async () => ({ entitlements: { get: () => 1 } }));
     queueEmptySelects();
 });
 
@@ -214,7 +190,7 @@ afterEach(() => {
 // Tests
 // ---------------------------------------------------------------------------
 
-describe('GET /api/v1/protected/accommodations/:id — rich description (BETA-199)', () => {
+describe('TEST:V5:31 GET /api/v1/protected/accommodations/:id — owner rich description', () => {
     it('returns both rich-description fields when the owner is entitled', async () => {
         const app = buildApp(ownerActor);
         const res = await app.request(`/${ACCOMMODATION_ID}`);
@@ -227,26 +203,22 @@ describe('GET /api/v1/protected/accommodations/:id — rich description (BETA-19
         expect(body.data.richDescription).toBe(RICH_HTML);
     });
 
-    it('omits both rich-description fields when the owner is NOT entitled', async () => {
-        mockResolveOwnerEntitlements.mockResolvedValue([EntitlementKey.CAN_EMBED_VIDEO]);
+    it('omits both fields when the owner lacks the effective capability', async () => {
+        mockEffectiveSet.mockImplementation(async () => ({ entitlements: { get: () => 0 } }));
 
         const app = buildApp(ownerActor);
         const res = await app.request(`/${ACCOMMODATION_ID}`);
 
         expect(res.status).toBe(200);
         const body = await res.json();
-        // Absent as KEYS, not merely null: the panel distinguishes "not entitled"
-        // (row hidden) from "entitled but never written" (row shown, no content),
-        // and it can only do that if the key itself is missing.
         expect(body.data).not.toHaveProperty('richDescriptionI18n');
         expect(body.data).not.toHaveProperty('richDescription');
-        // Everything else survives — this is a field gate, not a 404.
         expect(body.data.id).toBe(ACCOMMODATION_ID);
         expect(body.data.nameI18n).toEqual(ACCOMMODATION.nameI18n);
     });
 
-    it('gates on the OWNER of the row, not on the reader', async () => {
-        // An admin holding ACCOMMODATION_UPDATE_ANY reads someone else's row. The
+    it('serves an authorized admin reading another owner’s row', async () => {
+        // An admin holding ACCOMMODATION_VIEW_ALL reads someone else's row. The
         // entitlement lookup must be keyed by that row's ownerId — keying it by
         // the reader would hand out (or withhold) premium content according to
         // who happens to be looking.
@@ -255,25 +227,34 @@ describe('GET /api/v1/protected/accommodations/:id — rich description (BETA-19
             error: undefined
         });
 
+        mockEffectiveSet.mockImplementation(async ({ userId }: { userId: string }) => ({
+            entitlements: { get: () => (userId === OTHER_USER_ID ? 1 : 0) }
+        }));
         const app = buildApp({
             id: OWNER_ID,
             roles: [RoleEnum.ADMIN],
-            permissions: [PermissionEnum.ACCOMMODATION_UPDATE_ANY]
+            permissions: [PermissionEnum.ACCOMMODATION_VIEW_ALL]
         });
         const res = await app.request(`/${ACCOMMODATION_ID}`);
 
         expect(res.status).toBe(200);
-        expect(mockResolveOwnerEntitlements).toHaveBeenCalledWith(OTHER_USER_ID);
+        expect(mockEffectiveSet).toHaveBeenCalledWith({
+            userId: OTHER_USER_ID,
+            vertical: 'accommodation'
+        });
+        const body = await res.json();
+        expect(body.data.richDescription).toBe(RICH_HTML);
+        expect(body.data.richDescriptionI18n).toEqual(RICH_I18N);
     });
 
-    it('withholds the pair — but still serves the editor — when the lookup throws', async () => {
+    it('keeps the editor available when the effective set lookup fails', async () => {
         // The entitlement lookup hits billing. Letting it throw would 500 the GET,
         // and `editar.astro` redirects the owner away on a failed fetch: a billing
         // hiccup would lock the host out of editing their own accommodation
         // entirely (the HOS-190 lock-out). So the failure is contained, and it
         // resolves to "no entitlement proven" → the premium pair is withheld while
         // every other field is still served.
-        mockResolveOwnerEntitlements.mockRejectedValue(new Error('billing unreachable'));
+        mockEffectiveSet.mockRejectedValue(new Error('billing unreachable'));
 
         const app = buildApp(ownerActor);
         const res = await app.request(`/${ACCOMMODATION_ID}`);
@@ -295,7 +276,7 @@ describe('GET /api/v1/protected/accommodations/:id — rich description (BETA-19
         const res = await app.request(`/${ACCOMMODATION_ID}`);
 
         expect(res.status).toBe(404);
-        expect(mockResolveOwnerEntitlements).not.toHaveBeenCalled();
+        expect(mockEffectiveSet).not.toHaveBeenCalled();
     });
 
     it('keeps the entitled response usable when the columns are empty', async () => {

@@ -1,0 +1,21 @@
+# VA-A4 · fuente → spec · V/descomposicion.md V/docs/10-verticales-planes-billing-options.md V/docs/11-trial.md V/docs/15-entitlements-y-limits.md V/docs/17-autorizacion.md
+
+## Hallazgos
+
+fuentes/.specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/15-entitlements-y-limits.md:573 · «cada clave lleva **cuatro** atributos declarados —scope, estrategia de agregación, `enforcementStrategy` y **clase**» · distinta en s/c1c03210/10-corte/V1.md:154 («declara sus tres atributos»; enumera scope, estrategia de agregación y clase, omitiendo `enforcementStrategy`). La omisión también está en TEST:V1:2 (V1.md:379) y V3.md:896; la búsqueda en toda s/c1c03210/ no encuentra `enforcementStrategy` ni una declaración equivalente de estrategia de enforcement por clave. DEC-ENT-005, en fuentes/.specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:5054, ratifica que clase es el cuarto atributo; no hay una decisión posterior que retire el otro · BLOQUEA
+
+fuentes/.specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/17-autorizacion.md:230 · «Leer la propia conversación sigue siendo una lectura de lo suyo, también sobre una ficha que ya no se publica, y en sólo lectura sobre una `PURGED`» · distinta en s/c1c03210/10-corte/V5.md:430 («su conversación sobre la `PURGED` se lee entera y admite mensajes»), dentro de AC:V5:25. La misma regla de la fuente se repite en V/descomposicion.md:515 («su conversación sobre una `PURGED` se lee entera y no admite mensajes») y la ratifica DEC-DATA-005, 📌 del 2026-09-27, en fuentes/.specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:6092. El AC también contradice TEST:V5:30 (V5.md:1500: «rechaza un mensaje nuevo») y AC:V8a:5 (V8a.md:205: «no admite mensajes nuevos»); no hay una decisión posterior que habilite esa escritura · BLOQUEA
+
+## Resumen
+
+| archivo | reglas normativas vivas revisadas | líneas recorridas | ausentes | distintas |
+|---|---:|---|---:|---:|
+| V/descomposicion.md | ≈240, con reiteraciones | 1–768 | 0 | 0 |
+| V/docs/10-verticales-planes-billing-options.md | ≈55 | 1–153 | 0 | 0 |
+| V/docs/11-trial.md | ≈70 | 1–473 | 0 | 0 |
+| V/docs/15-entitlements-y-limits.md | ≈95 | 1–596 | 0 | 1 |
+| V/docs/17-autorizacion.md | ≈135 | 1–816 | 0 | 1 |
+
+V = fuentes/.specs/HOS-1353-verticales-capacidades-y-autorizacion/. Conteos de reglas aproximados. Los dos hallazgos se cuentan una sola vez por regla, aunque tengan reiteraciones en otros archivos. Total: 2 BLOQUEA, 0 MENOR.
+
+Se recorrieron completas las 2.806 líneas del bloque. El contraste incluyó la spec entera mediante rg --hidden, los AC y tests de las piezas correspondientes, sus transiciones y catálogos, y las precisiones del decision log y de docs/41-corte-del-mvp/10-decisiones-del-owner.md. Se excluyeron los tachados y las reglas reemplazadas; las piezas posteriores se buscaron en sus respectivas fases. La verificación fue documental, sin ejecutar pruebas de implementación.

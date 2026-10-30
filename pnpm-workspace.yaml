@@ -105,10 +105,9 @@ overrides:
   #
   #     grep "'@qazuor/qzpay-core@" pnpm-lock.yaml   # must print ONE line
   #
-  # Which is now a guard rather than a habit —
-  # `scripts/check-qzpay-wave-convergence.sh`, wired into both `check:guards`
-  # and its own CI step. It proves one core version resolves, not WHICH one; the
-  # floors above stay prose, and are not machine-checked.
+  # That count was once a guard (`scripts/check-qzpay-wave-convergence.sh`).
+  # The script no longer exists in this tree: it was retired with the qzpay
+  # dependencies (HOS-1416). The floors above were never machine-checked.
   #
   # HOS-1233 (2026-09-08): raised to core 6.0.0. `productDomain` is now REQUIRED
   # on subscription creation — a major because omitting it stops compiling.
@@ -119,14 +118,14 @@ overrides:
   # Not one line of code was wrong; the value was simply never stated. The floor
   # is what keeps it stateable. FLOOR: core >= 6.0.0.
   #
-  # Current wave (2026-09-08): core 6.0.0 · mercadopago 2.11.1 · drizzle 3.0.0 ·
-  # hono 2.0.0 · react 2.0.0. Declared as `^` ranges in apps/api, apps/admin,
-  # packages/billing, packages/db and packages/service-core.
-  #
-  # This line was stale for two waves before anyone noticed (it still named the
-  # 2026-09-01 wave while the workspace had moved twice). It is prose, so no
-  # guard reads it — `check-qzpay-wave-convergence.sh` proves ONE core resolves,
-  # never which one. Update it in the same commit that moves the ranges.
+  # Last wave before removal (2026-09-08): core 6.0.0 · mercadopago 2.11.1 ·
+  # drizzle 3.0.0 · hono 2.0.0 · react 2.0.0. These were `^` ranges in apps/api,
+  # apps/admin, packages/db and packages/service-core. As of HOS-1416 NO
+  # workspace package declares any `@qazuor/qzpay*` dependency and
+  # `pnpm-lock.yaml` has no qzpay entry, so everything in this block is
+  # historical. It is kept only as the record of why the convergence rule
+  # existed; the new billing does not use qzpay (HOS-1352 spec 30-el-corte.md,
+  # section 4.5). Nothing here is enforced any more.
   #
   # WHAT KEEPS THE WAVE TOGETHER. The rule above is about two DIFFERENT exact
   # core demands coexisting, which is narrower than "never bump one package".
@@ -148,15 +147,15 @@ overrides:
   # here, not something qzpay can prevent.
   # ---------------------------------------------------------------------------
   typescript: "6.0.3"
-  "zod@>=4.0.0 <5": "4.3.6"
+  "zod@>=4.0.0 <5": "4.6.6"
   ws: ">=8.21.0"
   form-data: ">=4.0.6"
   protobufjs: ">=7.6.1"
   react: "19.2.7"
   react-dom: "19.2.7"
-  vitest: "4.1.10"
-  "@vitest/coverage-v8": "4.1.10"
-  "@vitest/ui": "4.1.9"
+  vitest: "5.0.5"
+  "@vitest/coverage-v8": "5.0.5"
+  "@vitest/ui": "5.0.5"
   # 3.1.2 is vulnerable to both host-confusion advisories (failed IDN
   # canonicalization and literal backslash); 3.1.4 patched those two.
   # GHSA-7p8r-x3mc-p8w7 (high) then landed on 3.1.4 itself, so this exact pin
@@ -168,13 +167,14 @@ overrides:
   # so 3.1.5 clears it — a bare ">=3.1.5" additionally resolved the tree onto
   # 4.1.2, forcing a semver major onto ajv@8.20.0 (the only consumer), which
   # declares the 3.x line. Fixing an advisory must not smuggle in a major.
-  "fast-uri@>=3.0.0 <4": ">=3.1.5 <4"
-  devalue: ">=5.8.1"
-  seroval: ">=1.4.1"
+  "fast-uri@>=3.0.0 <4": ">=3.1.7 <4"
+  devalue: ">=5.9.3 <6"
+  # GHSA-jp82-f5mq-hwhp: solid-js (admin devtools) resolves seroval <=1.6.2.
+  seroval: ">=1.6.3 <2"
   tar: ">=7.5.11"
   tar-fs: ">=3.1.1"
   node-forge: ">=1.4.0"
-  basic-ftp: ">=5.2.0"
+  basic-ftp: ">=6.2.1"
   cookie: ">=0.7.0 <2"
   path-to-regexp: ">=6.3.0"
   "msw>path-to-regexp": "8.4.2"
@@ -188,7 +188,9 @@ overrides:
   # GHSA-6j4f-fj2g-mc7p (<5.0.10) + GHSA-qhr7-859c-m2p7 (<5.0.11), 2026-09:
   # same story, the floor moves again.
   brace-expansion: ">=5.0.11"
-  shell-quote: ">=1.8.5"
+  # GHSA-pqg4-j6r4-53mv: react-devtools-core (mobile, via expo) resolved
+  # shell-quote >=1.8.4 <1.11.0. Keep the 1.x line.
+  shell-quote: ">=1.11.0 <2"
   mdast-util-to-hast: ">=13.2.1"
   preact: ">=10.26.10"
   h3: ">=1.15.6"
@@ -261,10 +263,15 @@ overrides:
   # GHSA-rfgv-xxqx-mfg5 + BalancedPool TLS bypass (2026-09): <8.10.2. Same trap
   # twice: Dependabot #3413 bumped only the direct paths and left
   # @remix-run/node and unifont on 8.10.0, so the floor moves again.
-  undici: ">=8.10.2 <9"
-  "vite@^6.0.0": ">=8.0.16 <9"
-  "vite@^7.0.0": ">=8.0.16 <9"
-  "vite@>=6.0.0": ">=8.0.16 <9"
+  undici: ">=8.12.2 <9"
+  # GHSA-587h-7wmj-h5pm (2026-10): every vite line below 8.3.3 on the 8.3 minor
+  # (8.2.4 on 8.2) is affected. The floor was ours again: the `>=6.0.0` selector
+  # rewrites the direct `^8.3.0` specifiers too, which is how the lock stayed on
+  # 8.2.1 while both package.json files asked for 8.3. Raise the floor to the
+  # patched 8.3 release so the override cannot pull the lock below its own specs.
+  "vite@^6.0.0": ">=8.3.3 <9"
+  "vite@^7.0.0": ">=8.3.3 <9"
+  "vite@>=6.0.0": ">=8.3.3 <9"
   "@sentry/vite-plugin": ">=5.3.0"
   # GHSA-2v37-7h3g-55p8 (advisory ampliado 2026-08-07, y otra vez 2026-08-15):
   # el generador custom puede colgarse en un loop infinito con size 0. Sólo la
@@ -278,7 +285,8 @@ overrides:
   # brace-expansion, js-yaml y fast-uri más arriba. Un piso no absorbe un
   # advisory posterior por sí solo: hay que subirlo cada vez que se amplía.
   "nanoid@<3.3.18": ">=3.3.18 <4"
-  markdown-it: ">=14.1.1"
+  # GHSA-r7fv-28h4-cvq7 (2026-10-20): smartquotes quadratic complexity, fixed in 14.3.2.
+  markdown-it: ">=14.3.2 <15"
   diff: ">=8.0.3"
   defu: ">=6.1.5"
   flatted: ">=3.4.2"
@@ -296,7 +304,7 @@ overrides:
   # (10.2.2). 10.3.1 is the only floor that clears all three. Transitive only
   # (socks-proxy-agent), so no Dependabot PR can ever reach it — an override is
   # the only route.
-  ip-address: ">=10.3.1"
+  ip-address: ">=10.7.1"
   svgo: ">=4.0.1"
   next: ">=16.2.3"
   drizzle-orm: ">=0.45.2"
@@ -314,7 +322,8 @@ overrides:
   "@vitejs/plugin-react": "^6.0.3"
   turbo-stream: ">=3.0.0"
   linkify-it: ">=5.0.2 <6"
-  sharp: ">=0.35.3 <0.36"
+  # GHSA-wq5f-xc86-pv6w: sharp <0.35.5.
+  sharp: ">=0.35.5 <0.36"
   fast-xml-parser: ">=5.10.1 <6"
   # GHSA-7w5x-hrqm-74c2 (high): Denial of Service via malformed TOML documents,
   # covers <=1.7.0. Transitive only, via astro (astro>smol-toml,
@@ -323,11 +332,57 @@ overrides:
   # lockfile already resolves 1.7.1 for @astrojs/internal-helpers, so this is
   # a pure resolution fix, same as the other transitive-only entries above.
   smol-toml: ">=1.7.1 <2"
+  # GHSA-xjh9-v7x6-24jw / GHSA-x8mw-p69m-v3mx: unstorage reaches this
+  # through @whatwg-node/node-fetch. Keep the 3.x line used by its consumer.
+  "@fastify/busboy": ">=3.2.1 <4"
+  # GHSA-ch52-4w7c-c8xp: Astro resolves 4.2.0. The advisory names 4.2.1
+  # as patched, but npm's first published fixed version is 4.3.0.
+  http-cache-semantics: ">=4.3.0 <5"
+  # GHSA-68fv-2mgg-jv7q: @tailwindcss/node (admin) resolves source-map-js
+  # <1.2.2. Keep the 1.x line its consumers declare.
+  source-map-js: ">=1.2.2 <2"
+  # GHSA-vc2v-76pw-4v95: @expo/cli (mobile, via @better-auth/expo) resolves
+  # compression 1.8.1. Keep the 1.x line.
+  compression: ">=1.8.2 <2"
+  # HOS-1894: fflate 0.7.4 (via @vercel/og > satori > @shuding/opentype.js) has a
+  # fix in 0.7.5. Range-scoped so posthog-js's fflate 0.4.9 and vitest's 0.8.x
+  # are left alone.
+  "fflate@>=0.7.0 <0.7.5": ">=0.7.5 <0.8"
 
 auditConfig:
   ignoreGhsas:
     - GHSA-rmmr-r34h-pfm5
     - GHSA-5xrq-8626-4rwp
+    # GHSA-86w9-cpqp-85rv / CVE-2026-85393: node-forge <=1.4.0 accepts
+    # extra nested DigestAlgorithm elements during RSA PKCS#1 v1.5
+    # verification. The only production graph path is the Expo SDK 56 mobile
+    # toolchain (@expo/cli and its transitive packages); it is not bundled in
+    # the API, web, or admin runtimes. GitHub currently reports no patched
+    # node-forge release, and forcing an unpublished version is unsafe. Keep
+    # this explicit exception until Expo ships a compatible dependency update;
+    # remove it as soon as `pnpm audit --prod` confirms the path is gone.
+    - GHSA-86w9-cpqp-85rv
+    # GHSA-vfj7-8cjw-p6xm / CVE-2026-93687: braces@3.0.3 can exhaust the
+    # stack on deeply nested patterns. All production-audit paths are under
+    # apps/mobile > @better-auth/expo > expo > Metro > metro-file-map >
+    # micromatch > braces. Metro scans the app's source files at build time;
+    # this package does not process request input in the deployed runtimes.
+    # No fixed braces release exists on npm (latest is 3.0.3); the advisory's
+    # suggested 3.0.4 is unpublished. Remove this narrow exception as soon as
+    # a fixed braces release or an Expo/Metro dependency update is available.
+    - GHSA-vfj7-8cjw-p6xm
+    # GHSA-qr28-fpjm-wq7f: decode-uri-component <=0.5.0 is quadratic on long
+    # runs of percent-encoded input. Every production-audit path is
+    # apps/mobile > @better-auth/expo > expo > @expo/cli > expo-router >
+    # query-string@7 > decode-uri-component@0.2.2: the mobile app's own router,
+    # parsing URLs on the user's device. Nothing in the API, web or admin
+    # runtimes reaches it. The only fix is 0.5.1, and 0.4.0+ is ESM-only
+    # (`type: module`, default export) while query-string@7 is CommonJS and
+    # calls the required value as a function, so an override would break URL
+    # parsing in expo-router instead of patching it. Remove this exception with
+    # the Expo/expo-router bump that moves off query-string@7; confirm with:
+    #   pnpm why decode-uri-component -r --prod   # no <=0.5.0 left
+    - GHSA-qr28-fpjm-wq7f
     # image-size DoS in its ICNS (GHSA-w3rx-r6r6-pgpr) and JXL/HEIF
     # (GHSA-5p2g-fcmc-qvqq) parsers, fixed in 2.0.3 (HOS-418).
     #
@@ -350,6 +405,42 @@ auditConfig:
     #   pnpm why image-size -r --prod   # no 1.x left
     - GHSA-w3rx-r6r6-pgpr
     - GHSA-5p2g-fcmc-qvqq
+    # HOS-1894 — alerts deliberately left open (no ignoreGhsas entry needed:
+    # neither is in the `pnpm audit --prod` graph that CI gates on):
+    # - extract-zip@2.0.1 (symlink write, no fixed release on npm): reached only
+    #   via apps/web devDependencies > @lhci/cli > lighthouse > puppeteer-core >
+    #   @puppeteer/browsers. Dev tooling that unpacks the Chrome download.
+    # - decode-uri-component@0.2.2 (fixed in 0.5.0): reached only via
+    #   apps/mobile > expo-router > query-string@7.1.3. 0.5.0 (and 0.4.x) are
+    #   ESM-only ("type": "module"), while query-string 7.x loads it with
+    #   require(), so forcing it would break the mobile bundle. Goes away with
+    #   an expo-router / query-string bump.
+    # pnpm's GHSA ignore is advisory-wide; the remaining affected resolution is
+    # zod@3.25.76 only. The zod 4 override is patched at 4.6.6.
+    # GHSA-mrhx-c7xc-m3w5: zod@3.25.76 is pinned EXACTLY by @expo/cli
+    # (apps/mobile > @better-auth/expo > expo > @expo/cli), the mobile
+    # build-time CLI. No 3.x release is patched; remove this exception when
+    # the Expo SDK bump moves @expo/cli to zod 4. Confirm with:
+    #   pnpm why zod -r --prod   # only >=4.6.6 left
+    - GHSA-mrhx-c7xc-m3w5
+    # better-auth 1.6.x — three advisories published 2026-10-27, all fixed in
+    # 1.7.7+, all gated on a better-auth plugin that no app here enables. The
+    # only plugins in apps/api/src/lib/auth.ts are `admin()` and `expo()`; a
+    # `git grep` for each plugin name below returns nothing. The fix is a minor
+    # bump of the auth library across api/web/admin/mobile that needs its own
+    # login smoke (HOS-1932). Remove these lines with that bump — and do the
+    # bump BEFORE enabling any of the plugins named here:
+    # - GHSA-965c-763c-88jm (critical): an OAuth state value is accepted as a
+    #   Magic Link token (account takeover). Needs the `magicLink()` plugin
+    #   together with a social/Generic OAuth provider. We have Google/Facebook
+    #   but NOT magicLink, so the path does not exist.
+    # - GHSA-r4xp-prcw-77qf (high): forged profile via the `oAuthProxy()`
+    #   plugin. Not enabled.
+    # - GHSA-q84f-53jg-9ppm (high): device-approval screen omits the client and
+    #   its scopes. Needs the `deviceAuthorization()` plugin. Not enabled.
+    - GHSA-965c-763c-88jm
+    - GHSA-r4xp-prcw-77qf
+    - GHSA-q84f-53jg-9ppm
 
 allowBuilds:
   # Needed to upload source maps to Sentry from @sentry/esbuild-plugin (api)
@@ -382,23 +473,8 @@ allowBuilds:
 forceLegacyDeploy: true
 
 minimumReleaseAgeExclude:
-  # UNION of both waves, not a choice between them (merge of `staging`,
-  # 2026-09-09). `staging` had converged on core 5.3.0 while this branch was on
-  # 6.0.0; the installed wave is 6.0.0 (a strict descendant — qzpay PR #83's
-  # payer-email fix released as 5.3.0, PR #85's required productDomain as
-  # 6.0.0), but the older entries stay listed. This is an allowlist of versions
-  # permitted past the minimum-release-age policy, so dropping the side that
-  # lost the version race removes a permission another branch may still need
-  # and buys nothing.
-  # HOS-1233 wave (2026-09-09): core 7.0.0 and its four siblings. Added, never
-  # substituted, per the paragraph above. Verified before adding rather than
-  # assumed: drizzle 4.0.0, hono 2.0.1, react 2.0.1 and mercadopago 2.11.2 each
-  # pin `@qazuor/qzpay-core` at exactly 7.0.0, so this wave converges on one
-  # core — which is the whole point of raising the five together (qzpay PR #87:
-  # the product_domain default dropped, and productDomain made required on plan
-  # creation as well as subscription creation).
-  - '@qazuor/qzpay-core@1.15.0 || 1.16.0 || 1.17.0 || 2.0.0 || 3.0.0 || 3.1.0 || 4.0.0 || 5.0.0 || 5.1.0 || 5.1.1 || 5.2.0 || 5.3.0 || 6.0.0 || 7.0.0'
-  - '@qazuor/qzpay-mercadopago@2.6.0 || 2.7.0 || 2.8.0 || 2.8.1 || 2.8.2 || 2.9.0 || 2.9.1 || 2.9.2 || 2.9.4 || 2.10.0 || 2.11.0 || 2.11.1 || 2.11.2'
-  - '@qazuor/qzpay-drizzle@1.11.5 || 1.11.7 || 1.11.8 || 1.12.0 || 1.13.0 || 2.0.0 || 2.1.0 || 2.1.1 || 2.1.2 || 3.0.0 || 4.0.0'
-  - '@qazuor/qzpay-hono@1.6.7 || 1.6.8 || 1.6.9 || 1.6.10 || 1.6.11 || 1.6.13 || 1.6.14 || 1.6.15 || 2.0.0 || 2.0.1'
-  - '@qazuor/qzpay-react@1.1.22 || 1.1.23 || 1.1.24 || 1.1.25 || 1.1.26 || 1.1.28 || 1.1.29 || 1.1.30 || 2.0.0 || 2.0.1'
+  # HOS-1416: every `@qazuor/qzpay*` entry was removed — the legacy billing
+  # system that consumed those packages was demolished and no workspace
+  # package declares them any more. The historical rationale for the old
+  # entries lives in the comment block at the top of this file.
+  - http-cache-semantics@4.3.0

@@ -173,11 +173,11 @@ const DATA_DRIVEN_GROUPS: ReadonlyArray<DataDrivenGroup> = [
             'apps/web/src/components/shared/cards/ArticleCard.astro, RelatedPostCard.astro, FeaturedArticleCard.astro'
     },
     {
-        id: 'GASTRONOMY_TYPE_ICONS (getGastronomyTypeIcon)',
-        file: 'apps/web/src/lib/gastronomy-type-icons.ts',
-        constNames: ['GASTRONOMY_TYPE_ICONS', 'GASTRONOMY_TYPE_FALLBACK_ICON'],
+        id: 'VENUE_TYPE_ICONS (getVenueTypeIcon)',
+        file: 'apps/web/src/lib/venue-type-icons.ts',
+        constNames: ['VENUE_TYPE_ICONS', 'VENUE_TYPE_FALLBACK_ICON'],
         weights: ['regular'],
-        sourceHint: 'apps/web/src/pages/[lang]/gastronomia/index.astro -> FilterChips'
+        sourceHint: 'apps/web/src/pages/[lang]/comer-y-salir/index.astro -> FilterChips'
     },
     {
         id: 'EXPERIENCE_TYPE_ICONS (getExperienceTypeIcon)',

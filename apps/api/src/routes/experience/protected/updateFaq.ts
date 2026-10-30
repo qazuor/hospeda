@@ -2,26 +2,24 @@
  * PUT /api/v1/protected/experiences/:id/faqs/:faqId
  * Update an existing FAQ on an experience listing (T-020)
  *
- * Gated on COMMERCE_EDIT_OWN (listing owner) or COMMERCE_EDIT_ALL (staff).
+ * Gated on EXPERIENCE_EDIT_OWN (listing owner) or EXPERIENCE_EDIT_ALL (staff).
  * The FAQ must belong to the specified experience (enforced inside updateExperienceFaq).
  */
-import { EntitlementKey } from '@repo/billing';
+
 import {
     ExperienceFaqSingleOutputSchema,
     type ExperienceFaqUpdateInput,
     FaqWithChannelVisibilityUpdatePayloadSchema,
     type FaqWithChannelVisibilityUpdatePayloadType,
-    ProductDomainEnum
+    VerticalEnum
 } from '@repo/schemas';
 import { ExperienceService, ServiceError, updateExperienceFaq } from '@repo/service-core';
 import type { Context } from 'hono';
 import { z } from 'zod';
-import { commerceVerticalEntitlementMiddleware } from '../../../middlewares/commerce-entitlement';
-import { requireEntitlement } from '../../../middlewares/entitlement';
-import { requireLiveSubscription } from '../../../middlewares/require-live-subscription';
+
 import { getActorFromContext } from '../../../utils/actor';
 import { apiLogger } from '../../../utils/logger';
-import { createCRUDRoute } from '../../../utils/route-factory';
+import { createProtectedRoute } from '../../../utils/route-factory';
 
 const experienceService = new ExperienceService({ logger: apiLogger });
 
@@ -31,12 +29,14 @@ const experienceService = new ExperienceService({ logger: apiLogger });
  * TYPE-WORKAROUND: accesses the internal `model` field from the service instance
  * to pass to the standalone FAQ helper without requiring a public accessor.
  */
-export const protectedUpdateExperienceFaqRoute = createCRUDRoute({
+export const protectedUpdateExperienceFaqRoute = createProtectedRoute({
     method: 'put',
     path: '/{id}/faqs/{faqId}',
     summary: 'Update FAQ on experience listing',
     description: 'Updates an existing FAQ on an experience listing',
+    listingAccess: { vertical: VerticalEnum.EXPERIENCE, operation: 'EDIT', idParam: 'id' },
     tags: ['Experience', 'Experience FAQs'],
+    protectedTag: false,
     requestParams: {
         id: z.string().uuid({ message: 'zodError.common.id.invalidUuid' }),
         faqId: z.string().uuid({ message: 'zodError.common.id.invalidUuid' })
@@ -67,14 +67,5 @@ export const protectedUpdateExperienceFaqRoute = createCRUDRoute({
         }
 
         return result.data;
-    },
-    options: {
-        // HOS-1275: mirrors the gastronomy twin. See `addFaq.ts` for why the
-        // vertical loader must be first.
-        middlewares: [
-            commerceVerticalEntitlementMiddleware('experience'),
-            requireEntitlement(EntitlementKey.EDIT_EXPERIENCE_INFO),
-            requireLiveSubscription(ProductDomainEnum.EXPERIENCE)
-        ]
     }
 });

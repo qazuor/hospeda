@@ -156,7 +156,7 @@ export function SetPassword({
                 setPasswordError(
                     t(
                         'account.setPassword.errors.passwordWeak',
-                        'La contraseña debe tener mayúsculas, minúsculas, un número y un carácter especial (@$!%*?&).'
+                        'La contraseña debe tener mayúsculas, minúsculas, un número y un carácter especial (por ejemplo ! @ # $ - _).'
                     )
                 );
             }

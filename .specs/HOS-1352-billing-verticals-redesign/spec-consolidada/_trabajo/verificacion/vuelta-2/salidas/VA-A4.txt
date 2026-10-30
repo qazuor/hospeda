@@ -1,0 +1,29 @@
+# VA-A4 · fuente → spec · descomposicion.md, docs/10-verticales-planes-billing-options.md, docs/11-trial.md, docs/15-entitlements-y-limits.md, docs/17-autorizacion.md
+
+## Hallazgos
+
+.specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/11-trial.md:154 · «Cada vertical declara un máximo de días de trial acumulados por `user + vertical`, en base y no en código (§9)» · distinta en 10-corte/V4.md:536 («Cada vertical declara un máximo de días de trial acumulados por `user`, sumando todas sus verticales**, en base y no en código») — el techo pasa de por-vertical a por-usuario sumando verticales; sin soporte en ninguna fuente (rg «sumando todas» sólo da V4.md:536) y contradice dentro de la spec a 02-nucleo.md:1585 (PLAZO:7 «El techo de días de prueba acumulados, por vertical») y a V4.md:301 («el techo de días de prueba acumulados de su vertical») · BLOQUEA
+
+.specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/11-trial.md:242 · «la cuota de trial no participa del trinquete de `DEC-TRIAL-002`: es un valor propio del trial, no un limit derivado del plan premium … es el error más fácil de cometer al implementar la derivación» (repetida en 15-entitlements-y-limits.md:562-563 «la cuota de trial sigue sin participar del trinquete (`11` §4.3)» y en HOS-1352/docs/01-decision-log.md:601, implicación 5 de DEC-ENT-001) · ausente (rg «participa»/«trinquete» en toda la spec: V4.md §«La cuota del trial…» l. 564-589 la omite; V3.md:614 «Lo que no cambia: lo no usado se pierde» corta la frase de 15:562 justo antes de esta mitad; 01-decisiones-vigentes.md:2724-2731 transcribe DEC-ENT-001 con sólo 4 implicaciones y pierde la 5; ningún AC/TEST de V3 ni V4 la recoge — AC:V3:4 aplica el piso a «sus limits» sin excluir la cuota de trial) · BLOQUEA
+
+.specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/11-trial.md:219-221 · «Lo que sí hace falta es que el número de arriba [costo máximo por persona = cuota_de_trial × verticales × meses] sea visible para quien fija la cuota» · ausente como construcción (sólo vive en la prosa de Reglas de V4.md:579-581; V4.md:914 declara la UI «N/A en esta pieza» y remite a V8a/B13a sólo el total de días; ni la tabla de superficies de V8a.md:376-399 ni ningún AC/TEST la recoge, así que ninguna pieza la construye) · MENOR
+
+.specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/15-entitlements-y-limits.md:265-269 · «no necesita regla nueva: el §36 ya dice que la capacidad vive "mientras al menos una source exista". Si la única fuente era ese plan y el plan se va, la insignia se va, en todas las verticales» · distinta en 10-corte/V3.md:466-468 («Y una clave global que otorga un addon de alcance `LISTING` se conserva treinta días después de que el addon vence, para que la insignia no parpadee en una renovación tardía») — regla inventada (rg «treinta días después»/«parpadee» sin resultados en las fuentes) que mantiene una capacidad 30 días sin fuente viva, contra la regla de la fuente y contra el descarte del §2.6 · BLOQUEA
+
+.specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/15-entitlements-y-limits.md:346-356 · «El reconciliador de excedentes se dispara cuando el conjunto efectivo de un `user + vertical` se recalcula … Que a veces se dispare sin nada que hacer es gratis; que falte un disparo es una capacidad regalada o un límite incumplido» · distinta en 10-corte/V6.md:872-873 («Corre a lo sumo una vez por hora por `user + vertical`, y los disparos que caen dentro de esa hora se descartan») — debounce horario sin soporte en ninguna fuente (rg «una vez por hora» sólo da V6.md:872) que descarta disparos, lo que la fuente define como capacidad regalada o límite incumplido · BLOQUEA
+
+.specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/17-autorizacion.md:301-302 · «la que el pedido declare no decide nada, y si no coincide la operación responde *no existe*» · distinta en 10-corte/V5.md:711 («si no coincide la operación responde *prohibido*») — contradice además la precisión 6 de la propia V5.md (l. 579-585, «404 y no 403») y AC:V5:4 (V5.md:213, «contesta *«no existe»* (`404`)») · BLOQUEA
+
+.specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/17-autorizacion.md:97-99 · «una ficha `MODERATED` acepta de su dueño verla, exportarla, editarla y borrarla, y no publicarla» (g3; DEC-DATA-007; también V/19 §4 fila 24 en HOS-1353/docs/19-superficies.md:71) · distinta en 10-corte/V8a.md:388, fila 24 («qué puede hacer mientras tanto: verla y exportarla, no editarla, borrarla ni publicarla») — la superficie le diría al dueño lo contrario de lo que la cadena le permite; contradice V5.md:514 y AC:V6:11 (V6.md:395, «el dueño puede ver, exportar, editar y borrar la `MODERATED`, no publicarla») · BLOQUEA
+
+## Resumen
+
+| archivo | reglas normativas vivas revisadas | líneas recorridas | ausentes | distintas |
+|---|---|---|---|---|
+| descomposicion.md | ~130 (filas §2, repartos §2.6–§2.14, grafo §3, criterios §4) | 1–768 | 0 | 0 |
+| docs/10-verticales-planes-billing-options.md | ~20 | 1–153 | 0 | 0 |
+| docs/11-trial.md | ~40 | 1–473 | 2 (1 BLOQUEA, 1 MENOR) | 1 (BLOQUEA) |
+| docs/15-entitlements-y-limits.md | ~45 | 1–593 | 0 propias (la de 15:562 está contada en 11-trial.md:242) | 2 (BLOQUEA) |
+| docs/17-autorizacion.md | ~60 | 1–816 | 0 | 2 (BLOQUEA) |
+
+Total: 6 BLOQUEA, 1 MENOR.

@@ -3,7 +3,7 @@
  *
  *   PATCH /api/v1/{protected,admin}/posts/:id/media/:mediaId
  *   PATCH /api/v1/{protected,admin}/events/:id/media/:mediaId
- *   PATCH /api/v1/{protected,admin}/gastronomies/:id/media/:mediaId
+ *   PATCH /api/v1/{protected,admin}/venues/:id/media/:mediaId
  *   PATCH /api/v1/{protected,admin}/experiences/:id/media/:mediaId
  *
  * Eight thin handlers with one job each: resolve the actor, forward the four
@@ -35,7 +35,14 @@
  * @module test/routes/media-update-text
  */
 
-import { ModerationStatusEnum, PermissionEnum, ServiceErrorCode } from '@repo/schemas';
+import {
+    ModerationStatusEnum,
+    PermissionEnum,
+    PublicationStatusEnum,
+    ServiceErrorCode,
+    type VerticalEnum
+} from '@repo/schemas';
+import { rehydrateEffectiveSet } from '@repo/verticals';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 // ---------------------------------------------------------------------------
@@ -45,20 +52,20 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 const {
     mockUpdatePost,
     mockUpdateEvent,
-    mockUpdateGastronomy,
+    mockUpdateVenue,
     mockUpdateExperience,
     mockRemovePost,
     mockRemoveEvent,
-    mockRemoveGastronomy,
+    mockRemoveVenue,
     mockRemoveExperience
 } = vi.hoisted(() => ({
     mockUpdatePost: vi.fn(),
     mockUpdateEvent: vi.fn(),
-    mockUpdateGastronomy: vi.fn(),
+    mockUpdateVenue: vi.fn(),
     mockUpdateExperience: vi.fn(),
     mockRemovePost: vi.fn(),
     mockRemoveEvent: vi.fn(),
-    mockRemoveGastronomy: vi.fn(),
+    mockRemoveVenue: vi.fn(),
     mockRemoveExperience: vi.fn()
 }));
 
@@ -68,7 +75,7 @@ vi.mock('@repo/service-core', async (importOriginal) => {
         ...actual,
         updatePostMedia: mockUpdatePost,
         updateEventMedia: mockUpdateEvent,
-        updateGastronomyMedia: mockUpdateGastronomy,
+        updateVenueMedia: mockUpdateVenue,
         updateExperienceMedia: mockUpdateExperience,
         // The DELETE on the SAME path is mocked too — not to test removal, but
         // so "did the PATCH swallow the DELETE (or vice versa)?" has a real
@@ -77,10 +84,29 @@ vi.mock('@repo/service-core', async (importOriginal) => {
         // indistinguishable from "the route was never registered".
         removePostMedia: mockRemovePost,
         removeEventMedia: mockRemoveEvent,
-        removeGastronomyMedia: mockRemoveGastronomy,
+        removeVenueMedia: mockRemoveVenue,
         removeExperienceMedia: mockRemoveExperience
     };
 });
+
+vi.mock('../../src/utils/listing-access/ports', () => ({
+    getListingAccessPorts: () => ({
+        loadFacts: async () => ({
+            facts: { ownerId: ACTOR_ID, publicationStatus: PublicationStatusEnum.PUBLISHED },
+            ownerId: ACTOR_ID
+        }),
+        billing: { coverage: async () => ({ covered: false, sources: [{ type: 'BASE' }] }) },
+        effectiveSet: async ({ userId, vertical }: { userId: string; vertical: VerticalEnum }) =>
+            rehydrateEffectiveSet({
+                version: 1,
+                userId,
+                vertical,
+                hasLiveNonTrialTitle: false,
+                inheritsTouristVip: false,
+                entries: [{ key: `edit_${vertical.toLowerCase()}_info`, value: 1, strategy: 'MAX' }]
+            })
+    })
+}));
 
 // ---------------------------------------------------------------------------
 // Import app AFTER mocks are set up
@@ -159,23 +185,23 @@ const CASES: readonly RouteCase[] = [
         role: 'ADMIN'
     },
     {
-        name: 'protected gastronomy',
+        name: 'protected venue',
         tier: 'protected',
-        segment: 'gastronomies',
-        fk: 'gastronomyId',
-        mock: mockUpdateGastronomy,
-        removeMock: mockRemoveGastronomy,
-        permissions: [PermissionEnum.COMMERCE_EDIT_OWN],
-        role: 'COMMERCE_OWNER'
+        segment: 'venues',
+        fk: 'venueId',
+        mock: mockUpdateVenue,
+        removeMock: mockRemoveVenue,
+        permissions: [PermissionEnum.VENUE_EDIT_OWN],
+        role: 'VENUE_OWNER'
     },
     {
-        name: 'admin gastronomy',
+        name: 'admin venue',
         tier: 'admin',
-        segment: 'gastronomies',
-        fk: 'gastronomyId',
-        mock: mockUpdateGastronomy,
-        removeMock: mockRemoveGastronomy,
-        permissions: [PermissionEnum.ACCESS_PANEL_ADMIN, PermissionEnum.GASTRONOMY_EDIT_ALL],
+        segment: 'venues',
+        fk: 'venueId',
+        mock: mockUpdateVenue,
+        removeMock: mockRemoveVenue,
+        permissions: [PermissionEnum.ACCESS_PANEL_ADMIN, PermissionEnum.VENUE_EDIT_ALL],
         role: 'ADMIN'
     },
     {
@@ -185,8 +211,8 @@ const CASES: readonly RouteCase[] = [
         fk: 'experienceId',
         mock: mockUpdateExperience,
         removeMock: mockRemoveExperience,
-        permissions: [PermissionEnum.COMMERCE_EDIT_OWN],
-        role: 'COMMERCE_OWNER'
+        permissions: [PermissionEnum.EXPERIENCE_EDIT_OWN],
+        role: 'EXPERIENCE_OWNER'
     },
     {
         name: 'admin experience',
@@ -320,6 +346,7 @@ describe('PATCH media text metadata (HOS-1036)', () => {
             });
 
             expect(res.status).toBe(404);
+            expect(c.mock).toHaveBeenCalledTimes(1);
             const body = (await res.json()) as { error?: { code?: string } };
             expect(body.error?.code).not.toBe('INTERNAL_ERROR');
         });

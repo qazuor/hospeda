@@ -1,0 +1,29 @@
+# VA-A2 · fuente → spec · bloque A2
+
+Spec leída: `ciegas/s/da8f1ac2/` (todos los `*.md`, `10-corte/`, `20-fase-*/`, con `90-retirados.md` como muerto).
+Fuentes: `ciegas/fuentes/.specs/HOS-1352-billing-verticals-redesign/docs/` (`12-…`, `11-…`, `16-…`, `41-corte-del-mvp/10-…`).
+
+## Reglas con problema
+
+```
+.specs/HOS-1352-billing-verticals-redesign/docs/16-fase-7-del-paraguas.md:146 (y :1105) · «la copia de la base de producción restaurada en staging para el ensayo se borra al terminar el ensayo (C)» · ausente (30-el-corte.md:37-47 paso 0, :1379-1390 GATE:M3, :1544-1556 AC:CORTE:1, :1750-1762 AC:CORTE:19 y 01-decisiones-vigentes.md:6244-6249 DEC-ARCH-016 copian el resto de la definición del ensayo y omiten el borrado) · BLOQUEA
+.specs/HOS-1352-billing-verticals-redesign/docs/12-contrato-de-cobertura.md:22 · «regla de vigilancia: la firma de cobertura() se enuncia sólo en el contrato; ningún otro documento lleva un bloque que enumere sus campos, y se comprueba con rg -n "cobertura\(user" .specs/» · ausente (03-contrato-de-cobertura.md §0, l.14-26, transcribe el recuadro de arriba y corta antes de la regla) · MENOR
+.specs/HOS-1352-billing-verticals-redesign/docs/12-contrato-de-cobertura.md:1127 · «retenciónDetenida la consumen V6 (PB4/PB5, archivar) y V9b (PB9, borrar) y los avisos de retención» · distinta en 03-contrato-de-cobertura.md:1108 (dice «la consumen V9b (archivar, borrar)»: saca a V6 y le atribuye archivar a V9b; la pieza V6.md:349-365 sí la consulta) · MENOR
+.specs/HOS-1352-billing-verticals-redesign/docs/41-corte-del-mvp/10-decisiones-del-owner.md:124 · «BJ: S1 suma la guarda "el user no tiene un plan vigente que herede Turista VIP"» · distinta en 04-catalogos.md:1515 (la condición de TRANS:B:S1 no la lista; sí está en 10-corte/B3.md:169, AC:B3:28 y TEST:B3:29) · MENOR
+.specs/HOS-1352-billing-verticals-redesign/docs/41-corte-del-mvp/10-decisiones-del-owner.md:143 · «BR: dos filas en el catálogo de correos, "reembolso de revocación fallido" y "cobro duplicado detectado", transaccionales, no suprimibles, a SUPER_ADMIN, al producirse, dueña B11» · distinta en 02-nucleo-outbox.md:271-313 (el catálogo §6 no tiene las dos filas, aunque 10-corte/B11.md:501 las da como «filas del catálogo de NUCLEO/07 §6»; la regla completa vive sólo en B11) · MENOR
+.specs/HOS-1352-billing-verticals-redesign/docs/16-fase-7-del-paraguas.md:1019 · «cómo se enciende el drift guard sobre una rama epic/** lo fija DEC-CI-001, y queda como lo que falta escribir al abrir la primera fase» · ausente (30-el-corte.md:1471-1473 GATE:FP.3 y TEST:CORTE:16 dan el guard por corriendo; no figura en 80-abiertos.md) · MENOR
+```
+
+## Resumen
+
+| archivo del bloque | líneas recorridas | reglas normativas vivas revisadas | ausentes | distintas |
+|---|---|---|---|---|
+| `12-contrato-de-cobertura.md` | 1-1585 (enteras; diff palabra a palabra contra `03-contrato-de-cobertura.md` sin tachados, más búsqueda de cada frase en toda la spec) | ~120 (§0 a §7.1: firma, censos, clases, BASE, `hasta` y tabla de los nueve estados, sucesión, grant y anclas, aviso y emisores, empuje inverso, dirección inversa con sus ocho entradas, vigilancia, dos implementaciones, tres defensas, package) | 1 | 1 |
+| `11-particion-del-programa.md` | 1-303 | ~20 (frontera, catálogo por campo, interfaz un hecho y un aviso, default sin billing, tres inactivos, reparto por capítulo, flujo de ramas, «terminada») | 0 | 0 |
+| `16-fase-7-del-paraguas.md` | 1-1212 (sin tachados) | ~150 (los 6 ítems huérfanos; pasos 0 a 6 con sus «qué/quién/por qué»; sondas y manifiesto; ventana 1→3; herramientas del corte; rama de aborto y sus inversos; §4.3 a §4.5; §4.6 U1 con sus 4 puntos y 11 subítems, U2, U3, tabla de 30 piezas, tabla de esquema, BN, mitigación de AP; §4.7 momentos 1-5, BS, BT, precios, fases posteriores, fecha límite, smoke) | 2 | 0 |
+| `41-corte-del-mvp/10-decisiones-del-owner.md` | 1-204 | 60 (54 letras vivas Y…CB menos BI, que está retirada en `90-retirados.md` con razón; «Resultado del corte»; los 6 abiertos) — cada letra está transcripta en `01-decisiones-vigentes.md:13345-13916` y se verificó su regla en la pieza dueña y en el catálogo | 0 | 2 |
+| **total** | | **~350** | **3** | **3** |
+
+Clases: **1 BLOQUEA**, **5 MENOR**.
+
+Sin nada normativo vivo: las líneas de relato de `16-…` (§1-§3: por qué el hueco, nombre de `U1`, conteos históricos) y de `11-…` §1, §4.1 y §5, y en `10-…` el preámbulo de cada lote y «Pendiente de aplicar» (registro de aplicación ya hecha).

@@ -1,0 +1,34 @@
+# Brief · vuelta 4 ciega · verificación fuente → spec
+
+Leé primero `$V/brief-vb.txt` (dónde están las cosas, cómo leer la fuente —tachados muertos, 📌 y decisiones
+del owner que precisan—, prohibiciones): todo vale igual salvo la tarea y el formato.
+
+## Tarea
+Tu bloque es un conjunto de archivos de la FUENTE (abajo). Recorré todas sus líneas. Por cada regla
+normativa VIVA (no tachada, no reemplazada por un 📌 o una letra posterior: verificalo con `rg --hidden`
+en `P/docs/01-decision-log.md` y `P/docs/41-corte-del-mvp/10-decisiones-del-owner.md`), buscá en la spec
+entera (`$V/s/5586fad7/`, con `rg`) dónde está. Reportá la regla si:
+- está **ausente** de la spec (ningún archivo la dice), o sólo vive en `80-abiertos.md` o en un glosario/
+  contexto pero ningún AC, TEST, transición o catálogo la recoge;
+- está **distinta** (otro valor, otra guarda, más débil o más fuerte).
+Una regla que la fuente deja explícitamente fuera del corte del MVP, o que pertenece a una pieza posterior y
+está en el archivo de esa pieza, NO es ausente.
+
+Severidad: igual que en brief-vb.txt.
+
+## Salida
+`$V/salidas/<TU-ID>.txt`:
+
+```
+# <TU-ID> · fuente → spec · <archivos>
+
+## Hallazgos
+
+<ruta fuente>:<línea> · «cita de la regla» · ausente (<dónde buscaste>) | distinta en <archivo spec>:<línea> («cita») · BLOQUEA|MENOR
+
+## Resumen
+
+| archivo | reglas normativas vivas revisadas | líneas recorridas | ausentes | distintas |
+```
+
+Respuesta final: conteos y ruta de salida, nada más, y `## Key Learnings:`.

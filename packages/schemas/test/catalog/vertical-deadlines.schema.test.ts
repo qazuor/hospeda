@@ -1,0 +1,87 @@
+import { describe, expect, it } from 'vitest';
+import { ChangeBillingDeadlineSchema } from '../../src/catalog/billing-deadlines.schema.js';
+import {
+    ChangeVerticalDeadlineSchema,
+    VerticalDeadlineValuesSchema
+} from '../../src/catalog/vertical-deadlines.schema.js';
+
+// HOS-1479 Coord-61 D-1: keys 3, 4, 7, 8 and 9 are final.
+const versionOne = {
+    '1': { days: 90 },
+    '2': { days: 180 },
+    '3': { months: 3 },
+    '4': { beforeArchiveDays: 15, beforeDeletionDays: 15 },
+    '5': { daysBefore: [10, 5, 2, 0] },
+    '6': { daysAfter: [1, 5, 15, 30, 60] },
+    '7': { days: 90 },
+    '8': { days: 7 },
+    '9': { days: 30 }
+};
+
+describe('vertical deadline values (TEST:V6:20)', () => {
+    it('accepts the version 1 values', () => {
+        expect(VerticalDeadlineValuesSchema.safeParse(versionOne).success).toBe(true);
+    });
+
+    it.each([
+        [{ '1': { days: 200 } }, ['1', 'days']],
+        [{ '3': { months: 6 } }, ['3', 'months']],
+        [{ '4': { beforeArchiveDays: 95, beforeDeletionDays: 15 } }, ['4', 'beforeArchiveDays']],
+        [{ '4': { beforeArchiveDays: 15, beforeDeletionDays: 91 } }, ['4', 'beforeDeletionDays']],
+        [{ '5': { daysBefore: [10, 5, 5, 0] } }, ['5', 'daysBefore']],
+        [{ '6': { daysAfter: [1, 5, 5, 30, 60] } }, ['6', 'daysAfter']]
+    ] as const)('rejects a contradictory deadline at %j', (replacement, path) => {
+        const result = VerticalDeadlineValuesSchema.safeParse({ ...versionOne, ...replacement });
+        expect(result.success).toBe(false);
+        if (!result.success)
+            expect(
+                result.error.issues.some((issue) => issue.path.join('.') === path.join('.'))
+            ).toBe(true);
+    });
+
+    it('rejects missing and additional keys', () => {
+        const { '9': omitted, ...withoutNine } = versionOne;
+        expect(omitted).toBeDefined();
+        expect(VerticalDeadlineValuesSchema.safeParse(withoutNine).success).toBe(false);
+        expect(
+            VerticalDeadlineValuesSchema.safeParse({ ...versionOne, '10': { days: 1 } }).success
+        ).toBe(false);
+    });
+});
+
+describe('TEST:V6:9 G-R5-B PB5 month bound', () => {
+    it.each([
+        { months: 6, deletionDays: 186, accepted: false },
+        { months: 6, deletionDays: 187, accepted: true },
+        { months: 3, deletionDays: 93, accepted: false },
+        { months: 3, deletionDays: 94, accepted: true }
+    ])('TEST:V6:9 validates $months months against $deletionDays deletion days', ({
+        months,
+        deletionDays,
+        accepted
+    }) => {
+        const result = VerticalDeadlineValuesSchema.safeParse({
+            ...versionOne,
+            '2': { days: deletionDays },
+            '3': { months },
+            '4': { beforeArchiveDays: 1, beforeDeletionDays: Math.min(15, deletionDays - 91) }
+        });
+        expect(result.success).toBe(accepted);
+        if (!accepted && !result.success)
+            expect(result.error.issues.some((issue) => issue.path.join('.') === '3.months')).toBe(
+                true
+            );
+    });
+});
+
+// HOS-1774: zod 4.6 requires a key whose schema accepts `undefined` unless it is
+// wrapped in `.optional()`; zod 4.3.6 accepted the omission. These pin 4.3.6 parity.
+describe('deadline change requests without a `value` key (zod 4.3.6 parity)', () => {
+    it.each([
+        ['vertical', ChangeVerticalDeadlineSchema, 1],
+        ['billing', ChangeBillingDeadlineSchema, 10]
+    ] as const)('%s schema accepts an omitted value', (_name, schema, key) => {
+        const result = schema.safeParse({ key, expectedVersion: 1, confirmed: true });
+        expect(result.success).toBe(true);
+    });
+});

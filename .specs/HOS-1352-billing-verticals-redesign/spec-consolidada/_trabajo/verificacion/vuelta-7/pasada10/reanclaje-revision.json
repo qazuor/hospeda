@@ -1,0 +1,65 @@
+[
+    {
+        "archivo": "00-indice.md",
+        "linea": 402,
+        "fuente": ".specs/HOS-1353-verticales-capacidades-y-autorizacion/descomposicion.md",
+        "linea_fuente": 623,
+        "resolucion": "Misma línea y sección; revisión de cambio semántico aplicado en pasada10 o fuente regenerada"
+    },
+    {
+        "archivo": "00-indice.md",
+        "linea": 688,
+        "fuente": ".specs/HOS-1353-verticales-capacidades-y-autorizacion/descomposicion.md",
+        "linea_fuente": 623,
+        "resolucion": "Misma línea y sección; revisión de cambio semántico aplicado en pasada10 o fuente regenerada"
+    },
+    {
+        "archivo": "02-nucleo-glosario.md",
+        "linea": 429,
+        "fuente": ".specs/HOS-1352-billing-verticals-redesign/docs/nucleo/01-glosario.md",
+        "linea_fuente": 439,
+        "resolucion": "Misma línea y sección; revisión de cambio semántico aplicado en pasada10 o fuente regenerada"
+    },
+    {
+        "archivo": "02-nucleo-glosario.md",
+        "linea": 454,
+        "fuente": ".specs/HOS-1353-verticales-capacidades-y-autorizacion/descomposicion.md",
+        "linea_fuente": 73,
+        "resolucion": "Misma línea y sección; revisión de cambio semántico aplicado en pasada10 o fuente regenerada"
+    },
+    {
+        "archivo": "02-nucleo.md",
+        "linea": 1168,
+        "fuente": ".specs/HOS-1352-billing-verticals-redesign/docs/nucleo/08-auditoria-y-observabilidad.md",
+        "linea_fuente": 204,
+        "resolucion": "Misma línea y sección; revisión de cambio semántico aplicado en pasada10 o fuente regenerada"
+    },
+    {
+        "archivo": "10-corte/B11.md",
+        "linea": 1495,
+        "fuente": ".specs/HOS-1354-billing-cobro-y-proveedor/docs/12-suscripcion.md",
+        "linea_fuente": 271,
+        "resolucion": "Misma línea y sección; revisión de cambio semántico aplicado en pasada10 o fuente regenerada"
+    },
+    {
+        "archivo": "10-corte/B8a.md",
+        "linea": 359,
+        "fuente": ".specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md",
+        "linea_fuente": 1069,
+        "resolucion": "Misma línea y sección; revisión de cambio semántico aplicado en pasada10 o fuente regenerada"
+    },
+    {
+        "archivo": "10-corte/V9a.md",
+        "linea": 51,
+        "fuente": ".specs/HOS-1353-verticales-capacidades-y-autorizacion/descomposicion.md",
+        "linea_fuente": 73,
+        "resolucion": "Misma línea y sección; revisión de cambio semántico aplicado en pasada10 o fuente regenerada"
+    },
+    {
+        "archivo": "20-fase-1/V9b.md",
+        "linea": 48,
+        "fuente": ".specs/HOS-1353-verticales-capacidades-y-autorizacion/descomposicion.md",
+        "linea_fuente": 73,
+        "resolucion": "Misma línea y sección; revisión de cambio semántico aplicado en pasada10 o fuente regenerada"
+    }
+]

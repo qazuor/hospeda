@@ -12,11 +12,19 @@
  *   3. Exposed-port filter (last resort — depends on the docker-compose
  *      shape Coolify generates).
  *
+ * The fallbacks (2, 3) exist for single-environment, non-Coolify setups.
+ * They can never return a container that carries another resource's
+ * Coolify label (HOS-1950): prod and staging share ports and images, so a
+ * fallback that ignored labels resolved the OTHER target whenever the
+ * requested one was stopped.
+ *
  * If a kind matches MORE than one container, the resolver fails loud:
  * we never want to pick "the first one" by accident in production.
  */
 
 import { dockerInspectLabels, dockerPs } from './docker.ts';
+import { get } from './env.ts';
+import { log } from './log.ts';
 import { getAppResourceName, getDbResourceName, type Target } from './target.ts';
 
 /**
@@ -178,11 +186,38 @@ const COOLIFY_NAME_LABEL_KEYS: ReadonlyArray<string> = [
     'coolify.serviceName'
 ];
 
-async function strategyByLabel(resourceName: string): Promise<ReadonlyArray<string>> {
+/**
+ * Narrow view of the docker CLI the resolver needs. Injected so the
+ * resolution rules (and above all the cross-target guard) are unit-testable
+ * without a docker daemon. Production code uses {@link REAL_DOCKER}.
+ */
+export interface DockerQueryPort {
+    /**
+     * `docker ps --format <fmt> [--filter ...]` over RUNNING containers, or
+     * over every container (stopped included) when `all` is set.
+     */
+    readonly ps: (params: {
+        readonly format: string;
+        readonly filters?: ReadonlyArray<string>;
+        readonly all?: boolean;
+    }) => Promise<ReadonlyArray<string>>;
+    /** `docker inspect <name>` → `Config.Labels` (empty object when none). */
+    readonly inspectLabels: (container: string) => Promise<Readonly<Record<string, string>>>;
+}
+
+const REAL_DOCKER: DockerQueryPort = {
+    ps: dockerPs,
+    inspectLabels: dockerInspectLabels
+};
+
+async function strategyByLabel(
+    docker: DockerQueryPort,
+    resourceName: string
+): Promise<ReadonlyArray<string>> {
     // Try each known label key — at least one will hit on Coolify v4+.
     const matches = new Set<string>();
     for (const key of COOLIFY_NAME_LABEL_KEYS) {
-        const rows = await dockerPs({
+        const rows = await docker.ps({
             format: '{{.Names}}',
             filters: [`label=${key}=${resourceName}`]
         });
@@ -194,10 +229,11 @@ async function strategyByLabel(resourceName: string): Promise<ReadonlyArray<stri
 }
 
 async function strategyByImage(
+    docker: DockerQueryPort,
     patterns: ReadonlyArray<string>,
     excludeNamePrefixes: ReadonlyArray<string> = []
 ): Promise<ReadonlyArray<string>> {
-    const rows = await dockerPs({ format: '{{.Names}}\t{{.Image}}' });
+    const rows = await docker.ps({ format: '{{.Names}}\t{{.Image}}' });
     return rows
         .map((line) => line.split('\t'))
         .filter((parts): parts is [string, string] => parts.length === 2)
@@ -207,10 +243,11 @@ async function strategyByImage(
 }
 
 async function strategyByExposedPort(
+    docker: DockerQueryPort,
     port: number,
     excludeNamePrefixes: ReadonlyArray<string> = []
 ): Promise<ReadonlyArray<string>> {
-    const matches = await dockerPs({
+    const matches = await docker.ps({
         format: '{{.Names}}',
         filters: [`expose=${port}`]
     });
@@ -218,8 +255,11 @@ async function strategyByExposedPort(
     return matches.filter((name) => !excludeNamePrefixes.some((p) => name.startsWith(p)));
 }
 
-async function strategyByNamePrefix(prefix: string): Promise<ReadonlyArray<string>> {
-    const rows = await dockerPs({ format: '{{.Names}}' });
+async function strategyByNamePrefix(
+    docker: DockerQueryPort,
+    prefix: string
+): Promise<ReadonlyArray<string>> {
+    const rows = await docker.ps({ format: '{{.Names}}' });
     return rows.filter((name) => name.startsWith(prefix));
 }
 
@@ -238,20 +278,164 @@ async function tryStrategy(label: string, strategy: Strategy): Promise<string | 
     );
 }
 
+/** The label that identifies a Coolify resource, compared strictly. */
+const RESOURCE_NAME_LABEL = 'coolify.resourceName';
+
+/** Any label under this prefix marks a container as Coolify-managed. */
+const COOLIFY_LABEL_PREFIX = 'coolify.';
+
 /**
- * Resolve a container kind to a single running container name.
- *
- * Throws when no strategy matches, or when a strategy finds multiple
- * containers (we never silently pick).
+ * Read the `coolify.resourceName` a container carries. Deliberately does
+ * NOT fall back to `coolify.serviceName`: identity is decided by the
+ * resource name alone.
  */
-export async function findContainer(kind: ContainerKind): Promise<string> {
+function readResourceLabel(labels: Readonly<Record<string, string>>): string | undefined {
+    const value = labels[RESOURCE_NAME_LABEL];
+    return value ? value : undefined;
+}
+
+/** True when the container carries at least one `coolify.*` label. */
+function isCoolifyManaged(labels: Readonly<Record<string, string>>): boolean {
+    return Object.keys(labels).some((key) => key.startsWith(COOLIFY_LABEL_PREFIX));
+}
+
+/**
+ * True when ANY container on the daemon — stopped ones included — carries
+ * a `coolify.*` label, i.e. this host is run by Coolify. Reads the
+ * comma-joined `{{.Labels}}` column of `docker ps -a`.
+ */
+async function daemonHasCoolifyContainers(docker: DockerQueryPort): Promise<boolean> {
+    const rows = await docker.ps({ format: '{{.Labels}}', all: true });
+    return rows.some((row) =>
+        row.split(',').some((pair) => pair.trim().startsWith(COOLIFY_LABEL_PREFIX))
+    );
+}
+
+/**
+ * Outcome of {@link resolveContainer}.
+ */
+export interface ResolvedContainer {
+    /** Running container name. */
+    readonly name: string;
+    /** Which strategy produced the match (`label`, `image`, `port`, `name`). */
+    readonly strategy: 'label' | 'image' | 'port' | 'name';
+    /** The container's Coolify resource label, `undefined` when it has none. */
+    readonly resourceLabel: string | undefined;
+    /** Every label on the container (for `hops find --verbose`). */
+    readonly labels: Readonly<Record<string, string>>;
+}
+
+/**
+ * Central cross-target guard (HOS-1950). Runs on EVERY container a
+ * strategy returns, for every kind that has a target-specific label.
+ * Fail-closed:
+ *
+ *   - A Coolify-managed container (any `coolify.*` label) must carry
+ *     `coolify.resourceName` EXACTLY equal to the label the target expects.
+ *     A different value is the other target (prod and staging share ports
+ *     and images); a missing value is a managed container we cannot
+ *     attribute — both are errors.
+ *   - An unmanaged container (no `coolify.*` label at all) is accepted only
+ *     when the daemon runs no Coolify container at all (a non-Coolify
+ *     host), or when the operator opted in with
+ *     `HOPS_ALLOW_UNLABELLED_FALLBACK=1`. On the VPS a stray
+ *     `docker run postgres:17` must never be taken for staging.
+ *
+ * @throws when the container cannot be proven to belong to the target.
+ */
+async function assertBelongsToTarget(params: {
+    readonly kind: ContainerKind;
+    readonly target: Target;
+    readonly expectedLabel: string;
+    readonly name: string;
+    readonly labels: Readonly<Record<string, string>>;
+    readonly strategy: string;
+    readonly docker: DockerQueryPort;
+    readonly allowUnlabelledFallback: boolean;
+}): Promise<void> {
+    const { kind, target, expectedLabel, name, labels, strategy, docker } = params;
+    const header = `Refusing to resolve kind '${kind}' for target '${target}': no running container proves it carries ${RESOURCE_NAME_LABEL}='${expectedLabel}'. `;
+    const hint = `\nIs the '${target}' ${kind} stopped in Coolify? Run \`hops docker-by-name hospeda\` to inspect what is running.`;
+
+    if (isCoolifyManaged(labels)) {
+        const found = readResourceLabel(labels);
+        if (found === expectedLabel) return;
+        throw new Error(
+            found === undefined
+                ? `${header}The ${strategy} lookup matched '${name}', a Coolify-managed container with no ${RESOURCE_NAME_LABEL} label.${hint}`
+                : `${header}The ${strategy} lookup matched '${name}', but that container belongs to '${found}', not to target '${target}' — refusing to act on another target's container.${hint}`
+        );
+    }
+
+    if (params.allowUnlabelledFallback) return;
+    if (!(await daemonHasCoolifyContainers(docker))) return;
+    throw new Error(
+        `${header}The ${strategy} fallback matched '${name}', which carries no Coolify labels, on a host that runs Coolify — it cannot be attributed to '${target}'. ` +
+            `Set HOPS_ALLOW_UNLABELLED_FALLBACK=1 only if that container really is the '${target}' ${kind}.${hint}`
+    );
+}
+
+/**
+ * Resolve a container kind for a target to a single running container.
+ *
+ * Pure with respect to docker: everything goes through the injected
+ * {@link DockerQueryPort}, so the rules are unit-testable.
+ *
+ * Rules:
+ *   - The Coolify resource label of the target always wins.
+ *   - The image / port / name fallbacks may run when the label finds
+ *     nothing, but their result passes through
+ *     {@link assertBelongsToTarget}: a container labelled for any OTHER
+ *     resource (e.g. the other target), a managed container without a
+ *     resource name, or an unlabelled container on a Coolify host is an
+ *     error, never an answer.
+ *   - Ambiguity (2+ matches in one strategy) is an error.
+ *
+ * @throws when nothing resolves, when a strategy is ambiguous, or when a
+ * fallback lands on a container of another resource / target.
+ */
+export async function resolveContainer(params: {
+    readonly kind: ContainerKind;
+    readonly target: Target;
+    readonly docker: DockerQueryPort;
+    /**
+     * Accept a container with no Coolify labels on a Coolify host
+     * (`HOPS_ALLOW_UNLABELLED_FALLBACK=1`). Defaults to false.
+     */
+    readonly allowUnlabelledFallback?: boolean;
+}): Promise<ResolvedContainer> {
+    const { kind, target, docker } = params;
+    const allowUnlabelledFallback = params.allowUnlabelledFallback ?? false;
     const config = KIND_CONFIG[kind];
-    const labelValue = resolveResourceName(kind, getActiveTarget());
+    const labelValue = resolveResourceName(kind, target);
+
+    const finish = async (
+        name: string,
+        strategy: ResolvedContainer['strategy']
+    ): Promise<ResolvedContainer> => {
+        const labels = await docker.inspectLabels(name);
+        const resourceLabel = readResourceLabel(labels);
+        if (labelValue !== undefined) {
+            await assertBelongsToTarget({
+                kind,
+                target,
+                expectedLabel: labelValue,
+                name,
+                labels,
+                strategy,
+                docker,
+                allowUnlabelledFallback
+            });
+        }
+        return { name, strategy, resourceLabel, labels };
+    };
 
     // Strategy 1: Coolify resource-name label, when applicable.
     if (labelValue) {
-        const found = await tryStrategy(`label=${labelValue}`, () => strategyByLabel(labelValue));
-        if (found) return found;
+        const found = await tryStrategy(`label=${labelValue}`, () =>
+            strategyByLabel(docker, labelValue)
+        );
+        if (found) return finish(found, 'label');
     }
 
     // Strategy 2: image ancestor.
@@ -259,9 +443,9 @@ export async function findContainer(kind: ContainerKind): Promise<string> {
         const patterns = config.imagePatterns;
         const exclude = config.excludeNamePrefixes ?? [];
         const found = await tryStrategy(`image~=${patterns[0]}`, () =>
-            strategyByImage(patterns, exclude)
+            strategyByImage(docker, patterns, exclude)
         );
-        if (found) return found;
+        if (found) return finish(found, 'image');
     }
 
     // Strategy 3: exposed port.
@@ -269,9 +453,9 @@ export async function findContainer(kind: ContainerKind): Promise<string> {
         const port = config.exposedPort;
         const exclude = config.excludeNamePrefixes ?? [];
         const found = await tryStrategy(`expose=${port}`, () =>
-            strategyByExposedPort(port, exclude)
+            strategyByExposedPort(docker, port, exclude)
         );
-        if (found) return found;
+        if (found) return finish(found, 'port');
     }
 
     // Strategy 4: name prefix (used by 'coolify' since the orchestrator
@@ -279,13 +463,13 @@ export async function findContainer(kind: ContainerKind): Promise<string> {
     if (config.nameFallback) {
         const nameFallback = config.nameFallback;
         const found = await tryStrategy(`name~=${nameFallback}`, () =>
-            strategyByNamePrefix(nameFallback)
+            strategyByNamePrefix(docker, nameFallback)
         );
-        if (found) return found;
+        if (found) return finish(found, 'name');
     }
 
     throw new Error(
-        `No running container resolves to kind '${kind}' for target '${getActiveTarget()}'. Strategies tried in order:\n${
+        `No running container resolves to kind '${kind}' for target '${target}'. Strategies tried in order:\n${
             labelValue ? `  - Coolify resourceName label '${labelValue}'\n` : ''
         }${
             config.imagePatterns
@@ -293,6 +477,55 @@ export async function findContainer(kind: ContainerKind): Promise<string> {
                 : ''
         }${config.exposedPort ? `  - exposed port ${config.exposedPort}\n` : ''}${config.nameFallback ? `  - name starts-with '${config.nameFallback}'\n` : ''}Run \`hops docker-by-name <prefix>\` to inspect what is running. To switch target, pass \`--target=prod|staging\` or set HOPS_DEFAULT_TARGET in .env.local.`
     );
+}
+
+/**
+ * One-line, human-readable description of a resolution, printed by every
+ * command that resolves a container so the operator always sees WHICH
+ * container (and which target's label) a command is about to act on.
+ */
+export function formatResolution(params: {
+    readonly kind: ContainerKind;
+    readonly target: Target;
+    readonly resolved: ResolvedContainer;
+}): string {
+    const { kind, target, resolved } = params;
+    const label = resolved.resourceLabel ?? 'no coolify label';
+    const via = resolved.strategy === 'label' ? '' : ` (via ${resolved.strategy} fallback)`;
+    return `Resolved ${kind} (${target}) → container ${resolved.name} [${label}]${via}`;
+}
+
+/**
+ * Opt-in for unlabelled fallback matches on a Coolify host. Only the exact
+ * value `'1'` enables it; anything else (`'0'`, `'true'`, empty, unset) is
+ * off. Exported for tests.
+ */
+export function allowUnlabelledFallbackFromEnv(): boolean {
+    return get('HOPS_ALLOW_UNLABELLED_FALLBACK') === '1';
+}
+
+/**
+ * Resolve a container kind for the active target to a single running
+ * container name, and print the resolution to stderr.
+ *
+ * Throws when no strategy matches, when a strategy finds multiple
+ * containers (we never silently pick), or when a fallback lands on a
+ * container that belongs to another target (see {@link resolveContainer}).
+ */
+export async function findContainer(kind: ContainerKind): Promise<string> {
+    const target = getActiveTarget();
+    const resolved = await resolveContainer({
+        kind,
+        target,
+        docker: REAL_DOCKER,
+        allowUnlabelledFallback: allowUnlabelledFallbackFromEnv()
+    });
+    if (resolved.strategy === 'label') {
+        log.info(formatResolution({ kind, target, resolved }));
+    } else {
+        log.warn(formatResolution({ kind, target, resolved }));
+    }
+    return resolved.name;
 }
 
 /**
@@ -321,11 +554,17 @@ export async function findContainerVerbose(kind: ContainerKind): Promise<{
     readonly strategy: string;
     readonly labels: Readonly<Record<string, string>>;
 }> {
-    const name = await findContainer(kind);
-    const labels = await dockerInspectLabels(name);
-    const labelHit = COOLIFY_NAME_LABEL_KEYS.find((key) => labels[key]);
-    const strategy = labelHit
-        ? `label:${labelHit}=${labels[labelHit]}`
-        : 'fallback (image/port/name)';
-    return { name, strategy, labels };
+    const target = getActiveTarget();
+    const resolved = await resolveContainer({
+        kind,
+        target,
+        docker: REAL_DOCKER,
+        allowUnlabelledFallback: allowUnlabelledFallbackFromEnv()
+    });
+    log.info(formatResolution({ kind, target, resolved }));
+    const strategy =
+        resolved.strategy === 'label'
+            ? `label=${resolved.resourceLabel ?? ''}`
+            : `fallback (${resolved.strategy})`;
+    return { name: resolved.name, strategy, labels: resolved.labels };
 }

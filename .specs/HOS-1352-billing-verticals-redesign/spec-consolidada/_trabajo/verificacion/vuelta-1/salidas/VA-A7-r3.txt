@@ -1,0 +1,53 @@
+# VA-A7 · vuelta 3 · fuente → spec (bloque A7)
+
+Método: script de comparación (`a7r3/cmp.py`: partió cada fuente en líneas vivas sin tachados, mapeó
+cada línea a los bloques de la spec que la citan en `Origen:` y al bloque más parecido por tokens)
+más lectura manual de cada sección de fuente y búsqueda dirigida (`rg`) de cada regla en toda la
+spec, no sólo donde apunta un `Origen:`. Los bloques que la spec transcribe textuales
+(`04-catalogos.md` «Texto de `B/20-testing.md:…`», `30-el-corte.md` §2.4/§2.5 de `B/21`,
+`00-indice.md` para `spec.md`) se cotejaron por muestreo de frases normativas.
+
+## Reglas con problema
+
+- `docs/14-promos-cortesias-y-grants.md:241` · «el contador `cobros_restantes`: nulo es `forever`, N > 0 son N cobros con descuento, 0 es agotado; se inicializa al canjear con la duración del código, y "primer cobro" es N = 1» · ausente (la spec sólo dice `cobros_restantes` nunca negativo, `10-corte/B3.md:876`, y que `P1` lo decrementa; en ningún lado dice qué significa nulo ni con qué valor nace) · BLOQUEA
+- `docs/14-promos-cortesias-y-grants.md:297` (y `:303`) · «el reintento de 3 días de la mutación de monto vale SÓLO si la divergencia la abrió una mutación nuestra (`S30`, aumento de `DEC-MP-002`, `S37`); cualquier otra divergencia de monto abre `DIVERGENCIA_DE_MONTO` en el acto, sin reintento» · distinta en `04-catalogos.md:5666` (MOT:5: «después de 3 días de reintentar la mutación», sin distinguir quién abrió la divergencia) y en `10-corte/B11.md:220-224` (AC:B11:9: la marca se abre «cuando pasan 3 días de reintentar» en general); la regla sólo aparece como cita de cierre en `80-abiertos.md:345` · BLOQUEA
+- `docs/14-promos-cortesias-y-grants.md:376` · «el job de vencimiento del trial re-lee la fecha de fin dentro de su propia transacción, no actúa sobre la que leyó al armar el lote» · ausente (TRANS:V:T3, `04-catalogos.md:303-313`, tiene condición «—»; `10-corte/V4.md:926` describe el job sin la relectura) · BLOQUEA
+- `docs/14-promos-cortesias-y-grants.md:397` · «`stackable` y `usableWhileAnotherPromoActive` rigen sólo entre promos; las combinaciones con cortesía y grant no son configuración» · ausente · MENOR
+- `docs/14-promos-cortesias-y-grants.md:412` · «durante una cortesía el descuento se suspende y se reanuda al volver con su contador intacto» · ausente como regla explícita (se deduce de `P1`, `04-catalogos.md:4265`) · MENOR
+- `docs/16-addons.md:233` (y `:238`, `:241`) · «un addon a costo $0 por un grant no registra `payment` ni emite comprobante; lo que se registra es el origen (la instancia cuelga del ancla)» · ausente la mitad «no hay `payment` de cero ni comprobante de cero» (sólo está el ancla-título en `S20`) · BLOQUEA
+- `docs/16-addons.md:65` · «no hay vigencia `PERMANENTE`: para eso está el grant» · ausente · MENOR
+- `docs/16-addons.md:247` · «el grant habilita y no enciende: la persona elige uno por uno los addons compatibles, y esa elección es un acto suyo con su registro» · ausente la parte de la elección registrada (sí está «no enciende», `10-corte/B9a.md:573`, INV:27) · MENOR
+- `docs/19-superficies.md:116` (y `:181-191`) · «fila 8: al pedir la baja estando PAUSADO también se dice que el servicio termina hoy; si la pausa era cortesía, que pierde los meses que le quedaban; salvo la pausada que vive del crédito sin consumir, donde la pantalla dice "seguís hasta el …" con el fin del crédito» · distinta en `10-corte/B13a.md:164-166` (AC:B13a:1 y su TEST en `:510` sólo nombran `SUSPENDED` y `GRACE_PERIOD`; `B8b`, dueña de `S22`, no toma la fila 8) · BLOQUEA
+- `docs/19-superficies.md:120` · «fila 10-ter: a quien estaba en `PAUSED` por cortesía, el aviso de suspensión por contracargo le dice además que la cortesía terminó» · ausente (`02-nucleo-outbox.md:286` y `10-corte/B7.md:1479` traen el texto base sin esa línea) · BLOQUEA
+- `docs/19-superficies.md:137` · «fila 18: si tenía una cortesía diferida, "esos N meses se cerraron y no vuelven", con el número» · distinta en `02-nucleo-outbox.md:309` (dice «esos N **días**»; la unidad es meses desde `F-8CB1-001`) · BLOQUEA
+- `docs/19-superficies.md:142` · «fila 22: a quien pagó mientras ya mandábamos cancelar y quedó en `CANCEL_SCHEDULED` (espejo, `S7`), el aviso y Mi Suscripción dicen que el período se presta entero hasta `fin_de_servicio`, que no se renueva y que para seguir vuelve a suscribirse; y que el cobro de sus addons recurrentes también se cortó y se ven hasta esa fecha» · ausente (ni en `B7`, ni en `B13a`, ni en el catálogo de correos) · BLOQUEA
+- `docs/19-superficies.md:292` · «el panel muestra las versiones de plan retiradas con cuántas suscripciones siguen ancladas» · ausente · BLOQUEA
+- `docs/19-superficies.md:246` · «en el listado, un pago colgado que el banco ya devolvió por contracargo se muestra con el contracargo y fuera del default» · ausente en el listado (el mecanismo de `RF2` sí está, `04-catalogos.md:5867`) · MENOR
+- `docs/20-testing.md:687` · «ninguna credencial de producción la tiene un agente: la corrida mensual y la manual en producción las dispara una persona o el programador de la batería, nunca quien implementa» · ausente (la transcripción de §4.1 en `04-catalogos.md:6607-6648` salta de su punto 7 al párrafo siguiente sin esta línea) · BLOQUEA
+- `docs/20-testing.md:762` (con la lista de `:706-733`) · «cada flujo del §5 es una prueba de punta a punta contra los builds, con el falso como servidor, el reloj adelantable y el correo capturado, con aserciones sobre `B/19` §4 y el orden "nuestro correo antes que el del proveedor"; cada unidad escribe la de su flujo: la revocación `B5` (incluido el caso desde `PAUSED`), los cambios de plan y de ciclo, la pausa en sus dos formas y la cancelación `B8`, el addon (contratación, vencimiento y excedente) `B10`, la migración `B12` con sus casos» · ausente para `B5`, `B8a`/`B8b`, `B10` y `B12` (sólo `B3`, AC:B3:33, y `B7` tienen su e2e de punta a punta; `30-el-corte.md:1526` rinde sólo el §5 de verticales) · BLOQUEA
+- `descomposicion.md:713` · «un registro de cobro sin `expire_date` cierra sólo con `processed`: una terminal con el registro del alta en `recycling` y sin `expire_date` no se exime» (B11) · ausente · BLOQUEA
+- `descomposicion.md:714` · «un registro que el listado devuelve y da `404` por id se contesta con el pago que el listado nombra; con `rejected`, corre `S16` y la corrida queda completa» (B11) · ausente · BLOQUEA
+- `descomposicion.md:717` · «la comprobación de pagos acreditados relee también los `REFUNDED`, y un contracargo sobre uno abre `CONTRACARGO` sin `P6`: el pago sigue `REFUNDED`» (B11) · ausente (AC:B11:12 sólo `SUCCEEDED`; MOT:17, `04-catalogos.md:5858`, sin esta rama) · BLOQUEA
+
+## Resumen por archivo
+
+| archivo | rangos recorridos | reglas normativas vivas revisadas | ausentes | distintas |
+|---|---|---|---|---|
+| `docs/14-promos-cortesias-y-grants.md` | 1–742 (entero) | ~50 | 4 | 1 |
+| `docs/16-addons.md` | 1–1153 (entero) | ~60 | 3 | 0 |
+| `docs/19-superficies.md` | 1–346 (entero) | ~45 (las filas del §4 una por una, §1–§3, §5–§7) | 4 | 2 |
+| `docs/20-testing.md` | 1–807 (entero) | ~55 (los guards de la tabla del §2 y su prosa, §3, §4.1, §5, §5.1, §6) | 2 | 0 |
+| `docs/21-migracion.md` | 1–696 (entero; mayoría tachada) | ~25 | 0 | 0 |
+| `docs/22-lo-legal.md` | 1–196 (entero) | ~15 | 0 | 0 |
+| `descomposicion.md` | 1–1138 (entero) | ~90 (reglas del §1.3, tablas del §2.6–§2.12, §3, criterios del §4) | 3 | 0 |
+| `spec.md` | 1–348 (entero) | ~25 | 0 | 0 |
+
+**Total: 19 reglas con problema — 16 ausentes y 3 distintas; 14 BLOQUEA y 5 MENOR.**
+
+Notas:
+- `21-migracion.md` y `22-lo-legal.md`: lo vivo está rendido (`30-el-corte.md` §2.4/§2.5 y la
+  lista de lo que no se migra en `U1`/`V6`/`V7`; lo legal en `B5`, `B13a`, el outbox y
+  `80-abiertos.md`). Gran parte de `21` está tachada (lápida del corte, ventana, detector).
+- `spec.md`: lo vivo está en `00-indice.md` (§3.1–§3.7, §4, §5.3, §6) y en `B1`.
+- `14` §2.4 «primer cobro canjeado a las 23:59:59 es válido» quedó superado por la condición de
+  `T4` (fecha de fin sin pasar, `F-8V2A2-003`, de la otra épica); no se reporta.

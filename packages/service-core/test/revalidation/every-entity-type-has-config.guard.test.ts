@@ -7,7 +7,7 @@
  * fire-and-forget, the log write happens downstream of the return, and the
  * service reports nothing back to the caller. So a new entity type can be wired
  * into the purge chain, ship, and evict nothing — which is exactly what happened
- * to `pointOfInterest`, `attraction`, `gastronomy`, and `experience` across all
+ * to `pointOfInterest`, `attraction`, `venue`, and `experience` across all
  * of W2-4, on staging and production alike.
  *
  * The union is the contract ("these types schedule revalidation") and the seed
@@ -21,7 +21,7 @@
  *
  * HOS-389 §4b added a THIRD side: `RevalidationEntityTypeEnum`, the enum every
  * HTTP-facing revalidation surface validates against. It had drifted five values
- * behind the other two — `gastronomy`, `experience`, `pointOfInterest`,
+ * behind the other two — `venue`, `experience`, `pointOfInterest`,
  * `attraction` and `partner` all had a config row and a tag-mapper arm, but the
  * API rejected them at validation and the admin log filter could not name them.
  *

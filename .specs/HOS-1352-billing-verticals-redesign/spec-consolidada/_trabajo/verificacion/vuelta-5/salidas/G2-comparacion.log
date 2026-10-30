@@ -1,0 +1,104 @@
+{
+  "04-catalogos.md": {
+    "lines": 9843,
+    "scope": [
+      1,
+      9843
+    ],
+    "content_lines": 4629,
+    "fields": 1382,
+    "sections": 0
+  },
+  "10-corte/B11.md": {
+    "lines": 2356,
+    "scope": [
+      75,
+      1317
+    ],
+    "content_lines": 1064,
+    "fields": 0,
+    "sections": 14
+  },
+  "10-corte/B13a.md": {
+    "lines": 1300,
+    "scope": [
+      54,
+      445
+    ],
+    "content_lines": 268,
+    "fields": 0,
+    "sections": 15
+  },
+  "10-corte/B9a.md": {
+    "lines": 1417,
+    "scope": [
+      59,
+      715
+    ],
+    "content_lines": 466,
+    "fields": 0,
+    "sections": 27
+  },
+  "20-fase-2/B8b.md": {
+    "lines": 1406,
+    "scope": [
+      53,
+      340
+    ],
+    "content_lines": 185,
+    "fields": 0,
+    "sections": 17
+  },
+  "20-fase-3/B10.md": {
+    "lines": 1944,
+    "scope": [
+      90,
+      1211
+    ],
+    "content_lines": 908,
+    "fields": 0,
+    "sections": 26
+  },
+  "20-fase-3/B12.md": {
+    "lines": 834,
+    "scope": [
+      65,
+      270
+    ],
+    "content_lines": 152,
+    "fields": 0,
+    "sections": 8
+  }
+}
+DISCREPANCIAS 31
+('04-catalogos.md', 420, 'CELL_DIFFERENCE', 'condición', 'cubiertoesfalso', '—', '.specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/03-maquinas-de-estado.md', 54)
+('04-catalogos.md', 5307, 'CELL_DIFFERENCE', 'efectos', 'eslamismaacción,«registrarunpagomanual»(§30),ejecutadasincuotaabierta,comoMP4loesdesdeotroestadodeorigen:mismopermiso,mismaauditoríaymismaconfirmación,queacádiceademásqueelpagoesunsegundopagodelperíodoyqueseproponedevolverlo.Crealafilademanual_paymentyaREGISTERED,conelperíododelaúltimacuotadelasuscripción,quién,cuándoyelcomprobantedelatransferencia(B/02§2.3).IntentaescribirlacoberturaychocaconelUNIQUEdecovered_period,porqueeseperíodoyateníauncobroacreditado:lacoberturanoseescribeyS14abrelamarcaCOBRO_DUPLICADO(B/02§2.5,motivo20)conestemanual_paymentcolgado,igualqueP1sobreuncobrodetarjeta.Eslasimetríaconlatarjeta,yeldefaultesdevolver(B/19§6):ladevoluciónseasientaporRF4,conelcomprobantedelatransferenciadevuelta(§6.1).Nomuevelasuscripciónniavanzalafechadelpróximocobro:nocubreningúnperíodonuevo.Silafilanotieneningunacuota,porquenuncafuedepagadormanual,elperíodoeseldelúltimocobroacreditado.Sinotieneninguno,nohayperíodoconquéchocaryMP6nocorre:quedadeclaradoen«loqueestecapítuloNOcierra».SobreunaCANCELLEDcuyaúltimacuotaquedóDECLARED_UNP
+('04-catalogos.md', 9645, 'CELL_DIFFERENCE', 'Conclusión', 'WH-4midiólosreintentos,nosudestino.Sivaalavieja,eleventosepierdeysucobroloveelbarridodeB11comoeldecualquierdesconocido(lalápidadelcortesalió:FASE5,simplificacióndelcorte,S-40yS-70;verificación,VF5-06)🔎Indicio,nomedición(2026-09-29,anexodel29/09(./mp-probes/RESULTS-2026-09-29.md#anexo-con-los-dos-canales-escuchando-2909-mañana)):mientraselownercambiabalaURLdeWebhooksde/a/webhooks,dosavisosfechados14:34:27ZensupropiocuerpollegaronalaURLnuevaalas14:40:10Z,ynoquedóningúnintentoalavieja(elreceptorcontestaba200atodo).Compatiblecon«salealaURLvigentealmomentodeentregar»,peronoesestapregunta,queessobreunreintentotrasun500,ylaventanaestabacontaminada(tambiéncambiólaseleccióndeeventos)🚫Nosemide,pordecisióndelowner(2026-09-29,decisionessobrelasmediciones(./30-revision-del-owner/27-decisiones-sobre-las-mediciones.md),M-4):sieldíadelcortesepierdeunreintento,elbarridodiariolorelee(B/21,«NOcierra»,punto(3)).QuedaUNKNOWN,sinbloquearnada📌Sinsujetodesdeel2026-09-29,conOKdelowner(decisionessobrelaverificación(./30-revision-del-owner/32-decision
+('04-catalogos.md', 3, 'PROSE_NOT_IN_CORPUS', 'Catálogo único de transiciones, transiciones prohibidas, motivos de la marca de conciliación, candados, reglas y mentiras del proveedor falso, guards, validaciones del panel y filas de la matriz de Mercado Pago (organización por pieza con catálogos únicos: [DEC-METH-019](01-decisiones-vigentes.md#dec-meth-019), punto 2, letra [AH](01-decisiones-vigentes.md#own-41-corte-del-mvp-t2-ah)).')
+('04-catalogos.md', 5, 'PROSE_NOT_IN_CORPUS', '**Cómo se lee.** Cada ítem lleva su ancla, su texto **copiado de la fuente congelada** (`8a1d8902c2`) con lo tachado omitido y nada parafraseado, y su línea `Origen:`. Las celdas van con el nombre de la columna de la fuente; entre paréntesis, a qué parte de la transición corresponde (estado origen, disparador, estado destino, guardas, efectos). La **pieza dueña** y las que también lo ejercen salen de `_trabajo/cobertura.json`, con la cita que las justifica; el AC y los tests de cada ítem viven en el archivo de su pieza, no acá ([AM](01-decisiones-vigentes.md#own-41-corte-del-mvp-t2-am), [AN](01-decisiones-vigentes.md#own-41-corte-del-mvp-t2-an)). Los links a otros archivos de la fuente se dejaron como texto.')
+('04-catalogos.md', 7, 'PROSE_NOT_IN_CORPUS', 'Las secciones *«texto de la fuente»* traen, sin lo tachado, la prosa de la misma sección de la fuente que rodea cada tabla: son reglas de la tabla entera y se leen junto con sus filas.')
+('04-catalogos.md', 755, 'PROSE_NOT_IN_CORPUS', '- El lock vive dentro de la transacción que escribe y se suelta con ella. Con qué primitiva')
+('04-catalogos.md', 5585, 'PROSE_NOT_IN_CORPUS', 'Cada motivo es un valor de la columna **`motivo`** de **`reconciliation_mark`**, *«enumeración cerrada, §2.5»* (`B/02` §2.2, línea 57). El nombre del valor va en el título de cada ítem.')
+('04-catalogos.md', 6109, 'PROSE_NOT_IN_CORPUS', 'Cada candado es la sección entera de la fuente, sin lo tachado.')
+('04-catalogos.md', 6146, 'PROSE_NOT_IN_CORPUS', 'Cada caso de abajo se resuelve con una restricción de la base o con una relectura.')
+('04-catalogos.md', 6468, 'PROSE_NOT_IN_CORPUS', 'La sección no tiene texto vigente fuera de su título.')
+('04-catalogos.md', 8107, 'PROSE_NOT_IN_CORPUS', 'Las filas de la matriz son **sólo citables** ([AX](01-decisiones-vigentes.md#own-41-corte-del-mvp-t5-ax)): no exigen AC propio; las citan los ítems y las piezas que se apoyan en ellas. Cada fila va con todas sus columnas.')
+('04-catalogos.md', 8109, 'PROSE_NOT_IN_CORPUS', '**Cómo se lee una fila** (`D/06` §Reglas, 4 y 6): cada fila lleva **fecha y entorno**, y una fila sin fecha se lee como `UNKNOWN` (`S-MP-02`); un `PARTIALLY_SUPPORTED` **tiene que nombrar qué parte**. Cuándo caduca una fila verificada: [B1](10-corte/B1.md#pieza-b1) (`B/06` §8, que cierra `S-MP-02`).')
+('04-catalogos.md', 8111, 'PROSE_NOT_IN_CORPUS', '**Estados** (`D/06` §Estados, §61): `VERIFIED`, se ejecutó y funciona como lo necesitamos, con evidencia; `NOT_SUPPORTED`, se ejecutó y el proveedor no lo permite, con evidencia; `PARTIALLY_SUPPORTED`, funciona con una restricción **nombrada**; `UNKNOWN`, no se probó, o la fila caducó —por un cambio en lo que la sostiene, no por antigüedad (`B/06` §8, regla 2: *«una fila caduca cuando cambia lo que la sostiene, no por antigüedad»*)—.')
+('04-catalogos.md', 9400, 'PROSE_NOT_IN_CORPUS', 'Nota del catálogo sobre la fila siguiente:')
+('10-corte/B11.md', 250, 'OUTPUT_NOT_IN_SECTION', '| **monto esperado, derivado**: el precio de la versión de plan —**el vigente de la versión, con los aumentos de `DEC-MP-002` ya aplicados** (orquestador, FASE 8 completa, pendiente 8)— menos las promos vivas según su contador (`B/14` §2.4) —**no es una columna**—, **redondeado una sola vez, con el mismo cálculo que usa quien muta** (`B/14` §1.2; FASE 9 vuelta 2, `F-8V2B3-008`). **No se compara sobre una fila `PAUSED`** (orquestador, pendiente 8), **ni sobre una fila cuyo preapproval la relectura ve `cancelled`** —la `CANCEL_SCHEDULED` y la `SUSPENDED` de tarjeta—: su `transaction_amount` ya no se puede mutar, y un aumento la haría divergir para siempre sin acción posible; el cobro que todavía salga de ella lo mira la comparación de cobros (FASE 9 vuelta 2, `F-8V2B3-007`) | `transaction_amount`, **releído por id** | **si la divergencia la abrió una mutación NUESTRA** —`S30`, un aumento de precio de `DEC-MP-002` **o `S37`, la de una migración** (revisión del owner, 2026-09-28, C15)— **se reintenta la mutación durante 3 días, contados 
+('10-corte/B11.md', 240, 'SOURCE_NOT_IN_OUTPUT', '.specs/HOS-1354-billing-cobro-y-proveedor/docs/09-conciliacion.md:185', '| ~~monto vigente~~ **monto esperado, derivado**: el precio de la versión de plan —**el vigente de la versión, con los aumentos de `DEC-MP-002` ya aplicados** (orquestador, FASE 8 completa, pendiente 8)— menos las promos vivas según su contador (`B/14` §2.4) —**no es una columna**—, **redondeado una sola vez y hacia abajo, con el mismo cálculo que usa quien muta** (`B/14` §1.2; FASE 9 vuelta 2, `F-8V2B3-008`). **No se compara sobre una fila `PAUSED`** (orquestador, pendiente 8), **ni sobre una fila cuyo preapproval la relectura ve `cancelled`** —la `CANCEL_SCHEDULED` y la `SUSPENDED` de tarjeta—: su `transaction_amount` ya no se puede mutar, y un aumento la haría divergir para siempre sin acción posible; el cobro que todavía salga de ella lo mira la comparación de cobros (FASE 9 vuelta 2, `F-8V2B3-007`) | `transaction_amount`, **releído por id** | ~~se abre la **marca** con motivo **`DIVERGENCIA_DE_MONTO`**~~ **si la divergencia la abrió una mutación NUESTRA** —`
+('10-corte/B11.md', 1160, 'OUTPUT_NOT_IN_SECTION', '**Si pasan 48 h sin una corrida completa, se avisa, y el aviso lo da otro proceso**: un vigía que', [('.specs/HOS-1354-billing-cobro-y-proveedor/docs/09-conciliacion.md', '1115')])
+('10-corte/B11.md', 1142, 'SOURCE_NOT_IN_OUTPUT', '.specs/HOS-1354-billing-cobro-y-proveedor/docs/09-conciliacion.md:1132', '**Si pasan 26 h sin una corrida completa, se avisa, y el aviso lo da otro proceso**: un vigía que')
+('10-corte/B13a.md', 225, 'OUTPUT_NOT_IN_SECTION', 'suscribirse**, sin teléfono y sin hablar con nadie. Está decidido en', [('.specs/HOS-1354-billing-cobro-y-proveedor/docs/19-superficies.md', '171')])
+('10-corte/B13a.md', 221, 'SOURCE_NOT_IN_OUTPUT', '.specs/HOS-1354-billing-cobro-y-proveedor/docs/19-superficies.md:174', 'suscribirse**, sin teléfono, sin formulario de contacto y sin hablar con nadie. Está decidido en')
+('10-corte/B13a.md', 406, 'OUTPUT_NOT_IN_SECTION', 'sin teléfono y sin hablar con nadie.** Lo que pasa después ya está', [('.specs/HOS-1354-billing-cobro-y-proveedor/docs/22-lo-legal.md', '38')])
+('10-corte/B13a.md', 399, 'SOURCE_NOT_IN_OUTPUT', '.specs/HOS-1354-billing-cobro-y-proveedor/docs/22-lo-legal.md:44', 'sin teléfono, sin formulario de contacto y sin hablar con nadie.** Lo que pasa después ya está')
+('10-corte/B9a.md', 91, 'SOURCE_NOT_IN_OUTPUT', '.specs/HOS-1354-billing-cobro-y-proveedor/docs/14-promos-cortesias-y-grants.md:52', '**Y el redondeo es uno, al final** (FASE 9 vuelta 2, `F-8V2B3-008`). Los montos son enteros en la')
+('10-corte/B9a.md', 91, 'SOURCE_NOT_IN_OUTPUT', '.specs/HOS-1354-billing-cobro-y-proveedor/docs/14-promos-cortesias-y-grants.md:53', 'unidad mínima de la moneda (`B/02` §2.3), y dos porcentajes apilados dan fracciones de centavo.')
+('10-corte/B9a.md', 91, 'SOURCE_NOT_IN_OUTPUT', '.specs/HOS-1354-billing-cobro-y-proveedor/docs/14-promos-cortesias-y-grants.md:54', 'La composición se calcula sin redondear sobre el precio en la unidad mínima, y **el resultado se')
+('10-corte/B9a.md', 91, 'SOURCE_NOT_IN_OUTPUT', '.specs/HOS-1354-billing-cobro-y-proveedor/docs/14-promos-cortesias-y-grants.md:55', 'redondea una sola vez, hacia abajo**, a la unidad mínima. Así las dos operaciones siguen')
+('10-corte/B9a.md', 91, 'SOURCE_NOT_IN_OUTPUT', '.specs/HOS-1354-billing-cobro-y-proveedor/docs/14-promos-cortesias-y-grants.md:56', 'conmutando, que con un redondeo por paso dejaba de ser cierto. **Con ese mismo cálculo derivan el')
+('10-corte/B9a.md', 91, 'SOURCE_NOT_IN_OUTPUT', '.specs/HOS-1354-billing-cobro-y-proveedor/docs/14-promos-cortesias-y-grants.md:57', 'monto quien muta** —el canje, `S30`, el aumento de `DEC-MP-002`— **y quien compara** —el barrido')
+('10-corte/B9a.md', 91, 'SOURCE_NOT_IN_OUTPUT', '.specs/HOS-1354-billing-cobro-y-proveedor/docs/14-promos-cortesias-y-grants.md:58', '(`B/09` §3)—: si redondearan distinto, la divergencia de medio centavo sería permanente y abriría')
+('10-corte/B9a.md', 91, 'SOURCE_NOT_IN_OUTPUT', '.specs/HOS-1354-billing-cobro-y-proveedor/docs/14-promos-cortesias-y-grants.md:59', '`DIVERGENCIA_DE_MONTO` en el acto. Hacia abajo por la misma razón que el porcentaje va primero: a')

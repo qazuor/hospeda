@@ -5,9 +5,10 @@
  * contract directly. This test drives the React UI (MoveToCollectionModal +
  * UserFavoritesList) end-to-end so the wiring is covered in CI.
  *
- * Actors: Authenticated regular user.
+ * Actors: Authenticated USER seeded as a Tourist VIP (an ACTIVE PRINCIPAL tourist-vip
+ * subscription, read by billing coverage since HOS-1532). No deferral: a VIP answered 403 fails the spec (HOS-1665, TEST:1665:2).
  *
- * Tags: @p1 @favorites @collections @move @ui @spec-098
+ * Tags: @p0 @favorites @collections @move @ui @spec-098
  *
  * Preconditions:
  *   - At least one ACTIVE/PUBLIC accommodation in seed.
@@ -26,12 +27,7 @@
  */
 
 import { expect, test } from '@playwright/test';
-import {
-    createSubscription,
-    createUser,
-    markProfileCompleted,
-    resolvePlanIdBySlug
-} from '../../fixtures/api-helpers.ts';
+import { createUser, makeTouristVip, markProfileCompleted } from '../../fixtures/api-helpers.ts';
 import { seedCookieConsent } from '../../fixtures/browser-helpers.ts';
 import { execSQL, getDbPool } from '../../fixtures/db-helpers.ts';
 import { cleanupTestUsers } from '../../support/test-cleanup.ts';
@@ -71,13 +67,8 @@ async function attachSessionCookie(
     await context.addCookies(cookies);
 }
 
-test.describe('E2E-04b: move bookmark via UI @p1 @favorites @collections @move @ui @spec-098', () => {
+test.describe('E2E-04b: move bookmark via UI @p0 @favorites @collections @move @ui @spec-098', () => {
     const userIds: string[] = [];
-    let vipPlanId: string | null = null;
-
-    test.beforeAll(async () => {
-        ({ planId: vipPlanId } = await resolvePlanIdBySlug({ slug: 'tourist-vip' }));
-    });
 
     test.beforeEach(async ({ page }) => {
         await seedCookieConsent(page);
@@ -93,8 +84,7 @@ test.describe('E2E-04b: move bookmark via UI @p1 @favorites @collections @move @
     async function getFirstActiveAccommodationId(): Promise<string | null> {
         const rows = await execSQL<{ id: string }>(
             `SELECT id FROM accommodations
-             WHERE lifecycle_state = 'ACTIVE'
-               AND visibility = 'PUBLIC'
+             WHERE publication_status = 'PUBLISHED'
                AND deleted_at IS NULL
              ORDER BY created_at ASC
              LIMIT 1`
@@ -113,12 +103,9 @@ test.describe('E2E-04b: move bookmark via UI @p1 @favorites @collections @move @
             return;
         }
 
-        test.fixme(!vipPlanId, 'tourist-vip plan not seeded — cannot run');
-        if (!vipPlanId) return;
         const user = await createUser({ role: 'USER' });
         userIds.push(user.id);
-        // SPEC-287 put collections behind `can_use_collections`; tourist-free is 403.
-        await createSubscription({ userId: user.id, planId: vipPlanId, status: 'active' });
+        await makeTouristVip(user.id);
         // SPEC-113 bounces users with profile_completed = false to the completion
         // form, so a UI spec never reaches the account page it asserts on.
         await markProfileCompleted({ userId: user.id });
@@ -203,12 +190,9 @@ test.describe('E2E-04b: move bookmark via UI @p1 @favorites @collections @move @
             return;
         }
 
-        test.fixme(!vipPlanId, 'tourist-vip plan not seeded — cannot run');
-        if (!vipPlanId) return;
         const user = await createUser({ role: 'USER' });
         userIds.push(user.id);
-        // SPEC-287 put collections behind `can_use_collections`; tourist-free is 403.
-        await createSubscription({ userId: user.id, planId: vipPlanId, status: 'active' });
+        await makeTouristVip(user.id);
         // SPEC-113 bounces users with profile_completed = false to the completion
         // form, so a UI spec never reaches the account page it asserts on.
         await markProfileCompleted({ userId: user.id });
@@ -265,39 +249,20 @@ test.describe('E2E-04b: move bookmark via UI @p1 @favorites @collections @move @
         await page.goto(`${WEB_BASE_URL}/es/mi-cuenta/favoritos/colecciones/${collectionId}/`);
         await page.waitForLoadState('networkidle');
 
-        // CollectionBookmarkRemoveBtn asks for confirmation with window.confirm().
-        // Playwright DISMISSES dialogs unless a handler accepts them, so without this
-        // the confirm returns false and handleRemove() returns before issuing the
-        // DELETE — the click looks successful and nothing happens. e2e-04c already
-        // does this for the same reason.
-        page.on('dialog', (dialog) => {
-            void dialog.accept();
-        });
-
         const removeBtn = page.locator('[data-testid="collection-bookmark-remove-btn"]').first();
         await expect(
             removeBtn,
             `remove-from-collection button not rendered on ${page.url()}`
         ).toBeVisible();
 
-        // CollectionBookmarkRemoveBtn is mounted `client:visible`, so the button is
-        // server-rendered before React attaches its onClick. A single click plus
-        // `networkidle` silently did nothing when it landed pre-hydration: no request
-        // was ever sent, and the spec then blamed the DELETE for not clearing
-        // collection_id. Retry the click until the DELETE actually goes out — the
-        // request is the evidence that the handler ran.
+        // The component uses the product confirmation dialog; accept it explicitly
+        // before asserting the DELETE request.
         const deleteUrlFragment = `/user-bookmark-collections/${collectionId}/bookmarks/${bookmarkId}`;
-        await expect(async () => {
-            await Promise.all([
-                page.waitForResponse(
-                    (res) =>
-                        res.url().includes(deleteUrlFragment) &&
-                        res.request().method() === 'DELETE',
-                    { timeout: 3_000 }
-                ),
-                removeBtn.click()
-            ]);
-        }).toPass({ timeout: 20_000 });
+        await removeBtn.click();
+        await page.getByRole('dialog').getByRole('button', { name: 'Quitar', exact: true }).click();
+        await page.waitForResponse(
+            (res) => res.url().includes(deleteUrlFragment) && res.request().method() === 'DELETE'
+        );
 
         // The island reloads the page after a successful DELETE.
         await page.waitForLoadState('networkidle');

@@ -53,12 +53,7 @@
         },
         "trial": {
             "noCharge": "No charges have been made",
-            "subscribeNow": "Subscribe now",
-            "expiredBanner": {
-                "title": "Your free trial has ended",
-                "body": "Your trial of the {{planSlug}} plan expired on {{expiresAt}}. Subscribe to publish again.",
-                "cta": "View plans"
-            }
+            "subscribeNow": "Subscribe now"
         },
         "cancelled": {
             "title": "Subscription canceled",
@@ -183,34 +178,8 @@
     },
     "checkout": {
         "success": {
-            "title": "Your subscription is active!",
-            "subtitle": "Your payment was approved successfully",
             "planDetails": "Plan: {{planName}}",
-            "amountDetails": "Amount: {{amount}}",
-            "verifyingStatus": "Verifying payment status...",
-            "verifyingSubtitle": "We are confirming your payment. This may take a moment.",
-            "cta": "Go to my account",
-            "pageTitle": "Payment approved",
-            "promoIgnoredNote": "Your code was not applied: it extends a free trial, and this subscription does not have one.",
-            "linkErrorTitle": "We couldn't link your payment",
-            "linkErrorSubtitle": "There was a problem linking this payment to your account. If you already paid, contact support with the MercadoPago operation number.",
-            "unresolvedTitle": "We're still confirming your payment",
-            "unresolvedSubtitle": "Your payment was not lost. MercadoPago can take a few minutes to confirm it, and your plan activates automatically as soon as it does. You can close this page: check the status in My Account, or write to us if you still cannot see it in a while.",
-            "unresolvedSupportCta": "Contact us"
-        },
-        "pending": {
-            "title": "Your payment is being processed",
-            "body": "It may take up to 24 hours to confirm. We'll email you when it clears.",
-            "cta": "Check status",
-            "pageTitle": "Payment processing"
-        },
-        "partnerPending": {
-            "pageTitle": "Payment received",
-            "title": "We received your payment",
-            "body": "We are confirming the transaction with MercadoPago. It may take a few minutes, and in some cases up to 24 hours. Once the payment clears, your presence on Hospeda is activated automatically — there is nothing else for you to do.",
-            "note": "Keep the receipt MercadoPago sent you. If anything is unclear, write to us and we will look into it with you.",
-            "homeCta": "Go to homepage",
-            "contactCta": "Contact us"
+            "amountDetails": "Amount: {{amount}}"
         },
         "failure": {
             "title": "Your payment could not be processed",
@@ -228,48 +197,6 @@
             "supportCta": "Contact support",
             "pageTitle": "Payment rejected"
         },
-        "button": {
-            "cta": "Subscribe",
-            "processing": "Processing...",
-            "processingAriaLabel": "Processing payment",
-            "error": "We could not start the payment. Please try again.",
-            "unauthCta": "Sign in to subscribe",
-            "currentPlan": "Current plan",
-            "currentPlanAriaLabel": "This is your current plan",
-            "changePlan": "Switch to this plan",
-            "freeRegisterCta": "Sign up for free",
-            "freePlanLegend": "You already have this plan"
-        },
-        "promoApply": {
-            "label": "Discount code",
-            "inputPlaceholder": "Enter your code",
-            "applyButton": "Apply",
-            "applying": "Verifying...",
-            "removeButton": "Remove",
-            "discountPercentForever": "{{percent}}% discount forever",
-            "discountPercentCycle_one": "{{percent}}% discount for {{months}} month",
-            "discountPercentCycle_other": "{{percent}}% discount for {{months}} months",
-            "discountFixedForever": "${{amount}} discount forever",
-            "discountFixedCycle_one": "${{amount}} discount for {{months}} month",
-            "discountFixedCycle_other": "${{amount}} discount for {{months}} months",
-            "trialExtension_one": "{{days}} extra free trial day",
-            "trialExtension_other": "{{days}} extra free trial days",
-            "comp": "Free forever",
-            "compNotRedeemable": "This code cannot be redeemed. Get in touch if you were promised a complimentary subscription.",
-            "errorInvalid": "The code you entered is not valid. Please check it and try again.",
-            "errorAnnualOutsideTrial": "This discount code does not apply to annual plans outside the trial period.",
-            "errorGeneric": "We could not verify the code. Please try again.",
-            "errorNotFound": "We couldn't find that code. Check the spelling and try again.",
-            "errorInactive": "This code is no longer active.",
-            "errorExpired": "This code has expired.",
-            "errorMaxUses": "This code has reached its usage limit.",
-            "errorMaxUsesPerUser": "You've already used this code the maximum number of times.",
-            "errorPlanRestriction": "This code isn't valid for the selected plan.",
-            "errorNewUsersOnly": "This code is only for new customers.",
-            "errorMinAmount": "Your purchase doesn't meet the minimum required for this code.",
-            "pendingAuthMessage": "You'll be able to apply the code {{code}} as soon as you finish signing up.",
-            "registerCta": "Sign up"
-        },
         "payerEmailConfirm": {
             "title": "Which email you'll be able to pay with",
             "body": "Mercado Pago will only let you pay with this exact email. If you want to use a different Mercado Pago account, change it before continuing.",
@@ -286,22 +213,72 @@
         "firstPublishPaused": {
             "title": "Publishing new listings is paused",
             "body": "We've temporarily paused publishing new listings. Your listing is saved as a draft and you'll be able to publish it once we resume."
+        },
+        "signup": {
+            "pendingAttempt": {
+                "title": "You have a pending subscription signup attempt",
+                "body": "You started a subscription signup for {{plan}} ({{amount}}, {{cycle}}) and have not authorized it with Mercado Pago yet. To choose this other option, cancel that attempt first. It expires on {{date}}.",
+                "resume": "Resume that attempt",
+                "cancel": "Cancel that attempt",
+                "cancelling": "Canceling…",
+                "cancelled": "We canceled your previous subscription signup attempt. You can choose this option now."
+            },
+            "title": "Confirm your subscription",
+            "intro": "You will authorize the payment with Mercado Pago.",
+            "planSummary": "{{plan}} · {{amount}} {{cycle}}",
+            "cycle": {
+                "monthly": "per month",
+                "quarterly": "per quarter",
+                "semiannual": "per half-year",
+                "annual": "per year"
+            },
+            "confirm": "Continue to Mercado Pago",
+            "submitting": "Preparing your payment…",
+            "payerEmail": {
+                "label": "Email of your Mercado Pago account",
+                "hint": "It must be the email of the account you will pay with. If it differs from your Hospeda email, change it here: if it does not match, Mercado Pago will reject the payment.",
+                "invalid": "Enter a valid email."
+            },
+            "pending": {
+                "title": "Your {{vertical}} subscription is waiting for you to complete payment",
+                "resume": "Complete payment with Mercado Pago",
+                "windowEnds": "You have until {{date}}."
+            },
+            "rejection": {
+                "planNotForSale": "This plan is no longer available for purchase.",
+                "seePlans": "See current plans",
+                "previousAttemptClosing": "We are closing your previous attempt. Please try again in a few minutes.",
+                "previousAttemptInProgress": "We are still preparing your previous attempt with Mercado Pago. Please try again in a few minutes.",
+                "touristVipInherited": "Your current plan already includes Turista VIP benefits",
+                "commitmentTaken": "You already have an active subscription in this vertical.",
+                "generic": "We could not start your subscription. Please try again in a few minutes.",
+                "providerRejected": "Mercado Pago didn't accept the payment details. Check that the email is the one on your Mercado Pago account and try again.",
+                "partnerManualOnly": "Partner subscriptions cannot be purchased here. Our team will contact you to coordinate payment and activation."
+            },
+            "trialNotice": {
+                "running_one": "You are on your trial: {{days}} day left, until {{date}}.",
+                "running_other": "You are on your trial: {{days}} days left, until {{date}}.",
+                "endsOnCharge": "If the first charge goes through, your trial ends and you lose those days.",
+                "keepsOnDecline": "If the charge is declined, you stay on your trial with those days.",
+                "unknown": "If you are on a trial in this category: when the first charge goes through it ends and you lose the days you had left; if the charge is declined, you stay on your trial with those days."
+            },
+            "touristVipNotice": {
+                "cancelledOnReturn": "You have a suspended subscription whose plan gave you the Tourist VIP benefits. If you bring it up to date, this Tourist VIP subscription is cancelled right away and what you paid is not refunded, because your plan gives you those benefits again.",
+                "unknown": "If you have a suspended subscription whose plan gave you the Tourist VIP benefits and you bring it up to date, a Tourist VIP subscription you buy is cancelled right away, with no refund.",
+                "cancelledOnActivationUntil": "You have a Tourist VIP subscription paid until {{date}}. This plan already includes its benefits: once it is active, that subscription is cancelled and what you paid is not refunded.",
+                "cancelledOnActivation": "You have a Tourist VIP subscription. This plan already includes its benefits: once it is active, that subscription is cancelled and what you paid is not refunded.",
+                "unknownOnActivation": "If you have a Tourist VIP subscription and this plan includes its benefits, that subscription is cancelled once the plan is active, with no refund."
+            },
+            "retry": "Try again",
+            "vertical": {
+                "accommodation": "accommodation",
+                "experience": "experiences",
+                "tourist": "Turista VIP",
+                "partner": "partners",
+                "unknown": "Hospeda",
+                "venue": "Food & nightlife"
+            }
         }
-    },
-    "checkoutRetry": {
-        "checkingTitle": "Verifying your payment...",
-        "checkingBody": "We are checking the status of your subscription.",
-        "redirectingTitle": "Redirecting you to MercadoPago...",
-        "redirectingBody": "One moment, we're taking you to complete the payment.",
-        "activeTitle": "Your subscription is already active",
-        "activeBody": "No need to pay again: your plan is already up and running.",
-        "confirmingTitle": "We're confirming your payment",
-        "confirmingBody": "We may already be resolving this from another tab. Please wait a moment.",
-        "confirmingTimedOutTitle": "We're still confirming your payment",
-        "confirmingTimedOutBody": "This is taking longer than expected. You can try again in a moment.",
-        "errorTitle": "We couldn't verify your payment",
-        "errorBody": "Try again, or contact us if the problem continues.",
-        "retryButton": "Retry"
     },
     "limit": {
         "max_favorites": {
@@ -323,15 +300,15 @@
                 "secondaryCta": "View my properties"
             }
         },
-        "max_gastronomies": {
-            "title": "You've reached your gastronomy limit",
-            "message_one": "You have {{currentCount}} of {{maxAllowed}} gastronomy listing in your plan. Upgrade to publish more.",
-            "message_other": "You have {{currentCount}} of {{maxAllowed}} gastronomy listings in your plan. Upgrade to publish more.",
+        "max_venues": {
+            "title": "You've reached your Food & nightlife listing limit",
+            "message_one": "You have {{currentCount}} of {{maxAllowed}} Food & nightlife listing in your plan. Upgrade to publish more.",
+            "message_other": "You have {{currentCount}} of {{maxAllowed}} Food & nightlife listings in your plan. Upgrade to publish more.",
             "cta": "View my subscription",
             "atLimitPanel": {
                 "title": "You've reached your plan's limit",
-                "body_one": "You're using {{currentCount}} of {{maxAllowed}} gastronomy listing. Upgrade your plan to publish another one.",
-                "body_other": "You're using {{currentCount}} of {{maxAllowed}} gastronomy listings. Upgrade your plan to publish another one.",
+                "body_one": "You're using {{currentCount}} of {{maxAllowed}} Food & nightlife listing. Upgrade your plan to publish another one.",
+                "body_other": "You're using {{currentCount}} of {{maxAllowed}} Food & nightlife listings. Upgrade your plan to publish another one.",
                 "primaryCta": "View my subscription",
                 "secondaryCta": "View my listings"
             }
@@ -388,8 +365,8 @@
         "max_ai_chat_consumer_per_month": {
             "title": "You've reached your AI assistant chat limit"
         },
-        "max_ai_chat_gastronomy_per_month": {
-            "title": "You've reached your gastronomy AI chat limit"
+        "max_ai_chat_venue_per_month": {
+            "title": "You've reached your Food & nightlife AI chat limit"
         },
         "max_ai_chat_experience_per_month": {
             "title": "You've reached your experience AI chat limit"
@@ -496,7 +473,7 @@
         },
         "owner-premium": {
             "name": "Premium",
-            "description": "Everything in Professional, plus custom branding, a verification badge, and unlimited promotions."
+            "description": "Everything in Professional, plus custom branding (coming soon), a verification badge, and unlimited promotions."
         },
         "tourist-free": {
             "name": "Free",
@@ -506,15 +483,15 @@
             "name": "VIP",
             "description": "VIP support, exclusive promotions, and direct WhatsApp contact with hosts."
         },
-        "gastronomy-basico": {
+        "venue-basico": {
             "name": "Basic",
             "description": "List your venue with its photos, opening hours and contact details. What it takes to be found."
         },
-        "gastronomy-pro": {
+        "venue-pro": {
             "name": "Professional",
             "description": "Add the menu loaded into Hospeda, the dish of the day and your venue's events."
         },
-        "gastronomy-premium": {
+        "venue-premium": {
             "name": "Premium",
             "description": "All of the above plus photos per dish, a menu in several languages, a PDF listing and AI chat."
         },
@@ -542,16 +519,16 @@
     "entitlement": {
         "publish_accommodations": "Publish accommodations",
         "edit_accommodation_info": "Edit accommodation info",
-        "edit_gastronomy_info": "Edit gastronomy info",
-        "publish_gastronomy": "Publish gastronomy listings",
+        "edit_venue_info": "Edit Food & nightlife info",
+        "publish_venue": "Publish Food & nightlife listings",
         "edit_experience_info": "Edit experience info",
         "publish_experience": "Publish experience listings",
         "download_listing_pdf": "Printable PDF listing sheet",
         "issue_experience_certificate": "Experience certificates",
-        "manage_gastronomy_menu": "Structured menu with sections and dishes",
+        "manage_venue_menu": "Structured menu with sections and dishes",
         "menu_item_photos": "Photo for each dish on the menu",
         "manage_experience_directions": "Meeting point map and how to get there",
-        "manage_gastronomy_daily_special": "Dish of the day with its own validity window",
+        "manage_venue_daily_special": "Dish of the day with its own validity window",
         "view_basic_stats": "Basic statistics",
         "view_advanced_stats": "Advanced statistics",
         "respond_reviews": "Respond to reviews",
@@ -589,10 +566,15 @@
         "ai_support": "AI support assistant",
         "ai_translate": "AI content translation",
         "ai_accommodation_import": "AI accommodation import",
-        "manage_gastronomy_events": "Venue events, dated or weekly",
-        "multilingual_gastronomy_menu": "Menu in multiple languages",
+        "manage_venue_events": "Venue events, dated or weekly",
+        "multilingual_venue_menu": "Menu in multiple languages",
         "menu_qr_scan_metrics": "Menu QR with scan analytics panel",
-        "manage_experience_private_galleries": "Private galleries for your customers"
+        "manage_experience_private_galleries": "Private galleries for your customers",
+        "partner_public_page": "Your own page on Hospeda",
+        "partner_carousel_presence": "Logo in the partner carousel",
+        "recover_own_listing": "View, export, reactivate or delete your listings",
+        "subscribe_to_plan": "Subscribe to a plan",
+        "activate_trial": "Start the trial period"
     },
     "comparison": {
         "unlimited": "Unlimited",
@@ -612,11 +594,11 @@
             "asTourist": "As a traveler (included)",
             "asOwner": "As an owner",
             "aiBusiness": "AI for your business",
-            "gastronomyListing": "Your venue on Hospeda",
-            "gastronomyMenu": "The menu",
+            "venueListing": "Your venue on Hospeda",
+            "venueMenu": "The menu",
             "experienceListing": "Your experience on Hospeda",
             "experienceService": "Before and after the outing",
-            "commerceExtras": "Extra tools"
+            "listingExtras": "Extra tools"
         },
         "row": {
             "favorites": "Favorites",
@@ -650,12 +632,12 @@
             "aiImport": "AI imports per month",
             "aiChatOwner": "AI chat queries per month",
             "aiSupport": "AI support assistant",
-            "maxGastronomies": "Venues you can list",
-            "publishGastronomy": "Publish your venue",
-            "editGastronomyInfo": "Edit the venue's information",
-            "gastronomyMenu": "Menu loaded into Hospeda",
-            "gastronomyDailySpecial": "Dish of the day",
-            "gastronomyEvents": "Venue events",
+            "maxVenues": "Venues you can list",
+            "publishVenue": "Publish your venue",
+            "editVenueInfo": "Edit the venue's information",
+            "venueMenu": "Menu loaded into Hospeda",
+            "venueDailySpecial": "Dish of the day",
+            "venueEvents": "Venue events",
             "menuItemPhotos": "Photos per dish",
             "multilingualMenu": "Menu in several languages",
             "menuQrScanMetrics": "Menu QR with scan analytics",
@@ -665,7 +647,7 @@
             "experienceDirections": "How to reach the meeting point",
             "experienceCertificate": "Certificate for whoever took it",
             "listingPdf": "Downloadable PDF listing",
-            "aiChatCommerce": "AI chat queries per month"
+            "aiChatListing": "AI chat queries per month"
         },
         "rowDesc": {
             "favorites": "Save accommodations you like to revisit anytime.",
@@ -699,7 +681,22 @@
             "aiImport": "Monthly AI-assisted imports of listing data from external sources.",
             "aiChatOwner": "Monthly AI queries available to you as a host.",
             "aiSupport": "An AI assistant that helps you resolve platform questions in real time.",
-            "menuQrScanMetrics": "A table QR that opens your menu, with a scan panel: total, by day, and by device and language."
+            "menuQrScanMetrics": "A table QR that opens your menu, with a scan panel: total, by day, and by device and language.",
+            "maxVenues": "Number of venues you can have published at once.",
+            "publishVenue": "Publish your venue so visitors can find it on Hospeda.",
+            "editVenueInfo": "Update your venue's details and information whenever you like.",
+            "venueMenu": "Load your menu into Hospeda so it shows on your venue's page.",
+            "venueDailySpecial": "Show the dish of the day on your listing and change it whenever you like.",
+            "venueEvents": "Announce the events you host on your venue's page.",
+            "menuItemPhotos": "Add a photo to every dish on your menu.",
+            "multilingualMenu": "Offer your menu in several languages for visitors from other countries.",
+            "maxExperiences": "Number of experiences you can have published at once.",
+            "publishExperience": "Publish your experience so visitors can find it on Hospeda.",
+            "editExperienceInfo": "Update your experience's details and information whenever you like.",
+            "experienceDirections": "Explain how to reach the meeting point so nobody gets lost.",
+            "experienceCertificate": "Issue a certificate to those who took part in your experience.",
+            "listingPdf": "Download your listing as a PDF to share or print.",
+            "aiChatListing": "Number of monthly AI queries available for your listing."
         },
         "note": {
             "aiSearch": "For registered users",
@@ -710,7 +707,7 @@
         },
         "limitLabel": {
             "max_accommodations": "Published accommodations",
-            "max_gastronomies": "Published gastronomy listings",
+            "max_venues": "Published Food & nightlife listings",
             "max_experiences": "Published experiences",
             "max_photos_per_accommodation": "Photos per accommodation",
             "max_active_promotions": "Active promotions",
@@ -722,7 +719,7 @@
             "max_ai_text_improve_per_month": "AI text improvements per month",
             "max_ai_chat_per_month": "AI chat queries per month",
             "max_ai_chat_consumer_per_month": "AI assistant queries per month",
-            "max_ai_chat_gastronomy_per_month": "AI chat queries (gastronomy) per month",
+            "max_ai_chat_venue_per_month": "AI chat queries (Food & nightlife) per month",
             "max_ai_chat_experience_per_month": "AI chat queries (experiences) per month",
             "max_ai_search_per_month": "AI searches per month",
             "max_ai_support_per_month": "AI support queries per month",
@@ -745,7 +742,7 @@
         "max_ai_text_improve_per_month": "How many times a month you can ask the AI to improve your texts. The quota resets at the start of each month.",
         "max_ai_chat_per_month": "How many questions the AI can answer about your places each month. Once spent, it comes back the following month.",
         "max_ai_chat_consumer_per_month": "How many questions you can ask the AI assistant each month. Once spent, the quota resets the following month.",
-        "max_ai_chat_gastronomy_per_month": "How many questions the AI can answer about your restaurant each month. Once spent, it comes back the following month.",
+        "max_ai_chat_venue_per_month": "How many questions the AI can answer about your restaurant each month. Once spent, it comes back the following month.",
         "max_ai_chat_experience_per_month": "How many questions the AI can answer about your experience each month. Once spent, it comes back the following month.",
         "max_ai_search_per_month": "How many AI searches you can run each month. Once spent, you keep using the regular search until the following month.",
         "max_ai_support_per_month": "How many questions a month you can ask the AI support assistant. The quota resets at the start of each month.",
@@ -753,7 +750,7 @@
         "max_ai_accommodation_import_per_month": "How many places you can import from another platform each month with AI help. The quota resets at the start of each month.",
         "max_search_history_entries": "How many past searches are kept in your history. Beyond the cap, the oldest ones are removed.",
         "max_collections": "How many favourite lists you can keep. At the cap you have to delete one to create another.",
-        "max_gastronomies": "How many food and drink venues you can have published at once. At the cap you need a higher plan to add another.",
+        "max_venues": "How many food and drink venues you can have published at once. At the cap you need a higher plan to add another.",
         "max_experiences": "How many experiences you can have published at once. At the cap you need a higher plan to add another.",
         "max_active_private_galleries": "How many private galleries you can keep alive at the same time. Each gallery expires on its own once its term is up and is deleted, so slots free up as they lapse."
     }

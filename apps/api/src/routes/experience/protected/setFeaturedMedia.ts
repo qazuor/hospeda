@@ -13,7 +13,7 @@
  *
  * No request body — experienceId and mediaId come from URL params.
  *
- * Gated on COMMERCE_EDIT_OWN (listing owner) or COMMERCE_EDIT_ALL (staff) —
+ * Gated on EXPERIENCE_EDIT_OWN (listing owner) or EXPERIENCE_EDIT_ALL (staff) —
  * enforced inside `setFeaturedExperienceMedia` via `checkExperienceCanEditMedia`.
  *
  * NOTE: `index.ts` registers this before /{id}/media/{mediaId} by convention.
@@ -21,17 +21,15 @@
  * Hono resolves the static `featured` segment regardless of insertion order
  * (mirrors the reorder-route note).
  */
-import { EntitlementKey } from '@repo/billing';
-import { ExperienceMediaSingleOutputSchema, ProductDomainEnum } from '@repo/schemas';
+
+import { ExperienceMediaSingleOutputSchema, VerticalEnum } from '@repo/schemas';
 import { ExperienceService, ServiceError, setFeaturedExperienceMedia } from '@repo/service-core';
 import type { Context } from 'hono';
 import { z } from 'zod';
-import { commerceVerticalEntitlementMiddleware } from '../../../middlewares/commerce-entitlement';
-import { requireEntitlement } from '../../../middlewares/entitlement';
-import { requireLiveSubscription } from '../../../middlewares/require-live-subscription';
+
 import { getActorFromContext } from '../../../utils/actor';
 import { apiLogger } from '../../../utils/logger';
-import { createCRUDRoute } from '../../../utils/route-factory';
+import { createProtectedRoute } from '../../../utils/route-factory';
 
 const experienceService = new ExperienceService({ logger: apiLogger });
 
@@ -41,16 +39,18 @@ const experienceService = new ExperienceService({ logger: apiLogger });
  * TYPE-WORKAROUND: accesses the internal `model` field from the service instance
  * to pass to the standalone media helper without requiring a public accessor.
  */
-export const protectedSetFeaturedExperienceMediaRoute = createCRUDRoute({
+export const protectedSetFeaturedExperienceMediaRoute = createProtectedRoute({
     method: 'put',
     path: '/{id}/media/{mediaId}/featured',
     summary: 'Set featured photo for experience listing gallery',
     description:
         'Promotes the target media row to is_featured=true and demotes the previous ' +
         'featured row (if any). Archived photos cannot be featured — restore the ' +
-        'photo to visible first. Requires EXPERIENCE_EDIT_OWN (listing owner) or EXPERIENCE_EDIT_ALL (staff); the legacy COMMERCE_ equivalents are still accepted until HOS-1077 release 2. ' +
+        'photo to visible first. Requires EXPERIENCE_EDIT_OWN (listing owner) or EXPERIENCE_EDIT_ALL (staff). ' +
         'No request body — ids come from URL params.',
+    listingAccess: { vertical: VerticalEnum.EXPERIENCE, operation: 'EDIT', idParam: 'id' },
     tags: ['Experience', 'Experience Media'],
+    protectedTag: false,
     requestParams: {
         id: z.string().uuid({ message: 'zodError.common.id.invalidUuid' }),
         mediaId: z.string().uuid({ message: 'zodError.common.id.invalidUuid' })
@@ -75,15 +75,5 @@ export const protectedSetFeaturedExperienceMediaRoute = createCRUDRoute({
         }
 
         return result.data;
-    },
-    options: {
-        // HOS-1275: mirrors the gastronomy twin. See
-        // `gastronomy/protected/addFaq.ts` for why the vertical loader must be
-        // first.
-        middlewares: [
-            commerceVerticalEntitlementMiddleware('experience'),
-            requireEntitlement(EntitlementKey.EDIT_EXPERIENCE_INFO),
-            requireLiveSubscription(ProductDomainEnum.EXPERIENCE)
-        ]
     }
 });

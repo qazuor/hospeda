@@ -4,13 +4,13 @@
  * Async read-side glue that loads `event_media` rows and attaches the composed
  * `Media` shape onto event entities (HOS-390).
  *
- * Mirrors `gastronomy.media-read.ts` field-for-field, delegating the pure
+ * Mirrors `venue.media-read.ts` field-for-field, delegating the pure
  * composition step to {@link composeContentMedia}.
  *
  * Both helpers use the batch finder `findByEvents` (one `IN` query) so
  * list/search composition does not incur an N+1.
  *
- * ## Deliberate divergence from the accommodation/gastronomy molde
+ * ## Deliberate divergence from the accommodation/venue molde
  *
  * Those helpers preserve the entity's ORIGINAL `media` whenever the composed
  * object comes out empty, purely to avoid a `null → {}` shape drift. Copying
@@ -104,7 +104,7 @@ export async function attachComposedEventMediaList<T extends Event>(input: {
     const { items, mediaModel, tx } = input;
     // `!items` covers undefined/null, which a caller can reach when a model
     // stub or an error path yields a result object with no `items` key —
-    // spreading it (as the gastronomy molde does) throws a TypeError instead.
+    // spreading it (as the venue molde does) throws a TypeError instead.
     if (!items || items.length === 0) return items ? [...items] : [];
     const grouped = await mediaModel.findByEvents({ eventIds: items.map((i) => i.id), tx });
     return items.map((item) => withComposedEventMedia(item, grouped.get(item.id) ?? []));

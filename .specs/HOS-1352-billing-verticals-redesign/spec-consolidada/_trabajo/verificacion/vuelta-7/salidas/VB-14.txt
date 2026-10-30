@@ -1,0 +1,16 @@
+# VB-14 · spec → fuente · 30-el-corte.md 90-retirados.md
+
+## Hallazgos
+
+30-el-corte.md:724 · «purga, una vez por tipo de ficha, la etiqueta de colección» · más débil que .specs/HOS-1352-billing-verticals-redesign/docs/16-fase-7-del-paraguas.md:157 («y la de la portada»; «la purga de la portada la dejo, lo derivé y lo marco»): el paso 4c omite esa purga vigente, además de las colecciones y los destinos; tampoco aparece en otro archivo de la spec · BLOQUEA
+
+30-el-corte.md:778 · «conservar en el proveedor el token de calendario de toda ficha que no es de las cinco» · contradice .specs/HOS-1352-billing-verticals-redesign/docs/16-fase-7-del-paraguas.md:159 («revocar en el proveedor el token de calendario de toda ficha que no es de las cinco»). También contradice el procedimiento de la propia spec en 30-el-corte.md:793 y AC:V6:19 en 10-corte/V6.md:505: conservar el token deja vigente el acceso que el corte debe revocar · BLOQUEA
+
+90-retirados.md:247 · «Toda tabla comercial retirada conserva una réplica de sólo lectura accesible desde el panel durante noventa días después del corte.» · contradice .specs/HOS-1354-billing-cobro-y-proveedor/docs/21-migracion.md:495 («Las tablas viejas de billing, con todo lo que tengan adentro, y las columnas que las copian»; «no se conserva nada —ni se transcribe, ni se congela en solo lectura, ni se exporta—»). La réplica, el acceso desde el panel y el plazo de noventa días no tienen soporte; DEC-MIG-005 mantiene la decisión de no conservar el historial · BLOQUEA
+
+## Resumen
+
+| archivo | líneas recorridas | afirmaciones normativas revisadas (aprox.) | BLOQUEA | MENOR |
+|---|---|---|---|---|
+| 30-el-corte.md | 1–1949 | 300 | 2 | 0 |
+| 90-retirados.md | 1–535 | 65 | 1 | 0 |

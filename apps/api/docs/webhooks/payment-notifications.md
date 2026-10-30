@@ -1,253 +1,46 @@
-# Payment Notifications Implementation
+# Payment Notifications and the MercadoPago Receiver
 
 ## Overview
 
-Payment success/failure notifications are automatically sent when MercadoPago webhook events are processed. These notifications are sent using the fire-and-forget pattern to prevent webhook processing delays.
+The MercadoPago webhook route no longer sends payment emails itself. The
+HOS-1352 rebuild (see [root CLAUDE.md → Billing and verticals](../../../../CLAUDE.md#billing-and-verticals-hos-1352))
+replaced the old handler, which fired `PAYMENT_SUCCESS` / `PAYMENT_FAILURE` /
+`ADMIN_PAYMENT_FAILURE` notifications inline, with a receiver that stores every
+delivery and then processes it through the billing services.
 
-## Notification Types
+## Receiver flow
 
-### 1. PAYMENT_SUCCESS
+`POST /api/v1/webhooks/mercadopago` (`apps/api/src/routes/webhooks/mercadopago.ts`):
 
-**Sent when:** Payment status is `approved` or `accredited`
+1. Webhooks-channel deliveries require a valid `x-signature`
+   (`mercadopago-signature.ts`): 401 when invalid, 500 when
+   `HOSPEDA_MERCADO_PAGO_WEBHOOK_SECRET` is not configured. IPN-channel
+   deliveries are stored without processing.
+2. `receiveProviderDelivery` (`packages/service-core/src/services/billing/notice/receive-provider-delivery.service.ts`)
+   inserts the raw delivery (`providerNotificationModel.insertDelivery`) before
+   anything else.
+3. `processProviderNotice` handles it with the ports built in
+   `apps/api/src/routes/webhooks/mercadopago-ports.ts`.
+4. The route answers 200 `{ received: true }` when `ack` is `OK` and 500 when
+   the delivery could not be saved or re-read, so MercadoPago retries.
 
-**Recipient:** Customer (user who made the payment)
+There is no application-level retry loop and no dunning: MercadoPago owns the
+retry schedule of a failed charge, and reconciliation is done by the
+`billing-reconciliation-sweep` cron (see [cron-system.md](../cron-system.md)).
 
-**Payload:**
+## Notification types
 
-```ts
-{
-  type: NotificationType.PAYMENT_SUCCESS,
-  recipientEmail: string,        // Customer email
-  recipientName: string,          // Customer name or email
-  userId: string | null,          // User ID if available
-  customerId: string,             // Billing customer ID
-  planName: string,               // Subscription plan name
-  amount: number,                 // Payment amount
-  currency: string,               // Payment currency (e.g., "ARS")
-  paymentMethod?: string          // Payment method used (optional)
-}
-```
+The notification types still exist in `packages/notifications/src/types/notification.types.ts`
+(`PAYMENT_SUCCESS`, `PAYMENT_FAILURE`, `ADMIN_PAYMENT_FAILURE`), with categories in
+`packages/notifications/src/config/notification-categories.ts`. Nothing under
+`apps/api/src` sends them today (checked by search).
 
-### 2. PAYMENT_FAILURE
+Admin recipients for admin-category mail come from `HOSPEDA_ADMIN_NOTIFICATION_EMAILS`
+(comma-separated); when unset, admin notifications are skipped.
 
-**Sent when:** Payment status is `rejected`, `cancelled`, or `refunded`
+## Related files
 
-**Recipient:** Customer (user whose payment failed)
-
-**Payload:**
-
-```ts
-{
-  type: NotificationType.PAYMENT_FAILURE,
-  recipientEmail: string,        // Customer email
-  recipientName: string,          // Customer name or email
-  userId: string | null,          // User ID if available
-  customerId: string,             // Billing customer ID
-  planName: string,               // Subscription plan name
-  amount: number,                 // Payment amount
-  currency: string,               // Payment currency
-  failureReason: string          // Reason for failure (status_detail or status)
-}
-```
-
-### 3. ADMIN_PAYMENT_FAILURE
-
-**Sent when:** Payment fails (same trigger as PAYMENT_FAILURE)
-
-**Recipient:** Admin email list (from `ADMIN_NOTIFICATION_EMAILS` env variable)
-
-**Payload:**
-
-```ts
-{
-  type: NotificationType.ADMIN_PAYMENT_FAILURE,
-  recipientEmail: string,        // Admin email
-  recipientName: "Admin",
-  userId: null,
-  customerId: string,             // Billing customer ID
-  affectedUserEmail: string,      // Customer's email
-  affectedUserId?: string,        // Customer's user ID if available
-  eventDetails: {
-    amount: number,
-    currency: string,
-    failureReason: string,
-    planName?: string
-  },
-  severity: "warning"
-}
-```
-
-## Implementation Details
-
-### Payment Status Detection
-
-The webhook handler extracts payment information from the MercadoPago event:
-
-```ts
-// Payment statuses that trigger SUCCESS notification:
-- "approved"
-- "accredited"
-
-// Payment statuses that trigger FAILURE notifications:
-- "rejected"
-- "cancelled"
-- "refunded"
-```
-
-### Fire-and-Forget Pattern
-
-All notifications use the fire-and-forget pattern:
-
-1. Notifications are sent asynchronously without `await`
-2. Errors are caught silently and logged for debugging
-3. Webhook processing continues regardless of notification success/failure
-4. Failed notifications are handled by the retry service
-
-```ts
-sendNotification({...}).catch((error) => {
-  apiLogger.debug('Notification failed (will retry)', { error });
-});
-```
-
-### Admin Email Configuration
-
-Configure admin notification recipients in `.env`:
-
-```env
-# Single admin
-ADMIN_NOTIFICATION_EMAILS=admin@hospeda.com.ar
-
-# Multiple admins (comma-separated)
-ADMIN_NOTIFICATION_EMAILS=admin@hospeda.com.ar,finance@hospeda.com.ar,alerts@hospeda.com.ar
-```
-
-If `ADMIN_NOTIFICATION_EMAILS` is not set, admin notifications are skipped silently.
-
-### Retry Logic
-
-Payment failure notifications do NOT include a retry date. Hospeda's own dunning
-loop has been disabled since HOS-191 (2026-07-18): MercadoPago is the sole
-authority over the retry schedule, running its own internal *recycling* cadence
-(up to ~10 days) that Hospeda cannot query. Promising a concrete date in the
-email would be a fabricated value — see HOS-746. The email tells the customer a
-retry will happen without committing to when, and recommends updating the
-payment method to avoid a service interruption.
-
-## Data Flow
-
-```mermaid
-sequenceDiagram
-    participant MP as MercadoPago
-    participant WH as Webhook Handler
-    participant NS as NotificationService
-    participant User
-    participant Admin
-
-    MP->>WH: POST /webhooks/mercadopago
-    WH->>WH: Extract payment info
-
-    alt Payment Success
-        WH->>NS: Send PAYMENT_SUCCESS (fire-and-forget)
-        NS-->>User: Email notification
-    end
-
-    alt Payment Failure
-        WH->>NS: Send PAYMENT_FAILURE (fire-and-forget)
-        NS-->>User: Email notification
-        WH->>NS: Send ADMIN_PAYMENT_FAILURE (fire-and-forget)
-        NS-->>Admin: Email notification(s)
-    end
-
-    WH->>MP: 200 OK (webhook acknowledged)
-```
-
-## Testing
-
-### Manual Testing
-
-1. **Success Notification:**
-
-```bash
-# Trigger approved payment webhook
-curl -X POST http://localhost:3001/api/v1/webhooks/mercadopago \
-  -H "Content-Type: application/json" \
-  -H "x-signature: ts=...,v1=..." \
-  -d '{
-    "type": "payment",
-    "action": "payment.updated",
-    "data": {
-      "id": "payment-123",
-      "status": "approved",
-      "transaction_amount": 1500,
-      "currency_id": "ARS",
-      "payment_method_id": "visa",
-      "metadata": {
-        "customerId": "cus_123"
-      }
-    }
-  }'
-```
-
-2. **Failure Notification:**
-
-```bash
-# Trigger rejected payment webhook
-curl -X POST http://localhost:3001/api/v1/webhooks/mercadopago \
-  -H "Content-Type: application/json" \
-  -H "x-signature: ts=...,v1=..." \
-  -d '{
-    "type": "payment",
-    "action": "payment.updated",
-    "data": {
-      "id": "payment-123",
-      "status": "rejected",
-      "status_detail": "cc_rejected_insufficient_amount",
-      "transaction_amount": 1500,
-      "currency_id": "ARS",
-      "metadata": {
-        "customerId": "cus_123"
-      }
-    }
-  }'
-```
-
-### Integration Tests
-
-See `apps/api/test/integration/webhooks/payment-notifications.test.ts` (when implemented in T-024c)
-
-## Logging
-
-Payment notification attempts are logged:
-
-```ts
-// Debug logs (verbose)
-apiLogger.debug('Payment succeeded - sending success notification', { customerId, amount });
-apiLogger.debug('Payment failed - sending failure notifications', { customerId, status });
-apiLogger.debug('Notification failed (will retry)', { customerId, error });
-
-// Warning logs
-apiLogger.warn('Customer not found for payment failure notification', { customerId });
-```
-
-## Edge Cases
-
-1. **Missing customer ID:** Notifications are skipped silently
-2. **Customer not found:** Warning logged, notifications skipped
-3. **Invalid payment data:** Notifications skipped, webhook continues
-4. **Empty admin email list:** Admin notifications skipped silently
-5. **Notification service unavailable:** Error logged, retry service handles it
-
-## Related Files
-
-- `apps/api/src/routes/webhooks/mercadopago.ts` - Webhook handler implementation
-- `apps/api/src/utils/notification-helper.ts` - Fire-and-forget notification utility
-- `packages/notifications/src/types/notification.types.ts` - Notification type definitions
-- `.env.example` - Environment variable configuration
-
-## Future Enhancements
-
-- [ ] Configurable retry delay (currently hardcoded to 3 days)
-- [ ] Payment method-specific notification templates
-- [ ] Notification preferences per customer
-- [ ] Webhook replay for failed notifications
-- [ ] Admin dashboard for notification monitoring
+- `apps/api/src/routes/webhooks/mercadopago.ts` - the route
+- `apps/api/src/routes/webhooks/mercadopago-ports.ts` - receiver ports
+- `apps/api/src/routes/webhooks/mercadopago-signature.ts` - signature check
+- `apps/api/src/utils/notification-helper.ts` - fire-and-forget notification utility

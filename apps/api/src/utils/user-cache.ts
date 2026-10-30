@@ -1,7 +1,6 @@
-import type { User } from '@repo/schemas';
-import { UserService } from '@repo/service-core';
+import { PermissionEnum, type User } from '@repo/schemas';
+import { createSystemActor, UserService } from '@repo/service-core';
 import { LRUCache } from 'lru-cache';
-import { createSystemActor } from './actor.js';
 import { apiLogger } from './logger.js';
 
 /**
@@ -201,7 +200,10 @@ export class UserCache {
     private async queryDatabase(userId: string): Promise<User | null> {
         // Use SYSTEM actor for internal cache operations
         // This ensures the cache can access user data regardless of permission restrictions
-        const systemActor = createSystemActor();
+        const systemActor = createSystemActor({
+            jobId: 'api.user-cache',
+            permissions: [PermissionEnum.USER_READ_ALL]
+        });
 
         const result = await this.userService.getById(systemActor, userId);
 

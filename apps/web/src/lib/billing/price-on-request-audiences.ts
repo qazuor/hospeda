@@ -58,7 +58,7 @@ export const PRICE_ON_REQUEST_AUDIENCES: ReadonlySet<PricingAudience> = new Set<
  * Whether an audience's amounts are withheld from every public surface.
  *
  * @param params.audience - The audience in plan vocabulary (`owner`, `tourist`,
- *   `gastronomy`, `experience`, `partner`). Index-card ids are translated by
+ *   the venue, experience, and partner domains. Index-card ids are translated by
  *   `PRICING_AUDIENCE_BY_CARD_ID` before reaching here.
  * @returns `true` when no surface may render one of its amounts.
  */

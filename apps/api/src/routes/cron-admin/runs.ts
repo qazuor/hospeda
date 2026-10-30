@@ -101,8 +101,7 @@ export const cronRunSummaryRoute = createAdminRoute({
             throw new ServiceError(result.error.code, result.error.message);
         }
         return result.data;
-    },
-    options: { cacheTTL: 30 }
+    }
 });
 
 /**

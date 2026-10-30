@@ -42,15 +42,6 @@
         "title": "Acesso Negado",
         "description": "Você não tem permissão para acessar esta página."
     },
-    "impersonation": {
-        "banner": "Você está visualizando como {{userName}}",
-        "stop": "Parar de personificar",
-        "start": "Personificar usuário",
-        "confirm": "Tem certeza de que deseja personificar este usuário?",
-        "cancel": "Cancelar",
-        "error": "Erro ao personificar usuário. Tente novamente.",
-        "unavailable": "A personificação está temporariamente indisponível"
-    },
     "createHost": {
         "trigger": "Criar host",
         "title": "Criar conta de host",

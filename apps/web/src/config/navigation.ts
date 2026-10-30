@@ -32,7 +32,6 @@ import {
     MegaphoneIcon,
     NewsletterIcon,
     OffersIcon,
-    PackageIcon,
     PostIcon,
     ReceiptIcon,
     SearchIcon,
@@ -70,6 +69,8 @@ export interface NavItem {
      * evaluated by `isVisibleByPermissions` / `isVisibleByRoles`.
      */
     readonly requiredPermission?: PermissionEnum;
+    /** Any one of these permissions makes this navigation node visible. */
+    readonly requiredPermissions?: readonly PermissionEnum[];
     /** Which surfaces render this item. */
     readonly surfaces: readonly NavSurface[];
     /** `data-tour` target id for the welcome tour (`src/config/tours.ts`), if any. */
@@ -90,6 +91,8 @@ export interface NavGroup {
      * "always visible" (e.g. the `cuenta` and `turista` groups).
      */
     readonly requiredPermission?: PermissionEnum;
+    /** Any one of these permissions makes this navigation node visible. */
+    readonly requiredPermissions?: readonly PermissionEnum[];
     /**
      * When `true`, surfaces should render this group's single item without a
      * group header (used for the `comercio` "cajón" group per spec §6.1).
@@ -102,7 +105,7 @@ export interface NavGroup {
  * Both desktop surfaces (`sidebar`, `mobile`) render the full navigation.
  * The `avatar` dropdown curates a subset (spec §6.4) — only `dashboard`,
  * `favorites`, and `subscription` opt into it via `CURATED_SURFACES` below.
- * The single business-panel shortcut (`hostDashboard` / `commerce`, spec
+ * The single business-panel shortcut (`hostDashboard` / `comercio-listings`, spec
  * §6.4 "one, by priority") is NOT selected via surface membership — it's
  * picked at render time by `pickBusinessShortcut` (`src/lib/nav-avatar.ts`),
  * so those two items intentionally keep `FULL_SURFACES` here.
@@ -147,44 +150,6 @@ export const ACCOUNT_NAV_GROUPS: readonly NavGroup[] = [
                 href: 'mi-cuenta/suscripcion',
                 icon: CreditCardIcon,
                 surfaces: CURATED_SURFACES
-            },
-            {
-                id: 'addons',
-                /**
-                 * Reuses the addons PAGE title key on purpose (the same
-                 * pattern `recommendations` and `inbox` already use): the nav
-                 * label and the page's own `<h1>` must always read the same
-                 * word, and a single key makes that structural instead of a
-                 * convention two files have to remember.
-                 */
-                i18nKey: 'account.pages.addons.title',
-                href: 'mi-cuenta/addons',
-                icon: PackageIcon,
-                /**
-                 * HOS-726. The page itself gates per PRODUCT DOMAIN — it needs
-                 * an entitlement-granting subscription (`active`/`trialing`/
-                 * `comp`) in accommodation, gastronomy or experience — and
-                 * anyone without one lands on an empty state. A pure tourist
-                 * always does, so the item cannot ship ungated.
-                 *
-                 * `BILLING_ADDON_PURCHASE` exists FOR this gate (owner decision,
-                 * 2026-08-21). Nothing pre-existing fit: `requiredPermission`
-                 * holds one permission with no OR, so `ACCOMMODATION_CREATE`
-                 * would have hidden the entry from the COMMERCE_OWNER who buys
-                 * `extra-gastronomies-1`, while `SUBSCRIPTION_VIEW_OWN` and
-                 * `BILLING_VIEW_OWN` — the two that read like a fit — are both
-                 * granted to plain `RoleEnum.USER` by the seed and would have
-                 * shown the catalog to every tourist. The `subscription` item
-                 * above declares no permission at all, so there was nothing to
-                 * copy from it either.
-                 *
-                 * Granted to HOST, COMMERCE_OWNER, ADMIN and SUPER_ADMIN — see
-                 * the entry in `PERMISSION_ROLE_MAP` (`src/lib/nav-gating.ts`),
-                 * the seed baseline, and the
-                 * `0067-hos-726-addon-purchase-permission` data-migration.
-                 */
-                requiredPermission: PermissionEnum.BILLING_ADDON_PURCHASE,
-                surfaces: FULL_SURFACES
             },
             {
                 id: 'preferences',
@@ -323,17 +288,17 @@ export const ACCOUNT_NAV_GROUPS: readonly NavGroup[] = [
     },
     {
         id: 'comercio',
-        i18nKey: 'account.nav.groupCommerce',
-        requiredPermission: PermissionEnum.COMMERCE_EDIT_OWN,
+        i18nKey: 'account.nav.groupListings',
+        requiredPermissions: [PermissionEnum.VENUE_EDIT_OWN, PermissionEnum.EXPERIENCE_EDIT_OWN],
         suppressHeaderWhenSingle: true,
         items: [
             {
-                id: 'commerce',
-                i18nKey: 'commerce.owner.nav',
+                id: 'comercio-listings',
+                i18nKey: 'listing.owner.nav',
                 href: 'mi-cuenta/comercio',
                 icon: BriefcaseIcon,
                 surfaces: FULL_SURFACES,
-                tourTarget: 'commerce'
+                tourTarget: 'comercio-listings'
             }
         ]
     },
@@ -427,6 +392,8 @@ export const PROVIDER_NAV_GROUP: NavGroup = {
  */
 export type NavVisibilityPredicate = (node: {
     readonly requiredPermission?: PermissionEnum;
+    /** Any one of these permissions makes this navigation node visible. */
+    readonly requiredPermissions?: readonly PermissionEnum[];
 }) => boolean;
 
 /** Input for `getNavForSurface`. */

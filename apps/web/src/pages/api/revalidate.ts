@@ -15,6 +15,9 @@
  * Two modes, deliberately distinct in the body rather than one flag:
  *
  *   `{ "tags": ["prod:accom-x", "prod:list-accom"] }` — selective, the normal path.
+ *   `{ "prefixes": ["hospeda.com.ar/es/x/"] }`         — URL prefixes, for pages
+ *                                                       cached without a tag
+ *                                                       (cutover step 4c).
  *   `{ "purgeEverything": true }`                     — whole-zone flush, the
  *                                                       deploy escape hatch
  *                                                       (spec §7.3).
@@ -86,6 +89,51 @@ function jsonError(body: Record<string, unknown>, status: number): Response {
  */
 type PurgeInstruction = CloudflarePurgeInstruction;
 
+/** Production hosts. Their URL prefixes may only be purged by the prod deployment. */
+const PROD_HOSTS: ReadonlySet<string> = new Set(['hospeda.com.ar', 'www.hospeda.com.ar']);
+
+/**
+ * Validate a `prefixes` purge (cutover step 4c: pages cached under retired URLs,
+ * which carry no tag). Each entry is `host/path` with no scheme, query or
+ * fragment. Staging and production share one zone, so the production hosts are
+ * accepted only on the `prod` deployment and refused everywhere else, the same
+ * cross-environment protection the tag namespace gives the `tags` mode.
+ */
+function parsePrefixes({
+    rawPrefixes,
+    environment
+}: {
+    readonly rawPrefixes: unknown;
+    readonly environment: CacheTagEnvironment;
+}): PurgeInstruction | { readonly error: string } {
+    if (!Array.isArray(rawPrefixes) || rawPrefixes.length === 0) {
+        return { error: '`prefixes` must be a non-empty array of strings' };
+    }
+    if (rawPrefixes.length > MAX_TAGS_PER_REQUEST) {
+        return {
+            error: `\`prefixes\` must hold at most ${MAX_TAGS_PER_REQUEST} entries (Cloudflare per-request limit)`
+        };
+    }
+    const prefixes: string[] = [];
+    for (const candidate of rawPrefixes) {
+        if (
+            typeof candidate !== 'string' ||
+            !/^[a-z0-9.-]+\/[^\s?#]*$/i.test(candidate) ||
+            candidate.includes('://')
+        ) {
+            return { error: `invalid URL prefix: ${JSON.stringify(candidate)}` };
+        }
+        const host = candidate.slice(0, candidate.indexOf('/')).toLowerCase();
+        if (PROD_HOSTS.has(host) && environment !== 'prod') {
+            return {
+                error: `URL prefix ${JSON.stringify(candidate)} belongs to the production hosts but this deployment is "${environment}". Refusing to purge another environment's cache from a shared Cloudflare zone.`
+            };
+        }
+        prefixes.push(candidate);
+    }
+    return { kind: 'prefixes', prefixes };
+}
+
 /**
  * Parse and validate the request body.
  *
@@ -113,6 +161,13 @@ function parseInstruction(
 
     if (record.purgeEverything === true) {
         return { kind: 'everything' };
+    }
+
+    if ('prefixes' in record) {
+        if ('tags' in record) {
+            return { error: '`tags` and `prefixes` are mutually exclusive' };
+        }
+        return parsePrefixes({ rawPrefixes: record.prefixes, environment });
     }
 
     const rawTags = record.tags;
@@ -249,7 +304,9 @@ export const POST: APIRoute = async ({ request }) => {
         JSON.stringify(
             instruction.kind === 'everything'
                 ? { ok: true, purged: 'all' }
-                : { ok: true, purged: instruction.tags.length }
+                : instruction.kind === 'prefixes'
+                  ? { ok: true, purged: instruction.prefixes.length }
+                  : { ok: true, purged: instruction.tags.length }
         ),
         {
             status: 200,

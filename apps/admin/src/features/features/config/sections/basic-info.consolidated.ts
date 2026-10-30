@@ -105,7 +105,7 @@ export const createBasicInfoConsolidatedSection = (): ConsolidatedSectionConfig 
             description:
                 'Verticales en los que esta característica puede usarse (mínimo 1). ' +
                 '"Alojamiento" incluye todas las propiedades de hospedaje; ' +
-                '"Gastronomía" aplica a restaurantes y bares; "Experiencia" a actividades.',
+                '"Comer y salir" aplica a restaurantes y bares; "Experiencia" a actividades.',
             permissions: {
                 view: [PermissionEnum.FEATURE_CREATE],
                 edit: [PermissionEnum.FEATURE_UPDATE]
@@ -113,7 +113,7 @@ export const createBasicInfoConsolidatedSection = (): ConsolidatedSectionConfig 
             typeConfig: {
                 options: [
                     { value: 'accommodation', label: 'Alojamiento' },
-                    { value: 'gastronomy', label: 'Gastronomía' },
+                    { value: 'venue', label: 'Comer y salir' },
                     { value: 'experience', label: 'Experiencia' }
                 ]
             }

@@ -15,8 +15,8 @@
  * listing, which is what makes "a partner cannot read or edit another's"
  * structural rather than a check.
  *
- * Actor-dependent, therefore NOT cacheable. No `cacheTTL`, and neither may be
- * moved to the public tier.
+ * Actor-dependent, therefore NOT cacheable. It must stay uncached, and neither may be
+ * moved to a public route.
  *
  * @module routes/partners/protected/mine
  */
@@ -113,7 +113,7 @@ export const protectedUpdateMyPartnerRoute = createProtectedRoute({
     path: '/mine',
     summary: "Update the caller's own partner listing",
     description:
-        'Updates the partner listing owned by the authenticated caller. Contact details and social links apply immediately and are merged with the stored values, so omitted keys are preserved. A logo, description or website change is stored as a pending edit and awaits admin review before the public sees it. Identity and commercial fields (name, slug, type, tier, plan, subscription, lifecycle) are not accepted and are silently discarded.',
+        'Updates the partner listing owned by the authenticated caller. Contact details and social links apply immediately and are merged with the stored values, so omitted keys are preserved. A logo, description or website change is stored as a pending edit and awaits admin review before the public sees it. Identity and commercial fields are not accepted and are silently discarded.',
     tags: ['Partners'],
     requestBody: PartnerOwnerUpdateSchema,
     responseSchema: MyPartnerResponseSchema,

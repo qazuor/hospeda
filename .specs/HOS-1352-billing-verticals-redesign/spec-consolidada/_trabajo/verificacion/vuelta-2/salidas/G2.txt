@@ -1,0 +1,50 @@
+# G2 · spec → fuente · 04-catalogos.md; tramos g-secciones de 10-corte/B9a.md, 10-corte/B11.md, 10-corte/B13a.md, 20-fase-2/B8b.md, 20-fase-3/B10.md, 20-fase-3/B12.md
+
+## Hallazgos
+
+04-catalogos.md:6215 · «tomó para el excedente: *«se avisa, no se ejecuta por sorpresa»*.» (`LOCK:C4`, y ahí termina el párrafo) · omite texto vivo de .specs/HOS-1354-billing-cobro-y-proveedor/docs/05-idempotencia-y-concurrencia.md:224-226 («El aviso dice que hay un descenso programado para tal fecha y qué parte de lo que está comprando va a quedar fuera del límite a partir de ahí.»). Sin tachado en la fuente, y no aparece en ningún otro archivo de la spec: se pierde qué tiene que decir el aviso explícito de C4 · BLOQUEA
+
+04-catalogos.md:8213 · «el último reintento cae **~12 h después** del primer intento» (`MP:GR-3`, Conclusión) · contradice .specs/HOS-1352-billing-verticals-redesign/docs/06-mp-validation-matrix.md:202 («el último reintento cae **~18 h después** del primer intento»). Valor medido cambiado en la copia; la fuente lo repite en docs/26-fase-9-completa/01-R1-R3-R8-grace-S6-y-cambio-de-plan.md:622 («~18 h después del primero») · BLOQUEA
+
+04-catalogos.md:4006 · «**estrictamente posterior** a cumplirse el aviso de la migración (revisión del owner, 2026-09-28, C15, …)» (`TRANS:B:S37`, evento) · más débil que .specs/HOS-1354-billing-cobro-y-proveedor/docs/03-maquinas-de-estado.md:187: la copia omite el paréntesis vivo «(el empate lo gana el cliente, como en `DEC-MP-002`)». La regla de desempate explícita no queda en ninguna parte de la spec (ver también B12:214); el «estrictamente posterior» la implica · MENOR
+
+04-catalogos.md:7989 · «`UNKNOWN`, no se probó, o la fila caducó —por un cambio en lo que la sostiene, no por antigüedad (…)—» y 04-catalogos.md:7987 «**Cómo se lee una fila** (`D/06` §Reglas, 4 y 6)» · texto redactado por el generador (no copiado) dentro de un archivo que dice ser copia literal: (a) reemplaza la definición de .specs/HOS-1352-billing-verticals-redesign/docs/06-mp-validation-matrix.md:138 («No se probó, o se probó hace demasiado.») y deja afuera la regla 3 de B/06 §8 (06-proveedor.md:381, «se re-verifica si pasó tiempo desde la medición», que sí está en B1.md:598): el «no por antigüedad» aislado choca con B1; (b) de las siete reglas de D/06:113-129 transcribe sólo la 4 y la 6; la 2 («No se implementa una capability crítica mientras su fila diga `UNKNOWN`»), la 3 y la 7 no están en ningún archivo de la spec · MENOR
+
+04-catalogos.md:2031, 2090 (y 4912) · «**Texto de la fuente — «4. Grace»**», «**… «5. Pausa»**» colgados de `TRANS:B:S1`; «La pausa: no contradice el `B/06` §7…» colgado de `TRANS:B:MP1` · texto pegado al bloque equivocado: `_adjuntar` manda al ítem por defecto (S1, MP1, LOCK:C1, M:M1, RP:RP1) toda sección cuyo título no nombra un id entre backticks. «4. Grace» y «5. Pausa» rigen S4/S5/S8–S10 (pieza B7/B8b), no S1 (pieza B3). El texto es fiel; lo equivocado es el ítem al que se adjudica · MENOR
+
+10-corte/B9a.md:316-323 · sección «2.5 El pagador manual no canjea promos de monto» termina en «…el pagador manual **no tiene preapproval** (`B/05` §3) que mutar.» · omite el párrafo vivo de .specs/HOS-1354-billing-cobro-y-proveedor/docs/14-promos-cortesias-y-grants.md:344-346 («**Y la regla es sólo para las promos de monto** (FASE 8 completa, pendiente 8, owner 2026-09-25): **la extensión de trial (§32) SÍ vale para el pagador manual**. No muta ningún monto, así que la razón de arriba no la alcanza.»). Sin tachado; la regla no aparece en ningún archivo de la spec, y con lo que queda («no hay promos para el pagador manual») se le negaría también la extensión de trial · BLOQUEA
+
+10-corte/B9a.md:682 · la lista «Lo que la pendiente 7 dejaba abierto quedó cerrado» salta del ítem 4 al bloque siguiente · omite el ítem vivo de 14-promos-cortesias-y-grants.md:723-724 («5. … **Cerrado**: no la alcanza; la regla es sólo para las promos de monto (§2.5).»; tachada sólo la pregunta). Misma regla que el hallazgo anterior · MENOR
+
+10-corte/B13a.md:150 · «no hay promos **de monto** para él (cap. 14 §2.5; FASE 8 completa, pendiente 7, owner 2026-09-25). **Y si el canje…» (fila 7-bis) · omite texto vivo de .specs/HOS-1354-billing-cobro-y-proveedor/docs/19-superficies.md:115 («…owner 2026-09-25); **la extensión de trial sí** (pendiente 8, owner 2026-09-25).»). La superficie de B13a pierde que al pagador manual sí se le ofrece el canje de extensión de trial · BLOQUEA
+
+20-fase-3/B12.md:110 · «3. **El `rank` se libera** cuando termina la última suscripción anclada a la versión retirada» · contradice .specs/HOS-1354-billing-cobro-y-proveedor/docs/10-verticales-planes-billing-options.md:70 («3. **El `rank` se libera** en cuanto la vigente deja de ser vendible»). La frase de la spec no existe en ninguna fuente; cambia cuándo un plan nuevo puede ocupar el `rank` (y choca con 02-nucleo-glosario.md:245, «Participan **sólo los vendibles**») · BLOQUEA
+
+20-fase-3/B12.md:214 · «del próximo cobro **estrictamente posterior** a cumplirse el aviso, como en `DEC-MP-002`.» · más débil que 10-verticales-planes-billing-options.md:172-173 («…a cumplirse el aviso, con el empate a favor del cliente, como en `DEC-MP-002`.») · MENOR
+
+## Resumen
+
+| archivo | líneas recorridas | afirmaciones normativas revisadas (aprox.) | BLOQUEA | MENOR |
+|---|---|---|---|---|
+| 04-catalogos.md | 1–9721 | ~1.900 (298 ítems celda por celda, 99 bloques de prosa, 6 candados, 3 copias «También en», textos propios del generador) | 2 | 3 |
+| 10-corte/B9a.md (g-secciones) | 59–694 | ~180 | 1 | 1 |
+| 10-corte/B11.md (g-secciones) | 72–1287 | ~350 | 0 | 0 |
+| 10-corte/B13a.md (g-secciones) | 54–425 | ~110 | 1 | 0 |
+| 20-fase-2/B8b.md (g-secciones) | 53–340 | ~80 | 0 | 0 |
+| 20-fase-3/B10.md (g-secciones) | 90–1197 | ~300 | 0 | 0 |
+| 20-fase-3/B12.md (g-secciones) | 65–269 | ~60 | 1 | 1 |
+
+Método: reimplementación independiente (no se ejecutaron los generadores) que relee la fuente congelada en la línea de cada `Origen:`, saca lo tachado, neutraliza links y compara sin espacios contra la copia: celda por celda en los 298 ítems de 04, línea por línea en los 99 bloques «Texto de …» de 04, en los 6 candados y en las 3 filas «También en», y sección por sección en los 101 sub-bloques de g-secciones (25+13+14+17+25+8). Todas las diferencias se listan arriba; el resto coincide.
+
+Clases de error buscadas (en toda la salida, no por muestreo) y resultado:
+
+1. Tachado que sobrevive como vivo (`~~` sobrante, tachado parcial en celda o frase, número impar de `~~` que se come texto entre líneas): 0 `~~` en 04 y en los seis tramos; ninguna fila fuente con `~~` impar; las comparaciones con la fuente sin tachar no muestran texto muerto en la copia.
+2. Celda cortada en un `|` escapado o dentro de backticks: ninguna fila fuente de ítem tiene `\|`; el corte GFM y el corte con backticks dan el mismo número de celdas que el encabezado en los 292 ítems de tabla; ninguna «celda sin encabezado»; ninguna columna faltante.
+3. Palabras pegadas al sacar un tachado (`_rep`): sólo uniones con puntuación, ninguna palabra pegada.
+4. Texto pegado al bloque equivocado: títulos `desde → hacia`, títulos de matriz y valores del enum coinciden con sus filas; las 213 citas de «Fuente de la asignación» nombran el ítem o su pieza; los traslados TPZ coinciden con B/descomposicion §2.12. Hallazgo: secciones de prosa adjudicadas por defecto a S1/MP1 (MENOR).
+5. Letra del owner o 📌 retirado como vigente: los ítems retirados (T7, S25–S28, G-R5, G13 de B/20) no están; la única omisión BK (`MP:EX-46`) coincide con su adjudicación; frases «salió/retirada» en celdas vivas son de la propia fuente.
+6. Omisiones (algo vivo que no está): toda fila viva de cada tabla con ítems está como ítem o como «También en» (35 guards + 2 VAL, 24 motivos, A1-bis presente); los bloques de prosa quitan sólo tablas con filas-ítem. Hallazgos: seis omisiones dentro de texto copiado (LOCK:C4, S37, B9a ×2, B13a, B12 empate) y reglas de D/06 §Reglas ausentes.
+7. Valores alterados dentro de la copia: GR-3 (~12 h por ~18 h) y B12 regla 3 del `rank`.
+8. Textos propios del generador (no copiados): «Dónde corre» (34 + G13, contra V/20 y B/20 §1 y la fila G13), «Test mínimo» (AN, AZ), «Qué es» de las VAL, introducción de motivos (B/02:57), introducción de la matriz (D/06 §Reglas/§Estados, B/06 §8). Hallazgo: la de la matriz.
+
+Muestra estratificada cotejada además a mano contra la fuente (principio, medio y final; tablas y prosa; con y sin 📌): TRANS:V:T1, T3, T6, T8; prosa V/03:21–90 y 91–150; TRANS:V:PB1, PB9, PB11; TRANS:B:S1, S9, S10, S15, S37, S38; PROH:B:4; TRANS:B:P1, P7, RF3, MP2, MP3, A1-bis, A6, A7; MOT:1, 7, 15, 19, 24; LOCK:C1, C4; M:M1; RP:RP1; GUARD:G1, G13, G-R4 (con su copia de B/20:64), G-R6-B, G7, G12, G-R1-C; VAL:G-R3, G-R5-B; MP:GR-3, EX-46, EX-48, EX-59; introducción de la matriz; B9a §2.5 y lista de pendientes; B13a fila 7-bis; B12, regla 3 del retiro de una versión (`rank`) y regla 3 de la migración (fecha de aplicación).

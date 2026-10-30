@@ -1,4 +1,18 @@
 {
+    "subscribe": {
+        "publishCta": "Publicar meu anúncio",
+        "trialNote_one": "O período grátis de {{trialDays}} dia começa quando você publicar.",
+        "trialNote_other": "O período grátis de {{trialDays}} dias começa quando você publicar.",
+        "checkoutMonthly": "Assinar com pagamento mensal",
+        "checkoutAnnual": "Assinar com pagamento anual",
+        "continuePayment": "Continuar o pagamento",
+        "currentPlan": "Seu plano atual em {{vertical}}",
+        "touristVipInherited": "Seu plano já inclui Turista VIP: não é necessário comprá-lo."
+    },
+    "noPlans": {
+        "title": "Esta categoria não tem planos disponíveis",
+        "body": "Seu anúncio continua sem publicação. Não há nada para contratar nem período grátis para iniciar."
+    },
     "signedOut": {
         "tagline": "Primeiro passo",
         "title": "Crie sua conta e publique",
@@ -21,13 +35,13 @@
         "plansCta": "Ver planos",
         "pricingCta": "Ver preços"
     },
-    "gastronomy": {
+    "venue": {
         "meta": {
-            "title": "Publique seu estabelecimento gastronômico",
+            "title": "Publique seu estabelecimento no Comer e sair",
             "description": "Cadastre a ficha do seu restaurante, bar, churrascaria ou food truck na Hospeda e alcance os viajantes que procuram onde comer no litoral."
         },
         "hero": {
-            "tagline": "Para estabelecimentos gastronômicos",
+            "tagline": "Para estabelecimentos no Comer e sair",
             "title": "Publique seu estabelecimento e seja encontrado",
             "body": "Comece aqui pelo básico: o nome do seu estabelecimento, que tipo é e em qual destino fica. As fotos, o cardápio e os horários você preenche depois, no seu painel."
         },
@@ -44,7 +58,7 @@
             },
             "step3": {
                 "title": "Você entra no ar",
-                "desc": "Seu estabelecimento aparece no catálogo de gastronomia e quem está na região encontra você."
+                "desc": "Seu estabelecimento aparece no catálogo de Comer e sair e quem está na região encontra você."
             }
         },
         "benefits": {
@@ -106,10 +120,10 @@
         }
     },
     "precheck": {
-        "gastronomy": {
+        "venue": {
             "resumeOrCreate": {
                 "title": "Você já tem uma ficha começada",
-                "body": "Você tem uma ficha de gastronomia sem publicar. Pode retomá-la de onde parou ou começar uma nova do zero.",
+                "body": "Você tem uma ficha de Comer e sair sem publicar. Pode retomá-la de onde parou ou começar uma nova do zero.",
                 "resumeCta": "Retomar a ficha",
                 "createCta": "Criar uma nova"
             },

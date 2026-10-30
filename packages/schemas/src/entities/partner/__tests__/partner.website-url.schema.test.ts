@@ -13,8 +13,7 @@ const PAYLOADS = [
 const validCreate = {
     slug: 'acme',
     name: 'Acme',
-    type: 'COMPANY',
-    tier: 'GOLD'
+    type: 'COMPANY'
 };
 
 describe('partner websiteUrl — write contract (HOS-703)', () => {

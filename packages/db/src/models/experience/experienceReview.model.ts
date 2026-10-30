@@ -4,9 +4,9 @@ import { experienceReviews } from '../../schemas/experience/experience_review.db
 
 /**
  * ExperienceReviewModel — DB access for experience reviews (SPEC-240).
- * Mirrors GastronomyReviewModel: extends BaseModelImpl for standard CRUD.
+ * Mirrors VenueReviewModel: extends BaseModelImpl for standard CRUD.
  * Custom relation queries (with user/experience) should be added here as the
- * service layer grows — same pattern as GastronomyReviewModel.
+ * service layer grows — same pattern as VenueReviewModel.
  */
 export class ExperienceReviewModel extends BaseModelImpl<ExperienceReview> {
     protected table = experienceReviews;
@@ -18,7 +18,7 @@ export class ExperienceReviewModel extends BaseModelImpl<ExperienceReview> {
      * Returns the Drizzle query key for this model.
      * Must match the JS variable name used in the Drizzle schema (camelCase),
      * NOT the SQL table name. Used by findAllWithRelations via db.query[tableName]
-     * (same defect class as BETA-150 on gastronomy reviews — the snake_case SQL
+     * (same defect class as BETA-150 on venue reviews — the snake_case SQL
      * name is not a valid db.query key and throws "Invalid table configuration").
      */
     protected getTableName(): string {

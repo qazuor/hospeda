@@ -32,7 +32,7 @@
  * shrinks `LIVE_FALLBACKS` and moves that copy from THIS file's coverage to
  * `plan-copy-veracity.test.ts`'s — which reads the catalog and, as of the
  * HOS-616 fix, sweeps entire namespaces (`benefits`, `owners`, `about`, `blog`,
- * `gastronomy`) rather than an enumerated path list, so newly-catalogued copy
+ * the venue route segment rather than an enumerated path list, so newly-catalogued copy
  * is covered the moment it lands without anyone remembering to list it. This
  * file's own closing comment already anticipates the end state: "If this ever
  * hits zero… delete this file." When that happens, `plan-copy-veracity.test.ts`
@@ -43,7 +43,7 @@
 
 import { readdirSync, readFileSync, statSync } from 'node:fs';
 import { extname, join, relative, resolve } from 'node:path';
-import { EntitlementKey } from '@repo/billing';
+import { EntitlementKeyEnum } from '@repo/schemas';
 import { describe, expect, it } from 'vitest';
 
 const LOCALES = ['es', 'en', 'pt'] as const;
@@ -116,12 +116,12 @@ const BANNED_PHRASES: readonly string[] = [
     // local trial row in the same transaction as the lifecycle flip — so the
     // stated reason is no longer true. They stay banned for a narrower one: an
     // inline fallback is context-free, and the sentence is still false for
-    // commerce verticals, whose listings go live through a checkout that
+    // venue/experience verticals, whose listings go live through a checkout that
     // charges (HOS-1184). Copy that IS shown only to an eligible accommodation
     // owner belongs in a locale file gated on the server's verdict — see
     // `host.properties.card.actions.publishConfirmTrialNote`, rendered only when
-    // `GET /protected/accommodations/publish-eligibility` says `startsTrial`
-    // (HOS-1183).
+    // `GET /protected/publish/subscribe-destination/accommodation` answers
+    // `PUBLISH` (HOS-1183, repointed by HOS-1668).
     'trial empieza cuando publicás',
     'arranca tu trial gratis',
     'trial starts when you publish'
@@ -376,7 +376,7 @@ describe('inline fallback veracity (HOS-331)', () => {
         // Non-vacuity for the support half of BANNED_PHRASES: if a dedicated
         // support entitlement is ever added, this fails and the phrases must
         // move out of the ban list rather than staying banned by inertia.
-        const keys = new Set<string>(Object.values(EntitlementKey));
+        const keys = new Set<string>(Object.values(EntitlementKeyEnum));
         expect(keys.has('dedicated_manager')).toBe(false);
         expect(keys.has('dedicated_support')).toBe(false);
     });

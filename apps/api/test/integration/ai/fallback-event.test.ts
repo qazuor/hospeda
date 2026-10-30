@@ -188,7 +188,7 @@ async function seedAiSettingsWithFallback(actorId: string): Promise<void> {
         providers: { stub: { enabled: true } },
         features: {
             chat: featureConfig,
-            chat_gastronomy: featureConfig,
+            chat_venue: featureConfig,
             chat_experience: featureConfig,
             text_improve: featureConfig,
             search: featureConfig,
@@ -300,7 +300,7 @@ describe('AI provider fallback event (SPEC-173 T-038 AC-2)', () => {
             expect(fallbackEvents.length).toBeGreaterThanOrEqual(1);
 
             const fallbackEvent = fallbackEvents[0];
-            if (!fallbackEvent || fallbackEvent.type !== 'fallback') {
+            if (fallbackEvent?.type !== 'fallback') {
                 throw new Error('Expected a fallback event');
             }
 

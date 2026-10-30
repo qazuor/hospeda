@@ -1,0 +1,17 @@
+# VB-09 · spec → fuente · 10-corte/B4.md, 10-corte/B5.md, 10-corte/B6.md
+
+## Hallazgos
+
+10-corte/B4.md:51 · «el instante de la última relectura que vio el preapproval» · contradice fuentes/.specs/HOS-1354-billing-cobro-y-proveedor/docs/09-conciliacion.md:271 («el instante de la primera relectura por id que vio el preapproval `cancelled`»; las líneas 272–273 prohíben reescribirlo en las siguientes). Guardar la última relectura reiniciaría el plazo 16 y demoraría indefinidamente la exención y la baja de cuenta. También contradice AC:B4:11, líneas 220–222, y el modelo de B4, líneas 320–326. CH mantiene la regla del capítulo; no autoriza actualizar el instante · BLOQUEA
+
+10-corte/B5.md:201 · «Entonces el `receipt` —comprobante no fiscal— se escribe en la misma transacción que acredita» · más débil que fuentes/.specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:967 («cada cobro genere un comprobante o recibo PDF», continuado en la línea 968) y fuentes/.specs/HOS-1354-billing-cobro-y-proveedor/docs/02-modelo-de-datos.md:383 («número, PDF»). AC:B5:4 omite la generación del PDF; el esquema de `receipt` en B5:870–873 y TEST:B5:1 tampoco la exigen. No aparece PDF en la spec consolidada y su DEC-LEGAL-001:8216 sustituye el formato por «un documento». Permite implementar únicamente el registro del comprobante o emitirlo en otro formato, incumpliendo la fuente viva; ninguna precisión posterior consultada retira el PDF · BLOQUEA
+
+10-corte/B6.md:356 · «Antes de confirmar una devolución por tarjeta, se exige que el medio de pago original siga vigente; una tarjeta vencida bloquea la confirmación hasta que el cliente la actualice.» · sin soporte. La transición RF2 de fuentes/.specs/HOS-1354-billing-cobro-y-proveedor/docs/03-maquinas-de-estado.md:1851 confirma por una persona con permiso, persiste la clave y relee el pago antes de devolver; no exige vigencia de la tarjeta. El contrato de reembolsos de docs/06-proveedor.md:232–275 tampoco impone esa guarda, y fuentes/.specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:2162–2163 registra que la tarjeta la maneja MP y «nosotros no tenemos idea de tarjeta vencida». La condición agregada bloquea devoluciones admitidas por RF2 y por AC:B6:1; no se encontró una decisión posterior que la autorice · BLOQUEA
+
+## Resumen
+
+| archivo | líneas recorridas | afirmaciones normativas revisadas (aprox.) | BLOQUEA | MENOR |
+|---|---|---|---|---|
+| 10-corte/B4.md | 1–536 | 140 | 1 | 0 |
+| 10-corte/B5.md | 1–1235 | 320 | 1 | 0 |
+| 10-corte/B6.md | 1–550 | 150 | 1 | 0 |

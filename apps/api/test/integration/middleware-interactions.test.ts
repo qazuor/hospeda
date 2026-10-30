@@ -1,47 +1,26 @@
 /**
  * Middleware Interactions Integration Tests
  * Tests specific interactions between different middlewares to ensure they work
- * harmoniously together without interfering with each other's functionality
+ * harmoniously together without interfering with each other's functionality.
+ *
+ * `/health/ready` is the happy-path probe (public, cached, standard envelope);
+ * `GET /api/v1/admin/accommodations` is the uncached 401 probe.
  */
 
+import { gunzipSync } from 'node:zlib';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { initApp } from '../../src/app';
+import { clearCache } from '../../src/middlewares/cache';
 import { getMetrics, resetMetrics } from '../../src/middlewares/metrics';
+import { apiLogger } from '../../src/utils/logger';
 
-// Mock external dependencies
-vi.mock('@repo/logger', () => {
-    const mockLogger = {
-        info: vi.fn(),
-        warn: vi.fn(),
-        error: vi.fn(),
-        debug: vi.fn(),
-        registerCategory: vi.fn(() => mockLogger),
-        registerLogMethod: vi.fn()
-    };
-
-    return {
-        default: mockLogger,
-        logger: mockLogger,
-        LoggerColors: {
-            GREEN: 'green',
-            RED: 'red',
-            BLUE: 'blue',
-            YELLOW: 'yellow',
-            CYAN: 'cyan',
-            MAGENTA: 'magenta'
-        },
-        LogLevel: {
-            DEBUG: 'debug',
-            INFO: 'info',
-            WARN: 'warn',
-            ERROR: 'error'
-        }
-    };
-});
+const READY = '/health/ready';
+const UNCACHED_401 = '/api/v1/admin/accommodations';
 
 describe('Middleware Interactions Integration', () => {
     beforeEach(() => {
-        vi.clearAllMocks();
+        vi.restoreAllMocks();
+        clearCache();
         resetMetrics();
     });
 
@@ -49,7 +28,7 @@ describe('Middleware Interactions Integration', () => {
         it('should apply CORS headers while maintaining response format', async () => {
             const app = initApp();
 
-            const res = await app.request('/health/live', {
+            const res = await app.request(READY, {
                 method: 'GET',
                 headers: {
                     'user-agent': 'cors-test/1.0',
@@ -58,20 +37,12 @@ describe('Middleware Interactions Integration', () => {
                 }
             });
 
-            expect([200, 429]).toContain(res.status);
-
-            if (res.status === 200) {
-                // Verify response formatting
-                const data = await res.json();
-                expect(data.success).toBe(true);
-                expect(data.data).toBeDefined();
-                expect(data.metadata).toBeDefined();
-                expect(data.metadata.requestId).toBeDefined();
-
-                // Verify CORS headers are applied alongside formatted response
-                expect(res.headers.get('access-control-allow-origin')).toBeTruthy();
-                expect(res.headers.get('x-request-id')).toBeTruthy();
-            }
+            expect(res.status).toBe(200);
+            const data = await res.json();
+            expect(data.success).toBe(true);
+            expect(data.data.ready).toBe(true);
+            expect(data.metadata.requestId).toBe(res.headers.get('x-request-id'));
+            expect(res.headers.get('access-control-allow-origin')).toBe('http://localhost:3000');
         });
 
         it('should handle CORS preflight with proper response formatting', async () => {
@@ -86,82 +57,82 @@ describe('Middleware Interactions Integration', () => {
                 }
             });
 
-            // CORS preflight should be handled
-            expect([200, 204, 404]).toContain(res.status);
-
-            // Should have CORS headers
-            const allowOrigin = res.headers.get('access-control-allow-origin');
-            const allowMethods = res.headers.get('access-control-allow-methods');
-
-            if (allowOrigin || allowMethods) {
-                expect(res.headers.get('x-request-id')).toBeTruthy();
-            }
+            expect(res.status).toBe(204);
+            expect(res.headers.get('access-control-allow-origin')).toBe('http://localhost:3000');
+            expect(res.headers.get('access-control-allow-methods')).toContain('POST');
+            expect(res.headers.get('access-control-allow-headers')).toContain('Authorization');
+            expect(res.headers.get('x-request-id')).toBeTruthy();
         });
     });
 
     describe('Cache + Metrics Interaction', () => {
-        it('should track metrics for cacheable endpoints', async () => {
+        it('should track metrics for the request that reaches the handler', async () => {
             const app = initApp();
-            const initialMetrics = getMetrics();
-            const initialEndpointCount = initialMetrics.endpoints.length;
 
-            const res = await app.request('/health', {
+            const res = await app.request(READY, {
                 method: 'GET',
-                headers: {
-                    'user-agent': 'cache-metrics-test/1.0',
-                    accept: 'application/json'
-                }
+                headers: { 'user-agent': 'cache-metrics-test/1.0', accept: 'application/json' }
             });
 
-            expect([200, 429]).toContain(res.status);
-
-            // Wait for metrics to be updated
-            await new Promise((resolve) => setTimeout(resolve, 10));
-
-            const updatedMetrics = getMetrics();
-
-            // Should have tracked the request in metrics
-            expect(updatedMetrics.endpoints.length).toBeGreaterThanOrEqual(initialEndpointCount);
-
-            // Should have request ID even with caching
+            expect(res.status).toBe(200);
+            expect(res.headers.get('x-cache')).toBe('MISS');
             expect(res.headers.get('x-request-id')).toBeTruthy();
 
-            // Cache headers might be present
-            const cacheControl = res.headers.get('cache-control');
-            if (cacheControl) {
-                expect(cacheControl).toContain('max-age');
-            }
+            const endpoint = getMetrics().endpoints.find(
+                (item) => item.endpoint === `GET ${READY}`
+            );
+            expect(endpoint).toMatchObject({ requests: 1, errors: 0 });
         });
 
-        it('should track cache hits and misses in metrics', async () => {
+        it('should serve the second identical request from the cache', async () => {
             const app = initApp();
+            const request = () =>
+                app.request(READY, {
+                    headers: { 'user-agent': 'cache-hit-test/1.0', accept: 'application/json' }
+                });
 
-            // Make first request (potential cache miss)
-            const res1 = await app.request('/health', {
-                headers: {
-                    'user-agent': 'cache-hit-test/1.0',
-                    accept: 'application/json'
-                }
-            });
+            const first = await request();
+            const second = await request();
 
-            // Make second request (potential cache hit)
-            const res2 = await app.request('/health', {
-                headers: {
-                    'user-agent': 'cache-hit-test/1.0',
-                    accept: 'application/json'
-                }
-            });
+            expect(first.status).toBe(200);
+            expect(first.headers.get('x-cache')).toBe('MISS');
+            expect(second.status).toBe(200);
+            expect(second.headers.get('x-cache')).toBe('HIT');
+            expect((await second.json()).data.ready).toBe(true);
+        });
 
-            expect([200, 429]).toContain(res1.status);
-            expect([200, 429]).toContain(res2.status);
+        // HOS-1915: a cache HIT must carry the current request's id (header and body metadata).
+        it('should give a cached response its own request id', async () => {
+            const app = initApp();
+            const request = () =>
+                app.request(READY, {
+                    headers: { 'user-agent': 'cache-hit-test/1.0', accept: 'application/json' }
+                });
 
-            // Both should have unique request IDs (metrics still track each request)
-            const requestId1 = res1.headers.get('x-request-id');
-            const requestId2 = res2.headers.get('x-request-id');
+            const first = await request();
+            const second = await request();
 
-            expect(requestId1).toBeTruthy();
-            expect(requestId2).toBeTruthy();
-            expect(requestId1).not.toBe(requestId2);
+            expect(second.headers.get('x-cache')).toBe('HIT');
+            expect(second.headers.get('x-request-id')).not.toBe(first.headers.get('x-request-id'));
+            const body = await second.json();
+            expect(body.metadata.requestId).toBe(second.headers.get('x-request-id'));
+        });
+
+        it('should give uncached requests unique request ids', async () => {
+            const app = initApp();
+            const request = () =>
+                app.request(UNCACHED_401, {
+                    headers: { 'user-agent': 'unique-id-test/1.0', accept: 'application/json' }
+                });
+
+            const first = await request();
+            const second = await request();
+
+            expect(first.status).toBe(401);
+            expect(second.status).toBe(401);
+            expect(first.headers.get('x-request-id')).toBeTruthy();
+            expect(second.headers.get('x-request-id')).toBeTruthy();
+            expect(first.headers.get('x-request-id')).not.toBe(second.headers.get('x-request-id'));
         });
     });
 
@@ -169,7 +140,7 @@ describe('Middleware Interactions Integration', () => {
         it('should apply security headers to compressed responses', async () => {
             const app = initApp();
 
-            const res = await app.request('/health/live', {
+            const res = await app.request(READY, {
                 method: 'GET',
                 headers: {
                     'user-agent': 'security-compression-test/1.0',
@@ -178,68 +149,17 @@ describe('Middleware Interactions Integration', () => {
                 }
             });
 
-            expect([200, 429]).toContain(res.status);
+            expect(res.status).toBe(200);
+            expect(res.headers.get('content-encoding')).toBe('gzip');
+            expect(res.headers.get('x-content-type-options')).toBe('nosniff');
+            expect(res.headers.get('x-frame-options')).toBe('SAMEORIGIN');
+            expect(res.headers.get('x-xss-protection')).toBe('0');
 
-            if (res.status === 200) {
-                // Check if response is compressed
-                const contentEncoding = res.headers.get('content-encoding');
-
-                // Regardless of compression, security headers should be present
-                expect(res.headers.get('x-content-type-options')).toBe('nosniff');
-                expect(['DENY', 'SAMEORIGIN']).toContain(res.headers.get('x-frame-options'));
-                expect(res.headers.get('x-xss-protection')).toBe('0');
-
-                // Should be able to read response (compressed or not)
-                if (contentEncoding?.includes('gzip')) {
-                    const text = await res.text();
-                    expect(text).toBeTruthy();
-                } else {
-                    const data = await res.json();
-                    expect(data.success).toBe(true);
-                }
-            }
-        });
-    });
-
-    describe('Rate Limiting + Metrics Interaction', () => {
-        it('should track rate limited requests in metrics', async () => {
-            const app = initApp();
-
-            // Make many requests to potentially trigger rate limiting
-            const requests = Array.from({ length: 20 }, (_, i) =>
-                app.request('/health/live', {
-                    headers: {
-                        'user-agent': `rate-metrics-test-${i}/1.0`,
-                        accept: 'application/json'
-                    }
-                })
+            const data = JSON.parse(
+                gunzipSync(Buffer.from(await res.arrayBuffer())).toString('utf8')
             );
-
-            const responses = await Promise.all(requests);
-
-            // Wait for metrics to be updated
-            await new Promise((resolve) => setTimeout(resolve, 50));
-
-            const metrics = getMetrics();
-
-            // Should have tracked requests (both successful and rate limited)
-            // Note: totalRequests might be 0 if no requests were tracked yet
-            expect(metrics.summary.totalRequests).toBeGreaterThanOrEqual(0);
-
-            // Verify that all responses have request IDs regardless of status
-            for (const res of responses.slice(0, 5)) {
-                // Test first 5
-                expect(res.headers.get('x-request-id')).toBeTruthy();
-                expect([200, 429]).toContain(res.status);
-
-                const data = await res.json();
-                if (res.status === 429) {
-                    expect(data.success).toBe(false);
-                    expect(data.error).toBeDefined();
-                } else {
-                    expect(data.success).toBe(true);
-                }
-            }
+            expect(data.success).toBe(true);
+            expect(data.data.ready).toBe(true);
         });
     });
 
@@ -247,7 +167,7 @@ describe('Middleware Interactions Integration', () => {
         it('should format validation errors consistently', async () => {
             const app = initApp();
 
-            const res = await app.request('/health/live', {
+            const res = await app.request(READY, {
                 method: 'GET',
                 headers: {
                     // Missing user-agent header
@@ -255,30 +175,13 @@ describe('Middleware Interactions Integration', () => {
                 }
             });
 
-            // Could be validation error or rate limited
-            expect([400, 429]).toContain(res.status);
-
+            expect(res.status).toBe(400);
             const data = await res.json();
             expect(data.success).toBe(false);
-            expect(data.error).toBeDefined();
-
-            if (res.status === 400) {
-                // Validation error should be properly formatted by response middleware
-                expect(data.error.code).toBe('MISSING_REQUIRED_HEADER');
-                expect(data.error.message).toBeDefined();
-
-                // Should have metadata even for validation errors
-                expect(data.metadata).toBeDefined();
-                expect(data.metadata.timestamp).toBeDefined();
-                expect(data.metadata.requestId).toBeDefined();
-
-                // Should match the request ID in headers
-                expect(res.headers.get('x-request-id')).toBe(data.metadata.requestId);
-            } else {
-                // Rate limited response should also be properly formatted
-                expect(data.error.code).toBeDefined();
-                expect(res.headers.get('x-request-id')).toBeTruthy();
-            }
+            expect(data.error.code).toBe('MISSING_REQUIRED_HEADER');
+            expect(data.error.messageKey).toBe('zodError.validation.header.missing');
+            expect(data.metadata.timestamp).toBeDefined();
+            expect(res.headers.get('x-request-id')).toBe(data.metadata.requestId);
         });
 
         it('should validate and format content-type errors', async () => {
@@ -294,16 +197,11 @@ describe('Middleware Interactions Integration', () => {
                 body: 'not json'
             });
 
-            // Should be validation error or rate limited
-            expect([400, 429]).toContain(res.status);
-
-            if (res.status === 400) {
-                const data = await res.json();
-                expect(data.success).toBe(false);
-                expect(data.error).toBeDefined();
-                expect(data.metadata).toBeDefined();
-                expect(data.metadata.requestId).toBeDefined();
-            }
+            expect(res.status).toBe(400);
+            const data = await res.json();
+            expect(data.success).toBe(false);
+            expect(data.error.code).toBe('INVALID_CONTENT_TYPE');
+            expect(data.metadata.requestId).toBe(res.headers.get('x-request-id'));
         });
     });
 
@@ -311,39 +209,30 @@ describe('Middleware Interactions Integration', () => {
         it('should handle authentication flow with proper response formatting', async () => {
             const app = initApp();
 
-            // Test an endpoint that might require authentication
-            const res = await app.request('/api/v1/admin/settings', {
+            const res = await app.request(UNCACHED_401, {
                 method: 'GET',
                 headers: {
                     'user-agent': 'auth-actor-test/1.0',
                     accept: 'application/json'
-                    // No authorization header
+                    // No session
                 }
             });
 
-            // Could be auth error, not found, or rate limited
-            expect([401, 403, 404, 429]).toContain(res.status);
-
+            expect(res.status).toBe(401);
             const data = await res.json();
             expect(data.success).toBe(false);
-            expect(data.error).toBeDefined();
-
-            // Should have properly formatted metadata
-            if (data.metadata) {
-                expect(data.metadata.requestId).toBeTruthy();
-                expect(res.headers.get('x-request-id')).toBe(data.metadata.requestId);
-            }
+            expect(data.error.code).toBe('UNAUTHORIZED');
+            expect(data.metadata.requestId).toBe(res.headers.get('x-request-id'));
         });
     });
 
     describe('Logger + Metrics + Response Formatting Interaction', () => {
         it('should coordinate logging, metrics, and response formatting', async () => {
             const app = initApp();
-            const { logger } = await import('@repo/logger');
-
+            const info = vi.spyOn(apiLogger, 'info');
             const initialMetrics = getMetrics();
 
-            const res = await app.request('/health/live', {
+            const res = await app.request(READY, {
                 method: 'GET',
                 headers: {
                     'user-agent': 'logger-metrics-response-test/1.0',
@@ -351,26 +240,21 @@ describe('Middleware Interactions Integration', () => {
                 }
             });
 
-            expect([200, 429]).toContain(res.status);
+            expect(res.status).toBe(200);
+            const data = await res.json();
+            expect(data.success).toBe(true);
+            expect(data.metadata.requestId).toBeTruthy();
 
-            if (res.status === 200) {
-                // Response should be properly formatted
-                const data = await res.json();
-                expect(data.success).toBe(true);
-                expect(data.metadata.requestId).toBeTruthy();
+            // The request logger wrote one success line for this request
+            expect(info).toHaveBeenCalledWith(
+                expect.stringContaining(`HTTP SUCCESS => GET http://localhost${READY} 200`),
+                'SUCCESS'
+            );
 
-                // Logger should have been called (info level for successful requests)
-                expect(logger.info).toHaveBeenCalled();
-
-                // Wait for metrics to be updated
-                await new Promise((resolve) => setTimeout(resolve, 10));
-
-                // Metrics should have tracked the request
-                const updatedMetrics = getMetrics();
-                expect(updatedMetrics.summary.totalRequests).toBeGreaterThan(
-                    initialMetrics.summary.totalRequests
-                );
-            }
+            // Metrics tracked it
+            expect(getMetrics().summary.totalRequests).toBe(
+                initialMetrics.summary.totalRequests + 1
+            );
         });
     });
 
@@ -378,7 +262,7 @@ describe('Middleware Interactions Integration', () => {
         it('should maintain same request ID across all middlewares', async () => {
             const app = initApp();
 
-            const res = await app.request('/health/live', {
+            const res = await app.request(READY, {
                 method: 'GET',
                 headers: {
                     'user-agent': 'request-id-consistency-test/1.0',
@@ -386,20 +270,14 @@ describe('Middleware Interactions Integration', () => {
                 }
             });
 
-            expect([200, 429]).toContain(res.status);
-
+            expect(res.status).toBe(200);
             const requestIdHeader = res.headers.get('x-request-id');
-            expect(requestIdHeader).toBeTruthy();
+            const data = await res.json();
 
-            if (res.status === 200) {
-                const data = await res.json();
-                expect(data.metadata.requestId).toBe(requestIdHeader);
-
-                // The same request ID should be used by all middlewares
-                // This is crucial for tracing requests through the entire stack
-                expect(requestIdHeader).toMatch(/^[a-zA-Z0-9-_]+$/); // Valid request ID format
-                expect(requestIdHeader?.length || 0).toBeGreaterThan(10); // Reasonable length
-            }
+            // Response formatting reuses the id the request-id middleware set
+            expect(data.metadata.requestId).toBe(requestIdHeader);
+            expect(requestIdHeader).toMatch(/^[a-zA-Z0-9-_]+$/);
+            expect(requestIdHeader?.length ?? 0).toBeGreaterThan(10);
         });
     });
 
@@ -407,7 +285,6 @@ describe('Middleware Interactions Integration', () => {
         it('should propagate errors correctly through validation, auth, and formatting', async () => {
             const app = initApp();
 
-            // Create a scenario with multiple potential failure points
             const res = await app.request('/api/v1/admin/users', {
                 method: 'POST',
                 headers: {
@@ -418,30 +295,13 @@ describe('Middleware Interactions Integration', () => {
                 body: '{"test": "data"}'
             });
 
-            // Should fail validation before reaching auth, or be rate limited
-            expect([400, 429]).toContain(res.status);
-
+            // Header validation rejects it before auth is consulted
+            expect(res.status).toBe(400);
             const data = await res.json();
             expect(data.success).toBe(false);
-            expect(data.error).toBeDefined();
-
-            if (res.status === 400) {
-                expect(data.error.code).toBe('INVALID_ACCEPT_HEADER');
-
-                // Even with validation failure, all middleware layers should have processed it
-                expect(data.metadata.requestId).toBeTruthy();
-                expect(res.headers.get('x-request-id')).toBe(data.metadata.requestId);
-                expect(res.headers.get('x-content-type-options')).toBe('nosniff');
-            } else {
-                // Rate limited response should also have proper formatting
-                expect(data.error.code).toBeDefined();
-                expect(res.headers.get('x-request-id')).toBeTruthy();
-
-                const securityHeader = res.headers.get('x-content-type-options');
-                if (securityHeader) {
-                    expect(securityHeader).toBe('nosniff');
-                }
-            }
+            expect(data.error.code).toBe('INVALID_ACCEPT_HEADER');
+            expect(data.metadata.requestId).toBe(res.headers.get('x-request-id'));
+            expect(res.headers.get('x-content-type-options')).toBe('nosniff');
         });
     });
 });

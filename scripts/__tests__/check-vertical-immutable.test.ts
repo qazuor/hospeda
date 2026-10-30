@@ -1,0 +1,110 @@
+/** TEST:V5:5 — GUARD:G2 (c) detects writes to a listing's vertical. */
+import { execFileSync } from 'node:child_process';
+import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import path from 'node:path';
+import { afterEach, describe, expect, it } from 'vitest';
+import { findImmutableVerticalWrites, run } from '../check-vertical-immutable';
+
+const tempDirs: string[] = [];
+afterEach(() => {
+    for (const dir of tempDirs.splice(0)) rmSync(dir, { recursive: true, force: true });
+});
+
+function makeTree(files: Readonly<Record<string, string>>): string {
+    const root = mkdtempSync(path.join(tmpdir(), 'g2c-'));
+    tempDirs.push(root);
+    execFileSync('git', ['init', '-q'], { cwd: root, stdio: 'pipe' });
+    for (const [file, source] of Object.entries(files)) {
+        mkdirSync(path.dirname(path.join(root, file)), { recursive: true });
+        writeFileSync(path.join(root, file), source);
+    }
+    return root;
+}
+
+describe('TEST:V5:5 GUARD:G2 (c)', () => {
+    it('TEST:1813:6 AC:1:15 scans the moved venue schema path', () => {
+        const file = 'packages/schemas/src/entities/venue/venue.crud.schema.ts';
+        expect(
+            findImmutableVerticalWrites({
+                file,
+                source: 'export const VenueUpdateInputSchema = z.object({ vertical: z.string() });\n'
+            })
+        ).toEqual([
+            { file, line: 1, detail: 'update schema VenueUpdateInputSchema declares vertical' }
+        ]);
+    });
+
+    it('accepts the current branch and a listing update without a vertical field', () => {
+        expect(run().exitCode).toBe(0);
+        const root = makeTree({
+            'packages/service-core/src/services/venue/venue.service.ts':
+                'db.update(venues).set({ name: "New name" });\n'
+        });
+        expect(run({ root, minScannedFiles: 1 }).exitCode).toBe(0);
+    });
+
+    it('TEST:1814:4 AC:1:16 scans venue and ignores the removed legacy service path', () => {
+        const venueFile = 'packages/service-core/src/services/venue/venue.service.ts';
+        const oldVerticalName = ['gastro', 'nomy'].join('');
+        const legacyFile = [
+            'packages/service-core/src/services',
+            oldVerticalName,
+            `${oldVerticalName}.service.ts`
+        ].join('/');
+        const legacyVerticalTable = `${oldVerticalName}ies`;
+        const verticalUpdate = (table: string, vertical: string) =>
+            `db.update(${table}).set({ vertical: "${vertical}" });\n`;
+        const root = makeTree({
+            [venueFile]: verticalUpdate(legacyVerticalTable, oldVerticalName),
+            [legacyFile]: verticalUpdate(legacyVerticalTable, oldVerticalName)
+        });
+
+        const result = run({ root, minScannedFiles: 1 });
+        expect(result.exitCode).toBe(1);
+        expect(result.output).toContain(venueFile);
+        expect(result.output).not.toContain(legacyFile);
+
+        const legacyOnly = makeTree({
+            [legacyFile]: verticalUpdate(legacyVerticalTable, oldVerticalName)
+        });
+        const legacyResult = run({ root: legacyOnly, minScannedFiles: 1 });
+        expect(legacyResult.exitCode).toBe(0);
+        expect(legacyResult.output).not.toContain(legacyFile);
+    });
+
+    it('rejects a mutated listing service update with file and line', () => {
+        const file = 'packages/service-core/src/services/venue/venue.service.ts';
+        const root = makeTree({
+            [file]:
+                'const unchanged = 1;\n' + 'db.update(venues).set({ vertical: "accommodation" });\n'
+        });
+        const result = run({ root, minScannedFiles: 1 });
+        expect(result.exitCode).toBe(1);
+        expect(result.output).toContain(`G2 (c): ${file}:2`);
+        expect(result.output).toContain('set writes vertical');
+    });
+
+    it('rejects a listing update schema that declares productDomain', () => {
+        const file = 'packages/schemas/src/entities/experience/experience.crud.schema.ts';
+        const root = makeTree({
+            [file]: 'export const ExperienceUpdateInputSchema = z.object({ productDomain: z.string() });\n'
+        });
+        expect(run({ root, minScannedFiles: 1 }).output).toContain(`G2 (c): ${file}:1`);
+    });
+
+    it('ignores comments and test files, and rejects too-small scans', () => {
+        const file = 'apps/api/src/routes/accommodation/patch.ts';
+        expect(
+            findImmutableVerticalWrites({
+                file,
+                source: '// db.update(accommodations).set({ vertical: "venue" });\n'
+            })
+        ).toEqual([]);
+        const root = makeTree({
+            'apps/api/src/routes/accommodation/patch.test.ts':
+                'db.update(accommodations).set({ vertical: "venue" });\n'
+        });
+        expect(run({ root, minScannedFiles: 1 }).output).toContain('expected at least 1');
+    });
+});

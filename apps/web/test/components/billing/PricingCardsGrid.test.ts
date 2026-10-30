@@ -110,53 +110,21 @@ describe('PricingCardsGrid.astro', () => {
         });
     });
 
-    describe('pre-select toggle from logged-in intendedInterval lookup (HOS-115 T-008, nudge path 2)', () => {
-        it('fetches trial status via the shared billingApi client, not a raw fetch()', () => {
-            expect(src).toContain("import { billingApi } from '@/lib/api/endpoints-protected';");
-            expect(src).toContain('billingApi.getTrialStatus()');
+    describe('no old-billing call and no purchase island (HOS-1637, AC:B13a:21)', () => {
+        it('neither imports the old billing client nor mounts the purchase island', () => {
+            // The HOS-115 intendedInterval nudge read `billingApi.getTrialStatus()`
+            // and the cards mounted `PlanPurchaseButton` (promo validation +
+            // checkout). Both called the old billing client and were removed.
+            expect(src).not.toContain('billingApi');
+            expect(src).not.toContain('endpoints-protected');
+            expect(src).not.toContain('PlanPurchaseButton');
             expect(src).not.toMatch(/\bfetch\(/);
         });
 
-        it('only runs the lookup when the query param did not already decide', () => {
-            const initFnMatch = src.match(
-                /function initPricingToggle\(container: HTMLElement\): void \{[\s\S]*?\n\t\}/
-            );
-            const body = initFnMatch?.[0] ?? '';
-            expect(body).toMatch(
-                /if \(!queryInterval && container\.dataset\.audience === 'owner'\)/
-            );
-        });
-
-        it('is scoped to the owner audience via data-audience, so the tourist pricing page is unaffected', () => {
-            expect(src).toContain('data-audience={audience}');
-            expect(src).toContain("container.dataset.audience === 'owner'");
-        });
-
-        it('never overrides a manual toggle click made while the lookup is in flight', () => {
-            expect(src).toContain('let manuallyToggled = false;');
-            expect(src).toContain('manuallyToggled = true;');
-            expect(src).toContain('isOverridden: () => manuallyToggled');
-            const nudgeFnMatch = src.match(
-                /async function applyIntendedIntervalNudge[\s\S]*?\): Promise<void> \{[\s\S]*?\n\t\}/
-            );
-            expect(nudgeFnMatch).not.toBeNull();
-            expect(nudgeFnMatch?.[0]).toContain('if (isOverridden() || !result.ok) return;');
-        });
-
-        it('only applies a valid resolved interval from the API response', () => {
-            const nudgeFnMatch = src.match(
-                /async function applyIntendedIntervalNudge[\s\S]*?\): Promise<void> \{[\s\S]*?\n\t\}/
-            );
-            const body = nudgeFnMatch?.[0] ?? '';
-            expect(body).toContain(
-                "if (intendedInterval === 'monthly' || intendedInterval === 'annual') {"
-            );
-            expect(body).toContain('setActive(intendedInterval);');
-        });
-
-        it('documents why the lookup is client-side and not baked into the cached SSR HTML', () => {
-            expect(src).toContain('Cache-Control');
-            expect(src.toLowerCase()).toContain('cloudflare caches the ssr html');
+        it('keeps the plain-link CTA for the link grids', () => {
+            // Positive sibling of the negatives above: the CTA slot still exists.
+            expect(src).toContain("{ctaMode === 'link' && (");
+            expect(src).toContain('<GradientButton');
         });
     });
 
@@ -182,13 +150,13 @@ describe('PricingCardsGrid.astro', () => {
             // `getDisplayFeatures({ keys: plan.entitlements })` renders every
             // tier as a full list under a header promising only differences.
             expect(viewSrc).toContain(
-                'getDisplayFeatures({ keys: delta.addedEntitlements, audience, t })'
+                'getDisplayFeatures({ keys: displayEntitlements, audience, t })'
             );
             expect(viewSrc).not.toContain('getDisplayFeatures({ keys: plan.entitlements');
         });
 
         it('renders limit lines from the delta’s limitChanges', () => {
-            expect(viewSrc).toContain('delta.limitChanges.map(');
+            expect(viewSrc).toContain('delta.limitChanges\n            .filter(');
         });
 
         it('requires `limits` on the plan shape, so a payload without caps cannot compile', () => {
@@ -198,14 +166,27 @@ describe('PricingCardsGrid.astro', () => {
         });
 
         it('carries no hand-written per-plan feature or delta list', () => {
-            // AC-11. Any literal plan slug in either file would be the start of
-            // exactly the curated table this feature exists to avoid. Both are
-            // swept: the build moved out of the component, so checking only the
-            // component would leave the curated list a file away.
-            for (const slug of ['owner-basico', 'owner-pro', 'owner-premium', 'tourist-vip']) {
+            // AC-11. Any occurrence of a plan slug in either file would be the
+            // start of exactly the curated table this feature avoids. Both
+            // files are swept because the build moved out of the component.
+            for (const slug of ['owner-basico', 'owner-pro', 'owner-premium']) {
                 expect(src, `component / ${slug}`).not.toContain(slug);
                 expect(viewSrc, `view builder / ${slug}`).not.toContain(slug);
             }
+
+            // This substring now appears in the required catalogue import and
+            // grouped benefit id. Exempt only those references; keep the
+            // original substring prohibition for every other occurrence.
+            const componentWithoutVipImport = src.replace('@/lib/billing/tourist-vip-benefits', '');
+            const viewWithoutVipReferences = viewSrc
+                .replace('@/lib/billing/tourist-vip-benefits', '')
+                .replace("'group-tourist-vip'", '');
+            expect(componentWithoutVipImport, 'component / tourist-vip').not.toContain(
+                'tourist-vip'
+            );
+            expect(viewWithoutVipReferences, 'view builder / tourist-vip').not.toContain(
+                'tourist-vip'
+            );
         });
     });
 
@@ -359,31 +340,6 @@ describe('PricingCardsGrid.astro', () => {
             expect(mobile?.[0]).toContain(".pricing-cards__grid[data-count='1']");
             expect(mobile?.[0]).toContain(".pricing-cards__grid[data-count='2']");
             expect(mobile?.[0]).toContain('grid-template-columns: minmax(0, 1fr);');
-        });
-    });
-
-    describe('promo-code entry point above the grid (HOS-984)', () => {
-        it('gates the entry point on a checkout grid with a real amount to discount', () => {
-            // `'link'` grids (commerce, partner) never mount PlanPurchaseButton at
-            // all, and `'consult'` cards (aliados) show no amount — an anchor to a
-            // field that is not there would be a dead link either way.
-            expect(src).toContain(
-                "const showPromoEntry = hasPlans && ctaMode === 'checkout' && priceMode === 'amount';"
-            );
-        });
-
-        it('only renders the anchor when showPromoEntry is true', () => {
-            expect(src).toMatch(/\{showPromoEntry && \(\s*<a href="#pricing-cards-grid"/);
-        });
-
-        it('points at the grid container, which carries the matching id', () => {
-            expect(src).toContain('href="#pricing-cards-grid"');
-            expect(src).toContain('id="pricing-cards-grid"');
-        });
-
-        it('renders the promoEntryLabel copy, not a hardcoded string', () => {
-            expect(src).toMatch(/<a href="#pricing-cards-grid"[^>]*>\s*\{promoEntryLabel\}/);
-            expect(src).toContain("const promoEntryLabel = t(\n\t'pricing.promoEntry.label',");
         });
     });
 
@@ -563,7 +519,7 @@ describe('PricingCardsGrid.astro', () => {
                 'pricing-card__btn-wrapper'
             ];
             for (const block of blocks) {
-                expect(src, block).toContain(`class="${block.replace('"', '')}"`);
+                expect(src, block).toContain(`class="${block.replaceAll('"', '')}"`);
             }
 
             const rows = src.match(/grid-template-rows: ((?:auto |1fr )+auto);/);
@@ -1071,16 +1027,6 @@ describe('PricingCardsGrid.astro', () => {
             // the ink's 4.88:1 worst case; the trial pill's 60% alpha would
             // composite to 2.47:1 on the light track and fail WCAG 1.4.11.
             expect(badgeRule()).toContain('border: 1px solid currentColor;');
-        });
-
-        it('recolours the promo trial pill with the same green', () => {
-            // Preexisting, not introduced here: `--success` measured 4:1 on a
-            // light `--core-card`. Same token, same page, so the two greens
-            // cannot drift apart.
-            const rule = src.match(/\.pricing-card__trial--promo \{([^}]*)\}/)?.[1] ?? '';
-
-            expect(rule).toContain('var(--hospeda-forest-link,');
-            expect(rule).not.toContain('var(--success');
         });
 
         it('leaves the badge outside the card, so it consumes no subgrid row', () => {

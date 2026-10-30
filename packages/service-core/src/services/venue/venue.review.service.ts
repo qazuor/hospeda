@@ -1,0 +1,700 @@
+/**
+ * venue.review.service.ts
+ *
+ * Review service for venue listings (SPEC-239 T-039).
+ *
+ * ## Behavior
+ *
+ * - **Create (tourist path)**: `moderationState` defaults to `PENDING` (DB
+ *   default; we enforce it explicitly in `_beforeCreate` for defense-in-depth).
+ * - **Moderate (admin path)**: approve or reject a review via `moderateReview`.
+ *   On every decision, the listing's denormalized `averageRating` / `reviewsCount`
+ *   / `rating` fields are recomputed from all APPROVED, non-deleted reviews using
+ *   `VenueService.recomputeRating()`.
+ * - **Public list**: `_executeSearch` + `_executeCount` force-override
+ *   `lifecycleState = ACTIVE` AND `moderationState = APPROVED` so that PENDING /
+ *   REJECTED reviews never surface on public endpoints (mirrors SPEC-166).
+ * - **UNIQUE constraint**: one review per user per listing. We check in
+ *   `_beforeCreate` and return a friendly `ALREADY_EXISTS` error.
+ * - **Rating recompute**: after create / moderation / delete the listing's
+ *   denormalized rating is refreshed. Only APPROVED reviews count.
+ *
+ * @module venue.review.service
+ */
+
+import { type VenueReviewModel, venueModel, venueReviewModel } from '@repo/db';
+import {
+    type CountResponse,
+    LifecycleStatusEnum,
+    ModerationStatusEnum,
+    PermissionEnum,
+    type PublicationStatusEnum,
+    ServiceErrorCode,
+    type VenueReview,
+    type VenueReviewCreateInput,
+    VenueReviewCreateInputSchema,
+    VenueReviewUpdateInputSchema,
+    type VenueSearch,
+    VenueSearchSchema
+} from '@repo/schemas';
+import { readListingAccessFacts, resolveResourceStep } from '@repo/verticals';
+import { BaseCrudService } from '../../base/base.crud.service';
+import type {
+    Actor,
+    PaginatedListOutput,
+    ServiceConfig,
+    ServiceContext,
+    ServiceOutput
+} from '../../types';
+import { ServiceError } from '../../types';
+import { entityNotFoundError } from '../../utils/not-found';
+import { hasPermission } from '../../utils/permission';
+import { listingShowsReviews } from '../listing/listing-reviews-shown.js';
+import { VenueService } from './venue.service';
+
+// ---------------------------------------------------------------------------
+// Moderation decision input type
+// ---------------------------------------------------------------------------
+
+/**
+ * Input for the `moderateReview` method.
+ */
+export interface VenueReviewModerateInput {
+    /** UUID of the review to moderate. */
+    id: string;
+    /** The moderation decision. */
+    decision: ModerationStatusEnum.APPROVED | ModerationStatusEnum.REJECTED;
+    /** Optional free-text reason for the decision. */
+    reason?: string;
+}
+
+/**
+ * Computes the effective scalar rating (0–5, 2-decimal) for a review submission.
+ *
+ * - With a granular `rating` breakdown → mean of the four rating dimensions
+ *   (food / service / ambiance / value), all required when the breakdown is
+ *   present.
+ * - Without a breakdown → the required scalar `overallRating`.
+ *
+ * @param input - The validated create input.
+ * @returns The effective scalar rating to persist as `averageRating`.
+ */
+function computeEffectiveRating(input: VenueReviewCreateInput): number {
+    const breakdown = input.rating;
+    if (breakdown) {
+        const mean =
+            (breakdown.food + breakdown.service + breakdown.ambiance + breakdown.value) / 4;
+        return Math.round(mean * 100) / 100;
+    }
+    return input.overallRating;
+}
+
+// ---------------------------------------------------------------------------
+// Service
+// ---------------------------------------------------------------------------
+
+/**
+ * Service for managing venue reviews.
+ *
+ * Uses `VenueReview` as the entity type (inferred from Zod schema) and
+ * `VenueReviewModel` as the DB model.  Where the Drizzle inferred type
+ * diverges from the Zod type (e.g. `isVerified`, `reviewerName` absent from
+ * the DB columns), explicit `unknown` casts bridge the gap — this is the same
+ * pattern used by `AccommodationReviewService`.
+ *
+ * @example
+ * ```ts
+ * const service = new VenueReviewService({});
+ *
+ * // Tourist creates a review (goes to PENDING)
+ * const result = await service.create(
+ *   { venueId: 'uuid', overallRating: 4 },
+ *   actor,
+ *   ctx
+ * );
+ *
+ * // Admin approves it (recomputes listing rating)
+ * await service.moderateReview(
+ *   { id: 'review-uuid', decision: ModerationStatusEnum.APPROVED },
+ *   adminActor,
+ * );
+ * ```
+ */
+export class VenueReviewService extends BaseCrudService<
+    VenueReview,
+    VenueReviewModel,
+    typeof VenueReviewCreateInputSchema,
+    typeof VenueReviewUpdateInputSchema,
+    typeof VenueSearchSchema
+> {
+    static readonly ENTITY_NAME = 'venueReview';
+
+    protected readonly entityName = VenueReviewService.ENTITY_NAME;
+    protected readonly model: VenueReviewModel;
+    protected readonly createSchema = VenueReviewCreateInputSchema;
+    protected readonly updateSchema = VenueReviewUpdateInputSchema;
+    protected readonly searchSchema = VenueSearchSchema;
+
+    /** Injectable for unit tests. */
+    private _venueService: VenueService;
+    private _venueModel = venueModel;
+
+    constructor(config: ServiceConfig) {
+        super(config, VenueReviewService.ENTITY_NAME);
+        this.model = venueReviewModel;
+        this._venueService = new VenueService(config);
+    }
+
+    // -----------------------------------------------------------------------
+    // Relation defaults
+    // -----------------------------------------------------------------------
+
+    protected override getDefaultListRelations(): Record<string, boolean> {
+        return { venue: true, user: true };
+    }
+
+    /**
+     * Venue reviews are searched by `title` and `content`, matching the
+     * convention `AccommodationReviewService` and `DestinationReviewService`
+     * already follow.
+     *
+     * No review table has a `name` column, so the inherited `['name']`
+     * default matched nothing and admin search returned every review
+     * (HOS-1117).
+     */
+    protected override getSearchableColumns(): string[] {
+        return ['title', 'content'];
+    }
+
+    // -----------------------------------------------------------------------
+    // Permission hooks
+    // -----------------------------------------------------------------------
+
+    /**
+     * Any authenticated user may submit a review (tourist path).
+     *
+     * @param actor - The actor performing the action.
+     * @param _data - The create payload (unused).
+     * @throws {ServiceError} FORBIDDEN when actor is not authenticated.
+     */
+    protected _canCreate(actor: Actor, _data: VenueReviewCreateInput): void {
+        if (!actor?.id) {
+            throw new ServiceError(
+                ServiceErrorCode.FORBIDDEN,
+                'Permission denied: authentication required to submit a venue review'
+            );
+        }
+    }
+
+    /** Review update is staff-only (`VENUE_EDIT_ALL`). */
+    protected _canUpdate(actor: Actor, _entity: VenueReview): void {
+        if (!hasPermission(actor, PermissionEnum.VENUE_EDIT_ALL)) {
+            throw new ServiceError(
+                ServiceErrorCode.FORBIDDEN,
+                'Permission denied: VENUE_EDIT_ALL required to update a venue review'
+            );
+        }
+    }
+
+    /** Soft-delete: staff or the review author. */
+    protected _canSoftDelete(actor: Actor, entity: VenueReview): void {
+        const isAuthor = entity.userId === actor.id;
+        if (!hasPermission(actor, PermissionEnum.VENUE_EDIT_ALL) && !isAuthor) {
+            throw new ServiceError(
+                ServiceErrorCode.FORBIDDEN,
+                'Permission denied: cannot delete this venue review'
+            );
+        }
+    }
+
+    /** Hard delete is staff-only (`VENUE_EDIT_ALL`). */
+    protected _canHardDelete(actor: Actor, _entity: VenueReview): void {
+        if (!hasPermission(actor, PermissionEnum.VENUE_EDIT_ALL)) {
+            throw new ServiceError(
+                ServiceErrorCode.FORBIDDEN,
+                'Permission denied: VENUE_EDIT_ALL required to permanently delete a venue review'
+            );
+        }
+    }
+
+    /** Restore is staff-only (`VENUE_EDIT_ALL`). */
+    protected _canRestore(actor: Actor, _entity: VenueReview): void {
+        if (!hasPermission(actor, PermissionEnum.VENUE_EDIT_ALL)) {
+            throw new ServiceError(
+                ServiceErrorCode.FORBIDDEN,
+                'Permission denied: VENUE_EDIT_ALL required to restore a venue review'
+            );
+        }
+    }
+
+    /** Public view — any actor may view a review. */
+    protected _canView(_actor: Actor, _entity: VenueReview): void {
+        return;
+    }
+
+    /** Public list — open to any actor. */
+    protected _canList(_actor: Actor): void {
+        return;
+    }
+
+    /** Public search — open to any actor. */
+    protected _canSearch(_actor: Actor): void {
+        return;
+    }
+
+    /** Public count — open to any actor. */
+    protected _canCount(_actor: Actor): void {
+        return;
+    }
+
+    protected _canUpdateVisibility(actor: Actor, _entity: VenueReview, _v: unknown): void {
+        if (!hasPermission(actor, PermissionEnum.VENUE_EDIT_ALL)) {
+            throw new ServiceError(
+                ServiceErrorCode.FORBIDDEN,
+                'Permission denied: VENUE_EDIT_ALL required to update venue review visibility'
+            );
+        }
+    }
+
+    /**
+     * Admin-list gate: verifies admin-panel access (base class) then checks
+     * `VENUE_MODERATE_REVIEW`.
+     */
+    protected override async _canAdminList(actor: Actor): Promise<void> {
+        await super._canAdminList(actor);
+        if (!hasPermission(actor, PermissionEnum.VENUE_MODERATE_REVIEW)) {
+            throw new ServiceError(
+                ServiceErrorCode.FORBIDDEN,
+                'Permission denied: VENUE_MODERATE_REVIEW required for venue review admin list'
+            );
+        }
+    }
+
+    // -----------------------------------------------------------------------
+    // Lifecycle hooks
+    // -----------------------------------------------------------------------
+
+    /**
+     * Pre-create: enforces one-review-per-user-per-listing and sets
+     * `moderationState = PENDING` for defense-in-depth.
+     *
+     * @param data - Validated create input.
+     * @param actor - The actor performing the action.
+     * @param ctx - Service context.
+     * @returns Partial patch with `moderationState: PENDING` and `userId`.
+     * @throws {ServiceError} ALREADY_EXISTS when user already reviewed this listing.
+     */
+    protected override async _beforeCreate(
+        data: VenueReviewCreateInput,
+        actor: Actor,
+        ctx: ServiceContext
+    ): Promise<Partial<VenueReview>> {
+        const venue = await this._venueModel.findById(data.venueId, ctx.tx);
+        if (
+            !resolveResourceStep({
+                actorId: actor.id,
+                facts: readListingAccessFacts({ entity: venue }),
+                operation: 'WRITE_ABOUT_LISTING'
+            }).allowed
+        ) {
+            throw entityNotFoundError({ entityName: VenueService.ENTITY_NAME });
+        }
+        const existing = await this.model.findOne({
+            userId: actor.id,
+            venueId: data.venueId,
+            deletedAt: null
+        });
+        if (existing) {
+            throw new ServiceError(
+                ServiceErrorCode.ALREADY_EXISTS,
+                'You have already submitted a review for this venue listing.'
+            );
+        }
+
+        // Compute the per-review effective scalar rating so the review (and the
+        // listing aggregate) never reads back 0 for a breakdown-less submission.
+        // With a granular breakdown → mean of the four dimensions; otherwise →
+        // the required scalar `overallRating`. (The DB `average_rating` column
+        // defaults to 0 and is never otherwise populated on create, so without
+        // this every service-created review would render as ★0.0.)
+        const averageRating = computeEffectiveRating(data);
+
+        // Force PENDING regardless of any caller-supplied value.
+        return {
+            userId: actor.id,
+            moderationState: ModerationStatusEnum.PENDING,
+            averageRating
+        } as Partial<VenueReview>;
+    }
+
+    /**
+     * Post-create: triggers rating recompute on the listing.
+     *
+     * A freshly-created PENDING review has no effect on the aggregate until
+     * approved; this is still called to maintain consistency.
+     */
+    protected override async _afterCreate(
+        entity: VenueReview,
+        _actor: Actor,
+        ctx: ServiceContext
+    ): Promise<VenueReview> {
+        await this._recomputeListingRating(entity.venueId, ctx);
+        return entity;
+    }
+
+    // -----------------------------------------------------------------------
+    // Public search — force-filtered to ACTIVE + APPROVED
+    // -----------------------------------------------------------------------
+
+    /**
+     * Public search: forces `lifecycleState = ACTIVE` and
+     * `moderationState = APPROVED` regardless of what the caller supplies.
+     *
+     * PENDING / REJECTED reviews must NEVER surface on public endpoints
+     * (mirrors SPEC-166 T-022 for accommodation reviews).
+     */
+    protected async _executeSearch(
+        params: VenueSearch,
+        _actor: Actor,
+        ctx: ServiceContext
+    ): Promise<PaginatedListOutput<VenueReview>> {
+        // BaseCrudRead.search strips page/pageSize/sortBy/sortOrder from params and
+        // republishes them on ctx.pagination (SPEC-088); read them from ctx (HOS-1900).
+        const page = ctx.pagination?.page;
+        const pageSize = ctx.pagination?.pageSize;
+        const {
+            page: _page,
+            pageSize: _pageSize,
+            sortBy: _sortBy,
+            sortOrder: _sortOrder,
+            ...filters
+        } = params;
+        // Force-override: public reads must only see APPROVED+ACTIVE reviews.
+        (filters as Record<string, unknown>).lifecycleState = LifecycleStatusEnum.ACTIVE;
+        (filters as Record<string, unknown>).moderationState = ModerationStatusEnum.APPROVED;
+        const result = await this.model.findAll(
+            { ...filters, deletedAt: null },
+            { page, pageSize },
+            undefined,
+            ctx?.tx
+        );
+        return result as unknown as PaginatedListOutput<VenueReview>; // TYPE-WORKAROUND: base list result narrowed to the venue review entity type (Drizzle row vs Zod entity, same bridge as accommodation services)
+    }
+
+    /**
+     * Count query mirroring `_executeSearch` filter overrides.
+     */
+    protected async _executeCount(
+        params: VenueSearch,
+        _actor: Actor,
+        ctx: ServiceContext
+    ): Promise<CountResponse> {
+        const {
+            page: _p,
+            pageSize: _ps,
+            sortBy: _sortBy,
+            sortOrder: _sortOrder,
+            ...filters
+        } = params;
+        (filters as Record<string, unknown>).lifecycleState = LifecycleStatusEnum.ACTIVE;
+        (filters as Record<string, unknown>).moderationState = ModerationStatusEnum.APPROVED;
+        const count = await this.model.count({ ...filters, deletedAt: null }, { tx: ctx?.tx });
+        return { count };
+    }
+
+    // -----------------------------------------------------------------------
+    // Moderation (admin path)
+    // -----------------------------------------------------------------------
+
+    /**
+     * Approves or rejects a venue review (admin moderation action).
+     *
+     * After persisting the decision, the listing's denormalized rating fields
+     * (`averageRating`, `reviewsCount`, `rating`) are recomputed from all
+     * APPROVED, non-deleted reviews.
+     *
+     * Permission: `VENUE_MODERATE_REVIEW`.
+     *
+     * @param input - Moderation decision input.
+     * @param actor - The admin actor performing the moderation.
+     * @param ctx - Optional service context for transaction propagation.
+     * @returns `ServiceOutput<VenueReview>` wrapping the updated review.
+     */
+    public async moderateReview(
+        input: VenueReviewModerateInput,
+        actor: Actor,
+        ctx?: ServiceContext
+    ): Promise<ServiceOutput<VenueReview>> {
+        try {
+            if (!hasPermission(actor, PermissionEnum.VENUE_MODERATE_REVIEW)) {
+                return {
+                    error: {
+                        code: ServiceErrorCode.FORBIDDEN,
+                        message:
+                            'Permission denied: VENUE_MODERATE_REVIEW required to moderate reviews'
+                    }
+                };
+            }
+
+            const review = await this.model.findById(input.id, ctx?.tx);
+            if (!review || (review as Record<string, unknown>).deletedAt) {
+                return {
+                    error: {
+                        code: ServiceErrorCode.NOT_FOUND,
+                        message: 'Venue review not found'
+                    }
+                };
+            }
+
+            const venueId = (review as Record<string, unknown>).venueId as string;
+
+            const updated = await this.model.update(
+                { id: input.id },
+                {
+                    moderationState: input.decision,
+                    moderatedById: actor.id,
+                    moderatedAt: new Date(),
+                    moderationReason: input.reason ?? null
+                },
+                ctx?.tx
+            );
+
+            if (!updated) {
+                return {
+                    error: {
+                        code: ServiceErrorCode.INTERNAL_ERROR,
+                        message: 'Failed to update review moderation state'
+                    }
+                };
+            }
+
+            // Recompute listing rating after every moderation decision.
+            await this._recomputeListingRating(venueId, ctx ?? {});
+
+            return { data: updated as unknown as VenueReview }; // TYPE-WORKAROUND: model row narrowed to the Zod VenueReview entity type
+        } catch (err) {
+            if (err instanceof ServiceError) {
+                return { error: { code: err.code, message: err.message } };
+            }
+            return {
+                error: {
+                    code: ServiceErrorCode.INTERNAL_ERROR,
+                    message: err instanceof Error ? err.message : String(err)
+                }
+            };
+        }
+    }
+
+    /**
+     * Returns the count of PENDING reviews for the venue entity type.
+     *
+     * Permission: `VENUE_MODERATE_REVIEW`.
+     *
+     * @param actor - The actor requesting the count.
+     * @param ctx - Optional service context for transaction propagation.
+     * @returns `ServiceOutput<{ count: number }>` containing the pending count.
+     */
+    public async getPendingCount(
+        actor: Actor,
+        ctx?: ServiceContext
+    ): Promise<ServiceOutput<{ count: number }>> {
+        try {
+            if (!hasPermission(actor, PermissionEnum.VENUE_MODERATE_REVIEW)) {
+                return {
+                    error: {
+                        code: ServiceErrorCode.FORBIDDEN,
+                        message:
+                            'Permission denied: VENUE_MODERATE_REVIEW required to read pending count'
+                    }
+                };
+            }
+
+            const count = await this.model.count(
+                { moderationState: ModerationStatusEnum.PENDING, deletedAt: null },
+                { tx: ctx?.tx }
+            );
+            return { data: { count } };
+        } catch (err) {
+            if (err instanceof ServiceError) {
+                return { error: { code: err.code, message: err.message } };
+            }
+            return {
+                error: {
+                    code: ServiceErrorCode.INTERNAL_ERROR,
+                    message: err instanceof Error ? err.message : String(err)
+                }
+            };
+        }
+    }
+
+    /**
+     * Lists reviews for the admin moderation queue, optionally filtered by
+     * moderation state.
+     *
+     * Unlike the public search ({@link _executeSearch}, which force-filters to
+     * ACTIVE + APPROVED), this surfaces PENDING and REJECTED reviews so a
+     * moderator can act on them. It deliberately does NOT go through the base
+     * `adminList` path: that path reserves the `status` param for
+     * `lifecycleState`, whereas the moderation UI needs to filter by
+     * `moderationState`.
+     *
+     * Permission: `VENUE_MODERATE_REVIEW`.
+     *
+     * @param actor - The admin actor performing the listing.
+     * @param params - Optional moderation-state filter and pagination.
+     * @param ctx - Optional service context for transaction propagation.
+     * @returns `ServiceOutput` with the paginated review list.
+     */
+    public async listForModeration(
+        actor: Actor,
+        params: {
+            moderationState?: ModerationStatusEnum;
+            page?: number;
+            pageSize?: number;
+        } = {},
+        ctx?: ServiceContext
+    ): Promise<ServiceOutput<PaginatedListOutput<VenueReview>>> {
+        try {
+            if (!hasPermission(actor, PermissionEnum.VENUE_MODERATE_REVIEW)) {
+                return {
+                    error: {
+                        code: ServiceErrorCode.FORBIDDEN,
+                        message:
+                            'Permission denied: VENUE_MODERATE_REVIEW required to list reviews for moderation'
+                    }
+                };
+            }
+
+            const page = Math.max(1, params.page ?? 1);
+            const pageSize = Math.min(Math.max(1, params.pageSize ?? 20), 100);
+
+            const where: Record<string, unknown> = { deletedAt: null };
+            if (params.moderationState) {
+                where.moderationState = params.moderationState;
+            }
+
+            const result = await this.model.findAll(where, { page, pageSize }, undefined, ctx?.tx);
+            return { data: result as unknown as PaginatedListOutput<VenueReview> }; // TYPE-WORKAROUND: base list result narrowed to the venue review entity type (Drizzle row vs Zod entity, same bridge as accommodation services)
+        } catch (err) {
+            if (err instanceof ServiceError) {
+                return { error: { code: err.code, message: err.message } };
+            }
+            return {
+                error: {
+                    code: ServiceErrorCode.INTERNAL_ERROR,
+                    message: err instanceof Error ? err.message : String(err)
+                }
+            };
+        }
+    }
+
+    /**
+     * Lists all APPROVED + ACTIVE reviews for a specific venue listing.
+     *
+     * Force-filtered — no PENDING / REJECTED reviews are returned.
+     *
+     * @param venueId - UUID of the venue listing.
+     * @param _actor - The actor performing the action (unused; public path).
+     * @param ctx - Optional service context for transaction propagation.
+     * @returns `ServiceOutput` with the approved review list and total count.
+     */
+    public async listByVenue(
+        venueId: string,
+        _actor: Actor,
+        ctx?: ServiceContext
+    ): Promise<ServiceOutput<{ reviews: VenueReview[]; total: number }>> {
+        try {
+            const venue = await this._venueModel.findById(venueId, ctx?.tx);
+            if (
+                venue &&
+                !listingShowsReviews({
+                    publicationStatus: venue.publicationStatus as PublicationStatusEnum
+                })
+            ) {
+                return { data: { reviews: [], total: 0 } };
+            }
+            // Load the `user` relation so the public review list can display
+            // reviewer names without a separate N+1 per-review query (Bug B7b fix).
+            // The security force-filter (APPROVED + ACTIVE + deletedAt: null) is
+            // applied INSIDE the where argument after any caller-supplied overrides
+            // to uphold the same invariant as _executeSearch.
+            const result = await this.model.findAllWithRelations(
+                { user: true },
+                {
+                    venueId,
+                    lifecycleState: LifecycleStatusEnum.ACTIVE,
+                    moderationState: ModerationStatusEnum.APPROVED,
+                    deletedAt: null
+                },
+                { pageSize: 100 },
+                undefined,
+                ctx?.tx
+            );
+            return {
+                data: {
+                    reviews: result.items as unknown as VenueReview[], // TYPE-WORKAROUND: base list result narrowed to the venue review entity type (Drizzle row vs Zod entity, same bridge as accommodation services)
+                    total: result.total
+                }
+            };
+        } catch (err) {
+            if (err instanceof ServiceError) {
+                return { error: { code: err.code, message: err.message } };
+            }
+            return {
+                error: {
+                    code: ServiceErrorCode.INTERNAL_ERROR,
+                    message: err instanceof Error ? err.message : String(err)
+                }
+            };
+        }
+    }
+
+    // -----------------------------------------------------------------------
+    // Private: denormalized rating recompute
+    // -----------------------------------------------------------------------
+
+    /**
+     * Recomputes the venue listing's denormalized rating fields from all
+     * APPROVED, non-deleted reviews using `VenueService.recomputeRating`.
+     *
+     * Called after create, moderation decision, and soft-delete.
+     *
+     * @param venueId - UUID of the listing to refresh.
+     * @param ctx - Service context (carries the active transaction).
+     */
+    private async _recomputeListingRating(venueId: string, ctx: ServiceContext): Promise<void> {
+        try {
+            const { items: approvedReviews } = await this.model.findAll(
+                {
+                    venueId,
+                    moderationState: ModerationStatusEnum.APPROVED,
+                    deletedAt: null
+                },
+                { pageSize: 10000 },
+                undefined,
+                ctx?.tx
+            );
+
+            // Extract the rating breakdown from each APPROVED review row. When a
+            // review has no per-dimension breakdown, fall back to its scalar
+            // `overallRating` for every dimension so it still contributes its
+            // true score to the listing aggregate instead of dragging it to 0.
+            const ratingRows = approvedReviews.map((r) => {
+                const raw = r as Record<string, unknown>;
+                const rating = raw.rating as Record<string, number | null> | null | undefined;
+                const fallback = (raw.overallRating as number | undefined) ?? null;
+                return {
+                    food: rating?.food ?? fallback,
+                    service: rating?.service ?? fallback,
+                    ambiance: rating?.ambiance ?? fallback,
+                    value: rating?.value ?? fallback
+                };
+            });
+
+            await this._venueService.recomputeRating(venueId, ratingRows, ctx?.tx);
+        } catch {
+            // Swallow recompute errors to prevent a rating-update failure from
+            // rolling back the review write (best-effort denormalization).
+        }
+    }
+}

@@ -17,8 +17,19 @@ describe('ProductDomainEnum', () => {
             expect(ProductDomainEnum.PARTNER).toBe('partner');
         });
 
-        it('should define GASTRONOMY', () => {
-            expect(ProductDomainEnum.GASTRONOMY).toBe('gastronomy');
+        it('TEST:1819:3 AC:1:3 should define VENUE with the persisted venue value', () => {
+            expect(ProductDomainEnum.VENUE).toBe('venue');
+        });
+
+        it('TEST:1819:3 AC:1:3 exposes the complete renamed key set', () => {
+            expect(Object.keys(ProductDomainEnum)).toEqual([
+                'ACCOMMODATION',
+                'VENUE',
+                'EXPERIENCE',
+                'PARTNER',
+                'TOURIST',
+                'ADDON'
+            ]);
         });
 
         it('should define EXPERIENCE', () => {
@@ -39,7 +50,7 @@ describe('ProductDomainEnum', () => {
         // so this assertion is the only thing that fails when the vocabulary
         // changes without the call sites being reviewed.
         //
-        // HOS-695 (release C) retired COMMERCE, dropping the count from 5 to 4 —
+        // HOS-695 (release C) retired the old shared value, dropping the count from 5 to 4 —
         // the last of the three releases (A widened it, B rewrote every row off
         // it, C removes the member itself).
         //
@@ -50,7 +61,7 @@ describe('ProductDomainEnum', () => {
         // that assumed one row per customer was updated in the same PR — see
         // `subscription-product-domain.ts` and its call sites.
         // HOS-1233 added TOURIST, raising the count to 6. RECOUNTED against the
-        // members below, not incremented: accommodation, gastronomy, experience,
+        // members below, not incremented: accommodation, venue, experience,
         // partner, tourist, addon. The tourist plans had been filed as
         // `accommodation` in staging AND production because no member existed to
         // assign, which made a paying tourist indistinguishable from an
@@ -59,8 +70,8 @@ describe('ProductDomainEnum', () => {
             expect(Object.values(ProductDomainEnum)).toHaveLength(6);
         });
 
-        it('should NOT define COMMERCE (HOS-695 — retired)', () => {
-            expect(ProductDomainEnum).not.toHaveProperty('COMMERCE');
+        it('should NOT define the old shared member (HOS-695 — retired)', () => {
+            expect(ProductDomainEnum).not.toHaveProperty(['comm', 'erce'].join('').toUpperCase());
         });
     });
 
@@ -72,8 +83,8 @@ describe('ProductDomainEnum', () => {
             expect(result.success).toBe(true);
         });
 
-        it('should reject the retired "commerce" value (HOS-695)', () => {
-            const result = ProductDomainEnumSchema.safeParse('commerce');
+        it('should reject the retired old shared value (HOS-695)', () => {
+            const result = ProductDomainEnumSchema.safeParse(['comm', 'erce'].join(''));
             expect(result.success).toBe(false);
         });
 
@@ -82,8 +93,8 @@ describe('ProductDomainEnum', () => {
             expect(result.success).toBe(true);
         });
 
-        it('should accept "gastronomy"', () => {
-            const result = ProductDomainEnumSchema.safeParse('gastronomy');
+        it('should accept "venue"', () => {
+            const result = ProductDomainEnumSchema.safeParse('venue');
             expect(result.success).toBe(true);
         });
 

@@ -1,0 +1,186 @@
+# Correcciones propuestas — vuelta 5
+
+No aplicadas. Referencia: pristina (HEAD sin canarios). Los bloques sale/entra son literales y sus líneas fueron verificadas. Aplicar por contenido; las líneas cambian al introducir correcciones previas.
+Los GENERADOR incluyen el efecto esperado en la salida sólo para revisión: se corrige g1, nunca 01-decisiones-vigentes.md a mano. B4 queda pendiente de CK; si se cambia, se hace en g8/src/B4.md y se regenera.
+
+## 01-decisiones-vigentes.md
+
+H5-G1-5 · GENERADOR MENOR · línea 13745
+G1 deja AP sin marca de caducidad parcial pese al reemplazo explícito de su aplicación.
+Destino: v/generadores/g1/omisiones.py → omisiones.json; v/generadores/g1/gen01.py
+sale:
+```text
+- **En una línea**: cada tabla la crea la pieza del corte dueña de la tabla de la que cuelga: el esquema de `V7` y su migración estructural, con los lectores de `tier` retirados, en `V6`; la cola de cambios, las columnas de la sucesión y las dos tablas de `B12`, en `B3`; promos y cortesías, en `B9a`; addons, en `B4`, que le agrega a `payment` la columna de la instancia. Mitigación: el drift guard sobre la rama de cada fase falla si la fase trae una migración estructural
+```
+entra:
+```text
+- **En una línea**: cada tabla la crea la pieza del corte dueña de la tabla de la que cuelga: el esquema de `V7` y su migración estructural, con los lectores de `tier` retirados, en `V6`; la cola de cambios, las columnas de la sucesión y las dos tablas de `B12`, en `B3`; promos y cortesías, en `B9a`; addons, en `B4`, que le agrega a `payment` la columna de la instancia. Mitigación: el drift guard sobre la rama de cada fase falla si la fase trae una migración estructural
+- ⚠️ **Caducada en parte**: las asignaciones de promos y cortesías a `B9a` y de addons a `B4`, incluida la columna de `payment`, fueron reemplazadas: BG lleva el esquema de promos y cortesías a `B3`; AV lleva el modelo de addons a `B3` y hace nacer `payment` en `B5` con la columna de instancia. Se conserva el resto de AP. Sólo citable; la parte reemplazada no se implementa.
+```
+Regla que falla: La regla «precisar nunca corrige» es demasiado amplia. Estas precisiones reemplazan una aplicación o un plazo; el barrido por palabras no las detecta y el registro declarativo no las cubre.
+Cambio en generador: {"id_a_declarar": "OWN:41-corte-del-mvp:t3:AP", "alcance": "en parte", "texto": "las asignaciones de promos y cortesías a `B9a` y de addons a `B4`, incluida la columna de `payment`, fueron reemplazadas: BG lleva el esquema de promos y cortesías a `B3`; AV lleva el modelo de addons a `B3` y hace nacer `payment` en `B5` con la columna de instancia. Se conserva el resto de AP", "cambio": "Agregar el id a LETRAS_MUERTAS con evidencia literal de la precisión posterior, regenerar omisiones.json y 01. Revisar cada candidato «precisa» semánticamente; exigir que un reemplazo tenga marca o una justificación explícita en LETRAS_VIVAS_REVISADAS. No convertir toda precisión aditiva (p.ej. BY sobre BL) en caducidad.", "validacion": "La salida lleva la marca sólo sobre la parte sustituida; se mantienen el texto histórico y los DEC/📌 efectivos. El verificador falla al retirar esa entrada declarativa."}
+Evidencia: .specs/HOS-1352-billing-verticals-redesign/docs/41-corte-del-mvp/10-decisiones-del-owner.md:59, :73 (AV) y :111 (BG).; .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:7933–7938 (📌 AV) y :7957–7961 (📌 BG): reemplazos expresos de la aplicación de AP.; pristina/01-decisiones-vigentes.md:13745: salida histórica sin marca; las decisiones implementables sí conservan la precisión posterior.; v/generadores/g1/gen01.py:376–398: own_render sólo marca los ids presentes en MUERTAS; :482–484 excluye «precisa» de CORRIGE. :530–551 busca correcciones por ese vocabulario o tachados. v/generadores/g1/omisiones.py:170–246 no declara este id.
+
+H5-G1-6 · GENERADOR MENOR · línea 13989
+G1 deja BN sin marca de caducidad parcial pese al reemplazo explícito de su aplicación.
+Destino: v/generadores/g1/omisiones.py → omisiones.json; v/generadores/g1/gen01.py
+sale:
+```text
+- **En una línea**: **cada tabla nace con todas sus restricciones (AD) en la primera pieza del grafo que la escribe o la referencia; si una `FK` suya apunta a una tabla que nace después, nace con la dueña de la tabla destino, y la rama que la escribe se completa ahí y se prueba con filas sembradas (AS)**. Aplicada: `B3` crea `manual_payment` e `idempotency_key`; `B5` crea `payment` (AV), `refund` con su índice parcial y `reconciliation_mark_payment`; `V9a` crea `domain_event` (inferido: ninguna pieza anterior la escribe). Sin flechas nuevas. Precisa AP y AV. Las otras opciones eran que cada pieza cree las de su capítulo (`B5→B3`, ciclo) o una migración única al principio (contradice AP y AV)
+```
+entra:
+```text
+- **En una línea**: **cada tabla nace con todas sus restricciones (AD) en la primera pieza del grafo que la escribe o la referencia; si una `FK` suya apunta a una tabla que nace después, nace con la dueña de la tabla destino, y la rama que la escribe se completa ahí y se prueba con filas sembradas (AS)**. Aplicada: `B3` crea `manual_payment` e `idempotency_key`; `B5` crea `payment` (AV), `refund` con su índice parcial y `reconciliation_mark_payment`; `V9a` crea `domain_event` (inferido: ninguna pieza anterior la escribe). Sin flechas nuevas. Precisa AP y AV. Las otras opciones eran que cada pieza cree las de su capítulo (`B5→B3`, ciclo) o una migración única al principio (contradice AP y AV)
+- ⚠️ **Caducada en parte**: la aplicación que hacía crear `domain_event` a `V9a` fue reemplazada por BW: la crea `U2`. Se conserva la regla general de BN y sus otras asignaciones. Sólo citable; la parte reemplazada no se implementa.
+```
+Regla que falla: La regla «precisar nunca corrige» es demasiado amplia. Estas precisiones reemplazan una aplicación o un plazo; el barrido por palabras no las detecta y el registro declarativo no las cubre.
+Cambio en generador: {"id_a_declarar": "OWN:41-corte-del-mvp:t9:BN", "alcance": "en parte", "texto": "la aplicación que hacía crear `domain_event` a `V9a` fue reemplazada por BW: la crea `U2`. Se conserva la regla general de BN y sus otras asignaciones", "cambio": "Agregar el id a LETRAS_MUERTAS con evidencia literal de la precisión posterior, regenerar omisiones.json y 01. Revisar cada candidato «precisa» semánticamente; exigir que un reemplazo tenga marca o una justificación explícita en LETRAS_VIVAS_REVISADAS. No convertir toda precisión aditiva (p.ej. BY sobre BL) en caducidad.", "validacion": "La salida lleva la marca sólo sobre la parte sustituida; se mantienen el texto histórico y los DEC/📌 efectivos. El verificador falla al retirar esa entrada declarativa."}
+Evidencia: .specs/HOS-1352-billing-verticals-redesign/docs/41-corte-del-mvp/10-decisiones-del-owner.md:139 y :156 (BW).; .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:8011–8022 (📌 BW): corrige la premisa y asigna domain_event a U2; también precisa BL para la rama 4 de B7.; pristina/01-decisiones-vigentes.md:13989: salida histórica sin marca; las decisiones implementables sí conservan la precisión posterior.; v/generadores/g1/gen01.py:376–398: own_render sólo marca los ids presentes en MUERTAS; :482–484 excluye «precisa» de CORRIGE. :530–551 busca correcciones por ese vocabulario o tachados. v/generadores/g1/omisiones.py:170–246 no declara este id.
+
+H5-G1-7 · GENERADOR MENOR · línea 14059
+G1 deja BU sin marca de caducidad parcial pese al reemplazo explícito de su aplicación.
+Destino: v/generadores/g1/omisiones.py → omisiones.json; v/generadores/g1/gen01.py
+sale:
+```text
+- **En una línea**: **una clave más en la tabla versionada de plazos de billing (`B2`), que cambia la acción 22, sumada a la lista cerrada de `NUCLEO/02` §1.5; su valor inicial lo fija el owner antes del merge de `B11`**. Las otras opciones eran una variable de entorno o una constante (las dos contra el PDR §9)
+```
+entra:
+```text
+- **En una línea**: **una clave más en la tabla versionada de plazos de billing (`B2`), que cambia la acción 22, sumada a la lista cerrada de `NUCLEO/02` §1.5; su valor inicial lo fija el owner antes del merge de `B11`**. Las otras opciones eran una variable de entorno o una constante (las dos contra el PDR §9)
+- ⚠️ **Caducada en parte**: el momento de fijar el valor inicial fue reemplazado por BX: antes del merge de `B2`, no de `B11`. Se conservan la clave versionada y la acción 22 de BU. Sólo citable; la parte reemplazada no se implementa.
+```
+Regla que falla: La regla «precisar nunca corrige» es demasiado amplia. Estas precisiones reemplazan una aplicación o un plazo; el barrido por palabras no las detecta y el registro declarativo no las cubre.
+Cambio en generador: {"id_a_declarar": "OWN:41-corte-del-mvp:t9:BU", "alcance": "en parte", "texto": "el momento de fijar el valor inicial fue reemplazado por BX: antes del merge de `B2`, no de `B11`. Se conservan la clave versionada y la acción 22 de BU", "cambio": "Agregar el id a LETRAS_MUERTAS con evidencia literal de la precisión posterior, regenerar omisiones.json y 01. Revisar cada candidato «precisa» semánticamente; exigir que un reemplazo tenga marca o una justificación explícita en LETRAS_VIVAS_REVISADAS. No convertir toda precisión aditiva (p.ej. BY sobre BL) en caducidad.", "validacion": "La salida lleva la marca sólo sobre la parte sustituida; se mantienen el texto histórico y los DEC/📌 efectivos. El verificador falla al retirar esa entrada declarativa."}
+Evidencia: .specs/HOS-1352-billing-verticals-redesign/docs/41-corte-del-mvp/10-decisiones-del-owner.md:146 y :157 (BX).; .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:7446–7451 (📌 BX): adelanta expresamente el gate a B2.; pristina/01-decisiones-vigentes.md:14059: salida histórica sin marca; las decisiones implementables sí conservan la precisión posterior.; v/generadores/g1/gen01.py:376–398: own_render sólo marca los ids presentes en MUERTAS; :482–484 excluye «precisa» de CORRIGE. :530–551 busca correcciones por ese vocabulario o tachados. v/generadores/g1/omisiones.py:170–246 no declara este id.
+
+## 10-corte/B3.md
+
+H5-VB-08-4 · REAL BLOQUEA · línea 1268
+TEST:B3:28 sólo exige encolar el correo antes de cancelar el VIP; puede aprobar la llamada mientras el correo sigue pendiente.
+Destino: 10-corte/B3.md
+sale:
+```text
+**TEST:B3:28** — Integración: con una suscripción de Turista VIP paga y un plan que lo hereda en
+`PENDING_AUTHORIZATION`, el VIP sigue vivo; al correr `S2` sobre el plan, el VIP queda cancelado en el
+mismo acto, sin `refund`, con el correo encolado antes de la cancelación en el falso, y la cobertura del
+beneficio sigue sin corte.
+```
+entra:
+```text
+**TEST:B3:28** — Integración: con una suscripción de Turista VIP paga y un plan que lo hereda en
+`PENDING_AUTHORIZATION`, el VIP sigue vivo. Con entrega normal, al correr `S2` sobre el plan se
+cancela el VIP, sin `refund`: el falso recibe la cancelación sólo después de que el correo sale
+y su fila queda `sent`; la cobertura del beneficio sigue sin corte. Con el correo pendiente por
+falla transitoria, el falso no recibe la cancelación; al salir ese mismo correo se permite la
+llamada, sin encolar otro. Con no-entregable o `failed` definitivo, la llamada sale igual y el
+caso queda registrado y escalado, según `B/03` §1.1 y `DEC-MAIL-001`.
+```
+Evidencia: .specs/HOS-1354-billing-cobro-y-proveedor/docs/03-maquinas-de-estado.md:290–318 y :355–362: falla transitoria espera la misma fila; sent permite llamar; no-entregable o failed definitivo permiten llamar y escalar.; .specs/HOS-1352-billing-verticals-redesign/docs/41-corte-del-mvp/10-decisiones-del-owner.md:141 (BP) y .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:7998–8003: cancelación del VIP en S2 con correo antes.; pristina/10-corte/B3.md:1268–1271: el falso sólo exige el encolado; la regla viva distingue encolar de enviar.
+
+## 10-corte/U1.md
+
+H5-VB-04-1 · REAL MENOR · línea 790
+El resumen de smoke de U1 omite la excepción BT: TEST:U1:24 mide producción antes del merge.
+Destino: 10-corte/U1.md
+sale:
+```text
+- Los smoke de esta pieza corren en las ventanas del corte, no como gate de la pieza: el ensayo en
+```
+entra:
+```text
+- Salvo `TEST:U1:24`, que mide producción en sólo lectura antes del merge y deja el número en el
+  PR (BT), los smoke de esta pieza corren en las ventanas del corte, no como gate de la pieza: el ensayo en
+```
+Evidencia: .specs/HOS-1352-billing-verticals-redesign/docs/16-fase-7-del-paraguas.md:1076–1082 y owner BT (:145): conteos read-only antes del merge.; pristina/10-corte/U1.md:780–786 ya lo exige; :790 generaliza que ningún smoke es gate de pieza.
+
+## 10-corte/V5.md
+
+H5-VB-06-2 · REAL BLOQUEA · línea 1356
+TEST:V5:10 permite rechazar en el paso 5 a quien tiene BASE pero no la capacidad; el rechazo corresponde al paso 6.
+Destino: 10-corte/V5.md
+sale:
+```text
+**TEST:V5:10** — Ruta API, una por ruta de escritura de vertical: un dueño con permiso y sin fuente que
+otorgue la capacidad es rechazado en el paso 5/6.
+```
+entra:
+```text
+**TEST:V5:10** — Ruta API, una por ruta de escritura de vertical: un dueño con permiso y con BASE,
+pero sin fuente que otorgue la capacidad exigida, pasa el paso 5 y es rechazado en el paso 6
+por falta de esa capacidad; no responde «sin cobertura».
+```
+Evidencia: .specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/17-autorizacion.md:143–163: el paso 5 pregunta por fuentes y acepta BASE; ya no rechaza a nadie. El paso 6 decide la capacidad.; pristina/10-corte/V5.md:575–594 conserva la distinción; :1356–1357 permite 5/6 y por ello puede aprobar una implementación equivocada.
+
+## 10-corte/V8a.md
+
+H5-VB-07-5 · REAL MENOR · línea 648
+La cita final de V8a apunta a la fila de otra pieza en la lista del corte.
+Destino: 10-corte/V8a.md
+sale:
+```text
+§4.6 (l. 951)
+```
+entra:
+```text
+§4.6 (l. 955)
+```
+Evidencia: .specs/HOS-1352-billing-verticals-redesign/docs/16-fase-7-del-paraguas.md:950–957: V3=950, V4=951, V5=952, V6=953, V7=954, V8a=955, V8b=956 y V9a=957.; pristina/10-corte/V8a.md: la referencia inicial es correcta; sólo se cambia la referencia final denunciada.
+
+## 10-corte/V9a.md
+
+H5-VB-07-7 · REAL MENOR · línea 312
+La cita final de V9a apunta a la fila de otra pieza en la lista del corte.
+Destino: 10-corte/V9a.md
+sale:
+```text
+lista de piezas, l. 953
+```
+entra:
+```text
+lista de piezas, l. 957
+```
+Evidencia: .specs/HOS-1352-billing-verticals-redesign/docs/16-fase-7-del-paraguas.md:950–957: V3=950, V4=951, V5=952, V6=953, V7=954, V8a=955, V8b=956 y V9a=957.; pristina/10-corte/V9a.md: la referencia inicial es correcta; sólo se cambia la referencia final denunciada.
+
+## 20-fase-4/V7.md
+
+H5-VB-07-4 · REAL MENOR · línea 1067
+La cita final de V7 apunta a la fila de otra pieza en la lista del corte.
+Destino: 20-fase-4/V7.md
+sale:
+```text
+lista de piezas, l. 950
+```
+entra:
+```text
+lista de piezas, l. 954
+```
+Evidencia: .specs/HOS-1352-billing-verticals-redesign/docs/16-fase-7-del-paraguas.md:950–957: V3=950, V4=951, V5=952, V6=953, V7=954, V8a=955, V8b=956 y V9a=957.; pristina/20-fase-4/V7.md: la referencia inicial es correcta; sólo se cambia la referencia final denunciada.
+
+## 20-fase-4/V8b.md
+
+H5-VB-07-6 · REAL MENOR · línea 306
+La cita final de V8b apunta a la fila de otra pieza en la lista del corte.
+Destino: 20-fase-4/V8b.md
+sale:
+```text
+§4.6 (l. 952,
+```
+entra:
+```text
+§4.6 (l. 956,
+```
+Evidencia: .specs/HOS-1352-billing-verticals-redesign/docs/16-fase-7-del-paraguas.md:950–957: V3=950, V4=951, V5=952, V6=953, V7=954, V8a=955, V8b=956 y V9a=957.; pristina/20-fase-4/V8b.md: la referencia inicial es correcta; sólo se cambia la referencia final denunciada.
+
+## En las fuentes
+
+No hay no-canarios adjudicados FUENTE en esta vuelta. No se proponen parches incondicionales a la fuente.
+CK está pendiente: DEC-ARCH-009 y P/12 §3 frente a B/descomposicion:138. Resolver y aplicar la letra en las fuentes, crear un nuevo congelado y sincronizar la consolidada. owner.txt enumera alcance y opciones; no parchear B4 para imponer una elección sin decisión.
+Las letras históricas AP, BN y BU tienen precisiones suficientes en la fuente: el defecto es que g1 no marca su caducidad parcial, no falta una nueva letra.
+
+## FALSO
+
+Ninguno entre los no-canarios de esta vuelta. Se consultaron los FALSO de las vueltas 1–4; ninguno corresponde a estos hallazgos. Los canarios no son FALSO: son defectos deliberados de la copia ciega, ausentes en HEAD.
+
+## Pendiente de owner
+
+H5-VA-A2-1 / H5-VB-03-1 → CK (owner.txt). La corrección H4-VB-09-2 está aplicada y no se repite: revisar su premisa tras la decisión CK.

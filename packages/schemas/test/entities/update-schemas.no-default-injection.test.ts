@@ -155,8 +155,7 @@ const CASES: readonly UpdateSchemaCase[] = [
             'banned',
             'permissions',
             'profileCompleted',
-            'setPasswordPrompted',
-            'serviceSuspended'
+            'setPasswordPrompted'
         ]
     },
     {

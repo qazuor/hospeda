@@ -13,7 +13,7 @@
  *
  * ## Design decisions
  * - Extends `BaseService` (not `BaseCrudService`), mirroring
- *   `CommerceLeadService`: create is public, list/mark-handled are
+ *   the retired owner-lead service: create is public, list/mark-handled are
  *   admin-only workflow actions rather than standard CRUD.
  * - Permission checks use `ALLIANCE_LEAD_*` `PermissionEnum` values only;
  *   no `RoleEnum` checks (HOS-277 §7.5).
@@ -21,7 +21,7 @@
  *   row: the submitting actor is anonymous/public (`createGuestActor()`),
  *   whose sentinel id is not a real `users` row, so writing it would violate
  *   the table's `created_by_id` → `users.id` FK. The column stays NULL for
- *   every public submission, same as `commerce_leads`' `createdById`-less
+ *   every public submission, same as the retired lead table's `createdById`-less
  *   design achieves by omitting the column entirely (`alliance_leads` keeps
  *   it, per HOS-277 §7.2's full BaseModel audit convention, but it is only
  *   ever populated for admin-driven mutations like `markHandled`).
@@ -39,8 +39,6 @@ import {
     type AllianceLeadKind,
     AllianceLeadMarkHandledSchema,
     AllianceLeadSubmissionSchema,
-    type PartnerTierEnum,
-    PartnerTierEnumSchema,
     PermissionEnum,
     RoleEnum,
     ServiceErrorCode
@@ -222,9 +220,8 @@ export interface ApproveAndProvisionPartnerInput {
     readonly actor: Actor;
     /** UUID of the `partner` lead to approve and provision. */
     readonly id: string;
-    /** The tier to grant, plus an optional admin note. */
+    /** Optional admin note. */
     readonly input: {
-        readonly tier: PartnerTierEnum;
         readonly adminNote?: string;
     };
 }
@@ -253,10 +250,9 @@ const markHandledInputSchema = AllianceLeadMarkHandledSchema.extend({
     id: z.string().uuid({ message: 'zodError.common.id.invalidUuid' })
 });
 
-/** Validates the `{ id, tier, adminNote? }` shape for partner provisioning. */
+/** Validates the `{ id, adminNote? }` shape for partner provisioning. */
 const approveAndProvisionPartnerInputSchema = z.object({
     id: z.string().uuid({ message: 'zodError.common.id.invalidUuid' }),
-    tier: PartnerTierEnumSchema,
     adminNote: z.string().max(1000, { message: 'zodError.allianceLead.adminNote.max' }).optional()
 });
 
@@ -654,7 +650,7 @@ export class AllianceLeadService extends BaseService {
      * No permission gate, deliberately: the read is scoped to the actor's own
      * `applicantUserId`, so there is nothing an elevated permission could
      * unlock. Requiring one would turn a self-service read into an accidental
-     * gate — the same reasoning as `CommerceLeadService.getMyLead`.
+     * gate — the same reasoning as the retired owner-lead service's `getMyLead`.
      *
      * Having no applications is the COMMON case (`/mi-cuenta/aliados` is a
      * discovery hub most visitors reach without ever having applied), so it
@@ -1198,7 +1194,7 @@ export class AllianceLeadService extends BaseService {
      * provisioning into `markHandled` would have changed the meaning of a
      * button admins already use.
      *
-     * The tier is taken from the ADMIN, not the lead: it is a commercial
+     * The admin note is supplied by the ADMIN, not the lead: it is a
      * decision about what Hospeda is granting, so no public form asks for it
      * and no applicant can assert it.
      *
@@ -1207,7 +1203,7 @@ export class AllianceLeadService extends BaseService {
      * admin builds the partner by hand. Refusing would strand every partner
      * lead submitted before the typed columns existed.
      *
-     * @param params - `{ actor, id, input: { tier, adminNote? } }`.
+     * @param params - `{ actor, id, input: { adminNote? } }`.
      * @param ctx - Optional service execution context.
      * @returns `ServiceOutput<ApproveAndProvisionPartnerOutput>`.
      * @throws `FORBIDDEN` without `ALLIANCE_LEAD_MANAGE`.
@@ -1267,7 +1263,6 @@ export class AllianceLeadService extends BaseService {
                     const result = await provisionPartnerFromLead({
                         lead: existing,
                         partnerModel: this._partnerModel,
-                        tier: validated.tier,
                         actorId: a.id,
                         logger: this.logger,
                         tx: txCtx?.tx

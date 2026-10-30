@@ -17,6 +17,7 @@
 
 import type { AiChatEntityType } from '@repo/schemas';
 import { useCallback, useEffect, useRef, useState } from 'react';
+import { DockPortal } from '@/components/shared/dock/DockPortal';
 import { Spinner } from '@/components/shared/feedback/Spinner';
 import { useAccountPermissions } from '@/hooks/use-account-permissions';
 import { useAccommodationChat } from '@/hooks/useAccommodationChat';
@@ -54,7 +55,8 @@ export interface AiChatWidgetProps {
 
 /**
  * Root component for the AI accommodation chat.
- * Renders both the FAB and the chat panel (single Astro island).
+ * Keeps the FAB's dock portal mounted while rendering the chat panel outside
+ * that portal (single Astro island).
  *
  * @param props - Accommodation ID, locale, and API URL.
  */
@@ -158,13 +160,15 @@ export function AiChatWidget({ entityType, entityId, locale, apiUrl }: AiChatWid
 
     return (
         <>
-            <AiChatFab
-                ref={fabRef}
-                isOpen={isOpen}
-                onClick={() => setIsOpen(true)}
-                locale={locale}
-                entityType={entityType}
-            />
+            <DockPortal slot="ai-chat">
+                <AiChatFab
+                    ref={fabRef}
+                    isOpen={isOpen}
+                    onClick={() => setIsOpen(true)}
+                    locale={locale}
+                    entityType={entityType}
+                />
+            </DockPortal>
             {isOpen && (
                 <div
                     // biome-ignore lint/a11y/useSemanticElements: React dialog needs ref handling; div with role is acceptable per SPEC-200

@@ -206,12 +206,16 @@ export const createStreamingRoute = (options: StreamingRouteOptions) => {
     // applyRouteMiddlewares in route-factory.ts — inline here to avoid
     // exporting a private helper from that module).
     // OpenAPI-style `{id}` params must be converted to Hono `:id` syntax,
-    // otherwise `app.use()` would silently NOT match the route path and
-    // middlewares (including auth) would be skipped.
+    // otherwise the registration would silently NOT match the route path and
+    // middlewares (including auth) would be skipped. Each middleware is also
+    // scoped to this route's own method (HOS-1908): `app.use(path, mw)`
+    // would run it for a sibling route that shares the path under another
+    // method.
     if (options.options?.middlewares) {
         const honoPath = options.path.replace(/\{([^}]+)\}/g, ':$1');
+        const honoMethod = method.toUpperCase();
         for (const mw of options.options.middlewares) {
-            app.use(honoPath, mw);
+            app.on(honoMethod, honoPath, mw);
         }
     }
 

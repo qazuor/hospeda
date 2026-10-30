@@ -13,12 +13,12 @@
  * - Route ordering: "reorder" path is not confused with /:faqId
  *
  * Testing strategy: mock `@repo/service-core` (no DB), mock `getActorFromContext`
- * (fixed HOST owner actor), and mock `entitlementMiddleware` to toggle
+ * (fixed HOST owner actor), and mock the retired `entitlementMiddleware` (HOS-1416) to toggle
  * userEntitlements deterministically — mirrors
  * apps/api/test/routes/accommodation-protected-reorder-media.test.ts (actor +
  * service mocking) and
  * apps/api/test/routes/user-bookmark-collection/entitlement-gate.integration.test.ts
- * (real entitlementMiddleware mock for a true 403 ENTITLEMENT_REQUIRED check).
+ * (real entitlementMiddleware mock, since retired, for a true 403 ENTITLEMENT_REQUIRED check).
  *
  * NOTE: raw session authentication (missing/invalid Bearer token) is
  * deliberately NOT covered here — `getActorFromContext` is mocked to a fixed
@@ -29,7 +29,8 @@
  * @module test/routes/accommodation-protected-reorder-faqs
  */
 
-import { EntitlementKey, type LimitKey } from '@repo/billing';
+import { PublicationStatusEnum, VerticalEnum } from '@repo/schemas';
+import { rehydrateEffectiveSet } from '@repo/verticals';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 // ---------------------------------------------------------------------------
@@ -75,34 +76,35 @@ vi.mock('../../src/utils/logger.js', () => ({
     }
 }));
 
+vi.mock('../../src/utils/listing-access/ports', () => ({
+    getListingAccessPorts: () => ({
+        loadFacts: async () => ({
+            facts: { ownerId: mockActor.id, publicationStatus: PublicationStatusEnum.PUBLISHED },
+            ownerId: mockActor.id
+        }),
+        billing: { coverage: async () => ({ covered: false, sources: [{ type: 'BASE' }] }) },
+        effectiveSet: async ({ userId }: { userId: string }) =>
+            rehydrateEffectiveSet({
+                version: 1,
+                userId,
+                vertical: VerticalEnum.ACCOMMODATION,
+                hasLiveNonTrialTitle: false,
+                inheritsTouristVip: false,
+                entries: [{ key: 'edit_accommodation_info', value: 1, strategy: 'MAX' }]
+            })
+    })
+}));
+
 /**
- * Whether the mocked entitlementMiddleware grants EDIT_ACCOMMODATION_INFO for
+ * Whether the mocked (retired) entitlementMiddleware grants EDIT_ACCOMMODATION_INFO for
  * the current test. Toggled per-test via `setEntitled`.
  */
-const { getEntitled, setEntitled } = vi.hoisted(() => {
-    let entitled = true;
+const { setEntitled } = vi.hoisted(() => {
     return {
-        getEntitled: () => entitled,
-        setEntitled: (value: boolean) => {
-            entitled = value;
+        setEntitled: (_value: boolean) => {
+            // Entitlement gating was removed with the legacy billing system
+            // (HOS-1416); the toggle is kept as a no-op for test call sites.
         }
-    };
-});
-
-vi.mock('../../src/middlewares/entitlement', async (importOriginal) => {
-    const actual = await importOriginal<typeof import('../../src/middlewares/entitlement')>();
-    return {
-        ...actual,
-        entitlementMiddleware:
-            () => async (c: import('hono').Context, next: () => Promise<void>) => {
-                c.set(
-                    'userEntitlements',
-                    getEntitled() ? new Set([EntitlementKey.EDIT_ACCOMMODATION_INFO]) : new Set()
-                );
-                c.set('userLimits', new Map<LimitKey, number>());
-                c.set('billingLoadFailed', false);
-                await next();
-            }
     };
 });
 
@@ -152,38 +154,6 @@ describe('PUT /api/v1/protected/accommodations/:id/faqs/reorder — reorderFaqs 
         setEntitled(true);
         app = initApp();
         mockReorderFaqs.mockResolvedValue({ data: { success: true }, error: undefined });
-    });
-
-    // ── Entitlement gate ────────────────────────────────────────────────────────
-
-    describe('Entitlement gate (EDIT_ACCOMMODATION_INFO)', () => {
-        it('returns 403 ENTITLEMENT_REQUIRED when actor lacks EDIT_ACCOMMODATION_INFO', async () => {
-            setEntitled(false);
-
-            const res = await app.request(BASE_URL, {
-                method: 'PUT',
-                headers: buildHeaders(),
-                body: JSON.stringify(VALID_BODY)
-            });
-
-            expect(res.status).toBe(403);
-            const body = await res.json();
-            expect(body.error.code).toBe('ENTITLEMENT_REQUIRED');
-            expect(mockReorderFaqs).not.toHaveBeenCalled();
-        });
-
-        it('proceeds to the service when actor has EDIT_ACCOMMODATION_INFO', async () => {
-            setEntitled(true);
-
-            const res = await app.request(BASE_URL, {
-                method: 'PUT',
-                headers: buildHeaders(),
-                body: JSON.stringify(VALID_BODY)
-            });
-
-            expect(res.status).toBe(200);
-            expect(mockReorderFaqs).toHaveBeenCalledTimes(1);
-        });
     });
 
     // ── Happy path ────────────────────────────────────────────────────────────

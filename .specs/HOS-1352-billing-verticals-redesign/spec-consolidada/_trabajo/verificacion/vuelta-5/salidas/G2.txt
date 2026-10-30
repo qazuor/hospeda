@@ -1,0 +1,110 @@
+# G2 · spec → fuente · 04-catalogos.md; g-secciones de B9a, B10, B11, B12, B13a y B8b
+
+## Hallazgos
+
+04-catalogos.md:420 · «- **condición** (guardas): **`cubierto` es falso**» · contradice .specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/03-maquinas-de-estado.md:54 («| T3 | `TRIAL_ACTIVE` | llega la fecha de fin | `TRIAL_EXPIRED` | **—** |»). Agrega una guarda que impide vencer el trial cubierto; la propia transcripción en 04-catalogos.md:114 dice «sin condición» · BLOQUEA
+
+04-catalogos.md:755 · «- El lock vive dentro de la transacción que escribe y se suelta con ella. Con qué primitiva» · más débil que .specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/03-maquinas-de-estado.md:898 («- **No es el lock distribuido que `B/05` §1 descarta.**»). La copia omite la exclusión explícita del lock distribuido y su distinción del lock transaccional de publicación; complementa el recorte de la línea 6146 · BLOQUEA
+
+04-catalogos.md:5307 · «No mueve la suscripción ni avanza la fecha del próximo cobro**: no cubre ningún período nuevo.» · más débil que .specs/HOS-1354-billing-cobro-y-proveedor/docs/03-maquinas-de-estado.md:1876 («No mueve la suscripción, no avanza la fecha del próximo cobro y no emite comprobante**: no cubre ningún período nuevo.»). Se pierde la prohibición de emitir comprobante para MP6 · BLOQUEA
+
+04-catalogos.md:6146 · «Cada caso de abajo se resuelve con una restricción de la base o con una relectura.» · más débil que .specs/HOS-1354-billing-cobro-y-proveedor/docs/05-idempotencia-y-concurrencia.md:35 («**No hay locks distribuidos en este diseño.**»). Elimina la prohibición viva y la explicación de las líneas 36–37, habilitando un mecanismo que la fuente descarta · BLOQUEA
+
+10-corte/B9a.md:96 · «—qué familia va primero, y nada más— el resultado queda fijo.» · más débil que .specs/HOS-1354-billing-cobro-y-proveedor/docs/14-promos-cortesias-y-grants.md:52 («**Y el redondeo es uno, al final**»), :54–55 («La composición se calcula sin redondear sobre el precio en la unidad mínima, y **el resultado se redondea una sola vez, hacia abajo**»). Entre esta frase y el párrafo siguiente falta entero el párrafo vivo 52–60, incluida la obligación de compartir cálculo entre canje, S30, aumento y barrido · BLOQUEA
+
+10-corte/B11.md:250 · «**redondeado una sola vez, con el mismo cálculo que usa quien muta**» · más débil que .specs/HOS-1354-billing-cobro-y-proveedor/docs/09-conciliacion.md:185 («**redondeado una sola vez y hacia abajo, con el mismo cálculo que usa quien muta**»). Suprime la dirección obligatoria del redondeo del monto esperado · BLOQUEA
+
+10-corte/B11.md:1160 · «**Si pasan 48 h sin una corrida completa, se avisa, y el aviso lo da otro proceso**: un vigía que» · contradice .specs/HOS-1354-billing-cobro-y-proveedor/docs/09-conciliacion.md:1132 («**Si pasan 26 h sin una corrida completa, se avisa, y el aviso lo da otro proceso**: un vigía que»). Retrasa la alerta 22 horas; contradice también B11:1165 y DEC-DATA-008 (.specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:7376) · BLOQUEA
+
+10-corte/B13a.md:225 · «suscribirse**, sin teléfono y sin hablar con nadie. Está decidido en» · más débil que .specs/HOS-1354-billing-cobro-y-proveedor/docs/19-superficies.md:174 («suscribirse**, sin teléfono, sin formulario de contacto y sin hablar con nadie. Está decidido en»). Desaparece la prohibición expresa de exigir formulario de contacto para cancelar · BLOQUEA
+
+10-corte/B13a.md:406 · «sin teléfono y sin hablar con nadie.** Lo que pasa después ya está» · más débil que .specs/HOS-1354-billing-cobro-y-proveedor/docs/22-lo-legal.md:44 («sin teléfono, sin formulario de contacto y sin hablar con nadie.** Lo que pasa después ya está»). La segunda transcripción de la regla de baja vuelve a eliminar la misma prohibición · BLOQUEA
+
+## Resumen
+
+| archivo | líneas recorridas | afirmaciones normativas revisadas (aprox.) | BLOQUEA | MENOR |
+|---|---|---:|---:|---:|
+| 04-catalogos.md | 1–9843 | 3000 | 4 | 0 |
+| 10-corte/B11.md | 1–2356; auditoría G2: 75–1317 | 180 | 2 | 0 |
+| 10-corte/B13a.md | 1–1300; auditoría G2: 54–445 | 110 | 2 | 0 |
+| 10-corte/B9a.md | 1–1417; auditoría G2: 59–715 | 120 | 1 | 0 |
+| 20-fase-2/B8b.md | 1–1406; auditoría G2: 53–340 | 50 | 0 | 0 |
+| 20-fase-3/B10.md | 1–1944; auditoría G2: 90–1211 | 150 | 0 | 0 |
+| 20-fase-3/B12.md | 1–834; auditoría G2: 65–270 | 35 | 0 | 0 |
+
+Total: **9 BLOQUEA, 0 MENOR**. Son nueve ubicaciones; las dos omisiones de locks y las dos de formulario de contacto repiten, respectivamente, una misma regla. No se contabilizan como hallazgos nuevos las contradicciones internas que corroboran cada diferencia.
+
+Alcance: se leyeron los siete archivos completos con un cotejador independiente. La revisión normativa de las seis piezas se limita a los marcadores g-secciones asignados a G2; sus restantes líneas no se certifican. El catálogo se recorrió hasta 9843 y todos los bloques hasta su marcador final. El conteo de afirmaciones es aproximado por campos, párrafos y filas, no por renglones físicos. La lectura/cotejo exhaustivos fueron automatizados, con inspección directa de discrepancias y muestras; no se afirma una lectura humana de cada palabra.
+
+Se leyeron los generadores g3/gen.py, g3/omisiones.py, g3/omisiones.json, secciones/gen.py y secciones/fuentes.json; no se ejecutó ninguno. Las comprobaciones independientes contrastaron 292 ítems tabulares (1.382 campos), 102 tramos citados de prosa del catálogo y las 107 referencias de sección de las seis piezas. Las referencias emitidas coinciden con fuentes.json. Se comparó texto vivo, eliminando tachados también multilínea, neutralizando enlaces y tolerando diferencias de espacio y énfasis; las discrepancias reportadas se releyeron literalmente.
+
+Clases de error buscadas en toda la salida:
+
+- Tachados enteros, parciales en frases/celdas y multilínea que sobreviven: búsqueda `rg --hidden` de `~~`, cotejo contra texto vivo por campo y sección. Sin supervivencia adicional comprobada. T3 sí agrega una guarda sin soporte vivo (hallazgo de línea 420).
+- Barras escapadas/celdas cortadas: búsqueda literal `rg --hidden -F` de `\|` y cotejo de todas las columnas. Sin caso en las transcripciones asignadas. La única barra escapada en las fuentes examinadas está en D/06:452, resumen histórico fuera de las filas transcritas; no se presenta como prueba de que ese caso haya sido ejercitado por la salida.
+- Texto adjuntado al ítem equivocado: contraste bidireccional de los 102 rangos y de las secciones citadas; lectura de la resolución por título, ancestro y adjuntar. Sin diferencia adicional comprobada.
+- Letras del owner o 📌 retirados presentados como vigentes: búsqueda global de `📌`, retiradas, notas «sale» y «[…]», seguida de contraste con la fuente y con D/01-decision-log.md y D/41-corte-del-mvp/10-decisiones-del-owner.md. No apareció una decisión posterior que autorice los nueve recortes/cambios reportados. EX-46 conserva las omisiones con «[…]» autorizadas por BK (owner:136) y declaradas en omisiones.json; no se computan como error.
+- Omisiones de texto vivo, incluidas filas retiradas con celdas vivas, títulos retirados con cuerpo vivo y preámbulos: contraste fuente→salida por sección y búsqueda global de los fragmentos afectados con `rg --hidden`. Se confirman los siete recortes reportados; los otros dos hallazgos son la guarda T3 y el plazo 48 h. Las notas «fila retirada» preservan el texto vivo.
+- Contradicciones internas: búsqueda global en la spec de las reglas detectadas. T3 contradice su propia nota «sin condición»; B11:1160 contradice B11:1165, 1175 y 1185 y 02-nucleo.md:1501.
+
+Muestra estratificada del catálogo: 42 ítems tabulares repartidos entre principio, medio y final, cotejados campo por campo (además del barrido completo). Se incluyen filas con 📌 —por ejemplo RC-5, RF-3, EX-2, EX-46— y sin 📌. Identificador y línea de inicio:
+
+- TRANS:V:T1, 04-catalogos.md:72 → V/03-maquinas-de-estado.md:52.
+- TRANS:V:PB1, 04-catalogos.md:688 → V/03-maquinas-de-estado.md:488.
+- TRANS:V:PB8, 04-catalogos.md:1259 → V/03-maquinas-de-estado.md:495.
+- TRANS:V:PP2, 04-catalogos.md:1551 → V/03-maquinas-de-estado.md:1360.
+- TRANS:B:S6, 04-catalogos.md:2803 → B/03-maquinas-de-estado.md:156.
+- TRANS:B:S13, 04-catalogos.md:3134 → B/03-maquinas-de-estado.md:163.
+- TRANS:B:S21, 04-catalogos.md:3691 → B/03-maquinas-de-estado.md:171.
+- TRANS:B:S32, 04-catalogos.md:4039 → B/03-maquinas-de-estado.md:182.
+- PROH:B:1, 04-catalogos.md:4185 → B/03-maquinas-de-estado.md:1454.
+- TRANS:B:P2, 04-catalogos.md:4391 → B/03-maquinas-de-estado.md:1768.
+- TRANS:B:RF2, 04-catalogos.md:4516 → B/03-maquinas-de-estado.md:1851.
+- TRANS:B:MP4, 04-catalogos.md:4753 → B/03-maquinas-de-estado.md:1874.
+- TRANS:B:A4, 04-catalogos.md:5386 → B/03-maquinas-de-estado.md:2538.
+- MOT:4, 04-catalogos.md:5781 → B/02-modelo-de-datos.md:1026.
+- MOT:11, 04-catalogos.md:5909 → B/02-modelo-de-datos.md:1033.
+- MOT:18, 04-catalogos.md:6008 → B/02-modelo-de-datos.md:1040.
+- M:M2, 04-catalogos.md:6564 → B/20-testing.md:504.
+- M:M9, 04-catalogos.md:6648 → B/20-testing.md:511.
+- RP:RP3, 04-catalogos.md:6807 → B/20-testing.md:536.
+- RP:RP10, 04-catalogos.md:6884 → B/20-testing.md:543.
+- GUARD:G5, 04-catalogos.md:7637 → V/20-testing.md:54.
+- GUARD:G-R2, 04-catalogos.md:7728 → V/20-testing.md:61.
+- GUARD:G-R4-B, 04-catalogos.md:7821 → V/20-testing.md:68.
+- GUARD:G10, 04-catalogos.md:7934 → B/20-testing.md:52.
+- GUARD:G-R1-E, 04-catalogos.md:8040 → B/20-testing.md:60.
+- MP:PA-3, 04-catalogos.md:8145 → D/06-mp-validation-matrix.md:174.
+- MP:RN-1, 04-catalogos.md:8257 → D/06-mp-validation-matrix.md:192.
+- MP:PS-2, 04-catalogos.md:8356 → D/06-mp-validation-matrix.md:209.
+- MP:PC-1, 04-catalogos.md:8462 → D/06-mp-validation-matrix.md:226.
+- MP:CT-1, 04-catalogos.md:8565 → D/06-mp-validation-matrix.md:251.
+- MP:WH-4, 04-catalogos.md:8664 → D/06-mp-validation-matrix.md:268.
+- MP:RC-5, 04-catalogos.md:8759 → D/06-mp-validation-matrix.md:280.
+- MP:RF-3, 04-catalogos.md:8863 → D/06-mp-validation-matrix.md:305.
+- MP:EX-2, 04-catalogos.md:8970 → D/06-mp-validation-matrix.md:317.
+- MP:EX-10, 04-catalogos.md:9068 → D/06-mp-validation-matrix.md:325.
+- MP:EX-17, 04-catalogos.md:9166 → D/06-mp-validation-matrix.md:332.
+- MP:EX-24, 04-catalogos.md:9296 → D/06-mp-validation-matrix.md:361.
+- MP:EX-31, 04-catalogos.md:9438 → D/06-mp-validation-matrix.md:389.
+- MP:EX-39, 04-catalogos.md:9536 → D/06-mp-validation-matrix.md:396.
+- MP:EX-46, 04-catalogos.md:9634 → D/06-mp-validation-matrix.md:403.
+- MP:EX-53, 04-catalogos.md:9733 → D/06-mp-validation-matrix.md:410.
+- MP:EX-34, 04-catalogos.md:9831 → D/06-mp-validation-matrix.md:438.
+
+La prosa del catálogo se cotejó en los 102 tramos, incluidos V/03:91–122, 842–930; B/03:944–966, 1589–1623; B/05:27–38, 39–49; y los tramos de matriz con 📌. El detalle exacto de todos los rangos está en G2-rangos.json. Se comprobaron además directamente T3 y MP6 (fuentes V/03:54 y B/03:1876).
+
+Muestra estratificada adicional de cada transcripción: al menos 40 unidades de prosa o filas de tabla distribuidas a lo largo del bloque. Las líneas siguientes son las unidades cotejadas; G2-muestra-secciones.json conserva para cada una el texto y su fuente.
+
+- 10-corte/B11.md (42 unidades): 79, 133, 170, 198, 230, 250, 264, 293, 318, 348, 378, 404, 435, 469, 499, 528, 557, 586, 618, 652, 680, 712, 741, 773, 805, 832, 868, 898, 927, 953, 989, 1030, 1068, 1100, 1133, 1160, 1166, 1203, 1230, 1260, 1286, 1313.
+- 10-corte/B13a.md (42 unidades): 58, 73, 88, 101, 110, 124, 131, 139, 155, 161, 167, 173, 179, 187, 196, 204, 216, 225, 229, 238, 245, 258, 268, 281, 287, 294, 300, 307, 315, 321, 328, 336, 343, 360, 366, 377, 386, 403, 406, 419, 425, 440.
+- 10-corte/B9a.md (40 unidades): 63, 88, 113, 124, 149, 169, 180, 191, 218, 237, 251, 264, 276, 289, 305, 324, 348, 368, 397, 417, 429, 440, 456, 469, 481, 499, 511, 526, 541, 552, 566, 577, 590, 602, 622, 644, 661, 677, 696, 711.
+- 20-fase-2/B8b.md (40 unidades): 59, 65, 71, 76, 81, 92, 99, 106, 110, 115, 121, 125, 136, 142, 153, 165, 173, 177, 188, 197, 208, 219, 230, 235, 248, 252, 256, 263, 272, 276, 287, 293, 298, 303, 311, 315, 321, 325, 332, 336.
+- 20-fase-3/B10.md (40 unidades): 94, 142, 178, 202, 235, 278, 322, 357, 382, 406, 443, 468, 505, 535, 581, 605, 630, 655, 679, 702, 726, 750, 778, 800, 829, 853, 876, 904, 932, 957, 986, 1012, 1036, 1063, 1089, 1116, 1140, 1162, 1185, 1207.
+- 20-fase-3/B12.md (40 unidades): 71, 82, 87, 92, 100, 106, 110, 119, 125, 130, 134, 143, 147, 152, 155, 159, 165, 175, 180, 183, 194, 197, 201, 205, 209, 213, 216, 220, 224, 228, 232, 235, 239, 242, 246, 250, 254, 258, 261, 266.
+
+En B13a:187 el cotejo literal marca el envoltorio «fila retirada» como distinto; el contenido vivo coincide con la fuente y es una transformación declarada por el generador, no un hallazgo. B9a:91–103 se contrastó además como sección completa: la muestra de líneas presentes por sí sola no detectaría el párrafo que falta.
+
+Evidencia auxiliar: G2-comparacion.json, G2-rangos.json, G2-muestra-catalogo.json, G2-muestra-secciones.json, G2-contradicciones.txt y G2-decisiones-contraste.txt. Los registros automáticos contienen candidatos descartados por formato, metadatos, tachados o la excepción BK; sólo los nueve del apartado Hallazgos son resultados confirmados.
+
+Límites operativos: no se usaron git, trackers, red ni subagentes; sólo se escribió en salidas/. V no contiene .qz/project.json ni copias de los skills externos. No se leyeron esos skills porque el brief prohíbe leer fuera de V. No se modificaron fuentes, spec ni generadores.

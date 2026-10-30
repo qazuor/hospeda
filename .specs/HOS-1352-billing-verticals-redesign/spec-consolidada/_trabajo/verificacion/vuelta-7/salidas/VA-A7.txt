@@ -1,0 +1,11 @@
+# VA-A7 · fuente → spec · B/docs/03-maquinas-de-estado.md
+
+## Hallazgos
+
+fuentes/.specs/HOS-1354-billing-cobro-y-proveedor/docs/03-maquinas-de-estado.md:1779 · «Las dos resoluciones le avisan a la persona, con un correo transaccional cada una»; líneas 1783–1784: «al correr `P7` por `reimbursed`, “la disputa se resolvió; el cargo era correcto; podés volver a suscribirte desde acá”» · distinta en s/c1c03210/04-catalogos.md:4325 («La resolución `settled` le avisa a la persona con un correo transaccional»): la transcripción restringe el aviso a `settled` y elimina el de `reimbursed`. La búsqueda en toda s/c1c03210/ por `reimbursed`, `P7`, `cargo era correcto` y las resoluciones de la disputa no encuentra otra regla que ordene ese correo; AC:B5:8 (10-corte/B5.md:245), AC:B11:25 (10-corte/B11.md:1546) y el catálogo de correos (02-nucleo-outbox.md:290) tampoco lo recogen. Un implementador omitiría avisar a la persona cuando la disputa se resuelve a favor del vendedor. Verificados el decision log (DEC-SUB-020 y su 📌) y 41-corte-del-mvp/10-decisiones-del-owner.md: no retiran este aviso. · BLOQUEA
+
+## Resumen
+
+| archivo | reglas normativas vivas revisadas | líneas recorridas | ausentes | distintas |
+|---|---|---|---|---|
+| B/docs/03-maquinas-de-estado.md | ≈400, agrupando repeticiones de una misma regla | 1–3062 | 0 | 1 |

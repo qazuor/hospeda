@@ -146,47 +146,6 @@ vi.mock('@repo/notifications', async (importOriginal) => {
 });
 
 // Stub billing middlewares (required by createApp's middleware chain).
-vi.mock('../../src/middlewares/billing', async (importOriginal) => {
-    const original = await importOriginal<typeof import('../../src/middlewares/billing')>();
-    return {
-        ...original,
-        getQZPayBilling: vi.fn(),
-        requireBilling: vi.fn(async (_c: unknown, next: () => Promise<void>) => {
-            await next();
-        }),
-        billingMiddleware: vi.fn(async (_c: unknown, next: () => Promise<void>) => {
-            await next();
-        })
-    };
-});
-
-vi.mock('../../src/middlewares/billing-customer', () => ({
-    billingCustomerMiddleware: () => async (_c: unknown, next: () => Promise<void>) => {
-        await next();
-    }
-}));
-
-vi.mock('../../src/middlewares/entitlement', async (importOriginal) => {
-    const actual = await importOriginal<Record<string, unknown>>();
-    return {
-        ...actual,
-        entitlementMiddleware: () => async (_c: unknown, next: () => Promise<void>) => {
-            await next();
-        }
-    };
-});
-
-vi.mock('../../src/middlewares/trial', () => ({
-    trialMiddleware: () => async (_c: unknown, next: () => Promise<void>) => {
-        await next();
-    }
-}));
-
-vi.mock('../../src/middlewares/past-due-grace.middleware', () => ({
-    pastDueGraceMiddleware: () => async (_c: unknown, next: () => Promise<void>) => {
-        await next();
-    }
-}));
 
 vi.mock('../../src/middlewares/sentry', () => ({
     sentryMiddleware: () => async (_c: unknown, next: () => Promise<void>) => {
@@ -210,16 +169,6 @@ vi.mock('../../src/services/billing-usage.service', () => ({
     getSystemUsage: vi.fn().mockResolvedValue({ success: true, data: {} }),
     getApproachingLimits: vi.fn().mockResolvedValue({ success: true, data: [] })
 }));
-
-vi.mock('@qazuor/qzpay-hono', () => {
-    // eslint-disable-next-line @typescript-eslint/no-require-imports
-    const { OpenAPIHono } = require('@hono/zod-openapi');
-    return {
-        createBillingRoutes: vi.fn(() => {
-            return new OpenAPIHono({ strict: false });
-        })
-    };
-});
 
 // ---------------------------------------------------------------------------
 // Imports (after all mocks are registered)
@@ -256,16 +205,42 @@ function buildGuestHeaders(actorId: string): Record<string, string> {
     return req.headers;
 }
 
-/** Minimal conversation row belonging to the given userId. */
+/**
+ * Conversation row belonging to the given userId, complete enough to satisfy
+ * `ProtectedThreadResponseSchema` (the route validates its response body).
+ */
 function makeConversation(userId: string) {
+    const now = new Date();
     return {
         id: CONVERSATION_ID,
         userId,
         accommodationId: ACCOMMODATION_ID,
+        anonymousName: null,
+        anonymousEmail: null,
+        anonymousEmailVerified: false,
+        anonymousPhone: null,
         status: 'OPEN',
-        createdAt: new Date(),
-        updatedAt: new Date(),
-        deletedAt: null
+        blockReason: null,
+        locale: 'es',
+        archivedByGuest: false,
+        archivedByOwner: false,
+        lastReadAtByGuest: null,
+        lastReadAtByOwner: null,
+        firstGuestMessageAt: null,
+        firstOwnerReplyAt: null,
+        lastActivityAt: null,
+        lastGuestMessageAt: null,
+        lastOwnerMessageAt: null,
+        closedAt: null,
+        blockedAt: null,
+        guestMessageCount: 0,
+        ownerMessageCount: 0,
+        createdAt: now,
+        updatedAt: now,
+        deletedAt: null,
+        createdById: null,
+        updatedById: null,
+        deletedById: null
     };
 }
 

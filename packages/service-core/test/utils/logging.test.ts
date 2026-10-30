@@ -201,6 +201,10 @@ describe('resolveErrorLogLevel', () => {
         expect(resolveErrorLogLevel(ServiceErrorCode.FORBIDDEN)).toBe('warn');
     });
 
+    it('maps EMAIL_NOT_VERIFIED (403) to warn', () => {
+        expect(resolveErrorLogLevel(ServiceErrorCode.EMAIL_NOT_VERIFIED)).toBe('warn');
+    });
+
     // HOS-129: plan-gating denials (entitlement/limit gates) are routine,
     // expected client outcomes in the same class as FORBIDDEN — not faults.
     it('maps ENTITLEMENT_REQUIRED (403) to warn', () => {

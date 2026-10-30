@@ -6,11 +6,11 @@ import { LimitProgressIndicator } from '@/features/billing/LimitProgressIndicato
  * Mock the single dependency of LimitProgressIndicator so we can pin the
  * resolved limit per case. Since SPEC-171 the component no longer reads a
  * role-aware bypass hook — the entitlements resolver is the single source of
- * truth (staff receive the unlimited sentinel `-1`), so a `-1` limit is all we
+ * truth (staff receive positive infinity), so an infinite limit is all we
  * need to model both the staff case and an unlimited plan.
  */
-vi.mock('@/features/billing/use-my-entitlements', () => ({
-    useMyEntitlements: vi.fn()
+vi.mock('@/features/billing/use-effective-set', () => ({
+    useEffectiveSet: vi.fn()
 }));
 
 vi.mock('@/hooks/use-translations', () => ({
@@ -32,9 +32,9 @@ vi.mock('@/hooks/use-translations', () => ({
     })
 }));
 
-import { useMyEntitlements } from '@/features/billing/use-my-entitlements';
+import { useEffectiveSet } from '@/features/billing/use-effective-set';
 
-const mockedEntitlements = vi.mocked(useMyEntitlements);
+const mockedEntitlements = vi.mocked(useEffectiveSet);
 
 function withEntitlements({
     limit,
@@ -46,9 +46,9 @@ function withEntitlements({
     error?: Error | null;
 }) {
     mockedEntitlements.mockReturnValue({
+        subject: null,
         has: () => false,
         limit: () => limit,
-        plan: null,
         isLoading,
         error
     });
@@ -58,10 +58,10 @@ afterEach(() => {
     vi.clearAllMocks();
 });
 
-describe('LimitProgressIndicator', () => {
-    it('renders null for staff (resolver returns unlimited -1, SPEC-171)', () => {
+describe('TEST:B13a:23 AC:B13a:23 LimitProgressIndicator', () => {
+    it('renders null for staff with no subject', () => {
         // Arrange — staff get the unlimited sentinel straight from the motor.
-        withEntitlements({ limit: -1 });
+        withEntitlements({ limit: Number.POSITIVE_INFINITY });
 
         // Act
         const { container } = render(
@@ -92,9 +92,9 @@ describe('LimitProgressIndicator', () => {
         expect(container.firstChild).toBeNull();
     });
 
-    it('renders null when the plan has the key as unlimited (-1)', () => {
+    it('renders null when the key is unlimited (Infinity)', () => {
         // Arrange — premium tier with unlimited photos
-        withEntitlements({ limit: -1 });
+        withEntitlements({ limit: Number.POSITIVE_INFINITY });
 
         // Act
         const { container } = render(
@@ -141,6 +141,7 @@ describe('LimitProgressIndicator', () => {
             <LimitProgressIndicator
                 limitKey="MAX_PHOTOS_PER_ACCOMMODATION"
                 currentCount={5}
+                upgradeUrl="/plans"
             />
         );
 
@@ -159,6 +160,7 @@ describe('LimitProgressIndicator', () => {
             <LimitProgressIndicator
                 limitKey="MAX_PHOTOS_PER_ACCOMMODATION"
                 currentCount={8}
+                upgradeUrl="/plans"
             />
         );
 

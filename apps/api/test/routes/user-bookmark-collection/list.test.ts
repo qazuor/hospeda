@@ -15,8 +15,9 @@
  * override only UserBookmarkCollectionService here.
  */
 
-import { PermissionEnum, RoleEnum } from '@repo/schemas';
+import { PermissionEnum, RoleEnum, type VerticalEnum } from '@repo/schemas';
 import type { Actor } from '@repo/service-core';
+import { rehydrateEffectiveSet } from '@repo/verticals';
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { initApp } from '../../../src/app.js';
 import type { AppOpenAPI } from '../../../src/types.js';
@@ -25,11 +26,11 @@ import type { AppOpenAPI } from '../../../src/types.js';
 // vi.hoisted runs before module imports so the mock factory has the fn references
 // before @repo/service-core is resolved.
 
-const { mockCollectionService } = vi.hoisted(() => {
+const { mockCollectionService, effectiveSet } = vi.hoisted(() => {
     const mockCollectionService = {
         listCollectionsByUser: vi.fn()
     };
-    return { mockCollectionService };
+    return { mockCollectionService, effectiveSet: vi.fn() };
 });
 
 vi.mock('@repo/service-core', async (importOriginal) => {
@@ -50,6 +51,9 @@ vi.mock('@repo/db', async (importOriginal) => {
 vi.mock('../../../src/utils/logger', () => ({
     apiLogger: { debug: vi.fn(), error: vi.fn(), info: vi.fn(), warn: vi.fn() }
 }));
+vi.mock('../../../src/utils/listing-access/ports', () => ({
+    getListingAccessPorts: () => ({ effectiveSet })
+}));
 
 /**
  * Mock gateCollections (CAN_USE_COLLECTIONS entitlement gate, SPEC-287 T-014)
@@ -58,40 +62,14 @@ vi.mock('../../../src/utils/logger', () => ({
  * Uses importOriginal so every OTHER gate exported by this module (imported
  * by unrelated routes in the app graph loaded via initApp()) stays real.
  */
-vi.mock('../../../src/middlewares/tourist-entitlements', async (importOriginal) => {
-    const actual =
-        await importOriginal<typeof import('../../../src/middlewares/tourist-entitlements')>();
-    return {
-        ...actual,
-        gateCollections: () => async (_c: unknown, next: () => Promise<void>) => {
-            await next();
-        }
-    };
-});
-
-/**
- * Mock getRemainingLimit so usage.max resolution can be tested deterministically
- * (SPEC-287 T-014). Defaults to 10 (matches DEFAULT_MAX below, the pre-existing
- * expectation baked into TC1-TC9) unless a test overrides it via
- * mockGetRemainingLimit.mockReturnValueOnce(...).
- */
-const { mockGetRemainingLimit } = vi.hoisted(() => ({
-    mockGetRemainingLimit: vi.fn(() => 10)
-}));
-
-vi.mock('../../../src/middlewares/entitlement', async (importOriginal) => {
-    const actual = await importOriginal<typeof import('../../../src/middlewares/entitlement')>();
-    return {
-        ...actual,
-        getRemainingLimit: mockGetRemainingLimit
-    };
-});
 
 // ─── Constants ─────────────────────────────────────────────────────────────────
 
 const BASE_URL = '/api/v1/protected/user-bookmark-collections';
 const ACTOR_ID = 'aaaaaaaa-aaaa-4aaa-aaaa-aaaaaaaaaaaa';
-const DEFAULT_MAX = 10;
+// The per-plan limit resolution was removed with the legacy billing system
+// (HOS-1416); usage.max is the route's own DEFAULT_PLAN_LIMIT (25).
+const DEFAULT_MAX = 25;
 
 // ─── Fixtures ──────────────────────────────────────────────────────────────────
 
@@ -153,6 +131,20 @@ describe('GET /api/v1/protected/user-bookmark-collections — usage block', () =
 
     beforeEach(() => {
         vi.clearAllMocks();
+        effectiveSet.mockImplementation(
+            async ({ userId, vertical }: { userId: string; vertical: VerticalEnum }) =>
+                rehydrateEffectiveSet({
+                    version: 1,
+                    userId,
+                    vertical,
+                    hasLiveNonTrialTitle: false,
+                    inheritsTouristVip: false,
+                    entries: [
+                        { key: 'can_use_collections', value: 1, strategy: 'MAX' as const },
+                        { key: 'max_collections', value: 25, strategy: 'MAX' as const }
+                    ]
+                })
+        );
     });
 
     afterEach(() => {
@@ -314,12 +306,12 @@ describe('GET /api/v1/protected/user-bookmark-collections — usage block', () =
     // =========================================================================
 
     describe('TC6: At limit — user has max collections', () => {
-        it('returns 200 with usage.current === usage.max when user has 10 of 10', async () => {
+        it('returns 200 with usage.current === usage.max when user has 25 of 25', async () => {
             // Arrange
             const actor = buildUserActor();
-            const collections = makeCollections(10);
+            const collections = makeCollections(DEFAULT_MAX);
             mockCollectionService.listCollectionsByUser.mockResolvedValue({
-                data: { rows: collections, total: 10, page: 1, pageSize: 10 }
+                data: { rows: collections, total: DEFAULT_MAX, page: 1, pageSize: 10 }
             });
 
             // Act
@@ -433,72 +425,6 @@ describe('GET /api/v1/protected/user-bookmark-collections — usage block', () =
                 expect.anything(),
                 expect.objectContaining({ includeBookmarkCount: false })
             );
-        });
-    });
-
-    // =========================================================================
-    // TC10 — usage.max resolves from the plan limit (SPEC-287 T-014)
-    // =========================================================================
-
-    describe('TC10: usage.max resolves from the plan-based limit', () => {
-        it('reflects planLimit=10 (plus tier)', async () => {
-            // Arrange
-            mockGetRemainingLimit.mockReturnValueOnce(10);
-            const actor = buildUserActor();
-            mockCollectionService.listCollectionsByUser.mockResolvedValue({
-                data: { rows: [], total: 0, page: 1, pageSize: 10 }
-            });
-
-            // Act
-            const res = await app.request(`${BASE_URL}?page=1&pageSize=10`, {
-                method: 'GET',
-                headers: actorHeaders(actor)
-            });
-
-            // Assert
-            expect(res.status).toBe(200);
-            const body = await res.json();
-            expect(body.data.usage.max).toBe(10);
-        });
-
-        it('reflects planLimit=25 (vip tier)', async () => {
-            // Arrange
-            mockGetRemainingLimit.mockReturnValueOnce(25);
-            const actor = buildUserActor();
-            mockCollectionService.listCollectionsByUser.mockResolvedValue({
-                data: { rows: [], total: 0, page: 1, pageSize: 10 }
-            });
-
-            // Act
-            const res = await app.request(`${BASE_URL}?page=1&pageSize=10`, {
-                method: 'GET',
-                headers: actorHeaders(actor)
-            });
-
-            // Assert
-            expect(res.status).toBe(200);
-            const body = await res.json();
-            expect(body.data.usage.max).toBe(25);
-        });
-
-        it('maps -1 (unlimited, e.g. staff) to the VIP hard cap (25) as a safe default', async () => {
-            // Arrange
-            mockGetRemainingLimit.mockReturnValueOnce(-1);
-            const actor = buildUserActor();
-            mockCollectionService.listCollectionsByUser.mockResolvedValue({
-                data: { rows: [], total: 0, page: 1, pageSize: 10 }
-            });
-
-            // Act
-            const res = await app.request(`${BASE_URL}?page=1&pageSize=10`, {
-                method: 'GET',
-                headers: actorHeaders(actor)
-            });
-
-            // Assert
-            expect(res.status).toBe(200);
-            const body = await res.json();
-            expect(body.data.usage.max).toBe(25);
         });
     });
 });

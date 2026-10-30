@@ -233,7 +233,7 @@ export type QrCodeDownloadResponse = z.infer<typeof QrCodeDownloadResponseSchema
 /**
  * Rolling window accepted by the scan-aggregate read.
  *
- * Deliberately the same two values `hostAnalyticsApi`/`commerceAnalyticsApi`
+ * Deliberately the same two values `hostAnalyticsApi`/`listingAnalyticsApi`
  * already expose for view stats (`apps/web/.../endpoints-protected.ts`,
  * `AnalyticsWindow`), per HOS-1044 §11 OQ-1 — a third window here would be a
  * UI convention this panel invented alone. Declared as its own schema rather
@@ -271,7 +271,7 @@ export type QrCodeScanBreakdown = z.infer<typeof QrCodeScanBreakdownSchema>;
 
 /**
  * Aggregate read of `qr_code_scans` for ONE `qrCodeId` over a rolling window
- * (HOS-1044 §6.4). Generic by code id — not gastronomy-specific — so the same
+ * (HOS-1044 §6.4). Generic by code id — not venue-specific — so the same
  * shape serves the ficha QR (HOS-982) and any future `purpose` (§11 OQ-4).
  *
  * Counting is by `qrCodeId`, never by the entity behind it: a code can be

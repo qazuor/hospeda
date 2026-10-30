@@ -3,20 +3,18 @@
  * Remove an existing FAQ from an accommodation
  */
 
-import { EntitlementKey } from '@repo/billing';
 import {
     AccommodationFaqIdSchema,
     AccommodationIdSchema,
     DeleteResultSchema,
-    ProductDomainEnum
+    VerticalEnum
 } from '@repo/schemas';
 import { AccommodationService, ServiceError } from '@repo/service-core';
 import type { Context } from 'hono';
-import { requireEntitlement } from '../../../middlewares/entitlement';
-import { requireLiveSubscription } from '../../../middlewares/require-live-subscription';
+
 import { getActorFromContext } from '../../../utils/actor';
 import { apiLogger } from '../../../utils/logger';
-import { createCRUDRoute } from '../../../utils/route-factory';
+import { createProtectedRoute } from '../../../utils/route-factory';
 
 // Initialize service once
 const accommodationService = new AccommodationService({ logger: apiLogger });
@@ -24,12 +22,14 @@ const accommodationService = new AccommodationService({ logger: apiLogger });
 /**
  * Route definition using createCRUDRoute factory
  */
-export const removeFaqRoute = createCRUDRoute({
+export const removeFaqRoute = createProtectedRoute({
     method: 'delete',
     path: '/{id}/faqs/{faqId}',
     summary: 'Remove FAQ from accommodation',
     description: 'Remove an FAQ from a specific accommodation',
+    listingAccess: { vertical: VerticalEnum.ACCOMMODATION, operation: 'EDIT', idParam: 'id' },
     tags: ['Accommodations', 'FAQs'],
+    protectedTag: false,
     requestParams: {
         id: AccommodationIdSchema,
         faqId: AccommodationFaqIdSchema
@@ -52,17 +52,5 @@ export const removeFaqRoute = createCRUDRoute({
             success: true,
             data: result.data
         };
-    },
-    options: {
-        // HOS-1275: DELETING content is mutating it. These two routes carried no
-        // entitlement gate at all — not in commerce, and not in accommodation
-        // either, which PR #3299's own write-up missed because it only surveyed
-        // commerce. Wired here with the same pair every sibling content route
-        // carries, so the six of them stop being the exception that the next
-        // change to the EDIT_* keys would silently leave behind.
-        middlewares: [
-            requireEntitlement(EntitlementKey.EDIT_ACCOMMODATION_INFO),
-            requireLiveSubscription(ProductDomainEnum.ACCOMMODATION)
-        ]
     }
 });

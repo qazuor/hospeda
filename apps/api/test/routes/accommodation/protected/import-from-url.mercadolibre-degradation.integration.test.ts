@@ -41,6 +41,19 @@ const { mockGetValidMercadoLibreToken } = vi.hoisted(() => ({
 vi.mock('../../../../src/services/mercadolibre-oauth/ml-token.service', () => ({
     getValidMercadoLibreToken: mockGetValidMercadoLibreToken
 }));
+vi.mock('../../../../src/utils/listing-access/ports', () => ({
+    getListingAccessPorts: () => ({
+        effectiveSet: async () => ({
+            entitlements: { get: () => 1 },
+            limits: { get: () => 10 }
+        })
+    })
+}));
+vi.mock('@repo/ai-core', async (importActual) => ({
+    ...(await importActual<typeof import('@repo/ai-core')>()),
+    getMonthlyCallCount: vi.fn(async () => 0),
+    recordAiUsage: vi.fn(async () => undefined)
+}));
 
 import { initApp } from '../../../../src/app.js';
 import { MLTokenRefreshError } from '../../../../src/services/mercadolibre-oauth/ml-token.errors.js';

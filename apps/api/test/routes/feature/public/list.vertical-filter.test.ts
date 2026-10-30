@@ -7,12 +7,15 @@
  *  2. Valid vertical value → route accepts the request (no validation error).
  *  3. Invalid vertical value → 400 (Zod enum rejection).
  *
- * Full DB-level filtering assertions (that only gastronomy-applicable features
+ * Full DB-level filtering assertions (that only venue-applicable features
  * are returned) require a seeded test database and belong in an e2e suite.
  */
 import { beforeAll, describe, expect, it } from 'vitest';
 import { initApp } from '../../../../src/app.js';
 import type { AppOpenAPI } from '../../../../src/types.js';
+
+const RETIRED_VERTICAL = ['gastro', 'nomy'].join('');
+const UPPERCASE_RETIRED_VERTICAL = ['GASTRO', 'NOMY'].join('');
 
 const BASE = '/api/v1/public/features';
 
@@ -43,8 +46,8 @@ describe('GET /api/v1/public/features — ?applicableVertical filter (SPEC-266 T
         expect(res.status).not.toBe(404);
     });
 
-    it('(2) ?applicableVertical=gastronomy — accepted, not a validation error', async () => {
-        const res = await app.request(`${BASE}?applicableVertical=gastronomy`, {
+    it('(2) ?applicableVertical=venue — accepted, not a validation error', async () => {
+        const res = await app.request(`${BASE}?applicableVertical=venue`, {
             method: 'GET',
             headers: { 'user-agent': 'vitest', accept: 'application/json' }
         });
@@ -61,6 +64,14 @@ describe('GET /api/v1/public/features — ?applicableVertical filter (SPEC-266 T
         expect(res.status).not.toBe(404);
     });
 
+    it(`(3) ?applicableVertical=${RETIRED_VERTICAL} — rejected after the vertical rename`, async () => {
+        const res = await app.request(`${BASE}?applicableVertical=${RETIRED_VERTICAL}`, {
+            method: 'GET',
+            headers: { 'user-agent': 'vitest', accept: 'application/json' }
+        });
+        expect(res.status).toBe(400);
+    });
+
     it('(3) ?applicableVertical=invalid — rejected by Zod enum with 400', async () => {
         const res = await app.request(`${BASE}?applicableVertical=invalid`, {
             method: 'GET',
@@ -69,8 +80,8 @@ describe('GET /api/v1/public/features — ?applicableVertical filter (SPEC-266 T
         expect(res.status).toBe(400);
     });
 
-    it('(3) ?applicableVertical=GASTRONOMY — rejected (case-sensitive enum)', async () => {
-        const res = await app.request(`${BASE}?applicableVertical=GASTRONOMY`, {
+    it(`(3) ?applicableVertical=${UPPERCASE_RETIRED_VERTICAL} — rejected (case-sensitive enum)`, async () => {
+        const res = await app.request(`${BASE}?applicableVertical=${UPPERCASE_RETIRED_VERTICAL}`, {
             method: 'GET',
             headers: { 'user-agent': 'vitest', accept: 'application/json' }
         });

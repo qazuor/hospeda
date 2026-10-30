@@ -5,7 +5,7 @@
  * R-4 is "approving stops being reversible for free — define the way back".
  * The rules that make this a way back rather than a deletion:
  * - the row SURVIVES, with an author and a reason;
- * - `lifecycleState` is the switch, never `subscriptionStatus`;
+ * - `lifecycleState` is the switch;
  * - re-revoking never rewrites the original audit trail;
  * - the owner is told, after the write and never blocking it.
  */
@@ -13,8 +13,6 @@
 import type { PartnerModel } from '@repo/db';
 import {
     LifecycleStatusEnum,
-    PartnerSubscriptionStatusEnum,
-    PartnerTierEnum,
     PartnerTypeEnum,
     PermissionEnum,
     ServiceErrorCode
@@ -37,21 +35,15 @@ const makePartner = (overrides: Record<string, unknown> = {}) => ({
     id: PARTNER_ID,
     slug: 'acme-turismo',
     name: 'Acme Turismo',
-    type: PartnerTypeEnum.COMMERCE,
-    tier: PartnerTierEnum.SILVER,
+    type: PartnerTypeEnum.BUSINESS,
     logoUrl: null,
     websiteUrl: null,
     description: null,
     contactInfo: null,
     socialNetworks: null,
-    subscriptionStatus: PartnerSubscriptionStatusEnum.ACTIVE,
     lifecycleState: LifecycleStatusEnum.ACTIVE,
     analytics: {},
-    planId: null,
-    subscriptionId: null,
     ownerUserId: OWNER_ID,
-    startsAt: new Date('2026-07-01T00:00:00Z'),
-    endsAt: null,
     pendingLogoUrl: null,
     pendingDescription: null,
     pendingWebsiteUrl: null,
@@ -112,10 +104,8 @@ describe('PartnerService.revoke — the write', () => {
         expect(patch.revokeReason).toBe('Incumplió el acuerdo de difusión.');
     });
 
-    it('hides the partner via lifecycleState, NOT via subscriptionStatus', async () => {
-        // Arrange — writing `subscriptionStatus` here would conflate "we took
-        // them down" with "they stopped paying", and the billing crons read
-        // that column.
+    it('hides the partner via lifecycleState alone', async () => {
+        // Arrange
         const { service, model } = buildService({
             findById: vi.fn(async () => makePartner()),
             update: vi.fn(async () => makePartner())

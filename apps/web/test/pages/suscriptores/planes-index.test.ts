@@ -141,10 +141,10 @@ describe('plan index — the five audiences are told apart without reading (AC-2
 
         expect(declared.map((match) => match[1]).sort()).toEqual([
             'experience',
-            'gastronomy',
             'host',
             'partner',
-            'tourist'
+            'tourist',
+            'venue'
         ]);
         // Two audiences sharing an ink distinguish nothing.
         expect(new Set(declared.map((match) => match[2]?.trim())).size).toBe(5);
@@ -249,6 +249,24 @@ describe('plan index — mobile layout (AC-2)', () => {
         expect(indexSrc).toContain('minmax(0, 1fr)');
         expect(indexSrc).toContain('min-width: 0;');
         expect(indexSrc).toContain('overflow-wrap: anywhere;');
+    });
+});
+
+describe('TEST:1758:5 subscriber plans hub grid', () => {
+    it('uses one column on mobile and two columns at every wider breakpoint', () => {
+        const grid = indexSrc.match(/\.audiences__grid \{([^}]*)\}/)?.[1] ?? '';
+        const mediaBlocks = [
+            ...indexSrc.matchAll(
+                /@media \(min-width: ([^)]+)\) \{\s*\.audiences__grid \{([^}]*)\}/g
+            )
+        ];
+
+        expect(grid).toContain('grid-template-columns: 1fr;');
+        expect(indexSrc).not.toContain('repeat(3, minmax(0, 1fr))');
+        expect(
+            mediaBlocks.map((match) => [match[1], match[2]?.match(/repeat\((\d+)/)?.[1]])
+        ).toEqual([['640px', '2']]);
+        expect(indexSrc).not.toContain('All five cards');
     });
 });
 
@@ -372,7 +390,7 @@ describe('plan index — the trial line is read, never written (R-2)', () => {
     });
 
     it('guards the trial line independently of the price line', () => {
-        // Gastronomy has a price and no trial; partner has NEITHER since
+        // Venue has a price and no trial; partner has NEITHER since
         // HOS-1212, and host has both. Nesting the trial inside the price
         // conditional would couple two lines that vary independently across the
         // five cards; asserted by nesting DEPTH, since the two blocks are
@@ -748,18 +766,18 @@ describe('plan index — the trial line stands out, the price gains a step (3 an
 // HOS-943 adjustment 5 — "restaurante" was the vertical's only door
 // ---------------------------------------------------------------------------
 
-describe('the gastronomy card does not narrow the vertical to restaurants', () => {
+describe('the venue card does not narrow the vertical to restaurants', () => {
     const LOCALES = ['es', 'en', 'pt'] as const;
 
-    const gastronomyCard = (locale: string): Record<string, string> => {
+    const venueCard = (locale: string): Record<string, string> => {
         const file = resolve(
             __dirname,
             `../../../../../packages/i18n/src/locales/${locale}/pricing.json`
         );
         const parsed = JSON.parse(readFileSync(file, 'utf8')) as {
-            index?: { cards?: { gastronomy?: Record<string, unknown> } };
+            index?: { cards?: { venue?: Record<string, unknown> } };
         };
-        const card = parsed.index?.cards?.gastronomy ?? {};
+        const card = parsed.index?.cards?.venue ?? {};
 
         return Object.fromEntries(
             Object.entries(card)
@@ -773,13 +791,13 @@ describe('the gastronomy card does not narrow the vertical to restaurants', () =
         // cafés, heladerías, food trucks and casas de comida. A choripán cart
         // reading "restaurante" concludes, correctly, that this is not for it —
         // and the title is the one string that decides whether it reads on.
-        expect(gastronomyCard(locale).title?.toLowerCase()).not.toMatch(/restaurante|restaurant/);
+        expect(venueCard(locale).title?.toLowerCase()).not.toMatch(/restaurante|restaurant/);
     });
 
     it.each(LOCALES)('%s still names the vertical in the title', (locale) => {
         // Not merely "absence of restaurant": the title has to say what it is,
         // or the card stops being a door at all.
-        expect(gastronomyCard(locale).title).toMatch(/local gastron[oóô]mico|food business/i);
+        expect(venueCard(locale).title).toMatch(/Comer y salir|Comer e sair|Food & nightlife/i);
     });
 
     it.each(LOCALES)('%s widens the audience line past three venue types', (locale) => {
@@ -787,10 +805,10 @@ describe('the gastronomy card does not narrow the vertical to restaurants', () =
         // which reads as an exhaustive list rather than as examples. Keeping
         // "restaurante" AMONG several examples is fine — being the only door is
         // what was not.
-        const audience = gastronomyCard(locale).audience ?? '';
+        const audience = venueCard(locale).audience ?? '';
 
         expect(audience).toMatch(/food truck/i);
-        expect(audience).toMatch(/local gastron[oóô]mico|food business/i);
+        expect(audience).toMatch(/todo local|todo estabelecimento|any food business/i);
     });
 
     it('retires the old URL instead of leaving it indexed — D-9 reversed by HOS-1032', () => {
@@ -800,7 +818,7 @@ describe('the gastronomy card does not narrow the vertical to restaurants', () =
         // HOS-1032 revisited that call — `publicar-restaurante/index.astro`'s
         // own docblock records why: the page shipped 2026-08-21 (PR #2920) and
         // had accumulated almost no ranking to move, so retiring the URL in
-        // favour of `/planes/gastronomia/` (which does not carry "restaurante"
+        // favour of `/planes/comer-y-salir/` (which does not carry "restaurante"
         // either, for the same widened-audience reason as the card copy) was
         // judged the cheapest this rename would ever be. The old URL now 301s
         // there instead of staying a page of its own.
@@ -809,11 +827,11 @@ describe('the gastronomy card does not narrow the vertical to restaurants', () =
             'utf8'
         );
 
-        expect(audiencePlans).toContain("gastronomy: 'planes/gastronomia'");
+        expect(audiencePlans).toContain("venue: 'planes/comer-y-salir'");
         expect(STATIC_SITEMAP_PAGES.map((page) => page.path)).not.toContain(
             '/publicar-restaurante/'
         );
-        expect(STATIC_SITEMAP_PAGES.map((page) => page.path)).toContain('/planes/gastronomia/');
+        expect(STATIC_SITEMAP_PAGES.map((page) => page.path)).toContain('/planes/comer-y-salir/');
         expect(NON_SITEMAP_STATIC_PAGES['/publicar-restaurante/']).toBe('transactional');
     });
 });
@@ -858,7 +876,6 @@ describe('no trial key on the plan surfaces writes a number of days', () => {
         expect(Object.keys(allTrialCopy(locale)).sort()).toEqual([
             'pricing.index.trial_one',
             'pricing.index.trial_other',
-            'pricing.trialNotEligible',
             'pricing.trial_one',
             'pricing.trial_other'
         ]);

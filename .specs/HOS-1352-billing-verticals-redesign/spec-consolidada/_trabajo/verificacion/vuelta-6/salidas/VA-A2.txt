@@ -1,0 +1,15 @@
+# VA-A2 · fuente → spec · P/docs/12-contrato-de-cobertura.md; P/docs/16-fase-7-del-paraguas.md; P/docs/41-corte-del-mvp/10-decisiones-del-owner.md
+
+## Hallazgos
+
+fuentes/.specs/HOS-1352-billing-verticals-redesign/docs/41-corte-del-mvp/10-decisiones-del-owner.md:138 · «los carga la migración estructural del paso 3 y los verifica el 3a» · distinta en s/b249f841/00-indice.md:133 («los carga el paso 3a»), reiterada en s/b249f841/00-indice.md:1400 («los carga el [paso 3a](30-el-corte.md#paso-3a)»). El índice mantiene una carga posterior y separada de la migración, en vez de incluir los precios en el catálogo del paso 3; contradice también el procedimiento de s/b249f841/30-el-corte.md:602. La precisión vigente de fuentes/.specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:1502–1506 identifica expresamente como residuo atribuir la carga al 3a y confirma que ese paso sólo verifica. · BLOQUEA
+
+## Resumen
+
+| archivo | reglas normativas vivas revisadas | líneas recorridas | ausentes | distintas |
+|---|---|---|---|---|
+| P/docs/12-contrato-de-cobertura.md | ≈220 | 1–1585 | 0 | 0 |
+| P/docs/16-fase-7-del-paraguas.md | ≈210 | 1–1218 | 0 | 0 |
+| P/docs/41-corte-del-mvp/10-decisiones-del-owner.md | ≈120 | 1–267 | 0 | 1 |
+
+Conteos de reglas aproximados; hallazgos deduplicados: la regla de carga del catálogo también aparece en P/docs/16-fase-7-del-paraguas.md:152–153 y 1129–1138, y se cuenta una sola vez bajo BM. Total: 1 BLOQUEA y 0 MENOR.

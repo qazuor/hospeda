@@ -1,0 +1,22 @@
+# VB-12 · spec → fuente · 10-corte/B11.md 10-corte/B13a.md 20-fase-3/B13b.md 20-fase-3/B12.md
+
+## Hallazgos
+
+10-corte/B11.md:1369 · «su preapproval no se cancela hasta que el owner decida la devolución» · contradice .specs/HOS-1354-billing-cobro-y-proveedor/docs/09-conciliacion.md:99 («Y en el mismo acto el handler manda cancelar su preapproval») y .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:1658 (📌 DEC-CONC-002 del 2026-09-30, el mismo que cita el AC: «se anota, se cancela su preapproval y abre `PAGO_TARDÍO_RECHAZADO` con la propuesta de devolver») y 01-decision-log.md:6501 (📌 DEC-MIG-005: «se anota, se cancela y le aparece al owner marcado»); además contradice dentro de la spec a FILA:B11 (B11.md:41 «que el handler cancela al escribirla»), AC:B11:4 (B11.md:1385 «un desconocido fuera de la lista se manda cancelar»), AC:B11:6 (B11.md:1410, la lápida de recepción en la salvedad 4) y TEST:B11:3 (B11.md:1991 «el falso registra la cancelación del preapproval»). Quien implemente el AC no cancela, la lápida queda `CANCELLED` con el preapproval cobrando y la salvedad 4 nunca la reintenta · BLOQUEA
+
+10-corte/B13a.md:899 · «La baja desde Mi Suscripción pide reingresar la contraseña antes de confirmar; sin ella, la ruta contesta `401` y no corre `S11`» · sin soporte (ninguna fuente pide reingresar la contraseña en la baja; `rg` de «contraseña|reingres» en fuentes no da nada sobre la baja). Además agrega un paso a la baja contra .specs/HOS-1354-billing-cobro-y-proveedor/docs/19-superficies.md:187-188 («en no más pasos que los que costó suscribirse») y AC:B13a:1, que el TEST:B13a:1 cuenta paso por paso · BLOQUEA
+
+10-corte/B11.md:1538 · «—o, sin id de orden guardado, la búsqueda por el identificador del pedido la encuentra pagada (`EX-57`)—» · más débil que .specs/HOS-1354-billing-cobro-y-proveedor/docs/09-conciliacion.md:908 («por cada instancia `UNA_VEZ` en `ABANDONED` sin id de orden **y con su clave persistida** (la clave se persiste antes de la llamada, así que sin clave no salió ninguna)»): el AC no tiene la guarda de la clave persistida. El efecto es acotado (sin clave no hay orden que encontrar), pero el implementador buscaría también sobre instancias que nunca mandaron nada · MENOR
+
+10-corte/B11.md:2202 · «Las veinte cláusulas del criterio, una por caso» · contradicción interna con LISTA:B11 (B11.md:1745-1799), que tiene 21 cláusulas (la 21, la de `cancelado_visto_en` por la interfaz de `B4`, CH); fuente de la lista: .specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:1074 · MENOR
+
+10-corte/B13a.md:616 · «y cierra el saldo de una cortesía diferida con sus meses dichos (`B/14` §3.4)» · cita mal apuntada: `B/14` §3.4 es «Un canje rechazado no se consume» (.specs/HOS-1354-billing-cobro-y-proveedor/docs/14-promos-cortesias-y-grants.md:385); la regla de que otorgar un grant termina la cortesía y cierra el saldo diferido está en §4.3 (14-promos-cortesias-y-grants.md:436-439 y :454-477) · MENOR
+
+## Resumen
+
+| archivo | líneas recorridas | afirmaciones normativas revisadas (aprox.) | BLOQUEA | MENOR |
+|---|---|---|---|---|
+| 10-corte/B11.md | 1–74 y 1291–2327 (75–1290 son g-secciones, fuera del bloque) | 160 | 1 | 2 |
+| 10-corte/B13a.md | 1–53 y 427–1257 (54–426 son g-secciones, fuera del bloque) | 115 | 1 | 1 |
+| 20-fase-3/B13b.md | 1–261 | 30 | 0 | 0 |
+| 20-fase-3/B12.md | 1–64 y 266–819 (65–265 son g-secciones, fuera del bloque) | 85 | 0 | 0 |

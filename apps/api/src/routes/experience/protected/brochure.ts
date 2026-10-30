@@ -5,7 +5,7 @@
  * GET /api/v1/protected/experiences/{id}/brochure
  * ```
  *
- * The gastronomy twin (`routes/gastronomy/protected/brochure.ts`) carries the
+ * The venue twin (`routes/venue/protected/brochure.ts`) carries the
  * full reasoning for the order of the checks, for why the response is a raw
  * `Response`, and for why the projection is explicit. Two things differ here,
  * both because the two verticals publish different things:
@@ -17,18 +17,18 @@
  *   (HOS-1048), which is what makes it printable at all.
  *
  * R-1: the grant is on the experience premium plan, separately from
- * gastronomy's. There is no shared "commerce" plan to grant it once.
+ * venue's. There is no shared umbrella plan to grant it once.
  *
  * @module routes/experience/protected/brochure
  */
 
-import { EntitlementKey } from '@repo/billing';
 import {
     EntityTypeEnum,
     PermissionEnum,
+    PublicationStatusEnum,
     QrCodePurposeEnum,
     ServiceErrorCode,
-    VisibilityEnum
+    VerticalEnum
 } from '@repo/schemas';
 import { ExperienceService, entityNotFoundError } from '@repo/service-core';
 // Same module instance `utils/response-helpers` compares against: importing
@@ -37,17 +37,16 @@ import { ExperienceService, entityNotFoundError } from '@repo/service-core';
 import { ServiceError } from '@repo/service-core/types';
 import type { Context } from 'hono';
 import { z } from 'zod';
-import { commerceVerticalEntitlementMiddleware } from '../../../middlewares/commerce-entitlement';
-import { requireEntitlement } from '../../../middlewares/entitlement';
-import { buildExperienceBrochureContent } from '../../../services/commerce-brochure/brochure-content';
-import { buildBrochureResponse } from '../../../services/commerce-brochure/brochure-response';
-import { ExperienceBrochureSourceSchema } from '../../../services/commerce-brochure/brochure-source';
+
+import { buildExperienceBrochureContent } from '../../../services/listing-brochure/brochure-content';
+import { buildBrochureResponse } from '../../../services/listing-brochure/brochure-response';
+import { ExperienceBrochureSourceSchema } from '../../../services/listing-brochure/brochure-source';
 import { getActorFromContext } from '../../../utils/actor';
 import { buildEntityQrLabel, resolveEntityQrScanUrl } from '../../../utils/entity-qr';
 import { env } from '../../../utils/env';
 import { apiLogger } from '../../../utils/logger';
+import { resolveReturnUrlLocale } from '../../../utils/return-url-locale';
 import { createProtectedRoute } from '../../../utils/route-factory';
-import { resolveReturnUrlLocale } from '../../billing/checkout-return-urls';
 
 const experienceService = new ExperienceService({ logger: apiLogger });
 
@@ -65,12 +64,12 @@ export async function handleGetExperienceBrochure(
 
     const entity = result.data;
 
-    const hasViewAll = actor.permissions?.includes(PermissionEnum.COMMERCE_VIEW_ALL);
+    const hasViewAll = actor.permissions?.includes(PermissionEnum.EXPERIENCE_VIEW_ALL);
     if (!entity || (!hasViewAll && entity.ownerId !== actor.id)) {
         throw entityNotFoundError({ entityName: ExperienceService.ENTITY_NAME });
     }
 
-    if (entity.visibility !== VisibilityEnum.PUBLIC) {
+    if (entity.publicationStatus !== PublicationStatusEnum.PUBLISHED) {
         // Same canonical message as the branch above, deliberately: the error
         // contract's anti-enumeration rule wants one spelling of a 404, and two
         // would let a caller tell "not yours" from "not published" (HOS-600).
@@ -120,6 +119,12 @@ export async function handleGetExperienceBrochure(
 export const protectedGetExperienceBrochureRoute = createProtectedRoute({
     method: 'get',
     path: '/{id}/brochure',
+    listingAccess: {
+        vertical: VerticalEnum.EXPERIENCE,
+        operation: 'READ_OWN_COMMERCIAL',
+        idParam: 'id',
+        step6Key: 'download_listing_pdf'
+    },
     summary: 'Download the printable PDF sheet of an experience listing',
     description:
         'Returns a print-ready A4 PDF of the listing’s PUBLIC page — cover photo, meeting point, opening hours, contact, services and a QR back to the online sheet. Owner-only, and only for a listing that is publicly visible. Requires the download_listing_pdf entitlement, granted by the premium experience plan.',
@@ -131,10 +136,6 @@ export const protectedGetExperienceBrochureRoute = createProtectedRoute({
     handler: async (ctx: Context, params: Record<string, unknown>) =>
         handleGetExperienceBrochure(ctx, params),
     options: {
-        middlewares: [
-            commerceVerticalEntitlementMiddleware('experience'),
-            requireEntitlement(EntitlementKey.DOWNLOAD_LISTING_PDF)
-        ],
         customRateLimit: { requests: 20, windowMs: 60_000 }
     }
 });

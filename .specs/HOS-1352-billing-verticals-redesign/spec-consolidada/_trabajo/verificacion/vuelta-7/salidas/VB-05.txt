@@ -1,0 +1,15 @@
+# VB-05 · spec → fuente · 10-corte/V2.md, 10-corte/V3.md, 10-corte/V4.md
+
+## Hallazgos
+
+10-corte/V2.md:319 · «Dos planes vendibles de una misma vertical no pueden ofrecer el mismo precio mensual; publicar una versión que repita ese importe se rechaza aunque sus capacidades sean distintas.» · contradice fuentes/.specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:234 («BillingOption (§18), así que un plan tiene cuatro, y dos planes pueden costar lo mismo.»). DEC-ARCH-002 exige unicidad de rank, no de precio; la lista vigente de validaciones en fuentes/.specs/HOS-1352-billing-verticals-redesign/docs/nucleo/02-modelo-de-datos.md:129 tampoco agrega esta prohibición. Implementarla rechazaría planes admitidos por la fuente. · BLOQUEA
+
+10-corte/V3.md:376 · «de clase `COMPLEMENTO` SÓLO SI hay al menos una de clase `TÍTULO` viva que sea de» · contradice fuentes/.specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/15-entitlements-y-limits.md:140 («las de clase `COMPLEMENTO` SÓLO SI hay al menos una de clase `TÍTULO` viva que NO sea de»), completado en ambos textos por `tipo: TRIAL` en la línea siguiente. La spec invierte el predicado: admitiría complementos con el trial como único título y los descartaría cuando sólo hubiera suscripción, cortesía o grant. También contradice AC:V3:2 (10-corte/V3.md:146), TEST:V3:2 (10-corte/V3.md:773) y la regla de 10-corte/V4.md:651. · BLOQUEA
+
+## Resumen
+
+| archivo | líneas recorridas | afirmaciones normativas revisadas (aprox.) | BLOQUEA | MENOR |
+|---|---|---|---|---|
+| 10-corte/V2.md | 1–729 | 160 | 1 | 0 |
+| 10-corte/V3.md | 1–925 | 190 | 1 | 0 |
+| 10-corte/V4.md | 1–1246 | 260 | 0 | 0 |

@@ -46,7 +46,7 @@ describe('OwnerPromotionService.findExclusiveDeals (HOS-21 T-005)', () => {
         expect(result.error).toBeUndefined();
         expect(modelMock.findAll).toHaveBeenCalled();
         const [filter] = modelMock.findAll.mock.calls[0] ?? [];
-        expect(filter).toMatchObject({ planRestricted: false, deletedAt: null });
+        expect(filter).toMatchObject({ deletedAt: null });
     });
 
     it('includes both plus and vip conditions when audienceScope is [PLUS, VIP]', async () => {
@@ -71,13 +71,12 @@ describe('OwnerPromotionService.findExclusiveDeals (HOS-21 T-005)', () => {
         expect((filter as Record<string, unknown>).lifecycleState).toBe('ACTIVE');
     });
 
-    it('excludes plan-restricted and soft-deleted rows via the public filter', async () => {
+    it('excludes soft-deleted rows via the public filter', async () => {
         await service.findExclusiveDeals(guestActor, { page: 1, pageSize: 20 }, [
             TouristAudienceEnum.VIP
         ]);
 
         const [filter] = modelMock.findAll.mock.calls[0] ?? [];
-        expect((filter as Record<string, unknown>).planRestricted).toBe(false);
         expect((filter as Record<string, unknown>).deletedAt).toBeNull();
     });
 

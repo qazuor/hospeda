@@ -1,0 +1,13 @@
+{
+  // SONDA 08 — receptor de webhooks de FASE 1C (HOS-1352).
+  // NO es infraestructura de Hospeda: es un Worker descartable de experimento.
+  // Se borra con:  wrangler delete --name hos1352-webhook-sink
+  "name": "hos1352-webhook-sink",
+  "main": "worker.js",
+  "compatibility_date": "2026-09-01",
+  "workers_dev": true,
+  "observability": { "enabled": true },
+  "kv_namespaces": [
+    { "binding": "HOS1352_WEBHOOKS", "id": "7caa9fccaaae4c1788d169dee1bff6aa" }
+  ]
+}

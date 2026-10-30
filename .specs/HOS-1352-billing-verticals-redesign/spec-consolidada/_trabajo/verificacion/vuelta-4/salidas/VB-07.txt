@@ -1,0 +1,20 @@
+# VB-07 · spec → fuente · 20-fase-4/V7.md, 10-corte/V8a.md, 20-fase-4/V8b.md, 10-corte/V9a.md
+
+## Hallazgos
+
+20-fase-4/V7.md:815 · «La postulación exige un CUIT válido y único entre las postulaciones pendientes o aprobadas; un CUIT repetido rechaza el envío antes de crear la fila.» · sin soporte (la guarda vigente de PP1 en fuentes/.specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/03-maquinas-de-estado.md:1359 y el modelo de postulacion en fuentes/.specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/02-modelo-de-datos.md:640 restringen por correo, pendiente y espera tras rechazo; no exigen CUIT ni su unicidad. La búsqueda del término en las fuentes congeladas, el decision log y las decisiones posteriores no aporta autoridad para agregar este rechazo) · BLOQUEA
+
+10-corte/V8a.md:108 · «la acción 24 deja la cuenta sin filas en `accounts` y con sus favoritos conservados, y sus pruebas lo afirman» · contradice fuentes/.specs/HOS-1353-verticales-capacidades-y-autorizacion/descomposicion.md:719 («la acción 24 deja la cuenta sin filas en `accounts` y sin favoritos, y sus pruebas lo afirman»). El alcance preciso del borrado está en fuentes/.specs/HOS-1352-billing-verticals-redesign/docs/nucleo/08-auditoria-y-observabilidad.md:214: son los favoritos que terceros guardaron sobre esa cuenta. También contradice AC:V8a:11, AC:V8a:14 y TEST:V8a:13 del mismo archivo, que exigen ese borrado · BLOQUEA
+
+10-corte/V8a.md:408 · «los pedidos de arreglo abiertos, con la fecha sugerida vencida y los que el dueño ya avisó que corrigió» · más débil que fuentes/.specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/19-superficies.md:91 («los pedidos de arreglo abiertos, con su antigüedad, la fecha sugerida vencida y los que el dueño ya avisó que corrigió»): omite mostrar la antigüedad de los pedidos. El resto de la pieza y las referencias internas al listado tampoco recuperan ese dato, y no hay una decisión posterior que lo retire · BLOQUEA
+
+10-corte/V9a.md:74 · «el reloj, `PB9`, el empuje a billing, la lista cerrada de `PURGED` y los tres avisos: `V9b`» · contradice fuentes/.specs/HOS-1352-billing-verticals-redesign/docs/41-corte-del-mvp/10-decisiones-del-owner.md:137 («`V6` encola el aviso *«al archivar»* con su plantilla en `PB4`/`PB5` y `V9b` suma los dos avisos previos y el job»). Incoherencia de reparto sin cambio de comportamiento en los criterios operativos: las líneas 47–49 del mismo archivo, AC:V6:28 y AC:V9b:14 sí conservan el reparto vigente · MENOR
+
+## Resumen
+
+| archivo | líneas recorridas | afirmaciones normativas revisadas (aprox.) | BLOQUEA | MENOR |
+|---|---|---:|---:|---:|
+| 20-fase-4/V7.md | 1–1076 | 220 | 1 | 0 |
+| 10-corte/V8a.md | 1–655 | 190 | 2 | 0 |
+| 20-fase-4/V8b.md | 1–306 | 80 | 0 | 0 |
+| 10-corte/V9a.md | 1–311 | 75 | 0 | 1 |

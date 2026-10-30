@@ -8,13 +8,12 @@ import {
     createBaseLifecycleFields,
     createBaseLocationFields,
     createBaseMediaFields,
-    createBaseModerationFields,
     createBaseReviewFields,
     createBaseSeoFields,
     createBaseTagsFields,
-    createBaseVisibilityFields,
     createInvalidEmail,
     createInvalidUrl,
+    createPublicationStatusFields,
     createTooLongString,
     createTooShortString
 } from './common.fixtures.js';
@@ -39,9 +38,7 @@ export const createValidAccommodation = () => ({
     ...createBaseIdFields(),
     ...createBaseAuditFields(),
     ...createAccommodationEntityFields(),
-    ...createBaseLifecycleFields(),
-    ...createBaseModerationFields(),
-    ...createBaseVisibilityFields(),
+    ...createPublicationStatusFields(),
     ...createBaseReviewFields(),
     ...createBaseSeoFields(),
     ...createBaseContactFields(),
@@ -187,9 +184,7 @@ export const createMinimalAccommodation = () => ({
     ...createBaseIdFields(),
     ...createBaseAuditFields(),
     ...createAccommodationEntityFields(),
-    ...createBaseLifecycleFields(),
-    ...createBaseModerationFields(),
-    ...createBaseVisibilityFields(),
+    ...createPublicationStatusFields(),
     ...createBaseReviewFields(),
 
     type: 'HOTEL' as AccommodationTypeEnum,
@@ -207,9 +202,7 @@ export const createInvalidAccommodation = () => ({
     type: 'INVALID_TYPE', // Invalid enum
     destinationId: 'invalid-uuid', // Invalid UUID
     ownerId: '', // Empty required field
-    lifecycleState: 'INVALID_STATE', // Invalid enum
-    moderationState: 'INVALID_STATE', // Invalid enum
-    visibility: 'INVALID_VISIBILITY', // Invalid enum
+    publicationStatus: 'INVALID_STATE', // Invalid enum
     contact: {
         mobilePhone: 'invalid-phone', // Invalid phone format
         personalEmail: createInvalidEmail(),
@@ -238,9 +231,7 @@ export const createAccommodationEdgeCases = () => ({
     ...createBaseIdFields(),
     ...createBaseAuditFields(),
     ...createAccommodationEntityFields(),
-    ...createBaseLifecycleFields(),
-    ...createBaseModerationFields(),
-    ...createBaseVisibilityFields(),
+    ...createPublicationStatusFields(),
     ...createBaseReviewFields(),
 
     // Maximum length strings

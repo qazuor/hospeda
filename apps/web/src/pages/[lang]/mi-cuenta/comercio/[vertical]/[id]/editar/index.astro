@@ -1,7 +1,7 @@
 ---
 /**
  * @file mi-cuenta/comercio/[vertical]/[id]/editar/index.astro
- * @description The commerce editor hub (HOS-1080, closing HOS-892).
+ * @description The venue/experience editor hub (HOS-1080, closing HOS-892).
  *
  * Lists every section as a row with a status line. Rendered on BOTH viewports:
  * on mobile it IS the navigation, on desktop it doubles as a status summary of
@@ -18,23 +18,48 @@
  */
 
 import EditorHub from '@/components/host/editor/EditorHub.astro';
-import CommerceEditorSectionLayout from '@/layouts/CommerceEditorSectionLayout.astro';
-import { resolveCommerceEditorSectionStatuses } from '@/lib/editor/commerce-editor-hub-status-model';
-import { resolveCommerceEditorPage } from '@/lib/editor/resolve-commerce-editor-page';
+import ListingNotices from '@/components/listing/ListingNotices.astro';
+import SupportEditNotice from '@/components/listing/SupportEditNotice.astro';
+import ListingEditorSectionLayout from '@/layouts/ListingEditorSectionLayout.astro';
+import { resolveListingEditorSectionStatuses } from '@/lib/editor/listing-editor-hub-status-model';
+import { resolveListingEditorPage } from '@/lib/editor/resolve-listing-editor-page';
 import { createTranslations } from '@/lib/i18n';
-import { readCommerceEditorHubFacts } from '@/lib/commerce/commerce-editor-detail';
+import { readListingEditorHubFacts } from '@/lib/listing/listing-editor-detail';
+import { loadListingNoticesItem } from '@/lib/listing/listing-notices-loader';
+import { loadSupportEdits } from '@/lib/listing/support-edits';
 
 export const prerender = false;
 
-const resolution = await resolveCommerceEditorPage({ astro: Astro, sectionSlug: null });
+const resolution = await resolveListingEditorPage({ astro: Astro, sectionSlug: null });
 
 if (resolution.redirect) return resolution.redirect;
 
 const { detail, locale, vertical, listingId, registry } = resolution;
 const { t } = createTranslations(locale);
 
-const facts = readCommerceEditorHubFacts({ detail });
-const statuses = resolveCommerceEditorSectionStatuses({
+const facts = readListingEditorHubFacts({ detail });
+
+// Row 26 (HOS-1493) and the listing notices of HOS-1492 (fix requested,
+// moderated, archived, surplus): support's content edits and the notices of the
+// listing, read together. The vertical comes from the page resolution. Neither
+// blocks the hub: any failure degrades to nothing.
+const cookieHeader = Astro.request.headers.get('cookie') ?? undefined;
+const [supportEdits, listingNotices] = await Promise.all([
+	loadSupportEdits({
+		vertical,
+		listingId,
+		cookieHeader,
+	}),
+	loadListingNoticesItem({
+		vertical,
+		listingId,
+		cookieHeader,
+	}),
+]);
+
+const hasListingNotices =
+	listingNotices.item !== undefined && listingNotices.item.notices.length > 0;
+const statuses = resolveListingEditorSectionStatuses({
 	input: {
 		vertical,
 		listing: facts.listing,
@@ -44,10 +69,10 @@ const statuses = resolveCommerceEditorSectionStatuses({
 	},
 });
 
-const verticalLabel = t(`commerce.owner.list.badge.${vertical}`, vertical);
+const verticalLabel = t(`listing.owner.list.badge.${vertical}`, vertical);
 ---
 
-<CommerceEditorSectionLayout
+<ListingEditorSectionLayout
 	locale={locale}
 	registry={registry}
 	listingId={listingId}
@@ -55,13 +80,26 @@ const verticalLabel = t(`commerce.owner.list.badge.${vertical}`, vertical);
 	currentSectionId={null}
 	currentSectionSlug={null}
 	title={detail.name}
-	subtitle={t('commerce.owner.editor.hub.subtitle', 'Elegí qué querés editar')}
-	description={t('commerce.owner.editor.pageDescription', 'Editar la información de tu ficha')}
+	subtitle={t('listing.owner.editor.hub.subtitle', 'Elegí qué querés editar')}
+	description={t('listing.owner.editor.pageDescription', 'Editar la información de tu ficha')}
 >
-	<div class="commerce-hub__identity">
-		<span class="commerce-hub__badge">{verticalLabel}</span>
-		<code class="commerce-hub__slug">{detail.slug}</code>
+	<div class="listing-hub__identity">
+		<span class="listing-hub__badge">{verticalLabel}</span>
+		<code class="listing-hub__slug">{detail.slug}</code>
 	</div>
+
+	{hasListingNotices && (
+		<div class="listing-hub__notices" data-testid="editor-hub-listing-notices">
+			<ListingNotices
+				locale={locale}
+				vertical={vertical}
+				listingId={listingId}
+				item={listingNotices.item}
+			/>
+		</div>
+	)}
+
+	<SupportEditNotice locale={locale} items={supportEdits.items} />
 
 	<EditorHub
 		locale={locale}
@@ -69,10 +107,10 @@ const verticalLabel = t(`commerce.owner.list.badge.${vertical}`, vertical);
 		entityId={listingId}
 		statuses={statuses}
 	/>
-</CommerceEditorSectionLayout>
+</ListingEditorSectionLayout>
 
 <style>
-	.commerce-hub__identity {
+	.listing-hub__identity {
 		display: flex;
 		align-items: center;
 		gap: var(--space-3, 1rem);
@@ -80,7 +118,7 @@ const verticalLabel = t(`commerce.owner.list.badge.${vertical}`, vertical);
 		margin-bottom: var(--space-5, 1.5rem);
 	}
 
-	.commerce-hub__badge {
+	.listing-hub__badge {
 		font-size: var(--text-caption, 0.75rem);
 		padding: 0.125rem 0.5rem;
 		border-radius: var(--radius-pill, 999px);
@@ -88,8 +126,15 @@ const verticalLabel = t(`commerce.owner.list.badge.${vertical}`, vertical);
 		color: var(--core-muted-foreground);
 	}
 
-	.commerce-hub__slug {
+	.listing-hub__slug {
 		font-size: var(--text-caption, 0.75rem);
 		color: var(--core-muted-foreground);
+	}
+
+	.listing-hub__notices {
+		display: flex;
+		flex-direction: column;
+		gap: var(--space-3, 0.75rem);
+		margin: 0 0 var(--space-5, 1.5rem);
 	}
 </style>

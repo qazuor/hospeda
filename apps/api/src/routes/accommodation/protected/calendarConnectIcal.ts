@@ -10,9 +10,9 @@
  *
  * Gate model (mirrors `calendarConnectGoogle.ts`): ownership +
  * `ACCOMMODATION_OCCUPANCY_MANAGE` are enforced inline via
- * `assertOccupancyManageAccess`; the `CAN_SYNC_EXTERNAL_CALENDAR` billing
- * entitlement is enforced HERE at the route via `requireEntitlement`, never
- * re-checked in a service resolver.
+ * `assertOccupancyManageAccess`; external calendar connections run without
+ * the former billing entitlement during the transition.
+ * The listing access resolver requires the route capability on the owner.
  *
  * ## Probe-before-save
  *
@@ -21,7 +21,7 @@
  * immediate, actionable 400 instead of a silently-dead connection that only
  * surfaces as an error on the next cron run. On success, the probe's parsed
  * rows are discarded (not written here) — `saveIcalConnection` persists only
- * the credential. See `docs/billing/endpoint-gate-matrix.md` for the gate row.
+ * the credential.
  *
  * ## Immediate first sync on connect (HOS-162 judgment-day Fix #5)
  *
@@ -42,7 +42,6 @@
  * @module routes/accommodation/protected/calendarConnectIcal
  */
 
-import { EntitlementKey } from '@repo/billing';
 import { accommodationCalendarSyncModel } from '@repo/db';
 import {
     AccommodationIdSchema,
@@ -50,11 +49,12 @@ import {
     CalendarConnectionResponseSchema,
     ConnectIcalBodySchema,
     OccupancySourceEnum,
-    ServiceErrorCode
+    ServiceErrorCode,
+    VerticalEnum
 } from '@repo/schemas';
 import { assertOccupancyManageAccess, ServiceError } from '@repo/service-core';
 import type { Context } from 'hono';
-import { requireEntitlement } from '../../../middlewares/entitlement';
+
 import { getTodayInMarketTimezone } from '../../../services/calendar-sync/date-range';
 import { syncAccommodationIcalCalendar } from '../../../services/ical-calendar/ical-calendar-sync.service';
 import type { IcalProvider } from '../../../services/ical-calendar/ical-credential.repository';
@@ -81,6 +81,12 @@ const ICAL_PROVIDER_BY_TOKEN: Record<'airbnb' | 'booking' | 'other', IcalProvide
 export const protectedCalendarConnectIcalRoute = createProtectedRoute({
     method: 'post',
     path: '/{id}/calendar-sync/connect-ical',
+    listingAccess: {
+        vertical: VerticalEnum.ACCOMMODATION,
+        operation: 'EDIT',
+        capabilities: ['can_sync_external_calendar'],
+        idParam: 'id'
+    },
     summary: 'Connect an Airbnb/Booking/generic iCal feed (owner)',
     description:
         'Validates the supplied .ics feed URL by fetching and parsing it live, persists the ' +
@@ -167,8 +173,5 @@ export const protectedCalendarConnectIcalRoute = createProtectedRoute({
                 isActive: row.isActive
             }
         };
-    },
-    options: {
-        middlewares: [requireEntitlement(EntitlementKey.CAN_SYNC_EXTERNAL_CALENDAR)]
     }
 });

@@ -1,0 +1,16 @@
+# VB-14 · spec → fuente · 30-el-corte.md 90-retirados.md
+
+## Hallazgos
+
+30-el-corte.md:38 · «corre sobre **una copia de la base de producción restaurada en `staging`, con los correos reescritos a una casilla que no entrega y la lista real de las cinco cuentas**» · más débil que .specs/HOS-1352-billing-verticals-redesign/docs/16-fase-7-del-paraguas.md:146 («y la copia se borra al terminar el ensayo») y :1109 («Terminado el ensayo, la copia se borra (C)»). Omite el borrado obligatorio al finalizar; también falta en GATE:M3 (líneas 1389–1400), AC:CORTE:1 (1563–1572) y sus pruebas. La decisión C de .specs/HOS-1352-billing-verticals-redesign/docs/39-fases-6-y-7/10-decisiones-del-owner.md:21 exige «se borra al terminar»; BQ agrega el recorrido del aborto sobre la misma copia, pero no elimina su borrado final. Seguir el procedimiento consolidado permite dar el ensayo por terminado dejando la copia de producción en staging. · BLOQUEA
+
+30-el-corte.md:270 · «**El punto de no retorno tiene una ubicación declarada: está entre el paso 4b y el paso 5** (§4.3).» · contradice .specs/HOS-1352-billing-verticals-redesign/docs/16-fase-7-del-paraguas.md:513 («el punto de no retorno ahora tiene una ubicación declarada: está entre el paso 2 y el paso 3», continúa en :514), reiterado en :1113. También contradice las líneas 368 y 1411 del mismo archivo de la spec. La precisión de .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:3143 incluye el 4b en la terminación del paso 3 y en la cobertura de la rama de aborto, pero dice expresamente en :3145–3146 «El punto de no retorno no se mueve»; :3162 lo reitera. La nueva ubicación introduce una frontera distinta de la declarada y deja dos instrucciones incompatibles para el procedimiento de reversión. · BLOQUEA
+
+90-retirados.md:479 · «Los códigos promocionales del sistema viejo que no vencieron se importan al catálogo nuevo, con su vigencia y sus usos consumidos, antes de reabrir las altas.» · contradice .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:6439 («todo lo de billing arranca de cero, como si fuera un cliente nuevo: suscripciones, pagos, trials consumidos, promos y el historial del sistema viejo», continúa en :6440) y .specs/HOS-1354-billing-cobro-y-proveedor/docs/21-migracion.md:495 («Las tablas viejas de billing, con todo lo que tengan adentro», seguido en :497 de «no se conserva nada —ni se transcribe, ni se congela en solo lectura, ni se exporta—»). La carga de códigos vigentes del catálogo nuevo en D/16:153 no autoriza importar promociones viejas ni sus usos. Agrega una migración de datos prohibida y además contradice la declaración «Nada de acá se implementa» de 90-retirados.md:6–7. · BLOQUEA
+
+## Resumen
+
+| archivo | líneas recorridas | afirmaciones normativas revisadas (aprox.) | BLOQUEA | MENOR |
+|---|---|---|---|---|
+| 30-el-corte.md | 1–1948 | 300 | 2 | 0 |
+| 90-retirados.md | 1–535 | 85 | 1 | 0 |

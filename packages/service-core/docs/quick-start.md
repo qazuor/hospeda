@@ -40,7 +40,7 @@ An **actor** represents the user or system performing an action:
 ```typescript
 type Actor = {
   id: string;                             // User ID
-  roles: readonly RoleEnum[];             // Every role the actor holds at once (HOS-296) — GUEST, USER, HOST, COMMERCE_OWNER, EDITOR, SPONSOR, CLIENT_MANAGER, ADMIN, SUPER_ADMIN, SYSTEM
+  roles: readonly RoleEnum[];             // Every role the actor holds at once (HOS-296) — GUEST, USER, HOST, VENUE_OWNER / EXPERIENCE_OWNER, EDITOR, SPONSOR, CLIENT_MANAGER, ADMIN, SUPER_ADMIN, SYSTEM
   permissions: readonly PermissionEnum[]; // Union of permissions across all held roles + overrides
 };
 ```
@@ -61,7 +61,7 @@ This forces explicit error handling and provides type safety.
 
 ## Your First Service
 
-Let's create a `ProductService` that manages products in an e-commerce platform.
+Let's create a `ProductService` that manages products in an online store platform.
 
 ### Step 1: Define Zod Schemas
 

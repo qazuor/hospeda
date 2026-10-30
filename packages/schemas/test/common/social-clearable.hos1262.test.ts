@@ -3,7 +3,7 @@
  * expressible, on the way in AND on the way out.
  *
  * `socialNetworks` is now a MERGEABLE JSONB column on every model that owns one
- * (accommodation, experience, gastronomy, partner, postSponsor, user,
+ * (accommodation, experience, venue, partner, postSponsor, user,
  * eventOrganizer). Merge semantics invert how a key is CLEARED: an omitted key
  * means "leave it alone", so deleting a link is an explicit `null` — exactly the
  * contract `contactInfo` adopted in HOS-375. Before this change every key was
@@ -28,7 +28,7 @@ import {
     EventOrganizerUpdateHttpSchema,
     httpToDomainEventOrganizerUpdate
 } from '../../src/entities/eventOrganizer/eventOrganizer.http.schema.js';
-import { GastronomyUpdateHttpSchema } from '../../src/entities/gastronomy/gastronomy.http.schema.js';
+import { VenueUpdateHttpSchema } from '../../src/entities/venue/venue.http.schema.js';
 
 /** Every key of the shared social JSONB value. */
 const SOCIAL_FIELDS = [
@@ -93,14 +93,14 @@ describe('SocialNetworkReadSchema (READ) — a stored JSON null must not 500 the
     });
 });
 
-describe('flat HTTP social fields accept null (accommodation, gastronomy, event organizer)', () => {
+describe('flat HTTP social fields accept null (accommodation, venue, event organizer)', () => {
     it('accommodation update accepts `facebook: null` and rejects `""`', () => {
         expect(AccommodationUpdateHttpSchema.safeParse({ facebook: null }).success).toBe(true);
         expect(AccommodationUpdateHttpSchema.safeParse({ facebook: '' }).success).toBe(false);
     });
 
-    it('gastronomy update accepts `instagram: null`', () => {
-        expect(GastronomyUpdateHttpSchema.safeParse({ instagram: null }).success).toBe(true);
+    it('venue update accepts `instagram: null`', () => {
+        expect(VenueUpdateHttpSchema.safeParse({ instagram: null }).success).toBe(true);
     });
 
     it('event organizer update accepts `twitter: null`', () => {

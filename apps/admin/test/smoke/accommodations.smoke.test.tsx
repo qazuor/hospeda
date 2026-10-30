@@ -6,9 +6,26 @@
  * tree mounts successfully with mocked dependencies.
  */
 
-import { waitFor } from '@testing-library/react';
-import { describe, expect, it, vi } from 'vitest';
+import { screen, waitFor } from '@testing-library/react';
+import { HttpResponse, http } from 'msw';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { mockAccommodation } from '../fixtures';
 import { renderWithProviders } from '../helpers/render-with-providers';
+import { server } from '../mocks/server';
+
+vi.mock('@/hooks/use-auth-context', () => ({
+    useAuthContext: () => ({
+        user: {
+            id: 'test_user_id',
+            name: 'Test User',
+            email: 'test@example.com',
+            roles: ['ADMIN'],
+            permissions: ['accommodation.viewAll', 'accommodation.update.any']
+        },
+        isAuthenticated: true,
+        isLoading: false
+    })
+}));
 
 // Re-mock router with test-specific useParams (synchronous, no vi.importActual)
 vi.mock('@tanstack/react-router', () => ({
@@ -59,6 +76,29 @@ import { Route as AccommodationsListRoute } from '@/routes/_authed/accommodation
 import { Route as AccommodationNewRoute } from '@/routes/_authed/accommodations/new';
 
 describe('Accommodations smoke tests', () => {
+    let effectiveSetRequests = 0;
+
+    beforeEach(() => {
+        effectiveSetRequests = 0;
+        server.use(
+            http.get('http://localhost:3001/api/v1/admin/accommodations/:id', () =>
+                HttpResponse.json({ success: true, data: mockAccommodation })
+            ),
+            http.get('http://localhost:3001/api/v1/admin/users/:id/effective-set', () => {
+                effectiveSetRequests += 1;
+                return HttpResponse.json({
+                    success: true,
+                    data: {
+                        userId: mockAccommodation.ownerId,
+                        vertical: 'accommodation',
+                        hasLiveNonTrialTitle: false,
+                        entitlements: {},
+                        limits: {}
+                    }
+                });
+            })
+        );
+    });
     it('renders accommodations list page without crashing', async () => {
         const Page = AccommodationsListRoute.options.component;
         if (!Page) throw new Error('Component not found in Route.options');
@@ -93,12 +133,42 @@ describe('Accommodations smoke tests', () => {
 
         renderWithProviders(<Page />);
 
-        await waitFor(
-            () => {
-                expect(document.body.textContent?.length).toBeGreaterThan(0);
-            },
-            { timeout: 5000 }
+        expect(
+            (await screen.findAllByRole('heading', { name: mockAccommodation.name })).some(
+                (heading) => !heading.classList.contains('sr-only')
+            )
+        ).toBe(true);
+        await waitFor(() => expect(effectiveSetRequests).toBeGreaterThan(0));
+    });
+
+    it('keeps the view page rendered when the effective set read fails', async () => {
+        server.use(
+            http.get('http://localhost:3001/api/v1/admin/users/:id/effective-set', () => {
+                effectiveSetRequests += 1;
+                return HttpResponse.json({ error: 'read failed' }, { status: 503 });
+            })
         );
+        const Page = AccommodationViewRoute.options.component;
+        if (!Page) throw new Error('Component not found in Route.options');
+
+        const { queryClient } = renderWithProviders(<Page />);
+
+        await waitFor(
+            () =>
+                expect(
+                    queryClient.getQueryState([
+                        'billing',
+                        'effective-set',
+                        mockAccommodation.ownerId,
+                        'accommodation'
+                    ])?.status
+                ).toBe('error'),
+            { timeout: 3000 }
+        );
+        expect(
+            screen.getAllByRole('heading', { name: mockAccommodation.name }).length
+        ).toBeGreaterThan(0);
+        expect(screen.queryByText('Algo salió mal')).not.toBeInTheDocument();
     });
 
     it('renders accommodation edit page without crashing', async () => {
@@ -107,12 +177,9 @@ describe('Accommodations smoke tests', () => {
 
         renderWithProviders(<Page />);
 
-        await waitFor(
-            () => {
-                expect(document.body.textContent?.length).toBeGreaterThan(0);
-            },
-            { timeout: 5000 }
-        );
+        expect(await screen.findByRole('tablist')).toBeInTheDocument();
+        await waitFor(() => expect(effectiveSetRequests).toBeGreaterThan(0));
+        expect(screen.queryByText('Algo salió mal')).not.toBeInTheDocument();
     });
 
     it('renders accommodation amenities page without crashing', async () => {

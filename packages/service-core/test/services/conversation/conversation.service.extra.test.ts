@@ -97,7 +97,12 @@ vi.mock('@repo/db', async (importOriginal) => {
 import type { SelectConversation } from '@repo/db';
 import * as dbModule from '@repo/db';
 import { AccommodationModel, ConversationModel, MessageModel } from '@repo/db';
-import { ConversationStatusEnum, PermissionEnum, RoleEnum } from '@repo/schemas';
+import {
+    ConversationStatusEnum,
+    PermissionEnum,
+    PublicationStatusEnum,
+    RoleEnum
+} from '@repo/schemas';
 import * as jose from 'jose';
 import { afterEach, beforeEach, describe, expect, it, type Mock, vi } from 'vitest';
 import type { AccessTokenService } from '../../../src/services/conversation/access-token.service.js';
@@ -729,6 +734,8 @@ describe('ConversationService (extra coverage)', () => {
             const accommodation = {
                 id: ACCOMMODATION_ID,
                 name: 'Posada del Sol',
+                ownerId: HOST_ACTOR.id,
+                publicationStatus: PublicationStatusEnum.PUBLISHED,
                 deletedAt: null
             };
             asMock(accommodationModelMock.findById).mockResolvedValue(accommodation);

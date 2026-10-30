@@ -1,0 +1,59 @@
+# VA-A7a · fuente → spec · bloque A7a (14-promos, 16-addons, 19-superficies)
+
+Spec: `ciegas/s/11b6457f/`. Rutas de fuente abreviadas como `14:`, `16:`, `19:` =
+`.specs/HOS-1354-billing-cobro-y-proveedor/docs/{14-promos-cortesias-y-grants,16-addons,19-superficies}.md`.
+Rutas de spec relativas a `ciegas/s/11b6457f/`.
+
+## Reglas con problema
+
+### 14-promos-cortesias-y-grants.md
+
+```
+14:241 · «el contador `promo_redemption.cobros_restantes`: nulo = forever, N>0 = N cobros con descuento, 0 = agotado; se inicializa al canjear con la duración del código; "primer cobro" es N = 1» · ausente (B3.md:875 sólo dice «nunca negativo»; 04-catalogos.md:4265 y B9b sólo lo decrementan; nada dice qué es nulo ni con qué se inicializa) · BLOQUEA
+14:303 · «sólo una mutación NUESTRA (S30, aumento, S37) se reintenta 3 días; cualquier otra divergencia de monto abre DIVERGENCIA_DE_MONTO en el acto, sin reintento» · distinta en 04-catalogos.md:5666 (MOT:5: la marca se abre siempre «después de 3 días de reintentar la mutación») y en B11.md:220-227 (AC:B11:9 sólo cubre el caso con mutación previa); la rama «en el acto» no aparece en ningún lado · BLOQUEA
+14:306 · «entre el pedido de un downgrade y el acto que lo aplica (S38), el monto esperado del barrido es el del plan NUEVO, sin promos» · ausente para el barrido: 04-catalogos.md:3897 (S30) define el monto esperado como el precio «de la versión de plan» de la fila, que en esa ventana es la vieja; sólo se lo menciona de pasada en 01-decisiones-vigentes.md:1925 («como en el downgrade»). B8b.md:204 dice que el pedido muta, no qué espera el barrido · BLOQUEA
+14:376 · «el job de vencimiento del trial (T3) relee la fecha de fin dentro de su propia transacción, no actúa sobre la que leyó al armar el lote» · ausente (04-catalogos.md TRANS:V:T3 tiene condición «—»; V4.md:286-296 y :926 no lo dicen; sólo está el lado de T4, que rechaza con la fecha pasada) · BLOQUEA
+14:91 · «un descuento del 100 % no se canjea (el resultado es cero, que el proveedor rechaza); para regalar un período, la cortesía» · ausente como regla propia; queda cubierto de hecho por el rechazo bajo el piso (AC:B9b:2) · MENOR
+14:397 · «`stackable`/`usableWhileAnotherPromoActive` rigen sólo entre promos; las combinaciones con cortesía y grant no son configurables» · ausente (B9b AC:B9b:9 enumera los campos del código sin nombrarlo) · MENOR
+14:418 · «sobre un grant no se otorga cortesía: el predicado es "hay un ancla viva en la vertical de esa suscripción"» · distinta en 04-catalogos.md:2945 (la condición de S9 no lo incluye) y en B9b.md:173-183 (AC:B9b:7); sólo está en el inventario de 02-nucleo-glosario.md:604 · MENOR
+14:297 · «el reintento de 3 días de un aumento de DEC-MP-002 cuenta desde su fecha efectiva» · distinta en 04-catalogos.md:4009 (con BZ, 2026-10-02, el aumento pasa por S37 y los 3 días cuentan desde S37, siete días antes de la aplicación). Decisión del owner posterior a la fuente · MENOR
+14:734 · (abierto) «S30 sale sólo de ACTIVE; si P1 corre antes de S5, la mutación no ocurre y el barrido abre DIVERGENCIA_DE_MONTO» · distinta en 04-catalogos.md:3887-3897 (S30 desde ACTIVE o GRACE_PERIOD, «S5 y esta fila corren en el mismo acto»), mientras 80-abiertos.md:351 lo sigue listando como abierto con el texto viejo: contradicción interna · MENOR
+```
+
+### 16-addons.md
+
+```
+16:199 · «un grant permanente vale como título EN LUGAR de la suscripción ACTIVE para adquirir un addon, sólo en la vertical donde ancló y mientras el grant esté vivo» · distinta en 04-catalogos.md:5215 (nota de A1) y 20-fase-3/B10.md:138-147 (AC:B10:1): A1 «exige una suscripción principal válida» y no tiene la alternativa del grant. La regla está en 02-nucleo-glosario.md:603 y 03-contrato-de-cobertura.md:319, pero ningún AC ni guarda la deja comprar · BLOQUEA
+16:233 · «el addon elegido gratis con el grant (§3.2) no registra `payment` de cero ni emite comprobante; la instancia registra su origen (el ancla) como título» · ausente para el camino de elegirlo (sólo está para el convertido por S20, 04-catalogos.md S20; INV:28 en 02-nucleo.md:617 dice que «habilita a elegir» sin mecanismo, AC ni test) · BLOQUEA
+16:65 · «no hay vigencia PERMANENTE: los valores de vigencia son sólo DÍAS_FIJOS y MIENTRAS_VIVA_LA_SUSCRIPCIÓN» · ausente como prohibición (sólo está «PERIÓDICO + DÍAS_FIJOS no se puede configurar», B10.md:317) · MENOR
+```
+
+### 19-superficies.md
+
+```
+19:109 · «fila 3-bis: al dar de baja con addons recurrentes, desde ACTIVE su cobro se corta hoy y se siguen viendo hasta el fin del servicio; no se promete cortar hoy el de un addon pendiente o en mora; si vuelve, los contrata de nuevo» · distinta en 10-corte/B13a.md:166-167 (AC:B13a:1 sólo «qué addons recurrentes se cancelan y por cuánto»); las otras tres cosas no las dice ninguna pieza (B10 tampoco) · BLOQUEA
+19:116 (y §5, 19:181-191) · «fila 8 desde PAUSED (S22): la pantalla dice que el servicio termina hoy; si era cortesía, que pierde los meses que le quedaban; salvo la pausada que vive del crédito, donde dice "seguís hasta el …" con el fin del crédito» · ausente: B13a.md:164-165 (AC:B13a:1) cubre sólo SUSPENDED y GRACE_PERIOD, B8a.md:434 delega la fila 8 en B13a, y la lista de filas de B8b.md:575-631 no tiene la 8. AC:B8b:5 da el estado pero no la pantalla · BLOQUEA
+19:119 · «fila 10-bis: la confirmación del ADMIN antes de registrar un MP4 tardío dice qué devuelve la reapertura y qué no (ficha PURGED), que sobre una predecesora no reactiva (S19), y qué período paga y cuándo se abre la próxima cuota» · ausente como confirmación del panel (AC:B5:18, B5.md:336-345, no tiene superficie; sólo existe el correo al cliente en 02-nucleo-outbox.md:308) · BLOQUEA
+19:120 · «fila 10-ter: a quien estaba en una PAUSED por cortesía, el aviso de contracargo le dice además que la cortesía terminó» · ausente (02-nucleo-outbox.md:286 y B7.md:1480 sólo traen el texto base) · BLOQUEA
+19:120 · «⚠️ abierto: si el texto final del contracargo dice que "ya no se le va a cobrar" y que "una persona sigue el caso" no está decidido» · ausente de 80-abiertos.md y del catálogo · MENOR
+19:137 · «fila 18: al cerrarse una cortesía diferida por S3, el aviso dice que esos N MESES se cerraron y no vuelven» · distinta en 02-nucleo-outbox.md:309 («esos N días se cerraron»): la unidad no es la de F-8CB1-001 · BLOQUEA
+19:142 · «fila 22: aviso y Mi Suscripción de quien pagó mientras ya mandábamos cancelar (espejo de R18 y S7 hacia CANCEL_SCHEDULED): "tu pago entró y tenés servicio hasta el {fecha}; tu suscripción ya estaba cancelada, así que no se renueva: si querés seguir, volvé a suscribirte", y los addons recurrentes con su cobro cortado y visibles hasta esa fecha» · ausente (ni en B7, B13a, B8a ni en el catálogo de correos; el estado sí está en 04-catalogos.md:2911 y :5985-5995) · BLOQUEA
+19:292 · «el panel muestra las versiones de plan retiradas con cuántas suscripciones siguen ancladas» · ausente (ni B12, ni B13a, ni V8a) · BLOQUEA
+19:90 · «cuando el saldo diferido se cerró, Mi Suscripción deja de mostrarlo» · ausente como regla explícita (AC:B13a:8, B13a.md:246-251, sólo cubre el saldo abierto; se deduce de la definición de «cortesía diferida») · MENOR
+```
+
+## Resumen
+
+| archivo | líneas recorridas | reglas normativas vivas revisadas (aprox.) | ausentes | distintas |
+|---|---|---|---|---|
+| 14-promos-cortesias-y-grants.md | 1-743 (entero; tachados excluidos) | ~80 | 4 (2 BLOQUEA, 2 MENOR) | 5 (2 BLOQUEA, 3 MENOR) |
+| 16-addons.md | 1-1153 (entero; tachados excluidos) | ~100 | 2 (1 BLOQUEA, 1 MENOR) | 1 (BLOQUEA) |
+| 19-superficies.md | 1-346 (entero; tachados y filas retiradas 14, 14-bis y 20 excluidas) | ~75 | 6 (4 BLOQUEA, 2 MENOR) | 3 (3 BLOQUEA) |
+| **total** | | **~255** | **12** (7 BLOQUEA, 5 MENOR) | **9** (6 BLOQUEA, 3 MENOR) |
+
+Total: 21 hallazgos, 13 BLOQUEA y 8 MENOR.
+
+Notas de método:
+- La spec cita estos tres capítulos casi sólo como listas de `Origen:` (B9a.md:62, B10.md:85, B13a.md:54) y en 80-abiertos.md. Las reglas se buscaron por contenido en toda la spec: catálogo de transiciones (S9, S13, S18, S20, S30, S37, A1–A7, P1, MOT:*), decisiones, núcleo (outbox, auditoría, glosario, invariantes) y las piezas B3, B5, B7, B8a, B8b, B9a, B9b, B10, B11, B12, B13a, B13b y V4.
+- Están rendidas y bien: la composición y el redondeo, el piso y su texto, la pérdida de la promo en el cambio de plan y en la vuelta del suspendido, el contador sólo con cobro con descuento, S30, el aviso «tu promo termina», el pagador manual, extenderTrial y su clave, la cortesía mensual en meses (S9, S34, S35, S18, re-emisión), el cierre del saldo por grant, la orfandad completa (A5, las once transiciones, sobre qué filas, S21 y los motivos 14 y 15, S32/S33), S20 y su orden, /v1/orders y la identidad de la compra, A7, y las filas 5, 5-bis, 6, 7, 7-bis, 9, 10, 11, 12, 12-bis, 13, 13-bis, 13-ter, 13-quater, 13-quinquies, 15, 16, 16-bis, 17, 17-bis, 17-ter, 19, 19-bis y 21.
+- Las secciones «Lo que este capítulo NO cierra» de los tres archivos están transcritas en 80-abiertos.md:335-380.

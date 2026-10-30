@@ -43,7 +43,7 @@ const FULL_ACCOMMODATION = {
     location: { city: 'Concepcion del Uruguay', country: 'Argentina' },
     averageRating: 4.5,
     reviewsCount: 42,
-    visibility: 'PUBLIC',
+    publicationStatus: 'PUBLISHED',
     seo: {
         title: 'Hotel Test Accommodation SEO Title',
         description:
@@ -57,8 +57,6 @@ const FULL_ACCOMMODATION = {
         bedrooms: 2,
         bathrooms: 1
     },
-    lifecycleState: 'ACTIVE',
-    moderationState: 'APPROVED',
     createdAt: '2024-01-01T00:00:00.000Z',
     updatedAt: '2024-01-15T00:00:00.000Z',
     // Admin-only fields
@@ -82,7 +80,8 @@ describe('SPEC-062 T-018 — tiered enforcement via stripWithSchema', () => {
             expect(result).not.toHaveProperty('deletedById');
             expect(result).not.toHaveProperty('deletedAt');
             expect(result).not.toHaveProperty('adminInfo');
-            expect(result).not.toHaveProperty('lifecycleState');
+            // V6.9b: everything public is PUBLISHED, so the state is never exposed.
+            expect(result).not.toHaveProperty('publicationStatus');
         });
 
         it('keeps public fields', () => {
@@ -93,7 +92,6 @@ describe('SPEC-062 T-018 — tiered enforcement via stripWithSchema', () => {
             expect(result.id).toBe(VALID_UUID);
             expect(result.slug).toBe('hotel-tiered-strip');
             expect(result.name).toBe('Tiered Strip Hotel');
-            expect(result.visibility).toBe('PUBLIC');
         });
     });
 
@@ -116,6 +114,7 @@ describe('SPEC-062 T-018 — tiered enforcement via stripWithSchema', () => {
             ) as Record<string, unknown>;
             expect(result).toHaveProperty('id', VALID_UUID);
             expect(result).toHaveProperty('ownerId');
+            expect(result).toHaveProperty('publicationStatus', 'PUBLISHED');
         });
     });
 
@@ -129,7 +128,7 @@ describe('SPEC-062 T-018 — tiered enforcement via stripWithSchema', () => {
             expect(result).toHaveProperty('createdById');
             expect(result).toHaveProperty('updatedById');
             expect(result).toHaveProperty('adminInfo');
-            expect(result).toHaveProperty('lifecycleState', 'ACTIVE');
+            expect(result).toHaveProperty('publicationStatus', 'PUBLISHED');
             // Nullable admin fields must STILL be present (value === null is OK,
             // absence is NOT).
             expect(Object.hasOwn(result, 'deletedById')).toBe(true);

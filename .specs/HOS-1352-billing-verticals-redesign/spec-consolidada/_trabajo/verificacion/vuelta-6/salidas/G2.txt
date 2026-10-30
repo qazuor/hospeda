@@ -1,0 +1,106 @@
+# G2 · spec → fuente · 04-catalogos.md + g-secciones de B9a, B10, B11, B12, B13a, B8b
+
+## Hallazgos
+
+04-catalogos.md:1116 · «y **devuelve el trial** (§10.2).» · contradice .specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/03-maquinas-de-estado.md:493 («y **no devuelve el trial** (§10.2).») · BLOQUEA
+
+04-catalogos.md:3358 · «el `status_detail` de ese único intento, con un mapa» · más débil que .specs/HOS-1354-billing-cobro-y-proveedor/docs/03-maquinas-de-estado.md:166 («con un mapa y un genérico obligatorio»; omite la respuesta obligatoria para motivos fuera del mapa, vigente también en DEC-MP-004) · BLOQUEA
+
+04-catalogos.md:4542 · «corre **`P3` o `P4`** sobre el pago, según el acumulado (§6).» · más débil que .specs/HOS-1354-billing-cobro-y-proveedor/docs/03-maquinas-de-estado.md:1852 («según el acumulado (§6); se escribe *«por el proveedor»*.»; RF3 pierde la escritura del canal de ejecución que refund exige en EXECUTED, .specs/HOS-1354-billing-cobro-y-proveedor/docs/02-modelo-de-datos.md:380) · BLOQUEA
+
+04-catalogos.md:6293 · «listado accionable tiene que mostrarle es el pago y el monto.» · más débil que .specs/HOS-1354-billing-cobro-y-proveedor/docs/05-idempotencia-y-concurrencia.md:192 («listado accionable tiene que mostrarle es el pago, el monto y **desde cuándo la fila estaba en»; continúa en :193 «grace**.»; C2 omite el comienzo del grace necesario para decidir la devolución por el servicio recibido) · BLOQUEA
+
+10-corte/B13a.md:89 · «la **versión vigente** del plan de la suscripción» · contradice .specs/HOS-1354-billing-cobro-y-proveedor/docs/19-superficies.md:45 («la **versión anclada** de la suscripción»; cambia la versión que leen Mi Cuenta y Mi Suscripción) · BLOQUEA
+
+10-corte/B13a.md:182 · «derivado del `status_detail` con un mapa explícito:» · más débil que .specs/HOS-1354-billing-cobro-y-proveedor/docs/19-superficies.md:138 («derivado del `status_detail` con un mapa explícito y un **texto genérico obligatorio** para lo que no esté en el mapa:»; omite el mensaje obligatorio para rechazos no mapeados) · BLOQUEA
+
+## Resumen
+
+| archivo | líneas recorridas | afirmaciones normativas revisadas (aprox.) | BLOQUEA | MENOR |
+|---|---|---:|---:|---:|
+| 04-catalogos.md | 1–9845 | ≈3077 | 4 | 0 |
+| 10-corte/B11.md | 1–2358 | ≈205 | 0 | 0 |
+| 10-corte/B13a.md | 1–1299 | ≈119 | 2 | 0 |
+| 10-corte/B9a.md | 1–1427 | ≈149 | 0 | 0 |
+| 20-fase-2/B8b.md | 1–1406 | ≈50 | 0 | 0 |
+| 20-fase-3/B10.md | 1–1942 | ≈168 | 0 | 0 |
+| 20-fase-3/B12.md | 1–834 | ≈47 | 0 | 0 |
+
+Total: **6 BLOQUEA, 0 MENOR**. Se cuentan las dos omisiones del texto genérico por separado porque están en dos transcripciones distintas.
+
+Recorrido instrumental de los siete archivos completos. El juicio de fidelidad de las seis piezas se limita a los tramos g-secciones asignados a G2; no se adjudican sus AC externos. Tramos cotejados: 10-corte/B11.md:76–1316; 10-corte/B13a.md:55–444; 10-corte/B9a.md:60–724; 20-fase-2/B8b.md:54–339; 20-fase-3/B10.md:91–1210; 20-fase-3/B12.md:66–269.
+
+Cotejo exhaustivo de 292 ítems tabulares del catálogo, sus columnas, 3 apariciones secundarias de guards, 6 candados completos, 102 rangos explícitos de prosa del catálogo y 107 secciones de las piezas. Comparación independiente; no se importó ni ejecutó ningún generador. Se admitió sólo la limpieza anunciada (tachados, neutralización de enlaces, espacios, separadores y notas de filas retiradas). Las diferencias materiales se verificaron sobre las líneas originales.
+
+Clases de error buscadas en toda la salida con `rg --hidden` y contrastadas con las fuentes:
+
+- Tachados enteros, parciales y multilínea que sobreviven como vivos: ninguna diferencia adicional en los cuerpos cotejados; no queda ningún delimitador `~~` en el alcance generado. Se verificaron también títulos retirados con cuerpo vivo y las notas «sale» de filas retiradas.
+- Celdas partidas por `\|` o por barras dentro de código: sin hallazgos. Se cotejaron las columnas completas; no hay `\|` en los tramos generados. La búsqueda de fuente devuelve 168 líneas en el corpus completo, fuera de esos tramos copiados.
+- Texto adjunto al bloque equivocado: sin hallazgos. Los 102 rangos del catálogo se contrastaron con sus límites citados; los seis candados con sus secciones fuente; las 107 secciones con sus títulos y capítulos.
+- Letras del owner o 📌 retirados presentados como vigentes: sin hallazgo adicional. Se buscaron las 42 líneas con 📌 del alcance y las referencias de retiro, contrastando el texto vivo. EX-46 conserva la omisión autorizada por BK; no se confunde esa omisión con pérdida de texto vigente. Se consultaron el decision log y las decisiones del corte, incluidas BM, CF y CG.
+- Omisiones de texto vivo: cuatro hallazgos (S16, RF3, C2 y fila 19 de B13a). Los capítulos declarados enteros no pierden secciones. Se revisaron 34 tablas fuente; los tres guards sin fila principal propia en B/20 están copiados como apariciones secundarias en el catálogo.
+- Sustituciones que cambian una regla: dos hallazgos (PB6 y versión leída por Mi Cuenta/Mi Suscripción). Las fuentes vivas no autorizan esos cambios.
+- Contradicciones internas: búsqueda cruzada en toda s/b249f841 por PB6, el mensaje genérico, el canal del refund y el inicio del grace; los hallazgos anteriores no se duplican por sus otras manifestaciones. B13a contradice además su explicación inmediata: «la suscripción es lo que se compró» (:92–94).
+
+Muestra estratificada: **40 ítems de 04-catalogos.md**, distribuidos del principio al final y entre todas las familias; se cotejaron las celdas completas o, en C2, toda la sección. Se agregaron PB6, RF3 y todos los demás candados al detectar diferencias. Detalle de los 40 (línea de inicio → fuente):
+
+- `TRANS:V:T1` · `T1` — `PRE_TRIAL` → `TRIAL_ACTIVE` · :72 → .specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/03-maquinas-de-estado.md:52.
+- `TRANS:V:PB2` · `PB2` — `PUBLISHED` → `UNPUBLISHED_BY_BILLING` · :790 → .specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/03-maquinas-de-estado.md:489.
+- `TRANS:V:PB9` · `PB9` — `ARCHIVED` → **`PURGED`** · :1274 → .specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/03-maquinas-de-estado.md:496.
+- `TRANS:B:S1` · `S1` — *(sin fila)* → `PENDING_AUTHORIZATION` · :1618 → .specs/HOS-1354-billing-cobro-y-proveedor/docs/03-maquinas-de-estado.md:151.
+- `TRANS:B:S8` · `S8` — `ACTIVE` → `PAUSED` *(motivo `CUSTOMER_REQUEST`)* · :2836 → .specs/HOS-1354-billing-cobro-y-proveedor/docs/03-maquinas-de-estado.md:158.
+- `TRANS:B:S16` · `S16` — `ACTIVE` → `CHARGE_DECLINED` · :3346 → .specs/HOS-1354-billing-cobro-y-proveedor/docs/03-maquinas-de-estado.md:166.
+- `TRANS:B:S24` · `S24` — `GRACE_PERIOD` → `CANCELLED` · :3976 → .specs/HOS-1354-billing-cobro-y-proveedor/docs/03-maquinas-de-estado.md:174.
+- `TRANS:B:S35` · `S35` — `PAUSED` *(motivo `COURTESY`)* → `PAUSED` *(motivo `CUSTOMER_REQUEST`)* · :4088 → .specs/HOS-1354-billing-cobro-y-proveedor/docs/03-maquinas-de-estado.md:185.
+- `PROH:B:5` · `ABANDONED` → `ACTIVE` · :4268 → .specs/HOS-1354-billing-cobro-y-proveedor/docs/03-maquinas-de-estado.md:1458.
+- `TRANS:B:P7` · `P7` — `CHARGED_BACK` → `SUCCEEDED` — **o `PARTIALLY_REFUNDED`** · :4463 → .specs/HOS-1354-billing-cobro-y-proveedor/docs/03-maquinas-de-estado.md:1773.
+- `TRANS:B:MP2` · `MP2` — `AWAITING` → `DECLARED_UNPAID` · :4648 → .specs/HOS-1354-billing-cobro-y-proveedor/docs/03-maquinas-de-estado.md:1872.
+- `TRANS:B:A3` · `A3` — `PENDING_AUTHORIZATION` → `ABANDONED` · :5372 → .specs/HOS-1354-billing-cobro-y-proveedor/docs/03-maquinas-de-estado.md:2537.
+- `MOT:3` · `COBRO_POSTERIOR_AL_GRANT` · :5768 → .specs/HOS-1354-billing-cobro-y-proveedor/docs/02-modelo-de-datos.md:1025.
+- `MOT:11` · `ADDON_SIN_APAGAR` · :5910 → .specs/HOS-1354-billing-cobro-y-proveedor/docs/02-modelo-de-datos.md:1033.
+- `MOT:19` · `COBRO_SIN_REGISTRAR` · :6023 → .specs/HOS-1354-billing-cobro-y-proveedor/docs/02-modelo-de-datos.md:1041.
+- `LOCK:C2` · C2 · Se pide la cancelación mientras entra un cobro · :6225 → .specs/HOS-1354-billing-cobro-y-proveedor/docs/05-idempotencia-y-concurrencia.md:129.
+- `M:M4` · `M4` · :6590 → .specs/HOS-1354-billing-cobro-y-proveedor/docs/20-testing.md:506.
+- `M:M11` · `M11` · :6674 → .specs/HOS-1354-billing-cobro-y-proveedor/docs/20-testing.md:513.
+- `RP:RP6` · `RP6` · :6842 → .specs/HOS-1354-billing-cobro-y-proveedor/docs/20-testing.md:539.
+- `GUARD:G2` · `G2` · :7600 → .specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/20-testing.md:51.
+- `GUARD:G14` · `G14` · :7691 → .specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/20-testing.md:58.
+- `GUARD:G-R3-C` · `G-R3-C` · :7794 → .specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/20-testing.md:66.
+- `GUARD:G9` · `G9` · :7923 → .specs/HOS-1354-billing-cobro-y-proveedor/docs/20-testing.md:51.
+- `GUARD:G-R1-D` · `G-R1-D` · :8029 → .specs/HOS-1354-billing-cobro-y-proveedor/docs/20-testing.md:59.
+- `MP:PA-3` · Autorización por el usuario · :8147 → .specs/HOS-1352-billing-verticals-redesign/docs/06-mp-validation-matrix.md:174.
+- `MP:FR-4` · Anual · :8242 → .specs/HOS-1352-billing-verticals-redesign/docs/06-mp-validation-matrix.md:186.
+- `MP:PS-2` · Que no cobre mientras está pausada · :8358 → .specs/HOS-1352-billing-verticals-redesign/docs/06-mp-validation-matrix.md:209.
+- `MP:PC-2` · Limitaciones: pisos, topes, magnitud del cambio · :8477 → .specs/HOS-1352-billing-verticals-redesign/docs/06-mp-validation-matrix.md:227.
+- `MP:CT-2` · Estrategias posibles: bajar monto / pausar / recrear / reembolsar · :8580 → .specs/HOS-1352-billing-verticals-redesign/docs/06-mp-validation-matrix.md:252.
+- `MP:WH-6` · :8692 → .specs/HOS-1352-billing-verticals-redesign/docs/06-mp-validation-matrix.md:270.
+- `MP:RC-7` · **`expire_date`: la ventana de vida de un cobro** · :8787 → .specs/HOS-1352-billing-verticals-redesign/docs/06-mp-validation-matrix.md:282.
+- `MP:RF-6` · ¿El reembolso es idempotente? · :8916 → .specs/HOS-1352-billing-verticals-redesign/docs/06-mp-validation-matrix.md:313.
+- `MP:EX-6` · N autorizaciones del mismo pagador conviviendo, ya autorizadas · :9028 → .specs/HOS-1352-billing-verticals-redesign/docs/06-mp-validation-matrix.md:322.
+- `MP:EX-13` · ¿Los eventos vienen **firmados**, y se puede verificar la firma? · :9126 → .specs/HOS-1352-billing-verticals-redesign/docs/06-mp-validation-matrix.md:329.
+- `MP:EX-21` · ¿Se puede **mover** una suscripción viva de un plan a otro? · :9256 → .specs/HOS-1352-billing-verticals-redesign/docs/06-mp-validation-matrix.md:358.
+- `MP:EX-29` · El **free trial de un plan**, ¿lo decide el request? · :9368 → .specs/HOS-1352-billing-verticals-redesign/docs/06-mp-validation-matrix.md:366.
+- `MP:EX-37` · El **`init_point`** que devuelve el proveedor, ¿sirve tal como viene? · :9510 → .specs/HOS-1352-billing-verticals-redesign/docs/06-mp-validation-matrix.md:394.
+- `MP:EX-45` · Una cancelación leída `cancelled` en el `PUT` y en un `GET` inmediato, ¿sigue `cancelled` releída **horas después**? · :9622 → .specs/HOS-1352-billing-verticals-redesign/docs/06-mp-validation-matrix.md:402.
+- `MP:EX-52` · :9721 → .specs/HOS-1352-billing-verticals-redesign/docs/06-mp-validation-matrix.md:409.
+- `MP:EX-34` · Correr la **fecha de cobro** de una suscripción **ya viva** · :9833 → .specs/HOS-1352-billing-verticals-redesign/docs/06-mp-validation-matrix.md:438.
+
+En cada una de las seis piezas se seleccionaron además **40 afirmaciones/líneas de prosa o tabla**, repartidas a lo largo de su bloque. Cada par siguiente es línea de la pieza → línea de la fuente indicada (el texto íntegro está en `G2-muestra.json`):
+
+- 10-corte/B11.md, fuente .specs/HOS-1354-billing-cobro-y-proveedor/docs/09-conciliacion.md: 79→14, 133→66, 171→101, 199→134, 230→165, 268→203, 295→230, 321→260, 349→295, 387→333, 414→362, 445→394, 480→429, 506→455, 534→483, 563→512, 591→540, 622→571, 653→602, 681→630, 712→661, 742→698, 772→728, 804→767, 832→795, 868→831, 897→860, 924→887, 951→918, 985→952, 1028→999, 1065→1036, 1094→1065, 1130→1103, 1165→1141, 1202→1182, 1230→1227, 1260→1267, 1286→1293, 1313→1322.
+- 10-corte/B13a.md, fuente .specs/HOS-1354-billing-cobro-y-proveedor/docs/19-superficies.md: 58→14, 71→27, 80→36, 94→50, 106→62, 118→72, 128→82, 133→87, 145→99, 156→110, 167→121, 178→134, 194→145, 201→152, 207→158, 225→174, 233→182, 238→187, 245→194, 257→206, 274→222, 283→231, 291→239, 297→245, 303→251, 309→257, 315→263, 321→269, 327→275, 334→282, 342→291, 355→304, 365→319, 375→329, 384→341, 389→346.
+- 10-corte/B13a.md, fuente .specs/HOS-1354-billing-cobro-y-proveedor/docs/22-lo-legal.md: 407→45, 420→56, 426→62, 440→74.
+- 10-corte/B9a.md, fuente .specs/HOS-1354-billing-cobro-y-proveedor/docs/14-promos-cortesias-y-grants.md: 63→19, 88→44, 104→58, 126→81, 137→93, 160→116, 180→134, 192→148, 203→159, 229→231, 249→250, 262→263, 275→276, 287→288, 303→307, 325→333, 355→359, 373→376, 398→399, 423→420, 435→432, 447→444, 463→458, 476→474, 489→487, 508→506, 520→518, 533→531, 545→543, 561→557, 574→570, 585→581, 597→593, 609→605, 630→624, 646→641, 668→661, 682→675, 704→704, 721→742.
+- 20-fase-2/B8b.md, fuente .specs/HOS-1354-billing-cobro-y-proveedor/docs/12-suscripcion.md: 59→189, 65→195, 70→200, 76→206, 81→211, 92→220, 97→225, 105→233, 110→238, 114→242, 120→248, 124→252, 133→259, 140→266, 153→280, 165→290, 171→296, 176→301, 188→1017, 197→1024, 207→1032, 212→1037, 230→1053, 235→1058, 245→1066, 251→1072, 255→1076, 262→1083, 266→1087, 275→1094, 281→1100.
+- 20-fase-2/B8b.md, fuente .specs/HOS-1354-billing-cobro-y-proveedor/docs/02-modelo-de-datos.md: 290→1184, 298→1192, 303→1197, 311→1207, 315→1211, 321→1217, 326→1222, 332→1228, 336→1232.
+- 20-fase-3/B10.md, fuente .specs/HOS-1354-billing-cobro-y-proveedor/docs/16-addons.md: 94→19, 142→63, 177→102, 205→134, 237→170, 282→214, 323→251, 357→283, 381→307, 405→331, 441→363, 466→388, 502→939, 532→448, 573→487, 601→517, 625→547, 653→581, 676→604, 698→626, 721→649, 745→675, 772→705, 796→729, 819→752, 847→783, 875→814, 901→840, 930→869, 955→894, 978→917, 1009→946, 1032→969, 1060→1003, 1085→1028, 1112→1055, 1139→1087, 1161→1113, 1185→1138, 1207→1160.
+- 20-fase-3/B12.md, fuente .specs/HOS-1354-billing-cobro-y-proveedor/docs/10-verticales-planes-billing-options.md: 71→34, 82→43, 88→50, 93→55, 101→61, 107→67, 110→70, 121→80, 126→85, 132→91, 140→97, 145→103, 148→106, 153→111, 156→114, 161→119, 166→124, 177→135, 180→138, 190→148, 194→152, 198→156, 201→159, 205→163, 209→167, 213→171, 216→174, 220→178, 223→181, 229→188, 232→191, 236→195, 239→198, 243→202, 246→205, 250→209, 254→213, 258→217, 261→220, 266→225.
+
+Estrato de precisiones con 📌: se cotejaron además, entre otras, las celdas RC-5 (:8770), GR-3 (:8337) y EX-46 (:9647), junto con sus precisiones vivas y los tachados de la fuente. La muestra de prosa sin 📌 y de tablas se complementa con los 102 rangos y las 107 secciones completos; no se usó la muestra como sustituto del barrido.
+
+Evidencia auxiliar en salidas/: `G2-audit.json`, `G2-muestra.json`, `G2-clases-rg.txt`, `G2-decisiones-rg.txt`, `G2-cruces-spec.txt` y los scripts independientes de cotejo. No se usaron git, trackers ni subagentes. No se leyó fuera de V: las skills externas del brief y las skills comunes no se abrieron por esa restricción. No hay AGENTS.md ni .qz/project.json dentro de V en la búsqueda realizada.
+
+## Key Learnings:
+
+- La igualdad debe comprobarse también en prosa: C2 pierde una obligación fuera de las tablas.
+- Que no sobrevivan delimitadores de tachado no demuestra fidelidad: una negación borrada, una escritura omitida o una versión sustituida cambian la implementación.

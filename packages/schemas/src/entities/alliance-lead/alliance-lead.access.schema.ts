@@ -13,7 +13,7 @@ import { z } from 'zod';
  * Only the newly-created lead's UUID is disclosed. All applicant PII (email,
  * phone, contactName, message), workflow fields (status, adminNote), and audit
  * timestamps are withheld from public consumers — mirrors
- * `CommerceLeadCreateResponseSchema` (HOS-277 §6.3).
+ * the retired lead-intake create-response schema (HOS-277 §6.3).
  */
 export const AllianceLeadCreateResponseSchema = z.object({
     /** UUID of the newly-created AllianceLead record. */

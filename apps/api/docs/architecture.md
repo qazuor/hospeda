@@ -364,9 +364,6 @@ options: {
     windowMs: 60000
   },
 
-  // Cache TTL (seconds)
-  cacheTTL: 300,
-
   // Additional middleware
   middlewares: [customMiddleware]
 }
@@ -441,7 +438,7 @@ interface Actor {
   isAuthenticated: boolean
   id: string
   email: string
-  roles: readonly RoleEnum[] // every role the actor holds (HOS-296) — e.g. [RoleEnum.HOST, RoleEnum.COMMERCE_OWNER]
+  roles: readonly RoleEnum[] // every role the actor holds (HOS-296) — e.g. [RoleEnum.HOST, RoleEnum.VENUE_OWNER / EXPERIENCE_OWNER]
   permissions: readonly PermissionEnum[]
 }
 ```
@@ -697,13 +694,7 @@ Drizzle ORM handles connection pooling automatically.
 
 ### 2. Caching
 
-Routes can specify `cacheTTL` option:
-
-```typescript
-options: {
-  cacheTTL: 300 // 5 minutes
-}
-```
+Response caching is not configured per route: the in-process TTL is global (cache middleware config) and edge caching is decided by Cloudflare's cache rule. The only per-route public `Cache-Control` is the post-tag list (`routes/tag/post-tag/public/list.ts`); other manual headers are `no-store`.
 
 ### 3. Pagination
 

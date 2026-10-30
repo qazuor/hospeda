@@ -303,7 +303,7 @@ declare -a TRACED_SAFE=(
     "apps/web/src/components/shared/cards/EventCardHorizontal.astro"      # toEventCardProps
     "apps/web/src/components/shared/cards/utils/EventCardImage.astro"     # toEventCardProps, via its three card callers
     "apps/web/src/components/experience/ExperienceCard.astro"             # toExperienceCardProps
-    "apps/web/src/components/gastronomy/GastronomyCard.astro"             # toGastronomyCardProps
+    "apps/web/src/components/venue/VenueCard.astro"             # toVenueCardProps
     "apps/web/src/pages/[lang]/eventos/[slug].astro"                      # toEventDetailProps
     # Producer verified: `toArticleCardProps` applies BOTH
     # `processEntityImages(extract: true)` and `toRenderableImageUrl` (the

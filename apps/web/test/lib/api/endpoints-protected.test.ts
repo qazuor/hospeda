@@ -21,9 +21,29 @@ vi.mock('../../../src/lib/api/client', () => ({
 import {
     accommodationCalendarSyncApi,
     accommodationFaqApi,
-    publishApi,
-    userApi
+    billingSubscriptionApi,
+    effectiveSetApi,
+    promoCodeApi,
+    publishApi
 } from '../../../src/lib/api/endpoints-protected';
+
+describe('TEST:1730:5c billing subscription client', () => {
+    it('posts the selected option and declared payer email exactly', async () => {
+        postProtected.mockReset();
+        postProtected.mockResolvedValue({ ok: true, data: {} });
+        await billingSubscriptionApi.start({
+            billingOptionId: '123e4567-e89b-42d3-a456-426614174000',
+            payerEmail: 'payer@example.test'
+        });
+        expect(postProtected).toHaveBeenCalledWith({
+            path: '/api/v1/protected/billing/subscriptions',
+            body: {
+                billingOptionId: '123e4567-e89b-42d3-a456-426614174000',
+                payerEmail: 'payer@example.test'
+            }
+        });
+    });
+});
 
 describe('accommodationCalendarSyncApi credentialed mutations (HOS-157 regression)', () => {
     beforeEach(() => {
@@ -56,43 +76,6 @@ describe('accommodationCalendarSyncApi credentialed mutations (HOS-157 regressio
             body: {}
         });
         expect(post).not.toHaveBeenCalled();
-    });
-});
-
-describe('userApi.getSubscription productDomain param (HOS-259)', () => {
-    beforeEach(() => {
-        getProtected.mockReset();
-        getProtected.mockResolvedValue({ ok: true, data: { subscription: null } });
-    });
-
-    it('omits the productDomain query param when none is passed (server default applies)', async () => {
-        await userApi.getSubscription();
-
-        expect(getProtected).toHaveBeenCalledWith({
-            path: '/api/v1/protected/users/me/subscription',
-            params: undefined,
-            cookieHeader: undefined
-        });
-    });
-
-    it('forwards productDomain=commerce as a query param', async () => {
-        await userApi.getSubscription({ productDomain: 'commerce' });
-
-        expect(getProtected).toHaveBeenCalledWith({
-            path: '/api/v1/protected/users/me/subscription',
-            params: { productDomain: 'commerce' },
-            cookieHeader: undefined
-        });
-    });
-
-    it('forwards the cookieHeader alongside productDomain for SSR callers', async () => {
-        await userApi.getSubscription({ productDomain: 'accommodation', cookieHeader: 'sid=abc' });
-
-        expect(getProtected).toHaveBeenCalledWith({
-            path: '/api/v1/protected/users/me/subscription',
-            params: { productDomain: 'accommodation' },
-            cookieHeader: 'sid=abc'
-        });
     });
 });
 
@@ -194,7 +177,7 @@ describe('publishApi.precheck path per vertical (HOS-1156 T-016)', () => {
 
     it.each([
         ['accommodation', '/api/v1/protected/publish/precheck/accommodation'],
-        ['gastronomy', '/api/v1/protected/publish/precheck/gastronomy'],
+        ['venue', '/api/v1/protected/publish/precheck/venue'],
         ['experience', '/api/v1/protected/publish/precheck/experience']
     ] as const)('builds the %s path', async (vertical, expectedPath) => {
         await publishApi.precheck({ vertical });
@@ -205,7 +188,7 @@ describe('publishApi.precheck path per vertical (HOS-1156 T-016)', () => {
     it('forwards the SSR cookie header so the session resolves', async () => {
         // Without this the endpoint sees an anonymous caller and the page would
         // fail open to create_direct for a signed-in owner at their cap.
-        await publishApi.precheck({ vertical: 'gastronomy', cookieHeader: 'session=abc' });
+        await publishApi.precheck({ vertical: 'venue', cookieHeader: 'session=abc' });
 
         expect(getProtected).toHaveBeenCalledWith(
             expect.objectContaining({ cookieHeader: 'session=abc' })
@@ -215,5 +198,63 @@ describe('publishApi.precheck path per vertical (HOS-1156 T-016)', () => {
     it('uses the credentialed getProtected, never a bare get', async () => {
         await publishApi.precheck({ vertical: 'experience' });
         expect(getProtected).toHaveBeenCalledTimes(1);
+    });
+});
+
+describe('HOS-1646 · cliente web de capacidades · effective set endpoint', () => {
+    it('requests the protected effective set with the vertical query and cookie', async () => {
+        getProtected.mockResolvedValue({
+            ok: true,
+            data: {
+                userId: 'u',
+                vertical: 'tourist',
+                hasLiveNonTrialTitle: false,
+                entitlements: {},
+                limits: {}
+            }
+        });
+        await effectiveSetApi.get({ vertical: 'tourist', cookieHeader: 'session=abc' });
+        expect(getProtected).toHaveBeenCalledWith({
+            path: '/api/v1/protected/users/me/effective-set',
+            params: { vertical: 'tourist' },
+            cookieHeader: 'session=abc'
+        });
+    });
+});
+
+describe('promoCodeApi (AC:B9b:12 HOS-1591 TEST:B9b:12 (support))', () => {
+    beforeEach(() => {
+        postProtected.mockReset();
+        postProtected.mockResolvedValue({ ok: true, data: {} });
+    });
+
+    it('redeem posts the code and vertical to the protected endpoint', async () => {
+        await promoCodeApi.redeem({ code: 'SAVE20', vertical: 'accommodation' });
+        expect(postProtected).toHaveBeenCalledWith({
+            path: '/api/v1/protected/billing/promo-codes/redeem',
+            body: { code: 'SAVE20', vertical: 'accommodation' }
+        });
+    });
+});
+
+describe('TEST:1878:24a optional cancellation reason request body', () => {
+    beforeEach(() => {
+        postProtected.mockReset();
+        postProtected.mockResolvedValue({ ok: true, data: {} });
+    });
+
+    it('omits the body when no reason is selected', async () => {
+        await billingSubscriptionApi.cancel({ subscriptionId: 'sub-id' });
+        expect(postProtected).toHaveBeenCalledWith({
+            path: '/api/v1/protected/billing-subscription/sub-id/cancellation'
+        });
+    });
+
+    it('sends JSON only when a reason is selected', async () => {
+        await billingSubscriptionApi.cancel({ subscriptionId: 'sub-id', reason: 'SEASONAL_PAUSE' });
+        expect(postProtected).toHaveBeenCalledWith({
+            path: '/api/v1/protected/billing-subscription/sub-id/cancellation',
+            body: { reason: 'SEASONAL_PAUSE' }
+        });
     });
 });

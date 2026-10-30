@@ -50,8 +50,10 @@ export async function docker(
 export async function dockerPs(params: {
     readonly format: string;
     readonly filters?: ReadonlyArray<string>;
+    /** `docker ps -a`: include stopped containers. Defaults to running only. */
+    readonly all?: boolean;
 }): Promise<ReadonlyArray<string>> {
-    const args = ['ps', '--format', params.format];
+    const args = ['ps', ...(params.all ? ['-a'] : []), '--format', params.format];
     for (const f of params.filters ?? []) {
         args.push('--filter', f);
     }
@@ -81,6 +83,30 @@ export async function dockerInspectLabels(
         return {};
     }
     return JSON.parse(trimmed) as Readonly<Record<string, string>>;
+}
+
+/**
+ * Inspect a single container by name and return its `Config.Env` entries as
+ * `KEY=VALUE` strings. Throws if the container does not exist; a container
+ * with no env returns `[]`, never null.
+ *
+ * Values are returned verbatim and may contain `=`. Callers decide which keys
+ * to keep — this helper never prints or persists them.
+ */
+export async function dockerInspectEnv(container: string): Promise<ReadonlyArray<string>> {
+    const result = await docker(['inspect', container, '--format', '{{json .Config.Env}}']);
+    if (result.exitCode !== 0) {
+        throw new Error(`docker inspect ${container} failed: ${result.stderr.trim()}`);
+    }
+    const trimmed = result.stdout.trim();
+    if (!trimmed || trimmed === 'null') {
+        return [];
+    }
+    const parsed: unknown = JSON.parse(trimmed);
+    if (!Array.isArray(parsed)) {
+        return [];
+    }
+    return parsed.filter((entry): entry is string => typeof entry === 'string');
 }
 
 /**

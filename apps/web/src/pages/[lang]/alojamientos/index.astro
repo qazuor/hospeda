@@ -13,6 +13,7 @@
 import ListingLayout from '@/layouts/ListingLayout.astro';
 import Breadcrumbs from '@/components/shared/navigation/Breadcrumbs.astro';
 import ListingPageHeader from '@/components/shared/layout/ListingPageHeader.astro';
+import ListingViewToggle from '@/components/shared/layout/ListingViewToggle.astro';
 import CompareModeControls from '@/components/shared/compare/CompareModeControls.astro';
 import AccommodationCard from '@/components/shared/cards/AccommodationCard.astro';
 import AccommodationGridSkeleton from '@/components/skeletons/AccommodationGridSkeleton.astro';
@@ -31,6 +32,7 @@ import { buildAvailabilityParams } from '@/lib/availability-params';
 import { createTranslations } from '@/lib/i18n';
 import type { SupportedLocale } from '@/lib/i18n';
 import { buildUrl } from '@/lib/urls';
+import { buildListingViewHref } from '@/lib/listing-view-href';
 import { resolveFacetSeoDecision } from '@/lib/seo/promoted-facet-canonical';
 import { slugForAccommodationType } from '@/lib/facet-slugs';
 import { CACHE_TAG_COLLECTIONS } from '@repo/cache-tags';
@@ -57,6 +59,10 @@ const { t: tPt } = createTranslations('pt');
 
 // Read pagination and filter params from URL
 const url = Astro.url;
+const mapHref = buildListingViewHref({
+	base: buildUrl({ locale, path: 'alojamientos/mapa' }),
+	searchParams: url.searchParams
+}).href;
 const page = Math.max(1, Number(url.searchParams.get('page')) || 1);
 const pageSize = 20;
 
@@ -863,9 +869,13 @@ const emptyStateSuggestions = [
 		nextLabel={t('common.next', 'Siguiente')}
 	/>
 
+	{!hasError && cards.length > 0 && (
+		<ListingViewToggle slot="dock-start" locale={locale} active="list" mapHref={mapHref} variant="dock" />
+	)}
+
 	{/* Listing toolbar: list/map switch (left) + AI search entry (right),
-	    aligned on a single row (desktop). On mobile the view toggle becomes a
-	    fixed bottom bar (out of flow), so the search entry spans full width.
+	    aligned on a single row (desktop). The mobile view toggle lives in the
+	    dock, so the search entry spans full width.
 	    The AI entry stays available in the 0-results state too, so users can
 	    reformulate exactly when they hit no matches. */}
 	{!hasError && (
@@ -875,29 +885,7 @@ const emptyStateSuggestions = [
 			aria-label={cards.length > 0 ? t('accommodations.header.ariaLabel', 'Controles de listado') : undefined}
 		>
 			{cards.length > 0 && (
-				<div class="view-toggle" role="tablist" aria-label={t('accommodations.viewToggle.ariaLabel', 'Vista')}>
-					<span
-						class="view-toggle__btn view-toggle__btn--active"
-						role="tab"
-						aria-selected="true"
-					>
-						{t('accommodations.viewToggle.list', 'Lista')}
-					</span>
-					<a
-						href={(() => {
-							const sp = new URLSearchParams(url.searchParams);
-							sp.delete('page');
-							const qs = sp.toString();
-							const base = buildUrl({ locale, path: 'alojamientos/mapa' });
-							return qs ? `${base}?${qs}` : base;
-						})()}
-						class="view-toggle__btn"
-						role="tab"
-						aria-selected="false"
-					>
-						{t('accommodations.viewToggle.map', 'Mapa')}
-					</a>
-				</div>
+				<ListingViewToggle locale={locale} active="list" mapHref={mapHref} variant="inline" />
 			)}
 			<div class="ai-search-slot">
 				<AiSearchEntry
@@ -1021,78 +1009,6 @@ const emptyStateSuggestions = [
 		display: block;
 	}
 
-	/* View toggle (Lista / Mapa) */
-	.view-toggle {
-		display: inline-flex;
-		gap: var(--space-2, 8px);
-		padding: 4px;
-		margin: var(--space-4, 16px) 0;
-		background-color: var(--surface-warm, #faf6f0);
-		border-radius: var(--radius-pill, 9999px);
-		border: 1px solid transparent;
-	}
-	.view-toggle__btn {
-		font-family: var(--font-sans);
-		font-size: 0.875rem;
-		padding: 0.5rem 1rem;
-		border-radius: var(--radius-pill, 9999px);
-		color: var(--core-muted-foreground);
-		text-decoration: none;
-		transition: background-color var(--duration-normal, 0.4s) ease, color var(--duration-normal, 0.4s) ease;
-		cursor: pointer;
-	}
-	.view-toggle__btn:hover {
-		color: var(--core-foreground);
-	}
-	.view-toggle__btn--active {
-		background-color: var(--brand-accent);
-		/* SPEC-308: dark ink on the vibrant orange fill (white fails AA). */
-		color: var(--accent-foreground);
-		font-weight: 500;
-		cursor: default;
-	}
-
-	/*
-	 * Mobile: turn the toggle into a fixed bottom tab bar (Airbnb / Booking
-	 * pattern) so users can switch views from any scroll position. Stays
-	 * solid (opaque background + shadow) to read against cards behind it.
-	 *
-	 * z-index 150 sits above page content but below:
-	 * - drawer overlay (300) / drawer panel (400) — drawer covers it
-	 * - mobile menu overlay (9100) — menu covers it
-	 * - feedback FAB (max int) — feedback FAB is now hidden whenever those
-	 *   surfaces open, so no overlap conflict.
-	 *
-	 * Hidden while any blocking overlay is open via `:global(html[...])`.
-	 */
-	@media (max-width: 767px) {
-		.view-toggle {
-			position: fixed;
-			/* Lift above the cookie banner (or any future bottom overlay) via
-			 * the shared --bottom-safe-inset token defined in global.css. */
-			bottom: calc(1.5rem + var(--bottom-safe-inset, 0px));
-			left: 50%;
-			transform: translateX(-50%);
-			z-index: 150;
-			margin: 0;
-			/* Frosted-glass surface (see global.css → --frost-* tokens). Lets the
-			 * content underneath show through with a soft blur so the toggle
-			 * doesn't read as a flat patch over cards / the map. */
-			background-color: var(--frost-bg-light);
-			backdrop-filter: blur(var(--frost-blur));
-			-webkit-backdrop-filter: blur(var(--frost-blur));
-			border-color: var(--frost-border);
-			box-shadow: 0 4px 18px oklch(0 0 0 / 0.18), 0 1px 3px oklch(0 0 0 / 0.08);
-		}
-
-		:global(html[data-filters-drawer-open]) .view-toggle,
-		:global(html[data-search-panel-open]) .view-toggle,
-		:global(html[data-mobile-menu-open]) .view-toggle {
-			visibility: hidden;
-			pointer-events: none;
-		}
-	}
-
 	/* ─── AI Search entry slot ──────────────────────────────────────────────
 	   Full-width search-bar entry above the listing grid (replaces the old
 	   always-on panel). Stays available in the no-results state too; the
@@ -1100,18 +1016,13 @@ const emptyStateSuggestions = [
 	   ──────────────────────────────────────────────────────────────────────── */
 
 	/* Listing toolbar: list/map toggle (left) + AI search entry (right) aligned
-	   on one row. On mobile the toggle is a fixed bottom bar (out of flow), so
-	   the search entry naturally spans the full width. */
+	   on one row. On mobile the toggle lives in the dock, so the search entry
+	   naturally spans the full width. */
 	.listing-toolbar {
 		display: flex;
 		align-items: center;
 		gap: var(--space-4, 16px);
 		margin: var(--space-5, 20px) 0 var(--space-6, 24px);
-	}
-
-	.listing-toolbar .view-toggle {
-		flex-shrink: 0;
-		margin: 0;
 	}
 
 	.ai-search-slot {

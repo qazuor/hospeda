@@ -1,9 +1,8 @@
 /**
- * T-015: No-silent-skip regression guard for SPEC-217 target specs.
+ * No-silent-skip regression guard for migrated billing-related specs.
  *
- * Ensures that every `test.skip` / `test.fixme` occurrence in the six
- * SPEC-217 target spec files is documented, preventing silent regression back
- * to "skipped forever" without explanation.
+ * Ensures that every `test.skip` / `test.fixme` occurrence in the target
+ * scenarios is documented, preventing silent skips from hiding coverage.
  *
  * Convention (see `detectSilentSkips` in skip-detector.ts for the full rule):
  *   - A skip/fixme is ALLOWED when the call supplies a string literal argument
@@ -25,25 +24,20 @@ import { ANNOTATION_KEYWORDS, detectSilentSkips } from './skip-detector.ts';
 
 const E2E_ROOT = join(import.meta.dirname, '..', '..');
 
-// host-07d-tx-compensation.spec.ts was on this list and is deliberately gone
-// (HOS-171): its premise — publish starting a trial, then compensating via
-// cancelTrial when a later step failed — died with the no-card trial, and the spec
-// had already stopped giving signal, self-skipping via test.fixme() the moment the
-// flow stopped calling startTrial. Which is exactly what this guard exists to
-// catch, and could not: the guard only inspects the files named here, and a
-// self-skip driven by runtime state is invisible to a source scan. Rebuilding it
-// on the post-create compensation path is HOS-184.
+// Keep every migrated billing-related scenario here so a silent skip cannot
+// make its coverage disappear again.
 const TARGET_SPECS = [
-    'tests/host/host-03-trial-expired.spec.ts',
-    'tests/host/host-04-cancellation-grace.spec.ts',
-    'tests/host/host-07b-subscription-required.spec.ts',
-    'tests/host/host-07c-qzpay-timeout.spec.ts',
-    'tests/resilience/res-01-api-down-checkout.spec.ts'
+    'tests/host/host-01-onboarding-handoff.spec.ts',
+    'tests/resilience/res-04-webhook-duplicate.spec.ts',
+    'tests/security/sec-03-paywall-bypass.spec.ts',
+    'tests/guest/guest-05-accommodation-compare.spec.ts',
+    'tests/guest/guest-06-exclusive-deals.spec.ts',
+    'tests/spec-098/e2e-07-collections-limit.spec.ts'
 ] as const;
 
 // ── Real-file guard tests ──────────────────────────────────────────────────
 
-describe('T-015: no-silent-skip guard — SPEC-217 target specs', () => {
+describe('no-silent-skip guard — migrated billing scenarios', () => {
     for (const relPath of TARGET_SPECS) {
         it(`${relPath} — no undocumented skip/fixme`, () => {
             const absPath = join(E2E_ROOT, relPath);

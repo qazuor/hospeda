@@ -17,8 +17,7 @@
 
 .priceAlertButtonCreate,
 .priceAlertButtonActive,
-.priceAlertButtonDisabled,
-.priceAlertButtonLocked {
+.priceAlertButtonDisabled {
     display: flex;
     align-items: center;
     justify-content: center;
@@ -82,18 +81,6 @@
     border: 1px solid transparent;
     cursor: not-allowed;
     opacity: 0.7;
-}
-
-/* ─── Locked state (free plan — link to plans page) ───────────────────────── */
-
-.priceAlertButtonLocked {
-    color: var(--brand-primary);
-    background-color: transparent;
-    border: 1px solid var(--brand-primary-a30);
-}
-
-.priceAlertButtonLocked:hover {
-    background-color: var(--brand-primary-a05);
 }
 
 /* ─── Inline error message ────────────────────────────────────────────────── */

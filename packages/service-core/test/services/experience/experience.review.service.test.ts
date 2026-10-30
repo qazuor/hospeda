@@ -21,6 +21,7 @@ import {
     LifecycleStatusEnum,
     ModerationStatusEnum,
     PermissionEnum,
+    PublicationStatusEnum,
     RoleEnum,
     ServiceErrorCode
 } from '@repo/schemas';
@@ -29,7 +30,7 @@ import {
     type ExperienceReviewModerateInput,
     ExperienceReviewService
 } from '../../../src/services/experience/experience.review.service';
-import type { Actor } from '../../../src/types';
+import { type Actor, ServiceError } from '../../../src/types';
 import * as permissionUtils from '../../../src/utils/permission';
 
 // biome-ignore lint/suspicious/noExplicitAny: test helper — explicit any is intentional for mock wiring
@@ -64,9 +65,9 @@ const staffActor: Actor = {
     id: STAFF_ID,
     roles: [RoleEnum.ADMIN],
     permissions: [
-        PermissionEnum.COMMERCE_EDIT_ALL,
-        PermissionEnum.COMMERCE_MODERATE_REVIEW,
-        PermissionEnum.COMMERCE_VIEW_ALL
+        PermissionEnum.EXPERIENCE_EDIT_ALL,
+        PermissionEnum.EXPERIENCE_MODERATE_REVIEW,
+        PermissionEnum.EXPERIENCE_VIEW_ALL
     ]
 };
 
@@ -123,7 +124,11 @@ function makeReviewModel(review: ExperienceReview | null = null) {
 function makeExperienceModelMock() {
     return {
         entityName: 'experiences',
-        findById: vi.fn().mockResolvedValue({ id: EXPERIENCE_ID }),
+        findById: vi.fn().mockResolvedValue({
+            id: EXPERIENCE_ID,
+            ownerId: OTHER_USER,
+            publicationStatus: PublicationStatusEnum.PUBLISHED
+        }),
         update: vi.fn().mockResolvedValue({ id: EXPERIENCE_ID })
     };
 }
@@ -151,7 +156,7 @@ beforeEach(() => {
 // ---------------------------------------------------------------------------
 
 describe('ExperienceReviewService.moderateReview', () => {
-    it('should return FORBIDDEN when actor lacks COMMERCE_MODERATE_REVIEW', async () => {
+    it('should return FORBIDDEN when actor lacks EXPERIENCE_MODERATE_REVIEW', async () => {
         const service = makeService(makeReview());
         const input: ExperienceReviewModerateInput = {
             id: REVIEW_ID,
@@ -220,7 +225,7 @@ describe('ExperienceReviewService.moderateReview', () => {
 // ---------------------------------------------------------------------------
 
 describe('ExperienceReviewService.getPendingCount', () => {
-    it('should return FORBIDDEN when actor lacks COMMERCE_MODERATE_REVIEW', async () => {
+    it('should return FORBIDDEN when actor lacks EXPERIENCE_MODERATE_REVIEW', async () => {
         const service = makeService();
         const result = await service.getPendingCount(reviewerActor);
         expect(result.error?.code).toBe(ServiceErrorCode.FORBIDDEN);
@@ -258,6 +263,39 @@ describe('ExperienceReviewService.listByExperience', () => {
             moderationState: ModerationStatusEnum.APPROVED
         });
     });
+
+    it('returns empty without reading reviews for a PURGED listing', async () => {
+        const service = makeService();
+        const listingModel = (service as AnyService)._experienceModel;
+        listingModel.findById.mockResolvedValue({
+            publicationStatus: PublicationStatusEnum.PURGED
+        });
+
+        const result = await service.listByExperience(EXPERIENCE_ID, reviewerActor);
+
+        expect(result.data).toEqual({ reviews: [], total: 0 });
+        expect((service as AnyService).model.findAll).not.toHaveBeenCalled();
+    });
+
+    it.each([
+        PublicationStatusEnum.PUBLISHED,
+        PublicationStatusEnum.ARCHIVED
+    ])('continues reading reviews for %s listings', async (publicationStatus) => {
+        const review = makeReview({
+            moderationState: ModerationStatusEnum.APPROVED,
+            deletedAt: null
+        });
+        const service = makeService(review);
+        (service as AnyService)._experienceModel.findById.mockResolvedValue({
+            publicationStatus
+        });
+
+        const result = await service.listByExperience(EXPERIENCE_ID, reviewerActor);
+
+        expect(result.error).toBeUndefined();
+        expect(result.data?.reviews).toHaveLength(1);
+        expect((service as AnyService).model.findAll).toHaveBeenCalledOnce();
+    });
 });
 
 // ---------------------------------------------------------------------------
@@ -265,6 +303,31 @@ describe('ExperienceReviewService.listByExperience', () => {
 // ---------------------------------------------------------------------------
 
 describe('ExperienceReviewService._beforeCreate', () => {
+    it('masks a DRAFT listing exactly like a missing listing', async () => {
+        const service = makeService();
+        const model = (service as AnyService)._experienceModel;
+        model.findById
+            .mockResolvedValueOnce({
+                id: EXPERIENCE_ID,
+                ownerId: OTHER_USER,
+                publicationStatus: PublicationStatusEnum.DRAFT
+            })
+            .mockResolvedValueOnce(null);
+        const beforeCreate = (service as AnyService)._beforeCreate.bind(service);
+        const input = { experienceId: EXPERIENCE_ID, overallRating: 4 };
+        const capture = async () => {
+            try {
+                await beforeCreate(input, reviewerActor, { hookState: {} });
+            } catch (error) {
+                if (error instanceof ServiceError)
+                    return { code: error.code, message: error.message };
+                throw error;
+            }
+            throw new Error('expected review refusal');
+        };
+        expect(await capture()).toEqual(await capture());
+    });
+
     it('should throw ALREADY_EXISTS when user already reviewed this listing', async () => {
         const existingReview = makeReview();
         const service = makeService(existingReview);
@@ -446,5 +509,19 @@ describe('ExperienceReviewService._recomputeListingRating — rating math (B-1 r
             expect(row.ambiance).toBe(5);
             expect(row.value).toBe(5);
         }
+    });
+});
+
+describe('ExperienceReviewService.search pagination (HOS-1900)', () => {
+    it('forwards page and pageSize from ctx.pagination to the model', async () => {
+        // Arrange
+        const service = makeService(null);
+
+        // Act
+        await service.search(reviewerActor, { page: 2, pageSize: 5 });
+
+        // Assert
+        const model = (service as AnyService).model;
+        expect(model.findAll.mock.calls[0]?.[1]).toEqual({ page: 2, pageSize: 5 });
     });
 });

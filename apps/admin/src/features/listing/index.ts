@@ -1,0 +1,82 @@
+/**
+ * @file index.ts
+ * Public barrel for the generic listing admin config-layer.
+ *
+ * Concrete listing entities (venue, experiences, …) import from here
+ * to access config builders, section factories, and hook factories WITHOUT
+ * depending on the internal file paths of this feature.
+ *
+ * DO NOT export venue-specific or experience-specific symbols here.
+ * This module is the reusable shared layer only.
+ */
+
+export type { ListingGalleryManagerProps } from './components/ListingGalleryManager';
+
+// Relational gallery manager UI (HOS-382)
+export { ListingGalleryManager } from './components/ListingGalleryManager';
+export { ListingModerationActions } from './components/ListingModerationActions';
+export type { ListingModerationCardProps } from './components/ListingModerationCard';
+// Listing moderation by action, with reason (HOS-1684)
+export { ListingModerationCard } from './components/ListingModerationCard';
+export type { ListingPurgeOnRequestCardProps } from './components/ListingPurgeOnRequestCard';
+// Administrative action 23: purge at the owner's request (HOS-1493)
+export { ListingPurgeOnRequestCard } from './components/ListingPurgeOnRequestCard';
+// List config factory
+export { createListingListConfig } from './config/createListingListConfig';
+// HOS-1684
+export type { ListingModerationActionKind } from './config/listing-moderation-actions';
+export {
+    canEditListing,
+    canPurgeListingOnRequest,
+    getAvailableModerationActions
+} from './config/listing-moderation-actions';
+// Shared section builders
+export {
+    createListingIdentitySection,
+    createListingOperationalSection
+} from './config/listingSections';
+export type {
+    AssignOwnerInput,
+    ListingEntityHooks,
+    ListingEntityHooksConfig,
+    ModerateReviewInput,
+    PendingReviewsQueryParams,
+    ReviewModerationDecision
+} from './hooks/createListingEntityHooks';
+
+// Hooks factory + related types
+export { createListingEntityHooks } from './hooks/createListingEntityHooks';
+export type {
+    ListingMedia,
+    ListingMediaAddPayload,
+    ListingMediaVertical
+} from './hooks/useListingMedia';
+// Relational media gallery hooks (HOS-382)
+export {
+    listingMediaQueryKeys,
+    useListingMediaAdd,
+    useListingMediaList,
+    useListingMediaRemove,
+    useListingMediaSetFeatured
+} from './hooks/useListingMedia';
+export {
+    buildListingModerationStatePath,
+    useListingModerationStateQuery
+} from './hooks/useListingModerationStateQuery';
+// HOS-1684
+export {
+    buildModerateListingPath,
+    useModerateListingMutation
+} from './hooks/useModerateListingMutation';
+export type {
+    PurgeListingOnRequestInput,
+    PurgeListingOnRequestResult,
+    PurgeListingVertical
+} from './hooks/usePurgeListingOnRequestMutation';
+export { usePurgeListingOnRequestMutation } from './hooks/usePurgeListingOnRequestMutation';
+// Types
+export type {
+    ColumnTFunction,
+    ListingConsolidatedConfigParams,
+    ListingEntityConfigParams
+} from './types';

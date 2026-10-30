@@ -1,0 +1,2004 @@
+{
+    "10-corte/B11.md": [
+        {
+            "spec_line": 79,
+            "text": "El §23 pide un proceso periódico contra el proveedor que detecte webhooks faltantes,",
+            "source": [[".specs/HOS-1354-billing-cobro-y-proveedor/docs/09-conciliacion.md", [14]]],
+            "match": true
+        },
+        {
+            "spec_line": 133,
+            "text": "(§3), a más tardar al día siguiente, como ya acota la rama de la sucesora de `S4`.",
+            "source": [[".specs/HOS-1354-billing-cobro-y-proveedor/docs/09-conciliacion.md", [66]]],
+            "match": true
+        },
+        {
+            "spec_line": 170,
+            "text": "preapproval** (owner 2026-09-26, `X-1`; FASE 9 vuelta 1, `N-G3V-03`, `N-G1-02`): con la relectura",
+            "source": [
+                [".specs/HOS-1354-billing-cobro-y-proveedor/docs/09-conciliacion.md", [100]]
+            ],
+            "match": true
+        },
+        {
+            "spec_line": 198,
+            "text": "> 4b no está en ese manifiesto**: su evento escribe la lápida de recepción y la marca",
+            "source": [
+                [".specs/HOS-1354-billing-cobro-y-proveedor/docs/09-conciliacion.md", [133]]
+            ],
+            "match": true
+        },
+        {
+            "spec_line": 230,
+            "text": "> completa, owner 2026-09-25; y el 20, `COBRO_DUPLICADO`, con la pendiente 6; y el 21 y el 22 con la",
+            "source": [
+                [".specs/HOS-1354-billing-cobro-y-proveedor/docs/09-conciliacion.md", [165]]
+            ],
+            "match": true
+        },
+        {
+            "spec_line": 250,
+            "text": "| **monto esperado, derivado**: el precio de la versión de plan —**el vigente de la versión, con los aumentos de `DEC-MP-002` ya aplicados** (orquestador, FASE 8 completa, pendiente 8)— menos las promos vivas según su contador (`B/14` §2.4) —**no es una columna**—, **redondeado una sola vez, con el mismo cálculo que usa quien muta** (`B/14` §1.2; FASE 9 vuelta 2, `F-8V2B3-008`). **No se compara sobre una fila `PAUSED`** (orquestador, pendiente 8), **ni sobre una fila cuyo preapproval la relectura ve `cancelled`** —la `CANCEL_SCHEDULED` y la `SUSPENDED` de tarjeta—: su `transaction_amount` ya no se puede mutar, y un aumento la haría divergir para siempre sin acción posible; el cobro que todavía salga de ella lo mira la comparación de cobros (FASE 9 vuelta 2, `F-8V2B3-007`) | `transaction_amount`, **releído por id** | **si la divergencia la abrió una mutación NUESTRA** —`S30`, un aumento de precio de `DEC-MP-002` **o `S37`, la de una migración** (revisión del owner, 2026-09-28, C15)— **se reintenta la mutación durante 3 días, contados desde esa transición**, por tiempo y no por corridas, como el reintento de una cancelación nuestra (abajo), **y después** se abre la **marca** con motivo **`DIVERGENCIA_DE_MONTO`** (FASE 8 completa, pendiente 7, owner 2026-09-25); **cualquier otra divergencia de monto abre `DIVERGENCIA_DE_MONTO` en el acto** (orquestador, pendiente 8, derivado de `DEC-CONC-002` punto 4) — es el caso que no avisa por ningún canal. **Cerrado en la pendiente 8**: sin mutación nuestra no hay reintento, y **al reanudar una `PAUSED`, `S10` es la transición desde la que corren los 3 días** (`B/14` §2.4). **Cerrado (FASE 8 completa, owner 2026-09-25)**: (desde BZ, corte del MVP, owner 2026-10-02, el aumento a un anclado es `S37`, y los 3 días corren desde esa transición; residuo corregido el 2026-10-02), y **entre el pedido de un downgrade y el acto que lo aplica, el monto esperado es el del plan nuevo, sin promos** (`B/14` §2.4; FASE 9 completa, contradicción 1 de `03` §R6.5: el pedido termina la promo y muta al precio de lista del plan nuevo). **Y entre `S37` y el `S38` que aplica ese cambio, el monto esperado es el precio de lista de la versión destino para su ciclo, sin promos, salvo si el motivo es «aumento»: en ese caso conserva y descuenta la promo viva (BZ; `DEC-MP-002`)**: la ventana gemela, en una migración (`B/14` §2.4; verificación corta, 2026-09-29, lote M-C) |",
+            "source": [
+                [".specs/HOS-1354-billing-cobro-y-proveedor/docs/09-conciliacion.md", "176"]
+            ],
+            "match": false
+        },
+        {
+            "spec_line": 264,
+            "text": "espejo de la baja del proveedor (`B/03` §10.1), por la salvedad que ese par escribe.",
+            "source": [
+                [".specs/HOS-1354-billing-cobro-y-proveedor/docs/09-conciliacion.md", [199]]
+            ],
+            "match": true
+        },
+        {
+            "spec_line": 293,
+            "text": "parte de *«imposibilitada de cobrar»*, y no mueve las cifras de la tabla de abajo ni de las",
+            "source": [
+                [".specs/HOS-1354-billing-cobro-y-proveedor/docs/09-conciliacion.md", [228]]
+            ],
+            "match": true
+        },
+        {
+            "spec_line": 318,
+            "text": "terminal y no vuelve por esto. La relectura que la vio viva vacía `cancelado_visto_en` (abajo), así",
+            "source": [
+                [".specs/HOS-1354-billing-cobro-y-proveedor/docs/09-conciliacion.md", [257]]
+            ],
+            "match": true
+        },
+        {
+            "spec_line": 348,
+            "text": "| `S17` → `CANCELLED` | nuestra llamada, **pero con relectura**: si falla, `S17` **no ocurre** y la fila no llega a terminal (`B/03` §3.2) | **sí**, por construcción — **cerrado el registro de cobro del ciclo** (ídem) |",
+            "source": [
+                [".specs/HOS-1354-billing-cobro-y-proveedor/docs/09-conciliacion.md", [294]]
+            ],
+            "match": true
+        },
+        {
+            "spec_line": 378,
+            "text": "cancelar el preapproval**: las **once** de la 4 —`S12`, `S3`, `S13`, **`S16`**, `S20`, `S22`, `S23`, `S24`,",
+            "source": [
+                [".specs/HOS-1354-billing-cobro-y-proveedor/docs/09-conciliacion.md", [324]]
+            ],
+            "match": true
+        },
+        {
+            "spec_line": 404,
+            "text": "   el reloj de la marca, no para volver a llamar.",
+            "source": [
+                [".specs/HOS-1354-billing-cobro-y-proveedor/docs/09-conciliacion.md", [350]]
+            ],
+            "match": true
+        },
+        {
+            "spec_line": 435,
+            "text": "declaraba dónde vivía su conteo; y el registro de corridas del §7 dice cuándo corrió el barrido,",
+            "source": [
+                [".specs/HOS-1354-billing-cobro-y-proveedor/docs/09-conciliacion.md", [384]]
+            ],
+            "match": true
+        },
+        {
+            "spec_line": 469,
+            "text": "**Y esto es lo que vuelve consistente la frase de más abajo** —*«una fila con la marca",
+            "source": [
+                [".specs/HOS-1354-billing-cobro-y-proveedor/docs/09-conciliacion.md", [418]]
+            ],
+            "match": true
+        },
+        {
+            "spec_line": 499,
+            "text": "> §3.2 la llevaba a un estado terminal por esa causa, y por la regla 1 del núcleo eso no se podía",
+            "source": [
+                [".specs/HOS-1354-billing-cobro-y-proveedor/docs/09-conciliacion.md", [448]]
+            ],
+            "match": true
+        },
+        {
+            "spec_line": 528,
+            "text": "base— y vigila el único estado que deja el candado `A` **vacío**, que es el que permite que un",
+            "source": [
+                [".specs/HOS-1354-billing-cobro-y-proveedor/docs/09-conciliacion.md", [477]]
+            ],
+            "match": true
+        },
+        {
+            "spec_line": 557,
+            "text": "> fallar: eso lo cubre la **salvedad 4**, que devuelve las dos filas al barrido hasta que la",
+            "source": [
+                [".specs/HOS-1354-billing-cobro-y-proveedor/docs/09-conciliacion.md", [506]]
+            ],
+            "match": true
+        },
+        {
+            "spec_line": 586,
+            "text": "> determinable, y ahí lo que la persona tiene que hacer es decidirla (`B/02` §2.5, motivos 1 y 4).",
+            "source": [
+                [".specs/HOS-1354-billing-cobro-y-proveedor/docs/09-conciliacion.md", [535]]
+            ],
+            "match": true
+        },
+        {
+            "spec_line": 618,
+            "text": "> cuarta sí mira un ancla** —su segunda mitad pregunta si la que era título de una instancia se",
+            "source": [
+                [".specs/HOS-1354-billing-cobro-y-proveedor/docs/09-conciliacion.md", [567]]
+            ],
+            "match": true
+        },
+        {
+            "spec_line": 652,
+            "text": "**Y una cuarta, que tampoco le pregunta nada al proveedor: la instancia de addon viva cuyo",
+            "source": [
+                [".specs/HOS-1354-billing-cobro-y-proveedor/docs/09-conciliacion.md", [601]]
+            ],
+            "match": true
+        },
+        {
+            "spec_line": 680,
+            "text": "> tercera cláusula vive en `B/03` §8, no acá. **Y se lee igual de barata con el enunciado nuevo**:",
+            "source": [
+                [".specs/HOS-1354-billing-cobro-y-proveedor/docs/09-conciliacion.md", [629]]
+            ],
+            "match": true
+        },
+        {
+            "spec_line": 712,
+            "text": "> los **cuatro** momentos que el `B/16` §4.3 enumera —el cuarto es la revocación del grant o el",
+            "source": [
+                [".specs/HOS-1354-billing-cobro-y-proveedor/docs/09-conciliacion.md", [661]]
+            ],
+            "match": true
+        },
+        {
+            "spec_line": 741,
+            "text": "> **coincide**, exactamente como en el caso de `S13`. Y las otras cinco comprobaciones miran",
+            "source": [
+                [".specs/HOS-1354-billing-cobro-y-proveedor/docs/09-conciliacion.md", [697]]
+            ],
+            "match": true
+        },
+        {
+            "spec_line": 773,
+            "text": "con motivo **`CORTESÍA_SIN_RE_EMITIR`** (`B/02` §2.5). Cuesta cero llamadas —la cortesía y las dos",
+            "source": [
+                [".specs/HOS-1354-billing-cobro-y-proveedor/docs/09-conciliacion.md", [729]]
+            ],
+            "match": true
+        },
+        {
+            "spec_line": 805,
+            "text": "> cortesía sobre una pausa—. **Ese saldo se CIERRA en la misma transición que manda la fila a",
+            "source": [
+                [".specs/HOS-1354-billing-cobro-y-proveedor/docs/09-conciliacion.md", [768]]
+            ],
+            "match": true
+        },
+        {
+            "spec_line": 832,
+            "text": "registramos como `SUCCEEDED`**, así que si después cambia —el cliente lo desconoce ante su banco, o",
+            "source": [
+                [".specs/HOS-1354-billing-cobro-y-proveedor/docs/09-conciliacion.md", [795]]
+            ],
+            "match": true
+        },
+        {
+            "spec_line": 868,
+            "text": "> **No es una de las seis comprobaciones de cero llamadas, y por eso no cambia ese conteo**: las",
+            "source": [
+                [".specs/HOS-1354-billing-cobro-y-proveedor/docs/09-conciliacion.md", [831]]
+            ],
+            "match": true
+        },
+        {
+            "spec_line": 898,
+            "text": "dice la tabla de arriba; un error la deja para la corrida siguiente. **Nunca con una clave nueva**:",
+            "source": [
+                [".specs/HOS-1354-billing-cobro-y-proveedor/docs/09-conciliacion.md", [861]]
+            ],
+            "match": true
+        },
+        {
+            "spec_line": 927,
+            "text": "pagó sin que su instancia llegara a `ACTIVE`** (FASE 9 vuelta 2, owner 2026-09-27, `R4`,",
+            "source": [
+                [".specs/HOS-1354-billing-cobro-y-proveedor/docs/09-conciliacion.md", [890]]
+            ],
+            "match": true
+        },
+        {
+            "spec_line": 953,
+            "text": "no cubre está en *«lo que este capítulo NO cierra»*. La búsqueda sólo lee; no crea ni reenvía",
+            "source": [
+                [".specs/HOS-1354-billing-cobro-y-proveedor/docs/09-conciliacion.md", [920]]
+            ],
+            "match": true
+        },
+        {
+            "spec_line": 989,
+            "text": "> permite medir el plazo por marca. **El plazo es uno solo, el 17 de la lista cerrada, para todos",
+            "source": [
+                [".specs/HOS-1354-billing-cobro-y-proveedor/docs/09-conciliacion.md", [956]]
+            ],
+            "match": true
+        },
+        {
+            "spec_line": 1030,
+            "text": "| la lectura por id del preapproval falla | **el id es de otra cuenta** |",
+            "source": [
+                [".specs/HOS-1354-billing-cobro-y-proveedor/docs/09-conciliacion.md", [1001]]
+            ],
+            "match": true
+        },
+        {
+            "spec_line": 1068,
+            "text": "proveedor (`WH-4`, `WH-5`). **En el diseño nuevo el disparador no es un error**: el receptor",
+            "source": [
+                [".specs/HOS-1354-billing-cobro-y-proveedor/docs/09-conciliacion.md", [1039]]
+            ],
+            "match": true
+        },
+        {
+            "spec_line": 1100,
+            "text": "   pasaron 3 días desde el `date_created` del registro de cobro y la lectura sigue en *«todavía no",
+            "source": [
+                [".specs/HOS-1354-billing-cobro-y-proveedor/docs/09-conciliacion.md", [1073]]
+            ],
+            "match": true
+        },
+        {
+            "spec_line": 1133,
+            "text": "de relectura de `S17` —si la relectura ya ve el preapproval `cancelled`, no se manda nada—, así que",
+            "source": [
+                [".specs/HOS-1354-billing-cobro-y-proveedor/docs/09-conciliacion.md", [1106]]
+            ],
+            "match": true
+        },
+        {
+            "spec_line": 1160,
+            "text": "**Si pasan 48 h sin una corrida completa, se avisa, y el aviso lo da otro proceso**: un vigía que",
+            "source": [
+                [".specs/HOS-1354-billing-cobro-y-proveedor/docs/09-conciliacion.md", "1115"]
+            ],
+            "match": false
+        },
+        {
+            "spec_line": 1166,
+            "text": "nuestra ejecución, así que no muere con el barrido. **Primer candidato: Sentry Cron Monitoring**",
+            "source": [
+                [".specs/HOS-1354-billing-cobro-y-proveedor/docs/09-conciliacion.md", [1142]]
+            ],
+            "match": true
+        },
+        {
+            "spec_line": 1203,
+            "text": "  mismo día: una** (§6.2), **y a los 3 días abre la marca con motivo `COBRO_DEL_PERÍODO_SIN_RESOLVER`**",
+            "source": [
+                [".specs/HOS-1354-billing-cobro-y-proveedor/docs/09-conciliacion.md", [1183]]
+            ],
+            "match": true
+        },
+        {
+            "spec_line": 1230,
+            "text": "  proveedor en un contracargo es **documental** (`RC-8`, `UNKNOWN`): no se puede fabricar uno a",
+            "source": [
+                [".specs/HOS-1354-billing-cobro-y-proveedor/docs/09-conciliacion.md", [1227]]
+            ],
+            "match": true
+        },
+        {
+            "spec_line": 1260,
+            "text": "- **Un `pending` duplicado que aparece recién después de `S2` queda vivo** (FASE 9 vuelta 1,",
+            "source": [
+                [".specs/HOS-1354-billing-cobro-y-proveedor/docs/09-conciliacion.md", [1267]]
+            ],
+            "match": true
+        },
+        {
+            "spec_line": 1286,
+            "text": "  sale del motivo, por una población que es sólo del owner y se cierra con la medición. **Causa**:",
+            "source": [
+                [".specs/HOS-1354-billing-cobro-y-proveedor/docs/09-conciliacion.md", [1293]]
+            ],
+            "match": true
+        },
+        {
+            "spec_line": 1313,
+            "text": "  alcanza. **Dentro de la ventana, en cambio, el barrido manda la cancelación** (lote U, §3).",
+            "source": [
+                [".specs/HOS-1354-billing-cobro-y-proveedor/docs/09-conciliacion.md", [1322]]
+            ],
+            "match": true
+        }
+    ],
+    "10-corte/B13a.md": [
+        {
+            "spec_line": 58,
+            "text": "Mitad **BILLING** del capítulo 19 del programa. La otra mitad vive en la otra épica.",
+            "source": [[".specs/HOS-1354-billing-cobro-y-proveedor/docs/19-superficies.md", [14]]],
+            "match": true
+        },
+        {
+            "spec_line": 73,
+            "text": "**Ocultar un botón no es un control de acceso: es una comodidad.** Todo lo que la UI esconde",
+            "source": [[".specs/HOS-1354-billing-cobro-y-proveedor/docs/19-superficies.md", [29]]],
+            "match": true
+        },
+        {
+            "spec_line": 88,
+            "text": "| **pricing** (§47) | la **versión vigente** de cada plan, y sólo si es vendible (`V/10` §2) | nada de la suscripción de nadie |",
+            "source": [[".specs/HOS-1354-billing-cobro-y-proveedor/docs/19-superficies.md", [44]]],
+            "match": true
+        },
+        {
+            "spec_line": 101,
+            "text": "cancelación programada, addons, cortesía, *Free Forever*— y cierra con *«claridad total de",
+            "source": [[".specs/HOS-1354-billing-cobro-y-proveedor/docs/19-superficies.md", [57]]],
+            "match": true
+        },
+        {
+            "spec_line": 110,
+            "text": "entitlement global (cap. 15 §3, épica de verticales), no pertenece a ninguna vertical. Mostrarlo",
+            "source": [[".specs/HOS-1354-billing-cobro-y-proveedor/docs/19-superficies.md", [66]]],
+            "match": true
+        },
+        {
+            "spec_line": 124,
+            "text": "| la **cortesía diferida**, en la vertical de la suscripción que la firmó | `courtesy_grant.saldo_meses` no nulo y sin cerrar (cap. 02 §2.4, `NUCLEO/01` §2.6) | ***«te quedan N meses, que empiezan a correr cuando completes el pago»*** — el saldo **con la condición que lo activa**, nunca a secas. **En meses y no en días** desde la FASE 8 completa (`F-8CB1-001`, owner 2026-09-25; `B/14` §4.7); la frase de `DEC-GRANT-012` decía *«N días»*. ⚠️ Cómo se dice un saldo con fracción de mes depende de lo que queda abierto en `B/02` §2.4 |",
+            "source": [[".specs/HOS-1354-billing-cobro-y-proveedor/docs/19-superficies.md", [78]]],
+            "match": true
+        },
+        {
+            "spec_line": 131,
+            "text": "pago** porque es exactamente el acto que evita la pérdida: si la ventana de autorización vence, el",
+            "source": [[".specs/HOS-1354-billing-cobro-y-proveedor/docs/19-superficies.md", [85]]],
+            "match": true
+        },
+        {
+            "spec_line": 139,
+            "text": "pantalla, es que se cerró** — es la fila 18 del §4.",
+            "source": [[".specs/HOS-1354-billing-cobro-y-proveedor/docs/19-superficies.md", [93]]],
+            "match": true
+        },
+        {
+            "spec_line": 155,
+            "text": "| 3-bis | al **pedir la baja** de una suscripción principal teniendo **addons recurrentes que dependen de ella** —de ficha (`LISTING`) en esa vertical, de la suscripción (`VERTICAL_SUBSCRIPTION`), y de cuenta (`USER`/`GLOBAL`) si no les queda otra vertical compatible con una principal que siga (FASE 9 vuelta 2, owner 2026-09-27, `R1-a`)—, antes de confirmar | **qué addons se cancelan y por cuánto**: mueren con la suscripción —cuando deja de ser fila viva, que según el estado desde el que se pide es al fin del servicio o hoy (fila 8)—. **Desde `ACTIVE` su cobro se corta hoy, en el mismo acto que el del plan, y se siguen viendo hasta el fin del servicio** (`S11`, `R1-a`); desde los otros estados se apagan hoy con ella. **Lo que no se promete**: que se corte hoy el cobro de un addon que todavía espera autorización o está en mora, porque ése se apaga recién al fin del servicio (`B/16`, NO cierra). **Si vuelve, los contrata de nuevo**, no se reanudan | FASE 8 completa, `F-8CA2-003` (owner 2026-09-25), cap. 16 §4.2 y §4.4; **cap. 03 §3.2 `S11`** (FASE 9 vuelta 2, `R1-a`, `F-8V2B1-001`) |",
+            "source": [[".specs/HOS-1354-billing-cobro-y-proveedor/docs/19-superficies.md", [109]]],
+            "match": true
+        },
+        {
+            "spec_line": 161,
+            "text": "| 7-bis | al **canjear una promo de «primer cobro» o de «N cobros»** | **cuántos cobros lleva el descuento, qué monto paga después**, y que cuando termine **va a recibir un correo del proveedor** diciendo que el vendedor cambió el monto. **En una promo de «primer cobro» este aviso es también el de *«tu promo termina»***: los dos se unifican, porque el último cobro con descuento es el primero; en una de «N cobros» ese correo sale aparte, 7 días antes del último cobro con descuento, configurable (`NUCLEO/07` §6; FASE 8 completa, pendiente 8, owner 2026-09-25). **Al pagador manual el canje no se le ofrece**: no hay promos **de monto** para él (cap. 14 §2.5; FASE 8 completa, pendiente 7, owner 2026-09-25); **la extensión de trial sí** (pendiente 8, owner 2026-09-25). **Y si el canje —o el apilado con otra promo viva— deja el monto por debajo del piso del proveedor (ARS 15), se rechaza con el motivo en pantalla**: *«este código deja el importe por debajo del mínimo que Mercado Pago permite cobrar»* —**el texto dice que ese mínimo lo pone Mercado Pago, no nosotros** (owner 2026-09-25; FASE 9 completa, 9g)—; el código **no se consume** (owner 2026-09-25; FASE 9 completa, 4b) | corrección de diseño, FASE 8 completa, `F-8CB1-007`; cap. 14 §2.4, `DEC-MAIL-001` punto 2, `CT-3`; cap. 14 §1.3 (`PC-2`) |",
+            "source": [[".specs/HOS-1354-billing-cobro-y-proveedor/docs/19-superficies.md", [115]]],
+            "match": true
+        },
+        {
+            "spec_line": 167,
+            "text": "| 11 | la compra de **Turista VIP estando suspendido** | que **al regularizar se le cancela**, sin reembolso | cap. 15 §6.3 (épica de verticales), `DEC-ENT-004` |",
+            "source": [[".specs/HOS-1354-billing-cobro-y-proveedor/docs/19-superficies.md", [121]]],
+            "match": true
+        },
+        {
+            "spec_line": 173,
+            "text": "| 13-quater | al **elegir un plan no mensual —trimestral, semestral o anual—** —el cambio de plan (el alta nueva con saldo diferido salió con `S25`: revisión del owner, 2026-09-28, C8)— **teniendo una cortesía vigente o un saldo diferido** en esa vertical | **que pierde los N meses de cortesía que le quedan**, porque sobre un plan que no es mensual no hay cortesía temporal, y que decide él: puede seguir en mensual y conservarlos | `DEC-GRANT-003` impl. 6, `B/02` §2.4 (`DESTINO_DE_PLAN_NO_MENSUAL`) (FASE 8 completa, `F-8CB1-001`, owner 2026-09-25; FASE 9 completa, contradicción 1 de `03` §R4.5) |",
+            "source": [[".specs/HOS-1354-billing-cobro-y-proveedor/docs/19-superficies.md", [127]]],
+            "match": true
+        },
+        {
+            "spec_line": 179,
+            "text": "| 17-bis ✚ | el **cambio de plan** estando en el grace | que **no se ofrece**, y **qué hacer para poder**, según el método de pago: con tarjeta, *«cambiá tu tarjeta»* (tachado 2026-09-26) **y que al cambiarla se reintenta el cobro en el momento: la frase de la fila 9** (`GR-1` `VERIFIED` el 2026-09-26); con pago manual, *«pagá tu cuota»*. Y que **con la suscripción al día** puede cambiar de plan | `DEC-SUB-021` (owner 2026-09-25), cap. 03 §3.3.1 y §4, `EX-36`, `GR-3`, `GR-1` |",
+            "source": [[".specs/HOS-1354-billing-cobro-y-proveedor/docs/19-superficies.md", [135]]],
+            "match": true
+        },
+        {
+            "spec_line": 187,
+            "text": "*(fila retirada: **sale** (revisión del owner, 2026-09-28, C8): las verticales no se discontinúan, y el sistema no manda avisos de un acto que no existe)*",
+            "source": [[".specs/HOS-1354-billing-cobro-y-proveedor/docs/19-superficies.md", "97"]],
+            "match": false
+        },
+        {
+            "spec_line": 196,
+            "text": "transición que vence la ventana es la que cierra el saldo (`S3`). Mandar dos avisos por un solo",
+            "source": [[".specs/HOS-1354-billing-cobro-y-proveedor/docs/19-superficies.md", [147]]],
+            "match": true
+        },
+        {
+            "spec_line": 204,
+            "text": "**Los cinco que van del 16 al 17-ter son avisos de una operación que NO se ofrece, y por eso están",
+            "source": [[".specs/HOS-1354-billing-cobro-y-proveedor/docs/19-superficies.md", [155]]],
+            "match": true
+        },
+        {
+            "spec_line": 216,
+            "text": "2. **Cada aviso lleva la fecha de ese cliente, no una global.** `DEC-MP-002` lo exige para el",
+            "source": [[".specs/HOS-1354-billing-cobro-y-proveedor/docs/19-superficies.md", [165]]],
+            "match": true
+        },
+        {
+            "spec_line": 225,
+            "text": "suscribirse**, sin teléfono y sin hablar con nadie. Está decidido en",
+            "source": [[".specs/HOS-1354-billing-cobro-y-proveedor/docs/19-superficies.md", "171"]],
+            "match": false
+        },
+        {
+            "spec_line": 229,
+            "text": "inmediato y **el servicio sigue hasta el fin del período pagado** (`DEC-SUB-009`), con esa fecha a",
+            "source": [[".specs/HOS-1354-billing-cobro-y-proveedor/docs/19-superficies.md", [178]]],
+            "match": true
+        },
+        {
+            "spec_line": 238,
+            "text": "servicio termina en el acto** en vez de una fecha futura que no existe. **Salvo desde `PAUSED`",
+            "source": [[".specs/HOS-1354-billing-cobro-y-proveedor/docs/19-superficies.md", [187]]],
+            "match": true
+        },
+        {
+            "spec_line": 245,
+            "text": "cliente **tiene servicio entero** hasta el instante en que confirma (§20, `12-contrato…` §2.6),",
+            "source": [[".specs/HOS-1354-billing-cobro-y-proveedor/docs/19-superficies.md", [194]]],
+            "match": true
+        },
+        {
+            "spec_line": 258,
+            "text": "§48 no enumera aunque el resto del PDR se las asigne— son las veinticinco *(con la vigesimoquinta: verificación corta, 2026-09-29, lote N-G; con la vigesimosexta, asignar o quitar el rol `SUPER_ADMIN`: FASE 9 vuelta 3, owner 2026-09-30, lote P; el nombre, lote AC)* del capítulo 08 §3 (núcleo) (la vigesimotercera y la vigesimocuarta, borrar una ficha ajena y **dar de baja una cuenta** (caso I-C) a pedido de su dueño: revisión del owner, casos vecinos, 2026-09-29, caso F-C; la decimosexta salió con la revisión del owner, 2026-09-28, C8, y su número no se reusa; la decimoséptima, *«migrar a los clientes de un plan retirado»*: la misma revisión, C15; de la decimoctava a la vigesimosegunda, las cinco del catálogo: la misma revisión, N1 y C9; la decimoquinta, editar el contenido de una ficha ajena: owner 2026-09-26, `G5-2`; la decimotercera es moderar una ficha: FASE 8 completa, `F-8CA2-004`, owner 2026-09-25; la decimocuarta, *«asentar un cobro o una devolución que ya ocurrió por fuera»*: owner 2026-09-25, FASE 9 completa, 5a),",
+            "source": [[".specs/HOS-1354-billing-cobro-y-proveedor/docs/19-superficies.md", [207]]],
+            "match": true
+        },
+        {
+            "spec_line": 268,
+            "text": "| **las migraciones de planes retirados** ✚: antes de confirmar, **la previsualización** (cada cliente alcanzado con subida o bajada, su precio actual y el nuevo, y su fecha); y después, por migración, **sus filas por estado**, con **las que quedan para resolver a mano** (`PARA_RESOLVER`: el destino no ofrece su ciclo) a la vista, **sin plazo y con su antigüedad**, contada desde el anuncio (revisión del owner, casos vecinos, 2026-09-29, caso 26); la previsualización muestra también **la cuenta del propio `SUPER_ADMIN`, excluida**, si la cohorte la incluye (caso 24) | es la salida de la acción 17 (`NUCLEO/08` §3; revisión del owner, 2026-09-28, C15; `B/10` §3.7): sin el listado, los que no se pueden mover solos quedan en un plan retirado sin que nadie los mire, y la migración no sirve para vaciarlo |",
+            "source": [[".specs/HOS-1354-billing-cobro-y-proveedor/docs/19-superficies.md", [218]]],
+            "match": true
+        },
+        {
+            "spec_line": 281,
+            "text": "| `REEMBOLSO_POR_CONFIRMAR` (ramas 1, 5 y **6** de `B/12` §5.3; en la 6, no tras `S36`, cuyo `RF1` ya devuelve el pago (FASE 9 vuelta 2, verificación, owner 2026-09-28, `V2-o`)) | **devolver** |",
+            "source": [[".specs/HOS-1354-billing-cobro-y-proveedor/docs/19-superficies.md", [229]]],
+            "match": true
+        },
+        {
+            "spec_line": 287,
+            "text": "| `COBRO_DUPLICADO` (motivo **20**) ✚ | **devolver** — el cobro llegó sobre un período que ya tenía un cobro acreditado, así que uno de los dos no compró nada (`B/02` §2.5, motivo 20; `P1`; FASE 8 completa, pendiente 6, owner 2026-09-25) |",
+            "source": [[".specs/HOS-1354-billing-cobro-y-proveedor/docs/19-superficies.md", [235]]],
+            "match": true
+        },
+        {
+            "spec_line": 294,
+            "text": "**N** pagos colgados (`B/02` §2.2) y el listado los muestra con su total, así que *«devolver»*",
+            "source": [[".specs/HOS-1354-billing-cobro-y-proveedor/docs/19-superficies.md", [242]]],
+            "match": true
+        },
+        {
+            "spec_line": 300,
+            "text": "devolución que lo propusiera no sale (`RF2` relee el pago antes, `B/03` §6.1), y la persona lo",
+            "source": [[".specs/HOS-1354-billing-cobro-y-proveedor/docs/19-superficies.md", [248]]],
+            "match": true
+        },
+        {
+            "spec_line": 307,
+            "text": "**devolver**; en **una** —el 14— es **no devolver**; y **una** —`PAGO_PENDIENTE_SIN_RAMA`— no",
+            "source": [[".specs/HOS-1354-billing-cobro-y-proveedor/docs/19-superficies.md", [255]]],
+            "match": true
+        },
+        {
+            "spec_line": 315,
+            "text": "distinción **en el motivo mismo**, que es una enumeración cerrada y que quien abre la marca escribe",
+            "source": [[".specs/HOS-1354-billing-cobro-y-proveedor/docs/19-superficies.md", [263]]],
+            "match": true
+        },
+        {
+            "spec_line": 321,
+            "text": "`F-8CB3-009`, `F-8CB3-003`, `DEC-SUB-020`, y el 20, `COBRO_DUPLICADO`, con la pendiente 6; el 21 y el 22, con `no`, desde la FASE 9 completa)*.",
+            "source": [[".specs/HOS-1354-billing-cobro-y-proveedor/docs/19-superficies.md", [269]]],
+            "match": true
+        },
+        {
+            "spec_line": 328,
+            "text": "muestra —el motivo— **es** lo que decide la propuesta. Lo que sigue prohibido es la distinción",
+            "source": [[".specs/HOS-1354-billing-cobro-y-proveedor/docs/19-superficies.md", [276]]],
+            "match": true
+        },
+        {
+            "spec_line": 336,
+            "text": "**Y una propuesta puede ser *«no devolver»*, que no es lo mismo que no tener ninguna.** El **14** es",
+            "source": [[".specs/HOS-1354-billing-cobro-y-proveedor/docs/19-superficies.md", [284]]],
+            "match": true
+        },
+        {
+            "spec_line": 343,
+            "text": "| las **versiones de plan retiradas** con cuántas suscripciones siguen ancladas | es lo que convierte la cola larga del retiro en algo que alguien puede decidir atacar (cap. 10 §3.4) |",
+            "source": [[".specs/HOS-1354-billing-cobro-y-proveedor/docs/19-superficies.md", [292]]],
+            "match": true
+        },
+        {
+            "spec_line": 360,
+            "text": "1. **Lee la versión vigente y vendible, nada más** (§2). Un plan retirado no aparece, aunque haya",
+            "source": [[".specs/HOS-1354-billing-cobro-y-proveedor/docs/19-superficies.md", [309]]],
+            "match": true
+        },
+        {
+            "spec_line": 366,
+            "text": "   arrancaría el trial es la situación de *primer uso* del §47, y lo que arranca ahí es el trial.",
+            "source": [[".specs/HOS-1354-billing-cobro-y-proveedor/docs/19-superficies.md", [320]]],
+            "match": true
+        },
+        {
+            "spec_line": 377,
+            "text": "  superficie**, y de ahí sale la API. Enumerarla antes de FASE 3 sería anticipar el trabajo de las",
+            "source": [[".specs/HOS-1354-billing-cobro-y-proveedor/docs/19-superficies.md", [331]]],
+            "match": true
+        },
+        {
+            "spec_line": 386,
+            "text": "  futuro**: la regla de perder la promo se escribió para el cambio de plan que la persona elige, y",
+            "source": [[".specs/HOS-1354-billing-cobro-y-proveedor/docs/19-superficies.md", [343]]],
+            "match": true
+        },
+        {
+            "spec_line": 403,
+            "text": "compromete como requisito de diseño, con norma o sin ella:**",
+            "source": [[".specs/HOS-1354-billing-cobro-y-proveedor/docs/22-lo-legal.md", [41]]],
+            "match": true
+        },
+        {
+            "spec_line": 406,
+            "text": "sin teléfono y sin hablar con nadie.** Lo que pasa después ya está",
+            "source": [[".specs/HOS-1354-billing-cobro-y-proveedor/docs/22-lo-legal.md", "38"]],
+            "match": false
+        },
+        {
+            "spec_line": 419,
+            "text": "**Ya está resuelto por el capítulo 07 (núcleo) y no hacía falta un abogado**: el §44 exige que el",
+            "source": [[".specs/HOS-1354-billing-cobro-y-proveedor/docs/22-lo-legal.md", [55]]],
+            "match": true
+        },
+        {
+            "spec_line": 425,
+            "text": "de la prueba, no un adorno de la clave**: los tres avisos de aumento apuntan a una fecha de",
+            "source": [[".specs/HOS-1354-billing-cobro-y-proveedor/docs/22-lo-legal.md", [61]]],
+            "match": true
+        },
+        {
+            "spec_line": 440,
+            "text": "**Correo transaccional**, por lo mismo. No una notificación dentro del producto, que no deja",
+            "source": [[".specs/HOS-1354-billing-cobro-y-proveedor/docs/22-lo-legal.md", [74]]],
+            "match": true
+        }
+    ],
+    "10-corte/B9a.md": [
+        {
+            "spec_line": 63,
+            "text": "Los tres instrumentos aparecen juntos en el §36 como fuentes de entitlements, y el PDR los trata",
+            "source": [
+                [
+                    ".specs/HOS-1354-billing-cobro-y-proveedor/docs/14-promos-cortesias-y-grants.md",
+                    [19]
+                ]
+            ],
+            "match": true
+        },
+        {
+            "spec_line": 88,
+            "text": "Sin regla, el total depende del orden en que alguien iteró una lista.",
+            "source": [
+                [
+                    ".specs/HOS-1354-billing-cobro-y-proveedor/docs/14-promos-cortesias-y-grants.md",
+                    [44]
+                ]
+            ],
+            "match": true
+        },
+        {
+            "spec_line": 113,
+            "text": "   `400`. Una mutación rechazada deja al cliente pagando el precio entero **en silencio**, porque",
+            "source": [
+                [
+                    ".specs/HOS-1354-billing-cobro-y-proveedor/docs/14-promos-cortesias-y-grants.md",
+                    [75]
+                ]
+            ],
+            "match": true
+        },
+        {
+            "spec_line": 124,
+            "text": "   Pago, no nosotros** (owner 2026-09-25; FASE 9 completa, 9g; el texto, en `B/19` §4 fila 7-bis):",
+            "source": [
+                [
+                    ".specs/HOS-1354-billing-cobro-y-proveedor/docs/14-promos-cortesias-y-grants.md",
+                    [89]
+                ]
+            ],
+            "match": true
+        },
+        {
+            "spec_line": 149,
+            "text": "> mecanismo que `DEC-SUB-007` **descartó por escrito**: la decisión enumera tres alternativas",
+            "source": [
+                [
+                    ".specs/HOS-1354-billing-cobro-y-proveedor/docs/14-promos-cortesias-y-grants.md",
+                    [115]
+                ]
+            ],
+            "match": true
+        },
+        {
+            "spec_line": 169,
+            "text": "  termina `CANCELLED` (`B/03` §3.2, `B/02` §2.6). No es una escritura de `S18`: es la ausencia de",
+            "source": [
+                [
+                    ".specs/HOS-1354-billing-cobro-y-proveedor/docs/14-promos-cortesias-y-grants.md",
+                    [133]
+                ]
+            ],
+            "match": true
+        },
+        {
+            "spec_line": 180,
+            "text": "  plan nuevo, sin promos**, y el `transaction_amount` coincide. **Por qué se movió al pedido**:",
+            "source": [
+                [
+                    ".specs/HOS-1354-billing-cobro-y-proveedor/docs/14-promos-cortesias-y-grants.md",
+                    [146]
+                ]
+            ],
+            "match": true
+        },
+        {
+            "spec_line": 191,
+            "text": "  aplica es que no regularizó (`DEC-SUB-021`). **Anotado para el futuro**: ver cómo mejorarlo.",
+            "source": [
+                [
+                    ".specs/HOS-1354-billing-cobro-y-proveedor/docs/14-promos-cortesias-y-grants.md",
+                    [157]
+                ]
+            ],
+            "match": true
+        },
+        {
+            "spec_line": 218,
+            "text": "**Y se muestra antes de confirmar el cambio**, con el precio que va a pagar. El checkout de",
+            "source": [
+                [
+                    ".specs/HOS-1354-billing-cobro-y-proveedor/docs/14-promos-cortesias-y-grants.md",
+                    [230]
+                ]
+            ],
+            "match": true
+        },
+        {
+            "spec_line": 237,
+            "text": "Un cambio de plan tampoco lo mueve: **termina la promo** (§2.2; FASE 8 completa, pendiente 7,",
+            "source": [
+                [
+                    ".specs/HOS-1354-billing-cobro-y-proveedor/docs/14-promos-cortesias-y-grants.md",
+                    [248]
+                ]
+            ],
+            "match": true
+        },
+        {
+            "spec_line": 251,
+            "text": "sobre una autorizada sin pedir consentimiento nuevo: `PC-1` lo midió (1500 → 2200 → 15 → 1500,",
+            "source": [
+                [
+                    ".specs/HOS-1354-billing-cobro-y-proveedor/docs/14-promos-cortesias-y-grants.md",
+                    [262]
+                ]
+            ],
+            "match": true
+        },
+        {
+            "spec_line": 264,
+            "text": "  cuando termine **va a recibir un correo del proveedor avisando el cambio de monto** (`B/19` §4,",
+            "source": [
+                [
+                    ".specs/HOS-1354-billing-cobro-y-proveedor/docs/14-promos-cortesias-y-grants.md",
+                    [275]
+                ]
+            ],
+            "match": true
+        },
+        {
+            "spec_line": 276,
+            "text": "aumentos de `DEC-MP-002` ya aplicados** (orquestador, FASE 8 completa, pendiente 8). **Y el",
+            "source": [
+                [
+                    ".specs/HOS-1354-billing-cobro-y-proveedor/docs/14-promos-cortesias-y-grants.md",
+                    [287]
+                ]
+            ],
+            "match": true
+        },
+        {
+            "spec_line": 289,
+            "text": "- **cualquier otra divergencia de monto abre `DIVERGENCIA_DE_MONTO` en el acto**, sin reintento: es",
+            "source": [
+                [
+                    ".specs/HOS-1354-billing-cobro-y-proveedor/docs/14-promos-cortesias-y-grants.md",
+                    [303]
+                ]
+            ],
+            "match": true
+        },
+        {
+            "spec_line": 305,
+            "text": "cuyo preapproval la relectura ve `cancelled`** —la `CANCEL_SCHEDULED` y la `SUSPENDED` de tarjeta—,",
+            "source": [
+                [
+                    ".specs/HOS-1354-billing-cobro-y-proveedor/docs/14-promos-cortesias-y-grants.md",
+                    [319]
+                ]
+            ],
+            "match": true
+        },
+        {
+            "spec_line": 324,
+            "text": "canje no se le ofrece (`B/19` §4, fila 7-bis). Es coherente con el mecanismo: la promo de",
+            "source": [
+                [
+                    ".specs/HOS-1354-billing-cobro-y-proveedor/docs/14-promos-cortesias-y-grants.md",
+                    [340]
+                ]
+            ],
+            "match": true
+        },
+        {
+            "spec_line": 348,
+            "text": "`extenderTrial(user, vertical, días, claveDeCanje)` (`12-contrato…` §4.1), verticales corre `T4`",
+            "source": [
+                [
+                    ".specs/HOS-1354-billing-cobro-y-proveedor/docs/14-promos-cortesias-y-grants.md",
+                    [362]
+                ]
+            ],
+            "match": true
+        },
+        {
+            "spec_line": 368,
+            "text": "dejó de ocurrir, y la tabla del capítulo 03 §1 es exhaustiva: **lo que la tabla no declara no se",
+            "source": [
+                [
+                    ".specs/HOS-1354-billing-cobro-y-proveedor/docs/14-promos-cortesias-y-grants.md",
+                    [381]
+                ]
+            ],
+            "match": true
+        },
+        {
+            "spec_line": 397,
+            "text": "pausada el proveedor **rechaza toda modificación**. O sea que mutar el monto ahí no es una",
+            "source": [
+                [
+                    ".specs/HOS-1354-billing-cobro-y-proveedor/docs/14-promos-cortesias-y-grants.md",
+                    [406]
+                ]
+            ],
+            "match": true
+        },
+        {
+            "spec_line": 417,
+            "text": "> **no queda obligación de pago**, y sobre un grant **revocado** sí queda —el beneficiario volvió",
+            "source": [
+                [
+                    ".specs/HOS-1354-billing-cobro-y-proveedor/docs/14-promos-cortesias-y-grants.md",
+                    [424]
+                ]
+            ],
+            "match": true
+        },
+        {
+            "spec_line": 429,
+            "text": "**Y al revés: otorgar un grant termina cualquier cortesía vigente.** No es una pérdida — el grant",
+            "source": [
+                [
+                    ".specs/HOS-1354-billing-cobro-y-proveedor/docs/14-promos-cortesias-y-grants.md",
+                    [436]
+                ]
+            ],
+            "match": true
+        },
+        {
+            "spec_line": 440,
+            "text": "de anclas **son dos**. **Y los dos emiten el aviso de cobertura** (`12-contrato…` §3, *«quién emite»*; FASE 9",
+            "source": [
+                [
+                    ".specs/HOS-1354-billing-cobro-y-proveedor/docs/14-promos-cortesias-y-grants.md",
+                    [447]
+                ]
+            ],
+            "match": true
+        },
+        {
+            "spec_line": 456,
+            "text": "`S13` la acaba de cancelar junto con las demás. **No es una elección entre políticas: es una regla",
+            "source": [
+                [
+                    ".specs/HOS-1354-billing-cobro-y-proveedor/docs/14-promos-cortesias-y-grants.md",
+                    [461]
+                ]
+            ],
+            "match": true
+        },
+        {
+            "spec_line": 469,
+            "text": "`motivo_cierre = GRANT_PERMANENTE_OTORGADO` (`B/02` §2.4) sobre cada cortesía diferida del",
+            "source": [
+                [
+                    ".specs/HOS-1354-billing-cobro-y-proveedor/docs/14-promos-cortesias-y-grants.md",
+                    [477]
+                ]
+            ],
+            "match": true
+        },
+        {
+            "spec_line": 481,
+            "text": "hermano: **recibir el grant lo consume y la revocación no lo devuelve**, porque durante el grant la",
+            "source": [
+                [
+                    ".specs/HOS-1354-billing-cobro-y-proveedor/docs/14-promos-cortesias-y-grants.md",
+                    [489]
+                ]
+            ],
+            "match": true
+        },
+        {
+            "spec_line": 499,
+            "text": "la fracción de mes queda abierta, `B/02` §2.4); **`S9` la re-emite sobre la sucesora cuando",
+            "source": [
+                [
+                    ".specs/HOS-1354-billing-cobro-y-proveedor/docs/14-promos-cortesias-y-grants.md",
+                    [507]
+                ]
+            ],
+            "match": true
+        },
+        {
+            "spec_line": 511,
+            "text": "y sosteniendo el servicio de nuestro lado»*, así que re-apuntarla obligaba a dejar la sucesora",
+            "source": [
+                [
+                    ".specs/HOS-1354-billing-cobro-y-proveedor/docs/14-promos-cortesias-y-grants.md",
+                    [519]
+                ]
+            ],
+            "match": true
+        },
+        {
+            "spec_line": 526,
+            "text": "**Por qué tampoco puede simplemente morirse con la predecesora**, que es lo que pasaba antes de",
+            "source": [
+                [
+                    ".specs/HOS-1354-billing-cobro-y-proveedor/docs/14-promos-cortesias-y-grants.md",
+                    [534]
+                ]
+            ],
+            "match": true
+        },
+        {
+            "spec_line": 541,
+            "text": "**La versión anterior de este § afirmaba lo contrario y por eso el defecto duró dos tandas.**",
+            "source": [
+                [
+                    ".specs/HOS-1354-billing-cobro-y-proveedor/docs/14-promos-cortesias-y-grants.md",
+                    [547]
+                ]
+            ],
+            "match": true
+        },
+        {
+            "spec_line": 552,
+            "text": "   medido que el proveedor **rechaza toda modificación sobre una pausada pero sí deja cancelar**",
+            "source": [
+                [
+                    ".specs/HOS-1354-billing-cobro-y-proveedor/docs/14-promos-cortesias-y-grants.md",
+                    [558]
+                ]
+            ],
+            "match": true
+        },
+        {
+            "spec_line": 566,
+            "text": "§3.2, *«`ACTIVE` | `S9` — `SUPER_ADMIN` otorga cortesía | `PAUSED` | ¿sigue siendo fila viva? sí»*.",
+            "source": [
+                [
+                    ".specs/HOS-1354-billing-cobro-y-proveedor/docs/14-promos-cortesias-y-grants.md",
+                    [572]
+                ]
+            ],
+            "match": true
+        },
+        {
+            "spec_line": 577,
+            "text": "por la que `DEC-GRANT-007` descartó la alternativa de que la sucesora heredara la pausa.",
+            "source": [
+                [
+                    ".specs/HOS-1354-billing-cobro-y-proveedor/docs/14-promos-cortesias-y-grants.md",
+                    [583]
+                ]
+            ],
+            "match": true
+        },
+        {
+            "spec_line": 590,
+            "text": "> **Salvo si la sucesora ya cayó en `GRACE_PERIOD`**, que queda afuera a propósito (owner",
+            "source": [
+                [
+                    ".specs/HOS-1354-billing-cobro-y-proveedor/docs/14-promos-cortesias-y-grants.md",
+                    [596]
+                ]
+            ],
+            "match": true
+        },
+        {
+            "spec_line": 602,
+            "text": "baja** estando pausada y la cortesía *«termina con ella»* (`B/03` §3.2) — no se difiere, porque no",
+            "source": [
+                [
+                    ".specs/HOS-1354-billing-cobro-y-proveedor/docs/14-promos-cortesias-y-grants.md",
+                    [608]
+                ]
+            ],
+            "match": true
+        },
+        {
+            "spec_line": 622,
+            "text": "que pasa el techo y suma al total visible con su origen (`V/03` §2, `V/11` §3.4 y §3.5); la",
+            "source": [
+                [
+                    ".specs/HOS-1354-billing-cobro-y-proveedor/docs/14-promos-cortesias-y-grants.md",
+                    [626]
+                ]
+            ],
+            "match": true
+        },
+        {
+            "spec_line": 644,
+            "text": "**FASE 8 completa, `F-8CB1-001`, owner 2026-09-25** (`DEC-GRANT-003` impl. 6, `DEC-GRANT-004`",
+            "source": [
+                [
+                    ".specs/HOS-1354-billing-cobro-y-proveedor/docs/14-promos-cortesias-y-grants.md",
+                    [647]
+                ]
+            ],
+            "match": true
+        },
+        {
+            "spec_line": 661,
+            "text": "| **la cortesía permanente** | **no cambia** (`DEC-GRANT-003` impl. 5) |",
+            "source": [
+                [
+                    ".specs/HOS-1354-billing-cobro-y-proveedor/docs/14-promos-cortesias-y-grants.md",
+                    [664]
+                ]
+            ],
+            "match": true
+        },
+        {
+            "spec_line": 677,
+            "text": "   **sólo el término del ciclo mensual y los meses enteros** (**decidido por el owner el 2026-09-25**: la cortesía es un regalo nuestro, no un pedido del cliente, así que no gasta su cuota de pausas, no depende de que el plan permita pausar, y alcanza al pagador manual, cuya fecha de cobro es nuestra).",
+            "source": [
+                [
+                    ".specs/HOS-1354-billing-cobro-y-proveedor/docs/14-promos-cortesias-y-grants.md",
+                    [681]
+                ]
+            ],
+            "match": true
+        },
+        {
+            "spec_line": 696,
+            "text": "     sólo para mutaciones nuestras —`S30` o un aumento de `DEC-MP-002`— y cuenta desde esa",
+            "source": [
+                [
+                    ".specs/HOS-1354-billing-cobro-y-proveedor/docs/14-promos-cortesias-y-grants.md",
+                    [710]
+                ]
+            ],
+            "match": true
+        },
+        {
+            "spec_line": 711,
+            "text": "     reintento de monto de un aumento corren desde `S37`, la transición que muta el monto siete días antes de la fecha efectiva (BZ; `B/09` §3; `DEC-MP-002` y su 📌 de CC).",
+            "source": [
+                [
+                    ".specs/HOS-1354-billing-cobro-y-proveedor/docs/14-promos-cortesias-y-grants.md",
+                    [742]
+                ]
+            ],
+            "match": true
+        }
+    ],
+    "20-fase-2/B8b.md": [
+        {
+            "spec_line": 59,
+            "text": "El hueco pedía *«a lo sumo un cambio programado vigente, con reglas explícitas de reemplazo y de",
+            "source": [[".specs/HOS-1354-billing-cobro-y-proveedor/docs/12-suscripcion.md", [189]]],
+            "match": true
+        },
+        {
+            "spec_line": 65,
+            "text": "descenso de capacidades**, más la elección del cliente sobre qué conserva.",
+            "source": [[".specs/HOS-1354-billing-cobro-y-proveedor/docs/12-suscripcion.md", [195]]],
+            "match": true
+        },
+        {
+            "spec_line": 71,
+            "text": "(revisión del owner, casos vecinos, 2026-09-29, caso 37).",
+            "source": [[".specs/HOS-1354-billing-cobro-y-proveedor/docs/12-suscripcion.md", [201]]],
+            "match": true
+        },
+        {
+            "spec_line": 76,
+            "text": "no corre sobre una fila con un cambio programado) y las colisiones del §2.2 valen igual, con una",
+            "source": [[".specs/HOS-1354-billing-cobro-y-proveedor/docs/12-suscripcion.md", [206]]],
+            "match": true
+        },
+        {
+            "spec_line": 81,
+            "text": "`direcciónDeCambio(versiónOrigen, versiónDestino) → SUBE | BAJA` que emite verticales",
+            "source": [[".specs/HOS-1354-billing-cobro-y-proveedor/docs/12-suscripcion.md", [211]]],
+            "match": true
+        },
+        {
+            "spec_line": 92,
+            "text": "| 1 | **otro downgrade** | **lo reemplaza entero**, y la elección de qué conservar **se vuelve a pedir**: el plan destino cambió, así que la elección anterior responde a otra pregunta |",
+            "source": [[".specs/HOS-1354-billing-cobro-y-proveedor/docs/12-suscripcion.md", [220]]],
+            "match": true
+        },
+        {
+            "spec_line": 99,
+            "text": "1. **Si la fila está pausada, el cambio espera a la reanudación** — por `EX-11` y la implicación 3",
+            "source": [[".specs/HOS-1354-billing-cobro-y-proveedor/docs/12-suscripcion.md", [227]]],
+            "match": true
+        },
+        {
+            "spec_line": 106,
+            "text": "casos vecinos, 2026-09-29, caso G-A). Las cuatro de arriba son lo que llega encima del cambio;",
+            "source": [[".specs/HOS-1354-billing-cobro-y-proveedor/docs/12-suscripcion.md", [234]]],
+            "match": true
+        },
+        {
+            "spec_line": 110,
+            "text": "servicio que bajar. **Y si `S7` la devuelve a `CANCEL_SCHEDULED`**, porque el cobro entró sobre",
+            "source": [[".specs/HOS-1354-billing-cobro-y-proveedor/docs/12-suscripcion.md", [238]]],
+            "match": true
+        },
+        {
+            "spec_line": 115,
+            "text": "y nace sin cola (revisión del owner, casos vecinos, 2026-09-29, caso I-B). Ninguna de las cuatro colisiones cambia, y la regla general tampoco: la baja",
+            "source": [[".specs/HOS-1354-billing-cobro-y-proveedor/docs/12-suscripcion.md", [243]]],
+            "match": true
+        },
+        {
+            "spec_line": 121,
+            "text": "> en una **cortesía** el cliente **sí tiene servicio** —lo sostenemos nosotros—, así que esa regla",
+            "source": [[".specs/HOS-1354-billing-cobro-y-proveedor/docs/12-suscripcion.md", [249]]],
+            "match": true
+        },
+        {
+            "spec_line": 125,
+            "text": "> verdad de una sola de las dos pausas»*—, y acá sobrevivía porque la conclusión era correcta y",
+            "source": [[".specs/HOS-1354-billing-cobro-y-proveedor/docs/12-suscripcion.md", [253]]],
+            "match": true
+        },
+        {
+            "spec_line": 136,
+            "text": "**Y el pedido del descenso termina la promo de la fila** (orquestador, FASE 8",
+            "source": [[".specs/HOS-1354-billing-cobro-y-proveedor/docs/12-suscripcion.md", [262]]],
+            "match": true
+        },
+        {
+            "spec_line": 142,
+            "text": "la fila sobrevive y la redención sigue colgando de ella, así que sin esta escritura el monto",
+            "source": [[".specs/HOS-1354-billing-cobro-y-proveedor/docs/12-suscripcion.md", [268]]],
+            "match": true
+        },
+        {
+            "spec_line": 153,
+            "text": "ejecutar**, y si al ejecutar fuera más caro, si eso cuenta como aumento a los efectos del §29.",
+            "source": [[".specs/HOS-1354-billing-cobro-y-proveedor/docs/12-suscripcion.md", [280]]],
+            "match": true
+        },
+        {
+            "spec_line": 165,
+            "text": "Si el precio del plan destino sube entre el pedido y el fin del ciclo, **la suscripción conserva",
+            "source": [[".specs/HOS-1354-billing-cobro-y-proveedor/docs/12-suscripcion.md", [290]]],
+            "match": true
+        },
+        {
+            "spec_line": 173,
+            "text": "**Y desde BM y BZ el aumento no entra cambiando el precio de la versión destino** (corte del MVP,",
+            "source": [[".specs/HOS-1354-billing-cobro-y-proveedor/docs/12-suscripcion.md", [298]]],
+            "match": true
+        },
+        {
+            "spec_line": 177,
+            "text": "a la versión cuyo precio vio, y un aumento posterior le llega por BZ —una migración por `S37` y `S38`",
+            "source": [[".specs/HOS-1354-billing-cobro-y-proveedor/docs/12-suscripcion.md", [302]]],
+            "match": true
+        },
+        {
+            "spec_line": 188,
+            "text": "explícito. Así que un aumento de `DEC-MP-002` cuya fecha efectiva caiga sobre un cliente pausado",
+            "source": [
+                [".specs/HOS-1354-billing-cobro-y-proveedor/docs/12-suscripcion.md", [1017]]
+            ],
+            "match": true
+        },
+        {
+            "spec_line": 197,
+            "text": "implicación 3: *«todo cambio pedido durante la pausa se aplica DESPUÉS de reanudar»*. Esta sección",
+            "source": [
+                [".specs/HOS-1354-billing-cobro-y-proveedor/docs/12-suscripcion.md", [1024]]
+            ],
+            "match": true
+        },
+        {
+            "spec_line": 208,
+            "text": "aporta la restricción incómoda: al reanudar se le muestra **una sola cosa, qué día se le va a",
+            "source": [
+                [".specs/HOS-1354-billing-cobro-y-proveedor/docs/12-suscripcion.md", [1033]]
+            ],
+            "match": true
+        },
+        {
+            "spec_line": 219,
+            "text": "Si la pausa fue larga, la fecha efectiva se corre **hacia adelante**, nunca hacia atrás. La",
+            "source": [
+                [".specs/HOS-1354-billing-cobro-y-proveedor/docs/12-suscripcion.md", [1042]]
+            ],
+            "match": true
+        },
+        {
+            "spec_line": 230,
+            "text": "`E-SUB-02` razonaba que el §26.4 corre el fin del período hacia adelante, y preguntaba si la",
+            "source": [
+                [".specs/HOS-1354-billing-cobro-y-proveedor/docs/12-suscripcion.md", [1053]]
+            ],
+            "match": true
+        },
+        {
+            "spec_line": 235,
+            "text": "pausada **avanza la fecha sin cobrar**), y eso no es servicio adeudado.",
+            "source": [
+                [".specs/HOS-1354-billing-cobro-y-proveedor/docs/12-suscripcion.md", [1058]]
+            ],
+            "match": true
+        },
+        {
+            "spec_line": 248,
+            "text": "**El argumento va por el período pagado y no por *«durante la pausa no hay servicio»*, que es",
+            "source": [
+                [".specs/HOS-1354-billing-cobro-y-proveedor/docs/12-suscripcion.md", [1069]]
+            ],
+            "match": true
+        },
+        {
+            "spec_line": 252,
+            "text": "servicio *«lo sostenemos nosotros»* (`DEC-GRANT-003`). Con la razón vieja el § decidía sólo la",
+            "source": [
+                [".specs/HOS-1354-billing-cobro-y-proveedor/docs/12-suscripcion.md", [1073]]
+            ],
+            "match": true
+        },
+        {
+            "spec_line": 256,
+            "text": "se dice **antes de confirmar** (`B/19` §4, fila 8), con la misma forma que `DEC-GRANT-004` ya usa",
+            "source": [
+                [".specs/HOS-1354-billing-cobro-y-proveedor/docs/12-suscripcion.md", [1077]]
+            ],
+            "match": true
+        },
+        {
+            "spec_line": 263,
+            "text": "que vive del crédito de `DEC-SUB-006` sin consumir** (la que `S9` pausó al autorizar para",
+            "source": [
+                [".specs/HOS-1354-billing-cobro-y-proveedor/docs/12-suscripcion.md", [1084]]
+            ],
+            "match": true
+        },
+        {
+            "spec_line": 272,
+            "text": "**Y no es el §7.2 al revés, aunque lo parezca.** Ahí faltaba la fila de una decisión ya tomada y",
+            "source": [
+                [".specs/HOS-1354-billing-cobro-y-proveedor/docs/12-suscripcion.md", [1091]]
+            ],
+            "match": true
+        },
+        {
+            "spec_line": 276,
+            "text": "cuando alguien decidió que no pase: si un capítulo decidió que sí y la tabla no lo tiene, lo que",
+            "source": [
+                [".specs/HOS-1354-billing-cobro-y-proveedor/docs/12-suscripcion.md", [1095]]
+            ],
+            "match": true
+        },
+        {
+            "spec_line": 287,
+            "text": "**Un upgrade cancela y recrea** (`DEC-SUB-007` alternativa C), así que la fila que llevaba todo se",
+            "source": [
+                [".specs/HOS-1354-billing-cobro-y-proveedor/docs/02-modelo-de-datos.md", [1181]]
+            ],
+            "match": true
+        },
+        {
+            "spec_line": 293,
+            "text": "| qué cuelga | columna | qué pasa cuando `S18` cierra la sucesión | por qué |",
+            "source": [
+                [".specs/HOS-1354-billing-cobro-y-proveedor/docs/02-modelo-de-datos.md", [1187]]
+            ],
+            "match": true
+        },
+        {
+            "spec_line": 298,
+            "text": "| **el pago pendiente por `S19`** | `payment.subscription_id` **o `manual_payment.subscription_id`** — `S19` retiene el pago del período impago **entre por la puerta que entre** (cap. 03 §3.2) | **no se re-apunta**: el pago es un hecho de la fila que lo cobró. `S18` le abre a **esa** fila una marca con motivo **`REEMBOLSO_POR_CONFIRMAR`** (§2.5), **con el pago colgado de ella** (§2.2), y el reembolso lo confirma una persona (`DEC-RF-002`), asentado en un `refund` sobre ese mismo pago (§2.3) | re-apuntar un cobro a otra fila falsearía el registro contable, que el §4.1 conserva íntegro. Lo que se mueve no es el pago sino **quién tiene que mirarlo** — y sin el motivo esa fila llegaba al listado indistinguible de las otras doce marcas |",
+            "source": [
+                [".specs/HOS-1354-billing-cobro-y-proveedor/docs/02-modelo-de-datos.md", [1192]]
+            ],
+            "match": true
+        },
+        {
+            "spec_line": 303,
+            "text": "re-apuntaban y la cortesía era la que no se podía ejecutar. Es la distinción que `S18` tiene que",
+            "source": [
+                [".specs/HOS-1354-billing-cobro-y-proveedor/docs/02-modelo-de-datos.md", [1197]]
+            ],
+            "match": true
+        },
+        {
+            "spec_line": 311,
+            "text": "**Y la primera y la tercera tienen el mismo modo de falla: son silenciosas.**",
+            "source": [
+                [".specs/HOS-1354-billing-cobro-y-proveedor/docs/02-modelo-de-datos.md", [1207]]
+            ],
+            "match": true
+        },
+        {
+            "spec_line": 315,
+            "text": "pierde a propósito y se avisa antes (`B/14` §2.2). Por eso el inventario va acá y no repartido en",
+            "source": [
+                [".specs/HOS-1354-billing-cobro-y-proveedor/docs/02-modelo-de-datos.md", [1211]]
+            ],
+            "match": true
+        },
+        {
+            "spec_line": 321,
+            "text": "> **Y un grant NO es una sucesión: no re-apunta nada, y tampoco se lleva nada puesto.** `S13`",
+            "source": [
+                [".specs/HOS-1354-billing-cobro-y-proveedor/docs/02-modelo-de-datos.md", [1217]]
+            ],
+            "match": true
+        },
+        {
+            "spec_line": 325,
+            "text": "> mitad de la condición). De las cinco filas de arriba la única que un grant mueve por ser grant",
+            "source": [
+                [".specs/HOS-1354-billing-cobro-y-proveedor/docs/02-modelo-de-datos.md", [1221]]
+            ],
+            "match": true
+        },
+        {
+            "spec_line": 332,
+            "text": "> sucesora—, que es el addon a costo $0 del §35.2 escrito por fin como un acto (`B/16` §3.4).",
+            "source": [
+                [".specs/HOS-1354-billing-cobro-y-proveedor/docs/02-modelo-de-datos.md", [1228]]
+            ],
+            "match": true
+        },
+        {
+            "spec_line": 336,
+            "text": "> acá el ancla. Con el flag en `false` no se mueve nada y el complemento sigue cobrando.",
+            "source": [
+                [".specs/HOS-1354-billing-cobro-y-proveedor/docs/02-modelo-de-datos.md", [1232]]
+            ],
+            "match": true
+        }
+    ],
+    "20-fase-3/B10.md": [
+        {
+            "spec_line": 94,
+            "text": "El §39 ya separó bien **producto** de **instancia**, y el capítulo 02 §2.4 los modeló como dos",
+            "source": [[".specs/HOS-1354-billing-cobro-y-proveedor/docs/16-addons.md", [19]]],
+            "match": true
+        },
+        {
+            "spec_line": 142,
+            "text": "siguiente, que es un hueco fabricado por la taxonomía.",
+            "source": [[".specs/HOS-1354-billing-cobro-y-proveedor/docs/16-addons.md", [63]]],
+            "match": true
+        },
+        {
+            "spec_line": 178,
+            "text": "> reusa la orden**: el segundo pedido trae el mismo identificador, encuentra la instancia que ya",
+            "source": [[".specs/HOS-1354-billing-cobro-y-proveedor/docs/16-addons.md", [103]]],
+            "match": true
+        },
+        {
+            "spec_line": 202,
+            "text": ">   no cubrió queda declarado** (*«lo que este capítulo",
+            "source": [[".specs/HOS-1354-billing-cobro-y-proveedor/docs/16-addons.md", [131]]],
+            "match": true
+        },
+        {
+            "spec_line": 235,
+            "text": "El §38 dice que los addons *«sólo pueden adquirirse teniendo una subscription válida",
+            "source": [[".specs/HOS-1354-billing-cobro-y-proveedor/docs/16-addons.md", [168]]],
+            "match": true
+        },
+        {
+            "spec_line": 278,
+            "text": "Gastronomía, no por el solo hecho de que el beneficiario tenga un grant. En una vertical donde no",
+            "source": [[".specs/HOS-1354-billing-cobro-y-proveedor/docs/16-addons.md", [210]]],
+            "match": true
+        },
+        {
+            "spec_line": 322,
+            "text": "El grant **habilita**; no enciende. La persona elige cuáles de los addons compatibles quiere, uno",
+            "source": [[".specs/HOS-1354-billing-cobro-y-proveedor/docs/16-addons.md", [250]]],
+            "match": true
+        },
+        {
+            "spec_line": 357,
+            "text": "devolverle el débito que le cancelamos. **No pasa nada más: no se reanuda la suscripción de",
+            "source": [[".specs/HOS-1354-billing-cobro-y-proveedor/docs/16-addons.md", [283]]],
+            "match": true
+        },
+        {
+            "spec_line": 382,
+            "text": "misma razón que el §4.2 da para `VERTICAL_SUBSCRIPTION`.",
+            "source": [[".specs/HOS-1354-billing-cobro-y-proveedor/docs/16-addons.md", [308]]],
+            "match": true
+        },
+        {
+            "spec_line": 406,
+            "text": "> instrumento (`B/02` §2.4) y las N anclas dejan de ser **anclas vivas** a la vez; sus filas",
+            "source": [[".specs/HOS-1354-billing-cobro-y-proveedor/docs/16-addons.md", [332]]],
+            "match": true
+        },
+        {
+            "spec_line": 443,
+            "text": "—`VERTICAL_SUBSCRIPTION` y `LISTING`— pide además que **su objetivo sea de esa vertical**.",
+            "source": [[".specs/HOS-1354-billing-cobro-y-proveedor/docs/16-addons.md", [365]]],
+            "match": true
+        },
+        {
+            "spec_line": 468,
+            "text": ">    producto que mañana suma una vertical compatible volvería incorrecto un grant ya firmado, y",
+            "source": [[".specs/HOS-1354-billing-cobro-y-proveedor/docs/16-addons.md", [390]]],
+            "match": true
+        },
+        {
+            "spec_line": 505,
+            "text": "hoy un addon comprado hace un año, sin que nadie lo pidiera ni lo notara.",
+            "source": [[".specs/HOS-1354-billing-cobro-y-proveedor/docs/16-addons.md", [423]]],
+            "match": true
+        },
+        {
+            "spec_line": 535,
+            "text": "queda principal viva y pagando en ninguna vertical compatible** (4d), así que el *«para siempre»*",
+            "source": [[".specs/HOS-1354-billing-cobro-y-proveedor/docs/16-addons.md", [451]]],
+            "match": true
+        },
+        {
+            "spec_line": 581,
+            "text": "| `USER` · `GLOBAL` | **en ninguna vertical compatible de su producto** (`addon_product`, `B/02` §2.4) **hay una suscripción principal viva y pagando** —con un pago acreditado, o sucesora de una que venía pagando: la lectura de §2.2— **ni un ancla viva** (owner 2026-09-25; FASE 9 completa, 4d, que absorbe `R12-OWNER-2`). **Y, como antes, si la cuenta se borró.** Con *«la cuenta se borró»* solamente, quien se daba de baja de todo seguía pagando el addon todos los meses: el pliegue lo descartaba sin título y ningún barrido lo veía, porque la instancia no era terminal |",
+            "source": [[".specs/HOS-1354-billing-cobro-y-proveedor/docs/16-addons.md", [495]]],
+            "match": true
+        },
+        {
+            "spec_line": 605,
+            "text": "- **`A6` no cambia** **de desenlace: el borrado de la ficha es ahora su ÚNICA puerta** (FASE 9 completa, `K-9`), y sigue *«consumiendo»*.",
+            "source": [[".specs/HOS-1354-billing-cobro-y-proveedor/docs/16-addons.md", [521]]],
+            "match": true
+        },
+        {
+            "spec_line": 630,
+            "text": "> **Leída sobre el conjunto (4c), la mitad ya no se queda sin sujeto ni necesita elegir una fila.**",
+            "source": [[".specs/HOS-1354-billing-cobro-y-proveedor/docs/16-addons.md", [558]]],
+            "match": true
+        },
+        {
+            "spec_line": 655,
+            "text": "del cliente en el mismo acto en que mejora su plan** — le cobramos más y le sacamos lo que ya",
+            "source": [[".specs/HOS-1354-billing-cobro-y-proveedor/docs/16-addons.md", [583]]],
+            "match": true
+        },
+        {
+            "spec_line": 679,
+            "text": "> sigue matando a la sucesora sin que `S18` corra, y la sucesión en curso **normal** —predecesora",
+            "source": [[".specs/HOS-1354-billing-cobro-y-proveedor/docs/16-addons.md", [607]]],
+            "match": true
+        },
+        {
+            "spec_line": 702,
+            "text": "(`12-contrato-de-cobertura.md` (`../../HOS-1352-billing-verticals-redesign/docs/12-contrato-de-cobertura.md`)",
+            "source": [[".specs/HOS-1354-billing-cobro-y-proveedor/docs/16-addons.md", [630]]],
+            "match": true
+        },
+        {
+            "spec_line": 726,
+            "text": "> eso no duplica nada**: llegan al mismo `CANCELLED` y la segunda encuentra la instancia ya fuera",
+            "source": [[".specs/HOS-1354-billing-cobro-y-proveedor/docs/16-addons.md", [654]]],
+            "match": true
+        },
+        {
+            "spec_line": 750,
+            "text": "**El re-apunte es un efecto declarado de `S18`, y por eso el orden dejó de importar.** El addon no",
+            "source": [[".specs/HOS-1354-billing-cobro-y-proveedor/docs/16-addons.md", [680]]],
+            "match": true
+        },
+        {
+            "spec_line": 778,
+            "text": "sobre las `ACTIVE`.** Son **dos** estados de la instancia: `PENDING_AUTHORIZATION` y `ACTIVE`",
+            "source": [[".specs/HOS-1354-billing-cobro-y-proveedor/docs/16-addons.md", [711]]],
+            "match": true
+        },
+        {
+            "spec_line": 800,
+            "text": "—`VERTICAL_SUBSCRIPTION` y `LISTING`; `USER`/`GLOBAL` sólo si no les queda título sin pausar en",
+            "source": [[".specs/HOS-1354-billing-cobro-y-proveedor/docs/16-addons.md", [733]]],
+            "match": true
+        },
+        {
+            "spec_line": 829,
+            "text": "`DEC-ADDON-002` implicación 6: **cancelar el plan NO cancela los addons.** Cada addon recurrente",
+            "source": [[".specs/HOS-1354-billing-cobro-y-proveedor/docs/16-addons.md", [760]]],
+            "match": true
+        },
+        {
+            "spec_line": 853,
+            "text": "| los complementos pueden quedar huérfanos | **se cancelan en el proveedor, de inmediato** — salvo los que una sucesión releva (§4.2), que se re-apuntan a la sucesora y nunca quedaron huérfanos, y los que **releva un grant permanente** en esa vertical (§4.2, tercera mitad), que siguen su curso sin cambiar de objetivo —y, si ese grant lleva `includesAddons: true` y el addon es compatible, **además a costo $0**, con su suscripción de complemento cancelada por `S20` (§3.4)— |",
+            "source": [[".specs/HOS-1354-billing-cobro-y-proveedor/docs/16-addons.md", [789]]],
+            "match": true
+        },
+        {
+            "spec_line": 876,
+            "text": "se enuncia sobre la condición y no sobre la lista**: lo que hay que actualizar es el conteo, no la",
+            "source": [[".specs/HOS-1354-billing-cobro-y-proveedor/docs/16-addons.md", [815]]],
+            "match": true
+        },
+        {
+            "spec_line": 904,
+            "text": "> **Y hay que decir sobre QUÉ filas se evalúa, porque en el caso que obliga a re-evaluar no son",
+            "source": [[".specs/HOS-1354-billing-cobro-y-proveedor/docs/16-addons.md", [843]]],
+            "match": true
+        },
+        {
+            "spec_line": 932,
+            "text": "> —murió primero la predecesora por `S12`, `S13`, `S16` o el espejo, con la sucesora todavía",
+            "source": [[".specs/HOS-1354-billing-cobro-y-proveedor/docs/16-addons.md", [871]]],
+            "match": true
+        },
+        {
+            "spec_line": 957,
+            "text": "diciendo lo mismo, `ACTIVE` contra `authorized`, así que ninguna de las cinco comparaciones lo",
+            "source": [[".specs/HOS-1354-billing-cobro-y-proveedor/docs/16-addons.md", [896]]],
+            "match": true
+        },
+        {
+            "spec_line": 986,
+            "text": "Un addon recurrente son **dos cosas**: la **instancia** —la capacidad encendida— y la",
+            "source": [[".specs/HOS-1354-billing-cobro-y-proveedor/docs/16-addons.md", [923]]],
+            "match": true
+        },
+        {
+            "spec_line": 1012,
+            "text": "fin de servicio como dato nuestro (`DEC-SUB-009` implicación 3) sobre una fila que ya no otorga",
+            "source": [[".specs/HOS-1354-billing-cobro-y-proveedor/docs/16-addons.md", [949]]],
+            "match": true
+        },
+        {
+            "spec_line": 1036,
+            "text": "proveedor**: escribe el estado local que faltaba. Duplicarla serían dos llamadas por el mismo",
+            "source": [[".specs/HOS-1354-billing-cobro-y-proveedor/docs/16-addons.md", [973]]],
+            "match": true
+        },
+        {
+            "spec_line": 1063,
+            "text": "último cobro del complemento paga **un período que todavía no terminó**, `S21` abre la marca",
+            "source": [[".specs/HOS-1354-billing-cobro-y-proveedor/docs/16-addons.md", [1006]]],
+            "match": true
+        },
+        {
+            "spec_line": 1089,
+            "text": "agrega ninguna comprobación de cero llamadas**: la corrida que ejecuta `A5` y muere antes de `S21`",
+            "source": [[".specs/HOS-1354-billing-cobro-y-proveedor/docs/16-addons.md", [1032]]],
+            "match": true
+        },
+        {
+            "spec_line": 1116,
+            "text": "  el saneo del `init_point` en su §4.2, que ya declara que *«con `DEC-ADDON-002` deja de ser un call",
+            "source": [[".specs/HOS-1354-billing-cobro-y-proveedor/docs/16-addons.md", [1060]]],
+            "match": true
+        },
+        {
+            "spec_line": 1140,
+            "text": "  orden por el identificador del pedido** (FASE 9 vuelta 3, owner 2026-09-30, lote E). La medición",
+            "source": [[".specs/HOS-1354-billing-cobro-y-proveedor/docs/16-addons.md", [1088]]],
+            "match": true
+        },
+        {
+            "spec_line": 1162,
+            "text": "  (FASE 9 vuelta 1; owner 2026-09-26, `G2-1`, elegida contra la recomendación). `A6` corre **al recibir el empuje** *«la ficha llegó a `PURGED`»*",
+            "source": [
+                [".specs/HOS-1354-billing-cobro-y-proveedor/docs/16-addons.md", [1039, 1160]]
+            ],
+            "match": true
+        },
+        {
+            "spec_line": 1185,
+            "text": "  **Desde `R18-b`, `S7` cancela como `S11` los complementos que siguen en `ACTIVE`** (owner",
+            "source": [[".specs/HOS-1354-billing-cobro-y-proveedor/docs/16-addons.md", [1138]]],
+            "match": true
+        },
+        {
+            "spec_line": 1207,
+            "text": "  14. **Causa**: el evento de `S11` es la baja, no el estado `CANCEL_SCHEDULED`.",
+            "source": [[".specs/HOS-1354-billing-cobro-y-proveedor/docs/16-addons.md", [1160]]],
+            "match": true
+        }
+    ],
+    "20-fase-3/B12.md": [
+        {
+            "spec_line": 71,
+            "text": "El PDR no la menciona en ningún lado. Un plan que deja de venderse pero que todavía tiene",
+            "source": [
+                [
+                    ".specs/HOS-1354-billing-cobro-y-proveedor/docs/10-verticales-planes-billing-options.md",
+                    [34]
+                ]
+            ],
+            "match": true
+        },
+        {
+            "spec_line": 82,
+            "text": "pricing, deja de participar del `rank`, deja de alimentar la derivación del plan de trial. Para",
+            "source": [
+                [
+                    ".specs/HOS-1354-billing-cobro-y-proveedor/docs/10-verticales-planes-billing-options.md",
+                    [43]
+                ]
+            ],
+            "match": true
+        },
+        {
+            "spec_line": 87,
+            "text": "un acto distinto, explícito, por cliente o por cohorte, **con su propio mecanismo, el",
+            "source": [
+                [
+                    ".specs/HOS-1354-billing-cobro-y-proveedor/docs/10-verticales-planes-billing-options.md",
+                    [40, 57]
+                ]
+            ],
+            "match": true
+        },
+        {
+            "spec_line": 92,
+            "text": "Separarlos es la decisión. Fundirlos en uno —*«retirar el plan migra a los que quedan»*— haría",
+            "source": [
+                [
+                    ".specs/HOS-1354-billing-cobro-y-proveedor/docs/10-verticales-planes-billing-options.md",
+                    [54]
+                ]
+            ],
+            "match": true
+        },
+        {
+            "spec_line": 100,
+            "text": "**Retirar es publicar una versión nueva marcada no vendible.** No hace falta ningún mecanismo",
+            "source": [
+                [
+                    ".specs/HOS-1354-billing-cobro-y-proveedor/docs/10-verticales-planes-billing-options.md",
+                    [60]
+                ]
+            ],
+            "match": true
+        },
+        {
+            "spec_line": 106,
+            "text": "1. **Queda fechado y auditado solo.** La versión nueva tiene su fecha de publicación y su",
+            "source": [
+                [
+                    ".specs/HOS-1354-billing-cobro-y-proveedor/docs/10-verticales-planes-billing-options.md",
+                    [66]
+                ]
+            ],
+            "match": true
+        },
+        {
+            "spec_line": 110,
+            "text": "3. **El `rank` se libera** en cuanto la vigente deja de ser vendible, así que un plan nuevo puede",
+            "source": [
+                [
+                    ".specs/HOS-1354-billing-cobro-y-proveedor/docs/10-verticales-planes-billing-options.md",
+                    [70]
+                ]
+            ],
+            "match": true
+        },
+        {
+            "spec_line": 119,
+            "text": "**Un plan retirado sostiene a sus clientes por tiempo indefinido.** No se fija plazo, no caduca. **Nada migra por plazo ni por retirar**: la",
+            "source": [
+                [
+                    ".specs/HOS-1354-billing-cobro-y-proveedor/docs/10-verticales-planes-billing-options.md",
+                    [75, 94]
+                ]
+            ],
+            "match": true
+        },
+        {
+            "spec_line": 125,
+            "text": "tenía.** El costo es una cola larga de versiones vivas que nadie puede comprar. La alternativa",
+            "source": [
+                [
+                    ".specs/HOS-1354-billing-cobro-y-proveedor/docs/10-verticales-planes-billing-options.md",
+                    [84]
+                ]
+            ],
+            "match": true
+        },
+        {
+            "spec_line": 130,
+            "text": "**La cola es acotada y visible, no infinita ni silenciosa.** Una versión retirada se extingue",
+            "source": [
+                [
+                    ".specs/HOS-1354-billing-cobro-y-proveedor/docs/10-verticales-planes-billing-options.md",
+                    [89]
+                ]
+            ],
+            "match": true
+        },
+        {
+            "spec_line": 134,
+            "text": "en vez de algo que se acumula sin que nadie lo sepa.",
+            "source": [
+                [
+                    ".specs/HOS-1354-billing-cobro-y-proveedor/docs/10-verticales-planes-billing-options.md",
+                    [93]
+                ]
+            ],
+            "match": true
+        },
+        {
+            "spec_line": 143,
+            "text": "**La dirección no la deriva billing: la decide el veredicto de verticales,",
+            "source": [
+                [
+                    ".specs/HOS-1354-billing-cobro-y-proveedor/docs/10-verticales-planes-billing-options.md",
+                    [101]
+                ]
+            ],
+            "match": true
+        },
+        {
+            "spec_line": 147,
+            "text": "nunca lee `plan_version_entitlement` ni `plan_version_limit`** y recibe sólo `SUBE` o `BAJA`. **Y",
+            "source": [
+                [
+                    ".specs/HOS-1354-billing-cobro-y-proveedor/docs/10-verticales-planes-billing-options.md",
+                    [105]
+                ]
+            ],
+            "match": true
+        },
+        {
+            "spec_line": 152,
+            "text": "- **si algo baja** —*baja* es **empeora según la estrategia de la clave** (`V/15` §2.2), no *el",
+            "source": [
+                [
+                    ".specs/HOS-1354-billing-cobro-y-proveedor/docs/10-verticales-planes-billing-options.md",
+                    [110]
+                ]
+            ],
+            "match": true
+        },
+        {
+            "spec_line": 155,
+            "text": "  origen y ausente en el destino baja. Una clave que aparece sólo en el destino no baja (FASE 9",
+            "source": [
+                [
+                    ".specs/HOS-1354-billing-cobro-y-proveedor/docs/10-verticales-planes-billing-options.md",
+                    [113]
+                ]
+            ],
+            "match": true
+        },
+        {
+            "spec_line": 159,
+            "text": "- **si nada baja** (veredicto `SUBE`), sigue el camino de upgrade (`DEC-SUB-007`): inmediato.",
+            "source": [
+                [
+                    ".specs/HOS-1354-billing-cobro-y-proveedor/docs/10-verticales-planes-billing-options.md",
+                    [117]
+                ]
+            ],
+            "match": true
+        },
+        {
+            "spec_line": 165,
+            "text": "**Y la ventana de 60 días de `DEC-MP-002` no aplica acá.** Esa ventana protege a quien **no",
+            "source": [
+                [
+                    ".specs/HOS-1354-billing-cobro-y-proveedor/docs/10-verticales-planes-billing-options.md",
+                    [123]
+                ]
+            ],
+            "match": true
+        },
+        {
+            "spec_line": 175,
+            "text": "vuelta 2, owner 2026-09-27, `R24`, `F-8V2A3-005`.)",
+            "source": [
+                [
+                    ".specs/HOS-1354-billing-cobro-y-proveedor/docs/10-verticales-planes-billing-options.md",
+                    [133]
+                ]
+            ],
+            "match": true
+        },
+        {
+            "spec_line": 180,
+            "text": "**nadie nuevo arranca un trial**, porque `T1` exige lo mismo (`V/03` §2), y no poder probar algo que",
+            "source": [
+                [
+                    ".specs/HOS-1354-billing-cobro-y-proveedor/docs/10-verticales-planes-billing-options.md",
+                    [138]
+                ]
+            ],
+            "match": true
+        },
+        {
+            "spec_line": 183,
+            "text": "igual, indefinidamente** (§3.4). La vertical queda **en operación**, y se vuelve a vender",
+            "source": [
+                [
+                    ".specs/HOS-1354-billing-cobro-y-proveedor/docs/10-verticales-planes-billing-options.md",
+                    [141]
+                ]
+            ],
+            "match": true
+        },
+        {
+            "spec_line": 194,
+            "text": "1. **La lanza el `SUPER_ADMIN`** con la acción administrativa 17 (`NUCLEO/08` §3; el 16 era discontinuar una vertical y no se reusa), eligiendo la",
+            "source": [
+                [
+                    ".specs/HOS-1354-billing-cobro-y-proveedor/docs/10-verticales-planes-billing-options.md",
+                    [152]
+                ]
+            ],
+            "match": true
+        },
+        {
+            "spec_line": 197,
+            "text": "   capacidad, §3.5), su precio actual y el nuevo, y **la fecha que le toca**. Escribe la fila de",
+            "source": [
+                [
+                    ".specs/HOS-1354-billing-cobro-y-proveedor/docs/10-verticales-planes-billing-options.md",
+                    [155]
+                ]
+            ],
+            "match": true
+        },
+        {
+            "spec_line": 201,
+            "text": "   §3.2 regla 5), así que no se le escribe fila, la previsualización la muestra excluida con esa",
+            "source": [
+                [
+                    ".specs/HOS-1354-billing-cobro-y-proveedor/docs/10-verticales-planes-billing-options.md",
+                    [159]
+                ]
+            ],
+            "match": true
+        },
+        {
+            "spec_line": 205,
+            "text": "   que el mínimo del aviso de aumento** de `DEC-MP-002` (es el plazo 12 de `NUCLEO/02` §1.5, que",
+            "source": [
+                [
+                    ".specs/HOS-1354-billing-cobro-y-proveedor/docs/10-verticales-planes-billing-options.md",
+                    [163]
+                ]
+            ],
+            "match": true
+        },
+        {
+            "spec_line": 209,
+            "text": "   la fecha de renovación de ese cliente, que es su fecha de aplicación** (revisión del owner,",
+            "source": [
+                [
+                    ".specs/HOS-1354-billing-cobro-y-proveedor/docs/10-verticales-planes-billing-options.md",
+                    [167]
+                ]
+            ],
+            "match": true
+        },
+        {
+            "spec_line": 213,
+            "text": "3. **Se aplica a cada cliente en su renovación**: la **fecha de aplicación** es su primera fecha",
+            "source": [
+                [
+                    ".specs/HOS-1354-billing-cobro-y-proveedor/docs/10-verticales-planes-billing-options.md",
+                    [171]
+                ]
+            ],
+            "match": true
+        },
+        {
+            "spec_line": 216,
+            "text": "   meses espera diez meses, y la versión retirada vive hasta entonces (`L1-g`).",
+            "source": [
+                [
+                    ".specs/HOS-1354-billing-cobro-y-proveedor/docs/10-verticales-planes-billing-options.md",
+                    [174]
+                ]
+            ],
+            "match": true
+        },
+        {
+            "spec_line": 220,
+            "text": "   esa fecha en la cola de `B/12` §2; **las capacidades pasan a la versión destino en la",
+            "source": [
+                [
+                    ".specs/HOS-1354-billing-cobro-y-proveedor/docs/10-verticales-planes-billing-options.md",
+                    [178]
+                ]
+            ],
+            "match": true
+        },
+        {
+            "spec_line": 224,
+            "text": "   van con el tercer correo (revisión del owner, casos vecinos, 2026-09-29, caso 20). **Qué correo",
+            "source": [
+                [
+                    ".specs/HOS-1354-billing-cobro-y-proveedor/docs/10-verticales-planes-billing-options.md",
+                    [182]
+                ]
+            ],
+            "match": true
+        },
+        {
+            "spec_line": 228,
+            "text": "   se mide, por decisión del owner**: el tercer correo dice en general que Mercado Pago también le va",
+            "source": [
+                [
+                    ".specs/HOS-1354-billing-cobro-y-proveedor/docs/10-verticales-planes-billing-options.md",
+                    [187]
+                ]
+            ],
+            "match": true
+        },
+        {
+            "spec_line": 232,
+            "text": "   ciclo exige que autorice de nuevo (`DEC-SUB-006`). **Sin plazo**: el listado muestra **su",
+            "source": [
+                [
+                    ".specs/HOS-1354-billing-cobro-y-proveedor/docs/10-verticales-planes-billing-options.md",
+                    [191]
+                ]
+            ],
+            "match": true
+        },
+        {
+            "spec_line": 235,
+            "text": "   del anuncio**, con un texto que le dice que lo van a contactar, y no los de 30 y 7 días, que le",
+            "source": [
+                [
+                    ".specs/HOS-1354-billing-cobro-y-proveedor/docs/10-verticales-planes-billing-options.md",
+                    [194]
+                ]
+            ],
+            "match": true
+        },
+        {
+            "spec_line": 239,
+            "text": "   a `CANCELADA`** (punto 9) (verificación corta, 2026-09-29, lote N-E).",
+            "source": [
+                [
+                    ".specs/HOS-1354-billing-cobro-y-proveedor/docs/10-verticales-planes-billing-options.md",
+                    [198]
+                ]
+            ],
+            "match": true
+        },
+        {
+            "spec_line": 242,
+            "text": "7. **Pausados y en gracia esperan**: la migración se les aplica en la primera renovación después",
+            "source": [
+                [
+                    ".specs/HOS-1354-billing-cobro-y-proveedor/docs/10-verticales-planes-billing-options.md",
+                    [201]
+                ]
+            ],
+            "match": true
+        },
+        {
+            "spec_line": 246,
+            "text": "   la versión igual; si la encuentra en `SUSPENDED`, espera y se la cambia al volver por `S7`",
+            "source": [
+                [
+                    ".specs/HOS-1354-billing-cobro-y-proveedor/docs/10-verticales-planes-billing-options.md",
+                    [205]
+                ]
+            ],
+            "match": true
+        },
+        {
+            "spec_line": 250,
+            "text": "   fila vieja** (la colisión 2 del `B/12` §2.2): **su fila de alcance queda `APLICADA`, porque `S37`",
+            "source": [
+                [
+                    ".specs/HOS-1354-billing-cobro-y-proveedor/docs/10-verticales-planes-billing-options.md",
+                    [209]
+                ]
+            ],
+            "match": true
+        },
+        {
+            "spec_line": 254,
+            "text": "8. **Si el cliente cambia de plan o se da de baja por su cuenta durante el aviso, sale de la",
+            "source": [
+                [
+                    ".specs/HOS-1354-billing-cobro-y-proveedor/docs/10-verticales-planes-billing-options.md",
+                    [213]
+                ]
+            ],
+            "match": true
+        },
+        {
+            "spec_line": 258,
+            "text": "   alcanza a las filas en `PENDIENTE`, que pasan a `CANCELADA`, **y a las `PARA_RESOLVER`, que también pasan a `CANCELADA`, sin correo: sólo reciben el del anuncio** (punto 5; verificación corta, 2026-09-29, lote N-E); a cada `PENDIENTE` le sale **el correo",
+            "source": [
+                [
+                    ".specs/HOS-1354-billing-cobro-y-proveedor/docs/10-verticales-planes-billing-options.md",
+                    [217]
+                ]
+            ],
+            "match": true
+        },
+        {
+            "spec_line": 261,
+            "text": "   mutado y la versión todavía sin cambiar: la mutación no se deshace, y a cada una le sale **un",
+            "source": [
+                [
+                    ".specs/HOS-1354-billing-cobro-y-proveedor/docs/10-verticales-planes-billing-options.md",
+                    [220]
+                ]
+            ],
+            "match": true
+        },
+        {
+            "spec_line": 266,
+            "text": "lo automático es aplicar lo ya anunciado, fila por fila, releyendo (`D17`).",
+            "source": [
+                [
+                    ".specs/HOS-1354-billing-cobro-y-proveedor/docs/10-verticales-planes-billing-options.md",
+                    [225]
+                ]
+            ],
+            "match": true
+        }
+    ]
+}

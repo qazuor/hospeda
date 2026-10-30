@@ -1,0 +1,21 @@
+# VB-08 · spec → fuente · 10-corte/B1.md, 10-corte/B2.md, 10-corte/B3.md
+
+## Hallazgos
+
+10-corte/B2.md:199 · «el 14 (7 días antes), el 15 (48 h), el 16 (7 días)» · contradice .specs/HOS-1352-billing-verticals-redesign/docs/nucleo/02-modelo-de-datos.md:187 («| 15 | lo mínimo que tiene que quedar del ciclo para ofrecer un cambio de plan | billing | 24 h |»); el catálogo de la propia spec también dice 24 h (02-nucleo.md:1646, PLAZO:15) y ninguna decisión posterior lo cambia. La migración que escribe la versión 1 de los plazos se construiría con un valor equivocado · BLOQUEA
+
+10-corte/B3.md:300 · «Una fila de tarjeta cuyo checkout se abrió en la última hora de la ventana recibe una prórroga única de 24 h antes de vencer.» · sin soporte: ni el Origen citado (03-maquinas-de-estado.md:1526, §3.4, ni 06-proveedor.md:318) ni ninguna otra fuente congelada habla de una prórroga (rg «prórroga»: cero coincidencias en $V/fuentes). Contradice además la fila S3 (03-maquinas-de-estado.md:153: «venció la ventana de autorización de esa fila… 72 h para el pagador con tarjeta… La condición se lee sobre el método de la fila, nunca contra una cifra global») y el plazo 10 de la tabla versionada. Es una regla inventada en un AC · BLOQUEA
+
+10-corte/B3.md:876 · «La tabla de deduplicación por id del hecho, `UNIQUE(proveedor, id_del_hecho)` ([LOCK:C6]; [INV:19])» (bajo «Lo que crea por sus capítulos») · contradice .specs/HOS-1354-billing-cobro-y-proveedor/docs/02-modelo-de-datos.md:379 (la restricción vive en `payment`: «`UNIQUE(proveedor, id_del_hecho)` — es la deduplicación del cap. 03 §10.2») y 02-modelo-de-datos.md:1291 («19 · los webhooks son idempotentes | `UNIQUE(proveedor, id_del_hecho)` en `payment`»). `payment` nace en B5 (AV, BN), y B5.md:157/823 pone ahí esa misma restricción. Ninguna fuente nombra una tabla de deduplicación aparte: B3 crearía una tabla que no existe en el diseño, en paralelo con la restricción de B5 · BLOQUEA
+
+10-corte/B1.md:381 · «Quién demuestra cada defensa (derivado: la pieza que construye el mecanismo que nombra la columna «qué defensa obliga a probar» de las dos listas, `B/20` §3.2, l. 501-532)» · cita mal apuntada: en .specs/HOS-1354-billing-cobro-y-proveedor/docs/20-testing.md:530-542 la lista RP tiene sólo las columnas «qué exige el proveedor» y «fila», sin columna de defensa; el reparto de RP2–RP12 entre piezas (l. 384-385) no se deriva de esa columna, porque no existe. Sin efecto en lo que se construye (B6, B11, B2, B7 y B5 lo recogen de forma coherente) · MENOR
+
+10-corte/B3.md:643 · «se cumplen los once puntos de [LISTA:B3]» · incoherencia interna: LISTA:B3 (B3.md:159-187) tiene doce puntos, y la enumeración de AC:B3:35 omite el 12, el rechazo de la acción 19 con un `S38` encolado (CC/CF), que sí está en descomposicion.md:1057. Ese punto lo cubre AC:B3:40 / TEST:B3:41, así que no falta en lo que se construye · MENOR
+
+## Resumen
+
+| archivo | líneas recorridas | afirmaciones normativas revisadas (aprox.) | BLOQUEA | MENOR |
+|---|---|---|---|---|
+| 10-corte/B1.md | 1–946 | 150 | 0 | 1 |
+| 10-corte/B2.md | 1–553 | 85 | 1 | 0 |
+| 10-corte/B3.md | 1–1383 | 230 | 2 | 1 |

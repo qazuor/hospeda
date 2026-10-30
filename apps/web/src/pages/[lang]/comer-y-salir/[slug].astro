@@ -1,0 +1,547 @@
+---
+/**
+ * @file gastronomia/[slug].astro
+ * @description Venue detail page (SPEC-239 T-054).
+ * Fetches a single venue listing by slug, fetches reviews + FAQs in
+ * parallel, and composes the detail block components.
+ *
+ * 404 is returned when:
+ * - The API returns !result.ok (listing not found or server error).
+ * - The listing is not PUBLISHED: the public read answers it like an unknown
+ *   slug (HOS-1641), so this is the same `!result.ok` case.
+ *
+ * @route /{lang}/comer-y-salir/{slug}/
+ * @rendering SSR (on-demand)
+ */
+
+import DetailLayout from '@/layouts/DetailLayout.astro';
+import Breadcrumbs from '@/components/shared/navigation/Breadcrumbs.astro';
+import { ImageGallery } from '@/components/ImageGallery.client';
+import RestaurantJsonLd from '@/components/seo/RestaurantJsonLd.astro';
+import BreadcrumbJsonLd from '@/components/seo/BreadcrumbJsonLd.astro';
+import VenueDetailHeader from '@/components/venue/VenueDetailHeader.astro';
+import VenueDescription from '@/components/venue/VenueDescription.astro';
+import VenueDailySpecials from '@/components/venue/VenueDailySpecials.astro';
+import VenueMenu from '@/components/venue/VenueMenu.astro';
+import VenueEvents from '@/components/venue/VenueEvents.astro';
+import OpeningHoursSection from '@/components/venue/OpeningHoursSection.astro';
+import VenueContactBlock from '@/components/venue/VenueContactBlock.astro';
+// Reused, not duplicated (HOS-1072): venue reads the SAME `amenities` /
+// `features` catalog as accommodations, so it shares the i18n namespace
+// (`accommodations.amenityNames.<slug>`) these two grids already resolve. A
+// venue/experience copy would fork that contract for no gain.
+import AmenitiesGrid from '@/components/accommodation/AmenitiesGrid.astro';
+import FeaturesGrid from '@/components/accommodation/FeaturesGrid.astro';
+import VenueEventsCta from '@/components/venue/VenueEventsCta.astro';
+import { VenueReviewForm } from '@/components/venue/VenueReviewForm.client';
+import FaqAccordion from '@/components/accommodation/FaqAccordion.astro';
+import { EntityViewTracker } from '@/components/analytics/EntityViewTracker.client';
+import { venueApi, userBookmarksPublicApi } from '@/lib/api/endpoints';
+import { toVenueDetailPageProps } from '@/lib/api/transforms';
+import { getApiUrl } from '@/lib/env';
+import { AiChatWidget } from '@/components/accommodation/AiChatWidget';
+import { buildLoginRedirect } from '@/lib/auth-redirect';
+import { createTranslations } from '@/lib/i18n';
+import type { SupportedLocale } from '@/lib/i18n';
+import { resolveSafeExternalUrl } from '@/lib/safe-external-url';
+import { buildUrl } from '@/lib/urls';
+import { renderPlain } from '@/lib/render-plain';
+import type { VenueReviewPublicItem } from '@/lib/api/endpoints';
+import type { DetailFaq, VenueOpeningHoursEntry } from '@/data/types';
+
+import { buildEntityCacheTags, CACHE_TAG_COLLECTIONS } from '@repo/cache-tags';
+import { applyCacheHeaders } from '@/lib/cache/response-cache';
+export const prerender = false;
+
+const locale = Astro.locals.locale as SupportedLocale;
+const { t, tPlural } = createTranslations(locale);
+const { slug } = Astro.params;
+
+if (!slug) return new Response(null, { status: 404 });
+
+// --- Fetch main record ---
+const result = await venueApi.getBySlug({ slug });
+
+if (!result.ok) {
+    // Propagate 410 Gone for soft-deleted entities so crawlers/LLM fetchers
+    // deindex the URL fast (HOS-117 T-022); any other failure stays 404.
+    return new Response(null, { status: result.error.status === 410 ? 410 : 404 });
+}
+
+const raw = result.data as unknown as Record<string, unknown>;
+
+// --- Publication gate (HOS-1641) ---
+// There is no second gate here on purpose: the public read answers ONLY a
+// `PUBLISHED` listing (AC:V5:5), and every other publication state answers the
+// same 404 as an unknown slug, which `!result.ok` above already returns. The
+// public payload carries no publication field to re-check.
+
+const venue = toVenueDetailPageProps({ item: raw, locale });
+
+// --- Edge cacheability (HOS-369 W2-4) ---
+// After the guard above — the 404/410 for missing, soft-deleted or
+// non-PUBLISHED rows (HOS-1641: the public read answers only PUBLISHED). That
+// ordering is what makes this safe: a non-published listing 404s before
+// reaching here, so it can never be shared from the edge. It mirrors the
+// service side, which only schedules a purge for a PUBLISHED listing.
+//
+// Addressed by its OWN two tags and deliberately NOT by `list-venue`: a
+// detail page is not a listing, and the collection tag would make every
+// venue write evict every other one's page.
+const venueCacheTags = buildEntityCacheTags({
+    entity: 'venue',
+    slug,
+    id: String(raw.id || '')
+});
+const [primaryVenueTag, ...extraVenueTags] = venueCacheTags;
+
+applyCacheHeaders({
+    locals: Astro.locals,
+    headers: Astro.response.headers,
+    // No usable entity tag means nothing could purge this page, and an
+    // unpurgeable cached page is worse than an uncached one.
+    cacheable: primaryVenueTag !== undefined,
+    cacheClass: 'detail',
+    tags:
+        primaryVenueTag !== undefined
+            ? [primaryVenueTag, ...extraVenueTags]
+            : [CACHE_TAG_COLLECTIONS.venue]
+});
+
+// --- Parallel secondary fetches ---
+const [reviewsSettled, faqsSettled] = await Promise.allSettled([
+    venueApi.getReviews({ id: venue.id, page: 1, pageSize: 5 }),
+    venueApi.getFaqs({ id: venue.id })
+]);
+
+const reviewsResult =
+    reviewsSettled.status === 'fulfilled' ? reviewsSettled.value : null;
+const faqsResult =
+    faqsSettled.status === 'fulfilled' ? faqsSettled.value : null;
+
+const reviews: readonly VenueReviewPublicItem[] =
+    reviewsResult?.ok ? reviewsResult.data.items : [];
+const totalReviews: number =
+    reviewsResult?.ok ? reviewsResult.data.pagination.total : venue.reviewsCount;
+
+// FAQs: prefer inline entity FAQs, fall back to standalone endpoint
+const faqs: readonly DetailFaq[] =
+    venue.faqs.length > 0
+        ? venue.faqs
+        : faqsResult?.ok && Array.isArray(faqsResult.data)
+          ? (faqsResult.data as Array<Record<string, unknown>>).map((faq) => ({
+                id: String(faq.id || ''),
+                question: String(faq.question || ''),
+                answer: String(faq.answer || ''),
+                category: faq.category ? String(faq.category) : null
+            }))
+          : [];
+
+// --- Gallery images ---
+const galleryImages = (() => {
+    const mediaObj = raw.media as
+        | { gallery?: Array<{ url?: string; caption?: string }> }
+        | undefined;
+    const gallery = mediaObj?.gallery ?? [];
+    if (gallery.length > 0) {
+        return gallery
+            .filter((g) => g.url)
+            .map((g) => ({
+                url: String(g.url),
+                alt: g.caption ?? venue.name,
+                caption: g.caption
+            }));
+    }
+    if (venue.featuredImage.url && !venue.featuredImage.url.includes('placeholder')) {
+        return [
+            {
+                url: venue.featuredImage.url,
+                alt: venue.featuredImage.caption ?? venue.name
+            }
+        ];
+    }
+    return [];
+})();
+
+
+// --- SSR bookmark status for header ---
+let bookmarkCount: number | undefined;
+
+try {
+    const countResult = await userBookmarksPublicApi.count({
+        entityType: 'VENUE',
+        entityId: venue.id
+    });
+    if (countResult.ok) {
+        bookmarkCount = countResult.data.count;
+    }
+} catch {
+    // graceful degradation
+}
+
+
+const descriptionText = renderPlain({ raw: venue.description });
+
+// --- "Accepts events" CTA (HOS-1055) ---
+// Reuses the existing `private_events` catalog amenity (HOS-1072 exposed it in
+// `venue.amenities`) rather than a new DB column or public-schema field —
+// see the owner editor's `AmenitiesSection.client.tsx` for the same decision on
+// the write side.
+//
+// The CTA has no external `href` of its own — it is an in-page anchor to
+// `VenueContactBlock` (see `VenueEventsCta.astro`'s header for why:
+// venue has no single public contact channel to pick, especially since
+// HOS-1076 found `socialNetworks.whatsapp` never carried real data and
+// removed it — HOS-1088 tracks the open question of a real phone/WhatsApp
+// channel for venue). That sidesteps picking a channel AND the outbound
+// href-sanitization guard (HOS-592/F-02): there is nothing external to
+// sanitize.
+//
+// `hasVenueContact` mirrors the exact condition `VenueContactBlock`
+// uses to decide whether it renders anything at all (`hasSocial || menuHref`)
+// — duplicated rather than imported so this file never has to trust that the
+// component's internal gate stayed in sync silently; if that condition ever
+// changes, this one has to change with it on purpose. Without it, the CTA
+// could point at an anchor with nothing behind it, which is worse than no CTA
+// (same principle as HOS-363/HOS-924: never promise a channel that isn't
+// there).
+const acceptsEventsAmenity = venue.amenities.find((amenity) => amenity.name === 'private_events');
+const hasVenueContact =
+    Boolean(resolveSafeExternalUrl(venue.menuUrl)) ||
+    (venue.socialNetworks
+        ? Object.values(venue.socialNetworks).some((value) =>
+              Boolean(resolveSafeExternalUrl(value))
+          )
+        : false);
+const showEventsCta = Boolean(acceptsEventsAmenity) && hasVenueContact;
+// Excluded from the generic grid ONLY when the dedicated CTA renders in its
+// place — otherwise both would say "accepts events" two centimeters apart.
+const amenitiesForGrid = showEventsCta
+    ? venue.amenities.filter((amenity) => amenity.name !== 'private_events')
+    : venue.amenities;
+
+const canonicalPath = buildUrl({ locale, path: `comer-y-salir/${venue.slug}/` });
+
+// Sign-in URL (with return path) for the anonymous review CTA.
+const reviewSignInHref = buildLoginRedirect({ locale, currentUrl: canonicalPath });
+
+// Price range mapping for JSON-LD
+const priceRangeMap: Record<string, string> = {
+    BUDGET: '$',
+    MID: '$$',
+    HIGH: '$$$',
+    PREMIUM: '$$$$'
+};
+const jsonLdPriceRange = venue.priceRange ? priceRangeMap[venue.priceRange] ?? undefined : undefined;
+
+// --- SEO ---
+// SEOHead (via DetailLayout) already appends " | Hospeda", so the fallback is the
+// bare name — appending it here too produced a duplicated "… | Hospeda | Hospeda".
+const seoTitle = venue.seo?.title?.trim() || venue.name;
+const seoDescription =
+    venue.seo?.description?.trim() ||
+    venue.summary ||
+    t('venue.listing.subtitle', 'Gastronomía en el Litoral Entrerriano');
+
+// --- Breadcrumb JSON-LD (HOS-117 T-007) ---
+const siteOrigin = Astro.site?.href.replace(/\/$/, '') ?? Astro.url.origin;
+const breadcrumbItems = [
+    { name: t('nav.home', 'Inicio'), url: `${siteOrigin}/${locale}/` },
+    {
+        name: t('venue.listing.title', 'Gastronomía'),
+        url: `${siteOrigin}/${locale}/comer-y-salir/`
+    },
+    { name: venue.name, url: `${siteOrigin}${Astro.url.pathname}` }
+];
+---
+
+<DetailLayout
+    locale={locale}
+    title={seoTitle}
+    description={seoDescription}
+    canonicalPath={canonicalPath}
+    showBreadcrumbs={true}
+    showSidebar={false}
+    ogImage={venue.featuredImage.url}
+    ogType={t(`venue.types.${venue.type}`, venue.type)}
+    ogSubtitle={venue.destinationName}
+    ogRating={venue.averageRating > 0 ? venue.averageRating.toFixed(1) : undefined}
+>
+    <RestaurantJsonLd
+        slot="head-extra"
+        name={venue.name}
+        description={seoDescription}
+        url={canonicalPath}
+        image={venue.featuredImage.url}
+        priceRange={jsonLdPriceRange}
+        aggregateRating={venue.averageRating > 0 ? {
+            ratingValue: venue.averageRating,
+            reviewCount: venue.reviewsCount,
+        } : undefined}
+    />
+    <BreadcrumbJsonLd slot="head-extra" items={breadcrumbItems} />
+    <Breadcrumbs
+        slot="breadcrumbs"
+        locale={locale}
+        items={[
+            {
+                label: t('venue.listing.title', 'Gastronomía'),
+                path: 'comer-y-salir/'
+            },
+            { label: venue.name }
+        ]}
+    />
+
+    <!-- Header (rendered inside the wave band, like destinos/alojamientos) -->
+    <Fragment slot="page-header">
+        <VenueDetailHeader
+            venue={venue}
+            locale={locale}
+            bookmarkCount={bookmarkCount}
+        />
+    </Fragment>
+
+    <div class="venue-detail">
+        <!-- Gallery -->
+        {galleryImages.length > 0 && (
+            <div class="venue-detail__gallery">
+                <ImageGallery
+                    client:load
+                    images={galleryImages}
+                    locale={locale}
+                    variant="detail"
+                />
+            </div>
+        )}
+
+        <!-- Description -->
+        <VenueDescription
+            summary={venue.summary}
+            descriptionText={descriptionText}
+            richDescription={venue.richDescription}
+        />
+
+        <!-- Menú del día (HOS-1041): what is on offer TODAY, above the carta
+             on purpose — it answers the question a diner choosing lunch in
+             twenty minutes is actually asking. Arrives already filtered to the
+             current day (in the AR market timezone) AND already
+             entitlement-gated by the API; renders nothing when empty. -->
+        <VenueDailySpecials
+            dailySpecials={venue.dailySpecials}
+            locale={locale}
+        />
+
+        <!-- Menu (HOS-895 PR2): structured carta and/or the uploaded photo/PDF.
+             Both arrive pre-filtered by the API's live entitlement check —
+             see VenueMenu.astro's frontmatter for the hierarchy. -->
+        <VenueMenu
+            menuSections={venue.menuSections}
+            fileUrl={venue.menuFileUrl}
+            fileKind={venue.menuFileKind}
+            locale={locale}
+        />
+
+        <!-- Opening Hours (only when configured) -->
+        {venue.openingHours && Object.keys(venue.openingHours).length > 0 && (
+            <OpeningHoursSection
+                openingHours={venue.openingHours as Record<string, VenueOpeningHoursEntry>}
+                locale={locale}
+            />
+        )}
+
+        <!-- Venue's own agenda (HOS-1042): live music, happy hour, the Tuesday
+             deal. NOT the same as the "accepts events" CTA below — see
+             VenueEvents.astro's frontmatter. Pre-filtered by the API
+             the same way menuSections is, so no gate is needed here. -->
+        <VenueEvents
+            venueEvents={venue.venueEvents}
+            locale={locale}
+        />
+
+        <!-- Amenities and features the owner ticked (HOS-1072): medios de pago,
+             delivery, takeaway, reservas, estacionamiento… Both grids self-hide
+             on an empty list, so no guard is needed here. `smokingAllowed` is an
+             accommodation-only column and is passed as null. `private_events` is
+             excluded from `amenitiesForGrid` when the dedicated events CTA below
+             renders instead (HOS-1055) — see the frontmatter comment. -->
+        <FeaturesGrid features={venue.features} smokingAllowed={null} lang={locale} />
+        <AmenitiesGrid amenities={amenitiesForGrid} lang={locale} />
+
+        <!-- "Accepts events" CTA (HOS-1055) — a toggle, not an entitlement.
+             Anchors into VenueContactBlock below; no external href of
+             its own (see VenueEventsCta.astro's header). -->
+        {showEventsCta && <VenueEventsCta locale={locale} />}
+
+        <!-- Contact block (menu URL + social networks) -->
+        {(venue.menuUrl || venue.socialNetworks) && (
+            <VenueContactBlock
+                menuUrl={venue.menuUrl}
+                socialNetworks={venue.socialNetworks}
+                locale={locale}
+            />
+        )}
+
+        <!-- Reviews preview -->
+        {venue.reviewsCount > 0 && (
+            <section class="venue-detail__reviews">
+                <h2 class="venue-detail__section-title">
+                    {t('venue.detail.reviews.title', 'Reseñas')}
+                </h2>
+                {reviews.length === 0 ? (
+                    <p class="venue-detail__reviews-empty">
+                        {t(
+                            'venue.detail.reviews.empty',
+                            'Todavía no hay reseñas. ¡Sé el primero en opinar!'
+                        )}
+                    </p>
+                ) : (
+                    <ul class="venue-detail__reviews-list">
+                        {reviews.slice(0, 3).map((review) => (
+                            <li class="venue-detail__review-item">
+                                <p class="venue-detail__review-author">
+                                    {review.user?.name ?? t('common.anonymous')}
+                                </p>
+                                {review.averageRating != null && (
+                                    <span class="venue-detail__review-rating">
+                                        ★ {review.averageRating.toFixed(1)}
+                                    </span>
+                                )}
+                                {review.content && (
+                                    <p class="venue-detail__review-content">{review.content}</p>
+                                )}
+                            </li>
+                        ))}
+                        {totalReviews > 3 && (
+                            <p class="venue-detail__reviews-more">
+                                {tPlural('venue.detail.reviews.more', totalReviews - 3)}
+                            </p>
+                        )}
+                    </ul>
+                )}
+            </section>
+        )}
+
+        <!-- Leave a review (authenticated visitors submit; anonymous see a sign-in CTA) -->
+        <section class="venue-detail__review-form">
+            <VenueReviewForm
+                client:visible
+                venueId={venue.id}
+                venueName={venue.name}
+                locale={locale}
+                apiUrl={getApiUrl()}
+                signInHref={reviewSignInHref}
+            />
+        </section>
+
+        <!-- FAQs -->
+        {faqs.length > 0 && (
+            <FaqAccordion faqs={faqs} lang={locale} />
+        )}
+
+        <!-- Analytics tracker (headless, HOS-734) — feeds the owner-facing
+             basic view stats in mi-cuenta/comercio. -->
+        <EntityViewTracker
+            client:idle
+            entityType="VENUE"
+            slug={slug}
+            entityId={venue.id}
+            locale={locale}
+        />
+    </div>
+    <!-- AI chat widget (HOS-400) — signed-in visitors only, resolved in the
+         browser. Mounted unconditionally, exactly as the accommodation page
+         does: the widget renders nothing until it resolves a session, and both
+         the FAB and the panel are position:fixed, so appearing after hydration
+         shifts nothing. Whether the OWNER's plan grants the chat is decided
+         server-side; an owner without it answers 403 and the widget shows the
+         vertical's own `unavailable` copy (HOS-1264: resolved through
+         `resolveChatError` with the entity type, not the accommodation key). -->
+    <AiChatWidget
+        client:idle
+        entityType="venue"
+        entityId={venue.id}
+        locale={locale}
+        apiUrl={getApiUrl()}
+    />
+</DetailLayout>
+
+<style>
+    .venue-detail {
+        max-width: var(--container-max, 1350px);
+        margin: 0 auto;
+        padding: var(--space-6, 24px) var(--space-4, 16px);
+        display: flex;
+        flex-direction: column;
+        gap: var(--space-8, 32px);
+    }
+
+    .venue-detail__gallery {
+        border-radius: var(--radius-card, 24px);
+        overflow: hidden;
+    }
+
+    .venue-detail__section-title {
+        font-family: var(--font-heading);
+        font-size: 1.5rem;
+        font-weight: 600;
+        color: var(--core-foreground);
+        margin-bottom: var(--space-4, 16px);
+    }
+
+    /* Reviews */
+    .venue-detail__reviews-empty {
+        font-family: var(--font-sans);
+        font-size: 0.95rem;
+        color: var(--core-muted-foreground);
+        font-style: italic;
+        margin: 0;
+    }
+
+    .venue-detail__reviews-list {
+        list-style: none;
+        padding: 0;
+        margin: 0;
+        display: flex;
+        flex-direction: column;
+        gap: var(--space-4, 16px);
+    }
+
+    .venue-detail__review-item {
+        padding: var(--space-4, 16px);
+        background-color: var(--core-card);
+        border: 1px solid var(--border);
+        border-radius: var(--radius-md, 12px);
+    }
+
+    .venue-detail__review-author {
+        font-family: var(--font-sans);
+        font-weight: 600;
+        font-size: 0.9rem;
+        color: var(--core-foreground);
+        margin: 0 0 4px;
+    }
+
+    .venue-detail__review-rating {
+        font-family: var(--font-sans);
+        font-size: 0.85rem;
+        color: var(--rating-star);
+        font-weight: 500;
+    }
+
+    .venue-detail__review-content {
+        font-family: var(--font-sans);
+        font-size: 0.9rem;
+        line-height: 1.5;
+        color: var(--core-muted-foreground);
+        margin: 6px 0 0;
+    }
+
+    .venue-detail__reviews-more {
+        font-family: var(--font-sans);
+        font-size: 0.875rem;
+        color: var(--brand-primary);
+        font-weight: 500;
+        margin: 0;
+        padding: var(--space-2, 8px) 0;
+    }
+</style>

@@ -1,0 +1,18 @@
+# VB-04 · spec → fuente · 10-corte/U1.md, 10-corte/U2.md, 10-corte/U3.md, 10-corte/V1.md
+
+## Hallazgos
+
+10-corte/U1.md:790 · «Los smoke de esta pieza corren en las ventanas del corte, no como gate de la pieza» · contradice fuentes/.specs/HOS-1352-billing-verticals-redesign/docs/16-fase-7-del-paraguas.md:1076 («Las mediciones de producción que una pieza necesita»; «antes de su merge, y deja el número en el PR»). Incoherencia interna con TEST:U1:24 (10-corte/U1.md:777–784), clasificado como smoke de producción y exigido antes del merge; AC:U1:3 y AC:U1:13 sí conservan esa obligación. El resumen omite esta excepción, sin cambiar lo que los AC mandan construir · MENOR
+
+10-corte/U2.md:220 · «también viaja hacia el proveedor» · contradice fuentes/.specs/HOS-1352-billing-verticals-redesign/docs/nucleo/08-auditoria-y-observabilidad.md:144 («no viaja hacia afuera: se recupera»). Las líneas 146–152 fijan que external_reference lleva el id de suscripción y la correlación se recupera del evento original mediante provider_link. AC:U2:9 ordena transmitirla; también contradice 10-corte/U2.md:335 y 02-nucleo-auditoria.md:183. No hay una decisión posterior en el log o en las decisiones del owner del corte que cambie esa regla · BLOQUEA
+
+10-corte/V1.md:471 · «Agregar una vertical al catálogo requiere reiniciar todas las cuotas medidas de los usuarios existentes, para que el nuevo catálogo comience con contadores homogéneos.» · sin soporte. La fila fuente de V1 (fuentes/.specs/HOS-1353-verticales-capacidades-y-autorizacion/descomposicion.md:61) no ordena ese reinicio; fuentes/.specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/15-entitlements-y-limits.md:520–562 fija la renovación por el ciclo individual y la apertura de una ventana nueva después del vencimiento de la anterior, conservando lo consumido incluso ante cambios de plan o de título. DEC-ENT-002 y sus precisiones (fuentes/.specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:608–647) no autorizan reinicios por cambios del catálogo, ni aparece tal decisión en el registro del owner del corte. Contradice además AC:V3:8 y 10-corte/V3.md:609: implementar el reinicio borraría consumos vigentes y concedería cuota adicional · BLOQUEA
+
+## Resumen
+
+| archivo | líneas recorridas | afirmaciones normativas revisadas (aprox.) | BLOQUEA | MENOR |
+|---|---|---:|---:|---:|
+| 10-corte/U1.md | 1–848 | 240 | 0 | 1 |
+| 10-corte/U2.md | 1–493 | 130 | 1 | 0 |
+| 10-corte/U3.md | 1–475 | 130 | 0 | 0 |
+| 10-corte/V1.md | 1–523 | 145 | 1 | 0 |

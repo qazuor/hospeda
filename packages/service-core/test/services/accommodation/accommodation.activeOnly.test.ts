@@ -1,14 +1,16 @@
 /**
- * Regression tests for the `activeOnly` lifecycle-state filter introduced by
- * the accommodation public-draft-visibility fix.
+ * Regression tests for the `publishedOnly` publication-status filter (V6.9b,
+ * HOS-1641; it replaced the old `activeOnly` lifecycle filter and its three
+ * sibling visibility flags).
  *
  * Key invariant (the regression guard):
- *   - When the search is owner-scoped (ownerId === actor.id) OR the actor has
- *     VIP / ACCOMMODATION_VIEW_ALL access, `activeOnly` MUST be `false` so that
- *     non-ACTIVE accommodations (DRAFT, INACTIVE, ARCHIVED) are visible to the
- *     owner in their "my accommodations" list.
- *   - For all other callers (anonymous / different user / no VIP), `activeOnly`
- *     MUST be `true` so that only ACTIVE listings reach the public response.
+ *   - When the search is owner-scoped (ownerId === actor.id), `publishedOnly`
+ *     MUST be `false` so that non-PUBLISHED accommodations (DRAFT, ARCHIVED,
+ *     MODERATED, ...) are visible to the owner in their "my accommodations" list.
+ *   - For all other callers — anonymous, a different user, and since V6.9b
+ *     also a VIP entitlement holder or staff with ACCOMMODATION_VIEW_ALL
+ *     (another account's listing exists only while PUBLISHED, AC:V5:5) —
+ *     `publishedOnly` MUST be `true`.
  *
  * These tests target `_executeSearch` via the public `search()` method on
  * AccommodationService (which is the pipeline path that calls _executeSearch).
@@ -18,8 +20,8 @@
 
 import {
     type AccommodationSearchInput,
-    LifecycleStatusEnum,
     PermissionEnum,
+    PublicationStatusEnum,
     RoleEnum
 } from '@repo/schemas';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
@@ -58,7 +60,7 @@ const OTHER_UUID = getMockId('user', 'test-other');
 // ---------------------------------------------------------------------------
 function makeModelMock() {
     const mockAccommodation = createMockAccommodation({
-        lifecycleState: LifecycleStatusEnum.ACTIVE
+        publicationStatus: PublicationStatusEnum.PUBLISHED
     });
 
     const searchWithRelations = vi.fn().mockResolvedValue({
@@ -125,7 +127,7 @@ const BASE_PARAMS = { page: 1, pageSize: 10 } as AccommodationSearchInput;
 // Suite
 // ---------------------------------------------------------------------------
 
-describe('AccommodationService._executeSearch — activeOnly regression', () => {
+describe('AccommodationService._executeSearch — publishedOnly regression', () => {
     let service: AccommodationService;
     let model: ReturnType<typeof makeModelMock>;
     const ctx = {} as ServiceConfig;
@@ -149,11 +151,11 @@ describe('AccommodationService._executeSearch — activeOnly regression', () => 
     });
 
     // =========================================================================
-    // Public / anonymous scope — activeOnly must be true
+    // Public / anonymous scope — publishedOnly must be true
     // =========================================================================
 
     describe('anonymous actor (non-owner, no VIP)', () => {
-        it('passes activeOnly=true so DRAFT accommodations are hidden from public reads', async () => {
+        it('passes publishedOnly=true so DRAFT accommodations are hidden from public reads', async () => {
             // Arrange
             const actor = makeAnonymousActor();
 
@@ -166,10 +168,10 @@ describe('AccommodationService._executeSearch — activeOnly regression', () => 
                 string,
                 unknown
             >;
-            expect(calledParams.activeOnly).toBe(true);
+            expect(calledParams.publishedOnly).toBe(true);
         });
 
-        it('passes activeOnly=true when ownerId param belongs to a different user', async () => {
+        it('passes publishedOnly=true when ownerId param belongs to a different user', async () => {
             // Arrange — actor (OTHER_UUID) is not the owner named in the filter (OWNER_UUID)
             const actor = makeAnonymousActor();
             const params = { ...BASE_PARAMS, ownerId: OWNER_UUID } as AccommodationSearchInput;
@@ -177,26 +179,26 @@ describe('AccommodationService._executeSearch — activeOnly regression', () => 
             // Act
             await service.search(actor, params);
 
-            // Assert — ownerId !== actor.id → isOwnScope=false → activeOnly=true
+            // Assert — ownerId !== actor.id → isOwnScope=false → publishedOnly=true
             expect(model.searchWithRelations).toHaveBeenCalledOnce();
             const calledParams = model.searchWithRelations.mock.calls[0]?.[0] as Record<
                 string,
                 unknown
             >;
-            expect(calledParams.activeOnly).toBe(true);
+            expect(calledParams.publishedOnly).toBe(true);
         });
     });
 
     // =========================================================================
-    // Owner scope — the KEY REGRESSION — activeOnly must be false
+    // Owner scope — the KEY REGRESSION — publishedOnly must be false
     //
     // An owner must see their own DRAFT/INACTIVE/ARCHIVED accommodations in
-    // their "my listings" view.  If activeOnly were applied here they would
+    // their "my listings" view.  If publishedOnly were applied here they would
     // silently disappear from the owner's dashboard.
     // =========================================================================
 
     describe('owner-scoped search (ownerId === actor.id)', () => {
-        it('passes activeOnly=false so the owner sees their own DRAFTs', async () => {
+        it('passes publishedOnly=false so the owner sees their own DRAFTs', async () => {
             // Arrange — actor IS the owner; ownerId filter scopes to the same ID
             const actor = makeOwnerActor(); // id = OWNER_UUID
             const params = { ...BASE_PARAMS, ownerId: OWNER_UUID } as AccommodationSearchInput;
@@ -205,22 +207,22 @@ describe('AccommodationService._executeSearch — activeOnly regression', () => 
             await service.search(actor, params);
 
             // Assert — this is the critical regression test.
-            // If a future commit accidentally unconditionalises activeOnly=true, this fails.
+            // If a future commit accidentally unconditionalises publishedOnly=true, this fails.
             expect(model.searchWithRelations).toHaveBeenCalledOnce();
             const calledParams = model.searchWithRelations.mock.calls[0]?.[0] as Record<
                 string,
                 unknown
             >;
-            expect(calledParams.activeOnly).toBe(false);
+            expect(calledParams.publishedOnly).toBe(false);
         });
     });
 
     // =========================================================================
-    // VIP / staff scope — activeOnly must be false
+    // VIP / staff scope — publishedOnly must be TRUE since V6.9b (no bypass)
     // =========================================================================
 
     describe('VIP actor (vip_visibility_access entitlement)', () => {
-        it('passes activeOnly=false so VIP users see all lifecycle states', async () => {
+        it('passes publishedOnly=true: the VIP entitlement no longer exposes unpublished listings', async () => {
             // Arrange
             const actor = makeVipActor();
 
@@ -233,12 +235,12 @@ describe('AccommodationService._executeSearch — activeOnly regression', () => 
                 string,
                 unknown
             >;
-            expect(calledParams.activeOnly).toBe(false);
+            expect(calledParams.publishedOnly).toBe(true);
         });
     });
 
     describe('staff actor (ACCOMMODATION_VIEW_ALL permission)', () => {
-        it('passes activeOnly=false so staff see all lifecycle states', async () => {
+        it('passes publishedOnly=true: staff see unpublished listings through the admin list, not here', async () => {
             // Arrange
             const actor = makeStaffActor();
 
@@ -251,19 +253,19 @@ describe('AccommodationService._executeSearch — activeOnly regression', () => 
                 string,
                 unknown
             >;
-            expect(calledParams.activeOnly).toBe(false);
+            expect(calledParams.publishedOnly).toBe(true);
         });
     });
 
     // =========================================================================
-    // Discriminating power — the owner test would FAIL if activeOnly were forced
+    // Discriminating power — the owner test would FAIL if publishedOnly were forced
     // unconditionally to true.  We verify this by running both the owner scope
     // and a public scope in the same test and asserting they produce different
     // values.
     // =========================================================================
 
-    describe('discriminating power — owner and public scopes produce different activeOnly', () => {
-        it('sends activeOnly=false for owner and activeOnly=true for anonymous in the same suite', async () => {
+    describe('discriminating power — owner and public scopes produce different publishedOnly', () => {
+        it('sends publishedOnly=false for owner and publishedOnly=true for anonymous in the same suite', async () => {
             // --- Owner path ---
             const ownerActor = makeOwnerActor();
             const ownerParams = { ...BASE_PARAMS, ownerId: OWNER_UUID } as AccommodationSearchInput;
@@ -275,7 +277,7 @@ describe('AccommodationService._executeSearch — activeOnly regression', () => 
                 unknown
             >;
             // Owner must NOT have lifecycle filter applied.
-            expect(ownerCalledParams.activeOnly).toBe(false);
+            expect(ownerCalledParams.publishedOnly).toBe(false);
 
             // --- Reset and test public path ---
             model.searchWithRelations.mockClear();
@@ -288,26 +290,26 @@ describe('AccommodationService._executeSearch — activeOnly regression', () => 
                 unknown
             >;
             // Public must HAVE lifecycle filter applied.
-            expect(publicCalledParams.activeOnly).toBe(true);
+            expect(publicCalledParams.publishedOnly).toBe(true);
 
             // The two values differ — proving the test has real discriminating power.
-            // If activeOnly were unconditionally applied, both would be true and
+            // If publishedOnly were unconditionally applied, both would be true and
             // the owner assertion above would FAIL.
-            expect(ownerCalledParams.activeOnly).not.toBe(publicCalledParams.activeOnly);
+            expect(ownerCalledParams.publishedOnly).not.toBe(publicCalledParams.publishedOnly);
         });
     });
 });
 
 // =============================================================================
-// _executeCount — activeOnly consistency
+// _executeCount — publishedOnly consistency
 //
-// count() is the other half of a search+count pair.  If count omits activeOnly
+// count() is the other half of a search+count pair.  If count omits publishedOnly
 // the paginated total disagrees with the item list for public callers (DRAFT
 // items are counted but never returned).  These tests lock in that _executeCount
-// forwards activeOnly with the same expression as excludePlanRestricted.
+// forwards publishedOnly with the same expression as _executeSearch.
 // =============================================================================
 
-describe('AccommodationService._executeCount — activeOnly consistency', () => {
+describe('AccommodationService._executeCount — publishedOnly consistency', () => {
     let service: AccommodationService;
     let model: ReturnType<typeof makeModelMock>;
     const ctx = {} as ServiceConfig;
@@ -332,7 +334,7 @@ describe('AccommodationService._executeCount — activeOnly consistency', () => 
         vi.clearAllMocks();
     });
 
-    it('passes activeOnly=true to countByFilters for a public (non-owner, non-VIP) actor', async () => {
+    it('passes publishedOnly=true to countByFilters for a public (non-owner, non-VIP) actor', async () => {
         // Arrange
         const actor = makeAnonymousActor();
 
@@ -342,12 +344,10 @@ describe('AccommodationService._executeCount — activeOnly consistency', () => 
         // Assert
         expect(model.countByFilters).toHaveBeenCalledOnce();
         const calledParams = model.countByFilters.mock.calls[0]?.[0] as Record<string, unknown>;
-        expect(calledParams.activeOnly).toBe(true);
-        // Confirm parity: excludePlanRestricted and activeOnly must carry the same value.
-        expect(calledParams.excludePlanRestricted).toBe(calledParams.activeOnly);
+        expect(calledParams.publishedOnly).toBe(true);
     });
 
-    it('passes activeOnly=false to countByFilters for an owner-scoped actor', async () => {
+    it('passes publishedOnly=false to countByFilters for an owner-scoped actor', async () => {
         // Arrange — actor IS the owner of the requested scope
         const actor = makeOwnerActor();
         const params = { ...BASE_PARAMS, ownerId: OWNER_UUID } as AccommodationSearchInput;
@@ -358,11 +358,10 @@ describe('AccommodationService._executeCount — activeOnly consistency', () => 
         // Assert — owner sees their own non-ACTIVE items; count must reflect that.
         expect(model.countByFilters).toHaveBeenCalledOnce();
         const calledParams = model.countByFilters.mock.calls[0]?.[0] as Record<string, unknown>;
-        expect(calledParams.activeOnly).toBe(false);
-        expect(calledParams.excludePlanRestricted).toBe(calledParams.activeOnly);
+        expect(calledParams.publishedOnly).toBe(false);
     });
 
-    it('passes activeOnly=false to countByFilters for a VIP actor', async () => {
+    it('passes publishedOnly=true to countByFilters for a VIP actor', async () => {
         // Arrange
         const actor = makeVipActor();
 
@@ -372,11 +371,10 @@ describe('AccommodationService._executeCount — activeOnly consistency', () => 
         // Assert
         expect(model.countByFilters).toHaveBeenCalledOnce();
         const calledParams = model.countByFilters.mock.calls[0]?.[0] as Record<string, unknown>;
-        expect(calledParams.activeOnly).toBe(false);
-        expect(calledParams.excludePlanRestricted).toBe(calledParams.activeOnly);
+        expect(calledParams.publishedOnly).toBe(true);
     });
 
-    it('count and search agree on activeOnly for a public actor (consistency invariant)', async () => {
+    it('count and search agree on publishedOnly for a public actor (consistency invariant)', async () => {
         // Arrange
         const actor = makeAnonymousActor();
 
@@ -390,12 +388,12 @@ describe('AccommodationService._executeCount — activeOnly consistency', () => 
         await service.count(actor, BASE_PARAMS);
         const countParams = model.countByFilters.mock.calls[0]?.[0] as Record<string, unknown>;
 
-        // Assert — both must agree on activeOnly so count matches list length.
-        expect(searchParams.activeOnly).toBe(countParams.activeOnly);
-        expect(searchParams.activeOnly).toBe(true);
+        // Assert — both must agree on publishedOnly so count matches list length.
+        expect(searchParams.publishedOnly).toBe(countParams.publishedOnly);
+        expect(searchParams.publishedOnly).toBe(true);
     });
 
-    it('count and search agree on activeOnly for an owner actor (consistency invariant)', async () => {
+    it('count and search agree on publishedOnly for an owner actor (consistency invariant)', async () => {
         // Arrange
         const actor = makeOwnerActor();
         const params = { ...BASE_PARAMS, ownerId: OWNER_UUID } as AccommodationSearchInput;
@@ -410,21 +408,21 @@ describe('AccommodationService._executeCount — activeOnly consistency', () => 
         await service.count(actor, params);
         const countParams = model.countByFilters.mock.calls[0]?.[0] as Record<string, unknown>;
 
-        // Assert — owner: both must pass activeOnly=false
-        expect(searchParams.activeOnly).toBe(countParams.activeOnly);
-        expect(searchParams.activeOnly).toBe(false);
+        // Assert — owner: both must pass publishedOnly=false
+        expect(searchParams.publishedOnly).toBe(countParams.publishedOnly);
+        expect(searchParams.publishedOnly).toBe(false);
     });
 });
 
 // =============================================================================
-// searchWithRelations (service method) — activeOnly consistency
+// searchWithRelations (service method) — publishedOnly consistency
 //
 // searchWithRelations is a public service method that bypasses _executeSearch
 // and calls model.searchWithRelations directly.  It must apply the same
-// activeOnly logic as _executeSearch so the two paths are consistent.
+// publishedOnly logic as _executeSearch so the two paths are consistent.
 // =============================================================================
 
-describe('AccommodationService.searchWithRelations — activeOnly consistency', () => {
+describe('AccommodationService.searchWithRelations — publishedOnly consistency', () => {
     let service: AccommodationService;
     let model: ReturnType<typeof makeModelMock>;
     const ctx = {} as ServiceConfig;
@@ -448,7 +446,7 @@ describe('AccommodationService.searchWithRelations — activeOnly consistency', 
         vi.clearAllMocks();
     });
 
-    it('passes activeOnly=true to model.searchWithRelations for a public actor', async () => {
+    it('passes publishedOnly=true to model.searchWithRelations for a public actor', async () => {
         // Arrange
         const actor = makeAnonymousActor();
 
@@ -461,11 +459,10 @@ describe('AccommodationService.searchWithRelations — activeOnly consistency', 
             string,
             unknown
         >;
-        expect(calledParams.activeOnly).toBe(true);
-        expect(calledParams.excludePlanRestricted).toBe(calledParams.activeOnly);
+        expect(calledParams.publishedOnly).toBe(true);
     });
 
-    it('passes activeOnly=false to model.searchWithRelations for an owner-scoped actor', async () => {
+    it('passes publishedOnly=false to model.searchWithRelations for an owner-scoped actor', async () => {
         // Arrange
         const actor = makeOwnerActor();
         const params = { ...BASE_PARAMS, ownerId: OWNER_UUID } as AccommodationSearchInput;
@@ -479,11 +476,10 @@ describe('AccommodationService.searchWithRelations — activeOnly consistency', 
             string,
             unknown
         >;
-        expect(calledParams.activeOnly).toBe(false);
-        expect(calledParams.excludePlanRestricted).toBe(calledParams.activeOnly);
+        expect(calledParams.publishedOnly).toBe(false);
     });
 
-    it('passes activeOnly=false to model.searchWithRelations for a VIP actor', async () => {
+    it('passes publishedOnly=true to model.searchWithRelations for a VIP actor', async () => {
         // Arrange
         const actor = makeVipActor();
 
@@ -496,10 +492,10 @@ describe('AccommodationService.searchWithRelations — activeOnly consistency', 
             string,
             unknown
         >;
-        expect(calledParams.activeOnly).toBe(false);
+        expect(calledParams.publishedOnly).toBe(true);
     });
 
-    it('searchWithRelations and _executeSearch agree on activeOnly for a public actor', async () => {
+    it('searchWithRelations and _executeSearch agree on publishedOnly for a public actor', async () => {
         // Arrange
         const actor = makeAnonymousActor();
 
@@ -518,8 +514,8 @@ describe('AccommodationService.searchWithRelations — activeOnly consistency', 
             unknown
         >;
 
-        // Assert — both paths must produce the same activeOnly for the same actor.
-        expect(searchExecuteParams.activeOnly).toBe(searchWithRelationsParams.activeOnly);
-        expect(searchExecuteParams.activeOnly).toBe(true);
+        // Assert — both paths must produce the same publishedOnly for the same actor.
+        expect(searchExecuteParams.publishedOnly).toBe(searchWithRelationsParams.publishedOnly);
+        expect(searchExecuteParams.publishedOnly).toBe(true);
     });
 });

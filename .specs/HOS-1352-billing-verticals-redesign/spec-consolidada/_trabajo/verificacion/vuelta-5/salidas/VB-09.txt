@@ -1,0 +1,15 @@
+# VB-09 · spec → fuente · 10-corte/B4.md, 10-corte/B5.md, 10-corte/B6.md
+
+## Hallazgos
+
+10-corte/B4.md:480 · «La consulta de cobertura de una cuenta con más de veinte marcas abiertas debe devolver un error hasta que soporte reduzca ese número.» · sin soporte · BLOQUEA
+
+10-corte/B6.md:24 · «un `2084` se reintenta con otro monto **que puede superar el confirmado**» · contradice fuentes/.specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:1840 («el reintento ante un `2084` parte el monto confirmado y **nunca lo supera**») · BLOQUEA
+
+## Resumen
+
+| archivo | líneas recorridas | afirmaciones normativas revisadas (aprox.) | BLOQUEA | MENOR |
+|---|---|---|---|---|
+| 10-corte/B4.md | 1–520 | 150 | 1 | 0 |
+| 10-corte/B5.md | 1–1235 | 340 | 0 | 0 |
+| 10-corte/B6.md | 1–548 | 160 | 1 | 0 |

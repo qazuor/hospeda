@@ -1,10 +1,22 @@
+import { accommodationReviews, eq, getDb } from '@repo/db';
 import { PermissionEnum, RoleEnum } from '@repo/schemas';
-import { beforeAll, describe, expect, it } from 'vitest';
+import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it } from 'vitest';
 import { initApp } from '../../../src/app';
+import { clearCache } from '../../../src/middlewares/cache';
 import { validateApiEnv } from '../../../src/utils/env';
+import { testDb } from '../../e2e/setup/test-database';
+import {
+    ADMIN_GATE_PERMISSIONS,
+    buildMockActorHeaders,
+    createMockActorUser
+} from '../helpers/mock-actor';
+import { seedPublicAccommodation } from '../helpers/seed-public-accommodation';
+
+// The mock-actor headers are only honoured when CI is unset.
+delete process.env.CI;
 
 /**
- * Integration tests for admin accommodation review CRUD routes.
+ * Integration tests for the admin accommodation review CRUD routes.
  *
  * Reviews are registered as a sub-resource of accommodations:
  *   GET    /api/v1/admin/accommodations/reviews/:id
@@ -12,156 +24,312 @@ import { validateApiEnv } from '../../../src/utils/env';
  *   DELETE /api/v1/admin/accommodations/reviews/:id
  *   POST   /api/v1/admin/accommodations/reviews/:id/restore
  *   DELETE /api/v1/admin/accommodations/reviews/:id/hard
+ *
+ * Every route has its own permission gate (VIEW, UPDATE + MODERATE, DELETE,
+ * RESTORE, HARD_DELETE), and the service adds its own check on top.
+ *
+ * The tests use a full actor and withhold one permission at a time. (Before
+ * HOS-1908 the `/:id` gates were not method-scoped and accumulated across
+ * methods; that is fixed, and withholding one permission still isolates the
+ * gate under test.)
  */
 describe('Admin AccommodationReview CRUD Routes', () => {
     let app: ReturnType<typeof initApp>;
-
     const base = '/api/v1/admin/accommodations/reviews';
-    const nonExistentId = '123e4567-e89b-12d3-a456-426614174000';
+    const NONEXISTENT_UUID = 'a0000000-0000-4000-8000-000000000001';
+    const fullPermissions: readonly PermissionEnum[] = [
+        ...ADMIN_GATE_PERMISSIONS,
+        PermissionEnum.ACCOMMODATION_REVIEW_VIEW,
+        PermissionEnum.ACCOMMODATION_REVIEW_UPDATE,
+        PermissionEnum.ACCOMMODATION_REVIEW_MODERATE,
+        PermissionEnum.ACCOMMODATION_REVIEW_DELETE,
+        PermissionEnum.ACCOMMODATION_REVIEW_RESTORE,
+        PermissionEnum.ACCOMMODATION_REVIEW_HARD_DELETE
+    ];
+    const without = (permission: PermissionEnum): readonly PermissionEnum[] =>
+        fullPermissions.filter((candidate) => candidate !== permission);
 
-    const adminActor = {
-        id: crypto.randomUUID(),
-        roles: [RoleEnum.ADMIN],
-        permissions: [
-            PermissionEnum.ACCESS_API_PUBLIC,
-            PermissionEnum.ACCESS_API_PRIVATE,
-            PermissionEnum.ACCOMMODATION_REVIEW_VIEW,
-            PermissionEnum.ACCOMMODATION_REVIEW_UPDATE,
-            PermissionEnum.ACCOMMODATION_REVIEW_DELETE,
-            PermissionEnum.ACCOMMODATION_REVIEW_RESTORE,
-            PermissionEnum.ACCOMMODATION_REVIEW_HARD_DELETE,
-            PermissionEnum.MANAGE_CONTENT
-        ]
-    };
+    let actorId: string;
+    let parentId: string;
 
-    /**
-     * Builds mock auth headers for a test actor.
-     */
-    function makeHeaders(
-        actor: { id: string; roles: readonly string[]; permissions: string[] },
-        extra: Record<string, string> = {}
-    ): Record<string, string> {
-        return {
-            'content-type': 'application/json',
-            'user-agent': 'vitest',
-            'x-mock-actor-id': actor.id,
-            'x-mock-actor-role': actor.roles.join(','),
-            'x-mock-actor-permissions': JSON.stringify(actor.permissions),
-            ...extra
-        };
-    }
-
-    beforeAll(() => {
+    beforeAll(async () => {
+        await testDb.setup();
+        await testDb.clean();
+        clearCache();
         validateApiEnv();
         process.env.HOSPEDA_ALLOW_MOCK_ACTOR = 'true';
         app = initApp();
     });
 
-    // ─── GET /:id ────────────────────────────────────────────────────────────────
+    beforeEach(async () => {
+        actorId = (await createMockActorUser({ label: 'accommodation-review-admin-crud' })).id;
+        parentId = await seedParent();
+    });
+
+    afterEach(async () => {
+        await testDb.clean();
+        clearCache();
+    });
+
+    afterAll(async () => {
+        await testDb.teardown();
+    });
+
+    const seedParent = async (): Promise<string> => (await seedPublicAccommodation()).id;
+
+    const seedReview = async ({
+        deleted = false
+    }: {
+        readonly deleted?: boolean;
+    } = {}): Promise<string> => {
+        const rows = await getDb()
+            .insert(accommodationReviews)
+            .values({
+                accommodationId: parentId,
+                userId: actorId,
+                title: 'Seeded review',
+                content: 'Seeded review content for the admin CRUD tests.',
+                rating: {
+                    cleanliness: 4,
+                    hospitality: 4,
+                    services: 4,
+                    accuracy: 4,
+                    communication: 4,
+                    location: 4
+                },
+                averageRating: 4,
+                ...(deleted ? { deletedAt: new Date() } : {})
+            })
+            .returning({ id: accommodationReviews.id });
+        const id = rows[0]?.id;
+        if (!id) throw new Error('accommodation-review admin crud: review insert failed');
+        return id;
+    };
+
+    const send = ({
+        method,
+        path,
+        permissions = fullPermissions,
+        body,
+        withActor = true
+    }: {
+        readonly method: 'GET' | 'PUT' | 'DELETE' | 'POST';
+        readonly path: string;
+        readonly permissions?: readonly PermissionEnum[];
+        readonly body?: unknown;
+        readonly withActor?: boolean;
+    }) =>
+        app.request(`${base}${path}`, {
+            method,
+            headers: withActor
+                ? buildMockActorHeaders({ actorId, permissions, role: RoleEnum.ADMIN })
+                : { 'content-type': 'application/json', 'user-agent': 'vitest' },
+            ...(body === undefined ? {} : { body: JSON.stringify(body) })
+        });
+
+    const readRow = async (id: string) => {
+        const [row] = await getDb()
+            .select()
+            .from(accommodationReviews)
+            .where(eq(accommodationReviews.id, id));
+        return row;
+    };
 
     describe('GET /admin/accommodations/reviews/:id', () => {
-        it('returns 200 or 404 for valid UUID with admin actor', async () => {
-            const res = await app.request(`${base}/${nonExistentId}`, {
-                headers: makeHeaders(adminActor)
-            });
-            expect([200, 400, 401, 402, 403, 404]).toContain(res.status);
+        it('returns the seeded review', async () => {
+            const id = await seedReview();
+            const res = await send({ method: 'GET', path: `/${id}` });
+            expect(res.status).toBe(200);
+            const body = await res.json();
+            expect(body.data.id).toBe(id);
+            expect(body.data.title).toBe('Seeded review');
         });
 
-        it('returns 400 for non-UUID id', async () => {
-            const res = await app.request(`${base}/not-a-valid-uuid`, {
-                headers: makeHeaders(adminActor)
-            });
-            expect([400, 404, 422]).toContain(res.status);
+        it('answers 404 for a review that does not exist', async () => {
+            const res = await send({ method: 'GET', path: `/${NONEXISTENT_UUID}` });
+            expect(res.status).toBe(404);
         });
 
-        it('returns 401 or 403 when unauthenticated', async () => {
-            const res = await app.request(`${base}/${nonExistentId}`);
-            expect([401, 403]).toContain(res.status);
+        it('answers 400 for a non-UUID id', async () => {
+            const res = await send({ method: 'GET', path: '/not-a-valid-uuid' });
+            expect(res.status).toBe(400);
+        });
+
+        it('answers 401 when unauthenticated', async () => {
+            const id = await seedReview();
+            const res = await send({ method: 'GET', path: `/${id}`, withActor: false });
+            expect(res.status).toBe(401);
+        });
+
+        it('answers 403 when the actor lacks the view permission', async () => {
+            const id = await seedReview();
+            const res = await send({
+                method: 'GET',
+                path: `/${id}`,
+                permissions: without(PermissionEnum.ACCOMMODATION_REVIEW_VIEW)
+            });
+            expect(res.status).toBe(403);
         });
     });
-
-    // ─── PUT /:id ────────────────────────────────────────────────────────────────
 
     describe('PUT /admin/accommodations/reviews/:id', () => {
-        it('returns update result or 404 for non-existent review', async () => {
-            const payload = {
-                title: 'Updated title',
-                content: 'Updated review content.'
-            };
+        const payload = { title: 'Updated title', content: 'Updated review content.' };
 
-            const res = await app.request(`${base}/${nonExistentId}`, {
-                method: 'PUT',
-                headers: makeHeaders(adminActor),
-                body: JSON.stringify(payload)
-            });
-            expect([200, 400, 401, 402, 403, 404, 422]).toContain(res.status);
+        it('updates the review and persists the change', async () => {
+            const id = await seedReview();
+            const res = await send({ method: 'PUT', path: `/${id}`, body: payload });
+            expect(res.status).toBe(200);
+            const body = await res.json();
+            expect(body.data.title).toBe(payload.title);
+            expect((await readRow(id))?.title).toBe(payload.title);
         });
 
-        it('returns 400 or 422 for invalid UUID in path', async () => {
-            const res = await app.request(`${base}/not-a-uuid`, {
+        it('answers 404 for a review that does not exist', async () => {
+            const res = await send({
                 method: 'PUT',
-                headers: makeHeaders(adminActor),
-                body: JSON.stringify({ title: 'Updated' })
+                path: `/${NONEXISTENT_UUID}`,
+                body: payload
             });
-            expect([400, 404, 422]).toContain(res.status);
+            expect(res.status).toBe(404);
+        });
+
+        it('answers 400 for an invalid UUID in the path', async () => {
+            const res = await send({ method: 'PUT', path: '/not-a-uuid', body: payload });
+            expect(res.status).toBe(400);
+        });
+
+        it('answers 400 when the body carries a field the schema does not allow', async () => {
+            const id = await seedReview();
+            const res = await send({
+                method: 'PUT',
+                path: `/${id}`,
+                body: { unknownField: 'value' }
+            });
+            expect(res.status).toBe(400);
+        });
+
+        it('answers 401 when unauthenticated', async () => {
+            const id = await seedReview();
+            const res = await send({
+                method: 'PUT',
+                path: `/${id}`,
+                body: payload,
+                withActor: false
+            });
+            expect(res.status).toBe(401);
+        });
+
+        it('answers 403 when the actor lacks the update permission', async () => {
+            const id = await seedReview();
+            const res = await send({
+                method: 'PUT',
+                path: `/${id}`,
+                body: payload,
+                permissions: without(PermissionEnum.ACCOMMODATION_REVIEW_UPDATE)
+            });
+            expect(res.status).toBe(403);
+            expect((await readRow(id))?.title).toBe('Seeded review');
         });
     });
-
-    // ─── DELETE /:id ─────────────────────────────────────────────────────────────
 
     describe('DELETE /admin/accommodations/reviews/:id', () => {
-        it('returns soft-delete result or 404 for non-existent review', async () => {
-            const res = await app.request(`${base}/${nonExistentId}`, {
-                method: 'DELETE',
-                headers: makeHeaders(adminActor)
-            });
-            expect([200, 204, 400, 401, 402, 403, 404]).toContain(res.status);
+        it('soft-deletes the review', async () => {
+            const id = await seedReview();
+            const res = await send({ method: 'DELETE', path: `/${id}` });
+            expect(res.status).toBe(200);
+            expect((await readRow(id))?.deletedAt).toBeInstanceOf(Date);
         });
 
-        it('returns 401 or 403 when unauthenticated', async () => {
-            const res = await app.request(`${base}/${nonExistentId}`, {
-                method: 'DELETE'
+        it('answers 404 for a review that does not exist', async () => {
+            const res = await send({ method: 'DELETE', path: `/${NONEXISTENT_UUID}` });
+            expect(res.status).toBe(404);
+        });
+
+        it('answers 401 when unauthenticated', async () => {
+            const id = await seedReview();
+            const res = await send({ method: 'DELETE', path: `/${id}`, withActor: false });
+            expect(res.status).toBe(401);
+            expect((await readRow(id))?.deletedAt).toBeNull();
+        });
+
+        it('answers 403 when the actor lacks the delete permission', async () => {
+            const id = await seedReview();
+            const res = await send({
+                method: 'DELETE',
+                path: `/${id}`,
+                permissions: without(PermissionEnum.ACCOMMODATION_REVIEW_DELETE)
             });
-            expect([401, 403]).toContain(res.status);
+            expect(res.status).toBe(403);
+            expect((await readRow(id))?.deletedAt).toBeNull();
         });
     });
-
-    // ─── POST /:id/restore ───────────────────────────────────────────────────────
 
     describe('POST /admin/accommodations/reviews/:id/restore', () => {
-        it('returns restore result or 404 for non-existent review', async () => {
-            const res = await app.request(`${base}/${nonExistentId}/restore`, {
-                method: 'POST',
-                headers: makeHeaders(adminActor)
-            });
-            expect([200, 400, 401, 402, 403, 404]).toContain(res.status);
+        it('restores a soft-deleted review (POST answers 201)', async () => {
+            const id = await seedReview({ deleted: true });
+            const res = await send({ method: 'POST', path: `/${id}/restore` });
+            expect(res.status).toBe(201);
+            expect((await readRow(id))?.deletedAt).toBeNull();
         });
 
-        it('returns 400 or 422 for invalid UUID in path', async () => {
-            const res = await app.request(`${base}/not-a-uuid/restore`, {
+        it('answers 404 for a review that does not exist', async () => {
+            const res = await send({ method: 'POST', path: `/${NONEXISTENT_UUID}/restore` });
+            expect(res.status).toBe(404);
+        });
+
+        it('answers 400 for an invalid UUID in the path', async () => {
+            const res = await send({ method: 'POST', path: '/not-a-uuid/restore' });
+            expect(res.status).toBe(400);
+        });
+
+        it('answers 403 when the actor lacks the restore permission', async () => {
+            const id = await seedReview({ deleted: true });
+            const res = await send({
                 method: 'POST',
-                headers: makeHeaders(adminActor)
+                path: `/${id}/restore`,
+                permissions: without(PermissionEnum.ACCOMMODATION_REVIEW_RESTORE)
             });
-            expect([400, 404, 422]).toContain(res.status);
+            expect(res.status).toBe(403);
+            expect((await readRow(id))?.deletedAt).toBeInstanceOf(Date);
         });
     });
 
-    // ─── DELETE /:id/hard ────────────────────────────────────────────────────────
-
     describe('DELETE /admin/accommodations/reviews/:id/hard', () => {
-        it('returns hard-delete result or 404 for non-existent review', async () => {
-            const res = await app.request(`${base}/${nonExistentId}/hard`, {
-                method: 'DELETE',
-                headers: makeHeaders(adminActor)
-            });
-            expect([200, 204, 400, 401, 402, 403, 404]).toContain(res.status);
+        it('permanently deletes the review', async () => {
+            const id = await seedReview();
+            const res = await send({ method: 'DELETE', path: `/${id}/hard` });
+            expect(res.status).toBe(200);
+            expect(await readRow(id)).toBeUndefined();
         });
 
-        it('returns 401 or 403 when unauthenticated', async () => {
-            const res = await app.request(`${base}/${nonExistentId}/hard`, {
-                method: 'DELETE'
+        it('answers 404 for a review that does not exist', async () => {
+            const res = await send({ method: 'DELETE', path: `/${NONEXISTENT_UUID}/hard` });
+            expect(res.status).toBe(404);
+        });
+
+        it('permanently deletes a review that was soft-deleted first (HOS-1903)', async () => {
+            const id = await seedReview({ deleted: true });
+            const res = await send({ method: 'DELETE', path: `/${id}/hard` });
+            expect(res.status).toBe(200);
+            expect(await readRow(id)).toBeUndefined();
+        });
+
+        it('answers 401 when unauthenticated', async () => {
+            const id = await seedReview();
+            const res = await send({ method: 'DELETE', path: `/${id}/hard`, withActor: false });
+            expect(res.status).toBe(401);
+            expect(await readRow(id)).toBeDefined();
+        });
+
+        it('answers 403 when the actor lacks the hard-delete permission', async () => {
+            const id = await seedReview();
+            const res = await send({
+                method: 'DELETE',
+                path: `/${id}/hard`,
+                permissions: without(PermissionEnum.ACCOMMODATION_REVIEW_HARD_DELETE)
             });
-            expect([401, 403]).toContain(res.status);
+            expect(res.status).toBe(403);
+            expect(await readRow(id)).toBeDefined();
         });
     });
 });

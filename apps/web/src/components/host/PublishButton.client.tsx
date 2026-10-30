@@ -1,76 +1,16 @@
 /**
  * @file PublishButton.client.tsx
- * @description React island that renders a "Publicar" primary button with an
- * inline confirmation step.
- *
- * Flow:
- *  1. Idle  → shows the "Publicar" button.
- *  2. Click → swaps to inline confirmation with "[Sí, publicar] [Cancelar]".
- *  3. Confirm (Sí) → calls POST /api/v1/protected/accommodations/:id/publish,
- *                    disables UI while pending. A dedicated `/publish`
- *                    endpoint is used instead of the generic update PATCH
- *                    because the update schema strips `lifecycleState`,
- *                    which made the naive approach a silent no-op.
- *  4. Success → reloads the page via window.location.reload() so the card
- *               re-renders with the new ACTIVE status.
- *  5. Error   → shows inline error message, re-enables the button. Two
- *               failures get a dedicated banner instead, because retrying
- *               them changes nothing: `403 subscription_required` (no active
- *               plan — links to the plans page) and `400 VALIDATION_ERROR`
- *               (the publish-completeness gate — links to the editor and
- *               names the fields the server reported).
- *  6. No (cancel) → returns to step 1.
- *
- * ## When the server would refuse, there is no step 1 at all (H-99)
- *
- * When `canPublish` is false the button is never rendered: the plan link takes
- * its place. Publishing used to be offered with the same prominence as Edit and
- * Delete to an owner with no subscription at all, opening a dialog that promised
- * "va a aparecer en el sitio, visible para los turistas" — something that could
- * not happen — and failing only on confirm. Worse, the failure cited missing
- * bathrooms rather than the missing plan, because the server checked
- * completeness first. Both halves are fixed: the guard order flipped
- * server-side, and this button no longer offers what it cannot deliver.
- *
- * ## The rejection names real fields (H-94)
- *
- * The completeness branch used to map ANY 400 onto one fixed sentence naming
- * capacity, guests and bathrooms — its own comment admitted treating "cualquier
- * otro 400 como capacidad incompleta". In production that told a host their
- * guests and bedrooms were missing while the form showed 11 and 3, and never
- * mentioned bathrooms, the one field actually absent. The fields now come from
- * the server's `reason`, resolved through the same shared requirement list the
- * gate rejects from.
- *
- * ## Publishing starts the trial again, and the button reads the verdict (HOS-1183)
- *
- * This has flipped twice. Originally publishing granted a no-card trial and the
- * confirm step announced it. HOS-171 (card-first) moved the trial onto the
- * MercadoPago preapproval the CHECKOUT creates, so publishing required an active
- * subscription, rejected without one, and every billing promise was stripped from
- * the confirm copy. HOS-1012 moved the trial back off MercadoPago — a local row
- * with `mp_subscription_id = NULL`, inserted in the same transaction as the
- * lifecycle flip — so publishing grants it once more.
- *
- * The server followed; this button did not, and that is the bug HOS-1183 fixed.
- * It gated on `hasActivePlan` (`entitlements.plan != null`), which is the
- * server's `has_active_sub` verdict alone, while the server publishes on
- * `first_publish` too. The two publishable verdicts collapsed into one `false`
- * and the button vanished for exactly the owner holding an intact trial.
- *
- * So the props are now the server's own answer (`canPublish` / `startsTrial`,
- * from `GET /protected/accommodations/publish-eligibility`), and the trial line
- * is back — in the one branch where it is true.
- *
- * Mirrors UnpublishButton.client.tsx / DeleteButton.client.tsx (same
- * inline-confirm UX), but uses a positive (green) accent for the confirm
- * button instead of the danger red.
+ * @description Inline publish confirmation using the server-resolved
+ * `subscribe-destination` affordance. Dispatch and vertical paths live in
+ * `lib/publish/publish-listing.ts`; this component preserves the fail-closed
+ * state order and only announces a trial when `affordance.startsTrial` is true.
  *
  * @example
  * ```astro
  * <PublishButton
  *   client:load
- *   accommodationId={property.id}
+ *   listingId={property.id}
+ *   vertical="accommodation"
  *   locale={locale}
  *   label={t('host.properties.card.actions.publish', 'Publicar')}
  *   confirmTitle={t('host.properties.card.actions.publishConfirmTitle', '...')}
@@ -82,8 +22,8 @@
  *   subscriptionRequiredCta={t('host.properties.card.publishSubscriptionRequiredCta', 'Ver planes')}
  *   missingRequirementsMessage={t('host.properties.card.publishMissingRequirementsMessage', '...')}
  *   missingRequirementsCta={t('host.properties.card.publishMissingRequirementsCta', 'Completar en el editor')}
- *   canPublish={publishEligibility.canPublish}
- *   startsTrial={publishEligibility.startsTrial}
+ *   affordance={publishAffordance}
+ *   checkFailedText={t('host.properties.card.publishCheckFailed')}
  *   confirmTrialNote={tPlural('host.properties.card.actions.publishConfirmTrialNote', trialDays, { trialDays })}
  *   choosePlanLabel={t('host.properties.card.actions.choosePlan', 'Elegir plan de anfitrión')}
  * />
@@ -97,9 +37,15 @@ import {
 } from '@repo/schemas';
 import { type JSX, useState } from 'react';
 import { PaidSignupsPausedNotice } from '@/components/billing/PaidSignupsPausedNotice';
-import { accommodationEditApi } from '@/lib/api/endpoints-protected';
+import type { PublishVerticalSlug } from '@/lib/api/endpoints-protected';
 import { createTranslations, type SupportedLocale } from '@/lib/i18n';
-import { PRICING_PAGE_PATH_BY_AUDIENCE } from '@/lib/pricing-plans';
+import { buildSubscribeToPublishCopy } from '@/lib/listing/listing-notices';
+import {
+    publishListing,
+    resolvePublishEditorPath,
+    resolvePublishPricingPath
+} from '@/lib/publish/publish-listing';
+import { NO_PLANS_AVAILABLE_MESSAGE, type PublishAffordance } from '@/lib/publish/subscribe-button';
 import { buildUrl } from '@/lib/urls';
 import styles from './PublishButton.module.css';
 
@@ -120,14 +66,17 @@ type PublishState =
     | 'pending'
     | 'error'
     | 'subscriptionRequired'
+    | 'noPlans'
     | 'missingRequirements';
 
 /**
  * Props for the PublishButton component.
  */
 export interface PublishButtonProps {
-    /** The accommodation ID to publish (DRAFT → ACTIVE). */
-    readonly accommodationId: string;
+    /** Listing identifier. */
+    readonly listingId: string;
+    /** Listing vertical. */
+    readonly vertical: PublishVerticalSlug;
     /** Current locale, used to build the plans-page link on `subscription_required`. */
     readonly locale: SupportedLocale;
     /** Label for the main primary button (already-translated string). */
@@ -143,9 +92,10 @@ export interface PublishButtonProps {
     /** Error message shown on generic API failure (already-translated). */
     readonly errorText: string;
     /**
-     * Message shown when publish fails because the owner has no active
-     * subscription (`403 subscription_required`, already-translated). Since
-     * HOS-171 this is the normal outcome of a first publish, not an edge case.
+     * Message for `403 subscription_required` (already-translated). Kept for
+     * the callers' contract; since HOS-1492 that branch shows the row 21
+     * "subscribe to publish" notice instead, the same as the `checkout`
+     * affordance.
      */
     readonly subscriptionRequiredMessage: string;
     /** Label for the link to the plans page in that same case (already-translated). */
@@ -163,37 +113,24 @@ export interface PublishButtonProps {
     /** Label for the link to the editor in that same case (already-translated). */
     readonly missingRequirementsCta: string;
     /**
-     * Whether the server would accept a publish for this owner right now, read
-     * from `GET /protected/accommodations/publish-eligibility`. When `false`
-     * the button does not offer to publish at all: it offers the plan instead
-     * (H-99).
+     * What the server would do if this owner published right now, resolved by
+     * `resolvePublishAffordance` from `subscribe-destination` (HOS-1668). When
+     * `canPublish` is false the button does not offer to publish at all (H-99):
+     * `checkout` offers the plan, `noPlans` the no-plans notice and `unknown`
+     * (a failed read) the check-failed status line.
      *
-     * ## It replaced a boolean that meant something narrower (HOS-1183)
-     *
-     * This prop used to be `hasActivePlan`, fed by `entitlements.plan != null`
-     * — which is the server's `has_active_sub` verdict and nothing else. The
-     * server publishes on TWO verdicts: `has_active_sub` and `first_publish`,
-     * the latter starting a local trial in the same transaction. So the button
-     * hid itself from precisely the owner whose trial was intact, and offered
-     * them a plans page they did not need.
-     *
-     * Do NOT re-derive this from `startsTrial` or from any verdict comparison.
-     * One side owns the rule now, and it is the server.
+     * Do NOT re-derive any of this here (no destination, plan-list or trial-day
+     * comparisons). One side owns the rule, and it is the server.
      */
-    readonly canPublish: boolean;
+    readonly affordance: PublishAffordance;
     /**
-     * Whether publishing would start the owner's free trial, from the same
-     * read. Adds one line to the confirm step and nothing else.
-     *
-     * Separate from `canPublish` because they are separate questions: a paying
-     * owner publishes and starts nothing, and platform staff publish while
-     * being granted nothing. Announcing a trial to either would promise a clock
-     * that never starts.
+     * Status line shown when the destination read failed (`affordance.kind ===
+     * 'unknown'`), already-translated. Never the API's own error message.
      */
-    readonly startsTrial: boolean;
+    readonly checkFailedText: string;
     /**
      * The trial line for the confirm step (already-translated, with the day
-     * count interpolated). Rendered ONLY when `startsTrial` is true.
+     * count interpolated). Rendered ONLY when `affordance.startsTrial` is true.
      *
      * It may say "sin tarjeta", because in that branch it is true: HOS-1012's
      * trial is a local row with no MercadoPago preapproval, and signup collects
@@ -203,14 +140,6 @@ export interface PublishButtonProps {
     readonly confirmTrialNote: string;
     /** Label for the "choose a plan" action shown in place of Publish. */
     readonly choosePlanLabel: string;
-    /**
-     * Whether this owner's FIRST publish is paused because an admin froze new
-     * signups (`firstPublishPaused` from the publish-eligibility endpoint).
-     * When `true` the card shows the shared "publishing new listings is
-     * paused" notice instead of Publish — and instead of a plans link, which
-     * would send the host to a checkout that is paused too. Defaults to `false`.
-     */
-    readonly firstPublishPaused?: boolean;
 }
 
 // ---------------------------------------------------------------------------
@@ -227,7 +156,8 @@ export interface PublishButtonProps {
  * @param props - See `PublishButtonProps`.
  */
 export function PublishButton({
-    accommodationId,
+    listingId,
+    vertical,
     locale,
     label,
     confirmTitle,
@@ -235,15 +165,14 @@ export function PublishButton({
     confirmYes,
     confirmNo,
     errorText,
-    subscriptionRequiredMessage,
+    subscriptionRequiredMessage: _subscriptionRequiredMessage,
     subscriptionRequiredCta,
     missingRequirementsMessage,
     missingRequirementsCta,
-    canPublish,
-    startsTrial,
+    affordance,
+    checkFailedText,
     confirmTrialNote,
-    choosePlanLabel,
-    firstPublishPaused = false
+    choosePlanLabel
 }: PublishButtonProps): JSX.Element {
     const [state, setState] = useState<PublishState>('idle');
     const [apiError, setApiError] = useState<string | null>(null);
@@ -251,6 +180,12 @@ export function PublishButton({
         readonly AccommodationPublishRequirementId[]
     >([]);
     const { t } = createTranslations(locale);
+    /**
+     * Row 21 (AC:V8a:4, HOS-1492): "subscribe to publish". Only the copy; it
+     * shows where the affordance (`checkout`) or the server
+     * (`subscription_required`) already said publishing needs a subscription.
+     */
+    const subscribeToPublish = buildSubscribeToPublishCopy({ t, vertical });
 
     /** User clicked the main "Publicar" button → enter confirmation mode. */
     function handleRequestConfirm(): void {
@@ -269,7 +204,7 @@ export function PublishButton({
         setState('pending');
         setApiError(null);
 
-        const result = await accommodationEditApi.publish({ id: accommodationId });
+        const result = await publishListing({ vertical, id: listingId });
 
         if (!result.ok) {
             // The owner has no active subscription. Route them to the plans page
@@ -278,6 +213,13 @@ export function PublishButton({
             // a first publish, not just for someone who burnt their trial.
             if (result.error.status === 403 && result.error.message === 'subscription_required') {
                 setState('subscriptionRequired');
+                return;
+            }
+            if (
+                result.error.status === 403 &&
+                result.error.message === NO_PLANS_AVAILABLE_MESSAGE
+            ) {
+                setState('noPlans');
                 return;
             }
             // Admin-paused signups reached the API (the page's verdict was
@@ -323,10 +265,9 @@ export function PublishButton({
     // trial. It now fires only when the server itself would refuse. Deleting
     // the branch instead of narrowing it would bring H-99 straight back.
     // ── First publish paused (admin-frozen new signups) ──────────────────
-    // Checked BEFORE `!canPublish`: the server reports `canPublish: false`
-    // here too, and the plans link that branch offers leads to a checkout
-    // that is paused as well.
-    if (firstPublishPaused || state === 'firstPublishPaused') {
+    // Reactive only: the publish route answered `NEW_PAID_SIGNUPS_FROZEN`.
+    // Checked BEFORE the plans link, which would lead to a paused checkout.
+    if (state === 'firstPublishPaused') {
         return (
             <PaidSignupsPausedNotice
                 locale={locale}
@@ -336,14 +277,52 @@ export function PublishButton({
         );
     }
 
-    if (!canPublish) {
+    // ── No plans (proactive from the destination, or reactive from the API) ──
+    if (state === 'noPlans' || affordance.kind === 'noPlans') {
         return (
-            <a
-                href={buildUrl({ locale, path: PRICING_PAGE_PATH_BY_AUDIENCE.owner })}
-                className={`${styles.action} ${styles.primary}`}
+            <span
+                className={styles.noPlans}
+                role="alert"
+                data-testid="publish-no-plans"
             >
-                {choosePlanLabel}
-            </a>
+                <strong>{t('publish.noPlans.title')}</strong>
+                <span>{t('publish.noPlans.body')}</span>
+            </span>
+        );
+    }
+
+    // ── The destination read failed (HOS-1668 C-2) ───────────────────────
+    // Fails CLOSED: neither "Publicar" nor "Elegir plan", only a status line.
+    if (affordance.kind === 'unknown') {
+        return (
+            <span
+                className={styles.checkFailed}
+                role="status"
+                data-testid="publish-check-failed"
+            >
+                {checkFailedText}
+            </span>
+        );
+    }
+
+    // Row 21: the listing stays unpublished and publishing needs a
+    // subscription in this vertical. The plan link keeps its exact accessible
+    // name ("Elegir plan de anfitrión").
+    if (!affordance.canPublish) {
+        return (
+            <span
+                className={styles.subscribeToPublish}
+                data-testid="publish-subscribe-to-publish"
+            >
+                <strong>{subscribeToPublish.title}</strong>
+                <span>{subscribeToPublish.body}</span>
+                <a
+                    href={buildUrl({ locale, path: resolvePublishPricingPath({ vertical }) })}
+                    className={`${styles.action} ${styles.primary}`}
+                >
+                    {choosePlanLabel}
+                </a>
+            </span>
         );
     }
 
@@ -379,27 +358,15 @@ export function PublishButton({
     // Publish failed because the owner has no active plan. Show a banner
     // pointing to the plans page instead of a retryable error.
     if (state === 'subscriptionRequired') {
-        const plansUrl = buildUrl({ locale, path: PRICING_PAGE_PATH_BY_AUDIENCE.owner });
+        const plansUrl = buildUrl({ locale, path: resolvePublishPricingPath({ vertical }) });
         return (
             <span
                 role="alert"
-                style={{
-                    display: 'flex',
-                    flexWrap: 'wrap',
-                    gap: '6px',
-                    alignItems: 'center',
-                    width: '100%'
-                }}
+                className={styles.subscribeToPublish}
+                data-testid="publish-subscribe-to-publish"
             >
-                <span
-                    style={{
-                        fontSize: '0.8125rem',
-                        color: 'var(--core-foreground)',
-                        width: '100%'
-                    }}
-                >
-                    {subscriptionRequiredMessage}
-                </span>
+                <strong>{subscribeToPublish.title}</strong>
+                <span>{subscribeToPublish.body}</span>
                 <a
                     href={plansUrl}
                     className={`${styles.action} ${styles.primary}`}
@@ -417,7 +384,7 @@ export function PublishButton({
     if (state === 'missingRequirements') {
         const editUrl = buildUrl({
             locale,
-            path: `mi-cuenta/propiedades/${accommodationId}/editar`
+            path: resolvePublishEditorPath({ vertical, id: listingId })
         });
         // Falls back to the generic sentence only when the server sent no
         // recognisable reason — an old API build, say. It is vague, but it
@@ -484,7 +451,7 @@ export function PublishButton({
                  * before (byte-identical, AC-13), and an owner whose trial is
                  * spent never reaches the confirm step at all.
                  */}
-                {startsTrial && <p className={styles.calloutNote}>{confirmTrialNote}</p>}
+                {affordance.startsTrial && <p className={styles.calloutNote}>{confirmTrialNote}</p>}
                 <button
                     type="button"
                     className={`${styles.action} ${styles.primary}`}

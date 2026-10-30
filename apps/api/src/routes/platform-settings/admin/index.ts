@@ -55,7 +55,7 @@ export const adminGetPlatformSettingsRoute = createAdminRoute({
     responseSchema: z
         .object({
             key: PlatformSettingsKeySchema,
-            value: z.unknown(),
+            value: z.unknown().optional(),
             updatedAt: z.string().datetime({ offset: true }),
             updatedBy: z.string().uuid()
         })
@@ -89,7 +89,7 @@ export const adminGetPlatformSettingsRoute = createAdminRoute({
  * the discriminator at two layers.
  */
 const PatchBodySchema = z.object({
-    value: z.unknown()
+    value: z.unknown().optional()
 });
 
 /**
@@ -119,7 +119,7 @@ export const adminPatchPlatformSettingsRoute = createAdminRoute({
     requestBody: PatchBodySchema,
     responseSchema: z.object({
         key: PlatformSettingsKeySchema,
-        value: z.unknown(),
+        value: z.unknown().optional(),
         updatedAt: z.string().datetime({ offset: true }),
         updatedBy: z.string().uuid()
     }),

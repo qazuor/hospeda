@@ -7,19 +7,12 @@ import { seedAiPrompts } from './aiPrompts.seed.js';
 import { seedAiSettings } from './aiSettings.seed.js';
 import { seedAmenities } from './amenities.seed.js';
 import { seedAttractions } from './attractions.seed.js';
-import { seedBillingAddons } from './billingAddons.seed.js';
-import { seedBillingEntitlements } from './billingEntitlements.seed.js';
-import { seedBillingLimits } from './billingLimits.seed.js';
-import { seedBillingPlans } from './billingPlans.seed.js';
-import { seedBillingPromoCodes } from './billingPromoCodes.seed.js';
-import { seedCommercePlan } from './commercePlan.seed.js';
 import { seedContentModerationData } from './contentModeration.seed.js';
 import { seedDestinations } from './destinations.seed.js';
 import { seedExchangeRateConfig } from './exchangeRateConfig.seed.js';
 import { seedExchangeRates } from './exchangeRates.seed.js';
 import { seedFeatures } from './features.seed.js';
 import { seedInternalTags } from './internalTags.seed.js';
-import { seedPartnerPlan } from './partnerPlan.seed.js';
 import { seedPoiCategories } from './poiCategories.seed.js';
 import { seedPoiCategoryBackfill } from './poiCategoryBackfill.seed.js';
 import { seedPointsOfInterest } from './pointsOfInterest.seed.js';
@@ -33,8 +26,6 @@ import { seedSponsorshipLevels } from './sponsorshipLevels.seed.js';
 import { seedSponsorshipPackages } from './sponsorshipPackages.seed.js';
 import { seedSystemTags } from './systemTags.seed.js';
 import { seedSystemUser } from './systemUser.seed.js';
-import { seedTestDailyPlan } from './testDailyPlan.seed.js';
-import { seedTrialPlans } from './trialPlans.seed.js';
 import { seedUsers } from './users.seed.js';
 
 /**
@@ -50,7 +41,6 @@ import { seedUsers } from './users.seed.js';
  * - Points of interest (HOS-113)
  * - Destinations with their relationships (attractions + points of interest)
  * - Sponsorship levels and packages
- * - Billing entitlements, limits, plans, and add-ons
  * - Exchange rate configuration and initial rates
  * - Revalidation configuration per entity type
  *
@@ -83,17 +73,12 @@ import { seedUsers } from './users.seed.js';
  * // 10. Destinations with attractions + points of interest
  * // 11. Sponsorship levels
  * // 12. Sponsorship packages
- * // 13. Billing entitlements
- * // 14. Billing limits
- * // 15. Billing plans
- * // 16. Billing add-ons
- * // 17. Billing promo codes
- * // 18. Exchange rate config
- * // 19. Exchange rates
- * // 20. Revalidation config
- * // 21. AI prompt versions (default system prompts)
- * // 22. AI settings costCeilings defaults (SPEC-211 T-002)
- * // 23. Social automation catalog (SPEC-254 T-015)
+ * // 13. Exchange rate config
+ * // 14. Exchange rates
+ * // 15. Revalidation config
+ * // 16. AI prompt versions (default system prompts)
+ * // 17. AI settings costCeilings defaults (SPEC-211 T-002)
+ * // 18. Social automation catalog (SPEC-254 T-015)
  * ```
  *
  * @throws {Error} The first failing step's error, when continueOnError is false
@@ -172,63 +157,23 @@ export async function runRequiredSeeds(context: SeedContext): Promise<{
         // 9. Load sponsorship packages (uses ID mapping for eventLevelId)
         { name: 'SponsorshipPackages', run: () => seedSponsorshipPackages(context) },
 
-        // 10. Load billing entitlements (before plans to have entitlements available)
-        { name: 'BillingEntitlements', run: () => seedBillingEntitlements(context) },
-
-        // 11. Load billing limits (before plans to have limit definitions available)
-        { name: 'BillingLimits', run: () => seedBillingLimits(context) },
-
-        // 12. Load billing plans (uses entitlements and limits)
-        { name: 'BillingPlans', run: () => seedBillingPlans(context) },
-
-        // 12.1 Load the commerce-listing plan (SPEC-239 T-049). Separate from
-        //      ALL_PLANS so it stays excluded from accommodation plan lists;
-        //      stamps billing_plans.product_domain='commerce'.
-        { name: 'CommercePlan', run: () => seedCommercePlan(context) },
-
-        // 12.2 Load the partner-directory plan (SPEC-271). Separate from
-        //      ALL_PLANS so it stays excluded from accommodation plan lists;
-        //      stamps billing_plans.product_domain='partner'.
-        { name: 'PartnerPlan', run: () => seedPartnerPlan(context) },
-
-        // 12.3 Load the hidden daily test plan (billing-interval-override
-        //      tooling). Separate from ALL_PLANS; product_domain stays
-        //      'accommodation' so loadEntitlements resolves its grants.
-        //      Always seeded — HOSPEDA_SHOW_TEST_BILLING_PLAN gates
-        //      subscribability at checkout time, not seed presence.
-        { name: 'TestDailyPlan', run: () => seedTestDailyPlan(context) },
-
-        // 12.4 Load the three composed trial plans (HOS-1012 D-5). Separate
-        //      from ALL_PLANS for the same reason as 12.1-12.3; each is
-        //      stamped with its own product_domain and carries the
-        //      metadata.trialComposition the entitlement seam resolves live.
-        //      Seeded AFTER the plans above because its composition names
-        //      their slugs.
-        { name: 'TrialPlans', run: () => seedTrialPlans(context) },
-
-        // 13. Load billing add-ons (after plans, uses entitlements and limits)
-        { name: 'BillingAddons', run: () => seedBillingAddons(context) },
-
-        // 14. Load billing promo codes (default discount codes)
-        { name: 'BillingPromoCodes', run: () => seedBillingPromoCodes(context) },
-
-        // 15. Load exchange rate config (before rates to have config available)
+        // 10. Load exchange rate config (before rates to have config available)
         { name: 'ExchangeRateConfig', run: () => seedExchangeRateConfig(context) },
 
-        // 16. Load exchange rates (initial reference rates)
+        // 11. Load exchange rates (initial reference rates)
         { name: 'ExchangeRates', run: () => seedExchangeRates(context) },
 
-        // 17. Load revalidation config (per-entity-type ISR configuration)
+        // 12. Load revalidation config (per-entity-type ISR configuration)
         { name: 'RevalidationConfig', run: () => seedRevalidationConfig(context) },
 
-        // 18. Load AI prompt defaults (system prompts for all AI features)
+        // 13. Load AI prompt defaults (system prompts for all AI features)
         { name: 'AiPrompts', run: () => seedAiPrompts() },
 
-        // 19. Seed AI settings costCeilings defaults (SPEC-211 T-002)
+        // 14. Seed AI settings costCeilings defaults (SPEC-211 T-002)
         //     Idempotent: skips if costCeilings is already set by an operator.
         { name: 'AiSettings', run: () => seedAiSettings() },
 
-        // 20. Seed social automation catalog (SPEC-254 T-015)
+        // 15. Seed social automation catalog (SPEC-254 T-015)
         //     Platforms, platform-formats, settings, campaign, batch, audiences,
         //     footer, hashtag-sets, hashtags. All idempotent, model-direct.
         { name: 'SocialAutomation', run: () => seedSocialAutomation() }

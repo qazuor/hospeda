@@ -21,7 +21,7 @@
  */
 
 import { EyeIcon, EyeOffIcon } from '@repo/icons';
-import { StrongPasswordRegex } from '@repo/schemas';
+import { AsciiSpecialCharacterRegex, StrongPasswordRegex } from '@repo/schemas';
 import { useState } from 'react';
 import styles from './PasswordField.module.css';
 
@@ -97,7 +97,7 @@ type StrengthLevel = 0 | 1 | 2 | 3;
 function computeStrength(value: string): StrengthLevel {
     if (!value) return 0;
     if (StrongPasswordRegex.test(value)) return 3;
-    const rules = [/[A-Z]/, /[a-z]/, /\d/, /[@$!%*?&]/];
+    const rules = [/[A-Z]/, /[a-z]/, /\d/, AsciiSpecialCharacterRegex];
     const passed = rules.filter((r) => r.test(value)).length;
     if (value.length < 8 || passed < 3) return 1;
     return 2;
@@ -170,7 +170,7 @@ export function PasswordField({
                   { label: i18n.rules.upper, passed: /[A-Z]/.test(value) },
                   { label: i18n.rules.lower, passed: /[a-z]/.test(value) },
                   { label: i18n.rules.digit, passed: /\d/.test(value) },
-                  { label: i18n.rules.special, passed: /[@$!%*?&]/.test(value) }
+                  { label: i18n.rules.special, passed: AsciiSpecialCharacterRegex.test(value) }
               ]
             : [];
 

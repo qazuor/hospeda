@@ -1,0 +1,118 @@
+import type { AdminInfoType } from '@repo/schemas';
+import { relations } from 'drizzle-orm';
+import {
+    index,
+    jsonb,
+    numeric,
+    pgTable,
+    text,
+    timestamp,
+    uniqueIndex,
+    uuid
+} from 'drizzle-orm/pg-core';
+import { LifecycleStatusPgEnum, ModerationStatusPgEnum } from '../enums.dbschema.ts';
+import { users } from '../user/user.dbschema.ts';
+import { venues } from './venue.dbschema.ts';
+
+/**
+ * Venue review table (SPEC-239).
+ *
+ * Mirrors accommodation_reviews exactly:
+ * - FK venueId CASCADE (if the listing is deleted, reviews go with it)
+ * - FK userId SET NULL (review stays when reviewer is deleted)
+ * - Granular rating breakdown via jsonb
+ * - averageRating / lifecycleState / moderationState
+ * - Full moderation audit (moderatedById / moderatedAt / moderationReason)
+ * - UNIQUE(userId, venueId) — one review per user per listing
+ */
+export const venueReviews = pgTable(
+    'venue_reviews',
+    {
+        id: uuid('id').primaryKey().defaultRandom(),
+        venueId: uuid('venue_id')
+            .notNull()
+            .references(() => venues.id, { onDelete: 'cascade' }),
+        userId: uuid('user_id')
+            .notNull()
+            .references(() => users.id, { onDelete: 'set null' }),
+        title: text('title'),
+        content: text('content'),
+        /**
+         * Granular rating breakdown (food/service/ambiance/value).
+         * Nullable: a reviewer may submit only the required scalar
+         * `overallRating` without the per-dimension breakdown (SPEC-239 smoke
+         * fix — the create-input schema marks this optional, so the column must
+         * allow NULL to avoid a NOT NULL violation on rating-less reviews).
+         */
+        rating: jsonb('rating').$type<Record<string, unknown>>(),
+        /** Computed average of all rating categories (0.00–5.00). mode:'number' for JS coercion. */
+        averageRating: numeric('average_rating', { precision: 3, scale: 2, mode: 'number' })
+            .notNull()
+            .default(0),
+        /** Overall aggregated rating score (0.00–5.00). mode:'number' for JS coercion. */
+        overallRating: numeric('overall_rating', { precision: 3, scale: 2, mode: 'number' })
+            .notNull()
+            .default(0),
+        lifecycleState: LifecycleStatusPgEnum('lifecycle_state').notNull().default('ACTIVE'),
+        adminInfo: jsonb('admin_info').$type<AdminInfoType>(),
+        createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
+        updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow().notNull(),
+        createdById: uuid('created_by_id').references(() => users.id, { onDelete: 'set null' }),
+        updatedById: uuid('updated_by_id').references(() => users.id, { onDelete: 'set null' }),
+        deletedAt: timestamp('deleted_at', { withTimezone: true }),
+        deletedById: uuid('deleted_by_id').references(() => users.id, { onDelete: 'set null' }),
+        /**
+         * Moderation state defaults to PENDING: venue reviews require
+         * moderator approval before appearing publicly (unlike accommodation
+         * reviews which default to APPROVED).
+         */
+        moderationState: ModerationStatusPgEnum('moderation_state').notNull().default('PENDING'),
+        /** User who performed the last moderation action. */
+        moderatedById: uuid('moderated_by_id').references(() => users.id, {
+            onDelete: 'set null'
+        }),
+        /** Timestamp of the last moderation action. */
+        moderatedAt: timestamp('moderated_at', { withTimezone: true }),
+        /** Free-text reason for the moderation decision. */
+        moderationReason: text('moderation_reason')
+    },
+    (table) => ({
+        venue_reviews_venueId_idx: index('venue_reviews_venueId_idx').on(table.venueId),
+        venue_reviews_userId_idx: index('venue_reviews_userId_idx').on(table.userId),
+        venue_reviews_user_venue_uniq: uniqueIndex('venue_reviews_user_venue_uniq').on(
+            table.userId,
+            table.venueId
+        ),
+        venue_reviews_lifecycleState_idx: index('venue_reviews_lifecycleState_idx').on(
+            table.lifecycleState
+        ),
+        // Composite: most common query is listByVenue filtered by lifecycle
+        venue_reviews_venueId_lifecycleState_idx: index(
+            'venue_reviews_venueId_lifecycleState_idx'
+        ).on(table.venueId, table.lifecycleState),
+        venue_reviews_moderationState_idx: index('venue_reviews_moderationState_idx').on(
+            table.moderationState
+        )
+    })
+);
+
+export const venueReviewsRelations = relations(venueReviews, ({ one }) => ({
+    venue: one(venues, {
+        fields: [venueReviews.venueId],
+        references: [venues.id]
+    }),
+    user: one(users, {
+        fields: [venueReviews.userId],
+        references: [users.id]
+    }),
+    moderatedBy: one(users, {
+        fields: [venueReviews.moderatedById],
+        references: [users.id],
+        relationName: 'venueReviewModerator'
+    })
+}));
+
+/** Type-inferred insert type for venue_reviews rows. */
+export type InsertVenueReview = typeof venueReviews.$inferInsert;
+/** Type-inferred select type for venue_reviews rows. */
+export type SelectVenueReview = typeof venueReviews.$inferSelect;

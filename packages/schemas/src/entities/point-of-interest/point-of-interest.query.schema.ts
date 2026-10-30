@@ -279,31 +279,31 @@ export const PointOfInterestCountOutputSchema = z.object({ count: z.number().int
 /**
  * HTTP-compatible point-of-interest search schema with query string coercion
  */
-export const HttpPointOfInterestSearchSchema = HttpPaginationSchema.merge(HttpSortingSchema).extend(
-    {
-        // Search
-        q: z.string().optional(),
+export const HttpPointOfInterestSearchSchema = HttpPaginationSchema.safeExtend(
+    HttpSortingSchema.shape
+).extend({
+    // Search
+    q: z.string().optional(),
 
-        // Basic filters
-        slug: z.string().optional(),
-        type: PointOfInterestTypeEnumSchema.optional(),
-        isFeatured: HttpQueryFields.isFeatured(),
-        isBuiltin: HttpQueryFields.isBuiltin(),
+    // Basic filters
+    slug: z.string().optional(),
+    type: PointOfInterestTypeEnumSchema.optional(),
+    isFeatured: HttpQueryFields.isFeatured(),
+    isBuiltin: HttpQueryFields.isBuiltin(),
 
-        // Lifecycle state
-        lifecycleState: LifecycleStatusEnumSchema.optional(),
+    // Lifecycle state
+    lifecycleState: LifecycleStatusEnumSchema.optional(),
 
-        // Date filters with coercion
-        createdAfter: HttpQueryFields.createdAfter(),
-        createdBefore: HttpQueryFields.createdBefore(),
+    // Date filters with coercion
+    createdAfter: HttpQueryFields.createdAfter(),
+    createdBefore: HttpQueryFields.createdBefore(),
 
-        // Destination relation filter
-        destinationId: z.string().uuid().optional(),
+    // Destination relation filter
+    destinationId: z.string().uuid().optional(),
 
-        // Content filters with coercion
-        hasDescription: HttpQueryFields.hasDescription()
-    }
-);
+    // Content filters with coercion
+    hasDescription: HttpQueryFields.hasDescription()
+});
 
 export type HttpPointOfInterestSearch = z.infer<typeof HttpPointOfInterestSearchSchema>;
 

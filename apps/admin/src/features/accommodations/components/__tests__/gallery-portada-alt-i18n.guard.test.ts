@@ -1,7 +1,7 @@
 /**
  * Guard: the portada `alt` fallback must come from @repo/i18n, never a literal.
  *
- * HOS-389 §5. Both portada sections — the accommodation one and its commerce
+ * HOS-389 §5. Both portada sections — the accommodation one and its listing
  * twin — ended their `alt` chain in the hardcoded Spanish string `'Portada'`.
  * That string is announced by a screen reader, so an operator running the admin
  * in English or Portuguese heard Spanish; and because it is the LAST link of an
@@ -30,7 +30,7 @@ const ALT_FALLBACK_KEY = 'admin-pages.gallery.portada.altFallback';
  */
 const PORTADA_SECTIONS: readonly string[] = [
     'src/features/accommodations/components/GalleryPortadaSection.tsx',
-    'src/features/commerce/components/CommerceGalleryPortadaSection.tsx'
+    'src/features/listing/components/ListingGalleryPortadaSection.tsx'
 ];
 
 /** Reads a file relative to the `apps/admin` package root. */

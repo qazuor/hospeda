@@ -75,6 +75,7 @@ type Case = {
     path: string;
     updatePerm: PermissionEnum;
     moderatePerm: PermissionEnum;
+    viewPerm: PermissionEnum;
     serviceMock: { update: Mock };
 };
 
@@ -84,6 +85,7 @@ const cases: ReadonlyArray<Case> = [
         path: '/api/v1/admin/accommodations/reviews',
         updatePerm: PermissionEnum.ACCOMMODATION_REVIEW_UPDATE,
         moderatePerm: PermissionEnum.ACCOMMODATION_REVIEW_MODERATE,
+        viewPerm: PermissionEnum.ACCOMMODATION_REVIEW_VIEW,
         serviceMock: accomMockRef
     },
     {
@@ -91,6 +93,7 @@ const cases: ReadonlyArray<Case> = [
         path: '/api/v1/admin/destinations/reviews',
         updatePerm: PermissionEnum.DESTINATION_REVIEW_UPDATE,
         moderatePerm: PermissionEnum.DESTINATION_REVIEW_MODERATE,
+        viewPerm: PermissionEnum.DESTINATION_REVIEW_VIEW,
         serviceMock: destMockRef
     }
 ];
@@ -110,14 +113,20 @@ describe('T-029: review admin update — write-path permission boundaries', () =
         destMockRef.update = vi.fn().mockResolvedValue({ data: { id: reviewId } });
     });
 
-    describe.each(cases)('$label', ({ path, updatePerm, moderatePerm, serviceMock }) => {
+    describe.each(cases)('$label', ({ path, updatePerm, moderatePerm, viewPerm, serviceMock }) => {
         it('returns 403 when actor has *_REVIEW_UPDATE but lacks *_REVIEW_MODERATE (T-026 alignment)', async () => {
             const actor = {
                 id: crypto.randomUUID(),
                 roles: [RoleEnum.ADMIN],
                 permissions: [
                     PermissionEnum.ACCESS_API_PUBLIC,
-                    PermissionEnum.ACCESS_API_PRIVATE,
+                    // Admin tier base gate (authorization.ts): without these two the
+                    // 403 would come from the tier, not from the *_MODERATE check.
+                    PermissionEnum.ACCESS_API_ADMIN,
+                    PermissionEnum.ACCESS_PANEL_ADMIN,
+                    // VIEW is held so the 403 below can only come from the missing
+                    // *_REVIEW_MODERATE.
+                    viewPerm,
                     updatePerm
                     // intentionally omitting `moderatePerm`
                 ]
@@ -140,7 +149,11 @@ describe('T-029: review admin update — write-path permission boundaries', () =
                 roles: [RoleEnum.ADMIN],
                 permissions: [
                     PermissionEnum.ACCESS_API_PUBLIC,
-                    PermissionEnum.ACCESS_API_PRIVATE,
+                    // Admin tier base gate (authorization.ts): without these two the
+                    // 403 would come from the tier, not from the *_MODERATE check.
+                    PermissionEnum.ACCESS_API_ADMIN,
+                    PermissionEnum.ACCESS_PANEL_ADMIN,
+                    viewPerm,
                     updatePerm,
                     moderatePerm
                 ]
@@ -158,10 +171,42 @@ describe('T-029: review admin update — write-path permission boundaries', () =
             expect(res.status).not.toBe(401);
         });
 
+        // HOS-1908 (fixed): the GET /:id gate (*_REVIEW_VIEW) no longer leaks
+        // onto PUT, so the route's own UPDATE+MODERATE pair is enough.
+        const updateWithoutView = async (headers: Record<string, string>, path: string) =>
+            app.request(`${path}/${reviewId}`, {
+                method: 'PUT',
+                headers,
+                body: JSON.stringify({ title: 'updated' })
+            });
+        const actorWithoutView = (updatePerm: PermissionEnum, moderatePerm: PermissionEnum) => ({
+            id: crypto.randomUUID(),
+            roles: [RoleEnum.ADMIN],
+            permissions: [
+                PermissionEnum.ACCESS_API_PUBLIC,
+                PermissionEnum.ACCESS_API_ADMIN,
+                PermissionEnum.ACCESS_PANEL_ADMIN,
+                updatePerm,
+                moderatePerm
+            ]
+        });
+
+        // HOS-1908 (fixed): each route's gates are scoped to its own method.
+        it('lets UPDATE+MODERATE through without VIEW (HOS-1908)', async () => {
+            const res = await updateWithoutView(
+                makeHeaders(actorWithoutView(updatePerm, moderatePerm)),
+                path
+            );
+
+            expect(res.status).not.toBe(403);
+        });
+
         it('returns 401/403 when no auth headers are provided (anonymous)', async () => {
             const res = await app.request(`${path}/${reviewId}`, {
                 method: 'PUT',
-                headers: { 'content-type': 'application/json' },
+                // user-agent is required by the global validation middleware (400 otherwise,
+                // before the auth gate runs).
+                headers: { 'content-type': 'application/json', 'user-agent': 'vitest' },
                 body: JSON.stringify({ title: 'updated' })
             });
 

@@ -44,7 +44,7 @@ vi.mock('@repo/db', () => ({
     withTransaction: vi.fn(async (callback: (tx: unknown) => Promise<unknown>) =>
         callback(mockGetDb())
     ),
-    billingNotificationLog: {
+    notificationLog: {
         createdAt: 'createdAt',
         expiredAt: 'expiredAt'
     },

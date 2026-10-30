@@ -1,0 +1,16 @@
+# VB-03 · spec → fuente · 03-contrato-de-cobertura.md, 02-nucleo-modelo-y-maquinas.md
+
+## Hallazgos
+
+03-contrato-de-cobertura.md:101 · «Un mismo `user` puede consultar este contrato hasta sesenta veces por minuto; las consultas siguientes se rechazan hasta que abra la ventana siguiente.» · sin soporte · BLOQUEA
+
+02-nucleo-modelo-y-maquinas.md:240 · «El estado vive en una columna con dominio abierto» · contradice fuentes/.specs/HOS-1352-billing-verticals-redesign/docs/nucleo/03-maquinas-de-estado.md:49 («El estado vive en una columna con dominio restringido») · BLOQUEA
+
+03-contrato-de-cobertura.md:1782 · «las doce siguen» · contradice fuentes/.specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:361 («las ~~once~~ ~~doce~~ **trece** dependencias siguen»; doce está tachado, y DEP:15 y el encabezado de la propia spec ya incluyen la decimotercera dependencia, por lo que el defecto es de conteo y no omite su construcción) · MENOR
+
+## Resumen
+
+| archivo | líneas recorridas | afirmaciones normativas revisadas (aprox.) | BLOQUEA | MENOR |
+|---|---|---|---|---|
+| 03-contrato-de-cobertura.md | 1–1986 | 400 | 1 | 1 |
+| 02-nucleo-modelo-y-maquinas.md | 1–374 | 110 | 1 | 0 |

@@ -1,0 +1,113 @@
+{
+    "inventario": {
+        "exit": 0,
+        "log": "inventario.log"
+    },
+    "asignar": {
+        "exit": 0,
+        "log": "asignar.log"
+    },
+    "adjudicar": {
+        "exit": 0,
+        "log": "adjudicar.log"
+    },
+    "reanclar": {
+        "exit": 0,
+        "log": "reanclar.log"
+    },
+    "reanclar-cobertura": {
+        "exit_inicial": 1,
+        "log_inicial": "reanclar-cobertura.log",
+        "estado": "resuelto: revisión de citas V9b y cobertura de pins; sellado posterior",
+        "validacion_final": {
+            "exit": 0,
+            "log": "cobertura.log"
+        }
+    },
+    "omisiones-g1": {
+        "exit": 0,
+        "log": "omisiones-g1.log"
+    },
+    "generar-g1": {
+        "exit": 0,
+        "log": "generar-g1.log"
+    },
+    "generar-g3": {
+        "exit": 0,
+        "log": "generar-g3.log"
+    },
+    "omisiones-g3": {
+        "exit": 0,
+        "log": "omisiones-g3.log"
+    },
+    "generar-g8": {
+        "exit": 0,
+        "log": "generar-g8.log"
+    },
+    "generar-secciones": {
+        "exit": 0,
+        "log": "generar-secciones.log"
+    },
+    "markdownlint-fix": {
+        "exit": 0,
+        "log": "markdownlint-fix-escalado.log"
+    },
+    "trazar": {
+        "exit": 0,
+        "log": "trazar.log"
+    },
+    "canarios": {
+        "exit": 0,
+        "log": "canarios.log"
+    },
+    "canarios-cobertura": {
+        "exit": 0,
+        "log": "canarios-cobertura.log"
+    },
+    "canarios-g1": {
+        "exit": 0,
+        "log": "canarios-g1.log"
+    },
+    "canarios-g3": {
+        "exit": 0,
+        "log": "canarios-g3.log"
+    },
+    "canarios-secciones": {
+        "exit": 0,
+        "log": "canarios-secciones.log"
+    },
+    "aristas": {
+        "exit": 0,
+        "log": "aristas.log"
+    },
+    "contar": {
+        "exit": 0,
+        "log": "contar.log"
+    },
+    "cobertura": {
+        "exit": 0,
+        "log": "cobertura.log"
+    },
+    "markdownlint": {
+        "exit": 0,
+        "log": "markdownlint.log"
+    },
+    "sellar-cobertura": {
+        "exit": 0,
+        "log": "sellar-cobertura.log"
+    },
+    "biome-format": {
+        "exit": 0,
+        "log": "biome-format.log",
+        "nota": "cobertura.json supera máximo predeterminado; comprobado además con --files-max-size=8388608, ver biome-large.log; cobertura vuelve a su formato canónico al verificarse"
+    },
+    "cobertura_reanclada": {
+        "exit": 0,
+        "log": "cobertura.log",
+        "nota": "Citas V9b revisadas y dos pins asignados antes del sellado; el primer reanclaje detectó los pendientes esperados."
+    },
+    "markdownlint-final": {
+        "exit": 0,
+        "log": "markdownlint-final.log"
+    }
+}

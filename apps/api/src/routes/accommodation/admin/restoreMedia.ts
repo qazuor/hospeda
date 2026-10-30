@@ -17,10 +17,12 @@
 import {
     AccommodationIdSchema,
     AccommodationMediaIdSchema,
-    AccommodationMediaSingleOutputSchema
+    AccommodationMediaSingleOutputSchema,
+    VerticalEnum
 } from '@repo/schemas';
 import { AccommodationService, ServiceError } from '@repo/service-core';
 import type { Context } from 'hono';
+import { runListingContentCall } from '../../../middlewares/listing-access';
 import { getActorFromContext } from '../../../utils/actor';
 import { apiLogger } from '../../../utils/logger';
 import { createAdminRoute } from '../../../utils/route-factory';
@@ -45,6 +47,7 @@ const accommodationService = new AccommodationService({ logger: apiLogger });
  */
 export const adminRestoreMediaRoute = createAdminRoute({
     method: 'post',
+    listingAccess: { vertical: VerticalEnum.ACCOMMODATION, operation: 'EDIT', idParam: 'id' },
     path: '/{id}/media/{mediaId}/restore',
     summary: 'Restore archived photo to accommodation gallery (admin)',
     description:
@@ -63,9 +66,13 @@ export const adminRestoreMediaRoute = createAdminRoute({
     handler: async (ctx: Context, params: Record<string, unknown>) => {
         const actor = getActorFromContext(ctx);
 
-        const result = await accommodationService.restoreMedia(actor, {
-            accommodationId: params.id as string,
-            mediaId: params.mediaId as string
+        const result = await runListingContentCall({
+            ctx,
+            run: () =>
+                accommodationService.restoreMedia(actor, {
+                    accommodationId: params.id as string,
+                    mediaId: params.mediaId as string
+                })
         });
 
         if (result.error) {

@@ -21,11 +21,10 @@ export type PublicAuthorListItem = {
 
 export type UserWithCounts = User & {
     accommodationsCount: number;
-    gastronomiesCount: number;
+    venuesCount: number;
     experiencesCount: number;
     eventsCount: number;
     postsCount: number;
-    currentPlanSlug: string | null;
 };
 
 export class UserModel extends BaseModelImpl<User> {
@@ -340,7 +339,6 @@ export class UserModel extends BaseModelImpl<User> {
                   : and(...allConditions);
 
         const outerUserId = sql.raw('"users"."id"');
-        const outerUserIdText = sql.raw('"users"."id"::text');
 
         // Use correlated subqueries to get counts in a single query instead of N+1
         const accommodationsCountSq = sql<number>`(
@@ -350,12 +348,12 @@ export class UserModel extends BaseModelImpl<User> {
               AND a."deleted_at" IS NULL
         )`.as('accommodations_count');
 
-        const gastronomiesCountSq = sql<number>`(
+        const venuesCountSq = sql<number>`(
             SELECT count(*)::int
-            FROM "gastronomies" AS g
+            FROM "venues" AS g
             WHERE g."owner_id" = ${outerUserId}
               AND g."deleted_at" IS NULL
-        )`.as('gastronomies_count');
+        )`.as('venues_count');
 
         const experiencesCountSq = sql<number>`(
             SELECT count(*)::int
@@ -378,22 +376,6 @@ export class UserModel extends BaseModelImpl<User> {
               AND p."deleted_at" IS NULL
         )`.as('posts_count');
 
-        const currentPlanSlugSq = sql<string | null>`(
-            SELECT bp."name"
-            FROM "billing_subscriptions" AS bs
-            INNER JOIN "billing_customers" AS bc
-                ON bc."id" = bs."customer_id"
-            INNER JOIN "billing_plans" AS bp
-                ON (bp."id"::text = bs."plan_id" OR bp."name" = bs."plan_id")
-            WHERE bc."external_id" = ${outerUserIdText}
-              AND bc."deleted_at" IS NULL
-              AND bs."deleted_at" IS NULL
-              AND bp."deleted_at" IS NULL
-              AND bs."status" IN ('active', 'trialing', 'comp')
-              AND (bs."product_domain" IS NULL OR bs."product_domain" = 'accommodation')
-            LIMIT 1
-        )`.as('current_plan_slug');
-
         const orderByClause = options?.sortBy
             ? buildOrderByClause(options.sortBy, this.table, options.sortOrder ?? 'asc')
             : undefined;
@@ -402,11 +384,10 @@ export class UserModel extends BaseModelImpl<User> {
             .select({
                 user: users,
                 accommodationsCount: accommodationsCountSq,
-                gastronomiesCount: gastronomiesCountSq,
+                venuesCount: venuesCountSq,
                 experiencesCount: experiencesCountSq,
                 eventsCount: eventsCountSq,
-                postsCount: postsCountSq,
-                currentPlanSlug: currentPlanSlugSq
+                postsCount: postsCountSq
             })
             .from(users)
             .where(finalWhereClause)
@@ -419,11 +400,10 @@ export class UserModel extends BaseModelImpl<User> {
         let rows: Array<{
             user: typeof users.$inferSelect;
             accommodationsCount: number;
-            gastronomiesCount: number;
+            venuesCount: number;
             experiencesCount: number;
             eventsCount: number;
             postsCount: number;
-            currentPlanSlug: string | null;
         }>;
 
         // Safety cap for non-paginated path to prevent unbounded queries
@@ -440,11 +420,10 @@ export class UserModel extends BaseModelImpl<User> {
             // DRIZZLE-LIMITATION: select with leftJoin projects row.user as Drizzle's full users-table row type with branded enums; User domain entity uses unbranded enum unions.
             ...(row.user as unknown as User),
             accommodationsCount: row.accommodationsCount ?? 0,
-            gastronomiesCount: row.gastronomiesCount ?? 0,
+            venuesCount: row.venuesCount ?? 0,
             experiencesCount: row.experiencesCount ?? 0,
             eventsCount: row.eventsCount ?? 0,
-            postsCount: row.postsCount ?? 0,
-            currentPlanSlug: row.currentPlanSlug ?? null
+            postsCount: row.postsCount ?? 0
         }));
 
         // Get total count for pagination

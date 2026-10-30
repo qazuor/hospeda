@@ -30,8 +30,8 @@ const userService = new UserService({ logger: apiLogger });
  *
  * Note what that protects, precisely: `/api/v1/public/users` is in
  * `PRIVATE_CACHE_ENDPOINTS`, NOT `PUBLIC_CACHE_ENDPOINTS`, so it never reaches
- * the shared CDN. It IS stored in the API's in-memory cache (`cacheTTL: 300`
- * below) under `private:${path}${suffix}:${authorization ?? 'anonymous'}`, and
+ * the shared CDN. It IS stored in the API's in-memory cache (global cache
+ * middleware TTL) under `private:${path}${suffix}:${authorization ?? 'anonymous'}`, and
  * the web app authenticates with session COOKIES rather than an `Authorization`
  * header — so every logged-in visitor shares the `:anonymous` bucket with every
  * logged-out one. An actor-dependent field here would still be captured once
@@ -159,7 +159,6 @@ export const publicGetUserBySlugRoute = createPublicRoute({
         return result.data;
     },
     options: {
-        cacheTTL: 300,
         customRateLimit: { requests: 60, windowMs: 60000 }
     }
 });

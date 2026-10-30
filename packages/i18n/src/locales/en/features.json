@@ -1,12 +1,12 @@
 {
     "meta": {
         "title": "Todo lo que Hospeda hace por vos",
-        "description": "Descubrí todo lo que ofrece Hospeda: para viajeros, para anfitriones, para gastronomía y experiencias, y para marcas del Litoral entrerriano."
+        "description": "Discover everything Hospeda offers: for travelers, for hosts, for food and experiences, and for brands of the Entre Ríos Litoral."
     },
     "popularBadge": "Popular",
     "seo": {
         "collectionName": "Funcionalidades de Hospeda",
-        "collectionDescription": "Catálogo completo de lo que ofrece la plataforma Hospeda, organizado por audiencia: viajeros, anfitriones, gastronomía y experiencias, y marcas.",
+        "collectionDescription": "Complete catalog of what the Hospeda platform offers, organized by audience: travelers, hosts, food and experiences, and brands.",
         "breadcrumbHome": "Inicio",
         "breadcrumbCurrent": "Funcionalidades"
     },
@@ -32,7 +32,7 @@
             },
             "worlds": {
                 "value": "3",
-                "label": "mundos: alojamientos · gastronomía · experiencias"
+                "label": "worlds: stays · food · experiences"
             }
         }
     },
@@ -40,7 +40,7 @@
         "ariaLabel": "Navegación por audiencia",
         "viajeros": "Viajeros",
         "anfitriones": "Anfitriones",
-        "gastro": "Gastronomía y experiencias",
+        "gastro": "Food and experiences",
         "marcas": "Marcas",
         "ademas": "Y además",
         "proximamente": "Próximamente"
@@ -52,7 +52,7 @@
         "pillars": {
             "descubrir": {
                 "title": "Descubrir",
-                "description": "Buscá alojamientos, destinos, eventos, gastronomía y experiencias del Litoral. Con mapa, filtros, clima y hasta un buscador que entiende lenguaje natural."
+                "description": "Search stays, destinations, events, food and experiences across the Litoral. With maps, filters, weather and even a search engine that understands natural language."
             },
             "hospedarse": {
                 "title": "Hospedarse",
@@ -60,11 +60,11 @@
             },
             "publicar": {
                 "title": "Publicar y crecer",
-                "description": "Si alquilás, mostrá tu propiedad con fotos, promociones y estadísticas. Herramientas de IA que te escriben, traducen e importan la ficha por vos."
+                "description": "If you rent out, showcase your property with photos, promotions and stats. AI tools that write, translate and import the listing for you."
             },
             "sumarNegocio": {
                 "title": "Sumar tu negocio",
-                "description": "Locales gastronómicos, experiencias, auspiciantes y marcas: un lugar en el mapa turístico de la región, con ficha propia, reseñas y visibilidad."
+                "description": "Food venues, experiences, sponsors and brands: a spot on the region's tourist map, with your own listing, reviews and visibility."
             }
         }
     },
@@ -88,7 +88,7 @@
             },
             "contactHost": {
                 "title": "Hablá con el anfitrión",
-                "description": "Consultá directo desde la ficha, incluso sin cuenta. Seguí y respondé desde tu mail con un enlace mágico, o desde tu bandeja si tenés cuenta."
+                "description": "Message directly from the listing, even without an account. Follow up and reply from your email with a magic link, or from your inbox if you have an account."
             },
             "reviews": {
                 "title": "Reseñas de verdad",
@@ -167,7 +167,7 @@
         "who": "Para el que recibe",
         "eyebrow": "tu propiedad, bien mostrada",
         "title": "Publicá tu alojamiento y hacelo crecer.",
-        "description": "Cargá tu propiedad, mostrala con buenas fotos, creá promociones y mirá cómo rinde con estadísticas claras. Y cuando no tenés ganas de escribir, la IA te importa la ficha desde Airbnb o Booking, te mejora los textos y los traduce a tres idiomas.",
+        "description": "Upload your property, show it off with great photos, create promotions and see how it performs with clear stats. And when you don't feel like writing, AI imports the listing from Airbnb or Booking, improves your copy and translates it into three languages.",
         "banner": {
             "title_one": "{{trialDays}} día gratis en tu primera suscripción. No se cobra nada hasta que termina la prueba.",
             "title_other": "{{trialDays}} días gratis en tu primera suscripción. No se cobra nada hasta que termina la prueba.",
@@ -175,7 +175,7 @@
         },
         "list": {
             "aiImport": {
-                "title": "Importá la ficha en segundos",
+                "title": "Import the listing in seconds",
                 "description": "Pegá el link de Airbnb, Booking, MercadoLibre o Google y la IA completa los datos por vos."
             },
             "aiWrite": {
@@ -184,7 +184,7 @@
             },
             "promotions": {
                 "title": "Promociones que se ven",
-                "description": "Creá ofertas con badge en el listado y la ficha, visibles a todos los que buscan."
+                "description": "Create offers with a badge on the listing and its page, visible to everyone searching."
             },
             "stats": {
                 "title": "Estadísticas que se entienden",
@@ -192,7 +192,7 @@
             },
             "reputation": {
                 "title": "Reputación de todos lados, en un lugar",
-                "description": "Conectá tus ratings de Google, Booking y más para mostrarlos en tu ficha."
+                "description": "Connect your Google, Booking and other ratings to show them on your listing."
             },
             "calendarSync": {
                 "title": "Google Calendar sync",
@@ -207,12 +207,12 @@
                 "description": "Sumá un asistente que responde consultas sobre tu alojamiento a cualquier hora."
             },
             "seo": {
-                "title": "Tu ficha, lista para Google",
+                "title": "Your listing, ready for Google",
                 "description": "SEO editable, título y descripción, en cada alojamiento, incluido en todos los planes."
             },
             "hostTrades": {
                 "title": "Directorio de proveedores a mano",
-                "description": "Plomería, electricidad, gas, cerrajería, climatización, limpieza y más: oficios locales de confianza para llamar cuando algo falla en tu alojamiento."
+                "description": "Plumbing, electrical, gas, locksmith, HVAC, cleaning and more: trusted local trades to call when something breaks at your property."
             }
         },
         "table": {
@@ -253,7 +253,7 @@
                     "label": "Soporte prioritario"
                 },
                 "aiImport": {
-                    "label": "Importar ficha con IA",
+                    "label": "Import listing with AI",
                     "note": "por mes"
                 },
                 "aiImprove": {
@@ -289,10 +289,10 @@
         }
     },
     "gastro": {
-        "who": "Para tu local gastronómico o experiencia",
+        "who": "Para tu local o experiencia",
         "eyebrow": "tu negocio, en el mapa turístico",
-        "title": "Gastronomía y experiencias, donde la gente planea su viaje.",
-        "description": "Un restaurante, una bodega, un paseo en kayak o una cata: tu negocio tiene ficha propia dentro de Hospeda, visible para todos los que están armando su escapada por el Litoral. Vos mantenés el contenido; nosotros lo ponemos en la vidriera.",
+        "title": "Food and experiences, where people plan their trip.",
+        "description": "A restaurant, a winery, a kayak trip or a tasting: your business gets its own listing inside Hospeda, visible to everyone planning a getaway across the Litoral. You keep the content up to date; we put it in the shop window.",
         "list": {
             "ownProfile": {
                 "title": "Ficha pública propia",
@@ -316,14 +316,14 @@
             },
             "seo": {
                 "title": "Buen SEO incluido",
-                "description": "Tu ficha está pensada para aparecer bien en Google, con editor de título y descripción."
+                "description": "Your listing is built to rank well on Google, with a title and description editor."
             },
             "certificates": {
                 "title": "Certificates for whoever did the outing",
                 "description": "For experiences, issue a certificate to the person who did it: their name, the outing and the date, as a PDF to print or send. It carries a QR back to your page."
             }
         },
-        "note": "Mientras tu suscripción está activa, tu ficha es pública. ¿Querés sumarte? Se hace desde «sumar mi negocio» y nuestro equipo te da el alta."
+        "note": "While your subscription is active, your listing is public. Want to join? Go through «add my business» and our team will set you up."
     },
     "marcas": {
         "who": "Para marcas y auspiciantes",
@@ -337,7 +337,7 @@
             },
             "sponsorship": {
                 "title": "Patrocinio de contenido",
-                "description": "Como Sponsor tenés un panel propio para crear y editar tus patrocinios de posts y eventos, con niveles y paquetes a elegir, analíticas y facturas a la vista. Autogestionado."
+                "description": "As a Sponsor you get your own panel to create and edit your post and event sponsorships, with tiers and packages to choose from, analytics and invoices at a glance. Self-managed."
             }
         }
     },
@@ -380,7 +380,7 @@
         "items": {
             "touristCard": {
                 "title": "Tarjeta turista",
-                "description": "Beneficios y descuentos para viajeros en alojamientos, gastronomía y experiencias."
+                "description": "Benefits and discounts for travelers on stays, food and experiences."
             },
             "multiProperty": {
                 "title": "Alojamientos multi-propiedad",
@@ -407,8 +407,8 @@
     "cta": {
         "tagline": "¿arrancamos?",
         "title": "Sumá tu alojamiento o tu negocio a Hospeda.",
-        "description_one": "Probá {{trialDays}} día gratis en tu primera suscripción si alquilás, o escribinos para poner tu local gastronómico, experiencia o marca en el mapa turístico del Litoral. Sin compromiso: no se cobra nada hasta que termina la prueba.",
-        "description_other": "Probá {{trialDays}} días gratis en tu primera suscripción si alquilás, o escribinos para poner tu local gastronómico, experiencia o marca en el mapa turístico del Litoral. Sin compromiso: no se cobra nada hasta que termina la prueba.",
+        "description_one": "Probá {{trialDays}} día gratis en tu primera suscripción si alquilás, o escribinos para poner tu local, experiencia o marca en el mapa turístico del Litoral. Sin compromiso: no se cobra nada hasta que termina la prueba.",
+        "description_other": "Probá {{trialDays}} días gratis en tu primera suscripción si alquilás, o escribinos para poner tu local, experiencia o marca en el mapa turístico del Litoral. Sin compromiso: no se cobra nada hasta que termina la prueba.",
         "button": "Conocer Hospeda"
     },
     "footer": {

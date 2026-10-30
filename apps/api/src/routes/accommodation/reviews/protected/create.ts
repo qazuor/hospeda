@@ -3,18 +3,19 @@
  * Requires authentication
  */
 
-import { EntitlementKey } from '@repo/billing';
 import {
     AccommodationIdSchema,
     AccommodationReviewCreateBodySchema,
     AccommodationReviewProtectedSchema,
-    PermissionEnum
+    PermissionEnum,
+    VerticalEnum
 } from '@repo/schemas';
 import { AccommodationReviewService, ServiceError } from '@repo/service-core';
 import type { Context } from 'hono';
-import { requireEntitlement } from '../../../../middlewares/entitlement';
+
 import { createSlidingWindowPerUserRateLimit } from '../../../../middlewares/rate-limit';
 import { getActorFromContext } from '../../../../utils/actor';
+import { enforceUserGate } from '../../../../utils/listing-access/user-gate';
 import { apiLogger } from '../../../../utils/logger';
 import { createProtectedRoute } from '../../../../utils/route-factory';
 import type { z } from '../../../../utils/zod';
@@ -51,6 +52,11 @@ export const protectedCreateAccommodationReviewRoute = createProtectedRoute({
     handler: async (ctx: Context, params, body) => {
         const actor = getActorFromContext(ctx);
         const input = body as z.infer<typeof AccommodationReviewCreateBodySchema>;
+        await enforceUserGate({
+            userId: actor.id,
+            vertical: VerticalEnum.TOURIST,
+            keys: ['write_reviews']
+        });
         const payload = {
             ...input,
             accommodationId: params.accommodationId as z.infer<typeof AccommodationIdSchema>,
@@ -62,12 +68,6 @@ export const protectedCreateAccommodationReviewRoute = createProtectedRoute({
         return result.data;
     },
     options: {
-        // writeReviewRateLimit runs first (fast in-memory check, no DB hit) before
-        // requireEntitlement (which does a DB lookup for the user's plan tier).
-        // SPEC-145 T-005 / SPEC-216: WRITE_REVIEWS gate — granted on all tourist
-        // plans (tourist-free, tourist-vip — HOS-1224 retired tourist-plus) and on all owner/complex
-        // plans (via tourist-VIP entitlement inheritance, SPEC-216). Free tourists
-        // and owners can write reviews; unauthenticated access is blocked upstream.
-        middlewares: [writeReviewRateLimit, requireEntitlement(EntitlementKey.WRITE_REVIEWS)]
+        middlewares: [writeReviewRateLimit]
     }
 });

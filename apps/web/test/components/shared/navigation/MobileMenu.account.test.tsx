@@ -195,14 +195,14 @@ describe('MobileMenu — curated account block (HOS-131 §6.5)', () => {
         expect(fetchMock).not.toHaveBeenCalled();
     });
 
-    it('shows the "Mi comercio" business shortcut for commerce-only owners', async () => {
+    it('shows the "Mi comercio" business shortcut for venue/experience-only owners', async () => {
         sessionStorage.setItem(
             AUTH_ME_CACHE_KEY,
             JSON.stringify({
                 isAuthenticated: true,
                 user: { id: 'u1', name: 'Ana García', email: 'ana@example.com' },
-                permissions: ['commerce.editOwn'],
-                roles: ['USER', 'COMMERCE_OWNER'],
+                permissions: ['venue.editOwn'],
+                roles: ['USER', 'VENUE_OWNER'],
                 cachedAt: Date.now()
             })
         );
@@ -225,8 +225,8 @@ describe('MobileMenu — curated account block (HOS-131 §6.5)', () => {
             JSON.stringify({
                 isAuthenticated: true,
                 user: { id: 'u1', name: 'Ana García', email: 'ana@example.com' },
-                permissions: ['accommodation.create', 'commerce.editOwn'],
-                roles: ['USER', 'HOST', 'COMMERCE_OWNER'],
+                permissions: ['accommodation.create', 'venue.editOwn'],
+                roles: ['USER', 'HOST', 'VENUE_OWNER'],
                 cachedAt: Date.now()
             })
         );

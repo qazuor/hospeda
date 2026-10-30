@@ -1,0 +1,66 @@
+# VB-B5 · Verificación spec → fuente (zona B5: 10-corte/U1, U2, U3, V1, V2, V3, V4)
+
+Pregunta: ¿qué afirma esta parte de la spec que las fuentes no dicen? Una línea por afirmación con problema.
+
+## Hallazgos
+
+### 10-corte/U1.md
+
+- 10-corte/U1.md:477 · «`starts_at` y `ends_at` de `partners` quedan hasta la unidad de socios y las borra `V7` con su migración» (texto superado, copiado de B/21 §4) · contradice .specs/HOS-1352-billing-verticals-redesign/docs/16-fase-7-del-paraguas.md:984 (las borra la migración estructural de `V7` que crea `V6` AL CORTE, AB y AP; la adjudicación PARCIAL de DEC-ARCH-014#📌5 y DEC-ENT-006#📌2 da por muerto «quedan hasta la unidad de socios»; el mismo archivo lo dice bien en l.73, 181 y 439) · BLOQUEA
+- 10-corte/U1.md:816 · «las etiquetas `kind-*`/`area-*` no las fija la fuente: las propone el PR» · más débil que .specs/HOS-1352-billing-verticals-redesign/docs/16-fase-7-del-paraguas.md:1067 (BS fija el default: «los labels son `kind-spec` más las `area-*` de cada fila») · MENOR
+- 10-corte/U1.md:824 · «las etiquetas de Linear [y el nombre de «las tres tablas»] los propone el PR de `U1`» · más débil que .specs/HOS-1352-billing-verticals-redesign/docs/16-fase-7-del-paraguas.md:1067 (labels con default fijado) y .specs/HOS-1354-billing-cobro-y-proveedor/docs/21-migracion.md:517 («las tres tablas de fichas»: la fuente las identifica) · MENOR
+
+### 10-corte/U2.md
+
+- 10-corte/U2.md:253 · «el `failed` definitivo de un obligatorio se escala con un correo propio a `SUPER_ADMIN` en el acto, sin esperar la ventana del resumen» · más fuerte que .specs/HOS-1352-billing-verticals-redesign/docs/nucleo/07-outbox-y-notificaciones.md:56 (sólo «es un evento que mira una persona»; DEC-MAIL-001 y B/03:310 dicen «se escala a una persona»); y contradice .specs/HOS-1352-billing-verticals-redesign/docs/nucleo/08-auditoria-y-observabilidad.md:399 (el correo propio sin esperar la ventana es SÓLO para el doble cobro y el reembolso `FAILED`; el resto va agregado) · BLOQUEA
+
+### 10-corte/U3.md
+
+- (sin hallazgos)
+
+### 10-corte/V1.md
+
+- 10-corte/V1.md:274 · «Partner, ítem 1: trial en cero días y "no se enciende en esta versión (V/11 §8, desarrollado en V4)"» · más débil que .specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/10-verticales-planes-billing-options.md:40 (la fuente vigente, residuo corregido el 2026-10-02: «el panel rechaza pasarlo de 0 a más de 0»; la spec no nombra la validación del panel que lo impide) · MENOR
+- 10-corte/V1.md:154 · «cada clave declara su scope, su estrategia de agregación y su clase» (AC:V1:2; también TEST:V1:2, l.378) · más débil que .specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/15-entitlements-y-limits.md:570 (cada clave lleva CUATRO atributos declarados: scope, estrategia de agregación, `enforcementStrategy` y clase; la spec omite `enforcementStrategy`, que el catálogo de `V1` tiene que declarar) · MENOR
+
+### 10-corte/V2.md
+
+- 10-corte/V2.md:242 · «AC:V2:11: una versión recién publicada no se puede retirar (ni deshacer su publicación) en sus primeras 24 horas; el panel lo rechaza con el mensaje "una versión recién publicada no se retira antes de 24 horas"» (también su cobertura en l.587 y TEST:V2:9, l.649) · sin soporte (ni ACC:18 / nucleo/08:208, ni DEC-ARCH-001, ni NUCLEO/02 §1.4, ni ninguna otra fuente fijan un plazo de 24 h para retirar una versión de plan) · BLOQUEA
+- 10-corte/V2.md:226 · «si la carga del catálogo falla a la mitad, falla la migración entera y no queda un catálogo a medias» (y TEST:V2:12, l.667: «no deja filas del catálogo») · más fuerte que .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:7301 (DEC-ARCH-013#📌2 sólo dice «si falla a la mitad, el corte entra en la rama de aborto», que restaura el backup del 2b; no fija atomicidad de la migración) · MENOR
+- 10-corte/V2.md:237 · «sobre una base sin catálogo, el seed de demostración carga el suyo» (y TEST:V2:13, l.675) · más fuerte que .specs/HOS-1352-billing-verticals-redesign/docs/nucleo/02-modelo-de-datos.md:143 (la fuente sólo dice que el seed «no carga catálogo en una base que ya tiene uno» y «deja el que encuentra»; no manda cargar uno propio) · MENOR
+
+### 10-corte/V3.md
+
+- 10-corte/V3.md:703 · «no se cachea el conjunto de un `user` con una marca `requiere_conciliación` abierta: mientras la marca siga abierta su resolución se lee siempre en vivo (`V/02` §3.3)» · sin soporte (V/02 §3.3, .specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/02-modelo-de-datos.md:730, sólo dice que el caché nunca decide sobre plata; ninguna fuente excluye del caché a quien tiene una marca); además choca con .specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/02-modelo-de-datos.md:660 («ni el estado de una suscripción») y con la frontera del contrato: la marca es de billing y no cruza a verticales · BLOQUEA
+
+### 10-corte/V4.md
+
+- 10-corte/V4.md:427 · «quien ya consumió el trial en una vertical no arranca otro en ninguna: el seudónimo del correo se compara contra las filas de `trial` de TODAS las verticales, no sólo de la propia (DEC-TRIAL-004)» · contradice .specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/03-maquinas-de-estado.md:52 (las guardas de `T1`, `T6` y `T8` piden que no haya fila con el mismo hash «en esa vertical») y .specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/02-modelo-de-datos.md:406 (`UNIQUE(hash_del_correo_normalizado, vertical)`; el trial es uno por `user + vertical`, §10.1); DEC-TRIAL-004 no dice nada de cruzar verticales, y la misma spec lo contradice en l.251, 813 y 871 · BLOQUEA
+
+## Resumen
+
+Recorrido completo, línea por línea, de cada archivo de la zona. Cada bloque anclado (PIEZA, FILA, LISTA, US, AC, TEST) y cada regla, tabla y sección operativa (modelo de datos, API, cron, env, auditoría, seguridad, dependencias, labels, abiertos) se contrastó contra su `Origen:` y, para los AC/TEST, contra los ítems de su `Fuente:` (DEC y 📌 en `01-decisiones-vigentes.md`, INV/ACC/PLAZO en `02-nucleo.md`, GUARD/VAL en `04-catalogos.md`, GATE en `30-el-corte.md`) y la línea fuente que éstos citan; lo no hallado en el `Origen` se buscó en todo el corpus de `fuentes/` (incluido el directorio oculto `.specs`).
+
+| archivo | líneas recorridas | afirmaciones normativas revisadas (aprox.) | hallazgos | BLOQUEA | MENOR |
+|---|---|---|---|---|---|
+| 10-corte/U1.md | 1–841 | ~95 (43 ítems anclados + 4 puntos de la fila con sus 11 sub-ítems, LISTA, reglas, modelo de datos, «lo que no se migra», secciones operativas) | 3 | 1 | 2 |
+| 10-corte/U2.md | 1–493 | ~60 (30 anclados + reglas, modelo, cron, seguridad) | 1 | 1 | 0 |
+| 10-corte/U3.md | 1–475 | ~55 (29 anclados + reglas, env, auditoría, dependencias, abiertos) | 0 | 0 | 0 |
+| 10-corte/V1.md | 1–515 | ~60 (28 anclados + tabla Eje 2 de 8×5, reglas, modelo) | 2 | 0 | 2 |
+| 10-corte/V2.md | 1–727 | ~85 (31 anclados + tabla de lectura del catálogo, entidades, planes no vendibles, G-R3) | 3 | 1 | 2 |
+| 10-corte/V3.md | 1–917 | ~100 (30 anclados + agregación, conjunto plegable, scope, clase, guest, suspensión, cuota, caché) | 1 | 1 | 0 |
+| 10-corte/V4.md | 1–1200 | ~130 (46 anclados + reglas, V/11 §1–§9, G-R6, modelo `trial`/seudónimo, secciones operativas) | 1 | 1 | 0 |
+| **total** | 5168 líneas | **~585** | **11** | **5** | **6** |
+
+Por categoría:
+
+| categoría | cantidad | dónde |
+|---|---|---|
+| sin soporte | 2 | V2:242 (24 h para retirar una versión, BLOQUEA), V3:703 (no cachear con marca `requiere_conciliación`, BLOQUEA) |
+| contradice | 2 | U1:477 (`starts_at`/`ends_at` «hasta la unidad de socios», BLOQUEA), V4:427 (seudónimo contra todas las verticales, BLOQUEA) |
+| más fuerte que | 3 | U2:253 (escalado con correo propio inmediato a `SUPER_ADMIN`, BLOQUEA), V2:226 (atomicidad de la carga del catálogo, MENOR), V2:237 (el seed carga su catálogo, MENOR) |
+| más débil que | 4 | U1:816 y U1:824 (labels «no los fija la fuente», MENOR), V1:274 (Partner «no se enciende» sin la validación del panel, MENOR), V1:154 (omite `enforcementStrategy`, MENOR) |
+
+Clases: **BLOQUEA 5** (U1:477, U2:253, V2:242, V3:703, V4:427) · **MENOR 6**.
+
+Notas de método: los textos tachados y las partes «sin efecto» por adjudicación se trataron como muertos; las cifras de guards/unidades/dependencias superadas (33/34/35, once/doce) se verificaron contra su último 📌. No se marcaron como hallazgo las derivaciones que la fuente misma marca como derivadas («lo derivé y lo marco») ni los detalles que BS deja al PR de la pieza cuando la spec lo dice así y la fuente no fija un default.

@@ -1,7 +1,14 @@
+// This suite uses the explicit test-only mock-actor headers. Match the
+// integration-test convention that keeps those headers available under CI.
+delete process.env.CI;
+
 import { PermissionEnum, RoleEnum } from '@repo/schemas';
-import { beforeAll, describe, expect, it } from 'vitest';
+import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it } from 'vitest';
 import { initApp } from '../../../src/app';
+import { clearCache } from '../../../src/middlewares/cache';
 import { validateApiEnv } from '../../../src/utils/env';
+import { createTestUser } from '../../e2e/setup/seed-helpers';
+import { testDb } from '../../e2e/setup/test-database';
 
 /**
  * Integration tests for protected sponsorship routes.
@@ -14,23 +21,37 @@ import { validateApiEnv } from '../../../src/utils/env';
  *   POST   /api/v1/protected/sponsorships
  *   PUT    /api/v1/protected/sponsorships/:id
  *   DELETE /api/v1/protected/sponsorships/:id
+ *
+ * The acting sponsor is a real user row (created in `beforeEach`) and the
+ * statuses are pinned to the error contract: auth 401, input shape 400,
+ * missing resource 404.
  */
 describe('Protected Sponsorship Routes', () => {
     let app: ReturnType<typeof initApp>;
 
     const base = '/api/v1/protected/sponsorships';
-    const nonExistentId = '123e4567-e89b-12d3-a456-426614174000';
+    // Valid UUID v4 that matches no seeded row.
+    const nonExistentId = '99999999-9999-4999-8999-999999999999';
+    const unauthenticatedHeaders = {
+        'content-type': 'application/json',
+        'user-agent': 'vitest'
+    };
 
     const sponsorActor = {
-        id: crypto.randomUUID(),
+        id: '',
         roles: [RoleEnum.SPONSOR],
         permissions: [
             PermissionEnum.ACCESS_API_PUBLIC,
             PermissionEnum.ACCESS_API_PRIVATE,
+            // Route gates (requiredPermissions) ...
             PermissionEnum.SPONSORSHIP_VIEW,
             PermissionEnum.SPONSORSHIP_CREATE,
             PermissionEnum.SPONSORSHIP_UPDATE,
-            PermissionEnum.SPONSORSHIP_DELETE
+            PermissionEnum.SPONSORSHIP_DELETE,
+            // ... plus the ownership-scoped grants the service checks afterwards
+            PermissionEnum.SPONSORSHIP_VIEW_OWN,
+            PermissionEnum.SPONSORSHIP_UPDATE_OWN,
+            PermissionEnum.SPONSORSHIP_SOFT_DELETE_OWN
         ]
     };
 
@@ -51,65 +72,106 @@ describe('Protected Sponsorship Routes', () => {
         };
     }
 
-    beforeAll(() => {
+    afterAll(async () => {
+        await testDb.teardown();
+    });
+
+    afterEach(async () => {
+        await testDb.clean();
+        clearCache();
+    });
+
+    beforeAll(async () => {
+        await testDb.setup();
+        await testDb.clean();
+        clearCache();
         validateApiEnv();
         process.env.HOSPEDA_ALLOW_MOCK_ACTOR = 'true';
         app = initApp();
     });
 
+    beforeEach(async () => {
+        const user = await createTestUser({
+            email: `sponsorship-protected-${crypto.randomUUID()}@example.test`,
+            slug: `sponsorship-protected-${crypto.randomUUID()}`
+        });
+        sponsorActor.id = user.id;
+    });
+
     // ─── GET / ──────────────────────────────────────────────────────────────────
 
     describe('GET /protected/sponsorships', () => {
-        it('returns paginated list for authenticated user', async () => {
+        it('returns an empty paginated list for an authenticated sponsor without sponsorships', async () => {
             const res = await app.request(`${base}?page=1&pageSize=10`, {
                 headers: makeHeaders(sponsorActor)
             });
-            expect([200, 400, 401, 402, 403]).toContain(res.status);
+            expect(res.status).toBe(200);
+            const body = await res.json();
+            expect(body.data.items).toEqual([]);
+            expect(body.data.pagination).toMatchObject({ page: 1, pageSize: 10, total: 0 });
+        });
+
+        it('returns 403 when the actor lacks the view permissions', async () => {
+            const res = await app.request(base, {
+                headers: makeHeaders({
+                    ...sponsorActor,
+                    permissions: [
+                        PermissionEnum.ACCESS_API_PUBLIC,
+                        PermissionEnum.ACCESS_API_PRIVATE
+                    ]
+                })
+            });
+            expect(res.status).toBe(403);
         });
 
         it('returns 401 when no auth headers provided', async () => {
-            const res = await app.request(base);
-            expect([401, 403]).toContain(res.status);
+            const res = await app.request(base, { headers: { 'user-agent': 'vitest' } });
+            expect(res.status).toBe(401);
         });
     });
 
     // ─── GET /:id ────────────────────────────────────────────────────────────────
 
     describe('GET /protected/sponsorships/:id', () => {
-        it('returns 200 or 404 for valid UUID', async () => {
+        it('returns 404 for a valid UUID that matches no sponsorship', async () => {
             const res = await app.request(`${base}/${nonExistentId}`, {
                 headers: makeHeaders(sponsorActor)
             });
-            expect([200, 400, 401, 402, 403, 404]).toContain(res.status);
+            expect(res.status).toBe(404);
+            const body = await res.json();
+            expect(body.error.code).toBe('NOT_FOUND');
         });
 
         it('returns 400 for invalid UUID format', async () => {
             const res = await app.request(`${base}/not-a-uuid`, {
                 headers: makeHeaders(sponsorActor)
             });
-            expect([400, 404, 422]).toContain(res.status);
+            expect(res.status).toBe(400);
+            const body = await res.json();
+            expect(body.error.code).toBe('VALIDATION_ERROR');
         });
     });
 
     // ─── GET /:id/analytics ──────────────────────────────────────────────────────
 
     describe('GET /protected/sponsorships/:id/analytics', () => {
-        it('returns 200 or 404 for valid UUID', async () => {
+        it('returns 404 for a valid UUID that matches no sponsorship', async () => {
             const res = await app.request(`${base}/${nonExistentId}/analytics`, {
                 headers: makeHeaders(sponsorActor)
             });
-            expect([200, 400, 401, 402, 403, 404]).toContain(res.status);
+            expect(res.status).toBe(404);
         });
     });
 
     // ─── POST / ──────────────────────────────────────────────────────────────────
 
     describe('POST /protected/sponsorships', () => {
-        it('returns 201 or validation error for valid payload shape', async () => {
+        it('returns 400 when the referenced sponsorship level does not exist', async () => {
             const payload = {
+                sponsorUserId: sponsorActor.id,
                 targetType: 'event',
-                targetId: '00000000-0000-0000-0000-000000000001',
-                levelId: '00000000-0000-0000-0000-000000000002',
+                targetId: nonExistentId,
+                levelId: nonExistentId,
                 startsAt: new Date().toISOString(),
                 endsAt: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
                 logoUrl: 'https://example.com/logo.png',
@@ -121,38 +183,42 @@ describe('Protected Sponsorship Routes', () => {
                 headers: makeHeaders(sponsorActor),
                 body: JSON.stringify(payload)
             });
-            expect([200, 201, 400, 401, 402, 403, 404, 422]).toContain(res.status);
+            expect(res.status).toBe(400);
+            const body = await res.json();
+            expect(body.error.message).toContain('does not exist');
         });
 
-        it('returns 400 or 422 for empty body', async () => {
+        it('returns 400 for an empty body', async () => {
             const res = await app.request(base, {
                 method: 'POST',
                 headers: makeHeaders(sponsorActor),
                 body: JSON.stringify({})
             });
-            expect([400, 401, 402, 403, 422]).toContain(res.status);
+            expect(res.status).toBe(400);
+            const body = await res.json();
+            expect(body.error.code).toBe('VALIDATION_ERROR');
         });
 
         it('returns 401 when unauthenticated', async () => {
             const res = await app.request(base, {
                 method: 'POST',
-                headers: { 'content-type': 'application/json' },
+                headers: unauthenticatedHeaders,
                 body: JSON.stringify({ targetType: 'event' })
             });
-            expect([401, 403]).toContain(res.status);
+            expect(res.status).toBe(401);
         });
     });
 
     // ─── PUT /:id ────────────────────────────────────────────────────────────────
 
     describe('PUT /protected/sponsorships/:id', () => {
-        it('returns update response or 404 for non-existent resource', async () => {
+        it('returns 404 for a non-existent resource', async () => {
             const res = await app.request(`${base}/${nonExistentId}`, {
                 method: 'PUT',
                 headers: makeHeaders(sponsorActor),
                 body: JSON.stringify({ linkUrl: 'https://updated.example.com' })
             });
-            expect([200, 400, 401, 402, 403, 404, 422]).toContain(res.status);
+            expect(res.status).toBe(404);
         });
 
         it('returns 400 for invalid UUID in path', async () => {
@@ -161,26 +227,27 @@ describe('Protected Sponsorship Routes', () => {
                 headers: makeHeaders(sponsorActor),
                 body: JSON.stringify({ linkUrl: 'https://example.com' })
             });
-            expect([400, 404, 422]).toContain(res.status);
+            expect(res.status).toBe(400);
         });
     });
 
     // ─── DELETE /:id ─────────────────────────────────────────────────────────────
 
     describe('DELETE /protected/sponsorships/:id', () => {
-        it('returns success or 404 for non-existent resource', async () => {
+        it('returns 404 for a non-existent resource', async () => {
             const res = await app.request(`${base}/${nonExistentId}`, {
                 method: 'DELETE',
                 headers: makeHeaders(sponsorActor)
             });
-            expect([200, 204, 400, 401, 402, 403, 404]).toContain(res.status);
+            expect(res.status).toBe(404);
         });
 
         it('returns 401 when unauthenticated', async () => {
             const res = await app.request(`${base}/${nonExistentId}`, {
-                method: 'DELETE'
+                method: 'DELETE',
+                headers: { 'user-agent': 'vitest' }
             });
-            expect([401, 403]).toContain(res.status);
+            expect(res.status).toBe(401);
         });
     });
 });

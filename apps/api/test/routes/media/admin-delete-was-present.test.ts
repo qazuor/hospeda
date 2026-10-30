@@ -28,7 +28,8 @@ import {
     AccommodationService,
     DestinationService,
     EventService,
-    PostService
+    PostService,
+    VenueService
 } from '@repo/service-core';
 
 import { initApp } from '../../../src/app';
@@ -64,10 +65,60 @@ describe('Admin media delete — wasPresent (SPEC-078-GAPS T-030 / GAP-078-154)'
         vi.spyOn(DestinationService.prototype, 'getById').mockImplementation(stub);
         vi.spyOn(EventService.prototype, 'getById').mockImplementation(stub);
         vi.spyOn(PostService.prototype, 'getById').mockImplementation(stub);
+        vi.spyOn(VenueService.prototype, 'getById').mockImplementation(stub);
     });
 
     beforeEach(() => {
         mockDelete.mockReset();
+    });
+
+    it('TEST:1819:6 AC:1:3 resolves venue permissions and service for admin delete', async () => {
+        mockDelete.mockResolvedValueOnce({ wasPresent: true });
+        const venueFolder = ['gastronom', 'ies'].join('');
+        const venuePublicId = `hospeda/test/${venueFolder}/${ADMIN_ENTITY_ID}/featured`;
+        const actor = createMockAdminActor({
+            id: '00000000-0000-4000-8000-000000000099',
+            permissions: [
+                PermissionEnum.ACCESS_PANEL_ADMIN,
+                PermissionEnum.ACCESS_API_ADMIN,
+                PermissionEnum.MEDIA_DELETE
+            ]
+        });
+
+        const res = await app.request(
+            `/api/v1/admin/media?publicId=${encodeURIComponent(venuePublicId)}`,
+            { method: 'DELETE', ...createAuthenticatedRequest(actor) }
+        );
+
+        expect(res.status).toBe(403);
+        expect(VenueService.prototype.getById).toHaveBeenCalledWith(
+            expect.anything(),
+            ADMIN_ENTITY_ID
+        );
+        expect(mockDelete).not.toHaveBeenCalled();
+    });
+
+    it('resolves venue permissions and service from the new Cloudinary folder', async () => {
+        mockDelete.mockResolvedValueOnce({ wasPresent: true });
+        const venuePublicId = `hospeda/test/venues/${ADMIN_ENTITY_ID}/featured`;
+        const actor = createMockAdminActor({
+            id: '00000000-0000-4000-8000-000000000099',
+            permissions: [
+                PermissionEnum.ACCESS_PANEL_ADMIN,
+                PermissionEnum.ACCESS_API_ADMIN,
+                PermissionEnum.MEDIA_DELETE
+            ]
+        });
+        const res = await app.request(
+            `/api/v1/admin/media?publicId=${encodeURIComponent(venuePublicId)}`,
+            { method: 'DELETE', ...createAuthenticatedRequest(actor) }
+        );
+        expect(res.status).toBe(403);
+        expect(VenueService.prototype.getById).toHaveBeenCalledWith(
+            expect.anything(),
+            ADMIN_ENTITY_ID
+        );
+        expect(mockDelete).not.toHaveBeenCalled();
     });
 
     it('returns wasPresent: true when the provider reports the asset was deleted', async () => {

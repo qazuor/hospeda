@@ -54,7 +54,6 @@ export const publicGetDestinationByPathRoute = createPublicRoute({
         return { ...destination, faqs: faqsResult.data?.faqs ?? [] };
     },
     options: {
-        cacheTTL: 300,
         customRateLimit: { requests: 100, windowMs: 60000 }
     }
 });

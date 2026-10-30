@@ -1,0 +1,2883 @@
+--- .specs/HOS-1352-billing-verticals-redesign/spec-consolidada/01-decisiones-vigentes.md	2026-10-03 02:24:51.809875010 -0300
++++ /tmp/hos1352-p9-g/sandbox/.specs/HOS-1352-billing-verticals-redesign/spec-consolidada/01-decisiones-vigentes.md	2026-10-03 13:14:05.476924673 -0300
+@@ -33,7 +33,6 @@
+ ## Área TRIAL
+ 
+ <a id="dec-trial-001"></a>
+-
+ ### DEC-TRIAL-001 — Los overrides del Trial Plan se declaran en DB, por vertical
+ 
+ Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:257
+@@ -71,7 +70,6 @@
+ - **Origen**: `C-TRIAL-01` (BLOCKING).
+ 
+ <a id="dec-trial-002"></a>
+-
+ ### DEC-TRIAL-002 — Derivación con trinquete: en vivo, pero nunca empeora
+ 
+ Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:287
+@@ -112,7 +110,6 @@
+ - **Origen**: `BD-TRIAL-01` (BLOCKING).
+ 
+ <a id="dec-trial-003"></a>
+-
+ ### DEC-TRIAL-003 — El trial es configurable por plan; Partner lo tiene en cero
+ 
+ Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:361
+@@ -153,7 +150,6 @@
+ - → ver [📌1](#dec-trial-003-p1).
+ 
+ <a id="dec-trial-003-p1"></a>
+-
+ #### 📌1 de DEC-TRIAL-003
+ 
+ Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:392
+@@ -167,7 +163,6 @@
+ Partner queda en cero.
+ 
+ <a id="dec-trial-004"></a>
+-
+ ### DEC-TRIAL-004 — Identidad: el email normalizado bloquea; el resto observa
+ 
+ Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:435
+@@ -210,7 +205,6 @@
+ - → ver [📌3](#dec-trial-004-p3).
+ 
+ <a id="dec-trial-004-p1"></a>
+-
+ #### 📌1 de DEC-TRIAL-004
+ 
+ Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:467
+@@ -226,7 +220,6 @@
+ se declara.
+ 
+ <a id="dec-trial-004-p2"></a>
+-
+ #### 📌2 de DEC-TRIAL-004
+ 
+ Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:473
+@@ -243,7 +236,6 @@
+ dominios sólo cuenta dominios: no exporta ni guarda casillas.
+ 
+ <a id="dec-trial-004-p3"></a>
+-
+ #### 📌3 de DEC-TRIAL-004
+ 
+ Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:480
+@@ -256,7 +248,6 @@
+ el seudónimo (seguimiento HOS-1394).
+ 
+ <a id="dec-trial-005"></a>
+-
+ ### DEC-TRIAL-005 — La publicación es inmediata: publicar es quedar visible
+ 
+ Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:484
+@@ -291,7 +282,6 @@
+ - **Origen**: `A-TRIAL-01`.
+ 
+ <a id="dec-trial-006"></a>
+-
+ ### DEC-TRIAL-006 — El disparador del trial se declara por vertical; Turista usa "Empezar"
+ 
+ Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:511
+@@ -333,7 +323,6 @@
+ - → ver [📌1](#dec-trial-006-p1).
+ 
+ <a id="dec-trial-006-p1"></a>
+-
+ #### 📌1 de DEC-TRIAL-006
+ 
+ Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:543
+@@ -347,7 +336,6 @@
+ Partner queda en cero.
+ 
+ <a id="dec-trial-007"></a>
+-
+ ### DEC-TRIAL-007 — Pre-trial: borradores ilimitados, sin capacidades, archivado por inactividad
+ 
+ Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:548
+@@ -381,7 +369,6 @@
+ - → ver [📌1](#dec-trial-007-p1).
+ 
+ <a id="dec-trial-007-p1"></a>
+-
+ #### 📌1 de DEC-TRIAL-007
+ 
+ Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:572
+@@ -393,7 +380,6 @@
+ 3 de `NUCLEO/02` §1.5, validado contra el plazo de borrado (`DEC-DATA-008`).
+ 
+ <a id="dec-trial-008"></a>
+-
+ ### DEC-TRIAL-008 — Quien tiene una suscripción que NO cubre recibe su trial: la frontera no transporta un segundo hecho
+ 
+ Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:3594
+@@ -438,7 +424,6 @@
+ - → ver [📌1](#dec-trial-008-p1).
+ 
+ <a id="dec-trial-008-p1"></a>
+-
+ #### 📌1 de DEC-TRIAL-008
+ 
+ Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:3630
+@@ -453,7 +438,6 @@
+ queda intacto.
+ 
+ <a id="dec-trial-009"></a>
+-
+ ### DEC-TRIAL-009 — Revocar un grant NO devuelve el trial: se declara en la confirmación y no se repara
+ 
+ Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:3704
+@@ -504,7 +488,6 @@
+   las tres opciones que se le presentaron — eligió la 3 por encima de la 2, que era la recomendada.
+ 
+ <a id="dec-trial-010"></a>
+-
+ ### DEC-TRIAL-010 — El trial se convierte con el primer pago acreditado, y suscribirse termina el trial
+ 
+ Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:6196
+@@ -534,7 +517,6 @@
+ - → ver [📌1](#dec-trial-010-p1).
+ 
+ <a id="dec-trial-010-p1"></a>
+-
+ #### 📌1 de DEC-TRIAL-010
+ 
+ Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:6217
+@@ -545,7 +527,6 @@
+ 
+ **📌 Precisado el 2026-09-25, con OK del owner (FASE 9 completa, decisiones 6c y 2g de
+ `26-fase-9-completa/10`; `07-…` `R12-OWNER-1` y `C-R12-1`).**
+-
+ 1. **`T6` exige un título que convierte**, el mismo término de `T2`. *Juan* se suscribía, publicaba a
+    los diez minutos cubierto por una suscripción con `cobrada: no`, y `T6` le escribía la fila de
+    trial consumida; si el primer cobro se rechazaba, perdía un trial que nunca usó. Es la otra
+@@ -570,7 +551,6 @@
+ Retiradas de esta área (en `90-retirados.md`): [DEC-SUB-001](90-retirados.md#dec-sub-001), [DEC-SUB-003](90-retirados.md#dec-sub-003), [DEC-SUB-005](90-retirados.md#dec-sub-005), [DEC-SUB-015](90-retirados.md#dec-sub-015), [DEC-SUB-018](90-retirados.md#dec-sub-018).
+ 
+ <a id="dec-sub-002"></a>
+-
+ ### DEC-SUB-002 — Grace configurable en DB por plan, default 10 días
+ 
+ Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:702
+@@ -603,7 +583,6 @@
+ - → ver [📌1](#dec-sub-002-p1).
+ 
+ <a id="dec-sub-002-p1"></a>
+-
+ #### 📌1 de DEC-SUB-002
+ 
+ Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:725
+@@ -617,7 +596,6 @@
+ ciclo más corto que ofrece (`DEC-ARCH-013`).
+ 
+ <a id="dec-sub-004"></a>
+-
+ ### DEC-SUB-004 — La ventana de límites de pausa se cuenta por user + vertical
+ 
+ Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:757
+@@ -648,7 +626,6 @@
+ - **Origen**: `OD-SUB-01`.
+ 
+ <a id="dec-sub-006"></a>
+-
+ ### DEC-SUB-006 — El cambio de ciclo se re-autoriza en el checkout, y se compensa por valor
+ 
+ Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:1091
+@@ -725,7 +702,6 @@
+ - → ver [📌1](#dec-sub-006-p1).
+ 
+ <a id="dec-sub-006-p1"></a>
+-
+ #### 📌1 de DEC-SUB-006
+ 
+ Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:1159
+@@ -743,7 +719,6 @@
+ días a un moroso que vuelve.
+ 
+ <a id="dec-sub-007"></a>
+-
+ ### DEC-SUB-007 — El upgrade se ejecuta con el mismo mecanismo que el cambio de ciclo
+ 
+ Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:1167
+@@ -818,7 +793,6 @@
+ - → ver [📌1](#dec-sub-007-p1).
+ 
+ <a id="dec-sub-007-p1"></a>
+-
+ #### 📌1 de DEC-SUB-007
+ 
+ Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:1237
+@@ -831,7 +805,6 @@
+ capacidades en la renovación.
+ 
+ <a id="dec-sub-008"></a>
+-
+ ### DEC-SUB-008 — El downgrade muta el monto ya, baja los entitlements al fin del ciclo, y el excedente se avisa antes de tocarlo
+ 
+ Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:1241
+@@ -895,7 +868,6 @@
+ - → ver [📌2](#dec-sub-008-p2).
+ 
+ <a id="dec-sub-008-p1"></a>
+-
+ #### 📌1 de DEC-SUB-008
+ 
+ Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:1294
+@@ -908,7 +880,6 @@
+ capacidades en la renovación.
+ 
+ <a id="dec-sub-008-p2"></a>
+-
+ #### 📌2 de DEC-SUB-008
+ 
+ Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:1297
+@@ -928,7 +899,6 @@
+ sin cola.
+ 
+ <a id="dec-sub-009"></a>
+-
+ ### DEC-SUB-009 — La baja a fin de período cancela YA y sostiene el servicio de nuestro lado
+ 
+ Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:1308
+@@ -988,7 +958,6 @@
+ - → ver [📌4](#dec-sub-009-p4).
+ 
+ <a id="dec-sub-009-p1"></a>
+-
+ #### 📌1 de DEC-SUB-009
+ 
+ Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:1356
+@@ -1001,7 +970,6 @@
+ El fin en el acto queda sólo para la fila sin `covered_period` y sin crédito.
+ 
+ <a id="dec-sub-009-p2"></a>
+-
+ #### 📌2 de DEC-SUB-009
+ 
+ Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:1359
+@@ -1014,7 +982,6 @@
+ con fin en el fin del crédito, con la regla de `S11` entera, complementos incluidos.
+ 
+ <a id="dec-sub-009-p3"></a>
+-
+ #### 📌3 de DEC-SUB-009
+ 
+ Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:1362
+@@ -1028,7 +995,6 @@
+ mora o como baja del proveedor. `B/12`, lo que no cierra.
+ 
+ <a id="dec-sub-009-p4"></a>
+-
+ #### 📌4 de DEC-SUB-009
+ 
+ Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:1366
+@@ -1046,7 +1012,6 @@
+ resultados según dónde se dio.
+ 
+ <a id="dec-sub-010"></a>
+-
+ ### DEC-SUB-010 — La pausa es la del proveedor, empieza ya, dura meses enteros, y el que vuelve antes paga el ciclo siguiente completo
+ 
+ Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:1891
+@@ -1127,7 +1092,6 @@
+ - **Origen**: punto 10 del contraste PDR ↔ proveedor · §26.2 · §26.4 · `BD-MP-01`.
+ 
+ <a id="dec-sub-010-p1"></a>
+-
+ #### 📌1 de DEC-SUB-010
+ 
+ Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:1938
+@@ -1149,7 +1113,6 @@
+ aritmética del daño; pausar tres meses y volver el segundo día de un ciclo regala 29 días.)*
+ 
+ <a id="dec-sub-011"></a>
+-
+ ### DEC-SUB-011 — El invariante 8 del §64 cuenta COMPROMISOS, no FILAS
+ 
+ Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:3009
+@@ -1186,7 +1149,6 @@
+ - **Origen**: `15-fase-9/07-decisiones-del-owner.md` `D-13`, sobre el racimo `R1`.
+ 
+ <a id="dec-sub-012"></a>
+-
+ ### DEC-SUB-012 — El que paga después de que lo dimos por perdido se reabre, y el tope no es un plazo: es la condición que ya existía
+ 
+ Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:3940
+@@ -1255,7 +1217,6 @@
+   — eligió la 1, que era la recomendada.
+ 
+ <a id="dec-sub-013"></a>
+-
+ ### DEC-SUB-013 — La cuota del pagador manual la abre un reloj, y no se abre mientras está suspendido
+ 
+ Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:4058
+@@ -1330,7 +1291,6 @@
+ - → ver [📌2](#dec-sub-013-p2).
+ 
+ <a id="dec-sub-013-p1"></a>
+-
+ #### 📌1 de DEC-SUB-013
+ 
+ Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:4126
+@@ -1351,7 +1311,6 @@
+ > **Parte sin efecto** (adjudicación `PARCIAL`): `S26` y `S28` entre las diez salidas (C8). Lo supera: `.specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:4135` («`S25` a `S28` salieron»). Lo omitido del texto de arriba está marcado «[…]».
+ 
+ <a id="dec-sub-013-p2"></a>
+-
+ #### 📌2 de DEC-SUB-013
+ 
+ Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:4135
+@@ -1362,7 +1321,6 @@
+ con la revisión del owner (C8).
+ 
+ <a id="dec-sub-014"></a>
+-
+ ### DEC-SUB-014 — La baja desde `GRACE_PERIOD` corta el servicio en el acto
+ 
+ Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:4304
+@@ -1405,7 +1363,6 @@
+   opciones que se le presentaron — eligió la 1, que era la recomendada.
+ 
+ <a id="dec-sub-016"></a>
+-
+ ### DEC-SUB-016 — La primera cuota de un pagador manual tiene ventana propia: SIETE días corridos, no las 72 h del checkout
+ 
+ Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:5083
+@@ -1449,7 +1406,6 @@
+ - → ver [📌1](#dec-sub-016-p1).
+ 
+ <a id="dec-sub-016-p1"></a>
+-
+ #### 📌1 de DEC-SUB-016
+ 
+ Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:5118
+@@ -1462,7 +1418,6 @@
+ y los siete días con pago manual son el valor inicial del plazo 10 de `NUCLEO/02` §1.5.
+ 
+ <a id="dec-sub-017"></a>
+-
+ ### DEC-SUB-017 — El crédito corto del pagador manual SÍ se corrige, porque su fecha es una columna nuestra
+ 
+ Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:5319
+@@ -1496,7 +1451,6 @@
+ - → ver [📌1](#dec-sub-017-p1).
+ 
+ <a id="dec-sub-017-p1"></a>
+-
+ #### 📌1 de DEC-SUB-017
+ 
+ Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:5344
+@@ -1510,7 +1464,6 @@
+ además se devolvía.
+ 
+ <a id="dec-sub-019"></a>
+-
+ ### DEC-SUB-019 — Al vencer el grace se cancela el preapproval: la suspensión corta el cobro, no sólo el servicio
+ 
+ Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:5810
+@@ -1572,7 +1525,6 @@
+ > **Parte sin efecto** (adjudicación `PARCIAL`): «La pausa con motivo `PROVIDER_DUNNING` de `DEC-MP-003` **no se borra**»: sí se borra, y el espejo la lee como `S6` (`DEC-MP-008`). Lo supera: `.specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:5813` («`PROVIDER_DUNNING` que acá *«no se borra»* sí se borra, y el espejo la lee como `S6`»); `.specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:5839` («`PROVIDER_DUNNING` de `DEC-MP-003` **no se borra**»). Lo omitido del texto de arriba está marcado «[…]».
+ 
+ <a id="dec-sub-019-p1"></a>
+-
+ #### 📌1 de DEC-SUB-019
+ 
+ Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:5860
+@@ -1588,7 +1540,6 @@
+ tardío; lo que cambia es el tamaño del daño que cuenta el ejemplo.
+ 
+ <a id="dec-sub-019-p2"></a>
+-
+ #### 📌2 de DEC-SUB-019
+ 
+ Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:5867
+@@ -1606,7 +1557,6 @@
+ corta en el acto y se siguen viendo hasta la misma fecha.
+ 
+ <a id="dec-sub-019-p3"></a>
+-
+ #### 📌3 de DEC-SUB-019
+ 
+ Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:5875
+@@ -1619,7 +1569,6 @@
+ cancelación no la resuelve: la levanta una persona después de ver que el complemento ya no cobra.
+ 
+ <a id="dec-sub-020"></a>
+-
+ ### DEC-SUB-020 — Un contracargo suspende en el acto, sin grace, y lo sigue una persona
+ 
+ Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:5947
+@@ -1661,7 +1610,6 @@
+ - → ver [📌1](#dec-sub-020-p1).
+ 
+ <a id="dec-sub-020-p1"></a>
+-
+ #### 📌1 de DEC-SUB-020
+ 
+ Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:5979
+@@ -1678,7 +1626,6 @@
+ resuelve, suspendimos el servicio»*—, no el de mora, que le diría que no pagó.
+ 
+ <a id="dec-sub-021"></a>
+-
+ ### DEC-SUB-021 — En grace no se cambia de plan: primero se regulariza, y el camino de la tarjeta es cambiarla
+ 
+ Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:5989
+@@ -1723,7 +1670,6 @@
+ - → ver [📌2](#dec-sub-021-p2).
+ 
+ <a id="dec-sub-021-p1"></a>
+-
+ #### 📌1 de DEC-SUB-021
+ 
+ Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:6024
+@@ -1734,7 +1680,6 @@
+ 
+ **📌 Precisado el 2026-09-25, con OK del owner (FASE 9 completa, decisiones 3a y 3b de
+ `26-fase-9-completa/10`; `01-…` §3.5 pendiente 1, §2.5 pendiente 2 y contradicción `C3`).**
+-
+ 1. […] `GR-3`
+    mide la ventana sobre sujetos de 1 y 2 días —cuántos reintentos caen dentro del grace de un plan
+    mensual es extrapolación—. […]
+@@ -1753,7 +1698,6 @@
+ > **Parte sin efecto** (adjudicación `PARCIAL`): la condición de su punto 1 (`GR-1` pasó a `VERIFIED`). Lo supera: `.specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:6045` («Levanta la condición del»). Lo omitido del texto de arriba está marcado «[…]».
+ 
+ <a id="dec-sub-021-p2"></a>
+-
+ #### 📌2 de DEC-SUB-021
+ 
+ Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:6044
+@@ -1773,7 +1717,6 @@
+ muestra**; y la extrapolación de `GR-3` a un plan mensual (punto 1) no la toca esta medición.
+ 
+ <a id="dec-sub-022"></a>
+-
+ ### DEC-SUB-022 — La sucesora de quien venía pagando entra en grace si falla su primer cobro, y el barrido corta ese grace si el proveedor ya se rindió
+ 
+ Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:6368
+@@ -1825,7 +1768,6 @@
+ - → ver [📌1](#dec-sub-022-p1).
+ 
+ <a id="dec-sub-022-p1"></a>
+-
+ #### 📌1 de DEC-SUB-022
+ 
+ Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:6411
+@@ -1843,7 +1785,6 @@
+ La entrada no se edita en su contenido.
+ 
+ <a id="dec-sub-023"></a>
+-
+ ### DEC-SUB-023 — Migrar a los clientes de un plan retirado es un tercer camino, aparte del upgrade y del downgrade
+ 
+ Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:7122
+@@ -1880,7 +1821,6 @@
+ - → ver [📌2](#dec-sub-023-p2).
+ 
+ <a id="dec-sub-023-p1"></a>
+-
+ #### 📌1 de DEC-SUB-023
+ 
+ Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:7148
+@@ -1905,7 +1845,6 @@
+ cambiado de versión.
+ 
+ <a id="dec-sub-023-p2"></a>
+-
+ #### 📌2 de DEC-SUB-023
+ 
+ Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:7162
+@@ -1932,7 +1871,6 @@
+ ## Área MP
+ 
+ <a id="dec-mp-001"></a>
+-
+ ### DEC-MP-001 — Los cambios de precio sobre suscripciones vigentes se aplican mutando el monto
+ 
+ Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:1047
+@@ -1984,7 +1922,6 @@
+ - **Origen**: `BD-MP-03` (BLOCKING) + FASE 1C.
+ 
+ <a id="dec-mp-002"></a>
+-
+ ### DEC-MP-002 — El aumento rige ya para los nuevos, y alcanza a los existentes tras 60 días de aviso
+ 
+ Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:1375
+@@ -2081,7 +2018,6 @@
+ - → ver [📌5](#dec-mp-002-p5).
+ 
+ <a id="dec-mp-002-p1"></a>
+-
+ #### 📌1 de DEC-MP-002
+ 
+ Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:1457
+@@ -2098,7 +2034,6 @@
+ anunció (`DEC-DATA-008`).
+ 
+ <a id="dec-mp-002-p2"></a>
+-
+ #### 📌2 de DEC-MP-002
+ 
+ Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:1463
+@@ -2124,7 +2059,6 @@
+ BM.
+ 
+ <a id="dec-mp-002-p3"></a>
+-
+ #### 📌3 de DEC-MP-002
+ 
+ Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:1478
+@@ -2143,7 +2077,6 @@
+ `41-corte-del-mvp/10-decisiones-del-owner.md`, BZ.
+ 
+ <a id="dec-mp-002-p4"></a>
+-
+ #### 📌4 de DEC-MP-002
+ 
+ Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:1486
+@@ -2169,7 +2102,6 @@
+ CC.
+ 
+ <a id="dec-mp-002-p5"></a>
+-
+ #### 📌5 de DEC-MP-002
+ 
+ Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:1502
+@@ -2188,7 +2120,6 @@
+ `41-corte-del-mvp/10-decisiones-del-owner.md` se sincroniza con este reparto.
+ 
+ <a id="dec-mp-003"></a>
+-
+ ### DEC-MP-003 — La pausa que hace el proveedor por mora lleva motivo propio, y no entra como pausa del cliente
+ 
+ Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:4731
+@@ -2255,7 +2186,6 @@
+ > **Parte sin efecto** (adjudicación `PARCIAL`): el motivo `PROVIDER_DUNNING` (la decisión, *«un motivo nuevo de pausa»*, y lo que manda recorrer): la pausa del proveedor por mora se espeja con `S6` (`DEC-MP-008`); sobreviven el diagnóstico y que esa pausa no entra por `S8`. Lo supera: `.specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:4734` («el motivo `PROVIDER_DUNNING`, y la pausa del proveedor por mora se espeja con `S6`. Sobrevive el»); `.specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:4751` («- **Decisión**: **un motivo nuevo de pausa, `PROVIDER_DUNNING`.**»). Lo omitido del texto de arriba está marcado «[…]».
+ 
+ <a id="dec-mp-003-p1"></a>
+-
+ #### 📌1 de DEC-MP-003
+ 
+ Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:4785
+@@ -2272,7 +2202,6 @@
+ leer el bloque. **No hubo razón caducada que enmendar.**
+ 
+ <a id="dec-mp-004"></a>
+-
+ ### DEC-MP-004 — Lo que se le dice al cliente cuando el alta rebota sale del `status_detail`, no de un texto único
+ 
+ Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:4799
+@@ -2318,7 +2247,6 @@
+   recomendada.
+ 
+ <a id="dec-mp-005"></a>
+-
+ ### DEC-MP-005 — Seguimos con Mercado Pago, y lo que el proveedor no hace lo suple el diseño
+ 
+ Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:5520
+@@ -2388,7 +2316,6 @@
+   tercera fuente admitida por la regla 4.
+ 
+ <a id="dec-mp-006"></a>
+-
+ ### DEC-MP-006 — El reloj de cobro es del proveedor: el mandato es el modelo canónico, sin destino pendiente (2026-09-26)
+ 
+ Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:5655
+@@ -2454,7 +2381,6 @@
+   eligió la 1, que era la recomendada.
+ 
+ <a id="dec-mp-006-p1"></a>
+-
+ #### 📌1 de DEC-MP-006
+ 
+ Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:5682
+@@ -2474,7 +2400,6 @@
+ interfaz.
+ 
+ <a id="dec-mp-007"></a>
+-
+ ### DEC-MP-007 — No usamos los planes del proveedor: cada preapproval se crea suelto, desde nuestra versión de plan
+ 
+ Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:5772
+@@ -2517,7 +2442,6 @@
+ - **Origen**: el inventario de compensación del 2026-09-24 y la elección del owner del mismo día.
+ 
+ <a id="dec-mp-008"></a>
+-
+ ### DEC-MP-008 — Una pausa del proveedor por mora es el fin del grace: se espeja con `S6`, sin motivo de pausa nuevo
+ 
+ Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:5881
+@@ -2564,7 +2488,6 @@
+ - → ver [📌3](#dec-mp-008-p3).
+ 
+ <a id="dec-mp-008-p1"></a>
+-
+ #### 📌1 de DEC-MP-008
+ 
+ Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:5917
+@@ -2574,7 +2497,6 @@
+ 
+ **📌 Precisado el 2026-09-25, con OK del owner (FASE 9 completa, filas 9a y 9b de
+ `26-fase-9-completa/10`; `01-…` §1.5 bordes R1-a y R1-b; aplicado en `13` y `17`).**
+-
+ 1. **Corregido el primer borde** (9a): *«un webhook de cobro fallido que se perdió, y la fila sigue
+    `ACTIVE` cuando el proveedor pausa»* deja de ser un camino al `S6` de esta decisión. **Si la
+    lectura del barrido (`B/09` §4) da *«intentó y se rechazó»* sobre el período en curso de una
+@@ -2594,7 +2516,6 @@
+ La entrada no se edita en su contenido.
+ 
+ <a id="dec-mp-008-p2"></a>
+-
+ #### 📌2 de DEC-MP-008
+ 
+ Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:5936
+@@ -2609,7 +2530,6 @@
+ > **Parte sin efecto** (adjudicación `PARCIAL`): «Pendiente de medición» y «hasta medir,»: la pausa hecha por el pagador deja de estar pendiente (`EX-53`), y la cancelación desde su cuenta también: medida (`EX-52`, `VERIFIED`) y decidida en `DEC-SUB-009` (mediciones del 2026-09-29, lote L-A): se espeja como baja del proveedor, la misma conducta que este 📌 fijaba hasta medir. Lo supera: `.specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:5943` («la pausa deja de estar pendiente en el 📌 anterior (N8)»); `.specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:1367` («Medido el 2026-09-29 (`EX-52`, `EX-56`): el pagador puede darse de baja desde su cuenta de Mercado»). Lo omitido del texto de arriba está marcado «[…]».
+ 
+ <a id="dec-mp-008-p3"></a>
+-
+ #### 📌3 de DEC-MP-008
+ 
+ Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:5940
+@@ -2623,7 +2543,6 @@
+ mora que esta decisión espeja, y la pausa deja de estar pendiente en el 📌 anterior (N8).
+ 
+ <a id="dec-mp-009"></a>
+-
+ ### DEC-MP-009 — El canal IPN se escucha y se guarda, sin actuar
+ 
+ Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:7467
+@@ -2668,7 +2587,6 @@
+ - → ver [📌3](#dec-mp-009-p3).
+ 
+ <a id="dec-mp-009-p1"></a>
+-
+ #### 📌1 de DEC-MP-009
+ 
+ Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:7500
+@@ -2686,7 +2604,6 @@
+ `provider_notification` (`B/02` §2.7), y el predicado (c) de `G17` la nombra así.
+ 
+ <a id="dec-mp-009-p2"></a>
+-
+ #### 📌2 de DEC-MP-009
+ 
+ Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:7507
+@@ -2703,7 +2620,6 @@
+ entregas IPN sin guardarlas, y no mueve plata.
+ 
+ <a id="dec-mp-009-p3"></a>
+-
+ #### 📌3 de DEC-MP-009
+ 
+ Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:7514
+@@ -2720,7 +2636,6 @@
+ ## Área ENT
+ 
+ <a id="dec-ent-001"></a>
+-
+ ### DEC-ENT-001 — Existen entitlements medidos, y el trial tiene cuota propia en ellos
+ 
+ Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:575
+@@ -2759,7 +2674,6 @@
+ - → ver [📌1](#dec-ent-001-p1).
+ 
+ <a id="dec-ent-001-p1"></a>
+-
+ #### 📌1 de DEC-ENT-001
+ 
+ Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:604
+@@ -2773,7 +2687,6 @@
+ `V/11` §4.3.
+ 
+ <a id="dec-ent-002"></a>
+-
+ ### DEC-ENT-002 — Las cuotas de consumo son mensuales, independientes del ciclo de pago
+ 
+ Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:608
+@@ -2809,7 +2722,6 @@
+ - → ver [📌3](#dec-ent-002-p3).
+ 
+ <a id="dec-ent-002-p1"></a>
+-
+ #### 📌1 de DEC-ENT-002
+ 
+ Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:633
+@@ -2826,7 +2738,6 @@
+ título. `V/15` §7.
+ 
+ <a id="dec-ent-002-p2"></a>
+-
+ #### 📌2 de DEC-ENT-002
+ 
+ Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:639
+@@ -2840,7 +2751,6 @@
+ entitlement medido.
+ 
+ <a id="dec-ent-002-p3"></a>
+-
+ #### 📌3 de DEC-ENT-002
+ 
+ Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:643
+@@ -2855,7 +2765,6 @@
+ la regla ya le daba al cambio de plan.
+ 
+ <a id="dec-ent-003"></a>
+-
+ ### DEC-ENT-003 — La herencia de Turista VIP cubre entitlements y limits, y bloquea la compra
+ 
+ Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:649
+@@ -2888,7 +2797,6 @@
+ - **Origen**: `A-ENT-01`.
+ 
+ <a id="dec-ent-004"></a>
+-
+ ### DEC-ENT-004 — Un VIP previo se cancela de inmediato, sin reembolso
+ 
+ Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:674
+@@ -2923,7 +2831,6 @@
+ - **Origen**: `A-ENT-01` (b).
+ 
+ <a id="dec-ent-005"></a>
+-
+ ### DEC-ENT-005 — La CLASE de una clave de entitlement es un atributo declarado del catálogo, no un juicio
+ 
+ Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:5047
+@@ -2965,7 +2872,6 @@
+   entre las tres opciones que se le presentaron — eligió la 1, que era la recomendada.
+ 
+ <a id="dec-ent-006"></a>
+-
+ ### DEC-ENT-006 — La presencia pública de Partner es un entitlement sin máquina: la página y el carrusel son claves, y el admin la baja con un bit de moderación
+ 
+ Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:6724
+@@ -3000,7 +2906,6 @@
+ - → ver [📌4](#dec-ent-006-p4).
+ 
+ <a id="dec-ent-006-p1"></a>
+-
+ #### 📌1 de DEC-ENT-006
+ 
+ Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:6746
+@@ -3023,7 +2928,6 @@
+ > **Parte sin efecto** (adjudicación `PARCIAL`): «se asigna al aprobar la postulación»: el rol llega con el reclamo. Lo supera: `.specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:6757` («El rol de socio del»). Lo omitido del texto de arriba está marcado «[…]».
+ 
+ <a id="dec-ent-006-p2"></a>
+-
+ #### 📌2 de DEC-ENT-006
+ 
+ Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:6756
+@@ -3045,7 +2949,6 @@
+ > **Parte sin efecto** (adjudicación `PARCIAL`): «o el alta directa del admin con dueño» y «`starts_at` y `ends_at` quedan hasta la unidad de socios». Lo supera: `.specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:6768` («del 📌 anterior se lee *«cuando queda con dueño»*»); `.specs/HOS-1352-billing-verticals-redesign/docs/16-fase-7-del-paraguas.md:988` («| la migración estructural de `partners`: borra `starts_at`, `ends_at` y `tier` con su índice»). Lo omitido del texto de arriba está marcado «[…]».
+ 
+ <a id="dec-ent-006-p3"></a>
+-
+ #### 📌3 de DEC-ENT-006
+ 
+ Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:6765
+@@ -3065,7 +2968,6 @@
+ > **Parte sin efecto** (adjudicación `PARCIAL`): «los borra `V7` con su migración»: la migración estructural de `V7` la lleva `V6` al corte. Lo supera: `.specs/HOS-1352-billing-verticals-redesign/docs/16-fase-7-del-paraguas.md:988` («| la migración estructural de `partners`: borra `starts_at`, `ends_at` y `tier` con su índice»). Lo omitido del texto de arriba está marcado «[…]».
+ 
+ <a id="dec-ent-006-p4"></a>
+-
+ #### 📌4 de DEC-ENT-006
+ 
+ Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:6772
+@@ -3087,7 +2989,6 @@
+ ## Área ADDON
+ 
+ <a id="dec-addon-001"></a>
+-
+ ### DEC-ADDON-001 — El addon se pierde con la ficha, y su reloj no se congela
+ 
+ Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:781
+@@ -3120,7 +3021,6 @@
+ - **Origen**: `E-ADDON-01`, `E-ADDON-02`.
+ 
+ <a id="dec-addon-002"></a>
+-
+ ### DEC-ADDON-002 — Cada addon recurrente es un preapproval aparte, no una línea del monto del plan
+ 
+ Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:2104
+@@ -3209,7 +3109,6 @@
+ - **Origen**: `BD-MP-04` · §38 · §40 · §41. **Era el último bloqueante de FASE 2.**
+ 
+ <a id="dec-addon-002-p1"></a>
+-
+ #### 📌1 de DEC-ADDON-002
+ 
+ Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:2181
+@@ -3228,7 +3127,6 @@
+ apaga la orfandad.
+ 
+ <a id="dec-addon-002-p2"></a>
+-
+ #### 📌2 de DEC-ADDON-002
+ 
+ Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:2189
+@@ -3246,7 +3144,6 @@
+ > **Parte sin efecto** (adjudicación `PARCIAL`): «`S26` la aplica a los `USER`/`GLOBAL` compatibles con la vertical que discontinúa» (C8) y la cifra «catorce transiciones» (son once). Lo supera: `.specs/HOS-1354-billing-cobro-y-proveedor/docs/03-maquinas-de-estado.md:151` («(La guarda `admiteAltas` salió con la revisión del owner, 2026-09-28, C8: las verticales no se discontinúan.)»); `.specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:148` («[tachado: catorce] once desde que salieron `S25`, `S27` y `S28` con C8»). Lo omitido del texto de arriba está marcado «[…]».
+ 
+ <a id="dec-addon-003"></a>
+-
+ ### DEC-ADDON-003 — El grant con `includesAddons` convierte a $0 el addon YA comprado, y al revocar se apaga sin reparación
+ 
+ Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:3825
+@@ -3308,7 +3205,6 @@
+ > **Parte sin efecto** (adjudicación `PARCIAL`): «La condición de huérfano no se toca: sigue con tres mitades» (punto 4): la orfandad de `LISTING` y de `USER`/`GLOBAL` se lee como dice `DEC-ADDON-007`. Lo supera: `.specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:3827` («*«la condición de huérfano no se toca»* (punto 4) dejó de valer»); `.specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:3858` («**La condición de huérfano»). Lo omitido del texto de arriba está marcado «[…]».
+ 
+ <a id="dec-addon-004"></a>
+-
+ ### DEC-ADDON-004 — El complemento que se queda sin instancia muere en el acto: `CANCELLED`, sin período de gracia
+ 
+ Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:3880
+@@ -3355,7 +3251,7 @@
+   (la dejó sin cobrar una llamada nuestra y no tiene rama de fallo). Entra por la **salvedad 1**,
+   que ahora **puede nombrar su sujeto directamente** — y la selección por el estado de la instancia
+   **no sobra**: es la única que ve la corrida que ejecutó `A5` y no llegó a `S21`.
+-- **RESUELTA el
++-  **RESUELTA el
+   mismo día por `DEC-ADDON-006`**: el enunciado pasa a nombrar la revocación, que es un acto
+   declarado. Se deja tachada y no borrada porque la nota es lo que motivó esa decisión.
+ - **Origen**: el hueco que la familia de `S13` de la 9-bis-3 dejó nombrado en `B/09` §3 y que la de
+@@ -3365,7 +3261,6 @@
+ - → ver [📌2](#dec-addon-004-p2).
+ 
+ <a id="dec-addon-004-p1"></a>
+-
+ #### 📌1 de DEC-ADDON-004
+ 
+ Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:3929
+@@ -3384,7 +3279,6 @@
+ > **Parte sin efecto** (adjudicación `PARCIAL`): «o por `S26`» (C8). Lo supera: `.specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:3935` («`S25` a `S28` salieron»). Lo omitido del texto de arriba está marcado «[…]».
+ 
+ <a id="dec-addon-004-p2"></a>
+-
+ #### 📌2 de DEC-ADDON-004
+ 
+ Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:3935
+@@ -3395,7 +3289,6 @@
+ con la revisión del owner (C8).
+ 
+ <a id="dec-addon-005"></a>
+-
+ ### DEC-ADDON-005 — La fuga del addon `USER`/`GLOBAL` SE DEJA, y está decidido: no es un pendiente
+ 
+ Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:4003
+@@ -3426,7 +3319,6 @@
+   del 2026-09-21.
+ 
+ <a id="dec-addon-006"></a>
+-
+ ### DEC-ADDON-006 — La tercera cláusula de `A5` nombra la REVOCACIÓN, porque desanclar no existe
+ 
+ Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:4028
+@@ -3462,7 +3354,6 @@
+   del 2026-09-21 entre las dos opciones corregidas.
+ 
+ <a id="dec-addon-007"></a>
+-
+ ### DEC-ADDON-007 — Los addons siguen a su título: se pausan con la pausa, mueren cuando ninguna principal los sostiene, y se emiten sólo donde son compatibles
+ 
+ Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:6624
+@@ -3503,7 +3394,6 @@
+ - → ver [📌1](#dec-addon-007-p1).
+ 
+ <a id="dec-addon-007-p1"></a>
+-
+ #### 📌1 de DEC-ADDON-007
+ 
+ Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:6655
+@@ -3515,7 +3405,6 @@
+ **📌 Precisado el 2026-09-25, con OK del owner (FASE 9 completa, filas 9e y 9f de
+ `26-fase-9-completa/10`; elecciones del agente de aplicación en `15` §2, ratificadas como
+ estaban).**
+-
+ 1. **«Cobrada», en el punto 3 y en la compra de un addon, se lee como en `S4`** (9e): la principal
+    tiene un **pago acreditado**, **o** es la sucesora de una predecesora que venía pagando (el 📌
+    de `DEC-SUB-022`, 9d). Sin la segunda mitad, todo upgrade dejaba huérfanos en el acto los
+@@ -3531,7 +3420,6 @@
+ ## Área PROMO
+ 
+ <a id="dec-promo-001"></a>
+-
+ ### DEC-PROMO-001 — Cupo total de canjes más ventana de validez
+ 
+ Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:806
+@@ -3567,7 +3455,6 @@
+ - **Origen**: `M-PROMO-01`.
+ 
+ <a id="dec-promo-001-p1"></a>
+-
+ #### 📌1 de DEC-PROMO-001
+ 
+ Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:830
+@@ -3582,7 +3469,6 @@
+ pausar no tenía transición y dejaba una pausa sin fin (`F-8CB1-001`, paso 7).
+ 
+ <a id="dec-promo-001-p2"></a>
+-
+ #### 📌2 de DEC-PROMO-001
+ 
+ Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:835
+@@ -3597,7 +3483,6 @@
+ el agente de aplicación; el owner lo aceptó agregando de quién es el mínimo.
+ 
+ <a id="dec-promo-002"></a>
+-
+ ### DEC-PROMO-002 — El scope "todas las verticales futuras" se permite sin restricción
+ 
+ Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:842
+@@ -3632,7 +3517,6 @@
+ ## Área AUTH
+ 
+ <a id="dec-auth-001"></a>
+-
+ ### DEC-AUTH-001 — La vertical de un recurso es inmutable y se lee del recurso; lo ajeno existe sólo en público, lo propio no consulta el paso 6, y el caché se invalida por `user`
+ 
+ Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:6672
+@@ -3679,7 +3563,6 @@
+ - → ver [📌2](#dec-auth-001-p2).
+ 
+ <a id="dec-auth-001-p1"></a>
+-
+ #### 📌1 de DEC-AUTH-001
+ 
+ Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:6708
+@@ -3696,7 +3579,6 @@
+ `RESTRICTED` pasa a `404` en `V5`, con su test, porque lo ajeno existe sólo en estado público (D).
+ 
+ <a id="dec-auth-001-p2"></a>
+-
+ #### 📌2 de DEC-AUTH-001
+ 
+ Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:6715
+@@ -3712,7 +3594,6 @@
+ (`V3`); `41-corte-del-mvp/10-decisiones-del-owner.md`, CB.
+ 
+ <a id="dec-auth-002"></a>
+-
+ ### DEC-AUTH-002 — Una acción administrativa nunca tiene actor = sujeto
+ 
+ Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:6832
+@@ -3732,7 +3613,6 @@
+ - → ver [📌1](#dec-auth-002-p1).
+ 
+ <a id="dec-auth-002-p1"></a>
+-
+ #### 📌1 de DEC-AUTH-002
+ 
+ Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:6843
+@@ -3750,7 +3630,6 @@
+ solo, bloquearía la operación (`V/17` §3.2 regla 5 y su «NO cierra»; `27-cierre-Y-resto.md` §2).
+ 
+ <a id="dec-auth-003"></a>
+-
+ ### DEC-AUTH-003 — El admin edita el contenido de una ficha ajena con una acción propia, y nada más
+ 
+ Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:6854
+@@ -3778,7 +3657,6 @@
+ - → ver [📌5](#dec-auth-003-p5).
+ 
+ <a id="dec-auth-003-p1"></a>
+-
+ #### 📌1 de DEC-AUTH-003
+ 
+ Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:6869
+@@ -3791,7 +3669,6 @@
+ sus pasos 5 a 7 se evalúan sobre el dueño de la ficha. Su aviso es la fila 26 de `V/19` §4.
+ 
+ <a id="dec-auth-003-p2"></a>
+-
+ #### 📌2 de DEC-AUTH-003
+ 
+ Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:6871
+@@ -3804,7 +3681,6 @@
+ (revisión del owner, C7).
+ 
+ <a id="dec-auth-003-p3"></a>
+-
+ #### 📌3 de DEC-AUTH-003
+ 
+ Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:6875
+@@ -3817,7 +3693,6 @@
+ su dueño es la acción 23, otra fila con su permiso.
+ 
+ <a id="dec-auth-003-p4"></a>
+-
+ #### 📌4 de DEC-AUTH-003
+ 
+ Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:6878
+@@ -3837,7 +3712,6 @@
+ físico de fichas y de cuentas (lote 3, C).
+ 
+ <a id="dec-auth-003-p5"></a>
+-
+ #### 📌5 de DEC-AUTH-003
+ 
+ Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:6887
+@@ -3856,7 +3730,6 @@
+ la aplicación, owner 2026-09-30, L).
+ 
+ <a id="dec-auth-004"></a>
+-
+ ### DEC-AUTH-004 — El reclamo de un Partner vincula una sola vez y a la cuenta que reclama, y una cuenta es dueña de a lo sumo un Partner
+ 
+ Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:6899
+@@ -3897,7 +3770,6 @@
+   AB).
+ 
+ <a id="dec-auth-005"></a>
+-
+ ### DEC-AUTH-005 — Postular un Partner no exige cuenta: es la segunda excepción del guest en el paso 1
+ 
+ Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:6934
+@@ -3933,7 +3805,6 @@
+ - → ver [📌2](#dec-auth-005-p2).
+ 
+ <a id="dec-auth-005-p1"></a>
+-
+ #### 📌1 de DEC-AUTH-005
+ 
+ Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:6959
+@@ -3950,7 +3821,6 @@
+ baja (lote AI).
+ 
+ <a id="dec-auth-005-p2"></a>
+-
+ #### 📌2 de DEC-AUTH-005
+ 
+ Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:6965
+@@ -3968,7 +3838,6 @@
+ ## Área DATA
+ 
+ <a id="dec-data-001"></a>
+-
+ ### DEC-DATA-001 — Retención: oculto del público, visible para el dueño, con dos avisos
+ 
+ Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:926
+@@ -4009,7 +3878,6 @@
+ - → ver [📌2](#dec-data-001-p2).
+ 
+ <a id="dec-data-001-p1"></a>
+-
+ #### 📌1 de DEC-DATA-001
+ 
+ Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:954
+@@ -4022,7 +3890,6 @@
+ delete puede no eliminar nada.
+ 
+ <a id="dec-data-001-p2"></a>
+-
+ #### 📌2 de DEC-DATA-001
+ 
+ Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:959
+@@ -4037,7 +3904,6 @@
+ (`DEC-DATA-008`).
+ 
+ <a id="dec-data-002"></a>
+-
+ ### DEC-DATA-002 — La pausa no borra la ficha: `ARCHIVED` tiene vuelta, el reloj se reinicia, y la garantía es un invariante y no una desigualdad suelta
+ 
+ Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:3749
+@@ -4103,7 +3969,6 @@
+ > **Parte sin efecto** (adjudicación `PARCIAL`): que el reloj corre durante la pausa (*«el reloj SÍ corre durante la pausa, y se reinicia al reanudar»*) y la desigualdad que lo protegía (`D16`, con `G-R5`): la pausa del dueño detiene la retención (`DEC-DATA-006`); sobrevive el resto. Lo supera: `.specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:3751` («se cae que el reloj corre durante la pausa y la desigualdad que la protegía»); `.specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:3797` («reloj SÍ corre durante la pausa, y se reinicia al reanudar.**»). Lo omitido del texto de arriba está marcado «[…]».
+ 
+ <a id="dec-data-002-p1"></a>
+-
+ #### 📌1 de DEC-DATA-002
+ 
+ Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:3774
+@@ -4124,7 +3989,6 @@
+ > **Parte sin efecto** (adjudicación `PARCIAL`): «seis hechos»: el cuarto (fin de servicio de una vertical discontinuada) salió con C8; son cinco. Lo supera: `.specs/HOS-1353-verticales-capacidades-y-autorizacion/descomposicion.md:71` («[tachado: seis] cinco hechos de reinicio»). Lo omitido del texto de arriba está marcado «[…]».
+ 
+ <a id="dec-data-002-p2"></a>
+-
+ #### 📌2 de DEC-DATA-002
+ 
+ Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:3817
+@@ -4140,7 +4004,6 @@
+ anuncia y `PB9` no borra antes (`DEC-DATA-008`).
+ 
+ <a id="dec-data-003"></a>
+-
+ ### DEC-DATA-003 — El cupo que vuelve a alcanzar republica solo: `PB3` gana la rama simétrica a la del excedente
+ 
+ Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:4202
+@@ -4197,7 +4060,6 @@
+   las tres opciones que se le presentaron — eligió la 1, que era la recomendada.
+ 
+ <a id="dec-data-004"></a>
+-
+ ### DEC-DATA-004 — Se ratifican las tres formas que la tanda eligió sin consultar: la rama de `PB7`, el orden del cupo y la lista de los […]
+ 
+ Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:5007
+@@ -4244,7 +4106,6 @@
+ > **Parte sin efecto** (adjudicación `PARCIAL`): la cifra «cinco» del título y de `H1` (*«la lista de los cinco consumidores de `inactiva_desde`»*): son seis; la forma de la lista sigue. Lo supera: `.specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:5009` («los consumidores de `inactiva_desde` son **seis**, no cinco»); `.specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:5027` («**`H1` — la lista de los cinco consumidores de `inactiva_desde` queda como está**»). Lo omitido del texto de arriba está marcado «[…]».
+ 
+ <a id="dec-data-005"></a>
+-
+ ### DEC-DATA-005 — La retención sólo toca fichas: el usuario y sus datos no se borran nunca
+ 
+ Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:6057
+@@ -4288,7 +4149,6 @@
+ - → ver [📌8](#dec-data-005-p8).
+ 
+ <a id="dec-data-005-p1"></a>
+-
+ #### 📌1 de DEC-DATA-005
+ 
+ Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:6084
+@@ -4306,7 +4166,6 @@
+ antes»* una ficha, que ningún capítulo pide.
+ 
+ <a id="dec-data-005-p2"></a>
+-
+ #### 📌2 de DEC-DATA-005
+ 
+ Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:6092
+@@ -4322,7 +4181,6 @@
+ borra con el contenido.
+ 
+ <a id="dec-data-005-p3"></a>
+-
+ #### 📌3 de DEC-DATA-005
+ 
+ Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:6097
+@@ -4336,7 +4194,6 @@
+ `PURGED` no toca.
+ 
+ <a id="dec-data-005-p4"></a>
+-
+ #### 📌4 de DEC-DATA-005
+ 
+ Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:6101
+@@ -4348,7 +4205,6 @@
+ corrige la FAQ (HOS-1393).
+ 
+ <a id="dec-data-005-p5"></a>
+-
+ #### 📌5 de DEC-DATA-005
+ 
+ Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:6104
+@@ -4376,7 +4232,6 @@
+ (HOS-1393).
+ 
+ <a id="dec-data-005-p6"></a>
+-
+ #### 📌6 de DEC-DATA-005
+ 
+ Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:6121
+@@ -4400,7 +4255,6 @@
+ > **Parte sin efecto** (adjudicación `PARCIAL`): «Una suscripción en `CANCEL_SCHEDULED` no la traba: ya está dada de baja en el proveedor y termina sola por `S12`, sobre la cuenta ya dada de baja»: una `CANCEL_SCHEDULED` cuya cancelación ninguna relectura confirmó todavía SÍ traba la acción 24. Lo supera: `.specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:6125` («Una suscripción en `CANCEL_SCHEDULED` no la traba: ya está dada de baja en el proveedor y termina»); `.specs/HOS-1352-billing-verticals-redesign/docs/nucleo/08-auditoria-y-observabilidad.md:214` («**(también una `CANCEL_SCHEDULED` o una terminal cuya cancelación nuestra ninguna relectura confirmó todavía»). Lo omitido del texto de arriba está marcado «[…]».
+ 
+ <a id="dec-data-005-p7"></a>
+-
+ #### 📌7 de DEC-DATA-005
+ 
+ Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:6133
+@@ -4414,7 +4268,6 @@
+ la corrió y cuándo.
+ 
+ <a id="dec-data-005-p8"></a>
+-
+ #### 📌8 de DEC-DATA-005
+ 
+ Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:6137
+@@ -4430,7 +4283,6 @@
+ costado.
+ 
+ <a id="dec-data-006"></a>
+-
+ ### DEC-DATA-006 — La pausa pedida por el dueño detiene el reloj de retención de sus fichas
+ 
+ Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:7057
+@@ -4460,7 +4312,6 @@
+ - → ver [📌2](#dec-data-006-p2).
+ 
+ <a id="dec-data-006-p1"></a>
+-
+ #### 📌1 de DEC-DATA-006
+ 
+ Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:7076
+@@ -4479,7 +4330,6 @@
+ persona el barrido diario, con el motivo `REANUDACIÓN_NO_APLICADA`, que ya existía.
+ 
+ <a id="dec-data-006-p2"></a>
+-
+ #### 📌2 de DEC-DATA-006
+ 
+ Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:7084
+@@ -4495,7 +4345,6 @@
+ consulta `retenciónDetenida` y no cuenta desde el más tardío de los dos instantes.
+ 
+ <a id="dec-data-007"></a>
+-
+ ### DEC-DATA-007 — La moderación tiene dos niveles: pedir un arreglo o bajar la ficha
+ 
+ Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:7092
+@@ -4526,7 +4375,6 @@
+ - → ver [📌1](#dec-data-007-p1).
+ 
+ <a id="dec-data-007-p1"></a>
+-
+ #### 📌1 de DEC-DATA-007
+ 
+ Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:7113
+@@ -4543,7 +4391,6 @@
+ fila nueva en el catálogo.
+ 
+ <a id="dec-data-008"></a>
+-
+ ### DEC-DATA-008 — Todo plazo que decide cuándo pasa algo es configurable, y cada reloj cuenta con la versión con que arrancó
+ 
+ Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:7378
+@@ -4591,7 +4438,6 @@
+ - → ver [📌8](#dec-data-008-p8).
+ 
+ <a id="dec-data-008-p1"></a>
+-
+ #### 📌1 de DEC-DATA-008
+ 
+ Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:7409
+@@ -4614,7 +4460,6 @@
+ > **Parte sin efecto** (adjudicación `PARCIAL`): «antes del ensayo del corte en staging» (antes del merge de `V6`). Lo supera: `.specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:7436` («fija el owner **antes del merge de `V6`**, y no antes del ensayo del corte en `staging`, como»). Lo omitido del texto de arriba está marcado «[…]».
+ 
+ <a id="dec-data-008-p2"></a>
+-
+ #### 📌2 de DEC-DATA-008
+ 
+ Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:7419
+@@ -4627,7 +4472,6 @@
+ `B/02` §2.7) son un plazo técnico más, no configurable, como los que esta decisión nombra.
+ 
+ <a id="dec-data-008-p3"></a>
+-
+ #### 📌3 de DEC-DATA-008
+ 
+ Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:7422
+@@ -4645,7 +4489,6 @@
+ > **Parte sin efecto** (adjudicación `PARCIAL`): «antes del ensayo» y la cifra «quince valores» (dieciocho). Lo supera: `.specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:7436` («fija el owner **antes del merge de `V6`**, y no antes del ensayo del corte en `staging`, como»); `.specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:7428` («pasa de quince a dieciocho plazos»). Lo omitido del texto de arriba está marcado «[…]».
+ 
+ <a id="dec-data-008-p4"></a>
+-
+ #### 📌4 de DEC-DATA-008
+ 
+ Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:7427
+@@ -4664,7 +4507,6 @@
+ > **Parte sin efecto** (adjudicación `PARCIAL`): «antes del ensayo del corte en `staging`» (antes del merge de `V6`). Lo supera: `.specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:7436` («fija el owner **antes del merge de `V6`**, y no antes del ensayo del corte en `staging`, como»). Lo omitido del texto de arriba está marcado «[…]».
+ 
+ <a id="dec-data-008-p5"></a>
+-
+ #### 📌5 de DEC-DATA-008
+ 
+ Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:7434
+@@ -4680,7 +4522,6 @@
+ `db:migrate`) desde que se mergea, no recién en el ensayo.
+ 
+ <a id="dec-data-008-p6"></a>
+-
+ #### 📌6 de DEC-DATA-008
+ 
+ Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:7440
+@@ -4699,7 +4540,6 @@
+ `16-fase-7-del-paraguas.md` §4.6; `41-corte-del-mvp/10-decisiones-del-owner.md`, BD.
+ 
+ <a id="dec-data-008-p7"></a>
+-
+ #### 📌7 de DEC-DATA-008
+ 
+ Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:7448
+@@ -4720,7 +4560,6 @@
+ `41-corte-del-mvp/10-decisiones-del-owner.md`, BU y BV.
+ 
+ <a id="dec-data-008-p8"></a>
+-
+ #### 📌8 de DEC-DATA-008
+ 
+ Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:7458
+@@ -4739,7 +4578,6 @@
+ ## Área MAIL
+ 
+ <a id="dec-mail-001"></a>
+-
+ ### DEC-MAIL-001 — Nuestro correo bloquea la acción sólo donde el del proveedor hace daño, y los correos falsos se anticipan
+ 
+ Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:1709
+@@ -4811,7 +4649,6 @@
+ - **Origen**: punto 8 del contraste PDR ↔ proveedor · §42 · §43 · `M-MAIL-04`.
+ 
+ <a id="dec-mail-001-p1"></a>
+-
+ #### 📌1 de DEC-MAIL-001
+ 
+ Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:1740
+@@ -4830,7 +4667,6 @@
+ cancela: antes vivía sólo acá y ninguna transición lo nombraba.
+ 
+ <a id="dec-mail-001-p2"></a>
+-
+ #### 📌2 de DEC-MAIL-001
+ 
+ Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:1748
+@@ -4849,7 +4685,6 @@
+ mora (`EX-3`). **La rama transitoria —el correo todavía puede salir— sigue bloqueando.**
+ 
+ <a id="dec-mail-001-p3"></a>
+-
+ #### 📌3 de DEC-MAIL-001
+ 
+ Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:1756
+@@ -4874,7 +4709,6 @@
+ Retiradas de esta área (en `90-retirados.md`): [DEC-ARCH-011](90-retirados.md#dec-arch-011).
+ 
+ <a id="dec-arch-001"></a>
+-
+ ### DEC-ARCH-001 — Planes híbridos: se versiona lo que tiene efecto
+ 
+ Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:196
+@@ -4914,7 +4748,6 @@
+ - **Origen**: `BD-ARCH-01` (BLOCKING).
+ 
+ <a id="dec-arch-002"></a>
+-
+ ### DEC-ARCH-002 — Rank explícito por plan; sólo participan los vendibles
+ 
+ Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:228
+@@ -4950,7 +4783,6 @@
+ - **Origen**: `BD-ARCH-02` (BLOCKING).
+ 
+ <a id="dec-arch-003"></a>
+-
+ ### DEC-ARCH-003 — Los dos `SUSPENDED` del PDR se separan: el del trial se llama `TRIAL_EXPIRED`
+ 
+ Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:2197
+@@ -5000,7 +4832,6 @@
+   Spec; el nombre lo aprobó el owner el 2026-09-17.
+ 
+ <a id="dec-arch-004"></a>
+-
+ ### DEC-ARCH-004 — El billing se implementa de nuestro lado, en un package propio de Hospeda, con la pasarela detrás de un adaptador
+ 
+ Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:2287
+@@ -5102,7 +4933,6 @@
+ - → ver [📌3](#dec-arch-004-p3).
+ 
+ <a id="dec-arch-004-p1"></a>
+-
+ #### 📌1 de DEC-ARCH-004
+ 
+ Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:2378
+@@ -5123,7 +4953,6 @@
+ N2).
+ 
+ <a id="dec-arch-004-p2"></a>
+-
+ #### 📌2 de DEC-ARCH-004
+ 
+ Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:2388
+@@ -5139,7 +4968,6 @@
+ de esta épica por eso". `G16` no mira esas dependencias; la prohibición de `@qazuor/qzpay` sigue.
+ 
+ <a id="dec-arch-004-p3"></a>
+-
+ #### 📌3 de DEC-ARCH-004
+ 
+ Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:2394
+@@ -5157,7 +4985,6 @@
+ `qzpay`, y el lote N-A lo devolvió al repo al sacar el cobro viejo al principio.
+ 
+ <a id="dec-arch-005"></a>
+-
+ ### DEC-ARCH-005 — El programa se parte en dos épicas autónomas: Verticales y Billing
+ 
+ Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:2404
+@@ -5233,7 +5060,6 @@
+ - → ver [📌2](#dec-arch-005-p2).
+ 
+ <a id="dec-arch-005-p1"></a>
+-
+ #### 📌1 de DEC-ARCH-005
+ 
+ Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:2414
+@@ -5248,7 +5074,6 @@
+ épicas se citan entre sí, y lo que cruza por contrato es la cobertura (`DEC-ARCH-006`).
+ 
+ <a id="dec-arch-005-p2"></a>
+-
+ #### 📌2 de DEC-ARCH-005
+ 
+ Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:2477
+@@ -5267,7 +5092,6 @@
+ cambia es que ahora tiene quién lo construye.
+ 
+ <a id="dec-arch-006"></a>
+-
+ ### DEC-ARCH-006 — La frontera entre las dos épicas es un contrato único con dos implementaciones desde el día uno
+ 
+ Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:2489
+@@ -5344,7 +5168,6 @@
+ - → ver [📌11](#dec-arch-006-p11).
+ 
+ <a id="dec-arch-006-p1"></a>
+-
+ #### 📌1 de DEC-ARCH-006
+ 
+ Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:2540
+@@ -5365,7 +5188,6 @@
+ declarado en `B/16` NO cierra.
+ 
+ <a id="dec-arch-006-p2"></a>
+-
+ #### 📌2 de DEC-ARCH-006
+ 
+ Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:2551
+@@ -5388,7 +5210,6 @@
+ preguntas del §4.1, sin cifra.
+ 
+ <a id="dec-arch-006-p3"></a>
+-
+ #### 📌3 de DEC-ARCH-006
+ 
+ Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:2568
+@@ -5410,7 +5231,6 @@
+ La entrada no se edita en su contenido.
+ 
+ <a id="dec-arch-006-p6"></a>
+-
+ #### 📌6 de DEC-ARCH-006
+ 
+ Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:2592
+@@ -5426,7 +5246,6 @@
+ la dirección de ida tiene una pregunta, `retenciónDetenida` (C14).
+ 
+ <a id="dec-arch-006-p7"></a>
+-
+ #### 📌7 de DEC-ARCH-006
+ 
+ Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:2597
+@@ -5443,7 +5262,6 @@
+ en las pruebas se inyecta el adelantable. `G14` no cambia: importar el contrato nunca fue cruzar.
+ 
+ <a id="dec-arch-006-p8"></a>
+-
+ #### 📌8 de DEC-ARCH-006
+ 
+ Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:2604
+@@ -5466,7 +5284,6 @@
+ > **Parte sin efecto** (adjudicación `PARCIAL`): «las filas vivas sin `CANCEL_SCHEDULED`» (contesta sobre la cancelación confirmada, lote D) y «siguen siendo once» (doce). Lo supera: `.specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:2621` («contesta sobre la cancelación confirmada por Mercado Pago»); `.specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:7610` («son **doce**, no once como dicen los 📌 de O-A y P-C de esta decisión y el de `DEC-ARCH-006`»). Lo omitido del texto de arriba está marcado «[…]».
+ 
+ <a id="dec-arch-006-p9"></a>
+-
+ #### 📌9 de DEC-ARCH-006
+ 
+ Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:2615
+@@ -5484,7 +5301,6 @@
+ > **Parte sin efecto** (adjudicación `PARCIAL`): «siguen en once» (doce). Lo supera: `.specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:7610` («son **doce**, no once como dicen los 📌 de O-A y P-C de esta decisión y el de `DEC-ARCH-006`»). Lo omitido del texto de arriba está marcado «[…]».
+ 
+ <a id="dec-arch-006-p10"></a>
+-
+ #### 📌10 de DEC-ARCH-006
+ 
+ Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:2620
+@@ -5503,7 +5319,6 @@
+ `PB9` no corre en la misma pasada en que ve la ficha sin cobertura por primera vez.
+ 
+ <a id="dec-arch-006-p11"></a>
+-
+ #### 📌11 de DEC-ARCH-006
+ 
+ Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:2628
+@@ -5520,7 +5335,6 @@
+ (`EX-45`). La baja de cuenta espera hasta entonces.
+ 
+ <a id="dec-arch-007"></a>
+-
+ ### DEC-ARCH-007 — Las dos épicas se desarrollan en paralelo y se liberan juntas; ninguna llega a producción sola
+ 
+ Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:2637
+@@ -5585,7 +5399,6 @@
+ - → ver [📌3](#dec-arch-007-p3).
+ 
+ <a id="dec-arch-007-p1"></a>
+-
+ #### 📌1 de DEC-ARCH-007
+ 
+ Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:2691
+@@ -5598,7 +5411,6 @@
+ final, con `staging` congelado para `main` hasta el corte (`D/16` §4.4).
+ 
+ <a id="dec-arch-007-p2"></a>
+-
+ #### 📌2 de DEC-ARCH-007
+ 
+ Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:2694
+@@ -5612,7 +5424,6 @@
+ posterior al corte.
+ 
+ <a id="dec-arch-007-p3"></a>
+-
+ #### 📌3 de DEC-ARCH-007
+ 
+ Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:2698
+@@ -5631,7 +5442,6 @@
+ (`41-corte-del-mvp/00-propuesta.md` §5; `41-corte-del-mvp/10-decisiones-del-owner.md`, Y).
+ 
+ <a id="dec-arch-008"></a>
+-
+ ### DEC-ARCH-008 — La dirección de un cambio de plan la decide VERTICALES, y billing recibe un veredicto
+ 
+ Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:3307
+@@ -5668,7 +5478,6 @@
+ - **Origen**: `F-8bA3-005`, y la conversación con el owner del 2026-09-20.
+ 
+ <a id="dec-arch-009"></a>
+-
+ ### DEC-ARCH-009 — Un reconciliador diario de cobertura en verticales: el aviso es rápido, el reconciliador es la red
+ 
+ Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:6146
+@@ -5706,7 +5515,6 @@
+ - → ver [📌2](#dec-arch-009-p2).
+ 
+ <a id="dec-arch-009-p1"></a>
+-
+ #### 📌1 de DEC-ARCH-009
+ 
+ Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:6173
+@@ -5724,7 +5532,6 @@
+ `V/18` §1.6). La entrada no se edita en su contenido.
+ 
+ <a id="dec-arch-009-p2"></a>
+-
+ #### 📌2 de DEC-ARCH-009
+ 
+ Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:6182
+@@ -5745,7 +5552,6 @@
+ tabla t17, CK. La entrada no se edita en su contenido.
+ 
+ <a id="dec-arch-010"></a>
+-
+ ### DEC-ARCH-010 — Los tres inventarios de `NUCLEO/01` son capítulo de la unidad `B3`
+ 
+ Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:5385
+@@ -5775,7 +5581,6 @@
+   presentaron — eligió la 1, que era la recomendada.
+ 
+ <a id="dec-arch-012"></a>
+-
+ ### DEC-ARCH-012 — El agrupamiento viejo de Gastronomía y Experiencia desaparece del repositorio, ni como histórico
+ 
+ Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:7232
+@@ -5815,7 +5620,6 @@
+ - → ver [📌3](#dec-arch-012-p3).
+ 
+ <a id="dec-arch-012-p1"></a>
+-
+ #### 📌1 de DEC-ARCH-012
+ 
+ Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:7260
+@@ -5850,7 +5654,6 @@
+ se reescriben sin la palabra, con el OK del owner a esa reescritura.
+ 
+ <a id="dec-arch-012-p2"></a>
+-
+ #### 📌2 de DEC-ARCH-012
+ 
+ Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:7284
+@@ -5871,7 +5674,6 @@
+ también `alliance_leads.partner_type`.
+ 
+ <a id="dec-arch-012-p3"></a>
+-
+ #### 📌3 de DEC-ARCH-012
+ 
+ Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:7295
+@@ -5893,7 +5695,6 @@
+ (G, `BD-025`).
+ 
+ <a id="dec-arch-013"></a>
+-
+ ### DEC-ARCH-013 — La configuración de planes vive 100 % en la base, y cambia sólo por acciones administrativas
+ 
+ Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:7309
+@@ -5935,7 +5736,6 @@
+ - → ver [📌4](#dec-arch-013-p4).
+ 
+ <a id="dec-arch-013-p1"></a>
+-
+ #### 📌1 de DEC-ARCH-013
+ 
+ Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:7338
+@@ -5955,7 +5755,6 @@
+ > **Parte sin efecto** (adjudicación `PARCIAL`): las 11 migraciones «se congelan» (las saca `U1`) y «antes del ensayo del corte» (antes del merge de `V6`). Lo supera: `.specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:7359` («ya no se congelan hasta el paso 6: las saca de la rama»); `.specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:7436` («fija el owner **antes del merge de `V6`**, y no antes del ensayo del corte en `staging`, como»). Lo omitido del texto de arriba está marcado «[…]».
+ 
+ <a id="dec-arch-013-p2"></a>
+-
+ #### 📌2 de DEC-ARCH-013
+ 
+ Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:7347
+@@ -5970,7 +5769,6 @@
+ mitad, el corte entra en la rama de aborto.
+ 
+ <a id="dec-arch-013-p3"></a>
+-
+ #### 📌3 de DEC-ARCH-013
+ 
+ Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:7351
+@@ -5996,7 +5794,6 @@
+ > **Parte sin efecto** (adjudicación `PARCIAL`): «las escribe después el script del corte»: la herramienta del corte de `V6`. Lo supera: `.specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:7372` («**los escribe la herramienta del corte de `V6`**»). Lo omitido del texto de arriba está marcado «[…]».
+ 
+ <a id="dec-arch-013-p4"></a>
+-
+ #### 📌4 de DEC-ARCH-013
+ 
+ Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:7364
+@@ -6020,7 +5817,6 @@
+ > **Parte sin efecto** (adjudicación `PARCIAL`): la cifra «de 33 a 34» (hoy 35). Lo supera: `.specs/HOS-1352-billing-verticals-redesign/docs/16-fase-7-del-paraguas.md:866` («[tachado: 34] 35: entra `G19`, de `V5`»). Lo omitido del texto de arriba está marcado «[…]».
+ 
+ <a id="dec-arch-014"></a>
+-
+ ### DEC-ARCH-014 — El sistema viejo sale entero de la rama al principio de la épica, antes de construir el nuevo
+ 
+ Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:7522
+@@ -6072,7 +5868,6 @@
+ - → ver [📌7](#dec-arch-014-p7).
+ 
+ <a id="dec-arch-014-p1"></a>
+-
+ #### 📌1 de DEC-ARCH-014
+ 
+ Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:7559
+@@ -6092,7 +5887,6 @@
+ > **Parte sin efecto** (adjudicación `PARCIAL`): O-B: el cierre de la ruta hasta las lápidas del paso 4; las cifras «23 unidades», «33» y «once». Lo supera: `.specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:7615` («lote P pierde el Worker del borde (P-A) y el detector del día siguiente al corte (P-B), y el de»); `.specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:7610` («son **doce**, no once como dicen los 📌 de O-A y P-C de esta decisión y el de `DEC-ARCH-006`»); `.specs/HOS-1352-billing-verticals-redesign/docs/16-fase-7-del-paraguas.md:866` («[tachado: 34] 35: entra `G19`, de `V5`»). Lo omitido del texto de arriba está marcado «[…]».
+ 
+ <a id="dec-arch-014-p2"></a>
+-
+ #### 📌2 de DEC-ARCH-014
+ 
+ Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:7573
+@@ -6110,7 +5904,6 @@
+ > **Parte sin efecto** (adjudicación `PARCIAL`): P-A (el Worker) y P-B (el detector); las cifras «once» y «33»; P-C sigue. Lo supera: `.specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:7615` («lote P pierde el Worker del borde (P-A)»); `.specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:7610` («son **doce**, no once como dicen los 📌 de O-A y P-C de esta decisión y el de `DEC-ARCH-006`»). Lo omitido del texto de arriba está marcado «[…]».
+ 
+ <a id="dec-arch-014-p3"></a>
+-
+ #### 📌3 de DEC-ARCH-014
+ 
+ Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:7585
+@@ -6149,7 +5942,6 @@
+ Recontadas con script sobre `B/descomposicion.md` §2.6: filas 1 a 7, 9 a 12 y 14. `U2` no suma.)*
+ 
+ <a id="dec-arch-014-p4"></a>
+-
+ #### 📌4 de DEC-ARCH-014
+ 
+ Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:7613
+@@ -6166,7 +5958,6 @@
+ `U1` (P-C) sigue.
+ 
+ <a id="dec-arch-014-p5"></a>
+-
+ #### 📌5 de DEC-ARCH-014
+ 
+ Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:7620
+@@ -6188,7 +5979,6 @@
+ > **Parte sin efecto** (adjudicación `PARCIAL`): «`starts_at` y `ends_at` quedan hasta la unidad de socios» (los borra `V6` al corte) y la cifra «34». Lo supera: `.specs/HOS-1352-billing-verticals-redesign/docs/16-fase-7-del-paraguas.md:988` («| la migración estructural de `partners`: borra `starts_at`, `ends_at` y `tier` con su índice»); `.specs/HOS-1352-billing-verticals-redesign/docs/16-fase-7-del-paraguas.md:866` («[tachado: 34] 35: entra `G19`, de `V5`»). Lo omitido del texto de arriba está marcado «[…]».
+ 
+ <a id="dec-arch-014-p6"></a>
+-
+ #### 📌6 de DEC-ARCH-014
+ 
+ Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:7629
+@@ -6215,7 +6005,6 @@
+ > **Texto reubicado**: la fuente lo pegó al 📌7 ([DEC-ARCH-014#📌7](#dec-arch-014-p7), `.specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:7652`); es de este 📌 (letra F). Allá está omitido y marcado «[…]».
+ 
+ <a id="dec-arch-014-p7"></a>
+-
+ #### 📌7 de DEC-ARCH-014
+ 
+ Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:7642
+@@ -6239,7 +6028,6 @@
+ > **Parte sin efecto** (adjudicación `PARCIAL`): la cola «Ninguna unidad depende de ella; la necesitan el ensayo (paso 0) y los pasos 1a, 1b y 2. Y `U1` suma una cosa: reapunta la regla de smoke … Origen: (FASES 6 y 7, owner 2026-09-30, F)»: es texto del 📌6 (`U3`, letra F) que quedó pegado a éste; la consolidada la muestra bajo el 📌6, con su nota, y no bajo el 📌7. Lo supera: `.specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:7652` («Ninguna unidad depende de ella; la necesitan el ensayo (paso 0) y los pasos 1a, 1b y 2. Y `U1`»); `.specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:7630` («**el programa pasa de 24 a 25 unidades**. Una»). Lo omitido del texto de arriba está marcado «[…]».
+ 
+ <a id="dec-arch-015"></a>
+-
+ ### DEC-ARCH-015 — El package del contrato se llama `@repo/billing-verticals-contract`
+ 
+ Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:7659
+@@ -6269,7 +6057,6 @@
+   (`@repo/coverage-contract`), pidió más opciones y eligió la 1 de la segunda tanda, la recomendada.
+ 
+ <a id="dec-arch-016"></a>
+-
+ ### DEC-ARCH-016 — Los gates de aceptación del programa: cinco momentos, cada uno con una condición que se comprueba desde afuera
+ 
+ Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:7755
+@@ -6369,7 +6156,6 @@
+ - → ver [📌2](#dec-arch-016-p2).
+ 
+ <a id="dec-arch-016-p1"></a>
+-
+ #### 📌1 de DEC-ARCH-016
+ 
+ Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:7844
+@@ -6385,7 +6171,6 @@
+ (`16-fase-7-del-paraguas.md` §4.7; `41-corte-del-mvp/10-decisiones-del-owner.md`, Y).
+ 
+ <a id="dec-arch-016-p2"></a>
+-
+ #### 📌2 de DEC-ARCH-016
+ 
+ Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:7850
+@@ -6403,7 +6188,6 @@
+ §4.7, momento 3; `41-corte-del-mvp/10-decisiones-del-owner.md`, BQ.
+ 
+ <a id="dec-arch-017"></a>
+-
+ ### DEC-ARCH-017 — El MVP: el corte lleva 22 piezas y ocho llegan después, en fases aditivas sobre el sistema nuevo
+ 
+ Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:7861
+@@ -6492,7 +6276,6 @@
+ - → ver [📌13](#dec-arch-017-p13).
+ 
+ <a id="dec-arch-017-p1"></a>
+-
+ #### 📌1 de DEC-ARCH-017
+ 
+ Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:7928
+@@ -6521,7 +6304,6 @@
+ > **Parte sin efecto** (adjudicación `PARCIAL`): el renglón de addons de AP: «addons, `B4`, que le agrega a `payment` la columna»: las tablas son de `B3` y la columna nace con `payment` en `B5` (AV); y «promos y cortesías, `B9a`»: el esquema de promos y cortesías es de `B3` (BG; residuo del triage AB-g1-2, 2026-10-02). Lo supera: `.specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:7946` («**las tablas del modelo de addons»); `.specs/HOS-1352-billing-verticals-redesign/docs/41-corte-del-mvp/10-decisiones-del-owner.md:73` («las tablas del modelo de addons pasan de `B4` a `B3`, y `payment` nace en `B5` con su columna de la instancia»); `.specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:7969` («**BG**: el esquema de promos y cortesías pasa de `B9a` a `B3`»). Lo omitido del texto de arriba está marcado «[…]».
+ 
+ <a id="dec-arch-017-p2"></a>
+-
+ #### 📌2 de DEC-ARCH-017
+ 
+ Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:7945
+@@ -6538,7 +6320,6 @@
+ (`16-fase-7-del-paraguas.md` §4.6; `B/descomposicion.md` §2.12).
+ 
+ <a id="dec-arch-017-p3"></a>
+-
+ #### 📌3 de DEC-ARCH-017
+ 
+ Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:7951
+@@ -6555,7 +6336,6 @@
+ `41-corte-del-mvp/10-decisiones-del-owner.md`, AW).
+ 
+ <a id="dec-arch-017-p4"></a>
+-
+ #### 📌4 de DEC-ARCH-017
+ 
+ Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:7959
+@@ -6588,7 +6368,6 @@
+ `41-corte-del-mvp/aristas.py`; `41-corte-del-mvp/10-decisiones-del-owner.md`, BC, BF, BG y BH.
+ 
+ <a id="dec-arch-017-p5"></a>
+-
+ #### 📌5 de DEC-ARCH-017
+ 
+ Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:7981
+@@ -6610,7 +6389,6 @@
+ `41-corte-del-mvp/10-decisiones-del-owner.md`, BI y BJ.
+ 
+ <a id="dec-arch-017-p6"></a>
+-
+ #### 📌6 de DEC-ARCH-017
+ 
+ Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:7992
+@@ -6653,7 +6431,6 @@
+ > **Parte sin efecto** (adjudicación `PARCIAL`): en BN, «`V9a`, `domain_event` (inferido: ninguna pieza anterior la escribe)»: la crea `U2` (BW). Lo supera: `.specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:8024` («**`domain_event` la crea `U2`**, y no `V9a`.»). Lo omitido del texto de arriba está marcado «[…]».
+ 
+ <a id="dec-arch-017-p7"></a>
+-
+ #### 📌7 de DEC-ARCH-017
+ 
+ Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:8023
+@@ -6676,7 +6453,6 @@
+ `NUCLEO/02` §2.6; `41-corte-del-mvp/10-decisiones-del-owner.md`, BW.
+ 
+ <a id="dec-arch-017-p8"></a>
+-
+ #### 📌8 de DEC-ARCH-017
+ 
+ Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:8035
+@@ -6699,7 +6475,6 @@
+ `41-corte-del-mvp/10-decisiones-del-owner.md`, BY y CA.
+ 
+ <a id="dec-arch-017-p9"></a>
+-
+ #### 📌9 de DEC-ARCH-017
+ 
+ Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:8047
+@@ -6723,7 +6498,6 @@
+ `41-corte-del-mvp/10-decisiones-del-owner.md`, CD.
+ 
+ <a id="dec-arch-017-p10"></a>
+-
+ #### 📌10 de DEC-ARCH-017
+ 
+ Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:8061
+@@ -6740,7 +6514,6 @@
+ `B/descomposicion.md` §2, §2.12 y §4 (`B10`); `41-corte-del-mvp/10-decisiones-del-owner.md`, CE.
+ 
+ <a id="dec-arch-017-p11"></a>
+-
+ #### 📌11 de DEC-ARCH-017
+ 
+ Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:8068
+@@ -6761,7 +6534,6 @@
+ `B/20` §5.1; `41-corte-del-mvp/10-decisiones-del-owner.md`, CF y CG.
+ 
+ <a id="dec-arch-017-p12"></a>
+-
+ #### 📌12 de DEC-ARCH-017
+ 
+ Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:8078
+@@ -6787,7 +6559,6 @@
+ `41-corte-del-mvp/aristas.py`; `41-corte-del-mvp/10-decisiones-del-owner.md`, CH y CI.
+ 
+ <a id="dec-arch-017-p13"></a>
+-
+ #### 📌13 de DEC-ARCH-017
+ 
+ Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:8093
+@@ -6813,7 +6584,6 @@
+ Retiradas de esta área (en `90-retirados.md`): [DEC-MIG-004](90-retirados.md#dec-mig-004).
+ 
+ <a id="dec-mig-001"></a>
+-
+ ### DEC-MIG-001 — Coordinación manual de las cinco relaciones vivas, cero código de migración
+ 
+ Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:397
+@@ -6861,7 +6631,6 @@
+ > **Parte sin efecto** (adjudicación `PARCIAL`): «se los da de alta en el motor nuevo» (la decisión, (1)): lo que se cae es el destino, ya no se transcribe ninguna fila al sistema nuevo (`DEC-MIG-003`). Lo supera: `.specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:402` («**Lo que se cae es el destino**: ya no se transcribe»); `.specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:416` («Se los contacta, se los da de alta en el motor nuevo y se cancela el»). Lo omitido del texto de arriba está marcado «[…]».
+ 
+ <a id="dec-mig-001-p1"></a>
+-
+ #### 📌1 de DEC-MIG-001
+ 
+ Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:432
+@@ -6873,7 +6642,6 @@
+ No se convive.
+ 
+ <a id="dec-mig-002"></a>
+-
+ ### DEC-MIG-002 — Las altas nuevas siguen tomándose en el sistema actual durante el rediseño
+ 
+ Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:2710
+@@ -6928,7 +6696,6 @@
+ > **Parte sin efecto** (adjudicación `PARCIAL`): «y se transcriben a mano cuando el rediseño esté listo» (la decisión) y el riesgo de que *«la cohorte a transcribir crece»*: no se migra nada (`DEC-MIG-003`) y lo que entre hasta el corte no se conserva (`DEC-MIG-005`); sobrevive *«se siguen tomando altas en el sistema actual»* sólo para las que no son self-service: desde el 2026-10-01 las altas pagas self-service del viejo (start-paid con sus trials, el self-checkout de comercio, la compra de addons y la primera publicación que arranca trial) están congeladas por un setting de `billing_settings` (letras N, O y R; transitorio, del sistema viejo). Lo supera: `.specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:2712` («se cae *«se transcriben a mano cuando el rediseño esté listo»*»); `.specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:2730` («Se siguen tomando altas en el sistema actual, y **se transcriben a mano»); `.specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:2746` («**la cohorte a transcribir crece mientras dure el rediseño.**»); `.specs/HOS-1352-billing-verticals-redesign/docs/40-congelamiento-y-ci/10-decisiones-del-owner.md:19` («| N | el mecanismo del congelamiento de las altas pagas nuevas del sistema viejo»); `.specs/HOS-1352-billing-verticals-redesign/docs/40-congelamiento-y-ci/10-decisiones-del-owner.md:20` («| O | el alcance del congelamiento»). Lo omitido del texto de arriba está marcado «[…]».
+ 
+ <a id="dec-mig-002-p1"></a>
+-
+ #### 📌1 de DEC-MIG-002
+ 
+ Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:2734
+@@ -6944,7 +6711,6 @@
+ > **Parte sin efecto** (adjudicación `PARCIAL`): «una regla de Cloudflare cierra las rutas que crean o re-autorizan algo en el proveedor»: es una sola regla que bloquea toda escritura. Lo supera: `.specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:2767` («Y el 📌 `G4-1` queda precisado por el lote B: no»). Lo omitido del texto de arriba está marcado «[…]».
+ 
+ <a id="dec-mig-002-p2"></a>
+-
+ #### 📌2 de DEC-MIG-002
+ 
+ Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:2761
+@@ -6966,7 +6732,6 @@
+ repetidos.
+ 
+ <a id="dec-mig-002-p3"></a>
+-
+ #### 📌3 de DEC-MIG-002
+ 
+ Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:2773
+@@ -6985,7 +6750,6 @@
+ lote de la aplicación, owner 2026-09-30, A; ver los 📌 de `DEC-MIG-003` y `DEC-MIG-005`).
+ 
+ <a id="dec-mig-003"></a>
+-
+ ### DEC-MIG-003 — No se migra: las ocho filas se cancelan y quien tenga algo vivo se suscribe de nuevo
+ 
+ Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:3041
+@@ -7062,7 +6826,6 @@
+ - **Origen**: `15-fase-9/07-decisiones-del-owner.md` `D-24`, `D-25` y `D-26`, sobre el racimo `R5`.
+ 
+ <a id="dec-mig-003-p1"></a>
+-
+ #### 📌1 de DEC-MIG-003
+ 
+ Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:3093
+@@ -7081,7 +6844,6 @@
+ > **Parte sin efecto** (adjudicación `PARCIAL`): la rama de aborto (ahora: restaurar el backup y volver a la imagen vieja, con la escritura bloqueada hasta el reintento) y «qué se hace con esa diferencia no está decidido». Lo supera: `.specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:3186` («La rama de aborto del 📌 del»). Lo omitido del texto de arriba está marcado «[…]».
+ 
+ <a id="dec-mig-003-p2"></a>
+-
+ #### 📌2 de DEC-MIG-003
+ 
+ Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:3102
+@@ -7093,7 +6855,6 @@
+ **📌 Precisado el 2026-09-25, con OK del owner** (FASE 9 completa, decisiones 2b, 2c, 2e, 2f y
+ 2g de `26-fase-9-completa/10`; `02-…` `AO-2`, `AO-3`, `AO-5`, `AO-6`, `CT-4`; `09-…` `C-7`).
+ **El orden de base sigue sin cambiar.** Cambian cinco cosas:
+-
+ 1. **El gate del paso 2 exige completitud** (2f): el conteo del recorrido sin filtro tiene que
+    igualar el `total` de su paginado, y **todo id conocido** —los de nuestra base y los de los
+    manifiestos de sonda— tiene que aparecer en él; si no, el corte no avanza. La premisa *«el
+@@ -7129,7 +6890,6 @@
+ > **Parte sin efecto** (adjudicación `PARCIAL`): su punto 5: las lápidas del paso 4 (el corte ya no escribe lápidas). Lo supera: `.specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:3180` («del paso 4 que nombran el 📌 del 2026-09-25 (punto 5) y el de O-B: el corte ya no escribe»). Lo omitido del texto de arriba está marcado «[…]».
+ 
+ <a id="dec-mig-003-p3"></a>
+-
+ #### 📌3 de DEC-MIG-003
+ 
+ Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:3136
+@@ -7152,7 +6912,6 @@
+ > **Parte sin efecto** (adjudicación `PARCIAL`): la URL que devuelve la rama de aborto y el apuntado del 4b (la URL no cambia), el recuento de fichas de Gastronomía y Experiencia, el 5b como contenido de las `L1` y el 4c sobre fichas que nacieron despublicadas. Lo supera: `.specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:3185` («fichas de Gastronomía y de Experiencia del 📌 del 2026-09-27 (S-07)»); `.specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:3189` («Y el borrado del 5b del 📌 del 2026-09-27 ya no es el contenido de las `L1`»). Lo omitido del texto de arriba está marcado «[…]».
+ 
+ <a id="dec-mig-003-p4"></a>
+-
+ #### 📌4 de DEC-MIG-003
+ 
+ Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:3152
+@@ -7165,7 +6924,6 @@
+ por su destino: una purga por destino, 22, que cuentan para el tope del borde.
+ 
+ <a id="dec-mig-003-p5"></a>
+-
+ #### 📌5 de DEC-MIG-003
+ 
+ Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:3155
+@@ -7183,7 +6941,6 @@
+ > **Parte sin efecto** (adjudicación `PARCIAL`): el cierre y la apertura de la ruta por el borde y las lápidas del paso 4. Lo supera: `.specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:3182` («el 📌 del 2026-09-29, lote P-A (el Worker), y con»). Lo omitido del texto de arriba está marcado «[…]».
+ 
+ <a id="dec-mig-003-p7"></a>
+-
+ #### 📌7 de DEC-MIG-003
+ 
+ Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:3170
+@@ -7199,7 +6956,6 @@
+ el paso 5; se acepta que los del resto de la plataforma paren esas horas (E).
+ 
+ <a id="dec-mig-003-p8"></a>
+-
+ #### 📌8 de DEC-MIG-003
+ 
+ Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:3176
+@@ -7226,7 +6982,6 @@
+ filas borra la migración del paso 3 (J del lote 1 de la FASE 5; S-02, S-04).
+ 
+ <a id="dec-mig-003-p9"></a>
+-
+ #### 📌9 de DEC-MIG-003
+ 
+ Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:3192
+@@ -7249,7 +7004,6 @@
+ lote de la aplicación, owner 2026-09-30, A, C y D).
+ 
+ <a id="dec-mig-003-p10"></a>
+-
+ #### 📌10 de DEC-MIG-003
+ 
+ Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:3205
+@@ -7264,7 +7018,6 @@
+ 2026-09-30, P).
+ 
+ <a id="dec-mig-005"></a>
+-
+ ### DEC-MIG-005 — El corte trata a la cartera vieja como clientes nuevos: de su billing no se conserva nada, no se devuelve la diferencia del aborto y se les regala el trial; se conservan el usuario, sus preferencias y sus fichas
+ 
+ Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:6422
+@@ -7350,7 +7103,6 @@
+ - → ver [📌7](#dec-mig-005-p7).
+ 
+ <a id="dec-mig-005-p3"></a>
+-
+ #### 📌3 de DEC-MIG-005
+ 
+ Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:6508
+@@ -7363,7 +7115,6 @@
+ a cada dueño con una ficha a la vista.
+ 
+ <a id="dec-mig-005-p5"></a>
+-
+ #### 📌5 de DEC-MIG-005
+ 
+ Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:6517
+@@ -7378,7 +7129,6 @@
+ > **Parte sin efecto** (adjudicación `PARCIAL`): la parte del lote G (el detector del titular que sólo conoce el proveedor); lo del lote F sigue. Lo supera: `.specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:6530` («📌 del 2026-09-30, la parte del lote G»). Lo omitido del texto de arriba está marcado «[…]».
+ 
+ <a id="dec-mig-005-p6"></a>
+-
+ #### 📌6 de DEC-MIG-005
+ 
+ Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:6522
+@@ -7405,7 +7155,6 @@
+ `DEC-MIG-007`). El usuario y sus preferencias se siguen conservando.
+ 
+ <a id="dec-mig-005-p7"></a>
+-
+ #### 📌7 de DEC-MIG-005
+ 
+ Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:6538
+@@ -7424,7 +7173,6 @@
+ los 📌 de `DEC-MIG-002` y `DEC-MIG-003`).
+ 
+ <a id="dec-mig-006"></a>
+-
+ ### DEC-MIG-006 — El corte publica las fichas que estaban a la vista y le arranca a su dueño una prueba activa
+ 
+ Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:6973
+@@ -7460,7 +7208,6 @@
+ - → ver [📌3](#dec-mig-006-p3).
+ 
+ <a id="dec-mig-006-p2"></a>
+-
+ #### 📌2 de DEC-MIG-006
+ 
+ Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:7002
+@@ -7487,7 +7234,6 @@
+ > **Parte sin efecto** (adjudicación `PARCIAL`): «la escribe después el script del corte»: la escribe la herramienta del corte de `V6`. Lo supera: `.specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:7018` («**los escribe la herramienta del corte»). Lo omitido del texto de arriba está marcado «[…]».
+ 
+ <a id="dec-mig-006-p3"></a>
+-
+ #### 📌3 de DEC-MIG-006
+ 
+ Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:7016
+@@ -7506,7 +7252,6 @@
+ 📌 de `DEC-MIG-003`). Origen: (FASE 5, lote de la aplicación, owner 2026-09-30, B y D).
+ 
+ <a id="dec-mig-007"></a>
+-
+ ### DEC-MIG-007 — Las premisas del corte: reemplazo sin convivencia, cinco cuentas que importan y el resto a cargo del owner, por privado
+ 
+ Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:7027
+@@ -7545,7 +7290,6 @@
+ Retiradas de esta área (en `90-retirados.md`): [DEC-GRANT-010](90-retirados.md#dec-grant-010).
+ 
+ <a id="dec-grant-001"></a>
+-
+ ### DEC-GRANT-001 — Free Forever corta el cobro de inmediato, sin reembolso; revocar no restaura
+ 
+ Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:867
+@@ -7584,7 +7328,6 @@
+ - **Origen**: `M-GRANT-01`.
+ 
+ <a id="dec-grant-002"></a>
+-
+ ### DEC-GRANT-002 — La cortesía temporal también es exclusiva de SUPER_ADMIN
+ 
+ Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:899
+@@ -7619,7 +7362,6 @@
+ - **Origen**: `A-GRANT-01`.
+ 
+ <a id="dec-grant-003"></a>
+-
+ ### DEC-GRANT-003 — La cortesía temporal se implementa PAUSANDO la suscripción en el proveedor, y el servicio lo sostenemos nosotros
+ 
+ Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:1976
+@@ -7694,7 +7436,6 @@
+ - **Origen**: punto 11 del contraste PDR ↔ proveedor · §34.2 · `BD-MP-02`.
+ 
+ <a id="dec-grant-003-p1"></a>
+-
+ #### 📌1 de DEC-GRANT-003
+ 
+ Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:2037
+@@ -7717,7 +7458,6 @@
+ que es nuestro, y sigue en días.
+ 
+ <a id="dec-grant-004"></a>
+-
+ ### DEC-GRANT-004 — Cortesía y pausa se resuelven con validaciones nuestras: pausar cancela la cortesía avisando, y sobre una pausa no se otorga
+ 
+ Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:2055
+@@ -7774,7 +7514,6 @@
+ - **Origen**: residuo de `DEC-GRANT-003` · §34.2 · §35.4 · §26.
+ 
+ <a id="dec-grant-004-p1"></a>
+-
+ #### 📌1 de DEC-GRANT-004
+ 
+ Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:2073
+@@ -7785,7 +7524,6 @@
+ **📌 desde el 2026-09-25 se suman MESES**: la cortesía temporal es en meses enteros, ver `DEC-GRANT-003` impl. 6
+ 
+ <a id="dec-grant-005"></a>
+-
+ ### DEC-GRANT-005 — Un grant permanente se ancla al PLAN, lee su versión vigente, y lleva trinquete
+ 
+ Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:2936
+@@ -7831,7 +7569,6 @@
+ - **Origen**: `15-fase-9/07-decisiones-del-owner.md` `D-05`, sobre el racimo `R2`.
+ 
+ <a id="dec-grant-006"></a>
+-
+ ### DEC-GRANT-006 — La cortesía es POR SUSCRIPCIÓN: se retira su `scope`, y el §34 del PDR queda desviado a propósito
+ 
+ Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:3545
+@@ -7886,7 +7623,6 @@
+   que se le presentaron.
+ 
+ <a id="dec-grant-007"></a>
+-
+ ### DEC-GRANT-007 — La cortesía que el espejo se lleva puesta NO se re-apunta: se re-emite sobre la sucesora cuando autoriza
+ 
+ Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:4254
+@@ -7940,7 +7676,6 @@
+ - → ver [📌1](#dec-grant-007-p1).
+ 
+ <a id="dec-grant-007-p1"></a>
+-
+ #### 📌1 de DEC-GRANT-007
+ 
+ Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:4298
+@@ -7954,7 +7689,6 @@
+ `S9` sigue corriendo al autorizar y la pausa cruza los N cobros que caen desde ese día.
+ 
+ <a id="dec-grant-008"></a>
+-
+ ### DEC-GRANT-008 — La revocación de un grant guarda MOTIVO, además de fecha y firmante
+ 
+ Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:4455
+@@ -7980,7 +7714,6 @@
+   opciones que se le presentaron — eligió la 1, que era la recomendada.
+ 
+ <a id="dec-grant-009"></a>
+-
+ ### DEC-GRANT-009 — «A lo sumo un grant vivo por beneficiario» lo garantiza la base, no los nueve consumidores
+ 
+ Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:4476
+@@ -8014,7 +7747,6 @@
+   opciones que se le presentaron — eligió la 1, que era la recomendada.
+ 
+ <a id="dec-grant-011"></a>
+-
+ ### DEC-GRANT-011 — El saldo de cortesía de una sucesión que nadie completó se CIERRA, y se declara
+ 
+ Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:4915
+@@ -8076,7 +7808,6 @@
+   2026-09-23 entre las tres opciones que se le presentaron — eligió la 1, que era la recomendada.
+ 
+ <a id="dec-grant-012"></a>
+-
+ ### DEC-GRANT-012 — La cortesía diferida se le muestra al cliente CON su condición, no a secas y no escondida
+ 
+ Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:4972
+@@ -8116,7 +7847,6 @@
+   tres opciones que se le presentaron — eligió la 1, que era la recomendada.
+ 
+ <a id="dec-grant-013"></a>
+-
+ ### DEC-GRANT-013 — Otorgar un `Free Forever` CIERRA el saldo de una cortesía diferida del mismo beneficiario
+ 
+ Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:5222
+@@ -8160,7 +7890,6 @@
+   presentaron — eligió la 1, que era la recomendada.
+ 
+ <a id="dec-grant-014"></a>
+-
+ ### DEC-GRANT-014 — `motivo_cierre` es una enumeración CERRADA, porque el que cierra un saldo es una transición y no una persona
+ 
+ Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:5261
+@@ -8201,7 +7930,6 @@
+ ## Área LEGAL
+ 
+ <a id="dec-legal-001"></a>
+-
+ ### DEC-LEGAL-001 — Comprobante no fiscal hasta ARCA, sin fecha ni disparador de revisión
+ 
+ Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:964
+@@ -8236,7 +7964,6 @@
+ - → ver [📌1](#dec-legal-001-p1).
+ 
+ <a id="dec-legal-001-p1"></a>
+-
+ #### 📌1 de DEC-LEGAL-001
+ 
+ Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:990
+@@ -8252,7 +7979,6 @@
+ ## Área TEST
+ 
+ <a id="dec-test-001"></a>
+-
+ ### DEC-TEST-001 — Va UN guard nuevo, el de la columna que nadie escribe; el del orden de escrituras NO
+ 
+ Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:4505
+@@ -8408,7 +8134,6 @@
+ - → ver [📌6](#dec-test-001-p6).
+ 
+ <a id="dec-test-001-p1"></a>
+-
+ #### 📌1 de DEC-TEST-001
+ 
+ Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:4544
+@@ -8425,7 +8150,6 @@
+ > **Parte sin efecto** (adjudicación `PARCIAL`): la cifra «31 guards» (hoy 35). Lo supera: `.specs/HOS-1352-billing-verticals-redesign/docs/16-fase-7-del-paraguas.md:866` («[tachado: 34] 35: entra `G19`, de `V5`»). Lo omitido del texto de arriba está marcado «[…]».
+ 
+ <a id="dec-test-001-p2"></a>
+-
+ #### 📌2 de DEC-TEST-001
+ 
+ Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:4654
+@@ -8441,7 +8165,6 @@
+ > **Parte sin efecto** (adjudicación `PARCIAL`): la cifra «32 guards» (hoy 35). Lo supera: `.specs/HOS-1352-billing-verticals-redesign/docs/16-fase-7-del-paraguas.md:866` («[tachado: 34] 35: entra `G19`, de `V5`»). Lo omitido del texto de arriba está marcado «[…]».
+ 
+ <a id="dec-test-001-p3"></a>
+-
+ #### 📌3 de DEC-TEST-001
+ 
+ Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:4658
+@@ -8458,7 +8181,6 @@
+ > **Parte sin efecto** (adjudicación `PARCIAL`): la cifra «33 guards» (hoy 35). Lo supera: `.specs/HOS-1352-billing-verticals-redesign/docs/16-fase-7-del-paraguas.md:866` («[tachado: 34] 35: entra `G19`, de `V5`»). Lo omitido del texto de arriba está marcado «[…]».
+ 
+ <a id="dec-test-001-p4"></a>
+-
+ #### 📌4 de DEC-TEST-001
+ 
+ Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:4662
+@@ -8475,7 +8197,6 @@
+ > **Parte sin efecto** (adjudicación `PARCIAL`): la cifra «33 guards» (hoy 35). Lo supera: `.specs/HOS-1352-billing-verticals-redesign/docs/16-fase-7-del-paraguas.md:866` («[tachado: 34] 35: entra `G19`, de `V5`»). Lo omitido del texto de arriba está marcado «[…]».
+ 
+ <a id="dec-test-001-p5"></a>
+-
+ #### 📌5 de DEC-TEST-001
+ 
+ Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:4667
+@@ -8494,7 +8215,6 @@
+ > **Parte sin efecto** (adjudicación `PARCIAL`): la cifra «34» y «queda para el owner» (lo cerró el 📌 siguiente: `G18` en `V1`). Lo supera: `.specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:4678` («Cierra lo que el 📌 anterior dejaba para el owner.»); `.specs/HOS-1352-billing-verticals-redesign/docs/16-fase-7-del-paraguas.md:866` («[tachado: 34] 35: entra `G19`, de `V5`»). Lo omitido del texto de arriba está marcado «[…]».
+ 
+ <a id="dec-test-001-p6"></a>
+-
+ #### 📌6 de DEC-TEST-001
+ 
+ Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:4674
+@@ -8510,7 +8230,6 @@
+ > **Parte sin efecto** (adjudicación `PARCIAL`): el reparto «18 de verticales, 15 de billing y 1 de `U1`» (hoy 19, 15 y 1: `G19`). Lo supera: `.specs/HOS-1352-billing-verticals-redesign/docs/16-fase-7-del-paraguas.md:866` («[tachado: 34] 35: entra `G19`, de `V5`»). Lo omitido del texto de arriba está marcado «[…]».
+ 
+ <a id="dec-test-002"></a>
+-
+ ### DEC-TEST-002 — Un escritor DECLARADO y no implementado bloquea la terminación de su unidad, y no lo vigila un guard
+ 
+ Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:5351
+@@ -8542,7 +8261,6 @@
+ - → ver [📌1](#dec-test-002-p1).
+ 
+ <a id="dec-test-002-p1"></a>
+-
+ #### 📌1 de DEC-TEST-002
+ 
+ Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:5374
+@@ -8560,7 +8278,6 @@
+ `B/descomposicion.md` §2.7. Origen: (FASES 6 y 7, lote de la aplicación, owner 2026-09-30, M).
+ 
+ <a id="dec-test-003"></a>
+-
+ ### DEC-TEST-003 — El Mercado Pago falso miente sólo lo medido, y una batería vigila al proveedor real
+ 
+ Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:7179
+@@ -8595,7 +8312,6 @@
+ - → ver [📌3](#dec-test-003-p3).
+ 
+ <a id="dec-test-003-p1"></a>
+-
+ #### 📌1 de DEC-TEST-003
+ 
+ Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:7203
+@@ -8617,7 +8333,6 @@
+ ofrece compare-and-swap, y la cubre el barrido.
+ 
+ <a id="dec-test-003-p2"></a>
+-
+ #### 📌2 de DEC-TEST-003
+ 
+ Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:7215
+@@ -8632,7 +8347,6 @@
+ `WH-6`: un mismo `payment` llega una vez por cada canal.
+ 
+ <a id="dec-test-003-p3"></a>
+-
+ #### 📌3 de DEC-TEST-003
+ 
+ Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:7220
+@@ -8654,7 +8368,6 @@
+ ## Área CONC
+ 
+ <a id="dec-conc-001"></a>
+-
+ ### DEC-CONC-001 — El candado contra el doble cobro es nuestro, durable, y el duplicado se cancela solo pero se reembolsa con confirmación
+ 
+ Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:1512
+@@ -8726,7 +8439,6 @@
+ - → ver [📌4](#dec-conc-001-p4).
+ 
+ <a id="dec-conc-001-p1"></a>
+-
+ #### 📌1 de DEC-CONC-001
+ 
+ Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:1571
+@@ -8743,7 +8455,6 @@
+ (implicación 2); lo que cambia es que un rechazo cierra su pedido.
+ 
+ <a id="dec-conc-001-p2"></a>
+-
+ #### 📌2 de DEC-CONC-001
+ 
+ Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:1578
+@@ -8760,7 +8471,6 @@
+ probá en unos minutos", sin abrir un pedido nuevo: la primera orden pudo haberse aprobado.
+ 
+ <a id="dec-conc-001-p3"></a>
+-
+ #### 📌3 de DEC-CONC-001
+ 
+ Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:1584
+@@ -8777,7 +8487,6 @@
+ recurrente vivo igual sobre el mismo objetivo.
+ 
+ <a id="dec-conc-001-p4"></a>
+-
+ #### 📌4 de DEC-CONC-001
+ 
+ Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:1590
+@@ -8796,7 +8505,6 @@
+ `payer_email` y por `status`, y los compone) queda: es un hecho medido, no la regla.
+ 
+ <a id="dec-conc-002"></a>
+-
+ ### DEC-CONC-002 — La conciliación se apoya en NUESTRO inventario, detecta huérfanas por webhook, y sólo repara el vínculo
+ 
+ Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:1600
+@@ -8866,7 +8574,6 @@
+ - **Origen**: punto 7 del contraste PDR ↔ proveedor · §23 · §22.1.
+ 
+ <a id="dec-conc-002-p1"></a>
+-
+ #### 📌1 de DEC-CONC-002
+ 
+ Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:1633
+@@ -8893,7 +8600,6 @@
+ > **Parte sin efecto** (adjudicación `PARCIAL`): «Once filas»: cifra de su fecha; la nota de la misma decisión dice trece. Lo supera: `.specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:1646` («decisión; hoy son **trece** de las catorce filas «no», con `S31` y `S16`»). Lo omitido del texto de arriba está marcado «[…]».
+ 
+ <a id="dec-conc-002-p2"></a>
+-
+ #### 📌2 de DEC-CONC-002
+ 
+ Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:1648
+@@ -8904,7 +8610,6 @@
+ 
+ **📌 Precisado otra vez el 2026-09-25, con OK del owner (FASE 9 completa, decisiones 2b y 3d de
+ `26-fase-9-completa/10`).**
+-
+ - **La re-vinculación automática tiene precondición** (2b; `02-…` `AO-2`, `F-8CB3-008`): se
+   reescribe el `external_reference` de un preapproval desconocido **sólo si ese
+   `external_reference` ya nombra una fila nuestra que no tiene otro vínculo vivo con el
+@@ -8923,7 +8628,6 @@
+   actuar.
+ 
+ <a id="dec-conc-002-p3"></a>
+-
+ #### 📌3 de DEC-CONC-002
+ 
+ Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:1666
+@@ -8941,7 +8645,6 @@
+ > **Parte sin efecto** (adjudicación `PARCIAL`): «cuenta las dos lápidas, la del corte y la de recepción»: queda sólo la de recepción. Lo supera: `.specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:1675` («**una sola lápida, la de recepción**: la lápida del corte sale del diseño.»). Lo omitido del texto de arriba está marcado «[…]».
+ 
+ <a id="dec-conc-002-p4"></a>
+-
+ #### 📌4 de DEC-CONC-002
+ 
+ Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:1673
+@@ -8957,7 +8660,6 @@
+ el owner. La regla de re-vinculación por `external_reference` del segundo 📌 no cambia (S-49).
+ 
+ <a id="dec-conc-002-p5"></a>
+-
+ #### 📌5 de DEC-CONC-002
+ 
+ Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:1679
+@@ -8973,7 +8675,6 @@
+ migración la agrega (FASE 5, lote de la aplicación, owner 2026-09-30, I).
+ 
+ <a id="dec-conc-003"></a>
+-
+ ### DEC-CONC-003 — `RECONCILIATION_REQUIRED` deja de ser un estado y pasa a ser una MARCA
+ 
+ Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:2976
+@@ -9013,7 +8714,6 @@
+ ## Área RF
+ 
+ <a id="dec-rf-001"></a>
+-
+ ### DEC-RF-001 — La revocación reembolsa y cancela en un solo acto; el botón de arrepentimiento queda fuera de alcance hasta la consulta legal
+ 
+ Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:1796
+@@ -9091,7 +8791,6 @@
+ - → ver [📌6](#dec-rf-001-p6).
+ 
+ <a id="dec-rf-001-p1"></a>
+-
+ #### 📌1 de DEC-RF-001
+ 
+ Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:1827
+@@ -9106,7 +8805,6 @@
+ motivo 14.
+ 
+ <a id="dec-rf-001-p2"></a>
+-
+ #### 📌2 de DEC-RF-001
+ 
+ Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:1838
+@@ -9120,7 +8818,6 @@
+ lo supera** (`D11`; `B/03` §6.1, `RF2`).
+ 
+ <a id="dec-rf-001-p3"></a>
+-
+ #### 📌3 de DEC-RF-001
+ 
+ Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:1844
+@@ -9138,7 +8835,6 @@
+ operación única de la parte 1, y es lo que el botón va a llamar.
+ 
+ <a id="dec-rf-001-p4"></a>
+-
+ #### 📌4 de DEC-RF-001
+ 
+ Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:1852
+@@ -9155,7 +8851,6 @@
+ dispara `S18`.
+ 
+ <a id="dec-rf-001-p5"></a>
+-
+ #### 📌5 de DEC-RF-001
+ 
+ Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:1883
+@@ -9169,7 +8864,6 @@
+ y la rama 6 no abre marca sobre ese pago.
+ 
+ <a id="dec-rf-001-p6"></a>
+-
+ #### 📌6 de DEC-RF-001
+ 
+ Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:1887
+@@ -9183,7 +8877,6 @@
+ de devolución de órdenes; fuera de ella se consume.
+ 
+ <a id="dec-rf-002"></a>
+-
+ ### DEC-RF-002 — El reembolso del pago pendiente lo confirma una persona: no hay operaciones automáticas sobre dinero
+ 
+ Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:3505
+@@ -9229,7 +8922,6 @@
+   entre las dos opciones que se le presentaron.
+ 
+ <a id="dec-rf-003"></a>
+-
+ ### DEC-RF-003 — La rama 6 entra al listado con el default en DEVOLVER
+ 
+ Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:4416
+@@ -9271,7 +8963,6 @@
+ - → ver [📌1](#dec-rf-003-p1).
+ 
+ <a id="dec-rf-003-p1"></a>
+-
+ #### 📌1 de DEC-RF-003
+ 
+ Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:4449
+@@ -9285,7 +8976,6 @@
+ sigue siendo una, con sus tres filas.
+ 
+ <a id="dec-rf-004"></a>
+-
+ ### DEC-RF-004 — El motivo 14 no tiene UN default: tiene dos ramas, y la que devuelve es la que el cliente no causó
+ 
+ Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:5123
+@@ -9383,7 +9073,6 @@
+ - → ver [📌2](#dec-rf-004-p2).
+ 
+ <a id="dec-rf-004-p1"></a>
+-
+ #### 📌1 de DEC-RF-004
+ 
+ Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:5211
+@@ -9397,7 +9086,6 @@
+ > **Parte sin efecto** (adjudicación `PARCIAL`): `S12`-vía-`S26` y la lectura de `vertical_discontinuation` (C8); «queda del lado de la regla sólo `S17`» sigue. Lo supera: `.specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:5217` («Con C8 el disparador 2»). Lo omitido del texto de arriba está marcado «[…]».
+ 
+ <a id="dec-rf-004-p2"></a>
+-
+ #### 📌2 de DEC-RF-004
+ 
+ Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:5217
+@@ -9410,7 +9098,6 @@
+ de `S21` ya no se parte y el motivo 15 se llama `COMPLEMENTO_CON_PERÍODO_COBRADO_POR_REVOCACIÓN`.
+ 
+ <a id="dec-rf-005"></a>
+-
+ ### DEC-RF-005 — El listado ENLAZA al evento que dice cuál condición falló, y no lo copia en la marca
+ 
+ Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:5294
+@@ -9440,7 +9127,6 @@
+   opciones que se le presentaron — eligió la 3, que era la recomendada.
+ 
+ <a id="dec-rf-006"></a>
+-
+ ### DEC-RF-006 — El motivo 14 se PARTE EN DOS MOTIVOS, y con eso el default vuelve a ser por motivo
+ 
+ Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:5436
+@@ -9518,7 +9204,6 @@
+ - → ver [📌3](#dec-rf-006-p3).
+ 
+ <a id="dec-rf-006-p1"></a>
+-
+ #### 📌1 de DEC-RF-006
+ 
+ Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:5502
+@@ -9536,7 +9221,6 @@
+ motivos y nueve devuelven plata.
+ 
+ <a id="dec-rf-006-p2"></a>
+-
+ #### 📌2 de DEC-RF-006
+ 
+ Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:5509
+@@ -9552,7 +9236,6 @@
+ > **Parte sin efecto** (adjudicación `PARCIAL`): el `USER`/`GLOBAL` de `S26` y la vertical con fila en `vertical_discontinuation` (C8). Lo supera: `.specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:5515` («Con C8 el disparador 2»); `.specs/HOS-1354-billing-cobro-y-proveedor/docs/02-modelo-de-datos.md:1037` («(las causas de la discontinuación salieron con la revisión del owner, 2026-09-28, C8)»). Lo omitido del texto de arriba está marcado «[…]».
+ 
+ <a id="dec-rf-006-p3"></a>
+-
+ #### 📌3 de DEC-RF-006
+ 
+ Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:5515
+@@ -9565,7 +9248,6 @@
+ de `S21` ya no se parte y el motivo 15 se llama `COMPLEMENTO_CON_PERÍODO_COBRADO_POR_REVOCACIÓN`.
+ 
+ <a id="dec-rf-007"></a>
+-
+ ### DEC-RF-007 — El reembolso de un cobro viejo NO se implementa: pasado el plazo del proveedor, la reparación es manual
+ 
+ Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:5724
+@@ -9618,7 +9300,6 @@
+   que le puso sujeto y fecha a la fila.
+ 
+ <a id="dec-rf-008"></a>
+-
+ ### DEC-RF-008 — El reembolso tiene máquina mínima, y lo que ocurrió por fuera del flujo se asienta con una acción administrativa nueva
+ 
+ Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:6550
+@@ -9666,7 +9347,6 @@
+ - → ver [📌7](#dec-rf-008-p7).
+ 
+ <a id="dec-rf-008-p1"></a>
+-
+ #### 📌1 de DEC-RF-008
+ 
+ Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:6572
+@@ -9683,7 +9363,6 @@
+ > **Parte sin efecto** (adjudicación `PARCIAL`): la cifra «quince» (hoy 25 vivas); la acción 15 sigue. Lo supera: `.specs/HOS-1352-billing-verticals-redesign/docs/nucleo/08-auditoria-y-observabilidad.md:216` («**Es la vigesimosexta**»). Lo omitido del texto de arriba está marcado «[…]».
+ 
+ <a id="dec-rf-008-p3"></a>
+-
+ #### 📌3 de DEC-RF-008
+ 
+ Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:6591
+@@ -9700,7 +9379,6 @@
+ > **Parte sin efecto** (adjudicación `PARCIAL`): la cifra «veintiuna» (hoy 25 vivas). Lo supera: `.specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:6596` («pasan de veintiuna a veintitrés vivas»); `.specs/HOS-1352-billing-verticals-redesign/docs/nucleo/08-auditoria-y-observabilidad.md:216` («**Es la vigesimosexta**»). Lo omitido del texto de arriba está marcado «[…]».
+ 
+ <a id="dec-rf-008-p4"></a>
+-
+ #### 📌4 de DEC-RF-008
+ 
+ Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:6595
+@@ -9719,7 +9397,6 @@
+ > **Parte sin efecto** (adjudicación `PARCIAL`): la cifra «veintitrés» (hoy 25) y «las construye `V8`», que es `V8a`. Lo supera: `.specs/HOS-1352-billing-verticals-redesign/docs/nucleo/08-auditoria-y-observabilidad.md:216` («**Es la vigesimosexta**»); `.specs/HOS-1353-verticales-capacidades-y-autorizacion/descomposicion.md:69` («y las acciones administrativas 15, 23 y 24»). Lo omitido del texto de arriba está marcado «[…]».
+ 
+ <a id="dec-rf-008-p5"></a>
+-
+ #### 📌5 de DEC-RF-008
+ 
+ Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:6602
+@@ -9736,7 +9413,6 @@
+ la orden el reenvío devuelve la misma devolución con su id.
+ 
+ <a id="dec-rf-008-p6"></a>
+-
+ #### 📌6 de DEC-RF-008
+ 
+ Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:6609
+@@ -9752,7 +9428,6 @@
+ reenvía, que ya está diseñado (FASE 5, lote de la aplicación, owner 2026-09-30, J).
+ 
+ <a id="dec-rf-008-p7"></a>
+-
+ #### 📌7 de DEC-RF-008
+ 
+ Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:6615
+@@ -9770,7 +9445,6 @@
+ ## Área OBS
+ 
+ <a id="dec-obs-001"></a>
+-
+ ### DEC-OBS-001 — `RECONCILIATION_REQUIRED` avisa por un listado accionable y un correo AGREGADO, no uno por evento
+ 
+ Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:2239
+@@ -9819,7 +9493,6 @@
+ - → ver [📌2](#dec-obs-001-p2).
+ 
+ <a id="dec-obs-001-p1"></a>
+-
+ #### 📌1 de DEC-OBS-001
+ 
+ Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:2277
+@@ -9834,7 +9507,6 @@
+ vertical queda visible ahí, sin regla nueva.
+ 
+ <a id="dec-obs-001-p2"></a>
+-
+ #### 📌2 de DEC-OBS-001
+ 
+ Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:2282
+@@ -9847,7 +9519,6 @@
+ ## Área CI
+ 
+ <a id="dec-ci-001"></a>
+-
+ ### DEC-CI-001 — `epic/**` es un tipo de rama del proyecto, y no todos los workflows corren ahí
+ 
+ Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:2785
+@@ -9908,7 +9579,6 @@
+ - → ver [📌2](#dec-ci-001-p2).
+ 
+ <a id="dec-ci-001-p1"></a>
+-
+ #### 📌1 de DEC-CI-001
+ 
+ Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:2837
+@@ -9925,7 +9595,6 @@
+ `16-fase-7-del-paraguas.md` §4.6 y §4.7. Origen: (FASES 6 y 7, lote de la aplicación, owner 2026-09-30, M).
+ 
+ <a id="dec-ci-001-p2"></a>
+-
+ #### 📌2 de DEC-CI-001
+ 
+ Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:2845
+@@ -9953,7 +9622,6 @@
+ `[NOSPEC:epic-guard-promotion]`.
+ 
+ <a id="dec-ci-002"></a>
+-
+ ### DEC-CI-002 — `develop` no se toca: es una condición adelantada, no un filtro muerto
+ 
+ Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:2867
+@@ -9977,7 +9645,6 @@
+ ## Área METH
+ 
+ <a id="dec-meth-001"></a>
+-
+ ### DEC-METH-001 — Reset total: el PDR es la única herencia del programa
+ 
+ Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:62
+@@ -10010,7 +9677,6 @@
+ - **Origen**: instrucción del owner, 2026-09-15.
+ 
+ <a id="dec-meth-002"></a>
+-
+ ### DEC-METH-002 — Se autorizan conteos read-only de producción durante FASE 1A
+ 
+ Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:89
+@@ -10038,7 +9704,6 @@
+ - **Origen**: `O-METH-02`.
+ 
+ <a id="dec-meth-003"></a>
+-
+ ### DEC-METH-003 — El criterio de FASE 5 se define al empezar FASE 5, y es su gate de entrada
+ 
+ Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:111
+@@ -10075,7 +9740,6 @@
+ - **Origen**: `O-METH-03`.
+ 
+ <a id="dec-meth-004"></a>
+-
+ ### DEC-METH-004 — La FASE 9 tiene cuatro salidas, y «resuelto» exige verificar la regla contra todo su dominio
+ 
+ Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:144
+@@ -10129,7 +9793,6 @@
+   también actualizar las issues y las sub spec y los artifacts»*—, más `F-8C2-011` y `F-8C2-016`.
+ 
+ <a id="dec-meth-005"></a>
+-
+ ### DEC-METH-005 — Los guards nuevos salen de lo que la épica pide, y corren desde el día 1
+ 
+ Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:2885
+@@ -10184,7 +9847,6 @@
+   implementación y haga algo por fuera de lo que estamos buscando»*.
+ 
+ <a id="dec-meth-006"></a>
+-
+ ### DEC-METH-006 — La FASE 8 vuelve a correr sobre lo que la FASE 9 produjo, hasta que no aparezca ningún CRÍTICO nuevo
+ 
+ Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:3219
+@@ -10236,7 +9898,6 @@
+ > **Parte sin efecto** (adjudicación `PARCIAL`): la condición de corte del punto 2, *«se repite hasta que una pasada de FASE 8 no produzca ningún `CRITICA` nuevo»*: la reemplazó `DEC-METH-008` el mismo día (*«hasta que ningún `CRITICA` quede abierto sin causa declarada»*) y la precisó `DEC-METH-013` (metodología: no exige AC). Lo supera: `.specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:3222` («ENMENDADA por `DEC-METH-008`** el mismo 2026-09-19 y **PRECISADA por `DEC-METH-013`** el»); `.specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:3239` («**se repite hasta que una pasada de FASE 8 no produzca ningún `CRITICA` nuevo.**»). Lo omitido del texto de arriba está marcado «[…]».
+ 
+ <a id="dec-meth-007"></a>
+-
+ ### DEC-METH-007 — El gate de FASE 5 se abre, con un criterio de dos filtros en orden
+ 
+ Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:3265
+@@ -10281,7 +9942,6 @@
+ - **Origen**: `15-fase-9/07-decisiones-del-owner.md` `D-31`, sobre el racimo `R6`.
+ 
+ <a id="dec-meth-008"></a>
+-
+ ### DEC-METH-008 — «Resuelto» incluye el dominio que el ARREGLO crea, y el ciclo corta con causa declarada
+ 
+ Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:3338
+@@ -10334,7 +9994,6 @@
+   arregla o se escribe la causa y se patea: cada caso de esos me lo decís y me das a elegir»*.
+ 
+ <a id="dec-meth-009"></a>
+-
+ ### DEC-METH-009 — Un arreglo no está aplicado hasta que se buscó el término que redefine en los capítulos que el commit NO toca
+ 
+ Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:3387
+@@ -10388,7 +10047,6 @@
+   propone al cerrar su informe, y la conversación con el owner del 2026-09-20.
+ 
+ <a id="dec-meth-010"></a>
+-
+ ### DEC-METH-010 — El grep no falla al buscar sino al resolver: la resolución se escribe POR APARICIÓN, y el alcance es todo el corpus
+ 
+ Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:3637
+@@ -10459,7 +10117,6 @@
+   la regla corregida y volver a medir**, por encima de la pasada acotada que se le recomendó.
+ 
+ <a id="dec-meth-011"></a>
+-
+ ### DEC-METH-011 — La obligación alcanza a las DECISIONES, no sólo a los arreglos, y el rastro por aparición es un ARCHIVO
+ 
+ Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:4140
+@@ -10525,7 +10182,6 @@
+   2026-09-21 entre las tres opciones que se le presentaron — eligió la 1, que era la recomendada.
+ 
+ <a id="dec-meth-012"></a>
+-
+ ### DEC-METH-012 — La justificación de una aparición cubre el CUANTIFICADOR de la cita y no afirma nada que no esté verificado en ella
+ 
+ Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:4839
+@@ -10605,7 +10261,6 @@
+   pueda evaluar después.
+ 
+ <a id="dec-meth-013"></a>
+-
+ ### DEC-METH-013 — Cuándo se DEJA DE GIRAR el ciclo 8↔9: cuando la tanda anterior dejó de generar críticos, con tope de dos vueltas
+ 
+ Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:5585
+@@ -10667,7 +10322,6 @@
+   agregado de que acá no alcanzaba con leerla, había que leer **quién la enmendó**.
+ 
+ <a id="dec-meth-013-p1"></a>
+-
+ #### 📌1 de DEC-METH-013
+ 
+ Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:5629
+@@ -10679,7 +10333,6 @@
+ §1.3 midió en la **primera** vuelta que *«lo que baja no es el stock de defectos: es el tamaño de la
+ tanda de arreglos anterior»* (l. 81-83) y su §1.4 concluyó que *«con la condición escrita hoy, el
+ ciclo no tiene convergencia demostrada»* (l. 114-116). Su §1.5 propuso **tres** remedios:
+-
+ 1. **extender `DEC-METH-004` al dominio que el ARREGLO crea** — ✅ **aplicado** por `DEC-METH-008`
+    puntos 1 y 2, el 2026-09-19;
+ 2. **medir la tasa, no el conteo** (*«críticos nuevos por decisión aplicada»*, ≈ 0,76 en la 8-bis)
+@@ -10690,7 +10343,6 @@
+    esta decisión**.
+ 
+ <a id="dec-meth-014"></a>
+-
+ ### DEC-METH-014 — La 8-bis-6 se reemplaza por una FASE 8 COMPLETA sobre el diseño vigente, a ciegas del historial
+ 
+ Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:6238
+@@ -10737,7 +10389,6 @@
+   vectores el mismo día. Se arranca **en una sesión nueva, con contexto limpio**, a pedido suyo.
+ 
+ <a id="dec-meth-015"></a>
+-
+ ### DEC-METH-015 — Los residuos de borde que deja un arreglo se declaran, no se persiguen
+ 
+ Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:6281
+@@ -10757,7 +10408,6 @@
+ - **Origen**: propuesta del orquestador del 2026-09-25, tras la pendiente 8; aprobada por el owner.
+ 
+ <a id="dec-meth-016"></a>
+-
+ ### DEC-METH-016 — Una tercera vuelta de la FASE 8 y la FASE 9, entera y desde cero, como excepción declarada al tope de `DEC-METH-013`
+ 
+ Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:6297
+@@ -10790,7 +10440,6 @@
+   fase 9 de cero?»*); el owner eligió la 1, la recomendada.
+ 
+ <a id="dec-meth-017"></a>
+-
+ ### DEC-METH-017 — El criterio de la FASE 5: lo que `U1` borra se lista, y lo demás se clasifica contra el diseño
+ 
+ Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:6326
+@@ -10836,7 +10485,6 @@
+ - **Origen**: FASE 5, lote A, 2026-09-30; propuesta del orquestador, el owner eligió la 2.
+ 
+ <a id="dec-meth-018"></a>
+-
+ ### DEC-METH-018 — La FASE 6 queda cerrada por absorción en la FASE 5, con un pase sobre lo que la 5 no clasificó
+ 
+ Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:7683
+@@ -10912,7 +10560,6 @@
+   propuesta del orquestador, el owner eligió la 1, la recomendada.
+ 
+ <a id="dec-meth-019"></a>
+-
+ ### DEC-METH-019 — La spec consolidada es la única fuente para implementar, y se acepta sólo con trazabilidad mecánica y dos verificaciones ciegas
+ 
+ Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:8108
+@@ -10983,7 +10630,6 @@
+ - → ver [📌5](#dec-meth-019-p5).
+ 
+ <a id="dec-meth-019-p1"></a>
+-
+ #### 📌1 de DEC-METH-019
+ 
+ Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:8167
+@@ -11008,7 +10654,6 @@
+ (`41-corte-del-mvp/10-decisiones-del-owner.md`, AW a AY).
+ 
+ <a id="dec-meth-019-p2"></a>
+-
+ #### 📌2 de DEC-METH-019
+ 
+ Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:8183
+@@ -11023,7 +10668,6 @@
+ (`41-corte-del-mvp/10-decisiones-del-owner.md`, AZ).
+ 
+ <a id="dec-meth-019-p3"></a>
+-
+ #### 📌3 de DEC-METH-019
+ 
+ Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:8189
+@@ -11047,7 +10691,6 @@
+ las 30 piezas (`41-corte-del-mvp/10-decisiones-del-owner.md`, BA, BB y BE).
+ 
+ <a id="dec-meth-019-p4"></a>
+-
+ #### 📌4 de DEC-METH-019
+ 
+ Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:8204
+@@ -11078,7 +10721,6 @@
+ BS y BT.
+ 
+ <a id="dec-meth-019-p5"></a>
+-
+ #### 📌5 de DEC-METH-019
+ 
+ Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:8226
+@@ -14169,6 +13811,7 @@
+ - **Elegida**: 1
+ - **Recomendada**: sí
+ - **En una línea**: **un descenso encolado cuenta como cliente de la versión destino**: la acción 19 rechaza fijar el precio de una versión hacia la que hay un `S38` encolado (BM) y se publica una versión nueva; el cliente llega por `S38` a la versión cuyo precio vio y, si después hay aumento, le llega por BZ como a cualquier anclado. **El rechazo de la acción 19 suma un predicado** —cuenta también las filas con un `S38` encolado hacia esa versión— **y su test**, en `B2`. Precisa BM y BZ, y `B/12` §3.2. Las otras opciones eran que no cuente (`S38` aplica el precio nuevo y una relectura muta el monto en el acto: un aumento sin los 60 días del §29) o que fijar el precio cancele los descensos encolados con un aviso (el cliente pierde un pedido que hizo)
++- ⚠️ **Caducada en parte**: CF reemplaza la ubicación del predicado y su test: los escribe el PR de `B3`. El AC sigue siendo de `B2`; se conserva que un `S38` encolado cuenta como cliente de la versión destino. Véase [CF](#own-41-corte-del-mvp-t14-cf) (Origen: .specs/HOS-1352-billing-verticals-redesign/docs/41-corte-del-mvp/10-decisiones-del-owner.md:201). Sólo citable; la parte reemplazada no se implementa.
+ 
+ <a id="own-41-corte-del-mvp-t12-cd"></a>
+ **Letra CD**

@@ -365,6 +365,43 @@ describe('resolver real-shape contract', () => {
             );
         });
 
+        it('TEST:1751:3 admin.system.health forwards globalErrorRate untouched', async () => {
+            mockFetchApi.mockImplementation(async function ({ path }: { path: string }) {
+                if (path.includes('/system/health')) {
+                    return envelope({
+                        success: true,
+                        data: {
+                            status: 'up',
+                            db: 'connected',
+                            redis: 'connected',
+                            uptime: 3600
+                        }
+                    });
+                }
+                if (path.includes('/admin/metrics')) {
+                    return envelope({
+                        success: true,
+                        data: {
+                            summary: {
+                                totalRequests: 13,
+                                totalErrors: 1,
+                                globalErrorRate: 7.558,
+                                activeConnections: 1
+                            }
+                        }
+                    });
+                }
+                return envelope({ success: true, data: {} });
+            });
+
+            const result = (await runSource('admin.system.health')) as {
+                metrics?: { errorRate?: number };
+            };
+
+            // The API sends a percentage; the resolver must not scale it.
+            expect(result.metrics?.errorRate).toBe(7.558);
+        });
+
         it('returns null when the envelope has no data (renders empty, not crash)', async () => {
             mockFetchApi.mockResolvedValue(envelope({ success: true }));
             const result = await runSource('admin.system.health');
@@ -430,57 +467,6 @@ describe('resolver real-shape contract', () => {
                 { label: 'Anfitriones', value: 38 },
                 { label: 'Admins', value: 2 }
             ]);
-        });
-    });
-
-    // ── Card I — super.billing.stats ────────────────────────────────────────
-    describe('super.billing.stats (card I)', () => {
-        it('emits 5 billing kpis from the nested overview object', async () => {
-            mockFetchApi.mockResolvedValue(
-                envelope({
-                    success: true,
-                    data: {
-                        overview: {
-                            activeSubscriptions: 5,
-                            trialingSubscriptions: 2,
-                            mrr: 100000,
-                            churnRate: 0.025,
-                            totalCustomers: 12
-                        },
-                        revenueTimeSeries: [],
-                        subscriptionBreakdown: []
-                    }
-                })
-            );
-
-            const result = (await runSource('super.billing.stats')) as {
-                value: number;
-                kpis: ReadonlyArray<{
-                    key: string;
-                    value: number;
-                    unitPrefix?: string;
-                    unitSuffix?: string;
-                }>;
-            };
-
-            expect(result.value).toBe(5);
-            expect(result.kpis).toHaveLength(5);
-            expect(result.kpis.find((k) => k.key === 'activeSubs')?.value).toBe(5);
-            expect(result.kpis.find((k) => k.key === 'trialingSubs')?.value).toBe(2);
-            // MRR converted from centavos (100000 → 1000 pesos), with $ prefix.
-            const mrrKpi = result.kpis.find((k) => k.key === 'mrr');
-            expect(mrrKpi?.value).toBe(1000);
-            expect(mrrKpi?.unitPrefix).toBe('$');
-            // Churn 0.025 → 2.5% with suffix.
-            const churnKpi = result.kpis.find((k) => k.key === 'churn');
-            expect(churnKpi?.value).toBe(2.5);
-            expect(churnKpi?.unitSuffix).toBe('%');
-        });
-
-        it('returns null when overview is missing (renders empty, not 0)', async () => {
-            mockFetchApi.mockResolvedValue(envelope({ success: true, data: {} }));
-            const result = await runSource('super.billing.stats');
-            expect(result).toBeNull();
         });
     });
 });

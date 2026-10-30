@@ -12,7 +12,7 @@
  * Making the fallback throw was considered and rejected on evidence: 101 of the
  * 712 permissions rely on it TODAY, and they are not mistakes. Whole live
  * families sit there — `AMENITY_*`, `FEATURE_*`, `TAG_*`, `AD_SLOT_*`,
- * `AD_MEDIA_ASSET_*`, `PRICING_PLAN_*`, `PRICING_TIER_*` — and giving each one a
+ * `AD_MEDIA_ASSET_*`, `PRICING_TIER_*` — and giving each one a
  * category is a taxonomy decision about how the permissions screen should read,
  * not a bug fix. Breaking the build would mean breaking it for all 101 at once.
  *
@@ -85,19 +85,17 @@ const KNOWN_SYSTEM_FALLBACK_KEYS: readonly string[] = [
     'HOMEPAGE_LAYOUT_CONFIGURE',
     'HOST_CONTACT_VIEW',
     'HOST_MESSAGE_SEND',
+    'LISTING_FOREIGN_CONTENT_EDIT',
+    'LISTING_MODERATE',
+    'LISTING_PURGE_ON_REQUEST',
     'LOGS_VIEW_ALL',
     'MAINTENANCE_MODE_WRITE',
     'MANAGE_CLIENTS',
     'MANAGE_CONTENT',
     'MANAGE_PRODUCTS',
     'MANAGE_PURCHASES',
-    'MANAGE_SUBSCRIPTIONS',
     'MANAGE_USERS',
     'MULTILANGUAGE_CONTENT_EDIT',
-    'PRICING_PLAN_CREATE',
-    'PRICING_PLAN_DELETE',
-    'PRICING_PLAN_UPDATE',
-    'PRICING_PLAN_VIEW',
     'PRICING_TIER_CREATE',
     'PRICING_TIER_DELETE',
     'PRICING_TIER_UPDATE',
@@ -132,7 +130,8 @@ const KNOWN_SYSTEM_FALLBACK_KEYS: readonly string[] = [
     'TAG_VIEW_ALL_ASSIGNMENTS',
     'TAG_VIEW_ALL_USER_TAGS',
     'THEME_EDIT',
-    'TRANSLATIONS_MANAGE'
+    'TRANSLATIONS_MANAGE',
+    'TRIAL_EXTEND'
 ];
 
 const KEY_BY_VALUE = new Map(Object.entries(PermissionEnum).map(([key, value]) => [value, key]));

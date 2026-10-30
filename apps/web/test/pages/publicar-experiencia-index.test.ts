@@ -4,13 +4,13 @@
  * turned from the experience vertical's full marketing page (hero, benefits,
  * how-it-works, price, FAQ — see the previous revision of this file) into a
  * permanent redirect to `/planes/experiencias/`, the new level-2 sales page.
- * Mirrors `publicar-restaurante-index.test.ts`.
+ * Mirrors the retired venue lead page redirect test.
  *
  * ## Where the retired content coverage lives now
  *
  * See that file's docblock: `test/pages/sales-pages-family.guard.test.ts`
  * covers `/planes/experiencias/index.astro`'s content, and
- * `test/pages/commerce-landing-cta.guard.test.ts` /
+ * `test/pages/listing-landing-cta.guard.test.ts` /
  * `test/pages/pricing-ssr-runtime.test.ts` cover its CTA and pricing pages.
  */
 

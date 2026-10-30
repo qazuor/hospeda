@@ -1,7 +1,6 @@
 export enum PermissionCategoryEnum {
     ACCOMMODATION = 'ACCOMMODATION',
     ACCOMMODATION_LISTING = 'ACCOMMODATION_LISTING',
-    ACCOMMODATION_LISTING_PLAN = 'ACCOMMODATION_LISTING_PLAN',
     ACCOMMODATION_REVIEW = 'ACCOMMODATION_REVIEW',
     AD_PRICING_CATALOG = 'AD_PRICING_CATALOG',
     ATTRACTION = 'ATTRACTION',
@@ -39,17 +38,13 @@ export enum PermissionCategoryEnum {
     USER_BOOKMARK_COLLECTION = 'USER_BOOKMARK_COLLECTION',
     CLIENT = 'CLIENT',
     PRODUCT = 'PRODUCT',
-    SUBSCRIPTION = 'SUBSCRIPTION',
-    SUBSCRIPTION_ITEM = 'SUBSCRIPTION_ITEM',
     PROMOTION = 'PROMOTION',
     DISCOUNT_CODE = 'DISCOUNT_CODE',
     CAMPAIGN = 'CAMPAIGN',
     SERVICE_LISTING = 'SERVICE_LISTING',
     BENEFIT_LISTING = 'BENEFIT_LISTING',
     BENEFIT_PARTNER = 'BENEFIT_PARTNER',
-    BENEFIT_LISTING_PLAN = 'BENEFIT_LISTING_PLAN',
     TOURIST_SERVICE = 'TOURIST_SERVICE',
-    SERVICE_LISTING_PLAN = 'SERVICE_LISTING_PLAN',
     NEWSLETTER_CAMPAIGN = 'NEWSLETTER_CAMPAIGN',
     NEWSLETTER_SUBSCRIBER = 'NEWSLETTER_SUBSCRIBER',
     NOTIFICATION = 'NOTIFICATION',
@@ -65,19 +60,9 @@ export enum PermissionCategoryEnum {
     ACCESS = 'ACCESS',
     MEDIA = 'MEDIA',
     MODERATION = 'MODERATION',
-    /**
-     * Commerce listings (gastronomy, experience). Added in SPEC-239.
-     *
-     * RETIRING (HOS-1077): a category that names two verticals at once is the
-     * reason gastronomy could not be granted without experience. Split into
-     * {@link PermissionCategoryEnum.GASTRONOMY} and
-     * {@link PermissionCategoryEnum.EXPERIENCE}; kept through the expand release
-     * because the `commerce.*` permissions it classifies are still live.
-     */
-    COMMERCE = 'COMMERCE',
-    /** Gastronomy listings — the gastronomy half of the commerce split (HOS-1077). */
-    GASTRONOMY = 'GASTRONOMY',
-    /** Experience listings — the experience half of the commerce split (HOS-1077). */
+    /** venue listings (HOS-1077). */
+    VENUE = 'VENUE',
+    /** Experience listings (HOS-1077). */
     EXPERIENCE = 'EXPERIENCE',
     HOST_TRADE = 'HOST_TRADE',
     /** Partners program (SPEC-271). */
@@ -199,15 +184,6 @@ export enum PermissionEnum {
     ACCOMMODATION_LISTING_HARD_DELETE = 'accommodationListing.hardDelete', // Allows permanently deleting an accommodation listing.
     ACCOMMODATION_LISTING_STATUS_MANAGE = 'accommodationListing.status.manage', // Allows managing accommodation listing status (draft, active, paused, archived).
 
-    // ACCOMMODATION_LISTING_PLAN: Permissions related to accommodation listing plan management
-    ACCOMMODATION_LISTING_PLAN_CREATE = 'accommodationListingPlan.create', // Allows creating a new accommodation listing plan.
-    ACCOMMODATION_LISTING_PLAN_UPDATE = 'accommodationListingPlan.update', // Allows updating an accommodation listing plan.
-    ACCOMMODATION_LISTING_PLAN_DELETE = 'accommodationListingPlan.delete', // Allows deleting an accommodation listing plan (soft delete).
-    ACCOMMODATION_LISTING_PLAN_VIEW = 'accommodationListingPlan.view', // Allows viewing accommodation listing plan information.
-    ACCOMMODATION_LISTING_PLAN_RESTORE = 'accommodationListingPlan.restore', // Allows restoring a deleted accommodation listing plan.
-    ACCOMMODATION_LISTING_PLAN_HARD_DELETE = 'accommodationListingPlan.hardDelete', // Allows permanently deleting an accommodation listing plan.
-    ACCOMMODATION_LISTING_PLAN_STATUS_MANAGE = 'accommodationListingPlan.status.manage', // Allows managing accommodation listing plan status (activate, deactivate).
-
     // Catalog management for amenities/features
     AMENITY_VIEW = 'amenity.view', // Allows viewing amenity information.
     AMENITY_CREATE = 'amenity.create', // Allows creating a new amenity in the catalog.
@@ -307,7 +283,6 @@ export enum PermissionEnum {
 
     // USER: Permissions related to user management and actions
     USER_READ_ALL = 'user.read.all', // Allows reading all user profiles.
-    USER_IMPERSONATE = 'user.impersonate', // Allows impersonating another user.
     USER_CREATE = 'user.create', // Allows creating a new user.
     USER_UPDATE_ROLES = 'user.update.roles', // Allows updating user roles.
     USER_UPDATE_ANY = 'user.update.any', // Allows updating any user's profile.
@@ -381,34 +356,12 @@ export enum PermissionEnum {
     CLIENT_HARD_DELETE = 'client.hardDelete', // Allows permanently deleting a client.
     MANAGE_CLIENTS = 'client.manage', // Allows full management of clients.
 
-    // SUBSCRIPTION: Permissions related to subscription management
-    SUBSCRIPTION_CREATE = 'subscription.create', // Allows creating a new subscription.
-    SUBSCRIPTION_UPDATE = 'subscription.update', // Allows updating a subscription.
-    SUBSCRIPTION_DELETE = 'subscription.delete', // Allows deleting a subscription.
-    SUBSCRIPTION_VIEW = 'subscription.view', // Allows viewing subscription information.
-    MANAGE_SUBSCRIPTIONS = 'subscription.manage', // Allows full management of subscriptions.
-
-    // SUBSCRIPTION_ITEM: Permissions related to subscription item management
-    SUBSCRIPTION_ITEM_CREATE = 'subscriptionItem.create', // Allows creating a new subscription item.
-    SUBSCRIPTION_ITEM_UPDATE = 'subscriptionItem.update', // Allows updating a subscription item.
-    SUBSCRIPTION_ITEM_DELETE = 'subscriptionItem.delete', // Allows deleting a subscription item (soft delete).
-    SUBSCRIPTION_ITEM_VIEW = 'subscriptionItem.view', // Allows viewing subscription item information.
-    SUBSCRIPTION_ITEM_RESTORE = 'subscriptionItem.restore', // Allows restoring a deleted subscription item.
-    SUBSCRIPTION_ITEM_HARD_DELETE = 'subscriptionItem.hardDelete', // Allows permanently deleting a subscription item.
-    SUBSCRIPTION_ITEM_LINK_MANAGE = 'subscriptionItem.link.manage', // Allows managing links between subscriptions/purchases and entities.
-
     // PRODUCT: Permissions related to product management
     PRODUCT_CREATE = 'product.create', // Allows creating a new product.
     PRODUCT_UPDATE = 'product.update', // Allows updating a product.
     PRODUCT_DELETE = 'product.delete', // Allows deleting a product.
     PRODUCT_VIEW = 'product.view', // Allows viewing product information.
     MANAGE_PRODUCTS = 'product.manage', // Allows full management of products.
-
-    // PRICING_PLAN: Permissions related to pricing plan management
-    PRICING_PLAN_CREATE = 'pricingPlan.create', // Allows creating a new pricing plan.
-    PRICING_PLAN_UPDATE = 'pricingPlan.update', // Allows updating a pricing plan.
-    PRICING_PLAN_DELETE = 'pricingPlan.delete', // Allows deleting a pricing plan.
-    PRICING_PLAN_VIEW = 'pricingPlan.view', // Allows viewing pricing plan information.
 
     // PRICING_TIER: Permissions related to pricing tier management
     PRICING_TIER_CREATE = 'pricingTier.create', // Allows creating a new pricing tier.
@@ -830,16 +783,6 @@ export enum PermissionEnum {
     BENEFIT_PARTNER_SOFT_DELETE_VIEW = 'benefitPartner.softDelete.view', // Allows viewing soft-deleted benefit partners.
     BENEFIT_PARTNER_STATUS_MANAGE = 'benefitPartner.status.manage', // Allows managing benefit partner status.
 
-    // BENEFIT_LISTING_PLAN: Permissions related to benefit listing plan management
-    BENEFIT_LISTING_PLAN_CREATE = 'benefitListingPlan.create', // Allows creating a new benefit listing plan.
-    BENEFIT_LISTING_PLAN_UPDATE = 'benefitListingPlan.update', // Allows updating a benefit listing plan.
-    BENEFIT_LISTING_PLAN_DELETE = 'benefitListingPlan.delete', // Allows deleting a benefit listing plan (soft delete).
-    BENEFIT_LISTING_PLAN_VIEW = 'benefitListingPlan.view', // Allows viewing benefit listing plan information.
-    BENEFIT_LISTING_PLAN_RESTORE = 'benefitListingPlan.restore', // Allows restoring a deleted benefit listing plan.
-    BENEFIT_LISTING_PLAN_HARD_DELETE = 'benefitListingPlan.hardDelete', // Allows permanently deleting a benefit listing plan.
-    BENEFIT_LISTING_PLAN_SOFT_DELETE_VIEW = 'benefitListingPlan.softDelete.view', // Allows viewing soft-deleted benefit listing plans.
-    BENEFIT_LISTING_PLAN_STATUS_MANAGE = 'benefitListingPlan.status.manage', // Allows managing benefit listing plan status.
-
     // TOURIST_SERVICE: Permissions related to tourist service management
     TOURIST_SERVICE_CREATE = 'touristService.create', // Allows creating a new tourist service.
     TOURIST_SERVICE_UPDATE = 'touristService.update', // Allows updating a tourist service.
@@ -849,16 +792,6 @@ export enum PermissionEnum {
     TOURIST_SERVICE_HARD_DELETE = 'touristService.hardDelete', // Allows permanently deleting a tourist service.
     TOURIST_SERVICE_SOFT_DELETE_VIEW = 'touristService.softDelete.view', // Allows viewing soft-deleted tourist services.
     TOURIST_SERVICE_STATUS_MANAGE = 'touristService.status.manage', // Allows managing tourist service status.
-
-    // SERVICE_LISTING_PLAN: Permissions related to service listing plan management
-    SERVICE_LISTING_PLAN_CREATE = 'serviceListingPlan.create', // Allows creating a new service listing plan.
-    SERVICE_LISTING_PLAN_UPDATE = 'serviceListingPlan.update', // Allows updating a service listing plan.
-    SERVICE_LISTING_PLAN_DELETE = 'serviceListingPlan.delete', // Allows deleting a service listing plan (soft delete).
-    SERVICE_LISTING_PLAN_VIEW = 'serviceListingPlan.view', // Allows viewing service listing plan information.
-    SERVICE_LISTING_PLAN_RESTORE = 'serviceListingPlan.restore', // Allows restoring a deleted service listing plan.
-    SERVICE_LISTING_PLAN_HARD_DELETE = 'serviceListingPlan.hardDelete', // Allows permanently deleting a service listing plan.
-    SERVICE_LISTING_PLAN_SOFT_DELETE_VIEW = 'serviceListingPlan.softDelete.view', // Allows viewing soft-deleted service listing plans.
-    SERVICE_LISTING_PLAN_STATUS_MANAGE = 'serviceListingPlan.status.manage', // Allows managing service listing plan status.
 
     // SERVICE_ORDER: Permissions related to professional service order management
     SERVICE_ORDER_CREATE = 'serviceOrder.create', // Allows creating a new service order.
@@ -871,14 +804,6 @@ export enum PermissionEnum {
     SERVICE_ORDER_STATUS_MANAGE = 'serviceOrder.status.manage', // Allows managing service order status (start, complete, cancel, refund).
     SERVICE_ORDER_DELIVERABLES_MANAGE = 'serviceOrder.deliverables.manage', // Allows managing service order deliverables and revisions.
     SERVICE_ORDER_PRICING_MANAGE = 'serviceOrder.pricing.manage', // Allows managing service order pricing and charges.
-
-    // BILLING: Cross-cutting billing admin permissions
-    BILLING_READ_ALL = 'billing.readAll', // Allows viewing all billing data (notifications, usage, webhooks).
-    BILLING_PROMO_CODE_READ = 'billing.promoCode.read', // Allows viewing promo codes.
-    BILLING_PROMO_CODE_MANAGE = 'billing.promoCode.manage', // Allows creating, updating, and deleting promo codes.
-    BILLING_METRICS_READ = 'billing.metrics.read', // Allows viewing billing metrics and analytics.
-    BILLING_MANAGE = 'billing.manage', // Allows managing billing records (expire, activate add-ons, etc.).
-    BILLING_RECONCILIATION_MANAGE = 'billing.reconciliation.manage', // Allows using the orphan-payment rescue tool (HOS-765): reading the MercadoPago<->local divergence report, force-linking a preapproval to a local subscription, and backfilling a billing_payments row for a charge that already settled. Deliberately NOT folded into BILLING_MANAGE: those two verbs write MONEY into the ledger and bind a real payer's charge to a subscription, so the gate that opens them is its own, auditable grant. SUPER_ADMIN-only.
 
     // REVALIDATION: Permissions related to on-demand ISR revalidation management
     REVALIDATION_TRIGGER = 'revalidation.trigger', // Allows triggering on-demand revalidation of cached pages.
@@ -943,9 +868,20 @@ export enum PermissionEnum {
     MAINTENANCE_MODE_WRITE = 'system.maintenanceMode.write', // Allows writing maintenance mode + global announcements (Plataforma → Configuración crítica). SUPER_ADMIN-only.
     BILLING_SETTINGS_VIEW = 'billing.settings.view', // Allows viewing Comercial → Configuración billing (trial/payment/webhook/notification fields).
     BILLING_SETTINGS_WRITE = 'billing.settings.write', // Allows editing Comercial → Configuración billing.
-    BILLING_VIEW_OWN = 'billing.view.own', // Allows HOST to view their own billing data (subscription, invoices, payments, usage) via /protected/billing/*.
-    SUBSCRIPTION_VIEW_OWN = 'subscription.view.own', // Allows HOST to view their own subscription details — complements BILLING_VIEW_OWN for the Mi facturación landing.
-    BILLING_ADDON_PURCHASE = 'billing.addon.purchase', // Allows a paying tier (HOST, COMMERCE_OWNER) to reach the self-service add-on catalog and buy from it (HOS-726). Deliberately NOT granted to plain USER: the add-on page gates per product domain on an entitlement-granting subscription, so a tourist only ever reaches its empty state. Distinct from BILLING_MANAGE, which is the admin-tier gate for activating/expiring add-ons on someone else's behalf.
+    // HOS-1457 AC:V5:8: action 15, subscription inspection, and own-billing access.
+    LISTING_FOREIGN_CONTENT_EDIT = 'listing.foreignContent.edit', // Allows editing another owner's listing content across all three verticals (action 15).
+    LISTING_MODERATE = 'listing.moderate', // Allows moderating any listing in two levels (fix request or take-down) and lifting it; NUCLEO/08 §3 action 13 (AUT-113), the same permission that moderates a partner presence.
+    LISTING_PURGE_ON_REQUEST = 'listing.purgeOnRequest', // Allows purging another owner's listing at the owner's request, with a reason (PB12); NUCLEO/08 §3 action 23.
+    USER_CLOSE_ON_REQUEST = 'user.closeOnRequest', // Allows closing another person's account at their request, with a reason: pseudonymizes it and removes its credentials; NUCLEO/08 §3 action 24.
+    BILLING_SUBSCRIPTION_INSPECT = 'billing.subscription.inspect', // Allows inspecting another account's subscription.
+    BILLING_VIEW_OWN = 'billing.viewOwn', // Allows reading the account's own billing.
+    BILLING_SETTLE_EXTERNAL = 'billing.settleExternal', // Allows settling a charge or a refund that already happened outside our flow (RF4 and the P1 settlement); NUCLEO/08 §3 action 14.
+    BILLING_CANCEL_SUBSCRIPTION = 'billing.cancelSubscription', // Allows cancelling a subscription with administrative action 8 (NUCLEO/08 §3); with the revocation motive it runs S36.
+    BILLING_LIFT_RECONCILIATION_MARK = 'billing.liftReconciliationMark', // Allows lifting one reconciliation mark (S15) with administrative action 7 (NUCLEO/08 §3), resolving without refund only the hung payments the person names. SUPER_ADMIN-only.
+    TRIAL_EXTEND = 'trial.extend', // Allows extending another person's running trial past the ceiling with a mandatory reason (action 11, HOS-1445). SUPER_ADMIN-only.
+    USER_MANAGE_SUPER_ADMIN_ROLE = 'user.manageSuperAdminRole', // Allows assigning or removing the SUPER_ADMIN role with administrative action 26 (NUCLEO/08 §3). SUPER_ADMIN-only.
+    BILLING_GRANT_COMPLIMENTARY = 'billing.grantComplimentary', // Allows granting or revoking a temporary courtesy (action 1) and granting, anchoring or revoking a permanent grant (action 2): one permission for both (DEC-GRANT-002). SUPER_ADMIN-only.
+    BILLING_MANAGE_PROMO_CODES = 'billing.managePromoCodes', // Allows creating or closing a promotional code (administrative action 21, NUCLEO/08 §3). SUPER_ADMIN-only.
     USER_UPDATE_SELF = 'user.update.self', // Umbrella gate for the Mi cuenta area (Perfil, Preferencias, Notificaciones, Seguridad, Etiquetas). Distinct from USER_UPDATE_ANY (admin-on-other) and USER_UPDATE_PROFILE (legacy alias kept for back-compat).
     AI_SETTINGS_MANAGE = 'ai.settings.manage', // Allows managing AI provider credentials, settings, prompts, and usage reports (Plataforma → IA). SUPER_ADMIN-only (SPEC-173).
     FEATURE_FLAG_MANAGE = 'platform.featureFlag.manage', // Allows managing feature flags (create, edit, toggle kill-switch, view audit). SUPER_ADMIN-only (SPEC-276).
@@ -997,71 +933,41 @@ export enum PermissionEnum {
     MODERATION_THRESHOLD_RESTORE = 'moderation.threshold.restore', // Allows restoring a soft-deleted moderation threshold.
     MODERATION_THRESHOLD_HARD_DELETE = 'moderation.threshold.hardDelete', // Allows permanently deleting a moderation threshold.
 
-    // COMMERCE: Owner-scoped edit permission (SPEC-253)
-    // Replaces the 10 per-section COMMERCE_*_EDIT_OWN permissions (removed in SPEC-253 D2=b).
-    // A COMMERCE_OWNER holding this permission may edit all owner-accessible sections of
-    // their own commerce listing (operational fields, FAQs, i18n, etc.).
-    COMMERCE_EDIT_OWN = 'commerce.editOwn', // Allows a COMMERCE_OWNER to edit their own commerce listing (single owner write permission, SPEC-253).
-
-    // COMMERCE: Admin-level permissions (SPEC-239)
-    COMMERCE_CREATE = 'commerce.create', // Allows creating a new commerce listing.
-    COMMERCE_VIEW_ALL = 'commerce.viewAll', // Allows viewing all commerce listings (including private/draft).
-    COMMERCE_EDIT_ALL = 'commerce.editAll', // Allows editing any commerce listing regardless of ownership.
-    COMMERCE_DELETE = 'commerce.delete', // Allows soft-deleting any commerce listing.
-    COMMERCE_MODERATE_REVIEW = 'commerce.moderateReview', // Allows moderating reviews on commerce listings.
-    // HOS-686: the LISTING's own moderation verdict — distinct from
-    // COMMERCE_MODERATE_REVIEW above, which moderates reviews written ABOUT a
-    // listing. Grepping "moderate" under commerce finds the review permission
-    // first, so the two are spelled apart on purpose.
-    //
-    // Spelled `commerce.moderationChange` (camelCase second segment), NOT
-    // `commerce.moderation.change` like its accommodation/event/post
-    // counterparts: the whole `commerce.*` family is camelCase, and a dotted
-    // third segment here would add a fourteenth dual-spelled family to the
-    // baseline frozen by `permission-naming-convention.guard.test.ts`.
-    COMMERCE_MODERATION_CHANGE = 'commerce.moderationChange', // Allows changing the moderation state of a commerce LISTING (gastronomy/experience).
-
-    // GASTRONOMY / EXPERIENCE: the per-vertical split of the `commerce.*` family (HOS-1077).
+    // venue / EXPERIENCE: the per-vertical replacement for the retired
+    // shared permission family that named both verticals at once (HOS-1077 / HOS-1417).
     //
     // ## Why these exist
     //
-    // `commerce.*` names TWO product verticals at once, so it is impossible to
-    // grant edit rights over gastronomy without also granting them over
-    // experiences: a restaurant moderator moderates excursions, by construction.
+    // That family named TWO product verticals at once, so it was impossible to
+    // grant edit rights over venue without also granting them over
+    // experiences: a restaurant moderator could moderate excursions too.
     // Accommodation never had that problem — it is one vertical with its own
-    // family. These 14 give gastronomy and experience the same vocabulary.
+    // family. These 14 give venue and experience the same vocabulary.
     //
     // ## Deliberate shape: 7 each, NOT 64 each
     //
-    // This is a SPLIT of the seven, not an alignment with accommodation's 64.
+    // This replaced the seven old permissions, without aligning with accommodation's 64.
     // Roughly 14 of accommodation's 64 are per-SECTION listing permissions
     // (`amenities.edit`, `basicInfo.edit`, `faqs.edit`, `gallery.manage`, …)
-    // that SPEC-253 D2=b deliberately collapsed into the single
-    // `COMMERCE_EDIT_OWN` — re-creating them here would revert that decision.
-    // Others correspond to functionality commerce does not have
+    // that SPEC-253 D2=b deliberately collapsed into one owner permission.
+    // Others correspond to functionality venue and experience do not have
     // (`occupancy.manage`, `iaContent.approve`, `location.exact.view`), and a
     // permission no route ever demands is dead letter.
     //
     // ## Spelling
     //
-    // Two segments, camelCase second segment — identical to the `commerce.*`
-    // family they mirror, and for the same reason: a dotted third segment would
+    // Two segments, camelCase second segment — matching the retired family's
+    // spelling. A dotted third segment would
     // add a dual-spelled family to the baseline frozen by
     // `permission-naming-convention.guard.test.ts`.
     //
-    // ## Migration state (HOS-1077 release 1 = EXPAND)
-    //
-    // These coexist with `commerce.*`. Every gate reads BOTH (the vertical value
-    // OR the legacy one), so nobody loses access while live `role_permission`
-    // rows are backfilled. Release 2 (contract) removes the `commerce.*` seven,
-    // the `COMMERCE_OWNER` role and the dual-read.
-    GASTRONOMY_EDIT_OWN = 'gastronomy.editOwn', // Allows a GASTRONOMY_OWNER to edit their own gastronomy listing.
-    GASTRONOMY_CREATE = 'gastronomy.create', // Allows creating a new gastronomy listing.
-    GASTRONOMY_VIEW_ALL = 'gastronomy.viewAll', // Allows viewing all gastronomy listings (including private/draft).
-    GASTRONOMY_EDIT_ALL = 'gastronomy.editAll', // Allows editing any gastronomy listing regardless of ownership.
-    GASTRONOMY_DELETE = 'gastronomy.delete', // Allows soft-deleting any gastronomy listing.
-    GASTRONOMY_MODERATE_REVIEW = 'gastronomy.moderateReview', // Allows moderating reviews written ABOUT a gastronomy listing.
-    GASTRONOMY_MODERATION_CHANGE = 'gastronomy.moderationChange', // Allows changing the moderation state of a gastronomy LISTING.
+    VENUE_EDIT_OWN = 'venue.editOwn', // Allows a VENUE_OWNER to edit their own venue listing.
+    VENUE_CREATE = 'venue.create', // Allows creating a new venue listing.
+    VENUE_VIEW_ALL = 'venue.viewAll', // Allows viewing all venue listings (including private/draft).
+    VENUE_EDIT_ALL = 'venue.editAll', // Allows editing any venue listing regardless of ownership.
+    VENUE_DELETE = 'venue.delete', // Allows soft-deleting any venue listing.
+    VENUE_MODERATE_REVIEW = 'venue.moderateReview', // Allows moderating reviews written ABOUT a venue listing.
+    VENUE_MODERATION_CHANGE = 'venue.moderationChange', // Allows changing the moderation state of a venue listing.
 
     EXPERIENCE_EDIT_OWN = 'experience.editOwn', // Allows an EXPERIENCE_OWNER to edit their own experience listing.
     EXPERIENCE_CREATE = 'experience.create', // Allows creating a new experience listing.

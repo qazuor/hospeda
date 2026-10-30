@@ -416,6 +416,15 @@ export function LocationPicker({
                 )}
             </div>
 
+            {!hasValidCoords && (
+                <p className={styles.pinUnsetNotice}>
+                    {t(
+                        'host.properties.editor.location.pinNotSet',
+                        'Todavía no marcaste la ubicación. El pin está en el centro de la ciudad solo como punto de partida: arrastralo o hacé clic en el mapa hasta tu alojamiento, o buscá la dirección en el mapa.'
+                    )}
+                </p>
+            )}
+
             {/* Leaflet map */}
             <Suspense
                 fallback={

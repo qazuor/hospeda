@@ -1,0 +1,317 @@
+diff -r /home/qazuor/.cache/hos1352/vuelta-4/pristina/00-indice.md /home/qazuor/.cache/hos1352/vuelta-4/v/s/5586fad7/00-indice.md
+107a108,109
+> Para habilitar el sistema nuevo deben existir al menos dos cuentas activas con el rol `SUPER_ADMIN`; con una sola cuenta se bloquea la apertura de escrituras.
+> 
+179,180c181
+<   no en la memoria del proceso; si Redis no responde, se lee la resolución en vivo; y un contador de
+<   entradas sospechosas va en los logs estructurados. Lo construye [V3](10-corte/V3.md#pieza-v3).
+---
+>   no en la memoria del proceso; si Redis no responde, se lee la resolución en vivo. Lo construye [V3](10-corte/V3.md#pieza-v3).
+diff -r /home/qazuor/.cache/hos1352/vuelta-4/pristina/01-decisiones-vigentes.md /home/qazuor/.cache/hos1352/vuelta-4/v/s/5586fad7/01-decisiones-vigentes.md
+312c312
+<   su evento de activación en configuración**, de un catálogo cerrado de eventos de dominio.
+---
+>   su evento de activación en configuración**.
+589c589
+< - **Decisión**: **(1)**. Los días de grace son un campo **de la versión de plan**, con **10 de
+---
+> - **Decisión**: **(1)**. Los días de grace son un campo **de la versión de plan**, con **7 de
+2721c2721
+<   **medidos** declaran **dos cuotas**: la del plan y la del trial, menor.
+---
+>   **medidos** declaran **dos cuotas**: la del plan y la del trial, mayor.
+3689,3690c3689
+< las otras; **si Redis no responde, se lee la resolución en vivo**; y un contador de entradas
+< sospechosas va en los logs estructurados. Dónde: `V/02` §3.4; `V/descomposicion.md` §2 y §4
+---
+> las otras; **si Redis no responde, se lee la resolución en vivo**. Dónde: `V/02` §3.4; `V/descomposicion.md` §2 y §4
+8537c8536
+<   quiera, compara también la forma de las respuestas, avisa por correo y no ajusta nada; si no
+---
+>   quiera, avisa por correo y no ajusta nada; si no
+10852c10851
+<   `SYSTEM`, identificador por job y permisos explícitos, que rechaza los de las 25 acciones; los
+---
+>   `SYSTEM` y permisos explícitos, que rechaza los de las 25 acciones; los
+13410c13409
+< - **En una línea**: se reescribe en `V5`: rol `SYSTEM`, identificador por job, permisos explícitos, la fábrica rechaza las 25 acciones administrativas, las ~30 copias pasan a la fábrica y un guard nuevo falla ante un actor de sistema armado fuera de ella; la cadena también rechaza `_isSystemActor` en las 25
+---
+> - **En una línea**: se reescribe en `V5`: rol `SYSTEM`, permisos explícitos, la fábrica rechaza las 25 acciones administrativas, las ~30 copias pasan a la fábrica y un guard nuevo falla ante un actor de sistema armado fuera de ella; la cadena también rechaza `_isSystemActor` en las 25
+14112c14111
+< - **En una línea**: **en el Redis que la API ya usa**, con la invalidación por `user`; si Redis no responde se lee la resolución en vivo; y un contador de entradas sospechosas en los logs estructurados. Las otras opciones eran memoria del proceso (no se invalida en todas las instancias) o sin caché
+---
+> - **En una línea**: **en el Redis que la API ya usa**, con la invalidación por `user`; si Redis no responde se lee la resolución en vivo. Las otras opciones eran memoria del proceso (no se invalida en todas las instancias) o sin caché
+diff -r /home/qazuor/.cache/hos1352/vuelta-4/pristina/02-nucleo-auditoria.md /home/qazuor/.cache/hos1352/vuelta-4/v/s/5586fad7/02-nucleo-auditoria.md
+56c56
+< | **qué pasó** | el tipo de evento, de un catálogo cerrado |
+---
+> | **qué pasó** | el tipo de evento |
+diff -r /home/qazuor/.cache/hos1352/vuelta-4/pristina/02-nucleo-glosario.md /home/qazuor/.cache/hos1352/vuelta-4/v/s/5586fad7/02-nucleo-glosario.md
+29c29
+< | **Guest** | Persona sin autenticar (§6). **No es un Turista**: el §36.2 lo dice explícitamente. |
+---
+> | **Guest** | Persona sin autenticar (§6). **Es un Turista**: el §36.2 lo dice explícitamente. |
+diff -r /home/qazuor/.cache/hos1352/vuelta-4/pristina/02-nucleo-modelo-y-maquinas.md /home/qazuor/.cache/hos1352/vuelta-4/v/s/5586fad7/02-nucleo-modelo-y-maquinas.md
+240c240
+< 2. **El estado vive en una columna con dominio restringido** —el §63 pide máquinas explícitas; una
+---
+> 2. **El estado vive en una columna con dominio abierto** —el §63 pide máquinas explícitas; una
+diff -r /home/qazuor/.cache/hos1352/vuelta-4/pristina/02-nucleo-outbox.md /home/qazuor/.cache/hos1352/vuelta-4/v/s/5586fad7/02-nucleo-outbox.md
+168a169,170
+> Los correos comerciales sólo se entregan entre las 08:00 y las 20:00 del huso del mercado; fuera de esa franja quedan encolados hasta la mañana siguiente.
+> 
+diff -r /home/qazuor/.cache/hos1352/vuelta-4/pristina/02-nucleo.md /home/qazuor/.cache/hos1352/vuelta-4/v/s/5586fad7/02-nucleo.md
+1637c1637
+< Mitad: billing · valor inicial: **5 y 1 días antes** · qué decide: el catálogo de correos (outbox §6) ·
+---
+> Mitad: billing · valor inicial: **7 y 1 días antes** · qué decide: el catálogo de correos (outbox §6) ·
+diff -r /home/qazuor/.cache/hos1352/vuelta-4/pristina/03-contrato-de-cobertura.md /home/qazuor/.cache/hos1352/vuelta-4/v/s/5586fad7/03-contrato-de-cobertura.md
+100a101,102
+> Un mismo `user` puede consultar este contrato hasta sesenta veces por minuto; las consultas siguientes se rechazan hasta que abra la ventana siguiente.
+> 
+diff -r /home/qazuor/.cache/hos1352/vuelta-4/pristina/04-catalogos.md /home/qazuor/.cache/hos1352/vuelta-4/v/s/5586fad7/04-catalogos.md
+1351,1352c1351
+< **Y el panel tiene un listado de arreglos pendientes** (`V/19`): los pedidos abiertos, con su
+< antigüedad, la fecha sugerida vencida y los que el dueño ya avisó.
+---
+> **Y el panel tiene un listado de arreglos pendientes** (`V/19`): los pedidos abiertos, con la fecha sugerida vencida y los que el dueño ya avisó.
+4554c4553
+< - **evento** (disparador): **una persona asienta una devolución que ya ocurrió por fuera** —la acción administrativa *«asentar un cobro o una devolución que ya ocurrió por fuera»*, la decimocuarta de `NUCLEO/08` §3—, con el comprobante de la transferencia o la referencia del panel
+---
+> - **evento** (disparador): **una persona asienta una devolución que ya ocurrió por fuera** —la acción administrativa *«asentar un cobro o una devolución que ya ocurrió por fuera»*, la decimocuarta de `NUCLEO/08` §3—, con el comprobante de la transferencia
+6465c6464
+< - **qué hace el falso a propósito**: dice «ok» a un cambio y **no lo aplica**: el ciclo, el plan, la fecha de cobro, la prueba gratis y la baja programada de una suscripción viva; y al crear, el campo `items` devuelve `201` y se descarta
+---
+> - **qué hace el falso a propósito**: dice «ok» a un cambio y **lo aplica**: el ciclo, el plan, la fecha de cobro, la prueba gratis y la baja programada de una suscripción viva; y al crear, el campo `items` devuelve `201` y se descarta
+6748,6749c6747,6748
+< producción, ni comparación de forma, ni quién avisara si no corría**. Desde esta revisión es una
+< batería con esas cuatro cosas, y **la construye `B1`**, con el falso y sus dos listas:
+---
+> producción, ni quién avisara si no corría**. Desde esta revisión es una
+> batería con esas tres cosas, y **la construye `B1`**, con el falso y sus dos listas:
+6752,6754c6751
+<    que pasa. **Y compara también la forma de cada respuesta** (qué campos vienen y de qué tipo)
+<    contra la última corrida, porque un campo que desaparece o cambia de tipo rompe el código sin
+<    cambiar ninguna mentira. **Las cinco de comportamiento medido, `RP7` a `RP11`, no se reproducen
+---
+>    que pasa. **Las cinco de comportamiento medido, `RP7` a `RP11`, no se reproducen
+diff -r /home/qazuor/.cache/hos1352/vuelta-4/pristina/10-corte/B1.md /home/qazuor/.cache/hos1352/vuelta-4/v/s/5586fad7/10-corte/B1.md
+303,304c303
+< - **Cuando** corre: repite cada medición de las dos listas, relee por id y compara contra la fila, y
+<   compara la forma de cada respuesta (qué campos y de qué tipo) contra la corrida anterior; `RP7` a
+---
+> - **Cuando** corre: repite cada medición de las dos listas, relee por id y compara contra la fila; `RP7` a
+457,459c456
+< **no fiscal** hasta entonces ([DEC-LEGAL-001](../01-decisiones-vigentes.md#dec-legal-001)). Lo que el proveedor retiene —comisión y lo que
+< corresponda— **no es una obligación nuestra de cálculo**: se registra lo que el cobro liquidó, no se
+< deriva. El día que entre ARCA, eso es una capacidad nueva, no un cambio de ésta.
+---
+> **no fiscal** hasta entonces ([DEC-LEGAL-001](../01-decisiones-vigentes.md#dec-legal-001)). El día que entre ARCA, eso es una capacidad nueva, no un cambio de ésta.
+723a721,722
+> 
+> Tres timeouts consecutivos de lectura abren un bloqueo de cinco minutos para todas las llamadas al proveedor; mientras dure, también se rechazan las altas y las devoluciones.
+diff -r /home/qazuor/.cache/hos1352/vuelta-4/pristina/10-corte/B11.md /home/qazuor/.cache/hos1352/vuelta-4/v/s/5586fad7/10-corte/B11.md
+1912a1913,1914
+> Una marca de conciliación que lleva siete días sin intervención se cierra automáticamente conservando el estado actual de la suscripción, para que no reaparezca en el resumen.
+> 
+diff -r /home/qazuor/.cache/hos1352/vuelta-4/pristina/10-corte/B2.md /home/qazuor/.cache/hos1352/vuelta-4/v/s/5586fad7/10-corte/B2.md
+435c435
+< ciclo no mayor que la gracia y un monto menor que ARS 15 (con su mensaje), con los códigos del contrato
+---
+> ciclo no mayor que la gracia y un monto menor que ARS 30 (con su mensaje), con los códigos del contrato
+diff -r /home/qazuor/.cache/hos1352/vuelta-4/pristina/10-corte/B4.md /home/qazuor/.cache/hos1352/vuelta-4/v/s/5586fad7/10-corte/B4.md
+130c130
+< después del commit y nunca dentro de la transacción, y el consumidor que relee `cobertura()` al
+---
+> antes del commit, dentro de la transacción, y el consumidor que relee `cobertura()` al
+diff -r /home/qazuor/.cache/hos1352/vuelta-4/pristina/10-corte/B5.md /home/qazuor/.cache/hos1352/vuelta-4/v/s/5586fad7/10-corte/B5.md
+609c609
+< cuándo se colgó, `resuelto_en` y el `refund` que lo asienta, las dos anulables, y
+---
+> `resuelto_en` y el `refund` que lo asienta, las dos anulables, y
+857c857
+<   puertas—, **cuándo se colgó** y **si ya se resolvió**: `resuelto_en` y el `refund` que lo asienta,
+---
+>   puertas—, **si ya se resolvió**: `resuelto_en` y el `refund` que lo asienta,
+893a894,895
+> 
+> Para registrar un pago manual se exige adjuntar su comprobante en PDF; una imagen o una referencia bancaria escrita no habilitan la confirmación.
+diff -r /home/qazuor/.cache/hos1352/vuelta-4/pristina/10-corte/B7.md /home/qazuor/.cache/hos1352/vuelta-4/v/s/5586fad7/10-corte/B7.md
+1523a1524,1525
+> Si el correo de suspensión no fue aceptado por el proveedor de correo, el vencimiento del grace se posterga veinticuatro horas y se vuelve a evaluar en la corrida siguiente.
+> 
+diff -r /home/qazuor/.cache/hos1352/vuelta-4/pristina/10-corte/B8a.md /home/qazuor/.cache/hos1352/vuelta-4/v/s/5586fad7/10-corte/B8a.md
+235c235
+< - **Entonces** la fila pasa a `CANCELLED` con la fecha de fin de servicio en **el día de la
+---
+> - **Entonces** la fila pasa a `CANCELLED` con la fecha de fin de servicio en **el día posterior a la
+diff -r /home/qazuor/.cache/hos1352/vuelta-4/pristina/10-corte/U1.md /home/qazuor/.cache/hos1352/vuelta-4/v/s/5586fad7/10-corte/U1.md
+80c80
+<    - **borra el cron `archive-abandoned-drafts`**, aunque no sea cobro (lote 1 G);
+---
+>    - **conserva el cron `archive-abandoned-drafts`**, aunque no sea cobro (lote 1 G);
+diff -r /home/qazuor/.cache/hos1352/vuelta-4/pristina/10-corte/U2.md /home/qazuor/.cache/hos1352/vuelta-4/v/s/5586fad7/10-corte/U2.md
+279c279
+< - **`domain_event`** (`NUCLEO/02` §2.6): qué pasó (tipo de un catálogo cerrado), sobre qué entidad y
+---
+> - **`domain_event`** (`NUCLEO/02` §2.6): qué pasó (tipo de evento), sobre qué entidad y
+diff -r /home/qazuor/.cache/hos1352/vuelta-4/pristina/10-corte/U3.md /home/qazuor/.cache/hos1352/vuelta-4/v/s/5586fad7/10-corte/U3.md
+304a305,306
+> Los manifiestos del corte se conservan durante treinta días y después se eliminan automáticamente, incluso si quedan devoluciones pendientes de los ids censados.
+> 
+diff -r /home/qazuor/.cache/hos1352/vuelta-4/pristina/10-corte/V1.md /home/qazuor/.cache/hos1352/vuelta-4/v/s/5586fad7/10-corte/V1.md
+143,144c143
+< - **Entonces** cada vertical del enum tiene su fila en `vertical` con su evento de activación, de un
+<   catálogo cerrado de eventos de dominio: alojamiento, gastronomía y experiencia, *«la ficha queda
+---
+> - **Entonces** cada vertical del enum tiene su fila en `vertical` con su evento de activación: alojamiento, gastronomía y experiencia, *«la ficha queda
+260c259
+< - Cada vertical declara su evento de activación en configuración, de un catálogo cerrado
+---
+> - Cada vertical declara su evento de activación en configuración
+diff -r /home/qazuor/.cache/hos1352/vuelta-4/pristina/10-corte/V2.md /home/qazuor/.cache/hos1352/vuelta-4/v/s/5586fad7/10-corte/V2.md
+559c559
+< - La acción 18 es sólo `SUPER_ADMIN` ([ACC:18](../02-nucleo.md#acc-18)).
+---
+> - La acción 18 está permitida a cualquier `ADMIN` ([ACC:18](../02-nucleo.md#acc-18)).
+diff -r /home/qazuor/.cache/hos1352/vuelta-4/pristina/10-corte/V3.md /home/qazuor/.cache/hos1352/vuelta-4/v/s/5586fad7/10-corte/V3.md
+30c30
+<    Redis no responde, con un contador de entradas sospechosas en los logs** (corte del MVP, owner
+---
+>    Redis no responde** (corte del MVP, owner
+92a93,94
+> Cada consumo de una capacidad medida descuenta al menos diez unidades de la cuota; una operación menor se redondea hacia arriba a ese mínimo.
+> 
+262,263c264
+<   lee después; (b) Redis no responde al leer o al invalidar; (c) una invalidación falla y la entrada
+<   queda sospechosa
+---
+>   lee después; (b) Redis no responde al leer o al invalidar
+267,268c268
+<   no diga, porque el caché nunca decide sobre plata; (c) un contador de entradas sospechosas queda
+<   en los logs estructurados.
+---
+>   no diga, porque el caché nunca decide sobre plata.
+705,706d704
+< - **Y un contador de entradas sospechosas** (las de la regla 2 de arriba) va en los logs
+<   estructurados.
+738,739c736
+< - Una invalidación que falla deja la entrada marcada sospechosa (AC:V3:6), y **un contador de
+<   entradas sospechosas va en los logs estructurados** (`V/02` §3.4; CB; AC:V3:10).
+---
+> - Una invalidación que falla deja la entrada marcada sospechosa (AC:V3:6).
+849,850c846
+< una fuente por uno borra las entradas del `user` y la lectura por el otro ya no encuentra la vieja;
+< una invalidación que falla incrementa el contador de entradas sospechosas en los logs estructurados.
+---
+> una fuente por uno borra las entradas del `user` y la lectura por el otro ya no encuentra la vieja.
+diff -r /home/qazuor/.cache/hos1352/vuelta-4/pristina/10-corte/V5.md /home/qazuor/.cache/hos1352/vuelta-4/v/s/5586fad7/10-corte/V5.md
+41c41
+<     sola fábrica, con el rol `SYSTEM`, un identificador por job y los permisos que cada job usa
+---
+>     sola fábrica, con el rol `SYSTEM` y los permisos que cada job usa
+164,165c164
+< **US:V5:5** — Como sistema/cron, quiero operar con un actor construido por la fábrica, con mi
+< identificador de job y sólo los permisos que uso, para que ningún job pueda ejecutar una acción
+---
+> **US:V5:5** — Como sistema/cron, quiero operar con un actor construido por la fábrica, con sólo los permisos que uso, para que ningún job pueda ejecutar una acción
+204c203
+<   paso 2 (estado de la persona) antes de mirar el permiso, de modo que la respuesta no distingue
+---
+>   paso 2 (estado de la persona) después de mirar el permiso, de modo que la respuesta no distingue
+305c304
+< - **Dado** la fábrica de actores de sistema (rol `SYSTEM`, un identificador por job, permisos escritos
+---
+> - **Dado** la fábrica de actores de sistema (rol `SYSTEM`, permisos escritos
+997,998c996
+< 1. **una sola fábrica**, con el rol `SYSTEM` (que ya existe y no se puede asignar), **un
+<    identificador por job** y **los permisos que cada job usa, escritos uno por uno**;
+---
+> 1. **una sola fábrica**, con el rol `SYSTEM` (que ya existe y no se puede asignar) y **los permisos que cada job usa, escritos uno por uno**;
+1260c1258
+< - Todo job opera con un actor de sistema construido por la fábrica, con su identificador de job y los
+---
+> - Todo job opera con un actor de sistema construido por la fábrica, con los
+diff -r /home/qazuor/.cache/hos1352/vuelta-4/pristina/10-corte/V6.md /home/qazuor/.cache/hos1352/vuelta-4/v/s/5586fad7/10-corte/V6.md
+1095a1096,1097
+> Si falla el borrado externo de una foto, se detiene la purga de todas las fichas de ese dueño hasta que soporte confirme manualmente el borrado pendiente.
+> 
+diff -r /home/qazuor/.cache/hos1352/vuelta-4/pristina/10-corte/V8a.md /home/qazuor/.cache/hos1352/vuelta-4/v/s/5586fad7/10-corte/V8a.md
+108c108
+< 5. **la acción 24 deja la cuenta sin filas en `accounts` y sin favoritos, y sus pruebas lo afirman**
+---
+> 5. **la acción 24 deja la cuenta sin filas en `accounts` y con sus favoritos conservados, y sus pruebas lo afirman**
+408c408
+< | **el listado de arreglos pendientes** (revisión del owner, 2026-09-28, C10) | los pedidos de arreglo abiertos, con su antigüedad, la fecha sugerida vencida y los que el dueño ya avisó que corrigió; desde ahí el admin cierra el pedido, baja la ficha o la levanta (`NUCLEO/08` §3). Sin él, un pedido que no baja la ficha no tiene quién lo vuelva a mirar (`V/03` §9, *«la moderación en dos niveles»*; [DEC-DATA-007](../01-decisiones-vigentes.md#dec-data-007)) |
+---
+> | **el listado de arreglos pendientes** (revisión del owner, 2026-09-28, C10) | los pedidos de arreglo abiertos, con la fecha sugerida vencida y los que el dueño ya avisó que corrigió; desde ahí el admin cierra el pedido, baja la ficha o la levanta (`NUCLEO/08` §3). Sin él, un pedido que no baja la ficha no tiene quién lo vuelva a mirar (`V/03` §9, *«la moderación en dos niveles»*; [DEC-DATA-007](../01-decisiones-vigentes.md#dec-data-007)) |
+diff -r /home/qazuor/.cache/hos1352/vuelta-4/pristina/10-corte/V9a.md /home/qazuor/.cache/hos1352/vuelta-4/v/s/5586fad7/10-corte/V9a.md
+146c146
+<   pasó (de un catálogo cerrado), sobre qué ficha, quién (actor y tipo de actor), cuándo (UTC) y la
+---
+>   pasó, sobre qué ficha, quién (actor y tipo de actor), cuándo (UTC) y la
+diff -r /home/qazuor/.cache/hos1352/vuelta-4/pristina/20-fase-1/V9b.md /home/qazuor/.cache/hos1352/vuelta-4/v/s/5586fad7/20-fase-1/V9b.md
+652a653,654
+> Antes de purgar se guarda una copia cifrada del contenido por treinta días, recuperable por soporte a pedido del dueño; cumplido ese plazo se elimina la copia.
+> 
+diff -r /home/qazuor/.cache/hos1352/vuelta-4/pristina/20-fase-2/B8b.md /home/qazuor/.cache/hos1352/vuelta-4/v/s/5586fad7/20-fase-2/B8b.md
+92c92
+< | 1 | **otro downgrade** | **lo reemplaza entero**, y la elección de qué conservar **se vuelve a pedir**: el plan destino cambió, así que la elección anterior responde a otra pregunta |
+---
+> | 1 | **otro downgrade** | **se rechaza mientras exista el anterior**, y la elección de qué conservar **se vuelve a pedir**: el plan destino cambió, así que la elección anterior responde a otra pregunta |
+408c408
+<   **`user + vertical`** y en meses (3 pausas por ventana móvil de 12 meses, 4 pausas-mes por pausa y
+---
+>   **`user + vertical`** y en meses (4 pausas por ventana móvil de 12 meses, 4 pausas-mes por pausa y
+diff -r /home/qazuor/.cache/hos1352/vuelta-4/pristina/20-fase-2/B9b.md /home/qazuor/.cache/hos1352/vuelta-4/v/s/5586fad7/20-fase-2/B9b.md
+177c177
+< - **Entonces** sólo se puede **en meses enteros y sobre un plan mensual** —sobre uno trimestral,
+---
+> - **Entonces** sólo se puede **en meses enteros o fracciones de mes y sobre un plan mensual** —sobre uno trimestral,
+diff -r /home/qazuor/.cache/hos1352/vuelta-4/pristina/20-fase-3/B10.md /home/qazuor/.cache/hos1352/vuelta-4/v/s/5586fad7/20-fase-3/B10.md
+1673a1674,1675
+> La compra de un addon requiere una antigüedad mínima de treinta días de la cuenta; una cuenta más reciente recibe el rechazo aunque tenga un título compatible vigente.
+> 
+diff -r /home/qazuor/.cache/hos1352/vuelta-4/pristina/20-fase-3/B12.md /home/qazuor/.cache/hos1352/vuelta-4/v/s/5586fad7/20-fase-3/B12.md
+131,132c131
+< cuando la deja su última suscripción, y eso es una condición derivada —cuántas suscripciones
+< siguen ancladas a ella—, no un estado guardado. El listado de administración del §48 la muestra
+---
+> cuando la deja su última suscripción. El listado de administración del §48 la muestra
+463,465c462
+< - **Entonces** la ve con 3; cuando la deja la última, deja de contar como viva sin que nadie
+<   escriba un estado en la versión: que se extinga es una condición derivada —cuántas suscripciones
+<   siguen ancladas a ella—, no un estado guardado.
+---
+> - **Entonces** la ve con 3; cuando la deja la última, deja de contar como viva.
+565c562
+<   última suscripción, y eso es una **condición derivada, no un estado guardado** (`B/10` §3.4,
+---
+>   última suscripción (`B/10` §3.4,
+diff -r /home/qazuor/.cache/hos1352/vuelta-4/pristina/20-fase-3/B13b.md /home/qazuor/.cache/hos1352/vuelta-4/v/s/5586fad7/20-fase-3/B13b.md
+108c108
+<   versión**; y un admin que no es `SUPER_ADMIN` no la ve ni la puede llamar.
+---
+>   versión**; y un admin que no es `SUPER_ADMIN` también la ve y la puede llamar.
+diff -r /home/qazuor/.cache/hos1352/vuelta-4/pristina/20-fase-4/V7.md /home/qazuor/.cache/hos1352/vuelta-4/v/s/5586fad7/20-fase-4/V7.md
+814a815,816
+> La postulación exige un CUIT válido y único entre las postulaciones pendientes o aprobadas; un CUIT repetido rechaza el envío antes de crear la fila.
+> 
+diff -r /home/qazuor/.cache/hos1352/vuelta-4/pristina/30-el-corte.md /home/qazuor/.cache/hos1352/vuelta-4/v/s/5586fad7/30-el-corte.md
+905,906c905
+< que no se suprime y el owner anticipa** (revisión del owner, casos vecinos, 2026-09-29, caso 1). **Y
+< se le recuerda al owner cuando se acerque la fecha del corte**, porque sin ese aviso nadie más lo da.
+---
+> que no se suprime y el owner anticipa** (revisión del owner, casos vecinos, 2026-09-29, caso 1).
+1313c1312
+< escritas y una prueba por rama contra el proveedor falso** (D;
+---
+> escritas y una prueba compartida entre ambas ramas contra el proveedor falso** (D;
+1554a1554,1555
+> 
+> El corte sólo se da por aceptado cuando no queda ninguna marca de conciliación abierta en el sistema nuevo; una sola marca pendiente bloquea su cierre.
+diff -r /home/qazuor/.cache/hos1352/vuelta-4/pristina/80-abiertos.md /home/qazuor/.cache/hos1352/vuelta-4/v/s/5586fad7/80-abiertos.md
+584c584
+< | AB-g5-11 · Dónde vive el caché del conjunto efectivo y cómo se observa una entrada sospechosa | `g5-u-v1-v4.md`:162 | [CB](01-decisiones-vigentes.md#own-41-corte-del-mvp-t11-cb): en el Redis que la API ya usa, lectura en vivo si Redis no responde, y un contador de entradas sospechosas en los logs estructurados |
+---
+> | AB-g5-11 · Dónde vive el caché del conjunto efectivo | `g5-u-v1-v4.md`:162 | [CB](01-decisiones-vigentes.md#own-41-corte-del-mvp-t11-cb): en el Redis que la API ya usa, lectura en vivo si Redis no responde |

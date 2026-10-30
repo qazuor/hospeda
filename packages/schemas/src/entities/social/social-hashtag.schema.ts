@@ -16,7 +16,7 @@ export const SocialHashtagSchema = z.object({
     normalizedHashtag: z
         .string()
         .min(1, { message: 'zodError.socialHashtag.normalizedHashtag.required' }),
-    /** Category label for grouping (e.g. "nature", "travel", "gastronomy") */
+    /** Category label for grouping (e.g. "nature", "travel", "food") */
     category: z.string().min(1, { message: 'zodError.socialHashtag.category.required' }),
     /** Optional platform restriction — null means applies to all platforms */
     platform: SocialPlatformEnumSchema.nullable().optional(),

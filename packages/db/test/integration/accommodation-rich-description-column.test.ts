@@ -1,6 +1,7 @@
 import { readdir, readFile } from 'node:fs/promises';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { PublicationStatusEnum } from '@repo/schemas';
 /**
  * Integration test: accommodation.rich_description — add-column migration (P2-T2).
  *
@@ -148,6 +149,9 @@ describe('accommodation.rich_description migration (SPEC-187 P2-T2 / PD-3)', () 
             const [inserted] = await tx
                 .insert(accommodations)
                 .values({
+                    publicationStatus: PublicationStatusEnum.PUBLISHED,
+                    inactiveSince: new Date(),
+                    deadlinesVersion: 1,
                     ownerId: owner.id,
                     destinationId: destination.id,
                     slug: `spec187-rich-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,

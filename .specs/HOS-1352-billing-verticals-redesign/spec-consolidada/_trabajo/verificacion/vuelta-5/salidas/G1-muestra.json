@@ -1,0 +1,376 @@
+[
+    {
+        "id": "dec-trial-001",
+        "start": 35,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md",
+        "n": 257,
+        "a": 256,
+        "z": 286,
+        "end": 72,
+        "source_end": 286
+    },
+    {
+        "id": "dec-trial-004-p1",
+        "start": 212,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md",
+        "n": 467,
+        "a": 434,
+        "z": 483,
+        "end": 227,
+        "source_end": 482
+    },
+    {
+        "id": "dec-trial-006-p1",
+        "start": 335,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md",
+        "n": 543,
+        "a": 510,
+        "z": 547,
+        "end": 348,
+        "source_end": 546
+    },
+    {
+        "id": "dec-sub-004",
+        "start": 619,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md",
+        "n": 757,
+        "a": 756,
+        "z": 780,
+        "end": 649,
+        "source_end": 780
+    },
+    {
+        "id": "dec-sub-008-p2",
+        "start": 910,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md",
+        "n": 1297,
+        "a": 1240,
+        "z": 1307,
+        "end": 929,
+        "source_end": 1306
+    },
+    {
+        "id": "dec-sub-022-p1",
+        "start": 1827,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md",
+        "n": 6399,
+        "a": 6355,
+        "z": 6409,
+        "end": 1844,
+        "source_end": 6404
+    },
+    {
+        "id": "dec-mp-006",
+        "start": 2390,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md",
+        "n": 5655,
+        "a": 5654,
+        "z": 5723,
+        "end": 2455,
+        "source_end": 5723
+    },
+    {
+        "id": "dec-mp-009",
+        "start": 2625,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md",
+        "n": 7455,
+        "a": 7454,
+        "z": 7509,
+        "end": 2669,
+        "source_end": 7509
+    },
+    {
+        "id": "dec-ent-005",
+        "start": 2925,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md",
+        "n": 5047,
+        "a": 5046,
+        "z": 5082,
+        "end": 2966,
+        "source_end": 5082
+    },
+    {
+        "id": "dec-ent-002-p3",
+        "start": 2842,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md",
+        "n": 643,
+        "a": 607,
+        "z": 648,
+        "end": 2856,
+        "source_end": 647
+    },
+    {
+        "id": "dec-addon-001",
+        "start": 3089,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md",
+        "n": 781,
+        "a": 780,
+        "z": 805,
+        "end": 3121,
+        "source_end": 805
+    },
+    {
+        "id": "dec-auth-001",
+        "start": 3634,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md",
+        "n": 6660,
+        "a": 6659,
+        "z": 6711,
+        "end": 3680,
+        "source_end": 6711
+    },
+    {
+        "id": "dec-data-001-p1",
+        "start": 4011,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md",
+        "n": 954,
+        "a": 925,
+        "z": 963,
+        "end": 4023,
+        "source_end": 962
+    },
+    {
+        "id": "dec-data-006",
+        "start": 4432,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md",
+        "n": 7045,
+        "a": 7044,
+        "z": 7079,
+        "end": 4461,
+        "source_end": 7079
+    },
+    {
+        "id": "dec-arch-014-p6",
+        "start": 6167,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md",
+        "n": 7617,
+        "a": 7509,
+        "z": 7646,
+        "end": 6193,
+        "source_end": 7643
+    },
+    {
+        "id": "dec-arch-014-p7",
+        "start": 6194,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md",
+        "n": 7630,
+        "a": 7509,
+        "z": 7646,
+        "end": 6217,
+        "source_end": 7643
+    },
+    {
+        "id": "dec-arch-016",
+        "start": 6248,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md",
+        "n": 7743,
+        "a": 7742,
+        "z": 7848,
+        "end": 6346,
+        "source_end": 7848
+    },
+    {
+        "id": "dec-mig-007",
+        "start": 7484,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md",
+        "n": 7015,
+        "a": 7014,
+        "z": 7044,
+        "end": 7522,
+        "source_end": 7044
+    },
+    {
+        "id": "dec-grant-004-p1",
+        "start": 7752,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md",
+        "n": 2073,
+        "a": 2054,
+        "z": 2103,
+        "end": 7762,
+        "source_end": 2102
+    },
+    {
+        "id": "dec-grant-012",
+        "start": 8054,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md",
+        "n": 4972,
+        "a": 4971,
+        "z": 5006,
+        "end": 8093,
+        "source_end": 5006
+    },
+    {
+        "id": "dec-legal-001-p1",
+        "start": 8214,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md",
+        "n": 990,
+        "a": 963,
+        "z": 993,
+        "end": 8229,
+        "source_end": 992
+    },
+    {
+        "id": "dec-test-002",
+        "start": 8488,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md",
+        "n": 5351,
+        "a": 5350,
+        "z": 5384,
+        "end": 8519,
+        "source_end": 5384
+    },
+    {
+        "id": "dec-conc-002-p4",
+        "start": 8919,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md",
+        "n": 1673,
+        "a": 1599,
+        "z": 1708,
+        "end": 8934,
+        "source_end": 1707
+    },
+    {
+        "id": "dec-rf-005",
+        "start": 9388,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md",
+        "n": 5294,
+        "a": 5293,
+        "z": 5318,
+        "end": 9417,
+        "source_end": 5318
+    },
+    {
+        "id": "dec-obs-001-p2",
+        "start": 9812,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md",
+        "n": 2282,
+        "a": 2238,
+        "z": 2286,
+        "end": 9824,
+        "source_end": 2283
+    },
+    {
+        "id": "dec-ci-002",
+        "start": 9931,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md",
+        "n": 2867,
+        "a": 2866,
+        "z": 2884,
+        "end": 9954,
+        "source_end": 2884
+    },
+    {
+        "id": "dec-meth-019-p5",
+        "start": 11056,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md",
+        "n": 8214,
+        "a": 8095,
+        "z": 8225,
+        "end": 11081,
+        "source_end": 8222
+    },
+    {
+        "id": "own-26-fase-9-completa-t1-1",
+        "start": 11082,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/26-fase-9-completa/10-decisiones-del-owner.md",
+        "n": 19,
+        "end": 11090,
+        "source_end": 19
+    },
+    {
+        "id": "own-26-fase-9-completa-t1-8d",
+        "start": 11346,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/26-fase-9-completa/10-decisiones-del-owner.md",
+        "n": 48,
+        "end": 11354,
+        "source_end": 48
+    },
+    {
+        "id": "own-28-fase-9-vuelta-1-t1-g4-3",
+        "start": 11613,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/28-fase-9-vuelta-1/10-decisiones-del-owner.md",
+        "n": 32,
+        "end": 11621,
+        "source_end": 32
+    },
+    {
+        "id": "own-29-fase-8-vuelta-2-t1-r9",
+        "start": 11876,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/29-fase-8-vuelta-2/10-decisiones-del-owner.md",
+        "n": 26,
+        "end": 11884,
+        "source_end": 26
+    },
+    {
+        "id": "own-30-revision-del-owner-t1-c12",
+        "start": 12149,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/30-revision-del-owner/10-decisiones-del-owner.md",
+        "n": 36,
+        "end": 12156,
+        "source_end": 36
+    },
+    {
+        "id": "own-30-revision-del-owner-t5-l3-f",
+        "start": 12417,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/30-revision-del-owner/10-decisiones-del-owner.md",
+        "n": 87,
+        "end": 12425,
+        "source_end": 87
+    },
+    {
+        "id": "own-37-fase-8-vuelta-3-t1-ab",
+        "start": 12714,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/37-fase-8-vuelta-3/10-decisiones-del-owner.md",
+        "n": 49,
+        "end": 12723,
+        "source_end": 49
+    },
+    {
+        "id": "own-38-fase-5-t3-b",
+        "start": 13014,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/38-fase-5/10-decisiones-del-owner.md",
+        "n": 76,
+        "end": 13023,
+        "source_end": 76
+    },
+    {
+        "id": "own-38-fase-5-t7-m",
+        "start": 13298,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/38-fase-5/10-decisiones-del-owner.md",
+        "n": 152,
+        "end": 13306,
+        "source_end": 152
+    },
+    {
+        "id": "own-41-corte-del-mvp-t1-ac",
+        "start": 13602,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/41-corte-del-mvp/10-decisiones-del-owner.md",
+        "n": 23,
+        "end": 13611,
+        "source_end": 23
+    },
+    {
+        "id": "own-41-corte-del-mvp-t7-bf",
+        "start": 13904,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/41-corte-del-mvp/10-decisiones-del-owner.md",
+        "n": 110,
+        "end": 13913,
+        "source_end": 110
+    },
+    {
+        "id": "own-41-corte-del-mvp-t16-cj",
+        "start": 14214,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/41-corte-del-mvp/10-decisiones-del-owner.md",
+        "n": 224,
+        "end": 14222,
+        "source_end": 224
+    },
+    {
+        "id": "own-26-fase-9-completa-t1-5a",
+        "start": 11236,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/26-fase-9-completa/10-decisiones-del-owner.md",
+        "n": 36,
+        "end": 11244,
+        "source_end": 36
+    }
+]

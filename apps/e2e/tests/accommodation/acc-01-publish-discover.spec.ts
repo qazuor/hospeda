@@ -27,18 +27,14 @@
  */
 
 import { expect, test } from '@playwright/test';
-import {
-    createAccommodation,
-    createSubscription,
-    createUser,
-    forceVerifyEmail
-} from '../../fixtures/api-helpers.ts';
+import { PublicationStatusEnum } from '@repo/schemas';
+import { createAccommodation, createUser, forceVerifyEmail } from '../../fixtures/api-helpers.ts';
 import {
     buildE2eFolderRoot,
     getCloudinaryEnv,
     getFolderContents
 } from '../../fixtures/cloudinary-client.ts';
-import { execSQL, getDbPool } from '../../fixtures/db-helpers.ts';
+import { getDbPool } from '../../fixtures/db-helpers.ts';
 import { cleanupTestUsers } from '../../support/test-cleanup.ts';
 
 const API_URL = process.env.HOSPEDA_E2E_API_URL ?? 'http://localhost:3001';
@@ -70,24 +66,9 @@ test.describe('ACC-01: host publishes, guest discovers @p0 @accommodation @cloud
         userId = host.id;
         await forceVerifyEmail(host.id);
 
-        const planRows = await execSQL<{ id: string }>(
-            'SELECT id FROM billing_plans WHERE active = true ORDER BY created_at ASC LIMIT 1'
-        );
-        const planId = planRows[0]?.id;
-        if (!planId) {
-            test.fixme(true, 'No billing plan in seed — ACC-01 cannot run');
-            return;
-        }
-
-        await createSubscription({
-            userId: host.id,
-            planId,
-            status: 'active'
-        });
-
         const accommodation = await createAccommodation({
             ownerId: host.id,
-            lifecycleState: 'ACTIVE',
+            publicationStatus: PublicationStatusEnum.PUBLISHED,
             slugPrefix: 'acc-01'
         });
 

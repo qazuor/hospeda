@@ -1,0 +1,31 @@
+# VB-B7 · Verificación spec → fuente · zona B7 (10-corte/B1–B7)
+
+## Hallazgos
+
+10-corte/B3.md:26 · «un guard de CI falla si cualquier archivo del repositorio, incluidos los scripts del corte, llama a `/preapproval_plan`» · sin soporte (no está en descomposicion.md:137 ni en DEC-MP-007, 01-decision-log.md:5738-5772, que no crea guard alguno) y contradice 16-fase-7-del-paraguas.md:148 (el paso 1a del script del corte cancela los `preapproval_plan` viejos) · BLOQUEA
+10-corte/B7.md:668 · «si la lectura falla en tres corridas seguidas del barrido, `S6` suspende igual y deja abierta la marca 21» · contradice 12-suscripcion.md:80-81 («Si la lectura falla, no suspende») y 03-maquinas-de-estado.md:156 (con lectura fallida o «todavía no se sabe» `S6` no ocurre; a los 3 días se abre la marca 21 y «`S6` sigue sin correr hasta que una persona resuelva por `S15`») · BLOQUEA
+10-corte/B7.md:671 · «mientras la fila está en `GRACE_PERIOD` el panel no le deja crear fichas nuevas» · sin soporte en 12-suscripcion.md:40-85 (el Origen del bloque) y contradice 03-maquinas-de-estado.md:1632 y 12-suscripcion.md:307-308 (§20: durante el grace servicio activo, edición activa, entitlements activos) · BLOQUEA
+10-corte/B7.md:531 · «AC:B7:32: el reloj del grace suma un día por cada reintento rechazado, hasta `díasDeGrace` + 5, con evento por extensión, y `S6` corre al vencer el reloj extendido» · sin soporte en todo el corpus; contradice 03-maquinas-de-estado.md:1631 (el grace dura los días de la versión y siempre menos que el ciclo, DEC-SUB-019) y 12-suscripcion.md:42-51 (el reloj arranca en el primer rechazo leído; no se extiende) · BLOQUEA
+10-corte/B7.md:1579 · «TEST:B7:5 cubre AC:B7:32» · sin soporte (prueba un criterio inventado, ver arriba) · BLOQUEA
+10-corte/B5.md:170 · «el registro manual que llega segundo [para un período ya acreditado] falla» · más fuerte que 03-maquinas-de-estado.md:1876 (MP6: una segunda transferencia del mismo período nace `REGISTERED`, choca sólo la cobertura y abre `COBRO_DUPLICADO`); coincide con 05-idempotencia:241 sólo para el cruce con un cobro del proveedor · MENOR
+10-corte/B7.md:448 · «en la rama 6 (incluida la revocación `S36`) `S18` le abre a la predecesora la marca `REEMBOLSO_POR_CONFIRMAR`» · contradice 12-suscripcion.md:711 y 03-maquinas-de-estado.md:169 («tras `S36` no hay marca»: lo devuelve su `RF1`) · MENOR
+10-corte/B7.md:1485 · «la validación del grace (no más corto que el ciclo) la provee la acción de precios de `B2`» · más débil/desplazado respecto de nucleo/02-modelo-de-datos.md:133 (la valida «publicar una versión de plan» —donde se configura la gracia— y también «fijar el precio de un ciclo») · MENOR
+10-corte/B1.md:380 · «quién demuestra cada defensa (de `cobertura.json`)»: M6→B5, RP12→B5, RP5/RP7/RP11→B11, etc. · sin soporte (cobertura.json no está entre las fuentes; 20-testing.md:501-545 no asigna piezas) · MENOR
+10-corte/B1.md:290 · «RP12: cambiar la tarjeta emite un `payment` de ARS 0 … `rejected` si la tarjeta no pasa» · más débil que 20-testing.md:545 (omite «y autorizar deja otro igual en producción», `PA-3`) · MENOR
+10-corte/B7.md:59 · «rama 4 / `S13` detrás de interfaz: BL y BW» (también l. 1231, 1737 y 1752: «BW le sumó la rama 4») · contradice 41-corte-del-mvp/10-decisiones-del-owner.md:156 (BW decide quién crea `domain_event`, no la rama 4; la rama 4 viene de BL, descomposicion.md:1049) · MENOR
+10-corte/B4.md:453 · «el rollback del programa es el de `16-fase-7…` §4.3» (igual en B5.md:1119, B6.md:520, B7.md:1742) · contradice 16-fase-7-del-paraguas.md:93 (el rollback es el §3; el §4.3 es «Lo que este orden NO resuelve») · MENOR
+
+## Resumen
+
+| archivo | líneas recorridas | afirmaciones normativas revisadas (aprox.) | BLOQUEA | MENOR |
+|---|---|---|---|---|
+| 10-corte/B1.md | 1–933 | ~80 (fila 7, lista 8, AC 18, TEST 17, reglas/tablas ~30) | 0 | 2 |
+| 10-corte/B2.md | 1–507 | ~45 (fila 3, lista 5, AC 11, TEST 11, reglas/modelo/API ~15) | 0 | 0 |
+| 10-corte/B3.md | 1–1335 | ~115 (fila 15, lista 11, AC 39, TEST 40, reglas/ESQ/modelo ~20) | 1 | 0 |
+| 10-corte/B4.md | 1–470 | ~35 (fila 5, lista 7, AC 10, TEST 10, reglas ~5) | 0 | 1 |
+| 10-corte/B5.md | 1–1138 | ~95 (fila 11, lista 14, AC 38, TEST 20, reglas/modelo ~12) | 0 | 1 |
+| 10-corte/B6.md | 1–538 | ~45 (fila 6, lista 7, AC 13, TEST 11, reglas ~8) | 0 | 0 |
+| 10-corte/B7.md | 1–1763 | ~120 (fila 9, lista 14, AC 32, TEST 19, §1/§4/§5 de `12` ~40) | 4 | 3 |
+| **total** | | **~535** | **5** | **7** |
+
+(Las 4 de B4/B5/B6/B7 por la cita del rollback se cuentan una vez, en B4; las 4 menciones de BW, una vez, en B7.)

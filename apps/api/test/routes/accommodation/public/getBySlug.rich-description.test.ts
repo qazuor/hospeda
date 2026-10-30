@@ -157,7 +157,7 @@ describe('publicGetAccommodationBySlugRoute — richDescription gate', () => {
         queueSelectResults([], [], [], []);
     });
 
-    it('includes richDescription when the owning host is entitled', async () => {
+    it('hides richDescription while the old entitlement is retired', async () => {
         mockGetBySlug.mockResolvedValue({
             data: {
                 id: 'acc-001',
@@ -180,13 +180,8 @@ describe('publicGetAccommodationBySlugRoute — richDescription gate', () => {
         const body = await res.json();
 
         expect(res.status).toBe(200);
-        expect(body.data.richDescription).toBe('## Premium\n\n**luxury**');
-        // The i18n sibling rides the SAME gate — an entitled owner keeps both.
-        expect(body.data.richDescriptionI18n).toEqual({
-            es: '## Premium ES\n\n**lujo**',
-            en: '## Premium EN\n\n**luxury**',
-            pt: '## Premium PT\n\n**luxo**'
-        });
+        expect(body.data.richDescription).toBeUndefined();
+        expect(body.data.richDescriptionI18n).toBeUndefined();
     });
 
     it('omits richDescription when the owning host is not entitled', async () => {

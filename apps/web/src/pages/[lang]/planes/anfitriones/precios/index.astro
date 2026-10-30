@@ -41,6 +41,7 @@ import Breadcrumbs from '@/components/shared/navigation/Breadcrumbs.astro';
 import MarketingLayout from '@/layouts/MarketingLayout.astro';
 import { getPlanDescription, getPlanName } from '@/lib/billing-i18n';
 import { fetchAudiencePlans } from '@/lib/billing/audience-plans';
+import { fetchTouristVipBenefitKeys } from '@/lib/billing/tourist-vip-benefits';
 import {
     buildBillingFaqJsonLd,
     buildPricingBreadcrumbs,
@@ -65,7 +66,9 @@ applyCacheHeaders({
     tags: [CACHE_TAG_PRICING]
 });
 
+const touristVipBenefitsPromise = fetchTouristVipBenefitKeys();
 const plans = await fetchAudiencePlans({ audience: 'host' });
+const touristVipBenefits = await touristVipBenefitsPromise;
 const { copyRoot, faqs, hasComparison, priceMode } = resolvePricingPageContent({
     audience: 'owner',
     plans,
@@ -81,7 +84,7 @@ const siteOrigin = Astro.site?.href.replace(/\/$/, '') ?? Astro.url.origin;
  * (`getPlanName` / `getPlanDescription`) and not from the raw config values.
  *
  * `plan.name` / `plan.description` off the API are the billing package's
- * internal strings — for the commerce verticals, English engineering prose
+ * internal strings — for the venue/experience verticals, English engineering prose
  * carrying issue IDs. Publishing those as structured data would put them in the
  * field a search result quotes, while the visible card said something else.
  */
@@ -123,7 +126,7 @@ const headingMain = headingWords.join(' ');
     <JsonLd slot="head-extra" data={buildBillingFaqJsonLd({ faqs })} />
     <BreadcrumbJsonLd slot="head-extra" items={breadcrumbs.jsonLd} />
 
-    <Breadcrumbs locale={locale} items={breadcrumbs.visible} />
+    <Breadcrumbs slot="breadcrumbs" locale={locale} items={breadcrumbs.visible} />
 
     <MarketingHero
         tagline={t(`${copyRoot}.tagline`)}
@@ -140,10 +143,12 @@ const headingMain = headingWords.join(' ');
         locale={locale}
         audience="owner"
         plans={plans}
+        touristVipBenefits={touristVipBenefits}
         intlLocale={intlLocale}
         copyRoot={copyRoot}
         faqs={faqs}
         hasComparison={hasComparison}
         priceMode={priceMode}
+        ctaMode="checkout"
     />
 </MarketingLayout>

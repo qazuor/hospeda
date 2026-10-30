@@ -47,6 +47,7 @@ import {
     canRevokePermissions,
     canViewPermissions
 } from './permission.service.permission';
+import { assertPermissionIsNotSuperAdminExclusive } from './permission.service.super-admin-exclusive.js';
 import {
     applySetTrustedEditor,
     applyUnsetTrustedEditor
@@ -110,6 +111,7 @@ export class PermissionService extends BaseService {
                         'You do not have permission to assign permissions.'
                     );
                 }
+                assertPermissionIsNotSuperAdminExclusive({ permission });
                 const exists = await this.rolePermissionModel.findOne({ role, permission });
                 if (exists) return { assigned: false };
                 await this.rolePermissionModel.create({ role, permission });
@@ -174,6 +176,7 @@ export class PermissionService extends BaseService {
                         'You do not have permission to assign permissions.'
                     );
                 }
+                assertPermissionIsNotSuperAdminExclusive({ permission });
                 const user = userId as UserIdType;
 
                 // SUPER_ADMIN guard: an actor HOLDING the SUPER_ADMIN hat

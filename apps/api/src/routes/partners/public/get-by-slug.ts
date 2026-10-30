@@ -1,9 +1,7 @@
 /**
  * Public partner detail endpoint (HOS-294 D-5).
  *
- * Serves the gold partner's own page at `/partners/<slug>/`. Keyed by SLUG and
- * never by UUID: a UUID is not shareable from memory, tells a search engine
- * nothing, and leaks an internal identifier.
+ * Keeps the public detail page dark until V7 restores it on the public key.
  */
 
 import { PartnerPublicSchema, ServiceErrorCode } from '@repo/schemas';
@@ -19,20 +17,8 @@ const partnerService = new PartnerService({ logger: apiLogger });
 /**
  * Resolves a partner for a public detail request, or raises the right refusal.
  *
- * The three service outcomes become three DIFFERENT answers, and the split
- * between the last two is the point:
- *
- * - `gone` -> HTTP 410. The partner was deliberately REVOKED. 410 is the one
- *   irreversible answer — it tells a crawler to drop the URL for good — so it
- *   is reserved for the one irreversible state (HOS-562).
- * - `notFound` -> HTTP 404. Everything else: not gold, no row, never published,
- *   or a lapsed subscription. All of those are reversible, so none of them may
- *   earn a permanent deindex. A partner who stops paying and later regularises
- *   must come back with their ranking intact.
- *
- * Answering 404 for both would still render correctly in a browser and would
- * quietly throw away the deindex signal — which is the only reason the service
- * bothers to distinguish them.
+ * The public page is unavailable until V7 restores it on the public key, so
+ * every successful lookup outcome is translated to HTTP 404.
  *
  * A service ERROR is re-raised as itself, never folded into a 404: an outage
  * that renders as "this partner does not exist" is an outage nobody notices.
@@ -58,41 +44,21 @@ export const getPublicPartnerBySlugHandler = async (
         throw new ServiceError(result.error.code, result.error.message);
     }
 
-    if (result.data?.outcome === 'gone') {
-        // HOS-562: says "revoked", not "no longer published". The old wording
-        // inherited the same assumption the old gate did — it was logged
-        // verbatim against a partner that had NEVER been published, which is
-        // how the smoke found the bug. `gone` now means exactly one thing.
-        throw new ServiceError(
-            ServiceErrorCode.GONE,
-            `Partner with slug "${slug}" has been revoked`
-        );
-    }
-
-    if (result.data?.outcome !== 'found') {
-        throw new ServiceError(ServiceErrorCode.NOT_FOUND, `Partner with slug "${slug}" not found`);
-    }
-
-    return result.data.partner;
+    throw new ServiceError(ServiceErrorCode.NOT_FOUND, `Partner with slug "${slug}" not found`);
 };
 
 /**
  * GET /api/v1/public/partners/{slug}
  *
- * Returns the public payload for one gold partner. 410 only when the partner
- * was deliberately revoked; 404 for every other reason it is not visible.
+ * The public page remains unavailable until V7 restores it on the public key.
  */
 export const publicGetPartnerBySlugRoute = createPublicRoute({
     method: 'get',
     path: '/{slug}',
     summary: 'Get a partner by slug',
     description:
-        'Returns the public detail payload for a gold-tier partner. ' +
-        'Responds 410 only when the partner was deliberately revoked — the one ' +
-        'permanent state — and 404 for every other reason it is not visible: a ' +
-        'silver partner, no such row, a gold partner never published, or one ' +
-        'whose subscription lapsed (a temporary outage, which must not be ' +
-        'deindexed permanently).',
+        'The public detail page remains unavailable until V7 restores it on the public key. ' +
+        'Responds 404 until V7 restores the public page on the partner key.',
     tags: ['Partners'],
     requestParams: {
         slug: z
@@ -107,7 +73,6 @@ export const publicGetPartnerBySlugRoute = createPublicRoute({
     responseSchema: PartnerPublicSchema,
     handler: getPublicPartnerBySlugHandler,
     options: {
-        cacheTTL: 300,
         customRateLimit: { requests: 200, windowMs: 60000 }
     }
 });

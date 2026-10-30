@@ -1,0 +1,1861 @@
+
+### dec-trial-001 · spec 35–72 · fuente .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:257–286
+ESPECIFICACIÓN
+35: <a id="dec-trial-001"></a>
+36: 
+37: ### DEC-TRIAL-001 — Los overrides del Trial Plan se declaran en DB, por vertical
+38: 
+39: Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:257
+40: 
+41: Dueña del AC: [V3](10-corte/V3.md#pieza-v3).
+42: También: [V2](10-corte/V2.md#pieza-v2) (provee).
+43: Tests mínimos: ≥1 de cualquier tipo de la lista cerrada.
+44: 
+45: - **Fecha**: 2026-09-15 · **Estado**: ACCEPTED · **Decide**: owner
+46: - **Problema**: §10.3 ordena heredar **exactamente** los limits del plan más básico, derivados
+47:   automáticamente y sin copiarse a mano. §10.5 ordena **máximo una ficha** durante el trial.
+48:   Si el plan más básico permite más de una, las dos reglas se contradicen sobre el mismo
+49:   valor, y §64 las congela a las dos como invariantes (#5 y #6). Encima, el "1" está escrito
+50:   como constante en el PDR, lo que choca con §9.
+51: - **Alternativas**: (1) overrides declarados en DB por vertical; (2) el "1" es una regla dura
+52:   aparte, fuera de la derivación; (3) gana la derivación y se retira el "1".
+53: - **Decisión**: **(1)**. La resolución de limits del Trial Plan es **derivar y después aplicar
+54:   overrides declarados explícitamente en DB, por vertical**. El máximo de fichas es el primero
+55:   de esa lista.
+56: - **Motivo**: el apartamiento del §10.3 queda escrito y auditable en vez de escondido en
+57:   código, cumple §9, y una vertical futura puede permitir otra cantidad sin deploy. Respeta
+58:   §10.5 y §64.6 tal como están escritos.
+59: - **Implicaciones**:
+60:   1. **La derivación deja de ser pura**: pasa a ser "derivar + aplicar overrides". Toda
+61:      resolución de limits de trial ejecuta los dos pasos, siempre en ese orden, y el override
+62:      nunca reemplaza a la derivación.
+63:   2. **El conjunto de overrides es finito, declarado y cerrado.** Agregarle un ítem es una
+64:      decisión registrada, no una configuración más. Si la lista crece sin control, la
+65:      derivación del §10.3 se vuelve decorativa y vuelven a existir dos fuentes para el mismo
+66:      valor — que es lo que esta decisión viene a evitar.
+67:   3. Se cruza con `DEC-ARCH-001`: la derivación lee la **versión vigente** del plan más
+68:      básico, y el override se aplica sobre ese resultado.
+69:   4. **No resuelve `BD-TRIAL-01`**: qué pasa cuando la versión de la que se deriva cambia en
+70:      mitad de un trial sigue abierto.
+71: - **Origen**: `C-TRIAL-01` (BLOCKING).
+72: 
+FUENTE
+257: ### DEC-TRIAL-001 — Los overrides del Trial Plan se declaran en DB, por vertical
+258: 
+259: - **Fecha**: 2026-09-15 · **Estado**: ACCEPTED · **Decide**: owner
+260: - **Problema**: §10.3 ordena heredar **exactamente** los limits del plan más básico, derivados
+261:   automáticamente y sin copiarse a mano. §10.5 ordena **máximo una ficha** durante el trial.
+262:   Si el plan más básico permite más de una, las dos reglas se contradicen sobre el mismo
+263:   valor, y §64 las congela a las dos como invariantes (#5 y #6). Encima, el "1" está escrito
+264:   como constante en el PDR, lo que choca con §9.
+265: - **Alternativas**: (1) overrides declarados en DB por vertical; (2) el "1" es una regla dura
+266:   aparte, fuera de la derivación; (3) gana la derivación y se retira el "1".
+267: - **Decisión**: **(1)**. La resolución de limits del Trial Plan es **derivar y después aplicar
+268:   overrides declarados explícitamente en DB, por vertical**. El máximo de fichas es el primero
+269:   de esa lista.
+270: - **Motivo**: el apartamiento del §10.3 queda escrito y auditable en vez de escondido en
+271:   código, cumple §9, y una vertical futura puede permitir otra cantidad sin deploy. Respeta
+272:   §10.5 y §64.6 tal como están escritos.
+273: - **Implicaciones**:
+274:   1. **La derivación deja de ser pura**: pasa a ser "derivar + aplicar overrides". Toda
+275:      resolución de limits de trial ejecuta los dos pasos, siempre en ese orden, y el override
+276:      nunca reemplaza a la derivación.
+277:   2. **El conjunto de overrides es finito, declarado y cerrado.** Agregarle un ítem es una
+278:      decisión registrada, no una configuración más. Si la lista crece sin control, la
+279:      derivación del §10.3 se vuelve decorativa y vuelven a existir dos fuentes para el mismo
+280:      valor — que es lo que esta decisión viene a evitar.
+281:   3. Se cruza con `DEC-ARCH-001`: la derivación lee la **versión vigente** del plan más
+282:      básico, y el override se aplica sobre ese resultado.
+283:   4. **No resuelve `BD-TRIAL-01`**: qué pasa cuando la versión de la que se deriva cambia en
+284:      mitad de un trial sigue abierto.
+285: - **Origen**: `C-TRIAL-01` (BLOCKING).
+286: 
+
+### dec-trial-004-p1 · spec 212–227 · fuente .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:467–482
+ESPECIFICACIÓN
+212: <a id="dec-trial-004-p1"></a>
+213: 
+214: #### 📌1 de DEC-TRIAL-004
+215: 
+216: Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:467
+217: 
+218: Dueña del AC: [V4](10-corte/V4.md#pieza-v4).
+219: Tests mínimos: ≥1 de cualquier tipo de la lista cerrada.
+220: 
+221: 📌 **Precisado el 2026-09-27, con OK del owner (FASE 9 vuelta 2, `R23`, `F-8V2A3-004`)**: el
+222: seudónimo del correo se calcula con un hash sin clave sobre el correo normalizado, y la función no cambia
+223: nunca. Los puntos de la parte local y el `+alias` se sacan sólo en una lista cerrada de
+224: proveedores que los ignoran —Gmail, Outlook y los que se midan—; en los demás dominios el
+225: correo se compara tal cual, en minúsculas. Cambiar la lista no recalcula las filas viejas, y
+226: se declara.
+227: 
+FUENTE
+467: - 📌 **Precisado el 2026-09-27, con OK del owner (FASE 9 vuelta 2, `R23`, `F-8V2A3-004`)**: el
+468:   seudónimo del correo es SHA-256 sin clave sobre el correo normalizado, y la función no cambia
+469:   nunca. Los puntos de la parte local y el `+alias` se sacan sólo en una lista cerrada de
+470:   proveedores que los ignoran —Gmail, Outlook y los que se midan—; en los demás dominios el
+471:   correo se compara tal cual, en minúsculas. Cambiar la lista no recalcula las filas viejas, y
+472:   se declara.
+473: - 📌 **Precisada el 2026-09-28, con OK del owner (FASE 9 vuelta 2, verificación, `V2-j1` a `V2-j4`,
+474:   `V2-v`, `V2-w` y `V2-x`)**: la normalización sigue la lista por proveedor de `V/02` §2.2. Gmail
+475:   quita puntos y `+`; Microsoft consumidor sólo el `+`, sin unificar dominios; Proton e iCloud
+476:   unifican y quitan el `+`; Fastmail y Yandex quitan el `+`; todo dominio que la lista no nombra
+477:   cuenta como dominio propio y quita el `+`. Lo marcado *«a medir»* entra sólo si la medición del
+478:   paso 0 lo confirma, y lo que la medición muestre fuera de la lista vuelve al owner. La medición de
+479:   dominios sólo cuenta dominios: no exporta ni guarda casillas.
+480: - 📌 **Precisada el 2026-09-28, con OK del owner (revisión del owner, N7, `g2`, sobre la implicación
+481:   2)**: Teléfono, identificador fiscal y dispositivo no se guardan; la consulta legal queda sólo por
+482:   el seudónimo (seguimiento HOS-1394).
+
+### dec-trial-006-p1 · spec 335–348 · fuente .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:543–546
+ESPECIFICACIÓN
+335: <a id="dec-trial-006-p1"></a>
+336: 
+337: #### 📌1 de DEC-TRIAL-006
+338: 
+339: Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:543
+340: 
+341: Dueña del AC: [V2](10-corte/V2.md#pieza-v2).
+342: Tests mínimos: ≥1 de cualquier tipo de la lista cerrada.
+343: 
+344: 📌 **Precisada el 2026-09-28, con OK del owner (revisión del owner, N7, N1)**: Encender o apagar la
+345: prueba de una vertical queda fuera de esta versión: al publicar una versión de plan, el panel no
+346: deja pasar los días de prueba de 0 a más de 0 ni al revés (`NUCLEO/02` §1.4), y `T7` salió.
+347: Partner queda en cero.
+348: 
+FUENTE
+543: - 📌 **Precisada el 2026-09-28, con OK del owner (revisión del owner, N7, N1)**: Encender o apagar la
+544:   prueba de una vertical queda fuera de esta versión: al publicar una versión de plan, el panel no
+545:   deja pasar los días de prueba de 0 a más de 0 ni al revés (`NUCLEO/02` §1.4), y `T7` salió.
+546:   Partner queda en cero.
+
+### dec-sub-004 · spec 619–649 · fuente .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:757–780
+ESPECIFICACIÓN
+619: <a id="dec-sub-004"></a>
+620: 
+621: ### DEC-SUB-004 — La ventana de límites de pausa se cuenta por user + vertical
+622: 
+623: Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:757
+624: 
+625: Dueña del AC: [B8b](20-fase-2/B8b.md#pieza-b8b).
+626: Tests mínimos: ≥1 de cualquier tipo de la lista cerrada.
+627: 
+628: - **Fecha**: 2026-09-15 · **Estado**: ACCEPTED · **Decide**: owner
+629: - **Problema**: §26.3 define tres límites con precisión — 3 pausas por ventana móvil de 12
+630:   meses, 120 días por pausa, 240 días acumulados — y **no dice sobre qué entidad se cuentan**.
+631:   Si fuera por suscripción, cancelar y volver a suscribirse resetearía los tres.
+632: - **Alternativas**: (1) por `user + vertical`; (2) por suscripción; (3) por suscripción con
+633:   arrastre del historial al re-suscribirse.
+634: - **Decisión**: **(1)**. El contador vive en la relación **persona + vertical** y **sobrevive
+635:   a cancelar y volver a suscribirse**.
+636: - **Motivo**: es el único que hace que el límite limite. Con tres números tan específicos el
+637:   §26.3 claramente quiso poner un techo; contarlo por suscripción lo volvería decorativo.
+638: - **Implicaciones**:
+639:   1. Es **el mismo eje que ya usa el resto del modelo**: el trial es por `user + vertical`
+640:      (§10.1) y la suscripción principal también (§11). No se introduce un eje nuevo.
+641:   2. El contador vive **fuera** de la fila de suscripción: hay una entidad más que mantener.
+642:   3. **Queda abierto qué pasa con el historial si la persona borra la cuenta y vuelve.** Se
+643:      cruza con `DEC-TRIAL-004`, que ya eligió el email normalizado como señal de identidad
+644:      para un problema de la misma forma. Conviene que usen la misma señal.
+645:   4. Se descartó la variante con arrastre explícito porque es un **fail-open**: si un camino
+646:      de creación de suscripción se olvida de copiar el historial, el contador se resetea en
+647:      silencio.
+648: - **Origen**: `OD-SUB-01`.
+649: 
+FUENTE
+757: ### DEC-SUB-004 — La ventana de límites de pausa se cuenta por user + vertical
+758: 
+759: - **Fecha**: 2026-09-15 · **Estado**: ACCEPTED · **Decide**: owner
+760: - **Problema**: §26.3 define tres límites con precisión — 3 pausas por ventana móvil de 12
+761:   meses, 120 días por pausa, 240 días acumulados — y **no dice sobre qué entidad se cuentan**.
+762:   Si fuera por suscripción, cancelar y volver a suscribirse resetearía los tres.
+763: - **Alternativas**: (1) por `user + vertical`; (2) por suscripción; (3) por suscripción con
+764:   arrastre del historial al re-suscribirse.
+765: - **Decisión**: **(1)**. El contador vive en la relación **persona + vertical** y **sobrevive
+766:   a cancelar y volver a suscribirse**.
+767: - **Motivo**: es el único que hace que el límite limite. Con tres números tan específicos el
+768:   §26.3 claramente quiso poner un techo; contarlo por suscripción lo volvería decorativo.
+769: - **Implicaciones**:
+770:   1. Es **el mismo eje que ya usa el resto del modelo**: el trial es por `user + vertical`
+771:      (§10.1) y la suscripción principal también (§11). No se introduce un eje nuevo.
+772:   2. El contador vive **fuera** de la fila de suscripción: hay una entidad más que mantener.
+773:   3. **Queda abierto qué pasa con el historial si la persona borra la cuenta y vuelve.** Se
+774:      cruza con `DEC-TRIAL-004`, que ya eligió el email normalizado como señal de identidad
+775:      para un problema de la misma forma. Conviene que usen la misma señal.
+776:   4. Se descartó la variante con arrastre explícito porque es un **fail-open**: si un camino
+777:      de creación de suscripción se olvida de copiar el historial, el contador se resetea en
+778:      silencio.
+779: - **Origen**: `OD-SUB-01`.
+780: 
+
+### dec-sub-008-p2 · spec 910–929 · fuente .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:1297–1306
+ESPECIFICACIÓN
+910: <a id="dec-sub-008-p2"></a>
+911: 
+912: #### 📌2 de DEC-SUB-008
+913: 
+914: Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:1297
+915: 
+916: Dueña del AC: [B8b](20-fase-2/B8b.md#pieza-b8b).
+917: Tests mínimos: ≥1 de cualquier tipo de la lista cerrada.
+918: 
+919: 📌 **Precisada el 2026-09-29, con OK del owner (revisión del owner, casos vecinos, casos 37, G-A,
+920: I-A e I-B)**: El descenso programado lo aplica `S38`, la transición de la cola de `B/12` §2 que
+921: también aplica el cambio de versión de una migración: pasa la fila a la versión destino, aplica la
+922: elección de qué conservar y emite el aviso de cobertura. Si la fecha llega con la fila en
+923: `GRACE_PERIOD`, se aplica igual, porque el servicio sigue y el monto ya se mutó; en `SUSPENDED`
+924: espera y se aplica al volver por `S7`, también cuando `S7` la devuelve a `CANCEL_SCHEDULED` porque
+925: el cobro entró sobre un preapproval ya cancelado; en `PAUSED` espera a la reanudación, como ya
+926: estaba. Un pagador con tarjeta suspendido no vuelve por `S7` sino como sucesora, y el cambio muere
+927: con la fila vieja, como cuando llega un upgrade: la sucesora eligió su plan en el checkout y nace
+928: sin cola.
+929: 
+FUENTE
+1297: - 📌 **Precisada el 2026-09-29, con OK del owner (revisión del owner, casos vecinos, casos 37, G-A,
+1298:   I-A e I-B)**: El descenso programado lo aplica `S38`, la transición de la cola de `B/12` §2 que
+1299:   también aplica el cambio de versión de una migración: pasa la fila a la versión destino, aplica la
+1300:   elección de qué conservar y emite el aviso de cobertura. Si la fecha llega con la fila en
+1301:   `GRACE_PERIOD`, se aplica igual, porque el servicio sigue y el monto ya se mutó; en `SUSPENDED`
+1302:   espera y se aplica al volver por `S7`, también cuando `S7` la devuelve a `CANCEL_SCHEDULED` porque
+1303:   el cobro entró sobre un preapproval ya cancelado; en `PAUSED` espera a la reanudación, como ya
+1304:   estaba. Un pagador con tarjeta suspendido no vuelve por `S7` sino como sucesora, y el cambio muere
+1305:   con la fila vieja, como cuando llega un upgrade: la sucesora eligió su plan en el checkout y nace
+1306:   sin cola.
+
+### dec-sub-022-p1 · spec 1827–1844 · fuente .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:6399–6404
+ESPECIFICACIÓN
+1827: <a id="dec-sub-022-p1"></a>
+1828: 
+1829: #### 📌1 de DEC-SUB-022
+1830: 
+1831: Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:6399
+1832: 
+1833: Dueña del AC: [B7](10-corte/B7.md#pieza-b7).
+1834: Tests mínimos: ≥1 de cualquier tipo de la lista cerrada.
+1835: 
+1836: **📌 Precisado el 2026-09-25, con OK del owner (FASE 9 completa, fila 9d de
+1837: `26-fase-9-completa/10`; elección del agente de aplicación en `13` §2, ratificada como estaba).**
+1838: **«Venía pagando» es: la sucesión se declaró desde `ACTIVE` o `CANCEL_SCHEDULED`, y la
+1839: predecesora tiene al menos un pago acreditado.** No alcanza a la sucesora de una `SUSPENDED` ni
+1840: al pagador manual (`S29` ya exige la cuota pagada), como dice *Lo que no cambia*. La misma lectura
+1841: sirve para *«cobrada»* en `DEC-ADDON-007` punto 3 (su 📌, 9e).
+1842: 
+1843: La entrada no se edita en su contenido.
+1844: 
+FUENTE
+6399: - **📌 Precisado el 2026-09-25, con OK del owner (FASE 9 completa, fila 9d de
+6400:   `26-fase-9-completa/10`; elección del agente de aplicación en `13` §2, ratificada como estaba).**
+6401:   **«Venía pagando» es: la sucesión se declaró desde `ACTIVE` o `CANCEL_SCHEDULED`, y la
+6402:   predecesora tiene al menos un pago acreditado.** No alcanza a la sucesora de una `SUSPENDED` ni
+6403:   al pagador manual (`S29` ya exige la cuota pagada), como dice *Lo que no cambia*. La misma lectura
+6404:   sirve para *«cobrada»* en `DEC-ADDON-007` punto 3 (su 📌, 9e).
+
+### dec-mp-006 · spec 2390–2455 · fuente .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:5655–5723
+ESPECIFICACIÓN
+2390: <a id="dec-mp-006"></a>
+2391: 
+2392: ### DEC-MP-006 — El reloj de cobro es del proveedor: el mandato es el modelo canónico, sin destino pendiente (2026-09-26)
+2393: 
+2394: Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:5655
+2395: 
+2396: Dueña del AC: [B3](10-corte/B3.md#pieza-b3).
+2397: También: [B6](10-corte/B6.md#pieza-b6) (implementa).
+2398: Tests mínimos: ≥1 de cualquier tipo de la lista cerrada.
+2399: 
+2400: - **Fecha**: 2026-09-24 · **Estado**: ACCEPTED — **cláusula 1 cerrada el 2026-09-26**: el cargo puntual deja de ser destino (ver su 📌) · **Decide**: owner
+2401: - **Contesta la pregunta que gobierna el capítulo 13**, declarada en
+2402:   `HOS-1354-.../spec.md` §5.1 como *«la primera pregunta cuando esta épica arranque»* y dejada
+2403:   explícitamente abierta por el contrato de cobertura (§1.2 y §7). Literal: *«¿el capítulo 13 adopta el
+2404:   **cargo puntual contra tarjeta guardada** como modelo canónico, tratando el mandato del proveedor
+2405:   —lo que Mercado Pago hace hoy— como **modo degradado**?»*
+2406: - **Por qué no se podía esquivar**: decide **quién tiene el reloj**, y eso no se esconde detrás de una
+2407:   interfaz — **dos relojes sobre la misma autorización son el doble cobro** que `DEC-ARCH-004` declara
+2408:   como riesgo nuestro.
+2409: - **El hecho que la decide, y no es una preferencia de diseño**: `EX-31` (`NOT_SUPPORTED`, 2026-09-16).
+2410:   El cobro recurrente con credencial guardada —que es exactamente el cargo puntual del modelo
+2411:   canónico— **devuelve `403` en las cuatro formas de pedirlo**, con el mensaje idéntico *«The
+2412:   application is not authorized to perform this type of payment»*, mientras **la misma orden sin esos
+2413:   nodos entra con `201`** (`EX-30`, el control que lo distingue). **El rechazo es del PERMISO, no del
+2414:   pedido: no hay forma de armar el request que lo evite.** Y la vía alternativa está cerrada por diseño
+2415:   del proveedor: tokenizar una tarjeta guardada **exige recapturar el código de seguridad**, y un
+2416:   `card_token` es **reutilizable entre suscripciones** (`EX-12`, re-verificado en producción con tarjeta real).
+2417: - **Decisión**: **el reloj de cobro es del proveedor.** El **mandato** (`preapproval`) es el modelo
+2418:   canónico del capítulo 13. El cargo puntual **no se descarta: queda declarado como destino**, con dos
+2419:   cláusulas:
+2420:   1. **Se pide la habilitación** de *«pagos automáticos»* por el canal comercial, **en paralelo y sin
+2421:      bloquear nada**. Cuesta poco y cambia el techo del diseño.
+2422:   2. **La interfaz del capítulo 13 no puede impedir la migración.** Es lo que `DEC-ARCH-004` ya exige
+2423:      para el reembolso, aplicado acá: el modo canónico se elige hoy, **no se cementa**.
+2424: 
+2425:   → ver [📌1](#dec-mp-006-p1) (reemplaza parte de lo anterior; adjudicación).
+2426: - **🚧 El límite que esta decisión destapa, y va declarado porque es nuevo**: `DEC-MP-005` estableció
+2427:   que *«lo que MP no hace lo suple nuestro lado»*. **Esto no se puede suplir.** Un permiso comercial no
+2428:   se compensa con código, y las cuatro formas de pedirlo están medidas. **Es el primer caso donde esa
+2429:   directriz se topa con un límite duro**, y conviene tenerlo presente antes de prometerla como
+2430:   universal. Ironía que queda registrada: elegimos Mercado Pago porque Mobbex no nos habilitó, y el
+2431:   modelo de cobro que preferiríamos no lo podemos usar porque Mercado Pago tampoco nos habilita.
+2432: - **Lo que se ACEPTA al elegir esto**: **heredamos la política de reintentos del proveedor y no la
+2433:   gobernamos** — medida en `GR-3`: cuatro intentos dentro de una ventana de 24 h, y lo que decide el
+2434:   desenlace es **vencer la ventana**, no agotar los reintentos.
+2435: - **Lo que se EVITA, y es el costo que la pregunta original no enumeraba** (`HOS-1354-.../spec.md`
+2436:   §5.1): *«si el reloj es nuestro, **los reintentos también lo son, y son terreno regulado** — hay
+2437:   códigos de rechazo que no se pueden reintentar nunca, hay techo de intentos por ventana y hay multas
+2438:   por excederlo»*. Hoy eso lo absorbe Mercado Pago adentro del `preapproval`.
+2439: - **Consecuencia sobre el resto del programa, y hay que decirla**: `HOS-1354-.../spec.md` §5.2 dejó
+2440:   anotado que las filas del **cobro fallido** gobiernan el diseño del grace **sólo mientras el reloj
+2441:   sea del proveedor** — con el reloj nuestro *«dejan de ser bloqueantes de diseño y pasan a ser una
+2442:   nota del adaptador»*. **Con esta decisión siguen siendo bloqueantes**, y con ellas `RN-3` y la
+2443:   [sonda 49](../docs/mp-probes/probe-49-la-ventana-de-reintentos.mjs), que es la que separa *«ventana de
+2444:   24 h»* de *«ventana de un ciclo»* y con eso decide qué hace el dunning (`DEC-MP-003`).
+2445: - **Las dos alternativas, y por qué no:**
+2446:   - **El reloj nuestro, con cargo puntual canónico**: **no está disponible**, medido 4 de 4. Y aun con
+2447:     la habilitación otorgada, traería el terreno regulado de arriba — un scheduler de cobro, una
+2448:     política de reintentos propia y el riesgo de multa —, o sea **mecanismo caro** a cambio de un
+2449:     control que hoy no necesitamos.
+2450:   - **Pedir la habilitación y decidir después**: difiere el capítulo 13 **otra vez**, y el canal es el
+2451:     mismo que **no respondió** la consulta de `R-MP-01`. Diferir una decisión detrás de una respuesta
+2452:     que no llega es lo que `DEC-MP-005` acaba de dejar de hacer.
+2453: - **Origen**: la elección del owner del **2026-09-24** entre tres opciones que se le presentaron —
+2454:   eligió la 1, que era la recomendada.
+2455: 
+FUENTE
+5655: ### DEC-MP-006 — El reloj de cobro es del proveedor: el mandato es el modelo canónico, ~~y el cargo puntual queda declarado como destino~~ sin destino pendiente (2026-09-26)
+5656: 
+5657: - **Fecha**: 2026-09-24 · **Estado**: ACCEPTED — **cláusula 1 cerrada el 2026-09-26**: el cargo puntual deja de ser destino (ver su 📌) · **Decide**: owner
+5658: - **Contesta la pregunta que gobierna el capítulo 13**, declarada en
+5659:   `HOS-1354-.../spec.md` §5.1 como *«la primera pregunta cuando esta épica arranque»* y dejada
+5660:   explícitamente abierta por el contrato de cobertura (§1.2 y §7). Literal: *«¿el capítulo 13 adopta el
+5661:   **cargo puntual contra tarjeta guardada** como modelo canónico, tratando el mandato del proveedor
+5662:   —lo que Mercado Pago hace hoy— como **modo degradado**?»*
+5663: - **Por qué no se podía esquivar**: decide **quién tiene el reloj**, y eso no se esconde detrás de una
+5664:   interfaz — **dos relojes sobre la misma autorización son el doble cobro** que `DEC-ARCH-004` declara
+5665:   como riesgo nuestro.
+5666: - **El hecho que la decide, y no es una preferencia de diseño**: `EX-31` (`NOT_SUPPORTED`, 2026-09-16).
+5667:   El cobro recurrente con credencial guardada —que es exactamente el cargo puntual del modelo
+5668:   canónico— **devuelve `403` en las cuatro formas de pedirlo**, con el mensaje idéntico *«The
+5669:   application is not authorized to perform this type of payment»*, mientras **la misma orden sin esos
+5670:   nodos entra con `201`** (`EX-30`, el control que lo distingue). **El rechazo es del PERMISO, no del
+5671:   pedido: no hay forma de armar el request que lo evite.** Y la vía alternativa está cerrada por diseño
+5672:   del proveedor: tokenizar una tarjeta guardada **exige recapturar el código de seguridad**, y un
+5673:   `card_token` es **de un solo uso** (`EX-12`, re-verificado en producción con tarjeta real).
+5674: - **Decisión**: **el reloj de cobro es del proveedor.** El **mandato** (`preapproval`) es el modelo
+5675:   canónico del capítulo 13. El cargo puntual **no se descarta: queda declarado como destino**, con dos
+5676:   cláusulas:
+5677:   1. **Se pide la habilitación** de *«pagos automáticos»* por el canal comercial, **en paralelo y sin
+5678:      bloquear nada**. Cuesta poco y cambia el techo del diseño.
+5679:   2. **La interfaz del capítulo 13 no puede impedir la migración.** Es lo que `DEC-ARCH-004` ya exige
+5680:      para el reembolso, aplicado acá: el modo canónico se elige hoy, **no se cementa**.
+5681: 
+5682:   **📌 Precisado el 2026-09-26, con OK del owner.** **El cargo puntual deja de ser destino.** La
+5683:   habilitación de *«pagos automáticos»* se pidió por el canal comercial y **no hubo respuesta** —el
+5684:   mismo canal que no respondió `R-MP-01`—, y el owner decidió no esperar más: *«no contestaron nada y
+5685:   ya no vamos a esperar más»*. **El mandato (`preapproval`) queda como EL modelo, sin destino
+5686:   pendiente.** La cláusula 1 se cierra: no queda nada pedido ni nada que revisar cuando llegue una
+5687:   respuesta. Si la habilitación apareciera algún día, es una **pregunta nueva** con su propia decisión,
+5688:   no la reactivación de ésta. **La cláusula 2 se mantiene** (elección del owner entre mantenerla o
+5689:   hacerla caer junto con la 1), y se lee como **higiene de interfaz, no como plan**: es lo mismo que
+5690:   `DEC-ARCH-004` exige para el reembolso, no agrega mecanismo, y evita que B6 cemente el mandato en su
+5691:   interfaz.
+5692: - **🚧 El límite que esta decisión destapa, y va declarado porque es nuevo**: `DEC-MP-005` estableció
+5693:   que *«lo que MP no hace lo suple nuestro lado»*. **Esto no se puede suplir.** Un permiso comercial no
+5694:   se compensa con código, y las cuatro formas de pedirlo están medidas. **Es el primer caso donde esa
+5695:   directriz se topa con un límite duro**, y conviene tenerlo presente antes de prometerla como
+5696:   universal. Ironía que queda registrada: elegimos Mercado Pago porque Mobbex no nos habilitó, y el
+5697:   modelo de cobro que preferiríamos no lo podemos usar porque Mercado Pago tampoco nos habilita.
+5698: - **Lo que se ACEPTA al elegir esto**: **heredamos la política de reintentos del proveedor y no la
+5699:   gobernamos** — medida en `GR-3`: cuatro intentos dentro de una ventana de 24 h, y lo que decide el
+5700:   desenlace es **vencer la ventana**, no agotar los reintentos.
+5701: - **Lo que se EVITA, y es el costo que la pregunta original no enumeraba** (`HOS-1354-.../spec.md`
+5702:   §5.1): *«si el reloj es nuestro, **los reintentos también lo son, y son terreno regulado** — hay
+5703:   códigos de rechazo que no se pueden reintentar nunca, hay techo de intentos por ventana y hay multas
+5704:   por excederlo»*. Hoy eso lo absorbe Mercado Pago adentro del `preapproval`.
+5705: - **Consecuencia sobre el resto del programa, y hay que decirla**: `HOS-1354-.../spec.md` §5.2 dejó
+5706:   anotado que las filas del **cobro fallido** gobiernan el diseño del grace **sólo mientras el reloj
+5707:   sea del proveedor** — con el reloj nuestro *«dejan de ser bloqueantes de diseño y pasan a ser una
+5708:   nota del adaptador»*. **Con esta decisión siguen siendo bloqueantes**, y con ellas `RN-3` y la
+5709:   [sonda 49](./mp-probes/probe-49-la-ventana-de-reintentos.mjs), que es la que separa *«ventana de
+5710:   24 h»* de *«ventana de un ciclo»* y con eso decide qué hace el dunning (`DEC-MP-003`).
+5711: - **Las dos alternativas, y por qué no:**
+5712:   - **El reloj nuestro, con cargo puntual canónico**: **no está disponible**, medido 4 de 4. Y aun con
+5713:     la habilitación otorgada, traería el terreno regulado de arriba — un scheduler de cobro, una
+5714:     política de reintentos propia y el riesgo de multa —, o sea **mecanismo caro** a cambio de un
+5715:     control que hoy no necesitamos.
+5716:   - **Pedir la habilitación y decidir después**: difiere el capítulo 13 **otra vez**, y el canal es el
+5717:     mismo que **no respondió** la consulta de `R-MP-01`. Diferir una decisión detrás de una respuesta
+5718:     que no llega es lo que `DEC-MP-005` acaba de dejar de hacer.
+5719: - **Origen**: la elección del owner del **2026-09-24** entre tres opciones que se le presentaron —
+5720:   eligió la 1, que era la recomendada.
+5721: 
+5722: ---
+5723: 
+
+### dec-mp-009 · spec 2625–2669 · fuente .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:7455–7509
+ESPECIFICACIÓN
+2625: <a id="dec-mp-009"></a>
+2626: 
+2627: ### DEC-MP-009 — El canal IPN se escucha y se guarda, sin actuar
+2628: 
+2629: Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:7455
+2630: 
+2631: Dueña del AC: [B1](10-corte/B1.md#pieza-b1).
+2632: También: [B3](10-corte/B3.md#pieza-b3) (implementa).
+2633: Tests mínimos: ≥1 de cualquier tipo de la lista cerrada.
+2634: 
+2635: - **Fecha**: 2026-09-29 · **Estado**: ACCEPTED — **precisada el 2026-09-29, con OK del owner** (mediciones del 2026-09-29, lote L-B: se guarda también Webhooks y la tabla cambia de nombre; ver su 📌) — **y precisada otra vez el 2026-09-29, con OK del owner** (verificación corta, lotes N-D y O-B; ver su último 📌) · **Decide**: owner
+2636: - **Problema** (revisión del owner, N9 y `L3-g`): el proveedor avisa por dos canales, Webhooks e
+2637:   IPN, y el receptor de hoy descarta IPN en silencio (HOS-159). `L3-g` pidió medir antes de decidir
+2638:   qué hace el receptor nuevo con IPN; los casos 39 y G-D dejaron una salida para si `WH-6` no se
+2639:   llegaba a medir.
+2640: - **Contexto medido**: `WH-6` (2026-09-29, sandbox con los dos canales escuchando, y producción por
+2641:   sus logs): IPN entrega sólo `payment` (12 de 12 en sandbox, 8 de 8 en producción), cada pago llega
+2642:   una vez por canal, IPN no trae `version` (`EX-2`) ni se verifica con la clave de la aplicación
+2643:   (`EX-13`), y ningún hecho de suscripción llega por IPN. `RF-7` vio una vez en producción un
+2644:   `merchant_order` por IPN tras un reembolso. `WH-5` y `EX-15` se cerraron con los dos canales.
+2645: - **Alternativas**: (1) apagar IPN en el panel el día del corte y descartarlo en el receptor; (2)
+2646:   escucharlo y guardarlo sin actuar; (3) procesarlo como a Webhooks.
+2647: - **Decisión**: (2), a propuesta del owner. El receptor nuevo guarda cada entrega de IPN entera en
+2648:   `ipn_delivery` (`B/02` §2.7), una tabla sólo de altas que ninguna decisión lee y que `G17` nombra,
+2649:   con una retención técnica, no configurable, de 90 días; procesa sólo la entrega `payment` de
+2650:   Webhooks. El panel de la aplicación de producción queda con IPN activo, y en el corte su URL se
+2651:   apunta al receptor nuevo. Tres meses después del corte se revisa lo guardado de IPN contra lo
+2652:   recibido por Webhooks, y con ese dato se decide si se apaga
+2653:   ([HOS-1399](https://linear.app/hospeda-beta/issue/HOS-1399)).
+2654: - **Motivo**: el owner: *«lo escuchamos y lo guardamos, pero sin hacer nada más; en el futuro
+2655:   podemos revisar esa data y ver si realmente no nos sirve de nada, o nos estamos perdiendo de
+2656:   algo»*. **Contra la recomendación**, que era la (1).
+2657: - **Implicaciones**: (1) `G17` suma un tercer predicado, *«algo lee `ipn_delivery`»* (`B/20` §2);
+2658:   (2) el requisito de `L3-g` (ningún efecto doble) se prueba con el duplicado de Webhooks y la copia
+2659:   de IPN en el mismo segundo (`B/06`, «NO cierra»); (3) `EX-13` no se mide para IPN (M-3); (4) qué
+2660:   se guarda de Webhooks para poder comparar en HOS-1399 lo decidió el owner en el lote L, letra B
+2661:   (`30-revision-del-owner/27-…`; ver su 📌).
+2662: - **Reemplaza a**: la salida condicional de los casos 39 y G-D (`30-revision-del-owner/16-`, lote D
+2663:   letra J y lote G letra D), que no tenía `DEC` propio.
+2664: - **Origen**: `30-revision-del-owner/27-decisiones-sobre-las-mediciones.md` (M-2); aplicada en
+2665:   `30-revision-del-owner/28-aplicacion-mediciones-al-diseno.md`.
+2666: - → ver [📌1](#dec-mp-009-p1).
+2667: - → ver [📌2](#dec-mp-009-p2).
+2668: - → ver [📌3](#dec-mp-009-p3).
+2669: 
+FUENTE
+7455: ### DEC-MP-009 — El canal IPN se escucha y se guarda, sin actuar
+7456: 
+7457: - **Fecha**: 2026-09-29 · **Estado**: ACCEPTED — **precisada el 2026-09-29, con OK del owner** (mediciones del 2026-09-29, lote L-B: se guarda también Webhooks y la tabla cambia de nombre; ver su 📌) — **y precisada otra vez el 2026-09-29, con OK del owner** (verificación corta, lotes N-D y O-B; ver su último 📌) · **Decide**: owner
+7458: - **Problema** (revisión del owner, N9 y `L3-g`): el proveedor avisa por dos canales, Webhooks e
+7459:   IPN, y el receptor de hoy descarta IPN en silencio (HOS-159). `L3-g` pidió medir antes de decidir
+7460:   qué hace el receptor nuevo con IPN; los casos 39 y G-D dejaron una salida para si `WH-6` no se
+7461:   llegaba a medir.
+7462: - **Contexto medido**: `WH-6` (2026-09-29, sandbox con los dos canales escuchando, y producción por
+7463:   sus logs): IPN entrega sólo `payment` (12 de 12 en sandbox, 8 de 8 en producción), cada pago llega
+7464:   una vez por canal, IPN no trae `version` (`EX-2`) ni se verifica con la clave de la aplicación
+7465:   (`EX-13`), y ningún hecho de suscripción llega por IPN. `RF-7` vio una vez en producción un
+7466:   `merchant_order` por IPN tras un reembolso. `WH-5` y `EX-15` se cerraron con los dos canales.
+7467: - **Alternativas**: (1) apagar IPN en el panel el día del corte y descartarlo en el receptor; (2)
+7468:   escucharlo y guardarlo sin actuar; (3) procesarlo como a Webhooks.
+7469: - **Decisión**: (2), a propuesta del owner. El receptor nuevo guarda cada entrega de IPN entera en
+7470:   `ipn_delivery` (`B/02` §2.7), una tabla sólo de altas que ninguna decisión lee y que `G17` nombra,
+7471:   con una retención técnica, no configurable, de 180 días; procesa sólo la entrega `payment` de
+7472:   Webhooks. El panel de la aplicación de producción queda con IPN activo, y en el corte su URL se
+7473:   apunta al receptor nuevo. Tres meses después del corte se revisa lo guardado de IPN contra lo
+7474:   recibido por Webhooks, y con ese dato se decide si se apaga
+7475:   ([HOS-1399](https://linear.app/hospeda-beta/issue/HOS-1399)).
+7476: - **Motivo**: el owner: *«lo escuchamos y lo guardamos, pero sin hacer nada más; en el futuro
+7477:   podemos revisar esa data y ver si realmente no nos sirve de nada, o nos estamos perdiendo de
+7478:   algo»*. **Contra la recomendación**, que era la (1).
+7479: - **Implicaciones**: (1) `G17` suma un tercer predicado, *«algo lee `ipn_delivery`»* (`B/20` §2);
+7480:   (2) el requisito de `L3-g` (ningún efecto doble) se prueba con el duplicado de Webhooks y la copia
+7481:   de IPN en el mismo segundo (`B/06`, «NO cierra»); (3) `EX-13` no se mide para IPN (M-3); (4) qué
+7482:   se guarda de Webhooks para poder comparar en HOS-1399 lo decidió el owner en el lote L, letra B
+7483:   (`30-revision-del-owner/27-…`; ver su 📌).
+7484: - **Reemplaza a**: la salida condicional de los casos 39 y G-D (`30-revision-del-owner/16-`, lote D
+7485:   letra J y lote G letra D), que no tenía `DEC` propio.
+7486: - **Origen**: `30-revision-del-owner/27-decisiones-sobre-las-mediciones.md` (M-2); aplicada en
+7487:   `30-revision-del-owner/28-aplicacion-mediciones-al-diseno.md`.
+7488: - 📌 **Precisada el 2026-09-29, con OK del owner (mediciones del 2026-09-29, lote L-B)**: El receptor
+7489:   guarda también cada entrega de Webhooks, en la misma tabla, con su canal y los mismos 180 días,
+7490:   y tampoco la lee nadie: la procesa como siempre, desde la entrega y la relectura. Sin eso la
+7491:   revisión de HOS-1399 no puede contestar si Webhooks perdió algo, porque un `payment` nuestro no
+7492:   dice si lo trajo un aviso o el barrido, y los registros del servidor duran unos cuatro días. La
+7493:   tabla deja de ser sólo de IPN y cambia de nombre: `ipn_delivery` pasa a ser
+7494:   `provider_notification` (`B/02` §2.7), y el predicado (c) de `G17` la nombra así.
+7495: - 📌 **Precisada el 2026-09-29, con OK del owner (verificación corta, lote N-D)**: El paso 4b del corte
+7496:   verifica el apuntado de la URL de IPN con una entrega real de `payment`: la herramienta del corte
+7497:   hace un pago chico con la tarjeta del owner, directo por la API de pagos del proveedor, mira que su
+7498:   entrega IPN quedó guardada en `provider_notification` y lo devuelve, con el reembolso releído por
+7499:   id. La sonda de Webhooks no lo verifica, porque IPN entrega sólo `payment`. La URL de IPN es la
+7500:   tercera cosa que la vuelta atrás deshace, y a la vuelta no se verifica: el viejo contesta las
+7501:   entregas IPN sin guardarlas, y no mueve plata.
+7502: - 📌 **Precisada el 2026-09-29, con OK del owner (verificación corta, lote O-B)**: La URL de IPN no
+7503:   se apunta en el corte. El receptor nuevo sirve la misma ruta que el viejo, con la marca de
+7504:   Webhooks en una URL y sin ella en la otra, así que los dos canales llegan donde ya llegaban; el
+7505:   4b sólo verifica, con el mismo pago chico. La tercera cosa de la vuelta atrás deja de ser la URL
+7506:   de IPN y pasa a ser ese pago: si quedó sin devolver, se devuelve y se relee por id.
+7507: 
+7508: ---
+7509: 
+
+### dec-ent-005 · spec 2925–2966 · fuente .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:5047–5082
+ESPECIFICACIÓN
+2925: <a id="dec-ent-005"></a>
+2926: 
+2927: ### DEC-ENT-005 — La CLASE de una clave de entitlement es un atributo declarado del catálogo, no un juicio
+2928: 
+2929: Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:5047
+2930: 
+2931: Dueña del AC: [V1](10-corte/V1.md#pieza-v1).
+2932: También: [V2](10-corte/V2.md#pieza-v2) (usa).
+2933: Tests mínimos: migración desde cero.
+2934: 
+2935: - **Fecha**: 2026-09-23 · **Estado**: ACCEPTED · **Decide**: owner *(renumerada el 2026-09-25: se llamaba `DEC-ENT-002`, ID duplicado con otra decisión — FASE 8 completa, `F-8CD1-008`)*
+2936: - **El problema que cierra**, el crítico #1 de la FASE 8-bis-5 (`F-8fA1-002`, `ALTA`): `G-R3` tiene
+2937:   por predicado *«la clave de la clase comercial…»* y **«clase comercial» se usaba en cuatro lugares
+2938:   y no estaba definida en ninguno**. El guard más cargado del programa **no podía formar su
+2939:   predicado**, y la primera clave que tenía que clasificar era la que la tanda acababa de agregar.
+2940: - **Decisión**: la **clase** pasa a ser el **cuarto atributo declarado** de cada clave en el catálogo
+2941:   —junto al scope, la estrategia de agregación y los que ya estaban—, con **lista cerrada de dos
+2942:   valores: `COMERCIAL` y `DE_ACCESO`**, y su entrada de glosario al lado de *«entitlement medido»*.
+2943:   **`G-R3` lee un atributo; no juzga.**
+2944: - **Por qué, y es el patrón con que el programa viene cerrando guards inconstruibles**: un predicado
+2945:   que obliga al guard a decidir *«¿esta clave es comercial?»* no es ejecutable; uno que le hace leer
+2946:   una columna, sí. **Convertir un juicio en una lectura** es lo mismo que hizo `DEC-GRANT-009` al
+2947:   mandar el *«a lo sumo un grant vivo»* a un `UNIQUE` parcial en vez de a nueve consumidores.
+2948: - **Los precedentes, que están en el mismo capítulo**: el `scope` y la estrategia de agregación ya
+2949:   son atributos declarados de una clave (`V/15` §2.3 y §3.2). Y **`NUCLEO/02` §1.2 no lo prohíbe**:
+2950:   lo que prohíbe llevar en código son **valores, precios y asignaciones**, no los metadatos de una
+2951:   clave.
+2952: - **Las dos alternativas, y por qué no**:
+2953:   - **Tres valores**, dejando lugar a una clave que no caiga en ninguno de los dos: se descarta
+2954:     porque **es una puerta vacía**. Si aparece la clave que no encaja, agregar el tercer valor
+2955:     entonces cuesta exactamente lo mismo que ahora **y con un caso real delante** para nombrarlo
+2956:     bien.
+2957:   - **Definir *«clase comercial»* en prosa** y que `G-R3` la juzgue: **es volver al crítico**. Era el
+2958:     estado de partida.
+2959: - **Cómo se tomó, y va dicho**: el agente de arreglo de la familia 1 de la 9-bis-5 **la tomó sin
+2960:   consultar** —es una decisión de modelo— y la declaró como tal pidiendo ratificación. El owner la
+2961:   ratificó el 2026-09-23. **Que la haya tomado un agente no la vuelve menos decisión**: por eso
+2962:   tiene entrada propia en vez de quedar sólo en el commit `2e39e6224`.
+2963: - **Origen**: `22-fase-8-bis-5/A1-acceso-cruzado-y-autorizacion.md` (`F-8fA1-001` y `F-8fA1-002`), la
+2964:   familia 1 de la FASE 9-bis-5 (`6dc5aeb70`, `2e39e6224`) y la ratificación del owner del 2026-09-23
+2965:   entre las tres opciones que se le presentaron — eligió la 1, que era la recomendada.
+2966: 
+FUENTE
+5047: ### DEC-ENT-005 — La CLASE de una clave de entitlement es un atributo declarado del catálogo, no un juicio
+5048: 
+5049: - **Fecha**: 2026-09-23 · **Estado**: ACCEPTED · **Decide**: owner *(renumerada el 2026-09-25: se llamaba `DEC-ENT-002`, ID duplicado con otra decisión — FASE 8 completa, `F-8CD1-008`)*
+5050: - **El problema que cierra**, el crítico #1 de la FASE 8-bis-5 (`F-8fA1-002`, `ALTA`): `G-R3` tiene
+5051:   por predicado *«la clave de la clase comercial…»* y **«clase comercial» se usaba en cuatro lugares
+5052:   y no estaba definida en ninguno**. El guard más cargado del programa **no podía formar su
+5053:   predicado**, y la primera clave que tenía que clasificar era la que la tanda acababa de agregar.
+5054: - **Decisión**: la **clase** pasa a ser el **cuarto atributo declarado** de cada clave en el catálogo
+5055:   —junto al scope, la estrategia de agregación y los que ya estaban—, con **lista cerrada de dos
+5056:   valores: `COMERCIAL` y `DE_ACCESO`**, y su entrada de glosario al lado de *«entitlement medido»*.
+5057:   **`G-R3` lee un atributo; no juzga.**
+5058: - **Por qué, y es el patrón con que el programa viene cerrando guards inconstruibles**: un predicado
+5059:   que obliga al guard a decidir *«¿esta clave es comercial?»* no es ejecutable; uno que le hace leer
+5060:   una columna, sí. **Convertir un juicio en una lectura** es lo mismo que hizo `DEC-GRANT-009` al
+5061:   mandar el *«a lo sumo un grant vivo»* a un `UNIQUE` parcial en vez de a nueve consumidores.
+5062: - **Los precedentes, que están en el mismo capítulo**: el `scope` y la estrategia de agregación ya
+5063:   son atributos declarados de una clave (`V/15` §2.3 y §3.2). Y **`NUCLEO/02` §1.2 no lo prohíbe**:
+5064:   lo que prohíbe llevar en código son **valores, precios y asignaciones**, no los metadatos de una
+5065:   clave.
+5066: - **Las dos alternativas, y por qué no**:
+5067:   - **Tres valores**, dejando lugar a una clave que no caiga en ninguno de los dos: se descarta
+5068:     porque **es una puerta vacía**. Si aparece la clave que no encaja, agregar el tercer valor
+5069:     entonces cuesta exactamente lo mismo que ahora **y con un caso real delante** para nombrarlo
+5070:     bien.
+5071:   - **Definir *«clase comercial»* en prosa** y que `G-R3` la juzgue: **es volver al crítico**. Era el
+5072:     estado de partida.
+5073: - **Cómo se tomó, y va dicho**: el agente de arreglo de la familia 1 de la 9-bis-5 **la tomó sin
+5074:   consultar** —es una decisión de modelo— y la declaró como tal pidiendo ratificación. El owner la
+5075:   ratificó el 2026-09-23. **Que la haya tomado un agente no la vuelve menos decisión**: por eso
+5076:   tiene entrada propia en vez de quedar sólo en el commit `2e39e6224`.
+5077: - **Origen**: `22-fase-8-bis-5/A1-acceso-cruzado-y-autorizacion.md` (`F-8fA1-001` y `F-8fA1-002`), la
+5078:   familia 1 de la FASE 9-bis-5 (`6dc5aeb70`, `2e39e6224`) y la ratificación del owner del 2026-09-23
+5079:   entre las tres opciones que se le presentaron — eligió la 1, que era la recomendada.
+5080: 
+5081: ---
+5082: 
+
+### dec-ent-002-p3 · spec 2842–2856 · fuente .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:643–647
+ESPECIFICACIÓN
+2842: <a id="dec-ent-002-p3"></a>
+2843: 
+2844: #### 📌3 de DEC-ENT-002
+2845: 
+2846: Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:643
+2847: 
+2848: Dueña del AC: [V3](10-corte/V3.md#pieza-v3).
+2849: Tests mínimos: ≥1 de cualquier tipo de la lista cerrada.
+2850: 
+2851: 📌 **Precisada el 2026-09-29, con OK del owner (verificación corta, lote N-I)**: Cuando muere el
+2852: título que ancla la ventana de la cuota (la prueba que `T2` convierte, una cortesía que termina) y
+2853: otro título vivo pasa a anclar, la ventana en curso sigue hasta su fin, medida contra el cupo del
+2854: título que queda menos lo ya gastado, y la próxima arranca con el ancla nueva: el tratamiento que
+2855: la regla ya le daba al cambio de plan.
+2856: 
+FUENTE
+643: - 📌 **Precisada el 2026-09-29, con OK del owner (verificación corta, lote N-I)**: Cuando muere el
+644:   título que ancla la ventana de la cuota (la prueba que `T2` convierte, una cortesía que termina) y
+645:   otro título vivo pasa a anclar, la ventana en curso sigue hasta su fin, medida contra el cupo del
+646:   título que queda menos lo ya gastado, y la próxima arranca con el ancla nueva: el tratamiento que
+647:   la regla ya le daba al cambio de plan.
+
+### dec-addon-001 · spec 3089–3121 · fuente .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:781–805
+ESPECIFICACIÓN
+3089: <a id="dec-addon-001"></a>
+3090: 
+3091: ### DEC-ADDON-001 — El addon se pierde con la ficha, y su reloj no se congela
+3092: 
+3093: Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:781
+3094: 
+3095: Dueña del AC: [B13a](10-corte/B13a.md#pieza-b13a).
+3096: También: [B10](20-fase-3/B10.md#pieza-b10) (implementa).
+3097: Tests mínimos: ≥1 de cualquier tipo de la lista cerrada.
+3098: 
+3099: - **Fecha**: 2026-09-15 · **Estado**: ACCEPTED · **Decide**: owner
+3100: - **Problema**: §40 define el scope `LISTING` y §41 ordena cancelar *"solo cuando queda
+3101:   efectivamente huérfano"*. Dos casos quedan sin cubrir: la ficha **se borra** (el addon
+3102:   apunta a algo que ya no existe) y la ficha queda **despublicada por suspensión** (§21) — ahí
+3103:   el addon **no está huérfano**, la ficha existe, y sin embargo no sirve para nada mientras el
+3104:   reloj sigue corriendo.
+3105: - **Alternativas**: (1) se pierde con la ficha y el reloj no se congela; (2) el reloj se
+3106:   congela mientras la ficha no se vea; (3) el addon se libera y se puede reasignar.
+3107: - **Decisión**: **(1)**. Borrar la ficha **consume** el addon: no se libera ni se reasigna. Y
+3108:   el addon **vence cuando vence**, esté la ficha publicada o no.
+3109: - **Motivo**: la regla más simple posible — una fecha de fin y nada más que calcular, sin
+3110:   estados intermedios. No abre la puerta a usar el borrado o la despublicación para estirar un
+3111:   addon comprado.
+3112: - **Implicaciones**:
+3113:   1. **Mitigación obligatoria**: la confirmación de borrado de una ficha **debe advertir qué
+3114:      addons se pierden y por cuánto**. Sin eso el reclamo entra por soporte y es justo.
+3115:   2. Un cliente suspendido dos meses **pierde dos meses de algo que pagó**. Conviene que el
+3116:      aviso de suspensión lo diga explícitamente.
+3117:   3. Coherente con cómo el §10.2 trata el trial: borrar no devuelve nada.
+3118:   4. No resuelve *"quiero mover el destaque a otra ficha"*, que el PDR tampoco cubre y que
+3119:      queda fuera de alcance por ahora.
+3120: - **Origen**: `E-ADDON-01`, `E-ADDON-02`.
+3121: 
+FUENTE
+781: ### DEC-ADDON-001 — El addon se pierde con la ficha, y su reloj no se congela
+782: 
+783: - **Fecha**: 2026-09-15 · **Estado**: ACCEPTED · **Decide**: owner
+784: - **Problema**: §40 define el scope `LISTING` y §41 ordena cancelar *"solo cuando queda
+785:   efectivamente huérfano"*. Dos casos quedan sin cubrir: la ficha **se borra** (el addon
+786:   apunta a algo que ya no existe) y la ficha queda **despublicada por suspensión** (§21) — ahí
+787:   el addon **no está huérfano**, la ficha existe, y sin embargo no sirve para nada mientras el
+788:   reloj sigue corriendo.
+789: - **Alternativas**: (1) se pierde con la ficha y el reloj no se congela; (2) el reloj se
+790:   congela mientras la ficha no se vea; (3) el addon se libera y se puede reasignar.
+791: - **Decisión**: **(1)**. Borrar la ficha **consume** el addon: no se libera ni se reasigna. Y
+792:   el addon **vence cuando vence**, esté la ficha publicada o no.
+793: - **Motivo**: la regla más simple posible — una fecha de fin y nada más que calcular, sin
+794:   estados intermedios. No abre la puerta a usar el borrado o la despublicación para estirar un
+795:   addon comprado.
+796: - **Implicaciones**:
+797:   1. **Mitigación obligatoria**: la confirmación de borrado de una ficha **debe advertir qué
+798:      addons se pierden y por cuánto**. Sin eso el reclamo entra por soporte y es justo.
+799:   2. Un cliente suspendido dos meses **pierde dos meses de algo que pagó**. Conviene que el
+800:      aviso de suspensión lo diga explícitamente.
+801:   3. Coherente con cómo el §10.2 trata el trial: borrar no devuelve nada.
+802:   4. No resuelve *"quiero mover el destaque a otra ficha"*, que el PDR tampoco cubre y que
+803:      queda fuera de alcance por ahora.
+804: - **Origen**: `E-ADDON-01`, `E-ADDON-02`.
+805: 
+
+### dec-auth-001 · spec 3634–3680 · fuente .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:6660–6711
+ESPECIFICACIÓN
+3634: <a id="dec-auth-001"></a>
+3635: 
+3636: ### DEC-AUTH-001 — La vertical de un recurso es inmutable y se lee del recurso; lo ajeno existe sólo en público, lo propio no consulta el paso 6, y el caché se invalida por `user`
+3637: 
+3638: Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:6660
+3639: 
+3640: Dueña del AC: [V3](10-corte/V3.md#pieza-v3).
+3641: También: [V5](10-corte/V5.md#pieza-v5) (implementa) · [V6](10-corte/V6.md#pieza-v6) (implementa).
+3642: Tests mínimos: ≥1 de cualquier tipo de la lista cerrada.
+3643: 
+3644: - **Fecha**: 2026-09-25 · **Estado**: ACCEPTED — **precisada el 2026-09-30, con OK del owner** (FASE 5, lotes 4 a 6, letras D y G: el `404` a la ficha ajena `RESTRICTED` y la razón corregida del punto 3; ver su  primer 📌) — **y precisada otra vez el 2026-10-02, con OK del owner** (corte del MVP, CB: el caché vive en el Redis de la API; ver su segundo 📌) · **Decide**: owner
+3645: - **Registra además** una regla que el owner aprobó el mismo día en la FASE 8 completa y no tenía
+3646:   entrada: **`F-8CA1-001`, la vertical de una operación sobre una ficha se lee de la ficha, nunca del
+3647:   pedido** (`V/17` §1.2, precisión 6).
+3648: - **Problema** (`26-fase-9-completa/08-…` Owner 1; `09-…` `AO-1` a `AO-4`): cinco huecos del orden de
+3649:   autorización de `V/17`:
+3650:   1. una ficha publicada en Alojamiento se edita cambiándole la vertical a Gastronomía y queda
+3651:      publicada sin cobertura ahí; y las fotos de una presencia de Partner se cuentan contra la
+3652:      vertical que declara quien las sube;
+3653:   2. `S6` suspende Alojamiento y se invalida sólo `user + Alojamiento`: la herencia de Turista VIP y
+3654:      las claves globales siguen cacheadas en las otras verticales (`F-8CA1-002`, `F-8CA1-003`);
+3655:   3. el paso 2 nombra una cuenta *«inhabilitada»* que no tiene dato, transición ni acción
+3656:      (`F-8CA1-010`);
+3657:   4. el paso 4 no dice qué puede leer un visitante de lo ajeno (`F-8CA1-011`);
+3658:   5. el suspendido no tiene clave para leer lo suyo, justo cuando tiene que regularizar
+3659:      (`F-8CA1-013`).
+3660: - **Decisión**, las cinco por la opción recomendada:
+3661:   1. **La precisión 6 vale para todo recurso que guarda su vertical** —la ficha y su contenido, la
+3662:      presencia de Partner, la instancia de addon— **y la vertical de una ficha es inmutable desde el
+3663:      alta** (*«nunca una ficha debería poder cambiar de vertical»*, owner). Tercera mitad de `G2`:
+3664:      *«una operación escribe la vertical de un recurso que ya existe»*.
+3665:   2. **La invalidación del caché del conjunto efectivo es por `user`, no por `user + vertical`**
+3666:      (`V/02` §3.2, regla 3): una fuente puede otorgar en otra vertical que la suya.
+3667:   3. **«Inhabilitado por abuso» sale del paso 2**; el abuso se trata ficha por ficha con
+3668:      `MODERATED` (`PB10`).
+3669:   4. **En el paso 4, lo ajeno existe sólo en estado público**: ficha `PUBLISHED`; presencia de
+3670:      Partner con la clave vigente y sin moderar (`DEC-ENT-006`).
+3671:   5. **Las lecturas de lo propio —Mi Cuenta, su billing, sus fichas— no consultan el paso 6.**
+3672: - **Lo que se resigna**: (2) una relectura por vertical del user en cada invalidación; (3) un
+3673:   abusador puede crear fichas nuevas y cada una se modera a mano —el abuso es teórico a esta escala
+3674:   (`DEC-TRIAL-004`, 22 usuarios)—; (5) la excepción es sólo para esas tres lecturas, no para una
+3675:   lectura comercial que alguien llame *«propia»*.
+3676: - **Origen**: `26-fase-9-completa/10-decisiones-del-owner.md` filas 7a y 8a a 8d, sobre `08-…` Owner
+3677:   1 y `09-…` `AO-1` a `AO-4`; elecciones del owner del 2026-09-25, las recomendadas.
+3678: - → ver [📌1](#dec-auth-001-p1).
+3679: - → ver [📌2](#dec-auth-001-p2).
+3680: 
+FUENTE
+6660: ### DEC-AUTH-001 — La vertical de un recurso es inmutable y se lee del recurso; lo ajeno existe sólo en público, lo propio no consulta el paso 6, y el caché se invalida por `user`
+6661: 
+6662: - **Fecha**: 2026-09-25 · **Estado**: ACCEPTED — **precisada el 2026-09-30, con OK del owner** (FASE 5, lotes 4 a 6, letras D y G: el `404` a la ficha ajena `RESTRICTED` y la razón corregida del punto 3; ver su ~~📌~~ primer 📌) — **y precisada otra vez el 2026-10-02, con OK del owner** (corte del MVP, CB: el caché vive en el Redis de la API; ver su segundo 📌) · **Decide**: owner
+6663: - **Registra además** una regla que el owner aprobó el mismo día en la FASE 8 completa y no tenía
+6664:   entrada: **`F-8CA1-001`, la vertical de una operación sobre una ficha se lee de la ficha, nunca del
+6665:   pedido** (`V/17` §1.2, precisión 6).
+6666: - **Problema** (`26-fase-9-completa/08-…` Owner 1; `09-…` `AO-1` a `AO-4`): cinco huecos del orden de
+6667:   autorización de `V/17`:
+6668:   1. una ficha publicada en Alojamiento se edita cambiándole la vertical a Gastronomía y queda
+6669:      publicada sin cobertura ahí; y las fotos de una presencia de Partner se cuentan contra la
+6670:      vertical que declara quien las sube;
+6671:   2. `S6` suspende Alojamiento y se invalida sólo `user + Alojamiento`: la herencia de Turista VIP y
+6672:      las claves globales siguen cacheadas en las otras verticales (`F-8CA1-002`, `F-8CA1-003`);
+6673:   3. el paso 2 nombra una cuenta *«inhabilitada»* que no tiene dato, transición ni acción
+6674:      (`F-8CA1-010`);
+6675:   4. el paso 4 no dice qué puede leer un visitante de lo ajeno (`F-8CA1-011`);
+6676:   5. el suspendido no tiene clave para leer lo suyo, justo cuando tiene que regularizar
+6677:      (`F-8CA1-013`).
+6678: - **Decisión**, las cinco por la opción recomendada:
+6679:   1. **La precisión 6 vale para todo recurso que guarda su vertical** —la ficha y su contenido, la
+6680:      presencia de Partner, la instancia de addon— **y la vertical de una ficha es inmutable desde el
+6681:      alta** (*«nunca una ficha debería poder cambiar de vertical»*, owner). Tercera mitad de `G2`:
+6682:      *«una operación escribe la vertical de un recurso que ya existe»*.
+6683:   2. **La invalidación del caché del conjunto efectivo es por `user`, no por `user + vertical`**
+6684:      (`V/02` §3.2, regla 3): una fuente puede otorgar en otra vertical que la suya.
+6685:   3. **«Inhabilitado por abuso» sale del paso 2**; el abuso se trata ficha por ficha con
+6686:      `MODERATED` (`PB10`).
+6687:   4. **En el paso 4, lo ajeno existe sólo en estado público**: ficha `PUBLISHED`; presencia de
+6688:      Partner con la clave vigente y sin moderar (`DEC-ENT-006`).
+6689:   5. **Las lecturas de lo propio —Mi Cuenta, su billing, sus fichas— no consultan el paso 6.**
+6690: - **Lo que se resigna**: (2) una relectura por vertical del user en cada invalidación; (3) un
+6691:   abusador puede crear fichas nuevas y cada una se modera a mano —el abuso es teórico a esta escala
+6692:   (`DEC-TRIAL-004`, 22 usuarios)—; (5) la excepción es sólo para esas tres lecturas, no para una
+6693:   lectura comercial que alguien llame *«propia»*.
+6694: - **Origen**: `26-fase-9-completa/10-decisiones-del-owner.md` filas 7a y 8a a 8d, sobre `08-…` Owner
+6695:   1 y `09-…` `AO-1` a `AO-4`; elecciones del owner del 2026-09-25, las recomendadas.
+6696: - 📌 **Precisada el 2026-09-30, con OK del owner (FASE 5, lotes 4 a 6, letras D y G;
+6697:   `38-fase-5/10-decisiones-del-owner.md`, racimos `R5-26` y `R5-28`)**: **Punto 3**: la razón
+6698:   del problema 3 era falsa: la cuenta inhabilitada sí tiene dato. `banned`, `ban_reason` y
+6699:   `ban_expires` existen, son del plugin `admin` de Better Auth, que rechaza la sesión de una cuenta
+6700:   inhabilitada, y se conservan. Se corrige sólo la razón: el punto 3 no cambia (G, `AUT-016`).
+6701:   **Punto 4**: la excepción del contrato de errores de la API que contesta `403` a una ficha ajena
+6702:   `RESTRICTED` pasa a `404` en `V5`, con su test, porque lo ajeno existe sólo en estado público (D).
+6703: - 📌 **Precisada el 2026-10-02, con OK del owner (corte del MVP, CB, la 1)**, sobre el caché que se
+6704:   invalida por `user`: **vive en el Redis que la API ya usa**, no en la memoria del proceso, porque
+6705:   en un redeploy conviven dos contenedores y con varias instancias una invalidación no alcanzaría a
+6706:   las otras; **si Redis no responde, se lee la resolución en vivo**; y un contador de entradas
+6707:   sospechosas va en los logs estructurados. Dónde: `V/02` §3.4; `V/descomposicion.md` §2 y §4
+6708:   (`V3`); `41-corte-del-mvp/10-decisiones-del-owner.md`, CB.
+6709: 
+6710: ---
+6711: 
+
+### dec-data-001-p1 · spec 4011–4023 · fuente .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:954–962
+ESPECIFICACIÓN
+4011: <a id="dec-data-001-p1"></a>
+4012: 
+4013: #### 📌1 de DEC-DATA-001
+4014: 
+4015: Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:954
+4016: 
+4017: Dueña del AC: [V9b](20-fase-1/V9b.md#pieza-v9b).
+4018: Tests mínimos: ≥1 de cualquier tipo de la lista cerrada.
+4019: 
+4020: **📌 Cerrada el 2026-09-25 por `DEC-DATA-005`**: sólo el contenido de la
+4021: ficha; el usuario y sus datos no se tocan nunca. Si la auditoría del §49 guarda copias del contenido, el hard
+4022: delete puede no eliminar nada.
+4023: 
+FUENTE
+954:      (`M-DATA-01`, abierta). **📌 Cerrada el 2026-09-25 por `DEC-DATA-005`**: sólo el contenido de la
+955:      ficha; el usuario y sus datos no se tocan nunca. Si la auditoría del §49 guarda copias del contenido, el hard
+956:      delete puede no eliminar nada.
+957:   5. Los dos avisos tapan el silencio entre el `+60` y el día 90 que señalaba `R-DATA-01`.
+958: - **Origen**: `C-DATA-01`.
+959: - 📌 **Precisada el 2026-09-28, con OK del owner (revisión del owner, C9, C11)**: El día 90 y el día
+960:   180 son los valores iniciales de los plazos 1 y 2 de `NUCLEO/02` §1.5, y cuántos días antes salen
+961:   los dos avisos es el plazo 4; los cambia el `SUPER_ADMIN` sin adelantar ninguna fecha ya anunciada
+962:   (`DEC-DATA-008`).
+
+### dec-data-006 · spec 4432–4461 · fuente .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:7045–7079
+ESPECIFICACIÓN
+4432: <a id="dec-data-006"></a>
+4433: 
+4434: ### DEC-DATA-006 — La pausa pedida por el dueño detiene el reloj de retención de sus fichas
+4435: 
+4436: Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:7045
+4437: 
+4438: Dueña del AC: [V4](10-corte/V4.md#pieza-v4).
+4439: También: [B4](10-corte/B4.md#pieza-b4) (implementa) · [V6](10-corte/V6.md#pieza-v6) (implementa) · [V9b](20-fase-1/V9b.md#pieza-v9b) (implementa).
+4440: Tests mínimos: ≥1 de cualquier tipo de la lista cerrada.
+4441: 
+4442: - **Fecha**: 2026-09-28 · **Estado**: ACCEPTED — **precisada el 2026-09-29, con OK del owner** (revisión del owner, casos vecinos, casos 12, F-A y H-E; ver su 📌) — **y precisada otra vez el 2026-09-29, con OK del owner** (verificación corta, lote M-H y `VC-VT-05`; ver su último 📌) · **Decide**: owner
+4443: - **Problema** (revisión del owner, C14, `L1-c`): C14 decide que la pausa pedida por el dueño
+4444:   detiene el reloj de retención de sus fichas y que al volver se reinicia. Faltaba cómo se entera
+4445:   verticales, que no lee el estado de billing (`L1-c`).
+4446: - **Decisión**: la pausa pedida por el dueño detiene el reloj de retención de sus fichas en esa
+4447:   vertical: mientras dure no se archivan, no se borran y no reciben avisos de retención; al volver,
+4448:   el reloj se reinicia (hecho 2). Cruza como una pregunta de ida del contrato,
+4449:   `retenciónDetenida(user, vertical)`, que contesta billing (sí sólo con una `PAUSED` por
+4450:   `CUSTOMER_REQUEST`) y que leen SÓLO `PB4`, `PB5`, `PB9` y los avisos de retención, al ejecutar. No
+4451:   va en `fuentes` ni en `cubierto`. Salen `D16` y `G-R5`.
+4452: - **Reemplaza a**: `DEC-DATA-002`, EN PARTE, en lo que decía de que el reloj corre durante la pausa
+4453:   y en la desigualdad que la protegía (ver su *Estado*).
+4454: - **Dónde**: `30-revision-del-owner/12-aplicacion-verticales-y-contrato.md` §1 (C14).
+4455: - **Origen**: `30-revision-del-owner/10-decisiones-del-owner.md` (C14, `L1-c`); propuesta en
+4456:   `30-revision-del-owner/12-…` §3 punto 3 y consolidada en `30-revision-del-owner/14-…` §4.1 punto
+4457:   2; OK del owner al lote del log, 2026-09-28 (`30-revision-del-owner/10-…`, *«El lote del log y la
+4458:   matriz»*).
+4459: - → ver [📌1](#dec-data-006-p1).
+4460: - → ver [📌2](#dec-data-006-p2).
+4461: 
+FUENTE
+7045: ### DEC-DATA-006 — La pausa pedida por el dueño detiene el reloj de retención de sus fichas
+7046: 
+7047: - **Fecha**: 2026-09-28 · **Estado**: ACCEPTED — **precisada el 2026-09-29, con OK del owner** (revisión del owner, casos vecinos, casos 12, F-A y H-E; ver su 📌) — **y precisada otra vez el 2026-09-29, con OK del owner** (verificación corta, lote M-H y `VC-VT-05`; ver su último 📌) · **Decide**: owner
+7048: - **Problema** (revisión del owner, C14, `L1-c`): C14 decide que la pausa pedida por el dueño
+7049:   detiene el reloj de retención de sus fichas y que al volver se reinicia. Faltaba cómo se entera
+7050:   verticales, que no lee el estado de billing (`L1-c`).
+7051: - **Decisión**: la pausa pedida por el dueño detiene el reloj de retención de sus fichas en esa
+7052:   vertical: mientras dure no se archivan, no se borran y no reciben avisos de retención; al volver,
+7053:   el reloj se reinicia (hecho 2). Cruza como una pregunta de ida del contrato,
+7054:   `retenciónDetenida(user, vertical)`, que contesta billing (sí sólo con una `PAUSED` por
+7055:   `CUSTOMER_REQUEST`) y que leen SÓLO `PB4`, `PB5`, `PB9` y los avisos de retención, al ejecutar. No
+7056:   va en `fuentes` ni en `cubierto`. Salen `D16` y `G-R5`.
+7057: - **Reemplaza a**: `DEC-DATA-002`, EN PARTE, en lo que decía de que el reloj corre durante la pausa
+7058:   y en la desigualdad que la protegía (ver su *Estado*).
+7059: - **Dónde**: `30-revision-del-owner/12-aplicacion-verticales-y-contrato.md` §1 (C14).
+7060: - **Origen**: `30-revision-del-owner/10-decisiones-del-owner.md` (C14, `L1-c`); propuesta en
+7061:   `30-revision-del-owner/12-…` §3 punto 3 y consolidada en `30-revision-del-owner/14-…` §4.1 punto
+7062:   2; OK del owner al lote del log, 2026-09-28 (`30-revision-del-owner/10-…`, *«El lote del log y la
+7063:   matriz»*).
+7064: - 📌 **Precisada el 2026-09-29, con OK del owner (revisión del owner, casos vecinos, casos 12, F-A y
+7065:   H-E)**: Todo fin de la pausa, por cualquier camino, reinicia el reloj, también una baja desde la
+7066:   pausa. Ese reinicio no se escribe: `retenciónDetenida` devuelve también cuándo terminó la última
+7067:   pausa por `CUSTOMER_REQUEST` de la persona en esa vertical, y sus lectores cuentan desde el más
+7068:   tardío de dos instantes, `listing.inactiva_desde` y ése, con la versión de plazos que guarda la
+7069:   ficha (`listing.plazos_version`), porque el reinicio no escribe otra. La lista de hechos del reloj
+7070:   y `G-R6-B` no cambian. Una pausa vencida cuya reanudación no se aplicó la pone delante de una
+7071:   persona el barrido diario, con el motivo `REANUDACIÓN_NO_APLICADA`, que ya existía.
+7072: - 📌 **Precisada el 2026-09-29, con OK del owner (verificación corta, lote M-H y `VC-VT-05`)**: Los
+7073:   avisos previos de retención cuentan desde el más tardío de los dos instantes, con la versión de
+7074:   plazos de la ficha, y apuntan al día en que actuaría su lector; la fecha objetivo de su ocurrencia
+7075:   sale de esa cuenta. Y la mitad (d) de `G-R6-B` falla también sobre un lector de retención que
+7076:   consulta `retenciónDetenida` y no cuenta desde el más tardío de los dos instantes.
+7077: 
+7078: ---
+7079: 
+
+### dec-arch-014-p6 · spec 6167–6193 · fuente .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:7617–7643
+ESPECIFICACIÓN
+6167: <a id="dec-arch-014-p6"></a>
+6168: 
+6169: #### 📌6 de DEC-ARCH-014
+6170: 
+6171: Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:7617
+6172: 
+6173: Dueña del AC: [U3](10-corte/U3.md#pieza-u3).
+6174: Tests mínimos: smoke manual · staging.
+6175: 
+6176: 📌 **Precisada el 2026-09-30, con OK del owner (FASES 6 y 7, letra F;
+6177: `39-fases-6-y-7/10-decisiones-del-owner.md`)**: **el programa pasa de 24 a 25 unidades**. Una
+6178: unidad nueva del paraguas, **`U3`, el script del corte**: los pasos 1a, 1b y 2 de
+6179: `16-fase-7-del-paraguas.md` §4.2 (censo sin filtro tomado del proveedor, cancelación, relectura
+6180: por id, completitud contra el `total` del paginado y manifiesto), que estaban descriptos y no los
+6181: construía ninguna unidad. **Sin dependencias de código**: habla directo con la API del proveedor.
+6182: **Lista cuando corre entera contra la cuenta de pruebas**, y **se mergea en la rama del paraguas
+6183: antes del ensayo del corte**. *«La fecha del §2»* que su texto le ponía se lee como la de su
+6184: diseño, que ya está escrito, y deja de frenar a `U1`. Como `U1` y `U2`, no es de ninguna épica:
+6185: no le suma ninguna a las doce dependencias entre épicas, y no suma guards
+6186: (el total pasa a 35 por `G19`, de `V5`: FASES 6 y 7, pase de la FASE 6, owner 2026-09-30, H; ver `DEC-METH-018`).
+6187: **Entra después de `U1`, en paralelo con `V1`, `B1` y `U2`, y sólo tiene que estar mergeada
+6188: antes del ensayo; `U1` sigue siendo el primer PR de la rama** (FASES 6 y 7, lote de la aplicación, owner 2026-09-30, K).
+6189: 
+6190: Ninguna unidad depende de ella; la necesitan el ensayo (paso 0) y los pasos 1a, 1b y 2. Y `U1` suma una cosa: **reapunta la regla de smoke del `CLAUDE.md` raíz** al checklist del sistema nuevo (letra B; ver `DEC-ARCH-016`). Dónde: `16-fase-7-del-paraguas.md` §2, §4.2 y §4.6; las dos descomposiciones, §3 y §4; `spec.md`. Origen: (FASES 6 y 7, owner 2026-09-30, F).
+6191: 
+6192: > **Texto reubicado**: la fuente lo pegó al 📌7 ([DEC-ARCH-014#📌7](#dec-arch-014-p7), `.specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:7640`); es de este 📌 (letra F). Allá está omitido y marcado «[…]».
+6193: 
+FUENTE
+7617: - 📌 **Precisada el 2026-09-30, con OK del owner (FASES 6 y 7, letra F;
+7618:   `39-fases-6-y-7/10-decisiones-del-owner.md`)**: **el programa pasa de 24 a 25 unidades**. Una
+7619:   unidad nueva del paraguas, **`U3`, el script del corte**: los pasos 1a, 1b y 2 de
+7620:   `16-fase-7-del-paraguas.md` §4.2 (censo sin filtro tomado del proveedor, cancelación, relectura
+7621:   por id, completitud contra el `total` del paginado y manifiesto), que estaban descriptos y no los
+7622:   construía ninguna unidad. **Sin dependencias de código**: habla directo con la API del proveedor.
+7623:   **Lista cuando corre entera contra la cuenta de pruebas**, y **se mergea en la rama del paraguas
+7624:   antes del ensayo del corte**. *«La fecha del §2»* que su texto le ponía se lee como la de su
+7625:   diseño, que ya está escrito, y deja de frenar a `U1`. Como `U1` y `U2`, no es de ninguna épica:
+7626:   no le suma ninguna a las doce dependencias entre épicas, y no suma guards~~, que siguen en 34~~
+7627:   (el total pasa a 35 por `G19`, de `V5`: FASES 6 y 7, pase de la FASE 6, owner 2026-09-30, H; ver `DEC-METH-018`).
+7628:   **Entra después de `U1`, en paralelo con `V1`, `B1` y `U2`, y sólo tiene que estar mergeada
+7629:   antes del ensayo; `U1` sigue siendo el primer PR de la rama** (FASES 6 y 7, lote de la aplicación, owner 2026-09-30, K).
+7630: - 📌 **Precisada el 2026-09-30, con OK del owner (FASES 6 y 7, pase de la FASE 6, I;
+7631:   `39-fases-6-y-7/10-decisiones-del-owner.md`, «Lote del pase de la FASE 6»)**: **la lista de `U1`
+7632:   crece**: borra `check-product-domain-vocabulary.sh` y `check-product-domain-raw-sql.sh`, con sus
+7633:   scripts de `package.json`, su entrada en `check:guards` y su paso en `ci.yml`, y reescribe la
+7634:   cabecera y el mensaje de `check-no-binary-vertical-ternary.sh` sin la palabra vieja y sin los
+7635:   helpers que borra, sin tocar su patrón ni su alcance; **`V1` lo retira en el mismo PR en que entra
+7636:   `G1`**, con el caso de `HOS-1079` entre los que hacen fallar a `G1`. Los tres nombran la palabra
+7637:   vieja, así que sin esto `G8` no nace verde. Ninguno suma un guard del programa. Dónde:
+7638:   `16-fase-7-del-paraguas.md` §4.6, punto 4; `V/descomposicion.md` §2 y §4, `V1`; `V/20` §2, `G1`.
+7639:   Origen: (FASES 6 y 7, pase de la FASE 6, owner 2026-09-30, I) (FASES 6 y 7, verificación, 2026-09-30, F12).
+7640:   Ninguna unidad depende de ella; la necesitan el ensayo (paso 0) y los pasos 1a, 1b y 2. Y `U1`
+7641:   suma una cosa: **reapunta la regla de smoke del `CLAUDE.md` raíz** al checklist del sistema nuevo
+7642:   (letra B; ver `DEC-ARCH-016`). Dónde: `16-fase-7-del-paraguas.md` §2, §4.2 y §4.6; las dos
+7643:   descomposiciones, §3 y §4; `spec.md`. Origen: (FASES 6 y 7, owner 2026-09-30, F).
+
+### dec-arch-014-p7 · spec 6194–6217 · fuente .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:7630–7643
+ESPECIFICACIÓN
+6194: <a id="dec-arch-014-p7"></a>
+6195: 
+6196: #### 📌7 de DEC-ARCH-014
+6197: 
+6198: Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:7630
+6199: 
+6200: Dueña del AC: [U1](10-corte/U1.md#pieza-u1).
+6201: También: [V1](10-corte/V1.md#pieza-v1) (implementa).
+6202: Tests mínimos: smoke manual · staging.
+6203: 
+6204: 📌 **Precisada el 2026-09-30, con OK del owner (FASES 6 y 7, pase de la FASE 6, I;
+6205: `39-fases-6-y-7/10-decisiones-del-owner.md`, «Lote del pase de la FASE 6»)**: **la lista de `U1`
+6206: crece**: borra `check-product-domain-vocabulary.sh` y `check-product-domain-raw-sql.sh`, con sus
+6207: scripts de `package.json`, su entrada en `check:guards` y su paso en `ci.yml`, y reescribe la
+6208: cabecera y el mensaje de `check-no-binary-vertical-ternary.sh` sin la palabra vieja y sin los
+6209: helpers que borra, sin tocar su patrón ni su alcance; **`V1` lo retira en el mismo PR en que entra
+6210: `G1`**, con el caso de `HOS-1079` entre los que hacen fallar a `G1`. Los tres nombran la palabra
+6211: vieja, así que sin esto `G8` no nace verde. Ninguno suma un guard del programa. Dónde:
+6212: `16-fase-7-del-paraguas.md` §4.6, punto 4; `V/descomposicion.md` §2 y §4, `V1`; `V/20` §2, `G1`.
+6213: Origen: (FASES 6 y 7, pase de la FASE 6, owner 2026-09-30, I) (FASES 6 y 7, verificación, 2026-09-30, F12).
+6214: […]
+6215: 
+6216: > **Parte sin efecto** (adjudicación `PARCIAL`): la cola «Ninguna unidad depende de ella; la necesitan el ensayo (paso 0) y los pasos 1a, 1b y 2. Y `U1` suma una cosa: reapunta la regla de smoke … Origen: (FASES 6 y 7, owner 2026-09-30, F)»: es texto del 📌6 (`U3`, letra F) que quedó pegado a éste; la consolidada la muestra bajo el 📌6, con su nota, y no bajo el 📌7. Lo supera: `.specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:7640` («Ninguna unidad depende de ella; la necesitan el ensayo (paso 0) y los pasos 1a, 1b y 2. Y `U1`»); `.specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:7618` («**el programa pasa de 24 a 25 unidades**. Una»). Lo omitido del texto de arriba está marcado «[…]».
+6217: 
+FUENTE
+7630: - 📌 **Precisada el 2026-09-30, con OK del owner (FASES 6 y 7, pase de la FASE 6, I;
+7631:   `39-fases-6-y-7/10-decisiones-del-owner.md`, «Lote del pase de la FASE 6»)**: **la lista de `U1`
+7632:   crece**: borra `check-product-domain-vocabulary.sh` y `check-product-domain-raw-sql.sh`, con sus
+7633:   scripts de `package.json`, su entrada en `check:guards` y su paso en `ci.yml`, y reescribe la
+7634:   cabecera y el mensaje de `check-no-binary-vertical-ternary.sh` sin la palabra vieja y sin los
+7635:   helpers que borra, sin tocar su patrón ni su alcance; **`V1` lo retira en el mismo PR en que entra
+7636:   `G1`**, con el caso de `HOS-1079` entre los que hacen fallar a `G1`. Los tres nombran la palabra
+7637:   vieja, así que sin esto `G8` no nace verde. Ninguno suma un guard del programa. Dónde:
+7638:   `16-fase-7-del-paraguas.md` §4.6, punto 4; `V/descomposicion.md` §2 y §4, `V1`; `V/20` §2, `G1`.
+7639:   Origen: (FASES 6 y 7, pase de la FASE 6, owner 2026-09-30, I) (FASES 6 y 7, verificación, 2026-09-30, F12).
+7640:   Ninguna unidad depende de ella; la necesitan el ensayo (paso 0) y los pasos 1a, 1b y 2. Y `U1`
+7641:   suma una cosa: **reapunta la regla de smoke del `CLAUDE.md` raíz** al checklist del sistema nuevo
+7642:   (letra B; ver `DEC-ARCH-016`). Dónde: `16-fase-7-del-paraguas.md` §2, §4.2 y §4.6; las dos
+7643:   descomposiciones, §3 y §4; `spec.md`. Origen: (FASES 6 y 7, owner 2026-09-30, F).
+
+### dec-arch-016 · spec 6248–6346 · fuente .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:7743–7848
+ESPECIFICACIÓN
+6248: <a id="dec-arch-016"></a>
+6249: 
+6250: ### DEC-ARCH-016 — Los gates de aceptación del programa: cinco momentos, cada uno con una condición que se comprueba desde afuera
+6251: 
+6252: Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:7743
+6253: 
+6254: Dueña del AC: [U1](10-corte/U1.md#pieza-u1).
+6255: También: [B13a](10-corte/B13a.md#pieza-b13a) (implementa).
+6256: Tests mínimos: migración desde cero; smoke manual · prod.
+6257: 
+6258: - **Fecha**: 2026-09-30 · **Estado**: ACCEPTED — **precisada el 2026-10-01, con OK del owner** (corte del MVP, Y; ver su  primer 📌; **y otra vez el 2026-10-02**, BQ: el ensayo recorre la rama de aborto y la medición de `EX-49` lleva la etiqueta `prod`; ver su segundo 📌) · **Decide**: owner
+6259: - **Problema**: el PDR pide definir los *acceptance gates* (FASE 7) y no los define, y
+6260:   `16-fase-7-del-paraguas.md` §5 los dejaba como el último ítem pendiente de la FASE 7 del paraguas,
+6261:   con plazo *«antes de que nazca la rama»*. Lo que existía estaba en cuatro documentos, y faltaba:
+6262:   el CI en la rama (`DEC-CI-001` está aceptada y sin aplicar, así que el PR de `U1` entraría sin
+6263:   lint, typecheck, tests ni guards); qué hace una fila `UNKNOWN` con la terminación de una unidad
+6264:   (*«no está escrito en ninguna decisión»*, `B/descomposicion.md` §2.7); el estado en Linear de una
+6265:   unidad terminada; una lista única antes del PR final; sobre qué datos se ensaya el corte y qué es
+6266:   un ensayo verde; un smoke manual del sistema nuevo (`F-8cC2-005`, ALTA, nunca resuelto: la rama de
+6267:   spec borró los checklists que gobiernan al viejo, `U1` borra `.qtm/`, y el nivel de producción de
+6268:   la regla del `CLAUDE.md` es insatisfacible para un reemplazo); y cuándo se da por aceptado el
+6269:   programa.
+6270: - **Alternativas**, por pregunta (`39-fases-6-y-7/00-propuesta.md` §3): **A**, cuándo se enciende
+6271:   el CI en la rama: (1) un PR chico a `staging` antes de crear la rama; (2) como primer commit de la
+6272:   rama; (3) adentro del PR de `U1`. **B**, el smoke manual: (1) un checklist nuevo en dos partes;
+6273:   (2) sin smoke manual; (3) el viejo hasta el corte y el nuevo después. **C**, los datos del ensayo:
+6274:   (1) la base de `staging` como está; (2) una copia de producción con los correos reescritos; (3)
+6275:   una copia de producción sin tocar. **D**, una fila `UNKNOWN`: (1) la unidad termina con las dos
+6276:   ramas escritas y probadas contra el falso; (2) no termina hasta que la fila cierre; (3) termina
+6277:   como en la 1, pero el corte no avanza con filas abiertas. **E**, la aceptación: (1) al terminar el
+6278:   paso 6 y el smoke del mismo día; (2) el primer cobro real de una cuenta nueva y siete días de
+6279:   barrido limpio; (3) después de la primera renovación.
+6280: - **Decisión**: en las cinco, **la 1 de A, B y D, la 2 de C y E: todas la recomendada**, y con ellas
+6281:   lo derivado (D-1 a D-5 de la propuesta, §2.3). **Un gate de aceptación es el momento en que algo
+6282:   se da por bueno y el trabajo siguiente puede apoyarse en él, con una condición que alguien de
+6283:   afuera puede comprobar**, y son cinco:
+6284:   1. **Por unidad**: el criterio de su fila; sus guards escritos, enchufados en `pnpm check:guards`
+6285:      y en el job `guards` de `ci.yml` y rotos a propósito contra el job; `DEC-TEST-002`; **cada fila
+6286:      `UNKNOWN` en que se apoya con sus dos ramas escritas y una prueba por rama contra el proveedor
+6287:      falso**, y la batería semanal la sigue midiendo: cuando cierra, la rama que no vale se borra
+6288:      (D); sus e2e adaptados en el mismo PR; el PR a la rama con `CI Pass` en `SUCCESS` sobre el
+6289:      rollup completo; y una revisión de contexto fresco antes del merge. **En Linear pasa a `Done`
+6290:      al mergearse en la rama**, y **las etiquetas `status-needs-smoke-*` van sólo en `HOS-1352`**
+6291:      (D-2). **El CI de la rama se enciende antes de que la rama nazca**: los cambios `C-1` a `C-8`
+6292:      de `DEC-CI-001` y el guard de destino entran en un PR propio a `staging`, titulado
+6293:      `[NOSPEC:epic-ci]` y sin `HOS-1352` (A).
+6294:   2. **Por épica, antes del PR final a `staging`**: las 25 unidades en `Done`; `staging` mergeado
+6295:      hacia la rama y verde en su último `push`; `e2e-pr`, `codeql`, `lighthouse` y `a11y-sweep` con
+6296:      conclusión `success` fechada después del último merge a la rama; y el merge lo decide el owner
+6297:      (D-3).
+6298:   3. **Antes del ensayo del corte**: el ensayo corre sobre **una copia de la base de producción
+6299:      restaurada en `staging`, con los correos reescritos a una casilla que no entrega y la lista
+6300:      real de las cinco**, que se borra al terminar (C); arranca con la imagen vieja desplegada y **es
+6301:      verde cuando cada verificación del §4.2 pasó, en su orden, sin tocar nada a mano fuera de lo
+6302:      que el paso dice**; cualquier intervención no escrita lo vuelve rojo y se escribe antes del
+6303:      reintento (D-5).
+6304:   4. **Antes del corte real**: los ocho gates de la simplificación del corte, con el ensayo definido
+6305:      como arriba y la parte de `staging` del smoke adentro (D-4).
+6306:   5. **Después del corte**: **el programa se da por aceptado cuando el sistema nuevo acreditó su
+6307:      primer cobro real de una cuenta que se suscribió después del corte, y el barrido diario corrió
+6308:      siete días seguidos sin una divergencia sin explicar**; esa observación retira la etiqueta de
+6309:      smoke de producción de `HOS-1352` y dispara la tarea de cierre; si nadie se suscribe, se revisa
+6310:      a los 30 días (E).
+6311: 
+6312:   **El smoke manual del cobro nuevo** (B): un checklist del sistema nuevo en dos partes, que escribe
+6313:   `B13` en `docs/billing/`  (el recorte del checklist viejo se retira por quedar sin sujeto: el checklist viejo vive en `staging` y gobierna al sistema viejo hasta el corte, y el nuevo de `B13` lo reemplaza con el corte: FASES 6 y 7, lote de la aplicación, owner 2026-09-30, L): la de `staging` se ejecuta dentro del
+6314:   ensayo; la de producción, en un paso 5c después del 5, con la tarjeta del owner (un checkout real, su devolución, el correo de Mercado Pago, la caché del
+6315:   borde y los horarios de los crons el primer día). `U1` reapunta la regla de smoke del `CLAUDE.md`
+6316:   raíz en la rama. **Los tres checklists viejos se restauran en la rama de spec antes de que su PR
+6317:   entre a `staging`**, porque gobiernan al sistema viejo hasta el corte (hecho en el acto,
+6318:   `39-fases-6-y-7/10-decisiones-del-owner.md`).
+6319: - **Motivo**: cada gate queda con una condición que se puede comprobar sin preguntarle a nadie. A:
+6320:   el PR de `U1`, el más grande del programa, es el primero que corre CI completo, y `V1` y `B1` no
+6321:   arrancan sobre una rama que no compila. B: cubre exactamente lo que el diseño declara que no se
+6322:   puede simular, y no deja al sistema viejo sin su gate mientras cobra. C: es el único ensayo que
+6323:   prueba la migración que borra sobre lo que va a borrar, y un fallo en producción deja la
+6324:   plataforma entera en sólo lectura (`DEC-MIG-002`). D: es la forma que el diseño ya usa, y esperar
+6325:   una medición que no se puede provocar (`GR-2`, `PA-6`, `RC-8`) puede no terminar nunca. E: el
+6326:   cobro es lo único que el sistema nuevo no puede haber hecho antes del corte, y es lo que el
+6327:   programa existe para hacer.
+6328: - **Implicaciones**: (1) **precisa `DEC-CI-001`**: su implicación 1 (*«no está aplicado… la
+6329:   aplicación la decide el owner»*) queda contestada por A (ver su 📌; FASES 6 y 7, lote de la
+6330:   aplicación, owner 2026-09-30, M); (2) **precisa `DEC-TEST-002`**: la
+6331:   terminación de una unidad tiene una condición más, sobre las filas `UNKNOWN` en que se apoya (D;
+6332:   ver su 📌, M);
+6333:   (3) `F-8cC2-005` queda resuelto por B; (4) la FASE 7 del paraguas queda cerrada
+6334:   (`16-fase-7-del-paraguas.md` §5), y con ella la FASE 7 en la tabla de estado de `spec.md`; (5) en
+6335:   Linear, `status-needs-smoke-prod` va en `HOS-1352` y en ninguna unidad; (6) la matriz no cambia.
+6336: - **Dónde**: `16-fase-7-del-paraguas.md` §4.7 (nuevo), §2, §4.2 (paso 0 y paso 5c) y §4.6;
+6337:   `DEC-TEST-003` (su 📌 de las FASES 6 y 7, por L y B) (FASES 6 y 7, verificación, 2026-09-30, F4);
+6338:   `V/descomposicion.md` §4; `B/descomposicion.md` §2.7 y §4; `V/20` §2.1 y §5; `B/20` §2.1, §4.1 y
+6339:   §5.1.
+6340: - **Origen**: FASES 6 y 7, preguntas A a E, 2026-09-30
+6341:   (`39-fases-6-y-7/10-decisiones-del-owner.md`; con ellas el owner aprobó lo derivado del §2.3 de
+6342:   `39-fases-6-y-7/00-propuesta.md`); propuesta del orquestador, el owner eligió en las cinco la
+6343:   recomendada.
+6344: - → ver [📌1](#dec-arch-016-p1).
+6345: - → ver [📌2](#dec-arch-016-p2).
+6346: 
+FUENTE
+7743: ### DEC-ARCH-016 — Los gates de aceptación del programa: cinco momentos, cada uno con una condición que se comprueba desde afuera
+7744: 
+7745: - **Fecha**: 2026-09-30 · **Estado**: ACCEPTED — **precisada el 2026-10-01, con OK del owner** (corte del MVP, Y; ver su ~~📌~~ primer 📌; **y otra vez el 2026-10-02**, BQ: el ensayo recorre la rama de aborto y la medición de `EX-49` lleva la etiqueta `prod`; ver su segundo 📌) · **Decide**: owner
+7746: - **Problema**: el PDR pide definir los *acceptance gates* (FASE 7) y no los define, y
+7747:   `16-fase-7-del-paraguas.md` §5 los dejaba como el último ítem pendiente de la FASE 7 del paraguas,
+7748:   con plazo *«antes de que nazca la rama»*. Lo que existía estaba en cuatro documentos, y faltaba:
+7749:   el CI en la rama (`DEC-CI-001` está aceptada y sin aplicar, así que el PR de `U1` entraría sin
+7750:   lint, typecheck, tests ni guards); qué hace una fila `UNKNOWN` con la terminación de una unidad
+7751:   (*«no está escrito en ninguna decisión»*, `B/descomposicion.md` §2.7); el estado en Linear de una
+7752:   unidad terminada; una lista única antes del PR final; sobre qué datos se ensaya el corte y qué es
+7753:   un ensayo verde; un smoke manual del sistema nuevo (`F-8cC2-005`, ALTA, nunca resuelto: la rama de
+7754:   spec borró los checklists que gobiernan al viejo, `U1` borra `.qtm/`, y el nivel de producción de
+7755:   la regla del `CLAUDE.md` es insatisfacible para un reemplazo); y cuándo se da por aceptado el
+7756:   programa.
+7757: - **Alternativas**, por pregunta (`39-fases-6-y-7/00-propuesta.md` §3): **A**, cuándo se enciende
+7758:   el CI en la rama: (1) un PR chico a `staging` antes de crear la rama; (2) como primer commit de la
+7759:   rama; (3) adentro del PR de `U1`. **B**, el smoke manual: (1) un checklist nuevo en dos partes;
+7760:   (2) sin smoke manual; (3) el viejo hasta el corte y el nuevo después. **C**, los datos del ensayo:
+7761:   (1) la base de `staging` como está; (2) una copia de producción con los correos reescritos; (3)
+7762:   una copia de producción sin tocar. **D**, una fila `UNKNOWN`: (1) la unidad termina con las dos
+7763:   ramas escritas y probadas contra el falso; (2) no termina hasta que la fila cierre; (3) termina
+7764:   como en la 1, pero el corte no avanza con filas abiertas. **E**, la aceptación: (1) al terminar el
+7765:   paso 6 y el smoke del mismo día; (2) el primer cobro real de una cuenta nueva y siete días de
+7766:   barrido limpio; (3) después de la primera renovación.
+7767: - **Decisión**: en las cinco, **la 1 de A, B y D, la 2 de C y E: todas la recomendada**, y con ellas
+7768:   lo derivado (D-1 a D-5 de la propuesta, §2.3). **Un gate de aceptación es el momento en que algo
+7769:   se da por bueno y el trabajo siguiente puede apoyarse en él, con una condición que alguien de
+7770:   afuera puede comprobar**, y son cinco:
+7771:   1. **Por unidad**: el criterio de su fila; sus guards escritos, enchufados en `pnpm check:guards`
+7772:      y en el job `guards` de `ci.yml` y rotos a propósito contra el job; `DEC-TEST-002`; **cada fila
+7773:      `UNKNOWN` en que se apoya con sus dos ramas escritas y una prueba por rama contra el proveedor
+7774:      falso**, y la batería semanal la sigue midiendo: cuando cierra, la rama que no vale se borra
+7775:      (D); sus e2e adaptados en el mismo PR; el PR a la rama con `CI Pass` en `SUCCESS` sobre el
+7776:      rollup completo; y una revisión de contexto fresco antes del merge. **En Linear pasa a `Done`
+7777:      al mergearse en la rama**, y **las etiquetas `status-needs-smoke-*` van sólo en `HOS-1352`**
+7778:      (D-2). **El CI de la rama se enciende antes de que la rama nazca**: los cambios `C-1` a `C-8`
+7779:      de `DEC-CI-001` y el guard de destino entran en un PR propio a `staging`, titulado
+7780:      `[NOSPEC:epic-ci]` y sin `HOS-1352` (A).
+7781:   2. **Por épica, antes del PR final a `staging`**: las 25 unidades en `Done`; `staging` mergeado
+7782:      hacia la rama y verde en su último `push`; `e2e-pr`, `codeql`, `lighthouse` y `a11y-sweep` con
+7783:      conclusión `success` fechada después del último merge a la rama; y el merge lo decide el owner
+7784:      (D-3).
+7785:   3. **Antes del ensayo del corte**: el ensayo corre sobre **una copia de la base de producción
+7786:      restaurada en `staging`, con los correos reescritos a una casilla que no entrega y la lista
+7787:      real de las cinco**, que se borra al terminar (C); arranca con la imagen vieja desplegada y **es
+7788:      verde cuando cada verificación del §4.2 pasó, en su orden, sin tocar nada a mano fuera de lo
+7789:      que el paso dice**; cualquier intervención no escrita lo vuelve rojo y se escribe antes del
+7790:      reintento (D-5).
+7791:   4. **Antes del corte real**: los ocho gates de la simplificación del corte, con el ensayo definido
+7792:      como arriba y la parte de `staging` del smoke adentro (D-4).
+7793:   5. **Después del corte**: **el programa se da por aceptado cuando el sistema nuevo acreditó su
+7794:      primer cobro real de una cuenta que se suscribió después del corte, y el barrido diario corrió
+7795:      siete días seguidos sin una divergencia sin explicar**; esa observación retira la etiqueta de
+7796:      smoke de producción de `HOS-1352` y dispara la tarea de cierre; si nadie se suscribe, se revisa
+7797:      a los 30 días (E).
+7798: 
+7799:   **El smoke manual del cobro nuevo** (B): un checklist del sistema nuevo en dos partes, que escribe
+7800:   `B13` en `docs/billing/` ~~junto con el recorte que ya tenía~~ (el recorte del checklist viejo se retira por quedar sin sujeto: el checklist viejo vive en `staging` y gobierna al sistema viejo hasta el corte, y el nuevo de `B13` lo reemplaza con el corte: FASES 6 y 7, lote de la aplicación, owner 2026-09-30, L): la de `staging` se ejecuta dentro del
+7801:   ensayo; la de producción, en un paso 5c después del 5, con la tarjeta del owner y un monto
+7802:   aprobado de antemano (un checkout real, su devolución, el correo de Mercado Pago, la caché del
+7803:   borde y los horarios de los crons el primer día). `U1` reapunta la regla de smoke del `CLAUDE.md`
+7804:   raíz en la rama. **Los tres checklists viejos se restauran en la rama de spec antes de que su PR
+7805:   entre a `staging`**, porque gobiernan al sistema viejo hasta el corte (hecho en el acto,
+7806:   `39-fases-6-y-7/10-decisiones-del-owner.md`).
+7807: - **Motivo**: cada gate queda con una condición que se puede comprobar sin preguntarle a nadie. A:
+7808:   el PR de `U1`, el más grande del programa, es el primero que corre CI completo, y `V1` y `B1` no
+7809:   arrancan sobre una rama que no compila. B: cubre exactamente lo que el diseño declara que no se
+7810:   puede simular, y no deja al sistema viejo sin su gate mientras cobra. C: es el único ensayo que
+7811:   prueba la migración que borra sobre lo que va a borrar, y un fallo en producción deja la
+7812:   plataforma entera en sólo lectura (`DEC-MIG-002`). D: es la forma que el diseño ya usa, y esperar
+7813:   una medición que no se puede provocar (`GR-2`, `PA-6`, `RC-8`) puede no terminar nunca. E: el
+7814:   cobro es lo único que el sistema nuevo no puede haber hecho antes del corte, y es lo que el
+7815:   programa existe para hacer.
+7816: - **Implicaciones**: (1) **precisa `DEC-CI-001`**: su implicación 1 (*«no está aplicado… la
+7817:   aplicación la decide el owner»*) queda contestada por A (ver su 📌; FASES 6 y 7, lote de la
+7818:   aplicación, owner 2026-09-30, M); (2) **precisa `DEC-TEST-002`**: la
+7819:   terminación de una unidad tiene una condición más, sobre las filas `UNKNOWN` en que se apoya (D;
+7820:   ver su 📌, M);
+7821:   (3) `F-8cC2-005` queda resuelto por B; (4) la FASE 7 del paraguas queda cerrada
+7822:   (`16-fase-7-del-paraguas.md` §5), y con ella la FASE 7 en la tabla de estado de `spec.md`; (5) en
+7823:   Linear, `status-needs-smoke-prod` va en `HOS-1352` y en ninguna unidad; (6) la matriz no cambia.
+7824: - **Dónde**: `16-fase-7-del-paraguas.md` §4.7 (nuevo), §2, §4.2 (paso 0 y paso 5c) y §4.6;
+7825:   `DEC-TEST-003` (su 📌 de las FASES 6 y 7, por L y B) (FASES 6 y 7, verificación, 2026-09-30, F4);
+7826:   `V/descomposicion.md` §4; `B/descomposicion.md` §2.7 y §4; `V/20` §2.1 y §5; `B/20` §2.1, §4.1 y
+7827:   §5.1.
+7828: - **Origen**: FASES 6 y 7, preguntas A a E, 2026-09-30
+7829:   (`39-fases-6-y-7/10-decisiones-del-owner.md`; con ellas el owner aprobó lo derivado del §2.3 de
+7830:   `39-fases-6-y-7/00-propuesta.md`); propuesta del orquestador, el owner eligió en las cinco la
+7831:   recomendada.
+7832: - 📌 **Precisada el 2026-10-01, con OK del owner (corte del MVP, Y)**: **el momento 2 cuenta las
+7833:   piezas del corte**: *«las 25 unidades están en `Done`»* pasa a ser *«las 22 piezas del corte
+7834:   (`DEC-ARCH-017`) están en `Done`»*. Las ocho piezas posteriores no frenan el PR final del
+7835:   paraguas: cada fase posterior es aditiva y tiene su propio gate, y el momento 1 vale para sus
+7836:   piezas igual que para las del corte (`DEC-ARCH-017`, AE). Los momentos 3 a 5 no cambian
+7837:   (`16-fase-7-del-paraguas.md` §4.7; `41-corte-del-mvp/10-decisiones-del-owner.md`, Y).
+7838: - 📌 **Precisada otra vez el 2026-10-02, con OK del owner (corte del MVP, BQ, Q1 y Q2, las dos la
+7839:   1)**, sobre el momento 3 (*«qué es un ensayo verde»*) y el paso 0: **el ensayo recorre la rama de
+7840:   aborto una vez, en `staging`, sobre la misma copia**: una falla provocada después del 1b, y se
+7841:   verifica restaurar el 2b, la imagen vieja, los inversos (b) y (c) y la regla del 0b puesta hasta
+7842:   el reintento (Q1); y **la medición de `EX-49` se registra con la etiqueta `prod`**: lee datos de
+7843:   producción sin mutar nada y es gate del corte real, aunque el paso 0 decía *«ninguna en
+7844:   producción»* (Q2). Dónde: `16-fase-7-del-paraguas.md` §4.2 (el paso 0 y la rama de aborto) y
+7845:   §4.7, momento 3; `41-corte-del-mvp/10-decisiones-del-owner.md`, BQ.
+7846: 
+7847: ---
+7848: 
+
+### dec-mig-007 · spec 7484–7522 · fuente .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:7015–7044
+ESPECIFICACIÓN
+7484: <a id="dec-mig-007"></a>
+7485: 
+7486: ### DEC-MIG-007 — Las premisas del corte: reemplazo sin convivencia, cinco cuentas que importan y el resto a cargo del owner, por privado
+7487: 
+7488: Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:7015
+7489: 
+7490: Dueña del AC: [CORTE](30-el-corte.md).
+7491: Tests mínimos: ≥1 de cualquier tipo de la lista cerrada.
+7492: 
+7493: - **Fecha**: 2026-09-30 · **Estado**: ACCEPTED · **Decide**: owner
+7494: - **Problema**: al abrir la FASE 5, las preguntas del lote 1 volvían a traer casos del corte (un
+7495:   usuario que entra mientras se corta, un dueño con varias fichas, fichas que no son de clientes)
+7496:   que el owner considera fuera de alcance. Sin fijarlo por escrito, cada tanda los vuelve a abrir.
+7497: - **Decisión** (palabras del owner, 2026-09-30, al empezar el lote 1 de la FASE 5):
+7498:   1. **No conviven las dos versiones.** La vieja se va y entra la nueva; no hay período de
+7499:      convivencia que diseñar.
+7500:   2. **Un usuario que entre durante el corte no se diseña.** Es casi imposible; si pasa, se ve
+7501:      sobre la marcha. Alternativa del owner: antes del corte se bloquea que nadie, nuevo o
+7502:      existente, pueda hacer nada.
+7503:   3. **Sólo importan cinco cuentas**: las tres que están en prueba o ya pagan y las dos de
+7504:      cortesía. De ellas se conserva la información de sus fichas. **Cada una tiene una sola ficha**:
+7505:      no se diseña nada para más de una ficha por cuenta después del corte. El resto de las cuentas
+7506:      no importa.
+7507:   4. **A esas cinco les avisa el owner, por privado**: que después del corte arrancan de cero, con
+7508:      la prueba recién iniciada, y que al terminar la prueba se tienen que volver a suscribir. **No se
+7509:      programa nada para eso**: ni correos, ni avisos, ni flujos de continuidad.
+7510: - **Implicaciones**:
+7511:   1. Toda pregunta, hallazgo o mecanismo sobre convivencia, sobre usuarios activos durante el corte,
+7512:      sobre varias fichas por cuenta, sobre cuentas fuera de esas cinco o sobre comunicar el corte se
+7513:      descarta citando esta decisión, sin volver al owner.
+7514:   2. Las decisiones y capítulos del corte que diseñan para esos casos quedan por revisar a la luz de
+7515:      ésta. No se marcan `SUPERSEDED` sueltas: cada una se revisa con el owner y se precisa o se
+7516:      supera con su motivo.
+7517: - **Origen**: owner, 2026-09-30, antes de contestar el lote 1 de la FASE 5 (`38-fase-5/00-consolidado.md`).
+7518: 
+7519: ## Área GRANT
+7520: 
+7521: Retiradas de esta área (en `90-retirados.md`): [DEC-GRANT-010](90-retirados.md#dec-grant-010).
+7522: 
+FUENTE
+7015: ### DEC-MIG-007 — Las premisas del corte: reemplazo sin convivencia, cinco cuentas que importan y el resto a cargo del owner, por privado
+7016: 
+7017: - **Fecha**: 2026-09-30 · **Estado**: ACCEPTED · **Decide**: owner
+7018: - **Problema**: al abrir la FASE 5, las preguntas del lote 1 volvían a traer casos del corte (un
+7019:   usuario que entra mientras se corta, un dueño con varias fichas, fichas que no son de clientes)
+7020:   que el owner considera fuera de alcance. Sin fijarlo por escrito, cada tanda los vuelve a abrir.
+7021: - **Decisión** (palabras del owner, 2026-09-30, al empezar el lote 1 de la FASE 5):
+7022:   1. **No conviven las dos versiones.** La vieja se va y entra la nueva; no hay período de
+7023:      convivencia que diseñar.
+7024:   2. **Un usuario que entre durante el corte no se diseña.** Es casi imposible; si pasa, se ve
+7025:      sobre la marcha. Alternativa del owner: antes del corte se bloquea que nadie, nuevo o
+7026:      existente, pueda hacer nada.
+7027:   3. **Sólo importan cinco cuentas**: las tres que están en prueba o ya pagan y las dos de
+7028:      cortesía. De ellas se conserva la información de sus fichas. **Cada una tiene una sola ficha**:
+7029:      no se diseña nada para más de una ficha por cuenta después del corte. El resto de las cuentas
+7030:      no importa.
+7031:   4. **A esas cinco les avisa el owner, por privado**: que después del corte arrancan de cero, con
+7032:      la prueba recién iniciada, y que al terminar la prueba se tienen que volver a suscribir. **No se
+7033:      programa nada para eso**: ni correos, ni avisos, ni flujos de continuidad.
+7034: - **Implicaciones**:
+7035:   1. Toda pregunta, hallazgo o mecanismo sobre convivencia, sobre usuarios activos durante el corte,
+7036:      sobre varias fichas por cuenta, sobre cuentas fuera de esas cinco o sobre comunicar el corte se
+7037:      descarta citando esta decisión, sin volver al owner.
+7038:   2. Las decisiones y capítulos del corte que diseñan para esos casos quedan por revisar a la luz de
+7039:      ésta. No se marcan `SUPERSEDED` sueltas: cada una se revisa con el owner y se precisa o se
+7040:      supera con su motivo.
+7041: - **Origen**: owner, 2026-09-30, antes de contestar el lote 1 de la FASE 5 (`38-fase-5/00-consolidado.md`).
+7042: 
+7043: ---
+7044: 
+
+### dec-grant-004-p1 · spec 7752–7762 · fuente .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:2073–2102
+ESPECIFICACIÓN
+7752: <a id="dec-grant-004-p1"></a>
+7753: 
+7754: #### 📌1 de DEC-GRANT-004
+7755: 
+7756: Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:2073
+7757: 
+7758: Dueña del AC: [B9b](20-fase-2/B9b.md#pieza-b9b).
+7759: Tests mínimos: ≥1 de cualquier tipo de la lista cerrada.
+7760: 
+7761: **📌 desde el 2026-09-25 se suman MESES**: la cortesía temporal es en meses enteros, ver `DEC-GRANT-003` impl. 6
+7762: 
+FUENTE
+2073:   3. **Cortesía sobre cortesía** → **se SUMAN los días, no se reemplazan** (**📌 desde el 2026-09-25 se suman MESES**: la cortesía temporal es en meses enteros, ver `DEC-GRANT-003` impl. 6), y el aviso dice la
+2074:      **fecha de fin nueva**, no «un mes más».
+2075: - **Motivo**:
+2076:   - **(1) es la opción menos compleja, y esa es la razón.** La alternativa evaluada —prohibir
+2077:     pausar durante la cortesía y ofrecer una **pausa programada** para cuando termine— protege
+2078:     mejor al cliente, pero **introduce un mecanismo que `DEC-SUB-010` ya había descartado**: ahí se
+2079:     decidió que la pausa empieza cuando el cliente la pide, sin diferir nada. Traerla de vuelta por
+2080:     la puerta de atrás, para un caso de borde, no se paga.
+2081:     - Queda **declarado el costo**: durante la cortesía el cliente **no está pagando**, así que
+2082:       pausar no le ahorra un peso — sólo le quita servicio. Es la misma operación sin sentido
+2083:       económico que `DEC-SUB-010` eliminó para la pausa intra-ciclo. **Por eso el aviso importa
+2084:       más que la validación**: es lo único que lo protege de tomar una decisión que sólo lo
+2085:       perjudica.
+2086:   - **(2)**: regalarle meses a alguien que no está pagando **no le regala nada** — la cortesía se
+2087:     consumiría contra un período sin cobro. Bloquear y avisar deja el error del lado visible.
+2088:   - **(3) se suman** porque reemplazar es **destructivo y silencioso**: un super admin que otorga un
+2089:     mes a alguien que tenía seis se los saca sin que nada en la operación lo insinúe. Sumar es
+2090:     además lo que menos sorprende —«le doy un mes» es un mes más— y encaja con el §35.4, que ya
+2091:     pide auditoría **por grant**: cada uno sobrevive entero en el registro y la fecha de fin es la
+2092:     consecuencia, no un dato que haya que reconstruir.
+2093: - **Implicaciones**:
+2094:   1. **El estado «pausada» de nuestra base necesita un motivo**, no sólo un booleano: pausa del
+2095:      cliente, cortesía, o —cuando lo midamos— el destino al que el proveedor manda una suscripción
+2096:      al agotar los reintentos. El reloj que reanuda lee ese motivo, nunca el estado del proveedor.
+2097:   2. **El aviso del caso (1) es parte de la decisión, no un adorno.** Sin él, el cliente pausa y
+2098:      descubre después que perdió el regalo.
+2099:   3. **Programar una cortesía para cuando el cliente reanude** se evaluó y **queda fuera** por la
+2100:      misma razón de simplicidad. Si más adelante aparece la necesidad, es un agregado, no un
+2101:      rediseño.
+2102: - **Origen**: residuo de `DEC-GRANT-003` · §34.2 · §35.4 · §26.
+
+### dec-grant-012 · spec 8054–8093 · fuente .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:4972–5006
+ESPECIFICACIÓN
+8054: <a id="dec-grant-012"></a>
+8055: 
+8056: ### DEC-GRANT-012 — La cortesía diferida se le muestra al cliente CON su condición, no a secas y no escondida
+8057: 
+8058: Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:4972
+8059: 
+8060: Dueña del AC: [B13a](10-corte/B13a.md#pieza-b13a).
+8061: Tests mínimos: ≥1 de cualquier tipo de la lista cerrada.
+8062: 
+8063: - **Fecha**: 2026-09-23 · **Estado**: ACCEPTED · **Decide**: owner
+8064: - **El caso**: `B/19` §3 **obliga** a mostrar las cortesías en «Mi Suscripción». Entre el cierre de
+8065:   la sucesión (`S18`) y la autorización de la sucesora (`S2` → `S9`), la persona **tiene días
+8066:   firmados y no tiene cortesía corriendo** — el estado que `DEC-GRANT-007` creó al diferir el saldo
+8067:   en `courtesy_grant.saldo_días`.
+8068: - **Decisión**: se muestra el saldo **con la condición que lo activa** — *«te quedan N días, que
+8069:   empiezan a correr cuando completes el pago»*. Es una fila de copy en `B/19` §3, y ata esa
+8070:   superficie al `saldo_días` de `courtesy_grant`.
+8071: - **Por qué, y es la razón que `DEC-GRANT-011` vuelve más filosa**: con el saldo **cerrándose** al
+8072:   vencer la ventana de autorización, la ventana en que la persona no ve nada es exactamente la
+8073:   ventana en que puede perder los días. **Ésta es la única de las tres opciones que le da la
+8074:   información con la que evitar esa pérdida**, y decirlo es además lo que empuja a completar el
+8075:   pago.
+8076: - **Las dos alternativas, y la tercera se descarta de plano**:
+8077:   - **No mostrar nada** hasta que la cortesía vuelva a correr: cuesta cero y **le esconde al
+8078:     cliente días que son suyos**, justo cuando puede abandonar y perderlos. Es el mismo hueco que
+8079:     `DEC-GRANT-011` por la otra puerta.
+8080:   - **Mostrar el saldo a secas** —*«te quedan N días»*, sin la condición—: cuesta lo mismo que la
+8081:     elegida y es **estrictamente peor**. Es la clase de promesa que `NUCLEO/07` §5.3 manda
+8082:     anticipar, y es el patrón que el programa ya tiene medido en la copy del proveedor —*«Pagaste
+8083:     la suscripción»* sobre un cobro que nunca ocurrió (`EX-3`)—, que es lo que motivó la regla de
+8084:     que ninguna decisión de soporte se apoye en ella. **Prometer días y después quitarlos es
+8085:     exactamente lo que no se hace.**
+8086: - **Lo que NO cierra**: el texto exacto de la copy, que es trabajo de producto y se escribe en
+8087:   `B/19` §3; y **qué se le dice cuando el saldo efectivamente se cierra** por `DEC-GRANT-011` — el
+8088:   aviso de ese cierre no está escrito en ningún capítulo, y la tanda que implemente las dos
+8089:   decisiones tiene que resolverlo junto.
+8090: - **Origen**: la FASE 8-bis-5, `22-fase-8-bis-5/01-censo-de-preguntas-abiertas.md` §`E3`
+8091:   —levantado de `rastro-f21d5d828.md` §6 punto 3—, y la elección del owner del 2026-09-23 entre las
+8092:   tres opciones que se le presentaron — eligió la 1, que era la recomendada.
+8093: 
+FUENTE
+4972: ### DEC-GRANT-012 — La cortesía diferida se le muestra al cliente CON su condición, no a secas y no escondida
+4973: 
+4974: - **Fecha**: 2026-09-23 · **Estado**: ACCEPTED · **Decide**: owner
+4975: - **El caso**: `B/19` §3 **obliga** a mostrar las cortesías en «Mi Suscripción». Entre el cierre de
+4976:   la sucesión (`S18`) y la autorización de la sucesora (`S2` → `S9`), la persona **tiene días
+4977:   firmados y no tiene cortesía corriendo** — el estado que `DEC-GRANT-007` creó al diferir el saldo
+4978:   en `courtesy_grant.saldo_días`.
+4979: - **Decisión**: se muestra el saldo **con la condición que lo activa** — *«te quedan N días, que
+4980:   empiezan a correr cuando completes el pago»*. Es una fila de copy en `B/19` §3, y ata esa
+4981:   superficie al `saldo_días` de `courtesy_grant`.
+4982: - **Por qué, y es la razón que `DEC-GRANT-011` vuelve más filosa**: con el saldo **cerrándose** al
+4983:   vencer la ventana de autorización, la ventana en que la persona no ve nada es exactamente la
+4984:   ventana en que puede perder los días. **Ésta es la única de las tres opciones que le da la
+4985:   información con la que evitar esa pérdida**, y decirlo es además lo que empuja a completar el
+4986:   pago.
+4987: - **Las dos alternativas, y la tercera se descarta de plano**:
+4988:   - **No mostrar nada** hasta que la cortesía vuelva a correr: cuesta cero y **le esconde al
+4989:     cliente días que son suyos**, justo cuando puede abandonar y perderlos. Es el mismo hueco que
+4990:     `DEC-GRANT-011` por la otra puerta.
+4991:   - **Mostrar el saldo a secas** —*«te quedan N días»*, sin la condición—: cuesta lo mismo que la
+4992:     elegida y es **estrictamente peor**. Es la clase de promesa que `NUCLEO/07` §5.3 manda
+4993:     anticipar, y es el patrón que el programa ya tiene medido en la copy del proveedor —*«Pagaste
+4994:     la suscripción»* sobre un cobro que nunca ocurrió (`EX-3`)—, que es lo que motivó la regla de
+4995:     que ninguna decisión de soporte se apoye en ella. **Prometer días y después quitarlos es
+4996:     exactamente lo que no se hace.**
+4997: - **Lo que NO cierra**: el texto exacto de la copy, que es trabajo de producto y se escribe en
+4998:   `B/19` §3; y **qué se le dice cuando el saldo efectivamente se cierra** por `DEC-GRANT-011` — el
+4999:   aviso de ese cierre no está escrito en ningún capítulo, y la tanda que implemente las dos
+5000:   decisiones tiene que resolverlo junto.
+5001: - **Origen**: la FASE 8-bis-5, `22-fase-8-bis-5/01-censo-de-preguntas-abiertas.md` §`E3`
+5002:   —levantado de `rastro-f21d5d828.md` §6 punto 3—, y la elección del owner del 2026-09-23 entre las
+5003:   tres opciones que se le presentaron — eligió la 1, que era la recomendada.
+5004: 
+5005: ---
+5006: 
+
+### dec-legal-001-p1 · spec 8214–8229 · fuente .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:990–992
+ESPECIFICACIÓN
+8214: <a id="dec-legal-001-p1"></a>
+8215: 
+8216: #### 📌1 de DEC-LEGAL-001
+8217: 
+8218: Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:990
+8219: 
+8220: Dueña del AC: [B11](10-corte/B11.md#pieza-b11).
+8221: También: [B5](10-corte/B5.md#pieza-b5) (provee).
+8222: Tests mínimos: ≥1 de cualquier tipo de la lista cerrada.
+8223: 
+8224: 📌 **2026-09-27 (FASE 9 vuelta 2, `R25`, con OK del owner)**: el cobro que se asienta sobre
+8225: una lápida —la del corte o la de recepción— también emite su comprobante, que queda en su
+8226: fila sin enviarse, porque la lápida no tiene destinatario.
+8227: 
+8228: ## Área TEST
+8229: 
+FUENTE
+990: - 📌 **2026-09-27 (FASE 9 vuelta 2, `R25`, con OK del owner)**: el cobro que se asienta sobre
+991:   una lápida —la del corte o la de recepción— también emite su comprobante, que queda en su
+992:   fila sin enviarse, porque la lápida no tiene destinatario.
+
+### dec-test-002 · spec 8488–8519 · fuente .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:5351–5384
+ESPECIFICACIÓN
+8488: <a id="dec-test-002"></a>
+8489: 
+8490: ### DEC-TEST-002 — Un escritor DECLARADO y no implementado bloquea la terminación de su unidad, y no lo vigila un guard
+8491: 
+8492: Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:5351
+8493: 
+8494: Dueña del AC: [CORTE](30-el-corte.md).
+8495: Tests mínimos: ≥1 de cualquier tipo de la lista cerrada.
+8496: 
+8497: - **Fecha**: 2026-09-23 · **Estado**: ACCEPTED — **precisada el 2026-09-30, con OK del owner** (FASES 6 y 7, lote de la aplicación, M: una segunda condición de terminación, sobre las filas `UNKNOWN`, por `DEC-ARCH-016`; ver su 📌) · **Decide**: owner
+8498: - **De dónde sale**: la familia 1 de la 9-bis-5 arregló que `G-R6` naciera en rojo sobre el camino
+8499:   normal (`I1`), fijando su dominio en **las tablas que los capítulos declaran** en vez del
+8500:   subconjunto construido. **La contrapartida quedó declarada y es real**: un escritor que el capítulo
+8501:   declara pero que nadie implementa **pasa en verde**, y esa clase no la vigila nada.
+8502: - **Decisión**: **es un criterio de terminación, no un guard.** Ninguna unidad se declara lista si
+8503:   deja un escritor declarado sin implementar.
+8504: - **Por qué, y son dos razones**:
+8505:   1. **Actúa en el momento correcto** — cuando se declara lista la unidad, no cuando alguien lee un
+8506:      dato vacío en producción.
+8507:   2. **No inventa mecanismo**: la familia 5 acaba de convertir *«asignar un guard»* en *«exigirlo
+8508:      para terminar»* (los 29 guards pasaron a ser exigibles en los dos §4), y esto es **la misma
+8509:      forma aplicada a los escritores**.
+8510: - **Las dos alternativas, y por qué no**:
+8511:   - **Un guard nuevo** que compare escritores declarados contra implementados: **sólo puede correr
+8512:     cuando exista el código**, o sea FASE 10 en adelante, y hasta entonces no vigila nada.
+8513:   - **Aceptar la contrapartida** sin hacer nada: una columna con escritor declarado y sin
+8514:     implementar **no la detecta nadie** hasta que alguien lea el dato vacío.
+8515: - **Origen**: la familia 1 de la FASE 9-bis-5, que dejó la contrapartida declarada y la mandó a
+8516:   `DEC-TEST-001`, y la elección del owner del 2026-09-23 entre las tres opciones que se le
+8517:   presentaron — eligió la 3, que era la recomendada.
+8518: - → ver [📌1](#dec-test-002-p1).
+8519: 
+FUENTE
+5351: ### DEC-TEST-002 — Un escritor DECLARADO y no implementado bloquea la terminación de su unidad, y no lo vigila un guard
+5352: 
+5353: - **Fecha**: 2026-09-23 · **Estado**: ACCEPTED — **precisada el 2026-09-30, con OK del owner** (FASES 6 y 7, lote de la aplicación, M: una segunda condición de terminación, sobre las filas `UNKNOWN`, por `DEC-ARCH-016`; ver su 📌) · **Decide**: owner
+5354: - **De dónde sale**: la familia 1 de la 9-bis-5 arregló que `G-R6` naciera en rojo sobre el camino
+5355:   normal (`I1`), fijando su dominio en **las tablas que los capítulos declaran** en vez del
+5356:   subconjunto construido. **La contrapartida quedó declarada y es real**: un escritor que el capítulo
+5357:   declara pero que nadie implementa **pasa en verde**, y esa clase no la vigila nada.
+5358: - **Decisión**: **es un criterio de terminación, no un guard.** Ninguna unidad se declara lista si
+5359:   deja un escritor declarado sin implementar.
+5360: - **Por qué, y son dos razones**:
+5361:   1. **Actúa en el momento correcto** — cuando se declara lista la unidad, no cuando alguien lee un
+5362:      dato vacío en producción.
+5363:   2. **No inventa mecanismo**: la familia 5 acaba de convertir *«asignar un guard»* en *«exigirlo
+5364:      para terminar»* (los 29 guards pasaron a ser exigibles en los dos §4), y esto es **la misma
+5365:      forma aplicada a los escritores**.
+5366: - **Las dos alternativas, y por qué no**:
+5367:   - **Un guard nuevo** que compare escritores declarados contra implementados: **sólo puede correr
+5368:     cuando exista el código**, o sea FASE 10 en adelante, y hasta entonces no vigila nada.
+5369:   - **Aceptar la contrapartida** sin hacer nada: una columna con escritor declarado y sin
+5370:     implementar **no la detecta nadie** hasta que alguien lea el dato vacío.
+5371: - **Origen**: la familia 1 de la FASE 9-bis-5, que dejó la contrapartida declarada y la mandó a
+5372:   `DEC-TEST-001`, y la elección del owner del 2026-09-23 entre las tres opciones que se le
+5373:   presentaron — eligió la 3, que era la recomendada.
+5374: - 📌 **Precisada el 2026-09-30, con OK del owner (FASES 6 y 7, lote de la aplicación, M;
+5375:   `39-fases-6-y-7/10-decisiones-del-owner.md`)**: la terminación de una unidad tiene, además del
+5376:   escritor declarado, **una condición sobre las filas `UNKNOWN` de la matriz en que se apoya**
+5377:   (`DEC-ARCH-016`, letra D): la unidad termina si cada una tiene sus dos ramas escritas y una
+5378:   prueba por rama contra el proveedor falso; la batería semanal la sigue midiendo y, cuando la fila
+5379:   cierra, la rama que no vale se borra. Es de la misma forma que ésta: un criterio de terminación,
+5380:   no un guard. Dónde: `16-fase-7-del-paraguas.md` §4.7, momento 1; las dos descomposiciones, §4;
+5381:   `B/descomposicion.md` §2.7. Origen: (FASES 6 y 7, lote de la aplicación, owner 2026-09-30, M).
+5382: 
+5383: ---
+5384: 
+
+### dec-conc-002-p4 · spec 8919–8934 · fuente .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:1673–1707
+ESPECIFICACIÓN
+8919: <a id="dec-conc-002-p4"></a>
+8920: 
+8921: #### 📌4 de DEC-CONC-002
+8922: 
+8923: Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:1673
+8924: 
+8925: Dueña del AC: [B11](10-corte/B11.md#pieza-b11).
+8926: Tests mínimos: ≥1 de cualquier tipo de la lista cerrada.
+8927: 
+8928: **📌 Precisado el 2026-09-30, con OK del owner (FASE 5, simplificación del corte, lote C y
+8929: lote E; `38-fase-5/20-simplificacion-del-corte.md` §11, S-40 y S-46).** La salvedad 4 cuenta
+8930: **una sola lápida, la de recepción**: la lápida del corte sale del diseño. Un cobro tardío de
+8931: un débito viejo entra por la lápida de recepción como cualquier desconocido: se anota, se
+8932: cancela su preapproval y abre `PAGO_TARDÍO_RECHAZADO` con la propuesta de devolver, que decide
+8933: el owner. La regla de re-vinculación por `external_reference` del segundo 📌 no cambia (S-49).
+8934: 
+FUENTE
+1673:      **📌 Precisado el 2026-09-30, con OK del owner (FASE 5, simplificación del corte, lote C y
+1674:      lote E; `38-fase-5/20-simplificacion-del-corte.md` §11, S-40 y S-46).** La salvedad 4 cuenta
+1675:      **una sola lápida, la de recepción**: la lápida del corte sale del diseño. Un cobro tardío de
+1676:      un débito viejo entra por la lápida de recepción como cualquier desconocido: se anota, se
+1677:      cancela su preapproval y abre `PAGO_TARDÍO_RECHAZADO` con la propuesta de devolver, que decide
+1678:      el owner. La regla de re-vinculación por `external_reference` del segundo 📌 no cambia (S-49).
+1679:      **📌 Precisado otra vez el 2026-09-30, con OK del owner (FASE 5, lote de la aplicación, letra I;
+1680:      `38-fase-5/10-decisiones-del-owner.md`, «Lote de la aplicación», y `38-fase-5/21-cruces.md` §5 I).** La lápida de recepción se reconoce por `clase = LÁPIDA`, y alcanza:
+1681:      **sale la columna `origen_de_lápida` y su restricción**, que con la lápida del corte afuera
+1682:      sólo podía valer `RECEPCIÓN` y no distinguía nada. Si algún día vuelve otra lápida, una
+1683:      migración la agrega (FASE 5, lote de la aplicación, owner 2026-09-30, I).
+1684: - **Motivo**:
+1685:   - La parte 1 **no es una elección**: está medida. Cualquier diseño que liste desde el proveedor
+1686:     va a procesar una fracción de la cartera y a terminar en verde.
+1687:   - La parte 2 resuelve el punto ciego que deja la 1: si sólo miramos los ids que ya tenemos, una
+1688:     suscripción que nunca registramos no aparecería jamás. **Y el detector ya existe y funciona
+1689:     hoy en producción**: el `SubscriptionNotResolvedError` que encontramos de paso es exactamente
+1690:     eso — el sistema detecta la huérfana bien, y lo que está mal es lo que hace después (responde
+1691:     `500` y la encola cinco veces). Lo que falta no es el detector, es el tratamiento.
+1692:   - La parte 4 aplica la misma frontera que `DEC-CONC-001`, y el owner la eligió por segunda vez:
+1693:     **la línea no es «automático contra manual», es «toca plata o no toca plata»**.
+1694: - **Implicaciones**:
+1695:   1. **Guardar el id de cada suscripción deja de ser una comodidad y pasa a ser la condición de
+1696:      que la conciliación exista.** Si se pierde un id, esa suscripción se vuelve invisible para el
+1697:      barrido — y sólo reaparece si cobra y emite webhook.
+1698:   2. **El `SubscriptionNotResolvedError` vivo en producción pasa de bug a caso de uso.** Cuando se
+1699:      arregle, no debe silenciarse: debe convertirse en el disparador de la re-vinculación.
+1700:   3. **La conciliación no puede apoyarse en `/authorized_payments` para concluir que algo no
+1701:      cobró**: llega tarde, y la ausencia de cobros tiene tres causas distintas — no cobró nunca,
+1702:      lag, o el id es de otra cuenta.
+1703:   4. **Más allá de doce meses, la única fuente somos nosotros.** El buscador de pagos no llega, así
+1704:      que el histórico tiene que ser nuestro o no existe.
+1705:   5. `RECONCILIATION_REQUIRED` ya notifica a `SUPER_ADMIN` por regla del PDR; esta decisión define
+1706:      **cuándo se emite**: en toda divergencia que toque plata o estado.
+1707: - **Origen**: punto 7 del contraste PDR ↔ proveedor · §23 · §22.1.
+
+### dec-rf-005 · spec 9388–9417 · fuente .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:5294–5318
+ESPECIFICACIÓN
+9388: <a id="dec-rf-005"></a>
+9389: 
+9390: ### DEC-RF-005 — El listado ENLAZA al evento que dice cuál condición falló, y no lo copia en la marca
+9391: 
+9392: Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:5294
+9393: 
+9394: Dueña del AC: [B13a](10-corte/B13a.md#pieza-b13a).
+9395: Tests mínimos: ≥1 de cualquier tipo de la lista cerrada.
+9396: 
+9397: - **Fecha**: 2026-09-23 · **Estado**: ACCEPTED · **Decide**: owner
+9398: - **El caso**: el motivo 7 (`PAGO_TARDÍO_RECHAZADO`) quedó en `DEVOLVER` con **cuatro condiciones**
+9399:   que pueden fallar, y una de ellas —un precio nuevo no propagado— no es culpa del cliente del mismo
+9400:   modo que las otras. Hoy **cuál de las cuatro falló se libra a que la persona lea el evento
+9401:   crítico**.
+9402: - **La regla que el corpus ya tiene escrita, y que verifiqué**: `B/05` §3 dice textual ***«Cuál de
+9403:   las cuatro condiciones falló va en el evento y no en el motivo»***.
+9404: - **Decisión**: **el listado ENLAZA al evento**. La persona ve el motivo y un vínculo a la condición
+9405:   que falló. **La marca no guarda ese dato.**
+9406: - **Por qué**: resuelve el problema real —que quien resuelve tiene que ir a buscarlo— **sin
+9407:   contradecir `B/05` §3 y sin duplicar** información que ya existe en otro lado. Es superficie, no
+9408:   modelo: una fila de `B/19`, cero columnas nuevas.
+9409: - **Las dos alternativas, y por qué no**:
+9410:   - **Que la marca guarde cuál condición falló** y el listado proponga distinto por condición:
+9411:     **contradice una regla escrita del corpus**, que habría que enmendar explícitamente, y duplica
+9412:     un dato con dos fuentes que pueden divergir.
+9413:   - **Dejarlo como está**, con la persona leyendo el evento por su cuenta: es correcto y es lo que
+9414:     hay, pero deja el trabajo de encontrarlo del lado de quien resuelve, todas las veces.
+9415: - **Origen**: la familia 3 de la FASE 9-bis-5, y la elección del owner del 2026-09-23 entre las tres
+9416:   opciones que se le presentaron — eligió la 3, que era la recomendada.
+9417: 
+FUENTE
+5294: ### DEC-RF-005 — El listado ENLAZA al evento que dice cuál condición falló, y no lo copia en la marca
+5295: 
+5296: - **Fecha**: 2026-09-23 · **Estado**: ACCEPTED · **Decide**: owner
+5297: - **El caso**: el motivo 7 (`PAGO_TARDÍO_RECHAZADO`) quedó en `DEVOLVER` con **cuatro condiciones**
+5298:   que pueden fallar, y una de ellas —un precio nuevo no propagado— no es culpa del cliente del mismo
+5299:   modo que las otras. Hoy **cuál de las cuatro falló se libra a que la persona lea el evento
+5300:   crítico**.
+5301: - **La regla que el corpus ya tiene escrita, y que verifiqué**: `B/05` §3 dice textual ***«Cuál de
+5302:   las cuatro condiciones falló va en el evento y no en el motivo»***.
+5303: - **Decisión**: **el listado ENLAZA al evento**. La persona ve el motivo y un vínculo a la condición
+5304:   que falló. **La marca no guarda ese dato.**
+5305: - **Por qué**: resuelve el problema real —que quien resuelve tiene que ir a buscarlo— **sin
+5306:   contradecir `B/05` §3 y sin duplicar** información que ya existe en otro lado. Es superficie, no
+5307:   modelo: una fila de `B/19`, cero columnas nuevas.
+5308: - **Las dos alternativas, y por qué no**:
+5309:   - **Que la marca guarde cuál condición falló** y el listado proponga distinto por condición:
+5310:     **contradice una regla escrita del corpus**, que habría que enmendar explícitamente, y duplica
+5311:     un dato con dos fuentes que pueden divergir.
+5312:   - **Dejarlo como está**, con la persona leyendo el evento por su cuenta: es correcto y es lo que
+5313:     hay, pero deja el trabajo de encontrarlo del lado de quien resuelve, todas las veces.
+5314: - **Origen**: la familia 3 de la FASE 9-bis-5, y la elección del owner del 2026-09-23 entre las tres
+5315:   opciones que se le presentaron — eligió la 3, que era la recomendada.
+5316: 
+5317: ---
+5318: 
+
+### dec-obs-001-p2 · spec 9812–9824 · fuente .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:2282–2283
+ESPECIFICACIÓN
+9812: <a id="dec-obs-001-p2"></a>
+9813: 
+9814: #### 📌2 de DEC-OBS-001
+9815: 
+9816: Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:2282
+9817: 
+9818: Cobertura: **sólo citable**, en la lista cerrada de `03-contrato-de-cobertura.md` (letra [BB](#own-41-corte-del-mvp-t7-bb): `DEC-OBS-001#📌2`); no lleva AC.
+9819: 
+9820: 📌 **Precisada el 2026-09-28, con OK del owner (revisión del owner, C8)**: Su resumen ya no lleva
+9821: la acción 16 (`V2-s`).
+9822: 
+9823: ## Área CI
+9824: 
+FUENTE
+2282: - 📌 **Precisada el 2026-09-28, con OK del owner (revisión del owner, C8)**: Su resumen ya no lleva
+2283:   la acción 16 (`V2-s`).
+
+### dec-ci-002 · spec 9931–9954 · fuente .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:2867–2884
+ESPECIFICACIÓN
+9931: <a id="dec-ci-002"></a>
+9932: 
+9933: ### DEC-CI-002 — `develop` no se toca: es una condición adelantada, no un filtro muerto
+9934: 
+9935: Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:2867
+9936: 
+9937: Cobertura: **sólo citable**, en la lista cerrada de `03-contrato-de-cobertura.md` (letra [BA](#own-41-corte-del-mvp-t7-ba): `DEC-CI-002`); no lleva AC.
+9938: 
+9939: - **Fecha**: 2026-09-19 · **Estado**: ACCEPTED · **Decide**: owner
+9940: - **Problema**: midiendo R6 se encontró que `validate-docs.yml` filtra por `[main, develop]` y que
+9941:   **`develop` no existe en el remoto** (`git ls-remote --heads origin develop` → cero, 2026-09-19).
+9942:   Se propuso limpiarlo como filtro muerto.
+9943: - **Decisión**: **no se toca**, y **la razón vuelve falso el diagnóstico**: no es descuido, es una
+9944:   condición **adelantada** a una rama que el owner sí quiere tener. Le hizo falta hace semanas,
+9945:   para trabajo que todavía no debía llegar a `staging`.
+9946: - **Por qué no ahora y no acá**: crearla de verdad obliga a tocar **workflows, reglas de rama e
+9947:   instrucciones de los agentes** — es trabajo propio, no un renglón. Lo toma otra persona, en otro
+9948:   momento.
+9949: - **Implicación**: queda **anotado como pendiente de diseño**, no como limpieza. Quien agregue
+9950:   `epic/**` a `validate-docs.yml` (`C-7`) **no debe aprovechar para sacar `develop`**.
+9951: - **Origen**: conversación con el owner del 2026-09-19.
+9952: 
+9953: ## Área METH
+9954: 
+FUENTE
+2867: ### DEC-CI-002 — `develop` no se toca: es una condición adelantada, no un filtro muerto
+2868: 
+2869: - **Fecha**: 2026-09-19 · **Estado**: ACCEPTED · **Decide**: owner
+2870: - **Problema**: midiendo R6 se encontró que `validate-docs.yml` filtra por `[main, develop]` y que
+2871:   **`develop` no existe en el remoto** (`git ls-remote --heads origin develop` → cero, 2026-09-19).
+2872:   Se propuso limpiarlo como filtro muerto.
+2873: - **Decisión**: **no se toca**, y **la razón vuelve falso el diagnóstico**: no es descuido, es una
+2874:   condición **adelantada** a una rama que el owner sí quiere tener. Le hizo falta hace semanas,
+2875:   para trabajo que todavía no debía llegar a `staging`.
+2876: - **Por qué no ahora y no acá**: crearla de verdad obliga a tocar **workflows, reglas de rama e
+2877:   instrucciones de los agentes** — es trabajo propio, no un renglón. Lo toma otra persona, en otro
+2878:   momento.
+2879: - **Implicación**: queda **anotado como pendiente de diseño**, no como limpieza. Quien agregue
+2880:   `epic/**` a `validate-docs.yml` (`C-7`) **no debe aprovechar para sacar `develop`**.
+2881: - **Origen**: conversación con el owner del 2026-09-19.
+2882: 
+2883: ---
+2884: 
+
+### dec-meth-019-p5 · spec 11056–11081 · fuente .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:8214–8222
+ESPECIFICACIÓN
+11056: <a id="dec-meth-019-p5"></a>
+11057: 
+11058: #### 📌5 de DEC-METH-019
+11059: 
+11060: Origen: .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:8214
+11061: 
+11062: Cobertura: decisión de metodología, **sólo citable** (owner AX, ver el primer 📌 de [DEC-METH-019](#dec-meth-019)); no lleva AC.
+11063: 
+11064: 📌 **Precisada otra vez el 2026-10-02, con OK del owner (corte del MVP, BS, la 1: los defaults de
+11065: la opción elegida, que el 📌 anterior no recogía)**: la opción 1 de BS, tal como se le presentó al
+11066: owner en el lote BK a BV, incluía estos defaults, y valen: **el monto del pago chico del 4b lo
+11067: aprueba el owner antes del ensayo**, como el del 5c; **las credenciales van en variables de
+11068: entorno de la sesión de quien opera, nunca versionadas**; **cada pieza posterior escribe la sección
+11069: de su fase en el checklist de smoke, con el formato de `B13a`**; **las listas que viven en el
+11070: código las saca el PR del código o del registro y las lista en su descripción**; y **los labels de
+11071: Linear son `kind-spec` más las `area-*` de cada fila**. Dónde: `16-fase-7-del-paraguas.md` §4.7,
+11072: momento 1; `41-corte-del-mvp/10-decisiones-del-owner.md`, BS.
+11073: 
+11074: ## Registro de las letras del owner
+11075: 
+11076: Cada fila de las tablas `10-decisiones-del-owner.md` de las rondas de diseño, sin lo tachado. Son **sólo citables** (owner AX: «la matriz, las letras del owner y la lista de piezas son sólo citables»); la decisión que cada letra produjo vive en su DEC o su 📌 de arriba. Las letras que una fuente posterior dejó sin efecto llevan su marca ⚠️ **Caducada**; lo que produjeron, si murió, está en [`90-retirados.md`](90-retirados.md).
+11077: 
+11078: ### FASE 9 completa — decisiones del owner
+11079: 
+11080: Fuente: `26-fase-9-completa/10-decisiones-del-owner.md`.
+11081: 
+FUENTE
+8214: - 📌 **Precisada otra vez el 2026-10-02, con OK del owner (corte del MVP, BS, la 1: los defaults de
+8215:   la opción elegida, que el 📌 anterior no recogía)**: la opción 1 de BS, tal como se le presentó al
+8216:   owner en el lote BK a BV, incluía estos defaults, y valen: **el monto del pago chico del 4b lo
+8217:   aprueba el owner antes del ensayo**, como el del 5c; **las credenciales van en variables de
+8218:   entorno de la sesión de quien opera, nunca versionadas**; **cada pieza posterior escribe la sección
+8219:   de su fase en el checklist de smoke, con el formato de `B13a`**; **las listas que viven en el
+8220:   código las saca el PR del código o del registro y las lista en su descripción**; y **los labels de
+8221:   Linear son `kind-spec` más las `area-*` de cada fila**. Dónde: `16-fase-7-del-paraguas.md` §4.7,
+8222:   momento 1; `41-corte-del-mvp/10-decisiones-del-owner.md`, BS.
+
+### own-26-fase-9-completa-t1-1 · spec 11082–11090 · fuente .specs/HOS-1352-billing-verticals-redesign/docs/26-fase-9-completa/10-decisiones-del-owner.md:19–19
+ESPECIFICACIÓN
+11082: <a id="own-26-fase-9-completa-t1-1"></a>
+11083: **# 1**
+11084: 
+11085: Origen: .specs/HOS-1352-billing-verticals-redesign/docs/26-fase-9-completa/10-decisiones-del-owner.md:19
+11086: 
+11087: - **punto**: el correo *«antes de cancelar»* que agota sus reintentos (`failed`) traba `S17` y `S6` para siempre
+11088: - **origen**: [`04`](../docs/26-fase-9-completa/04-R5-R7-correo-y-conciliacion.md) §R5.5.1
+11089: - **decisión**: **opción 1**: un correo obligatorio en `failed` no bloquea; se cancela igual y se escala como no-entregable, igual que sin destinatario. Precisa `DEC-MAIL-001`
+11090: 
+FUENTE
+19: | 1 | el correo *«antes de cancelar»* que agota sus reintentos (`failed`) traba `S17` y `S6` para siempre | [`04`](./04-R5-R7-correo-y-conciliacion.md) §R5.5.1 | **opción 1**: un correo obligatorio en `failed` no bloquea; se cancela igual y se escala como no-entregable, igual que sin destinatario. Precisa `DEC-MAIL-001` |
+
+### own-26-fase-9-completa-t1-8d · spec 11346–11354 · fuente .specs/HOS-1352-billing-verticals-redesign/docs/26-fase-9-completa/10-decisiones-del-owner.md:48–48
+ESPECIFICACIÓN
+11346: <a id="own-26-fase-9-completa-t1-8d"></a>
+11347: **# 8d**
+11348: 
+11349: Origen: .specs/HOS-1352-billing-verticals-redesign/docs/26-fase-9-completa/10-decisiones-del-owner.md:48
+11350: 
+11351: - **punto**: el suspendido no puede leer lo suyo (`F-8CA1-013`)
+11352: - **origen**: `09` `AO-4`
+11353: - **decisión**: **opción 1**: las lecturas de lo propio (Mi Cuenta, su billing, sus fichas) no consultan el paso 6
+11354: 
+FUENTE
+48: | 8d | el suspendido no puede leer lo suyo (`F-8CA1-013`) | `09` `AO-4` | **opción 1**: las lecturas de lo propio (Mi Cuenta, su billing, sus fichas) no consultan el paso 6 |
+
+### own-28-fase-9-vuelta-1-t1-g4-3 · spec 11613–11621 · fuente .specs/HOS-1352-billing-verticals-redesign/docs/28-fase-9-vuelta-1/10-decisiones-del-owner.md:32–32
+ESPECIFICACIÓN
+11613: <a id="own-28-fase-9-vuelta-1-t1-g4-3"></a>
+11614: **pregunta `G4-3`**
+11615: 
+11616: Origen: .specs/HOS-1352-billing-verticals-redesign/docs/28-fase-9-vuelta-1/10-decisiones-del-owner.md:32
+11617: 
+11618: - **qué pregunta**: cuánto vale la red de tiempo del caché de entitlements
+11619: - **elige**: **1** — 15 minutos
+11620: - **¿la recomendada?**: sí
+11621: 
+FUENTE
+32: | `G4-3` | cuánto vale la red de tiempo del caché de entitlements | **1** — 15 minutos | sí |
+
+### own-29-fase-8-vuelta-2-t1-r9 · spec 11876–11884 · fuente .specs/HOS-1352-billing-verticals-redesign/docs/29-fase-8-vuelta-2/10-decisiones-del-owner.md:26–26
+ESPECIFICACIÓN
+11876: <a id="own-29-fase-8-vuelta-2-t1-r9"></a>
+11877: **pregunta `R9`**
+11878: 
+11879: Origen: .specs/HOS-1352-billing-verticals-redesign/docs/29-fase-8-vuelta-2/10-decisiones-del-owner.md:26
+11880: 
+11881: - **qué pregunta**: qué pasa en `PURGED` con lo que cuelga de la ficha además de reseñas y calendario
+11882: - **elige**: **1** — `G1-5` generalizado por dueño del dato: lo del tercero se conserva (la conversación queda en sólo lectura con «esta ficha ya no existe», la FK admite ficha ausente); la alerta de precio se cierra con aviso al turista; lo del dueño que sólo sirve a la ficha (promociones, listados externos, ocupación, datos de IA) se borra con el contenido; lista cerrada en el capítulo
+11883: - **¿la recomendada?**: sí
+11884: 
+FUENTE
+26: | `R9` | qué pasa en `PURGED` con lo que cuelga de la ficha además de reseñas y calendario | **1** — `G1-5` generalizado por dueño del dato: lo del tercero se conserva (la conversación queda en sólo lectura con «esta ficha ya no existe», la FK admite ficha ausente); la alerta de precio se cierra con aviso al turista; lo del dueño que sólo sirve a la ficha (promociones, listados externos, ocupación, datos de IA) se borra con el contenido; lista cerrada en el capítulo | sí |
+
+### own-30-revision-del-owner-t1-c12 · spec 12149–12156 · fuente .specs/HOS-1352-billing-verticals-redesign/docs/30-revision-del-owner/10-decisiones-del-owner.md:36–36
+ESPECIFICACIÓN
+12149: <a id="own-30-revision-del-owner-t1-c12"></a>
+12150: **punto C12**
+12151: 
+12152: Origen: .specs/HOS-1352-billing-verticals-redesign/docs/30-revision-del-owner/10-decisiones-del-owner.md:36
+12153: 
+12154: - **qué pregunta o pide**: avisos del corte
+12155: - **decide**: **El sistema no avisa nada del corte**: el owner les avisa en persona. Hay que **recordárselo** cuando se acerque el corte
+12156: 
+FUENTE
+36: | C12 | avisos del corte | **El sistema no avisa nada del corte**: el owner les avisa en persona. Hay que **recordárselo** cuando se acerque el corte |
+
+### own-30-revision-del-owner-t5-l3-f · spec 12417–12425 · fuente .specs/HOS-1352-billing-verticals-redesign/docs/30-revision-del-owner/10-decisiones-del-owner.md:87–87
+ESPECIFICACIÓN
+12417: <a id="own-30-revision-del-owner-t5-l3-f"></a>
+12418: **punto L3-f**
+12419: 
+12420: Origen: .specs/HOS-1352-billing-verticals-redesign/docs/30-revision-del-owner/10-decisiones-del-owner.md:87
+12421: 
+12422: - **qué pregunta**: volver a consultar a Mercado Pago siempre
+12423: - **elige**: **1**: un control que falla si una decisión sale de un aviso sin releer, extendido a las acciones administrativas
+12424: - **¿la recomendada?**: sí
+12425: 
+FUENTE
+87: | L3-f | volver a consultar a Mercado Pago siempre | **1**: un control que falla si una decisión sale de un aviso sin releer, extendido a las acciones administrativas | sí |
+
+### own-37-fase-8-vuelta-3-t1-ab · spec 12714–12723 · fuente .specs/HOS-1352-billing-verticals-redesign/docs/37-fase-8-vuelta-3/10-decisiones-del-owner.md:49–49
+ESPECIFICACIÓN
+12714: <a id="own-37-fase-8-vuelta-3-t1-ab"></a>
+12715: **lote AB**
+12716: 
+12717: Origen: .specs/HOS-1352-billing-verticals-redesign/docs/37-fase-8-vuelta-3/10-decisiones-del-owner.md:49
+12718: 
+12719: - **racimo**: log y matriz
+12720: - **qué pregunta**: si se aplican las nueve propuestas al log (siete 📌 y `DEC-AUTH-004`/`-005` nuevas) y las tres filas nuevas de la matriz (`EX-57` a `EX-59`) de `14-aplicacion-cierre.md` § «Para el owner», con Q sumado a `DEC-ARCH-006`, Y a `DEC-CONC-001` y los valores de R a `DEC-DATA-008`
+12721: - **elige**: **1**: sí, todo como está
+12722: - **¿la recomendada?**: sí
+12723: 
+FUENTE
+49: | AB | log y matriz | si se aplican las nueve propuestas al log (siete 📌 y `DEC-AUTH-004`/`-005` nuevas) y las tres filas nuevas de la matriz (`EX-57` a `EX-59`) de `14-aplicacion-cierre.md` § «Para el owner», con Q sumado a `DEC-ARCH-006`, Y a `DEC-CONC-001` y los valores de R a `DEC-DATA-008` | **1**: sí, todo como está | sí |
+
+### own-38-fase-5-t3-b · spec 13014–13023 · fuente .specs/HOS-1352-billing-verticals-redesign/docs/38-fase-5/10-decisiones-del-owner.md:76–76
+ESPECIFICACIÓN
+13014: <a id="own-38-fase-5-t3-b"></a>
+13015: **letra B**
+13016: 
+13017: Origen: .specs/HOS-1352-billing-verticals-redesign/docs/38-fase-5/10-decisiones-del-owner.md:76
+13018: 
+13019: - **racimo**: `R5-16`
+13020: - **elegida**: 1
+13021: - **contra la recomendación**: no
+13022: - **qué decide**: `V6` retira los lectores de las tres columnas que sobreviven en el mismo cambio que la migración que las borra, reemplazados por el estado nuevo; se corrige el texto *«sólo las usa el cobro viejo»* (`16-` §4.6, `V/21`)
+13023: 
+FUENTE
+76: | B | `R5-16` | 1 | no | `V6` retira los lectores de las tres columnas que sobreviven en el mismo cambio que la migración que las borra, reemplazados por el estado nuevo; se corrige el texto *«sólo las usa el cobro viejo»* (`16-` §4.6, `V/21`) |
+
+### own-38-fase-5-t7-m · spec 13298–13306 · fuente .specs/HOS-1352-billing-verticals-redesign/docs/38-fase-5/10-decisiones-del-owner.md:152–152
+ESPECIFICACIÓN
+13298: <a id="own-38-fase-5-t7-m"></a>
+13299: **letra M**
+13300: 
+13301: Origen: .specs/HOS-1352-billing-verticals-redesign/docs/38-fase-5/10-decisiones-del-owner.md:152
+13302: 
+13303: - **elegida**: 1
+13304: - **contra la recomendación**: no
+13305: - **qué decide**: la devolución de una orden que el índice parcial (J) frenó la manda el barrido en su corrida siguiente, cuando ya no queda ninguna de esa orden esperando su id
+13306: 
+FUENTE
+152: | M | 1 | no | la devolución de una orden que el índice parcial (J) frenó la manda el barrido en su corrida siguiente, cuando ya no queda ninguna de esa orden esperando su id |
+
+### own-41-corte-del-mvp-t1-ac · spec 13602–13611 · fuente .specs/HOS-1352-billing-verticals-redesign/docs/41-corte-del-mvp/10-decisiones-del-owner.md:23–23
+ESPECIFICACIÓN
+13602: <a id="own-41-corte-del-mvp-t1-ac"></a>
+13603: **Letra AC**
+13604: 
+13605: Origen: .specs/HOS-1352-billing-verticals-redesign/docs/41-corte-del-mvp/10-decisiones-del-owner.md:23
+13606: 
+13607: - **Pregunta**: retención y seudónimo
+13608: - **Elegida**: 1
+13609: - **Recomendada**: sí
+13610: - **En una línea**: `V9a` al corte (registro de actos del dueño y seudónimo; la función del seudónimo se reasigna a `V4`); `V9b` (jobs, `PB9`, avisos) mergeada antes de la primera fecha en que un aviso de retención podría salir
+13611: 
+FUENTE
+23: | AC | retención y seudónimo | 1 | sí | `V9a` al corte (registro de actos del dueño y seudónimo; la función del seudónimo se reasigna a `V4`); `V9b` (jobs, `PB9`, avisos) mergeada antes de la primera fecha en que un aviso de retención podría salir |
+
+### own-41-corte-del-mvp-t7-bf · spec 13904–13913 · fuente .specs/HOS-1352-billing-verticals-redesign/docs/41-corte-del-mvp/10-decisiones-del-owner.md:110–110
+ESPECIFICACIÓN
+13904: <a id="own-41-corte-del-mvp-t7-bf"></a>
+13905: **Letra BF**
+13906: 
+13907: Origen: .specs/HOS-1352-billing-verticals-redesign/docs/41-corte-del-mvp/10-decisiones-del-owner.md:110
+13908: 
+13909: - **Pregunta**: quién construye la herramienta del paso 4b (la sonda de Webhooks, el pago chico, su devolución y la verificación en `provider_notification`)
+13910: - **Elegida**: 1
+13911: - **Recomendada**: sí
+13912: - **En una línea**: **`U3`**: el script suelto de `scripts/cutover/` suma la sonda (alta, cancelación y relectura), el pago chico por la API de pagos con su devolución releída por id, la consulta de sólo lectura a `provider_notification`, los ids al manifiesto y los inversos (b) y (c) de la rama de aborto. Su *«Lista cuando»* corre contra la cuenta de pruebas; la entrega real al receptor de `B3` se prueba en el ensayo, que ya incluye el 4b (D-4). Sin flechas nuevas; respeta K. Las otras opciones eran `B3` (el pago por fuera del adaptador) y `U3` detrás de `B3` (reabría K)
+13913: 
+FUENTE
+110: | BF | quién construye la herramienta del paso 4b (la sonda de Webhooks, el pago chico, su devolución y la verificación en `provider_notification`) | 1 | sí | **`U3`**: el script suelto de `scripts/cutover/` suma la sonda (alta, cancelación y relectura), el pago chico por la API de pagos con su devolución releída por id, la consulta de sólo lectura a `provider_notification`, los ids al manifiesto y los inversos (b) y (c) de la rama de aborto. Su *«Lista cuando»* corre contra la cuenta de pruebas; la entrega real al receptor de `B3` se prueba en el ensayo, que ya incluye el 4b (D-4). Sin flechas nuevas; respeta K. Las otras opciones eran `B3` (el pago por fuera del adaptador) y `U3` detrás de `B3` (reabría K) |
+
+### own-41-corte-del-mvp-t16-cj · spec 14214–14222 · fuente .specs/HOS-1352-billing-verticals-redesign/docs/41-corte-del-mvp/10-decisiones-del-owner.md:224–224
+ESPECIFICACIÓN
+14214: <a id="own-41-corte-del-mvp-t16-cj"></a>
+14215: **Letra CJ**
+14216: 
+14217: Origen: .specs/HOS-1352-billing-verticals-redesign/docs/41-corte-del-mvp/10-decisiones-del-owner.md:224
+14218: 
+14219: - **Pregunta**: quién retira la ruta que borra cuentas de verdad (`user/admin/hardDelete.ts`), si la fila de `V6` de `V/descomposicion.md` §2 dice que con `V6` *«desaparecen el borrado físico de fichas y de cuentas»* y la tabla de puertas de la misma descomposición (§2.13, lote 3 C) le da la de cuentas a `V8a` (Z sólo renombró `V8` a `V8a`; el reparto es de antes)
+14220: - **Elegida**: 1
+14221: - **Recomendada**: sí
+14222: - **En una línea**: **la retira `V6`**, en el mismo cambio que las puertas de fichas y antes del corte: se corrige la tabla de puertas para que diga `V6`, y el mapa de cobertura de la spec consolidada también. `AC:V6:25` ya lo exige, y queda una sola pieza dueña de todas las puertas de borrado físico; la acción 24, que la reemplaza, sigue en `V8a`. Las otras opciones eran que la retirara `V8a` (cuatro lugares que cambiar, y entre el merge de `V6` y el de `V8a` la ruta sigue viva contra la `FK` `RESTRICT` de `V4`) o las dos, `V6` deshabilitándola y `V8a` borrando el archivo (reparte un solo acto en dos piezas, contra cómo la fuente reparte las puertas)
+FUENTE
+224: | CJ | quién retira la ruta que borra cuentas de verdad (`user/admin/hardDelete.ts`), si la fila de `V6` de `V/descomposicion.md` §2 dice que con `V6` *«desaparecen el borrado físico de fichas y de cuentas»* y la tabla de puertas de la misma descomposición (§2.13, lote 3 C) le da la de cuentas a `V8a` (Z sólo renombró `V8` a `V8a`; el reparto es de antes) | 1 | sí | **la retira `V6`**, en el mismo cambio que las puertas de fichas y antes del corte: se corrige la tabla de puertas para que diga `V6`, y el mapa de cobertura de la spec consolidada también. `AC:V6:25` ya lo exige, y queda una sola pieza dueña de todas las puertas de borrado físico; la acción 24, que la reemplaza, sigue en `V8a`. Las otras opciones eran que la retirara `V8a` (cuatro lugares que cambiar, y entre el merge de `V6` y el de `V8a` la ruta sigue viva contra la `FK` `RESTRICT` de `V4`) o las dos, `V6` deshabilitándola y `V8a` borrando el archivo (reparte un solo acto en dos piezas, contra cómo la fuente reparte las puertas) |
+### own-26-fase-9-completa-t1-5a
+ESPECIFICACIÓN
+11236: <a id="own-26-fase-9-completa-t1-5a"></a>
+11237: **# 5a**
+11238: 
+11239: Origen: .specs/HOS-1352-billing-verticals-redesign/docs/26-fase-9-completa/10-decisiones-del-owner.md:36
+11240: 
+11241: - **punto**: el reembolso sin estados y lo hecho por fuera sin acto (`F-8CB1-015`, motivos 18 y 19)
+11242: - **origen**: [`04`](../docs/26-fase-9-completa/04-R5-R7-correo-y-conciliacion.md) §R7.5.1
+11243: - **decisión**: **opción 1**: máquina mínima de `refund` (`REQUESTED → CONFIRMED → EXECUTED | FAILED`) y una acción administrativa nueva, *«asentar un cobro o una devolución que ya ocurrió por fuera»* (el catálogo pasa de 13 a 14)
+11244: 
+FUENTE
+| 5a | el reembolso sin estados y lo hecho por fuera sin acto (`F-8CB1-015`, motivos 18 y 19) | [`04`](./04-R5-R7-correo-y-conciliacion.md) §R7.5.1 | **opción 1**: máquina mínima de `refund` (`REQUESTED → CONFIRMED → EXECUTED \| FAILED`) y una acción administrativa nueva, *«asentar un cobro o una devolución que ya ocurrió por fuera»* (el catálogo pasa de 13 a 14) |

@@ -9,7 +9,7 @@
  * `apps/web/src/lib/billing-limit-error.ts` reads `details.limitKey` to pick
  * the limit-specific copy — with `details` always `undefined` in production,
  * `limitKey` fell back to `'generic'` and EVERY limit (accommodations,
- * gastronomy listings, ...) rendered the same generic toast instead of the
+ * venue listings, ...) rendered the same generic toast instead of the
  * one that names the limit and links its unlocking addon.
  *
  * ## Why this test does NOT use a hand-rolled `app.onError`
@@ -29,7 +29,6 @@
  * suite red — see the mutation note in HOS-700's report.
  */
 
-import { LimitKey } from '@repo/billing';
 import { ServiceErrorCode } from '@repo/schemas';
 import { ServiceError } from '@repo/service-core/types';
 import { describe, expect, it, vi } from 'vitest';
@@ -44,7 +43,6 @@ vi.mock('../../src/utils/logger', () => ({
     }
 }));
 
-import { buildLimitReachedDetails } from '../../src/middlewares/limit-enforcement';
 import { createSimpleRoute } from '../../src/utils/route-factory';
 
 const FACTORY_OPTS = { skipAuth: true, skipValidation: true } as const;
@@ -54,12 +52,12 @@ describe('HOS-700 — handleRouteError public-details scope (real route-factory,
     it('LIMIT_REACHED: details.limitKey reaches the client with HOSPEDA_API_DEBUG_ERRORS off', async () => {
         // Arrange — the real structured details shape the limit-enforcement
         // middleware builds for an accommodation-limit refusal.
-        const details = buildLimitReachedDetails({
-            limitKey: LimitKey.MAX_ACCOMMODATIONS,
+        const details = {
+            limitKey: 'max_accommodations',
             currentCount: 3,
             maxAllowed: 3,
             usagePercent: 100
-        });
+        };
 
         const app = createSimpleRoute({
             method: 'get',
@@ -88,25 +86,25 @@ describe('HOS-700 — handleRouteError public-details scope (real route-factory,
             error: { code: string; details?: { limitKey?: string } };
         };
         expect(body.error.code).toBe(ServiceErrorCode.LIMIT_REACHED);
-        expect(body.error.details?.limitKey).toBe(LimitKey.MAX_ACCOMMODATIONS);
+        expect(body.error.details?.limitKey).toBe('max_accommodations');
     });
 
     it('LIMIT_REACHED: details.limitKey reaches the client for a non-accommodation key (HOS-690 AC-24)', async () => {
         // Arrange — the mechanism `handleRouteError` uses is keyed on
         // `error.code === LIMIT_REACHED`, not on which limit was hit. This
-        // proves that generality directly for the gastronomy vertical cap
+        // proves that generality directly for the venue vertical cap
         // (HOS-690 AC-24), rather than trusting it by inference from the
         // MAX_ACCOMMODATIONS case above.
-        const details = buildLimitReachedDetails({
-            limitKey: LimitKey.MAX_GASTRONOMIES,
+        const details = {
+            limitKey: 'max_venues',
             currentCount: 1,
             maxAllowed: 1,
             usagePercent: 100
-        });
+        };
 
         const app = createSimpleRoute({
             method: 'get',
-            path: '/hos-690-limit-reached-gastronomy',
+            path: '/hos-690-limit-reached-venue',
             summary: 'HOS-690 test route',
             description: 'HOS-690 test route',
             tags: ['Test'],
@@ -114,7 +112,7 @@ describe('HOS-700 — handleRouteError public-details scope (real route-factory,
             handler: () => {
                 throw new ServiceError(
                     ServiceErrorCode.LIMIT_REACHED,
-                    'Gastronomy listing limit reached',
+                    'Venue listing limit reached',
                     details
                 );
             },
@@ -123,7 +121,7 @@ describe('HOS-700 — handleRouteError public-details scope (real route-factory,
 
         // Act — real HTTP request through the real route factory, same as the
         // MAX_ACCOMMODATIONS case: no custom onError registered here.
-        const res = await app.request('/hos-690-limit-reached-gastronomy');
+        const res = await app.request('/hos-690-limit-reached-venue');
 
         // Assert
         expect(res.status).toBe(403);
@@ -131,7 +129,7 @@ describe('HOS-700 — handleRouteError public-details scope (real route-factory,
             error: { code: string; details?: { limitKey?: string } };
         };
         expect(body.error.code).toBe(ServiceErrorCode.LIMIT_REACHED);
-        expect(body.error.details?.limitKey).toBe(LimitKey.MAX_GASTRONOMIES);
+        expect(body.error.details?.limitKey).toBe('max_venues');
     });
 
     it('ENTITLEMENT_REQUIRED: details reaches the client with HOSPEDA_API_DEBUG_ERRORS off', async () => {

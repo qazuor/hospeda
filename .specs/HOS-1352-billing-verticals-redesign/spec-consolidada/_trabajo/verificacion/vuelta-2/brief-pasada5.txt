@@ -1,0 +1,37 @@
+# Brief · pasada 5 · aplicar la adjudicación de la vuelta 2 (HOS-1352)
+
+Respondé en español. W=/home/qazuor/projects/WEBS/hospeda-spec-hos-1352-billing-redesign
+C=$W/.specs/HOS-1352-billing-verticals-redesign/spec-consolidada · A=$C/_trabajo/verificacion/vuelta-2/adjudicacion
+
+## Antes de empezar
+- Leé `$W/.claude/skills/hospeda-specs/SKILL.md`, `.../hospeda-billing/SKILL.md` y `.../hops-linear-workflow/SKILL.md`.
+- Leé `$A/correcciones.txt` (las correcciones), `$A/patrones.txt` y, para el contexto de cada hallazgo, `$A/hallazgos.json`.
+- Fuentes congeladas en `591034c665` (`$C/scripts/comun.py` → `SHA`). Se leen con `git -C $W show 591034c665:<ruta>`
+  o del árbol de trabajo (son iguales). Usá `rg --hidden` (las rutas empiezan con `.specs`).
+- Las líneas de `correcciones.txt` son de la spec en `200317c484`. Desde entonces se re-anclaron las citas y se
+  regeneraron 01 y 04 (commit `7a536669c1`): **ubicá cada corrección por su TEXTO**, no por el número de línea.
+
+## Reglas
+- Hacé SÓLO las correcciones de tu grupo (abajo). Si una corrección exige tocar un archivo de otro grupo, no lo
+  toques: anotalo en tu reporte.
+- Lo que es generado se corrige en su generador, nunca en el .md: 01 → `scripts/generadores/g1/`; 04 →
+  `scripts/generadores/g3/`; B4–B7 → `scripts/generadores/g8/src/B4..B7.md` (y regenerar con `g8/gen.py`); los tramos
+  entre `<!-- g-secciones: inicio -->` y `<!-- g-secciones: fin -->` → `scripts/generadores/secciones/`.
+- Redacción: texto vigente (sin tachados) y fiel a la fuente; cada bloque nuevo o cambiado con su `Origen:`
+  apuntando a las líneas de la fuente en `591034c665`; AC en Given/When/Then con ID `AC:<pieza>:<n>` (el siguiente
+  libre: sacá el máximo con `rg -o 'AC:B3:[0-9]+'`, no con `tail`: los AC no están en orden); cada AC nuevo con su
+  TEST en el mapa AC→test con un tipo de la lista cerrada. Lo derivado (no dicho por la fuente) va marcado «lo
+  derivé…; lo marco».
+- Decisiones del owner: `$W/.specs/HOS-1352-billing-verticals-redesign/docs/41-corte-del-mvp/10-decisiones-del-owner.md`
+  (la última es t15: CH y CI). No se relitigan. No se editan el PDR, la matriz, los informes ni ninguna fuente.
+- Si una corrección te parece equivocada al verificarla contra la fuente, NO la apliques: reportala con la
+  evidencia. Si aparece algo que exige una decisión del owner, no la tomes: reportala.
+- Prohibido: git que escriba, Linear, lanzar subagentes, tocar archivos de otro grupo.
+
+## Al terminar
+- Corré markdownlint (`pnpm exec markdownlint-cli2 <archivos>` desde $W) sobre lo que tocaste: 0 errores.
+- Corré `python3 $C/scripts/trazar.py --cobertura` con la salida a un archivo y leé el exit code (no `| tail`);
+  reportá los errores que caen en tus archivos.
+- Respuesta final: corrección por corrección (id H2-…): APLICADA / NO APLICADA (por qué) / FUERA DE GRUPO;
+  archivos tocados; resultados de markdownlint y trazar; lo que quedó para otro grupo o para el owner. Terminá con
+  `## Key Learnings:`.

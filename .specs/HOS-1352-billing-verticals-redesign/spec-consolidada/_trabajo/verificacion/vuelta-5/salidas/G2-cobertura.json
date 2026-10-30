@@ -1,0 +1,410 @@
+{
+    "count": 5194,
+    "issues": [
+        [
+            ".specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/03-maquinas-de-estado.md",
+            365,
+            "####"
+        ],
+        [
+            ".specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/03-maquinas-de-estado.md",
+            500,
+            "**PB13** ✚"
+        ],
+        [
+            ".specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/03-maquinas-de-estado.md",
+            898,
+            "- **No es el lock distribuido que `B/05` §1 descarta.** Ese § lo descarta por *«el que lo toma y"
+        ],
+        [
+            ".specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/03-maquinas-de-estado.md",
+            899,
+            "muere»*; éste vive dentro de la transacción que escribe y se suelta con ella. Con qué primitiva"
+        ],
+        [".specs/HOS-1354-billing-cobro-y-proveedor/docs/03-maquinas-de-estado.md", 942, "####"],
+        [".specs/HOS-1354-billing-cobro-y-proveedor/docs/03-maquinas-de-estado.md", 944, "####"],
+        [
+            ".specs/HOS-1354-billing-cobro-y-proveedor/docs/03-maquinas-de-estado.md",
+            1876,
+            "**es la misma acción, *«registrar un pago manual»* (§30), ejecutada sin cuota abierta**, como `MP4` lo es desde otro estado de origen: mismo permiso, misma auditoría y misma confirmación, que acá dice además que el pago es un segundo pago del período y que se propone devolverlo. **Crea la fila de `manual_payment` ya `REGISTERED`**, con el período de la última cuota de la suscripción, quién, cuándo y el comprobante de la transferencia (`B/02` §2.3). **Intenta escribir la cobertura y choca con el `UNIQUE` de `covered_period`**, porque ese período ya tenía un cobro acreditado: la cobertura no se escribe y **`S14` abre la marca `COBRO_DUPLICADO`** (`B/02` §2.5, motivo 20) con este `manual_payment` colgado, igual que `P1` sobre un cobro de tarjeta. Es la simetría con la tarjeta, y el default es devolver (`B/19` §6): la devolución se asienta por **`RF4`**, con el comprobante de la transferencia de vuelta (§6.1). **No mueve la suscripción, no avanza la fecha del próximo cobro y no emite comprobante**: no cubre ningún período nuevo. Si la fila no tiene ninguna cuota, porque nunca fue de pagador manual, el período es el del último cobro acreditado. Si no tiene ninguno, no hay período con qué chocar y `MP6` no corre: queda declarado en *«lo que este capítulo NO cierra»*. **Sobre una `CANCELLED` cuya última cuota quedó `DECLARED_UNPAID`** (la baja desde `GRACE_PERIOD` o desde `SUSPENDED`, que `MP3` o `MP2` cierran sin pago), **ese período no tiene cobertura y no hay nada con qué chocar: `MP6` no escribe cobertura y `S14` abre la marca `COBRO_POSTERIOR_A_LA_BAJA`** (`B/02` §2.5, motivo 2) con este `manual_payment` colgado, que ya propone devolver, lo mismo que la tabla de desempate del `B/05` §3 le da a un cobro sobre una terminal. La confirmación dice que es un pago posterior a la baja, no un segundo pago del período. La devolución se asienta igual por `RF4` (FASE 9 vuelta 3, owner 2026-09-30, lote AF; verificación, VC3-cobro-03). **Lo mismo sobre una `ABANDONED` de pagador manual cuya primera cuota quedó `DECLARED_UNPAID`** (la ventana de autorización vencida, que `S3` y `MP3` cierran sin pago): el período de esa cuota no tiene cobertura, `MP6` no la escribe y `S14` abre el motivo 2 con el `manual_payment` colgado y la propuesta de devolver (FASE 9 vuelta 3, owner 2026-09-30, lote AM)"
+        ],
+        [
+            ".specs/HOS-1354-billing-cobro-y-proveedor/docs/03-maquinas-de-estado.md",
+            2535,
+            "**A1-bis** ✚"
+        ],
+        [
+            ".specs/HOS-1354-billing-cobro-y-proveedor/docs/05-idempotencia-y-concurrencia.md",
+            35,
+            "**No hay locks distribuidos en este diseño.** Cada caso de abajo se resuelve con una restricción"
+        ],
+        [
+            ".specs/HOS-1354-billing-cobro-y-proveedor/docs/05-idempotencia-y-concurrencia.md",
+            36,
+            "de la base o con una relectura; un lock agrega un modo de falla —el que lo toma y muere— sin"
+        ],
+        [
+            ".specs/HOS-1354-billing-cobro-y-proveedor/docs/05-idempotencia-y-concurrencia.md",
+            37,
+            "resolver ninguno de los seis cruces."
+        ],
+        [".specs/HOS-1354-billing-cobro-y-proveedor/docs/20-testing.md", 543, "**RP10** ✚"],
+        [".specs/HOS-1354-billing-cobro-y-proveedor/docs/20-testing.md", 544, "**RP11** ✚"],
+        [".specs/HOS-1354-billing-cobro-y-proveedor/docs/20-testing.md", 545, "**RP12** ✚"],
+        [
+            ".specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/20-testing.md",
+            64,
+            "`G-R3` (validación del panel)"
+        ],
+        [
+            ".specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/20-testing.md",
+            70,
+            "**`G-R5-B`** (validación del panel)"
+        ],
+        [
+            ".specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/20-testing.md",
+            73,
+            "**G-R9** ✚"
+        ],
+        [
+            ".specs/HOS-1352-billing-verticals-redesign/docs/06-mp-validation-matrix.md",
+            115,
+            "1. **Ninguna fila se completa desde documentación, memoria, código existente ni \"parece que lo"
+        ],
+        [
+            ".specs/HOS-1352-billing-verticals-redesign/docs/06-mp-validation-matrix.md",
+            116,
+            "soporta\"** (§58: *\"NO alcanza documentación. NO alcanza código legacy. NO alcanza memoria."
+        ],
+        [
+            ".specs/HOS-1352-billing-verticals-redesign/docs/06-mp-validation-matrix.md",
+            117,
+            "NO alcanza 'parece soportarlo'.\"*). Una fila se llena **sólo** con un experimento"
+        ],
+        [
+            ".specs/HOS-1352-billing-verticals-redesign/docs/06-mp-validation-matrix.md",
+            118,
+            "ejecutado."
+        ],
+        [
+            ".specs/HOS-1352-billing-verticals-redesign/docs/06-mp-validation-matrix.md",
+            119,
+            "2. **No se implementa una capability crítica mientras su fila diga `UNKNOWN`** (§61)."
+        ],
+        [
+            ".specs/HOS-1352-billing-verticals-redesign/docs/06-mp-validation-matrix.md",
+            120,
+            "3. **Ninguna decisión sobre Mercado Pago se toma mientras su fila diga `UNKNOWN`**"
+        ],
+        [
+            ".specs/HOS-1352-billing-verticals-redesign/docs/06-mp-validation-matrix.md",
+            121,
+            "(regla 3 de `01-decision-log.md` (`./01-decision-log.md`))."
+        ],
+        [
+            ".specs/HOS-1352-billing-verticals-redesign/docs/06-mp-validation-matrix.md",
+            122,
+            "4. Cada fila lleva **fecha y entorno**. Una fila sin fecha se lee como `UNKNOWN` (`S-MP-02`):"
+        ],
+        [
+            ".specs/HOS-1352-billing-verticals-redesign/docs/06-mp-validation-matrix.md",
+            123,
+            "un proveedor externo cambia su comportamiento sin avisarnos, y un resultado viejo no es un"
+        ],
+        [
+            ".specs/HOS-1352-billing-verticals-redesign/docs/06-mp-validation-matrix.md",
+            125,
+            "5. Las pruebas quedan como **sondas versionadas y ejecutables** en `docs/mp-probes/`, marcadas"
+        ],
+        [
+            ".specs/HOS-1352-billing-verticals-redesign/docs/06-mp-validation-matrix.md",
+            126,
+            "como no productivas y excluidas de todo build (`S-MP-03`). Un experimento que vive sólo en"
+        ],
+        [
+            ".specs/HOS-1352-billing-verticals-redesign/docs/06-mp-validation-matrix.md",
+            127,
+            "su conclusión no se puede volver a correr."
+        ],
+        [
+            ".specs/HOS-1352-billing-verticals-redesign/docs/06-mp-validation-matrix.md",
+            128,
+            "6. Un `PARTIALLY_SUPPORTED` **tiene que nombrar qué parte**. \"Casi\" no es un resultado."
+        ],
+        [
+            ".specs/HOS-1352-billing-verticals-redesign/docs/06-mp-validation-matrix.md",
+            129,
+            "7. Antes de FASE 10 **todas las filas se re-verifican** (`S-MP-02`)."
+        ],
+        [
+            ".specs/HOS-1352-billing-verticals-redesign/docs/06-mp-validation-matrix.md",
+            177,
+            "**PA-6** ✚"
+        ],
+        [
+            ".specs/HOS-1352-billing-verticals-redesign/docs/06-mp-validation-matrix.md",
+            270,
+            "**WH-6** ✚"
+        ],
+        [
+            ".specs/HOS-1352-billing-verticals-redesign/docs/06-mp-validation-matrix.md",
+            279,
+            "RC-4 ✚"
+        ],
+        [
+            ".specs/HOS-1352-billing-verticals-redesign/docs/06-mp-validation-matrix.md",
+            280,
+            "**RC-5** ✚"
+        ],
+        [
+            ".specs/HOS-1352-billing-verticals-redesign/docs/06-mp-validation-matrix.md",
+            281,
+            "**RC-6** ✚"
+        ],
+        [
+            ".specs/HOS-1352-billing-verticals-redesign/docs/06-mp-validation-matrix.md",
+            282,
+            "**RC-7** ✚"
+        ],
+        [
+            ".specs/HOS-1352-billing-verticals-redesign/docs/06-mp-validation-matrix.md",
+            283,
+            "**RC-8** ✚"
+        ],
+        [
+            ".specs/HOS-1352-billing-verticals-redesign/docs/06-mp-validation-matrix.md",
+            284,
+            "**RC-9** ✚"
+        ],
+        [
+            ".specs/HOS-1352-billing-verticals-redesign/docs/06-mp-validation-matrix.md",
+            306,
+            "RF-4 ✚"
+        ],
+        [
+            ".specs/HOS-1352-billing-verticals-redesign/docs/06-mp-validation-matrix.md",
+            307,
+            "RF-5 ✚"
+        ],
+        [
+            ".specs/HOS-1352-billing-verticals-redesign/docs/06-mp-validation-matrix.md",
+            313,
+            "RF-6 ✚"
+        ],
+        [
+            ".specs/HOS-1352-billing-verticals-redesign/docs/06-mp-validation-matrix.md",
+            314,
+            "RF-7 ✚"
+        ],
+        [
+            ".specs/HOS-1352-billing-verticals-redesign/docs/06-mp-validation-matrix.md",
+            315,
+            "RF-8 ✚"
+        ],
+        [
+            ".specs/HOS-1352-billing-verticals-redesign/docs/06-mp-validation-matrix.md",
+            318,
+            "EX-3 | ¿Qué le comunica el proveedor **al cliente, por su cuenta**, al cancelar / pausar / modificar? | `M-MAIL-04` | **`VERIFIED`** | 2026-09-15 · **ampliada 2026-09-19** | **producción** | casilla real del owner (`./mp-probes/RESULTS-2026-09-15.md`), 43 correos de `info@mercadopago.com` en el día · ampliación: re-lectura de la misma casilla el 2026-09-19 | **Le avisa TODO, y primero que a nosotros.** Cuatro correos al pagador: **alta** (monto, tarjeta terminada en, frecuencia, el vendedor con su mail, y *\"Cobramos $15 solo para validar tu tarjeta y te lo devolvemos enseguida\"*), **cambio de monto** (*\"El vendedor Hospeda cambió el monto\"* + *\"Próximo cobro: no especificado\"*), **pausa** y **cancelación**. Y uno al vendedor: *\"¡Tenés un nuevo suscriptor!\"*. **Seis consecuencias**: (1) el **`reason` ES la copy que ve el cliente** en asunto y encabezado —y `EX-19` lo hace reescribible, así que nunca va un slug interno ahí—; (2) **un cambio de precio no se puede hacer en silencio**, y como `EX-15` midió que no emite webhook, **el proveedor le avisa al cliente y NO nos avisa a nosotros**; (3) los cuatro correos mandan al cliente a **nuestra** puerta (*\"contactá con el vendedor\"`*): no hay autogestión, todo cae en soporte; (4) **`paused` y `cancelled` llegan AMBIGUOS** —los dos dicen *\"por un pago no realizado o por opción del vendedor\"*—, así que una pausa de cortesía y una por mora son idénticas para el cliente y **nuestra comunicación tiene que desambiguar**; (5) el proveedor afirma que una pausa **la levanta el vendedor**, contra el supuesto de reanudación automática del §26.2; (6) el asunto del alta dice **\"Pagaste la suscripción\"** y no se pagó nada. **Y no es prematuro: es FALSO.** Medido con reloj: el correo sale ~18 s después de autorizar, el cobro real llega ~26 min más tarde (`PA-3`) — y en `pausa-real` y `cancelada`, que recibieron el mismo correo, **el cobro no llegó NUNCA** (cero `authorized_payments` en las dos). Un cliente puede tener en su bandeja un correo del proveedor que dice que pagó una suscripción que jamás le cobró un peso. Tercer caso del patrón, con el `2084` de `RF-8` y el *\"Cobramos $15\"* de un cargo inexistente: **ninguna decisión de soporte puede apoyarse en la copy de Mercado Pago**. ⊕ **AMPLIACIÓN 2026-09-19 — séptima consecuencia, y es un silencio**: sobre un preapproval que queda **`pending` y nunca se autoriza, el proveedor NO comunica nada** — ni por su creación ni por su cancelación. Medido sobre el sujeto creado en producción el 2026-09-15 22:38 con la dirección del owner como pagador y cancelado 45 s después: búsqueda `in:anywhere` —**incluye Spam y Papelera**— acotada a ese día, **46 correos del proveedor**, y la franja entre las 22:04 y las 23:04 **está vacía**. El proveedor sólo le escribe al pagador sobre suscripciones **ya autorizadas** (alta, cobro, cambio de monto, pausa, cancelación). **La consecuencia de diseño**: durante `PENDING_AUTHORIZATION` —las 72 h del cap. 03 §3.4— **el proveedor calla**, así que todo lo que esa persona escuche en esa ventana **sale de nosotros o no existe**. Eso convierte el punto 3 de ese §3.4 —qué ve la persona mientras tanto— de «una pantalla más» en **el único canal que hay**. ⚠️ **Esto NO contesta `EX-1`**: dice que el proveedor no comunica el vencimiento, no que el `pending` venza o deje de vencer"
+        ],
+        [
+            ".specs/HOS-1352-billing-verticals-redesign/docs/06-mp-validation-matrix.md",
+            358,
+            "EX-21 ✚"
+        ],
+        [
+            ".specs/HOS-1352-billing-verticals-redesign/docs/06-mp-validation-matrix.md",
+            359,
+            "EX-22 ✚"
+        ],
+        [
+            ".specs/HOS-1352-billing-verticals-redesign/docs/06-mp-validation-matrix.md",
+            360,
+            "EX-23 ✚"
+        ],
+        [
+            ".specs/HOS-1352-billing-verticals-redesign/docs/06-mp-validation-matrix.md",
+            361,
+            "EX-24 ✚"
+        ],
+        [
+            ".specs/HOS-1352-billing-verticals-redesign/docs/06-mp-validation-matrix.md",
+            362,
+            "EX-25 ✚"
+        ],
+        [
+            ".specs/HOS-1352-billing-verticals-redesign/docs/06-mp-validation-matrix.md",
+            363,
+            "EX-26 ✚"
+        ],
+        [
+            ".specs/HOS-1352-billing-verticals-redesign/docs/06-mp-validation-matrix.md",
+            364,
+            "EX-27 ✚"
+        ],
+        [
+            ".specs/HOS-1352-billing-verticals-redesign/docs/06-mp-validation-matrix.md",
+            365,
+            "EX-28 ✚"
+        ],
+        [
+            ".specs/HOS-1352-billing-verticals-redesign/docs/06-mp-validation-matrix.md",
+            366,
+            "EX-29 ✚"
+        ],
+        [
+            ".specs/HOS-1352-billing-verticals-redesign/docs/06-mp-validation-matrix.md",
+            388,
+            "EX-30 ✚"
+        ],
+        [
+            ".specs/HOS-1352-billing-verticals-redesign/docs/06-mp-validation-matrix.md",
+            389,
+            "EX-31 ✚"
+        ],
+        [
+            ".specs/HOS-1352-billing-verticals-redesign/docs/06-mp-validation-matrix.md",
+            390,
+            "EX-32 ✚"
+        ],
+        [
+            ".specs/HOS-1352-billing-verticals-redesign/docs/06-mp-validation-matrix.md",
+            391,
+            "EX-33 ✚"
+        ],
+        [
+            ".specs/HOS-1352-billing-verticals-redesign/docs/06-mp-validation-matrix.md",
+            392,
+            "EX-35 ✚"
+        ],
+        [
+            ".specs/HOS-1352-billing-verticals-redesign/docs/06-mp-validation-matrix.md",
+            393,
+            "EX-36 ✚"
+        ],
+        [
+            ".specs/HOS-1352-billing-verticals-redesign/docs/06-mp-validation-matrix.md",
+            394,
+            "EX-37 ✚"
+        ],
+        [
+            ".specs/HOS-1352-billing-verticals-redesign/docs/06-mp-validation-matrix.md",
+            395,
+            "EX-38 ✚"
+        ],
+        [
+            ".specs/HOS-1352-billing-verticals-redesign/docs/06-mp-validation-matrix.md",
+            396,
+            "EX-39 ✚"
+        ],
+        [
+            ".specs/HOS-1352-billing-verticals-redesign/docs/06-mp-validation-matrix.md",
+            397,
+            "**EX-40** ✚"
+        ],
+        [
+            ".specs/HOS-1352-billing-verticals-redesign/docs/06-mp-validation-matrix.md",
+            398,
+            "**EX-41** ✚"
+        ],
+        [
+            ".specs/HOS-1352-billing-verticals-redesign/docs/06-mp-validation-matrix.md",
+            399,
+            "**EX-42** ✚"
+        ],
+        [
+            ".specs/HOS-1352-billing-verticals-redesign/docs/06-mp-validation-matrix.md",
+            400,
+            "**EX-43** ✚"
+        ],
+        [
+            ".specs/HOS-1352-billing-verticals-redesign/docs/06-mp-validation-matrix.md",
+            401,
+            "**EX-44** ✚"
+        ],
+        [
+            ".specs/HOS-1352-billing-verticals-redesign/docs/06-mp-validation-matrix.md",
+            402,
+            "**EX-45** ✚"
+        ],
+        [
+            ".specs/HOS-1352-billing-verticals-redesign/docs/06-mp-validation-matrix.md",
+            403,
+            "**EX-46** ✚"
+        ],
+        [
+            ".specs/HOS-1352-billing-verticals-redesign/docs/06-mp-validation-matrix.md",
+            403,
+            "`WH-4` midió los reintentos, no su destino. Si va a la vieja, el evento se pierde  **y su cobro lo ve el barrido de B11 como el de cualquier desconocido** (la lápida del corte salió: FASE 5, simplificación del corte, S-40 y S-70; verificación, `VF5-06`) 🔎 **Indicio, no medición** (2026-09-29, anexo del 29/09 (`./mp-probes/RESULTS-2026-09-29.md#anexo-con-los-dos-canales-escuchando-2909-mañana`)): mientras el owner cambiaba la URL de Webhooks de `/` a `/webhooks`, dos avisos fechados `14:34:27Z` en su propio cuerpo llegaron a la URL **nueva** a las 14:40:10Z, y no quedó ningún intento a la vieja (el receptor contestaba `200` a todo). Compatible con «sale a la URL vigente al momento de entregar», pero no es esta pregunta, que es sobre un **reintento** tras un `500`, y la ventana estaba contaminada (también cambió la selección de eventos) 🚫 **No se mide, por decisión del owner** (2026-09-29, decisiones sobre las mediciones (`./30-revision-del-owner/27-decisiones-sobre-las-mediciones.md`), M-4): si el día del corte se pierde un reintento, el barrido diario lo relee (`B/21`, «NO cierra», punto (3)). Queda `UNKNOWN`, sin bloquear nada 📌 **Sin sujeto desde el 2026-09-29, con OK del owner** (decisiones sobre la verificación (`./30-revision-del-owner/32-decisiones-sobre-la-verificacion.md`), lote O-B): la URL de notificación ya no cambia en el corte. El receptor nuevo sirve la misma ruta que el viejo, `/api/v1/webhooks/mercadopago`, el borde la cierra desde que se apaga el contenedor viejo hasta que las lápidas están escritas, y el reintento vuelve a la misma URL (`16-fase-7-del-paraguas.md` §4.2, pasos 3, 4 y 4b). El estado no cambia: la pregunta sigue sin medir, y ya no condiciona ningún paso"
+        ],
+        [
+            ".specs/HOS-1352-billing-verticals-redesign/docs/06-mp-validation-matrix.md",
+            404,
+            "**EX-47** ✚"
+        ],
+        [
+            ".specs/HOS-1352-billing-verticals-redesign/docs/06-mp-validation-matrix.md",
+            405,
+            "**EX-48** ✚"
+        ],
+        [
+            ".specs/HOS-1352-billing-verticals-redesign/docs/06-mp-validation-matrix.md",
+            406,
+            "**EX-49** ✚"
+        ],
+        [
+            ".specs/HOS-1352-billing-verticals-redesign/docs/06-mp-validation-matrix.md",
+            407,
+            "**EX-50** ✚"
+        ],
+        [
+            ".specs/HOS-1352-billing-verticals-redesign/docs/06-mp-validation-matrix.md",
+            408,
+            "**EX-51** ✚"
+        ],
+        [
+            ".specs/HOS-1352-billing-verticals-redesign/docs/06-mp-validation-matrix.md",
+            409,
+            "**EX-52** ✚"
+        ],
+        [
+            ".specs/HOS-1352-billing-verticals-redesign/docs/06-mp-validation-matrix.md",
+            410,
+            "**EX-53** ✚"
+        ],
+        [
+            ".specs/HOS-1352-billing-verticals-redesign/docs/06-mp-validation-matrix.md",
+            411,
+            "**EX-54** ✚"
+        ],
+        [
+            ".specs/HOS-1352-billing-verticals-redesign/docs/06-mp-validation-matrix.md",
+            412,
+            "**EX-55** ✚"
+        ],
+        [
+            ".specs/HOS-1352-billing-verticals-redesign/docs/06-mp-validation-matrix.md",
+            413,
+            "**EX-56** ✚"
+        ],
+        [
+            ".specs/HOS-1352-billing-verticals-redesign/docs/06-mp-validation-matrix.md",
+            414,
+            "**EX-57** ✚"
+        ],
+        [
+            ".specs/HOS-1352-billing-verticals-redesign/docs/06-mp-validation-matrix.md",
+            415,
+            "**EX-58** ✚"
+        ],
+        [
+            ".specs/HOS-1352-billing-verticals-redesign/docs/06-mp-validation-matrix.md",
+            416,
+            "**EX-59** ✚"
+        ],
+        [
+            ".specs/HOS-1352-billing-verticals-redesign/docs/06-mp-validation-matrix.md",
+            438,
+            "EX-34 ✚"
+        ]
+    ]
+}

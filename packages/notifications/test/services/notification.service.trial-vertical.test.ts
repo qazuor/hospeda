@@ -79,14 +79,14 @@ describe('NotificationService — vertical copy reaches the real send (HOS-1283)
         return renderToStaticMarkup(react);
     }
 
-    it('trial_ending_1d: a gastronomy candidate never reaches the mailer as "tu alojamiento"', async () => {
+    it('trial_ending_1d: a venue candidate never reaches the mailer as "tu alojamiento"', async () => {
         const payload: NotificationPayload = {
             type: NotificationType.TRIAL_ENDING_1D,
             ...basePayload,
             planName: 'Plan Comercio',
             trialEndDate: '2026-09-26T00:00:00.000Z',
-            upgradeUrl: 'https://hospeda.com.ar/es/planes/gastronomia/precios/',
-            productDomain: 'gastronomy',
+            upgradeUrl: 'https://hospeda.com.ar/es/planes/comer-y-salir/precios/',
+            productDomain: 'venue',
             idempotencyKey: 'trial_ending_1d-sub-1'
         };
 

@@ -217,7 +217,7 @@ describe('useAccommodationSectionForm — handleCancel', () => {
     // jsdom refuses to perform a real path navigation ("Not implemented:
     // navigation (except hash changes)") and, unmocked, leaves `href`
     // unchanged — the same stand-in `window.location` used by
-    // `CommerceCreateForm.test.tsx` for the identical `window.location.href =
+    // `ListingCreateForm.test.tsx` for the identical `window.location.href =
     // buildUrl(...)` pattern.
     beforeEach(() => {
         Object.defineProperty(window, 'location', {

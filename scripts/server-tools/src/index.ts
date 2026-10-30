@@ -33,11 +33,14 @@
 
 import * as p from '@clack/prompts';
 import { appRestart } from './commands/app-restart.ts';
-import { billingTestLink } from './commands/billing-test-link.ts';
-import { billingTestReset } from './commands/billing-test-reset.ts';
 import { runContainerExec } from './commands/container-exec.ts';
 import { cronList } from './commands/cron-list.ts';
 import { cronTrigger } from './commands/cron-trigger.ts';
+import { CUTOVER_STEP_3_ARGV, cutoverStep3 } from './commands/cutover-step-3.ts';
+import { CUTOVER_STEP_3B_ARGV, cutoverStep3b } from './commands/cutover-step-3b.ts';
+import { CUTOVER_STEP_4C_ARGV, cutoverStep4c } from './commands/cutover-step-4c.ts';
+import { CUTOVER_STEP_5B_ARGV, cutoverStep5b } from './commands/cutover-step-5b.ts';
+import { CUTOVER_VERIFY_ARGV, cutoverVerify } from './commands/cutover-verify.ts';
 import { dbBackupNow } from './commands/db-backup-now.ts';
 import { dbCounts } from './commands/db-counts.ts';
 import { dbMigrate } from './commands/db-migrate.ts';
@@ -63,6 +66,7 @@ import { logsClear } from './commands/logs-clear.ts';
 import { prune } from './commands/prune.ts';
 import { psql } from './commands/psql.ts';
 import { r2Lifecycle } from './commands/r2-lifecycle.ts';
+import { r2PurgeForeignBackups } from './commands/r2-purge-foreign-backups.ts';
 import { redeploy } from './commands/redeploy.ts';
 import { update } from './commands/update.ts';
 import {
@@ -216,41 +220,6 @@ const COMMANDS: ReadonlyArray<Command> = [
         run: dbCounts
     },
     {
-        name: 'billing-test-link',
-        summary:
-            'Map a Hospeda signup user to a MercadoPago test buyer email so the smoke checkout can proceed (staging only).',
-        // Updates billing_customers — write operation.
-        targetPolicy: 'explicit-required',
-        argv: {
-            // `-y` is a real, working alias in the parser. It was undocumented
-            // until this change; the help text now lists it (HOS-510 follow-up
-            // decision: bless what the code accepts, then document it).
-            booleanFlags: ['--yes', '-y', ...HELP_FLAGS],
-            valueFlags: [
-                { name: '--email', syntax: 'both' },
-                { name: '--buyer-email', syntax: 'both' }
-            ]
-        },
-        run: billingTestLink
-    },
-    {
-        name: 'billing-test-reset',
-        summary:
-            'Wipe billing transactional data for a user so a fresh smoke iteration can start. Dry-run by default (pass --execute to write); prod requires typed-email confirmation.',
-        // Deletes rows across many billing tables — write/destroy operation.
-        // Prod is allowed (unlike before) but gated hard: dry-run default,
-        // --execute required to write, and --yes is rejected on prod.
-        targetPolicy: 'explicit-required',
-        argv: {
-            // `-y` as above. Note it is accepted by the PARSER and then
-            // rejected by a business rule on `--target=prod --execute`; that
-            // refusal is the command's to make, not this validator's.
-            booleanFlags: ['--delete-user', '--execute', '--yes', '-y', ...HELP_FLAGS],
-            valueFlags: [{ name: '--email', syntax: 'both' }]
-        },
-        run: billingTestReset
-    },
-    {
         name: 'db-backup-now',
         summary: 'Trigger a Postgres backup outside the daily cron and upload to R2.',
         // Creates a backup; read-only on the DB, writes to R2. Safe with env default.
@@ -265,7 +234,14 @@ const COMMANDS: ReadonlyArray<Command> = [
         targetPolicy: 'explicit-required',
         argv: {
             booleanFlags: ['--no-snapshot-first', '--yes', ...HELP_FLAGS],
-            valueFlags: [{ name: '--target-db', syntax: 'space' }]
+            valueFlags: [
+                { name: '--target-db', syntax: 'both' },
+                // HOS-1957: exact-name selection and the prod -> staging
+                // rehearsal source. The command refuses any foreign bucket
+                // onto prod itself (src/lib/restore-plan.ts).
+                { name: '--object', syntax: 'both' },
+                { name: '--from-target', syntax: 'both' }
+            ]
         },
         run: dbRestore
     },
@@ -287,7 +263,7 @@ const COMMANDS: ReadonlyArray<Command> = [
                 '--yes',
                 ...HELP_FLAGS
             ],
-            valueFlags: []
+            valueFlags: [{ name: '--expect-commit', syntax: 'equals' }]
         },
         run: dbMigrate
     },
@@ -314,7 +290,9 @@ const COMMANDS: ReadonlyArray<Command> = [
             booleanFlags: [
                 '--no-reset',
                 '--no-required',
+                '--example',
                 '--no-example',
+                '--baseline-stamp',
                 '--clean-images',
                 '--build',
                 '--migrate',
@@ -360,6 +338,54 @@ const COMMANDS: ReadonlyArray<Command> = [
             }
         },
         run: dbSeedMigrate
+    },
+    {
+        name: 'cutover-step-3',
+        summary:
+            'Run the V6 cutover step 3 script (writes the five cutover trials) against the target DB; dry-run by default.',
+        // The script WRITES trial rows on the cutover, and its only safe default
+        // (dry-run) still talks to the target database. Requiring an explicit
+        // --target= is what keeps a staging rehearsal from reaching prod.
+        targetPolicy: 'explicit-required',
+        argv: { ...CUTOVER_STEP_3_ARGV },
+        run: cutoverStep3
+    },
+    {
+        name: 'cutover-step-3b',
+        summary:
+            'Run the B9a cutover step 3b tool (the two permanent grants) against the target DB; dry-run by default.',
+        // Writes two permanent grants; same target and prod guards as step 3.
+        targetPolicy: 'explicit-required',
+        argv: { ...CUTOVER_STEP_3B_ARGV },
+        run: cutoverStep3b
+    },
+    {
+        name: 'cutover-step-4c',
+        summary:
+            "Run the V6 cutover step 4c tool (revalidate the deleted listings' pages) against the target; dry-run by default.",
+        // Purges the edge cache of the target; same target and prod guards as step 3.
+        targetPolicy: 'explicit-required',
+        argv: { ...CUTOVER_STEP_4C_ARGV },
+        run: cutoverStep4c
+    },
+    {
+        name: 'cutover-step-5b',
+        summary:
+            'Run the V6 cutover step 5b tool (delete remote photos, revoke calendar tokens); list-only by default, --execute refused on staging.',
+        // Irreversible on external resources; list-only unless --execute.
+        targetPolicy: 'explicit-required',
+        argv: { ...CUTOVER_STEP_5B_ARGV },
+        run: cutoverStep5b
+    },
+    {
+        name: 'cutover-verify',
+        summary:
+            'Read-only cutover checks: --journal (drizzle journal applied) and --catalog (step 3a).',
+        // Never writes, but the verdict only means something for one database:
+        // an explicit --target= keeps a staging run from being read as prod's.
+        targetPolicy: 'explicit-required',
+        argv: { ...CUTOVER_VERIFY_ARGV },
+        run: cutoverVerify
     },
     {
         name: 'db-seed-test-users',
@@ -430,6 +456,17 @@ const COMMANDS: ReadonlyArray<Command> = [
             ]
         },
         run: r2Lifecycle
+    },
+    {
+        name: 'r2-purge-foreign-backups',
+        summary:
+            'List (or --delete) the staging-bucket objects written while staging held prod data (HOS-1957).',
+        // --delete removes R2 objects; the command itself refuses prod. The
+        // default mode only lists, but it still needs an explicit target so
+        // it can never be pointed at a bucket by an env default.
+        targetPolicy: 'explicit-required',
+        argv: { booleanFlags: ['--delete', ...HELP_FLAGS], valueFlags: [] },
+        run: r2PurgeForeignBackups
     },
     {
         name: 'free-mem',

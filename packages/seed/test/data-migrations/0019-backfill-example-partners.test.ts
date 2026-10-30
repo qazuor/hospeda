@@ -121,21 +121,22 @@ describe('0019-backfill-example-partners', () => {
         });
     });
 
-    it('converts startsAt/endsAt to real Date instances on the inserted rows', async () => {
-        // Arrange
+    it('writes only the current partner fixture keys', async () => {
         const store = new Map<string, { id: string; slug: string }>();
-        const ctx = buildCtx(store);
-
-        // Act
-        await partnersMigration.up(ctx);
-
-        // Assert — every fixture declares startsAt; endsAt is optional per fixture.
+        await partnersMigration.up(buildCtx(store));
         for (const row of store.values()) {
-            const typedRow = row as unknown as { startsAt: unknown; endsAt: unknown };
-            expect(typedRow.startsAt).toBeInstanceOf(Date);
-            if (typedRow.endsAt !== undefined) {
-                expect(typedRow.endsAt).toBeInstanceOf(Date);
-            }
+            expect(Object.keys(row).sort()).toEqual([
+                'createdById',
+                'description',
+                'id',
+                'lifecycleState',
+                'logoUrl',
+                'name',
+                'slug',
+                'type',
+                'updatedById',
+                'websiteUrl'
+            ]);
         }
     });
 });

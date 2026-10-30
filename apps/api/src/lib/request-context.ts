@@ -30,12 +30,21 @@ import { AsyncLocalStorage } from 'node:async_hooks';
 /**
  * Shape of the per-request store held in AsyncLocalStorage.
  *
- * All fields except `requestId`, `method`, and `path` are optional because
- * the store is created before authentication and enriched progressively.
+ * All fields except `requestId`, `correlationId`, `method`, and `path` are
+ * optional because the store is created before authentication and enriched
+ * progressively.
  */
 export interface RequestContextStore {
     /** Unique identifier for the request (from `hono/request-id`). */
     requestId: string;
+    /**
+     * Correlation of the business intention this request starts (HOS-1424,
+     * NUCLEO/08 §2.1, AC:U2:9). Respected when the client sends a valid UUID in
+     * `x-correlation-id`, minted otherwise. Everything the intention produces
+     * (a domain event, an outbox row) carries it; it never travels to a
+     * payment or mail provider. Unlike `requestId`, it can span requests.
+     */
+    correlationId: string;
     /** HTTP method in uppercase, e.g. `"GET"`. */
     method: string;
     /** URL pathname, e.g. `"/api/v1/public/accommodations"`. */
@@ -63,6 +72,13 @@ export interface RequestContextStore {
      * without an authenticated user.
      */
     visitorId?: string;
+    /**
+     * The "why" of an administrative action (ACC:15, HOS-1493, H6): the
+     * decoded `x-action-reason` header, recorded by the listing-access
+     * middleware ONLY once step 3 permitted the administrative action. Read by
+     * service-core through its ambient action-reason resolver.
+     */
+    actionReason?: string;
 }
 
 /**
@@ -161,6 +177,43 @@ export async function runWithRequestContext(input: RunWithRequestContextInput): 
  */
 export function getRequestContext(): RequestContextStore | undefined {
     return requestContextStorage.getStore();
+}
+
+/**
+ * Returns the active request's correlation id (HOS-1424), or `undefined`
+ * outside a request scope (a cron run carries its own on `CronJobContext`).
+ *
+ * Code that writes a domain event or enqueues an outbox row reads it here and
+ * passes it to the `@repo/db` model explicitly: the models never read this
+ * store themselves.
+ *
+ * @returns The correlation id of the current request, if any.
+ */
+export function getRequestCorrelationId(): string | undefined {
+    return requestContextStorage.getStore()?.correlationId;
+}
+
+/**
+ * Mutates the active request's store to record the reason of a permitted
+ * administrative action (ACC:15, H6). No-op outside a request scope.
+ *
+ * @param input.actionReason - The decoded, trimmed, validated header value.
+ */
+export function setRequestContextActionReason(input: { readonly actionReason: string }): void {
+    const store = requestContextStorage.getStore();
+    if (!store) return;
+    store.actionReason = input.actionReason;
+}
+
+/**
+ * Returns the reason of the administrative action the current request runs
+ * (ACC:15, H6), or `undefined` when none was recorded or outside a request
+ * scope. Wired into service-core with `setActionReasonResolver` (`initApp`).
+ *
+ * @returns The action reason of the current request, if any.
+ */
+export function getRequestActionReason(): string | undefined {
+    return requestContextStorage.getStore()?.actionReason;
 }
 
 /**

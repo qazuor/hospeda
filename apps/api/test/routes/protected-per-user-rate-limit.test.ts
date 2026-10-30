@@ -11,7 +11,7 @@
  * **Why not real-route?**  The actual protected routes require:
  *  - Better Auth session middleware + DB actor lookup (not easy to stub without
  *    the real auth layer)
- *  - Per-service mocks (GastronomyReviewService, EntityCommentService, …) with
+ *  - Per-service mocks (VenueReviewService, EntityCommentService, …) with
  *    transactional DB mocks to avoid real DB hits
  *  - All of `setupRoutes(app)` which starts billing, cron, and Sentry side-effects
  *
@@ -32,7 +32,7 @@
  *  - `RateLimit-Limit` / `RateLimit-Remaining` headers are correct.
  *
  * ### Point B — write limit on review/comment create routes (30 req / 1 h)
- *  - Review bucket: 30 writes pass; 31st returns 429 (mirrors I2 bug: gastronomy
+ *  - Review bucket: 30 writes pass; 31st returns 429 (mirrors I2 bug: venue
  *    review returning 429 prematurely under IP-keyed limit).
  *  - Comment bucket: same semantics, independent budget from the review bucket.
  *  - The two keyPrefixes (`prot:write:review` vs `prot:write:comment`) are
@@ -90,10 +90,6 @@ vi.mock('../../src/utils/env', () => {
             adminWindowMs: 60_000,
             adminMaxRequests: 50,
             adminMessage: 'Too many admin requests',
-            billingEnabled: true,
-            billingWindowMs: 60_000,
-            billingMaxRequests: 20,
-            billingMessage: 'Too many billing requests',
             webhookEnabled: true,
             webhookWindowMs: 60_000,
             webhookMaxRequests: 200,
@@ -337,12 +333,12 @@ describe('Point B — write rate limit on review/comment create endpoints (30 re
     });
 
     /**
-     * Regression for the I2 bug: gastronomy review create was returning 429
+     * Regression for the I2 bug: venue review create was returning 429
      * prematurely because the per-route IP-keyed limiter collapsed NAT traffic.
      * This test verifies the per-user write limiter (keyed by actor.id) fires
      * only after the 30th write within an hour.
      */
-    it('should return 429 on the 31st review-create write (I2 regression: gastronomy review flow)', async () => {
+    it('should return 429 on the 31st review-create write (I2 regression: venue review flow)', async () => {
         const app = buildApp({
             windowMs: 3_600_000,
             max: 30,

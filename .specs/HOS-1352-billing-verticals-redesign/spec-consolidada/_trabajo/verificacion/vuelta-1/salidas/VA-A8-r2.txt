@@ -1,0 +1,80 @@
+# VA-A8 · vuelta 2 · fuente → spec
+
+Spec leída: `ciegas/s/fe90e1d7/` (todos los `*.md`). Fuentes: `ciegas/fuentes/.specs/HOS-1352-billing-verticals-redesign/docs/`.
+
+Método: el log y la matriz se compararon token a token (difflib) contra su rendición en la spec
+(`01-decisiones-vigentes.md`, `90-retirados.md`, `04-catalogos.md`), quitando lo tachado. Cada tramo
+fuente que no aparece en su bloque se buscó en toda la spec y se resolvió a mano contra los 📌 posteriores, las
+notas «Parte sin efecto» y los retiros de `90-retirados.md`. Las letras del owner se compararon fila por
+fila contra su ítem anclado. La prosa fuera de tabla se leyó entera.
+
+## Reglas con problema
+
+01-decision-log.md:659 · «mientras su plan comercial se lo dé no puede comprar Turista VIP; al perder el plan comercial, recupera la posibilidad de comprarlo» · distinta en 01-decisiones-vigentes.md:2824 (se omite la segunda mitad, «al perder el plan comercial, recupera la posibilidad de comprarlo», sin «[…]» y sin nota «Parte sin efecto»; ningún 📌 ni adjudicación la supera, y CA la confirma: el suspendido compra Turista VIP con advertencia) · MENOR (el predicado de la guarda de `S1` ya la implica, y AC:B7:30/31 y AC:B13a:16 ejercen la compra del suspendido)
+01-decision-log.md:7939 · «(📌5 de DEC-ARCH-017, BJ) `S1` suma la guarda «el user no tiene un plan vigente que herede Turista VIP»; al perder ese plan, la compra vuelve a admitirse» · distinta en 01-decisiones-vigentes.md:6520 (se omite «al perder ese plan, la compra vuelve a admitirse», sin marca ni nota; AC:B3:28, en 10-corte/B3.md:553, prueba sólo el rechazo y ningún AC prueba que la compra vuelva a admitirse después de una baja o cancelación del plan) · MENOR
+01-decision-log.md:1150 · «(DEC-SUB-006, implicación 6) el crédito se consume entero en la fecha y no deja saldo: no se modela un saldo a favor» · ausente en 01-decisiones-vigentes.md:712-715 (el bloque pasa de la implicación 5 a «CONDICIONADA», sin «[…]» y sin nota; no aparece en ningún otro archivo) · MENOR (B8a:4 y 02-nucleo.md:417 ya modelan el crédito como una fecha, así que el modelo no cambia)
+06-mp-validation-matrix.md:330 · «(EX-14, 📌 2026-09-29) por IPN tampoco se distingue el entorno: el cuerpo no trae `live_mode` ni ningún otro campo de entorno» · distinta en 04-catalogos.md:9007 (la Conclusión termina antes del 📌, sin «[…]» y sin adjudicación) · MENOR (`G17` ya prohíbe leer del cuerpo otra cosa que tipo, id y `version`)
+06-mp-validation-matrix.md:122 · «una fila sin fecha se lee como `UNKNOWN`» · ausente (10-corte/B1.md:575-590 exige fecha y entorno y fija la caducidad por cambio, pero no dice cómo se lee una fila sin fecha) · MENOR
+06-mp-validation-matrix.md:128 · «un `PARTIALLY_SUPPORTED` tiene que nombrar qué parte» · ausente como regla (sólo está implícita en las filas) · MENOR
+06-mp-validation-matrix.md:129 · «antes de FASE 10 todas las filas se re-verifican» · distinta en 10-corte/B1.md:589 (ahí se re-verifica la fila de cada capacidad antes de implementarla y sólo «si pasó tiempo», no la matriz entera antes de implementar; parece la forma que le dio el cierre posterior de `S-MP-02`, pero la spec no dice que la regla de la matriz quedó superada) · MENOR
+26-fase-9-completa/10-decisiones-del-owner.md:36 · «(5a) máquina mínima de `refund` `REQUESTED → CONFIRMED → EXECUTED | FAILED` y una acción administrativa nueva, «asentar un cobro o una devolución que ya ocurrió por fuera»» · distinta en 01-decisiones-vigentes.md:11051 (la celda se corta en el `\|` escapado: faltan `FAILED`, la acción nueva y «el catálogo pasa de 13 a 14») · MENOR (DEC-RF-008 trae la regla entera)
+28-fase-9-vuelta-1/10-decisiones-del-owner.md:71 · «caducadas por la revisión del owner del 2026-09-28: `G1-1` y R1 en lo que decían de la cartera (los reemplaza DEC-MIG-006) y `G2-4` (sale `T7`)» · ausente en 01-decisiones-vigentes.md:11299 y :11371 (el registro reproduce las dos letras como vivas, sin la nota de caducidad) · MENOR (son sólo citables; las DEC vivas mandan)
+29-fase-8-vuelta-2/10-decisiones-del-owner.md:75 · «`R15` caduca entera con DEC-MIG-006 (C12, `L1-b`), y con ella `N-B-01`» · ausente en 01-decisiones-vigentes.md:11685 (R15 figura sin la nota de caducidad) · MENOR
+01-decision-log.md:7606 · «(📌6 de DEC-ARCH-014, `U3`) ninguna unidad depende de `U3`; la necesitan el ensayo (paso 0) y los pasos 1a, 1b y 2» · distinta en 01-decisiones-vigentes.md:6160 (la nota «Parte sin efecto» del 📌7 dice que ese texto se muestra bajo el 📌6, y no está ahí; sí está en 10-corte/U3.md:437) · MENOR
+
+No encontré ninguna regla con problema que cambie lo que se implementa o se prueba: **cero BLOQUEA**.
+
+## Lo que se comprobó y resultó bien
+
+- **Log**: las 146 entradas (127 funcionales y 19 de metodología) y sus ~204 📌 están en la spec
+  textualmente, salvo las tres omisiones de arriba. Todo lo demás que falta en su bloque está
+  explicado:
+  - **Pasa a 90-retirados.md**, con «Por qué murió» comprobado contra el *Estado* de la fuente:
+    - las 8 decisiones `SUPERSEDED`: SUB-001, SUB-003, SUB-005, MIG-004, SUB-015, GRANT-010, SUB-018 y ARCH-011;
+    - los 📌 muertos: ARCH-006 📌4 y 📌5, MIG-003 📌6, MIG-005 📌1, 📌2 y 📌4, RF-008 📌2 y MIG-006 📌1.
+  - **Está marcado «[…]» con nota «Parte sin efecto»**, y cada nota cita una línea que la supera:
+    MIG-001, MIG-002, MIG-003, CONC-002, ADDON-002, ADDON-003, ADDON-004, METH-006, DATA-002, SUB-013,
+    TEST-001, MP-003, DATA-004, RF-004, RF-006, SUB-019, MP-008, SUB-021, DATA-005, TRIAL-010, MIG-005,
+    RF-008, ENT-006, MIG-006, ARCH-013, DATA-008, ARCH-014, ARCH-017 y ARCH-006.
+  - **Las restantes diferencias son 📌 que la spec mueve detrás de su decisión** (con `→ ver 📌n`); el
+    texto está entero en su bloque. Es el caso de MAIL-001, RF-001, SUB-010, GRANT-003, GRANT-004,
+    ARCH-005, METH-013 y MP-006.
+- **Matriz**:
+  - Las 117 filas están en 04-catalogos.md con todas sus celdas. EX-46 lleva su adjudicación BK.
+  - Las notas de sección (PC-3, Reembolsos, EX-7/EX-8, Planes, el `403` de habilitación y la fila huérfana) están.
+  - De la cabecera, «toda mutación se relee campo por campo» está en INV:D5, AC:B1:3 y B1.md:496, y las sondas versionadas en B1.md:598.
+- **Letras del owner**: las 272 filas de las ocho tablas están textualmente, salvo la 5a de arriba.
+  - Lo normativo de la prosa también está:
+    - el rol de socio no se quita (02-nucleo.md:1017);
+    - el contenido de Partner en la tabla de hoy (V7.md:527);
+    - los avisos de retención releen la ficha (04-catalogos.md:726).
+  - Los plazos fijados (72 h y 7 días, 60/30/7, 7, 7 y 180 días, 15 min, 3 días, 10 días corridos) coinciden con 02-nucleo.md §4.
+- **Spot-checks de valores del log contra las piezas, todos coinciden**:
+  - grace 10 días por versión y menor que el ciclo;
+  - 4 y 8 pausas-mes;
+  - `puedeCobrarle` con la marca y el plazo 16;
+  - `G13` con las seis respuestas de arranque.
+
+## Resumen por archivo
+
+| archivo | líneas recorridas | reglas normativas vivas revisadas | ausente | distinta |
+|---|---|---|---|---|
+| 01-decision-log.md | 1–8160 (todo; el *Resumen* 8134–8160 es recuento) | 146 decisiones (8 muertas) + ~204 📌 (9 muertos), ≈ 330 vivas | 1 | 3 |
+| 06-mp-validation-matrix.md | 1–573 | 117 filas + 7 reglas + 6 notas de sección ≈ 130 | 2 | 2 |
+| 26-fase-9-completa/10-decisiones-del-owner.md | 1–77 | 45 filas | 0 | 1 |
+| 28-fase-9-vuelta-1/10-decisiones-del-owner.md | 1–73 | 37 filas + nota de caducidad | 1 | 0 |
+| 29-fase-8-vuelta-2/10-decisiones-del-owner.md | 1–76 | 30 filas + «Por qué R1-a» + nota de caducidad | 1 | 0 |
+| 30-revision-del-owner/10-decisiones-del-owner.md | 1–95 | 35 filas + los tres ítems de la línea 47 | 0 | 0 |
+| 37-fase-8-vuelta-3/10-decisiones-del-owner.md | 1–73 | 40 filas | 0 | 0 |
+| 38-fase-5/10-decisiones-del-owner.md | 1–164 | 50 filas + prosa normativa (I, B, A, 23→24 unidades) | 0 | 0 |
+| 39-fases-6-y-7/10-decisiones-del-owner.md | 1–52 | 13 filas | 0 | 0 |
+| 40-congelamiento-y-ci/10-decisiones-del-owner.md | 1–35 | 7 filas (N, O, R y S son del congelamiento del viejo) | 0 | 0 |
+| 37-fase-8-vuelta-3/D1-coherencia-del-conjunto.md | 1–276 | 0: es un informe de hallazgos, no fija reglas. Sus 7 hallazgos ya están resueltos en la spec (`G13` con las seis respuestas, la fila 27 de `puedeCobrarle` con la marca, cinco hechos de reinicio, 25 acciones) | 0 | 0 |
+
+**Totales: 5 ausentes y 6 distintas, 0 BLOQUEA y 11 MENOR.**
+
+**Queda fuera, por no ser normativo de implementación:**
+
+- las *Reglas* 1 a 5 del log (líneas 41–58), que gobiernan cómo se escribe el log;
+- la regla 3 de la matriz (no decidir sobre MP con la fila `UNKNOWN`) y el *Procedimiento por fila*, que son método de la FASE 1C;
+- los recuentos del *Resumen* de los dos documentos.

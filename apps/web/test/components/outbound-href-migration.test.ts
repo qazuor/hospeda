@@ -80,7 +80,7 @@ const MIGRATED: readonly MigratedLink[] = [
         neverRenders: ['href={url}']
     },
     {
-        file: 'components/gastronomy/GastronomyContactBlock.astro',
+        file: 'components/venue/VenueContactBlock.astro',
         renders: [
             'const menuHref = resolveSafeExternalUrl(menuUrl)',
             'const href = resolveSafeExternalUrl(socialNetworks?.[key])',

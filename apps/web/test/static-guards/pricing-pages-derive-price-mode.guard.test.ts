@@ -110,10 +110,11 @@ const destructuredKeys = (src: string): readonly string[] =>
 const stripBlockComments = (src: string): string => src.replace(/\/\*[\s\S]*?\*\//g, '');
 
 describe('pricing pages derive their price mode (HOS-1212)', () => {
-    it('finds the five audience pricing pages', () => {
+    it('finds the four audience pricing pages', () => {
         // Guards the guard: a glob that silently matched nothing would make
-        // every assertion below vacuously true.
-        expect(PRICING_PAGES).toHaveLength(5);
+        // every assertion below vacuously true. Four since the aliados page was
+        // removed with the old billing (HOS-1637, AC:B13a:21).
+        expect(PRICING_PAGES).toHaveLength(4);
     });
 
     it.each(PRICING_PAGES)('%s passes priceMode', (page) => {

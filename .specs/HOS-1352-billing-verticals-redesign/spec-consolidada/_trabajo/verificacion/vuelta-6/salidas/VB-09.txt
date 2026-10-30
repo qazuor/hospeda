@@ -1,0 +1,15 @@
+# VB-09 · spec → fuente · 10-corte/B4.md 10-corte/B5.md 10-corte/B6.md
+
+## Hallazgos
+
+10-corte/B5.md:64 · «apaga dentro de los 15 días» · contradice fuentes/.specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:721 («`S36` crea `RF1` sobre el pago de cada `UNA_VEZ` que su orfandad apaga dentro de los 10 días»); confirmado por la regla viva de fuentes/.specs/HOS-1354-billing-cobro-y-proveedor/docs/03-maquinas-de-estado.md:186 («cuyo pago se acreditó dentro de los mismos 10 días corridos»), sin decisión posterior que amplíe la ventana. Contradicción interna con AC:B5:24 (líneas 438–439), B5.md:801 y 04-catalogos.md:4511: amplía indebidamente los pagos por los que se pide devolución · BLOQUEA
+
+10-corte/B6.md:376 · «Si una cuenta ya recibió un reembolso durante el mes calendario, toda nueva devolución queda bloqueada hasta el mes siguiente, incluso con confirmación humana.» · sin soporte: no existe ese límite mensual en las fuentes congeladas, el decision log ni las decisiones posteriores del owner. La regla vigente RF2 de fuentes/.specs/HOS-1354-billing-cobro-y-proveedor/docs/03-maquinas-de-estado.md:1851 manda ejecutar la devolución confirmada con sus controles de idempotencia, contracargo y serialización por orden, sin bloqueo mensual por cuenta; la restricción agregada impediría devoluciones que la fuente manda ejecutar. Contradicción interna con AC:B6:1 y AC:B6:9 · BLOQUEA
+
+## Resumen
+
+| archivo | líneas recorridas | afirmaciones normativas revisadas (aprox.) | BLOQUEA | MENOR |
+|---|---|---|---|---|
+| 10-corte/B4.md | 1–536 | 130 | 0 | 0 |
+| 10-corte/B5.md | 1–1235 | 290 | 1 | 0 |
+| 10-corte/B6.md | 1–550 | 150 | 1 | 0 |

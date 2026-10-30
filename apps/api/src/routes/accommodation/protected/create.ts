@@ -2,18 +2,18 @@
  * Protected create accommodation endpoint
  * Requires authentication
  */
-import { EntitlementKey } from '@repo/billing';
+
 import {
     type AccommodationCreateHttp,
     AccommodationCreateHttpSchema,
     AccommodationProtectedSchema,
     httpToDomainAccommodationCreate,
-    PermissionEnum
+    PermissionEnum,
+    VerticalEnum
 } from '@repo/schemas';
 import { AccommodationService, ServiceError } from '@repo/service-core';
 import type { Context } from 'hono';
-import { requireEntitlement } from '../../../middlewares/entitlement';
-import { enforceAccommodationLimit } from '../../../middlewares/limit-enforcement';
+
 import { getActorFromContext } from '../../../utils/actor';
 import { stripRichDescriptionFields } from '../../../utils/entitlement-filter';
 import { apiLogger } from '../../../utils/logger';
@@ -28,20 +28,29 @@ const accommodationService = new AccommodationService({ logger: apiLogger });
 export const protectedCreateAccommodationRoute = createProtectedRoute({
     method: 'post',
     path: '/',
+    listingAccess: { vertical: VerticalEnum.ACCOMMODATION, operation: 'CREATE' },
     summary: 'Create accommodation',
     description: 'Creates a new accommodation. Requires ACCOMMODATION_CREATE permission.',
     tags: ['Accommodations'],
     requiredPermissions: [PermissionEnum.ACCOMMODATION_CREATE],
     requestBody: AccommodationCreateHttpSchema,
     responseSchema: AccommodationProtectedSchema,
+    // CREATE keeps drafts unlimited; PB1 counts published listings at publication (V6.1; V2.md:434-438).
     handler: async (
         ctx: Context,
         _params: Record<string, unknown>,
         body: Record<string, unknown>
     ) => {
         const actor = getActorFromContext(ctx);
-        // Convert HTTP input to domain input
-        const domainInput = httpToDomainAccommodationCreate(body as AccommodationCreateHttp);
+        // HOS-1909: the shared create schema accepts `ownerId`, but in the protected
+        // tier the owner is ALWAYS the caller. A body-supplied value is discarded
+        // (not rejected, so clients that echo their own id keep working) so a signed-in
+        // user cannot create a listing owned by someone else. Creating on behalf of
+        // another owner is an admin-tier capability (action 15) with its own route.
+        const domainInput = httpToDomainAccommodationCreate({
+            ...(body as AccommodationCreateHttp),
+            ownerId: actor.id
+        });
         const result = await accommodationService.create(actor, domainInput);
 
         if (result.error) {
@@ -59,12 +68,6 @@ export const protectedCreateAccommodationRoute = createProtectedRoute({
         return stripRichDescriptionFields(result.data);
     },
     options: {
-        // SPEC-145 T-004: entitlement gate BEFORE limit check — host must have the
-        // PUBLISH_ACCOMMODATIONS entitlement (granted on all owner/complex plans)
-        // before we even consult the accommodation-count limit.
-        middlewares: [
-            requireEntitlement(EntitlementKey.PUBLISH_ACCOMMODATIONS),
-            enforceAccommodationLimit()
-        ]
+        // CREATE keeps drafts unlimited; PB1 counts published listings at publication (V6.1; V2.md:434-438).
     }
 });

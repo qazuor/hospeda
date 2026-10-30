@@ -6,6 +6,7 @@
  * this page issues exactly one request.
  */
 
+import { PublicationStatusEnum } from '@repo/schemas';
 import { useCallback } from 'react';
 import type { AccommodationEditData } from '@/lib/api/types';
 import type { SupportedLocale } from '@/lib/i18n';
@@ -61,13 +62,14 @@ export function CapacityPricingForm({
 }: CapacityPricingFormProps) {
     const prompt = usePublishReadyPrompt();
 
-    // This section is one of exactly two that can flip publish readiness (the
-    // other is photos), which is why the prompt is wired here and not into the
-    // shared form hook for all eleven routes.
+    // This section owns four blocking requirements. Basic info owns the
+    // description and photos owns the main image; each section wires the same
+    // transition prompt where its final field can be completed.
     const handleSaved = useCallback(
         ({ before, after }: { before: AccommodationEditData; after: AccommodationEditData }) => {
             void prompt.evaluate({
                 before: {
+                    description: before.description,
                     capacity: before.maxGuests,
                     minNights: before.minNights,
                     bedrooms: before.bedrooms,
@@ -75,13 +77,14 @@ export function CapacityPricingForm({
                     hasMainImage
                 },
                 after: {
+                    description: after.description,
                     capacity: after.maxGuests,
                     minNights: after.minNights,
                     bedrooms: after.bedrooms,
                     bathrooms: after.bathrooms,
                     hasMainImage
                 },
-                isDraft: after.lifecycleState === 'DRAFT'
+                isDraft: after.publicationStatus === PublicationStatusEnum.DRAFT
             });
         },
         [prompt, hasMainImage]

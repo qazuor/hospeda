@@ -56,6 +56,9 @@ describe('Public /api/v1/public/announcements (SPEC-156)', () => {
         });
 
         it('instantiates PlatformSettingsService at module load', async () => {
+            // vitest 5 clears mock history before every test; reset the module registry so
+            // this import runs the route module's top-level constructor call again.
+            vi.resetModules();
             await import('../../src/routes/platform-settings/public/index.js');
             const { PlatformSettingsService } = await import('@repo/service-core');
             expect(PlatformSettingsService).toHaveBeenCalled();

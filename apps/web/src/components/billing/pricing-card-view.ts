@@ -41,6 +41,7 @@ import type {
     PricingCardLimitItem
 } from '@/components/billing/pricing-card-items';
 import { buildPricingCardItems } from '@/components/billing/pricing-card-items';
+import type { TouristVipBenefitKeys } from '@/lib/billing/tourist-vip-benefits';
 import type { PricingAudience } from '@/lib/billing-i18n';
 import {
     formatLimitValue,
@@ -63,10 +64,12 @@ import type { TranslationFn } from '@/lib/i18n';
  * exactly what the cumulative delta could not survive: several tiers in this
  * catalogue differ ONLY in their numeric caps, so a card built from entitlements
  * alone renders "everything in Basic, plus:" followed by nothing. The shape is
- * `Record<key, value>` — QZPay's storage format, which is what the public
+ * `Record<key, value>` — the legacy QZPay storage format, which is what the public
  * endpoint returns — not `LimitDefinition[]`.
  */
 export interface PricingPlan {
+    readonly planVersionId?: string;
+    readonly billingOptions?: { readonly monthly: string; readonly annual: string | null };
     readonly slug: string;
     readonly name: string;
     readonly description: string;
@@ -76,9 +79,10 @@ export interface PricingPlan {
     readonly trialDays: number;
     readonly sortOrder: number;
     readonly isActive: boolean;
+    readonly inheritsTouristVip: boolean;
     /** Entitlement keys (string values matching EntitlementKey). */
     readonly entitlements: readonly string[];
-    /** Numeric caps as a key -> value map; `-1` is the unlimited sentinel. */
+    /** Numeric caps as a key -> value map; unlimited uses the catalog sentinel. */
     readonly limits: Readonly<Record<string, number>>;
 }
 
@@ -150,11 +154,12 @@ export interface BuildPricingCardViewsInput {
      * each card is diffed against the one before it.
      */
     readonly plans: ReadonlyArray<PricingPlan>;
-    /** Audience of the page — owner cards collapse some entitlements into groups. */
+    /** Audience of the page — commercial cards collapse inherited Tourist VIP benefits. */
     readonly audience: PricingAudience;
     /** BCP-47 locale for `Intl` number formatting. */
     readonly intlLocale: string;
     readonly t: TranslationFn;
+    readonly touristVipBenefits: TouristVipBenefitKeys | null;
 }
 
 /**
@@ -202,7 +207,7 @@ function formatPriceArs(input: { readonly cents: number; readonly intlLocale: st
  * ```
  */
 export function buildPricingCardViews(input: BuildPricingCardViewsInput): PricingCardsView {
-    const { plans, audience, intlLocale, t } = input;
+    const { plans, audience, intlLocale, t, touristVipBenefits } = input;
 
     const includesEverythingTemplate = t(
         'pricing.includesEverything',
@@ -235,23 +240,65 @@ export function buildPricingCardViews(input: BuildPricingCardViewsInput): Pricin
         const showsDelta = !rawDelta.isFirstTier && !rawDelta.isEmpty && previousPlan !== undefined;
         const delta = showsDelta ? rawDelta : computePlanDelta({ plan });
 
-        const features = getDisplayFeatures({ keys: delta.addedEntitlements, audience, t });
-        const limitLines: PricingCardLimitItem[] = delta.limitChanges.map((change) => ({
-            kind: 'limit',
-            id: change.key,
-            text: limitLineTemplate
-                .replace('{label}', getLimitName({ key: change.key, t }))
-                .replace(
-                    '{value}',
-                    formatLimitValue({
-                        value: change.value,
-                        isUnlimited: change.isUnlimited,
-                        intlLocale,
-                        t
-                    })
-                ),
-            help: getLimitHelp({ key: change.key, t })
-        }));
+        const collapseTouristVip: Record<PricingAudience, boolean> = {
+            owner: true,
+            venue: true,
+            experience: true,
+            tourist: false,
+            partner: false
+        };
+        const inheritsBenefits =
+            collapseTouristVip[audience] && plan.inheritsTouristVip && touristVipBenefits != null;
+        const touristVipEntitlements = new Set(touristVipBenefits?.entitlements ?? []);
+        const touristVipLimits = new Set(touristVipBenefits?.limits ?? []);
+        /**
+         * The VIP line represents the inherited offer, so its presence follows
+         * the inheritance flags rather than matching benefit keys. A full-offer
+         * card needs the line; a delta needs it only when the previous tier did
+         * not already inherit the VIP offer.
+         */
+        const hasTouristVipDelta =
+            inheritsBenefits && (!showsDelta || previousPlan?.inheritsTouristVip !== true);
+        /**
+         * VIP catalog keys are covered by the group line wherever that line is
+         * shown: on a full-offer card, or on a delta against a tier that did not
+         * inherit the VIP offer. New VIP-keyed benefits in a delta against an
+         * already-inheriting tier are tier-specific additions and stay visible.
+         */
+        const filtersTouristVipKeys =
+            inheritsBenefits && (!showsDelta || previousPlan?.inheritsTouristVip !== true);
+        const displayEntitlements = filtersTouristVipKeys
+            ? delta.addedEntitlements.filter((key) => !touristVipEntitlements.has(key))
+            : delta.addedEntitlements;
+        const features = getDisplayFeatures({ keys: displayEntitlements, audience, t });
+        const limitLines: PricingCardLimitItem[] = delta.limitChanges
+            .filter((change) => !filtersTouristVipKeys || !touristVipLimits.has(change.key))
+            .map((change) => ({
+                kind: 'limit',
+                id: change.key,
+                text: limitLineTemplate
+                    .replace('{label}', getLimitName({ key: change.key, t }))
+                    .replace(
+                        '{value}',
+                        formatLimitValue({
+                            value: change.value,
+                            isUnlimited: change.isUnlimited,
+                            intlLocale,
+                            t
+                        })
+                    ),
+                help: getLimitHelp({ key: change.key, t })
+            }));
+
+        const leading = hasTouristVipDelta
+            ? [
+                  {
+                      kind: 'feature' as const,
+                      id: 'group-tourist-vip',
+                      label: t('pricing.group.touristVip')
+                  }
+              ]
+            : [];
 
         const items = buildPricingCardItems({
             features: features.map((feature) => ({
@@ -259,7 +306,8 @@ export function buildPricingCardViews(input: BuildPricingCardViewsInput): Pricin
                 id: feature.id,
                 label: feature.label
             })),
-            limits: limitLines
+            limits: limitLines,
+            leading
         });
 
         const hasAnnualPrice = plan.annualPriceArs !== null && plan.annualPriceArs > 0;

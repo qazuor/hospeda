@@ -11,6 +11,7 @@
 import ListingLayout from '@/layouts/ListingLayout.astro';
 import Breadcrumbs from '@/components/shared/navigation/Breadcrumbs.astro';
 import ListingPageHeader from '@/components/shared/layout/ListingPageHeader.astro';
+import ListingViewToggle from '@/components/shared/layout/ListingViewToggle.astro';
 import CompareModeControls from '@/components/shared/compare/CompareModeControls.astro';
 import EmptyState from '@/components/shared/feedback/EmptyState.astro';
 import ErrorBanner from '@/components/shared/feedback/ErrorBanner.astro';
@@ -24,6 +25,7 @@ import { buildAvailabilityParams } from '@/lib/availability-params';
 import { createTranslations } from '@/lib/i18n';
 import type { SupportedLocale } from '@/lib/i18n';
 import { buildUrl } from '@/lib/urls';
+import { buildListingViewHref } from '@/lib/listing-view-href';
 import { CACHE_TAG_COLLECTIONS } from '@repo/cache-tags';
 import { hasActiveAccommodationListingFilters } from '@/lib/cache/listing-cache';
 import { applyCacheHeaders } from '@/lib/cache/response-cache';
@@ -391,12 +393,10 @@ if (adultsContext !== undefined) initialParams.adults = String(adultsContext);
 if (childrenContext !== undefined) initialParams.children = String(childrenContext);
 
 // Build the URL pointing back to the list view, preserving every active filter.
-const listHref = (() => {
-	const sp = new URLSearchParams(url.searchParams);
-	const qs = sp.toString();
-	const base = buildUrl({ locale, path: 'alojamientos' });
-	return qs ? `${base}?${qs}` : base;
-})();
+const listHref = buildListingViewHref({
+	base: buildUrl({ locale, path: 'alojamientos' }),
+	searchParams: url.searchParams
+}).href;
 
 // Build per-id maps for popup enrichment. Resolved on the page so the island
 // stays i18n-agnostic and we don't need to serialize functions.
@@ -480,23 +480,16 @@ const newColors = getBadgeStatusColor({ status: 'new' });
 		initialParams={initialParams}
 	/>
 
+	{/* Two sibling expressions on purpose: a `slot` attribute on a child of the
+	    bare `<>` shorthand is ignored by Astro, which dumps the dock toggle into
+	    the default slot (the page content) instead of the mobile dock. */}
 	{!hasError && cards.length > 0 && (
-		<div class="view-toggle" role="tablist" aria-label={t('accommodations.viewToggle.ariaLabel', 'Vista')}>
-			<a
-				href={listHref}
-				class="view-toggle__btn"
-				role="tab"
-				aria-selected="false"
-			>
-				{t('accommodations.viewToggle.list', 'Lista')}
-			</a>
-			<span
-				class="view-toggle__btn view-toggle__btn--active"
-				role="tab"
-				aria-selected="true"
-			>
-				{t('accommodations.viewToggle.map', 'Mapa')}
-			</span>
+		<ListingViewToggle slot="dock-start" locale={locale} active="map" listHref={listHref} variant="dock" />
+	)}
+
+	{!hasError && cards.length > 0 && (
+		<div class="map-view-toggle">
+			<ListingViewToggle locale={locale} active="map" listHref={listHref} variant="inline" />
 		</div>
 	)}
 
@@ -545,6 +538,8 @@ const newColors = getBadgeStatusColor({ status: 'new' });
 					openSheet: t('maps.sidebar.openSheet', 'Ver tarjetas'),
 					openSheetCountOne: t('maps.sidebar.openSheetCount_one', 'Ver {{count}} resultado'),
 					openSheetCountOther: t('maps.sidebar.openSheetCount_other', 'Ver {{count}} resultados'),
+					openSheetCountShortOne: t('maps.sidebar.openSheetCountShort_one', '{{count}} resultado'),
+					openSheetCountShortOther: t('maps.sidebar.openSheetCountShort_other', '{{count}} resultados'),
 					closeSheet: t('maps.sidebar.closeSheet', 'Cerrar'),
 					loading: t('maps.sidebar.loading', 'Cargando resultados…'),
 				}}
@@ -566,64 +561,8 @@ const newColors = getBadgeStatusColor({ status: 'new' });
 </ListingLayout>
 
 <style>
-	.view-toggle {
-		display: inline-flex;
-		gap: var(--space-2, 8px);
-		padding: 4px;
+	.map-view-toggle {
 		margin: var(--space-4, 16px) 0;
-		background-color: var(--surface-warm, #faf6f0);
-		border-radius: var(--radius-pill, 9999px);
-		border: 1px solid transparent;
-	}
-	.view-toggle__btn {
-		font-family: var(--font-sans);
-		font-size: 0.875rem;
-		padding: 0.5rem 1rem;
-		border-radius: var(--radius-pill, 9999px);
-		color: var(--core-muted-foreground);
-		text-decoration: none;
-		transition: background-color var(--duration-normal, 0.4s) ease, color var(--duration-normal, 0.4s) ease;
-		cursor: pointer;
-	}
-	.view-toggle__btn:hover {
-		color: var(--core-foreground);
-	}
-	.view-toggle__btn--active {
-		background-color: var(--brand-accent);
-		/* SPEC-308: dark ink on the vibrant orange fill (white fails AA). */
-		color: var(--accent-foreground);
-		font-weight: 500;
-		cursor: default;
-	}
-
-	/* Mobile: float the toggle over the top of the fullscreen map, centered.
-	 * The bottom row of the map view is reserved for Filtros (left) + Ver
-	 * tarjetas (right), so the Lista/Mapa selector hovers near the top
-	 * instead of competing for the bottom-center slot. */
-	@media (max-width: 767px) {
-		.view-toggle {
-			position: fixed;
-			top: calc(var(--navbar-height, 80px) + var(--wave-bar-compact, 77px) + 8px);
-			left: 50%;
-			transform: translateX(-50%);
-			z-index: 200;
-			margin: 0;
-			/* Frosted-glass surface — see global.css → --frost-* tokens. */
-			background-color: var(--frost-bg-light);
-			backdrop-filter: blur(var(--frost-blur));
-			-webkit-backdrop-filter: blur(var(--frost-blur));
-			border-color: var(--frost-border);
-			box-shadow: 0 4px 12px oklch(0 0 0 / 0.12), 0 1px 3px oklch(0 0 0 / 0.06);
-		}
-
-		/* Hide while a blocking overlay is open — same set the sheet trigger
-		 * and filters trigger already honor. */
-		:global(html[data-filters-drawer-open]) .view-toggle,
-		:global(html[data-search-panel-open]) .view-toggle,
-		:global(html[data-mobile-menu-open]) .view-toggle {
-			visibility: hidden;
-			pointer-events: none;
-		}
 	}
 
 	.acc-listing-map {

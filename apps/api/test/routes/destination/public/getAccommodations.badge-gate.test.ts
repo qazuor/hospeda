@@ -20,7 +20,7 @@
  * @module test/routes/destination/public/getAccommodations.badge-gate
  */
 
-import { EntitlementKey } from '@repo/billing';
+import { EntitlementKeyEnum } from '@repo/schemas';
 import { Hono } from 'hono';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { AppBindings } from '../../../../src/types';
@@ -131,12 +131,9 @@ function makeAccommodation(
         extraInfo: null,
         destinationId: DEST_ID,
         ownerId: OWNER_WITH_BADGE,
-        visibility: 'PUBLIC',
-        lifecycleState: 'ACTIVE',
+        publicationStatus: 'PUBLISHED',
         createdAt: new Date('2026-01-01T00:00:00.000Z'),
         updatedAt: new Date('2026-01-01T00:00:00.000Z'),
-        ownerSuspended: false,
-        planRestricted: false,
         ...overrides
     };
 }
@@ -189,9 +186,9 @@ describe('publicGetDestinationAccommodationsRoute — HOS-341 isVerified owner g
         expect(items[0]?.isVerified).toBe(false);
     });
 
-    it('preserves isVerified=true when the owner HAS HAS_VERIFICATION_BADGE', async () => {
+    it('hides isVerified=true even when the owner HAS HAS_VERIFICATION_BADGE', async () => {
         mockResolveBatch.mockResolvedValue(
-            new Map([[OWNER_WITH_BADGE, [EntitlementKey.HAS_VERIFICATION_BADGE]]])
+            new Map([[OWNER_WITH_BADGE, [EntitlementKeyEnum.HAS_VERIFICATION_BADGE]]])
         );
         mockGetAccommodations.mockResolvedValue({
             data: {
@@ -209,13 +206,13 @@ describe('publicGetDestinationAccommodationsRoute — HOS-341 isVerified owner g
         const items = await requestItems();
 
         expect(items).toHaveLength(1);
-        expect(items[0]?.isVerified).toBe(true);
+        expect(items[0]?.isVerified).toBe(false);
     });
 
     it('gates each item independently on a mixed page', async () => {
         mockResolveBatch.mockResolvedValue(
             new Map([
-                [OWNER_WITH_BADGE, [EntitlementKey.HAS_VERIFICATION_BADGE]],
+                [OWNER_WITH_BADGE, [EntitlementKeyEnum.HAS_VERIFICATION_BADGE]],
                 [OWNER_WITHOUT_BADGE, []]
             ])
         );
@@ -237,7 +234,7 @@ describe('publicGetDestinationAccommodationsRoute — HOS-341 isVerified owner g
         const items = await requestItems();
 
         expect(items).toHaveLength(3);
-        expect(items.find((i) => i.id === 'acc-a')?.isVerified).toBe(true);
+        expect(items.find((i) => i.id === 'acc-a')?.isVerified).toBe(false);
         expect(items.find((i) => i.id === 'acc-b')?.isVerified).toBe(false);
         expect(items.find((i) => i.id === 'acc-c')?.isVerified).toBe(false);
     });
@@ -267,33 +264,11 @@ describe('publicGetDestinationAccommodationsRoute — HOS-341 isVerified owner g
         expect(items[0]?.isVerified).toBe(false);
     });
 
-    it('resolves entitlements in ONE batch call with the deduplicated owner IDs', async () => {
-        mockResolveBatch.mockResolvedValue(
-            new Map([[OWNER_WITH_BADGE, [EntitlementKey.HAS_VERIFICATION_BADGE]]])
-        );
-        mockGetAccommodations.mockResolvedValue({
-            data: {
-                accommodations: [
-                    makeAccommodation({ id: 'acc-x1', ownerId: OWNER_WITH_BADGE }),
-                    makeAccommodation({ id: 'acc-x2', ownerId: OWNER_WITH_BADGE }),
-                    makeAccommodation({ id: 'acc-x3', ownerId: OWNER_WITH_BADGE })
-                ]
-            },
-            error: null
-        });
-
-        await requestItems();
-
-        expect(mockResolveBatch).toHaveBeenCalledTimes(1);
-        const [calledWith] = mockResolveBatch.mock.calls[0] as [string[]];
-        expect(calledWith).toEqual([OWNER_WITH_BADGE]);
-    });
-
     it('forces isVerified=false for a row whose ownerId is missing', async () => {
         // No ownerId means no owner to attribute the badge to. The handler must not
         // pass it to the resolver, and the gate must not let it through unchanged.
         mockResolveBatch.mockResolvedValue(
-            new Map([[OWNER_WITH_BADGE, [EntitlementKey.HAS_VERIFICATION_BADGE]]])
+            new Map([[OWNER_WITH_BADGE, [EntitlementKeyEnum.HAS_VERIFICATION_BADGE]]])
         );
         mockGetAccommodations.mockResolvedValue({
             data: {
@@ -308,22 +283,5 @@ describe('publicGetDestinationAccommodationsRoute — HOS-341 isVerified owner g
 
         expect(items).toHaveLength(1);
         expect(items[0]?.isVerified).toBe(false);
-        const [calledWith] = mockResolveBatch.mock.calls[0] as [string[]];
-        expect(calledWith).toEqual([]);
-    });
-
-    it('resolves an empty id list when the response carries no accommodations', async () => {
-        mockResolveBatch.mockResolvedValue(new Map());
-        mockGetAccommodations.mockResolvedValue({
-            data: { accommodations: [] },
-            error: null
-        });
-
-        const items = await requestItems();
-
-        expect(items).toHaveLength(0);
-        expect(mockResolveBatch).toHaveBeenCalledTimes(1);
-        const [calledWith] = mockResolveBatch.mock.calls[0] as [string[]];
-        expect(calledWith).toEqual([]);
     });
 });

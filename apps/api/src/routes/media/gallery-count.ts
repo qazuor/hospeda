@@ -22,7 +22,7 @@
  * | Entity type   | Counted from                                                     |
  * |---------------|------------------------------------------------------------------|
  * | accommodation | `accommodation_media` rows (`state='visible'`, `is_featured=false`) |
- * | gastronomy    | `gastronomy_media` rows (`state='visible'`, `is_featured=false`)    |
+ * | venue    | `venue_media` rows (`state='visible'`, `is_featured=false`)    |
  * | experience    | `experience_media` rows (`state='visible'`, `is_featured=false`)    |
  * | destination   | JSONB `media.gallery`                                              |
  * | event         | `event_media` rows (`state='visible'`, `is_featured=false`)         |
@@ -41,8 +41,8 @@ import {
     accommodationMediaModel,
     eventMediaModel,
     experienceMediaModel,
-    gastronomyMediaModel,
-    postMediaModel
+    postMediaModel,
+    venueMediaModel
 } from '@repo/db';
 
 /**
@@ -98,9 +98,9 @@ export async function resolveVisibleGalleryCount(
             });
             return total;
         }
-        case 'gastronomy': {
-            const { total } = await gastronomyMediaModel.findByGastronomy({
-                gastronomyId: entityId,
+        case 'venue': {
+            const { total } = await venueMediaModel.findByVenue({
+                venueId: entityId,
                 state: 'visible',
                 isFeatured: false
             });

@@ -3,7 +3,7 @@
  * @file ExperienceInfo.astro
  * @description Info block for an experience detail page (SPEC-240 T-027).
  * Renders summary, description, opening hours, amenities/features, and social
- * networks. Mirrors GastronomyDescription + OpeningHoursSection pattern.
+ * networks. Mirrors VenueDescription + OpeningHoursSection pattern.
  *
  * The amenities/features half of that sentence was a promise this file made and
  * did not keep until HOS-1072: the word appeared in this docstring and nowhere
@@ -19,14 +19,14 @@ import { resolveSafeExternalUrl } from '@/lib/safe-external-url';
 import { createTranslations } from '@/lib/i18n';
 import type { SupportedLocale } from '@/lib/i18n';
 import type { ExperienceDetailData, ExperienceOpeningHoursEntry } from '@/data/types';
-import OpeningHoursSection from '@/components/gastronomy/OpeningHoursSection.astro';
+import OpeningHoursSection from '@/components/venue/OpeningHoursSection.astro';
 // Reused, not duplicated (HOS-1072): experiences read the SAME `amenities` /
 // `features` catalog as accommodations, so they share the i18n namespace
 // (`accommodations.amenityNames.<slug>`) these two grids already resolve. A
-// commerce copy would fork that contract for no gain.
+// listing copy would fork that contract for no gain.
 import AmenitiesGrid from '@/components/accommodation/AmenitiesGrid.astro';
 import FeaturesGrid from '@/components/accommodation/FeaturesGrid.astro';
-import type { GastronomyOpeningHoursEntry } from '@/data/types';
+import type { VenueOpeningHoursEntry } from '@/data/types';
 
 interface Props {
     readonly experience: ExperienceDetailData;
@@ -44,11 +44,11 @@ const richHtml =
 
 const descriptionText = renderPlain({ raw: experience.description });
 
-// Opening hours: experience hours use the same shape as gastronomy.
+// Opening hours: experience hours use the same shape as venue.
 // We cast safely since both OpeningHoursEntry interfaces are structurally identical.
 const openingHours =
     experience.openingHours && Object.keys(experience.openingHours).length > 0
-        ? (experience.openingHours as Record<string, GastronomyOpeningHoursEntry>)
+        ? (experience.openingHours as Record<string, VenueOpeningHoursEntry>)
         : null;
 ---
 

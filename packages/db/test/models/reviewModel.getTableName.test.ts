@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { schema } from '../../src/client';
 import { AccommodationReviewModel } from '../../src/models/accommodation/accommodationReview.model';
 import { ExperienceReviewModel } from '../../src/models/experience/experienceReview.model';
-import { GastronomyReviewModel } from '../../src/models/gastronomy/gastronomyReview.model';
+import { VenueReviewModel } from '../../src/models/venue/venueReview.model';
 
 /**
  * BETA-150 regression.
@@ -12,9 +12,9 @@ import { GastronomyReviewModel } from '../../src/models/gastronomy/gastronomyRev
  *
  * `findAllWithRelations` / `findOneWithRelations` read `db.query[getTableName()]`,
  * and Drizzle keys `db.query` by the schema object's export names. A snake_case
- * value (e.g. `gastronomy_reviews`) is absent from that object, so the relation
- * query threw `Invalid table configuration for: gastronomy_reviews` and every
- * public `GET /gastronomies/:id/reviews` request returned HTTP 500 in production.
+ * value (e.g. `venue_reviews`) is absent from that object, so the relation
+ * query threw `Invalid table configuration for: venue_reviews` and every
+ * public `GET /venue/:id/reviews` request returned HTTP 500 in production.
  *
  * Mocked unit/service tests never exercise the real `db.query` object, so they
  * did not catch this — hence the structural assertion below against the actual
@@ -26,9 +26,9 @@ const getTableName = (model: unknown): string =>
 describe('Review model getTableName() (BETA-150 regression)', () => {
     const cases = [
         {
-            name: 'GastronomyReviewModel',
-            model: new GastronomyReviewModel(),
-            expected: 'gastronomyReviews'
+            name: 'VenueReviewModel',
+            model: new VenueReviewModel(),
+            expected: 'venueReviews'
         },
         {
             name: 'ExperienceReviewModel',

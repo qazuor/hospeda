@@ -1,0 +1,251 @@
+import type {
+    AdminInfoType,
+    ContactInfo,
+    I18nText,
+    Seo,
+    SocialNetwork,
+    Video
+} from '@repo/schemas';
+import { relations } from 'drizzle-orm';
+import {
+    boolean,
+    index,
+    integer,
+    jsonb,
+    numeric,
+    pgEnum,
+    pgTable,
+    text,
+    timestamp,
+    uuid
+} from 'drizzle-orm/pg-core';
+import { destinations } from '../destination/destination.dbschema.ts';
+import { PriceRangePgEnum, VenueTypePgEnum } from '../enums.dbschema.ts';
+import { listingPublicationColumns } from '../listing/listing-publication-columns.ts';
+import { users } from '../user/user.dbschema.ts';
+import { rVenueAmenity } from './r_venue_amenity.dbschema.ts';
+import { rVenueFeature } from './r_venue_feature.dbschema.ts';
+import { venueEvents } from './venue_event.dbschema.ts';
+import { venueFaqs } from './venue_faq.dbschema.ts';
+import { venueMenuSections } from './venue_menu_section.dbschema.ts';
+import { venueReviews } from './venue_review.dbschema.ts';
+
+/**
+ * What kind of file a venue uploaded as its menu (HOS-895).
+ *
+ * - `image` — a photo or scan of the printed menu, the overwhelmingly common
+ *   case for a small restaurant.
+ * - `pdf` — the same thing, already digital, and the only one of the two that
+ *   can carry several pages in one file.
+ *
+ * An enum rather than a MIME string or an extension sniffed off the URL: the
+ * public page has to decide between an `<img>` and a document link, and a
+ * decision taken from the tail of a Cloudinary URL is a decision that breaks
+ * the first time a delivery transformation is appended to it.
+ */
+export const VenueMenuFileKindPgEnum = pgEnum('venue_menu_file_kind_enum', ['image', 'pdf']);
+
+/**
+ * Venue table — listings for food and beverage venues (SPEC-239).
+ *
+ * Mirrors the accommodation table shape as closely as possible:
+ * - Same audit columns (createdById, updatedById, deletedById)
+ * - Same publication state (`listingPublicationColumns`, V/03 §9)
+ * - Same jsonb contact/social/media/seo/adminInfo pattern
+ * - Additional columns specific to venue: type, priceRange, menuUrl, openingHours
+ */
+export const venues = pgTable(
+    'venues',
+    {
+        id: uuid('id').primaryKey().defaultRandom(),
+        slug: text('slug').notNull().unique(),
+        name: text('name').notNull(),
+        summary: text('summary').notNull(),
+        description: text('description').notNull(),
+        richDescription: text('rich_description'),
+        // I18n columns (same pattern as accommodations — SPEC-212 style)
+        nameI18n: jsonb('name_i18n').$type<I18nText>(),
+        summaryI18n: jsonb('summary_i18n').$type<I18nText>(),
+        descriptionI18n: jsonb('description_i18n').$type<I18nText>(),
+        richDescriptionI18n: jsonb('rich_description_i18n').$type<I18nText>(),
+        /** Venue sub-category (RESTAURANT, BAR, CAFE, PARRILLA, etc.). */
+        type: VenueTypePgEnum('type').notNull(),
+        /** Price-range tier for the venue (BUDGET/MID/HIGH/PREMIUM). Nullable until owner sets it. */
+        priceRange: PriceRangePgEnum('price_range'),
+        /**
+         * Optional URL to the venue's online menu — the link the owner already
+         * publishes somewhere else.
+         *
+         * Since HOS-895 this is ONE of three ways a venue can show its menu,
+         * not the only one. The other two are the structured carta
+         * (`venue_menu_sections` + `venue_menu_items`) and the
+         * uploaded file below. All three may be set at once and none is
+         * mandatory: an owner who does not want to type forty dishes must
+         * still be able to publish.
+         */
+        menuUrl: text('menu_url'),
+        /**
+         * Public URL of an uploaded photo or PDF of the menu (HOS-895).
+         *
+         * Written by the upload route in the SAME request that stores the file,
+         * which is the whole reason the column is written server-side rather
+         * than diffed into the editor's PATCH body: an owner who uploads and
+         * then walks away without saving used to leave the asset billing in
+         * Cloudinary with nothing pointing at it — the orphan HOS-372 built
+         * `venue_media` to stop.
+         */
+        menuFileUrl: text('menu_file_url'),
+        /**
+         * Provider-side identifier of {@link menuFileUrl}, kept so the delete
+         * route can destroy the asset instead of merely forgetting its URL.
+         * Nullable for the same reason the URL is; the two are set and cleared
+         * together.
+         */
+        menuFilePublicId: text('menu_file_public_id'),
+        /** Whether {@link menuFileUrl} is an image or a PDF. */
+        menuFileKind: VenueMenuFileKindPgEnum('menu_file_kind'),
+        // Jsonb grouped columns (matching accommodation pattern)
+        contactInfo: jsonb('contact_info').$type<ContactInfo>(),
+        socialNetworks: jsonb('social_networks').$type<SocialNetwork>(),
+        /** Weekly opening hours — keyed by day name with open/close time strings. */
+        openingHours: jsonb('opening_hours').$type<Record<string, unknown>>(),
+        /**
+         * Embedded videos for the listing (HOS-372).
+         *
+         * Deliberately its OWN column rather than rows in `venue_media`: a video is
+         * an external YouTube/Vimeo URL pasted into a form, not an uploaded asset. It
+         * cannot be orphaned in Cloudinary and has no per-operation persistence problem,
+         * so a relational row would only add dead columns (`public_id`, `is_featured`,
+         * file moderation) without solving anything.
+         *
+         * Photos live in `venue_media`; the `media` column above is being retired.
+         */
+        videos: jsonb('videos').$type<Video[]>(),
+        seo: jsonb('seo').$type<Seo>(),
+        adminInfo: jsonb('admin_info').$type<AdminInfoType>(),
+        // FK relations
+        ownerId: uuid('owner_id')
+            .notNull()
+            .references(() => users.id, { onDelete: 'restrict' }),
+        // HOS-1478 (V6.8a): the listing publication model of V/03 §9.
+        ...listingPublicationColumns(),
+        destinationId: uuid('destination_id')
+            .notNull()
+            .references(() => destinations.id, { onDelete: 'restrict' }),
+        /**
+         * Denormalized billing-state flag (HOS-1286) — mirror of
+         * `accommodations.featured_by_entitlement`. True while a
+         * `visibility-boost-venue-*` addon purchase grants an active
+         * FEATURED_LISTING entitlement for THIS listing. Written only by the
+         * billing sync primitives, never by admin curation. Since HOS-1419
+         * dropped the admin-curated `is_featured` column it is the ONLY featuring
+         * source: the public `isFeatured` value is derived from it in the PUBLIC
+         * routes only (`resolvePublicIsFeatured`).
+         *
+         * **Only one source feeds it, unlike accommodation.** No venue plan
+         * grants FEATURED_LISTING (the venue entitlement config grants
+         * EDIT/PUBLISH/VIEW_BASIC_STATS per vertical and nothing else), so this
+         * column has exactly one writer — the addon — where accommodation has
+         * two (plan owner-wide + addon per-listing). A future venue plan that
+         * grants featuring must add the plan-driven half; it does not exist yet
+         * and is not stubbed here.
+         *
+         * ---
+         * ## Why a denormalized column rather than deriving on read
+         *
+         * Deriving would join `featured_listing_addon_grants` →
+         * `billing_addon_purchases` on every public read. The honest argument
+         * FOR deriving is not performance: **a derived value cannot desync**,
+         * while this column needs sync primitives and a reconcile cron — more
+         * code, and more surface where the stored state can lie.
+         *
+         * It still loses, for a reason specific to this epic: `accommodations`
+         * already denormalizes. Deriving here would leave TWO different
+         * mechanisms answering one question, which is the asymmetry HOS-1257
+         * exists to close — fixing one by creating another. And the cost of
+         * being wrong is not symmetric: the column is a pattern this repo has
+         * already validated, indexes, sync primitives and backstop cron
+         * included, whereas the join would put a new query on a hot public path
+         * with no precedent to consult when it misbehaves.
+         *
+         * If this is ever unified for real, the question is not "should venue
+         * derive?" but "should BOTH derive?" — recorded here so whoever asks it
+         * knows the alternative was considered and why it lost.
+         */
+        featuredByEntitlement: boolean('featured_by_entitlement').notNull().default(false),
+        // Denormalized aggregate stats (updated by trigger / service)
+        reviewsCount: integer('reviews_count').notNull().default(0),
+        /** Average rating across all review criteria (0.00–5.00). mode:'number' for JS coercion. */
+        averageRating: numeric('average_rating', { precision: 3, scale: 2, mode: 'number' })
+            .notNull()
+            .default(0),
+        /** Granular rating breakdown stored as JSONB (food/service/ambiance/value). */
+        rating: jsonb('rating').$type<Record<string, unknown>>(),
+        // Full audit (mirrors accommodation)
+        createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
+        updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow().notNull(),
+        createdById: uuid('created_by_id').references(() => users.id, { onDelete: 'set null' }),
+        updatedById: uuid('updated_by_id').references(() => users.id, { onDelete: 'set null' }),
+        deletedAt: timestamp('deleted_at', { withTimezone: true }),
+        deletedById: uuid('deleted_by_id').references(() => users.id, { onDelete: 'set null' })
+    },
+    (table) => ({
+        venues_destinationId_idx: index('venues_destinationId_idx').on(table.destinationId),
+        // HOS-1641 (V6.9b): public and per-destination reads filter on
+        // `publication_status = 'PUBLISHED'`; these replace the visibility indexes.
+        venues_publicationStatus_idx: index('venues_publicationStatus_idx').on(
+            table.publicationStatus
+        ),
+        venues_destinationId_publicationStatus_idx: index(
+            'venues_destinationId_publicationStatus_idx'
+        ).on(table.destinationId, table.publicationStatus),
+        // HOS-1286: index for featuredByEntitlement, mirroring the accommodations
+        // one — the only featuring source since HOS-1419 dropped `is_featured`.
+        venues_featuredByEntitlement_idx: index('venues_featuredByEntitlement_idx').on(
+            table.featuredByEntitlement
+        ),
+        venues_type_idx: index('venues_type_idx').on(table.type),
+        venues_ownerId_idx: index('venues_ownerId_idx').on(table.ownerId),
+        venues_deletedAt_idx: index('venues_deletedAt_idx').on(table.deletedAt),
+        // Composite indexes (same pattern as accommodations)
+        venues_ownerId_deletedAt_idx: index('venues_ownerId_deletedAt_idx').on(
+            table.ownerId,
+            table.deletedAt
+        )
+    })
+);
+
+export const venuesRelations = relations(venues, ({ one, many }) => ({
+    owner: one(users, {
+        fields: [venues.ownerId],
+        references: [users.id]
+    }),
+    createdBy: one(users, {
+        fields: [venues.createdById],
+        references: [users.id]
+    }),
+    updatedBy: one(users, {
+        fields: [venues.updatedById],
+        references: [users.id]
+    }),
+    deletedBy: one(users, {
+        fields: [venues.deletedById],
+        references: [users.id]
+    }),
+    destination: one(destinations, {
+        fields: [venues.destinationId],
+        references: [destinations.id]
+    }),
+    amenities: many(rVenueAmenity, { relationName: 'venueToAmenity' }),
+    features: many(rVenueFeature, { relationName: 'venueToFeature' }),
+    reviews: many(venueReviews),
+    faqs: many(venueFaqs),
+    menuSections: many(venueMenuSections),
+    /** The venue's own agenda — HOS-1042. */
+    venueEvents: many(venueEvents)
+}));
+
+/** Type-inferred insert type for venue rows. */
+export type InsertVenue = typeof venues.$inferInsert;
+/** Type-inferred select type for venue rows. */
+export type SelectVenue = typeof venues.$inferSelect;

@@ -24,9 +24,9 @@ import {
     EventOrganizerService,
     EventService,
     ExperienceService,
-    GastronomyService,
     PostService,
-    PostSponsorService
+    PostSponsorService,
+    VenueService
 } from '@repo/service-core';
 import type { Context, MiddlewareHandler } from 'hono';
 import { Sentry } from '../../../lib/sentry';
@@ -116,7 +116,7 @@ const resolveDeleteEntityService = (
     | DestinationService
     | EventService
     | PostService
-    | GastronomyService
+    | VenueService
     | ExperienceService
     | PostSponsorService
     | EventOrganizerService => {
@@ -129,8 +129,8 @@ const resolveDeleteEntityService = (
             return new EventService({ logger: apiLogger });
         case 'post':
             return new PostService({ logger: apiLogger });
-        case 'gastronomy':
-            return new GastronomyService({ logger: apiLogger });
+        case 'venue':
+            return new VenueService({ logger: apiLogger });
         case 'experience':
             return new ExperienceService({ logger: apiLogger });
         case 'postSponsor':
@@ -152,19 +152,20 @@ const resolveDeleteEntityService = (
 const parseEntityFromPublicId = (
     publicId: string
 ): { entityType: MediaEntityType; entityId: string } | null => {
-    const match = publicId.match(
-        /^hospeda\/[^/]+\/(accommodations|destinations|events|posts|postSponsors|eventOrganizers)\/([^/]+)(\/|$)/
-    );
-    if (!match) return null;
-
     const pluralToSingular: Record<string, MediaEntityType> = {
         accommodations: 'accommodation',
         destinations: 'destination',
         events: 'event',
         posts: 'post',
+        gastronomies: 'venue', // legacy-name-allowed: fotos subidas antes del renombrado (HOS-1822)
+        venues: 'venue',
         postSponsors: 'postSponsor',
         eventOrganizers: 'eventOrganizer'
     };
+
+    const entityPlurals = Object.keys(pluralToSingular).join('|');
+    const match = publicId.match(new RegExp(`^hospeda/[^/]+/(${entityPlurals})/([^/]+)(/|$)`));
+    if (!match) return null;
 
     const plural = match[1];
     const entityId = match[2];

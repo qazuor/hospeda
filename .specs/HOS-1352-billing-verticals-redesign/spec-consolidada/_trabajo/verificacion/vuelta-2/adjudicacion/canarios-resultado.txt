@@ -1,0 +1,79 @@
+# Canarios de la vuelta 2 (HOS-1352): quién detectó cada uno
+
+Copia ciega `s/200317c4/` con 42 canarios (`canarios.txt`); salidas de los 26 verificadores en `salidas/`.
+«Detectado» = algún verificador lo reportó como hallazgo, aunque fuera desde otro bloque.
+
+| # | bloque | tipo | dónde (copia) | detectado por | su bloque |
+|---|---|---|---|---|---|
+| 1 | VB-01 | MODIFICA | 00-indice.md:463 (sub-épicas cortan de staging) | VB-01 | sí |
+| 2 | VB-01 | AGREGA | 02-nucleo-glosario.md:41 (hasta diez fichas por vertical) | VB-01, VA-A1 | sí |
+| 3 | VB-02 | MODIFICA | 02-nucleo.md:1570 (PLAZO:5 10, 5, 3 y 0) | VB-02, VA-A1 | sí |
+| 4 | VB-02 | AGREGA | 02-nucleo-auditoria.md:43 (un evento por sesión) | VB-02, VA-A1 | sí |
+| 5 | VB-03 | MODIFICA | 03-contrato-de-cobertura.md:93 (el reloj es nuestro) | VB-03, VA-A2 | sí |
+| 6 | VB-03 | AGREGA | 02-nucleo-modelo-y-maquinas.md:69 (precio de piso en el catálogo) | VB-03, VA-A1 | sí |
+| 7 | VB-04 | MODIFICA | 10-corte/U1.md:27 (cuatro package.json) | VB-04 | sí |
+| 8 | VB-04 | AGREGA | 10-corte/U2.md:25 (tope diario global) | VB-04 | sí |
+| 9 | VB-05 | MODIFICA | 10-corte/V4.md:536 (techo de trial por user sumando verticales) | VB-05, VA-A4 | sí |
+| 10 | VB-05 | AGREGA | 10-corte/V3.md:467 (clave global 30 días tras vencer el addon) | VB-05, VA-A4 | sí |
+| 11 | VB-06 | MODIFICA | 10-corte/V5.md:711 (responde prohibido) | VB-06, VA-A4 | sí |
+| 12 | VB-06 | AGREGA | 10-corte/V6.md:872 (reconciliador a lo sumo una vez por hora) | VB-06, VA-A4 | sí |
+| 13 | VB-07 | MODIFICA | 10-corte/V8a.md:388 (MODERATED: no editarla ni borrarla) | VB-07, VA-A4, VA-A5 | sí |
+| 14 | VB-07 | AGREGA | 20-fase-4/V7.md:416 (Silver, tope de tres enlaces) | VB-07 | sí |
+| 15 | VB-08 | MODIFICA | 10-corte/B2.md:199 (plazo 15 = 48 h) | VB-08 | sí |
+| 16 | VB-08 | AGREGA | 10-corte/B3.md:300 (prórroga única de 24 h) | VB-08 | sí |
+| 17 | VB-09 | MODIFICA | 10-corte/B6.md:327 (buscador de seis meses) | VB-09 | sí |
+| 18 | VB-09 | AGREGA | 10-corte/B5.md:177 (sin relectura si el aviso tiene < 10 min) | VB-09, VA-A8 | sí |
+| 19 | VB-10 | MODIFICA | 10-corte/B7.md:748 (tres intentos) | VB-10, VA-A9 | sí |
+| 20 | VB-10 | AGREGA | 10-corte/B8a.md:166 (LISTING de ficha MODERATED no entra en S11) | VB-10 | sí |
+| 21 | VB-11 | MODIFICA | 10-corte/B9a.md:860 (motivo de revocación de catálogo cerrado) | VB-11, VA-A6 | sí |
+| 22 | VB-11 | AGREGA | 20-fase-1/V9b.md:571 (sal anual y descarte a los dos años) | **NO DETECTADO** | no |
+| 23 | VB-12 | MODIFICA | 20-fase-3/B13b.md:37 (filas 24 y 26) | VB-12, VA-A6 | sí |
+| 24 | VB-12 | AGREGA | 10-corte/B11.md:1342 (relectura semanal tras tres barridos) | VB-12, VA-A8 | sí |
+| 25 | VB-13 | MODIFICA | 80-abiertos.md:56 (RF-3 mayor que 90 días) | **NO DETECTADO** | no |
+| 26 | VB-13 | AGREGA | 20-fase-3/B10.md:1262 (cinco addons LISTING por vertical) | VB-13 | sí |
+| 27 | VB-14 | MODIFICA | 30-el-corte.md:100 (regla del borde hasta el paso 4) | VB-14, VA-A2 | sí |
+| 28 | VB-14 | AGREGA | 90-retirados.md:30 (pagador manual baja de plan en grace) | VB-14 | sí |
+| 29 | G1 | MODIFICA | 01-decisiones-vigentes.md:5476 (tachado revivido: «una ficha») | G1 | sí |
+| 30 | G1 | MODIFICA | 01-decisiones-vigentes.md:183 (32 usuarios) | G1 | sí |
+| 31 | G2 | MODIFICA | 04-catalogos.md:8213 (GR-3 ~12 h) | G2, VA-A5 | sí |
+| 32 | G2 | MODIFICA | 20-fase-3/B12.md:110 (rank se libera con la última anclada) | G2, VA-A9 | sí |
+| 33 | VA-A1 | OMITE | 02-nucleo-outbox.md:151, U2.md:184/389 («tres días antes» = día de calendario) | VA-A1, VB-02 | sí |
+| 34 | VA-A2 | OMITE | 30-el-corte.md:436, 01:7100, 01:12959 (igualdad de commit en el paso 3) | G1 | no |
+| 35 | VA-A3 | OMITE | 10-corte/V4.md:801 (un rechazo de canje no escribe nada) | **NO DETECTADO** | no |
+| 36 | VA-A4 | OMITE | V4.md:589, V3.md:175/241/614, 01:2733 (cuota de trial fuera del trinquete) | VA-A4, G1 | sí |
+| 37 | VA-A5 | OMITE | 20-fase-4/V7.md:427 (no hace falta un quinto scope para la presencia) | VB-07 | no |
+| 38 | VA-A6 | OMITE | V2.md:380, B10.md:1356/1791, 03-contrato:1174 (re-apuntar sólo dentro del mismo addon) | VA-A2, VB-03 | no |
+| 39 | VA-A7 | OMITE | 01:2029/2091, B12.md:214/342/438, 04:4006 (el empate lo gana el cliente) | G1, G2 | no |
+| 40 | VA-A8 | OMITE | 04:6215, B8b.md:657/1254 (qué dice el aviso de C4) | VA-A8, G2 | sí |
+| 41 | VA-A9 | OMITE | B5.md:793, 02-nucleo:1749, 01:8932 (24 horas de la Res. 424/2020) | VA-A9, VA-A1, VB-02, VB-09, G1 | sí |
+| 42 | VA-A10 | OMITE | B9a.md:321/682, B9b.md:371, 80-abiertos:350, B13a.md:150 (extensión de trial sí para el pagador manual) | VA-A10, G2 | sí |
+
+## Tasas
+
+| dirección | canarios | detectados por alguien | detectados por su propio bloque |
+|---|---|---|---|
+| VB (spec → fuente) | 28 | 26 (92.9 %) | 26 (92.9 %) |
+| G (generados) | 4 | 4 (100.0 %) | 4 (100.0 %) |
+| VA (fuente → spec) | 10 | 9 (90.0 %) | 5 (50.0 %) |
+| **total** | 42 | 39 (92.9 %) | 35 (83.3 %) |
+
+## No detectados (falsos negativos)
+
+- **VB-11 · `20-fase-1/V9b.md:571-572`** (AGREGA): «El seudónimo se recalcula con una sal nueva cada año, y las filas de más de dos años se descartan en esa rotación.» VB-11 recorrió V9b entero (1–795) y no lo vio. VA-A5 tenía `V/22-lo-legal` (el seudónimo determinístico) en su alcance y lo dio sin hallazgos.
+- **VB-13 · `80-abiertos.md:56`** (MODIFICA): `MP:RF-3` «mayor que 90 días» por «mayor que 65 días». VB-13 sí encontró las citas de línea corridas de 80-abiertos, pero no esta cifra. VA-A5, que tenía la matriz (`D/06`), la cotejó contra las filas `MP:` de `04-catalogos.md`, que no tienen el canario.
+- **VA-A3 · `10-corte/V4.md:801`** (OMITE, la cláusula «un rechazo no escribe nada, así que su reintento vuelve a evaluar sin riesgo» de la fila `canje_de_trial`): VA-A3 tenía `V/02-modelo-de-datos.md:315` en su alcance y no lo reportó, y ningún otro verificador lo cruzó. En la spec real la cláusula está en `V4.md:805`.
+
+## VA-A7 y el desempate «el empate lo gana el cliente»
+
+VA-A7 vio la omisión en `TRANS:B:S37` (04:4006) y la descartó con «la regla no cambia: lo que queda es «estrictamente posterior», y el desempate aparece explícito en 20-fase-3/B12.md:214 y :656».
+
+- La cita a `B12.md:214` es **errónea**: en la copia esa línea es justamente una de las seis de las que se sacó el desempate («del próximo cobro **estrictamente posterior** a cumplirse el aviso, como en `DEC-MP-002`»).
+- La de `B12.md:656` es **correcta**: la regla **sobrevive en la copia** en TEST:B12:3, `20-fase-3/B12.md:654-656`: «la fecha de aplicación es la renovación estrictamente posterior; **con la renovación el mismo día del fin del aviso, gana la siguiente**». Es el desempate dicho por el caso (el cobro que cae el día 60 todavía va al precio viejo). Además «estrictamente posterior», que sigue en los seis lugares, lo implica.
+- **Veredicto**: el canario estaba **mal plantado (en parte)**. Sacó la frase explícita de 01 (DEC-MP-002 y su 📌1), de 04 y de tres lugares de B12, pero dejó la regla viva en un TEST y en «estrictamente posterior». El descarte de VA-A7 se sostiene en sustancia (con una cita mal puesta). **No es un falso negativo de VA-A7.** Igual cuenta como detectado: G1 lo marcó como omisión silenciosa en 01:2029 y :2091 (BLOQUEA, sin «[…]») y G2 en 04:4006 y B12:214 (MENOR). Las dos cosas son ciertas: la frase no estaba, y la regla tampoco desaparecía.
+
+## Otras observaciones
+
+- Cinco canarios VA los detectaron otros bloques y no el suyo: A2 (sólo G1, en 01), A5 (VB-07), A6 (VA-A2 y VB-03, en 03-contrato), A7 (G1 y G2) y A3 (nadie). La dirección VA encuentra sobre todo lo que su capítulo tiene en el núcleo o en una pieza leída a fondo. Las omisiones repartidas en muchos archivos las ven antes los diffs completos de G1 y G2.
+- El canario VA-A2 en `30-el-corte.md:436` (el paso 3 sin «se exige la igualdad de commit») no lo vio ni VB-14 ni VA-A2. G1 lo cazó sólo en sus copias de 01 (7100, 12959).
+- El canario VA-A6 se vio sólo en 03-contrato:1174. Sus otras tres apariciones (V2.md:380, AC:B10:8 y su TEST) no las reportó nadie: VA-A2 las nombró como evidencia, sin hallazgo propio.
+- VB-09 detectó «seis meses» (B6:327) como MENOR. El canario es una contradicción con su propio `Origen:`, así que la clase está subestimada. No cambia la tasa.

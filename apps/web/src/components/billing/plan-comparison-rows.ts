@@ -22,14 +22,14 @@
  * a wall of "not included".
  */
 
-import { EntitlementKey, LimitKey } from '@repo/billing';
-
+import { EntitlementKeyEnum, LimitKeyEnum } from '@repo/schemas';
+import { isUnlimitedLimit } from './plan-card-delta';
 export type YesNo = 'yes' | 'no';
 
 export interface LimitCell {
     readonly kind: 'limit';
     /** Strongly-typed limit key — reads the real value from plan.limits. */
-    readonly key: LimitKey;
+    readonly key: LimitKeyEnum;
 }
 export interface EntitlementCell {
     readonly kind: 'entitlement';
@@ -38,7 +38,7 @@ export interface EntitlementCell {
      * own `entitlements` array, so the cell is correct for any tier — including
      * tiers that did not exist when this row was written.
      */
-    readonly key: EntitlementKey;
+    readonly key: EntitlementKeyEnum;
 }
 /**
  * A row included in NO plan — an announced feature with no grant anywhere yet.
@@ -78,55 +78,55 @@ export const TOURIST_EXPERIENCE_ROWS: readonly RowConfig[] = [
     {
         id: 'favorites',
         labelKey: 'billing.comparison.row.favorites',
-        cell: { kind: 'limit', key: LimitKey.MAX_FAVORITES },
+        cell: { kind: 'limit', key: LimitKeyEnum.MAX_FAVORITES },
         status: 'available'
     },
     {
         id: 'collections',
         labelKey: 'billing.comparison.row.collections',
-        cell: { kind: 'limit', key: LimitKey.MAX_COLLECTIONS },
+        cell: { kind: 'limit', key: LimitKeyEnum.MAX_COLLECTIONS },
         status: 'available'
     },
     {
         id: 'reviews',
         labelKey: 'billing.comparison.row.reviews',
-        cell: { kind: 'entitlement', key: EntitlementKey.READ_REVIEWS },
+        cell: { kind: 'entitlement', key: EntitlementKeyEnum.READ_REVIEWS },
         status: 'available'
     },
     {
         id: 'recommendations',
         labelKey: 'billing.comparison.row.recommendations',
-        cell: { kind: 'entitlement', key: EntitlementKey.CAN_VIEW_RECOMMENDATIONS },
+        cell: { kind: 'entitlement', key: EntitlementKeyEnum.CAN_VIEW_RECOMMENDATIONS },
         status: 'available'
     },
     {
         id: 'compare',
         labelKey: 'billing.comparison.row.compare',
-        cell: { kind: 'entitlement', key: EntitlementKey.CAN_COMPARE_ACCOMMODATIONS },
+        cell: { kind: 'entitlement', key: EntitlementKeyEnum.CAN_COMPARE_ACCOMMODATIONS },
         status: 'available'
     },
     {
         id: 'searchHistory',
         labelKey: 'billing.comparison.row.searchHistory',
-        cell: { kind: 'limit', key: LimitKey.MAX_SEARCH_HISTORY_ENTRIES },
+        cell: { kind: 'limit', key: LimitKeyEnum.MAX_SEARCH_HISTORY_ENTRIES },
         status: 'available'
     },
     {
         id: 'alertsOffers',
         labelKey: 'billing.comparison.row.alertsOffers',
-        cell: { kind: 'entitlement', key: EntitlementKey.PRICE_ALERTS },
+        cell: { kind: 'entitlement', key: EntitlementKeyEnum.PRICE_ALERTS },
         status: 'upcoming'
     },
     {
         id: 'whatsappDisplay',
         labelKey: 'billing.comparison.row.whatsappDisplay',
-        cell: { kind: 'entitlement', key: EntitlementKey.CAN_CONTACT_WHATSAPP_DISPLAY },
+        cell: { kind: 'entitlement', key: EntitlementKeyEnum.CAN_CONTACT_WHATSAPP_DISPLAY },
         status: 'available'
     },
     {
         id: 'whatsappDirect',
         labelKey: 'billing.comparison.row.whatsappDirect',
-        cell: { kind: 'entitlement', key: EntitlementKey.CAN_CONTACT_WHATSAPP_DIRECT },
+        cell: { kind: 'entitlement', key: EntitlementKeyEnum.CAN_CONTACT_WHATSAPP_DIRECT },
         status: 'available'
     }
 ];
@@ -135,14 +135,14 @@ export const TOURIST_AI_ROWS: readonly RowConfig[] = [
     {
         id: 'aiSearch',
         labelKey: 'billing.comparison.row.aiSearch',
-        cell: { kind: 'limit', key: LimitKey.MAX_AI_SEARCH_PER_MONTH },
+        cell: { kind: 'limit', key: LimitKeyEnum.MAX_AI_SEARCH_PER_MONTH },
         status: 'available',
         noteKey: 'billing.comparison.note.aiSearch'
     },
     {
         id: 'aiChat',
         labelKey: 'billing.comparison.row.aiChat',
-        cell: { kind: 'limit', key: LimitKey.MAX_AI_CHAT_CONSUMER_PER_MONTH },
+        cell: { kind: 'limit', key: LimitKeyEnum.MAX_AI_CHAT_CONSUMER_PER_MONTH },
         status: 'available',
         noteKey: 'billing.comparison.note.aiChatTourist'
     }
@@ -177,79 +177,79 @@ export const OWNER_ROWS: readonly RowConfig[] = [
     {
         id: 'publish',
         labelKey: 'billing.comparison.row.publish',
-        cell: { kind: 'limit', key: LimitKey.MAX_ACCOMMODATIONS },
+        cell: { kind: 'limit', key: LimitKeyEnum.MAX_ACCOMMODATIONS },
         status: 'available'
     },
     {
         id: 'photos',
         labelKey: 'billing.comparison.row.photos',
-        cell: { kind: 'limit', key: LimitKey.MAX_PHOTOS_PER_ACCOMMODATION },
+        cell: { kind: 'limit', key: LimitKeyEnum.MAX_PHOTOS_PER_ACCOMMODATION },
         status: 'available'
     },
     {
         id: 'editInfo',
         labelKey: 'billing.comparison.row.editInfo',
-        cell: { kind: 'entitlement', key: EntitlementKey.EDIT_ACCOMMODATION_INFO },
+        cell: { kind: 'entitlement', key: EntitlementKeyEnum.EDIT_ACCOMMODATION_INFO },
         status: 'available'
     },
     {
         id: 'respondReviews',
         labelKey: 'billing.comparison.row.respondReviews',
-        cell: { kind: 'entitlement', key: EntitlementKey.RESPOND_REVIEWS },
+        cell: { kind: 'entitlement', key: EntitlementKeyEnum.RESPOND_REVIEWS },
         status: 'upcoming'
     },
     {
         id: 'basicStats',
         labelKey: 'billing.comparison.row.basicStats',
-        cell: { kind: 'entitlement', key: EntitlementKey.VIEW_BASIC_STATS },
+        cell: { kind: 'entitlement', key: EntitlementKeyEnum.VIEW_BASIC_STATS },
         status: 'available'
     },
     {
         id: 'advancedStats',
         labelKey: 'billing.comparison.row.advancedStats',
-        cell: { kind: 'entitlement', key: EntitlementKey.VIEW_ADVANCED_STATS },
+        cell: { kind: 'entitlement', key: EntitlementKeyEnum.VIEW_ADVANCED_STATS },
         status: 'available'
     },
     {
         id: 'calendar',
         labelKey: 'billing.comparison.row.calendar',
-        cell: { kind: 'entitlement', key: EntitlementKey.CAN_USE_CALENDAR },
+        cell: { kind: 'entitlement', key: EntitlementKeyEnum.CAN_USE_CALENDAR },
         status: 'available'
     },
     {
         id: 'calendarSync',
         labelKey: 'billing.comparison.row.calendarSync',
-        cell: { kind: 'entitlement', key: EntitlementKey.CAN_SYNC_EXTERNAL_CALENDAR },
+        cell: { kind: 'entitlement', key: EntitlementKeyEnum.CAN_SYNC_EXTERNAL_CALENDAR },
         status: 'available'
     },
     {
         id: 'richDescription',
         labelKey: 'billing.comparison.row.richDescription',
-        cell: { kind: 'entitlement', key: EntitlementKey.CAN_USE_RICH_DESCRIPTION },
+        cell: { kind: 'entitlement', key: EntitlementKeyEnum.CAN_USE_RICH_DESCRIPTION },
         status: 'available'
     },
     {
         id: 'video',
         labelKey: 'billing.comparison.row.video',
-        cell: { kind: 'entitlement', key: EntitlementKey.CAN_EMBED_VIDEO },
+        cell: { kind: 'entitlement', key: EntitlementKeyEnum.CAN_EMBED_VIDEO },
         status: 'available'
     },
     {
         id: 'promotions',
         labelKey: 'billing.comparison.row.promotions',
-        cell: { kind: 'limit', key: LimitKey.MAX_ACTIVE_PROMOTIONS },
+        cell: { kind: 'limit', key: LimitKeyEnum.MAX_ACTIVE_PROMOTIONS },
         status: 'available'
     },
     {
         id: 'prioritySupport',
         labelKey: 'billing.comparison.row.prioritySupport',
-        cell: { kind: 'entitlement', key: EntitlementKey.PRIORITY_SUPPORT },
+        cell: { kind: 'entitlement', key: EntitlementKeyEnum.PRIORITY_SUPPORT },
         status: 'upcoming'
     },
     {
         id: 'featured',
         labelKey: 'billing.comparison.row.featured',
-        cell: { kind: 'entitlement', key: EntitlementKey.FEATURED_LISTING },
+        cell: { kind: 'entitlement', key: EntitlementKeyEnum.FEATURED_LISTING },
         status: 'available',
         // FEATURED_LISTING is granted two ways (SPEC-309 OQ-3): plan-wide, and
         // per-accommodation via the visibility-boost addon, which ANY tier can
@@ -260,13 +260,13 @@ export const OWNER_ROWS: readonly RowConfig[] = [
     {
         id: 'branding',
         labelKey: 'billing.comparison.row.branding',
-        cell: { kind: 'entitlement', key: EntitlementKey.CUSTOM_BRANDING },
+        cell: { kind: 'entitlement', key: EntitlementKeyEnum.CUSTOM_BRANDING },
         status: 'upcoming'
     },
     {
         id: 'verificationBadge',
         labelKey: 'billing.comparison.row.verificationBadge',
-        cell: { kind: 'entitlement', key: EntitlementKey.HAS_VERIFICATION_BADGE },
+        cell: { kind: 'entitlement', key: EntitlementKeyEnum.HAS_VERIFICATION_BADGE },
         status: 'available'
     }
 ];
@@ -275,25 +275,25 @@ export const OWNER_AI_ROWS: readonly RowConfig[] = [
     {
         id: 'aiTextImprove',
         labelKey: 'billing.comparison.row.aiTextImprove',
-        cell: { kind: 'limit', key: LimitKey.MAX_AI_TEXT_IMPROVE_PER_MONTH },
+        cell: { kind: 'limit', key: LimitKeyEnum.MAX_AI_TEXT_IMPROVE_PER_MONTH },
         status: 'available'
     },
     {
         id: 'aiTranslate',
         labelKey: 'billing.comparison.row.aiTranslate',
-        cell: { kind: 'limit', key: LimitKey.MAX_AI_TRANSLATE_PER_MONTH },
+        cell: { kind: 'limit', key: LimitKeyEnum.MAX_AI_TRANSLATE_PER_MONTH },
         status: 'available'
     },
     {
         id: 'aiImport',
         labelKey: 'billing.comparison.row.aiImport',
-        cell: { kind: 'limit', key: LimitKey.MAX_AI_ACCOMMODATION_IMPORT_PER_MONTH },
+        cell: { kind: 'limit', key: LimitKeyEnum.MAX_AI_ACCOMMODATION_IMPORT_PER_MONTH },
         status: 'available'
     },
     {
         id: 'aiChatOwner',
         labelKey: 'billing.comparison.row.aiChatOwner',
-        cell: { kind: 'limit', key: LimitKey.MAX_AI_CHAT_PER_MONTH },
+        cell: { kind: 'limit', key: LimitKeyEnum.MAX_AI_CHAT_PER_MONTH },
         status: 'available',
         noteKey: 'billing.comparison.note.aiChatOwner'
     },
@@ -307,85 +307,85 @@ export const OWNER_AI_ROWS: readonly RowConfig[] = [
 ];
 
 // ---------------------------------------------------------------------------
-// Commerce-vertical rows (HOS-1032)
+// Venue and experience rows (HOS-1032)
 // ---------------------------------------------------------------------------
 //
 // The two verticals get their own rows rather than reusing the owner ones,
-// because they grant entirely different keys: `EDIT_GASTRONOMY_INFO` is not
+// because they grant entirely different keys: `EDIT_VENUE_INFO` is not
 // `EDIT_ACCOMMODATION_INFO`, and a row asking for the accommodation key would
-// render every commerce tier as "not included". They are also kept apart from
-// EACH OTHER — `gastronomy` and `experience` are separate product domains and
+// render every venue or experience tier as "not included". They are also kept apart from
+// EACH OTHER — `venue` and `experience` are separate product domains and
 // no surface may group them under a shared "Comercio" (HOS-941 R-3).
 //
 // Every cell names a real key off `plans.config.ts`, so a tier the owner
-// activates later (or a key added to `ENTITLEMENT_KEYS_BY_COMMERCE_VERTICAL`)
+// activates later (or a key added to a plan's entitlements)
 // is reflected with no edit here — the same property that keeps the owner and
 // tourist tables honest.
 
-/** What a gastronomy tier lets its owner publish and maintain. */
-export const GASTRONOMY_LISTING_ROWS: readonly RowConfig[] = [
+/** What a venue tier lets its owner publish and maintain. */
+export const VENUE_LISTING_ROWS: readonly RowConfig[] = [
     {
-        id: 'maxGastronomies',
-        labelKey: 'billing.comparison.row.maxGastronomies',
-        cell: { kind: 'limit', key: LimitKey.MAX_GASTRONOMIES },
+        id: 'maxVenues',
+        labelKey: 'billing.comparison.row.maxVenues',
+        cell: { kind: 'limit', key: LimitKeyEnum.MAX_VENUES },
         status: 'available'
     },
     {
-        id: 'publishGastronomy',
-        labelKey: 'billing.comparison.row.publishGastronomy',
-        cell: { kind: 'entitlement', key: EntitlementKey.PUBLISH_GASTRONOMY },
+        id: 'publishVenue',
+        labelKey: 'billing.comparison.row.publishVenue',
+        cell: { kind: 'entitlement', key: EntitlementKeyEnum.PUBLISH_VENUE },
         status: 'available'
     },
     {
-        id: 'editGastronomyInfo',
-        labelKey: 'billing.comparison.row.editGastronomyInfo',
-        cell: { kind: 'entitlement', key: EntitlementKey.EDIT_GASTRONOMY_INFO },
+        id: 'editVenueInfo',
+        labelKey: 'billing.comparison.row.editVenueInfo',
+        cell: { kind: 'entitlement', key: EntitlementKeyEnum.EDIT_VENUE_INFO },
         status: 'available'
     },
     {
         id: 'basicStats',
         labelKey: 'billing.comparison.row.basicStats',
-        cell: { kind: 'entitlement', key: EntitlementKey.VIEW_BASIC_STATS },
+        cell: { kind: 'entitlement', key: EntitlementKeyEnum.VIEW_BASIC_STATS },
         status: 'available'
     }
 ];
 
-/** The carta, and everything that hangs off it. The gastronomy differentiator. */
-export const GASTRONOMY_MENU_ROWS: readonly RowConfig[] = [
+/** The carta, and everything that hangs off it. The venue differentiator. */
+export const VENUE_MENU_ROWS: readonly RowConfig[] = [
     {
-        id: 'gastronomyMenu',
-        labelKey: 'billing.comparison.row.gastronomyMenu',
-        cell: { kind: 'entitlement', key: EntitlementKey.MANAGE_GASTRONOMY_MENU },
+        id: 'venueMenu',
+        labelKey: 'billing.comparison.row.venueMenu',
+        cell: { kind: 'entitlement', key: EntitlementKeyEnum.MANAGE_VENUE_MENU },
         status: 'available'
     },
     {
-        id: 'gastronomyDailySpecial',
-        labelKey: 'billing.comparison.row.gastronomyDailySpecial',
-        cell: { kind: 'entitlement', key: EntitlementKey.MANAGE_GASTRONOMY_DAILY_SPECIAL },
+        id: 'venueDailySpecial',
+        labelKey: 'billing.comparison.row.venueDailySpecial',
+        cell: { kind: 'entitlement', key: EntitlementKeyEnum.MANAGE_VENUE_DAILY_SPECIAL },
         status: 'available'
     },
     {
-        id: 'gastronomyEvents',
-        labelKey: 'billing.comparison.row.gastronomyEvents',
-        cell: { kind: 'entitlement', key: EntitlementKey.MANAGE_GASTRONOMY_EVENTS },
+        id: 'venueEvents',
+        labelKey: 'billing.comparison.row.venueEvents',
+        cell: { kind: 'entitlement', key: EntitlementKeyEnum.MANAGE_VENUE_EVENTS },
         status: 'available'
     },
     {
         id: 'menuItemPhotos',
         labelKey: 'billing.comparison.row.menuItemPhotos',
-        cell: { kind: 'entitlement', key: EntitlementKey.MENU_ITEM_PHOTOS },
+        cell: { kind: 'entitlement', key: EntitlementKeyEnum.MENU_ITEM_PHOTOS },
         status: 'available'
     },
     {
         id: 'multilingualMenu',
         labelKey: 'billing.comparison.row.multilingualMenu',
-        cell: { kind: 'entitlement', key: EntitlementKey.MULTILINGUAL_GASTRONOMY_MENU },
+        cell: { kind: 'entitlement', key: EntitlementKeyEnum.MULTILINGUAL_VENUE_MENU },
         status: 'available'
     },
     {
         id: 'menuQrScanMetrics',
         labelKey: 'billing.comparison.row.menuQrScanMetrics',
-        cell: { kind: 'entitlement', key: EntitlementKey.MENU_QR_SCAN_METRICS },
+        cell: { kind: 'entitlement', key: EntitlementKeyEnum.MENU_QR_SCAN_METRICS },
         status: 'available'
     }
 ];
@@ -395,25 +395,25 @@ export const EXPERIENCE_LISTING_ROWS: readonly RowConfig[] = [
     {
         id: 'maxExperiences',
         labelKey: 'billing.comparison.row.maxExperiences',
-        cell: { kind: 'limit', key: LimitKey.MAX_EXPERIENCES },
+        cell: { kind: 'limit', key: LimitKeyEnum.MAX_EXPERIENCES },
         status: 'available'
     },
     {
         id: 'publishExperience',
         labelKey: 'billing.comparison.row.publishExperience',
-        cell: { kind: 'entitlement', key: EntitlementKey.PUBLISH_EXPERIENCE },
+        cell: { kind: 'entitlement', key: EntitlementKeyEnum.PUBLISH_EXPERIENCE },
         status: 'available'
     },
     {
         id: 'editExperienceInfo',
         labelKey: 'billing.comparison.row.editExperienceInfo',
-        cell: { kind: 'entitlement', key: EntitlementKey.EDIT_EXPERIENCE_INFO },
+        cell: { kind: 'entitlement', key: EntitlementKeyEnum.EDIT_EXPERIENCE_INFO },
         status: 'available'
     },
     {
         id: 'basicStats',
         labelKey: 'billing.comparison.row.basicStats',
-        cell: { kind: 'entitlement', key: EntitlementKey.VIEW_BASIC_STATS },
+        cell: { kind: 'entitlement', key: EntitlementKeyEnum.VIEW_BASIC_STATS },
         status: 'available'
     }
 ];
@@ -423,13 +423,13 @@ export const EXPERIENCE_SERVICE_ROWS: readonly RowConfig[] = [
     {
         id: 'experienceDirections',
         labelKey: 'billing.comparison.row.experienceDirections',
-        cell: { kind: 'entitlement', key: EntitlementKey.MANAGE_EXPERIENCE_DIRECTIONS },
+        cell: { kind: 'entitlement', key: EntitlementKeyEnum.MANAGE_EXPERIENCE_DIRECTIONS },
         status: 'available'
     },
     {
         id: 'experienceCertificate',
         labelKey: 'billing.comparison.row.experienceCertificate',
-        cell: { kind: 'entitlement', key: EntitlementKey.ISSUE_EXPERIENCE_CERTIFICATE },
+        cell: { kind: 'entitlement', key: EntitlementKeyEnum.ISSUE_EXPERIENCE_CERTIFICATE },
         status: 'available'
     }
 ];
@@ -444,33 +444,33 @@ export const EXPERIENCE_SERVICE_ROWS: readonly RowConfig[] = [
  * @param params.aiChatLimitKey - The vertical's own monthly AI-chat cap key.
  * @returns The shared rows, bound to that vertical's cap.
  */
-function commerceExtrasRows({
+function listingExtrasRows({
     aiChatLimitKey
 }: {
-    readonly aiChatLimitKey: LimitKey;
+    readonly aiChatLimitKey: LimitKeyEnum;
 }): readonly RowConfig[] {
     return [
         {
             id: 'listingPdf',
             labelKey: 'billing.comparison.row.listingPdf',
-            cell: { kind: 'entitlement', key: EntitlementKey.DOWNLOAD_LISTING_PDF },
+            cell: { kind: 'entitlement', key: EntitlementKeyEnum.DOWNLOAD_LISTING_PDF },
             status: 'available'
         },
         {
-            id: 'aiChatCommerce',
-            labelKey: 'billing.comparison.row.aiChatCommerce',
+            id: 'aiChatListing',
+            labelKey: 'billing.comparison.row.aiChatListing',
             cell: { kind: 'limit', key: aiChatLimitKey },
             status: 'available'
         }
     ];
 }
 
-export const GASTRONOMY_GROUPS: readonly GroupConfig[] = [
-    { id: 'gastronomyListing', rows: GASTRONOMY_LISTING_ROWS },
-    { id: 'gastronomyMenu', rows: GASTRONOMY_MENU_ROWS },
+export const VENUE_GROUPS: readonly GroupConfig[] = [
+    { id: 'venueListing', rows: VENUE_LISTING_ROWS },
+    { id: 'venueMenu', rows: VENUE_MENU_ROWS },
     {
-        id: 'commerceExtras',
-        rows: commerceExtrasRows({ aiChatLimitKey: LimitKey.MAX_AI_CHAT_GASTRONOMY_PER_MONTH })
+        id: 'listingExtras',
+        rows: listingExtrasRows({ aiChatLimitKey: LimitKeyEnum.MAX_AI_CHAT_VENUE_PER_MONTH })
     }
 ];
 
@@ -478,8 +478,8 @@ export const EXPERIENCE_GROUPS: readonly GroupConfig[] = [
     { id: 'experienceListing', rows: EXPERIENCE_LISTING_ROWS },
     { id: 'experienceService', rows: EXPERIENCE_SERVICE_ROWS },
     {
-        id: 'commerceExtras',
-        rows: commerceExtrasRows({ aiChatLimitKey: LimitKey.MAX_AI_CHAT_EXPERIENCE_PER_MONTH })
+        id: 'listingExtras',
+        rows: listingExtrasRows({ aiChatLimitKey: LimitKeyEnum.MAX_AI_CHAT_EXPERIENCE_PER_MONTH })
     }
 ];
 
@@ -517,7 +517,7 @@ export function resolveCell({
         case 'limit': {
             const val = plan.limits[cell.key];
             if (typeof val !== 'number') return 'no';
-            return val === -1 ? 'unlimited' : val;
+            return isUnlimitedLimit({ value: val }) ? 'unlimited' : val;
         }
         case 'entitlement':
             return plan.entitlements.includes(cell.key) ? 'yes' : 'no';

@@ -1,0 +1,4722 @@
+[
+    {
+        "id": "dec-trial-001",
+        "start": 35,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md",
+        "n": 257,
+        "a": 256,
+        "z": 286
+    },
+    {
+        "id": "dec-trial-002",
+        "start": 73,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md",
+        "n": 287,
+        "a": 286,
+        "z": 319
+    },
+    {
+        "id": "dec-trial-003",
+        "start": 114,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md",
+        "n": 361,
+        "a": 360,
+        "z": 396
+    },
+    {
+        "id": "dec-trial-003-p1",
+        "start": 155,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md",
+        "n": 392,
+        "a": 360,
+        "z": 396
+    },
+    {
+        "id": "dec-trial-004",
+        "start": 169,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md",
+        "n": 435,
+        "a": 434,
+        "z": 483
+    },
+    {
+        "id": "dec-trial-004-p1",
+        "start": 212,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md",
+        "n": 467,
+        "a": 434,
+        "z": 483
+    },
+    {
+        "id": "dec-trial-004-p2",
+        "start": 228,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md",
+        "n": 473,
+        "a": 434,
+        "z": 483
+    },
+    {
+        "id": "dec-trial-004-p3",
+        "start": 245,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md",
+        "n": 480,
+        "a": 434,
+        "z": 483
+    },
+    {
+        "id": "dec-trial-005",
+        "start": 258,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md",
+        "n": 484,
+        "a": 483,
+        "z": 510
+    },
+    {
+        "id": "dec-trial-006",
+        "start": 293,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md",
+        "n": 511,
+        "a": 510,
+        "z": 547
+    },
+    {
+        "id": "dec-trial-006-p1",
+        "start": 335,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md",
+        "n": 543,
+        "a": 510,
+        "z": 547
+    },
+    {
+        "id": "dec-trial-007",
+        "start": 349,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md",
+        "n": 548,
+        "a": 547,
+        "z": 574
+    },
+    {
+        "id": "dec-trial-007-p1",
+        "start": 383,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md",
+        "n": 572,
+        "a": 547,
+        "z": 574
+    },
+    {
+        "id": "dec-trial-008",
+        "start": 395,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md",
+        "n": 3594,
+        "a": 3593,
+        "z": 3636
+    },
+    {
+        "id": "dec-trial-008-p1",
+        "start": 440,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md",
+        "n": 3630,
+        "a": 3593,
+        "z": 3636
+    },
+    {
+        "id": "dec-trial-009",
+        "start": 455,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md",
+        "n": 3704,
+        "a": 3703,
+        "z": 3748
+    },
+    {
+        "id": "dec-trial-010",
+        "start": 506,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md",
+        "n": 6184,
+        "a": 6183,
+        "z": 6225
+    },
+    {
+        "id": "dec-trial-010-p1",
+        "start": 536,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md",
+        "n": 6205,
+        "a": 6183,
+        "z": 6225
+    },
+    {
+        "id": "dec-sub-002",
+        "start": 572,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md",
+        "n": 702,
+        "a": 701,
+        "z": 728
+    },
+    {
+        "id": "dec-sub-002-p1",
+        "start": 605,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md",
+        "n": 725,
+        "a": 701,
+        "z": 728
+    },
+    {
+        "id": "dec-sub-004",
+        "start": 619,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md",
+        "n": 757,
+        "a": 756,
+        "z": 780
+    },
+    {
+        "id": "dec-sub-006",
+        "start": 650,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md",
+        "n": 1091,
+        "a": 1090,
+        "z": 1166
+    },
+    {
+        "id": "dec-sub-006-p1",
+        "start": 727,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md",
+        "n": 1159,
+        "a": 1090,
+        "z": 1166
+    },
+    {
+        "id": "dec-sub-007",
+        "start": 745,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md",
+        "n": 1167,
+        "a": 1166,
+        "z": 1240
+    },
+    {
+        "id": "dec-sub-007-p1",
+        "start": 820,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md",
+        "n": 1237,
+        "a": 1166,
+        "z": 1240
+    },
+    {
+        "id": "dec-sub-008",
+        "start": 833,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md",
+        "n": 1241,
+        "a": 1240,
+        "z": 1307
+    },
+    {
+        "id": "dec-sub-008-p1",
+        "start": 897,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md",
+        "n": 1294,
+        "a": 1240,
+        "z": 1307
+    },
+    {
+        "id": "dec-sub-008-p2",
+        "start": 910,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md",
+        "n": 1297,
+        "a": 1240,
+        "z": 1307
+    },
+    {
+        "id": "dec-sub-009",
+        "start": 930,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md",
+        "n": 1308,
+        "a": 1307,
+        "z": 1374
+    },
+    {
+        "id": "dec-sub-009-p1",
+        "start": 990,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md",
+        "n": 1356,
+        "a": 1307,
+        "z": 1374
+    },
+    {
+        "id": "dec-sub-009-p2",
+        "start": 1003,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md",
+        "n": 1359,
+        "a": 1307,
+        "z": 1374
+    },
+    {
+        "id": "dec-sub-009-p3",
+        "start": 1016,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md",
+        "n": 1362,
+        "a": 1307,
+        "z": 1374
+    },
+    {
+        "id": "dec-sub-009-p4",
+        "start": 1030,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md",
+        "n": 1366,
+        "a": 1307,
+        "z": 1374
+    },
+    {
+        "id": "dec-sub-010",
+        "start": 1048,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md",
+        "n": 1891,
+        "a": 1890,
+        "z": 1975
+    },
+    {
+        "id": "dec-sub-010-p1",
+        "start": 1129,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md",
+        "n": 1938,
+        "a": 1890,
+        "z": 1975
+    },
+    {
+        "id": "dec-sub-011",
+        "start": 1151,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md",
+        "n": 3009,
+        "a": 3008,
+        "z": 3040
+    },
+    {
+        "id": "dec-sub-012",
+        "start": 1188,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md",
+        "n": 3940,
+        "a": 3939,
+        "z": 4002
+    },
+    {
+        "id": "dec-sub-013",
+        "start": 1257,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md",
+        "n": 4058,
+        "a": 4057,
+        "z": 4139
+    },
+    {
+        "id": "dec-sub-013-p1",
+        "start": 1332,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md",
+        "n": 4126,
+        "a": 4057,
+        "z": 4139
+    },
+    {
+        "id": "dec-sub-013-p2",
+        "start": 1353,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md",
+        "n": 4135,
+        "a": 4057,
+        "z": 4139
+    },
+    {
+        "id": "dec-sub-014",
+        "start": 1364,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md",
+        "n": 4304,
+        "a": 4303,
+        "z": 4341
+    },
+    {
+        "id": "dec-sub-016",
+        "start": 1407,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md",
+        "n": 5083,
+        "a": 5082,
+        "z": 5122
+    },
+    {
+        "id": "dec-sub-016-p1",
+        "start": 1451,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md",
+        "n": 5118,
+        "a": 5082,
+        "z": 5122
+    },
+    {
+        "id": "dec-sub-017",
+        "start": 1464,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md",
+        "n": 5319,
+        "a": 5318,
+        "z": 5350
+    },
+    {
+        "id": "dec-sub-017-p1",
+        "start": 1498,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md",
+        "n": 5344,
+        "a": 5318,
+        "z": 5350
+    },
+    {
+        "id": "dec-sub-019",
+        "start": 1512,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md",
+        "n": 5810,
+        "a": 5809,
+        "z": 5880
+    },
+    {
+        "id": "dec-sub-019-p1",
+        "start": 1574,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md",
+        "n": 5860,
+        "a": 5809,
+        "z": 5880
+    },
+    {
+        "id": "dec-sub-019-p2",
+        "start": 1590,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md",
+        "n": 5867,
+        "a": 5809,
+        "z": 5880
+    },
+    {
+        "id": "dec-sub-019-p3",
+        "start": 1608,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md",
+        "n": 5875,
+        "a": 5809,
+        "z": 5880
+    },
+    {
+        "id": "dec-sub-020",
+        "start": 1621,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md",
+        "n": 5947,
+        "a": 5946,
+        "z": 5988
+    },
+    {
+        "id": "dec-sub-020-p1",
+        "start": 1663,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md",
+        "n": 5979,
+        "a": 5946,
+        "z": 5988
+    },
+    {
+        "id": "dec-sub-021",
+        "start": 1680,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md",
+        "n": 5989,
+        "a": 5988,
+        "z": 6056
+    },
+    {
+        "id": "dec-sub-021-p1",
+        "start": 1725,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md",
+        "n": 6024,
+        "a": 5988,
+        "z": 6056
+    },
+    {
+        "id": "dec-sub-021-p2",
+        "start": 1755,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md",
+        "n": 6044,
+        "a": 5988,
+        "z": 6056
+    },
+    {
+        "id": "dec-sub-022",
+        "start": 1775,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md",
+        "n": 6356,
+        "a": 6355,
+        "z": 6409
+    },
+    {
+        "id": "dec-sub-022-p1",
+        "start": 1827,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md",
+        "n": 6399,
+        "a": 6355,
+        "z": 6409
+    },
+    {
+        "id": "dec-sub-023",
+        "start": 1845,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md",
+        "n": 7110,
+        "a": 7109,
+        "z": 7166
+    },
+    {
+        "id": "dec-sub-023-p1",
+        "start": 1882,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md",
+        "n": 7136,
+        "a": 7109,
+        "z": 7166
+    },
+    {
+        "id": "dec-sub-023-p2",
+        "start": 1907,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md",
+        "n": 7150,
+        "a": 7109,
+        "z": 7166
+    },
+    {
+        "id": "dec-mp-001",
+        "start": 1934,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md",
+        "n": 1047,
+        "a": 1046,
+        "z": 1090
+    },
+    {
+        "id": "dec-mp-002",
+        "start": 1986,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md",
+        "n": 1375,
+        "a": 1374,
+        "z": 1511
+    },
+    {
+        "id": "dec-mp-002-p1",
+        "start": 2083,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md",
+        "n": 1457,
+        "a": 1374,
+        "z": 1511
+    },
+    {
+        "id": "dec-mp-002-p2",
+        "start": 2100,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md",
+        "n": 1463,
+        "a": 1374,
+        "z": 1511
+    },
+    {
+        "id": "dec-mp-002-p3",
+        "start": 2126,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md",
+        "n": 1478,
+        "a": 1374,
+        "z": 1511
+    },
+    {
+        "id": "dec-mp-002-p4",
+        "start": 2145,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md",
+        "n": 1486,
+        "a": 1374,
+        "z": 1511
+    },
+    {
+        "id": "dec-mp-002-p5",
+        "start": 2171,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md",
+        "n": 1502,
+        "a": 1374,
+        "z": 1511
+    },
+    {
+        "id": "dec-mp-003",
+        "start": 2190,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md",
+        "n": 4731,
+        "a": 4730,
+        "z": 4798
+    },
+    {
+        "id": "dec-mp-003-p1",
+        "start": 2257,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md",
+        "n": 4785,
+        "a": 4730,
+        "z": 4798
+    },
+    {
+        "id": "dec-mp-004",
+        "start": 2274,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md",
+        "n": 4799,
+        "a": 4798,
+        "z": 4838
+    },
+    {
+        "id": "dec-mp-005",
+        "start": 2320,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md",
+        "n": 5520,
+        "a": 5519,
+        "z": 5584
+    },
+    {
+        "id": "dec-mp-006",
+        "start": 2390,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md",
+        "n": 5655,
+        "a": 5654,
+        "z": 5723
+    },
+    {
+        "id": "dec-mp-006-p1",
+        "start": 2456,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md",
+        "n": 5682,
+        "a": 5654,
+        "z": 5723
+    },
+    {
+        "id": "dec-mp-007",
+        "start": 2476,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md",
+        "n": 5772,
+        "a": 5771,
+        "z": 5809
+    },
+    {
+        "id": "dec-mp-008",
+        "start": 2519,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md",
+        "n": 5881,
+        "a": 5880,
+        "z": 5946
+    },
+    {
+        "id": "dec-mp-008-p1",
+        "start": 2566,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md",
+        "n": 5917,
+        "a": 5880,
+        "z": 5946
+    },
+    {
+        "id": "dec-mp-008-p2",
+        "start": 2596,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md",
+        "n": 5936,
+        "a": 5880,
+        "z": 5946
+    },
+    {
+        "id": "dec-mp-008-p3",
+        "start": 2611,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md",
+        "n": 5940,
+        "a": 5880,
+        "z": 5946
+    },
+    {
+        "id": "dec-mp-009",
+        "start": 2625,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md",
+        "n": 7455,
+        "a": 7454,
+        "z": 7509
+    },
+    {
+        "id": "dec-mp-009-p1",
+        "start": 2670,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md",
+        "n": 7488,
+        "a": 7454,
+        "z": 7509
+    },
+    {
+        "id": "dec-mp-009-p2",
+        "start": 2688,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md",
+        "n": 7495,
+        "a": 7454,
+        "z": 7509
+    },
+    {
+        "id": "dec-mp-009-p3",
+        "start": 2705,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md",
+        "n": 7502,
+        "a": 7454,
+        "z": 7509
+    },
+    {
+        "id": "dec-ent-001",
+        "start": 2722,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md",
+        "n": 575,
+        "a": 574,
+        "z": 607
+    },
+    {
+        "id": "dec-ent-001-p1",
+        "start": 2761,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md",
+        "n": 604,
+        "a": 574,
+        "z": 607
+    },
+    {
+        "id": "dec-ent-002",
+        "start": 2775,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md",
+        "n": 608,
+        "a": 607,
+        "z": 648
+    },
+    {
+        "id": "dec-ent-002-p1",
+        "start": 2811,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md",
+        "n": 633,
+        "a": 607,
+        "z": 648
+    },
+    {
+        "id": "dec-ent-002-p2",
+        "start": 2828,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md",
+        "n": 639,
+        "a": 607,
+        "z": 648
+    },
+    {
+        "id": "dec-ent-002-p3",
+        "start": 2842,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md",
+        "n": 643,
+        "a": 607,
+        "z": 648
+    },
+    {
+        "id": "dec-ent-003",
+        "start": 2857,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md",
+        "n": 649,
+        "a": 648,
+        "z": 673
+    },
+    {
+        "id": "dec-ent-004",
+        "start": 2890,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md",
+        "n": 674,
+        "a": 673,
+        "z": 701
+    },
+    {
+        "id": "dec-ent-005",
+        "start": 2925,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md",
+        "n": 5047,
+        "a": 5046,
+        "z": 5082
+    },
+    {
+        "id": "dec-ent-006",
+        "start": 2967,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md",
+        "n": 6712,
+        "a": 6711,
+        "z": 6769
+    },
+    {
+        "id": "dec-ent-006-p1",
+        "start": 3002,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md",
+        "n": 6734,
+        "a": 6711,
+        "z": 6769
+    },
+    {
+        "id": "dec-ent-006-p2",
+        "start": 3025,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md",
+        "n": 6744,
+        "a": 6711,
+        "z": 6769
+    },
+    {
+        "id": "dec-ent-006-p3",
+        "start": 3047,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md",
+        "n": 6753,
+        "a": 6711,
+        "z": 6769
+    },
+    {
+        "id": "dec-ent-006-p4",
+        "start": 3067,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md",
+        "n": 6760,
+        "a": 6711,
+        "z": 6769
+    },
+    {
+        "id": "dec-addon-001",
+        "start": 3089,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md",
+        "n": 781,
+        "a": 780,
+        "z": 805
+    },
+    {
+        "id": "dec-addon-002",
+        "start": 3122,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md",
+        "n": 2104,
+        "a": 2103,
+        "z": 2196
+    },
+    {
+        "id": "dec-addon-002-p1",
+        "start": 3211,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md",
+        "n": 2181,
+        "a": 2103,
+        "z": 2196
+    },
+    {
+        "id": "dec-addon-002-p2",
+        "start": 3230,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md",
+        "n": 2189,
+        "a": 2103,
+        "z": 2196
+    },
+    {
+        "id": "dec-addon-003",
+        "start": 3248,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md",
+        "n": 3825,
+        "a": 3824,
+        "z": 3879
+    },
+    {
+        "id": "dec-addon-004",
+        "start": 3310,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md",
+        "n": 3880,
+        "a": 3879,
+        "z": 3939
+    },
+    {
+        "id": "dec-addon-004-p1",
+        "start": 3367,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md",
+        "n": 3929,
+        "a": 3879,
+        "z": 3939
+    },
+    {
+        "id": "dec-addon-004-p2",
+        "start": 3386,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md",
+        "n": 3935,
+        "a": 3879,
+        "z": 3939
+    },
+    {
+        "id": "dec-addon-005",
+        "start": 3397,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md",
+        "n": 4003,
+        "a": 4002,
+        "z": 4027
+    },
+    {
+        "id": "dec-addon-006",
+        "start": 3428,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md",
+        "n": 4028,
+        "a": 4027,
+        "z": 4057
+    },
+    {
+        "id": "dec-addon-007",
+        "start": 3464,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md",
+        "n": 6612,
+        "a": 6611,
+        "z": 6659
+    },
+    {
+        "id": "dec-addon-007-p1",
+        "start": 3505,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md",
+        "n": 6643,
+        "a": 6611,
+        "z": 6659
+    },
+    {
+        "id": "dec-promo-001",
+        "start": 3533,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md",
+        "n": 806,
+        "a": 805,
+        "z": 841
+    },
+    {
+        "id": "dec-promo-001-p1",
+        "start": 3569,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md",
+        "n": 830,
+        "a": 805,
+        "z": 841
+    },
+    {
+        "id": "dec-promo-001-p2",
+        "start": 3584,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md",
+        "n": 835,
+        "a": 805,
+        "z": 841
+    },
+    {
+        "id": "dec-promo-002",
+        "start": 3599,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md",
+        "n": 842,
+        "a": 841,
+        "z": 866
+    },
+    {
+        "id": "dec-auth-001",
+        "start": 3634,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md",
+        "n": 6660,
+        "a": 6659,
+        "z": 6711
+    },
+    {
+        "id": "dec-auth-001-p1",
+        "start": 3681,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md",
+        "n": 6696,
+        "a": 6659,
+        "z": 6711
+    },
+    {
+        "id": "dec-auth-001-p2",
+        "start": 3698,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md",
+        "n": 6703,
+        "a": 6659,
+        "z": 6711
+    },
+    {
+        "id": "dec-auth-002",
+        "start": 3714,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md",
+        "n": 6820,
+        "a": 6819,
+        "z": 6841
+    },
+    {
+        "id": "dec-auth-002-p1",
+        "start": 3734,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md",
+        "n": 6831,
+        "a": 6819,
+        "z": 6841
+    },
+    {
+        "id": "dec-auth-003",
+        "start": 3752,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md",
+        "n": 6842,
+        "a": 6841,
+        "z": 6886
+    },
+    {
+        "id": "dec-auth-003-p1",
+        "start": 3780,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md",
+        "n": 6857,
+        "a": 6841,
+        "z": 6886
+    },
+    {
+        "id": "dec-auth-003-p2",
+        "start": 3793,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md",
+        "n": 6859,
+        "a": 6841,
+        "z": 6886
+    },
+    {
+        "id": "dec-auth-003-p3",
+        "start": 3806,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md",
+        "n": 6863,
+        "a": 6841,
+        "z": 6886
+    },
+    {
+        "id": "dec-auth-003-p4",
+        "start": 3819,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md",
+        "n": 6866,
+        "a": 6841,
+        "z": 6886
+    },
+    {
+        "id": "dec-auth-003-p5",
+        "start": 3839,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md",
+        "n": 6875,
+        "a": 6841,
+        "z": 6886
+    },
+    {
+        "id": "dec-auth-004",
+        "start": 3858,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md",
+        "n": 6887,
+        "a": 6886,
+        "z": 6921
+    },
+    {
+        "id": "dec-auth-005",
+        "start": 3899,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md",
+        "n": 6922,
+        "a": 6921,
+        "z": 6960
+    },
+    {
+        "id": "dec-auth-005-p1",
+        "start": 3935,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md",
+        "n": 6947,
+        "a": 6921,
+        "z": 6960
+    },
+    {
+        "id": "dec-auth-005-p2",
+        "start": 3952,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md",
+        "n": 6953,
+        "a": 6921,
+        "z": 6960
+    },
+    {
+        "id": "dec-data-001",
+        "start": 3970,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md",
+        "n": 926,
+        "a": 925,
+        "z": 963
+    },
+    {
+        "id": "dec-data-001-p1",
+        "start": 4011,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md",
+        "n": 954,
+        "a": 925,
+        "z": 963
+    },
+    {
+        "id": "dec-data-001-p2",
+        "start": 4024,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md",
+        "n": 959,
+        "a": 925,
+        "z": 963
+    },
+    {
+        "id": "dec-data-002",
+        "start": 4039,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md",
+        "n": 3749,
+        "a": 3748,
+        "z": 3824
+    },
+    {
+        "id": "dec-data-002-p1",
+        "start": 4105,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md",
+        "n": 3774,
+        "a": 3748,
+        "z": 3824
+    },
+    {
+        "id": "dec-data-002-p2",
+        "start": 4126,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md",
+        "n": 3817,
+        "a": 3748,
+        "z": 3824
+    },
+    {
+        "id": "dec-data-003",
+        "start": 4142,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md",
+        "n": 4202,
+        "a": 4201,
+        "z": 4253
+    },
+    {
+        "id": "dec-data-004",
+        "start": 4199,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md",
+        "n": 5007,
+        "a": 5006,
+        "z": 5046
+    },
+    {
+        "id": "dec-data-005",
+        "start": 4246,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md",
+        "n": 6057,
+        "a": 6056,
+        "z": 6145
+    },
+    {
+        "id": "dec-data-005-p1",
+        "start": 4290,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md",
+        "n": 6084,
+        "a": 6056,
+        "z": 6145
+    },
+    {
+        "id": "dec-data-005-p2",
+        "start": 4308,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md",
+        "n": 6092,
+        "a": 6056,
+        "z": 6145
+    },
+    {
+        "id": "dec-data-005-p3",
+        "start": 4324,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md",
+        "n": 6097,
+        "a": 6056,
+        "z": 6145
+    },
+    {
+        "id": "dec-data-005-p4",
+        "start": 4338,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md",
+        "n": 6101,
+        "a": 6056,
+        "z": 6145
+    },
+    {
+        "id": "dec-data-005-p5",
+        "start": 4350,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md",
+        "n": 6104,
+        "a": 6056,
+        "z": 6145
+    },
+    {
+        "id": "dec-data-005-p6",
+        "start": 4378,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md",
+        "n": 6121,
+        "a": 6056,
+        "z": 6145
+    },
+    {
+        "id": "dec-data-005-p7",
+        "start": 4402,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md",
+        "n": 6133,
+        "a": 6056,
+        "z": 6145
+    },
+    {
+        "id": "dec-data-005-p8",
+        "start": 4416,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md",
+        "n": 6137,
+        "a": 6056,
+        "z": 6145
+    },
+    {
+        "id": "dec-data-006",
+        "start": 4432,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md",
+        "n": 7045,
+        "a": 7044,
+        "z": 7079
+    },
+    {
+        "id": "dec-data-006-p1",
+        "start": 4462,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md",
+        "n": 7064,
+        "a": 7044,
+        "z": 7079
+    },
+    {
+        "id": "dec-data-006-p2",
+        "start": 4481,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md",
+        "n": 7072,
+        "a": 7044,
+        "z": 7079
+    },
+    {
+        "id": "dec-data-007",
+        "start": 4497,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md",
+        "n": 7080,
+        "a": 7079,
+        "z": 7109
+    },
+    {
+        "id": "dec-data-007-p1",
+        "start": 4528,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md",
+        "n": 7101,
+        "a": 7079,
+        "z": 7109
+    },
+    {
+        "id": "dec-data-008",
+        "start": 4545,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md",
+        "n": 7366,
+        "a": 7365,
+        "z": 7454
+    },
+    {
+        "id": "dec-data-008-p1",
+        "start": 4593,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md",
+        "n": 7397,
+        "a": 7365,
+        "z": 7454
+    },
+    {
+        "id": "dec-data-008-p2",
+        "start": 4616,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md",
+        "n": 7407,
+        "a": 7365,
+        "z": 7454
+    },
+    {
+        "id": "dec-data-008-p3",
+        "start": 4629,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md",
+        "n": 7410,
+        "a": 7365,
+        "z": 7454
+    },
+    {
+        "id": "dec-data-008-p4",
+        "start": 4647,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md",
+        "n": 7415,
+        "a": 7365,
+        "z": 7454
+    },
+    {
+        "id": "dec-data-008-p5",
+        "start": 4666,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md",
+        "n": 7422,
+        "a": 7365,
+        "z": 7454
+    },
+    {
+        "id": "dec-data-008-p6",
+        "start": 4682,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md",
+        "n": 7428,
+        "a": 7365,
+        "z": 7454
+    },
+    {
+        "id": "dec-data-008-p7",
+        "start": 4701,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md",
+        "n": 7436,
+        "a": 7365,
+        "z": 7454
+    },
+    {
+        "id": "dec-data-008-p8",
+        "start": 4722,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md",
+        "n": 7446,
+        "a": 7365,
+        "z": 7454
+    },
+    {
+        "id": "dec-mail-001",
+        "start": 4741,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md",
+        "n": 1709,
+        "a": 1708,
+        "z": 1795
+    },
+    {
+        "id": "dec-mail-001-p1",
+        "start": 4813,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md",
+        "n": 1740,
+        "a": 1708,
+        "z": 1795
+    },
+    {
+        "id": "dec-mail-001-p2",
+        "start": 4832,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md",
+        "n": 1748,
+        "a": 1708,
+        "z": 1795
+    },
+    {
+        "id": "dec-mail-001-p3",
+        "start": 4851,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md",
+        "n": 1756,
+        "a": 1708,
+        "z": 1795
+    },
+    {
+        "id": "dec-arch-001",
+        "start": 4876,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md",
+        "n": 196,
+        "a": 195,
+        "z": 227
+    },
+    {
+        "id": "dec-arch-002",
+        "start": 4916,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md",
+        "n": 228,
+        "a": 227,
+        "z": 256
+    },
+    {
+        "id": "dec-arch-003",
+        "start": 4952,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md",
+        "n": 2197,
+        "a": 2196,
+        "z": 2238
+    },
+    {
+        "id": "dec-arch-004",
+        "start": 5002,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md",
+        "n": 2287,
+        "a": 2286,
+        "z": 2403
+    },
+    {
+        "id": "dec-arch-004-p1",
+        "start": 5104,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md",
+        "n": 2378,
+        "a": 2286,
+        "z": 2403
+    },
+    {
+        "id": "dec-arch-004-p2",
+        "start": 5125,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md",
+        "n": 2388,
+        "a": 2286,
+        "z": 2403
+    },
+    {
+        "id": "dec-arch-004-p3",
+        "start": 5141,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md",
+        "n": 2394,
+        "a": 2286,
+        "z": 2403
+    },
+    {
+        "id": "dec-arch-005",
+        "start": 5159,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md",
+        "n": 2404,
+        "a": 2403,
+        "z": 2488
+    },
+    {
+        "id": "dec-arch-005-p1",
+        "start": 5235,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md",
+        "n": 2414,
+        "a": 2403,
+        "z": 2488
+    },
+    {
+        "id": "dec-arch-005-p2",
+        "start": 5250,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md",
+        "n": 2477,
+        "a": 2403,
+        "z": 2488
+    },
+    {
+        "id": "dec-arch-006",
+        "start": 5269,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md",
+        "n": 2489,
+        "a": 2488,
+        "z": 2636
+    },
+    {
+        "id": "dec-arch-006-p1",
+        "start": 5346,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md",
+        "n": 2540,
+        "a": 2488,
+        "z": 2636
+    },
+    {
+        "id": "dec-arch-006-p2",
+        "start": 5367,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md",
+        "n": 2551,
+        "a": 2488,
+        "z": 2636
+    },
+    {
+        "id": "dec-arch-006-p3",
+        "start": 5390,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md",
+        "n": 2568,
+        "a": 2488,
+        "z": 2636
+    },
+    {
+        "id": "dec-arch-006-p6",
+        "start": 5412,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md",
+        "n": 2592,
+        "a": 2488,
+        "z": 2636
+    },
+    {
+        "id": "dec-arch-006-p7",
+        "start": 5428,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md",
+        "n": 2597,
+        "a": 2488,
+        "z": 2636
+    },
+    {
+        "id": "dec-arch-006-p8",
+        "start": 5445,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md",
+        "n": 2604,
+        "a": 2488,
+        "z": 2636
+    },
+    {
+        "id": "dec-arch-006-p9",
+        "start": 5468,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md",
+        "n": 2615,
+        "a": 2488,
+        "z": 2636
+    },
+    {
+        "id": "dec-arch-006-p10",
+        "start": 5486,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md",
+        "n": 2620,
+        "a": 2488,
+        "z": 2636
+    },
+    {
+        "id": "dec-arch-006-p11",
+        "start": 5505,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md",
+        "n": 2628,
+        "a": 2488,
+        "z": 2636
+    },
+    {
+        "id": "dec-arch-007",
+        "start": 5522,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md",
+        "n": 2637,
+        "a": 2636,
+        "z": 2709
+    },
+    {
+        "id": "dec-arch-007-p1",
+        "start": 5587,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md",
+        "n": 2691,
+        "a": 2636,
+        "z": 2709
+    },
+    {
+        "id": "dec-arch-007-p2",
+        "start": 5600,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md",
+        "n": 2694,
+        "a": 2636,
+        "z": 2709
+    },
+    {
+        "id": "dec-arch-007-p3",
+        "start": 5614,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md",
+        "n": 2698,
+        "a": 2636,
+        "z": 2709
+    },
+    {
+        "id": "dec-arch-008",
+        "start": 5633,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md",
+        "n": 3307,
+        "a": 3306,
+        "z": 3337
+    },
+    {
+        "id": "dec-arch-009",
+        "start": 5670,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md",
+        "n": 6146,
+        "a": 6145,
+        "z": 6183
+    },
+    {
+        "id": "dec-arch-009-p1",
+        "start": 5706,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md",
+        "n": 6173,
+        "a": 6145,
+        "z": 6183
+    },
+    {
+        "id": "dec-arch-010",
+        "start": 5724,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md",
+        "n": 5385,
+        "a": 5384,
+        "z": 5409
+    },
+    {
+        "id": "dec-arch-012",
+        "start": 5754,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md",
+        "n": 7220,
+        "a": 7219,
+        "z": 7296
+    },
+    {
+        "id": "dec-arch-012-p1",
+        "start": 5794,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md",
+        "n": 7248,
+        "a": 7219,
+        "z": 7296
+    },
+    {
+        "id": "dec-arch-012-p2",
+        "start": 5829,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md",
+        "n": 7272,
+        "a": 7219,
+        "z": 7296
+    },
+    {
+        "id": "dec-arch-012-p3",
+        "start": 5850,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md",
+        "n": 7283,
+        "a": 7219,
+        "z": 7296
+    },
+    {
+        "id": "dec-arch-013",
+        "start": 5872,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md",
+        "n": 7297,
+        "a": 7296,
+        "z": 7365
+    },
+    {
+        "id": "dec-arch-013-p1",
+        "start": 5914,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md",
+        "n": 7326,
+        "a": 7296,
+        "z": 7365
+    },
+    {
+        "id": "dec-arch-013-p2",
+        "start": 5934,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md",
+        "n": 7335,
+        "a": 7296,
+        "z": 7365
+    },
+    {
+        "id": "dec-arch-013-p3",
+        "start": 5949,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md",
+        "n": 7339,
+        "a": 7296,
+        "z": 7365
+    },
+    {
+        "id": "dec-arch-013-p4",
+        "start": 5975,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md",
+        "n": 7352,
+        "a": 7296,
+        "z": 7365
+    },
+    {
+        "id": "dec-arch-014",
+        "start": 5999,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md",
+        "n": 7510,
+        "a": 7509,
+        "z": 7646
+    },
+    {
+        "id": "dec-arch-014-p1",
+        "start": 6051,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md",
+        "n": 7547,
+        "a": 7509,
+        "z": 7646
+    },
+    {
+        "id": "dec-arch-014-p2",
+        "start": 6071,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md",
+        "n": 7561,
+        "a": 7509,
+        "z": 7646
+    },
+    {
+        "id": "dec-arch-014-p3",
+        "start": 6089,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md",
+        "n": 7573,
+        "a": 7509,
+        "z": 7646
+    },
+    {
+        "id": "dec-arch-014-p4",
+        "start": 6128,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md",
+        "n": 7601,
+        "a": 7509,
+        "z": 7646
+    },
+    {
+        "id": "dec-arch-014-p5",
+        "start": 6145,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md",
+        "n": 7608,
+        "a": 7509,
+        "z": 7646
+    },
+    {
+        "id": "dec-arch-014-p6",
+        "start": 6167,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md",
+        "n": 7617,
+        "a": 7509,
+        "z": 7646
+    },
+    {
+        "id": "dec-arch-014-p7",
+        "start": 6194,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md",
+        "n": 7630,
+        "a": 7509,
+        "z": 7646
+    },
+    {
+        "id": "dec-arch-015",
+        "start": 6218,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md",
+        "n": 7647,
+        "a": 7646,
+        "z": 7670
+    },
+    {
+        "id": "dec-arch-016",
+        "start": 6248,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md",
+        "n": 7743,
+        "a": 7742,
+        "z": 7848
+    },
+    {
+        "id": "dec-arch-016-p1",
+        "start": 6347,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md",
+        "n": 7832,
+        "a": 7742,
+        "z": 7848
+    },
+    {
+        "id": "dec-arch-016-p2",
+        "start": 6363,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md",
+        "n": 7838,
+        "a": 7742,
+        "z": 7848
+    },
+    {
+        "id": "dec-arch-017",
+        "start": 6381,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md",
+        "n": 7849,
+        "a": 7848,
+        "z": 8095
+    },
+    {
+        "id": "dec-arch-017-p1",
+        "start": 6470,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md",
+        "n": 7916,
+        "a": 7848,
+        "z": 8095
+    },
+    {
+        "id": "dec-arch-017-p2",
+        "start": 6499,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md",
+        "n": 7933,
+        "a": 7848,
+        "z": 8095
+    },
+    {
+        "id": "dec-arch-017-p3",
+        "start": 6516,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md",
+        "n": 7939,
+        "a": 7848,
+        "z": 8095
+    },
+    {
+        "id": "dec-arch-017-p4",
+        "start": 6533,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md",
+        "n": 7947,
+        "a": 7848,
+        "z": 8095
+    },
+    {
+        "id": "dec-arch-017-p5",
+        "start": 6566,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md",
+        "n": 7969,
+        "a": 7848,
+        "z": 8095
+    },
+    {
+        "id": "dec-arch-017-p6",
+        "start": 6588,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md",
+        "n": 7980,
+        "a": 7848,
+        "z": 8095
+    },
+    {
+        "id": "dec-arch-017-p7",
+        "start": 6631,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md",
+        "n": 8011,
+        "a": 7848,
+        "z": 8095
+    },
+    {
+        "id": "dec-arch-017-p8",
+        "start": 6654,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md",
+        "n": 8023,
+        "a": 7848,
+        "z": 8095
+    },
+    {
+        "id": "dec-arch-017-p9",
+        "start": 6677,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md",
+        "n": 8035,
+        "a": 7848,
+        "z": 8095
+    },
+    {
+        "id": "dec-arch-017-p10",
+        "start": 6701,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md",
+        "n": 8049,
+        "a": 7848,
+        "z": 8095
+    },
+    {
+        "id": "dec-arch-017-p11",
+        "start": 6718,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md",
+        "n": 8056,
+        "a": 7848,
+        "z": 8095
+    },
+    {
+        "id": "dec-arch-017-p12",
+        "start": 6739,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md",
+        "n": 8066,
+        "a": 7848,
+        "z": 8095
+    },
+    {
+        "id": "dec-arch-017-p13",
+        "start": 6765,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md",
+        "n": 8081,
+        "a": 7848,
+        "z": 8095
+    },
+    {
+        "id": "dec-mig-001",
+        "start": 6791,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md",
+        "n": 397,
+        "a": 396,
+        "z": 434
+    },
+    {
+        "id": "dec-mig-001-p1",
+        "start": 6839,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md",
+        "n": 432,
+        "a": 396,
+        "z": 434
+    },
+    {
+        "id": "dec-mig-002",
+        "start": 6851,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md",
+        "n": 2710,
+        "a": 2709,
+        "z": 2784
+    },
+    {
+        "id": "dec-mig-002-p1",
+        "start": 6906,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md",
+        "n": 2734,
+        "a": 2709,
+        "z": 2784
+    },
+    {
+        "id": "dec-mig-002-p2",
+        "start": 6922,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md",
+        "n": 2761,
+        "a": 2709,
+        "z": 2784
+    },
+    {
+        "id": "dec-mig-002-p3",
+        "start": 6944,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md",
+        "n": 2773,
+        "a": 2709,
+        "z": 2784
+    },
+    {
+        "id": "dec-mig-003",
+        "start": 6963,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md",
+        "n": 3041,
+        "a": 3040,
+        "z": 3218
+    },
+    {
+        "id": "dec-mig-003-p1",
+        "start": 7040,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md",
+        "n": 3093,
+        "a": 3040,
+        "z": 3218
+    },
+    {
+        "id": "dec-mig-003-p2",
+        "start": 7059,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md",
+        "n": 3102,
+        "a": 3040,
+        "z": 3218
+    },
+    {
+        "id": "dec-mig-003-p3",
+        "start": 7107,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md",
+        "n": 3136,
+        "a": 3040,
+        "z": 3218
+    },
+    {
+        "id": "dec-mig-003-p4",
+        "start": 7130,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md",
+        "n": 3152,
+        "a": 3040,
+        "z": 3218
+    },
+    {
+        "id": "dec-mig-003-p5",
+        "start": 7143,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md",
+        "n": 3155,
+        "a": 3040,
+        "z": 3218
+    },
+    {
+        "id": "dec-mig-003-p7",
+        "start": 7161,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md",
+        "n": 3170,
+        "a": 3040,
+        "z": 3218
+    },
+    {
+        "id": "dec-mig-003-p8",
+        "start": 7177,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md",
+        "n": 3176,
+        "a": 3040,
+        "z": 3218
+    },
+    {
+        "id": "dec-mig-003-p9",
+        "start": 7204,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md",
+        "n": 3192,
+        "a": 3040,
+        "z": 3218
+    },
+    {
+        "id": "dec-mig-003-p10",
+        "start": 7227,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md",
+        "n": 3205,
+        "a": 3040,
+        "z": 3218
+    },
+    {
+        "id": "dec-mig-005",
+        "start": 7242,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md",
+        "n": 6410,
+        "a": 6409,
+        "z": 6537
+    },
+    {
+        "id": "dec-mig-005-p3",
+        "start": 7328,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md",
+        "n": 6496,
+        "a": 6409,
+        "z": 6537
+    },
+    {
+        "id": "dec-mig-005-p5",
+        "start": 7341,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md",
+        "n": 6505,
+        "a": 6409,
+        "z": 6537
+    },
+    {
+        "id": "dec-mig-005-p6",
+        "start": 7356,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md",
+        "n": 6510,
+        "a": 6409,
+        "z": 6537
+    },
+    {
+        "id": "dec-mig-005-p7",
+        "start": 7383,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md",
+        "n": 6526,
+        "a": 6409,
+        "z": 6537
+    },
+    {
+        "id": "dec-mig-006",
+        "start": 7402,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md",
+        "n": 6961,
+        "a": 6960,
+        "z": 7014
+    },
+    {
+        "id": "dec-mig-006-p2",
+        "start": 7438,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md",
+        "n": 6990,
+        "a": 6960,
+        "z": 7014
+    },
+    {
+        "id": "dec-mig-006-p3",
+        "start": 7465,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md",
+        "n": 7004,
+        "a": 6960,
+        "z": 7014
+    },
+    {
+        "id": "dec-mig-007",
+        "start": 7484,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md",
+        "n": 7015,
+        "a": 7014,
+        "z": 7044
+    },
+    {
+        "id": "dec-grant-001",
+        "start": 7523,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md",
+        "n": 867,
+        "a": 866,
+        "z": 898
+    },
+    {
+        "id": "dec-grant-002",
+        "start": 7562,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md",
+        "n": 899,
+        "a": 898,
+        "z": 925
+    },
+    {
+        "id": "dec-grant-003",
+        "start": 7597,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md",
+        "n": 1976,
+        "a": 1975,
+        "z": 2054
+    },
+    {
+        "id": "dec-grant-003-p1",
+        "start": 7672,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md",
+        "n": 2037,
+        "a": 1975,
+        "z": 2054
+    },
+    {
+        "id": "dec-grant-004",
+        "start": 7695,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md",
+        "n": 2055,
+        "a": 2054,
+        "z": 2103
+    },
+    {
+        "id": "dec-grant-004-p1",
+        "start": 7752,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md",
+        "n": 2073,
+        "a": 2054,
+        "z": 2103
+    },
+    {
+        "id": "dec-grant-005",
+        "start": 7763,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md",
+        "n": 2936,
+        "a": 2935,
+        "z": 2975
+    },
+    {
+        "id": "dec-grant-006",
+        "start": 7809,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md",
+        "n": 3545,
+        "a": 3544,
+        "z": 3593
+    },
+    {
+        "id": "dec-grant-007",
+        "start": 7864,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md",
+        "n": 4254,
+        "a": 4253,
+        "z": 4303
+    },
+    {
+        "id": "dec-grant-007-p1",
+        "start": 7918,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md",
+        "n": 4298,
+        "a": 4253,
+        "z": 4303
+    },
+    {
+        "id": "dec-grant-008",
+        "start": 7932,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md",
+        "n": 4455,
+        "a": 4454,
+        "z": 4475
+    },
+    {
+        "id": "dec-grant-009",
+        "start": 7958,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md",
+        "n": 4476,
+        "a": 4475,
+        "z": 4504
+    },
+    {
+        "id": "dec-grant-011",
+        "start": 7992,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md",
+        "n": 4915,
+        "a": 4914,
+        "z": 4971
+    },
+    {
+        "id": "dec-grant-012",
+        "start": 8054,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md",
+        "n": 4972,
+        "a": 4971,
+        "z": 5006
+    },
+    {
+        "id": "dec-grant-013",
+        "start": 8094,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md",
+        "n": 5222,
+        "a": 5221,
+        "z": 5260
+    },
+    {
+        "id": "dec-grant-014",
+        "start": 8138,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md",
+        "n": 5261,
+        "a": 5260,
+        "z": 5293
+    },
+    {
+        "id": "dec-legal-001",
+        "start": 8179,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md",
+        "n": 964,
+        "a": 963,
+        "z": 993
+    },
+    {
+        "id": "dec-legal-001-p1",
+        "start": 8214,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md",
+        "n": 990,
+        "a": 963,
+        "z": 993
+    },
+    {
+        "id": "dec-test-001",
+        "start": 8230,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md",
+        "n": 4505,
+        "a": 4504,
+        "z": 4681
+    },
+    {
+        "id": "dec-test-001-p1",
+        "start": 8386,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md",
+        "n": 4544,
+        "a": 4504,
+        "z": 4681
+    },
+    {
+        "id": "dec-test-001-p2",
+        "start": 8403,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md",
+        "n": 4654,
+        "a": 4504,
+        "z": 4681
+    },
+    {
+        "id": "dec-test-001-p3",
+        "start": 8419,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md",
+        "n": 4658,
+        "a": 4504,
+        "z": 4681
+    },
+    {
+        "id": "dec-test-001-p4",
+        "start": 8436,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md",
+        "n": 4662,
+        "a": 4504,
+        "z": 4681
+    },
+    {
+        "id": "dec-test-001-p5",
+        "start": 8453,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md",
+        "n": 4667,
+        "a": 4504,
+        "z": 4681
+    },
+    {
+        "id": "dec-test-001-p6",
+        "start": 8472,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md",
+        "n": 4674,
+        "a": 4504,
+        "z": 4681
+    },
+    {
+        "id": "dec-test-002",
+        "start": 8488,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md",
+        "n": 5351,
+        "a": 5350,
+        "z": 5384
+    },
+    {
+        "id": "dec-test-002-p1",
+        "start": 8520,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md",
+        "n": 5374,
+        "a": 5350,
+        "z": 5384
+    },
+    {
+        "id": "dec-test-003",
+        "start": 8538,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md",
+        "n": 7167,
+        "a": 7166,
+        "z": 7219
+    },
+    {
+        "id": "dec-test-003-p1",
+        "start": 8573,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md",
+        "n": 7191,
+        "a": 7166,
+        "z": 7219
+    },
+    {
+        "id": "dec-test-003-p2",
+        "start": 8595,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md",
+        "n": 7203,
+        "a": 7166,
+        "z": 7219
+    },
+    {
+        "id": "dec-test-003-p3",
+        "start": 8610,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md",
+        "n": 7208,
+        "a": 7166,
+        "z": 7219
+    },
+    {
+        "id": "dec-conc-001",
+        "start": 8632,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md",
+        "n": 1512,
+        "a": 1511,
+        "z": 1599
+    },
+    {
+        "id": "dec-conc-001-p1",
+        "start": 8704,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md",
+        "n": 1571,
+        "a": 1511,
+        "z": 1599
+    },
+    {
+        "id": "dec-conc-001-p2",
+        "start": 8721,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md",
+        "n": 1578,
+        "a": 1511,
+        "z": 1599
+    },
+    {
+        "id": "dec-conc-001-p3",
+        "start": 8738,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md",
+        "n": 1584,
+        "a": 1511,
+        "z": 1599
+    },
+    {
+        "id": "dec-conc-001-p4",
+        "start": 8755,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md",
+        "n": 1590,
+        "a": 1511,
+        "z": 1599
+    },
+    {
+        "id": "dec-conc-002",
+        "start": 8774,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md",
+        "n": 1600,
+        "a": 1599,
+        "z": 1708
+    },
+    {
+        "id": "dec-conc-002-p1",
+        "start": 8844,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md",
+        "n": 1633,
+        "a": 1599,
+        "z": 1708
+    },
+    {
+        "id": "dec-conc-002-p2",
+        "start": 8871,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md",
+        "n": 1648,
+        "a": 1599,
+        "z": 1708
+    },
+    {
+        "id": "dec-conc-002-p3",
+        "start": 8901,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md",
+        "n": 1666,
+        "a": 1599,
+        "z": 1708
+    },
+    {
+        "id": "dec-conc-002-p4",
+        "start": 8919,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md",
+        "n": 1673,
+        "a": 1599,
+        "z": 1708
+    },
+    {
+        "id": "dec-conc-002-p5",
+        "start": 8935,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md",
+        "n": 1679,
+        "a": 1599,
+        "z": 1708
+    },
+    {
+        "id": "dec-conc-003",
+        "start": 8951,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md",
+        "n": 2976,
+        "a": 2975,
+        "z": 3008
+    },
+    {
+        "id": "dec-rf-001",
+        "start": 8991,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md",
+        "n": 1796,
+        "a": 1795,
+        "z": 1890
+    },
+    {
+        "id": "dec-rf-001-p1",
+        "start": 9069,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md",
+        "n": 1827,
+        "a": 1795,
+        "z": 1890
+    },
+    {
+        "id": "dec-rf-001-p2",
+        "start": 9084,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md",
+        "n": 1838,
+        "a": 1795,
+        "z": 1890
+    },
+    {
+        "id": "dec-rf-001-p3",
+        "start": 9098,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md",
+        "n": 1844,
+        "a": 1795,
+        "z": 1890
+    },
+    {
+        "id": "dec-rf-001-p4",
+        "start": 9116,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md",
+        "n": 1852,
+        "a": 1795,
+        "z": 1890
+    },
+    {
+        "id": "dec-rf-001-p5",
+        "start": 9133,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md",
+        "n": 1883,
+        "a": 1795,
+        "z": 1890
+    },
+    {
+        "id": "dec-rf-001-p6",
+        "start": 9147,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md",
+        "n": 1887,
+        "a": 1795,
+        "z": 1890
+    },
+    {
+        "id": "dec-rf-002",
+        "start": 9161,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md",
+        "n": 3505,
+        "a": 3504,
+        "z": 3544
+    },
+    {
+        "id": "dec-rf-003",
+        "start": 9207,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md",
+        "n": 4416,
+        "a": 4415,
+        "z": 4454
+    },
+    {
+        "id": "dec-rf-003-p1",
+        "start": 9249,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md",
+        "n": 4449,
+        "a": 4415,
+        "z": 4454
+    },
+    {
+        "id": "dec-rf-004",
+        "start": 9263,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md",
+        "n": 5123,
+        "a": 5122,
+        "z": 5221
+    },
+    {
+        "id": "dec-rf-004-p1",
+        "start": 9361,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md",
+        "n": 5211,
+        "a": 5122,
+        "z": 5221
+    },
+    {
+        "id": "dec-rf-004-p2",
+        "start": 9375,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md",
+        "n": 5217,
+        "a": 5122,
+        "z": 5221
+    },
+    {
+        "id": "dec-rf-005",
+        "start": 9388,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md",
+        "n": 5294,
+        "a": 5293,
+        "z": 5318
+    },
+    {
+        "id": "dec-rf-006",
+        "start": 9418,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md",
+        "n": 5436,
+        "a": 5435,
+        "z": 5519
+    },
+    {
+        "id": "dec-rf-006-p1",
+        "start": 9496,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md",
+        "n": 5502,
+        "a": 5435,
+        "z": 5519
+    },
+    {
+        "id": "dec-rf-006-p2",
+        "start": 9514,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md",
+        "n": 5509,
+        "a": 5435,
+        "z": 5519
+    },
+    {
+        "id": "dec-rf-006-p3",
+        "start": 9530,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md",
+        "n": 5515,
+        "a": 5435,
+        "z": 5519
+    },
+    {
+        "id": "dec-rf-007",
+        "start": 9543,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md",
+        "n": 5724,
+        "a": 5723,
+        "z": 5771
+    },
+    {
+        "id": "dec-rf-008",
+        "start": 9596,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md",
+        "n": 6538,
+        "a": 6537,
+        "z": 6611
+    },
+    {
+        "id": "dec-rf-008-p1",
+        "start": 9644,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md",
+        "n": 6560,
+        "a": 6537,
+        "z": 6611
+    },
+    {
+        "id": "dec-rf-008-p3",
+        "start": 9661,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md",
+        "n": 6579,
+        "a": 6537,
+        "z": 6611
+    },
+    {
+        "id": "dec-rf-008-p4",
+        "start": 9678,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md",
+        "n": 6583,
+        "a": 6537,
+        "z": 6611
+    },
+    {
+        "id": "dec-rf-008-p5",
+        "start": 9697,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md",
+        "n": 6590,
+        "a": 6537,
+        "z": 6611
+    },
+    {
+        "id": "dec-rf-008-p6",
+        "start": 9714,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md",
+        "n": 6597,
+        "a": 6537,
+        "z": 6611
+    },
+    {
+        "id": "dec-rf-008-p7",
+        "start": 9730,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md",
+        "n": 6603,
+        "a": 6537,
+        "z": 6611
+    },
+    {
+        "id": "dec-obs-001",
+        "start": 9748,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md",
+        "n": 2239,
+        "a": 2238,
+        "z": 2286
+    },
+    {
+        "id": "dec-obs-001-p1",
+        "start": 9797,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md",
+        "n": 2277,
+        "a": 2238,
+        "z": 2286
+    },
+    {
+        "id": "dec-obs-001-p2",
+        "start": 9812,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md",
+        "n": 2282,
+        "a": 2238,
+        "z": 2286
+    },
+    {
+        "id": "dec-ci-001",
+        "start": 9825,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md",
+        "n": 2785,
+        "a": 2784,
+        "z": 2866
+    },
+    {
+        "id": "dec-ci-001-p1",
+        "start": 9886,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md",
+        "n": 2837,
+        "a": 2784,
+        "z": 2866
+    },
+    {
+        "id": "dec-ci-001-p2",
+        "start": 9903,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md",
+        "n": 2845,
+        "a": 2784,
+        "z": 2866
+    },
+    {
+        "id": "dec-ci-002",
+        "start": 9931,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md",
+        "n": 2867,
+        "a": 2866,
+        "z": 2884
+    },
+    {
+        "id": "dec-meth-001",
+        "start": 9955,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md",
+        "n": 62,
+        "a": 61,
+        "z": 88
+    },
+    {
+        "id": "dec-meth-002",
+        "start": 9988,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md",
+        "n": 89,
+        "a": 88,
+        "z": 110
+    },
+    {
+        "id": "dec-meth-003",
+        "start": 10016,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md",
+        "n": 111,
+        "a": 110,
+        "z": 143
+    },
+    {
+        "id": "dec-meth-004",
+        "start": 10053,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md",
+        "n": 144,
+        "a": 143,
+        "z": 193
+    },
+    {
+        "id": "dec-meth-005",
+        "start": 10107,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md",
+        "n": 2885,
+        "a": 2884,
+        "z": 2935
+    },
+    {
+        "id": "dec-meth-006",
+        "start": 10162,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md",
+        "n": 3219,
+        "a": 3218,
+        "z": 3264
+    },
+    {
+        "id": "dec-meth-007",
+        "start": 10214,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md",
+        "n": 3265,
+        "a": 3264,
+        "z": 3306
+    },
+    {
+        "id": "dec-meth-008",
+        "start": 10259,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md",
+        "n": 3338,
+        "a": 3337,
+        "z": 3386
+    },
+    {
+        "id": "dec-meth-009",
+        "start": 10312,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md",
+        "n": 3387,
+        "a": 3386,
+        "z": 3436
+    },
+    {
+        "id": "dec-meth-010",
+        "start": 10366,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md",
+        "n": 3637,
+        "a": 3636,
+        "z": 3703
+    },
+    {
+        "id": "dec-meth-011",
+        "start": 10437,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md",
+        "n": 4140,
+        "a": 4139,
+        "z": 4201
+    },
+    {
+        "id": "dec-meth-012",
+        "start": 10503,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md",
+        "n": 4839,
+        "a": 4838,
+        "z": 4914
+    },
+    {
+        "id": "dec-meth-013",
+        "start": 10583,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md",
+        "n": 5585,
+        "a": 5584,
+        "z": 5654
+    },
+    {
+        "id": "dec-meth-013-p1",
+        "start": 10645,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md",
+        "n": 5629,
+        "a": 5584,
+        "z": 5654
+    },
+    {
+        "id": "dec-meth-014",
+        "start": 10668,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md",
+        "n": 6226,
+        "a": 6225,
+        "z": 6268
+    },
+    {
+        "id": "dec-meth-015",
+        "start": 10715,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md",
+        "n": 6269,
+        "a": 6268,
+        "z": 6284
+    },
+    {
+        "id": "dec-meth-016",
+        "start": 10735,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md",
+        "n": 6285,
+        "a": 6284,
+        "z": 6313
+    },
+    {
+        "id": "dec-meth-017",
+        "start": 10768,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md",
+        "n": 6314,
+        "a": 6313,
+        "z": 6355
+    },
+    {
+        "id": "dec-meth-018",
+        "start": 10814,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md",
+        "n": 7671,
+        "a": 7670,
+        "z": 7742
+    },
+    {
+        "id": "dec-meth-019",
+        "start": 10890,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md",
+        "n": 8096,
+        "a": 8095,
+        "z": 8225
+    },
+    {
+        "id": "dec-meth-019-p1",
+        "start": 10961,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md",
+        "n": 8155,
+        "a": 8095,
+        "z": 8225
+    },
+    {
+        "id": "dec-meth-019-p2",
+        "start": 10986,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md",
+        "n": 8171,
+        "a": 8095,
+        "z": 8225
+    },
+    {
+        "id": "dec-meth-019-p3",
+        "start": 11001,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md",
+        "n": 8177,
+        "a": 8095,
+        "z": 8225
+    },
+    {
+        "id": "dec-meth-019-p4",
+        "start": 11025,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md",
+        "n": 8192,
+        "a": 8095,
+        "z": 8225
+    },
+    {
+        "id": "dec-meth-019-p5",
+        "start": 11056,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md",
+        "n": 8214,
+        "a": 8095,
+        "z": 8225
+    },
+    {
+        "id": "own-26-fase-9-completa-t1-1",
+        "start": 11082,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/26-fase-9-completa/10-decisiones-del-owner.md",
+        "n": 19
+    },
+    {
+        "id": "own-26-fase-9-completa-t1-2a",
+        "start": 11091,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/26-fase-9-completa/10-decisiones-del-owner.md",
+        "n": 20
+    },
+    {
+        "id": "own-26-fase-9-completa-t1-2b",
+        "start": 11100,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/26-fase-9-completa/10-decisiones-del-owner.md",
+        "n": 21
+    },
+    {
+        "id": "own-26-fase-9-completa-t1-2c",
+        "start": 11109,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/26-fase-9-completa/10-decisiones-del-owner.md",
+        "n": 22
+    },
+    {
+        "id": "own-26-fase-9-completa-t1-2d",
+        "start": 11118,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/26-fase-9-completa/10-decisiones-del-owner.md",
+        "n": 23
+    },
+    {
+        "id": "own-26-fase-9-completa-t1-2e",
+        "start": 11128,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/26-fase-9-completa/10-decisiones-del-owner.md",
+        "n": 24
+    },
+    {
+        "id": "own-26-fase-9-completa-t1-2f",
+        "start": 11137,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/26-fase-9-completa/10-decisiones-del-owner.md",
+        "n": 25
+    },
+    {
+        "id": "own-26-fase-9-completa-t1-2g",
+        "start": 11146,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/26-fase-9-completa/10-decisiones-del-owner.md",
+        "n": 26
+    },
+    {
+        "id": "own-26-fase-9-completa-t1-3a",
+        "start": 11155,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/26-fase-9-completa/10-decisiones-del-owner.md",
+        "n": 27
+    },
+    {
+        "id": "own-26-fase-9-completa-t1-3b",
+        "start": 11164,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/26-fase-9-completa/10-decisiones-del-owner.md",
+        "n": 28
+    },
+    {
+        "id": "own-26-fase-9-completa-t1-3c",
+        "start": 11173,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/26-fase-9-completa/10-decisiones-del-owner.md",
+        "n": 29
+    },
+    {
+        "id": "own-26-fase-9-completa-t1-3d",
+        "start": 11182,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/26-fase-9-completa/10-decisiones-del-owner.md",
+        "n": 30
+    },
+    {
+        "id": "own-26-fase-9-completa-t1-4a",
+        "start": 11191,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/26-fase-9-completa/10-decisiones-del-owner.md",
+        "n": 31
+    },
+    {
+        "id": "own-26-fase-9-completa-t1-4b",
+        "start": 11200,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/26-fase-9-completa/10-decisiones-del-owner.md",
+        "n": 32
+    },
+    {
+        "id": "own-26-fase-9-completa-t1-4c",
+        "start": 11209,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/26-fase-9-completa/10-decisiones-del-owner.md",
+        "n": 33
+    },
+    {
+        "id": "own-26-fase-9-completa-t1-4d",
+        "start": 11218,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/26-fase-9-completa/10-decisiones-del-owner.md",
+        "n": 34
+    },
+    {
+        "id": "own-26-fase-9-completa-t1-4e",
+        "start": 11227,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/26-fase-9-completa/10-decisiones-del-owner.md",
+        "n": 35
+    },
+    {
+        "id": "own-26-fase-9-completa-t1-5a",
+        "start": 11236,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/26-fase-9-completa/10-decisiones-del-owner.md",
+        "n": 36
+    },
+    {
+        "id": "own-26-fase-9-completa-t1-5b",
+        "start": 11245,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/26-fase-9-completa/10-decisiones-del-owner.md",
+        "n": 37
+    },
+    {
+        "id": "own-26-fase-9-completa-t1-5c",
+        "start": 11254,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/26-fase-9-completa/10-decisiones-del-owner.md",
+        "n": 38
+    },
+    {
+        "id": "own-26-fase-9-completa-t1-6a",
+        "start": 11263,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/26-fase-9-completa/10-decisiones-del-owner.md",
+        "n": 39
+    },
+    {
+        "id": "own-26-fase-9-completa-t1-6b",
+        "start": 11273,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/26-fase-9-completa/10-decisiones-del-owner.md",
+        "n": 40
+    },
+    {
+        "id": "own-26-fase-9-completa-t1-6c",
+        "start": 11283,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/26-fase-9-completa/10-decisiones-del-owner.md",
+        "n": 41
+    },
+    {
+        "id": "own-26-fase-9-completa-t1-7a",
+        "start": 11292,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/26-fase-9-completa/10-decisiones-del-owner.md",
+        "n": 42
+    },
+    {
+        "id": "own-26-fase-9-completa-t1-7b",
+        "start": 11301,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/26-fase-9-completa/10-decisiones-del-owner.md",
+        "n": 43
+    },
+    {
+        "id": "own-26-fase-9-completa-t1-7c",
+        "start": 11310,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/26-fase-9-completa/10-decisiones-del-owner.md",
+        "n": 44
+    },
+    {
+        "id": "own-26-fase-9-completa-t1-8a",
+        "start": 11319,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/26-fase-9-completa/10-decisiones-del-owner.md",
+        "n": 45
+    },
+    {
+        "id": "own-26-fase-9-completa-t1-8b",
+        "start": 11328,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/26-fase-9-completa/10-decisiones-del-owner.md",
+        "n": 46
+    },
+    {
+        "id": "own-26-fase-9-completa-t1-8c",
+        "start": 11337,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/26-fase-9-completa/10-decisiones-del-owner.md",
+        "n": 47
+    },
+    {
+        "id": "own-26-fase-9-completa-t1-8d",
+        "start": 11346,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/26-fase-9-completa/10-decisiones-del-owner.md",
+        "n": 48
+    },
+    {
+        "id": "own-26-fase-9-completa-t1-8e",
+        "start": 11355,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/26-fase-9-completa/10-decisiones-del-owner.md",
+        "n": 49
+    },
+    {
+        "id": "own-26-fase-9-completa-t1-8f",
+        "start": 11364,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/26-fase-9-completa/10-decisiones-del-owner.md",
+        "n": 50
+    },
+    {
+        "id": "own-26-fase-9-completa-t2-9a",
+        "start": 11375,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/26-fase-9-completa/10-decisiones-del-owner.md",
+        "n": 60
+    },
+    {
+        "id": "own-26-fase-9-completa-t2-9b",
+        "start": 11384,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/26-fase-9-completa/10-decisiones-del-owner.md",
+        "n": 61
+    },
+    {
+        "id": "own-26-fase-9-completa-t2-9c",
+        "start": 11393,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/26-fase-9-completa/10-decisiones-del-owner.md",
+        "n": 62
+    },
+    {
+        "id": "own-26-fase-9-completa-t2-9d",
+        "start": 11402,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/26-fase-9-completa/10-decisiones-del-owner.md",
+        "n": 63
+    },
+    {
+        "id": "own-26-fase-9-completa-t2-9e",
+        "start": 11411,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/26-fase-9-completa/10-decisiones-del-owner.md",
+        "n": 64
+    },
+    {
+        "id": "own-26-fase-9-completa-t2-9f",
+        "start": 11420,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/26-fase-9-completa/10-decisiones-del-owner.md",
+        "n": 65
+    },
+    {
+        "id": "own-26-fase-9-completa-t2-9g",
+        "start": 11429,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/26-fase-9-completa/10-decisiones-del-owner.md",
+        "n": 66
+    },
+    {
+        "id": "own-26-fase-9-completa-t2-9h",
+        "start": 11438,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/26-fase-9-completa/10-decisiones-del-owner.md",
+        "n": 67
+    },
+    {
+        "id": "own-26-fase-9-completa-t3-10a",
+        "start": 11449,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/26-fase-9-completa/10-decisiones-del-owner.md",
+        "n": 73
+    },
+    {
+        "id": "own-26-fase-9-completa-t3-10b",
+        "start": 11457,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/26-fase-9-completa/10-decisiones-del-owner.md",
+        "n": 74
+    },
+    {
+        "id": "own-26-fase-9-completa-t3-10c",
+        "start": 11465,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/26-fase-9-completa/10-decisiones-del-owner.md",
+        "n": 75
+    },
+    {
+        "id": "own-26-fase-9-completa-t3-10d",
+        "start": 11473,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/26-fase-9-completa/10-decisiones-del-owner.md",
+        "n": 76
+    },
+    {
+        "id": "own-26-fase-9-completa-t3-10e",
+        "start": 11481,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/26-fase-9-completa/10-decisiones-del-owner.md",
+        "n": 77
+    },
+    {
+        "id": "own-28-fase-9-vuelta-1-t1-g1-1",
+        "start": 11493,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/28-fase-9-vuelta-1/10-decisiones-del-owner.md",
+        "n": 19
+    },
+    {
+        "id": "own-28-fase-9-vuelta-1-t1-g1-2",
+        "start": 11503,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/28-fase-9-vuelta-1/10-decisiones-del-owner.md",
+        "n": 20
+    },
+    {
+        "id": "own-28-fase-9-vuelta-1-t1-g1-3",
+        "start": 11512,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/28-fase-9-vuelta-1/10-decisiones-del-owner.md",
+        "n": 21
+    },
+    {
+        "id": "own-28-fase-9-vuelta-1-t1-g1-4",
+        "start": 11521,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/28-fase-9-vuelta-1/10-decisiones-del-owner.md",
+        "n": 22
+    },
+    {
+        "id": "own-28-fase-9-vuelta-1-t1-g1-5",
+        "start": 11530,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/28-fase-9-vuelta-1/10-decisiones-del-owner.md",
+        "n": 23
+    },
+    {
+        "id": "own-28-fase-9-vuelta-1-t1-g2-1",
+        "start": 11539,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/28-fase-9-vuelta-1/10-decisiones-del-owner.md",
+        "n": 24
+    },
+    {
+        "id": "own-28-fase-9-vuelta-1-t1-g2-2",
+        "start": 11549,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/28-fase-9-vuelta-1/10-decisiones-del-owner.md",
+        "n": 25
+    },
+    {
+        "id": "own-28-fase-9-vuelta-1-t1-g2-3",
+        "start": 11558,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/28-fase-9-vuelta-1/10-decisiones-del-owner.md",
+        "n": 26
+    },
+    {
+        "id": "own-28-fase-9-vuelta-1-t1-g2-4",
+        "start": 11567,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/28-fase-9-vuelta-1/10-decisiones-del-owner.md",
+        "n": 27
+    },
+    {
+        "id": "own-28-fase-9-vuelta-1-t1-g3-1",
+        "start": 11577,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/28-fase-9-vuelta-1/10-decisiones-del-owner.md",
+        "n": 28
+    },
+    {
+        "id": "own-28-fase-9-vuelta-1-t1-g3-2",
+        "start": 11586,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/28-fase-9-vuelta-1/10-decisiones-del-owner.md",
+        "n": 29
+    },
+    {
+        "id": "own-28-fase-9-vuelta-1-t1-g4-1",
+        "start": 11595,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/28-fase-9-vuelta-1/10-decisiones-del-owner.md",
+        "n": 30
+    },
+    {
+        "id": "own-28-fase-9-vuelta-1-t1-g4-2",
+        "start": 11604,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/28-fase-9-vuelta-1/10-decisiones-del-owner.md",
+        "n": 31
+    },
+    {
+        "id": "own-28-fase-9-vuelta-1-t1-g4-3",
+        "start": 11613,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/28-fase-9-vuelta-1/10-decisiones-del-owner.md",
+        "n": 32
+    },
+    {
+        "id": "own-28-fase-9-vuelta-1-t1-g5-1",
+        "start": 11622,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/28-fase-9-vuelta-1/10-decisiones-del-owner.md",
+        "n": 33
+    },
+    {
+        "id": "own-28-fase-9-vuelta-1-t1-g5-2",
+        "start": 11631,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/28-fase-9-vuelta-1/10-decisiones-del-owner.md",
+        "n": 34
+    },
+    {
+        "id": "own-28-fase-9-vuelta-1-t1-g5-3",
+        "start": 11640,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/28-fase-9-vuelta-1/10-decisiones-del-owner.md",
+        "n": 35
+    },
+    {
+        "id": "own-28-fase-9-vuelta-1-t1-g5-4",
+        "start": 11650,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/28-fase-9-vuelta-1/10-decisiones-del-owner.md",
+        "n": 36
+    },
+    {
+        "id": "own-28-fase-9-vuelta-1-t1-g5-5",
+        "start": 11659,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/28-fase-9-vuelta-1/10-decisiones-del-owner.md",
+        "n": 37
+    },
+    {
+        "id": "own-28-fase-9-vuelta-1-t1-pa",
+        "start": 11668,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/28-fase-9-vuelta-1/10-decisiones-del-owner.md",
+        "n": 38
+    },
+    {
+        "id": "own-28-fase-9-vuelta-1-t1-pb",
+        "start": 11677,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/28-fase-9-vuelta-1/10-decisiones-del-owner.md",
+        "n": 39
+    },
+    {
+        "id": "own-28-fase-9-vuelta-1-t2-a-g",
+        "start": 11688,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/28-fase-9-vuelta-1/10-decisiones-del-owner.md",
+        "n": 47
+    },
+    {
+        "id": "own-28-fase-9-vuelta-1-t2-h",
+        "start": 11696,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/28-fase-9-vuelta-1/10-decisiones-del-owner.md",
+        "n": 48
+    },
+    {
+        "id": "own-28-fase-9-vuelta-1-t2-i",
+        "start": 11704,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/28-fase-9-vuelta-1/10-decisiones-del-owner.md",
+        "n": 49
+    },
+    {
+        "id": "own-28-fase-9-vuelta-1-t2-j",
+        "start": 11712,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/28-fase-9-vuelta-1/10-decisiones-del-owner.md",
+        "n": 50
+    },
+    {
+        "id": "own-28-fase-9-vuelta-1-t2-k",
+        "start": 11720,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/28-fase-9-vuelta-1/10-decisiones-del-owner.md",
+        "n": 51
+    },
+    {
+        "id": "own-28-fase-9-vuelta-1-t2-l",
+        "start": 11728,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/28-fase-9-vuelta-1/10-decisiones-del-owner.md",
+        "n": 52
+    },
+    {
+        "id": "own-28-fase-9-vuelta-1-t2-m",
+        "start": 11736,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/28-fase-9-vuelta-1/10-decisiones-del-owner.md",
+        "n": 53
+    },
+    {
+        "id": "own-28-fase-9-vuelta-1-t2-p1",
+        "start": 11744,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/28-fase-9-vuelta-1/10-decisiones-del-owner.md",
+        "n": 54
+    },
+    {
+        "id": "own-28-fase-9-vuelta-1-t2-p2",
+        "start": 11752,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/28-fase-9-vuelta-1/10-decisiones-del-owner.md",
+        "n": 55
+    },
+    {
+        "id": "own-28-fase-9-vuelta-1-t3-x-1",
+        "start": 11762,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/28-fase-9-vuelta-1/10-decisiones-del-owner.md",
+        "n": 61
+    },
+    {
+        "id": "own-28-fase-9-vuelta-1-t3-x-2",
+        "start": 11771,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/28-fase-9-vuelta-1/10-decisiones-del-owner.md",
+        "n": 62
+    },
+    {
+        "id": "own-28-fase-9-vuelta-1-t3-y-1",
+        "start": 11780,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/28-fase-9-vuelta-1/10-decisiones-del-owner.md",
+        "n": 63
+    },
+    {
+        "id": "own-28-fase-9-vuelta-1-t3-y-2",
+        "start": 11789,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/28-fase-9-vuelta-1/10-decisiones-del-owner.md",
+        "n": 64
+    },
+    {
+        "id": "own-28-fase-9-vuelta-1-t3-l1-l6",
+        "start": 11798,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/28-fase-9-vuelta-1/10-decisiones-del-owner.md",
+        "n": 65
+    },
+    {
+        "id": "own-28-fase-9-vuelta-1-t3-cl-usuladey-2",
+        "start": 11807,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/28-fase-9-vuelta-1/10-decisiones-del-owner.md",
+        "n": 66
+    },
+    {
+        "id": "own-28-fase-9-vuelta-1-t3-pdec-conc-002",
+        "start": 11816,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/28-fase-9-vuelta-1/10-decisiones-del-owner.md",
+        "n": 67
+    },
+    {
+        "id": "own-29-fase-8-vuelta-2-t1-r1-a",
+        "start": 11829,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/29-fase-8-vuelta-2/10-decisiones-del-owner.md",
+        "n": 21
+    },
+    {
+        "id": "own-29-fase-8-vuelta-2-t1-r1-b",
+        "start": 11838,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/29-fase-8-vuelta-2/10-decisiones-del-owner.md",
+        "n": 22
+    },
+    {
+        "id": "own-29-fase-8-vuelta-2-t1-r2",
+        "start": 11847,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/29-fase-8-vuelta-2/10-decisiones-del-owner.md",
+        "n": 23
+    },
+    {
+        "id": "own-29-fase-8-vuelta-2-t1-r4",
+        "start": 11857,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/29-fase-8-vuelta-2/10-decisiones-del-owner.md",
+        "n": 24
+    },
+    {
+        "id": "own-29-fase-8-vuelta-2-t1-r5",
+        "start": 11866,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/29-fase-8-vuelta-2/10-decisiones-del-owner.md",
+        "n": 25
+    },
+    {
+        "id": "own-29-fase-8-vuelta-2-t1-r9",
+        "start": 11876,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/29-fase-8-vuelta-2/10-decisiones-del-owner.md",
+        "n": 26
+    },
+    {
+        "id": "own-29-fase-8-vuelta-2-t1-r15",
+        "start": 11885,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/29-fase-8-vuelta-2/10-decisiones-del-owner.md",
+        "n": 27
+    },
+    {
+        "id": "own-29-fase-8-vuelta-2-t1-r17",
+        "start": 11895,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/29-fase-8-vuelta-2/10-decisiones-del-owner.md",
+        "n": 28
+    },
+    {
+        "id": "own-29-fase-8-vuelta-2-t1-r21",
+        "start": 11904,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/29-fase-8-vuelta-2/10-decisiones-del-owner.md",
+        "n": 29
+    },
+    {
+        "id": "own-29-fase-8-vuelta-2-t1-r7",
+        "start": 11914,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/29-fase-8-vuelta-2/10-decisiones-del-owner.md",
+        "n": 30
+    },
+    {
+        "id": "own-29-fase-8-vuelta-2-t1-r18",
+        "start": 11923,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/29-fase-8-vuelta-2/10-decisiones-del-owner.md",
+        "n": 31
+    },
+    {
+        "id": "own-29-fase-8-vuelta-2-t1-r20",
+        "start": 11932,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/29-fase-8-vuelta-2/10-decisiones-del-owner.md",
+        "n": 32
+    },
+    {
+        "id": "own-29-fase-8-vuelta-2-t1-q-altas",
+        "start": 11941,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/29-fase-8-vuelta-2/10-decisiones-del-owner.md",
+        "n": 33
+    },
+    {
+        "id": "own-29-fase-8-vuelta-2-t1-r24",
+        "start": 11951,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/29-fase-8-vuelta-2/10-decisiones-del-owner.md",
+        "n": 34
+    },
+    {
+        "id": "own-29-fase-8-vuelta-2-t1-q-fecha",
+        "start": 11961,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/29-fase-8-vuelta-2/10-decisiones-del-owner.md",
+        "n": 35
+    },
+    {
+        "id": "own-29-fase-8-vuelta-2-t1-r11-3b",
+        "start": 11971,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/29-fase-8-vuelta-2/10-decisiones-del-owner.md",
+        "n": 36
+    },
+    {
+        "id": "own-29-fase-8-vuelta-2-t1-r21-b",
+        "start": 11980,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/29-fase-8-vuelta-2/10-decisiones-del-owner.md",
+        "n": 37
+    },
+    {
+        "id": "own-29-fase-8-vuelta-2-t1-r3-g4-1",
+        "start": 11990,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/29-fase-8-vuelta-2/10-decisiones-del-owner.md",
+        "n": 38
+    },
+    {
+        "id": "own-29-fase-8-vuelta-2-t1-r1-c",
+        "start": 11999,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/29-fase-8-vuelta-2/10-decisiones-del-owner.md",
+        "n": 39
+    },
+    {
+        "id": "own-29-fase-8-vuelta-2-t1-r7-b",
+        "start": 12008,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/29-fase-8-vuelta-2/10-decisiones-del-owner.md",
+        "n": 40
+    },
+    {
+        "id": "own-29-fase-8-vuelta-2-t1-r23",
+        "start": 12017,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/29-fase-8-vuelta-2/10-decisiones-del-owner.md",
+        "n": 41
+    },
+    {
+        "id": "own-29-fase-8-vuelta-2-t1-r25",
+        "start": 12026,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/29-fase-8-vuelta-2/10-decisiones-del-owner.md",
+        "n": 42
+    },
+    {
+        "id": "own-29-fase-8-vuelta-2-t1-r27",
+        "start": 12035,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/29-fase-8-vuelta-2/10-decisiones-del-owner.md",
+        "n": 43
+    },
+    {
+        "id": "own-29-fase-8-vuelta-2-t1-r9-b",
+        "start": 12044,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/29-fase-8-vuelta-2/10-decisiones-del-owner.md",
+        "n": 44
+    },
+    {
+        "id": "own-29-fase-8-vuelta-2-t1-r18-b",
+        "start": 12054,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/29-fase-8-vuelta-2/10-decisiones-del-owner.md",
+        "n": 45
+    },
+    {
+        "id": "own-29-fase-8-vuelta-2-t1-q-altas-b",
+        "start": 12063,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/29-fase-8-vuelta-2/10-decisiones-del-owner.md",
+        "n": 46
+    },
+    {
+        "id": "own-29-fase-8-vuelta-2-t1-q-acc16",
+        "start": 12073,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/29-fase-8-vuelta-2/10-decisiones-del-owner.md",
+        "n": 47
+    },
+    {
+        "id": "own-29-fase-8-vuelta-2-t1-q-anuncio",
+        "start": 12083,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/29-fase-8-vuelta-2/10-decisiones-del-owner.md",
+        "n": 48
+    },
+    {
+        "id": "own-29-fase-8-vuelta-2-t1-q-estado",
+        "start": 12093,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/29-fase-8-vuelta-2/10-decisiones-del-owner.md",
+        "n": 49
+    },
+    {
+        "id": "own-29-fase-8-vuelta-2-t1-q-unknown",
+        "start": 12102,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/29-fase-8-vuelta-2/10-decisiones-del-owner.md",
+        "n": 50
+    },
+    {
+        "id": "own-30-revision-del-owner-t1-n2",
+        "start": 12117,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/30-revision-del-owner/10-decisiones-del-owner.md",
+        "n": 32
+    },
+    {
+        "id": "own-30-revision-del-owner-t1-n7",
+        "start": 12125,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/30-revision-del-owner/10-decisiones-del-owner.md",
+        "n": 33
+    },
+    {
+        "id": "own-30-revision-del-owner-t1-n8",
+        "start": 12133,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/30-revision-del-owner/10-decisiones-del-owner.md",
+        "n": 34
+    },
+    {
+        "id": "own-30-revision-del-owner-t1-n9",
+        "start": 12141,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/30-revision-del-owner/10-decisiones-del-owner.md",
+        "n": 35
+    },
+    {
+        "id": "own-30-revision-del-owner-t1-c12",
+        "start": 12149,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/30-revision-del-owner/10-decisiones-del-owner.md",
+        "n": 36
+    },
+    {
+        "id": "own-30-revision-del-owner-t1-n5",
+        "start": 12157,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/30-revision-del-owner/10-decisiones-del-owner.md",
+        "n": 37
+    },
+    {
+        "id": "own-30-revision-del-owner-t2-g1",
+        "start": 12167,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/30-revision-del-owner/10-decisiones-del-owner.md",
+        "n": 43
+    },
+    {
+        "id": "own-30-revision-del-owner-t2-g2",
+        "start": 12176,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/30-revision-del-owner/10-decisiones-del-owner.md",
+        "n": 44
+    },
+    {
+        "id": "own-30-revision-del-owner-t2-g3",
+        "start": 12185,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/30-revision-del-owner/10-decisiones-del-owner.md",
+        "n": 45
+    },
+    {
+        "id": "own-30-revision-del-owner-t3-l1-a",
+        "start": 12196,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/30-revision-del-owner/10-decisiones-del-owner.md",
+        "n": 53
+    },
+    {
+        "id": "own-30-revision-del-owner-t3-l1-b",
+        "start": 12205,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/30-revision-del-owner/10-decisiones-del-owner.md",
+        "n": 54
+    },
+    {
+        "id": "own-30-revision-del-owner-t3-l1-c",
+        "start": 12214,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/30-revision-del-owner/10-decisiones-del-owner.md",
+        "n": 55
+    },
+    {
+        "id": "own-30-revision-del-owner-t3-l1-d",
+        "start": 12223,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/30-revision-del-owner/10-decisiones-del-owner.md",
+        "n": 56
+    },
+    {
+        "id": "own-30-revision-del-owner-t3-l1-e",
+        "start": 12232,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/30-revision-del-owner/10-decisiones-del-owner.md",
+        "n": 57
+    },
+    {
+        "id": "own-30-revision-del-owner-t3-l1-f",
+        "start": 12241,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/30-revision-del-owner/10-decisiones-del-owner.md",
+        "n": 58
+    },
+    {
+        "id": "own-30-revision-del-owner-t3-l1-g",
+        "start": 12250,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/30-revision-del-owner/10-decisiones-del-owner.md",
+        "n": 59
+    },
+    {
+        "id": "own-30-revision-del-owner-t3-l1-h",
+        "start": 12259,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/30-revision-del-owner/10-decisiones-del-owner.md",
+        "n": 60
+    },
+    {
+        "id": "own-30-revision-del-owner-t4-l2-a",
+        "start": 12270,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/30-revision-del-owner/10-decisiones-del-owner.md",
+        "n": 66
+    },
+    {
+        "id": "own-30-revision-del-owner-t4-l2-b",
+        "start": 12279,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/30-revision-del-owner/10-decisiones-del-owner.md",
+        "n": 67
+    },
+    {
+        "id": "own-30-revision-del-owner-t4-l2-c",
+        "start": 12288,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/30-revision-del-owner/10-decisiones-del-owner.md",
+        "n": 68
+    },
+    {
+        "id": "own-30-revision-del-owner-t4-l2-d",
+        "start": 12297,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/30-revision-del-owner/10-decisiones-del-owner.md",
+        "n": 69
+    },
+    {
+        "id": "own-30-revision-del-owner-t4-l2-e",
+        "start": 12306,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/30-revision-del-owner/10-decisiones-del-owner.md",
+        "n": 70
+    },
+    {
+        "id": "own-30-revision-del-owner-t4-l2-f1",
+        "start": 12315,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/30-revision-del-owner/10-decisiones-del-owner.md",
+        "n": 71
+    },
+    {
+        "id": "own-30-revision-del-owner-t4-l2-f2",
+        "start": 12324,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/30-revision-del-owner/10-decisiones-del-owner.md",
+        "n": 72
+    },
+    {
+        "id": "own-30-revision-del-owner-t4-l2-f3",
+        "start": 12333,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/30-revision-del-owner/10-decisiones-del-owner.md",
+        "n": 73
+    },
+    {
+        "id": "own-30-revision-del-owner-t4-l2-g",
+        "start": 12342,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/30-revision-del-owner/10-decisiones-del-owner.md",
+        "n": 74
+    },
+    {
+        "id": "own-30-revision-del-owner-t4-l2-h",
+        "start": 12351,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/30-revision-del-owner/10-decisiones-del-owner.md",
+        "n": 75
+    },
+    {
+        "id": "own-30-revision-del-owner-t4-l2-i",
+        "start": 12360,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/30-revision-del-owner/10-decisiones-del-owner.md",
+        "n": 76
+    },
+    {
+        "id": "own-30-revision-del-owner-t5-l3-a",
+        "start": 12371,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/30-revision-del-owner/10-decisiones-del-owner.md",
+        "n": 82
+    },
+    {
+        "id": "own-30-revision-del-owner-t5-l3-b",
+        "start": 12381,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/30-revision-del-owner/10-decisiones-del-owner.md",
+        "n": 83
+    },
+    {
+        "id": "own-30-revision-del-owner-t5-l3-c",
+        "start": 12390,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/30-revision-del-owner/10-decisiones-del-owner.md",
+        "n": 84
+    },
+    {
+        "id": "own-30-revision-del-owner-t5-l3-d",
+        "start": 12399,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/30-revision-del-owner/10-decisiones-del-owner.md",
+        "n": 85
+    },
+    {
+        "id": "own-30-revision-del-owner-t5-l3-e",
+        "start": 12408,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/30-revision-del-owner/10-decisiones-del-owner.md",
+        "n": 86
+    },
+    {
+        "id": "own-30-revision-del-owner-t5-l3-f",
+        "start": 12417,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/30-revision-del-owner/10-decisiones-del-owner.md",
+        "n": 87
+    },
+    {
+        "id": "own-30-revision-del-owner-t5-l3-g",
+        "start": 12426,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/30-revision-del-owner/10-decisiones-del-owner.md",
+        "n": 88
+    },
+    {
+        "id": "own-37-fase-8-vuelta-3-t1-a",
+        "start": 12439,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/37-fase-8-vuelta-3/10-decisiones-del-owner.md",
+        "n": 22
+    },
+    {
+        "id": "own-37-fase-8-vuelta-3-t1-b",
+        "start": 12449,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/37-fase-8-vuelta-3/10-decisiones-del-owner.md",
+        "n": 23
+    },
+    {
+        "id": "own-37-fase-8-vuelta-3-t1-c",
+        "start": 12459,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/37-fase-8-vuelta-3/10-decisiones-del-owner.md",
+        "n": 24
+    },
+    {
+        "id": "own-37-fase-8-vuelta-3-t1-d",
+        "start": 12469,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/37-fase-8-vuelta-3/10-decisiones-del-owner.md",
+        "n": 25
+    },
+    {
+        "id": "own-37-fase-8-vuelta-3-t1-e",
+        "start": 12479,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/37-fase-8-vuelta-3/10-decisiones-del-owner.md",
+        "n": 26
+    },
+    {
+        "id": "own-37-fase-8-vuelta-3-t1-f",
+        "start": 12489,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/37-fase-8-vuelta-3/10-decisiones-del-owner.md",
+        "n": 27
+    },
+    {
+        "id": "own-37-fase-8-vuelta-3-t1-g",
+        "start": 12499,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/37-fase-8-vuelta-3/10-decisiones-del-owner.md",
+        "n": 28
+    },
+    {
+        "id": "own-37-fase-8-vuelta-3-t1-h",
+        "start": 12510,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/37-fase-8-vuelta-3/10-decisiones-del-owner.md",
+        "n": 29
+    },
+    {
+        "id": "own-37-fase-8-vuelta-3-t1-i",
+        "start": 12520,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/37-fase-8-vuelta-3/10-decisiones-del-owner.md",
+        "n": 30
+    },
+    {
+        "id": "own-37-fase-8-vuelta-3-t1-j",
+        "start": 12530,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/37-fase-8-vuelta-3/10-decisiones-del-owner.md",
+        "n": 31
+    },
+    {
+        "id": "own-37-fase-8-vuelta-3-t1-k",
+        "start": 12540,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/37-fase-8-vuelta-3/10-decisiones-del-owner.md",
+        "n": 32
+    },
+    {
+        "id": "own-37-fase-8-vuelta-3-t1-l",
+        "start": 12550,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/37-fase-8-vuelta-3/10-decisiones-del-owner.md",
+        "n": 33
+    },
+    {
+        "id": "own-37-fase-8-vuelta-3-t1-m",
+        "start": 12560,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/37-fase-8-vuelta-3/10-decisiones-del-owner.md",
+        "n": 34
+    },
+    {
+        "id": "own-37-fase-8-vuelta-3-t1-n",
+        "start": 12570,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/37-fase-8-vuelta-3/10-decisiones-del-owner.md",
+        "n": 35
+    },
+    {
+        "id": "own-37-fase-8-vuelta-3-t1-o",
+        "start": 12581,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/37-fase-8-vuelta-3/10-decisiones-del-owner.md",
+        "n": 36
+    },
+    {
+        "id": "own-37-fase-8-vuelta-3-t1-p",
+        "start": 12591,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/37-fase-8-vuelta-3/10-decisiones-del-owner.md",
+        "n": 37
+    },
+    {
+        "id": "own-37-fase-8-vuelta-3-t1-q",
+        "start": 12601,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/37-fase-8-vuelta-3/10-decisiones-del-owner.md",
+        "n": 38
+    },
+    {
+        "id": "own-37-fase-8-vuelta-3-t1-r",
+        "start": 12611,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/37-fase-8-vuelta-3/10-decisiones-del-owner.md",
+        "n": 39
+    },
+    {
+        "id": "own-37-fase-8-vuelta-3-t1-s",
+        "start": 12621,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/37-fase-8-vuelta-3/10-decisiones-del-owner.md",
+        "n": 40
+    },
+    {
+        "id": "own-37-fase-8-vuelta-3-t1-t",
+        "start": 12632,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/37-fase-8-vuelta-3/10-decisiones-del-owner.md",
+        "n": 41
+    },
+    {
+        "id": "own-37-fase-8-vuelta-3-t1-u",
+        "start": 12643,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/37-fase-8-vuelta-3/10-decisiones-del-owner.md",
+        "n": 42
+    },
+    {
+        "id": "own-37-fase-8-vuelta-3-t1-v",
+        "start": 12653,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/37-fase-8-vuelta-3/10-decisiones-del-owner.md",
+        "n": 43
+    },
+    {
+        "id": "own-37-fase-8-vuelta-3-t1-w",
+        "start": 12663,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/37-fase-8-vuelta-3/10-decisiones-del-owner.md",
+        "n": 44
+    },
+    {
+        "id": "own-37-fase-8-vuelta-3-t1-x",
+        "start": 12673,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/37-fase-8-vuelta-3/10-decisiones-del-owner.md",
+        "n": 45
+    },
+    {
+        "id": "own-37-fase-8-vuelta-3-t1-y",
+        "start": 12684,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/37-fase-8-vuelta-3/10-decisiones-del-owner.md",
+        "n": 46
+    },
+    {
+        "id": "own-37-fase-8-vuelta-3-t1-z",
+        "start": 12694,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/37-fase-8-vuelta-3/10-decisiones-del-owner.md",
+        "n": 47
+    },
+    {
+        "id": "own-37-fase-8-vuelta-3-t1-aa",
+        "start": 12704,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/37-fase-8-vuelta-3/10-decisiones-del-owner.md",
+        "n": 48
+    },
+    {
+        "id": "own-37-fase-8-vuelta-3-t1-ab",
+        "start": 12714,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/37-fase-8-vuelta-3/10-decisiones-del-owner.md",
+        "n": 49
+    },
+    {
+        "id": "own-37-fase-8-vuelta-3-t1-ac",
+        "start": 12724,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/37-fase-8-vuelta-3/10-decisiones-del-owner.md",
+        "n": 50
+    },
+    {
+        "id": "own-37-fase-8-vuelta-3-t1-ad",
+        "start": 12734,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/37-fase-8-vuelta-3/10-decisiones-del-owner.md",
+        "n": 51
+    },
+    {
+        "id": "own-37-fase-8-vuelta-3-t1-ae",
+        "start": 12744,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/37-fase-8-vuelta-3/10-decisiones-del-owner.md",
+        "n": 52
+    },
+    {
+        "id": "own-37-fase-8-vuelta-3-t1-af",
+        "start": 12754,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/37-fase-8-vuelta-3/10-decisiones-del-owner.md",
+        "n": 53
+    },
+    {
+        "id": "own-37-fase-8-vuelta-3-t1-ag",
+        "start": 12764,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/37-fase-8-vuelta-3/10-decisiones-del-owner.md",
+        "n": 54
+    },
+    {
+        "id": "own-37-fase-8-vuelta-3-t1-ah",
+        "start": 12774,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/37-fase-8-vuelta-3/10-decisiones-del-owner.md",
+        "n": 55
+    },
+    {
+        "id": "own-37-fase-8-vuelta-3-t1-ai",
+        "start": 12784,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/37-fase-8-vuelta-3/10-decisiones-del-owner.md",
+        "n": 56
+    },
+    {
+        "id": "own-37-fase-8-vuelta-3-t1-aj",
+        "start": 12794,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/37-fase-8-vuelta-3/10-decisiones-del-owner.md",
+        "n": 57
+    },
+    {
+        "id": "own-37-fase-8-vuelta-3-t1-ak",
+        "start": 12804,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/37-fase-8-vuelta-3/10-decisiones-del-owner.md",
+        "n": 58
+    },
+    {
+        "id": "own-37-fase-8-vuelta-3-t1-al",
+        "start": 12814,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/37-fase-8-vuelta-3/10-decisiones-del-owner.md",
+        "n": 59
+    },
+    {
+        "id": "own-37-fase-8-vuelta-3-t1-am",
+        "start": 12824,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/37-fase-8-vuelta-3/10-decisiones-del-owner.md",
+        "n": 60
+    },
+    {
+        "id": "own-37-fase-8-vuelta-3-t1-an",
+        "start": 12834,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/37-fase-8-vuelta-3/10-decisiones-del-owner.md",
+        "n": 61
+    },
+    {
+        "id": "own-38-fase-5-t1-a",
+        "start": 12850,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/38-fase-5/10-decisiones-del-owner.md",
+        "n": 19
+    },
+    {
+        "id": "own-38-fase-5-t1-b",
+        "start": 12860,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/38-fase-5/10-decisiones-del-owner.md",
+        "n": 20
+    },
+    {
+        "id": "own-38-fase-5-t1-c",
+        "start": 12870,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/38-fase-5/10-decisiones-del-owner.md",
+        "n": 21
+    },
+    {
+        "id": "own-38-fase-5-t1-d",
+        "start": 12880,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/38-fase-5/10-decisiones-del-owner.md",
+        "n": 22
+    },
+    {
+        "id": "own-38-fase-5-t1-e",
+        "start": 12890,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/38-fase-5/10-decisiones-del-owner.md",
+        "n": 23
+    },
+    {
+        "id": "own-38-fase-5-t1-f",
+        "start": 12900,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/38-fase-5/10-decisiones-del-owner.md",
+        "n": 24
+    },
+    {
+        "id": "own-38-fase-5-t1-g",
+        "start": 12910,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/38-fase-5/10-decisiones-del-owner.md",
+        "n": 25
+    },
+    {
+        "id": "own-38-fase-5-t1-h",
+        "start": 12920,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/38-fase-5/10-decisiones-del-owner.md",
+        "n": 26
+    },
+    {
+        "id": "own-38-fase-5-t1-i",
+        "start": 12930,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/38-fase-5/10-decisiones-del-owner.md",
+        "n": 27
+    },
+    {
+        "id": "own-38-fase-5-t1-j",
+        "start": 12940,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/38-fase-5/10-decisiones-del-owner.md",
+        "n": 28
+    },
+    {
+        "id": "own-38-fase-5-t2-a",
+        "start": 12952,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/38-fase-5/10-decisiones-del-owner.md",
+        "n": 55
+    },
+    {
+        "id": "own-38-fase-5-t2-b",
+        "start": 12962,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/38-fase-5/10-decisiones-del-owner.md",
+        "n": 56
+    },
+    {
+        "id": "own-38-fase-5-t2-c",
+        "start": 12972,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/38-fase-5/10-decisiones-del-owner.md",
+        "n": 57
+    },
+    {
+        "id": "own-38-fase-5-t2-d",
+        "start": 12982,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/38-fase-5/10-decisiones-del-owner.md",
+        "n": 58
+    },
+    {
+        "id": "own-38-fase-5-t2-e",
+        "start": 12992,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/38-fase-5/10-decisiones-del-owner.md",
+        "n": 59
+    },
+    {
+        "id": "own-38-fase-5-t3-a",
+        "start": 13004,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/38-fase-5/10-decisiones-del-owner.md",
+        "n": 75
+    },
+    {
+        "id": "own-38-fase-5-t3-b",
+        "start": 13014,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/38-fase-5/10-decisiones-del-owner.md",
+        "n": 76
+    },
+    {
+        "id": "own-38-fase-5-t3-c",
+        "start": 13024,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/38-fase-5/10-decisiones-del-owner.md",
+        "n": 77
+    },
+    {
+        "id": "own-38-fase-5-t3-d",
+        "start": 13034,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/38-fase-5/10-decisiones-del-owner.md",
+        "n": 78
+    },
+    {
+        "id": "own-38-fase-5-t3-e",
+        "start": 13044,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/38-fase-5/10-decisiones-del-owner.md",
+        "n": 79
+    },
+    {
+        "id": "own-38-fase-5-t3-f",
+        "start": 13054,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/38-fase-5/10-decisiones-del-owner.md",
+        "n": 80
+    },
+    {
+        "id": "own-38-fase-5-t4-a",
+        "start": 13066,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/38-fase-5/10-decisiones-del-owner.md",
+        "n": 90
+    },
+    {
+        "id": "own-38-fase-5-t4-b",
+        "start": 13076,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/38-fase-5/10-decisiones-del-owner.md",
+        "n": 91
+    },
+    {
+        "id": "own-38-fase-5-t4-c",
+        "start": 13087,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/38-fase-5/10-decisiones-del-owner.md",
+        "n": 92
+    },
+    {
+        "id": "own-38-fase-5-t4-d",
+        "start": 13097,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/38-fase-5/10-decisiones-del-owner.md",
+        "n": 93
+    },
+    {
+        "id": "own-38-fase-5-t4-e",
+        "start": 13107,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/38-fase-5/10-decisiones-del-owner.md",
+        "n": 94
+    },
+    {
+        "id": "own-38-fase-5-t4-f",
+        "start": 13117,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/38-fase-5/10-decisiones-del-owner.md",
+        "n": 95
+    },
+    {
+        "id": "own-38-fase-5-t4-g",
+        "start": 13127,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/38-fase-5/10-decisiones-del-owner.md",
+        "n": 96
+    },
+    {
+        "id": "own-38-fase-5-t5-a",
+        "start": 13139,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/38-fase-5/10-decisiones-del-owner.md",
+        "n": 111
+    },
+    {
+        "id": "own-38-fase-5-t5-b",
+        "start": 13148,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/38-fase-5/10-decisiones-del-owner.md",
+        "n": 112
+    },
+    {
+        "id": "own-38-fase-5-t5-c",
+        "start": 13157,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/38-fase-5/10-decisiones-del-owner.md",
+        "n": 113
+    },
+    {
+        "id": "own-38-fase-5-t5-d",
+        "start": 13166,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/38-fase-5/10-decisiones-del-owner.md",
+        "n": 114
+    },
+    {
+        "id": "own-38-fase-5-t5-e",
+        "start": 13175,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/38-fase-5/10-decisiones-del-owner.md",
+        "n": 115
+    },
+    {
+        "id": "own-38-fase-5-t6-a",
+        "start": 13186,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/38-fase-5/10-decisiones-del-owner.md",
+        "n": 128
+    },
+    {
+        "id": "own-38-fase-5-t6-b",
+        "start": 13195,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/38-fase-5/10-decisiones-del-owner.md",
+        "n": 129
+    },
+    {
+        "id": "own-38-fase-5-t6-c",
+        "start": 13204,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/38-fase-5/10-decisiones-del-owner.md",
+        "n": 130
+    },
+    {
+        "id": "own-38-fase-5-t6-d",
+        "start": 13213,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/38-fase-5/10-decisiones-del-owner.md",
+        "n": 131
+    },
+    {
+        "id": "own-38-fase-5-t6-e",
+        "start": 13222,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/38-fase-5/10-decisiones-del-owner.md",
+        "n": 132
+    },
+    {
+        "id": "own-38-fase-5-t6-f",
+        "start": 13231,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/38-fase-5/10-decisiones-del-owner.md",
+        "n": 133
+    },
+    {
+        "id": "own-38-fase-5-t6-g",
+        "start": 13241,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/38-fase-5/10-decisiones-del-owner.md",
+        "n": 134
+    },
+    {
+        "id": "own-38-fase-5-t6-h",
+        "start": 13250,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/38-fase-5/10-decisiones-del-owner.md",
+        "n": 135
+    },
+    {
+        "id": "own-38-fase-5-t6-i",
+        "start": 13260,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/38-fase-5/10-decisiones-del-owner.md",
+        "n": 136
+    },
+    {
+        "id": "own-38-fase-5-t6-j",
+        "start": 13269,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/38-fase-5/10-decisiones-del-owner.md",
+        "n": 137
+    },
+    {
+        "id": "own-38-fase-5-t6-k",
+        "start": 13278,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/38-fase-5/10-decisiones-del-owner.md",
+        "n": 138
+    },
+    {
+        "id": "own-38-fase-5-t6-l",
+        "start": 13287,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/38-fase-5/10-decisiones-del-owner.md",
+        "n": 139
+    },
+    {
+        "id": "own-38-fase-5-t7-m",
+        "start": 13298,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/38-fase-5/10-decisiones-del-owner.md",
+        "n": 152
+    },
+    {
+        "id": "own-38-fase-5-t7-n",
+        "start": 13307,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/38-fase-5/10-decisiones-del-owner.md",
+        "n": 153
+    },
+    {
+        "id": "own-38-fase-5-t7-o",
+        "start": 13316,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/38-fase-5/10-decisiones-del-owner.md",
+        "n": 154
+    },
+    {
+        "id": "own-38-fase-5-t7-p",
+        "start": 13326,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/38-fase-5/10-decisiones-del-owner.md",
+        "n": 155
+    },
+    {
+        "id": "own-38-fase-5-t8-q",
+        "start": 13337,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/38-fase-5/10-decisiones-del-owner.md",
+        "n": 164
+    },
+    {
+        "id": "own-39-fases-6-y-7-t1-a",
+        "start": 13350,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/39-fases-6-y-7/10-decisiones-del-owner.md",
+        "n": 19
+    },
+    {
+        "id": "own-39-fases-6-y-7-t1-b",
+        "start": 13360,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/39-fases-6-y-7/10-decisiones-del-owner.md",
+        "n": 20
+    },
+    {
+        "id": "own-39-fases-6-y-7-t1-c",
+        "start": 13370,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/39-fases-6-y-7/10-decisiones-del-owner.md",
+        "n": 21
+    },
+    {
+        "id": "own-39-fases-6-y-7-t1-d",
+        "start": 13380,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/39-fases-6-y-7/10-decisiones-del-owner.md",
+        "n": 22
+    },
+    {
+        "id": "own-39-fases-6-y-7-t1-e",
+        "start": 13390,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/39-fases-6-y-7/10-decisiones-del-owner.md",
+        "n": 23
+    },
+    {
+        "id": "own-39-fases-6-y-7-t1-f",
+        "start": 13400,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/39-fases-6-y-7/10-decisiones-del-owner.md",
+        "n": 24
+    },
+    {
+        "id": "own-39-fases-6-y-7-t1-g",
+        "start": 13410,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/39-fases-6-y-7/10-decisiones-del-owner.md",
+        "n": 25
+    },
+    {
+        "id": "own-39-fases-6-y-7-t2-h",
+        "start": 13422,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/39-fases-6-y-7/10-decisiones-del-owner.md",
+        "n": 34
+    },
+    {
+        "id": "own-39-fases-6-y-7-t2-i",
+        "start": 13432,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/39-fases-6-y-7/10-decisiones-del-owner.md",
+        "n": 35
+    },
+    {
+        "id": "own-39-fases-6-y-7-t2-j",
+        "start": 13442,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/39-fases-6-y-7/10-decisiones-del-owner.md",
+        "n": 36
+    },
+    {
+        "id": "own-39-fases-6-y-7-t3-k",
+        "start": 13454,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/39-fases-6-y-7/10-decisiones-del-owner.md",
+        "n": 45
+    },
+    {
+        "id": "own-39-fases-6-y-7-t3-l",
+        "start": 13464,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/39-fases-6-y-7/10-decisiones-del-owner.md",
+        "n": 46
+    },
+    {
+        "id": "own-39-fases-6-y-7-t3-m",
+        "start": 13474,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/39-fases-6-y-7/10-decisiones-del-owner.md",
+        "n": 47
+    },
+    {
+        "id": "own-40-congelamiento-y-ci-t1-n",
+        "start": 13488,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/40-congelamiento-y-ci/10-decisiones-del-owner.md",
+        "n": 19
+    },
+    {
+        "id": "own-40-congelamiento-y-ci-t1-o",
+        "start": 13498,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/40-congelamiento-y-ci/10-decisiones-del-owner.md",
+        "n": 20
+    },
+    {
+        "id": "own-40-congelamiento-y-ci-t1-p",
+        "start": 13508,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/40-congelamiento-y-ci/10-decisiones-del-owner.md",
+        "n": 21
+    },
+    {
+        "id": "own-40-congelamiento-y-ci-t1-q",
+        "start": 13518,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/40-congelamiento-y-ci/10-decisiones-del-owner.md",
+        "n": 22
+    },
+    {
+        "id": "own-40-congelamiento-y-ci-t1-r",
+        "start": 13528,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/40-congelamiento-y-ci/10-decisiones-del-owner.md",
+        "n": 23
+    },
+    {
+        "id": "own-40-congelamiento-y-ci-t1-s",
+        "start": 13538,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/40-congelamiento-y-ci/10-decisiones-del-owner.md",
+        "n": 24
+    },
+    {
+        "id": "own-40-congelamiento-y-ci-t1-t",
+        "start": 13548,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/40-congelamiento-y-ci/10-decisiones-del-owner.md",
+        "n": 25
+    },
+    {
+        "id": "own-41-corte-del-mvp-t1-y",
+        "start": 13562,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/41-corte-del-mvp/10-decisiones-del-owner.md",
+        "n": 19
+    },
+    {
+        "id": "own-41-corte-del-mvp-t1-z",
+        "start": 13572,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/41-corte-del-mvp/10-decisiones-del-owner.md",
+        "n": 20
+    },
+    {
+        "id": "own-41-corte-del-mvp-t1-aa",
+        "start": 13582,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/41-corte-del-mvp/10-decisiones-del-owner.md",
+        "n": 21
+    },
+    {
+        "id": "own-41-corte-del-mvp-t1-ab",
+        "start": 13592,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/41-corte-del-mvp/10-decisiones-del-owner.md",
+        "n": 22
+    },
+    {
+        "id": "own-41-corte-del-mvp-t1-ac",
+        "start": 13602,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/41-corte-del-mvp/10-decisiones-del-owner.md",
+        "n": 23
+    },
+    {
+        "id": "own-41-corte-del-mvp-t1-ad",
+        "start": 13612,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/41-corte-del-mvp/10-decisiones-del-owner.md",
+        "n": 24
+    },
+    {
+        "id": "own-41-corte-del-mvp-t1-ae",
+        "start": 13622,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/41-corte-del-mvp/10-decisiones-del-owner.md",
+        "n": 25
+    },
+    {
+        "id": "own-41-corte-del-mvp-t2-af",
+        "start": 13634,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/41-corte-del-mvp/10-decisiones-del-owner.md",
+        "n": 35
+    },
+    {
+        "id": "own-41-corte-del-mvp-t2-ag",
+        "start": 13644,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/41-corte-del-mvp/10-decisiones-del-owner.md",
+        "n": 36
+    },
+    {
+        "id": "own-41-corte-del-mvp-t2-ah",
+        "start": 13654,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/41-corte-del-mvp/10-decisiones-del-owner.md",
+        "n": 37
+    },
+    {
+        "id": "own-41-corte-del-mvp-t2-ai",
+        "start": 13664,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/41-corte-del-mvp/10-decisiones-del-owner.md",
+        "n": 38
+    },
+    {
+        "id": "own-41-corte-del-mvp-t2-aj",
+        "start": 13674,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/41-corte-del-mvp/10-decisiones-del-owner.md",
+        "n": 39
+    },
+    {
+        "id": "own-41-corte-del-mvp-t2-ak",
+        "start": 13684,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/41-corte-del-mvp/10-decisiones-del-owner.md",
+        "n": 40
+    },
+    {
+        "id": "own-41-corte-del-mvp-t2-al",
+        "start": 13694,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/41-corte-del-mvp/10-decisiones-del-owner.md",
+        "n": 41
+    },
+    {
+        "id": "own-41-corte-del-mvp-t2-am",
+        "start": 13704,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/41-corte-del-mvp/10-decisiones-del-owner.md",
+        "n": 42
+    },
+    {
+        "id": "own-41-corte-del-mvp-t2-an",
+        "start": 13714,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/41-corte-del-mvp/10-decisiones-del-owner.md",
+        "n": 43
+    },
+    {
+        "id": "own-41-corte-del-mvp-t2-ao",
+        "start": 13724,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/41-corte-del-mvp/10-decisiones-del-owner.md",
+        "n": 44
+    },
+    {
+        "id": "own-41-corte-del-mvp-t3-ap",
+        "start": 13736,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/41-corte-del-mvp/10-decisiones-del-owner.md",
+        "n": 59
+    },
+    {
+        "id": "own-41-corte-del-mvp-t3-aq",
+        "start": 13746,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/41-corte-del-mvp/10-decisiones-del-owner.md",
+        "n": 60
+    },
+    {
+        "id": "own-41-corte-del-mvp-t3-ar",
+        "start": 13756,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/41-corte-del-mvp/10-decisiones-del-owner.md",
+        "n": 61
+    },
+    {
+        "id": "own-41-corte-del-mvp-t3-as",
+        "start": 13766,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/41-corte-del-mvp/10-decisiones-del-owner.md",
+        "n": 62
+    },
+    {
+        "id": "own-41-corte-del-mvp-t3-at",
+        "start": 13776,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/41-corte-del-mvp/10-decisiones-del-owner.md",
+        "n": 63
+    },
+    {
+        "id": "own-41-corte-del-mvp-t3-au",
+        "start": 13786,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/41-corte-del-mvp/10-decisiones-del-owner.md",
+        "n": 64
+    },
+    {
+        "id": "own-41-corte-del-mvp-t4-av",
+        "start": 13798,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/41-corte-del-mvp/10-decisiones-del-owner.md",
+        "n": 73
+    },
+    {
+        "id": "own-41-corte-del-mvp-t5-aw",
+        "start": 13810,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/41-corte-del-mvp/10-decisiones-del-owner.md",
+        "n": 83
+    },
+    {
+        "id": "own-41-corte-del-mvp-t5-ax",
+        "start": 13820,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/41-corte-del-mvp/10-decisiones-del-owner.md",
+        "n": 84
+    },
+    {
+        "id": "own-41-corte-del-mvp-t5-ay",
+        "start": 13830,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/41-corte-del-mvp/10-decisiones-del-owner.md",
+        "n": 85
+    },
+    {
+        "id": "own-41-corte-del-mvp-t6-az",
+        "start": 13842,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/41-corte-del-mvp/10-decisiones-del-owner.md",
+        "n": 94
+    },
+    {
+        "id": "own-41-corte-del-mvp-t7-ba",
+        "start": 13854,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/41-corte-del-mvp/10-decisiones-del-owner.md",
+        "n": 105
+    },
+    {
+        "id": "own-41-corte-del-mvp-t7-bb",
+        "start": 13864,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/41-corte-del-mvp/10-decisiones-del-owner.md",
+        "n": 106
+    },
+    {
+        "id": "own-41-corte-del-mvp-t7-bc",
+        "start": 13874,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/41-corte-del-mvp/10-decisiones-del-owner.md",
+        "n": 107
+    },
+    {
+        "id": "own-41-corte-del-mvp-t7-bd",
+        "start": 13884,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/41-corte-del-mvp/10-decisiones-del-owner.md",
+        "n": 108
+    },
+    {
+        "id": "own-41-corte-del-mvp-t7-be",
+        "start": 13894,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/41-corte-del-mvp/10-decisiones-del-owner.md",
+        "n": 109
+    },
+    {
+        "id": "own-41-corte-del-mvp-t7-bf",
+        "start": 13904,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/41-corte-del-mvp/10-decisiones-del-owner.md",
+        "n": 110
+    },
+    {
+        "id": "own-41-corte-del-mvp-t7-bg",
+        "start": 13914,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/41-corte-del-mvp/10-decisiones-del-owner.md",
+        "n": 111
+    },
+    {
+        "id": "own-41-corte-del-mvp-t7-bh",
+        "start": 13924,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/41-corte-del-mvp/10-decisiones-del-owner.md",
+        "n": 112
+    },
+    {
+        "id": "own-41-corte-del-mvp-t8-bj",
+        "start": 13938,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/41-corte-del-mvp/10-decisiones-del-owner.md",
+        "n": 124
+    },
+    {
+        "id": "own-41-corte-del-mvp-t9-bk",
+        "start": 13950,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/41-corte-del-mvp/10-decisiones-del-owner.md",
+        "n": 136
+    },
+    {
+        "id": "own-41-corte-del-mvp-t9-bl",
+        "start": 13960,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/41-corte-del-mvp/10-decisiones-del-owner.md",
+        "n": 137
+    },
+    {
+        "id": "own-41-corte-del-mvp-t9-bm",
+        "start": 13970,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/41-corte-del-mvp/10-decisiones-del-owner.md",
+        "n": 138
+    },
+    {
+        "id": "own-41-corte-del-mvp-t9-bn",
+        "start": 13980,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/41-corte-del-mvp/10-decisiones-del-owner.md",
+        "n": 139
+    },
+    {
+        "id": "own-41-corte-del-mvp-t9-bo",
+        "start": 13990,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/41-corte-del-mvp/10-decisiones-del-owner.md",
+        "n": 140
+    },
+    {
+        "id": "own-41-corte-del-mvp-t9-bp",
+        "start": 14000,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/41-corte-del-mvp/10-decisiones-del-owner.md",
+        "n": 141
+    },
+    {
+        "id": "own-41-corte-del-mvp-t9-bq",
+        "start": 14010,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/41-corte-del-mvp/10-decisiones-del-owner.md",
+        "n": 142
+    },
+    {
+        "id": "own-41-corte-del-mvp-t9-br",
+        "start": 14020,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/41-corte-del-mvp/10-decisiones-del-owner.md",
+        "n": 143
+    },
+    {
+        "id": "own-41-corte-del-mvp-t9-bs",
+        "start": 14030,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/41-corte-del-mvp/10-decisiones-del-owner.md",
+        "n": 144
+    },
+    {
+        "id": "own-41-corte-del-mvp-t9-bt",
+        "start": 14040,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/41-corte-del-mvp/10-decisiones-del-owner.md",
+        "n": 145
+    },
+    {
+        "id": "own-41-corte-del-mvp-t9-bu",
+        "start": 14050,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/41-corte-del-mvp/10-decisiones-del-owner.md",
+        "n": 146
+    },
+    {
+        "id": "own-41-corte-del-mvp-t9-bv",
+        "start": 14060,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/41-corte-del-mvp/10-decisiones-del-owner.md",
+        "n": 147
+    },
+    {
+        "id": "own-41-corte-del-mvp-t10-bw",
+        "start": 14072,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/41-corte-del-mvp/10-decisiones-del-owner.md",
+        "n": 156
+    },
+    {
+        "id": "own-41-corte-del-mvp-t10-bx",
+        "start": 14082,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/41-corte-del-mvp/10-decisiones-del-owner.md",
+        "n": 157
+    },
+    {
+        "id": "own-41-corte-del-mvp-t11-by",
+        "start": 14094,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/41-corte-del-mvp/10-decisiones-del-owner.md",
+        "n": 168
+    },
+    {
+        "id": "own-41-corte-del-mvp-t11-bz",
+        "start": 14104,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/41-corte-del-mvp/10-decisiones-del-owner.md",
+        "n": 169
+    },
+    {
+        "id": "own-41-corte-del-mvp-t11-ca",
+        "start": 14114,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/41-corte-del-mvp/10-decisiones-del-owner.md",
+        "n": 170
+    },
+    {
+        "id": "own-41-corte-del-mvp-t11-cb",
+        "start": 14124,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/41-corte-del-mvp/10-decisiones-del-owner.md",
+        "n": 171
+    },
+    {
+        "id": "own-41-corte-del-mvp-t12-cc",
+        "start": 14136,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/41-corte-del-mvp/10-decisiones-del-owner.md",
+        "n": 182
+    },
+    {
+        "id": "own-41-corte-del-mvp-t12-cd",
+        "start": 14146,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/41-corte-del-mvp/10-decisiones-del-owner.md",
+        "n": 183
+    },
+    {
+        "id": "own-41-corte-del-mvp-t13-ce",
+        "start": 14158,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/41-corte-del-mvp/10-decisiones-del-owner.md",
+        "n": 192
+    },
+    {
+        "id": "own-41-corte-del-mvp-t14-cf",
+        "start": 14170,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/41-corte-del-mvp/10-decisiones-del-owner.md",
+        "n": 201
+    },
+    {
+        "id": "own-41-corte-del-mvp-t14-cg",
+        "start": 14180,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/41-corte-del-mvp/10-decisiones-del-owner.md",
+        "n": 202
+    },
+    {
+        "id": "own-41-corte-del-mvp-t15-ch",
+        "start": 14192,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/41-corte-del-mvp/10-decisiones-del-owner.md",
+        "n": 213
+    },
+    {
+        "id": "own-41-corte-del-mvp-t15-ci",
+        "start": 14202,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/41-corte-del-mvp/10-decisiones-del-owner.md",
+        "n": 214
+    },
+    {
+        "id": "own-41-corte-del-mvp-t16-cj",
+        "start": 14214,
+        "path": ".specs/HOS-1352-billing-verticals-redesign/docs/41-corte-del-mvp/10-decisiones-del-owner.md",
+        "n": 224
+    }
+]

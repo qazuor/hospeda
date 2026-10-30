@@ -208,7 +208,7 @@ export const pointOfInterestTabs: TabConfig[] = [
     { id: 'edit', label: 'Editar', labelKey: 'admin-tabs.edit', href: '/edit' }
 ];
 
-export const gastronomyTabs: TabConfig[] = [
+export const venueTabs: TabConfig[] = [
     { id: 'overview', label: 'General', labelKey: 'admin-tabs.overview', href: '' },
     { id: 'gallery', label: 'Galería', labelKey: 'admin-tabs.gallery', href: '/gallery' },
     { id: 'seo', label: 'SEO', labelKey: 'admin-tabs.seo', href: '/seo' }

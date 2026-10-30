@@ -16,6 +16,7 @@
  * @see SPEC-155 T-006
  */
 
+import { rehydrateEffectiveSet } from '@repo/verticals';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 // ---------------------------------------------------------------------------
@@ -36,6 +37,20 @@ const { mockGetHostResponseRate } = vi.hoisted(() => ({
 // ---------------------------------------------------------------------------
 // Module mocks
 // ---------------------------------------------------------------------------
+
+vi.mock('../../../../src/utils/listing-access/ports', () => ({
+    getListingAccessPorts: () => ({
+        effectiveSet: async ({ userId, vertical }: { userId: string; vertical: VerticalEnum }) =>
+            rehydrateEffectiveSet({
+                version: 1,
+                userId,
+                vertical,
+                hasLiveNonTrialTitle: false,
+                inheritsTouristVip: false,
+                entries: [{ key: 'view_basic_stats', value: 1, strategy: 'MAX' }]
+            })
+    })
+}));
 
 // Intercept createProtectedRoute to capture the raw handler without mounting Hono.
 vi.mock('../../../../src/utils/route-factory', () => ({
@@ -119,7 +134,7 @@ vi.mock('../../../../src/services/plan.service', () => ({
 // Imports (after mocks)
 // ---------------------------------------------------------------------------
 
-import { PermissionEnum, RoleEnum } from '@repo/schemas';
+import { PermissionEnum, RoleEnum, type VerticalEnum } from '@repo/schemas';
 import type { Actor } from '@repo/service-core';
 import type { Context } from 'hono';
 import { getActorFromContext } from '../../../../src/utils/actor';

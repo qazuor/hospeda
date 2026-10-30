@@ -48,15 +48,14 @@ const resolveAmenityLabel = (slug: string | null | undefined, fallback: string):
 const VERTICAL_BADGE_STYLES: Record<ApplicableVertical, string> = {
     accommodation:
         'inline-flex items-center rounded-md px-2 py-0.5 text-xs font-medium bg-blue-50 text-blue-700 ring-1 ring-inset ring-blue-700/20 dark:bg-blue-900/20 dark:text-blue-400 dark:ring-blue-400/30',
-    gastronomy:
-        'inline-flex items-center rounded-md px-2 py-0.5 text-xs font-medium bg-green-50 text-green-700 ring-1 ring-inset ring-green-700/20 dark:bg-green-900/20 dark:text-green-400 dark:ring-green-400/30',
+    venue: 'inline-flex items-center rounded-md px-2 py-0.5 text-xs font-medium bg-green-50 text-green-700 ring-1 ring-inset ring-green-700/20 dark:bg-green-900/20 dark:text-green-400 dark:ring-green-400/30',
     experience:
         'inline-flex items-center rounded-md px-2 py-0.5 text-xs font-medium bg-purple-50 text-purple-700 ring-1 ring-inset ring-purple-700/20 dark:bg-purple-900/20 dark:text-purple-400 dark:ring-purple-400/30'
 };
 
 const VERTICAL_LABELS: Record<ApplicableVertical, string> = {
     accommodation: 'Alojamiento',
-    gastronomy: 'Gastronomía',
+    venue: 'Comer y salir',
     experience: 'Experiencia'
 };
 

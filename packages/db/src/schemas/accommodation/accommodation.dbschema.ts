@@ -22,12 +22,8 @@ import {
 } from 'drizzle-orm/pg-core';
 import { accommodationExternalListings } from '../accommodation-external/accommodation_external_listings.dbschema.ts';
 import { destinations } from '../destination/destination.dbschema.ts';
-import {
-    AccommodationTypePgEnum,
-    LifecycleStatusPgEnum,
-    ModerationStatusPgEnum,
-    VisibilityPgEnum
-} from '../enums.dbschema.ts';
+import { AccommodationTypePgEnum } from '../enums.dbschema.ts';
+import { listingPublicationColumns } from '../listing/listing-publication-columns.ts';
 import { rEntityTag } from '../tag/r_entity_tag.dbschema.ts';
 import { users } from '../user/user.dbschema.ts';
 import { accommodationFaqs } from './accommodation_faq.dbschema.ts';
@@ -80,15 +76,13 @@ export const accommodations = pgTable(
          * public surface that displays them. Guarded by `videosPreservation.test.ts`.
          */
         videos: jsonb('videos').$type<Video[]>(),
-        isFeatured: boolean('is_featured').notNull().default(false),
         // Denormalized billing-state flag (SPEC-292, renamed SPEC-309): true when the
         // owner's plan OR a customer-level addon grants an active FEATURED_LISTING
-        // entitlement. Set/cleared by the billing-sync reconciler — never written by
-        // admin curation. Distinct from isFeatured, which is the admin-curated flag.
-        // Effective featured status is the disjunction: isFeatured OR
-        // featuredByEntitlement. This column is the hot-path denormalization so
-        // public queries do not join billing tables. Flipped in bulk on entitlement
-        // grant/revoke events.
+        // entitlement. Set/cleared by the billing-sync primitives — never written by
+        // admin curation. Since HOS-1419 dropped the admin-curated `is_featured`
+        // column this is the ONLY featuring source: the public `isFeatured` value is
+        // derived from it. This column is the hot-path denormalization so public
+        // queries do not join billing tables.
         featuredByEntitlement: boolean('featured_by_entitlement').notNull().default(false),
         /**
          * SPEC-237: master toggle — when false the public detail page hides all
@@ -102,45 +96,16 @@ export const accommodations = pgTable(
         isVerified: boolean('is_verified').notNull().default(false),
         verifiedAt: timestamp('verified_at', { withTimezone: true }),
         verifiedById: uuid('verified_by_id').references(() => users.id, { onDelete: 'set null' }),
-        // Denormalized flag (SPEC-143 #29): true when the owner's subscription is
-        // paused WITH service suspension. Public reads filter it out and the
-        // accommodation write path rejects edits while true. Canonical source is
-        // users.service_suspended; this column is the hot-path denormalization so
-        // public queries do not join users. Flipped in bulk on pause/resume.
-        ownerSuspended: boolean('owner_suspended').notNull().default(false),
-        // SPEC-167: true when this accommodation was restricted by the downgrade
-        // remediation flow (host exceeded their new plan's MAX_ACCOMMODATIONS cap).
-        // Separate from ownerSuspended — the pause-flow flips/restores ALL of an
-        // owner's accommodations in bulk; downgrade restriction is selective and
-        // the two states must NOT collide. Reversible: flipped back to false on
-        // re-upgrade or manual restore by the host once back under cap.
-        planRestricted: boolean('plan_restricted').notNull().default(false),
-        /**
-         * HOS-1181: set when BILLING took this listing down — today only the
-         * accommodation trial-expiry cron's unpublish (which passes
-         * `billingUnpublish: true`). Null when the listing is live, or was
-         * taken down by its owner, or has been published again.
-         *
-         * `lifecycleState = INACTIVE` alone cannot tell those apart: the owner's
-         * own unpublish and the cron's write the exact same row shape. This
-         * column is what distinguishes "the trial took it down and nothing has
-         * brought it back" (republish when the owner pays — HOS-1181) from "the
-         * owner paused it on purpose" (never republish). Cleared by ANY publish,
-         * in the same write that flips `lifecycleState` to ACTIVE, so it can
-         * never survive as a stale marker on a live row and republish a listing
-         * its owner has since deliberately unpublished.
-         */
-        billingUnpublishedAt: timestamp('billing_unpublished_at', { withTimezone: true }),
         ownerId: uuid('owner_id')
             .notNull()
             .references(() => users.id, { onDelete: 'restrict' }),
+        // HOS-1478 (V6.8a): the listing publication model of V/03 §9.
+        ...listingPublicationColumns(),
         destinationId: uuid('destination_id')
             .notNull()
             .references(() => destinations.id, {
                 onDelete: 'restrict'
             }),
-        visibility: VisibilityPgEnum('visibility').notNull().default('PUBLIC'),
-        lifecycleState: LifecycleStatusPgEnum('lifecycle_state').notNull().default('ACTIVE'),
         reviewsCount: integer('reviews_count').notNull().default(0),
         /** Average guest rating (0.00-5.00). Drizzle mode:'number' ensures runtime JS number type. */
         averageRating: numeric('average_rating', { precision: 3, scale: 2, mode: 'number' })
@@ -155,54 +120,31 @@ export const accommodations = pgTable(
         deletedAt: timestamp('deleted_at', { withTimezone: true }),
         deletedById: uuid('deleted_by_id').references(() => users.id, { onDelete: 'set null' }),
         lastWarnedAt: timestamp('last_warned_at', { withTimezone: true }),
-        moderationState: ModerationStatusPgEnum('moderation_state').notNull().default('PENDING'),
         extraInfo: jsonb('extra_info').$type<Record<string, unknown>>(),
         rating: jsonb('rating').$type<Record<string, unknown>>()
     },
     (table) => ({
-        accommodations_isFeatured_idx: index('accommodations_isFeatured_idx').on(table.isFeatured),
         // SPEC-291: index for admin verified-badge queries/filters.
         accommodations_isVerified_idx: index('accommodations_isVerified_idx').on(table.isVerified),
-        // SPEC-292: parallel indexes for featuredByEntitlement, mirroring the isFeatured
-        // family (renamed SPEC-309). BitmapOr of (isFeatured_idx, featuredByEntitlement_idx)
-        // serves "isFeatured OR featuredByEntitlement" efficiently without an expression
-        // index (kept in the structural carril).
+        // SPEC-292: indexes for featuredByEntitlement (renamed SPEC-309), the only
+        // featuring source since HOS-1419 dropped `is_featured`.
         accommodations_featuredByEntitlement_idx: index(
             'accommodations_featuredByEntitlement_idx'
         ).on(table.featuredByEntitlement),
-        accommodations_visibility_featuredByEntitlement_idx: index(
-            'accommodations_visibility_featuredByEntitlement_idx'
-        ).on(table.visibility, table.featuredByEntitlement),
-        accommodations_destinationId_featuredByEntitlement_visibility_idx: index(
-            'accommodations_destinationId_featuredByEntitlement_visibility_idx'
-        ).on(table.destinationId, table.featuredByEntitlement, table.visibility),
-        accommodations_ownerSuspended_idx: index('accommodations_ownerSuspended_idx').on(
-            table.ownerSuspended
+        // HOS-1641 (V6.9b): public and per-destination reads filter on
+        // `publication_status = 'PUBLISHED'`; these replace the visibility and
+        // lifecycle indexes that served them.
+        accommodations_publicationStatus_idx: index('accommodations_publicationStatus_idx').on(
+            table.publicationStatus
         ),
-        accommodations_planRestricted_idx: index('accommodations_planRestricted_idx').on(
-            table.planRestricted
-        ),
-        accommodations_visibility_idx: index('accommodations_visibility_idx').on(table.visibility),
-        accommodations_lifecycle_idx: index('accommodations_lifecycle_idx').on(
-            table.lifecycleState
-        ),
-        accommodations_visibility_isFeatured_idx: index(
-            'accommodations_visibility_isFeatured_idx'
-        ).on(table.visibility, table.isFeatured),
-        accommodations_destinationId_visibility_idx: index(
-            'accommodations_destinationId_visibility_idx'
-        ).on(table.destinationId, table.visibility),
+        accommodations_destinationId_publicationStatus_idx: index(
+            'accommodations_destinationId_publicationStatus_idx'
+        ).on(table.destinationId, table.publicationStatus),
         accommodations_ownerId_idx: index('accommodations_ownerId_idx').on(table.ownerId),
         accommodations_type_idx: index('accommodations_type_idx').on(table.type),
         accommodations_createdAt_idx: index('accommodations_createdAt_idx').on(table.createdAt),
-        accommodations_destinationId_isFeatured_visibility_idx: index(
-            'accommodations_destinationId_isFeatured_visibility_idx'
-        ).on(table.destinationId, table.isFeatured, table.visibility),
-        // Performance indexes for soft delete and moderation queries
+        // Performance index for soft delete queries
         accommodations_deletedAt_idx: index('accommodations_deletedAt_idx').on(table.deletedAt),
-        accommodations_moderationState_idx: index('accommodations_moderationState_idx').on(
-            table.moderationState
-        ),
         accommodations_ownerId_deletedAt_idx: index('accommodations_ownerId_deletedAt_idx').on(
             table.ownerId,
             table.deletedAt

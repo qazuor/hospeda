@@ -6,6 +6,7 @@ import type { DrizzleClient } from '../../types.ts';
 import { safeIlike } from '../../utils/drizzle-helpers.ts';
 import { DbError } from '../../utils/error.ts';
 import { logError, logQuery } from '../../utils/logger.ts';
+import { withListingBirthColumns } from '../listing/listing-birth.ts';
 
 /**
  * Search input for experience listings (basic subset — expand as routes are built).
@@ -16,21 +17,25 @@ interface ExperienceSearchInput {
     readonly ownerId?: string;
     readonly type?: string;
     readonly isFeatured?: boolean;
-    readonly hasActiveSubscription?: boolean;
     readonly page?: number;
     readonly pageSize?: number;
 }
 
 /**
- * ExperienceModel — all DB access for experience commerce listings (SPEC-240).
+ * ExperienceModel — all DB access for experience listings (SPEC-240).
  *
- * Mirrors GastronomyModel structure: extends BaseModelImpl, provides search()
- * override with experience-specific filters (type, hasActiveSubscription).
+ * Mirrors VenueModel structure: extends BaseModelImpl, provides search()
+ * override with experience-specific filters (type).
  * Expand with domain-specific query methods as the service layer grows.
  */
 export class ExperienceModel extends BaseModelImpl<Experience> {
     protected table = experiences;
     public entityName = 'experiences';
+
+    /** Creates an experience with its initial publication clock. */
+    override async create(data: Partial<Experience>, tx?: DrizzleClient): Promise<Experience> {
+        return super.create(withListingBirthColumns({ data }).data, tx);
+    }
 
     protected override readonly validRelationKeys = [
         'owner',
@@ -108,12 +113,9 @@ export class ExperienceModel extends BaseModelImpl<Experience> {
                 );
             }
             if (params.isFeatured !== undefined) {
-                whereClauses.push(eq(experiences.isFeatured, params.isFeatured));
-            }
-            if (params.hasActiveSubscription !== undefined) {
-                whereClauses.push(
-                    eq(experiences.hasActiveSubscription, params.hasActiveSubscription)
-                );
+                // `isFeatured` is the public name; its only source is
+                // `featuredByEntitlement` since HOS-1419 dropped `is_featured`.
+                whereClauses.push(eq(experiences.featuredByEntitlement, params.isFeatured));
             }
             if (params.q) {
                 whereClauses.push(safeIlike(experiences.name, params.q));
@@ -152,8 +154,8 @@ export class ExperienceModel extends BaseModelImpl<Experience> {
     /**
      * Returns the IDs of every non-deleted experience listing owned by the
      * given owner. Mirrors `AccommodationModel.findIdsByOwnerId` — used by
-     * `EntityViewService.getStatsForOwnCommerceListings` /
-     * `getDailySeriesForOwnCommerceListings` (HOS-734) to resolve which
+     * `EntityViewService.getStatsForOwnListings` /
+     * `getDailySeriesForOwnListings` (HOS-734) to resolve which
      * `entity_views` rows belong to the caller without accepting an ownerId
      * param at the route layer (anti-peeking).
      *

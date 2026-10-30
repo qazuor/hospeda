@@ -4,7 +4,7 @@
  *
  * Supported filters (all wired through to the model via service.search()):
  * - type: accommodation type (direct column match)
- * - isFeatured: featured flag (direct column match)
+ * - isFeatured: featured flag (derived from `featuredByEntitlement`)
  * - destinationId: filter by destination (direct column match)
  * - q: full-text search on name and description
  * - minPrice, maxPrice: price range (JSONB field)
@@ -25,26 +25,23 @@
  * - Stable `id DESC` tiebreaker is appended by the model to guarantee
  *           deterministic pagination across pages when leading sort keys tie.
  */
-import { EntitlementKey } from '@repo/billing';
+
 import {
     AccommodationPublicSchema,
     type AccommodationSearchHttp,
     AccommodationSearchHttpSchema,
     httpToDomainAccommodationSearch,
-    type SortField
+    type SortField,
+    VerticalEnum
 } from '@repo/schemas';
 import { AccommodationService, SearchHistoryService, ServiceError } from '@repo/service-core';
-import type { Context } from 'hono';
-import { hasEntitlement } from '../../../middlewares/entitlement';
-import { resolveOwnerEntitlementsForOwnerIds } from '../../../middlewares/owner-entitlement';
-import type { AppBindings } from '../../../types';
 import { resolvePublicIsFeatured } from '../../../utils/accommodation-featured';
 import { createGuestActor, getActorFromContext, isGuestActor } from '../../../utils/actor';
-import type { AccommodationData } from '../../../utils/entitlement-filter';
 import {
-    filterAccommodationListByOwnerEntitlements,
-    stripRichDescriptionFields
+    filterPublicPaidFieldsForOwner,
+    resolvePublicFieldGrants
 } from '../../../utils/entitlement-filter';
+import { readEffectiveKeys } from '../../../utils/listing-access/user-gate';
 import { apiLogger } from '../../../utils/logger';
 import { extractPaginationParams, getPaginationResponse } from '../../../utils/pagination';
 import { createPublicListRoute } from '../../../utils/route-factory';
@@ -155,10 +152,10 @@ export const publicListAccommodationsRoute = createPublicListRoute({
 
         // HOS-353: resolve visibility against a GUEST actor, never the caller.
         //
-        // `_executeSearch` derives `excludeRestricted` / `excludeOwnerSuspended` /
-        // `excludePlanRestricted` / `activeOnly` from the actor, so a VIP or a
-        // holder of ACCOMMODATION_VIEW_ALL gets RESTRICTED, DRAFT, owner-suspended
-        // and plan-restricted rows. This route is the first entry of
+        // `_executeSearch` derives `publishedOnly` from the actor (V6.9b: off only
+        // for an owner reading their own scope, who then gets unpublished rows).
+        // When this was written the same derivation also widened the result for
+        // a VIP or a holder of ACCOMMODATION_VIEW_ALL. This route is the first entry of
         // PUBLIC_CACHE_ENDPOINTS and its cache key carries no actor, so that widened
         // response is then replayed to every anonymous visitor for the TTL. The
         // service behavior is correct and stays as it is — it is load-bearing for
@@ -186,18 +183,17 @@ export const publicListAccommodationsRoute = createPublicListRoute({
             throw new ServiceError(result.error.code, result.error.message);
         }
 
-        // SPEC-289 write-hook: fire-and-forget search history recording.
-        // Gate conditions (all must be true to record):
-        //   1. Actor is authenticated (not a GUEST)
-        //   2. Actor has CAN_VIEW_SEARCH_HISTORY entitlement (Plus / VIP plans)
-        //   3. User has not opted out (checked inside service.record())
-        // Never blocks or fails the search response — errors are caught and logged.
-        if (
-            !isGuestActor(actor) &&
-            hasEntitlement(ctx as Context<AppBindings>, EntitlementKey.CAN_VIEW_SEARCH_HISTORY)
-        ) {
-            void searchHistoryService
-                .record(actor, {
+        // SPEC-289 write-hook: record only for authenticated actors with effective history access.
+        // This remains fire-and-forget so history lookup cannot delay or break the public search.
+        if (!isGuestActor(actor)) {
+            void (async () => {
+                const access = await readEffectiveKeys({
+                    userId: actor.id,
+                    vertical: VerticalEnum.TOURIST,
+                    keys: ['can_view_search_history']
+                });
+                if (!access.can_view_search_history) return;
+                await searchHistoryService.record(actor, {
                     queryText: httpQuery.q ?? null,
                     filters: {
                         destinationId: httpQuery.destinationId,
@@ -226,72 +222,27 @@ export const publicListAccommodationsRoute = createPublicListRoute({
                         checkOut: httpQuery.checkOut ? new Date(httpQuery.checkOut) : undefined
                     },
                     resultCount: result.data?.total ?? null
-                })
-                .catch((err) => {
-                    apiLogger.warn(
-                        'SPEC-289 write-hook: search history record failed (fire-and-forget)',
-                        err instanceof Error ? err.message : String(err)
-                    );
                 });
+            })().catch((err: unknown) => {
+                apiLogger.warn(
+                    'SPEC-289 write-hook: search history record failed (fire-and-forget)',
+                    err instanceof Error ? err.message : String(err)
+                );
+            });
         }
 
-        // SPEC-187 / SPEC-212 data-level omission: richDescription and its i18n
-        // sibling are PREMIUM fields gated per-owner by the entitlement system.
-        // This card-listing endpoint never renders them, so BOTH are stripped
-        // before reaching the response payload — fail-closed and independent of
-        // any schema change.
+        // Apply owner-effective paid-field grants before building the public page.
         const rawItems = result.data?.items || [];
 
-        // Deduplicate ownerIds for this page — shared by the AI_CHAT badge (F1)
-        // and the isVerified badge gate (SPEC-291 Phase 3b). Computing once avoids
-        // a second pass over the items array.
-        const uniqueOwnerIds = [
-            ...new Set(
-                rawItems
-                    .map((item) => (item as { ownerId?: string }).ownerId)
-                    .filter((id): id is string => typeof id === 'string' && id.length > 0)
-            )
-        ];
-
-        // F1 + SPEC-291 Phase 3b: ONE owner-entitlement resolution serves both
-        // the "Chat IA" badge and the `isVerified` badge gate.
-        //
-        // HOS-1084 collapsed what used to be two independent resolutions of the
-        // same fact. AI_CHAT was resolved per owner through a route-local
-        // 5-minute `Map` (`ownerAiChatCache`) while the verified gate went
-        // through the batch resolver's own 5-minute `Map` — two per-process
-        // caches, two expiries, over one owner-level entitlement set. Both are
-        // gone: the batch resolver now reads the shared, webhook-fresh
-        // `entity_subscriptions` cache, so a page costs one batched cache read
-        // plus one plan lookup per DISTINCT plan, and the badge stops depending
-        // on which API instance answered.
-        //
-        // Fail-closed is preserved end to end: a resolution failure yields an
-        // empty entitlement array for that owner, which shows no badge.
-        const ownerEntitlementsMap = await resolveOwnerEntitlementsForOwnerIds(uniqueOwnerIds);
-
-        const rawMappedItems = rawItems.map((item) => {
-            const ownerId = (item as { ownerId?: string }).ownerId;
-            const ownerEntitlements = ownerId ? ownerEntitlementsMap.get(ownerId) : undefined;
-            return {
-                ...stripRichDescriptionFields(item),
-                // HOS-929: public read treats holding either the admin-curated
-                // `isFeatured` flag OR the billing-derived `featuredByEntitlement`
-                // flag as featured. `featuredByEntitlement` itself is stripped by
-                // `AccommodationPublicSchema` (never in its pick).
-                isFeatured: resolvePublicIsFeatured(
-                    item as { isFeatured: boolean; featuredByEntitlement?: boolean }
-                ),
-                hasAiChat: ownerEntitlements?.includes(EntitlementKey.AI_CHAT) ?? false
-            };
-        });
-
-        // SPEC-291 Phase 3b: gate isVerified by owner billing entitlement.
-        // Pure synchronous pass over the already-mapped items — no extra DB calls.
-        const items = filterAccommodationListByOwnerEntitlements(
-            rawMappedItems as AccommodationData[],
-            ownerEntitlementsMap
-        );
+        const grants = await resolvePublicFieldGrants(rawItems.map((item) => item.ownerId));
+        const items = rawItems.map((item) => ({
+            ...filterPublicPaidFieldsForOwner(item, grants),
+            // HOS-929: the public `isFeatured` is derived from `featuredByEntitlement`
+            // (the only featuring source since HOS-1419); the raw column itself is
+            // stripped by the public schema (never in its pick).
+            isFeatured: resolvePublicIsFeatured(item as { featuredByEntitlement?: boolean }),
+            hasAiChat: grants.get(item.ownerId ?? '')?.aiChat ?? false
+        }));
 
         return {
             items,
@@ -299,7 +250,6 @@ export const publicListAccommodationsRoute = createPublicListRoute({
         };
     },
     options: {
-        cacheTTL: 300, // Cache for 5 minutes
         customRateLimit: { requests: 200, windowMs: 60000 }
     }
 });

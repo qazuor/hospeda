@@ -2,8 +2,8 @@
  * HOS-372 guard — the `videos` field must stay exposed on the access schemas of
  * every entity whose photos moved to a relational media table.
  *
- * Accommodations, gastronomy listings and experiences keep their photos as rows
- * (`accommodation_media` / `gastronomy_media` / `experience_media`) and their
+ * Accommodations, venue listings and experiences keep their photos as rows
+ * (`accommodation_media` / `venue_media` / `experience_media`) and their
  * videos in a dedicated `videos` column, because a video is an external
  * YouTube/Vimeo URL rather than an uploaded asset. Once the `media` JSONB column
  * is dropped, that column is the ONLY place videos exist.
@@ -21,7 +21,7 @@ import { describe, expect, it } from 'vitest';
 import {
     AccommodationPublicSchema,
     ExperiencePublicSchema,
-    GastronomyPublicSchema
+    VenuePublicSchema
 } from '../../src/index.js';
 
 /** A minimal, valid video entry per `VideoSchema`. */
@@ -44,9 +44,9 @@ describe('videos field exposure on relational-media entities (HOS-372)', () => {
     // assertion below then catches.
     const cases = [
         {
-            name: 'GastronomyPublicSchema',
-            shapeKeys: Object.keys(GastronomyPublicSchema.shape),
-            isolated: GastronomyPublicSchema.pick({ videos: true })
+            name: 'VenuePublicSchema',
+            shapeKeys: Object.keys(VenuePublicSchema.shape),
+            isolated: VenuePublicSchema.pick({ videos: true })
         },
         {
             name: 'ExperiencePublicSchema',
@@ -76,14 +76,14 @@ describe('videos field exposure on relational-media entities (HOS-372)', () => {
     }
 
     it('accepts a null videos value (column is nullable)', () => {
-        const parsed = GastronomyPublicSchema.pick({ videos: true }).parse({ videos: null });
+        const parsed = VenuePublicSchema.pick({ videos: true }).parse({ videos: null });
         expect(parsed.videos).toBeNull();
     });
 
     it('still parses payloads written before the field existed', () => {
         // Additive-only policy: videos is nullish, so an older payload that never
         // carried the key must keep parsing.
-        const result = GastronomyPublicSchema.pick({ videos: true }).safeParse({});
+        const result = VenuePublicSchema.pick({ videos: true }).safeParse({});
         expect(result.success).toBe(true);
     });
 });

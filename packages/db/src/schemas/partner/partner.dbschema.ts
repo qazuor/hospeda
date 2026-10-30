@@ -1,13 +1,19 @@
 import type { ContactInfo, SocialNetwork } from '@repo/schemas';
-import { relations } from 'drizzle-orm';
-import { index, jsonb, pgTable, text, timestamp, uuid, varchar } from 'drizzle-orm/pg-core';
-import { billingPlans, billingSubscriptions } from '../../billing/index.ts';
+import { relations, sql } from 'drizzle-orm';
+import {
+    boolean,
+    index,
+    jsonb,
+    pgTable,
+    text,
+    timestamp,
+    uniqueIndex,
+    uuid,
+    varchar
+} from 'drizzle-orm/pg-core';
 import {
     LifecycleStatusPgEnum,
     PartnerContentReviewStatePgEnum,
-    PartnerPaymentReviewStatePgEnum,
-    PartnerSubscriptionStatusPgEnum,
-    PartnerTierPgEnum,
     PartnerTypePgEnum
 } from '../enums.dbschema.ts';
 import { users } from '../user/user.dbschema.ts';
@@ -27,7 +33,6 @@ export const partners = pgTable(
         slug: varchar('slug', { length: 255 }).notNull().unique(),
         name: varchar('name', { length: 255 }).notNull(),
         type: PartnerTypePgEnum('type').notNull(),
-        tier: PartnerTierPgEnum('tier').notNull(),
         logoUrl: text('logo_url'),
         websiteUrl: text('website_url'),
         description: text('description'),
@@ -52,17 +57,8 @@ export const partners = pgTable(
          * per-key `null` — see `PartnerModel.mergeableJsonbColumns`.
          */
         socialNetworks: jsonb('social_networks').$type<SocialNetwork>(),
-        subscriptionStatus: PartnerSubscriptionStatusPgEnum('subscription_status')
-            .notNull()
-            .default('pending'),
         lifecycleState: LifecycleStatusPgEnum('lifecycle_state').notNull().default('ACTIVE'),
         analytics: jsonb('analytics').$type<PartnerAnalytics>().default({}),
-        planId: uuid('plan_id').references(() => billingPlans.id, {
-            onDelete: 'set null'
-        }),
-        subscriptionId: uuid('subscription_id').references(() => billingSubscriptions.id, {
-            onDelete: 'set null'
-        }),
         /**
          * The account that owns this partner listing (HOS-278 §6.5).
          *
@@ -75,20 +71,10 @@ export const partners = pgTable(
          * owner at all and are meant to stay that way.
          */
         ownerUserId: uuid('owner_user_id').references(() => users.id, { onDelete: 'set null' }),
-        /**
-         * When the alliance actually began — NULL until it does (HOS-278 D1).
-         *
-         * Nullable because provisioning creates the row BEFORE any payment:
-         * a DRAFT partner has been approved but has not started, and this
-         * column previously had no way to say so. It was NOT NULL with no
-         * default, so every writer had to invent a date — the admin form
-         * still defaults to today — and that invented date was indexed by
-         * `partners_startsAt_idx` alongside the real ones, indistinguishable
-         * from them. NULL is now the honest answer, written for real only
-         * when the partner subscription activates.
-         */
-        startsAt: timestamp('starts_at', { withTimezone: true }),
-        endsAt: timestamp('ends_at', { withTimezone: true }),
+        /** Spec «bit de moderación de la presencia»; lo escribe V7 sólo mediante la acción administrativa 12/PB10/PB11. */
+        presenceModerated: boolean('presence_moderated').notNull().default(false),
+        /** Spec «secreto_de_reclamo»: hash del secreto de un solo uso, escrito por V7 al emitirlo. */
+        claimSecretHash: text('claim_secret_hash'),
         /**
          * Logo the partner submitted, awaiting an admin's verdict (HOS-278 AC-11).
          *
@@ -144,17 +130,6 @@ export const partners = pgTable(
             onDelete: 'set null'
         }),
         /**
-         * When the "you have not paid, we will archive this" notice was sent
-         * (HOS-278 R-3), or null if it never was.
-         *
-         * Load-bearing for the reaper's FIRST stage and nothing else: without
-         * it the 30-day nudge has no memory, so the cron would re-send it every
-         * single day from day 31 until the partner either pays or is archived.
-         * Sixty emails is not a reminder, it is a reason to mark the sender as
-         * spam.
-         */
-        unpaidNoticeSentAt: timestamp('unpaid_notice_sent_at', { withTimezone: true }),
-        /**
          * When this partner was revoked (HOS-278 R-4), or null if it was not.
          *
          * Revoking flips {@link lifecycleState} to INACTIVE and fills this
@@ -165,50 +140,13 @@ export const partners = pgTable(
          * from admin queries too, and a revoked partner must stay in front of
          * the admins who revoked it. `lifecycleState` is the visibility switch
          * this table already had; the trio is what turns flipping it into a
-         * decision with an author. `subscriptionStatus` is deliberately left
-         * alone: using it would conflate "we took them down" with "they
-         * stopped paying".
+         * decision with an author.
          */
         revokedAt: timestamp('revoked_at', { withTimezone: true }),
         /** Admin who revoked the partner. */
         revokedById: uuid('revoked_by_id').references(() => users.id, { onDelete: 'set null' }),
         /** Why it was revoked. Required at the endpoint, so never empty when set. */
         revokeReason: text('revoke_reason'),
-        /**
-         * Whether an admin has been asked to confirm this partner's payment
-         * (HOS-1299), or NULL when nothing is pending.
-         *
-         * Its own column, and its own pg type, rather than a fifth value of
-         * {@link subscriptionStatus}. That column is what `getPublicBySlug`,
-         * `findByFilters`, `countActivePartners` and the web's
-         * `evaluatePartnerIndexability` all read, so moving it off `active`
-         * answers the question by performing the takedown: 404, `noindex`, out
-         * of the sitemap and off the carousel, all before a human sees the
-         * alert. The owner's decision (2026-09-09) is the opposite — the
-         * expensive mistake is cutting off somebody who did pay, so the system
-         * asks and waits.
-         *
-         * Nothing reads this to decide visibility, billing or listing. It
-         * drives one admin queue and one email. Same shape and same reasoning
-         * as {@link contentReviewState}, which is also NULL for most rows.
-         */
-        paymentReviewState: PartnerPaymentReviewStatePgEnum('payment_review_state'),
-        /**
-         * The date through which an admin has confirmed this partner is paid up
-         * (HOS-1299), or NULL when nobody ever has.
-         *
-         * Deliberately NOT {@link endsAt}. That column is read by
-         * `partner-expiry`, which ARCHIVES the row unattended the moment it
-         * passes — so writing a confirmed period there would rebuild the silent
-         * automatic takedown through the back door, which is precisely what the
-         * owner ruled out. `endsAt` stays what it is today: a field an admin
-         * types by hand, and the only thing that arms that cron.
-         *
-         * NULL falls back to {@link startsAt} for the review clock, which is
-         * the honest reading — the alliance has been running, unconfirmed,
-         * since the day it began.
-         */
-        paymentConfirmedThrough: timestamp('payment_confirmed_through', { withTimezone: true }),
         // Audit fields
         createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
         updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow().notNull(),
@@ -220,35 +158,17 @@ export const partners = pgTable(
     (table) => ({
         partners_slug_idx: index('partners_slug_idx').on(table.slug),
         partners_type_idx: index('partners_type_idx').on(table.type),
-        partners_tier_idx: index('partners_tier_idx').on(table.tier),
-        partners_subscriptionStatus_idx: index('partners_subscriptionStatus_idx').on(
-            table.subscriptionStatus
-        ),
         partners_lifecycleState_idx: index('partners_lifecycleState_idx').on(table.lifecycleState),
-        partners_startsAt_idx: index('partners_startsAt_idx').on(table.startsAt),
         partners_ownerUserId_idx: index('partners_ownerUserId_idx').on(table.ownerUserId),
+        uq_partners_owner_user_id: uniqueIndex('uq_partners_owner_user_id')
+            .on(table.ownerUserId)
+            .where(sql`${table.ownerUserId} IS NOT NULL`),
         // Drives the admin review queue ("what is waiting on me"), which reads
         // exactly one value out of a column that is null for most rows.
         partners_contentReviewState_idx: index('partners_contentReviewState_idx').on(
             table.contentReviewState
         ),
-        // Drives the OTHER admin queue ("whose payment am I being asked about"),
-        // and the review cron's own "already flagged, skip it" read. Same shape
-        // as the content one above: one value out of a column that is null for
-        // most rows.
-        partners_paymentReviewState_idx: index('partners_paymentReviewState_idx').on(
-            table.paymentReviewState
-        ),
-        partners_deletedAt_idx: index('partners_deletedAt_idx').on(table.deletedAt),
-        // Composite index for findActivePartners (filters by both subscriptionStatus and lifecycleState)
-        partners_subscriptionStatus_lifecycleState_idx: index(
-            'partners_subscriptionStatus_lifecycleState_idx'
-        ).on(table.subscriptionStatus, table.lifecycleState),
-        // Anticipatory composite for partner-expiry cron
-        partners_lifecycleState_endsAt_idx: index('partners_lifecycleState_endsAt_idx').on(
-            table.lifecycleState,
-            table.endsAt
-        )
+        partners_deletedAt_idx: index('partners_deletedAt_idx').on(table.deletedAt)
     })
 );
 
@@ -260,15 +180,7 @@ export const partnersRelations = relations(partners, ({ one }) => ({
     }),
     createdBy: one(users, { fields: [partners.createdById], references: [users.id] }),
     updatedBy: one(users, { fields: [partners.updatedById], references: [users.id] }),
-    deletedBy: one(users, { fields: [partners.deletedById], references: [users.id] }),
-    plan: one(billingPlans, {
-        fields: [partners.planId],
-        references: [billingPlans.id]
-    }),
-    subscription: one(billingSubscriptions, {
-        fields: [partners.subscriptionId],
-        references: [billingSubscriptions.id]
-    })
+    deletedBy: one(users, { fields: [partners.deletedById], references: [users.id] })
 }));
 
 /** Type-inferred insert type for partners rows. */

@@ -173,11 +173,10 @@ export const UserAdminSchema = UserProtectedSchema.extend({
 
     // Admin list computed fields
     accommodationsCount: z.number().int().min(0).optional(),
-    gastronomiesCount: z.number().int().min(0).optional(),
+    venuesCount: z.number().int().min(0).optional(),
     experiencesCount: z.number().int().min(0).optional(),
     eventsCount: z.number().int().min(0).optional(),
-    postsCount: z.number().int().min(0).optional(),
-    currentPlanSlug: z.string().nullable().optional()
+    postsCount: z.number().int().min(0).optional()
 });
 
 /**

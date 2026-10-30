@@ -30,9 +30,11 @@
 import { existsSync } from 'node:fs';
 import { join } from 'node:path';
 import { findContainer, getActiveTarget } from '../lib/container-lookup.ts';
+import { readCheckoutSha } from '../lib/cutover-step-3-core.ts';
 import { get } from '../lib/env.ts';
 import { ENCRYPTED_SUFFIX, gpgSymmetricEncrypt } from '../lib/gpg.ts';
 import { die, log } from '../lib/log.ts';
+import { runMigratePullPhase } from '../lib/migrate-commit-guard.ts';
 import { buildDbDependencies, runMigrateSequence } from '../lib/migrate-core.ts';
 import { buildPostgresUrl, pgDumpToBuffer } from '../lib/postgres.ts';
 import { confirm } from '../lib/prompt.ts';
@@ -44,6 +46,7 @@ import { getDbCredentials } from '../lib/target.ts';
 const HELP = `
 hops db-migrate [--target=prod|staging]
                 [--pull | --no-pull]
+                [--expect-commit=<sha>]
                 [--no-install]
                 [--no-build]
                 [--no-backup]
@@ -77,6 +80,17 @@ Flags:
   --pull              Always git pull \\$HOPS_REPO_ROOT first.
                       Mutually exclusive with --no-pull.
   --no-pull           Never git pull. Mutually exclusive with --pull.
+  --expect-commit=<sha>
+                      The commit the new image is built from (>= 10 hex
+                      chars; full SHA recommended). REQUIRED whenever a git
+                      pull happens. After the pull, the checkout HEAD must
+                      equal it; otherwise the command aborts with a non-zero
+                      exit BEFORE install, build, backup or any migration.
+                      Also verified (without a pull) when given with
+                      --no-pull. There is no override flag. It is not read
+                      from the api container: at the cutover the old app is
+                      stopped and the new image is not running yet, so the
+                      container would report the OLD commit.
   --no-install        Skip \`pnpm install --frozen-lockfile\` after the pull.
                       Only use when you are certain the pulled commits added
                       no dependency. Has no effect when no pull happens.
@@ -96,7 +110,8 @@ Without --pull / --no-pull the command asks interactively.
 
 Unattended examples:
   hops db-migrate --target=staging --no-pull --yes
-  hops db-migrate --target=prod --pull --yes
+  hops db-migrate --target=staging --pull --expect-commit=<origin-staging-sha> --yes
+  hops db-migrate --target=prod --pull --expect-commit=<merge-sha> --yes
   hops db-migrate --target=staging --reset --no-pull --yes
   hops db-migrate --target=prod --no-backup --no-pull --yes
 
@@ -118,6 +133,8 @@ export interface ParsedMigrateArgs {
     readonly backup: boolean;
     readonly applyExtras: boolean;
     readonly pull: 'on' | 'off' | 'ask';
+    /** `--expect-commit=<sha>`: the commit the new image is built from. */
+    readonly expectCommit: string | undefined;
     readonly skipConfirm: boolean;
 }
 
@@ -130,7 +147,11 @@ export function parseMigrateArgs(argv: ReadonlyArray<string>): ParsedMigrateArgs
         die('--pull and --no-pull are mutually exclusive.');
     }
 
+    const expectArg = args.find((arg) => arg.startsWith('--expect-commit='));
+
     return {
+        expectCommit:
+            expectArg === undefined ? undefined : expectArg.slice('--expect-commit='.length),
         reset: args.includes('--reset'),
         install: !args.includes('--no-install'),
         build: !args.includes('--no-build'),
@@ -282,17 +303,24 @@ export async function dbMigrate(argv: ReadonlyArray<string>): Promise<void> {
         shouldPull = await confirm('Pull latest code from git first?', { defaultValue: true });
     }
 
-    if (shouldPull) {
-        await gitPullRepo(repoRoot);
+    // The commit guard sits between the pull and everything that applies
+    // something (install, build, backup, migrate). A mismatch or an unknown
+    // image commit aborts here (HOS-1957 G4).
+    if (!shouldPull) log.hint('Skipping git pull.');
+    const pullPhase = await runMigratePullPhase({
+        shouldPull,
+        install: parsed.install,
+        expectCommit: parsed.expectCommit,
+        pull: () => gitPullRepo(repoRoot),
+        readCheckoutSha: () => readCheckoutSha({ runner, repoRoot }),
         // A pulled commit may add a dependency; install before the schema build
-        // so buildDbDependencies doesn't fail against a stale node_modules (BETA-102).
-        if (parsed.install) {
-            await installDeps(repoRoot);
-        } else {
-            log.hint('Skipping pnpm install (--no-install).');
-        }
-    } else {
-        log.hint('Skipping git pull.');
+        // so buildDbDependencies doesn't fail against stale dependencies (BETA-102).
+        installDeps: () => installDeps(repoRoot)
+    });
+    if (!pullPhase.ok) die(pullPhase.message);
+    if (shouldPull && !parsed.install) log.hint('Skipping pnpm install (--no-install).');
+    if (parsed.expectCommit !== undefined) {
+        log.ok(`Checkout is the image commit (${parsed.expectCommit}).`);
     }
 
     // ── Build workspace deps ─────────────────────────────────────────

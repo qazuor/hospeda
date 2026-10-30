@@ -17,7 +17,7 @@ import { ExperienceService, listExperienceFaqs, ServiceError } from '@repo/servi
 import type { Context } from 'hono';
 import { z } from 'zod';
 import { getActorFromContext } from '../../../utils/actor';
-import { filterPublicFaqs } from '../../../utils/commerce-faq-visibility';
+import { filterPublicFaqs } from '../../../utils/listing-faq-visibility';
 import { apiLogger } from '../../../utils/logger';
 import { createPublicRoute } from '../../../utils/route-factory';
 
@@ -67,7 +67,6 @@ export const publicGetExperienceFaqsRoute = createPublicRoute({
         return { faqs: filterPublicFaqs(faqs) };
     },
     options: {
-        cacheTTL: 300,
         customRateLimit: { requests: 200, windowMs: 60000 }
     }
 });

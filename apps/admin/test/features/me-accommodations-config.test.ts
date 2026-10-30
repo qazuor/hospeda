@@ -24,6 +24,7 @@
 
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
+import { PublicationStatusEnum } from '@repo/schemas';
 import { describe, expect, it } from 'vitest';
 import { accommodationsConfig } from '../../src/features/accommodations/config/accommodations.config';
 import {
@@ -118,15 +119,14 @@ describe('T-011 — meAccommodationsConfig shape', () => {
             expect(isFeatured).toBeUndefined();
         });
 
-        it('status filter has DRAFT, ACTIVE, and ARCHIVED options', () => {
+        it('status filter offers exactly the six publication states (HOS-1641)', () => {
             const filters = meAccommodationsConfig.filterBarConfig?.filters ?? [];
             const statusFilter = filters.find((f) => f.paramKey === 'status') as
                 | { options: ReadonlyArray<{ value: string }> }
                 | undefined;
             const values = statusFilter?.options.map((o) => o.value) ?? [];
-            expect(values).toContain('DRAFT');
-            expect(values).toContain('ACTIVE');
-            expect(values).toContain('ARCHIVED');
+            expect(values).toEqual(Object.values(PublicationStatusEnum));
+            expect(values).not.toContain('ACTIVE');
         });
     });
 

@@ -501,8 +501,9 @@ a bare function — Nitro's runtime dispatcher requires that exact shape and thr
 
 The container healthcheck MUST hit `/healthz`, not `GET /`. Probing `/` server-renders
 the entire React root on every probe (every 30 s), and each SSR render of the root used to
-construct a fresh `QZPayBilling` instance — the production admin grew to ~986 MB in 48 h
-with no real users, fed almost entirely by the healthcheck. See engram
+construct a fresh billing-client instance (the QZPayBilling client, since removed by HOS-1416)
+— the production admin grew to ~986 MB in 48 h with no real users, fed almost entirely by the
+healthcheck. See engram
 `deploy/vps-memory-pressure` and `spec/SPEC-209/progress`.
 
 - **Endpoint**: `/healthz` returns `200 {"status":"ok"}` (`application/json`) without
@@ -532,20 +533,17 @@ Start SSR). A `useState(() => createX())` lazy initializer is the correct *brows
 (one instance per mounted tree) but on the server it runs on EVERY request, leaking a fresh
 instance per render.
 
-- **QZPayBilling** is therefore built CLIENT-ONLY: `const [billing, setBilling] = useState(null)`
-  - `useEffect(() => setBilling(createQZPayBilling(...)), [])`. `useEffect` never runs on the
-  server, so SSR builds zero billing instances; the client builds exactly one on mount.
-  `QZPayProvider` does not tolerate `null` billing (it calls `billing.isLivemode()` during
-  render), so it is mounted conditionally (`{billing !== null ? <QZPayProvider…> : children}`)
-  with the theme/query/toast providers kept stable outside the conditional.
+- The original leak was a `QZPayBilling` instance built in a `useState` initializer; HOS-1416
+  removed that client and its provider from the root. The rule it taught still holds: do not
+  construct per-request singletons in the root; build client-only objects inside `useEffect`.
 - **QueryClient** is intentionally LEFT as a per-request `useState` lazy initializer — a
   per-request QueryClient is the recommended TanStack Query SSR pattern (cache isolation
   between requests) and is NOT a leak. Do not collapse it into a module-level singleton.
 - **Guard**: `test/routes/__root.ssr-guard.test.ts` (and the web twin
-  `apps/web/test/layouts/BaseLayout.ssr-guard.test.ts`) statically fail CI if
-  `createQZPayBilling(` / `new QueryClient(` reappears in a root/layout outside a client-only
-  guard. The memory-validation procedure for staging lives in
-  [`.qtm/specs/SPEC-209-admin-ssr-memory-leak-healthcheck/docs/memory-validation-procedure.md`](../../.qtm/specs/SPEC-209-admin-ssr-memory-leak-healthcheck/docs/memory-validation-procedure.md).
+  `apps/web/test/layouts/BaseLayout.ssr-guard.test.ts`) is a static check. The admin one only
+  scans `__root.tsx` for `createQZPayBilling(` outside a client-only guard; since HOS-1416 that
+  call no longer exists, so it passes vacuously and does NOT check `new QueryClient(`. The memory-validation procedure for staging lives in
+  `.qtm/specs/SPEC-209-admin-ssr-memory-leak-healthcheck/docs/memory-validation-procedure.md` (legacy `.qtm/` spec, removed in HOS-1352 U1; still present on `staging`).
 
 ## Environment Variables
 
@@ -716,12 +714,12 @@ Both components are covered by component tests under
 
 ### Fresh `pnpm install` requires a workspace build before `pnpm dev`
 
-`apps/admin/vite.config.ts` aliases 8 of the ~12 `@repo/*` workspace packages to their `src/` directories. The four packages NOT aliased — `@repo/feedback`, `@repo/auth-ui`, `@repo/billing`, `@repo/notifications` — resolve to their `dist/` outputs per their `exports` field. A fresh checkout has empty `dist/` directories, so SSR fails on the first request with `ERR_MODULE_NOT_FOUND: @repo/feedback/schemas` (or one of the other three) until the packages are built (SPEC-117 A2).
+`apps/admin/vite.config.ts` aliases 8 `@repo/*` workspace packages (`schemas`, `db`, `logger`, `utils`, `config`, `service-core`, `icons`, `i18n`) to their `src/` directories. The three packages listed here that are NOT aliased — `@repo/feedback`, `@repo/auth-ui`, `@repo/notifications` — resolve to their `dist/` outputs per their `exports` field. A fresh checkout has empty `dist/` directories, so SSR fails on the first request with `ERR_MODULE_NOT_FOUND: @repo/feedback/schemas` (or one of the other two) until the packages are built (SPEC-117 A2).
 
 If you see that error after a fresh `pnpm install`, run from the repo root:
 
 ```bash
-pnpm turbo run build --filter='@repo/feedback' --filter='@repo/auth-ui' --filter='@repo/billing' --filter='@repo/notifications'
+pnpm turbo run build --filter='@repo/feedback' --filter='@repo/auth-ui' --filter='@repo/notifications'
 ```
 
 Workspace packages whose source can be consumed directly via the existing aliases (everything under `resolve.alias` in `vite.config.ts`) do NOT need to be pre-built — Vite picks them up from `src/` and hot-reloads on edit.
@@ -744,12 +742,6 @@ BETA-81 and accepted — they are **not defects**. Do NOT "fix" them by swapping
 `@vitejs/plugin-react-oxc` or removing `vite-tsconfig-paths`: those are explicitly
 out of scope (SPEC-117 CE-6, CE-8).
 
-- **`Module "crypto" has been externalized for browser compatibility`** (imported by
-  `@qazuor/qzpay-mercadopago/dist/index.js`). The MercadoPago SDK is pulled in
-  transitively via `@repo/billing` / `@repo/service-core` (aliased to `src/`); no
-  admin client code imports it directly. Its `crypto` usage is server-side (MP
-  webhook signing) and is never invoked from the browser — Vite stubs it to empty
-  in the client bundle. Benign; accepted.
 - **`"import.meta" is not available in the configured target environment ("es2019") and will be empty`**
   (Nitro server build, e.g. `components-entity-*.js`). These are all
   `import.meta.env.DEV` debug gates (EntityCreateContent, VirtualizedEntityList,

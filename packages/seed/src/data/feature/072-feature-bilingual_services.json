@@ -7,7 +7,7 @@
         "en": "Personal capacitado para atención en múltiples idiomas garantizando comunicación fluida con huéspedes internacionales",
         "pt": "Personal capacitado para atención en múltiples idiomas garantizando comunicación fluida con huéspedes internacionales"
     },
-    "applicableVerticals": ["accommodation", "gastronomy", "experience"],
+    "applicableVerticals": ["accommodation", "venue", "experience"],
     "icon": "BilingualServiceIcon",
     "isBuiltin": true,
     "isFeatured": false,

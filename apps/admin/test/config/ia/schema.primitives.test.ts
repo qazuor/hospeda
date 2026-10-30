@@ -169,7 +169,7 @@ describe('PermissionExpressionSchema', () => {
             // Arrange — minimal valid exact value: one uppercase letter followed by nothing?
             // Actually: [A-Z][A-Z0-9_]+ requires at least 2 chars for exact.
             // But the regex also has alternation — let's test a standard-looking value.
-            const input = 'BILLING_VIEW_ALL';
+            const input = 'ACCOUNT_VIEW_ALL';
 
             // Act
             const result = PermissionExpressionSchema.safeParse(input);

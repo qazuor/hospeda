@@ -362,7 +362,7 @@ Phase 1:
 2. For each screenshot, perform the full analysis: layout, colors, typography,
    spacing, components, and interaction hints
 3. Assign a descriptive label to each screenshot (e.g., "Screenshot 1: Dark
-   e-commerce dashboard", "Screenshot 2: Light minimalist portfolio")
+   online store dashboard", "Screenshot 2: Light minimalist portfolio")
 4. Write findings to separate files: `ANALYSIS-1.md`, `ANALYSIS-2.md`, etc.
    — one per screenshot, following the same `ANALYSIS.md` format from Phase 1
 
@@ -378,7 +378,7 @@ Build a side-by-side comparison across all design aspects and write it to
 
 | # | Label | Description |
 |---|-------|-------------|
-| 1 | Dark Dashboard | E-commerce admin with sidebar navigation |
+| 1 | Dark Dashboard | Online store admin with sidebar navigation |
 | 2 | Light Portfolio | Minimalist single-page with top navbar |
 | 3 | ... | ... |
 

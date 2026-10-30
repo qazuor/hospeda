@@ -1,12 +1,12 @@
 ---
 /**
  * @file publicar-restaurante/index.astro
- * @description Permanent redirect to `/{lang}/publicar/gastronomia/`, the
- * gastronomy publish page (HOS-1156 D-6).
+ * @description Permanent redirect to `/{lang}/publicar/comer-y-salir/`, the
+ * venue publish page (HOS-1156 D-6).
  *
  * ## This target OVERRIDES HOS-941 D-8
  *
- * HOS-1032 pointed this URL at `/planes/gastronomia/`, and its reasoning was
+ * HOS-1032 pointed this URL at `/planes/comer-y-salir/`, and its reasoning was
  * sound at the time: "its successor by content is the SALES page", because this
  * URL's body was an argument with a price block, and no publish page existed for
  * this vertical to send anyone to.
@@ -35,7 +35,7 @@ const locale = Astro.locals.locale;
 return Astro.redirect(
     buildPricingRedirectTarget({
         locale,
-        path: PUBLISH_PAGE_PATH_BY_VERTICAL.gastronomy,
+        path: PUBLISH_PAGE_PATH_BY_VERTICAL.venue,
         search: Astro.url.search
     }),
     301

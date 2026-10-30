@@ -1,0 +1,18 @@
+# VB-06 · spec → fuente · 10-corte/V5.md, 10-corte/V6.md
+
+## Hallazgos
+
+10-corte/V5.md:203 · «paso 2 (estado de la persona) después de mirar el permiso» · contradice .specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/17-autorizacion.md:120 («El estado de la persona va ANTES del permiso»). AC:V5:3 invierte el orden obligatorio; también contradice la precisión 2 de V5:553 y su sección Seguridad, V5:1282. No hay una decisión posterior que autorice esa inversión. · BLOQUEA
+
+10-corte/V5.md:996 · «una sola fábrica**, con el rol `SYSTEM` (que ya existe y no se puede asignar) y **los permisos que cada job usa, escritos uno por uno» · más débil que .specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/17-autorizacion.md:582 («una sola fábrica», con «un identificador por job», explicitado en la línea 583). Se omite la identidad diferenciada por job también en FILA:V5, US:V5:5, AC:V5:12 y Cron y outbox; permitiría construir actores con identidad compartida. La referencia genérica a su propio identificador en V5:952 no exige uno por job. La misma obligación está viva en .specs/HOS-1353-verticales-capacidades-y-autorizacion/descomposicion.md:65. · BLOQUEA
+
+10-corte/V6.md:160 · «levantar la moderación la deja en `DRAFT` con el reloj reiniciado» · contradice .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:7079 («`DRAFT` si era borrador (`PB11`), y si estaba publicada o bajada por billing,», seguido en 7080 por «`UNPUBLISHED_BY_BILLING` con `PB3` en el mismo acto (`PB13`)»). LISTA:V6 conserva como criterio vigente la salida incondicional a DRAFT del texto anterior de descomposicion.md:717, superada por DEC-DATA-007 y su precisión sobre ARCHIVED. Contradice asimismo AC:V6:11, líneas 395–398, y la fila PB13 de .specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/03-maquinas-de-estado.md:500. · BLOQUEA
+
+10-corte/V6.md:1096 · «Si falla el borrado externo de una foto, se detiene la purga de todas las fichas de ese dueño hasta que soporte confirme manualmente el borrado pendiente.» · contradice .specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/02-modelo-de-datos.md:834 («Lo pendiente lo reintenta una corrida diaria»). La fuente exige marcas por foto/conexión, confirmación del almacenamiento o proveedor y reporte del pendiente en cada corrida (líneas 828–838); no establece un bloqueo de todas las fichas del dueño ni una confirmación manual de soporte. También contradice AC:V6:30 y TEST:V6:38, y la demostración exigida en .specs/HOS-1353-verticales-capacidades-y-autorizacion/descomposicion.md:519. · BLOQUEA
+
+## Resumen
+
+| archivo | líneas recorridas | afirmaciones normativas revisadas (aprox.) | BLOQUEA | MENOR |
+|---|---|---|---|---|
+| 10-corte/V5.md | 1–1571 | 230 | 2 | 0 |
+| 10-corte/V6.md | 1–1496 | 280 | 2 | 0 |

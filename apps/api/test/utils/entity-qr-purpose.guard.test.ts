@@ -35,7 +35,7 @@ const CALL = 'resolveEntityQrScanUrl(';
  * An experience appears TWICE on purpose: its brochure and its certificate are
  * two live codes for one subject, landing in different places, and `purpose` is
  * the only thing that tells them apart. Since HOS-982 an experience and a
- * gastronomy each appear a THIRD time, for `LISTING`: the printable sheet is
+ * venue each appear a THIRD time, for `LISTING`: the printable sheet is
  * another live code for the same subject, and the distance between the three is
  * exactly what this guard keeps honest — a brochure is handed to someone, a
  * certificate is issued to someone, and a listing sheet is taped to a door.
@@ -50,8 +50,8 @@ const CALL = 'resolveEntityQrScanUrl(';
  * listing's scan counts split between them.
  */
 const EXPECTED: Readonly<Record<string, { entityType: string; purpose: string }>> = {
-    'routes/gastronomy/protected/brochure.ts': {
-        entityType: 'GASTRONOMY',
+    'routes/venue/protected/brochure.ts': {
+        entityType: 'VENUE',
         purpose: 'BROCHURE'
     },
     'routes/experience/protected/brochure.ts': {
@@ -66,8 +66,8 @@ const EXPECTED: Readonly<Record<string, { entityType: string; purpose: string }>
         entityType: 'ACCOMMODATION',
         purpose: 'LISTING'
     },
-    'routes/gastronomy/protected/qrSheet.ts': {
-        entityType: 'GASTRONOMY',
+    'routes/venue/protected/qrSheet.ts': {
+        entityType: 'VENUE',
         purpose: 'LISTING'
     },
     'routes/experience/protected/qrSheet.ts': {
@@ -78,8 +78,8 @@ const EXPECTED: Readonly<Record<string, { entityType: string; purpose: string }>
         entityType: 'ACCOMMODATION',
         purpose: 'LISTING'
     },
-    'routes/gastronomy/protected/qrCode.ts': {
-        entityType: 'GASTRONOMY',
+    'routes/venue/protected/qrCode.ts': {
+        entityType: 'VENUE',
         purpose: 'LISTING'
     },
     'routes/experience/protected/qrCode.ts': {

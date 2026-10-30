@@ -34,7 +34,6 @@ export const publicGetDestinationWeatherRoute = createPublicRoute({
         return weatherService.getCachedWeather(actor, { destinationId: params.id as string });
     },
     options: {
-        cacheTTL: 300,
         customRateLimit: { requests: 100, windowMs: 60000 }
     }
 });

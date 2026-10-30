@@ -25,7 +25,7 @@ export const FeatureSearchHttpSchema = BaseHttpSearchSchema.extend({
     icon: z.string().optional(),
 
     /** Filter by applicable vertical (SPEC-266) */
-    applicableVertical: z.enum(['accommodation', 'gastronomy', 'experience']).optional(),
+    applicableVertical: z.enum(['accommodation', 'venue', 'experience']).optional(),
 
     // Boolean filters with HTTP coercion
     isAvailable: createBooleanQueryParam('Filter by feature availability status'),
@@ -66,7 +66,7 @@ export const FeatureCreateHttpSchema = z.object({
     description: i18nText({ min: 10, max: 500 }).optional(),
     /** Verticals this feature is applicable to (SPEC-266). */
     applicableVerticals: z
-        .array(z.enum(['accommodation', 'gastronomy', 'experience']))
+        .array(z.enum(['accommodation', 'venue', 'experience']))
         .min(1)
         .default(['accommodation']),
     category: z.string().min(1).max(50).optional(),

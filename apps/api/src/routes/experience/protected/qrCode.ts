@@ -8,9 +8,9 @@
  * The accommodation twin (`routes/accommodation/protected/qrCode.ts`) carries
  * the full reasoning: why the dashboard needs the SVG rather than the PDF, why
  * this is the SAME code the printable sheet carries and not a second one, why
- * both clauses of "published" are checked before anything is minted, and why
- * there is no entitlement gate. As in gastronomy, the staff bypass is
- * `COMMERCE_VIEW_ALL`.
+ * the "published" state is checked before anything is minted, and why
+ * there is no entitlement gate. As in venue, the staff bypass is
+ * `EXPERIENCE_VIEW_ALL`.
  *
  * ## An experience holds three codes and this route touches exactly one
  *
@@ -28,11 +28,10 @@
 
 import {
     EntityTypeEnum,
-    LifecycleStatusEnum,
     PermissionEnum,
+    PublicationStatusEnum,
     QrCodePurposeEnum,
-    ServiceErrorCode,
-    VisibilityEnum
+    ServiceErrorCode
 } from '@repo/schemas';
 import { ExperienceService, entityNotFoundError } from '@repo/service-core';
 // Same module instance `utils/response-helpers` compares against: importing
@@ -78,17 +77,14 @@ export async function handleGetExperienceQrCode(
 
     const entity = result.data;
 
-    const hasViewAll = actor.permissions?.includes(PermissionEnum.COMMERCE_VIEW_ALL);
+    const hasViewAll = actor.permissions?.includes(PermissionEnum.EXPERIENCE_VIEW_ALL);
     if (!entity || (!hasViewAll && entity.ownerId !== actor.id)) {
         throw entityNotFoundError({ entityName: ExperienceService.ENTITY_NAME });
     }
 
-    // BOTH clauses — see the accommodation twin. Checked BEFORE anything is
+    // Only PUBLISHED has a public page (V6.9b). Checked BEFORE anything is
     // minted, so a listing with no public page leaves no live `qr_codes` row.
-    if (
-        entity.lifecycleState !== LifecycleStatusEnum.ACTIVE ||
-        entity.visibility !== VisibilityEnum.PUBLIC
-    ) {
+    if (entity.publicationStatus !== PublicationStatusEnum.PUBLISHED) {
         // Same canonical message as the branch above, deliberately (HOS-600).
         throw entityNotFoundError({ entityName: ExperienceService.ENTITY_NAME });
     }

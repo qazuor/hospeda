@@ -1,0 +1,94 @@
+# G1 · spec → fuente · 01-decisiones-vigentes.md
+
+## Hallazgos
+
+01-decisiones-vigentes.md:136 · «catorce hoy.**» · contradice .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:375 («cero hoy.**»); cambia la duración del trial de Partner de 0 a 14 días · BLOQUEA
+
+01-decisiones-vigentes.md:317 · «| turista | el primer inicio de sesión del §47 |» · contradice .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:527 («| turista | el botón `Empezar` del §47 |»); adelanta el consumo del trial al inicio de sesión · BLOQUEA
+
+01-decisiones-vigentes.md:1899 · «`PARA_RESOLVER` no tiene plazo. Una cortesía temporal vigente el día de la migración espera a volver.» · más débil que .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:7155–7156 («`PARA_RESOLVER` no tiene plazo, y el panel muestra su antigüedad.»); omite la obligación del panel · BLOQUEA
+
+01-decisiones-vigentes.md:2941 · «la **clase** pasa a ser un **atributo declarado** de cada clave en el catálogo» · contradice la copia literal de .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:5054–5055 («la **clase** pasa a ser el **cuarto atributo declarado**» y «—junto al scope, la estrategia de agregación y los que ya estaban—»); la línea 2942 también omite «y los que ya estaban». Conserva el atributo y sus dos valores, sin cambio concreto de comportamiento demostrado · MENOR
+
+01-decisiones-vigentes.md:4414 · «de `V/22`; si contesta en contra, se borran todos con una tarea puntual, y se anota quién» · más débil que .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:6135 («de `V/22`; si contesta en contra, soporte los borra todos con una tarea puntual, y se anota quién»); elimina al actor responsable del borrado de seudónimos · BLOQUEA
+
+01-decisiones-vigentes.md:8216 · «un documento y que **no** se lo llame factura fiscal» · más débil que .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:968 («PDF y que **no** se lo llame factura fiscal»); elimina el formato exigido al comprobante · BLOQUEA
+
+01-decisiones-vigentes.md:8615 · «autorización de la batería en producción la custodia el owner. Y» · más débil que .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:7210 («autorización mensual de la batería en producción la custodia el owner y la renueva cada mes. Y»); desaparecen la periodicidad y la renovación obligatoria · BLOQUEA
+
+01-decisiones-vigentes.md:9034 · «monto original. ARS 5 entró sobre pagos de 5.000 y 7.500.» · más débil que .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:1805 («monto original. **No hay monto mínimo** — ARS 5 entró sobre pagos de 5.000 y 7.500.»); omite la ausencia de un mínimo para reembolsos parciales, que no se deduce del ejemplo de ARS 5 · BLOQUEA
+
+01-decisiones-vigentes.md:12543 · «**1**: se conserva hasta la respuesta; si es en contra, se borran todos con una tarea puntual (se anota quién y cuándo)» · más débil que .specs/HOS-1352-billing-verticals-redesign/docs/37-fase-8-vuelta-3/10-decisiones-del-owner.md:29 («**1**: se conserva hasta la respuesta; si es en contra, soporte los borra todos con una tarea puntual (se anota quién y cuándo)»); la letra H pierde el mismo responsable que su 📌 en la línea 4414 · BLOQUEA
+
+## Resumen
+
+| archivo | líneas recorridas | afirmaciones normativas revisadas (aprox.) | BLOQUEA | MENOR |
+| --- | --- | --- | --- | --- |
+| 01-decisiones-vigentes.md | 1–14264 | ≈2500, agrupadas por párrafo, regla y celda | 8 | 1 |
+
+Conteo por ubicación: los dos hallazgos sobre el actor soporte son dos copias afectadas de la misma regla. Se recorrió el archivo completo mediante cotejo textual contra las fuentes citadas, con revisión de las diferencias; no se presenta como una lectura semántica manual de cada una de las 14.264 líneas. Se contrastaron 672 bloques con ancla: 138 DEC, 213 📌 y 321 filas del owner. El primer barrido comparó 8.014 líneas de contenido; el control complementario incluyó las líneas que comienzan en negrita y todas las celdas de las filas del owner.
+
+Clases de error buscadas en toda la salida (con `rg --hidden` y cotejo textual complementario):
+
+- Tachado entero o parcial que sobrevive como vivo: cero marcadores `~~`; cotejo con la fuente sin tachados y búsqueda global de 14 fragmentos tachados de ocho o más palabras, sin coincidencias literales. No se confirmó una resurrección de texto tachado.
+- Separación de tablas por `\|`: cero separadores escapados o barras inversas finales en la salida. Se contrastaron las celdas de las 321 filas del owner; no se detectó truncamiento por pipes.
+- Texto pegado a otro bloque o 📌: contraste del contenido con su DEC de origen, punteros y reubicación declarada. La única nota «Texto reubicado» corresponde al traslado de DEC-ARCH-014#📌7 a 📌6 previsto en `omisiones.json`. No se confirmó un error adicional de asignación.
+- DEC, 📌 o letra retirada como vigente: ninguna ancla enlazada a `90-retirados.md` se desarrolla como ancla viva en G1. Todas las letras de `letras_muertas` presentes llevan su advertencia. Se revisaron las precisiones posteriores, incluidas BM, CF, CG y CK; no justifican las diferencias reportadas.
+- Omisiones de texto vivo: barrido inverso desde el log y control de todas las celdas del owner. Se distinguieron las omisiones explícitas de `omisiones.json`, los punteros a retirados y la separación de los 📌. Hallazgos: antigüedad, actor soporte (dos ubicaciones), formato PDF, renovación mensual y ausencia de mínimo. «Once filas de» → «[…] Filas de» está previsto por la adjudicación y no se reporta.
+- Sustituciones de contenido: los dos cambios de trial bloquean. La reformulación del atributo del catálogo es MENOR por pérdida de literalidad sin efecto funcional demostrado.
+- Contradicciones internas: el trial de Partner contradice el propio 📌 de G1 (línea 166: «Partner queda en cero») y la tabla de la línea 318; el evento de Turista contradice `10-corte/V4.md:257` y `:498`, que conservan el botón Empezar. Las búsquedas transversales se registraron en `G1-contraste-transversal.txt`.
+
+Muestra estratificada adicional: 48 ítems distribuidos desde el principio hasta la última línea, con DEC sin 📌, precisiones, tablas y letras del owner. Se cotejaron las líneas de contenido de sus bloques contra la fuente; la siguiente lista identifica una línea de referencia de cada ítem y su correspondencia fuente. Las diferencias de los bloques están incluidas arriba; no se interpreta la selección como aprobación semántica de las letras caducadas.
+
+| ítem | línea de referencia en G1 | fuente |
+| --- | --- | --- |
+| `dec-trial-001` | 53 | `.specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:267` |
+| `dec-trial-006` | 318 | `.specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:528` |
+| `dec-sub-004` | 634 | `.specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:765` |
+| `dec-sub-009-p4` | 1039 | `.specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:1366` |
+| `dec-sub-019-p3` | 1617 | `.specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:5875` |
+| `dec-mp-002-p4` | 2156 | `.specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:1486` |
+| `dec-mp-009-p1` | 2681 | `.specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:7500` |
+| `dec-ent-006` | 2985 | `.specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:6733` |
+| `dec-addon-004-p1` | 3378 | `.specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:3929` |
+| `dec-auth-003-p1` | 3791 | `.specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:6869` |
+| `dec-data-003` | 4163 | `.specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:4215` |
+| `dec-data-006-p2` | 4492 | `.specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:7084` |
+| `dec-data-008-p8` | 4733 | `.specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:7458` |
+| `dec-arch-004` | 5032 | `.specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:2309` |
+| `dec-arch-005` | 5191 | `.specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:2434` |
+| `dec-arch-007-p2` | 5610 | `.specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:2694` |
+| `dec-arch-013-p2` | 5969 | `.specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:7347` |
+| `dec-arch-014-p7` | 6229 | `.specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:7642` |
+| `dec-arch-017-p7` | 6667 | `.specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:8023` |
+| `dec-mig-002-p3` | 6979 | `.specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:2773` |
+| `dec-mig-005-p5` | 7375 | `.specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:6517` |
+| `dec-grant-004` | 7741 | `.specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:2067` |
+| `dec-legal-001` | 8223 | `.specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:975` |
+| `dec-test-003` | 8578 | `.specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:7186` |
+| `dec-rf-001-p1` | 9104 | `.specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:1827` |
+| `dec-rf-006-p1` | 9532 | `.specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:5502` |
+| `dec-obs-001-p2` | 9846 | `.specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:2282` |
+| `dec-meth-009` | 10356 | `.specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:3399` |
+| `dec-meth-019` | 10930 | `.specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:8116` |
+| `own-28-fase-9-vuelta-1-t1-g2-1` | 11571 | `.specs/HOS-1352-billing-verticals-redesign/docs/28-fase-9-vuelta-1/10-decisiones-del-owner.md:24` |
+| `own-28-fase-9-vuelta-1-t1-g5-4` | 11682 | `.specs/HOS-1352-billing-verticals-redesign/docs/28-fase-9-vuelta-1/10-decisiones-del-owner.md:36` |
+| `own-29-fase-8-vuelta-2-t1-r1-a` | 11861 | `.specs/HOS-1352-billing-verticals-redesign/docs/29-fase-8-vuelta-2/10-decisiones-del-owner.md:21` |
+| `own-29-fase-8-vuelta-2-t1-q-altas` | 11973 | `.specs/HOS-1352-billing-verticals-redesign/docs/29-fase-8-vuelta-2/10-decisiones-del-owner.md:33` |
+| `own-29-fase-8-vuelta-2-t1-r9-b` | 12076 | `.specs/HOS-1352-billing-verticals-redesign/docs/29-fase-8-vuelta-2/10-decisiones-del-owner.md:44` |
+| `own-30-revision-del-owner-t3-l1-b` | 12237 | `.specs/HOS-1352-billing-verticals-redesign/docs/30-revision-del-owner/10-decisiones-del-owner.md:54` |
+| `own-30-revision-del-owner-t4-l2-f1` | 12347 | `.specs/HOS-1352-billing-verticals-redesign/docs/30-revision-del-owner/10-decisiones-del-owner.md:71` |
+| `own-30-revision-del-owner-t5-l3-f` | 12449 | `.specs/HOS-1352-billing-verticals-redesign/docs/30-revision-del-owner/10-decisiones-del-owner.md:87` |
+| `own-37-fase-8-vuelta-3-t1-j` | 12563 | `.specs/HOS-1352-billing-verticals-redesign/docs/37-fase-8-vuelta-3/10-decisiones-del-owner.md:31` |
+| `own-37-fase-8-vuelta-3-t1-v` | 12686 | `.specs/HOS-1352-billing-verticals-redesign/docs/37-fase-8-vuelta-3/10-decisiones-del-owner.md:43` |
+| `own-37-fase-8-vuelta-3-t1-ag` | 12797 | `.specs/HOS-1352-billing-verticals-redesign/docs/37-fase-8-vuelta-3/10-decisiones-del-owner.md:54` |
+| `own-39-fases-6-y-7-t1-d` | 13414 | `.specs/HOS-1352-billing-verticals-redesign/docs/39-fases-6-y-7/10-decisiones-del-owner.md:22` |
+| `own-40-congelamiento-y-ci-t1-p` | 13542 | `.specs/HOS-1352-billing-verticals-redesign/docs/40-congelamiento-y-ci/10-decisiones-del-owner.md:21` |
+| `own-41-corte-del-mvp-t1-ae` | 13656 | `.specs/HOS-1352-billing-verticals-redesign/docs/41-corte-del-mvp/10-decisiones-del-owner.md:25` |
+| `own-41-corte-del-mvp-t3-aq` | 13781 | `.specs/HOS-1352-billing-verticals-redesign/docs/41-corte-del-mvp/10-decisiones-del-owner.md:60` |
+| `own-41-corte-del-mvp-t7-bb` | 13899 | `.specs/HOS-1352-billing-verticals-redesign/docs/41-corte-del-mvp/10-decisiones-del-owner.md:106` |
+| `own-41-corte-del-mvp-t9-bn` | 14015 | `.specs/HOS-1352-billing-verticals-redesign/docs/41-corte-del-mvp/10-decisiones-del-owner.md:139` |
+| `own-41-corte-del-mvp-t11-bz` | 14141 | `.specs/HOS-1352-billing-verticals-redesign/docs/41-corte-del-mvp/10-decisiones-del-owner.md:169` |
+| `own-41-corte-del-mvp-t17-ck` | 14264 | `.specs/HOS-1352-billing-verticals-redesign/docs/41-corte-del-mvp/10-decisiones-del-owner.md:234` |
+
+Alcance y evidencia: se leyeron `gen01.py`, la cabecera y las reglas de omisión, sin ejecutar los generadores. Los cotejos auxiliares son independientes del generador. Sólo se leyó dentro de V y se escribió dentro de `salidas/`; no se usaron git, trackers ni subagentes. Los skills citados por el brief están fuera de V y no se leyeron, para respetar la prohibición expresa. No se corrigió la spec.

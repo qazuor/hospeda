@@ -26,8 +26,9 @@ import { PostCategoryEnumSchema } from '../../../enums/post-category.schema.js';
  * Base schema for post queries with common filters
  * Used as foundation for specific query types
  */
-export const BasePostQueryParamsSchema =
-    WithVisibilityParamsSchema.merge(WithDateRangeParamsSchema);
+export const BasePostQueryParamsSchema = WithVisibilityParamsSchema.safeExtend(
+    WithDateRangeParamsSchema.shape
+);
 
 // ============================================================================
 // SPECIFIC QUERY INPUT SCHEMAS

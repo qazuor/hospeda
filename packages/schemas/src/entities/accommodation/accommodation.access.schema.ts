@@ -1,20 +1,15 @@
 import { z } from 'zod';
 import { I18nTextSchema } from '../../common/i18n.schema.js';
-import { ApproximateLocationSchema, CoordinatesSchema } from '../../common/location.schema.js';
+import { ApproximateLocationSchema } from '../../common/location.schema.js';
 import { BaseMediaObjectSchema } from '../../common/media.schema.js';
 import { PreferredContactEnumSchema } from '../../enums/index.js';
 import { AmenityAdminSchema, AmenityProtectedSchema } from '../amenity/amenity.access.schema.js';
 import { CityDestinationRefSchema } from '../destination/destination.refs.schema.js';
 import { FeatureAdminSchema, FeatureProtectedSchema } from '../feature/feature.access.schema.js';
 import { UserAdminSchema, UserProtectedSchema } from '../user/user.access.schema.js';
+import { AccommodationLocationReadSchema } from './accommodation.location.schema.js';
 import { AccommodationReadSlugSchema, AccommodationSchema } from './accommodation.schema.js';
-import {
-    AccommodationPriceSchema,
-    AdditionalFeesInfoSchema,
-    DiscountInfoSchema,
-    OtherAdditionalFeesSchema,
-    OtherDiscountSchema
-} from './subtypes/accommodation.price.schema.js';
+import { AccommodationPriceReadSchema } from './subtypes/accommodation.price.schema.js';
 
 // ============================================================================
 // READ⊇WRITE LENIENT SHAPES (HOS-190)
@@ -110,15 +105,6 @@ const AccommodationSocialNetworksReadSchema = z.object({
     youtube: z.string().nullish()
 });
 
-/** Location read shape — postal string fields drop min/max (coordinates keep their numeric validation; they only ever come from the map picker). */
-const AccommodationLocationReadSchema = z.object({
-    coordinates: CoordinatesSchema.optional(),
-    street: z.string().optional(),
-    number: z.string().optional(),
-    floor: z.string().optional(),
-    apartment: z.string().optional()
-});
-
 /**
  * i18n read shape (HOS-190 / BETA-186) — each locale is individually optional and
  * nullable, unlike the strict `I18nTextSchema` which requires a complete
@@ -179,60 +165,6 @@ const AccommodationAmenityReadSchema = AmenityProtectedSchema.extend(LenientCata
 const AccommodationFeatureReadSchema = FeatureProtectedSchema.extend(LenientCatalogRowFields);
 
 /**
- * Price read shape — drops `.positive()` on the nightly amount AND on every
- * nested fee/discount amount, so a legacy/"consultar precio" `0` never 500s the
- * response at ANY nesting level (the shared `PriceSchema.price` positivity is a
- * WRITE constraint asserted by an existing test, so it stays strict; the
- * relaxation is contained to this read overlay). The `.extend({ price })` on each
- * info schema overrides only the amount, preserving every fee/discount flag.
- */
-const LenientPriceAmount = z.number().optional();
-const AdditionalFeesInfoReadSchema = AdditionalFeesInfoSchema.extend({ price: LenientPriceAmount });
-const DiscountInfoReadSchema = DiscountInfoSchema.extend({ price: LenientPriceAmount });
-const AccommodationPriceReadSchema = AccommodationPriceSchema.extend({
-    price: LenientPriceAmount,
-    additionalFees: z
-        .object({
-            cleaning: AdditionalFeesInfoReadSchema.optional(),
-            tax: AdditionalFeesInfoReadSchema.optional(),
-            lateCheckout: AdditionalFeesInfoReadSchema.optional(),
-            pets: AdditionalFeesInfoReadSchema.optional(),
-            bedlinen: AdditionalFeesInfoReadSchema.optional(),
-            towels: AdditionalFeesInfoReadSchema.optional(),
-            babyCrib: AdditionalFeesInfoReadSchema.optional(),
-            babyHighChair: AdditionalFeesInfoReadSchema.optional(),
-            extraBed: AdditionalFeesInfoReadSchema.optional(),
-            securityDeposit: AdditionalFeesInfoReadSchema.optional(),
-            extraGuest: AdditionalFeesInfoReadSchema.optional(),
-            parking: AdditionalFeesInfoReadSchema.optional(),
-            earlyCheckin: AdditionalFeesInfoReadSchema.optional(),
-            lateCheckin: AdditionalFeesInfoReadSchema.optional(),
-            luggageStorage: AdditionalFeesInfoReadSchema.optional(),
-            // `name` is also relaxed (drops min2/max100, stays required) so a
-            // legacy custom fee with a short name never 500s either.
-            others: z
-                .array(
-                    OtherAdditionalFeesSchema.extend({
-                        price: LenientPriceAmount,
-                        name: z.string()
-                    })
-                )
-                .optional()
-        })
-        .optional(),
-    discounts: z
-        .object({
-            weekly: DiscountInfoReadSchema.optional(),
-            monthly: DiscountInfoReadSchema.optional(),
-            lastMinute: DiscountInfoReadSchema.optional(),
-            others: z
-                .array(OtherDiscountSchema.extend({ price: LenientPriceAmount, name: z.string() }))
-                .optional()
-        })
-        .optional()
-});
-
-/**
  * PUBLIC ACCESS SCHEMA
  *
  * Contains only the minimum data safe to expose to unauthenticated users.
@@ -250,7 +182,6 @@ export const AccommodationPublicSchema = AccommodationSchema.pick({
     // Content
     summary: true,
     description: true,
-    isFeatured: true,
     isVerified: true,
 
     // SPEC-212: I18nText translations (public-safe content fields).
@@ -276,8 +207,8 @@ export const AccommodationPublicSchema = AccommodationSchema.pick({
     averageRating: true,
     reviewsCount: true,
 
-    // Visibility
-    visibility: true,
+    // No publication state here (HOS-1641): every listing a stranger can read
+    // is PUBLISHED, so exposing it would say nothing.
 
     // SEO (public)
     seo: true,
@@ -294,6 +225,13 @@ export const AccommodationPublicSchema = AccommodationSchema.pick({
     // Extra Info (public)
     extraInfo: true
 }).extend({
+    /**
+     * Public featured state. Not a column: since HOS-1419 dropped the
+     * admin-curated `is_featured` it is derived in the public routes from
+     * `featuredByEntitlement` (`resolvePublicIsFeatured`), which itself is never
+     * exposed here. Defaults to `false` for a read that did not derive it.
+     */
+    isFeatured: z.boolean().default(false),
     /**
      * Slug — relaxed on the read side so accommodations whose slug was
      * generated before the BETA-172 truncation fix (onboarding drafts with a
@@ -318,7 +256,7 @@ export const AccommodationPublicSchema = AccommodationSchema.pick({
      * (phone/email/website only — see {@link AccommodationPublicContactInfoSchema}
      * for exactly what is included and why). Added via `.extend()`, not
      * `.pick()`, since the base `.pick()` call above deliberately omits
-     * `contactInfo` entirely (mirrors the gastronomy/experience public
+     * `contactInfo` entirely (mirrors the venue/experience public
      * schemas' "Omits: ... contactInfo (direct)" precedent) — this schema
      * re-adds a deliberately narrowed shape instead of the full one.
      */
@@ -563,13 +501,11 @@ export const AccommodationProtectedSchema = AccommodationSchema.pick({
     //     locally-composed schema is not seen.
     richDescription: true,
     richDescriptionI18n: true,
-    isFeatured: true,
-    // HOS-929: the owner's own editor needs BOTH source columns to know
-    // whether the listing is CURRENTLY featured for any reason — the addon
-    // upsell in the editor hub reads this to decide whether to show at all.
-    // Same sensitivity class as `isFeatured` (a billing-status boolean, not
-    // premium content), so it rides the same pick/omit path, including into
-    // `AccommodationProtectedCardSchema` embeds.
+    // HOS-929: the owner's own editor needs the featuring source to know
+    // whether the listing is CURRENTLY featured — the addon upsell in the
+    // editor hub reads this to decide whether to show at all. It is the only
+    // source since HOS-1419 dropped `is_featured`. A billing-status boolean,
+    // not premium content.
     featuredByEntitlement: true,
     destinationId: true,
     media: true,
@@ -577,7 +513,6 @@ export const AccommodationProtectedSchema = AccommodationSchema.pick({
     location: true,
     averageRating: true,
     reviewsCount: true,
-    visibility: true,
     seo: true,
     price: true,
     tags: true,
@@ -592,8 +527,9 @@ export const AccommodationProtectedSchema = AccommodationSchema.pick({
     // Social networks
     socialNetworks: true,
 
-    // Lifecycle (for owners)
-    lifecycleState: true,
+    // Publication state (for owners, HOS-1641): the six `PublicationStatusEnum`
+    // values, written only by the PB publication transitions.
+    publicationStatus: true,
 
     // FAQs
     faqs: true,
@@ -602,6 +538,13 @@ export const AccommodationProtectedSchema = AccommodationSchema.pick({
     createdAt: true,
     updatedAt: true
 }).extend({
+    /**
+     * Public featured state. Not a column: since HOS-1419 dropped the
+     * admin-curated `is_featured` it is derived in the public routes from
+     * `featuredByEntitlement` (`resolvePublicIsFeatured`), which itself is never
+     * exposed here. Defaults to `false` for a read that did not derive it.
+     */
+    isFeatured: z.boolean().default(false),
     /**
      * Slug — relaxed on the read side so accommodations whose slug was
      * generated before the BETA-172 truncation fix (onboarding drafts with a

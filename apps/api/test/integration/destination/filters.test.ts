@@ -12,8 +12,8 @@ describe('Destination - Filters', () => {
         app = initApp();
     });
 
-    it('supports city and country filters', async () => {
-        const res = await app.request(`${base}?city=Miami&country=US`);
+    it('supports city and state filters', async () => {
+        const res = await app.request(`${base}?city=Miami&state=Florida`);
         expect([200, 400]).toContain(res.status);
     });
 

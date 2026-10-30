@@ -1,26 +1,26 @@
 /**
  * PlanEntitlementGate — plan-aware feature gate for the admin app.
  *
- * Replaces the `@qazuor/qzpay-react` `EntitlementGate` for fields whose
- * visibility depends on the **currently-logged-in user's** plan entitlements
- * (e.g. `can_use_rich_description`, `can_embed_video`).
+ * (HOS-1416: replaced the retired qzpay-react `EntitlementGate` for fields
+ * whose visibility depends on the **currently-logged-in user's** plan
+ * entitlements — e.g. `can_use_rich_description`, `can_embed_video`.)
  *
  * Unlike `EntitlementGate`, this component does NOT require a `customerId`
  * prop or a customer wired into the `QZPayContext`. It reads entitlements
- * from `GET /api/v1/protected/users/me/entitlements` via `useMyEntitlements`
+ * from `GET /api/v1/admin/users/{id}/effective-set` via `useEffectiveSet`
  * and renders `children` or `fallback` accordingly.
  *
  * @module features/billing/PlanEntitlementGate
  */
 
-import { EntitlementKey } from '@repo/billing';
+import { EntitlementKeyEnum } from '@repo/schemas';
 import type * as React from 'react';
-import { useMyEntitlements } from '@/features/billing/use-my-entitlements';
+import { useEffectiveSet } from '@/features/billing/use-effective-set';
 import { useTranslations } from '@/hooks/use-translations';
 
 export interface PlanEntitlementGateProps {
     /** The entitlement flag that must be present to render `children`. */
-    readonly entitlementKey: EntitlementKey | string;
+    readonly entitlementKey: EntitlementKeyEnum | string;
     /** Rendered when the entitlement is present. */
     // biome-ignore lint/suspicious/noExplicitAny: React 19 ReactNode type compatibility
     readonly children: any;
@@ -56,7 +56,7 @@ export interface PlanEntitlementGateProps {
  * @example
  * ```tsx
  * <PlanEntitlementGate
- *   entitlementKey={EntitlementKey.CAN_USE_RICH_DESCRIPTION}
+ *   entitlementKey={EntitlementKeyEnum.CAN_USE_RICH_DESCRIPTION}
  *   nudgeVariant="rich-description"
  *   fieldLabel="Descripción Enriquecida"
  * >
@@ -69,12 +69,12 @@ export interface PlanEntitlementGateProps {
  * provided by the caller.
  */
 function deriveNudgeVariant(
-    key: EntitlementKey | string,
+    key: EntitlementKeyEnum | string,
     explicit: PlanEntitlementGateProps['nudgeVariant']
 ): PlanEntitlementGateProps['nudgeVariant'] {
     if (explicit !== undefined) return explicit;
-    if (key === EntitlementKey.CAN_USE_RICH_DESCRIPTION) return 'rich-description';
-    if (key === EntitlementKey.CAN_EMBED_VIDEO) return 'video';
+    if (key === EntitlementKeyEnum.CAN_USE_RICH_DESCRIPTION) return 'rich-description';
+    if (key === EntitlementKeyEnum.CAN_EMBED_VIDEO) return 'video';
     return 'generic';
 }
 
@@ -86,7 +86,7 @@ export function PlanEntitlementGate({
     nudgeVariant,
     upgradeUrl
 }: PlanEntitlementGateProps): React.ReactNode {
-    const { has, isLoading, error } = useMyEntitlements();
+    const { has, isLoading, error } = useEffectiveSet();
     const { t } = useTranslations();
 
     const resolvedNudgeVariant = deriveNudgeVariant(entitlementKey, nudgeVariant);

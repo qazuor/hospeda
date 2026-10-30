@@ -2,7 +2,7 @@
  * @file experience-consolidated.config.ts
  * Consolidated section configuration for the experience entity (SPEC-240 T-028).
  *
- * Assembles the shared commerce sections (identity + operational) and injects
+ * Assembles the shared listing sections (identity + operational) and injects
  * an experience-specific section in between that covers:
  *   - type (ExperienceTypeEnum SELECT)
  *   - priceFrom (NUMBER, optional — base price in centavos)
@@ -33,10 +33,7 @@ import type {
     ConsolidatedEntityConfig,
     ConsolidatedSectionConfig
 } from '@/features/accommodations/types/consolidated-config.types';
-import {
-    createCommerceIdentitySection,
-    createCommerceOperationalSection
-} from '@/features/commerce';
+import { createListingIdentitySection, createListingOperationalSection } from '@/features/listing';
 
 // ---------------------------------------------------------------------------
 // Experience-specific field options
@@ -92,8 +89,8 @@ function createExperienceSpecificSection(): ConsolidatedSectionConfig {
         layout: LayoutTypeEnum.GRID,
         modes: ['view', 'edit', 'create'],
         permissions: {
-            view: [PermissionEnum.COMMERCE_VIEW_ALL],
-            edit: [PermissionEnum.COMMERCE_EDIT_ALL]
+            view: [PermissionEnum.EXPERIENCE_VIEW_ALL],
+            edit: [PermissionEnum.EXPERIENCE_EDIT_ALL]
         },
         fields: [
             {
@@ -105,8 +102,8 @@ function createExperienceSpecificSection(): ConsolidatedSectionConfig {
                 description: 'Categoría de la actividad turística',
                 placeholder: 'Seleccioná el tipo…',
                 permissions: {
-                    view: [PermissionEnum.COMMERCE_VIEW_ALL],
-                    edit: [PermissionEnum.COMMERCE_EDIT_ALL]
+                    view: [PermissionEnum.EXPERIENCE_VIEW_ALL],
+                    edit: [PermissionEnum.EXPERIENCE_EDIT_ALL]
                 },
                 typeConfig: {
                     // TYPE-WORKAROUND: option constant is a readonly tuple; SelectFieldConfig expects a mutable array.
@@ -125,8 +122,8 @@ function createExperienceSpecificSection(): ConsolidatedSectionConfig {
                 description: 'Cómo se cobra la experiencia',
                 placeholder: 'Seleccioná la unidad…',
                 permissions: {
-                    view: [PermissionEnum.COMMERCE_VIEW_ALL],
-                    edit: [PermissionEnum.COMMERCE_EDIT_ALL]
+                    view: [PermissionEnum.EXPERIENCE_VIEW_ALL],
+                    edit: [PermissionEnum.EXPERIENCE_EDIT_ALL]
                 },
                 typeConfig: {
                     // TYPE-WORKAROUND: option constant is a readonly tuple; SelectFieldConfig expects a mutable array.
@@ -146,8 +143,8 @@ function createExperienceSpecificSection(): ConsolidatedSectionConfig {
                     'Precio en centavos (ej: 150000 = $1500,00). Ignorado si "Consultar precio" está activo.',
                 placeholder: '0',
                 permissions: {
-                    view: [PermissionEnum.COMMERCE_VIEW_ALL],
-                    edit: [PermissionEnum.COMMERCE_EDIT_ALL]
+                    view: [PermissionEnum.EXPERIENCE_VIEW_ALL],
+                    edit: [PermissionEnum.EXPERIENCE_EDIT_ALL]
                 },
                 typeConfig: {
                     min: 0,
@@ -162,8 +159,8 @@ function createExperienceSpecificSection(): ConsolidatedSectionConfig {
                 label: 'Consultar precio',
                 description: 'Cuando está activo muestra "Consultar precio" en lugar del monto.',
                 permissions: {
-                    view: [PermissionEnum.COMMERCE_VIEW_ALL],
-                    edit: [PermissionEnum.COMMERCE_EDIT_ALL]
+                    view: [PermissionEnum.EXPERIENCE_VIEW_ALL],
+                    edit: [PermissionEnum.EXPERIENCE_EDIT_ALL]
                 },
                 typeConfig: {}
             }
@@ -191,7 +188,7 @@ function createExperienceSpecificSection(): ConsolidatedSectionConfig {
  * meeting point in words and never pin it. Null is "no coordinate", not an
  * error — the columns are nullable all the way down.
  *
- * The permissions are the ordinary commerce ones. There is NO entitlement gate
+ * The permissions are the ordinary listing ones. There is NO entitlement gate
  * here and there must not be one: the owner decided (2026-09-01) that the
  * meeting point is ficha data available from the basic tier. Only the map that
  * draws these coordinates is paid (HOS-1049).
@@ -206,8 +203,8 @@ function createMeetingPointSection(): ConsolidatedSectionConfig {
         layout: LayoutTypeEnum.GRID,
         modes: ['view', 'edit', 'create'],
         permissions: {
-            view: [PermissionEnum.COMMERCE_VIEW_ALL],
-            edit: [PermissionEnum.COMMERCE_EDIT_ALL]
+            view: [PermissionEnum.EXPERIENCE_VIEW_ALL],
+            edit: [PermissionEnum.EXPERIENCE_EDIT_ALL]
         },
         fields: [
             {
@@ -220,8 +217,8 @@ function createMeetingPointSection(): ConsolidatedSectionConfig {
                     'Dirección o referencia del lugar donde arranca la experiencia. Puede ser un punto de referencia y no una calle.',
                 placeholder: 'Ej: Muelle 3 del puerto, frente a la caseta azul',
                 permissions: {
-                    view: [PermissionEnum.COMMERCE_VIEW_ALL],
-                    edit: [PermissionEnum.COMMERCE_EDIT_ALL]
+                    view: [PermissionEnum.EXPERIENCE_VIEW_ALL],
+                    edit: [PermissionEnum.EXPERIENCE_EDIT_ALL]
                 },
                 typeConfig: {}
             },
@@ -234,8 +231,8 @@ function createMeetingPointSection(): ConsolidatedSectionConfig {
                 description: 'Latitud en grados decimales (WGS84). Opcional.',
                 placeholder: '-32.4825',
                 permissions: {
-                    view: [PermissionEnum.COMMERCE_VIEW_ALL],
-                    edit: [PermissionEnum.COMMERCE_EDIT_ALL]
+                    view: [PermissionEnum.EXPERIENCE_VIEW_ALL],
+                    edit: [PermissionEnum.EXPERIENCE_EDIT_ALL]
                 },
                 typeConfig: {
                     min: -90,
@@ -252,8 +249,8 @@ function createMeetingPointSection(): ConsolidatedSectionConfig {
                 description: 'Longitud en grados decimales (WGS84). Opcional.',
                 placeholder: '-58.2333',
                 permissions: {
-                    view: [PermissionEnum.COMMERCE_VIEW_ALL],
-                    edit: [PermissionEnum.COMMERCE_EDIT_ALL]
+                    view: [PermissionEnum.EXPERIENCE_VIEW_ALL],
+                    edit: [PermissionEnum.EXPERIENCE_EDIT_ALL]
                 },
                 typeConfig: {
                     min: -180,
@@ -291,7 +288,7 @@ function createMeetingPointSection(): ConsolidatedSectionConfig {
  * owner editor, because staff correcting a value are reading the stored number
  * and a split control would hide it. The hint says so.
  *
- * The permissions are the ordinary commerce ones. There is NO entitlement gate
+ * The permissions are the ordinary listing ones. There is NO entitlement gate
  * here and there must not be one: the owner decided (2026-09-01) that all of
  * this is ficha data available from the basic tier.
  *
@@ -305,8 +302,8 @@ function createPracticalDetailsSection(): ConsolidatedSectionConfig {
         layout: LayoutTypeEnum.GRID,
         modes: ['view', 'edit', 'create'],
         permissions: {
-            view: [PermissionEnum.COMMERCE_VIEW_ALL],
-            edit: [PermissionEnum.COMMERCE_EDIT_ALL]
+            view: [PermissionEnum.EXPERIENCE_VIEW_ALL],
+            edit: [PermissionEnum.EXPERIENCE_EDIT_ALL]
         },
         fields: [
             {
@@ -319,8 +316,8 @@ function createPracticalDetailsSection(): ConsolidatedSectionConfig {
                     'Cuánto dura la experiencia, en minutos. 150 son dos horas y media. Vacío = sin declarar.',
                 placeholder: '150',
                 permissions: {
-                    view: [PermissionEnum.COMMERCE_VIEW_ALL],
-                    edit: [PermissionEnum.COMMERCE_EDIT_ALL]
+                    view: [PermissionEnum.EXPERIENCE_VIEW_ALL],
+                    edit: [PermissionEnum.EXPERIENCE_EDIT_ALL]
                 },
                 typeConfig: {
                     min: 1,
@@ -339,8 +336,8 @@ function createPracticalDetailsSection(): ConsolidatedSectionConfig {
                 placeholder:
                     'Si hay alerta meteorológica o baja el río, avisamos con 12 horas de anticipación y reprogramamos sin cargo.',
                 permissions: {
-                    view: [PermissionEnum.COMMERCE_VIEW_ALL],
-                    edit: [PermissionEnum.COMMERCE_EDIT_ALL]
+                    view: [PermissionEnum.EXPERIENCE_VIEW_ALL],
+                    edit: [PermissionEnum.EXPERIENCE_EDIT_ALL]
                 },
                 typeConfig: {}
             },
@@ -353,8 +350,8 @@ function createPracticalDetailsSection(): ConsolidatedSectionConfig {
                 description:
                     'Cuando está activo, la ficha pública muestra una invitación a consultar por grupos. No publica tarifario.',
                 permissions: {
-                    view: [PermissionEnum.COMMERCE_VIEW_ALL],
-                    edit: [PermissionEnum.COMMERCE_EDIT_ALL]
+                    view: [PermissionEnum.EXPERIENCE_VIEW_ALL],
+                    edit: [PermissionEnum.EXPERIENCE_EDIT_ALL]
                 },
                 typeConfig: {}
             }
@@ -370,11 +367,11 @@ function createPracticalDetailsSection(): ConsolidatedSectionConfig {
  * Creates the complete consolidated configuration for the experience entity.
  *
  * Section order:
- *  1. Commerce identity section (shared — name, slug, summary, description, …)
+ *  1. Listing identity section (shared — name, slug, summary, description, …)
  *  2. Experience-specific section (type, priceUnit, priceFrom, isPriceOnRequest)
  *  3. Meeting-point section (HOS-1048 — meetingPoint + optional lat/long)
  *  4. Practical-details section (HOS-898 / HOS-1047 / HOS-1056)
- *  5. Commerce operational section (shared — contact, social, media, hours, …)
+ *  5. Listing operational section (shared — contact, social, media, hours, …)
  *
  * Used by `EntityCreatePageBase` (create flow) and `EntityPageBase`
  * (view/edit flow).
@@ -386,11 +383,11 @@ export const createExperienceConsolidatedConfig = (
     t: ReturnType<typeof useTranslations>['t']
 ): ConsolidatedEntityConfig => ({
     sections: [
-        createCommerceIdentitySection(),
+        createListingIdentitySection('experience'),
         createExperienceSpecificSection(),
         createMeetingPointSection(),
         createPracticalDetailsSection(),
-        createCommerceOperationalSection()
+        createListingOperationalSection('experience')
     ],
     metadata: {
         title: t('admin-entities.entities.experience.singular'),

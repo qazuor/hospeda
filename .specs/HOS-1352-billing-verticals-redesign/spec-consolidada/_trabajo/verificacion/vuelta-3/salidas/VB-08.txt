@@ -1,0 +1,19 @@
+# VB-08 · spec → fuente · 10-corte/B1.md 10-corte/B2.md 10-corte/B3.md
+
+## Hallazgos
+
+10-corte/B1.md:428 · «pausar y reanudar funcionan (`PS-1`, `PS-3`, `PS-5`), y **la auto-reanudación existe** (`PS-4`), pero el reloj es nuestro» · contradice .specs/HOS-1354-billing-cobro-y-proveedor/docs/06-proveedor.md:69 («pausar y reanudar funcionan (`PS-1`, `PS-3`, `PS-5`), pero **no hay auto-reanudación** (`PS-4`): el reloj es nuestro»); también .specs/HOS-1352-billing-verticals-redesign/docs/06-mp-validation-matrix.md:211 (`PS-4` `NOT_SUPPORTED`, «No existe la auto-reanudación») y, dentro de la spec, B1.md:270 y la mentira M12 («una pausa no se reanuda sola», 20-testing.md:514). El valor medido está invertido: un implementador del adaptador o del falso puede modelar una reanudación automática del proveedor que no existe · BLOQUEA
+
+10-corte/B3.md:1047 · «Un aviso del proveedor que llega más de diez minutos después de su `date_created` se descarta sin guardarse en `provider_notification`: se lo trata como una repetición.» · sin soporte (ninguna fuente habla de una ventana de diez minutos ni de descartar avisos tardíos); contradice .specs/HOS-1354-billing-cobro-y-proveedor/docs/02-modelo-de-datos.md:1242 («cada entrega que llega por cualquiera de los dos canales, tal cual […] Una fila por entrega: un reintento del proveedor es otra fila […] Sin `UNIQUE`: un duplicado es dato para la revisión, no un error»), .specs/HOS-1354-billing-cobro-y-proveedor/docs/03-maquinas-de-estado.md (§10.1: un aviso viejo se descarta por `version`, no por edad) y la mentira M6 («avisa tarde, repetido o nunca», 20-testing.md:512). Contradice además, dentro de la spec, AC:B3:21 (B3.md:475-485, cada entrega se guarda) y AC:B3:18 (descarte por `version`). Es una regla inventada: un receptor construido así pierde entregas tardías legítimas y la revisión de HOS-1399 · BLOQUEA
+
+10-corte/B3.md:450-451 · «y una pausa dada desde la cuenta del pagador, que tampoco se distingue, se trata como la del proveedor por mora.» · más débil que .specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:5921-5924 (📌 del 2026-09-29, `EX-53`: «el pagador no puede pausar desde su cuenta de Mercado Pago. Un `paused` sin un `PUT` nuestro es, entonces, la mora […] y la pausa deja de estar pendiente en el 📌 anterior (N8)»). Se apoya en el 📌 N8 (01-decision-log.md:1362-1365), que ese 📌 posterior superó: la pausa del pagador no existe. El efecto que construye (`paused` sin `PUT` nuestro → `S6` por mora) es el mismo · MENOR
+
+10-corte/B3.md:617-618 · «cada fila es de su `user + vertical` y sigue su propia máquina […] y ninguna transición de una lee el estado de la otra.» · más fuerte que .specs/HOS-1352-billing-verticals-redesign/docs/nucleo/04-invariantes.md:60 (invariante 9: «verticales simultáneas en estados distintos […] todo cuelga de `user + vertical`», sin prohibir lecturas cruzadas). Es además una contradicción interna con AC:B3:27/AC:B3:28 de la misma pieza: `S2` del plan cancela la suscripción de Turista VIP, que es de otra vertical, y la guarda de `S1` lee si el plan vigente lo hereda (03-maquinas-de-estado.md:151-152). El escenario del AC (Alojamiento y Gastronomía) no cambia lo que se construye · MENOR
+
+## Resumen
+
+| archivo | líneas recorridas | afirmaciones normativas revisadas (aprox.) | BLOQUEA | MENOR |
+|---|---|---|---|---|
+| 10-corte/B1.md | 1–978 | 150 | 1 | 0 |
+| 10-corte/B2.md | 1–553 | 75 | 0 | 0 |
+| 10-corte/B3.md | 1–1455 | 230 | 1 | 2 |

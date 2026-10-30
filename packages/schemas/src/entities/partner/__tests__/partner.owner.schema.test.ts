@@ -1,6 +1,5 @@
 import { describe, expect, it } from 'vitest';
 import { PartnerContentReviewStateEnum } from '../../../enums/partner-content-review-state.enum.js';
-import { PartnerTierEnum } from '../../../enums/partner-tier.enum.js';
 import { PartnerTypeEnum } from '../../../enums/partner-type.enum.js';
 import {
     PARTNER_OWNER_FORBIDDEN_FIELDS,
@@ -14,13 +13,9 @@ const smuggled: Record<string, unknown> = {
     name: 'Renamed By Owner',
     slug: 'renamed-by-owner',
     type: PartnerTypeEnum.NGO,
-    tier: PartnerTierEnum.GOLD,
-    planId: '00000000-0000-4000-a000-000000000002',
-    subscriptionId: '00000000-0000-4000-a000-000000000003',
-    subscriptionStatus: 'active',
     lifecycleState: 'ACTIVE',
-    startsAt: new Date().toISOString(),
-    endsAt: new Date().toISOString(),
+    presenceModerated: true,
+    claimSecretHash: 'hashed-one-time-secret',
     ownerUserId: '00000000-0000-4000-a000-000000000004',
     analytics: { impressions: 999 },
     pendingLogoUrl: 'https://cdn.example.com/sneaky.png',
@@ -32,8 +27,7 @@ const smuggled: Record<string, unknown> = {
     contentApprovedById: '00000000-0000-4000-a000-000000000005',
     revokedAt: new Date().toISOString(),
     revokedById: '00000000-0000-4000-a000-000000000006',
-    revokeReason: 'sneaky',
-    unpaidNoticeSentAt: new Date().toISOString()
+    revokeReason: 'sneaky'
 };
 
 describe('PartnerOwnerUpdateSchema — server-side stripping', () => {

@@ -9,10 +9,12 @@ import {
     type AccommodationFaqUpdateInput,
     AccommodationIdSchema,
     FaqWithChannelVisibilityUpdatePayloadSchema,
-    type FaqWithChannelVisibilityUpdatePayloadType
+    type FaqWithChannelVisibilityUpdatePayloadType,
+    VerticalEnum
 } from '@repo/schemas';
 import { AccommodationService, ServiceError } from '@repo/service-core';
 import type { Context } from 'hono';
+import { runListingContentCall } from '../../../middlewares/listing-access';
 import { getActorFromContext } from '../../../utils/actor';
 import { apiLogger } from '../../../utils/logger';
 import { createAdminRoute } from '../../../utils/route-factory';
@@ -30,6 +32,7 @@ const accommodationService = new AccommodationService({ logger: apiLogger });
  */
 export const adminUpdateFaqRoute = createAdminRoute({
     method: 'put',
+    listingAccess: { vertical: VerticalEnum.ACCOMMODATION, operation: 'EDIT', idParam: 'id' },
     path: '/{id}/faqs/{faqId}',
     summary: 'Update FAQ in accommodation (admin)',
     description:
@@ -54,7 +57,10 @@ export const adminUpdateFaqRoute = createAdminRoute({
             faq: body as FaqWithChannelVisibilityUpdatePayloadType
         };
 
-        const result = await accommodationService.updateFaq(actor, input);
+        const result = await runListingContentCall({
+            ctx,
+            run: () => accommodationService.updateFaq(actor, input)
+        });
 
         if (result.error) {
             throw new ServiceError(result.error.code, result.error.message);

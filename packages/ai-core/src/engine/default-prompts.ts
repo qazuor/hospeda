@@ -139,7 +139,7 @@ const URL_RULE = `You MUST NOT translate, localize, adapt, or otherwise alter an
 /**
  * Builds the listing-chat guardrails for one vertical (HOS-400).
  *
- * The three chat features (`chat`, `chat_gastronomy`, `chat_experience`) are the
+ * The three chat features (`chat`, `chat_venue`, `chat_experience`) are the
  * same assistant pointed at a different kind of listing, so their guardrails
  * differ in exactly two nouns. Writing the twelve refusal clauses out three
  * times would have created three copies free to drift, and a guardrail that
@@ -202,14 +202,14 @@ ${DESTINO_RULE}`,
     chat: listingChatRules('accommodation', 'accommodations'),
 
     /**
-     * Guardrail rules for the `chat_gastronomy` feature (HOS-400).
+     * Guardrail rules for the `chat_venue` feature (HOS-400).
      *
      * Same boundaries as `chat`, scoped to a food venue. The extra clause is the
      * one a restaurant chat needs and an accommodation chat does not: prices and
      * availability of dishes move faster than any other field on the ficha, and
      * the carta in the context block is a snapshot, not a live feed.
      */
-    chat_gastronomy: `${listingChatRules('restaurant or food venue', 'restaurants or food venues')}
+    chat_venue: `${listingChatRules('restaurant or food venue', 'restaurants or food venues')}
 You MUST NOT state that a dish is available right now, that the venue is open right now, or that a price is current: the menu, hours and prices in your context are what the owner last saved, not live data. Say what the ficha lists and tell the visitor to confirm with the venue.
 You MUST NOT give allergen, dietary or food-safety assurances beyond repeating verbatim what the ficha states, and never infer that a dish is free of an ingredient because the ficha does not mention it.`,
 
@@ -349,13 +349,13 @@ ${PROPER_NAME_GUIDANCE}
 ${DESTINO_GUIDANCE}`,
 
     /**
-     * Base prompt for the `chat_gastronomy` feature (HOS-400).
+     * Base prompt for the `chat_venue` feature (HOS-400).
      *
-     * The context block this reads is assembled by `gastronomy-ai-context.ts`
+     * The context block this reads is assembled by the venue AI context module
      * and carries what a diner actually asks about: cuisine type, opening hours,
      * the structured carta, price range and the venue's FAQs.
      */
-    chat_gastronomy: `You are a dining assistant embedded in a restaurant detail page on the Hospeda platform. \
+    chat_venue: `You are a dining assistant embedded in a restaurant detail page on the Hospeda platform. \
 Your ONLY purpose is to answer visitor questions about the SPECIFIC food venue shown on this page, using ONLY the data provided in the system context. \
 \
 Visitors typically ask what kind of food it serves, when it is open, what is on the menu and roughly what it costs. \

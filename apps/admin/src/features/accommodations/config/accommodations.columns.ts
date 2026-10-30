@@ -1,11 +1,6 @@
 import type { TranslationKey } from '@repo/i18n';
 import { PermissionEnum } from '@repo/schemas';
 import { createElement } from 'react';
-import { InlineFeaturedCell } from '@/components/entity-list/InlineFeaturedCell';
-import {
-    type InlineStateOption,
-    InlineStateSelectCell
-} from '@/components/entity-list/InlineStateSelectCell';
 import { InlineVerifiedCell } from '@/components/entity-list/InlineVerifiedCell';
 import { RatingCell, type RatingDimension } from '@/components/entity-list/RatingCell';
 import { ReviewsCell } from '@/components/entity-list/ReviewsCell';
@@ -16,14 +11,9 @@ import type {
 } from '@/components/entity-list/types';
 import { Views30dCell } from '@/components/entity-list/Views30dCell';
 import { BadgeColor, ColumnType, EntityType } from '@/components/table/DataTable';
-import { CONTENT_MODERATION_OPTIONS } from '@/features/content/config/content-state-options';
-import type { ModerationStatePatch } from '@/features/content/hooks/useContentStateMutations';
+import { getPublicationStatusBadgeOptions } from '@/features/listing/config/publication-status-options';
 import { AccommodationTypeBadge } from '../components/AccommodationTypeBadge';
-import {
-    ACCOMMODATION_STATE_MUTATIONS,
-    useAccommodationQuery,
-    useUpdateAccommodationMutation
-} from '../hooks/useAccommodationQuery';
+import { useAccommodationQuery } from '../hooks/useAccommodationQuery';
 import type { Accommodation } from '../schemas/accommodations.schemas';
 
 /** Accommodation rating breakdown dimensions (6), in display order. */
@@ -34,66 +24,6 @@ const ACCOMMODATION_RATING_DIMENSIONS: ReadonlyArray<RatingDimension> = [
     { key: 'accuracy', label: 'review.form.ratingAspects.accuracy' },
     { key: 'communication', label: 'review.form.ratingAspects.communication' },
     { key: 'location', label: 'review.form.ratingAspects.location' }
-];
-
-/**
- * Visibility options (value + localized label + badge color). Single source for
- * both the read-only badge fallback and the inline-edit dropdown.
- */
-const VISIBILITY_OPTIONS = (t: ColumnTFunction): ReadonlyArray<InlineStateOption> => [
-    {
-        value: 'PUBLIC',
-        label: t('admin-entities.states.visibility.public'),
-        color: BadgeColor.PURPLE
-    },
-    {
-        value: 'PRIVATE',
-        label: t('admin-entities.states.visibility.private'),
-        color: BadgeColor.CYAN
-    },
-    {
-        value: 'RESTRICTED',
-        label: t('admin-entities.states.visibility.restricted'),
-        color: BadgeColor.PINK
-    }
-];
-
-/** Lifecycle-state options. ARCHIVED is the destructive transition. */
-const LIFECYCLE_OPTIONS = (t: ColumnTFunction): ReadonlyArray<InlineStateOption> => [
-    {
-        value: 'DRAFT',
-        label: t('admin-entities.states.lifecycle.draft'),
-        color: BadgeColor.GRAY
-    },
-    {
-        value: 'ACTIVE',
-        label: t('admin-entities.states.lifecycle.active'),
-        color: BadgeColor.GREEN
-    },
-    {
-        value: 'ARCHIVED',
-        label: t('admin-entities.states.lifecycle.archived'),
-        color: BadgeColor.ORANGE
-    }
-];
-
-/** Moderation-state options. REJECTED is the destructive transition. */
-const MODERATION_OPTIONS = (t: ColumnTFunction): ReadonlyArray<InlineStateOption> => [
-    {
-        value: 'PENDING',
-        label: t('admin-entities.states.moderation.pending'),
-        color: BadgeColor.YELLOW
-    },
-    {
-        value: 'APPROVED',
-        label: t('admin-entities.states.moderation.approved'),
-        color: BadgeColor.GREEN
-    },
-    {
-        value: 'REJECTED',
-        label: t('admin-entities.states.moderation.rejected'),
-        color: BadgeColor.RED
-    }
 ];
 
 /**
@@ -222,22 +152,6 @@ export const createAccommodationsColumns = (
                 })
         },
         {
-            id: 'isFeatured',
-            header: t('admin-entities.columns.featured'),
-            accessorKey: 'isFeatured',
-            enableSorting: true,
-            columnType: ColumnType.WIDGET,
-            widgetRenderer: (row) =>
-                createElement(InlineFeaturedCell, {
-                    entityId: row.id,
-                    entityName: row.name,
-                    entityLabelKey: 'admin-entities.entities.accommodation.singular',
-                    checked: Boolean(row.isFeatured),
-                    permission: PermissionEnum.ACCOMMODATION_FEATURED_TOGGLE,
-                    useUpdateMutation: useUpdateAccommodationMutation
-                })
-        },
-        {
             id: 'isVerified',
             header: t('admin-entities.columns.verified'),
             accessorKey: 'isVerified',
@@ -252,99 +166,16 @@ export const createAccommodationsColumns = (
                 })
         },
         {
-            id: 'visibility',
-            header: t('admin-entities.columns.visibility'),
-            accessorKey: 'visibility',
-            enableSorting: true,
-            columnType: ColumnType.WIDGET,
-            widgetRenderer: (row) =>
-                createElement(InlineStateSelectCell, {
-                    entityId: row.id,
-                    entityName: row.name,
-                    entityLabelKey: 'admin-entities.entities.accommodation.singular',
-                    field: 'visibility',
-                    currentValue: row.visibility,
-                    successMessageKey: 'admin-entities.messages.visibilityChanged',
-                    options: VISIBILITY_OPTIONS(t),
-                    permission: PermissionEnum.ACCOMMODATION_VISIBILITY_CHANGE,
-                    useUpdateMutation: useUpdateAccommodationMutation
-                })
-        },
-        {
-            id: 'lifecycleState',
+            // HOS-1641: ONE read-only state column. `visibility`, `lifecycleState`
+            // and `moderationState` no longer exist on a listing, and the panel
+            // does not write `publicationStatus` inline: only the publication
+            // transitions (PB1-PB13) do. Moderation is `POST /:id/moderate`.
+            id: 'publicationStatus',
             header: t('admin-entities.columns.status'),
-            accessorKey: 'lifecycleState',
+            accessorKey: 'publicationStatus',
             enableSorting: true,
-            columnType: ColumnType.WIDGET,
-            widgetRenderer: (row) =>
-                createElement(InlineStateSelectCell, {
-                    entityId: row.id,
-                    entityName: row.name,
-                    entityLabelKey: 'admin-entities.entities.accommodation.singular',
-                    field: 'lifecycleState',
-                    currentValue: row.lifecycleState,
-                    successMessageKey: 'admin-entities.messages.stateChanged',
-                    options: LIFECYCLE_OPTIONS(t),
-                    permission: PermissionEnum.ACCOMMODATION_LIFECYCLE_CHANGE,
-                    useUpdateMutation: useUpdateAccommodationMutation,
-                    confirmValues: ['ARCHIVED'],
-                    confirmCopyKey: 'archive'
-                })
-        },
-        {
-            // H-102: until this column existed there was no way to approve a
-            // listing from anywhere. `ACCOMMODATION_MODERATION_CHANGE` sat in the
-            // enum and was granted in the seed, read by nothing, while
-            // `ModerationAggregationService` counted pending accommodations for
-            // the admin dashboard — a queue that could only grow. Mirrors the
-            // equivalent column on posts and events.
-            //
-            // Writes through `ACCOMMODATION_STATE_MUTATIONS`, NOT the generic
-            // update: moderation has its own endpoint and its own permission, so
-            // routing it through the generic PATCH would put the verdict back
-            // behind plain ACCOMMODATION_UPDATE.
-            id: 'moderationState',
-            header: t('admin-entities.columns.moderation'),
-            accessorKey: 'moderationState',
-            enableSorting: true,
-            columnType: ColumnType.WIDGET,
-            startVisibleOnTable: false,
-            startVisibleOnGrid: false,
-            widgetRenderer: (row) =>
-                createElement(InlineStateSelectCell<ModerationStatePatch>, {
-                    entityId: row.id,
-                    entityName: row.name,
-                    entityLabelKey: 'admin-entities.entities.accommodation.singular',
-                    field: 'moderationState',
-                    currentValue: row.moderationState,
-                    successMessageKey: 'admin-entities.messages.moderationChanged',
-                    options: CONTENT_MODERATION_OPTIONS(t),
-                    permission: PermissionEnum.ACCOMMODATION_MODERATION_CHANGE,
-                    useUpdateMutation: ACCOMMODATION_STATE_MUTATIONS.useModerateMutation,
-                    confirmValues: ['REJECTED'],
-                    confirmCopyKey: 'reject'
-                })
-        },
-        {
-            id: 'moderationState',
-            header: t('admin-entities.columns.moderation'),
-            accessorKey: 'moderationState',
-            enableSorting: true,
-            columnType: ColumnType.WIDGET,
-            widgetRenderer: (row) =>
-                createElement(InlineStateSelectCell, {
-                    entityId: row.id,
-                    entityName: row.name,
-                    entityLabelKey: 'admin-entities.entities.accommodation.singular',
-                    field: 'moderationState',
-                    currentValue: row.moderationState,
-                    successMessageKey: 'admin-entities.messages.moderationChanged',
-                    options: MODERATION_OPTIONS(t),
-                    permission: PermissionEnum.ACCOMMODATION_MODERATION_CHANGE,
-                    useUpdateMutation: useUpdateAccommodationMutation,
-                    confirmValues: ['REJECTED'],
-                    confirmCopyKey: 'reject'
-                })
+            columnType: ColumnType.BADGE,
+            badgeOptions: getPublicationStatusBadgeOptions({ t })
         },
         {
             id: 'createdAt',

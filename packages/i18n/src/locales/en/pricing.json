@@ -4,25 +4,6 @@
     "recommended": "Recommended",
     "trial_one": "{{count}} day free trial",
     "trial_other": "{{count}} days free trial",
-    "trialNotEligible": "No trial period",
-    "trialWarning": {
-        "title": "You are about to lose your free trial",
-        "body_one": "You have {{count}} day of free trial left. If you subscribe now, you lose it.",
-        "body_other": "You have {{count}} days of free trial left. If you subscribe now, you lose them.",
-        "bodyUnknown": "You may have a free trial running. If you subscribe now, you lose it.",
-        "immediateCharge": "You are charged straight away, not when the trial ends.",
-        "confirm": "Subscribe anyway",
-        "cancel": "Keep my trial"
-    },
-    "trialBanner": {
-        "message_one": "Your free trial is still running: {{count}} day left.",
-        "message_other": "Your free trial is still running: {{count}} days left.",
-        "hint": "If you subscribe now, you are charged straight away and lose the days you have left."
-    },
-    "touristVipHeld": {
-        "cta": "You already have these benefits",
-        "note": "Your active subscription already includes every tourist VIP benefit."
-    },
     "includesEverything": "Everything in {plan}, plus:",
     "includesAll": "This plan includes:",
     "limitsLabel": "This plan's limits",
@@ -32,9 +13,9 @@
         "default": {
             "owner": "anyone listing their place on Hospeda",
             "tourist": "anyone travelling around the Litoral who wants more out of the platform",
-            "gastronomy": "owners of a food business who want to be found",
             "experience": "people who run outings and activities for visitors",
-            "partner": "institutions and businesses looking to partner with Hospeda"
+            "partner": "institutions and businesses looking to partner with Hospeda",
+            "venue": "owners of a food business who want to be found"
         },
         "plan": {
             "owner-basico": "someone renting out a single property who is just getting started",
@@ -42,9 +23,9 @@
             "owner-premium": "someone who makes a living from renting and needs every tool and the widest reach",
             "tourist-free": "someone starting to browse places to stay who wants to save a few favourites",
             "tourist-vip": "someone who travels often and wants every benefit plus direct contact with the host",
-            "gastronomy-basico": "someone listing their venue for the first time, to get on the map",
-            "gastronomy-pro": "someone with regulars who wants the menu always up to date",
-            "gastronomy-premium": "someone running a venue with a multilingual menu and constant service",
+            "venue-basico": "someone listing their venue for the first time, to get on the map",
+            "venue-pro": "someone with regulars who wants the menu always up to date",
+            "venue-premium": "someone running a venue with a multilingual menu and constant service",
             "experience-basico": "someone starting to offer outings and looking to get known",
             "experience-pro": "someone with frequent visitors who needs to explain how to get there",
             "experience-premium": "someone who lives off outings and wants certificates and full support",
@@ -58,6 +39,7 @@
     "baseHighlightText": "Everything essential to begin, no commitment.",
     "group": {
         "tourist": "All tourist features",
+        "touristVip": "Includes every Tourist VIP benefit",
         "ai": "AI suite: text, translation, import and chat"
     },
     "features": {
@@ -79,15 +61,12 @@
         "year": "/year"
     },
     "monthlyOnly": "Monthly plan only",
-    "promoEntry": {
-        "label": "Have a discount code? You'll be able to use it on whichever plan you pick."
-    },
     "index": {
         "title": "Hospeda plans",
         "description": "Pick the audience you belong to and see the plans built for you.",
         "tagline": "Plans and pricing",
         "heading": "A plan for every audience",
-        "subtitle": "There are five ways to join Hospeda. Pick yours and see what each one includes.",
+        "subtitle": "There are four ways to join Hospeda. Pick yours and see what each one includes.",
         "cardsHeading": "Choose your audience",
         "highlightsLabel": "What you get",
         "from": "From {{price}}",
@@ -114,10 +93,10 @@
                     "item3": "Compare places to stay and write your own reviews."
                 }
             },
-            "gastronomy": {
-                "title": "List my food business",
+            "venue": {
+                "title": "List my venue on Food & nightlife",
                 "audience": "For restaurants, grills, bakeries, food trucks and any food business that wants to appear in the guide.",
-                "cta": "See gastronomy plans",
+                "cta": "See Food & nightlife plans",
                 "highlights": {
                     "item1": "A listing with photos, menu, opening hours and contact details.",
                     "item2": "Show up in the dining guide travellers browse.",
@@ -132,16 +111,6 @@
                     "item1": "Publish tours, outings and activities with photos and schedules.",
                     "item2": "Appear among the experiences travellers look for in the Litoral.",
                     "item3": "One fixed monthly amount: no booking charges you a separate commission."
-                }
-            },
-            "partner": {
-                "title": "Become a Hospeda partner",
-                "audience": "For brands and businesses that want visibility across the platform.",
-                "cta": "Explore the partner programme",
-                "highlights": {
-                    "item1": "Brand presence in Hospeda's partner carousel.",
-                    "item2": "Joint visibility in our campaigns and outreach channels.",
-                    "item3": "Tailored commercial terms depending on the partnership type."
                 }
             }
         }
@@ -256,12 +225,12 @@
         "seePlans": "See plans and pricing"
     },
     "consultPrice": "Ask us",
-    "gastronomy": {
+    "venue": {
         "tagline": "Plans and pricing",
-        "heading": "Gastronomy pricing",
+        "heading": "Food & nightlife pricing",
         "subtitle": "Every plan lists your venue. What changes is how much of it you can show.",
         "empty": "Plans unavailable right now.",
-        "cardsHeading": "Gastronomy plan comparison",
+        "cardsHeading": "Food & nightlife plan comparison",
         "pageTitle": "Pricing to list your food business",
         "pageDescription": "See what it costs to list your restaurant, grill, deli or food truck on Hospeda.",
         "ctaLabel": "Get started"
@@ -303,5 +272,6 @@
         "invoiceA": "Yes. Every charge generates its receipt and you have it available in your account.",
         "partnerPriceQ": "Why is there no price?",
         "partnerPriceA": "Because we do not charge an institution what we charge a corner shop, even at the same level. We share the current figures in the conversation."
-    }
+    },
+    "startConsumesTrialNote": "Starting uses up your free trial, and the trial is once in a lifetime."
 }

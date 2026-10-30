@@ -42,7 +42,7 @@
             "alreadyReviewed": "Você já enviou uma avaliação para este destino.",
             "categoryHint": "Avalie cada categoria ou expanda para ajustar cada aspecto."
         },
-        "gastronomy": {
+        "venue": {
             "pendingNotice": "Sua avaliação está pendente de aprovação e ficará visível após a revisão.",
             "alreadyReviewed": "Você já enviou uma avaliação para este lugar."
         }
@@ -66,7 +66,7 @@
         "signInCta": "Entre para opinar",
         "signInCtaHint": "Você precisa de uma conta para deixar sua avaliação."
     },
-    "gastronomySidebar": {
+    "venueSidebar": {
         "title": "Sua opinião",
         "canLeaveReview": "Compartilhe sua experiência neste lugar para ajudar outros comensais.",
         "cta": "Deixar avaliação",

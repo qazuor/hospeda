@@ -1,0 +1,22 @@
+[
+    {
+        "check": "omisiones-g1",
+        "exit": 0
+    },
+    {
+        "check": "generar-g1",
+        "exit": 0
+    },
+    {
+        "check": "generar-g3",
+        "exit": 0
+    },
+    {
+        "check": "generar-g8",
+        "exit": 0
+    },
+    {
+        "check": "generar-secciones",
+        "exit": 0
+    }
+]

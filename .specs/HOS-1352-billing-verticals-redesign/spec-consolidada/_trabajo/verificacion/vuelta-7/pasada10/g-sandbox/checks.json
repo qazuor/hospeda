@@ -1,0 +1,19 @@
+{
+    "sandbox": "/tmp/hos1352-p10-g/repo",
+    "red": {
+        "exit": 1,
+        "canarios": 22,
+        "fallas": 5
+    },
+    "adjudicar": 0,
+    "omisiones": 0,
+    "generar": 0,
+    "green": {
+        "exit": 0,
+        "canarios": 22,
+        "fallas": 0
+    },
+    "diff_check": 0,
+    "markdownlint_sandbox": 0,
+    "markdownlint_initial_sandbox_failure": "pnpm SQLite store open failed before lint; escalated rerun completed exit0"
+}

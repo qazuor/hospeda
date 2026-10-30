@@ -82,7 +82,7 @@ function content(overrides: Partial<ListingQrSheetContent> = {}): ListingQrSheet
         invite: 'Apuntá la cámara de tu teléfono al código para ver la ficha completa.',
         brand: 'Hospeda',
         brandTagline: 'Alojamientos, gastronomía y experiencias del Litoral',
-        url: 'https://hospeda.com.ar/es/gastronomia/la-parrilla-del-puerto/',
+        url: 'https://hospeda.com.ar/es/comer-y-salir/la-parrilla-del-puerto/',
         ...overrides
     };
 }
@@ -374,7 +374,7 @@ describe('the QR sheet file (HOS-982)', () => {
  * WHY A SUITE ABOUT WHERE LINES BREAK
  *
  * The sheet does not own its text mechanics: `wrapText` and `toDrawableText`
- * are imported from `services/commerce-brochure/brochure-render.ts`, which is
+ * are imported from `services/listing-brochure/brochure-render.ts`, which is
  * correct — both are pure, generic and would drift if copied — but directional.
  * The brochure has no idea a second document depends on it, and until this
  * suite existed the sheet had no assertion that could notice a change to it:
@@ -471,12 +471,12 @@ describe('what the QR encodes (HOS-982)', () => {
 
     it('ignores content.url, which the sheet draws nowhere', async () => {
         const short = await renderListingQrSheetPdf({
-            content: content({ url: 'https://hospeda.com.ar/es/gastronomia/a/' }),
+            content: content({ url: 'https://hospeda.com.ar/es/comer-y-salir/a/' }),
             qrUrl: QR_URL
         });
         const long = await renderListingQrSheetPdf({
             content: content({
-                url: `https://hospeda.com.ar/es/gastronomia/${'un-slug-larguisimo-'.repeat(6)}/`
+                url: `https://hospeda.com.ar/es/comer-y-salir/${'un-slug-larguisimo-'.repeat(6)}/`
             }),
             qrUrl: QR_URL
         });
@@ -498,14 +498,16 @@ describe('what the QR encodes (HOS-982)', () => {
 
     it('prints the bare domain, never the ficha address and never the opaque slug', async () => {
         const bytes = await renderListingQrSheetPdf({
-            content: content({ url: 'https://hospeda.com.ar/es/gastronomia/la-parrilla/' }),
+            content: content({ url: 'https://hospeda.com.ar/es/comer-y-salir/la-parrilla/' }),
             qrUrl: QR_URL
         });
 
         expect(drawsText(bytes, 'hospeda.com.ar')).toBe(true);
         // The deep path is the half that would rot the day the ficha moves.
-        expect(drawsText(bytes, 'https://hospeda.com.ar/es/gastronomia/la-parrilla/')).toBe(false);
-        expect(drawsText(bytes, '/es/gastronomia/')).toBe(false);
+        expect(drawsText(bytes, 'https://hospeda.com.ar/es/comer-y-salir/la-parrilla/')).toBe(
+            false
+        );
+        expect(drawsText(bytes, '/es/comer-y-salir/')).toBe(false);
         // Nor the redirect identifier, which nobody can type or remember.
         expect(drawsText(bytes, 'K7Qm2XbT')).toBe(false);
     });

@@ -49,11 +49,6 @@ vi.mock('../../src/utils/env', () => {
         adminMaxRequests: 200,
         adminMessage: '',
 
-        billingEnabled: false,
-        billingWindowMs: 60_000,
-        billingMaxRequests: 200,
-        billingMessage: '',
-
         webhookEnabled: true,
         webhookWindowMs: 60_000,
         webhookMaxRequests: 200,

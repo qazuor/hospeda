@@ -21,8 +21,8 @@ import {
     DestinationService,
     EventService,
     ExperienceService,
-    GastronomyService,
-    PostService
+    PostService,
+    VenueService
 } from '@repo/service-core';
 import type { Context, MiddlewareHandler } from 'hono';
 import { z } from 'zod';
@@ -37,7 +37,7 @@ import { mediaEntityNotFoundResponse } from '../entity-not-found';
 
 type ProtectedMediaEntityType = Extract<
     MediaEntityType,
-    'accommodation' | 'destination' | 'event' | 'post' | 'gastronomy' | 'experience'
+    'accommodation' | 'destination' | 'event' | 'post' | 'venue' | 'experience'
 >;
 
 /** Reusable Zod validator for actor.id UUID format. */
@@ -103,7 +103,13 @@ const protectedDeletePreValidation: MiddlewareHandler = async (ctx, next) => {
  * Supported entity types for the protected delete endpoint.
  * Must match the allowed types in the protected upload-entity route.
  */
-const SUPPORTED_ENTITY_TYPES = new Set<string>(['accommodation', 'destination', 'event', 'post']);
+const SUPPORTED_ENTITY_TYPES = new Set<string>([
+    'accommodation',
+    'destination',
+    'event',
+    'post',
+    'venue'
+]);
 
 /** Maps plural Cloudinary path segments to singular entity-type strings. */
 const PLURAL_TO_SINGULAR: Readonly<Record<string, ProtectedMediaEntityType>> = {
@@ -111,7 +117,8 @@ const PLURAL_TO_SINGULAR: Readonly<Record<string, ProtectedMediaEntityType>> = {
     destinations: 'destination',
     events: 'event',
     posts: 'post',
-    gastronomies: 'gastronomy',
+    gastronomies: 'venue', // legacy-name-allowed: fotos subidas antes del renombrado (HOS-1822)
+    venues: 'venue',
     experiences: 'experience'
 };
 
@@ -126,7 +133,7 @@ const parseEntityFromPublicId = (
     publicId: string
 ): { entityType: ProtectedMediaEntityType; entityId: string } | null => {
     const match = publicId.match(
-        /^hospeda\/[^/]+\/(accommodations|destinations|events|posts|gastronomies|experiences)\/([^/]+)(\/|$)/
+        /^hospeda\/[^/]+\/(accommodations|destinations|events|posts|gastronomies|venues|experiences)\/([^/]+)(\/|$)/ // legacy-name-allowed: Cloudinary folders already uploaded
     );
     if (!match) return null;
 
@@ -149,7 +156,7 @@ const resolveEntityService = (
     | DestinationService
     | EventService
     | PostService
-    | GastronomyService
+    | VenueService
     | ExperienceService => {
     switch (entityType) {
         case 'accommodation':
@@ -160,8 +167,8 @@ const resolveEntityService = (
             return new EventService({ logger: apiLogger });
         case 'post':
             return new PostService({ logger: apiLogger });
-        case 'gastronomy':
-            return new GastronomyService({ logger: apiLogger });
+        case 'venue':
+            return new VenueService({ logger: apiLogger });
         case 'experience':
             return new ExperienceService({ logger: apiLogger });
         default:

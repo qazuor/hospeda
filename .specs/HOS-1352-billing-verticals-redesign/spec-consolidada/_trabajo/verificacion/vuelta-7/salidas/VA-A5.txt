@@ -1,0 +1,22 @@
+# VA-A5 · fuente → spec · 18-partner.md, 19-superficies.md, 20-testing.md, 21-migracion.md, 22-lo-legal.md, 06-mp-validation-matrix.md
+
+## Hallazgos
+
+fuentes/.specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/19-superficies.md:90 · «las **postulaciones de Partner atrasadas** y las **aprobadas sin reclamar**» · distinta en s/c1c03210/20-fase-4/V8b.md:57 («las `APROBADA` ya reclamadas como un dato»). LISTA:V8b exige una población distinta de la fuente. AC:V8b:2 (línea 114) y TEST:V8b:2 (línea 226) conservan “sin reclamar”, por lo que queda una contradicción entre el criterio de salida y su aceptación: seguir el primero cambia qué postulaciones debe mostrar el panel. · BLOQUEA
+
+fuentes/.specs/HOS-1352-billing-verticals-redesign/docs/06-mp-validation-matrix.md:304 · «**Funciona en los DOS tipos de pago** y **NO hay monto mínimo**» · ausente (buscada en toda s/c1c03210/ por reembolso, RF-2, mínimo, piso y sus variantes; contrastadas las decisiones posteriores del log y del owner). MP:RF-2 en s/c1c03210/04-catalogos.md:8860 conserva el ejemplo de ARS 5 y la ausencia de piso del resto, pero elimina la ausencia de mínimo del importe reembolsado. s/c1c03210/10-corte/B6.md:308–310 y s/c1c03210/01-decisiones-vigentes.md:9034 sólo conservan el ejemplo. Aceptar ARS 5 no prohíbe imponer un mínimo de ARS 5 o inferior: falta la regla general vigente, también ratificada en fuentes/.specs/HOS-1352-billing-verticals-redesign/docs/01-decision-log.md:1805. · BLOQUEA
+
+## Resumen
+
+Conteos aproximados de reglas vivas, agrupando condiciones de una misma regla. Recorrido completo de las líneas indicadas; se excluyeron del conteo los tachados y las reglas reemplazadas por decisiones posteriores. Las referencias diferidas a fases posteriores se buscaron también en los archivos de esas fases.
+
+| archivo | reglas normativas vivas revisadas | líneas recorridas | ausentes | distintas |
+| --- | ---: | --- | ---: | ---: |
+| fuentes/.specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/18-partner.md | ≈65 | 1–407 | 0 | 0 |
+| fuentes/.specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/19-superficies.md | ≈40 | 1–111 | 0 | 1 |
+| fuentes/.specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/20-testing.md | ≈65 | 1–381 | 0 | 0 |
+| fuentes/.specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/21-migracion.md | ≈70 | 1–777 | 0 | 0 |
+| fuentes/.specs/HOS-1353-verticales-capacidades-y-autorizacion/docs/22-lo-legal.md | ≈16 | 1–141 | 0 | 0 |
+| fuentes/.specs/HOS-1352-billing-verticals-redesign/docs/06-mp-validation-matrix.md | ≈140 | 1–573 | 1 | 0 |
+
+Total: 2 BLOQUEA, 0 MENOR.

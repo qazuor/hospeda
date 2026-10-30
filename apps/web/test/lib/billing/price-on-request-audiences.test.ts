@@ -28,7 +28,7 @@ import type { PricingAudience } from '@/lib/billing-i18n';
 const ALL_AUDIENCES: readonly PricingAudience[] = [
     'owner',
     'tourist',
-    'gastronomy',
+    'venue',
     'experience',
     'partner'
 ] as const;

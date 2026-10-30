@@ -1,0 +1,418 @@
+{
+    "brochure": {
+        "qrHint": "Escaneá el código para ver la ficha completa, con fotos y opiniones.",
+        "footer": "Ficha generada por Hospeda — hospeda.com.ar",
+        "download": "Descargar ficha en PDF",
+        "downloading": "Generando la ficha…",
+        "error": "No pudimos generar la ficha. Probá de nuevo en un momento.",
+        "locked": "La ficha en PDF está disponible en el plan Premium de tu rubro."
+    },
+    "owner": {
+        "nav": "Mi comercio",
+        "purgeAddons": {
+            "title": "Se pierden con la ficha, sin devolución:",
+            "clockRuns": "El complemento no se pasa a otra ficha y su plazo sigue corriendo.",
+            "cycle": {
+                "monthly": "por mes",
+                "quarterly": "por trimestre",
+                "semiannual": "por semestre",
+                "annual": "por año"
+            },
+            "until": "hasta el {{date}}",
+            "pending": "(pendiente de autorización)",
+            "loadError": "No pudimos leer los complementos de esta ficha. Probá de nuevo antes de eliminarla.",
+            "retry": "Reintentar"
+        },
+        "list": {
+            "title": "Mi comercio",
+            "subtitle": "Gestioná la información de tus comercios publicados.",
+            "empty": "Todavía no tenés comercios. Creá tu primera ficha para empezar.",
+            "edit": "Editar",
+            "badge": {
+                "venue": "Comer y salir",
+                "experience": "Experiencia"
+            },
+            "emptyCta": "Crear mi primer comercio",
+            "createCta": "+ Nuevo comercio",
+            "state": {
+                "published": "Publicado",
+                "viewPublic": "Ver ficha pública",
+                "pendingPayment": "Pago en proceso",
+                "suspended": "Suspendido",
+                "suspendedHint": "Tu pago no pudo procesarse. Revisá tu método de pago para reactivar la publicación.",
+                "recoverCta": "Revisar mi suscripción",
+                "unknown": "Estado no disponible",
+                "draftComplete": "Borrador — listo para publicar",
+                "draftIncomplete": "Borrador — incompleto"
+            },
+            "usage": {
+                "venue": {
+                    "label_one": "{{current}} de {{max}} ficha de Comer y salir",
+                    "label_other": "{{current}} de {{max}} fichas de Comer y salir"
+                },
+                "experience": {
+                    "label_one": "{{current}} de {{max}} experiencia",
+                    "label_other": "{{current}} de {{max}} experiencias"
+                },
+                "upgrade": "Ampliar cupo",
+                "atLimit": "Llegaste al tope de tu plan. Para publicar otra ficha, ampliá tu cupo."
+            },
+            "views": {
+                "title": "Vistas",
+                "unique": "únicos",
+                "total": "totales",
+                "error": "No pudimos cargar las vistas. Probá de nuevo más tarde."
+            },
+            "menuQr": {
+                "title": "QR de la carta",
+                "scans": "escaneos",
+                "device": "Dispositivo",
+                "os": "Sistema operativo",
+                "language": "Idioma",
+                "unknown": "Desconocido",
+                "download": "Descargar QR (PNG)",
+                "downloaded": "Listo, lo descargamos.",
+                "qrAlt": "Código QR que lleva a la carta de {{name}}",
+                "encodes": "Lleva a: {{url}}",
+                "locked": "El QR de la carta y sus estadísticas de escaneo están disponibles en el plan Premium de Comer y salir.",
+                "error": "No pudimos cargar los escaneos del QR. Probá de nuevo más tarde.",
+                "empty": "Todavía no tuvo escaneos en este período."
+            }
+        },
+        "editor": {
+            "sectionNav": {
+                "basicInfo": "Información básica",
+                "contactInfo": "Contacto",
+                "socialNetworks": "Redes sociales",
+                "openingHours": "Horarios",
+                "media": "Fotos",
+                "translations": "Traducciones",
+                "amenities": "Servicios",
+                "price": "Precio",
+                "faqs": "Preguntas frecuentes",
+                "meetingPoint": "Punto de encuentro",
+                "practicalInfo": "Datos prácticos",
+                "contactSocial": "Contacto y redes",
+                "menu": "Carta",
+                "dailySpecials": "Menú del día",
+                "venueEvents": "Eventos"
+            },
+            "sections": {
+                "type": "Categoría",
+                "summary": "Resumen",
+                "openingHours": "Horarios de atención",
+                "openingHoursHint": "Todos los días arrancan en \"Cerrado\". Destildá \"Cerrado\" en un día para cargar sus horarios, y usá \"Copiar a todos los días\" para repetirlos en el resto de la semana.",
+                "openingHoursCopyToAll": "Copiar a todos los días",
+                "contactInfo": "Información de contacto",
+                "socialNetworks": "Redes sociales",
+                "media": "Fotos",
+                "menuUrl": "Enlace al menú",
+                "priceRange": "Rango de precios",
+                "isPriceOnRequest": "Precio a consultar",
+                "priceFrom": "Precio desde",
+                "priceFromWithCurrency": "Precio desde (ARS)",
+                "priceUnit": "Unidad de precio",
+                "richDescription": "Descripción ampliada",
+                "amenities": "Servicios",
+                "features": "Características",
+                "translations": "Traducciones",
+                "faqs": "Preguntas frecuentes",
+                "name": "Nombre del comercio",
+                "destination": "Ciudad / Destino",
+                "description": "Descripción",
+                "destinationLoadError": "No pudimos cargar el listado de ciudades / destinos. Recargá la página para reintentar.",
+                "destinationEmpty": "Todavía no hay ciudades / destinos cargados. Contactanos para poder completar este campo.",
+                "meetingPoint": "Punto de encuentro",
+                "meetingPointPlaceholder": "Ej: Muelle 3 del puerto, frente a la caseta azul",
+                "meetingPointHint": "Dónde arranca la experiencia. Puede ser una dirección o una referencia del lugar.",
+                "meetingPointLat": "Latitud (opcional)",
+                "meetingPointLong": "Longitud (opcional)",
+                "meetingPointCoordsHint": "Si cargás las coordenadas, mostramos el punto en un mapa. Podés dejarlas vacías.",
+                "meetingPointDirections": "Cómo llegar",
+                "meetingPointDirectionsPlaceholder": "Estacioná en la bajada municipal, sobre la costanera\nEl colectivo 4 te deja en la rotonda\nSon 300 m por camino de ripio, buscá el muelle de madera",
+                "meetingPointDirectionsHint": "Una indicación por línea. Dónde estacionar, qué colectivo, cuánto se camina desde la ruta, qué referencia buscar.",
+                "meetingPointDirectionsLocked": "El mapa y las indicaciones de cómo llegar no están incluidos en tu plan. El punto de encuentro sí, y se sigue publicando.",
+                "durationHours": "Duración — horas",
+                "durationMinutes": "Duración — minutos",
+                "durationHint": "Cuánto dura la experiencia. Dejá los dos campos vacíos si preferís no publicarlo.",
+                "durationHoursPlaceholder": "Ej.: 2",
+                "durationMinutesPlaceholder": "Ej.: 30",
+                "whatToBring": "Qué llevar",
+                "whatToBringPlaceholder": "Repelente\nCalzado cerrado\nTraje de baño",
+                "whatToBringHint": "Un ítem por línea. Lo que tiene que traer la persona que se anota.",
+                "requirements": "Requisitos",
+                "requirementsPlaceholder": "Edad mínima 12 años\nSaber nadar\nNo apto para embarazadas",
+                "requirementsHint": "Un requisito por línea. Edad, estado físico, salud, lo que haga falta para poder participar.",
+                "cancellationPolicy": "Política de cancelación",
+                "cancellationPolicyPlaceholder": "Si hay alerta meteorológica o baja el río, avisamos con 12 horas de anticipación y reprogramamos sin cargo.",
+                "cancellationPolicyHint": "Qué pasa si la salida no sale: lluvia, viento, bajante del río, o si no se junta el mínimo de gente.",
+                "acceptsPrivateGroups": "Hago precio especial para grupos privados",
+                "acceptsPrivateGroupsHint": "Si lo activás, la ficha invita a escribirte para consultar por grupos. No publicamos ningún tarifario."
+            },
+            "contactField": {
+                "mobilePhone": "Teléfono",
+                "workEmail": "Email"
+            },
+            "validation": {
+                "summaryMin": "Mínimo 10 caracteres.",
+                "summaryMax": "Máximo 300 caracteres.",
+                "summaryHint": "{{count}}/300",
+                "priceMustBePositive": "El precio debe ser un número positivo."
+            },
+            "priceRangeOption": {
+                "BUDGET": "Económico",
+                "MID": "Moderado",
+                "HIGH": "Elevado",
+                "PREMIUM": "Premium"
+            },
+            "priceUnitOption": {
+                "per_day": "Por día",
+                "per_hour": "Por hora",
+                "per_person": "Por persona",
+                "per_group": "Por grupo"
+            },
+            "translationPanel": {
+                "sectionTitle": "Traducciones",
+                "sectionDescription": "Editá las traducciones de los campos principales de tu comercio en los tres idiomas disponibles.",
+                "fieldName": "Nombre",
+                "fieldSummary": "Resumen",
+                "fieldDescription": "Descripción",
+                "fieldRichDescription": "Descripción ampliada",
+                "localePlaceholder": "Ingresá el texto en {{locale}}...",
+                "saveSuccess": "Traducciones guardadas.",
+                "saveError": "No se pudieron guardar las traducciones.",
+                "generating": "Generando traducciones...",
+                "generateButton": "Generar traducciones faltantes"
+            },
+            "faqManager": {
+                "sectionTitle": "Preguntas frecuentes",
+                "emptyState": "Todavía no hay preguntas. Agregá la primera.",
+                "addButton": "Agregar pregunta",
+                "editButton": "Editar",
+                "deleteButton": "Eliminar",
+                "saveButton": "Guardar",
+                "cancelButton": "Cancelar",
+                "questionLabel": "Pregunta",
+                "answerLabel": "Respuesta",
+                "questionPlaceholder": "Escribí la pregunta...",
+                "answerPlaceholder": "Escribí la respuesta...",
+                "questionRequired": "Escribí la pregunta antes de guardar.",
+                "answerRequired": "Escribí la respuesta antes de guardar.",
+                "moveUp": "Subir",
+                "moveDown": "Bajar",
+                "deleteConfirm": "¿Eliminás esta pregunta?",
+                "deleteDialogTitle": "Eliminar pregunta",
+                "deleteConfirmButton": "Eliminar pregunta",
+                "deleting": "Eliminando...",
+                "saveError": "No se pudo guardar la pregunta.",
+                "deleteError": "No se pudo eliminar la pregunta.",
+                "reorderError": "No se pudo reordenar.",
+                "channelIntro": {
+                    "summary": "Elegí si cada pregunta se ve en la ficha y si el asistente de chat puede usarla.",
+                    "title": "¿Por qué ocultar o restringir una pregunta?",
+                    "body1": "\"Visible en la ficha pública\" muestra la pregunta en la página del local y en los resultados de los buscadores. \"Usable por la IA\" permite que el asistente de chat use esta pregunta para responder consultas.",
+                    "body2": "Destildá \"Visible en la ficha pública\" para información útil pero que no querés publicar: algo temporal, un margen que preferís no prometer por escrito, o una recomendación que suena mejor en una conversación que en la vidriera.",
+                    "body3": "Destildá \"Usable por la IA\" para contenido que preferís que se muestre tal cual, sin que el asistente lo parafrasee.",
+                    "body4": "Importante: una pregunta no visible en la ficha pero usable por la IA no es privada. El asistente se la puede decir a cualquiera que pregunte por chat; solo no aparece publicada en la página."
+                },
+                "visibleOnListingLabel": "Visible en la ficha pública",
+                "usableByAiLabel": "Usable por la IA",
+                "notVisibleBadge": "No visible en la ficha",
+                "notAiUsableBadge": "No usable por IA"
+            },
+            "noChanges": "No hay cambios para guardar",
+            "success": "Cambios guardados.",
+            "error": "No se pudieron guardar los cambios. Probá de nuevo.",
+            "unsavedChanges": "Tenés cambios sin guardar. Si salís ahora se pierden. ¿Querés salir igual?",
+            "media": {
+                "featured": "Imagen principal",
+                "gallery": "Galería de fotos",
+                "add": "Agregar foto",
+                "remove": "Eliminar",
+                "uploadHint": "JPG, PNG, WebP o HEIC — máx. {{maxSize}}MB",
+                "invalidType": "Solo se permiten archivos JPG, PNG, WebP o HEIC",
+                "tooLarge": "El archivo no puede superar {{maxSize}}MB",
+                "uploadFailed": "Error al subir la imagen",
+                "uploadTimeout": "La subida tardó demasiado. Probá de nuevo.",
+                "uploadingBatch": "Subiendo foto {{current}} de {{total}}…",
+                "processingImage": "Optimizando imagen…",
+                "compressionUnsupportedTooLarge": "No pudimos optimizar esta imagen automáticamente (tu navegador no puede procesar este formato) y supera el máximo de {{maxSize}}MB. Probá convertirla a JPG antes de subirla, o elegí una foto más liviana.",
+                "capReached_one": "Límite de galería alcanzado (máx. {{cap}} foto)",
+                "capReached_other": "Límite de galería alcanzado (máx. {{cap}} fotos)",
+                "featuredFailed": "No se pudo marcar la imagen como principal",
+                "persistFailed": "No se pudo guardar la imagen en la base de datos",
+                "metadataSaveFailed": "No se pudieron guardar los datos de la foto",
+                "removeFailed": "No se pudo eliminar la imagen"
+            },
+            "slugFollowsNameNotice": "La dirección web de tu ficha (su URL) va a seguir al nombre hasta que la publiques.",
+            "slugFixedNotice": "La dirección web de tu ficha (su URL) ya está fija: cambiar el nombre no la modifica.",
+            "slugRefresh": {
+                "notice": "Esta ficha ya está publicada. Por defecto la dirección web actual se mantiene aunque cambies el nombre.",
+                "warning": "Si cambiás la dirección web, podés afectar cómo aparece hoy en Google o en enlaces que ya compartiste.",
+                "checkbox": "Cambiar igual la dirección web para que siga este nuevo nombre"
+            },
+            "group": {
+                "listing": "Tu ficha",
+                "content": "Contenido",
+                "management": "Gestión"
+            },
+            "breadcrumb": {
+                "listings": "Mis comercios"
+            },
+            "pageDescription": "Editar la información de tu ficha",
+            "hub": {
+                "subtitle": "Elegí qué querés editar",
+                "status": {
+                    "photos_one": "{{count}} foto",
+                    "photos_other": "{{count}} fotos",
+                    "faqs_one": "{{count}} pregunta",
+                    "faqs_other": "{{count}} preguntas",
+                    "selected_one": "{{count}} seleccionado",
+                    "selected_other": "{{count}} seleccionados",
+                    "blockedFromPublishing": "⛔ Falta para publicar: {{fields}}"
+                }
+            },
+            "amenities": {
+                "catalogUnavailable": "No pudimos cargar el listado de servicios y características. Recargá la página para reintentar."
+            }
+        },
+        "checklist": {
+            "field": {
+                "name": "Nombre",
+                "summary": "Resumen",
+                "description": "Descripción",
+                "destinationId": "Ciudad / Destino",
+                "ownerId": "Propietario",
+                "type": "Categoría",
+                "featuredImage": "Foto principal",
+                "contactInfo": "Un dato de contacto (teléfono o email)",
+                "openingHours": "Horarios de atención",
+                "priceRange": "Rango de precios",
+                "priceFrom": "Precio"
+            },
+            "publishCta": "Publicar y pagar",
+            "publishing": "Iniciando pago...",
+            "incompleteError": "Todavía faltan datos para publicar.",
+            "alreadySubscribedError": "Este comercio ya tiene una suscripción activa.",
+            "checkoutError": "No pudimos iniciar el pago. Probá de nuevo.",
+            "invalidPlanError": "El plan elegido ya no está disponible. Recargá la página e intentá de nuevo.",
+            "publishCtaFree": "Publicar",
+            "publishingFree": "Publicando...",
+            "publishCtaTrial_one": "Publicar gratis {{count}} día",
+            "publishCtaTrial_other": "Publicar gratis {{count}} días",
+            "publishCtaTrialNoCount": "Publicar gratis"
+        },
+        "create": {
+            "fields": {
+                "name": {
+                    "venue": "Nombre del comercio",
+                    "experience": "Nombre de la experiencia"
+                },
+                "type": "Categoría",
+                "summary": "Resumen",
+                "description": "Descripción",
+                "destination": "Ciudad / Destino",
+                "destinationLoadError": "No pudimos cargar el listado de ciudades / destinos. Recargá la página para reintentar.",
+                "destinationEmpty": "Todavía no hay ciudades / destinos cargados. Contactanos para poder completar este campo."
+            },
+            "submit": {
+                "venue": "Crear comercio",
+                "experience": "Crear experiencia"
+            },
+            "submitting": "Creando...",
+            "error": {
+                "venue": "No pudimos crear el comercio. Probá de nuevo.",
+                "experience": "No pudimos crear la experiencia. Probá de nuevo."
+            }
+        },
+        "supportEdit": {
+            "title": "Soporte editó esta ficha",
+            "edited": "Soporte editó el contenido de esta ficha el {{date}}: {{parts}}.",
+            "unchanged": "No se publicó, no se destacó ni se borró por eso.",
+            "contact": "Si no lo pediste, escribinos.",
+            "parts": {
+                "texts": "los textos",
+                "photos": "las fotos",
+                "faq": "las preguntas frecuentes",
+                "hours": "los horarios",
+                "other": "otros datos"
+            }
+        },
+        "publish": {
+            "confirmTitle": {
+                "venue": "¿Publicar este comercio?",
+                "experience": "¿Publicar esta experiencia?"
+            },
+            "choosePlan": {
+                "venue": "Elegir plan de Comer y salir",
+                "experience": "Elegir plan de experiencias"
+            },
+            "missingRequirements": "No se pudo publicar porque faltan datos."
+        }
+    },
+    "notices": {
+        "surplus": {
+            "criterion": "Se despublican primero las fichas publicadas más recientemente, hasta respetar el límite de tu plan. No se borra nada.",
+            "recurringFeatured": "Los destaques recurrentes de las fichas que bajaron se siguen cobrando hasta que los des de baja.",
+            "noWindowDone": "Despublicamos las fichas más recientes en el momento en que tu plan dejó de cubrirlas. Si querés recuperarlas, cambiá de plan o liberá lugar en tu cupo."
+        },
+        "restitution": {
+            "restored": "Volvieron estas fichas: {{listings}}.",
+            "notRestored": "Estas fichas no entraron: {{listings}}.",
+            "criterion": "Vuelve primero la ficha que cayó al final, hasta llenar el cupo. Las fichas del sistema anterior que nunca se publicaron acá van primero, según su antigüedad de carga.",
+            "nothingDeleted": "Las fichas que no entraron siguen ahí: no se borra ninguna."
+        },
+        "reason": "Motivo: {{reason}}",
+        "purgedByInactivity": {
+            "title": "Ficha borrada por inactividad",
+            "body": "Esta ficha existió, y su contenido se borró por inactividad."
+        },
+        "purgedFromModeration": {
+            "title": "Ficha borrada",
+            "body": "Esta ficha se borró mientras estaba moderada.",
+            "what": "Se borraron sus textos, sus fotos, sus preguntas frecuentes y sus horarios."
+        },
+        "purged": {
+            "title": "Ficha borrada",
+            "body": "Esta ficha se borró."
+        },
+        "neverReturns": "No vuelve: el borrado es definitivo.",
+        "archived": {
+            "title": "Ficha archivada",
+            "nothingDeleted": "No se borró nada: la ficha está archivada y no se ve en el sitio.",
+            "recurring_one": "Tenés {{count}} destaque recurrente sobre esta ficha: se sigue cobrando aunque esté archivada, hasta que lo des de baja.",
+            "recurring_other": "Tenés {{count}} destaques recurrentes sobre esta ficha: se siguen cobrando aunque esté archivada, hasta que los des de baja.",
+            "canSeeAndExport": "La seguís viendo y podés exportarla.",
+            "returnsOnItsOwn": "Vuelve sola cuando recuperes la cobertura, o cuando el cupo vuelva a alcanzar, si hay lugar para ella.",
+            "backToDraft": "Podés traerla a borrador cuando quieras, sin pagar.",
+            "deletionDate": "Si sigue archivada, su contenido se borra a partir del {{date}}."
+        },
+        "moderated": {
+            "title": "Ficha moderada",
+            "hidden": "No se ve en el sitio hasta que un admin levante la moderación.",
+            "canDo": "Mientras tanto podés verla, exportarla, editarla y borrarla, pero no publicarla.",
+            "recurring_one": "Tenés {{count}} destaque recurrente sobre esta ficha: se sigue cobrando hasta que lo des de baja.",
+            "recurring_other": "Tenés {{count}} destaques recurrentes sobre esta ficha: se siguen cobrando hasta que los des de baja."
+        },
+        "fixRequest": {
+            "title": "Te pidieron un arreglo en esta ficha",
+            "suggestedDate": "Fecha sugerida para corregirlo: {{date}}.",
+            "stillVisible": "Tu ficha sigue a la vista mientras tanto.",
+            "button": "Ya lo corregí",
+            "reported": "Avisaste que lo corregiste el {{date}}.",
+            "error": "No pudimos registrar tu aviso. Intentá de nuevo."
+        },
+        "lifted": {
+            "title": "Se levantó la moderación",
+            "returnedTo": {
+                "PUBLISHED": "Volvió a estar publicada.",
+                "DRAFT": "Volvió a borrador.",
+                "UNPUBLISHED_BY_BILLING": "Quedó sin publicar, porque hoy tu suscripción no tiene lugar para ella. No se borró nada.",
+                "ARCHIVED": "Sigue archivada, como estaba."
+            },
+            "draftIsYours": "Publicarla es decisión tuya.",
+            "fixRequestOpen": "El pedido de arreglo sigue abierto."
+        },
+        "surplusTitle": "Ficha despublicada por el límite de tu plan"
+    }
+}

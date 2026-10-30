@@ -1,0 +1,18 @@
+# VA-A6 · fuente → spec · B/descomposicion.md; B/docs/02-modelo-de-datos.md
+
+## Hallazgos
+
+fuentes/.specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md:136 · «los carga **la migración estructural del paso 3 y los verifica el 3a**» · distinta en s/5586fad7/10-corte/B2.md:345 («las filas de `billing_option` las carga el paso 3a del corte, no esta migración»). La fuente marca expresamente la corrección del 2026-10-02, repetida en su línea 823; P/docs/16-fase-7-del-paraguas.md:152–153 confirma que el catálogo, incluidos los precios, se carga dentro de la migración estructural y 3a sólo verifica. Se revisaron BM y los 📌 de DEC-MP-002: conservan la referencia anterior a 3a, que esta corrección identifica como residuo. La instrucción de B2 deja la migración sin los precios que debe cargar. · BLOQUEA
+
+fuentes/.specs/HOS-1354-billing-cobro-y-proveedor/docs/02-modelo-de-datos.md:58 · «**`reconciliation_mark_payment`** […] **cuándo se colgó**» · ausente (búsqueda con rg --hidden en toda s/5586fad7/ por `reconciliation_mark_payment`, «cuándo se colgó», fechas/instantes del vínculo y variantes; revisión de AC:B5:32, s/5586fad7/10-corte/B5.md:608, del modelo en B5.md:855 y del TEST:B5:16 en B5.md:1108). El AC y el modelo enumeran marca, pago, resolución y refund, pero omiten guardar cuándo se vinculó cada pago. `puesta_en` fecha la marca, no cada uno de los N pagos que se le agregan. BN y BY trasladan la tabla y sus lectores a B5, sin retirar este dato. · BLOQUEA
+
+fuentes/.specs/HOS-1354-billing-cobro-y-proveedor/docs/02-modelo-de-datos.md:577 · «**`promo_redemption`** | código, user, cuándo, sobre qué suscripción» · ausente (búsqueda con rg --hidden en toda s/5586fad7/ por `promo_redemption`, redención, canje y sus fechas/instantes; revisión de ESQ:6 en s/5586fad7/10-corte/B3.md:961, AC:B3:29, y los AC/TEST y modelo de 20-fase-2/B9b.md). Se recogen la unicidad y `cobros_restantes`, pero no el instante del canje guardado en la redención. El «cuándo» de `canje_de_trial` en V4 es de otra tabla y sólo cubre extensiones de trial. AP/BG adelantan el esquema a B3; no eliminan este campo ni lo postergan. · BLOQUEA
+
+fuentes/.specs/HOS-1354-billing-cobro-y-proveedor/docs/02-modelo-de-datos.md:1294 · «toda columna de estado tiene dominio cerrado | restricción de dominio por columna» · distinta en s/5586fad7/02-nucleo-modelo-y-maquinas.md:240 («El estado vive en una columna con dominio abierto»). Aunque s/5586fad7/02-nucleo.md:309 conserva la restricción correcta, la regla general de lectura de las máquinas ordena lo contrario y permite implementar estados fuera del dominio declarado. No se encontró en el decision log ni en 41-corte-del-mvp/10-decisiones-del-owner.md una decisión que abra ese dominio. · BLOQUEA
+
+## Resumen
+
+| archivo | reglas normativas vivas revisadas | líneas recorridas | ausentes | distintas |
+|---|---:|---|---:|---:|
+| fuentes/.specs/HOS-1354-billing-cobro-y-proveedor/descomposicion.md | ≈300 | 1–1157 | 0 | 1 |
+| fuentes/.specs/HOS-1354-billing-cobro-y-proveedor/docs/02-modelo-de-datos.md | ≈250 | 1–1298 | 2 | 1 |

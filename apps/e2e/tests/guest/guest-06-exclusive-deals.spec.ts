@@ -5,11 +5,9 @@
  * Tags: @p1 @guest @billing
  *
  * Preconditions:
- *   - Suite seed has the `tourist-vip` and `owner-pro` billing plans in
- *     `billing_plans` with `name = slug` and livemode = false. Seeded by
- *     packages/seed/src/required/billingPlans.seed.ts.
- *   - Suite seed has at least 1 ACTIVE, publicly-visible (destination-linked)
- *     accommodation available via getAnyCityDestinationId().
+ *   - Suite seed has current `tourist-vip` and `owner-pro` catalog versions.
+ *   - Suite seed has at least 1 PUBLISHED (destination-linked) accommodation
+ *     available via getAnyCityDestinationId().
  *
  * Validates (HOS-21 T-016 subtasks):
  *   - Free tourist: GET /exclusive-deals → 403 ENTITLEMENT_REQUIRED (API), and
@@ -35,13 +33,13 @@
 
 import { expect, test } from '@playwright/test';
 import {
-    createSubscription,
     createUser,
     getAnyCityDestinationId,
     markProfileCompleted
 } from '../../fixtures/api-helpers.ts';
 import { seedCookieConsent } from '../../fixtures/browser-helpers.ts';
 import { execSQL, getDbPool } from '../../fixtures/db-helpers.ts';
+import { seedActivePlanHolder } from '../../fixtures/signup-checkout.ts';
 import { cleanupTestUsers } from '../../support/test-cleanup.ts';
 
 const API_URL = process.env.HOSPEDA_E2E_API_URL ?? 'http://localhost:18001';
@@ -49,22 +47,8 @@ const WEB_URL = process.env.HOSPEDA_E2E_WEB_URL ?? 'http://localhost:18321';
 const EXCLUSIVE_DEALS_PATH = '/api/v1/protected/owner-promotions/exclusive-deals';
 const EXCLUSIVE_DEALS_PAGE = `${WEB_URL}/es/mi-cuenta/ofertas-exclusivas/`;
 
-type PlanRow = { id: string } & Record<string, unknown>;
 type AccommodationRow = { id: string } & Record<string, unknown>;
 type OwnerPromotionRow = { id: string; tourist_audience: string } & Record<string, unknown>;
-
-/**
- * Resolve a seeded plan id by slug. The seed stores the plan slug in
- * `billing_plans.name` (see billingPlans.seed.ts) and the e2e sandbox runs
- * with livemode = false, so the QZPay adapter only sees livemode = false rows.
- */
-async function resolvePlanIdBySlug(slug: string): Promise<string | null> {
-    const rows = await execSQL<PlanRow>(
-        'SELECT id FROM billing_plans WHERE name = $1 AND livemode = false LIMIT 1',
-        [slug]
-    );
-    return rows[0]?.id ?? null;
-}
 
 /** Attach a Better-Auth session cookie (from a `sessionCookie` string) to the browser context. */
 async function attachSession(
@@ -104,19 +88,16 @@ test.describe.configure({ mode: 'serial' });
 
 test.describe('GUEST-06: exclusive deals & VIP promotions @p1 @guest @billing', () => {
     const userIds: string[] = [];
-    let vipPlanId: string | null = null;
-    let ownerProPlanId: string | null = null;
 
     // ── Shared fixture: owner + visible/restricted accommodations + deals ──
+    // "Visible" is a PUBLISHED listing; "restricted" is one the public never
+    // sees (DRAFT), which is all `publication_status` can say (HOS-1641).
     let ownerId: string | null = null;
     let visibleAccommodationId: string | null = null;
     let restrictedAccommodationId: string | null = null;
     const promoIds: string[] = [];
 
     test.beforeAll(async () => {
-        vipPlanId = await resolvePlanIdBySlug('tourist-vip');
-        ownerProPlanId = await resolvePlanIdBySlug('owner-pro');
-
         const owner = await createUser({ role: 'HOST' }, { apiBaseUrl: API_URL });
         ownerId = owner.id;
         userIds.push(owner.id);
@@ -126,13 +107,13 @@ test.describe('GUEST-06: exclusive deals & VIP promotions @p1 @guest @billing', 
         const visible = await execSQL<AccommodationRow>(
             `INSERT INTO accommodations (
                  slug, name, summary, description, type,
-                 owner_id, destination_id, lifecycle_state,
-                 visibility, moderation_state, is_featured,
+                 owner_id, destination_id,
+                 publication_status, inactive_since, deadlines_version,
                  created_at, updated_at
              ) VALUES (
                  $1, $2, $3, $4, 'HOUSE'::accommodation_type_enum,
-                 $5, $6, 'ACTIVE'::lifecycle_status_enum,
-                 'PUBLIC'::visibility_enum, 'APPROVED'::moderation_status_enum, false,
+                 $5, $6,
+                 'PUBLISHED'::publication_status_enum, NOW(), 1,
                  NOW(), NOW()
              ) RETURNING id`,
             [
@@ -149,13 +130,13 @@ test.describe('GUEST-06: exclusive deals & VIP promotions @p1 @guest @billing', 
         const restricted = await execSQL<AccommodationRow>(
             `INSERT INTO accommodations (
                  slug, name, summary, description, type,
-                 owner_id, destination_id, lifecycle_state,
-                 visibility, moderation_state, is_featured,
+                 owner_id, destination_id,
+                 publication_status, inactive_since, deadlines_version,
                  created_at, updated_at
              ) VALUES (
                  $1, $2, $3, $4, 'HOUSE'::accommodation_type_enum,
-                 $5, $6, 'ACTIVE'::lifecycle_status_enum,
-                 'RESTRICTED'::visibility_enum, 'APPROVED'::moderation_status_enum, false,
+                 $5, $6,
+                 'DRAFT'::publication_status_enum, NOW(), 1,
                  NOW(), NOW()
              ) RETURNING id`,
             [
@@ -252,12 +233,9 @@ test.describe('GUEST-06: exclusive deals & VIP promotions @p1 @guest @billing', 
     test('tourist-vip: sees plus + vip deals with the VIP badge, restricted deal still excluded', async ({
         page
     }) => {
-        test.fixme(!vipPlanId, 'tourist-vip plan not seeded — cannot run');
-        if (!vipPlanId) return;
-
         const vip = await createUser({ role: 'USER' }, { apiBaseUrl: API_URL });
         userIds.push(vip.id);
-        await createSubscription({ userId: vip.id, planId: vipPlanId, status: 'active' });
+        await seedActivePlanHolder({ userId: vip.id, slug: 'tourist-vip' });
         await markProfileCompleted({ userId: vip.id });
 
         await attachSession(page, vip.sessionCookie);
@@ -286,15 +264,12 @@ test.describe('GUEST-06: exclusive deals & VIP promotions @p1 @guest @billing', 
     });
 
     test('owner: can mark a new promotion VIP-only via the form', async ({ page }) => {
-        test.fixme(!ownerProPlanId, 'owner-pro plan not seeded — cannot run');
-        if (!ownerProPlanId) return;
-
         // Fresh owner (not the shared fixture `ownerId`) so this test's
         // owner-pro subscription doesn't interfere with the shared
         // deal-visibility fixture used by the tier-scoping tests above.
         const owner = await createUser({ role: 'HOST' }, { apiBaseUrl: API_URL });
         userIds.push(owner.id);
-        await createSubscription({ userId: owner.id, planId: ownerProPlanId, status: 'active' });
+        await seedActivePlanHolder({ userId: owner.id, slug: 'owner-pro' });
         await markProfileCompleted({ userId: owner.id });
 
         await attachSession(page, owner.sessionCookie);
