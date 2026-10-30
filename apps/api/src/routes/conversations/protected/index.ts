@@ -18,6 +18,7 @@
  *   PATCH /:id/archive               — toggle archived state
  */
 
+import { requireAuthenticatedProtectedConversation } from '../../../middlewares/require-authenticated-protected-conversation.middleware';
 import { createRouter } from '../../../utils/create-app';
 import { archiveProtectedConversationRoute } from './archive';
 import { initiateProtectedConversationRoute } from './initiate';
@@ -30,6 +31,9 @@ import { threadProtectedConversationRoute } from './thread';
 import { unreadCountProtectedConversationRoute } from './unread-count';
 
 const app = createRouter();
+
+// Guest actor -> 401 for every route below, before any handler or service call (HOS-1928).
+app.use('*', requireAuthenticatedProtectedConversation);
 
 // Unread count MUST be registered before /:id to avoid path conflicts.
 app.route('/', unreadCountProtectedConversationRoute);

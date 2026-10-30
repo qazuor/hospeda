@@ -87,26 +87,6 @@ const SHADOWED_ROUTES: readonly string[] = ['GET /api/v1/public/features/search'
  * reported to the owner, not endorsed exceptions.
  */
 const NO_OWN_GATE_ALLOWLIST: Readonly<Record<string, string>> = {
-    'GET /api/v1/protected/conversations/unread-count':
-        'plain Hono route; no route-level check, handler uses the actor as-is',
-    'GET /api/v1/protected/conversations':
-        'plain Hono route; no route-level check, handler uses the actor as-is',
-    'POST /api/v1/protected/conversations/initiate':
-        'plain Hono route; no route-level check, handler uses the actor as-is',
-    'GET /api/v1/protected/conversations/owner/unread-count':
-        'plain Hono route; no route-level check, handler uses the actor as-is',
-    'GET /api/v1/protected/conversations/owner':
-        'plain Hono route; no route-level check, handler uses the actor as-is',
-    'GET /api/v1/protected/conversations/owner/:id':
-        'plain Hono route; no route-level check, handler uses the actor as-is',
-    'POST /api/v1/protected/conversations/owner/:id/messages':
-        'plain Hono route; no route-level check, handler uses the actor as-is',
-    'GET /api/v1/protected/conversations/:id':
-        'plain Hono route; no route-level check, handler uses the actor as-is',
-    'POST /api/v1/protected/conversations/:id/messages':
-        'plain Hono route; no route-level check, handler uses the actor as-is',
-    'PATCH /api/v1/protected/conversations/:id/archive':
-        'plain Hono route; no route-level check, handler uses the actor as-is',
     'GET /api/v1/protected/accommodations/:id/contact': 'plain Hono route; inline isGuestActor 401',
     'GET /api/v1/protected/accommodations/:id/whatsapp':
         'plain Hono route; inline isGuestActor 401',
