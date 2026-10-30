@@ -11,21 +11,22 @@ import {
     createScratch,
     dropScratch,
     fingerprint,
+    PRE_CUTOVER_MAIN_SHA,
     requireAdminUrl,
     withDatabase
 } from './scratch-db.ts';
 
 /**
  * TEST:U3:5 and TEST:U3:13 (AC:U3:2, AC:U3:4): the cutover script against a REAL
- * Postgres. The old database is built from `main`'s migrations (ref overridable with
- * CUTOVER_OLD_SCHEMA_REF) and seeded with live rows. The provider is simulated: no
+ * Postgres. The old database is built from the migrations of the pre-cutover `main` commit
+ * (PRE_CUTOVER_MAIN_SHA; ref overridable with CUTOVER_OLD_SCHEMA_REF) and seeded with live rows. The provider is simulated: no
  * network call leaves this test. Only databases created here are dropped.
  */
 const suffix = randomBytes(4).toString('hex');
 const OLD_DB = `cutover_u3_old_${suffix}`;
 const NEW_DB = `cutover_u3_new_${suffix}`;
 const session = process.env;
-const oldRef = session.CUTOVER_OLD_SCHEMA_REF ?? 'origin/main';
+const oldRef = session.CUTOVER_OLD_SCHEMA_REF ?? PRE_CUTOVER_MAIN_SHA;
 
 const PERSON_EMAIL = 'person.example@example.invalid';
 

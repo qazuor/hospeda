@@ -50,6 +50,25 @@ vi.mock('../../../src/lib/env', () => ({
     isLoggingEnabled: () => false
 }));
 
+// The brochure button reads the owner's effective set up front (owner decision,
+// 2026-10-29). That read is not under test here, and through the real cache it
+// would reach `fetch` and trip the QR panel's "nothing was asked" assertion, so
+// it answers as a failed read: the gate falls open and the button renders.
+vi.mock('../../../src/lib/entitlements-cache', () => ({
+    getEntitlementsCached: vi.fn(async () => ({
+        entitlements: {},
+        limits: {},
+        hasLiveNonTrialTitle: false,
+        failed: true
+    })),
+    fetchEntitlementsUncached: vi.fn(async () => ({
+        entitlements: {},
+        limits: {},
+        hasLiveNonTrialTitle: false,
+        failed: true
+    }))
+}));
+
 function buildListing(
     overrides: Partial<OwnerListingSummaryWithState> = {}
 ): OwnerListingSummaryWithState {

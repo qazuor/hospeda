@@ -35,17 +35,30 @@ function stubCatalogs(options: { readonly failedVertical?: Vertical } = {}): voi
     global.fetch = vi.fn(async (input: unknown) => {
         const vertical = new URL(String(input)).searchParams.get('vertical') as Vertical;
         if (vertical === options.failedVertical) return { ok: false, status: 503 } as Response;
+        // Each sellable plan carries its own (ignored) trial_days of 99; the
+        // trial comes from the API's per-vertical trialOffer (HOS-1967).
         const records: Record<Vertical, ReturnType<typeof plan>> = {
-            accommodation: plan('host', 14, 1800000),
-            tourist: plan('tourist', 45, 150000),
-            venue: plan('venue', 7, 1000000),
-            experience: plan('experience', 3, 1200000)
+            accommodation: plan('host', 99, 1800000),
+            tourist: plan('tourist', 99, 150000),
+            venue: plan('venue', 99, 1000000),
+            experience: plan('experience', 99, 1200000)
+        };
+        const trialOffers: Record<Vertical, { trialDays: number } | null> = {
+            accommodation: { trialDays: 14 },
+            tourist: null,
+            venue: { trialDays: 7 },
+            experience: { trialDays: 3 }
         };
         return {
             ok: true,
             json: async () => ({
                 success: true,
-                data: { vertical, plans: [records[vertical]], floor: null }
+                data: {
+                    vertical,
+                    plans: [records[vertical]],
+                    floor: null,
+                    trialOffer: trialOffers[vertical]
+                }
             })
         } as Response;
     }) as typeof fetch;
@@ -81,7 +94,8 @@ describe('fetchAudienceOffers', () => {
         expect(startingPrices.host).toEqual({ kind: 'from', monthlyPriceArs: 1800000 });
         expect(trialDays.host).toBe(14);
         expect(startingPrices.tourist).toEqual({ kind: 'from', monthlyPriceArs: 150000 });
-        expect(trialDays.tourist).toBe(45);
+        expect(trialDays.tourist).toBeNull();
+        expect(trialDays.venue).toBe(7);
     });
 
     it('degrades every audience when the network throws', async () => {

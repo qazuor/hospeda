@@ -6,7 +6,9 @@ import {
     MarkEscalated,
     RECONCILIATION_SUMMARY_SUBJECT,
     REVOCATION_REFUND_FAILED_SUBJECT,
+    type ReconciliationSubjectsReader,
     ReconciliationSummary,
+    type ReconciliationSummaryContext,
     RevocationRefundFailed
 } from '../../templates/billing/index.js';
 import type { OutboxMailRenderer } from './email-outbox-delivery.service.js';
@@ -83,7 +85,57 @@ function validOmitted(value: unknown): value is Data {
     });
 }
 
-function reconciliationSummary(row: EmailOutboxRow) {
+/** Render-time collaborators of the summary mail (HOS-1971). */
+interface SummaryEnrichment {
+    readonly readSubjects?: ReconciliationSubjectsReader;
+    readonly environmentLabel?: string;
+    readonly adminUrl?: string;
+    readonly onEnrichmentError?: (input: { readonly error: unknown }) => void;
+}
+
+/**
+ * Resolves the subjects named by the payload in ONE batched call. Never throws:
+ * a failed or missing reader yields a context without details, so every line
+ * renders as the bare payload line and the mail still goes out.
+ */
+async function resolveContext(
+    data: Data,
+    enrichment: SummaryEnrichment
+): Promise<ReconciliationSummaryContext> {
+    const base = {
+        ...(enrichment.environmentLabel ? { environmentLabel: enrichment.environmentLabel } : {}),
+        ...(enrichment.adminUrl ? { adminUrl: enrichment.adminUrl } : {})
+    };
+    const empty: ReconciliationSummaryContext = {
+        ...base,
+        subscriptions: new Map(),
+        addonInstances: new Map(),
+        openMarks: new Map()
+    };
+    if (!enrichment.readSubjects) return empty;
+    const subscriptionIds = new Set<string>();
+    const addonInstanceIds = new Set<string>();
+    for (const mark of [...(data.marks as Data[]), ...(data.escalations as Data[])]) {
+        (mark.subjectType === 'subscription' ? subscriptionIds : addonInstanceIds).add(
+            mark.subjectId as string
+        );
+    }
+    for (const row of [...(data.underCharges as Data[]), ...(data.pauseGifts as Data[])]) {
+        subscriptionIds.add(row.subscriptionId as string);
+    }
+    try {
+        const found = await enrichment.readSubjects({
+            subscriptionIds: [...subscriptionIds],
+            addonInstanceIds: [...addonInstanceIds]
+        });
+        return { ...empty, ...found };
+    } catch (error) {
+        enrichment.onEnrichmentError?.({ error });
+        return empty;
+    }
+}
+
+function reconciliationSummary(row: EmailOutboxRow, enrichment: SummaryEnrichment) {
     const data = payloadOf(row);
     const totals = data.totals;
     const totalEvents = totals && typeof totals === 'object' ? (totals as Data).events : undefined;
@@ -106,12 +158,20 @@ function reconciliationSummary(row: EmailOutboxRow) {
         !validOmitted(data.omitted)
     )
         throw new TypeError(REQUIRED);
+    // Validation stays synchronous (a bad payload throws at once); only the lookup is awaited.
+    return renderSummary(data, enrichment);
+}
+
+async function renderSummary(data: Data, enrichment: SummaryEnrichment) {
+    const context = await resolveContext(data, enrichment);
     // TYPE-WORKAROUND: The manually validated outbox payload is the template props contract.
+    const props = data as unknown as Parameters<typeof ReconciliationSummary>[0];
     return {
         subject: RECONCILIATION_SUMMARY_SUBJECT,
         react: (
             <ReconciliationSummary
-                {...(data as unknown as Parameters<typeof ReconciliationSummary>[0])}
+                {...props}
+                context={context}
             />
         )
     };
@@ -185,12 +245,25 @@ function revocationRefundFailed(row: EmailOutboxRow) {
     };
 }
 
-/** Creates production renderers for the aggregated reconciliation and three immediate billing notices. */
-export function createBillingReconciliationRenderers(_input: {
-    readonly siteUrl: string;
-}): Readonly<Record<string, OutboxMailRenderer>> {
+/**
+ * Creates production renderers for the aggregated reconciliation and three immediate billing notices.
+ *
+ * The summary renderer resolves holders, plans and listings through `readSubjects`
+ * (one batched call per mail) and marks the environment; both are optional, and a
+ * failing reader never blocks the send (HOS-1971).
+ */
+export function createBillingReconciliationRenderers(
+    input: {
+        readonly siteUrl: string;
+    } & SummaryEnrichment
+): Readonly<Record<string, OutboxMailRenderer>> {
+    const adminUrl = input.adminUrl?.replace(/\/$/, '');
+    const enrichment: SummaryEnrichment = {
+        ...input,
+        ...(adminUrl ? { adminUrl } : {})
+    };
     return {
-        'billing.reconciliation-summary': ({ row }) => reconciliationSummary(row),
+        'billing.reconciliation-summary': ({ row }) => reconciliationSummary(row, enrichment),
         'billing.duplicate-charge-detected': ({ row }) => duplicateChargeDetected(row),
         'billing.mark-escalated': ({ row }) => markEscalated(row),
         'billing.revocation-refund-failed': ({ row }) => revocationRefundFailed(row)

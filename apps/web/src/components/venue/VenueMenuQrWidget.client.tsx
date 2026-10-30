@@ -14,6 +14,11 @@
  * the plan gate, mirroring `BrochureDownloadButton.client.tsx` /
  * `ExperienceCertificatePanel.client.tsx`'s own `locked` branch.
  *
+ * The locked copy has two wordings (owner decision, 2026-10-29), picked from the
+ * owner's effective set by `useListingPlanGate`: a pre-trial owner gets the QR
+ * when the listing is published (the trial grants the top tier), anybody else
+ * by moving to Premium, with a link to the plans page.
+ *
  * ## What this panel must never say (HOS-1141, NG-3/NG-4)
  *
  * No country, no location, no "where from" — none of that is recorded. A
@@ -36,10 +41,13 @@
  */
 
 import { type JSX, useEffect, useState } from 'react';
+import { useListingPlanGate } from '@/hooks/useListingPlanGate';
 import { listingAnalyticsApi } from '@/lib/api/endpoints-protected';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations, type TranslationFn } from '@/lib/i18n';
+import { PRICING_PAGE_PATH_BY_AUDIENCE } from '@/lib/pricing-plans';
 import { buildSvgDataUrl, renderSvgToPngBlob } from '@/lib/qr/qr-png';
+import { buildUrl } from '@/lib/urls';
 import styles from './VenueMenuQrWidget.module.css';
 
 /** The one venue listing shape this widget needs. */
@@ -276,6 +284,13 @@ export function VenueMenuQrWidget({
     const { t } = createTranslations(locale);
     const [windowParam, setWindowParam] = useState<'7d' | '30d'>('30d');
     const [states, setStates] = useState<ReadonlyMap<string, ListingQrState>>(new Map());
+    // Only decides the WORDING of the locked state; the 403 still decides
+    // whether the panel is locked at all.
+    const { gate } = useListingPlanGate({
+        vertical: 'venue',
+        entitlementKey: 'menu_qr_scan_metrics'
+    });
+    const isPreTrial = gate === 'preTrial';
 
     useEffect(() => {
         let cancelled = false;
@@ -359,9 +374,27 @@ export function VenueMenuQrWidget({
                                 className={styles.locked}
                                 data-testid="venue-menu-qr-locked"
                             >
-                                {t(
-                                    'listing.owner.list.menuQr.locked',
-                                    'El QR de la carta y sus estadísticas de escaneo están disponibles en el plan Premium de gastronomía.'
+                                {isPreTrial ? (
+                                    t(
+                                        'listing.owner.list.menuQr.lockedPreTrial',
+                                        'El QR de la carta y sus estadísticas de escaneo se habilitan cuando publiques tu ficha.'
+                                    )
+                                ) : (
+                                    <>
+                                        {t(
+                                            'listing.owner.list.menuQr.locked',
+                                            'El QR de la carta y sus estadísticas de escaneo están disponibles en el plan Premium de Comer y salir.'
+                                        )}{' '}
+                                        <a
+                                            className={styles.plansLink}
+                                            href={buildUrl({
+                                                locale,
+                                                path: PRICING_PAGE_PATH_BY_AUDIENCE.venue
+                                            })}
+                                        >
+                                            {t('listing.owner.list.menuQr.seePlans', 'Ver planes')}
+                                        </a>
+                                    </>
                                 )}
                             </p>
                         )}

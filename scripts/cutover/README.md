@@ -473,8 +473,8 @@ only covers the ids we already know.
   incremental manifest is covered by `manifest-writer.test.ts`.
 - Real Postgres: `HOSPEDA_TEST_DATABASE_URL=<server admin url> corepack pnpm test:cutover-db`
   (`scripts/__tests__/cutover-db/`), TEST:U3:5 and 13. They create their own scratch
-  databases, build the old schema from `main`'s migrations (`CUTOVER_OLD_SCHEMA_REF`,
-  default `origin/main`), seed live rows, and drop only what they created. A missing
+  databases, build the old schema from the pre-cutover `main` commit's migrations
+  (`CUTOVER_OLD_SCHEMA_REF`, default the pinned `PRE_CUTOVER_MAIN_SHA` in `scratch-db.ts`), seed live rows, and drop only what they created. A missing
   `HOSPEDA_TEST_DATABASE_URL` is a failure, not a skip.
 
 ## Unit exit (U3.4, AC:U3:10)

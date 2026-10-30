@@ -58,6 +58,36 @@ vi.mock('../../../src/lib/api/endpoints-protected', () => ({
     }
 }));
 
+// The fresh confirmation read (taken before any BLOCKING answer) mirrors the
+// cached read unless a test sets it apart.
+const { mockFreshEntitlements } = vi.hoisted(() => ({ mockFreshEntitlements: vi.fn() }));
+
+vi.mock('../../../src/lib/entitlements-cache', () => ({
+    getEntitlementsCached: vi.fn(),
+    fetchEntitlementsUncached: mockFreshEntitlements
+}));
+
+import { getEntitlementsCached } from '../../../src/lib/entitlements-cache';
+
+const mockEntitlements = vi.mocked(getEntitlementsCached);
+
+// Unless a test says otherwise, the fresh read answers what the cached one did.
+function mirrorFreshRead(): void {
+    mockFreshEntitlements.mockImplementation((input: { vertical: string }) =>
+        mockEntitlements(input as never)
+    );
+}
+
+/** A resolved effective set holding exactly `keys`. */
+function effectiveSet(keys: readonly string[]) {
+    return {
+        entitlements: Object.fromEntries(keys.map((key) => [key, 1])),
+        limits: {},
+        hasLiveNonTrialTitle: false,
+        failed: false
+    };
+}
+
 const LISTING: VenueMenuQrWidgetListing = { id: 'venue-1', name: 'La Parrilla del Puerto' };
 
 const READY_QR = {
@@ -89,6 +119,9 @@ const READY_STATS = {
 describe('VenueMenuQrWidget (HOS-1044)', () => {
     beforeEach(() => {
         vi.clearAllMocks();
+        mirrorFreshRead();
+        // A failed read by default: the wording falls back to the plan copy.
+        mockEntitlements.mockResolvedValue({ ...effectiveSet([]), failed: true });
     });
 
     it('renders nothing when the owner has zero venue listings', () => {
@@ -160,9 +193,41 @@ describe('VenueMenuQrWidget (HOS-1044)', () => {
         );
 
         expect(await screen.findByTestId('venue-menu-qr-locked')).toHaveTextContent(
-            'plan Premium de gastronomía'
+            'plan Premium de Comer y salir'
+        );
+        expect(screen.getByRole('link', { name: 'Ver planes' })).toHaveAttribute(
+            'href',
+            expect.stringContaining('planes/comer-y-salir/precios')
         );
         expect(screen.queryByTestId('menu-qr-total')).toBeNull();
+        expect(screen.queryByRole('alert')).toBeNull();
+    });
+
+    it('a pre-trial owner is told it unlocks on publishing, with no plan link', async () => {
+        mockEntitlements.mockResolvedValue(effectiveSet(['activate_trial']));
+        mockGetMenuQr.mockResolvedValue({
+            ok: false,
+            error: { status: 403, message: 'ENTITLEMENT_REQUIRED' }
+        });
+        mockGetMenuQrScans.mockResolvedValue({
+            ok: false,
+            error: { status: 403, message: 'ENTITLEMENT_REQUIRED' }
+        });
+
+        render(
+            <VenueMenuQrWidget
+                locale="es"
+                listings={[LISTING]}
+            />
+        );
+
+        await waitFor(() =>
+            expect(screen.getByTestId('venue-menu-qr-locked')).toHaveTextContent(
+                'se habilitan cuando publiques tu ficha'
+            )
+        );
+        expect(mockEntitlements).toHaveBeenCalledWith({ vertical: 'venue' });
+        expect(screen.queryByRole('link', { name: 'Ver planes' })).toBeNull();
         expect(screen.queryByRole('alert')).toBeNull();
     });
 

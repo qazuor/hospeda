@@ -68,3 +68,35 @@
     font-size: var(--text-body-sm, 0.9375rem);
     color: var(--core-muted-foreground);
 }
+
+/*
+ * The brochure upsell (owner decision, 2026-10-29): a Premium-only action stays
+ * visible on lower tiers, but as a locked link to the plans page, so it never
+ * reads as a broken button.
+ */
+.lockedLink {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-1, 0.25rem);
+}
+
+.premiumBadge {
+    font-size: var(--text-caption, 0.75rem);
+    font-weight: 600;
+    padding: 0.0625rem 0.4375rem;
+    border-radius: var(--radius-pill, 999px);
+    background: color-mix(in srgb, var(--brand-primary, #1d4ed8) 12%, transparent);
+    color: var(--brand-primary, var(--core-foreground));
+}
+
+.hint {
+    margin: 0;
+    font-size: var(--text-caption, 0.75rem);
+    color: var(--core-muted-foreground);
+}
+
+.error {
+    margin: 0;
+    font-size: var(--text-caption, 0.75rem);
+    color: var(--destructive, #b91c1c);
+}

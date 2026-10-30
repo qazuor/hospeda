@@ -139,3 +139,50 @@ describe('TEST:1607:10 reconciliation renderers are registered in the production
         ).rejects.toThrow(TypeError);
     });
 });
+
+describe('HOS-1971 reconciliation summary wiring in the production sender', () => {
+    const payload = {
+        windowId: 'w',
+        coversFrom: '2026-10-01T00:00:00.000Z',
+        closesAt: '2026-10-02T00:00:00.000Z',
+        windowMinutes: 60,
+        totals: { events: 1 },
+        marks: [
+            { reason: 'COBRO_DUPLICADO', subjectType: 'subscription', subjectId: 'sub-1', count: 1 }
+        ],
+        escalations: [],
+        underCharges: [],
+        pauseGifts: [],
+        omitted: { marks: 0, escalations: 0, underCharges: 0, pauseGifts: 0 }
+    };
+
+    it('marks the environment in the header and links to the admin panel', async () => {
+        const render = buildOutboxSenderRender({
+            siteUrl: 'https://hospeda.test',
+            adminUrl: 'https://admin.hospeda.test',
+            environmentLabel: 'STAGING',
+            readReconciliationSubjects: async () => ({
+                subscriptions: new Map(),
+                addonInstances: new Map(),
+                openMarks: new Map()
+            })
+        });
+        const result = await render({ row: row('billing.reconciliation-summary', payload) });
+        const html = renderToStaticMarkup(result.react);
+        expect(html).toContain('[STAGING] Resumen de conciliación de billing');
+        expect(html).toContain('https://admin.hospeda.test/billing/reconciliation/');
+    });
+
+    it('sends the bare line when the subject lookup throws', async () => {
+        const render = buildOutboxSenderRender({
+            siteUrl: 'https://hospeda.test',
+            readReconciliationSubjects: async () => {
+                throw new Error('db down');
+            }
+        });
+        const result = await render({ row: row('billing.reconciliation-summary', payload) });
+        expect(renderToStaticMarkup(result.react)).toContain(
+            'COBRO_DUPLICADO · subscription sub-1 · 1 vez'
+        );
+    });
+});

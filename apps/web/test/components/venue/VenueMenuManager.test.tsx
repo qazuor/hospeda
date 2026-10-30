@@ -21,7 +21,7 @@
  */
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
-import { fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { act, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { VenueMenuManager } from '../../../src/components/venue/VenueMenuManager.client';
 
@@ -45,7 +45,40 @@ vi.mock('../../../src/lib/api/client', () => ({
     }
 }));
 
+// The fresh confirmation read (taken before any BLOCKING answer) mirrors the
+// cached read unless a test sets it apart.
+const { mockFreshEntitlements } = vi.hoisted(() => ({ mockFreshEntitlements: vi.fn() }));
+
+vi.mock('../../../src/lib/entitlements-cache', () => ({
+    getEntitlementsCached: vi.fn(),
+    fetchEntitlementsUncached: mockFreshEntitlements
+}));
+
 import { apiClient } from '../../../src/lib/api/client';
+import type { EntitlementsData } from '../../../src/lib/entitlements-cache';
+import { getEntitlementsCached } from '../../../src/lib/entitlements-cache';
+
+const mockEntitlements = vi.mocked(getEntitlementsCached);
+
+// Unless a test says otherwise, the fresh read answers what the cached one did.
+function mirrorFreshRead(): void {
+    mockFreshEntitlements.mockImplementation((input: { vertical: string }) =>
+        mockEntitlements(input as never)
+    );
+}
+
+/** An effective set holding exactly `keys` (a resolved read, not a failure). */
+function effectiveSet(keys: readonly string[]): EntitlementsData {
+    return {
+        entitlements: Object.fromEntries(keys.map((key) => [key, 1])),
+        limits: {},
+        hasLiveNonTrialTitle: false,
+        failed: false
+    };
+}
+
+/** What a Profesional owner's read holds for the menu. */
+const ENTITLED = effectiveSet(['manage_venue_menu']);
 
 const mockGet = vi.mocked(apiClient.get);
 const mockPut = vi.mocked(apiClient.put);
@@ -113,6 +146,8 @@ const LOADED_MENU_WITH_PHOTO = {
 describe('VenueMenuManager (HOS-895)', () => {
     beforeEach(() => {
         vi.clearAllMocks();
+        mirrorFreshRead();
+        mockEntitlements.mockResolvedValue(ENTITLED);
     });
 
     it('loads the carta from its own endpoint and shows what is stored', async () => {
@@ -259,10 +294,12 @@ describe('VenueMenuManager (HOS-895)', () => {
     });
 
     it('shows a plan refusal as the upsell it is, not as a failure', async () => {
+        // The read failed and fell open, so only the 403 can tell the panel.
+        mockEntitlements.mockResolvedValue({ ...effectiveSet([]), failed: true });
         mockGet.mockResolvedValue(LOADED_MENU as never);
         mockPut.mockResolvedValue({
             ok: false,
-            error: { status: 403, message: 'entitlement required' }
+            error: { status: 403, code: 'ENTITLEMENT_REQUIRED', message: 'entitlement required' }
         } as never);
 
         render(
@@ -279,12 +316,15 @@ describe('VenueMenuManager (HOS-895)', () => {
         fireEvent.click(screen.getByRole('button', { name: 'Guardar carta' }));
 
         await waitFor(() => {
-            expect(screen.getByRole('status')).toHaveTextContent(/plan Profesional/);
+            expect(screen.getByTestId('venue-menu-plan-notice')).toHaveTextContent(
+                /plan Profesional/
+            );
         });
 
-        // And the two ungated fallbacks are still offered — a refused save must
-        // not read as "there is no way to show a menu on your plan".
-        expect(screen.getByRole('status').textContent?.includes('foto o un PDF')).toBe(true);
+        // The photo/PDF upload needs the SAME entitlement, so the notice must not
+        // offer it as a way out (the old copy did, and that upload 403'd too).
+        expect(screen.queryByText(/Mientras tanto/)).toBeNull();
+        expect(screen.getByRole('button', { name: 'Guardar carta' })).toBeDisabled();
     });
 
     // ── The photo per dish (HOS-1045) ───────────────────────────────────────
@@ -357,7 +397,7 @@ describe('VenueMenuManager (HOS-895)', () => {
         mockGet.mockResolvedValue(LOADED_MENU_WITH_PHOTO as never);
         mockPut.mockResolvedValue({
             ok: false,
-            error: { status: 403, message: 'entitlement required' }
+            error: { status: 403, code: 'ENTITLEMENT_REQUIRED', message: 'entitlement required' }
         } as never);
 
         render(
@@ -415,7 +455,9 @@ describe('VenueMenuManager (HOS-895)', () => {
 describe('upload control (HOS-1763)', () => {
     beforeEach(() => {
         vi.clearAllMocks();
+        mirrorFreshRead();
         mockGet.mockResolvedValue(LOADED_MENU as never);
+        mockEntitlements.mockResolvedValue(ENTITLED);
     });
 
     it('renders an i18n upload button and no native browser text (TEST:1763:1a)', async () => {
@@ -512,5 +554,232 @@ describe('upload control (HOS-1763)', () => {
 
         expect(input.value).toBe('');
         expect(await screen.findByText('carta.pdf')).toBeInTheDocument();
+    });
+});
+
+// ── Known before the click (owner decision, 2026-10-29) ─────────────────────
+//
+// Measured on staging: a pre-trial owner's DRAFT venue got 403
+// ENTITLEMENT_REQUIRED from `POST .../menu-file` while the copy invited the
+// upload. The panel now reads the effective set and disables what would fail.
+
+/** A pre-trial owner: may still activate the trial and holds no title. */
+const PRE_TRIAL = effectiveSet(['activate_trial']);
+
+/** A `Response`-shaped stub for the raw multipart upload. */
+function uploadResponse(input: { status: number; code?: string }): Response {
+    return {
+        ok: input.status >= 200 && input.status < 300,
+        status: input.status,
+        json: async () => (input.code ? { error: { code: input.code, message: 'x' } } : {})
+    } as unknown as Response;
+}
+
+/** Picks a PDF in the panel's file input. */
+function pickPdf(input: HTMLInputElement): void {
+    fireEvent.change(input, {
+        target: { files: [new File(['x'], 'carta.pdf', { type: 'application/pdf' })] }
+    });
+}
+
+describe('menu plan gate', () => {
+    beforeEach(() => {
+        vi.clearAllMocks();
+        mirrorFreshRead();
+        mockGet.mockResolvedValue(LOADED_MENU as never);
+    });
+
+    function renderPanel() {
+        return render(
+            <VenueMenuManager
+                listingId={LISTING_ID}
+                locale="es"
+            />
+        );
+    }
+
+    it('pre-trial owner: upload and Save disabled, with the publish-to-unlock reason', async () => {
+        mockEntitlements.mockResolvedValue(PRE_TRIAL);
+
+        const { container } = renderPanel();
+
+        const notice = await screen.findByTestId('venue-menu-plan-notice');
+        expect(notice).toHaveTextContent('La carta se habilita cuando publiques tu ficha');
+        // No plan link: publishing, not paying, is what unlocks it.
+        expect(screen.queryByRole('link', { name: 'Ver planes' })).toBeNull();
+
+        const input = container.querySelector('input[type="file"]') as HTMLInputElement;
+        await waitFor(() => {
+            expect(input).toBeDisabled();
+        });
+        expect(input).toHaveAttribute('aria-describedby', notice.id);
+        expect(screen.getByRole('button', { name: 'Guardar carta' })).toBeDisabled();
+    });
+
+    it('a PAID owner who never trialed gets the plan reason, never "publish to unlock"', async () => {
+        // The pre-trial source is merged whenever no trial row exists, so a
+        // paying Básico owner still carries `activate_trial`.
+        mockEntitlements.mockResolvedValue({
+            ...effectiveSet(['activate_trial']),
+            hasLiveNonTrialTitle: true
+        });
+
+        renderPanel();
+
+        const notice = await screen.findByTestId('venue-menu-plan-notice');
+        expect(notice).toHaveTextContent('está disponible desde el plan Profesional');
+        expect(notice).not.toHaveTextContent('cuando publiques');
+    });
+
+    it('owner without a trial left: the Profesional reason with a link to the plans', async () => {
+        mockEntitlements.mockResolvedValue(effectiveSet([]));
+
+        const { container } = renderPanel();
+
+        const notice = await screen.findByTestId('venue-menu-plan-notice');
+        expect(notice).toHaveTextContent('está disponible desde el plan Profesional');
+        expect(screen.getByRole('link', { name: 'Ver planes' })).toHaveAttribute(
+            'href',
+            expect.stringContaining('planes/comer-y-salir/precios')
+        );
+        expect(container.querySelector('input[type="file"]')).toBeDisabled();
+    });
+
+    it('a 403 ENTITLEMENT_REQUIRED on the upload lands in the notice', async () => {
+        mockEntitlements.mockResolvedValue({ ...effectiveSet([]), failed: true });
+        const fetchMock = vi
+            .spyOn(globalThis, 'fetch')
+            .mockResolvedValue(uploadResponse({ status: 403, code: 'ENTITLEMENT_REQUIRED' }));
+
+        const { container } = renderPanel();
+        await screen.findByText('Ningún archivo elegido');
+
+        const input = container.querySelector('input[type="file"]') as HTMLInputElement;
+        pickPdf(input);
+
+        expect(await screen.findByTestId('venue-menu-plan-notice')).toHaveTextContent(
+            /plan Profesional/
+        );
+        expect(screen.queryByText('No se pudo subir el archivo del menú.')).toBeNull();
+        expect(input).toBeDisabled();
+        fetchMock.mockRestore();
+    });
+
+    it('a 403 with another code on the upload is the ordinary, retryable error', async () => {
+        mockEntitlements.mockResolvedValue({ ...effectiveSet([]), failed: true });
+        const fetchMock = vi
+            .spyOn(globalThis, 'fetch')
+            .mockResolvedValue(uploadResponse({ status: 403, code: 'EMAIL_NOT_VERIFIED' }));
+
+        const { container } = renderPanel();
+        await screen.findByText('Ningún archivo elegido');
+
+        const input = container.querySelector('input[type="file"]') as HTMLInputElement;
+        pickPdf(input);
+
+        expect(await screen.findByText('No se pudo subir el archivo del menú.')).toBeTruthy();
+        expect(screen.queryByTestId('venue-menu-plan-notice')).toBeNull();
+        // Not latched: the owner can retry.
+        expect(input).toBeEnabled();
+        fetchMock.mockRestore();
+    });
+
+    it('a 403 with another code on Save is the ordinary error and does not lock', async () => {
+        mockEntitlements.mockResolvedValue({ ...effectiveSet([]), failed: true });
+        mockPut.mockResolvedValue({
+            ok: false,
+            error: { status: 403, code: 'EMAIL_NOT_VERIFIED', message: 'verify your email' }
+        } as never);
+
+        renderPanel();
+        await screen.findByDisplayValue('Entradas');
+
+        fireEvent.click(screen.getByRole('button', { name: 'Guardar carta' }));
+
+        expect(await screen.findByText('No se pudo guardar la carta.')).toBeTruthy();
+        expect(screen.queryByTestId('venue-menu-plan-notice')).toBeNull();
+        expect(screen.getByRole('button', { name: 'Guardar carta' })).toBeEnabled();
+    });
+
+    it('«Eliminar» is disabled while the menu is gated', async () => {
+        mockGet.mockResolvedValue({
+            ok: true,
+            data: {
+                ...LOADED_MENU.data,
+                file: { url: 'https://res.cloudinary.com/demo/menu.pdf', kind: 'pdf' }
+            }
+        } as never);
+        mockEntitlements.mockResolvedValue(effectiveSet([]));
+
+        renderPanel();
+
+        const notice = await screen.findByTestId('venue-menu-plan-notice');
+        const remove = screen.getByRole('button', { name: 'Eliminar' });
+        expect(remove).toBeDisabled();
+        expect(remove).toHaveAttribute('aria-describedby', notice.id);
+    });
+
+    it('a 403 ENTITLEMENT_REQUIRED on «Eliminar» lands in the notice', async () => {
+        const mockDelete = vi.mocked(apiClient.delete);
+        mockGet.mockResolvedValue({
+            ok: true,
+            data: {
+                ...LOADED_MENU.data,
+                file: { url: 'https://res.cloudinary.com/demo/menu.pdf', kind: 'pdf' }
+            }
+        } as never);
+        mockEntitlements.mockResolvedValue({ ...effectiveSet([]), failed: true });
+        mockDelete.mockResolvedValue({
+            ok: false,
+            error: { status: 403, code: 'ENTITLEMENT_REQUIRED', message: 'x' }
+        } as never);
+
+        renderPanel();
+        fireEvent.click(await screen.findByRole('button', { name: 'Eliminar' }));
+
+        expect(await screen.findByTestId('venue-menu-plan-notice')).toHaveTextContent(
+            /plan Profesional/
+        );
+        expect(screen.queryByText('No se pudo eliminar el archivo del menú.')).toBeNull();
+    });
+
+    it('a stale cached block loses to a fresh read that grants the entitlement', async () => {
+        mockEntitlements.mockResolvedValue(effectiveSet([]));
+        mockFreshEntitlements.mockResolvedValue(ENTITLED);
+
+        const { container } = renderPanel();
+        await screen.findByDisplayValue('Entradas');
+
+        await waitFor(() => {
+            expect(mockFreshEntitlements).toHaveBeenCalledWith({ vertical: 'venue' });
+        });
+        await act(async () => {});
+
+        expect(screen.queryByTestId('venue-menu-plan-notice')).toBeNull();
+        expect(container.querySelector('input[type="file"]')).toBeEnabled();
+    });
+
+    it('entitled owner: no notice, upload and Save enabled (unchanged)', async () => {
+        let resolveRead: (value: EntitlementsData) => void = () => {};
+        mockEntitlements.mockReturnValue(
+            new Promise<EntitlementsData>((resolve) => {
+                resolveRead = resolve;
+            })
+        );
+
+        const { container } = renderPanel();
+        await screen.findByDisplayValue('Entradas');
+
+        // Only once the read has RESOLVED does an assertion about the gate mean
+        // anything: before it, the gate is open by construction.
+        await act(async () => {
+            resolveRead(ENTITLED);
+        });
+
+        expect(mockFreshEntitlements).not.toHaveBeenCalled();
+        expect(screen.queryByTestId('venue-menu-plan-notice')).toBeNull();
+        expect(container.querySelector('input[type="file"]')).toBeEnabled();
+        expect(screen.getByRole('button', { name: 'Guardar carta' })).toBeEnabled();
+        expect(screen.getByRole('button', { name: 'Agregar sección' })).toBeEnabled();
     });
 });

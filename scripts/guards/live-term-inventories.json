@@ -300,6 +300,12 @@
             "symbol": "adminLiftReconciliationMarkRoute",
             "row": null,
             "why": "La ruta serializa levantada_en recién escrita por S15 para responder qué marca se levantó; no la relee como estado de origen y no corresponde a una fila del glosario."
+        },
+        {
+            "file": "apps/api/src/utils/reconciliation-summary/reconciliation-subjects-reader.ts",
+            "symbol": "readReconciliationSubjects",
+            "row": null,
+            "why": "El mail de resumen de conciliación (HOS-1971) lee las marcas abiertas (levantada_en nula) de los sujetos que nombra, sólo para mostrar desde cuándo están abiertas y enlazar a su detalle en el panel; no decide nada con el término."
         }
     ],
     "cortesia_diferida": [

@@ -17,20 +17,29 @@
  * arrives complete. The anchor is only the local hand-off of bytes the browser
  * already holds.
  *
- * ## The 403 is a real state, not an error
+ * ## Not holding the entitlement is an upsell, not a broken button
  *
- * The sheet is a premium capability, and the listing summary the owner index
- * renders carries no entitlement information — so the button renders for every
- * published listing and the API is the one that decides. A refusal is shown as
- * the upsell sentence it is, never as "something went wrong".
+ * The sheet is a Premium capability (`download_listing_pdf`). The island reads
+ * the owner's effective set for the vertical (`useListingPlanGate`) and, when
+ * the key is not held, renders the action as a locked link with a "Premium"
+ * badge that leads to that vertical's plans page instead of a button that can
+ * only answer 403. A 403 from the API (the read was still pending, or failed
+ * and fell open) lands in the same upsell, never in "something went wrong".
  */
 
+import { LockIcon } from '@repo/icons';
 import type { JSX } from 'react';
-import { useState } from 'react';
+import { useId, useState } from 'react';
+import { useListingPlanGate } from '@/hooks/useListingPlanGate';
 import { getApiUrl } from '@/lib/env';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
+import { PRICING_PAGE_PATH_BY_AUDIENCE } from '@/lib/pricing-plans';
+import { buildUrl } from '@/lib/urls';
 import styles from './ListingActions.module.css';
+
+/** The entitlement the API's brochure route requires (Premium tiers). */
+const BROCHURE_ENTITLEMENT = 'download_listing_pdf';
 
 /** API path segment per vertical (mirrors the protected route mounts). */
 const API_SEGMENT_BY_VERTICAL = {
@@ -74,6 +83,8 @@ export function BrochureDownloadButton({
 }: BrochureDownloadButtonProps): JSX.Element {
     const { t } = createTranslations(locale);
     const [state, setState] = useState<DownloadState>('idle');
+    const hintId = useId();
+    const { gate } = useListingPlanGate({ vertical, entitlementKey: BROCHURE_ENTITLEMENT });
 
     async function handleDownload(): Promise<void> {
         if (state === 'working') {
@@ -120,6 +131,39 @@ export function BrochureDownloadButton({
         }
     }
 
+    // Any answer but `open` means the click could only be refused: show the
+    // upsell. A server-side 403 (`locked`) joins it, for the fail-open cases.
+    if (gate !== 'open' || state === 'locked') {
+        return (
+            <>
+                <a
+                    className={`${styles.link} ${styles.lockedLink}`}
+                    href={buildUrl({ locale, path: PRICING_PAGE_PATH_BY_AUDIENCE[vertical] })}
+                    aria-describedby={hintId}
+                    data-testid="listing-brochure-upsell"
+                >
+                    <LockIcon
+                        size={14}
+                        aria-hidden="true"
+                    />
+                    {t('listing.brochure.download', 'Descargar ficha en PDF')}
+                    <span className={styles.premiumBadge}>
+                        {t('listing.brochure.premiumBadge', 'Premium')}
+                    </span>
+                </a>
+                <p
+                    id={hintId}
+                    className={styles.hint}
+                >
+                    {t(
+                        'listing.brochure.locked',
+                        'La ficha en PDF está disponible en el plan Premium de tu rubro.'
+                    )}
+                </p>
+            </>
+        );
+    }
+
     return (
         <>
             <button
@@ -136,15 +180,6 @@ export function BrochureDownloadButton({
                     ? t('listing.brochure.downloading', 'Generando la ficha…')
                     : t('listing.brochure.download', 'Descargar ficha en PDF')}
             </button>
-
-            {state === 'locked' && (
-                <p className={styles.hint}>
-                    {t(
-                        'listing.brochure.locked',
-                        'La ficha en PDF está disponible en el plan Premium de tu rubro.'
-                    )}
-                </p>
-            )}
 
             {state === 'error' && (
                 <p

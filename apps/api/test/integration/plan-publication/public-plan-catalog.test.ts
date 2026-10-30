@@ -168,6 +168,76 @@ describe('HOS-1621 public plan catalog (TEST:1621:1)', () => {
         expect(noCurrentFloor.floor).toBeNull();
     });
 
+    it('HOS-1967 the trial offer comes from the vertical trial plan and follows its current version', async () => {
+        // Arrange: a sellable plan whose OWN trial_days disagrees with the trial plan.
+        const app = initApp();
+        const sellable = await insertPlan({ vertical: 'venue', slug: 'venue-sellable' });
+        await insertVersion({
+            planId: sellable,
+            vertical: 'venue',
+            rank: 1,
+            sellable: true,
+            current: true,
+            trialDays: 99,
+            billingCycles: ['monthly']
+        });
+        const read = async (vertical: string) => {
+            const response = await app.request(`/api/v1/public/plan-catalog?vertical=${vertical}`, {
+                headers: publicHeaders
+            });
+            expect(response.status, await response.clone().text()).toBe(200);
+            return (await response.json()).data;
+        };
+
+        // Act + Assert: no trial plan yet, so nothing is offered.
+        expect((await read('venue')).trialOffer).toBeNull();
+
+        const trialPlan = await insertPlan({ vertical: 'venue', slug: 'trial', role: 'trial' });
+        const firstTrial = await insertVersion({
+            planId: trialPlan,
+            vertical: 'venue',
+            rank: 0,
+            sellable: false,
+            current: true,
+            trialDays: 21
+        });
+        expect((await read('venue')).trialOffer).toEqual({ trialDays: 21 });
+
+        // Changing the trial plan's current version changes the offer.
+        await getDb()
+            .update(planVersions)
+            .set({ current: false })
+            .where(eq(planVersions.id, firstTrial));
+        await insertVersion({
+            planId: trialPlan,
+            vertical: 'venue',
+            rank: 0,
+            sellable: false,
+            current: true,
+            trialDays: 7
+        });
+        expect((await read('venue')).trialOffer).toEqual({ trialDays: 7 });
+    });
+
+    it('HOS-1967 tourist is never offered a trial, even with trial days in its trial plan', async () => {
+        const trialPlan = await insertPlan({ vertical: 'tourist', slug: 'trial', role: 'trial' });
+        await insertVersion({
+            planId: trialPlan,
+            vertical: 'tourist',
+            rank: 0,
+            sellable: false,
+            current: true,
+            trialDays: 30
+        });
+
+        const response = await initApp().request('/api/v1/public/plan-catalog?vertical=tourist', {
+            headers: publicHeaders
+        });
+
+        expect(response.status, await response.clone().text()).toBe(200);
+        expect((await response.json()).data.trialOffer).toBeNull();
+    });
+
     it('TEST:1621:1 (e) rejects invalid and missing verticals by request shape', async () => {
         const app = initApp();
         expect(
