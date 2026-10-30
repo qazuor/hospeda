@@ -20,6 +20,7 @@ import {
     createScratch,
     dropScratch,
     fingerprint,
+    PRE_CUTOVER_MAIN_SHA,
     requireAdminUrl,
     withDatabase
 } from './scratch-db.ts';
@@ -34,7 +35,7 @@ const suffix = randomBytes(4).toString('hex');
 const OLD_DB = `rehearsal_copy_old_${suffix}`;
 const NEW_DB = `rehearsal_copy_new_${suffix}`;
 const session = process.env;
-const oldRef = session.CUTOVER_OLD_SCHEMA_REF ?? 'origin/main';
+const oldRef = session.CUTOVER_OLD_SCHEMA_REF ?? PRE_CUTOVER_MAIN_SHA;
 
 const PROD_PRE = ['prod-pre-sub-1', 'prod-pre-sub-2', 'prod-pre-addon-1', 'prod-pre-target-1'];
 const PROD_PLANS = ['prod-plan-mp-1', 'prod-plan-addon-1', 'prod-plan-checkout-1'];

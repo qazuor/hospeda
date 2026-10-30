@@ -59,6 +59,14 @@ export function requireAdminUrl(): string {
     return url;
 }
 
+/**
+ * The last `main` commit BEFORE the V6 billing cutover: the schema production ran until
+ * the promotion. Pinned to a SHA because `main` moved past V6 on 2026-10-30 (#3914), so
+ * `origin/main` is no longer the old schema. An ancestor of `main`; CI fetches this exact
+ * commit. Override with CUTOVER_OLD_SCHEMA_REF.
+ */
+export const PRE_CUTOVER_MAIN_SHA = 'c52c57b58749267adf1f2de519574f14571b4125';
+
 /** Where a migration chain comes from. */
 export type MigrationSource =
     | { readonly kind: 'git-ref'; readonly ref: string }
