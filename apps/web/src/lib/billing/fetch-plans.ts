@@ -22,7 +22,13 @@ export interface PublicPlanData {
     readonly category: BillingPlanCategory;
     readonly monthlyPriceArs: number;
     readonly annualPriceArs: number | null;
+    /**
+     * Whether this card may promise a free trial. Comes ONLY from the catalog's
+     * `trialOffer` (the API's decision, HOS-1967) — never from the sellable
+     * version's own `trial_days`.
+     */
     readonly hasTrial: boolean;
+    /** The trial length of `trialOffer`, or `0` when there is no offer. */
     readonly trialDays: number;
     readonly sortOrder: number;
     readonly isActive: boolean;
@@ -43,10 +49,8 @@ const CATEGORY_BY_VERTICAL: Record<PublicPlanCatalogVertical, BillingPlanCategor
     experience: 'owner'
 };
 
-/** Named predicate shared by sellable plan cards and the free floor card. */
-function hasTrialDays(days: number): boolean {
-    return days > 0;
-}
+/** The vertical's trial offer as decided by the API; `null` means "promise nothing". */
+type TrialOffer = { readonly trialDays: number } | null;
 
 /** Map a catalog plan when it has a monthly billing choice. */
 function mapSellablePlan(
@@ -58,13 +62,13 @@ function mapSellablePlan(
         description: string | null;
         pricingOrder: number;
         rank: number;
-        trialDays: number;
         inheritsTouristVip: boolean;
         entitlements: string[];
         limits: Record<string, number>;
         billingOptions: { id: string; cycle: string; amount: number }[];
     },
-    vertical: PublicPlanCatalogVertical
+    vertical: PublicPlanCatalogVertical,
+    trialOffer: TrialOffer
 ): PublicPlanData | null {
     const monthly = plan.billingOptions.find((option) => option.cycle === 'monthly');
     if (!monthly) return null;
@@ -79,8 +83,8 @@ function mapSellablePlan(
         category: CATEGORY_BY_VERTICAL[vertical],
         monthlyPriceArs: monthly.amount,
         annualPriceArs: annual?.amount ?? null,
-        hasTrial: hasTrialDays(plan.trialDays),
-        trialDays: plan.trialDays,
+        hasTrial: trialOffer !== null,
+        trialDays: trialOffer?.trialDays ?? 0,
         sortOrder: plan.pricingOrder,
         isActive: true,
         inheritsTouristVip: plan.inheritsTouristVip,
@@ -102,7 +106,6 @@ function mapFloor(
         description: string | null;
         pricingOrder: number;
         rank: number;
-        trialDays: number;
         inheritsTouristVip?: boolean;
         entitlements: string[];
         limits: Record<string, number>;
@@ -158,10 +161,12 @@ export async function fetchPublicPlans({
             return { ok: false, error: 'Invalid public plan catalog response' };
         }
 
+        // An absent offer (an API older than HOS-1967) promises nothing.
+        const trialOffer: TrialOffer = parsed.data.trialOffer ?? null;
         const plans = parsed.data.plans
             .slice()
             .sort((left, right) => left.pricingOrder - right.pricingOrder || left.rank - right.rank)
-            .map((plan) => mapSellablePlan(plan, vertical))
+            .map((plan) => mapSellablePlan(plan, vertical, trialOffer))
             .filter((plan): plan is PublicPlanData => plan !== null);
         const floor = parsed.data.floor ? mapFloor(parsed.data.floor, vertical) : null;
         return { ok: true, plans: floor ? [floor, ...plans] : plans };
