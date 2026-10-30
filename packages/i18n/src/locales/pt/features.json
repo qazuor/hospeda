@@ -171,7 +171,7 @@
         "banner": {
             "title_one": "{{trialDays}} dia grátis na sua primeira assinatura. Nada é cobrado até o teste terminar.",
             "title_other": "{{trialDays}} dias grátis na sua primeira assinatura. Nada é cobrado até o teste terminar.",
-            "description": "Você começa a testar tudo hoje mesmo: monta seu imóvel, publica e aí começa o seu teste grátis, que é uma só para hospedagens. Seus dados ficam salvos mesmo que você decida esperar."
+            "description": "Você começa a testar tudo hoje mesmo, sem cartão: monta seu imóvel, publica e aí começa o seu teste grátis, que é uma só para hospedagens. Seus dados ficam salvos mesmo que você decida esperar."
         },
         "list": {
             "aiImport": {

@@ -171,7 +171,7 @@
         "banner": {
             "title_one": "{{trialDays}} free day on your first subscription. You won't be charged anything until the trial ends.",
             "title_other": "{{trialDays}} free days on your first subscription. You won't be charged anything until the trial ends.",
-            "description": "You can start trying everything today: set up your property, publish it, and that's when your free trial begins. There's only one for accommodation. Your data stays saved even if you decide to wait."
+            "description": "You can start trying everything today, no card needed: set up your property, publish it, and that's when your free trial begins. There's only one for accommodation. Your data stays saved even if you decide to wait."
         },
         "list": {
             "aiImport": {
