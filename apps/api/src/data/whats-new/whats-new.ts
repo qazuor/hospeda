@@ -155,7 +155,7 @@ export const whatsNewEntries: WhatsNewEntry[] = WhatsNewCatalogSchema.parse([
     // origin: #3898
     {
         id: '2026-10-29-restaurants-section-is-now-comer-y-salir',
-        publishedAt: 'on-promotion',
+        publishedAt: '2026-10-30T06:31:48Z',
         highlight: false,
         title: {
             es: 'Restaurantes y bares ahora están en Comer y salir',
@@ -172,7 +172,7 @@ export const whatsNewEntries: WhatsNewEntry[] = WhatsNewCatalogSchema.parse([
     // origin: #3824
     {
         id: '2026-10-26-admin-social-secrets-masked',
-        publishedAt: 'on-promotion',
+        publishedAt: '2026-10-30T05:31:48Z',
         highlight: false,
         roles: ['ADMIN', 'SUPER_ADMIN'],
         title: {
@@ -190,7 +190,7 @@ export const whatsNewEntries: WhatsNewEntry[] = WhatsNewCatalogSchema.parse([
     // origin: #3811
     {
         id: '2026-10-25-listing-summary-in-portuguese',
-        publishedAt: 'on-promotion',
+        publishedAt: '2026-10-30T04:31:48Z',
         highlight: false,
         title: {
             es: 'Los listados de Comer y salir y de experiencias se leen en portugués',
@@ -207,7 +207,7 @@ export const whatsNewEntries: WhatsNewEntry[] = WhatsNewCatalogSchema.parse([
     // origin: #3833
     {
         id: '2026-10-26-checkout-straight-to-mercadopago',
-        publishedAt: 'on-promotion',
+        publishedAt: '2026-10-30T03:31:48Z',
         highlight: false,
         title: {
             es: 'Suscribirte ahora te lleva directo a Mercado Pago',
@@ -224,7 +224,7 @@ export const whatsNewEntries: WhatsNewEntry[] = WhatsNewCatalogSchema.parse([
     // origin: #3800
     {
         id: '2026-10-25-grace-period-reminders',
-        publishedAt: 'on-promotion',
+        publishedAt: '2026-10-30T02:31:48Z',
         highlight: false,
         title: {
             es: 'Te avisamos antes de que termine el plazo para regularizar tu pago',
@@ -241,7 +241,7 @@ export const whatsNewEntries: WhatsNewEntry[] = WhatsNewCatalogSchema.parse([
     // origin: #3805
     {
         id: '2026-10-25-newsletter-subscribers-list-loads',
-        publishedAt: 'on-promotion',
+        publishedAt: '2026-10-30T01:31:48Z',
         highlight: false,
         roles: ['ADMIN', 'SUPER_ADMIN'],
         title: {
@@ -259,7 +259,7 @@ export const whatsNewEntries: WhatsNewEntry[] = WhatsNewCatalogSchema.parse([
     // origin: #3726
     {
         id: '2026-10-20-plans-for-every-listing',
-        publishedAt: 'on-promotion',
+        publishedAt: '2026-10-30T00:31:48Z',
         highlight: false,
         title: {
             es: 'Nuevos planes para publicar alojamientos, locales de Comer y salir y experiencias',
@@ -276,7 +276,7 @@ export const whatsNewEntries: WhatsNewEntry[] = WhatsNewCatalogSchema.parse([
     // origin: #3743
     {
         id: '2026-10-21-passwords-accept-any-symbol',
-        publishedAt: 'on-promotion',
+        publishedAt: '2026-10-29T23:31:48Z',
         highlight: false,
         title: {
             es: 'Tu contraseña puede llevar cualquier símbolo',
@@ -293,7 +293,7 @@ export const whatsNewEntries: WhatsNewEntry[] = WhatsNewCatalogSchema.parse([
     // origin: #3774
     {
         id: '2026-10-23-account-and-forms-polish',
-        publishedAt: 'on-promotion',
+        publishedAt: '2026-10-29T22:31:48Z',
         highlight: false,
         title: {
             es: 'Tu cuenta y los formularios, más prolijos',
@@ -310,7 +310,7 @@ export const whatsNewEntries: WhatsNewEntry[] = WhatsNewCatalogSchema.parse([
     // origin: #3759
     {
         id: '2026-10-23-withdrawal-button-readable',
-        publishedAt: 'on-promotion',
+        publishedAt: '2026-10-29T21:31:48Z',
         highlight: false,
         title: {
             es: 'El botón de arrepentimiento se lee bien en tema claro y oscuro',
@@ -327,7 +327,7 @@ export const whatsNewEntries: WhatsNewEntry[] = WhatsNewCatalogSchema.parse([
     // origin: #3801
     {
         id: '2026-10-25-safer-data-validation',
-        publishedAt: 'on-promotion',
+        publishedAt: '2026-10-29T20:31:48Z',
         highlight: false,
         title: {
             es: 'Actualizamos la validación de datos con un parche de seguridad',
@@ -344,7 +344,7 @@ export const whatsNewEntries: WhatsNewEntry[] = WhatsNewCatalogSchema.parse([
     // origin: #3775, #3783, #3785, #3792
     {
         id: '2026-10-24-mobile-floating-dock',
-        publishedAt: 'on-promotion',
+        publishedAt: '2026-10-29T19:31:48Z',
         highlight: false,
         title: {
             es: 'En el celular, los botones flotantes ya no tapan las tarjetas',
