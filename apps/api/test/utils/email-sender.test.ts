@@ -21,6 +21,7 @@ describe('buildEmailEnvDecoration', () => {
         // Assert
         expect(result.fromName).toBe('Hospeda [STAGING]');
         expect(result.subjectPrefix).toBe('[STAGING] ');
+        expect(result.environmentLabel).toBe('STAGING');
     });
 
     it('marks the local development deployment', () => {
@@ -41,6 +42,9 @@ describe('buildEmailEnvDecoration', () => {
 
         // Act
         const result = buildEmailEnvDecoration(input);
+
+        // Assert (label)
+        expect(result.environmentLabel).toBeUndefined();
 
         // Assert
         expect(result.fromName).toBe('Hospeda');

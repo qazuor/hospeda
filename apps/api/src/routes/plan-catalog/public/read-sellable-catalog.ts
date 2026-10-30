@@ -10,7 +10,8 @@ import {
     planVersionLimits,
     planVersions
 } from '@repo/db';
-import type { BillingCycle, PublicPlanCatalogVertical } from '@repo/schemas';
+import { type BillingCycle, type PublicPlanCatalogVertical, TRIAL_PLAN_ROLE } from '@repo/schemas';
+import { resolveTrialOffer } from './resolve-trial-offer';
 
 const BILLING_CYCLE_ORDER: Record<BillingCycle, number> = {
     monthly: 0,
@@ -119,5 +120,29 @@ export async function readSellablePlanCatalog(args: { vertical: PublicPlanCatalo
             };
         }
     }
-    return { vertical: args.vertical, plans: sellablePlans, floor };
+    const { trialOffer } = resolveTrialOffer({
+        vertical: args.vertical,
+        trialPlanTrialDays: await readCurrentTrialPlanDays({ vertical: args.vertical })
+    });
+    return { vertical: args.vertical, plans: sellablePlans, floor, trialOffer };
+}
+
+/**
+ * Reads `trial_days` of the current version of the vertical's `role='trial'`
+ * plan — the same row the trial engine reads (`trial-start-reader.ts`
+ * `findTrialPlan`). `null` when the plan or its current version is missing.
+ */
+async function readCurrentTrialPlanDays(args: {
+    readonly vertical: PublicPlanCatalogVertical;
+}): Promise<number | null> {
+    const [trialPlan] = await getDb()
+        .select({ id: plans.id })
+        .from(plans)
+        .where(and(eq(plans.vertical, args.vertical), eq(plans.role, TRIAL_PLAN_ROLE)))
+        .limit(1);
+    if (!trialPlan) return null;
+    const version = await planCatalogModel.findCurrentPlanVersion({ planId: trialPlan.id });
+    if (!version) return null;
+    const content = await planCatalogModel.findPlanVersion({ id: version.id });
+    return content?.trialDays ?? null;
 }
