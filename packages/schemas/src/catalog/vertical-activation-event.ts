@@ -47,3 +47,38 @@ export const VERTICAL_ACTIVATION_EVENT_BY_VERTICAL: Readonly<
     [VerticalEnum.TOURIST]: VERTICAL_ACTIVATION_EVENTS.START_BUTTON_PRESSED,
     [VerticalEnum.PARTNER]: null
 };
+
+/**
+ * The activation events that something in the product actually PRODUCES today
+ * (HOS-1967). Declaring an event in {@link VERTICAL_ACTIVATION_EVENT_BY_VERTICAL}
+ * is not the same as wiring it: `start_button_pressed` is declared for tourist,
+ * but nothing calls the trial engine with it, so no tourist trial can start.
+ *
+ * A vertical whose declared event is absent from this list has NO trial path,
+ * and a surface must never promise it a trial, whatever its trial plan's
+ * `trial_days` says. Adding an event here is the act of wiring its trigger
+ * (HOS-1970 would add `start_button_pressed` together with its producer).
+ */
+export const TRIGGERED_VERTICAL_ACTIVATION_EVENTS: readonly VerticalActivationEvent[] = [
+    VERTICAL_ACTIVATION_EVENTS.LISTING_PUBLISHED
+];
+
+/**
+ * Whether a vertical has a real trial path: it declares an activation event and
+ * that event has a producer ({@link TRIGGERED_VERTICAL_ACTIVATION_EVENTS}).
+ *
+ * @param input - RO-RO input.
+ * @param input.vertical - The vertical to ask about.
+ * @returns `{ hasTrialPath }` — `false` for a vertical with no event, or with an
+ *   event nothing produces.
+ */
+export function resolveVerticalTrialPath(input: {
+    readonly vertical: VerticalEnum | `${VerticalEnum}`;
+}): {
+    readonly hasTrialPath: boolean;
+} {
+    const event = VERTICAL_ACTIVATION_EVENT_BY_VERTICAL[input.vertical as VerticalEnum] ?? null;
+    return {
+        hasTrialPath: event !== null && TRIGGERED_VERTICAL_ACTIVATION_EVENTS.includes(event)
+    };
+}
