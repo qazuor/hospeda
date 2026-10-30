@@ -25,14 +25,14 @@ import type { Context } from 'hono';
 import { z } from 'zod';
 import { getActorFromContext } from '../../../utils/actor';
 import { apiLogger } from '../../../utils/logger';
-import { createCRUDRoute } from '../../../utils/route-factory';
+import { createProtectedRoute } from '../../../utils/route-factory';
 
 const postService = new PostService({ logger: apiLogger });
 
 /**
  * Route handler — promotes a photo to featured on a post.
  */
-export const protectedSetFeaturedPostMediaRoute = createCRUDRoute({
+export const protectedSetFeaturedPostMediaRoute = createProtectedRoute({
     method: 'put',
     path: '/{id}/media/{mediaId}/featured',
     summary: 'Set featured photo for post gallery',
@@ -42,6 +42,7 @@ export const protectedSetFeaturedPostMediaRoute = createCRUDRoute({
         'photo to visible first. Requires the same permission as updating the post. ' +
         'No request body — ids come from URL params.',
     tags: ['Post', 'Post Media'],
+    protectedTag: false,
     requestParams: {
         id: z.string().uuid({ message: 'zodError.common.id.invalidUuid' }),
         mediaId: z.string().uuid({ message: 'zodError.common.id.invalidUuid' })

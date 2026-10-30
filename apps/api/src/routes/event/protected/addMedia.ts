@@ -20,14 +20,14 @@ import type { Context } from 'hono';
 import { z } from 'zod';
 import { getActorFromContext } from '../../../utils/actor';
 import { apiLogger } from '../../../utils/logger';
-import { createCRUDRoute } from '../../../utils/route-factory';
+import { createProtectedRoute } from '../../../utils/route-factory';
 
 const eventService = new EventService({ logger: apiLogger });
 
 /**
  * Route handler — adds a photo to the specified event's gallery.
  */
-export const protectedAddEventMediaRoute = createCRUDRoute({
+export const protectedAddEventMediaRoute = createProtectedRoute({
     method: 'post',
     path: '/{id}/media',
     summary: 'Add photo to event gallery',
@@ -35,6 +35,7 @@ export const protectedAddEventMediaRoute = createCRUDRoute({
         'Registers an already-uploaded URL as a new event_media row. ' +
         'Requires the same permission as updating the event.',
     tags: ['Event', 'Event Media'],
+    protectedTag: false,
     requestParams: {
         id: z.string().uuid({ message: 'zodError.common.id.invalidUuid' })
     },

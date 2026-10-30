@@ -44,7 +44,7 @@ import type { Context } from 'hono';
 import { z } from 'zod';
 import { getActorFromContext } from '../../../utils/actor';
 import { apiLogger } from '../../../utils/logger';
-import { createCRUDRoute } from '../../../utils/route-factory';
+import { createProtectedRoute } from '../../../utils/route-factory';
 
 const eventService = new EventService({ logger: apiLogger });
 
@@ -53,7 +53,7 @@ const eventService = new EventService({ logger: apiLogger });
  *
  * Permission model: the service helper `updateEventMedia` gates on `checkEventCanEditMedia`, which delegates to `checkCanUpdateEvent` — editing an event's photo text IS editing the event, so it cannot require less.
  */
-export const protectedUpdateEventMediaRoute = createCRUDRoute({
+export const protectedUpdateEventMediaRoute = createProtectedRoute({
     method: 'patch',
     path: '/{id}/media/{mediaId}',
     summary: 'Correct photo text metadata in event gallery',
@@ -63,6 +63,7 @@ export const protectedUpdateEventMediaRoute = createCRUDRoute({
         'to replace. At least one field must be present — an empty body is a ' +
         'VALIDATION_ERROR, not a silent 200. Requires the same permission as updating the event.',
     tags: ['Event', 'Event Media'],
+    protectedTag: false,
     requestParams: {
         id: z.string().uuid({ message: 'zodError.common.id.invalidUuid' }),
         mediaId: z.string().uuid({ message: 'zodError.common.id.invalidUuid' })

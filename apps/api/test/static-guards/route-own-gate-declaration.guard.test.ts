@@ -125,25 +125,7 @@ const NO_OWN_GATE_ALLOWLIST: Readonly<Record<string, string>> = {
     'GET /api/v1/protected/accommodations/calendar-sync/google/callback':
         'public by design: OAuth callback validated by a CSRF cookie',
     'POST /api/v1/protected/auth/change-password':
-        'createSimpleRoute; handler throws 401 without a session user',
-    // Raw `createCRUDRoute` under the protected tier: no route gate, the
-    // handler/service decides with the actor (a guest gets the service's
-    // answer, not the factory's 401). Service checks not re-verified here.
-    'GET /api/v1/protected/accommodations/:id/media': 'raw createCRUDRoute; no route gate',
-    'GET /api/v1/protected/experiences/:id/media': 'raw createCRUDRoute; no route gate',
-    'PATCH /api/v1/protected/events/:id/media/reorder': 'raw createCRUDRoute; no route gate',
-    'GET /api/v1/protected/events/:id/media': 'raw createCRUDRoute; no route gate',
-    'POST /api/v1/protected/events/:id/media': 'raw createCRUDRoute; no route gate',
-    'PUT /api/v1/protected/events/:id/media/:mediaId/featured':
-        'raw createCRUDRoute; no route gate',
-    'DELETE /api/v1/protected/events/:id/media/:mediaId': 'raw createCRUDRoute; no route gate',
-    'PATCH /api/v1/protected/events/:id/media/:mediaId': 'raw createCRUDRoute; no route gate',
-    'PATCH /api/v1/protected/posts/:id/media/reorder': 'raw createCRUDRoute; no route gate',
-    'GET /api/v1/protected/posts/:id/media': 'raw createCRUDRoute; no route gate',
-    'POST /api/v1/protected/posts/:id/media': 'raw createCRUDRoute; no route gate',
-    'PUT /api/v1/protected/posts/:id/media/:mediaId/featured': 'raw createCRUDRoute; no route gate',
-    'DELETE /api/v1/protected/posts/:id/media/:mediaId': 'raw createCRUDRoute; no route gate',
-    'PATCH /api/v1/protected/posts/:id/media/:mediaId': 'raw createCRUDRoute; no route gate'
+        'createSimpleRoute; handler throws 401 without a session user'
 };
 
 /**

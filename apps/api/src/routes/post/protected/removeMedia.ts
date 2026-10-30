@@ -20,14 +20,14 @@ import { z } from 'zod';
 import { getMediaProvider } from '../../../services/media';
 import { getActorFromContext } from '../../../utils/actor';
 import { apiLogger } from '../../../utils/logger';
-import { createCRUDRoute } from '../../../utils/route-factory';
+import { createProtectedRoute } from '../../../utils/route-factory';
 
 const postService = new PostService({ logger: apiLogger });
 
 /**
  * Route handler — soft-deletes a specific photo from a post gallery.
  */
-export const protectedRemovePostMediaRoute = createCRUDRoute({
+export const protectedRemovePostMediaRoute = createProtectedRoute({
     method: 'delete',
     path: '/{id}/media/{mediaId}',
     summary: 'Remove photo from post gallery',
@@ -35,6 +35,7 @@ export const protectedRemovePostMediaRoute = createCRUDRoute({
         'Soft-deletes a media row and resequences the remaining visible photos. ' +
         'Requires the same permission as updating the post.',
     tags: ['Post', 'Post Media'],
+    protectedTag: false,
     requestParams: {
         id: z.string().uuid({ message: 'zodError.common.id.invalidUuid' }),
         mediaId: z.string().uuid({ message: 'zodError.common.id.invalidUuid' })
