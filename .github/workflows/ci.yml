@@ -928,11 +928,13 @@ jobs:
         env:
           HOSPEDA_TEST_DATABASE_URL: postgresql://hospeda_user:hospeda_pass@localhost:5436/postgres
       # U3 (HOS-1426): the cutover script's database tests build the OLD schema from
-      # `main`'s migrations, so that ref must exist in this shallow checkout. They
+      # the pre-cutover `main` commit (PRE_CUTOVER_MAIN_SHA in
+      # scripts/__tests__/cutover-db/scratch-db.ts; main moved past V6 on 2026-10-30,
+      # #3914), so that exact commit must exist in this shallow checkout. They
       # create and drop their own scratch databases on the same service.
-      - name: Fetch main for the old-schema migration chain (cutover tests)
+      - name: Fetch the pre-cutover main commit for the old-schema chain (cutover tests)
         if: matrix.suite == 'packages'
-        run: git fetch --depth=1 origin main:refs/remotes/origin/main
+        run: git fetch --depth=1 origin c52c57b58749267adf1f2de519574f14571b4125
       - name: Cutover script database tests (U3)
         if: matrix.suite == 'packages'
         run: pnpm test:cutover-db
