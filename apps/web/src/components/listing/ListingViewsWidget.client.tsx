@@ -59,20 +59,36 @@ interface ViewRow {
     readonly total: number;
 }
 
+/**
+ * `ready` carries the rows of every vertical that answered AND whether some
+ * vertical was locked: one vertical refusing must not hide another's data.
+ */
 type WidgetState =
     | { readonly status: 'loading' }
-    | { readonly status: 'ready'; readonly rows: readonly ViewRow[] }
-    | { readonly status: 'locked' }
+    | {
+          readonly status: 'ready';
+          readonly rows: readonly ViewRow[];
+          readonly hasLockedVertical: boolean;
+      }
     | { readonly status: 'error' };
+
+/** What {@link fetchRows} resolves to: rows plus the locked flag, or a genuine failure. */
+type FetchOutcome =
+    | { readonly ok: true; readonly rows: readonly ViewRow[]; readonly hasLockedVertical: boolean }
+    | { readonly ok: false };
 
 /**
  * Fetches view stats for every distinct vertical present in `listings` and
  * zips the results with each listing's display name.
+ *
+ * A vertical refused with `403 ENTITLEMENT_REQUIRED` contributes no rows and
+ * sets `hasLockedVertical`; the other verticals' rows still render. Any other
+ * failure is a genuine error for the whole widget.
  */
 async function fetchRows(
     listings: readonly ListingViewsWidgetListing[],
     windowParam: '7d' | '30d'
-): Promise<readonly ViewRow[] | 'locked' | null> {
+): Promise<FetchOutcome> {
     const verticals = [...new Set(listings.map((l) => l.vertical))];
     const nameById = new Map(listings.map((l) => [l.id, l.name] as const));
 
@@ -80,16 +96,16 @@ async function fetchRows(
         verticals.map((vertical) => listingAnalyticsApi.getViews({ vertical, window: windowParam }))
     );
 
-    const failures = results.filter((r) => !r.ok);
-    if (failures.length > 0) {
-        // Locked only when EVERY failure is the entitlement refusal; anything
-        // else in the mix is a genuine error and must say so.
-        return failures.every((r) => !r.ok && r.error.status === 403) ? 'locked' : null;
-    }
-
+    let hasLockedVertical = false;
     const rows: ViewRow[] = [];
     for (const result of results) {
-        if (!result.ok) continue;
+        if (!result.ok) {
+            if (result.error.status === 403 && result.error.code === 'ENTITLEMENT_REQUIRED') {
+                hasLockedVertical = true;
+                continue;
+            }
+            return { ok: false };
+        }
         for (const item of result.data) {
             rows.push({
                 id: item.entityId,
@@ -99,7 +115,7 @@ async function fetchRows(
             });
         }
     }
-    return rows;
+    return { ok: true, rows, hasLockedVertical };
 }
 
 /**
@@ -123,20 +139,22 @@ export function ListingViewsWidget({
         let cancelled = false;
 
         if (listings.length === 0) {
-            setState({ status: 'ready', rows: [] });
+            setState({ status: 'ready', rows: [], hasLockedVertical: false });
             return;
         }
 
         setState({ status: 'loading' });
-        fetchRows(listings, windowParam).then((rows) => {
+        fetchRows(listings, windowParam).then((outcome) => {
             if (cancelled) return;
-            if (rows === null) {
-                setState({ status: 'error' });
-            } else if (rows === 'locked') {
-                setState({ status: 'locked' });
-            } else {
-                setState({ status: 'ready', rows });
-            }
+            setState(
+                outcome.ok
+                    ? {
+                          status: 'ready',
+                          rows: outcome.rows,
+                          hasLockedVertical: outcome.hasLockedVertical
+                      }
+                    : { status: 'error' }
+            );
         });
 
         return () => {
@@ -180,7 +198,7 @@ export function ListingViewsWidget({
                 </fieldset>
             </div>
 
-            {state.status === 'locked' && (
+            {state.status === 'ready' && state.hasLockedVertical && (
                 <p
                     className={styles.locked}
                     data-testid="listing-views-locked"
@@ -204,7 +222,7 @@ export function ListingViewsWidget({
                 </p>
             )}
 
-            {state.status === 'ready' && (
+            {state.status === 'ready' && state.rows.length > 0 && (
                 <ul
                     className={styles.list}
                     data-testid="listing-views-list"

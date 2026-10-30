@@ -49,10 +49,19 @@ describe('resolveListingPlanGate', () => {
         });
     });
 
-    it('is preTrial when the key is missing and the trial can still be activated', () => {
+    it('is preTrial when the key is missing, the trial can be activated and no title is live', () => {
         expect(
             resolveListingPlanGate({ data: data(['activate_trial']), entitlementKey: KEY })
         ).toEqual({ gate: 'preTrial' });
+    });
+
+    it('is plan for a PAID owner who never trialed, even though activate_trial is merged in', () => {
+        // The pre-trial source is MAX-merged whenever no trial row exists,
+        // paid subscription or not (`trial-and-base-sources.ts`).
+        const paidNeverTrialed = { ...data(['activate_trial']), hasLiveNonTrialTitle: true };
+        expect(resolveListingPlanGate({ data: paidNeverTrialed, entitlementKey: KEY })).toEqual({
+            gate: 'plan'
+        });
     });
 
     it('is plan when the key is missing and no trial is left', () => {

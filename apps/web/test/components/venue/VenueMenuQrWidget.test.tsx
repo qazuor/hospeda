@@ -58,13 +58,25 @@ vi.mock('../../../src/lib/api/endpoints-protected', () => ({
     }
 }));
 
+// The fresh confirmation read (taken before any BLOCKING answer) mirrors the
+// cached read unless a test sets it apart.
+const { mockFreshEntitlements } = vi.hoisted(() => ({ mockFreshEntitlements: vi.fn() }));
+
 vi.mock('../../../src/lib/entitlements-cache', () => ({
-    getEntitlementsCached: vi.fn()
+    getEntitlementsCached: vi.fn(),
+    fetchEntitlementsUncached: mockFreshEntitlements
 }));
 
 import { getEntitlementsCached } from '../../../src/lib/entitlements-cache';
 
 const mockEntitlements = vi.mocked(getEntitlementsCached);
+
+// Unless a test says otherwise, the fresh read answers what the cached one did.
+function mirrorFreshRead(): void {
+    mockFreshEntitlements.mockImplementation((input: { vertical: string }) =>
+        mockEntitlements(input as never)
+    );
+}
 
 /** A resolved effective set holding exactly `keys`. */
 function effectiveSet(keys: readonly string[]) {
@@ -107,6 +119,7 @@ const READY_STATS = {
 describe('VenueMenuQrWidget (HOS-1044)', () => {
     beforeEach(() => {
         vi.clearAllMocks();
+        mirrorFreshRead();
         // A failed read by default: the wording falls back to the plan copy.
         mockEntitlements.mockResolvedValue({ ...effectiveSet([]), failed: true });
     });

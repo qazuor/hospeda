@@ -17,7 +17,7 @@
  *    `download_listing_pdf` gets a locked link to the plans page instead.
  */
 
-import { fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { act, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { BrochureDownloadButton } from '../../../src/components/listing/BrochureDownloadButton.client';
 
@@ -35,14 +35,26 @@ vi.mock('../../../src/lib/env', () => ({
     getApiUrl: () => 'https://api.test'
 }));
 
+// The fresh confirmation read (taken before any BLOCKING answer) mirrors the
+// cached read unless a test sets it apart.
+const { mockFreshEntitlements } = vi.hoisted(() => ({ mockFreshEntitlements: vi.fn() }));
+
 vi.mock('../../../src/lib/entitlements-cache', () => ({
-    getEntitlementsCached: vi.fn()
+    getEntitlementsCached: vi.fn(),
+    fetchEntitlementsUncached: mockFreshEntitlements
 }));
 
 import type { EntitlementsData } from '../../../src/lib/entitlements-cache';
 import { getEntitlementsCached } from '../../../src/lib/entitlements-cache';
 
 const mockEntitlements = vi.mocked(getEntitlementsCached);
+
+// Unless a test says otherwise, the fresh read answers what the cached one did.
+function mirrorFreshRead(): void {
+    mockFreshEntitlements.mockImplementation((input: { vertical: string }) =>
+        mockEntitlements(input as never)
+    );
+}
 
 /** A resolved effective set holding exactly `keys`. */
 function effectiveSet(keys: readonly string[]): EntitlementsData {
@@ -85,6 +97,7 @@ describe('BrochureDownloadButton (HOS-1058)', () => {
     beforeEach(() => {
         clickedAnchor = null;
         vi.restoreAllMocks();
+        mirrorFreshRead();
         // A Premium owner by default: every download test below needs one.
         mockEntitlements.mockResolvedValue(effectiveSet(['download_listing_pdf']));
         // jsdom implements neither of these.
@@ -202,12 +215,22 @@ describe('BrochureDownloadButton (HOS-1058)', () => {
     });
 
     it('on Premium: stays a normal download button, no lock, no badge', async () => {
+        let resolveRead: (value: EntitlementsData) => void = () => {};
+        mockEntitlements.mockReturnValue(
+            new Promise<EntitlementsData>((resolve) => {
+                resolveRead = resolve;
+            })
+        );
+
         renderButton();
 
-        await waitFor(() => expect(mockEntitlements).toHaveBeenCalledWith({ vertical: 'venue' }));
-        // Let the resolved read settle before asserting the absence of the lock.
-        await Promise.resolve();
+        // The gate is open by construction until the read resolves, so the
+        // assertions below only mean something once it HAS resolved.
+        await act(async () => {
+            resolveRead(effectiveSet(['download_listing_pdf']));
+        });
 
+        expect(mockFreshEntitlements).not.toHaveBeenCalled();
         expect(screen.getByTestId('listing-brochure-download').tagName).toBe('BUTTON');
         expect(screen.queryByTestId('listing-brochure-upsell')).toBeNull();
         expect(screen.queryByText('Premium')).toBeNull();

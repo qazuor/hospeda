@@ -16,27 +16,59 @@
  *              The last two fail OPEN on purpose: the API still enforces the
  *              gate, so the worst case is the old behaviour (a refusal after
  *              the click), never a Premium owner shown a lock they do not have.
- * - `preTrial` the key is not held and the effective set still grants
- *              `activate_trial`: the owner has never started the vertical's
- *              trial, which begins when the listing is first published and
- *              grants the top tier's entitlements. "Publish to unlock" is true.
- * - `plan`     the key is not held and no trial is available: only a plan
- *              change unlocks it.
+ * - `preTrial` the key is not held, the effective set grants `activate_trial`
+ *              AND the owner holds no live non-trial title. Both conditions are
+ *              needed: the pre-trial source is merged into the effective set
+ *              whenever no trial row exists, EVEN for a paying owner who never
+ *              trialed (`trial-and-base-sources.ts`, `resolve-effective-set.ts`).
+ *              So `activate_trial` alone would tell a paid Básico owner, on an
+ *              already-published listing, that publishing unlocks the feature.
+ *              Only the owner with no title at all is truly pre-trial: the trial
+ *              begins at the first publish and grants the top tier's
+ *              entitlements, so "publish to unlock" is true for them.
+ * - `plan`     the key is not held otherwise: only a plan change unlocks it.
  *
  * Built on `getEntitlementsCached` rather than `useMyEntitlements` because the
  * latter cannot distinguish "no session yet" from "resolved without the key",
  * and only the second may lock a control.
  *
+ * ## A cached read never blocks on its own
+ *
+ * The cache is a browser-module cache with a 60 s TTL that survives ClientRouter
+ * soft navigations, and nothing invalidates it when the owner's plan changes. A
+ * cached answer that would OPEN the control is used as is (the API still
+ * decides). A cached answer that would BLOCK is confirmed with a fresh,
+ * uncached read first, and the fresh answer wins. Concurrent islands for the
+ * same vertical (one brochure button per listing card) share one fresh read.
+ *
  * @module hooks/useListingPlanGate
  */
 
-import type { VerticalEnum } from '@repo/schemas';
+import { VERTICAL_ACTIVATION_KEY, type VerticalEnum } from '@repo/schemas';
 import { useEffect, useState } from 'react';
 import type { EntitlementsData } from '@/lib/entitlements-cache';
-import { getEntitlementsCached } from '@/lib/entitlements-cache';
+import { fetchEntitlementsUncached, getEntitlementsCached } from '@/lib/entitlements-cache';
 
-/** Entitlement the pre-trial plan grants; its presence means "trial not started yet". */
-const ACTIVATE_TRIAL_KEY = 'activate_trial';
+/** Fresh reads in flight, per vertical, so concurrent islands share one request. */
+const freshReads = new Map<`${VerticalEnum}`, Promise<EntitlementsData>>();
+
+/**
+ * One uncached effective-set read for `vertical`, shared by every caller that
+ * asks while it is in flight.
+ */
+function readFresh({
+    vertical
+}: {
+    readonly vertical: `${VerticalEnum}`;
+}): Promise<EntitlementsData> {
+    const pending = freshReads.get(vertical);
+    if (pending) return pending;
+    const request = fetchEntitlementsUncached({ vertical }).finally(() => {
+        freshReads.delete(vertical);
+    });
+    freshReads.set(vertical, request);
+    return request;
+}
 
 /** What the gate answers for one entitlement key. */
 export type ListingPlanGate = 'open' | 'preTrial' | 'plan';
@@ -61,7 +93,7 @@ export function resolveListingPlanGate({
     if ((data.entitlements[entitlementKey] ?? 0) > 0) {
         return { gate: 'open' };
     }
-    if ((data.entitlements[ACTIVATE_TRIAL_KEY] ?? 0) > 0) {
+    if ((data.entitlements[VERTICAL_ACTIVATION_KEY] ?? 0) > 0 && !data.hasLiveNonTrialTitle) {
         return { gate: 'preTrial' };
     }
     return { gate: 'plan' };
@@ -87,15 +119,20 @@ export function useListingPlanGate({
 
     useEffect(() => {
         let cancelled = false;
-        void getEntitlementsCached({ vertical }).then((result) => {
-            if (!cancelled) {
-                setData(result);
+        void (async () => {
+            const cached = await getEntitlementsCached({ vertical });
+            if (resolveListingPlanGate({ data: cached, entitlementKey }).gate === 'open') {
+                if (!cancelled) setData(cached);
+                return;
             }
-        });
+            // About to block: never on the strength of a cached answer alone.
+            const fresh = await readFresh({ vertical });
+            if (!cancelled) setData(fresh);
+        })();
         return () => {
             cancelled = true;
         };
-    }, [vertical]);
+    }, [vertical, entitlementKey]);
 
     return resolveListingPlanGate({ data, entitlementKey });
 }

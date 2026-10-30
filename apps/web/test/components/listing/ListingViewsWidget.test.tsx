@@ -147,7 +147,7 @@ describe('ListingViewsWidget (HOS-734)', () => {
     it('shows an informative locked sentence, not an error, when the API answers 403', async () => {
         mockGetViews.mockResolvedValue({
             ok: false,
-            error: { status: 403, message: 'ENTITLEMENT_REQUIRED' }
+            error: { status: 403, code: 'ENTITLEMENT_REQUIRED', message: 'x' }
         });
 
         render(
@@ -166,10 +166,49 @@ describe('ListingViewsWidget (HOS-734)', () => {
         ).toBeNull();
     });
 
+    it('one vertical locked does not hide another vertical that has data', async () => {
+        mockGetViews.mockImplementation(async ({ vertical }: { vertical: string }) =>
+            vertical === 'venue'
+                ? { ok: false, error: { status: 403, code: 'ENTITLEMENT_REQUIRED', message: 'x' } }
+                : { ok: true, data: [{ entityId: 'exp-1', unique: 7, total: 11 }] }
+        );
+
+        render(
+            <ListingViewsWidget
+                locale="es"
+                listings={[GASTRO_LISTING, EXPERIENCE_LISTING]}
+            />
+        );
+
+        const row = await screen.findByTestId('listing-views-row');
+        expect(row).toHaveTextContent('Paseo en Kayak');
+        expect(row).toHaveTextContent('7');
+        expect(screen.getAllByTestId('listing-views-row')).toHaveLength(1);
+        expect(screen.getByTestId('listing-views-locked')).toBeTruthy();
+        expect(screen.queryByRole('alert')).toBeNull();
+    });
+
+    it('a 403 with another code is the error, not the locked sentence', async () => {
+        mockGetViews.mockResolvedValue({
+            ok: false,
+            error: { status: 403, code: 'EMAIL_NOT_VERIFIED', message: 'x' }
+        });
+
+        render(
+            <ListingViewsWidget
+                locale="es"
+                listings={[GASTRO_LISTING]}
+            />
+        );
+
+        expect(await screen.findByRole('alert')).toHaveTextContent('No pudimos cargar las vistas');
+        expect(screen.queryByTestId('listing-views-locked')).toBeNull();
+    });
+
     it('a 403 mixed with a genuine failure is still the error', async () => {
         mockGetViews.mockImplementation(async ({ vertical }: { vertical: string }) =>
             vertical === 'venue'
-                ? { ok: false, error: { status: 403, message: 'ENTITLEMENT_REQUIRED' } }
+                ? { ok: false, error: { status: 403, code: 'ENTITLEMENT_REQUIRED', message: 'x' } }
                 : { ok: false, error: { status: 500, message: 'boom' } }
         );
 

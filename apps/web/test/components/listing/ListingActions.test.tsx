@@ -60,6 +60,12 @@ vi.mock('../../../src/lib/entitlements-cache', () => ({
         limits: {},
         hasLiveNonTrialTitle: false,
         failed: true
+    })),
+    fetchEntitlementsUncached: vi.fn(async () => ({
+        entitlements: {},
+        limits: {},
+        hasLiveNonTrialTitle: false,
+        failed: true
     }))
 }));
 
