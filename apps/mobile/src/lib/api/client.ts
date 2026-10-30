@@ -223,10 +223,10 @@ export const apiFetch = async <S extends ZodTypeAny>({
     const headers: Record<string, string> = {};
 
     // Attach session cookie from SecureStore (via Better Auth expoClient).
-    // getCookie() is typed as () => string by better-auth; it returns an empty
-    // string '' when no session is present (SecureStore has no stored cookie),
+    // getCookie() is async since better-auth 1.7 (Promise<string>); it resolves to an
+    // empty string '' when no session is present (SecureStore has no stored cookie),
     // so we guard with a truthiness check to avoid sending `Cookie: `.
-    const cookie = getCookie();
+    const cookie = await getCookie();
     if (cookie) {
         headers.Cookie = cookie;
     }

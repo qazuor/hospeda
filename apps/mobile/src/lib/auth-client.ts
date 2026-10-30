@@ -92,7 +92,7 @@ export const signOut = authClient.signOut;
 export const useSession = authClient.useSession;
 
 /**
- * Returns the raw cookie string stored in SecureStore.
+ * Resolves the raw cookie string stored in SecureStore (async since better-auth 1.7).
  * Useful for passing to non-Better-Auth fetch calls that need the session
  * cookie (e.g. custom file upload endpoints).
  */

@@ -569,7 +569,19 @@ function buildAuth() {
 
         advanced: {
             database: {
-                generateId: () => crypto.randomUUID()
+                generateId: () => crypto.randomUUID(),
+                /**
+                 * HOS-1932 — Better Auth 1.7 validates the Drizzle schema against the
+                 * tables it expects and fails EVERY auth request with
+                 * `Drizzle schema mismatch: Missing columns user.role`, because the
+                 * admin plugin declares a `role` field on `user`. That column is
+                 * deliberately gone (HOS-296: roles live in `user_role`), and the
+                 * user-create hook below (`user.create.before`) already strips the
+                 * plugin's injected `role` so no insert ever touches it. 1.6 had no
+                 * such check, so turning it off restores the exact prior behaviour.
+                 * Drop this only if the admin plugin goes away or `users.role` returns.
+                 */
+                validateSchema: false
             },
             /** Explicitly enable CSRF protection (origin header + Fetch Metadata checks) */
             disableCSRFCheck: false,

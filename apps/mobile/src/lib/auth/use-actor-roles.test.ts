@@ -25,7 +25,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 // ---------------------------------------------------------------------------
 
 vi.mock('../auth-client', () => ({
-    getCookie: vi.fn(() => '')
+    getCookie: vi.fn(async () => '')
 }));
 
 vi.mock('expo-constants', () => ({
