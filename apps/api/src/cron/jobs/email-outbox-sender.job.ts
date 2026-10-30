@@ -47,13 +47,16 @@ import {
     OUTBOX_MAIL_RENDERERS,
     type OutboxEscalation,
     PreferenceService,
-    processEmailOutboxBatch
+    processEmailOutboxBatch,
+    type ReconciliationSubjectsReader
 } from '@repo/notifications';
 import { getClock } from '../../utils/clock.js';
 import { resolveOutboxEmailClientConfig } from '../../utils/e2e-mail-capture.js';
-import { getEmailSender } from '../../utils/email-sender.js';
+import { getEmailEnvironmentLabel, getEmailSender } from '../../utils/email-sender.js';
 import { env } from '../../utils/env.js';
 import { readListingNames } from '../../utils/listing-publication/listing-names-reader.js';
+import { apiLogger } from '../../utils/logger.js';
+import { readReconciliationSubjects } from '../../utils/reconciliation-summary/reconciliation-subjects-reader.js';
 import type { CronJobContext, CronJobDefinition, CronJobResult } from '../types.js';
 
 /** The sender runs every minute. */
@@ -76,6 +79,12 @@ export const EMAIL_OUTBOX_BATCH_SIZE = 50;
 export function buildOutboxSenderRender(input: {
     readonly siteUrl: string;
     readonly readListingNames?: ListingNamesReader;
+    /** Resolves the reconciliation summary's subjects; defaults to the database reader. */
+    readonly readReconciliationSubjects?: ReconciliationSubjectsReader;
+    /** Admin panel base URL for the summary's links. Absent: no links. */
+    readonly adminUrl?: string;
+    /** Non-production marker (e.g. `STAGING`) for the summary header. Absent in production. */
+    readonly environmentLabel?: string;
 }) {
     return createOutboxMailRenderer({
         renderers: {
@@ -84,7 +93,17 @@ export function buildOutboxSenderRender(input: {
             ...createBillingRenewalRenderers({ siteUrl: input.siteUrl }),
             ...createBillingGraceReminderRenderers({ siteUrl: input.siteUrl }),
             ...createBillingPromoRenderers({ siteUrl: input.siteUrl }),
-            ...createBillingReconciliationRenderers({ siteUrl: input.siteUrl }),
+            ...createBillingReconciliationRenderers({
+                siteUrl: input.siteUrl,
+                readSubjects: input.readReconciliationSubjects ?? readReconciliationSubjects,
+                ...(input.adminUrl ? { adminUrl: input.adminUrl } : {}),
+                ...(input.environmentLabel ? { environmentLabel: input.environmentLabel } : {}),
+                onEnrichmentError: ({ error }) =>
+                    apiLogger.warn(
+                        { error: error instanceof Error ? error.message : String(error) },
+                        'Reconciliation summary: subjects could not be resolved; sending the bare lines'
+                    )
+            }),
             ...createBillingSignupRenderers({ siteUrl: input.siteUrl }),
             ...createVerticalListingRenderers({
                 siteUrl: input.siteUrl,
@@ -180,7 +199,11 @@ function buildDefaultDeps(): EmailOutboxSenderDeps | null {
         outbox: emailOutboxModel,
         log: notificationLogModel,
         isOptedOut: createOutboxOptOutReader({ preferenceService }),
-        render: buildOutboxSenderRender({ siteUrl: env.HOSPEDA_SITE_URL }),
+        render: buildOutboxSenderRender({
+            siteUrl: env.HOSPEDA_SITE_URL,
+            adminUrl: env.HOSPEDA_ADMIN_URL,
+            ...(getEmailEnvironmentLabel() ? { environmentLabel: getEmailEnvironmentLabel() } : {})
+        }),
         transport: new BrevoEmailTransport(createEmailClient(clientConfig), getEmailSender())
     };
 }

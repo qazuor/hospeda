@@ -60,6 +60,9 @@ export interface EmailEnvDecoration {
      * `undefined` on production, so callers can pass it through untouched.
      */
     readonly subjectPrefix: string | undefined;
+
+    /** Bare marker (`STAGING`, `DEV`) for in-body use. `undefined` on production. */
+    readonly environmentLabel: string | undefined;
 }
 
 /**
@@ -82,12 +85,13 @@ export function buildEmailEnvDecoration(input: BuildEmailEnvDecorationInput): Em
     const marker = deployEnv ? DEPLOY_ENV_MARKERS[deployEnv] : undefined;
 
     if (!marker) {
-        return { fromName: baseFromName, subjectPrefix: undefined };
+        return { fromName: baseFromName, subjectPrefix: undefined, environmentLabel: undefined };
     }
 
     return {
         fromName: `${baseFromName} [${marker}]`,
-        subjectPrefix: `[${marker}] `
+        subjectPrefix: `[${marker}] `,
+        environmentLabel: marker
     };
 }
 
@@ -116,6 +120,19 @@ export function getEmailSender(): {
         fromName: decoration.fromName,
         subjectPrefix: decoration.subjectPrefix
     };
+}
+
+/**
+ * Bare environment marker of the running deployment (`STAGING`, `DEV`), for
+ * mails that name their origin in the body as well as in the subject.
+ *
+ * @returns The marker, or `undefined` on production and unrecognised values
+ */
+export function getEmailEnvironmentLabel(): string | undefined {
+    return buildEmailEnvDecoration({
+        deployEnv: env.HOSPEDA_DEPLOY_ENV,
+        baseFromName: ''
+    }).environmentLabel;
 }
 
 /**
