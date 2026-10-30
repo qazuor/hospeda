@@ -46,6 +46,7 @@ describe('TEST:1769:4 entitlements cache is browser-only', () => {
             'components/host/AnalyticsSection.client.tsx',
             'components/host/PromotionList.client.tsx',
             'hooks/use-price-alert-gate-state.ts',
+            'hooks/useListingPlanGate.ts',
             'hooks/useMyEntitlements.ts'
         ]);
         expect(expected).not.toHaveLength(0);
