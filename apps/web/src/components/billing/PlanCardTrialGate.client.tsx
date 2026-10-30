@@ -15,7 +15,7 @@ export function PlanCardTrialGate({
     useEffect(() => {
         if (vertical === null) return;
         void loadPricingSituation({ vertical }).then((result) => {
-            setShowOffer(resolvePlanCardTrialOffer({ vertical, result }));
+            setShowOffer(resolvePlanCardTrialOffer({ result }));
         });
     }, [vertical]);
 

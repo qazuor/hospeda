@@ -157,30 +157,34 @@ describe('TEST:1621:5 pricing card CTA situation resolver', () => {
     });
 });
 
-describe('TEST:1758:2 pricing card trial offer', () => {
-    const verticals = ['accommodation', 'venue', 'experience', 'tourist'] as const;
+describe('TEST:1758:2 HOS-1967 pricing card trial offer', () => {
+    it('promises nothing on a failed read or with no read at all', () => {
+        // Arrange
+        const failed = { ok: false as const, error: { status: 500, message: 'failed' } };
 
-    it.each(verticals)('keeps the generic offer for an unread %s situation', (vertical) => {
-        expect(resolvePlanCardTrialOffer({ vertical, result: null })).toBe(true);
+        // Act + Assert
+        expect(resolvePlanCardTrialOffer({ result: null })).toBe(false);
+        expect(resolvePlanCardTrialOffer({ result: failed })).toBe(false);
         expect(
             resolvePlanCardTrialOffer({
-                vertical,
-                result: { ok: false, error: { status: 500, message: 'failed' } }
+                result: { ok: false, error: { status: 0, message: 'network' } }
             })
-        ).toBe(true);
+        ).toBe(false);
+    });
+
+    it('keeps the catalog offer for an anonymous visitor (401)', () => {
         expect(
             resolvePlanCardTrialOffer({
-                vertical,
                 result: { ok: false, error: { status: 401, message: 'guest' } }
             })
         ).toBe(true);
     });
 
-    it.each(verticals)('resolves trial eligibility exhaustively for %s', (vertical) => {
+    it('keeps the offer only in FIRST_USE, CHECKOUT included among the ones that drop it', () => {
         const expected: Record<string, boolean> = {
             FIRST_USE: true,
             TRIAL: false,
-            CHECKOUT: vertical === 'tourist',
+            CHECKOUT: false,
             SUBSCRIBED: false,
             COVERED: false,
             NO_PLANS: false,
@@ -196,11 +200,12 @@ describe('TEST:1758:2 pricing card trial offer', () => {
                           planVersionId: 'version-a',
                           billingOptionId: 'monthly-a'
                       }
-                    : ({ situation } as const);
-            expect(
-                resolvePlanCardTrialOffer({ vertical, result: { ok: true, data } }),
-                `${vertical} ${situation}`
-            ).toBe(eligible);
+                    : situation === 'FIRST_USE'
+                      ? { situation: 'FIRST_USE' as const, trialDays: 14 }
+                      : ({ situation } as PricingSituationResponse);
+            expect(resolvePlanCardTrialOffer({ result: { ok: true, data } }), situation).toBe(
+                eligible
+            );
         }
     });
 });

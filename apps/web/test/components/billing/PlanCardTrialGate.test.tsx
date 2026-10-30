@@ -14,7 +14,7 @@ beforeEach(() => {
 });
 
 describe('PlanCardTrialGate', () => {
-    it('keeps the SSR children before resolution and for first use or a read error', async () => {
+    it('keeps the SSR children before resolution and for first use', async () => {
         pricingSituation.mockResolvedValueOnce({
             ok: true,
             data: { situation: 'FIRST_USE', trialDays: 14 }
@@ -31,7 +31,7 @@ describe('PlanCardTrialGate', () => {
         resetPricingSituationCacheForTests();
         pricingSituation.mockResolvedValueOnce({
             ok: false,
-            error: { status: 500, message: 'offline' }
+            error: { status: 401, message: 'guest' }
         });
         rerender(
             <PlanCardTrialGate vertical="venue">
@@ -42,9 +42,23 @@ describe('PlanCardTrialGate', () => {
         expect(screen.getByText('Trial offer')).toBeInTheDocument();
     });
 
+    it('HOS-1967 removes the children on a failed read: it promises nothing', async () => {
+        pricingSituation.mockResolvedValue({
+            ok: false,
+            error: { status: 500, message: 'offline' }
+        });
+        render(
+            <PlanCardTrialGate vertical="accommodation">
+                <p>Trial offer</p>
+            </PlanCardTrialGate>
+        );
+        await waitFor(() => expect(screen.queryByText('Trial offer')).not.toBeInTheDocument());
+    });
+
     it.each([
         { situation: 'SUBSCRIBED', status: 'ACTIVE', planVersionId: 'v1', billingOptionId: 'm1' },
-        { situation: 'TOURIST_VIP_INHERITED' }
+        { situation: 'TOURIST_VIP_INHERITED' },
+        { situation: 'CHECKOUT' }
     ] as const)('removes the children when the situation rules out trial', async (situation) => {
         pricingSituation.mockResolvedValue({ ok: true, data: situation });
         render(
