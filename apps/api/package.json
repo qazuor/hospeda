@@ -55,7 +55,7 @@
         "@sentry/profiling-node": "^11.9.0",
         "@vercel/oidc": "3.8.2",
         "bcryptjs": "^3.0.3",
-        "better-auth": "^1.6.23",
+        "better-auth": "^1.7.7",
         "bullmq": "^6.0.7",
         "cloudinary": "^2.10.0",
         "cron-parser": "^5.7.0",
