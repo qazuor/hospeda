@@ -23,6 +23,7 @@ export * from './plan-price-change-notice.js';
 export * from './promo-ending.js';
 export * from './purchase-confirmation.js';
 export * from './reconciliation-summary.js';
+export * from './reconciliation-summary-enrichment.js';
 export * from './renewal-reminder.js';
 export * from './renewal-upcoming.js';
 export * from './revocation-cancel.js';
