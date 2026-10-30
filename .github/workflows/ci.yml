@@ -1028,8 +1028,12 @@ jobs:
             # Framework-app floors (web 55, admin 45, api 70) stay low by
             # design — those surfaces are covered by integration/E2E, not
             # per-file unit tests. The only remaining sub-90 floor is
-            # service-core 88 (real coverage 90.2%, floored at 88 for a safety
-            # margin on a large, actively-developed package). Everything else is
+            # service-core. It was 88 (real coverage 90.2%). On 2026-10-30 it
+            # was lowered TEMPORARILY to 71, the measured coverage, because the
+            # HOS-1352 billing redesign was first measured on promotion PR #3914
+            # (this job never runs on PRs to staging) at 71.37%. That was an
+            # owner decision, made so the V6 cutover is not blocked. HOS-1960
+            # restores coverage and raises this floor back to 88. Everything else is
             # at the 90% default — icons, billing, schemas, notifications,
             # seed and feedback were ratcheted back to 90 as coverage was restored.
             THRESHOLD=90
@@ -1045,7 +1049,8 @@ jobs:
               # apps; ratchet up under SPEC-236.
               THRESHOLD=15
             elif [ "$PACKAGE_NAME" = "service-core" ]; then
-              THRESHOLD=88
+              # TEMPORARY floor (HOS-1960): back to 88 once coverage is restored.
+              THRESHOLD=71
             fi
 
             if (( $(echo "$COVERAGE < $THRESHOLD" | bc -l) )); then

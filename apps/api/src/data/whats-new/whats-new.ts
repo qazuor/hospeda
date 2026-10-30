@@ -373,7 +373,7 @@ export const whatsNewEntries: WhatsNewEntry[] = WhatsNewCatalogSchema.parse([
             en: 'Previously, when a listing failed to load, that error could stay cached for up to two hours and you kept seeing it even after the problem was fixed. Now the page comes back on its own as soon as it is resolved.',
             pt: 'Antes, quando uma listagem não carregava, esse erro podia ficar guardado por até duas horas e você continuava vendo-o mesmo depois de o problema ser resolvido. Agora a página volta sozinha assim que é corrigida.'
         },
-        translations: { en: 'machine', pt: 'machine' }
+        translations: { en: 'declared', pt: 'declared' }
     },
     // origin: #3379
     {
@@ -390,7 +390,7 @@ export const whatsNewEntries: WhatsNewEntry[] = WhatsNewCatalogSchema.parse([
             en: 'If you follow posts or events via RSS, a temporary problem no longer reaches you as a feed with no news: your reader understands there was an error and tries again.',
             pt: 'Se você acompanha as publicações ou os eventos por RSS, um problema temporário não chega mais como um feed sem novidades: seu leitor entende que houve um erro e tenta de novo.'
         },
-        translations: { en: 'machine', pt: 'machine' }
+        translations: { en: 'declared', pt: 'declared' }
     },
     // origin: #3370
     {
@@ -408,7 +408,7 @@ export const whatsNewEntries: WhatsNewEntry[] = WhatsNewCatalogSchema.parse([
             en: 'If you double-click or have two tabs open editing the same thing, the system recognises it as the same repeated action instead of failing with an error.',
             pt: 'Se você clicar duas vezes ou tiver duas abas abertas editando a mesma coisa, o sistema reconhece que é a mesma ação repetida em vez de falhar com um erro.'
         },
-        translations: { en: 'machine', pt: 'machine' }
+        translations: { en: 'declared', pt: 'declared' }
     },
     {
         id: '2026-09-08-mobile-menu-single-controls',
