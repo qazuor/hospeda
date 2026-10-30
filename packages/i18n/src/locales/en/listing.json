@@ -5,7 +5,8 @@
         "download": "Download PDF sheet",
         "downloading": "Generating the sheet…",
         "error": "We couldn't generate the sheet. Please try again in a moment.",
-        "locked": "The PDF sheet is available on the Premium plan of your category."
+        "locked": "The PDF sheet is available on the Premium plan of your category.",
+        "premiumBadge": "Premium"
     },
     "owner": {
         "nav": "My business",
@@ -61,7 +62,8 @@
                 "title": "Views",
                 "unique": "unique",
                 "total": "total",
-                "error": "We couldn't load your views. Please try again later."
+                "error": "We couldn't load your views. Please try again later.",
+                "locked": "Your listings’ views show up while they are published, on an active plan or during the trial period."
             },
             "menuQr": {
                 "title": "Menu QR",
@@ -75,6 +77,8 @@
                 "qrAlt": "QR code linking to {{name}}'s menu",
                 "encodes": "Links to: {{url}}",
                 "locked": "The menu QR and its scan analytics are available on the Food & nightlife Premium plan.",
+                "lockedPreTrial": "The menu QR and its scan analytics unlock when you publish your listing.",
+                "seePlans": "See plans",
                 "error": "We couldn't load the QR scans. Please try again later.",
                 "empty": "No scans yet in this period."
             }

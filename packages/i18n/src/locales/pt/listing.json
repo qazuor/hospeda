@@ -5,7 +5,8 @@
         "download": "Baixar ficha em PDF",
         "downloading": "Gerando a ficha…",
         "error": "Não conseguimos gerar a ficha. Tente novamente em instantes.",
-        "locked": "A ficha em PDF está disponível no plano Premium do seu ramo."
+        "locked": "A ficha em PDF está disponível no plano Premium do seu ramo.",
+        "premiumBadge": "Premium"
     },
     "owner": {
         "nav": "Meu comércio",
@@ -61,7 +62,8 @@
                 "title": "Visualizações",
                 "unique": "únicos",
                 "total": "totais",
-                "error": "Não foi possível carregar suas visualizações. Tente novamente mais tarde."
+                "error": "Não foi possível carregar suas visualizações. Tente novamente mais tarde.",
+                "locked": "As visualizações das suas fichas aparecem enquanto estão publicadas, com um plano ativo ou no período de teste."
             },
             "menuQr": {
                 "title": "QR do cardápio",
@@ -75,6 +77,8 @@
                 "qrAlt": "Código QR que leva ao cardápio de {{name}}",
                 "encodes": "Leva a: {{url}}",
                 "locked": "O QR do cardápio e suas estatísticas de leitura estão disponíveis no plano Premium de Comer e sair.",
+                "lockedPreTrial": "O QR do cardápio e suas estatísticas de leitura são liberados quando você publicar sua ficha.",
+                "seePlans": "Ver planos",
                 "error": "Não foi possível carregar as leituras do QR. Tente novamente mais tarde.",
                 "empty": "Ainda não houve leituras neste período."
             }
