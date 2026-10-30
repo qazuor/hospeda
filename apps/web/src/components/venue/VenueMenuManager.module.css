@@ -108,6 +108,38 @@
     cursor: not-allowed;
 }
 
+/*
+ * Why the menu controls are disabled (VenueMenuPlanNotice). Same boxed
+ * lock-plus-sentence treatment as the accommodation editor's format upsell
+ * (`BasicInfoSection.module.css` `.formatUpsell`), so a locked capability reads
+ * the same across editors.
+ */
+.planNotice {
+    display: flex;
+    gap: var(--space-2, 0.5rem);
+    align-items: flex-start;
+    padding: var(--space-3, 0.75rem);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-md, 10px);
+    background: var(--surface-warm);
+}
+
+.planNoticeIcon {
+    width: 1rem;
+    height: 1rem;
+    flex-shrink: 0;
+    margin-top: 0.125rem;
+    color: var(--core-muted-foreground);
+}
+
+.planNoticeText {
+    margin: 0;
+    font-family: var(--font-sans);
+    font-size: 0.8125rem;
+    line-height: 1.5;
+    color: var(--core-foreground);
+}
+
 /* ── The structured carta ─────────────────────────────────────────────── */
 
 .sectionCard {

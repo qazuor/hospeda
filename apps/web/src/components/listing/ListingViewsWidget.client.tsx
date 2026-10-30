@@ -8,12 +8,14 @@
  * mirrors the accommodation host dashboard's `ViewsWidget`, scoped down to
  * the one stat a venue or experience listing has today.
  *
- * **Why no "locked" state, unlike the accommodation widget.** `VIEW_BASIC_STATS`
- * is in the entitlement set of every tier of a
- * vertical (HOS-734), so there is no listing owner this widget
- * would ever need to gate. A fetch failure (403 should not normally happen,
- * but a 500 or network error can) degrades to a plain inline error message
- * instead of a CTA — there's no plan to upsell into.
+ * **The one "locked" case is an owner with no tier at all.** `VIEW_BASIC_STATS`
+ * is in the entitlement set of every tier of a vertical (HOS-734), and the
+ * trial grants it too, so there is no plan to upsell into. But an owner whose
+ * listing was never published (no trial yet), or whose trial ended unpaid,
+ * holds no tier, and the API answers `403`. That is a real state, measured on
+ * staging (2026-10-29), so it renders as an informative `locked` sentence, not
+ * as the "could not load" error it used to fall into. Any other failure (a 500,
+ * the network) is still the error.
  *
  * **What's explicitly NOT here (owner decision, HOS-734):** the daily-series
  * chart (API route exists, `listingAnalyticsApi.getViewsDailySeries`, ready
@@ -60,6 +62,7 @@ interface ViewRow {
 type WidgetState =
     | { readonly status: 'loading' }
     | { readonly status: 'ready'; readonly rows: readonly ViewRow[] }
+    | { readonly status: 'locked' }
     | { readonly status: 'error' };
 
 /**
@@ -69,7 +72,7 @@ type WidgetState =
 async function fetchRows(
     listings: readonly ListingViewsWidgetListing[],
     windowParam: '7d' | '30d'
-): Promise<readonly ViewRow[] | null> {
+): Promise<readonly ViewRow[] | 'locked' | null> {
     const verticals = [...new Set(listings.map((l) => l.vertical))];
     const nameById = new Map(listings.map((l) => [l.id, l.name] as const));
 
@@ -77,8 +80,11 @@ async function fetchRows(
         verticals.map((vertical) => listingAnalyticsApi.getViews({ vertical, window: windowParam }))
     );
 
-    if (results.some((r) => !r.ok)) {
-        return null;
+    const failures = results.filter((r) => !r.ok);
+    if (failures.length > 0) {
+        // Locked only when EVERY failure is the entitlement refusal; anything
+        // else in the mix is a genuine error and must say so.
+        return failures.every((r) => !r.ok && r.error.status === 403) ? 'locked' : null;
     }
 
     const rows: ViewRow[] = [];
@@ -124,7 +130,13 @@ export function ListingViewsWidget({
         setState({ status: 'loading' });
         fetchRows(listings, windowParam).then((rows) => {
             if (cancelled) return;
-            setState(rows === null ? { status: 'error' } : { status: 'ready', rows });
+            if (rows === null) {
+                setState({ status: 'error' });
+            } else if (rows === 'locked') {
+                setState({ status: 'locked' });
+            } else {
+                setState({ status: 'ready', rows });
+            }
         });
 
         return () => {
@@ -167,6 +179,18 @@ export function ListingViewsWidget({
                     </button>
                 </fieldset>
             </div>
+
+            {state.status === 'locked' && (
+                <p
+                    className={styles.locked}
+                    data-testid="listing-views-locked"
+                >
+                    {t(
+                        'listing.owner.list.views.locked',
+                        'Las vistas de tus fichas aparecen mientras están publicadas, con un plan activo o en período de prueba.'
+                    )}
+                </p>
+            )}
 
             {state.status === 'error' && (
                 <p

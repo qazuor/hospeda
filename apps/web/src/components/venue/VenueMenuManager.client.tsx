@@ -54,8 +54,18 @@
  * mounts on carries no entitlement information — the same situation
  * `BrochureDownloadButton` is in. So the fields render for every owner and the
  * API decides; a refusal is shown as the upsell sentence it is, never as
- * "something went wrong". The uploaded file and the link are NOT gated and stay
- * usable on every tier.
+ * "something went wrong".
+ *
+ * ## Known BEFORE the click (owner decision, 2026-10-29)
+ *
+ * The uploaded photo/PDF needs the same `manage_venue_menu` as the carta
+ * (`POST`/`DELETE .../menu-file` and `PUT .../menu` all declare it). So the
+ * panel reads the owner's effective set (`useListingPlanGate`) and, when the
+ * key is not held, renders the upload control and Save DISABLED with the reason
+ * next to them, instead of inviting an action that can only answer 403. The
+ * reason has two wordings: a pre-trial owner unlocks it by publishing (the trial
+ * starts then), anybody else by moving to Profesional. A pending or failed read
+ * leaves the panel as it always was, and a 403 still lands in the same notice.
  *
  * ## Translations (HOS-1043)
  *
@@ -72,7 +82,8 @@
  */
 
 import type { JSX } from 'react';
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useId, useState } from 'react';
+import { type ListingPlanGate, useListingPlanGate } from '@/hooks/useListingPlanGate';
 import { apiClient } from '@/lib/api/client';
 import { getApiUrl } from '@/lib/env';
 import type { SupportedLocale } from '@/lib/i18n';
@@ -80,6 +91,7 @@ import { createTranslations } from '@/lib/i18n';
 import { centsToPesosInputValue, parsePesosInputToCents } from '@/lib/listing/price-units';
 import { resolveSafeExternalUrl } from '@/lib/safe-external-url';
 import styles from './VenueMenuManager.module.css';
+import { VenueMenuPlanNotice } from './VenueMenuPlanNotice.client';
 import { VenueMenuTranslationFields } from './VenueMenuTranslationFields.client';
 
 /** What the API returns for the uploaded photo/PDF. */
@@ -196,6 +208,9 @@ interface MenuItemPhotoUpload {
 /** MIME types the per-dish photo input and the API both accept — images only. */
 const ACCEPTED_ITEM_PHOTO_TYPES = 'image/jpeg,image/png,image/webp';
 
+/** The entitlement every menu write (carta and photo/PDF) requires. */
+const MENU_ENTITLEMENT = 'manage_venue_menu';
+
 /** What the panel is doing right now. */
 type PanelState = 'loading' | 'idle' | 'saving' | 'uploading';
 
@@ -268,6 +283,18 @@ export function VenueMenuManager({ listingId, locale }: VenueMenuManagerProps): 
      * must stay enabled.
      */
     const [isTranslationLocked, setIsTranslationLocked] = useState(false);
+    /**
+     * The menu gate as the effective set reports it, overridden to a lock by a
+     * 403 the read did not foresee (it was pending, or failed and fell open).
+     */
+    const { gate: readGate } = useListingPlanGate({
+        vertical: 'venue',
+        entitlementKey: MENU_ENTITLEMENT
+    });
+    const [refusedGate, setRefusedGate] = useState<Exclude<ListingPlanGate, 'open'> | null>(null);
+    const menuGate: ListingPlanGate = refusedGate ?? readGate;
+    const isMenuGated = menuGate !== 'open';
+    const planNoticeId = useId();
 
     const basePath = `/api/v1/protected/venues/${listingId}/menu`;
 
@@ -582,18 +609,15 @@ export function VenueMenuManager({ listingId, locale }: VenueMenuManagerProps): 
                 return;
             }
 
+            // The carta gate itself: the same notice the effective set would
+            // have shown, so the wording cannot disagree with it.
             setIsLocked(true);
-            setMessage(
-                t(
-                    'venue.owner.editor.menuManager.locked',
-                    'Cargar la carta plato por plato está disponible desde el plan Profesional. Mientras tanto podés subir una foto o un PDF del menú, o dejar el enlace.'
-                )
-            );
+            setRefusedGate(readGate === 'open' ? 'plan' : readGate);
             return;
         }
 
         setMessage(t('venue.owner.editor.menuManager.saveError', 'No se pudo guardar la carta.'));
-    }, [basePath, sections, t]);
+    }, [basePath, readGate, sections, t]);
 
     // ── The uploaded photo / PDF ────────────────────────────────────────────
 
@@ -622,6 +646,11 @@ export function VenueMenuManager({ listingId, locale }: VenueMenuManagerProps): 
 
             setState('idle');
 
+            if (response?.status === 403) {
+                setRefusedGate(readGate === 'open' ? 'plan' : readGate);
+                return;
+            }
+
             if (!response?.ok) {
                 setMessage(
                     t(
@@ -640,7 +669,7 @@ export function VenueMenuManager({ listingId, locale }: VenueMenuManagerProps): 
                 );
             }
         },
-        [basePath, t]
+        [basePath, readGate, t]
     );
 
     const deleteFile = useCallback(async () => {
@@ -704,6 +733,14 @@ export function VenueMenuManager({ listingId, locale }: VenueMenuManagerProps): 
                 )}
             </p>
 
+            {isMenuGated ? (
+                <VenueMenuPlanNotice
+                    id={planNoticeId}
+                    gate={menuGate}
+                    locale={locale}
+                />
+            ) : null}
+
             {/* ── The uploaded photo / PDF ──────────────────────────────── */}
             <div className={styles.fileBlock}>
                 <h3 className={styles.subheading}>
@@ -762,7 +799,8 @@ export function VenueMenuManager({ listingId, locale }: VenueMenuManagerProps): 
                     <input
                         type="file"
                         accept={ACCEPTED_MENU_FILE_TYPES}
-                        disabled={busy}
+                        disabled={busy || isMenuGated}
+                        aria-describedby={isMenuGated ? planNoticeId : undefined}
                         onChange={(event) => {
                             const selected = event.target.files?.[0];
                             // The input is cleared so choosing the SAME file
@@ -1121,7 +1159,8 @@ export function VenueMenuManager({ listingId, locale }: VenueMenuManagerProps): 
                 <button
                     type="button"
                     className={styles.primaryButton}
-                    disabled={busy || isLocked}
+                    disabled={busy || isLocked || isMenuGated}
+                    aria-describedby={isMenuGated ? planNoticeId : undefined}
                     onClick={() => {
                         void saveMenu();
                     }}

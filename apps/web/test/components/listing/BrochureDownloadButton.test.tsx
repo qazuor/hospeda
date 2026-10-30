@@ -12,6 +12,9 @@
  *    index has no entitlement data, so the API decides and the refusal must
  *    read as a plan message.
  * 3. **The file is handed over, with the server's filename.**
+ * 4. **Below Premium it is an upsell, not a broken button** (owner decision,
+ *    2026-10-29): the effective set is read up front, and an owner without
+ *    `download_listing_pdf` gets a locked link to the plans page instead.
  */
 
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
@@ -31,6 +34,25 @@ vi.mock('../../../src/components/listing/ListingActions.module.css', () => ({
 vi.mock('../../../src/lib/env', () => ({
     getApiUrl: () => 'https://api.test'
 }));
+
+vi.mock('../../../src/lib/entitlements-cache', () => ({
+    getEntitlementsCached: vi.fn()
+}));
+
+import type { EntitlementsData } from '../../../src/lib/entitlements-cache';
+import { getEntitlementsCached } from '../../../src/lib/entitlements-cache';
+
+const mockEntitlements = vi.mocked(getEntitlementsCached);
+
+/** A resolved effective set holding exactly `keys`. */
+function effectiveSet(keys: readonly string[]): EntitlementsData {
+    return {
+        entitlements: Object.fromEntries(keys.map((key) => [key, 1])),
+        limits: {},
+        hasLiveNonTrialTitle: true,
+        failed: false
+    };
+}
 
 /** Renders the button for a published venue listing. */
 function renderButton() {
@@ -63,6 +85,8 @@ describe('BrochureDownloadButton (HOS-1058)', () => {
     beforeEach(() => {
         clickedAnchor = null;
         vi.restoreAllMocks();
+        // A Premium owner by default: every download test below needs one.
+        mockEntitlements.mockResolvedValue(effectiveSet(['download_listing_pdf']));
         // jsdom implements neither of these.
         Object.defineProperty(URL, 'createObjectURL', {
             value: vi.fn(() => 'blob:fake'),
@@ -122,6 +146,8 @@ describe('BrochureDownloadButton (HOS-1058)', () => {
     });
 
     it('shows the plan message on a 403 and downloads nothing', async () => {
+        // The read failed and fell open, so only the API can say no.
+        mockEntitlements.mockResolvedValue({ ...effectiveSet([]), failed: true });
         vi.stubGlobal('fetch', vi.fn().mockResolvedValue(pdfResponse({ status: 403 })));
 
         renderButton();
@@ -133,6 +159,58 @@ describe('BrochureDownloadButton (HOS-1058)', () => {
             )
         ).toBeTruthy();
         expect(clickedAnchor).toBeNull();
+        // ...and the action turns into the same upsell link a known lock shows.
+        expect(screen.getByTestId('listing-brochure-upsell')).toBeTruthy();
+    });
+
+    it('below Premium: a locked link with a Premium badge to the plans page', async () => {
+        mockEntitlements.mockResolvedValue(effectiveSet(['manage_venue_menu']));
+        const fetchMock = vi.fn();
+        vi.stubGlobal('fetch', fetchMock);
+
+        renderButton();
+
+        const link = await screen.findByTestId('listing-brochure-upsell');
+        expect(link.tagName).toBe('A');
+        expect(link.getAttribute('href')).toContain('planes/comer-y-salir/precios');
+        expect(link.textContent).toContain('Descargar ficha en PDF');
+        expect(link.textContent).toContain('Premium');
+        // The reason is announced with the link, not only shown next to it.
+        const hint = screen.getByText(
+            'La ficha en PDF está disponible en el plan Premium de tu rubro.'
+        );
+        expect(link.getAttribute('aria-describedby')).toBe(hint.id);
+        expect(screen.queryByTestId('listing-brochure-download')).toBeNull();
+        expect(fetchMock).not.toHaveBeenCalled();
+    });
+
+    it('below Premium on an experience: links to the experience plans', async () => {
+        mockEntitlements.mockResolvedValue(effectiveSet([]));
+
+        render(
+            <BrochureDownloadButton
+                vertical="experience"
+                listingId="listing-2"
+                slug="kayak"
+                locale="es"
+            />
+        );
+
+        const link = await screen.findByTestId('listing-brochure-upsell');
+        expect(link.getAttribute('href')).toContain('planes/experiencias/precios');
+        expect(mockEntitlements).toHaveBeenCalledWith({ vertical: 'experience' });
+    });
+
+    it('on Premium: stays a normal download button, no lock, no badge', async () => {
+        renderButton();
+
+        await waitFor(() => expect(mockEntitlements).toHaveBeenCalledWith({ vertical: 'venue' }));
+        // Let the resolved read settle before asserting the absence of the lock.
+        await Promise.resolve();
+
+        expect(screen.getByTestId('listing-brochure-download').tagName).toBe('BUTTON');
+        expect(screen.queryByTestId('listing-brochure-upsell')).toBeNull();
+        expect(screen.queryByText('Premium')).toBeNull();
     });
 
     it('shows a retry message on any other failure', async () => {

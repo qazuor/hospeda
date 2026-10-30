@@ -8,8 +8,9 @@
  *  - Fetches views per distinct vertical present in `listings` and renders
  *    one row per listing, zipped with its name.
  *  - The 7d/30d toggle re-fetches with the new window.
- *  - A failed fetch shows the inline error message (never a locked/upsell
- *    CTA — VIEW_BASIC_STATS is the venue/experience floor, HOS-734).
+ *  - A failed fetch shows the inline error message.
+ *  - A 403 (an owner with no tier yet: never published, or trial ended
+ *    unpaid) is an informative locked sentence, not that error.
  */
 
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
@@ -140,5 +141,46 @@ describe('ListingViewsWidget (HOS-734)', () => {
             await screen.findByText('No pudimos cargar las vistas. Probá de nuevo más tarde.')
         ).toBeTruthy();
         expect(screen.queryByTestId('listing-views-row')).toBeNull();
+        expect(screen.queryByTestId('listing-views-locked')).toBeNull();
+    });
+
+    it('shows an informative locked sentence, not an error, when the API answers 403', async () => {
+        mockGetViews.mockResolvedValue({
+            ok: false,
+            error: { status: 403, message: 'ENTITLEMENT_REQUIRED' }
+        });
+
+        render(
+            <ListingViewsWidget
+                locale="es"
+                listings={[GASTRO_LISTING, EXPERIENCE_LISTING]}
+            />
+        );
+
+        expect(await screen.findByTestId('listing-views-locked')).toHaveTextContent(
+            'Las vistas de tus fichas aparecen mientras están publicadas'
+        );
+        expect(screen.queryByRole('alert')).toBeNull();
+        expect(
+            screen.queryByText('No pudimos cargar las vistas. Probá de nuevo más tarde.')
+        ).toBeNull();
+    });
+
+    it('a 403 mixed with a genuine failure is still the error', async () => {
+        mockGetViews.mockImplementation(async ({ vertical }: { vertical: string }) =>
+            vertical === 'venue'
+                ? { ok: false, error: { status: 403, message: 'ENTITLEMENT_REQUIRED' } }
+                : { ok: false, error: { status: 500, message: 'boom' } }
+        );
+
+        render(
+            <ListingViewsWidget
+                locale="es"
+                listings={[GASTRO_LISTING, EXPERIENCE_LISTING]}
+            />
+        );
+
+        expect(await screen.findByRole('alert')).toHaveTextContent('No pudimos cargar las vistas');
+        expect(screen.queryByTestId('listing-views-locked')).toBeNull();
     });
 });

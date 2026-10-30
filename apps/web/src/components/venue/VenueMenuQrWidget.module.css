@@ -73,6 +73,12 @@
     font-size: var(--text-body-sm, 0.9375rem);
 }
 
+.plansLink {
+    color: var(--brand-primary);
+    text-decoration: underline;
+    white-space: nowrap;
+}
+
 .totalRow {
     display: flex;
     align-items: baseline;
