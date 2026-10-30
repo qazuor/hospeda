@@ -17,14 +17,14 @@ import type { Context } from 'hono';
 import { z } from 'zod';
 import { getActorFromContext } from '../../../utils/actor';
 import { apiLogger } from '../../../utils/logger';
-import { createCRUDRoute } from '../../../utils/route-factory';
+import { createProtectedRoute } from '../../../utils/route-factory';
 
 const eventService = new EventService({ logger: apiLogger });
 
 /**
  * Route handler — lists the gallery photos for an event.
  */
-export const protectedGetEventMediaRoute = createCRUDRoute({
+export const protectedGetEventMediaRoute = createProtectedRoute({
     method: 'get',
     path: '/{id}/media',
     summary: 'List event gallery photos',
@@ -33,6 +33,7 @@ export const protectedGetEventMediaRoute = createCRUDRoute({
         'Supports an optional `state` query filter (default: visible). ' +
         'Requires the same permission as updating the event.',
     tags: ['Event', 'Event Media'],
+    protectedTag: false,
     requestParams: {
         id: z.string().uuid({ message: 'zodError.common.id.invalidUuid' })
     },
