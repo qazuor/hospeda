@@ -34,6 +34,14 @@ export const PublicPlanCatalogPlanSchema = z.object({
     description: z.string().nullable(),
     pricingOrder: z.number().int(),
     rank: z.number().int(),
+    /**
+     * The SELLABLE version's own `trial_days`. NOT the trial offer: the trial
+     * is one per vertical and its length lives on the vertical's `role='trial'`
+     * plan (HOS-1967). Kept only for wire compatibility; read
+     * {@link PublicPlanCatalogResponseSchema} `trialOffer` instead.
+     *
+     * @deprecated Never use it to promise a trial.
+     */
     trialDays: z.number().int().nonnegative(),
     inheritsTouristVip: z.boolean(),
     entitlements: z.array(z.string()),
@@ -49,10 +57,27 @@ export const PublicPlanCatalogFloorSchema = PublicPlanCatalogPlanSchema.omit({
 }).strict();
 export type PublicPlanCatalogFloor = z.infer<typeof PublicPlanCatalogFloorSchema>;
 
+/**
+ * The free trial a vertical offers, decided by the API (HOS-1967): present only
+ * when the vertical has a real trial path AND its `role='trial'` plan's current
+ * version has `trial_days > 0`. `trialDays` is that version's value, the same
+ * number the trial engine uses when the trial starts.
+ */
+export const PublicPlanCatalogTrialOfferSchema = z.object({
+    trialDays: z.number().int().positive()
+});
+export type PublicPlanCatalogTrialOffer = z.infer<typeof PublicPlanCatalogTrialOfferSchema>;
+
 /** Public sellable plans and the optional current floor plan for a vertical. */
 export const PublicPlanCatalogResponseSchema = z.object({
     vertical: PublicPlanCatalogVerticalSchema,
     plans: z.array(PublicPlanCatalogPlanSchema),
-    floor: PublicPlanCatalogFloorSchema.nullable()
+    floor: PublicPlanCatalogFloorSchema.nullable(),
+    /**
+     * The vertical's trial offer, or `null` when none is offered. Optional on
+     * the wire only so a web deployed ahead of the API parses an older
+     * response; an absent value means "no offer", never "unknown, assume yes".
+     */
+    trialOffer: PublicPlanCatalogTrialOfferSchema.nullable().optional()
 });
 export type PublicPlanCatalogResponse = z.infer<typeof PublicPlanCatalogResponseSchema>;

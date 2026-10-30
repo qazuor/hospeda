@@ -47,11 +47,19 @@ function floorPlan(overrides: Record<string, unknown> = {}) {
     };
 }
 
-function mockCatalog(vertical: string, plans: unknown[], floor: unknown): void {
+function mockCatalog(
+    vertical: string,
+    plans: unknown[],
+    floor: unknown,
+    trialOffer?: { trialDays: number } | null
+): void {
     global.fetch = vi.fn().mockResolvedValue({
         ok: true,
         status: 200,
-        json: async () => ({ success: true, data: { vertical, plans, floor } })
+        json: async () => ({
+            success: true,
+            data: { vertical, plans, floor, ...(trialOffer === undefined ? {} : { trialOffer }) }
+        })
     });
 }
 
@@ -96,15 +104,15 @@ describe('TEST:1621:4 fetchPublicPlans', () => {
     });
 
     it('(b) maps prices, option ids, version, vertical, and trial from the catalog', async () => {
-        mockCatalog('tourist', [catalogPlan()], null);
-        const result = await fetchPublicPlans({ vertical: 'tourist' });
+        mockCatalog('accommodation', [catalogPlan()], null, { trialDays: 14 });
+        const result = await fetchPublicPlans({ vertical: 'accommodation' });
         expect(result.ok).toBe(true);
         if (!result.ok) throw new Error('Expected catalog success');
         expect(result.plans).toEqual([
             expect.objectContaining({
                 id: planId,
                 planVersionId: versionId,
-                vertical: 'tourist',
+                vertical: 'accommodation',
                 slug: 'tourist-vip',
                 description: 'Descripción',
                 monthlyPriceArs: 120000,
@@ -180,5 +188,49 @@ describe('TEST:1621:4 fetchPublicPlans', () => {
         expect(result.ok).toBe(true);
         if (!result.ok) throw new Error('Expected catalog success');
         expect(result.plans.map((plan) => plan.slug)).toEqual(['tourist-vip']);
+    });
+
+    it('HOS-1967 the trial line comes from trialOffer, never from the plan own trialDays', async () => {
+        // Arrange: the sellable plan carries 30, the vertical offers nothing.
+        mockCatalog('tourist', [catalogPlan({ trialDays: 30 })], null, null);
+
+        // Act
+        const result = await fetchPublicPlans({ vertical: 'tourist' });
+
+        // Assert
+        expect(result.ok).toBe(true);
+        if (!result.ok) throw new Error('Expected catalog success');
+        expect(result.plans[0]).toMatchObject({ hasTrial: false, trialDays: 0 });
+    });
+
+    it('HOS-1967 an absent trialOffer (older API) promises nothing', async () => {
+        mockCatalog('accommodation', [catalogPlan({ trialDays: 30 })], null);
+        const result = await fetchPublicPlans({ vertical: 'accommodation' });
+        if (!result.ok) throw new Error('Expected catalog success');
+        expect(result.plans[0]).toMatchObject({ hasTrial: false, trialDays: 0 });
+    });
+
+    it('HOS-1967 changing the trial days in the catalog changes what every card shows', async () => {
+        const plans = [catalogPlan(), catalogPlan({ slug: 'second', planId: annualId })];
+
+        mockCatalog('venue', plans, null, { trialDays: 14 });
+        const before = await fetchPublicPlans({ vertical: 'venue' });
+        mockCatalog('venue', plans, null, { trialDays: 45 });
+        const after = await fetchPublicPlans({ vertical: 'venue' });
+
+        if (!before.ok || !after.ok) throw new Error('Expected catalog success');
+        expect(before.plans.map((plan) => [plan.hasTrial, plan.trialDays])).toEqual([
+            [true, 14],
+            [true, 14]
+        ]);
+        expect(after.plans.map((plan) => [plan.hasTrial, plan.trialDays])).toEqual([
+            [true, 45],
+            [true, 45]
+        ]);
+    });
+
+    it('HOS-1967 rejects a malformed trialOffer instead of guessing', async () => {
+        mockCatalog('venue', [catalogPlan()], null, { trialDays: 0 });
+        expect((await fetchPublicPlans({ vertical: 'venue' })).ok).toBe(false);
     });
 });

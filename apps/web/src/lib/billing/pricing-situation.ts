@@ -51,32 +51,39 @@ type Plan = {
 };
 type Situation = PricingSituationResponse['situation'];
 
-/** Whether the generic trial offer remains usable for a resolved account situation. */
+/**
+ * Whether the trial line the card rendered from the catalog stays visible for
+ * this account (HOS-1967).
+ *
+ * The card only ever renders a trial line when the public catalog's
+ * `trialOffer` says the vertical offers one; this decides nothing about the
+ * offer itself, only whether THIS account can still take it. It never
+ * reproduces a per-vertical rule: the backend situation already encodes it.
+ *
+ * - An anonymous visitor (`401`) keeps the catalog offer: nothing about them is
+ *   known, and the catalog read that produced the line did succeed.
+ * - Any other failed read hides it: on a failed read the web promises nothing.
+ * - `FIRST_USE` is the only situation in which publishing starts the trial.
+ *   Every other situation, `CHECKOUT` included, charges or covers without one.
+ */
 export function resolvePlanCardTrialOffer({
-    vertical,
     result
 }: {
-    readonly vertical: PricingSituationVertical;
     readonly result: ApiResult<PricingSituationResponse> | null;
 }): boolean {
-    if (!result?.ok) return true;
+    if (result === null) return false;
+    if (!result.ok) return result.error.status === 401;
 
-    const checkoutByVertical: Record<PricingSituationVertical, boolean> = {
-        accommodation: false,
-        venue: false,
-        experience: false,
-        tourist: true
+    const bySituation: Record<Situation, boolean> = {
+        FIRST_USE: true,
+        CHECKOUT: false,
+        TRIAL: false,
+        SUBSCRIBED: false,
+        COVERED: false,
+        NO_PLANS: false,
+        TOURIST_VIP_INHERITED: false
     };
-    const bySituation: Record<Situation, () => boolean> = {
-        FIRST_USE: () => true,
-        CHECKOUT: () => checkoutByVertical[vertical],
-        TRIAL: () => false,
-        SUBSCRIBED: () => false,
-        COVERED: () => false,
-        NO_PLANS: () => false,
-        TOURIST_VIP_INHERITED: () => false
-    };
-    return bySituation[result.data.situation]();
+    return bySituation[result.data.situation];
 }
 
 /** Resolve one card without reproducing any backend authorization rule. */
