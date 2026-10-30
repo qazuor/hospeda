@@ -152,6 +152,24 @@ const WhatsNewCatalogSchema = z.array(WhatsNewEntrySchema).min(0);
 // distinct from when the batch was published. Do not "fix" this mismatch by
 // renaming the ids to match `publishedAt`.
 export const whatsNewEntries: WhatsNewEntry[] = WhatsNewCatalogSchema.parse([
+    // origin: #3754, #3758, #3776, #3784, #3786, #3789
+    {
+        id: '2026-10-22-cutover-trials-step-typed-confirmation',
+        publishedAt: 'on-promotion',
+        highlight: false,
+        roles: ['SUPER_ADMIN'],
+        title: {
+            es: 'Las pruebas del corte se escriben con un comando que pide confirmación en producción',
+            en: 'Cutover trials are written by a command that asks for confirmation in production',
+            pt: 'Os testes da migração são gravados por um comando que pede confirmação em produção'
+        },
+        body: {
+            es: '`hops cutover-step-3` corre el paso de pruebas del corte contra el entorno elegido. Por defecto sólo simula, y en producción no escribe nada hasta que tipeás la frase de confirmación.',
+            en: '`hops cutover-step-3` runs the cutover trials step against the chosen environment. By default it only simulates, and in production it writes nothing until you type the confirmation phrase.',
+            pt: '`hops cutover-step-3` executa a etapa de testes da migração no ambiente escolhido. Por padrão só simula, e em produção não grava nada até você digitar a frase de confirmação.'
+        },
+        translations: { en: 'machine', pt: 'machine' }
+    },
     // origin: #3898
     {
         id: '2026-10-29-restaurants-section-is-now-comer-y-salir',
