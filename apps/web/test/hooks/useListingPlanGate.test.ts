@@ -1,6 +1,6 @@
 /**
  * @file useListingPlanGate.test.ts
- * @description The pure resolution behind the commerce-owner plan gate.
+ * @description The pure resolution behind the venue and experience owner plan gate.
  *
  * The load-bearing property is the fail-OPEN direction: a pending or failed
  * effective-set read must never lock a control, because the API still enforces

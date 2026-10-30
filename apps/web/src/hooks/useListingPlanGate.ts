@@ -1,6 +1,6 @@
 /**
  * @file useListingPlanGate.ts
- * @description Tells a commerce-owner island, BEFORE the owner clicks, whether
+ * @description Tells a venue or experience owner island, BEFORE the owner clicks, whether
  * one entitlement-gated action will work, and if not, why.
  *
  * The venue/experience owner surfaces used to learn about a missing
