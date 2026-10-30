@@ -20,14 +20,14 @@ import { z } from 'zod';
 import { getMediaProvider } from '../../../services/media';
 import { getActorFromContext } from '../../../utils/actor';
 import { apiLogger } from '../../../utils/logger';
-import { createCRUDRoute } from '../../../utils/route-factory';
+import { createProtectedRoute } from '../../../utils/route-factory';
 
 const eventService = new EventService({ logger: apiLogger });
 
 /**
  * Route handler — soft-deletes a specific photo from a event gallery.
  */
-export const protectedRemoveEventMediaRoute = createCRUDRoute({
+export const protectedRemoveEventMediaRoute = createProtectedRoute({
     method: 'delete',
     path: '/{id}/media/{mediaId}',
     summary: 'Remove photo from event gallery',
@@ -35,6 +35,7 @@ export const protectedRemoveEventMediaRoute = createCRUDRoute({
         'Soft-deletes a media row and resequences the remaining visible photos. ' +
         'Requires the same permission as updating the event.',
     tags: ['Event', 'Event Media'],
+    protectedTag: false,
     requestParams: {
         id: z.string().uuid({ message: 'zodError.common.id.invalidUuid' }),
         mediaId: z.string().uuid({ message: 'zodError.common.id.invalidUuid' })

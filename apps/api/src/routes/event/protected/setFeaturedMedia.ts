@@ -25,14 +25,14 @@ import type { Context } from 'hono';
 import { z } from 'zod';
 import { getActorFromContext } from '../../../utils/actor';
 import { apiLogger } from '../../../utils/logger';
-import { createCRUDRoute } from '../../../utils/route-factory';
+import { createProtectedRoute } from '../../../utils/route-factory';
 
 const eventService = new EventService({ logger: apiLogger });
 
 /**
  * Route handler — promotes a photo to featured on an event.
  */
-export const protectedSetFeaturedEventMediaRoute = createCRUDRoute({
+export const protectedSetFeaturedEventMediaRoute = createProtectedRoute({
     method: 'put',
     path: '/{id}/media/{mediaId}/featured',
     summary: 'Set featured photo for event gallery',
@@ -42,6 +42,7 @@ export const protectedSetFeaturedEventMediaRoute = createCRUDRoute({
         'photo to visible first. Requires the same permission as updating the event. ' +
         'No request body — ids come from URL params.',
     tags: ['Event', 'Event Media'],
+    protectedTag: false,
     requestParams: {
         id: z.string().uuid({ message: 'zodError.common.id.invalidUuid' }),
         mediaId: z.string().uuid({ message: 'zodError.common.id.invalidUuid' })
