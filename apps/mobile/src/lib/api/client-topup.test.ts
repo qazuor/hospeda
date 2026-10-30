@@ -19,7 +19,7 @@ import { ApiError } from './errors';
 // ---------------------------------------------------------------------------
 
 vi.mock('../auth-client', () => ({
-    getCookie: vi.fn(() => '')
+    getCookie: vi.fn(async () => '')
 }));
 
 vi.mock('expo-constants', () => ({

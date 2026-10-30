@@ -29,8 +29,8 @@ import { ApiError, ApiSchemaError } from './errors';
 
 // Mock the auth-client module so getCookie() does not reach expo-secure-store
 vi.mock('../auth-client', () => ({
-    // better-auth types getCookie as () => string; returns '' when no session.
-    getCookie: vi.fn(() => '')
+    // better-auth 1.7 types getCookie as () => Promise<string>; resolves '' when no session.
+    getCookie: vi.fn(async () => '')
 }));
 
 // Mock expo-constants (used by client.ts to resolve apiBaseUrl)
@@ -98,7 +98,7 @@ describe('apiFetch', () => {
     beforeEach(() => {
         vi.resetAllMocks();
         // Default: no session cookie (better-auth returns '' when no session)
-        mockGetCookie.mockReturnValue('');
+        mockGetCookie.mockResolvedValue('');
         // Default: fetch is not mocked (individual tests override this)
         vi.stubGlobal('fetch', vi.fn());
     });
@@ -183,7 +183,7 @@ describe('apiFetch', () => {
     describe('cookie header', () => {
         it('attaches Cookie header when getCookie() returns a string', async () => {
             // Arrange
-            mockGetCookie.mockReturnValue('hospeda_cookie=abc123; Path=/');
+            mockGetCookie.mockResolvedValue('hospeda_cookie=abc123; Path=/');
             const fetchMock = vi.mocked(fetch);
             fetchMock.mockResolvedValue(makeFetchResponse({ success: true, data: validUser }));
 
@@ -199,7 +199,7 @@ describe('apiFetch', () => {
 
         it('omits Cookie header when getCookie() returns empty string (no session)', async () => {
             // Arrange — better-auth returns '' when no session cookie is stored
-            mockGetCookie.mockReturnValue('');
+            mockGetCookie.mockResolvedValue('');
             const fetchMock = vi.mocked(fetch);
             fetchMock.mockResolvedValue(makeFetchResponse({ success: true, data: validUser }));
 
