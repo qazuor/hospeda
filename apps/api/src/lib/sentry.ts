@@ -338,37 +338,13 @@ export interface BillingContext {
     promoCode?: string;
     /** Add-on IDs */
     addonIds?: string[];
-    /**
-     * qzpay-core operation string from `QZPayProviderSyncError.operation`
-     * (e.g. 'checkout_create', 'subscription_create'). Present only when the
-     * error originated from a provider sync call (SPEC-149).
-     */
-    operation?: string;
-    /**
-     * Numeric HTTP status extracted from the upstream provider error cause
-     * (e.g. 429, 408, 500). Populated by `mapProviderErrorToServiceError` via
-     * `ProviderErrorDetails.providerStatus` (SPEC-149).
-     */
-    providerStatus?: number;
-    /**
-     * String error code from `QZPayMercadoPagoError.code` if available
-     * (e.g. 'rate_limit_error', 'invalid_card'). Used to correlate Sentry
-     * events with the upstream error classification (SPEC-149).
-     */
-    providerCode?: string;
 }
 
 /**
  * Capture billing-specific error with enriched context.
  *
- * When the error originates from a provider sync call (SPEC-149), pass the
- * additional fields `operation`, `providerStatus`, and `providerCode` so that
- * Sentry fingerprints the event by provider error class and the Sentry issue
- * title includes the upstream HTTP status.
- *
  * @param error - The error to capture.
- * @param context - Billing-specific context, optionally including
- *   `operation`, `providerStatus`, and `providerCode` for provider errors.
+ * @param context - Billing-specific context.
  * @param severity - Error severity level.
  * @returns Event ID from Sentry.
  */
@@ -382,13 +358,7 @@ export function captureBillingError(
         tags: {
             module: 'billing',
             planId: context.planId,
-            billingCycle: context.billingCycle,
-            // Provider error tags — present only for SPEC-149 provider sync errors
-            ...(context.operation === undefined ? {} : { billing_operation: context.operation }),
-            ...(context.providerStatus === undefined
-                ? {}
-                : { provider_status: String(context.providerStatus) }),
-            ...(context.providerCode === undefined ? {} : { provider_code: context.providerCode })
+            billingCycle: context.billingCycle
         },
         contexts: {
             billing: {
@@ -404,17 +374,7 @@ export function captureBillingError(
                 amount: context.amount,
                 currency: context.currency,
                 promoCode: context.promoCode,
-                addonCount: context.addonIds?.length,
-                // Provider error context — present only for SPEC-149 provider sync errors
-                ...(context.operation === undefined
-                    ? {}
-                    : { providerOperation: context.operation }),
-                ...(context.providerStatus === undefined
-                    ? {}
-                    : { providerStatus: context.providerStatus }),
-                ...(context.providerCode === undefined
-                    ? {}
-                    : { providerCode: context.providerCode })
+                addonCount: context.addonIds?.length
             }
         }
     });
@@ -586,7 +546,7 @@ export function setBillingContext(context: BillingContext): void {
  * belongs to a single accommodation.
  */
 export interface PublishLinkageContext {
-    /** Trial subscription id returned by QZPay. */
+    /** Trial subscription id. */
     subscriptionId: string;
     /** Accommodation whose publish triggered the trial (referential). */
     accommodationId: string;

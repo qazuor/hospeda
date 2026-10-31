@@ -27,10 +27,7 @@ import { z } from 'zod';
  * Path params for `POST /api/v1/protected/billing/subscriptions/:localId/checkout-retry`.
  */
 export const CheckoutRetryParamsSchema = z.object({
-    localId: z
-        .string()
-        .uuid('localId must be a valid UUID')
-        .describe('Local subscription UUID (returned by /start-paid)')
+    localId: z.string().uuid('localId must be a valid UUID').describe('Local subscription UUID')
 });
 export type CheckoutRetryParams = z.infer<typeof CheckoutRetryParamsSchema>;
 
