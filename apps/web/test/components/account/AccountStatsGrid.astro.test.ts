@@ -125,3 +125,12 @@ describe('TEST:1756:12 AccountStatsGrid subscription labels', () => {
         expect(status).toContain('data-label-cancel-scheduled=');
     });
 });
+
+describe('AccountStatsGrid listings card hidden-listings notice (HOS-1948)', () => {
+    it('declares a hidden notice with both plural templates, empty until the client fills it', () => {
+        const notice = source.slice(source.indexOf('id="stat-listings-hidden"'));
+        expect(notice).toContain('data-label-one=');
+        expect(notice).toContain('data-label-other=');
+        expect(notice.slice(0, notice.indexOf('</p>'))).toContain('hidden');
+    });
+});

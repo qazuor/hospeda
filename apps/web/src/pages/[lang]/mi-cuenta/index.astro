@@ -514,6 +514,10 @@ const canonicalUrl = new URL(Astro.url.pathname, Astro.site).href;
     import { getApiUrl } from '@/lib/env';
     import type { UserStatsResponse } from '@repo/schemas';
     import { parsePlanNames, resolveDashboardPlanStat } from '@/lib/billing/dashboard-plan-stat';
+    import {
+        summarizeListingVisibility,
+        type ListingWithPublicationStatus
+    } from '@/lib/listing/dashboard-listing-counts';
 
     /**
      * Fetch user stats from the protected API and update the dashboard counters.
@@ -697,29 +701,43 @@ const canonicalUrl = new URL(Astro.url.pathname, Astro.site).href;
                 // request failing does not zero the other's count — only both
                 // failing (or a thrown error) falls back to the SSR-rendered
                 // "0" default via the outer catch below.
-                let listingsCount = 0;
+                const listings: ListingWithPublicationStatus[] = [];
                 let listingsFetchOk = false;
                 if (venueRes.ok) {
                     const venueData = (await venueRes.json()) as {
-                        data?: { listings?: unknown[] };
+                        data?: { listings?: ListingWithPublicationStatus[] };
                     };
-                    listingsCount += venueData.data?.listings?.length ?? 0;
+                    listings.push(...(venueData.data?.listings ?? []));
                     listingsFetchOk = true;
                 }
                 if (experienceRes.ok) {
                     const experienceData = (await experienceRes.json()) as {
-                        data?: { listings?: unknown[] };
+                        data?: { listings?: ListingWithPublicationStatus[] };
                     };
-                    listingsCount += experienceData.data?.listings?.length ?? 0;
+                    listings.push(...(experienceData.data?.listings ?? []));
                     listingsFetchOk = true;
                 }
+
+                // HOS-1948: the card says "published", so count only PUBLISHED
+                // listings, and tell the owner how many are not visible yet.
+                const { published, hidden } = summarizeListingVisibility({ listings });
 
                 const listingsEl = document.getElementById('stat-listings');
                 if (listingsEl) {
                     if (listingsFetchOk) {
-                        listingsEl.textContent = String(listingsCount);
+                        listingsEl.textContent = String(published);
                     }
                     listingsEl.classList.remove('stat-value--loading');
+                }
+
+                const hiddenEl = document.getElementById('stat-listings-hidden');
+                if (hiddenEl && listingsFetchOk && hidden > 0) {
+                    const template =
+                        (hidden === 1
+                            ? hiddenEl.getAttribute('data-label-one')
+                            : hiddenEl.getAttribute('data-label-other')) ?? '{{count}}';
+                    hiddenEl.textContent = template.replace('{{count}}', String(hidden));
+                    hiddenEl.hidden = false;
                 }
             } catch (error) {
                 console.error('[account] Failed to load listing dashboard stats:', error);

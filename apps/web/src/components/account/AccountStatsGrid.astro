@@ -83,6 +83,19 @@ const statMessagesDesc = t('account.pages.dashboard.stats.messagesDesc', 'Consul
 // experience listing.
 const statListingsLabel = t('account.pages.dashboard.stats.listings', 'Mis fichas');
 const statListingsDesc = t('account.pages.dashboard.stats.listingsDesc', 'Fichas publicadas');
+// HOS-1948: the count above is PUBLISHED listings only. A merchant whose listings
+// are drafts (or paused by billing) sees 0 there, so the card also says how many
+// are not visible. Both CLDR plural templates keep their `{{count}}` raw — the real
+// number is only known after the client-side fetch (same pattern as the
+// multipleSubscriptions labels above).
+const statListingsHiddenOne = t(
+    'account.pages.dashboard.stats.listingsHidden_one',
+    '{{count}} ficha sin publicar: no se ve en público.'
+);
+const statListingsHiddenOther = t(
+    'account.pages.dashboard.stats.listingsHidden_other',
+    '{{count}} fichas sin publicar: no se ven en público.'
+);
 ---
 
 <div class="account__stats-grid">
@@ -139,6 +152,14 @@ const statListingsDesc = t('account.pages.dashboard.stats.listingsDesc', 'Fichas
                 </div>
                 <p id="stat-listings" class="account__stat-value stat-value--loading" aria-live="polite">0</p>
                 <p class="account__stat-desc">{statListingsDesc}</p>
+                <p
+                    id="stat-listings-hidden"
+                    class="account__stat-desc"
+                    role="status"
+                    data-label-one={statListingsHiddenOne}
+                    data-label-other={statListingsHiddenOther}
+                    hidden
+                ></p>
                 <a href={buildUrl({ locale, path: 'mi-cuenta/comercio' })} class="account__stat-link">
                     {viewLabel} {statListingsLabel.toLowerCase()}
                 </a>
