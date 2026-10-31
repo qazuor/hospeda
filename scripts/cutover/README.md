@@ -342,7 +342,15 @@ every known id).
    (anything else but `cancelled`) is a failure and the object is left alone.
 4. **Step 2** (AC:U3:3, AC:U3:4). Each cancelled id is re-read **by id**. One that is not
    `cancelled` has its cancellation re-sent up to **3 times** with increasing waits
-   (2 s, 5 s, 10 s), re-reading after each. Then the completeness gate: the walked count of
+   (2 s, 5 s, 10 s), re-reading after each. **Exception (HOS-1961)**: a preapproval is
+   *finished, not stuck* when BOTH hold: the provider answered the cancellation with a `400`
+   whose message says the subscription "has already ended and cannot be modified", and its
+   `auto_recurring.end_date` (read by id) is in the past. The provider never changes the
+   status of an expired preapproval (it keeps reading `authorized`), and it can no longer
+   charge, so there is nothing to cancel. Its id goes to `endedPreapprovalIds` in the manifest,
+   not to `failures`, and it does not change the exit code. Either condition alone is still
+   `NOT_CANCELLED`: a `400` with another message, or an `end_date` in the future or missing.
+   Then the completeness gate: the walked count of
    each family must equal the paginated `total`, and every known id (old DB ids plus probe
    manifest ids) must appear in the walk.
 
@@ -393,7 +401,7 @@ probe and payment ids.
 JSON with ids and counts only (`schemaVersion: 1`): `outcome`, `startedAt`, `finishedAt`,
 walked versus `total` per family (`census`), `cancelledPlanIds` and `cancelledPreapprovalIds`
 (ids a cancellation call was sent for), `rereadCancelledIds` (verified `cancelled` by id),
-`preservedProbeIds` (left alive on purpose), `unknownLiveIds` (alive at the provider, unknown to
+`endedPreapprovalIds` (HOS-1961: expired preapprovals the provider refuses to modify; not failures, optional), `preservedProbeIds` (left alive on purpose), `unknownLiveIds` (alive at the provider, unknown to
 the DB and to the probe manifest) and `failures`. Optional, and absent until step 4b creates
 them: `probeId` (the delivery probe preapproval), `paymentId` (the small payment) and
 `refundId` (its refund). Adding these three did not bump `schemaVersion`. Provider payloads are
@@ -446,7 +454,7 @@ inverses ended clean, 1 otherwise, 2 on a usage error.
 | `KNOWN_ID_MISSING` | An id from the old DB or the probe manifest is absent from the unfiltered walk. |
 | `UNEXPECTED_STATUS` | A preapproval is in a status other than pending, authorized, paused or cancelled. |
 | `PROBE_PLAN_BOUND` | A probe in the probe manifest hangs from a plan that step 1a would cancel; nothing was cancelled. Remove the probe from the manifest or return to the owner. |
-| `NOT_CANCELLED` | An id is still not `cancelled` after the 3 retries. |
+| `NOT_CANCELLED` | An id is still not `cancelled` after the 3 retries. An expired preapproval refused as already ended (past `end_date` and the provider's 400) is not this failure; see `endedPreapprovalIds`. |
 | `REFUND_NOT_CONFIRMED` | Abort inverse (c): the refund never read `approved`, or the refund call got no refund. |
 | `MANIFEST_WRITE_FAILED` | The first manifest checkpoint could not be written; nothing was called. |
 | `PROVIDER_ERROR` | The provider could not be read or answered something unusable (status and path only; the body is dropped). |
