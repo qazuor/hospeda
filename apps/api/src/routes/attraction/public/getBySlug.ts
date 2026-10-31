@@ -6,7 +6,7 @@ import { AttractionPublicSchema } from '@repo/schemas';
 import { AttractionService, ServiceError } from '@repo/service-core';
 import type { Context } from 'hono';
 import { z } from 'zod';
-import { getActorFromContext } from '../../../utils/actor';
+import { createGuestActor } from '../../../utils/actor';
 import { apiLogger } from '../../../utils/logger';
 import { createPublicRoute } from '../../../utils/route-factory';
 
@@ -30,8 +30,8 @@ export const publicGetAttractionBySlugRoute = createPublicRoute({
             .regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/)
     },
     responseSchema: AttractionPublicSchema.nullable(),
-    handler: async (ctx: Context, params: Record<string, unknown>) => {
-        const actor = getActorFromContext(ctx);
+    handler: async (_ctx: Context, params: Record<string, unknown>) => {
+        const actor = createGuestActor();
         const result = await attractionService.getBySlug(actor, params.slug as string);
 
         if (result.error) {

@@ -5,7 +5,7 @@
 import { EventIdSchema, EventSummarySchema } from '@repo/schemas';
 import { EventService, ServiceError } from '@repo/service-core';
 import type { Context } from 'hono';
-import { getActorFromContext } from '../../../utils/actor';
+import { createGuestActor } from '../../../utils/actor';
 import { apiLogger } from '../../../utils/logger';
 import { createPublicRoute } from '../../../utils/route-factory';
 
@@ -23,11 +23,11 @@ export const publicGetEventSummaryRoute = createPublicRoute({
     tags: ['Events'],
     requestParams: { id: EventIdSchema },
     responseSchema: EventSummarySchema.nullable(),
-    handler: async (ctx: Context, params: Record<string, unknown>) => {
+    handler: async (_ctx: Context, params: Record<string, unknown>) => {
         const id = params.id as string;
         const validation = EventIdSchema.safeParse(id);
         if (!validation.success) throw validation.error;
-        const actor = getActorFromContext(ctx);
+        const actor = createGuestActor();
         const result = await eventService.getSummary(actor, { eventId: id });
         if (result.error) throw new ServiceError(result.error.code, result.error.message);
         return result.data ?? null;

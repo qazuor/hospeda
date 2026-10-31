@@ -5,7 +5,7 @@
 import { PostStatsSchema } from '@repo/schemas';
 import { PostService, ServiceError } from '@repo/service-core';
 import type { Context } from 'hono';
-import { getActorFromContext } from '../../../utils/actor';
+import { createGuestActor } from '../../../utils/actor';
 import { apiLogger } from '../../../utils/logger';
 import { createPublicRoute } from '../../../utils/route-factory';
 
@@ -22,8 +22,8 @@ export const publicGetPostStatsRoute = createPublicRoute({
     description: 'Retrieves statistics about posts',
     tags: ['Posts'],
     responseSchema: PostStatsSchema,
-    handler: async (ctx: Context) => {
-        const actor = getActorFromContext(ctx);
+    handler: async (_ctx: Context) => {
+        const actor = createGuestActor();
         const result = await postService.getStats(actor, {});
         if (result.error) throw new ServiceError(result.error.code, result.error.message);
         return result.data;

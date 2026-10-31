@@ -11,7 +11,7 @@
  */
 import { type HttpPostSearch, PostPublicSchema, PostSearchHttpSchema } from '@repo/schemas';
 import { PostService, ServiceError } from '@repo/service-core';
-import { getActorFromContext } from '../../../utils/actor';
+import { createGuestActor } from '../../../utils/actor';
 import { apiLogger } from '../../../utils/logger';
 import { extractPaginationParams, getPaginationResponse } from '../../../utils/pagination';
 import { createPublicListRoute } from '../../../utils/route-factory';
@@ -60,8 +60,8 @@ export const publicListPostsRoute = createPublicListRoute({
     tags: ['Posts'],
     requestQuery: PostSearchHttpSchema.shape,
     responseSchema: PostPublicSchema,
-    handler: async (ctx, _params, _body, query) => {
-        const actor = getActorFromContext(ctx);
+    handler: async (_ctx, _params, _body, query) => {
+        const actor = createGuestActor();
         const { page, pageSize } = extractPaginationParams(query || {});
 
         const httpParams = (query ?? {}) as HttpPostSearch;
