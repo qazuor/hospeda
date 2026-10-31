@@ -23,8 +23,7 @@ BEGIN
     WHERE table_schema = 'public'
       AND table_name = 'user_bookmarks'
   ) THEN
-    RAISE NOTICE 'Table user_bookmarks does not exist, skipping idx_user_bookmarks_entity_active.';
-    RETURN;
+    RAISE EXCEPTION 'extras/008: table % does not exist, cannot ensure idx_user_bookmarks_entity_active. Run pnpm db:migrate before pnpm db:apply-extras.', 'user_bookmarks';
   END IF;
 
   IF NOT EXISTS (
@@ -55,8 +54,7 @@ BEGIN
     WHERE table_schema = 'public'
       AND table_name = 'user_bookmark_collections'
   ) THEN
-    RAISE NOTICE 'Table user_bookmark_collections does not exist, skipping unique_user_bookmark_collections_userid_name_active.';
-    RETURN;
+    RAISE EXCEPTION 'extras/008: table % does not exist, cannot ensure unique_user_bookmark_collections_userid_name_active. Run pnpm db:migrate before pnpm db:apply-extras.', 'user_bookmark_collections';
   END IF;
 
   IF NOT EXISTS (
