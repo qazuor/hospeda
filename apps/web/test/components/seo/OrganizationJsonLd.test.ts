@@ -122,7 +122,7 @@ describe('ORGANIZATION_INFO constant', () => {
         // represents a plain phone call, and +549... degrades that call (see
         // apps/web/src/lib/whatsapp.ts's docblock). Derived from
         // HOSPEDA_BRAND_PHONE via getBrandPhoneE164() — see @/lib/brand-phone.
-        expect(ORGANIZATION_INFO.telephone).toBe('+543442453797');
+        expect(ORGANIZATION_INFO.telephone).toBe('+543442470650');
     });
 
     it('has the public contact email', () => {

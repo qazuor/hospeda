@@ -63,7 +63,7 @@ export function getBrandPhoneDisplay(): string {
 /**
  * Returns the brand phone number without its leading country-code group, for
  * prose that already establishes the country (e.g. "Llamanos al 3442
- * 453797"). Strips a leading `+54` (and any following whitespace) only; any
+ * 470650"). Strips a leading `+54` (and any following whitespace) only; any
  * other configured value passes through unchanged rather than guessing.
  *
  * @returns The local-format brand phone number

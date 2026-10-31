@@ -35,7 +35,7 @@ describe('contacto/index.astro — WhatsApp channel', () => {
             // If the configured number is ever edited into something undialable
             // this fails HERE, instead of silently degrading the page in
             // production.
-            expect(getBrandPhoneWhatsAppUrl()).toBe('https://wa.me/5493442453797');
+            expect(getBrandPhoneWhatsAppUrl()).toBe('https://wa.me/5493442470650');
         });
     });
 

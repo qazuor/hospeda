@@ -70,14 +70,14 @@ export const HOSPEDA_ENV_VARS = [
     {
         name: 'HOSPEDA_BRAND_PHONE',
         description:
-            "Hospeda's brand contact phone number (HOS-364), in call/display form — WITHOUT the AR mobile 9 (e.g. '+54 3442 453797'). Single source of truth for every phone surface in apps/web: the footer, the contact page, the FAQ WhatsApp CTA, the six presentation pages, and the schema.org Organization telephone. web derives the display text, the tel: href, and the wa.me WhatsApp link (which inserts the AR mobile 9) all from this one value via apps/web/src/lib/brand-phone.ts — no call site should hardcode the number again.",
+            "Hospeda's brand contact phone number (HOS-364), in call/display form — WITHOUT the AR mobile 9 (e.g. '+54 3442 470650'). Single source of truth for every phone surface in apps/web: the footer, the contact page, the FAQ WhatsApp CTA, the six presentation pages, and the schema.org Organization telephone. web derives the display text, the tel: href, and the wa.me WhatsApp link (which inserts the AR mobile 9) all from this one value via apps/web/src/lib/brand-phone.ts — no call site should hardcode the number again.",
         descriptionEs:
-            "Teléfono de contacto de la marca Hospeda (HOS-364), en formato de llamada/display — SIN el 9 móvil argentino (ej: '+54 3442 453797'). Fuente única para toda superficie de teléfono en apps/web: el footer, la página de contacto, el CTA de WhatsApp de las FAQ, las seis páginas de presentación y el telephone del Organization de schema.org. web deriva el texto a mostrar, el href tel: y el link de WhatsApp wa.me (que inserta el 9 móvil) a partir de este único valor vía apps/web/src/lib/brand-phone.ts — ningún call site debería volver a hardcodear el número.",
+            "Teléfono de contacto de la marca Hospeda (HOS-364), en formato de llamada/display — SIN el 9 móvil argentino (ej: '+54 3442 470650'). Fuente única para toda superficie de teléfono en apps/web: el footer, la página de contacto, el CTA de WhatsApp de las FAQ, las seis páginas de presentación y el telephone del Organization de schema.org. web deriva el texto a mostrar, el href tel: y el link de WhatsApp wa.me (que inserta el 9 móvil) a partir de este único valor vía apps/web/src/lib/brand-phone.ts — ningún call site debería volver a hardcodear el número.",
         type: 'string',
         required: false,
         secret: false,
-        defaultValue: '+54 3442 453797',
-        exampleValue: '+54 3442 453797',
+        defaultValue: '+54 3442 470650',
+        exampleValue: '+54 3442 470650',
         apps: ['web'],
         category: 'core',
         howToObtain:
