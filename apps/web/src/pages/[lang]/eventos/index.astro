@@ -231,13 +231,12 @@ const cards = items.map((item) => toEventCardProps({ item: item as unknown as Re
  * Mirrors the accommodations pattern via the parallel `event-listing-summary`
  * module — see SPEC-XXX (events-summary) for the architecture.
  */
-const summaryLocale: 'es' | 'en' = locale === 'pt' ? 'es' : locale;
 const destinationCatalog = destinations.map((d) => ({
     key: d.id,
-    label: { es: d.name, en: d.name } as const
+    label: { es: d.name, en: d.name, pt: d.name } as const
 }));
 const filterSummary = buildEventListingSummary({
-    locale: summaryLocale,
+    locale,
     filters: {
         text: q,
         category,
