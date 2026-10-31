@@ -1,14 +1,16 @@
 import { Button, Heading, Text } from '@react-email/components';
 import { BaseLayout } from './base-layout.js';
+import { resolveGreeting } from './greeting.js';
 
 /**
  * Props for the email verification template.
  */
 export interface VerifyEmailTemplateProps {
     /**
-     * User's display name.
+     * User's display name. Optional: when absent (or when it is just the
+     * email address) the greeting is a generic "Hola,".
      */
-    readonly name: string;
+    readonly name?: string | null;
 
     /**
      * Email verification URL.
@@ -42,10 +44,10 @@ export interface VerifyEmailTemplateProps {
  */
 export function VerifyEmailTemplate({ name, verificationUrl }: VerifyEmailTemplateProps) {
     return (
-        <BaseLayout>
+        <BaseLayout showUnsubscribe={false}>
             <Heading style={h1}>Verifica tu dirección de correo electrónico</Heading>
 
-            <Text style={text}>Hola {name},</Text>
+            <Text style={text}>{resolveGreeting({ name }).text}</Text>
 
             <Text style={text}>
                 Gracias por registrarte en Hospeda. Para completar tu registro, necesitamos
@@ -66,12 +68,7 @@ export function VerifyEmailTemplate({ name, verificationUrl }: VerifyEmailTempla
             <Text style={text}>
                 O copia y pega este enlace en tu navegador:
                 <br />
-                <a
-                    href={verificationUrl}
-                    style={link}
-                >
-                    {verificationUrl}
-                </a>
+                <span style={link}>{verificationUrl}</span>
             </Text>
 
             <Text style={notice}>

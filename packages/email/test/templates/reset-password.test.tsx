@@ -108,4 +108,61 @@ describe('ResetPasswordTemplate', () => {
         // React inserts <!-- --> comment nodes between interpolated values
         expect(html).toMatch(/Hola\s*(?:<!--\s*-->)?\s*,/);
     });
+
+    describe('transactional mail signals (HOS-1965)', () => {
+        const url = 'https://hospeda.com.ar/reset-password?token=xyz789';
+
+        it('should not render the unsubscribe footer', async () => {
+            // Arrange & Act
+            const html = await render(
+                <ResetPasswordTemplate
+                    name="Juan"
+                    resetUrl={url}
+                />
+            );
+
+            // Assert
+            expect(html).not.toContain('darte de baja');
+            expect(html).not.toContain('/unsubscribe');
+        });
+
+        it('should greet with a generic "Hola," when there is no name', async () => {
+            // Arrange & Act
+            const html = await render(<ResetPasswordTemplate resetUrl={url} />);
+
+            // Assert
+            expect(html).toMatch(/Hola,/);
+            expect(html).not.toMatch(/Hola\s+(?:<!--\s*-->)?\s*undefined/);
+        });
+
+        it('should never greet with the email address', async () => {
+            // Arrange & Act
+            const html = await render(
+                <ResetPasswordTemplate
+                    name="a@b.com"
+                    resetUrl={url}
+                />
+            );
+
+            // Assert
+            expect(html).not.toContain('a@b.com');
+            expect(html).toMatch(/Hola,/);
+        });
+
+        it('should keep the raw URL out of any link text (only the button is an anchor)', async () => {
+            // Arrange & Act
+            const html = await render(
+                <ResetPasswordTemplate
+                    name="Juan"
+                    resetUrl={url}
+                />
+            );
+
+            // Assert
+            const anchors = html.match(/<a\b[^>]*>[\s\S]*?<\/a>/g) ?? [];
+            expect(anchors).toHaveLength(1);
+            expect(anchors[0]).not.toContain(`>${url}`);
+            expect(html).toContain(url);
+        });
+    });
 });

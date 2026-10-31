@@ -297,7 +297,7 @@ function buildAuth() {
                             to: user.email,
                             subject: 'Restablece tu contraseña de Hospeda',
                             react: ResetPasswordTemplate({
-                                name: user.name || user.email,
+                                name: user.name,
                                 resetUrl
                             })
                         });
@@ -381,7 +381,7 @@ function buildAuth() {
                             to: user.email,
                             subject: 'Verifica tu cuenta de Hospeda',
                             react: VerifyEmailTemplate({
-                                name: user.name || user.email,
+                                name: user.name,
                                 verificationUrl
                             })
                         });

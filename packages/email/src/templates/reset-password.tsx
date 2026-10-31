@@ -1,14 +1,16 @@
 import { Button, Heading, Text } from '@react-email/components';
 import { BaseLayout } from './base-layout.js';
+import { resolveGreeting } from './greeting.js';
 
 /**
  * Props for the password reset template.
  */
 export interface ResetPasswordTemplateProps {
     /**
-     * User's display name.
+     * User's display name. Optional: when absent (or when it is just the
+     * email address) the greeting is a generic "Hola,".
      */
-    readonly name: string;
+    readonly name?: string | null;
 
     /**
      * Password reset URL.
@@ -42,10 +44,10 @@ export interface ResetPasswordTemplateProps {
  */
 export function ResetPasswordTemplate({ name, resetUrl }: ResetPasswordTemplateProps) {
     return (
-        <BaseLayout>
+        <BaseLayout showUnsubscribe={false}>
             <Heading style={h1}>Restablece tu contraseña</Heading>
 
-            <Text style={text}>Hola {name},</Text>
+            <Text style={text}>{resolveGreeting({ name }).text}</Text>
 
             <Text style={text}>
                 Recibimos una solicitud para restablecer la contraseña de tu cuenta en Hospeda.
@@ -63,12 +65,7 @@ export function ResetPasswordTemplate({ name, resetUrl }: ResetPasswordTemplateP
             <Text style={text}>
                 O copia y pega este enlace en tu navegador:
                 <br />
-                <a
-                    href={resetUrl}
-                    style={link}
-                >
-                    {resetUrl}
-                </a>
+                <span style={link}>{resetUrl}</span>
             </Text>
 
             <Text style={securityNotice}>
