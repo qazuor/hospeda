@@ -95,10 +95,10 @@ const isAuthenticatedHint = Astro.locals.user ? 'true' : 'false';
 			/* ErrorLayout: body — flex column so the footer sits at the bottom
 			   while the main fills the remaining viewport height. Same shape as
 			   AuthLayout so status pages render identically across both. */
-			body { min-height: 100vh; display: flex; flex-direction: column; background-color: var(--background); }
+			body { min-height: 100vh; display: flex; flex-direction: column; background-color: var(--core-background); }
 
 			/* ErrorLayout: header */
-			.error-header { position: sticky; top: 0; z-index: 100; background-color: var(--background); padding: 1rem 0; }
+			.error-header { position: sticky; top: 0; z-index: 100; background-color: var(--core-background); padding: 1rem 0; }
 			.error-header__container { max-width: var(--container-max, 1350px); margin: 0 auto; padding: 0 1.5rem; display: flex; align-items: center; justify-content: center; }
 
 			/* ErrorLayout: content area. Fills the space between header and

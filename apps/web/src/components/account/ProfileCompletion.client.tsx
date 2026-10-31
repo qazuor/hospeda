@@ -23,11 +23,13 @@
  */
 
 import { CompleteProfileBodySchema } from '@repo/schemas';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { refreshBetterAuthSession } from '@/lib/auth-client';
 import { useZodForm } from '@/lib/forms/use-zod-form';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
+import type { ThemeChoice } from '@/lib/theme';
+import { applyThemeChoice, DEFAULT_THEME_CHOICE, readStoredThemeChoice } from '@/lib/theme';
 import {
     computeDisplayName,
     computeInitialDisplayNameOverride,
@@ -89,32 +91,6 @@ function ddmmyyyyToIso(value: string): string | null {
 }
 
 /**
- * Applies `theme` by setting `data-theme` on the root `<html>` element and
- * persisting it to `localStorage` (mirrors `PreferenceToggles.client.tsx`'s
- * `applyTheme`, kept as a separate local copy since there is no shared
- * theme-application module yet).
- *
- * Intentionally called ONLY after the profile-completion POST succeeds
- * (HOS-313), never on the select's `onChange`: applying it live would
- * re-render the page mid-fill and disorient the user filling out the form.
- */
-function applyTheme(theme: SupportedTheme): void {
-    if (typeof document === 'undefined') return;
-    const root = document.documentElement;
-    if (theme === 'system') {
-        const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-        root.setAttribute('data-theme', prefersDark ? 'dark' : 'light');
-    } else {
-        root.setAttribute('data-theme', theme);
-    }
-    try {
-        localStorage.setItem('theme', theme);
-    } catch {
-        // ignore storage errors
-    }
-}
-
-/**
  * Profile completion form island.
  *
  * Renders a form that collects baseline profile data for first-time users.
@@ -172,10 +148,20 @@ export function ProfileCompletion({
     const [phoneCode, setPhoneCode] = useState('+54');
     const [phoneNumber, setPhoneNumber] = useState('');
     const [selectedLocale, setSelectedLocale] = useState<SupportedLocale>(locale);
-    // Defaults to 'system' (matches ThemeEnumSchema's default). Not applied
-    // live — see handleSubmit, which calls applyTheme only after the POST
-    // succeeds (HOS-313).
-    const [selectedTheme, setSelectedTheme] = useState<SupportedTheme>('system');
+    // HOS-1966: the select starts on the theme the visitor is ALREADY seeing
+    // (their stored choice, `'light'` when they never chose), not on a
+    // hard-coded `'system'`. A `'system'` default silently flipped a light
+    // visitor on a dark OS to dark the moment they saved their profile, with no
+    // theme gesture at all. Read after mount (SSR has no storage). Not applied
+    // live, and applied after the POST only when it differs from this initial
+    // choice (HOS-313).
+    const [initialThemeChoice, setInitialThemeChoice] = useState<ThemeChoice>(DEFAULT_THEME_CHOICE);
+    const [selectedTheme, setSelectedTheme] = useState<SupportedTheme>(DEFAULT_THEME_CHOICE);
+    useEffect(() => {
+        const stored = readStoredThemeChoice();
+        setInitialThemeChoice(stored);
+        setSelectedTheme(stored);
+    }, []);
     // Newsletter defaults to TRUE — pre-checked so the user opts OUT explicitly.
     // The terms checkbox stays unchecked: acceptance must be an explicit action.
     const [newsletter, setNewsletter] = useState(true);
@@ -314,7 +300,7 @@ export function ProfileCompletion({
             // point, so there is no mid-fill re-render to disorient the user
             // — unlike an on-change apply, which would. On failure (the
             // `!response.ok` branch above returns early) nothing is applied.
-            applyTheme(selectedTheme);
+            if (selectedTheme !== initialThemeChoice) applyThemeChoice({ choice: selectedTheme });
 
             // Both destinations are resolved server-side and carry the
             // interrupted destination forward, so finishing here lands on what
