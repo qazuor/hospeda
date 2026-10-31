@@ -734,6 +734,68 @@ describe('ExternalReputationSection', () => {
         });
     });
 
+    // ── 7b. Refresh with nothing to refresh (HOS-1944) ──────────────────────
+
+    describe('Refresh with no platforms (HOS-1944)', () => {
+        function mockRefreshReply(refreshBody: unknown, listings = [LISTING_GOOGLE]) {
+            vi.mocked(global.fetch).mockImplementation((url, opts) => {
+                const urlStr = typeof url === 'string' ? url : url.toString();
+                if ((opts as RequestInit)?.method === 'POST' && urlStr.includes('/refresh')) {
+                    return Promise.resolve({
+                        ok: true,
+                        status: 200,
+                        json: async () => ({ success: true, data: refreshBody }),
+                        headers: new Headers()
+                    } as unknown as Response);
+                }
+                return Promise.resolve(makeListingsOkResponse(listings, EMPTY_REPUTATION_META));
+            });
+        }
+
+        it('disables the refresh button and says a platform link is needed when none is loaded', async () => {
+            mockRefreshReply({}, []);
+            renderSection();
+
+            await waitFor(() => {
+                expect(screen.getByTestId('refresh-needs-platform')).toBeInTheDocument();
+            });
+            expect(screen.getByTestId('refresh-button')).toBeDisabled();
+        });
+
+        it('does not claim the button needs a platform while listings are still loading', () => {
+            vi.mocked(global.fetch).mockReturnValue(new Promise(() => {}));
+            renderSection();
+
+            expect(screen.queryByTestId('refresh-needs-platform')).not.toBeInTheDocument();
+        });
+
+        it('never shows "Actualizado" when the server answered 200 with three empty lists', async () => {
+            mockRefreshReply({ inlineSucceeded: [], enqueuedAsync: [], inlineFailed: [] });
+            renderSection();
+            await waitFor(() => expect(screen.getByTestId('refresh-button')).not.toBeDisabled());
+
+            fireEvent.click(screen.getByTestId('refresh-button'));
+
+            await waitFor(() => {
+                expect(screen.getByTestId('refresh-no-platforms')).toBeInTheDocument();
+            });
+            expect(screen.queryByText('Actualizado')).not.toBeInTheDocument();
+        });
+
+        it('still shows "Actualizado" when a platform was refreshed inline', async () => {
+            mockRefreshReply({ inlineSucceeded: ['GOOGLE'], enqueuedAsync: [], inlineFailed: [] });
+            renderSection();
+            await waitFor(() => expect(screen.getByTestId('refresh-button')).not.toBeDisabled());
+
+            fireEvent.click(screen.getByTestId('refresh-button'));
+
+            await waitFor(() => {
+                expect(screen.getByText('Actualizado')).toBeInTheDocument();
+            });
+            expect(screen.queryByTestId('refresh-no-platforms')).not.toBeInTheDocument();
+        });
+    });
+
     // ── SPEC-228 T-022: loading state uses Spinner, not '...' ───────────────
 
     describe('Loading state (SPEC-228 T-022)', () => {
