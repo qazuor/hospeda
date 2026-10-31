@@ -316,6 +316,7 @@ GIN/partial/functional indexes. Files are:
 - Named `NNN-name.kind.sql` (3-digit prefix for ordering, e.g. `001-search-index.matview.sql`)
 - **Idempotent** — use `IF NOT EXISTS` / `CREATE OR REPLACE` throughout
 - Re-applied on every `pnpm db:apply-extras` call (not just once)
+- **A missing target table is an error, not a skip** (HOS-1794): a constraint/index extra must `RAISE EXCEPTION` when its table does not exist, never `RAISE NOTICE ... RETURN`. A silent skip leaves the invariant absent while `db:apply-extras` exits 0. Idempotency comes from `IF NOT EXISTS` / `pg_constraint` lookups on an existing table, not from tolerating a missing one. `032-venue-experience-media.constraints.sql` is the reference; older extras (005-008, 018, 033) still skip silently (listed in HOS-1794 PR).
 
 ```bash
 pnpm db:apply-extras   # Re-apply every extras/*.sql in lexical order
