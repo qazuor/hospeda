@@ -1084,7 +1084,7 @@ describe('buildAccommodationListingSummary', () => {
                 sort: { key: 'name', direction: 'asc' },
                 catalogs: TEST_CATALOGS
             });
-            expect(result).toContain('ordenados por nome, A a Z');
+            expect(result).toContain('ordenadas por nome, A a Z');
         });
 
         it('should render price in Portuguese locale', () => {
@@ -1121,7 +1121,7 @@ describe('buildAccommodationListingSummary', () => {
                 filters: { featured: true },
                 counts: { shown: 10, globalTotal: 50 }
             });
-            expect(result).toContain('somente destacados');
+            expect(result).toContain('somente destacadas');
         });
 
         it('should render multiple types joined with "e" in Portuguese', () => {
@@ -1622,6 +1622,99 @@ describe('buildAccommodationListingSummary', () => {
             expect(result).toBe(
                 'Mostrando 15 de 45 hoteles, cabañas y hostels en Colón, Concordia o Federación, con precio entre $5.000 y $30.000, para al menos 2 huéspedes, ordenados por destacados, destacados primero.'
             );
+        });
+    });
+
+    // -------------------------------------------------------------------------
+    // Number and gender agreement (HOS-1926)
+    // -------------------------------------------------------------------------
+
+    describe('number and gender agreement', () => {
+        const sortFeatured = { key: 'isFeatured', direction: 'desc' } as const;
+
+        it('uses the singular feminine noun and participle for one cabin', () => {
+            const result = buildAccommodationListingSummary({
+                locale: 'es',
+                filters: { types: ['CABIN'] },
+                counts: { shown: 1, globalTotal: 50, subjectTotal: 1 },
+                sort: sortFeatured
+            });
+            expect(result).toBe(
+                'Mostrando 1 de 1 cabaña, ordenada por destacados, destacada primero.'
+            );
+        });
+
+        it('keeps the plural feminine forms for several houses', () => {
+            const result = buildAccommodationListingSummary({
+                locale: 'es',
+                filters: { types: ['HOUSE'] },
+                counts: { shown: 3, globalTotal: 50, subjectTotal: 3 },
+                sort: sortFeatured
+            });
+            expect(result).toBe(
+                'Mostrando 3 de 3 casas, ordenadas por destacados, destacadas primero.'
+            );
+        });
+
+        it('keeps the masculine form for a mixed list of types', () => {
+            const result = buildAccommodationListingSummary({
+                locale: 'es',
+                filters: { types: ['HOTEL', 'CABIN'] },
+                counts: { shown: 1, globalTotal: 50, subjectTotal: 4 },
+                sort: { key: 'name', direction: 'asc' }
+            });
+            expect(result).toBe('Mostrando 1 de 4 hoteles y cabañas, ordenados por nombre, A a Z.');
+        });
+
+        it('makes "que contiene" agree with a single generic result', () => {
+            const result = buildAccommodationListingSummary({
+                locale: 'es',
+                filters: { text: 'Host Basico' },
+                counts: { shown: 1, globalTotal: 1 }
+            });
+            expect(result).toBe(
+                'Mostrando 1 de 1 hospedaje que contiene "Host Basico" en el nombre o la descripción.'
+            );
+        });
+
+        it('keeps "que contienen" for several results', () => {
+            const result = buildAccommodationListingSummary({
+                locale: 'es',
+                filters: { text: 'Host' },
+                counts: { shown: 2, globalTotal: 2 }
+            });
+            expect(result).toContain('hospedajes que contienen "Host"');
+        });
+
+        it('agrees the featured filter with a feminine singular subject', () => {
+            const result = buildAccommodationListingSummary({
+                locale: 'es',
+                filters: { types: ['CABIN'], featured: true },
+                counts: { shown: 1, globalTotal: 50, subjectTotal: 1 }
+            });
+            expect(result).toBe('Mostrando 1 de 1 cabaña, solo destacada.');
+        });
+
+        it('agrees Portuguese: feminine generic subject and singular verb', () => {
+            const result = buildAccommodationListingSummary({
+                locale: 'pt',
+                filters: { text: 'Host' },
+                counts: { shown: 1, globalTotal: 1 },
+                sort: { key: 'name', direction: 'asc' }
+            });
+            expect(result).toBe(
+                'Mostrando 1 de 1 hospedagem que contém "Host" no nome ou na descrição, ordenada por nome, A a Z.'
+            );
+        });
+
+        it('uses the singular type noun in English', () => {
+            const result = buildAccommodationListingSummary({
+                locale: 'en',
+                filters: { types: ['CABIN'] },
+                counts: { shown: 1, globalTotal: 50, subjectTotal: 1 },
+                sort: sortFeatured
+            });
+            expect(result).toBe('Showing 1 of 1 cabin, sorted by featured, featured first.');
         });
     });
 });

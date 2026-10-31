@@ -159,7 +159,7 @@ export function buildAccommodationListingSummary({
     };
 
     // 2. Resolve subject
-    const { subjectPhrase, total } = resolveSubject({
+    const { subjectPhrase, total, isPlural, gender } = resolveSubject({
         filters,
         counts,
         catalogs,
@@ -175,7 +175,9 @@ export function buildAccommodationListingSummary({
             intlLocale,
             filters,
             catalogs,
-            options
+            options,
+            subjectPlural: isPlural,
+            subjectGender: gender
         };
         const activeDescriptors = FILTER_DESCRIPTORS.filter((d) => d.isActive({ filters }));
         const fragments = activeDescriptors.map((d) => ({
@@ -199,7 +201,9 @@ export function buildAccommodationListingSummary({
         intlLocale,
         filters,
         catalogs,
-        options
+        options,
+        subjectPlural: isPlural,
+        subjectGender: gender
     };
 
     // 5. Evaluate active descriptors
@@ -207,7 +211,7 @@ export function buildAccommodationListingSummary({
 
     // 6. No active non-type filters
     if (activeDescriptors.length === 0) {
-        const sortPhrase = buildSortPhrase({ sort, catalogs, locale });
+        const sortPhrase = buildSortPhrase({ sort, catalogs, locale, gender, plural: isPlural });
         const sortPart = sortPhrase ? `, ${sortPhrase}` : '';
         // Only show "sin filtros activos" when types are also absent.
         // If the user selected types, the subject phrase already reflects the
@@ -230,7 +234,7 @@ export function buildAccommodationListingSummary({
     const modifierStr = assembleModifiers(fragments, destinationActive);
 
     // 8. Build sort phrase
-    const sortPhrase = buildSortPhrase({ sort, catalogs, locale });
+    const sortPhrase = buildSortPhrase({ sort, catalogs, locale, gender, plural: isPlural });
     const sortPart = sortPhrase ? `, ${sortPhrase}` : '';
 
     // 9. Assemble: "Mostrando 18 de 42 hoteles en Colón, con precio de hasta $20.000."
