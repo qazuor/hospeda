@@ -134,6 +134,13 @@ vi.mock('@repo/db', async () => {
 
 import { PermissionEnum, QrCodeFormatEnum, RoleEnum, ServiceErrorCode } from '@repo/schemas';
 import { Hono } from 'hono';
+// Imported statically on purpose (HOS-1975). The router's module graph costs
+// seconds to load cold; imported inside `buildApp()` that cost was charged to
+// the FIRST test's 30s budget, and on a loaded CI runner it overran. A test that
+// times out does not stop: its request kept running and landed its `update`
+// call inside the NEXT test, whose `not.toHaveBeenCalled()` failed with "called
+// 1 times". Loading at collection time keeps the cost out of every test budget.
+import { adminQrCodeRoutes } from '../../../src/routes/qr-code/admin/index.js';
 import type { AppBindings } from '../../../src/types';
 
 // ---------------------------------------------------------------------------
@@ -240,7 +247,6 @@ type Probe = { readonly status: number; readonly body: Record<string, unknown> }
  * the real `handleRouteError`, so these probes see the bodies production sends.
  */
 async function buildApp(actor: Record<string, unknown> = adminActor): Promise<Hono<AppBindings>> {
-    const { adminQrCodeRoutes } = await import('../../../src/routes/qr-code/admin/index.js');
     const app = new Hono<AppBindings>();
     app.use((c, next) => {
         c.set('actor', actor as never);
@@ -276,25 +282,7 @@ async function probe(
     }
 }
 
-/**
- * Lets every request still in flight finish before the next test starts.
- *
- * The model stubs are module-level and shared by all tests, and `mockClear`
- * wipes their call history synchronously. A write that lands AFTER that wipe
- * (a request from the previous test that has not fully unwound) is recorded
- * against the NEXT test, whose `not.toHaveBeenCalled()` then fails with "called
- * 1 times" for a call it never made. That is the one-in-N CI failure this
- * drain exists for (HOS-1975): the refusal tests sit right after the tests that
- * do write. Two macrotask turns cover the promise chains and the timer-queued
- * continuations a request leaves behind.
- */
-async function settle(): Promise<void> {
-    await new Promise<void>((resolve) => setTimeout(resolve, 0));
-    await new Promise<void>((resolve) => setImmediate(resolve));
-}
-
-beforeEach(async () => {
-    await settle();
+beforeEach(() => {
     qrDb.rows.clear();
     qrDb.rows.set(RED_ID, redQrRow());
     for (const fn of [
@@ -309,8 +297,7 @@ beforeEach(async () => {
     }
 });
 
-afterEach(async () => {
-    await settle();
+afterEach(() => {
     vi.restoreAllMocks();
 });
 
