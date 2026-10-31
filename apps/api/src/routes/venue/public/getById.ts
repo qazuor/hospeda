@@ -46,8 +46,8 @@ export const publicGetVenueByIdRoute = createPublicRoute({
             return null;
         }
         // HOS-1792: same menu-file projection as by-slug.
-        const venue = await gateVenueMenuFile({ venue: result.data });
-        return withPublicIsFeatured(withPublicVisibleFaqs(venue));
+        const venue = await gateVenueMenuFile({ venue: withPublicVisibleFaqs(result.data) });
+        return withPublicIsFeatured(venue);
     },
     options: {
         customRateLimit: { requests: 100, windowMs: 60000 }
