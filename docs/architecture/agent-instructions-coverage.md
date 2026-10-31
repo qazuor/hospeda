@@ -101,7 +101,7 @@ protege varias invariantes mediante `pnpm check:guards` y sus pasos individuales
 | variables, schemas y ejemplos de entorno | `check-env-*`, `env:doctor` y tests de `packages/config` |
 | paridad i18n y placeholders | `check-i18n-key-coverage.ts` y tests de `packages/i18n` |
 | Cloudinary y placeholders de media | `check-cloudinary-isolation.sh`, `check-bare-cloudinary-img.sh`, `check-local-media-placeholders.sh` |
-| trial, preapproval, planes y billing | `check-no-trial-to-mp.sh`, `check-no-plan-id-to-own-preapproval.sh`, `check-no-price-trial-days.ts`, guards de billing |
+| trial, preapproval, planes y billing | `check-no-provider-trial.ts`, `check-no-plan-id-to-own-preapproval.sh`, `check-no-price-trial-days.ts`, guards de billing |
 | schemas de seed y migraciones | `check-seed-migration-schema-probe.sh` y tests de `packages/seed` |
 | dialogs, formularios y UI | `check-dialog-panel.ts`, `check-form-error-cleared-on-submit.ts`, `check-no-native-dialogs.ts` |
 | CSP y nonce | `check-csp-patterns.sh`, `check-no-inline-nonce.sh` |

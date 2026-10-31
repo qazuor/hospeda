@@ -17,8 +17,8 @@
 >   `packages/billing/src/config/plans.config.ts`. Partner plans have none.
 > - **Not card-first.** HOS-1012 retired the card-first design entirely: the trial
 >   is Hospeda's own, granted locally at first publish, and MercadoPago is never
->   asked for a free day. `scripts/check-no-trial-to-mercadopago.sh` fails CI if a
->   checkout payload names one. The HOS-171 addendum below describes a path that
+>   asked for a free day. `scripts/check-no-provider-trial.ts` (G11) fails CI if an
+>   authorization payload names one. The HOS-171 addendum below describes a path that
 >   no longer exists.
 >
 > The live picture is in the root `CLAUDE.md` ("The trial is Hospeda's;
