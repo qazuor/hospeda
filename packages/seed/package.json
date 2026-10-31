@@ -46,7 +46,7 @@
         "@repo/service-core": "workspace:*",
         "@repo/utils": "workspace:*",
         "bcryptjs": "^3.0.3",
-        "dotenv": "^17.4.2",
+        "dotenv": "^18.0.9",
         "drizzle-orm": "^0.45.2",
         "pg": "^8.22.0",
         "zod": "^4.0.8"
