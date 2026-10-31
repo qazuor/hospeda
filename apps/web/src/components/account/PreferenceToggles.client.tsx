@@ -22,7 +22,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { translateApiError } from '@/lib/api-errors';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
-import { applyThemeChoice } from '@/lib/theme';
+import { applyThemeChoice, markThemeSynced } from '@/lib/theme';
 import { buildLocaleSwitchPathname } from '@/lib/urls';
 import { addToast } from '@/store/toast-store';
 import styles from './PreferenceToggles.module.css';
@@ -243,6 +243,7 @@ export function PreferenceToggles({ userId, locale, apiUrl }: PreferenceTogglesP
         const next = { ...settings, themeWeb: value };
         setSettings(next);
         applyThemeChoice({ choice: value });
+        markThemeSynced({ userId });
         void persistSettings({ themeWeb: value }, 'themeWeb', prev);
     }
 

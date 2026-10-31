@@ -115,3 +115,112 @@ export function applyThemeChoice({ choice }: { readonly choice: ThemeChoice }): 
         // Ignore storage errors: the attribute is already applied.
     }
 }
+
+// ─── Saved profile preference (HOS-1966 follow-up) ───────────────────────────
+//
+// Owner decision 2026-10-31: "if the user saved a theme, we must load the one
+// they saved". Resolution order for a signed-in user:
+//
+//   1. the saved `settings.themeWeb`, applied ONCE per browser session;
+//   2. otherwise `localStorage.theme` (what the visitor was already seeing);
+//   3. otherwise {@link DEFAULT_THEME_CHOICE}.
+//
+// "Once per session" is what prevents a snap back. The header toggle persists
+// to the profile asynchronously (`AuthedPreferenceSync`), so a page loaded
+// right after a toggle can read the OLD saved value. Any theme choice made
+// while signed in therefore stamps a session marker for that user, and a
+// stamped session never lets the server value override the local one again.
+// A guest toggle stamps nothing: logging in must still load the saved theme.
+//
+// The saved value is written into `localStorage.theme`, so every later paint
+// goes through `ThemeFoucScript.astro` with no flash. Only the first
+// authenticated page after login can swap once. Cacheable HTML never carries
+// per-user data: the value is fetched client-side.
+
+/** `sessionStorage` key holding the user id whose saved theme was resolved. */
+export const THEME_SYNC_MARKER_KEY = 'themeSyncedFor';
+
+/** Window event fired after a saved preference replaced the local choice. */
+export const THEME_SYNCED_EVENT = 'hospeda:theme-synced';
+
+/**
+ * Decides which choice wins for a signed-in user. Pure.
+ *
+ * @param params.savedChoice - `settings.themeWeb` from the profile (any value).
+ * @param params.localChoice - Current `localStorage` choice (or the default).
+ * @param params.alreadySynced - Whether this session already resolved it.
+ * @returns The choice to apply and whether it came from the saved preference.
+ */
+export function resolveSignedInThemeChoice({
+    savedChoice,
+    localChoice,
+    alreadySynced
+}: {
+    readonly savedChoice: unknown;
+    readonly localChoice: ThemeChoice;
+    readonly alreadySynced: boolean;
+}): { readonly choice: ThemeChoice; readonly fromSaved: boolean } {
+    if (!alreadySynced && isThemeChoice(savedChoice)) {
+        return { choice: savedChoice, fromSaved: true };
+    }
+    return { choice: localChoice, fromSaved: false };
+}
+
+/**
+ * Whether this session already resolved the theme for `userId`.
+ *
+ * @param params.userId - The signed-in user id.
+ * @returns `true` when the marker matches `userId`.
+ */
+export function isThemeSynced({ userId }: { readonly userId: string }): boolean {
+    try {
+        return sessionStorage.getItem(THEME_SYNC_MARKER_KEY) === userId;
+    } catch {
+        return false;
+    }
+}
+
+/**
+ * Stamps the session so the saved preference never overrides the local one
+ * again. Call it when a SIGNED-IN user picks a theme, and after a sync.
+ *
+ * @param params.userId - The signed-in user id.
+ */
+export function markThemeSynced({ userId }: { readonly userId: string }): void {
+    try {
+        sessionStorage.setItem(THEME_SYNC_MARKER_KEY, userId);
+    } catch {
+        // Storage may be blocked; the worst case is one extra sync.
+    }
+}
+
+/**
+ * Applies the signed-in user's saved theme once per session.
+ *
+ * No saved value (never chose, or invalid) leaves the local choice untouched.
+ * Persists to `localStorage` through {@link applyThemeChoice} so later paints
+ * use the FOUC script, but does NOT emit `preferences:change` (no PATCH echo).
+ *
+ * @param params.userId - The signed-in user id.
+ * @param params.savedChoice - `settings.themeWeb` from the profile.
+ * @returns `true` when the saved preference was applied.
+ */
+export function syncSavedThemeChoice({
+    userId,
+    savedChoice
+}: {
+    readonly userId: string;
+    readonly savedChoice: unknown;
+}): boolean {
+    if (typeof document === 'undefined') return false;
+    const { choice, fromSaved } = resolveSignedInThemeChoice({
+        savedChoice,
+        localChoice: readStoredThemeChoice(),
+        alreadySynced: isThemeSynced({ userId })
+    });
+    markThemeSynced({ userId });
+    if (!fromSaved) return false;
+    applyThemeChoice({ choice });
+    window.dispatchEvent(new CustomEvent(THEME_SYNCED_EVENT, { detail: { choice } }));
+    return true;
+}
