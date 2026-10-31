@@ -156,6 +156,21 @@ describe('startCronScheduler — soft-failure Sentry capture', () => {
         });
     });
 
+    it('HOS-1885 F1: a job named dunning gets no dedicated event_type (the branch is gone)', async () => {
+        const job = makeJob('dunning', () => Promise.resolve(makeSoftFailResult(1)));
+        mockGetEnabledCronJobs.mockReturnValue([job]);
+
+        const { startCronScheduler } = await import('../../src/cron/bootstrap');
+        await startCronScheduler();
+        await fireTick();
+
+        const [, capturedOpts] = mockCaptureException.mock.calls[0] as [
+            unknown,
+            { tags: Record<string, string> }
+        ];
+        expect(capturedOpts.tags.event_type).toBe('cron_soft_failure');
+    });
+
     it('includes errors count in the capture context', async () => {
         const job = makeJob('exchange-rate', () => Promise.resolve(makeSoftFailResult(7)));
         mockGetEnabledCronJobs.mockReturnValue([job]);

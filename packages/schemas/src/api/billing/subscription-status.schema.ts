@@ -25,10 +25,7 @@ import { SubscriptionStatusEnumSchema } from '../../enums/subscription-status.sc
  * the `start-paid` endpoint as `localSubscriptionId`.
  */
 export const SubscriptionStatusParamsSchema = z.object({
-    localId: z
-        .string()
-        .uuid('localId must be a valid UUID')
-        .describe('Local subscription UUID (returned by /start-paid)')
+    localId: z.string().uuid('localId must be a valid UUID').describe('Local subscription UUID')
 });
 export type SubscriptionStatusParams = z.infer<typeof SubscriptionStatusParamsSchema>;
 

@@ -607,4 +607,69 @@ describe('billing reconciliation sweep cron', () => {
         const result = await billingReconciliationSweepJob.handler(context());
         expect(result).toMatchObject({ success: false, processed: 0, errors: 1 });
     });
+    describe('HOS-1885 F1: the alert the retired dunning job carried', () => {
+        const base = {
+            rowsRead: 5,
+            runId: 'r',
+            complete: true,
+            pinged: false,
+            divergences: 0,
+            marksOpened: 0,
+            marksAccumulated: 0,
+            startedAt: new Date(),
+            finishedAt: new Date()
+        };
+
+        it('captures to Sentry when billing rows fail the sweep', async () => {
+            mockSweep.mockResolvedValue({
+                ...base,
+                rowsFailed: 2,
+                failures: [{ subscriptionId: 'sub-1' }, { subscriptionId: 'sub-2' }]
+            });
+            const ctx = context();
+            await billingReconciliationSweepJob.handler(ctx);
+            expect(ctx.logger.error).toHaveBeenCalledWith(
+                'Billing reconciliation sweep had failures',
+                expect.objectContaining({
+                    rowsFailed: 2,
+                    failedSubscriptionIds: ['sub-1', 'sub-2']
+                }),
+                { capture: true }
+            );
+        });
+
+        it('captures to Sentry when only a zero-call check fails', async () => {
+            mockSweep.mockResolvedValue({
+                ...base,
+                rowsFailed: 0,
+                failures: [],
+                zeroCallChecks: { results: [], failures: [{ check: 'addon-orphanhood' }] }
+            });
+            const ctx = context();
+            await billingReconciliationSweepJob.handler(ctx);
+            expect(ctx.logger.error).toHaveBeenCalledWith(
+                'Billing reconciliation sweep had failures',
+                expect.objectContaining({ failedChecks: ['addon-orphanhood'] }),
+                { capture: true }
+            );
+        });
+
+        it('stays silent on a clean sweep', async () => {
+            mockSweep.mockResolvedValue({ ...base, rowsFailed: 0, failures: [] });
+            const ctx = context();
+            await billingReconciliationSweepJob.handler(ctx);
+            expect(ctx.logger.error).not.toHaveBeenCalled();
+        });
+
+        it('captures a thrown sweep to Sentry', async () => {
+            mockSweep.mockRejectedValue(new Error('service failed'));
+            const ctx = context();
+            await billingReconciliationSweepJob.handler(ctx);
+            expect(ctx.logger.error).toHaveBeenCalledWith(
+                'Billing reconciliation sweep failed',
+                { error: 'service failed' },
+                { capture: true }
+            );
+        });
+    });
 });
