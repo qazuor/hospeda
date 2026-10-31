@@ -14,6 +14,7 @@
 
 import { getPhrase, lookupCatalogLabel } from './summary.catalogs';
 import {
+    agreeParticiples,
     cleanText,
     formatNaturalList,
     formatPrice,
@@ -82,10 +83,13 @@ const textDescriptor: FilterDescriptor = {
         return cleaned.length > 0;
     },
     build: ({ context }) => {
-        const { filters, locale } = context;
+        const { filters, locale, subjectPlural } = context;
         const raw = filters.text ?? '';
         const cleaned = cleanText({ text: raw });
-        const containing = getPhrase({ locale, key: 'containing' });
+        const containing = getPhrase({
+            locale,
+            key: subjectPlural ? 'containing' : 'containingSingular'
+        });
         const inNameOrDesc = getPhrase({ locale, key: 'inNameOrDescription' });
         return `${containing} "${cleaned}" ${inNameOrDesc}`;
     }
@@ -302,10 +306,17 @@ const featuredDescriptor: FilterDescriptor = {
     key: 'featured',
     isActive: ({ filters }) => filters.featured === true || filters.featured === false,
     build: ({ context }) => {
-        const { filters, locale } = context;
-        return filters.featured === true
-            ? getPhrase({ locale, key: 'onlyFeatured' })
-            : getPhrase({ locale, key: 'onlyNotFeatured' });
+        const { filters, locale, subjectGender, subjectPlural } = context;
+        const phrase =
+            filters.featured === true
+                ? getPhrase({ locale, key: 'onlyFeatured' })
+                : getPhrase({ locale, key: 'onlyNotFeatured' });
+        return agreeParticiples({
+            text: phrase,
+            locale,
+            gender: subjectGender,
+            plural: subjectPlural
+        });
     }
 };
 

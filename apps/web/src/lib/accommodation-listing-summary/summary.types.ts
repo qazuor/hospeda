@@ -8,6 +8,9 @@
 /** Supported locales for summary generation. */
 export type SummaryLocale = 'es' | 'en' | 'pt';
 
+/** Grammatical gender used for participle agreement (es/pt; en is invariant). */
+export type SummaryGender = 'masculine' | 'feminine';
+
 /** How multiple values in a filter are combined. */
 export type MatchMode = 'any' | 'all';
 
@@ -71,6 +74,11 @@ export interface AccommodationSort {
 export interface TypeGrammarEntry {
     /** Type key matching the filter value (e.g. 'HOTEL', 'CABIN'). */
     readonly key: string;
+    /**
+     * Grammatical gender per locale, used to agree participles ("ordenadas").
+     * Missing entries default to masculine.
+     */
+    readonly gender?: Partial<Record<SummaryLocale, SummaryGender>>;
     /** Singular label per locale. */
     readonly singular: Record<SummaryLocale, string>;
     /** Plural label per locale. */
@@ -186,6 +194,10 @@ export interface FilterDescriptorContext {
     readonly filters: AccommodationSummaryFilters;
     readonly catalogs: SummaryCatalogs;
     readonly options: Required<Pick<SummaryOptions, 'matchMode' | 'quantityMode'>> & SummaryOptions;
+    /** Whether the sentence subject is plural. Drives verb and participle agreement. */
+    readonly subjectPlural: boolean;
+    /** Grammatical gender of the sentence subject. */
+    readonly subjectGender: SummaryGender;
 }
 
 /**
