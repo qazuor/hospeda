@@ -40,12 +40,11 @@ Y lo que se **lee** en pantalla, que no se dice en voz:
 | T3–T4 | subtítulo palabra por palabra de F2, F3 y F4 |
 | T6 | **Empezá en hospeda.com.ar** |
 
-> El texto sale del [plan de videos](../../plan-videos.md#v12--treinta-días-para-probarlo)
+> El texto sale del [plan de videos](../../plan-videos.md#v12--probalo-gratis)
 > y no se cambia acá. ✅ **"Sin tarjeta" ahora se puede decir** (HOS-1012, 01/09/2026):
 > la prueba arranca sola al publicar y no pide medio de pago. Hasta esa fecha la tarjeta
-> se pedía al registrarse y la frase estaba prohibida, que es por qué el texto en pantalla
-> quedó como "30 días sin pagar nada". Ese texto sigue siendo válido, pero ya no es la
-> única opción: la promesa sobre el medio de pago hoy es cierta y es más fuerte.
+> se pedía al registrarse y la frase estaba prohibida. ⚠️ **Nunca una cantidad de días**
+> en pantalla (regla 10): el plazo puede cambiar. El texto principal es "Empezá gratis".
 
 ---
 
