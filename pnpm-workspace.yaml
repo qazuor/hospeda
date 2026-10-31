@@ -2,6 +2,7 @@ packages:
   - "apps/*"
   - "packages/*"
   - "infra/cloudflare/*"
+  - "marketing/videos"
 
 publicHoistPattern:
   - "react"
