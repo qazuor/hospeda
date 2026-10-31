@@ -8,9 +8,13 @@ import {
     applyThemeChoice,
     DEFAULT_THEME_CHOICE,
     isThemeChoice,
+    markThemeSynced,
     readStoredThemeChoice,
     resolveIsDark,
-    THEME_STORAGE_KEY
+    resolveSignedInThemeChoice,
+    syncSavedThemeChoice,
+    THEME_STORAGE_KEY,
+    THEME_SYNC_MARKER_KEY
 } from '../../src/lib/theme';
 
 function mockSystemDark(matches: boolean): void {
@@ -115,6 +119,107 @@ describe('theme module', () => {
             });
             applyThemeChoice({ choice: 'dark' });
             expect(document.documentElement.getAttribute('data-theme')).toBe('dark');
+        });
+    });
+});
+
+describe('saved profile theme (HOS-1966)', () => {
+    const originalMatchMedia = window.matchMedia;
+
+    beforeEach(() => {
+        localStorage.clear();
+        sessionStorage.clear();
+        document.documentElement.removeAttribute('data-theme');
+        mockSystemDark(false);
+    });
+
+    afterEach(() => {
+        window.matchMedia = originalMatchMedia;
+    });
+
+    describe('resolveSignedInThemeChoice', () => {
+        it('saved preference beats the local choice', () => {
+            expect(
+                resolveSignedInThemeChoice({
+                    savedChoice: 'dark',
+                    localChoice: 'light',
+                    alreadySynced: false
+                })
+            ).toEqual({ choice: 'dark', fromSaved: true });
+        });
+
+        it('falls back to the local choice when nothing valid was saved', () => {
+            for (const savedChoice of [undefined, null, 'purple']) {
+                expect(
+                    resolveSignedInThemeChoice({
+                        savedChoice,
+                        localChoice: 'system',
+                        alreadySynced: false
+                    })
+                ).toEqual({ choice: 'system', fromSaved: false });
+            }
+        });
+
+        it('keeps the local choice once the session is synced', () => {
+            expect(
+                resolveSignedInThemeChoice({
+                    savedChoice: 'dark',
+                    localChoice: 'light',
+                    alreadySynced: true
+                })
+            ).toEqual({ choice: 'light', fromSaved: false });
+        });
+    });
+
+    describe('syncSavedThemeChoice', () => {
+        it('applies and stores the saved theme over a different local one', () => {
+            localStorage.setItem(THEME_STORAGE_KEY, 'light');
+            expect(syncSavedThemeChoice({ userId: 'u1', savedChoice: 'dark' })).toBe(true);
+            expect(localStorage.getItem(THEME_STORAGE_KEY)).toBe('dark');
+            expect(document.documentElement.getAttribute('data-theme')).toBe('dark');
+            expect(sessionStorage.getItem(THEME_SYNC_MARKER_KEY)).toBe('u1');
+        });
+
+        it('does not snap back after a signed-in toggle', () => {
+            // Saved was light; the user toggles to dark and PATCH is still in flight.
+            applyThemeChoice({ choice: 'dark' });
+            markThemeSynced({ userId: 'u1' });
+            expect(syncSavedThemeChoice({ userId: 'u1', savedChoice: 'light' })).toBe(false);
+            expect(localStorage.getItem(THEME_STORAGE_KEY)).toBe('dark');
+            expect(document.documentElement.getAttribute('data-theme')).toBe('dark');
+        });
+
+        it('applies the saved theme only once per session', () => {
+            expect(syncSavedThemeChoice({ userId: 'u1', savedChoice: 'dark' })).toBe(true);
+            applyThemeChoice({ choice: 'light' });
+            expect(syncSavedThemeChoice({ userId: 'u1', savedChoice: 'dark' })).toBe(false);
+            expect(localStorage.getItem(THEME_STORAGE_KEY)).toBe('light');
+        });
+
+        it('a guest toggle before login does not block the saved theme', () => {
+            applyThemeChoice({ choice: 'light' }); // guest gesture: no marker
+            expect(syncSavedThemeChoice({ userId: 'u1', savedChoice: 'dark' })).toBe(true);
+            expect(localStorage.getItem(THEME_STORAGE_KEY)).toBe('dark');
+        });
+
+        it('a different user in the same tab gets their own saved theme', () => {
+            syncSavedThemeChoice({ userId: 'u1', savedChoice: 'dark' });
+            expect(syncSavedThemeChoice({ userId: 'u2', savedChoice: 'light' })).toBe(true);
+            expect(localStorage.getItem(THEME_STORAGE_KEY)).toBe('light');
+        });
+
+        it('keeps the current behaviour when the user never saved one', () => {
+            localStorage.setItem(THEME_STORAGE_KEY, 'dark');
+            expect(syncSavedThemeChoice({ userId: 'u1', savedChoice: undefined })).toBe(false);
+            expect(localStorage.getItem(THEME_STORAGE_KEY)).toBe('dark');
+            expect(readStoredThemeChoice()).toBe('dark');
+        });
+
+        it('logged-out behaviour is untouched: the module never reads a saved value', () => {
+            expect(readStoredThemeChoice()).toBe(DEFAULT_THEME_CHOICE);
+            applyThemeChoice({ choice: 'dark' });
+            expect(readStoredThemeChoice()).toBe('dark');
+            expect(sessionStorage.getItem(THEME_SYNC_MARKER_KEY)).toBeNull();
         });
     });
 });
