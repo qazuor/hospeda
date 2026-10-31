@@ -1,14 +1,18 @@
-/** Debug helper: logs in and screenshots a page on the mobile viewport. Usage: pnpm probe /es/publicar/ */
+/**
+ * Debug helper: logs in and screenshots a page on the reference phone's viewport
+ * (config/device.ts). Usage: pnpm probe /es/publicar/
+ */
 import { mkdirSync } from 'node:fs';
 import { join } from 'node:path';
 import { chromium } from 'playwright';
 import { resolveAssetPaths } from '../config/asset-paths';
+import { REFERENCE_DEVICE } from '../config/device';
 
 const WEB = process.env.WEB_URL ?? 'http://localhost:4422';
 const path = process.argv[2] ?? '/es/publicar/';
 const browser = await chromium.launch();
 const context = await browser.newContext({
-    viewport: { width: 390, height: 844 },
+    viewport: REFERENCE_DEVICE.viewport,
     deviceScaleFactor: 1,
     isMobile: true,
     hasTouch: true
