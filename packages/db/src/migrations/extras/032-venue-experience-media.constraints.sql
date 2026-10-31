@@ -25,9 +25,12 @@
 -- silently violate the featured invariant.
 --
 -- Idempotency:
---   Each block guards on table existence first (skips silently on a fresh DB
---   where the structural migration has not run yet), then uses IF NOT EXISTS /
---   pg_constraint lookups so re-applying is a no-op.
+--   Each block checks that its table exists and RAISES an exception when it
+--   does not (HOS-1794): a silent skip left the invariant absent while
+--   `db:apply-extras` exited 0. The structural migration must run first
+--   (`pnpm db:migrate` before `pnpm db:apply-extras`). Once the table exists,
+--   DROP/CREATE INDEX IF [NOT] EXISTS and pg_constraint lookups make re-applying
+--   a no-op.
 -- =============================================================================
 
 -- ---------------------------------------------------------------------------
@@ -40,8 +43,7 @@ BEGIN
     WHERE table_schema = 'public'
       AND table_name   = 'venue_media'
   ) THEN
-    RAISE NOTICE 'Table venue_media does not exist, skipping uq_venue_media_single_featured.';
-    RETURN;
+    RAISE EXCEPTION 'extras/032: table % does not exist, cannot ensure uq_venue_media_single_featured. Run pnpm db:migrate before pnpm db:apply-extras.', 'venue_media';
   END IF;
 
   -- Drop first so we can recreate with the updated predicate (idempotent).
@@ -63,8 +65,7 @@ BEGIN
     WHERE table_schema = 'public'
       AND table_name   = 'venue_media'
   ) THEN
-    RAISE NOTICE 'Table venue_media does not exist, skipping chk_venue_media_featured_not_archived.';
-    RETURN;
+    RAISE EXCEPTION 'extras/032: table % does not exist, cannot ensure chk_venue_media_featured_not_archived. Run pnpm db:migrate before pnpm db:apply-extras.', 'venue_media';
   END IF;
 
   IF NOT EXISTS (
@@ -92,8 +93,7 @@ BEGIN
     WHERE table_schema = 'public'
       AND table_name   = 'experience_media'
   ) THEN
-    RAISE NOTICE 'Table experience_media does not exist, skipping uq_experience_media_single_featured.';
-    RETURN;
+    RAISE EXCEPTION 'extras/032: table % does not exist, cannot ensure uq_experience_media_single_featured. Run pnpm db:migrate before pnpm db:apply-extras.', 'experience_media';
   END IF;
 
   -- Drop first so we can recreate with the updated predicate (idempotent).
@@ -115,8 +115,7 @@ BEGIN
     WHERE table_schema = 'public'
       AND table_name   = 'experience_media'
   ) THEN
-    RAISE NOTICE 'Table experience_media does not exist, skipping chk_experience_media_featured_not_archived.';
-    RETURN;
+    RAISE EXCEPTION 'extras/032: table % does not exist, cannot ensure chk_experience_media_featured_not_archived. Run pnpm db:migrate before pnpm db:apply-extras.', 'experience_media';
   END IF;
 
   IF NOT EXISTS (

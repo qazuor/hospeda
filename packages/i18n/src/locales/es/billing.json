@@ -578,6 +578,14 @@
         "subscribe_to_plan": "Suscribirse a un plan",
         "activate_trial": "Activar el período de prueba"
     },
+    "entitlementByAudience": {
+        "venue": {
+            "ai_chat": "Consultas de IA sobre tu local"
+        },
+        "experience": {
+            "ai_chat": "Consultas de IA sobre tu experiencia"
+        }
+    },
     "comparison": {
         "unlimited": "Ilimitado",
         "notIncluded": "No incluido",

@@ -8,7 +8,7 @@
  */
 
 /** Supported locales for summary generation. */
-export type SummaryLocale = 'es' | 'en';
+export type SummaryLocale = 'es' | 'en' | 'pt';
 
 /** Sort order direction. */
 export type SortDirection = 'asc' | 'desc';

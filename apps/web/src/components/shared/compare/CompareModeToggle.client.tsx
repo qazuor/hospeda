@@ -45,9 +45,11 @@ import { useCompareGuard } from '@/hooks/useCompareGuard';
 import { cn } from '@/lib/cn';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createT } from '@/lib/i18n';
+import { clearPendingAction, savePendingAction, takePendingAction } from '@/lib/pending-action';
 import { PRICING_PAGE_PATH_BY_AUDIENCE } from '@/lib/pricing-plans';
 import {
     loadCompareModeFromStorage,
+    setCompareMode,
     toggleCompareMode,
     useCompareMode
 } from '@/store/compare-store';
@@ -145,6 +147,25 @@ export const CompareModeToggle: FC<CompareModeToggleProps> = ({ locale = 'es', c
             ? ''
             : `${window.location.pathname}${window.location.search}${window.location.hash}`;
 
+    // HOS-1925: a guest who tapped "compare" before signing in gets compare mode
+    // turned on once they are back authenticated and entitlements have loaded.
+    // The saved action is taken exactly once; without the entitlement the
+    // upsell opens instead of a silent no-op.
+    const isAuthenticated = user !== null;
+    useEffect(() => {
+        if (!isAuthenticated || isLoading) return;
+        const taken = takePendingAction({
+            path: window.location.pathname,
+            matches: (action) => action.kind === 'compare-mode'
+        });
+        if (!taken) return;
+        if (!canCompare) {
+            setIsUpsellPopoverOpen(true);
+            return;
+        }
+        setCompareMode(true);
+    }, [isAuthenticated, isLoading, canCompare]);
+
     const handleClick = (): void => {
         if (canCompare) {
             toggleCompareMode();
@@ -171,6 +192,10 @@ export const CompareModeToggle: FC<CompareModeToggleProps> = ({ locale = 'es', c
         // before the session resolves — gets the sign-in prompt, which is
         // recoverable in a way a payment CTA is not.
         if (user === null) {
+            savePendingAction({
+                action: { kind: 'compare-mode' },
+                path: window.location.pathname
+            });
             setIsAuthPopoverOpen(true);
             return;
         }
@@ -208,7 +233,10 @@ export const CompareModeToggle: FC<CompareModeToggleProps> = ({ locale = 'es', c
                         'accommodations.comparison.gate.authMessage',
                         'Iniciá sesión para comparar alojamientos.'
                     )}
-                    onClose={() => setIsAuthPopoverOpen(false)}
+                    onClose={() => {
+                        clearPendingAction();
+                        setIsAuthPopoverOpen(false);
+                    }}
                     locale={locale}
                     returnUrl={returnUrl}
                 />

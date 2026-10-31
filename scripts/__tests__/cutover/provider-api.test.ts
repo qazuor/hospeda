@@ -137,6 +137,55 @@ describe('provider client over fetch', () => {
         expect(JSON.parse(seen[1]?.body ?? '{}')).toEqual({ status: 'cancelled' });
     });
 
+    it('flags only the 400 "already ended" refusal of a preapproval (HOS-1961)', async () => {
+        // Arrange
+        const ended = {
+            status: 400,
+            json: { message: 'This subscription has already ended and cannot be modified' }
+        };
+        const other = { status: 400, json: { message: 'invalid transaction_amount' } };
+        const answers = [ended, other, ended];
+        const { impl } = fakeFetch({ answer: (_s, attempt) => answers[attempt - 1] ?? ended });
+        const api = createProviderApi({
+            accessToken: TOKEN,
+            baseUrl: BASE,
+            fetchImpl: impl,
+            sleep: noSleep
+        });
+        // Act
+        const first = await api.cancel({ kind: 'preapproval', id: 'x-1' });
+        const second = await api.cancel({ kind: 'preapproval', id: 'x-2' });
+        const plan = await api.cancel({ kind: 'plan', id: 'p-1' });
+        // Assert
+        expect(first).toEqual({ accepted: false, httpStatus: 400, alreadyEnded: true });
+        expect(second).toEqual({ accepted: false, httpStatus: 400 });
+        expect(plan.alreadyEnded).toBeUndefined();
+    });
+
+    it('reads auto_recurring.end_date of a preapproval by id (HOS-1961)', async () => {
+        // Arrange
+        const { impl } = fakeFetch({
+            answer: () => ({
+                status: 200,
+                json: {
+                    id: 'q',
+                    status: 'authorized',
+                    auto_recurring: { end_date: '2026-09-16T00:00:00.000-04:00' }
+                }
+            })
+        });
+        const api = createProviderApi({
+            accessToken: TOKEN,
+            baseUrl: BASE,
+            fetchImpl: impl,
+            sleep: noSleep
+        });
+        // Act
+        const found = await api.getById({ kind: 'preapproval', id: 'q' });
+        // Assert
+        expect(found.endDate).toBe('2026-09-16T00:00:00.000-04:00');
+    });
+
     it('retries a 429 and then succeeds', async () => {
         // Arrange
         const { seen, impl } = fakeFetch({

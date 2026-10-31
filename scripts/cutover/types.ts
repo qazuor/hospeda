@@ -21,6 +21,8 @@ export interface ProviderObject {
     readonly id: string;
     readonly status: string;
     readonly planId?: string | null;
+    /** A preapproval's `auto_recurring.end_date` (ISO string) when the provider returns one. */
+    readonly endDate?: string | null;
 }
 
 /** One page of the unfiltered provider search. */
@@ -33,6 +35,11 @@ export interface ListPage {
 export interface CancelCallResult {
     readonly accepted: boolean;
     readonly httpStatus: number;
+    /**
+     * True when the provider refused with a 400 whose message says the subscription "has
+     * already ended and cannot be modified" (HOS-1961). Only that exact refusal sets it.
+     */
+    readonly alreadyEnded?: boolean;
 }
 
 /** One payment as read by id: its status and the ids of the refunds it already carries. */
@@ -192,6 +199,12 @@ export interface CutoverManifest {
     readonly census: { readonly plans: WalkSummary; readonly preapprovals: WalkSummary };
     readonly cancelledPlanIds: readonly string[];
     readonly cancelledPreapprovalIds: readonly string[];
+    /**
+     * Preapprovals that could not be cancelled because their `end_date` is in the past and the
+     * provider refuses them as already ended (HOS-1961). They cannot charge, so they are NOT
+     * failures. Optional so older manifests and the other runners stay valid.
+     */
+    readonly endedPreapprovalIds?: readonly string[];
     readonly rereadCancelledIds: readonly string[];
     readonly preservedProbeIds: readonly string[];
     readonly unknownLiveIds: readonly string[];

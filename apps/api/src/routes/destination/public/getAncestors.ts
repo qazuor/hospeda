@@ -6,7 +6,7 @@ import { DestinationIdSchema, DestinationPublicSchema } from '@repo/schemas';
 import { DestinationService, ServiceError } from '@repo/service-core';
 import type { Context } from 'hono';
 import { z } from 'zod';
-import { getActorFromContext } from '../../../utils/actor';
+import { createGuestActor } from '../../../utils/actor';
 import { apiLogger } from '../../../utils/logger';
 import { createPublicRoute } from '../../../utils/route-factory';
 
@@ -29,8 +29,8 @@ export const publicGetDestinationAncestorsRoute = createPublicRoute({
     responseSchema: z.object({
         ancestors: z.array(DestinationPublicSchema)
     }),
-    handler: async (ctx: Context, params: Record<string, unknown>) => {
-        const actor = getActorFromContext(ctx);
+    handler: async (_ctx: Context, params: Record<string, unknown>) => {
+        const actor = createGuestActor();
         const result = await destinationService.getAncestors(actor, {
             destinationId: params.id as string
         });

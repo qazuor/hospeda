@@ -10,17 +10,17 @@ import type { CatalogEntry, SummaryLocale } from './summary.types';
 
 /** Default post category labels (mirror the FilterSidebar config). */
 export const DEFAULT_POST_CATEGORIES: readonly CatalogEntry[] = [
-    { key: 'CULTURE', label: { es: 'cultura', en: 'culture' } },
-    { key: 'GASTRONOMY', label: { es: 'gastronomía', en: 'gastronomy' } },
-    { key: 'NATURE', label: { es: 'naturaleza', en: 'nature' } },
-    { key: 'TOURISM', label: { es: 'turismo', en: 'tourism' } },
-    { key: 'SPORT', label: { es: 'deporte', en: 'sport' } },
-    { key: 'HISTORY', label: { es: 'historia', en: 'history' } },
-    { key: 'EVENTS', label: { es: 'eventos', en: 'events' } },
-    { key: 'CARNIVAL', label: { es: 'carnaval', en: 'carnival' } },
-    { key: 'WELLNESS', label: { es: 'bienestar', en: 'wellness' } },
-    { key: 'FAMILY', label: { es: 'familia', en: 'family' } },
-    { key: 'TIPS', label: { es: 'consejos', en: 'tips' } }
+    { key: 'CULTURE', label: { es: 'cultura', en: 'culture', pt: 'cultura' } },
+    { key: 'GASTRONOMY', label: { es: 'gastronomía', en: 'gastronomy', pt: 'gastronomia' } },
+    { key: 'NATURE', label: { es: 'naturaleza', en: 'nature', pt: 'natureza' } },
+    { key: 'TOURISM', label: { es: 'turismo', en: 'tourism', pt: 'turismo' } },
+    { key: 'SPORT', label: { es: 'deporte', en: 'sport', pt: 'esporte' } },
+    { key: 'HISTORY', label: { es: 'historia', en: 'history', pt: 'história' } },
+    { key: 'EVENTS', label: { es: 'eventos', en: 'events', pt: 'eventos' } },
+    { key: 'CARNIVAL', label: { es: 'carnaval', en: 'carnival', pt: 'carnaval' } },
+    { key: 'WELLNESS', label: { es: 'bienestar', en: 'wellness', pt: 'bem-estar' } },
+    { key: 'FAMILY', label: { es: 'familia', en: 'family', pt: 'família' } },
+    { key: 'TIPS', label: { es: 'consejos', en: 'tips', pt: 'dicas' } }
 ] as const;
 
 /**
@@ -30,12 +30,24 @@ export const DEFAULT_POST_CATEGORIES: readonly CatalogEntry[] = [
  * keeping the keys in sync with the page.
  */
 export const SORT_KEY_PHRASES: Readonly<Record<string, Record<SummaryLocale, string>>> = {
-    newest: { es: 'por publicación más reciente', en: 'by most recently published' },
-    oldest: { es: 'por publicación más antigua', en: 'by oldest first' },
-    mostSaved: { es: 'por más guardadas', en: 'by most saved' },
-    featured: { es: 'con las destacadas primero', en: 'with featured first' },
-    titleAsc: { es: 'por título, A a Z', en: 'by title, A to Z' },
-    titleDesc: { es: 'por título, Z a A', en: 'by title, Z to A' }
+    newest: {
+        es: 'por publicación más reciente',
+        en: 'by most recently published',
+        pt: 'por publicação mais recente'
+    },
+    oldest: {
+        es: 'por publicación más antigua',
+        en: 'by oldest first',
+        pt: 'por publicação mais antiga'
+    },
+    mostSaved: { es: 'por más guardadas', en: 'by most saved', pt: 'por mais salvas' },
+    featured: {
+        es: 'con las destacadas primero',
+        en: 'with featured first',
+        pt: 'com as destacadas primeiro'
+    },
+    titleAsc: { es: 'por título, A a Z', en: 'by title, A to Z', pt: 'por título, de A a Z' },
+    titleDesc: { es: 'por título, Z a A', en: 'by title, Z to A', pt: 'por título, de Z a A' }
 };
 
 /**
@@ -78,6 +90,24 @@ const PHRASES: Readonly<Record<SummaryLocale, Readonly<Record<string, string>>>>
         dateTo: 'published up to',
         dateBetween: 'published between',
         noResultsFound: 'No results found for'
+    },
+    pt: {
+        showing: 'Mostrando',
+        of: 'de',
+        postSingular: 'publicação',
+        postPlural: 'publicações',
+        noFiltersActive: 'sem filtros ativos',
+        sortedBy: 'ordenadas',
+        in: 'sobre',
+        containing: 'que contêm',
+        inTitleOrContent: 'no título ou no conteúdo',
+        and: 'e',
+        ofCategory: 'de',
+        onlyFeatured: 'somente destacadas',
+        dateFrom: 'publicadas desde',
+        dateTo: 'publicadas até',
+        dateBetween: 'publicadas entre',
+        noResultsFound: 'Nenhum resultado encontrado para'
     }
 } as const;
 

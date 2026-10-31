@@ -8,6 +8,7 @@
 import { useQuery } from '@tanstack/react-query';
 import { useTranslations } from '@/hooks/use-translations';
 import { fetchApi } from '@/lib/api/client';
+import { formatDateWithTime } from '@/lib/format-helpers';
 
 // ---------------------------------------------------------------------------
 // Types
@@ -67,7 +68,7 @@ export function useAuditLog(postId: string) {
  * Fetches and renders the audit-log entries for this post.
  */
 export function SocialPostAuditTab({ postId }: SocialPostAuditTabProps) {
-    const { t } = useTranslations();
+    const { t, locale } = useTranslations();
     const { data, isLoading, error } = useAuditLog(postId);
 
     if (isLoading) {
@@ -123,7 +124,7 @@ export function SocialPostAuditTab({ postId }: SocialPostAuditTabProps) {
                                 : t('social.posts.detail.audit.systemActor')}
                         </span>
                         <span className="text-muted-foreground">
-                            {new Date(entry.createdAt as string).toLocaleString()}
+                            {formatDateWithTime({ date: entry.createdAt as string, locale })}
                         </span>
                     </div>
                 </div>

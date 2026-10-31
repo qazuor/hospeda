@@ -21,6 +21,7 @@ import {
 } from '@/features/content-moderation/hooks/useModerationTermQuery';
 import { useTranslations } from '@/hooks/use-translations';
 import { createErrorComponent, createPendingComponent } from '@/lib/factories';
+import { formatShortDate } from '@/lib/format-helpers';
 
 export const Route = createFileRoute('/_authed/content/moderation-terms/$id')({
     component: ModerationTermViewPage,
@@ -34,7 +35,7 @@ function ModerationTermViewPage() {
     const navigate = useNavigate();
     const { data: term, isLoading } = useModerationTermDetail(id);
     const deleteMutation = useDeleteModerationTerm();
-    const { t } = useTranslations();
+    const { t, locale } = useTranslations();
 
     if (isLoading) {
         return <div className="p-8 text-muted-foreground">{t('admin-common.states.loading')}</div>;
@@ -168,7 +169,7 @@ function ModerationTermViewPage() {
                                 </span>
                                 <p>
                                     {term.createdAt
-                                        ? new Date(term.createdAt).toLocaleDateString()
+                                        ? formatShortDate({ date: term.createdAt, locale })
                                         : '—'}
                                 </p>
                             </div>

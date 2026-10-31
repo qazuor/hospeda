@@ -5,7 +5,7 @@
 import { AccommodationIdSchema, PostPublicSchema } from '@repo/schemas';
 import { PostService, ServiceError } from '@repo/service-core';
 import type { Context } from 'hono';
-import { getActorFromContext } from '../../../utils/actor';
+import { createGuestActor } from '../../../utils/actor';
 import { apiLogger } from '../../../utils/logger';
 import { extractPaginationParams, getPaginationResponse } from '../../../utils/pagination';
 import { createPublicListRoute } from '../../../utils/route-factory';
@@ -24,8 +24,8 @@ export const publicGetPostsByRelatedAccommodationRoute = createPublicListRoute({
     tags: ['Posts'],
     requestParams: { accommodationId: AccommodationIdSchema },
     responseSchema: PostPublicSchema,
-    handler: async (ctx: Context, params: Record<string, unknown>) => {
-        const actor = getActorFromContext(ctx);
+    handler: async (_ctx: Context, params: Record<string, unknown>) => {
+        const actor = createGuestActor();
         const { page, pageSize } = extractPaginationParams({});
         const result = await postService.getByRelatedAccommodation(actor, {
             accommodationId: params.accommodationId as string

@@ -71,6 +71,8 @@
     },
     "refresh": {
         "enqueued": "Atualizando em segundo plano...",
-        "inlineSuccess": "Atualizado"
+        "inlineSuccess": "Atualizado",
+        "noPlatforms": "Nenhuma plataforma adicionada. Adicione um link para poder atualizar suas avaliações.",
+        "needsPlatform": "Adicione primeiro um link de uma plataforma para poder atualizar suas avaliações."
     }
 }

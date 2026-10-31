@@ -105,6 +105,60 @@ describe('TEST:U3:3 step 2 reread and retries (AC:U3:3)', () => {
     });
 });
 
+describe('TEST:U3:3b expired preapproval is finished, not stuck (HOS-1961)', () => {
+    const ENDED = 'pre-paused';
+    const PAST = '2026-09-16T00:00:00.000-04:00';
+    const NOW = () => new Date('2026-10-30T12:00:00Z');
+
+    it('records an authorized preapproval refused as already ended in its own list, without failing the run', async () => {
+        // Arrange
+        const { promise } = run({
+            provider: { refuseAsEndedIds: [ENDED], endDates: { [ENDED]: PAST } },
+            overrides: { now: NOW }
+        });
+        // Act
+        const { ok, manifest } = await promise;
+        // Assert
+        expect(ok).toBe(true);
+        expect(manifest.outcome).toBe('ok');
+        expect(manifest.failures).toEqual([]);
+        expect(manifest.endedPreapprovalIds).toEqual([ENDED]);
+        expect(manifest.rereadCancelledIds).not.toContain(ENDED);
+    });
+
+    it('still fails when the refusal comes with an end_date in the future', async () => {
+        // Arrange
+        const { promise } = run({
+            provider: { refuseAsEndedIds: [ENDED], endDates: { [ENDED]: '2027-01-01T00:00:00Z' } },
+            overrides: { now: NOW }
+        });
+        // Act
+        const { ok, manifest } = await promise;
+        // Assert
+        expect(ok).toBe(false);
+        expect(manifest.failures).toEqual([
+            expect.objectContaining({ code: 'NOT_CANCELLED', id: ENDED })
+        ]);
+        expect(manifest.endedPreapprovalIds).toEqual([]);
+    });
+
+    it('still fails when the end_date is past but the provider did not refuse it as ended', async () => {
+        // Arrange
+        const { promise } = run({
+            provider: { stuckIds: [ENDED], endDates: { [ENDED]: PAST } },
+            overrides: { now: NOW }
+        });
+        // Act
+        const { ok, manifest } = await promise;
+        // Assert
+        expect(ok).toBe(false);
+        expect(manifest.failures).toEqual([
+            expect.objectContaining({ code: 'NOT_CANCELLED', id: ENDED })
+        ]);
+        expect(manifest.endedPreapprovalIds).toEqual([]);
+    });
+});
+
 describe('TEST:U3:4 completeness gate (AC:U3:4)', () => {
     it('fails when the walked count does not equal the paginated total', async () => {
         // Arrange: the provider claims 12 preapprovals, the walk finds 7
@@ -182,6 +236,7 @@ const BASE_KEYS = [
     'cancelledPlanIds',
     'cancelledPreapprovalIds',
     'census',
+    'endedPreapprovalIds',
     'failures',
     'finishedAt',
     'outcome',
@@ -209,6 +264,7 @@ const EVERY_FIELD: Required<CutoverManifest> = {
     census: { plans: { total: 0, walked: 0 }, preapprovals: { total: 0, walked: 0 } },
     cancelledPlanIds: [],
     cancelledPreapprovalIds: [],
+    endedPreapprovalIds: [],
     rereadCancelledIds: [],
     preservedProbeIds: [],
     unknownLiveIds: [],
