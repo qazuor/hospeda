@@ -3,7 +3,7 @@
 Copywriting rules for Hospeda social captions. Hospeda is a tourism portal for the
 Argentine Litoral.
 
-The canonical source is `docs/marketing/plan-contenido-redes.md` in the Hospeda repo.
+The canonical source is `marketing/plan-contenido-redes.md` in the Hospeda repo.
 This file is its extract.
 
 ---

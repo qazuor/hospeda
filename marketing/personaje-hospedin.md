@@ -6,7 +6,7 @@ Mascota oficial, presentador virtual y guía turístico de Hospeda.
 
 ## Imágenes de referencia
 
-Están en las subcarpetas de `docs/marketing/` y son la fuente de verdad visual. **Van en cada generación junto con este texto.**
+Están en las subcarpetas de `marketing/` y son la fuente de verdad visual. **Van en cada generación junto con este texto.**
 
 Los nombres son cortos, sin acentos ni espacios, para poder referenciarlos como `@personaje`, `@poses`, `@expresiones`, `@bocas`, `@acciones`, `@escena7`, `@pantalla` y `@voz` en los modelos que aceptan referencias etiquetadas.
 
