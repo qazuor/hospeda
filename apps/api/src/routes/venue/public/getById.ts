@@ -12,6 +12,7 @@ import { getActorFromContext } from '../../../utils/actor';
 import { withPublicVisibleFaqs } from '../../../utils/listing-faq-visibility';
 import { apiLogger } from '../../../utils/logger';
 import { createPublicRoute } from '../../../utils/route-factory';
+import { gateVenueMenuFile } from './menu-file-gate';
 
 const venueService = new VenueService({ logger: apiLogger });
 
@@ -41,7 +42,12 @@ export const publicGetVenueByIdRoute = createPublicRoute({
         }
 
         // HOS-1286: the public `isFeatured`, derived in the PUBLIC tier only.
-        return result.data ? withPublicIsFeatured(withPublicVisibleFaqs(result.data)) : null;
+        if (!result.data) {
+            return null;
+        }
+        // HOS-1792: same menu-file projection as by-slug.
+        const venue = await gateVenueMenuFile({ venue: result.data });
+        return withPublicIsFeatured(withPublicVisibleFaqs(venue));
     },
     options: {
         customRateLimit: { requests: 100, windowMs: 60000 }

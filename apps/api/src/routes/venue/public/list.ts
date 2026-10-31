@@ -18,6 +18,7 @@ import { getActorFromContext } from '../../../utils/actor';
 import { apiLogger } from '../../../utils/logger';
 import { extractPaginationParams, getPaginationResponse } from '../../../utils/pagination';
 import { createPublicListRoute } from '../../../utils/route-factory';
+import { gateVenueMenuFiles } from './menu-file-gate';
 
 const venueService = new VenueService({ logger: apiLogger });
 
@@ -55,7 +56,10 @@ export const publicListVenuesRoute = createPublicListRoute({
             throw new ServiceError(result.error.code, result.error.message);
         }
 
-        const items = withPublicIsFeaturedList(result.data?.items || []);
+        // HOS-1792: withhold the menu file of unentitled owners.
+        const items = withPublicIsFeaturedList(
+            await gateVenueMenuFiles({ venues: result.data?.items || [] })
+        );
 
         return {
             items,
