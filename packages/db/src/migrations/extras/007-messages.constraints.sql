@@ -18,8 +18,7 @@ BEGIN
     WHERE table_schema = 'public'
       AND table_name = 'messages'
   ) THEN
-    RAISE NOTICE 'Table messages does not exist, skipping messages_body_length.';
-    RETURN;
+    RAISE EXCEPTION 'extras/007: table % does not exist, cannot ensure messages_body_length. Run pnpm db:migrate before pnpm db:apply-extras.', 'messages';
   END IF;
 
   IF NOT EXISTS (

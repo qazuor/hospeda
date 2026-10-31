@@ -36,8 +36,7 @@ BEGIN
     WHERE table_schema = 'public'
       AND table_name = 'conversations'
   ) THEN
-    RAISE NOTICE 'Table conversations does not exist, skipping conversations_userId_accommodationId_unique.';
-    RETURN;
+    RAISE EXCEPTION 'extras/006: table % does not exist, cannot ensure conversations_userId_accommodationId_unique. Run pnpm db:migrate before pnpm db:apply-extras.', 'conversations';
   END IF;
 
   CREATE UNIQUE INDEX IF NOT EXISTS conversations_userId_accommodationId_unique
@@ -57,8 +56,7 @@ BEGIN
     WHERE table_schema = 'public'
       AND table_name = 'conversations'
   ) THEN
-    RAISE NOTICE 'Table conversations does not exist, skipping conversations_anonymousEmail_accommodationId_unique.';
-    RETURN;
+    RAISE EXCEPTION 'extras/006: table % does not exist, cannot ensure conversations_anonymousEmail_accommodationId_unique. Run pnpm db:migrate before pnpm db:apply-extras.', 'conversations';
   END IF;
 
   CREATE UNIQUE INDEX IF NOT EXISTS conversations_anonymousEmail_accommodationId_unique
@@ -79,8 +77,7 @@ BEGIN
     WHERE table_schema = 'public'
       AND table_name = 'conversation_notification_schedules'
   ) THEN
-    RAISE NOTICE 'Table conversation_notification_schedules does not exist, skipping conv_notif_schedules_conversation_recipient_unique.';
-    RETURN;
+    RAISE EXCEPTION 'extras/006: table % does not exist, cannot ensure conv_notif_schedules_conversation_recipient_unique. Run pnpm db:migrate before pnpm db:apply-extras.', 'conversation_notification_schedules';
   END IF;
 
   CREATE UNIQUE INDEX IF NOT EXISTS conv_notif_schedules_conversation_recipient_unique
