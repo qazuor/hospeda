@@ -47,14 +47,15 @@ const showOnRequest = display.kind === 'on-request';
  * Uses Intl.NumberFormat with Argentine Spanish locale and no decimal places
  * since prices end in 00 centavos in practice.
  */
-const formattedPrice = showOnRequest
-    ? ''
-    : new Intl.NumberFormat('es-AR', {
-          style: 'currency',
-          currency: 'ARS',
-          minimumFractionDigits: 0,
-          maximumFractionDigits: 0
-      }).format((display.kind === 'amount' ? display.cents : 0) / 100);
+const formattedPrice =
+    display.kind === 'on-request'
+        ? ''
+        : new Intl.NumberFormat('es-AR', {
+              style: 'currency',
+              currency: 'ARS',
+              minimumFractionDigits: 0,
+              maximumFractionDigits: 0
+          }).format(display.cents / 100);
 
 // The `priceUnit == null` arm is defence in depth, not a reachable state: the
 // create schemas only allow a null unit when the price is on request, which
