@@ -11,6 +11,7 @@ import {
     LISTING_URL_COMMIT_EVENT,
     resetDialogHistoryForTests
 } from '../../src/lib/dialog-history';
+import { __setNavigateImpl } from '../stubs/astro-transitions-client';
 
 const PAGE_URL = 'http://localhost:3000/es/alojamientos/';
 const FILTERED_URL = `${PAGE_URL}?type=hotel`;
@@ -144,5 +145,69 @@ describe('dialog-history raw claim (HOS-1927)', () => {
             (window.history.state as Record<string, unknown>).__hospedaDialogRaw
         ).toBeUndefined();
         goSpy.mockRestore();
+    });
+});
+
+describe('dialog-history raw claim with the router agreeing (HOS-1927 review)', () => {
+    const navigateCalls: string[] = [];
+
+    beforeEach(async () => {
+        __setNavigateImpl((href: string) => {
+            navigateCalls.push(href);
+            window.history.pushState({ index: 1, scrollX: 0, scrollY: 0 }, '', href);
+        });
+        const meta = document.createElement('meta');
+        meta.setAttribute('name', 'astro-view-transitions-enabled');
+        document.head.appendChild(meta);
+        navigateCalls.length = 0;
+        window.history.replaceState({ index: 0, scrollX: 0, scrollY: 0 }, '', PAGE_URL);
+        resetDialogHistoryForTests();
+        await settle();
+    });
+
+    afterEach(async () => {
+        for (const meta of document.querySelectorAll('[name="astro-view-transitions-enabled"]')) {
+            meta.remove();
+        }
+        resetDialogHistoryForTests();
+        await settle();
+    });
+
+    it('the first open is raw: no navigate(), no fragment', () => {
+        acquireDialogHistoryEntry({ onPopped: vi.fn(), tolerateRouterDrift: true });
+
+        expect(navigateCalls).toEqual([]);
+        expect(window.location.hash).toBe('');
+        expect((window.history.state as Record<string, unknown>).__hospedaDialogRaw).toBe(true);
+    });
+
+    it('filter, UI close, then back leaves no hash for the router fast path', async () => {
+        const { release } = acquireDialogHistoryEntry({
+            onPopped: vi.fn(),
+            tolerateRouterDrift: true
+        });
+        commitUrl(FILTERED_URL);
+        release();
+        await settle();
+
+        // The settled entry is plain: clean URL, filtered query, no claim fragment.
+        expect(window.location.href).toBe(FILTERED_URL);
+        expect(window.location.hash).toBe('');
+
+        // Back goes to the unfiltered entry; the router (not swallowed) handles it.
+        const routerSpy = vi.fn();
+        window.addEventListener('popstate', routerSpy);
+        window.history.back();
+        await settle();
+        window.removeEventListener('popstate', routerSpy);
+
+        expect(window.location.href).toBe(PAGE_URL);
+        expect(routerSpy).toHaveBeenCalledTimes(1);
+    });
+
+    it('a routed dialog does not adopt a listing URL commit', () => {
+        acquireDialogHistoryEntry({ onPopped: vi.fn() });
+
+        expect(commitUrl(FILTERED_URL)).toBe(false);
     });
 });

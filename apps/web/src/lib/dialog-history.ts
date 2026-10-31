@@ -164,12 +164,10 @@ export function subscribeToOpenOverlays(listener: () => void): () => void {
  * Every currently-open modal-like surface (HOS-350), deliberately
  * independent of {@link stack}: `stack` only ever holds surfaces that
  * successfully claim a browser-history entry, and some never can. The
- * mobile filters drawer (`MobileDrawer.tsx`) opens over a listing page that
- * rewrites its own URL on every filter tap, which buries any entry the
- * drawer might claim — so it cannot appear in `stack` regardless of whether
- * `<ClientRouter />` is even present. It still needs to participate in "who
- * is on top", which is all this array is for: presence only, no history
- * claim, no popstate interaction.
+ * `stack` holds only surfaces that claimed an entry, and a claim can be
+ * refused. This array is presence only (no history claim, no popstate
+ * interaction) and answers "who is on top" for every open surface, including
+ * the mobile filters drawer (which claims a raw entry since HOS-1927).
  */
 const openOverlays: { id: number }[] = [];
 let nextOverlayId = 1;
@@ -310,7 +308,8 @@ function restoreRewrittenUrl(entry: DialogHistoryEntry): void {
 /** A listing is about to move its URL: do it under the live claim, not on top of it. */
 function handleListingUrlCommit(event: Event): void {
     const top = stack[stack.length - 1];
-    if (!top?.pushed || currentEntryId() !== top.id) return;
+    // Raw claims only: a routed dialog's fragment is in the router's `originalLocation`.
+    if (!top?.raw || !top.pushed || currentEntryId() !== top.id) return;
     const url = (event as CustomEvent<{ url?: unknown }>).detail?.url;
     if (typeof url !== 'string') return;
     const bare = rewriteClaimedUrl({ url });
@@ -379,9 +378,12 @@ export function acquireDialogHistoryEntry({
     // navigation is already in flight. Opening a modal must never cancel the
     // link the user just tapped.
     if (navigationInFlight()) return NO_ENTRY;
-    if (!transitionsEnabled() || !routerViewIsCurrent()) {
-        return tolerateRouterDrift ? claimRaw({ onPopped }) : NO_ENTRY;
-    }
+    // A surface over a page that rewrites its own URL NEVER takes the routed
+    // claim, even while the router still agrees: the first filter tap would
+    // desync it with the claim's fragment already in `originalLocation`, and a
+    // later back would hit the router's no-swap fast path under filtered content.
+    if (tolerateRouterDrift) return claimRaw({ onPopped });
+    if (!transitionsEnabled() || !routerViewIsCurrent()) return NO_ENTRY;
 
     const entry: DialogHistoryEntry = {
         id: nextId++,

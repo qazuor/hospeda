@@ -411,12 +411,10 @@ const resultsSummaryLabel =
 			handleListingNav(nextUrl.href, window.location.href !== nextUrl.href);
 		});
 
-		// Browser back/forward (popstate) intentionally falls through to
-		// `<ClientRouter />`'s default handling. ClientRouter listens on
-		// window first and competing with it for the popstate event is
-		// brittle; the marginal cost is that back/forward across filter
-		// states briefly re-renders the wave header, same as before. If
-		// that becomes a papercut we can revisit with a capture-phase
-		// stopImmediatePropagation trick.
+		// Browser back/forward (popstate) falls through to `<ClientRouter />`'s
+		// default handling, with ONE exception: a traversal onto or off the
+		// filters drawer's raw history entry is kept from the router by
+		// `@/lib/dialog-history` (capture phase, HOS-1927). Everything else
+		// across filter states briefly re-renders the wave header, as before.
 	})();
 </script>
