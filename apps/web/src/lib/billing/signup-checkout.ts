@@ -201,7 +201,7 @@ export function buildSignupCheckoutHref({
 
 /** Localized rejection description returned by {@link resolveSignupRejection}. */
 export interface SignupRejection {
-    readonly reason: StartSubscriptionRejectionReason | 'UNKNOWN';
+    readonly reason: StartSubscriptionRejectionReason | 'PROVIDER_BUSY' | 'UNKNOWN';
     readonly messageKey: string;
     readonly retryable: boolean;
     readonly showPlansLink: boolean;
@@ -260,6 +260,16 @@ const GENERIC_REJECTION: SignupRejection = {
     showPlansLink: false
 };
 
+/** The API's 503 `reason` when the payment provider is throttled or down (HOS-1968). */
+const PROVIDER_BUSY_REASON = 'PROVIDER_BUSY';
+
+const PROVIDER_BUSY_REJECTION: SignupRejection = {
+    reason: PROVIDER_BUSY_REASON,
+    messageKey: 'billing.checkout.signup.rejection.providerBusy',
+    retryable: true,
+    showPlansLink: false
+};
+
 function isStartSubscriptionRejectionReason(
     value: unknown
 ): value is StartSubscriptionRejectionReason {
@@ -268,6 +278,16 @@ function isStartSubscriptionRejectionReason(
 
 /** Map only recognized reasons to user-facing keys; API prose never escapes. */
 export function resolveSignupRejection({ error }: { readonly error?: unknown }): SignupRejection {
+    if (
+        error &&
+        typeof error === 'object' &&
+        'status' in error &&
+        error.status === 503 &&
+        'reason' in error &&
+        error.reason === PROVIDER_BUSY_REASON
+    ) {
+        return PROVIDER_BUSY_REJECTION;
+    }
     if (
         !error ||
         typeof error !== 'object' ||

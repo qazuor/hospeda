@@ -107,6 +107,28 @@ describe('signup checkout helpers — B3 UI (B3.md:1045-1053)', () => {
         });
     });
 
+    it('shows the provider-busy message for a 503 PROVIDER_BUSY, and only for that pair (HOS-1968)', () => {
+        expect(
+            resolveSignupRejection({
+                error: { status: 503, code: 'PROVIDER_RATE_LIMITED', reason: 'PROVIDER_BUSY' }
+            })
+        ).toEqual({
+            reason: 'PROVIDER_BUSY',
+            messageKey: 'billing.checkout.signup.rejection.providerBusy',
+            retryable: true,
+            showPlansLink: false
+        });
+        for (const error of [
+            { status: 500, reason: 'PROVIDER_BUSY' },
+            { status: 503, reason: 'SOMETHING_ELSE' },
+            { status: 503 }
+        ]) {
+            expect(resolveSignupRejection({ error }).messageKey).toBe(
+                'billing.checkout.signup.rejection.generic'
+            );
+        }
+    });
+
     it('parses only UUID option values and builds the localized checkout URL', () => {
         expect(parseSignupOptionId({ search: `?opcion=${validId}` })).toBe(validId);
         expect(parseSignupOptionId({ search: '?opcion=not-a-uuid' })).toBeNull();
