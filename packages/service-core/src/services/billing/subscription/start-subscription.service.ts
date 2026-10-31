@@ -36,7 +36,8 @@ import {
     appliedAuthorizationResult,
     previousAttemptInProgress,
     rejectedCreationResult,
-    resolveLiveCommitmentReuse
+    resolveLiveCommitmentReuse,
+    throttledCreationResult
 } from './resolve-live-commitment';
 
 const logger = createLogger('subscription-start');
@@ -230,7 +231,10 @@ export async function authorizePendingSubscription(input: {
             await subscriptionModel.recordCreationRejected({
                 idempotencyKey: pending.idempotencyKey,
                 subscriptionId: pending.subscription.id,
-                result: rejectedCreationResult(),
+                result:
+                    error.transient?.kind === 'RATE_LIMITED'
+                        ? throttledCreationResult()
+                        : rejectedCreationResult(),
                 completedAt: input.clock.now()
             });
         }
