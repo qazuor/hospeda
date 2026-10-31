@@ -695,6 +695,27 @@ documented convention deviation — do not "fix" them by adding BaseModel column
 Apply this pattern only for tables that are: (a) append-only, (b) never user-owned or
 role-scoped for CRUD, and (c) high-write enough that audit column overhead is measurable.
 
+## `users.role` — a better-auth placeholder, NOT a role (HOS-1932)
+
+`users.role text NULL` exists for ONE reason: better-auth >= 1.7 validates the Drizzle
+schema at runtime against the fields its plugins declare, and the `admin()` plugin
+declares `user.role`. Without the column every auth request fails with
+`Drizzle schema mismatch: Missing columns user.role` (sign-up answered 500). HOS-296
+had dropped the real scalar; the roles a user holds live in `user_role`.
+
+Rules:
+
+- **Always NULL.** `user.create.before` in `apps/api/src/lib/auth.ts` strips the value the
+  plugin injects. Granting or revoking a role never touches this column.
+- **Never read it for authorization.** Authorization is `PermissionEnum` resolved from
+  `user_role`. `apps/api/test/lib/auth-schema-validation.guard.test.ts` fails on any
+  `user.role` / `session.user.role` read in production code, and `pnpm check:role-never-decides`
+  covers role-constant comparisons.
+- **Do not re-add an enum, a NOT NULL or a default.** That would turn the placeholder into the
+  second source of truth HOS-296 removed.
+- Do not set `advanced.database.validateSchema: false` again to get around a missing plugin
+  column: add a nullable placeholder like this one, so the next drift is reported.
+
 ## `users.is_system_account` — service accounts (HOS-375)
 
 `users.is_system_account boolean NOT NULL DEFAULT false` marks an account that represents
