@@ -165,7 +165,9 @@ export const ExperienceSchema = z.object({
      * the display layer will show "Consultar precio" instead of the numeric value.
      */
     priceFrom: z
-        .number()
+        // Without a message, an empty field surfaces Zod's own English text
+        // ("Invalid input: expected number, received undefined") inside a Spanish form.
+        .number({ message: 'zodError.experience.priceFrom.required' })
         .int()
         .nonnegative({ message: 'zodError.experience.priceFrom.nonnegative' }),
 
