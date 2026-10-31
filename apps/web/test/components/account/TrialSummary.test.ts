@@ -94,20 +94,36 @@ describe('TrialSummary.astro — row 4, the accumulated trial days', () => {
     });
 
     it('renders nothing for NONE, for zero days, or without entries', () => {
-        expect(SOURCE).toContain('resolveTrialSummaryView({ summary })');
+        expect(SOURCE).toContain('resolveTrialSummaryView({');
         expect(SOURCE).toContain('views.length > 0 && (');
     });
 
     it('TEST:1727:6 — consumes the view resolver and marks running or ended cards', () => {
-        expect(SOURCE).toContain('resolveTrialSummaryView({ summary })');
+        expect(SOURCE).toContain('resolveTrialSummaryView({');
         expect(SOURCE).toContain('data-trial-state=');
         expect(SOURCE).toContain("state: 'running' as const");
         expect(SOURCE).toContain("state: 'ended' as const");
-        expect(SOURCE).toContain('formatNoticeInstant({ iso: state.endsAt, locale })');
+        expect(SOURCE).toContain('formatNoticeInstant({ iso: endInstant, locale })');
         expect(SOURCE).toContain("'account.subscription.trialSummary.endedExpired'");
         expect(SOURCE).not.toContain('summary.totalDays <= 0');
         expect(SOURCE).not.toMatch(/fetch\(|publishApi/);
         expect(SOURCE).not.toMatch(/client:/);
+    });
+
+    it('TEST:1772:5 — only claims the plan for a converted trial with a live subscription', () => {
+        expect(SOURCE).toContain(
+            'hasLiveSubscription: liveSubscriptionVerticals.includes(vertical)'
+        );
+        expect(SOURCE).toContain("state.kind === 'ended_converted'");
+        expect(SOURCE).toContain(
+            "const endInstant = state.kind === 'ended_converted' ? null : state.endsAt;"
+        );
+    });
+
+    it('TEST:1772:6 — every locale states the end date without claiming a plan', () => {
+        for (const locale of ['es', 'en', 'pt'] as const) {
+            expect(readCopy(locale).endedExpired).toContain('{{end}}');
+        }
     });
 
     it('states the start and end dates only when both are known', () => {

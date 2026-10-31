@@ -39,9 +39,15 @@ describe('mi-cuenta/suscripcion — row 4 trial summary (HOS-1492)', () => {
         // Below the header as one block; HOS-1617 mounts the own-subscriptions
         // list between them.
         const header = source.indexOf('<AccountPageHeader title={title} />');
-        const summary = source.indexOf('<TrialSummary locale={locale} entries={trialSummaries} />');
+        const summary = source.indexOf('<TrialSummary locale={locale} entries={trialSummaries}');
         expect(header).toBeGreaterThan(-1);
         expect(summary).toBeGreaterThan(header);
+    });
+
+    it('TEST:1772:7 — hands TrialSummary the verticals of the live own subscriptions', () => {
+        expect(source).toContain(
+            'liveSubscriptionVerticals={ownSubscriptions?.subscriptions.map((row) => row.vertical) ?? []}'
+        );
     });
 
     it('offers trial extensions only for active trials below TrialSummary (AC:B9b:12 HOS-1591 TEST:B9b:12 (support))', () => {
@@ -49,7 +55,7 @@ describe('mi-cuenta/suscripcion — row 4 trial summary (HOS-1492)', () => {
         expect(source).toContain(
             'trialSummaries.filter(({ summary }) => summary.status === TrialStatusEnum.TRIAL_ACTIVE)'
         );
-        const summary = source.indexOf('<TrialSummary locale={locale} entries={trialSummaries} />');
+        const summary = source.indexOf('<TrialSummary locale={locale} entries={trialSummaries}');
         const offer = source.indexOf('data-testid="trial-promo-redeem"');
         expect(summary).toBeGreaterThan(-1);
         expect(offer).toBeGreaterThan(summary);
