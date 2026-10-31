@@ -124,7 +124,7 @@ function unwrapLiteral(expr: ts.Expression): ts.Expression {
         expr = expr.expression;
     return expr;
 }
-function runChecks(root: string, files: readonly string[]): Finding[] {
+function runChecks(root: string, asts: ReadonlyMap<string, ts.SourceFile>): Finding[] {
     const findings: Finding[] = [];
     const report = (sf: ts.SourceFile, file: string, rule: string, node: ts.Node, detail: string) =>
         findings.push({
@@ -133,7 +133,6 @@ function runChecks(root: string, files: readonly string[]): Finding[] {
             rule,
             detail
         });
-    const read = (f: string) => readFileSync(join(root, f), 'utf8');
     const reasonsSource = safeRead(root, REASONS_FILE);
     const closeSource = safeRead(root, COURTESY_FILE);
     if (reasonsSource === null)
@@ -174,9 +173,6 @@ function runChecks(root: string, files: readonly string[]): Finding[] {
             rule: '(h)',
             detail: `catalog has ${closeReasons.length} readable string values; expected 4`
         });
-    const asts = new Map<string, ts.SourceFile>();
-    for (const f of files)
-        asts.set(f, ts.createSourceFile(f, read(f), ts.ScriptTarget.Latest, true));
     const reasonSet = new Set(reasons),
         closeSet = new Set(closeReasons);
     const openCallsByFn = new Map<Fn, Set<string>>();
@@ -373,7 +369,21 @@ export function run(args: { readonly root?: string; readonly minScannedFiles?: n
             exitCode: 1,
             output: `G-R1-F: scanned ${files.length} files; expected at least ${min}`
         };
-    const findings = runChecks(root, files);
+    // Each production file is parsed exactly once and the tree is shared by every
+    // pass below. Parsing dominates the cost (~2.4s per pass over ~4300 files), and
+    // this used to happen five times per run (HOS-1910).
+    const asts = new Map<string, ts.SourceFile>();
+    for (const f of files)
+        asts.set(
+            f,
+            ts.createSourceFile(
+                f,
+                readFileSync(join(root, f), 'utf8'),
+                ts.ScriptTarget.Latest,
+                true
+            )
+        );
+    const findings = runChecks(root, asts);
     if (findings.length)
         return {
             exitCode: 1,
@@ -381,59 +391,24 @@ export function run(args: { readonly root?: string; readonly minScannedFiles?: n
                 .map((f) => `G-R1-F ${f.rule}: ${f.file}:${f.line} ${f.detail}`)
                 .join('\n')
         };
-    const open = files.reduce(
-        (n, f) =>
-            n +
-            calls(
-                ts.createSourceFile(
-                    f,
-                    readFileSync(join(root, f), 'utf8'),
-                    ts.ScriptTarget.Latest,
-                    true
-                ),
-                'openReconciliationMark'
-            ).length,
-        0
-    );
-    const lifts = files.reduce(
-        (n, f) =>
-            n +
-            calls(
-                ts.createSourceFile(
-                    f,
-                    readFileSync(join(root, f), 'utf8'),
-                    ts.ScriptTarget.Latest,
-                    true
-                ),
-                'liftReconciliationMark'
-            ).length,
-        0
-    );
-    const closes = files.reduce(
-        (n, f) =>
-            n +
-            calls(
-                ts.createSourceFile(
-                    f,
-                    readFileSync(join(root, f), 'utf8'),
-                    ts.ScriptTarget.Latest,
-                    true
-                ),
-                'set'
-            ).filter((c) => {
-                const o = objectArg(c);
-                return (
-                    o && (properties(o).has('balanceClosedAt') || properties(o).has('closeReason'))
-                );
-            }).length,
-        0
-    );
+    let open = 0;
+    let lifts = 0;
+    let closes = 0;
+    for (const sf of asts.values()) {
+        open += calls(sf, 'openReconciliationMark').length;
+        lifts += calls(sf, 'liftReconciliationMark').length;
+        closes += calls(sf, 'set').filter((c) => {
+            const o = objectArg(c);
+            return o && (properties(o).has('balanceClosedAt') || properties(o).has('closeReason'));
+        }).length;
+    }
     const hasInventory = existsSync(join(root, 'scripts/guards/live-term-inventories.json'));
     const inventory = hasInventory ? loadInventories({ root }) : { inventories: {}, findings: [] };
     const listing = runListingInventory({
         root,
         minScannedFiles: min,
-        inventories: inventory.inventories
+        inventories: inventory.inventories,
+        sourceFiles: asts
     });
     const extra = [
         ...inventory.findings.map(
