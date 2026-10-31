@@ -263,6 +263,13 @@ host-reachable `HOSPEDA_DATABASE_URL`, the deployed-SHA guard
 Every one defaults to a dry-run; a prod write asks for a typed phrase that
 `--yes` never skips.
 
+The typed phrase needs a TTY: piped through stdin (`echo phrase | hops ...`)
+clack skips the prompt, so every `hops` prompt now exits 1 with a message when
+stdin or stdout is not a terminal, and nothing is done. For scripted runs pass
+`--confirm-phrase=<phrase>` (steps 3, 3b, 4c, 5b). It must equal the phrase
+exactly, a wrong value aborts without falling back to the prompt, and it stays
+in the shell history like a typed phrase would.
+
 | Command | Wraps | Write flag | Prod phrase |
 | --- | --- | --- | --- |
 | `cutover-step-3b` | `scripts/cutover-b9a-step-3b.ts` | `--confirm` | `grant-permanent-prod` |
