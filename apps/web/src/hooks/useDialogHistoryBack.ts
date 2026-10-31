@@ -14,6 +14,11 @@ interface UseDialogHistoryBackParams {
     readonly isOpen: boolean;
     /** Close handler, invoked when the user presses the system back button. */
     readonly onClose: () => void;
+    /**
+     * For surfaces over a page that rewrites its own URL (HOS-1927). See
+     * `acquireDialogHistoryEntry`.
+     */
+    readonly tolerateRouterDrift?: boolean;
 }
 
 /** Return value of {@link useDialogHistoryBack}. */
@@ -55,7 +60,8 @@ export interface UseDialogHistoryBackResult {
  */
 export function useDialogHistoryBack({
     isOpen,
-    onClose
+    onClose,
+    tolerateRouterDrift = false
 }: UseDialogHistoryBackParams): UseDialogHistoryBackResult {
     // `onClose` is almost always an inline arrow at the call site. Reading it
     // through a ref keeps it out of the effect below: a new identity on every
@@ -75,13 +81,14 @@ export function useDialogHistoryBack({
     useEffect(() => {
         if (!isOpen) return;
         const { release } = acquireDialogHistoryEntry({
+            tolerateRouterDrift,
             onPopped: () => {
                 onCloseRef.current();
                 setClaimToken((token) => token + 1);
             }
         });
         return release;
-    }, [isOpen, claimToken]);
+    }, [isOpen, claimToken, tolerateRouterDrift]);
 
     // Topmost arbitration (HOS-350) is a presence concern, not a
     // history-claiming one — see `useIsTopmostOverlay`'s module doc for why

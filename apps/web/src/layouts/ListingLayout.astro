@@ -351,7 +351,18 @@ const resultsSummaryLabel =
 			spliceSwapRegions(newDoc);
 
 			if (newDoc.title) document.title = newDoc.title;
-			if (needsPushState) window.history.pushState({}, '', targetUrl);
+			if (needsPushState) {
+				// HOS-1927: an open overlay (the mobile filters drawer) owns the current
+				// history entry. Offer it the URL change first; if it takes it, the
+				// entry is rewritten in place instead of buried under a new one.
+				var claimed = !window.dispatchEvent(
+					new CustomEvent('hospeda:listing-url-commit', {
+						cancelable: true,
+						detail: { url: targetUrl }
+					})
+				);
+				if (!claimed) window.history.pushState({}, '', targetUrl);
+			}
 
 			// Tell anything that initialises on a navigation (FilterSidebar
 			// clears its "loading" flag here, for instance) that we are done.
