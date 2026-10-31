@@ -441,8 +441,8 @@ importers:
         specifier: ^1.5.2
         version: 1.5.2(hono@4.13.7)(zod@4.6.6)
       '@linear/sdk':
-        specifier: ^91.0.0
-        version: 91.0.0(graphql@16.14.2)
+        specifier: ^99.0.0
+        version: 99.0.0(graphql@16.14.2)
       '@react-email/components':
         specifier: ^1.0.12
         version: 1.0.12(react-dom@19.2.7(react@19.2.7))(react@19.2.7)
@@ -3736,9 +3736,9 @@ packages:
   '@lhci/utils@0.15.1':
     resolution: {integrity: sha512-WclJnUQJeOMY271JSuaOjCv/aA0pgvuHZS29NFNdIeI14id8eiFsjith85EGKYhljgoQhJ2SiW4PsVfFiakNNw==}
 
-  '@linear/sdk@91.0.0':
-    resolution: {integrity: sha512-H0pa8J6D4OSL89wZK7xtM7g/JcOjGWfZgeLyvl0RcUfY+arvWVimjMz+XVRxmu2yMLov0eeuRB1z0qIWIrCd9w==}
-    engines: {node: '>=18.x'}
+  '@linear/sdk@99.0.0':
+    resolution: {integrity: sha512-VPzig11GUM9Ttz+UlQToUsOFdLfMpaOVaL/KGSOIdi+o1/yno3VXQrShkHXBxXLQd6Cl/N/eSclD9sZSq19crg==}
+    engines: {node: ^20.19.0 || >=22.12.0}
 
   '@marsidev/react-turnstile@1.5.5':
     resolution: {integrity: sha512-+EtXbmsJwlRuIUruLb3UBAakpW0wFGeA17QQp0uG8Mv+Zh8MXktZT68P5HS2g1ssfeRd2+BZGupOE/F4KGajFQ==}
@@ -8878,8 +8878,8 @@ packages:
   leaflet@1.9.4:
     resolution: {integrity: sha512-nxS1ynzJOmOlHp+iL3FyWqK89GtNL8U8rvlMOsQdTTssxZwCXh8N2NB3GDQOL+YR3XnWyZAxwQixURb+FA74PA==}
 
-  legacy-javascript@0.0.4:
-    resolution: {integrity: sha512-UTmeKBVxnfJcpmpOvzzNnLsQT99BXHpPlc/ZKddIRmWmrR0fw6335I3lq4+sJoP60UTbBNaYsGYVPc65YB1x3A==}
+  legacy-javascript@0.0.3:
+    resolution: {integrity: sha512-1r6MT4dVaJyXt4G07Cm2cQ0AUaLJdefiEp4SmIAylA++gnEQ82YvmzE58RkM5EP0fk5hROLCslUPGnwIYdZQVA==}
 
   leven@3.1.0:
     resolution: {integrity: sha512-qsda+H8jTaUaN/x5vzW2rzc+8Rw4TAQ/4KjB46IwK5VH+IlVeeeje/EoZRpiXvIqjFgK84QffqPztGI3VBLG1A==}
@@ -14147,7 +14147,7 @@ snapshots:
       - supports-color
       - utf-8-validate
 
-  '@linear/sdk@91.0.0(graphql@16.14.2)':
+  '@linear/sdk@99.0.0(graphql@16.14.2)':
     dependencies:
       '@graphql-typed-document-node/core': 3.2.0(graphql@16.14.2)
     transitivePeerDependencies:
@@ -14343,7 +14343,7 @@ snapshots:
 
   '@paulirish/trace_engine@0.0.53':
     dependencies:
-      legacy-javascript: 0.0.4
+      legacy-javascript: 0.0.3
       third-party-web: 0.30.0
 
   '@pdf-lib/standard-fonts@1.0.0':
@@ -20013,7 +20013,7 @@ snapshots:
 
   leaflet@1.9.4: {}
 
-  legacy-javascript@0.0.4: {}
+  legacy-javascript@0.0.3: {}
 
   leven@3.1.0: {}
 
