@@ -1275,6 +1275,13 @@
       "when": 1793218068800,
       "tag": "0181_hos1825_moderation_kind_check",
       "breakpoints": true
+    },
+    {
+      "idx": 182,
+      "version": "7",
+      "when": 1793429949812,
+      "tag": "0182_left_the_hand",
+      "breakpoints": true
     }
   ]
 }

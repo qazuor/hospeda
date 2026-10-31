@@ -18,6 +18,7 @@ export const mockUser: InferredUser = {
     banned: false,
     banReason: null,
     banExpires: null,
+    role: null,
     authProvider: AuthProviderEnum.BETTER_AUTH,
     authProviderUserId: 'auth-user-1',
     mustChangePassword: false,

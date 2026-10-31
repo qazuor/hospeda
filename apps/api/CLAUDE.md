@@ -211,6 +211,21 @@ export const handler = async (c: Context) => {
 - `roles: readonly RoleEnum[]` — every role the actor holds (HOS-296); there is no single "primary role"
 - `permissions: readonly PermissionEnum[]`
 
+### `users.role` and Better Auth's admin plugin (HOS-1932)
+
+The `admin()` plugin is kept only for its ban gate (`users.banned` / `ban_expires`). It
+declares a `role` field on `user`, and better-auth >= 1.7 validates the Drizzle schema
+against plugin-declared fields (`advanced.database.validateSchema`, left ON). So
+`users.role` exists as a nullable, always-NULL placeholder: `user.create.before` strips
+the value the plugin injects, no plugin role grants any plugin action
+(`lib/auth-admin-access.ts`), and `role` is `input: false`, so no endpoint accepts it.
+
+Never read `user.role` / `session.user.role` for anything: authorization is
+`actor.permissions` (`PermissionEnum`) resolved from `user_role`.
+`test/lib/auth-schema-validation.guard.test.ts` enforces both that validation stays on
+and that nothing in production code reads the placeholder. Details:
+[`packages/db/CLAUDE.md`](../../packages/db/CLAUDE.md#usersrole--a-better-auth-placeholder-not-a-role-hos-1932).
+
 ## Response Standardization
 
 Use `ResponseFactory` for consistent responses:
