@@ -68,13 +68,22 @@ export const experiences = pgTable(
          *
          * No default: a row that omits the price must not be born with a fake 0.
          *
-         * INVARIANT: NULL only when `isPriceOnRequest` is true. Enforced today by
-         * the create schemas (`requirePriceFromUnlessOnRequest`) and by
-         * `ExperienceService`, which writes NULL whenever the flag is on. A CHECK
-         * constraint is deliberately NOT added in the same release as the
-         * backfill (`0132-hos1943-price-on-request-null`): `db:apply-extras`
-         * runs BEFORE `db:seed:migrate`, so a CHECK would reject the rows the
-         * backfill has not reached yet.
+         * Two directions, enforced differently, and NOT by the database:
+         * - NULL ⇒ on request. Creates through the API: the `*Checked` create
+         *   schemas (`requirePriceFromUnlessOnRequest`). Updates:
+         *   `ExperienceService._beforeUpdate` rejects (VALIDATION_ERROR) a write
+         *   that leaves the flag off with a NULL price, judged against the row
+         *   the hook already loaded. A write that bypasses the service (raw SQL,
+         *   a seed) is not covered.
+         * - On request ⇒ NULL. `ExperienceService` writes NULL whenever the flag
+         *   is on after the write. Rows written before HOS-1943 hold 0 until
+         *   `0132-hos1943-price-on-request-null` runs; rows with a positive price
+         *   behind the flag are left as they are.
+         *
+         * No CHECK constraint yet. It cannot ship in the same release as the
+         * backfill: `db:apply-extras` runs BEFORE `db:seed:migrate`, so it would
+         * reject the rows the backfill has not reached. Until it lands, readers
+         * must treat NULL, 0 and a hidden positive price as "no price shown".
          */
         priceFrom: integer('price_from'),
         /**
