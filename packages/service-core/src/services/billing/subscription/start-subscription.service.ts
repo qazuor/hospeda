@@ -206,17 +206,29 @@ export async function authorizePendingSubscription(input: {
         created = await input.provider.authorize(sent);
     } catch (error) {
         if (error instanceof PaymentProviderError) {
-            logger.error(
-                error,
-                `Provider authorization creation failed (subscription: ${pending.subscription.id})`,
-                { capture: true }
-            );
+            // HOS-1968: a throttle or outage is transient, not a defect: WARN, no Sentry capture.
+            if (error.transient) {
+                logger.warn(
+                    error,
+                    `Provider authorization creation deferred (subscription: ${pending.subscription.id}, kind: ${error.transient.kind})`
+                );
+            } else {
+                logger.error(
+                    error,
+                    `Provider authorization creation failed (subscription: ${pending.subscription.id})`,
+                    { capture: true }
+                );
+            }
         }
+        // A 429 is refused before processing, so (like a 4xx rejection) nothing exists at the
+        // provider: complete the key so the person's retry mints a new one on this same row
+        // instead of waiting out PREVIOUS_ATTEMPT_IN_PROGRESS. A 5xx or transport failure has an
+        // UNKNOWN outcome and keeps the key open for the creations sweep to resolve.
         if (
             error instanceof PaymentProviderError &&
-            error.code === 'REJECTED' &&
             error.capability === 'authorize' &&
-            !input.paymentToken
+            !input.paymentToken &&
+            (error.code === 'REJECTED' || error.transient?.kind === 'RATE_LIMITED')
         ) {
             await subscriptionModel.recordCreationRejected({
                 idempotencyKey: pending.idempotencyKey,
