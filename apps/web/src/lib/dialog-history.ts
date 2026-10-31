@@ -24,6 +24,12 @@
  */
 
 import {
+    isRawEntryState,
+    pushRawEntry,
+    rewriteClaimedUrl,
+    settleClaimedEntry
+} from './dialog-history.raw-entry';
+import {
     attachRouterSyncListeners,
     markRouterAgrees,
     navigationInFlight,
@@ -31,6 +37,9 @@ import {
     routerViewIsCurrent,
     transitionsEnabled
 } from './dialog-history.router-sync';
+
+/** Cancelable event a listing dispatches before it moves its own URL (HOS-1927). */
+export const LISTING_URL_COMMIT_EVENT = 'hospeda:listing-url-commit';
 
 /** Marker written into the claimed entry's history state. */
 const DIALOG_STATE_KEY = '__hospedaDialog';
@@ -57,6 +66,10 @@ interface DialogHistoryEntry {
     pushed: boolean;
     /** Set when released before the claim landed, so the claim self-cancels. */
     cancelled: boolean;
+    /** Claimed with a plain `pushState` (no router), see `dialog-history.raw-entry`. */
+    readonly raw?: boolean;
+    /** Set when the page rewrote its URL while this entry was current. */
+    rewrittenUrl?: string;
 }
 
 interface AcquireParams {
@@ -70,6 +83,13 @@ interface AcquireParams {
      * open on the render after this fires.
      */
     readonly onPopped: () => void;
+    /**
+     * HOS-1927. For surfaces over a page that rewrites its own URL (listings).
+     * When the router can no longer vouch for the document (or is absent) the
+     * claim is made with a plain `pushState` and the resulting `popstate` is
+     * kept from the router, instead of being refused.
+     */
+    readonly tolerateRouterDrift?: boolean;
 }
 
 interface AcquireResult {
@@ -91,6 +111,9 @@ const stack: DialogHistoryEntry[] = [];
 
 let nextId = 1;
 let listenersAttached = false;
+
+/** Whether the previous history position was a raw entry (see `handlePopState`). */
+let previousWasRaw = false;
 
 /**
  * Entries released but not yet unwound. Coalesced into a single `history.go()`
@@ -141,12 +164,10 @@ export function subscribeToOpenOverlays(listener: () => void): () => void {
  * Every currently-open modal-like surface (HOS-350), deliberately
  * independent of {@link stack}: `stack` only ever holds surfaces that
  * successfully claim a browser-history entry, and some never can. The
- * mobile filters drawer (`MobileDrawer.tsx`) opens over a listing page that
- * rewrites its own URL on every filter tap, which buries any entry the
- * drawer might claim — so it cannot appear in `stack` regardless of whether
- * `<ClientRouter />` is even present. It still needs to participate in "who
- * is on top", which is all this array is for: presence only, no history
- * claim, no popstate interaction.
+ * `stack` holds only surfaces that claimed an entry, and a claim can be
+ * refused. This array is presence only (no history claim, no popstate
+ * interaction) and answers "who is on top" for every open surface, including
+ * the mobile filters drawer (which claims a raw entry since HOS-1927).
  */
 const openOverlays: { id: number }[] = [];
 let nextOverlayId = 1;
@@ -210,7 +231,13 @@ function currentEntryId(): number | undefined {
  * entries from the stack before unwinding, so they fall out through the two
  * guards below rather than through a flag that could desynchronise.
  */
-function handlePopState(): void {
+function handlePopState(event: PopStateEvent): void {
+    // Raw entries (HOS-1927) have no router fast path, so the router must never
+    // see a traversal onto or off one: it would refetch and swap the document.
+    const rawNow = isRawEntryState(window.history.state);
+    if (rawNow || previousWasRaw) event.stopImmediatePropagation();
+    previousWasRaw = rawNow;
+
     const top = stack[stack.length - 1];
     if (!top) return;
 
@@ -226,6 +253,7 @@ function handlePopState(): void {
     if (currentId !== undefined && currentId > top.id) return;
 
     stack.pop();
+    restoreRewrittenUrl(top);
     // A claim still resolving has no entry to own any more; letting it land
     // would strand a fragment in the URL that nothing will ever unwind.
     if (!top.pushed) top.cancelled = true;
@@ -255,6 +283,39 @@ function abandonAll(): void {
     }
     stack.length = 0;
     pendingBackSteps = 0;
+    previousWasRaw = false;
+}
+
+/**
+ * Back landed on the entry BELOW a claim that saw the page rewrite its URL: the
+ * content is the rewritten one but the URL is the old one. Re-assert the
+ * rewritten URL once the router has handled the traversal (a microtask would
+ * run between the two listeners, a timeout runs after both).
+ */
+function restoreRewrittenUrl(entry: DialogHistoryEntry): void {
+    const target = entry.rewrittenUrl;
+    if (target === undefined) return;
+    setTimeout(() => {
+        try {
+            if (new URL(target).pathname !== window.location.pathname) return;
+            window.history.replaceState(window.history.state, '', target);
+        } catch {
+            // The URL stays stale; content and URL disagree until the next filter tap.
+        }
+    }, 0);
+}
+
+/** A listing is about to move its URL: do it under the live claim, not on top of it. */
+function handleListingUrlCommit(event: Event): void {
+    const top = stack[stack.length - 1];
+    // Raw claims only: a routed dialog's fragment is in the router's `originalLocation`.
+    if (!top?.raw || !top.pushed || currentEntryId() !== top.id) return;
+    const url = (event as CustomEvent<{ url?: unknown }>).detail?.url;
+    if (typeof url !== 'string') return;
+    const bare = rewriteClaimedUrl({ url });
+    if (bare === null) return;
+    top.rewrittenUrl = bare;
+    event.preventDefault();
 }
 
 function attachListeners(): void {
@@ -265,7 +326,9 @@ function attachListeners(): void {
     attachRouterSyncListeners({ onSwapStart: abandonAll });
     if (listenersAttached) return;
     listenersAttached = true;
-    window.addEventListener('popstate', handlePopState);
+    // Capture, so a raw traversal can be kept from the router (HOS-1927).
+    window.addEventListener('popstate', handlePopState, true);
+    window.addEventListener(LISTING_URL_COMMIT_EVENT, handleListingUrlCommit);
 }
 
 /**
@@ -299,7 +362,10 @@ function warmRouter(): void {
  * than a modal that simply keeps the old back-button behaviour. The same
  * reasoning covers every "skip the claim" branch below.
  */
-export function acquireDialogHistoryEntry({ onPopped }: AcquireParams): AcquireResult {
+export function acquireDialogHistoryEntry({
+    onPopped,
+    tolerateRouterDrift = false
+}: AcquireParams): AcquireResult {
     if (typeof window === 'undefined') return NO_ENTRY;
 
     attachListeners();
@@ -308,12 +374,16 @@ export function acquireDialogHistoryEntry({ onPopped }: AcquireParams): AcquireR
     // Without the router there is nothing to appease, but also no cheap path:
     // a plain entry would make the back press swap the document on any page
     // that does have the router. Only claim where we can route the entry.
-    if (!transitionsEnabled()) return NO_ENTRY;
     // Claiming calls `navigate()`, whose first act is to abort whatever
     // navigation is already in flight. Opening a modal must never cancel the
     // link the user just tapped.
     if (navigationInFlight()) return NO_ENTRY;
-    if (!routerViewIsCurrent()) return NO_ENTRY;
+    // A surface over a page that rewrites its own URL NEVER takes the routed
+    // claim, even while the router still agrees: the first filter tap would
+    // desync it with the claim's fragment already in `originalLocation`, and a
+    // later back would hit the router's no-swap fast path under filtered content.
+    if (tolerateRouterDrift) return claimRaw({ onPopped });
+    if (!transitionsEnabled() || !routerViewIsCurrent()) return NO_ENTRY;
 
     const entry: DialogHistoryEntry = {
         id: nextId++,
@@ -347,6 +417,25 @@ export function acquireDialogHistoryEntry({ onPopped }: AcquireParams): AcquireR
             });
     }
 
+    return { release: () => releaseDialogHistoryEntry(entry) };
+}
+
+/** Claims an entry with a plain `pushState`, never through the router. */
+function claimRaw({ onPopped }: { readonly onPopped: () => void }): AcquireResult {
+    const entry: DialogHistoryEntry = {
+        id: nextId++,
+        onPopped,
+        pushed: false,
+        cancelled: false,
+        raw: true
+    };
+    const landed = pushRawEntry({
+        state: { [DIALOG_STATE_KEY]: entry.id, [DIALOG_SESSION_KEY]: SESSION_STAMP }
+    });
+    if (!landed) return NO_ENTRY;
+    entry.pushed = true;
+    previousWasRaw = true;
+    stack.push(entry);
     return { release: () => releaseDialogHistoryEntry(entry) };
 }
 
@@ -438,6 +527,16 @@ function releaseDialogHistoryEntry(entry: DialogHistoryEntry): void {
         return;
     }
 
+    // The page moved its URL under this entry, so it is now the history entry
+    // of that filter state: walking back would revert it. Keep it, as plain.
+    if (entry.rewrittenUrl !== undefined) {
+        if (currentEntryId() === entry.id) {
+            settleClaimedEntry({ keys: [DIALOG_STATE_KEY, DIALOG_SESSION_KEY] });
+        }
+        previousWasRaw = false;
+        return;
+    }
+
     unwinding.add(entry.id);
     scheduleUnwind();
 }
@@ -516,8 +615,10 @@ export function resetDialogHistoryForTests(): void {
     // state, and clearing it would push every following claim back onto the
     // async path that production never takes.
     resetRouterSyncForTests();
+    previousWasRaw = false;
     if (listenersAttached) {
-        window.removeEventListener('popstate', handlePopState);
+        window.removeEventListener('popstate', handlePopState, true);
+        window.removeEventListener(LISTING_URL_COMMIT_EVENT, handleListingUrlCommit);
         listenersAttached = false;
     }
 }

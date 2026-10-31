@@ -6,13 +6,11 @@
 
 import type { ReactNode } from 'react';
 import { useEffect, useRef } from 'react';
-// Arbitrates Escape when another overlay (e.g. the feedback modal) opens on
-// top of this drawer (HOS-350). This drawer never claims a browser-history
-// entry — the listing page rewrites its own URL on every filter tap, which
-// would bury the claim — so it cannot use `useDialogHistoryBack` for this.
-// `useIsTopmostOverlay` arbitrates on presence alone, independent of history
-// claiming, which is exactly what a history-less surface like this needs.
-import { useIsTopmostOverlay } from '@/hooks/useIsTopmostOverlay';
+// Back closes the drawer (HOS-1927). The listing rewrites its own URL on every
+// filter tap, so the claim is made with `tolerateRouterDrift` and the listing
+// commits URL changes under it (see `@/lib/dialog-history`). The hook also
+// arbitrates Escape when another overlay opens on top (HOS-350).
+import { useDialogHistoryBack } from '@/hooks/useDialogHistoryBack';
 // Shared with every other modal-like surface (Dialog, the AI search drawer,
 // the AI chat widget). This file used to keep a private copy of the
 // selector + boundary-only Tab cycling, bound to the PANEL rather than
@@ -46,10 +44,8 @@ export interface MobileDrawerProps {
 export function MobileDrawer({ isOpen, onClose, children, ariaLabel }: MobileDrawerProps) {
     const panelRef = useRef<HTMLDialogElement>(null);
 
-    // HOS-350: only the topmost open overlay should react to a single Escape
-    // press. See the import comment above for why this drawer registers here
-    // instead of going through `useDialogHistoryBack`.
-    const isTopmost = useIsTopmostOverlay({ isOpen });
+    // HOS-350: only the topmost open overlay should react to a single Escape press.
+    const { isTopmost } = useDialogHistoryBack({ isOpen, onClose, tolerateRouterDrift: true });
 
     // Lock body scroll while drawer is open + publish a flag on <html> so other
     // floating UI (e.g. the global feedback FAB) can hide itself while a drawer
