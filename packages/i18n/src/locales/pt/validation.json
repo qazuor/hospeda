@@ -3004,7 +3004,8 @@
             "min": "A longitude do ponto de encontro deve ser no mínimo {{min}}"
         },
         "priceFrom": {
-            "nonnegative": "El precio debe ser mayor o igual a 0"
+            "nonnegative": "El precio debe ser mayor o igual a 0",
+            "required": "O preço é obrigatório. Se a experiência não tem preço fixo, marque «Preço sob consulta»."
         },
         "priceUnit": {
             "requiredUnlessOnRequest": "Escolha a unidade de preço (por dia, por hora, por pessoa ou por grupo). Se a experiência não tem preço fixo, marque «Preço sob consulta»."
