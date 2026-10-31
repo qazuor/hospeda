@@ -57,9 +57,8 @@ export interface SeedSponsorshipInput {
     /** Level the sponsorship is bound to. Its target type becomes the row's. */
     readonly level: SeededSponsorshipLevel;
     /**
-     * Attach a package. Defaults to true: a sponsorship with no package makes
-     * `GET /protected/sponsorships/:id` answer 500 (HOS-1905), so tests that are
-     * not about that bug seed one.
+     * Attach a package. Defaults to true; pass false to seed a sponsorship with no
+     * package (`package_id` is nullable, HOS-1905).
      */
     readonly withPackage?: boolean;
     /** Analytics counters stored on the row, merged over zeroes. */

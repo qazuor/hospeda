@@ -45,8 +45,8 @@ export const SponsorshipPublicSchema = SponsorshipSchema.pick({
     sponsorUser: UserPublicSchema.optional(),
     /** Resolved sponsorship level (base schema, no tier restriction). */
     level: SponsorshipLevelSchema.optional(),
-    /** Resolved sponsorship package (base schema, no tier restriction). */
-    package: SponsorshipPackageSchema.optional()
+    /** Resolved sponsorship package (base schema, no tier restriction). `null` when `package_id` is unset (HOS-1905). */
+    package: SponsorshipPackageSchema.nullable().optional()
 });
 
 export type SponsorshipPublic = z.infer<typeof SponsorshipPublicSchema>;
@@ -96,8 +96,8 @@ export const SponsorshipProtectedSchema = SponsorshipSchema.pick({
     sponsorUser: UserProtectedSchema.optional(),
     /** Resolved sponsorship level (base schema, no tier restriction). */
     level: SponsorshipLevelSchema.optional(),
-    /** Resolved sponsorship package (base schema, no tier restriction). */
-    package: SponsorshipPackageSchema.optional()
+    /** Resolved sponsorship package (base schema, no tier restriction). `null` when `package_id` is unset (HOS-1905). */
+    package: SponsorshipPackageSchema.nullable().optional()
 });
 
 export type SponsorshipProtected = z.infer<typeof SponsorshipProtectedSchema>;
@@ -118,8 +118,8 @@ export const SponsorshipAdminSchema = SponsorshipSchema.extend({
     sponsorUser: UserAdminSchema.optional(),
     /** Resolved sponsorship level (base schema, no tier restriction). */
     level: SponsorshipLevelSchema.optional(),
-    /** Resolved sponsorship package (base schema, no tier restriction). */
-    package: SponsorshipPackageSchema.optional()
+    /** Resolved sponsorship package (base schema, no tier restriction). `null` when `package_id` is unset (HOS-1905). */
+    package: SponsorshipPackageSchema.nullable().optional()
 });
 
 export type SponsorshipAdmin = z.infer<typeof SponsorshipAdminSchema>;
