@@ -111,6 +111,36 @@ describe.each([
         expect(Object.keys(input)).not.toContain('email');
     });
 
+    it.each([
+        [
+            'email',
+            { email: 'only@example.com' },
+            { personalEmail: 'only@example.com', workEmail: 'only@example.com' }
+        ],
+        [
+            'website',
+            { website: 'https://only.example.com' },
+            { website: 'https://only.example.com' }
+        ],
+        ['phone', { phone: '+5493435551234' }, { mobilePhone: '+5493435551234' }]
+    ])('persists %s sent alone, without touching the other contact keys (HOS-1939)', async (_name, body, expected) => {
+        const input = await write(method, body);
+
+        expect(input.contactInfo).toStrictEqual(expected);
+    });
+
+    it('clears a contact field sent as null and omits the rest (HOS-1939)', async () => {
+        const input = await write(method, { email: null });
+
+        expect(input.contactInfo).toStrictEqual({ personalEmail: null, workEmail: null });
+    });
+
+    it('sends no contactInfo when no contact field is present (HOS-1939)', async () => {
+        const input = await write(method, { name: 'Just a name' });
+
+        expect(input.contactInfo).toBeUndefined();
+    });
+
     it('nests the socials under socialNetworks and renames linkedin', async () => {
         const input = await write(method, {
             facebook: 'https://facebook.com/org',
