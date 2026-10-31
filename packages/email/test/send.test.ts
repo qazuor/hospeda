@@ -140,6 +140,20 @@ describe('sendEmail', () => {
             expect(body.sender).toEqual({ email: 'noreply@hospeda.com.ar', name: 'Hospeda' });
         });
 
+        it('should not send marketing List-Unsubscribe headers on a transactional send', async () => {
+            // Arrange
+            fetchMock.mockResolvedValueOnce(jsonResponse({ messageId: '<id>' }));
+
+            // Act
+            await sendEmail({ client: TEST_CLIENT, to: 'a@b.com', subject: 's', react: mockReact });
+
+            // Assert
+            const body = JSON.parse((fetchMock.mock.calls[0]?.[1] as RequestInit).body as string);
+            expect(JSON.stringify(body.headers ?? {}).toLowerCase()).not.toContain(
+                'list-unsubscribe'
+            );
+        });
+
         it('should pass the rendered HTML and subject to the provider', async () => {
             // Arrange
             fetchMock.mockResolvedValue(jsonResponse({ messageId: '<msg@brevo>' }));
