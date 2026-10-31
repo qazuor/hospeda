@@ -120,6 +120,16 @@ describe('ExperienceAdminCreateInputSchema', () => {
             ).not.toThrow();
         });
 
+        it('reports an empty priceFrom with a translatable key, not Zod English (HOS-1943)', () => {
+            const raw = buildAdminCreateInput({ priceFrom: undefined });
+            const result = ExperienceAdminCreateInputCheckedSchema.safeParse(raw);
+            expect(result.success).toBe(false);
+            if (!result.success) {
+                const issue = result.error.issues.find((i) => i.path[0] === 'priceFrom');
+                expect(issue?.message).toBe('zodError.experience.priceFrom.required');
+            }
+        });
+
         it('accepts an omitted priceUnit when the price is on request (H-156)', () => {
             const raw = buildAdminCreateInput({
                 priceUnit: undefined,
