@@ -163,10 +163,18 @@ describe('dialog-history raw claim with the router agreeing (HOS-1927 review)', 
         navigateCalls.length = 0;
         window.history.replaceState({ index: 0, scrollX: 0, scrollY: 0 }, '', PAGE_URL);
         resetDialogHistoryForTests();
+        // Warm the router's cached navigate, so routed claims are synchronous
+        // regardless of which test ran before this one.
+        acquireDialogHistoryEntry({ onPopped: vi.fn() }).release();
+        await settle();
+        window.history.replaceState({ index: 0, scrollX: 0, scrollY: 0 }, '', PAGE_URL);
+        resetDialogHistoryForTests();
+        navigateCalls.length = 0;
         await settle();
     });
 
     afterEach(async () => {
+        __setNavigateImpl(null);
         for (const meta of document.querySelectorAll('[name="astro-view-transitions-enabled"]')) {
             meta.remove();
         }
@@ -208,6 +216,8 @@ describe('dialog-history raw claim with the router agreeing (HOS-1927 review)', 
 
     it('a routed dialog does not adopt a listing URL commit', () => {
         acquireDialogHistoryEntry({ onPopped: vi.fn() });
+        // Precondition: the routed claim really landed, or this proves nothing.
+        expect(window.location.hash).toMatch(/^#hospeda-dialog-/);
 
         expect(commitUrl(FILTERED_URL)).toBe(false);
     });
