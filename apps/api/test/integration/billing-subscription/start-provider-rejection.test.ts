@@ -174,10 +174,11 @@ describe('TEST:1746:4/5 signup provider rejection route', () => {
         expect(first.headers.get('Retry-After')).toBeNull();
         expect((await first.json()).error).toMatchObject({
             code: 'SERVICE_UNAVAILABLE',
-            reason: 'PROVIDER_BUSY'
+            reason: 'PROVIDER_UNAVAILABLE'
         });
         // The outcome of a 5xx write is unknown: the key stays open, so an immediate retry is held.
         const retry = await request(app, user.id, option.id, user.email);
         expect(retry.status).toBe(409);
+        expect((await retry.json()).error.reason).toBe('PREVIOUS_ATTEMPT_IN_PROGRESS');
     });
 });

@@ -36,8 +36,20 @@ export const StartSubscriptionRejectionReasonSchema = z.enum([
     'CREATION_NOT_APPLIED',
     'PREVIOUS_ATTEMPT_IN_PROGRESS',
     'PROVIDER_REJECTED',
-    'PARTNER_MANUAL_ONLY'
+    'PARTNER_MANUAL_ONLY',
+    'PROVIDER_BUSY',
+    'PROVIDER_UNAVAILABLE'
 ]);
+
+/**
+ * The rejection reasons answered with 503 when the payment provider is transiently
+ * failing (HOS-1968): `PROVIDER_BUSY` after a throttle (429), `PROVIDER_UNAVAILABLE`
+ * after a 5xx or transport failure. Single source for the API route and the web.
+ */
+export const PROVIDER_TRANSIENT_REJECTION_REASONS = [
+    'PROVIDER_BUSY',
+    'PROVIDER_UNAVAILABLE'
+] as const;
 
 export type StartSubscriptionRejectionReason = z.infer<
     typeof StartSubscriptionRejectionReasonSchema

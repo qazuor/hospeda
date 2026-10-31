@@ -254,6 +254,7 @@
                 "generic": "No pudimos iniciar tu suscripción. Probá de nuevo en unos minutos.",
                 "providerRejected": "Mercado Pago no aceptó los datos del pago. Revisá que el email sea el de tu cuenta de Mercado Pago y volvé a intentar.",
                 "providerBusy": "Mercado Pago está con mucha demanda en este momento. Esperá un minuto y volvé a intentar.",
+                "providerUnavailable": "El proveedor de pagos no respondió. Probá de nuevo en unos minutos.",
                 "partnerManualOnly": "La suscripción de aliados no se contrata desde acá. Nuestro equipo te va a contactar para coordinar el pago y activarla."
             },
             "trialNotice": {

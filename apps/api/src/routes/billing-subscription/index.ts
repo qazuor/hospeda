@@ -39,9 +39,6 @@ const S1_REJECTIONS_WITH_UNPROCESSABLE_ENTITY_STATUS = new Set<StartSubscription
     'PARTNER_MANUAL_ONLY'
 ]);
 
-/** Machine-readable `reason` of the 503 answered when the payment provider is throttled or down. */
-const PROVIDER_BUSY_REASON = 'PROVIDER_BUSY';
-
 export const protectedStartSubscriptionRoute = createProtectedRoute({
     method: 'post',
     path: '/',
@@ -147,7 +144,7 @@ export const protectedStartSubscriptionRoute = createProtectedRoute({
                                 ? ServiceErrorCode.PROVIDER_RATE_LIMITED
                                 : ServiceErrorCode.SERVICE_UNAVAILABLE,
                         message: 'The payment provider is busy; try again in a minute',
-                        reason: PROVIDER_BUSY_REASON,
+                        reason: kind === 'RATE_LIMITED' ? 'PROVIDER_BUSY' : 'PROVIDER_UNAVAILABLE',
                         ...(retryAfterSeconds === undefined
                             ? {}
                             : { details: { retryAfter: retryAfterSeconds } })

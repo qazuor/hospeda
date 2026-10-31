@@ -107,19 +107,22 @@ describe('signup checkout helpers — B3 UI (B3.md:1045-1053)', () => {
         });
     });
 
-    it('shows the provider-busy message for a 503 PROVIDER_BUSY, and only for that pair (HOS-1968)', () => {
-        expect(
-            resolveSignupRejection({
-                error: { status: 503, code: 'PROVIDER_RATE_LIMITED', reason: 'PROVIDER_BUSY' }
-            })
-        ).toEqual({
-            reason: 'PROVIDER_BUSY',
-            messageKey: 'billing.checkout.signup.rejection.providerBusy',
+    it.each([
+        ['PROVIDER_RATE_LIMITED', 'PROVIDER_BUSY', 'providerBusy'],
+        ['SERVICE_UNAVAILABLE', 'PROVIDER_UNAVAILABLE', 'providerUnavailable']
+    ] as const)('maps a 503 %s/%s to its own message (HOS-1968)', (code, reason, key) => {
+        expect(resolveSignupRejection({ error: { status: 503, code, reason } })).toEqual({
+            reason,
+            messageKey: `billing.checkout.signup.rejection.${key}`,
             retryable: true,
             showPlansLink: false
         });
+    });
+
+    it('honours the transient provider reasons only on a 503 (HOS-1968)', () => {
         for (const error of [
             { status: 500, reason: 'PROVIDER_BUSY' },
+            { status: 500, reason: 'PROVIDER_UNAVAILABLE' },
             { status: 503, reason: 'SOMETHING_ELSE' },
             { status: 503 }
         ]) {

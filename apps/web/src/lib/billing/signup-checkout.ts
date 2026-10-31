@@ -2,6 +2,7 @@
 import {
     type BillingCycle,
     isManualPaymentOnlyVertical,
+    PROVIDER_TRANSIENT_REJECTION_REASONS,
     SignupNoticeResponseSchema,
     type StartSubscriptionRejectionReason,
     StartSubscriptionRequestSchema,
@@ -201,7 +202,7 @@ export function buildSignupCheckoutHref({
 
 /** Localized rejection description returned by {@link resolveSignupRejection}. */
 export interface SignupRejection {
-    readonly reason: StartSubscriptionRejectionReason | 'PROVIDER_BUSY' | 'UNKNOWN';
+    readonly reason: StartSubscriptionRejectionReason | 'UNKNOWN';
     readonly messageKey: string;
     readonly retryable: boolean;
     readonly showPlansLink: boolean;
@@ -250,22 +251,22 @@ const REJECTION_BY_REASON: Record<
         messageKey: 'billing.checkout.signup.rejection.partnerManualOnly',
         retryable: false,
         showPlansLink: false
+    },
+    PROVIDER_BUSY: {
+        messageKey: 'billing.checkout.signup.rejection.providerBusy',
+        retryable: true,
+        showPlansLink: false
+    },
+    PROVIDER_UNAVAILABLE: {
+        messageKey: 'billing.checkout.signup.rejection.providerUnavailable',
+        retryable: true,
+        showPlansLink: false
     }
 };
 
 const GENERIC_REJECTION: SignupRejection = {
     reason: 'UNKNOWN',
     messageKey: 'billing.checkout.signup.rejection.generic',
-    retryable: true,
-    showPlansLink: false
-};
-
-/** The API's 503 `reason` when the payment provider is throttled or down (HOS-1968). */
-const PROVIDER_BUSY_REASON = 'PROVIDER_BUSY';
-
-const PROVIDER_BUSY_REJECTION: SignupRejection = {
-    reason: PROVIDER_BUSY_REASON,
-    messageKey: 'billing.checkout.signup.rejection.providerBusy',
     retryable: true,
     showPlansLink: false
 };
@@ -278,15 +279,17 @@ function isStartSubscriptionRejectionReason(
 
 /** Map only recognized reasons to user-facing keys; API prose never escapes. */
 export function resolveSignupRejection({ error }: { readonly error?: unknown }): SignupRejection {
+    // HOS-1968: the transient provider reasons are the only ones honoured on a 503.
     if (
         error &&
         typeof error === 'object' &&
         'status' in error &&
         error.status === 503 &&
         'reason' in error &&
-        error.reason === PROVIDER_BUSY_REASON
+        PROVIDER_TRANSIENT_REJECTION_REASONS.some((reason) => reason === error.reason)
     ) {
-        return PROVIDER_BUSY_REJECTION;
+        const reason = error.reason as StartSubscriptionRejectionReason;
+        return { reason, ...REJECTION_BY_REASON[reason] };
     }
     if (
         !error ||

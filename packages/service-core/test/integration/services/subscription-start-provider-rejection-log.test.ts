@@ -156,11 +156,12 @@ describe('TEST:1968 transient authorize failures', () => {
     it.each([
         ['429', throttled],
         ['5xx', outage]
-    ])('does not capture a %s to Sentry', async (_label, build) => {
+    ])('captures a %s to Sentry so a sustained outage is visible', async (_label, build) => {
         const error = build();
         const { promise, captured } = await attempt(error);
         await expect(promise).rejects.toBe(error);
-        expect(captured).toEqual([]);
+        expect(captured).toHaveLength(1);
+        expect(captured[0]?.error).toBe(error);
     });
 
     it('completes the creation key after a 429 so the next attempt can recreate', async () => {

@@ -254,6 +254,7 @@
                 "generic": "We could not start your subscription. Please try again in a few minutes.",
                 "providerRejected": "Mercado Pago didn't accept the payment details. Check that the email is the one on your Mercado Pago account and try again.",
                 "providerBusy": "Mercado Pago is very busy right now. Wait a minute and try again.",
+                "providerUnavailable": "The payment provider did not respond. Please try again in a few minutes.",
                 "partnerManualOnly": "Partner subscriptions cannot be purchased here. Our team will contact you to coordinate payment and activation."
             },
             "trialNotice": {
