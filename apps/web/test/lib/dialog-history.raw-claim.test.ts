@@ -152,9 +152,10 @@ describe('dialog-history raw claim with the router agreeing (HOS-1927 review)', 
     const navigateCalls: string[] = [];
 
     beforeEach(async () => {
-        __setNavigateImpl((href: string) => {
+        __setNavigateImpl((href: string, options?: unknown) => {
             navigateCalls.push(href);
-            window.history.pushState({ index: 1, scrollX: 0, scrollY: 0 }, '', href);
+            const state = (options as { state?: Record<string, unknown> } | undefined)?.state;
+            window.history.pushState({ ...state, index: 1, scrollX: 0, scrollY: 0 }, '', href);
         });
         const meta = document.createElement('meta');
         meta.setAttribute('name', 'astro-view-transitions-enabled');
