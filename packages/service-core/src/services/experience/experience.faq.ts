@@ -49,6 +49,7 @@ import {
 } from '@repo/schemas';
 import type { Actor, ServiceContext, ServiceOutput } from '../../types';
 import { ServiceError } from '../../types';
+import { liveParentOrNull } from '../../utils/live-parent';
 import { recordListingSubEntityEdit } from '../listing/listing-owner-act';
 import { checkExperienceCanEditFaqEntries, checkExperienceCanView } from './experience.permissions';
 
@@ -68,9 +69,11 @@ import { checkExperienceCanEditFaqEntries, checkExperienceCanView } from './expe
 async function requireExperience(
     model: ExperienceModel,
     experienceId: string,
-    tx?: ServiceContext['tx']
+    tx?: ServiceContext['tx'],
+    includeDeleted = false
 ) {
-    const entity = await model.findById(experienceId, tx);
+    const row = await model.findById(experienceId, tx);
+    const entity = includeDeleted ? row : liveParentOrNull({ entity: row });
     if (!entity) {
         throw new ServiceError(ServiceErrorCode.NOT_FOUND, 'Experience listing not found');
     }

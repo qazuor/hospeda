@@ -54,6 +54,7 @@ import {
 import type { z } from 'zod';
 import type { Actor, ServiceContext, ServiceOutput } from '../../types';
 import { ServiceError } from '../../types';
+import { liveParentOrNull } from '../../utils/live-parent';
 import { recordListingSubEntityEdit } from '../listing/listing-owner-act';
 import { checkExperienceCanEditFaqs } from './experience.permissions';
 
@@ -95,7 +96,7 @@ async function requireOwnedExperience(
     experienceId: string,
     tx?: ServiceContext['tx']
 ): Promise<{ id: string; ownerId?: string | null }> {
-    const entity = await model.findById(experienceId, tx);
+    const entity = liveParentOrNull({ entity: await model.findById(experienceId, tx) });
     if (!entity || !actor?.id || entity.ownerId !== actor.id) {
         throw new ServiceError(ServiceErrorCode.NOT_FOUND, NOT_FOUND_MESSAGE);
     }

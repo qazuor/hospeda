@@ -52,6 +52,7 @@ import {
 } from '@repo/schemas';
 import type { Actor, ServiceContext, ServiceOutput } from '../../types';
 import { ServiceError } from '../../types';
+import { liveParentOrNull } from '../../utils/live-parent';
 import { recordListingSubEntityEdit } from '../listing/listing-owner-act';
 import { checkVenueCanEditFaqs } from './venue.permissions';
 
@@ -76,8 +77,14 @@ const DAILY_SPECIALS_READ_PAGE_SIZE = 1000;
  * @returns The venue DB row.
  * @throws {ServiceError} NOT_FOUND when no matching row exists.
  */
-async function requireVenue(model: VenueModel, venueId: string, tx?: ServiceContext['tx']) {
-    const entity = await model.findById(venueId, tx);
+async function requireVenue(
+    model: VenueModel,
+    venueId: string,
+    tx?: ServiceContext['tx'],
+    includeDeleted = false
+) {
+    const row = await model.findById(venueId, tx);
+    const entity = includeDeleted ? row : liveParentOrNull({ entity: row });
     if (!entity) {
         throw new ServiceError(ServiceErrorCode.NOT_FOUND, 'venue listing not found');
     }
@@ -124,7 +131,7 @@ export async function getVenueDailySpecials(
         }
         const { venueId, validOn } = parseResult.data;
 
-        await requireVenue(model, venueId, ctx?.tx);
+        await requireVenue(model, venueId, ctx?.tx, true);
 
         const specialModel = new VenueDailySpecialModel();
 
