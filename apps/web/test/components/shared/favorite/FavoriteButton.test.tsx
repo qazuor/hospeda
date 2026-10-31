@@ -237,6 +237,9 @@ async function renderButton(props: FavoriteButtonProps) {
 beforeEach(() => {
     vi.clearAllMocks();
 
+    // A guest tap persists a pending action (HOS-1925); never let it leak.
+    window.sessionStorage.clear();
+
     // The favorites store caches resolved statuses for the whole page load, so
     // without this a status resolved in one test would satisfy the next test's
     // registration and its bulk check would never be issued.
