@@ -19,6 +19,7 @@
  */
 
 import type { AccommodationSearchInput } from '@repo/schemas';
+import { AccommodationTypeEnum, PriceCurrencyEnum } from '@repo/schemas';
 import type { SQL } from 'drizzle-orm';
 import { and, eq, gte, inArray, isNull, lte, or, sql } from 'drizzle-orm';
 import { accommodations } from '../../schemas/accommodation/accommodation.dbschema.ts';
@@ -381,14 +382,14 @@ export const ACCOMMODATION_SEARCH_FILTER_HANDLING: Readonly<
     sorts: { kind: 'elsewhere', reason: 'ORDER BY (buildAccommodationOrderBy)' },
     featuredFirst: { kind: 'elsewhere', reason: 'ORDER BY pin (buildAccommodationOrderBy)' },
     q: { kind: 'builder', sample: { q: 'casa' } },
-    type: { kind: 'builder', sample: { type: 'HOTEL' } },
-    types: { kind: 'builder', sample: { types: ['HOTEL'] } },
+    type: { kind: 'builder', sample: { type: AccommodationTypeEnum.HOTEL } },
+    types: { kind: 'builder', sample: { types: [AccommodationTypeEnum.HOTEL] } },
     isFeatured: { kind: 'builder', sample: { isFeatured: true } },
     minPrice: { kind: 'builder', sample: { minPrice: 10 } },
     maxPrice: { kind: 'builder', sample: { maxPrice: 10 } },
     currency: {
         kind: 'known-gap',
-        sample: { currency: 'ARS' },
+        sample: { currency: PriceCurrencyEnum.ARS },
         reason: 'accepted by the schema, never read by the model (price is not currency-scoped)'
     },
     createdAfter: {
