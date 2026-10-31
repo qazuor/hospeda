@@ -87,6 +87,21 @@ export function getActiveTarget(): Target {
 }
 
 /**
+ * Thrown when no RUNNING container can be proven to belong to the requested
+ * target: nothing matched, or the only fallback match carries another
+ * target's (or no) Coolify identity. Distinct from the ambiguity error so a
+ * caller that can live without the container (HOS-1962: the cutover wrappers
+ * read the api environment from Coolify when the api is stopped) can fall
+ * back on exactly this case and still fail loud on 2+ matches.
+ */
+export class ContainerNotRunningError extends Error {
+    constructor(message: string) {
+        super(message);
+        this.name = 'ContainerNotRunningError';
+    }
+}
+
+/**
  * One lookup strategy. Returns a list of container names that matched.
  * Empty array means "this strategy didn't find anything; try the next".
  */
@@ -360,7 +375,7 @@ async function assertBelongsToTarget(params: {
     if (isCoolifyManaged(labels)) {
         const found = readResourceLabel(labels);
         if (found === expectedLabel) return;
-        throw new Error(
+        throw new ContainerNotRunningError(
             found === undefined
                 ? `${header}The ${strategy} lookup matched '${name}', a Coolify-managed container with no ${RESOURCE_NAME_LABEL} label.${hint}`
                 : `${header}The ${strategy} lookup matched '${name}', but that container belongs to '${found}', not to target '${target}' — refusing to act on another target's container.${hint}`
@@ -369,7 +384,7 @@ async function assertBelongsToTarget(params: {
 
     if (params.allowUnlabelledFallback) return;
     if (!(await daemonHasCoolifyContainers(docker))) return;
-    throw new Error(
+    throw new ContainerNotRunningError(
         `${header}The ${strategy} fallback matched '${name}', which carries no Coolify labels, on a host that runs Coolify — it cannot be attributed to '${target}'. ` +
             `Set HOPS_ALLOW_UNLABELLED_FALLBACK=1 only if that container really is the '${target}' ${kind}.${hint}`
     );
@@ -468,7 +483,7 @@ export async function resolveContainer(params: {
         if (found) return finish(found, 'name');
     }
 
-    throw new Error(
+    throw new ContainerNotRunningError(
         `No running container resolves to kind '${kind}' for target '${target}'. Strategies tried in order:\n${
             labelValue ? `  - Coolify resourceName label '${labelValue}'\n` : ''
         }${
