@@ -15,7 +15,7 @@
  *    {@link buildPaginatedPath};
  * 3. the `rel=prev|next` neighbours — {@link buildPaginationLinks}.
  *
- * Before this module gastronomy and experiences declared a canonical at
+ * Before this module comer-y-salir and experiences declared a canonical at
  * `/page/N/` while no such route existed, so every page 2+ canonicalized to a
  * 404. A static guard (`listing-pagination.guard.test.ts`) now fails when a
  * listing canonicalizes to a route that is not there or builds the path by hand.

@@ -6,7 +6,7 @@
  * What it fails on:
  * 1. a vertical listing that renders `<Pagination>` (so its links and canonical
  *    point at `.../page/N/`) with no sibling `page/[page].astro` — the exact
- *    shape of the gastronomy/experiences bug, where every page 2+ canonicalized
+ *    shape of the comer-y-salir/experiences bug, where every page 2+ canonicalized
  *    to a 404;
  * 2. a `page/[page].astro` shim that decides by hand (own `Astro.rewrite`,
  *    `Astro.redirect` or `Number(...)`) instead of calling
