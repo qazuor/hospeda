@@ -534,7 +534,11 @@ export function MediaSection({
 
             const remainingSlots = galleryCap - galleryItems.length;
             if (files.length > remainingSlots) {
-                reportError(tPlural('listing.owner.editor.media.capReached', galleryCap));
+                reportError(
+                    tPlural('listing.owner.editor.media.capReached', galleryCap, {
+                        cap: galleryCap
+                    })
+                );
                 if (galleryInputRef.current) {
                     galleryInputRef.current.value = '';
                 }

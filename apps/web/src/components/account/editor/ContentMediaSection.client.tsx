@@ -475,7 +475,11 @@ export function ContentMediaSection({
                 return;
             }
             if (isGalleryFull) {
-                reportError(tPlural('account.myContent.editor.media.capReached', galleryCap));
+                reportError(
+                    tPlural('account.myContent.editor.media.capReached', galleryCap, {
+                        cap: galleryCap
+                    })
+                );
                 if (galleryInputRef.current) {
                     galleryInputRef.current.value = '';
                 }
@@ -767,6 +771,7 @@ export function ContentMediaSection({
                 />
                 <span className={styles.mediaHint}>
                     {tPlural('account.myContent.editor.media.uploadHint', galleryCap, {
+                        cap: galleryCap,
                         maxSize: DEFAULT_ENTITY_MAX_FILE_SIZE_MB
                     })}
                 </span>
