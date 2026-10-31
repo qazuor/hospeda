@@ -29,10 +29,29 @@ const RejectedCreationResultSchema = z.object({
     code: z.literal('REJECTED')
 });
 
+/** A throttled creation (HOS-1976): refused before processing, not a rejection of the payer. */
+const ThrottledCreationResultSchema = z.object({
+    outcome: z.literal('THROTTLED_BY_PROVIDER'),
+    code: z.literal('RATE_LIMITED')
+});
+
 const logger = createLogger('resolve-live-commitment');
 
 /** The result persisted when the provider rejects a creation before returning an authorization. */
 export type RejectedCreationResult = z.infer<typeof RejectedCreationResultSchema>;
+
+/** The result persisted when the provider throttles (429) a creation before processing it. */
+export type ThrottledCreationResult = z.infer<typeof ThrottledCreationResultSchema>;
+
+/**
+ * Builds the stored result for a throttled preapproval creation (HOS-1976). Distinct from
+ * `rejectedCreationResult` so a 429 does not inflate rejection metrics or audits, yet S1
+ * treats both the same way: recreate on the same row with a fresh key. Stored in the JSON
+ * `result` column, so no schema change is needed.
+ */
+export function throttledCreationResult(): ThrottledCreationResult {
+    return { outcome: 'THROTTLED_BY_PROVIDER', code: 'RATE_LIMITED' };
+}
 
 /** Builds the stored result for a rejected preapproval creation. */
 export function rejectedCreationResult(): RejectedCreationResult {
@@ -162,8 +181,10 @@ export async function resolveLiveCommitmentReuse(input: {
     const notApplied = NotAppliedAuthorizationResultSchema.safeParse(key.result);
     if (notApplied.success && input.commitment.providerLink)
         return { kind: 'REPLACE', cause: 'CREATION_NOT_APPLIED' };
-    const rejected = RejectedCreationResultSchema.safeParse(key.result);
-    if (rejected.success) {
+    const rejected =
+        RejectedCreationResultSchema.safeParse(key.result).success ||
+        ThrottledCreationResultSchema.safeParse(key.result).success;
+    if (rejected) {
         if (input.commitment.providerLink) {
             logger.error(
                 { subscriptionId: subscription.id, idempotencyKey: key.key },
