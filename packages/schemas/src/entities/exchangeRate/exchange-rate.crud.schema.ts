@@ -144,7 +144,16 @@ export const ExchangeRateSearchInputSchema = z.object({
         .date({ message: 'zodError.exchangeRate.search.fromDate.invalidDate' })
         .optional(),
     /** Filter rates fetched on or before this date */
-    toDate: z.coerce.date({ message: 'zodError.exchangeRate.search.toDate.invalidDate' }).optional()
+    toDate: z.coerce
+        .date({ message: 'zodError.exchangeRate.search.toDate.invalidDate' })
+        .optional(),
+    /**
+     * Pagination. Declared here so Zod keeps the keys: `BaseCrudRead.search` reads
+     * `page`/`pageSize` from the validated params and republishes them on
+     * `ctx.pagination` (HOS-1917).
+     */
+    page: z.number().int().positive().optional(),
+    pageSize: z.number().int().positive().max(100).optional()
 });
 
 // ============================================================================

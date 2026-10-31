@@ -133,9 +133,13 @@ export class SocialCampaignService extends BaseCrudService<
     protected async _executeSearch(
         params: SocialCampaignAdminSearch,
         _actor: Actor,
-        _ctx: ServiceContext
+        ctx: ServiceContext
     ): Promise<PaginatedListOutput<SelectSocialCampaign>> {
-        const { page = 1, pageSize = 20, sort, active, startsAfter, endsBefore, search } = params;
+        const { sort, active, startsAfter, endsBefore, search } = params;
+        // BaseCrudRead.search moves page/pageSize onto ctx.pagination (SPEC-088);
+        // they are no longer in params (HOS-1917).
+        const page = ctx.pagination?.page ?? 1;
+        const pageSize = ctx.pagination?.pageSize ?? 20;
         const where: Record<string, unknown> = {};
 
         if (active !== undefined) where.active = active;

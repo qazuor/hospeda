@@ -154,16 +154,16 @@ export class ContentModerationTermService extends BaseCrudService<
         return result;
     }
 
-    protected async _executeSearch(params: ContentModerationTermAdminSearch) {
-        const {
-            page = 1,
-            pageSize = 10,
-            search,
-            kind,
-            category,
-            enabled,
-            includeDeleted = false
-        } = params;
+    protected async _executeSearch(
+        params: ContentModerationTermAdminSearch,
+        _actor: Actor,
+        ctx: ServiceContext
+    ) {
+        // BaseCrudRead.search moves page/pageSize onto ctx.pagination (SPEC-088);
+        // they are no longer in params (HOS-1917).
+        const page = ctx.pagination?.page ?? 1;
+        const pageSize = ctx.pagination?.pageSize ?? 10;
+        const { search, kind, category, enabled, includeDeleted = false } = params;
         const db = getDb();
         const conditions = this.buildConditions({
             search,
