@@ -292,6 +292,13 @@ database is a copy of prod: its photo paths and calendar tokens are prod
 resources. The 5b script exits 1 on a list-only run (it maps `dry_run` to 1),
 so read the printed `"status":"dry_run"` there rather than the exit code.
 
+The typed phrase needs a TTY: piped through stdin (`echo phrase | hops ...`)
+clack skips the prompt, so every `hops` prompt now exits 1 with a message when
+stdin or stdout is not a terminal, and nothing is done. For scripted runs pass
+`--confirm-phrase=<phrase>` (steps 3, 3b, 4c, 5b). It must equal the phrase
+exactly, a wrong value aborts without falling back to the prompt, and it stays
+in the shell history like a typed phrase would.
+
 ## Restoring a prod backup onto staging (HOS-1957)
 
 The V6 cutover rehearsal needs a prod backup inside the STAGING Postgres.
