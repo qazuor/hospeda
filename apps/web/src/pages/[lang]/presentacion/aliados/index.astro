@@ -54,7 +54,7 @@ const locale = Astro.locals.locale as SupportedLocale;
 // under the button, derived from the same href, so a PDF export still says where it leads.
 const ctaLabel = 'Sumate como aliado';
 const ctaHref = 'https://hospeda.com.ar/es/sumate/partner';
-const ctaUrlText = ctaHref.replace(/^https?:\/\//, '');
+const ctaUrlText = ctaHref;
 // Brand contact phone, single source of truth (HOS-364) — this page's
 // copy is the owner-approved artifact verbatim; only the phone digits are
 // parameterized so a real number change does not require re-editing prose.
@@ -191,7 +191,7 @@ const canonical = `${getSiteUrl().replace(/\/$/, '')}/${locale}/presentacion/ali
     </div>
     <p class="subhead">
       <strong>La página propia es la diferencia entre un nivel y el otro.</strong> Vive en
-      <strong>hospeda.com.ar/es/partners/tu-nombre</strong> y es tuya para contar quién sos con
+      <strong>https://hospeda.com.ar/es/partners/tu-nombre</strong> y es tuya para contar quién sos con
       espacio de verdad.
     </p>
     <p>
@@ -231,7 +231,7 @@ const canonical = `${getSiteUrl().replace(/\/$/, '')}/${locale}/presentacion/ali
       <strong>por mes o por año</strong>. Los valores vigentes te los pasamos en la charla, junto
       con qué incluye cada uno en tu caso concreto.
     </p>
-    <p class="subhead">Dos formas de abonar, la que le sirva a tu administración:</p>
+    <p class="subhead">Hay diversas formas de abonar, la que le sirva a tu administración:</p>
     <div class="tablewrap">
       <table>
         <thead>
@@ -239,7 +239,7 @@ const canonical = `${getSiteUrl().replace(/\/$/, '')}/${locale}/presentacion/ali
         </thead>
         <tbody>
           <tr>
-            <td>Suscripción por Mercado Pago</td>
+            <td>Suscripción por Mercado Pago (Débito automático)</td>
             <td>Te mandamos un enlace, lo autorizás una vez y <strong>los cobros salen solos</strong> cada período. Sin trámite mes a mes ni año a año. Se da de baja cuando quieras.</td>
           </tr>
           <tr>
@@ -271,7 +271,7 @@ const canonical = `${getSiteUrl().replace(/\/$/, '')}/${locale}/presentacion/ali
           <h3>Nos contactás, por donde te quede cómodo</h3>
           <p>
             <strong>Por el formulario del sitio</strong>, en
-            hospeda.com.ar/es/sumate/partner: te pide quién sos, cómo contactarte y qué tenés en
+            https://hospeda.com.ar/es/sumate/partner: te pide quién sos, cómo contactarte y qué tenés en
             mente.
           </p>
           <p>

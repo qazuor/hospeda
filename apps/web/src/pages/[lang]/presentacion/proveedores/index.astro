@@ -54,7 +54,7 @@ const locale = Astro.locals.locale as SupportedLocale;
 // under the button, derived from the same href, so a PDF export still says where it leads.
 const ctaLabel = 'Sumate como proveedor';
 const ctaHref = 'https://hospeda.com.ar/es/sumate/proveedor';
-const ctaUrlText = ctaHref.replace(/^https?:\/\//, '');
+const ctaUrlText = ctaHref;
 // Brand contact phone, single source of truth (HOS-364) — this page's
 // copy is the owner-approved artifact verbatim; only the phone digits are
 // parameterized so a real number change does not require re-editing prose.
@@ -78,7 +78,7 @@ const canonical = `${getSiteUrl().replace(/\/$/, '')}/${locale}/presentacion/pro
 	<SEOHead
 		slot="head"
 		title="Presentación Proveedores"
-		description="Sumate como proveedor de servicios. Cuando a un dueño que alquila por temporada se le rompe algo del alojamiento y necesita una solución rápida, hoy pregunta en un grupo de WhatsApp."
+		description="Sumate como proveedor de servicios. Un directorio para que los anfitriones encuentren a quien les resuelva un problema del alojamiento rápido, con un beneficio de tu parte y cada trabajo registrado."
 		canonical={canonical}
 		locale={locale}
 		noindex
@@ -99,18 +99,19 @@ const canonical = `${getSiteUrl().replace(/\/$/, '')}/${locale}/presentacion/pro
     <h1>Sumate como proveedor de servicios</h1>
     <div class="rule"></div>
     <p class="masthead__lede">
-      Cuando a un dueño que alquila su casa o departamento por temporada se le rompe algo de su
-      alojamiento y necesita una solución rápida, hoy pregunta en el grupo de WhatsApp que
-      comparte con otros propietarios. En
-      Hospeda a esos dueños les decimos <strong>anfitriones</strong>, y este directorio es una
-      forma más ordenada de resolver lo mismo: pueden usarlo en lugar de ese grupo, o además
-      de ese grupo. Vos ofrecés un beneficio para ellos, te encuentran, y cada trabajo queda
-      registrado con la firma de los dos.
+      Cuando a un dueño de un alojamiento que alquila por temporada se le rompe algo de su
+      alojamiento y necesita una solución rápida para atender a sus huéspedes, hoy pregunta a
+      conocidos o en algún grupo de WhatsApp que comparte con otros propietarios o en redes
+      sociales. En Hospeda a esos dueños les decimos <strong>anfitriones</strong>. Hospeda ofrece
+      este espacio para que proveedores o prestadores de servicios formen parte de un directorio
+      que permita contactar con quien pueda dar solución a sus anfitriones, ofreciendo una forma
+      ordenada de resolver sus inconvenientes e imprevistos. Vos ofrecés un beneficio para ellos,
+      te encuentran, y cada trabajo queda registrado con la firma de los dos.
     </p>
     <div class="factsheet">
       <div class="fact">
         <span class="fact__k">Costo de estar</span>
-        <span class="fact__v fact__v--free">$0</span>
+        <span class="fact__v fact__v--free">Ninguno</span>
       </div>
       <div class="fact">
         <span class="fact__k">Comisión</span>
@@ -202,7 +203,7 @@ const canonical = `${getSiteUrl().replace(/\/$/, '')}/${locale}/presentacion/pro
         </thead>
         <tbody>
           <tr><td class="mono">Porcentaje</td><td>Descuento en porcentaje sobre tu precio.</td><td>15&nbsp;% en mano de obra</td></tr>
-          <tr><td class="mono">Monto fijo</td><td>Una rebaja de un importe fijo.</td><td>$8.000 menos en la visita</td></tr>
+          <tr><td class="mono">Monto fijo</td><td>Una rebaja de un importe fijo.</td><td>Una rebaja fija en la visita</td></tr>
           <tr><td class="mono">2 x 1</td><td>Dos servicios al precio de uno.</td><td>Dos limpiezas, pagás una</td></tr>
           <tr><td class="mono">Atención las 24hs</td><td>Atendés a cualquier hora, todos los días.</td><td>&ldquo;Una pérdida de agua un domingo a las 3 de la mañana&rdquo;</td></tr>
           <tr><td class="mono">Atención prioritaria</td><td>El anfitrión de Hospeda pasa al frente de tu cola.</td><td>&ldquo;Te llama el martes y vas el miércoles, aunque tengas la semana llena&rdquo;</td></tr>
@@ -254,7 +255,7 @@ const canonical = `${getSiteUrl().replace(/\/$/, '')}/${locale}/presentacion/pro
           <h3>Completás el formulario</h3>
           <p>Nombre, email, negocio, rubro, ciudad, qué beneficio ofrecés y un mensaje sobre tu servicio. Teléfono y página web son opcionales.</p>
           <p>El formulario pide <strong>una sola ciudad</strong>, la tuya. Si atendés en más de una — por ejemplo estás en Concepción del Uruguay y también vas hasta San Justo — <strong>aclaralo en el mensaje</strong> y lo dejamos anotado.</p>
-          <p class="step__meta">Todo se hace desde el celular &middot; No hace falta computadora &middot; No se te pide ningún dato de pago</p>
+          <p class="step__meta">Todo se puede hacer desde el celular o la computadora &middot; No se te pide ningún dato de pago</p>
         </div>
       </li>
       <li>
@@ -373,8 +374,8 @@ const canonical = `${getSiteUrl().replace(/\/$/, '')}/${locale}/presentacion/pro
   <footer class="close">
     <h2>Sumate</h2>
     <p>
-      El formulario tarda cinco minutos y se hace desde el celular. Lo peor que puede pasar es
-      que te digamos que no, por email, sin que hayas puesto un peso.
+      El formulario tarda cinco minutos y se hace desde el celular o la computadora. Lo peor que puede pasar es
+      que te digamos que no, por email, sin que hayas pagado nada.
     </p>
     <a class="cta" href={ctaHref}>{ctaLabel}</a>
     <p class="cta-url">{ctaUrlText}</p>

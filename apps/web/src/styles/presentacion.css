@@ -120,7 +120,7 @@ body {
     -webkit-font-smoothing: antialiased;
 }
 .wrap {
-    max-width: 44rem;
+    max-width: 58rem;
     margin-inline: auto;
     padding: 0 1.5rem 5rem;
     /* A long token (a URL, a hyphen-less compound) must wrap instead of pushing
@@ -189,7 +189,7 @@ a:focus-visible {
     font-size: 1.28rem;
     line-height: 1.6;
     color: var(--ink-soft);
-    max-width: 33em;
+    max-width: 42em;
 }
 .rule {
     height: 3px;

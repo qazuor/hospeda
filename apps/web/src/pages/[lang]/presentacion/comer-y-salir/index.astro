@@ -1,90 +1,68 @@
 ---
 /**
  * @file presentacion/comer-y-salir/index.astro
- * @description Commercial presentation for the venue vertical (HOS-978). It STARTED as a
- * verbatim migration of the owner-approved artifact "Presentación Gastronomía"; the stylesheet is still the artifact's own.
+ * @description Commercial presentation for the venue vertical, «Comer y salir» (HOS-978, rewritten for HOS-1850). It
+ * started as the owner-approved artifact "Presentación Gastronomía"; the stylesheet is still the artifact's own. The copy
+ * is owned by this file, not by the artifact.
  *
- * THE COPY HAS DIVERGED FROM THE ARTIFACT, BY OWNER REQUEST (2026-09-05). The artifact is no longer the source of truth for the
- * prose — this file is. The reason is the ladder: the artifact sold one plan that bought "una ficha publicada", with a second
- * venue at "el mismo valor". HOS-975 priced three tiers (`venue-basico` $30.000 / `-pro` $65.000 / `-premium` $80.000,
- * `packages/billing/src/config/plans.config.ts`) with caps 1 / 3 / 5, and `extra-venues-1` is $15.000/month — half a
- * Básico, not the same value, and not a route to three venues. Three sentences were false at once: the single listing, the
- * same-value extra, and "tres escalones según cuánto quieras mostrar" (the primary axis is HOW MANY VENUES). All three are
- * gone, and so are the per-feature "va en el escalón Premium" asides: a feature's tier is stated in the tier table and nowhere
- * else, so there is exactly one place to correct when a tier moves.
+ * THE COPY FOLLOWS THE NEUTRAL-VERTICAL RULE OF HOS-1787 (sub-spec 9, AC:9:1). The vertical is described as «tu local»,
+ * «para comer o para salir», never as a restaurant: dishes, carta and menú del día live inside «La carta, si tenés
+ * cocina», the section that only the `food` rubro shows. A sentence about the vertical that says «restaurante», «platos»
+ * or «menú» is a regression of that rule, however natural it reads. The one deliberate exception is the owner's own list
+ * of business kinds in the masthead lede (restaurante, bar, parrilla, café, carrito, pub, cervecería, boliche).
  *
- * SEVEN CLAIMS ARE AHEAD OF THE CODE. OWNER DECISION (2026-09-05): the page goes first, the issues follow. They are in the
- * present tense, without hedging, ON PURPOSE — do NOT "correct" any back to today's behaviour; shipping the issue is what
- * closes the gap. Each names WHERE it appears, so a later reader can tell a deliberate promise from a mistake:
- *  1. THE 30-DAY TRIAL — masthead factsheet, steps 03 and 04, the "prueba es una sola" bullet in "Para ser justos",
- *     and the closing paragraph. Listing has no trial: `startListingCheckout` passes a literal `trialDays: 0` and
- *     the first charge lands on day 1. A REGRESSION, not a missing feature — HOS-590 gave venue/experience the trial,
- *     HOS-1012 removed it when it rebuilt the local trial for accommodation only. Tracked as HOS-1184.
- *  2. ANNUAL PRICING — the paragraph above the tier table ("pagás diez meses y tenés doce") and the table's "Por año"
- *     row ($300.000 / $650.000 / $800.000). **MOSTLY SHIPPED by HOS-1285.** The six figures are now the catalogue's own
- *     (`listingVerticalTier` takes `annualPriceArs` per tier instead of sealing `null` for all six), the seed writes
- *     the `'year'` `billing_prices` row, and the checkout — renamed `initiateListingSubscription` because the old name
- *     said otherwise — accepts `billingInterval: 'annual'` and resolves that row. What is NOT shipped is the owner-facing
- *     PICKER: the old picker was retired with the old billing flow and no replacement sends the
- *     field yet. So this row is true about the price and still ahead of the code about the gesture.
- *  3. THE PHOTO LADDER 15 / 30 / 50 — the tier table's "Fotos por local" row. Today all three tiers get a flat 30. HOS-1108; the
- *     owner fixed those three numbers in a comment on it on 2026-09-05. Note 50 also implies raising the per-entity ceiling.
- *  4. ALL OF THE CONTACT — the whole "Cómo te van a contactar" section, the "Teléfono, WhatsApp, email, redes" bullet in "Qué
- *     más podés mostrar", the venue-events CTA sentence, step 02's requirement list, and the masthead lede's "te llama
- *     directo". The biggest gap: a venue listing publishes NO channel today. `VenuePublicSchema` omits `contactInfo`
- *     (`packages/schemas/src/entities/venue/venue.access.schema.ts`) and `socialNetworks.whatsapp` was removed
- *     outright — four files plus a guard test (`test/components/venue/venue-contact-block-whatsapp.guard.test.ts`)
- *     say it must not return through that field. HOS-1088 is where the owner decided (2026-09-05) that venue DOES get
- *     contact, the way accommodation has it.
- *  5. AI TRANSLATION TO ENGLISH AND PORTUGUESE — the "en el idioma del que la lee" panel of "La carta, en serio" and the
- *     multi-language line in "Qué más podés mostrar". Venue and experience listings have the FOUR multilang columns but no AI translation
- *     path, so the owner types every locale by hand. HOS-1192. NOTE what the page claims about the
- *     Premium CARTA specifically (owner decision, 2026-09-05): the AI PROPOSES each dish's translation and the owner ACCEPTS OR
- *     CORRECTS it before it goes live — a review step the rest of the listing does not have. That review is the product stance
- *     and it is deliberate: a dish name is not prose to trust a machine with unwatched. So the carta needs BOTH the translation
- *     path and a per-item approval UI; shipping only the former leaves this page's promise half-kept.
- *  6. STATISTICS BY DAY — "Los números que ves". VERIFIED against the code, not inherited: `ListingViewsWidget.client.tsx`
- *     renders uniques and totals over a rolling 7d/30d window and plots no series; its own JSDoc says so ("What's explicitly
- *     NOT here (owner decision, HOS-734): the daily-series chart"). The route exists (`getViewsDailySeries`) with no caller in
- *     `apps/web`. So the per-day figure is a promise — same shared widget as experiences. HOS-1193.
- *  7. MOVING DOWN A PLAN — the line under the tier table. The plan-change route answers 422 on a
- *     downgrade today (HOS-1122); the change is about to land.
+ * WHAT IS PROMISED, AND WHERE. OWNER DECISION (2026-10-31, option 3 of three): the page states in the present tense
+ * (a) what is built on staging and (b) what HOS-1787 ships in its MVP stage; what has no MVP leaf goes to «Lo que se
+ * viene». The owner also kept two earlier promises in the present tense (decided 2026-09-05). Do NOT "correct" any of
+ * these back to today's behaviour — shipping the issue closes the gap. Ahead of the code as of 2026-10-31:
+ *  1. RUBROS, «DE NOCHE», PUB/BOLICHE, THE TWO COLLECTIONS AND REVIEW DIMENSIONS — masthead, «Para comer, para salir o
+ *     para las dos», «De noche», the tier table's rubro and «De noche» rows, «Qué más podés mostrar» (reviews) and the
+ *     URL paragraph. `VenueTypeEnum` has no PUB/BOLICHE and nothing reads `business_lines` yet: HOS-1802/1803/1804
+ *     (catalogues, resolver, nightInfo), HOS-1806 (editor), HOS-1807 (public web). Field list and the Ley 24.788 text
+ *     are `sub-specs/4-tipos-y-noche.md`; the approved labels are DEC-FAC-068. The owner states that everything lives in
+ *     ONE section, «Comer y salir» (2026-10-31): the copy no longer names one section per rubro.
+ *  2. THE CARTA LINK IS PAID — the tier table's carta row. Today `menuUrl` is free; DEC-FAC-062 puts it inside
+ *     `manage_venue_menu` (HOS-1803).
+ *  3. ALL OF THE CONTACT — «Cómo te van a contactar», the masthead's «te llama directo». `VenuePublicSchema` still omits
+ *     `contactInfo` (only the map and social links are public). HOS-1088.
+ *  4. AI TRANSLATION, WITH THE OWNER ACCEPTING OR CORRECTING EACH DISH — «En el idioma del que la lee» and the
+ *     «Para ser justos» bullet. `/ai/protected/translate` does not accept venue. HOS-1192.
+ * Built and therefore NOT on this list: the 30-day trial (venue trial plan `trialDays: 30`, activation
+ * `listing_published`) and the annual price (10 × monthly).
+ * Views by day (HOS-1193) and answering reviews are in «Lo que se viene». Tier change from the account, the photo ladder
+ * 15/30/50 (HOS-1108; today a flat 30 per venue, `ENTITY_GALLERY_CAPS`) and featuring were taken out of that list and out
+ * of «Para ser justos» by the owner (2026-10-31); the old add-on section was removed too. Featuring
+ * is the owner's own (the «Quién manda sobre qué» row).
  *
  * THREE STRINGS HERE ARE FROZEN BY A TEST. `test/pages/listing-amenities-render.test.ts` (HOS-1071/1072) asserts this page
  * contains "Lo que ofrece el local" and "delivery o take away", and that the FIRST row of "Quién manda sobre qué" carries this
  * markup VERBATIM, on one line:
  *     lo que ofrece el local, contacto y redes</td><td><strong>Vos, cuando quieras</strong>
  * The suite also asserts this page never names `AmenitiesGrid`. Reword any of the three and it fails; that is the point.
+ * The rest of that table is verified permissions: name, type and city ARE owner-editable (`VenueOwnerUpdateInputSchema`);
+ * restoring the old team-owned row reintroduces a bug fixed twice already (see the experiences page).
  *
- * THE REST OF THAT TABLE IS VERIFIED PERMISSIONS, NOT PROSE — DO NOT "RESTORE" THE OLD ROW. Until 2026-09-05 the table ended
- * with one row handing "Nombre del local, tipo y ciudad" to the team ("Escribinos y lo cambiamos"). It was wrong in all three
- * fields: `VenueOwnerUpdateInputSchema` includes `name`, `type` and `destinationId` — carrying the comment "Previously
- * owner-editable (SPEC-253 §3)" — and the venue/experience editor renders `name` editable with an opt-in slug-refresh checkbox beside
- * it (`BasicInfoSection.client.tsx`; the form flag is `refreshSlugFromName`, which reaches the schema and
- * `base-listing.service.ts`, gated by `shouldOfferSlugRefresh`). So the owner changes all three alone. It is now three rows: those fields as the owner's,
- * the listing URL as the owner's (it follows the new name, with the warning that this moves the page for Google and for links
- * already shared), and featuring as the team's. The same false row was corrected on the experiences page, which these three
- * mirror — "fixing" this back to one team-owned row reintroduces a bug that has now been fixed twice.
+ * THE PAGE PRINTS NO AMOUNT (owner decision, 2026-10-31). The tier table has no price rows and the prose points to
+ * `/{lang}/planes/comer-y-salir/precios/`, which reads the catalogue at request time. That link is what survives a
+ * reprice (HOS-1134 had removed a hardcoded figure that was half the real price for two releases). The tiers are
+ * called «planes» in the copy (owner decision 2026-10-31, same word on the three vertical pages), never «escalones» or «niveles».
  *
- * WHY THE PRICES ARE PRINTED *AND* LINKED. HOS-1134 removed a hardcoded "quince mil pesos" that had been half the real
- * `venue-basico` price for two releases. The lesson is not "never print a number" — a presentation with no price is not a
- * presentation — it is that the number must travel with the live grid beside it. So the tier table carries the figures AND
- * every price mention links to `/{lang}/planes/comer-y-salir/precios/`, which reads the catalogue at request time from the public
- * plans endpoint for the venue domain. That link is what survives a reprice. It is NOT the pre-rename venue publish URL (301s to the
- * sales page since HOS-690) nor the bare `/planes/comer-y-salir`, which is the sales level, not the grid.
- *
- * WHY IT IS NOT THE PUBLIC LANDING (/planes/comer-y-salir/), NOT TRANSLATED, AND STANDALONE — the four constraints every
- * `presentacion/*` page shares; see the sibling pages for the long form. That landing sells and ranks; this one is
- * hand-delivered to one prospect and carries negotiable pricing and operational detail, so `noindex, nofollow` is a
- * requirement, not a precaution, and the page is excluded from the sitemap (`lib/seo-config.ts` → SITEMAP_EXCLUDED_PATHS, which
- * also drives the robots.txt `Disallow`). The audience is local (HOS-978), so the same Spanish copy serves under `/en/` and
- * `/pt/` BY DESIGN — it lives under `[lang]/` only so the dictable `hospeda.com.ar/presentacion/comer-y-salir` 301s to `/es/…`
- * via the middleware's locale step. `StandaloneLayout` because the page owns 100% of its chrome. And the stylesheet stays a
- * plain `<style>` block: `is:inline` would be dropped in prod, where the CSP omits `'unsafe-inline'` from `style-src`
- * (`lib/middleware-helpers.ts`) — perfect locally, unstyled live. Do not add it.
+ * WHY IT IS NOT THE PUBLIC LANDING, NOT TRANSLATED, AND STANDALONE — the four constraints every `presentacion/*` page
+ * shares; see the sibling pages for the long form. It is hand-delivered to one prospect, so `noindex, nofollow` is a
+ * requirement and the page is excluded from the sitemap (`lib/seo-config.ts` → SITEMAP_EXCLUDED_PATHS). The audience is
+ * local (HOS-978), so the same Spanish copy serves under `/en/` and `/pt/` BY DESIGN. `StandaloneLayout` because the page
+ * owns its chrome. The stylesheet stays a plain `<style>`/import: `is:inline` is dropped in prod, where the CSP omits
+ * `'unsafe-inline'` from `style-src` (`lib/middleware-helpers.ts`).
  *
  * @route /{lang}/presentacion/comer-y-salir/
  * @rendering SSR + Cloudflare cache (matches funcionalidades/nosotros)
+ *
+ * ADD-ONS (owner decision, 2026-10-31): complementos are presented as purchasable today because the purchase flow ships in
+ * the coming days. They live ONLY in their own «Complementos» section, right after the tiers table; no other part of the
+ * page mentions them. The section prints no amount and lists the add-ons of this vertical from
+ * `scripts/production-catalog/commercial-catalog.ts` (monthly limit packs while the subscription lives; one-off 7/30-day boosts per listing).
+ *
+ * COMING ADD-ONS (owner-approved list, 2026-10-31): the sub-block «Complementos que vienen» at the end of that section lists future add-ons, presented as coming, with no dates or prices.
  */
 
 import StandaloneLayout from '@/layouts/StandaloneLayout.astro';
@@ -102,11 +80,11 @@ import { applyCacheHeaders } from '@/lib/cache/response-cache';
 
 const locale = Astro.locals.locale as SupportedLocale;
 // Closing button: the label is authored in Spanish like the rest of this page (it is not
-// translated, see "WHY IT IS NOT TRANSLATED" above). The destination is shown as visible text
+// translated, see "NOT TRANSLATED" above). The destination is shown as visible text
 // under the button, derived from the same href, so a PDF export still says where it leads.
 const ctaLabel = 'Ver planes y precios';
 const ctaHref = 'https://hospeda.com.ar/es/planes/comer-y-salir/precios/';
-const ctaUrlText = ctaHref.replace(/^https?:\/\//, '');
+const ctaUrlText = ctaHref;
 // Brand contact phone, single source of truth (HOS-364) — only the phone
 // digits are parameterized so a real number change does not require
 // re-editing prose.
@@ -130,8 +108,8 @@ const preciosUrl = buildUrl({ locale, path: 'planes/comer-y-salir/precios' });
 <StandaloneLayout locale={locale}>
 	<SEOHead
 		slot="head"
-		title="Presentación Gastronomía"
-		description="Tu restaurante donde se planea el viaje. Qué es Hospeda para tu restaurante, bar, parrilla o café: cómo publicás, tu carta plato por plato, y tres escalones de 1, 3 o 5 locales. Sin comisión y con 30 días de prueba."
+		title="Presentación Comer y salir"
+		description="Tu local donde se planea el viaje, para comer o para salir. Qué es Hospeda para tu bar, boliche, parrilla, café o cervecería: cómo publicás, tus rubros y tres planes de 1, 3 o 5 locales. Sin comisión y con 30 días de prueba."
 		canonical={canonical}
 		locale={locale}
 		noindex
@@ -148,14 +126,10 @@ const preciosUrl = buildUrl({ locale, path: 'planes/comer-y-salir/precios' });
 <div class="wrap">
 
   <header class="masthead">
-    <p class="eyebrow">Hospeda &middot; Gastronomía</p>
-    <h1>Tu restaurante donde se planea el viaje</h1>
+    <p class="eyebrow">Hospeda &middot; Comer y salir</p>
+    <h1>Tu local, donde se planea el viaje</h1>
     <div class="rule"></div>
-    <p class="masthead__lede">
-      El turista que viene al Litoral primero busca dónde dormir, y en la misma vuelta decide dónde va a comer.
-      Hospeda es el portal donde hace las dos cosas. Tu restaurante, bar, parrilla o café tiene su propia página, la
-      cargás vos, y el que quiere una mesa <strong>te llama directo</strong>.
-    </p>
+    <p class="masthead__lede">El turista, cuando decide un destino, primero busca dónde dormir y, sin dudas, qué hacer; el dónde y qué comer también es parte de la elección. Hospeda es el portal donde el turista encuentra todo para planificar sus vacaciones, y allí es donde debe estar tu servicio local (restaurante, bar, parrilla, café, carrito, pub, cervecería, boliche, entre otros), a disposición del viajero y también de las personas de la ciudad y la región, con toda la información para decidir qué hacer, qué comer y adónde salir.</p>
     <div class="factsheet">
       <div class="fact">
         <span class="fact__k">Comisión</span>
@@ -175,18 +149,12 @@ const preciosUrl = buildUrl({ locale, path: 'planes/comer-y-salir/precios' });
   <section>
     <div class="sec-head">
       <p class="eyebrow">Lo primero, sin vueltas</p>
-      <h2>Cómo ganamos plata</h2>
+      <h2>Cuál es el costo</h2>
     </div>
     <div class="notice">
       <h3>No nos quedamos con un peso de lo que facturás.</h3>
-      <p>
-        <strong>No cobramos comisión.</strong> Ni por cubierto, ni por mesa, ni por consulta, ni por contacto. Lo que
-        entra por la caja es tuyo, entero, y los precios de tu carta los ponés vos como los ponés hoy.
-      </p>
-      <p>
-        Lo único que se paga es <strong>una cuota fija por mes</strong> por tener tu local publicado. Sabés todos los meses cuánto vas a
-        pagar: es lo mismo si te llaman dos personas o doscientas, y lo mismo si llenás el salón un sábado o no.
-      </p>
+      <p><strong>No cobramos comisión.</strong> Ni por cubierto, ni por entrada, ni por consulta, ni por contacto. Lo que ingresa a tu local por la caja o por la puerta es tuyo, sin comisiones, y tus precios los ponés vos.</p>
+      <p>Lo único que se paga es <strong>una cuota fija por mes</strong> por tener tu local publicado. Sabés todos los meses cuánto vas a pagar: es lo mismo si te llaman dos personas o doscientas, y lo mismo si el sábado se llena o no.</p>
     </div>
   </section>
 
@@ -196,15 +164,9 @@ const preciosUrl = buildUrl({ locale, path: 'planes/comer-y-salir/precios' });
       <h2>Qué es y qué no es</h2>
     </div>
     <div class="notice">
-      <h3>No es una app de pedidos ni de reservas de mesa.</h3>
-      <p>
-        No tomamos pedidos, no cobramos delivery y <strong>no nos llevamos un porcentaje de lo que facturás</strong>. Nadie reserva una
-        mesa desde acá, y nadie te manda un pedido que tengas que aceptar en dos minutos con el salón lleno.
-      </p>
-      <p>
-        Es <strong>tu página</strong> dentro del portal donde el turista está armando el viaje: con tus fotos, tu carta, tus horarios y tu
-        teléfono. Lo que hace es que te encuentren y te llamen. Se paga una cuota fija por mes, y punto.
-      </p>
+      <h3>No es una app de pedidos, ni de reservas, ni de venta de entradas.</h3>
+      <p>No tomamos pedidos, no cobramos delivery, no vendemos entradas y <strong>no nos llevamos un porcentaje de lo que facturás</strong>. Nadie reserva desde acá, y nadie te manda un pedido que tengas que aceptar en dos minutos con el local lleno.</p>
+      <p>Es <strong>tu página</strong> dentro del portal donde el turista está armando el viaje: con tus fotos, tus horarios, lo que ofrecés y tu teléfono. Lo que hace es que te encuentren y te llamen. Se paga una cuota fija por mes, y nada más.</p>
     </div>
   </section>
 
@@ -218,38 +180,31 @@ const preciosUrl = buildUrl({ locale, path: 'planes/comer-y-salir/precios' });
         <span class="num">01</span>
         <div class="step__body">
           <h3>Creás tu cuenta y cargás el local</h3>
-          <p>
-            No hay que esperar que nadie te apruebe ni que te llamen: entrás, creás la cuenta y cargás tu local vos mismo, en el momento.
-            Nombre, de qué se trata, qué tipo de local es (restaurante, bar, parrilla, café&hellip;) y en qué ciudad está.
-          </p>
-          <p class="step__meta">Gratis &middot; No se pide tarjeta &middot; Se hace desde el celular</p>
+          <p>No hay que esperar que nadie te apruebe ni que te llamen: entrás, creás la cuenta y cargás tu local vos mismo, en el momento. Nombre, de qué se trata, qué tipo de local es (bar, pub, boliche, parrilla, café, cervecería&hellip;) y en qué ciudad está. Según el tipo te proponemos los rubros &mdash; para comer, para salir o los dos &mdash; y los ajustás si hace falta.</p>
+          <p class="step__meta">Gratis &middot; No se pide tarjeta &middot; Se puede hacer desde el celular o la computadora</p>
         </div>
       </li>
       <li>
         <span class="num">02</span>
         <div class="step__body">
           <h3>La completás con tiempo</h3>
-          <p>Queda guardada como borrador, sin que nadie la vea, hasta que vos digas. Vas cargando las fotos, la descripción, los horarios de cada día, el rango de precios, tu carta, el contacto y las redes.</p>
-          <p class="step__meta">Para publicar hacen falta: nombre, resumen, descripción, ciudad, tipo de local, foto principal, un contacto, horarios y rango de precios</p>
+          <p>Queda guardada como borrador, sin que nadie la vea, hasta que vos digas. Vas cargando las fotos, la descripción, los horarios de cada día, el rango de precios, el contacto, las redes y lo que corresponda a tu rubro: la carta si tenés cocina, la entrada y la edad si abrís de noche.</p>
+          <p class="step__meta">Para publicar hacen falta: nombre, resumen, descripción, ciudad, tipo de local, al menos un rubro, foto principal, un contacto, horarios y rango de precios</p>
         </div>
       </li>
       <li>
         <span class="num">03</span>
         <div class="step__body">
           <h3>Le das publicar y arrancan los 30 días</h3>
-          <p>Tu página sale al aire <strong>en ese momento</strong> y ahí arranca la prueba: <strong>30 días sin costo</strong>. No elegís escalón todavía y no cargás nada.</p>
+          <p>Tu página sale al aire <strong>en ese momento</strong> y ahí arranca la prueba: <strong>30 días sin costo</strong>. No elegís plan todavía y no cargás nada.</p>
           <p class="step__meta">Una ficha incompleta no se publica: el sistema te muestra qué falta</p>
         </div>
       </li>
       <li>
         <span class="num">04</span>
         <div class="step__body">
-          <h3>Recién al final elegís escalón y cargás la tarjeta</h3>
-          <p>
-            Te avisamos por mail antes de que se cumpla el mes. Si querés seguir, elegís tu escalón y cargás la
-            tarjeta; recién ahí se cobra. Si no hacés nada, tu página sale del sitio ese día &mdash; <strong>no se
-            borra nada</strong>, y vuelve cuando elijas uno. Podés adelantarte y elegir antes, si preferís.
-          </p>
+          <h3>Recién al final elegís plan y cargás la tarjeta</h3>
+          <p>Te avisamos por mail antes de que se cumpla el mes de prueba gratis. Si querés seguir, elegís tu plan y cargás la tarjeta; recién ahí se cobra. Si no hacés nada, tu página sale del sitio ese día &mdash; <strong>no se borra nada</strong>, y vuelve cuando elijas uno. Podés adelantarte y elegir antes, si preferís.</p>
           <p class="step__meta">Se paga con Mercado Pago &middot; La prueba es una sola, por única vez</p>
         </div>
       </li>
@@ -257,12 +212,8 @@ const preciosUrl = buildUrl({ locale, path: 'planes/comer-y-salir/precios' });
         <span class="num">05</span>
         <div class="step__body">
           <h3>Ya publicado, el panel es tuyo</h3>
-          <p>
-            Cambiás la carta el día que cambiás los precios, subís la foto del plato nuevo,
-            corregís un horario de temporada, cargás las preguntas frecuentes y mirás tus números.
-            Cambiás de escalón, sumás complementos, pausás o cancelás vos mismo, sin llamar a nadie.
-          </p>
-          <p class="step__meta">Publicar el segundo local no vuelve a cobrarte ni te manda otra vez a Mercado Pago: se engancha a la suscripción que ya tenés</p>
+          <p>Cambiás los precios el día que cambian, subís la foto nueva, corregís un horario de temporada, cargás la noche de música en vivo, las preguntas frecuentes y mirás tus números. Cancelás vos mismo, sin llamar a nadie.</p>
+          <p class="step__meta">Si dentro de esta sección tenés un rubro y sumás otro (por ejemplo, tenés un resto que a la noche tiene shows en vivo, por lo que además de comer tenés el salir), publicar el segundo rubro no vuelve a cobrarte ni te manda otra vez a Mercado Pago: se engancha a la suscripción que ya tenés</p>
         </div>
       </li>
     </ol>
@@ -270,15 +221,23 @@ const preciosUrl = buildUrl({ locale, path: 'planes/comer-y-salir/precios' });
 
   <section>
     <div class="sec-head">
-      <p class="eyebrow">Los escalones</p>
-      <h2>Tres escalones, según cuántos locales tengas</h2>
+      <p class="eyebrow">Tus rubros</p>
+      <h2>Para comer, para salir o para las dos</h2>
     </div>
-    <p>
-      El eje principal es ese: <strong>cuántos locales publicás</strong>. Uno, tres o cinco. Lo demás &mdash; la carta cargada plato por
-      plato, el menú del día, las traducciones &mdash; viene después, y está en la tabla. La cuota es fija en los tres: no es un cargo por
-      cubierto ni por consulta. Pagás por mes, o por año: <strong>si pagás el año entero, pagás diez meses y tenés doce</strong>. Los
-      valores del día están siempre publicados en <a href={preciosUrl}>el sitio</a>.
-    </p>
+    <p>Cada local dice qué es: <strong>Gastronomía</strong>, <strong>Noche</strong>, o las dos. Una parrilla es Gastronomía, un boliche es Noche, y un resto-bar que cocina hasta las once y después sube la música es las dos cosas. Según lo que elijas, tu ficha muestra lo que te corresponde: la carta y el menú del día del lado de la cocina, la entrada, la edad y el dress code del lado de la noche.</p>
+    <ul class="plain">
+      <li><span class="tick">&check;</span><span><strong>Los rubros son gratis.</strong> No cambian el precio ni el plan: elegir los dos cuesta lo mismo que elegir uno.</span></li>
+      <li><span class="tick">&check;</span><span><strong>Te encuentran en un solo lugar.</strong> Todo está en una única sección, «Comer y salir», y tu local aparece ahí con los rubros que elegiste. Un resto-bar muestra los dos; un boliche, el de noche.</span></li>
+      <li><span class="tick">&check;</span><span><strong>Cambiar de rubro no borra nada.</strong> Si sacás uno, lo que cargaste para él se guarda oculto y vuelve tal cual si lo volvés a poner. Antes de sacarlo te decimos qué deja de verse.</span></li>
+    </ul>
+  </section>
+
+  <section>
+    <div class="sec-head">
+      <p class="eyebrow">Los planes</p>
+      <h2>Tres planes, según cuántos locales tengas</h2>
+    </div>
+    <p>El eje principal es ese: <strong>cuántos locales publicás</strong>. Uno, tres o cinco. Lo demás &mdash; la carta cargada en serio, el menú del día, la agenda, las traducciones &mdash; viene después, y está en la tabla. La cuota es fija en los tres: no es un cargo por cubierto ni por consulta. Pagás por mes, o por año: <strong>si pagás el año entero, pagás diez meses y tenés doce</strong>. Los valores del día están siempre publicados en <a href={preciosUrl}>el sitio</a>.</p>
     <div class="tablewrap">
       <table>
         <thead>
@@ -290,14 +249,14 @@ const preciosUrl = buildUrl({ locale, path: 'planes/comer-y-salir/precios' });
           </tr>
         </thead>
         <tbody>
-          <tr><td>Por mes</td><td class="mono">$30.000</td><td class="mono">$65.000</td><td class="mono">$80.000</td></tr>
-          <tr><td>Por año <span class="mono">(pagás 10, tenés 12)</span></td><td class="mono">$300.000</td><td class="mono">$650.000</td><td class="mono">$800.000</td></tr>
           <tr><td>Locales publicados</td><td class="mono">1</td><td class="mono">3</td><td class="mono">5</td></tr>
-          <tr><td>Fotos por local</td><td class="mono">15</td><td class="mono">30</td><td class="mono">50</td></tr>
-          <tr><td>La carta cargada plato por plato, o en foto, o en PDF</td><td>—</td><td>sí</td><td>sí</td></tr>
-          <tr><td>El menú del día, que se vence solo</td><td>—</td><td>sí</td><td>sí</td></tr>
+          <tr><td>Fotos por local</td><td class="mono">30</td><td class="mono">30</td><td class="mono">30</td></tr>
+          <tr><td>Rubros: Gastronomía, Noche o los dos</td><td>sí</td><td>sí</td><td>sí</td></tr>
+          <tr><td>La sección «De noche»: entrada, edad y dress code</td><td>sí</td><td>sí</td><td>sí</td></tr>
           <tr><td>La agenda de eventos del local</td><td>—</td><td>sí</td><td>sí</td></tr>
-          <tr><td>Una foto por cada plato</td><td>—</td><td>—</td><td>sí</td></tr>
+          <tr><td>La carta: cargada en serio, en foto, en PDF o con el enlace a la tuya</td><td>—</td><td>sí</td><td>sí</td></tr>
+          <tr><td>El menú del día, que se vence solo</td><td>—</td><td>sí</td><td>sí</td></tr>
+          <tr><td>Una foto por cada ítem de la carta</td><td>—</td><td>—</td><td>sí</td></tr>
           <tr><td>La carta en inglés y en portugués</td><td>—</td><td>—</td><td>sí</td></tr>
           <tr><td>Tu ficha en PDF con QR, para imprimir</td><td>—</td><td>—</td><td>sí</td></tr>
           <tr><td>El QR de la mesa, con el panel de escaneos</td><td>—</td><td>—</td><td>sí</td></tr>
@@ -305,40 +264,70 @@ const preciosUrl = buildUrl({ locale, path: 'planes/comer-y-salir/precios' });
         </tbody>
       </table>
     </div>
-    <p class="subhead">
-      <strong>En los tres escalones</strong> entran: editar toda tu ficha cuando quieras, publicarla vos mismo y las estadísticas de
-      visitas. Se cambia de escalón desde tu cuenta, para arriba y también para abajo, sin llamar a nadie.
-    </p>
+    <p class="subhead"><strong>Los 3 planes incluyen:</strong> editar toda tu ficha cuando quieras, publicarla vos mismo, elegir tus rubros, la sección de noche y las estadísticas de visitas. Las filas de la carta valen para los locales con cocina.</p>
     <div class="notice">
-      <h3>Además, sos turista VIP sin pagar un peso más.</h3>
-      <p>
-        Hospeda tiene una cuenta paga para viajeros que sale <strong>quince mil pesos por mes</strong>: favoritos y
-        alertas de precio sin límite, comparador, historial de búsquedas, recomendaciones, ofertas exclusivas y
-        &mdash;lo más útil&mdash; <strong>ver el WhatsApp de los anfitriones</strong>.
-      </p>
-      <p>
-        <strong>Con cualquiera de los tres escalones eso viene incluido.</strong> No es un descuento ni una promoción:
-        el plan trae adentro el paquete completo de turista VIP. Cuando salís vos a recorrer la zona, o a comer a otro
-        lado, usás el sitio con todo desbloqueado.
-      </p>
+      <h3>Además, sos turista VIP sin pagar nada más.</h3>
+      <p>Hospeda tiene una <strong>cuenta paga para viajeros</strong>: favoritos y alertas de precio sin límite, comparador, historial de búsquedas, recomendaciones, ofertas exclusivas y &mdash;lo más útil&mdash; <strong>ver el WhatsApp de los anfitriones</strong>.</p>
+      <p><strong>Con cualquiera de los tres planes eso viene incluido.</strong> No es un descuento ni una promoción: el plan trae adentro el paquete completo de turista VIP. Cuando salís vos a recorrer la zona, o a comer y a salir a otro lado, usás el sitio con todo desbloqueado.</p>
     </div>
   </section>
 
   <section>
     <div class="sec-head">
-      <p class="eyebrow">Lo que un alojamiento no puede tener</p>
+      <p class="eyebrow">Para crecer sin cambiar de plan</p>
+      <h2>Complementos</h2>
+    </div>
+    <p>Un complemento es algo que sumás a tu plan <strong>sin cambiar de plan</strong>. Existen para que puedas crecer o ganar visibilidad en un momento puntual, una temporada, un fin de semana largo o un local más, sin pasar a un plan más alto. Valen para cualquiera de los tres planes.</p>
+    <p>Hay de dos tipos. Los que se cobran <strong>por mes</strong> duran mientras dure tu suscripción y los sacás cuando quieras. Los de <strong>una sola vez</strong> valen por un período fijo y se aplican a una sola ficha. Estos son los que hay para vos:</p>
+    <div class="tablewrap">
+      <table>
+        <thead>
+          <tr><th scope="col">Complemento</th><th scope="col">Qué te da</th><th scope="col">Cómo se cobra</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>Destacar tu local por 7 o 30 días</td><td>Tu local aparece destacado en los resultados durante 7 o 30 días.</td><td>Por única vez</td></tr>
+          <tr><td>1 local más</td><td>Un local más por encima del tope de tu plan.</td><td>Por mes</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p class="subhead"><strong>Cómo se agregan:</strong> desde tu panel, en <strong>Mi cuenta &rsaquo; Complementos</strong>, desde el celular o la computadora, sin llamar a nadie. Ves qué hay disponible, elegís el que necesitás y listo. Los que se cobran por mes los sacás desde el mismo lugar cuando ya no los necesitás.</p>
+    <h3>Complementos que vienen</h3>
+    <p>Todavía no se pueden pedir: no tienen fecha ni precio. Cuando estén, se agregan igual que los de arriba, desde el celular o la computadora.</p>
+    <ul class="plain">
+      <li><span class="tick">&rarr;</span><span><strong>Destacado en la página del destino.</strong> Tu local arriba de la página de tu ciudad, por 7 o 30 días. <em>Por única vez.</em></span></li>
+      <li><span class="tick">&rarr;</span><span><strong>Aparición en el newsletter o en las redes de Hospeda.</strong> Tu local en un envío nuestro o en una publicación de nuestras redes.</span></li>
+      <li><span class="tick">&rarr;</span><span><strong>Sesión de fotos profesional.</strong> Un fotógrafo te visita y las fotos quedan cargadas en tu ficha. <em>Por única vez.</em></span></li>
+      <li><span class="tick">&rarr;</span><span><strong>Kit de QR impresos.</strong> Stickers o afiches con el QR de tu ficha. <em>Por única vez.</em></span></li>
+      <li><span class="tick">&rarr;</span><span><strong>Más consultas al chat de IA.</strong> Más respuestas por mes cuando se agota la cuota de tu plan. <em>Por mes.</em></span></li>
+      <li><span class="tick">&rarr;</span><span><strong>Página propia.</strong> Una página completa tuya, independiente del portal.</span></li>
+      <li><span class="tick">&rarr;</span><span><strong>Estadísticas avanzadas.</strong> Más detalle de quién mira tu ficha y de dónde llega.</span></li>
+      <li><span class="tick">&rarr;</span><span><strong>Bot de WhatsApp con IA.</strong> Contesta las consultas que te llegan por WhatsApp.</span></li>
+      <li><span class="tick">&rarr;</span><span><strong>Material gráfico con IA.</strong> Piezas generadas con inteligencia artificial, listas para imprimir.</span></li>
+      <li><span class="tick">&rarr;</span><span><strong>Destacar un evento.</strong> Tu show o tu fecha arriba de la agenda.</span></li>
+      <li><span class="tick">&rarr;</span><span><strong>Más fotos.</strong> Más fotos por local que las de tu plan.</span></li>
+      <li><span class="tick">&rarr;</span><span><strong>Tarjeta turista.</strong> Aparecé entre los beneficios que recibe el turista.</span></li>
+      <li><span class="tick">&rarr;</span><span><strong>La agenda de eventos del local.</strong> Publicá tus fechas y shows en la agenda. <em>Hoy, desde Profesional.</em></span></li>
+      <li><span class="tick">&rarr;</span><span><strong>La carta.</strong> Cargada en serio, en foto, en PDF o con el enlace a la tuya, para los locales con cocina. <em>Hoy, desde Profesional.</em></span></li>
+      <li><span class="tick">&rarr;</span><span><strong>El especial del día.</strong> Se vence solo cuando termina el día. <em>Hoy, desde Profesional.</em></span></li>
+      <li><span class="tick">&rarr;</span><span><strong>Una foto por cada ítem de la carta.</strong> Cada ítem con su foto. <em>Hoy, desde Premium.</em></span></li>
+      <li><span class="tick">&rarr;</span><span><strong>La carta en inglés y en portugués.</strong> Para el turista que no lee español. <em>Hoy, desde Premium.</em></span></li>
+      <li><span class="tick">&rarr;</span><span><strong>Tu ficha en PDF con QR.</strong> Para imprimir y dejar en el local. <em>Hoy, desde Premium.</em></span></li>
+      <li><span class="tick">&rarr;</span><span><strong>El QR de la mesa, con el panel de escaneos.</strong> Cuántas veces se escanea cada QR. <em>Hoy, desde Premium.</em></span></li>
+      <li><span class="tick">&rarr;</span><span><strong>Chat con IA en tu ficha.</strong> Responde las dudas del que mira tu ficha. <em>Hoy, desde Premium.</em></span></li>
+    </ul>
+  </section>
+
+  <section>
+    <div class="sec-head">
+      <p class="eyebrow">Si tu local tiene cocina</p>
       <h2>La carta, en serio</h2>
     </div>
-    <p>
-      Casi todos los locales de la zona resuelven la carta con una foto del pizarrón sacada de costado, o un PDF de dos megas que en el
-      celular no se lee. El que la está mirando quiere saber dos cosas antes de levantarse de la reposera: <strong>qué hay y cuánto
-      sale</strong>. Acá la carta es un campo de verdad de tu ficha, no un archivo colgado.
-    </p>
+    <p>Casi todos los locales de la zona resuelven la carta con una foto del pizarrón sacada de costado, o un PDF de dos megas que en el celular no se lee. El que la está mirando quiere saber dos cosas antes de levantarse de la reposera: <strong>qué hay y cuánto sale</strong>. Acá la carta es un campo de verdad de tu ficha, no un archivo colgado.</p>
     <div class="split">
       <div class="panel">
         <h3>Se lee sin abrir nada</h3>
         <ul class="plain">
-          <li><span class="tick">&check;</span><span><strong>Secciones y platos</strong>: entradas, principales, postres, la carta de vinos. Cada plato con su nombre, su descripción y su precio &mdash; o &laquo;a consultar&raquo;, que también es un precio honesto.</span></li>
+          <li><span class="tick">&check;</span><span><strong>Secciones y platos</strong>: entradas, principales, postres, la carta de vinos o de tragos. Cada plato con su nombre, su descripción y su precio &mdash; o &laquo;a consultar&raquo;, que también es un precio honesto.</span></li>
           <li><span class="tick">&check;</span><span>Se lee en tu página, en el celular, <strong>sin que nadie tenga que abrir un archivo</strong> &mdash; y Google la lee igual, así que el que busca &laquo;dónde comer pescado en Colón&raquo; puede caer en tu plato.</span></li>
           <li><span class="tick">&check;</span><span><strong>Una foto por cada plato</strong>, al lado del plato, no una galería suelta donde nadie sabe cuál milanesa es cuál. La subís desde la fila del plato mientras cargás la carta.</span></li>
           <li><span class="tick">&check;</span><span>Si preferís no cargarla plato por plato, subís <strong>una foto o un PDF</strong> del menú impreso, o dejás el <strong>enlace a tu carta</strong> de siempre. Las tres formas conviven.</span></li>
@@ -355,31 +344,28 @@ const preciosUrl = buildUrl({ locale, path: 'planes/comer-y-salir/precios' });
     </div>
     <div class="notice">
       <h3>Y el menú del día se apaga solo.</h3>
-      <p>
-        Cargás el plato del día o la sugerencia del chef, le ponés hasta cuándo vale, y <strong>cuando esa fecha pasa
-        deja de mostrarse</strong>. No hay que acordarse de bajarlo el miércoles a la mañana, ni delegarlo en alguien
-        que ese día no vino. Nadie tiene que entrar a apagar nada.
-      </p>
-      <p>Que es justamente lo que hoy no pasa, y por eso las fichas terminan anunciando el pescado del martes pasado.</p>
+      <p>Cargás el plato del día o la sugerencia del chef, le ponés hasta cuándo vale, y <strong>cuando esa fecha pasa deja de mostrarse</strong>. No hay que acordarse de bajarlo el miércoles a la mañana, ni delegarlo en alguien que ese día no vino. Que es justamente lo que hoy no pasa, y por eso las fichas terminan anunciando el pescado del martes pasado.</p>
     </div>
     <div class="notice">
       <h3>Y a la mesa llega con un QR.</h3>
-      <p>
-        Imprimís un código, lo ponés en la mesa, y el que se sienta abre tu carta en el teléfono. Hasta acá lo hace
-        cualquier generador gratis. Lo que no te da ninguno es el otro lado: <strong>cuántos lo escanearon, qué día y a
-        qué hora</strong>, con qué aparato y en qué idioma. Saber que el martes a las nueve lo abrieron cuarenta personas
-        es un dato de tu propio local que hoy no tenés de ninguna forma.
-      </p>
-      <p>
-        El idioma es el que más dice: te avisa si te está entrando turismo, que es la pregunta de fondo. <strong>De dónde
-        venía cada uno no lo registramos</strong> &mdash; se escanea sentado en tu salón, así que diría «Argentina» casi
-        siempre, incluso para el brasileño que querés contar. Preferimos no dártelo antes que dártelo mal.
-      </p>
-      <p>
-        Y si algún día cambiás a dónde lleva el código, <strong>el que ya imprimiste sigue sirviendo</strong>: no hay que
-        volver a pegar nada en ninguna mesa.
-      </p>
+      <p>Imprimís un código, lo ponés en la mesa, y el que se sienta abre tu carta en el teléfono. Hasta acá lo hace cualquier generador gratis. Lo que no te da ninguno es el otro lado: <strong>cuántos lo escanearon, qué día y a qué hora</strong>, con qué aparato y en qué idioma. El idioma es el que más dice: te avisa si te está entrando turismo. <strong>De dónde venía cada uno no lo registramos</strong> &mdash; se escanea sentado en tu local, así que diría «Argentina» casi siempre. Preferimos no dártelo antes que dártelo mal.</p>
+      <p>Y si algún día cambiás a dónde lleva el código, <strong>el que ya imprimiste sigue sirviendo</strong>: no hay que volver a pegar nada en ninguna mesa.</p>
     </div>
+  </section>
+
+  <section>
+    <div class="sec-head">
+      <p class="eyebrow">Si tu local abre de noche</p>
+      <h2>De noche</h2>
+    </div>
+    <p>Antes de salir, el que no conoce la ciudad pregunta siempre lo mismo: <strong>cuánto sale entrar, desde qué edad y cómo hay que ir vestido</strong>. Hoy eso se averigua por mensaje, de a uno. En tu ficha está a la vista, y es gratis en los tres planes.</p>
+    <ul class="plain">
+      <li><span class="tick">&check;</span><span><strong>La entrada</strong>: gratis, paga o «depende», con una nota corta para lo que no entra en una palabra &mdash; &laquo;gratis hasta la 1&raquo;, &laquo;anticipadas por Instagram&raquo;. Si es paga, un precio «desde», que la página muestra como aproximado y con el mes en que lo actualizaste.</span></li>
+      <li><span class="tick">&check;</span><span><strong>La edad mínima</strong>, con una insignia «+18» bien visible y, al lado, el aviso legal sobre la venta de alcohol a menores (Ley 24.788). Si cambia según la noche, lo aclarás en la nota.</span></li>
+      <li><span class="tick">&check;</span><span><strong>El dress code</strong>, de una lista corta que se entiende en cualquier idioma: informal, sport elegante, elegante o sin restricciones. Y una nota, si en tu puerta la regla tiene un detalle.</span></li>
+      <li><span class="tick">&check;</span><span><strong>Los horarios de madrugada se leen bien.</strong> Si abrís el sábado de 23:30 a 6, a las 3 del domingo tu ficha dice «abierto», que es lo que el que está en la calle necesita saber.</span></li>
+    </ul>
+    <p class="subhead">Si tu local es las dos cosas, todo esto aparece bajo el título «De noche», separado de la carta, para que el que busca dónde cenar y el que busca dónde seguir encuentren cada uno lo suyo.</p>
   </section>
 
   <section>
@@ -388,38 +374,31 @@ const preciosUrl = buildUrl({ locale, path: 'planes/comer-y-salir/precios' });
       <h2>Qué más podés mostrar</h2>
     </div>
     <ul class="plain">
-      <li><span class="tick">&check;</span><span>Fotos del local y de los platos, con una principal destacada. Descripción con formato, y videos si tenés.</span></li>
-      <li><span class="tick">&check;</span><span><strong>Horarios día por día</strong>, con más de un turno si cerrás al mediodía &mdash; que es la mitad de los locales de la zona y casi ninguna ficha lo dice bien.</span></li>
-      <li><span class="tick">&check;</span><span><strong>El rango de precios</strong>, para que el que llega sepa a qué atenerse antes de sentarse.</span></li>
-      <li><span class="tick">&check;</span><span><strong>Lo que ofrece el local</strong>, tildado de una lista: si aceptás tarjeta, si hacés delivery o take away, si tomás reservas, si hay estacionamiento, terraza, wifi, música en vivo, si se puede ir con perro o si <strong>aceptás eventos</strong> (cumpleaños, empresas, casamientos) &mdash; con un botón de contacto directo en tu ficha.</span></li>
-      <li><span class="tick">&check;</span><span><strong>Los aptos de tu carta</strong>: sin TACC, vegano, vegetariano, sin lactosa, sin frutos secos. Se tildan igual que el resto, aparecen en tu página y <strong>el que busca puede filtrar por ellos</strong> antes de elegir dónde comer. Están en los tres escalones, desde el más básico: no le vamos a cobrar a nadie por avisar algo que a otro le puede hacer daño no saber.</span></li>
-      <li><span class="tick">&check;</span><span><strong>El tipo de cocina</strong>: argentina, de río, italiana, peruana, internacional, asiática, mediterránea o de fusión &mdash; se tilda todo lo que corresponda, porque un mismo local puede ser parrilla y cocina de río a la vez. Sirve para que te encuentre el que ya sabe qué se le antoja comer.</span></li>
-      <li><span class="tick">&check;</span><span><strong>La agenda de tu local</strong>: la noche de música en vivo, el happy hour, la cena show, la promo de los martes. Se cargan con fecha, o &laquo;todos los jueves de 18 a 20&raquo; si se repite. Podés apagar uno sin borrarlo &mdash; el show de invierno vuelve el año que viene y no hace falta volver a escribirlo.</span></li>
-      <li><span class="tick">&check;</span><span><strong>Preguntas frecuentes propias</strong>: si hay estacionamiento, si se puede ir con perro, si hacen menú para chicos, o cualquier cosa que te pregunten seguido por teléfono.</span></li>
-      <li><span class="tick">&check;</span><span><strong>Reseñas</strong>, que deja cualquier persona con cuenta en Hospeda, una por persona. <strong>Ninguna se publica sola</strong>: las revisamos antes de que aparezcan. Eso frena al que escribe caliente o al que nunca pisó tu local.</span></li>
-      <li><span class="tick">&check;</span><span><strong>Un chat con inteligencia artificial en tu ficha</strong>: el que entra pregunta lo que quiera &mdash;a qué hora abren, si hay opción sin TACC, cuánto sale una milanesa&mdash; y contesta con lo que vos cargaste. No inventa: si algo no está cargado, lo dice y manda a preguntarte a vos.</span></li>
-      <li><span class="tick">&check;</span><span><strong>Tu ficha en PDF, lista para imprimir</strong>: la foto, los horarios, el contacto y un QR que devuelve a tu página. Para el folleto del mostrador del hotel, el volante de la cabaña o la pila de la oficina de turismo &mdash; el único lugar donde tu ficha funciona sin internet.</span></li>
+      <li><span class="tick">&check;</span><span>Fotos del local, con una principal destacada. Descripción con formato, y videos si tenés.</span></li>
+      <li><span class="tick">&check;</span><span><strong>Horarios día por día</strong>, con más de un turno si cerrás al mediodía o abrís sólo el fin de semana &mdash; que es la mitad de los locales de la zona y casi ninguna ficha lo dice bien.</span></li>
+      <li><span class="tick">&check;</span><span><strong>El rango de precios</strong>, para que el que llega sepa a qué atenerse antes de entrar.</span></li>
+      <li><span class="tick">&check;</span><span><strong>Lo que ofrece el local</strong>, tildado de una lista: si aceptás tarjeta, si hacés delivery o take away, si tomás reservas, si hay estacionamiento, terraza, wifi, música en vivo, happy hour, si se puede ir con perro o si <strong>aceptás eventos</strong> (cumpleaños, empresas, casamientos) &mdash; con un botón de contacto directo en tu ficha.</span></li>
+      <li><span class="tick">&check;</span><span><strong>Los aptos de tu carta</strong>: sin TACC, vegano, vegetariano, sin lactosa, sin frutos secos. Aparecen en tu página y <strong>el que busca puede filtrar por ellos</strong>. Están en los tres planes: no le vamos a cobrar a nadie por avisar algo que a otro le puede hacer daño no saber.</span></li>
+      <li><span class="tick">&check;</span><span><strong>El tipo de cocina</strong>, si tenés: argentina, de río, italiana, peruana, internacional, asiática, mediterránea o de fusión &mdash; se tilda todo lo que corresponda.</span></li>
+      <li><span class="tick">&check;</span><span><strong>La agenda de tu local</strong>: la noche de música en vivo, el happy hour, la cena show, la fiesta temática, la promo de los martes. Se cargan con fecha, o &laquo;todos los jueves de 18 a 20&raquo; si se repite. Podés apagar uno sin borrarlo &mdash; el show de invierno vuelve el año que viene y no hace falta volver a escribirlo.</span></li>
+      <li><span class="tick">&check;</span><span><strong>Preguntas frecuentes propias</strong>: si hay estacionamiento, si se puede ir con perro, hasta qué hora se entra, o cualquier cosa que te pregunten seguido por teléfono.</span></li>
+      <li><span class="tick">&check;</span><span><strong>Reseñas</strong>, que deja cualquier persona con cuenta en Hospeda, una por persona. Además de la nota general, el que opina puede puntuar <strong>la atención, el ambiente, la relación precio-calidad y, si tenés cocina, la comida</strong>. <strong>Ninguna se publica sola</strong>: las revisamos antes de que aparezcan.</span></li>
+      <li><span class="tick">&check;</span><span><strong>Un chat con inteligencia artificial en tu ficha</strong>: el que entra pregunta lo que quiera &mdash;a qué hora abren, si hay opción sin TACC, si se paga entrada&mdash; y contesta con lo que vos cargaste. No inventa: si algo no está cargado, lo dice y manda a preguntarte a vos. Y con la edad no negocia: repite la que pusiste y no le explica a nadie cómo saltearla.</span></li>
+      <li><span class="tick">&check;</span><span><strong>Tu ficha en PDF, lista para imprimir</strong>: la foto, los horarios, el contacto y un QR que devuelve a tu página. Para el mostrador del hotel, el volante de la cabaña o la oficina de turismo &mdash; el único lugar donde tu ficha funciona sin internet.</span></li>
     </ul>
-    <p class="subhead">
-      Tu página vive en <strong>hospeda.com.ar/es/comer-y-salir/tu-local</strong>, entra en el listado con buscador y
-      filtros por ciudad, por tipo de cocina y por apto, y está escrita para que Google la encuentre.
-    </p>
+    <p class="subhead">Tu página vive en <strong>https://hospeda.com.ar/es/comer-y-salir/tu-local</strong> y entra en el listado de la sección «Comer y salir», con buscador y filtros por rubro, por ciudad, por tipo de local, por tipo de cocina y por apto, y está escrita para que Google la encuentre.</p>
   </section>
 
   <section>
     <div class="sec-head">
-      <p class="eyebrow">El teléfono suena en tu salón</p>
+      <p class="eyebrow">El teléfono suena en tu local</p>
       <h2>Cómo te van a contactar</h2>
     </div>
-    <p>
-      Acá no hay intermediario. El que te encuentra en Hospeda <strong>te llama, te escribe o viene</strong>: no le
-      pasamos su pedido a nadie, no le cobramos nada y no nos metemos en el medio de esa conversación.
-    </p>
+    <p>Acá no hay intermediario. El que te encuentra en Hospeda <strong>te llama, te escribe o viene</strong>: no le pasamos su pedido a nadie, no le cobramos nada y no participamos de esa conversación.</p>
     <ul class="plain">
-      <li><span class="tick">&check;</span><span><strong>Teléfono, WhatsApp, email, redes y tu ubicación en el mapa</strong>, todo en tu ficha. El que mira la carta a las siete de la tarde te llama a las siete y cinco para preguntar si queda mesa.</span></li>
-      <li><span class="tick">&check;</span><span><strong>El mapa es la mitad del trabajo.</strong> El turista no sabe dónde queda tu calle: llega desde el alojamiento, con el celular en la mano. La ficha le abre el mapa y lo trae hasta la puerta.</span></li>
-      <li><span class="tick">&check;</span><span><strong>Si aceptás eventos</strong>, la ficha lo dice y pone un botón aparte para eso. El cumpleaños de quince y la cena de la empresa no se preguntan igual que una mesa para dos, y no conviene que caigan en la misma consulta.</span></li>
-      <li><span class="tick">&check;</span><span>Cargá un contacto que <strong>alguien atienda en horario de servicio</strong>. Es la parte que no conviene dejar a medias: estar publicado, pagando, y que el que quiso ir no haya tenido cómo avisar, es la peor versión de esto.</span></li>
+      <li><span class="tick">&check;</span><span><strong>Teléfono, WhatsApp, email, redes y tu ubicación en el mapa</strong>, todo en tu ficha. El que mira tu página a las siete de la tarde te escribe a las siete y cinco para preguntar si queda lugar.</span></li>
+      <li><span class="tick">&check;</span><span><strong>El mapa es la mitad del trabajo.</strong> El turista no conoce las calles de la ciudad. Llega desde el alojamiento, con el celular en la mano. La ficha le abre el mapa y lo trae hasta la puerta.</span></li>
+      <li><span class="tick">&check;</span><span><strong>Si aceptás eventos</strong>, la ficha lo dice y pone un botón aparte para eso. El cumpleaños de quince y la fiesta de la empresa no se preguntan igual que una mesa para dos, y no conviene que caigan en la misma consulta.</span></li>
     </ul>
   </section>
 
@@ -435,13 +414,15 @@ const preciosUrl = buildUrl({ locale, path: 'planes/comer-y-salir/precios' });
         </thead>
         <tbody>
           <tr><td>Fotos, descripción, horarios, carta, rango de precios, lo que ofrece el local, contacto y redes</td><td><strong>Vos, cuando quieras</strong></td></tr>
+          <tr><td>Tus rubros, la entrada, la edad y el dress code</td><td><strong>Vos, cuando quieras</strong></td></tr>
           <tr><td>Tus preguntas frecuentes</td><td><strong>Vos</strong></td></tr>
-          <tr><td>Nombre del local, tipo (restaurante, bar, café&hellip;) y ciudad</td><td><strong>Vos, cuando quieras</strong></td></tr>
+          <tr><td>Nombre del local, tipo (bar, boliche, café&hellip;) y ciudad</td><td><strong>Vos, cuando quieras</strong></td></tr>
           <tr><td>La dirección web de tu ficha</td><td><strong>Vos</strong>, tildando que siga al nombre nuevo. Te avisa antes, porque puede cambiar cómo aparecés en Google y en los enlaces que ya compartiste.</td></tr>
-          <tr><td>Si tu local aparece destacado</td><td>El equipo. No se compra: se mira la ficha, no la factura.</td></tr>
+          <tr><td>Si tu local aparece destacado</td><td><strong>Vos</strong>.</td></tr>
         </tbody>
       </table>
     </div>
+    <p class="subhead">Si alguna vez el equipo corrige uno de tus rubros, te avisamos por mail y en tu cuenta qué cambió y qué deja de verse, y lo podés revisar desde tu editor.</p>
   </section>
 
   <section>
@@ -449,13 +430,12 @@ const preciosUrl = buildUrl({ locale, path: 'planes/comer-y-salir/precios' });
       <p class="eyebrow">Los números que ves</p>
       <h2>Qué información tenés de tu local</h2>
     </div>
-    <p>Las estadísticas de visitas están en <strong>los tres escalones</strong>, desde el Básico. No es un extra que se compra: es piso.</p>
+    <p>Las estadísticas de visitas están en <strong>los tres planes</strong>, desde el Básico. No es un extra que se compra.</p>
     <ul class="plain">
-      <li><span class="tick">&check;</span><span>Cuántas veces vieron tu página, día por día.</span></li>
-      <li><span class="tick">&check;</span><span>Cuánta gente distinta llegó, en la semana y en el mes.</span></li>
+      <li><span class="tick">&check;</span><span>Cuántas veces vieron tu página, y cuánta gente distinta llegó, en la semana y en el mes.</span></li>
       <li><span class="tick">&check;</span><span>Cada local por separado, si tenés más de uno.</span></li>
-      <li><span class="tick">&check;</span><span><strong>Cuántos escanearon el QR de tu mesa</strong>, día por día, con qué aparato y en qué idioma. Es la única estadística que no sale de tu página sino del salón.</span></li>
-      <li><span class="tick tick--no">&times;</span><span><strong>Lo más fino todavía no está</strong>: qué plato mira más la gente, de qué destino venía el que entró. Está en la lista, pero hoy no existe y preferimos decírtelo.</span></li>
+      <li><span class="tick">&check;</span><span><strong>Cuántos escanearon el QR de tu mesa</strong>, qué día y a qué hora, con qué aparato y en qué idioma. Es la única estadística que no sale de tu página sino del salón.</span></li>
+      <li><span class="tick">&rarr;</span><span><strong>En el futuro cercano tendrás</strong>: el detalle día por día, qué plato mira más la gente, de qué destino venía el que entró.</span></li>
     </ul>
   </section>
 
@@ -467,26 +447,10 @@ const preciosUrl = buildUrl({ locale, path: 'planes/comer-y-salir/precios' });
     <p>Sin fechas, porque no las prometemos. Es en lo que estamos trabajando.</p>
     <ul class="plain">
       <li><span class="tick">&rarr;</span><span><strong>Responder las reseñas.</strong> Que tu respuesta se vea abajo de la reseña, en tu página, con tu nombre.</span></li>
-      <li><span class="tick">&rarr;</span><span><strong>Aparecer destacado.</strong> Que tu local se muestre resaltado en el listado, para el fin de semana largo o el arranque de temporada.</span></li>
-      <li><span class="tick">&rarr;</span><span><strong>Estadísticas más finas.</strong> Qué sección de la carta se mira más, qué plato, y de qué parte del sitio venía el que llegó.</span></li>
+      <li><span class="tick">&rarr;</span><span><strong>Estadísticas más detalladas.</strong> Las visitas día por día, qué sección de la carta se mira más, y de qué parte del sitio venía el que llegó.</span></li>
+      <li><span class="tick">&rarr;</span><span><strong>Cuántos te contactaron.</strong> Saber cuántas personas te llamaron o te escribieron desde tu ficha.</span></li>
+      <li><span class="tick">&rarr;</span><span><strong>Recomendado en el camino.</strong> Que tu local aparezca recomendado junto a salidas y alojamientos cercanos.</span></li>
     </ul>
-  </section>
-
-  <section>
-    <div class="sec-head">
-      <p class="eyebrow">Complementos</p>
-      <h2>Si un mes necesitás más</h2>
-    </div>
-    <p>
-      Si abrís un local más y el tope del escalón te queda corto <strong>por uno solo</strong>, no hace falta cambiar de escalón: sumás
-      <strong>un local más por quince mil pesos por mes</strong>, aparte, y lo sacás cuando no lo necesitás. Se contrata desde tu panel,
-      en Mi cuenta &rsaquo; Complementos, con el precio del día y sin llamar a nadie. Igual para darlo de baja.
-    </p>
-    <p class="subhead">
-      Es para eso y no para otra cosa: <strong>si te faltan dos o tres locales, te conviene el escalón de
-      arriba</strong>, no tres complementos. Hacé la cuenta con los valores de <a href={preciosUrl}>el sitio</a> antes
-      de decidir &mdash; y si te da parejo, escribinos y la hacemos juntos.
-    </p>
   </section>
 
   <section>
@@ -496,12 +460,12 @@ const preciosUrl = buildUrl({ locale, path: 'planes/comer-y-salir/precios' });
     </div>
     <ul class="plain">
       <li><span class="tick tick--no">!</span><span><strong>La prueba es una sola, por única vez.</strong> Son 30 días desde que publicás tu primer local, y no se renuevan: si la dejás pasar y volvés más adelante, ya entrás pagando.</span></li>
-      <li><span class="tick tick--no">!</span><span><strong>La carta en inglés y en portugués la escribís vos.</strong> El resto de tu ficha se traduce sola; la carta no, a propósito. Es más trabajo, y es la única forma de que un plato tuyo no termine con un nombre que nadie reconoce.</span></li>
-      <li><span class="tick tick--no">!</span><span><strong>Todavía no podés responder una reseña.</strong> Está en la lista de lo que viene, pero hoy no existe la pantalla. Mientras tanto, si aparece una que te parece injusta, escribinos y la miramos.</span></li>
-      <li><span class="tick tick--no">!</span><span><strong>Aparecer destacado no se compra.</strong> Hoy no hay forma de pagar para saltear la fila, ni para vos ni para nadie.</span></li>
-      <li><span class="tick tick--no">!</span><span><strong>No hay promociones ni cupones para el comensal</strong>, ni una reserva de mesa de verdad. La ficha puede decir que tomás reservas; el que quiere una te la pide a vos.</span></li>
+      <li><span class="tick tick--no">!</span><span><strong>La traducción de la carta la revisás vos.</strong> El resto de tu ficha se traduce sola; en la carta cada plato espera tu visto bueno, a propósito. Es un paso más, y es la única forma de que un plato tuyo no termine con un nombre que nadie reconoce.</span></li>
+      <li><span class="tick tick--no">!</span><span><strong>La carta es del plan Profesional para arriba</strong>, también el enlace a la tuya. En el Básico tu ficha muestra todo lo demás, pero no la carta.</span></li>
+      <li><span class="tick tick--no">!</span><span><strong>Todavía no podés responder una reseña.</strong> Está en la lista de lo que viene. Mientras tanto, si aparece una que te parece injusta, escribinos y la miramos.</span></li>
+      <li><span class="tick tick--no">!</span><span><strong>No hay promociones ni cupones para el cliente</strong>, ni reservas ni venta de entradas de verdad. La ficha puede decir que tomás reservas o que vendés anticipadas; el que quiere una te la pide a vos.</span></li>
       <li><span class="tick tick--no">!</span><span>Una ficha incompleta no se publica. Sin foto principal, horarios y rango de precios el sistema no te deja &mdash; porque una página a medias no la elige nadie.</span></li>
-      <li><span class="tick tick--no">!</span><span>Si dejás de pagar, tu página <strong>deja de verse pero no se borra</strong>: fotos, textos, carta y reseñas quedan, y vuelve a estar en línea cuando reactivás.</span></li>
+      <li><span class="tick tick--no">!</span><span>Si dejás de pagar, tu página <strong>deja de verse pero queda guardada</strong>: fotos, textos, carta y reseñas, y vuelve a estar en línea cuando reactivás.</span></li>
     </ul>
   </section>
 
@@ -513,12 +477,12 @@ const preciosUrl = buildUrl({ locale, path: 'planes/comer-y-salir/precios' });
     <div class="phone">
       <span class="fact__k">¿Preferís que te acompañemos?</span>
       <strong>Llamanos o escribinos por WhatsApp al {brandPhone}</strong>
-      <span class="finelines">Te ayudamos a cargar la ficha y la carta la primera vez, si querés.</span>
+      <span class="finelines">Te ayudamos a cargar la ficha la primera vez, si querés.</span>
     </div>
     <div class="finelines">
       Hospeda cobra una suscripción por tener la ficha publicada, nunca un porcentaje de lo que
-      facturás, y no interviene entre el comensal y tu local. Los valores y los límites de cada
-      escalón son los vigentes al día de hoy y pueden cambiar; los del momento están siempre
+      facturás, y no interviene entre tu cliente y tu local. Los valores y los límites de cada
+      plan son los vigentes al día de hoy y pueden cambiar; los del momento están siempre
       publicados en el sitio.
     </div>
   </footer>
