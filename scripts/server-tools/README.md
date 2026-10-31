@@ -263,6 +263,15 @@ host-reachable `HOSPEDA_DATABASE_URL`, the deployed-SHA guard
 Every one defaults to a dry-run; a prod write asks for a typed phrase that
 `--yes` never skips.
 
+With the target's api STOPPED (the cutover window, when Coolify removes the
+container) the wrappers and `cutover-verify` read that environment from the
+Coolify API instead (needs a token with `read:sensitive`) and warn that they
+did. Only "no running container for this target" falls back; an ambiguous
+lookup still aborts. The deployed-SHA guard has no running image to compare
+with then, so it refuses unless Coolify holds a usable `HOSPEDA_COMMIT_SHA` or
+`SOURCE_COMMIT`; `--allow-sha-mismatch` overrides it. `env-list` never
+resolves a container: it finds the app by name in the Coolify API.
+
 | Command | Wraps | Write flag | Prod phrase |
 | --- | --- | --- | --- |
 | `cutover-step-3b` | `scripts/cutover-b9a-step-3b.ts` | `--confirm` | `grant-permanent-prod` |

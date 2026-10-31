@@ -16,8 +16,10 @@
 
 import { existsSync } from 'node:fs';
 import { join } from 'node:path';
+import { resolveApiEnv } from '../lib/api-env-source.ts';
 import type { CommandArgvSpec } from '../lib/cli-flags.ts';
 import { findContainer, getActiveTarget } from '../lib/container-lookup.ts';
+import { createCoolifyClient } from '../lib/coolify.ts';
 import { readCheckoutSha } from '../lib/cutover-step-3-core.ts';
 import { executeCutoverVerify, parseCutoverVerifyArgs } from '../lib/cutover-verify-core.ts';
 import { dockerInspectEnv } from '../lib/docker.ts';
@@ -25,7 +27,7 @@ import { die, log } from '../lib/log.ts';
 import { buildPostgresUrl } from '../lib/postgres.ts';
 import { resolveRepoRoot } from '../lib/repo-root.ts';
 import { runner } from '../lib/runner.ts';
-import { getDbCredentials } from '../lib/target.ts';
+import { getAppResourceName, getDbCredentials } from '../lib/target.ts';
 
 const HELP_FLAGS = ['--help', '-h'] as const;
 
@@ -83,8 +85,12 @@ export async function cutoverVerify(argv: ReadonlyArray<string>): Promise<void> 
     }
     if (!existsSync(join(repoRoot, '.git'))) die(`'${repoRoot}' is not a git repository.`);
 
-    const apiContainer = await findContainer('api');
-    const containerEnv = await dockerInspectEnv(apiContainer);
+    const { entries: containerEnv } = await resolveApiEnv({
+        readFromContainer: async () => dockerInspectEnv(await findContainer('api')),
+        coolify: createCoolifyClient,
+        resourceName: getAppResourceName(target, 'api'),
+        warn: (message) => log.warn(message)
+    });
     const postgresContainer = await findContainer('postgres');
     const credentials = getDbCredentials(target);
     const databaseUrl = await buildPostgresUrl({

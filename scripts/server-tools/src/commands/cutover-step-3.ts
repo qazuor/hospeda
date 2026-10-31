@@ -33,8 +33,10 @@
 
 import { existsSync } from 'node:fs';
 import { join } from 'node:path';
+import { resolveApiEnv } from '../lib/api-env-source.ts';
 import type { CommandArgvSpec } from '../lib/cli-flags.ts';
 import { findContainer, getActiveTarget } from '../lib/container-lookup.ts';
+import { createCoolifyClient } from '../lib/coolify.ts';
 import {
     type CutoverStep3Mode,
     executeCutoverStep3,
@@ -49,7 +51,7 @@ import { buildPostgresUrl } from '../lib/postgres.ts';
 import { promptText } from '../lib/prompt.ts';
 import { resolveRepoRoot } from '../lib/repo-root.ts';
 import { runner } from '../lib/runner.ts';
-import { getDbCredentials, type Target } from '../lib/target.ts';
+import { getAppResourceName, getDbCredentials, type Target } from '../lib/target.ts';
 import { CONFIRM_PHRASE_FLAG, confirmTypedPhrase } from '../lib/typed-confirmation.ts';
 
 const HELP_FLAGS = ['--help', '-h'] as const;
@@ -187,8 +189,12 @@ export async function cutoverStep3(argv: ReadonlyArray<string>): Promise<void> {
         die(`'${repoRoot}' is not a git repository.`);
     }
 
-    const apiContainer = await findContainer('api');
-    const containerEnv = await dockerInspectEnv(apiContainer);
+    const { entries: containerEnv } = await resolveApiEnv({
+        readFromContainer: async () => dockerInspectEnv(await findContainer('api')),
+        coolify: createCoolifyClient,
+        resourceName: getAppResourceName(target, 'api'),
+        warn: (message) => log.warn(message)
+    });
     const postgresContainer = await findContainer('postgres');
     const credentials = getDbCredentials(target);
     const databaseUrl = await buildPostgresUrl({

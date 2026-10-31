@@ -163,7 +163,7 @@ describe('ownerIdsTargetRefusal', () => {
         expect(guard).toBeGreaterThan(-1);
         expect(guard).toBeLessThan(source.indexOf('resolveRepoRoot()'));
         expect(guard).toBeLessThan(source.indexOf("findContainer('api')"));
-        expect(guard).toBeLessThan(source.indexOf('dockerInspectEnv(apiContainer)'));
+        expect(guard).toBeLessThan(source.indexOf('resolveApiEnv({'));
         expect(guard).toBeLessThan(source.indexOf('buildPostgresUrl({'));
     });
 });
