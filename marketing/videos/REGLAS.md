@@ -23,11 +23,40 @@ nombra como `<public>/…`.
 - Audio normalizado a **-14 LUFS**, true peak -1,5 dB (`ffmpeg loudnorm` sobre el render).
 - A1 v3: 28,7 s, ~10 MB. WhatsApp recomprime los videos; mandarlo como documento llega intacto.
 
+## Dispositivo de referencia: Samsung Galaxy S24 Ultra
+
+Todo lo que se muestra en modo celular representa la pantalla de un **Galaxy S24 Ultra con la
+configuración de fábrica** (resolución FHD+, zoom por defecto, Chrome). Medido por el dueño en
+el teléfono real el 31/10/2026 (whatismyviewport.com):
+
+| Medida | Valor |
+|---|---|
+| Pantalla, en píxeles CSS | **412 × 892** |
+| Área visible de la página en Chrome | **411 × 750** (las barras de Android y Chrome ocupan 142 px) |
+| DPR | 2,63 → **1080 × 2340** físicos |
+| Proporción | **19,5:9** (0,4615 ancho/alto) |
+
+- **Se graba el área visible real: viewport de 412 × 750.** Cada toma muestra exactamente lo que
+  ve un usuario, con el mismo corte arriba y abajo. Se usa 412 de ancho (el ancho de pantalla);
+  el 411 medido es redondeo de Chrome.
+- **DPR 3 al grabar**, no 2,63: la sobremuestra deja margen para los zooms sin pixelar.
+- **Las barras se dibujan en la edición**: barra de estado de Android arriba, barra de direcciones
+  de Chrome y barra de navegación, hasta completar los 892. Son un componente, mínimas y siempre
+  iguales; en los momentos de foco el zoom puede dejarlas fuera de cuadro.
+- **La pantalla editada (capa 2) se exporta a 1080 × 2340**, la resolución real del teléfono. La
+  pantalla dentro del marco (capa 3) respeta la misma proporción 19,5:9; el marco del teléfono
+  tiene que ser el de un S24 Ultra, no un iPhone.
+- Coincide con la referencia de [`prompts/grabaciones.md`](../prompts/grabaciones.md), que ya
+  fijaba 1080 × 2340 para las grabaciones hechas con el teléfono.
+
+> ⚠️ **Pendiente**: `record/record-a1.mts` y la composición A1 todavía usan 390 × 844 (proporción
+> de iPhone). Se pasan a este dispositivo al construir la capa 1; A1 hay que regrabarla.
+
 ## Grabación (record/record-a1.mts)
 
-- Pantallas **reales** de Hospeda, vista **mobile** (390×844, DPR 3 → cuadros de 1170×2532).
+- Pantallas **reales** de Hospeda, vista **mobile** con el viewport del dispositivo de referencia (arriba).
 - Chromium headless nuevo (`channel: 'chromium'`) + `--force-device-scale-factor=3`. El headless shell por
-  defecto ignora el DPR y graba a 390×844.
+  defecto ignora el DPR y graba a escala 1.
 - Usuario `host-basico@local.test`. Antes de cada toma: se borra el borrador de la toma anterior (si no,
   `/publicar/` muestra «Ya tenés un borrador en curso») y su alojamiento publicado se llama
   **«Casa Quinta Las Palmeras»** (el seed lo trae como «Alojamiento Completo — Host Basico»).
