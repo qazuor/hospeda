@@ -134,6 +134,13 @@ vi.mock('@repo/db', async () => {
 
 import { PermissionEnum, QrCodeFormatEnum, RoleEnum, ServiceErrorCode } from '@repo/schemas';
 import { Hono } from 'hono';
+// Imported statically on purpose (HOS-1975). The router's module graph costs
+// seconds to load cold; imported inside `buildApp()` that cost was charged to
+// the FIRST test's 30s budget, and on a loaded CI runner it overran. A test that
+// times out does not stop: its request kept running and landed its `update`
+// call inside the NEXT test, whose `not.toHaveBeenCalled()` failed with "called
+// 1 times". Loading at collection time keeps the cost out of every test budget.
+import { adminQrCodeRoutes } from '../../../src/routes/qr-code/admin/index.js';
 import type { AppBindings } from '../../../src/types';
 
 // ---------------------------------------------------------------------------
@@ -240,7 +247,6 @@ type Probe = { readonly status: number; readonly body: Record<string, unknown> }
  * the real `handleRouteError`, so these probes see the bodies production sends.
  */
 async function buildApp(actor: Record<string, unknown> = adminActor): Promise<Hono<AppBindings>> {
-    const { adminQrCodeRoutes } = await import('../../../src/routes/qr-code/admin/index.js');
     const app = new Hono<AppBindings>();
     app.use((c, next) => {
         c.set('actor', actor as never);

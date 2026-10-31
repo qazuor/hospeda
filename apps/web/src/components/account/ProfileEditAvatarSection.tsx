@@ -21,6 +21,8 @@ export interface ProfileEditAvatarSectionProps {
     readonly initials: string;
     /** Whether an upload is currently in-flight (disables the change button). */
     readonly avatarUploading: boolean;
+    /** Whether the picked image is being resized/recompressed in the browser (HOS-1936). */
+    readonly avatarCompressing: boolean;
     /** Whether the form is submitting (disables the change button). */
     readonly submitting: boolean;
     /** Ref forwarded to the hidden file input so the parent can trigger it. */
@@ -42,6 +44,7 @@ export function ProfileEditAvatarSection({
     activeImageUrl,
     initials,
     avatarUploading,
+    avatarCompressing,
     submitting,
     fileInputRef,
     t,
@@ -79,13 +82,18 @@ export function ProfileEditAvatarSection({
                         type="button"
                         className={styles.avatarUploadBtn}
                         onClick={onChangeClick}
-                        disabled={avatarUploading || submitting}
+                        disabled={avatarUploading || avatarCompressing || submitting}
                     >
                         {t('account.avatar.changeButton')}
                     </button>
                     {avatarUploading && (
                         <span className={styles.avatarUploading}>
                             {t('account.avatar.uploading')}
+                        </span>
+                    )}
+                    {avatarCompressing && (
+                        <span className={styles.avatarUploading}>
+                            {t('account.avatar.actions.processing', 'Optimizando…')}
                         </span>
                     )}
                     <input

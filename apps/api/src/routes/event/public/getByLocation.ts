@@ -4,7 +4,7 @@
  */
 import { EventByLocationHttpSchema, EventLocationIdSchema, EventPublicSchema } from '@repo/schemas';
 import { EventService, ServiceError } from '@repo/service-core';
-import { getActorFromContext } from '../../../utils/actor';
+import { createGuestActor } from '../../../utils/actor';
 import { apiLogger } from '../../../utils/logger';
 import { extractPaginationParams, getPaginationResponse } from '../../../utils/pagination';
 import { createPublicListRoute } from '../../../utils/route-factory';
@@ -26,8 +26,8 @@ export const publicGetEventsByLocationRoute = createPublicListRoute({
     },
     requestQuery: EventByLocationHttpSchema.shape,
     responseSchema: EventPublicSchema,
-    handler: async (ctx, params, _body, query) => {
-        const actor = getActorFromContext(ctx);
+    handler: async (_ctx, params, _body, query) => {
+        const actor = createGuestActor();
         const { locationId } = params as { locationId: string };
         const { page, pageSize } = extractPaginationParams(query || {});
         const result = await eventService.getByLocation(actor, {

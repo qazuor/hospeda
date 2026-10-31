@@ -578,6 +578,14 @@
         "subscribe_to_plan": "Subscribe to a plan",
         "activate_trial": "Start the trial period"
     },
+    "entitlementByAudience": {
+        "venue": {
+            "ai_chat": "AI answers about your venue listing"
+        },
+        "experience": {
+            "ai_chat": "AI answers about your experience listing"
+        }
+    },
     "comparison": {
         "unlimited": "Unlimited",
         "notIncluded": "Not included",

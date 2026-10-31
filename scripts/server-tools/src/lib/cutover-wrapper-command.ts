@@ -11,12 +11,13 @@
 
 import { existsSync } from 'node:fs';
 import { join } from 'node:path';
+import { resolveApiEnv } from './api-env-source.ts';
 import { findContainer, getActiveTarget } from './container-lookup.ts';
+import { createCoolifyClient } from './coolify.ts';
 import { readCheckoutSha } from './cutover-step-3-core.ts';
 import {
     cutoverWrapperTargetRefusal,
     executeCutoverWrapper,
-    isWrapperPhraseValid,
     parseCutoverWrapperArgs
 } from './cutover-wrapper-core.ts';
 import type { CutoverWrapperSpec } from './cutover-wrapper-specs.ts';
@@ -26,7 +27,8 @@ import { buildPostgresUrl } from './postgres.ts';
 import { promptText } from './prompt.ts';
 import { resolveRepoRoot } from './repo-root.ts';
 import { runner } from './runner.ts';
-import { getDbCredentials } from './target.ts';
+import { getAppResourceName, getDbCredentials } from './target.ts';
+import { confirmTypedPhrase } from './typed-confirmation.ts';
 
 /**
  * Run one cutover wrapper command end to end.
@@ -66,8 +68,12 @@ export async function runCutoverWrapperCommand(input: {
     }
     if (!existsSync(join(repoRoot, '.git'))) die(`'${repoRoot}' is not a git repository.`);
 
-    const apiContainer = await findContainer('api');
-    const containerEnv = await dockerInspectEnv(apiContainer);
+    const { entries: containerEnv } = await resolveApiEnv({
+        readFromContainer: async () => dockerInspectEnv(await findContainer('api')),
+        coolify: createCoolifyClient,
+        resourceName: getAppResourceName(target, 'api'),
+        warn: (message) => log.warn(message)
+    });
     const postgresContainer = await findContainer('postgres');
     const credentials = getDbCredentials(target);
     const databaseUrl = await buildPostgresUrl({
@@ -93,13 +99,18 @@ export async function runCutoverWrapperCommand(input: {
                     ? confirmSpec.writeDescription
                     : 'This run OVERRIDES the deployed-SHA guard against PRODUCTION.'
             );
-            const typed = await promptText({
-                message: `Type '${confirmSpec.prodPhrase}' to confirm`,
-                placeholder: confirmSpec.prodPhrase
+            const result = await confirmTypedPhrase({
+                expected: confirmSpec.prodPhrase,
+                provided: options.confirmPhrase,
+                ask: () =>
+                    promptText({
+                        message: `Type '${confirmSpec.prodPhrase}' to confirm`,
+                        placeholder: confirmSpec.prodPhrase
+                    })
             });
-            if (!isWrapperPhraseValid({ spec: confirmSpec, typed })) {
-                log.warn('Aborted: typed confirmation did not match.');
-                throw new Error('Aborted: typed confirmation did not match.');
+            if (!result.ok) {
+                log.warn(result.reason);
+                throw new Error(result.reason);
             }
         },
         log

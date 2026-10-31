@@ -12,6 +12,7 @@ import { formatNaturalList, pluralizeWord } from './summary.helpers';
 import type {
     AccommodationSummaryFilters,
     SummaryCatalogs,
+    SummaryGender,
     SummaryLocale,
     SummaryOptions
 } from './summary.types';
@@ -44,6 +45,10 @@ export interface ResolvedSubject {
     readonly total: number;
     /** Whether the subject fell back to the generic "hospedajes" phrase. */
     readonly isGeneric: boolean;
+    /** Whether the subject phrase is plural (drives verb/participle agreement). */
+    readonly isPlural: boolean;
+    /** Grammatical gender of the subject (feminine only when every noun is). */
+    readonly gender: SummaryGender;
 }
 
 // ---------------------------------------------------------------------------
@@ -120,7 +125,10 @@ export function resolveSubject({
             plural: genericPlural
         }),
         total: counts.globalTotal,
-        isGeneric: true
+        isGeneric: true,
+        isPlural: counts.shown !== 1,
+        // "hospedagem" is feminine in Portuguese; "hospedaje" is masculine in Spanish.
+        gender: locale === 'pt' ? 'feminine' : 'masculine'
     });
 
     // No types selected — always generic
@@ -141,19 +149,26 @@ export function resolveSubject({
         return buildGeneric();
     }
 
-    // Resolve plural labels for each selected type
-    const pluralLabels: string[] = types.map((typeKey) => {
-        const entry = lookupTypeEntry({ key: typeKey, entries: typeEntries });
-        // Fall back to the raw key when the type is not in the catalog
-        return entry ? entry.plural[locale] : typeKey;
-    });
+    // A single type agrees in number with the shown count ("1 de 1 cabaña").
+    // A list of types stays plural: each noun would otherwise disagree.
+    const useSingular = types.length === 1 && counts.shown === 1;
+    const entries = types.map((typeKey) => lookupTypeEntry({ key: typeKey, entries: typeEntries }));
+
+    // Fall back to the raw key when the type is not in the catalog
+    const labels: string[] = entries.map((entry, index) =>
+        entry ? (useSingular ? entry.singular[locale] : entry.plural[locale]) : (types[index] ?? '')
+    );
+
+    const allFeminine = entries.every((entry) => entry?.gender?.[locale] === 'feminine');
 
     const conjunction = locale === 'es' ? 'y' : locale === 'pt' ? 'e' : 'and';
-    const subjectPhrase = formatNaturalList({ items: pluralLabels, conjunction });
+    const subjectPhrase = formatNaturalList({ items: labels, conjunction });
 
     return {
         subjectPhrase,
         total: counts.subjectTotal,
-        isGeneric: false
+        isGeneric: false,
+        isPlural: !useSingular,
+        gender: allFeminine ? 'feminine' : 'masculine'
     };
 }

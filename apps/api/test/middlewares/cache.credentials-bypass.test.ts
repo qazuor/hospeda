@@ -189,9 +189,29 @@ describe('Cache middleware — requests with credentials bypass the cache (HOS-1
     });
 
     it.each([
+        // HOS-1924: a cookie shaped like a Better Auth one under a prefix nobody
+        // registered (a third `cookiePrefix`) is still a credential. Fail closed.
+        ['an unregistered prefix', 'acme-staging.session_token=signed.sig'],
+        ['an unregistered __Secure- prefix', '__Secure-acme.session_data=payload'],
+        ['the account_data cookie', '__Secure-better-auth.account_data=payload'],
+        ['the dont_remember cookie', 'better-auth.dont_remember=true'],
+        ['a Cookie header the parser cannot read into any cookie', 'garbage-without-equals']
+    ])('bypasses a request with %s (fail closed)', async (_label, cookie) => {
+        const { app, getExecutions } = createTestApp({ route: DRAFT_ROUTE });
+
+        const first = await app.request(DRAFT_ROUTE, { headers: { Cookie: cookie } });
+        const second = await app.request(DRAFT_ROUTE, { headers: { Cookie: cookie } });
+
+        expect(first.headers.get('x-cache')).toBe('BYPASS');
+        expect(second.headers.get('x-cache')).toBe('BYPASS');
+        expect(getExecutions()).toBe(2);
+        expect(getCacheSize()).toBe(0);
+    });
+
+    it.each([
         ['visitor-id and analytics cookies', ANONYMOUS_COOKIES],
         ['a cookie whose VALUE mentions the session cookie', 'note=better-auth.session_token'],
-        ['a cookie whose name only contains the prefix', 'xbetter-auth.session_token=1']
+        ['a cookie whose name only contains the prefix mid-name', 'x_better-auth_session=1']
     ])('keeps caching a request with %s', async (_label, cookie) => {
         const { app, getExecutions } = createTestApp({ route: '/api/v1/public/accommodations' });
 

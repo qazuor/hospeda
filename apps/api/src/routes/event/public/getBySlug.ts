@@ -6,7 +6,7 @@ import { EventPublicSchema } from '@repo/schemas';
 import { SlugRequestParamsSchema } from '@repo/schemas/common';
 import { EventService, ServiceError } from '@repo/service-core';
 import type { Context } from 'hono';
-import { getActorFromContext } from '../../../utils/actor';
+import { createGuestActor } from '../../../utils/actor';
 import { apiLogger } from '../../../utils/logger';
 import { createPublicRoute } from '../../../utils/route-factory';
 
@@ -24,8 +24,10 @@ export const publicGetEventBySlugRoute = createPublicRoute({
     tags: ['Events'],
     requestParams: SlugRequestParamsSchema.shape,
     responseSchema: EventPublicSchema.nullable(),
-    handler: async (ctx: Context, params: Record<string, unknown>) => {
-        const actor = getActorFromContext(ctx);
+    handler: async (_ctx: Context, params: Record<string, unknown>) => {
+        // HOS-1924: this path is shared-cached under a key with no actor in it, so the
+        // service must never see the request's real actor.
+        const actor = createGuestActor();
         const slug = params.slug as string;
         const result = await eventService.getBySlug(actor, slug);
         if (result.error) throw new ServiceError(result.error.code, result.error.message);

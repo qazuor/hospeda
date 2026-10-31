@@ -9,8 +9,10 @@ import { z } from 'zod';
 import {
     BaseHttpSearchSchema,
     createArrayQueryParam,
-    createBooleanQueryParam
+    createBooleanQueryParam,
+    createEnumArrayQueryParam
 } from '../../api/http/base-http.schema.js';
+import { VenueTypeEnumSchema } from '../../enums/index.js';
 import { stripShapeDefaults } from '../../utils/utils.js';
 
 /**
@@ -46,7 +48,7 @@ export const EventLocationSearchHttpSchema = BaseHttpSearchSchema.extend({
 
     // Array filters
     destinationIds: createArrayQueryParam('Filter by multiple destination IDs'),
-    venueTypes: createArrayQueryParam('Filter by venue types')
+    venueTypes: createEnumArrayQueryParam('Filter by venue types', VenueTypeEnumSchema)
 });
 
 export type EventLocationSearchHttp = z.infer<typeof EventLocationSearchHttpSchema>;

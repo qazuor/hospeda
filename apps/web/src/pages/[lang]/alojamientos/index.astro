@@ -32,6 +32,7 @@ import { buildAvailabilityParams } from '@/lib/availability-params';
 import { createTranslations } from '@/lib/i18n';
 import type { SupportedLocale } from '@/lib/i18n';
 import { buildUrl } from '@/lib/urls';
+import { buildPaginationLinks } from '@/lib/listing/listing-pagination';
 import { buildListingViewHref } from '@/lib/listing-view-href';
 import { resolveFacetSeoDecision } from '@/lib/seo/promoted-facet-canonical';
 import { slugForAccommodationType } from '@/lib/facet-slugs';
@@ -530,7 +531,11 @@ const canonicalBaseUrl =
 // `canonicalPath = Astro.url.pathname` would canonicalize every paginated page
 // back to page 1. We rebuild the real crawlable URL from the page number so
 // each paginated page self-canonicalizes and stays indexable.
-const canonicalPath = page > 1 ? `${canonicalBaseUrl}page/${page}/` : canonicalBaseUrl;
+const { canonicalPath, prevPath, nextPath } = buildPaginationLinks({
+	basePath: canonicalBaseUrl,
+	page,
+	totalPages
+});
 
 // HOS-218 — Cloudflare edge cache. This SSR page re-fetches the near-static
 // catalog (accommodations + amenities + features + destinations) on every
@@ -822,6 +827,8 @@ const emptyStateSuggestions = [
 	title={t('accommodations.title', 'Alojamientos')}
 	description={t('accommodations.description', 'Encontrá los mejores alojamientos del Litoral Entrerriano.')}
 	canonicalPath={canonicalPath}
+	prevPath={prevPath}
+	nextPath={nextPath}
 	noindex={facetSeoDecision.noindex}
 	showFilters={true}
 	filterPosition="left"

@@ -74,3 +74,15 @@ describe('TEST:1756:12 mi-cuenta subscription stat source', () => {
         expect(source).not.toContain('statsData.data?.plan?.name');
     });
 });
+
+describe('mi-cuenta index — listings card counts published only (HOS-1948)', () => {
+    const page = readFileSync(
+        resolve(__dirname, '../../src/pages/[lang]/mi-cuenta/index.astro'),
+        'utf8'
+    );
+
+    it('derives the listings number from summarizeListingVisibility, never from list length', () => {
+        expect(page).toContain('summarizeListingVisibility({ listings })');
+        expect(page).not.toContain('listings?.length');
+    });
+});

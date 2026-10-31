@@ -24,7 +24,12 @@ import type { JSX } from 'react';
 import { useEffect, useState } from 'react';
 import { cn } from '@/lib/cn';
 import type { ThemeChoice } from '@/lib/theme';
-import { applyThemeAttribute, applyThemeChoice, readStoredThemeChoice } from '@/lib/theme';
+import {
+    applyThemeAttribute,
+    applyThemeChoice,
+    readStoredThemeChoice,
+    THEME_SYNCED_EVENT
+} from '@/lib/theme';
 import styles from './ThemeControl.module.css';
 
 const OPTIONS: ReadonlyArray<{
@@ -75,6 +80,10 @@ export function ThemeControl({
 
     useEffect(() => {
         setChoice(readStoredThemeChoice());
+        // A saved profile preference can replace the stored choice after mount.
+        const onSynced = () => setChoice(readStoredThemeChoice());
+        window.addEventListener(THEME_SYNCED_EVENT, onSynced);
+        return () => window.removeEventListener(THEME_SYNCED_EVENT, onSynced);
     }, []);
 
     // When the choice is 'system', track OS-level changes live so the page

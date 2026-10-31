@@ -111,6 +111,9 @@ export const webLight: Theme = {
     'accent-foreground': oklchValue(0.99, 0, 0),
 
     destructive: danger[500],
+    // HOS-1942: destructive as TEXT/BORDER on a surface. Same value as `destructive`
+    // in light; dark lifts it (see web-dark.ts).
+    'destructive-text': danger[500],
     'destructive-foreground': oklchValue(0.98, 0, 0),
 
     overlay: 'oklch(0.2 0.02 220 / 0.5)',

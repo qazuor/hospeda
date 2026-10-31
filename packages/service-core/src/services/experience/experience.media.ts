@@ -57,6 +57,7 @@ import {
 } from '@repo/schemas';
 import type { Actor, ServiceContext, ServiceOutput } from '../../types';
 import { ServiceError } from '../../types';
+import { liveParentOrNull } from '../../utils/live-parent';
 import { recordListingSubEntityEdit } from '../listing/listing-owner-act';
 import { scheduleListingMediaRevalidation } from '../listing/listing-revalidation.js';
 import { assertSupportEditContentOnly } from '../listing/listing-support-edit';
@@ -82,9 +83,11 @@ import { checkExperienceCanEditMedia } from './experience.permissions';
 async function requireExperience(
     model: ExperienceModel,
     experienceId: string,
-    tx?: ServiceContext['tx']
+    tx?: ServiceContext['tx'],
+    includeDeleted = false
 ) {
-    const entity = await model.findById(experienceId, tx);
+    const row = await model.findById(experienceId, tx);
+    const entity = includeDeleted ? row : liveParentOrNull({ entity: row });
     if (!entity) {
         throw new ServiceError(ServiceErrorCode.NOT_FOUND, 'Experience listing not found');
     }
@@ -526,7 +529,7 @@ export async function getExperienceMedia(
         }
         const validated = parseResult.data;
 
-        const experience = await requireExperience(model, validated.experienceId, ctx?.tx);
+        const experience = await requireExperience(model, validated.experienceId, ctx?.tx, true);
         checkExperienceCanEditMedia(actor, experience);
 
         const mediaModel = new ExperienceMediaModel();

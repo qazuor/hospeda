@@ -90,10 +90,9 @@ running the router; `before-swap` is the event it does not forge, and unlike
   alternative, and that corrupts the history stack.
 - **Listing and destination-index pages re-push their URL on every filter or
   facet tap.** A modal opened after the first such tap gets no back gesture for
-  the rest of that page's life. This is why the mobile filter drawer
-  (`MobileDrawer.tsx`) is deliberately NOT wired — it would work once and then
-  stop — and why `AiSearchEntry` and `MobileMenu` are effectively
-  first-interaction-only on those pages.
+  the rest of that page's life (`AiSearchEntry` and `MobileMenu` are effectively
+  first-interaction-only on those pages). The mobile filter drawer opts out of
+  this limitation, see "Surfaces over a rewriting page".
 - If something pushes a history entry on top of a live claim (the listing filter
   debounce can land after a modal opened), the claim is abandoned rather than
   unwound — walking back would take the user somewhere they did not ask for.
@@ -143,11 +142,34 @@ running the router; `before-swap` is the event it does not forge, and unlike
   claim into a full document swap. If that directive changes, this needs to
   change with it.
 
+## Surfaces over a rewriting page (HOS-1927)
+
+The mobile filters drawer sits over a listing that rewrites its URL on every
+filter tap, so it uses `useDialogHistoryBack({ tolerateRouterDrift: true })`:
+
+- **Raw claim.** When the router cannot vouch for the document, the entry is a
+  plain `pushState` at the same URL (state carries `__hospedaDialogRaw`), and
+  `handlePopState` runs in the CAPTURE phase and calls `stopImmediatePropagation`
+  for any traversal onto or off a raw entry, so `<ClientRouter />` never answers
+  it with a refetch-and-swap. Chosen over `replaceState` because replacing the
+  page's own entry cannot take the user anywhere, and over the routed claim
+  because that one is unavailable after the first filter tap.
+- **The listing commits under the claim.** `ListingLayout` dispatches the
+  cancelable `hospeda:listing-url-commit` before it `pushState`s. A live claim
+  takes it (`replaceState`, keeping state and fragment) and the push is skipped,
+  so the claim is never buried.
+- **Back** closes the drawer and keeps the filters (the rewritten URL is
+  re-asserted after the router has handled the traversal). **Closing by UI** after
+  a rewrite keeps the entry as an ordinary filter entry instead of walking back,
+  which would revert the filters.
+- Not measured on a real WebKit/Android device: relies on capture listeners
+  firing before non-capture ones on `window`.
+
 ## Surfaces that are NOT covered
 
 Wiring is opt-in per surface. These deliberately have no back-button handling:
 
-- `components/shared/filters/components/MobileDrawer.tsx` — see above.
+- (`MobileDrawer.tsx` is covered since HOS-1927, see "Surfaces over a rewriting page".)
 - `components/maps/MapCardsSidebar.client.tsx` — mobile results bottom sheet.
 - The native `<dialog showModal>` review forms (`ReviewSidebarCard`,
   `DestinationReviewSidebarCard`, `VenueReviewForm`) — these are the highest

@@ -9,7 +9,8 @@ import { z } from 'zod';
 import {
     BaseHttpSearchSchema,
     createArrayQueryParam,
-    createBooleanQueryParam
+    createBooleanQueryParam,
+    createEnumArrayQueryParam
 } from '../../api/http/base-http.schema.js';
 import { safeExternalUrl } from '../../common/safe-external-url.schema.js';
 import { PriceCurrencyEnum } from '../../enums/currency.enum.js';
@@ -18,10 +19,12 @@ import { stripShapeDefaults } from '../../utils/utils.js';
 import { DRAFT_DESCRIPTION_PLACEHOLDER } from './accommodation.publish-requirements.js';
 
 /**
- * HOS-1938: query strings are case-insensitive for the accommodation type
- * filters. Trims and upper-cases the raw string so `?types=apartment` reaches
- * the uppercase enum (and the DB `type` column) instead of a Postgres 500,
- * then validates it: a value that is still not in the enum fails with a 400.
+ * HOS-1938: query strings are case-insensitive for the singular accommodation
+ * `type` filter. Trims and upper-cases the raw string so `?type=apartment`
+ * reaches the uppercase enum (and the DB `type` column) instead of a Postgres
+ * 500, then validates it: a value that is still not in the enum fails with a
+ * 400. The array sibling `types` gets the same treatment from
+ * `createEnumArrayQueryParam`.
  */
 const upperCasedAccommodationType = z
     .string()
@@ -72,7 +75,6 @@ export const AccommodationSearchHttpSchema = BaseHttpSearchSchema.extend({
 
     // Boolean filters with HTTP coercion
     isFeatured: createBooleanQueryParam('Filter featured accommodations'),
-    isAvailable: createBooleanQueryParam('Filter available accommodations'),
     hasPool: createBooleanQueryParam('Filter accommodations with pools'),
     hasWifi: createBooleanQueryParam('Filter accommodations with WiFi'),
     allowsPets: createBooleanQueryParam('Filter pet-friendly accommodations'),
@@ -93,8 +95,9 @@ export const AccommodationSearchHttpSchema = BaseHttpSearchSchema.extend({
     address: z.string().optional(),
 
     // Array filters with HTTP coercion
-    types: createArrayQueryParam('Filter by multiple accommodation types').pipe(
-        z.array(upperCasedAccommodationType).optional()
+    types: createEnumArrayQueryParam(
+        'Filter by multiple accommodation types',
+        AccommodationTypeEnumSchema
     ),
     /**
      * Filter by required amenity UUIDs.
@@ -689,11 +692,11 @@ export const httpToDomainAccommodationSearch = (
     includeAmenities: httpParams.includeAmenities,
     includeFeatures: httpParams.includeFeatures,
     checkIn: httpParams.checkIn,
-    checkOut: httpParams.checkOut,
-    isAvailable: httpParams.isAvailable
+    checkOut: httpParams.checkOut
 
-    // Note: Fields like country, city, ownerId, createdAfter, createdBefore
-    // exist in domain schema but not in HTTP schema, so they're not mapped
+    // Note: Fields like ownerId, createdAfter, createdBefore exist in the domain
+    // schema but not in the HTTP schema, so they're not mapped. `isAvailable`,
+    // `city` and `country` were removed (HOS-1922): nothing ever implemented them.
 });
 
 import { httpBodyBoolean } from '../../common/boolean-params.js';

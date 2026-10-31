@@ -350,13 +350,21 @@ export class PartnerService extends BaseCrudService<
     protected async _executeSearch(
         params: Record<string, unknown>,
         _actor: Actor,
-        _ctx: ServiceContext
+        ctx: ServiceContext
     ): Promise<PaginatedListOutput<Partner>> {
-        const { page = 1, pageSize = 20, ...filterParams } = params;
-        (filterParams as Record<string, unknown>).lifecycleState = LifecycleStatusEnum.ACTIVE;
-        const items = await this.model.findByFilters(
-            filterParams as Parameters<PartnerModel['findByFilters']>[0]
-        );
+        // BaseCrudRead.search moves page/pageSize/sortBy/sortOrder onto
+        // ctx.pagination (SPEC-088); they are no longer in params (HOS-1917).
+        const filterParams: Record<string, unknown> = {
+            ...params,
+            lifecycleState: LifecycleStatusEnum.ACTIVE
+        };
+        const items = await this.model.findByFilters({
+            ...(filterParams as Parameters<PartnerModel['findByFilters']>[0]),
+            page: ctx.pagination?.page ?? 1,
+            pageSize: ctx.pagination?.pageSize ?? 20,
+            sort: ctx.pagination?.sortBy,
+            sortOrder: ctx.pagination?.sortOrder
+        });
         const total = await this.model.countActivePartners(
             filterParams as { q?: string; type?: string }
         );

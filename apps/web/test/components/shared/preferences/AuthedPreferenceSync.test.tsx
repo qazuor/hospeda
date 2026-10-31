@@ -7,6 +7,7 @@ import { render } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { AuthedPreferenceSync } from '../../../../src/components/shared/preferences/AuthedPreferenceSync.client';
 import { AUTH_ME_CACHE_KEY } from '../../../../src/lib/auth-cache';
+import { THEME_SYNC_MARKER_KEY } from '../../../../src/lib/theme';
 import { clearToasts, getToasts } from '../../../../src/store/toast-store';
 
 vi.mock('../../../../src/lib/env', () => ({
@@ -17,9 +18,19 @@ function dispatch(detail: { kind: 'theme' | 'locale'; value: string }) {
     window.dispatchEvent(new CustomEvent('preferences:change', { detail }));
 }
 
-function setAuth({ authed, userId }: { authed: boolean; userId: string | null }) {
+/** `synced: true` (default) models a session that already loaded the saved theme. */
+function setAuth({
+    authed,
+    userId,
+    synced = true
+}: {
+    authed: boolean;
+    userId: string | null;
+    synced?: boolean;
+}) {
     document.documentElement.setAttribute('data-user-authenticated', authed ? 'true' : 'false');
     if (authed && userId) {
+        if (synced) sessionStorage.setItem(THEME_SYNC_MARKER_KEY, userId);
         sessionStorage.setItem(
             AUTH_ME_CACHE_KEY,
             JSON.stringify({
@@ -121,6 +132,57 @@ describe('AuthedPreferenceSync', () => {
             const toasts = getToasts();
             expect(toasts).toHaveLength(1);
             expect(toasts[0]?.type).toBe('error');
+        });
+    });
+
+    describe('saved theme load (HOS-1966)', () => {
+        beforeEach(() => {
+            localStorage.clear();
+            document.documentElement.removeAttribute('data-theme');
+            document.documentElement.setAttribute('data-user-authenticated', 'true');
+        });
+
+        it('applies the saved themeWeb on mount for an authed user', async () => {
+            setAuth({ authed: true, userId: 'user-123', synced: false });
+            fetchMock.mockResolvedValue({
+                ok: true,
+                json: async () => ({ data: { settings: { themeWeb: 'dark' } } })
+            });
+            render(<AuthedPreferenceSync />);
+            await vi.waitFor(() =>
+                expect(document.documentElement.getAttribute('data-theme')).toBe('dark')
+            );
+            expect(localStorage.getItem('theme')).toBe('dark');
+            expect(fetchMock.mock.calls[0]?.[1]).not.toHaveProperty('method');
+        });
+
+        it('does not fetch for guests', async () => {
+            document.documentElement.removeAttribute('data-user-authenticated');
+            setAuth({ authed: false, userId: null });
+            render(<AuthedPreferenceSync />);
+            await Promise.resolve();
+            expect(fetchMock).not.toHaveBeenCalled();
+        });
+
+        it('a toggle during the GET wins over the late saved value', async () => {
+            setAuth({ authed: true, userId: 'user-123', synced: false });
+            let release: (v: unknown) => void = () => undefined;
+            fetchMock.mockImplementationOnce(
+                () =>
+                    new Promise((r) => {
+                        release = r;
+                    })
+            );
+            render(<AuthedPreferenceSync />);
+            localStorage.setItem('theme', 'light');
+            dispatch({ kind: 'theme', value: 'light' });
+            release({
+                ok: true,
+                json: async () => ({ data: { settings: { themeWeb: 'dark' } } })
+            });
+            await new Promise((r) => setTimeout(r, 20));
+            expect(localStorage.getItem('theme')).toBe('light');
+            expect(document.documentElement.getAttribute('data-theme')).toBeNull();
         });
     });
 });

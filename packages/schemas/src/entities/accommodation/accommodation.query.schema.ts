@@ -50,8 +50,6 @@ export const AccommodationFiltersSchema = z.object({
     // Location filters
     destinationId: z.string().uuid().optional(),
     destinationIds: z.array(z.string()).optional(),
-    country: z.string().length(2).optional(),
-    city: z.string().optional(),
     latitude: z.number().min(-90).max(90).optional(),
     longitude: z.number().min(-180).max(180).optional(),
     radius: z.number().positive().optional(), // in kilometers
@@ -87,8 +85,7 @@ export const AccommodationFiltersSchema = z.object({
 
     // Availability filters
     checkIn: z.date().optional(),
-    checkOut: z.date().optional(),
-    isAvailable: z.boolean().optional()
+    checkOut: z.date().optional()
 });
 
 // Type: Filters
@@ -113,8 +110,6 @@ export const AccommodationSearchSchema = BaseSearchSchema.extend({
     createdBefore: z.date().optional(),
     destinationId: z.string().uuid().optional(),
     destinationIds: z.array(z.string()).optional(),
-    country: z.string().length(2).optional(),
-    city: z.string().optional(),
     latitude: z.number().min(-90).max(90).optional(),
     longitude: z.number().min(-180).max(180).optional(),
     radius: z.number().positive().optional(),
@@ -165,8 +160,7 @@ export const AccommodationSearchSchema = BaseSearchSchema.extend({
     includeFeatures: z.boolean().optional(),
     ownerId: z.string().uuid().optional(),
     checkIn: z.date().optional(),
-    checkOut: z.date().optional(),
-    isAvailable: z.boolean().optional()
+    checkOut: z.date().optional()
 });
 
 // Type: Search Input
@@ -219,8 +213,6 @@ export const HttpAccommodationSearchSchema = HttpPaginationSchema.safeExtend(
 
     // Location filters
     destinationId: z.string().uuid().optional(),
-    country: z.string().length(2).optional(),
-    city: z.string().optional(),
     latitude: HttpQueryFields.latitude(),
     longitude: HttpQueryFields.longitude(),
     radius: HttpQueryFields.radius(),
@@ -244,10 +236,7 @@ export const HttpAccommodationSearchSchema = HttpPaginationSchema.safeExtend(
         .optional(),
 
     // UUID filters
-    ownerId: z.string().uuid().optional(),
-
-    // Boolean filters with coercion
-    isAvailable: HttpQueryFields.isAvailable()
+    ownerId: z.string().uuid().optional()
 });
 
 export type HttpAccommodationSearch = z.infer<typeof HttpAccommodationSearchSchema>;

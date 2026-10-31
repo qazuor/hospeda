@@ -75,10 +75,20 @@ export function getPlanDescription(input: { plan: PlanLike; t: Translator }): st
  * entitlement definition; if the key is unknown, falls back to the raw key
  * (formatted) so the UI never renders an empty bullet.
  */
-export function getEntitlementName(input: { key: EntitlementKey; t: Translator }): string {
-    const { key, t } = input;
+export function getEntitlementName(input: {
+    key: EntitlementKey;
+    t: Translator;
+    audience?: PricingAudience;
+}): string {
+    const { key, t, audience } = input;
     // HOS-1352: transitional until V2 (HOS-1356), see PR: locale labels replace the demolished plan-definition fallback.
-    return t(`billing.entitlement.${key}`, humanizeKey(key));
+    const generic = t(`billing.entitlement.${key}`, humanizeKey(key));
+    if (audience === undefined) return generic;
+    // HOS-1799: one key can mean different things per audience (`ai_chat` is the
+    // visitor's chat about a stay for tourists, the listing owner's chat for
+    // venue/experience). An audience override, when the locale has one, wins;
+    // otherwise the generic label stands.
+    return t(`billing.entitlementByAudience.${audience}.${key}`, generic);
 }
 
 /**
@@ -103,7 +113,7 @@ export function getDisplayFeatures(input: {
     if (audience !== 'owner') {
         return keys.map((k) => ({
             id: k,
-            label: getEntitlementName({ key: k as EntitlementKey, t })
+            label: getEntitlementName({ key: k as EntitlementKey, t, audience })
         }));
     }
 
@@ -125,7 +135,10 @@ export function getDisplayFeatures(input: {
             }
             continue;
         }
-        out.push({ id: key, label: getEntitlementName({ key: key as EntitlementKey, t }) });
+        out.push({
+            id: key,
+            label: getEntitlementName({ key: key as EntitlementKey, t, audience })
+        });
     }
     return out;
 }

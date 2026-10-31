@@ -105,12 +105,19 @@ function inventoryConsumers(file: string, sf: ts.SourceFile): Consumer[] {
     walk(sf);
     return found;
 }
-export function inspect(args: { file: string; source: string }): {
+export function inspect(args: {
+    file: string;
+    source: string;
+    /** Already-parsed tree for `file`; skips the re-parse when the caller holds one. */
+    sourceFile?: ts.SourceFile;
+}): {
     findings: readonly Finding[];
     consumers: readonly Consumer[];
     listingCount: number;
 } {
-    const sf = ts.createSourceFile(args.file, args.source, ts.ScriptTarget.Latest, true);
+    const sf =
+        args.sourceFile ??
+        ts.createSourceFile(args.file, args.source, ts.ScriptTarget.Latest, true);
     const findings: Finding[] = [];
     let listingCount = 0;
     const walk = (node: ts.Node): void => {
@@ -144,6 +151,8 @@ export function run(args: {
     readonly root: string;
     readonly minScannedFiles?: number;
     readonly inventories: Partial<Record<InventoryKey, readonly unknown[]>>;
+    /** Pre-parsed trees keyed by file; a file found here is not read or parsed again. */
+    readonly sourceFiles?: ReadonlyMap<string, ts.SourceFile>;
 }): {
     readonly exitCode: number;
     readonly output: string;
@@ -170,7 +179,10 @@ export function run(args: {
     ]);
     let listingCount = 0;
     for (const file of files) {
-        const result = inspect({ file, source: readFileSync(join(args.root, file), 'utf8') });
+        const parsed = args.sourceFiles?.get(file);
+        const result = parsed
+            ? inspect({ file, source: '', sourceFile: parsed })
+            : inspect({ file, source: readFileSync(join(args.root, file), 'utf8') });
         listingCount += result.listingCount;
         errors.push(
             ...result.findings.map((f) => `G-R1-F ${f.predicate}: ${f.file}:${f.line} ${f.detail}`)

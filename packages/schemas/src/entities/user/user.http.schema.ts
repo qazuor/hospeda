@@ -8,10 +8,10 @@
 import { z } from 'zod';
 import {
     BaseHttpSearchSchema,
-    createArrayQueryParam,
-    createBooleanQueryParam
+    createBooleanQueryParam,
+    createEnumArrayQueryParam
 } from '../../api/http/base-http.schema.js';
-import { RoleEnumSchema } from '../../enums/index.js';
+import { LifecycleStatusEnumSchema, RoleEnumSchema } from '../../enums/index.js';
 import { LifecycleStatusEnum } from '../../enums/lifecycle-state.enum.js';
 import { VisibilityEnum } from '../../enums/visibility.enum.js';
 import { stripShapeDefaults } from '../../utils/utils.js';
@@ -55,8 +55,11 @@ export const UserSearchHttpSchema = BaseHttpSearchSchema.extend({
     bioContains: z.string().min(1).max(500).optional(),
 
     // Array filters with HTTP coercion
-    roles: createArrayQueryParam('Filter by multiple user roles'),
-    statuses: createArrayQueryParam('Filter by multiple user statuses'),
+    roles: createEnumArrayQueryParam('Filter by multiple user roles', RoleEnumSchema),
+    statuses: createEnumArrayQueryParam(
+        'Filter by multiple user statuses',
+        LifecycleStatusEnumSchema
+    ),
 
     // Numeric filters with HTTP coercion
     minAge: z.coerce.number().int().min(0).max(120).optional(),

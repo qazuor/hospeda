@@ -6,6 +6,7 @@
  */
 
 import { useTranslations } from '@/hooks/use-translations';
+import { formatDateWithTime } from '@/lib/format-helpers';
 
 import { SocialPostStatusBadge } from './SocialPostStatusBadge';
 
@@ -27,7 +28,7 @@ export interface SocialPostTargetsTabProps {
  * Renders each publish target as a card with status, timestamps, and error info.
  */
 export function SocialPostTargetsTab({ targets }: SocialPostTargetsTabProps) {
-    const { t } = useTranslations();
+    const { t, locale } = useTranslations();
 
     if (targets.length === 0) {
         return (
@@ -69,13 +70,13 @@ export function SocialPostTargetsTab({ targets }: SocialPostTargetsTabProps) {
                             <span>
                                 <strong>{t('social.posts.detail.targets.scheduledAt')}:</strong>{' '}
                                 {scheduledAt
-                                    ? new Date(scheduledAt as string).toLocaleString()
+                                    ? formatDateWithTime({ date: scheduledAt as string, locale })
                                     : t('social.posts.detail.targets.noScheduled')}
                             </span>
                             <span>
                                 <strong>{t('social.posts.detail.targets.publishedAt')}:</strong>{' '}
                                 {publishedAt
-                                    ? new Date(publishedAt as string).toLocaleString()
+                                    ? formatDateWithTime({ date: publishedAt as string, locale })
                                     : t('social.posts.detail.targets.noPublished')}
                             </span>
                             {externalUrl && (

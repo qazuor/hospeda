@@ -34,6 +34,7 @@ import {
 } from '@/hooks/use-social-posts';
 import { useTranslations } from '@/hooks/use-translations';
 import { useHasPermission } from '@/hooks/use-user-permissions';
+import { formatDateWithTime } from '@/lib/format-helpers';
 import {
     PublishNowDialog,
     RejectDialog,
@@ -178,7 +179,7 @@ export function SocialPostSidePanel({
     nextRunAt,
     recurrenceParamsJson
 }: SocialPostSidePanelProps) {
-    const { t } = useTranslations();
+    const { t, locale } = useTranslations();
 
     const canApprove = useHasPermission(PermissionEnum.SOCIAL_POST_APPROVE);
     const canSchedule = useHasPermission(PermissionEnum.SOCIAL_POST_SCHEDULE);
@@ -242,10 +243,10 @@ export function SocialPostSidePanel({
     const platforms = extractPlatforms(targets);
 
     const formattedScheduled = scheduledAt
-        ? new Date(scheduledAt as string).toLocaleString()
+        ? formatDateWithTime({ date: scheduledAt as string, locale })
         : null;
 
-    const formattedNextRunAt = nextRunAt ? new Date(nextRunAt).toLocaleString() : null;
+    const formattedNextRunAt = nextRunAt ? formatDateWithTime({ date: nextRunAt, locale }) : null;
 
     /** True when the cadence is something other than one-shot. */
     const isRecurring = recurrenceType !== SocialRecurrenceTypeEnum.ONCE;

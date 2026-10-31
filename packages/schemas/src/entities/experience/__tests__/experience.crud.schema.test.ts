@@ -5,6 +5,7 @@ import {
     ExperienceAdminCreateInputCheckedSchema,
     ExperienceAdminCreateInputSchema,
     ExperienceDeleteInputSchema,
+    ExperienceOwnerCreateInputCheckedSchema,
     ExperienceOwnerCreateInputSchema,
     ExperienceOwnerUpdateInputSchema,
     ExperienceRestoreInputSchema,
@@ -118,6 +119,74 @@ describe('ExperienceAdminCreateInputSchema', () => {
             expect(() =>
                 ExperienceAdminCreateInputSchema.pick({ name: true, priceUnit: true })
             ).not.toThrow();
+        });
+
+        it('reports an empty priceFrom with a translatable key, not Zod English (HOS-1943)', () => {
+            const raw = buildAdminCreateInput({ priceFrom: undefined });
+            const result = ExperienceAdminCreateInputCheckedSchema.safeParse(raw);
+            expect(result.success).toBe(false);
+            if (!result.success) {
+                const issue = result.error.issues.find((i) => i.path[0] === 'priceFrom');
+                expect(issue?.message).toBe('zodError.experience.priceFrom.required');
+            }
+        });
+
+        it('accepts a null priceFrom when the price is on request (HOS-1943)', () => {
+            // Arrange
+            const raw = buildAdminCreateInput({
+                priceUnit: null,
+                priceFrom: null,
+                isPriceOnRequest: true
+            });
+
+            // Act
+            const result = ExperienceAdminCreateInputCheckedSchema.safeParse(raw);
+
+            // Assert
+            expect(result.success).toBe(true);
+            if (result.success) {
+                expect(result.data.priceFrom).toBeNull();
+            }
+        });
+
+        it('REJECTS a null priceFrom when there is no on-request flag, with the required key (HOS-1943)', () => {
+            // Arrange
+            const raw = buildAdminCreateInput({ priceFrom: null, isPriceOnRequest: false });
+
+            // Act
+            const result = ExperienceAdminCreateInputCheckedSchema.safeParse(raw);
+
+            // Assert
+            expect(result.success).toBe(false);
+            if (!result.success) {
+                const issue = result.error.issues.find((i) => i.path[0] === 'priceFrom');
+                expect(issue?.message).toBe('zodError.experience.priceFrom.required');
+            }
+        });
+
+        it('applies the same null-price rule to the owner create schema (HOS-1943)', () => {
+            // Arrange
+            const { ownerId: _ownerId, ...ownerBase } = buildAdminCreateInput();
+            const onRequest = {
+                ...ownerBase,
+                priceUnit: null,
+                priceFrom: null,
+                isPriceOnRequest: true
+            };
+            const priced = { ...ownerBase, priceFrom: null, isPriceOnRequest: false };
+
+            // Act
+            const onRequestResult = ExperienceOwnerCreateInputCheckedSchema.safeParse(onRequest);
+            const pricedResult = ExperienceOwnerCreateInputCheckedSchema.safeParse(priced);
+
+            // Assert
+            expect(onRequestResult.success).toBe(true);
+            expect(pricedResult.success).toBe(false);
+            if (!pricedResult.success) {
+                expect(pricedResult.error.issues.map((i) => i.path.join('.'))).toContain(
+                    'priceFrom'
+                );
+            }
         });
 
         it('accepts an omitted priceUnit when the price is on request (H-156)', () => {

@@ -22,6 +22,7 @@
 import { useEffect } from 'react';
 import { AUTH_ME_CACHE_KEY } from '@/lib/auth-cache';
 import { getApiUrl } from '@/lib/env';
+import { isThemeSynced, markThemeSynced, syncSavedThemeChoice } from '@/lib/theme';
 import { addToast } from '@/store/toast-store';
 
 interface AuthMeSnapshot {
@@ -58,6 +59,9 @@ async function persistPreference(detail: PreferenceChangeDetail): Promise<void> 
 
     const body: Record<string, unknown> = {};
     if (detail.kind === 'theme') {
+        // A signed-in toggle wins over the saved value for the rest of the
+        // session, even if the PATCH below is still in flight on the next page.
+        markThemeSynced({ userId });
         body.themeWeb = detail.value;
     } else if (detail.kind === 'locale') {
         body.languageWeb = detail.value;
@@ -85,6 +89,33 @@ async function persistPreference(detail: PreferenceChangeDetail): Promise<void> 
 }
 
 /**
+ * Loads the saved `settings.themeWeb` once per session and applies it
+ * (HOS-1966). Silent on every failure: the local theme simply stays.
+ */
+async function loadSavedTheme(): Promise<void> {
+    if (!isAuthenticatedByAttribute()) return;
+    const userId = readUserIdFromCache();
+    if (!userId || isThemeSynced({ userId })) return;
+
+    try {
+        const apiUrl = getApiUrl().replace(/\/$/, '');
+        const response = await fetch(`${apiUrl}/api/v1/protected/users/${userId}`, {
+            credentials: 'include',
+            headers: { Accept: 'application/json' }
+        });
+        if (!response.ok) return;
+        const body = (await response.json()) as {
+            data?: { settings?: { themeWeb?: unknown } | null } | null;
+        };
+        // The user may have toggled while the GET was in flight: re-check
+        // inside the sync (it reads the marker) before anything is applied.
+        syncSavedThemeChoice({ userId, savedChoice: body.data?.settings?.themeWeb });
+    } catch {
+        // Keep the local theme; the next page load retries.
+    }
+}
+
+/**
  * AuthedPreferenceSync — silent background sync for authenticated users.
  *
  * @example
@@ -94,6 +125,7 @@ async function persistPreference(detail: PreferenceChangeDetail): Promise<void> 
  */
 export function AuthedPreferenceSync(): null {
     useEffect(() => {
+        void loadSavedTheme();
         const handle = (event: Event) => {
             const detail = (event as CustomEvent<PreferenceChangeDetail>).detail;
             if (!detail) return;

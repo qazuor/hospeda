@@ -397,6 +397,44 @@ describe('resolveListingCompleteness — experience', () => {
             expect(result.missing).not.toContain('priceFrom');
         });
 
+        it('should NOT report "priceFrom" missing for an on-request listing stored with priceFrom=null (HOS-1943)', () => {
+            // Arrange
+            const listing = {
+                ...makeCompleteExperienceListing(),
+                priceFrom: null,
+                isPriceOnRequest: true
+            };
+
+            // Act
+            const result = resolveListingCompleteness({
+                entityType: ProductDomainEnum.EXPERIENCE,
+                listing
+            });
+
+            // Assert
+            expect(result.complete).toBe(true);
+            expect(result.missing).not.toContain('priceFrom');
+        });
+
+        it('should report "priceFrom" missing when priceFrom is null and isPriceOnRequest is false (HOS-1943)', () => {
+            // Arrange
+            const listing = {
+                ...makeCompleteExperienceListing(),
+                priceFrom: null,
+                isPriceOnRequest: false
+            };
+
+            // Act
+            const result = resolveListingCompleteness({
+                entityType: ProductDomainEnum.EXPERIENCE,
+                listing
+            });
+
+            // Assert
+            expect(result.complete).toBe(false);
+            expect(result.missing).toContain('priceFrom');
+        });
+
         it('should NOT report "priceFrom" missing when priceFrom is a positive integer', () => {
             const result = resolveListingCompleteness({
                 entityType: ProductDomainEnum.EXPERIENCE,

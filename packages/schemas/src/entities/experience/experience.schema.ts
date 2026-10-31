@@ -125,7 +125,7 @@ function experienceChecklistSchema(input: {
  *
  * Entity-specific fields (SPEC-240):
  * - `type` — experience sub-category (CAR_RENTAL, TOUR_GUIDE, EXCURSION, etc.)
- * - `priceFrom` — starting price in integer centavos (0 = free / on_request)
+ * - `priceFrom` — starting price in integer centavos; `null` when on request (HOS-1943)
  * - `priceUnit` — billing unit (per_day / per_hour / per_person / per_group)
  * - `isPriceOnRequest` — when true, hides priceFrom and shows "Consultar precio"
  * - `meetingPoint` / `meetingPointLat` / `meetingPointLong` — where the
@@ -161,13 +161,26 @@ export const ExperienceSchema = z.object({
 
     /**
      * Starting price in integer centavos (project-wide "Money = integer" rule).
-     * Must be a non-negative integer. Use 0 when `isPriceOnRequest` is true —
-     * the display layer will show "Consultar precio" instead of the numeric value.
+     * A non-negative integer, or `null` when `isPriceOnRequest` is true.
+     *
+     * NULLABLE since HOS-1943 (owner decision, option a), mirroring
+     * `experiences.price_from`: an experience "a consultar" has no price and
+     * stores NULL, never a fake 0 that reads as "$0" and sorts as cheapest.
+     *
+     * `.nullable()` and NOT `.nullish()`: the key stays required, so an empty
+     * field still reports `zodError.experience.priceFrom.required` instead of
+     * passing silently. "Null only when on request" is a cross-field rule and
+     * lives on the CREATE schemas (`requirePriceFromUnlessOnRequest` in
+     * `experience.crud.schema.ts`), because this base schema also describes
+     * rows read back from the database.
      */
     priceFrom: z
-        .number()
+        // Without a message, an empty field surfaces Zod's own English text
+        // ("Invalid input: expected number, received undefined") inside a Spanish form.
+        .number({ message: 'zodError.experience.priceFrom.required' })
         .int()
-        .nonnegative({ message: 'zodError.experience.priceFrom.nonnegative' }),
+        .nonnegative({ message: 'zodError.experience.priceFrom.nonnegative' })
+        .nullable(),
 
     /**
      * Billing unit for the experience pricing.
@@ -196,7 +209,7 @@ export const ExperienceSchema = z.object({
 
     /**
      * When true, the UI shows "Consultar precio" and hides the numeric `priceFrom`.
-     * Store `priceFrom = 0` alongside this flag to avoid confusion.
+     * `priceFrom` is stored as `null` alongside this flag (HOS-1943).
      */
     isPriceOnRequest: z.boolean().default(false),
 

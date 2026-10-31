@@ -62,7 +62,11 @@ interface ExperienceInsertInput {
     summary: string;
     description: string;
     type: string;
-    priceFrom: number;
+    /**
+     * Starting price in centavos. `null` for an experience "a consultar"
+     * (HOS-1943): no price is stored, never a fake 0.
+     */
+    priceFrom: number | null;
     priceUnit: string;
     isPriceOnRequest: boolean;
     /** Publication state the listing is born with (HOS-1641: replaces the three old state columns). */
@@ -206,7 +210,9 @@ function buildExperienceInputs(
             description:
                 'Un tour privado por la ciudad que da vida al Carnaval del País. Recorrés el Corsódromo, talleres de trajes, museos y los barrios típicos con una guía local especializada. El precio varía según el grupo y el recorrido, consultanos.',
             type: 'TOUR_GUIDE',
-            priceFrom: 0,
+            // HOS-1943: "a consultar" stores no price. Data-migration
+            // 0132-hos1943-price-on-request-null brings live DBs to the same state.
+            priceFrom: null,
             priceUnit: 'per_group',
             isPriceOnRequest: true,
             publicationStatus: PublicationStatusEnum.PUBLISHED,

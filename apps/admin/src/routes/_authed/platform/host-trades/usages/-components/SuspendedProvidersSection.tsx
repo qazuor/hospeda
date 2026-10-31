@@ -15,6 +15,7 @@
 import type { HostTradeAdmin } from '@repo/schemas';
 import { Button } from '@/components/ui/button';
 import { useTranslations } from '@/hooks/use-translations';
+import { formatShortDate } from '@/lib/format-helpers';
 
 /** Props for {@link SuspendedProvidersSection}. */
 export interface SuspendedProvidersSectionProps {
@@ -25,11 +26,17 @@ export interface SuspendedProvidersSectionProps {
     readonly isDeciding: boolean;
 }
 
-/** Renders a date as the admin's locale short date, or an em dash. */
-function formatDate(value: Date | string | null | undefined): string {
+/** Renders a date as the app-locale short date, or an em dash. */
+function formatDate({
+    value,
+    locale
+}: {
+    readonly value: Date | string | null | undefined;
+    readonly locale: string;
+}): string {
     if (!value) return '—';
     const date = value instanceof Date ? value : new Date(value);
-    return Number.isNaN(date.getTime()) ? '—' : date.toLocaleDateString();
+    return Number.isNaN(date.getTime()) ? '—' : formatShortDate({ date, locale });
 }
 
 /**
@@ -44,7 +51,7 @@ export function SuspendedProvidersSection({
     onLift,
     isDeciding
 }: SuspendedProvidersSectionProps) {
-    const { t, tPlural } = useTranslations();
+    const { t, tPlural, locale } = useTranslations();
 
     return (
         <section className="space-y-3">
@@ -109,7 +116,7 @@ export function SuspendedProvidersSection({
                                     {' · '}
                                     {t('admin-pages.hostTradeUsages.suspensions.suspendedAtLabel')}
                                     {': '}
-                                    {formatDate(provider.declarationSuspendedAt)}
+                                    {formatDate({ value: provider.declarationSuspendedAt, locale })}
                                 </p>
                                 <p className="text-sm">
                                     <span className="text-muted-foreground">

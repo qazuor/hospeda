@@ -5,7 +5,7 @@
 import type { EventUpcomingInput } from '@repo/schemas';
 import { EventPublicSchema, EventUpcomingHttpSchema } from '@repo/schemas';
 import { EventService, ServiceError } from '@repo/service-core';
-import { getActorFromContext } from '../../../utils/actor';
+import { createGuestActor } from '../../../utils/actor';
 import { apiLogger } from '../../../utils/logger';
 import { extractPaginationParams, getPaginationResponse } from '../../../utils/pagination';
 import { createPublicListRoute } from '../../../utils/route-factory';
@@ -24,8 +24,8 @@ export const publicGetUpcomingEventsRoute = createPublicListRoute({
     tags: ['Events'],
     requestQuery: EventUpcomingHttpSchema.shape,
     responseSchema: EventPublicSchema,
-    handler: async (ctx, _params, _body, query) => {
-        const actor = getActorFromContext(ctx);
+    handler: async (_ctx, _params, _body, query) => {
+        const actor = createGuestActor();
         const { page, pageSize } = extractPaginationParams(query || {});
 
         // SPEC-095: city/country filters dropped from the public upcoming-events

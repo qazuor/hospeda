@@ -61,9 +61,9 @@ describe('alojamientos/index.astro — facet SEO wiring (HOS-96 T-017)', () => {
         expect(src).toContain('noindex={facetSeoDecision.noindex}');
     });
 
-    it('preserves the pagination-aware canonical (?page=N -> /page/N/) for the base case', () => {
+    it('preserves the pagination-aware canonical (?page=N -> /page/N/) via the shared builder on canonicalBaseUrl', () => {
         expect(src).toMatch(
-            /const canonicalPath = page > 1 \? `\$\{canonicalBaseUrl\}page\/\$\{page\}\/` : canonicalBaseUrl;/
+            /const \{ canonicalPath, prevPath, nextPath \} = buildPaginationLinks\(\{\s*basePath: canonicalBaseUrl,\s*page,\s*totalPages\s*\}\);/
         );
     });
 

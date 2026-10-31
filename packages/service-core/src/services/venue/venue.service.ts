@@ -445,8 +445,8 @@ export class VenueService extends BaseListingService<
         ctx: ServiceContext
     ): Promise<PaginatedListOutput<Venue>> {
         const {
-            page,
-            pageSize,
+            page: _page,
+            pageSize: _pageSize,
             sortBy: _sortBy,
             sortOrder: _sortOrder,
             amenities,
@@ -480,8 +480,8 @@ export class VenueService extends BaseListingService<
                 publicationStatus: PublicationStatusEnum.PUBLISHED
             },
             {
-                page,
-                pageSize,
+                page: ctx?.pagination?.page,
+                pageSize: ctx?.pagination?.pageSize,
                 sortBy: ctx?.pagination?.sortBy,
                 sortOrder: ctx?.pagination?.sortOrder
             },

@@ -129,6 +129,7 @@ import type {
 import { ServiceError } from '../../types';
 import { parseIdOrSlug } from '../../utils';
 import { shouldRegenerateSlugOnListingChange } from '../../utils/listing-slug-policy';
+import { liveParentOrNull } from '../../utils/live-parent';
 import { hasPermission } from '../../utils/permission';
 import { withServiceTransaction } from '../../utils/transaction.js';
 import { ConversationService } from '../conversation/conversation.service.js';
@@ -540,6 +541,25 @@ export class AccommodationService extends BaseCrudService<
     protected override _canAdminSetInfo(actor: Actor, entity: Accommodation): Promise<void> | void {
         assertOutsideAction15Scope({ operation: 'adminInfo' });
         return super._canAdminSetInfo(actor, entity);
+    }
+
+    /**
+     * Loads the parent accommodation for a child-entity WRITE, treating a
+     * soft-deleted row (one in the trash) as missing (HOS-1919). The caller's
+     * own `!accommodation` branch then answers 404 NOT_FOUND.
+     *
+     * Reads and the restore/hard-delete lifecycle hooks deliberately keep using
+     * `this.model.findById` so the admin trash flows still reach trashed rows.
+     *
+     * @param accommodationId - Parent accommodation id.
+     * @param tx - Optional transaction handle.
+     * @returns The live accommodation row, or `null`.
+     */
+    private async _findLiveParent(
+        accommodationId: string,
+        tx?: ServiceContext['tx']
+    ): Promise<Accommodation | null> {
+        return liveParentOrNull({ entity: await this.model.findById(accommodationId, tx) });
     }
 
     /**
@@ -2779,7 +2799,7 @@ export class AccommodationService extends BaseCrudService<
                 // one transaction — an FAQ edit without its event (or the
                 // reverse) would feed the retention clock a false fact.
                 const run = async (tx: DrizzleClient) => {
-                    const accommodation = await this.model.findById(validated.accommodationId, tx);
+                    const accommodation = await this._findLiveParent(validated.accommodationId, tx);
                     if (!accommodation) {
                         throw new ServiceError(
                             ServiceErrorCode.NOT_FOUND,
@@ -2846,7 +2866,7 @@ export class AccommodationService extends BaseCrudService<
             execute: async (validated) => {
                 // HOS-1642 (AC:V9a:6): write + owner-act event in one transaction.
                 const run = async (tx: DrizzleClient) => {
-                    const accommodation = await this.model.findById(validated.accommodationId, tx);
+                    const accommodation = await this._findLiveParent(validated.accommodationId, tx);
                     if (!accommodation) {
                         throw new ServiceError(
                             ServiceErrorCode.NOT_FOUND,
@@ -2908,7 +2928,7 @@ export class AccommodationService extends BaseCrudService<
             execute: async (validated) => {
                 // HOS-1642 (AC:V9a:6): write + owner-act event in one transaction.
                 const run = async (tx: DrizzleClient) => {
-                    const accommodation = await this.model.findById(validated.accommodationId, tx);
+                    const accommodation = await this._findLiveParent(validated.accommodationId, tx);
                     if (!accommodation) {
                         throw new ServiceError(
                             ServiceErrorCode.NOT_FOUND,
@@ -3065,7 +3085,10 @@ export class AccommodationService extends BaseCrudService<
             input: { ...data, actor },
             schema: AccommodationFaqReorderInputSchema,
             execute: async (validated) => {
-                const accommodation = await this.model.findById(validated.accommodationId, ctx?.tx);
+                const accommodation = await this._findLiveParent(
+                    validated.accommodationId,
+                    ctx?.tx
+                );
                 if (!accommodation) {
                     throw new ServiceError(ServiceErrorCode.NOT_FOUND, 'Accommodation not found');
                 }
@@ -3144,7 +3167,10 @@ export class AccommodationService extends BaseCrudService<
             input: { actor: actor, ...input },
             schema: AccommodationIaDataAddInputSchema,
             execute: async (validated) => {
-                const accommodation = await this.model.findById(validated.accommodationId, ctx?.tx);
+                const accommodation = await this._findLiveParent(
+                    validated.accommodationId,
+                    ctx?.tx
+                );
                 if (!accommodation) {
                     throw new ServiceError(ServiceErrorCode.NOT_FOUND, 'Accommodation not found');
                 }
@@ -3177,7 +3203,10 @@ export class AccommodationService extends BaseCrudService<
             input: { actor: actor, ...input },
             schema: AccommodationIaDataRemoveInputSchema,
             execute: async (validated) => {
-                const accommodation = await this.model.findById(validated.accommodationId, ctx?.tx);
+                const accommodation = await this._findLiveParent(
+                    validated.accommodationId,
+                    ctx?.tx
+                );
                 if (!accommodation) {
                     throw new ServiceError(ServiceErrorCode.NOT_FOUND, 'Accommodation not found');
                 }
@@ -3213,7 +3242,10 @@ export class AccommodationService extends BaseCrudService<
             input: { actor: actor, ...input },
             schema: AccommodationIaDataUpdateInputSchema,
             execute: async (validated) => {
-                const accommodation = await this.model.findById(validated.accommodationId, ctx?.tx);
+                const accommodation = await this._findLiveParent(
+                    validated.accommodationId,
+                    ctx?.tx
+                );
                 if (!accommodation) {
                     throw new ServiceError(ServiceErrorCode.NOT_FOUND, 'Accommodation not found');
                 }
@@ -3446,7 +3478,7 @@ export class AccommodationService extends BaseCrudService<
                 // one transaction — a photo edit without its event (or the
                 // reverse) would feed the retention clock a false fact.
                 const run = async (tx: DrizzleClient) => {
-                    const accommodation = await this.model.findById(validated.accommodationId, tx);
+                    const accommodation = await this._findLiveParent(validated.accommodationId, tx);
                     if (!accommodation) {
                         throw new ServiceError(
                             ServiceErrorCode.NOT_FOUND,
@@ -3616,7 +3648,10 @@ export class AccommodationService extends BaseCrudService<
             input: { ...data, actor },
             schema: AccommodationFeaturedMediaAddInputSchema,
             execute: async (validated) => {
-                const accommodation = await this.model.findById(validated.accommodationId, ctx?.tx);
+                const accommodation = await this._findLiveParent(
+                    validated.accommodationId,
+                    ctx?.tx
+                );
                 if (!accommodation) {
                     throw new ServiceError(ServiceErrorCode.NOT_FOUND, 'Accommodation not found');
                 }
@@ -3711,7 +3746,10 @@ export class AccommodationService extends BaseCrudService<
             input: { ...data, actor },
             schema: AccommodationMediaRemoveInputSchema,
             execute: async (validated) => {
-                const accommodation = await this.model.findById(validated.accommodationId, ctx?.tx);
+                const accommodation = await this._findLiveParent(
+                    validated.accommodationId,
+                    ctx?.tx
+                );
                 if (!accommodation) {
                     throw new ServiceError(ServiceErrorCode.NOT_FOUND, 'Accommodation not found');
                 }
@@ -3817,7 +3855,10 @@ export class AccommodationService extends BaseCrudService<
             input: { ...data, actor },
             schema: AccommodationMediaReorderInputSchema,
             execute: async (validated) => {
-                const accommodation = await this.model.findById(validated.accommodationId, ctx?.tx);
+                const accommodation = await this._findLiveParent(
+                    validated.accommodationId,
+                    ctx?.tx
+                );
                 if (!accommodation) {
                     throw new ServiceError(ServiceErrorCode.NOT_FOUND, 'Accommodation not found');
                 }
@@ -3992,7 +4033,10 @@ export class AccommodationService extends BaseCrudService<
             input: { ...data, actor },
             schema: AccommodationMediaSetFeaturedInputSchema,
             execute: async (validated) => {
-                const accommodation = await this.model.findById(validated.accommodationId, ctx?.tx);
+                const accommodation = await this._findLiveParent(
+                    validated.accommodationId,
+                    ctx?.tx
+                );
                 if (!accommodation) {
                     throw new ServiceError(ServiceErrorCode.NOT_FOUND, 'Accommodation not found');
                 }
@@ -4121,7 +4165,7 @@ export class AccommodationService extends BaseCrudService<
                 // HOS-1642 (AC:V9a:6): the write and its owner-act event share
                 // one transaction.
                 const run = async (tx: DrizzleClient) => {
-                    const accommodation = await this.model.findById(validated.accommodationId, tx);
+                    const accommodation = await this._findLiveParent(validated.accommodationId, tx);
                     if (!accommodation) {
                         throw new ServiceError(
                             ServiceErrorCode.NOT_FOUND,
@@ -4231,7 +4275,7 @@ export class AccommodationService extends BaseCrudService<
                 // photos ("cambia" in the spec), so it records too — and shares
                 // the write's transaction.
                 const run = async (tx: DrizzleClient) => {
-                    const accommodation = await this.model.findById(validated.accommodationId, tx);
+                    const accommodation = await this._findLiveParent(validated.accommodationId, tx);
                     if (!accommodation) {
                         throw new ServiceError(
                             ServiceErrorCode.NOT_FOUND,
@@ -4348,7 +4392,7 @@ export class AccommodationService extends BaseCrudService<
                 // photos ("cambia" in the spec), so it records too — and shares
                 // the write's transaction.
                 const run = async (tx: DrizzleClient) => {
-                    const accommodation = await this.model.findById(validated.accommodationId, tx);
+                    const accommodation = await this._findLiveParent(validated.accommodationId, tx);
                     if (!accommodation) {
                         throw new ServiceError(
                             ServiceErrorCode.NOT_FOUND,

@@ -9,7 +9,8 @@ import { z } from 'zod';
 import {
     BaseHttpSearchSchema,
     createArrayQueryParam,
-    createBooleanQueryParam
+    createBooleanQueryParam,
+    createEnumArrayQueryParam
 } from '../../api/http/base-http.schema.js';
 import { LifecycleStatusEnumSchema, PostCategoryEnumSchema } from '../../enums/index.js';
 import { stripShapeDefaults } from '../../utils/utils.js';
@@ -29,8 +30,9 @@ export const PostSearchHttpSchema = BaseHttpSearchSchema.extend({
      * (US-10); when both are present the array takes precedence in the model
      * layer, mirroring `AccommodationModel`'s `types`/`type` blueprint.
      */
-    categories: createArrayQueryParam('Filter by multiple post categories').pipe(
-        z.array(PostCategoryEnumSchema).optional()
+    categories: createEnumArrayQueryParam(
+        'Filter by multiple post categories',
+        PostCategoryEnumSchema
     ),
     isFeatured: createBooleanQueryParam('Filter featured posts'),
     isPublished: createBooleanQueryParam('Filter published posts'),

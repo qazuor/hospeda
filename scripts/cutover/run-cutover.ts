@@ -132,6 +132,7 @@ export async function runCutover({
     const preserved: string[] = [];
     let unknownLive: string[] = [];
     let verified: readonly string[] = [];
+    let ended: readonly string[] = [];
     const sentPlanIds: string[] = [];
     const sentPreapprovalIds: string[] = [];
 
@@ -147,6 +148,7 @@ export async function runCutover({
         census: { plans: summary(plansWalk), preapprovals: summary(preapprovalsWalk) },
         cancelledPlanIds: [...sentPlanIds],
         cancelledPreapprovalIds: [...sentPreapprovalIds],
+        endedPreapprovalIds: ended,
         rereadCancelledIds: verified,
         preservedProbeIds: [...preserved],
         unknownLiveIds: unknownLive,
@@ -229,9 +231,11 @@ export async function runCutover({
                 api,
                 targets: [...plansToCancel, ...preapprovalsToCancel],
                 sleep,
-                backoffMs
+                backoffMs,
+                now
             });
             verified = result.verified;
+            ended = result.ended;
             for (const s of result.stuck) {
                 failures.push({
                     code: 'NOT_CANCELLED',

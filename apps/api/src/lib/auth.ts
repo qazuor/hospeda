@@ -480,44 +480,45 @@ function buildAuth() {
              * Better Auth's admin plugin — kept, but NO LONGER the source of
              * truth for roles (HOS-296).
              *
-             * **What broke and why.** The plugin declares a `role` field on the
-             * `user` model (`better-auth/plugins/admin/schema`) and its `init()`
-             * registers a `databaseHooks.user.create.before` that injects
-             * `{ role: defaultRole }` into EVERY user insert. The Drizzle
-             * adapter's `create()` runs `checkMissingFields`, which throws
-             * `BetterAuthError: The field "role" does not exist in the "user"
-             * Drizzle schema` for any key with no matching column. With
-             * `users.role` dropped, that made **every signup fail** — verified
-             * against the installed better-auth 1.6.23 sources, not inferred.
+             * **Why `users.role` exists again (HOS-1932).** The plugin declares a
+             * `role` field on the `user` model and better-auth >= 1.7 validates
+             * the Drizzle schema against every plugin-declared field at runtime;
+             * with the column dropped (HOS-296) every auth request failed with
+             * `Drizzle schema mismatch: Missing columns user.role`. The column is
+             * back as a NULLABLE PLACEHOLDER, so `advanced.database.validateSchema`
+             * stays at its default (ON) and a future drift is caught instead of
+             * silenced. It is not a role store: see the `users.role` docblock in
+             * `packages/db/src/schemas/user/user.dbschema.ts`.
              *
-             * **The fix** is in `databaseHooks.user.create.before` below, which
-             * strips `role` back out. Plugin hooks are registered BEFORE the
-             * user's own (`runPluginInit` pushes `source: 'user'` last) and
-             * `createWithHooks` merges each result in order, so ours wins.
-             * `transformInput` then skips the now-`undefined` value because the
-             * field carries no `defaultValue`, and nothing reaches the adapter.
+             * **The column stays NULL.** The plugin's `databaseHooks.user.create.before`
+             * injects `{ role: defaultRole }` into EVERY insert, and
+             * `databaseHooks.user.create.before` below strips it back out. Plugin
+             * hooks are registered BEFORE the user's own (`runPluginInit` pushes
+             * `source: 'user'` last) and `createWithHooks` merges each result in
+             * order, so ours wins; `transformInput` then skips the `undefined`
+             * value because the field carries no `defaultValue`.
              *
-             * **What this costs, deliberately.** `session.user.role` is now
-             * always `undefined`, so the plugin's own `hasPermission()` falls
-             * back to `defaultRole` → `noAdminRole` and every
-             * `/api/auth/admin/*` endpoint returns 403. Since HOS-1352 V5 that
-             * is also the declared design, not only the fallback: no plugin
-             * role grants any plugin action (`fullAdminRole` is empty, and
-             * `impersonate` / `set-role` are gone), so the outcome no longer
-             * depends on whether the plugin can resolve a role. See
+             * **Why that is safe.** `session.user.role` is therefore always
+             * null/undefined, so the plugin's own `hasPermission()` falls back to
+             * `defaultRole` → `noAdminRole` and every `/api/auth/admin/*`
+             * endpoint returns 403. That is also the declared design (HOS-1352
+             * V5): no plugin role grants any plugin action (`fullAdminRole` is
+             * empty, and `impersonate` / `set-role` are gone), so even a
+             * non-null value could not grant anything. `role` is `input: false`
+             * in the plugin schema, so no public endpoint accepts it. See
              * `./auth-admin-access.ts`.
              *
              * **Why not remove the plugin instead.** It owns the ban gate:
              * its `databaseHooks.session.create.before` rejects a session for a
-             * banned user (`users.banned`/`ban_expires`, both real columns that
-             * survive this change). Dropping the plugin would silently disable
-             * that security control. That gate is the only job the plugin
-             * keeps.
+             * banned user (`users.banned`/`ban_expires`). Dropping the plugin
+             * would silently disable that security control. That gate is the
+             * only job the plugin keeps.
              *
-             * **Why not keep a role column for it.** That is the scalar AC-7
-             * deletes, and it would immediately become a second source of truth
-             * for "is this user an admin", drifting from `user_role` — the exact
-             * class of bug HOS-296 exists to remove.
+             * **Authorization never reads this column.** "Is this user an admin"
+             * is `PermissionEnum` resolved from `user_role`. A second source of
+             * truth for it is the class of bug HOS-296 exists to remove, which
+             * is why `test/lib/auth-schema-validation.guard.test.ts` also fails
+             * on any `user.role` read in production code.
              *
              * The `roles` map below is retained because the plugin validates
              * `adminRoles` against its keys at construction time and throws
@@ -569,19 +570,7 @@ function buildAuth() {
 
         advanced: {
             database: {
-                generateId: () => crypto.randomUUID(),
-                /**
-                 * HOS-1932 — Better Auth 1.7 validates the Drizzle schema against the
-                 * tables it expects and fails EVERY auth request with
-                 * `Drizzle schema mismatch: Missing columns user.role`, because the
-                 * admin plugin declares a `role` field on `user`. That column is
-                 * deliberately gone (HOS-296: roles live in `user_role`), and the
-                 * user-create hook below (`user.create.before`) already strips the
-                 * plugin's injected `role` so no insert ever touches it. 1.6 had no
-                 * such check, so turning it off restores the exact prior behaviour.
-                 * Drop this only if the admin plugin goes away or `users.role` returns.
-                 */
-                validateSchema: false
+                generateId: () => crypto.randomUUID()
             },
             /** Explicitly enable CSRF protection (origin header + Fetch Metadata checks) */
             disableCSRFCheck: false,
@@ -735,25 +724,23 @@ function buildAuth() {
                             .replace(/^-+|-+$/g, '');
                         const slug = `${baseName}-${crypto.randomUUID().slice(0, 8)}`;
 
-                        // HOS-296: no `role` here any more. This hook mutates
-                        // the PRE-insert payload, so it has no `user.id` yet and
-                        // cannot write a `user_role` row even if it wanted to —
-                        // and `users.role`, the column it used to set, is gone.
-                        // The baseline USER hat is granted from the `after` hook
-                        // below, which does have the real id.
+                        // HOS-296: no real role here. This hook mutates the
+                        // PRE-insert payload, so it has no `user.id` yet and
+                        // cannot write a `user_role` row. The baseline USER hat
+                        // is granted from the `after` hook below, which does
+                        // have the real id.
                         //
-                        // The explicit `role: undefined` is LOAD-BEARING, not
-                        // tidiness: Better Auth's admin plugin injects
-                        // `{ role: defaultRole }` into every user insert from its
-                        // own `create.before` hook, and the Drizzle adapter throws
-                        // `BetterAuthError: The field "role" does not exist in the
-                        // "user" Drizzle schema` on any key without a column —
-                        // i.e. EVERY signup 500s without this line. User hooks run
-                        // after plugin hooks and their result is spread on top, so
-                        // setting it to `undefined` here wins; `transformInput`
-                        // then drops it because the field declares no
-                        // `defaultValue`. See the `admin()` plugin block above for
-                        // the full rationale and the cost accepted.
+                        // The explicit `role: undefined` is LOAD-BEARING: the
+                        // admin plugin injects `{ role: defaultRole }` into every
+                        // user insert from its own `create.before` hook. Since
+                        // HOS-1932 the `users.role` column exists again, but only
+                        // to satisfy better-auth's schema validation; letting the
+                        // injected value through would store a "role" that looks
+                        // authoritative and can drift from `user_role`. User hooks
+                        // run after plugin hooks and their result is spread on
+                        // top, so `undefined` wins and `transformInput` drops it
+                        // (the field declares no `defaultValue`), keeping the
+                        // column NULL. See the `admin()` plugin block above.
                         return {
                             data: {
                                 ...user,

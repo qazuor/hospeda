@@ -152,6 +152,52 @@ export const createArrayQueryParam = (description: string) =>
         .describe(description);
 
 /**
+ * Options for {@link createEnumArrayQueryParam}.
+ */
+export interface EnumArrayQueryParamOptions {
+    /**
+     * Case handling applied to every item before it is checked against the enum.
+     * - `'upper'` (default): trim + upper-case, so `?types=apartment` reaches an
+     *   upper-case enum (HOS-1938).
+     * - `'none'`: trim only. Use it for enums whose values are case-sensitive
+     *   (for example the dotted, camelCase `PermissionEnum`).
+     */
+    readonly normalize?: 'upper' | 'none';
+}
+
+/**
+ * Utility for creating array query parameters that map to an enum (HOS-1974).
+ *
+ * Splits a comma-separated string like {@link createArrayQueryParam}, then
+ * validates EVERY item against `enumSchema`. A value outside the enum fails
+ * schema validation, which the API answers with a 400. Without that check the
+ * raw string travels to the model layer and, on an enum column, Postgres
+ * rejects it with a 500 (`INTERNAL_ERROR`), which `error-contract.md` forbids.
+ *
+ * Prefer this helper over `createArrayQueryParam(...).pipe(...)` for any array
+ * filter whose items come from an enum. A static guard
+ * (`array-query-param-enum.guard.test.ts`) fails on a bare
+ * `createArrayQueryParam` that is not on its reviewed allowlist.
+ *
+ * @param description - OpenAPI description of the parameter.
+ * @param enumSchema - Zod schema of the enum each item must belong to.
+ * @param options - See {@link EnumArrayQueryParamOptions}.
+ * @returns An optional schema yielding `Enum[] | undefined`.
+ */
+export const createEnumArrayQueryParam = <TEnum extends z.ZodType<string, string>>(
+    description: string,
+    enumSchema: TEnum,
+    options: EnumArrayQueryParamOptions = {}
+) => {
+    const { normalize = 'upper' } = options;
+    const item = z
+        .string()
+        .transform((value) => (normalize === 'upper' ? value.trim().toUpperCase() : value.trim()))
+        .pipe(enumSchema);
+    return createArrayQueryParam(description).pipe(z.array(item).optional());
+};
+
+/**
  * Utility for creating number query parameters with coercion
  * Converts string numbers to actual numbers with validation
  */

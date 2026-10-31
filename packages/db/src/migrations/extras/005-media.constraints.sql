@@ -12,7 +12,8 @@
 --
 -- Idempotency:
 --   All blocks use DO $$ ... IF NOT EXISTS ... $$ guards on pg_constraint
---   before executing ALTER TABLE. Missing tables are silently skipped.
+--   before executing ALTER TABLE. A missing table raises (HOS-1794); the only intentional skip is
+--   accommodations.media, whose column was dropped on purpose (HOS-372).
 -- =============================================================================
 
 -- ---------------------------------------------------------------------------
@@ -28,6 +29,15 @@
 -- blob and are deliberately left on the table-existence guard.
 DO $$
 BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM information_schema.tables
+    WHERE table_schema = 'public'
+      AND table_name   = 'accommodations'
+  ) THEN
+    RAISE EXCEPTION 'extras/005: table % does not exist, cannot ensure chk_accommodations_media_shape. Run pnpm db:migrate before pnpm db:apply-extras.', 'accommodations';
+  END IF;
+
+  -- Intentional skip (HOS-372): the media column was dropped on purpose.
   IF NOT EXISTS (
     SELECT 1 FROM information_schema.columns
     WHERE table_schema = 'public'
@@ -61,8 +71,7 @@ BEGIN
     WHERE table_schema = 'public'
       AND table_name   = 'destinations'
   ) THEN
-    RAISE NOTICE 'Table destinations does not exist, skipping chk_destinations_media_shape.';
-    RETURN;
+    RAISE EXCEPTION 'extras/005: table % does not exist, cannot ensure chk_destinations_media_shape. Run pnpm db:migrate before pnpm db:apply-extras.', 'destinations';
   END IF;
 
   IF NOT EXISTS (
@@ -88,8 +97,7 @@ BEGIN
     WHERE table_schema = 'public'
       AND table_name   = 'events'
   ) THEN
-    RAISE NOTICE 'Table events does not exist, skipping chk_events_media_shape.';
-    RETURN;
+    RAISE EXCEPTION 'extras/005: table % does not exist, cannot ensure chk_events_media_shape. Run pnpm db:migrate before pnpm db:apply-extras.', 'events';
   END IF;
 
   IF NOT EXISTS (
@@ -115,8 +123,7 @@ BEGIN
     WHERE table_schema = 'public'
       AND table_name   = 'posts'
   ) THEN
-    RAISE NOTICE 'Table posts does not exist, skipping chk_posts_media_shape.';
-    RETURN;
+    RAISE EXCEPTION 'extras/005: table % does not exist, cannot ensure chk_posts_media_shape. Run pnpm db:migrate before pnpm db:apply-extras.', 'posts';
   END IF;
 
   IF NOT EXISTS (
@@ -149,6 +156,15 @@ $$;
 -- not by this CHECK.
 DO $$
 BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM information_schema.tables
+    WHERE table_schema = 'public'
+      AND table_name   = 'accommodations'
+  ) THEN
+    RAISE EXCEPTION 'extras/005: table % does not exist, cannot ensure chk_accommodations_gallery_max. Run pnpm db:migrate before pnpm db:apply-extras.', 'accommodations';
+  END IF;
+
+  -- Intentional skip (HOS-372): the media column was dropped on purpose.
   IF NOT EXISTS (
     SELECT 1 FROM information_schema.columns
     WHERE table_schema = 'public'
@@ -186,8 +202,7 @@ BEGIN
     WHERE table_schema = 'public'
       AND table_name = 'destinations'
   ) THEN
-    RAISE NOTICE 'Table destinations does not exist, skipping chk_destinations_gallery_max.';
-    RETURN;
+    RAISE EXCEPTION 'extras/005: table % does not exist, cannot ensure chk_destinations_gallery_max. Run pnpm db:migrate before pnpm db:apply-extras.', 'destinations';
   END IF;
 
   IF NOT EXISTS (
@@ -217,8 +232,7 @@ BEGIN
     WHERE table_schema = 'public'
       AND table_name = 'events'
   ) THEN
-    RAISE NOTICE 'Table events does not exist, skipping chk_events_gallery_max.';
-    RETURN;
+    RAISE EXCEPTION 'extras/005: table % does not exist, cannot ensure chk_events_gallery_max. Run pnpm db:migrate before pnpm db:apply-extras.', 'events';
   END IF;
 
   IF NOT EXISTS (
@@ -248,8 +262,7 @@ BEGIN
     WHERE table_schema = 'public'
       AND table_name = 'posts'
   ) THEN
-    RAISE NOTICE 'Table posts does not exist, skipping chk_posts_gallery_max.';
-    RETURN;
+    RAISE EXCEPTION 'extras/005: table % does not exist, cannot ensure chk_posts_gallery_max. Run pnpm db:migrate before pnpm db:apply-extras.', 'posts';
   END IF;
 
   IF NOT EXISTS (

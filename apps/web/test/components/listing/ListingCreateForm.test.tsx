@@ -353,7 +353,8 @@ describe('ListingCreateForm', () => {
             });
 
             const call = mockCreate.mock.calls[0]?.[0];
-            expect(call?.data).toMatchObject({ priceFrom: 0, isPriceOnRequest: true });
+            // HOS-1943: "a consultar" stores no price — null, never a fake 0.
+            expect(call?.data).toMatchObject({ priceFrom: null, isPriceOnRequest: true });
         });
     });
 });

@@ -94,9 +94,26 @@ export const users = pgTable(
         contactInfo: jsonb('contact_info').$type<ContactInfo>(),
         location: jsonb('location').$type<UserLocationType>(),
         socialNetworks: jsonb('social_networks').$type<SocialNetwork>(),
-        // HOS-296: the `role` column was DROPPED here. A user's hats now live
-        // in the `user_role` table (many-to-many) — see r_user_role.dbschema.ts.
-        // There is deliberately no derived scalar and no compatibility shim.
+        /**
+         * Better Auth admin-plugin schema placeholder (HOS-1932). NOT a role.
+         *
+         * HOS-296 dropped the real `role` scalar: a user's hats live in the
+         * `user_role` table (many-to-many) — see r_user_role.dbschema.ts. This
+         * column was re-added ONLY because better-auth >= 1.7 validates the
+         * Drizzle schema at runtime against the fields its plugins declare, and
+         * the `admin()` plugin declares `user.role`. Without it every auth
+         * request fails with `Drizzle schema mismatch: Missing columns user.role`.
+         *
+         * Contract:
+         * - nullable, no default, and ALWAYS NULL: `user.create.before` in
+         *   `apps/api/src/lib/auth.ts` strips the value the plugin injects;
+         * - NEVER a source of truth for authorization and NEVER read for a
+         *   permission check. Authorization is `PermissionEnum` resolved from
+         *   `user_role`. Granting or revoking a hat does not touch this column;
+         * - even a non-null value grants no admin-plugin power, because the
+         *   plugin's roles map grants no action (`auth-admin-access.ts`).
+         */
+        role: text('role'),
         profile: jsonb('profile').$type<UserProfile>(),
         settings: jsonb('settings')
             .$type<UserSettings>()
