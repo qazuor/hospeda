@@ -12,7 +12,17 @@ import {
     useVideoConfig
 } from 'remotion';
 import { Bubble, HospedinActor } from './HospedinActor';
-import { K, PHONE_H, PHONE_W, PhoneFrame, Spotlight, STATUS_H, Touch, Wipe } from './Phone';
+import {
+    BEZEL,
+    fitRecording,
+    PAGE_TOP,
+    PHONE_H,
+    PHONE_W,
+    PhoneFrame,
+    Spotlight,
+    Touch,
+    Wipe
+} from './Phone';
 import { type Cue, SoundTrack } from './Sound';
 import { Backdrop, ClosingCard, KineticText, StepChip } from './scene';
 import {
@@ -24,13 +34,18 @@ import {
     find,
     pieceFrames,
     RATE,
-    REC_HEIGHT,
-    REC_WIDTH,
     type Recording,
+    recordingSize,
     STAGES
 } from './timeline';
 
 const recording = rec as Recording;
+/**
+ * Size of the take. The current take predates the S24 Ultra profile (390 × 844 at DPR 3), so
+ * it is letterboxed into the 412 × 750 page area until A1 is re-recorded (REGLAS.md).
+ */
+const { size: REC } = recordingSize({ rec: recording });
+const { fit: FIT } = fitRecording({ size: REC });
 
 /** Intro length = first bar of the music (2.18 s): the groove kicks in exactly when the tutorial starts. */
 export const INTRO = 65;
@@ -40,7 +55,7 @@ const pieces = buildPieces(recording);
 const frames = pieceFrames(pieces);
 const timeMap = buildTimeMap(pieces);
 const cuts = buildCuts(pieces);
-const { camera, spot } = buildFocus(recording, timeMap, cuts);
+const { camera, spot } = buildFocus({ rec: recording, timeMap, cuts, scale: FIT.k });
 const SCREEN = timeMap.length;
 const OUTRO_AT = INTRO + SCREEN;
 
@@ -51,11 +66,15 @@ export const FIRST_SOURCE_TIME = pieces[0]?.from ?? 0;
 
 const PHONE_LEFT = (1080 - PHONE_W) / 2;
 const PHONE_TOP = 200;
-const SCREEN_ORIGIN = { x: PHONE_LEFT + 16, y: PHONE_TOP + 16 + STATUS_H };
+/** Composition position of recording px (0, 0). */
+const SCREEN_ORIGIN = {
+    x: PHONE_LEFT + BEZEL + FIT.ox,
+    y: PHONE_TOP + BEZEL + PAGE_TOP + FIT.oy
+};
 /** Rest focus (centre of the recording) in composition px: zoom 1 there is the identity. */
 const ANCHOR = {
-    x: SCREEN_ORIGIN.x + (REC_WIDTH / 2) * K,
-    y: SCREEN_ORIGIN.y + (REC_HEIGHT / 2) * K
+    x: SCREEN_ORIGIN.x + (REC.width / 2) * FIT.k,
+    y: SCREEN_ORIGIN.y + (REC.height / 2) * FIT.k
 };
 
 /** First composition frame at which source time `t` is on screen, or undefined if it was cut. */
@@ -120,8 +139,8 @@ export const A1: React.FC = () => {
     const inScreen = frame >= INTRO && frame < OUTRO_AT;
     const cam = (inScreen ? camera[s] : undefined) ?? {
         zoom: 1,
-        fx: REC_WIDTH / 2,
-        fy: REC_HEIGHT / 2
+        fx: REC.width / 2,
+        fy: REC.height / 2
     };
     const curSpot = spot[s];
 
@@ -133,8 +152,8 @@ export const A1: React.FC = () => {
           })
         : 1;
     const zoom = cam.zoom * punch;
-    const fx = SCREEN_ORIGIN.x + cam.fx * K;
-    const fy = SCREEN_ORIGIN.y + cam.fy * K;
+    const fx = SCREEN_ORIGIN.x + cam.fx * FIT.k;
+    const fy = SCREEN_ORIGIN.y + cam.fy * FIT.k;
 
     // Phone staging: tilted at the right in the intro, straight in the tutorial, out at the end.
     const enter = spring({
@@ -182,15 +201,22 @@ export const A1: React.FC = () => {
                     }}
                 >
                     <PhoneFrame
+                        fit={FIT}
                         overlay={
                             <>
-                                {inScreen && curSpot && <Spotlight spot={curSpot} />}
+                                {inScreen && curSpot && (
+                                    <Spotlight
+                                        spot={curSpot}
+                                        fit={FIT}
+                                    />
+                                )}
                                 {touches.map((t) => (
                                     <Touch
                                         key={t.at}
                                         x={t.x}
                                         y={t.y}
                                         at={t.at}
+                                        fit={FIT}
                                     />
                                 ))}
                                 {cuts

@@ -4,13 +4,15 @@
  * where the camera looks, what is highlighted and where the cuts are.
  */
 
+import { recordingSizeOf, type Size } from '../../config/device';
+
 /** One action recorded by record/record-a1.mts. Times are seconds since the screencast started. */
 export type RecEvent = {
     readonly t: number;
     readonly end?: number;
     readonly kind: 'mark' | 'tap' | 'type' | 'hold';
     readonly label: string;
-    /** Target box in device pixels of the 1170px-wide recording. */
+    /** Target box in device pixels of the recording (see {@link recordingSize}). */
     readonly box?: Box;
 };
 
@@ -23,7 +25,31 @@ export type Box = {
 };
 
 /** The event log written by the recorder (events.json). */
-export type Recording = { readonly duration: number; readonly events: readonly RecEvent[] };
+export type Recording = {
+    /** Device pixel ratio the take was recorded at. */
+    readonly dpr?: number;
+    /** CSS viewport the take was recorded at. */
+    readonly viewport?: Size;
+    readonly duration: number;
+    readonly events: readonly RecEvent[];
+};
+
+/**
+ * Size in device pixels of a take, from what the recorder logged. Takes that predate the log
+ * fall back to the reference device (config/device.ts).
+ *
+ * @param input.rec - The recording.
+ * @returns `{ size }` in device pixels.
+ */
+export const recordingSize = ({ rec }: { readonly rec: Recording }): { readonly size: Size } =>
+    rec.dpr && rec.viewport
+        ? {
+              size: {
+                  width: Math.round(rec.viewport.width * rec.dpr),
+                  height: Math.round(rec.viewport.height * rec.dpr)
+              }
+          }
+        : recordingSizeOf();
 
 /** A kept stretch of the source. `cut` says how the edit enters it. */
 export type Piece = {
@@ -40,10 +66,6 @@ export type Spot = Box & { readonly a: number };
 
 /** Output frame rate of every composition. */
 export const FPS = 30;
-/** Width of the recording in device px (390 CSS px at DPR 3). */
-export const REC_WIDTH = 1170;
-/** Height of the recording in device px (844 CSS px at DPR 3). */
-export const REC_HEIGHT = 2532;
 /** Playback speed of the kept source footage (overall 1.2x pace). */
 export const RATE = 1.2;
 
@@ -134,7 +156,7 @@ type Focus = {
     readonly zoom: number;
 };
 
-const focusWindows = (events: readonly RecEvent[]): Focus[] => {
+const focusWindows = (events: readonly RecEvent[], size: Size): Focus[] => {
     const out: Focus[] = [];
     for (const e of events) {
         if (!e.box) continue;
@@ -143,12 +165,12 @@ const focusWindows = (events: readonly RecEvent[]): Focus[] => {
         if (e.kind === 'tap') out.push({ from: e.t - 0.55, to: e.t + 0.6, box: e.box, zoom: 1.3 });
     }
     const toast = find(events, 'toast:guardado');
-    // The toast has no recorded box; it sits near the bottom of the screen.
+    // The toast has no recorded box; it sits near the bottom of the screen (~155 CSS px tall band).
     if (toast)
         out.push({
             from: toast.t,
             to: toast.t + 1.5,
-            box: { x: 30, y: 2070, w: 1110, h: 190 },
+            box: { x: 30, y: size.height - 462, w: size.width - 60, h: 190 },
             zoom: 1.3
         });
     return out.sort((a, b) => a.from - b.from);
@@ -160,9 +182,6 @@ const MIN_MOVE_FRAMES = 22;
 const MAX_MOVE_FRAMES = 44;
 /** Average on-screen speed a move is sized for (px per frame); the sine ease peaks at ~1.57x this. */
 const PAN_SPEED = 34;
-/** Recording px → composition px at zoom 1 (phone screen width / recording width). */
-export const SCREEN_W = 660;
-const SCREEN_SCALE = SCREEN_W / REC_WIDTH;
 
 /** Sine ease-in-out: peaks at ~1.57x the average speed (a cubic peaks at 3x and reads as a whip). */
 export const easeInOut = (x: number): number =>
@@ -172,14 +191,14 @@ const sameCamera = (a: Camera, b: Camera): boolean =>
     a.zoom === b.zoom && a.fx === b.fx && a.fy === b.fy;
 
 /** On-screen offset of the phone centre for a camera, used to size moves by real travel. */
-const phoneOffset = (c: Camera): { x: number; y: number } => ({
-    x: (REC_WIDTH / 2 - c.fx) * SCREEN_SCALE * c.zoom,
-    y: (REC_HEIGHT / 2 - c.fy) * SCREEN_SCALE * c.zoom
+const phoneOffset = (c: Camera, size: Size, scale: number): { x: number; y: number } => ({
+    x: (size.width / 2 - c.fx) * scale * c.zoom,
+    y: (size.height / 2 - c.fy) * scale * c.zoom
 });
 
-const moveFrames = (a: Camera, b: Camera): number => {
-    const pa = phoneOffset(a);
-    const pb = phoneOffset(b);
+const moveFrames = (a: Camera, b: Camera, size: Size, scale: number): number => {
+    const pa = phoneOffset(a, size, scale);
+    const pb = phoneOffset(b, size, scale);
     return Math.round(
         Math.min(
             MAX_MOVE_FRAMES,
@@ -197,14 +216,27 @@ const activeWindow = (windows: readonly Focus[], t: number): Focus | undefined =
  * Camera: each change of target is one sine-eased move sized by on-screen travel, centred on the
  * change, never overlapping the previous move. At a wipe the camera snaps (the wipe hides it).
  * Spotlight: the active field stays lit while the rest of the screen dims; it fades in and out.
+ *
+ * @param input.rec - The recording and its events.
+ * @param input.timeMap - Source second of every output frame ({@link buildTimeMap}).
+ * @param input.cuts - Cuts of the edit ({@link buildCuts}).
+ * @param input.scale - Recording px → composition px at zoom 1 (sizes moves by on-screen travel).
+ * @returns `{ camera, spot }`, one entry per output frame.
  */
-export const buildFocus = (
-    rec: Recording,
-    timeMap: readonly number[],
-    cuts: ReadonlyArray<{ frame: number; cut: Piece['cut'] }>
-): { camera: Camera[]; spot: Spot[] } => {
-    const rest: Camera = { zoom: 1, fx: REC_WIDTH / 2, fy: REC_HEIGHT / 2 };
-    const windows = focusWindows(rec.events);
+export const buildFocus = ({
+    rec,
+    timeMap,
+    cuts,
+    scale
+}: {
+    readonly rec: Recording;
+    readonly timeMap: readonly number[];
+    readonly cuts: ReadonlyArray<{ frame: number; cut: Piece['cut'] }>;
+    readonly scale: number;
+}): { camera: Camera[]; spot: Spot[] } => {
+    const { size } = recordingSize({ rec });
+    const rest: Camera = { zoom: 1, fx: size.width / 2, fy: size.height / 2 };
+    const windows = focusWindows(rec.events, size);
     const bridged = windows.map((w, i) => {
         const next = windows[i + 1];
         return next && next.from - w.to < BRIDGE_GAP ? { ...w, to: Math.max(w.to, next.from) } : w;
@@ -223,7 +255,7 @@ export const buildFocus = (
         const previous = targets[i - 1];
         if (!target || !previous || sameCamera(target, previous)) continue;
         const atWipe = wipes.some((w) => Math.abs(w - i) <= 8);
-        const frames = atWipe ? 1 : moveFrames(previous, target);
+        const frames = atWipe ? 1 : moveFrames(previous, target, size, scale);
         const start = atWipe ? i : Math.max(lastEnd, i - Math.floor(frames / 2));
         moves.push({ start, to: target, frames });
         lastEnd = start + frames;
@@ -255,7 +287,7 @@ export const buildFocus = (
 
     // Spotlight: raw (unbridged) windows, so it only lights a field while it is being used.
     const spot: Spot[] = [];
-    let cur: Spot = { x: REC_WIDTH / 2, y: REC_HEIGHT / 2, w: 0, h: 0, a: 0 };
+    let cur: Spot = { x: size.width / 2, y: size.height / 2, w: 0, h: 0, a: 0 };
     for (const t of timeMap) {
         const w = activeWindow(windows, t);
         const target = w ? { ...w.box, a: 1 } : { ...cur, a: 0 };
