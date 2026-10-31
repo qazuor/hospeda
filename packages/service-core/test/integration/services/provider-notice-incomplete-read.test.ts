@@ -14,13 +14,15 @@ afterEach(unregisterCaptureHook);
 
 function failingProvider(
     fixture: Awaited<ReturnType<typeof paymentFixture>>,
-    incompleteRead: boolean
+    incompleteRead: boolean,
+    transient?: PaymentProviderError['transient']
 ): { readonly provider: PaymentProvider; readonly error: PaymentProviderError } {
     const error = new PaymentProviderError({
         code: 'UNAVAILABLE',
         capability: 'read',
         message: 'Mercado Pago returned a charge record still being written at results.0.id',
-        incompleteRead
+        incompleteRead,
+        ...(transient === undefined ? {} : { transient })
     });
     const provider = new Proxy(fixture.provider as unknown as PaymentProvider, {
         get(target, key, receiver) {
@@ -86,6 +88,26 @@ describe('TEST:1747:4 provider notice incomplete read retry response', () => {
         async () => {
             const fixture = await paymentFixture();
             const { provider, error } = failingProvider(fixture, false);
+            const captured: unknown[] = [];
+            registerCaptureHook((capturedError) => captured.push(capturedError));
+
+            await expect(notify(fixture, provider)).resolves.toEqual({
+                ack: 'ERROR',
+                outcome: 'FAILED'
+            });
+            expect(captured).toHaveLength(1);
+            expect(captured[0]).toBe(error);
+        }
+    );
+
+    it.skipIf(!isServiceTestDbAvailable())(
+        'keeps a 429 on a webhook read as FAILED, never DEFERRED (HOS-1976)',
+        async () => {
+            const fixture = await paymentFixture();
+            const { provider, error } = failingProvider(fixture, false, {
+                kind: 'RATE_LIMITED',
+                retryAfterSeconds: 30
+            });
             const captured: unknown[] = [];
             registerCaptureHook((capturedError) => captured.push(capturedError));
 
