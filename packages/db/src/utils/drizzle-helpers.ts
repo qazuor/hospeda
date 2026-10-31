@@ -263,12 +263,17 @@ export function buildWhereClause(where: Record<string, unknown>, table: Table): 
  * @param sortBy - Column name to sort by
  * @param sortOrder - Sort direction ('asc' or 'desc'), defaults to 'asc'
  * @param table - Drizzle table schema object
+ * @param nullsLast - When true, NULLs sort last in BOTH directions. Postgres
+ *   puts NULLs FIRST under `DESC` by default, so without it a nullable column
+ *   meaning "no value" (an experience price "a consultar", HOS-1943) would head
+ *   a descending sort. Defaults to false, which keeps Postgres' default.
  * @returns SQL order clause for Drizzle .orderBy(), or undefined if invalid
  */
 export function buildOrderByClause(
     sortBy: string,
     table: Table,
-    sortOrder: 'asc' | 'desc' = 'asc'
+    sortOrder: 'asc' | 'desc' = 'asc',
+    nullsLast = false
 ): SQL | undefined {
     if (typeof table !== 'object' || table === null) return undefined;
     const tableRecord = table as unknown as Record<string, unknown>;
@@ -278,6 +283,11 @@ export function buildOrderByClause(
     }
 
     const column = tableRecord[sortBy] as PgColumn;
+    if (nullsLast) {
+        return sortOrder === 'desc'
+            ? sql`${column} desc nulls last`
+            : sql`${column} asc nulls last`;
+    }
     return sortOrder === 'desc' ? desc(column) : asc(column);
 }
 
