@@ -1,6 +1,7 @@
 import { integer, PgDialect, pgTable, text, timestamp, uuid, varchar } from 'drizzle-orm/pg-core';
 import { describe, expect, it } from 'vitest';
 import {
+    buildOrderByClause,
     buildSearchCondition,
     buildWhereClause,
     escapeLikePattern,
@@ -675,5 +676,37 @@ describe('safeIlike', () => {
         // Assert -- result is a SQL object (same as calling ilike directly)
         expect(safeResult).toBeDefined();
         expect(typeof safeResult).toBe('object');
+    });
+});
+
+describe('buildOrderByClause nullsLast (HOS-1943)', () => {
+    it('keeps Postgres default NULL placement when nullsLast is not requested', () => {
+        // Arrange / Act
+        const clause = buildOrderByClause('price', testTable, 'desc');
+
+        // Assert
+        expect(clause).toBeDefined();
+        expect(toSqlText(clause).toLowerCase()).not.toContain('nulls last');
+    });
+
+    it('sorts NULLs last on a descending sort when nullsLast is set', () => {
+        // Arrange / Act
+        const clause = buildOrderByClause('price', testTable, 'desc', true);
+
+        // Assert
+        expect(toSqlText(clause)).toBe('"test_items"."price" desc nulls last');
+    });
+
+    it('sorts NULLs last on an ascending sort when nullsLast is set', () => {
+        // Arrange / Act
+        const clause = buildOrderByClause('price', testTable, 'asc', true);
+
+        // Assert
+        expect(toSqlText(clause)).toBe('"test_items"."price" asc nulls last');
+    });
+
+    it('returns undefined for an unknown column even with nullsLast', () => {
+        // Arrange / Act / Assert
+        expect(buildOrderByClause('missing', testTable, 'asc', true)).toBeUndefined();
     });
 });

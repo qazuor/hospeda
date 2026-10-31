@@ -109,8 +109,8 @@ export interface ListingCompletenessListing {
     readonly priceFrom?: number | null;
     /**
      * When `true`, the experience shows "Consultar precio" instead of a
-     * numeric price, so {@link priceFrom} being `0` is expected and not a
-     * completeness gap. Experience-only requirement.
+     * numeric price, so {@link priceFrom} being `null` (or a legacy `0`) is
+     * expected and not a completeness gap (HOS-1943). Experience-only requirement.
      */
     readonly isPriceOnRequest?: boolean | null;
 }
@@ -321,10 +321,11 @@ export function resolveListingCompleteness(
     }
 
     // ── Experience-specific required fields ───────────────────────────────
-    // HOS-166 PR-B resolution of the PR-A TODO. `priceFrom` is non-nullable on
-    // `ExperienceSchema`, so a listing that satisfies the Create schema always
-    // has SOME price data — but "some" is not "meaningful": `priceFrom: 0` with
-    // `isPriceOnRequest: false` reads as "$0", a broken listing. This mirrors
+    // HOS-166 PR-B resolution of the PR-A TODO. `priceFrom` is nullable since
+    // HOS-1943 (an on-request listing stores NULL), so both `null` and a
+    // leftover `0` count as "no price": `priceFrom: 0` with
+    // `isPriceOnRequest: false` reads as "$0", a broken listing, and a `null`
+    // price with the flag off has nothing to show at all. This mirrors
     // venue's `priceRange` requirement (real price information is
     // viability, not quality).
     //

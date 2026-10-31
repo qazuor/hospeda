@@ -79,6 +79,13 @@ export class ExperienceModel extends BaseModelImpl<Experience> {
      */
     protected override readonly mergeableJsonbColumns = ['contactInfo', 'socialNetworks'] as const;
 
+    /**
+     * `priceFrom` is NULL for an experience "a consultar" (HOS-1943). That
+     * listing has no price, so it must never sort as the cheapest (ASC) nor as
+     * the most expensive (DESC): it goes last in both directions.
+     */
+    protected override readonly nullsLastSortColumns = ['priceFrom'] as const;
+
     protected getTableName(): string {
         return 'experiences';
     }

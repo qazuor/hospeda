@@ -410,7 +410,9 @@ describe('ExperienceService.updateOwn — identity-field regression (SPEC-249 T-
 
         // biome-ignore lint/suspicious/noExplicitAny: simulating a mixed HTTP body
         const payload: any = {
-            isPriceOnRequest: true, // operational — must persist
+            // false (HOS-1943): with the flag ON the service stores priceFrom = null,
+            // which is covered by its own describe block below.
+            isPriceOnRequest: false, // operational — must persist
             type: ExperienceTypeEnum.TOUR_GUIDE, // owner-editable (SPEC-253 D1) — must persist
             priceFrom: 100000, // owner-editable — must persist
             priceUnit: ExperiencePriceUnitEnum.PER_GROUP, // owner-editable — must persist
@@ -430,7 +432,7 @@ describe('ExperienceService.updateOwn — identity-field regression (SPEC-249 T-
         const updatePayload = (mockUpdate.mock.calls[0]?.[1] ?? {}) as Record<string, unknown>;
 
         // Operational and owner-editable fields persist.
-        expect(updatePayload.isPriceOnRequest).toBe(true);
+        expect(updatePayload.isPriceOnRequest).toBe(false);
         expect(updatePayload.type).toBe(ExperienceTypeEnum.TOUR_GUIDE); // SPEC-253 AC-5
         expect(updatePayload.priceFrom).toBe(100000); // SPEC-253 AC-5
         expect(updatePayload.priceUnit).toBe(ExperiencePriceUnitEnum.PER_GROUP); // SPEC-253 AC-5
@@ -744,5 +746,171 @@ describe('ExperienceService._executeSearch — BETA-119 regression (sort forward
         };
         expect(paginationArg.sortBy).toBeUndefined();
         expect(paginationArg.sortOrder).toBeUndefined();
+    });
+});
+
+// ---------------------------------------------------------------------------
+// Price on request stores NULL (HOS-1943)
+// ---------------------------------------------------------------------------
+
+describe('ExperienceService — price on request stores priceFrom = null (HOS-1943)', () => {
+    it('nulls the price when the owner turns "a consultar" on, even if a price is sent', async () => {
+        // Arrange
+        const entity = makeExperienceEntity();
+        const service = makeService(entity);
+        const mockUpdate = (service as AnyService).model.update;
+
+        // Act
+        const result = await service.updateOwn(
+            ENTITY_ID,
+            { isPriceOnRequest: true, priceFrom: 150000 },
+            ownerActor
+        );
+
+        // Assert
+        expect(result.error).toBeUndefined();
+        const updatePayload = (mockUpdate.mock.calls[0]?.[1] ?? {}) as Record<string, unknown>;
+        expect(updatePayload.isPriceOnRequest).toBe(true);
+        expect(updatePayload.priceFrom).toBeNull();
+    });
+
+    it('drops a price sent alone for a listing that is already "a consultar"', async () => {
+        // Arrange
+        const entity = makeExperienceEntity({ isPriceOnRequest: true, priceFrom: null });
+        const service = makeService(entity);
+        const mockUpdate = (service as AnyService).model.update;
+
+        // Act
+        const result = await service.updateOwn(ENTITY_ID, { priceFrom: 90000 }, ownerActor);
+
+        // Assert
+        expect(result.error).toBeUndefined();
+        const updatePayload = (mockUpdate.mock.calls[0]?.[1] ?? {}) as Record<string, unknown>;
+        expect(updatePayload.priceFrom).toBeNull();
+    });
+
+    it('keeps the price when the listing has a real price', async () => {
+        // Arrange
+        const entity = makeExperienceEntity();
+        const service = makeService(entity);
+        const mockUpdate = (service as AnyService).model.update;
+
+        // Act
+        const result = await service.updateOwn(
+            ENTITY_ID,
+            { isPriceOnRequest: false, priceFrom: 90000 },
+            ownerActor
+        );
+
+        // Assert
+        expect(result.error).toBeUndefined();
+        const updatePayload = (mockUpdate.mock.calls[0]?.[1] ?? {}) as Record<string, unknown>;
+        expect(updatePayload.priceFrom).toBe(90000);
+    });
+
+    it('creates an on-request listing with priceFrom = null even if the form sent a number', async () => {
+        // Arrange
+        const service = makeService(null);
+        const mockCreate = (service as AnyService).model.create;
+
+        // Act
+        const result = await service.create(staffActor, {
+            name: 'Guía de carnaval',
+            slug: 'guia-de-carnaval',
+            summary: 'Un recorrido guiado por el carnaval.',
+            description: 'Un recorrido guiado por el corsódromo y los talleres de trajes.',
+            type: ExperienceTypeEnum.TOUR_GUIDE,
+            priceFrom: 0,
+            priceUnit: null,
+            isPriceOnRequest: true,
+            ownerId: OWNER_ID,
+            destinationId: DEST_ID
+        } as AnyService);
+
+        // Assert
+        expect(result.error).toBeUndefined();
+        const createPayload = (mockCreate.mock.calls[0]?.[0] ?? {}) as Record<string, unknown>;
+        expect(createPayload.priceFrom).toBeNull();
+    });
+});
+
+describe('ExperienceService — a priced listing cannot end up with a null price (HOS-1943 review)', () => {
+    it('rejects a PATCH that clears the price of a listing that is not on request', async () => {
+        // Arrange
+        const entity = makeExperienceEntity();
+        const service = makeService(entity);
+        const mockUpdate = (service as AnyService).model.update;
+
+        // Act
+        const result = await service.updateOwn(ENTITY_ID, { priceFrom: null }, ownerActor);
+
+        // Assert
+        expect(result.error?.code).toBe(ServiceErrorCode.VALIDATION_ERROR);
+        expect(mockUpdate).not.toHaveBeenCalled();
+    });
+
+    it('rejects turning "a consultar" off without sending a price', async () => {
+        // Arrange
+        const entity = makeExperienceEntity({ isPriceOnRequest: true, priceFrom: null });
+        const service = makeService(entity);
+        const mockUpdate = (service as AnyService).model.update;
+
+        // Act
+        const result = await service.updateOwn(ENTITY_ID, { isPriceOnRequest: false }, ownerActor);
+
+        // Assert
+        expect(result.error?.code).toBe(ServiceErrorCode.VALIDATION_ERROR);
+        expect(mockUpdate).not.toHaveBeenCalled();
+    });
+
+    it('rejects turning the flag off and clearing the price in the same PATCH', async () => {
+        // Arrange
+        const entity = makeExperienceEntity({ isPriceOnRequest: true, priceFrom: null });
+        const service = makeService(entity);
+
+        // Act
+        const result = await service.updateOwn(
+            ENTITY_ID,
+            { isPriceOnRequest: false, priceFrom: null },
+            ownerActor
+        );
+
+        // Assert
+        expect(result.error?.code).toBe(ServiceErrorCode.VALIDATION_ERROR);
+    });
+
+    it('allows a null price on a listing that stays "a consultar"', async () => {
+        // Arrange
+        const entity = makeExperienceEntity({ isPriceOnRequest: true, priceFrom: null });
+        const service = makeService(entity);
+        const mockUpdate = (service as AnyService).model.update;
+
+        // Act
+        const result = await service.updateOwn(ENTITY_ID, { priceFrom: null }, ownerActor);
+
+        // Assert
+        expect(result.error).toBeUndefined();
+        const updatePayload = (mockUpdate.mock.calls[0]?.[1] ?? {}) as Record<string, unknown>;
+        expect(updatePayload.priceFrom).toBeNull();
+    });
+
+    it('allows turning the flag off while also sending a price', async () => {
+        // Arrange
+        const entity = makeExperienceEntity({ isPriceOnRequest: true, priceFrom: null });
+        const service = makeService(entity);
+        const mockUpdate = (service as AnyService).model.update;
+
+        // Act
+        const result = await service.updateOwn(
+            ENTITY_ID,
+            { isPriceOnRequest: false, priceFrom: 90000 },
+            ownerActor
+        );
+
+        // Assert
+        expect(result.error).toBeUndefined();
+        const updatePayload = (mockUpdate.mock.calls[0]?.[1] ?? {}) as Record<string, unknown>;
+        expect(updatePayload.isPriceOnRequest).toBe(false);
+        expect(updatePayload.priceFrom).toBe(90000);
     });
 });

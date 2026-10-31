@@ -65,6 +65,59 @@ export function requirePriceUnitUnlessOnRequest(
     }
 }
 
+/**
+ * Cross-field rule: a create MUST carry a price unless it is on request
+ * (HOS-1943).
+ *
+ * `priceFrom` is `.nullable()` on the base schema because an experience
+ * "a consultar" stores NULL. That makes `null` a valid VALUE, so the "required"
+ * half of the rule can no longer live on the field: a priced listing sending
+ * `priceFrom: null` would pass. This puts it back, with the same message the
+ * field uses for an empty input.
+ *
+ * Applied to the CREATE `*Checked` schemas only, for the same reasons as
+ * {@link requirePriceUnitUnlessOnRequest}: updates are partial, and the plain
+ * schemas must stay slice-able.
+ *
+ * @param value - The parsed create input.
+ * @param ctx - Zod refinement context; the issue is attached to `priceFrom`.
+ */
+export function requirePriceFromUnlessOnRequest(
+    value: { readonly priceFrom?: number | null; readonly isPriceOnRequest?: boolean },
+    ctx: z.RefinementCtx
+): void {
+    if (value.isPriceOnRequest === true) {
+        return;
+    }
+    if (value.priceFrom === null || value.priceFrom === undefined) {
+        ctx.addIssue({
+            code: 'custom',
+            path: ['priceFrom'],
+            message: 'zodError.experience.priceFrom.required'
+        });
+    }
+}
+
+/**
+ * Both pricing rules of an experience create, in one refinement: the unit
+ * ({@link requirePriceUnitUnlessOnRequest}) and the price
+ * ({@link requirePriceFromUnlessOnRequest}). Each reports on its own field.
+ *
+ * @param value - The parsed create input.
+ * @param ctx - Zod refinement context.
+ */
+export function requirePricingUnlessOnRequest(
+    value: {
+        readonly priceFrom?: number | null;
+        readonly priceUnit?: string | null;
+        readonly isPriceOnRequest?: boolean;
+    },
+    ctx: z.RefinementCtx
+): void {
+    requirePriceUnitUnlessOnRequest(value, ctx);
+    requirePriceFromUnlessOnRequest(value, ctx);
+}
+
 // ============================================================================
 // ADMIN CREATE SCHEMAS
 // ============================================================================
@@ -151,7 +204,7 @@ export const ExperienceAdminCreateInputSchema = ExperienceSchema.omit({
  * slice-able.
  */
 export const ExperienceAdminCreateInputCheckedSchema = ExperienceAdminCreateInputSchema.superRefine(
-    requirePriceUnitUnlessOnRequest
+    requirePricingUnlessOnRequest
 );
 
 /** TypeScript type for {@link ExperienceAdminCreateInputSchema}. */
@@ -201,7 +254,7 @@ export type ExperienceAdminCreateOutput = z.infer<typeof ExperienceAdminCreateOu
  *                        identity-strip guard, AC-5)
  * - `summary`          — short marketing summary
  * - `priceFrom`        — starting price in integer centavos (experience-only;
- *                        0 when `isPriceOnRequest` is true)
+ *                        `null` when `isPriceOnRequest` is true, HOS-1943)
  * - `priceUnit`        — billing unit (per_day/per_hour/per_person/per_group)
  * - `nameI18n`         — localized name translations (SPEC-212 pattern)
  * - `summaryI18n`      — localized summary translations
@@ -410,7 +463,7 @@ export const ExperienceOwnerCreateInputSchema = ExperienceSchema.omit({
  * object schema.
  */
 export const ExperienceOwnerCreateInputCheckedSchema = ExperienceOwnerCreateInputSchema.superRefine(
-    requirePriceUnitUnlessOnRequest
+    requirePricingUnlessOnRequest
 );
 
 /** TypeScript type for {@link ExperienceOwnerCreateInputSchema}. */

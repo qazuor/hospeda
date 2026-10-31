@@ -19,15 +19,22 @@ describe('ExperiencePriceTag.astro', () => {
             expect(src).toContain('experience.priceOnRequest');
         });
 
-        it('also shows "Consultar" when priceFrom is 0', () => {
-            // Zero price is treated as "on request"
-            expect(src).toContain('priceFrom === 0');
+        it('delegates the on-request decision to resolveExperiencePriceDisplay (HOS-1943)', () => {
+            // A null, missing or legacy 0 price is "on request": that rule lives
+            // in the resolver (behaviour-tested in test/lib/experience/
+            // price-display.test.ts). Here: the tag must call it with the stored
+            // pair and branch on its answer, not re-derive the rule inline.
+            expect(src).toContain('resolveExperiencePriceDisplay({ priceFrom, isPriceOnRequest })');
+            expect(src).toContain("display.kind === 'on-request'");
+            expect(src).not.toContain('priceFrom === 0');
         });
     });
 
     describe('price formatting', () => {
-        it('divides priceFrom by 100 for display (centavos to ARS)', () => {
-            expect(src).toContain('priceFrom / 100');
+        it('divides the resolved cents by 100 for display (centavos to ARS)', () => {
+            // `display.cents` is only reachable on the 'amount' branch, so the
+            // conversion can never format a null or on-request price as "$0".
+            expect(src).toContain('.format(display.cents / 100)');
         });
 
         it('uses Intl.NumberFormat with es-AR currency formatting', () => {
@@ -44,8 +51,8 @@ describe('ExperiencePriceTag.astro', () => {
     });
 
     describe('props', () => {
-        it('accepts priceFrom as a number prop', () => {
-            expect(src).toContain('readonly priceFrom: number');
+        it('accepts priceFrom as a nullable number prop (HOS-1943)', () => {
+            expect(src).toContain('readonly priceFrom: number | null');
         });
 
         it('accepts isPriceOnRequest as a boolean prop', () => {

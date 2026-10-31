@@ -1374,9 +1374,9 @@ export interface ExperienceCardData {
     readonly destinationName: string;
     /**
      * Base price in centavos (integer). Divide by 100 for display.
-     * Zero when `isPriceOnRequest` is true (price stored as 0 per the spec decision).
+     * `null` when `isPriceOnRequest` is true (HOS-1943: no price is stored).
      */
-    readonly priceFrom: number;
+    readonly priceFrom: number | null;
     /**
      * Billing unit for the price (per_day | per_hour | per_person | per_group).
      * `null` when the experience has no price to bill (H-156) — the card shows

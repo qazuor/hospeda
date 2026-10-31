@@ -43,7 +43,7 @@ import {
     ExperienceOwnerCreateInputSchema,
     ExperiencePriceUnitEnum,
     ExperienceTypeEnum,
-    requirePriceUnitUnlessOnRequest,
+    requirePricingUnlessOnRequest,
     VenueOwnerCreateInputSchema,
     VenueTypeEnum
 } from '@repo/schemas';
@@ -112,7 +112,7 @@ const EXPERIENCE_FORM_SCHEMA = ExperienceOwnerCreateInputSchema.pick({
     priceFrom: true,
     priceUnit: true,
     isPriceOnRequest: true
-}).superRefine(requirePriceUnitUnlessOnRequest);
+}).superRefine(requirePricingUnlessOnRequest);
 
 /**
  * ListingCreateForm — owner self-service listing create island.
@@ -187,7 +187,9 @@ export function ListingCreateForm({
         };
 
         if (vertical === 'experience') {
-            basePayload.priceFrom = isPriceOnRequest ? 0 : (priceFromCents ?? undefined);
+            // HOS-1943: "a consultar" stores no price, never a fake 0 that
+            // reads as "$0". Same reasoning as the unit just below.
+            basePayload.priceFrom = isPriceOnRequest ? null : (priceFromCents ?? undefined);
             // H-156: an experience with no price has no billing unit. Send an
             // explicit null rather than whatever the select happened to hold, so
             // the row does not end up asserting "price on request", "price 0"
