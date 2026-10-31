@@ -44,7 +44,12 @@ export const loggerMiddleware: MiddlewareHandler = async (c, next) => {
     // logged — you never want to silently drop them. The routine access log
     // (2xx success + 4xx client warnings) is gated by API_ENABLE_REQUEST_LOGGING
     // and skipped for health probes.
-    if (status >= 500) {
+    // HOS-1968: a 503 that carries Retry-After is a deliberate "ask again" (provider throttled,
+    // webhook notice deferred), not a crash: WARN, so it does not page as an [ERROR].
+    const isDeliberateDeferral = status === 503 && c.res.headers.has('Retry-After');
+    if (isDeliberateDeferral) {
+        apiLogger.warn(`⚠️ HTTP DEFERRED => ${logMessage}`, 'WARNING');
+    } else if (status >= 500) {
         apiLogger.error(`❌ HTTP ERROR => ${logMessage}`, 'ERROR');
     } else if (!env.API_ENABLE_REQUEST_LOGGING || isHealthProbe) {
         // Routine access log suppressed (request logging disabled or health probe).

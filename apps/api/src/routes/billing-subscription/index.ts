@@ -39,6 +39,9 @@ const S1_REJECTIONS_WITH_UNPROCESSABLE_ENTITY_STATUS = new Set<StartSubscription
     'PARTNER_MANUAL_ONLY'
 ]);
 
+/** Machine-readable `reason` of the 503 answered when the payment provider is throttled or down. */
+const PROVIDER_BUSY_REASON = 'PROVIDER_BUSY';
+
 export const protectedStartSubscriptionRoute = createProtectedRoute({
     method: 'post',
     path: '/',
@@ -128,6 +131,32 @@ export const protectedStartSubscriptionRoute = createProtectedRoute({
                     },
                     ctx,
                     422
+                );
+            }
+            if (
+                error instanceof PaymentProviderError &&
+                error.capability === 'authorize' &&
+                error.transient
+            ) {
+                // HOS-1968: a throttled or unavailable provider is a retryable 503, never a 500.
+                const { kind, retryAfterSeconds } = error.transient;
+                return createErrorResponse(
+                    {
+                        code:
+                            kind === 'RATE_LIMITED'
+                                ? ServiceErrorCode.PROVIDER_RATE_LIMITED
+                                : ServiceErrorCode.SERVICE_UNAVAILABLE,
+                        message: 'The payment provider is busy; try again in a minute',
+                        reason: PROVIDER_BUSY_REASON,
+                        ...(retryAfterSeconds === undefined
+                            ? {}
+                            : { details: { retryAfter: retryAfterSeconds } })
+                    },
+                    ctx,
+                    503,
+                    retryAfterSeconds === undefined
+                        ? undefined
+                        : { 'Retry-After': String(retryAfterSeconds) }
                 );
             }
             const serviceError = error instanceof ServiceError ? error : null;
