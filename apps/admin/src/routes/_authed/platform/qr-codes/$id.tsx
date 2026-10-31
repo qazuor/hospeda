@@ -22,6 +22,7 @@ import {
     useQrCodePreview
 } from '@/features/qr-codes/hooks/useQrCodes';
 import { useTranslations } from '@/hooks/use-translations';
+import { formatShortDate } from '@/lib/format-helpers';
 
 export const Route = createFileRoute('/_authed/platform/qr-codes/$id')({
     component: QrCodeDetailPage
@@ -29,7 +30,7 @@ export const Route = createFileRoute('/_authed/platform/qr-codes/$id')({
 
 function QrCodeDetailPage() {
     const { id } = Route.useParams();
-    const { t } = useTranslations();
+    const { t, locale } = useTranslations();
     const navigate = useNavigate();
     const { addToast } = useToast();
 
@@ -145,7 +146,7 @@ function QrCodeDetailPage() {
                             <div className="flex items-center justify-between">
                                 <span>{t('admin-qr-codes.columns.createdAt')}</span>
                                 <span className="text-muted-foreground">
-                                    {new Date(qrCode.createdAt).toLocaleDateString()}
+                                    {formatShortDate({ date: qrCode.createdAt, locale })}
                                 </span>
                             </div>
                         </CardContent>

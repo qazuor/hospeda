@@ -5,6 +5,7 @@
  */
 
 import { useTranslations } from '@/hooks/use-translations';
+import { formatDateWithTime } from '@/lib/format-helpers';
 
 // ---------------------------------------------------------------------------
 // Types
@@ -24,7 +25,7 @@ export interface SocialPostLogsTabProps {
  * Renders each publish-log entry as a card with status, timestamps, and message.
  */
 export function SocialPostLogsTab({ logs }: SocialPostLogsTabProps) {
-    const { t } = useTranslations();
+    const { t, locale } = useTranslations();
 
     if (logs.length === 0) {
         return (
@@ -52,7 +53,7 @@ export function SocialPostLogsTab({ logs }: SocialPostLogsTabProps) {
                         {log.platform != null && <span>{String(log.platform)}</span>}
                         {log.publishFormat != null && <span>{String(log.publishFormat)}</span>}
                         <span className="text-muted-foreground">
-                            {new Date(log.createdAt as string).toLocaleString()}
+                            {formatDateWithTime({ date: log.createdAt as string, locale })}
                         </span>
                     </div>
                     {log.message != null && (
