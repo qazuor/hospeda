@@ -31,7 +31,7 @@ function serializeThemeValue(value: unknown): string {
 }
 
 describe('webLight — coverage', () => {
-    it('declares all 238 web :root tokens', () => {
+    it('declares all 239 web :root tokens', () => {
         // 155 was the prior count (accommodation-type tokens + base). Count grew
         // to 208 after the SSOT icon+color passes added event-category (8),
         // post-category (18), user-role (7), auth-provider (5), amenity-type (12)
@@ -44,7 +44,7 @@ describe('webLight — coverage', () => {
         // `-on` glyph companions → 233, then HOS-314's 5 --channel-whatsapp*
         // tokens (fill, frozen foreground, logotype ink, hover, AA text) → 238.
         // Adding or removing entries should be intentional.
-        expect(Object.keys(webLight)).toHaveLength(238);
+        expect(Object.keys(webLight)).toHaveLength(239);
     });
 
     it('declares the 10 per-accommodation-type tokens referencing palette primitives', () => {
@@ -162,7 +162,7 @@ describe('webLight — radius / spacing / typography / shadows / motion / z-inde
 });
 
 describe('webDark — coverage', () => {
-    it('declares 70 dark overrides', () => {
+    it('declares 71 dark overrides', () => {
         // 57 was the count after brand-primary-text; the dark-mode navy refresh
         // (hero-wave-fill) and the SPEC-308 a11y pass (brand-primary-link,
         // hospeda-forest-link, surface-warm-foreground) brought it to 63.
@@ -174,7 +174,7 @@ describe('webDark — coverage', () => {
         // --channel-whatsapp* tokens are deliberately light-only, since the
         // brand fill and its ink must not change with the theme (see
         // tokens/channel-contrast.test.ts).
-        expect(Object.keys(webDark)).toHaveLength(70);
+        expect(Object.keys(webDark)).toHaveLength(71);
     });
 
     // Dark tokens that intentionally have NO light counterpart (the light value
