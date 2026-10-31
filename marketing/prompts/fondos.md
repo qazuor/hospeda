@@ -81,7 +81,10 @@ atención justo donde el espectador tiene que estar mirando a Hospedín.
 
 Todos los fondos que muestran un teléfono comparten una regla que **no se negocia**:
 su pantalla tiene que tener la proporción del teléfono con el que se graba — **el alto
-es 2,17 veces el ancho**.
+es 2,17 veces el ancho** (19,5:9) — y el teléfono tiene que verse como ese dispositivo:
+un Android de marco plano, esquinas casi rectas y cámara perforada centrada arriba, sin
+logos. El dispositivo de referencia y sus medidas están en
+[`videos/REGLAS.md`](../videos/REGLAS.md#dispositivo-de-referencia-samsung-galaxy-s24-ultra).
 
 **En el fondo la pantalla va gris, y eso no cambia.** El gris es una máscara de
 posición, no el resultado: un mismo fondo lo usan varios videos con pantallas distintas,
@@ -112,13 +115,17 @@ excepción es el 12, que lleva una caña de pescar en vez del celular.
 ```
 Hospedín DE PIE Y DE FRENTE A LA CÁMARA, de cuerpo entero, en el terreno frente a una cabaña de madera del Litoral, de día.
 
-Sostiene un TELÉFONO CELULAR MODERNO con una mano, en alto a la altura del pecho, con
-la PANTALLA MIRANDO DE FRENTE A LA CÁMARA. La pantalla es una superficie GRIS CLARO
-LISA Y COMPLETAMENTE VACÍA: sin texto, sin íconos, sin interfaz, sin fotos, sin
-reflejos y sin brillos. Se le compone contenido después. EL TELÉFONO ES MUY ALARGADO:
-su alto es 2,17 veces su ancho, la proporción de un teléfono moderno. Está DE FRENTE Y
-PLANO respecto de la cámara, sin perspectiva, sin rotación y sin inclinación. Los dedos
-NO tapan la pantalla: se ve entera, con sus cuatro esquinas a la vista.
+Sostiene un TELÉFONO CELULAR MODERNO con una mano, en alto a la altura del pecho, con la
+PANTALLA MIRANDO DE FRENTE A LA CÁMARA. La pantalla es una superficie GRIS CLARO LISA Y
+COMPLETAMENTE VACÍA: sin texto, sin íconos, sin interfaz, sin fotos, sin reflejos y sin
+brillos. Se le compone contenido después. EL TELÉFONO ES MUY ALARGADO: su PANTALLA tiene
+el alto 2,17 veces el ancho (19,5:9), la proporción de un teléfono moderno. Es un
+teléfono Android de gama alta: marco plano de titanio, esquinas casi rectas apenas
+redondeadas, bordes de pantalla finos y parejos, y una sola cámara frontal en un
+orificio circular diminuto, centrado arriba dentro de la pantalla. Sin muesca, sin logos
+y sin ninguna marca visible. Está DE FRENTE Y PLANO respecto de la cámara, sin
+perspectiva, sin rotación y sin inclinación. Los dedos NO tapan la pantalla: se ve
+entera, con sus cuatro esquinas a la vista.
 
 Mira a cámara con expresión alegre y confiada. La otra mano relajada al costado del
 cuerpo.
@@ -172,13 +179,17 @@ escribe hospeda, sin mayúsculas, sin acento y sin la extensión del dominio.
 ```
 Hospedín DE PIE Y DE FRENTE A LA CÁMARA, de cuerpo entero, de pie sobre un muelle de madera sobre el río, de día.
 
-Sostiene un TELÉFONO CELULAR MODERNO con una mano, en alto a la altura del pecho, con
-la PANTALLA MIRANDO DE FRENTE A LA CÁMARA. La pantalla es una superficie GRIS CLARO
-LISA Y COMPLETAMENTE VACÍA: sin texto, sin íconos, sin interfaz, sin fotos, sin
-reflejos y sin brillos. Se le compone contenido después. EL TELÉFONO ES MUY ALARGADO:
-su alto es 2,17 veces su ancho, la proporción de un teléfono moderno. Está DE FRENTE Y
-PLANO respecto de la cámara, sin perspectiva, sin rotación y sin inclinación. Los dedos
-NO tapan la pantalla: se ve entera, con sus cuatro esquinas a la vista.
+Sostiene un TELÉFONO CELULAR MODERNO con una mano, en alto a la altura del pecho, con la
+PANTALLA MIRANDO DE FRENTE A LA CÁMARA. La pantalla es una superficie GRIS CLARO LISA Y
+COMPLETAMENTE VACÍA: sin texto, sin íconos, sin interfaz, sin fotos, sin reflejos y sin
+brillos. Se le compone contenido después. EL TELÉFONO ES MUY ALARGADO: su PANTALLA tiene
+el alto 2,17 veces el ancho (19,5:9), la proporción de un teléfono moderno. Es un
+teléfono Android de gama alta: marco plano de titanio, esquinas casi rectas apenas
+redondeadas, bordes de pantalla finos y parejos, y una sola cámara frontal en un
+orificio circular diminuto, centrado arriba dentro de la pantalla. Sin muesca, sin logos
+y sin ninguna marca visible. Está DE FRENTE Y PLANO respecto de la cámara, sin
+perspectiva, sin rotación y sin inclinación. Los dedos NO tapan la pantalla: se ve
+entera, con sus cuatro esquinas a la vista.
 
 Mira a cámara con expresión alegre y confiada. La otra mano relajada al costado del
 cuerpo.
@@ -236,13 +247,17 @@ escribe hospeda, sin mayúsculas, sin acento y sin la extensión del dominio.
 ```
 Hospedín DE PIE Y DE FRENTE A LA CÁMARA, de cuerpo entero, de pie en una playa de arena del río, de día.
 
-Sostiene un TELÉFONO CELULAR MODERNO con una mano, en alto a la altura del pecho, con
-la PANTALLA MIRANDO DE FRENTE A LA CÁMARA. La pantalla es una superficie GRIS CLARO
-LISA Y COMPLETAMENTE VACÍA: sin texto, sin íconos, sin interfaz, sin fotos, sin
-reflejos y sin brillos. Se le compone contenido después. EL TELÉFONO ES MUY ALARGADO:
-su alto es 2,17 veces su ancho, la proporción de un teléfono moderno. Está DE FRENTE Y
-PLANO respecto de la cámara, sin perspectiva, sin rotación y sin inclinación. Los dedos
-NO tapan la pantalla: se ve entera, con sus cuatro esquinas a la vista.
+Sostiene un TELÉFONO CELULAR MODERNO con una mano, en alto a la altura del pecho, con la
+PANTALLA MIRANDO DE FRENTE A LA CÁMARA. La pantalla es una superficie GRIS CLARO LISA Y
+COMPLETAMENTE VACÍA: sin texto, sin íconos, sin interfaz, sin fotos, sin reflejos y sin
+brillos. Se le compone contenido después. EL TELÉFONO ES MUY ALARGADO: su PANTALLA tiene
+el alto 2,17 veces el ancho (19,5:9), la proporción de un teléfono moderno. Es un
+teléfono Android de gama alta: marco plano de titanio, esquinas casi rectas apenas
+redondeadas, bordes de pantalla finos y parejos, y una sola cámara frontal en un
+orificio circular diminuto, centrado arriba dentro de la pantalla. Sin muesca, sin logos
+y sin ninguna marca visible. Está DE FRENTE Y PLANO respecto de la cámara, sin
+perspectiva, sin rotación y sin inclinación. Los dedos NO tapan la pantalla: se ve
+entera, con sus cuatro esquinas a la vista.
 
 Mira a cámara con expresión alegre y confiada. La otra mano relajada al costado del
 cuerpo.
@@ -295,13 +310,17 @@ escribe hospeda, sin mayúsculas, sin acento y sin la extensión del dominio.
 ```
 Hospedín DE PIE Y DE FRENTE A LA CÁMARA, de cuerpo entero, de pie en una costanera del río, sobre una pasarela de madera con baranda, de día.
 
-Sostiene un TELÉFONO CELULAR MODERNO con una mano, en alto a la altura del pecho, con
-la PANTALLA MIRANDO DE FRENTE A LA CÁMARA. La pantalla es una superficie GRIS CLARO
-LISA Y COMPLETAMENTE VACÍA: sin texto, sin íconos, sin interfaz, sin fotos, sin
-reflejos y sin brillos. Se le compone contenido después. EL TELÉFONO ES MUY ALARGADO:
-su alto es 2,17 veces su ancho, la proporción de un teléfono moderno. Está DE FRENTE Y
-PLANO respecto de la cámara, sin perspectiva, sin rotación y sin inclinación. Los dedos
-NO tapan la pantalla: se ve entera, con sus cuatro esquinas a la vista.
+Sostiene un TELÉFONO CELULAR MODERNO con una mano, en alto a la altura del pecho, con la
+PANTALLA MIRANDO DE FRENTE A LA CÁMARA. La pantalla es una superficie GRIS CLARO LISA Y
+COMPLETAMENTE VACÍA: sin texto, sin íconos, sin interfaz, sin fotos, sin reflejos y sin
+brillos. Se le compone contenido después. EL TELÉFONO ES MUY ALARGADO: su PANTALLA tiene
+el alto 2,17 veces el ancho (19,5:9), la proporción de un teléfono moderno. Es un
+teléfono Android de gama alta: marco plano de titanio, esquinas casi rectas apenas
+redondeadas, bordes de pantalla finos y parejos, y una sola cámara frontal en un
+orificio circular diminuto, centrado arriba dentro de la pantalla. Sin muesca, sin logos
+y sin ninguna marca visible. Está DE FRENTE Y PLANO respecto de la cámara, sin
+perspectiva, sin rotación y sin inclinación. Los dedos NO tapan la pantalla: se ve
+entera, con sus cuatro esquinas a la vista.
 
 Mira a cámara con expresión alegre y confiada. La otra mano relajada al costado del
 cuerpo.
@@ -359,13 +378,17 @@ escribe hospeda, sin mayúsculas, sin acento y sin la extensión del dominio.
 ```
 Hospedín DE PIE Y DE FRENTE A LA CÁMARA, de cuerpo entero, de pie en un sendero de tierra entre palmeras yatay altas, de día.
 
-Sostiene un TELÉFONO CELULAR MODERNO con una mano, en alto a la altura del pecho, con
-la PANTALLA MIRANDO DE FRENTE A LA CÁMARA. La pantalla es una superficie GRIS CLARO
-LISA Y COMPLETAMENTE VACÍA: sin texto, sin íconos, sin interfaz, sin fotos, sin
-reflejos y sin brillos. Se le compone contenido después. EL TELÉFONO ES MUY ALARGADO:
-su alto es 2,17 veces su ancho, la proporción de un teléfono moderno. Está DE FRENTE Y
-PLANO respecto de la cámara, sin perspectiva, sin rotación y sin inclinación. Los dedos
-NO tapan la pantalla: se ve entera, con sus cuatro esquinas a la vista.
+Sostiene un TELÉFONO CELULAR MODERNO con una mano, en alto a la altura del pecho, con la
+PANTALLA MIRANDO DE FRENTE A LA CÁMARA. La pantalla es una superficie GRIS CLARO LISA Y
+COMPLETAMENTE VACÍA: sin texto, sin íconos, sin interfaz, sin fotos, sin reflejos y sin
+brillos. Se le compone contenido después. EL TELÉFONO ES MUY ALARGADO: su PANTALLA tiene
+el alto 2,17 veces el ancho (19,5:9), la proporción de un teléfono moderno. Es un
+teléfono Android de gama alta: marco plano de titanio, esquinas casi rectas apenas
+redondeadas, bordes de pantalla finos y parejos, y una sola cámara frontal en un
+orificio circular diminuto, centrado arriba dentro de la pantalla. Sin muesca, sin logos
+y sin ninguna marca visible. Está DE FRENTE Y PLANO respecto de la cámara, sin
+perspectiva, sin rotación y sin inclinación. Los dedos NO tapan la pantalla: se ve
+entera, con sus cuatro esquinas a la vista.
 
 Mira a cámara con expresión alegre y confiada. La otra mano relajada al costado del
 cuerpo.
@@ -423,13 +446,17 @@ escribe hospeda, sin mayúsculas, sin acento y sin la extensión del dominio.
 ```
 Hospedín DE PIE Y DE FRENTE A LA CÁMARA, de cuerpo entero, de pie junto a las piletas de un complejo termal, de día.
 
-Sostiene un TELÉFONO CELULAR MODERNO con una mano, en alto a la altura del pecho, con
-la PANTALLA MIRANDO DE FRENTE A LA CÁMARA. La pantalla es una superficie GRIS CLARO
-LISA Y COMPLETAMENTE VACÍA: sin texto, sin íconos, sin interfaz, sin fotos, sin
-reflejos y sin brillos. Se le compone contenido después. EL TELÉFONO ES MUY ALARGADO:
-su alto es 2,17 veces su ancho, la proporción de un teléfono moderno. Está DE FRENTE Y
-PLANO respecto de la cámara, sin perspectiva, sin rotación y sin inclinación. Los dedos
-NO tapan la pantalla: se ve entera, con sus cuatro esquinas a la vista.
+Sostiene un TELÉFONO CELULAR MODERNO con una mano, en alto a la altura del pecho, con la
+PANTALLA MIRANDO DE FRENTE A LA CÁMARA. La pantalla es una superficie GRIS CLARO LISA Y
+COMPLETAMENTE VACÍA: sin texto, sin íconos, sin interfaz, sin fotos, sin reflejos y sin
+brillos. Se le compone contenido después. EL TELÉFONO ES MUY ALARGADO: su PANTALLA tiene
+el alto 2,17 veces el ancho (19,5:9), la proporción de un teléfono moderno. Es un
+teléfono Android de gama alta: marco plano de titanio, esquinas casi rectas apenas
+redondeadas, bordes de pantalla finos y parejos, y una sola cámara frontal en un
+orificio circular diminuto, centrado arriba dentro de la pantalla. Sin muesca, sin logos
+y sin ninguna marca visible. Está DE FRENTE Y PLANO respecto de la cámara, sin
+perspectiva, sin rotación y sin inclinación. Los dedos NO tapan la pantalla: se ve
+entera, con sus cuatro esquinas a la vista.
 
 Mira a cámara con expresión alegre y confiada. La otra mano relajada al costado del
 cuerpo.
@@ -487,13 +514,17 @@ escribe hospeda, sin mayúsculas, sin acento y sin la extensión del dominio.
 ```
 Hospedín DE PIE Y DE FRENTE A LA CÁMARA, de cuerpo entero, de pie en un balneario de arena del río, de día.
 
-Sostiene un TELÉFONO CELULAR MODERNO con una mano, en alto a la altura del pecho, con
-la PANTALLA MIRANDO DE FRENTE A LA CÁMARA. La pantalla es una superficie GRIS CLARO
-LISA Y COMPLETAMENTE VACÍA: sin texto, sin íconos, sin interfaz, sin fotos, sin
-reflejos y sin brillos. Se le compone contenido después. EL TELÉFONO ES MUY ALARGADO:
-su alto es 2,17 veces su ancho, la proporción de un teléfono moderno. Está DE FRENTE Y
-PLANO respecto de la cámara, sin perspectiva, sin rotación y sin inclinación. Los dedos
-NO tapan la pantalla: se ve entera, con sus cuatro esquinas a la vista.
+Sostiene un TELÉFONO CELULAR MODERNO con una mano, en alto a la altura del pecho, con la
+PANTALLA MIRANDO DE FRENTE A LA CÁMARA. La pantalla es una superficie GRIS CLARO LISA Y
+COMPLETAMENTE VACÍA: sin texto, sin íconos, sin interfaz, sin fotos, sin reflejos y sin
+brillos. Se le compone contenido después. EL TELÉFONO ES MUY ALARGADO: su PANTALLA tiene
+el alto 2,17 veces el ancho (19,5:9), la proporción de un teléfono moderno. Es un
+teléfono Android de gama alta: marco plano de titanio, esquinas casi rectas apenas
+redondeadas, bordes de pantalla finos y parejos, y una sola cámara frontal en un
+orificio circular diminuto, centrado arriba dentro de la pantalla. Sin muesca, sin logos
+y sin ninguna marca visible. Está DE FRENTE Y PLANO respecto de la cámara, sin
+perspectiva, sin rotación y sin inclinación. Los dedos NO tapan la pantalla: se ve
+entera, con sus cuatro esquinas a la vista.
 
 Mira a cámara con expresión alegre y confiada. La otra mano relajada al costado del
 cuerpo.
@@ -549,13 +580,17 @@ escribe hospeda, sin mayúsculas, sin acento y sin la extensión del dominio.
 ```
 Hospedín DE PIE Y DE FRENTE A LA CÁMARA, de cuerpo entero, de pie en un corsódromo de carnaval, de noche.
 
-Sostiene un TELÉFONO CELULAR MODERNO con una mano, en alto a la altura del pecho, con
-la PANTALLA MIRANDO DE FRENTE A LA CÁMARA. La pantalla es una superficie GRIS CLARO
-LISA Y COMPLETAMENTE VACÍA: sin texto, sin íconos, sin interfaz, sin fotos, sin
-reflejos y sin brillos. Se le compone contenido después. EL TELÉFONO ES MUY ALARGADO:
-su alto es 2,17 veces su ancho, la proporción de un teléfono moderno. Está DE FRENTE Y
-PLANO respecto de la cámara, sin perspectiva, sin rotación y sin inclinación. Los dedos
-NO tapan la pantalla: se ve entera, con sus cuatro esquinas a la vista.
+Sostiene un TELÉFONO CELULAR MODERNO con una mano, en alto a la altura del pecho, con la
+PANTALLA MIRANDO DE FRENTE A LA CÁMARA. La pantalla es una superficie GRIS CLARO LISA Y
+COMPLETAMENTE VACÍA: sin texto, sin íconos, sin interfaz, sin fotos, sin reflejos y sin
+brillos. Se le compone contenido después. EL TELÉFONO ES MUY ALARGADO: su PANTALLA tiene
+el alto 2,17 veces el ancho (19,5:9), la proporción de un teléfono moderno. Es un
+teléfono Android de gama alta: marco plano de titanio, esquinas casi rectas apenas
+redondeadas, bordes de pantalla finos y parejos, y una sola cámara frontal en un
+orificio circular diminuto, centrado arriba dentro de la pantalla. Sin muesca, sin logos
+y sin ninguna marca visible. Está DE FRENTE Y PLANO respecto de la cámara, sin
+perspectiva, sin rotación y sin inclinación. Los dedos NO tapan la pantalla: se ve
+entera, con sus cuatro esquinas a la vista.
 
 Mira a cámara con expresión alegre y confiada. La otra mano relajada al costado del
 cuerpo.
@@ -617,13 +652,17 @@ escribe hospeda, sin mayúsculas, sin acento y sin la extensión del dominio.
 ```
 Hospedín DE PIE Y DE FRENTE A LA CÁMARA, de cuerpo entero, de pie en el interior cálido de una cervecería artesanal, de noche.
 
-Sostiene un TELÉFONO CELULAR MODERNO con una mano, en alto a la altura del pecho, con
-la PANTALLA MIRANDO DE FRENTE A LA CÁMARA. La pantalla es una superficie GRIS CLARO
-LISA Y COMPLETAMENTE VACÍA: sin texto, sin íconos, sin interfaz, sin fotos, sin
-reflejos y sin brillos. Se le compone contenido después. EL TELÉFONO ES MUY ALARGADO:
-su alto es 2,17 veces su ancho, la proporción de un teléfono moderno. Está DE FRENTE Y
-PLANO respecto de la cámara, sin perspectiva, sin rotación y sin inclinación. Los dedos
-NO tapan la pantalla: se ve entera, con sus cuatro esquinas a la vista.
+Sostiene un TELÉFONO CELULAR MODERNO con una mano, en alto a la altura del pecho, con la
+PANTALLA MIRANDO DE FRENTE A LA CÁMARA. La pantalla es una superficie GRIS CLARO LISA Y
+COMPLETAMENTE VACÍA: sin texto, sin íconos, sin interfaz, sin fotos, sin reflejos y sin
+brillos. Se le compone contenido después. EL TELÉFONO ES MUY ALARGADO: su PANTALLA tiene
+el alto 2,17 veces el ancho (19,5:9), la proporción de un teléfono moderno. Es un
+teléfono Android de gama alta: marco plano de titanio, esquinas casi rectas apenas
+redondeadas, bordes de pantalla finos y parejos, y una sola cámara frontal en un
+orificio circular diminuto, centrado arriba dentro de la pantalla. Sin muesca, sin logos
+y sin ninguna marca visible. Está DE FRENTE Y PLANO respecto de la cámara, sin
+perspectiva, sin rotación y sin inclinación. Los dedos NO tapan la pantalla: se ve
+entera, con sus cuatro esquinas a la vista.
 
 Mira a cámara con expresión alegre y confiada. La otra mano relajada al costado del
 cuerpo.
@@ -684,13 +723,17 @@ escribe hospeda, sin mayúsculas, sin acento y sin la extensión del dominio.
 ```
 Hospedín DE PIE Y DE FRENTE A LA CÁMARA, de cuerpo entero, de pie en el interior cálido de un restaurante, al atardecer.
 
-Sostiene un TELÉFONO CELULAR MODERNO con una mano, en alto a la altura del pecho, con
-la PANTALLA MIRANDO DE FRENTE A LA CÁMARA. La pantalla es una superficie GRIS CLARO
-LISA Y COMPLETAMENTE VACÍA: sin texto, sin íconos, sin interfaz, sin fotos, sin
-reflejos y sin brillos. Se le compone contenido después. EL TELÉFONO ES MUY ALARGADO:
-su alto es 2,17 veces su ancho, la proporción de un teléfono moderno. Está DE FRENTE Y
-PLANO respecto de la cámara, sin perspectiva, sin rotación y sin inclinación. Los dedos
-NO tapan la pantalla: se ve entera, con sus cuatro esquinas a la vista.
+Sostiene un TELÉFONO CELULAR MODERNO con una mano, en alto a la altura del pecho, con la
+PANTALLA MIRANDO DE FRENTE A LA CÁMARA. La pantalla es una superficie GRIS CLARO LISA Y
+COMPLETAMENTE VACÍA: sin texto, sin íconos, sin interfaz, sin fotos, sin reflejos y sin
+brillos. Se le compone contenido después. EL TELÉFONO ES MUY ALARGADO: su PANTALLA tiene
+el alto 2,17 veces el ancho (19,5:9), la proporción de un teléfono moderno. Es un
+teléfono Android de gama alta: marco plano de titanio, esquinas casi rectas apenas
+redondeadas, bordes de pantalla finos y parejos, y una sola cámara frontal en un
+orificio circular diminuto, centrado arriba dentro de la pantalla. Sin muesca, sin logos
+y sin ninguna marca visible. Está DE FRENTE Y PLANO respecto de la cámara, sin
+perspectiva, sin rotación y sin inclinación. Los dedos NO tapan la pantalla: se ve
+entera, con sus cuatro esquinas a la vista.
 
 Mira a cámara con expresión alegre y confiada. La otra mano relajada al costado del
 cuerpo.
@@ -746,13 +789,17 @@ escribe hospeda, sin mayúsculas, sin acento y sin la extensión del dominio.
 ```
 Hospedín DE PIE Y DE FRENTE A LA CÁMARA, de cuerpo entero, de pie junto al alambrado perimetral de un autódromo, de día.
 
-Sostiene un TELÉFONO CELULAR MODERNO con una mano, en alto a la altura del pecho, con
-la PANTALLA MIRANDO DE FRENTE A LA CÁMARA. La pantalla es una superficie GRIS CLARO
-LISA Y COMPLETAMENTE VACÍA: sin texto, sin íconos, sin interfaz, sin fotos, sin
-reflejos y sin brillos. Se le compone contenido después. EL TELÉFONO ES MUY ALARGADO:
-su alto es 2,17 veces su ancho, la proporción de un teléfono moderno. Está DE FRENTE Y
-PLANO respecto de la cámara, sin perspectiva, sin rotación y sin inclinación. Los dedos
-NO tapan la pantalla: se ve entera, con sus cuatro esquinas a la vista.
+Sostiene un TELÉFONO CELULAR MODERNO con una mano, en alto a la altura del pecho, con la
+PANTALLA MIRANDO DE FRENTE A LA CÁMARA. La pantalla es una superficie GRIS CLARO LISA Y
+COMPLETAMENTE VACÍA: sin texto, sin íconos, sin interfaz, sin fotos, sin reflejos y sin
+brillos. Se le compone contenido después. EL TELÉFONO ES MUY ALARGADO: su PANTALLA tiene
+el alto 2,17 veces el ancho (19,5:9), la proporción de un teléfono moderno. Es un
+teléfono Android de gama alta: marco plano de titanio, esquinas casi rectas apenas
+redondeadas, bordes de pantalla finos y parejos, y una sola cámara frontal en un
+orificio circular diminuto, centrado arriba dentro de la pantalla. Sin muesca, sin logos
+y sin ninguna marca visible. Está DE FRENTE Y PLANO respecto de la cámara, sin
+perspectiva, sin rotación y sin inclinación. Los dedos NO tapan la pantalla: se ve
+entera, con sus cuatro esquinas a la vista.
 
 Mira a cámara con expresión alegre y confiada. La otra mano relajada al costado del
 cuerpo.
@@ -865,14 +912,17 @@ escribe hospeda, sin mayúsculas, sin acento y sin la extensión del dominio.
 Hospedín SENTADO en una reposera de playa de madera y lona clara, en una playa de
 arena del río, de tarde.
 
-Está recostado hacia atrás, relajado, con las piernas cortas apoyadas y las zapatillas
-a la vista. Sostiene un celular en una mano, apoyado sobre la falda, con la pantalla
-gris claro plana y sin contenido, orientada hacia la cámara.
-EL TELÉFONO ES MUY ALARGADO: su alto es 2,17 veces su ancho, la proporción de un
-teléfono moderno. Está DE FRENTE Y PLANO respecto de la cámara, sin perspectiva, sin
-rotación y sin inclinación. Los dedos NO tapan la pantalla: se ve entera, con sus
-cuatro esquinas a la vista. La otra mano descansa
-sobre el apoyabrazos. Mira a cámara con expresión tranquila y contenta.
+Está recostado hacia atrás, relajado, con las piernas cortas apoyadas y las zapatillas a
+la vista. Sostiene un celular en una mano, apoyado sobre la falda, con la pantalla gris
+claro plana y sin contenido, orientada hacia la cámara. EL TELÉFONO ES MUY ALARGADO: su
+PANTALLA tiene el alto 2,17 veces el ancho (19,5:9), la proporción de un teléfono
+moderno. Es un teléfono Android de gama alta: marco plano de titanio, esquinas casi
+rectas apenas redondeadas, bordes de pantalla finos y parejos, y una sola cámara frontal
+en un orificio circular diminuto, centrado arriba dentro de la pantalla. Sin muesca, sin
+logos y sin ninguna marca visible. Está DE FRENTE Y PLANO respecto de la cámara, sin
+perspectiva, sin rotación y sin inclinación. Los dedos NO tapan la pantalla: se ve
+entera, con sus cuatro esquinas a la vista. La otra mano descansa sobre el apoyabrazos.
+Mira a cámara con expresión tranquila y contenta.
 
 La reposera está sobre la arena. Al lado hay una sombrilla plegada y un bolso de playa.
 Detrás, el agua calma del río, y más atrás una línea de árboles, todo bien desenfocado.
@@ -930,12 +980,15 @@ cálida, de noche.
 Está sentado en un banco o silla, con el torso apoyado hacia adelante y los antebrazos
 sobre la mesa, en actitud de conversación. Sobre la mesa hay un vaso de cerveza servido
 y un posavasos. Sostiene un celular en una mano, apoyado sobre la mesa, con la pantalla
-gris claro plana y sin contenido, orientada hacia la cámara.
-EL TELÉFONO ES MUY ALARGADO: su alto es 2,17 veces su ancho, la proporción de un
-teléfono moderno. Está DE FRENTE Y PLANO respecto de la cámara, sin perspectiva, sin
-rotación y sin inclinación. Los dedos NO tapan la pantalla: se ve entera, con sus
-cuatro esquinas a la vista. Mira a cámara con
-expresión cálida y cercana.
+gris claro plana y sin contenido, orientada hacia la cámara. EL TELÉFONO ES MUY
+ALARGADO: su PANTALLA tiene el alto 2,17 veces el ancho (19,5:9), la proporción de un
+teléfono moderno. Es un teléfono Android de gama alta: marco plano de titanio, esquinas
+casi rectas apenas redondeadas, bordes de pantalla finos y parejos, y una sola cámara
+frontal en un orificio circular diminuto, centrado arriba dentro de la pantalla. Sin
+muesca, sin logos y sin ninguna marca visible. Está DE FRENTE Y PLANO respecto de la
+cámara, sin perspectiva, sin rotación y sin inclinación. Los dedos NO tapan la pantalla:
+se ve entera, con sus cuatro esquinas a la vista. Mira a cámara con expresión cálida y
+cercana.
 
 Detrás suyo, el ambiente de la cervecería: lámparas colgantes de luz cálida, madera,
 algún tanque de cobre, y gente lejana y muy desenfocada. Nada de texto legible en el
@@ -990,16 +1043,19 @@ ubicado en el TERCIO IZQUIERDO del cuadro.
 
 Junto a él, hacia la derecha, flotando en el aire a la altura de su cabeza, hay un
 TELÉFONO CELULAR MODERNO VISTO COMPLETAMENTE DE FRENTE, con la pantalla encendida pero
-VACÍA. El marco es fino, oscuro y de esquinas redondeadas. La pantalla es una superficie
-GRIS CLARO LISA Y COMPLETAMENTE VACÍA: sin texto, sin íconos, sin interfaz, sin fotos,
-sin reflejos y sin brillos. Se le compone contenido después.
+VACÍA. Es un teléfono Android de gama alta: marco plano de titanio oscuro, esquinas casi
+rectas apenas redondeadas, bordes de pantalla finos y parejos, y una sola cámara frontal
+en un orificio circular diminuto, centrado arriba dentro de la pantalla. Sin muesca, sin
+logos y sin ninguna marca visible. La pantalla es una superficie GRIS CLARO LISA Y
+COMPLETAMENTE VACÍA: sin texto, sin íconos, sin interfaz, sin fotos, sin reflejos y sin
+brillos. Se le compone contenido después.
 
 EL TELÉFONO — ESTO ES LO MÁS IMPORTANTE DE LA IMAGEN:
 - Está PERFECTAMENTE DE FRENTE Y PLANO respecto de la cámara: sin perspectiva, sin
   rotación, sin inclinación y sin escorzo. Sus cuatro bordes quedan paralelos a los
   bordes de la imagen. Si aparece aunque sea levemente girado, la imagen NO SIRVE.
-- Es MUY ALARGADO: su alto es 2,17 veces su ancho. Es la proporción de un teléfono
-  moderno, mucho más estirado que una hoja. NO es un rectángulo ancho, NO es cuadrado y
+- Es MUY ALARGADO: su PANTALLA tiene el alto 2,17 veces el ancho (19,5:9). Es la
+  proporción de un teléfono moderno, mucho más estirado que una hoja. NO es un rectángulo ancho, NO es cuadrado y
   NO tiene proporción 9:16.
 - ES GRANDE: ocupa DOS QUINTOS del ancho de la imagen (un 40%) y CASI LA MITAD del
   alto, centrado verticalmente. Es el elemento más grande del cuadro después del
@@ -1196,12 +1252,15 @@ río, de día.
 
 Tiene un antebrazo apoyado sobre la baranda y el cuerpo ligeramente girado hacia la
 cámara, en postura relajada y asimétrica: no está parado firme y de frente. Una pierna
-apenas cruzada delante de la otra. Sostiene un celular en la mano libre, a la altura
-del pecho, con la pantalla gris claro plana y sin contenido, orientada hacia la cámara.
-EL TELÉFONO ES MUY ALARGADO: su alto es 2,17 veces su ancho, la proporción de un
-teléfono moderno. Está DE FRENTE Y PLANO respecto de la cámara, sin perspectiva, sin
-rotación y sin inclinación. Los dedos NO tapan la pantalla: se ve entera, con sus
-cuatro esquinas a la vista.
+apenas cruzada delante de la otra. Sostiene un celular en la mano libre, a la altura del
+pecho, con la pantalla gris claro plana y sin contenido, orientada hacia la cámara. EL
+TELÉFONO ES MUY ALARGADO: su PANTALLA tiene el alto 2,17 veces el ancho (19,5:9), la
+proporción de un teléfono moderno. Es un teléfono Android de gama alta: marco plano de
+titanio, esquinas casi rectas apenas redondeadas, bordes de pantalla finos y parejos, y
+una sola cámara frontal en un orificio circular diminuto, centrado arriba dentro de la
+pantalla. Sin muesca, sin logos y sin ninguna marca visible. Está DE FRENTE Y PLANO
+respecto de la cámara, sin perspectiva, sin rotación y sin inclinación. Los dedos NO
+tapan la pantalla: se ve entera, con sus cuatro esquinas a la vista.
 
 Mira a cámara con expresión tranquila y confiada.
 
@@ -1379,16 +1438,19 @@ baranda, ubicado en el TERCIO IZQUIERDO del cuadro.
 
 Junto a él, hacia la derecha, flotando en el aire a la altura de su cabeza, hay un
 TELÉFONO CELULAR MODERNO VISTO COMPLETAMENTE DE FRENTE, con la pantalla encendida pero
-VACÍA. El marco es fino, oscuro y de esquinas redondeadas. La pantalla es una superficie
-GRIS CLARO LISA Y COMPLETAMENTE VACÍA: sin texto, sin íconos, sin interfaz, sin fotos,
-sin reflejos y sin brillos. Se le compone contenido después.
+VACÍA. Es un teléfono Android de gama alta: marco plano de titanio oscuro, esquinas casi
+rectas apenas redondeadas, bordes de pantalla finos y parejos, y una sola cámara frontal
+en un orificio circular diminuto, centrado arriba dentro de la pantalla. Sin muesca, sin
+logos y sin ninguna marca visible. La pantalla es una superficie GRIS CLARO LISA Y
+COMPLETAMENTE VACÍA: sin texto, sin íconos, sin interfaz, sin fotos, sin reflejos y sin
+brillos. Se le compone contenido después.
 
 EL TELÉFONO — ESTO ES LO MÁS IMPORTANTE DE LA IMAGEN:
 - Está PERFECTAMENTE DE FRENTE Y PLANO respecto de la cámara: sin perspectiva, sin
   rotación, sin inclinación y sin escorzo. Sus cuatro bordes quedan paralelos a los
   bordes de la imagen. Si aparece aunque sea levemente girado, la imagen NO SIRVE.
-- Es MUY ALARGADO: su alto es 2,17 veces su ancho. Es la proporción de un teléfono
-  moderno, mucho más estirado que una hoja. NO es un rectángulo ancho, NO es cuadrado y
+- Es MUY ALARGADO: su PANTALLA tiene el alto 2,17 veces el ancho (19,5:9). Es la
+  proporción de un teléfono moderno, mucho más estirado que una hoja. NO es un rectángulo ancho, NO es cuadrado y
   NO tiene proporción 9:16.
 - ES GRANDE: ocupa DOS QUINTOS del ancho de la imagen (un 40%) y CASI LA MITAD del
   alto, centrado verticalmente. Es el elemento más grande del cuadro después del
@@ -1463,16 +1525,19 @@ IZQUIERDO del cuadro.
 
 Junto a él, hacia la derecha, flotando en el aire a la altura de su cabeza, hay un
 TELÉFONO CELULAR MODERNO VISTO COMPLETAMENTE DE FRENTE, con la pantalla encendida pero
-VACÍA. El marco es fino, oscuro y de esquinas redondeadas. La pantalla es una superficie
-GRIS CLARO LISA Y COMPLETAMENTE VACÍA: sin texto, sin íconos, sin interfaz, sin fotos,
-sin reflejos y sin brillos. Se le compone contenido después.
+VACÍA. Es un teléfono Android de gama alta: marco plano de titanio oscuro, esquinas casi
+rectas apenas redondeadas, bordes de pantalla finos y parejos, y una sola cámara frontal
+en un orificio circular diminuto, centrado arriba dentro de la pantalla. Sin muesca, sin
+logos y sin ninguna marca visible. La pantalla es una superficie GRIS CLARO LISA Y
+COMPLETAMENTE VACÍA: sin texto, sin íconos, sin interfaz, sin fotos, sin reflejos y sin
+brillos. Se le compone contenido después.
 
 EL TELÉFONO — ESTO ES LO MÁS IMPORTANTE DE LA IMAGEN:
 - Está PERFECTAMENTE DE FRENTE Y PLANO respecto de la cámara: sin perspectiva, sin
   rotación, sin inclinación y sin escorzo. Sus cuatro bordes quedan paralelos a los
   bordes de la imagen. Si aparece aunque sea levemente girado, la imagen NO SIRVE.
-- Es MUY ALARGADO: su alto es 2,17 veces su ancho. Es la proporción de un teléfono
-  moderno, mucho más estirado que una hoja. NO es un rectángulo ancho, NO es cuadrado y
+- Es MUY ALARGADO: su PANTALLA tiene el alto 2,17 veces el ancho (19,5:9). Es la
+  proporción de un teléfono moderno, mucho más estirado que una hoja. NO es un rectángulo ancho, NO es cuadrado y
   NO tiene proporción 9:16.
 - ES GRANDE: ocupa DOS QUINTOS del ancho de la imagen (un 40%) y CASI LA MITAD del
   alto, centrado verticalmente. Es el elemento más grande del cuadro después del
@@ -1547,16 +1612,19 @@ el TERCIO IZQUIERDO del cuadro.
 
 Junto a él, hacia la derecha, flotando en el aire a la altura de su cabeza, hay un
 TELÉFONO CELULAR MODERNO VISTO COMPLETAMENTE DE FRENTE, con la pantalla encendida pero
-VACÍA. El marco es fino, oscuro y de esquinas redondeadas. La pantalla es una superficie
-GRIS CLARO LISA Y COMPLETAMENTE VACÍA: sin texto, sin íconos, sin interfaz, sin fotos,
-sin reflejos y sin brillos. Se le compone contenido después.
+VACÍA. Es un teléfono Android de gama alta: marco plano de titanio oscuro, esquinas casi
+rectas apenas redondeadas, bordes de pantalla finos y parejos, y una sola cámara frontal
+en un orificio circular diminuto, centrado arriba dentro de la pantalla. Sin muesca, sin
+logos y sin ninguna marca visible. La pantalla es una superficie GRIS CLARO LISA Y
+COMPLETAMENTE VACÍA: sin texto, sin íconos, sin interfaz, sin fotos, sin reflejos y sin
+brillos. Se le compone contenido después.
 
 EL TELÉFONO — ESTO ES LO MÁS IMPORTANTE DE LA IMAGEN:
 - Está PERFECTAMENTE DE FRENTE Y PLANO respecto de la cámara: sin perspectiva, sin
   rotación, sin inclinación y sin escorzo. Sus cuatro bordes quedan paralelos a los
   bordes de la imagen. Si aparece aunque sea levemente girado, la imagen NO SIRVE.
-- Es MUY ALARGADO: su alto es 2,17 veces su ancho. Es la proporción de un teléfono
-  moderno, mucho más estirado que una hoja. NO es un rectángulo ancho, NO es cuadrado y
+- Es MUY ALARGADO: su PANTALLA tiene el alto 2,17 veces el ancho (19,5:9). Es la
+  proporción de un teléfono moderno, mucho más estirado que una hoja. NO es un rectángulo ancho, NO es cuadrado y
   NO tiene proporción 9:16.
 - ES GRANDE: ocupa DOS QUINTOS del ancho de la imagen (un 40%) y CASI LA MITAD del
   alto, centrado verticalmente. Es el elemento más grande del cuadro después del
@@ -1629,14 +1697,17 @@ escribe hospeda, sin mayúsculas, sin acento y sin la extensión del dominio.
 Hospedín SENTADO en una reposera de madera y lona clara, junto al borde de una pileta
 de aguas termales, de día.
 
-Está recostado hacia atrás, relajado, con las piernas cortas apoyadas y las zapatillas
-a la vista. Sostiene un celular en una mano, apoyado sobre la falda, con la pantalla
-gris claro plana y sin contenido, orientada hacia la cámara.
-EL TELÉFONO ES MUY ALARGADO: su alto es 2,17 veces su ancho, la proporción de un
-teléfono moderno. Está DE FRENTE Y PLANO respecto de la cámara, sin perspectiva, sin
-rotación y sin inclinación. Los dedos NO tapan la pantalla: se ve entera, con sus
-cuatro esquinas a la vista. La otra mano descansa
-sobre el apoyabrazos. Mira a cámara con expresión tranquila y contenta.
+Está recostado hacia atrás, relajado, con las piernas cortas apoyadas y las zapatillas a
+la vista. Sostiene un celular en una mano, apoyado sobre la falda, con la pantalla gris
+claro plana y sin contenido, orientada hacia la cámara. EL TELÉFONO ES MUY ALARGADO: su
+PANTALLA tiene el alto 2,17 veces el ancho (19,5:9), la proporción de un teléfono
+moderno. Es un teléfono Android de gama alta: marco plano de titanio, esquinas casi
+rectas apenas redondeadas, bordes de pantalla finos y parejos, y una sola cámara frontal
+en un orificio circular diminuto, centrado arriba dentro de la pantalla. Sin muesca, sin
+logos y sin ninguna marca visible. Está DE FRENTE Y PLANO respecto de la cámara, sin
+perspectiva, sin rotación y sin inclinación. Los dedos NO tapan la pantalla: se ve
+entera, con sus cuatro esquinas a la vista. La otra mano descansa sobre el apoyabrazos.
+Mira a cámara con expresión tranquila y contenta.
 
 Detrás, el agua turquesa de la pileta termal con vapor suave, sombrillas y palmeras,
 todo bien desenfocado. Sin carteles legibles.
@@ -1693,14 +1764,17 @@ escribe hospeda, sin mayúsculas, sin acento y sin la extensión del dominio.
 Hospedín SENTADO en una silla baja de madera con almohadones, en la galería de una
 cabaña de madera del Litoral, de tarde.
 
-Está recostado hacia atrás, relajado, con las piernas cortas apoyadas y las zapatillas
-a la vista. Sostiene un celular en una mano, apoyado sobre la falda, con la pantalla
-gris claro plana y sin contenido, orientada hacia la cámara.
-EL TELÉFONO ES MUY ALARGADO: su alto es 2,17 veces su ancho, la proporción de un
-teléfono moderno. Está DE FRENTE Y PLANO respecto de la cámara, sin perspectiva, sin
-rotación y sin inclinación. Los dedos NO tapan la pantalla: se ve entera, con sus
-cuatro esquinas a la vista. La otra mano descansa
-sobre el apoyabrazos. Mira a cámara con expresión tranquila y contenta.
+Está recostado hacia atrás, relajado, con las piernas cortas apoyadas y las zapatillas a
+la vista. Sostiene un celular en una mano, apoyado sobre la falda, con la pantalla gris
+claro plana y sin contenido, orientada hacia la cámara. EL TELÉFONO ES MUY ALARGADO: su
+PANTALLA tiene el alto 2,17 veces el ancho (19,5:9), la proporción de un teléfono
+moderno. Es un teléfono Android de gama alta: marco plano de titanio, esquinas casi
+rectas apenas redondeadas, bordes de pantalla finos y parejos, y una sola cámara frontal
+en un orificio circular diminuto, centrado arriba dentro de la pantalla. Sin muesca, sin
+logos y sin ninguna marca visible. Está DE FRENTE Y PLANO respecto de la cámara, sin
+perspectiva, sin rotación y sin inclinación. Los dedos NO tapan la pantalla: se ve
+entera, con sus cuatro esquinas a la vista. La otra mano descansa sobre el apoyabrazos.
+Mira a cámara con expresión tranquila y contenta.
 
 Detrás, la galería de madera con baranda, plantas en macetas y el verde del terreno,
 todo bien desenfocado.
@@ -1758,12 +1832,15 @@ Hospedín SENTADO a una mesa servida en el interior de un restaurante cálido, d
 
 Está sentado con el torso apoyado hacia adelante y los antebrazos sobre la mesa, en
 actitud de conversación. Sobre la mesa hay un plato servido, una copa y una vela.
-Sostiene un celular en una mano, apoyado sobre la mesa, con la pantalla gris claro
-plana y sin contenido, orientada hacia la cámara.
-EL TELÉFONO ES MUY ALARGADO: su alto es 2,17 veces su ancho, la proporción de un
-teléfono moderno. Está DE FRENTE Y PLANO respecto de la cámara, sin perspectiva, sin
-rotación y sin inclinación. Los dedos NO tapan la pantalla: se ve entera, con sus
-cuatro esquinas a la vista. Mira a cámara con expresión cálida y
+Sostiene un celular en una mano, apoyado sobre la mesa, con la pantalla gris claro plana
+y sin contenido, orientada hacia la cámara. EL TELÉFONO ES MUY ALARGADO: su PANTALLA
+tiene el alto 2,17 veces el ancho (19,5:9), la proporción de un teléfono moderno. Es un
+teléfono Android de gama alta: marco plano de titanio, esquinas casi rectas apenas
+redondeadas, bordes de pantalla finos y parejos, y una sola cámara frontal en un
+orificio circular diminuto, centrado arriba dentro de la pantalla. Sin muesca, sin logos
+y sin ninguna marca visible. Está DE FRENTE Y PLANO respecto de la cámara, sin
+perspectiva, sin rotación y sin inclinación. Los dedos NO tapan la pantalla: se ve
+entera, con sus cuatro esquinas a la vista. Mira a cámara con expresión cálida y
 cercana.
 
 Detrás, el ambiente del restaurante: lámparas de luz cálida, plantas, paredes en verde
@@ -1825,11 +1902,14 @@ del río, de tarde.
 Está sentado con el torso apoyado hacia adelante y los antebrazos sobre la mesa, en
 actitud de conversación. Sobre la mesa hay una taza de café y un vaso de agua. Sostiene
 un celular en una mano, apoyado sobre la mesa, con la pantalla gris claro plana y sin
-contenido, orientada hacia la cámara.
-EL TELÉFONO ES MUY ALARGADO: su alto es 2,17 veces su ancho, la proporción de un
-teléfono moderno. Está DE FRENTE Y PLANO respecto de la cámara, sin perspectiva, sin
-rotación y sin inclinación. Los dedos NO tapan la pantalla: se ve entera, con sus
-cuatro esquinas a la vista. Mira a cámara con expresión cálida y cercana.
+contenido, orientada hacia la cámara. EL TELÉFONO ES MUY ALARGADO: su PANTALLA tiene el
+alto 2,17 veces el ancho (19,5:9), la proporción de un teléfono moderno. Es un teléfono
+Android de gama alta: marco plano de titanio, esquinas casi rectas apenas redondeadas,
+bordes de pantalla finos y parejos, y una sola cámara frontal en un orificio circular
+diminuto, centrado arriba dentro de la pantalla. Sin muesca, sin logos y sin ninguna
+marca visible. Está DE FRENTE Y PLANO respecto de la cámara, sin perspectiva, sin
+rotación y sin inclinación. Los dedos NO tapan la pantalla: se ve entera, con sus cuatro
+esquinas a la vista. Mira a cámara con expresión cálida y cercana.
 
 Detrás, la costanera: palmeras, la baranda de madera y el río, todo bien desenfocado.
 Sin carteles legibles.
@@ -2804,10 +2884,11 @@ escribe hospeda, sin mayúsculas, sin acento y sin la extensión del dominio.
 **El logo lleva la palabra `hospeda` debajo del símbolo**, en minúsculas y legible. Es
 lo que más se pierde entre generaciones.
 
-**El teléfono está de frente y plano**, sin perspectiva ni rotación, y con el alto 2,17
-veces el ancho. Si sale girado, componer la grabación encima deja de ser un pegado
-directo y pasa a ser corner-pin cuadro por cuadro: es el motivo número uno para
-descartar una imagen.
+**El teléfono está de frente y plano**, sin perspectiva ni rotación, con la pantalla en
+19,5:9 (alto 2,17 veces el ancho) y con la forma del dispositivo de referencia: esquinas
+casi rectas, cámara perforada centrada arriba, sin muesca y sin logos. Si sale girado,
+componer la grabación encima deja de ser un pegado directo y pasa a ser corner-pin
+cuadro por cuadro: es el motivo número uno para descartar una imagen.
 
 **La pantalla está completamente vacía**, gris claro liso, sin reflejos ni brillos.
 

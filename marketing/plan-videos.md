@@ -234,6 +234,9 @@ Pose: sostiene un teléfono en una mano, a la altura del pecho y con la PANTALLA
 ORIENTADA HACIA LA CÁMARA, bien visible y sin reflejos. La otra mano en gesto de
 negación con la palma hacia adelante.
 Pantalla del teléfono: en blanco o gris plano, se le compone contenido después.
+Teléfono: Android de gama alta con pantalla 19,5:9 (alto 2,17 veces el ancho), marco
+plano de titanio, esquinas casi rectas apenas redondeadas, bordes finos y una sola
+cámara frontal en un orificio circular diminuto centrado arriba; sin muesca y sin logos.
 Fondo: color plano #DFECF8, sin textura ni degradado.
 Luz: pareja y suave, sin sombras duras.
 Estilo: [MISMO ESTILO DE RENDER QUE LA REFERENCIA], colores planos, sin fotorrealismo.
@@ -260,6 +263,9 @@ Pose: sostiene el teléfono en una mano, a la altura del pecho y con la PANTALLA
 ORIENTADA HACIA LA CÁMARA, en la misma posición y ángulo que el Plano A. Pulgar
 hacia arriba con la otra mano.
 Pantalla del teléfono: en blanco o gris plano, se le compone contenido después.
+Teléfono: Android de gama alta con pantalla 19,5:9 (alto 2,17 veces el ancho), marco
+plano de titanio, esquinas casi rectas apenas redondeadas, bordes finos y una sola
+cámara frontal en un orificio circular diminuto centrado arriba; sin muesca y sin logos.
 Fondo: color plano #CCE7C3, sin textura ni degradado.
 Luz: pareja y suave, sin sombras duras.
 Estilo: [MISMO ESTILO DE RENDER QUE LA REFERENCIA], colores planos, sin fotorrealismo.

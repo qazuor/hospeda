@@ -8,6 +8,12 @@ hay que capturar exactamente.
 
 ## El teléfono
 
+Es el dispositivo de referencia de todo `marketing/`: un **Samsung Galaxy S24 Ultra** con
+la configuración de fábrica. Sus medidas (pantalla, viewport, DPR, barras) y cómo tiene
+que verse el marco están en una sola fuente,
+[`videos/REGLAS.md`](../videos/REGLAS.md#dispositivo-de-referencia-samsung-galaxy-s24-ultra);
+acá se usan, no se redefinen.
+
 | Fuente | Píxeles | Ratio a/h |
 |---|:-:|:-:|
 | **Grabación de pantalla** | 1080 × 2340 | **0,4615** |
@@ -41,9 +47,13 @@ Se recortan en este orden:
 
 ### Dentro del teléfono de un fondo
 
-El teléfono de los fondos de patrón B mide **311 × 520 px** equivalentes en 1080 × 1920.
-Eso es el 29% del ancho de una pantalla: **solo se leen títulos y botones**. Adentro va
-un **recorte ampliado**, nunca la pantalla completa en miniatura.
+El teléfono de los fondos de patrón B ya generados mide **311 × 520 px** equivalentes en
+1080 × 1920. Esa pantalla es 0,598, no 0,4615: al regenerarlo con la pantalla en 19,5:9,
+a ese mismo ancho mide **311 × 674** (311 ÷ 0,4615 ≈ 674). El prompt actual de
+[`fondos.md`](fondos.md) lo pide del 40% del ancho: 432 × 936 (432 ÷ 0,4615).
+
+Con 311 de ancho es el 29% del ancho de una pantalla: **solo se leen títulos y botones**.
+Adentro va un **recorte ampliado**, nunca la pantalla completa en miniatura.
 
 > Regla práctica: si en la grabación original el elemento no es un título o un botón,
 > dentro del teléfono no se va a leer.

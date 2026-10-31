@@ -302,7 +302,10 @@ OPUESTO al círculo naranja para que no compitan, mientras él la señala con el
 hacia arriba y pone cara de "se me ocurrió algo". La lamparita es un objeto simple y
 estilizado, del mismo estilo 3D que el personaje, y NO reemplaza ni tapa al círculo
 naranja: los dos se ven, cada uno de su lado
-CON EL TELÉFONO — sosteniendo un celular con la pantalla hacia la cámara, vacía
+CON EL TELÉFONO — sosteniendo un celular con la pantalla hacia la cámara, vacía. Es un
+teléfono Android de gama alta con pantalla 19,5:9: marco plano de titanio, esquinas casi
+rectas apenas redondeadas, bordes finos y una sola cámara frontal en un orificio circular
+diminuto centrado arriba; sin muesca y sin logos
 CON VALIJA — tirando de una valija de viaje con ruedas
 
 FILA 4 — con accesorios de viaje:
@@ -437,9 +440,12 @@ lista de lo que el personaje no debe ser.
 
 **Los objetos no tapan el logo del buzo** en las poses que sostienen algo.
 
-**El teléfono de la pose `con el teléfono` tiene el alto 2,17 veces el ancho** y la
-pantalla vacía en gris claro. Los prompts de video piden esa proporción, y cuando texto
-e imagen se contradicen el modelo le hace caso a la imagen.
+**El teléfono de la pose `con el teléfono` tiene la pantalla con el alto 2,17 veces el
+ancho** (19,5:9), la pantalla vacía en gris claro y la forma del dispositivo de referencia
+(esquinas casi rectas, cámara perforada centrada, sin muesca; ver
+[`videos/REGLAS.md`](../videos/REGLAS.md#dispositivo-de-referencia-samsung-galaxy-s24-ultra)).
+Los prompts de video piden esa proporción, y cuando texto e imagen se contradicen el
+modelo le hace caso a la imagen.
 
 **En `acciones2.png`, revisar los cuatro objetos uno por uno**: en `con el mate`, la
 bombilla tiene que salir de DENTRO del mate (nunca apoyada al costado) y el mate no
