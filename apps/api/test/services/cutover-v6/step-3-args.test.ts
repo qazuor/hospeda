@@ -117,7 +117,7 @@ describe('TEST:1776:4 AC:1776:3 production target guard', () => {
         for (const effect of [
             'resolveRepoRoot()',
             "findContainer('api')",
-            'dockerInspectEnv(apiContainer)',
+            'resolveApiEnv({',
             'buildPostgresUrl({'
         ]) {
             expect(guard).toBeLessThan(source.indexOf(effect));
