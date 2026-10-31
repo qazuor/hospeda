@@ -55,6 +55,10 @@ describe('AccommodationService child writes on a trashed accommodation (HOS-1919
         });
         vi.spyOn(permissionHelpers, 'checkCanUpdate').mockReturnValue();
         faqModelMock.findAll.mockResolvedValue({ items: [] });
+        iaModelMock.findById.mockResolvedValue({
+            id: accommodation.id,
+            accommodationId: accommodation.id
+        });
         faqModelMock.create.mockResolvedValue({ id: 'faq-1', ...faqInput.faq });
     });
 
