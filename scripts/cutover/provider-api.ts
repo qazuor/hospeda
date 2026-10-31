@@ -43,7 +43,15 @@ type JsonValue =
 
 const idSchema = z.union([z.string(), z.number()]).transform((value) => String(value));
 const objectSchema = z.object({ id: idSchema, status: z.string() });
-const preapprovalSchema = objectSchema.extend({ preapproval_plan_id: idSchema.nullish() });
+const preapprovalSchema = objectSchema.extend({
+    preapproval_plan_id: idSchema.nullish(),
+    // A surprising `auto_recurring` shape must never make the by-id read unusable.
+    auto_recurring: z.object({ end_date: z.string().nullish() }).nullish().catch(null)
+});
+const errorMessageSchema = z.object({ message: z.string() });
+
+/** The provider's refusal of a cancellation on a subscription whose term already ended. */
+const ALREADY_ENDED_MESSAGE = /already ended/i;
 const createdSchema = z.object({ id: idSchema });
 const paymentSchema = z.object({
     id: idSchema,
@@ -240,7 +248,8 @@ export function createProviderApi(input: CreateProviderApiInput): ProviderApi {
                     kind,
                     id: parsed.data.id,
                     status: parsed.data.status,
-                    planId: parsed.data.preapproval_plan_id ?? null
+                    planId: parsed.data.preapproval_plan_id ?? null,
+                    endDate: parsed.data.auto_recurring?.end_date ?? null
                 };
             }
             const parsed = objectSchema.safeParse(json);
@@ -255,12 +264,20 @@ export function createProviderApi(input: CreateProviderApiInput): ProviderApi {
         cancel: async ({ kind, id }): Promise<CancelCallResult> => {
             assertSafeId({ id });
             const path = `${KIND_PATH[kind]}/${id}`;
-            const { httpStatus } = await request({
+            const { httpStatus, json } = await request({
                 method: 'PUT',
                 path,
                 body: { status: CANCEL_STATUS[kind] }
             });
-            return { accepted: httpStatus >= 200 && httpStatus < 300, httpStatus };
+            const accepted = httpStatus >= 200 && httpStatus < 300;
+            // Only the fixed refusal is recognised; the body is otherwise dropped.
+            const message = errorMessageSchema.safeParse(json);
+            const alreadyEnded =
+                kind === 'preapproval' &&
+                httpStatus === 400 &&
+                message.success &&
+                ALREADY_ENDED_MESSAGE.test(message.data.message);
+            return { accepted, httpStatus, ...(alreadyEnded ? { alreadyEnded: true } : {}) };
         },
         getPayment: async ({ paymentId }): Promise<PaymentRead> => {
             assertSafeId({ id: paymentId });
