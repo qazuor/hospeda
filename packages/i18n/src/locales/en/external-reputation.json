@@ -71,6 +71,8 @@
     },
     "refresh": {
         "enqueued": "Updating in the background...",
-        "inlineSuccess": "Updated"
+        "inlineSuccess": "Updated",
+        "noPlatforms": "No platforms added yet. Add a link to be able to refresh your reviews.",
+        "needsPlatform": "Add a platform link first to be able to refresh your reviews."
     }
 }
