@@ -310,7 +310,7 @@ function restoreRewrittenUrl(entry: DialogHistoryEntry): void {
 /** A listing is about to move its URL: do it under the live claim, not on top of it. */
 function handleListingUrlCommit(event: Event): void {
     const top = stack[stack.length - 1];
-    if (!top || !top.pushed || currentEntryId() !== top.id) return;
+    if (!top?.pushed || currentEntryId() !== top.id) return;
     const url = (event as CustomEvent<{ url?: unknown }>).detail?.url;
     if (typeof url !== 'string') return;
     const bare = rewriteClaimedUrl({ url });
