@@ -58,17 +58,16 @@
     color: var(--primary-foreground, #ffffff);
 }
 
-/* Literal oklch, same hue as the REJECTED badge in `EditableContentCard.astro`:
-   this app defines no `--destructive` token (the listing editor's
-   `var(--destructive, …)` resolves to its fallback everywhere). */
+/* HOS-1942: the lifted-in-dark text twin of --destructive, so the label clears
+   4.5:1 on the dark card (the fill token reads 3.37:1 there). */
 .deleteButton {
-    border: 1px solid oklch(0.55 0.22 25 / 0.45);
+    border: 1px solid var(--destructive-text);
     background-color: transparent;
-    color: oklch(0.55 0.22 25);
+    color: var(--destructive-text);
 }
 
 .cancelButton {
-    border: 1px solid var(--border);
+    border: 1px solid var(--core-muted-foreground);
     background-color: transparent;
     color: var(--core-foreground);
 }
