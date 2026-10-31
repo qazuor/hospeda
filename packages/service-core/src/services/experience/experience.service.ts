@@ -41,6 +41,7 @@ import {
 import {
     type CountResponse,
     type Experience,
+    type ExperienceAdminCreateInput,
     ExperienceAdminCreateInputSchema,
     ExperienceAdminSearchSchema,
     type ExperienceOwnerUpdateInput,
@@ -67,6 +68,7 @@ import { hasPermission } from '../../utils/permission';
 import { EXPERIENCE_ENTITY_NAME } from '../entity-names';
 import type { ListingCatalogModel, ListingJunctionModel } from '../listing/base-listing.service';
 import { BaseListingService } from '../listing/base-listing.service';
+import type { ListingHookState } from '../listing/listing.types';
 import {
     attachComposedExperienceMedia,
     attachComposedExperienceMediaList
@@ -82,6 +84,7 @@ import {
     checkExperienceCanRestore,
     checkExperienceCanView
 } from './experience.permissions';
+import { resolveOnRequestPricePatch } from './experience.price-on-request';
 import { projectExperienceOwnerAvatar, projectExperiencePublic } from './experience.projections';
 import type { ExperienceHookState } from './experience.types';
 
@@ -283,6 +286,42 @@ export class ExperienceService extends BaseListingService<
             features: true,
             faqs: true
         };
+    }
+
+    // -----------------------------------------------------------------------
+    // Price on request (HOS-1943)
+    // -----------------------------------------------------------------------
+    //
+    // An experience "a consultar" stores `priceFrom = NULL`, never 0. Both
+    // hooks defer to the base listing hooks first (destination check, slug,
+    // junction capture) and then apply `resolveOnRequestPricePatch` over the
+    // result. The update hook reads the row the base hook already loaded into
+    // `hookState.ownerActBefore`, so this costs no extra query.
+
+    protected override async _beforeCreate(
+        data: ExperienceAdminCreateInput,
+        actor: Actor,
+        ctx: ServiceContext
+    ): Promise<Partial<Experience>> {
+        const base = await super._beforeCreate(data, actor, ctx);
+        const { patch } = resolveOnRequestPricePatch({
+            data: data as Readonly<Record<string, unknown>>
+        });
+        return { ...base, ...patch };
+    }
+
+    protected override async _beforeUpdate(
+        data: ExperienceUpdateInput,
+        actor: Actor,
+        ctx: ServiceContext
+    ): Promise<Partial<Experience>> {
+        const base = await super._beforeUpdate(data, actor, ctx);
+        const hookState = (ctx as ServiceContext<ListingHookState>).hookState;
+        const { patch } = resolveOnRequestPricePatch({
+            data: data as Readonly<Record<string, unknown>>,
+            current: hookState?.ownerActBefore ?? null
+        });
+        return { ...base, ...patch };
     }
 
     // -----------------------------------------------------------------------
