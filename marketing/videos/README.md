@@ -29,12 +29,19 @@ importar los JSON generados. Typecheck no depende de esos archivos (`src/marketi
 
 1. **Toma**: Playwright graba el flujo real y registra un **log de eventos** (toques, tipeo,
    esperas, cada uno con su caja en pantalla). Se graba en viewport **mobile y desktop**.
+   Mobile es siempre el **Galaxy S24 Ultra** de `config/device.ts` (412 × 750 a DPR 3); las
+   medidas y el porqué están en [`REGLAS.md`](REGLAS.md#dispositivo-de-referencia-samsung-galaxy-s24-ultra).
 2. **Pantalla editada**: una composición que muestra sólo la pantalla, con cortes, zoom y foco
    calculados desde el log de eventos. Regrabar recalcula el montaje solo.
 3. **Tutorial completo**: envuelve el componente de la capa 2 en un marco de teléfono o de
    escritorio, con título, número de paso y Hospedín.
 
 Hoy existe A1 (`src/a1/`), que todavía mezcla las capas 2 y 3 en una sola composición.
+
+> ⚠️ **A1 hay que regrabarla.** La toma actual usa el viewport anterior (más angosto y alto), previo al dispositivo de
+> referencia: el marco ya es el del S24 Ultra, pero la toma vieja entra con bandas a los
+> costados (letterbox) en el área de página de 412 × 750. Regrabar con `pnpm record:a1` la
+> llena entera; el montaje se recalcula solo desde `events.json`.
 
 ## Uso
 
