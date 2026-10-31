@@ -25,7 +25,7 @@ Images must:
 - use Hospeda colors
 - feel clean, light, modern and rounded
 - focus on tourism, local experiences and Argentine Litoral identity
-- represent Entre Ríos, the Río Uruguay area, local destinations, lodging, gastronomy or tourism services when relevant
+- represent Entre Ríos, the Río Uruguay area, local destinations, lodging, places to eat and go out, or tourism services when relevant
 - use short, readable text
 - avoid visual clutter
 - leave enough breathing room
