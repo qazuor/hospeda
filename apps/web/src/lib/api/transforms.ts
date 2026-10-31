@@ -3129,7 +3129,9 @@ export function toExperienceCardProps({
         featuredImage,
         destinationId: String(item.destinationId || ''),
         destinationName,
-        priceFrom: Number(item.priceFrom ?? 0),
+        // HOS-1943: a price "a consultar" is null. Keep it null instead of
+        // inventing a 0 that reads as "$0" downstream.
+        priceFrom: item.priceFrom == null ? null : Number(item.priceFrom),
         // H-156: pass a missing unit through as null instead of inventing
         // `'per_day'`. `priceUnit` is nullable now, and null means "this
         // experience has no price, so it has no billing unit" — substituting a
