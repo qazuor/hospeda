@@ -156,8 +156,8 @@ describe('closing CTA', () => {
         expect(source).toMatch(
             /<a class="cta" href=\{ctaHref\}>\{ctaLabel\}<\/a>\s*<p class="cta-url">\{ctaUrlText\}<\/p>/
         );
-        expect(source).toContain("const ctaUrlText = ctaHref.replace(/^https?:\\/\\//, '');");
-        expect(href?.replace(/^https?:\/\//, '')).toMatch(/^hospeda\.com\.ar\/es\//);
+        expect(source).toContain('const ctaUrlText = ctaHref;');
+        expect(href).toMatch(/^https:\/\/hospeda\.com\.ar\/es\//);
     });
 
     it('the visible URL wraps on a phone and is not hidden in print', () => {

@@ -60,6 +60,13 @@
  *
  * @route /{lang}/presentacion/alojamientos/
  * @rendering SSR + Cloudflare cache (matches funcionalidades/nosotros)
+ *
+ * ADD-ONS (owner decision, 2026-10-31): complementos are presented as purchasable today because the purchase flow ships in
+ * the coming days. They live ONLY in their own «Complementos» section, right after the tiers table; no other part of the
+ * page mentions them. The section prints no amount and lists the add-ons of this vertical from
+ * `scripts/production-catalog/commercial-catalog.ts` (monthly limit packs while the subscription lives; one-off 7/30-day boosts per listing).
+ *
+ * COMING ADD-ONS (owner-approved list, 2026-10-31): the sub-block «Complementos que vienen» at the end of that section lists future add-ons, presented as coming, with no dates or prices.
  */
 
 import StandaloneLayout from '@/layouts/StandaloneLayout.astro';
@@ -80,7 +87,7 @@ const locale = Astro.locals.locale as SupportedLocale;
 // under the button, derived from the same href, so a PDF export still says where it leads.
 const ctaLabel = 'Publicá tu alojamiento';
 const ctaHref = 'https://hospeda.com.ar/es/publicar';
-const ctaUrlText = ctaHref.replace(/^https?:\/\//, '');
+const ctaUrlText = ctaHref;
 // Brand contact phone, single source of truth (HOS-364) — this page's
 // copy is the owner-approved artifact verbatim; only the phone digits are
 // parameterized so a real number change does not require re-editing prose.
@@ -149,7 +156,7 @@ const canonical = `${getSiteUrl().replace(/\/$/, '')}/${locale}/presentacion/alo
   <section>
     <div class="sec-head">
       <p class="eyebrow">Lo primero, sin vueltas</p>
-      <h2>Cómo ganamos plata</h2>
+      <h2>Cuál es el costo</h2>
     </div>
     <div class="notice">
       <h3>No nos quedamos con un peso de tu alquiler.</h3>
@@ -160,7 +167,7 @@ const canonical = `${getSiteUrl().replace(/\/$/, '')}/${locale}/presentacion/alo
       </p>
       <p>
         Lo único que se paga es <strong>una suscripción mensual fija</strong> por tener tu
-        alojamiento publicado. Sabés todos los meses cuánto vas a pagar, alquiles mucho o poco.
+        alojamiento publicado. Sabés todos los meses cuánto vas a pagar, sin importar cuánto alquiles.
       </p>
     </div>
   </section>
@@ -172,9 +179,9 @@ const canonical = `${getSiteUrl().replace(/\/$/, '')}/${locale}/presentacion/alo
     </div>
     <p>
       Hospeda <strong>no es una plataforma de reservas</strong>. Nadie te bloquea fechas ni te
-      manda plata por el sitio. Lo que hace es que la gente te encuentre y te escriba: por el
-      mensajero interno o por WhatsApp. De ahí en adelante — la seña, el pago, las condiciones —
-      es entre el huésped y vos, como siempre.
+      manda plata por el sitio. Lo que hace es que la gente te encuentre y te escriba: por la
+      mensajería interna del portal o por WhatsApp. De ahí en adelante — la seña, el pago, las condiciones —
+      es entre el huésped y vos.
     </p>
     <p>
       Si buscabas algo que te cobre la estadía y te la deposite, no somos eso. Si buscabas que te
@@ -196,7 +203,7 @@ const canonical = `${getSiteUrl().replace(/\/$/, '')}/${locale}/presentacion/alo
             Nombre del alojamiento, una descripción corta, qué tipo es (casa, departamento,
             cabaña&hellip;) y en qué ciudad está. Nada más.
           </p>
-          <p class="step__meta">Gratis &middot; No se pide tarjeta &middot; Se hace desde el celular</p>
+          <p class="step__meta">Gratis &middot; No se pide tarjeta &middot; Se puede hacer desde el celular o la computadora</p>
         </div>
       </li>
       <li>
@@ -242,7 +249,7 @@ const canonical = `${getSiteUrl().replace(/\/$/, '')}/${locale}/presentacion/alo
           <p>
             Editás la ficha cuando querés, cargás tus preguntas frecuentes, marcás las fechas
             ocupadas, armás promociones, contestás las consultas y mirás tus números. Cambiás de
-            plan, sumás adicionales, pausás o cancelás vos mismo, desde tu cuenta, sin llamar a
+            plan, pausás o cancelás vos mismo, desde tu cuenta, sin llamar a
             nadie.
           </p>
           <p class="step__meta">Lo único que conviene no descuidar: mantener el calendario y el precio al día</p>
@@ -257,9 +264,9 @@ const canonical = `${getSiteUrl().replace(/\/$/, '')}/${locale}/presentacion/alo
       <h2>Tres planes, según cuántos alojamientos tengas y qué funcionalidades quieras</h2>
     </div>
     <p>
-      El de entrada <strong>ronda los veinte mil pesos por mes</strong> — menos que una noche en
-      temporada. El más completo, unos sesenta y cinco mil. Si lo pagás por año,
-      <strong>pagás diez meses y tenés doce</strong>. Los valores exactos están siempre en el sitio.
+      El plan Básico <strong>cuesta bastante menos de lo que cobrás por una noche de alquiler</strong>.
+      Si lo pagás por año, <strong>pagás diez meses y tenés doce</strong>. Los valores vigentes
+      están siempre en el sitio.
     </p>
     <div class="tablewrap">
       <table>
@@ -275,10 +282,9 @@ const canonical = `${getSiteUrl().replace(/\/$/, '')}/${locale}/presentacion/alo
           <tr><td>Alojamientos publicados</td><td class="mono">1</td><td class="mono">3</td><td class="mono">10</td></tr>
           <tr><td>Fotos por alojamiento</td><td class="mono">15</td><td class="mono">30</td><td class="mono">50</td></tr>
           <tr><td>Promociones activas</td><td class="mono">2</td><td class="mono">5</td><td class="mono">sin tope</td></tr>
-          <tr><td>Aparecer destacado</td><td>con un adicional</td><td>sí</td><td>sí</td></tr>
+          <tr><td>Aparecer destacado</td><td>—</td><td>sí</td><td>sí</td></tr>
           <tr><td>Calendario conectado con Airbnb, Booking y Google</td><td>—</td><td>sí</td><td>sí</td></tr>
           <tr><td>Descripción con formato y video</td><td>—</td><td>sí</td><td>sí</td></tr>
-          <tr><td>Botón directo de WhatsApp en tu ficha</td><td>sólo se muestra</td><td>sí</td><td>sí</td></tr>
           <tr><td>Atención prioritaria</td><td>—</td><td>sí</td><td>sí</td></tr>
           <tr><td>Estadísticas avanzadas</td><td>—</td><td>—</td><td>sí</td></tr>
           <tr><td>Insignia de verificado</td><td>—</td><td>—</td><td>sí</td></tr>
@@ -294,10 +300,9 @@ const canonical = `${getSiteUrl().replace(/\/$/, '')}/${locale}/presentacion/alo
       artificial (ver abajo).
     </p>
     <div class="notice">
-      <h3>Además, sos turista VIP sin pagar un peso más.</h3>
+      <h3>Además, sos turista VIP sin pagar nada más.</h3>
       <p>
-        Hospeda tiene una cuenta paga para viajeros que sale <strong>quince mil pesos por
-        mes</strong>: favoritos y alertas de precio sin límite, comparador, historial de búsquedas,
+        Hospeda tiene una <strong>cuenta paga para viajeros</strong>: favoritos y alertas de precio sin límite, comparador, historial de búsquedas,
         recomendaciones, ofertas exclusivas y &mdash;lo más útil&mdash; <strong>ver el WhatsApp de
         los otros anfitriones</strong>.
       </p>
@@ -307,6 +312,52 @@ const canonical = `${getSiteUrl().replace(/\/$/, '')}/${locale}/presentacion/alo
         salís vos de viaje por la zona, usás el sitio con todo desbloqueado.
       </p>
     </div>
+  </section>
+
+  <section>
+    <div class="sec-head">
+      <p class="eyebrow">Para crecer sin cambiar de plan</p>
+      <h2>Complementos</h2>
+    </div>
+    <p>Un complemento es algo que sumás a tu plan <strong>sin cambiar de plan</strong>. Existen para que puedas crecer o ganar visibilidad en un momento puntual, una temporada, un fin de semana largo o una propiedad más, sin pasar a un plan más alto. Valen para cualquiera de los tres planes.</p>
+    <p>Hay de dos tipos. Los que se cobran <strong>por mes</strong> duran mientras dure tu suscripción y los sacás cuando quieras. Los de <strong>una sola vez</strong> valen por un período fijo y se aplican a una sola ficha. Estos son los que hay para vos:</p>
+    <div class="tablewrap">
+      <table>
+        <thead>
+          <tr><th scope="col">Complemento</th><th scope="col">Qué te da</th><th scope="col">Cómo se cobra</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>Destacar tu alojamiento por 7 o 30 días</td><td>Tu alojamiento aparece destacado en los resultados durante 7 o 30 días. Útil para un fin de semana largo o el arranque de temporada.</td><td>Por única vez</td></tr>
+          <tr><td>20 fotos más</td><td>20 fotos más en cada uno de tus alojamientos, además de las de tu plan.</td><td>Por mes</td></tr>
+          <tr><td>5 alojamientos más</td><td>Cinco alojamientos más por encima del tope de tu plan.</td><td>Por mes</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p class="subhead"><strong>Cómo se agregan:</strong> desde tu panel, en <strong>Mi cuenta &rsaquo; Complementos</strong>, desde el celular o la computadora, sin llamar a nadie. Ves qué hay disponible, elegís el que necesitás y listo. Los que se cobran por mes los sacás desde el mismo lugar cuando ya no los necesitás.</p>
+    <h3>Complementos que vienen</h3>
+    <p>Todavía no se pueden pedir: no tienen fecha ni precio. Cuando estén, se agregan igual que los de arriba, desde el celular o la computadora.</p>
+    <ul class="plain">
+      <li><span class="tick">&rarr;</span><span><strong>Destacado en la página del destino.</strong> Tu alojamiento arriba de la página de tu ciudad, por 7 o 30 días. <em>Por única vez.</em></span></li>
+      <li><span class="tick">&rarr;</span><span><strong>Aparición en el newsletter o en las redes de Hospeda.</strong> Tu alojamiento en un envío nuestro o en una publicación de nuestras redes.</span></li>
+      <li><span class="tick">&rarr;</span><span><strong>Sesión de fotos profesional.</strong> Un fotógrafo te visita y las fotos quedan cargadas en tu ficha. <em>Por única vez.</em></span></li>
+      <li><span class="tick">&rarr;</span><span><strong>Kit de QR impresos.</strong> Stickers o afiches con el QR de tu ficha. <em>Por única vez.</em></span></li>
+      <li><span class="tick">&rarr;</span><span><strong>Más consultas al chat de IA.</strong> Más respuestas por mes cuando se agota la cuota de tu plan. <em>Por mes.</em></span></li>
+      <li><span class="tick">&rarr;</span><span><strong>Página propia.</strong> Una página completa tuya, independiente del portal.</span></li>
+      <li><span class="tick">&rarr;</span><span><strong>Estadísticas avanzadas.</strong> Más detalle de quién mira tu ficha y de dónde llega.</span></li>
+      <li><span class="tick">&rarr;</span><span><strong>Bot de WhatsApp con IA.</strong> Contesta las consultas que te llegan por WhatsApp.</span></li>
+      <li><span class="tick">&rarr;</span><span><strong>Material gráfico con IA.</strong> Piezas generadas con inteligencia artificial, listas para imprimir.</span></li>
+      <li><span class="tick">&rarr;</span><span><strong>Campaña de temporada.</strong> Tu alojamiento destacado toda la temporada alta o un fin de semana largo puntual.</span></li>
+      <li><span class="tick">&rarr;</span><span><strong>Video o recorrido 360°.</strong> Sumá un video o un recorrido 360° en tu ficha. <em>Hoy, desde Profesional.</em></span></li>
+      <li><span class="tick">&rarr;</span><span><strong>Tarjeta turista.</strong> Recibila para ofrecérsela a tus huéspedes.</span></li>
+      <li><span class="tick">&rarr;</span><span><strong>Reservas en tu Google Calendar.</strong> Cada reserva que anotás aparece en tu Google Calendar con los datos del huésped: nombre, teléfono, cantidad de personas y seña.</span></li>
+      <li><span class="tick">&rarr;</span><span><strong>Formulario de reserva.</strong> Un formulario que armás a tu medida: le pasás el enlace al huésped, él completa sus datos y la reserva queda cargada sola en tu Google Calendar y en Hospeda.</span></li>
+      <li><span class="tick">&rarr;</span><span><strong>Aparecer destacado.</strong> Tu alojamiento marcado como destacado en los resultados. <em>Hoy, desde Profesional.</em></span></li>
+      <li><span class="tick">&rarr;</span><span><strong>Calendario conectado con Airbnb, Booking y Google.</strong> Las fechas ocupadas afuera se bloquean acá. <em>Hoy, desde Profesional.</em></span></li>
+      <li><span class="tick">&rarr;</span><span><strong>Descripción con formato.</strong> Títulos, negritas y listas en la descripción de tu ficha. <em>Hoy, desde Profesional.</em></span></li>
+      <li><span class="tick">&rarr;</span><span><strong>Atención prioritaria.</strong> Tus consultas a Hospeda se contestan primero. <em>Hoy, desde Profesional.</em></span></li>
+      <li><span class="tick">&rarr;</span><span><strong>Insignia de verificado.</strong> El sello que le da confianza a quien te está mirando. <em>Hoy, desde Premium.</em></span></li>
+      <li><span class="tick">&rarr;</span><span><strong>Tu identidad visual en la ficha.</strong> Tus colores y tu logo en la ficha. <em>Hoy, desde Premium.</em></span></li>
+    </ul>
   </section>
 
   <section>
@@ -342,34 +393,6 @@ const canonical = `${getSiteUrl().replace(/\/$/, '')}/${locale}/presentacion/alo
 
   <section>
     <div class="sec-head">
-      <p class="eyebrow">Adicionales</p>
-      <h2>Si un mes necesitás más</h2>
-    </div>
-    <p>
-      No hace falta cambiar de plan: se suman aparte y se sacan cuando no los necesitás. Estos son
-      los que hay hoy.
-    </p>
-    <div class="tablewrap">
-      <table>
-        <thead>
-          <tr><th scope="col">Adicional</th><th scope="col">Para qué</th><th scope="col">Cómo se paga</th></tr>
-        </thead>
-        <tbody>
-          <tr><td>Destacar por 7 o 30 días</td><td>Tu alojamiento aparece resaltado en los resultados. Útil para un fin de semana largo o el arranque de temporada.</td><td>Una sola vez</td></tr>
-          <tr><td>20 fotos más</td><td>Si tu alojamiento se luce y las del plan te quedan cortas.</td><td>Por mes</td></tr>
-          <tr><td>5 alojamientos más</td><td>Si administrás varias propiedades y superás el tope de tu plan.</td><td>Por mes</td></tr>
-        </tbody>
-      </table>
-    </div>
-    <p class="subhead">
-      El listado completo y actualizado está en <strong>tu panel, en Mi cuenta &rsaquo;
-      Complementos</strong>. Entrás cuando querés, ves qué hay disponible con el precio del día y lo
-      contratás ahí mismo, sin llamar a nadie ni esperar a nadie. Igual para darlo de baja.
-    </p>
-  </section>
-
-  <section>
-    <div class="sec-head">
       <p class="eyebrow">En camino</p>
       <h2>Lo que se viene</h2>
     </div>
@@ -381,7 +404,7 @@ const canonical = `${getSiteUrl().replace(/\/$/, '')}/${locale}/presentacion/alo
       <li><span class="tick">&rarr;</span><span><strong>Un cartel con QR para imprimir.</strong> Para pegar en la puerta o el mostrador: lo escanean y caen en tu ficha.</span></li>
       <li><span class="tick">&rarr;</span><span><strong>Responder las reseñas de tus huéspedes.</strong> Que tu respuesta se vea abajo de la reseña, en la ficha.</span></li>
       <li><span class="tick">&rarr;</span><span><strong>Mejorar tus fotos con inteligencia artificial.</strong> Corregir luz y color, y recortar, sin salir del editor.</span></li>
-      <li><span class="tick">&rarr;</span><span><strong>Llevarte tu calendario a otro lado.</strong> Hoy traés a Hospeda las fechas que tenés ocupadas afuera; vas a poder mandar para el otro lado las que bloqueás acá, hacia otros portales y hacia tu Google Calendar.</span></li>
+      <li><span class="tick">&rarr;</span><span><strong>Llevarte tu calendario a otro lado.</strong> Hoy traés a Hospeda las fechas que tenés ocupadas afuera; vas a poder mandar para el otro lado las que bloqueás acá, hacia otros portales.</span></li>
       <li><span class="tick">&rarr;</span><span><strong>Complejos y hoteles, unidad por unidad.</strong> Cada cabaña o cada habitación con su propia capacidad y su propio calendario, dentro de una misma publicación.</span></li>
       <li><span class="tick">&rarr;</span><span><strong>Una cuenta para el que administra propiedades ajenas.</strong> Varios alojamientos independientes, cada uno con su dueño y sus datos, manejados desde un solo usuario.</span></li>
       <li><span class="tick">&rarr;</span><span><strong>Una tarjeta de beneficios para tus huéspedes.</strong> Que el que se aloja con vos tenga descuentos y ventajas en comercios de la zona, de parte tuya.</span></li>
