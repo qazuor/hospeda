@@ -1,0 +1,12 @@
+# Generated media never lives in the repo: it goes under HOSPEDA_MARKETING_ASSETS_DIR
+# (default /home/qazuor/projects/WEBS/marketing/video-lab/). These guard against a
+# stray run that writes next to the package instead.
+out/
+recordings/
+public/
+tools/models/
+tools/audio/_check/
+*.mp4
+*.wav
+*.pth
+.venv

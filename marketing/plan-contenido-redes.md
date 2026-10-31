@@ -3093,7 +3093,7 @@ Decisiones ya cerradas. Se respetan salvo aviso.
 | **Nombrar otras plataformas — calendarios** | **Sí se nombran.** Google, Airbnb, Booking y cualquier otro calendario estándar, porque son los que efectivamente se conectan. |
 | **Nombrar otras plataformas — importar la ficha** | **No se nombran Airbnb ni Booking.** Se dice "Google, Mercado Libre y otras plataformas de alquiler". |
 | **Tarjeta de crédito** | **NO se pide para la prueba** (HOS-1012, 01/09/2026). La prueba arranca sola al publicar la primera ficha y dura 30 días; la tarjeta recién aparece cuando el anfitrión elige un plan. **Se puede decir "sin tarjeta"** — cambió respecto de HOS-171, que exigía lo contrario. |
-| **Días de prueba** | 30 días. |
+| **Días de prueba** | **No van dentro de ninguna imagen** (regla 10). El número puede cambiar y vive solo en la página web, que lo lee del sistema. En las piezas se dice *empezá gratis*. |
 | **Directorio de oficios** | Disponible. La pieza 12.13 quedó en prioridad 1. |
 
 ---
