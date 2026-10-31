@@ -22,6 +22,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { translateApiError } from '@/lib/api-errors';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
+import { applyThemeChoice } from '@/lib/theme';
 import { buildLocaleSwitchPathname } from '@/lib/urls';
 import { addToast } from '@/store/toast-store';
 import styles from './PreferenceToggles.module.css';
@@ -104,27 +105,6 @@ const DEFAULT_SETTINGS: WebSettings = {
 };
 
 // ─── Theme application ────────────────────────────────────────────────────────
-
-/**
- * Apply themeWeb by setting `data-theme` on the root `<html>` element.
- * 'system' follows the OS preference via `prefers-color-scheme`.
- */
-function applyTheme(theme: ThemeWeb): void {
-    if (typeof document === 'undefined') return;
-    const root = document.documentElement;
-    if (theme === 'system') {
-        const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-        root.setAttribute('data-theme', prefersDark ? 'dark' : 'light');
-    } else {
-        root.setAttribute('data-theme', theme);
-    }
-    // Persist so FOUC-prevention script picks it up next load
-    try {
-        localStorage.setItem('theme', theme);
-    } catch {
-        // ignore storage errors
-    }
-}
 
 // ─── Component ────────────────────────────────────────────────────────────────
 
@@ -262,7 +242,7 @@ export function PreferenceToggles({ userId, locale, apiUrl }: PreferenceTogglesP
         const prev = { ...settings };
         const next = { ...settings, themeWeb: value };
         setSettings(next);
-        applyTheme(value);
+        applyThemeChoice({ choice: value });
         void persistSettings({ themeWeb: value }, 'themeWeb', prev);
     }
 

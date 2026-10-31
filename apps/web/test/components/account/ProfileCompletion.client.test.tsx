@@ -10,7 +10,7 @@
  */
 
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { z } from 'zod';
 import { ProfileCompletion } from '../../../src/components/account/ProfileCompletion.client';
 
@@ -241,8 +241,9 @@ describe('ProfileCompletion (HOS-190 slice 3 — useZodForm migration)', () => {
                 'newsletterOptIn'
             ].sort()
         );
-        // Defaults to 'system' when the user never touches the theme select.
-        expect(body.theme).toBe('system');
+        // HOS-1966: defaults to the theme the visitor is already seeing
+        // ('light' when nothing is stored), never a hard-coded 'system'.
+        expect(body.theme).toBe('light');
 
         await waitFor(() => {
             expect(hrefAssignSpy).toHaveBeenCalledWith('/es/mi-cuenta/');
@@ -409,5 +410,82 @@ describe('ProfileCompletion — HOS-313: theme applies only after a successful s
         });
 
         expect(document.documentElement.getAttribute('data-theme')).toBeNull();
+    });
+});
+
+/**
+ * HOS-1966 regression: saving the profile without touching the theme select
+ * must not change the theme. The old default ('system') flipped a light
+ * visitor on a dark OS to dark and rewrote `localStorage.theme`.
+ */
+describe('ProfileCompletion — HOS-1966: an untouched theme select never changes the theme', () => {
+    const matchMediaOriginal = window.matchMedia;
+
+    beforeEach(() => {
+        vi.clearAllMocks();
+        document.documentElement.removeAttribute('data-theme');
+        localStorage.removeItem('theme');
+        // OS reports dark: the exact condition under which 'system' flipped it.
+        window.matchMedia = ((query: string) => ({
+            matches: query.includes('dark'),
+            media: query,
+            addEventListener: vi.fn(),
+            removeEventListener: vi.fn()
+        })) as unknown as typeof window.matchMedia;
+    });
+
+    afterEach(() => {
+        window.matchMedia = matchMediaOriginal;
+        localStorage.removeItem('theme');
+        document.documentElement.removeAttribute('data-theme');
+    });
+
+    async function saveWithoutTouchingTheme(): Promise<void> {
+        const hrefAssignSpy = vi.fn();
+        const originalLocation = window.location;
+        Object.defineProperty(window, 'location', {
+            configurable: true,
+            writable: true,
+            value: {
+                ...originalLocation,
+                set href(v: string) {
+                    hrefAssignSpy(v);
+                }
+            } as Location
+        });
+        globalThis.fetch = vi.fn().mockResolvedValue(
+            new Response(
+                JSON.stringify({
+                    data: { profileCompleted: true, requiresSetPassword: false }
+                }),
+                { status: 200, headers: { 'Content-Type': 'application/json' } }
+            )
+        );
+        renderForm();
+        fillRequiredFields();
+        submit();
+        await waitFor(() => {
+            expect(globalThis.fetch).toHaveBeenCalledTimes(1);
+        });
+        // Let the post-save code run to completion.
+        await waitFor(() => {
+            expect(hrefAssignSpy).toHaveBeenCalled();
+        });
+    }
+
+    it('keeps a visitor with no stored theme light on a dark OS', async () => {
+        await saveWithoutTouchingTheme();
+
+        expect(document.documentElement.getAttribute('data-theme')).toBeNull();
+        expect(localStorage.getItem('theme')).toBeNull();
+    });
+
+    it('preselects and keeps the stored theme', async () => {
+        localStorage.setItem('theme', 'dark');
+        await saveWithoutTouchingTheme();
+
+        const themeSelect = document.getElementById('pc-theme') as HTMLSelectElement;
+        expect(themeSelect.value).toBe('dark');
+        expect(localStorage.getItem('theme')).toBe('dark');
     });
 });

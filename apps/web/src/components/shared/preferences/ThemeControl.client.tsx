@@ -23,9 +23,9 @@ import { MonitorIcon, MoonIcon, SunIcon } from '@repo/icons';
 import type { JSX } from 'react';
 import { useEffect, useState } from 'react';
 import { cn } from '@/lib/cn';
+import type { ThemeChoice } from '@/lib/theme';
+import { applyThemeAttribute, applyThemeChoice, readStoredThemeChoice } from '@/lib/theme';
 import styles from './ThemeControl.module.css';
-
-type ThemeChoice = 'light' | 'system' | 'dark';
 
 const OPTIONS: ReadonlyArray<{
     value: ThemeChoice;
@@ -57,33 +57,6 @@ export interface ThemeControlProps {
     readonly className?: string;
 }
 
-function isThemeChoice(value: string | null): value is ThemeChoice {
-    return value === 'light' || value === 'dark' || value === 'system';
-}
-
-function readStoredChoice(): ThemeChoice {
-    try {
-        const stored = localStorage.getItem('theme');
-        if (isThemeChoice(stored)) return stored;
-    } catch {
-        // Storage may be unavailable. Fall through to default.
-    }
-    return 'light';
-}
-
-function applyTheme(choice: ThemeChoice): void {
-    const root = document.documentElement;
-    const dark =
-        choice === 'dark' ||
-        (choice === 'system' && window.matchMedia('(prefers-color-scheme: dark)').matches);
-
-    if (dark) {
-        root.setAttribute('data-theme', 'dark');
-    } else {
-        root.removeAttribute('data-theme');
-    }
-}
-
 /**
  * ThemeControl - segmented light / system / dark switch.
  *
@@ -101,7 +74,7 @@ export function ThemeControl({
     const labelsVisible = showLabels ?? variant !== 'navbar';
 
     useEffect(() => {
-        setChoice(readStoredChoice());
+        setChoice(readStoredThemeChoice());
     }, []);
 
     // When the choice is 'system', track OS-level changes live so the page
@@ -110,7 +83,7 @@ export function ThemeControl({
         if (choice !== 'system') return;
 
         const media = window.matchMedia('(prefers-color-scheme: dark)');
-        const handle = () => applyTheme('system');
+        const handle = () => applyThemeAttribute({ choice: 'system' });
         media.addEventListener('change', handle);
         return () => {
             media.removeEventListener('change', handle);
@@ -121,13 +94,7 @@ export function ThemeControl({
         if (next === choice) return;
         setChoice(next);
 
-        try {
-            localStorage.setItem('theme', next);
-        } catch {
-            // Ignore storage errors.
-        }
-
-        applyTheme(next);
+        applyThemeChoice({ choice: next });
 
         window.dispatchEvent(
             new CustomEvent('preferences:change', {
