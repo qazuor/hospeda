@@ -9,7 +9,8 @@ import { z } from 'zod';
 import {
     BaseHttpSearchSchema,
     createArrayQueryParam,
-    createBooleanQueryParam
+    createBooleanQueryParam,
+    createEnumArrayQueryParam
 } from '../../api/http/base-http.schema.js';
 import { i18nText } from '../../common/i18n.schema.js';
 import { AmenitiesTypeEnumSchema } from '../../enums/index.js';
@@ -56,7 +57,7 @@ export const AmenitySearchHttpSchema = BaseHttpSearchSchema.extend({
     descriptionContains: z.string().min(1).max(500).optional(),
 
     // Array filters with HTTP coercion
-    types: createArrayQueryParam('Filter by multiple amenity types'),
+    types: createEnumArrayQueryParam('Filter by multiple amenity types', AmenitiesTypeEnumSchema),
     categories: createArrayQueryParam('Filter by multiple categories')
 });
 

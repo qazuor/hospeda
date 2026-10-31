@@ -9,7 +9,8 @@ import { z } from 'zod';
 import {
     BaseHttpSearchSchema,
     createArrayQueryParam,
-    createBooleanQueryParam
+    createBooleanQueryParam,
+    createEnumArrayQueryParam
 } from '../../api/http/base-http.schema.js';
 import { safeExternalUrl } from '../../common/safe-external-url.schema.js';
 import { ClientTypeEnumSchema } from '../../enums/index.js';
@@ -45,7 +46,7 @@ export const PostSponsorSearchHttpSchema = BaseHttpSearchSchema.extend({
     hasLinkedIn: createBooleanQueryParam('Filter sponsors with LinkedIn'),
 
     // Array filters
-    types: createArrayQueryParam('Filter by multiple client types'),
+    types: createEnumArrayQueryParam('Filter by multiple client types', ClientTypeEnumSchema),
     industries: createArrayQueryParam('Filter by multiple industries'),
     names: createArrayQueryParam('Filter by multiple sponsor names')
 });

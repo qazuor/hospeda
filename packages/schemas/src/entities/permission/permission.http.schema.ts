@@ -12,9 +12,10 @@
 import { z } from 'zod';
 import {
     BaseHttpSearchSchema,
-    createArrayQueryParam,
-    createBooleanQueryParam
+    createBooleanQueryParam,
+    createEnumArrayQueryParam
 } from '../../api/http/base-http.schema.js';
+import { PermissionEnumSchema, RoleEnumSchema } from '../../enums/index.js';
 
 /**
  * HTTP-compatible permission search schema with automatic coercion
@@ -26,8 +27,11 @@ export const PermissionSearchHttpSchema = BaseHttpSearchSchema.extend({
     permission: z.string().optional(),
 
     // Array filters for multiple values
-    roles: createArrayQueryParam('Filter by multiple roles'),
-    permissions: createArrayQueryParam('Filter by multiple permissions'),
+    roles: createEnumArrayQueryParam('Filter by multiple roles', RoleEnumSchema),
+    // PermissionEnum values are case-sensitive (dotted camelCase), so no upper-casing.
+    permissions: createEnumArrayQueryParam('Filter by multiple permissions', PermissionEnumSchema, {
+        normalize: 'none'
+    }),
 
     // Boolean filters with HTTP coercion
     isActive: createBooleanQueryParam('Filter by active status'),
