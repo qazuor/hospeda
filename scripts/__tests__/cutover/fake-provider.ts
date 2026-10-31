@@ -30,6 +30,10 @@ export interface FakeProviderOptions {
     readonly objects: readonly FakeObject[];
     /** Cancel calls on these ids are accepted (200) but the status never changes. */
     readonly stuckIds?: readonly string[];
+    /** Cancel calls on these ids answer 400 "already ended" (HOS-1961); the status never changes. */
+    readonly refuseAsEndedIds?: readonly string[];
+    /** `auto_recurring.end_date` each preapproval reads back, by id. */
+    readonly endDates?: Readonly<Record<string, string>>;
     /** Ids hidden from the search walk but still readable by id (an incomplete walk). */
     readonly hiddenFromWalk?: readonly string[];
     /** Overrides the `total` the search reports, per kind. */
@@ -59,6 +63,8 @@ export interface FakeProvider {
 export function createFakeProvider({
     objects,
     stuckIds = [],
+    refuseAsEndedIds = [],
+    endDates = {},
     hiddenFromWalk = [],
     totalOverride = {},
     payments: seededPayments = [],
@@ -76,6 +82,7 @@ export function createFakeProvider({
     let probeSeq = 0;
     let paymentSeq = 0;
     const stuck = new Set(stuckIds);
+    const refusedAsEnded = new Set(refuseAsEndedIds);
     const hidden = new Set(hiddenFromWalk);
 
     const api: ProviderApi = {
@@ -117,13 +124,18 @@ export function createFakeProvider({
                 kind,
                 id,
                 status: found.status,
-                ...(kind === 'preapproval' ? { planId: found.planId ?? null } : {})
+                ...(kind === 'preapproval'
+                    ? { planId: found.planId ?? null, endDate: endDates[id] ?? null }
+                    : {})
             };
         },
         cancel: async ({ kind, id }): Promise<CancelCallResult> => {
             calls.push(`CANCEL ${kind} ${id}`);
             const found = state.get(id);
             if (!found) return { accepted: false, httpStatus: 404 };
+            if (refusedAsEnded.has(id)) {
+                return { accepted: false, httpStatus: 400, alreadyEnded: true };
+            }
             if (!stuck.has(id)) state.set(id, { ...found, status: 'cancelled' });
             return { accepted: true, httpStatus: 200 };
         },
