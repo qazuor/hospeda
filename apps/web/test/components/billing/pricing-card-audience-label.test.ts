@@ -46,7 +46,7 @@ describe('getDisplayFeatures - ai_chat label by audience', () => {
         expect(labelFor('tourist')).toBe('GENERIC_CHAT');
     });
 
-    it('uses the venue label for gastronomy', () => {
+    it('uses the venue label for the venue audience', () => {
         expect(labelFor('venue')).toBe('VENUE_CHAT');
     });
 
