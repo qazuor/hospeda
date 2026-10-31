@@ -1282,6 +1282,13 @@
       "when": 1793429949812,
       "tag": "0182_left_the_hand",
       "breakpoints": true
+    },
+    {
+      "idx": 183,
+      "version": "7",
+      "when": 1793463506158,
+      "tag": "0183_hos1943_price_from_nullable",
+      "breakpoints": true
     }
   ]
 }

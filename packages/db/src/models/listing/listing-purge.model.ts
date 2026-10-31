@@ -92,7 +92,7 @@ const BLANK_CONTENT: Record<ListingVertical, SQL> = {
         price_range = NULL, videos = NULL, seo = NULL`,
     experience: sql`summary = '', description = '', rich_description = NULL,
         name_i18n = NULL, summary_i18n = NULL, description_i18n = NULL, rich_description_i18n = NULL,
-        price_from = 0, price_unit = NULL, is_price_on_request = true,
+        price_from = NULL, price_unit = NULL, is_price_on_request = true,
         meeting_point = NULL, meeting_point_lat = NULL, meeting_point_long = NULL,
         meeting_point_directions = '{}', duration_minutes = NULL, what_to_bring = '{}',
         requirements = '{}', cancellation_policy = NULL, accepts_private_groups = false,

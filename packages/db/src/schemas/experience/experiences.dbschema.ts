@@ -59,9 +59,24 @@ export const experiences = pgTable(
         type: ExperienceTypePgEnum('type').notNull(),
         /**
          * Starting price in integer centavos (project-wide "Money = integer" rule).
-         * Use 0 when isPriceOnRequest is true.
+         *
+         * NULLABLE since HOS-1943 (owner decision 01/11, option a): an experience
+         * with `isPriceOnRequest = true` has no price, and stores NULL rather than
+         * 0. A 0 read as "$0" (free) everywhere the flag was not checked first,
+         * and sorted as the cheapest listing. NULL is "no price", which every
+         * consumer has to handle explicitly.
+         *
+         * No default: a row that omits the price must not be born with a fake 0.
+         *
+         * INVARIANT: NULL only when `isPriceOnRequest` is true. Enforced today by
+         * the create schemas (`requirePriceFromUnlessOnRequest`) and by
+         * `ExperienceService`, which writes NULL whenever the flag is on. A CHECK
+         * constraint is deliberately NOT added in the same release as the
+         * backfill (`0132-hos1943-price-on-request-null`): `db:apply-extras`
+         * runs BEFORE `db:seed:migrate`, so a CHECK would reject the rows the
+         * backfill has not reached yet.
          */
-        priceFrom: integer('price_from').notNull().default(0),
+        priceFrom: integer('price_from'),
         /**
          * Billing unit (per_day / per_hour / per_person / per_group).
          *
@@ -79,7 +94,7 @@ export const experiences = pgTable(
         priceUnit: ExperiencePriceUnitPgEnum('price_unit'),
         /**
          * When true, the UI shows "Consultar precio" instead of the numeric priceFrom.
-         * Store priceFrom = 0 alongside this flag.
+         * Store priceFrom = NULL alongside this flag (HOS-1943).
          */
         isPriceOnRequest: boolean('is_price_on_request').notNull().default(false),
         /**
