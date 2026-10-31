@@ -9,7 +9,7 @@ import { DestinationIdSchema, DestinationPointOfInterestSummarySchema } from '@r
 import { DestinationService, ServiceError } from '@repo/service-core';
 import type { Context } from 'hono';
 import { z } from 'zod';
-import { getActorFromContext } from '../../../utils/actor';
+import { createGuestActor } from '../../../utils/actor';
 import { apiLogger } from '../../../utils/logger';
 import { createPublicRoute } from '../../../utils/route-factory';
 
@@ -43,12 +43,12 @@ export const publicGetDestinationPointsOfInterestRoute = createPublicRoute({
     },
     responseSchema: z.array(DestinationPointOfInterestSummarySchema),
     handler: async (
-        ctx: Context,
+        _ctx: Context,
         params: Record<string, unknown>,
         _body: unknown,
         query?: Record<string, unknown>
     ) => {
-        const actor = getActorFromContext(ctx);
+        const actor = createGuestActor();
         // `relation` is optional on the wire (query param, `.default('ALL')`
         // in the schema); the service input's inferred TYPE is required
         // because z.infer reflects the post-default OUTPUT shape. The cast

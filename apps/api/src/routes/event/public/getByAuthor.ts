@@ -4,7 +4,7 @@
  */
 import { EventByAuthorHttpSchema, EventPublicSchema, UserIdSchema } from '@repo/schemas';
 import { EventService, ServiceError } from '@repo/service-core';
-import { getActorFromContext } from '../../../utils/actor';
+import { createGuestActor } from '../../../utils/actor';
 import { apiLogger } from '../../../utils/logger';
 import { extractPaginationParams, getPaginationResponse } from '../../../utils/pagination';
 import { createPublicListRoute } from '../../../utils/route-factory';
@@ -24,8 +24,8 @@ export const publicGetEventsByAuthorRoute = createPublicListRoute({
     requestParams: { authorId: UserIdSchema },
     requestQuery: EventByAuthorHttpSchema.shape,
     responseSchema: EventPublicSchema,
-    handler: async (ctx, params, _body, query) => {
-        const actor = getActorFromContext(ctx);
+    handler: async (_ctx, params, _body, query) => {
+        const actor = createGuestActor();
         const { authorId } = params as { authorId: string };
         const { page, pageSize } = extractPaginationParams(query || {});
         const result = await eventService.getByAuthor(actor, {

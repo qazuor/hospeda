@@ -8,7 +8,7 @@ import {
     type HttpAttractionSearch
 } from '@repo/schemas';
 import { AttractionService, ServiceError } from '@repo/service-core';
-import { getActorFromContext } from '../../../utils/actor';
+import { createGuestActor } from '../../../utils/actor';
 import { apiLogger } from '../../../utils/logger';
 import { extractPaginationParams, getPaginationResponse } from '../../../utils/pagination';
 import { createPublicListRoute } from '../../../utils/route-factory';
@@ -27,8 +27,8 @@ export const publicListAttractionsRoute = createPublicListRoute({
     tags: ['Attractions'],
     requestQuery: AttractionSearchHttpSchema.shape,
     responseSchema: AttractionPublicSchema,
-    handler: async (ctx, _params, _body, query) => {
-        const actor = getActorFromContext(ctx);
+    handler: async (_ctx, _params, _body, query) => {
+        const actor = createGuestActor();
         const { page, pageSize } = extractPaginationParams(query || {});
 
         const result = await attractionService.search(actor, {

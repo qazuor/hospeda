@@ -8,8 +8,10 @@
  */
 
 /**
- * Path prefixes that receive public cache headers (cacheable by CDN).
- * Used for read-only endpoints with no per-user data.
+ * Path prefixes served from the API's in-process response cache under a key with
+ * no actor in it. Used for read-only endpoints with no per-user data.
+ * (Being listed does not make a response CDN-cacheable: the cache middleware
+ * emits no `Cache-Control`; the one route that sets `public` does so itself.)
  */
 export const PUBLIC_CACHE_ENDPOINTS = [
     '/api/v1/public/authors',
@@ -36,8 +38,9 @@ export const PUBLIC_CACHE_ENDPOINTS = [
 ] as const;
 
 /**
- * Path prefixes that receive private cache headers (cacheable only by browser).
- * Used for per-user data.
+ * Path prefixes cached in-process for ANONYMOUS callers only, in a separate
+ * `private:` keyspace. A request carrying credentials bypasses the cache
+ * entirely (HOS-1923), so per-user answers are never stored here.
  */
 export const PRIVATE_CACHE_ENDPOINTS = [
     '/api/v1/public/users',

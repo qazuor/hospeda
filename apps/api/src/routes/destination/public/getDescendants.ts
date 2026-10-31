@@ -10,7 +10,7 @@ import {
 import { DestinationService, ServiceError } from '@repo/service-core';
 import type { Context } from 'hono';
 import { z } from 'zod';
-import { getActorFromContext } from '../../../utils/actor';
+import { createGuestActor } from '../../../utils/actor';
 import { apiLogger } from '../../../utils/logger';
 import { createPublicRoute } from '../../../utils/route-factory';
 
@@ -38,12 +38,12 @@ export const publicGetDestinationDescendantsRoute = createPublicRoute({
         descendants: z.array(DestinationPublicSchema)
     }),
     handler: async (
-        ctx: Context,
+        _ctx: Context,
         params: Record<string, unknown>,
         _body: unknown,
         query?: Record<string, unknown>
     ) => {
-        const actor = getActorFromContext(ctx);
+        const actor = createGuestActor();
         const result = await destinationService.getDescendants(actor, {
             destinationId: params.id as string,
             maxDepth: query?.maxDepth as number | undefined,

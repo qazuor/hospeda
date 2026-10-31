@@ -6,7 +6,7 @@ import { DestinationPublicSchema } from '@repo/schemas';
 import { DestinationService, ServiceError } from '@repo/service-core';
 import type { Context } from 'hono';
 import { z } from 'zod';
-import { getActorFromContext } from '../../../utils/actor';
+import { createGuestActor } from '../../../utils/actor';
 import { apiLogger } from '../../../utils/logger';
 import { createPublicRoute } from '../../../utils/route-factory';
 
@@ -35,12 +35,12 @@ export const publicGetDestinationByPathRoute = createPublicRoute({
     },
     responseSchema: DestinationPublicSchema.nullable(),
     handler: async (
-        ctx: Context,
+        _ctx: Context,
         _params: Record<string, unknown>,
         _body: unknown,
         query?: Record<string, unknown>
     ) => {
-        const actor = getActorFromContext(ctx);
+        const actor = createGuestActor();
         const result = await destinationService.getByPath(actor, {
             path: (query?.path ?? '') as string
         });

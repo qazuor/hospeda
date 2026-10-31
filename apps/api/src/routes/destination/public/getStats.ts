@@ -5,7 +5,7 @@
 import { DestinationIdSchema, DestinationStatsSchema } from '@repo/schemas';
 import { DestinationService, ServiceError } from '@repo/service-core';
 import type { Context } from 'hono';
-import { getActorFromContext } from '../../../utils/actor';
+import { createGuestActor } from '../../../utils/actor';
 import { apiLogger } from '../../../utils/logger';
 import { createPublicRoute } from '../../../utils/route-factory';
 
@@ -25,8 +25,8 @@ export const publicGetDestinationStatsRoute = createPublicRoute({
         id: DestinationIdSchema
     },
     responseSchema: DestinationStatsSchema,
-    handler: async (ctx: Context, params: Record<string, unknown>) => {
-        const actor = getActorFromContext(ctx);
+    handler: async (_ctx: Context, params: Record<string, unknown>) => {
+        const actor = createGuestActor();
         const result = await destinationService.getStats(actor, {
             destinationId: params.id as string
         });

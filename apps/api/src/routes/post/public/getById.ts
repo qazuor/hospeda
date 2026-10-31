@@ -5,7 +5,7 @@
 import { PostIdSchema, PostPublicSchema } from '@repo/schemas';
 import { PostService, ServiceError } from '@repo/service-core';
 import type { Context } from 'hono';
-import { getActorFromContext } from '../../../utils/actor';
+import { createGuestActor } from '../../../utils/actor';
 import { apiLogger } from '../../../utils/logger';
 import { createPublicRoute } from '../../../utils/route-factory';
 
@@ -23,8 +23,10 @@ export const publicGetPostByIdRoute = createPublicRoute({
     tags: ['Posts'],
     requestParams: { id: PostIdSchema },
     responseSchema: PostPublicSchema.nullable(),
-    handler: async (ctx: Context, params: Record<string, unknown>) => {
-        const actor = getActorFromContext(ctx);
+    handler: async (_ctx: Context, params: Record<string, unknown>) => {
+        // HOS-1924: this path is shared-cached under a key with no actor in it, so the
+        // service must never see the request's real actor.
+        const actor = createGuestActor();
         const result = await postService.getById(actor, params.id as string);
         if (result.error) throw new ServiceError(result.error.code, result.error.message);
         return result.data;

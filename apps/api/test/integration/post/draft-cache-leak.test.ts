@@ -99,9 +99,11 @@ describe('GET /api/v1/public/posts/slug/:slug — a draft never reaches the cach
             headers: ANONYMOUS_HEADERS
         });
 
-        // Assert: non-vacuity — the editor really was served the draft.
-        expect(editor.status).toBe(200);
-        expect((await editor.json()).data.slug).toBe(draftSlug);
+        // Assert: since HOS-1924 the public route resolves as a guest for EVERYONE,
+        // so even the editor is not served the draft here (drafts are read through
+        // the protected/admin tiers). The editor request still bypasses the cache.
+        expect(editor.status).toBe(404);
+        expect(await editor.clone().text()).not.toContain('Draft content');
 
         // The leak: before HOS-1923 this was the editor's 200, served as a HIT.
         expect(await stranger.clone().text()).not.toContain('Draft content');
@@ -110,14 +112,16 @@ describe('GET /api/v1/public/posts/slug/:slug — a draft never reaches the cach
         expect(editor.headers.get('x-cache')).toBe('BYPASS');
     });
 
-    it('does not serve the anonymous 404 to the editor who arrives afterwards', async () => {
+    it('keeps the editor out of the cache and never serves the draft on the public route', async () => {
         const stranger = await app.request(`${BASE}/${draftSlug}`, {
             headers: ANONYMOUS_HEADERS
         });
         const editor = await app.request(`${BASE}/${draftSlug}`, { headers: editorHeaders });
 
         expect(stranger.status).toBe(404);
-        expect(editor.status).toBe(200);
+        // HOS-1924: guest actor on the public route, so the draft stays hidden.
+        expect(editor.status).toBe(404);
+        expect(await editor.clone().text()).not.toContain('Draft content');
         expect(editor.headers.get('x-cache')).toBe('BYPASS');
     });
 
