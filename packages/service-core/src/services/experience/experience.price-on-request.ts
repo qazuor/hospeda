@@ -31,6 +31,12 @@ export interface ResolveOnRequestPricePatchInput {
 export interface ResolveOnRequestPricePatchOutput {
     /** Fields to merge over the payload; empty when nothing must change. */
     readonly patch: { readonly priceFrom?: null };
+    /**
+     * `true` when the write would leave the listing NOT on request with a NULL
+     * price: nobody chose "Consultar precio", yet every display would show it.
+     * The caller must reject the write (VALIDATION_ERROR).
+     */
+    readonly missingPrice: boolean;
 }
 
 /**
@@ -43,12 +49,19 @@ export interface ResolveOnRequestPricePatchOutput {
  * - payload turns the flag ON → any stored price is cleared with it;
  * - payload sends a price for a listing that stays on request → dropped.
  *
+ * The opposite case is a hole, not a patch: a write that leaves the listing
+ * NOT on request with a NULL price (`priceFrom: null` with the flag off, or the
+ * flag turned off on an on-request row without sending a price). That is
+ * reported as `missingPrice` so the caller rejects it. The resulting price is
+ * the payload's when it carries one, else the stored row's; when neither is
+ * known (no row loaded, no price in the payload) nothing is claimed.
+ *
  * A payload that does not touch pricing at all (`priceFrom` and
- * `isPriceOnRequest` both absent) yields no patch, so an unrelated edit never
- * rewrites the column.
+ * `isPriceOnRequest` both absent) yields no patch and no violation, so an
+ * unrelated edit never rewrites or blocks on the column.
  *
  * @param input - The write payload and, for updates, the row before it.
- * @returns `{ patch: { priceFrom: null } }` or `{ patch: {} }`.
+ * @returns The patch to merge and whether the write leaves a priced listing without a price.
  */
 export function resolveOnRequestPricePatch({
     data,
@@ -57,12 +70,17 @@ export function resolveOnRequestPricePatch({
     const touchesFlag = Object.hasOwn(data, 'isPriceOnRequest');
     const touchesPrice = Object.hasOwn(data, 'priceFrom');
     if (!touchesFlag && !touchesPrice) {
-        return { patch: {} };
+        return { patch: {}, missingPrice: false };
     }
 
     const onRequestAfterWrite = touchesFlag
         ? data.isPriceOnRequest === true
         : current?.isPriceOnRequest === true;
 
-    return onRequestAfterWrite ? { patch: { priceFrom: null } } : { patch: {} };
+    if (onRequestAfterWrite) {
+        return { patch: { priceFrom: null }, missingPrice: false };
+    }
+
+    const priceAfterWrite = touchesPrice ? data.priceFrom : current?.priceFrom;
+    return { patch: {}, missingPrice: priceAfterWrite === null };
 }

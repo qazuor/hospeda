@@ -833,3 +833,84 @@ describe('ExperienceService — price on request stores priceFrom = null (HOS-19
         expect(createPayload.priceFrom).toBeNull();
     });
 });
+
+describe('ExperienceService — a priced listing cannot end up with a null price (HOS-1943 review)', () => {
+    it('rejects a PATCH that clears the price of a listing that is not on request', async () => {
+        // Arrange
+        const entity = makeExperienceEntity();
+        const service = makeService(entity);
+        const mockUpdate = (service as AnyService).model.update;
+
+        // Act
+        const result = await service.updateOwn(ENTITY_ID, { priceFrom: null }, ownerActor);
+
+        // Assert
+        expect(result.error?.code).toBe(ServiceErrorCode.VALIDATION_ERROR);
+        expect(mockUpdate).not.toHaveBeenCalled();
+    });
+
+    it('rejects turning "a consultar" off without sending a price', async () => {
+        // Arrange
+        const entity = makeExperienceEntity({ isPriceOnRequest: true, priceFrom: null });
+        const service = makeService(entity);
+        const mockUpdate = (service as AnyService).model.update;
+
+        // Act
+        const result = await service.updateOwn(ENTITY_ID, { isPriceOnRequest: false }, ownerActor);
+
+        // Assert
+        expect(result.error?.code).toBe(ServiceErrorCode.VALIDATION_ERROR);
+        expect(mockUpdate).not.toHaveBeenCalled();
+    });
+
+    it('rejects turning the flag off and clearing the price in the same PATCH', async () => {
+        // Arrange
+        const entity = makeExperienceEntity({ isPriceOnRequest: true, priceFrom: null });
+        const service = makeService(entity);
+
+        // Act
+        const result = await service.updateOwn(
+            ENTITY_ID,
+            { isPriceOnRequest: false, priceFrom: null },
+            ownerActor
+        );
+
+        // Assert
+        expect(result.error?.code).toBe(ServiceErrorCode.VALIDATION_ERROR);
+    });
+
+    it('allows a null price on a listing that stays "a consultar"', async () => {
+        // Arrange
+        const entity = makeExperienceEntity({ isPriceOnRequest: true, priceFrom: null });
+        const service = makeService(entity);
+        const mockUpdate = (service as AnyService).model.update;
+
+        // Act
+        const result = await service.updateOwn(ENTITY_ID, { priceFrom: null }, ownerActor);
+
+        // Assert
+        expect(result.error).toBeUndefined();
+        const updatePayload = (mockUpdate.mock.calls[0]?.[1] ?? {}) as Record<string, unknown>;
+        expect(updatePayload.priceFrom).toBeNull();
+    });
+
+    it('allows turning the flag off while also sending a price', async () => {
+        // Arrange
+        const entity = makeExperienceEntity({ isPriceOnRequest: true, priceFrom: null });
+        const service = makeService(entity);
+        const mockUpdate = (service as AnyService).model.update;
+
+        // Act
+        const result = await service.updateOwn(
+            ENTITY_ID,
+            { isPriceOnRequest: false, priceFrom: 90000 },
+            ownerActor
+        );
+
+        // Assert
+        expect(result.error).toBeUndefined();
+        const updatePayload = (mockUpdate.mock.calls[0]?.[1] ?? {}) as Record<string, unknown>;
+        expect(updatePayload.isPriceOnRequest).toBe(false);
+        expect(updatePayload.priceFrom).toBe(90000);
+    });
+});

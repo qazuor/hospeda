@@ -317,10 +317,19 @@ export class ExperienceService extends BaseListingService<
     ): Promise<Partial<Experience>> {
         const base = await super._beforeUpdate(data, actor, ctx);
         const hookState = (ctx as ServiceContext<ListingHookState>).hookState;
-        const { patch } = resolveOnRequestPricePatch({
+        const { patch, missingPrice } = resolveOnRequestPricePatch({
             data: data as Readonly<Record<string, unknown>>,
             current: hookState?.ownerActBefore ?? null
         });
+        if (missingPrice) {
+            // A NULL price is "a consultar" ONLY when the owner chose it. A PATCH
+            // that clears the price, or turns the flag off without sending one,
+            // would make every display show "Consultar precio" anyway.
+            throw new ServiceError(
+                ServiceErrorCode.VALIDATION_ERROR,
+                'priceFrom: zodError.experience.priceFrom.required'
+            );
+        }
         return { ...base, ...patch };
     }
 
