@@ -43,6 +43,7 @@ import { defineMiddleware } from 'astro:middleware';
 import { CACHE_TAG_HEADER_NAME, serializeCacheTags } from '@repo/cache-tags';
 import type { APIContext, MiddlewareNext } from 'astro';
 import { collectCspHashes } from '../integrations/csp-hash-collector';
+import { runWithVisitorIp } from './lib/api/visitor-ip-context';
 import { LISTING_PRIVATE_CONTROL } from './lib/cache/listing-cache';
 import { schedulePurgeOnDeploy } from './lib/cache/purge-on-deploy';
 import { isEdgeCacheableControl, isResponseDegraded } from './lib/cache/response-cache';
@@ -177,7 +178,11 @@ if (import.meta.env.SSR) {
  * setting the headers inline at each early return.
  */
 export const onRequest = defineMiddleware(async (context, next) => {
-    const response = await runMiddlewarePipeline(context, next);
+    // HOS-1973: bind the visitor IP so SSR calls to the API forward it.
+    const response = await runWithVisitorIp({
+        headers: context.request.headers,
+        fn: () => runMiddlewarePipeline(context, next)
+    });
     applySecurityHeaders({ headers: response.headers });
     return response;
 });

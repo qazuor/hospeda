@@ -89,6 +89,20 @@ function getBaseUrl(): string {
 const REQUEST_TIMEOUT = 10_000;
 
 /**
+ * Headers carrying the visiting client's IP for the current SSR request
+ * (HOS-1973). Empty in the browser and outside a request scope. Read through
+ * a `globalThis` accessor so this browser-safe module never imports
+ * `node:async_hooks` (see `visitor-ip-context.ts`).
+ */
+function getVisitorHeaders(): Record<string, string> {
+    if (!import.meta.env.SSR) return {};
+    const accessor = (globalThis as Record<symbol, unknown>)[
+        Symbol.for('hospeda.web.visitorForwardHeaders')
+    ];
+    return typeof accessor === 'function' ? (accessor as () => Record<string, string>)() : {};
+}
+
+/**
  * Serialize query parameters into a URL search string.
  */
 function serializeParams(params?: Record<string, unknown>): string {
@@ -185,6 +199,7 @@ async function request<T>({
             const url = `${getBaseUrl()}${path}${serializeParams(params)}`;
             const headers: Record<string, string> = {
                 Accept: 'application/json',
+                ...getVisitorHeaders(),
                 ...extraHeaders
             };
             if (body) {
