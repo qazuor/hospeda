@@ -18,6 +18,17 @@ import { stripShapeDefaults } from '../../utils/utils.js';
 import { DRAFT_DESCRIPTION_PLACEHOLDER } from './accommodation.publish-requirements.js';
 
 /**
+ * HOS-1938: query strings are case-insensitive for the accommodation type
+ * filters. Trims and upper-cases the raw string so `?types=apartment` reaches
+ * the uppercase enum (and the DB `type` column) instead of a Postgres 500,
+ * then validates it: a value that is still not in the enum fails with a 400.
+ */
+const upperCasedAccommodationType = z
+    .string()
+    .transform((value) => value.trim().toUpperCase())
+    .pipe(AccommodationTypeEnumSchema);
+
+/**
  * HTTP-compatible accommodation search schema with automatic coercion
  * Extracted from inline definition and enhanced with proper HTTP patterns
  */
@@ -68,7 +79,7 @@ export const AccommodationSearchHttpSchema = BaseHttpSearchSchema.extend({
     hasParking: createBooleanQueryParam('Filter accommodations with parking'),
 
     // Type filters
-    type: AccommodationTypeEnumSchema.optional(),
+    type: upperCasedAccommodationType.optional(),
 
     // Date filters with HTTP coercion
     checkIn: z.coerce.date().optional(),
@@ -82,7 +93,9 @@ export const AccommodationSearchHttpSchema = BaseHttpSearchSchema.extend({
     address: z.string().optional(),
 
     // Array filters with HTTP coercion
-    types: createArrayQueryParam('Filter by multiple accommodation types'),
+    types: createArrayQueryParam('Filter by multiple accommodation types').pipe(
+        z.array(upperCasedAccommodationType).optional()
+    ),
     /**
      * Filter by required amenity UUIDs.
      * Accepts repeated query params (?amenities=uuid1&amenities=uuid2) or

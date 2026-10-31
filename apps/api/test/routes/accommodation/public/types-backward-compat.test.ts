@@ -15,12 +15,9 @@
  *
  * T-022 — empty `?types=` resolves to unfiltered (not `IN ()`), selecting
  * every enum value is equivalent to no filter at all. Unlike events/posts
- * `categories`, `AccommodationSearchHttpSchema.types` has NO enum-pipe
- * validation (see `packages/schemas/src/entities/accommodation/accommodation.http.schema.ts`
- * line ~74: `createArrayQueryParam(...)` without `.pipe(z.array(enum))`), so
- * an invalid member does NOT get the strict-400 behavior OQ-3 gives events/
- * posts `categories` — that is a pre-existing, out-of-scope gap in the
- * blueprint, not a HOS-96 regression, and is documented (not "fixed") here.
+ * `categories`, `AccommodationSearchHttpSchema.types` had no enum-pipe
+ * validation; HOS-1938 added it (case-insensitive), see the last describe
+ * block below.
  *
  * The public accommodation list route has several collaborators beyond
  * AccommodationService (SearchHistoryService, quick-amenity resolver, owner
@@ -218,22 +215,64 @@ describe('GET /api/v1/public/accommodations — type/types backward compat + edg
     });
 
     // -----------------------------------------------------------------------
-    // T-022 — pre-existing nuance: invalid `types` member is NOT rejected
-    // (documented gap in the blueprint, out of scope to fix here — OQ-3's
-    // strict-400 behavior was added for events/posts `categories` via a new
-    // `.pipe(z.array(enum))`; accommodation `types` never got that pipe).
+    // HOS-1938 — case-insensitive normalization + enum validation of
+    // `type`/`types`. Before the fix a lowercase value reached Postgres as
+    // `"accommodations"."type" in ('apartment')` and the route answered 500.
     // -----------------------------------------------------------------------
 
-    describe('invalid type member (pre-existing blueprint gap, documented not fixed)', () => {
-        it('?types=HOTEL,NOT_A_TYPE is accepted by the HTTP schema (NOT a 400)', async () => {
-            const res = await app.request(`${BASE}?types=HOTEL,NOT_A_TYPE`, {
+    describe('case normalization and enum validation (HOS-1938)', () => {
+        const get = (query: string) =>
+            app.request(`${BASE}${query}`, {
                 headers: { 'user-agent': 'vitest', accept: 'application/json' }
             });
 
-            // Documents actual behavior: no enum-pipe validation on `types` means
-            // an invalid member reaches the service as a plain string and simply
-            // matches nothing extra — it is NOT rejected at the schema boundary.
-            expect(res.status).not.toBe(400);
+        it('?types=apartment is normalized to APARTMENT and answers 200', async () => {
+            const res = await get('?types=apartment');
+
+            expect(res.status).toBe(200);
+            const body = await res.json();
+            const types = (body.data.items as Array<{ type: string }>).map((i) => i.type);
+            expect(types).toEqual(['APARTMENT']);
+        });
+
+        it('?types=Cabin,hotel (mixed case, CSV) is normalized member by member', async () => {
+            const res = await get('?types=Cabin,hotel');
+
+            expect(res.status).toBe(200);
+            const body = await res.json();
+            const types = (body.data.items as Array<{ type: string }>).map((i) => i.type).sort();
+            expect(types).toEqual(['CABIN', 'HOTEL']);
+        });
+
+        it('?type=cabin (singular, lowercase) is normalized and answers 200', async () => {
+            const res = await get('?type=cabin');
+
+            expect(res.status).toBe(200);
+            const body = await res.json();
+            const types = (body.data.items as Array<{ type: string }>).map((i) => i.type);
+            expect(types).toEqual(['CABIN']);
+        });
+
+        it('?types=notatype answers 400 VALIDATION_ERROR naming the field, never 500', async () => {
+            const res = await get('?types=notatype');
+
+            expect(res.status).toBe(400);
+            const body = await res.json();
+            expect(body.error.code).toBe('VALIDATION_ERROR');
+            expect(JSON.stringify(body.error)).toContain('types');
+        });
+
+        it('?types=HOTEL,NOT_A_TYPE answers 400 (one bad member rejects the request)', async () => {
+            const res = await get('?types=HOTEL,NOT_A_TYPE');
+
+            expect(res.status).toBe(400);
+        });
+
+        it('?type=notatype answers 400 VALIDATION_ERROR', async () => {
+            const res = await get('?type=notatype');
+
+            expect(res.status).toBe(400);
+            expect((await res.json()).error.code).toBe('VALIDATION_ERROR');
         });
     });
 });

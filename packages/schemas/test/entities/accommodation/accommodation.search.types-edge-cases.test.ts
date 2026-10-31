@@ -3,12 +3,11 @@
  * parsing (HOS-96 T-022).
  *
  * Accommodation `types` is the pre-existing blueprint (`createArrayQueryParam`
- * without an enum `.pipe()` — see `accommodation.http.schema.ts`). This file
+ * piped to the enum — see `accommodation.http.schema.ts`). This file
  * pins its ACTUAL parsing behavior at the schema layer, matching the same
  * matrix already covered for events/posts `categories` in
  * `event.search.categories.dedup.test.ts` / `post.search.categories.dedup.test.ts`,
- * plus the accommodation-specific nuance: no enum-pipe means an invalid
- * member is NOT rejected here (unlike `categories`).
+ * (HOS-1938: `types` now pipes through the enum too, case-insensitively).
  *
  * Per the resolved OQ-4 in the spec: `createArrayQueryParam` does NOT
  * de-duplicate. `?types=HOTEL,HOTEL` parses to `['HOTEL', 'HOTEL']` — de-dup
@@ -56,20 +55,15 @@ describe('AccommodationSearchHttpSchema.types — edge cases (HOS-96 T-022)', ()
         }
     });
 
-    it('does NOT reject an invalid member (pre-existing gap, unlike events/posts categories)', () => {
-        // Unlike EventSearchHttpSchema.categories / PostSearchHttpSchema.categories
-        // (which pipe through z.array(enum) and reject invalid members with a
-        // Zod error), AccommodationSearchHttpSchema.types has no such pipe —
-        // it accepts any non-empty string. This is a pre-existing blueprint
-        // characteristic, documented here rather than "fixed" (out of scope).
+    it('rejects an invalid member with a 400-grade issue on `types` (HOS-1938)', () => {
+        // HOS-1938: the enum pipe was added; an unknown member used to reach
+        // Postgres as `type in ('NOT_A_REAL_TYPE')` and answer 500.
         const result = AccommodationSearchHttpSchema.safeParse({
             types: 'HOTEL,NOT_A_REAL_TYPE'
         });
 
-        expect(result.success).toBe(true);
-        if (result.success) {
-            expect(result.data.types).toEqual(['HOTEL', 'NOT_A_REAL_TYPE']);
-        }
+        expect(result.success).toBe(false);
+        expect(result.error?.issues[0]?.path[0]).toBe('types');
     });
 
     it('keeps accepting the singular `type` enum alone (US-10)', () => {
