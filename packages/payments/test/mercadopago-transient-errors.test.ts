@@ -46,6 +46,26 @@ describe('TEST:1968 transient Mercado Pago failures are classified on authorize'
         expect(error.transient).toEqual({ kind: 'RATE_LIMITED', retryAfterSeconds: 17 });
     });
 
+    it('measures an HTTP-date Retry-After against the injected clock (HOS-1976)', async () => {
+        const date = new Date(clock.now().getTime() + 42_000).toUTCString();
+        const error = await failureOf(
+            adapter(
+                async () => new Response('', { status: 429, headers: { 'Retry-After': date } })
+            ).authorize(authorizeInput)
+        );
+        expect(error.transient).toEqual({ kind: 'RATE_LIMITED', retryAfterSeconds: 42 });
+    });
+
+    it('clamps an HTTP-date Retry-After already in the past to zero (HOS-1976)', async () => {
+        const date = new Date(clock.now().getTime() - 60_000).toUTCString();
+        const error = await failureOf(
+            adapter(
+                async () => new Response('', { status: 503, headers: { 'Retry-After': date } })
+            ).authorize(authorizeInput)
+        );
+        expect(error.transient).toEqual({ kind: 'UNAVAILABLE', retryAfterSeconds: 0 });
+    });
+
     it('marks a 429 without Retry-After as RATE_LIMITED with no hint', async () => {
         const error = await failureOf(
             adapter(

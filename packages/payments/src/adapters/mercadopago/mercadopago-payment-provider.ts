@@ -235,7 +235,9 @@ export class MercadoPagoPaymentProvider implements PaymentProvider {
             },
             headers: { 'X-Idempotency-Key': input.reference }
         });
-        const parsed = await parseResponse(AuthorizationResponseSchema, response, 'authorize');
+        const parsed = await parseResponse(AuthorizationResponseSchema, response, 'authorize', () =>
+            this.clock.now()
+        );
         return { authorizationId: parsed.id, approvalUrl: parsed.init_point };
     }
 
@@ -287,7 +289,7 @@ export class MercadoPagoPaymentProvider implements PaymentProvider {
             method: 'PUT',
             body: { status: 'cancelled' }
         });
-        assertResponseOk(response, 'cancel');
+        assertResponseOk(response, 'cancel', () => this.clock.now());
         return { accepted: true, resourceId: input.authorizationId };
     }
 
@@ -305,7 +307,9 @@ export class MercadoPagoPaymentProvider implements PaymentProvider {
             path: `/preapproval/${encodeURIComponent(input.authorizationId)}`,
             method: 'GET'
         });
-        const parsed = await parseResponse(ReadResponseSchema, response, 'read');
+        const parsed = await parseResponse(ReadResponseSchema, response, 'read', () =>
+            this.clock.now()
+        );
         // A preapproval with no reference is foreign by construction: we always
         // send ours on creation. Classifying it as UNSUPPORTED makes the notice
         // service ignore it (HOS-1777) instead of writing a receipt tombstone,

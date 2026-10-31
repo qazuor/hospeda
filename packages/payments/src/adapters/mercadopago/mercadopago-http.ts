@@ -1,5 +1,8 @@
 import type { PaymentCapability } from '../../provider/capabilities';
 import { PaymentProviderError, type TransientProviderFailure } from '../../provider/errors';
+import { parseRetryAfterMs } from './mercadopago-read-retry';
+
+const systemNow = (): Date => new Date();
 
 /** Sends one authenticated Mercado Pago request from the adapter transport. */
 export type MercadoPagoSend = (args: {
@@ -14,7 +17,8 @@ export type MercadoPagoSend = (args: {
 export async function parseResponse<T>(
     schema: import('zod').ZodType<T>,
     response: Response,
-    capability: PaymentCapability
+    capability: PaymentCapability,
+    now: () => Date = systemNow
 ): Promise<T> {
     if (!response.ok) {
         const code = responseErrorCode(response.status);
@@ -24,7 +28,7 @@ export async function parseResponse<T>(
             capability,
             message: `Mercado Pago request failed (${response.status})`,
             cause: { status: response.status, body },
-            ...transientFromResponse(response)
+            ...transientFromResponse(response, now)
         });
     }
     let body: unknown;
@@ -53,14 +57,18 @@ export async function parseResponse<T>(
 }
 
 /** Throws a typed error for a non-successful Mercado Pago response. */
-export function assertResponseOk(response: Response, capability: PaymentCapability): void {
+export function assertResponseOk(
+    response: Response,
+    capability: PaymentCapability,
+    now: () => Date = systemNow
+): void {
     if (response.ok) return;
     const code = responseErrorCode(response.status);
     throw new PaymentProviderError({
         code,
         capability,
         message: `Mercado Pago request failed (${response.status})`,
-        ...transientFromResponse(response)
+        ...transientFromResponse(response, now)
     });
 }
 
@@ -68,23 +76,19 @@ export function assertResponseOk(response: Response, capability: PaymentCapabili
  * Classifies a non-OK response as transient (HOS-1968): 429 is a throttle, 5xx an outage.
  * Reads the provider's `Retry-After` (delta-seconds or HTTP date) when present.
  */
-function transientFromResponse(response: Response): { transient?: TransientProviderFailure } {
+function transientFromResponse(
+    response: Response,
+    now: () => Date
+): { transient?: TransientProviderFailure } {
     const kind =
         response.status === 429 ? 'RATE_LIMITED' : response.status >= 500 ? 'UNAVAILABLE' : null;
     if (kind === null) return {};
-    const retryAfterSeconds = parseRetryAfterSeconds(response.headers.get('Retry-After'));
+    const retryAfterMs = parseRetryAfterMs({ value: response.headers.get('Retry-After'), now });
+    const retryAfterSeconds =
+        retryAfterMs === undefined ? undefined : Math.max(0, Math.ceil(retryAfterMs / 1000));
     return {
         transient: { kind, ...(retryAfterSeconds === undefined ? {} : { retryAfterSeconds }) }
     };
-}
-
-function parseRetryAfterSeconds(value: string | null): number | undefined {
-    if (value === null) return undefined;
-    const trimmed = value.trim();
-    if (/^\d+$/.test(trimmed)) return Number(trimmed);
-    const instant = Date.parse(trimmed);
-    if (Number.isNaN(instant)) return undefined;
-    return Math.max(0, Math.ceil((instant - Date.now()) / 1000));
 }
 
 /**

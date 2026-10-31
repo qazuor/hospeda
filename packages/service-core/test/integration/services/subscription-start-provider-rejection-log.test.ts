@@ -174,6 +174,30 @@ describe('TEST:1968 transient authorize failures', () => {
         expect(row?.subscription.status).toBe('PENDING_AUTHORIZATION');
         expect(row?.providerLink).toBeNull();
         expect(row?.idempotencyKey?.completedAt).not.toBeNull();
+        // HOS-1976: a throttle is recorded distinctly from a real provider rejection.
+        expect(row?.idempotencyKey?.result).toEqual({
+            outcome: 'THROTTLED_BY_PROVIDER',
+            code: 'RATE_LIMITED'
+        });
+    });
+
+    it('still records a real 4xx rejection as REJECTED_BY_PROVIDER', async () => {
+        const rejection = new PaymentProviderError({
+            code: 'REJECTED',
+            capability: 'authorize',
+            message: 'Mercado Pago request failed (400)',
+            cause: { status: 400, body: { message: 'invalid payer_email' } }
+        });
+        const { promise, user } = await attempt(rejection);
+        await expect(promise).rejects.toBe(rejection);
+        const row = await subscriptionModel.findLiveCommitment({
+            userId: user.id,
+            vertical: 'accommodation'
+        });
+        expect(row?.idempotencyKey?.result).toEqual({
+            outcome: 'REJECTED_BY_PROVIDER',
+            code: 'REJECTED'
+        });
     });
 
     it('keeps the creation key open after a 5xx because the outcome is unknown', async () => {
