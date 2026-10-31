@@ -75,7 +75,6 @@ export const AccommodationSearchHttpSchema = BaseHttpSearchSchema.extend({
 
     // Boolean filters with HTTP coercion
     isFeatured: createBooleanQueryParam('Filter featured accommodations'),
-    isAvailable: createBooleanQueryParam('Filter available accommodations'),
     hasPool: createBooleanQueryParam('Filter accommodations with pools'),
     hasWifi: createBooleanQueryParam('Filter accommodations with WiFi'),
     allowsPets: createBooleanQueryParam('Filter pet-friendly accommodations'),
@@ -693,11 +692,11 @@ export const httpToDomainAccommodationSearch = (
     includeAmenities: httpParams.includeAmenities,
     includeFeatures: httpParams.includeFeatures,
     checkIn: httpParams.checkIn,
-    checkOut: httpParams.checkOut,
-    isAvailable: httpParams.isAvailable
+    checkOut: httpParams.checkOut
 
-    // Note: Fields like country, city, ownerId, createdAfter, createdBefore
-    // exist in domain schema but not in HTTP schema, so they're not mapped
+    // Note: Fields like ownerId, createdAfter, createdBefore exist in the domain
+    // schema but not in the HTTP schema, so they're not mapped. `isAvailable`,
+    // `city` and `country` were removed (HOS-1922): nothing ever implemented them.
 });
 
 import { httpBodyBoolean } from '../../common/boolean-params.js';
