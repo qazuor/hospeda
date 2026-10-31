@@ -75,7 +75,7 @@ describe('TEST:1747:4 provider notice incomplete read retry response', () => {
 
             await expect(notify(fixture, provider)).resolves.toEqual({
                 ack: 'ERROR',
-                outcome: 'FAILED'
+                outcome: 'DEFERRED'
             });
             expect(captured).toEqual([]);
         }
