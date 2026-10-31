@@ -33,6 +33,7 @@ import { createTranslations } from '@/lib/i18n';
 import type { SupportedLocale } from '@/lib/i18n';
 import { hasActiveExperienceListingFilters } from '@/lib/listing-empty-state-filters';
 import { buildUrl } from '@/lib/urls';
+import { buildPaginationLinks } from '@/lib/listing/listing-pagination';
 import { buildToggleParamHref } from '@/lib/filters/toggle-query-param';
 
 import { CACHE_TAG_COLLECTIONS } from '@repo/cache-tags';
@@ -247,7 +248,11 @@ const filterSummary = buildExperienceListingSummary({
 });
 
 const baseUrl = buildUrl({ locale, path: 'experiencias' });
-const canonicalPath = page > 1 ? `${baseUrl}page/${page}/` : baseUrl;
+const { canonicalPath, prevPath, nextPath } = buildPaginationLinks({
+	basePath: baseUrl,
+	page,
+	totalPages
+});
 
 /**
  * Quick-filter type chips (HOS-97): filter the listing in place via
@@ -287,6 +292,8 @@ const itemListEntries = cards.map((card) => ({
         'Descubrí las mejores experiencias y servicios turísticos del Litoral Entrerriano'
     )}
     canonicalPath={canonicalPath}
+    prevPath={prevPath}
+    nextPath={nextPath}
     showFilters={true}
     filterPosition="left"
     ogTagline={t('experience.listing.subtitle', 'Descubrí las mejores experiencias')}

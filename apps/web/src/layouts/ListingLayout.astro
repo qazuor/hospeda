@@ -20,6 +20,16 @@ interface Props {
 	readonly title?: string;
 	readonly description?: string;
 	readonly canonicalPath?: string;
+	/**
+	 * Path of the previous page of a paginated listing, emitted as
+	 * `<link rel="prev">` (HOS-1797). Omit on page 1.
+	 */
+	readonly prevPath?: string;
+	/**
+	 * Path of the next page of a paginated listing, emitted as
+	 * `<link rel="next">` (HOS-1797). Omit on the last page.
+	 */
+	readonly nextPath?: string;
 	readonly showFilters?: boolean;
 	readonly filterPosition?: 'left' | 'top';
 	/**
@@ -51,6 +61,8 @@ const {
 	title,
 	description,
 	canonicalPath = Astro.url.pathname,
+	prevPath,
+	nextPath,
 	showFilters = false,
 	filterPosition = 'left',
 	noindex = false,
@@ -61,6 +73,8 @@ const {
 
 const siteBase = getSiteUrl();
 const canonicalUrl = new URL(canonicalPath, siteBase).href;
+const prevUrl = prevPath ? new URL(prevPath, siteBase).href : undefined;
+const nextUrl = nextPath ? new URL(nextPath, siteBase).href : undefined;
 
 const resolvedTitle = title ?? 'Hospeda';
 const resolvedDescription = description ?? 'Descubrí alojamientos en el Litoral Entrerriano';
@@ -90,6 +104,12 @@ const resultsSummaryLabel =
 		ogTagline={ogTagline}
 	/>
 	<slot name="head-extra" slot="head" />
+	{(prevUrl || nextUrl) && (
+		<Fragment slot="head">
+			{prevUrl && <link rel="prev" href={prevUrl} />}
+			{nextUrl && <link rel="next" href={nextUrl} />}
+		</Fragment>
+	)}
 	<slot name="dock-start" slot="dock-start" />
 
 	<!-- WaveHeader wraps everything so sticky bar has full-page-height parent -->
