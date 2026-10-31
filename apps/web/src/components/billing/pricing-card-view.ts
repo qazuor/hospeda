@@ -273,6 +273,10 @@ export function buildPricingCardViews(input: BuildPricingCardViewsInput): Pricin
         const features = getDisplayFeatures({ keys: displayEntitlements, audience, t });
         const limitLines: PricingCardLimitItem[] = delta.limitChanges
             .filter((change) => !filtersTouristVipKeys || !touristVipLimits.has(change.key))
+            // HOS-1799: a cap of 0 means "this tier does not get it", which is not
+            // a benefit. Unlimited is excluded from this test on purpose: its
+            // sentinel is a huge number, never 0, but stating it keeps the intent.
+            .filter((change) => change.isUnlimited || change.value !== 0)
             .map((change) => ({
                 kind: 'limit',
                 id: change.key,
