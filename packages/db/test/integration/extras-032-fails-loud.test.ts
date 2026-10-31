@@ -53,6 +53,23 @@ afterAll(async () => {
 });
 
 describe('TEST:HOS-1794 extras/032 fails loudly on a missing table', () => {
+    it('every one of the four blocks raises on its own when its table is missing', async () => {
+        // Arrange: each DO block run alone against a database that has neither table
+        const blocks = EXTRA_SQL.split(/^(?=DO \$\$)/m).filter((b) => b.startsWith('DO $$'));
+        const fresh = new Pool({ connectionString: urlFor({ database: SCRATCH_DB }) });
+        protectScratchPool({ pool: fresh });
+        try {
+            await fresh.query('DROP TABLE IF EXISTS venue_media, experience_media');
+            // Act + Assert
+            expect(blocks).toHaveLength(4);
+            for (const block of blocks) {
+                await expect(fresh.query(block)).rejects.toThrow(/does not exist/);
+            }
+        } finally {
+            await fresh.end();
+        }
+    });
+
     it('raises when venue_media does not exist', async () => {
         // Arrange: empty database, no tables
         // Act + Assert
