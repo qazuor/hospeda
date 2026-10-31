@@ -276,7 +276,25 @@ async function probe(
     }
 }
 
-beforeEach(() => {
+/**
+ * Lets every request still in flight finish before the next test starts.
+ *
+ * The model stubs are module-level and shared by all tests, and `mockClear`
+ * wipes their call history synchronously. A write that lands AFTER that wipe
+ * (a request from the previous test that has not fully unwound) is recorded
+ * against the NEXT test, whose `not.toHaveBeenCalled()` then fails with "called
+ * 1 times" for a call it never made. That is the one-in-N CI failure this
+ * drain exists for (HOS-1975): the refusal tests sit right after the tests that
+ * do write. Two macrotask turns cover the promise chains and the timer-queued
+ * continuations a request leaves behind.
+ */
+async function settle(): Promise<void> {
+    await new Promise<void>((resolve) => setTimeout(resolve, 0));
+    await new Promise<void>((resolve) => setImmediate(resolve));
+}
+
+beforeEach(async () => {
+    await settle();
     qrDb.rows.clear();
     qrDb.rows.set(RED_ID, redQrRow());
     for (const fn of [
@@ -291,7 +309,8 @@ beforeEach(() => {
     }
 });
 
-afterEach(() => {
+afterEach(async () => {
+    await settle();
     vi.restoreAllMocks();
 });
 
