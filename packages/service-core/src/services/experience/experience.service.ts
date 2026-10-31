@@ -421,8 +421,8 @@ export class ExperienceService extends BaseListingService<
         ctx: ServiceContext
     ): Promise<PaginatedListOutput<Experience>> {
         const {
-            page,
-            pageSize,
+            page: _page,
+            pageSize: _pageSize,
             sortBy: _sortBy,
             sortOrder: _sortOrder,
             amenities: _amenities,
@@ -454,8 +454,8 @@ export class ExperienceService extends BaseListingService<
                 publicationStatus: PublicationStatusEnum.PUBLISHED
             },
             {
-                page,
-                pageSize,
+                page: ctx?.pagination?.page,
+                pageSize: ctx?.pagination?.pageSize,
                 sortBy: ctx?.pagination?.sortBy,
                 sortOrder: ctx?.pagination?.sortOrder
             },

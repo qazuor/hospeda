@@ -169,16 +169,16 @@ export class ExchangeRateService extends BaseCrudService<
      * @returns A paginated list of exchange rates matching the criteria.
      */
     protected async _executeSearch(
-        params: z.infer<typeof ExchangeRateSearchInputSchema> & {
-            page?: number;
-            pageSize?: number;
-        },
+        params: z.infer<typeof ExchangeRateSearchInputSchema>,
         _actor: Actor,
-        _ctx: ServiceContext
+        ctx: ServiceContext
     ) {
-        const { page = 1, pageSize = 10, ...searchParams } = params;
+        // BaseCrudRead.search moves page/pageSize onto ctx.pagination (SPEC-088);
+        // they are no longer in params (HOS-1917).
+        const page = ctx.pagination?.page ?? 1;
+        const pageSize = ctx.pagination?.pageSize ?? 10;
 
-        const results = await this.model.findAllWithDateRange(searchParams, {
+        const results = await this.model.findAllWithDateRange(params, {
             page,
             pageSize
         });

@@ -457,7 +457,7 @@ describe('ExperienceService search filter forwarding', () => {
 
         await (
             service as unknown as { _executeSearch: (...args: unknown[]) => unknown }
-        )._executeSearch({ page: 1, pageSize: 10 }, staffActor, {});
+        )._executeSearch({}, staffActor, {});
 
         // After B3 fix: _executeSearch uses findAllWithRelations (arg[0]=relations, arg[1]=where)
         expect(mockFindAllWithRelations).toHaveBeenCalledWith(
@@ -716,8 +716,8 @@ describe('ExperienceService._executeSearch — BETA-119 regression (sort forward
 
         await (
             service as unknown as { _executeSearch: (...args: unknown[]) => unknown }
-        )._executeSearch({ page: 1, pageSize: 10 }, staffActor, {
-            pagination: { sortBy: 'averageRating', sortOrder: 'desc' }
+        )._executeSearch({}, staffActor, {
+            pagination: { page: 1, pageSize: 10, sortBy: 'averageRating', sortOrder: 'desc' }
         });
 
         // arg[2] is the pagination options object in findAllWithRelations
@@ -736,7 +736,7 @@ describe('ExperienceService._executeSearch — BETA-119 regression (sort forward
 
         await (
             service as unknown as { _executeSearch: (...args: unknown[]) => unknown }
-        )._executeSearch({ page: 1, pageSize: 10 }, staffActor, {});
+        )._executeSearch({}, staffActor, {});
 
         const paginationArg = mockFindAllWithRelations.mock.calls[0]?.[2] as {
             sortBy?: unknown;
