@@ -1105,6 +1105,7 @@
         "zodError.experience.meetingPointLong.max",
         "zodError.experience.meetingPointLong.min",
         "zodError.experience.priceFrom.nonnegative",
+        "zodError.experience.priceFrom.required",
         "zodError.experience.priceUnit.requiredUnlessOnRequest",
         "zodError.experience.requirements.item.max",
         "zodError.experience.requirements.item.min",
@@ -1933,7 +1934,7 @@
         "zodError.venueFeature.hostReWriteName.max",
         "zodError.venueFeature.hostReWriteName.min"
     ],
-    "total": 1932,
+    "total": 1933,
     "byNamespace": {
         "accommodation": 71,
         "accommodationAmenity": 4,
@@ -1968,7 +1969,7 @@
         "exchangeRate": 25,
         "exchangeRateConfig": 13,
         "exchangeRates": 1,
-        "experience": 34,
+        "experience": 35,
         "experienceCertificate": 4,
         "experienceFeature": 4,
         "feature": 61,
