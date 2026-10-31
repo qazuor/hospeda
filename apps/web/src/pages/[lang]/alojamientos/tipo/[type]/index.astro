@@ -44,6 +44,7 @@ import { buildAvailabilityParams } from '@/lib/availability-params';
 import { createTranslations } from '@/lib/i18n';
 import type { SupportedLocale } from '@/lib/i18n';
 import { buildUrl } from '@/lib/urls';
+import { buildPaginationLinks } from '@/lib/listing/listing-pagination';
 import { getApiUrl } from '@/lib/env';
 import { CACHE_TAG_COLLECTIONS } from '@repo/cache-tags';
 import { hasActiveAccommodationListingFilters } from '@/lib/cache/listing-cache';
@@ -253,7 +254,11 @@ const baseUrl = buildUrl({ locale, path: `alojamientos/tipo/${canonicalTypeSlug}
 // `Astro.url.pathname` the base path (dropping `/page/n/`), ListingLayout's
 // default `canonicalPath = Astro.url.pathname` would canonicalize every
 // paginated page back to page 1. Rebuild the real crawlable URL instead.
-const canonicalPath = page > 1 ? `${baseUrl}page/${page}/` : baseUrl;
+const { canonicalPath, prevPath, nextPath } = buildPaginationLinks({
+	basePath: baseUrl,
+	page,
+	totalPages
+});
 
 /** Build the sidebar's `initialParams` so server-rendered state matches the URL on first paint. */
 const initialParams: Record<string, string> = {};
@@ -418,6 +423,8 @@ const collectionPageUrl = `${siteOrigin}${canonicalPath}`;
 	title={typePageTitle}
 	description={typeDescription}
 	canonicalPath={canonicalPath}
+	prevPath={prevPath}
+	nextPath={nextPath}
 	showFilters={true}
 	filterPosition="left"
 	totalCount={total}

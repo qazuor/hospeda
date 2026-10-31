@@ -32,9 +32,9 @@ describe('alojamientos/tipo/[type]/index.astro — unchanged by HOS-96 T-017', (
         expect(src).toContain('@route /{lang}/alojamientos/tipo/{type}/');
     });
 
-    it('still self-canonicalizes via its own pagination-aware canonicalPath (unchanged pattern)', () => {
+    it('self-canonicalizes via the shared pagination builder on baseUrl (page > 1 -> baseUrl/page/N/)', () => {
         expect(src).toMatch(
-            /const canonicalPath = page > 1 \? `\$\{baseUrl\}page\/\$\{page\}\/` : baseUrl;/
+            /const \{ canonicalPath, prevPath, nextPath \} = buildPaginationLinks\(\{\s*basePath: baseUrl,\s*page,\s*totalPages\s*\}\);/
         );
         expect(src).toContain('canonicalPath={canonicalPath}');
     });
