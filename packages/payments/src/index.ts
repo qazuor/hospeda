@@ -59,7 +59,8 @@ export {
 export {
     PaymentProviderError,
     type PaymentProviderErrorCode,
-    type PaymentProviderErrorInput
+    type PaymentProviderErrorInput,
+    type TransientProviderFailure
 } from './provider/errors';
 export type {
     AuthorizationRef,

@@ -94,6 +94,7 @@ type Outcome =
     | 'CHARGEBACK_MARKED'
     | 'CHARGEBACK_ON_UNCREDITED'
     | 'REFUNDED_NOT_CREDITED'
+    | 'DEFERRED'
     | 'FAILED';
 export interface ProcessProviderNoticePorts {
     readonly provider: PaymentProvider;
@@ -477,6 +478,10 @@ export async function processProviderNotice(
         return { ack: 'OK', outcome: finalOutcome };
     } catch (error) {
         logProviderNoticeFailure({ error, channel: input.channel });
+        // HOS-1968: the provider record is still being written; the receiver answers a
+        // deliberate retryable status instead of a generic failure.
+        if (error instanceof PaymentProviderError && error.incompleteRead)
+            return { ack: 'ERROR', outcome: 'DEFERRED' };
         return { ack: 'ERROR', outcome: 'FAILED' };
     }
 }

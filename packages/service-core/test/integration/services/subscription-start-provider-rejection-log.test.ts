@@ -134,3 +134,56 @@ describe('TEST:1746:3 authorize rejection logging', () => {
         expect(captured[0]?.extra.label).toContain(row?.subscription.id);
     });
 });
+
+describe('TEST:1968 transient authorize failures', () => {
+    const throttled = () =>
+        new PaymentProviderError({
+            code: 'UNAVAILABLE',
+            capability: 'authorize',
+            message: 'Mercado Pago request failed (429)',
+            cause: { status: 429, body: { message: 'local_rate_limited' } },
+            transient: { kind: 'RATE_LIMITED' }
+        });
+    const outage = () =>
+        new PaymentProviderError({
+            code: 'UNAVAILABLE',
+            capability: 'authorize',
+            message: 'Mercado Pago request failed (502)',
+            cause: { status: 502, body: '' },
+            transient: { kind: 'UNAVAILABLE' }
+        });
+
+    it.each([
+        ['429', throttled],
+        ['5xx', outage]
+    ])('captures a %s to Sentry so a sustained outage is visible', async (_label, build) => {
+        const error = build();
+        const { promise, captured } = await attempt(error);
+        await expect(promise).rejects.toBe(error);
+        expect(captured).toHaveLength(1);
+        expect(captured[0]?.error).toBe(error);
+    });
+
+    it('completes the creation key after a 429 so the next attempt can recreate', async () => {
+        const { promise, user } = await attempt(throttled());
+        await expect(promise).rejects.toBeInstanceOf(PaymentProviderError);
+        const row = await subscriptionModel.findLiveCommitment({
+            userId: user.id,
+            vertical: 'accommodation'
+        });
+        expect(row?.subscription.status).toBe('PENDING_AUTHORIZATION');
+        expect(row?.providerLink).toBeNull();
+        expect(row?.idempotencyKey?.completedAt).not.toBeNull();
+    });
+
+    it('keeps the creation key open after a 5xx because the outcome is unknown', async () => {
+        const { promise, user } = await attempt(outage());
+        await expect(promise).rejects.toBeInstanceOf(PaymentProviderError);
+        const row = await subscriptionModel.findLiveCommitment({
+            userId: user.id,
+            vertical: 'accommodation'
+        });
+        expect(row?.subscription.status).toBe('PENDING_AUTHORIZATION');
+        expect(row?.idempotencyKey?.completedAt).toBeNull();
+    });
+});

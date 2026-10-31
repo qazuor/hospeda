@@ -348,6 +348,7 @@ Three situations, two answers:
 | The referenced object does not exist at the provider | **200** `{received:true, ignored:'provider-resource-missing'}` | No retry can ever succeed. MercadoPago's dashboard test button sends the fictitious id `123456`; before HOS-707 that answered 500 and bounced forever. |
 | The object exists but belongs to another collector | **200**, same body | MercadoPago scopes by collector and answers **404**, not 403, so at the wire this is the row above. |
 | The provider genuinely failed — 429, 5xx, timeout, socket error | **500** | The retry is what we want. |
+| The provider record is still being written (`incompleteRead`, HOS-1968) | **503** `{received:false, deferred:true}` + `Retry-After: 60` | A deliberate "ask again": still non-2xx, so MercadoPago retries (a 200 would drop the payment). Logged WARN with no Sentry capture, and `loggerMiddleware` logs a 503 that carries `Retry-After` at WARN, not ERROR. |
 | Anything unclassified | **500** | Fail-safe: an error we cannot positively identify keeps the pre-HOS-707 behaviour, so a misclassification can never swallow a real failure. |
 
 Two rules specific to this surface:
@@ -368,6 +369,15 @@ Two rules specific to this surface:
 `PLAN_NOT_FOR_SALE` and `PARTNER_MANUAL_ONLY` are 422 `VALIDATION_ERROR`; `PREVIOUS_ATTEMPT_CLOSING` and `COMMITMENT_TAKEN` are 409 `ALREADY_EXISTS`; `TOURIST_VIP_INHERITED` is 409 `ALREADY_EXISTS`. `PARTNER_MANUAL_ONLY` means Partner is a manual payer and cannot start card checkout until the team's payment link exists. `TOURIST_VIP_INHERITED` means the person already has the benefit; it is not a missing entitlement (`403 ENTITLEMENT_REQUIRED`).
 
 `PROVIDER_REJECTED` is 422 `VALIDATION_ERROR`: the payment provider refused the data of the signup (HOS-1746); a provider outage or 5xx stays a 5xx and is retried.
+
+**Transient provider failure on checkout (HOS-1968).** When MercadoPago throttles (429) or is down (5xx, network, timeout) while the preapproval is created, S1 answers **503** with a `reason` the client can read, never `INTERNAL_ERROR`:
+
+| Provider failure | Status | `error.code` | `error.reason` | `Retry-After` |
+|---|---|---|---|---|
+| 429 | 503 | `PROVIDER_RATE_LIMITED` | `PROVIDER_BUSY` | Only when MercadoPago sent one (`details.retryAfter` too) |
+| 5xx, network, timeout | 503 | `SERVICE_UNAVAILABLE` | `PROVIDER_UNAVAILABLE` | Only when MercadoPago sent one |
+
+The two reasons differ because the retry differs: a 429 is refused before processing, so the creation key is completed and an immediate retry recreates on the same row; a 5xx has an unknown outcome, so the key stays open and a retry inside the creations-sweep window answers 409 `PREVIOUS_ATTEMPT_IN_PROGRESS`. Both are logged at error with Sentry capture, so a sustained outage is visible.
 
 ### Pending signup attempt cancellation (HOS-1735)
 

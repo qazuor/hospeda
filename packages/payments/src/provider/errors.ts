@@ -23,6 +23,21 @@ export type PaymentProviderErrorCode =
     | 'UNSUPPORTED'
     | 'NOT_IMPLEMENTED';
 
+/**
+ * A transient provider failure the caller may retry later (HOS-1968).
+ *
+ * - `RATE_LIMITED`: the provider throttled the request (HTTP 429). It refused before
+ *   processing, so nothing was created on its side.
+ * - `UNAVAILABLE`: a 5xx answer or a transport failure (network, timeout). The outcome
+ *   of a write is unknown.
+ *
+ * `retryAfterSeconds` is the provider's own `Retry-After`, when it sent one.
+ */
+export interface TransientProviderFailure {
+    readonly kind: 'RATE_LIMITED' | 'UNAVAILABLE';
+    readonly retryAfterSeconds?: number;
+}
+
 /** Constructor input of `PaymentProviderError`. */
 export interface PaymentProviderErrorInput {
     readonly code: PaymentProviderErrorCode;
@@ -32,6 +47,7 @@ export interface PaymentProviderErrorInput {
     readonly incompleteRead?: boolean;
     readonly providerStatus?: string;
     readonly providerCadence?: string;
+    readonly transient?: TransientProviderFailure;
 }
 
 /** A typed refusal from a payment provider. */
@@ -44,6 +60,8 @@ export class PaymentProviderError extends Error {
     readonly providerStatus?: string;
     /** The provider's billing cadence for an unsupported authorization, as the provider spelled it, when available. */
     readonly providerCadence?: string;
+    /** Set when the failure is transient and worth retrying later (HOS-1968). */
+    readonly transient?: TransientProviderFailure;
 
     /**
      * @param input.code - Why the provider refused
@@ -53,6 +71,7 @@ export class PaymentProviderError extends Error {
      * @param input.incompleteRead - Whether the provider returned a record still being written
      * @param input.providerStatus - The provider's status for an unsupported resource shape
      * @param input.providerCadence - The provider's billing cadence for an unsupported authorization, as the provider spelled it
+     * @param input.transient - Set when the failure is transient (rate limit, 5xx, transport)
      */
     constructor(input: PaymentProviderErrorInput) {
         super(input.message, input.cause === undefined ? undefined : { cause: input.cause });
@@ -62,5 +81,6 @@ export class PaymentProviderError extends Error {
         this.incompleteRead = input.incompleteRead ?? false;
         this.providerStatus = input.providerStatus;
         this.providerCadence = input.providerCadence;
+        this.transient = input.transient;
     }
 }

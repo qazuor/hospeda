@@ -175,12 +175,13 @@ export class MercadoPagoPaymentProvider implements PaymentProvider {
                         signal: controller.signal
                     });
                 } catch (cause) {
-                    throw providerError(
-                        'UNAVAILABLE',
-                        args.capability,
-                        'Mercado Pago is unavailable',
-                        cause
-                    );
+                    throw new PaymentProviderError({
+                        code: 'UNAVAILABLE',
+                        capability: args.capability,
+                        message: 'Mercado Pago is unavailable',
+                        cause,
+                        transient: { kind: 'UNAVAILABLE' }
+                    });
                 } finally {
                     clearTimeout(timer);
                 }

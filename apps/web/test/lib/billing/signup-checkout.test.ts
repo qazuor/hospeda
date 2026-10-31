@@ -107,6 +107,31 @@ describe('signup checkout helpers — B3 UI (B3.md:1045-1053)', () => {
         });
     });
 
+    it.each([
+        ['PROVIDER_RATE_LIMITED', 'PROVIDER_BUSY', 'providerBusy'],
+        ['SERVICE_UNAVAILABLE', 'PROVIDER_UNAVAILABLE', 'providerUnavailable']
+    ] as const)('maps a 503 %s/%s to its own message (HOS-1968)', (code, reason, key) => {
+        expect(resolveSignupRejection({ error: { status: 503, code, reason } })).toEqual({
+            reason,
+            messageKey: `billing.checkout.signup.rejection.${key}`,
+            retryable: true,
+            showPlansLink: false
+        });
+    });
+
+    it('honours the transient provider reasons only on a 503 (HOS-1968)', () => {
+        for (const error of [
+            { status: 500, reason: 'PROVIDER_BUSY' },
+            { status: 500, reason: 'PROVIDER_UNAVAILABLE' },
+            { status: 503, reason: 'SOMETHING_ELSE' },
+            { status: 503 }
+        ]) {
+            expect(resolveSignupRejection({ error }).messageKey).toBe(
+                'billing.checkout.signup.rejection.generic'
+            );
+        }
+    });
+
     it('parses only UUID option values and builds the localized checkout URL', () => {
         expect(parseSignupOptionId({ search: `?opcion=${validId}` })).toBe(validId);
         expect(parseSignupOptionId({ search: '?opcion=not-a-uuid' })).toBeNull();

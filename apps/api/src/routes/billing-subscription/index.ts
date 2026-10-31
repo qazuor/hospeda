@@ -130,6 +130,32 @@ export const protectedStartSubscriptionRoute = createProtectedRoute({
                     422
                 );
             }
+            if (
+                error instanceof PaymentProviderError &&
+                error.capability === 'authorize' &&
+                error.transient
+            ) {
+                // HOS-1968: a throttled or unavailable provider is a retryable 503, never a 500.
+                const { kind, retryAfterSeconds } = error.transient;
+                return createErrorResponse(
+                    {
+                        code:
+                            kind === 'RATE_LIMITED'
+                                ? ServiceErrorCode.PROVIDER_RATE_LIMITED
+                                : ServiceErrorCode.SERVICE_UNAVAILABLE,
+                        message: 'The payment provider is busy; try again in a minute',
+                        reason: kind === 'RATE_LIMITED' ? 'PROVIDER_BUSY' : 'PROVIDER_UNAVAILABLE',
+                        ...(retryAfterSeconds === undefined
+                            ? {}
+                            : { details: { retryAfter: retryAfterSeconds } })
+                    },
+                    ctx,
+                    503,
+                    retryAfterSeconds === undefined
+                        ? undefined
+                        : { 'Retry-After': String(retryAfterSeconds) }
+                );
+            }
             const serviceError = error instanceof ServiceError ? error : null;
             const reason = serviceError
                 ? StartSubscriptionRejectionReasonSchema.safeParse(serviceError.reason)
