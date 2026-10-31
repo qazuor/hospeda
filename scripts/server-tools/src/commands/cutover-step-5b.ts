@@ -19,7 +19,7 @@ export const CUTOVER_STEP_5B_ARGV: CommandArgvSpec = cutoverWrapperArgvSpec(CUTO
 
 const HELP = `
 hops cutover-step-5b --target=prod|staging [--list-only | --dry-run | --execute]
-                     [--allow-sha-mismatch] [--yes]
+                     [--allow-sha-mismatch] [--yes] [--confirm-phrase=<phrase>]
 
 Run the V6 cutover step 5b tool (delete remote photos, revoke calendar tokens
 of the listings step 3 deleted) from the VPS host. The script runs as:
@@ -38,6 +38,8 @@ Flags:
   --allow-sha-mismatch  Run a checkout that is not the deployed commit. On
                         prod this also requires the typed phrase on a dry-run.
   --yes                 Accepted; does NOT skip the typed prod guard.
+  --confirm-phrase=<p>  Answer the typed prod phrase without a prompt. Must equal it
+                        exactly. Without a TTY the prompt is refused (exit 1).
   --help, -h            Show this help.
 
 Exit codes: the script's own, unchanged. NOTE: the script exits 1 on a

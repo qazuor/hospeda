@@ -23,7 +23,7 @@ hops cutover-step-3b --target=prod|staging [--dry-run | --confirm]
                      --beneficiary=<uuid> --beneficiary=<uuid>
                      --plan-id=<uuid> --floor-plan-version-id=<uuid>
                      --includes-addons=true|false
-                     [--allow-sha-mismatch] [--yes]
+                     [--allow-sha-mismatch] [--yes] [--confirm-phrase=<phrase>]
 
 Run the B9a cutover step 3b tool (the two permanent grants) against the
 target database, from the VPS host. The script runs as:
@@ -41,6 +41,8 @@ Flags:
   --allow-sha-mismatch  Run a checkout that is not the deployed commit. On
                         prod this also requires the typed phrase on a dry-run.
   --yes                 Accepted; does NOT skip the typed prod guard.
+  --confirm-phrase=<p>  Answer the typed prod phrase without a prompt. Must equal it
+                        exactly. Without a TTY the prompt is refused (exit 1).
   --help, -h            Show this help.
 
 Exit codes: the script's own, unchanged (0 ok, 1 failed, 2 refused arguments).

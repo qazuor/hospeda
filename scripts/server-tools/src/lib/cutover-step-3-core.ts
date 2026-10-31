@@ -12,6 +12,7 @@
 import { buildStep3ChildEnv, resolveDeployedSha } from './cutover-step-3-env.ts';
 import type { Runner } from './runner.ts';
 import type { Target } from './target.ts';
+import { CONFIRM_PHRASE_FLAG } from './typed-confirmation.ts';
 
 export type { BuildStep3ChildEnvInput } from './cutover-step-3-env.ts';
 export {
@@ -53,6 +54,8 @@ export interface ParsedCutoverStep3Args {
     readonly yes: boolean;
     /** Raw CSV supplied with `--owner-ids=<csv>`, when present. */
     readonly ownerIds?: string;
+    /** Value of `--confirm-phrase=<phrase>`, when present (HOS-1963). */
+    readonly confirmPhrase?: string;
 }
 
 /** Result of parsing the command's own argv. */
@@ -65,7 +68,8 @@ const KNOWN_FLAGS = new Set([
     '--confirm-write-trials',
     '--allow-sha-mismatch',
     '--yes',
-    '--owner-ids'
+    '--owner-ids',
+    CONFIRM_PHRASE_FLAG
 ]);
 
 /**
@@ -82,6 +86,7 @@ const KNOWN_FLAGS = new Set([
 export function parseCutoverStep3Args(argv: ReadonlyArray<string>): ParseCutoverStep3ArgsResult {
     const seen = new Set<string>();
     let ownerIds: string | undefined;
+    let confirmPhrase: string | undefined;
     for (const arg of argv) {
         const separator = arg.indexOf('=');
         const flag = separator < 0 ? arg : arg.slice(0, separator);
@@ -95,6 +100,13 @@ export function parseCutoverStep3Args(argv: ReadonlyArray<string>): ParseCutover
                     reason: '--owner-ids requires a non-empty value in --owner-ids=<csv> form.'
                 };
             ownerIds = arg.slice(separator + 1);
+        } else if (flag === CONFIRM_PHRASE_FLAG) {
+            if (separator < 0 || arg.slice(separator + 1).length === 0)
+                return {
+                    ok: false,
+                    reason: `${CONFIRM_PHRASE_FLAG} requires a non-empty value in ${CONFIRM_PHRASE_FLAG}=<phrase> form.`
+                };
+            confirmPhrase = arg.slice(separator + 1);
         } else if (separator >= 0) {
             return { ok: false, reason: `Malformed flag: ${flag} takes no value.` };
         }
@@ -115,7 +127,8 @@ export function parseCutoverStep3Args(argv: ReadonlyArray<string>): ParseCutover
             mode: write ? 'write' : 'dry-run',
             allowShaMismatch: seen.has('--allow-sha-mismatch'),
             yes: seen.has('--yes'),
-            ...(ownerIds === undefined ? {} : { ownerIds })
+            ...(ownerIds === undefined ? {} : { ownerIds }),
+            ...(confirmPhrase === undefined ? {} : { confirmPhrase })
         }
     };
 }
