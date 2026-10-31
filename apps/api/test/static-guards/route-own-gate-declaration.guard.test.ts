@@ -72,14 +72,6 @@ interface EndpointGates {
 const SAMPLE_PARAM = '00000000-0000-4000-8000-000000000001';
 
 /**
- * Same-method routes whose request is answered by ANOTHER route's handler.
- * Not a HOS-1908 leak (both routes are GET): the literal route is registered
- * after a `/{id}` sibling, so `/search` is routed to `/:id` and never reaches
- * its own handler. Pre-existing, reported for the owner.
- */
-const SHADOWED_ROUTES: readonly string[] = ['GET /api/v1/public/features/search'];
-
-/**
  * Protected/admin routes with no authorization-middleware gate of their own.
  * Pre-existing and untouched by HOS-1908 (none of them ever received a
  * sibling's gate). The reason states what is in the route TODAY, not that it
@@ -315,17 +307,14 @@ describe('HOS-1908 static guard — every route declares its own gate', () => {
 
     it('every endpoint is answered by its own handler', () => {
         const misrouted = endpoints
-            .filter((e) => e.servedBy !== e.key && !SHADOWED_ROUTES.includes(e.key))
+            .filter((e) => e.servedBy !== e.key)
             .map((e) => `${e.key} -> ${e.servedBy ?? 'nothing'}`);
         expect(misrouted).toEqual([]);
-        expect(
-            SHADOWED_ROUTES.filter((key) => endpoints.find((e) => e.key === key)?.servedBy === key)
-        ).toEqual([]);
     });
 
     it("no route runs a gate declared by another route's method or path", () => {
         const leaks = endpoints
-            .filter((e) => e.foreign.length > 0 && !SHADOWED_ROUTES.includes(e.key))
+            .filter((e) => e.foreign.length > 0)
             .map((e) => `${e.key} <= ${e.foreign.join(', ')}`);
         expect(leaks, leaks.join('\n')).toEqual([]);
     });

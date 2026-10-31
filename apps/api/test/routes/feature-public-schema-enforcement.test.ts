@@ -7,7 +7,6 @@
  *
  * Routes covered:
  *   GET /api/v1/public/features            (list.ts)
- *   GET /api/v1/public/features/search     (search.ts)
  *   GET /api/v1/public/features/accommodation/:id  (getFeaturesForAccommodation.ts)
  *
  * The "Schema unit tests — always run (no DB required)" block runs unconditionally
@@ -183,64 +182,6 @@ describe('GET /api/v1/public/features — schema enforcement (SPEC-210)', () => 
                       : Array.isArray(body?.data)
                         ? body.data
                         : [];
-
-                for (const item of items) {
-                    const record = item as Record<string, unknown>;
-                    for (const field of FORBIDDEN_FIELDS) {
-                        expect(record, `field "${field}" must be absent`).not.toHaveProperty(field);
-                    }
-                }
-            }
-
-            expect(res.status).not.toBe(404);
-        } catch (error: unknown) {
-            if (error && typeof error === 'object' && 'status' in error) {
-                expect([401, 403, 500]).toContain((error as { status: number }).status);
-            } else {
-                throw error;
-            }
-        }
-    });
-});
-
-describe('GET /api/v1/public/features/search — schema enforcement (SPEC-210)', () => {
-    let app: AppOpenAPI;
-    const base = '/api/v1/public/features/search';
-
-    beforeAll(async () => {
-        app = initApp();
-    });
-
-    it('should be registered and reachable (not 404)', async () => {
-        try {
-            const res = await app.request(base, {
-                method: 'GET',
-                headers: { 'user-agent': 'vitest', accept: 'application/json' }
-            });
-            expect(res.status).not.toBe(404);
-        } catch (error: unknown) {
-            if (error && typeof error === 'object' && 'status' in error) {
-                expect([401, 403]).toContain((error as { status: number }).status);
-            } else {
-                throw error;
-            }
-        }
-    });
-
-    it('should NOT include lifecycleState or audit fields in any search result item', async () => {
-        try {
-            const res = await app.request(`${base}?q=pool`, {
-                method: 'GET',
-                headers: { 'user-agent': 'vitest', accept: 'application/json' }
-            });
-
-            if (res.status === 200) {
-                const body = await res.json();
-                const items: unknown[] = Array.isArray(body?.data?.items)
-                    ? body.data.items
-                    : Array.isArray(body?.items)
-                      ? body.items
-                      : [];
 
                 for (const item of items) {
                     const record = item as Record<string, unknown>;

@@ -3726,10 +3726,6 @@
             "path": "/api/v1/public/features/accommodation/:accommodationId"
         },
         {
-            "method": "GET",
-            "path": "/api/v1/public/features/search"
-        },
-        {
             "method": "POST",
             "path": "/api/v1/public/feedback"
         },
