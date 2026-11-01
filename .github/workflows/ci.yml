@@ -939,12 +939,24 @@ jobs:
         run: pnpm turbo run test:integration:coverage --filter=@repo/service-core
         env:
           HOSPEDA_TEST_DATABASE_URL: postgresql://hospeda_user:hospeda_pass@localhost:5436/postgres
+      # upload-artifact roots the artifact at the least common ancestor of the
+      # uploaded paths. A single file therefore lands bare at the artifact
+      # root, with its `packages/service-core/coverage/` prefix stripped, and
+      # merge-coverage.mjs cannot attribute it to service-core (promotion PR
+      # #3991 measured it as a phantom package named `coverage-merged`). Stage
+      # it under its workspace-relative path and upload the staging root, so
+      # the artifact has the same layout as the unit shards.
+      - name: Stage service-core integration coverage under its package path
+        if: matrix.suite == 'packages' && ((github.event_name == 'push' && github.ref == 'refs/heads/main') || (github.event_name == 'pull_request' && github.base_ref == 'main'))
+        run: |
+          mkdir -p .coverage-integration/packages/service-core/coverage
+          cp packages/service-core/coverage/coverage-final.json .coverage-integration/packages/service-core/coverage/coverage-final.json
       - name: Upload service-core integration coverage
         if: matrix.suite == 'packages' && ((github.event_name == 'push' && github.ref == 'refs/heads/main') || (github.event_name == 'pull_request' && github.base_ref == 'main'))
         uses: actions/upload-artifact@v7
         with:
           name: coverage-shard-integration-service-core
-          path: packages/service-core/coverage/coverage-final.json
+          path: .coverage-integration/
           if-no-files-found: error
           retention-days: 7
       # Through turbo, never `pnpm --filter`: turbo's strict env mode is what
