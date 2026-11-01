@@ -152,6 +152,58 @@ const WhatsNewCatalogSchema = z.array(WhatsNewEntrySchema).min(0);
 // distinct from when the batch was published. Do not "fix" this mismatch by
 // renaming the ids to match `publishedAt`.
 export const whatsNewEntries: WhatsNewEntry[] = WhatsNewCatalogSchema.parse([
+    // origin: #3982
+    {
+        id: '2026-10-31-accommodation-list-rejects-dead-filters',
+        publishedAt: 'on-promotion',
+        highlight: false,
+        title: {
+            es: 'El listado de alojamientos avisa cuando un filtro no existe',
+            en: 'The accommodations list now tells you when a filter does not exist',
+            pt: 'A lista de hospedagens avisa quando um filtro não existe'
+        },
+        body: {
+            es: 'Los filtros de disponibilidad, ciudad y país nunca funcionaron en el listado de alojamientos; ahora se rechazan con un mensaje claro en lugar de ignorarse en silencio. Los filtros por tipo y la paginación siguen funcionando igual.',
+            en: 'The availability, city and country filters never worked on the accommodations list; they are now rejected with a clear message instead of being silently ignored. Type filters and pagination keep working as before.',
+            pt: 'Os filtros de disponibilidade, cidade e país nunca funcionaram na lista de hospedagens; agora são rejeitados com uma mensagem clara em vez de serem ignorados em silêncio. Os filtros por tipo e a paginação continuam funcionando como antes.'
+        },
+        translations: { en: 'machine', pt: 'machine' }
+    },
+    // origin: #3971
+    {
+        id: '2026-10-31-accommodation-list-summary-grammar',
+        publishedAt: 'on-promotion',
+        highlight: false,
+        title: {
+            es: 'El resumen del listado de alojamientos concuerda en singular, plural y género',
+            en: 'The accommodations list summary now agrees in number and gender',
+            pt: 'O resumo da lista de hospedagens concorda em número e gênero'
+        },
+        body: {
+            es: 'El texto que resume tu búsqueda ahora se lee bien: «Mostrando 1 de 1 casa», «2 de 2 casas y casas quinta» o «1 de 1 hospedaje que contiene…», con el singular, el plural y el género correctos.',
+            en: 'The text summarizing your search now reads correctly: "Showing 1 of 1 house", "2 of 2 houses and country houses" or "1 of 1 lodging containing…", with the right singular, plural and gender.',
+            pt: 'O texto que resume a sua busca agora fica correto: «Mostrando 1 de 1 casa», «2 de 2 casas e casas de campo» ou «1 de 1 hospedagem que contém…», com singular, plural e gênero corretos.'
+        },
+        translations: { en: 'machine', pt: 'machine' }
+    },
+    // origin: #3941
+    {
+        id: '2026-10-31-gastronomy-menu-file-follows-plan',
+        publishedAt: 'on-promotion',
+        highlight: false,
+        roles: ['GASTRONOMY_OWNER'],
+        title: {
+            es: 'La carta en archivo de tu local se muestra según tu plan',
+            en: 'The menu file of your venue is shown according to your plan',
+            pt: 'O cardápio em arquivo do seu local é exibido conforme o seu plano'
+        },
+        body: {
+            es: 'La carta subida como archivo (PDF o foto) de un local de Comer y salir sólo se muestra al público si tu plan la incluye. Esto vale en todas las vistas: la ficha, el listado y la búsqueda por destino.',
+            en: 'A menu uploaded as a file (PDF or photo) for a Food & nightlife venue is only shown publicly if your plan includes it. This applies everywhere: the venue page, the list and the by-destination view.',
+            pt: 'O cardápio enviado como arquivo (PDF ou foto) de um local de Comer e sair só é exibido ao público se o seu plano o incluir. Isso vale em todas as telas: a ficha, a lista e a busca por destino.'
+        },
+        translations: { en: 'machine', pt: 'machine' }
+    },
     // origin: #3898
     {
         id: '2026-10-29-restaurants-section-is-now-comer-y-salir',
