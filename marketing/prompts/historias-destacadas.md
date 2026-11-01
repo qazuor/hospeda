@@ -423,8 +423,10 @@ sonriendo, con expresión de estar mostrando algo: "mirá, se hace así". El tel
 tapa la cara ni la boca.
 
 EL TELÉFONO
-Un celular simple y redondeado, del mismo acabado 3D suave que el personaje, visto de
-frente y en vertical, completamente quieto y de frente, sin inclinación ni perspectiva. Su
+Un celular simple, del mismo acabado 3D suave que el personaje, con la forma de un
+teléfono Android de gama alta: pantalla 19,5:9 (alto 2,17 veces el ancho), esquinas casi
+rectas apenas redondeadas y una sola cámara frontal en un orificio circular diminuto
+centrado arriba; sin muesca y sin logos. Visto de frente y en vertical, completamente quieto y de frente, sin inclinación ni perspectiva. Su
 altura equivale aproximadamente a dos tercios de la altura de la cabeza del personaje: se
 ve claramente, sin quedar reducido a un detalle.
 

@@ -1,5 +1,6 @@
 /**
- * Records the "create a new accommodation" flow on a mobile viewport at device resolution.
+ * Records the "create a new accommodation" flow on the reference phone's viewport (config/device.ts:
+ * the visible page area of a Galaxy S24 Ultra, 412 × 750 CSS px) at DPR 3.
  *
  * Output (in <recordings dir>/<take>/, outside the repo — see config/asset-paths.ts):
  * - frames/NNNNN.jpg + frames.json  raw CDP screencast frames with their timestamps
@@ -13,13 +14,14 @@ import { mkdirSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { chromium, type Locator, type Page } from 'playwright';
 import { resolveAssetPaths } from '../config/asset-paths';
+import { REFERENCE_DEVICE } from '../config/device';
 
 const WEB = process.env.WEB_URL ?? 'http://localhost:4422';
 /** Seeded local test user (packages/seed, `pnpm db:fresh-dev`); not a real credential. */
 const DEMO_USER = { email: 'host-basico@local.test', password: 'Password123!' } as const;
 const DB_NAME = process.env.DB_NAME ?? 'worktree_hospeda2';
 const DEMO_NAME = 'Cabañas Costa del Río';
-const DPR = 3;
+const DPR = REFERENCE_DEVICE.recordDpr;
 /** Name shown for the host's already-published listing on the properties page. */
 const EXISTING_LISTING = {
     id: '5f3f3516-95b9-4237-a656-b24b3c8ada3b',
@@ -35,7 +37,7 @@ const DEMO_HIDE_CSS = [
 ]
     .map((s) => `${s}{display:none!important}`)
     .join('\n');
-const VIEWPORT = { width: 390, height: 844 } as const;
+const VIEWPORT = REFERENCE_DEVICE.viewport;
 
 const take = process.argv[2] ?? 'a1-test';
 const outDir = join(resolveAssetPaths().recordingsDir, take);
@@ -146,7 +148,7 @@ const resetDrafts = (): void => {
 const main = async (): Promise<void> => {
     resetDrafts();
     // Only new-headless Chromium with a forced scale factor screencasts at device pixels;
-    // the default headless shell ignores deviceScaleFactor and yields 390x844 frames.
+    // the default headless shell ignores deviceScaleFactor and yields frames at CSS size.
     const browser = await chromium.launch({
         channel: 'chromium',
         args: [`--force-device-scale-factor=${DPR}`]

@@ -141,7 +141,13 @@ lo reemplace por otro modelo de celular al dibujarle contenido:
 
 > `THE PHONE: its shape, proportions and screen aspect ratio are exactly those of the`
 > `phone in @######ESCENAN#######. Do not reshape it and do not substitute a different`
-> `phone model.`
+> `phone model. It is a modern Android flagship with a 19.5:9 screen: flat titanium`
+> `frame, nearly square corners, thin even bezels and a single tiny round punch-hole`
+> `camera centred at the top of the screen. No logos or brand names on it.`
+
+La segunda mitad describe el dispositivo de referencia (Galaxy S24 Ultra, ver
+[`videos/REGLAS.md`](../videos/REGLAS.md#dispositivo-de-referencia-samsung-galaxy-s24-ultra))
+sin nombrar la marca: el modelo no tiene que imprimir logos en el teléfono.
 
 ### El teléfono quieto es innegociable
 

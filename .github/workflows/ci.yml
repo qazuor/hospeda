@@ -370,6 +370,9 @@ jobs:
       # G-FAC-R1 guards the retired venue word.
       - name: Check the retired venue word (G-FAC-R1, HOS-1823)
         run: pnpm check:venue-retired-word
+      # Every phone in marketing/ is the Galaxy S24 Ultra (marketing/videos/REGLAS.md).
+      - name: Check marketing uses the reference phone only (Galaxy S24 Ultra)
+        run: pnpm check:marketing-device
       # TEST:V9b:14 (HOS-1504, AC:V9b:14). Its own step, like every guard here.
       - name: Check PB4 and PB5 code is untouched by V9b (TEST:V9b:14)
         run: pnpm check:retention-archive-untouched
