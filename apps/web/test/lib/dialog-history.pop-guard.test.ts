@@ -8,12 +8,9 @@
  * router AFTER the module, which is the one order where the bug cannot show.
  */
 
+import { readFileSync } from 'node:fs';
+import { resolve } from 'node:path';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import {
-    acquireDialogHistoryEntry,
-    LISTING_URL_COMMIT_EVENT,
-    resetDialogHistoryForTests
-} from '../../src/lib/dialog-history';
 import {
     DIALOG_POP_GUARD_SNIPPET,
     POP_GUARD_KEY
@@ -21,6 +18,12 @@ import {
 
 const PAGE_URL = 'http://localhost:3000/es/alojamientos/';
 const FILTERED_URL = `${PAGE_URL}?destinationIds=a%2Cb`;
+const BASE_LAYOUT_SOURCE = readFileSync(
+    resolve(__dirname, '../../src/layouts/BaseLayout.astro'),
+    'utf8'
+);
+
+let dialogHistory: typeof import('../../src/lib/dialog-history');
 
 function settle(): Promise<void> {
     return new Promise((resolve) => setTimeout(resolve, 30));
@@ -36,27 +39,28 @@ describe('dialog-history pop guard (HOS-1927)', () => {
     const routerPopState = vi.fn();
 
     beforeEach(async () => {
+        vi.resetModules();
         window.history.replaceState({ index: 0, scrollX: 0, scrollY: 0 }, '', PAGE_URL);
-        resetDialogHistoryForTests();
         // Page-load order: guard (inline, in <head>) first, router next, and only
         // then, on first open, the module under test.
         installGuard();
         routerPopState.mockClear();
         window.addEventListener('popstate', routerPopState);
+        dialogHistory = await import('../../src/lib/dialog-history');
         await settle();
     });
 
     afterEach(async () => {
         window.removeEventListener('popstate', routerPopState);
-        resetDialogHistoryForTests();
+        dialogHistory.resetDialogHistoryForTests();
         await settle();
     });
 
     it('keeps the router from seeing Back after the listing rewrote the claimed URL', async () => {
         const onPopped = vi.fn();
-        acquireDialogHistoryEntry({ onPopped, tolerateRouterDrift: true });
+        dialogHistory.acquireDialogHistoryEntry({ onPopped, tolerateRouterDrift: true });
         window.dispatchEvent(
-            new CustomEvent(LISTING_URL_COMMIT_EVENT, {
+            new CustomEvent(dialogHistory.LISTING_URL_COMMIT_EVENT, {
                 cancelable: true,
                 detail: { url: FILTERED_URL }
             })
@@ -76,7 +80,7 @@ describe('dialog-history pop guard (HOS-1927)', () => {
         // pins the mechanism: the order-proof guard must be the one in use.
         const addSpy = vi.spyOn(window, 'addEventListener');
 
-        acquireDialogHistoryEntry({ onPopped: vi.fn(), tolerateRouterDrift: true });
+        dialogHistory.acquireDialogHistoryEntry({ onPopped: vi.fn(), tolerateRouterDrift: true });
 
         const capturePopstate = addSpy.mock.calls.filter(
             ([type, , options]) => type === 'popstate' && options === true
@@ -85,6 +89,18 @@ describe('dialog-history pop guard (HOS-1927)', () => {
         const guard = (window as unknown as Record<string, { handler: unknown }>)[POP_GUARD_KEY];
         expect(typeof guard?.handler).toBe('function');
         addSpy.mockRestore();
+    });
+
+    it('includes the inline pop guard before Astro ClientRouter', () => {
+        const guardScript =
+            /^[\t ]*<script\s+is:inline\s+set:html=\{DIALOG_POP_GUARD_SNIPPET\}\s*\/>/m;
+        const clientRouter = /^[\t ]*<ClientRouter\s*\/>/m;
+        const guardMatch = guardScript.exec(BASE_LAYOUT_SOURCE);
+        const routerMatch = clientRouter.exec(BASE_LAYOUT_SOURCE);
+
+        expect(guardMatch).not.toBeNull();
+        expect(routerMatch).not.toBeNull();
+        expect(guardMatch!.index).toBeLessThan(routerMatch!.index);
     });
 
     it('lets the router see an ordinary traversal when no claim is involved', async () => {
