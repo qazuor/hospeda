@@ -6,19 +6,23 @@
  * Renders the price display based on the experience pricing model:
  * - When `isPriceOnRequest` is true → shows the i18n "Consultar precio" label.
  * - When false and `priceFrom > 0` → shows "Desde $X.XXX <unit>" formatted.
- * - When false and `priceFrom === 0` → shows the on-request label as fallback.
+ * - When false and `priceFrom` is `null` (or a legacy `0`) → shows the
+ *   on-request label as fallback. Never "$0" (HOS-1943).
+ *
+ * The decision lives in `resolveExperiencePriceDisplay` (unit-tested), not here.
  *
  * `priceFrom` is stored in centavos (integer). Divide by 100 for display.
  *
  * Hydration: none — fully static Astro component.
  */
 
+import { resolveExperiencePriceDisplay } from '@/lib/experience/price-display';
 import { createTranslations } from '@/lib/i18n';
 import type { SupportedLocale } from '@/lib/i18n';
 
 interface Props {
-    /** Base price in centavos (integer). Zero when isPriceOnRequest is true. */
-    readonly priceFrom: number;
+    /** Base price in centavos (integer). `null` when the price is on request (HOS-1943). */
+    readonly priceFrom: number | null;
     /**
      * Billing unit for the price (per_day | per_hour | per_person | per_group).
      * `null` when the experience has no price, so there is nothing to bill per
@@ -35,21 +39,23 @@ interface Props {
 const { priceFrom, priceUnit, isPriceOnRequest, locale, class: className } = Astro.props;
 const { t } = createTranslations(locale);
 
-const showOnRequest = isPriceOnRequest || priceFrom === 0;
+const display = resolveExperiencePriceDisplay({ priceFrom, isPriceOnRequest });
+const showOnRequest = display.kind === 'on-request';
 
 /**
  * Format centavos to ARS currency string (e.g. 150000 → "$1.500").
  * Uses Intl.NumberFormat with Argentine Spanish locale and no decimal places
  * since prices end in 00 centavos in practice.
  */
-const formattedPrice = showOnRequest
-    ? ''
-    : new Intl.NumberFormat('es-AR', {
-          style: 'currency',
-          currency: 'ARS',
-          minimumFractionDigits: 0,
-          maximumFractionDigits: 0
-      }).format(priceFrom / 100);
+const formattedPrice =
+    display.kind === 'on-request'
+        ? ''
+        : new Intl.NumberFormat('es-AR', {
+              style: 'currency',
+              currency: 'ARS',
+              minimumFractionDigits: 0,
+              maximumFractionDigits: 0
+          }).format(display.cents / 100);
 
 // The `priceUnit == null` arm is defence in depth, not a reachable state: the
 // create schemas only allow a null unit when the price is on request, which

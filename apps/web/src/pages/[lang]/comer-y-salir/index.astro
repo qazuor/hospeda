@@ -33,6 +33,7 @@ import { createTranslations } from '@/lib/i18n';
 import type { SupportedLocale } from '@/lib/i18n';
 import { hasActiveVenueListingFilters } from '@/lib/listing-empty-state-filters';
 import { buildUrl } from '@/lib/urls';
+import { buildPaginationLinks } from '@/lib/listing/listing-pagination';
 import { buildToggleParamHref } from '@/lib/filters/toggle-query-param';
 
 import { CACHE_TAG_COLLECTIONS } from '@repo/cache-tags';
@@ -312,7 +313,11 @@ const filterSummary = buildVenueListingSummary({
 });
 
 const baseUrl = buildUrl({ locale, path: 'comer-y-salir' });
-const canonicalPath = page > 1 ? `${baseUrl}page/${page}/` : baseUrl;
+const { canonicalPath, prevPath, nextPath } = buildPaginationLinks({
+	basePath: baseUrl,
+	page,
+	totalPages
+});
 
 /**
  * Quick-filter type chips (HOS-97): filter the listing in place via
@@ -352,6 +357,8 @@ const itemListEntries = cards.map((card) => ({
         'Descubrí los mejores restaurantes, bares y sabores de la región'
     )}
     canonicalPath={canonicalPath}
+    prevPath={prevPath}
+    nextPath={nextPath}
     showFilters={true}
     filterPosition="left"
     ogTagline={t('venue.listing.subtitle', 'Descubrí los mejores sabores')}

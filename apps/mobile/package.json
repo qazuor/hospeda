@@ -17,12 +17,12 @@
         "clean": "rm -rf node_modules dist .expo"
     },
     "dependencies": {
-        "@better-auth/expo": "1.6.23",
+        "@better-auth/expo": "1.7.14",
         "@expo/metro-runtime": "~57.0.8",
         "@repo/i18n": "workspace:*",
         "@repo/schemas": "workspace:*",
         "@tanstack/react-query": "5.101.4",
-        "better-auth": "1.6.23",
+        "better-auth": "1.7.14",
         "expo": "~56.0.18",
         "expo-constants": "~56.0.22",
         "expo-linking": "~56.0.16",

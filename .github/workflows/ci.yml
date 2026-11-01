@@ -370,6 +370,9 @@ jobs:
       # G-FAC-R1 guards the retired venue word.
       - name: Check the retired venue word (G-FAC-R1, HOS-1823)
         run: pnpm check:venue-retired-word
+      # Every phone in marketing/ is the Galaxy S24 Ultra (marketing/videos/REGLAS.md).
+      - name: Check marketing uses the reference phone only (Galaxy S24 Ultra)
+        run: pnpm check:marketing-device
       # TEST:V9b:14 (HOS-1504, AC:V9b:14). Its own step, like every guard here.
       - name: Check PB4 and PB5 code is untouched by V9b (TEST:V9b:14)
         run: pnpm check:retention-archive-untouched
@@ -913,11 +916,52 @@ jobs:
             sleep 1
           done
           docker exec ${{ job.services.postgres.id }} psql -U hospeda_user -d postgres -tAc "SHOW max_locks_per_transaction" | grep -qx 1024
-      - name: Run integration tests (SPEC-061 db + SPEC-080 service-core)
+      # service-core is split out of the generic step (HOS-1960) so that on PRs to
+      # `main` it can run with coverage instead of twice. Everywhere else it runs
+      # exactly as before, just as its own step.
+      - name: Run integration tests (SPEC-061 db + other packages)
         if: matrix.suite == 'packages'
-        run: pnpm test:integration --filter=!hospeda-api
+        run: pnpm test:integration --filter=!hospeda-api --filter=!@repo/service-core
         env:
           HOSPEDA_TEST_DATABASE_URL: postgresql://hospeda_user:hospeda_pass@localhost:5436/postgres
+      - name: Run integration tests (SPEC-080 service-core)
+        if: matrix.suite == 'packages' && !((github.event_name == 'push' && github.ref == 'refs/heads/main') || (github.event_name == 'pull_request' && github.base_ref == 'main'))
+        run: pnpm turbo run test:integration --filter=@repo/service-core
+        env:
+          HOSPEDA_TEST_DATABASE_URL: postgresql://hospeda_user:hospeda_pass@localhost:5436/postgres
+      # HOS-1960: the real-DB suite is what exercises most of
+      # `services/billing/**` (unit alone measures service-core at ~72%), so on
+      # the runs that feed the coverage gate it also records coverage. The
+      # artifact is named `coverage-shard-*` on purpose: coverage-check merges
+      # every such artifact per package, summing hit counts with the unit shards.
+      - name: Run integration tests with coverage (SPEC-080 service-core)
+        if: matrix.suite == 'packages' && ((github.event_name == 'push' && github.ref == 'refs/heads/main') || (github.event_name == 'pull_request' && github.base_ref == 'main'))
+        run: pnpm turbo run test:integration:coverage --filter=@repo/service-core
+        env:
+          HOSPEDA_TEST_DATABASE_URL: postgresql://hospeda_user:hospeda_pass@localhost:5436/postgres
+      # upload-artifact roots the artifact at the least common ancestor of the
+      # uploaded paths. A single file therefore lands bare at the artifact
+      # root, with its `packages/service-core/coverage/` prefix stripped, and
+      # merge-coverage.mjs cannot attribute it to service-core (promotion PR
+      # #3991 measured it as a phantom package named `coverage-merged`). Stage
+      # it under its workspace-relative path and upload the staging root, so
+      # the artifact has the same layout as the unit shards. The staging dir
+      # must NOT be a dot-directory: upload-artifact defaults to
+      # `include-hidden-files: false` and silently skips it, which failed the
+      # step with "no files found" on #3991.
+      - name: Stage service-core integration coverage under its package path
+        if: matrix.suite == 'packages' && ((github.event_name == 'push' && github.ref == 'refs/heads/main') || (github.event_name == 'pull_request' && github.base_ref == 'main'))
+        run: |
+          mkdir -p coverage-integration-artifact/packages/service-core/coverage
+          cp packages/service-core/coverage/coverage-final.json coverage-integration-artifact/packages/service-core/coverage/coverage-final.json
+      - name: Upload service-core integration coverage
+        if: matrix.suite == 'packages' && ((github.event_name == 'push' && github.ref == 'refs/heads/main') || (github.event_name == 'pull_request' && github.base_ref == 'main'))
+        uses: actions/upload-artifact@v7
+        with:
+          name: coverage-shard-integration-service-core
+          path: coverage-integration-artifact/
+          if-no-files-found: error
+          retention-days: 7
       # Through turbo, never `pnpm --filter`: turbo's strict env mode is what
       # keeps the workflow-level secrets (HOSPEDA_DATABASE_URL,
       # HOSPEDA_BETTER_AUTH_SECRET, ...) out of the suite. Without it they win
@@ -951,7 +995,9 @@ jobs:
     name: Coverage Threshold
     runs-on: ubuntu-latest
     timeout-minutes: 10
-    needs: test-unit
+    # test-integration too (HOS-1960): its `packages` leg uploads the
+    # service-core integration coverage this job merges in.
+    needs: [test-unit, test-integration]
     # Coverage artifacts exist on main pushes and on PRs targeting main
     # (see test-unit job). On PRs targeting staging and on staging pushes
     # this job is skipped and ci-pass treats the skipped result as
@@ -1030,12 +1076,14 @@ jobs:
             # Framework-app floors (web 55, admin 45, api 70) stay low by
             # design — those surfaces are covered by integration/E2E, not
             # per-file unit tests. The only remaining sub-90 floor is
-            # service-core. It was 88 (real coverage 90.2%). On 2026-10-30 it
-            # was lowered TEMPORARILY to 71, the measured coverage, because the
-            # HOS-1352 billing redesign was first measured on promotion PR #3914
-            # (this job never runs on PRs to staging) at 71.37%. That was an
-            # owner decision, made so the V6 cutover is not blocked. HOS-1960
-            # restores coverage and raises this floor back to 88. Everything else is
+            # service-core, at 88. It dropped to 71.37% when the HOS-1352 billing
+            # redesign was first measured on promotion PR #3914 (this job never
+            # runs on PRs to staging), and was floored at 71 on 2026-10-30 so the
+            # V6 cutover was not blocked. HOS-1960 found the cause: that code is
+            # tested by the real-DB integration suite (test/integration/services),
+            # which the gate did not count. The integration run now uploads its
+            # coverage too and this job merges it with the unit shards (measured
+            # locally: unit 72.8% + integration -> 93.3% lines). Everything else is
             # at the 90% default — icons, billing, schemas, notifications,
             # seed and feedback were ratcheted back to 90 as coverage was restored.
             THRESHOLD=90
@@ -1051,8 +1099,8 @@ jobs:
               # apps; ratchet up under SPEC-236.
               THRESHOLD=15
             elif [ "$PACKAGE_NAME" = "service-core" ]; then
-              # TEMPORARY floor (HOS-1960): back to 88 once coverage is restored.
-              THRESHOLD=71
+              # Merged unit + real-DB integration coverage (HOS-1960).
+              THRESHOLD=88
             fi
 
             if (( $(echo "$COVERAGE < $THRESHOLD" | bc -l) )); then

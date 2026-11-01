@@ -11,15 +11,15 @@ import type { CatalogEntry, SummaryLocale } from './summary.types';
 
 /** Default event category labels (mirror the FilterSidebar config). */
 export const DEFAULT_EVENT_CATEGORIES: readonly CatalogEntry[] = [
-    { key: 'MUSIC', label: { es: 'música', en: 'music' } },
-    { key: 'CULTURE', label: { es: 'cultura', en: 'culture' } },
-    { key: 'SPORTS', label: { es: 'deportes', en: 'sports' } },
-    { key: 'GASTRONOMY', label: { es: 'gastronomía', en: 'gastronomy' } },
-    { key: 'FESTIVAL', label: { es: 'festival', en: 'festival' } },
-    { key: 'NATURE', label: { es: 'naturaleza', en: 'nature' } },
-    { key: 'THEATER', label: { es: 'teatro', en: 'theater' } },
-    { key: 'WORKSHOP', label: { es: 'taller', en: 'workshop' } },
-    { key: 'OTHER', label: { es: 'otros', en: 'other' } }
+    { key: 'MUSIC', label: { es: 'música', en: 'music', pt: 'música' } },
+    { key: 'CULTURE', label: { es: 'cultura', en: 'culture', pt: 'cultura' } },
+    { key: 'SPORTS', label: { es: 'deportes', en: 'sports', pt: 'esportes' } },
+    { key: 'GASTRONOMY', label: { es: 'gastronomía', en: 'gastronomy', pt: 'gastronomia' } },
+    { key: 'FESTIVAL', label: { es: 'festival', en: 'festival', pt: 'festival' } },
+    { key: 'NATURE', label: { es: 'naturaleza', en: 'nature', pt: 'natureza' } },
+    { key: 'THEATER', label: { es: 'teatro', en: 'theater', pt: 'teatro' } },
+    { key: 'WORKSHOP', label: { es: 'taller', en: 'workshop', pt: 'oficina' } },
+    { key: 'OTHER', label: { es: 'otros', en: 'other', pt: 'outros' } }
 ] as const;
 
 /**
@@ -29,14 +29,30 @@ export const DEFAULT_EVENT_CATEGORIES: readonly CatalogEntry[] = [
  * keys in sync with the page.
  */
 export const SORT_KEY_PHRASES: Readonly<Record<string, Record<SummaryLocale, string>>> = {
-    upcoming: { es: 'por fecha más próxima', en: 'by closest date' },
-    farthest: { es: 'por última fecha primero', en: 'by latest date first' },
-    newest: { es: 'por publicación más reciente', en: 'by most recently added' },
-    oldest: { es: 'por publicación más antigua', en: 'by oldest first' },
-    featured: { es: 'con los destacados primero', en: 'with featured first' },
-    nameAsc: { es: 'por nombre, A a Z', en: 'by name, A to Z' },
-    nameDesc: { es: 'por nombre, Z a A', en: 'by name, Z to A' },
-    mostSaved: { es: 'por más guardados', en: 'by most saved' }
+    upcoming: { es: 'por fecha más próxima', en: 'by closest date', pt: 'por data mais próxima' },
+    farthest: {
+        es: 'por última fecha primero',
+        en: 'by latest date first',
+        pt: 'por última data primeiro'
+    },
+    newest: {
+        es: 'por publicación más reciente',
+        en: 'by most recently added',
+        pt: 'por publicação mais recente'
+    },
+    oldest: {
+        es: 'por publicación más antigua',
+        en: 'by oldest first',
+        pt: 'por publicação mais antiga'
+    },
+    featured: {
+        es: 'con los destacados primero',
+        en: 'with featured first',
+        pt: 'com os destacados primeiro'
+    },
+    nameAsc: { es: 'por nombre, A a Z', en: 'by name, A to Z', pt: 'por nome, de A a Z' },
+    nameDesc: { es: 'por nombre, Z a A', en: 'by name, Z to A', pt: 'por nome, de Z a A' },
+    mostSaved: { es: 'por más guardados', en: 'by most saved', pt: 'por mais salvos' }
 };
 
 /**
@@ -101,6 +117,35 @@ const PHRASES: Readonly<Record<SummaryLocale, Readonly<Record<string, string>>>>
         when_next60: 'in the next 60 days',
         when_past: 'already finished',
         noResultsFound: 'No results found for'
+    },
+    pt: {
+        showing: 'Mostrando',
+        of: 'de',
+        eventSingular: 'evento',
+        eventPlural: 'eventos',
+        noFiltersActive: 'sem filtros ativos',
+        sortedBy: 'ordenados',
+        in: 'em',
+        containing: 'que contêm',
+        inNameOrDescription: 'no nome ou na descrição',
+        and: 'e',
+        or: 'ou',
+        ofCategory: 'de',
+        priceFrom: 'com preço a partir de',
+        priceUpTo: 'com preço de até',
+        priceBetween: 'com preço entre',
+        onlyFree: 'gratuitos',
+        excludingUnpriced: 'sem contar eventos sem preço definido',
+        onlyFeatured: 'somente destacados',
+        dateFrom: 'a partir de',
+        dateTo: 'até',
+        dateBetween: 'entre',
+        when_today: 'que acontecem hoje',
+        when_week: 'durante esta semana',
+        when_month: 'durante este mês',
+        when_next60: 'nos próximos 60 dias',
+        when_past: 'já encerrados',
+        noResultsFound: 'Nenhum resultado encontrado para'
     }
 } as const;
 

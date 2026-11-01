@@ -52,13 +52,13 @@
     },
     {
       "name": "HOSPEDA_BRAND_PHONE",
-      "description": "Hospeda's brand contact phone number (HOS-364), in call/display form — WITHOUT the AR mobile 9 (e.g. '+54 3442 453797'). Single source of truth for every phone surface in apps/web: the footer, the contact page, the FAQ WhatsApp CTA, the six presentation pages, and the schema.org Organization telephone. web derives the display text, the tel: href, and the wa.me WhatsApp link (which inserts the AR mobile 9) all from this one value via apps/web/src/lib/brand-phone.ts — no call site should hardcode the number again.",
-      "descriptionEs": "Teléfono de contacto de la marca Hospeda (HOS-364), en formato de llamada/display — SIN el 9 móvil argentino (ej: '+54 3442 453797'). Fuente única para toda superficie de teléfono en apps/web: el footer, la página de contacto, el CTA de WhatsApp de las FAQ, las seis páginas de presentación y el telephone del Organization de schema.org. web deriva el texto a mostrar, el href tel: y el link de WhatsApp wa.me (que inserta el 9 móvil) a partir de este único valor vía apps/web/src/lib/brand-phone.ts — ningún call site debería volver a hardcodear el número.",
+      "description": "Hospeda's brand contact phone number (HOS-364), in call/display form — WITHOUT the AR mobile 9 (e.g. '+54 3442 470650'). Single source of truth for every phone surface in apps/web: the footer, the contact page, the FAQ WhatsApp CTA, the six presentation pages, and the schema.org Organization telephone. web derives the display text, the tel: href, and the wa.me WhatsApp link (which inserts the AR mobile 9) all from this one value via apps/web/src/lib/brand-phone.ts — no call site should hardcode the number again.",
+      "descriptionEs": "Teléfono de contacto de la marca Hospeda (HOS-364), en formato de llamada/display — SIN el 9 móvil argentino (ej: '+54 3442 470650'). Fuente única para toda superficie de teléfono en apps/web: el footer, la página de contacto, el CTA de WhatsApp de las FAQ, las seis páginas de presentación y el telephone del Organization de schema.org. web deriva el texto a mostrar, el href tel: y el link de WhatsApp wa.me (que inserta el 9 móvil) a partir de este único valor vía apps/web/src/lib/brand-phone.ts — ningún call site debería volver a hardcodear el número.",
       "type": "string",
       "required": false,
       "secret": false,
-      "defaultValue": "+54 3442 453797",
-      "exampleValue": "+54 3442 453797",
+      "defaultValue": "+54 3442 470650",
+      "exampleValue": "+54 3442 470650",
       "apps": [
         "web"
       ],
@@ -2424,14 +2424,14 @@
       "type": "string",
       "required": false,
       "secret": false,
-      "defaultValue": "Content-Type,Authorization,X-Requested-With,X-Idempotency-Key,X-Client-Locale,X-Forwarded-For,X-Real-IP,X-Request-ID",
-      "exampleValue": "Content-Type,Authorization,X-Requested-With,X-Idempotency-Key,X-Client-Locale,X-Forwarded-For,X-Real-IP,X-Request-ID",
+      "defaultValue": "Content-Type,Authorization,X-Requested-With,X-Client-Locale,X-Forwarded-For,X-Real-IP,X-Request-ID",
+      "exampleValue": "Content-Type,Authorization,X-Requested-With,X-Client-Locale,X-Forwarded-For,X-Real-IP,X-Request-ID",
       "apps": [
         "api"
       ],
       "category": "api-config",
-      "howToObtain": "Headers the browser may send. Default covers Content-Type/Authorization/X-Requested-With + the IP/request-id headers the API actually reads. X-Idempotency-Key and X-Client-Locale are enforced in code (getCorsConfig REQUIRED_HEADERS) even if an override here omits them — a non-simple header missing from this list silently fails the browser preflight for every cross-origin mutation, not just the one that reads it, so this example lists them explicitly rather than relying on the code-side safety net alone. Add more if you introduce new x-* request headers (e.g. x-actor-id for impersonation).",
-      "howToObtainEs": "Headers que el navegador puede mandar. El default cubre Content-Type/Authorization/X-Requested-With + los headers de IP/request-id que la API realmente lee. X-Idempotency-Key y X-Client-Locale se fuerzan en código (getCorsConfig REQUIRED_HEADERS) aunque un override acá los omita — un header no-simple ausente de esta lista hace fallar el preflight del navegador para TODA mutación cross-origin, no sólo la que lo lee, así que este ejemplo los lista explícitamente en vez de depender sólo de la red de seguridad del código. Agregá más si incorporás nuevos headers x-* en el request (ej: x-actor-id para impersonar)."
+      "howToObtain": "Headers the browser may send. Default covers Content-Type/Authorization/X-Requested-With + the IP/request-id headers the API actually reads. X-Client-Locale and X-Correlation-ID are enforced in code (getCorsConfig REQUIRED_HEADERS) even if an override here omits them — a non-simple header missing from this list silently fails the browser preflight for every cross-origin mutation, not just the one that reads it, so this example lists them explicitly rather than relying on the code-side safety net alone. Add more if you introduce new x-* request headers (e.g. x-actor-id for impersonation).",
+      "howToObtainEs": "Headers que el navegador puede mandar. El default cubre Content-Type/Authorization/X-Requested-With + los headers de IP/request-id que la API realmente lee. X-Client-Locale y X-Correlation-ID se fuerzan en código (getCorsConfig REQUIRED_HEADERS) aunque un override acá los omita — un header no-simple ausente de esta lista hace fallar el preflight del navegador para TODA mutación cross-origin, no sólo la que lo lee, así que este ejemplo los lista explícitamente en vez de depender sólo de la red de seguridad del código. Agregá más si incorporás nuevos headers x-* en el request (ej: x-actor-id para impersonar)."
     },
     {
       "name": "API_CORS_EXPOSE_HEADERS",

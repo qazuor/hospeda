@@ -1,0 +1,30 @@
+{
+    "name": "@repo/videos",
+    "version": "0.0.0",
+    "private": true,
+    "type": "module",
+    "description": "Hospeda tutorial videos: Playwright takes of the real app, edited and rendered with Remotion. Generated media lives outside the repo (HOSPEDA_MARKETING_ASSETS_DIR).",
+    "scripts": {
+        "studio": "remotion studio",
+        "render:test": "tsx scripts/render.mts Test test.mp4",
+        "render:a1": "tsx scripts/render.mts A1 a1.mp4",
+        "record:a1": "tsx record/record-a1.mts",
+        "probe": "tsx record/probe.mts",
+        "typecheck": "tsc --noEmit --project ./tsconfig.json"
+    },
+    "dependencies": {
+        "@remotion/cli": "4.0.539",
+        "@remotion/google-fonts": "4.0.539",
+        "react": "19.2.8",
+        "react-dom": "19.2.8",
+        "remotion": "4.0.539"
+    },
+    "devDependencies": {
+        "@repo/typescript-config": "workspace:*",
+        "@types/node": "^26.6.1",
+        "@types/react": "19.2.18",
+        "playwright": "^1.63.0",
+        "tsx": "^4.23.13",
+        "typescript": "6.0.3"
+    }
+}

@@ -224,9 +224,7 @@ export const startCronScheduler = async (): Promise<void> => {
                                     tags: {
                                         module: 'cron',
                                         job_name: job.name,
-                                        ...(job.name === 'dunning'
-                                            ? { event_type: 'dunning_failure' }
-                                            : { event_type: 'cron_soft_failure' })
+                                        event_type: 'cron_soft_failure'
                                     },
                                     contexts: {
                                         cron: {
@@ -256,8 +254,7 @@ export const startCronScheduler = async (): Promise<void> => {
                         // Capture to Sentry with consistent tags so the Sentry alert
                         // rules can match.
                         // Tags pinned by the alert configuration: module=cron,
-                        // job_name=<name>. The dunning job carries an extra
-                        // event_type=dunning_failure tag for its dedicated alert.
+                        // job_name=<name>.
                         Sentry.captureException(
                             error instanceof Error ? error : new Error(errorMessage),
                             {
@@ -265,9 +262,7 @@ export const startCronScheduler = async (): Promise<void> => {
                                 tags: {
                                     module: 'cron',
                                     job_name: job.name,
-                                    ...(job.name === 'dunning'
-                                        ? { event_type: 'dunning_failure' }
-                                        : { event_type: 'cron_failure' })
+                                    event_type: 'cron_failure'
                                 },
                                 contexts: {
                                     cron: {

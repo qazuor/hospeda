@@ -1,24 +1,21 @@
 ---
 /**
  * @file Pagination.astro
- * @description Accessible pagination component with URL-segment and query-param routing modes.
+ * @description Accessible pagination component. ONE URL scheme for every listing
+ * (HOS-1797): page 1 is the listing root, page N is `{base}/page/N/`. Filters
+ * ride along as a query string via `searchParams`, which never carries `page`.
  * Renders previous/next buttons and page numbers with an ellipsis algorithm.
  * Mobile-responsive: shows 3 page buttons (current ± 1) on mobile, 5 on desktop.
  * Uses web CSS custom properties and scoped styles (no Tailwind).
  *
- * @example Segment mode (default)
+ * @example Without filters
  * ```astro
- * <Pagination
- *   currentPage={2}
- *   totalPages={10}
- *   baseUrl="/es/alojamientos"
- *   locale="es"
- * />
+ * <Pagination currentPage={2} totalPages={10} baseUrl="/es/alojamientos" locale="es" />
  * // Page 1 → /es/alojamientos/
  * // Page 2 → /es/alojamientos/page/2/
  * ```
  *
- * @example Query-param mode
+ * @example With filters preserved across pages
  * ```astro
  * <Pagination
  *   currentPage={3}
@@ -28,11 +25,12 @@
  *   searchParams={new URLSearchParams('q=playa&tipo=cabana')}
  * />
  * // Page 1 → /es/alojamientos/?q=playa&tipo=cabana
- * // Page 3 → /es/alojamientos/?q=playa&tipo=cabana&page=3
+ * // Page 3 → /es/alojamientos/page/3/?q=playa&tipo=cabana
  * ```
  */
 
 import { createT, type SupportedLocale } from '../../../lib/i18n';
+import { buildPaginatedPath } from '../../../lib/listing/listing-pagination';
 
 /**
  * Props for the Pagination component.
@@ -50,9 +48,9 @@ interface Props {
     /** Locale used for ARIA labels and translated button text. Defaults to "es". */
     readonly locale?: SupportedLocale;
     /**
-     * When provided, the component switches to query-param mode: `?page=N&...params`.
-     * Pass any extra search params that must be preserved across pages (e.g. filters).
-     * Page 1 removes the `page` param entirely to keep URLs canonical.
+     * Extra search params preserved across pages (e.g. filters), appended as a
+     * query string AFTER the `/page/N/` path segment. Any `page` key is dropped:
+     * the page number only ever lives in the path.
      */
     readonly searchParams?: URLSearchParams;
     /** Additional CSS class merged onto the `<nav>` element. */
@@ -79,40 +77,22 @@ const labels = {
 } as const;
 
 /**
- * Build the href for a given page number.
- *
- * In hybrid mode (`searchParams` provided):
- *   - Page segment in the URL path (`/page/N/`) for page > 1, canonical (`/`) for page 1.
- *   - Filter params preserved as query string (page param excluded from query).
- *
- * In pure segment mode (default, no `searchParams`):
- *   - Page 1 → `{base}/`
- *   - Page N → `{base}/page/{N}/`
+ * Build the href for a given page number: `{base}/` for page 1,
+ * `{base}/page/{N}/` after, plus the preserved filters as a query string.
+ * The path itself comes from {@link buildPaginatedPath}, the same function
+ * listings use for their canonical, so the two cannot drift.
  *
  * @param page - Target page number.
  * @returns Fully formed URL string.
  */
 function buildPageUrl(page: number): string {
     const base = baseUrl.endsWith('/') ? baseUrl.slice(0, -1) : baseUrl;
+    const path = buildPaginatedPath({ basePath: `${base}/`, page });
 
-    if (searchParams) {
-        // Hybrid mode: segment-based page number + query params for filters
-        const params = new URLSearchParams(searchParams);
-        params.delete('page'); // page goes in URL segment, not query
-        const qs = params.toString();
-        const suffix = qs ? `?${qs}` : '';
-
-        if (page === 1) {
-            return `${base}/${suffix}`;
-        }
-        return `${base}/page/${page}/${suffix}`;
-    }
-
-    // Pure segment mode (no filters)
-    if (page === 1) {
-        return `${base}/`;
-    }
-    return `${base}/page/${page}/`;
+    const params = new URLSearchParams(searchParams);
+    params.delete('page');
+    const qs = params.toString();
+    return qs ? `${path}?${qs}` : path;
 }
 
 /**

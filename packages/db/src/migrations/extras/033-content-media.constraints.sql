@@ -25,8 +25,8 @@
 -- featured invariant.
 --
 -- Idempotency:
---   Each block guards on table existence first (skips silently on a fresh DB
---   where the structural migration has not run yet), then uses IF NOT EXISTS /
+--   Each block guards on table existence first (raises if the table is missing, HOS-1794:
+--   run the structural migration first), then uses IF NOT EXISTS /
 --   pg_constraint lookups so re-applying is a no-op.
 -- =============================================================================
 
@@ -40,8 +40,7 @@ BEGIN
     WHERE table_schema = 'public'
       AND table_name   = 'post_media'
   ) THEN
-    RAISE NOTICE 'Table post_media does not exist, skipping uq_post_media_single_featured.';
-    RETURN;
+    RAISE EXCEPTION 'extras/033: table % does not exist, cannot ensure uq_post_media_single_featured. Run pnpm db:migrate before pnpm db:apply-extras.', 'post_media';
   END IF;
 
   -- Drop first so we can recreate with the updated predicate (idempotent).
@@ -63,8 +62,7 @@ BEGIN
     WHERE table_schema = 'public'
       AND table_name   = 'post_media'
   ) THEN
-    RAISE NOTICE 'Table post_media does not exist, skipping chk_post_media_featured_not_archived.';
-    RETURN;
+    RAISE EXCEPTION 'extras/033: table % does not exist, cannot ensure chk_post_media_featured_not_archived. Run pnpm db:migrate before pnpm db:apply-extras.', 'post_media';
   END IF;
 
   IF NOT EXISTS (
@@ -92,8 +90,7 @@ BEGIN
     WHERE table_schema = 'public'
       AND table_name   = 'event_media'
   ) THEN
-    RAISE NOTICE 'Table event_media does not exist, skipping uq_event_media_single_featured.';
-    RETURN;
+    RAISE EXCEPTION 'extras/033: table % does not exist, cannot ensure uq_event_media_single_featured. Run pnpm db:migrate before pnpm db:apply-extras.', 'event_media';
   END IF;
 
   -- Drop first so we can recreate with the updated predicate (idempotent).
@@ -115,8 +112,7 @@ BEGIN
     WHERE table_schema = 'public'
       AND table_name   = 'event_media'
   ) THEN
-    RAISE NOTICE 'Table event_media does not exist, skipping chk_event_media_featured_not_archived.';
-    RETURN;
+    RAISE EXCEPTION 'extras/033: table % does not exist, cannot ensure chk_event_media_featured_not_archived. Run pnpm db:migrate before pnpm db:apply-extras.', 'event_media';
   END IF;
 
   IF NOT EXISTS (

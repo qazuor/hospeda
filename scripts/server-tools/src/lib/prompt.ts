@@ -6,7 +6,23 @@
  */
 
 import * as p from '@clack/prompts';
-import { log } from './log.ts';
+import { die, log } from './log.ts';
+import { ttyRefusal } from './typed-confirmation.ts';
+
+/**
+ * Exit with an error when the prompt cannot be answered because stdin or
+ * stdout is not a TTY (HOS-1963). Without this, clack renders the prompt and
+ * the command ends silently without the answer. Every prompt wrapper calls it
+ * first.
+ */
+function requireTty(message: string): void {
+    const refusal = ttyRefusal({
+        stdinIsTty: process.stdin.isTTY,
+        stdoutIsTty: process.stdout.isTTY,
+        message
+    });
+    if (refusal !== undefined) die(refusal, 1);
+}
 
 /**
  * Ask a yes/no question. Returns true on yes. Cancels (Ctrl+C) abort
@@ -16,6 +32,7 @@ export async function confirm(
     message: string,
     opts: { defaultValue?: boolean } = {}
 ): Promise<boolean> {
+    requireTty(message);
     const answer = await p.confirm({
         message,
         initialValue: opts.defaultValue ?? false
@@ -42,6 +59,7 @@ export async function pickOne<T>(
     if (options.length === 0) {
         throw new Error(`pickOne: cannot pick from an empty list (${message})`);
     }
+    requireTty(message);
 
     const choice = await p.select({
         message,
@@ -92,6 +110,7 @@ export async function promptText(input: {
     readonly placeholder?: string;
     readonly validate?: (value: string) => string | undefined;
 }): Promise<string> {
+    requireTty(input.message);
     const answer = await p.text({
         message: input.message,
         placeholder: input.placeholder,

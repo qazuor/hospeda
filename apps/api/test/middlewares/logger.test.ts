@@ -39,6 +39,16 @@ describe('Logger Middleware', () => {
         app.get('/test', (c) => c.json({ message: 'success' }));
         app.get('/error', (c) => c.json({ error: 'test error' }, 400));
         app.get('/server-error', (c) => c.json({ error: 'server error' }, 500));
+        app.get('/api/v1/protected/billing/subscriptions', (c) =>
+            c.json({ error: 'busy' }, 503, { 'Retry-After': '60' })
+        );
+        app.post('/api/v1/webhooks/mercadopago', (c) =>
+            c.json({ error: 'busy' }, 503, { 'Retry-After': '60' })
+        );
+        app.get('/maintenance', (c) =>
+            c.json({ error: 'maintenance' }, 503, { 'Retry-After': '60' })
+        );
+        app.get('/unavailable', (c) => c.json({ error: 'down' }, 503));
 
         // Reset env defaults so a prior test's override does not leak.
         mockEnv.API_ENABLE_REQUEST_LOGGING = true;
@@ -80,6 +90,49 @@ describe('Logger Middleware', () => {
                 vi.mocked(await import('../../src/utils/logger')).apiLogger.error
             ).toHaveBeenCalledWith(
                 expect.stringContaining('GET http://localhost/server-error 500'),
+                'ERROR'
+            );
+        });
+
+        it('logs a 503 carrying Retry-After at warn level, never error (HOS-1968)', async () => {
+            const { apiLogger } = await import('../../src/utils/logger');
+            const res = await app.request('/api/v1/protected/billing/subscriptions');
+
+            expect(res.status).toBe(503);
+            expect(vi.mocked(apiLogger.warn)).toHaveBeenCalledWith(
+                expect.stringContaining(
+                    'GET http://localhost/api/v1/protected/billing/subscriptions 503'
+                ),
+                'WARNING'
+            );
+            expect(vi.mocked(apiLogger.error)).not.toHaveBeenCalled();
+        });
+
+        it('logs the Mercado Pago webhook deferral at warn level (HOS-1976)', async () => {
+            const { apiLogger } = await import('../../src/utils/logger');
+            await app.request('/api/v1/webhooks/mercadopago', { method: 'POST' });
+
+            expect(vi.mocked(apiLogger.warn)).toHaveBeenCalledTimes(1);
+            expect(vi.mocked(apiLogger.error)).not.toHaveBeenCalled();
+        });
+
+        it('keeps a 503 + Retry-After from an unknown producer at error level (HOS-1976)', async () => {
+            const { apiLogger } = await import('../../src/utils/logger');
+            await app.request('/maintenance');
+
+            expect(vi.mocked(apiLogger.error)).toHaveBeenCalledWith(
+                expect.stringContaining('GET http://localhost/maintenance 503'),
+                'ERROR'
+            );
+            expect(vi.mocked(apiLogger.warn)).not.toHaveBeenCalled();
+        });
+
+        it('still logs a 503 without Retry-After at error level (HOS-1968)', async () => {
+            const { apiLogger } = await import('../../src/utils/logger');
+            await app.request('/unavailable');
+
+            expect(vi.mocked(apiLogger.error)).toHaveBeenCalledWith(
+                expect.stringContaining('GET http://localhost/unavailable 503'),
                 'ERROR'
             );
         });

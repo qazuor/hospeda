@@ -113,9 +113,9 @@ export const getCorsConfig = () => {
             // override omits one, to prevent a misconfigured deploy from
             // silently breaking browser mutations. Each entry's own reason:
             //
-            // - X-Idempotency-Key: formerly required by `idempotencyKeyMiddleware`
-            //   (SPEC-143 T-143-60; removed by HOS-1416) on the retired /billing/subscriptions/start-paid,
-            //   /billing/addons/:slug/purchase, /billing/addons/:id/cancel.
+            // - (X-Idempotency-Key is NOT here any more: its only enforcer,
+            //   `idempotencyKeyMiddleware`, was removed by HOS-1416 and no browser
+            //   client sends it. HOS-1885 F7.)
             // - X-Client-Locale: sent by apps/web's API client on every
             //   browser-initiated request (HOS-605) so `resolveReturnUrlLocale`
             //   knows the visitor's actual page locale. Missing it from this
@@ -129,10 +129,10 @@ export const getCorsConfig = () => {
             const parsed = parseCommaSeparated(
                 _safe.get(
                     'API_CORS_ALLOW_HEADERS',
-                    'Content-Type,Authorization,X-Requested-With,X-Idempotency-Key,X-Client-Locale'
+                    'Content-Type,Authorization,X-Requested-With,X-Client-Locale'
                 )
             );
-            const REQUIRED_HEADERS = ['X-Idempotency-Key', 'X-Client-Locale', 'X-Correlation-ID'];
+            const REQUIRED_HEADERS = ['X-Client-Locale', 'X-Correlation-ID'];
             const lowerParsed = new Set(parsed.map((h) => h.toLowerCase()));
             const missing = REQUIRED_HEADERS.filter((h) => !lowerParsed.has(h.toLowerCase()));
             return [...parsed, ...missing];

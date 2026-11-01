@@ -6,7 +6,7 @@
  */
 
 import { toBcp47Locale } from '@repo/i18n/web';
-import type { SummaryLocale } from './summary.types';
+import type { SummaryGender, SummaryLocale } from './summary.types';
 
 // ---------------------------------------------------------------------------
 // Price formatting
@@ -225,6 +225,38 @@ export interface PluralizeWordInput {
  */
 export function pluralizeWord({ count, singular, plural }: PluralizeWordInput): string {
     return count === 1 ? singular : plural;
+}
+
+// ---------------------------------------------------------------------------
+// Gender / number agreement
+// ---------------------------------------------------------------------------
+
+/** Input for {@link agreeParticiples}. */
+export interface AgreeParticiplesInput {
+    /** Phrase written with masculine plural participles ("destacados primero"). */
+    readonly text: string;
+    readonly locale: SummaryLocale;
+    readonly gender: SummaryGender;
+    readonly plural: boolean;
+}
+
+const PARTICIPLE_PATTERN = /\b(antigu|antig|destacad)os\b/g;
+
+/**
+ * Re-inflects the known masculine-plural adjectives of a catalog phrase
+ * ("antiguos", "destacados") to match the subject's gender and number.
+ * English is invariant, and text without those words is returned unchanged.
+ *
+ * @example
+ * ```ts
+ * agreeParticiples({ text: 'destacados primero', locale: 'es', gender: 'feminine', plural: false })
+ * // => 'destacada primero'
+ * ```
+ */
+export function agreeParticiples({ text, locale, gender, plural }: AgreeParticiplesInput): string {
+    if (locale === 'en') return text;
+    const ending = `${gender === 'feminine' ? 'a' : 'o'}${plural ? 's' : ''}`;
+    return text.replace(PARTICIPLE_PATTERN, (_match, stem: string) => `${stem}${ending}`);
 }
 
 // ---------------------------------------------------------------------------

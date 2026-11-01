@@ -342,9 +342,10 @@ describe('GET /accommodations (Enhanced List)', () => {
                     const data = await response.json();
                     expect(data.success).toBe(true);
 
-                    // All returned items should match the filter type
+                    // All returned items should match the filter type. HOS-1938:
+                    // the filter is case-insensitive, so `type=hotel` returns `HOTEL` rows.
                     for (const item of data.data.items) {
-                        expect(item.type).toBe(type);
+                        expect(item.type).toBe(type.toUpperCase());
                     }
                 }
             }

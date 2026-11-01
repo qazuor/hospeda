@@ -44,7 +44,7 @@ import type { Context } from 'hono';
 import { z } from 'zod';
 import { getActorFromContext } from '../../../utils/actor';
 import { apiLogger } from '../../../utils/logger';
-import { createCRUDRoute } from '../../../utils/route-factory';
+import { createProtectedRoute } from '../../../utils/route-factory';
 
 const postService = new PostService({ logger: apiLogger });
 
@@ -53,7 +53,7 @@ const postService = new PostService({ logger: apiLogger });
  *
  * Permission model: the service helper `updatePostMedia` gates on `checkPostCanEditMedia`, which delegates to `checkCanUpdatePost` — editing a post's photo text IS editing the post, so it cannot require less.
  */
-export const protectedUpdatePostMediaRoute = createCRUDRoute({
+export const protectedUpdatePostMediaRoute = createProtectedRoute({
     method: 'patch',
     path: '/{id}/media/{mediaId}',
     summary: 'Correct photo text metadata in post gallery',
@@ -63,6 +63,7 @@ export const protectedUpdatePostMediaRoute = createCRUDRoute({
         'to replace. At least one field must be present — an empty body is a ' +
         'VALIDATION_ERROR, not a silent 200. Requires the same permission as updating the post.',
     tags: ['Post', 'Post Media'],
+    protectedTag: false,
     requestParams: {
         id: z.string().uuid({ message: 'zodError.common.id.invalidUuid' }),
         mediaId: z.string().uuid({ message: 'zodError.common.id.invalidUuid' })

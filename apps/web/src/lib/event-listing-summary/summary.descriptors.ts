@@ -10,24 +10,25 @@
  * domain-agnostic.
  */
 
+import { toBcp47Locale } from '@repo/i18n/web';
 import {
     cleanText,
     formatNaturalList,
     formatPrice
 } from '../accommodation-listing-summary/summary.helpers';
 import { getPhrase, lookupCatalogLabel } from './summary.catalogs';
-import type { FilterDescriptor } from './summary.types';
+import type { FilterDescriptor, SummaryLocale } from './summary.types';
 
 /**
  * Format an ISO `yyyy-mm-dd` string as a locale-friendly short date.
  * Example (es): "20/05/2026". Example (en): "May 20, 2026".
  */
-function formatIsoDay(iso: string, locale: 'es' | 'en'): string {
+function formatIsoDay(iso: string, locale: SummaryLocale): string {
     const [y, m, d] = iso.split('-').map(Number);
     if (!y || !m || !d) return iso;
     const date = new Date(y, m - 1, d, 12);
     if (Number.isNaN(date.getTime())) return iso;
-    const fmt = new Intl.DateTimeFormat(locale === 'es' ? 'es-AR' : 'en-US', {
+    const fmt = new Intl.DateTimeFormat(toBcp47Locale(locale), {
         day: '2-digit',
         month: 'short',
         year: 'numeric'

@@ -82,6 +82,12 @@ export const webDark: Theme = {
     'accent-foreground': oklchValue(0.1, 0.01, 55),
 
     destructive: oklchValue(0.6, 0.22, 27),
+    // HOS-1942: `destructive` (0.6) is the FILL colour and reads only 3.37:1 as text
+    // on --core-card (3.24:1 on --surface-elevated). Outlined danger buttons put it
+    // on the surface as text and border, so they use this lifted twin instead: 5.56:1
+    // on the card and 5.34:1 on elevated. The fill token stays put because the solid
+    // danger button pairs it with a near-white foreground.
+    'destructive-text': oklchValue(0.72, 0.22, 27),
     'destructive-foreground': oklchValue(0.98, 0, 0),
 
     overlay: 'oklch(0.05 0.01 220 / 0.7)',

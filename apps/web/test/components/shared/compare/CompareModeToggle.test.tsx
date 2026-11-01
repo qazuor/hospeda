@@ -61,12 +61,14 @@ vi.mock('@repo/icons', () => ({
 }));
 
 const mockToggleCompareMode = vi.fn();
+const mockSetCompareMode = vi.fn();
 const mockLoadCompareModeFromStorage = vi.fn();
 const mockMode = vi.hoisted(() => ({ value: false }));
 
 vi.mock('../../../../src/store/compare-store', () => ({
     useCompareMode: () => mockMode.value,
     toggleCompareMode: (...args: unknown[]) => mockToggleCompareMode(...args),
+    setCompareMode: (...args: unknown[]) => mockSetCompareMode(...args),
     loadCompareModeFromStorage: (...args: unknown[]) => mockLoadCompareModeFromStorage(...args)
 }));
 
@@ -155,6 +157,7 @@ vi.mock('@/lib/auth-cache', () => ({
 
 beforeEach(() => {
     vi.clearAllMocks();
+    window.sessionStorage.clear();
     mockMode.value = false;
     mockGuard.value = { canCompare: true, isLoading: false };
     // Default: a guest. Tests that need a confirmed session override this —
@@ -388,5 +391,28 @@ describe('CompareModeToggle — returnUrl for auth redirect (HOS-1185)', () => {
         // `/es/mi-cuenta/` fallback the guard uses when it rejects the input.
         expect(resolved).toBe(originalPath);
         expect(resolved).not.toBe('/es/mi-cuenta/');
+    });
+});
+
+describe('CompareModeToggle — compare tapped before sign-in (HOS-1925)', () => {
+    it('turns compare mode on once after login, without a second click', () => {
+        // Arrange: a guest taps compare on the listing
+        mockGuard.value = { canCompare: false, isLoading: false };
+        window.history.pushState({}, '', '/es/alojamientos/');
+        const guest = render(<CompareModeToggle locale="es" />);
+        fireEvent.click(screen.getByRole('button'));
+        guest.unmount();
+
+        // Act: back on the page, signed in and entitled
+        mockReadCachedAuthMe.mockReturnValue(buildAuthSnapshot({ isAuthenticated: true }));
+        mockGuard.value = { canCompare: true, isLoading: false };
+        const back = render(<CompareModeToggle locale="es" />);
+
+        // Assert: applied once; a remount does not replay it
+        expect(mockSetCompareMode).toHaveBeenCalledTimes(1);
+        expect(mockSetCompareMode).toHaveBeenCalledWith(true);
+        back.unmount();
+        render(<CompareModeToggle locale="es" />);
+        expect(mockSetCompareMode).toHaveBeenCalledTimes(1);
     });
 });

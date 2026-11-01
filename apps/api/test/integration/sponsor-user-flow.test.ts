@@ -22,7 +22,6 @@
  * - HOS-1913: a foreign sponsorship answers 403.
  * - HOS-1916: the seeded SPONSOR cannot create, update, delete or read analytics
  *   of its own sponsorships, and the list ignores the page.
- * - HOS-1905: a sponsorship with no package makes `GET /:id` answer 500.
  */
 
 import { PermissionEnum, RoleEnum, SponsorshipTargetTypeEnum } from '@repo/schemas';
@@ -137,9 +136,9 @@ describe('Sponsor User E2E Flow', () => {
             });
         });
 
-        // HOS-1905: a sponsorship with no package makes the response schema reject the
-        // relation loader's `package: null`, so the read answers 500.
-        it.fails('should view a sponsorship that has no package (HOS-1905)', async () => {
+        // HOS-1905: package_id is nullable, so the relation loader's `package: null` must pass
+        // response stripping.
+        it('should view a sponsorship that has no package (HOS-1905)', async () => {
             const unpackaged = await seedSponsorship({
                 sponsorUserId: sponsorId,
                 level,
@@ -151,20 +150,6 @@ describe('Sponsor User E2E Flow', () => {
             });
 
             expect(res.status).toBe(200);
-        });
-
-        it('currently answers 500 for a sponsorship that has no package (HOS-1905)', async () => {
-            const unpackaged = await seedSponsorship({
-                sponsorUserId: sponsorId,
-                level,
-                withPackage: false
-            });
-
-            const res = await app.request(`${BASE}/${unpackaged.id}`, {
-                headers: sponsorHeaders()
-            });
-
-            expect(res.status).toBe(500);
         });
 
         it('should answer 404 for the retired billing invoices endpoint', async () => {

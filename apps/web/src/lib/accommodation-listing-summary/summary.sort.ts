@@ -5,8 +5,14 @@
  * appended to the end of the summary sentence.
  */
 
-import { DEFAULT_SORT_KEYS } from './summary.catalogs';
-import type { AccommodationSort, SummaryCatalogs, SummaryLocale } from './summary.types';
+import { DEFAULT_SORT_KEYS, getSortedByPhrase } from './summary.catalogs';
+import { agreeParticiples } from './summary.helpers';
+import type {
+    AccommodationSort,
+    SummaryCatalogs,
+    SummaryGender,
+    SummaryLocale
+} from './summary.types';
 
 // ---------------------------------------------------------------------------
 // Types
@@ -20,6 +26,10 @@ export interface BuildSortPhraseInput {
     readonly catalogs: SummaryCatalogs;
     /** Output locale. */
     readonly locale: SummaryLocale;
+    /** Gender of the sentence subject (default: masculine). */
+    readonly gender?: SummaryGender;
+    /** Whether the sentence subject is plural (default: true). */
+    readonly plural?: boolean;
 }
 
 // ---------------------------------------------------------------------------
@@ -62,11 +72,16 @@ export interface BuildSortPhraseInput {
  * // => ''
  * ```
  */
-export function buildSortPhrase({ sort, catalogs, locale }: BuildSortPhraseInput): string {
+export function buildSortPhrase({
+    sort,
+    catalogs,
+    locale,
+    gender = 'masculine',
+    plural = true
+}: BuildSortPhraseInput): string {
     if (!sort) return '';
 
-    const sortedByPhrase =
-        locale === 'es' ? 'ordenados por' : locale === 'pt' ? 'ordenados por' : 'sorted by';
+    const sortedByPhrase = getSortedByPhrase({ locale, gender, plural });
 
     // Look up sort key in catalog, falling back to defaults
     const sortKeys = catalogs.sortKeys ?? DEFAULT_SORT_KEYS;
@@ -79,7 +94,12 @@ export function buildSortPhrase({ sort, catalogs, locale }: BuildSortPhraseInput
     }
 
     const label = entry.label[locale];
-    const directionPhrase = sort.direction === 'asc' ? entry.asc[locale] : entry.desc[locale];
+    const directionPhrase = agreeParticiples({
+        text: sort.direction === 'asc' ? entry.asc[locale] : entry.desc[locale],
+        locale,
+        gender,
+        plural
+    });
 
     return `${sortedByPhrase} ${label}, ${directionPhrase}`;
 }

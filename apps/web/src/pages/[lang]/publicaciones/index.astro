@@ -182,13 +182,12 @@ const cards = items.map((item) => toArticleCardProps({ item: item as unknown as 
  * replace the generic "N resultados encontrados" line in the wave header.
  * Mirrors the events pattern via the parallel `post-listing-summary` module.
  */
-const summaryLocale: 'es' | 'en' = locale === 'pt' ? 'es' : locale;
 const destinationCatalog = destinations.map((d) => ({
     key: d.id,
-    label: { es: d.name, en: d.name } as const
+    label: { es: d.name, en: d.name, pt: d.name } as const
 }));
 const filterSummary = buildPostListingSummary({
-    locale: summaryLocale,
+    locale,
     filters: {
         text: q,
         category,

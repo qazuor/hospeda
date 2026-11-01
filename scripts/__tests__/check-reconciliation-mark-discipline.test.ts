@@ -2,7 +2,7 @@ import { execFileSync } from 'node:child_process';
 import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
-import { afterEach, describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import {
     COURTESY_FILE,
     MARK_MODEL_FILE,
@@ -11,6 +11,21 @@ import {
     S14_FILE,
     S15_FILE
 } from '../check-reconciliation-mark-discipline.js';
+
+const parseCounter = vi.hoisted(() => ({ calls: 0 }));
+vi.mock('typescript', async (importOriginal) => {
+    const actual = await importOriginal<{ default: Record<string, unknown> }>();
+    const original = actual.default.createSourceFile as (...a: unknown[]) => unknown;
+    const wrapped = Object.create(actual.default, {
+        createSourceFile: {
+            value: (...args: unknown[]) => {
+                parseCounter.calls++;
+                return original(...args);
+            }
+        }
+    });
+    return { ...actual, default: wrapped };
+});
 
 const repo = path.resolve(import.meta.dirname, '../..');
 const dirs: string[] = [];
@@ -83,6 +98,14 @@ describe('TEST:B3:27 GUARD:G-R1-F', () => {
         expect(result.output).toMatch(/\(c\) [1-9]\d* listings? checked/);
         expect(result.output).toContain('mark consumers registered');
     }, 30000);
+    it('parses each production file exactly once per run (HOS-1910)', () => {
+        const root = tree();
+        parseCounter.calls = 0;
+        const result = run({ root, minScannedFiles: 1 });
+        expect(result.exitCode).toBe(0);
+        // One parse per file plus the two catalog reads (reasons, close reasons).
+        expect(parseCounter.calls).toBeLessThanOrEqual(Object.keys(base).length + 2);
+    });
     it('is green on the minimum valid source tree', () => {
         const result = check();
         expect(result.exitCode).toBe(0);

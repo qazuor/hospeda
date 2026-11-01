@@ -2,8 +2,9 @@
  * @file env-config-helpers.test.ts
  * @description Unit tests for the getCorsConfig() helper in env-config-helpers.ts.
  *
- * SPEC-203: Verifies that X-Idempotency-Key is always present in the resolved
- * CORS allowHeaders, even when the env override omits it (FIX 1).
+ * Verifies that the browser-mutation headers (X-Client-Locale, X-Correlation-ID) are always
+ * present in the resolved CORS allowHeaders, even when the env override omits them.
+ * X-Idempotency-Key left the list with its enforcer (HOS-1416, HOS-1885 F7).
  *
  * HOS-605: X-Client-Locale joined the same REQUIRED_HEADERS enforcement after
  * its absence broke EVERY cross-origin browser mutation (not just locale
@@ -21,7 +22,6 @@ import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 const HELPER_PATH = '../../src/utils/env-config-helpers';
 
 describe.each([
-    { header: 'X-Idempotency-Key', reason: 'idempotencyKeyMiddleware (SPEC-203)' },
     { header: 'X-Client-Locale', reason: 'browser locale signal (HOS-605)' },
     { header: 'X-Correlation-ID', reason: 'correlation sent back by the client (HOS-1424)' }
 ])('getCorsConfig — allowHeaders always includes $header ($reason)', ({ header }) => {
@@ -184,6 +184,26 @@ describe('getRateLimitConfig — protected tier (HOS-186)', () => {
 
         const { getRateLimitConfig } = await import(HELPER_PATH);
         expect(getRateLimitConfig().protectedMaxRequests).toBe(5000);
+    });
+});
+
+describe('getCorsConfig — retired X-Idempotency-Key (HOS-1885 F7)', () => {
+    afterEach(() => {
+        Reflect.deleteProperty(process.env, 'API_CORS_ALLOW_HEADERS');
+    });
+
+    it('is not forced into allowHeaders when the override omits it', async () => {
+        process.env.API_CORS_ALLOW_HEADERS = 'Content-Type,Authorization';
+        const { getCorsConfig } = await import(HELPER_PATH);
+        const headers = (getCorsConfig().allowHeaders as string[]).map((h) => h.toLowerCase());
+        expect(headers).not.toContain('x-idempotency-key');
+    });
+
+    it('is not in the default allowHeaders', async () => {
+        Reflect.deleteProperty(process.env, 'API_CORS_ALLOW_HEADERS');
+        const { getCorsConfig } = await import(HELPER_PATH);
+        const headers = (getCorsConfig().allowHeaders as string[]).map((h) => h.toLowerCase());
+        expect(headers).not.toContain('x-idempotency-key');
     });
 });
 

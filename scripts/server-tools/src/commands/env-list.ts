@@ -15,9 +15,11 @@
  */
 
 import * as p from '@clack/prompts';
-import { findContainer, getApplicationUuid } from '../lib/container-lookup.ts';
+import { resolveAppUuidByName } from '../lib/api-env-source.ts';
+import { getActiveTarget } from '../lib/container-lookup.ts';
 import { CoolifyApiError, type CoolifyEnvVar, createCoolifyClient } from '../lib/coolify.ts';
 import { die, log } from '../lib/log.ts';
+import { getAppResourceName } from '../lib/target.ts';
 
 const KINDS = ['api', 'web', 'admin'] as const;
 type App = (typeof KINDS)[number];
@@ -85,12 +87,15 @@ export async function envList(argv: ReadonlyArray<string>): Promise<void> {
         die(`Unknown app '${kindRaw}'. Known: ${KINDS.join(', ')}.`);
     }
 
-    const container = await findContainer(kindRaw);
-    const uuid = await getApplicationUuid(container);
-
+    // The Coolify API is the source of these vars, so no container is needed
+    // (HOS-1962): this works while the app is stopped, mid-cutover.
     const client = createCoolifyClient();
     let vars: ReadonlyArray<CoolifyEnvVar>;
     try {
+        const uuid = await resolveAppUuidByName({
+            coolify: client,
+            resourceName: getAppResourceName(getActiveTarget(), kindRaw)
+        });
         vars = await client.listEnvVars(uuid);
     } catch (err) {
         if (err instanceof CoolifyApiError) {

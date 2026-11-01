@@ -71,6 +71,17 @@ for (const shardRoot of shardRoots) {
         // Drop the shard root prefix and the trailing `/coverage/coverage-final.json`.
         const rel = relative(shardRoot, file);
         const pkgPath = dirname(dirname(rel));
+        // A file with no package prefix (e.g. an artifact that uploaded a
+        // single coverage-final.json, which upload-artifact stores bare at the
+        // artifact root) cannot be attributed to any package. Merging it
+        // anyway produced a phantom package named after the output dir and
+        // silently left the real package without that coverage (HOS-1960).
+        if (pkgPath === '.' || pkgPath === '' || pkgPath.startsWith('..')) {
+            console.error(
+                `Cannot attribute ${file} to a package: expected <pkg-path>/coverage/coverage-final.json under ${shardRoot}`
+            );
+            process.exit(1);
+        }
         if (!groups.has(pkgPath)) groups.set(pkgPath, []);
         groups.get(pkgPath).push(file);
     }

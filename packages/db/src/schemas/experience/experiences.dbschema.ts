@@ -59,9 +59,33 @@ export const experiences = pgTable(
         type: ExperienceTypePgEnum('type').notNull(),
         /**
          * Starting price in integer centavos (project-wide "Money = integer" rule).
-         * Use 0 when isPriceOnRequest is true.
+         *
+         * NULLABLE since HOS-1943 (owner decision 01/11, option a): an experience
+         * with `isPriceOnRequest = true` has no price, and stores NULL rather than
+         * 0. A 0 read as "$0" (free) everywhere the flag was not checked first,
+         * and sorted as the cheapest listing. NULL is "no price", which every
+         * consumer has to handle explicitly.
+         *
+         * No default: a row that omits the price must not be born with a fake 0.
+         *
+         * Two directions, enforced differently, and NOT by the database:
+         * - NULL ⇒ on request. Creates through the API: the `*Checked` create
+         *   schemas (`requirePriceFromUnlessOnRequest`). Updates:
+         *   `ExperienceService._beforeUpdate` rejects (VALIDATION_ERROR) a write
+         *   that leaves the flag off with a NULL price, judged against the row
+         *   the hook already loaded. A write that bypasses the service (raw SQL,
+         *   a seed) is not covered.
+         * - On request ⇒ NULL. `ExperienceService` writes NULL whenever the flag
+         *   is on after the write. Rows written before HOS-1943 hold 0 until
+         *   `0132-hos1943-price-on-request-null` runs; rows with a positive price
+         *   behind the flag are left as they are.
+         *
+         * No CHECK constraint yet. It cannot ship in the same release as the
+         * backfill: `db:apply-extras` runs BEFORE `db:seed:migrate`, so it would
+         * reject the rows the backfill has not reached. Until it lands, readers
+         * must treat NULL, 0 and a hidden positive price as "no price shown".
          */
-        priceFrom: integer('price_from').notNull().default(0),
+        priceFrom: integer('price_from'),
         /**
          * Billing unit (per_day / per_hour / per_person / per_group).
          *
@@ -79,7 +103,7 @@ export const experiences = pgTable(
         priceUnit: ExperiencePriceUnitPgEnum('price_unit'),
         /**
          * When true, the UI shows "Consultar precio" instead of the numeric priceFrom.
-         * Store priceFrom = 0 alongside this flag.
+         * Store priceFrom = NULL alongside this flag (HOS-1943).
          */
         isPriceOnRequest: boolean('is_price_on_request').notNull().default(false),
         /**

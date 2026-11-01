@@ -89,6 +89,20 @@ function getBaseUrl(): string {
 const REQUEST_TIMEOUT = 10_000;
 
 /**
+ * Headers carrying the visiting client's IP for the current SSR request
+ * (HOS-1973). Empty in the browser and outside a request scope. Read through
+ * a `globalThis` accessor so this browser-safe module never imports
+ * `node:async_hooks` (see `visitor-ip-context.ts`).
+ */
+function getVisitorHeaders(): Record<string, string> {
+    if (!import.meta.env.SSR) return {};
+    const accessor = (globalThis as Record<symbol, unknown>)[
+        Symbol.for('hospeda.web.visitorForwardHeaders')
+    ];
+    return typeof accessor === 'function' ? (accessor as () => Record<string, string>)() : {};
+}
+
+/**
  * Serialize query parameters into a URL search string.
  */
 function serializeParams(params?: Record<string, unknown>): string {
@@ -152,8 +166,7 @@ async function request<T>({
     /**
      * Additional request headers to merge in alongside the defaults (Accept,
      * Content-Type, cookie). Used by callers that hit endpoints requiring
-     * extra headers like `X-Idempotency-Key` (the billing mutating endpoints
-     * enforce this via `idempotencyKeyMiddleware` — see SPEC-143 T-143-60).
+     * extra headers.
      */
     headers?: Record<string, string>;
     /**
@@ -185,6 +198,7 @@ async function request<T>({
             const url = `${getBaseUrl()}${path}${serializeParams(params)}`;
             const headers: Record<string, string> = {
                 Accept: 'application/json',
+                ...getVisitorHeaders(),
                 ...extraHeaders
             };
             if (body) {
@@ -415,11 +429,9 @@ export const apiClient = {
     /**
      * POST request with authentication credentials.
      *
-     * @param headers - Optional extra request headers. Required when hitting
-     *   endpoints that were wrapped by the retired `idempotencyKeyMiddleware`
-     *   (`/billing/subscriptions/start-paid`, all removed by HOS-1416; `/billing/addons/:slug/purchase`,
-     *   `/billing/addons/:id/cancel`) which enforce `X-Idempotency-Key`. Send
-     *   a fresh UUID v4 per logical user action (`crypto.randomUUID()`).
+     * @param headers - Optional extra request headers. `X-Idempotency-Key` is no longer
+     *   enforced by any endpoint (`idempotencyKeyMiddleware` was removed by HOS-1416) and is
+     *   not allowed by the CORS preflight; do not send it from a browser.
      * @param timeoutMs - Optional override for the request's abort timeout, in
      *   milliseconds. Defaults to 10s. Use for endpoints whose backend work
      *   legitimately exceeds the default budget (e.g. the AI translate

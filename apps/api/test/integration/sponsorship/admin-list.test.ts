@@ -159,24 +159,18 @@ describe('Admin Sponsorship List Route', () => {
             });
     };
 
-    // HOS-1905: SponsorshipAdminSchema declares
-    // `package: SponsorshipPackageSchema.optional()` (sponsorship.access.schema.ts:122) but
-    // sponsorships.package_id is nullable and the relation loader emits `package: null`
-    // (sponsorship.service.ts:52), so response stripping throws and the list answers 500
-    // (response-helpers.ts:201).
-    it('currently answers 500 when a listed sponsorship has no package (HOS-1905)', async () => {
-        await seedUnpackagedSponsorship();
-        const res = await list({ query: '?page=1&pageSize=10', permissions: lister });
-        expect(res.status).toBe(500);
-    });
-
-    // Drop `.fails` (and the test above) once HOS-1905 is fixed.
-    it.fails('lists a sponsorship that has no package (HOS-1905)', async () => {
+    // HOS-1905: package_id is nullable, so the relation loader emits `package: null`.
+    it('lists a sponsorship that has no package (HOS-1905)', async () => {
         await seedUnpackagedSponsorship();
         const res = await list({ query: '?page=1&pageSize=10', permissions: lister });
         expect(res.status).toBe(200);
         const body = await res.json();
         expect(body.data.items).toHaveLength(seededCount + 1);
+        const unpackaged = body.data.items.filter(
+            (item: { packageId: string | null }) => item.packageId === null
+        );
+        expect(unpackaged).toHaveLength(1);
+        expect(unpackaged[0].package ?? null).toBeNull();
     });
 
     it('answers 400 for an unknown sponsorshipStatus', async () => {

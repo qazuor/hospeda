@@ -7,6 +7,20 @@ import type { MiddlewareHandler } from 'hono';
 import { env } from '../utils/env';
 import { apiLogger } from '../utils/logger';
 
+/**
+ * The routes that answer a deliberate "ask again" 503 with `Retry-After` (HOS-1976): the card
+ * subscription start (provider throttled or unavailable) and the Mercado Pago webhook (provider
+ * record still being written). Only these are downgraded; a 503 + `Retry-After` from anywhere
+ * else (maintenance middleware, a proxy) is still an outage and stays at ERROR.
+ */
+const DEFERRAL_ROUTE_PREFIXES = [
+    '/api/v1/protected/billing/subscriptions',
+    '/api/v1/webhooks/mercadopago'
+] as const;
+
+const isDeferralRoute = (path: string): boolean =>
+    DEFERRAL_ROUTE_PREFIXES.some((prefix) => path === prefix || path.startsWith(`${prefix}/`));
+
 export const loggerMiddleware: MiddlewareHandler = async (c, next) => {
     const startTime = Date.now();
     const method = c.req.method;
@@ -44,7 +58,13 @@ export const loggerMiddleware: MiddlewareHandler = async (c, next) => {
     // logged — you never want to silently drop them. The routine access log
     // (2xx success + 4xx client warnings) is gated by API_ENABLE_REQUEST_LOGGING
     // and skipped for health probes.
-    if (status >= 500) {
+    // HOS-1968/HOS-1976: a 503 that carries Retry-After from a known producer is a deliberate "ask again" (provider throttled,
+    // webhook notice deferred), not a crash: WARN, so it does not page as an [ERROR].
+    const isDeliberateDeferral =
+        status === 503 && c.res.headers.has('Retry-After') && isDeferralRoute(c.req.path);
+    if (isDeliberateDeferral) {
+        apiLogger.warn(`⚠️ HTTP DEFERRED => ${logMessage}`, 'WARNING');
+    } else if (status >= 500) {
         apiLogger.error(`❌ HTTP ERROR => ${logMessage}`, 'ERROR');
     } else if (!env.API_ENABLE_REQUEST_LOGGING || isHealthProbe) {
         // Routine access log suppressed (request logging disabled or health probe).

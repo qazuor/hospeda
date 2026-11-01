@@ -10,7 +10,7 @@ import {
 } from '@repo/schemas';
 import { PostService, ServiceError } from '@repo/service-core';
 import type { Context } from 'hono';
-import { getActorFromContext } from '../../../utils/actor';
+import { createGuestActor } from '../../../utils/actor';
 import { apiLogger } from '../../../utils/logger';
 import { extractPaginationParams, getPaginationResponse } from '../../../utils/pagination';
 import { createPublicListRoute } from '../../../utils/route-factory';
@@ -30,8 +30,8 @@ export const publicGetPostsByCategoryRoute = createPublicListRoute({
     requestParams: { category: PostCategoryEnumSchema },
     requestQuery: PostsByCategoryHttpSchema.shape,
     responseSchema: PostPublicSchema,
-    handler: async (ctx: Context, params: Record<string, unknown>, _body, query) => {
-        const actor = getActorFromContext(ctx);
+    handler: async (_ctx: Context, params: Record<string, unknown>, _body, query) => {
+        const actor = createGuestActor();
         const { page, pageSize } = extractPaginationParams(query || {});
         const result = await postService.getByCategory(actor, {
             category: params.category as PostCategoryEnum

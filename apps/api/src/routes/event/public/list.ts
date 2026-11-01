@@ -11,7 +11,7 @@
  */
 import { EventPublicSchema, EventSearchHttpSchema, type HttpEventSearch } from '@repo/schemas';
 import { EventService, ServiceError } from '@repo/service-core';
-import { getActorFromContext } from '../../../utils/actor';
+import { createGuestActor } from '../../../utils/actor';
 import { apiLogger } from '../../../utils/logger';
 import { extractPaginationParams, getPaginationResponse } from '../../../utils/pagination';
 import { createPublicListRoute } from '../../../utils/route-factory';
@@ -64,8 +64,8 @@ export const publicListEventsRoute = createPublicListRoute({
     tags: ['Events'],
     requestQuery: EventSearchHttpSchema.shape,
     responseSchema: EventPublicSchema,
-    handler: async (ctx, _params, _body, query) => {
-        const actor = getActorFromContext(ctx);
+    handler: async (_ctx, _params, _body, query) => {
+        const actor = createGuestActor();
         const { page, pageSize } = extractPaginationParams(query || {});
 
         const httpParams = (query ?? {}) as HttpEventSearch;

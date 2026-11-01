@@ -55,11 +55,11 @@ describe('PermissionSearchHttpSchema — safeParse', () => {
 
     it('should accept permissions array filter as comma-separated string', () => {
         const result = PermissionSearchHttpSchema.safeParse({
-            permissions: 'manage:users,view:dashboard'
+            permissions: 'user.create,post.create'
         });
         expect(result.success).toBe(true);
         if (result.success) {
-            expect(result.data.permissions).toEqual(['manage:users', 'view:dashboard']);
+            expect(result.data.permissions).toEqual(['user.create', 'post.create']);
         }
     });
 
@@ -117,14 +117,14 @@ describe('httpToDomainPermissionSearch', () => {
     it('should preserve permissions array when provided', () => {
         // Arrange
         const parsed = PermissionSearchHttpSchema.parse({
-            permissions: 'view:posts'
+            permissions: 'post.update'
         });
 
         // Act
         const result = httpToDomainPermissionSearch(parsed);
 
         // Assert
-        expect(result.permissions).toEqual(['view:posts']);
+        expect(result.permissions).toEqual(['post.update']);
     });
 
     it('should handle empty input with all-undefined fields', () => {

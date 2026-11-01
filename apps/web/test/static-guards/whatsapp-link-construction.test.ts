@@ -74,14 +74,14 @@ const MIN_SCANNED_FILES = 400;
 /**
  * The invariant core of the brand's phone number: its ten local digits, with
  * no country code and no AR mobile `9`. Present, contiguous, in EVERY
- * spelling this issue found — `3442 453797`, `3442453797`,
- * `+54 3442 453797`, `+54 9 3442 453797`, `543442453797`, `5493442453797` —
+ * spelling this issue found (shown with the current number) — `3442 470650`, `3442470650`,
+ * `+54 3442 470650`, `+54 9 3442 470650`, `543442470650`, `5493442470650` —
  * because none of those variations touch these ten digits, only what
  * precedes them. Matched against a PER-LINE digit-only projection of the
  * source (see {@link lineHasCoreDigits}), so a phone written across two
  * unrelated tokens can never falsely concatenate into this string.
  */
-const CORE_DIGITS = '3442453797';
+const CORE_DIGITS = '3442470650';
 
 /**
  * Files allowed to contain the literal, each because the digits there are
@@ -92,10 +92,7 @@ const CORE_DIGITS = '3442453797';
 const LITERAL_EXEMPTIONS: Readonly<Record<string, string>> = Object.freeze({
     'env-schema.ts':
         'the Zod default for HOSPEDA_BRAND_PHONE — the one place the literal must ' +
-        'live so an unset env var still resolves to a real, dialable number',
-    'lib/whatsapp.ts':
-        "documents a real, measured incident (dated in the file) against Hospeda's " +
-        'own number — historical record in a doc comment, not a rendered call site'
+        'live so an unset env var still resolves to a real, dialable number'
 });
 
 /** Recursively collects scannable files under `dir`. */
@@ -197,7 +194,7 @@ describe('HOS-364 static guard — the brand phone number has one source, no lit
         });
 
         it('the AR mobile 9 is present ONLY in the WhatsApp form, never in the call form', () => {
-            const callDigits = getBrandPhoneE164().replace(/\D/g, ''); // e.g. 543442453797
+            const callDigits = getBrandPhoneE164().replace(/\D/g, ''); // e.g. 543442470650
             const waUrl = getBrandPhoneWhatsAppUrl();
             const waDigits = (waUrl ?? '').replace('https://wa.me/', '').split('?')[0] ?? '';
 

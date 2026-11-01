@@ -125,4 +125,60 @@ describe('TEST:1746:4/5 signup provider rejection route', () => {
         expect(response.status).toBeGreaterThanOrEqual(500);
         expect((await response.json()).error.reason).not.toBe('PROVIDER_REJECTED');
     });
+    it('answers a throttled provider (429) with a retryable 503 and lets the next attempt recreate', async () => {
+        const { user, option } = await fixture();
+        const fake = new FakePaymentProvider({ clock, idNamespace: crypto.randomUUID() });
+        const authorize = vi.spyOn(fake, 'authorize').mockRejectedValueOnce(
+            new PaymentProviderError({
+                code: 'UNAVAILABLE',
+                capability: 'authorize',
+                message: 'Mercado Pago request failed (429)',
+                cause: { status: 429, body: { message: 'local_rate_limited' } },
+                transient: { kind: 'RATE_LIMITED', retryAfterSeconds: 42 }
+            })
+        );
+        const app = initApp({ clock, paymentProvider: fake });
+        const first = await request(app, user.id, option.id, user.email);
+        expect(first.status).toBe(503);
+        expect(first.headers.get('Retry-After')).toBe('42');
+        expect((await first.json()).error).toMatchObject({
+            code: 'PROVIDER_RATE_LIMITED',
+            reason: 'PROVIDER_BUSY'
+        });
+        const row = await subscriptionModel.findLiveCommitment({
+            userId: user.id,
+            vertical: 'accommodation'
+        });
+        expect(row?.subscription.status).toBe('PENDING_AUTHORIZATION');
+        const retry = await request(app, user.id, option.id, user.email);
+        expect(retry.status).toBe(201);
+        expect((await retry.json()).data.subscriptionId).toBe(row!.subscription.id);
+        expect(authorize).toHaveBeenCalledTimes(2);
+    });
+
+    it('answers a provider outage (5xx) with a retryable 503 and leaves the attempt for the sweep', async () => {
+        const { user, option } = await fixture();
+        const fake = new FakePaymentProvider({ clock, idNamespace: crypto.randomUUID() });
+        vi.spyOn(fake, 'authorize').mockRejectedValueOnce(
+            new PaymentProviderError({
+                code: 'UNAVAILABLE',
+                capability: 'authorize',
+                message: 'Mercado Pago request failed (502)',
+                cause: { status: 502, body: '' },
+                transient: { kind: 'UNAVAILABLE' }
+            })
+        );
+        const app = initApp({ clock, paymentProvider: fake });
+        const first = await request(app, user.id, option.id, user.email);
+        expect(first.status).toBe(503);
+        expect(first.headers.get('Retry-After')).toBeNull();
+        expect((await first.json()).error).toMatchObject({
+            code: 'SERVICE_UNAVAILABLE',
+            reason: 'PROVIDER_UNAVAILABLE'
+        });
+        // The outcome of a 5xx write is unknown: the key stays open, so an immediate retry is held.
+        const retry = await request(app, user.id, option.id, user.email);
+        expect(retry.status).toBe(409);
+        expect((await retry.json()).error.reason).toBe('PREVIOUS_ATTEMPT_IN_PROGRESS');
+    });
 });

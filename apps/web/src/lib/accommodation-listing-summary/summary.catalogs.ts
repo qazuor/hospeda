@@ -6,7 +6,13 @@
  * their own entries with the defaults exported here.
  */
 
-import type { CatalogEntry, SortKeyEntry, SummaryLocale, TypeGrammarEntry } from './summary.types';
+import type {
+    CatalogEntry,
+    SortKeyEntry,
+    SummaryGender,
+    SummaryLocale,
+    TypeGrammarEntry
+} from './summary.types';
 
 // ---------------------------------------------------------------------------
 // Accommodation type grammar
@@ -29,51 +35,61 @@ import type { CatalogEntry, SortKeyEntry, SummaryLocale, TypeGrammarEntry } from
 export const DEFAULT_TYPE_GRAMMAR: readonly TypeGrammarEntry[] = [
     {
         key: 'APARTMENT',
+        gender: { es: 'masculine', en: 'masculine', pt: 'masculine' },
         singular: { es: 'departamento', en: 'apartment', pt: 'apartamento' },
         plural: { es: 'departamentos', en: 'apartments', pt: 'apartamentos' }
     },
     {
         key: 'HOUSE',
+        gender: { es: 'feminine', en: 'masculine', pt: 'feminine' },
         singular: { es: 'casa', en: 'house', pt: 'casa' },
         plural: { es: 'casas', en: 'houses', pt: 'casas' }
     },
     {
         key: 'COUNTRY_HOUSE',
+        gender: { es: 'feminine', en: 'masculine', pt: 'feminine' },
         singular: { es: 'casa quinta', en: 'country house', pt: 'casa de campo' },
         plural: { es: 'casas quinta', en: 'country houses', pt: 'casas de campo' }
     },
     {
         key: 'CABIN',
+        gender: { es: 'feminine', en: 'masculine', pt: 'feminine' },
         singular: { es: 'cabaña', en: 'cabin', pt: 'cabana' },
         plural: { es: 'cabañas', en: 'cabins', pt: 'cabanas' }
     },
     {
         key: 'HOTEL',
+        gender: { es: 'masculine', en: 'masculine', pt: 'masculine' },
         singular: { es: 'hotel', en: 'hotel', pt: 'hotel' },
         plural: { es: 'hoteles', en: 'hotels', pt: 'hotéis' }
     },
     {
         key: 'HOSTEL',
+        gender: { es: 'masculine', en: 'masculine', pt: 'masculine' },
         singular: { es: 'hostel', en: 'hostel', pt: 'hostel' },
         plural: { es: 'hostels', en: 'hostels', pt: 'hostels' }
     },
     {
         key: 'CAMPING',
+        gender: { es: 'masculine', en: 'masculine', pt: 'masculine' },
         singular: { es: 'camping', en: 'campsite', pt: 'camping' },
         plural: { es: 'campings', en: 'campsites', pt: 'campings' }
     },
     {
         key: 'ROOM',
+        gender: { es: 'feminine', en: 'masculine', pt: 'masculine' },
         singular: { es: 'habitación', en: 'room', pt: 'quarto' },
         plural: { es: 'habitaciones', en: 'rooms', pt: 'quartos' }
     },
     {
         key: 'MOTEL',
+        gender: { es: 'masculine', en: 'masculine', pt: 'masculine' },
         singular: { es: 'motel', en: 'motel', pt: 'motel' },
         plural: { es: 'moteles', en: 'motels', pt: 'motéis' }
     },
     {
         key: 'RESORT',
+        gender: { es: 'masculine', en: 'masculine', pt: 'masculine' },
         singular: { es: 'resort', en: 'resort', pt: 'resort' },
         plural: { es: 'resorts', en: 'resorts', pt: 'resorts' }
     }
@@ -156,6 +172,7 @@ export const PHRASES: Readonly<Record<SummaryLocale, Readonly<Record<string, str
         sortedBy: 'ordenados por',
         in: 'en',
         containing: 'que contienen',
+        containingSingular: 'que contiene',
         inNameOrDescription: 'en el nombre o la descripción',
         priceFrom: 'con precio desde',
         priceUpTo: 'con precio de hasta',
@@ -190,6 +207,7 @@ export const PHRASES: Readonly<Record<SummaryLocale, Readonly<Record<string, str
         sortedBy: 'sorted by',
         in: 'in',
         containing: 'containing',
+        containingSingular: 'containing',
         inNameOrDescription: 'in name or description',
         priceFrom: 'with price from',
         priceUpTo: 'with price up to',
@@ -224,6 +242,7 @@ export const PHRASES: Readonly<Record<SummaryLocale, Readonly<Record<string, str
         sortedBy: 'ordenados por',
         in: 'em',
         containing: 'que contêm',
+        containingSingular: 'que contém',
         inNameOrDescription: 'no nome ou na descrição',
         priceFrom: 'com preço a partir de',
         priceUpTo: 'com preço até',
@@ -278,6 +297,41 @@ export interface GetPhraseInput {
  */
 export function getPhrase({ locale, key }: GetPhraseInput): string {
     return PHRASES[locale][key] ?? key;
+}
+
+// ---------------------------------------------------------------------------
+// Participle agreement
+// ---------------------------------------------------------------------------
+
+/** Input for {@link getSortedByPhrase}. */
+export interface GetSortedByPhraseInput {
+    readonly locale: SummaryLocale;
+    readonly gender: SummaryGender;
+    readonly plural: boolean;
+}
+
+const SORTED_BY: Readonly<Record<SummaryLocale, Record<SummaryGender, readonly [string, string]>>> =
+    {
+        es: {
+            masculine: ['ordenado por', 'ordenados por'],
+            feminine: ['ordenada por', 'ordenadas por']
+        },
+        pt: {
+            masculine: ['ordenado por', 'ordenados por'],
+            feminine: ['ordenada por', 'ordenadas por']
+        },
+        en: {
+            masculine: ['sorted by', 'sorted by'],
+            feminine: ['sorted by', 'sorted by']
+        }
+    } as const;
+
+/**
+ * Resolves "ordenado/ordenada/ordenados/ordenadas por" (es, pt) so the
+ * participle agrees with the subject. English is invariant.
+ */
+export function getSortedByPhrase({ locale, gender, plural }: GetSortedByPhraseInput): string {
+    return SORTED_BY[locale][gender][plural ? 1 : 0];
 }
 
 // ---------------------------------------------------------------------------

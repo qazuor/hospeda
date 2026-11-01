@@ -316,6 +316,7 @@ GIN/partial/functional indexes. Files are:
 - Named `NNN-name.kind.sql` (3-digit prefix for ordering, e.g. `001-search-index.matview.sql`)
 - **Idempotent** — use `IF NOT EXISTS` / `CREATE OR REPLACE` throughout
 - Re-applied on every `pnpm db:apply-extras` call (not just once)
+- **A missing target table is an error, not a skip** (HOS-1794): a constraint/index extra must `RAISE EXCEPTION` when its table does not exist, never `RAISE NOTICE ... RETURN`. A silent skip leaves the invariant absent while `db:apply-extras` exits 0. Idempotency comes from `IF NOT EXISTS` / `pg_constraint` lookups on an existing table, not from tolerating a missing one. `032-venue-experience-media.constraints.sql` is the reference; older extras (005-008, 018, 033) still skip silently (listed in HOS-1794 PR).
 
 ```bash
 pnpm db:apply-extras   # Re-apply every extras/*.sql in lexical order
@@ -693,6 +694,27 @@ documented convention deviation — do not "fix" them by adding BaseModel column
 
 Apply this pattern only for tables that are: (a) append-only, (b) never user-owned or
 role-scoped for CRUD, and (c) high-write enough that audit column overhead is measurable.
+
+## `users.role` — a better-auth placeholder, NOT a role (HOS-1932)
+
+`users.role text NULL` exists for ONE reason: better-auth >= 1.7 validates the Drizzle
+schema at runtime against the fields its plugins declare, and the `admin()` plugin
+declares `user.role`. Without the column every auth request fails with
+`Drizzle schema mismatch: Missing columns user.role` (sign-up answered 500). HOS-296
+had dropped the real scalar; the roles a user holds live in `user_role`.
+
+Rules:
+
+- **Always NULL.** `user.create.before` in `apps/api/src/lib/auth.ts` strips the value the
+  plugin injects. Granting or revoking a role never touches this column.
+- **Never read it for authorization.** Authorization is `PermissionEnum` resolved from
+  `user_role`. `apps/api/test/lib/auth-schema-validation.guard.test.ts` fails on any
+  `user.role` / `session.user.role` read in production code, and `pnpm check:role-never-decides`
+  covers role-constant comparisons.
+- **Do not re-add an enum, a NOT NULL or a default.** That would turn the placeholder into the
+  second source of truth HOS-296 removed.
+- Do not set `advanced.database.validateSchema: false` again to get around a missing plugin
+  column: add a nullable placeholder like this one, so the next drift is reported.
 
 ## `users.is_system_account` — service accounts (HOS-375)
 

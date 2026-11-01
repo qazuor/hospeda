@@ -29,10 +29,10 @@ describe('contact number — single source, two derived forms (HOS-364)', () => 
     // (see @/lib/brand-phone) instead of being hand-typed per surface.
     it('WhatsApp link uses the AR mobile prefix 549', () => {
         const whatsapp = SOCIAL_PROFILES.find((p) => p.platform === 'whatsapp');
-        expect(whatsapp?.url).toBe('https://wa.me/5493442453797');
+        expect(whatsapp?.url).toBe('https://wa.me/5493442470650');
     });
 
     it('Organization telephone is E.164 WITHOUT the AR mobile 9 — a plain call, not WhatsApp', () => {
-        expect(ORGANIZATION_INFO.telephone).toBe('+543442453797');
+        expect(ORGANIZATION_INFO.telephone).toBe('+543442470650');
     });
 });

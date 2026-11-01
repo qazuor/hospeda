@@ -73,7 +73,7 @@ try {
 <AccountLayout locale={locale} title={title} activeSection="suscripcion">
 	<AccountPageHeader title={title} />
 	<MySubscriptions locale={locale} result={ownSubscriptions} />
-	<TrialSummary locale={locale} entries={trialSummaries} />
+	<TrialSummary locale={locale} entries={trialSummaries} liveSubscriptionVerticals={ownSubscriptions?.subscriptions.map((row) => row.vertical) ?? []} />
 	{trialSummaries.some(({ summary }) => summary.status === TrialStatusEnum.TRIAL_ACTIVE) && <section data-testid="trial-promo-redeem">
 		<h2>{t('account.subscription.promoRedeem.trialSectionTitle')}</h2>
 		{trialSummaries.filter(({ summary }) => summary.status === TrialStatusEnum.TRIAL_ACTIVE).map(({ vertical }) =>

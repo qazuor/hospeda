@@ -9,7 +9,8 @@ import { z } from 'zod';
 import {
     BaseHttpSearchSchema,
     createArrayQueryParam,
-    createBooleanQueryParam
+    createBooleanQueryParam,
+    createEnumArrayQueryParam
 } from '../../api/http/base-http.schema.js';
 import {
     EventCategoryEnumSchema,
@@ -32,8 +33,9 @@ export const EventSearchHttpSchema = BaseHttpSearchSchema.extend({
      * both are present the array takes precedence in the model layer,
      * mirroring `AccommodationModel`'s `types`/`type` blueprint.
      */
-    categories: createArrayQueryParam('Filter by multiple event categories').pipe(
-        z.array(EventCategoryEnumSchema).optional()
+    categories: createEnumArrayQueryParam(
+        'Filter by multiple event categories',
+        EventCategoryEnumSchema
     ),
     isFeatured: createBooleanQueryParam('Filter featured events'),
     isVirtual: createBooleanQueryParam('Filter virtual events'),

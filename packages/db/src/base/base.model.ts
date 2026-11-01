@@ -135,6 +135,21 @@ export abstract class BaseModelImpl<T extends Record<string, unknown>> implement
     protected readonly mergeableJsonbColumns: readonly string[] = [];
 
     /**
+     * Nullable columns (camelCase Drizzle keys) whose NULL means "no value" and
+     * must sort LAST in both directions when used as `sortBy`.
+     *
+     * Postgres puts NULLs first under `DESC`, so without this a listing with no
+     * price would head a "most expensive first" sort. Default is empty, which
+     * keeps Postgres' own NULL placement for every model that does not opt in.
+     *
+     * @example
+     * ```ts
+     * protected override readonly nullsLastSortColumns = ['priceFrom'] as const;
+     * ```
+     */
+    protected readonly nullsLastSortColumns: readonly string[] = [];
+
+    /**
      * Returns the provided tx if available, otherwise returns the default db connection from getDb().
      * Safe to call with undefined.
      */
@@ -208,7 +223,12 @@ export abstract class BaseModelImpl<T extends Record<string, unknown>> implement
 
             // Build orderBy clause if sorting is requested
             const orderClause = options?.sortBy
-                ? buildOrderByClause(options.sortBy, this.table, options.sortOrder ?? 'asc')
+                ? buildOrderByClause(
+                      options.sortBy,
+                      this.table,
+                      options.sortOrder ?? 'asc',
+                      this.nullsLastSortColumns.includes(options.sortBy)
+                  )
                 : undefined;
 
             // Build query - use $dynamic() to allow conditional chaining
@@ -1089,7 +1109,12 @@ export abstract class BaseModelImpl<T extends Record<string, unknown>> implement
 
             // Build optional orderBy clause
             const orderByClause = options.sortBy
-                ? buildOrderByClause(options.sortBy, this.table, options.sortOrder ?? 'asc')
+                ? buildOrderByClause(
+                      options.sortBy,
+                      this.table,
+                      options.sortOrder ?? 'asc',
+                      this.nullsLastSortColumns.includes(options.sortBy)
+                  )
                 : undefined;
 
             const queryOptions = {

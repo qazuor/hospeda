@@ -40,7 +40,7 @@ export const serverEnvBaseSchema = z.object({
      * forms — nothing else should hardcode this number again. Defaults to the
      * currently published number so the app runs locally with no env var set.
      */
-    HOSPEDA_BRAND_PHONE: z.string().min(1).default('+54 3442 453797'),
+    HOSPEDA_BRAND_PHONE: z.string().min(1).default('+54 3442 470650'),
     /**
      * Internal API base URL for server-to-server SSR fetches (HOS-103).
      *

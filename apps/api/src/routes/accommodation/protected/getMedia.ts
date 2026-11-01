@@ -21,7 +21,7 @@ import { AccommodationService, ServiceError } from '@repo/service-core';
 import type { Context } from 'hono';
 import { getActorFromContext } from '../../../utils/actor';
 import { apiLogger } from '../../../utils/logger';
-import { createCRUDRoute } from '../../../utils/route-factory';
+import { createProtectedRoute } from '../../../utils/route-factory';
 
 const accommodationService = new AccommodationService({ logger: apiLogger });
 
@@ -35,7 +35,7 @@ const accommodationService = new AccommodationService({ logger: apiLogger });
  * An authenticated HOST owner passes the ownership branch.
  * No additional entitlement gate — read access requires only auth + ownership.
  */
-export const protectedGetMediaRoute = createCRUDRoute({
+export const protectedGetMediaRoute = createProtectedRoute({
     method: 'get',
     path: '/{id}/media',
     summary: 'List accommodation gallery photos (owner)',
@@ -44,6 +44,7 @@ export const protectedGetMediaRoute = createCRUDRoute({
         'Supports an optional `state` query filter (default: visible). ' +
         'Requires authentication; the service layer enforces UPDATE_OWN + ownership.',
     tags: ['Accommodations', 'Media'],
+    protectedTag: false,
     requestParams: {
         id: AccommodationIdSchema
     },

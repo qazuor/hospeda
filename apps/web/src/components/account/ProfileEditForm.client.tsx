@@ -27,6 +27,7 @@ import { getInitials } from '@/lib/avatar-utils';
 import { useZodForm } from '@/lib/forms/use-zod-form';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
+import { compressImageForUpload, isCompressionUnavailable } from '@/lib/media/compress-image';
 import { addToast } from '@/store/toast-store';
 import { ProfileEditAvatarSection } from './ProfileEditAvatarSection';
 import { ProfileEditExtrasSection } from './ProfileEditExtrasSection';
@@ -211,6 +212,7 @@ export function ProfileEditForm({ initialUser, locale, apiUrl }: ProfileEditForm
     const [previewUrl, setPreviewUrl] = useState<string | null>(null);
     const [avatarFile, setAvatarFile] = useState<File | null>(null);
     const [avatarUploading, setAvatarUploading] = useState(false);
+    const [avatarCompressing, setAvatarCompressing] = useState(false);
 
     // ── Form meta ─────────────────────────────────────────────────────────
     //
@@ -281,7 +283,7 @@ export function ProfileEditForm({ initialUser, locale, apiUrl }: ProfileEditForm
         fileInputRef.current?.click();
     }
 
-    function handleFileChange(e: React.ChangeEvent<HTMLInputElement>): void {
+    async function handleFileChange(e: React.ChangeEvent<HTMLInputElement>): Promise<void> {
         const file = e.target.files?.[0];
         e.target.value = '';
         if (!file) return;
@@ -290,22 +292,39 @@ export function ProfileEditForm({ initialUser, locale, apiUrl }: ProfileEditForm
             addToast({ type: 'error', message: t('account.avatar.errors.invalidType') });
             return;
         }
-        if (file.size > MAX_AVATAR_BYTES) {
+
+        // HOS-1936: resize/recompress BEFORE the size cap is checked, so a heavy
+        // phone original that shrinks under the cap is accepted. A compression
+        // failure falls back to the original file and never blocks the pick.
+        setAvatarCompressing(true);
+        let compression: Awaited<ReturnType<typeof compressImageForUpload>>;
+        try {
+            compression = await compressImageForUpload({ file });
+        } finally {
+            setAvatarCompressing(false);
+        }
+
+        const uploadableFile = compression.file;
+        if (uploadableFile.size > MAX_AVATAR_BYTES) {
             addToast({
                 type: 'error',
-                message: t(
-                    'account.avatar.errors.fileTooLarge',
-                    'Archivo muy grande (máx. {{maxSize}} MB)',
-                    { maxSize: DEFAULT_AVATAR_MAX_FILE_SIZE_MB }
-                )
+                message: isCompressionUnavailable(compression)
+                    ? t('account.avatar.errors.compressionUnsupportedTooLarge', undefined, {
+                          maxSize: DEFAULT_AVATAR_MAX_FILE_SIZE_MB
+                      })
+                    : t(
+                          'account.avatar.errors.fileTooLarge',
+                          'Archivo muy grande (máx. {{maxSize}} MB)',
+                          { maxSize: DEFAULT_AVATAR_MAX_FILE_SIZE_MB }
+                      )
             });
             return;
         }
 
         if (previewUrl) URL.revokeObjectURL(previewUrl);
-        const blobUrl = URL.createObjectURL(file);
+        const blobUrl = URL.createObjectURL(uploadableFile);
         setPreviewUrl(blobUrl);
-        setAvatarFile(file);
+        setAvatarFile(uploadableFile);
     }
 
     // ── Submit ────────────────────────────────────────────────────────────
@@ -475,6 +494,7 @@ export function ProfileEditForm({ initialUser, locale, apiUrl }: ProfileEditForm
                 activeImageUrl={activeImageUrl}
                 initials={initials}
                 avatarUploading={avatarUploading}
+                avatarCompressing={avatarCompressing}
                 submitting={submitting}
                 fileInputRef={fileInputRef}
                 t={t}
@@ -558,7 +578,7 @@ export function ProfileEditForm({ initialUser, locale, apiUrl }: ProfileEditForm
                 <button
                     type="submit"
                     className={styles.submitBtn}
-                    disabled={submitting || avatarUploading}
+                    disabled={submitting || avatarUploading || avatarCompressing}
                 >
                     {submitting
                         ? t('account.editProfile.saving', 'Guardando…')

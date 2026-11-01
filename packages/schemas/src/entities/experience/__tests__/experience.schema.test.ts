@@ -119,6 +119,35 @@ describe('ExperienceSchema', () => {
             expect(result.success).toBe(true);
         });
 
+        it('should accept priceFrom = null, the stored shape of an on-request row (HOS-1943)', () => {
+            // Arrange
+            const raw = buildValidExperience({ priceFrom: null, isPriceOnRequest: true });
+
+            // Act
+            const result = ExperienceSchema.safeParse(raw);
+
+            // Assert
+            expect(result.success).toBe(true);
+            if (result.success) {
+                expect(result.data.priceFrom).toBeNull();
+            }
+        });
+
+        it('should still require the priceFrom key (null is a value, absence is not) (HOS-1943)', () => {
+            // Arrange
+            const raw = buildValidExperience({ priceFrom: undefined });
+
+            // Act
+            const result = ExperienceSchema.safeParse(raw);
+
+            // Assert
+            expect(result.success).toBe(false);
+            if (!result.success) {
+                const issue = result.error.issues.find((i) => i.path[0] === 'priceFrom');
+                expect(issue?.message).toBe('zodError.experience.priceFrom.required');
+            }
+        });
+
         it('should accept all ExperienceTypeEnum values', () => {
             for (const type of Object.values(ExperienceTypeEnum)) {
                 const raw = buildValidExperience({ type });

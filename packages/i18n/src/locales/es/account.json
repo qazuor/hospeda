@@ -755,7 +755,9 @@
                 "messages": "Mensajes sin leer",
                 "messagesDesc": "Consultas de huéspedes",
                 "listings": "Mis fichas",
-                "listingsDesc": "Fichas publicadas"
+                "listingsDesc": "Fichas publicadas",
+                "listingsHidden_one": "{{count}} ficha sin publicar: no se ve en público.",
+                "listingsHidden_other": "{{count}} fichas sin publicar: no se ven en público."
             },
             "sectionsLabel": "Secciones"
         },

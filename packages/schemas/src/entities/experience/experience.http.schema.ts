@@ -59,8 +59,8 @@ export const ExperienceCreateHttpSchema = z.object({
     /** Experience sub-type. */
     type: ExperienceTypeEnumSchema,
     /**
-     * Starting price in integer centavos.
-     * Set to 0 when `isPriceOnRequest` is true.
+     * Starting price in integer centavos. Ignored when `isPriceOnRequest` is
+     * true: the service stores NULL for an on-request listing (HOS-1943).
      */
     priceFrom: z.coerce.number().int().nonnegative().default(0),
     /** Billing unit for the price. */

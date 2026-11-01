@@ -7,7 +7,9 @@ import { createFileRoute } from '@tanstack/react-router';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { useTranslations } from '@/hooks/use-translations';
 import { fetchApi } from '@/lib/api/client';
+import { formatShortDate } from '@/lib/format-helpers';
 
 export const Route = createFileRoute('/_authed/platform/feature-flags/$id')({
     component: ViewFeatureFlag,
@@ -16,6 +18,7 @@ export const Route = createFileRoute('/_authed/platform/feature-flags/$id')({
 
 function ViewFeatureFlag() {
     const { id } = Route.useParams();
+    const { locale } = useTranslations();
     const { data: flag } = useSuspenseQuery<FeatureFlag>({
         queryKey: ['feature-flag', id],
         queryFn: async () => {
@@ -107,11 +110,11 @@ function ViewFeatureFlag() {
                         </div>
                         <div className="flex justify-between">
                             <span className="text-muted-foreground">Created</span>
-                            <span>{new Date(flag.createdAt).toLocaleDateString()}</span>
+                            <span>{formatShortDate({ date: flag.createdAt, locale })}</span>
                         </div>
                         <div className="flex justify-between">
                             <span className="text-muted-foreground">Updated</span>
-                            <span>{new Date(flag.updatedAt).toLocaleDateString()}</span>
+                            <span>{formatShortDate({ date: flag.updatedAt, locale })}</span>
                         </div>
                     </CardContent>
                 </Card>

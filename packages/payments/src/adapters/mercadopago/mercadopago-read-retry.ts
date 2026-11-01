@@ -22,12 +22,25 @@ export const MERCADOPAGO_READ_RETRY_POLICY: MercadoPagoReadRetryPolicy = {
 
 const RETRYABLE_STATUSES = new Set([429, 500, 502, 503, 504]);
 
+/**
+ * Parses a `Retry-After` header value (delta-seconds or HTTP date) into milliseconds.
+ * An HTTP date is measured against the injected clock, so the result can be negative
+ * when the date is already past; callers clamp. Returns `undefined` when absent or malformed.
+ * Shared by the read retry loop and the transient-error classifier (HOS-1976).
+ */
+export function parseRetryAfterMs(args: {
+    readonly value: string | null;
+    readonly now: () => Date;
+}): number | undefined {
+    if (args.value === null) return undefined;
+    const trimmed = args.value.trim();
+    if (/^\d+$/.test(trimmed)) return Number(trimmed) * 1000;
+    const instant = Date.parse(trimmed);
+    return Number.isNaN(instant) ? undefined : instant - args.now().getTime();
+}
+
 function retryAfterMs(response: Response, now: () => Date): number | undefined {
-    const value = response.headers.get('Retry-After');
-    if (value === null) return undefined;
-    if (/^\d+$/.test(value.trim())) return Number(value.trim()) * 1000;
-    const instant = Date.parse(value);
-    return Number.isNaN(instant) ? undefined : instant - now().getTime();
+    return parseRetryAfterMs({ value: response.headers.get('Retry-After'), now });
 }
 
 async function discardBody(response: Response): Promise<void> {

@@ -20,6 +20,16 @@ interface Props {
 	readonly title?: string;
 	readonly description?: string;
 	readonly canonicalPath?: string;
+	/**
+	 * Path of the previous page of a paginated listing, emitted as
+	 * `<link rel="prev">` (HOS-1797). Omit on page 1.
+	 */
+	readonly prevPath?: string;
+	/**
+	 * Path of the next page of a paginated listing, emitted as
+	 * `<link rel="next">` (HOS-1797). Omit on the last page.
+	 */
+	readonly nextPath?: string;
 	readonly showFilters?: boolean;
 	readonly filterPosition?: 'left' | 'top';
 	/**
@@ -51,6 +61,8 @@ const {
 	title,
 	description,
 	canonicalPath = Astro.url.pathname,
+	prevPath,
+	nextPath,
 	showFilters = false,
 	filterPosition = 'left',
 	noindex = false,
@@ -61,6 +73,8 @@ const {
 
 const siteBase = getSiteUrl();
 const canonicalUrl = new URL(canonicalPath, siteBase).href;
+const prevUrl = prevPath ? new URL(prevPath, siteBase).href : undefined;
+const nextUrl = nextPath ? new URL(nextPath, siteBase).href : undefined;
 
 const resolvedTitle = title ?? 'Hospeda';
 const resolvedDescription = description ?? 'Descubrí alojamientos en el Litoral Entrerriano';
@@ -90,6 +104,12 @@ const resultsSummaryLabel =
 		ogTagline={ogTagline}
 	/>
 	<slot name="head-extra" slot="head" />
+	{(prevUrl || nextUrl) && (
+		<Fragment slot="head">
+			{prevUrl && <link rel="prev" href={prevUrl} />}
+			{nextUrl && <link rel="next" href={nextUrl} />}
+		</Fragment>
+	)}
 	<slot name="dock-start" slot="dock-start" />
 
 	<!-- WaveHeader wraps everything so sticky bar has full-page-height parent -->
@@ -331,7 +351,18 @@ const resultsSummaryLabel =
 			spliceSwapRegions(newDoc);
 
 			if (newDoc.title) document.title = newDoc.title;
-			if (needsPushState) window.history.pushState({}, '', targetUrl);
+			if (needsPushState) {
+				// HOS-1927: an open overlay (the mobile filters drawer) owns the current
+				// history entry. Offer it the URL change first; if it takes it, the
+				// entry is rewritten in place instead of buried under a new one.
+				var claimed = !window.dispatchEvent(
+					new CustomEvent('hospeda:listing-url-commit', {
+						cancelable: true,
+						detail: { url: targetUrl }
+					})
+				);
+				if (!claimed) window.history.pushState({}, '', targetUrl);
+			}
 
 			// Tell anything that initialises on a navigation (FilterSidebar
 			// clears its "loading" flag here, for instance) that we are done.
@@ -380,12 +411,10 @@ const resultsSummaryLabel =
 			handleListingNav(nextUrl.href, window.location.href !== nextUrl.href);
 		});
 
-		// Browser back/forward (popstate) intentionally falls through to
-		// `<ClientRouter />`'s default handling. ClientRouter listens on
-		// window first and competing with it for the popstate event is
-		// brittle; the marginal cost is that back/forward across filter
-		// states briefly re-renders the wave header, same as before. If
-		// that becomes a papercut we can revisit with a capture-phase
-		// stopImmediatePropagation trick.
+		// Browser back/forward (popstate) falls through to `<ClientRouter />`'s
+		// default handling, with ONE exception: a traversal onto or off the
+		// filters drawer's raw history entry is kept from the router by
+		// `@/lib/dialog-history` (capture phase, HOS-1927). Everything else
+		// across filter states briefly re-renders the wave header, as before.
 	})();
 </script>

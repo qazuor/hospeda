@@ -83,7 +83,9 @@ describe('TEST:B3:2 subscription start request', () => {
             'CREATION_NOT_APPLIED',
             'PREVIOUS_ATTEMPT_IN_PROGRESS',
             'PROVIDER_REJECTED',
-            'PARTNER_MANUAL_ONLY'
+            'PARTNER_MANUAL_ONLY',
+            'PROVIDER_BUSY',
+            'PROVIDER_UNAVAILABLE'
         ]);
         expect(StartSubscriptionRejectionReasonSchema.safeParse('OTHER').success).toBe(false);
     });

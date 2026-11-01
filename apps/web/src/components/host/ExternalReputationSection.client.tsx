@@ -38,6 +38,8 @@ import { ConfirmDeleteDialog } from '@/components/shared/ui/ConfirmDeleteDialog.
 import { FieldError, fieldErrorId } from '@/components/ui/FieldError';
 import { useReputationStatus } from '@/hooks/use-reputation-status';
 import { getApiUrl } from '@/lib/env';
+import type { RefreshResultBody } from '@/lib/host/external-reputation-refresh';
+import { hasNothingToRefresh } from '@/lib/host/external-reputation-refresh';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
 import styles from './ExternalReputationSection.module.css';
@@ -195,10 +197,13 @@ export function ExternalReputationSection({
      * fully inline (200). Drives whether polling should be active.
      */
     const [asyncRefreshPending, setAsyncRefreshPending] = useState(false);
-    /** Brief feedback message after a refresh action (enqueued / inline success). */
-    const [refreshFeedback, setRefreshFeedback] = useState<'enqueued' | 'inlineSuccess' | null>(
-        null
-    );
+    /**
+     * Brief feedback message after a refresh action: enqueued, inline success, or
+     * `noPlatforms` when the server answered 200 without querying anybody (HOS-1944).
+     */
+    const [refreshFeedback, setRefreshFeedback] = useState<
+        'enqueued' | 'inlineSuccess' | 'noPlatforms' | null
+    >(null);
 
     // --- Status polling (SPEC-250 Phase 7) ---
     const {
@@ -472,9 +477,15 @@ export function ExternalReputationSection({
                 setRefreshFeedback('enqueued');
                 await loadListings();
             } else if (res.ok) {
-                // All resolved inline (e.g. Google-only accommodation).
+                // A 200 with all three lists empty means NO platform was queried
+                // (HOS-1944): there was nothing to refresh, so never say "Actualizado".
+                const body = (await res.json().catch(() => null)) as {
+                    data?: RefreshResultBody;
+                } | null;
                 setAsyncRefreshPending(false);
-                setRefreshFeedback('inlineSuccess');
+                setRefreshFeedback(
+                    hasNothingToRefresh({ result: body?.data }) ? 'noPlatforms' : 'inlineSuccess'
+                );
                 await loadListings();
             } else {
                 setRefreshError(
@@ -495,6 +506,11 @@ export function ExternalReputationSection({
             setIsRefreshing(false);
         }
     }, [accommodationId, loadListings, t]);
+
+    // Nothing to refresh until a platform link exists. Only once the listings
+    // loaded: while loading, or after a failed load, the list is empty without
+    // that meaning "no platforms", so the button must not claim it (HOS-1944).
+    const hasNoPlatforms = !isLoadingData && !loadError && listings.length === 0;
 
     // Stop polling once all platforms have settled.
     useEffect(() => {
@@ -844,6 +860,18 @@ export function ExternalReputationSection({
                     {t('external-reputation.refresh.enqueued', 'Actualizando en segundo plano...')}
                 </div>
             )}
+            {refreshFeedback === 'noPlatforms' && (
+                <div
+                    className={chipStyles.refreshStatus}
+                    role="status"
+                    data-testid="refresh-no-platforms"
+                >
+                    {t(
+                        'external-reputation.refresh.noPlatforms',
+                        'No hay plataformas cargadas. Agregá un enlace para poder actualizar tus reseñas.'
+                    )}
+                </div>
+            )}
             {refreshFeedback === 'inlineSuccess' && (
                 <div className={`${chipStyles.refreshStatus} ${chipStyles.refreshStatusSuccess}`}>
                     {t('external-reputation.refresh.inlineSuccess', 'Actualizado')}
@@ -856,12 +884,24 @@ export function ExternalReputationSection({
                     type="button"
                     className={styles.refreshButton}
                     onClick={() => void handleRefresh()}
-                    disabled={isRefreshing || !allSettled}
-                    aria-disabled={isRefreshing || !allSettled}
+                    disabled={isRefreshing || !allSettled || hasNoPlatforms}
+                    aria-disabled={isRefreshing || !allSettled || hasNoPlatforms}
                     data-testid="refresh-button"
                 >
                     {t('external-reputation.ownerConfig.refresh', 'Actualizar reseñas')}
                 </button>
+
+                {hasNoPlatforms && (
+                    <span
+                        className={styles.lastUpdated}
+                        data-testid="refresh-needs-platform"
+                    >
+                        {t(
+                            'external-reputation.refresh.needsPlatform',
+                            'Primero agregá un enlace de una plataforma para poder actualizar tus reseñas.'
+                        )}
+                    </span>
+                )}
 
                 {aggregateFetchedAt && !rateLimitMinutes && (
                     <span className={styles.lastUpdated}>

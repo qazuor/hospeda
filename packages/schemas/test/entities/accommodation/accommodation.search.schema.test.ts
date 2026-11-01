@@ -238,3 +238,29 @@ describe('AccommodationSearchHttpSchema (HTTP / query-string)', () => {
         });
     });
 });
+
+describe('AccommodationSearchHttpSchema type/types case normalization (HOS-1938)', () => {
+    it('normalizes lowercase types to the uppercase enum', () => {
+        const result = AccommodationSearchHttpSchema.parse({ types: 'apartment, Cabin' });
+        expect(result.types).toEqual(['APARTMENT', 'CABIN']);
+    });
+
+    it('normalizes a lowercase single type', () => {
+        const result = AccommodationSearchHttpSchema.parse({ type: 'cabin' });
+        expect(result.type).toBe('CABIN');
+    });
+
+    it('keeps uppercase values and leaves omitted keys undefined', () => {
+        expect(AccommodationSearchHttpSchema.parse({ types: 'HOTEL' }).types).toEqual(['HOTEL']);
+        const empty = AccommodationSearchHttpSchema.parse({});
+        expect(empty.types).toBeUndefined();
+        expect(empty.type).toBeUndefined();
+    });
+
+    it('rejects a value that is not in the enum, naming the field', () => {
+        const result = AccommodationSearchHttpSchema.safeParse({ types: 'apartment,notatype' });
+        expect(result.success).toBe(false);
+        expect(result.error?.issues[0]?.path[0]).toBe('types');
+        expect(AccommodationSearchHttpSchema.safeParse({ type: 'foo' }).success).toBe(false);
+    });
+});

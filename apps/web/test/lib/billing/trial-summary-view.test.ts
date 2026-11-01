@@ -1,7 +1,18 @@
 /** @file Tests for the pure trial summary presentation resolver. */
 import { TrialStatusEnum, type TrialSummaryResponse } from '@repo/schemas';
 import { describe, expect, it } from 'vitest';
-import { resolveTrialSummaryView } from '@/lib/billing/trial-summary-view';
+import { resolveTrialSummaryView as resolveView } from '@/lib/billing/trial-summary-view';
+
+/** Existing cases run with a live subscription, the pre-HOS-1772 assumption. */
+function resolveTrialSummaryView({
+    summary,
+    hasLiveSubscription = true
+}: {
+    readonly summary: TrialSummaryResponse;
+    readonly hasLiveSubscription?: boolean;
+}) {
+    return resolveView({ summary, hasLiveSubscription });
+}
 
 const activeSummary: TrialSummaryResponse = {
     status: TrialStatusEnum.TRIAL_ACTIVE,
@@ -69,5 +80,46 @@ describe('resolveTrialSummaryView', () => {
             expect(view).toBeDefined();
             expect(view.kind).not.toBe('hidden');
         }
+    });
+
+    it('TEST:1772:1 — a converted trial with no live subscription states its end instead of claiming a plan', () => {
+        // Arrange
+        const summary = summaryFor(TrialStatusEnum.TRIAL_CONVERTED);
+
+        // Act
+        const view = resolveTrialSummaryView({ summary, hasLiveSubscription: false });
+
+        // Assert
+        expect(view).toEqual({
+            kind: 'ended_converted_without_plan',
+            endsAt: activeSummary.endsAt
+        });
+    });
+
+    it('TEST:1772:2 — a converted trial with a live subscription keeps the plan wording', () => {
+        const view = resolveTrialSummaryView({
+            summary: summaryFor(TrialStatusEnum.TRIAL_CONVERTED),
+            hasLiveSubscription: true
+        });
+
+        expect(view).toEqual({ kind: 'ended_converted' });
+    });
+
+    it('TEST:1772:3 — the live-subscription flag does not change a running or expired trial', () => {
+        for (const status of [TrialStatusEnum.TRIAL_ACTIVE, TrialStatusEnum.TRIAL_EXPIRED]) {
+            const summary = summaryFor(status);
+            expect(resolveTrialSummaryView({ summary, hasLiveSubscription: false })).toEqual(
+                resolveTrialSummaryView({ summary, hasLiveSubscription: true })
+            );
+        }
+    });
+
+    it('TEST:1772:4 — a converted trial without a plan and without an end date carries null', () => {
+        const view = resolveTrialSummaryView({
+            summary: summaryFor(TrialStatusEnum.TRIAL_CONVERTED, { endsAt: null }),
+            hasLiveSubscription: false
+        });
+
+        expect(view).toEqual({ kind: 'ended_converted_without_plan', endsAt: null });
     });
 });

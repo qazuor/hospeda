@@ -6,7 +6,7 @@ import { DestinationPublicSchema } from '@repo/schemas';
 import { SlugRequestParamsSchema } from '@repo/schemas/common';
 import { DestinationService, ServiceError } from '@repo/service-core';
 import type { Context } from 'hono';
-import { getActorFromContext } from '../../../utils/actor';
+import { createGuestActor } from '../../../utils/actor';
 import { apiLogger } from '../../../utils/logger';
 import { createPublicRoute } from '../../../utils/route-factory';
 
@@ -24,8 +24,8 @@ export const publicGetDestinationBySlugRoute = createPublicRoute({
     tags: ['Destinations'],
     requestParams: SlugRequestParamsSchema.shape,
     responseSchema: DestinationPublicSchema.nullable(),
-    handler: async (ctx: Context, params: Record<string, unknown>) => {
-        const actor = getActorFromContext(ctx);
+    handler: async (_ctx: Context, params: Record<string, unknown>) => {
+        const actor = createGuestActor();
         const slug = params.slug as string;
         const result = await destinationService.getBySlug(actor, slug);
         if (result.error) throw new ServiceError(result.error.code, result.error.message);

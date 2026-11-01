@@ -253,6 +253,8 @@
                 "commitmentTaken": "You already have an active subscription in this vertical.",
                 "generic": "We could not start your subscription. Please try again in a few minutes.",
                 "providerRejected": "Mercado Pago didn't accept the payment details. Check that the email is the one on your Mercado Pago account and try again.",
+                "providerBusy": "Mercado Pago is very busy right now. Wait a minute and try again.",
+                "providerUnavailable": "The payment provider did not respond. Please try again in a few minutes.",
                 "partnerManualOnly": "Partner subscriptions cannot be purchased here. Our team will contact you to coordinate payment and activation."
             },
             "trialNotice": {
@@ -575,6 +577,14 @@
         "recover_own_listing": "View, export, reactivate or delete your listings",
         "subscribe_to_plan": "Subscribe to a plan",
         "activate_trial": "Start the trial period"
+    },
+    "entitlementByAudience": {
+        "venue": {
+            "ai_chat": "AI answers about your venue listing"
+        },
+        "experience": {
+            "ai_chat": "AI answers about your experience listing"
+        }
     },
     "comparison": {
         "unlimited": "Unlimited",

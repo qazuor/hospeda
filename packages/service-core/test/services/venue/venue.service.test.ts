@@ -395,7 +395,7 @@ describe('VenueService search filter forwarding', () => {
 
         await (
             service as unknown as { _executeSearch: (...args: unknown[]) => unknown }
-        )._executeSearch({ page: 1, pageSize: 10 }, staffActor, {});
+        )._executeSearch({}, staffActor, {});
 
         // After B7a fix: _executeSearch uses findAllWithRelations (arg[0]=relations, arg[1]=where)
         expect(mockFindAllWithRelations).toHaveBeenCalledWith(
@@ -511,7 +511,7 @@ describe('VenueService — apto/catalog filters (HOS-1054)', () => {
 
         await (
             service as unknown as { _executeSearch: (...args: unknown[]) => unknown }
-        )._executeSearch({ page: 1, pageSize: 10 }, staffActor, {});
+        )._executeSearch({}, staffActor, {});
 
         expect(mockFindAllWithRelations.mock.calls[0][3]).toBeUndefined();
     });
@@ -704,7 +704,7 @@ describe('VenueService._executeSearch — B7a regression (destination relation l
 
         await (
             service as unknown as { _executeSearch: (...args: unknown[]) => unknown }
-        )._executeSearch({ page: 1, pageSize: 10 }, staffActor, {});
+        )._executeSearch({}, staffActor, {});
 
         expect(mockFindAllWithRelations).toHaveBeenCalledWith(
             expect.objectContaining({ destination: true, owner: true }),
@@ -753,8 +753,8 @@ describe('VenueService._executeSearch — BETA-119 regression (sort forwarded fr
 
         await (
             service as unknown as { _executeSearch: (...args: unknown[]) => unknown }
-        )._executeSearch({ page: 1, pageSize: 10 }, staffActor, {
-            pagination: { sortBy: 'name', sortOrder: 'asc' }
+        )._executeSearch({}, staffActor, {
+            pagination: { page: 1, pageSize: 10, sortBy: 'name', sortOrder: 'asc' }
         });
 
         // arg[2] is the pagination options object in findAllWithRelations
@@ -773,7 +773,7 @@ describe('VenueService._executeSearch — BETA-119 regression (sort forwarded fr
 
         await (
             service as unknown as { _executeSearch: (...args: unknown[]) => unknown }
-        )._executeSearch({ page: 1, pageSize: 10 }, staffActor, {});
+        )._executeSearch({}, staffActor, {});
 
         const paginationArg = mockFindAllWithRelations.mock.calls[0]?.[2] as {
             sortBy?: unknown;

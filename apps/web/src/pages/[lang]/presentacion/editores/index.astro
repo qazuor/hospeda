@@ -8,7 +8,9 @@
  * THE COPY HAS DIVERGED FROM THE ARTIFACT, BY OWNER REQUEST (2026-09-04). The artifact is
  * therefore NO LONGER the source of truth for the prose — this file is. What changed and why:
  *  - the lede now addresses the LOCAL reader too, not only the incoming tourist (nothing
- *    centralizes what happens in the region, and that is the pitch);
+ *    centralizes what happens in the region, and that is the pitch). The owner rewrote the
+ *    first lede paragraph again on 2026-10-31 into three paragraphs: the gap, the two new
+ *    sections (guide and notes), and what each one is;
  *  - the whole page was de-biased from "an editor writes blog posts" to "an editor writes
  *    notes, loads events, or both" — the EDITOR role grants POST_CREATE *and* EVENT_CREATE;
  *  - the publishing cadence is no longer a minimum ("una nota por mes es el mínimo" →
@@ -87,7 +89,7 @@ const locale = Astro.locals.locale as SupportedLocale;
 // under the button, derived from the same href, so a PDF export still says where it leads.
 const ctaLabel = 'Sumate como editor';
 const ctaHref = 'https://hospeda.com.ar/es/colaborar/editores';
-const ctaUrlText = ctaHref.replace(/^https?:\/\//, '');
+const ctaUrlText = ctaHref;
 // Brand contact phone, single source of truth (HOS-364) — this page's
 // copy is the owner-approved artifact verbatim; only the phone digits are
 // parameterized so a real number change does not require re-editing prose.
@@ -132,12 +134,19 @@ const canonical = `${getSiteUrl().replace(/\/$/, '')}/${locale}/presentacion/edi
     <h1>Contá el Litoral que conocés</h1>
     <div class="rule"></div>
     <p class="masthead__lede">
-      El blog (publicaciones y notas de interés) y la agenda de eventos de Hospeda los lee gente
-      que está por venir a la zona y no sabe dónde parar, qué comer, ni qué pasa este fin de
-      semana. Y los lee también el que vive acá: hoy no hay un solo lugar donde enterarte de qué
-      hay este sábado, qué local abrió o qué se está por hacer en tu ciudad &mdash; está todo
-      desparramado entre mil publicaciones que hay que ir a buscar de a una. <strong>Hospeda lo
-      junta en un solo lado.</strong>
+      Hoy no hay un solo lugar donde enterarte de qué hay este sábado, qué local abrió o qué se
+      está por hacer en tu ciudad, o leer notas sobre cultura, historia, costumbres, novedades
+      de la región, entre otros temas.
+    </p>
+    <p class="masthead__lede">
+      Está todo desparramado entre mil publicaciones en sitios web y redes sociales que hay que
+      ir a buscar de a una, por lo que en Hospeda decidimos sumar dos importantes secciones, tanto
+      para quienes nos visitan como para quienes viven acá.
+    </p>
+    <p class="masthead__lede">
+      Una será una guía de todo lo que implica eventos, lugares y organizaciones para el
+      servicio, esparcimiento y entretenimiento de visitantes y lugareños. Y la otra, una sección
+      donde todos puedan conocer la región a través de notas sobre diversos temas de la región.
     </p>
     <p class="masthead__lede">
       Si conocés el Litoral y querés compartir lo que sabés &mdash; la historia de tu lugar,
@@ -181,7 +190,7 @@ const canonical = `${getSiteUrl().replace(/\/$/, '')}/${locale}/presentacion/edi
       </p>
       <p>
         <strong>Y una sola cosa que podría considerarse económica:</strong> si además contratás un
-        plan en alguno de los verticales &mdash; alojamiento, gastronomía o experiencias &mdash;
+        plan en alguno de los verticales &mdash; alojamiento, comer y salir o experiencias &mdash;
         podemos arreglar una bonificación sobre ese plan a cambio de tu trabajo editorial. No es un
         pago: es un descuento sobre algo que ibas a contratar igual.
       </p>
@@ -299,7 +308,7 @@ const canonical = `${getSiteUrl().replace(/\/$/, '')}/${locale}/presentacion/edi
             escribir o qué eventos podrías cubrir. Si tenés algo publicado en algún lado, mandanos
             el enlace.
           </p>
-          <p class="step__meta">hospeda.com.ar/es/colaborar/editores</p>
+          <p class="step__meta">https://hospeda.com.ar/es/colaborar/editores</p>
         </div>
       </li>
       <li>
@@ -367,7 +376,7 @@ const canonical = `${getSiteUrl().replace(/\/$/, '')}/${locale}/presentacion/edi
       <h2>Tenés página propia de autor</h2>
     </div>
     <p>
-      Vive en <strong>hospeda.com.ar/es/autores/tu-nombre</strong> y reúne todo lo que escribiste:
+      Vive en <strong>https://hospeda.com.ar/es/autores/tu-nombre</strong> y reúne todo lo que escribiste:
       tus notas por un lado, los eventos que cargaste por el otro.
     </p>
     <ul class="plain">

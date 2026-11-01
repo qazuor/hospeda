@@ -2,6 +2,7 @@ packages:
   - "apps/*"
   - "packages/*"
   - "infra/cloudflare/*"
+  - "marketing/videos"
 
 publicHoistPattern:
   - "react"
@@ -173,7 +174,7 @@ overrides:
   seroval: ">=1.6.3 <2"
   tar: ">=7.5.11"
   tar-fs: ">=3.1.1"
-  node-forge: ">=1.4.0"
+  node-forge: ">=1.4.1"
   basic-ftp: ">=6.2.1"
   cookie: ">=0.7.0 <2"
   path-to-regexp: ">=6.3.0"
@@ -353,15 +354,6 @@ auditConfig:
   ignoreGhsas:
     - GHSA-rmmr-r34h-pfm5
     - GHSA-5xrq-8626-4rwp
-    # GHSA-86w9-cpqp-85rv / CVE-2026-85393: node-forge <=1.4.0 accepts
-    # extra nested DigestAlgorithm elements during RSA PKCS#1 v1.5
-    # verification. The only production graph path is the Expo SDK 56 mobile
-    # toolchain (@expo/cli and its transitive packages); it is not bundled in
-    # the API, web, or admin runtimes. GitHub currently reports no patched
-    # node-forge release, and forcing an unpublished version is unsafe. Keep
-    # this explicit exception until Expo ships a compatible dependency update;
-    # remove it as soon as `pnpm audit --prod` confirms the path is gone.
-    - GHSA-86w9-cpqp-85rv
     # GHSA-vfj7-8cjw-p6xm / CVE-2026-93687: braces@3.0.3 can exhaust the
     # stack on deeply nested patterns. All production-audit paths are under
     # apps/mobile > @better-auth/expo > expo > Metro > metro-file-map >
@@ -423,24 +415,6 @@ auditConfig:
     # the Expo SDK bump moves @expo/cli to zod 4. Confirm with:
     #   pnpm why zod -r --prod   # only >=4.6.6 left
     - GHSA-mrhx-c7xc-m3w5
-    # better-auth 1.6.x — three advisories published 2026-10-27, all fixed in
-    # 1.7.7+, all gated on a better-auth plugin that no app here enables. The
-    # only plugins in apps/api/src/lib/auth.ts are `admin()` and `expo()`; a
-    # `git grep` for each plugin name below returns nothing. The fix is a minor
-    # bump of the auth library across api/web/admin/mobile that needs its own
-    # login smoke (HOS-1932). Remove these lines with that bump — and do the
-    # bump BEFORE enabling any of the plugins named here:
-    # - GHSA-965c-763c-88jm (critical): an OAuth state value is accepted as a
-    #   Magic Link token (account takeover). Needs the `magicLink()` plugin
-    #   together with a social/Generic OAuth provider. We have Google/Facebook
-    #   but NOT magicLink, so the path does not exist.
-    # - GHSA-r4xp-prcw-77qf (high): forged profile via the `oAuthProxy()`
-    #   plugin. Not enabled.
-    # - GHSA-q84f-53jg-9ppm (high): device-approval screen omits the client and
-    #   its scopes. Needs the `deviceAuthorization()` plugin. Not enabled.
-    - GHSA-965c-763c-88jm
-    - GHSA-r4xp-prcw-77qf
-    - GHSA-q84f-53jg-9ppm
 
 allowBuilds:
   # Needed to upload source maps to Sentry from @sentry/esbuild-plugin (api)

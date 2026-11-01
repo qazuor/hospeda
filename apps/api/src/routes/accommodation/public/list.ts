@@ -130,7 +130,7 @@ export const publicListAccommodationsRoute = createPublicListRoute({
         // This maps: type, isFeatured, destinationId, q, minPrice, maxPrice,
         // minGuests, maxGuests, minBedrooms, maxBedrooms, minBathrooms,
         // maxBathrooms, minRating, maxRating, amenities, sortBy, sortOrder,
-        // currency, latitude, longitude, radius, checkIn, checkOut, isAvailable.
+        // currency, latitude, longitude, radius, checkIn, checkOut.
         const httpQuery = (query ?? {}) as AccommodationSearchHttp;
         const domainParams = httpToDomainAccommodationSearch(httpQuery);
 
@@ -209,7 +209,6 @@ export const publicListAccommodationsRoute = createPublicListRoute({
                         minRating: httpQuery.minRating,
                         maxRating: httpQuery.maxRating,
                         isFeatured: httpQuery.isFeatured,
-                        isAvailable: httpQuery.isAvailable,
                         hasPool: httpQuery.hasPool,
                         hasWifi: httpQuery.hasWifi,
                         allowsPets: httpQuery.allowsPets,

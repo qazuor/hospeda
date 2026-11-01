@@ -51,6 +51,15 @@ interface CacheEntry {
  * matching `metadata.requestId` inside the body is re-stamped separately
  * (see `restampRequestId`).
  *
+ * HOS-1924: the CORS headers are per-request too. `cors()` runs OUTSIDE this
+ * middleware and writes `Access-Control-Allow-Origin` and `Vary: Origin` onto
+ * the response before `next()`, so they were stored with the body and a HIT
+ * replayed the origin of whoever filled the entry over the origin of the
+ * caller being served. Every `access-control-*` header and `vary` is dropped
+ * from the entry (see {@link isPerRequestHeader}); on a HIT the ones `cors()`
+ * already set for this request stay in place. Nothing inside the cache sets
+ * `Vary` itself, so dropping it loses no content negotiation.
+ *
  * Keep this list to headers that are genuinely per-request. Anything that
  * describes the body (`content-type`, `etag`, `cache-control`, …) MUST keep
  * being cached — dropping those would break content negotiation and
@@ -66,8 +75,12 @@ const PER_REQUEST_HEADERS: ReadonlySet<string> = new Set([
     'retry-after',
     'x-ratelimit-limit',
     'x-ratelimit-remaining',
-    'x-ratelimit-reset'
+    'x-ratelimit-reset',
+    'vary'
 ]);
+
+/** Prefix shared by every CORS response header; all of them describe the caller. */
+const CORS_HEADER_PREFIX = 'access-control-';
 
 /**
  * Whether a response header describes this request rather than the payload,
@@ -79,7 +92,8 @@ const PER_REQUEST_HEADERS: ReadonlySet<string> = new Set([
  * @returns `true` when the header must not be cached.
  */
 function isPerRequestHeader(name: string): boolean {
-    return PER_REQUEST_HEADERS.has(name.toLowerCase());
+    const lower = name.toLowerCase();
+    return PER_REQUEST_HEADERS.has(lower) || lower.startsWith(CORS_HEADER_PREFIX);
 }
 
 /**
@@ -226,6 +240,25 @@ const AUTH_COOKIE_NAME_PREFIXES: readonly string[] = [
 ].flatMap((prefix) => [`${prefix}.`, `__Secure-${prefix}.`]);
 
 /**
+ * The cookie keys Better Auth (1.7) writes after the `<prefix>.` part of a
+ * cookie name: the session token, the `session.cookieCache` payload, the
+ * remember-me marker and the account-data cookie (HOS-1924).
+ *
+ * Recognising a cookie by its KEY as well as by the deployment prefix is the
+ * fail-closed half: a third `cookiePrefix` nobody added to
+ * {@link AUTH_COOKIE_NAME_PREFIXES} still ends in `.session_token`, so it is
+ * still treated as a credential. The names are read back from the real
+ * instance by `test/middlewares/cache.auth-cookie-names.test.ts`, which fails
+ * if Better Auth adds a cookie this list and the prefixes both miss.
+ */
+const AUTH_COOKIE_KEY_SUFFIXES: readonly string[] = [
+    '.session_token',
+    '.session_data',
+    '.dont_remember',
+    '.account_data'
+];
+
+/**
  * Test-only headers that make the harness build an actor
  * (`test/helpers/mockAuthMiddleware.ts`, `middlewares/actor.ts`). Both readers
  * require `x-mock-actor-id`, so its presence alone is the superset.
@@ -265,9 +298,23 @@ function requestCarriesCredentials({ c }: { readonly c: Context<AppBindings> }):
         return true;
     }
 
-    if (c.req.header('Cookie') === undefined) return false;
-    return Object.keys(getCookie(c)).some((name) =>
-        AUTH_COOKIE_NAME_PREFIXES.some((prefix) => name.startsWith(prefix))
+    const rawCookie = c.req.header('Cookie');
+    if (rawCookie === undefined) return false;
+
+    // Fail closed (HOS-1924): a Cookie header we cannot read is ambiguous, and an
+    // ambiguous request must not be served from nor stored in the shared cache.
+    let names: string[];
+    try {
+        names = Object.keys(getCookie(c));
+    } catch {
+        return true;
+    }
+    if (names.length === 0) return rawCookie.trim().length > 0;
+
+    return names.some(
+        (name) =>
+            AUTH_COOKIE_NAME_PREFIXES.some((prefix) => name.startsWith(prefix)) ||
+            AUTH_COOKIE_KEY_SUFFIXES.some((suffix) => name.endsWith(suffix))
     );
 }
 
@@ -278,7 +325,6 @@ function requestCarriesCredentials({ c }: { readonly c: Context<AppBindings> }):
 function generateCacheKey({
     path,
     queryString,
-    authorization,
     publicEndpoints,
     privateEndpoints,
     noCacheEndpoints
@@ -286,7 +332,6 @@ function generateCacheKey({
     readonly path: string;
     /** Normalised query string (no leading `?`), or empty string. */
     readonly queryString: string;
-    readonly authorization: string | undefined;
     readonly publicEndpoints: readonly string[];
     readonly privateEndpoints: readonly string[];
     readonly noCacheEndpoints: readonly string[];
@@ -304,7 +349,10 @@ function generateCacheKey({
     if (isPublic) return `public:${path}${suffix}`;
 
     const isPrivate = privateEndpoints.some((endpoint) => path.startsWith(endpoint));
-    if (isPrivate) return `private:${path}${suffix}:${authorization ?? 'anonymous'}`;
+    // HOS-1924: a request carrying credentials never reaches this key (see
+    // `requestCarriesCredentials`), so the old per-`Authorization` suffix was
+    // unreachable. Only anonymous requests are keyed, and they share one slot.
+    if (isPrivate) return `private:${path}${suffix}:anonymous`;
 
     // Unclassified endpoints are not cached
     return null;
@@ -341,7 +389,6 @@ export const createCacheMiddleware = (): MiddlewareHandler<AppBindings> => {
         }
 
         const path = c.req.path;
-        const authorization = c.req.header('Authorization');
         // c.req.url is the full URL including query string. Splitting on
         // the first `?` gives us the query without the leading mark; an
         // empty string when there's no query.
@@ -350,7 +397,6 @@ export const createCacheMiddleware = (): MiddlewareHandler<AppBindings> => {
         const key = generateCacheKey({
             path,
             queryString,
-            authorization,
             publicEndpoints: PUBLIC_CACHE_ENDPOINTS,
             privateEndpoints: PRIVATE_CACHE_ENDPOINTS,
             noCacheEndpoints: NO_CACHE_ENDPOINTS

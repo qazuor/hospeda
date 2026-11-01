@@ -33,12 +33,13 @@
 
 import { existsSync } from 'node:fs';
 import { join } from 'node:path';
+import { resolveApiEnv } from '../lib/api-env-source.ts';
 import type { CommandArgvSpec } from '../lib/cli-flags.ts';
 import { findContainer, getActiveTarget } from '../lib/container-lookup.ts';
+import { createCoolifyClient } from '../lib/coolify.ts';
 import {
     type CutoverStep3Mode,
     executeCutoverStep3,
-    isTypedConfirmationValid,
     ownerIdsTargetRefusal,
     parseCutoverStep3Args,
     readCheckoutSha,
@@ -50,7 +51,8 @@ import { buildPostgresUrl } from '../lib/postgres.ts';
 import { promptText } from '../lib/prompt.ts';
 import { resolveRepoRoot } from '../lib/repo-root.ts';
 import { runner } from '../lib/runner.ts';
-import { getDbCredentials, type Target } from '../lib/target.ts';
+import { getAppResourceName, getDbCredentials, type Target } from '../lib/target.ts';
+import { CONFIRM_PHRASE_FLAG, confirmTypedPhrase } from '../lib/typed-confirmation.ts';
 
 const HELP_FLAGS = ['--help', '-h'] as const;
 
@@ -63,7 +65,10 @@ export const CUTOVER_STEP_3_ARGV: CommandArgvSpec = {
         '--yes',
         ...HELP_FLAGS
     ],
-    valueFlags: [{ name: '--owner-ids', syntax: 'equals' }]
+    valueFlags: [
+        { name: '--owner-ids', syntax: 'equals' },
+        { name: CONFIRM_PHRASE_FLAG, syntax: 'equals' }
+    ]
 };
 
 const HELP = `
@@ -103,6 +108,8 @@ Flags:
   --yes                   Accepted for symmetry with other destructive
                           commands. It does NOT skip the typed prod guard.
   --owner-ids=<csv>       Limit a staging rehearsal to these owner UUIDs. Rejected on prod.
+  --confirm-phrase=<p>    Answer the typed prod phrase without a prompt. Must equal it
+                          exactly. Without a TTY the prompt is refused (exit 1).
   --help, -h              Show this help.
 
 Exit codes (propagated from the script, unchanged):
@@ -127,19 +134,25 @@ Required environment variables (in scripts/server-tools/.env.local):
 async function confirmProd(input: {
     readonly target: Target;
     readonly mode: CutoverStep3Mode;
+    readonly confirmPhrase: string | undefined;
 }): Promise<void> {
     if (input.mode === 'write') {
         log.warn('This run WRITES the five cutover trials to the PRODUCTION database.');
     } else {
         log.warn('This run OVERRIDES the deployed-SHA guard against PRODUCTION.');
     }
-    const typed = await promptText({
-        message: `Type '${WRITE_TRIALS_PROD_PHRASE}' to confirm`,
-        placeholder: WRITE_TRIALS_PROD_PHRASE
+    const result = await confirmTypedPhrase({
+        expected: WRITE_TRIALS_PROD_PHRASE,
+        provided: input.confirmPhrase,
+        ask: () =>
+            promptText({
+                message: `Type '${WRITE_TRIALS_PROD_PHRASE}' to confirm`,
+                placeholder: WRITE_TRIALS_PROD_PHRASE
+            })
     });
-    if (!isTypedConfirmationValid({ typed })) {
-        log.warn('Aborted: typed confirmation did not match.');
-        throw new Error('Aborted: typed confirmation did not match.');
+    if (!result.ok) {
+        log.warn(result.reason);
+        throw new Error(result.reason);
     }
 }
 
@@ -176,8 +189,12 @@ export async function cutoverStep3(argv: ReadonlyArray<string>): Promise<void> {
         die(`'${repoRoot}' is not a git repository.`);
     }
 
-    const apiContainer = await findContainer('api');
-    const containerEnv = await dockerInspectEnv(apiContainer);
+    const { entries: containerEnv } = await resolveApiEnv({
+        readFromContainer: async () => dockerInspectEnv(await findContainer('api')),
+        coolify: createCoolifyClient,
+        resourceName: getAppResourceName(target, 'api'),
+        warn: (message) => log.warn(message)
+    });
     const postgresContainer = await findContainer('postgres');
     const credentials = getDbCredentials(target);
     const databaseUrl = await buildPostgresUrl({
@@ -196,7 +213,8 @@ export async function cutoverStep3(argv: ReadonlyArray<string>): Promise<void> {
         hostEnv: process.env,
         readCheckoutSha: ({ repoRoot: checkoutRoot }) =>
             readCheckoutSha({ runner, repoRoot: checkoutRoot }),
-        confirmProd,
+        confirmProd: (confirmation) =>
+            confirmProd({ ...confirmation, confirmPhrase: options.confirmPhrase }),
         log
     });
 

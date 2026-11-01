@@ -16,7 +16,7 @@ import type { Context } from 'hono';
 import { z } from 'zod';
 import { getActorFromContext } from '../../../utils/actor';
 import { apiLogger } from '../../../utils/logger';
-import { createCRUDRoute } from '../../../utils/route-factory';
+import { createProtectedRoute } from '../../../utils/route-factory';
 
 const experienceService = new ExperienceService({ logger: apiLogger });
 
@@ -26,7 +26,7 @@ const experienceService = new ExperienceService({ logger: apiLogger });
  * TYPE-WORKAROUND: accesses the internal `model` field from the service instance
  * to pass to the standalone media helper without requiring a public accessor.
  */
-export const protectedGetExperienceMediaRoute = createCRUDRoute({
+export const protectedGetExperienceMediaRoute = createProtectedRoute({
     method: 'get',
     path: '/{id}/media',
     summary: 'List experience listing gallery photos',
@@ -35,6 +35,7 @@ export const protectedGetExperienceMediaRoute = createCRUDRoute({
         'Supports an optional `state` query filter (default: visible). ' +
         'Requires EXPERIENCE_EDIT_OWN (listing owner) or EXPERIENCE_EDIT_ALL (staff).',
     tags: ['Experience', 'Experience Media'],
+    protectedTag: false,
     requestParams: {
         id: z.string().uuid({ message: 'zodError.common.id.invalidUuid' })
     },

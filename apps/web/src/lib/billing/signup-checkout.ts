@@ -2,6 +2,7 @@
 import {
     type BillingCycle,
     isManualPaymentOnlyVertical,
+    PROVIDER_TRANSIENT_REJECTION_REASONS,
     SignupNoticeResponseSchema,
     type StartSubscriptionRejectionReason,
     StartSubscriptionRequestSchema,
@@ -250,6 +251,16 @@ const REJECTION_BY_REASON: Record<
         messageKey: 'billing.checkout.signup.rejection.partnerManualOnly',
         retryable: false,
         showPlansLink: false
+    },
+    PROVIDER_BUSY: {
+        messageKey: 'billing.checkout.signup.rejection.providerBusy',
+        retryable: true,
+        showPlansLink: false
+    },
+    PROVIDER_UNAVAILABLE: {
+        messageKey: 'billing.checkout.signup.rejection.providerUnavailable',
+        retryable: true,
+        showPlansLink: false
     }
 };
 
@@ -268,6 +279,18 @@ function isStartSubscriptionRejectionReason(
 
 /** Map only recognized reasons to user-facing keys; API prose never escapes. */
 export function resolveSignupRejection({ error }: { readonly error?: unknown }): SignupRejection {
+    // HOS-1968: the transient provider reasons are the only ones honoured on a 503.
+    if (
+        error &&
+        typeof error === 'object' &&
+        'status' in error &&
+        error.status === 503 &&
+        'reason' in error &&
+        PROVIDER_TRANSIENT_REJECTION_REASONS.some((reason) => reason === error.reason)
+    ) {
+        const reason = error.reason as StartSubscriptionRejectionReason;
+        return { reason, ...REJECTION_BY_REASON[reason] };
+    }
     if (
         !error ||
         typeof error !== 'object' ||

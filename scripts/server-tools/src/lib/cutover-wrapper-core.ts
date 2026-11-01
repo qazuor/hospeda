@@ -23,6 +23,7 @@ import { buildStep3ChildEnv, resolveDeployedSha } from './cutover-step-3-env.ts'
 import type { CutoverWrapperSpec } from './cutover-wrapper-specs.ts';
 import type { Runner } from './runner.ts';
 import type { Target } from './target.ts';
+import { CONFIRM_PHRASE_FLAG } from './typed-confirmation.ts';
 
 /** Which mode the wrapped script runs in. `dry-run` is the default of every wrapper. */
 export type CutoverWrapperMode = 'dry-run' | 'write';
@@ -44,7 +45,10 @@ export function cutoverWrapperArgvSpec(spec: CutoverWrapperSpec): CommandArgvSpe
             '--help',
             '-h'
         ],
-        valueFlags: spec.passThrough.map((flag) => ({ name: flag.name, syntax: 'equals' as const }))
+        valueFlags: [
+            ...spec.passThrough.map((flag) => ({ name: flag.name, syntax: 'equals' as const })),
+            { name: CONFIRM_PHRASE_FLAG, syntax: 'equals' as const }
+        ]
     };
 }
 
@@ -56,6 +60,8 @@ export interface ParsedCutoverWrapperArgs {
     readonly allowShaMismatch: boolean;
     /** `--yes`: parsed for symmetry; never skips the typed prod guard. */
     readonly yes: boolean;
+    /** Value of `--confirm-phrase=<phrase>`, when present (HOS-1963). Never forwarded. */
+    readonly confirmPhrase?: string;
     /** Pass-through flags, in input order, as `--name=value` (paths made absolute). */
     readonly forwarded: readonly string[];
 }
@@ -99,10 +105,22 @@ export function parseCutoverWrapperArgs(
     const seen = new Set<string>();
     const counts = new Map<string, number>();
     const forwarded: string[] = [];
+    let confirmPhrase: string | undefined;
 
     for (const arg of input.argv) {
         const separator = arg.indexOf('=');
         const flag = separator < 0 ? arg : arg.slice(0, separator);
+        if (flag === CONFIRM_PHRASE_FLAG) {
+            if (confirmPhrase !== undefined) return { ok: false, reason: `Repeated flag: ${flag}` };
+            const value = separator < 0 ? '' : arg.slice(separator + 1);
+            if (value.length === 0)
+                return {
+                    ok: false,
+                    reason: `${flag} requires a non-empty value in ${flag}=<phrase> form.`
+                };
+            confirmPhrase = value;
+            continue;
+        }
         const pass = passThrough.get(flag);
         if (pass !== undefined) {
             const value = separator < 0 ? '' : arg.slice(separator + 1);
@@ -150,6 +168,7 @@ export function parseCutoverWrapperArgs(
             mode: write ? 'write' : 'dry-run',
             allowShaMismatch: seen.has('--allow-sha-mismatch'),
             yes: seen.has('--yes'),
+            ...(confirmPhrase === undefined ? {} : { confirmPhrase }),
             forwarded
         }
     };

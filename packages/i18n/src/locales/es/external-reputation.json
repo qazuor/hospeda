@@ -71,6 +71,8 @@
     },
     "refresh": {
         "enqueued": "Actualizando en segundo plano...",
-        "inlineSuccess": "Actualizado"
+        "inlineSuccess": "Actualizado",
+        "noPlatforms": "No hay plataformas cargadas. Agregá un enlace para poder actualizar tus reseñas.",
+        "needsPlatform": "Primero agregá un enlace de una plataforma para poder actualizar tus reseñas."
     }
 }

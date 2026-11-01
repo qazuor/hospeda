@@ -84,6 +84,11 @@
             "dependsOn": ["^build"],
             "cache": false,
             "env": ["HOSPEDA_TEST_DATABASE_URL"]
+        },
+        "test:integration:coverage": {
+            "dependsOn": ["^build"],
+            "cache": false,
+            "env": ["HOSPEDA_TEST_DATABASE_URL"]
         }
     },
     "concurrency": "10"

@@ -38,6 +38,10 @@ export const RENDER_TIME_INLINE_SCRIPT_ALLOWLIST: readonly RenderTimeInlineScrip
         reason: 'FEEDBACK_NAV_BOOTSTRAP_SNIPPET is a constant.'
     },
     {
+        component: 'src/layouts/BaseLayout.astro',
+        reason: 'DIALOG_POP_GUARD_SNIPPET is a constant (HOS-1927).'
+    },
+    {
         component: 'src/components/shared/IconSpriteClientData.astro',
         reason: 'iconSpriteClientScript() is deterministic for a build: the content-addressed sprite URL plus the committed symbol manifest.'
     },

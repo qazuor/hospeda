@@ -72,7 +72,13 @@ export type EventOrganizerCreateHttp = z.infer<typeof EventOrganizerCreateHttpSc
  * HTTP-compatible event organizer update schema
  * Handles partial updates via HTTP PATCH requests
  */
-export const EventOrganizerUpdateHttpSchema = EventOrganizerCreateHttpSchema.partial();
+export const EventOrganizerUpdateHttpSchema = EventOrganizerCreateHttpSchema.partial().extend({
+    // `null` clears the stored value (contactInfo is a shallow-merged column, so an
+    // omitted key is "keep" and an explicit null is "clear" — HOS-1939).
+    email: z.string().email().nullish(),
+    phone: z.string().nullish(),
+    website: safeExternalUrl('zodError.common.contact.website.invalid').nullish()
+});
 
 export type EventOrganizerUpdateHttp = z.infer<typeof EventOrganizerUpdateHttpSchema>;
 
@@ -181,6 +187,22 @@ export const httpToDomainEventOrganizerCreate = (
 };
 
 /**
+ * Build the partial `contactInfo` patch for an update, or `undefined` when the
+ * caller sent none of email/phone/website.
+ */
+const buildContactInfoPatch = (
+    httpData: EventOrganizerUpdateHttp
+): EventOrganizerUpdateInput['contactInfo'] => {
+    const { email, phone, website } = httpData;
+    if (email === undefined && phone === undefined && website === undefined) return undefined;
+    return {
+        ...(email === undefined ? {} : { personalEmail: email, workEmail: email }),
+        ...(phone === undefined ? {} : { mobilePhone: phone }),
+        ...(website === undefined ? {} : { website })
+    };
+};
+
+/**
  * Convert HTTP event organizer update data to domain update input
  * Handles partial updates from HTTP PATCH requests
  */
@@ -192,15 +214,12 @@ export const httpToDomainEventOrganizerUpdate = (
         description: httpData.description,
         logo: httpData.logo,
 
-        // Contact info as nested object (only if phone is provided, since it's required)
-        contactInfo: httpData.phone
-            ? {
-                  personalEmail: httpData.email,
-                  workEmail: httpData.email,
-                  mobilePhone: httpData.phone,
-                  website: httpData.website
-              }
-            : undefined,
+        // Contact info as a PARTIAL nested object (HOS-1939). `event_organizers.contact_info`
+        // is shallow-MERGED, so only the keys the caller sent are emitted; each of
+        // email/phone/website persists independently of the others. `null` clears,
+        // `undefined` preserves, so presence is tested with `!== undefined`, never
+        // truthiness. `email` fans out to both personalEmail and workEmail (as on create).
+        contactInfo: buildContactInfoPatch(httpData),
 
         // Social networks as a PARTIAL nested object: only the keys the caller
         // actually sent are emitted, because `event_organizers.social` is a

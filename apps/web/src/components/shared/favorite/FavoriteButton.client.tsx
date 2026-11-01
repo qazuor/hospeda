@@ -30,10 +30,12 @@ import { buildLimitReachedPayloadFromDetails } from '@/lib/billing-limit-error';
 import { cn } from '@/lib/cn';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createT } from '@/lib/i18n';
+import { clearPendingAction, savePendingAction } from '@/lib/pending-action';
 import { setFavoriteStatus, useFavoriteStatus } from '@/store/favorites-store';
 import { addToast } from '@/store/toast-store';
 import { CollectionPickerPopover } from './CollectionPickerPopover';
 import styles from './FavoriteButton.module.css';
+import { usePendingFavorite } from './usePendingFavorite';
 import { getUserCollections } from './user-collections-cache';
 
 /**
@@ -271,13 +273,13 @@ export const FavoriteButton: FC<FavoriteButtonProps> = ({
      * Handle click for authenticated users.
      * Applies optimistic update, calls the API, and rolls back on error.
      */
-    const handleAuthenticatedClick = async (): Promise<void> => {
+    const handleAuthenticatedClick = async (baseFavorited?: boolean): Promise<void> => {
         // Guard against double-click while pending.
         if (isPending) return;
 
         // Capture current values for potential rollback.
-        const prevFavorited = isFavorited;
-        const prevBookmarkId = bookmarkId;
+        const prevFavorited = baseFavorited ?? isFavorited;
+        const prevBookmarkId = baseFavorited === undefined ? bookmarkId : null;
 
         // Optimistic update.
         const nextFavorited = !prevFavorited;
@@ -303,7 +305,7 @@ export const FavoriteButton: FC<FavoriteButtonProps> = ({
                     // attempted before the session resolved, or a session that
                     // expired after the page rendered. Rollback and prompt auth.
                     publish({ isFavorited: prevFavorited, bookmarkId: prevBookmarkId });
-                    setIsPopoverOpen(true);
+                    promptSignIn();
                 } else if (status === 403 && errorCode === 'LIMIT_REACHED') {
                     // User hit their plan's limit — rollback and show localized toast with upgrade CTA.
                     publish({ isFavorited: prevFavorited, bookmarkId: prevBookmarkId });
@@ -407,6 +409,49 @@ export const FavoriteButton: FC<FavoriteButtonProps> = ({
         }
     };
 
+    /**
+     * Open the sign-in prompt and remember the tap, so it is applied once the
+     * guest comes back authenticated (HOS-1925).
+     */
+    const promptSignIn = (): void => {
+        savePendingAction({
+            action: { kind: 'favorite', entityType, entityId },
+            path: window.location.pathname
+        });
+        setIsPopoverOpen(true);
+    };
+
+    /**
+     * Apply the favorite saved before sign-in. Idempotent: the account may
+     * already have this bookmark (the guest saw an empty heart), and a blind
+     * toggle would remove it. So it asks the server first and only toggles when
+     * the entity is confirmed not bookmarked. If the check fails it does nothing.
+     */
+    const applyPendingFavorite = async (): Promise<void> => {
+        try {
+            const check = await userBookmarksApi.checkBulk({ entityType, entityIds: [entityId] });
+            if (!check.ok) return;
+            const current = check.data.checks[entityId];
+            if (current?.isBookmarked) {
+                publish({ isFavorited: true, bookmarkId: current.bookmarkId ?? null });
+                return;
+            }
+            // Pin the base state for the toggle to "not favorited".
+            setFavoriteStatus({ entityType, entityId, isFavorited: false, bookmarkId: null });
+            await handleAuthenticatedClick(false);
+        } catch {
+            // Best effort: the heart stays as the server last reported it.
+        }
+    };
+
+    usePendingFavorite({
+        entityType,
+        entityId,
+        isAuthenticated: isSessionResolved && user !== null,
+        isResolving,
+        apply: applyPendingFavorite
+    });
+
     const handleClick = (event: MouseEvent<HTMLButtonElement>): void => {
         // The favorite button is rendered inside a card-wide <a> wrapper in
         // listings/cards. Without stopping propagation, the click bubbles up
@@ -423,7 +468,7 @@ export const FavoriteButton: FC<FavoriteButtonProps> = ({
         if (isSessionResolved && user === null) {
             // Known guest: open the auth-required popover immediately, without
             // spending a doomed request first.
-            setIsPopoverOpen(true);
+            promptSignIn();
             return;
         }
 
@@ -436,6 +481,8 @@ export const FavoriteButton: FC<FavoriteButtonProps> = ({
     };
 
     const handlePopoverClose = (): void => {
+        // Dismissed without signing in: the tap is no longer wanted.
+        clearPendingAction();
         setIsPopoverOpen(false);
     };
 
