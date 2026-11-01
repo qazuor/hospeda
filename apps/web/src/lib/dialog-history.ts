@@ -23,6 +23,7 @@
  * @module dialog-history
  */
 
+import { POP_GUARD_KEY, type PopGuardWindow } from './dialog-history.pop-guard.snippet';
 import {
     isRawEntryState,
     pushRawEntry,
@@ -112,7 +113,7 @@ const stack: DialogHistoryEntry[] = [];
 let nextId = 1;
 let listenersAttached = false;
 
-/** Whether the previous history position was a raw entry (see `handlePopState`). */
+/** Whether the previous history position was a raw entry (see `processPopState`). */
 let previousWasRaw = false;
 
 /**
@@ -230,27 +231,29 @@ function currentEntryId(): number | undefined {
  * own. Traversals this module issued need no special casing: it removes its
  * entries from the stack before unwinding, so they fall out through the two
  * guards below rather than through a flag that could desynchronise.
+ *
+ * @returns Whether the router must NOT see this traversal (HOS-1927).
  */
-function handlePopState(event: PopStateEvent): void {
+function processPopState(): boolean {
     // Raw entries (HOS-1927) have no router fast path, so the router must never
     // see a traversal onto or off one: it would refetch and swap the document.
     const rawNow = isRawEntryState(window.history.state);
-    if (rawNow || previousWasRaw) event.stopImmediatePropagation();
+    const swallow = rawNow || previousWasRaw;
     previousWasRaw = rawNow;
 
     const top = stack[stack.length - 1];
-    if (!top) return;
+    if (!top) return swallow;
 
     const currentId = currentEntryId();
     // Still sitting on the innermost modal's own entry: nothing was dismissed.
-    if (currentId === top.id) return;
+    if (currentId === top.id) return swallow;
     // Ids are monotonic within a document, so a HIGHER id is necessarily an
     // entry claimed after this one — i.e. the user moved forward, into an entry
     // already dismissed or abandoned. That must not close anything. A lower id
     // is a genuine back traversal, even when it belongs to an entry this module
     // abandoned earlier (which sits directly below the current claim after the
     // user navigates away from an open modal and returns).
-    if (currentId !== undefined && currentId > top.id) return;
+    if (currentId !== undefined && currentId > top.id) return swallow;
 
     stack.pop();
     restoreRewrittenUrl(top);
@@ -258,6 +261,7 @@ function handlePopState(event: PopStateEvent): void {
     // would strand a fragment in the URL that nothing will ever unwind.
     if (!top.pushed) top.cancelled = true;
     top.onPopped();
+    return swallow;
 }
 
 /**
@@ -318,6 +322,11 @@ function handleListingUrlCommit(event: Event): void {
     event.preventDefault();
 }
 
+/** Fallback `popstate` listener, used when the early inline guard is absent. */
+function handleCapturedPopState(event: PopStateEvent): void {
+    if (processPopState()) event.stopImmediatePropagation();
+}
+
 function attachListeners(): void {
     // Not short-circuited by the flag below: `attachRouterSyncListeners` keeps
     // its own, and letting one flag gate both means clearing only the other
@@ -326,8 +335,18 @@ function attachListeners(): void {
     attachRouterSyncListeners({ onSwapStart: abandonAll });
     if (listenersAttached) return;
     listenersAttached = true;
-    // Capture, so a raw traversal can be kept from the router (HOS-1927).
-    window.addEventListener('popstate', handlePopState, true);
+    // A raw traversal must be kept from the router (HOS-1927), which means
+    // running BEFORE its `popstate` listener. A capture listener does not do it:
+    // on `window` itself Chromium fires listeners in registration order, and the
+    // router registers first. The inline guard in `BaseLayout` registers ahead of
+    // the router and delegates here; the capture listener is the fallback for a
+    // page that lacks it.
+    const guard = (window as PopGuardWindow)[POP_GUARD_KEY];
+    if (guard) {
+        guard.handler = processPopState;
+    } else {
+        window.addEventListener('popstate', handleCapturedPopState, true);
+    }
     window.addEventListener(LISTING_URL_COMMIT_EVENT, handleListingUrlCommit);
 }
 
@@ -617,7 +636,9 @@ export function resetDialogHistoryForTests(): void {
     resetRouterSyncForTests();
     previousWasRaw = false;
     if (listenersAttached) {
-        window.removeEventListener('popstate', handlePopState, true);
+        window.removeEventListener('popstate', handleCapturedPopState, true);
+        const guard = (window as PopGuardWindow)[POP_GUARD_KEY];
+        if (guard) guard.handler = null;
         window.removeEventListener(LISTING_URL_COMMIT_EVENT, handleListingUrlCommit);
         listenersAttached = false;
     }
