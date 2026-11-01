@@ -177,7 +177,7 @@
         "node": ">=22.19.0"
     },
     "dependencies": {
-        "glob": "^13.0.6",
+        "glob": "^14.0.2",
         "zod": "^4.0.8"
     },
     "workspaces": [
