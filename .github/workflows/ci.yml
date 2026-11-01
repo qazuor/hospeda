@@ -945,18 +945,21 @@ jobs:
       # merge-coverage.mjs cannot attribute it to service-core (promotion PR
       # #3991 measured it as a phantom package named `coverage-merged`). Stage
       # it under its workspace-relative path and upload the staging root, so
-      # the artifact has the same layout as the unit shards.
+      # the artifact has the same layout as the unit shards. The staging dir
+      # must NOT be a dot-directory: upload-artifact defaults to
+      # `include-hidden-files: false` and silently skips it, which failed the
+      # step with "no files found" on #3991.
       - name: Stage service-core integration coverage under its package path
         if: matrix.suite == 'packages' && ((github.event_name == 'push' && github.ref == 'refs/heads/main') || (github.event_name == 'pull_request' && github.base_ref == 'main'))
         run: |
-          mkdir -p .coverage-integration/packages/service-core/coverage
-          cp packages/service-core/coverage/coverage-final.json .coverage-integration/packages/service-core/coverage/coverage-final.json
+          mkdir -p coverage-integration-artifact/packages/service-core/coverage
+          cp packages/service-core/coverage/coverage-final.json coverage-integration-artifact/packages/service-core/coverage/coverage-final.json
       - name: Upload service-core integration coverage
         if: matrix.suite == 'packages' && ((github.event_name == 'push' && github.ref == 'refs/heads/main') || (github.event_name == 'pull_request' && github.base_ref == 'main'))
         uses: actions/upload-artifact@v7
         with:
           name: coverage-shard-integration-service-core
-          path: .coverage-integration/
+          path: coverage-integration-artifact/
           if-no-files-found: error
           retention-days: 7
       # Through turbo, never `pnpm --filter`: turbo's strict env mode is what
