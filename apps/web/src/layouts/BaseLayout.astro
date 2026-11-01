@@ -19,6 +19,7 @@ import { buildUrl } from '@/lib/urls';
 import { getApiUrl, getDeployVersion, getTurnstileSiteKey, isFeedbackEnabled } from '@/lib/env';
 import { BRAND_THEME_COLOR, BRAND_THEME_COLOR_DARK } from '@/lib/constants';
 import { FEEDBACK_NAV_BOOTSTRAP_SNIPPET } from '@/lib/feedback/feedback-nav-bootstrap.snippet';
+import { DIALOG_POP_GUARD_SNIPPET } from '@/lib/dialog-history.pop-guard.snippet';
 import { ClientRouter } from 'astro:transitions';
 import Header from './Header.astro';
 import Footer from './Footer.astro';
@@ -163,6 +164,12 @@ const isAuthenticatedHint = Astro.locals.user ? 'true' : 'false';
 		     cold loads. -->
 
 
+		{/*
+		  MUST precede <ClientRouter />: its popstate listener has to be registered
+		  first to keep a raw dialog-history traversal from the router (HOS-1927).
+		  Source comes through set:html from a constant, see feedback-nav-bootstrap.
+		*/}
+		<script is:inline set:html={DIALOG_POP_GUARD_SNIPPET} />
 		<ClientRouter />
 
 		{/*

@@ -151,7 +151,13 @@ filter tap, so it uses `useDialogHistoryBack({ tolerateRouterDrift: true })`:
   plain `pushState` at the same URL (state carries `__hospedaDialogRaw`), and
   `handlePopState` runs in the CAPTURE phase and calls `stopImmediatePropagation`
   for any traversal onto or off a raw entry, so `<ClientRouter />` never answers
-  it with a refetch-and-swap. Chosen over `replaceState` because replacing the
+  it with a refetch-and-swap. **A capture listener alone does NOT achieve this**:
+  on `window` Chromium fires listeners in registration order and the router
+  registers first (measured on staging: Back refetched the pre-filter URL and
+  swapped the listing to the previous search). The listener that matters is the
+  inline guard in `BaseLayout.astro` (`dialog-history.pop-guard.snippet.ts`),
+  placed BEFORE `<ClientRouter />`; the module hands it its decision. The capture
+  listener is only the fallback for a page without the guard. Chosen over `replaceState` because replacing the
   page's own entry cannot take the user anywhere, and over the routed claim
   because that one is unavailable after the first filter tap.
 - **The listing commits under the claim.** `ListingLayout` dispatches the
@@ -162,8 +168,9 @@ filter tap, so it uses `useDialogHistoryBack({ tolerateRouterDrift: true })`:
   re-asserted after the router has handled the traversal). **Closing by UI** after
   a rewrite keeps the entry as an ordinary filter entry instead of walking back,
   which would revert the filters.
-- Not measured on a real WebKit/Android device: relies on capture listeners
-  firing before non-capture ones on `window`.
+- Not measured on a real WebKit device. jsdom fires capture listeners first on
+  `window`, unlike Chromium, so unit tests cannot prove the ordering: they pin the
+  mechanism (guard in use) instead.
 
 ## Surfaces that are NOT covered
 
