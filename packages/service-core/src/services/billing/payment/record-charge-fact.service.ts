@@ -303,7 +303,15 @@ export async function recordChargeFact(
         };
     }
     if (charge.status === 'pending') return { outcome: 'RECORDED_PENDING', paymentId };
-    logger.info({ paymentId }, 'Provider charge was rejected');
+    // HOS-1991: keep why the provider refused (e.g. `cc_rejected_high_risk`) on the payment and
+    // in the log; before this the reason was read for the decline email and then discarded.
+    const providerStatusDetail = charge.declineReason?.trim() || null;
+    if (providerStatusDetail)
+        await getDb()
+            .update(payments)
+            .set({ providerStatusDetail })
+            .where(eq(payments.id, paymentId));
+    logger.info({ paymentId, providerStatusDetail }, 'Provider charge was rejected');
     const grace = await enterGraceOnRejectedCharge(
         { chargeId: input.chargeId },
         {
