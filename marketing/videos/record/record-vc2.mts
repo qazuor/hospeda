@@ -12,6 +12,7 @@
  *   (WEB_URL, VIDEO_LOGIN_EMAIL and IMPORT_SOURCE_URL override the defaults)
  */
 import type { Locator, Page } from 'playwright';
+import { assertCleanView, login } from './lib/staging';
 import {
     createTake,
     docTopOf,
@@ -27,7 +28,6 @@ import {
 const WEB = process.env.WEB_URL ?? 'https://staging.hospeda.com.ar';
 /** Seeded host account on staging (never a super admin). */
 const EMAIL = process.env.VIDEO_LOGIN_EMAIL ?? 'host-pro@local.test';
-const PASSWORD = process.env.VIDEO_LOGIN_PASSWORD;
 const SOURCE =
     process.env.IMPORT_SOURCE_URL ?? 'https://www.airbnb.com.ar/rooms/817515602448448452';
 
@@ -35,46 +35,6 @@ const SOURCE =
 const DEMO_HIDE_CSS = hideCssOf(['[class*="trial-callout"]']);
 
 const rec = createTake({ video: 'vc2', take: process.argv[2] ?? 'vc2-test' });
-
-/**
- * Fails the take when the viewport shows a price or names another platform. The words are
- * built at runtime so this file does not spell them either.
- */
-const assertCleanView = async (page: Page, where: string): Promise<void> => {
-    const hits = (await page.evaluate(`(() => {
-        const bad = /precio (base|convertido)|\\$\\s?\\d|US\\$|${['air', 'bnb'].join('')}|${['boo', 'king'].join('')}/i;
-        const out = [];
-        const walker = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT);
-        while (walker.nextNode()) {
-            const node = walker.currentNode;
-            const text = node.textContent.trim();
-            if (!text || !bad.test(text)) continue;
-            const el = node.parentElement;
-            if (!el || el.closest('[aria-hidden="true"]')) continue;
-            const r = el.getBoundingClientRect();
-            const style = getComputedStyle(el);
-            if (style.visibility === 'hidden' || style.display === 'none' || r.height === 0) continue;
-            if (r.bottom > ${HEADER_OFFSET - 10} && r.top < innerHeight) out.push(text.slice(0, 60));
-        }
-        for (const input of document.querySelectorAll('input')) {
-            const r = input.getBoundingClientRect();
-            if (r.height > 0 && r.bottom > 0 && r.top < innerHeight && /^\\d{4,}$/.test(input.value))
-                out.push('numeric input ' + input.value.length + ' digits');
-        }
-        return out;
-    })()`)) as string[];
-    if (hits.length > 0) throw new Error(`Unclean view at ${where}: ${hits.join(' | ')}`);
-};
-
-const login = async (page: Page): Promise<void> => {
-    if (!PASSWORD) throw new Error('Set VIDEO_LOGIN_PASSWORD to record VC2.');
-    await page.goto(`${WEB}/es/auth/signin/`, { waitUntil: 'networkidle' });
-    await sleep(1000);
-    await page.locator('#signin-email').fill(EMAIL);
-    await page.locator('#signin-password').fill(PASSWORD);
-    await page.getByRole('button', { name: 'Iniciar sesión' }).click();
-    await page.waitForURL((u) => !u.pathname.includes('/auth/'), { timeout: 30_000 });
-};
 
 /** Label of a form field, by its exact text. */
 const label = (page: Page, text: string): Locator =>
@@ -85,7 +45,7 @@ const main = async (): Promise<void> => {
         origin: WEB,
         hideCss: DEMO_HIDE_CSS
     });
-    await login(page);
+    await login({ page, web: WEB, email: EMAIL, video: 'VC2' });
     await page.goto(`${WEB}/es/publicar/`, { waitUntil: 'networkidle' });
     await sleep(1500);
     if (await page.getByText('Ya tenés un borrador en curso').count()) {
@@ -119,7 +79,7 @@ const main = async (): Promise<void> => {
     if (indicator) await page.mouse.click(indicator.x + 10, indicator.y + 10);
     await scrollToLocator(label(page, 'Nombre del alojamiento'), 0, HEADER_OFFSET + 70);
     await sleep(1200);
-    await assertCleanView(page, 'name');
+    await assertCleanView({ page, where: 'name' });
     rec.mark('cut:in');
 
     // Stage 2 — the filled listing.
@@ -128,7 +88,7 @@ const main = async (): Promise<void> => {
     // Scroll down to the description and counts, stopping with the price label just below the fold.
     const priceTop = await docTopOf(label(page, 'Precio base por noche'));
     await scrollToY(page, priceTop - VIEWPORT.height - 12, 2200);
-    await assertCleanView(page, 'description');
+    await assertCleanView({ page, where: 'description' });
     await rec.hold('descripcion', 1800, page.getByLabel('Descripción completa'));
     await rec.hold('conteos', 1200);
 
@@ -137,7 +97,7 @@ const main = async (): Promise<void> => {
     const amenities = page.getByTestId('extras-amenities');
     await scrollToLocator(amenities, 0, HEADER_OFFSET + 40);
     await sleep(600);
-    await assertCleanView(page, 'amenities');
+    await assertCleanView({ page, where: 'amenities' });
     rec.mark('cut:in');
     rec.mark('jump:comodidades');
     await rec.hold('comodidades', 2000, amenities);
