@@ -7,6 +7,7 @@ export async function readSubscription(subscriptionId: string) {
             id: subscriptions.id,
             userId: subscriptions.userId,
             vertical: subscriptions.vertical,
+            billingOptionId: subscriptions.billingOptionId,
             status: subscriptions.status,
             class: subscriptions.class,
             paymentMethod: subscriptions.paymentMethod,

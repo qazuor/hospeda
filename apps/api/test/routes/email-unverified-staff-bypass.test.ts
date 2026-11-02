@@ -369,6 +369,7 @@ describe('TEST:V5:3 TEST:1692:5 an unverified actor uses no staff bypass on the 
                     id: SUBSCRIPTION_ID,
                     userId: OWNER_ID,
                     vertical: 'accommodation',
+                    billingOptionId: null,
                     status: 'ACTIVE',
                     class: 'PRINCIPAL',
                     paymentMethod: 'CARD',
