@@ -1,35 +1,50 @@
 import { VenueTypeEnum } from '@repo/schemas';
-import { describe, expect, it } from 'vitest';
-import enAdmin from '../src/locales/en/admin-entities.json';
-import enVenue from '../src/locales/en/venue.json';
-import esAdmin from '../src/locales/es/admin-entities.json';
-import esVenue from '../src/locales/es/venue.json';
-import ptAdmin from '../src/locales/pt/admin-entities.json';
-import ptVenue from '../src/locales/pt/venue.json';
+import { vi } from 'vitest';
 
-const locales = [
-    { name: 'es', venue: esVenue, admin: esAdmin.venue },
-    { name: 'en', venue: enVenue, admin: enAdmin.venue },
-    { name: 'pt', venue: ptVenue, admin: ptAdmin.venue }
-];
+// The package setup replaces fs/path reads with locale-loading stubs.
+vi.unmock('node:fs');
+vi.unmock('node:path');
+
+import { readFileSync } from 'node:fs';
+import { resolve } from 'node:path';
+import { describe, expect, it } from 'vitest';
+
+const locales = ['es', 'en', 'pt'] as const;
+
+type TranslationObject = Record<string, unknown>;
+
+function readLocaleJson(locale: (typeof locales)[number], file: string): TranslationObject {
+    const path = resolve(import.meta.dirname, `../src/locales/${locale}/${file}.json`);
+    return JSON.parse(readFileSync(path, 'utf8')) as TranslationObject;
+}
+
+function getNestedValue(source: TranslationObject, path: readonly string[]): unknown {
+    let value: unknown = source;
+    for (const key of path) {
+        if (typeof value !== 'object' || value === null) return undefined;
+        value = (value as TranslationObject)[key];
+    }
+    return value;
+}
 
 describe('venue type translations', () => {
     it('provides labels and descriptions for every venue type in every locale', () => {
         for (const locale of locales) {
+            const venue = readLocaleJson(locale, 'venue');
+            const adminEntities = readLocaleJson(locale, 'admin-entities');
             for (const type of Object.values(VenueTypeEnum)) {
-                expect(locale.venue.types[type], `${locale.name} venue.types.${type}`).toBeTruthy();
-                expect(
-                    locale.venue.typeDescriptions[type],
-                    `${locale.name} venue.typeDescriptions.${type}`
-                ).toBeTruthy();
-                expect(
-                    locale.admin.types[type],
-                    `${locale.name} admin venue.types.${type}`
-                ).toBeTruthy();
-                expect(
-                    locale.admin.typeDescriptions[type],
-                    `${locale.name} admin venue.typeDescriptions.${type}`
-                ).toBeTruthy();
+                for (const [file, root, path] of [
+                    ['venue', venue, ['types', type]],
+                    ['venue', venue, ['typeDescriptions', type]],
+                    ['admin-entities', adminEntities, ['venue', 'types', type]],
+                    ['admin-entities', adminEntities, ['venue', 'typeDescriptions', type]]
+                ] as const) {
+                    const value = getNestedValue(root, path);
+                    expect(
+                        typeof value === 'string' && value.trim().length > 0,
+                        `${locale}/${file}: ${path.join('.')} must be a non-empty string`
+                    ).toBe(true);
+                }
             }
         }
     });

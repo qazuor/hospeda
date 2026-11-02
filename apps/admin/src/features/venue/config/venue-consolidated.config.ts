@@ -63,7 +63,9 @@ const PRICE_RANGE_OPTIONS = [
  *
  * @returns A `ConsolidatedSectionConfig` for venue-specific fields.
  */
-function createVenueSpecificSection(): ConsolidatedSectionConfig {
+function createVenueSpecificSection(
+    t: ReturnType<typeof useTranslations>['t']
+): ConsolidatedSectionConfig {
     return {
         id: 'venue-specific',
         title: 'Detalles de Gastronomía',
@@ -81,7 +83,11 @@ function createVenueSpecificSection(): ConsolidatedSectionConfig {
                 required: true,
                 modes: ['view', 'edit', 'create'],
                 label: 'Tipo de Establecimiento',
-                description: 'Categoría gastronómica del comercio',
+                descriptionForValue: (value) =>
+                    typeof value === 'string' &&
+                    Object.values(VenueTypeEnum).includes(value as VenueTypeEnum)
+                        ? t(`admin-entities.venue.typeDescriptions.${value as VenueTypeEnum}`)
+                        : undefined,
                 placeholder: 'Seleccioná el tipo…',
                 permissions: {
                     view: [PermissionEnum.VENUE_VIEW_ALL],
@@ -158,7 +164,7 @@ export const createVenueConsolidatedConfig = (
 ): ConsolidatedEntityConfig => ({
     sections: [
         createListingIdentitySection('venue'),
-        createVenueSpecificSection(),
+        createVenueSpecificSection(t),
         createListingOperationalSection('venue')
     ],
     metadata: {
