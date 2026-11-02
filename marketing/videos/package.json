@@ -8,7 +8,9 @@
         "studio": "remotion studio",
         "render:test": "tsx scripts/render.mts Test test.mp4",
         "render:a1": "tsx scripts/render.mts A1 a1.mp4",
+        "render:vc5": "tsx scripts/render.mts VC5 vc5.mp4 --concurrency=4",
         "record:a1": "tsx record/record-a1.mts",
+        "record:vc5": "tsx record/record-vc5.mts",
         "probe": "tsx record/probe.mts",
         "typecheck": "tsc --noEmit --project ./tsconfig.json"
     },
