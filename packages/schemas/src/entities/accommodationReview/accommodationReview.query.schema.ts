@@ -378,10 +378,12 @@ export const AccommodationReviewStatsWrapperSchema = z.object({
 });
 
 /**
- * Wrapper schema for accommodation review with user list responses
+ * Wrapper schema for accommodation review with user list responses. `total` is the real count
+ * of reviews matching the filter, not the current page length.
  */
 export const AccommodationReviewWithUserListWrapperSchema = z.object({
-    accommodationReviews: z.array(AccommodationReviewWithUserSchema)
+    accommodationReviews: z.array(AccommodationReviewWithUserSchema),
+    total: z.number().int().nonnegative()
 });
 
 // Type exports for wrapper schemas
