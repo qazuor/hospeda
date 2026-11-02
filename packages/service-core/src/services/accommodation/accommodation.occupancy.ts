@@ -166,10 +166,12 @@ export interface GetOwnerOccupancyForAccommodationInput {
 }
 
 /**
- * Reads an accommodation's occupancy calendar for its owner (protected
- * tier — `GET /api/v1/protected/accommodations/:id/occupancy`).
+ * Reads an accommodation's occupancy calendar for its owner or for an
+ * inspector holding `ACCOMMODATION_VIEW_ALL` (protected tier —
+ * `GET /api/v1/protected/accommodations/:id/occupancy`).
  *
- * Ownership-gated only — no `CAN_USE_CALENDAR` check (see module doc).
+ * Gated by ownership or the inspection permission — no `CAN_USE_CALENDAR`
+ * check (see module doc). Writes still require `ACCOMMODATION_UPDATE_ANY`.
  *
  * @param input - Actor, accommodation id, and optional half-open date range.
  * @returns The full row set (with `note`/`createdById`/`source` intact — this
