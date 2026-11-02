@@ -75,8 +75,16 @@ describe('TEST:V7:23 PP1 public route', () => {
     });
 
     it('does not apply step 2 to a guest with emailVerified false', async () => {
-        const { response } = await post({ ...createGuestActor(), emailVerified: false }, validBody);
+        const { response, body } = await post(
+            { ...createGuestActor(), emailVerified: false },
+            validBody
+        );
         expect(response.status).toBe(201);
+        expect(body).toEqual({
+            success: true,
+            data: { submitted: true },
+            metadata: { timestamp: expect.any(String), requestId: 'unknown' }
+        });
         expect(mocks.submit).toHaveBeenCalledExactlyOnceWith({ email: validBody.email });
     });
 
@@ -109,8 +117,13 @@ describe('TEST:V7:23 PP1 public route', () => {
     });
 
     it('allows a signed-in verified account', async () => {
-        const { response } = await post({ ...accountActor, emailVerified: true }, validBody);
+        const { response, body } = await post({ ...accountActor, emailVerified: true }, validBody);
         expect(response.status).toBe(201);
+        expect(body).toEqual({
+            success: true,
+            data: { submitted: true },
+            metadata: { timestamp: expect.any(String), requestId: 'unknown' }
+        });
         expect(mocks.submit).toHaveBeenCalledExactlyOnceWith({ email: validBody.email });
     });
 
