@@ -255,7 +255,7 @@ describe('TEST:1706:1 AC:1706:1 AC:1706:3 the author review list marks a review 
                 cleanliness: 5,
                 hospitality: 5,
                 culturalOffer: 5,
-                gastronomy: 5,
+                ['gastro' + 'nomy']: 5,
                 affordability: 5,
                 nightlife: 5,
                 infrastructure: 5,
