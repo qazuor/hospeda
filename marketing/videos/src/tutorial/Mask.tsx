@@ -17,7 +17,11 @@ export const Mask: React.FC<{
     readonly fit: RecordingFit;
     /** Recording px kept clear inside the box (shows the field's own border). */
     readonly inset?: number;
-}> = ({ box, from, to, fit, inset = 10 }) => {
+    /** Fill colour; match the page behind the box to make an element vanish instead. */
+    readonly fill?: string;
+    /** Whether to draw the blurred bar that stands for the hidden text. */
+    readonly bar?: boolean;
+}> = ({ box, from, to, fit, inset = 10, fill = '#FFFFFF', bar = true }) => {
     const frame = useCurrentFrame();
     if (frame < from || frame >= to) return null;
     const height = (box.h - inset * 2) * fit.k;
@@ -30,23 +34,25 @@ export const Mask: React.FC<{
                 width: (box.w - inset * 2) * fit.k,
                 height,
                 borderRadius: 8,
-                background: '#FFFFFF',
+                background: fill,
                 overflow: 'hidden',
                 pointerEvents: 'none'
             }}
         >
-            <div
-                style={{
-                    position: 'absolute',
-                    left: '6%',
-                    right: '8%',
-                    top: '34%',
-                    height: '32%',
-                    borderRadius: 999,
-                    background: 'rgba(13,43,62,0.28)',
-                    filter: `blur(${Math.max(3, height * 0.12)}px)`
-                }}
-            />
+            {bar && (
+                <div
+                    style={{
+                        position: 'absolute',
+                        left: '6%',
+                        right: '8%',
+                        top: '34%',
+                        height: '32%',
+                        borderRadius: 999,
+                        background: 'rgba(13,43,62,0.28)',
+                        filter: `blur(${Math.max(3, height * 0.12)}px)`
+                    }}
+                />
+            )}
         </div>
     );
 };
