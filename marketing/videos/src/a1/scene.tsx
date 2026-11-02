@@ -222,13 +222,29 @@ export const StepChip: React.FC<{
     );
 };
 
-/** Hospeda logo mark + URL pill + slogan for the closing. */
-export const ClosingCard: React.FC<{ readonly at: number }> = ({ at }) => {
+/** Logo drawn at the top of the closing card: a file in the public dir and its width in px. */
+export type ClosingLogo = { readonly src: string; readonly width: number };
+
+/**
+ * Hospeda logo + call to action + URL pill + slogan for the closing. Defaults are A1's;
+ * other videos pass their own call to action and logo, and `slogan={null}` drops the slogan.
+ */
+export const ClosingCard: React.FC<{
+    readonly at: number;
+    readonly title?: string;
+    readonly logo?: ClosingLogo;
+    readonly slogan?: string | null;
+}> = ({
+    at,
+    title = 'Publicá tu\nalojamiento',
+    logo = { src: 'brand/logo.png', width: 150 },
+    slogan = 'Todo tu viaje, en un solo lugar.'
+}) => {
     const frame = useCurrentFrame();
     const { fps } = useVideoConfig();
-    const logo = spring({ frame: frame - at, fps, config: { damping: 11, stiffness: 140 } });
+    const logoIn = spring({ frame: frame - at, fps, config: { damping: 11, stiffness: 140 } });
     const pill = spring({ frame: frame - at - 16, fps, config: { damping: 13 } });
-    const slogan = interpolate(frame, [at + 24, at + 36], [0, 1], {
+    const sloganIn = interpolate(frame, [at + 24, at + 36], [0, 1], {
         extrapolateLeft: 'clamp',
         extrapolateRight: 'clamp'
     });
@@ -246,11 +262,14 @@ export const ClosingCard: React.FC<{ readonly at: number }> = ({ at }) => {
             }}
         >
             <Img
-                src={staticFile('brand/logo.png')}
-                style={{ width: 150, transform: `scale(${logo}) rotate(${(1 - logo) * -25}deg)` }}
+                src={staticFile(logo.src)}
+                style={{
+                    width: logo.width,
+                    transform: `scale(${logoIn}) rotate(${(1 - logoIn) * -25}deg)`
+                }}
             />
             <KineticText
-                text={'Publicá tu\nalojamiento'}
+                text={title}
                 at={at + 6}
                 size={92}
             />
@@ -269,17 +288,19 @@ export const ClosingCard: React.FC<{ readonly at: number }> = ({ at }) => {
             >
                 hospeda.com.ar
             </div>
-            <div
-                style={{
-                    fontFamily: headingFont,
-                    fontWeight: 500,
-                    fontSize: 36,
-                    color: BRAND.ink,
-                    opacity: slogan * 0.85
-                }}
-            >
-                Todo tu viaje, en un solo lugar.
-            </div>
+            {slogan !== null && (
+                <div
+                    style={{
+                        fontFamily: headingFont,
+                        fontWeight: 500,
+                        fontSize: 36,
+                        color: BRAND.ink,
+                        opacity: sloganIn * 0.85
+                    }}
+                >
+                    {slogan}
+                </div>
+            )}
         </div>
     );
 };
