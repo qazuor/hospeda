@@ -319,7 +319,7 @@ describe('HOS-1993 the renewal notice names the plan by its display name', () =>
                 nextChargeAt: renewalCharge('2001-07-01')
             });
             await translatePlanOf(tx, seeded.subscriptionId, {
-                slug: 'owner-pro',
+                slug: 'venue-pro',
                 name: 'Professional'
             });
             await sendRenewalNotices(

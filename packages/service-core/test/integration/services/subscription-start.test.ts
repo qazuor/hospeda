@@ -362,12 +362,12 @@ describe('TEST:B3:3 every declined predecessor is reread before new signup', () 
 
 // HOS-1993: the provider label is built from the display name, never the stored catalog name.
 describe('S1 sends the user-facing plan name to the provider', () => {
-    it('uses "Básico" for owner-basico even when the stored name is "Basic"', async () => {
+    it('uses "Básico" for venue-basico even when the stored name is "Basic"', async () => {
         const choice = await seedChoice();
         const pool = getServiceTestPool();
         const planOf = `(SELECT plan_id FROM plan_version WHERE id = $1)`;
         await pool.query(
-            `UPDATE plan SET slug = 'owner-basico', name = 'Basic' WHERE id = ${planOf}`,
+            `UPDATE plan SET slug = 'venue-basico', name = 'Basic' WHERE id = ${planOf}`,
             [choice.planVersionId]
         );
         try {

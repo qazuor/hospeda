@@ -270,7 +270,7 @@ describe('HOS-1993 the promo ending notice names the plan by its display name', 
                 listAmountMinor: 100000
             });
             await translatePlanOf(tx, seeded.subscriptionId, {
-                slug: 'owner-basico',
+                slug: 'experience-basico',
                 name: 'Basic'
             });
             await applyPromoEndingNotice({

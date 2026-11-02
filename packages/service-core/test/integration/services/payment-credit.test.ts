@@ -447,12 +447,12 @@ describe('TEST:B5:1 P1 payment credit', () => {
 
 describe('HOS-1993 payment-credited names the plan by its display name', () => {
     it.skipIf(!isServiceTestDbAvailable())(
-        'sends "Premium" for owner-premium, not the stored catalog name',
+        'sends "Premium" for venue-premium, not the stored catalog name',
         async () => {
             const fixture = await paymentFixture();
             const db = getServiceTestDb();
             await translatePlanOf(db, fixture.started.subscriptionId, {
-                slug: 'owner-premium',
+                slug: 'venue-premium',
                 name: 'Premium plan (internal)'
             });
             try {
