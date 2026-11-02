@@ -3,14 +3,19 @@
  * host, on the reference phone (config/device.ts: the visible page area of a Galaxy S24 Ultra,
  * 412 × 750 CSS px, at DPR 3) through record/lib/take.ts.
  *
- * - The story is unchanged: «Mis propiedades» → «Publicar otra» → the creation form (name, type,
- *   city, summary) → the editor hub → basic info, where the long description is typed and saved.
- *   Nothing is published: the take leaves a DRAFT behind.
+ * - The story: «Mis propiedades» → «Publicar otra» → the creation form (name, type, city,
+ *   summary) → the editor hub → basic info, where the long description is typed and saved →
+ *   (off camera: capacity and the map pin) → the photos (gallery, then the main photo, which
+ *   opens the publish prompt) → «Publicar ahora» → the public listing.
+ * - Publishing starts the account's 30-day trial with no card. The take stops if the prompt
+ *   does not offer «Publicar ahora» or anything lands on the payment provider: nothing is paid.
+ * - Off-camera work is bracketed by `off` / `off:end` marks (cut with a wipe) and waits on
+ *   screen by `skip` / `skip:end` (cut with a jump); see src/a1/timeline.ts.
  * - Staging differs from the old local seed: the account's existing listing is a seed test card
  *   (test name, a price, a plan badge, a stock photo), so the properties list hides the cards
  *   (owner-approved demo staging, listed in DEMO_HIDE_CSS), and the site footer with them,
  *   which the then-short page would bring into view.
- * - A draft with the take's name left by an earlier take is deleted first through the UI
+ * - A listing with the take's name left by an earlier take is deleted first through the UI
  *   («Eliminar» → «Sí, eliminar»), so /publicar/ shows the form and not the «draft in progress»
  *   panel.
  * - The password comes from `VIDEO_LOGIN_PASSWORD` and is never logged.
@@ -25,8 +30,8 @@ import { copyFileSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import type { Locator, Page } from 'playwright';
 import { resolveAssetPaths } from '../config/asset-paths';
-import { assertCleanView, login } from './lib/staging';
-import { createTake, hideCssOf, launchDevice, sleep } from './lib/take';
+import { assertCleanView, login, photosDirOf, saveSection } from './lib/staging';
+import { createTake, hideCssOf, launchDevice, scrollToLocator, scrollToY, sleep } from './lib/take';
 
 const WEB = process.env.WEB_URL ?? 'https://staging.hospeda.com.ar';
 /**
@@ -35,6 +40,12 @@ const WEB = process.env.WEB_URL ?? 'https://staging.hospeda.com.ar';
  */
 const EMAIL = process.env.VIDEO_LOGIN_EMAIL ?? 'host-pro@local.test';
 const DEMO_NAME = 'Cabañas Costa del Río';
+/** The owner's photos (VC1's set, outside the repo). */
+const PHOTOS_DIR = photosDirOf({ video: 'vc1' });
+const FEATURED = '01-exterior.jpg';
+const GALLERY = ['02-pileta.jpg', '03-living.jpg'];
+/** Off camera: what publishing needs besides the description and the photos. No price. */
+const CAPACITY = { guests: '4', bedrooms: '2', baths: '1' } as const;
 
 /** Owner-approved demo staging (REGLAS.md): every hidden element is listed here. */
 const DEMO_HIDE_CSS = hideCssOf([
@@ -230,10 +241,118 @@ const main = async (): Promise<void> => {
     });
     await page.getByText('Cambios guardados').first().waitFor({ timeout: 30_000 });
     rec.mark('toast:guardado');
-    await rec.hold('final', 2500);
+    await rec.hold('guardado', 1800);
+    const editBase = page.url().replace(/datos\/?$/, '');
+
+    // Off camera: capacity and the map pin.
+    rec.mark('off');
+    await page.goto(`${editBase}capacidad-precio/`, { waitUntil: 'networkidle' });
+    await sleep(1500);
+    await page.getByLabel('Huéspedes máx.').fill(CAPACITY.guests);
+    await page.getByLabel('Dormitorios').fill(CAPACITY.bedrooms);
+    await page.getByLabel('Baños').fill(CAPACITY.baths);
+    await saveSection({ page, where: 'capacidad' });
+    await page.goto(`${editBase}ubicacion/`, { waitUntil: 'networkidle' });
+    await sleep(2000);
+    const map = page.locator('.leaflet-container').first();
+    await scrollToLocator(map, 10, 300);
+    await sleep(1500);
+    const mapBox = await map.boundingBox();
+    if (!mapBox) throw new Error('Map not visible.');
+    await page.mouse.click(mapBox.x + mapBox.width * 0.62, mapBox.y + mapBox.height * 0.4);
+    await sleep(1500);
+    if (!(await page.getByLabel('Latitud').inputValue())) {
+        throw new Error('The map tap did not set the coordinates.');
+    }
+    await saveSection({ page, where: 'ubicacion' });
+
+    // Stage 3 — the photos: the gallery, then the main photo, which opens the publish prompt.
+    await page.goto(`${editBase}fotos/`, { waitUntil: 'networkidle' });
+    await sleep(2000);
+    const featuredButton = page
+        .locator('#featured-image-input')
+        .locator('xpath=..')
+        .locator('button')
+        .first();
+    // Demo staging: the «Videos» block under the gallery names three video platforms.
+    await page
+        .locator('form', { has: page.getByRole('heading', { name: 'Videos', exact: true }) })
+        .evaluateAll((forms) => {
+            for (const f of forms)
+                (f as HTMLElement).style.setProperty('display', 'none', 'important');
+        });
+    await scrollToLocator(featuredButton, 10, 150);
+    await sleep(1000);
+    await assertCleanView({ page, where: 'photos' });
+    rec.mark('off:end');
+    const galleryAdd = page.getByRole('button', { name: 'Agregar fotos a la galería' });
+    const galleryImages = galleryAdd.locator('xpath=..').locator('img');
+    rec.mark('stage:fotos');
+    await rec.hold('fotos', 900);
+    const galleryChooser = page.waitForEvent('filechooser');
+    await tap('subir-galeria', galleryAdd);
+    await (await galleryChooser).setFiles(GALLERY.map((f) => join(PHOTOS_DIR, f)));
+    await sleep(900);
+    rec.mark('skip');
+    await galleryImages.nth(GALLERY.length - 1).waitFor({ timeout: 90_000 });
+    await sleep(1200);
+    rec.mark('skip:end');
+    await rec.hold('galeria-lista', 1300);
+    const featuredChooser = page.waitForEvent('filechooser');
+    await tap('subir-principal', featuredButton);
+    await (await featuredChooser).setFiles(join(PHOTOS_DIR, FEATURED));
+    await sleep(900);
+    rec.mark('skip');
+    const dialog = page.getByRole('dialog', { name: 'Tu ficha ya está lista' });
+    await dialog.waitFor({ timeout: 90_000 }).catch(() => {
+        throw new Error('No publish prompt after the main photo (plan limit or missing field).');
+    });
+    const publishNow = dialog.getByRole('button', { name: 'Publicar ahora' });
+    if ((await publishNow.count()) === 0) {
+        throw new Error(
+            'The publish prompt offers no «Publicar ahora»: stopping before any payment.'
+        );
+    }
+    await sleep(900);
+    rec.mark('skip:end');
+    rec.mark('stage:publicar');
+    await rec.hold('dialogo', 1600, dialog);
+    await tap('publicar', publishNow);
+    await sleep(600);
+
+    // Off camera: from «Mis propiedades» to the public listing.
+    rec.mark('off');
+    await page.waitForURL(/\/mi-cuenta\/propiedades\/?$|mercadopago/, { timeout: 60_000 });
+    if (/mercadopago/.test(page.url())) {
+        throw new Error('Publishing went to the payment provider: stopping, nothing is paid.');
+    }
+    await page.waitForLoadState('networkidle');
+    const card = page
+        .locator('article.prop-card', { hasText: DEMO_NAME })
+        .filter({ hasNotText: 'Ficha borrada' })
+        .first();
+    const href = await card.locator('a[href*="/alojamientos/"]').first().getAttribute('href');
+    if (!href) throw new Error('The published card has no public link.');
+    const publicUrl = new URL(href, WEB).toString();
+    console.info(`public listing: ${publicUrl}`);
+    await page.goto(publicUrl, { waitUntil: 'networkidle' });
+    await sleep(2500);
+    if (!(await page.getByText(DEMO_NAME).first().isVisible())) {
+        throw new Error(`The public page does not show "${DEMO_NAME}".`);
+    }
+    await assertCleanView({ page, where: 'public top' });
+    rec.mark('off:end');
+
+    // Stage 4 — the published listing, as a tourist sees it.
+    rec.mark('stage:ficha');
+    await rec.hold('ficha', 2200);
+    await scrollToY(page, 520, 3200);
+    await assertCleanView({ page, where: 'public scrolled' });
+    await rec.hold('ficha-abajo', 4500);
+    rec.mark('ficha:end');
 
     await page.screenshot({ path: join(rec.outDir, 'last.png') });
-    await rec.finish({ account: EMAIL });
+    await rec.finish({ account: EMAIL, publicUrl });
     await browser.close();
     writeStills();
 };
