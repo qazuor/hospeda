@@ -60,6 +60,7 @@ export {
     PaymentProviderError,
     type PaymentProviderErrorCode,
     type PaymentProviderErrorInput,
+    type RefundRefusal,
     type TransientProviderFailure
 } from './provider/errors';
 export type {

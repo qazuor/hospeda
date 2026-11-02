@@ -236,3 +236,39 @@ describe('TEST:1669:8 AC:1669:0 AC:1669:2 Mercado Pago refunds', () => {
         }
     });
 });
+
+describe('TEST:HOS-1551:2 Mercado Pago refund refusal code', () => {
+    it.each([
+        { code: 2084, expected: 'AMOUNT_NOT_ACCEPTED' },
+        { code: '2084', expected: 'AMOUNT_NOT_ACCEPTED' },
+        { code: 2017, expected: undefined },
+        { code: 2063, expected: undefined }
+    ])('classifies cause code $code without reading the message', async ({ code, expected }) => {
+        const provider = new MercadoPagoPaymentProvider({
+            clock,
+            accessToken: 'test-token',
+            fetch: async () =>
+                new Response(
+                    JSON.stringify({
+                        cause: [{ code, description: 'same provider refusal message' }]
+                    }),
+                    { status: 400, headers: { 'content-type': 'application/json' } }
+                )
+        });
+
+        const rejection = provider.refund({
+            chargeId: 'payment-1',
+            amount: { amountMinor: 500, currency: 'ARS' },
+            reference: 'refund-1'
+        });
+        if (expected === undefined) {
+            await expect(rejection).rejects.toMatchObject({ code: 'REJECTED' });
+            await expect(rejection).rejects.toHaveProperty('refundRefusal', undefined);
+            return;
+        }
+        await expect(rejection).rejects.toMatchObject({
+            code: 'REJECTED',
+            refundRefusal: expected
+        });
+    });
+});
