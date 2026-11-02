@@ -22,7 +22,7 @@ nombra como `<public>/…`.
 
 - Vertical 9:16, 1080×1920, 30 fps, H.264 + AAC 192k. Destino principal: WhatsApp.
 - Audio normalizado a **-14 LUFS**, true peak -1,5 dB (`ffmpeg loudnorm` sobre el render).
-- A1 v3: 28,7 s, ~10 MB. WhatsApp recomprime los videos; mandarlo como documento llega intacto.
+- A1 v4 (staging, hasta publicar): 44,4 s. WhatsApp recomprime los videos; mandarlo como documento llega intacto.
 
 ## Dispositivo de referencia: Samsung Galaxy S24 Ultra
 
@@ -77,8 +77,12 @@ bandas.
   defecto ignora el DPR y graba a escala 1.
 - Se graba **en staging**, logueado como `host-pro@local.test` (`host-basico` y `host-premium` están en el
   límite de fichas de su plan y `/publicar/` les muestra «Llegaste al límite de tu plan»). Contraseña por
-  `VIDEO_LOGIN_PASSWORD`. La toma no publica: deja un borrador «Cabañas Costa del Río», y antes de cada
-  toma se borra por la interfaz el de la toma anterior (si no, `/publicar/` ofrece retomarlo).
+  `VIDEO_LOGIN_PASSWORD`. La toma llega hasta **publicar** «Cabañas Costa del Río» (capacidad y pin del
+  mapa se cargan fuera de cámara; sin precio, la ficha queda «a consultar»), con las fotos del dueño de
+  `fotos/vc1/upload`. Publicar arranca la prueba de 30 días sin tarjeta; si el aviso no ofrece «Publicar
+  ahora» o algo cae en el proveedor de pagos, la toma se corta sin pagar nada. Antes de cada toma se borra
+  por la interfaz la ficha de la toma anterior (si no, `/publicar/` ofrece retomarla).
+- En la página de fotos se oculta el bloque «Videos», que nombra tres plataformas de video.
 - La lista «Mis propiedades» se muestra **sin tarjetas**: la ficha de la cuenta en staging es una tarjeta
   de prueba del seed (nombre de prueba, precio, cartel de plan, foto genérica), así que se oculta junto con
   el footer del sitio, que la página corta dejaría a la vista.
