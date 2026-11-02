@@ -1,5 +1,5 @@
-import { VenueTypeEnum } from '@repo/schemas';
 import { vi } from 'vitest';
+import { VenueTypeEnum } from '../../schemas/src/enums/venue-type.enum';
 
 // The package setup replaces fs/path reads with locale-loading stubs.
 vi.unmock('node:fs');
