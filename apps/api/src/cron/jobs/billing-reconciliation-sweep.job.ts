@@ -204,7 +204,7 @@ export const billingReconciliationSweepJob: CronJobDefinition = {
                         failedSubscriptionIds: failures.map(({ subscriptionId }) => subscriptionId),
                         failedChecks: zeroCallFailures.map(({ check }) => check)
                     },
-                    { capture: true }
+                    { capture: summary.rowsFailed > 0 || zeroCallFailures.length > 0 }
                 );
             }
             return {

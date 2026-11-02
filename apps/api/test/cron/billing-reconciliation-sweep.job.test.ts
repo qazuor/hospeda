@@ -575,8 +575,15 @@ describe('billing reconciliation sweep cron', () => {
             startedAt: new Date(),
             finishedAt: new Date()
         });
-        const result = await billingReconciliationSweepJob.handler(context());
+        const ctx = context();
+        const result = await billingReconciliationSweepJob.handler(ctx);
         expect(result).toMatchObject({ errors: 3, success: false });
+        // The per-row capture carries the detail; the job must not add a second Sentry event.
+        expect(ctx.logger.error).toHaveBeenCalledWith(
+            'Billing reconciliation sweep had failures',
+            expect.anything(),
+            { capture: false }
+        );
     });
 
     it('runs the credited payments check and maps its counters (HOS-1605, AC:B11:12, AC:B11:27)', async () => {

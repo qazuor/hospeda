@@ -53,6 +53,8 @@ export interface CancelOurAuthorizationInput {
         readonly read: ProviderRead<AuthorizationSnapshot>;
         readonly act: ActStart;
     };
+    /** Retry policy for a transient cancel failure; omitted means one attempt (HOS-1995). */
+    readonly retry?: CancelRetryPolicy;
 }
 
 /** Ports of {@link cancelOurAuthorization}. */
@@ -65,18 +67,37 @@ export interface CancelOurAuthorizationPorts {
 }
 
 /**
- * Bounded in-pass retry of the cancel call on a transient provider failure (HOS-1995): a
- * 429 burst or a 5xx is retried a few times with exponential backoff (the provider's
- * `Retry-After` wins, capped), so a throttled sweep does not leave an abandoned preapproval
- * alive until the next day. The cancel PUT is idempotent and the result is re-read after.
- * Beyond these attempts the row stays `CALL_FAILED` and the 3-day retry window of
+ * Opt-in retry of the cancel call on a transient provider failure (HOS-1995). Only the
+ * reconciliation sweep passes one: synchronous callers (webhook handlers, user HTTP routes)
+ * omit it and keep the single attempt, with no sleeps.
+ */
+export interface CancelRetryPolicy {
+    /** Total attempts, the first included. */
+    readonly maxAttempts: number;
+    /** Delay before the second attempt; doubles on each following one. */
+    readonly baseDelayMs: number;
+    /**
+     * Cap of one wait. A provider `Retry-After` above it is ignored ON PURPOSE: the sweep has
+     * a run time limit and the next sweep retries within the 3-day window anyway.
+     */
+    readonly maxDelayMs: number;
+    /** Cap on the sum of all waits of one cancel; a wait that would exceed it ends the retry. */
+    readonly totalBudgetMs: number;
+}
+
+/**
+ * The sweep's policy: waits of 2s then 4s (15s budget). MercadoPago writes are not idempotent
+ * by contract, so after a transient failure followed by a refusal the authorization is re-read
+ * before a failure is reported (it may have been cancelled by an attempt that looked failed).
+ * Beyond these attempts the row stays `CALL_FAILED` and the 3-day window of
  * `retryOurCancellation` decides whether later sweeps try again.
  */
-export const CANCEL_TRANSIENT_RETRY = {
+export const SWEEP_CANCEL_RETRY: CancelRetryPolicy = {
     maxAttempts: 3,
     baseDelayMs: 2000,
-    maxDelayMs: 10000
-} as const;
+    maxDelayMs: 10000,
+    totalBudgetMs: 15000
+};
 
 /** Result of {@link cancelOurAuthorization}. */
 export interface CancelOurAuthorizationResult {
@@ -111,41 +132,6 @@ function providerFailureDetail(error: unknown): {
     };
 }
 
-/** Calls `cancel`, retrying transient provider failures a bounded number of times. */
-async function cancelWithTransientRetry(
-    input: { readonly authorizationId: string },
-    ports: CancelOurAuthorizationPorts
-): Promise<{ readonly attempts: number; readonly error?: unknown }> {
-    const sleep = ports.sleep ?? defaultSleep;
-    for (let attempt = 1; ; attempt++) {
-        try {
-            await ports.provider.cancel({ authorizationId: input.authorizationId });
-            return { attempts: attempt };
-        } catch (error) {
-            const transient = error instanceof PaymentProviderError ? error.transient : undefined;
-            if (!transient || attempt >= CANCEL_TRANSIENT_RETRY.maxAttempts) {
-                return { attempts: attempt, error };
-            }
-            const backoff = Math.min(
-                CANCEL_TRANSIENT_RETRY.maxDelayMs,
-                CANCEL_TRANSIENT_RETRY.baseDelayMs * 2 ** (attempt - 1)
-            );
-            const delayMs =
-                transient.retryAfterSeconds === undefined
-                    ? backoff
-                    : Math.min(
-                          CANCEL_TRANSIENT_RETRY.maxDelayMs,
-                          transient.retryAfterSeconds * 1000
-                      );
-            logger.warn(
-                { attempt, delayMs, ...providerFailureDetail(error) },
-                'Retrying provider cancel after a transient failure'
-            );
-            await sleep(delayMs);
-        }
-    }
-}
-
 async function rereadIsCancelled(
     input: { readonly authorizationId: string },
     ports: CancelOurAuthorizationPorts
@@ -155,6 +141,47 @@ async function rereadIsCancelled(
     const read = await ports.provider.readAuthorization({ authorizationId: input.authorizationId });
     const fresh = assertFreshForAct({ read, act });
     return fresh.snapshot.status === 'cancelled';
+}
+
+/** Calls `cancel`, retrying transient provider failures when a policy was given. */
+async function cancelWithTransientRetry(
+    input: { readonly authorizationId: string; readonly retry?: CancelRetryPolicy },
+    ports: CancelOurAuthorizationPorts
+): Promise<{
+    readonly attempts: number;
+    readonly sawTransient: boolean;
+    readonly error?: unknown;
+}> {
+    const policy = input.retry;
+    const sleep = ports.sleep ?? defaultSleep;
+    let waitedMs = 0;
+    let sawTransient = false;
+    for (let attempt = 1; ; attempt++) {
+        try {
+            await ports.provider.cancel({ authorizationId: input.authorizationId });
+            return { attempts: attempt, sawTransient };
+        } catch (error) {
+            const transient = error instanceof PaymentProviderError ? error.transient : undefined;
+            if (transient) sawTransient = true;
+            if (!policy || !transient || attempt >= policy.maxAttempts) {
+                return { attempts: attempt, sawTransient, error };
+            }
+            const backoff = Math.min(policy.maxDelayMs, policy.baseDelayMs * 2 ** (attempt - 1));
+            const delayMs =
+                transient.retryAfterSeconds === undefined
+                    ? backoff
+                    : Math.min(policy.maxDelayMs, transient.retryAfterSeconds * 1000);
+            if (waitedMs + delayMs > policy.totalBudgetMs) {
+                return { attempts: attempt, sawTransient, error };
+            }
+            waitedMs += delayMs;
+            logger.warn(
+                { attempt, delayMs, ...providerFailureDetail(error) },
+                'Retrying provider cancel after a transient failure'
+            );
+            await sleep(delayMs);
+        }
+    }
 }
 
 /**
@@ -171,7 +198,7 @@ async function rereadIsCancelled(
  *    warn and call anyway. A recipient without a kind fails closed: no notice, no call,
  *    `CALL_FAILED` (HOS-1683, never a generic notice). Without a recipient there is no
  *    notice, and it never blocks.
- * 3. Calls `cancel`, retrying a transient failure (429, 5xx) with bounded backoff; a final
+ * 3. Calls `cancel`, retrying a transient failure (429, 5xx) with bounded backoff only when `input.retry` is given; a final
  *    failure is logged with its HTTP status and sanitized body and reported, never thrown.
  * 4. Re-reads by id after the call to confirm it.
  *
@@ -230,6 +257,17 @@ export async function cancelOurAuthorization(
 
     const cancelled = await cancelWithTransientRetry(input, ports);
     if (cancelled.error !== undefined) {
+        // A write that failed transiently may still have taken effect (MercadoPago writes are
+        // not idempotent): before reporting a refusal, look at what the provider holds.
+        const refused =
+            cancelled.error instanceof PaymentProviderError && !cancelled.error.transient;
+        if (cancelled.sawTransient && refused) {
+            try {
+                if (await rereadIsCancelled(input, ports)) return { outcome: 'CONFIRMED' };
+            } catch {
+                // The read failed too: fall through and report the cancel failure.
+            }
+        }
         logger.error(
             {
                 subscriptionId: input.subscriptionId,
