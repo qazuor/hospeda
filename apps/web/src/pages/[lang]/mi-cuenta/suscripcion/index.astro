@@ -27,9 +27,12 @@ import AccountPageHeader from '@/components/account/AccountPageHeader.astro';
 import TrialSummary from '@/components/account/TrialSummary.astro';
 import MySubscriptions from '@/components/account/MySubscriptions.astro';
 import { PromoCodeRedeem } from '@/components/account/PromoCodeRedeem.client';
+import StripMercadoPagoReturnParams from '@/components/billing/StripMercadoPagoReturnParams.astro';
+import { SubscriptionReturn } from '@/components/billing/SubscriptionReturn.client';
 import { TrialStatusEnum } from '@repo/schemas';
 import { billingSubscriptionApi, publishApi, type PublishVerticalSlug } from '@/lib/api/endpoints-protected';
 import { parseOwnSubscriptions } from '@/lib/billing/self-cancel';
+import { parseReturnSubscriptionId } from '@/lib/billing/subscription-return';
 import { createTranslations } from '@/lib/i18n';
 import type { SupportedLocale } from '@/lib/i18n';
 import { buildUrl } from '@/lib/urls';
@@ -68,10 +71,36 @@ try {
 } catch {
 	 ownSubscriptions = null;
 }
+
+// HOS-1979: the payer returns from Mercado Pago with `?subscription=<our id>`.
+// Read that attempt's real status here, server-side; the island polls from there.
+const returnSubscriptionId = parseReturnSubscriptionId({ search: Astro.url.search });
+let returnStatus: string | null = null;
+let returnBillingOptionId: string | null = null;
+if (returnSubscriptionId) {
+	try {
+		const read = await billingSubscriptionApi.read({ subscriptionId: returnSubscriptionId, cookieHeader });
+		if (read.ok) {
+			returnStatus = read.data.status;
+			returnBillingOptionId = read.data.billingOptionId;
+		}
+	} catch {
+		returnStatus = null;
+	}
+}
 ---
 
 <AccountLayout locale={locale} title={title} activeSection="suscripcion">
+	<StripMercadoPagoReturnParams slot="head-early" />
 	<AccountPageHeader title={title} />
+	{returnSubscriptionId && <SubscriptionReturn
+		client:load
+		locale={locale}
+		subscriptionId={returnSubscriptionId}
+		initialStatus={returnStatus}
+		billingOptionId={returnBillingOptionId}
+		accountEmail={user.email}
+	/>}
 	<MySubscriptions locale={locale} result={ownSubscriptions} />
 	<TrialSummary locale={locale} entries={trialSummaries} liveSubscriptionVerticals={ownSubscriptions?.subscriptions.map((row) => row.vertical) ?? []} />
 	{trialSummaries.some(({ summary }) => summary.status === TrialStatusEnum.TRIAL_ACTIVE) && <section data-testid="trial-promo-redeem">

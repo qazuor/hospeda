@@ -5557,6 +5557,19 @@ export const billingSubscriptionApi = {
     }): Promise<ApiResult<z.infer<typeof OwnSubscriptionsResponseSchema>>> {
         return apiClient.getProtected({ path: `${PROTECTED}/billing-subscription/`, cookieHeader });
     },
+    /** Read one owned subscription (status and anchored billing option); a foreign id answers 404. */
+    read({
+        subscriptionId,
+        cookieHeader
+    }: {
+        readonly subscriptionId: string;
+        readonly cookieHeader?: string;
+    }): Promise<ApiResult<{ readonly status: string; readonly billingOptionId: string | null }>> {
+        return apiClient.getProtected({
+            path: `${PROTECTED}/billing-subscription/${subscriptionId}`,
+            cookieHeader
+        });
+    },
     /** Read the cancellation consequences for one owned subscription. */
     cancellationPreview({
         subscriptionId
