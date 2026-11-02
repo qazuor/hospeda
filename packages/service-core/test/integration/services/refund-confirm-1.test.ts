@@ -211,4 +211,52 @@ describe('TEST:B6:1 AC:B6:1 RF2 confirmation persists a key before calling the p
             expect(callCount).toBe(0);
         }
     );
+
+    it.skipIf(skip)(
+        'allows the exact remaining balance and rejects a request that exceeds it',
+        async () => {
+            // Arrange
+            const exact = await refundConfirmFixture(10000, 5000);
+            await requestRefund(
+                {
+                    source: { kind: 'PAYMENT', id: exact.payment.id },
+                    amount: 5000,
+                    reason: 'REVOCATION'
+                },
+                { clock: exact.fixture.clock }
+            );
+            const over = await refundConfirmFixture(10000, 5000);
+            await getServiceTestDb().insert(refunds).values({
+                paymentId: over.payment.id,
+                amount: 6000,
+                reason: 'REVOCATION',
+                status: 'REQUESTED'
+            });
+            let calls = 0;
+            const counting = new Proxy(over.fixture.provider, {
+                get(target, property, receiver) {
+                    if (property === 'refund')
+                        return async (input: RefundInput) => {
+                            calls++;
+                            return target.refund(input);
+                        };
+                    return Reflect.get(target, property, receiver);
+                }
+            });
+
+            // Act / Assert
+            const allowed = await confirmRefund(
+                { actor: exact.actor, refundId: exact.refundId },
+                { clock: exact.fixture.clock, provider: exact.fixture.provider }
+            );
+            expect(allowed.status).toBe('CONFIRMED');
+            await expect(
+                confirmRefund(
+                    { actor: over.actor, refundId: over.refundId },
+                    { clock: over.fixture.clock, provider: counting }
+                )
+            ).rejects.toMatchObject({ code: 'VALIDATION_ERROR', reason: 'REFUND_EXCEEDS_BALANCE' });
+            expect(calls).toBe(0);
+        }
+    );
 });
