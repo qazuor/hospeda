@@ -36,8 +36,8 @@ Three changes, shipped as independent PRs:
   slices, and give the creations sweep a per-row backoff.
 
 The owner answered OQ-1…OQ-6 on 2026-11-02 (§14). A design review the same day
-(findings H1–H19) hardened the design; OQ-7 and OQ-8 came out of it and are
-**pending**.
+(findings H1–H19) hardened the design; the owner then decided the two questions
+it raised, OQ-7 and OQ-8, the same day.
 
 Measured diagnosis, with file:line on `origin/staging@5839d5e749`:
 [`docs/diagnosis.md`](docs/diagnosis.md).
@@ -340,11 +340,11 @@ charge is younger than the horizon. A deadline 18 longer than a month leaves
 more than one approved charge open and adds one live read per extra open charge.
 
 **Creations sweep memory.** New table `creation_sweep_attempt` (docs). A
-pending row gets a `next_search_at` and is not searched before it; a new create
-key resets the cadence. The cadence itself (proposed: +5, +10, +20, +40 min,
-then every 60 min until its window closes, jittered) is **OQ-7, pending**. A run
-memoizes `searchAuthorizations({ payerEmail })` by email, so rows sharing one
-email cost one search.
+pending row gets a `next_search_at` and is not searched before it: +5 min, then
++15 min, then every 60 min until its window closes, jittered (OQ-7 decided); a
+new create key resets the cadence. Searches are batched by payer email: a run
+groups its due rows by email and issues one `searchAuthorizations({ payerEmail })`
+per email.
 
 ### 6.3 C — Schedule
 
@@ -430,115 +430,108 @@ the run), persisted by `recordCronRun`, so per-run cost is queryable in
 the interactive class, or background 429s exceed 1% of background requests, open
 D.
 
-### 6.5 Resumable nightly sweep cycle (OQ-4, G-7)
+### 6.5 Resumable nightly sweep cycle (OQ-4, OQ-8, G-7)
 
-Owner decision 2026-11-02. Full algorithm, columns and failure matrix:
-[`docs/sweep-slicing.md`](docs/sweep-slicing.md).
+Owner decisions 2026-11-02 (OQ-4: several short slices across the night; OQ-8:
+progress is a per-row `last_swept_at`, not a cursor). Algorithm, columns and
+failure cases: [`docs/sweep-slicing.md`](docs/sweep-slicing.md).
 
 **Shape.** `billing-reconciliation-sweep` fires at `02:10`, `03:10` and `04:10`
 (market time zone), 50-min timeout and a 45-min own budget each (§6.3). Each
-firing is a **slice** of one **cycle**, identified by `cycle_id` (the id of its
-slice 0 run row) and dated by `cycle_date`. A slice takes the cron lock (§6.3),
-resumes the latest cycle of the day where the previous slice left it, and stops
-on its own budget or on `ctx.signal`. The manual trigger with `?newCycle=true`
-opens a fresh cycle (new `cycle_id`, same `cycle_date`) instead.
+firing is a **slice** of one **cycle**; a cycle is identified by `cycle_id` and
+starts at `cycle_started_at` (slice 0's start). The manual trigger with
+`?newCycle=true` opens a fresh cycle.
 
-**Cursor state** lives in `reconciliation_sweep_run`, one row per slice (new
-nullable columns, expand-only): `cycle_id`, `cycle_date`, `slice_index` (unique
-with `cycle_id`), `phase` (`ROWS` → `PASSES` → `DONE`), `cursor_after_id`,
-`cursor_seq`, `cycle_origin_after_id`, `cursor_wrapped`, `rows_complete`,
-`passes_completed`, `lease_until`, `inventory_size_at_start`, `outcome`,
-per-slice counters (including `rows_visited`) and `failed_subscription_ids`.
-After each row finishes (success or row failure) one guarded `UPDATE` advances
-the cursor, increments `cursor_seq`, adds the counters and extends
-`lease_until = now + 5 min`; it matches only `WHERE id = :runId AND outcome IS
-NULL AND cursor_seq = :expectedSeq`. Zero rows updated means another slice has
-closed this run (it was taken for dead): the slice stops at once without
-touching anything else. At most the row in flight is replayed.
+**Progress lives on the row.** New nullable column
+`subscription.last_swept_at`. Every page of the main loop takes the inventory
+(today's filter, `reconciliation-inventory.model.ts:116-125`) restricted to
+`last_swept_at IS NULL OR last_swept_at < cycle_started_at`, ordered
+`last_swept_at ASC NULLS FIRST, id`. When a row finishes — success or row
+failure — it is stamped `last_swept_at = now()` and leaves the cycle's set. So:
 
-**Lease, not lock, decides "dead".** A free advisory lock does not prove its
-holder is gone: R-6 says the lock dies with its **connection**, so a live slice
-whose lock connection dropped would otherwise be declared dead and run twice. A
-run left open is closed as `ABANDONED` only when its `lease_until` has passed;
-while the lease is live, the new slice records `details.skipped =
-'lease_held'` and exits. The guarded cursor `UPDATE` above stops the zombie if
-it ever comes back. The same lease applies unchanged if OQ-8 replaces the cursor
-with a per-row `last_swept_at`: the per-row write is then guarded by the run's
-lease and `outcome IS NULL` in the same transaction.
+- a row is read once per cycle; a row interrupted mid-flight is unstamped and is
+  simply read again (replay is safe, below);
+- rows created during the cycle (`NULL`) are read in the same cycle, first;
+- rows an incomplete cycle did not reach carry the oldest stamps, so the next
+  cycle reads them first — fairness needs no wrap logic;
+- the rows phase is complete exactly when the query returns nothing
+  (`rows_complete`), so coverage holds by construction.
 
-**Rows read at different hours.** Freshness and deadlines are already per row:
-each row opens its own act and decides on reads stamped inside it (INV:D17), and
-no comparison reads the run's start. What changes is when a row is reached
-(up to ~2 h later than slice 0) and the spacing between two reads of a row
-(~22–26 h instead of ~24 h); no check counts runs. A replayed row is safe: marks
-are find-or-insert under the open-mark unique index (verified,
-`open-reconciliation-mark.service.ts:105-147`), charges are keyed by
+The stamp writes only `last_swept_at` (never `updated_at`, which means "last
+business change") in a short transaction of its own, after the row's act.
+
+**Lease.** A free advisory lock does not prove its holder is dead (it dies with
+its connection, R-6). Each slice's run row carries `lease_until`, extended to
+`now + 5 min` in the same transaction as every stamp: `UPDATE
+reconciliation_sweep_run SET lease_until = …, <counters> WHERE id = :runId AND
+outcome IS NULL`; zero rows updated → the stamp is rolled back and the slice
+stops. A new slice that finds an open run with a live lease exits with
+`details.skipped = 'lease_held'`; with an expired lease it closes that run as
+`ABANDONED` (bookkeeping only — there is no position to resume) and proceeds.
+
+**Run row.** `reconciliation_sweep_run` keeps one row per slice and gains the
+cycle columns (`cycle_id`, `phase`, `rows_complete`, `passes_completed`,
+`lease_until`, `outcome`, …), listed in `docs/sweep-slicing.md` §2.
+
+**Rows read at different hours.** Freshness and deadlines are per row: each row
+opens its own act and decides on reads stamped inside it (INV:D17); no check
+reads the run's start or counts runs. A row is reached up to ~2 h later than
+with one run, and two reads of it are ~22–26 h apart. A replayed row is safe:
+marks are find-or-insert under the open-mark unique index
+(`open-reconciliation-mark.service.ts:105-147`), collected charges are keyed by
 `uq_payment_provider_fact`, undercharge events dedupe by payment id.
 
-**Slice budget or failure.** When its 45-min budget runs out the slice finishes
-the current row, records `TIMED_OUT` on its run row and returns `success: true`
-(§6.3): no Sentry capture, no Healthchecks `/fail`, no failed `cron_runs` entry.
-The next slot resumes from the cursor. A thrown fault closes the run as `FAILED`
-in a `finally`; a run left open by a dead process is closed as `ABANDONED` once
-its lease expires (above). Row failures never stop the cycle.
+**Slice budget or failure.** On its 45-min budget the slice finishes the current
+row, records `TIMED_OUT` and returns `success: true` (§6.3): no Sentry capture,
+no Healthchecks `/fail`, no failed `cron_runs` entry. A thrown fault closes the
+run as `FAILED` in a `finally`. Row failures never stop the cycle.
 
-**Post-loop passes across slices.** They run after the inventory is exhausted
-(`phase = PASSES`), in today's order: our-cancellation retry (unconfirmed),
-terminal return, credited payments, paid orders, mark escalation, pause gifts,
-zero-call checks. Each finished pass is appended to `passes_completed`; an
-interrupted pass restarts from its beginning in the next slice (each is
-idempotent over state). The per-row cancellation retry of live
-`CANCEL_SCHEDULED` rows stays inside the row loop, unchanged.
-
-The passes must not starve behind the rows: in the **last slot** of the night,
-the row loop stops when the remaining budget falls below a **pass reserve**
-(15 min, a code constant sized from the passes' measured duration in PR-5),
-records `rows_complete = false` and moves to `PASSES` anyway. Every night
-therefore runs every pass at least once, even when the rows did not finish; the
-unread rows are handled by the wrap below.
+**Post-loop passes.** After the rows (`phase = PASSES`), in today's order:
+our-cancellation retry (unconfirmed), terminal return, credited payments, paid
+orders, mark escalation, pause gifts, zero-call checks. Each finished pass is
+appended to `passes_completed`; an interrupted one restarts from its beginning
+in the next slice (each is idempotent over state). In the **last slot**, the row
+loop stops when the remaining budget falls below a **pass reserve** (15 min, a
+code constant sized in PR-5), with `rows_complete = false`, so every pass runs
+every night. The per-row cancellation retry of live `CANCEL_SCHEDULED` rows
+stays inside the row loop.
 
 **End-of-cycle summary.** The slice that reaches `DONE` sums the cycle's slices,
 emits the HOS-1885 failure alert once per cycle, sends the liveness ping only
-when the cycle had zero failed rows and `rows_complete` (today's rule, per
-cycle), and returns `details.cycle`. Earlier slices return `success: true`
-unless they faulted, so row failures do not page twice. Coverage is checked
-against `inventory_size_at_start` (counted when slice 0 opens the cycle): the
-summed `rows_visited` may differ from it by the rows created or soft-deleted
-during the cycle, so a mismatch is logged at `warn` with both numbers, never at
-error.
+when the cycle had zero failed rows and `rows_complete`, and returns
+`details.cycle`. Earlier slices return `success: true` unless they faulted.
+If the last slot ends without `DONE`, or with `rows_complete = false`, it logs
+"reconciliation cycle incomplete" at error level with `capture: true` and
+returns `success: false` — the one deliberate page of the night; the next cycle
+picks the unread rows first. A cycle that needs the last slot logs `warn` "near
+capacity", the trigger to add slots or revisit D.
 
 **Monitors.** The Sentry monitor (`apps/api/src/utils/cron-monitor-ping.ts:10`,
 today an interval of 1 day with a 120-min margin) becomes a crontab monitor
-`10 2 * * *` with timezone `America/Argentina/Buenos_Aires` (the jobs' own zone,
-`cron/bootstrap.ts:41`) and a 170-min margin; otherwise a ping moving between
-~02:15 and ~05:00 trips it falsely. The Healthchecks check
-`<env>-billing-reconciliation-sweep` is a per-**tick** liveness signal (the
-bootstrap pings it on every run, `bootstrap.ts:181,206-211`), so its schedule moves
-from `0 6 * * *` to `10 2,3,4 * * *` in the same zone, with a 1-hour grace; it is
-changed by hand in the Healthchecks UI, and the step that lists it
-(`scripts/cutover/README.md:632-638`) is updated in PR-5.
+`10 2 * * *`, timezone `America/Argentina/Buenos_Aires` (the jobs' zone,
+`cron/bootstrap.ts:41`), 170-min margin. The Healthchecks check
+`<env>-billing-reconciliation-sweep` is pinged on every tick
+(`bootstrap.ts:181,206-211`), so its schedule becomes `10 2,3,4 * * *` in the
+same zone with a 1-hour grace, set by hand in the Healthchecks UI.
 
-**Incomplete cycle.** If the last slot ends without `DONE`, or reaches `DONE`
-with `rows_complete = false`, that slice logs "reconciliation cycle incomplete"
-at error level with `capture: true` and returns `success: false`. The next cycle
-starts **after** the stopped cursor and wraps (`cycle_origin_after_id`), so the
-unreached rows go first instead of being starved every night. The manual trigger
-(same `runCronJob`, same lock) runs one more slice of the current cycle. A cycle
-that needs the last slot logs `warn` "near capacity", the trigger to add slots
-or revisit D.
-
-**Docs updated with PR-5:** `apps/api/docs/cron-system.md` (schedule table and
-examples, lines 268 and 907), `docs/guides/sentry-alerts.md:161` ("Diario
-06:00"), `scripts/cutover/README.md:632-638` and
+**Docs updated with PR-5:** `apps/api/docs/cron-system.md` (lines 268 and 907),
+`docs/guides/sentry-alerts.md:161`, `scripts/cutover/README.md:632-638` and
 `docs/billing/smoke-checklist.md:84`.
 
 ## 7. Data model / contracts
 
 - **Migrations (carril 1, expand-only):** `provider_charge_snapshot`,
   `creation_sweep_attempt`, and the cycle columns on `reconciliation_sweep_run`
-  (§6.5). The B4 fingerprint is not part of this spec (OQ-6). If OQ-8 is chosen,
-  the cycle columns shrink and `subscription` (or a side table) gains
-  `last_swept_at` instead (§14).
+  (§6.5), and `subscription.last_swept_at timestamptz NULL` with the index
+  `idx_subscription_last_swept_at (last_swept_at ASC NULLS FIRST, id)`, which
+  matches the slice query's order so a page is an index-ordered scan filtered by
+  the inventory predicate. All additions are nullable with no default and no
+  backfill: `NULL` already means "never swept", so the first cycle reads every
+  row. `subscription` is small (about 13 live subscriptions today), so a plain
+  `CREATE INDEX` from `pnpm db:generate` takes its lock for milliseconds; if the
+  table has grown past ~100k rows when PR-5 ships, the migration uses
+  `CREATE INDEX CONCURRENTLY` instead. The B4 fingerprint is not part of this
+  spec (OQ-6).
 - **Env vars:** `HOSPEDA_MERCADO_PAGO_GOVERNOR_MODE` (`off|observe|enforce`,
   default `observe`). Rate / burst / reserve are code constants (OQ-3). Full
   workflow for the one env var: registry in
@@ -653,9 +646,10 @@ request log: **77** before any PR (baseline, unchanged by PR-1 and by PR-3/4/5);
 - **AC-35** Given a fetch in one read scope that rejects, then the callers
   already awaiting it receive the rejection, the promise is evicted, and the next
   caller in the scope issues a new request.
-- **AC-14** Given two pending creations sharing a payer email, then one run issues
-  one search; given a pending row searched at T, then it is not searched again
-  before its `next_search_at`.
+- **AC-14** Given two due pending creations sharing a payer email, then one run
+  issues one search; given a pending row created at T, then it is searched no
+  earlier than T+5 min, then T+20 min, then at most every 60 min (each slot
+  jittered), and a new create key restarts that sequence.
 
 ### Schedule (C)
 
@@ -680,29 +674,30 @@ request log: **77** before any PR (baseline, unchanged by PR-1 and by PR-3/4/5);
   the counters of §6.4; every MP-calling cron run's `details.providerTraffic` is
   persisted in `cron_runs`.
 
-### Resumable sweep cycle (C, OQ-4)
+### Resumable sweep cycle (C, OQ-4, OQ-8)
 
-- **AC-19** Given an inventory of 300 rows and a slice budget that covers 120,
-  when the three slots run, then every row is read exactly once in the cycle, in
-  id order, and the third slice reaches `DONE`.
+- **AC-19** Given an inventory of 300 never-swept rows and a slice budget that
+  covers 120, when the three slots run, then every row is read exactly once in
+  the cycle, every row ends with `last_swept_at ≥ cycle_started_at`, and the
+  third slice reaches `DONE`.
 - **AC-20** Given a slice that reaches its own 45-min budget mid-loop, then the
-  row in progress finishes, `cursor_after_id` is that row, the run is
-  `TIMED_OUT`, the job returns `success: true`, there is **no**
-  `Sentry.captureException`, **no** Healthchecks `/fail` ping and no failed
-  `cron_runs` entry, and the next slice starts at the following row.
+  row in progress finishes and is stamped, the run is `TIMED_OUT`, the job
+  returns `success: true`, there is **no** `Sentry.captureException`, **no**
+  Healthchecks `/fail` ping and no failed `cron_runs` entry, and the next slice
+  reads only rows not yet stamped in this cycle.
 - **AC-21** Given a slice whose process dies after row K started, when the next
   slot fires after its `lease_until` has passed, then that slice closes the open
-  run as `ABANDONED`, resumes after the last recorded cursor, and re-reading row
-  K opens no second mark.
+  run as `ABANDONED`, reads row K again (it was never stamped), and re-reading
+  row K opens no second mark.
 - **AC-36** Given an open run whose lock is free but whose `lease_until` is still
   in the future, then the new slice does not close it and exits with
   `details.skipped = 'lease_held'`. Given a run closed as `ABANDONED` whose
-  original slice is still alive, then that slice's next cursor `UPDATE` matches
-  zero rows and it stops without processing another row.
-- **AC-22** Given the inventory is exhausted mid-slice, then the passes run in
-  the fixed order; given the signal aborts during the credited-payments pass,
-  then `passes_completed` lists only the earlier passes and the next slice starts
-  the credited-payments pass from its beginning.
+  original slice is still alive, then that slice's next stamp transaction updates
+  zero run rows, rolls back the stamp, and the slice stops.
+- **AC-22** Given the rows are exhausted mid-slice, then the passes run in the
+  fixed order; given the signal aborts during the credited-payments pass, then
+  `passes_completed` lists only the earlier passes and the next slice starts the
+  credited-payments pass from its beginning.
 - **AC-34** Given rows that would consume the whole last slot, then the row loop
   stops when the remaining budget falls below the pass reserve, `rows_complete`
   is `false`, every pass runs and is listed in `passes_completed`, and the cycle
@@ -712,21 +707,20 @@ request log: **77** before any PR (baseline, unchanged by PR-1 and by PR-3/4/5);
   `SKIPPED_CYCLE_DONE` and makes no provider call.
 - **AC-24** Given a cycle with failed rows in slices 0 and 2, then exactly one
   failure alert carries the failed ids of both, no liveness ping is sent, and
-  earlier slices reported `success: true`.
-- **AC-25** Given the last slot ends with the cycle in `ROWS`, or `DONE` with
-  `rows_complete = false`, then an "incomplete" error is captured, and the next
-  night's cycle starts with the row after the stopped cursor, wraps to the
-  beginning, and ends with the row at the stopped cursor.
-- **AC-37** Given rows created and soft-deleted during a cycle, then the
-  coverage check compares the summed `rows_visited` with
-  `inventory_size_at_start`, logs any difference at `warn` with both numbers,
-  and never at error.
+  earlier slices reported `success: true`; the failed rows are stamped and not
+  retried within the cycle.
+- **AC-25** Given the last slot ends with `rows_complete = false`, then an
+  "incomplete" error is captured, and the next night's cycle reads the rows that
+  were not reached (oldest `last_swept_at`) before the rows that were.
+- **AC-37** Given a row that enters the inventory during a cycle (`last_swept_at`
+  `NULL`), then the same cycle reads it before any previously swept row it has
+  not reached yet.
 
 ## 10. Test strategy
 
 Mutation-sensitive by design: every test names the mutation it must kill, and
 the implementer records the mutation run on the PR (a survivor blocks merge).
-Full matrix (42 tests, 10 of them for the resumable cycle) in
+Full matrix (43 tests, 11 of them for the resumable cycle) in
 [`docs/data-model-and-tests.md`](docs/data-model-and-tests.md). The cycle tests
 drive slices with an injected clock and signal against a real DB, and assert on
 `reconciliation_sweep_run` rows plus the fake server's request log. The
@@ -770,12 +764,13 @@ it against the fake server's log.
    Target: **≤ 15** steady; **≤ 3 per read** under 429s.
 4. **PR-4 C, scheduling**: shared `runCronJob` (async manual trigger), stagger
    of the other four jobs, `withCronLock`, `ctx.signal` + own budget, creations
-   backoff + table (cadence per OQ-7). The sweep keeps its single run, moved to
+   backoff + table (OQ-7: 5 → 15 → 60 min, batched by email). The sweep keeps
+   its single run, moved to
    `10 2 * * *`, so PR-5 starts from a locked, cancellable job; the Sentry
    monitor, the Healthchecks check and the docs of §6.5 move to `10 2 * * *`
    here. Target: **≤ 15**, unchanged.
-5. **PR-5 Resumable sweep cycle** (§6.5, or its OQ-8 variant): run columns,
-   lease, slice algorithm, pass reserve and bookkeeping, cycle summary, monitors
+5. **PR-5 Resumable sweep cycle** (§6.5): `subscription.last_swept_at` and its
+   index, run columns, lease, slice algorithm, pass reserve and bookkeeping, cycle summary, monitors
    and docs moved to `10 2,3,4`, `?newCycle=true` and the smoke-checklist step.
    Staging smoke: force a small slice budget so one cycle spans the three slots,
    kill one slice mid-run, and check the cycle summary. Target: **≤ 15**,
@@ -809,9 +804,10 @@ expand-only so a revert leaves harmless tables).
   check keeps reading live inside its window; the latest charge is always read
   live; only the period-charges comparison consumes snapshots (AC-13).
 - **R-4 Background starvation.** Sustained interactive load could starve a
-  slice. Mitigation: the slice stops on its budget and the next slot resumes from
-  the cursor; the passes keep a reserve in the last slot (AC-34); an unfinished
-  cycle is captured and the next one starts at the unreached rows (§6.5).
+  slice. Mitigation: the slice stops on its budget and the next slot continues
+  with the unstamped rows; the passes keep a reserve in the last slot (AC-34);
+  an unfinished cycle is captured and the next one reads the unreached rows
+  first (§6.5).
 - **R-5 Wrong default limits.** Without E we guess `R`. Too low slows the sweep;
   too high keeps 429s. Mitigation: a week in `observe` first; the constants
   (OQ-3) are retuned in a PR once that baseline or E is in.
@@ -829,14 +825,17 @@ expand-only so a revert leaves harmless tables).
   `chargeRecordCount`/`lastChargedAt`, the skip would miss it. Mitigation: any
   open charge forces a listing; B4 is deferred (OQ-6) until T-B4-GATE measures
   exactly this.
-- **R-9 Cycle bookkeeping bugs.** A wrong cursor skips or repeats rows silently.
-  Mitigation: AC-19 to AC-25 and AC-34/36/37; the guarded cursor `UPDATE`; a
-  per-slice `rows_visited` counter summed at `DONE` and compared with
-  `inventory_size_at_start` (a `warn`, because rows created or deleted during
-  the cycle make an exact match impossible).
+- **R-9 Cycle bookkeeping bugs.** A stamp written before the row finishes would
+  skip a row on a crash; a stamp never written would re-read rows every slice.
+  Mitigation: the stamp is written only after the row's act, in the lease
+  transaction; `rows_complete` is "the query returned nothing", so coverage needs
+  no counter; AC-19 to AC-25, AC-34, AC-36 and AC-37. A stray write of
+  `last_swept_at` outside the sweep is caught by a static guard (one writer).
 - **R-10 A row reached later in the night.** Up to ~2 h later than slice 0, so a
   grace that expired overnight is taken a little later than with one run.
-  Accepted by the owner's decision; all deadlines are day-granular.
+  Accepted by the owner's decision; all deadlines are day-granular. Ordering by
+  the previous stamp keeps a row's position roughly stable night to night, so
+  its read hour does not drift.
 - **R-11 The kill switch must revert behaviour, not just the bucket.** If PR-3's
   retry changes ran regardless of mode, `off` would leave L1 without its delay
   and L2 without `RATE_LIMITED` retries and no governor wait to replace them.
@@ -851,10 +850,10 @@ expand-only so a revert leaves harmless tables).
 
 ## 14. Decisions
 
-The owner answered OQ-1…OQ-6 on **2026-11-02**. The options are kept as the
-record of what was weighed; **✅ Chosen** marks the decision. OQ-7 and OQ-8 came
-out of the design review the same day and are **⏳ Pending** (end of this
-section).
+The owner answered every open question on **2026-11-02**: OQ-1…OQ-6 first,
+then OQ-7 and OQ-8, which came out of the design review the same day. The
+options are kept as the record of what was weighed; **✅ Chosen** marks the
+decision.
 
 **OQ-1 · Cross-container coordination scope.** During a rollout two containers
 call MP at once; Redis is available.
@@ -920,7 +919,8 @@ It was the recommended option; the owner did not object. Revisit after E.
    traffic. Impact: none.
 
 Option 1 was recommended; the owner chose 2, trading more state for a run
-length that stays bounded as volume grows.
+length that stays bounded as volume grows. How progress is tracked (cursor vs
+per-row stamp) was settled later by OQ-8.
 
 **OQ-5 · Interactive behaviour under a cool-down.**
 
@@ -945,45 +945,42 @@ It was the recommended option; the owner did not object.
 
 It was the recommended option.
 
-**OQ-7 · Creations-sweep search cadence. ⏳ Pending.** How often a pending
-creation is searched by payer email once the per-row memory exists (§6.2).
-Today every pending row is searched every 5 minutes.
+**OQ-7 · Creations-sweep search cadence.** How often a pending creation is
+searched by payer email once the per-row memory exists (§6.2). Today every
+pending row is searched every 5 minutes.
 
-1. *Back-off: +5, +10, +20, +40 min, then every 60 min until the window
-   closes, jittered* (the current proposal). Pros: most searches fall in the
-   first hour, when a checkout usually lands; cost per row drops from ~12/h to
-   ~1/h after the first hour. Cons: a creation that lands late is seen up to an
-   hour later (the webhook normally reports it first). Impact: as in §6.2.
-2. *Fixed 15 min.* Pros: simple and predictable; 3× fewer searches than today.
-   Cons: still ~4/h per row for the whole window; slower first detection than
-   option 1. Impact: one constant.
+1. **✅ Chosen (2026-11-02).** *Back-off, batched by email.* The owner set the
+   cadence to **+5 min → +15 min → every 60 min** until the window closes
+   (jittered), with one search per payer email per run. Pros: most searches fall
+   early, when a checkout usually lands; cost per row drops from ~12/h to ~1/h
+   after the first 20 min. Cons: a creation that lands late is seen up to an hour
+   later (the webhook normally reports it first). Impact: as in §6.2.
+2. *Fixed 15 min.* Pros: simple; 3× fewer searches than today. Cons: still ~4/h
+   per row for the whole window. Impact: one constant.
 3. *Keep 5 min, add only the per-email memo.* Pros: no change in detection
    latency. Cons: cost stays proportional to pending rows × window length.
    Impact: the `creation_sweep_attempt` table is not needed.
 
-Recommended: 1. The webhook is the primary path; the sweep only catches a lost
-notice, so hour-level latency after the first hour costs little.
+It was the recommended option; the owner shortened its ramp (the review draft
+had +5, +10, +20, +40 min).
 
-**OQ-8 · Cycle bookkeeping: cursor or per-row `last_swept_at`. ⏳ Pending.**
+**OQ-8 · Cycle bookkeeping: cursor or per-row `last_swept_at`.**
 
-1. *Cursor on the run row* (§6.5 as written): `cursor_after_id`, wrap-around via
-   `cycle_origin_after_id`, `ABANDONED` runs, the lease and the guarded cursor
-   `UPDATE`. Pros: no write on `subscription`; state is local to the run table.
-   Cons: the most moving parts in this spec (wrap, abandon, lease, monotonic
-   guard); rows created behind the cursor wait for the next cycle. Impact: as
-   designed (§6.5, `docs/sweep-slicing.md`).
-2. *Per-row `last_swept_at`.* Each slice takes `WHERE last_swept_at <
-   cycle_start ORDER BY last_swept_at NULLS FIRST, id`, and stamps the row when
-   it finishes. Pros: removes the cursor, the wrap and `ABANDONED` (a dead slice
-   just leaves rows unstamped), and the dead-holder problem of the lease shrinks
-   to "two slices stamping"; fair to new rows (`NULLS FIRST`) and to rows an
-   incomplete cycle missed (oldest first). Cons: one write per row per night on
-   `subscription` (or a side table keyed by subscription id); needs an index on
-   `last_swept_at`. Impact: PR-5 shrinks; the run row keeps only counters,
-   `phase`, `passes_completed` and the lease.
+1. *Cursor on the run row*: `cursor_after_id`, wrap-around via an origin id,
+   `ABANDONED` resume, a monotonic guard on the cursor `UPDATE`. Pros: no write
+   on `subscription`. Cons: the most moving parts in the spec; rows created
+   behind the cursor wait for the next cycle. Impact: larger PR-5.
+2. **✅ Chosen (2026-11-02).** *Per-row `last_swept_at`.* Slices take
+   `last_swept_at < cycle_start ORDER BY last_swept_at NULLS FIRST`, and stamp
+   each row when it finishes. Pros: removes the cursor, the wrap and the resume
+   logic; fair to new rows (`NULLS FIRST`) and to rows an incomplete cycle missed
+   (oldest first); coverage holds by construction. Cons: one indexed write per
+   row per night on `subscription`. Impact: §6.5 as written; the lease stays,
+   to stop a zombie slice.
 
-Recommended: 2. It is simpler and fairer at the cost of one indexed write per
-row; the lease of §6.5 still applies to stop a zombie slice.
+It was the recommended option. Placement: the column goes on `subscription`
+(not a side table) so one index serves the slice query's order; the stamp writes
+only that column, never `updated_at`.
 
 ## 15. Linear
 

@@ -41,14 +41,14 @@ rewrites the snapshot; a slower read that finishes after a newer one is dropped.
 |---|---|---|
 | `subscription_id` | uuid PK, FK `subscription.id` | |
 | `attempts` | integer | searches done for this pending row |
-| `next_search_at` | timestamptz | per the cadence of OQ-7 (pending) |
+| `next_search_at` | timestamptz | +5 min, then +15 min, then every 60 min, jittered (OQ-7) |
 | `reset_marker` | varchar null | create-key id / `updated_at` seen at the last attempt; a change resets the cadence |
 
-## `reconciliation_sweep_run` cycle columns (OQ-4)
+## Sweep cycle columns (OQ-4, OQ-8)
 
-See [`sweep-slicing.md`](sweep-slicing.md) §2. Expand-only, nullable, so legacy
-single-run rows stay valid. OQ-8 (pending) would replace the cursor columns with
-a per-row `last_swept_at`.
+`subscription.last_swept_at` (indexed `last_swept_at ASC NULLS FIRST, id`) and
+the `reconciliation_sweep_run` cycle columns: see
+[`sweep-slicing.md`](sweep-slicing.md) §2. Expand-only, nullable, no backfill.
 
 ## Inventory fingerprint (B4, deferred)
 
@@ -98,7 +98,7 @@ provider method calls.
 | Refund after close (AC-12): closed approved snapshot + refund webhook → snapshot rewritten, next comparison sees it | integration | write-through skipped for closed rows |
 | Closedness at read time (AC-30): deadline 18 lengthened → a previously closed snapshot is read live | integration | closedness persisted at write time |
 | Latest re-read live (AC-31): latest listed charge has a closed snapshot → read live; latest chosen by `createdAt` across snapshots and live reads | integration | latest served from the snapshot; latest chosen by list order |
-| Creations memory: two rows, one email → one search; a row is not searched before `next_search_at` | integration | per-email memo or backoff removed |
+| Creations memory (AC-14): two due rows, one email → one search; a row created at T is searched at ≥ T+5, ≥ T+20, then at most hourly; a new create key restarts | integration (fake clock) | per-email batching or backoff removed; cadence not reset |
 
 ### Schedule and cron execution (C)
 
@@ -109,20 +109,21 @@ provider method calls.
 | Manual trigger (AC-32): same `runCronJob` as the tick, `202 { runId }` before the handler ends, `409` on overlap, `?newCycle=true` opens a new cycle after `DONE` | integration (route + DB) | the 30 s route race survives; trigger awaits the handler |
 | Manifest stagger: no two MP-calling jobs share a minute, none at minute 0 | unit on `CRON_SCHEDULES` | schedules collide |
 
-### Resumable sweep cycle (OQ-4)
+### Resumable sweep cycle (OQ-4, OQ-8)
 
 | Test | Level | Kills the mutation |
 |---|---|---|
-| Cycle covers every row once (AC-19): 300 rows, budget 120 per slice, three slices → each id read once, in order, `DONE` on slice 2 | integration (DB + fake server) | cursor written before the row instead of after; off-by-one on `>` vs `>=` |
-| Budget stop (AC-20): budget reached at row 57 → row 57 finishes, cursor = 57, `TIMED_OUT`, `success: true`, no `captureException`, no `/fail` ping, next slice starts at 58 | integration (Sentry + ping spies) | slice stops by throwing / via the race; cursor not persisted |
-| Dead slice (AC-21): open run with cursor 40, lease expired → closed `ABANDONED`, resume at 41; replaying row 41 opens no second mark | integration | resume from slice start instead of cursor; abandoned run left open |
-| Lease held (AC-36): lock free, lease live → no `ABANDONED`, `details.skipped = 'lease_held'`; a zombie's cursor `UPDATE` matches 0 rows and it stops | integration | free lock taken as proof of death; unguarded cursor `UPDATE` |
+| Cycle covers every row once (AC-19): 300 never-swept rows, budget 120 per slice, three slices → each id read once, all stamped ≥ `cycle_started_at`, `DONE` on slice 2 | integration (DB + fake server) | stamp skipped or compared with `<=`; query not restricted to unswept rows |
+| Budget stop (AC-20): budget reached at row 57 → row 57 finishes and is stamped, `TIMED_OUT`, `success: true`, no `captureException`, no `/fail` ping; next slice reads only unstamped rows | integration (Sentry + ping spies) | slice stops by throwing / via the race |
+| Crash mid-row (AC-21): act of row K ran, stamp not committed, lease expired → run closed `ABANDONED`, row K read again, no second mark | integration | stamp written before the act (row lost); abandoned run left open |
+| Lease held and zombie (AC-36): lock free, lease live → `details.skipped = 'lease_held'`; a run closed under a live slice → its next stamp transaction rolls back and it stops | integration | free lock taken as proof of death; stamp not guarded by the run's lease |
 | Passes across slices (AC-22): abort during credited payments → `passes_completed` = the earlier passes; next slice skips them and restarts credited payments | integration | pass marked complete before it returns; completed passes re-run |
 | Pass reserve (AC-34): rows would fill the last slot → loop stops at the reserve, `rows_complete = false`, every pass runs | integration | no reserve; passes skipped when rows run long |
 | Cycle already done (AC-23): third slot after `DONE` → `SKIPPED_CYCLE_DONE`, zero requests in the fake server log | integration | `DONE` not checked before reading |
-| One alert per cycle (AC-24): failures in slices 0 and 2 → one capture with both ids, no ping, slices 0–1 `success: true` | integration (logger + ping spies) | alert per slice; ping on failed cycle |
-| Incomplete cycle and wrap (AC-25): last slot ends in `ROWS` at cursor K → error captured; next cycle reads K+1…end, then start…K | integration | next cycle restarts from the beginning (tail starvation) |
-| Coverage check (AC-37): rows created and deleted mid-cycle → `warn` with both numbers, never error | integration | exact-match check at error level |
+| One alert per cycle (AC-24): failures in slices 0 and 2 → one capture with both ids, no ping, slices 0–1 `success: true`, failed rows stamped | integration (logger + ping spies) | alert per slice; ping on failed cycle; failed rows retried within the cycle |
+| Incomplete cycle (AC-25): last slot ends with `rows_complete = false` → error captured; next cycle reads the unreached rows before the reached ones | integration | ordering by `id` instead of `last_swept_at` (tail starvation) |
+| New row mid-cycle (AC-37): a row with `NULL` stamp appears during the cycle → read before previously swept rows not yet reached | integration | `NULLS LAST` |
+| One writer of `last_swept_at`: only the sweep's stamp transaction writes it | static guard test | a second writer (e.g. a generic update helper) |
 
 ### Observability
 
@@ -130,4 +131,4 @@ provider method calls.
 |---|---|---|
 | Window log (AC-18): traffic in both classes → one `mp_traffic_window` per class with the §6.4 counters; `details.providerTraffic` persisted | integration (logger spy + DB) | counters not flushed / not scoped to the run |
 
-42 tests. Integration suites run per file, never the full package suite locally.
+43 tests. Integration suites run per file, never the full package suite locally.
