@@ -343,6 +343,10 @@
             }
         },
         "publish": {
+            "republishConfirmTitle": {
+                "venue": "Publish this business again?",
+                "experience": "Publish this experience again?"
+            },
             "confirmTitle": {
                 "venue": "Publish this business?",
                 "experience": "Publish this experience?"

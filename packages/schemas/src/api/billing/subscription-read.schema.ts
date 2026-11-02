@@ -4,6 +4,10 @@ import { z } from 'zod';
 export const SubscriptionReadSchema = z.object({
     id: z.string().uuid(),
     vertical: z.string().nullable(),
+    /** Billing option the subscription is anchored to; lets a rejected attempt be restarted for the same plan (HOS-1979). */
+    billingOptionId: z.string().uuid().nullable(),
+    /** Email the payer declared for this attempt's authorization; lets a retry reuse it (HOS-1890, HOS-1979). */
+    declaredPayerEmail: z.string().nullable(),
     status: z.string(),
     class: z.string(),
     paymentMethod: z.string().nullable(),

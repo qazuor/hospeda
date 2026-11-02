@@ -145,3 +145,4 @@ el teléfono real el 31/10/2026 (whatismyviewport.com):
   publicación.
 - Animación «de verdad» de Hospedín (saludo con brazo articulado, etc.): requiere un clip generado
   (Hailuo, método de `marketing/`) o separar el personaje en piezas.
+- VC3: map shot borrowed from accommodations until the venue map ships — re-record stage 2 then.
