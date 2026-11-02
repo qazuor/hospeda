@@ -252,16 +252,17 @@ export async function creditPayment(
                         template: PAYMENT_CREDITED_TEMPLATE,
                         occurrence: buildEventOccurrence({ eventId: payment.id })
                     });
-                    const planRow = subscription?.planVersionId
-                        ? (
-                              await tx
-                                  .select({ slug: plans.slug, name: plans.name })
-                                  .from(planVersions)
-                                  .innerJoin(plans, eq(plans.id, planVersions.planId))
-                                  .where(eq(planVersions.id, subscription.planVersionId))
-                                  .limit(1)
-                          )[0]
-                        : undefined;
+                    const planRow =
+                        !payment.addonInstanceId && subscription?.planVersionId
+                            ? (
+                                  await tx
+                                      .select({ slug: plans.slug, name: plans.name })
+                                      .from(planVersions)
+                                      .innerJoin(plans, eq(plans.id, planVersions.planId))
+                                      .where(eq(planVersions.id, subscription.planVersionId))
+                                      .limit(1)
+                              )[0]
+                            : undefined;
                     const payload = payment.addonInstanceId
                         ? {
                               paymentId: payment.id,

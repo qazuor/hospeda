@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import {
     buildProviderReason,
     resolvePlanDisplayName
@@ -55,5 +55,29 @@ describe('buildProviderReason', () => {
             plan: { slug: 'owner-basico', name: 'Basic' }
         });
         expect(reason).not.toContain('Basic');
+    });
+});
+
+describe('when the billing copy cannot be loaded (HOS-1993)', () => {
+    it('falls back to the stored plan name and retries on the next call', async () => {
+        vi.resetModules();
+        let attempts = 0;
+        vi.doMock('@repo/i18n/locales/es/billing.json', () => {
+            attempts++;
+            if (attempts === 1) throw new Error('boom');
+            return { default: { plan: { 'owner-basico': { name: 'Básico' } } } };
+        });
+        const mod = await import('../../../src/services/billing/plan-display-name');
+
+        const first = await mod.resolvePlanDisplayName({
+            plan: { slug: 'owner-basico', name: 'Basic' }
+        });
+        const second = await mod.resolvePlanDisplayName({
+            plan: { slug: 'owner-basico', name: 'Basic' }
+        });
+
+        expect(first).toBe('Basic');
+        expect(second).toBe('Básico');
+        vi.doUnmock('@repo/i18n/locales/es/billing.json');
     });
 });

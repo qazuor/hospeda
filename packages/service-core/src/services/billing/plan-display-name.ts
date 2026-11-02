@@ -1,3 +1,7 @@
+import { createLogger } from '@repo/logger';
+
+const logger = createLogger('plan-display-name');
+
 /** Identity of a catalog plan as stored in `plan` (the stored name is not user-facing). */
 export interface PlanDisplayInput {
     /** Stable plan slug inside its vertical. */
@@ -25,9 +29,18 @@ let cachedCopy: Promise<BillingCopy> | undefined;
  * index fails the same way because it imports every locale file without attributes.
  */
 function loadCopy(): Promise<BillingCopy> {
-    cachedCopy ??= import('@repo/i18n/locales/es/billing.json', { with: { type: 'json' } }).then(
-        (module) => module.default as BillingCopy
-    );
+    // A failed load must never poison the cache nor break the caller: display names are cosmetic,
+    // and callers sit inside payment/activation transactions. Fall back to the stored plan name.
+    cachedCopy ??= import('@repo/i18n/locales/es/billing.json', { with: { type: 'json' } })
+        .then((module) => module.default as BillingCopy)
+        .catch((error: unknown) => {
+            cachedCopy = undefined;
+            logger.warn(
+                { error: error instanceof Error ? error.message : String(error) },
+                'Billing copy could not be loaded; falling back to stored plan names'
+            );
+            return {} as BillingCopy;
+        });
     return cachedCopy;
 }
 
