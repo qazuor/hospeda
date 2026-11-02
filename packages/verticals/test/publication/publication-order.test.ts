@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
     comparePublicationOrder,
+    orderRestorationCandidates,
     orderReturningCandidates,
     type PublicationQueueEntry,
     selectSurplusToLower
@@ -48,6 +49,20 @@ describe('publication order', () => {
         expect(
             selectSurplusToLower({ published: entries, limit: 2 }).map((item) => item.id)
         ).toEqual(['c']);
+    });
+
+    it('HOS-1984 restores the newest manual publish first, listings without an instant last', () => {
+        const created = date('2025-01-01T00:00:00Z');
+        const entries: PublicationQueueEntry[] = [
+            { id: 'none', createdAt: created, publishedAt: null },
+            { id: 'old', createdAt: created, publishedAt: date('2026-01-01T00:00:00Z') },
+            { id: 'new', createdAt: created, publishedAt: date('2026-06-01T00:00:00Z') }
+        ];
+        expect(orderRestorationCandidates({ entries }).map(({ id }) => id)).toEqual([
+            'new',
+            'old',
+            'none'
+        ]);
     });
 
     it('TEST:V6:5 keeps the published prefix independent of input permutation', () => {
