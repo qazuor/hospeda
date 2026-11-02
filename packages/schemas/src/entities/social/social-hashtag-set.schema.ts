@@ -12,12 +12,12 @@ export const SocialHashtagSetSchema = z.object({
     name: z.string().min(1, { message: 'zodError.socialHashtagSet.name.required' }),
     slug: z.string().min(1, { message: 'zodError.socialHashtagSet.slug.required' }),
     /** Optional platform restriction — null means applies to all platforms */
-    platform: SocialPlatformEnumSchema.optional(),
+    platform: SocialPlatformEnumSchema.nullish(),
     /** Space-separated hashtag string, e.g. "#playa #verano #hospeda" */
     hashtagsText: z.string().min(1, { message: 'zodError.socialHashtagSet.hashtagsText.required' }),
     priority: z.number().int().default(0),
     active: z.boolean().default(true),
-    notes: z.string().optional(),
+    notes: z.string().nullish(),
     ...BaseAuditFields
 });
 
