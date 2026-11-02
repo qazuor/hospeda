@@ -35,7 +35,9 @@ Three changes, shipped as independent PRs:
   cooperatively, run the daily sweep as a **resumable nightly cycle** of short
   slices, and give the creations sweep a per-row backoff.
 
-The owner answered the open questions on 2026-11-02 (§14).
+The owner answered OQ-1…OQ-6 on 2026-11-02 (§14). A design review the same day
+(findings H1–H19) hardened the design; OQ-7 and OQ-8 came out of it and are
+**pending**.
 
 Measured diagnosis, with file:line on `origin/staging@5839d5e749`:
 [`docs/diagnosis.md`](docs/diagnosis.md).
@@ -147,17 +149,24 @@ the last `reserve` tokens, so an interactive request arriving mid-burst finds a
 token immediately.
 
 **Class propagation.** An `AsyncLocalStorage<TrafficClass>` exported by
-`packages/payments` (`runWithTrafficClass`). Set once at two composition points,
-not per call site:
+`packages/payments` (`runWithTrafficClass`). Set once per composition point, not
+per call site. There are three:
 
 - the API app middleware sets `interactive` for every HTTP request (covers
   checkout, webhook, user routes, admin);
-- `cron/bootstrap.ts` wraps every job handler in `background` (also the manual
-  trigger in `apps/api/src/routes/cron-admin`).
+- the shared `runCronJob` (§6.3) wraps every job handler in `background`, for
+  both the scheduled tick and the manual trigger;
+- the operator script `apps/api/scripts/cutover-b9a-step-3b.ts`, which composes
+  its own provider through `composeStep3bProcess`
+  (`apps/api/src/services/cutover-b9a/step-3b.compose.ts:36`,
+  `defaultPaymentProvider({ clock })`), runs in `background`.
 
 A request with no class is treated as `interactive` (fail toward serving a
-customer) and counted as `unclassified` (§6.4); a static guard test asserts both
-composition points wrap.
+customer) and counted as `unclassified` (§6.4). A static guard test enumerates
+**every** caller of `defaultPaymentProvider` and of `new
+MercadoPagoPaymentProvider` in production code and fails on one that is not on
+its allowlist with a declared class, so a fourth composition point cannot be
+born unclassified.
 
 **Shared cool-down.** On a 429, `observe` sets `coolDownUntil = now + d`, where
 `d = Retry-After + random[0, 1 s]` when present (never shorter than the
@@ -167,35 +176,66 @@ consecutive 429 (max 60 s); random is injectable. While cooling down:
 - background waits (its `maxWaitMs` is the job's remaining budget);
 - interactive waits only if the cool-down ends within its `maxWaitMs`
   (default 2 s); otherwise it fails fast with the existing transient
-  `RATE_LIMITED` error (OQ-5). The webhook turns that into `DEFERRED` →
-  `503 + Retry-After` and MP redelivers, so no notice is lost; checkout maps it
-  to the existing retryable error (HOS-1968), not a 500. Neither runs inside a
-  read scope (§6.2): they always read live and only write facts.
+  `RATE_LIMITED` error (OQ-5), flagged `governorRejected: true` (no HTTP request
+  was sent). Checkout maps it to the existing retryable error (HOS-1968), not a
+  500. Neither checkout nor the webhook runs inside a read scope (§6.2): they
+  always read live and only write snapshots.
+
+**Webhook under a cool-down.** Today only an incomplete read becomes `DEFERRED`
+(`process-provider-notice.service.ts:483-485`); every other error, including a
+`RATE_LIMITED` one, becomes `FAILED`, and the route answers a fixed
+`Retry-After: 60` (`routes/webhooks/mercadopago.ts:58-63`). This spec maps a
+`RATE_LIMITED` error (governor-rejected or a real 429) to `DEFERRED` as well, and
+carries `retryAfterSeconds` = the remaining shared cool-down (rounded up, min 1,
+max 120) into the outcome, so the route answers `503` with that `Retry-After`
+instead of 60. MP redelivers; no notice is lost.
 
 A 2xx resets k. 5xx does not open a cool-down (it is not a quota signal).
 
-**Retry ownership (G-3).**
+**Retry ownership (G-3).** Under `enforce` only; under `off` and `observe` every
+layer keeps today's behaviour byte for byte (see Kill switch).
 
-| Layer | After this spec |
+| Layer | Under `enforce` |
 |---|---|
-| L1 adapter GET retry (`mercadopago-read-retry.ts`) | Stays the **only** HTTP-level retry. Each attempt acquires a token, so a retry after a 429 waits the shared cool-down instead of its own capped 2 s. Its `Retry-After` cap is removed (the governor owns the wait). The time spent waiting for a token counts against `maxTotalDelayMs` for interactive callers. Jitter added to its backoff. |
+| L1 adapter GET retry (`mercadopago-read-retry.ts`) | Stays the **only** HTTP-level retry. Each attempt acquires a token. Two changes keep it from undoing the governor's wait: (a) an error with `governorRejected: true` is rethrown at once, never retried (today the loop retries every `UNAVAILABLE`, `mercadopago-read-retry.ts:75-77`, which would turn one fast-fail into three); (b) after a 429, L1's own delay is **0**: the next attempt's `acquire` owns the wait, so a long `Retry-After` can no longer exhaust L1's 4000 ms budget before the next acquire is reached. L1's budget becomes class-dependent: **interactive** keeps a 4000 ms total including token waits (each `acquire` gets `maxWaitMs = min(2000, remaining)`); **background** has no L1 time cap and is bounded by the job's `ctx.signal`. Jitter on the 5xx/network backoff. |
 | L2 sweep decorator (`sweep-provider-pacing.ts`) | **Stops retrying `RATE_LIMITED`** (L1 + governor already did). Keeps retrying 5xx / network errors, reduced to 2 attempts, honoring `transient.retryAfterSeconds`, with jitter. `minIntervalMs` spacing is removed (the bucket replaces it). |
 | L3 cancel retry (HOS-1995, `SWEEP_CANCEL_RETRY`) | Kept: it is the only write retry. Each attempt now acquires a background token, so its 2→10 s backoff can no longer fire inside a cool-down. If #4005 merges first this spec only adjusts its tests; if not, the spec's PR rebases on it. |
 
-Resulting bound: one logical GET causes at most `L1.maxAttempts (3) × L2 attempts
-on 5xx only (2) = 6` HTTP requests, and **3** under 429s (down from 15), all
-spaced by the shared cool-down.
+Resulting bound under `enforce`: one logical GET causes at most `L1.maxAttempts
+(3) × L2 attempts on 5xx only (2) = 6` HTTP requests, and **3** under 429s (down
+from 15), all spaced by the shared cool-down.
 
 **Cross-container scope** (decided, OQ-1 option 2): the bucket stays
-in-process; the **cool-down is shared through Redis** — a 429
-in any container writes `mp:cooldown-until` (`SET … PX`, keep the max), and
-`acquire` reads it (cached ≤ 250 ms). If Redis is unreachable the governor
-falls back to the in-process cool-down and logs once; it never blocks on Redis.
-Duplicate cron runs during a rollout are removed by C's lock, not by the bucket.
+in-process; the **cool-down is shared through Redis** — a 429 in any container
+writes `mp:cooldown-until`, keeping the max atomically (a short Lua script:
+write only if the new instant is later, with `PX` = the remaining duration), and
+`acquire` reads it (cached ≤ 250 ms). Duplicate cron runs during a rollout are
+removed by C's lock, not by the bucket.
+
+The governor uses a **dedicated** ioredis client, not the shared
+`getRedisClient()`: that helper awaits `client.connect()` with a 5 s
+`connectTimeout` on first use (`apps/api/src/utils/redis.ts:32-52`) and, once a
+first attempt fails, returns `undefined` forever because `connectionAttempted`
+is never reset (`redis.ts:18-19`). Changing the shared helper is out of scope
+(other consumers depend on its behaviour). The dedicated client:
+
+- connects in the background at composition (`lazyConnect` + a non-awaited
+  `connect()`); `acquire` **never awaits the connection** — while
+  `status !== 'ready'` it uses the in-process cool-down;
+- runs with `enableOfflineQueue: false`, `commandTimeout: 50` and a
+  `retryStrategy` that never gives up (capped backoff), so it recovers by itself
+  after Redis comes back;
+- bounds every read at **50 ms**; a timeout or error falls back to the
+  in-process cool-down and logs once per outage (not per request).
 
 **Kill switch.** `HOSPEDA_MERCADO_PAGO_GOVERNOR_MODE = off | observe | enforce`
-(new env var, full workflow in §7). `observe` measures and logs as if enforcing
-but never waits; it is the first rollout step (§11).
+(new env var, full workflow in §7). The mode gates **all** of A, including the
+L1/L2 changes of PR-3: under `off` the governor is not consulted and L1/L2 run
+their legacy code paths (today's attempts, delays, `Retry-After` cap and
+`minIntervalMs`); under `observe` the same legacy paths run and the governor only
+measures and logs the waits it would have imposed; only `enforce` turns on the
+new retry ownership. So setting `off` reverts PR-3's behaviour without a revert
+PR, and a parity test pins it (AC-28). `observe` is the first rollout step (§11).
 
 ### 6.2 B — Stop re-reading immutable data
 
@@ -207,54 +247,85 @@ Four layers, cheapest first. None changes what a check decides (NG-3).
 `Promise.all` siblings: in-flight dedupe). The scope is an
 `AsyncLocalStorage` opened by `runWithProviderReadScope(fn)`; **outside a scope
 nothing is memoized**, so the webhook and checkout keep reading live.
-`readCharge` inside a scope costs 1 request instead of `1 + P`.
+`readCharge` inside a scope costs 1 request instead of `1 + P`. The in-flight
+memo stores the promise and **evicts it when it rejects**, so one failed fetch
+(a 5xx, a governor fast-fail, an abort) is never served to the next caller in
+the scope; only a resolved value stays memoized.
 
 **B2. Row-scoped memo in the sweep.** `runReconciliationSweep` opens one read
-scope per row and wraps the provider in a row memo for `listCharges` and
-`readCharge`, reset when the row ends. The second inventory reader on the same
-row (comparison then lost-rejection) is free. The memoized values are the same
-`ProviderRead`s stamped after this row's act started, so `assertFreshForAct`
-still holds (INV:D17 intact).
+scope per row, reset when the row ends. B2 memoizes **only the raw inputs B1
+already shares** — the `listCharges` result and the per-authorization charge
+records — never a stamped `ProviderRead`. Every `readCharge` / `readAuthorization`
+still builds and stamps a fresh `ProviderRead` at call time from those inputs
+(costing 1 request for the charge itself, 0 for the records).
+
+Memoizing a `ProviderRead` would break INV:D17 under **nested acts**: inside a
+row, the grace check reads the period at `grace-expiry-check.ts:193` and, on
+`CHARGED`, calls `settleChargedPeriod` (`:218`), which calls `recordChargeFact`
+(`:166`); that service opens its **own** act at its own `clock.now()` and runs
+`assertFreshForAct` on a `readCharge` made inside it
+(`record-charge-fact.service.ts:131-134`). A read memoized earlier in the row is
+stamped before that inner act started, so `assertFreshForAct` would throw and a
+GRACE row past its deadline with an approved charge would never leave grace.
+AC-26 pins this. The second inventory reader on the same row (comparison then
+lost-rejection) still reuses the listing and the records, which is where the
+cost was.
 
 After B1 + B2 the common row costs `1 + P + N` (12 months: 15, down from 77). Still
 linear in N, so:
 
-**B3. Persisted closed charges.** New table `provider_charge_fact`
+**B3. Persisted charge snapshots.** New table `provider_charge_snapshot`
 (structural carril: `pnpm db:generate` + `pnpm db:migrate`; no seed data, so no
-dual-write). One row per `(provider, charge_id)` holding the charge snapshot
-(amounts as integer centavos), `observed_at` and `frozen_at`; columns in
+dual-write). The name avoids `payment.provider_fact_id` and the existing
+`recordChargeFact` service, which are a different thing (the ledger's fact of a
+collected charge). One row per `(provider, charge_id)` holding the charge's
+fields (amounts as integer centavos) and `observed_at`; columns in
 [`docs/data-model-and-tests.md`](docs/data-model-and-tests.md).
 
 Written through on **every** live `readCharge` (webhook, sweep, admin) by a
-service-core decorator at the composition root (`createChargeFactRecordingProvider`),
-never by the adapter (`packages/payments` stays DB-free).
+service-core decorator at the composition root
+(`createChargeSnapshotRecordingProvider`), never by the adapter
+(`packages/payments` stays DB-free). The upsert is ordered:
+`ON CONFLICT (provider, charge_id) DO UPDATE … WHERE
+provider_charge_snapshot.observed_at <= EXCLUDED.observed_at`, so a slow read
+that finishes after a newer one cannot overwrite it.
 
-A fact is **closed** (`frozen_at` set) when:
+Whether a snapshot is **closed** is evaluated **at read time**, never persisted:
+no `frozen_at` column. Closed means:
 
 - `rejected` and `expires_at` has passed (no more retries can land on that record), or
-- `approved` and older than the freeze horizon of OQ-2 (refunds and chargebacks
-  arrive by webhook, which re-reads live and rewrites the row).
+- `approved` and its `provider_created_at` is older than deadline 18 **as in
+  force when the snapshot is read** (`reconciliationWindowSince`,
+  `payment-window.ts:20-30`, reads the current deadline values). Persisting the
+  verdict would keep an old horizon alive after an owner edits deadline 18.
 
-Closed facts are exposed as a distinct type `ClosedChargeFact` — **not** a
-`ProviderRead` — through a new port `closedChargeFacts.find({ chargeIds })`. The
-inventory readers use it only for charges that are not the current period's:
+Closed snapshots are exposed as a distinct type `ClosedChargeSnapshot` — **not**
+a `ProviderRead` — through a new port `closedChargeSnapshots.find({ chargeIds })`.
+It exposes only immutable fields (`chargeId`, `providerCreatedAt`, `status`,
+`amountMinor`, `currency`, `reference`, `authorizationId`). Its **only** consumer
+is the period-charges comparison (`period-charges-comparison.ts`, through
+`readListedCharges`): amount comparison and ledger presence over historical
+charges need nothing else. Every other reader and every check keeps receiving
+`ProviderRead`s.
 
-- `readListedCharges` / period-charges comparison: closed facts for historical
-  charges (amount comparison and ledger presence only need immutable fields);
-  live `readCharge` for open ones.
-- `readPeriodCharges`: decides from the **latest** charge only, which is always
-  read live (it is open by definition until its window passes).
+`readPeriodCharges` decides from the **latest** charge. Today it reads every
+listed charge live and sorts the reads by `createdAt`
+(`read-period-charges.ts:76-78`). With B3 the latest is defined by
+`createdAt` across the closed snapshots and the live reads of the charges
+without one; that latest charge is then **re-read live even if its snapshot is
+closed**, and only that live `ProviderRead` reaches the decision.
 
-The type split keeps INV:D17 honest: a decision that needs live state cannot
-receive a `ClosedChargeFact` without a type change visible in review. Approved
-charges freeze once they leave the credited-payments window (deadline 18;
-OQ-2 decided).
+The type split keeps INV:D17 honest, and the plan updates the docblock that
+states it (`provider-read.ts:5-7`, "`ProviderRead<T>` is the ONLY way a decision
+receives the provider's state") to name `ClosedChargeSnapshot` as the one
+non-decision exception and its single consumer. AC-13's guard is type-based
+(§9).
 
 **B4. Unchanged-inventory skip.** Per authorization, store the inventory
 fingerprint `(chargeRecordCount, lastChargedAt, chargeIds)` after a complete
 live listing. When the row's fresh `readAuthorization` reports the same
 `chargeRecordCount` and `lastChargedAt`, and every stored id is closed, the
-listing is skipped and the inventory is served from facts. Any null, mismatch or
+listing is skipped and the inventory is served from snapshots. Any null, mismatch or
 open charge → full live listing (fail toward reading). **Deferred** (OQ-6
 decided): this spec ships B1–B3 only. A sandbox measurement task (T-B4-GATE,
 §11) checks whether `summarized.charged_quantity` / `last_charged_date` move on
@@ -263,13 +334,17 @@ follow-up only if they do.
 
 Steady-state cost per common row with B1–B3: `1` (`readAuthorization`) + `P`
 (listing) + `1` (latest charge, live). A day with a new charge costs the same.
-That is G-4; B4 would take it to ≤ 2.
+That is G-4; B4 would take it to ≤ 2. The bound holds only while **deadline 18
+is shorter than the charge cadence** (monthly today): then at most the latest
+charge is younger than the horizon. A deadline 18 longer than a month leaves
+more than one approved charge open and adds one live read per extra open charge.
 
 **Creations sweep memory.** New table `creation_sweep_attempt` (docs). A
-pending row is searched at +5, +10, +20, +40 min, then every 60 min until its
-window closes (jittered); a new create key resets the cadence. A run memoizes
-`searchAuthorizations({ payerEmail })` by email, so rows sharing one email cost
-one search.
+pending row gets a `next_search_at` and is not searched before it; a new create
+key resets the cadence. The cadence itself (proposed: +5, +10, +20, +40 min,
+then every 60 min until its window closes, jittered) is **OQ-7, pending**. A run
+memoizes `searchAuthorizations({ payerEmail })` by email, so rows sharing one
+email cost one search.
 
 ### 6.3 C — Schedule
 
@@ -286,22 +361,51 @@ one search.
 
 No two MP-calling jobs then share a minute, and none starts at :00.
 
-**No-overlap lock (G-5).** `bootstrap.ts` wraps every MP-calling job (flag
+**One execution path: `runCronJob`.** Today the scheduled tick
+(`cron/bootstrap.ts`) and the manual trigger (`routes/cron-admin/index.ts`) run a
+handler through two separate code paths. The manual one has its own race with a
+30 s default (`job.timeoutMs ?? 30000`, `cron-admin/index.ts:216-225`), no
+signal, no traffic class and no lock. This spec extracts a shared
+`runCronJob({ job, executionMode, dryRun, … })` that both call: traffic class
+`background`, `withCronLock`, `ctx.signal` with the job's budget, the safety-net
+race, `recordCronRun`, Sentry and Healthchecks signalling. The manual trigger
+becomes **asynchronous** for jobs flagged `exclusive`: it answers `202` with the
+`runId` once the lock is taken (or `409` with the holder's `runId` on overlap),
+and the run is followed through `cron_runs`. For the reconciliation sweep it
+accepts `?newCycle=true` (§6.5), which opens a fresh cycle instead of resuming or
+skipping today's — the staging smoke needs this, because step 1 of the sweep
+section of `docs/billing/smoke-checklist.md` (line 84, "Run the
+`billing-reconciliation-sweep` cron on `staging`") would otherwise hit
+`SKIPPED_CYCLE_DONE` after the night's cycle. PR-5 updates that step to name the
+flag and to read the result from `cron_runs` instead of the HTTP response.
+
+**No-overlap lock (G-5).** `runCronJob` wraps every MP-calling job (flag
 `exclusive: true` on `CronJobDefinition`) in `withCronLock`: a Postgres
 **session** advisory lock (`pg_try_advisory_lock(hashtext('cron:' || name))`) on a
 dedicated pooled connection, released when the **handler promise settles** — not
-when the timeout fires. A tick that cannot take the lock is recorded as
-`skipped: overlap` in `cron_runs` and does not run. The manual trigger
-(`apps/api/src/routes/cron-admin`) takes the same lock. This also removes duplicate
-runs across two containers during a rollout. `noOverlap: true` is added to the
-node-cron options as the in-process first line.
+when the timeout fires. A tick that cannot take the lock does not run and is
+recorded in `cron_runs` with the existing `success` status and
+`details.skipped = 'overlap'` — **not** a new status value: `recordCronRun`
+derives the status from five fixed cases (`record-run.ts:28-33`) and the cron
+models filter on the existing values (`cronRun.model.ts:41,127,155-159`), so a
+sixth value would trip frozen guards and silently drop out of those queries.
+This also removes duplicate runs across two containers during a rollout.
+`noOverlap: true` is added to the node-cron options as the in-process first line.
+The lock is a cost control, not a correctness boundary (R-6); the sweep adds its
+own lease (§6.5).
 
-**Cooperative timeout.** `CronJobContext` gains `signal: AbortSignal`. The
-timeout aborts it instead of only racing; the reconciliation and creations
-sweeps check `signal.aborted` between rows and stop cleanly (recording
-`complete: false`), and the governor's `acquire` rejects on abort. The race is
-kept as the reporting deadline; the lock stays held until the handler actually
-returns.
+**Cooperative timeout.** `CronJobContext` gains `signal: AbortSignal` and
+`deadlineAt`. A job flagged `exclusive` stops **on its own budget**, set below
+`timeoutMs` (the sweep: 45 of 50 min), checking `signal.aborted` between rows,
+and returns `success: true` with `details.stoppedOnBudget = true` (the sweep
+records `TIMED_OUT` on its run row). Stopping on budget is the normal path, not a
+fault: today a timeout throws into the bootstrap's catch, which captures a
+`cron_failure` in Sentry, records a failed run and pings Healthchecks `/fail`
+(`bootstrap.ts:258-288`); a nightly slice that legitimately runs out of budget
+must page nobody. The `timeoutMs` race stays only as a **safety net** for a
+handler that ignores its signal, and the governor's `acquire` rejects on abort.
+The lock stays held until the handler actually returns. The creations sweep
+gets the same treatment.
 
 **Slicing the daily sweep.** Decided (OQ-4 option 2): a resumable nightly
 cycle, §6.5.
@@ -314,7 +418,8 @@ structured log `mp_traffic_window` via `@repo/logger`:
 - `requests`, `status2xx`, `status429`, `status5xx`, `networkErrors`;
 - `waitMs` p50 / p95 / max, `fastFailures` (interactive rejected by cool-down);
 - `coolDowns` opened, `coolDownMs` total, `unclassified` requests;
-- `memoHits` (B1/B2) and `factHits` (B3/B4).
+- `memoHits` (B1/B2) and `snapshotHits` (B3/B4);
+- `redisFallbacks` (reads served by the in-process cool-down).
 
 Every cron run's `details` gains `providerTraffic` (the same counters scoped to
 the run), persisted by `recordCronRun`, so per-run cost is queryable in
@@ -331,16 +436,35 @@ Owner decision 2026-11-02. Full algorithm, columns and failure matrix:
 [`docs/sweep-slicing.md`](docs/sweep-slicing.md).
 
 **Shape.** `billing-reconciliation-sweep` fires at `02:10`, `03:10` and `04:10`
-(market time zone), 50-min timeout each. Each firing is a **slice** of one
-**cycle** (`cycle_date`). A slice takes the cron lock (§6.3), resumes the cycle
-where the previous slice left it, and stops cooperatively on `ctx.signal`.
+(market time zone), 50-min timeout and a 45-min own budget each (§6.3). Each
+firing is a **slice** of one **cycle**, identified by `cycle_id` (the id of its
+slice 0 run row) and dated by `cycle_date`. A slice takes the cron lock (§6.3),
+resumes the latest cycle of the day where the previous slice left it, and stops
+on its own budget or on `ctx.signal`. The manual trigger with `?newCycle=true`
+opens a fresh cycle (new `cycle_id`, same `cycle_date`) instead.
 
 **Cursor state** lives in `reconciliation_sweep_run`, one row per slice (new
-nullable columns, expand-only): `cycle_date`, `slice_index` (unique per cycle),
-`phase` (`ROWS` → `PASSES` → `DONE`), `cursor_after_id`, `cycle_origin_after_id`,
-`cursor_wrapped`, `passes_completed`, `outcome`, per-slice counters (including
-`rows_visited`) and `failed_subscription_ids`. The cursor advances with one `UPDATE` **after** each
-row finishes (success or row failure), so at most the row in flight is replayed.
+nullable columns, expand-only): `cycle_id`, `cycle_date`, `slice_index` (unique
+with `cycle_id`), `phase` (`ROWS` → `PASSES` → `DONE`), `cursor_after_id`,
+`cursor_seq`, `cycle_origin_after_id`, `cursor_wrapped`, `rows_complete`,
+`passes_completed`, `lease_until`, `inventory_size_at_start`, `outcome`,
+per-slice counters (including `rows_visited`) and `failed_subscription_ids`.
+After each row finishes (success or row failure) one guarded `UPDATE` advances
+the cursor, increments `cursor_seq`, adds the counters and extends
+`lease_until = now + 5 min`; it matches only `WHERE id = :runId AND outcome IS
+NULL AND cursor_seq = :expectedSeq`. Zero rows updated means another slice has
+closed this run (it was taken for dead): the slice stops at once without
+touching anything else. At most the row in flight is replayed.
+
+**Lease, not lock, decides "dead".** A free advisory lock does not prove its
+holder is gone: R-6 says the lock dies with its **connection**, so a live slice
+whose lock connection dropped would otherwise be declared dead and run twice. A
+run left open is closed as `ABANDONED` only when its `lease_until` has passed;
+while the lease is live, the new slice records `details.skipped =
+'lease_held'` and exits. The guarded cursor `UPDATE` above stops the zombie if
+it ever comes back. The same lease applies unchanged if OQ-8 replaces the cursor
+with a per-row `last_swept_at`: the per-row write is then guarded by the run's
+lease and `outcome IS NULL` in the same transaction.
 
 **Rows read at different hours.** Freshness and deadlines are already per row:
 each row opens its own act and decides on reads stamped inside it (INV:D17), and
@@ -351,51 +475,83 @@ are find-or-insert under the open-mark unique index (verified,
 `open-reconciliation-mark.service.ts:105-147`), charges are keyed by
 `uq_payment_provider_fact`, undercharge events dedupe by payment id.
 
-**Slice timeout or failure.** On abort the slice finishes the current row,
-records `TIMED_OUT` and returns; the next slot resumes from the cursor. A thrown
-fault closes the run as `FAILED` in a `finally`; a run left open by a dead
-process is closed as `ABANDONED` by the next slice that gets the lock (the free
-lock proves its holder is gone). Row failures never stop the cycle.
+**Slice budget or failure.** When its 45-min budget runs out the slice finishes
+the current row, records `TIMED_OUT` on its run row and returns `success: true`
+(§6.3): no Sentry capture, no Healthchecks `/fail`, no failed `cron_runs` entry.
+The next slot resumes from the cursor. A thrown fault closes the run as `FAILED`
+in a `finally`; a run left open by a dead process is closed as `ABANDONED` once
+its lease expires (above). Row failures never stop the cycle.
 
-**Post-loop passes across slices.** They run only after the inventory is
-exhausted (`phase = PASSES`), in today's order: our-cancellation retry
-(unconfirmed), terminal return, credited payments, paid orders, mark escalation,
-pause gifts, zero-call checks. Each finished pass is appended to
-`passes_completed`; an interrupted pass restarts from its beginning in the next
-slice (each is idempotent over state). The per-row cancellation retry of live
+**Post-loop passes across slices.** They run after the inventory is exhausted
+(`phase = PASSES`), in today's order: our-cancellation retry (unconfirmed),
+terminal return, credited payments, paid orders, mark escalation, pause gifts,
+zero-call checks. Each finished pass is appended to `passes_completed`; an
+interrupted pass restarts from its beginning in the next slice (each is
+idempotent over state). The per-row cancellation retry of live
 `CANCEL_SCHEDULED` rows stays inside the row loop, unchanged.
+
+The passes must not starve behind the rows: in the **last slot** of the night,
+the row loop stops when the remaining budget falls below a **pass reserve**
+(15 min, a code constant sized from the passes' measured duration in PR-5),
+records `rows_complete = false` and moves to `PASSES` anyway. Every night
+therefore runs every pass at least once, even when the rows did not finish; the
+unread rows are handled by the wrap below.
 
 **End-of-cycle summary.** The slice that reaches `DONE` sums the cycle's slices,
 emits the HOS-1885 failure alert once per cycle, sends the liveness ping only
-when the cycle had zero failed rows (today's rule, per cycle), and returns
-`details.cycle`. Earlier slices return `success: true` unless they faulted, so
-row failures do not page twice. The Sentry monitor
-(`apps/api/src/utils/cron-monitor-ping.ts:10`, today an interval of 1 day with a
-120-min margin) becomes a crontab monitor `10 2 * * *` with a 170-min margin;
-otherwise a ping moving between ~02:15 and ~05:00 trips it falsely.
+when the cycle had zero failed rows and `rows_complete` (today's rule, per
+cycle), and returns `details.cycle`. Earlier slices return `success: true`
+unless they faulted, so row failures do not page twice. Coverage is checked
+against `inventory_size_at_start` (counted when slice 0 opens the cycle): the
+summed `rows_visited` may differ from it by the rows created or soft-deleted
+during the cycle, so a mismatch is logged at `warn` with both numbers, never at
+error.
 
-**Incomplete cycle.** If the last slot ends without `DONE`, that slice logs
-"reconciliation cycle incomplete" at error level with `capture: true` and returns
-`success: false`. The next cycle starts **after** the stopped cursor and wraps
-(`cycle_origin_after_id`), so the unreached rows go first instead of being starved
-every night. The manual trigger (`apps/api/src/routes/cron-admin`, same lock)
-runs one more slice of the current cycle. A cycle that needs the last slot logs
-`warn` "near capacity", the trigger to add slots or revisit D.
+**Monitors.** The Sentry monitor (`apps/api/src/utils/cron-monitor-ping.ts:10`,
+today an interval of 1 day with a 120-min margin) becomes a crontab monitor
+`10 2 * * *` with timezone `America/Argentina/Buenos_Aires` (the jobs' own zone,
+`cron/bootstrap.ts:41`) and a 170-min margin; otherwise a ping moving between
+~02:15 and ~05:00 trips it falsely. The Healthchecks check
+`<env>-billing-reconciliation-sweep` is a per-**tick** liveness signal (the
+bootstrap pings it on every run, `bootstrap.ts:181,206-211`), so its schedule moves
+from `0 6 * * *` to `10 2,3,4 * * *` in the same zone, with a 1-hour grace; it is
+changed by hand in the Healthchecks UI, and the step that lists it
+(`scripts/cutover/README.md:632-638`) is updated in PR-5.
+
+**Incomplete cycle.** If the last slot ends without `DONE`, or reaches `DONE`
+with `rows_complete = false`, that slice logs "reconciliation cycle incomplete"
+at error level with `capture: true` and returns `success: false`. The next cycle
+starts **after** the stopped cursor and wraps (`cycle_origin_after_id`), so the
+unreached rows go first instead of being starved every night. The manual trigger
+(same `runCronJob`, same lock) runs one more slice of the current cycle. A cycle
+that needs the last slot logs `warn` "near capacity", the trigger to add slots
+or revisit D.
+
+**Docs updated with PR-5:** `apps/api/docs/cron-system.md` (schedule table and
+examples, lines 268 and 907), `docs/guides/sentry-alerts.md:161` ("Diario
+06:00"), `scripts/cutover/README.md:632-638` and
+`docs/billing/smoke-checklist.md:84`.
 
 ## 7. Data model / contracts
 
-- **Migrations (carril 1, expand-only):** `provider_charge_fact`,
+- **Migrations (carril 1, expand-only):** `provider_charge_snapshot`,
   `creation_sweep_attempt`, and the cycle columns on `reconciliation_sweep_run`
-  (§6.5). The B4 fingerprint is not part of this spec (OQ-6).
+  (§6.5). The B4 fingerprint is not part of this spec (OQ-6). If OQ-8 is chosen,
+  the cycle columns shrink and `subscription` (or a side table) gains
+  `last_swept_at` instead (§14).
 - **Env vars:** `HOSPEDA_MERCADO_PAGO_GOVERNOR_MODE` (`off|observe|enforce`,
   default `observe`). Rate / burst / reserve are code constants (OQ-3). Full
   workflow for the one env var: registry in
   `packages/config`, Zod in `apps/api/src/utils/env.ts`, `.env.example`, set in
   Coolify for staging and prod.
 - **Contracts:** `MercadoPagoPaymentProvider` options gain `governor`.
-  `PaymentProvider` is **unchanged** (the fake needs no change for A). New ports:
-  `ClosedChargeFacts`, `ChargeFactRecorder`. `CronJobContext` gains `signal`;
-  `CronJobDefinition` gains `exclusive`.
+  `PaymentProvider` is **unchanged** (the fake needs no change for A).
+  `PaymentProviderError` gains `governorRejected?: true`. New ports:
+  `ClosedChargeSnapshots`, `ChargeSnapshotRecorder`. `CronJobContext` gains
+  `signal` and `deadlineAt`; `CronJobDefinition` gains `exclusive`. New shared
+  `runCronJob` (§6.3). The manual trigger answers `202 { runId }` / `409 {
+  runId }` for `exclusive` jobs and accepts `?newCycle=true` for the sweep.
+  `processProviderNotice`'s result (`{ ack, outcome }`) gains an optional `retryAfterSeconds`, set with `DEFERRED`.
 - **Fake server:** `startFakeProviderServer` gains a `throttle` option
   (`{ afterRequests | everyNth | paths, status: 429, retryAfter }`) so tests can
   drive 429s over real HTTP.
@@ -406,6 +562,9 @@ None when MP is healthy; under a long cool-down, checkout shows the existing
 retryable error (HOS-1968).
 
 ## 9. Acceptance criteria
+
+IDs are stable. AC-26 onwards came from the 2026-11-02 design review and sit
+under their topic, so numbers are not consecutive within a section.
 
 ### Governor (A)
 
@@ -426,28 +585,74 @@ retryable error (HOS-1968).
   then at most 3 HTTP requests are issued for that read (L1 only), and L2 does not
   retry it.
 - **AC-6** Given OQ-1 option 2, when container A receives a 429, then container B
-  does not send to MP until the shared cool-down ends; given Redis is down, then
-  both keep working with in-process cool-downs and one warning is logged.
+  sends no request to MP later than 250 ms after A's 429 (the read-cache
+  tolerance) until the shared cool-down ends. Given Redis is unreachable or
+  answers slower than 50 ms, then both keep working with in-process cool-downs,
+  no `acquire` waits more than 50 ms on Redis, one warning is logged per outage,
+  and when Redis comes back the shared cool-down is used again without a
+  restart.
 - **AC-7** Given mode `observe`, then no request ever waits and the window log
   reports the waits it would have imposed. Given `off`, the governor is not
   consulted.
 - **AC-8** Given a request with no traffic class, then it is served as
   interactive and counted as `unclassified`.
+- **AC-27** Given `enforce` and an interactive read rejected by the governor
+  (`governorRejected`), then L1 rethrows it at once: zero HTTP requests and no
+  retry. Given `enforce` and a 429 with `Retry-After: 30` on a background read,
+  then L1 does not sleep before its next attempt, that attempt's `acquire` waits
+  the cool-down, and the read is not abandoned by L1's 4000 ms budget.
+- **AC-28** Given mode `off` or `observe`, then L1 and L2 issue exactly the
+  requests, delays and retries they issue today (attempt counts, 2 s
+  `Retry-After` cap, `minIntervalMs`), pinned by a parity test against the
+  legacy behaviour.
+- **AC-29** Given a webhook whose read is rejected with `RATE_LIMITED` (governor
+  fast-fail or real 429) while the shared cool-down has 37 s left, then the
+  outcome is `DEFERRED` with `retryAfterSeconds = 37` and the route answers `503`
+  with `Retry-After: 37`. An incomplete read keeps today's `DEFERRED`.
+- **AC-33** Given the production source, then every caller of
+  `defaultPaymentProvider` / `new MercadoPagoPaymentProvider` is on the guard's
+  allowlist with its declared class (`app.ts` → per-request middleware,
+  `step-3b.compose.ts` → `background`); a new unlisted caller fails the guard.
 
-### Memoization and facts (B)
+### Memoization and snapshots (B)
 
-- **AC-9** Given an ACTIVE credited row with 12 monthly records and no new charge
-  since the previous run, when the sweep processes it, then it issues at most 4
-  HTTP requests to MP (measured against the fake server's request log).
-- **AC-10** Given the same row with 36 records, then the request count exceeds
-  the 12-record count only by the extra listing pages (2).
+Request-count targets per PR, for an ACTIVE credited row with 12 monthly
+records and no new charge since the previous run, counted in the fake server's
+request log: **77** before any PR (baseline, unchanged by PR-1 and by PR-3/4/5);
+**≤ 15** after PR-2 (B1 + B2: `1 + P + N`); **≤ 4** after PR-6 (B3: `2 + P`).
+
+- **AC-9** (PR-6) Given deadline 18 shorter than the charge cadence (so only the
+  latest charge is younger than the horizon) and the row above, when the sweep
+  processes it, then it issues at most 4 HTTP requests to MP. Given deadline 18
+  longer than the cadence, then each extra open approved charge adds exactly one
+  request.
+- **AC-10** (PR-6) Given the same row with 36 records, then the request count
+  exceeds the 12-record count only by the extra listing pages (2).
 - **AC-11** Given a webhook for a charge, then `readCharge` reads live (no memo)
-  and upserts its `provider_charge_fact` row.
-- **AC-12** Given a closed approved fact and a later refund webhook, then the fact
-  is rewritten from the live read and the next sweep's comparison sees the refund.
-- **AC-13** Given any check that decides from the current period, then it
-  receives a `ProviderRead` stamped after its act started (INV:D17), never a
-  `ClosedChargeFact` (enforced by types plus a guard test).
+  and upserts its `provider_charge_snapshot` row; given an older read finishing
+  after a newer one, then the newer `observed_at` row is kept.
+- **AC-12** Given a closed approved snapshot and a later refund webhook, then
+  the snapshot is rewritten from the live read and the next sweep's comparison
+  sees the refund.
+- **AC-13** Given any check, then it receives provider state only as a
+  `ProviderRead` stamped after its act started (INV:D17). `ClosedChargeSnapshot`
+  reaches only the period-charges comparison, enforced by type tests
+  (`expectTypeOf` on every check's port and on `readPeriodCharges`'s input) plus a
+  guard with a single-consumer allowlist for `closedChargeSnapshots.find` — not a
+  text grep.
+- **AC-26** Given B2 on, a GRACE row past its deadline and an approved charge for
+  the period, when the sweep processes it, then the grace check settles the
+  period through `recordChargeFact`, the row leaves grace, and no
+  `assertFreshForAct` error is raised (nested act, §6.2).
+- **AC-30** Given deadline 18 edited to a longer value, when a snapshot that was
+  closed under the old value is read, then it is treated as open and read live
+  (closedness is evaluated at read time).
+- **AC-31** Given the latest listed charge has a closed snapshot, then
+  `readPeriodCharges` still reads it live and decides from that live read; the
+  latest is chosen by `createdAt` across snapshots and live reads.
+- **AC-35** Given a fetch in one read scope that rejects, then the callers
+  already awaiting it receive the rejection, the promise is evicted, and the next
+  caller in the scope issues a new request.
 - **AC-14** Given two pending creations sharing a payer email, then one run issues
   one search; given a pending row searched at T, then it is not searched again
   before its `next_search_at`.
@@ -455,12 +660,19 @@ retryable error (HOS-1968).
 ### Schedule (C)
 
 - **AC-15** Given a sweep run still in progress after its timeout, when the next
-  tick fires (same or other container), then the tick is skipped and recorded as
-  `overlap`, and the lock is released only when the first handler returns.
+  tick fires (same or other container), then the tick does not run, its
+  `cron_runs` row has the existing status `success` with `details.skipped =
+  'overlap'` (no new status value), and the lock is released only when the first
+  handler returns.
 - **AC-16** Given the timeout fires, then `ctx.signal` is aborted and the sweep
   stops before starting another row, reporting `complete: false`.
 - **AC-17** Given the manifest, then no two MP-calling jobs share a minute and
   none runs at minute 0.
+- **AC-32** Given a manual trigger of an `exclusive` job, then it runs through
+  the same `runCronJob` as the scheduled tick (class `background`, lock, signal,
+  the job's own budget, no 30 s race), answers `202 { runId }` without waiting
+  for the handler, answers `409 { runId }` when the lock is held, and for the
+  sweep with `?newCycle=true` opens a new cycle even when today's is `DONE`.
 
 ### Observability
 
@@ -473,35 +685,51 @@ retryable error (HOS-1968).
 - **AC-19** Given an inventory of 300 rows and a slice budget that covers 120,
   when the three slots run, then every row is read exactly once in the cycle, in
   id order, and the third slice reaches `DONE`.
-- **AC-20** Given a slice whose signal aborts mid-loop, then the row in progress
-  finishes, `cursor_after_id` is that row, the run is `TIMED_OUT`, and the next
-  slice starts at the following row.
-- **AC-21** Given a slice whose process dies after row K started, then the next
-  slice closes the open run as `ABANDONED`, resumes after the last recorded
-  cursor, and re-reading row K opens no second mark.
+- **AC-20** Given a slice that reaches its own 45-min budget mid-loop, then the
+  row in progress finishes, `cursor_after_id` is that row, the run is
+  `TIMED_OUT`, the job returns `success: true`, there is **no**
+  `Sentry.captureException`, **no** Healthchecks `/fail` ping and no failed
+  `cron_runs` entry, and the next slice starts at the following row.
+- **AC-21** Given a slice whose process dies after row K started, when the next
+  slot fires after its `lease_until` has passed, then that slice closes the open
+  run as `ABANDONED`, resumes after the last recorded cursor, and re-reading row
+  K opens no second mark.
+- **AC-36** Given an open run whose lock is free but whose `lease_until` is still
+  in the future, then the new slice does not close it and exits with
+  `details.skipped = 'lease_held'`. Given a run closed as `ABANDONED` whose
+  original slice is still alive, then that slice's next cursor `UPDATE` matches
+  zero rows and it stops without processing another row.
 - **AC-22** Given the inventory is exhausted mid-slice, then the passes run in
   the fixed order; given the signal aborts during the credited-payments pass,
   then `passes_completed` lists only the earlier passes and the next slice starts
   the credited-payments pass from its beginning.
+- **AC-34** Given rows that would consume the whole last slot, then the row loop
+  stops when the remaining budget falls below the pass reserve, `rows_complete`
+  is `false`, every pass runs and is listed in `passes_completed`, and the cycle
+  is reported incomplete (AC-25) rather than skipping the passes.
 - **AC-23** Given a cycle already `DONE`, when another slot or a manual trigger
-  fires the same day, then the slice records `SKIPPED_CYCLE_DONE` and makes no
-  provider call.
+  without `newCycle` fires the same day, then the slice records
+  `SKIPPED_CYCLE_DONE` and makes no provider call.
 - **AC-24** Given a cycle with failed rows in slices 0 and 2, then exactly one
   failure alert carries the failed ids of both, no liveness ping is sent, and
   earlier slices reported `success: true`.
-- **AC-25** Given the last slot ends with the cycle in `ROWS`, then an
-  "incomplete" error is captured, and the next night's cycle starts with the row
-  after the stopped cursor, wraps to the beginning, and ends with the row at the
-  stopped cursor.
+- **AC-25** Given the last slot ends with the cycle in `ROWS`, or `DONE` with
+  `rows_complete = false`, then an "incomplete" error is captured, and the next
+  night's cycle starts with the row after the stopped cursor, wraps to the
+  beginning, and ends with the row at the stopped cursor.
+- **AC-37** Given rows created and soft-deleted during a cycle, then the
+  coverage check compares the summed `rows_visited` with
+  `inventory_size_at_start`, logs any difference at `warn` with both numbers,
+  and never at error.
 
 ## 10. Test strategy
 
 Mutation-sensitive by design: every test names the mutation it must kill, and
 the implementer records the mutation run on the PR (a survivor blocks merge).
-Full matrix (26 tests, 7 of them for the resumable cycle) in
+Full matrix (42 tests, 10 of them for the resumable cycle) in
 [`docs/data-model-and-tests.md`](docs/data-model-and-tests.md). The cycle tests
 drive slices with an injected clock and signal against a real DB, and assert on
-`reconciliation_sweep_run` rows plus the fake server's request log. The three
+`reconciliation_sweep_run` rows plus the fake server's request log. The
 load-bearing ones for A and B:
 
 - **The governor actually blocks** — fake clock, R=1, B=1: a third `acquire`
@@ -511,7 +739,11 @@ load-bearing ones for A and B:
   one token refilled: interactive resolves first; kills "FIFO across classes".
 - **Memoization reduces the call count** — ACTIVE credited row with 12 records
   against the fake HTTP server: `requests().length` goes from the measured
-  baseline (77) to ≤ 4 in steady state; kills "B1 scope or B2 memo bypassed".
+  baseline (77) to ≤ 15 after PR-2 and ≤ 4 after PR-6 in steady state; kills
+  "B1 scope or B2 memo bypassed" and "snapshots not consulted".
+- **The memo does not break nested acts** (AC-26) — GRACE row past its deadline
+  with an approved charge, B2 on: the row leaves grace; kills "B2 memoizes a
+  stamped `ProviderRead`".
 
 The fake server gains a throttle mode (§7) so 429 paths run over real HTTP.
 Assertions count **HTTP requests seen by the fake server**, never provider method
@@ -522,24 +754,35 @@ full package suite locally.
 
 PRs to `staging`, in order; each independently revertible.
 
+Each PR states its request-count target for the 12-record row of §9 and proves
+it against the fake server's log.
+
 1. **PR-1 Observability + governor in `observe`** (A without blocking) and the
-   fake-server throttle. Ship, collect a week of `mp_traffic_window` baseline
-   (this is the "before" for G-4 and the evidence to retune OQ-3's constants).
-2. **PR-2 B1 + B2** (no schema). Expected: sweep request volume drops ~5× at 12
-   months of tenure.
-3. **PR-3 Governor `enforce` + retry rework** (L1/L2/L3 changes) with the
-   Redis-shared cool-down (OQ-1). Staging smoke under induced 429s (fake throttle
-   in local; real sandbox in staging).
-4. **PR-4 C, scheduling** (stagger of the other four jobs, `withCronLock` for
-   scheduled and manual runs, `ctx.signal`, creations backoff + table). The sweep
-   keeps its single run, moved to `10 2 * * *`, so PR-5 starts from a locked,
-   cancellable job.
-5. **PR-5 Resumable sweep cycle** (§6.5): `reconciliation_sweep_run` columns,
-   slice algorithm, pass bookkeeping, cycle summary, Sentry monitor change, the
-   `10 2,3,4` schedule. Staging smoke: force a small slice budget so one cycle
-   spans the three slots, kill one slice mid-run, and check the cycle summary.
-6. **PR-6 B3** — `provider_charge_fact`, write-through, readers, freeze rule
-   (OQ-2).
+   fake-server throttle, plus the class-propagation guard (AC-33). Ship, collect
+   a week of `mp_traffic_window` baseline (this is the "before" for G-4 and the
+   evidence to retune OQ-3's constants). Target: **77, unchanged**.
+2. **PR-2 B1 + B2** (no schema), including the nested-act test (AC-26) and the
+   rejected-promise eviction (AC-35). Target: **≤ 15**.
+3. **PR-3 Governor `enforce` + retry rework** (L1/L2/L3 changes, gated by mode,
+   with the legacy parity test, AC-28), the dedicated Redis client for the
+   shared cool-down (OQ-1) and the webhook `DEFERRED` mapping (AC-29). Staging
+   smoke under induced 429s (fake throttle in local; real sandbox in staging).
+   Target: **≤ 15** steady; **≤ 3 per read** under 429s.
+4. **PR-4 C, scheduling**: shared `runCronJob` (async manual trigger), stagger
+   of the other four jobs, `withCronLock`, `ctx.signal` + own budget, creations
+   backoff + table (cadence per OQ-7). The sweep keeps its single run, moved to
+   `10 2 * * *`, so PR-5 starts from a locked, cancellable job; the Sentry
+   monitor, the Healthchecks check and the docs of §6.5 move to `10 2 * * *`
+   here. Target: **≤ 15**, unchanged.
+5. **PR-5 Resumable sweep cycle** (§6.5, or its OQ-8 variant): run columns,
+   lease, slice algorithm, pass reserve and bookkeeping, cycle summary, monitors
+   and docs moved to `10 2,3,4`, `?newCycle=true` and the smoke-checklist step.
+   Staging smoke: force a small slice budget so one cycle spans the three slots,
+   kill one slice mid-run, and check the cycle summary. Target: **≤ 15**,
+   unchanged.
+6. **PR-6 B3** — `provider_charge_snapshot`, ordered write-through, readers,
+   read-time closedness (OQ-2), the `provider-read.ts` docblock and the type
+   guard (AC-13). Target: **≤ 4** (AC-9, given deadline 18 < cadence).
 
 **T-B4-GATE** (no code, runs in parallel with PR-1): on the MP sandbox, retry a
 rejected cycle on one record and record whether `summarized.charged_quantity`
@@ -554,40 +797,50 @@ expand-only so a revert leaves harmless tables).
 
 - **R-1 Webhook latency budget.** A webhook that waits for tokens can exceed MP's
   delivery timeout and be retried anyway. Mitigation: interactive `maxWaitMs`
-  2 s and fail-fast to `DEFERRED` (§6.1); B1 does not apply to it, but its
-  `readCharge` still costs `1 + P` — acceptable, and measured by §6.4.
+  2 s and fail-fast to `DEFERRED` with the remaining cool-down as `Retry-After`
+  (§6.1, AC-29); B1 does not apply to it, but its `readCharge` still costs
+  `1 + P` — acceptable, and measured by §6.4.
 - **R-2 Checkout latency.** A burst of background traffic must not delay an
   `authorize`. Mitigation: priority + reserve (AC-1, AC-2); the reserve is sized
   so a checkout never waits for a background refill.
-- **R-3 Stale cached charge.** A closed fact may miss a later refund or
-  chargeback. Mitigation: facts close only past OQ-2's horizon; every webhook
-  rewrites them; the credited-payments check keeps reading live inside its window;
-  decisions never consume facts (AC-13).
+- **R-3 Stale snapshot.** A closed snapshot may miss a later refund or
+  chargeback. Mitigation: snapshots close only past deadline 18 as in force at
+  read time; every webhook rewrites them (ordered upsert); the credited-payments
+  check keeps reading live inside its window; the latest charge is always read
+  live; only the period-charges comparison consumes snapshots (AC-13).
 - **R-4 Background starvation.** Sustained interactive load could starve a
-  slice. Mitigation: the slice stops cooperatively and the next slot resumes from
-  the cursor; an unfinished cycle is captured and the next one starts at the
-  unreached rows (§6.5).
-- **R-9 Cycle bookkeeping bugs.** A wrong cursor skips or repeats rows silently.
-  Mitigation: AC-19 to AC-25; a per-slice `rows_visited` counter is summed at
-  `DONE` and compared with the inventory count, and a mismatch is logged at
-  error level.
-- **R-10 A row reached later in the night.** Up to ~2 h later than slice 0, so a
-  grace that expired overnight is taken a little later than with one run.
-  Accepted by the owner's decision; all deadlines are day-granular.
+  slice. Mitigation: the slice stops on its budget and the next slot resumes from
+  the cursor; the passes keep a reserve in the last slot (AC-34); an unfinished
+  cycle is captured and the next one starts at the unreached rows (§6.5).
 - **R-5 Wrong default limits.** Without E we guess `R`. Too low slows the sweep;
   too high keeps 429s. Mitigation: a week in `observe` first; the constants
   (OQ-3) are retuned in a PR once that baseline or E is in.
 - **R-6 Advisory lock on a dropped connection.** The lock is released if the
   dedicated connection drops, allowing a second run. The lock is a cost control;
-  PR-4 verifies, job by job, that a concurrent second run is safe (today nothing
-  prevents it, so this is no worse than the baseline).
-- **R-7 Redis as a new dependency of the MP path.** Mitigation: one write per
-  429 and a cached read (≤ 250 ms) otherwise; fail-open to in-process; never
-  awaited past 50 ms.
+  the sweep does not trust it to decide that a holder is dead and uses its lease
+  instead (§6.5, AC-36). PR-4 verifies, job by job, that a concurrent second run
+  of the other jobs is safe (today nothing prevents it, so this is no worse than
+  the baseline).
+- **R-7 Redis as a new dependency of the MP path.** Mitigation: a dedicated
+  client that never blocks `acquire` on its connection, a 50 ms bound on every
+  read, one write per 429, a cached read (≤ 250 ms) otherwise, fail-open to
+  in-process, and self-recovery after an outage (AC-6).
 - **R-8 B4 fingerprint false "unchanged".** If MP changed a record without moving
   `chargeRecordCount`/`lastChargedAt`, the skip would miss it. Mitigation: any
   open charge forces a listing; B4 is deferred (OQ-6) until T-B4-GATE measures
   exactly this.
+- **R-9 Cycle bookkeeping bugs.** A wrong cursor skips or repeats rows silently.
+  Mitigation: AC-19 to AC-25 and AC-34/36/37; the guarded cursor `UPDATE`; a
+  per-slice `rows_visited` counter summed at `DONE` and compared with
+  `inventory_size_at_start` (a `warn`, because rows created or deleted during
+  the cycle make an exact match impossible).
+- **R-10 A row reached later in the night.** Up to ~2 h later than slice 0, so a
+  grace that expired overnight is taken a little later than with one run.
+  Accepted by the owner's decision; all deadlines are day-granular.
+- **R-11 The kill switch must revert behaviour, not just the bucket.** If PR-3's
+  retry changes ran regardless of mode, `off` would leave L1 without its delay
+  and L2 without `RATE_LIMITED` retries and no governor wait to replace them.
+  Mitigation: every new L1/L2 path is gated on `enforce`, pinned by AC-28.
 
 ## 13. Implementation notes
 
@@ -598,8 +851,10 @@ expand-only so a revert leaves harmless tables).
 
 ## 14. Decisions
 
-The owner answered every open question on **2026-11-02**. The options are kept
-as the record of what was weighed; **✅ Chosen** marks the decision.
+The owner answered OQ-1…OQ-6 on **2026-11-02**. The options are kept as the
+record of what was weighed; **✅ Chosen** marks the decision. OQ-7 and OQ-8 came
+out of the design review the same day and are **⏳ Pending** (end of this
+section).
 
 **OQ-1 · Cross-container coordination scope.** During a rollout two containers
 call MP at once; Redis is available.
@@ -634,7 +889,9 @@ re-read live before its fact is treated as closed.
    chargebacks without trusting webhooks. Cons: six months of linear cost per
    subscription; G-4 met only for older history. Impact: same code, other constant.
 
-It was the recommended option.
+It was the recommended option. Review note (2026-11-02): the "fact" is now a
+*snapshot* (`provider_charge_snapshot`), and "frozen" is evaluated at read time
+against deadline 18 as currently in force, never persisted (§6.2).
 
 **OQ-3 · Governor limit values.** MP has not published our limits (E is pending).
 
@@ -687,6 +944,46 @@ It was the recommended option; the owner did not object.
    tenure-dependent. Impact: B4 becomes a follow-up issue if the gate passes.
 
 It was the recommended option.
+
+**OQ-7 · Creations-sweep search cadence. ⏳ Pending.** How often a pending
+creation is searched by payer email once the per-row memory exists (§6.2).
+Today every pending row is searched every 5 minutes.
+
+1. *Back-off: +5, +10, +20, +40 min, then every 60 min until the window
+   closes, jittered* (the current proposal). Pros: most searches fall in the
+   first hour, when a checkout usually lands; cost per row drops from ~12/h to
+   ~1/h after the first hour. Cons: a creation that lands late is seen up to an
+   hour later (the webhook normally reports it first). Impact: as in §6.2.
+2. *Fixed 15 min.* Pros: simple and predictable; 3× fewer searches than today.
+   Cons: still ~4/h per row for the whole window; slower first detection than
+   option 1. Impact: one constant.
+3. *Keep 5 min, add only the per-email memo.* Pros: no change in detection
+   latency. Cons: cost stays proportional to pending rows × window length.
+   Impact: the `creation_sweep_attempt` table is not needed.
+
+Recommended: 1. The webhook is the primary path; the sweep only catches a lost
+notice, so hour-level latency after the first hour costs little.
+
+**OQ-8 · Cycle bookkeeping: cursor or per-row `last_swept_at`. ⏳ Pending.**
+
+1. *Cursor on the run row* (§6.5 as written): `cursor_after_id`, wrap-around via
+   `cycle_origin_after_id`, `ABANDONED` runs, the lease and the guarded cursor
+   `UPDATE`. Pros: no write on `subscription`; state is local to the run table.
+   Cons: the most moving parts in this spec (wrap, abandon, lease, monotonic
+   guard); rows created behind the cursor wait for the next cycle. Impact: as
+   designed (§6.5, `docs/sweep-slicing.md`).
+2. *Per-row `last_swept_at`.* Each slice takes `WHERE last_swept_at <
+   cycle_start ORDER BY last_swept_at NULLS FIRST, id`, and stamps the row when
+   it finishes. Pros: removes the cursor, the wrap and `ABANDONED` (a dead slice
+   just leaves rows unstamped), and the dead-holder problem of the lease shrinks
+   to "two slices stamping"; fair to new rows (`NULLS FIRST`) and to rows an
+   incomplete cycle missed (oldest first). Cons: one write per row per night on
+   `subscription` (or a side table keyed by subscription id); needs an index on
+   `last_swept_at`. Impact: PR-5 shrinks; the run row keeps only counters,
+   `phase`, `passes_completed` and the lease.
+
+Recommended: 2. It is simpler and fairer at the cost of one indexed write per
+row; the lease of §6.5 still applies to stop a zombie slice.
 
 ## 15. Linear
 
