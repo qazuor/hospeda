@@ -1,4 +1,4 @@
-import type { UserStatsResponse } from '@repo/schemas';
+import { TrialStatusEnum, type TrialSummaryResponse, type UserStatsResponse } from '@repo/schemas';
 
 /** Plan catalog slugs that have dashboard name translations. */
 export const DASHBOARD_PLAN_SLUGS = [
@@ -64,4 +64,37 @@ export function parsePlanNames(raw: string | null): Record<string, string> {
     } catch {
         return {};
     }
+}
+
+/** Dashboard subscription-card state derived from the trial reads. */
+export type DashboardTrialStat =
+    | { readonly kind: 'none' }
+    | { readonly kind: 'trial'; readonly endsAt: string | null };
+
+/**
+ * Resolve the trial reads (`GET /protected/publish/trial-summary/:vertical`, one per vertical)
+ * into the dashboard card state.
+ *
+ * The trial is Hospeda's own and never appears in the provider subscription, so
+ * `/users/me/stats` reports `plan: null` while a trial runs. The caller asks for this only when
+ * {@link resolveDashboardPlanStat} answered `free`. With several running trials the earliest
+ * `endsAt` wins (the first date the owner has to act on); a running trial without a date sorts last.
+ *
+ * @param input.summaries - The summaries that answered; failed reads are simply left out.
+ * @returns `trial` when at least one vertical's trial is `TRIAL_ACTIVE`, otherwise `none`.
+ */
+export function resolveDashboardTrialStat(input: {
+    readonly summaries: readonly TrialSummaryResponse[];
+}): DashboardTrialStat {
+    const running = input.summaries.filter(
+        (summary): summary is Extract<TrialSummaryResponse, { endsAt: string | null }> =>
+            summary.status === TrialStatusEnum.TRIAL_ACTIVE
+    );
+    if (running.length === 0) return { kind: 'none' };
+    const time = (iso: string | null): number => {
+        const ms = iso ? Date.parse(iso) : Number.NaN;
+        return Number.isNaN(ms) ? Number.POSITIVE_INFINITY : ms;
+    };
+    const [first] = [...running].sort((a, b) => time(a.endsAt) - time(b.endsAt));
+    return { kind: 'trial', endsAt: first?.endsAt ?? null };
 }

@@ -513,7 +513,14 @@ const canonicalUrl = new URL(Astro.url.pathname, Astro.site).href;
 <script>
     import { getApiUrl } from '@/lib/env';
     import type { UserStatsResponse } from '@repo/schemas';
-    import { parsePlanNames, resolveDashboardPlanStat } from '@/lib/billing/dashboard-plan-stat';
+    import {
+        parsePlanNames,
+        resolveDashboardPlanStat,
+        resolveDashboardTrialStat
+    } from '@/lib/billing/dashboard-plan-stat';
+    import { formatNoticeInstant } from '@/lib/listing/listing-notices';
+    import { TrialSummaryResponseSchema } from '@repo/schemas';
+    import type { SupportedLocale } from '@/lib/i18n';
     import {
         summarizeListingVisibility,
         type ListingWithPublicationStatus
@@ -532,6 +539,29 @@ const canonicalUrl = new URL(Astro.url.pathname, Astro.site).href;
         for (const id of ids) {
             document.getElementById(id)?.classList.remove('stat-value--loading');
         }
+    }
+
+    /**
+     * Reads the owner's trial in every vertical that can hold one
+     * (`GET /protected/publish/trial-summary/:vertical`, the canonical trial read) and
+     * resolves the dashboard card state. A failed read leaves that vertical out.
+     */
+    async function readDashboardTrialStat(): Promise<ReturnType<typeof resolveDashboardTrialStat>> {
+        const base = `${getApiUrl()}/api/v1/protected/publish/trial-summary`;
+        const reads = await Promise.all(
+            ['accommodation', 'venue', 'experience'].map(async (vertical) => {
+                try {
+                    const res = await fetch(`${base}/${vertical}`, { credentials: 'include' });
+                    if (!res.ok) return [];
+                    const body = (await res.json()) as { data?: unknown };
+                    const parsed = TrialSummaryResponseSchema.safeParse(body.data);
+                    return parsed.success ? [parsed.data] : [];
+                } catch {
+                    return [];
+                }
+            })
+        );
+        return resolveDashboardTrialStat({ summaries: reads.flat() });
     }
 
     async function loadStats(): Promise<void> {
@@ -589,10 +619,32 @@ const canonicalUrl = new URL(Astro.url.pathname, Astro.site).href;
                 } as const;
                 let subscriptionValue: string;
                 let statusAttribute: string | null = null;
+                let statusText: string | null = null;
                 switch (planStat.kind) {
-                    case 'free':
-                        subscriptionValue = subEl?.getAttribute('data-label-free') ?? 'Gratuito';
+                    case 'free': {
+                        // The trial is Hospeda's own: `plan: null` here does NOT mean "free"
+                        // while a trial runs. Ask the trial summary before saying so.
+                        const trialStat = await readDashboardTrialStat();
+                        if (trialStat.kind === 'trial') {
+                            subscriptionValue =
+                                statusEl?.getAttribute('data-label-trial') ?? 'En prueba';
+                            const endsAt = trialStat.endsAt
+                                ? formatNoticeInstant({
+                                      iso: trialStat.endsAt,
+                                      locale: document.documentElement.lang as SupportedLocale
+                                  })
+                                : null;
+                            statusText = endsAt
+                                ? (statusEl?.getAttribute('data-label-trial-ends-on') ?? '').replace(
+                                      '{{date}}',
+                                      endsAt
+                                  )
+                                : null;
+                        } else {
+                            subscriptionValue = subEl?.getAttribute('data-label-free') ?? 'Gratuito';
+                        }
                         break;
+                    }
                     case 'multiple': {
                         const template =
                             planStat.count === 1
@@ -618,7 +670,8 @@ const canonicalUrl = new URL(Astro.url.pathname, Astro.site).href;
                 }
 
                 if (statusEl) {
-                    const statusLabel = statusAttribute ? statusEl.getAttribute(statusAttribute) : null;
+                    const statusLabel =
+                        statusText ?? (statusAttribute ? statusEl.getAttribute(statusAttribute) : null);
                     statusEl.textContent = statusLabel ?? '';
                     statusEl.hidden = !statusLabel;
                 }
