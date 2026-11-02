@@ -139,6 +139,9 @@ export const CLIENT_I18N_KEY_PREFIXES = [
     // rejection render these keys in the browser.
     'publish.noPlans',
     'publish.subscribe',
+    // HOS-1977 — the publish button's LIMIT_REACHED rejection renders
+    // these keys in the browser.
+    'publish.limitReached',
     'blog.categories',
     'comments.form',
     'comments.thread',
