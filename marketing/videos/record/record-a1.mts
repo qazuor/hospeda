@@ -35,11 +35,14 @@ import { createTake, hideCssOf, launchDevice, scrollToLocator, scrollToY, sleep 
 
 const WEB = process.env.WEB_URL ?? 'https://staging.hospeda.com.ar';
 /**
- * Seeded host on staging (never a super admin). `host-basico` and `host-premium` are at their
- * plan's listing limit there, so /publicar/ shows «Llegaste al límite de tu plan» instead of the form.
+ * Seeded host on staging (never a super admin) whose accommodation trial is still unused, so
+ * publishing starts it instead of asking for a payment. `host-basico` and `host-premium` are at
+ * their plan's listing limit (/publicar/ shows «Llegaste al límite de tu plan»), and `host-pro`
+ * spent its trial on an earlier take.
  */
-const EMAIL = process.env.VIDEO_LOGIN_EMAIL ?? 'host-pro@local.test';
-const DEMO_NAME = 'Cabañas Costa del Río';
+const EMAIL = process.env.VIDEO_LOGIN_EMAIL ?? 'host-venue@local.test';
+/** Matches the photos: one country house with a fenced pool and a large park. */
+const DEMO_NAME = 'Casa de Campo El Ceibo';
 /** The owner's photos (VC1's set, outside the repo). */
 const PHOTOS_DIR = photosDirOf({ video: 'vc1' });
 const FEATURED = '01-exterior.jpg';
@@ -195,7 +198,10 @@ const main = async (): Promise<void> => {
 
     await tap('tipo', page.getByTestId('property-type-input'));
     await rec.hold('opciones-tipo', 700);
-    await tap('tipo-cabana', page.getByRole('option', { name: 'Cabaña', exact: true }));
+    await tap(
+        'tipo-casa-de-campo',
+        page.getByRole('option', { name: 'Casa de campo', exact: true })
+    );
     await rec.hold('pausa', 500);
 
     await typeInto('ciudad', page.getByTestId('property-city-input'), 'Colón', 110);
@@ -208,7 +214,7 @@ const main = async (): Promise<void> => {
     await typeInto(
         'resumen',
         page.getByLabel('Descripción corta'),
-        'Cabañas para 4 personas a 300 metros del río, con parrilla y pileta.',
+        'Casa de campo para 4 personas, con pileta y un parque enorme.',
         40
     );
     await rec.hold('pausa', 700);
@@ -230,7 +236,7 @@ const main = async (): Promise<void> => {
     await typeInto(
         'descripcion',
         page.locator('#acc-description'),
-        'Tres cabañas de madera rodeadas de verde, a pasos de la playa. Cada una tiene dos dormitorios, cocina equipada, aire acondicionado y galería con vista al parque.',
+        'Casa de una planta rodeada de verde y tranquilidad. Living comedor luminoso, cocina equipada, dormitorio con cama matrimonial y un parque amplio con pileta cercada y hamacas para los chicos.',
         28
     );
     await rec.hold('pausa', 700);
