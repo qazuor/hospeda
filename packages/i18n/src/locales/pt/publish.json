@@ -11,6 +11,10 @@
         "currentPlan": "Seu plano atual em {{vertical}}",
         "touristVipInherited": "Seu plano já inclui Turista VIP: não é necessário comprá-lo."
     },
+    "limitReached": {
+        "body": "Você atingiu o limite de publicações do seu plano. Despublique outro anúncio ou melhore seu plano.",
+        "cta": "Melhorar meu plano"
+    },
     "noPlans": {
         "title": "Esta categoria não tem planos disponíveis",
         "body": "Seu anúncio continua sem publicação. Não há nada para contratar nem período grátis para iniciar."

@@ -194,6 +194,20 @@ describe('PropertyCard.astro — actions per publication state (HOS-1641)', () =
         expect(actionsBlock.slice(gateAt + gate.length, elementAt).trim()).toBe('');
     });
 
+    it('HOS-1977: the single PublishButton is gated by showPublish, which is draft publish OR the republish offer', () => {
+        expect(propertyCardSource).toContain(
+            'const showRepublish = resolveRepublishOffer({ actions, affordance: publishAffordance });'
+        );
+        expect(propertyCardSource).toContain(
+            'const showPublish = actions.publish || showRepublish;'
+        );
+        // The copy switches on the republish flag and uses its own keys.
+        expect(propertyCardSource).toContain('const publishCopy = actions.republish');
+        expect(propertyCardSource).toContain('host.properties.card.actions.republish');
+        // No other gate may lead to the island.
+        expect(propertyCardSource).not.toContain('{actions.publish && (');
+    });
+
     it('renders each action element exactly once in the whole card', () => {
         for (const element of [
             '<UnpublishButton',

@@ -29,13 +29,21 @@ export function PlanCardCta({
     const { t } = useMemo(() => createTranslations(locale), [locale]);
     const [ownsBillingUnpublished, setOwnsBillingUnpublished] = useState(false);
     useEffect(() => {
-        void loadPricingSituation({ vertical }).then(async (situation) => {
-            // HOS-1977: the extra read is only worth making for an unspent trial.
-            if (situation.ok && situation.data.situation === 'FIRST_USE') {
-                setOwnsBillingUnpublished(await loadBillingUnpublishedListing({ vertical }));
-            }
+        let active = true;
+        void loadPricingSituation({ vertical }).then((situation) => {
+            if (!active) return;
+            // The primary CTA is never delayed by the extra read (HOS-1977).
             setResult(situation);
+            // Only worth reading for an unspent trial.
+            if (situation.ok && situation.data.situation === 'FIRST_USE') {
+                void loadBillingUnpublishedListing({ vertical }).then((owns) => {
+                    if (active) setOwnsBillingUnpublished(owns);
+                });
+            }
         });
+        return () => {
+            active = false;
+        };
     }, [vertical]);
     const view: PlanCardCtaView = result
         ? resolvePlanCardCta({

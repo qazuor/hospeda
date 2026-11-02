@@ -235,6 +235,11 @@ export function loadBillingUnpublishedListing({
                 ? publishApi
                       .listingNotices({ vertical, cookieHeader: undefined })
                       .then((result) => hasBillingUnpublishedListing({ result }))
+                      .catch(() => {
+                          // A rejected read is not cached: the next card retries.
+                          billingUnpublishedPromises.delete(vertical);
+                          return false;
+                      })
                 : Promise.resolve(false);
         billingUnpublishedPromises.set(vertical, pending);
     }

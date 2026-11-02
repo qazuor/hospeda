@@ -11,6 +11,10 @@
         "currentPlan": "Tu plan actual en {{vertical}}",
         "touristVipInherited": "Tu plan ya incluye Turista VIP: no hace falta comprarlo."
     },
+    "limitReached": {
+        "body": "Ya alcanzaste el límite de publicaciones de tu plan. Despublicá otra ficha o mejorá tu plan.",
+        "cta": "Mejorar mi plan"
+    },
     "noPlans": {
         "title": "Esta vertical no tiene planes disponibles",
         "body": "Tu ficha sigue sin publicar. No hay nada que contratar ni una prueba gratis que empezar."

@@ -164,4 +164,44 @@ describe('PlanCardCta', () => {
         );
         expect(screen.getByTestId('pricing-card-cta')).toHaveAttribute('data-kind', 'none');
     });
+    it('HOS-1977 keeps the primary CTA and drops a rejected extra read from the cache', async () => {
+        pricingSituation.mockResolvedValue({
+            ok: true,
+            data: { situation: 'FIRST_USE', trialDays: 30 }
+        });
+        listingNotices.mockRejectedValueOnce(new Error('network'));
+        const props = {
+            locale: 'es',
+            vertical: 'accommodation',
+            planVersionId: 'v1',
+            billingOptions: { monthly: 'm1', annual: null }
+        } as const;
+        const first = render(<PlanCardCta {...props} />);
+        await vi.waitFor(() =>
+            expect(screen.getByTestId('pricing-card-cta')).toHaveAttribute('data-loaded', 'true')
+        );
+        await vi.waitFor(() => expect(listingNotices).toHaveBeenCalledTimes(1));
+        expect(screen.getByTestId('pricing-card-cta')).toHaveAttribute('data-kind', 'none');
+        first.unmount();
+
+        listingNotices.mockResolvedValue({
+            ok: true,
+            data: {
+                trialRunning: false,
+                items: [
+                    {
+                        listingId: 'l1',
+                        publicationStatus: 'UNPUBLISHED_BY_BILLING',
+                        notices: [],
+                        recurringAddons: 0
+                    }
+                ]
+            }
+        });
+        render(<PlanCardCta {...props} />);
+        expect(
+            await screen.findByRole('link', { name: 'Publicar de nuevo desde Mis propiedades' })
+        ).toBeInTheDocument();
+        expect(listingNotices).toHaveBeenCalledTimes(2);
+    });
 });
