@@ -3,10 +3,10 @@
  * Partner application's wait, records the decision, and lets the owner submit
  * again while leaving the rejection itself unchanged.
  */
-import { getDb, sql } from '@repo/db';
+import { domainEventModel, getDb, partnerApplicationModel, sql } from '@repo/db';
 import { PermissionEnum, RoleEnum, ServiceErrorCode } from '@repo/schemas';
 import { ServiceError } from '@repo/service-core/types';
-import { afterAll, afterEach, beforeAll, describe, expect, it } from 'vitest';
+import { afterAll, afterEach, beforeAll, describe, expect, it, vi } from 'vitest';
 import { initApp } from '../../../src/app';
 import { submitPartnerApplication } from '../../../src/services/partner-application/partner-application-submission.service';
 import { validateApiEnv } from '../../../src/utils/env';
@@ -256,5 +256,65 @@ describe('TEST:V7:3 partner application rejection wait cancellation', () => {
         const response = await cancel({ applicationId: id, adminId });
         expect(response.status).toBe(403);
         expect(await readEvents(id)).toEqual([]);
+    });
+
+    it('(i) serializes concurrent cancellation attempts and records one event', async () => {
+        const adminId = await admin();
+        const id = await rejectedApplication(email());
+        const originalCancelWait = partnerApplicationModel.cancelWait.bind(partnerApplicationModel);
+        let writers = 0;
+        let releaseWriters: (() => void) | undefined;
+        const writerGate = new Promise<void>((resolve) => {
+            releaseWriters = resolve;
+        });
+        const fallback = setTimeout(() => releaseWriters?.(), 1000);
+        const cancelWaitSpy = vi
+            .spyOn(partnerApplicationModel, 'cancelWait')
+            .mockImplementation(async (args) => {
+                writers += 1;
+                if (writers === 2) releaseWriters?.();
+                await writerGate;
+                await originalCancelWait(args);
+            });
+
+        try {
+            const responses = await Promise.all([
+                cancel({ applicationId: id, adminId }),
+                cancel({ applicationId: id, adminId })
+            ]);
+            expect(responses.map(({ status }) => status).sort()).toEqual([200, 409]);
+            expect(await readApplication(id)).toMatchObject({
+                status: 'REJECTED',
+                wait_cancelled_by: adminId
+            });
+            expect(await readEvents(id)).toHaveLength(1);
+        } finally {
+            clearTimeout(fallback);
+            cancelWaitSpy.mockRestore();
+        }
+    });
+
+    it('(j) rolls back the cancellation when inserting its event fails', async () => {
+        const adminId = await admin();
+        const id = await rejectedApplication(email());
+        const before = await readApplication(id);
+        const eventInsertSpy = vi
+            .spyOn(domainEventModel, 'insert')
+            .mockRejectedValue(new Error('Simulated event insert failure'));
+
+        try {
+            const response = await cancel({ applicationId: id, adminId });
+            expect(response.status).toBe(500);
+            expect(await readApplication(id)).toMatchObject({
+                status: 'REJECTED',
+                resolved_at: before?.resolved_at,
+                partner_id: null,
+                wait_cancelled_at: null,
+                wait_cancelled_by: null
+            });
+            expect(await readEvents(id)).toEqual([]);
+        } finally {
+            eventInsertSpy.mockRestore();
+        }
     });
 });
