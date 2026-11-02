@@ -15,7 +15,7 @@
  */
 
 import { readdirSync, readFileSync } from 'node:fs';
-import { join } from 'node:path';
+import { dirname, join, resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';
 
 const ROUTES_DIR = join(import.meta.dirname, '../../src/routes');
@@ -48,42 +48,94 @@ function stripComments(source: string): string {
 
 type Verdict = 'configured' | 'missing' | 'out-of-scope';
 
+/** Returns the source of the class body starting at its declaration (to the end of the file). */
+function classBody(source: string, name: string): string | undefined {
+    const start = source.search(new RegExp(`export\\s+(?:abstract\\s+)?class\\s+${name}\\b`));
+    if (start < 0) return undefined;
+    const rest = source.slice(start);
+    // Cut at the next top-level class declaration so a sibling class in the same file
+    // cannot satisfy this one.
+    const next = rest.slice(1).search(/\nexport\s+(?:abstract\s+)?class\s/);
+    return next < 0 ? rest : rest.slice(0, next + 1);
+}
+
 /** Walks the `extends` chain of a service class looking for `adminSearchSchema`. */
 function classVerdict(name: string, seen = new Set<string>()): Verdict {
     if (seen.has(name)) return 'out-of-scope';
     seen.add(name);
     const source = findClassSource(name);
     if (!source) return 'out-of-scope';
-    const code = stripComments(source);
-    const header = new RegExp(`class\\s+${name}\\b[^{]*?extends\\s+(\\w+)`).exec(code);
-    const parent = header?.[1];
-    const isCrud = parent === 'BaseCrudService' || parent === 'BaseCrudRelatedService';
-    const declaresSchema = /adminSearchSchema\s*[=:]/.test(code);
-    if (declaresSchema) return 'configured';
-    if (isCrud) return 'missing';
+    const code = classBody(stripComments(source), name);
+    if (!code) return 'out-of-scope';
+    const parent = new RegExp(`class\\s+${name}\\b[^{]*?extends\\s+(\\w+)`).exec(code)?.[1];
+    if (/adminSearchSchema\s*[=:]/.test(code)) return 'configured';
+    if (parent === 'BaseCrudService' || parent === 'BaseCrudRelatedService') return 'missing';
     if (parent) return classVerdict(parent, seen);
     return 'out-of-scope';
+}
+
+/**
+ * Receivers that legitimately do NOT use the inherited `BaseCrudService.adminList`:
+ * the service defines its own `adminList` (it does not extend `BaseCrudService`).
+ * Keyed `<routes-relative file>#<receiver>`. The guard also asserts each entry still
+ * resolves to a class outside the BaseCrud hierarchy, so an entry cannot hide a
+ * CRUD service.
+ */
+const OWN_ADMIN_LIST: Readonly<Record<string, { serviceClass: string; reason: string }>> = {
+    'newsletter/admin/subscribers.ts#getDefaultNewsletterService': {
+        serviceClass: 'NewsletterSubscriberService',
+        reason: 'extends BaseService and implements its own adminList (typed Drizzle query)'
+    },
+    'feature-flags/admin/list.ts#featureFlagService': {
+        serviceClass: 'FeatureFlagService',
+        reason: 'plain class with its own adminList over FeatureFlagModel'
+    }
+};
+
+/**
+ * Resolves `receiver` to the service class it was built from: a `new X(` in the
+ * route file itself, or in the relative module it is imported from (singletons).
+ */
+function resolveServiceClass(code: string, file: string, receiver: string): string | undefined {
+    const construct = new RegExp(`\\b${receiver}\\s*=\\s*new\\s+(\\w+)\\s*\\(`);
+    const local = construct.exec(code)?.[1];
+    if (local) return local;
+    const imported = new RegExp(
+        `import\\s*\\{[^}]*\\b${receiver}\\b[^}]*\\}\\s*from\\s*'(\\.[^']+)'`
+    ).exec(code)?.[1];
+    if (!imported) return undefined;
+    const base = resolve(dirname(file), imported.replace(/\.js$/, ''));
+    for (const candidate of [`${base}.ts`, join(base, 'index.ts')]) {
+        try {
+            return construct.exec(readFileSync(candidate, 'utf8'))?.[1];
+        } catch {
+            // try the next candidate
+        }
+    }
+    return undefined;
 }
 
 interface AdminListCall {
     readonly file: string;
     readonly receiver: string;
     readonly serviceClass: string | undefined;
+    readonly allowlisted: boolean;
 }
 
-/** Collects every `<receiver>.adminList(` call in the routes tree. */
+/** Collects every `<receiver>.adminList(` and `<factory>().adminList(` call in the routes tree. */
 function collectAdminListCalls(): AdminListCall[] {
     const calls: AdminListCall[] = [];
     for (const file of listTsFiles(ROUTES_DIR)) {
         const code = stripComments(readFileSync(file, 'utf8'));
-        for (const match of code.matchAll(/(\w+)\.adminList\(/g)) {
-            const receiver = match[1] as string;
-            const built = new RegExp(`\\b${receiver}\\s*=\\s*new\\s+(\\w+)\\s*\\(`).exec(code);
+        const rel = file.slice(ROUTES_DIR.length + 1);
+        for (const match of code.matchAll(/(?:(\w+)|(\w+)\(\s*\))\s*\.adminList\(/g)) {
+            const receiver = (match[1] ?? match[2]) as string;
+            const allow = OWN_ADMIN_LIST[`${rel}#${receiver}`];
             calls.push({
-                file: file.slice(ROUTES_DIR.length + 1),
+                file: rel,
                 receiver,
-                // Fallback for injected singletons: `qrCodeService` -> `QrCodeService`.
-                serviceClass: built?.[1] ?? receiver.charAt(0).toUpperCase() + receiver.slice(1)
+                serviceClass: allow?.serviceClass ?? resolveServiceClass(code, file, receiver),
+                allowlisted: Boolean(allow)
             });
         }
     }
@@ -97,11 +149,25 @@ describe('admin list routes: adminSearchSchema is configured (HOS-1985)', () => 
         expect(calls.length).toBeGreaterThan(20);
     });
 
-    it('resolves every receiver to a service class', () => {
+    it('sees the call-expression receiver form (newsletter subscribers)', () => {
+        expect(calls.some((c) => c.receiver === 'getDefaultNewsletterService')).toBe(true);
+    });
+
+    it('resolves every receiver to a service class, or allowlists it with a reason', () => {
         const unresolved = calls
             .filter(({ serviceClass }) => !serviceClass)
             .map(({ file, receiver }) => `${file} (${receiver})`);
         expect(unresolved).toEqual([]);
+    });
+
+    it('every allowlisted entry still points at a class outside the BaseCrud hierarchy', () => {
+        const stale = Object.entries(OWN_ADMIN_LIST)
+            .filter(([, { serviceClass }]) => classVerdict(serviceClass) !== 'out-of-scope')
+            .map(([key]) => key);
+        expect(stale).toEqual([]);
+        for (const key of Object.keys(OWN_ADMIN_LIST)) {
+            expect(calls.some((c) => `${c.file}#${c.receiver}` === key)).toBe(true);
+        }
     });
 
     it('every BaseCrudService used through adminList declares adminSearchSchema', () => {
@@ -111,13 +177,16 @@ describe('admin list routes: adminSearchSchema is configured (HOS-1985)', () => 
         expect(offenders).toEqual([]);
     });
 
-    it('classVerdict flags a CRUD service without the field (negative control)', () => {
-        // ExchangeRateService extends BaseCrudService and is never listed via adminList,
-        // so it has no schema: the walker must report it as missing.
-        expect(classVerdict('ExchangeRateService')).toBe('missing');
-    });
+    describe('classVerdict on fixtures', () => {
+        it('flags a CRUD service without the field (negative control)', () => {
+            // SponsorshipLevelService extends BaseCrudService and is listed through `list`,
+            // so it has no adminSearchSchema. If someone adds one, replace this fixture.
+            expect(findClassSource('SponsorshipLevelService')).toBeDefined();
+            expect(classVerdict('SponsorshipLevelService')).toBe('missing');
+        });
 
-    it('classVerdict accepts a configured service (positive control)', () => {
-        expect(classVerdict('ContentModerationTermService')).toBe('configured');
+        it('accepts a configured service (positive control)', () => {
+            expect(classVerdict('ContentModerationTermService')).toBe('configured');
+        });
     });
 });

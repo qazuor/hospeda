@@ -124,4 +124,39 @@ describe('admin list routes configure adminSearchSchema (HOS-1985)', () => {
             });
         });
     }
+    describe('ExperienceReview moderation panel (usePendingReviewsQuery)', () => {
+        const panel = ROUTES.find((r) => r.entity === 'ExperienceReview') as RouteEntry;
+
+        it('accepts the panel query status=PENDING and filters by moderationState', async () => {
+            const result = { items: [], total: 3 };
+            const withRelations = vi
+                .spyOn(panel.modelPrototype as ModelStub, 'findAllWithRelations')
+                .mockResolvedValue(result);
+            const plain = vi
+                .spyOn(panel.modelPrototype as ModelStub, 'findAll')
+                .mockResolvedValue(result);
+
+            // Exactly what createListingEntityHooks.usePendingReviewsQuery sends.
+            const res = await app.request(
+                `${panel.path}?status=PENDING&page=1&pageSize=20`,
+                createAuthenticatedRequest(adminActor(panel.permission))
+            );
+            const body = await res.json();
+
+            expect(res.status, JSON.stringify(body)).toBe(200);
+            expect(body.data.pagination).toMatchObject({ page: 1, pageSize: 20, total: 3 });
+            const wheres = [...withRelations.mock.calls, ...plain.mock.calls].map((call) =>
+                JSON.stringify(call[call.length > 4 ? 1 : 0])
+            );
+            expect(wheres.some((w) => w.includes('"moderationState":"PENDING"'))).toBe(true);
+        });
+
+        it('still rejects a status that is not a moderation state', async () => {
+            const res = await app.request(
+                `${panel.path}?status=NOPE`,
+                createAuthenticatedRequest(adminActor(panel.permission))
+            );
+            expect(res.status).toBe(400);
+        });
+    });
 });
