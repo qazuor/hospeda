@@ -299,3 +299,58 @@ describe('PATCH /protected/accommodations/:id — partial grouped objects (SPEC-
         expect(contact && 'mobilePhone' in contact).toBe(false);
     });
 });
+
+describe('PATCH /protected/accommodations/:id — unsupported nested fields (HOS-1978)', () => {
+    const NESTED_BODIES: ReadonlyArray<readonly [string, Record<string, unknown>]> = [
+        [
+            'extraInfo',
+            { extraInfo: { capacity: 4, minNights: 2, bedrooms: 2, beds: 3, bathrooms: 1 } }
+        ],
+        [
+            'location',
+            {
+                location: {
+                    coordinates: { lat: '-32.2214', long: '-58.1440' },
+                    street: 'Av. Costanera',
+                    number: '100'
+                }
+            }
+        ],
+        ['price', { price: { price: 45000, currency: 'ARS' } }]
+    ];
+
+    it.each(
+        NESTED_BODIES
+    )('rejects the domain-shaped %s with 400 VALIDATION_ERROR instead of a silent 200', async (field, body) => {
+        const response = await buildApp().request(`/${ACCOMMODATION_ID}`, {
+            method: 'PATCH',
+            headers: HEADERS,
+            body: JSON.stringify(body)
+        });
+        const json = (await response.json()) as { success: boolean; error?: { code?: string } };
+
+        expect(response.status).toBe(400);
+        expect(json.success).toBe(false);
+        expect(json.error?.code).toBe('VALIDATION_ERROR');
+        expect(JSON.stringify(json)).toContain(field);
+        expect(updateSpy).not.toHaveBeenCalled();
+    });
+
+    it('still persists the same data when sent in the flat http shape', async () => {
+        const input = await patch({
+            maxGuests: 4,
+            minNights: 2,
+            latitude: -32.2214,
+            longitude: -58.144,
+            street: 'Av. Costanera',
+            number: '100',
+            basePrice: 45000,
+            currency: 'ARS'
+        });
+
+        expect((input.extraInfo as Record<string, unknown>).capacity).toBe(4);
+        expect((input.extraInfo as Record<string, unknown>).minNights).toBe(2);
+        expect((input.location as Record<string, unknown>).street).toBe('Av. Costanera');
+        expect((input.price as Record<string, unknown>).price).toBe(45000);
+    });
+});
