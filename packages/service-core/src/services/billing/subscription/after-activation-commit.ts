@@ -170,7 +170,8 @@ export async function afterSubscriptionActivated(
                 clock: ports.clock,
                 beforeCancelNotice: ports.beforeCancelNotice,
                 touristVipInheritance: ports.touristVipInheritance,
-                coverageNotices: ports.coverageNotices
+                coverageNotices: ports.coverageNotices,
+                billingFacts: ports.billingFacts
             }
         );
         return { touristVipCancelled: result.cancelled };
