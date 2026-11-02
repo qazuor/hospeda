@@ -538,7 +538,7 @@ values reviewed; revisit after E. The mode kill switch stays an env var.
 3. *Keep 06:00.* Pros: no change in when marks appear. Cons: overlaps morning
    traffic. Impact: none.
 
-**Recommended: 1.** With B the per-row cost is ~1–3 requests; at R=5/s background
+**Recommended: 1.** With B the per-row cost is ~2–6 requests; at R=5/s background
 reaches thousands of rows inside the timeout, and the alert gives lead time.
 
 **OQ-5 · Interactive behaviour under a cool-down.**
@@ -554,11 +554,11 @@ reaches thousands of rows inside the timeout, and the alert gives lead time.
 
 **OQ-6 · Ship the unchanged-inventory skip (B4) now.**
 
-1. *Yes, in PR-5.* Pros: meets G-4 fully (≈1 request per steady row). Cons: relies
+1. *Yes, in PR-5.* Pros: meets G-4 fully (≤ 2 requests per steady row). Cons: relies
    on `charged_quantity`/`last_charged_date` moving with every record change (R-8);
    that has not been measured against MP. Impact: one more table/columns.
 2. *No; ship B1–B3, measure with §6.4, add B4 if needed.* Pros: no unmeasured
-   assumption. Cons: steady rows cost `1 + P` (2–5 requests), still slightly
+   assumption. Cons: steady rows cost `2 + P` (3–6 requests), still slightly
    tenure-dependent. Impact: smaller PR-5.
 
 **Recommended: 2**, plus a sandbox measurement task (does `summarized` move on a
