@@ -1,78 +1,68 @@
 /**
- * Records the "create a new accommodation" flow on the reference phone's viewport (config/device.ts:
- * the visible page area of a Galaxy S24 Ultra, 412 × 750 CSS px) at DPR 3.
+ * Records the "create a new accommodation" flow (video A1) on staging, logged in as a seeded
+ * host, on the reference phone (config/device.ts: the visible page area of a Galaxy S24 Ultra,
+ * 412 × 750 CSS px, at DPR 3) through record/lib/take.ts.
  *
- * Output (in <recordings dir>/<take>/, outside the repo — see config/asset-paths.ts):
- * - frames/NNNNN.jpg + frames.json  raw CDP screencast frames with their timestamps
- * - events.json                     timeline of actions (taps, typing, holds) with target boxes
- *                                   in device pixels, used by the Remotion composition to zoom.
+ * - The story is unchanged: «Mis propiedades» → «Publicar otra» → the creation form (name, type,
+ *   city, summary) → the editor hub → basic info, where the long description is typed and saved.
+ *   Nothing is published: the take leaves a DRAFT behind.
+ * - Staging differs from the old local seed: the account's existing listing is a seed test card
+ *   (test name, a price, a plan badge, a stock photo), so the properties list hides the cards
+ *   (owner-approved demo staging, listed in DEMO_HIDE_CSS), and the site footer with them,
+ *   which the then-short page would bring into view.
+ * - A draft with the take's name left by an earlier take is deleted first through the UI
+ *   («Eliminar» → «Sí, eliminar»), so /publicar/ shows the form and not the «draft in progress»
+ *   panel.
+ * - The password comes from `VIDEO_LOGIN_PASSWORD` and is never logged.
  *
- * Usage: pnpm record:a1 [take-name]
+ * Output: <recordings>/a1/<take>/ (frames, events.json, screen.mp4, first.png, last.png), with
+ * the edit-ready files copied to <public>/a1/.
+ *
+ * Usage: VIDEO_LOGIN_PASSWORD=… pnpm record:a1 [take-name]
  */
 import { execFileSync } from 'node:child_process';
-import { mkdirSync, writeFileSync } from 'node:fs';
+import { copyFileSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
-import { chromium, type Locator, type Page } from 'playwright';
+import type { Locator, Page } from 'playwright';
 import { resolveAssetPaths } from '../config/asset-paths';
-import { REFERENCE_DEVICE } from '../config/device';
+import { assertCleanView, login } from './lib/staging';
+import { createTake, hideCssOf, launchDevice, sleep } from './lib/take';
 
-const WEB = process.env.WEB_URL ?? 'http://localhost:4422';
-/** Seeded local test user (packages/seed, `pnpm db:fresh-dev`); not a real credential. */
-const DEMO_USER = { email: 'host-basico@local.test', password: 'Password123!' } as const;
-const DB_NAME = process.env.DB_NAME ?? 'worktree_hospeda2';
+const WEB = process.env.WEB_URL ?? 'https://staging.hospeda.com.ar';
+/**
+ * Seeded host on staging (never a super admin). `host-basico` and `host-premium` are at their
+ * plan's listing limit there, so /publicar/ shows «Llegaste al límite de tu plan» instead of the form.
+ */
+const EMAIL = process.env.VIDEO_LOGIN_EMAIL ?? 'host-pro@local.test';
 const DEMO_NAME = 'Cabañas Costa del Río';
-const DPR = REFERENCE_DEVICE.recordDpr;
-/** Name shown for the host's already-published listing on the properties page. */
-const EXISTING_LISTING = {
-    id: '5f3f3516-95b9-4237-a656-b24b3c8ada3b',
-    name: 'Casa Quinta Las Palmeras'
-} as const;
 
-const DEMO_HIDE_CSS = [
+/** Owner-approved demo staging (REGLAS.md): every hidden element is listed here. */
+const DEMO_HIDE_CSS = hideCssOf([
     '.props-page__needs-plan', // "Sos anfitrión en preparación" plan banner
-    '.prop-card__qr', // printable QR block on the property card
+    'article.prop-card', // the account's seed test cards (test name, price, plan badge)
+    'footer.footer', // site footer (social-network icons); with the cards hidden the list page is short
     '[class*="trial-callout"]', // "Probá Hospeda gratis por 30 días" callouts on /publicar/
     'form div[class*="_locked_"]', // "Función premium" box in the editor
     'div[class*="_formatUpsell_"]' // "Texto con formato… Mejorar plan" notice
-]
-    .map((s) => `${s}{display:none!important}`)
-    .join('\n');
-const VIEWPORT = REFERENCE_DEVICE.viewport;
+]);
 
-const take = process.argv[2] ?? 'a1-test';
-const outDir = join(resolveAssetPaths().recordingsDir, take);
-const framesDir = join(outDir, 'frames');
-mkdirSync(framesDir, { recursive: true });
+/**
+ * Turns spellcheck off on every field, also those islands render later: squiggles under typed
+ * Spanish look like errors on camera. A string, because tsx rewrites function literals with a
+ * `__name` helper that does not exist inside the page.
+ */
+const NO_SPELLCHECK = `
+    (() => {
+        const tick = () => {
+            for (const el of document.querySelectorAll('input:not([spellcheck="false"]), textarea:not([spellcheck="false"]), [contenteditable]:not([spellcheck="false"])')) {
+                el.setAttribute('spellcheck', 'false');
+            }
+        };
+        setInterval(tick, 100);
+    })();
+`;
 
-type Box = { readonly x: number; readonly y: number; readonly w: number; readonly h: number };
-type TimelineEvent = {
-    readonly t: number;
-    readonly end?: number;
-    readonly kind: 'mark' | 'tap' | 'type' | 'hold';
-    readonly label: string;
-    readonly box?: Box;
-};
-
-const events: TimelineEvent[] = [];
-const frames: { file: string; ts: number }[] = [];
-let t0 = 0;
-const now = (): number => Date.now() / 1000 - t0;
-const sleep = (ms: number): Promise<void> => new Promise((r) => setTimeout(r, ms));
-
-const boxOf = async (loc: Locator): Promise<Box | undefined> => {
-    const b = await loc.boundingBox();
-    return b ? { x: b.x * DPR, y: b.y * DPR, w: b.width * DPR, h: b.height * DPR } : undefined;
-};
-
-const mark = (label: string): void => {
-    events.push({ t: now(), kind: 'mark', label });
-};
-
-const hold = async (label: string, ms: number): Promise<void> => {
-    const t = now();
-    await sleep(ms);
-    events.push({ t, end: now(), kind: 'hold', label });
-};
+const rec = createTake({ video: 'a1', take: process.argv[2] ?? 'a1-test' });
 
 /**
  * Smoothly scrolls the target into a comfortable band of the viewport, only if it is outside it.
@@ -98,150 +88,111 @@ const tap = async (label: string, loc: Locator, { alignBottom = false } = {}): P
     } else {
         await smoothIntoView(loc);
     }
-    await sleep(350);
-    const box = await boxOf(loc);
-    events.push({ t: now(), kind: 'tap', label, box });
-    await sleep(250);
-    await loc.tap();
+    await sleep(150);
+    await rec.tap(label, loc);
 };
 
 const typeInto = async (label: string, loc: Locator, text: string, delay = 55): Promise<void> => {
     await smoothIntoView(loc);
     await sleep(300);
-    const box = await boxOf(loc);
-    // Islands hydrate after the init script, so disable spellcheck on the field itself too.
     await loc.evaluate((el) => el.setAttribute('spellcheck', 'false'));
     await loc.tap();
     // Some fields come prefilled (the draft's description stub); start from empty.
     await loc.fill('');
-    const t = now();
-    await loc.pressSequentially(text, { delay });
-    events.push({ t, end: now(), kind: 'type', label, box });
+    await rec.type(label, loc, text, delay);
 };
 
-const login = async (page: Page): Promise<void> => {
-    // Wait for hydration: submitting before React attaches posts the native form as a GET.
-    await page.goto(`${WEB}/es/auth/signin/`, { waitUntil: 'networkidle' });
-    await sleep(1000);
-    await page.locator('#signin-email').fill(DEMO_USER.email);
-    await page.locator('#signin-password').fill(DEMO_USER.password);
-    await page.getByRole('button', { name: 'Iniciar sesión' }).click();
-    await page.waitForURL((u) => !u.pathname.includes('/auth/'), { timeout: 30_000 });
+/** Deletes a draft with the take's name left by an earlier take, through the UI. */
+const deleteLeftover = async (page: Page): Promise<void> => {
+    for (let i = 0; i < 3; i++) {
+        await page.goto(`${WEB}/es/mi-cuenta/propiedades/`, { waitUntil: 'networkidle' });
+        await sleep(1500);
+        const card = page
+            .locator('article.prop-card', { hasText: DEMO_NAME })
+            .filter({ hasNotText: 'Ficha borrada' })
+            .first();
+        if ((await card.count()) === 0) return;
+        console.info(`deleting leftover "${DEMO_NAME}"`);
+        // The cards are hidden by the demo CSS; this one is shown again to reach its buttons.
+        await card.evaluate((el) => el.style.setProperty('display', 'block', 'important'));
+        await card.getByRole('button', { name: 'Eliminar' }).click();
+        await card.getByRole('button', { name: 'Sí, eliminar' }).click();
+        await page.waitForLoadState('load');
+        await sleep(3000);
+    }
+    throw new Error(`Could not delete the leftover "${DEMO_NAME}".`);
 };
 
-/** Removes drafts left by previous takes so /publicar/ shows the form, not the "draft in progress" panel. */
-const resetDrafts = (): void => {
-    const sql = [
-        `delete from accommodations where name='${DEMO_NAME}' and publication_status='DRAFT'`,
-        `update accommodations set name='${EXISTING_LISTING.name}' where id='${EXISTING_LISTING.id}'`
-    ].join('; ');
-    const out = execFileSync('docker', [
-        'exec',
-        'hospeda-postgres',
-        'sh',
-        '-c',
-        `psql -U "$POSTGRES_USER" -d ${DB_NAME} -c "${sql}"`
-    ]);
-    console.info(`reset: ${out.toString().trim()}`);
+/**
+ * Writes the intro and closing stills next to the take and copies them to <public>/a1/: the
+ * first one is the frame the edit opens on (1.5 s before the first tap, as src/a1/timeline.ts
+ * trims it), the last one the page after the save.
+ */
+const writeStills = (): void => {
+    const { outDir } = rec;
+    const { events } = JSON.parse(readFileSync(join(outDir, 'events.json'), 'utf8')) as {
+        events: { label: string; t: number }[];
+    };
+    const firstTap = events.find((e) => e.label === 'publicar-otra');
+    const at = Math.max(0.4, (firstTap?.t ?? 1.6) - 1.5);
+    execFileSync(
+        'ffmpeg',
+        [
+            '-y',
+            '-loglevel',
+            'error',
+            '-ss',
+            at.toFixed(3),
+            '-i',
+            'screen.mp4',
+            '-frames:v',
+            '1',
+            'first.png'
+        ],
+        { cwd: outDir, stdio: 'inherit' }
+    );
+    const editDir = join(resolveAssetPaths().publicDir, 'a1');
+    copyFileSync(join(outDir, 'first.png'), join(editDir, 'first.png'));
+    copyFileSync(join(outDir, 'last.png'), join(editDir, 'last.png'));
 };
 
 const main = async (): Promise<void> => {
-    resetDrafts();
-    // Only new-headless Chromium with a forced scale factor screencasts at device pixels;
-    // the default headless shell ignores deviceScaleFactor and yields frames at CSS size.
-    const browser = await chromium.launch({
-        channel: 'chromium',
-        args: [`--force-device-scale-factor=${DPR}`]
-    });
-    const context = await browser.newContext({
-        viewport: VIEWPORT,
-        deviceScaleFactor: DPR,
-        isMobile: true,
-        hasTouch: true,
-        locale: 'es-AR'
-    });
-    const consent = encodeURIComponent(
-        JSON.stringify({
-            necessary: true,
-            crashReporting: false,
-            analytics: false,
-            marketing: false,
-            version: 2,
-            decidedAt: '2026-01-01T00:00:00.000Z'
-        })
-    );
-    await context.addCookies([{ name: 'cookie-consent', value: consent, url: WEB }]);
-    // Demo staging: hide upsell / plan banners that read as ads or errors in a tutorial.
-    // Owner-approved (see REGLAS.md); every hidden element is listed here and nothing else changes.
-    // Client-side navigations swap <head> and <body>, so the style hangs off <html> and is re-added if lost.
-    // Init scripts go in as plain strings: tsx rewrites function literals with a `__name` helper
-    // that does not exist inside the page, and the script then throws silently.
-    // Also turns spellcheck off everywhere: squiggles under typed Spanish look like errors on camera.
-    await context.addInitScript(`
-        (() => {
-            const css = ${JSON.stringify(DEMO_HIDE_CSS)};
-            const tick = () => {
-                if (!document.documentElement) return;
-                if (!document.getElementById('demo-hide')) {
-                    const style = document.createElement('style');
-                    style.id = 'demo-hide';
-                    style.textContent = css;
-                    document.documentElement.append(style);
-                }
-                // Only untouched fields: rewriting the attribute every tick forces restyles and drops frames.
-                for (const el of document.querySelectorAll('input:not([spellcheck="false"]), textarea:not([spellcheck="false"]), [contenteditable]:not([spellcheck="false"])')) {
-                    el.setAttribute('spellcheck', 'false');
-                }
-            };
-            setInterval(tick, 100);
-            tick();
-        })();
-    `);
-    const page = await context.newPage();
-
-    await login(page);
+    const { browser, context, page } = await launchDevice({ origin: WEB, hideCss: DEMO_HIDE_CSS });
+    await context.addInitScript(NO_SPELLCHECK);
+    page.setDefaultNavigationTimeout(90_000);
+    page.setDefaultTimeout(45_000);
+    await login({ page, web: WEB, email: EMAIL, video: 'A1' });
+    await deleteLeftover(page);
     await page.goto(`${WEB}/es/mi-cuenta/propiedades/`, { waitUntil: 'networkidle' });
     await sleep(1500);
+    await assertCleanView({ page, where: 'properties list' });
 
-    const cdp = await context.newCDPSession(page);
-    cdp.on('Page.screencastFrame', async ({ data, metadata, sessionId }) => {
-        const file = `${String(frames.length).padStart(5, '0')}.jpg`;
-        writeFileSync(join(framesDir, file), Buffer.from(data, 'base64'));
-        frames.push({ file, ts: (metadata.timestamp ?? Date.now() / 1000) - t0 });
-        await cdp.send('Page.screencastFrameAck', { sessionId }).catch(() => undefined);
-    });
-    t0 = Date.now() / 1000;
-    await cdp.send('Page.startScreencast', {
-        format: 'jpeg',
-        quality: 92,
-        maxWidth: VIEWPORT.width * DPR,
-        maxHeight: VIEWPORT.height * DPR,
-        everyNthFrame: 1
-    });
+    await rec.start(context, page);
 
     // Stage 1 — properties list, then into the creation form.
-    mark('stage:propiedades');
-    await hold('lista', 2000);
+    rec.mark('stage:propiedades');
+    await rec.hold('lista', 2000);
     await tap('publicar-otra', page.locator('a.props-page__cta-btn').first());
     await page.waitForURL(/\/es\/publicar\//);
     await page.waitForLoadState('networkidle');
-    mark('stage:crear');
-    await hold('form', 1500);
+    await assertCleanView({ page, where: 'publish form' });
+    rec.mark('stage:crear');
+    await rec.hold('form', 1500);
 
     await typeInto('nombre', page.getByLabel('Nombre del alojamiento'), DEMO_NAME);
-    await hold('pausa', 500);
+    await rec.hold('pausa', 500);
 
     await tap('tipo', page.getByTestId('property-type-input'));
-    await hold('opciones-tipo', 700);
+    await rec.hold('opciones-tipo', 700);
     await tap('tipo-cabana', page.getByRole('option', { name: 'Cabaña', exact: true }));
-    await hold('pausa', 500);
+    await rec.hold('pausa', 500);
 
     await typeInto('ciudad', page.getByTestId('property-city-input'), 'Colón', 110);
     const cityOption = page.locator('[data-testid^=property-city-option-]').first();
     await cityOption.waitFor({ timeout: 15_000 });
-    await hold('opciones-ciudad', 700);
+    await rec.hold('opciones-ciudad', 700);
     await tap('ciudad-colon', cityOption);
-    await hold('pausa', 500);
+    await rec.hold('pausa', 500);
 
     await typeInto(
         'resumen',
@@ -249,20 +200,21 @@ const main = async (): Promise<void> => {
         'Cabañas para 4 personas a 300 metros del río, con parrilla y pileta.',
         40
     );
-    await hold('pausa', 700);
+    await rec.hold('pausa', 700);
 
     await tap('crear', page.getByRole('button', { name: 'Crear borrador y seguir al paso 2' }));
-    await page.waitForURL(/\/editar\/$/, { timeout: 30_000 });
+    await page.waitForURL(/\/editar\/$/, { timeout: 60_000 });
     await page.waitForLoadState('networkidle');
+    await assertCleanView({ page, where: 'editor hub' });
 
     // Stage 2 — the editor hub, then basic info to add the long description.
-    mark('stage:hub');
-    await hold('hub', 2200);
+    rec.mark('stage:hub');
+    await rec.hold('hub', 2200);
     await tap('info-basica', page.locator('a[href$="/editar/datos/"]:visible').first());
     await page.waitForURL(/\/editar\/datos\/$/);
     await page.waitForLoadState('networkidle');
-    mark('stage:datos');
-    await hold('datos', 1200);
+    rec.mark('stage:datos');
+    await rec.hold('datos', 1200);
 
     await typeInto(
         'descripcion',
@@ -270,25 +222,20 @@ const main = async (): Promise<void> => {
         'Tres cabañas de madera rodeadas de verde, a pasos de la playa. Cada una tiene dos dormitorios, cocina equipada, aire acondicionado y galería con vista al parque.',
         28
     );
-    await hold('pausa', 700);
+    await rec.hold('pausa', 700);
 
-    await tap('guardar', page.getByRole('button', { name: 'Guardar' }), { alignBottom: true });
-    await page.getByText('Cambios guardados').first().waitFor({ timeout: 15_000 });
-    mark('toast:guardado');
-    await hold('final', 2500);
+    await assertCleanView({ page, where: 'basic info' });
+    await tap('guardar', page.getByRole('button', { name: 'Guardar', exact: true }).last(), {
+        alignBottom: true
+    });
+    await page.getByText('Cambios guardados').first().waitFor({ timeout: 30_000 });
+    rec.mark('toast:guardado');
+    await rec.hold('final', 2500);
 
-    await cdp.send('Page.stopScreencast');
-    mark('end');
-    await sleep(300);
-
-    writeFileSync(join(outDir, 'frames.json'), JSON.stringify(frames, null, 2));
-    writeFileSync(
-        join(outDir, 'events.json'),
-        JSON.stringify({ dpr: DPR, viewport: VIEWPORT, duration: now(), events }, null, 2)
-    );
-    await page.screenshot({ path: join(outDir, 'last.png') });
+    await page.screenshot({ path: join(rec.outDir, 'last.png') });
+    await rec.finish({ account: EMAIL });
     await browser.close();
-    console.info(`frames=${frames.length} duration=${now().toFixed(1)}s → ${outDir}`);
+    writeStills();
 };
 
 await main();
