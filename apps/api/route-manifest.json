@@ -3767,6 +3767,10 @@
         },
         {
             "method": "POST",
+            "path": "/api/v1/public/partner-applications"
+        },
+        {
+            "method": "POST",
             "path": "/api/v1/public/partner-logo-clicks"
         },
         {
