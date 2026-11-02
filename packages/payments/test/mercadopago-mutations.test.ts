@@ -250,7 +250,14 @@ describe('TEST:HOS-1551:2 Mercado Pago refund refusal code', () => {
             fetch: async () =>
                 new Response(
                     JSON.stringify({
-                        cause: [{ code, description: 'same provider refusal message' }]
+                        message: 'This transaction does not support to be refunded (2084)',
+                        cause: [
+                            {
+                                code,
+                                description:
+                                    'This transaction does not support to be refunded (2084)'
+                            }
+                        ]
                     }),
                     { status: 400, headers: { 'content-type': 'application/json' } }
                 )
