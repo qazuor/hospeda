@@ -3,6 +3,7 @@ import { AbsoluteFill, Composition, Img, interpolate, staticFile, useCurrentFram
 import { A1, A1_DURATION } from './a1/A1';
 import { VC1, VC1_DURATION } from './vc1/VC1';
 import { VC2, VC2_DURATION } from './vc2/VC2';
+import { VC3, VC3_DURATION } from './vc3/VC3';
 import { VC4, VC4_DURATION } from './vc4/VC4';
 import { VC5, VC5_DURATION } from './vc5/VC5';
 
@@ -64,6 +65,14 @@ export const RemotionRoot: React.FC = () => (
             height={1920}
             fps={30}
             durationInFrames={VC5_DURATION}
+        />
+        <Composition
+            id="VC3"
+            component={VC3}
+            width={1080}
+            height={1920}
+            fps={30}
+            durationInFrames={VC3_DURATION}
         />
         <Composition
             id="VC4"
