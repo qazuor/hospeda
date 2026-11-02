@@ -173,6 +173,7 @@ export * from './billing/reconciliation/sweep/terminal-return.js';
 export * from './billing/reconciliation/sweep/unresolved-period-charge.port.js';
 export * from './billing/reconciliation/sweep/zero-call-checks.service.js';
 export * from './billing/reconciliation/sweep/zero-call-ports.js';
+export * from './billing/refund/confirm-refund.service.js';
 export * from './billing/refund/refund-machine.js';
 export * from './billing/refund/request-refund.service.js';
 export * from './billing/refund/settle-external-refund.service.js';
