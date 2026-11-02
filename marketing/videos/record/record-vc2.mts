@@ -8,8 +8,8 @@
  * - The import source must never be legible: the composition blurs the URL field (its box is the
  *   `paste` event), and every settled position is checked for prices and third-party brand names.
  *
- * Usage: VIDEO_LOGIN_PASSWORD=… pnpm record:vc2 [take-name]
- *   (WEB_URL, VIDEO_LOGIN_EMAIL and IMPORT_SOURCE_URL override the defaults)
+ * Usage: VIDEO_LOGIN_PASSWORD=… IMPORT_SOURCE_URL=… pnpm record:vc2 [take-name]
+ *   (IMPORT_SOURCE_URL is required; WEB_URL and VIDEO_LOGIN_EMAIL override the defaults)
  */
 import type { Locator, Page } from 'playwright';
 import { assertCleanView, login } from './lib/staging';
@@ -28,8 +28,9 @@ import {
 const WEB = process.env.WEB_URL ?? 'https://staging.hospeda.com.ar';
 /** Seeded host account on staging (never a super admin). */
 const EMAIL = process.env.VIDEO_LOGIN_EMAIL ?? 'host-pro@local.test';
-const SOURCE =
-    process.env.IMPORT_SOURCE_URL ?? 'https://www.airbnb.com.ar/rooms/817515602448448452';
+/** Public listing to import. Supplied per take so no third-party listing URL lives in the repo. */
+const SOURCE = process.env.IMPORT_SOURCE_URL;
+if (!SOURCE) throw new Error('IMPORT_SOURCE_URL is required: the public listing to import.');
 
 /** Owner-approved demo staging (REGLAS.md): the trial callouts, which the closing covers. */
 const DEMO_HIDE_CSS = hideCssOf(['[class*="trial-callout"]']);
