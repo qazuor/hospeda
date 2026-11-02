@@ -565,7 +565,7 @@ Operative rule (verifiable without judgment):
 
 #### Umbrella integration branches — `epic/**` (DEC-CI-001)
 
-`epic/**` is a first-class branch type: the integration branch of a multi-epic program that must reach `staging` as ONE unit (currently `epic/HOS-1352-verticales-billing` and `epic/HOS-1801-renombrado-fisico`, DEC-ARCH-007). It is a declared exception to the 6-step flow below — do not "fix" it back:
+`epic/**` is a first-class branch type: the integration branch of a multi-epic program that must reach `staging` as ONE unit (currently `epic/HOS-1352-post-mvp` and `epic/HOS-1801-renombrado-fisico`, DEC-ARCH-007; the first HOS-1352 umbrella, `epic/HOS-1352-verticales-billing`, reached `main` with the MVP cutover and was deleted). It is a declared exception to the 6-step flow below — do not "fix" it back:
 
 1. The umbrella is cut from `staging`. Sub-epic/unit branches are cut from the **umbrella** and PR back into the **umbrella**, never into `staging` or `main`. Review happens on those PRs.
 2. `staging` is merged INTO the umbrella periodically, as an obligation. Never the reverse until the end.
