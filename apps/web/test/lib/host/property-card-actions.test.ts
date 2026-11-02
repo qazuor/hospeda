@@ -11,14 +11,17 @@ import { describe, expect, it } from 'vitest';
 import {
     hasAnyPropertyCardAction,
     type PropertyCardActions,
-    resolvePropertyCardActions
+    resolvePropertyCardActions,
+    resolveRepublishOffer
 } from '../../../src/lib/host/property-card-actions';
+import type { PublishAffordance } from '../../../src/lib/publish/subscribe-button';
 
 const EXPECTED: Readonly<Record<PublicationStatusEnum, PropertyCardActions>> = {
     [PublicationStatusEnum.DRAFT]: {
         edit: true,
         viewOnSite: false,
         publish: true,
+        republish: false,
         unpublish: false,
         delete: true,
         qrBlock: true,
@@ -28,6 +31,7 @@ const EXPECTED: Readonly<Record<PublicationStatusEnum, PropertyCardActions>> = {
         edit: true,
         viewOnSite: true,
         publish: false,
+        republish: false,
         unpublish: true,
         delete: true,
         qrBlock: true,
@@ -37,6 +41,7 @@ const EXPECTED: Readonly<Record<PublicationStatusEnum, PropertyCardActions>> = {
         edit: true,
         viewOnSite: false,
         publish: false,
+        republish: true,
         unpublish: false,
         delete: true,
         qrBlock: true,
@@ -46,6 +51,7 @@ const EXPECTED: Readonly<Record<PublicationStatusEnum, PropertyCardActions>> = {
         edit: true,
         viewOnSite: false,
         publish: false,
+        republish: false,
         unpublish: false,
         delete: true,
         qrBlock: true,
@@ -55,6 +61,7 @@ const EXPECTED: Readonly<Record<PublicationStatusEnum, PropertyCardActions>> = {
         edit: true,
         viewOnSite: false,
         publish: false,
+        republish: false,
         unpublish: false,
         delete: true,
         qrBlock: true,
@@ -64,6 +71,7 @@ const EXPECTED: Readonly<Record<PublicationStatusEnum, PropertyCardActions>> = {
         edit: false,
         viewOnSite: false,
         publish: false,
+        republish: false,
         unpublish: false,
         delete: false,
         qrBlock: false,
@@ -117,5 +125,41 @@ describe('resolvePropertyCardActions (HOS-1641, H11)', () => {
                 actions: resolvePropertyCardActions({ publicationStatus })
             })
         ).toBe(true);
+    });
+});
+
+describe('resolveRepublishOffer (HOS-1977)', () => {
+    const kinds = {
+        publish: { kind: 'publish', canPublish: true, startsTrial: true, trialDays: 30 },
+        covered: { kind: 'covered', canPublish: true, startsTrial: false, trialDays: null },
+        checkout: { kind: 'checkout', canPublish: false, startsTrial: false, trialDays: null },
+        noPlans: { kind: 'noPlans', canPublish: false, startsTrial: false, trialDays: null },
+        unknown: { kind: 'unknown', canPublish: false, startsTrial: false, trialDays: null }
+    } as const satisfies Record<PublishAffordance['kind'], PublishAffordance>;
+    const billingActions = resolvePropertyCardActions({
+        publicationStatus: PublicationStatusEnum.UNPUBLISHED_BY_BILLING
+    });
+
+    it.each([
+        ['publish', true],
+        ['checkout', true],
+        ['noPlans', true],
+        ['unknown', true],
+        ['covered', false]
+    ] as const)('billing-unpublished card with %s affordance -> %s', (kind, expected) => {
+        expect(resolveRepublishOffer({ actions: billingActions, affordance: kinds[kind] })).toBe(
+            expected
+        );
+    });
+
+    it.each(
+        Object.values(PublicationStatusEnum).filter(
+            (status) => status !== PublicationStatusEnum.UNPUBLISHED_BY_BILLING
+        )
+    )('%s never offers republish, whatever the affordance', (status) => {
+        const actions = resolvePropertyCardActions({ publicationStatus: status });
+        for (const affordance of Object.values(kinds)) {
+            expect(resolveRepublishOffer({ actions, affordance })).toBe(false);
+        }
     });
 });

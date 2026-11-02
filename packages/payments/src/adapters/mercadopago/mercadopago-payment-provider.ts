@@ -289,7 +289,7 @@ export class MercadoPagoPaymentProvider implements PaymentProvider {
             method: 'PUT',
             body: { status: 'cancelled' }
         });
-        assertResponseOk(response, 'cancel', () => this.clock.now());
+        await assertResponseOk(response, 'cancel', () => this.clock.now());
         return { accepted: true, resourceId: input.authorizationId };
     }
 
