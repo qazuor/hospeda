@@ -399,10 +399,10 @@ describe('GET /:id/external-listings', () => {
         expect(body.data.reputation.aggregateFetchedAt).toBeNull();
     });
 
-    it('returns 403 for a non-owner authenticated user', async () => {
+    it('returns 404 for a non-owner authenticated user', async () => {
         const app = buildApp(nonOwnerActor, protectedListExternalListingsRoute);
         const res = await app.request(`/${ACCOMMODATION_ID}/external-listings`);
-        expect(res.status).toBe(403);
+        expect(res.status).toBe(404);
     });
 
     it('returns 401 or 403 for a guest (unauthenticated)', async () => {
