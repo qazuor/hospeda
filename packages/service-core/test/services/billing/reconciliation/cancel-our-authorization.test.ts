@@ -1,6 +1,12 @@
-import type { PaymentProvider } from '@repo/payments';
+import { type PaymentProvider, PaymentProviderError } from '@repo/payments';
 import { FakePaymentProvider } from '@repo/payments/fake';
 import { describe, expect, it, vi } from 'vitest';
+
+const { logError, logWarn } = vi.hoisted(() => ({ logError: vi.fn(), logWarn: vi.fn() }));
+vi.mock('@repo/logger', () => ({
+    createLogger: () => ({ error: logError, warn: logWarn, info: vi.fn(), debug: vi.fn() })
+}));
+
 import { cancelOurAuthorization } from '../../../../src/services/billing/reconciliation/cancel-our-authorization';
 import type {
     BeforeCancelNotice,
@@ -288,5 +294,95 @@ describe('TEST:1683:5 AC:1683:3 a recipient without a kind fails closed', () => 
         expect(result).toStrictEqual({ outcome: 'CALL_FAILED' });
         expect(beforeCancelNotice.beforeCancel).not.toHaveBeenCalled();
         expect(calls).not.toContain('cancel');
+    });
+});
+
+function rateLimited(retryAfterSeconds?: number): PaymentProviderError {
+    return new PaymentProviderError({
+        code: 'REJECTED',
+        capability: 'cancel',
+        message: 'Mercado Pago request failed (429)',
+        cause: { status: 429, body: { message: 'too many requests' } },
+        transient: { kind: 'RATE_LIMITED', ...(retryAfterSeconds ? { retryAfterSeconds } : {}) }
+    });
+}
+
+describe('HOS-1995 the cancel call survives a provider throttle', () => {
+    it('retries a 429 with backoff in the same pass and confirms', async () => {
+        // Arrange
+        const { fake, provider, clock, authorizationId, calls } = await setup();
+        const real = FakePaymentProvider.prototype.cancel.bind(fake);
+        const cancel = vi.spyOn(fake, 'cancel');
+        cancel.mockRejectedValueOnce(rateLimited()).mockImplementation(async (input) => {
+            calls.push('cancel-ok');
+            return real(input);
+        });
+        const sleep = vi.fn(async (_ms: number) => undefined);
+
+        // Act
+        const result = await cancelOurAuthorization(
+            { subscriptionId: crypto.randomUUID(), userId: null, authorizationId, kind: null },
+            { provider, clock, sleep }
+        );
+
+        // Assert
+        expect(result).toEqual({ outcome: 'CONFIRMED' });
+        expect(cancel).toHaveBeenCalledTimes(2);
+        expect(sleep).toHaveBeenCalledTimes(1);
+        expect(sleep.mock.calls[0]?.[0]).toBeGreaterThan(0);
+    });
+
+    it('stops after a bounded number of attempts and reports CALL_FAILED', async () => {
+        const { fake, provider, clock, authorizationId } = await setup();
+        const cancel = vi.spyOn(fake, 'cancel').mockRejectedValue(rateLimited());
+        const sleep = vi.fn(async (_ms: number) => undefined);
+        const result = await cancelOurAuthorization(
+            { subscriptionId: crypto.randomUUID(), userId: null, authorizationId, kind: null },
+            { provider, clock, sleep }
+        );
+        expect(result).toEqual({ outcome: 'CALL_FAILED' });
+        expect(cancel).toHaveBeenCalledTimes(3);
+        expect(sleep).toHaveBeenCalledTimes(2);
+    });
+
+    it('does not retry a refusal that is not transient', async () => {
+        const { fake, provider, clock, authorizationId } = await setup();
+        const cancel = vi.spyOn(fake, 'cancel').mockRejectedValue(
+            new PaymentProviderError({
+                code: 'REJECTED',
+                capability: 'cancel',
+                message: 'Mercado Pago request failed (400)',
+                cause: { status: 400, body: { message: 'bad' } }
+            })
+        );
+        const sleep = vi.fn(async (_ms: number) => undefined);
+        const result = await cancelOurAuthorization(
+            { subscriptionId: crypto.randomUUID(), userId: null, authorizationId, kind: null },
+            { provider, clock, sleep }
+        );
+        expect(result).toEqual({ outcome: 'CALL_FAILED' });
+        expect(cancel).toHaveBeenCalledTimes(1);
+        expect(sleep).not.toHaveBeenCalled();
+    });
+
+    it('logs the HTTP status and the sanitized body of the failed cancel and captures it', async () => {
+        const { fake, provider, clock, authorizationId } = await setup();
+        vi.spyOn(fake, 'cancel').mockRejectedValue(rateLimited(4));
+        logError.mockClear();
+        await cancelOurAuthorization(
+            { subscriptionId: crypto.randomUUID(), userId: null, authorizationId, kind: null },
+            { provider, clock, sleep: async () => undefined }
+        );
+        const call = logError.mock.calls.find(
+            ([, label]) => label === 'Our provider authorization could not be cancelled'
+        );
+        expect(call?.[0]).toMatchObject({
+            errorName: 'PaymentProviderError',
+            status: 429,
+            body: { message: 'too many requests' },
+            transientKind: 'RATE_LIMITED',
+            attempts: 3
+        });
+        expect(call?.[2]).toMatchObject({ capture: true });
     });
 });

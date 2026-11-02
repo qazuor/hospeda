@@ -551,6 +551,34 @@ describe('billing reconciliation sweep cron', () => {
         expect(result.details).toMatchObject({ cancellationRetry: { rowsFailed: 1 } });
     });
 
+    it('counts failed provider cancellations as errors (HOS-1995)', async () => {
+        mockSweep.mockResolvedValue({
+            rowsRead: 3,
+            runId: 'run-id',
+            complete: true,
+            pinged: true,
+            rowsFailed: 0,
+            divergences: 0,
+            marksOpened: 0,
+            marksAccumulated: 0,
+            failures: [],
+            cancellationRetry: {
+                stopped: 0,
+                confirmed: 0,
+                marked: 0,
+                noticePending: 0,
+                callFailed: 3,
+                sentUnconfirmed: 0,
+                rowsRead: 3,
+                rowsFailed: 0
+            },
+            startedAt: new Date(),
+            finishedAt: new Date()
+        });
+        const result = await billingReconciliationSweepJob.handler(context());
+        expect(result).toMatchObject({ errors: 3, success: false });
+    });
+
     it('runs the credited payments check and maps its counters (HOS-1605, AC:B11:12, AC:B11:27)', async () => {
         // Arrange
         mockSweep.mockResolvedValue({
