@@ -550,11 +550,11 @@ const canonicalUrl = new URL(Astro.url.pathname, Astro.site).href;
     const TRIAL_READ_TIMEOUT_MS = 3000;
 
     async function readDashboardTrialSummaries(): Promise<TrialSummaryResponse[]> {
-        const base = `${getApiUrl()}/api/v1/protected/publish/trial-summary`;
+        const apiUrl = getApiUrl();
         const reads = await Promise.all(
             ['accommodation', 'venue', 'experience'].map(async (vertical) => {
                 try {
-                    const res = await fetch(`${base}/${vertical}`, {
+                    const res = await fetch(`${apiUrl}/api/v1/protected/publish/trial-summary/${vertical}`, {
                         credentials: 'include',
                         signal: AbortSignal.timeout(TRIAL_READ_TIMEOUT_MS)
                     });
