@@ -23,6 +23,11 @@ vendedores por WhatsApp, Instagram y mail. Plan de origen: la conversación del 
    como un rectángulo con la palabra CAPTURA para pegarla después: ChatGPT no inventa la
    interfaz.
 
+6. **Videos** (`videos/`): los `VH` se hacen con Hailuo (una tirada por toma, el logo
+   adjunto otra vez en cada una, más una tirada solo para la voz) y el montaje lo arma
+   Claude Code; los `VC` los hace Claude Code de punta a punta en Remotion. En los dos,
+   Claude pide el logo antes del cierre y antes de cada render o corrección.
+
 ## Reglas de todo el kit
 
 - **Cero precios**, salvo en la hoja de precios (T6), que se rehace con los valores del día.
@@ -97,6 +102,22 @@ vendedores por WhatsApp, Instagram y mail. Plan de origen: la conversación del 
 | [P3 · Dónde aparece tu marca](aliados/p3-donde-aparece-tu-marca.md) | Quien quiere ver la presencia antes de decidir | Carrusel (3 placas) |
 | [P4 · Aliado fundador](aliados/p4-aliado-fundador.md) | Marcas que pueden entrar en el lanzamiento | Placa |
 | [P5 · Kit de medios](aliados/p5-kit-de-medios.md) | Marcas grandes que piden números | PDF (3 páginas, plantilla) |
+
+### Videos
+
+| Video | Vertical | Cómo se hace |
+|---|---|---|
+| [VH1 · Sin comisión, para todos](videos/vh1-sin-comision.md) | Para todas | Hailuo + montaje de Claude |
+| [VH2 · Del departamento al hotel](videos/vh2-del-depto-al-hotel.md) | Alojamientos | Hailuo + montaje de Claude |
+| [VH3 · Basta de bloquear fechas a mano](videos/vh3-calendario-sincronizado.md) | Alojamientos | Hailuo + montaje de Claude |
+| [VH4 · Que te encuentren para comer o salir](videos/vh4-tu-local.md) | Comer y salir | Hailuo + montaje de Claude |
+| [VH5 · Tu salida, donde el turista ya está mirando](videos/vh5-tu-experiencia.md) | Experiencias | Hailuo + montaje de Claude |
+| [VH6 · Tu marca en la portada](videos/vh6-tu-marca.md) | Aliados | Hailuo + montaje de Claude |
+| [VC1 · Publicá tu alojamiento en tres pasos](videos/vc1-publica-en-tres-pasos.md) | Alojamientos | Claude (Remotion) |
+| [VC2 · Ya lo tenés publicado: importalo](videos/vc2-importa-desde-un-link.md) | Alojamientos | Claude (Remotion) |
+| [VC3 · Sumá tu local](videos/vc3-suma-tu-local.md) | Comer y salir | Claude (Remotion) |
+| [VC4 · Publicá tu experiencia](videos/vc4-publica-tu-experiencia.md) | Experiencias | Claude (Remotion) |
+| [VC5 · Lo que ve el turista](videos/vc5-lo-que-ve-el-turista.md) | Para todas | Claude (Remotion) |
 
 
 ### Textos (no son imágenes)

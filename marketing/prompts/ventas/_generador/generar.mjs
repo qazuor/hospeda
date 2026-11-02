@@ -10,10 +10,12 @@ import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { attachmentsOf, buildPrompt } from './constructor.mjs';
+import { ASSETS, promptsOf, secondsOf, timelineOf } from './constructor-videos.mjs';
 import { ALOJAMIENTOS } from './datos-alojamientos.mjs';
 import { COMER_Y_SALIR } from './datos-comer-y-salir.mjs';
 import { ALIADOS, EXPERIENCIAS } from './datos-experiencias-aliados.mjs';
 import { TRANSVERSAL } from './datos-transversal.mjs';
+import { VIDEOS_CLAUDE, VIDEOS_HAILUO } from './datos-videos.mjs';
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..');
 
@@ -70,6 +72,11 @@ vendedores por WhatsApp, Instagram y mail. Plan de origen: la conversación del 
    una cuenta de anfitrión (nunca la de super admin). Si no la adjuntás, la pantalla queda
    como un rectángulo con la palabra CAPTURA para pegarla después: ChatGPT no inventa la
    interfaz.
+
+6. **Videos** (\`videos/\`): los \`VH\` se hacen con Hailuo (una tirada por toma, el logo
+   adjunto otra vez en cada una, más una tirada solo para la voz) y el montaje lo arma
+   Claude Code; los \`VC\` los hace Claude Code de punta a punta en Remotion. En los dos,
+   Claude pide el logo antes del cierre y antes de cada render o corrección.
 
 ## Reglas de todo el kit
 
@@ -133,6 +140,129 @@ const renderPiece = ({ piece, group }) => {
     return lines.join('\n');
 };
 
+const fmt = (n) => n.toFixed(1).replace('.', ',');
+
+/**
+ * Renders the Markdown file of one sales video.
+ * @param {{ video: object }} input
+ * @returns {string}
+ */
+const renderVideo = ({ video }) => {
+    const hailuo = video.mode === 'hailuo';
+    const lines = [
+        `# ${video.id} · ${video.name}`,
+        '',
+        `Video de venta · ${video.vertical}. Índice en [\`../README.md\`](../README.md).`,
+        '',
+        hailuo
+            ? 'Se hace con **Hailuo / MiniMax** (*image to video*) para las tomas de Hospedín, una tirada solo para la voz, grabaciones reales y un **montaje que arma Claude Code** en Remotion.'
+            : 'Lo hace **Claude Code** de punta a punta con el pipeline de Remotion de `marketing/videos/`.',
+        '',
+        '---',
+        '',
+        `- **Para quién:** ${video.para}`,
+        '- **Formato:** vertical 9:16, 1080×1920, para WhatsApp e Instagram',
+        `- **Insignia de prueba gratis:** ${video.badge ? 'sí, en el cierre' : 'no'}`
+    ];
+    if (hailuo) {
+        const { shots, total } = timelineOf({ video });
+        lines.push(
+            `- **Duración:** ${fmt(total)} s`,
+            '',
+            '## Lo que se escucha',
+            '',
+            '| Frase | Toma | Dura (aprox.) |',
+            '|---|:-:|:-:|',
+            ...video.lines.map(
+                (l, i) =>
+                    `| ${l.text} | ${shots.find((s) => (s.lines || []).some((x) => x.i === i))?.id ?? '—'} | ${fmt(secondsOf(l))} s |`
+            ),
+            '',
+            '## El montaje',
+            '',
+            '| Toma | Tiempo | De dónde sale |',
+            '|---|---|---|',
+            ...shots.map(
+                (s) =>
+                    `| ${s.id} | ${fmt(s.from)}–${fmt(s.to)} | ${s.source === 'hailuo' ? `Hailuo (se pide ${s.request} s)` : s.source === 'grabacion' ? `grabación ${s.recording}` : 'cierre con el logo, en Remotion'} |`
+            ),
+            '',
+            '## Cómo se hace',
+            '',
+            '1. **Una tirada de Hailuo por toma.** En cada una se adjuntan sus archivos, **el logo incluido, otra vez en cada tirada**, y se reemplazan los marcadores `@######NOMBRE#######` a mano.',
+            '2. **La tirada de voz** genera el audio de todo el video de corrido; su imagen se descarta.',
+            `3. **Las tiradas descargadas** van a \`${ASSETS}/video-lab/ventas/${video.id.toLowerCase()}/\` (\`t1.mp4\`, \`t3.mp4\`, …, \`voz.mp4\`).`,
+            '4. **El montaje** lo arma Claude Code con el último prompt: graba las pantallas, arma el cierre con el logo y renderiza.',
+            '',
+            `> \`${ASSETS}\` es la carpeta de assets de marketing (\`HOSPEDA_MARKETING_ASSETS_DIR\`), fuera del repo.`
+        );
+    } else {
+        lines.push(`- **Duración:** ${video.length}`, '', `**La idea:** ${video.idea}`);
+    }
+    for (const n of video.notes || []) lines.push('', `> **${n.label}:** ${n.text}`);
+    for (const p of promptsOf({ video })) {
+        lines.push('', `## ${p.label}`, '');
+        if (p.attach)
+            lines.push(
+                '**Adjuntar y reemplazar:**',
+                '',
+                ...p.attach.map((a) => `- \`${a.split(' → ')[0]}\` → ${a.split(' → ')[1]}`),
+                ''
+            );
+        lines.push('````', p.text, '````');
+    }
+    lines.push('');
+    return lines.join('\n');
+};
+
+/**
+ * Writes the video files and returns their index rows and artifact entries.
+ * @returns {{ index: Array<string>, json: Array<object> }}
+ */
+const generateVideos = () => {
+    mkdirSync(join(ROOT, 'videos'), { recursive: true });
+    const index = ['### Videos', '', '| Video | Vertical | Cómo se hace |', '|---|---|---|'];
+    const json = [];
+    for (const video of [...VIDEOS_HAILUO, ...VIDEOS_CLAUDE]) {
+        const file = `${video.id.toLowerCase()}-${video.slug}.md`;
+        writeFileSync(join(ROOT, 'videos', file), renderVideo({ video }));
+        const how = video.mode === 'hailuo' ? 'Hailuo + montaje de Claude' : 'Claude (Remotion)';
+        index.push(
+            `| [${video.id} · ${video.name}](videos/${file}) | ${video.vertical} | ${how} |`
+        );
+        const prompts = promptsOf({ video }).map((p) => ({
+            label: p.label,
+            text: p.attach ? `${p.text}` : p.text,
+            attach: p.attach || []
+        }));
+        json.push({
+            id: video.id,
+            group: 'videos',
+            groupName: 'Videos',
+            name: video.name,
+            para: video.para,
+            tipo: `Video · ${how}`,
+            vertical: video.vertical,
+            mode: video.mode,
+            formats: ['9:16'],
+            badge: Boolean(video.badge),
+            hospedin: true,
+            capture: true,
+            photo: false,
+            units: prompts.length,
+            isPdf: false,
+            prioridad5: false,
+            title: video.lines?.[0]?.text || video.intro,
+            notes: video.notes || [],
+            file: `marketing/prompts/ventas/videos/${file}`,
+            prompt: prompts.map((p) => p.text).join('\n\n'),
+            prompts
+        });
+    }
+    index.push('');
+    return { index, json };
+};
+
 /**
  * Writes every piece file and the folder index.
  * @param {{ jsonOut?: string }} input
@@ -182,6 +312,9 @@ const generate = ({ jsonOut }) => {
         }
         index.push('');
     }
+    const videos = generateVideos();
+    index.push(...videos.index);
+    json.push(...videos.json);
     writeFileSync(join(ROOT, 'README.md'), `${README_HEAD}\n${index.join('\n')}\n${README_TAIL}`);
     for (const t of TEXT_PIECES) {
         json.push({
