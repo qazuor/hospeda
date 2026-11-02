@@ -3,6 +3,9 @@ import { extractPostgresErrorCause, ServiceError } from '@repo/service-core';
 /** Shared opaque reason for Partner applications rejected by database guards. */
 export const PARTNER_APPLICATION_UNAVAILABLE = 'PARTNER_APPLICATION_UNAVAILABLE' as const;
 
+/** Conflict reason when a Partner application has no active rejection wait to cancel. */
+export const PARTNER_APPLICATION_WAIT_NOT_ACTIVE = 'PARTNER_APPLICATION_WAIT_NOT_ACTIVE' as const;
+
 const MAX_CAUSE_DEPTH = 10;
 
 /** Classifies only the database constraints that prevent a Partner application submission. */
