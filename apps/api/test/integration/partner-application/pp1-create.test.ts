@@ -82,7 +82,7 @@ describe('TEST:V7:1 PP1 creates PENDING applications', () => {
         const email = rememberEmail();
         const response = await app.request('/api/v1/public/partner-applications', {
             method: 'POST',
-            headers: { 'content-type': 'application/json' },
+            headers: { 'content-type': 'application/json', 'user-agent': 'pp1-integration-test' },
             body: JSON.stringify({ email, cfTurnstileToken: 'valid-token' })
         });
         expect(response.status).toBe(201);
