@@ -5129,5 +5129,15 @@
         "windowDays": {
             "unsupported": "La ventana de días solicitada no está disponible"
         }
+    },
+    "partnerApplication": {
+        "email": {
+            "invalid": "El email no es válido.",
+            "max": "El email no puede superar los 320 caracteres."
+        },
+        "reason": {
+            "required": "Escribí el motivo de la anulación.",
+            "max": "El motivo no puede superar los 2000 caracteres."
+        }
     }
 }
