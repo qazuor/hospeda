@@ -223,6 +223,8 @@ const activeWindow = (windows: readonly Focus[], t: number): Focus | undefined =
  * @param input.cuts - Cuts of the edit ({@link buildCuts}).
  * @param input.scale - Recording px → composition px at zoom 1 (sizes moves by on-screen travel).
  * @param input.windows - Focus windows; defaults to A1's (taps, typing and the saved toast).
+ * @param input.snapAt - Cut kinds the camera snaps at instead of easing across; default wipes
+ *   only. Adding `jump` keeps a framing exact from the first frame after a jump cut.
  * @returns `{ camera, spot }`, one entry per output frame.
  */
 export const buildFocus = ({
@@ -230,13 +232,15 @@ export const buildFocus = ({
     timeMap,
     cuts,
     scale,
-    windows: customWindows
+    windows: customWindows,
+    snapAt = ['wipe']
 }: {
     readonly rec: Recording;
     readonly timeMap: readonly number[];
     readonly cuts: ReadonlyArray<{ frame: number; cut: Piece['cut'] }>;
     readonly scale: number;
     readonly windows?: readonly Focus[];
+    readonly snapAt?: readonly Piece['cut'][];
 }): { camera: Camera[]; spot: Spot[] } => {
     const { size } = recordingSize({ rec });
     const rest: Camera = { zoom: 1, fx: size.width / 2, fy: size.height / 2 };
@@ -245,7 +249,7 @@ export const buildFocus = ({
         const next = windows[i + 1];
         return next && next.from - w.to < BRIDGE_GAP ? { ...w, to: Math.max(w.to, next.from) } : w;
     });
-    const wipes = cuts.filter((c) => c.cut === 'wipe').map((c) => c.frame);
+    const wipes = cuts.filter((c) => snapAt.includes(c.cut)).map((c) => c.frame);
 
     const targets = timeMap.map((t) => {
         const w = activeWindow(bridged, t);

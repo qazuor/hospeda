@@ -138,16 +138,19 @@ export const holdWindows = ({
  * @param input.rec - The recording (events.json).
  * @param input.stages - Kept pieces, one group per stage, in order.
  * @param input.windows - Camera/spotlight focus windows.
+ * @param input.snapAtJumps - The camera also snaps at jump cuts (default: it eases across them).
  * @returns The {@link TutorialEdit}.
  */
 export const buildTutorialEdit = ({
     rec,
     stages,
-    windows
+    windows,
+    snapAtJumps = false
 }: {
     readonly rec: Recording;
     readonly stages: readonly (readonly Piece[])[];
     readonly windows: readonly Focus[];
+    readonly snapAtJumps?: boolean;
 }): TutorialEdit => {
     const { size } = recordingSize({ rec });
     const { fit } = fitRecording({ size });
@@ -155,7 +158,14 @@ export const buildTutorialEdit = ({
     const frames = pieceFrames(pieces);
     const timeMap = buildTimeMap(pieces);
     const cuts = buildCuts(pieces);
-    const { camera, spot } = buildFocus({ rec, timeMap, cuts, scale: fit.k, windows });
+    const { camera, spot } = buildFocus({
+        rec,
+        timeMap,
+        cuts,
+        scale: fit.k,
+        windows,
+        snapAt: snapAtJumps ? ['wipe', 'jump'] : ['wipe']
+    });
     const outroAt = INTRO + timeMap.length;
     const stageStarts = stages.map(
         (_, i) => INTRO + pieceFrames(stages.slice(0, i).flat()).reduce((sum, n) => sum + n, 0)
