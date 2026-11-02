@@ -10,7 +10,7 @@
  * `accommodation.featured-toggle.ts`, removed HOS-929.)
  *
  * **Permission model (spec section 4.4 / 6):**
- * - Reads (owner or admin) require ONLY ownership / `ACCOMMODATION_OCCUPANCY_VIEW`
+ * - Reads require ownership or `ACCOMMODATION_VIEW_ALL`
  *   — no `CAN_USE_CALENDAR` gate. A host who lost their calendar entitlement
  *   (e.g. downgraded plan) must still be able to SEE their existing occupancy
  *   data; only the ability to add/change it is gated.
@@ -42,8 +42,10 @@ import type {
 import { PermissionEnum, ServiceErrorCode } from '@repo/schemas';
 import type { Actor } from '../../types/index.js';
 import { ServiceError } from '../../types/index.js';
+import { entityNotFoundError } from '../../utils/not-found.js';
 import { hasPermission } from '../../utils/permission.js';
 import { withServiceTransaction } from '../../utils/transaction.js';
+import { ACCOMMODATION_ENTITY_NAME } from '../entity-names.js';
 
 /**
  * Minimal public-safe projection of an occupancy row (HOS-43 spec section 6:
@@ -76,17 +78,13 @@ async function getAccommodationOrThrow(accommodationId: string): Promise<Accommo
     const accommodationModel = new AccommodationModel();
     const accommodation = await accommodationModel.findById(accommodationId);
     if (!accommodation || accommodation.deletedAt !== null) {
-        throw new ServiceError(
-            ServiceErrorCode.NOT_FOUND,
-            `Accommodation not found: ${accommodationId}`
-        );
+        throw entityNotFoundError({ entityName: ACCOMMODATION_ENTITY_NAME });
     }
     return accommodation as Accommodation;
 }
 
 /**
- * Whether the actor may act as the accommodation's owner: either they ARE the
- * owner, or they hold the staff-wide `ACCOMMODATION_UPDATE_ANY` bypass.
+ * Whether the actor may manage as owner or staff with `ACCOMMODATION_UPDATE_ANY`.
  */
 function isOwnerOrStaff(actor: Actor, accommodation: Accommodation): boolean {
     return (
@@ -95,17 +93,22 @@ function isOwnerOrStaff(actor: Actor, accommodation: Accommodation): boolean {
     );
 }
 
+/** Whether the actor owns the accommodation or may inspect all accommodations. */
+function isOwnerOrInspector(actor: Actor, accommodation: Accommodation): boolean {
+    return (
+        actor.id === accommodation.ownerId ||
+        hasPermission(actor, PermissionEnum.ACCOMMODATION_VIEW_ALL)
+    );
+}
+
 /**
  * Enforces the protected-read ownership gate: the actor must own the
- * accommodation (or hold the staff `ACCOMMODATION_UPDATE_ANY` bypass).
+ * accommodation (or hold `ACCOMMODATION_VIEW_ALL`).
  * No `CAN_USE_CALENDAR` check — reads are never gated by the entitlement.
  */
 function assertOwnerReadAccess(actor: Actor, accommodation: Accommodation): void {
-    if (!isOwnerOrStaff(actor, accommodation)) {
-        throw new ServiceError(
-            ServiceErrorCode.FORBIDDEN,
-            'Permission denied: actor must own this accommodation to view its occupancy calendar'
-        );
+    if (!isOwnerOrInspector(actor, accommodation)) {
+        throw entityNotFoundError({ entityName: ACCOMMODATION_ENTITY_NAME });
     }
 }
 
@@ -152,7 +155,7 @@ async function fetchOccupancyRows(
  * Input for {@link getOwnerOccupancyForAccommodation}.
  */
 export interface GetOwnerOccupancyForAccommodationInput {
-    /** The actor requesting the calendar (must own the accommodation, or hold ACCOMMODATION_UPDATE_ANY). */
+    /** The actor requesting the calendar (must own it or hold ACCOMMODATION_VIEW_ALL). */
     readonly actor: Actor;
     /** The accommodation to read occupancy for. */
     readonly accommodationId: string;
@@ -171,9 +174,7 @@ export interface GetOwnerOccupancyForAccommodationInput {
  * @param input - Actor, accommodation id, and optional half-open date range.
  * @returns The full row set (with `note`/`createdById`/`source` intact — this
  *   is the owner-facing tier, not the public projection).
- * @throws {ServiceError} `NOT_FOUND` when the accommodation does not exist or
- *   is soft-deleted. `FORBIDDEN` when the actor does not own it and lacks
- *   `ACCOMMODATION_UPDATE_ANY`.
+ * @throws {ServiceError} `NOT_FOUND` when missing, soft-deleted, or inaccessible without `ACCOMMODATION_VIEW_ALL`.
  */
 export async function getOwnerOccupancyForAccommodation(
     input: GetOwnerOccupancyForAccommodationInput
@@ -682,14 +683,13 @@ export async function assertOccupancyManageAccess(
 
 /**
  * Asserts the actor may READ the accommodation's occupancy calendar
- * (ownership, or the `ACCOMMODATION_UPDATE_ANY` staff bypass) — no entitlement
+ * (ownership, or `ACCOMMODATION_VIEW_ALL`) — no entitlement
  * or MANAGE permission required, matching the read gate of the manual
  * endpoints. Used by the Phase 2 sync-status route.
  *
  * @param input - Actor and accommodation id.
  * @returns The fetched accommodation (owner resolved).
- * @throws {ServiceError} `NOT_FOUND` when the accommodation does not exist or is
- * soft-deleted. `FORBIDDEN` when the actor does not own it and lacks the staff bypass.
+ * @throws {ServiceError} `NOT_FOUND` when missing, soft-deleted, or inaccessible without inspection permission.
  */
 export async function assertOccupancyReadAccess(
     input: AssertOccupancyAccessInput
