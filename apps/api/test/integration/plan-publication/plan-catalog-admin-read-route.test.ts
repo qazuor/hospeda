@@ -126,6 +126,14 @@ describe('TEST:1704:4 admin plan catalog read route', () => {
             expect((await invalid.json()).error.code).toBe('VALIDATION_ERROR');
         }
 
+        await insertVersion({
+            planId: emptyPlanId,
+            vertical: 'accommodation',
+            rank: 20,
+            sellable: true,
+            current: true
+        });
+
         const published = await app.request(publishUrl({ planId }), {
             method: 'POST',
             headers: superAdmin,
@@ -153,7 +161,15 @@ describe('TEST:1704:4 admin plan catalog read route', () => {
             refreshedBody.data.plans.find((plan) => plan.planId === planId)?.currentVersion
         ).toEqual({
             versionId: publishedBody.data.id,
-            rank: 19
+            rank: 19,
+            sellable: true,
+            trialDays: 2,
+            graceDays: 5,
+            allowsPause: true,
+            inheritsTouristVip: false,
+            entitlements: [{ key: 'view_basic_stats', planQuota: null, trialQuota: null }],
+            limits: [{ key: 'max_photos_per_accommodation', value: 22 }],
+            cycles: []
         });
     });
 });
