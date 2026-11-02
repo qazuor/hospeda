@@ -343,6 +343,10 @@
             }
         },
         "publish": {
+            "republishConfirmTitle": {
+                "venue": "¿Publicar de nuevo este comercio?",
+                "experience": "¿Publicar de nuevo esta experiencia?"
+            },
             "confirmTitle": {
                 "venue": "¿Publicar este comercio?",
                 "experience": "¿Publicar esta experiencia?"
