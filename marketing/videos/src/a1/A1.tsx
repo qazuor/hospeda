@@ -326,7 +326,10 @@ export const A1: React.FC = () => {
 
             {frame >= OUTRO_AT && (
                 <>
-                    <ClosingCard at={OUTRO_AT + 8} />
+                    <ClosingCard
+                        at={OUTRO_AT + 8}
+                        badge="30 días de prueba gratis · Sin tarjeta"
+                    />
                     <div
                         style={{
                             position: 'absolute',

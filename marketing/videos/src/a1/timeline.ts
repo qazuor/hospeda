@@ -87,6 +87,33 @@ const LOADS: ReadonlyArray<readonly [string, string]> = [
 ];
 
 /**
+ * Spans the recorder brackets to drop: `off` … `off:end` is work done off camera (it leaves with
+ * a brand wipe), `skip` … `skip:end` a wait on screen (an upload, a prompt) cut with a jump.
+ */
+const BRACKETS: ReadonlyArray<readonly [string, Piece['cut']]> = [
+    ['off', 'wipe'],
+    ['skip', 'jump']
+];
+
+/** Every `<name>` … `<name>:end` span of the log, in order. */
+const spansOf = (
+    events: readonly RecEvent[],
+    name: string
+): Array<{ from: number; to: number }> => {
+    const out: Array<{ from: number; to: number }> = [];
+    let open: number | undefined;
+    for (const e of events) {
+        if (e.kind !== 'mark') continue;
+        if (e.label === name) open = e.t;
+        if (e.label === `${name}:end` && open !== undefined) {
+            out.push({ from: open, to: e.t });
+            open = undefined;
+        }
+    }
+    return out;
+};
+
+/**
  * Waits on the server between finishing to type and the result showing ([type, next hold]):
  * staging's city search can take seconds. A wait longer than {@link WAIT_MAX} is jump-cut.
  */
@@ -102,13 +129,20 @@ export const buildPieces = ({ events, duration }: Recording): Piece[] => {
     const firstTap = find(events, 'publicar-otra');
     const start = Math.max(0.4, (firstTap?.t ?? 1.6) - 1.5);
     const toast = find(events, 'toast:guardado');
-    const stop = Math.min(duration, (toast?.t ?? duration) + TAIL_AFTER_TOAST);
+    // The take ends on the published listing; an older take (no listing) ends after the toast.
+    const listingEnd = find(events, 'ficha:end');
+    const stop = Math.min(duration, listingEnd?.t ?? (toast?.t ?? duration) + TAIL_AFTER_TOAST);
 
     const removed: Array<{ from: number; to: number; cut: Piece['cut'] }> = [];
     for (const [tapLabel, stageLabel] of LOADS) {
         const tap = find(events, tapLabel);
         const stage = find(events, stageLabel);
         if (tap && stage) removed.push({ from: tap.t + 0.45, to: stage.t + 0.35, cut: 'wipe' });
+    }
+    for (const [name, cut] of BRACKETS) {
+        for (const span of spansOf(events, name)) {
+            removed.push({ from: span.from + 0.1, to: span.to, cut });
+        }
     }
     for (const [typeLabel, holdLabel] of WAITS) {
         const typed = find(events, typeLabel);
@@ -342,24 +376,33 @@ export const STAGES: readonly Stage[] = [
     { mark: 'stage:propiedades', say: 'Entrá a Mis propiedades', pose: 'senalando' },
     {
         mark: 'stage:crear',
-        step: '1/3',
+        step: '1/4',
         chip: 'Datos básicos',
         say: 'Paso 1: los datos básicos',
         pose: 'te-explico'
     },
     {
         mark: 'stage:hub',
-        step: '2/3',
+        step: '2/4',
         chip: 'Tu panel',
         say: 'Paso 2: desde tu panel completás todo',
         pose: 'es-facil'
     },
+    { mark: 'stage:datos', say: 'Contá qué lo hace único', pose: 'enumerando' },
+    { mark: 'toast:guardado', say: '¡Guardado!', pose: 'vamos' },
     {
-        mark: 'stage:datos',
-        step: '3/3',
-        chip: 'Descripción',
-        say: 'Paso 3: contá qué lo hace único',
-        pose: 'enumerando'
+        mark: 'stage:fotos',
+        step: '3/4',
+        chip: 'Fotos',
+        say: 'Paso 3: sumá tus mejores fotos',
+        pose: 'senalando'
     },
-    { mark: 'toast:guardado', say: '¡Listo, guardado!', pose: 'vamos' }
+    { mark: 'stage:publicar', say: 'Y lo publicás', pose: 'te-explico' },
+    {
+        mark: 'stage:ficha',
+        step: '4/4',
+        chip: 'Publicada',
+        say: '¡Ya está publicado!',
+        pose: 'vamos'
+    }
 ];
