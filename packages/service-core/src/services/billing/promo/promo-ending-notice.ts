@@ -159,7 +159,7 @@ export async function applyPromoEndingNotice(input: {
                 subscriptionId: row.subscriptionId,
                 redemptionId: row.redemptionId,
                 vertical: row.vertical,
-                planName: resolvePlanDisplayName({
+                planName: await resolvePlanDisplayName({
                     vertical: row.vertical,
                     plan: { slug: row.planSlug, name: row.planName }
                 }),

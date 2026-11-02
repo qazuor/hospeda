@@ -215,7 +215,7 @@ export async function applyRenewalNotice(input: {
             payload: {
                 subscriptionId: row.subscriptionId,
                 vertical: row.vertical,
-                planName: resolvePlanDisplayName({
+                planName: await resolvePlanDisplayName({
                     vertical: row.vertical,
                     plan: { slug: row.planSlug, name: row.planName }
                 }),

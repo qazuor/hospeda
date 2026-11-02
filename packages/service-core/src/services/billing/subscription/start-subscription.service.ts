@@ -146,7 +146,7 @@ export async function readBillingChoice(input: { readonly billingOptionId: strin
     if (!choice) throw new ServiceError(ServiceErrorCode.NOT_FOUND, 'Billing option not found');
     return {
         ...choice,
-        providerReason: buildProviderReason({
+        providerReason: await buildProviderReason({
             vertical: choice.vertical,
             plan: { slug: choice.planSlug, name: choice.planName }
         })

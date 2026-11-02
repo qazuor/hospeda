@@ -84,7 +84,7 @@ export async function enqueueSignupConfirmedNotice(
                 subscriptionId: row.subscriptionId,
                 vertical: row.vertical,
                 planName: row.planSlug
-                    ? resolvePlanDisplayName({
+                    ? await resolvePlanDisplayName({
                           vertical: row.vertical,
                           plan: { slug: row.planSlug, name: row.planName ?? '' }
                       })

@@ -275,7 +275,7 @@ export async function creditPayment(
                               paymentId: payment.id,
                               subscriptionId: subscription?.id ?? null,
                               planName: planRow
-                                  ? resolvePlanDisplayName({
+                                  ? await resolvePlanDisplayName({
                                         vertical: subscription?.vertical,
                                         plan: planRow
                                     })

@@ -190,7 +190,7 @@ export async function runCreationsSweep(
                         pending: { subscription, idempotencyKey: minted.key },
                         provider: ports.provider,
                         clock: ports.clock,
-                        reason: buildProviderReason({
+                        reason: await buildProviderReason({
                             vertical: subscription.vertical ?? '',
                             plan: { slug: planSlug, name: planName }
                         }),

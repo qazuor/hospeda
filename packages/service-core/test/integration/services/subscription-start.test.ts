@@ -127,7 +127,7 @@ describe('TEST:B3:1 S1 durable pending authorization', () => {
             expect(key?.completedAt).toBeNull();
             expect(input).toMatchObject({
                 reference: row?.id,
-                reason: 'Básico',
+                reason: 'Hospeda · Alojamiento Básico',
                 amount: { amountMinor: 250000, currency: 'ARS' },
                 cadence: { everyMonths: 3 }
             });

@@ -1,7 +1,3 @@
-// Imported by subpath, never through the `@repo/i18n` index: the index pulls every locale file
-// without JSON import attributes, which native Node ESM (seed, scripts) refuses to load.
-import billingEs from '@repo/i18n/locales/es/billing.json' with { type: 'json' };
-
 /** Identity of a catalog plan as stored in `plan` (the stored name is not user-facing). */
 export interface PlanDisplayInput {
     /** Stable plan slug inside its vertical. */
@@ -20,9 +16,23 @@ interface BillingCopy {
     };
 }
 
-const copy: BillingCopy = billingEs;
+let cachedCopy: Promise<BillingCopy> | undefined;
 
-function verticalLabel(vertical: string): string | undefined {
+/**
+ * Loads the Spanish billing copy lazily and by subpath. A static import would make every
+ * consumer of this file load the JSON at module-evaluation time, and the Playwright e2e
+ * runner (which strips import attributes) then crashes in native Node ESM; the `@repo/i18n`
+ * index fails the same way because it imports every locale file without attributes.
+ */
+function loadCopy(): Promise<BillingCopy> {
+    cachedCopy ??= import('@repo/i18n/locales/es/billing.json', { with: { type: 'json' } }).then(
+        (module) => module.default as BillingCopy
+    );
+    return cachedCopy;
+}
+
+async function verticalLabel(vertical: string): Promise<string | undefined> {
+    const copy = await loadCopy();
     const label = copy.checkout?.signup?.vertical?.[vertical];
     return label && label.trim() !== '' ? label : undefined;
 }
@@ -41,14 +51,15 @@ function verticalLabel(vertical: string): string | undefined {
  * @param input.plan - The plan slug and stored name
  * @returns The Spanish display name
  */
-export function resolvePlanDisplayName(input: {
+export async function resolvePlanDisplayName(input: {
     readonly vertical?: string | null;
     readonly plan: PlanDisplayInput;
-}): string {
+}): Promise<string> {
     if (input.vertical === TOURIST_VERTICAL) {
-        const label = verticalLabel(TOURIST_VERTICAL);
+        const label = await verticalLabel(TOURIST_VERTICAL);
         if (label) return label;
     }
+    const copy = await loadCopy();
     const translated = copy.plan?.[input.plan.slug]?.name;
     return translated && translated.trim() !== '' ? translated : input.plan.name;
 }
@@ -64,12 +75,16 @@ export function resolvePlanDisplayName(input: {
  * @param input.plan - The plan slug and stored name
  * @returns The provider-facing reason
  */
-export function buildProviderReason(input: {
+export async function buildProviderReason(input: {
     readonly vertical: string;
     readonly plan: PlanDisplayInput;
-}): string {
-    const planName = resolvePlanDisplayName({ vertical: input.vertical, plan: input.plan });
-    const label = input.vertical === TOURIST_VERTICAL ? undefined : verticalLabel(input.vertical);
+}): Promise<string> {
+    const planName = await resolvePlanDisplayName({
+        vertical: input.vertical,
+        plan: input.plan
+    });
+    const label =
+        input.vertical === TOURIST_VERTICAL ? undefined : await verticalLabel(input.vertical);
     if (!label) return `Hospeda · ${planName}`;
     return `Hospeda · ${label.charAt(0).toUpperCase()}${label.slice(1)} ${planName}`;
 }
