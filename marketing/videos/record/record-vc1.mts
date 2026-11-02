@@ -17,7 +17,7 @@
 import { existsSync } from 'node:fs';
 import { join } from 'node:path';
 import type { Page } from 'playwright';
-import { assertCleanView, login } from './lib/staging';
+import { assertCleanView, login, saveSection } from './lib/staging';
 import { createTake, hideCssOf, launchDevice, scrollToLocator, scrollToY, sleep } from './lib/take';
 
 const WEB = process.env.WEB_URL ?? 'https://staging.hospeda.com.ar';
@@ -75,19 +75,6 @@ const deleteLeftover = async (page: Page): Promise<void> => {
     throw new Error(`Could not delete the leftover "${NAME}".`);
 };
 
-/** Clicks the section's «Guardar» and waits for the confirmation. */
-const save = async (page: Page, where: string): Promise<void> => {
-    await page.getByRole('button', { name: 'Guardar', exact: true }).last().click();
-    await page
-        .getByText('Cambios guardados')
-        .first()
-        .waitFor({ timeout: 20_000 })
-        .catch(() => {
-            throw new Error(`No save confirmation at ${where}.`);
-        });
-    await sleep(800);
-};
-
 const main = async (): Promise<void> => {
     const { browser, context, page } = await launchDevice({ origin: WEB, hideCss: DEMO_HIDE_CSS });
     await login({ page, web: WEB, email: EMAIL, video: 'VC1' });
@@ -132,7 +119,7 @@ const main = async (): Promise<void> => {
     await page.goto(`${editBase}datos/`, { waitUntil: 'networkidle' });
     await sleep(1200);
     await page.locator('#acc-description').fill(DESCRIPTION);
-    await save(page, 'datos');
+    await saveSection({ page, where: 'datos' });
 
     await page.goto(`${editBase}capacidad-precio/`, { waitUntil: 'networkidle' });
     await sleep(1500);
@@ -151,7 +138,7 @@ const main = async (): Promise<void> => {
     await assertCleanView({ page, where: 'capacity' });
     await rec.hold('capacidad', 1600, capacityGrid);
     rec.mark('keep:capacidad:end');
-    await save(page, 'capacidad');
+    await saveSection({ page, where: 'capacidad' });
 
     // Stage 2 — the map pin, then the photos; the main photo opens the publish prompt.
     await page.goto(`${editBase}ubicacion/`, { waitUntil: 'networkidle' });
@@ -170,7 +157,7 @@ const main = async (): Promise<void> => {
     rec.mark('keep:mapa:end');
     const lat = await page.getByLabel('Latitud').inputValue();
     if (!lat) throw new Error('The map tap did not set the coordinates.');
-    await save(page, 'ubicacion');
+    await saveSection({ page, where: 'ubicacion' });
 
     await page.goto(`${editBase}fotos/`, { waitUntil: 'networkidle' });
     await sleep(2000);
