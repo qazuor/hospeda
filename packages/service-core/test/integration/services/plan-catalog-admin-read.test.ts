@@ -22,6 +22,18 @@ const actor = {
     permissions: [PermissionEnum.MAINTENANCE_MODE_WRITE]
 } as const;
 
+/**
+ * Rows this transaction inserted, updated or deleted in the catalog tables.
+ * `pg_stat_xact_user_tables` is scoped to the current transaction, so writes
+ * made by other test files running in parallel never move these numbers —
+ * unlike a global `count(*)`, which raced with them.
+ */
+const OWN_TRANSACTION_WRITES = sql.raw(`SELECT relname,
+    n_tup_ins + n_tup_upd + n_tup_del + n_tup_hot_upd AS writes
+    FROM pg_stat_xact_user_tables
+    WHERE relname IN ('plan', 'plan_version', 'plan_version_entitlement', 'plan_version_limit', 'billing_option')
+    ORDER BY relname`);
+
 describe('TEST:1704:3 admin plan catalog reader', () => {
     it('returns only the vertical plans and current version effects without writing', async () => {
         await withServiceTestTransaction(async (tx) => {
@@ -130,23 +142,13 @@ describe('TEST:1704:3 admin plan catalog reader', () => {
                 },
                 { planVersionId: currentVersion.id, cycle: 'annual', amount: 9000, currency: 'ARS' }
             ]);
-            const before = await tx.execute(sql`SELECT
-                (SELECT count(*) FROM plan) AS plans,
-                (SELECT count(*) FROM plan_version) AS versions,
-                (SELECT count(*) FROM plan_version_entitlement) AS entitlements,
-                (SELECT count(*) FROM plan_version_limit) AS limits,
-                (SELECT count(*) FROM billing_option) AS options`);
+            const before = await tx.execute(OWN_TRANSACTION_WRITES);
             const response = await readAdminPlanCatalog({
                 actor,
                 vertical: 'accommodation',
                 client: tx
             });
-            const after = await tx.execute(sql`SELECT
-                (SELECT count(*) FROM plan) AS plans,
-                (SELECT count(*) FROM plan_version) AS versions,
-                (SELECT count(*) FROM plan_version_entitlement) AS entitlements,
-                (SELECT count(*) FROM plan_version_limit) AS limits,
-                (SELECT count(*) FROM billing_option) AS options`);
+            const after = await tx.execute(OWN_TRANSACTION_WRITES);
             const actual = response.plans.filter((plan) =>
                 [withVersion.id, withoutVersion.id].includes(plan.planId)
             );
@@ -185,6 +187,7 @@ describe('TEST:1704:3 admin plan catalog reader', () => {
                 }
             ]);
             expect(response.plans.some((plan) => plan.planId === otherVertical.id)).toBe(false);
+            expect(before.rows).toHaveLength(5);
             expect(after.rows).toEqual(before.rows);
         });
     });
