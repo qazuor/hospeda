@@ -28,7 +28,18 @@ src/a1/ es el molde: intro → tutorial → cierre. Trabajá en un worktree cort
 staging; lo generado vive en /home/qazuor/projects/WEBS/marketing/video-lab/, nunca en el repo.
 
 GRABACIÓN (pantallas reales, vista mobile del dispositivo de referencia):
-- Cuenta: sin login.
+- Dónde: en https://staging.hospeda.com.ar, no en local. Ahí se crean cuentas y se
+  paga con el sandbox de Mercado Pago, así que el alta llega a publicado de verdad.
+- La cuenta: pedímela, o la creamos juntos, antes de grabar. Nunca escribas usuario ni
+  contraseña en el repo, en el grabador ni en un log: pasalos por variables de entorno.
+- Nunca una cuenta con permisos de super admin.
+- Si el flujo pide pagar, se paga con una tarjeta de prueba del sandbox y ese tramo no
+  entra en el video.
+- En la barra de direcciones que se dibuja en la edición se lee hospeda.com.ar, nunca
+  staging.
+- Staging tiene datos de prueba: elegí fichas con buenas fotos y sin textos de prueba a
+  la vista.
+- Cuenta: ninguna: es la ficha pública, sin login.
 - Qué grabar: P5 · Ficha de alojamiento completa, sección por sección.
   1. Fotos y descripción; cambiar el idioma a inglés.
   2. Mapa y «Qué hay cerca», con distancias.

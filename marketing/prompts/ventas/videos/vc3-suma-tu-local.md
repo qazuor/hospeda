@@ -28,7 +28,18 @@ src/a1/ es el molde: intro → tutorial → cierre. Trabajá en un worktree cort
 staging; lo generado vive en /home/qazuor/projects/WEBS/marketing/video-lab/, nunca en el repo.
 
 GRABACIÓN (pantallas reales, vista mobile del dispositivo de referencia):
-- Cuenta: venue-owner@local.test.
+- Dónde: en https://staging.hospeda.com.ar, no en local. Ahí se crean cuentas y se
+  paga con el sandbox de Mercado Pago, así que el alta llega a publicado de verdad.
+- La cuenta: pedímela, o la creamos juntos, antes de grabar. Nunca escribas usuario ni
+  contraseña en el repo, en el grabador ni en un log: pasalos por variables de entorno.
+- Nunca una cuenta con permisos de super admin.
+- Si el flujo pide pagar, se paga con una tarjeta de prueba del sandbox y ese tramo no
+  entra en el video.
+- En la barra de direcciones que se dibuja en la edición se lee hospeda.com.ar, nunca
+  staging.
+- Staging tiene datos de prueba: elegí fichas con buenas fotos y sin textos de prueba a
+  la vista.
+- Cuenta: una cuenta de dueño de local en staging.
 - Qué grabar: Alta de un local desde /publicar/comer-y-salir/ hasta publicado.
   1. Datos del local y rubro.
   2. Fotos y ubicación.
@@ -57,7 +68,6 @@ REGLAS DE CONTENIDO (no se negocian):
 - Voseo rioplatense en todo el texto.
 - En el copy se dice «tu local»; «menú» o «carta» sólo si se muestra esa sección.
 - La ficha pública de un local no muestra teléfono: no prometas que te escriben directo.
-- Resolvé conmigo el plan activo antes de grabar (REGLAS.md, «Pendiente de definir»).
 
 ENTREGA: render 1080×1920, 30 fps, en /home/qazuor/projects/WEBS/marketing/video-lab/out/vc3.mp4. Antes de
 grabar, mostrame el guion con los tiempos. Un render por vez: después del primero esperá

@@ -28,7 +28,18 @@ src/a1/ es el molde: intro → tutorial → cierre. Trabajá en un worktree cort
 staging; lo generado vive en /home/qazuor/projects/WEBS/marketing/video-lab/, nunca en el repo.
 
 GRABACIÓN (pantallas reales, vista mobile del dispositivo de referencia):
-- Cuenta: experience-owner@local.test.
+- Dónde: en https://staging.hospeda.com.ar, no en local. Ahí se crean cuentas y se
+  paga con el sandbox de Mercado Pago, así que el alta llega a publicado de verdad.
+- La cuenta: pedímela, o la creamos juntos, antes de grabar. Nunca escribas usuario ni
+  contraseña en el repo, en el grabador ni en un log: pasalos por variables de entorno.
+- Nunca una cuenta con permisos de super admin.
+- Si el flujo pide pagar, se paga con una tarjeta de prueba del sandbox y ese tramo no
+  entra en el video.
+- En la barra de direcciones que se dibuja en la edición se lee hospeda.com.ar, nunca
+  staging.
+- Staging tiene datos de prueba: elegí fichas con buenas fotos y sin textos de prueba a
+  la vista.
+- Cuenta: una cuenta de prestador de experiencias en staging.
 - Qué grabar: Alta de una experiencia desde /publicar/experiencias/ hasta publicada.
   1. Datos de la salida.
   2. Fotos y punto de encuentro.
@@ -56,7 +67,6 @@ REGLAS DE CONTENIDO (no se negocian):
 - Airbnb, Booking y Google se nombran sólo en calendario y reputación, nunca con su logo.
 - Voseo rioplatense en todo el texto.
 - Hoy no se vende el cupo por Hospeda: nada de reservas ni pagos en el video.
-- Resolvé conmigo el plan activo antes de grabar (REGLAS.md, «Pendiente de definir»).
 
 ENTREGA: render 1080×1920, 30 fps, en /home/qazuor/projects/WEBS/marketing/video-lab/out/vc4.mp4. Antes de
 grabar, mostrame el guion con los tiempos. Un render por vez: después del primero esperá

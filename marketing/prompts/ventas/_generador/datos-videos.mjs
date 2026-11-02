@@ -329,7 +329,8 @@ export const VIDEOS_CLAUDE = [
         badge: true,
         length: '30 a 35 s',
         idea: 'Mostrar que cargar un alojamiento es corto y guiado. Es el video A1 que ya existe, convertido en pieza de venta.',
-        account: 'host-basico@local.test (alojamiento «Casa Quinta Las Palmeras»)',
+        account:
+            'una cuenta de anfitrión en staging (su alojamiento se llama «Casa Quinta Las Palmeras»)',
         recording: 'A1/A2 · alta completa de un alojamiento, desde /publicar/ hasta publicado.',
         recordSteps: [
             'Datos básicos: nombre, tipo y capacidad.',
@@ -356,8 +357,7 @@ export const VIDEOS_CLAUDE = [
         ],
         cta: 'Publicá tu alojamiento',
         extraRules: [
-            'Reusá todo lo que sirva de src/a1/; regrabá con el dispositivo de referencia (REGLAS.md, «Pendiente: regrabar A1»).',
-            'Publicar exige plan activo y los usuarios del seed no lo tienen (REGLAS.md, «Pendiente de definir»): resolvelo conmigo antes de grabar.'
+            'Reusá todo lo que sirva de src/a1/; regrabá con el dispositivo de referencia (REGLAS.md, «Pendiente: regrabar A1»).'
         ]
     },
     {
@@ -370,7 +370,7 @@ export const VIDEOS_CLAUDE = [
         badge: true,
         length: '20 a 25 s',
         idea: 'Pegás el link de tu aviso y la ficha se completa sola. Versión motion graphics de V1, sin tiradas de Hailuo.',
-        account: 'host-basico@local.test',
+        account: 'una cuenta de anfitrión en staging',
         recording: 'A10 · Importar ficha: pegar el link, esperar, la ficha aparece completa.',
         recordSteps: [
             'Abrir el importador desde /publicar/.',
@@ -405,7 +405,7 @@ export const VIDEOS_CLAUDE = [
         badge: true,
         length: '25 a 30 s',
         idea: 'Cargar un local es corto: datos, fotos, mapa y redes.',
-        account: 'venue-owner@local.test',
+        account: 'una cuenta de dueño de local en staging',
         recording: 'Alta de un local desde /publicar/comer-y-salir/ hasta publicado.',
         recordSteps: [
             'Datos del local y rubro.',
@@ -425,8 +425,7 @@ export const VIDEOS_CLAUDE = [
         cta: 'Sumá tu local',
         extraRules: [
             'En el copy se dice «tu local»; «menú» o «carta» sólo si se muestra esa sección.',
-            'La ficha pública de un local no muestra teléfono: no prometas que te escriben directo.',
-            'Resolvé conmigo el plan activo antes de grabar (REGLAS.md, «Pendiente de definir»).'
+            'La ficha pública de un local no muestra teléfono: no prometas que te escriben directo.'
         ]
     },
     {
@@ -439,7 +438,7 @@ export const VIDEOS_CLAUDE = [
         badge: true,
         length: '25 a 30 s',
         idea: 'Mostrar el alta de una experiencia y cómo la ve el turista.',
-        account: 'experience-owner@local.test',
+        account: 'una cuenta de prestador de experiencias en staging',
         recording: 'Alta de una experiencia desde /publicar/experiencias/ hasta publicada.',
         recordSteps: [
             'Datos de la salida.',
@@ -453,10 +452,7 @@ export const VIDEOS_CLAUDE = [
             { chip: 'Publicada', says: '¡Y el turista ya la ve!', show: 'La ficha pública.' }
         ],
         cta: 'Publicá tu experiencia',
-        extraRules: [
-            'Hoy no se vende el cupo por Hospeda: nada de reservas ni pagos en el video.',
-            'Resolvé conmigo el plan activo antes de grabar (REGLAS.md, «Pendiente de definir»).'
-        ]
+        extraRules: ['Hoy no se vende el cupo por Hospeda: nada de reservas ni pagos en el video.']
     },
     {
         id: 'VC5',
@@ -468,7 +464,7 @@ export const VIDEOS_CLAUDE = [
         badge: false,
         length: '25 a 30 s',
         idea: 'Recorrido por una ficha pública: traducción automática, mapa, clima y qué hay cerca.',
-        account: 'sin login',
+        account: 'ninguna: es la ficha pública, sin login',
         recording: 'P5 · Ficha de alojamiento completa, sección por sección.',
         recordSteps: [
             'Fotos y descripción; cambiar el idioma a inglés.',
