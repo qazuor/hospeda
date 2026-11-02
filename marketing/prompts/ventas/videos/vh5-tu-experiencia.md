@@ -231,6 +231,17 @@ MATERIAL QUE TE PASO en /home/qazuor/projects/WEBS/marketing/video-lab/ventas/vh
 
 GRABACIÓN: la grabás vos con el grabador de marketing/videos, con el dispositivo de
 referencia (config/device.ts) y la puesta en escena de demo (DEMO_HIDE_CSS).
+- Dónde: en https://staging.hospeda.com.ar, no en local. Ahí se crean cuentas y se
+  paga con el sandbox de Mercado Pago, así que el alta llega a publicado de verdad.
+- La cuenta: pedímela, o la creamos juntos, antes de grabar. Nunca escribas usuario ni
+  contraseña en el repo, en el grabador ni en un log: pasalos por variables de entorno.
+- Nunca una cuenta con permisos de super admin.
+- Si el flujo pide pagar, se paga con una tarjeta de prueba del sandbox y ese tramo no
+  entra en el video.
+- En la barra de direcciones que se dibuja en la edición se lee hospeda.com.ar, nunca
+  staging.
+- Staging tiene datos de prueba: elegí fichas con buenas fotos y sin textos de prueba a
+  la vista.
 - T2: P9 · Experiencias: listado y ficha. Del listado a una ficha con buenas fotos.
 
 HOJA DE CORTE (cortes secos, en múltiplos de 0,5 s):

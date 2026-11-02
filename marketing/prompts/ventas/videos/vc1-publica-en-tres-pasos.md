@@ -28,7 +28,18 @@ src/a1/ es el molde: intro → tutorial → cierre. Trabajá en un worktree cort
 staging; lo generado vive en /home/qazuor/projects/WEBS/marketing/video-lab/, nunca en el repo.
 
 GRABACIÓN (pantallas reales, vista mobile del dispositivo de referencia):
-- Cuenta: host-basico@local.test (alojamiento «Casa Quinta Las Palmeras»).
+- Dónde: en https://staging.hospeda.com.ar, no en local. Ahí se crean cuentas y se
+  paga con el sandbox de Mercado Pago, así que el alta llega a publicado de verdad.
+- La cuenta: pedímela, o la creamos juntos, antes de grabar. Nunca escribas usuario ni
+  contraseña en el repo, en el grabador ni en un log: pasalos por variables de entorno.
+- Nunca una cuenta con permisos de super admin.
+- Si el flujo pide pagar, se paga con una tarjeta de prueba del sandbox y ese tramo no
+  entra en el video.
+- En la barra de direcciones que se dibuja en la edición se lee hospeda.com.ar, nunca
+  staging.
+- Staging tiene datos de prueba: elegí fichas con buenas fotos y sin textos de prueba a
+  la vista.
+- Cuenta: una cuenta de anfitrión en staging (su alojamiento se llama «Casa Quinta Las Palmeras»).
 - Qué grabar: A1/A2 · alta completa de un alojamiento, desde /publicar/ hasta publicado.
   1. Datos básicos: nombre, tipo y capacidad.
   2. Ubicación en el mapa y fotos.
@@ -56,7 +67,6 @@ REGLAS DE CONTENIDO (no se negocian):
 - Airbnb, Booking y Google se nombran sólo en calendario y reputación, nunca con su logo.
 - Voseo rioplatense en todo el texto.
 - Reusá todo lo que sirva de src/a1/; regrabá con el dispositivo de referencia (REGLAS.md, «Pendiente: regrabar A1»).
-- Publicar exige plan activo y los usuarios del seed no lo tienen (REGLAS.md, «Pendiente de definir»): resolvelo conmigo antes de grabar.
 
 ENTREGA: render 1080×1920, 30 fps, en /home/qazuor/projects/WEBS/marketing/video-lab/out/vc1.mp4. Antes de
 grabar, mostrame el guion con los tiempos. Un render por vez: después del primero esperá

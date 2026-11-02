@@ -216,6 +216,19 @@ corrección, pedime el logo. Usá exactamente el archivo que te pase (por defect
 apps/web/src/assets/images/logo.webp): sin redibujarlo, sin recolorearlo, sin
 deformarlo y sin vectorizarlo a mano.`;
 
+/** Where the screens are recorded: staging, where accounts and sandbox payments work. */
+const STAGING_RULE = `- Dónde: en https://staging.hospeda.com.ar, no en local. Ahí se crean cuentas y se
+  paga con el sandbox de Mercado Pago, así que el alta llega a publicado de verdad.
+- La cuenta: pedímela, o la creamos juntos, antes de grabar. Nunca escribas usuario ni
+  contraseña en el repo, en el grabador ni en un log: pasalos por variables de entorno.
+- Nunca una cuenta con permisos de super admin.
+- Si el flujo pide pagar, se paga con una tarjeta de prueba del sandbox y ese tramo no
+  entra en el video.
+- En la barra de direcciones que se dibuja en la edición se lee hospeda.com.ar, nunca
+  staging.
+- Staging tiene datos de prueba: elegí fichas con buenas fotos y sin textos de prueba a
+  la vista.`;
+
 const CONTENT_RULES = `REGLAS DE CONTENIDO (no se negocian):
 - Cero precios en pantalla y en la voz.
 - Nada que no exista como si funcionara; lo que viene dice «Próximamente».
@@ -255,6 +268,7 @@ ${
     shots.some((s) => s.source === 'grabacion')
         ? `GRABACIÓN: la grabás vos con el grabador de marketing/videos, con el dispositivo de
 referencia (config/device.ts) y la puesta en escena de demo (DEMO_HIDE_CSS).
+${STAGING_RULE}
 ${shots
     .filter((s) => s.source === 'grabacion')
     .map((s) => `- ${s.id}: ${s.recording}. ${s.recordingHow}`)
@@ -305,6 +319,7 @@ src/a1/ es el molde: intro → tutorial → cierre. Trabajá en un worktree cort
 staging; lo generado vive en ${ASSETS}/video-lab/, nunca en el repo.
 
 GRABACIÓN (pantallas reales, vista mobile del dispositivo de referencia):
+${STAGING_RULE}
 - Cuenta: ${video.account}.
 - Qué grabar: ${video.recording}
 ${video.recordSteps.map((s, i) => `  ${i + 1}. ${s}`).join('\n')}
