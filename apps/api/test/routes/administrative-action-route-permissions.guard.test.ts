@@ -307,6 +307,11 @@ const ROUTE_BINDINGS: Readonly<Record<AdministrativeAction, BoundEntry | Unbound
                 kind: 'required',
                 file: 'apps/api/src/routes/plan-catalog/admin/index.ts',
                 route: 'adminPublishPlanVersionRoute'
+            },
+            {
+                kind: 'required',
+                file: 'apps/api/src/routes/plan-catalog/admin/index.ts',
+                route: 'adminReadPlanCatalogRoute'
             }
         ]
     },
@@ -441,10 +446,10 @@ describe('TEST:1696:5 AC:1696:5 / HOS-1689 — each administrative action row ag
         expect(Object.keys(ROUTE_BINDINGS)).toHaveLength(25);
     });
 
-    it('b. checks exactly 35 bindings across 14 bound rows', () => {
+    it('b. checks exactly 36 bindings across 14 bound rows', () => {
         expect(BOUND_ACTIONS).toHaveLength(14);
         const total = BOUND_ACTIONS.reduce((count, action) => count + bindingsOf(action).length, 0);
-        expect(total).toBe(35);
+        expect(total).toBe(36);
     });
 
     it.each(
