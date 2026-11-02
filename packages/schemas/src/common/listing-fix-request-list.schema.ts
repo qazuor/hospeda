@@ -1,15 +1,18 @@
 import { z } from 'zod';
 import { PublicationStatusEnumSchema } from '../enums/publication-status.schema.js';
 import { VerticalEnum } from '../enums/vertical.enum.js';
-import { VerticalEnumSchema } from '../enums/vertical.schema.js';
+
+const ListingVerticalSchema = z.enum([
+    VerticalEnum.ACCOMMODATION,
+    VerticalEnum.VENUE,
+    VerticalEnum.EXPERIENCE
+]);
 
 /** Query parameters for the paginated admin list of open listing fix requests. */
 export const AdminListingFixRequestListQuerySchema = z.object({
     page: z.coerce.number().int().min(1).default(1),
     pageSize: z.coerce.number().int().min(1).max(100).default(50),
-    vertical: z
-        .enum([VerticalEnum.ACCOMMODATION, VerticalEnum.VENUE, VerticalEnum.EXPERIENCE])
-        .optional(),
+    vertical: ListingVerticalSchema.optional(),
     ownerReported: z.enum(['yes', 'no']).optional(),
     overdue: z.enum(['true']).optional()
 });
@@ -17,7 +20,7 @@ export const AdminListingFixRequestListQuerySchema = z.object({
 /** One open fix request and its listing summary for the admin queue. */
 export const AdminListingFixRequestItemSchema = z.object({
     fixRequestId: z.string().uuid(),
-    vertical: VerticalEnumSchema,
+    vertical: ListingVerticalSchema,
     listingId: z.string().uuid(),
     listingName: z.string(),
     listingSlug: z.string(),
