@@ -4,10 +4,8 @@ import { describe, expect, it } from 'vitest';
 
 const ROOT = join(import.meta.dirname, '../../src/routes');
 const EXPECTED_GET_PROTECTED_COUNT = 97;
-const PENDING_OWNER_DECISION = [
-    // HOS-1693 D-1: pending owner decision; remove when it moves to the inspection permission
-    'accommodation-external-reputation/protected/listListings.ts'
-];
+// HOS-1703: empty on purpose; add a file only with a linked owner decision
+const PENDING_OWNER_DECISION: readonly string[] = [];
 
 function files(dir: string, prefix = ''): string[] {
     return readdirSync(dir, { withFileTypes: true }).flatMap((entry) => {
@@ -54,7 +52,8 @@ describe('TEST:1693:4 no protected GET route reads ACCOMMODATION_UPDATE_ANY as a
         const sheetFiles = [
             'accommodation/protected/getById.ts',
             'accommodation/protected/qrCode.ts',
-            'accommodation/protected/qrSheet.ts'
+            'accommodation/protected/qrSheet.ts',
+            'accommodation-external-reputation/protected/listListings.ts'
         ];
         for (const file of sheetFiles) {
             const row = protectedGets.find((candidate) => candidate.file === file);
