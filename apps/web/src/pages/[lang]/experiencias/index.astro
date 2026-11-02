@@ -33,7 +33,7 @@ import { createTranslations } from '@/lib/i18n';
 import type { SupportedLocale } from '@/lib/i18n';
 import { hasActiveExperienceListingFilters } from '@/lib/listing-empty-state-filters';
 import { buildUrl } from '@/lib/urls';
-import { buildPaginationLinks } from '@/lib/listing/listing-pagination';
+import { buildPaginationLinks, isPageOutOfRange } from '@/lib/listing/listing-pagination';
 import { buildToggleParamHref } from '@/lib/filters/toggle-query-param';
 
 import { CACHE_TAG_COLLECTIONS } from '@repo/cache-tags';
@@ -117,6 +117,9 @@ const hasError = !result.ok;
 const items = result.ok ? result.data.items : [];
 const total = result.ok ? result.data.pagination.total : 0;
 const totalPages = result.ok ? result.data.pagination.totalPages : 0;
+if (isPageOutOfRange({ page, totalPages: result.ok ? totalPages : null })) {
+	return new Response(null, { status: 404 });
+}
 
 // --- Transform to card props ---
 
