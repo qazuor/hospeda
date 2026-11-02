@@ -67,26 +67,31 @@ el teléfono real el 31/10/2026 (whatismyviewport.com):
 - **Guard**: `scripts/check-marketing-device.ts` (`pnpm check:marketing-device`, corre en CI)
   falla si `marketing/` nombra otro teléfono o medidas de otro teléfono.
 
-> ⚠️ **Pendiente: regrabar A1.** La toma actual (`<public>/a1/screen.mp4` + `events.json`) usa
-> el viewport anterior (el de la fila del 31/10/2026 en el historial), previo a este dispositivo. El grabador y la composición ya usan el S24 Ultra; la
-> toma vieja entra con bandas a los costados hasta que se regrabe con `pnpm record:a1`.
+A1 se regrabó en staging con este dispositivo (02/11/2026): la toma llena el área de página, sin
+bandas.
 
 ## Grabación (record/record-a1.mts)
 
 - Pantallas **reales** de Hospeda, vista **mobile** con el viewport del dispositivo de referencia (arriba).
 - Chromium headless nuevo (`channel: 'chromium'`) + `--force-device-scale-factor=3`. El headless shell por
   defecto ignora el DPR y graba a escala 1.
-- Usuario `host-basico@local.test`. Antes de cada toma: se borra el borrador de la toma anterior (si no,
-  `/publicar/` muestra «Ya tenés un borrador en curso») y su alojamiento publicado se llama
-  **«Casa Quinta Las Palmeras»** (el seed lo trae como «Alojamiento Completo — Host Basico»).
+- Se graba **en staging**, logueado como `host-pro@local.test` (`host-basico` y `host-premium` están en el
+  límite de fichas de su plan y `/publicar/` les muestra «Llegaste al límite de tu plan»). Contraseña por
+  `VIDEO_LOGIN_PASSWORD`. La toma no publica: deja un borrador «Cabañas Costa del Río», y antes de cada
+  toma se borra por la interfaz el de la toma anterior (si no, `/publicar/` ofrece retomarlo).
+- La lista «Mis propiedades» se muestra **sin tarjetas**: la ficha de la cuenta en staging es una tarjeta
+  de prueba del seed (nombre de prueba, precio, cartel de plan, foto genérica), así que se oculta junto con
+  el footer del sitio, que la página corta dejaría a la vista.
 - **Puesta en escena de demo**: se ocultan con CSS los avisos de plan/upsell que en un tutorial se leen
-  como publicidad o error: banner «anfitrión en preparación», QR imprimible de la tarjeta, «Probá Hospeda
-  gratis», «Función premium», «Texto con formato… Mejorar plan». Lista exacta en `DEMO_HIDE_CSS`; no se
-  toca nada más de la interfaz. Los «Falta para publicar» del panel se dejan: cuentan la historia del
+  como publicidad o error: banner «anfitrión en preparación», «Probá Hospeda gratis», «Función premium»,
+  «Texto con formato… Mejorar plan», más las tarjetas de prueba y el footer de arriba. Lista exacta en
+  `DEMO_HIDE_CSS`; no se toca nada más de la interfaz. Los «Falta para publicar» del panel se dejan: cuentan la historia del
   paso 3.
 - Los scripts que se inyectan en la página van como **texto**, no como función: `tsx` les agrega un
   helper `__name` que no existe en la página y el script falla en silencio.
 - Cookie de consentimiento precargada; corrector ortográfico apagado; campos vaciados antes de tipear.
+- La búsqueda de ciudades de staging puede tardar varios segundos: el montaje corta esa espera con un
+  corte en salto (`WAITS` en `src/a1/timeline.ts`).
 - Scroll **suave** y sólo si el elemento está fuera de la franja cómoda de la pantalla.
 - Botón al final de un formulario: se alinea al borde inferior antes de tocarlo (si no, aparece el footer).
 - **Grabar con la máquina libre**: con la CPU saturada la página captura a 8-11 cuadros/s en vez de 20-25.
