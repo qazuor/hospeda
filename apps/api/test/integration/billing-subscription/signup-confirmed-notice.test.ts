@@ -135,7 +135,7 @@ describe('TEST:B3:34 signup confirmed notice', () => {
         expect(started.subscriptionId).toBeTruthy();
         expect(authorize).toHaveBeenCalledOnce();
         const authorizeReason = authorize.mock.calls[0]?.[0].reason;
-        expect(authorizeReason).toBe(plan.name);
+        expect(authorizeReason).toBe(`Hospeda · Alojamiento ${plan.name}`);
         expect(authorizeReason).not.toContain(plan.id);
         expect(authorizeReason).not.toContain(plan.slug);
 
@@ -177,15 +177,16 @@ describe('TEST:B3:34 signup confirmed notice', () => {
             subscriptionId: started.subscriptionId,
             vertical: 'accommodation',
             planName: plan.name,
-            firstChargeDate: '2026-10-08'
+            firstPayment: null,
+            nextChargeDate: null
         });
         const render = buildOutboxSenderRender({ siteUrl: 'https://hospeda.test' });
         const rendered = await render({ row: signupNotice! });
         const { renderToStaticMarkup } = await import('react-dom/server');
         const html = renderToStaticMarkup(rendered.react);
         expect(html).toContain('Mercado Pago');
-        expect(html).toContain('ya pagaste');
-        expect(html).toContain('8 de octubre de 2026');
+        expect(html).toContain('procesando el primer cobro');
+        expect(html).not.toContain('ya pagaste');
         expect(html).not.toContain(started.subscriptionId);
     });
 });

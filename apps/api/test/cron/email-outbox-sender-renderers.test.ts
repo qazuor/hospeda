@@ -129,9 +129,10 @@ describe('TEST:B3:34 the production outbox sender renders signup notices', () =>
                 subscriptionId,
                 vertical: 'accommodation',
                 planName: 'Plan premium',
-                firstChargeDate: '2026-10-08'
+                firstPayment: { amountMinor: 1800000, currency: 'ARS' },
+                nextChargeDate: '2026-11-08'
             },
-            expected: ['Mercado Pago', 'ya pagaste', '8 de octubre de 2026', 'Plan premium']
+            expected: ['Ya cobramos el primer pago', '8 de noviembre de 2026', 'Plan premium']
         },
         {
             template: 'billing.before-cancel',

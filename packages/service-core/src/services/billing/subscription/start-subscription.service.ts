@@ -27,6 +27,7 @@ import {
 import { ServiceError } from '../../../types';
 import { extractPostgresErrorCause } from '../../../utils';
 import { getCurrentBillingDeadlines } from '../deadlines/billing-deadlines.service';
+import { buildProviderReason } from '../plan-display-name';
 import { readAnchoredBillingOption } from '../read-anchored-billing-option';
 import type { ArrearsSuspensionNoticeContent } from './arrears-suspension-notice';
 import type { BeforeCancelNoticeKind } from './before-cancel-notice-kinds';
@@ -126,6 +127,8 @@ export async function readBillingChoice(input: { readonly billingOptionId: strin
     readonly vertical: string;
     readonly planName: string;
     readonly planSlug: string;
+    /** Label MercadoPago shows to the payer (HOS-1993); never the internal plan name. */
+    readonly providerReason: string;
 }> {
     const [choice] = await getDb()
         .select({
@@ -141,7 +144,13 @@ export async function readBillingChoice(input: { readonly billingOptionId: strin
         .where(eq(billingOptions.id, input.billingOptionId))
         .limit(1);
     if (!choice) throw new ServiceError(ServiceErrorCode.NOT_FOUND, 'Billing option not found');
-    return choice;
+    return {
+        ...choice,
+        providerReason: await buildProviderReason({
+            vertical: choice.vertical,
+            plan: { slug: choice.planSlug, name: choice.planName }
+        })
+    };
 }
 
 /** Rejects Tourist VIP purchases already inherited from the current plan. */
@@ -379,7 +388,7 @@ export async function startSubscription(
                 pending: { subscription: existing.subscription, idempotencyKey: minted.key },
                 provider: ports.provider,
                 clock: ports.clock,
-                reason: choice.planName,
+                reason: choice.providerReason,
                 returnUrl: input.returnUrl,
                 payerEmail: input.payerEmail,
                 paymentToken: input.paymentToken
@@ -429,7 +438,7 @@ export async function startSubscription(
         pending,
         provider: ports.provider,
         clock: ports.clock,
-        reason: choice.planName,
+        reason: choice.providerReason,
         returnUrl: input.returnUrl,
         payerEmail: input.payerEmail,
         paymentToken: input.paymentToken

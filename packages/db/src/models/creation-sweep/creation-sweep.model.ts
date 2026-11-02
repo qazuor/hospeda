@@ -35,6 +35,7 @@ export interface PendingCreationRow {
     readonly userEmail: string | null;
     readonly payerEmail: string | null;
     readonly planName: string;
+    readonly planSlug: string;
 }
 
 /** Input for minting a persisted key before retrying an external creation. */
@@ -81,7 +82,8 @@ export class CreationSweepModel {
                 payerEmail: sql<
                     string | null
                 >`coalesce(${subscriptions.declaredPayerEmail}, ${users.email})`,
-                planName: plans.name
+                planName: plans.name,
+                planSlug: plans.slug
             })
             .from(subscriptions)
             .leftJoin(providerLinks, eq(providerLinks.subscriptionId, subscriptions.id))

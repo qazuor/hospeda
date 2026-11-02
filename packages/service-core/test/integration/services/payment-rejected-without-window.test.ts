@@ -90,6 +90,12 @@ describe('TEST:1734 rejected charge without a retry window', () => {
             .from(payments)
             .where(eq(payments.id, result.paymentId));
         expect(payment).toEqual({ status: 'FAILED', version: 2 });
+        // HOS-1991: the provider's rejection detail survives on the payment row.
+        const [detail] = await getServiceTestDb()
+            .select({ providerStatusDetail: payments.providerStatusDetail })
+            .from(payments)
+            .where(eq(payments.id, result.paymentId));
+        expect(detail).toEqual({ providerStatusDetail: 'cc_rejected_insufficient_amount' });
         expect(result).toMatchObject({ terminalRejection: { outcome: 'FAILED' } });
         const [recorded] = await getServiceTestDb()
             .select({

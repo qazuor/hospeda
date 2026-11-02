@@ -9,6 +9,7 @@ import {
     sanitizeApprovalUrl
 } from '@repo/payments';
 import { extractPostgresErrorCause } from '../../../../utils/postgres-error-cause.js';
+import { buildProviderReason } from '../../plan-display-name.js';
 import {
     type AppliedAuthorizationResult,
     appliedAuthorizationResult
@@ -66,7 +67,8 @@ export async function runCreationsSweep(
         });
         for (const row of page) {
             rowsExamined++;
-            const { subscription, providerLink, newestCreateKey, payerEmail, planName } = row;
+            const { subscription, providerLink, newestCreateKey, payerEmail, planName, planSlug } =
+                row;
             try {
                 let cancellationFailure: unknown;
                 const cancelAndCount = async (authorizationId: string) => {
@@ -188,7 +190,10 @@ export async function runCreationsSweep(
                         pending: { subscription, idempotencyKey: minted.key },
                         provider: ports.provider,
                         clock: ports.clock,
-                        reason: planName,
+                        reason: await buildProviderReason({
+                            vertical: subscription.vertical ?? '',
+                            plan: { slug: planSlug, name: planName }
+                        }),
                         returnUrl: ports.returnUrl,
                         payerEmail,
                         firstChargeAt: subscription.firstChargeAt?.toISOString()

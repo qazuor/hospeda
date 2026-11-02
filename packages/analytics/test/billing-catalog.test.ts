@@ -141,6 +141,13 @@ describe('billing analytics event schemas (TEST:1878:16)', () => {
             ).toEqual(properties);
         }
     });
+    it('accepts the inherited-by-plan cancellation path (HOS-1994)', () => {
+        const parsed = AnalyticsEventSchemas.billing_subscription_cancelled.safeParse({
+            ...examples.billing_subscription_cancelled,
+            path: 'INHERITED_BY_PLAN'
+        });
+        expect(parsed.success).toBe(true);
+    });
     it('rejects invalid closed enum values and forbidden property keys', () => {
         expect(
             AnalyticsEventSchemas.billing_checkout_started.safeParse({

@@ -9,6 +9,7 @@ import {
     renewalNow,
     seedRenewalSubscription
 } from './support/renewal-notice-fixtures';
+import { translatePlanOf } from './support/translated-plan';
 
 afterAll(closeServiceTestPool);
 
@@ -306,6 +307,30 @@ describe('HOS-1622 TEST:B13a:13 AC:B13a:13 the renewal notice at 5 and 1 days, w
             expect(clock?.version).toBeNull();
             expect(await readOutboxRows(tx, invalid.subscriptionId)).toHaveLength(0);
             expect(await readOutboxRows(tx, valid.subscriptionId)).toHaveLength(1);
+        });
+    });
+});
+
+describe('HOS-1993 the renewal notice names the plan by its display name', () => {
+    it('sends "Profesional", not the stored catalog name', async () => {
+        await withServiceTestTransaction(async (tx) => {
+            await ensureBillingDeadlineVersion1(tx);
+            const seeded = await seedRenewalSubscription(tx, {
+                nextChargeAt: renewalCharge('2001-07-01')
+            });
+            await translatePlanOf(tx, seeded.subscriptionId, {
+                slug: 'venue-pro',
+                name: 'Professional'
+            });
+            await sendRenewalNotices(
+                { limit: 50, db: tx },
+                {
+                    clock: { now: () => renewalNow('2001-06-26') },
+                    readCurrentDeadlines: async () => currentVersion()
+                }
+            );
+            const [notice] = await readOutboxRows(tx, seeded.subscriptionId);
+            expect(notice?.payload).toMatchObject({ planName: 'Profesional' });
         });
     });
 });

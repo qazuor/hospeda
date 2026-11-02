@@ -142,7 +142,8 @@ async function expectConfirmed(subscriptionId: string) {
         subscriptionId,
         vertical: 'accommodation',
         planName: 'Plan HOS-1740',
-        firstChargeDate: '2026-10-08'
+        // The recovered signup was already credited: the notice reports the charge as made.
+        firstPayment: { amountMinor: expect.any(Number), currency: 'ARS' }
     });
 }
 

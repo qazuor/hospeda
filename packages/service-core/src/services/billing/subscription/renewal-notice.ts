@@ -5,6 +5,7 @@ import { getLocalDateString } from '@repo/utils';
 import { and, eq } from 'drizzle-orm';
 import { z } from 'zod';
 import { ServiceError } from '../../../types';
+import { resolvePlanDisplayName } from '../plan-display-name';
 
 const logger = createLogger('renewal-notice');
 
@@ -122,7 +123,8 @@ export async function applyRenewalNotice(input: {
             noticeChargeAt: subscriptions.renewalNoticeChargeAt,
             storedValues: billingDeadlineVersions.values,
             email: users.email,
-            planName: plans.name
+            planName: plans.name,
+            planSlug: plans.slug
         })
         .from(subscriptions)
         .innerJoin(users, eq(users.id, subscriptions.userId))
@@ -213,7 +215,10 @@ export async function applyRenewalNotice(input: {
             payload: {
                 subscriptionId: row.subscriptionId,
                 vertical: row.vertical,
-                planName: row.planName,
+                planName: await resolvePlanDisplayName({
+                    vertical: row.vertical,
+                    plan: { slug: row.planSlug, name: row.planName }
+                }),
                 renewalDate: milestone.targetDate,
                 daysBefore: milestone.daysBefore,
                 deadlinesVersion

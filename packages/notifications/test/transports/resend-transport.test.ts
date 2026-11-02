@@ -13,7 +13,9 @@ import type { ReactElement } from 'react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 vi.mock('@react-email/render', () => ({
-    render: vi.fn().mockResolvedValue('<html><body>rendered</body></html>')
+    render: vi.fn(async (_element: unknown, options?: { plainText?: boolean }) =>
+        options?.plainText ? 'rendered as plain text' : '<html><body>rendered</body></html>'
+    )
 }));
 
 import type { EmailClient } from '../../src/config/resend.config';
@@ -89,6 +91,21 @@ describe('BrevoEmailTransport', () => {
             const headers = (init as RequestInit).headers as Record<string, string>;
             expect(headers['api-key']).toBe('xkeysib-test');
             expect(headers['content-type']).toBe('application/json');
+        });
+
+        it('should send both the HTML and the plain-text part (HOS-1990)', async () => {
+            // Arrange
+            const transport = new BrevoEmailTransport(TEST_CLIENT, DEFAULT_TRANSPORT_OPTIONS);
+            fetchMock.mockResolvedValue(jsonResponse({ messageId: '<msg@brevo>' }));
+
+            // Act
+            await transport.send(createTestInput());
+
+            // Assert
+            const [, init] = fetchMock.mock.calls[0] ?? [];
+            const body = JSON.parse((init as RequestInit).body as string);
+            expect(body.htmlContent).toBe('<html><body>rendered</body></html>');
+            expect(body.textContent).toBe('rendered as plain text');
         });
 
         it('should default to fromEmail/fromName when no `from` is provided', async () => {

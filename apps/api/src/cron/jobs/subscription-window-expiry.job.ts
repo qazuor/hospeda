@@ -94,7 +94,8 @@ export const subscriptionWindowExpiryJob: CronJobDefinition = {
                 clock: getClock().clock,
                 beforeCancelNotice,
                 touristVipInheritance,
-                coverageNotices: getCoverageNotices()
+                coverageNotices: getCoverageNotices(),
+                billingFacts: getAnalyticsFactSink()
             });
         } catch (error) {
             rejected = true;

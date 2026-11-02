@@ -106,7 +106,8 @@ describe('subscription-window-expiry cron', () => {
             clock: mockClock,
             beforeCancelNotice,
             touristVipInheritance,
-            coverageNotices: getCoverageNotices()
+            coverageNotices: getCoverageNotices(),
+            billingFacts: getAnalyticsFactSink()
         });
         // HOS-1533: S2 and the VIP closure notify the ONE process-wide registry (identity, not shape).
         expect(mockCredited.mock.invocationCallOrder[0]).toBeLessThan(

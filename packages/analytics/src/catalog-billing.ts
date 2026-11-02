@@ -122,7 +122,13 @@ export const BillingAnalyticsEventSchemas = {
     billing_subscription_cancelled: z.object({
         ...common,
         cancelled_by: z.enum(['USER', 'ADMIN', 'SYSTEM']),
-        path: z.enum(['SERVICE_END', 'DIRECT_FROM_GRACE', 'DIRECT_FROM_SUSPENDED', 'REVOKED']),
+        path: z.enum([
+            'SERVICE_END',
+            'DIRECT_FROM_GRACE',
+            'DIRECT_FROM_SUSPENDED',
+            'REVOKED',
+            'INHERITED_BY_PLAN'
+        ]),
         was_scheduled: z.boolean(),
         lifetime_days: z.number().int().nonnegative().optional(),
         reason: z

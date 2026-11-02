@@ -98,7 +98,12 @@ export type BillingFact =
     | (Common & {
           kind: 'SUBSCRIPTION_CANCELLED';
           cancelledBy: ActorKind;
-          path: 'SERVICE_END' | 'DIRECT_FROM_GRACE' | 'DIRECT_FROM_SUSPENDED' | 'REVOKED';
+          path:
+              | 'SERVICE_END'
+              | 'DIRECT_FROM_GRACE'
+              | 'DIRECT_FROM_SUSPENDED'
+              | 'REVOKED'
+              | 'INHERITED_BY_PLAN';
           wasScheduled: boolean;
           lifetimeDays?: number;
           reason?:
