@@ -20,7 +20,7 @@ import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const SCRIPT_PATH = path.resolve(__dirname, '../check-umbrella-branch-target.sh');
-const UMBRELLA = 'epic/HOS-1352-verticales-billing';
+const UMBRELLA = 'epic/HOS-1352-post-mvp';
 const UMBRELLA_RENAME = 'epic/HOS-1801-renombrado-fisico';
 const WATCHED = [UMBRELLA, UMBRELLA_RENAME];
 
