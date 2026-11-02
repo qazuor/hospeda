@@ -65,3 +65,26 @@ describe('TEST:1693:4 no protected GET route reads ACCOMMODATION_UPDATE_ANY as a
         expect(protectedGets).toHaveLength(EXPECTED_GET_PROTECTED_COUNT);
     });
 });
+
+describe('TEST:1703:4 service read gates use inspection permission', () => {
+    it('the service read gates behind protected GET routes do not read ACCOMMODATION_UPDATE_ANY', () => {
+        const serviceRoot = join(
+            import.meta.dirname,
+            '../../../../packages/service-core/src/services/accommodation'
+        );
+        const occupancy = withoutComments(
+            readFileSync(join(serviceRoot, 'accommodation.occupancy.ts'), 'utf8')
+        );
+        const media = withoutComments(
+            readFileSync(join(serviceRoot, 'accommodation.media-reader.ts'), 'utf8')
+        );
+        const readGate = occupancy.match(/function isOwnerOrInspector\([\s\S]*?\n}/)?.[0];
+        const accessGate = occupancy.match(/function assertOwnerReadAccess\([\s\S]*?\n}/)?.[0];
+        expect(readGate, 'isOwnerOrInspector block must be instrumented').toBeDefined();
+        expect(accessGate, 'assertOwnerReadAccess block must be instrumented').toBeDefined();
+        expect(`${readGate}\n${accessGate}`).not.toMatch(/ACCOMMODATION_UPDATE_ANY\b/);
+        expect(`${readGate}\n${accessGate}`).toMatch(/ACCOMMODATION_VIEW_ALL\b/);
+        expect(media).not.toMatch(/UPDATE_ANY\b/);
+        expect(media).toMatch(/ACCOMMODATION_VIEW_ALL\b/);
+    });
+});
