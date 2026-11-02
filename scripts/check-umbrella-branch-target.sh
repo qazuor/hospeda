@@ -7,7 +7,7 @@
 # WHY
 #
 # Each multi-epic program is developed on its own integration branch. The
-# watched branches are `epic/HOS-1352-verticales-billing` and
+# watched branches are `epic/HOS-1352-post-mvp` and
 # `epic/HOS-1801-renombrado-fisico`. Sub-epics and units branch off their
 # umbrella and merge back into it; `staging` is merged INTO it
 # periodically; and only the umbrella itself goes to `staging`, once, at the
@@ -84,7 +84,7 @@
 
 set -euo pipefail
 
-readonly DEFAULT_UMBRELLAS="epic/HOS-1352-verticales-billing epic/HOS-1801-renombrado-fisico"
+readonly DEFAULT_UMBRELLAS="epic/HOS-1352-post-mvp epic/HOS-1801-renombrado-fisico"
 read -r -a UMBRELLA_BRANCHES <<<"${UMBRELLA_BRANCHES:-${DEFAULT_UMBRELLAS}}"
 readonly REMOTE="${UMBRELLA_REMOTE:-origin}"
 readonly BASE_REF="${GITHUB_BASE_REF:-}"
