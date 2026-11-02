@@ -56,17 +56,37 @@ function confirmed(row: EmailOutboxRow) {
     if (
         typeof data.subscriptionId !== 'string' ||
         typeof data.vertical !== 'string' ||
-        typeof data.planName !== 'string' ||
-        typeof data.firstChargeDate !== 'string' ||
-        !/^\d{4}-\d{2}-\d{2}$/.test(data.firstChargeDate)
+        typeof data.planName !== 'string'
     )
         throw new TypeError('Faltan datos requeridos del aviso de alta');
+    // Rows queued before HOS-1993 carry no payment facts: they render as "still processing".
+    const payment = isRecord(data.firstPayment) ? data.firstPayment : null;
+    if (
+        payment &&
+        (typeof payment.amountMinor !== 'number' ||
+            !Number.isInteger(payment.amountMinor) ||
+            payment.amountMinor < 0 ||
+            typeof payment.currency !== 'string')
+    )
+        throw new TypeError('El pago del aviso de alta no es válido');
+    const nextChargeDate =
+        typeof data.nextChargeDate === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(data.nextChargeDate)
+            ? formatDate({ dateString: data.nextChargeDate })
+            : null;
     return {
         subject: 'Tu suscripción está activa',
         react: (
             <SignupConfirmed
                 planName={data.planName}
-                firstChargeDate={data.firstChargeDate}
+                firstPaymentAmount={
+                    payment
+                        ? formatCurrency({
+                              amount: payment.amountMinor as number,
+                              currency: payment.currency as string
+                          })
+                        : null
+                }
+                nextChargeDate={nextChargeDate}
             />
         )
     };
@@ -381,6 +401,7 @@ function paymentCredited(row: EmailOutboxRow) {
                 amount={formatCurrency({ amount: data.amountMinor, currency: data.currency })}
                 receiptNumber={data.receiptNumber}
                 creditedDate={creditedDate}
+                planName={typeof data.planName === 'string' ? data.planName : null}
             />
         )
     };

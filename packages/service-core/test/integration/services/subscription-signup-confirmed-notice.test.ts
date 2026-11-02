@@ -143,7 +143,8 @@ async function expectConfirmed(subscriptionId: string) {
             subscriptionId,
             vertical: 'accommodation',
             planName: 'Plan real',
-            firstChargeDate: '2026-10-08'
+            firstPayment: null,
+            nextChargeDate: null
         }
     });
 }

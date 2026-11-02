@@ -10,6 +10,8 @@ import {
     eq,
     getDb,
     payments,
+    plans,
+    planVersions,
     promoRedemptions,
     subscriptions
 } from '@repo/db';
@@ -20,6 +22,7 @@ import { ServiceError } from '../../../types';
 import { extractPostgresErrorCause } from '../../../utils/postgres-error-cause';
 import type { BillingFactSink } from '../facts/billing-fact-sink';
 import { emitBillingFact } from '../facts/billing-fact-sink';
+import { resolvePlanDisplayName } from '../plan-display-name';
 import { openReconciliationMark } from '../reconciliation/open-reconciliation-mark.service';
 import { issueReceipt, readReceiptPayer } from './issue-receipt.js';
 import {
@@ -249,6 +252,16 @@ export async function creditPayment(
                         template: PAYMENT_CREDITED_TEMPLATE,
                         occurrence: buildEventOccurrence({ eventId: payment.id })
                     });
+                    const planRow = subscription?.planVersionId
+                        ? (
+                              await tx
+                                  .select({ slug: plans.slug, name: plans.name })
+                                  .from(planVersions)
+                                  .innerJoin(plans, eq(plans.id, planVersions.planId))
+                                  .where(eq(planVersions.id, subscription.planVersionId))
+                                  .limit(1)
+                          )[0]
+                        : undefined;
                     const payload = payment.addonInstanceId
                         ? {
                               paymentId: payment.id,
@@ -261,6 +274,7 @@ export async function creditPayment(
                         : {
                               paymentId: payment.id,
                               subscriptionId: subscription?.id ?? null,
+                              planName: planRow ? resolvePlanDisplayName({ plan: planRow }) : null,
                               amountMinor: payment.amount,
                               currency: payment.currency,
                               receiptId: receipt.receiptId,

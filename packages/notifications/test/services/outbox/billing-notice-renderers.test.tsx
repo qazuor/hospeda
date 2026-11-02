@@ -93,6 +93,19 @@ describe('TEST:1675:1 AC:1675:1 AC:1675:3 the signup-declined, grace-started and
             expect(html).not.toContain(id);
     });
 
+    it('names the plan paid on a subscription receipt', async () => {
+        const { html } = await render('billing.payment-credited', {
+            paymentId,
+            subscriptionId,
+            planName: 'Básico',
+            amountMinor: 1800000,
+            currency: 'ARS',
+            receiptId,
+            receiptNumber: 42
+        });
+        expect(html).toContain('por tu suscripción a Básico');
+    });
+
     it.each([
         ['signup empty payload', 'billing.signup-declined', {}],
         [

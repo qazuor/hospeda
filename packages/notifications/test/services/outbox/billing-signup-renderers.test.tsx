@@ -48,7 +48,69 @@ describe('billing signup outbox renderers', () => {
         ).toThrow(TypeError);
     });
 
-    it('renders the confirmed signup with plan, provider notice, and formatted first charge date', async () => {
+    it('renders a credited first payment as already charged, with the next charge date', async () => {
+        const result = await renderers['billing.signup-confirmed']!({
+            row: row({
+                template: 'billing.signup-confirmed',
+                payload: {
+                    subscriptionId,
+                    vertical: 'accommodation',
+                    planName: 'Básico',
+                    firstPayment: { amountMinor: 1800000, currency: 'ARS' },
+                    nextChargeDate: '2026-12-02'
+                }
+            })
+        });
+        const html = renderToStaticMarkup(result.react);
+        expect(result.subject).toContain('suscripción');
+        expect(html).toContain('Básico');
+        expect(html).toContain('Ya cobramos el primer pago');
+        expect(html).toContain('$18.000,00');
+        expect(html).toContain('2 de diciembre de 2026');
+        expect(html).not.toContain('ya pagaste');
+        expect(html).not.toContain('primer cobro real');
+        expect(html).not.toContain(subscriptionId);
+    });
+
+    it('omits the next charge line when it is unknown', async () => {
+        const result = await renderers['billing.signup-confirmed']!({
+            row: row({
+                template: 'billing.signup-confirmed',
+                payload: {
+                    subscriptionId,
+                    vertical: 'tourist',
+                    planName: 'Turista VIP',
+                    firstPayment: { amountMinor: 1500000, currency: 'ARS' },
+                    nextChargeDate: null
+                }
+            })
+        });
+        const html = renderToStaticMarkup(result.react);
+        expect(html).toContain('Turista VIP');
+        expect(html).not.toContain('próximo cobro');
+    });
+
+    it('says the first charge is being processed when the payment is not credited yet', async () => {
+        const result = await renderers['billing.signup-confirmed']!({
+            row: row({
+                template: 'billing.signup-confirmed',
+                payload: {
+                    subscriptionId,
+                    vertical: 'accommodation',
+                    planName: 'Básico',
+                    firstPayment: null,
+                    nextChargeDate: null
+                }
+            })
+        });
+        const html = renderToStaticMarkup(result.react);
+        expect(html).toContain('Básico');
+        expect(html).toContain('procesando el primer cobro');
+        expect(html).not.toContain('ya pagaste');
+        expect(html).not.toContain('Ya cobramos');
+    });
+
+    it('renders a pre-HOS-1993 queued row (legacy firstChargeDate payload) as still processing', async () => {
         const result = await renderers['billing.signup-confirmed']!({
             row: row({
                 template: 'billing.signup-confirmed',
@@ -61,12 +123,24 @@ describe('billing signup outbox renderers', () => {
             })
         });
         const html = renderToStaticMarkup(result.react);
-        expect(result.subject).toContain('suscripción');
-        expect(html).toContain('Plan premium');
-        expect(html).toContain('Mercado Pago');
-        expect(html).toContain('ya pagaste');
-        expect(html).toContain('8 de octubre de 2026');
-        expect(html).not.toContain(subscriptionId);
+        expect(html).toContain('procesando el primer cobro');
+        expect(html).not.toContain('8 de octubre de 2026');
+    });
+
+    it('rejects a malformed first payment', () => {
+        expect(() =>
+            renderers['billing.signup-confirmed']!({
+                row: row({
+                    template: 'billing.signup-confirmed',
+                    payload: {
+                        subscriptionId,
+                        vertical: 'accommodation',
+                        planName: 'Básico',
+                        firstPayment: { amountMinor: 'x', currency: 'ARS' }
+                    }
+                })
+            })
+        ).toThrow(TypeError);
     });
 
     it('renders the before-cancel and incomplete-signup notices without identifiers', async () => {
