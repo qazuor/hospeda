@@ -75,9 +75,12 @@ bandas.
 - Pantallas **reales** de Hospeda, vista **mobile** con el viewport del dispositivo de referencia (arriba).
 - Chromium headless nuevo (`channel: 'chromium'`) + `--force-device-scale-factor=3`. El headless shell por
   defecto ignora el DPR y graba a escala 1.
-- Se graba **en staging**, logueado como `host-pro@local.test` (`host-basico` y `host-premium` están en el
-  límite de fichas de su plan y `/publicar/` les muestra «Llegaste al límite de tu plan»). Contraseña por
-  `VIDEO_LOGIN_PASSWORD`. La toma llega hasta **publicar** «Cabañas Costa del Río» (capacidad y pin del
+- Se graba **en staging**, logueado como `host-venue@local.test`, que todavía no usó la prueba de
+  alojamiento (`host-basico` y `host-premium` están en el límite de fichas de su plan y `/publicar/` les
+  muestra «Llegaste al límite de tu plan»; `host-pro` ya gastó su prueba en una toma anterior). Una toma que
+  publica consume la prueba de la cuenta: para volver a grabar hace falta otra cuenta con la prueba sin usar.
+  Contraseña por `VIDEO_LOGIN_PASSWORD`. La toma llega hasta **publicar** «Casa de Campo El Ceibo» (el
+  nombre y los textos describen lo que muestran las fotos: una casa con pileta y parque; capacidad y pin del
   mapa se cargan fuera de cámara; sin precio, la ficha queda «a consultar»), con las fotos del dueño de
   `fotos/vc1/upload`. Publicar arranca la prueba de 30 días sin tarjeta; si el aviso no ofrece «Publicar
   ahora» o algo cae en el proveedor de pagos, la toma se corta sin pagar nada. Antes de cada toma se borra
