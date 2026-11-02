@@ -2,6 +2,7 @@ import {
     billingDeadlineVersions,
     billingOptions,
     eq,
+    payments,
     plans,
     planVersions,
     subscriptionModel,
@@ -11,10 +12,12 @@ import {
 import type { NoticeDelivery, PaymentProvider } from '@repo/payments';
 import { encodeFakeNotice, FakePaymentProvider } from '@repo/payments/fake';
 import type { BillingDeadlineValues } from '@repo/schemas';
+import { getLocalDateString } from '@repo/utils';
 import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
 import { receiveProviderDelivery } from '../../../src/services/billing/notice/receive-provider-delivery.service.js';
 import { activateSubscription } from '../../../src/services/billing/subscription/activate-subscription.service.js';
 import { expireAuthorizationWindows } from '../../../src/services/billing/subscription/expire-authorization-windows.service.js';
+import { enqueueSignupConfirmedNotice } from '../../../src/services/billing/subscription/signup-confirmed-notice.js';
 import { startSubscription } from '../../../src/services/billing/subscription/start-subscription.service.js';
 import { closeServiceTestPool, getServiceTestDb, getServiceTestPool } from './helpers.js';
 import { noTouristVip } from './support/tourist-vip.js';
@@ -269,5 +272,71 @@ describe('TEST:B3:34 (soporte) signup-confirmed outbox notice', () => {
             [first.started.subscriptionId, second.started.subscriptionId].sort()
         );
         expect(rows.map((row) => row.payload.vertical).sort()).toEqual(['accommodation', 'venue']);
+    });
+});
+
+describe('HOS-1993 signup-confirmed payment facts', () => {
+    async function enqueueFor(subscriptionId: string) {
+        await getServiceTestDb().transaction((tx) =>
+            enqueueSignupConfirmedNotice({ tx, subscriptionId, activatedAt })
+        );
+        const [row] = await noticesFor([subscriptionId]);
+        return row?.payload as {
+            firstPayment: { amountMinor: number; currency: string } | null;
+            nextChargeDate: string | null;
+        };
+    }
+
+    async function addPayment(subscriptionId: string, status: 'PENDING' | 'FAILED' | 'SUCCEEDED') {
+        await getServiceTestDb()
+            .insert(payments)
+            .values({
+                subscriptionId,
+                amount: 250000,
+                currency: 'ARS',
+                status,
+                provider: 'fake',
+                providerFactId: `hos1993-${crypto.randomUUID()}`,
+                factAt: activatedAt
+            });
+    }
+
+    it('keeps firstPayment null when the only payments are PENDING or FAILED', async () => {
+        const { started } = await startPending(newProvider());
+        await addPayment(started.subscriptionId, 'PENDING');
+        await addPayment(started.subscriptionId, 'FAILED');
+
+        const payload = await enqueueFor(started.subscriptionId);
+
+        expect(payload.firstPayment).toBeNull();
+    });
+
+    it('reports a SUCCEEDED payment and a future next charge date', async () => {
+        const { started } = await startPending(newProvider());
+        await addPayment(started.subscriptionId, 'SUCCEEDED');
+        const nextChargeAt = new Date(activatedAt.getTime() + 30 * 24 * 60 * 60 * 1000);
+        await getServiceTestDb()
+            .update(subscriptions)
+            .set({ nextChargeAt })
+            .where(eq(subscriptions.id, started.subscriptionId));
+
+        const payload = await enqueueFor(started.subscriptionId);
+
+        expect(payload.firstPayment).toEqual({ amountMinor: 250000, currency: 'ARS' });
+        expect(payload.nextChargeDate).toBe(getLocalDateString({ instant: nextChargeAt }));
+    });
+
+    it('omits the next charge date when it is not after the activation day', async () => {
+        const { started } = await startPending(newProvider());
+        await addPayment(started.subscriptionId, 'SUCCEEDED');
+        await getServiceTestDb()
+            .update(subscriptions)
+            .set({ nextChargeAt: activatedAt })
+            .where(eq(subscriptions.id, started.subscriptionId));
+
+        const payload = await enqueueFor(started.subscriptionId);
+
+        expect(payload.firstPayment).not.toBeNull();
+        expect(payload.nextChargeDate).toBeNull();
     });
 });
