@@ -195,6 +195,7 @@ describe('TEST:1706:1 AC:1706:1 AC:1706:3 the author review list marks a review 
     });
 
     it('marks a missing listing as gone with no name or slug', async () => {
+        mockAccommodationRows.mockResolvedValue([]);
         mockAccommodationReviews.mockResolvedValue({
             data: { accommodationReviews: [review()], total: 1 },
             error: undefined
@@ -207,6 +208,7 @@ describe('TEST:1706:1 AC:1706:1 AC:1706:3 the author review list marks a review 
             accommodationSlug: null,
             accommodationGone: true
         });
+        expect(mockAccommodationRows).toHaveBeenCalledWith([ACCOMMODATION_ID]);
     });
 
     it('preserves all reviews in input order and leaves totals unchanged', async () => {

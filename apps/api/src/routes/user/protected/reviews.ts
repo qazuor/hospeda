@@ -158,15 +158,19 @@ export const userReviewsRoute = createProtectedRoute({
             destinationModel.findByIds(destinationIds)
         ]);
 
+        const accommodationRowsById = new Map(accommodationRows.map((row) => [row.id, row]));
         const accommodationsById = new Map<string, { name?: string; slug?: string; gone: boolean }>(
-            accommodationRows.map((row) => [
-                row.id,
-                {
-                    name: row.name,
-                    slug: row.slug,
-                    gone: isListingGone({ row })
-                }
-            ])
+            accommodationIds.map((id) => {
+                const row = accommodationRowsById.get(id);
+                return [
+                    id,
+                    {
+                        name: row?.name,
+                        slug: row?.slug,
+                        gone: isListingGone({ row })
+                    }
+                ];
+            })
         );
         const destinationsById = new Map<string, { name?: string; slug?: string }>(
             destinationRows.map((row) => [
@@ -179,12 +183,12 @@ export const userReviewsRoute = createProtectedRoute({
         );
 
         const accommodationReviews = accommodationReviewsRaw.map((r) => {
-            const accommodation = accommodationsById.get(r.accommodationId);
-            const accommodationGone = accommodation?.gone ?? true;
+            const accommodation = accommodationsById.get(r.accommodationId)!;
+            const accommodationGone = accommodation.gone;
             return {
                 ...r,
-                accommodationName: accommodation?.name ?? null,
-                accommodationSlug: accommodationGone ? null : (accommodation?.slug ?? null),
+                accommodationName: accommodation.name ?? null,
+                accommodationSlug: accommodationGone ? null : (accommodation.slug ?? null),
                 accommodationGone
             };
         });
