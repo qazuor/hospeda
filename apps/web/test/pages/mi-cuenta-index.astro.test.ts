@@ -77,11 +77,14 @@ describe('TEST:1756:12 mi-cuenta subscription stat source', () => {
 describe('mi-cuenta index — the free label asks the trial first (HOS-1996)', () => {
     it('reads the trial summary before falling back to the free label', () => {
         const free = source.indexOf("case 'free'");
-        const trialRead = source.indexOf('readDashboardTrialStat()', free);
+        const trialRead = source.indexOf('trialSummariesPromise', free);
         const freeLabel = source.indexOf("getAttribute('data-label-free')", free);
         expect(trialRead).toBeGreaterThan(free);
         expect(trialRead).toBeLessThan(freeLabel);
         expect(source).toContain('/protected/publish/trial-summary');
+        expect(source).toContain('AbortSignal.timeout');
+        expect(source).toMatch(/dataset\s*\.locale/);
+        expect(source).not.toContain('documentElement.lang');
     });
 });
 

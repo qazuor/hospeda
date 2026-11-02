@@ -98,3 +98,42 @@ export function resolveDashboardTrialStat(input: {
     const [first] = [...running].sort((a, b) => time(a.endsAt) - time(b.endsAt));
     return { kind: 'trial', endsAt: first?.endsAt ?? null };
 }
+
+/** Text the dashboard subscription card shows when the stats report no paid plan. */
+export interface DashboardFreeCard {
+    /** Main value of the card. */
+    readonly value: string;
+    /** Status line under it, or `null` when there is nothing to say. */
+    readonly statusText: string | null;
+}
+
+/**
+ * Decide what the card says when `/users/me/stats` reports no paid plan.
+ *
+ * An active trial wins over the free label. The end date line appears only when the trial has a
+ * parseable end date; an empty `trialSummaries` (every read failed or timed out) keeps the free
+ * label, which is the pre-trial behaviour.
+ *
+ * @param input.trialSummaries - The trial reads that answered; failed reads are left out.
+ * @param input.labels - Translated labels; `trialEndsOn` carries a `{{date}}` placeholder.
+ * @param input.formatDate - Formats an ISO instant, returning `null` when it cannot.
+ * @returns The value and optional status line to render.
+ */
+export function resolveDashboardFreeCard(input: {
+    readonly trialSummaries: readonly TrialSummaryResponse[];
+    readonly labels: {
+        readonly free: string;
+        readonly trial: string;
+        readonly trialEndsOn: string;
+    };
+    readonly formatDate: (iso: string) => string | null;
+}): DashboardFreeCard {
+    const { trialSummaries, labels, formatDate } = input;
+    const trial = resolveDashboardTrialStat({ summaries: trialSummaries });
+    if (trial.kind === 'none') return { value: labels.free, statusText: null };
+    const date = trial.endsAt ? formatDate(trial.endsAt) : null;
+    return {
+        value: labels.trial,
+        statusText: date ? labels.trialEndsOn.replace('{{date}}', date) : null
+    };
+}

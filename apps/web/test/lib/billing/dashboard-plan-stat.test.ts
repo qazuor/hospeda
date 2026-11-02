@@ -4,6 +4,7 @@ import { describe, expect, it } from 'vitest';
 import {
     DASHBOARD_PLAN_SLUGS,
     parsePlanNames,
+    resolveDashboardFreeCard,
     resolveDashboardPlanStat,
     resolveDashboardTrialStat
 } from '../../../src/lib/billing/dashboard-plan-stat';
@@ -128,5 +129,41 @@ describe('HOS-1996 dashboard trial stat resolver', () => {
             ]
         });
         expect(stat).toEqual({ kind: 'trial', endsAt: '2026-12-02T00:00:00.000Z' });
+    });
+});
+
+describe('HOS-1996 dashboard free-branch decision', () => {
+    const labels = { free: 'Gratuito', trial: 'En prueba', trialEndsOn: 'Hasta el {{date}}' };
+    const formatDate = (iso: string) =>
+        iso.startsWith('2026-12-02') ? '2 de diciembre de 2026' : null;
+    const trial = (endsAt: string | null) => ({
+        status: 'TRIAL_ACTIVE' as const,
+        startedAt: '2026-11-02T17:48:40.000Z',
+        endsAt,
+        totalDays: 30,
+        origins: { base: 30, promo: 0, support: 0 }
+    });
+
+    it('shows En prueba with the end date for an active trial', () => {
+        const card = resolveDashboardFreeCard({
+            trialSummaries: [{ status: 'NONE' }, trial('2026-12-02T17:48:40.000Z')],
+            labels,
+            formatDate
+        });
+        expect(card).toEqual({ value: 'En prueba', statusText: 'Hasta el 2 de diciembre de 2026' });
+    });
+
+    it('falls back to Gratuito when every read failed', () => {
+        const card = resolveDashboardFreeCard({ trialSummaries: [], labels, formatDate });
+        expect(card).toEqual({ value: 'Gratuito', statusText: null });
+    });
+
+    it('shows no date line for a trial without an end date', () => {
+        const card = resolveDashboardFreeCard({
+            trialSummaries: [trial(null)],
+            labels,
+            formatDate
+        });
+        expect(card).toEqual({ value: 'En prueba', statusText: null });
     });
 });
