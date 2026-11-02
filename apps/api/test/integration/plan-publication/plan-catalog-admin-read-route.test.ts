@@ -36,13 +36,6 @@ describe('TEST:1704:4 admin plan catalog read route', () => {
             vertical: 'venue',
             slug: `hos1704-venue-${crypto.randomUUID()}`
         });
-        const previousVersionId = await insertVersion({
-            planId,
-            vertical: 'accommodation',
-            rank: 17,
-            sellable: false,
-            current: false
-        });
         const currentVersionId = await insertVersion({
             planId,
             vertical: 'accommodation',
@@ -54,6 +47,22 @@ describe('TEST:1704:4 admin plan catalog read route', () => {
             entitlements: [{ key: 'view_basic_stats' }],
             limits: [{ key: 'max_photos_per_accommodation', value: 21 }],
             billingCycles: ['monthly', 'annual']
+        });
+        const previousVersionId = await insertVersion({
+            planId,
+            vertical: 'accommodation',
+            rank: 17,
+            sellable: false,
+            current: false
+        });
+        await insertVersion({
+            planId: otherVerticalId,
+            vertical: 'venue',
+            rank: 29,
+            sellable: true,
+            current: true,
+            trialDays: 31,
+            graceDays: 62
         });
         const get = () =>
             app.request('/api/v1/admin/plan-catalog/plans?vertical=accommodation', {

@@ -67,19 +67,6 @@ describe('TEST:1704:3 admin plan catalog reader', () => {
                 .returning();
             if (!withVersion || !withoutVersion || !otherVertical)
                 throw new Error('Plan rows were not created');
-            const [oldVersion] = await tx
-                .insert(planVersions)
-                .values({
-                    planId: withVersion.id,
-                    vertical: 'accommodation',
-                    rank: 1900000000,
-                    current: false,
-                    sellable: false,
-                    trialDays: 0,
-                    graceDays: 0,
-                    allowsPause: false
-                })
-                .returning();
             const [currentVersion] = await tx
                 .insert(planVersions)
                 .values({
@@ -94,7 +81,34 @@ describe('TEST:1704:3 admin plan catalog reader', () => {
                     inheritsTouristVip: false
                 })
                 .returning();
-            if (!oldVersion || !currentVersion) throw new Error('Plan versions were not created');
+            const [oldVersion] = await tx
+                .insert(planVersions)
+                .values({
+                    planId: withVersion.id,
+                    vertical: 'accommodation',
+                    rank: 1900000000,
+                    current: false,
+                    sellable: false,
+                    trialDays: 0,
+                    graceDays: 0,
+                    allowsPause: false
+                })
+                .returning();
+            const [otherVerticalVersion] = await tx
+                .insert(planVersions)
+                .values({
+                    planId: otherVertical.id,
+                    vertical: 'venue',
+                    rank: 1900000002,
+                    current: true,
+                    sellable: true,
+                    trialDays: 31,
+                    graceDays: 62,
+                    allowsPause: true
+                })
+                .returning();
+            if (!oldVersion || !currentVersion || !otherVerticalVersion)
+                throw new Error('Plan versions were not created');
             await tx.insert(planVersionEntitlements).values([
                 {
                     planVersionId: currentVersion.id,
