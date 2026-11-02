@@ -201,9 +201,38 @@ export const createTake = ({ video, take }: { readonly video: string; readonly t
         events.push({ t, end: now(), kind: 'type', label, box });
     };
 
+    /** Types `text` key by key, visibly (a `type` event over the field's box). */
+    const type = async (label: string, loc: Locator, text: string, delayMs = 65): Promise<void> => {
+        const box = await boxOf(loc);
+        const t = now();
+        await loc.pressSequentially(text, { delay: delayMs });
+        events.push({ t, end: now(), kind: 'type', label, box });
+    };
+
+    let activePage: Page | undefined;
+
+    /**
+     * Taps a point of the page (CSS px) that no locator names, such as a spot on a map. The
+     * event box is a small square around the point.
+     */
+    const tapAt = async (label: string, x: number, y: number): Promise<void> => {
+        if (!activePage) throw new Error('tapAt before start()');
+        await sleep(200);
+        const half = 12;
+        events.push({
+            t: now(),
+            kind: 'tap',
+            label,
+            box: { x: (x - half) * DPR, y: (y - half) * DPR, w: half * 2 * DPR, h: half * 2 * DPR }
+        });
+        await sleep(220);
+        await activePage.mouse.click(x, y);
+    };
+
     let cdpStop: (() => Promise<void>) | undefined;
 
     const start = async (context: BrowserContext, page: Page): Promise<void> => {
+        activePage = page;
         const cdp = await context.newCDPSession(page);
         cdp.on('Page.screencastFrame', async ({ data, metadata, sessionId }) => {
             const file = `${String(frames.length).padStart(5, '0')}.jpg`;
@@ -285,5 +314,5 @@ export const createTake = ({ video, take }: { readonly video: string; readonly t
         );
     };
 
-    return { mark, hold, tap, paste, boxOf, start, finish, outDir };
+    return { mark, hold, tap, tapAt, paste, type, boxOf, start, finish, outDir };
 };
