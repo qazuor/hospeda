@@ -23,7 +23,7 @@
 import { existsSync } from 'node:fs';
 import { join } from 'node:path';
 import type { BrowserContext, Cookie, Locator, Page } from 'playwright';
-import { assertCleanView, login, saveSection } from './lib/staging';
+import { assertCleanView, login, photosDirOf, saveSection } from './lib/staging';
 import { createTake, hideCssOf, launchDevice, scrollToLocator, scrollToY, sleep } from './lib/take';
 
 const WEB = process.env.WEB_URL ?? 'https://staging.hospeda.com.ar';
@@ -33,8 +33,7 @@ const EMAIL = process.env.VIDEO_LOGIN_EMAIL ?? 'venue-owner@local.test';
 const MAP_HOST_EMAIL = process.env.VC3_MAP_HOST_EMAIL ?? 'host-premium@local.test';
 const MAP_HOST_LISTING = 'Casa Quinta Las Palmeras';
 /** Resized copies (≤ 2000 px) of the Pexels photos; they live outside the repo. */
-const PHOTOS_DIR =
-    process.env.VC3_PHOTOS_DIR ?? '/home/qazuor/projects/WEBS/marketing/fotos/vc3/upload';
+const PHOTOS_DIR = photosDirOf({ video: 'vc3' });
 const FEATURED = '03-parrilla.jpg';
 const GALLERY = ['01-exterior.jpg', '02-salon.jpg', '04-asado.jpg', '05-achuras.jpg'];
 

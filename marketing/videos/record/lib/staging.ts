@@ -2,8 +2,24 @@
  * Helpers for recorders that run logged in against a Hospeda site (staging): login with a
  * password taken from the environment, and the clean-view check every settled position runs.
  */
+import { join } from 'node:path';
 import type { Page } from 'playwright';
+import { resolveAssetPaths } from '../../config/asset-paths';
 import { HEADER_OFFSET, sleep } from './take';
+
+/** Hostnames a logged-in (writing) recorder must refuse. */
+const PRODUCTION_HOSTS: readonly string[] = ['hospeda.com.ar', 'www.hospeda.com.ar'];
+
+/**
+ * Folder with the photos a recorder uploads: `<VCn>_PHOTOS_DIR` when set, otherwise
+ * `<assets>/fotos/<video>/upload` under `HOSPEDA_MARKETING_ASSETS_DIR`.
+ *
+ * @param input.video - Lower-case video id (`vc1`, `vc3`, ...).
+ * @returns The absolute photos directory.
+ */
+export const photosDirOf = ({ video }: { readonly video: string }): string =>
+    process.env[`${video.toUpperCase()}_PHOTOS_DIR`] ??
+    join(resolveAssetPaths().assetsDir, 'fotos', video, 'upload');
 
 /**
  * Signs in through the real form. The password comes from `VIDEO_LOGIN_PASSWORD` and is never
@@ -25,6 +41,10 @@ export const login = async ({
     readonly email: string;
     readonly video: string;
 }): Promise<void> => {
+    // These recorders publish listings: never let a WEB_URL override point them at production.
+    if (PRODUCTION_HOSTS.includes(new URL(web).hostname)) {
+        throw new Error(`${video} writes data: record it on staging, not on ${web}.`);
+    }
     const password = process.env.VIDEO_LOGIN_PASSWORD;
     if (!password) throw new Error(`Set VIDEO_LOGIN_PASSWORD to record ${video}.`);
     // Wait for hydration: submitting before React attaches posts the native form as a GET.

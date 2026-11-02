@@ -17,15 +17,14 @@
 import { existsSync } from 'node:fs';
 import { join } from 'node:path';
 import type { Locator, Page } from 'playwright';
-import { assertCleanView, login, saveSection } from './lib/staging';
+import { assertCleanView, login, photosDirOf, saveSection } from './lib/staging';
 import { createTake, hideCssOf, launchDevice, scrollToLocator, scrollToY, sleep } from './lib/take';
 
 const WEB = process.env.WEB_URL ?? 'https://staging.hospeda.com.ar';
 /** Seeded experience owner on staging (never a super admin). */
 const EMAIL = process.env.VIDEO_LOGIN_EMAIL ?? 'experience-owner@local.test';
 /** Resized copies (≤ 2000 px) of the Pexels photos; they live outside the repo. */
-const PHOTOS_DIR =
-    process.env.VC4_PHOTOS_DIR ?? '/home/qazuor/projects/WEBS/marketing/fotos/vc4/upload';
+const PHOTOS_DIR = photosDirOf({ video: 'vc4' });
 const FEATURED = '01-kayak-rio.jpg';
 const GALLERY = ['02-grupo.jpg', '03-atardecer.jpg', '04-desde-arriba.jpg', '05-muelle.jpg'];
 

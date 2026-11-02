@@ -17,15 +17,14 @@
 import { existsSync } from 'node:fs';
 import { join } from 'node:path';
 import type { Page } from 'playwright';
-import { assertCleanView, login, saveSection } from './lib/staging';
+import { assertCleanView, login, photosDirOf, saveSection } from './lib/staging';
 import { createTake, hideCssOf, launchDevice, scrollToLocator, scrollToY, sleep } from './lib/take';
 
 const WEB = process.env.WEB_URL ?? 'https://staging.hospeda.com.ar';
 /** Seeded host account on staging (never a super admin). */
 const EMAIL = process.env.VIDEO_LOGIN_EMAIL ?? 'host-premium@local.test';
 /** Resized copies (≤ 2000 px) of the owner's photos; they live outside the repo. */
-const PHOTOS_DIR =
-    process.env.VC1_PHOTOS_DIR ?? '/home/qazuor/projects/WEBS/marketing/fotos/vc1/upload';
+const PHOTOS_DIR = photosDirOf({ video: 'vc1' });
 const FEATURED = '01-exterior.jpg';
 const GALLERY = ['02-pileta.jpg', '03-living.jpg', '04-dormitorio.jpg', '05-cocina.jpg'];
 
