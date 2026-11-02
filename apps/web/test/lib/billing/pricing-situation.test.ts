@@ -215,7 +215,7 @@ describe('HOS-1977 FIRST_USE republish CTA', () => {
     const firstUse = { ok: true, data: { situation: 'FIRST_USE', trialDays: 30 } } as const;
     const cta = (
         owns: boolean,
-        vertical: 'accommodation' | 'venue' = 'accommodation',
+        vertical: 'accommodation' | 'venue' | 'experience' | 'tourist' = 'accommodation',
         situation: PricingSituationResponse = firstUse.data as PricingSituationResponse
     ) =>
         resolvePlanCardCta({
@@ -232,8 +232,14 @@ describe('HOS-1977 FIRST_USE republish CTA', () => {
     it('keeps FIRST_USE without such a listing as no CTA', () => {
         expect(cta(false).kind).toBe('none');
     });
-    it('does not offer it outside the accommodation vertical', () => {
-        expect(cta(true, 'venue').kind).toBe('none');
+    it.each([
+        ['venue', '/es/mi-cuenta/comercio/'],
+        ['experience', '/es/mi-cuenta/comercio/']
+    ] as const)('leads a %s host to Mi cuenta listings (HOS-1998)', (vertical, href) => {
+        expect(cta(true, vertical)).toEqual({ kind: 'republish', href });
+    });
+    it('has nothing to republish for the tourist vertical', () => {
+        expect(cta(true, 'tourist').kind).toBe('none');
     });
     it('ignores the flag in every other situation', () => {
         expect(cta(true, 'accommodation', { situation: 'CHECKOUT' }).kind).toBe('checkout');

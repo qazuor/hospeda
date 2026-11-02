@@ -25,6 +25,29 @@ export const PRICING_VERTICAL_BY_AUDIENCE: Record<
     partner: null
 };
 
+/**
+ * Where the host manages the listings of one vertical (HOS-1977, HOS-1998).
+ * `null`: the vertical owns no listings (tourist), so there is nothing to
+ * republish.
+ */
+const LISTINGS_PATH_BY_PRICING_VERTICAL: Record<PricingSituationVertical, string | null> = {
+    accommodation: 'mi-cuenta/propiedades',
+    venue: 'mi-cuenta/comercio',
+    experience: 'mi-cuenta/comercio',
+    tourist: null
+};
+
+/** The publish-API vertical slug of each pricing vertical, `null` for tourist. */
+const PUBLISH_SLUG_BY_PRICING_VERTICAL: Record<
+    PricingSituationVertical,
+    'accommodation' | 'venue' | 'experience' | null
+> = {
+    accommodation: 'accommodation',
+    venue: 'venue',
+    experience: 'experience',
+    tourist: null
+};
+
 type LiveStatus = Extract<PricingSituationResponse, { situation: 'SUBSCRIBED' }>['status'];
 /** Statuses whose cards show the shared unavailable plan-change notice. */
 export const PRICING_PLAN_CHANGE_NOTICE: Record<LiveStatus, boolean> = {
@@ -123,10 +146,12 @@ export function resolvePlanCardCta({
         // HOS-1977: an unspent trial plus a billing-unpublished listing means
         // the way out is republishing it (PB1 starts the trial). Nothing to
         // charge here, so the CTA leads to the listing card, not to checkout.
-        FIRST_USE: () =>
-            ownsBillingUnpublishedListing && vertical === 'accommodation'
-                ? { kind: 'republish', href: buildUrl({ locale, path: 'mi-cuenta/propiedades' }) }
-                : none,
+        FIRST_USE: () => {
+            const listingsPath = LISTINGS_PATH_BY_PRICING_VERTICAL[vertical];
+            return ownsBillingUnpublishedListing && listingsPath
+                ? { kind: 'republish', href: buildUrl({ locale, path: listingsPath }) }
+                : none;
+        },
         NO_PLANS: () => none,
         COVERED: () => none,
         TOURIST_VIP_INHERITED: () => ({ kind: 'vipInherited' }),
@@ -230,17 +255,17 @@ export function loadBillingUnpublishedListing({
 }): Promise<boolean> {
     let pending = billingUnpublishedPromises.get(vertical);
     if (!pending) {
-        pending =
-            vertical === 'accommodation'
-                ? publishApi
-                      .listingNotices({ vertical, cookieHeader: undefined })
-                      .then((result) => hasBillingUnpublishedListing({ result }))
-                      .catch(() => {
-                          // A rejected read is not cached: the next card retries.
-                          billingUnpublishedPromises.delete(vertical);
-                          return false;
-                      })
-                : Promise.resolve(false);
+        const slug = PUBLISH_SLUG_BY_PRICING_VERTICAL[vertical];
+        pending = slug
+            ? publishApi
+                  .listingNotices({ vertical: slug, cookieHeader: undefined })
+                  .then((result) => hasBillingUnpublishedListing({ result }))
+                  .catch(() => {
+                      // A rejected read is not cached: the next card retries.
+                      billingUnpublishedPromises.delete(vertical);
+                      return false;
+                  })
+            : Promise.resolve(false);
         billingUnpublishedPromises.set(vertical, pending);
     }
     return pending;

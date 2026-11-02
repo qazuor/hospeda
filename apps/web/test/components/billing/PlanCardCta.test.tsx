@@ -141,7 +141,7 @@ describe('PlanCardCta', () => {
             />
         );
         expect(
-            await screen.findByRole('link', { name: 'Publicar de nuevo desde Mis propiedades' })
+            await screen.findByRole('link', { name: 'Publicar de nuevo desde Mi cuenta' })
         ).toHaveAttribute('href', '/es/mi-cuenta/propiedades/');
     });
     it('HOS-1977 shows nothing for FIRST_USE when no listing is billing-unpublished', async () => {
@@ -200,8 +200,43 @@ describe('PlanCardCta', () => {
         });
         render(<PlanCardCta {...props} />);
         expect(
-            await screen.findByRole('link', { name: 'Publicar de nuevo desde Mis propiedades' })
+            await screen.findByRole('link', { name: 'Publicar de nuevo desde Mi cuenta' })
         ).toBeInTheDocument();
         expect(listingNotices).toHaveBeenCalledTimes(2);
+    });
+    it.each([
+        'venue',
+        'experience'
+    ] as const)('HOS-1998 shows the republish CTA on the %s plans page', async (vertical) => {
+        pricingSituation.mockResolvedValue({
+            ok: true,
+            data: { situation: 'FIRST_USE', trialDays: 30 }
+        });
+        listingNotices.mockResolvedValue({
+            ok: true,
+            data: {
+                trialRunning: false,
+                items: [
+                    {
+                        listingId: 'l1',
+                        publicationStatus: 'UNPUBLISHED_BY_BILLING',
+                        notices: [],
+                        recurringAddons: 0
+                    }
+                ]
+            }
+        });
+        render(
+            <PlanCardCta
+                locale="es"
+                vertical={vertical}
+                planVersionId="v1"
+                billingOptions={{ monthly: 'm1', annual: null }}
+            />
+        );
+        expect(
+            await screen.findByRole('link', { name: 'Publicar de nuevo desde Mi cuenta' })
+        ).toHaveAttribute('href', '/es/mi-cuenta/comercio/');
+        expect(listingNotices).toHaveBeenCalledWith(expect.objectContaining({ vertical }));
     });
 });
