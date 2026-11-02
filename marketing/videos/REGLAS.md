@@ -22,7 +22,7 @@ nombra como `<public>/…`.
 
 - Vertical 9:16, 1080×1920, 30 fps, H.264 + AAC 192k. Destino principal: WhatsApp.
 - Audio normalizado a **-14 LUFS**, true peak -1,5 dB (`ffmpeg loudnorm` sobre el render).
-- A1 v4 (staging, hasta publicar): 44,4 s. WhatsApp recomprime los videos; mandarlo como documento llega intacto.
+- A1 v5 (staging, hasta publicar): 45,4 s. WhatsApp recomprime los videos; mandarlo como documento llega intacto.
 
 ## Dispositivo de referencia: Samsung Galaxy S24 Ultra
 
