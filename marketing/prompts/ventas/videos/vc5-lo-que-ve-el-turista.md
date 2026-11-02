@@ -1,0 +1,63 @@
+# VC5 · Lo que ve el turista
+
+Video de venta · Para todas. Índice en [`../README.md`](../README.md).
+
+Lo hace **Claude Code** de punta a punta con el pipeline de Remotion de `marketing/videos/`.
+
+---
+
+- **Para quién:** Cualquier prospecto que pregunta «¿y cómo se ve?»
+- **Formato:** vertical 9:16, 1080×1920, para WhatsApp e Instagram
+- **Insignia de prueba gratis:** no
+- **Duración:** 25 a 30 s
+
+**La idea:** Recorrido por una ficha pública: traducción automática, mapa, clima y qué hay cerca.
+
+## Prompt para Claude Code
+
+````
+Hacé en Remotion el video de venta VC5 · «Lo que ve el turista» (25 a 30 s).
+
+PARA QUIÉN: Cualquier prospecto que pregunta «¿y cómo se ve?».
+LA IDEA: Recorrido por una ficha pública: traducción automática, mapa, clima y qué hay cerca.
+
+ANTES DE EMPEZAR, leé: marketing/videos/REGLAS.md (todas sus reglas valen: formato,
+dispositivo de referencia, nivel estudio, sonido), marketing/videos/README.md,
+marketing/personaje-hospedin.md y marketing/prompts/grabaciones.md. La composición
+src/a1/ es el molde: intro → tutorial → cierre. Trabajá en un worktree cortado de
+staging; lo generado vive en /home/qazuor/projects/WEBS/marketing/video-lab/, nunca en el repo.
+
+GRABACIÓN (pantallas reales, vista mobile del dispositivo de referencia):
+- Cuenta: sin login.
+- Qué grabar: P5 · Ficha de alojamiento completa, sección por sección.
+  1. Fotos y descripción; cambiar el idioma a inglés.
+  2. Mapa y «Qué hay cerca», con distancias.
+  3. Pronóstico del clima del destino.
+- Escribí el grabador como record/record-vc5.mts, siguiendo record-a1.mts
+  (eventos con su caja en pantalla, scroll suave, DEMO_HIDE_CSS).
+
+GUION:
+- Intro (2,2 s): «¿Cómo te ve el turista?» palabra por palabra, con Hospedín grande.
+- Etapa 1 · chip «1/3 · En su idioma»: Hospedín entra y dice «Tu ficha, en su idioma.». El cambio de idioma.
+- Etapa 2 · chip «2/3 · Qué hay cerca»: Hospedín entra y dice «Mapa y qué hay cerca.». Mapa y lugares con distancia.
+- Etapa 3 · chip «3/3 · El clima»: Hospedín entra y dice «Y hasta el pronóstico.». El bloque del clima.
+- Cierre (4 s): logo, «Sumate a Hospeda» palabra por palabra, píldora hospeda.com.ar, Hospedín festejando (pose vamos).
+
+EL LOGO: antes de armar el cierre, y otra vez antes de cada render nuevo o de cada
+corrección, pedime el logo. Usá exactamente el archivo que te pase (por defecto
+apps/web/src/assets/images/logo.webp): sin redibujarlo, sin recolorearlo, sin
+deformarlo y sin vectorizarlo a mano.
+
+REGLAS DE CONTENIDO (no se negocian):
+- Cero precios en pantalla y en la voz.
+- Nada que no exista como si funcionara; lo que viene dice «Próximamente».
+- Pantallas reales de Hospeda, grabadas con una cuenta del seed, nunca con super admin.
+- Ningún destino por encima de otro; sin cupones; sin métricas ni testimonios inventados.
+- Airbnb, Booking y Google se nombran sólo en calendario y reputación, nunca con su logo.
+- Voseo rioplatense en todo el texto.
+- Elegí una ficha de un destino cualquiera de la lista aprobada, sin destacarlo en el texto.
+
+ENTREGA: render 1080×1920, 30 fps, en /home/qazuor/projects/WEBS/marketing/video-lab/out/vc5.mp4. Antes de
+grabar, mostrame el guion con los tiempos. Un render por vez: después del primero esperá
+mis correcciones. El sonido lo valido yo.
+````
