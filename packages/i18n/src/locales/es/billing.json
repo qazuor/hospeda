@@ -292,7 +292,7 @@
             },
             "stillProcessing": {
                 "title": "Todavía no tenemos la confirmación",
-                "body": "Tu pago puede estar demorado. No hace falta que pagues de nuevo: revisá tu suscripción en unos minutos.",
+                "body": "Todavía no vemos el pago. Si ya lo completaste, puede tardar unos minutos en reflejarse. Si no lo completaste, podés retomarlo desde el checkout.",
                 "refresh": "Volver a revisar"
             },
             "rejected": {
@@ -303,7 +303,8 @@
             },
             "unknown": {
                 "title": "No pudimos leer el estado del pago",
-                "body": "Revisá tu suscripción para ver cómo quedó."
+                "body": "Revisá tu suscripción para ver cómo quedó.",
+                "refresh": "Volver a revisar"
             },
             "closed": {
                 "title": "Este intento ya no está vigente",

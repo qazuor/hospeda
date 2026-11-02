@@ -292,7 +292,7 @@
             },
             "stillProcessing": {
                 "title": "We do not have the confirmation yet",
-                "body": "Your payment may be delayed. You do not need to pay again: check your subscription in a few minutes.",
+                "body": "We do not see the payment yet. If you already completed it, it can take a few minutes to show up. If you did not complete it, you can pick it up again from the checkout.",
                 "refresh": "Check again"
             },
             "rejected": {
@@ -303,7 +303,8 @@
             },
             "unknown": {
                 "title": "We could not read the payment status",
-                "body": "Check your subscription to see how it ended up."
+                "body": "Check your subscription to see how it ended up.",
+                "refresh": "Check again"
             },
             "closed": {
                 "title": "This attempt is no longer valid",

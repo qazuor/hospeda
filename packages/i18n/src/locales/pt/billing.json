@@ -292,7 +292,7 @@
             },
             "stillProcessing": {
                 "title": "Ainda não temos a confirmação",
-                "body": "Seu pagamento pode estar atrasado. Não é preciso pagar de novo: confira sua assinatura em alguns minutos.",
+                "body": "Ainda não vemos o pagamento. Se você já o concluiu, pode levar alguns minutos para aparecer. Se não o concluiu, pode retomá-lo pelo checkout.",
                 "refresh": "Verificar de novo"
             },
             "rejected": {
@@ -303,7 +303,8 @@
             },
             "unknown": {
                 "title": "Não conseguimos ler o status do pagamento",
-                "body": "Confira sua assinatura para ver como ficou."
+                "body": "Confira sua assinatura para ver como ficou.",
+                "refresh": "Verificar de novo"
             },
             "closed": {
                 "title": "Esta tentativa não é mais válida",
