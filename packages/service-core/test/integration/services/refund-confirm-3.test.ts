@@ -149,3 +149,44 @@ describe('TEST:B6:4 AC:B6:4 accepted partial calls are retained on the same refu
         }
     );
 });
+
+describe('TEST:B6:1 AC:B6:1 an unanswered provider refund remains for B11', () => {
+    it.skipIf(skip)(
+        'keeps the persisted call incomplete when refund returns UNAVAILABLE',
+        async () => {
+            // Arrange
+            const seeded = await refundConfirmFixture();
+            const provider = new Proxy(seeded.fixture.provider, {
+                get(target, property, receiver) {
+                    if (property === 'refund')
+                        return async () => {
+                            throw new PaymentProviderError({
+                                code: 'UNAVAILABLE',
+                                capability: 'refund',
+                                message: 'provider unavailable'
+                            });
+                        };
+                    return Reflect.get(target, property, receiver);
+                }
+            });
+
+            // Act
+            const result = await confirmRefund(
+                { actor: seeded.actor, refundId: seeded.refundId },
+                { clock: seeded.fixture.clock, provider }
+            );
+
+            // Assert
+            const rows = await refundConfirmRows(seeded.refundId);
+            expect(result).toMatchObject({
+                status: 'CONFIRMED',
+                outcome: 'AWAITING_PROVIDER_ANSWER'
+            });
+            expect(rows.refund?.status).toBe('CONFIRMED');
+            expect(rows.calls).toHaveLength(1);
+            expect(rows.calls[0]).toMatchObject({ providerRefundId: null, amount: 10000 });
+            expect(rows.keys).toHaveLength(1);
+            expect(rows.keys[0]).toMatchObject({ result: null, completedAt: null });
+        }
+    );
+});
