@@ -81,7 +81,11 @@ export interface CancelRetryPolicy {
      * a run time limit and the next sweep retries within the 3-day window anyway.
      */
     readonly maxDelayMs: number;
-    /** Cap on the sum of all waits of one cancel; a wait that would exceed it ends the retry. */
+    /**
+     * Cap on the total time spent WAITING between attempts; a wait that would exceed it ends
+     * the retry. It does not bound the whole operation: each attempt's own request timeout and
+     * the re-reads come on top of it.
+     */
     readonly totalBudgetMs: number;
 }
 
@@ -198,8 +202,9 @@ async function cancelWithTransientRetry(
  *    warn and call anyway. A recipient without a kind fails closed: no notice, no call,
  *    `CALL_FAILED` (HOS-1683, never a generic notice). Without a recipient there is no
  *    notice, and it never blocks.
- * 3. Calls `cancel`, retrying a transient failure (429, 5xx) with bounded backoff only when `input.retry` is given; a final
- *    failure is logged with its HTTP status and sanitized body and reported, never thrown.
+ * 3. Calls `cancel`, retrying a transient failure (429, 5xx) with bounded backoff only when
+ *    `input.retry` is given; a final failure is logged with its HTTP status and sanitized
+ *    body and reported, never thrown.
  * 4. Re-reads by id after the call to confirm it.
  *
  * It writes nothing to the database: the caller decides what each outcome means.
