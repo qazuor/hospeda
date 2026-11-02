@@ -1,4 +1,6 @@
-import { trans } from '@repo/i18n';
+// Imported by subpath, never through the `@repo/i18n` index: the index pulls every locale file
+// without JSON import attributes, which native Node ESM (seed, scripts) refuses to load.
+import billingEs from '@repo/i18n/locales/es/billing.json' with { type: 'json' };
 
 /** Identity of a catalog plan as stored in `plan` (the stored name is not user-facing). */
 export interface PlanDisplayInput {
@@ -11,8 +13,17 @@ export interface PlanDisplayInput {
 /** Tourist has one plan and its vertical label ("Turista VIP") already names it. */
 const TOURIST_VERTICAL = 'tourist';
 
+interface BillingCopy {
+    readonly plan?: Readonly<Record<string, { readonly name?: string }>>;
+    readonly checkout?: {
+        readonly signup?: { readonly vertical?: Readonly<Record<string, string>> };
+    };
+}
+
+const copy: BillingCopy = billingEs;
+
 function verticalLabel(vertical: string): string | undefined {
-    const label = trans.es[`billing.checkout.signup.vertical.${vertical}`];
+    const label = copy.checkout?.signup?.vertical?.[vertical];
     return label && label.trim() !== '' ? label : undefined;
 }
 
@@ -38,7 +49,7 @@ export function resolvePlanDisplayName(input: {
         const label = verticalLabel(TOURIST_VERTICAL);
         if (label) return label;
     }
-    const translated = trans.es[`billing.plan.${input.plan.slug}.name`];
+    const translated = copy.plan?.[input.plan.slug]?.name;
     return translated && translated.trim() !== '' ? translated : input.plan.name;
 }
 
