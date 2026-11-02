@@ -8,6 +8,7 @@ export async function readSubscription(subscriptionId: string) {
             userId: subscriptions.userId,
             vertical: subscriptions.vertical,
             billingOptionId: subscriptions.billingOptionId,
+            declaredPayerEmail: subscriptions.declaredPayerEmail,
             status: subscriptions.status,
             class: subscriptions.class,
             paymentMethod: subscriptions.paymentMethod,
