@@ -6,7 +6,11 @@ import { PlanCardCta } from '@/components/billing/PlanCardCta.client';
 import { resetPricingSituationCacheForTests } from '@/lib/billing/pricing-situation';
 
 const pricingSituation = vi.hoisted(() => vi.fn());
-vi.mock('@/lib/api/endpoints-protected', () => ({ billingSubscriptionApi: { pricingSituation } }));
+const listingNotices = vi.hoisted(() => vi.fn());
+vi.mock('@/lib/api/endpoints-protected', () => ({
+    billingSubscriptionApi: { pricingSituation },
+    publishApi: { listingNotices }
+}));
 beforeEach(() => {
     vi.clearAllMocks();
     resetPricingSituationCacheForTests();
@@ -108,5 +112,131 @@ describe('PlanCardCta', () => {
         );
         expect(await screen.findAllByTestId('pricing-card-cta')).toHaveLength(2);
         expect(pricingSituation).toHaveBeenCalledTimes(1);
+    });
+    it('HOS-1977 shows the republish CTA for FIRST_USE with a billing-unpublished listing', async () => {
+        pricingSituation.mockResolvedValue({
+            ok: true,
+            data: { situation: 'FIRST_USE', trialDays: 30 }
+        });
+        listingNotices.mockResolvedValue({
+            ok: true,
+            data: {
+                trialRunning: false,
+                items: [
+                    {
+                        listingId: 'l1',
+                        publicationStatus: 'UNPUBLISHED_BY_BILLING',
+                        notices: [],
+                        recurringAddons: 0
+                    }
+                ]
+            }
+        });
+        render(
+            <PlanCardCta
+                locale="es"
+                vertical="accommodation"
+                planVersionId="v1"
+                billingOptions={{ monthly: 'm1', annual: null }}
+            />
+        );
+        expect(
+            await screen.findByRole('link', { name: 'Publicar de nuevo desde Mi cuenta' })
+        ).toHaveAttribute('href', '/es/mi-cuenta/propiedades/');
+    });
+    it('HOS-1977 shows nothing for FIRST_USE when no listing is billing-unpublished', async () => {
+        pricingSituation.mockResolvedValue({
+            ok: true,
+            data: { situation: 'FIRST_USE', trialDays: 30 }
+        });
+        listingNotices.mockResolvedValue({ ok: true, data: { trialRunning: false, items: [] } });
+        render(
+            <PlanCardCta
+                locale="es"
+                vertical="accommodation"
+                planVersionId="v1"
+                billingOptions={{ monthly: 'm1', annual: null }}
+            />
+        );
+        await screen.findByTestId('pricing-card-cta');
+        await vi.waitFor(() =>
+            expect(screen.getByTestId('pricing-card-cta')).toHaveAttribute('data-loaded', 'true')
+        );
+        expect(screen.getByTestId('pricing-card-cta')).toHaveAttribute('data-kind', 'none');
+    });
+    it('HOS-1977 keeps the primary CTA and drops a rejected extra read from the cache', async () => {
+        pricingSituation.mockResolvedValue({
+            ok: true,
+            data: { situation: 'FIRST_USE', trialDays: 30 }
+        });
+        listingNotices.mockRejectedValueOnce(new Error('network'));
+        const props = {
+            locale: 'es',
+            vertical: 'accommodation',
+            planVersionId: 'v1',
+            billingOptions: { monthly: 'm1', annual: null }
+        } as const;
+        const first = render(<PlanCardCta {...props} />);
+        await vi.waitFor(() =>
+            expect(screen.getByTestId('pricing-card-cta')).toHaveAttribute('data-loaded', 'true')
+        );
+        await vi.waitFor(() => expect(listingNotices).toHaveBeenCalledTimes(1));
+        expect(screen.getByTestId('pricing-card-cta')).toHaveAttribute('data-kind', 'none');
+        first.unmount();
+
+        listingNotices.mockResolvedValue({
+            ok: true,
+            data: {
+                trialRunning: false,
+                items: [
+                    {
+                        listingId: 'l1',
+                        publicationStatus: 'UNPUBLISHED_BY_BILLING',
+                        notices: [],
+                        recurringAddons: 0
+                    }
+                ]
+            }
+        });
+        render(<PlanCardCta {...props} />);
+        expect(
+            await screen.findByRole('link', { name: 'Publicar de nuevo desde Mi cuenta' })
+        ).toBeInTheDocument();
+        expect(listingNotices).toHaveBeenCalledTimes(2);
+    });
+    it.each([
+        'venue',
+        'experience'
+    ] as const)('HOS-1998 shows the republish CTA on the %s plans page', async (vertical) => {
+        pricingSituation.mockResolvedValue({
+            ok: true,
+            data: { situation: 'FIRST_USE', trialDays: 30 }
+        });
+        listingNotices.mockResolvedValue({
+            ok: true,
+            data: {
+                trialRunning: false,
+                items: [
+                    {
+                        listingId: 'l1',
+                        publicationStatus: 'UNPUBLISHED_BY_BILLING',
+                        notices: [],
+                        recurringAddons: 0
+                    }
+                ]
+            }
+        });
+        render(
+            <PlanCardCta
+                locale="es"
+                vertical={vertical}
+                planVersionId="v1"
+                billingOptions={{ monthly: 'm1', annual: null }}
+            />
+        );
+        expect(
+            await screen.findByRole('link', { name: 'Publicar de nuevo desde Mi cuenta' })
+        ).toHaveAttribute('href', '/es/mi-cuenta/comercio/');
+        expect(listingNotices).toHaveBeenCalledWith(expect.objectContaining({ vertical }));
     });
 });
