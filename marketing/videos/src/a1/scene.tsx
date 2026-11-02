@@ -234,16 +234,20 @@ export const ClosingCard: React.FC<{
     readonly title?: string;
     readonly logo?: ClosingLogo;
     readonly slogan?: string | null;
+    /** Optional badge under the URL pill (e.g. the trial offer). */
+    readonly badge?: string;
 }> = ({
     at,
     title = 'Publicá tu\nalojamiento',
     logo = { src: 'brand/logo.png', width: 150 },
-    slogan = 'Todo tu viaje, en un solo lugar.'
+    slogan = 'Todo tu viaje, en un solo lugar.',
+    badge
 }) => {
     const frame = useCurrentFrame();
     const { fps } = useVideoConfig();
     const logoIn = spring({ frame: frame - at, fps, config: { damping: 11, stiffness: 140 } });
     const pill = spring({ frame: frame - at - 16, fps, config: { damping: 13 } });
+    const badgeIn = spring({ frame: frame - at - 26, fps, config: { damping: 13 } });
     const sloganIn = interpolate(frame, [at + 24, at + 36], [0, 1], {
         extrapolateLeft: 'clamp',
         extrapolateRight: 'clamp'
@@ -288,6 +292,24 @@ export const ClosingCard: React.FC<{
             >
                 hospeda.com.ar
             </div>
+            {badge !== undefined && (
+                <div
+                    style={{
+                        padding: '14px 34px',
+                        borderRadius: 999,
+                        background: BRAND.white,
+                        color: BRAND.ink,
+                        fontFamily: headingFont,
+                        fontWeight: 700,
+                        fontSize: 38,
+                        border: `4px solid ${BRAND.green}`,
+                        boxShadow: '0 12px 26px rgba(13,43,62,0.16)',
+                        transform: `scale(${badgeIn})`
+                    }}
+                >
+                    {badge}
+                </div>
+            )}
             {slogan !== null && (
                 <div
                     style={{
