@@ -182,7 +182,7 @@ export const VIDEOS_HAILUO = [
         lines: [
             { text: '¿Tenés un carrito, una rotisería o un resto bar?' },
             { text: 'Que te encuentren los que buscan dónde comer o salir.' },
-            { text: 'Con tus fotos y tus horarios.' },
+            { text: 'Con tu mapa, tus fotos y tus redes.' },
             { text: 'Sumá tu local en hospeda.com.ar.' }
         ],
         shots: [
@@ -201,11 +201,11 @@ export const VIDEOS_HAILUO = [
                 lines: [1, 2],
                 recording: 'P8 · Gastronomía: listado y ficha',
                 recordingHow:
-                    'Del listado a una ficha: fotos y horarios. Un local con buenas fotos.'
+                    'Del listado a una ficha: fotos, mapa y redes. Un local con buenas fotos.'
             },
             { id: 'T3', source: 'cierre', lines: [3], use: 4 }
         ],
-        onScreen: ['T1: «Carrito, rotisería o resto bar»', 'T2: «Fotos · Horarios»'],
+        onScreen: ['T1: «Carrito, rotisería o resto bar»', 'T2: «Mapa · Fotos · Redes»'],
         cta: 'Sumá tu local',
         notes: [
             {
@@ -404,7 +404,7 @@ export const VIDEOS_CLAUDE = [
         mode: 'claude',
         badge: true,
         length: '25 a 30 s',
-        idea: 'Cargar un local es corto: datos, fotos y dónde encontrarte.',
+        idea: 'Cargar un local es corto: datos, fotos, mapa y redes.',
         account: 'una cuenta de dueño de local en staging',
         recording: 'Alta de un local desde /publicar/comer-y-salir/ hasta publicado.',
         recordSteps: [
