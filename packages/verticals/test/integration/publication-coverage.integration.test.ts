@@ -50,7 +50,9 @@ describe('TEST:V6:1 and TEST:V6:4 - PB2, PB3 and PB6 with DB', () => {
             actorType: 'owner',
             actorId: userId,
             correlationId: randomUUID(),
-            occurredAt: new Date('2026-12-01T00:00:00.000Z')
+            // Older than `published`: with the cap full the newest manual publish returns first
+            // (HOS-1984), so this distractor must rank last.
+            occurredAt: new Date('2026-01-01T00:00:00.000Z')
         });
         const covered = { value: false };
         const limit = { value: 2 };

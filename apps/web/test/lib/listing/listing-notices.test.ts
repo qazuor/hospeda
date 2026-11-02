@@ -120,7 +120,7 @@ describe('buildListingNoticeViews — one view per kind (HOS-1492)', () => {
         );
         expect(text).toContain('La seguís viendo y podés exportarla.');
         expect(text).toContain('Vuelve sola cuando recuperes la cobertura');
-        expect(text).toContain('Vuelve primero la ficha que cayó al final');
+        expect(text).toContain('Vuelven primero las fichas que publicaste más recientemente');
         expect(text).toContain('Podés traerla a borrador cuando quieras, sin pagar.');
         // 2027-01-08T02:00Z is still January 7 in Argentina.
         expect(text).toContain('se borra a partir del 7 de enero de 2027');
