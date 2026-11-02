@@ -177,7 +177,9 @@
             "HELADERIA": "Ice Cream Shop",
             "PANADERIA": "Bakery",
             "ROTISERIA": "Deli / Rotisserie",
-            "FOOD_TRUCK": "Food Truck"
+            "FOOD_TRUCK": "Food Truck",
+            "PUB": "Pub",
+            "BOLICHE": "Nightclub"
         },
         "priceRanges": {
             "BUDGET": "Budget ($)",

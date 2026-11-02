@@ -29,7 +29,9 @@ const TYPE_LABELS: Record<VenueTypeEnum, string> = {
     [VenueTypeEnum.HELADERIA]: 'Heladería',
     [VenueTypeEnum.PANADERIA]: 'Panadería',
     [VenueTypeEnum.ROTISERIA]: 'Rotisería',
-    [VenueTypeEnum.FOOD_TRUCK]: 'Food Truck'
+    [VenueTypeEnum.FOOD_TRUCK]: 'Food Truck',
+    [VenueTypeEnum.PUB]: 'Pub',
+    [VenueTypeEnum.BOLICHE]: 'Boliche'
 };
 
 /** Spanish labels for each PriceRangeEnum value. */

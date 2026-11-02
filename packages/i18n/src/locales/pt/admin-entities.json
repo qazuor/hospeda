@@ -177,7 +177,9 @@
             "HELADERIA": "Sorveteria",
             "PANADERIA": "Padaria",
             "ROTISERIA": "Rotisseria",
-            "FOOD_TRUCK": "Food Truck"
+            "FOOD_TRUCK": "Food Truck",
+            "PUB": "Pub",
+            "BOLICHE": "Balada"
         },
         "priceRanges": {
             "BUDGET": "Econômico ($)",

@@ -35,7 +35,9 @@ const VENUE_TYPE_OPTIONS = [
     { value: VenueTypeEnum.HELADERIA, label: 'Heladería' },
     { value: VenueTypeEnum.PANADERIA, label: 'Panadería' },
     { value: VenueTypeEnum.ROTISERIA, label: 'Rotisería' },
-    { value: VenueTypeEnum.FOOD_TRUCK, label: 'Food Truck' }
+    { value: VenueTypeEnum.FOOD_TRUCK, label: 'Food Truck' },
+    { value: VenueTypeEnum.PUB, label: 'Pub' },
+    { value: VenueTypeEnum.BOLICHE, label: 'Boliche' }
 ] as const;
 
 /** SELECT options for the price-range tier field. */
