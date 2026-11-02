@@ -75,3 +75,27 @@ export const assertCleanView = async ({
     })()`)) as string[];
     if (hits.length > 0) throw new Error(`Unclean view at ${where}: ${hits.join(' | ')}`);
 };
+
+/**
+ * Clicks an editor section's «Guardar» and waits for the «Cambios guardados» confirmation.
+ *
+ * @param input.page - Page of the recording browser.
+ * @param input.where - Name of the section, for the error message.
+ */
+export const saveSection = async ({
+    page,
+    where
+}: {
+    readonly page: Page;
+    readonly where: string;
+}): Promise<void> => {
+    await page.getByRole('button', { name: 'Guardar', exact: true }).last().click();
+    await page
+        .getByText('Cambios guardados')
+        .first()
+        .waitFor({ timeout: 30_000 })
+        .catch(() => {
+            throw new Error(`No save confirmation at ${where}.`);
+        });
+    await sleep(800);
+};
