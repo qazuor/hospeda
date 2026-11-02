@@ -152,7 +152,7 @@ describe('check-umbrella-branch-target.sh (DEC-ARCH-007)', () => {
 
         // Assert
         expect(result.exitCode).toBe(0);
-        expect(result.stdout).toContain('does not exist');
+        expect(result.stdout).toContain("no 'epic/*' umbrella exists");
     });
 
     it('fails a sub-epic branch cut from the umbrella that targets staging', () => {
@@ -536,11 +536,83 @@ describe('check-umbrella-branch-target.sh (DEC-ARCH-007)', () => {
         expect(result.stdout).toContain('does not exist');
     });
 
-    it('TEST:1818:5 AC:1:21 the default list contains both umbrellas', () => {
+    it('DEC-FAC-091 the script names no umbrella: the watched set is discovered', () => {
         const script = readFileSync(SCRIPT_PATH, 'utf8');
-        const defaultLine = script.split('\n').find((line) => line.includes('DEFAULT_UMBRELLAS'));
-        expect(defaultLine).toContain(UMBRELLA);
-        expect(defaultLine).toContain(UMBRELLA_RENAME);
+        const code = script
+            .split('\n')
+            .filter((line) => !line.trimStart().startsWith('#'))
+            .join('\n');
+        expect(code).not.toMatch(/epic\/HOS-/);
+    });
+
+    it('DEC-FAC-091 fails a branch cut from an epic/* umbrella no list has ever named', () => {
+        // Arrange
+        const cwd = sandbox.clone;
+        const unlisted = 'epic/HOS-9999-brand-new-program';
+        createUmbrellaWithWork({ umbrella: unlisted });
+        git({ cwd, args: ['checkout', '-q', '-b', 'feat/HOS-9999-unit', unlisted] });
+        commit({ cwd, file: 'new-program-unit.txt' });
+        push({ cwd, branch: 'feat/HOS-9999-unit' });
+        checkoutPrMerge({ cwd, head: 'feat/HOS-9999-unit', base: 'staging' });
+
+        // Act
+        const result = runGuard({
+            cwd,
+            env: { GITHUB_BASE_REF: 'staging', GITHUB_HEAD_REF: 'feat/HOS-9999-unit' }
+        });
+
+        // Assert
+        expect(result.exitCode).toBe(1);
+        expect(result.stdout).toContain('FAIL (DEC-ARCH-007)');
+        expect(result.stdout).toContain(unlisted);
+    });
+
+    it('DEC-FAC-091 does not treat a non-epic branch with work of its own as an umbrella', () => {
+        // Arrange
+        const cwd = sandbox.clone;
+        git({ cwd, args: ['checkout', '-q', '-b', 'feat/epic-looking', 'staging'] });
+        commit({ cwd, file: 'epic-looking.txt' });
+        push({ cwd, branch: 'feat/epic-looking' });
+        git({ cwd, args: ['checkout', '-q', '-b', 'fix/cut-from-feature', 'feat/epic-looking'] });
+        commit({ cwd, file: 'cut-from-feature.txt' });
+        push({ cwd, branch: 'fix/cut-from-feature' });
+        checkoutPrMerge({ cwd, head: 'fix/cut-from-feature', base: 'staging' });
+
+        // Act
+        const result = runGuard({
+            cwd,
+            env: { GITHUB_BASE_REF: 'staging', GITHUB_HEAD_REF: 'fix/cut-from-feature' }
+        });
+
+        // Assert
+        expect(result.exitCode).toBe(0);
+        expect(result.stdout).toContain('nothing to protect');
+    });
+
+    it('DEC-FAC-091 fails closed when the remote cannot be listed', () => {
+        // Arrange
+        const cwd = sandbox.clone;
+        createUmbrellaWithWork();
+        checkoutPrMerge({ cwd, head: UMBRELLA, base: 'staging' });
+        git({ cwd, args: ['remote', 'add', 'gone', path.join(sandbox.root, 'missing.git')] });
+        git({
+            cwd,
+            args: ['fetch', '-q', 'origin', '+refs/heads/staging:refs/remotes/gone/staging']
+        });
+
+        // Act
+        const result = runGuard({
+            cwd,
+            env: {
+                GITHUB_BASE_REF: 'staging',
+                GITHUB_HEAD_REF: 'feat/anything',
+                UMBRELLA_REMOTE: 'gone'
+            }
+        });
+
+        // Assert
+        expect(result.exitCode).toBe(1);
+        expect(result.stdout).toContain('could not list');
     });
 
     it('TEST:1818:6 AC:1:21 the exemption is per umbrella when its PR carries another umbrella commits', () => {
@@ -590,8 +662,8 @@ describe('check-umbrella-branch-target.sh (DEC-ARCH-007)', () => {
             env: { GITHUB_BASE_REF: 'staging', GITHUB_HEAD_REF: 'feat/only-rename' }
         });
         expect(result.exitCode).toBe(1);
-        expect(result.stdout).toContain('does not exist');
         expect(result.stdout).toContain(UMBRELLA_RENAME);
+        expect(result.stdout).not.toContain(UMBRELLA);
     });
 
     it('skips when there is no protected target (push or local run)', () => {
