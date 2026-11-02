@@ -148,9 +148,13 @@ the bucket holds more than the interactive reserve. Background can never take
 the last `reserve` tokens, so an interactive request arriving mid-burst finds a
 token immediately.
 
-**Class propagation.** An `AsyncLocalStorage<TrafficClass>` exported by
-`packages/payments` (`runWithTrafficClass`). Set once per composition point, not
-per call site. There are three:
+**Class propagation.** An `AsyncLocalStorage<TrafficContext>` exported by
+`packages/payments` (`runWithTrafficClass`), where `TrafficContext = {
+trafficClass, signal?, deadlineAt? }`. `runCronJob` puts the job's `AbortSignal`
+and budget deadline in the same context as the class, so `acquire` (when no
+`signal` is passed) and L1's background budget see the job budget without any
+call site threading it. Set once per composition point, not per call site. There
+are three:
 
 - the API app middleware sets `interactive` for every HTTP request (covers
   checkout, webhook, user routes, admin);
@@ -184,7 +188,7 @@ consecutive 429 (max 60 s); random is injectable. While cooling down:
 **Webhook under a cool-down.** Today only an incomplete read becomes `DEFERRED`
 (`process-provider-notice.service.ts:483-485`); every other error, including a
 `RATE_LIMITED` one, becomes `FAILED`, and the route answers a fixed
-`Retry-After: 60` (`routes/webhooks/mercadopago.ts:58-63`). This spec maps a
+`Retry-After: 60` (`routes/webhooks/mercadopago.ts:58-63`). Under `enforce`, this spec maps a
 `RATE_LIMITED` error (governor-rejected or a real 429) to `DEFERRED` as well, and
 carries `retryAfterSeconds` = the remaining shared cool-down (rounded up, min 1,
 max 120) into the outcome, so the route answers `503` with that `Retry-After`
@@ -442,6 +446,19 @@ firing is a **slice** of one **cycle**; a cycle is identified by `cycle_id` and
 starts at `cycle_started_at` (slice 0's start). The manual trigger with
 `?newCycle=true` opens a fresh cycle.
 
+**One clock: the database's.** `cycle_started_at`, every row stamp and every
+`lease_until` are written with Postgres `now()` inside the statement, never from
+the app's injected clock, and the "unswept" comparison runs in SQL. A skewed app
+clock (or two containers with different clocks) therefore cannot make a stamp
+look older than its own cycle's start. The injected clock keeps driving the
+row's act (INV:D17) and the slice budget, which never compare against stamps.
+
+**Last slot.** A slice is the *last slot* when no scheduled firing of the sweep
+remains later on the same market day (manifest hours, market time zone). So the
+04:10 tick is last; a manual trigger after 04:10 is last; one at 02:50 is not
+(03:10 remains); a `newCycle` slice opened during the day is last. Only the last
+slot applies the pass reserve and may report the cycle incomplete.
+
 **Progress lives on the row.** New nullable column
 `subscription.last_swept_at`. Every page of the main loop takes the inventory
 (today's filter, `reconciliation-inventory.model.ts:116-125`) restricted to
@@ -457,17 +474,37 @@ failure — it is stamped `last_swept_at = now()` and leaves the cycle's set. So
 - the rows phase is complete exactly when the query returns nothing
   (`rows_complete`), so coverage holds by construction.
 
-The stamp writes only `last_swept_at` (never `updated_at`, which means "last
-business change") in a short transaction of its own, after the row's act.
+The stamp is a short transaction of its own, after the row's act. It sets only
+`last_swept_at` in its `SET`, but it **does bump `updated_at`**: the BEFORE
+UPDATE trigger `set_updated_at()` sets `updated_at := NOW()` on every table that
+has the column (`extras/002-set-updated-at.trigger.sql:19-59`), and the update
+also fires the deferred tombstone constraint trigger on `subscription`
+(`extras/047-provider-link-tombstone.trigger.sql:33-36`), which is a no-op for a
+non-`LAPIDA` row. This is accepted (§14, N1): no production code reads
+`subscriptions.updatedAt` today, and R-12 covers a future reader.
+
+**Query plan.** The `IS NULL OR <` predicate may be planned as a BitmapOr, which
+loses the index order and adds a sort. At today's size that sort is trivial.
+PR-5 records the `EXPLAIN` of the page query; if the table grows to where the
+sort matters, the page is split into two index-ordered queries (`IS NULL` first,
+then `< cycle_started_at`) or served by a partial index on the inventory
+predicate.
 
 **Lease.** A free advisory lock does not prove its holder is dead (it dies with
 its connection, R-6). Each slice's run row carries `lease_until`, extended to
-`now + 5 min` in the same transaction as every stamp: `UPDATE
+`now() + 5 min` in the same transaction as every stamp, and during the passes
+after every page or batch a pass processes (not only when a pass ends): `UPDATE
 reconciliation_sweep_run SET lease_until = …, <counters> WHERE id = :runId AND
 outcome IS NULL`; zero rows updated → the stamp is rolled back and the slice
-stops. A new slice that finds an open run with a live lease exits with
-`details.skipped = 'lease_held'`; with an expired lease it closes that run as
-`ABANDONED` (bookkeeping only — there is no position to resume) and proceeds.
+stops. **Before opening any slice** — resuming, new cycle or `newCycle` — the
+slice looks for an open run of the sweep, in any cycle: a live lease → exit with
+`details.skipped = 'lease_held'`; an expired one → close that run as
+`ABANDONED` (bookkeeping only — there is no position to resume) and proceed.
+
+Pages are **not** taken `FOR UPDATE SKIP LOCKED`: a row lock would have to live
+across the row's act, which calls MP and writes through its own connections
+(its own transactions would then wait on the page's lock). The lease is the
+exclusion instead; the residual zombie case is named in R-6.
 
 **Run row.** `reconciliation_sweep_run` keeps one row per slice and gains the
 cycle columns (`cycle_id`, `phase`, `rows_complete`, `passes_completed`,
@@ -601,7 +638,11 @@ under their topic, so numbers are not consecutive within a section.
 - **AC-29** Given a webhook whose read is rejected with `RATE_LIMITED` (governor
   fast-fail or real 429) while the shared cool-down has 37 s left, then the
   outcome is `DEFERRED` with `retryAfterSeconds = 37` and the route answers `503`
-  with `Retry-After: 37`. An incomplete read keeps today's `DEFERRED`.
+  with `Retry-After: 37`. An incomplete read keeps today's `DEFERRED`. The
+  `RATE_LIMITED` → `DEFERRED` mapping is part of PR-3's behaviour and applies
+  **only under `enforce`**: under `off` and `observe` a `RATE_LIMITED` read
+  stays `FAILED` with today's fixed `Retry-After: 60`, so the kill switch
+  reverts it too (AC-28).
 - **AC-33** Given the production source, then every caller of
   `defaultPaymentProvider` / `new MercadoPagoPaymentProvider` is on the guard's
   allowlist with its declared class (`app.ts` → per-request middleware,
@@ -658,8 +699,10 @@ request log: **77** before any PR (baseline, unchanged by PR-1 and by PR-3/4/5);
   `cron_runs` row has the existing status `success` with `details.skipped =
   'overlap'` (no new status value), and the lock is released only when the first
   handler returns.
-- **AC-16** Given the timeout fires, then `ctx.signal` is aborted and the sweep
-  stops before starting another row, reporting `complete: false`.
+- **AC-16** Given an `exclusive` job reaches its own budget (or `ctx.signal`
+  aborts), then it starts no further row and returns `success: true` with
+  `details.stoppedOnBudget = true` (the sweep's run row records `TIMED_OUT`);
+  only a handler that ignores its signal is cut by the `timeoutMs` race.
 - **AC-17** Given the manifest, then no two MP-calling jobs share a minute and
   none runs at minute 0.
 - **AC-32** Given a manual trigger of an `exclusive` job, then it runs through
@@ -678,8 +721,9 @@ request log: **77** before any PR (baseline, unchanged by PR-1 and by PR-3/4/5);
 
 - **AC-19** Given an inventory of 300 never-swept rows and a slice budget that
   covers 120, when the three slots run, then every row is read exactly once in
-  the cycle, every row ends with `last_swept_at ≥ cycle_started_at`, and the
-  third slice reaches `DONE`.
+  the cycle, every row ends with `last_swept_at ≥ cycle_started_at` (both from
+  the database's `now()`), and the third slice reaches `DONE`. The same holds
+  with the app's injected clock 10 min ahead of or behind the database.
 - **AC-20** Given a slice that reaches its own 45-min budget mid-loop, then the
   row in progress finishes and is stamped, the run is `TIMED_OUT`, the job
   returns `success: true`, there is **no** `Sentry.captureException`, **no**
@@ -715,12 +759,15 @@ request log: **77** before any PR (baseline, unchanged by PR-1 and by PR-3/4/5);
 - **AC-37** Given a row that enters the inventory during a cycle (`last_swept_at`
   `NULL`), then the same cycle reads it before any previously swept row it has
   not reached yet.
+- **AC-38** Given a swept row, then its stamp changes `last_swept_at` and
+  `updated_at` (trigger) and no other column, and the transaction commits with
+  the deferred tombstone constraint trigger in place.
 
 ## 10. Test strategy
 
 Mutation-sensitive by design: every test names the mutation it must kill, and
 the implementer records the mutation run on the PR (a survivor blocks merge).
-Full matrix (43 tests, 11 of them for the resumable cycle) in
+Full matrix (48 tests, 15 of them for the resumable cycle) in
 [`docs/data-model-and-tests.md`](docs/data-model-and-tests.md). The cycle tests
 drive slices with an injected clock and signal against a real DB, and assert on
 `reconciliation_sweep_run` rows plus the fake server's request log. The
@@ -816,7 +863,15 @@ expand-only so a revert leaves harmless tables).
   the sweep does not trust it to decide that a holder is dead and uses its lease
   instead (§6.5, AC-36). PR-4 verifies, job by job, that a concurrent second run
   of the other jobs is safe (today nothing prevents it, so this is no worse than
-  the baseline).
+  the baseline). **Residual sweep case:** a zombie slice (lock connection gone,
+  process alive, run closed as `ABANDONED` after its lease expired) can still be
+  inside one row's act while the new slice reads the same, still unstamped row.
+  At most that one row is processed twice; its MP-visible effect is an extra
+  read and possibly a **duplicate `cancel`** of the same preapproval. How MP
+  answers a cancel of an already cancelled preapproval is not verified here;
+  PR-5 must confirm the cancel path tolerates it (local marks are already
+  find-or-insert). The zombie stops at its next stamp (AC-36).
+  Pages do not use `FOR UPDATE SKIP LOCKED` (§6.5 explains why).
 - **R-7 Redis as a new dependency of the MP path.** Mitigation: a dedicated
   client that never blocks `acquire` on its connection, a 50 ms bound on every
   read, one write per 429, a cached read (≤ 250 ms) otherwise, fail-open to
@@ -829,8 +884,11 @@ expand-only so a revert leaves harmless tables).
   skip a row on a crash; a stamp never written would re-read rows every slice.
   Mitigation: the stamp is written only after the row's act, in the lease
   transaction; `rows_complete` is "the query returned nothing", so coverage needs
-  no counter; AC-19 to AC-25, AC-34, AC-36 and AC-37. A stray write of
-  `last_swept_at` outside the sweep is caught by a static guard (one writer).
+  no counter; AC-19 to AC-25, AC-34, AC-36 and AC-37. A stray write of the
+  column is caught by a static guard anchored on **any** write of it — the
+  Drizzle key `lastSweptAt` in a `.set(…)` / `.values(…)` and the SQL name
+  `last_swept_at` in raw `sql` templates or `.sql` files — allowing only the
+  sweep's stamp statement and the migration that creates the column.
 - **R-10 A row reached later in the night.** Up to ~2 h later than slice 0, so a
   grace that expired overnight is taken a little later than with one run.
   Accepted by the owner's decision; all deadlines are day-granular. Ordering by
@@ -840,6 +898,13 @@ expand-only so a revert leaves harmless tables).
   retry changes ran regardless of mode, `off` would leave L1 without its delay
   and L2 without `RATE_LIMITED` retries and no governor wait to replace them.
   Mitigation: every new L1/L2 path is gated on `enforce`, pinned by AC-28.
+- **R-12 `subscription.updated_at` moves every night.** The stamp bumps it
+  through the `set_updated_at()` trigger (§6.5, N1), so after PR-5 it means "last
+  touched", not "last business change". No production code reads
+  `subscriptions.updatedAt` today (verified on 2026-11-02). Mitigation: a
+  docblock on the column says so, an integration test pins the bump (AC-38), and
+  any future reader that needs "last business change" must use the domain events,
+  never `updated_at`.
 
 ## 13. Implementation notes
 
@@ -853,7 +918,8 @@ expand-only so a revert leaves harmless tables).
 The owner answered every open question on **2026-11-02**: OQ-1…OQ-6 first,
 then OQ-7 and OQ-8, which came out of the design review the same day. The
 options are kept as the record of what was weighed; **✅ Chosen** marks the
-decision.
+decision. N1, raised by the re-review, was decided by the orchestrator and is
+recorded last.
 
 **OQ-1 · Cross-container coordination scope.** During a rollout two containers
 call MP at once; Redis is available.
@@ -979,8 +1045,28 @@ had +5, +10, +20, +40 min).
    to stop a zombie slice.
 
 It was the recommended option. Placement: the column goes on `subscription`
-(not a side table) so one index serves the slice query's order; the stamp writes
-only that column, never `updated_at`.
+(not a side table) so one index serves the slice query's order. Its effect on
+`updated_at` is settled by N1 below.
+
+**N1 · The row stamp bumps `subscription.updated_at`.** Decided by the
+orchestrator on 2026-11-02 (re-review of PR #4012). The `set_updated_at()`
+BEFORE UPDATE trigger (`extras/002-set-updated-at.trigger.sql:19-59`) rewrites
+`updated_at` on any update of the row, and the update also fires the deferred
+tombstone trigger (`extras/047-provider-link-tombstone.trigger.sql:33-36`).
+
+1. **✅ Chosen.** *Accept the bump.* Pros: no new table, no trigger change; no
+   production code reads `subscriptions.updatedAt` today. Cons: `updated_at`
+   stops meaning "last business change". Impact: R-12, AC-38, and
+   `creation_sweep_attempt.reset_marker` holds only the create-key id, never
+   `updated_at`.
+2. *Move the stamp to a side table* (`reconciliation_sweep_row`, keyed by
+   subscription id). Pros: `subscription` untouched. Cons: the slice query
+   becomes a `LEFT JOIN` whose `NULL` rows no index can order; one more table.
+   Impact: §6.5 and §7.
+3. *Exempt the column in the trigger* (skip the bump when only `last_swept_at`
+   changes). Pros: keeps `updated_at` semantic. Cons: special-cases a shared
+   trigger every table uses, in the extras carril. Impact: an extras change and
+   its tests.
 
 ## 15. Linear
 
