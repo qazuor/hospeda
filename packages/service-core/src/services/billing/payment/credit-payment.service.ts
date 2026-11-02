@@ -274,7 +274,12 @@ export async function creditPayment(
                         : {
                               paymentId: payment.id,
                               subscriptionId: subscription?.id ?? null,
-                              planName: planRow ? resolvePlanDisplayName({ plan: planRow }) : null,
+                              planName: planRow
+                                  ? resolvePlanDisplayName({
+                                        vertical: subscription?.vertical,
+                                        plan: planRow
+                                    })
+                                  : null,
                               amountMinor: payment.amount,
                               currency: payment.currency,
                               receiptId: receipt.receiptId,

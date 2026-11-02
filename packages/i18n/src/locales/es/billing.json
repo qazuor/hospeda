@@ -481,12 +481,6 @@
             "name": "Gratis",
             "description": "Guardá favoritos, leé reseñas y planificá tu próximo viaje sin costo."
         },
-        "basic": {
-            "name": "Básico"
-        },
-        "vip": {
-            "name": "Turista VIP"
-        },
         "tourist-vip": {
             "name": "VIP",
             "description": "Soporte VIP, promociones exclusivas y contacto directo por WhatsApp con los alojamientos."

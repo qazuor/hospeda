@@ -160,6 +160,7 @@ export async function applyPromoEndingNotice(input: {
                 redemptionId: row.redemptionId,
                 vertical: row.vertical,
                 planName: resolvePlanDisplayName({
+                    vertical: row.vertical,
                     plan: { slug: row.planSlug, name: row.planName }
                 }),
                 lastDiscountedChargeDate: milestone.targetDate,

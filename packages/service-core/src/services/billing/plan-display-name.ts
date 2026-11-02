@@ -8,18 +8,36 @@ export interface PlanDisplayInput {
     readonly name: string;
 }
 
+/** Tourist has one plan and its vertical label ("Turista VIP") already names it. */
+const TOURIST_VERTICAL = 'tourist';
+
+function verticalLabel(vertical: string): string | undefined {
+    const label = trans.es[`billing.checkout.signup.vertical.${vertical}`];
+    return label && label.trim() !== '' ? label : undefined;
+}
+
 /**
  * User-facing plan name in Spanish (the default locale and the only one the
  * billing emails and the MercadoPago checkout speak today).
  *
  * Resolves the same `billing.plan.<slug>.name` key the web pricing UI reads, so
- * the catalog has a single display source. Falls back to the stored name so an
- * untranslated plan never produces an empty string.
+ * the catalog has a single display source, and falls back to the stored name so
+ * an untranslated plan never produces an empty string. The tourist plan reads
+ * as its vertical label ("Turista VIP"), because "VIP" alone means nothing in an
+ * email.
  *
+ * @param input.vertical - The plan's vertical id, when known
  * @param input.plan - The plan slug and stored name
  * @returns The Spanish display name
  */
-export function resolvePlanDisplayName(input: { readonly plan: PlanDisplayInput }): string {
+export function resolvePlanDisplayName(input: {
+    readonly vertical?: string | null;
+    readonly plan: PlanDisplayInput;
+}): string {
+    if (input.vertical === TOURIST_VERTICAL) {
+        const label = verticalLabel(TOURIST_VERTICAL);
+        if (label) return label;
+    }
     const translated = trans.es[`billing.plan.${input.plan.slug}.name`];
     return translated && translated.trim() !== '' ? translated : input.plan.name;
 }
@@ -39,9 +57,8 @@ export function buildProviderReason(input: {
     readonly vertical: string;
     readonly plan: PlanDisplayInput;
 }): string {
-    const planName = resolvePlanDisplayName({ plan: input.plan });
-    if (input.vertical === 'tourist') return `Hospeda · ${planName}`;
-    const label = trans.es[`billing.checkout.signup.vertical.${input.vertical}`];
+    const planName = resolvePlanDisplayName({ vertical: input.vertical, plan: input.plan });
+    const label = input.vertical === TOURIST_VERTICAL ? undefined : verticalLabel(input.vertical);
     if (!label) return `Hospeda · ${planName}`;
     return `Hospeda · ${label.charAt(0).toUpperCase()}${label.slice(1)} ${planName}`;
 }

@@ -216,6 +216,7 @@ export async function applyRenewalNotice(input: {
                 subscriptionId: row.subscriptionId,
                 vertical: row.vertical,
                 planName: resolvePlanDisplayName({
+                    vertical: row.vertical,
                     plan: { slug: row.planSlug, name: row.planName }
                 }),
                 renewalDate: milestone.targetDate,
