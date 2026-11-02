@@ -11,15 +11,20 @@ Lo hace **Claude Code** de punta a punta con el pipeline de Remotion de `marketi
 - **Insignia de prueba gratis:** sí, en el cierre
 - **Duración:** 25 a 30 s
 
-**La idea:** Cargar un local es corto: datos, fotos y dónde encontrarte.
+**La idea:** Cargar un local es corto: datos, fotos, mapa y redes.
 
 ## Prompt para Claude Code
+
+**Adjuntar y reemplazar:**
+
+- `Nada al empezar: Claude graba las pantallas reales en staging.` → undefined
+- `Logo: apps/web/src/assets/images/logo.webp, cuando Claude lo pida (antes del cierre y antes de cada render o corrección)` → undefined
 
 ````
 Hacé en Remotion el video de venta VC3 · «Sumá tu local» (25 a 30 s).
 
 PARA QUIÉN: Locales gastronómicos y de noche.
-LA IDEA: Cargar un local es corto: datos, fotos y dónde encontrarte.
+LA IDEA: Cargar un local es corto: datos, fotos, mapa y redes.
 
 ANTES DE EMPEZAR, leé: marketing/videos/REGLAS.md (todas sus reglas valen: formato,
 dispositivo de referencia, nivel estudio, sonido), marketing/videos/README.md,
