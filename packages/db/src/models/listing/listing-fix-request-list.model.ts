@@ -56,7 +56,9 @@ export async function listOpenFixRequests(input: {
     const listResult = await client.execute(sql`
         SELECT * FROM (${union}) requests ORDER BY opened_at ASC, id ASC
         LIMIT ${input.pageSize} OFFSET ${(input.page - 1) * input.pageSize}`);
+    // DRIZZLE-LIMITATION: Raw SQL results are exposed as unknown and need a row-shape assertion.
     const countRows = countResult.rows as unknown as { total: number | string }[];
+    // DRIZZLE-LIMITATION: Raw SQL results are exposed as unknown and need a row-shape assertion.
     const rows = listResult.rows as unknown as RawOpenFixRequestRow[];
     return {
         total: Number(countRows[0]?.total ?? 0),
