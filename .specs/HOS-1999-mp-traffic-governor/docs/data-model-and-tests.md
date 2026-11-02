@@ -35,11 +35,16 @@ new state is still closed.
 | `last_result_hash` | varchar null | hash of the classified search result |
 | `reset_marker` | varchar null | create-key id / `updated_at` seen at the last attempt; a change resets the cadence |
 
-## Inventory fingerprint (B4, only if OQ-6 = 1)
+## `reconciliation_sweep_run` cycle columns (OQ-4)
 
-Per authorization: `charge_record_count`, `last_charged_at`, `charge_ids text[]`,
-`fingerprinted_at`. Columns on `provider_link` or a `provider_charge_inventory`
-table; decided in implementation and recorded on the Linear issue.
+See [`sweep-slicing.md`](sweep-slicing.md) §2. Expand-only, nullable, so legacy
+single-run rows stay valid.
+
+## Inventory fingerprint (B4, deferred)
+
+Not in this spec (OQ-6, 2026-11-02): gated by T-B4-GATE. If the gate passes,
+the follow-up stores per authorization `charge_record_count`, `last_charged_at`,
+`charge_ids text[]` and `fingerprinted_at`.
 
 ## Test matrix (spec §10)
 
@@ -61,7 +66,7 @@ provider method calls.
 | Shared cool-down via Redis: two governor instances, one Redis; a 429 on A blocks B | integration (Redis) | cool-down written only locally |
 | Redis down: both instances keep serving, one warning | integration | governor awaits Redis |
 | Memo count: ACTIVE credited row, 12 records, steady state → `requests().length` ≤ 4 (baseline before the change: 77) | integration (fake HTTP server + DB) | B1 scope or B2 memo bypassed |
-| Tenure: 12 vs 36 records → counts differ only by listing pages (equal with B4) | integration | facts not consulted for historic charges |
+| Tenure: 12 vs 36 records → counts differ only by listing pages | integration | facts not consulted for historic charges |
 | Webhook not memoized: two notices for one charge → two live reads | integration | read scope leaks outside the sweep |
 | Freshness guard: decision paths (`readPeriodCharges`, row checks) accept `ProviderRead`, never `ClosedChargeFact` | static guard test | a decision fed from the cache |
 | Refund after freeze: closed approved fact + refund webhook → fact rewritten, next comparison sees it | integration | write-through skipped for frozen rows |
@@ -69,5 +74,12 @@ provider method calls.
 | Overlap lock: two `withCronLock` on one name, first handler outlives its timeout → second skipped, lock released when the first settles | integration (DB) | lock released at timeout |
 | Cooperative stop: abort `ctx.signal` mid-run → no new row starts, `complete: false` | unit | signal ignored |
 | Manifest stagger: no two MP-calling jobs share a minute, none at minute 0 | unit on `CRON_SCHEDULES` | schedules collide |
+| Cycle covers every row once (AC-19): 300 rows, budget 120 per slice, three slices → each id read once, in order, `DONE` on slice 2 | integration (DB + fake server) | cursor written before the row instead of after; off-by-one on `>` vs `>=` |
+| Abort mid-loop (AC-20): signal at row 57 → row 57 finishes, cursor = 57, `TIMED_OUT`, next slice starts at 58 | integration | signal checked after starting the row; cursor not persisted on abort |
+| Dead slice (AC-21): open run with cursor 40 and no lock holder → closed `ABANDONED`, resume at 41; replaying row 41 opens no second mark | integration | resume from slice start instead of cursor; abandoned run left open |
+| Passes across slices (AC-22): abort during credited payments → `passes_completed` = the earlier passes; next slice skips them and restarts credited payments | integration | pass marked complete before it returns; completed passes re-run |
+| Cycle already done (AC-23): third slot after `DONE` → `SKIPPED_CYCLE_DONE`, zero requests in the fake server log | integration | `DONE` not checked before reading |
+| One alert per cycle (AC-24): failures in slices 0 and 2 → one capture with both ids, no ping, slices 0–1 `success: true` | integration (logger + ping spies) | alert per slice; ping on failed cycle |
+| Incomplete cycle and wrap (AC-25): last slot ends in `ROWS` at cursor K → error captured; next cycle reads K+1…end, then start…K | integration | next cycle restarts from the beginning (tail starvation) |
 
 Integration suites run per file, never the full package suite locally.
