@@ -182,7 +182,7 @@ export const VIDEOS_HAILUO = [
         lines: [
             { text: '¿Tenés un carrito, una rotisería o un resto bar?' },
             { text: 'Que te encuentren los que buscan dónde comer o salir.' },
-            { text: 'Con tu mapa, tus fotos y tus redes.' },
+            { text: 'Con tus fotos y tus horarios.' },
             { text: 'Sumá tu local en hospeda.com.ar.' }
         ],
         shots: [
@@ -201,11 +201,11 @@ export const VIDEOS_HAILUO = [
                 lines: [1, 2],
                 recording: 'P8 · Gastronomía: listado y ficha',
                 recordingHow:
-                    'Del listado a una ficha: fotos, mapa y redes. Un local con buenas fotos.'
+                    'Del listado a una ficha: fotos y horarios. Un local con buenas fotos.'
             },
             { id: 'T3', source: 'cierre', lines: [3], use: 4 }
         ],
-        onScreen: ['T1: «Carrito, rotisería o resto bar»', 'T2: «Mapa · Fotos · Redes»'],
+        onScreen: ['T1: «Carrito, rotisería o resto bar»', 'T2: «Fotos · Horarios»'],
         cta: 'Sumá tu local',
         notes: [
             {
@@ -404,7 +404,7 @@ export const VIDEOS_CLAUDE = [
         mode: 'claude',
         badge: true,
         length: '25 a 30 s',
-        idea: 'Cargar un local es corto: datos, fotos, mapa y redes.',
+        idea: 'Cargar un local es corto: datos, fotos y dónde encontrarte.',
         account: 'una cuenta de dueño de local en staging',
         recording: 'Alta de un local desde /publicar/comer-y-salir/ hasta publicado.',
         recordSteps: [
@@ -424,6 +424,7 @@ export const VIDEOS_CLAUDE = [
         ],
         cta: 'Sumá tu local',
         extraRules: [
+            'El mapa de locales todavía no existe: la toma del mapa se presta del editor de alojamientos, tapando todo lo que diga alojamiento (decisión del dueño), y se regraba cuando entre. El video no se manda hasta entonces.',
             'En el copy se dice «tu local»; «menú» o «carta» sólo si se muestra esa sección.',
             'La ficha pública de un local no muestra teléfono: no prometas que te escriben directo.'
         ]
@@ -462,14 +463,13 @@ export const VIDEOS_CLAUDE = [
         para: 'Cualquier prospecto que pregunta «¿y cómo se ve?»',
         mode: 'claude',
         badge: false,
-        length: '25 a 30 s',
-        idea: 'Recorrido por una ficha pública: traducción automática, mapa, clima y qué hay cerca.',
+        length: '20 a 25 s',
+        idea: 'Recorrido por una ficha pública: traducción automática, mapa y qué hay cerca. El clima no va: vive en la página del destino, no en la ficha.',
         account: 'ninguna: es la ficha pública, sin login',
         recording: 'P5 · Ficha de alojamiento completa, sección por sección.',
         recordSteps: [
-            'Fotos y descripción; cambiar el idioma a inglés.',
-            'Mapa y «Qué hay cerca», con distancias.',
-            'Pronóstico del clima del destino.'
+            'Fotos y descripción; cambiar el idioma a inglés y a portugués.',
+            'Mapa y «Qué hay cerca», con distancias.'
         ],
         intro: '¿Cómo te ve el turista?',
         stages: [
@@ -478,8 +478,7 @@ export const VIDEOS_CLAUDE = [
                 chip: 'Qué hay cerca',
                 says: 'Mapa y qué hay cerca.',
                 show: 'Mapa y lugares con distancia.'
-            },
-            { chip: 'El clima', says: 'Y hasta el pronóstico.', show: 'El bloque del clima.' }
+            }
         ],
         cta: 'Sumate a Hospeda',
         extraRules: [

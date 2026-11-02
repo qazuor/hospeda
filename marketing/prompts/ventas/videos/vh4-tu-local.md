@@ -9,7 +9,7 @@ Se hace con **Hailuo / MiniMax** (*image to video*) para las tomas de Hospedín,
 - **Para quién:** Carritos, rotiserías, restaurantes, cervecerías, bares y boliches
 - **Formato:** vertical 9:16, 1080×1920, para WhatsApp e Instagram
 - **Insignia de prueba gratis:** sí, en el cierre
-- **Duración:** 14,0 s
+- **Duración:** 13,5 s
 
 ## Lo que se escucha
 
@@ -17,7 +17,7 @@ Se hace con **Hailuo / MiniMax** (*image to video*) para las tomas de Hospedín,
 |---|:-:|:-:|
 | ¿Tenés un carrito, una rotisería o un resto bar? | T1 | 3,2 s |
 | Que te encuentren los que buscan dónde comer o salir. | T2 | 2,8 s |
-| Con tu mapa, tus fotos y tus redes. | T2 | 1,8 s |
+| Con tus fotos y tus horarios. | T2 | 1,4 s |
 | Sumá tu local en hospeda.com.ar. | T3 | 2,6 s |
 
 ## El montaje
@@ -25,8 +25,8 @@ Se hace con **Hailuo / MiniMax** (*image to video*) para las tomas de Hospedín,
 | Toma | Tiempo | De dónde sale |
 |---|---|---|
 | T1 | 0,0–4,0 | Hailuo (se pide 6 s) |
-| T2 | 4,0–10,0 | grabación P8 · Gastronomía: listado y ficha |
-| T3 | 10,0–14,0 | cierre con el logo, en Remotion |
+| T2 | 4,0–9,5 | grabación P8 · Gastronomía: listado y ficha |
+| T3 | 9,5–13,5 | cierre con el logo, en Remotion |
 
 ## Cómo se hace
 
@@ -131,10 +131,10 @@ TIMING, as fractions of the shot — THIS IS THE MOST IMPORTANT PART OF THIS PRO
 21-23% a SHORT pause.
 23-42% he speaks the SECOND sentence.
 42-44% a SHORT pause.
-44-56% he speaks the THIRD sentence.
-56-58% a SHORT pause.
-58-76% he speaks the FOURTH sentence.
-76-100% SILENCE until the end.
+44-54% he speaks the THIRD sentence.
+54-56% a SHORT pause.
+56-74% he speaks the FOURTH sentence.
+74-100% SILENCE until the end.
 
 DO NOT SPREAD THE SPEECH ACROSS THE CLIP. The delivery is at a normal conversational
 pace. Do not slow it down, do not stretch it to fill the 15 seconds, and do not insert
@@ -144,7 +144,7 @@ FIRST sentence: [Spanish] ¿Tenés un carrito, una rotisería o un resto bar?
 
 SECOND sentence: [Spanish] Que te encuentren los que buscan dónde comer o salir.
 
-THIRD sentence: [Spanish] Con tu mapa, tus fotos y tus redes.
+THIRD sentence: [Spanish] Con tus fotos y tus horarios.
 
 FOURTH sentence: [Spanish] Sumá tu local en hospeda.com.ar.
 
@@ -157,7 +157,7 @@ NO echo. The voice is recorded close and dry, as if in a quiet room.
 ## Montaje · prompt para Claude Code
 
 ````
-Armá en Remotion el video de venta VH4 · «Que te encuentren para comer o salir» (14,0 s).
+Armá en Remotion el video de venta VH4 · «Que te encuentren para comer o salir» (13,5 s).
 
 ANTES DE EMPEZAR, leé: marketing/videos/REGLAS.md, marketing/videos/README.md,
 marketing/personaje-hospedin.md y marketing/prompts/grabaciones.md. Usá la composición
@@ -181,20 +181,20 @@ referencia (config/device.ts) y la puesta en escena de demo (DEMO_HIDE_CSS).
   staging.
 - Staging tiene datos de prueba: elegí fichas con buenas fotos y sin textos de prueba a
   la vista.
-- T2: P8 · Gastronomía: listado y ficha. Del listado a una ficha: fotos, mapa y redes. Un local con buenas fotos.
+- T2: P8 · Gastronomía: listado y ficha. Del listado a una ficha: fotos y horarios. Un local con buenas fotos.
 
 HOJA DE CORTE (cortes secos, en múltiplos de 0,5 s):
 | Toma | En la timeline | Dura | De dónde sale | Voz |
 |---|---|:-:|---|---|
 | T1 | 0,0 → 4,0 | 4,0 | tirada T1 · 6 s, se usa 0,0 → 4,0 | «¿Tenés un carrito, una rotisería o un resto bar?» |
-| T2 | 4,0 → 10,0 | 6,0 | grabación P8 · Gastronomía: listado y ficha | «Que te encuentren los que buscan dónde comer o salir.» «Con tu mapa, tus fotos y tus redes.» |
-| T3 | 10,0 → 14,0 | 4,0 | cierre en Remotion | «Sumá tu local en hospeda.com.ar.» |
+| T2 | 4,0 → 9,5 | 5,5 | grabación P8 · Gastronomía: listado y ficha | «Que te encuentren los que buscan dónde comer o salir.» «Con tus fotos y tus horarios.» |
+| T3 | 9,5 → 13,5 | 4,0 | cierre en Remotion | «Sumá tu local en hospeda.com.ar.» |
 
 LA VOZ: la pista es una sola tirada; cortala entre frases y ubicá cada frase en su toma.
 
 TEXTOS EN PANTALLA (exactos, Geologica para títulos, Roboto para el resto):
 - T1: «Carrito, rotisería o resto bar»
-- T2: «Mapa · Fotos · Redes»
+- T2: «Fotos · Horarios»
 
 EL CIERRE (4,0 s): logo que entra, «Sumá tu local» palabra por palabra, píldora
 hospeda.com.ar y la insignia «30 días de prueba gratis · Sin tarjeta». Fondo con las colinas de A1.

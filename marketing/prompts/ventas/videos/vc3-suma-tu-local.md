@@ -11,7 +11,7 @@ Lo hace **Claude Code** de punta a punta con el pipeline de Remotion de `marketi
 - **Insignia de prueba gratis:** sí, en el cierre
 - **Duración:** 25 a 30 s
 
-**La idea:** Cargar un local es corto: datos, fotos, mapa y redes.
+**La idea:** Cargar un local es corto: datos, fotos y dónde encontrarte.
 
 ## Prompt para Claude Code
 
@@ -19,7 +19,7 @@ Lo hace **Claude Code** de punta a punta con el pipeline de Remotion de `marketi
 Hacé en Remotion el video de venta VC3 · «Sumá tu local» (25 a 30 s).
 
 PARA QUIÉN: Locales gastronómicos y de noche.
-LA IDEA: Cargar un local es corto: datos, fotos, mapa y redes.
+LA IDEA: Cargar un local es corto: datos, fotos y dónde encontrarte.
 
 ANTES DE EMPEZAR, leé: marketing/videos/REGLAS.md (todas sus reglas valen: formato,
 dispositivo de referencia, nivel estudio, sonido), marketing/videos/README.md,
@@ -66,6 +66,7 @@ REGLAS DE CONTENIDO (no se negocian):
 - Ningún destino por encima de otro; sin cupones; sin métricas ni testimonios inventados.
 - Airbnb, Booking y Google se nombran sólo en calendario y reputación, nunca con su logo.
 - Voseo rioplatense en todo el texto.
+- El mapa de locales todavía no existe: la toma del mapa se presta del editor de alojamientos, tapando todo lo que diga alojamiento (decisión del dueño), y se regraba cuando entre. El video no se manda hasta entonces.
 - En el copy se dice «tu local»; «menú» o «carta» sólo si se muestra esa sección.
 - La ficha pública de un local no muestra teléfono: no prometas que te escriben directo.
 
