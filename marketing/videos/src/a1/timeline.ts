@@ -87,8 +87,16 @@ const LOADS: ReadonlyArray<readonly [string, string]> = [
 ];
 
 /**
+ * Waits on the server between finishing to type and the result showing ([type, next hold]):
+ * staging's city search can take seconds. A wait longer than {@link WAIT_MAX} is jump-cut.
+ */
+const WAITS: ReadonlyArray<readonly [string, string]> = [['ciudad', 'opciones-ciudad']];
+const WAIT_MAX = 1.2;
+
+/**
  * Splits the recording into the pieces that make the cut: page loads are dropped (wipe),
- * the middle of long typing is dropped (jump cut), the opening hold is trimmed.
+ * the middle of long typing and long server waits are dropped (jump cut), the opening hold is
+ * trimmed.
  */
 export const buildPieces = ({ events, duration }: Recording): Piece[] => {
     const firstTap = find(events, 'publicar-otra');
@@ -101,6 +109,13 @@ export const buildPieces = ({ events, duration }: Recording): Piece[] => {
         const tap = find(events, tapLabel);
         const stage = find(events, stageLabel);
         if (tap && stage) removed.push({ from: tap.t + 0.45, to: stage.t + 0.35, cut: 'wipe' });
+    }
+    for (const [typeLabel, holdLabel] of WAITS) {
+        const typed = find(events, typeLabel);
+        const shown = find(events, holdLabel);
+        const typedEnd = typed?.end ?? typed?.t;
+        if (typedEnd !== undefined && shown && shown.t - typedEnd > WAIT_MAX)
+            removed.push({ from: typedEnd + 0.5, to: shown.t - 0.3, cut: 'jump' });
     }
     for (const e of events) {
         if (e.kind !== 'type' || e.end === undefined || e.end - e.t < JUMP_MIN) continue;
