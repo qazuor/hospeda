@@ -363,7 +363,7 @@
         "restitution": {
             "restored": "These listings are back: {{listings}}.",
             "notRestored": "These listings could not return: {{listings}}.",
-            "criterion": "The listing that dropped last returns first, until the available slots are filled. Listings from the old system that were never published here go first, by oldest creation date.",
+            "criterion": "The listings you published most recently return first, until the available slots are filled.",
             "nothingDeleted": "Listings that could not return are still there; none are deleted."
         },
         "reason": "Reason: {{reason}}",

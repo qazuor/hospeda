@@ -363,7 +363,7 @@
         "restitution": {
             "restored": "Estes anúncios voltaram: {{listings}}.",
             "notRestored": "Estes anúncios não puderam voltar: {{listings}}.",
-            "criterion": "Volta primeiro o anúncio que caiu por último, até preencher as vagas. Anúncios do sistema antigo que nunca foram publicados aqui vêm primeiro, pela data de criação mais antiga.",
+            "criterion": "Voltam primeiro os anúncios que você publicou mais recentemente, até preencher as vagas.",
             "nothingDeleted": "Os anúncios que não voltaram continuam aqui; nenhum é apagado."
         },
         "reason": "Motivo: {{reason}}",
