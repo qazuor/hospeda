@@ -9,7 +9,11 @@
  * Status spelling: this is the API's `SubscriptionRead.status` (upper-case row
  * status, e.g. `CHARGE_DECLINED`), not the domain enum of the old billing.
  */
-import { resolveSignupRejection, type SignupRejection } from '@/lib/billing/signup-checkout';
+import {
+    resolveDeclaredPayerEmail,
+    resolveSignupRejection,
+    type SignupRejection
+} from '@/lib/billing/signup-checkout';
 import { resolveSafeExternalUrl } from '@/lib/safe-external-url';
 
 /** Query parameter holding our subscription id on the return trip. */
@@ -92,6 +96,38 @@ export function shouldPollAgain({
     readonly attempt: number;
 }): boolean {
     return view === 'processing' && attempt < RETURN_POLL_MAX_ATTEMPTS;
+}
+
+/**
+ * Whether the retry must ask for the payer email first.
+ *
+ * The rejected attempt stored the email the payer declared (HOS-1890); when it is
+ * present and valid the retry reuses it as is. Otherwise the same declared-email
+ * field as the checkout is shown, never a silent default to the account email.
+ */
+export function retryNeedsEmailField({
+    declaredPayerEmail
+}: {
+    readonly declaredPayerEmail: string | null;
+}): boolean {
+    return !(declaredPayerEmail && resolveDeclaredPayerEmail({ value: declaredPayerEmail }).ok);
+}
+
+/**
+ * Email to send with the retry: the attempt's declared email when usable, else the
+ * one typed in the field.
+ */
+export function resolveRetryPayerEmail({
+    declaredPayerEmail,
+    typed
+}: {
+    readonly declaredPayerEmail: string | null;
+    readonly typed: string;
+}): { readonly ok: true; readonly email: string } | { readonly ok: false } {
+    if (!retryNeedsEmailField({ declaredPayerEmail })) {
+        return resolveDeclaredPayerEmail({ value: declaredPayerEmail });
+    }
+    return resolveDeclaredPayerEmail({ value: typed });
 }
 
 /** Result of the one-click retry. */

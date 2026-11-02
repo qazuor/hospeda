@@ -3,8 +3,10 @@ import { describe, expect, it, vi } from 'vitest';
 import {
     parseReturnSubscriptionId,
     RETURN_POLL_MAX_ATTEMPTS,
+    resolveRetryPayerEmail,
     resolveReturnView,
     retryCheckout,
+    retryNeedsEmailField,
     shouldPollAgain
 } from '@/lib/billing/subscription-return';
 
@@ -156,5 +158,23 @@ describe('retryCheckout', () => {
         });
 
         expect(outcome.kind).toBe('rejected');
+    });
+});
+
+describe('retry payer email (HOS-1890 declared email)', () => {
+    it('reuses the declared email and does not need the field', () => {
+        expect(retryNeedsEmailField({ declaredPayerEmail: 'mp@example.test' })).toBe(false);
+        expect(
+            resolveRetryPayerEmail({ declaredPayerEmail: 'mp@example.test', typed: 'other@x.test' })
+        ).toEqual({ ok: true, email: 'mp@example.test' });
+    });
+
+    it('asks for the field when none is stored or the stored one is unusable', () => {
+        expect(retryNeedsEmailField({ declaredPayerEmail: null })).toBe(true);
+        expect(retryNeedsEmailField({ declaredPayerEmail: 'garbage' })).toBe(true);
+        expect(
+            resolveRetryPayerEmail({ declaredPayerEmail: null, typed: 'typed@example.test' })
+        ).toEqual({ ok: true, email: 'typed@example.test' });
+        expect(resolveRetryPayerEmail({ declaredPayerEmail: null, typed: 'nope' }).ok).toBe(false);
     });
 });

@@ -77,12 +77,14 @@ try {
 const returnSubscriptionId = parseReturnSubscriptionId({ search: Astro.url.search });
 let returnStatus: string | null = null;
 let returnBillingOptionId: string | null = null;
+let returnDeclaredPayerEmail: string | null = null;
 if (returnSubscriptionId) {
 	try {
 		const read = await billingSubscriptionApi.read({ subscriptionId: returnSubscriptionId, cookieHeader });
 		if (read.ok) {
 			returnStatus = read.data.status;
 			returnBillingOptionId = read.data.billingOptionId;
+			returnDeclaredPayerEmail = read.data.declaredPayerEmail;
 		}
 	} catch {
 		returnStatus = null;
@@ -100,6 +102,7 @@ if (returnSubscriptionId) {
 		initialStatus={returnStatus}
 		billingOptionId={returnBillingOptionId}
 		accountEmail={user.email}
+		declaredPayerEmail={returnDeclaredPayerEmail}
 	/>}
 	<MySubscriptions locale={locale} result={ownSubscriptions} />
 	<TrialSummary locale={locale} entries={trialSummaries} liveSubscriptionVerticals={ownSubscriptions?.subscriptions.map((row) => row.vertical) ?? []} />

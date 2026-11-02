@@ -5564,7 +5564,13 @@ export const billingSubscriptionApi = {
     }: {
         readonly subscriptionId: string;
         readonly cookieHeader?: string;
-    }): Promise<ApiResult<{ readonly status: string; readonly billingOptionId: string | null }>> {
+    }): Promise<
+        ApiResult<{
+            readonly status: string;
+            readonly billingOptionId: string | null;
+            readonly declaredPayerEmail: string | null;
+        }>
+    > {
         return apiClient.getProtected({
             path: `${PROTECTED}/billing-subscription/${subscriptionId}`,
             cookieHeader
