@@ -7,8 +7,9 @@
 # WHY
 #
 # Each multi-epic program is developed on its own integration branch. The
-# watched branches are `epic/HOS-1352-verticales-billing` and
-# `epic/HOS-1801-renombrado-fisico`. Sub-epics and units branch off their
+# watched branches are EVERY `epic/*` head on the remote, discovered at run
+# time (DEC-FAC-091): a hard-coded list left each new umbrella unguarded until
+# somebody remembered to add it. Sub-epics and units branch off their
 # umbrella and merge back into it; `staging` is merged INTO it
 # periodically; and only the umbrella itself goes to `staging`, once, at the
 # end. That rule exists so that shipping half of the program is not a decision
@@ -75,8 +76,10 @@
 #   CI_BASELINE_SHA   commit the PR is measured against (set by
 #                     scripts/resolve-ci-baseline.sh). Falls back to
 #                     <remote>/<GITHUB_BASE_REF>.
-#   UMBRELLA_BRANCHES space-separated list; defaults to the watched umbrellas
+#   UMBRELLA_BRANCHES space-separated list that replaces discovery; when unset,
+#                     every `epic/*` head on the remote is watched
 #   UMBRELLA_REMOTE   default: origin
+#   UMBRELLA_LS_RETRY_DELAY seconds between the 3 listing attempts; default 2
 #
 # Exit: 0 allowed, 1 forbidden target or the check could not be completed
 # (fails closed: a guard that cannot see the umbrella does not wave the PR
@@ -84,8 +87,8 @@
 
 set -euo pipefail
 
-readonly DEFAULT_UMBRELLAS="epic/HOS-1352-verticales-billing epic/HOS-1801-renombrado-fisico"
-read -r -a UMBRELLA_BRANCHES <<<"${UMBRELLA_BRANCHES:-${DEFAULT_UMBRELLAS}}"
+# Every branch under this prefix on the remote is an umbrella (DEC-CI-001).
+readonly UMBRELLA_PREFIX="epic/"
 readonly REMOTE="${UMBRELLA_REMOTE:-origin}"
 readonly BASE_REF="${GITHUB_BASE_REF:-}"
 readonly HEAD_REF="${GITHUB_HEAD_REF:-}"
@@ -174,8 +177,55 @@ check_umbrella() {
     echo "OK: no umbrella-only commit of '${umbrella}' reaches '${BASE_REF}' through this branch."
 }
 
+# The umbrellas to check: the explicit list when given, otherwise every
+# `epic/*` head on the remote. Discovery fails closed: a remote that cannot be
+# listed is not the same as a remote with no umbrella.
+umbrellas=()
+if [ -n "${UMBRELLA_BRANCHES+set}" ]; then
+    read -r -a umbrellas <<<"${UMBRELLA_BRANCHES}"
+    # An override that names nothing is an operator error, not "no umbrella":
+    # waving the PR through would disable the guard silently.
+    if [ "${#umbrellas[@]}" -eq 0 ]; then
+        echo "FAIL: UMBRELLA_BRANCHES is set but names no branch."
+        exit 1
+    fi
+else
+    # This now runs on every PR to staging/main, so a transient remote error
+    # gets two retries before the guard fails closed.
+    ls_status=1
+    ls_err=""
+    for attempt in 1 2 3; do
+        set +e
+        listing="$(git ls-remote --heads "${REMOTE}" "refs/heads/${UMBRELLA_PREFIX}*" 2>"${TMPDIR:-/tmp}/umbrella-ls-remote.$$")"
+        ls_status=$?
+        set -e
+        ls_err="$(cat "${TMPDIR:-/tmp}/umbrella-ls-remote.$$" 2>/dev/null || true)"
+        rm -f "${TMPDIR:-/tmp}/umbrella-ls-remote.$$"
+        [ "${ls_status}" -eq 0 ] && break
+        [ "${attempt}" -lt 3 ] && sleep "${UMBRELLA_LS_RETRY_DELAY:-2}"
+    done
+    if [ "${ls_status}" -ne 0 ]; then
+        echo "FAIL: could not list '${UMBRELLA_PREFIX}*' umbrellas on '${REMOTE}' (git ls-remote exit ${ls_status}, 3 attempts)."
+        [ -n "${ls_err}" ] && echo "  ${ls_err}"
+        exit 1
+    fi
+    # `ls-remote` tail-matches with `*` crossing `/`, so it can also return
+    # e.g. `refs/heads/refs/heads/epic/x`. Only exact `refs/heads/epic/...`
+    # heads are umbrellas.
+    while read -r _sha ref; do
+        case "${ref:-}" in
+            "refs/heads/${UMBRELLA_PREFIX}"?*) umbrellas+=("${ref#refs/heads/}") ;;
+        esac
+    done <<<"${listing}"
+fi
+
+if [ "${#umbrellas[@]}" -eq 0 ]; then
+    echo "OK: no '${UMBRELLA_PREFIX}*' umbrella exists on '${REMOTE}' — nothing to protect yet."
+    exit 0
+fi
+
 failed=0
-for u in "${UMBRELLA_BRANCHES[@]}"; do
+for u in "${umbrellas[@]}"; do
     check_umbrella "${u}" || failed=1
 done
 exit "${failed}"
