@@ -606,13 +606,88 @@ describe('check-umbrella-branch-target.sh (DEC-ARCH-007)', () => {
             env: {
                 GITHUB_BASE_REF: 'staging',
                 GITHUB_HEAD_REF: 'feat/anything',
-                UMBRELLA_REMOTE: 'gone'
+                UMBRELLA_REMOTE: 'gone',
+                UMBRELLA_LS_RETRY_DELAY: '0'
             }
         });
 
         // Assert
         expect(result.exitCode).toBe(1);
         expect(result.stdout).toContain('could not list');
+        expect(result.stdout).toContain('3 attempts');
+    });
+
+    it('DEC-FAC-091 fails closed when UMBRELLA_BRANCHES is set but names nothing', () => {
+        // Arrange
+        const cwd = sandbox.clone;
+        createUmbrellaWithWork();
+        git({ cwd, args: ['checkout', '-q', '-b', 'feat/blank-override', UMBRELLA] });
+        commit({ cwd, file: 'blank-override.txt' });
+        push({ cwd, branch: 'feat/blank-override' });
+        checkoutPrMerge({ cwd, head: 'feat/blank-override', base: 'staging' });
+
+        // Act
+        const result = runGuard({
+            cwd,
+            env: {
+                GITHUB_BASE_REF: 'staging',
+                GITHUB_HEAD_REF: 'feat/blank-override',
+                UMBRELLA_BRANCHES: '   '
+            }
+        });
+
+        // Assert
+        expect(result.exitCode).toBe(1);
+        expect(result.stdout).toContain('names no branch');
+    });
+
+    it('DEC-FAC-091 discovers a nested epic/*/* umbrella', () => {
+        // Arrange
+        const cwd = sandbox.clone;
+        const nested = 'epic/program/sub-umbrella';
+        createUmbrellaWithWork({ umbrella: nested });
+        git({ cwd, args: ['checkout', '-q', '-b', 'feat/nested-unit', nested] });
+        commit({ cwd, file: 'nested-unit.txt' });
+        push({ cwd, branch: 'feat/nested-unit' });
+        checkoutPrMerge({ cwd, head: 'feat/nested-unit', base: 'staging' });
+
+        // Act
+        const result = runGuard({
+            cwd,
+            env: { GITHUB_BASE_REF: 'staging', GITHUB_HEAD_REF: 'feat/nested-unit' }
+        });
+
+        // Assert
+        expect(result.exitCode).toBe(1);
+        expect(result.stdout).toContain(nested);
+    });
+
+    it('DEC-FAC-091 a stale epic already merged into staging keeps normal PRs and the promotion green', () => {
+        // Arrange
+        const cwd = sandbox.clone;
+        createUmbrellaWithWork();
+        git({ cwd, args: ['checkout', '-q', 'staging'] });
+        git({ cwd, args: ['merge', '-q', '--no-ff', '--no-edit', UMBRELLA] });
+        push({ cwd, branch: 'staging' });
+        git({ cwd, args: ['checkout', '-q', '-b', 'feat/after-stale', 'staging'] });
+        commit({ cwd, file: 'after-stale.txt' });
+        push({ cwd, branch: 'feat/after-stale' });
+
+        // Act
+        checkoutPrMerge({ cwd, head: 'feat/after-stale', base: 'staging' });
+        const toStaging = runGuard({
+            cwd,
+            env: { GITHUB_BASE_REF: 'staging', GITHUB_HEAD_REF: 'feat/after-stale' }
+        });
+        checkoutPrMerge({ cwd, head: 'staging', base: 'main' });
+        const promotion = runGuard({
+            cwd,
+            env: { GITHUB_BASE_REF: 'main', GITHUB_HEAD_REF: 'staging' }
+        });
+
+        // Assert
+        expect(toStaging.exitCode).toBe(0);
+        expect(promotion.exitCode).toBe(0);
     });
 
     it('TEST:1818:6 AC:1:21 the exemption is per umbrella when its PR carries another umbrella commits', () => {

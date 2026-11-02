@@ -79,6 +79,7 @@
 #   UMBRELLA_BRANCHES space-separated list that replaces discovery; when unset,
 #                     every `epic/*` head on the remote is watched
 #   UMBRELLA_REMOTE   default: origin
+#   UMBRELLA_LS_RETRY_DELAY seconds between the 3 listing attempts; default 2
 #
 # Exit: 0 allowed, 1 forbidden target or the check could not be completed
 # (fails closed: a guard that cannot see the umbrella does not wave the PR
@@ -180,17 +181,37 @@ check_umbrella() {
 # `epic/*` head on the remote. Discovery fails closed: a remote that cannot be
 # listed is not the same as a remote with no umbrella.
 umbrellas=()
-if [ -n "${UMBRELLA_BRANCHES:-}" ]; then
+if [ -n "${UMBRELLA_BRANCHES+set}" ]; then
     read -r -a umbrellas <<<"${UMBRELLA_BRANCHES}"
-else
-    set +e
-    listing="$(git ls-remote --heads "${REMOTE}" "refs/heads/${UMBRELLA_PREFIX}*" 2>/dev/null)"
-    ls_status=$?
-    set -e
-    if [ "${ls_status}" -ne 0 ]; then
-        echo "FAIL: could not list '${UMBRELLA_PREFIX}*' umbrellas on '${REMOTE}' (git ls-remote exit ${ls_status})."
+    # An override that names nothing is an operator error, not "no umbrella":
+    # waving the PR through would disable the guard silently.
+    if [ "${#umbrellas[@]}" -eq 0 ]; then
+        echo "FAIL: UMBRELLA_BRANCHES is set but names no branch."
         exit 1
     fi
+else
+    # This now runs on every PR to staging/main, so a transient remote error
+    # gets two retries before the guard fails closed.
+    ls_status=1
+    ls_err=""
+    for attempt in 1 2 3; do
+        set +e
+        listing="$(git ls-remote --heads "${REMOTE}" "refs/heads/${UMBRELLA_PREFIX}*" 2>"${TMPDIR:-/tmp}/umbrella-ls-remote.$$")"
+        ls_status=$?
+        set -e
+        ls_err="$(cat "${TMPDIR:-/tmp}/umbrella-ls-remote.$$" 2>/dev/null || true)"
+        rm -f "${TMPDIR:-/tmp}/umbrella-ls-remote.$$"
+        [ "${ls_status}" -eq 0 ] && break
+        [ "${attempt}" -lt 3 ] && sleep "${UMBRELLA_LS_RETRY_DELAY:-2}"
+    done
+    if [ "${ls_status}" -ne 0 ]; then
+        echo "FAIL: could not list '${UMBRELLA_PREFIX}*' umbrellas on '${REMOTE}' (git ls-remote exit ${ls_status}, 3 attempts)."
+        [ -n "${ls_err}" ] && echo "  ${ls_err}"
+        exit 1
+    fi
+    # `ls-remote` tail-matches with `*` crossing `/`, so it can also return
+    # e.g. `refs/heads/refs/heads/epic/x`. Only exact `refs/heads/epic/...`
+    # heads are umbrellas.
     while read -r _sha ref; do
         case "${ref:-}" in
             "refs/heads/${UMBRELLA_PREFIX}"?*) umbrellas+=("${ref#refs/heads/}") ;;
