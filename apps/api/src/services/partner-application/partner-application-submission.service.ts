@@ -1,5 +1,6 @@
 import { getDb, partnerApplicationModel } from '@repo/db';
-import { ServiceError, ServiceErrorCode } from '@repo/service-core';
+import { ServiceErrorCode } from '@repo/schemas';
+import { ServiceError } from '@repo/service-core';
 import {
     classifyPartnerApplicationInsertError,
     PARTNER_APPLICATION_UNAVAILABLE
