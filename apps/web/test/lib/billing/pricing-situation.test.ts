@@ -1,6 +1,7 @@
-import type { PricingSituationResponse } from '@repo/schemas';
+import { type PricingSituationResponse, PublicationStatusEnum } from '@repo/schemas';
 import { describe, expect, it } from 'vitest';
 import {
+    hasBillingUnpublishedListing,
     PLAN_CHANGE_UNAVAILABLE_KEY,
     PRICING_PLAN_CHANGE_NOTICE,
     resolvePlanCardCta,
@@ -207,5 +208,69 @@ describe('TEST:1758:2 HOS-1967 pricing card trial offer', () => {
                 eligible
             );
         }
+    });
+});
+
+describe('HOS-1977 FIRST_USE republish CTA', () => {
+    const firstUse = { ok: true, data: { situation: 'FIRST_USE', trialDays: 30 } } as const;
+    const cta = (
+        owns: boolean,
+        vertical: 'accommodation' | 'venue' = 'accommodation',
+        situation: PricingSituationResponse = firstUse.data as PricingSituationResponse
+    ) =>
+        resolvePlanCardCta({
+            locale: 'es',
+            vertical,
+            plan,
+            result: { ok: true, data: situation },
+            ownsBillingUnpublishedListing: owns
+        });
+
+    it('leads FIRST_USE with a billing-unpublished listing to Mis propiedades', () => {
+        expect(cta(true)).toEqual({ kind: 'republish', href: '/es/mi-cuenta/propiedades/' });
+    });
+    it('keeps FIRST_USE without such a listing as no CTA', () => {
+        expect(cta(false).kind).toBe('none');
+    });
+    it('does not offer it outside the accommodation vertical', () => {
+        expect(cta(true, 'venue').kind).toBe('none');
+    });
+    it('ignores the flag in every other situation', () => {
+        expect(cta(true, 'accommodation', { situation: 'CHECKOUT' }).kind).toBe('checkout');
+        expect(cta(true, 'accommodation', { situation: 'COVERED' }).kind).toBe('none');
+    });
+
+    const notices = (statuses: readonly PublicationStatusEnum[]) =>
+        ({
+            ok: true,
+            data: {
+                trialRunning: false,
+                items: statuses.map((publicationStatus, i) => ({
+                    listingId: `l${i}`,
+                    publicationStatus,
+                    notices: [],
+                    recurringAddons: 0
+                }))
+            }
+        }) as never;
+    it('detects a billing-unpublished listing among the notices', () => {
+        expect(
+            hasBillingUnpublishedListing({
+                result: notices([
+                    PublicationStatusEnum.DRAFT,
+                    PublicationStatusEnum.UNPUBLISHED_BY_BILLING
+                ])
+            })
+        ).toBe(true);
+        expect(
+            hasBillingUnpublishedListing({ result: notices([PublicationStatusEnum.PUBLISHED]) })
+        ).toBe(false);
+    });
+    it('fails closed on a failed read', () => {
+        expect(
+            hasBillingUnpublishedListing({
+                result: { ok: false, error: { status: 500, code: 'X', message: 'x' } } as never
+            })
+        ).toBe(false);
     });
 });

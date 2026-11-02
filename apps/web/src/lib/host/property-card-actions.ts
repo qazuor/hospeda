@@ -13,6 +13,7 @@
  */
 
 import { PublicationStatusEnum } from '@repo/schemas';
+import type { PublishAffordance } from '@/lib/publish/subscribe-button';
 
 /** The actions (and the QR block) one card renders. */
 export interface PropertyCardActions {
@@ -22,6 +23,13 @@ export interface PropertyCardActions {
     readonly viewOnSite: boolean;
     /** The guided publish island (PB1). */
     readonly publish: boolean;
+    /**
+     * The "Publicar de nuevo" action (HOS-1977): a listing the system took
+     * down for billing goes back through the SAME publish endpoint. Whether it
+     * is actually offered also depends on the owner's affordance, see
+     * {@link resolveRepublishOffer}.
+     */
+    readonly republish: boolean;
     /** The unpublish island. */
     readonly unpublish: boolean;
     /** The delete island (PB12). */
@@ -42,6 +50,7 @@ const NO_ACTION: PropertyCardActions = {
     edit: false,
     viewOnSite: false,
     publish: false,
+    republish: false,
     unpublish: false,
     delete: false,
     qrBlock: false,
@@ -62,12 +71,13 @@ const ACTIONS_BY_STATUS: Readonly<Record<PublicationStatusEnum, PropertyCardActi
         edit: true,
         viewOnSite: true,
         publish: false,
+        republish: false,
         unpublish: true,
         delete: true,
         qrBlock: true,
         canPrintQrSheet: true
     },
-    [PublicationStatusEnum.UNPUBLISHED_BY_BILLING]: TAKEN_DOWN,
+    [PublicationStatusEnum.UNPUBLISHED_BY_BILLING]: { ...TAKEN_DOWN, republish: true },
     [PublicationStatusEnum.ARCHIVED]: TAKEN_DOWN,
     [PublicationStatusEnum.MODERATED]: TAKEN_DOWN,
     // Final state: the content is gone. Only the HOS-1492 row-20 notice remains.
@@ -79,8 +89,9 @@ const ACTIONS_BY_STATUS: Readonly<Record<PublicationStatusEnum, PropertyCardActi
  *
  * - `DRAFT`: edit, publish, delete.
  * - `PUBLISHED`: edit, view on site, unpublish, delete, printable QR.
- * - `UNPUBLISHED_BY_BILLING`, `ARCHIVED`, `MODERATED`: edit, delete (the
- *   HOS-1492 notices say what to do next).
+ * - `UNPUBLISHED_BY_BILLING`: edit, republish, delete (HOS-1977).
+ * - `ARCHIVED`, `MODERATED`: edit, delete (the HOS-1492 notices say what to
+ *   do next).
  * - `PURGED`: nothing at all.
  *
  * @param params.publicationStatus - The listing's publication state.
@@ -107,6 +118,48 @@ export function hasAnyPropertyCardAction({
     readonly actions: PropertyCardActions;
 }): boolean {
     return (
-        actions.edit || actions.viewOnSite || actions.publish || actions.unpublish || actions.delete
+        actions.edit ||
+        actions.viewOnSite ||
+        actions.publish ||
+        actions.republish ||
+        actions.unpublish ||
+        actions.delete
     );
+}
+
+/**
+ * Whether the "Publicar de nuevo" button renders, per the owner's publish
+ * affordance (HOS-1977). One exhaustive `Record` keyed by `kind`, never a
+ * comparison against a kind literal.
+ *
+ * - `publish`: not covered and the trial is unspent. The button republishes
+ *   through PB1, which starts the trial in the same transaction.
+ * - `checkout`: not covered and no trial left. The button renders and, being
+ *   the shared `PublishButton`, leads to the paid plans page of the vertical.
+ * - `covered`: the reconciler lifts the listing on its own and PB1 would answer
+ *   `COVERED_USE_PB3`, so offering a button would offer a refusal.
+ * - `noPlans` / `unknown`: the shared `PublishButton` renders its own notice
+ *   (no plans, check failed), so the card shows the same fail-closed states
+ *   it shows a draft.
+ *
+ * @param params.actions - The resolved card actions.
+ * @param params.affordance - What the server would do if the owner published.
+ * @returns `true` when the republish button renders.
+ */
+export function resolveRepublishOffer({
+    actions,
+    affordance
+}: {
+    readonly actions: PropertyCardActions;
+    readonly affordance: PublishAffordance;
+}): boolean {
+    if (!actions.republish) return false;
+    const byKind: Readonly<Record<PublishAffordance['kind'], boolean>> = {
+        publish: true,
+        checkout: true,
+        covered: false,
+        noPlans: true,
+        unknown: true
+    };
+    return byKind[affordance.kind];
 }

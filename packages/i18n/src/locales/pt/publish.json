@@ -6,6 +6,8 @@
         "checkoutMonthly": "Assinar com pagamento mensal",
         "checkoutAnnual": "Assinar com pagamento anual",
         "continuePayment": "Continuar o pagamento",
+        "republishFromProperties": "Publicar novamente em Meus imóveis",
+        "republishFromPropertiesHint": "Seu anúncio está despublicado. Publique de novo e comece seu teste grátis.",
         "currentPlan": "Seu plano atual em {{vertical}}",
         "touristVipInherited": "Seu plano já inclui Turista VIP: não é necessário comprá-lo."
     },

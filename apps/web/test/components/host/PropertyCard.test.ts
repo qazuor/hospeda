@@ -183,7 +183,8 @@ describe('PropertyCard.astro — actions per publication state (HOS-1641)', () =
         ['publish', '<PublishButton'],
         ['delete', '<DeleteButton']
     ])('gates the %s action on its own flag, inside the action row', (flag, element) => {
-        const gate = `{actions.${flag} && (`;
+        // HOS-1977: Publish and Republish share one island, gated by `showPublish`.
+        const gate = flag === 'publish' ? '{showPublish && (' : `{actions.${flag} && (`;
         const gateAt = actionsBlock.indexOf(gate);
         const elementAt = actionsBlock.indexOf(element);
 
