@@ -26,6 +26,10 @@ describe('venue type translations', () => {
                     locale.admin.types[type],
                     `${locale.name} admin venue.types.${type}`
                 ).toBeTruthy();
+                expect(
+                    locale.admin.typeDescriptions[type],
+                    `${locale.name} admin venue.typeDescriptions.${type}`
+                ).toBeTruthy();
             }
         }
     });
