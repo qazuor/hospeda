@@ -46,7 +46,7 @@ export type { CountAnchoredCustomersPort } from './plan-publication.types.js';
 export { zeroAnchoredCustomers } from './plan-publication.types.js';
 
 /** Rejects every caller without the super-admin write permission. */
-function requirePlanPublisher(actor: Actor): void {
+export function requirePlanPublisher(actor: Actor): void {
     if (!actor.permissions.includes(PermissionEnum.MAINTENANCE_MODE_WRITE)) {
         throw new ServiceError(
             ServiceErrorCode.FORBIDDEN,

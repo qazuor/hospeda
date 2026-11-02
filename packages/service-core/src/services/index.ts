@@ -288,6 +288,7 @@ export * from './partner/partner-mention.service';
 export * from './partner/partner-stats.service';
 export * from './permission/permission.effects';
 export * from './permission/permission.service';
+export * from './plan-catalog/plan-catalog.admin-reader.js';
 // HOS-1436 (V2.3, AC:V2:6/7): the action 18 — publish a plan version.
 export * from './plan-catalog/plan-publication.service.js';
 export * from './platformSettings/index.js';
