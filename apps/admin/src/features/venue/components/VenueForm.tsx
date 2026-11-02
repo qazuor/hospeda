@@ -307,7 +307,9 @@ export function VenueForm({
                                     </select>
                                     {field.state.value ? (
                                         <p className="text-muted-foreground text-sm">
-                                            {t(`venue.typeDescriptions.${field.state.value}`)}
+                                            {t(
+                                                `admin-entities.venue.typeDescriptions.${field.state.value}`
+                                            )}
                                         </p>
                                     ) : null}
                                 </FieldWrapper>
