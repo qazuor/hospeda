@@ -19,6 +19,7 @@ import {
     isServiceTestDbAvailable
 } from './helpers.js';
 import { paymentFixture, setNextChargeAt } from './support/payment-fixtures.js';
+import { translatePlanOf } from './support/translated-plan.js';
 
 afterAll(closeServiceTestPool);
 const beforeCancelNotice = { beforeCancel: async () => 'SENT' as const };
@@ -440,6 +441,49 @@ describe('TEST:B5:1 P1 payment credit', () => {
             expect(mail.filter((row) => row.template === 'billing.payment-credited')).toHaveLength(
                 0
             );
+        }
+    );
+});
+
+describe('HOS-1993 payment-credited names the plan by its display name', () => {
+    it.skipIf(!isServiceTestDbAvailable())(
+        'sends "Premium" for owner-premium, not the stored catalog name',
+        async () => {
+            const fixture = await paymentFixture();
+            const db = getServiceTestDb();
+            await translatePlanOf(db, fixture.started.subscriptionId, {
+                slug: 'owner-premium',
+                name: 'Premium plan (internal)'
+            });
+            try {
+                const [payment] = await db
+                    .insert(payments)
+                    .values({
+                        subscriptionId: fixture.started.subscriptionId,
+                        amount: 250000,
+                        currency: 'ARS',
+                        status: 'PENDING',
+                        provider: fixture.link.provider,
+                        providerFactId: `fact-${crypto.randomUUID()}`,
+                        factAt: fixture.clock.now()
+                    })
+                    .returning();
+                await creditPayment(
+                    { paymentId: payment!.id, chargeCreatedAt: fixture.clock.now() },
+                    { clock: fixture.clock }
+                );
+                const mail = await db
+                    .select()
+                    .from(emailOutbox)
+                    .where(eq(emailOutbox.recipientUserId, fixture.user.id));
+                const credited = mail.find((row) => row.template === 'billing.payment-credited');
+                expect(credited?.payload).toMatchObject({ planName: 'Premium' });
+            } finally {
+                await translatePlanOf(db, fixture.started.subscriptionId, {
+                    slug: `payment-${crypto.randomUUID()}`,
+                    name: 'Payment plan'
+                });
+            }
         }
     );
 });

@@ -10,6 +10,7 @@ import {
     readPromoEndingOutbox,
     seedPromoEndingCase
 } from './support/promo-ending-fixtures';
+import { translatePlanOf } from './support/translated-plan';
 
 afterAll(closeServiceTestPool);
 const clock = (day: string) => ({ now: () => promoEndingInstant(day) });
@@ -251,6 +252,34 @@ describe('TEST:B9b:5 AC:B9b:5 the promo ending notice is enqueued 7 days before 
             expect(summary).toMatchObject({ failed: 1, enqueued: 1 });
             expect(await readPromoEndingOutbox(tx, missing.subscriptionId)).toHaveLength(0);
             expect(await readPromoEndingOutbox(tx, valid.subscriptionId)).toHaveLength(1);
+        });
+    });
+});
+
+describe('HOS-1993 the promo ending notice names the plan by its display name', () => {
+    it('sends "Básico", not the stored catalog name', async () => {
+        await withServiceTestTransaction(async (tx) => {
+            await insertDeadlineVersion(tx, {
+                version: 801002,
+                createdAt: promoEndingInstant('2098-01-01'),
+                daysBefore: 7
+            });
+            const seeded = await seedPromoEndingCase(tx, {
+                nextChargeAt: promoEndingInstant('2099-06-09'),
+                redeemedAt: promoEndingInstant('2098-02-01'),
+                listAmountMinor: 100000
+            });
+            await translatePlanOf(tx, seeded.subscriptionId, {
+                slug: 'owner-basico',
+                name: 'Basic'
+            });
+            await applyPromoEndingNotice({
+                tx,
+                redemptionId: seeded.redemptionId,
+                now: promoEndingInstant('2099-06-02')
+            });
+            const [notice] = await readPromoEndingOutbox(tx, seeded.subscriptionId);
+            expect(notice?.payload).toMatchObject({ planName: 'Básico' });
         });
     });
 });
