@@ -85,7 +85,7 @@ export const CRON_SCHEDULES: ReadonlyArray<CronScheduleEntry> = [
         name: 'billing-reconciliation-sweep',
         displayName: 'Barrido de conciliación de cobros',
         category: 'billing',
-        schedule: '0 6 * * *',
+        schedule: '10 2 * * *',
         description:
             'Read owned billing inventory by provider id and open marks for divergences (HOS-1602, AC:B11:1).'
     },
@@ -93,7 +93,7 @@ export const CRON_SCHEDULES: ReadonlyArray<CronScheduleEntry> = [
         name: 'billing-creations-sweep',
         displayName: 'Barrido de creaciones de cobros',
         category: 'billing',
-        schedule: '*/5 * * * *',
+        schedule: '1-59/5 * * * *',
         description:
             'Recover unanswered subscription creations and cancel duplicates (HOS-1610, AC:B11:23).'
     },
@@ -125,7 +125,7 @@ export const CRON_SCHEDULES: ReadonlyArray<CronScheduleEntry> = [
         name: 'subscription-window-expiry',
         displayName: 'Vencimiento de ventanas de autorización',
         category: 'billing',
-        schedule: '*/15 * * * *',
+        schedule: '7-59/15 * * * *',
         description:
             'Expire subscription authorization windows after provider re-read and prior notice (HOS-1521, AC:B3:9-10).'
     },
@@ -133,7 +133,7 @@ export const CRON_SCHEDULES: ReadonlyArray<CronScheduleEntry> = [
         name: 'payment-window-expiry',
         displayName: 'Vencimiento de ventanas de cobro',
         category: 'billing',
-        schedule: '20 * * * *',
+        schedule: '23 * * * *',
         description:
             'Fail pending payments whose provider collection window closed without collection, re-read by id (HOS-1709, AC:B5:5).'
     },
@@ -141,7 +141,7 @@ export const CRON_SCHEDULES: ReadonlyArray<CronScheduleEntry> = [
         name: 'subscription-service-end',
         displayName: 'Fin de servicio de bajas programadas',
         category: 'billing',
-        schedule: '*/15 * * * *',
+        schedule: '12-59/15 * * * *',
         description:
             'Run S12 on scheduled cancellations whose end of service passed (HOS-1569, AC:B8a:5-6).'
     },

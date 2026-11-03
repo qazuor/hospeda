@@ -23,6 +23,16 @@ export interface FakeProviderServerOptions {
     readonly port?: number;
     readonly host?: string;
     readonly clockFile?: string;
+    readonly throttle?: FakeProviderThrottle;
+}
+
+/** Configures deterministic HTTP 429 responses from the fake provider server. */
+export interface FakeProviderThrottle {
+    readonly afterRequests?: number;
+    readonly everyNth?: number;
+    readonly paths?: readonly (string | RegExp)[];
+    readonly status: 429;
+    readonly retryAfter?: number | string;
 }
 
 export interface FakeProviderRequest {
@@ -42,6 +52,8 @@ export interface FakeProviderServer {
     advanceClock(args: { readonly ms: number }): Promise<void>;
     setClock(args: { readonly at: Date }): Promise<void>;
     requests(): readonly FakeProviderRequest[];
+    /** Replace or clear the deterministic response throttle. */
+    setThrottle(args: { readonly throttle: FakeProviderThrottle | undefined }): void;
     deliverDue(args: { readonly to: string }): Promise<{ readonly delivered: number }>;
     mercadoPagoDeliveries(args?: { readonly webhookSecret?: string }): MercadoPagoDeliveriesResult;
     deliverDueAsMercadoPago(args: {
@@ -105,8 +117,42 @@ export async function startFakeProviderServer(
     const initPoints = new Map<string, string>();
     const refundAmounts = new Map<string, number>();
     let provider = options.provider;
+    let throttle = options.throttle;
     const recordRequest = (args: Omit<FakeProviderRequest, 'at'>) => {
         requests.push({ ...args, at: options.clock.now().toISOString() });
+    };
+    const sendThrottleResponse = (path: string, response: ServerResponse): boolean => {
+        if (!throttle) return false;
+        const matches = (entryPath: string): boolean =>
+            !throttle?.paths?.length ||
+            throttle.paths.some((pattern) => {
+                if (typeof pattern === 'string') return entryPath.startsWith(pattern);
+                pattern.lastIndex = 0;
+                return pattern.test(entryPath);
+            });
+        if (!matches(path)) return false;
+        const matchingCount = requests.filter((entry) => matches(entry.path)).length;
+        const shouldThrottle =
+            throttle.afterRequests === undefined
+                ? throttle.everyNth === undefined
+                    ? true
+                    : matchingCount % throttle.everyNth === 0
+                : matchingCount > throttle.afterRequests;
+        if (!shouldThrottle) return false;
+        response.writeHead(throttle.status, {
+            'content-type': 'application/json; charset=utf-8',
+            ...(throttle.retryAfter === undefined
+                ? {}
+                : { 'Retry-After': String(throttle.retryAfter) })
+        });
+        response.end(
+            JSON.stringify({
+                message: 'Too Many Requests',
+                status: 429,
+                error: 'too_many_requests'
+            })
+        );
+        return true;
     };
 
     const server: Server = createServer(async (request, response) => {
@@ -125,6 +171,7 @@ export async function startFakeProviderServer(
                 body: null,
                 headers: { 'X-Idempotency-Key': undefined }
             });
+            if (sendThrottleResponse(path, response)) return;
             sendJson(response, 400, {
                 code: 4292,
                 message: "Header X-Idempotency-Key can't be null",
@@ -141,6 +188,7 @@ export async function startFakeProviderServer(
                 path: request.url ?? '/',
                 body: null
             });
+            if (sendThrottleResponse(path, response)) return;
             sendJson(response, 400, {
                 message: 'Invalid JSON',
                 status: 'INVALID_INPUT',
@@ -158,6 +206,7 @@ export async function startFakeProviderServer(
                     : request.headers['x-idempotency-key']
             }
         });
+        if (sendThrottleResponse(path, response)) return;
         if (!/^Bearer .+\S$/.test(request.headers.authorization ?? '')) {
             sendJson(response, 401, {
                 message: 'Authorization required',
@@ -358,6 +407,9 @@ export async function startFakeProviderServer(
         },
         requests() {
             return structuredClone(requests);
+        },
+        setThrottle(args) {
+            throttle = args.throttle;
         },
         async deliverDue(args) {
             const destination = new URL(args.to);

@@ -52,6 +52,8 @@ import {
     parseProviderInput,
     RefundInputSchema
 } from '../../provider/schemas';
+import { currentTrafficContext } from '../../provider/traffic-context';
+import { ProviderTrafficGovernor } from '../../provider/traffic-governor';
 import { MERCADOPAGO_CAPABILITY_SUPPORT } from './mercadopago-capability-support';
 import { readMercadoPagoCharge } from './mercadopago-charge-read';
 import { listMercadoPagoCharges } from './mercadopago-charges';
@@ -63,7 +65,11 @@ import {
 } from './mercadopago-mutations';
 import { decodeMercadoPagoNotice } from './mercadopago-notice';
 import { readMercadoPagoOrder, searchMercadoPagoOrders } from './mercadopago-orders';
-import { type MercadoPagoReadRetryPolicy, sendWithReadRetry } from './mercadopago-read-retry';
+import {
+    type MercadoPagoReadRetryPolicy,
+    parseRetryAfterMs,
+    sendWithReadRetry
+} from './mercadopago-read-retry';
 import { searchMercadoPagoAuthorizations } from './mercadopago-search';
 
 const MercadoPagoOptionsSchema = z.strictObject({
@@ -77,6 +83,9 @@ const MercadoPagoOptionsSchema = z.strictObject({
     readRetry: z.custom<MercadoPagoReadRetryPolicy>(isReadRetryPolicy).optional(),
     sleep: z
         .custom<(ms: number) => Promise<void>>((value) => typeof value === 'function')
+        .optional(),
+    governor: z
+        .custom<ProviderTrafficGovernor>((value) => value instanceof ProviderTrafficGovernor)
         .optional()
 });
 
@@ -141,6 +150,7 @@ export class MercadoPagoPaymentProvider implements PaymentProvider {
     private readonly request: typeof globalThis.fetch;
     private readonly readRetry: MercadoPagoReadRetryPolicy | undefined;
     private readonly sleep: (ms: number) => Promise<void>;
+    private readonly governor: ProviderTrafficGovernor | undefined;
 
     private async send(args: {
         readonly capability: PaymentCapability;
@@ -160,11 +170,27 @@ export class MercadoPagoPaymentProvider implements PaymentProvider {
             policy: this.readRetry,
             sleep: this.sleep,
             now: () => this.clock.now(),
-            attempt: async () => {
+            retryOwnership: this.governor?.mode === 'enforce' ? 'governor' : 'legacy',
+            trafficClass: currentTrafficContext()?.trafficClass ?? 'interactive',
+            attempt: async ({ maxWaitMs } = {}) => {
+                const trafficContext = currentTrafficContext();
+                const trafficClass = trafficContext?.trafficClass ?? 'interactive';
+                if (this.governor) {
+                    try {
+                        await this.governor.acquire({
+                            trafficClass,
+                            capability: args.capability,
+                            ...(maxWaitMs === undefined ? {} : { maxWaitMs }),
+                            unclassified: trafficContext === undefined
+                        });
+                    } catch (error) {
+                        if (this.isGovernorRejection(error)) throw error;
+                    }
+                }
                 const controller = new AbortController();
                 const timer = setTimeout(() => controller.abort(), this.timeoutMs);
                 try {
-                    return await this.request(`${this.baseUrl}${args.path}`, {
+                    const response = await this.request(`${this.baseUrl}${args.path}`, {
                         method: args.method,
                         headers: {
                             Authorization: `Bearer ${this.accessToken}`,
@@ -174,7 +200,30 @@ export class MercadoPagoPaymentProvider implements PaymentProvider {
                         ...(args.body ? { body: JSON.stringify(args.body) } : {}),
                         signal: controller.signal
                     });
+                    try {
+                        this.governor?.observe({
+                            trafficClass,
+                            capability: args.capability,
+                            status: response.status,
+                            retryAfterMs: parseRetryAfterMs({
+                                value: response.headers.get('Retry-After'),
+                                now: () => this.clock.now()
+                            })
+                        });
+                    } catch {
+                        // Observe bookkeeping never changes the provider response.
+                    }
+                    return response;
                 } catch (cause) {
+                    try {
+                        this.governor?.observe({
+                            trafficClass,
+                            capability: args.capability,
+                            networkError: true
+                        });
+                    } catch {
+                        // Observe bookkeeping never changes the provider error.
+                    }
                     throw new PaymentProviderError({
                         code: 'UNAVAILABLE',
                         capability: args.capability,
@@ -189,6 +238,11 @@ export class MercadoPagoPaymentProvider implements PaymentProvider {
         });
     }
 
+    /** Identify a rejection raised by governor admission, independent of mode naming. */
+    private isGovernorRejection(error: unknown): boolean {
+        return error instanceof PaymentProviderError && error.governorRejected === true;
+    }
+
     /**
      * @param options.clock - The injected clock (AC:B1:17)
      */
@@ -200,6 +254,8 @@ export class MercadoPagoPaymentProvider implements PaymentProvider {
         readonly fetch?: typeof globalThis.fetch;
         readonly readRetry?: MercadoPagoReadRetryPolicy;
         readonly sleep?: (ms: number) => Promise<void>;
+        /** Optional request governor; omit it for legacy/off behavior. */
+        readonly governor?: ProviderTrafficGovernor;
     }) {
         const parsed = MercadoPagoOptionsSchema.parse(options);
         this.clock = PaymentProviderOptionsSchema.parse({ clock: parsed.clock }).clock;
@@ -210,6 +266,7 @@ export class MercadoPagoPaymentProvider implements PaymentProvider {
         this.readRetry = parsed.readRetry;
         this.sleep =
             parsed.sleep ?? ((ms) => new Promise<void>((resolve) => setTimeout(resolve, ms)));
+        this.governor = parsed.governor;
     }
 
     /** Capability 1 · authorize. */

@@ -29,21 +29,29 @@ async function main(): Promise<void> {
     let processComposition: ReturnType<typeof composeStep3bProcess> | undefined;
     try {
         initializeDb(pool);
-        const [{ composeStep3bProcess, resolveCutoverOperatorActor }, { runStep3b }] =
-            await Promise.all([
-                import('../src/services/cutover-b9a/step-3b.compose.js'),
-                import('../src/services/cutover-b9a/step-3b.service.js')
-            ]);
-        processComposition = composeStep3bProcess();
-        const actor = await resolveCutoverOperatorActor({ userId: parsed.value.actorUserId });
-        const result = await runStep3b({
-            actor,
-            beneficiaryUserIds: parsed.value.beneficiaryUserIds,
-            planId: parsed.value.planId,
-            floorPlanVersionId: parsed.value.floorPlanVersionId,
-            includesAddons: parsed.value.includesAddons,
-            dryRun: parsed.value.dryRun,
-            ports: processComposition.ports
+        const [
+            { composeStep3bProcess, resolveCutoverOperatorActor, runStep3bAsBackgroundTraffic },
+            { runStep3b }
+        ] = await Promise.all([
+            import('../src/services/cutover-b9a/step-3b.compose.js'),
+            import('../src/services/cutover-b9a/step-3b.service.js')
+        ]);
+        const composition = composeStep3bProcess();
+        processComposition = composition;
+        // HOS-1999 (AC-33): the operator's Mercado Pago calls are background traffic.
+        const result = await runStep3bAsBackgroundTraffic({
+            fn: async () =>
+                runStep3b({
+                    actor: await resolveCutoverOperatorActor({
+                        userId: parsed.value.actorUserId
+                    }),
+                    beneficiaryUserIds: parsed.value.beneficiaryUserIds,
+                    planId: parsed.value.planId,
+                    floorPlanVersionId: parsed.value.floorPlanVersionId,
+                    includesAddons: parsed.value.includesAddons,
+                    dryRun: parsed.value.dryRun,
+                    ports: composition.ports
+                })
         });
         console.info(JSON.stringify(result));
         process.exitCode = result.status === 'failed' ? 1 : 0;

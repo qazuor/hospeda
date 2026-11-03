@@ -1,8 +1,9 @@
 import { randomUUID } from 'node:crypto';
-import { and, asc, desc, eq, gt, isNull, or, sql } from 'drizzle-orm';
+import { and, asc, desc, eq, gt, inArray, isNull, or, sql } from 'drizzle-orm';
 import { getDb } from '../../client.ts';
 import { users } from '../../schemas/user/user.dbschema.ts';
 import { billingOptions } from '../../schemas/vertical/billing-option.dbschema.ts';
+import { creationSweepAttempts } from '../../schemas/vertical/creation-sweep-attempt.dbschema.ts';
 import {
     idempotencyKeys,
     type SelectIdempotencyKey
@@ -56,6 +57,45 @@ export interface CompleteNewestCreateKeyInput {
 
 /** Read model and narrow key writer used by the creation sweep. */
 export class CreationSweepModel {
+    /** Read persisted search cadence rows for a bounded group of subscriptions. */
+    async listAttempts(input: {
+        readonly subscriptionIds: readonly string[];
+        readonly tx?: DrizzleClient;
+    }): Promise<ReadonlyArray<typeof creationSweepAttempts.$inferSelect>> {
+        if (input.subscriptionIds.length === 0) return [];
+        return (input.tx ?? getDb())
+            .select()
+            .from(creationSweepAttempts)
+            .where(inArray(creationSweepAttempts.subscriptionId, [...input.subscriptionIds]));
+    }
+
+    /** Persist the next search time after a successful provider search. */
+    async upsertAttempt(input: {
+        readonly subscriptionId: string;
+        readonly attempts: number;
+        readonly nextSearchAt: Date;
+        readonly resetMarker: string | null;
+        readonly tx?: DrizzleClient;
+    }): Promise<void> {
+        const db = input.tx ?? getDb();
+        await db
+            .insert(creationSweepAttempts)
+            .values({
+                subscriptionId: input.subscriptionId,
+                attempts: input.attempts,
+                nextSearchAt: input.nextSearchAt,
+                resetMarker: input.resetMarker
+            })
+            .onConflictDoUpdate({
+                target: creationSweepAttempts.subscriptionId,
+                set: {
+                    attempts: input.attempts,
+                    nextSearchAt: input.nextSearchAt,
+                    resetMarker: input.resetMarker
+                }
+            });
+    }
+
     /**
      * Lists pending PRINCIPAL/CARD rows whose authorization window is still open.
      * Linked rows remain candidates because duplicate creations can arrive while

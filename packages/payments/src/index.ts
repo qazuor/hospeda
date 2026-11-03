@@ -111,6 +111,7 @@ export {
     type ProviderReadRejectedErrorInput,
     type ProviderReadRejection
 } from './provider/provider-read';
+export { runWithProviderReadScope, shareProviderReadForAct } from './provider/provider-read-scope';
 export {
     AuthorizationRefSchema,
     AuthorizationSearchInputSchema,
@@ -126,3 +127,28 @@ export {
     parseProviderInput,
     RefundInputSchema
 } from './provider/schemas';
+export {
+    currentTrafficContext,
+    runWithTrafficClass,
+    type TrafficClass,
+    type TrafficContext,
+    type TrafficCounterSink
+} from './provider/traffic-context';
+// HOS-1999 provider traffic governor API (appended to keep composition changes conflict-light).
+export {
+    type CoolDownStore,
+    GOVERNOR_BASE_BACKOFF_MS,
+    GOVERNOR_BURST,
+    GOVERNOR_INTERACTIVE_MAX_WAIT_MS,
+    GOVERNOR_INTERACTIVE_RESERVE,
+    GOVERNOR_MAX_BACKOFF_COOLDOWN_MS,
+    GOVERNOR_MAX_RETRY_AFTER_COOLDOWN_MS,
+    GOVERNOR_MAX_WAIT_SAMPLES,
+    GOVERNOR_RATE_PER_SECOND,
+    GOVERNOR_WINDOW_MS,
+    type GovernorMode,
+    type InteractiveRateLimitedInfo,
+    ProviderTrafficGovernor,
+    type TrafficCounter,
+    type TrafficWindow
+} from './provider/traffic-governor';

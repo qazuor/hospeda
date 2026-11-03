@@ -33,6 +33,7 @@ import { buildBillingCoveragePorts } from '../../utils/listing-access/billing-co
 import { createBootstrapCoverageReader } from '../../utils/listing-access/bootstrap-coverage-reader.js';
 import { getCoverageNotices } from '../../utils/listing-access/coverage-notices.js';
 import { createApiListingInverse } from '../../utils/listing-publication/listing-inverse.js';
+import { isMercadoPagoGovernorEnforcing } from '../../utils/mp-traffic-governor.js';
 import { getPaymentProvider } from '../../utils/payment-provider.js';
 import type { CronJobDefinition } from '../types.js';
 
@@ -41,9 +42,11 @@ export const billingReconciliationSweepJob: CronJobDefinition = {
     name: 'billing-reconciliation-sweep',
     description:
         'Read owned billing inventory by provider id and open marks for divergences (HOS-1602, AC:B11:1)',
-    schedule: '0 6 * * *',
+    schedule: '10 2 * * *',
+    exclusive: true,
+    budgetMs: 2_700_000,
     enabled: true,
-    timeoutMs: 600_000,
+    timeoutMs: 3_000_000,
 
     handler: async (ctx) => {
         const { logger, startedAt, dryRun } = ctx;
@@ -62,7 +65,8 @@ export const billingReconciliationSweepJob: CronJobDefinition = {
             // HOS-1737 gives this sweep run its own paced provider instance.
             const provider = createSweepPacedProvider({
                 provider: getPaymentProvider(),
-                pacing: RECONCILIATION_SWEEP_PROVIDER_PACING
+                pacing: RECONCILIATION_SWEEP_PROVIDER_PACING,
+                retryOwnership: isMercadoPagoGovernorEnforcing() ? 'governor' : 'legacy'
             });
             const clock = getClock().clock;
             const { planPolicy } = createPlanCatalogInverse({ reader: planCatalogModel });
@@ -71,7 +75,7 @@ export const billingReconciliationSweepJob: CronJobDefinition = {
             }).ports;
             const complements = buildComplementPolicyPorts();
             const summary = await runReconciliationSweep(
-                { correlationId: ctx.correlationId },
+                { correlationId: ctx.correlationId, signal: ctx.signal },
                 {
                     provider,
                     clock,
@@ -207,7 +211,22 @@ export const billingReconciliationSweepJob: CronJobDefinition = {
                     { capture: summary.rowsFailed > 0 || zeroCallFailures.length > 0 }
                 );
             }
+            // HOS-1999 (M2 mitigation): until PR-5's cursor resumes a stopped sweep,
+            // a stop on the budget must not be silent. Name every pass it skipped.
+            if (summary.stoppedOnBudget) {
+                logger.error(
+                    'Billing reconciliation sweep stopped on its budget',
+                    {
+                        runId: summary.runId,
+                        rowsRead: summary.rowsRead,
+                        skippedPasses: summary.skippedPasses
+                    },
+                    { capture: true }
+                );
+            }
             return {
+                // AC-16: stopping on the budget is not itself a failure, but it
+                // never turns a run with failed rows green.
                 success: summary.rowsFailed === 0 && cancelCallFailed === 0,
                 message: `Processed ${summary.rowsRead} billing subscriptions`,
                 processed: summary.rowsRead,
@@ -215,6 +234,7 @@ export const billingReconciliationSweepJob: CronJobDefinition = {
                 durationMs: Date.now() - startedAt.getTime(),
                 details: {
                     ...details,
+                    stoppedOnBudget: summary.stoppedOnBudget,
                     failedSubscriptionIds: failures.map(({ subscriptionId }) => subscriptionId),
                     ...(summary.zeroCallChecks
                         ? {

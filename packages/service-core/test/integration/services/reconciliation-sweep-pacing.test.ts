@@ -1,4 +1,13 @@
-import { PaymentProviderError } from '@repo/payments';
+import {
+    MercadoPagoPaymentProvider,
+    PaymentProviderError,
+    ProviderTrafficGovernor
+} from '@repo/payments';
+import { FakePaymentProvider } from '@repo/payments/fake';
+import {
+    type AdjustableFakeServerClock,
+    startFakeProviderServer
+} from '@repo/payments/fake-server';
 import { afterAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { runReconciliationSweep } from '../../../src/services/billing/reconciliation/sweep/reconciliation-sweep.service.js';
 import {
@@ -17,7 +26,70 @@ import {
 afterAll(closeServiceTestPool);
 beforeEach(resetSeededReconciliationInventory);
 
+function testClock(): AdjustableFakeServerClock {
+    let instant = new Date('2026-10-01T03:00:00.000Z');
+    return {
+        now: () => new Date(instant),
+        advance: ({ ms }) => {
+            instant = new Date(instant.getTime() + ms);
+        },
+        set: ({ at }) => {
+            instant = new Date(at);
+        }
+    };
+}
+
 describe('HOS-1737 reconciliation sweep provider pacing', () => {
+    it('AC-5 keeps 429 HTTP attempts at three under enforce and pins legacy multiplication', async () => {
+        for (const retryOwnership of ['governor', 'legacy'] as const) {
+            const clock = testClock();
+            const fake = new FakePaymentProvider({ clock });
+            const authorization = await fake.authorize({
+                reference: 'retry-multiplication',
+                amount: { amountMinor: 1500, currency: 'ARS' },
+                cadence: { everyMonths: 1 },
+                reason: 'retry test',
+                returnUrl: 'https://example.test/return'
+            });
+            await fake.approve({ authorizationId: authorization.authorizationId });
+            const charge = await fake.charge({
+                authorizationId: authorization.authorizationId,
+                amount: { amountMinor: 1500, currency: 'ARS' },
+                reference: 'retry-multiplication'
+            });
+            const server = await startFakeProviderServer({ provider: fake, clock });
+            const governor =
+                retryOwnership === 'governor'
+                    ? new ProviderTrafficGovernor({ mode: 'enforce', random: () => 0 })
+                    : undefined;
+            server.setThrottle({ throttle: { status: 429, retryAfter: 0 } });
+            try {
+                const adapter = new MercadoPagoPaymentProvider({
+                    clock,
+                    baseUrl: server.url,
+                    accessToken: 'test-token',
+                    sleep: async () => {},
+                    ...(governor ? { governor } : {})
+                });
+                const paced = createSweepPacedProvider({
+                    provider: adapter,
+                    pacing: RECONCILIATION_SWEEP_PROVIDER_PACING,
+                    sleep: async () => {},
+                    retryOwnership
+                });
+                await expect(paced.readCharge({ chargeId: charge.chargeId })).rejects.toMatchObject(
+                    {
+                        transient: { kind: 'RATE_LIMITED' }
+                    }
+                );
+                expect(server.requests()).toHaveLength(retryOwnership === 'governor' ? 3 : 15);
+            } finally {
+                governor?.stop();
+                await server.close();
+            }
+        }
+    });
+
     it('TEST:1737:10 completes after a 429 burst with the sweep budget', async () => {
         const { fake } = createReconciliationFake();
         const row = await seedSubscription({ status: 'ACTIVE', withLink: true, fake });

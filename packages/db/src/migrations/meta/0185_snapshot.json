@@ -1,5 +1,5 @@
 {
-  "id": "a551dc0e-d6d2-469f-81a4-824f8cf556b7",
+  "id": "50c899d2-4c95-474d-88a1-59f455fca432",
   "prevId": "d98cf60b-d632-4a45-8eb6-5cca5c220136",
   "version": "7",
   "dialect": "postgresql",
@@ -26857,6 +26857,63 @@
       "checkConstraints": {},
       "isRLSEnabled": false
     },
+    "public.creation_sweep_attempt": {
+      "name": "creation_sweep_attempt",
+      "schema": "",
+      "columns": {
+        "subscription_id": {
+          "name": "subscription_id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "attempts": {
+          "name": "attempts",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 0
+        },
+        "next_search_at": {
+          "name": "next_search_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "reset_marker": {
+          "name": "reset_marker",
+          "type": "varchar(255)",
+          "primaryKey": false,
+          "notNull": false
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "creation_sweep_attempt_subscription_id_subscription_id_fk": {
+          "name": "creation_sweep_attempt_subscription_id_subscription_id_fk",
+          "tableFrom": "creation_sweep_attempt",
+          "tableTo": "subscription",
+          "columnsFrom": [
+            "subscription_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {
+        "ck_creation_sweep_attempts_nonnegative": {
+          "name": "ck_creation_sweep_attempts_nonnegative",
+          "value": "\"creation_sweep_attempt\".\"attempts\" >= 0"
+        }
+      },
+      "isRLSEnabled": false
+    },
     "public.addon_version_entitlement": {
       "name": "addon_version_entitlement",
       "schema": "",
@@ -33545,9 +33602,7 @@
         "HELADERIA",
         "PANADERIA",
         "ROTISERIA",
-        "FOOD_TRUCK",
-        "PUB",
-        "BOLICHE"
+        "FOOD_TRUCK"
       ]
     },
     "public.visibility_enum": {
