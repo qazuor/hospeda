@@ -28,6 +28,21 @@ afterAll(closeServiceTestPool);
 beforeEach(resetSeededReconciliationInventory);
 
 describe('TEST:B11:23 creations sweep over the fake', () => {
+    it('shares one provider search across due rows with the same payer email', async () => {
+        const time = createAdjustableClock({ start: new Date(Date.now() + 10 * 60_000) });
+        const { fake } = createReconciliationFake(time);
+        await seedPendingCreation({ declaredPayerEmail: 'shared@example.test' });
+        await seedPendingCreation({ declaredPayerEmail: 'shared@example.test' });
+        const search = vi.spyOn(fake, 'searchAuthorizations');
+        await withSeededPendingCreations(() =>
+            runCreationsSweep(
+                {},
+                { provider: fake, clock: time, returnUrl: 'https://example.test', random: () => 0 }
+            )
+        );
+        expect(search).toHaveBeenCalledExactlyOnceWith({ payerEmail: 'shared@example.test' });
+    });
+
     it('stops before searching the next creation row when its budget signal aborts', async () => {
         const time = createAdjustableClock({ start: new Date(Date.now() + 6 * 60_000) });
         const { fake } = createReconciliationFake(time);
@@ -45,7 +60,7 @@ describe('TEST:B11:23 creations sweep over the fake', () => {
         const summary = await withSeededPendingCreations(() =>
             runCreationsSweep(
                 { signal: controller.signal },
-                { provider: fake, clock: time, returnUrl: 'https://example.test' }
+                { provider: fake, clock: time, returnUrl: 'https://example.test', random: () => 0 }
             )
         );
         expect(summary).toMatchObject({ rowsExamined: 1, stoppedOnBudget: true });
@@ -68,7 +83,7 @@ describe('TEST:B11:23 creations sweep over the fake', () => {
         const summary = await withSeededPendingCreations(() =>
             runCreationsSweep(
                 {},
-                { provider: fake, clock: time, returnUrl: 'https://example.test' }
+                { provider: fake, clock: time, returnUrl: 'https://example.test', random: () => 0 }
             )
         );
         expect(search).toHaveBeenCalledWith({ payerEmail: 'declared@example.test' });
@@ -97,7 +112,7 @@ describe('TEST:B11:23 creations sweep over the fake', () => {
         await withSeededPendingCreations(() =>
             runCreationsSweep(
                 {},
-                { provider: fake, clock: time, returnUrl: 'https://example.test' }
+                { provider: fake, clock: time, returnUrl: 'https://example.test', random: () => 0 }
             )
         );
         expect(search).toHaveBeenCalledWith({ payerEmail: 'declared@example.test' });
@@ -182,16 +197,17 @@ describe('TEST:B11:23 creations sweep over the fake', () => {
         await withSeededPendingCreations(() =>
             runCreationsSweep(
                 {},
-                { provider: fake, clock: time, returnUrl: 'https://example.test' }
+                { provider: fake, clock: time, returnUrl: 'https://example.test', random: () => 0 }
             )
         );
         const late = await fake.authorize({ ...input, reason: 'late' });
+        time.advance({ ms: 15 * 60_000 + 1 });
         const cancel = vi.spyOn(fake, 'cancel');
         const search = vi.spyOn(fake, 'searchAuthorizations');
         await withSeededPendingCreations(() =>
             runCreationsSweep(
                 {},
-                { provider: fake, clock: time, returnUrl: 'https://example.test' }
+                { provider: fake, clock: time, returnUrl: 'https://example.test', random: () => 0 }
             )
         );
         expect(cancel).toHaveBeenCalledExactlyOnceWith({ authorizationId: late.authorizationId });
@@ -205,10 +221,11 @@ describe('TEST:B11:23 creations sweep over the fake', () => {
                 }
             ]
         });
+        time.advance({ ms: 60 * 60_000 + 1 });
         const repeated = await withSeededPendingCreations(() =>
             runCreationsSweep(
                 {},
-                { provider: fake, clock: time, returnUrl: 'https://example.test' }
+                { provider: fake, clock: time, returnUrl: 'https://example.test', random: () => 0 }
             )
         );
         expect(repeated.alreadyCancelled).toBe(1);

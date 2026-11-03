@@ -18,6 +18,8 @@ import { authorizePendingSubscription } from '../../subscription/start-subscript
 
 export const CREATION_GRACE_MS = 5 * 60_000;
 export const CREATION_RECREATE_AFTER_MS = 15 * 60_000;
+const CREATION_FIRST_SEARCH_MS = 15 * 60_000;
+const CREATION_REPEAT_SEARCH_MS = 60 * 60_000;
 // The provider identity matches start-subscription.service.ts and handle-unknown-authorization.service.ts.
 const PROVIDER = 'MERCADO_PAGO' as const;
 const logger = createLogger('billing-creations-sweep');
@@ -32,6 +34,7 @@ export interface CreationsSweepSummary {
     readonly alreadyCancelled: number;
     readonly recreated: number;
     readonly skippedTooFresh: number;
+    readonly skippedNotDue: number;
     readonly skippedNoEmail: number;
     readonly skippedLiveElsewhere: number;
     readonly skippedRaced: number;
@@ -43,7 +46,7 @@ export interface CreationsSweepSummary {
 
 export async function runCreationsSweep(
     input: { pageSize?: number; correlationId?: string; signal?: AbortSignal } = {},
-    ports: { provider: PaymentProvider; clock: Clock; returnUrl: string }
+    ports: { provider: PaymentProvider; clock: Clock; returnUrl: string; random?: () => number }
 ): Promise<CreationsSweepSummary> {
     const pageSize = input.pageSize ?? 100;
     const startedAt = ports.clock.now();
@@ -55,18 +58,27 @@ export async function runCreationsSweep(
         alreadyCancelled = 0,
         recreated = 0;
     let skippedTooFresh = 0,
+        skippedNotDue = 0,
         skippedNoEmail = 0,
         skippedLiveElsewhere = 0,
         skippedRaced = 0,
         rowsFailed = 0;
     let afterSubscriptionId: string | undefined;
     let stoppedOnBudget = false;
+    const searchesByEmail = new Map<
+        string,
+        Promise<Awaited<ReturnType<PaymentProvider['searchAuthorizations']>>>
+    >();
     for (;;) {
         const page = await creationSweepModel.listPendingCreationPage({
             now: ports.clock.now(),
             afterSubscriptionId,
             limit: pageSize
         });
+        const attempts = await creationSweepModel.listAttempts({
+            subscriptionIds: page.map((row) => row.subscription.id)
+        });
+        const attemptsById = new Map(attempts.map((attempt) => [attempt.subscriptionId, attempt]));
         for (const row of page) {
             if (input.signal?.aborted) {
                 stoppedOnBudget = true;
@@ -112,8 +124,33 @@ export async function runCreationsSweep(
                     skippedTooFresh++;
                     continue;
                 }
-                // The provider search intentionally uses only payerEmail; its result is classified locally.
-                const found = await ports.provider.searchAuthorizations({ payerEmail });
+                const previous = attemptsById.get(subscription.id);
+                const resetMarker = newestCreateKey?.key ?? null;
+                if (
+                    previous &&
+                    previous.resetMarker === resetMarker &&
+                    previous.nextSearchAt > rowStartedAt
+                ) {
+                    skippedNotDue++;
+                    continue;
+                }
+                // Searches are shared across rows with the same payer email for this run.
+                let search = searchesByEmail.get(payerEmail);
+                if (!search) {
+                    search = ports.provider.searchAuthorizations({ payerEmail });
+                    searchesByEmail.set(payerEmail, search);
+                }
+                const found = await search;
+                const count = previous?.resetMarker === resetMarker ? previous.attempts : 0;
+                const step = count === 0 ? CREATION_FIRST_SEARCH_MS : CREATION_REPEAT_SEARCH_MS;
+                const jitter =
+                    Math.max(0, Math.min(1, (ports.random ?? Math.random)())) * step * 0.1;
+                await creationSweepModel.upsertAttempt({
+                    subscriptionId: subscription.id,
+                    attempts: count + 1,
+                    nextSearchAt: new Date(ports.clock.now().getTime() + step + jitter),
+                    resetMarker
+                });
                 const named = found.authorizations.filter(
                     (candidate) => candidate.reference === subscription.id
                 );
@@ -232,6 +269,7 @@ export async function runCreationsSweep(
         alreadyCancelled,
         recreated,
         skippedTooFresh,
+        skippedNotDue,
         skippedNoEmail,
         skippedLiveElsewhere,
         skippedRaced,
