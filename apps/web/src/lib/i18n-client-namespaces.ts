@@ -76,8 +76,6 @@ export const CLIENT_I18N_KEY_PREFIXES = [
     'account.favorites',
     'account.myContent',
     'account.nav',
-    // Partner claim copy is read in the browser after consuming the link fragment.
-    'partners.claim',
     'account.newsletter',
     'account.pages',
     // HOS-278 D3 — named by `PartnerEditForm.client.tsx`, the partner
@@ -311,6 +309,8 @@ export const CLIENT_I18N_KEY_PREFIXES = [
     'newsletter.error',
     'newsletter.errorMessage',
     'newsletter.errorPage',
+    // Partner claim copy is read in the browser after consuming the link fragment.
+    'partners.claim',
     'review.carousel',
     'review.destinationSidebar',
     'review.dialog',
