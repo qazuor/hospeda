@@ -43,6 +43,30 @@ export interface FindReconciliationSweepRunInput {
     readonly tx?: DrizzleClient;
 }
 
+/** Thrown by `openSlice` when another slice is already open (unique index, one open at a time). */
+export class ReconciliationSweepSliceAlreadyOpenError extends Error {
+    constructor() {
+        super('A reconciliation sweep slice is already open');
+        this.name = 'ReconciliationSweepSliceAlreadyOpenError';
+    }
+}
+
+function isOneOpenSliceViolation(error: unknown): boolean {
+    const seen = new Set<unknown>();
+    let current = error;
+    while (current && typeof current === 'object' && !seen.has(current)) {
+        seen.add(current);
+        const candidate = current as { code?: string; constraint?: string; cause?: unknown };
+        if (
+            candidate.code === '23505' &&
+            candidate.constraint === 'uq_reconciliation_sweep_run_one_open'
+        )
+            return true;
+        current = candidate.cause;
+    }
+    return false;
+}
+
 /** Input for opening a cycle's first or next slice. */
 export interface OpenReconciliationSweepSliceInput {
     readonly correlationId: string;
@@ -132,24 +156,31 @@ export class ReconciliationSweepRunModel {
             : [];
         const prior = previous[0];
         const cycleId = prior?.cycleId ?? id;
-        const [row] = await db
-            .insert(reconciliationSweepRuns)
-            .values({
-                id,
-                correlationId: input.correlationId,
-                startedAt: sql`now()`,
-                cycleId,
-                cycleDate:
-                    prior?.cycleDate ??
-                    sql`(now() AT TIME ZONE 'America/Argentina/Buenos_Aires')::date`,
-                cycleStartedAt: prior?.cycleStartedAt ?? sql`now()`,
-                sliceIndex: prior ? (prior.sliceIndex ?? 0) + 1 : 0,
-                phase: 'ROWS',
-                rowsComplete: false,
-                passesCompleted: prior?.passesCompleted ?? [],
-                leaseUntil: sql`now() + (${input.ttlMs ?? 300_000} * interval '1 millisecond')`
-            })
-            .returning();
+        let row: SelectReconciliationSweepRun | undefined;
+        try {
+            [row] = await db
+                .insert(reconciliationSweepRuns)
+                .values({
+                    id,
+                    correlationId: input.correlationId,
+                    startedAt: sql`now()`,
+                    cycleId,
+                    cycleDate:
+                        prior?.cycleDate ??
+                        sql`(now() AT TIME ZONE 'America/Argentina/Buenos_Aires')::date`,
+                    cycleStartedAt: prior?.cycleStartedAt ?? sql`now()`,
+                    sliceIndex: prior ? (prior.sliceIndex ?? 0) + 1 : 0,
+                    phase: 'ROWS',
+                    rowsComplete: false,
+                    passesCompleted: prior?.passesCompleted ?? [],
+                    leaseUntil: sql`now() + (${input.ttlMs ?? 300_000} * interval '1 millisecond')`
+                })
+                .returning();
+        } catch (error) {
+            if (isOneOpenSliceViolation(error))
+                throw new ReconciliationSweepSliceAlreadyOpenError();
+            throw error;
+        }
         if (!row) throw new Error('Reconciliation sweep slice insert returned no row');
         return row;
     }
@@ -230,6 +261,53 @@ export class ReconciliationSweepRunModel {
         return { cycleId, slices };
     }
 
+    /**
+     * Reads one run's liveness from the database clock. This is the helper other jobs
+     * (HOS-1955) use instead of a max age derived from `timeoutMs`: `live` means the lease is
+     * still in the future, `abandoned` means the run is open but its lease expired, `closed`
+     * means it has an outcome, `missing` means no such run.
+     */
+    async getRunLiveness(input: {
+        readonly id: string;
+        readonly tx?: DrizzleClient;
+    }): Promise<'live' | 'abandoned' | 'closed' | 'missing'> {
+        const db = input.tx ?? getDb();
+        const [row] = await db
+            .select({
+                outcome: reconciliationSweepRuns.outcome,
+                leaseLive: sql<boolean>`COALESCE(${reconciliationSweepRuns.leaseUntil} > now(), false)`
+            })
+            .from(reconciliationSweepRuns)
+            .where(eq(reconciliationSweepRuns.id, input.id))
+            .limit(1);
+        if (!row) return 'missing';
+        if (row.outcome !== null) return 'closed';
+        return row.leaseLive ? 'live' : 'abandoned';
+    }
+
+    /**
+     * Records what a slice did when another slice closed it (ABANDONED) underneath it. The
+     * lease-guarded writers refuse a closed run, so this one is deliberately unguarded and only
+     * touches the progress fields; the outcome stays the closer's.
+     */
+    async recordLostSliceProgress(input: {
+        readonly id: string;
+        readonly rowsRead: number;
+        readonly rowsFailed: number;
+        readonly failedSubscriptionIds: readonly string[];
+        readonly tx?: DrizzleClient;
+    }): Promise<void> {
+        const db = input.tx ?? getDb();
+        await db
+            .update(reconciliationSweepRuns)
+            .set({
+                rowsRead: input.rowsRead,
+                rowsFailed: input.rowsFailed,
+                failedSubscriptionIds: [...input.failedSubscriptionIds]
+            })
+            .where(eq(reconciliationSweepRuns.id, input.id));
+    }
+
     /** Stamps one completed row only after extending its still-open slice lease atomically. */
     async stampSweptRow(input: {
         readonly runId: string;
@@ -239,6 +317,7 @@ export class ReconciliationSweepRunModel {
     }): Promise<{ readonly stamped: boolean }> {
         const db = input.tx ?? getDb();
         return db.transaction(async (transaction) => {
+            // DRIZZLE-LIMITATION: the transaction handle is structurally a DrizzleClient but its generic differs.
             const tx = transaction as unknown as DrizzleClient;
             const extended = await extendRunLease({
                 lease: runLease,

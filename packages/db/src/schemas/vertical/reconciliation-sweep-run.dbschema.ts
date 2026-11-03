@@ -54,7 +54,12 @@ export const reconciliationSweepRuns = pgTable(
             .where(sql`${t.cycleId} IS NOT NULL`),
         openRunsIndex: index('idx_reconciliation_sweep_run_open')
             .on(t.leaseUntil)
-            .where(sql`${t.outcome} IS NULL`)
+            .where(sql`${t.outcome} IS NULL`),
+        // At most ONE open cycle slice at any time: the lease no longer depends on the
+        // caller holding withCronLock, because a second concurrent open fails on this index.
+        oneOpenSliceUnique: uniqueIndex('uq_reconciliation_sweep_run_one_open')
+            .on(sql`(true)`)
+            .where(sql`${t.outcome} IS NULL AND ${t.cycleId} IS NOT NULL`)
     })
 );
 

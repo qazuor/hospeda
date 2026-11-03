@@ -1310,6 +1310,13 @@
       "when": 1793731804751,
       "tag": "0186_slow_bug",
       "breakpoints": true
+    },
+    {
+      "idx": 187,
+      "version": "7",
+      "when": 1793734622730,
+      "tag": "0187_public_klaw",
+      "breakpoints": true
     }
   ]
 }

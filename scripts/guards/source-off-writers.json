@@ -288,5 +288,13 @@
         "effect": "neutral",
         "via": null,
         "reason": "HOS-1732: after the provider rejected the creation, the retry updates the declared payer email on the same PENDING_AUTHORIZATION row (no provider link yet); the row stays uncovered, so coverage does not change."
+    },
+    {
+        "file": "packages/db/src/models/reconciliation-sweep-run/reconciliation-sweep-run.model.ts",
+        "symbol": "stampSweptRow",
+        "table": "subscriptions",
+        "effect": "neutral",
+        "via": null,
+        "reason": "HOS-1999: the reconciliation sweep records when it last read the row (last_swept_at); status, provider link and coverage are untouched."
     }
 ]
