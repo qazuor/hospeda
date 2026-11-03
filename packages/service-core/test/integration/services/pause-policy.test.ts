@@ -4,7 +4,12 @@ import { canPause } from '../../../src/services/billing/subscription/pause-polic
 import { readPauseQuota } from '../../../src/services/billing/subscription/pause-quota.js';
 import { closeServiceTestPool, getServiceTestDb, isServiceTestDbAvailable } from './helpers.js';
 import { complementNow, providerHarness } from './support/complement-fixtures.js';
-import { pausePlanPolicy, retirePauseRows, seedPausePrincipal } from './support/pause-fixtures.js';
+import {
+    pausePlanPolicy,
+    retirePauseRows,
+    seedClosedPause,
+    seedPausePrincipal
+} from './support/pause-fixtures.js';
 
 const clock = { now: () => complementNow };
 afterEach(retirePauseRows);
@@ -74,6 +79,32 @@ describe.skipIf(!isServiceTestDbAvailable())('Pause policy reason order and quot
                 now: complementNow
             })
         ).toEqual({ pausesInWindow: 3, monthsInWindow: 6 });
+    });
+
+    it('excludes a pause starting exactly at the twelve-month boundary', async () => {
+        const harness = providerHarness();
+        const principal = await seedPausePrincipal({ harness });
+        const boundary = new Date(complementNow);
+        boundary.setUTCMonth(boundary.getUTCMonth() - 12);
+        await seedClosedPause({
+            subscriptionId: principal.subscriptionId,
+            startsAt: boundary,
+            actualEndAt: new Date(boundary.getTime() + 10 * 24 * 60 * 60 * 1000)
+        });
+        await seedClosedPause({
+            subscriptionId: principal.subscriptionId,
+            startsAt: new Date(boundary.getTime() + 1),
+            actualEndAt: new Date(boundary.getTime() + 10 * 24 * 60 * 60 * 1000)
+        });
+
+        expect(
+            await readPauseQuota({
+                tx: getServiceTestDb(),
+                userId: principal.userId,
+                vertical: 'accommodation',
+                now: complementNow
+            })
+        ).toEqual({ pausesInWindow: 1, monthsInWindow: 1 });
     });
 
     it('refuses while a courtesy grant with ends_at in the future exists', async () => {
