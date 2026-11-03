@@ -22,7 +22,11 @@ function tree() {
     mkdirSync(path.join(root, 'apps/api/src/routes/venue/admin'), { recursive: true });
     write(root, INVENTORY_FILE, JSON.stringify(INVENTORY));
     for (const file of Object.keys(INVENTORY))
-        write(root, file, readFileSync(path.join(ROOT, file), 'utf8'));
+        write(
+            root,
+            file,
+            execFileSync('git', ['show', `HEAD:${file}`], { cwd: ROOT, encoding: 'utf8' })
+        );
     return root;
 }
 function write(root: string, file: string, source: string) {
