@@ -55,7 +55,7 @@ const plan: AdminCatalogPlan = {
         allowsPause: true,
         inheritsTouristVip: false,
         cycles: ['monthly'],
-        entitlements: [],
+        entitlements: [{ key: 'publish_accommodations' }],
         limits: []
     }
 } as const;
@@ -117,7 +117,7 @@ describe('TEST:1704:16 PlanVersionPublish', () => {
                 graceDays: 2,
                 allowsPause: true,
                 inheritsTouristVip: false,
-                entitlements: [],
+                entitlements: [{ key: 'publish_accommodations' }],
                 limits: [],
                 cycles: ['monthly']
             }
@@ -132,7 +132,7 @@ describe('TEST:1704:16 PlanVersionPublish', () => {
                 graceDays: 2,
                 allowsPause: true,
                 inheritsTouristVip: false,
-                entitlements: [],
+                entitlements: [{ key: 'publish_accommodations' }],
                 limits: [],
                 cycles: ['monthly'],
                 confirmed: true
