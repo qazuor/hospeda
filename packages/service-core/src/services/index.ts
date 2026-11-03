@@ -187,6 +187,8 @@ export * from './billing/refund/execute-refund.service.js';
 export * from './billing/refund/refund-machine.js';
 export * from './billing/refund/refund-window.js';
 export * from './billing/refund/request-refund.service.js';
+export * from './billing/refund/resend-refund-call.service.js';
+export * from './billing/refund/send-held-order-refund.service.js';
 export * from './billing/refund/settle-external-refund.service.js';
 export * from './billing/subscription/activate-pending-with-signup-notice.js';
 export * from './billing/subscription/activate-subscription.service.js';

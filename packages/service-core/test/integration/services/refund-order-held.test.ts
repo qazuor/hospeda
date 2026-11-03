@@ -3,6 +3,8 @@ import { PaymentProviderError } from '@repo/payments';
 import { afterAll, describe, expect, it } from 'vitest';
 import { confirmRefund } from '../../../src/services/billing/refund/confirm-refund.service.js';
 import { requestRefund } from '../../../src/services/billing/refund/request-refund.service.js';
+import { resendUnansweredRefundCalls } from '../../../src/services/billing/refund/resend-refund-call.service.js';
+import { sendHeldOrderRefund } from '../../../src/services/billing/refund/send-held-order-refund.service.js';
 import { closeServiceTestPool, getServiceTestPool, isServiceTestDbAvailable } from './helpers.js';
 import { orderRefundRows, refundOrderFixture } from './support/refund-order-fixtures.js';
 
@@ -28,6 +30,76 @@ async function waitForBlockedCallInserts(barrierPid: number, expected: number): 
 }
 
 describe('HOS-1553 TEST:B6:7 AC:B6:9 order refund held by the database', () => {
+    it.skipIf(skip)(
+        'retries the held refund after the first unanswered call gets its id',
+        async () => {
+            const seeded = await refundOrderFixture({ refundAmount: 4000 });
+            const secondRequest = await requestRefund(
+                {
+                    source: { kind: 'PAYMENT', id: seeded.payment.id },
+                    amount: 3000,
+                    reason: 'REVOCATION'
+                },
+                { clock: seeded.fixture.clock }
+            );
+            let first = true;
+            const refundOrder = async (input: OrderRefundInput) => {
+                const response = await seeded.fixture.provider.refundOrder(input);
+                if (first) {
+                    first = false;
+                    throw new PaymentProviderError({
+                        code: 'UNAVAILABLE',
+                        capability: 'refund',
+                        message: 'lost response'
+                    });
+                }
+                return response;
+            };
+            const provider = new Proxy(seeded.fixture.provider as PaymentProvider, {
+                get(target, property, receiver) {
+                    return property === 'refundOrder'
+                        ? refundOrder
+                        : Reflect.get(target, property, receiver);
+                }
+            });
+            const firstResult = await confirmRefund(
+                { actor: seeded.actor, refundId: seeded.refundId },
+                { clock: seeded.fixture.clock, provider }
+            );
+            const secondResult = await confirmRefund(
+                { actor: seeded.actor, refundId: secondRequest.refundId },
+                { clock: seeded.fixture.clock, provider }
+            );
+            expect(firstResult.outcome).toBe('AWAITING_PROVIDER_ANSWER');
+            expect(secondResult.outcome).toBe('ORDER_REFUND_HELD');
+            const stillHeld = await sendHeldOrderRefund(
+                { refundId: secondRequest.refundId },
+                { clock: seeded.fixture.clock, provider }
+            );
+            expect(stillHeld.outcome).toBe('ORDER_REFUND_HELD');
+            expect((await orderRefundRows(secondRequest.refundId)).calls).toHaveLength(0);
+            const resent = await resendUnansweredRefundCalls(
+                { refundId: seeded.refundId },
+                { clock: seeded.fixture.clock, provider }
+            );
+            expect(resent.outcomes[0]?.outcome).toBe('SENT');
+            expect(
+                (await orderRefundRows(seeded.refundId)).calls[0]?.providerRefundId
+            ).toBeTruthy();
+            const released = await sendHeldOrderRefund(
+                { refundId: secondRequest.refundId },
+                { clock: seeded.fixture.clock, provider }
+            );
+            const secondRows = await orderRefundRows(secondRequest.refundId);
+            expect(released.outcome).toBe('SENT');
+            expect(secondRows.calls).toHaveLength(1);
+            expect(secondRows.calls[0]?.providerRefundId).toBeTruthy();
+            expect(
+                (await seeded.fixture.provider.readOrder({ orderId: seeded.orderId })).snapshot
+                    .refunds
+            ).toHaveLength(2);
+        }
+    );
     it.skipIf(skip)(
         'holds a second concurrent refund insert while the first awaits its id',
         async () => {
