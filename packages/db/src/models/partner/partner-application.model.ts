@@ -68,6 +68,26 @@ export const partnerApplicationModel = {
         return result.rows.length > 0;
     },
 
+    /**
+     * The only writer of claim_secret_hash; overwrites a previous hash on purpose (a re-render
+     * invalidates the previous link, D-2); never writes once the Partner has an owner, because
+     * the claim keeps the hash (V7 §2.4 rule 4).
+     */
+    async setClaimSecretHashIfUnclaimed(args: {
+        readonly tx: DrizzleClient;
+        readonly partnerId: string;
+        readonly hash: string;
+    }): Promise<boolean> {
+        const result = await args.tx.execute(sql`
+            UPDATE partners
+            SET claim_secret_hash = ${args.hash}
+            WHERE id = ${args.partnerId}
+              AND owner_user_id IS NULL
+              AND deleted_at IS NULL
+            RETURNING id`);
+        return result.rows.length > 0;
+    },
+
     /** Inserts a pending application and returns its generated identifier. */
     async insertPending(args: {
         readonly tx: DrizzleClient;
@@ -169,5 +189,39 @@ export const partnerApplicationModel = {
             SELECT id FROM users WHERE lower(email) = lower(${args.email}) LIMIT 1`);
         const row = result.rows[0];
         return row ? { id: String(row.id) } : null;
+    },
+
+    /** Reads the account's supported web locale, falling back to Spanish. */
+    async readAccountLocaleByEmail(args: {
+        readonly tx: DrizzleClient;
+        readonly email: string;
+    }): Promise<'es' | 'en' | 'pt'> {
+        const result = await args.tx.execute(sql`
+            SELECT COALESCE(settings->>'languageWeb', settings->>'language') AS locale
+            FROM users
+            WHERE lower(email) = lower(${args.email})
+            LIMIT 1`);
+        const locale = result.rows[0]?.locale;
+        return locale === 'en' || locale === 'pt' || locale === 'es' ? locale : 'es';
+    },
+
+    /** Reads the rejection's market reapplication date from its stored deadline version. */
+    async readReapplyAfter(args: {
+        readonly tx: DrizzleClient;
+        readonly applicationId: string;
+    }): Promise<Date> {
+        const result = await args.tx.execute(sql`
+            SELECT pa.resolved_at + make_interval(days => (v."values" -> '9' ->> 'days')::integer) AS reapply_after
+            FROM partner_application pa
+            JOIN vertical_deadline_version v ON v.version = pa.deadlines_version
+            WHERE pa.id = ${args.applicationId}`);
+        const rawValue = result.rows[0]?.reapply_after;
+        const value = rawValue instanceof Date ? rawValue : new Date(String(rawValue ?? ''));
+        if (rawValue == null || Number.isNaN(value.getTime())) {
+            throw new Error(
+                `Could not read reapply date for partner application ${args.applicationId}`
+            );
+        }
+        return value;
     }
 };
