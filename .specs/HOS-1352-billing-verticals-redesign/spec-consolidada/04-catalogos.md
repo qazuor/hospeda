@@ -501,8 +501,7 @@ puerta de la máquina.
 - **Si el cobro se rechaza**, `S16` lleva la fila a `CHARGE_DECLINED`, `PB2` baja la ficha y la
   persona queda en `PRE_TRIAL`: su próximo `PB1`, sin cobertura, arranca el trial por `T1`
   —también sobre la ficha que `PB2` bajó, porque `PB1` sale de `UNPUBLISHED_BY_BILLING` cuando
-  arranca un trial (§9; FASE 9 vuelta 1, R1)—. Cubierto y con lugar en el cupo, el dueño también la
-  publica a mano (`DEC-DATA-009`, owner 2026-11-02).
+  arranca un trial (§9; FASE 9 vuelta 1, R1)—. Cubierto y con lugar en el cupo, el dueño también la publica a mano (`DEC-DATA-009`, owner 2026-11-02).
 - **La superficie empuja al orden que no necesita `T8`** (decisión del owner, 6c): el botón de
   suscribirse de una vertical **en la que la persona todavía no publicó la manda a publicar**
   **si publicar le arrancaría el trial** (la regla, escrita sólo en `V/19` §4 fila 23; FASE 9
