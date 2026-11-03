@@ -238,8 +238,18 @@ describe('TEST:V7:12 AC:V7:12 partner role survives loss of presence', () => {
         const ownerRow = await getDb().execute(sql`
             SELECT owner_user_id FROM partners WHERE id = ${partnerId}::uuid`);
         expect(ownerRow.rows).toEqual([{ owner_user_id: owner.id }]);
+    });
 
-        // (b) Even after presence loss, the owner family still passes route step 3.
+    it('(b) keeps PATCH available after presence loss through the partner owner family', async () => {
+        const owner = await createOwner();
+        users.push(owner.id);
+        const inserted = await getDb().execute(sql`
+            INSERT INTO partners (slug, name, type, lifecycle_state, owner_user_id, created_by_id, updated_by_id)
+            VALUES (${`hos1487-after-loss-${randomUUID()}`}, 'HOS1487 after loss', 'business', 'ACTIVE',
+                    ${owner.id}::uuid, ${owner.id}::uuid, ${owner.id}::uuid)
+            RETURNING id`);
+        const partnerId = String(inserted.rows[0]?.id);
+        partnerIds.push(partnerId);
         const familyPermissions = [
             ...new Set([
                 ...seededPermissionsFor({ role: RoleEnum.USER }),
