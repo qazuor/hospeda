@@ -1263,7 +1263,15 @@
         },
         {
             "method": "POST",
+            "path": "/api/v1/admin/partner-applications/:id/approve"
+        },
+        {
+            "method": "POST",
             "path": "/api/v1/admin/partner-applications/:id/cancel-wait"
+        },
+        {
+            "method": "POST",
+            "path": "/api/v1/admin/partner-applications/:id/reject"
         },
         {
             "method": "GET",

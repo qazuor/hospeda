@@ -7,11 +7,11 @@ import {
     userModel
 } from '@repo/db';
 import { ServiceErrorCode } from '@repo/schemas';
-import { type Actor, isSystemActor, ServiceError } from '@repo/service-core';
-import { isAdministrativeActionPermitted, resolveAdministrativeActionStep } from '@repo/verticals';
+import { type Actor, ServiceError } from '@repo/service-core';
 import { getRequestCorrelationId } from '../../lib/request-context';
 import { getClock } from '../../utils/clock';
 import { PARTNER_APPLICATION_WAIT_NOT_ACTIVE } from './partner-application-errors';
+import { assertAction5Step3 } from './partner-application-step3';
 
 /** Cancels an active rejection wait as administrative action 5 (ACC:5). */
 export async function cancelPartnerApplicationWait(input: {
@@ -19,19 +19,7 @@ export async function cancelPartnerApplicationWait(input: {
     readonly applicationId: string;
     readonly reason: string;
 }): Promise<{ readonly cancelled: true }> {
-    const action = 'ACC_5' as const;
-    const permitted = isAdministrativeActionPermitted({
-        action,
-        actorPermissions: input.actor.permissions
-    });
-    const step = resolveAdministrativeActionStep({
-        action,
-        actorId: input.actor.id,
-        subjectId: null,
-        permitted,
-        isSystemActor: isSystemActor(input.actor)
-    });
-    if (!step.allowed) throw new ServiceError(ServiceErrorCode.FORBIDDEN, 'Forbidden');
+    assertAction5Step3({ actor: input.actor });
 
     const reason = input.reason.trim();
     if (reason.length === 0) {

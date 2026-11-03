@@ -1310,6 +1310,13 @@
       "when": 1793670469150,
       "tag": "0186_hos1551_billing_refund_permission",
       "breakpoints": true
+    },
+    {
+      "idx": 187,
+      "version": "7",
+      "when": 1793678736020,
+      "tag": "0187_hos1485_partner_application_resolution",
+      "breakpoints": true
     }
   ]
 }
