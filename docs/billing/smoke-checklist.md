@@ -165,6 +165,17 @@ touching PR to `staging` (CLAUDE.md). This part is TEST:B13a:14 and TEST:U1:19.
 - **Evidence:** `hops psql --target=staging`, read-only queries: `owner_user_id` and `claim_secret_hash` for the Partner before and after (the hash is unchanged); the `partner.claimed` event with `reason = 'claim_link'` and, for C, `changes` containing `email_verified`, `revoked_session_count`, and `removed_credential_providers`; C's `session` and `account` rows.
 - **Covers:** AC:V7:7, AC:V7:8, AC:V7:9; TEST:V7:7, TEST:V7:8, TEST:V7:9, TEST:V7:22.
 
+### V7.3 · Alta directa de Partner (HOS-1487)
+
+- **Preconditions:** `staging` with a real `HOSPEDA_EMAIL_API_KEY`; two mailboxes controlled by the executor; an admin with `PARTNER_MANAGE`.
+- **Steps:**
+  1. Create a Partner in the admin and enter a claim notice address controlled by the executor.
+  2. Verify the claim notice arrives at that address.
+  3. Claim the Partner with a different account.
+  4. Verify the Partner is owned by the claiming account and the mailbox account received no other email.
+- **Expected:** The Partner remains unowned until the link is claimed; the claiming account receives `PARTNER_OWNER`.
+- **Covers:** AC:V7:11, AC:V7:12; TEST:V7:11 and TEST:V7:12(a).
+
 ### Sign-off
 
 | Date | Executor | PR | Result | Notes |
