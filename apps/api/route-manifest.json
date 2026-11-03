@@ -1111,6 +1111,10 @@
         },
         {
             "method": "GET",
+            "path": "/api/v1/admin/listing-fix-requests"
+        },
+        {
+            "method": "GET",
             "path": "/api/v1/admin/logs"
         },
         {
@@ -1312,6 +1316,10 @@
         {
             "method": "PATCH",
             "path": "/api/v1/admin/partners/:partnerId/mentions/:id"
+        },
+        {
+            "method": "GET",
+            "path": "/api/v1/admin/plan-catalog/plans"
         },
         {
             "method": "POST",
