@@ -3,7 +3,14 @@ import { getDb, listPartnerApplicationsForPanel, sql } from '@repo/db';
 import { afterAll, afterEach, beforeAll, describe, expect, it } from 'vitest';
 import { validateApiEnv } from '../../../src/utils/env';
 import { testDb } from '../../e2e/setup/test-database';
-import { deletePanelFixtures, insertApplication, panelEmail } from './panel.helpers';
+import {
+    createPanelOwner,
+    deletePanelFixtures,
+    insertApplication,
+    insertPartner,
+    panelEmail,
+    softDeletePartner
+} from './panel.helpers';
 
 const createdEmails: string[] = [];
 const DAY = 24 * 60 * 60 * 1000;
@@ -96,6 +103,72 @@ describe('TEST:V8b:2 (soporte API) partner application panel clock', () => {
             pageSize: 100
         });
         expect(after.items.some((item) => item.email === value)).toBe(false);
+    });
+
+    it('(d) filters approved and rejected views by ownership, deletion, cancellation, and wait expiry', async () => {
+        const owner = await createPanelOwner();
+        const unclaimedPartner = await insertPartner({ ownerUserId: null });
+        const claimedPartner = await insertPartner({ ownerUserId: owner.id });
+        const deletedPartner = await insertPartner({ ownerUserId: null });
+        const approvedEmail = email('model-approved-unclaimed');
+        const claimedEmail = email('model-approved-claimed');
+        const deletedEmail = email('model-approved-deleted');
+        await insertApplication({
+            email: approvedEmail,
+            status: 'APPROVED',
+            partnerId: unclaimedPartner.id
+        });
+        await insertApplication({
+            email: claimedEmail,
+            status: 'APPROVED',
+            partnerId: claimedPartner.id
+        });
+        await insertApplication({
+            email: deletedEmail,
+            status: 'APPROVED',
+            partnerId: deletedPartner.id
+        });
+        await softDeletePartner(deletedPartner.id);
+        const approved = await listPartnerApplicationsForPanel({
+            view: 'approvedUnclaimed',
+            now: new Date(),
+            page: 1,
+            pageSize: 100
+        });
+        const unclaimed = approved.items.find((item) => item.email === approvedEmail);
+        expect(unclaimed).toEqual(
+            expect.objectContaining({
+                status: 'APPROVED',
+                partner: {
+                    id: unclaimedPartner.id,
+                    name: unclaimedPartner.name,
+                    slug: unclaimedPartner.slug
+                }
+            })
+        );
+        expect(approved.items.some((item) => item.email === claimedEmail)).toBe(false);
+        expect(approved.items.some((item) => item.email === deletedEmail)).toBe(false);
+
+        const activeEmail = email('model-rejected-active');
+        const expiredEmail = email('model-rejected-expired');
+        const cancelledEmail = email('model-rejected-cancelled');
+        await insertApplication({ email: activeEmail, status: 'REJECTED', resolvedDaysAgo: 1 });
+        await insertApplication({ email: expiredEmail, status: 'REJECTED', resolvedDaysAgo: 40 });
+        await insertApplication({
+            email: cancelledEmail,
+            status: 'REJECTED',
+            resolvedDaysAgo: 1,
+            waitCancelled: true
+        });
+        const rejected = await listPartnerApplicationsForPanel({
+            view: 'rejectedWaiting',
+            now: new Date(),
+            page: 1,
+            pageSize: 100
+        });
+        expect(rejected.items.some((item) => item.email === activeEmail)).toBe(true);
+        expect(rejected.items.some((item) => item.email === expiredEmail)).toBe(false);
+        expect(rejected.items.some((item) => item.email === cancelledEmail)).toBe(false);
     });
 
     it("(c) fails closed when a pending application's stored version has no PLAZO:8", async () => {
