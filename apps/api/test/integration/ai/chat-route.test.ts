@@ -557,6 +557,32 @@ describe('TEST:V5:32 POST /api/v1/protected/ai/chat — integration (SPEC-200 T-
         assembler.mockRestore();
     });
 
+    it('keeps the menu absent in chat for nightlife even when the owner has manage_venue_menu', async () => {
+        const assembler = vi.spyOn(CHAT_CONTEXT_ASSEMBLERS, 'venue').mockResolvedValue({
+            contextBlock: 'context',
+            systemMessage: 'system',
+            entityName: 'test venue'
+        });
+        mockOwnerQueryResult.current = [{ ownerId: OWNER_ID, businessLines: ['nightlife'] }];
+        mockOwnerEntitlements.current = [EntitlementKeyEnum.AI_CHAT, 'manage_venue_menu'];
+        mockOwnerLimits.current = new Map([['max_ai_chat_venue_per_month', 20]]);
+
+        const res = await app.request(STREAM_PATH, {
+            method: 'POST',
+            headers: makeMockActorHeaders(),
+            body: JSON.stringify({
+                entityType: 'venue',
+                entityId: ACCOMMODATION_ID,
+                messages: makeMessages(1)
+            })
+        });
+
+        expect(res.status).toBe(200);
+        const listingSections = assembler.mock.calls[0]?.[0].listingSections;
+        expect(listingSections?.get('menu')?.state).toBe('absent');
+        assembler.mockRestore();
+    });
+
     it('rejects the chat when the listing owner lacks ai_chat', async () => {
         mockOwnerEntitlements.current = [];
         mockOwnerLimits.current = new Map();
