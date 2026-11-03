@@ -2,6 +2,8 @@
  * Protected event organizer routes
  * Routes that require authentication
  */
+
+import { eventOrganizerCacheInvalidationMiddleware } from '../../../middlewares/event-organizer-cache-invalidation';
 import { createRouter } from '../../../utils/create-app';
 import { protectedCreateEventOrganizerRoute } from './create';
 import { protectedPatchEventOrganizerRoute } from './patch';
@@ -9,6 +11,8 @@ import { protectedSoftDeleteEventOrganizerRoute } from './softDelete';
 import { protectedUpdateEventOrganizerRoute } from './update';
 
 const app = createRouter();
+
+app.use('*', eventOrganizerCacheInvalidationMiddleware());
 
 // POST / - Create event organizer
 app.route('/', protectedCreateEventOrganizerRoute);

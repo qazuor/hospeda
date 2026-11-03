@@ -1,0 +1,82 @@
+import {
+    currentTrafficContext,
+    ProviderTrafficGovernor,
+    runWithTrafficClass
+} from '@repo/payments';
+import { describe, expect, it } from 'vitest';
+import { runCronHandlerInBackground } from '../../src/cron/traffic';
+import type { CronJobContext } from '../../src/cron/types';
+
+const context: CronJobContext = {
+    logger: {
+        info: () => undefined,
+        warn: () => undefined,
+        error: () => undefined,
+        debug: () => undefined
+    },
+    startedAt: new Date('2026-10-01T00:00:00.000Z'),
+    runId: 'run-id',
+    correlationId: 'correlation-id',
+    dryRun: false
+};
+
+describe('cron provider traffic context', () => {
+    it('overrides an interactive parent and only attaches traffic details after a governed request (kills missing cron class)', async () => {
+        const governor = new ProviderTrafficGovernor({ mode: 'observe' });
+        const result = await runWithTrafficClass({
+            context: { trafficClass: 'interactive' },
+            fn: () =>
+                runCronHandlerInBackground({
+                    ctx: context,
+                    job: {
+                        handler: async () => {
+                            expect(currentTrafficContext()?.trafficClass).toBe('background');
+                            await governor.acquire({
+                                trafficClass: 'background',
+                                capability: 'read'
+                            });
+                            governor.observe({
+                                trafficClass: 'background',
+                                capability: 'read',
+                                status: 200
+                            });
+                            return {
+                                success: true,
+                                message: 'ok',
+                                processed: 1,
+                                errors: 0,
+                                durationMs: 1,
+                                details: { retained: true }
+                            };
+                        }
+                    }
+                })
+        });
+        expect(result.details).toMatchObject({
+            retained: true,
+            providerTraffic: { requests: 1, status2xx: 1 }
+        });
+        const unchanged = await runCronHandlerInBackground({
+            ctx: context,
+            job: {
+                handler: async () => ({
+                    success: true,
+                    message: 'ok',
+                    processed: 0,
+                    errors: 0,
+                    durationMs: 1,
+                    details: { retained: true }
+                })
+            }
+        });
+        expect(unchanged).toEqual({
+            success: true,
+            message: 'ok',
+            processed: 0,
+            errors: 0,
+            durationMs: 1,
+            details: { retained: true }
+        });
+        governor.stop();
+    });
+});
