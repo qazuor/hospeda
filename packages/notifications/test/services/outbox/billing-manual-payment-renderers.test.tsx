@@ -35,4 +35,15 @@ describe('manual installment notice renderer', () => {
             })
         ).toThrow(TypeError);
     });
+
+    it('throws TypeError for an extra payload property', () => {
+        expect(() =>
+            renderer({
+                row: row({
+                    template: 'billing.manual-installment-unpaid',
+                    payload: { ...payload, unexpected: true }
+                })
+            })
+        ).toThrow(TypeError);
+    });
 });
