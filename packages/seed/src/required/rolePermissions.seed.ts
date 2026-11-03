@@ -361,6 +361,9 @@ export const ROLE_PERMISSIONS: Record<RoleEnum, PermissionEnum[]> = {
         PermissionEnum.BILLING_SETTLE_EXTERNAL,
         // HOS-1551: action 13 (confirm a refund, RF2) — SUPER_ADMIN-only.
         PermissionEnum.BILLING_REFUND,
+        // HOS-1541: actions 3 and 4 (register a manual payment / confirm it was not paid) — SUPER_ADMIN-only.
+        PermissionEnum.BILLING_REGISTER_MANUAL_PAYMENT,
+        PermissionEnum.BILLING_DECLARE_MANUAL_UNPAID,
         // HOS-1543: action 8 (cancel a subscription; with the revocation motive it runs S36) — SUPER_ADMIN-only.
         PermissionEnum.BILLING_CANCEL_SUBSCRIPTION,
         // HOS-1697: action 7 (lift a reconciliation mark, S15) — SUPER_ADMIN-only.
