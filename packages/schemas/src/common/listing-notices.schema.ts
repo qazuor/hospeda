@@ -6,6 +6,22 @@ import { TrialStatusEnum } from '../enums/trial-status.enum.js';
 const InstantSchema = z.string().datetime({ offset: true });
 
 /**
+ * Why a lifted listing that is still `UNPUBLISHED_BY_BILLING` is not published
+ * (HOS-1997): the owner is not covered, the plan has no room at all, the quota
+ * is full (advice: unpublish another listing) or there is a free slot (advice:
+ * publish it).
+ */
+export const ListingUnpublishedBecauseSchema = z.enum([
+    'QUOTA_FULL',
+    'NOT_COVERED',
+    'FREE_SLOT',
+    'NO_ROOM'
+]);
+
+/** See {@link ListingUnpublishedBecauseSchema}. */
+export type ListingUnpublishedBecause = z.infer<typeof ListingUnpublishedBecauseSchema>;
+
+/**
  * One notice about one of the owner's listings, as Mi Cuenta shows it (HOS-1492,
  * V8a.1b, `V/19` §4). The surface only READS what the core resolved; every
  * variant is a fact read from the listing, its last transition events and its
@@ -57,7 +73,13 @@ export const ListingNoticeSchema = z.discriminatedUnion('kind', [
         returnedTo: z.nativeEnum(PublicationStatusEnum),
         at: InstantSchema,
         /** Whether a fix request is still open after the lift. */
-        fixRequestOpen: z.boolean()
+        fixRequestOpen: z.boolean(),
+        /**
+         * Why a lifted listing that is STILL `UNPUBLISHED_BY_BILLING` is not
+         * published (HOS-1997). Absent otherwise, so the web falls back to the
+         * generic text of `returnedTo`.
+         */
+        unpublishedBecause: ListingUnpublishedBecauseSchema.optional()
     }),
     z.object({ kind: z.literal('SURPLUS') })
 ]);

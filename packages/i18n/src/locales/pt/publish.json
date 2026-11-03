@@ -6,8 +6,14 @@
         "checkoutMonthly": "Assinar com pagamento mensal",
         "checkoutAnnual": "Assinar com pagamento anual",
         "continuePayment": "Continuar o pagamento",
+        "republishFromProperties": "Publicar novamente em Minha conta",
+        "republishFromPropertiesHint": "Seu anúncio está despublicado. Publique de novo e comece seu teste grátis.",
         "currentPlan": "Seu plano atual em {{vertical}}",
         "touristVipInherited": "Seu plano já inclui Turista VIP: não é necessário comprá-lo."
+    },
+    "limitReached": {
+        "body": "Você atingiu o limite de publicações do seu plano. Despublique outro anúncio ou melhore seu plano.",
+        "cta": "Melhorar meu plano"
     },
     "noPlans": {
         "title": "Esta categoria não tem planos disponíveis",

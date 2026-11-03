@@ -22,11 +22,27 @@ export function comparePublicationOrder(
     return a.id < b.id ? -1 : a.id > b.id ? 1 : 0;
 }
 
-/** Orders listings that return to publication, oldest publication first. */
-export function orderReturningCandidates(args: {
+/**
+ * Orders listings that regain a publication slot when coverage returns, newest
+ * manual publish first (HOS-1984). With the cap full, the listings the host
+ * published by hand most recently stay visible. A listing with no manual
+ * publish instant (present at the data cut) ranks last; ties fall back to
+ * newest creation, then identifier.
+ */
+export function orderRestorationCandidates(args: {
     readonly entries: readonly PublicationQueueEntry[];
 }): readonly PublicationQueueEntry[] {
-    return [...args.entries].sort(comparePublicationOrder);
+    return [...args.entries].sort((a, b) => {
+        if (a.publishedAt === null && b.publishedAt !== null) return 1;
+        if (a.publishedAt !== null && b.publishedAt === null) return -1;
+        if (a.publishedAt && b.publishedAt) {
+            const byPublished = b.publishedAt.getTime() - a.publishedAt.getTime();
+            if (byPublished !== 0) return byPublished;
+        }
+        const byCreated = b.createdAt.getTime() - a.createdAt.getTime();
+        if (byCreated !== 0) return byCreated;
+        return a.id < b.id ? -1 : a.id > b.id ? 1 : 0;
+    });
 }
 
 /** Selects the most recent published listings to lower, newest first. */

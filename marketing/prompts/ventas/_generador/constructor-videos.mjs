@@ -346,7 +346,16 @@ mis correcciones. El sonido lo valido yo.`;
  */
 export const promptsOf = ({ video }) => {
     if (video.mode === 'claude')
-        return [{ label: 'Prompt para Claude Code', text: claudePrompt({ video }) }];
+        return [
+            {
+                label: 'Prompt para Claude Code',
+                text: claudePrompt({ video }),
+                attach: [
+                    'Nada al empezar: Claude graba las pantallas reales en staging.',
+                    'Logo: apps/web/src/assets/images/logo.webp, cuando Claude lo pida (antes del cierre y antes de cada render o corrección)'
+                ]
+            }
+        ];
     const { shots } = timelineOf({ video });
     const base = (shot) => [
         `@######ESCENA####### → ${ASSETS}/escenas/${video.scene}.png`,
@@ -374,6 +383,19 @@ export const promptsOf = ({ video }) => {
             `@######ESCENA####### → ${ASSETS}/escenas/${video.scene}.png`
         ]
     });
-    out.push({ label: 'Montaje · prompt para Claude Code', text: editPrompt({ video }) });
+    out.push({
+        label: 'Montaje · prompt para Claude Code',
+        text: editPrompt({ video }),
+        attach: [
+            ...out
+                .filter((p) => p.label.includes('tirada T'))
+                .map(
+                    (p) =>
+                        `El clip descargado de Hailuo de la ${p.label.split(' (')[0].replace('Hailuo · ', '')}`
+                ),
+            'El clip descargado de la tirada de voz (sólo se usa su audio)',
+            'Logo: apps/web/src/assets/images/logo.webp, cuando Claude lo pida'
+        ]
+    });
     return out;
 };

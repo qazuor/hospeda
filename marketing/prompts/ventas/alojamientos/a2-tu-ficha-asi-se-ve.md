@@ -13,8 +13,8 @@ Prompt para **ChatGPT** (el generador de imágenes del custom GPT de Hospeda).
 
 **Qué adjuntar:**
 
-- Logo de Hospeda (isotipo: forma azul de río, franja verde y turquesa, círculo naranja de sol, y la palabra "hospeda"). Usalo tal cual: no lo redibujes ni le cambies los colores.
-- Captura real de Hospeda, sacada con una cuenta de anfitrión: una ficha de alojamiento real y completa de hospeda.com.ar, vista en el celular, con fotos, ubicación, la sección «Qué hay cerca», el clima del destino y la reputación externa
+- Logo: apps/web/src/assets/images/logo.webp (otra vez antes de cada imagen nueva)
+- Captura: una ficha de alojamiento real y completa de hospeda.com.ar, vista en el celular, con fotos, ubicación, la sección «Qué hay cerca», el clima del destino y la reputación externa
 
 **Cómo se genera:** primero 4:5; después pedile «ahora en 9:16». Antes de cada formato te va a pedir el logo otra vez.
 

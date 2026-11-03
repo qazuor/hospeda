@@ -280,6 +280,36 @@
                 "unknown": "Hospeda",
                 "venue": "Food & nightlife"
             }
+        },
+        "return": {
+            "confirmed": {
+                "title": "Your subscription is active",
+                "body": "Mercado Pago confirmed the payment. You can start using your plan."
+            },
+            "processing": {
+                "title": "We are confirming your payment",
+                "body": "Mercado Pago has not told us the result yet. This usually takes a few seconds."
+            },
+            "stillProcessing": {
+                "title": "We do not have the confirmation yet",
+                "body": "We do not see the payment yet. If you already completed it, it can take a few minutes to show up. If you did not complete it, you can pick it up again from the checkout.",
+                "refresh": "Check again"
+            },
+            "rejected": {
+                "title": "Mercado Pago did not approve the payment",
+                "body": "You were not charged and the previous attempt is closed. You can start a new one with the same plan.",
+                "retry": "Try again",
+                "retrying": "Preparing the payment…"
+            },
+            "unknown": {
+                "title": "We could not read the payment status",
+                "body": "Check your subscription to see how it ended up.",
+                "refresh": "Check again"
+            },
+            "closed": {
+                "title": "This attempt is no longer valid",
+                "body": "The payment attempt expired or was cancelled. You can see your subscription status from your account."
+            }
         }
     },
     "limit": {

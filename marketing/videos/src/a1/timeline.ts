@@ -87,20 +87,69 @@ const LOADS: ReadonlyArray<readonly [string, string]> = [
 ];
 
 /**
+ * Spans the recorder brackets to drop: `off` … `off:end` is work done off camera (it leaves with
+ * a brand wipe), `skip` … `skip:end` a wait on screen (an upload, a prompt) cut with a jump.
+ */
+const BRACKETS: ReadonlyArray<readonly [string, Piece['cut']]> = [
+    ['off', 'wipe'],
+    ['skip', 'jump']
+];
+
+/** Every `<name>` … `<name>:end` span of the log, in order. */
+const spansOf = (
+    events: readonly RecEvent[],
+    name: string
+): Array<{ from: number; to: number }> => {
+    const out: Array<{ from: number; to: number }> = [];
+    let open: number | undefined;
+    for (const e of events) {
+        if (e.kind !== 'mark') continue;
+        if (e.label === name) open = e.t;
+        if (e.label === `${name}:end` && open !== undefined) {
+            out.push({ from: open, to: e.t });
+            open = undefined;
+        }
+    }
+    return out;
+};
+
+/**
+ * Waits on the server between finishing to type and the result showing ([type, next hold]):
+ * staging's city search can take seconds. A wait longer than {@link WAIT_MAX} is jump-cut.
+ */
+const WAITS: ReadonlyArray<readonly [string, string]> = [['ciudad', 'opciones-ciudad']];
+const WAIT_MAX = 1.2;
+
+/**
  * Splits the recording into the pieces that make the cut: page loads are dropped (wipe),
- * the middle of long typing is dropped (jump cut), the opening hold is trimmed.
+ * the middle of long typing and long server waits are dropped (jump cut), the opening hold is
+ * trimmed.
  */
 export const buildPieces = ({ events, duration }: Recording): Piece[] => {
     const firstTap = find(events, 'publicar-otra');
     const start = Math.max(0.4, (firstTap?.t ?? 1.6) - 1.5);
     const toast = find(events, 'toast:guardado');
-    const stop = Math.min(duration, (toast?.t ?? duration) + TAIL_AFTER_TOAST);
+    // The take ends on the published listing; an older take (no listing) ends after the toast.
+    const listingEnd = find(events, 'ficha:end');
+    const stop = Math.min(duration, listingEnd?.t ?? (toast?.t ?? duration) + TAIL_AFTER_TOAST);
 
     const removed: Array<{ from: number; to: number; cut: Piece['cut'] }> = [];
     for (const [tapLabel, stageLabel] of LOADS) {
         const tap = find(events, tapLabel);
         const stage = find(events, stageLabel);
         if (tap && stage) removed.push({ from: tap.t + 0.45, to: stage.t + 0.35, cut: 'wipe' });
+    }
+    for (const [name, cut] of BRACKETS) {
+        for (const span of spansOf(events, name)) {
+            removed.push({ from: span.from + 0.1, to: span.to, cut });
+        }
+    }
+    for (const [typeLabel, holdLabel] of WAITS) {
+        const typed = find(events, typeLabel);
+        const shown = find(events, holdLabel);
+        const typedEnd = typed?.end ?? typed?.t;
+        if (typedEnd !== undefined && shown && shown.t - typedEnd > WAIT_MAX)
+            removed.push({ from: typedEnd + 0.5, to: shown.t - 0.3, cut: 'jump' });
     }
     for (const e of events) {
         if (e.kind !== 'type' || e.end === undefined || e.end - e.t < JUMP_MIN) continue;
@@ -149,7 +198,8 @@ export const buildCuts = (
     return cuts;
 };
 
-type Focus = {
+/** A stretch of source time where the camera zooms onto a box (and the spotlight lights it). */
+export type Focus = {
     readonly from: number;
     readonly to: number;
     readonly box: Box;
@@ -221,27 +271,34 @@ const activeWindow = (windows: readonly Focus[], t: number): Focus | undefined =
  * @param input.timeMap - Source second of every output frame ({@link buildTimeMap}).
  * @param input.cuts - Cuts of the edit ({@link buildCuts}).
  * @param input.scale - Recording px → composition px at zoom 1 (sizes moves by on-screen travel).
+ * @param input.windows - Focus windows; defaults to A1's (taps, typing and the saved toast).
+ * @param input.snapAt - Cut kinds the camera snaps at instead of easing across; default wipes
+ *   only. Adding `jump` keeps a framing exact from the first frame after a jump cut.
  * @returns `{ camera, spot }`, one entry per output frame.
  */
 export const buildFocus = ({
     rec,
     timeMap,
     cuts,
-    scale
+    scale,
+    windows: customWindows,
+    snapAt = ['wipe']
 }: {
     readonly rec: Recording;
     readonly timeMap: readonly number[];
     readonly cuts: ReadonlyArray<{ frame: number; cut: Piece['cut'] }>;
     readonly scale: number;
+    readonly windows?: readonly Focus[];
+    readonly snapAt?: readonly Piece['cut'][];
 }): { camera: Camera[]; spot: Spot[] } => {
     const { size } = recordingSize({ rec });
     const rest: Camera = { zoom: 1, fx: size.width / 2, fy: size.height / 2 };
-    const windows = focusWindows(rec.events, size);
+    const windows = customWindows ?? focusWindows(rec.events, size);
     const bridged = windows.map((w, i) => {
         const next = windows[i + 1];
         return next && next.from - w.to < BRIDGE_GAP ? { ...w, to: Math.max(w.to, next.from) } : w;
     });
-    const wipes = cuts.filter((c) => c.cut === 'wipe').map((c) => c.frame);
+    const wipes = cuts.filter((c) => snapAt.includes(c.cut)).map((c) => c.frame);
 
     const targets = timeMap.map((t) => {
         const w = activeWindow(bridged, t);
@@ -319,24 +376,33 @@ export const STAGES: readonly Stage[] = [
     { mark: 'stage:propiedades', say: 'Entrá a Mis propiedades', pose: 'senalando' },
     {
         mark: 'stage:crear',
-        step: '1/3',
+        step: '1/4',
         chip: 'Datos básicos',
         say: 'Paso 1: los datos básicos',
         pose: 'te-explico'
     },
     {
         mark: 'stage:hub',
-        step: '2/3',
+        step: '2/4',
         chip: 'Tu panel',
         say: 'Paso 2: desde tu panel completás todo',
         pose: 'es-facil'
     },
+    { mark: 'stage:datos', say: 'Contá qué lo hace único', pose: 'enumerando' },
+    { mark: 'toast:guardado', say: '¡Guardado!', pose: 'vamos' },
     {
-        mark: 'stage:datos',
-        step: '3/3',
-        chip: 'Descripción',
-        say: 'Paso 3: contá qué lo hace único',
-        pose: 'enumerando'
+        mark: 'stage:fotos',
+        step: '3/4',
+        chip: 'Fotos',
+        say: 'Paso 3: sumá tus mejores fotos',
+        pose: 'senalando'
     },
-    { mark: 'toast:guardado', say: '¡Listo, guardado!', pose: 'vamos' }
+    { mark: 'stage:publicar', say: 'Y lo publicás', pose: 'te-explico' },
+    {
+        mark: 'stage:ficha',
+        step: '4/4',
+        chip: 'Publicada',
+        say: '¡Ya está publicado!',
+        pose: 'vamos'
+    }
 ];

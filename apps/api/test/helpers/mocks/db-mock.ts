@@ -197,6 +197,67 @@ class ExperienceMockModel extends GenericMockModel {
 }
 
 /**
+ * HOS-1985 — content-moderation and experience-review table stubs.
+ *
+ * `adminList` validates the sort field against `getTable()` with `hasOwnProperty`, so
+ * a bare `{}` turns the default `createdAt` sort into a 400. These column maps let the
+ * REAL services run through `adminList` in route tests (see
+ * `admin-list-search-schema-routes.test.ts`) — which is the only way a missing
+ * `adminSearchSchema` (a 500 `CONFIGURATION_ERROR`) can show up there.
+ */
+const AUDIT_COLUMNS = {
+    id: 'id',
+    createdAt: 'created_at',
+    updatedAt: 'updated_at',
+    deletedAt: 'deleted_at',
+    createdById: 'created_by_id',
+    updatedById: 'updated_by_id'
+} as const;
+
+class ContentModerationTermMockModel extends GenericMockModel {
+    override getTable() {
+        return {
+            ...AUDIT_COLUMNS,
+            term: 'term',
+            kind: 'kind',
+            category: 'category',
+            enabled: 'enabled'
+        };
+    }
+    override getTableName() {
+        return 'contentModerationTerms';
+    }
+}
+
+class ContentModerationThresholdMockModel extends GenericMockModel {
+    override getTable() {
+        return { ...AUDIT_COLUMNS, context: 'context' };
+    }
+    override getTableName() {
+        return 'contentModerationThresholds';
+    }
+}
+
+class ExperienceReviewMockModel extends GenericMockModel {
+    override getTable() {
+        return {
+            ...AUDIT_COLUMNS,
+            experienceId: 'experience_id',
+            userId: 'user_id',
+            title: 'title',
+            content: 'content',
+            averageRating: 'average_rating',
+            overallRating: 'overall_rating',
+            lifecycleState: 'lifecycle_state',
+            moderationState: 'moderation_state'
+        };
+    }
+    override getTableName() {
+        return 'experienceReviews';
+    }
+}
+
+/**
  * HOS-981 — `qr_codes` table stub.
  *
  * Shape-only, in the style of the `accommodations` stub further down: a map from
@@ -1597,7 +1658,12 @@ export function createDbMock() {
         // instances (not classes) in @repo/db — mirror that here so initApp() can
         // construct all experience routes without a real DB.
         experienceModel: new ExperienceMockModel(),
-        experienceReviewModel: new GenericMockModel(),
+        experienceReviewModel: new ExperienceReviewMockModel(),
+
+        // HOS-1985: content-moderation term/threshold models (constructed by the
+        // services' constructors, so the CLASSES must be in this inventory).
+        ContentModerationTermModel: ContentModerationTermMockModel,
+        ContentModerationThresholdModel: ContentModerationThresholdMockModel,
         rExperienceAmenityModel: new GenericMockModel(),
         rExperienceFeatureModel: new GenericMockModel(),
 
