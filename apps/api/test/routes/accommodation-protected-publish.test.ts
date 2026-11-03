@@ -242,12 +242,6 @@ describe('POST /api/v1/protected/accommodations/:id/publish — publish (HOS-110
             ['no coverage and no trial', ServiceErrorCode.FORBIDDEN, 'subscription_required', 403],
             ['full vertical quota', ServiceErrorCode.LIMIT_REACHED, 'Listing limit reached', 403],
             ['changed source state', ServiceErrorCode.ALREADY_EXISTS, 'Listing state changed', 409],
-            [
-                'covered listing must use PB3',
-                ServiceErrorCode.ALREADY_EXISTS,
-                'Listing state changed',
-                409
-            ],
             ['invalid owner email', ServiceErrorCode.VALIDATION_ERROR, 'Invalid owner email', 400],
             ['incomplete listing', ServiceErrorCode.VALIDATION_ERROR, 'Listing is incomplete', 400],
             [
