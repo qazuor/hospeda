@@ -81,7 +81,16 @@ export async function shareProviderReadForAct<T>(args: {
     const scope = scopeStorage.getStore();
     if (!scope) return await args.read();
     const existing = scope.values.get(key);
-    if (existing) return (await existing) as ProviderRead<T>;
+    if (existing) {
+        const context = currentTrafficContext();
+        if (context?.counters)
+            context.counters.record({
+                trafficClass: context.trafficClass,
+                capability: 'read',
+                memoHit: true
+            });
+        return (await existing) as ProviderRead<T>;
+    }
     const pending = args.read();
     scope.values.set(key, pending);
     try {

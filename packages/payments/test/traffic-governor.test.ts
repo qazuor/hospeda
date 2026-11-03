@@ -7,6 +7,45 @@ import { ProviderTrafficGovernor } from '../src/provider/traffic-governor';
 afterEach(() => vi.useRealTimers());
 
 describe('ProviderTrafficGovernor', () => {
+    it('refreshes only in enforce, counts Redis fallback and memo hits (kills missing shared-state accounting)', async () => {
+        const refresh = vi.fn(async () => ({ fallback: true }));
+        const store = { extend: vi.fn(), until: () => 0, refresh };
+        const enforce = new ProviderTrafficGovernor({ mode: 'enforce', coolDownStore: store });
+        await enforce.acquire({ trafficClass: 'interactive', capability: 'read' });
+        enforce.recordMemoHit({ trafficClass: 'interactive', capability: 'read' });
+        const window = enforce.flushWindow();
+        expect(refresh).toHaveBeenCalledTimes(1);
+        expect(window?.redisFallbacks).toBe(1);
+        expect(window?.memoHits).toBe(1);
+
+        const observe = new ProviderTrafficGovernor({ mode: 'observe', coolDownStore: store });
+        await observe.acquire({ trafficClass: 'interactive', capability: 'read' });
+        expect(refresh).toHaveBeenCalledTimes(1);
+    });
+
+    it('rechecks abort after the shared refresh before queueing (kills a lost abort)', async () => {
+        let finishRefresh!: (value: { readonly fallback: boolean }) => void;
+        const refresh = vi.fn(
+            () =>
+                new Promise<{ readonly fallback: boolean }>((resolve) => {
+                    finishRefresh = resolve;
+                })
+        );
+        const governor = new ProviderTrafficGovernor({
+            mode: 'enforce',
+            coolDownStore: { extend: () => {}, until: () => 0, refresh }
+        });
+        const controller = new AbortController();
+        const pending = governor.acquire({
+            trafficClass: 'background',
+            capability: 'read',
+            signal: controller.signal
+        });
+        controller.abort();
+        finishRefresh({ fallback: false });
+        await expect(pending).rejects.toMatchObject({ governorRejected: true });
+        governor.stop();
+    });
     it('prioritizes interactive waiters after a refill (kills FIFO across classes)', async () => {
         vi.useFakeTimers();
         vi.setSystemTime(0);
