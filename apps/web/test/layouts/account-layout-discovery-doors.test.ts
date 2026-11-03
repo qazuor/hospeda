@@ -8,9 +8,9 @@
 
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
+import { VenueIcon } from '@repo/icons';
 import { RoleEnum } from '@repo/schemas';
 import { describe, expect, it } from 'vitest';
-
 import { ACCOUNT_DISCOVERY_DOORS, type DiscoveryDoor } from '../../src/config/discovery-doors';
 import { isDoorVisible, isVisibleByRoles } from '../../src/lib/nav-gating';
 
@@ -25,6 +25,14 @@ function visibleDoorsForRole(role: string | null): readonly DiscoveryDoor[] {
         })
     );
 }
+
+describe('venue discovery door icon', () => {
+    it('uses VenueIcon for the venue vertical', () => {
+        const listing = ACCOUNT_DISCOVERY_DOORS.find((door) => door.id === 'listing');
+        const venue = listing?.options.find((option) => option.id === 'venue');
+        expect(venue?.icon).toBe(VenueIcon);
+    });
+});
 
 describe('AccountLayout — discovery-door wiring (HOS-131 §6.2/§6.3)', () => {
     it('renders doors from the single-source config via ACCOUNT_DISCOVERY_DOORS + isDoorVisible', () => {
