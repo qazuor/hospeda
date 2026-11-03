@@ -260,7 +260,7 @@ const triggerCronJobRoute = createAdminRoute({
     requestQuery: { dryRun: cronDryRunQuerySchema },
     responseSchema: cronJobTriggerResponseSchema,
     successStatusCode: (result) =>
-        typeof result === 'object' && result !== null && 'accepted' in result ? 202 : 200,
+        typeof result === 'object' && result !== null && 'accepted' in result ? 202 : 201,
     handler: async (c, params, body, query) =>
         triggerCronJobHandler(
             c as Context<AppBindings>,

@@ -139,7 +139,7 @@ describe('exclusive manual cron trigger', () => {
         });
     });
 
-    it('returns 200 with the result for a non-exclusive job over HTTP', async () => {
+    it('returns 201 with the result for a non-exclusive job over HTTP', async () => {
         registeredJob.exclusive = false;
         runCronJob.mockResolvedValue({
             started: true,
@@ -153,7 +153,7 @@ describe('exclusive manual cron trigger', () => {
             })
         });
         const response = await adminCronRoutes.request('/exclusive-demo', { method: 'POST' });
-        expect(response.status).toBe(200);
+        expect(response.status).toBe(201);
         await expect(response.json()).resolves.toMatchObject({
             success: true,
             data: { success: true, jobName: 'exclusive-demo' }
