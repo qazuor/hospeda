@@ -173,6 +173,14 @@ export interface ChargeListResult {
     readonly chargeIds: readonly string[];
 }
 
+/** One refund of a charge as read by id: its provider id, amount, and whether the provider accredited it. */
+export interface ChargeRefund {
+    readonly refundId: string;
+    readonly amount: Money;
+    /** True only for a refund the provider reads `approved` (the only measured status, D-1); anything else fails closed. */
+    readonly accredited: boolean;
+}
+
 /** Capability 7 output: a charge as read by id. */
 export interface ChargeSnapshot {
     readonly chargeId: string;
@@ -192,6 +200,8 @@ export interface ChargeSnapshot {
     readonly amount: Money;
     /** Cumulative amount refunded so far. */
     readonly refundedAmount: Money;
+    /** The provider refunds by id that tie one refund row to its own returned amounts (02 §2.3). */
+    readonly refunds: readonly ChargeRefund[];
     /**
      * The payer disputed this charge with their bank and the money went back.
      * `status` stays `approved` because the charge did collect. Documented, not

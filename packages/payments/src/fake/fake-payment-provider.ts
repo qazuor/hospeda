@@ -75,6 +75,7 @@ import {
 } from './fake-options';
 import { FakeOrders } from './fake-orders';
 import { FakeOutbox } from './fake-outbox';
+import * as refundOutcome from './fake-refund-outcome';
 import { assertChargeableAmount, assertUnusedPaymentToken, nextChargeBatch } from './fake-rules';
 import { searchStoredAuthorizations } from './fake-search';
 import {
@@ -282,7 +283,8 @@ export class FakePaymentProvider implements PaymentProvider {
                     amountMinor: 0,
                     currency: authorization.snapshot.amount.currency
                 },
-                chargedBack: false
+                chargedBack: false,
+                refunds: []
             },
             version: 1,
             settleAt: null,
@@ -371,7 +373,8 @@ export class FakePaymentProvider implements PaymentProvider {
                         declineReason: null,
                         amount: { ...value.amount },
                         refundedAmount: { amountMinor: 0, currency: value.amount.currency },
-                        chargedBack: false
+                        chargedBack: false,
+                        refunds: []
                     },
                     version: 1,
                     settleAt: late ? nextChargeBatch({ at: this.now() }) : null,
@@ -520,12 +523,14 @@ export class FakePaymentProvider implements PaymentProvider {
                 if (stored.refundAttempts === 1 && partial && this.lying({ lie: 'M13' })) {
                     throw notRefundable({ capability: 'refund' });
                 }
+                const refundId = this.ledger.nextId({ prefix: 'refund' });
+                const refund = { refundId, amount: value.amount, accredited: true };
                 stored.snapshot = {
                     ...snapshot,
-                    refundedAmount: { amountMinor: refunded, currency: snapshot.amount.currency }
+                    refundedAmount: { amountMinor: refunded, currency: snapshot.amount.currency },
+                    refunds: [...snapshot.refunds, refund]
                 };
                 stored.refundsByReference.set(value.reference, value.amount.amountMinor);
-                const refundId = this.ledger.nextId({ prefix: 'refund' });
                 this.ledger.bump({ stored, resourceKind: 'charge', resourceId: value.chargeId });
                 this.ledger.emit({ resourceKind: 'refund', resourceId: refundId, version: 1 });
                 return { refundId };
@@ -648,6 +653,13 @@ export class FakePaymentProvider implements PaymentProvider {
         return { accepted: true, resourceId: chargeId };
     }
 
+    /** Test handle: rejects one previously accepted refund of this charge. */
+    async rejectRefund(input: refundOutcome.RejectInput): Promise<MutationAcknowledgement> {
+        const { chargeId, refundId } = refundOutcome.parseFakeRefundRejectionInput(input);
+        this.catchUp();
+        refundOutcome.applyFakeRefundRejection({ ledger: this.ledger, chargeId, refundId });
+        return { accepted: true, resourceId: chargeId };
+    }
     /**
      * Test handle: hands over, and forgets, every delivery due by now.
      *
