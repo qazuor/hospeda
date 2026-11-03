@@ -1,4 +1,5 @@
 import {
+    creationSweepModel,
     emailOutbox,
     eq,
     idempotencyKeys,
@@ -28,6 +29,106 @@ afterAll(closeServiceTestPool);
 beforeEach(resetSeededReconciliationInventory);
 
 describe('TEST:B11:23 creations sweep over the fake', () => {
+    it('retries searches on cadence, resets for a new create key, and retries a failed search immediately', async () => {
+        const createdAt = new Date('2026-10-20T12:00:00.000Z');
+        const time = createAdjustableClock({ start: new Date(createdAt.getTime() + 4 * 60_000) });
+        const { fake } = createReconciliationFake(time);
+        const row = await seedPendingCreation({ declaredPayerEmail: 'cadence@example.test' });
+        await getServiceTestDb()
+            .update(idempotencyKeys)
+            .set({ createdAt })
+            .where(eq(idempotencyKeys.key, row.key!));
+        const search = vi.spyOn(fake, 'searchAuthorizations').mockResolvedValue({
+            authorizations: [
+                {
+                    authorizationId: 'cancelled-cadence-result',
+                    createdAt: createdAt.toISOString(),
+                    reference: row.subscription.id,
+                    status: 'cancelled'
+                }
+            ]
+        });
+        const run = () =>
+            withSeededPendingCreations(() =>
+                runCreationsSweep(
+                    {},
+                    {
+                        provider: fake,
+                        clock: time,
+                        returnUrl: 'https://example.test',
+                        random: () => 0
+                    }
+                )
+            );
+
+        await run();
+        expect(search).toHaveBeenCalledTimes(0);
+        time.advance({ ms: 60_000 });
+        await run();
+        expect(search).toHaveBeenCalledTimes(1);
+        time.advance({ ms: 14 * 60_000 });
+        await run();
+        expect(search).toHaveBeenCalledTimes(1);
+        time.advance({ ms: 60_000 });
+        await run();
+        expect(search).toHaveBeenCalledTimes(2);
+        time.advance({ ms: 59 * 60_000 });
+        await run();
+        expect(search).toHaveBeenCalledTimes(2);
+        time.advance({ ms: 60_000 });
+        await run();
+        expect(search).toHaveBeenCalledTimes(3);
+
+        time.advance({ ms: 60_000 });
+        const newKey = await creationSweepModel.mintCreateKeyIfUnlinked({
+            subscriptionId: row.subscription.id,
+            createdAt: time.now()
+        });
+        expect(newKey).not.toBeNull();
+        await run();
+        expect(search).toHaveBeenCalledTimes(3);
+        time.advance({ ms: 5 * 60_000 });
+        await run();
+        expect(search).toHaveBeenCalledTimes(4);
+        time.advance({ ms: 14 * 60_000 });
+        await run();
+        expect(search).toHaveBeenCalledTimes(4);
+        time.advance({ ms: 60_000 });
+        await run();
+        expect(search).toHaveBeenCalledTimes(5);
+
+        const failingTime = createAdjustableClock({
+            start: new Date(createdAt.getTime() + 5 * 60_000)
+        });
+        const failingProvider = createReconciliationFake(failingTime).fake;
+        const failingRow = await seedPendingCreation({
+            declaredPayerEmail: 'failure@example.test'
+        });
+        await getServiceTestDb()
+            .update(idempotencyKeys)
+            .set({ createdAt })
+            .where(eq(idempotencyKeys.key, failingRow.key!));
+        const failingSearch = vi
+            .spyOn(failingProvider, 'searchAuthorizations')
+            .mockRejectedValueOnce(new Error('temporary provider failure'))
+            .mockResolvedValue({ authorizations: [] });
+        const retry = () =>
+            withSeededPendingCreations(() =>
+                runCreationsSweep(
+                    {},
+                    {
+                        provider: failingProvider,
+                        clock: failingTime,
+                        returnUrl: 'https://example.test',
+                        random: () => 0
+                    }
+                )
+            );
+        await retry();
+        await retry();
+        expect(failingSearch).toHaveBeenCalledTimes(2);
+    });
+
     it('shares one provider search across due rows with the same payer email', async () => {
         const time = createAdjustableClock({ start: new Date(Date.now() + 10 * 60_000) });
         const { fake } = createReconciliationFake(time);
