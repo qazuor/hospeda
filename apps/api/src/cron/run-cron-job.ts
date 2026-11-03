@@ -2,6 +2,7 @@ import { randomUUID } from 'node:crypto';
 import * as Sentry from '@sentry/node';
 import { HEALTHCHECKS_MONITORED_JOBS, pingHealthchecks } from '../utils/healthchecks-ping';
 import { apiLogger } from '../utils/logger';
+import type { CronLockDecision } from './cron-lock';
 import { withCronLock } from './cron-lock';
 import { recordCronRun } from './record-run';
 import { runCronHandlerInBackground } from './traffic';
@@ -98,7 +99,36 @@ export async function runCronJob(args: {
     const startHandler = (): Promise<CronJobResult> => runCronHandlerInBackground({ job, ctx });
     let handlerPromise: Promise<CronJobResult>;
     if (job.exclusive) {
-        const lock = await withCronLock({ name: job.name, runId, handler: startHandler });
+        let lock: CronLockDecision<CronJobResult>;
+        try {
+            lock = await withCronLock({ name: job.name, runId, handler: startHandler });
+        } catch (error) {
+            const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+            await recordCronRun({
+                jobName: job.name,
+                executionMode,
+                dryRun,
+                startedAt,
+                finishedAt: new Date(),
+                error
+            });
+            if (executionMode === 'scheduled') {
+                Sentry.captureException(error instanceof Error ? error : new Error(errorMessage), {
+                    level: 'error',
+                    tags: { module: 'cron', job_name: job.name, event_type: 'cron_failure' },
+                    contexts: {
+                        cron: {
+                            jobName: job.name,
+                            schedule: args.scheduleExpression ?? job.schedule,
+                            durationMs: Date.now() - startedAt.getTime()
+                        }
+                    }
+                });
+                if (monitored)
+                    void pingHealthchecks({ job: job.name, signal: 'fail' }).catch(() => undefined);
+            }
+            throw error;
+        }
         if (!lock.acquired) {
             const result: CronJobResult = {
                 success: true,

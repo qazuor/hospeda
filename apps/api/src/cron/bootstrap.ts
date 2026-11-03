@@ -20,95 +20,14 @@
  * @module cron/bootstrap
  */
 
-import { randomUUID } from 'node:crypto';
 import { MARKET_TIMEZONE } from '@repo/utils';
 import { env } from '../utils/env.js';
 import { apiLogger } from '../utils/logger';
 import { getEnabledCronJobs } from './registry';
 import { runCronJob } from './run-cron-job';
-import { runCronHandlerInBackground } from './traffic';
-import type { CronJobContext, CronJobDefinition, CronJobResult } from './types';
-
-/** Default per-job execution timeout (matches the value used by admin manual triggers). */
-const DEFAULT_JOB_TIMEOUT_MS = 30_000;
 
 /** node-cron options shared by every registered schedule. */
 export const CRON_SCHEDULE_OPTIONS = { timezone: MARKET_TIMEZONE, noOverlap: true } as const;
-
-/**
- * Builds the per-tick context handed to a job handler.
- *
- * Each tick mints a fresh run id and run correlation (HOS-1424). Each log
- * call is namespaced with the job name so log scraping by `[CRON:<name>]`
- * works the same as on the admin manual trigger path, and carries both ids
- * so one run can be read whole.
- *
- * @param jobName - Name of the job being run.
- * @returns The context for one run.
- */
-export function buildContext(
-    jobName: string,
-    options: {
-        readonly executionMode?: 'scheduled' | 'manual';
-        readonly signal?: AbortSignal;
-        readonly deadlineAt?: Date;
-        readonly dryRun?: boolean;
-    } = {}
-): CronJobContext {
-    const runId = randomUUID();
-    const correlationId = randomUUID();
-    const ids = { runId, correlationId };
-    const prefix = options.executionMode === 'manual' ? 'ADMIN-CRON' : 'CRON';
-    return {
-        logger: {
-            info: (message, data) =>
-                apiLogger.info({ message: `[${prefix}:${jobName}] ${message}`, ...ids, ...data }),
-            warn: (message, data) =>
-                apiLogger.warn({ message: `[${prefix}:${jobName}] ${message}`, ...ids, ...data }),
-            // SPEC-180: propagate `capture` option so job handlers can opt in to
-            // Sentry forwarding via `ctx.logger.error(msg, data, { capture: true })`.
-            error: (message, data, options) =>
-                apiLogger.error(
-                    { message: `[${prefix}:${jobName}] ${message}`, ...ids, ...data },
-                    undefined,
-                    options?.capture ? { capture: true } : undefined
-                ),
-            debug: (message, data) =>
-                apiLogger.debug({ message: `[${prefix}:${jobName}] ${message}`, ...ids, ...data })
-        },
-        startedAt: new Date(),
-        runId,
-        correlationId,
-        signal: options.signal ?? new AbortController().signal,
-        deadlineAt: options.deadlineAt ?? new Date(Date.now() + DEFAULT_JOB_TIMEOUT_MS),
-        dryRun: options.dryRun ?? false
-    };
-}
-
-/** Runs a single job handler with a wall-clock timeout. */
-export async function runJobWithTimeout(
-    job: CronJobDefinition,
-    timeoutMs: number
-): Promise<CronJobResult> {
-    const controller = new AbortController();
-    const startedAt = Date.now();
-    const timer = setTimeout(() => controller.abort(), timeoutMs);
-    const ctx = buildContext(job.name, {
-        signal: controller.signal,
-        deadlineAt: new Date(startedAt + timeoutMs)
-    });
-    const timeoutPromise = new Promise<never>((_, reject) => {
-        setTimeout(
-            () => reject(new Error(`Job execution timeout after ${timeoutMs}ms`)),
-            timeoutMs
-        );
-    });
-    try {
-        return await Promise.race([runCronHandlerInBackground({ job, ctx }), timeoutPromise]);
-    } finally {
-        clearTimeout(timer);
-    }
-}
 
 /**
  * Start the cron scheduler.
@@ -180,8 +99,13 @@ export const startCronScheduler = async (): Promise<void> => {
                             scheduleExpression
                         });
                         if (decision.started) await decision.completion;
-                    } catch {
-                        // runCronJob records and reports scheduled failures.
+                    } catch (error) {
+                        const errorMessage =
+                            error instanceof Error ? error.message : 'Unknown error';
+                        apiLogger.error({
+                            message: `[cron] tick failed before completion: ${job.name}`,
+                            error: errorMessage
+                        });
                     }
                 },
                 CRON_SCHEDULE_OPTIONS
