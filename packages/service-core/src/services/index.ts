@@ -199,6 +199,7 @@ export * from './billing/subscription/complement-s11-rule.js';
 export * from './billing/subscription/complement-s21.js';
 export * from './billing/subscription/complement-s21-charge.js';
 export * from './billing/subscription/complement-selection.js';
+export * from './billing/subscription/declare-manual-unpaid.service.js';
 export * from './billing/subscription/decline-first-charge.service.js';
 export * from './billing/subscription/end-scheduled-services.service.js';
 export * from './billing/subscription/enter-grace.service.js';

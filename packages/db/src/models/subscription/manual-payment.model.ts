@@ -160,6 +160,24 @@ export class ManualPaymentModel {
             .returning({ id: manualPayments.id });
         return Boolean(row);
     }
+
+    /** Declares an awaiting installment unpaid inside the caller's transaction. */
+    async markDeclaredUnpaid(input: {
+        readonly manualPaymentId: string;
+        readonly tx: DrizzleClient;
+    }): Promise<boolean> {
+        const [row] = await input.tx
+            .update(manualPayments)
+            .set({ status: 'DECLARED_UNPAID' })
+            .where(
+                and(
+                    eq(manualPayments.id, input.manualPaymentId),
+                    eq(manualPayments.status, 'AWAITING')
+                )
+            )
+            .returning({ id: manualPayments.id });
+        return Boolean(row);
+    }
 }
 
 /** Shared manual installment model. */
