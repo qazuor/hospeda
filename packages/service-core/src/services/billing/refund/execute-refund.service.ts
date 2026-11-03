@@ -16,6 +16,15 @@ import { lockRefundSource } from './refund-source';
 
 const logger = createLogger('execute-refund');
 
+function isRejectedResult(value: unknown): boolean {
+    return (
+        typeof value === 'object' &&
+        value !== null &&
+        'outcome' in value &&
+        value.outcome === 'REJECTED'
+    );
+}
+
 /** The id of a confirmed refund, optionally tied to a notice or sweep. */
 export type ExecuteRefundInput = { readonly refundId: string; readonly correlationId?: string };
 
@@ -92,11 +101,20 @@ export async function executeRefundFromProviderRead(
         .innerJoin(idempotencyKeys, eq(refundCalls.idempotencyKey, idempotencyKeys.key))
         .where(eq(refundCalls.refundId, input.refundId));
     if (calls.some((call) => call.addonInstanceId !== null)) return result(input, 'NOT_APPLICABLE');
-    if (calls.some((call) => call.completedAt === null))
-        return result(input, 'AWAITING_PROVIDER_ANSWER');
     const acceptedIds = calls.flatMap((call) =>
         call.providerRefundId === null ? [] : [call.providerRefundId]
     );
+    const rejectedCount = calls.filter(
+        (call) =>
+            call.providerRefundId === null &&
+            call.completedAt !== null &&
+            isRejectedResult(call.result)
+    ).length;
+    if (
+        calls.some((call) => call.completedAt === null) ||
+        acceptedIds.length + rejectedCount !== calls.length
+    )
+        return result(input, 'AWAITING_PROVIDER_ANSWER');
     if (acceptedIds.length === 0) return result(input, 'NOTHING_ACCEPTED');
 
     const [payment] = await db.select().from(payments).where(eq(payments.id, paymentId)).limit(1);
