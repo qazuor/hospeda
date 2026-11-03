@@ -1,7 +1,7 @@
 import type { Clock } from '@repo/billing-verticals-contract';
 import type { DrizzleClient, SelectPayment, SelectRefund } from '@repo/db';
 import { addonInstances, and, eq, getDb, refunds, subscriptions } from '@repo/db';
-import type { ChargeSnapshot, PaymentProvider } from '@repo/payments';
+import type { PaymentProvider } from '@repo/payments';
 import { actStartInstant, assertFreshForAct, PaymentProviderError } from '@repo/payments';
 import { ServiceErrorCode } from '@repo/schemas';
 import { isAdministrativeActionPermitted, resolveAdministrativeActionStep } from '@repo/verticals';
@@ -233,10 +233,10 @@ export async function confirmRefund(
     const { refund, payment, subjectId } = confirmed;
     const act = { kind: 'decision' as const, startedAt: ports.clock.now() };
     actStartInstant({ act });
-    let snapshot: ChargeSnapshot;
+    let chargedBack: boolean;
     try {
         const read = await ports.provider.readCharge({ chargeId: payment.providerFactId });
-        ({ snapshot } = assertFreshForAct({ read, act }));
+        chargedBack = assertFreshForAct({ read, act }).snapshot.chargedBack;
     } catch (error) {
         if (error instanceof PaymentProviderError && error.code === 'UNAVAILABLE')
             return {
@@ -248,7 +248,7 @@ export async function confirmRefund(
             };
         throw error;
     }
-    if (snapshot.chargedBack) {
+    if (chargedBack) {
         await detectRefundChargeback({ refund, payment, input, ports });
         return {
             refundId: refund.id,
