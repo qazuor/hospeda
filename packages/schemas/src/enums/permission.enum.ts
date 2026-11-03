@@ -879,6 +879,8 @@ export enum PermissionEnum {
     BILLING_CANCEL_SUBSCRIPTION = 'billing.cancelSubscription', // Allows cancelling a subscription with administrative action 8 (NUCLEO/08 §3); with the revocation motive it runs S36.
     BILLING_LIFT_RECONCILIATION_MARK = 'billing.liftReconciliationMark', // Allows lifting one reconciliation mark (S15) with administrative action 7 (NUCLEO/08 §3), resolving without refund only the hung payments the person names. SUPER_ADMIN-only.
     BILLING_REFUND = 'billing.refund', // Allows confirming a refund request so it is sent to the provider (RF2) with administrative action 13 (NUCLEO/08 §3). SUPER_ADMIN-only.
+    BILLING_REGISTER_MANUAL_PAYMENT = 'billing.registerManualPayment', // Allows registering a manual payment with administrative action 3 (NUCLEO/08 §3): MP1, and later MP4 and MP6. SUPER_ADMIN-only.
+    BILLING_DECLARE_MANUAL_UNPAID = 'billing.declareManualUnpaid', // Allows confirming that a manual installment was not paid with administrative action 4 (NUCLEO/08 §3): MP2 suspends the subscription. SUPER_ADMIN-only.
     TRIAL_EXTEND = 'trial.extend', // Allows extending another person's running trial past the ceiling with a mandatory reason (action 11, HOS-1445). SUPER_ADMIN-only.
     USER_MANAGE_SUPER_ADMIN_ROLE = 'user.manageSuperAdminRole', // Allows assigning or removing the SUPER_ADMIN role with administrative action 26 (NUCLEO/08 §3). SUPER_ADMIN-only.
     BILLING_GRANT_COMPLIMENTARY = 'billing.grantComplimentary', // Allows granting or revoking a temporary courtesy (action 1) and granting, anchoring or revoking a permanent grant (action 2): one permission for both (DEC-GRANT-002). SUPER_ADMIN-only.
