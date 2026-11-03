@@ -1,11 +1,20 @@
 import { randomUUID } from 'node:crypto';
-import { billingOptions, getDb, plans, planVersions, sql, subscriptions } from '@repo/db';
+import {
+    billingOptions,
+    getDb,
+    plans,
+    planVersionEntitlements,
+    planVersions,
+    sql,
+    subscriptions
+} from '@repo/db';
 import { RoleEnum, RoleGrantReason, VerticalEnum } from '@repo/schemas';
 import { grantRole } from '@repo/service-core';
 import { runDailyCoverageReconciler } from '@repo/verticals';
 import { afterAll, afterEach, beforeAll, describe, expect, it } from 'vitest';
 import { initApp } from '../../../src/app';
 import { validateApiEnv } from '../../../src/utils/env';
+import { getListingAccessPorts } from '../../../src/utils/listing-access/ports';
 import { getListingReconcilerPorts } from '../../../src/utils/listing-publication/reconciler-ports';
 import { testDb } from '../../e2e/setup/test-database';
 import { createOwner } from '../listing-publication/publication-routes.helpers';
@@ -77,23 +86,40 @@ describe('TEST:V7:12 AC:V7:12 partner role survives loss of presence', () => {
             })
             .returning({ id: plans.id });
         if (!plan) throw new Error('Expected Partner plan');
-        const [version] = await getDb()
-            .insert(planVersions)
-            .values({
-                planId: plan.id,
-                vertical: VerticalEnum.PARTNER,
-                rank: Math.floor(Math.random() * 100_000_000) + 1_000,
-                sellable: false,
-                current: false,
-                trialDays: 0,
-                allowsPause: false
-            })
-            .returning({ id: planVersions.id });
-        if (!version) throw new Error('Expected Partner plan version');
+        const versionId = await getDb().transaction(async (tx) => {
+            const [version] = await tx
+                .insert(planVersions)
+                .values({
+                    planId: plan.id,
+                    vertical: VerticalEnum.PARTNER,
+                    rank: Math.floor(Math.random() * 100_000_000) + 1_000,
+                    sellable: false,
+                    current: false,
+                    trialDays: 0,
+                    allowsPause: false
+                })
+                .returning({ id: planVersions.id });
+            if (!version) throw new Error('Expected Partner plan version');
+            await tx.insert(planVersionEntitlements).values([
+                {
+                    planVersionId: version.id,
+                    key: 'partner_public_page',
+                    planQuota: null,
+                    trialQuota: null
+                },
+                {
+                    planVersionId: version.id,
+                    key: 'partner_carousel_presence',
+                    planQuota: null,
+                    trialQuota: null
+                }
+            ]);
+            return version.id;
+        });
         const [option] = await getDb()
             .insert(billingOptions)
             .values({
-                planVersionId: version.id,
+                planVersionId: versionId,
                 cycle: 'monthly',
                 amount: 10_000,
                 currency: 'ARS'
@@ -106,7 +132,7 @@ describe('TEST:V7:12 AC:V7:12 partner role survives loss of presence', () => {
             .values({
                 userId: owner.id,
                 vertical: VerticalEnum.PARTNER,
-                planVersionId: version.id,
+                planVersionId: versionId,
                 billingOptionId: option.id,
                 paymentMethod: 'CARD',
                 status: 'ACTIVE',
@@ -121,6 +147,19 @@ describe('TEST:V7:12 AC:V7:12 partner role survives loss of presence', () => {
         expect(before).toContainEqual(
             expect.objectContaining({ role: 'PARTNER_OWNER', grant_reason: 'partner_claimed' })
         );
+        const effectiveSet = await getListingAccessPorts().effectiveSet({
+            userId: owner.id,
+            vertical: VerticalEnum.PARTNER
+        });
+        const cachedPartnerKeys = ['partner_public_page', 'partner_carousel_presence'].filter(
+            (key) =>
+                effectiveSet?.entitlements.get({
+                    key,
+                    userId: owner.id,
+                    vertical: VerticalEnum.PARTNER
+                }) !== undefined
+        );
+        expect(cachedPartnerKeys).toEqual(['partner_public_page', 'partner_carousel_presence']);
 
         // The production writer, writeArrearsSuspension, is not exported from @repo/service-core;
         // G4 already guarantees subscription transitions never write user_role.
