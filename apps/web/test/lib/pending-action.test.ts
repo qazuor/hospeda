@@ -44,22 +44,30 @@ describe('pending-action', () => {
 
     it('stores and takes a partner claim once, and expires it after ten minutes', () => {
         savePendingAction({ action: PARTNER_CLAIM, path: '/es/partners/reclamar/', now: 1000 });
-        expect(
-            takePendingAction({ path: '/es/partners/reclamar/', matches: anyAction, now: 1001 })
-        ).toEqual(PARTNER_CLAIM);
-        expect(
-            takePendingAction({ path: '/es/partners/reclamar/', matches: anyAction, now: 1002 })
-        ).toBeNull();
+        const taken = takePendingAction({
+            path: '/es/partners/reclamar/',
+            matches: anyAction,
+            now: 1001
+        });
+        const takenClaim = taken as Extract<PendingAction, { readonly kind: 'partner-claim' }>;
+        expect(takenClaim.kind).toBe('partner-claim');
+        expect(takenClaim.partnerId).toBe(PARTNER_CLAIM.partnerId);
+        expect(takenClaim.secret === PARTNER_CLAIM.secret).toBe(true);
+        const replayed = takePendingAction({
+            path: '/es/partners/reclamar/',
+            matches: anyAction,
+            now: 1002
+        });
+        expect(replayed === null).toBe(true);
 
         savePendingAction({ action: PARTNER_CLAIM, path: '/es/partners/reclamar/', now: 2000 });
-        expect(
-            takePendingAction({
-                path: '/es/partners/reclamar/',
-                matches: anyAction,
-                now: 2000 + PENDING_ACTION_TTL_MS
-            })
-        ).toBeNull();
-        expect(window.sessionStorage.getItem(PENDING_ACTION_STORAGE_KEY)).toBeNull();
+        const expired = takePendingAction({
+            path: '/es/partners/reclamar/',
+            matches: anyAction,
+            now: 2000 + PENDING_ACTION_TTL_MS
+        });
+        expect(expired === null).toBe(true);
+        expect(window.sessionStorage.getItem(PENDING_ACTION_STORAGE_KEY) === null).toBe(true);
     });
 
     it('discards an expired action and purges it', () => {
