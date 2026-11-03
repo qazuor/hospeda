@@ -49,6 +49,23 @@ describe.skipIf(!isServiceTestDbAvailable())('TEST:B8b:1 S8 and its failure bran
             principal: { userId: principal.userId, principalId: principal.subscriptionId },
             scopeType: 'VERTICAL_SUBSCRIPTION'
         });
+        const noticeSnapshots: Array<{ status: string | undefined; lossCount: number }> = [];
+        const emitCoverageChanged = vi.fn(async () => {
+            const [current] = await db()
+                .select({ status: subscriptions.status })
+                .from(subscriptions)
+                .where(eq(subscriptions.id, principal.subscriptionId));
+            const losses = await db()
+                .select({ lostAt: coverageLosses.lostAt })
+                .from(coverageLosses)
+                .where(
+                    and(
+                        eq(coverageLosses.userId, principal.userId),
+                        eq(coverageLosses.vertical, 'accommodation')
+                    )
+                );
+            noticeSnapshots.push({ status: current?.status, lossCount: losses.length });
+        });
 
         const result = await pauseSubscription(
             { subscriptionId: principal.subscriptionId, requestedMonths: 2 },
@@ -57,11 +74,18 @@ describe.skipIf(!isServiceTestDbAvailable())('TEST:B8b:1 S8 and its failure bran
                 clock,
                 planPolicy: pausePlanPolicy(),
                 complements: seeded.policy,
-                coverageNotices: { emitCoverageChanged: async () => {} }
+                coverageNotices: { emitCoverageChanged }
             }
         );
 
         expect(result.outcome).toBe('PAUSED');
+        expect(emitCoverageChanged).toHaveBeenCalledExactlyOnceWith({
+            userId: principal.userId,
+            vertical: 'accommodation',
+            sourceType: 'SUBSCRIPTION',
+            change: 'REMOVED'
+        });
+        expect(noticeSnapshots).toEqual([{ status: 'PAUSED', lossCount: 1 }]);
         if (result.outcome !== 'PAUSED') throw new Error('S8 did not pause');
         expect(result.complements.results).toMatchObject([{ outcome: 'PAUSED' }]);
         const rows = await db()
