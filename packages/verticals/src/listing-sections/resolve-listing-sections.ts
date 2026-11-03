@@ -23,12 +23,14 @@ const VERTICAL_ENUM: Readonly<Record<ListingVertical, VerticalEnum>> = {
     accommodation: VerticalEnum.ACCOMMODATION
 };
 
+/** A business line or the catalog names a section id the vertical's catalog does not have. */
 export class UnknownListingSectionIdError extends Error {
     constructor(readonly id: string) {
         super(`Unknown listing section id: ${id}`);
         this.name = 'UnknownListingSectionIdError';
     }
 }
+/** The listing carries a business line that is not declared for its vertical. */
 export class UnknownBusinessLineError extends Error {
     constructor(
         readonly vertical: ListingVertical,
@@ -38,6 +40,7 @@ export class UnknownBusinessLineError extends Error {
         this.name = 'UnknownBusinessLineError';
     }
 }
+/** A section or trait names an entitlement key that is not in the key catalog. */
 export class UnknownListingSectionKeyError extends Error {
     constructor(readonly key: string) {
         super(`Unknown listing section entitlement key: ${key}`);
@@ -45,16 +48,38 @@ export class UnknownListingSectionKeyError extends Error {
     }
 }
 
+/** One section's resolved state and the state of each of its traits. */
 export interface ResolvedListingSection {
+    /** `absent` (no line lists it), `locked` (key not granted) or `available`. */
     readonly state: ListingSectionState;
+    /** Trait id → state; a non-available section imposes its own state on every trait. */
     readonly traits: ReadonlyMap<string, ListingSectionState>;
 }
+/** Output of {@link resolveListingSections}. */
 export interface ResolveListingSectionsResult {
+    /** Section id → resolved section, for every section of the vertical's catalog. */
     readonly sections: ReadonlyMap<string, ResolvedListingSection>;
+    /** More than one of the listing's business lines owns a non-`absent` section. */
     readonly multiLine: boolean;
 }
 
-/** Resolves every section and trait from one already-read effective set. */
+/**
+ * Resolves every section and trait of a listing from one already-read effective set
+ * (sub-spec 3, DEC-FAC-020/050/051). A non-common section that none of the listing's
+ * business lines lists is `absent`; otherwise it is `locked` when its entitlement key
+ * is not granted, and `available` when it is. Traits inherit a non-available section's
+ * state and are otherwise gated by their own key. Pure: no I/O.
+ *
+ * @param args.vertical - The listing's vertical.
+ * @param args.businessLines - The listing's stored business lines.
+ * @param args.effective - The owner's effective set, read once for the listing.
+ * @param args.userId - The owner whose entitlements are evaluated.
+ * @param args.catalog - Test-only catalog override; production reads `@repo/schemas`.
+ * @returns The state of every section and trait, plus `multiLine`.
+ * @throws {UnknownBusinessLineError} A business line not declared for the vertical.
+ * @throws {UnknownListingSectionIdError} A section id missing from the vertical's catalog.
+ * @throws {UnknownListingSectionKeyError} An entitlement key missing from the key catalog.
+ */
 export function resolveListingSections(args: {
     readonly vertical: ListingVertical;
     readonly businessLines: readonly string[];

@@ -7,7 +7,7 @@ import {
     UnknownBusinessLineError,
     UnknownListingSectionIdError,
     UnknownListingSectionKeyError
-} from '../../src/listing-sections';
+} from '../../src/listing-sections/resolve-listing-sections';
 
 function effective(vertical: 'venue' | 'experience' | 'accommodation', keys: readonly string[]) {
     const userId = 'owner';

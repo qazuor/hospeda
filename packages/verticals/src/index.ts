@@ -133,7 +133,7 @@ export {
     UnknownBusinessLineError,
     UnknownListingSectionIdError,
     UnknownListingSectionKeyError
-} from './listing-sections';
+} from './listing-sections/resolve-listing-sections';
 export type {
     AddonVersionPolicyRow,
     PlanCatalogReader,
