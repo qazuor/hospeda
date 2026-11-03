@@ -1,11 +1,12 @@
 import { GOVERNOR_WINDOW_MS, type GovernorMode, ProviderTrafficGovernor } from '@repo/payments';
 import { env } from './env';
 import { apiLogger } from './logger';
+import { createMercadoPagoRedisCoolDownStore } from './mp-cooldown-redis-store';
 
 let processGovernor: ProviderTrafficGovernor | undefined;
 let initialized = false;
 
-/** Build the process-wide MP governor, degrading enforce to observe in PR-1.
+/** Build the process-wide MP governor.
  * Emits at most one Sentry capture per capability per fixed 60 s window (`floor(now / GOVERNOR_WINDOW_MS)`).
  */
 export function createMercadoPagoTrafficGovernor(args: {
@@ -13,15 +14,17 @@ export function createMercadoPagoTrafficGovernor(args: {
     readonly now?: () => number;
 }): ProviderTrafficGovernor | undefined {
     if (args.mode === 'off') return undefined;
-    if (args.mode === 'enforce') {
-        apiLogger.warn({
-            message: '[mp-governor] enforce is not available until HOS-1999 PR-3; running observe'
-        });
-    }
     const capturedAt = new Map<string, number>();
     const now = args.now ?? Date.now;
     const governor = new ProviderTrafficGovernor({
-        mode: 'observe',
+        mode: args.mode,
+        ...(args.mode === 'enforce' && env.HOSPEDA_REDIS_URL
+            ? {
+                  coolDownStore: createMercadoPagoRedisCoolDownStore({
+                      redisUrl: env.HOSPEDA_REDIS_URL
+                  })
+              }
+            : {}),
         now,
         onWindow: (window) => apiLogger.info({ message: 'mp_traffic_window', ...window }),
         onInteractiveRateLimited: (info) => {
@@ -51,4 +54,9 @@ export function getMercadoPagoTrafficGovernor(
         mode: args.mode ?? env.HOSPEDA_MERCADO_PAGO_GOVERNOR_MODE
     });
     return processGovernor;
+}
+
+/** Tell whether the process governor owns retry behavior. */
+export function isMercadoPagoGovernorEnforcing(): boolean {
+    return getMercadoPagoTrafficGovernor()?.mode === 'enforce';
 }

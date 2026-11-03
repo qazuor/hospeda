@@ -9,13 +9,13 @@ import { createMercadoPagoTrafficGovernor } from '../../src/utils/mp-traffic-gov
 afterEach(() => vi.clearAllMocks());
 
 describe('Mercado Pago traffic governor composition', () => {
-    it('supports off, observe, and enforce degradation with one warning (kills enforce activation before PR-3)', () => {
+    it('supports off, observe, and enforce without constructing Redis outside enforce (kills mode degradation)', () => {
         expect(createMercadoPagoTrafficGovernor({ mode: 'off' })).toBeUndefined();
         const observe = createMercadoPagoTrafficGovernor({ mode: 'observe' });
         expect(observe).toMatchObject({ mode: 'observe' });
         const enforce = createMercadoPagoTrafficGovernor({ mode: 'enforce' });
-        expect(enforce).toMatchObject({ mode: 'observe' });
-        expect(warn).toHaveBeenCalledTimes(1);
+        expect(enforce).toMatchObject({ mode: 'enforce' });
+        expect(warn).not.toHaveBeenCalled();
         observe?.stop();
         enforce?.stop();
     });
