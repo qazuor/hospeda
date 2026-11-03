@@ -545,9 +545,9 @@ export const HOSPEDA_ENV_VARS = [
     {
         name: 'HOSPEDA_MERCADO_PAGO_GOVERNOR_MODE',
         description:
-            'Mercado Pago traffic governor mode: off disables it, observe records traffic, enforce is available in HOS-1999 PR-3',
+            'Mercado Pago traffic governor mode: off disables it, observe records traffic without changing requests, enforce applies admission control, shared cool-down and governor-owned read retries',
         descriptionEs:
-            'Modo del governor de tráfico de Mercado Pago: off lo desactiva, observe registra tráfico y enforce llega en HOS-1999 PR-3',
+            'Modo del governor de tráfico de Mercado Pago: off lo desactiva, observe registra tráfico sin cambiar requests y enforce aplica control de admisión, cool-down compartido y retries de lectura bajo el governor',
         type: 'enum',
         enumValues: ['off', 'observe', 'enforce'],
         required: false,

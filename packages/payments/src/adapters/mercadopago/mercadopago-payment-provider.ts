@@ -170,7 +170,9 @@ export class MercadoPagoPaymentProvider implements PaymentProvider {
             policy: this.readRetry,
             sleep: this.sleep,
             now: () => this.clock.now(),
-            attempt: async () => {
+            retryOwnership: this.governor?.mode === 'enforce' ? 'governor' : 'legacy',
+            trafficClass: currentTrafficContext()?.trafficClass ?? 'interactive',
+            attempt: async ({ maxWaitMs } = {}) => {
                 const trafficContext = currentTrafficContext();
                 const trafficClass = trafficContext?.trafficClass ?? 'interactive';
                 if (this.governor) {
@@ -178,6 +180,7 @@ export class MercadoPagoPaymentProvider implements PaymentProvider {
                         await this.governor.acquire({
                             trafficClass,
                             capability: args.capability,
+                            ...(maxWaitMs === undefined ? {} : { maxWaitMs }),
                             unclassified: trafficContext === undefined
                         });
                     } catch (error) {
