@@ -2,12 +2,7 @@ import type { Clock } from '@repo/billing-verticals-contract';
 import type { SelectPayment, SelectRefund } from '@repo/db';
 import { eq, getDb, idempotencyKeys, refundCalls } from '@repo/db';
 import { createLogger } from '@repo/logger';
-import type {
-    OrderRefundScope,
-    OrderSnapshot,
-    PaymentProvider,
-    ProviderRead
-} from '@repo/payments';
+import type { OrderRefundScope, PaymentProvider } from '@repo/payments';
 import { PaymentProviderError } from '@repo/payments';
 import { ServiceErrorCode } from '@repo/schemas';
 import { ServiceError } from '../../../types';
@@ -40,15 +35,17 @@ export async function sendOrderRefundCall(input: {
     readonly refund: SelectRefund;
     readonly payment: SelectPayment;
     readonly orderId: string;
-    readonly order: ProviderRead<OrderSnapshot>['snapshot'];
+    readonly order: { readonly paymentTransactionId: string | null };
     readonly provider: PaymentProvider;
     readonly clock: Clock;
+    readonly existingCall?: { readonly idempotencyKey: string; readonly amount: number };
 }): Promise<OrderCallResult> {
     const { refund, payment, orderId, order, provider, clock } = input;
+    const amount = input.existingCall?.amount ?? refund.amount;
     const addonInstanceId = payment.addonInstanceId;
     if (!addonInstanceId) throw new Error('Order refund has no add-on instance');
     let scope: OrderRefundScope;
-    if (refund.amount === payment.amount) scope = { kind: 'total' };
+    if (amount === payment.amount) scope = { kind: 'total' };
     else {
         const transactionId = order.paymentTransactionId;
         if (transactionId === null)
@@ -56,19 +53,22 @@ export async function sendOrderRefundCall(input: {
         scope = {
             kind: 'partial',
             transactionId,
-            amount: { amountMinor: refund.amount, currency: payment.currency }
+            amount: { amountMinor: amount, currency: payment.currency }
         };
     }
     let key: string;
-    try {
-        ({ key } = await persistCall(refund.id, payment, refund.amount, addonInstanceId));
-    } catch (error) {
-        const cause = extractPostgresErrorCause(error);
-        if (cause?.code === '23505' && cause.constraint === HELD_CONSTRAINT)
-            return { outcome: 'ORDER_REFUND_HELD', calls: [] };
-        throw error;
+    if (input.existingCall) key = input.existingCall.idempotencyKey;
+    else {
+        try {
+            ({ key } = await persistCall(refund.id, payment, amount, addonInstanceId));
+        } catch (error) {
+            const cause = extractPostgresErrorCause(error);
+            if (cause?.code === '23505' && cause.constraint === HELD_CONSTRAINT)
+                return { outcome: 'ORDER_REFUND_HELD', calls: [] };
+            throw error;
+        }
     }
-    const unanswered: SentCall = { amount: refund.amount, providerRefundId: null, answered: false };
+    const unanswered: SentCall = { amount, providerRefundId: null, answered: false };
     let response: Awaited<ReturnType<PaymentProvider['refundOrder']>>;
     try {
         response = await provider.refundOrder({ orderId, reference: key, scope });
@@ -110,7 +110,7 @@ export async function sendOrderRefundCall(input: {
     );
     const newRefunds = response.refunds.filter(({ refundId }) => !ids.has(refundId));
     const only = newRefunds.length === 1 ? newRefunds[0] : undefined;
-    if (!only || only.amountMinor !== refund.amount) {
+    if (!only || only.amountMinor !== amount) {
         logger.error(
             {
                 orderId,
@@ -141,7 +141,7 @@ export async function sendOrderRefundCall(input: {
     }
     return {
         outcome: 'SENT',
-        calls: [{ amount: refund.amount, providerRefundId: only.refundId, answered: true }]
+        calls: [{ amount, providerRefundId: only.refundId, answered: true }]
     };
 }
 
