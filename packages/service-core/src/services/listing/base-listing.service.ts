@@ -26,6 +26,7 @@
 import type { DrizzleClient } from '@repo/db';
 import { DestinationModel } from '@repo/db';
 import {
+    BUSINESS_LINE_RULES,
     DestinationTypeEnum,
     type PermissionEnum,
     RoleGrantReason,
@@ -577,6 +578,14 @@ export abstract class BaseListingService<
         ctx: ServiceContext
     ): Promise<Partial<TEntity>> {
         const payload = data as Record<string, unknown>;
+        const businessRules = (
+            BUSINESS_LINE_RULES as Record<
+                string,
+                { readonly typeRules: Record<string, { readonly preselect: readonly string[] }> }
+            >
+        )[this.entityName];
+        const businessLines =
+            payload.businessLines ?? businessRules?.typeRules[String(payload.type)]?.preselect;
         // ACC:15 (HOS-1493): an action-15 create is born an unpublished draft.
         assertSupportCreateIsDraft({ data: payload });
         const typedCtx = ctx as ServiceContext<ListingHookState>;
@@ -606,10 +615,10 @@ export abstract class BaseListingService<
                 const existing = await model.findOne({ slug: candidate });
                 return !!existing;
             });
-            return { slug } as Partial<TEntity>;
+            return { slug, ...(businessLines ? { businessLines } : {}) } as Partial<TEntity>;
         }
 
-        return {} as Partial<TEntity>;
+        return (businessLines ? { businessLines } : {}) as Partial<TEntity>;
     }
 
     // -----------------------------------------------------------------------

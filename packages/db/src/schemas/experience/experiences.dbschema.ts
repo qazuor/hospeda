@@ -6,9 +6,11 @@ import type {
     SocialNetwork,
     Video
 } from '@repo/schemas';
-import { relations } from 'drizzle-orm';
+import { BUSINESS_LINES } from '@repo/schemas';
+import { relations, sql } from 'drizzle-orm';
 import {
     boolean,
+    check,
     doublePrecision,
     index,
     integer,
@@ -23,6 +25,7 @@ import { destinations } from '../destination/destination.dbschema.ts';
 import { ExperiencePriceUnitPgEnum, ExperienceTypePgEnum } from '../enums.dbschema.ts';
 import { listingPublicationColumns } from '../listing/listing-publication-columns.ts';
 import { users } from '../user/user.dbschema.ts';
+import { quotedList } from '../vertical/quoted-list.ts';
 import { experienceFaqs } from './experience_faq.dbschema.ts';
 import { experienceReviews } from './experience_review.dbschema.ts';
 import { rExperienceAmenity } from './r_experience_amenity.dbschema.ts';
@@ -57,6 +60,14 @@ export const experiences = pgTable(
         richDescriptionI18n: jsonb('rich_description_i18n').$type<I18nText>(),
         /** Experience sub-category (CAR_RENTAL, TOUR_GUIDE, EXCURSION, etc.). */
         type: ExperienceTypePgEnum('type').notNull(),
+        businessLines: text('business_lines')
+            .array()
+            .notNull()
+            .default(
+                sql.raw(
+                    `ARRAY[${BUSINESS_LINES.experience.map(({ value }) => `'${value}'`).join(', ')}]::text[]`
+                )
+            ),
         /**
          * Starting price in integer centavos (project-wide "Money = integer" rule).
          *
@@ -328,6 +339,14 @@ export const experiences = pgTable(
         deletedById: uuid('deleted_by_id').references(() => users.id, { onDelete: 'set null' })
     },
     (table) => ({
+        experiences_business_lines_valid: check(
+            'experiences_business_lines_valid',
+            sql`cardinality(${table.businessLines}) >= 1 AND ${table.businessLines} <@ ARRAY[${quotedList(BUSINESS_LINES.experience.map(({ value }) => value))}]::text[]`
+        ),
+        experiences_business_lines_gin_idx: index('experiences_business_lines_gin_idx').using(
+            'gin',
+            table.businessLines
+        ),
         experiences_destinationId_idx: index('experiences_destinationId_idx').on(
             table.destinationId
         ),

@@ -74,7 +74,8 @@ export const LISTING_NON_CONTENT_FIELDS = [
     'publicationStatus',
     'inactiveSince',
     'deadlinesVersion',
-    'deletionAnnouncedAt'
+    'deletionAnnouncedAt',
+    'businessLines'
 ] as const;
 
 const NON_CONTENT = new Set<string>(LISTING_NON_CONTENT_FIELDS);
