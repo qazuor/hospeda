@@ -11,31 +11,10 @@ vi.mock('@/lib/api/client', () => ({ fetchApi }));
 vi.mock('@/hooks/use-user-permissions', () => ({
     useUserPermissions: () => ['MAINTENANCE_MODE_WRITE']
 }));
-vi.mock('@/hooks/use-translations', () => ({
-    useTranslations: () => ({
-        locale: 'es-AR',
-        t: (key: string, values?: Record<string, unknown>) => {
-            const text =
-                key
-                    .split('.')
-                    .slice(1)
-                    .reduce((node: any, part) => node?.[part], es) ?? key;
-            return Object.entries(values ?? {}).reduce(
-                (result, [name, value]) => result.replaceAll(`{${name}}`, String(value)),
-                text
-            );
-        },
-        tPlural: (key: string, count: number) => {
-            const parts = key.split('.').slice(1);
-            const leaf = parts.pop();
-            const parent = parts.reduce((node: any, part) => node?.[part], es);
-            return (parent?.[`${leaf}_${count === 1 ? 'one' : 'other'}`] ?? key).replaceAll(
-                '{{count}}',
-                String(count)
-            );
-        }
-    })
-}));
+vi.mock('@/hooks/use-translations', async () => {
+    const { createTranslationMock } = await import('./translation-mock');
+    return { useTranslations: createTranslationMock };
+});
 function renderScreen() {
     const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
     return render(
