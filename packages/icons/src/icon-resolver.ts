@@ -178,6 +178,7 @@ import { PostIcon } from './icons/entities/PostIcon';
 import { PostSponsorIcon } from './icons/entities/PostSponsorIcon';
 import { PostSponsorshipIcon } from './icons/entities/PostSponsorshipIcon';
 import { PromotionsIcon } from './icons/entities/PromotionsIcon';
+import { VenueIcon } from './icons/entities/VenueIcon';
 // Feature icons
 import { AccessibilityFriendlyIcon } from './icons/features/AccessibilityFriendlyIcon';
 import { AdultsOnlyIcon } from './icons/features/AdultsOnlyIcon';
@@ -429,6 +430,7 @@ export const ICON_MAP: Record<string, IconComponent> = {
     PermissionIcon,
     PostIcon,
     PostSponsorIcon,
+    VenueIcon,
     PostSponsorshipIcon,
     PromotionsIcon,
 

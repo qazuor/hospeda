@@ -8,7 +8,7 @@
     },
     "listing": {
         "title": "Comer e sair",
-        "subtitle": "Descubra os melhores restaurantes, bares e sabores da região",
+        "subtitle": "Descubra lugares para comer e sair na região",
         "emptyState": "Nenhum estabelecimento encontrado com os filtros selecionados.",
         "emptyCatalog": "Ainda não há estabelecimentos publicados.",
         "errorBanner": "Não foi possível carregar a lista de Comer e sair. Tente novamente mais tarde.",
@@ -118,11 +118,11 @@
             "title": "Benefícios para seu estabelecimento",
             "item1": {
                 "title": "Visibilidade regional",
-                "desc": "Apareça onde milhares de viajantes procuram onde comer em Concepción del Uruguay e no litoral entrerriano."
+                "desc": "Apareça onde milhares de viajantes procuram lugares para comer ou sair em Concepción del Uruguay e no litoral entrerriano."
             },
             "item2": {
                 "title": "Publique em minutos",
-                "desc": "Carregue fotos, cardápio e horários em um painel simples. Edite quando quiser."
+                "desc": "Adicione fotos, opções de comida ou bebida e horários em um painel simples. Edite quando quiser."
             },
             "item3": {
                 "title": "Preço fixo, sem comissões",
@@ -138,11 +138,11 @@
             },
             "step2": {
                 "title": "Publique seu local",
-                "desc": "Adicione fotos, cardápio, horários e localização."
+                "desc": "Adicione fotos, opções de comida ou bebida, horários e localização."
             },
             "step3": {
                 "title": "Seja encontrado",
-                "desc": "Os clientes te encontram procurando onde comer e sair na região."
+                "desc": "Quem visita a região encontra seu estabelecimento ao procurar um lugar para comer ou sair."
             }
         },
         "price": {
@@ -174,7 +174,7 @@
         },
         "lead": {
             "title": "Adicione seu negócio",
-            "subtitle": "Crie sua conta, publique seu local e comece a alcançar clientes que procuram onde comer na região."
+            "subtitle": "Crie sua conta, publique seu estabelecimento e alcance quem procura um lugar para comer ou sair na região."
         }
     },
     "owner": {
