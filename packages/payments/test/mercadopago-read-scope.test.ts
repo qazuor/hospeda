@@ -57,6 +57,7 @@ describe('Mercado Pago provider read scope', () => {
         await provider.listCharges({ authorizationId: authorization.authorizationId });
         await provider.readCharge({ chargeId: chargeIds[0]! });
         expect(server.requests().length - beforeOutside).toBe(3);
+        clock.advance({ ms: 1 });
         const reads = await runWithProviderReadScope({
             fn: async () =>
                 Promise.all([
@@ -65,6 +66,7 @@ describe('Mercado Pago provider read scope', () => {
                 ])
         });
         expect(reads[0]).not.toBe(reads[1]);
-        expect(reads[0]?.readAt).not.toBe(first?.readAt);
+        expect(reads[0]?.readAt.getTime()).toBe(clock.now().getTime());
+        expect(reads[0]!.readAt.getTime()).toBeGreaterThan(first!.readAt.getTime());
     });
 });

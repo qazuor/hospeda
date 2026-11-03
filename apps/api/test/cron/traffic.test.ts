@@ -87,11 +87,16 @@ describe('cron provider traffic context', () => {
             job: {
                 handler: async () => {
                     const counters = currentTrafficContext()?.counters;
-                    for (let index = 0; index < GOVERNOR_MAX_WAIT_SAMPLES + 1; index += 1)
+                    counters?.record({
+                        trafficClass: 'background',
+                        capability: 'read',
+                        waitMs: 999_999
+                    });
+                    for (let index = 1; index <= GOVERNOR_MAX_WAIT_SAMPLES; index += 1)
                         counters?.record({
                             trafficClass: 'background',
                             capability: 'read',
-                            waitMs: index
+                            waitMs: 7
                         });
                     counters?.record({
                         trafficClass: 'background',
@@ -112,7 +117,7 @@ describe('cron provider traffic context', () => {
         expect(result.details).toMatchObject({
             providerTraffic: {
                 requests: 1,
-                waitMs: { max: GOVERNOR_MAX_WAIT_SAMPLES }
+                waitMs: { max: 7 }
             }
         });
     });

@@ -5,7 +5,9 @@ import { apiLogger } from './logger';
 let processGovernor: ProviderTrafficGovernor | undefined;
 let initialized = false;
 
-/** Build the process-wide MP governor, degrading enforce to observe in PR-1. */
+/** Build the process-wide MP governor, degrading enforce to observe in PR-1.
+ * Emits at most one Sentry capture per capability per fixed 60 s window (`floor(now / GOVERNOR_WINDOW_MS)`).
+ */
 export function createMercadoPagoTrafficGovernor(args: {
     readonly mode: 'off' | GovernorMode;
     readonly now?: () => number;
