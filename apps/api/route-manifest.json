@@ -1254,6 +1254,10 @@
             "path": "/api/v1/admin/owner-promotions/:id/restore"
         },
         {
+            "method": "GET",
+            "path": "/api/v1/admin/partner-applications"
+        },
+        {
             "method": "POST",
             "path": "/api/v1/admin/partner-applications/:id/cancel-wait"
         },
