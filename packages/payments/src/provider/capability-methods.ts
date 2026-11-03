@@ -16,7 +16,7 @@ export const CAPABILITY_METHODS = {
     changeAmount: ['changeAmount'],
     pauseAndResume: ['pause', 'resume'],
     cancel: ['cancel'],
-    refund: ['refund'],
+    refund: ['refund', 'refundOrder'],
     read: [
         'readAuthorization',
         'readCharge',

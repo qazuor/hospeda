@@ -84,6 +84,26 @@ describe('TEST:1710:1 AC:1710:1 AC:1710:2 captured payment read', () => {
     });
 });
 
+describe('HOS-1553 charge read safe minor amounts', () => {
+    it.each([
+        'transaction_amount',
+        'transaction_amount_refunded',
+        'refunds'
+    ] as const)('fails closed when %s exceeds safe minor units', async (field) => {
+        const payment = clonePayment();
+        if (field === 'refunds')
+            Object.assign(payment, {
+                refunds: [{ id: 'overflow', amount: 1e308, status: 'approved' }]
+            });
+        else payment[field] = 1e308;
+        await expect(
+            adapterFor(payment).adapter.readCharge({ chargeId: 'x' })
+        ).rejects.toMatchObject({
+            code: 'UNAVAILABLE'
+        });
+    });
+});
+
 describe('TEST:1710:2 AC:1710:1 authorization-link variants', () => {
     it('TEST:1710:2 AC:1710:1 resolves metadata, interaction, conflict, and absent links', async () => {
         const metadata = clonePayment();

@@ -28,6 +28,8 @@ import type {
     MutationAcknowledgement,
     NoticeDelivery,
     OrderRef,
+    OrderRefundInput,
+    OrderRefundResult,
     OrderSearchInput,
     OrderSearchResult,
     OrderSnapshot,
@@ -47,6 +49,7 @@ import {
     ChargeRefSchema,
     NoticeDeliverySchema,
     OrderRefSchema,
+    OrderRefundInputSchema,
     OrderSearchInputSchema,
     PaymentProviderOptionsSchema,
     parseProviderInput,
@@ -64,6 +67,7 @@ import {
     setMercadoPagoStatus
 } from './mercadopago-mutations';
 import { decodeMercadoPagoNotice } from './mercadopago-notice';
+import { refundMercadoPagoOrder } from './mercadopago-order-refund';
 import { readMercadoPagoOrder, searchMercadoPagoOrders } from './mercadopago-orders';
 import {
     type MercadoPagoReadRetryPolicy,
@@ -354,6 +358,12 @@ export class MercadoPagoPaymentProvider implements PaymentProvider {
     async refund(input: RefundInput): Promise<RefundResult> {
         parseProviderInput({ schema: RefundInputSchema, input, capability: 'refund' });
         return refundMercadoPagoPayment({ ...input, send: (args) => this.send(args) });
+    }
+
+    /** Capability 6 · refund an order (MP:EX-58, AC:B6:8, TRANS:B:RF2). */
+    async refundOrder(input: OrderRefundInput): Promise<OrderRefundResult> {
+        parseProviderInput({ schema: OrderRefundInputSchema, input, capability: 'refund' });
+        return refundMercadoPagoOrder({ ...input, send: (args) => this.send(args) });
     }
 
     /** Capability 7 · read an authorization by id. */

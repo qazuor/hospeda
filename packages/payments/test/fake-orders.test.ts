@@ -46,7 +46,9 @@ describe('TEST:B11:12 (support) the fake keeps orders and RP13 bounds the search
             orderId: paid.orderId,
             reference: 'request-1',
             createdAt: START.toISOString(),
-            hasApprovedPayment: true
+            hasApprovedPayment: true,
+            paymentTransactionId: expect.any(String),
+            refunds: []
         });
         expect(read.readAt).toEqual(clock.now());
         expect(

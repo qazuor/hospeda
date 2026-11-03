@@ -61,6 +61,7 @@ function providerWithoutAppliedAmount(fake: FakePaymentProvider): PaymentProvide
         resume: (input) => fake.resume(input),
         cancel: (input) => fake.cancel(input),
         refund: (input) => fake.refund(input),
+        refundOrder: (input) => fake.refundOrder(input),
         readAuthorization: (input) => fake.readAuthorization(input),
         searchAuthorizations: (input) => fake.searchAuthorizations(input),
         readCharge: (input) => fake.readCharge(input),
