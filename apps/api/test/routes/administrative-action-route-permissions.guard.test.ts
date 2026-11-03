@@ -32,6 +32,11 @@ import {
 import { describe, expect, it } from 'vitest';
 
 const REPO_ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../../../..');
+const partnerApplicationResolutionBinding = (decision: 'approve' | 'reject') => ({
+    kind: 'required' as const,
+    file: `apps/api/src/routes/partner-application/admin/${decision}.ts`,
+    route: `admin${decision === 'approve' ? 'Approve' : 'Reject'}PartnerApplicationRoute`
+});
 
 /**
  * Strips block and line comments before matching, so a route's own docblock
@@ -188,16 +193,8 @@ const ROUTE_BINDINGS: Readonly<Record<AdministrativeAction, BoundEntry | Unbound
                 file: 'apps/api/src/routes/partner-application/admin/cancel-wait.ts',
                 route: 'adminCancelPartnerApplicationWaitRoute'
             },
-            {
-                kind: 'required',
-                file: 'apps/api/src/routes/partner-application/admin/approve.ts',
-                route: 'adminApprovePartnerApplicationRoute'
-            },
-            {
-                kind: 'required',
-                file: 'apps/api/src/routes/partner-application/admin/reject.ts',
-                route: 'adminRejectPartnerApplicationRoute'
-            }
+            partnerApplicationResolutionBinding('approve'),
+            partnerApplicationResolutionBinding('reject')
         ]
     },
     ACC_6: { unbound: 'legacy HOS-278 partner routes; V7 (HOS-1489) builds it' },
