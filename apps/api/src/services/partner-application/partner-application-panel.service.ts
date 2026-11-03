@@ -21,10 +21,10 @@ export async function listPartnerApplicationPanel(input: {
             id: item.id,
             email: item.email,
             status: item.status,
-            createdAt: item.createdAt.toISOString(),
-            resolvedAt: item.resolvedAt?.toISOString() ?? null,
+            createdAt: new Date(item.createdAt).toISOString(),
+            resolvedAt: item.resolvedAt === null ? null : new Date(item.resolvedAt).toISOString(),
             overdue: item.overdue,
-            waitEndsAt: item.waitEndsAt?.toISOString() ?? null,
+            waitEndsAt: item.waitEndsAt === null ? null : new Date(item.waitEndsAt).toISOString(),
             partner: item.partner
         })),
         pagination: getPaginationResponse(result.total, {

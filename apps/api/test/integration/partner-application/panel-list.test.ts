@@ -116,7 +116,10 @@ async function readDates(
 async function readSnapshot() {
     const result = await getDb().execute(sql`
         SELECT id, status, resolved_at, partner_id, wait_cancelled_at
-        FROM partner_application WHERE id = ANY(${stateIds}::uuid[]) ORDER BY id`);
+        FROM partner_application WHERE id IN (${sql.join(
+            stateIds.map((id) => sql`${id}::uuid`),
+            sql`, `
+        )}) ORDER BY id`);
     return result.rows;
 }
 
@@ -205,7 +208,7 @@ describe('TEST:V8b:2 (soporte API) partner application panel', () => {
     it('(d) lists only rejected applications with an active wait and derives its end from stored resolution time', async () => {
         const fixture = await setUpFixtures();
         const resolved = await getDb().execute(sql`
-            SELECT created_at, resolved_at, resolved_at + make_interval(days =>
+            SELECT pa.created_at, pa.resolved_at, pa.resolved_at + make_interval(days =>
                 ((v."values" -> '9' ->> 'days')::int)
             ) AS wait_ends_at
             FROM partner_application pa
