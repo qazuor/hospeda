@@ -5,7 +5,8 @@
  * All symbols are re-exported from route-factory.ts so importers are unaffected.
  */
 
-import type { PermissionEnum } from '@repo/schemas';
+import type { BusinessLine, PermissionEnum } from '@repo/schemas';
+import { LISTING_SECTIONS } from '@repo/schemas';
 import type { EmailUnverifiedAllowedOperation } from '@repo/verticals';
 import type { MiddlewareHandler } from 'hono';
 import {
@@ -27,6 +28,74 @@ import type { CreateOpenApiRouteInterface } from './route-factory';
 import { createCRUDRoute, createListRoute } from './route-factory';
 import type { z } from './zod';
 
+type SectionDeclaration = { readonly id: string; readonly intent: 'read' | 'write' | 'delete' };
+type ListingAccessWithSections = ListingAccessConfig & {
+    readonly listingSection?:
+        | SectionDeclaration
+        | ((args: {
+              readonly body: Record<string, unknown> | undefined;
+          }) => readonly SectionDeclaration[]);
+    readonly sectionTraits?:
+        | readonly string[]
+        | ((args: { readonly body: Record<string, unknown> | undefined }) => readonly string[]);
+    readonly businessLinesFromBody?: (args: {
+        readonly body: Record<string, unknown> | undefined;
+    }) => readonly BusinessLine[];
+};
+
+function assertListingSectionDeclarations(args: {
+    readonly listingAccess?: ListingAccessWithSections;
+}): void {
+    const config = args.listingAccess;
+    if (!config) return;
+    let requested =
+        typeof config.listingSection === 'function'
+            ? []
+            : config.listingSection
+              ? [config.listingSection]
+              : [];
+    if (typeof config.listingSection === 'function') {
+        try {
+            requested = [...config.listingSection({ body: undefined })];
+        } catch (error) {
+            throw new Error(
+                `Cannot validate dynamic listingSection for ${config.vertical} at route construction`,
+                { cause: error }
+            );
+        }
+    }
+    const sections: readonly {
+        readonly id: string;
+        readonly traits?: readonly { readonly id: string }[];
+    }[] = LISTING_SECTIONS[config.vertical];
+    for (const declaration of requested) {
+        const section = sections.find(({ id }) => id === declaration.id);
+        if (!section)
+            throw new Error(
+                `Unknown listing section "${declaration.id}" for vertical "${config.vertical}"`
+            );
+    }
+    let declaredTraits =
+        typeof config.sectionTraits === 'function' ? [] : (config.sectionTraits ?? []);
+    if (typeof config.sectionTraits === 'function') {
+        try {
+            declaredTraits = [...config.sectionTraits({ body: undefined })];
+        } catch (error) {
+            throw new Error(
+                `Cannot validate dynamic sectionTraits for ${config.vertical} at route construction`,
+                { cause: error }
+            );
+        }
+    }
+    if (
+        declaredTraits.length &&
+        !sections.some((section) =>
+            declaredTraits.every((trait) => section.traits?.some(({ id }) => id === trait))
+        )
+    )
+        throw new Error(`Unknown listing section trait for vertical "${config.vertical}"`);
+}
+
 // ============================================================================
 // Three-Tier Authorization Route Factories
 // ============================================================================
@@ -44,7 +113,7 @@ export interface PublicRouteOptions extends CreateOpenApiRouteInterface {
  */
 export interface ProtectedRouteOptions extends CreateOpenApiRouteInterface {
     /** Listing access decision after the validated request shape. */
-    listingAccess?: ListingAccessConfig;
+    listingAccess?: ListingAccessWithSections;
     /** Closed-list operation permitted before email verification. */
     emailUnverifiedOperation?: EmailUnverifiedAllowedOperation;
     /** Required permissions for this route */
@@ -68,7 +137,7 @@ export interface ProtectedRouteOptions extends CreateOpenApiRouteInterface {
  */
 export interface AdminRouteOptions extends CreateOpenApiRouteInterface {
     /** Listing access decision after the validated request shape. */
-    listingAccess?: ListingAccessConfig;
+    listingAccess?: ListingAccessWithSections;
     /** Required admin permissions for this route */
     requiredPermissions?: PermissionEnum[];
     /**
@@ -161,6 +230,8 @@ export const createProtectedRoute = (options: ProtectedRouteOptions) => {
         listingAccess,
         ...routeOptions
     } = options;
+
+    assertListingSectionDeclarations({ listingAccess });
 
     if (
         listingAccess &&
@@ -268,6 +339,8 @@ export const createAdminRoute = (options: AdminRouteOptions) => {
         listingAccess,
         ...routeOptions
     } = options;
+
+    assertListingSectionDeclarations({ listingAccess });
 
     if (
         listingAccess &&

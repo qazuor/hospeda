@@ -16,6 +16,7 @@ export {
 } from './authorization/administrative-actions';
 export {
     type EffectiveSetPort,
+    isGranted,
     resolveEntitlementStep,
     UnknownStepKeyError
 } from './authorization/entitlement-step';
@@ -125,6 +126,14 @@ export type {
     EffectiveSetCodec,
     RedisLike
 } from './effective-set-cache/types';
+export {
+    type ResolvedListingSection,
+    type ResolveListingSectionsResult,
+    resolveListingSections,
+    UnknownBusinessLineError,
+    UnknownListingSectionIdError,
+    UnknownListingSectionKeyError
+} from './listing-sections/resolve-listing-sections';
 export type {
     AddonVersionPolicyRow,
     PlanCatalogReader,

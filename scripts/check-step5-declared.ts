@@ -18,6 +18,8 @@
  * when the enumeration is empty, and when the scan is suspiciously small.
  *
  * What it does NOT verify:
+ * - the position of section-presence step 4b, which is after step 4 and before
+ *   this declared step-5 coverage gate;
  * - which routes must run the chain: that is AC:V5:9, the frozen list of
  *   `apps/api/test/routes/coverage-step-coverage.guard.test.ts` (TEST:V5:10);
  * - whether the value declared for each operation is the right one under
