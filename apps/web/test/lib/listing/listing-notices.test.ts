@@ -251,6 +251,35 @@ describe('buildListingNoticeViews — one view per kind (HOS-1492)', () => {
         expect(text).not.toContain('Publicarla es decisión tuya.');
     });
 
+    it.each([
+        ['QUOTA_FULL', false, 'Quedó aprobada, pero tu cupo está lleno'],
+        ['QUOTA_FULL', true, 'Sigue sin publicar porque tu cupo está lleno'],
+        ['NOT_COVERED', false, 'hoy tu suscripción no la cubre'],
+        ['FREE_SLOT', false, 'Tenés lugar en tu cupo'],
+        ['NO_ROOM', false, 'tu suscripción no tiene lugar para ella']
+    ] as const)('row 30 (HOS-1997): unpublished because %s (fix request %s) says %s', (unpublishedBecause, fixRequestOpen, phrase) => {
+        // Act
+        const text = textOf({
+            kind: 'MODERATION_LIFTED',
+            returnedTo: 'UNPUBLISHED_BY_BILLING' as Extract<
+                ListingNotice,
+                { kind: 'MODERATION_LIFTED' }
+            >['returnedTo'],
+            at: '2026-10-10T12:00:00.000Z',
+            fixRequestOpen,
+            unpublishedBecause
+        });
+
+        // Assert
+        expect(text).toContain(phrase);
+        if (unpublishedBecause === 'QUOTA_FULL') {
+            expect(text).toContain('despublicá otra ficha y publicá esta');
+        } else {
+            expect(text).not.toContain('despublicá otra ficha');
+        }
+        if (fixRequestOpen) expect(text).not.toContain('aprobada');
+    });
+
     it('TEST:V8a:7 rows 8 and 9: the criterion, no window, and the recurring boosts only with boosts', () => {
         // Act
         const withBoosts = textOf({ kind: 'SURPLUS' }, 1);

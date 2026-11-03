@@ -106,7 +106,7 @@ describe('TEST:V6:2 - PB1 over Postgres', () => {
         ).toBe(PublicationStatusEnum.DRAFT);
     });
 
-    it('publishes UNPUBLISHED_BY_BILLING only through T1, not while covered', async () => {
+    it('publishes a covered UNPUBLISHED_BY_BILLING listing by hand only while the quota has room (HOS-1997)', async () => {
         const { userId, destinationId } = await seedPublicationOwner({ db });
         const listing = await seedPublicationListing({
             db,
@@ -115,13 +115,62 @@ describe('TEST:V6:2 - PB1 over Postgres', () => {
             destinationId,
             status: PublicationStatusEnum.UNPUBLISHED_BY_BILLING
         });
-        const covered = { value: true };
-        const adapter = createPublicationTestAdapter({ db, covered, limit: { value: 1 } });
+        const holder = await seedPublicationListing({
+            db,
+            vertical,
+            userId,
+            destinationId,
+            status: PublicationStatusEnum.PUBLISHED
+        });
+        const limit = { value: 1 };
+        const adapter = createPublicationTestAdapter({ db, covered: { value: true }, limit });
         expect(await publish({ userId, listingId: listing.id, adapter })).toEqual({
             published: false,
-            reason: 'COVERED_USE_PB3'
+            reason: 'LIMIT_REACHED'
         });
-        covered.value = false;
+        const stillDown = await listingPublicationModel.readListing({
+            tx: db,
+            vertical,
+            listingId: listing.id
+        });
+        expect(stillDown?.publicationStatus).toBe(PublicationStatusEnum.UNPUBLISHED_BY_BILLING);
+        limit.value = 2;
+        expect(await publish({ userId, listingId: listing.id, adapter })).toMatchObject({
+            published: true,
+            trialStarted: false,
+            trialConsumed: false
+        });
+        const after = await listingPublicationModel.readListing({
+            tx: db,
+            vertical,
+            listingId: listing.id
+        });
+        expect(after?.publicationStatus).toBe(PublicationStatusEnum.PUBLISHED);
+        expect(after?.inactiveSince).toEqual(clock.now());
+        const instants = await listingPublicationModel.readPublicationInstants({
+            tx: db,
+            vertical,
+            listingIds: [listing.id, holder.id]
+        });
+        // Recorded as an owner publish: it ranks in the restoration order; the holder has none.
+        expect(instants.get(listing.id)).toBeInstanceOf(Date);
+        expect(instants.has(holder.id)).toBe(false);
+    });
+
+    it('publishes an uncovered UNPUBLISHED_BY_BILLING listing only through T1 (unchanged)', async () => {
+        const { userId, destinationId } = await seedPublicationOwner({ db });
+        const listing = await seedPublicationListing({
+            db,
+            vertical,
+            userId,
+            destinationId,
+            status: PublicationStatusEnum.UNPUBLISHED_BY_BILLING
+        });
+        const adapter = createPublicationTestAdapter({
+            db,
+            covered: { value: false },
+            limit: { value: 1 }
+        });
         expect(await publish({ userId, listingId: listing.id, adapter })).toMatchObject({
             published: true,
             trialStarted: true

@@ -36,6 +36,23 @@ function createValidEnv(overrides: Record<string, unknown> = {}): Record<string,
 }
 
 describe('AdminEnvSchema', () => {
+    describe('runtime NODE_ENV fallback', () => {
+        afterEach(() => {
+            vi.unstubAllEnvs();
+        });
+
+        it('derives production NODE_ENV when PROD is true and NODE_ENV is undefined', async () => {
+            vi.stubEnv('PROD', true);
+            vi.stubEnv('NODE_ENV', undefined);
+            vi.stubEnv('VITE_ADMIN_URL', 'http://localhost:3000');
+            vi.stubEnv('VITE_SENTRY_DSN', 'https://public@example.ingest.sentry.io/1');
+            vi.resetModules();
+            const { env } = await import('../src/env');
+
+            expect(env.NODE_ENV).toBe('production');
+        });
+    });
+
     describe('required fields', () => {
         it('should parse valid minimal env', () => {
             const result = AdminEnvSchema.safeParse(createValidEnv());

@@ -11559,6 +11559,7 @@ Origen: .specs/HOS-1352-billing-verticals-redesign/docs/28-fase-9-vuelta-1/10-de
 
 - **qué pregunta**: por qué camino estrena el trial el dueño del corte, cuya ficha queda abajo
 - **elige**: **1** — `PB1` sale también de `UNPUBLISHED_BY_BILLING`, sólo si arranca un trial
+- ⚠️ **Caducada en parte (2026-11-02)**: «sólo si arranca un trial» la reemplaza `DEC-DATA-009` (HOS-1997): cubierto y con lugar en el cupo, `PB1` también sale de `UNPUBLISHED_BY_BILLING` a mano. La rama del trial queda como estaba. Sólo citable la parte reemplazada.
 - **¿la recomendada?**: sí
 - ⚠️ **Caducada en parte**: en lo que decía de la cartera la reemplaza `DEC-MIG-006` (C12) (Origen: .specs/HOS-1352-billing-verticals-redesign/docs/28-fase-9-vuelta-1/10-decisiones-del-owner.md:71). Sólo citable; la parte reemplazada no se implementa.
 
@@ -14346,3 +14347,15 @@ Origen: HOS-1707 (decisión del owner, 2026-10-25, opción 1)
 - **Elegida**: 1, todas las versiones, ordenadas por versión
 - **Recomendada**: sí
 - **En una línea**: **la migración de partida copia todas las filas de `billing_deadline_version` y de la tabla de plazos de verticales, ordenadas por versión, y no sólo la versión 1.** Después de `0178`, staging y producción tienen la versión 2 con la clave 20, y una foto con sólo la versión 1 perdería los hitos del aviso de gracia. La herramienta (`scripts/cutover-v6/step-6/reference-rows.ts`) sigue exigiendo exactamente una versión 1 y copia todas las filas. Implementado en el PR #3800
+
+#### Publicar a mano desde `UNPUBLISHED_BY_BILLING` (2026-11-02)
+
+<a id="own-hos-1997-publicar-a-mano-desde-pb3"></a>
+**Letra HOS-1997 (`DEC-DATA-009`)**
+
+Origen: HOS-1997 (decisión del owner, 2026-11-02)
+
+- **Pregunta**: si el dueño puede publicar a mano una ficha en `UNPUBLISHED_BY_BILLING` cuando está cubierto y su cupo tiene lugar, o sólo vuelve por `PB3`
+- **Elegida**: sí, puede
+- **Recomendada**: —
+- **En una línea**: **`PB1` sale de `UNPUBLISHED_BY_BILLING` también a mano cuando el dueño está cubierto y `publicadas < cupo`; con el cupo lleno se rechaza con `LIMIT_REACHED` (403).** Reemplaza a `G1-1` en lo que decía que esa salida existía *sólo si arranca un trial*; la rama del trial no cambia. Se conservan el lock, el evento de estado (autor: el dueño, así que cuenta como publicación manual para el orden de la restitución), `inactiva_desde` y la revalidación; la publicación a mano desde ahí no consume trial (`T6` es un paso de la primera publicación). Sin cobertura no cambia nada. Es la salida del dueño que `F-8fA2-002` echaba de menos para una ficha de excedente que `PB3` no devuelve. Levantar una moderación con el cupo lleno nunca despublica otra ficha: deja la levantada en `UNPUBLISHED_BY_BILLING` y le avisa al dueño que despublique otra y publique esa. Implementado en el PR #4020
