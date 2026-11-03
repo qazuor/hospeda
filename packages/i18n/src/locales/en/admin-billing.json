@@ -81,6 +81,7 @@
         "errors": {
             "load": "Could not load the catalog. Reload the page.",
             "invalid": "Check the form: {message}",
+            "emptyRequiredNumber": "Required numeric values cannot be empty.",
             "rejected": "The API rejected the publication: {message}",
             "forbidden": "Only SUPER_ADMIN can publish plan versions.",
             "generic": "Could not complete the action. Try again."

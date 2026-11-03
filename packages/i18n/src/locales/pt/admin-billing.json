@@ -81,6 +81,7 @@
         "errors": {
             "load": "Não foi possível carregar o catálogo. Recarregue a página.",
             "invalid": "Revise o formulário: {message}",
+            "emptyRequiredNumber": "Os valores numéricos obrigatórios não podem ficar vazios.",
             "rejected": "A API recusou a publicação: {message}",
             "forbidden": "Somente SUPER_ADMIN pode publicar versões de plano.",
             "generic": "Não foi possível concluir a ação. Tente novamente."

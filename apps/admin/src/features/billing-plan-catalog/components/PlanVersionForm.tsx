@@ -51,7 +51,7 @@ export function PlanVersionForm({
                 setError(
                     tr(`${root}errors.invalid`, {
                         message: parsed.success
-                            ? 'Required numeric values cannot be empty'
+                            ? tr(`${root}errors.emptyRequiredNumber`)
                             : (parsed.error.issues[0]?.message ?? '')
                     })
                 );

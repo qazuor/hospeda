@@ -81,6 +81,7 @@
         "errors": {
             "load": "No se pudo leer el catálogo. Recargá la página.",
             "invalid": "Revisá el formulario: {message}",
+            "emptyRequiredNumber": "Los valores numéricos requeridos no pueden estar vacíos.",
             "rejected": "La API rechazó la publicación: {message}",
             "forbidden": "Sólo SUPER_ADMIN puede publicar versiones de plan.",
             "generic": "No se pudo completar la acción. Probá de nuevo."
