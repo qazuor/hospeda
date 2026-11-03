@@ -15,6 +15,7 @@ export async function claimPartnerOnEmailVerification(input: {
     readonly userId: string;
     readonly email: string;
 }): Promise<{ readonly claimed: boolean }> {
+    let claimedPartnerId: string | null = null;
     try {
         return await getDb().transaction(async (rawTx) => {
             const tx = rawTx as DrizzleClient;
@@ -24,6 +25,7 @@ export async function claimPartnerOnEmailVerification(input: {
                 email: input.email
             });
             if (!candidate) return { claimed: false };
+            claimedPartnerId = candidate.partnerId;
 
             const changed = await partnerApplicationModel.setPartnerOwnerIfUnclaimed({
                 tx,
@@ -62,7 +64,7 @@ export async function claimPartnerOnEmailVerification(input: {
             postgresError.constraint === 'uq_partners_owner_user_id'
         ) {
             apiLogger.warn(
-                { userId: input.userId },
+                { userId: input.userId, partnerId: claimedPartnerId },
                 'Partner claim skipped because account already owns a Partner'
             );
             return { claimed: false };
