@@ -106,6 +106,15 @@
         "reason": "S23/S24 move SUSPENDED/GRACE_PERIOD to CANCELLED with service ended today; GRACE_PERIOD emits a source and CANCELLED does not (03-contrato-de-cobertura.md:469,474); the coverage notice is emitted after commit."
     },
     {
+        "file": "packages/service-core/src/services/billing/subscription/cancel-succession-predecessor-support.ts",
+        "symbol": "writeSuccessionPredecessorCancellation",
+        "table": "subscriptions",
+        "effect": "turns-off",
+        "via": "caller",
+        "notifiedBy": "packages/service-core/src/services/billing/subscription/cancel-succession-predecessor.service.ts",
+        "reason": "S17 cancels the predecessor after its successor authorized; the coverage notice is emitted after commit (AC:B8b:9)."
+    },
+    {
         "file": "packages/service-core/src/services/billing/subscription/cancel-paused-subscription-support.ts",
         "symbol": "writePausedCancellation",
         "table": "subscriptions",

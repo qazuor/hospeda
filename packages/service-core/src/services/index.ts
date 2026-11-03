@@ -203,6 +203,7 @@ export type {
     CancelPausedSubscriptionResult
 } from './billing/subscription/cancel-paused-subscription-support.js';
 export * from './billing/subscription/cancel-pending-attempt.service.js';
+export * from './billing/subscription/cancel-succession-predecessor.service.js';
 export * from './billing/subscription/cancellation-authorization.js';
 export * from './billing/subscription/cancellation-crossing-charge.js';
 export * from './billing/subscription/cancellation-crossing-rule.js';
@@ -234,6 +235,7 @@ export * from './billing/subscription/price-increase-after-pause.js';
 export * from './billing/subscription/provider-link-cancellation-seen.js';
 export * from './billing/subscription/reactivate-suspended.service.js';
 export * from './billing/subscription/reactivate-suspended-after-commit.js';
+export * from './billing/subscription/reevaluate-succession-predecessors.service.js';
 export * from './billing/subscription/refuse-undeclared-transition.js';
 export * from './billing/subscription/renewal-notice.js';
 export { readResumableCheckoutUrl } from './billing/subscription/resolve-live-commitment.js';
