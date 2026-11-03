@@ -781,6 +781,61 @@ describe('billing reconciliation sweep cron', () => {
             );
         });
 
+        it('HOS-1999 AC-24: three slices of one cycle emit exactly one failure alert, from the DONE slice', async () => {
+            const slice = (overrides: Record<string, unknown>) => ({
+                ...base,
+                failures: [],
+                rowsFailed: 0,
+                skippedPasses: [],
+                stoppedOnBudget: false,
+                ...overrides
+            });
+            const ctxs = [context(), context(), context()];
+            mockSweep
+                .mockResolvedValueOnce(
+                    slice({
+                        outcome: 'TIMED_OUT',
+                        stoppedOnBudget: true,
+                        rowsFailed: 1,
+                        failures: [{ subscriptionId: 'sub-a' }],
+                        sliceIndex: 0
+                    })
+                )
+                .mockResolvedValueOnce(
+                    slice({ outcome: 'TIMED_OUT', stoppedOnBudget: true, sliceIndex: 1 })
+                )
+                .mockResolvedValueOnce(
+                    slice({
+                        outcome: 'CYCLE_DONE',
+                        rowsFailed: 1,
+                        failures: [{ subscriptionId: 'sub-c' }],
+                        sliceIndex: 2,
+                        rowsComplete: true,
+                        cycle: {
+                            cycleId: 'c',
+                            slices: 3,
+                            rowsRead: 9,
+                            rowsFailed: 2,
+                            failedSubscriptionIds: ['sub-a', 'sub-c']
+                        }
+                    })
+                );
+            const results = [];
+            for (const ctx of ctxs) results.push(await billingReconciliationSweepJob.handler(ctx));
+            const alerts = ctxs.flatMap((ctx) =>
+                vi
+                    .mocked(ctx.logger.error)
+                    .mock.calls.filter(
+                        ([message]) => message === 'Billing reconciliation sweep had failures'
+                    )
+            );
+            expect(alerts).toHaveLength(1);
+            expect(alerts[0]?.[1]).toMatchObject({ failedSubscriptionIds: ['sub-a', 'sub-c'] });
+            expect(alerts[0]?.[2]).toEqual({ capture: true });
+            expect(results[0]?.success).toBe(true);
+            expect(results[1]?.success).toBe(true);
+        });
+
         it('captures to Sentry when only a zero-call check fails', async () => {
             mockSweep.mockResolvedValue({
                 ...base,
