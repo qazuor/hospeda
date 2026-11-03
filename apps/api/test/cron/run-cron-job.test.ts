@@ -137,7 +137,9 @@ describe('runCronJob lifecycle', () => {
     it('uses the 90 percent exclusive budget and persists the returned run ID', async () => {
         vi.useFakeTimers();
         vi.setSystemTime(new Date('2026-11-03T12:00:00.000Z'));
-        let observed: { readonly startedAt: Date; readonly deadlineAt: Date } | undefined;
+        let observed:
+            | { readonly startedAt: Date; readonly deadlineAt: Date | undefined }
+            | undefined;
         const budgetJob: CronJobDefinition = {
             ...job,
             timeoutMs: 100,
@@ -161,7 +163,9 @@ describe('runCronJob lifecycle', () => {
         if (!decision.started) throw new Error('expected an acquired lock');
         const result = await decision.completion;
         if (!observed) throw new Error('expected the handler to receive a run context');
-        expect(observed.deadlineAt.getTime() - observed.startedAt.getTime()).toBe(90);
+        expect((observed.deadlineAt?.getTime() ?? Number.NaN) - observed.startedAt.getTime()).toBe(
+            90
+        );
         expect(result.details?.runId).toBe(decision.runId);
         expect(mocks.record).toHaveBeenCalledWith(
             expect.objectContaining({
