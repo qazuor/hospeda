@@ -110,6 +110,14 @@ export async function runCronJob(args: {
                 dryRun,
                 startedAt,
                 finishedAt: new Date(),
+                result: {
+                    success: false,
+                    message: errorMessage,
+                    processed: 0,
+                    errors: 1,
+                    durationMs: Date.now() - startedAt.getTime(),
+                    details: { runId }
+                },
                 error
             });
             if (executionMode === 'scheduled') {
@@ -245,6 +253,14 @@ export async function runCronJob(args: {
                 dryRun,
                 startedAt,
                 finishedAt: new Date(),
+                result: {
+                    success: false,
+                    message: error instanceof Error ? error.message : 'Unknown error',
+                    processed: 0,
+                    errors: 1,
+                    durationMs: Date.now() - startedAt.getTime(),
+                    details: { runId }
+                },
                 error
             });
             throw error;
