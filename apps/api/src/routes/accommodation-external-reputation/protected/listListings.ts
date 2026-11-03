@@ -5,9 +5,9 @@
  * plus the accommodation-level reputation metadata the owner's editor needs
  * (HOS-290; it used to return a bare array).
  *
- * SPEC-237 T-008 — protected owner route.
- * Permission: ACCOMMODATION_UPDATE_OWN (the service pattern enforces ownership;
- * this read-only list applies the same check inline).
+ * SPEC-237 T-008 — protected accommodation route.
+ * Requires ownership (ACCOMMODATION_UPDATE_OWN) or the inspection permission
+ * ACCOMMODATION_VIEW_ALL; a foreign listing answers 404.
  */
 import {
     AccommodationExternalListingModel,
@@ -17,10 +17,9 @@ import {
 import {
     AccommodationExternalListingsResponseSchema,
     AccommodationIdSchema,
-    PermissionEnum,
-    ServiceErrorCode
+    PermissionEnum
 } from '@repo/schemas';
-import { ServiceError } from '@repo/service-core';
+import { AccommodationService, entityNotFoundError } from '@repo/service-core';
 import type { Context } from 'hono';
 import { getActorFromContext } from '../../../utils/actor';
 import { apiLogger } from '../../../utils/logger';
@@ -43,15 +42,16 @@ const MAX_PLATFORM_ROWS = 100;
  *
  * Lists all non-deleted external listing configurations for the accommodation,
  * together with the accommodation-level reputation metadata (`showExternalReputation`
- * master toggle + most recent aggregate fetch). The actor must own the
- * accommodation or hold ACCOMMODATION_UPDATE_ANY.
+ * master toggle + most recent aggregate fetch).
+ * Requires ownership (ACCOMMODATION_UPDATE_OWN) or the inspection permission
+ * ACCOMMODATION_VIEW_ALL; a foreign listing answers 404.
  */
 export const protectedListExternalListingsRoute = createProtectedRoute({
     method: 'get',
     path: '/{id}/external-listings',
     summary: 'List external listing configs and reputation metadata',
     description:
-        'Returns `{listings, reputation}`: all non-deleted external platform listing configs registered for the accommodation, plus the accommodation-level reputation metadata (the `showExternalReputation` master toggle and the most recent aggregate fetch timestamp across platforms). Requires ownership or ACCOMMODATION_UPDATE_ANY.',
+        'Returns `{listings, reputation}`: all non-deleted external platform listing configs registered for the accommodation, plus the accommodation-level reputation metadata (the `showExternalReputation` master toggle and the most recent aggregate fetch timestamp across platforms). Requires ownership (ACCOMMODATION_UPDATE_OWN) or the inspection permission ACCOMMODATION_VIEW_ALL; a foreign listing answers 404.',
     tags: ['Accommodations', 'External Reputation'],
     requestParams: {
         id: AccommodationIdSchema
@@ -63,20 +63,14 @@ export const protectedListExternalListingsRoute = createProtectedRoute({
 
         const accommodation = await accommodationModel.findById(accommodationId);
         if (!accommodation || accommodation.deletedAt !== null) {
-            throw new ServiceError(
-                ServiceErrorCode.NOT_FOUND,
-                `Accommodation not found: ${accommodationId}`
-            );
+            throw entityNotFoundError({ entityName: AccommodationService.ENTITY_NAME });
         }
 
-        const hasAny = (actor.permissions ?? []).includes(PermissionEnum.ACCOMMODATION_UPDATE_ANY);
+        const hasViewAll = actor.permissions?.includes(PermissionEnum.ACCOMMODATION_VIEW_ALL);
         const hasOwn = (actor.permissions ?? []).includes(PermissionEnum.ACCOMMODATION_UPDATE_OWN);
 
-        if (!hasAny && !(hasOwn && actor.id === accommodation.ownerId)) {
-            throw new ServiceError(
-                ServiceErrorCode.FORBIDDEN,
-                'Permission denied: ACCOMMODATION_UPDATE_OWN required and actor must own the accommodation'
-            );
+        if (!hasViewAll && !(hasOwn && actor.id === accommodation.ownerId)) {
+            throw entityNotFoundError({ entityName: AccommodationService.ENTITY_NAME });
         }
 
         const rows = await listingModel.findByAccommodation(accommodationId);

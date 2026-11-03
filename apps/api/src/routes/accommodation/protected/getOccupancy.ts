@@ -4,8 +4,8 @@
  * Owner-facing occupancy calendar read (HOS-43 Phase 1, spec section 6).
  *
  * No declarative `ownership:` config — ownership is enforced inline inside
- * `getOwnerOccupancyForAccommodation`, which also grants the
- * `ACCOMMODATION_UPDATE_ANY` staff bypass. No `CAN_USE_CALENDAR` gate on
+ * `getOwnerOccupancyForAccommodation`, which admits `ACCOMMODATION_VIEW_ALL`
+ * inspectors and answers 404 for foreign rows. No `CAN_USE_CALENDAR` gate on
  * reads (see that function's doc).
  */
 import {
@@ -37,7 +37,7 @@ export const protectedGetOccupancyRoute = createProtectedRoute({
     summary: 'Get accommodation occupancy calendar (owner)',
     description:
         'Returns the full occupancy row set for an accommodation the actor owns ' +
-        '(or holds ACCOMMODATION_UPDATE_ANY for). Supports an optional half-open ' +
+        '(or may inspect with ACCOMMODATION_VIEW_ALL). Foreign rows answer 404. Supports an optional half-open ' +
         '?from&to range; omit both to fetch every row.',
     tags: ['Accommodations'],
     requestParams: {
