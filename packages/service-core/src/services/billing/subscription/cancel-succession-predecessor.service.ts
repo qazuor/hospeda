@@ -68,8 +68,9 @@ export async function cancelSuccessionPredecessor(
     ports: CancelSuccessionPredecessorPorts
 ): Promise<CancelSuccessionPredecessorResult> {
     const { successorSubscriptionId } = cancelSuccessionPredecessorInputSchema.parse(input);
-    const { successor, predecessor, successorLink } =
-        await readSuccessionPredecessor(successorSubscriptionId);
+    const { successor, predecessor, successorLink } = await readSuccessionPredecessor({
+        successorSubscriptionId
+    });
     if (!successor?.predecessorId || !predecessor)
         return { outcome: 'NOT_APPLICABLE', reason: 'NO_SUCCESSION' };
     if (successor.status !== 'ACTIVE')
@@ -101,7 +102,9 @@ export async function cancelSuccessionPredecessor(
     let providerCall: 'CONFIRMED' | 'ALREADY_CANCELLED' | 'NONE' = 'NONE';
     let noticeUndeliverable = false;
     if (predecessor.paymentMethod === 'CARD') {
-        const authorizationId = await readPredecessorAuthorizationId(predecessor.id);
+        const { authorizationId } = await readPredecessorAuthorizationId({
+            subscriptionId: predecessor.id
+        });
         if (authorizationId) {
             const beforeCancelNotice: BeforeCancelNotice = {
                 async beforeCancel(args) {

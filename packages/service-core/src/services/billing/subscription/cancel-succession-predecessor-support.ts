@@ -15,8 +15,10 @@ export const cancelSuccessionPredecessorInputSchema = z.strictObject({
     successorSubscriptionId: z.uuid()
 });
 
-/** The rows S17 needs before any provider call or transaction. */
-export async function readSuccessionPredecessor(successorSubscriptionId: string) {
+/** Read the rows S17 needs before any provider call or transaction. */
+export async function readSuccessionPredecessor(input: {
+    readonly successorSubscriptionId: string;
+}) {
     const db = getDb();
     const [successor] = await db
         .select({
@@ -25,7 +27,7 @@ export async function readSuccessionPredecessor(successorSubscriptionId: string)
             predecessorId: subscriptions.succeedsId
         })
         .from(subscriptions)
-        .where(eq(subscriptions.id, successorSubscriptionId))
+        .where(eq(subscriptions.id, input.successorSubscriptionId))
         .limit(1);
     if (!successor?.predecessorId) return { successor, predecessor: null, successorLink: null };
     const [predecessor] = await db
@@ -47,16 +49,16 @@ export async function readSuccessionPredecessor(successorSubscriptionId: string)
     return { successor, predecessor: predecessor ?? null, successorLink: successorLink ?? null };
 }
 
-/** Reads the predecessor authorization link without holding a lock. */
-export async function readPredecessorAuthorizationId(
-    subscriptionId: string
-): Promise<string | null> {
+/** Read the predecessor authorization link without holding a lock. */
+export async function readPredecessorAuthorizationId(input: {
+    readonly subscriptionId: string;
+}): Promise<{ readonly authorizationId: string | null }> {
     const [link] = await getDb()
         .select({ providerId: providerLinks.providerId })
         .from(providerLinks)
-        .where(eq(providerLinks.subscriptionId, subscriptionId))
+        .where(eq(providerLinks.subscriptionId, input.subscriptionId))
         .limit(1);
-    return link?.providerId ?? null;
+    return { authorizationId: link?.providerId ?? null };
 }
 
 /** S17's guarded status and service-end write, registered as a turns-off writer by G5. */
