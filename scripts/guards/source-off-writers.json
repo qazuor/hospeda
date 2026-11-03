@@ -82,6 +82,22 @@
         "reason": "S4 keeps the same SUSCRIPCIÓN coverage source in GRACE_PERIOD as ACTIVE (03-contrato-de-cobertura.md:567-571; D-9)."
     },
     {
+        "file": "packages/service-core/src/services/billing/subscription/manual-grace-entry.ts",
+        "symbol": "enterManualGraceInTx",
+        "table": "subscriptions",
+        "effect": "neutral",
+        "via": null,
+        "reason": "Manual S4 keeps the same subscription coverage source in GRACE_PERIOD as ACTIVE (AC:B5:13)."
+    },
+    {
+        "file": "packages/service-core/src/services/billing/subscription/register-manual-payment.service.ts",
+        "symbol": "registerManualPayment",
+        "table": "subscriptions",
+        "effect": "neutral",
+        "via": null,
+        "reason": "MP1 writes next_charge_at only; S29 activation is inventoried through activatePendingAuthorization, while S5 keeps the same source in GRACE_PERIOD and ACTIVE (AC:B5:14-15)."
+    },
+    {
         "file": "packages/service-core/src/services/billing/subscription/exit-grace.service.ts",
         "symbol": "reactivateFromGrace",
         "table": "subscriptions",
@@ -90,12 +106,12 @@
         "reason": "S5 moves GRACE_PERIOD to ACTIVE; both emit the same SUSCRIPCIÓN source (03-contrato-de-cobertura.md:468-469)."
     },
     {
-        "file": "packages/service-core/src/services/billing/subscription/suspend-for-arrears.service.ts",
-        "symbol": "writeArrearsSuspension",
+        "file": "packages/service-core/src/services/billing/subscription/arrears-suspension-write.ts",
+        "symbol": "writeArrearsSuspensionInTx",
         "table": "subscriptions",
         "effect": "turns-off",
         "via": "notice",
-        "reason": "S6 moves GRACE_PERIOD or ACTIVE (second event) to SUSPENDED, which emits no source (03-contrato-de-cobertura.md:472); the coverage notice is emitted after commit."
+        "reason": "S6 moves GRACE_PERIOD or ACTIVE (second event) to SUSPENDED, which emits no source (03-contrato-de-cobertura.md:472); both the wrapper and MP2 call emitArrearsSuspensionCoverageChanged after commit."
     },
     {
         "file": "packages/service-core/src/services/billing/subscription/cancel-direct-subscription.service.ts",

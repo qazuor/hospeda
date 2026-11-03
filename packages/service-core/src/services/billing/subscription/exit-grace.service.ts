@@ -1,5 +1,13 @@
 import type { Clock } from '@repo/billing-verticals-contract';
-import { and, eq, getDb, payments, providerLinks, subscriptions } from '@repo/db';
+import {
+    and,
+    type DrizzleClient,
+    eq,
+    getDb,
+    payments,
+    providerLinks,
+    subscriptions
+} from '@repo/db';
 import { createLogger } from '@repo/logger';
 import { actStartInstant, type PaymentProvider } from '@repo/payments';
 import { VerticalEnumSchema } from '@repo/schemas';
@@ -66,8 +74,9 @@ export async function reactivateFromGrace(input: {
     readonly subscriptionId: string;
     readonly now: Date;
     readonly paymentId?: string;
+    readonly tx?: DrizzleClient;
 }): Promise<boolean> {
-    return getDb().transaction(async (tx) => {
+    const write = async (tx: DrizzleClient): Promise<boolean> => {
         const [updated] = await tx
             .update(subscriptions)
             .set({
@@ -91,7 +100,8 @@ export async function reactivateFromGrace(input: {
                 tx
             });
         return Boolean(updated);
-    });
+    };
+    return input.tx ? write(input.tx) : getDb().transaction(write);
 }
 
 /**

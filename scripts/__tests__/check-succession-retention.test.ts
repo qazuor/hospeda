@@ -69,6 +69,27 @@ describe('TEST:B7:11 GUARD:G-R1-D', () => {
         expect(check(tree())).toMatchObject({ exitCode: 0 });
     });
 
+    it('accepts the registered MP1 entry with its S19 decision before S5', () => {
+        const mp1 = REACTIVATORS.find((r) => r.entry === 'registerManualPayment');
+        expect(mp1).toMatchObject({
+            file: 'packages/service-core/src/services/billing/subscription/register-manual-payment.service.ts',
+            writer: 'reactivateFromGrace'
+        });
+        expect(check(tree())).toMatchObject({ exitCode: 0 });
+    });
+
+    it('rejects the MP1 caller when its registry entry is removed', () => {
+        const result = run({
+            root: tree(),
+            minScannedFiles: 1,
+            reactivators: REACTIVATORS.filter((r) => r.entry !== 'registerManualPayment')
+        });
+        expect(result.exitCode).toBe(1);
+        expect(result.output).toMatch(
+            /register-manual-payment\.service\.ts:\d+ calls reactivateFromGrace outside exitGraceOnCreditedPayment/
+        );
+    });
+
     it('is red when fewer files than the floor are scanned', () => {
         expect(run({ root: tree(), minScannedFiles: 1000 }).output).toContain('G-R1-D: scanned');
     });

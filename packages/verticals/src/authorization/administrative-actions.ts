@@ -55,8 +55,14 @@ export const ADMINISTRATIVE_ACTION_PERMISSIONS: Readonly<
         permissions: [PermissionEnum.BILLING_GRANT_COMPLIMENTARY],
         pendingOwnPermission: null
     },
-    ACC_3: { permissions: [PermissionEnum.PARTNER_MANAGE], pendingOwnPermission: 'B5 (HOS-1541)' },
-    ACC_4: { permissions: [], pendingOwnPermission: 'B7' },
+    ACC_3: {
+        permissions: [PermissionEnum.BILLING_REGISTER_MANUAL_PAYMENT],
+        pendingOwnPermission: null
+    },
+    ACC_4: {
+        permissions: [PermissionEnum.BILLING_DECLARE_MANUAL_UNPAID],
+        pendingOwnPermission: null
+    },
     ACC_5: {
         permissions: [PermissionEnum.PARTNER_RESOLVE_APPLICATION],
         pendingOwnPermission: null

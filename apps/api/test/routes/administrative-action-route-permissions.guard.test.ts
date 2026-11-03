@@ -1,24 +1,4 @@
-/**
- * HOS-1689 — each row of `ADMINISTRATIVE_ACTION_PERMISSIONS` must agree with the
- * gate of the route that implements it.
- *
- * The table (`@repo/verticals`) declares the current permission of every one of
- * the 25 administrative actions; the routes enforce it. Nothing ties the two
- * together, so a row cannot rot without anyone noticing — which is exactly what
- * happened to ACC_11: HOS-1445 landed `TRIAL_EXTEND` on the route while the row
- * still said `permissions: []`.
- *
- * The comparison is STATIC (source text), not runtime, for two reasons. The
- * permission never reaches the route object: `createAdminRoute` closes over
- * `requiredPermissions` inside its auth middleware, so a route module exposes no
- * field to read. And importing the routes to inspect them would drag in
- * service-core and the DB for a test that only needs the source. So this guard
- * reads the files, strips comments, and compares the literals.
- *
- * A row is checked through `ROUTE_BINDINGS`. Because the binding is manual, a
- * NEW route for an administrative action is invisible to this guard until it is
- * added there — the switch from unbound to bound is a deliberate edit.
- */
+/** HOS-1689: statically compare each administrative action's catalog permission with its bound route gates. */
 
 import { readFileSync } from 'node:fs';
 import path from 'node:path';
@@ -38,10 +18,7 @@ const partnerApplicationResolutionBinding = (decision: 'approve' | 'reject') => 
     route: `admin${decision === 'approve' ? 'Approve' : 'Reject'}PartnerApplicationRoute`
 });
 
-/**
- * Strips block and line comments before matching, so a route's own docblock
- * cannot satisfy (or defeat) a match. Same shape as the partner-stats guard.
- */
+/** Strip comments before matching route permission literals. */
 const readCode = (file: string): string =>
     readFileSync(file, 'utf-8')
         .replace(/\/\*[\s\S]*?\*\//g, '')
@@ -92,11 +69,7 @@ type Binding =
 type BoundEntry = { readonly bindings: readonly Binding[] };
 type UnboundEntry = { readonly unbound: string };
 
-/**
- * Compares one binding against one row and returns `null` when they agree, or a
- * string naming the difference. A missing file, export, or field is an error,
- * never "no mismatch": the guard fails closed on a route it cannot read.
- */
+/** Compare a binding with its catalog row; missing exports fail closed. */
 const compareBinding = (args: {
     readonly action: AdministrativeAction;
     readonly row: ActionRow;
@@ -182,10 +155,33 @@ const ROUTE_BINDINGS: Readonly<Record<AdministrativeAction, BoundEntry | Unbound
                 kind: 'required',
                 file: 'apps/api/src/routes/partners/admin/manual-payment.ts',
                 route: 'adminManualPaymentRoute'
+            },
+            {
+                kind: 'required',
+                file: 'apps/api/src/routes/billing-subscription/admin/manual-payment.ts',
+                route: 'adminManualPaymentRegistrationPreviewRoute'
+            },
+            {
+                kind: 'required',
+                file: 'apps/api/src/routes/billing-subscription/admin/manual-payment.ts',
+                route: 'adminRegisterManualPaymentRoute'
             }
         ]
     },
-    ACC_4: { unbound: 'B7 builds it' },
+    ACC_4: {
+        bindings: [
+            {
+                kind: 'required',
+                file: 'apps/api/src/routes/billing-subscription/admin/manual-payment.ts',
+                route: 'adminManualUnpaidPreviewRoute'
+            },
+            {
+                kind: 'required',
+                file: 'apps/api/src/routes/billing-subscription/admin/manual-payment.ts',
+                route: 'adminDeclareManualUnpaidRoute'
+            }
+        ]
+    },
     ACC_5: {
         bindings: [
             {
@@ -436,12 +432,7 @@ const ROUTE_BINDINGS: Readonly<Record<AdministrativeAction, BoundEntry | Unbound
     }
 };
 
-/**
- * The only row known to be out of step today, and why it is not fixed here.
- * The row says `[]` with `pendingOwnPermission` V6.9 (HOS-1479) while the two
- * deadline-change routes ask for `MAINTENANCE_MODE_WRITE` provisionally
- * (Coord-20); the real permission is B13a's debt. Tracked in HOS-1689.
- */
+/** HOS-1479: the deadline-change routes still use a provisional permission. */
 const KNOWN_MISALIGNED: Readonly<Partial<Record<AdministrativeAction, string>>> = {
     ACC_22: 'Row says [] with pending V6.9 (HOS-1479); both deadline-change routes ask for MAINTENANCE_MODE_WRITE provisionally (Coord-20); the real permission is B13a debt.'
 };
@@ -474,10 +465,10 @@ describe('TEST:1696:5 AC:1696:5 / HOS-1689 — each administrative action row ag
         expect(Object.keys(ROUTE_BINDINGS)).toHaveLength(25);
     });
 
-    it('b. checks exactly 41 bindings across 16 bound rows', () => {
-        expect(BOUND_ACTIONS).toHaveLength(16);
+    it('b. checks exactly 45 bindings across 17 bound rows', () => {
+        expect(BOUND_ACTIONS).toHaveLength(17);
         const total = BOUND_ACTIONS.reduce((count, action) => count + bindingsOf(action).length, 0);
-        expect(total).toBe(41);
+        expect(total).toBe(45);
     });
     it.each(
         BOUND_ACTIONS.filter((action) => !(action in KNOWN_MISALIGNED))
