@@ -116,6 +116,21 @@ const events = {
     ]
 };
 const certificate = { recipientName: 'Jane Guest', completedAt: '2026-10-10' };
+const validVenueResponse = {
+    id: LISTING,
+    slug: 'local-cafe',
+    name: 'Local Cafe',
+    type: VenueTypeEnum.CAFE,
+    summary: 'A welcoming local cafe.',
+    description: 'A detailed description of this local cafe for visitors.',
+    destinationId: '00000000-0000-4000-a000-000000000002',
+    ownerId: OWNER_A,
+    publicationStatus: PublicationStatusEnum.DRAFT,
+    createdAt: new Date('2026-10-10T00:00:00.000Z'),
+    updatedAt: new Date('2026-10-10T00:00:00.000Z'),
+    createdById: OWNER_A,
+    updatedById: OWNER_A
+};
 const baseSource = {
     type: 'BASE',
     reference: { kind: 'PLAN_VERSION', planVersionId: 'basic' },
@@ -615,11 +630,12 @@ describe('TEST:V5:31 venue and experience content gates', () => {
             },
             ownerId: OWNER_A
         });
+        mocks.service.mockResolvedValue({ data: validVenueResponse });
         const adding = await request(row, OWNER_A, LISTING, {
             businessLines: ['food'],
             menuUrl: 'https://example.com/menu'
         });
-        expect(adding.status).not.toBe(409);
+        expect(adding.status).toBe(200);
 
         const removing = await request(row, OWNER_A, LISTING, {
             businessLines: ['nightlife'],
@@ -631,8 +647,9 @@ describe('TEST:V5:31 venue and experience content gates', () => {
         });
 
         configureSet(OWNER_A, ['edit_venue_info']);
+        mocks.service.mockResolvedValue({ data: validVenueResponse });
         const clearing = await request(row, OWNER_A, LISTING, { menuUrl: null, entryKind: null });
-        expect(clearing.status).not.toBe(403);
+        expect(clearing.status).toBe(200);
         expect((await clearing.json()).error?.details?.entitlementKey).not.toBe(
             'manage_venue_menu'
         );
@@ -668,7 +685,8 @@ describe('TEST:V5:31 venue and experience content gates', () => {
         expect((await boliche.json()).error).toMatchObject({
             details: { reason: 'SECTION_ABSENT', section: 'menu' }
         });
+        mocks.service.mockResolvedValue({ data: validVenueResponse });
         const cafe = await create(VenueTypeEnum.CAFE);
-        expect((await cafe.json()).error?.details?.reason).not.toBe('SECTION_ABSENT');
+        expect(cafe.status).toBe(201);
     });
 });
