@@ -3,6 +3,9 @@ import type { PaymentProvider } from '@repo/payments';
 import { FAKE_NOTICE_DELAY_MS } from '@repo/payments/fake';
 import { afterAll, describe, expect, it } from 'vitest';
 import { processProviderNotice } from '../../../src/services/billing/notice/process-provider-notice.service.js';
+import { confirmedRefundsForNotice } from '../../../src/services/billing/notice/refund-execution-on-notice.js';
+import { confirmRefund } from '../../../src/services/billing/refund/confirm-refund.service.js';
+import { requestRefund } from '../../../src/services/billing/refund/request-refund.service.js';
 import { closeServiceTestPool, getServiceTestDb, isServiceTestDbAvailable } from './helpers.js';
 import { confirmedExecuteFixture, executeRows } from './support/refund-execute-fixtures.js';
 
@@ -41,6 +44,79 @@ function receive(
 }
 
 describe('AC:B6:5 RF3 after a payment refund notice', () => {
+    it.skipIf(!isServiceTestDbAvailable())(
+        'selects only confirmed refunds of the noticed payment',
+        async () => {
+            const seeded = await confirmedExecuteFixture();
+            const requested = await requestRefund(
+                {
+                    source: { kind: 'PAYMENT', id: seeded.payment.id },
+                    amount: 1000,
+                    reason: 'REVOCATION'
+                },
+                { clock: seeded.fixture.clock }
+            );
+
+            const found = await confirmedRefundsForNotice.find({
+                paymentId: seeded.payment.id,
+                providerFactId: seeded.charge.chargeId
+            });
+            const otherFact = await confirmedRefundsForNotice.find({
+                paymentId: seeded.payment.id,
+                providerFactId: seeded.payment.id
+            });
+            const pending = await executeRows(requested.refundId, seeded.payment.id);
+
+            expect(found).toEqual([seeded.refundId]);
+            expect(otherFact).toEqual([]);
+            expect(pending.refund?.status).toBe('REQUESTED');
+        }
+    );
+
+    it.skipIf(!isServiceTestDbAvailable())(
+        'continues to the next confirmed refund after one RF3 failure',
+        async () => {
+            const seeded = await confirmedExecuteFixture();
+            seeded.fixture.clock.advance({ ms: 1 });
+            const second = await requestRefund(
+                {
+                    source: { kind: 'PAYMENT', id: seeded.payment.id },
+                    amount: 1000,
+                    reason: 'REVOCATION'
+                },
+                { clock: seeded.fixture.clock }
+            );
+            await confirmRefund(
+                { actor: seeded.actor, refundId: second.refundId },
+                { clock: seeded.fixture.clock, provider: seeded.fixture.provider }
+            );
+            const delivery = await refundNotice(seeded);
+            let reads = 0;
+            const provider = new Proxy(seeded.fixture.provider as PaymentProvider, {
+                get(target, key, receiver) {
+                    if (key === 'readCharge')
+                        return async (input: Parameters<PaymentProvider['readCharge']>[0]) => {
+                            reads += 1;
+                            if (reads === 2) throw new Error('first RF3 read unavailable');
+                            return target.readCharge(input);
+                        };
+                    const value = Reflect.get(target, key, receiver) as unknown;
+                    return typeof value === 'function' ? value.bind(target) : value;
+                }
+            });
+
+            const result = await receive(seeded, delivery, provider);
+            const firstAfter = await executeRows(seeded.refundId, seeded.payment.id);
+            const secondAfter = await executeRows(second.refundId, seeded.payment.id);
+
+            expect(result.ack).toBe('OK');
+            expect(reads).toBe(3);
+            expect(firstAfter.refund?.status).toBe('CONFIRMED');
+            expect(secondAfter.refund?.status).toBe('EXECUTED');
+            expect(secondAfter.payment?.refundedAmount).toBe(1000);
+        }
+    );
+
     it.skipIf(!isServiceTestDbAvailable())(
         'executes two accredited parts through P4 once',
         async () => {
