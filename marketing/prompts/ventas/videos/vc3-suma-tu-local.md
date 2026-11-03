@@ -15,6 +15,11 @@ Lo hace **Claude Code** de punta a punta con el pipeline de Remotion de `marketi
 
 ## Prompt para Claude Code
 
+**Adjuntar y reemplazar:**
+
+- `Nada al empezar: Claude graba las pantallas reales en staging.` → undefined
+- `Logo: apps/web/src/assets/images/logo.webp, cuando Claude lo pida (antes del cierre y antes de cada render o corrección)` → undefined
+
 ````
 Hacé en Remotion el video de venta VC3 · «Sumá tu local» (25 a 30 s).
 
@@ -66,6 +71,7 @@ REGLAS DE CONTENIDO (no se negocian):
 - Ningún destino por encima de otro; sin cupones; sin métricas ni testimonios inventados.
 - Airbnb, Booking y Google se nombran sólo en calendario y reputación, nunca con su logo.
 - Voseo rioplatense en todo el texto.
+- El mapa de locales todavía no existe: la toma del mapa se presta del editor de alojamientos, tapando todo lo que diga alojamiento (decisión del dueño), y se regraba cuando entre. El video no se manda hasta entonces.
 - En el copy se dice «tu local»; «menú» o «carta» sólo si se muestra esa sección.
 - La ficha pública de un local no muestra teléfono: no prometas que te escriben directo.
 

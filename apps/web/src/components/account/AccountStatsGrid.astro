@@ -45,6 +45,7 @@ const statSubscriptionDesc = t('account.pages.dashboard.stats.subscriptionDesc',
 const statSubscriptionStatus = t('account.pages.dashboard.stats.subscriptionStatus', 'Estado de la suscripción');
 const statActiveStatus = t('account.pages.dashboard.stats.activeStatus', 'Activa');
 const statTrialStatus = t('account.pages.dashboard.stats.trialStatus', 'En prueba');
+const statTrialEndsOn = t('account.pages.dashboard.stats.trialEndsOn', 'Hasta el {{date}}');
 const statFreeStatus = t('account.pages.dashboard.stats.freeStatus', 'Gratuito');
 // A complimentary plan is a real paid plan granted at no charge. It needs its
 // own label: the client script resolves the status line via
@@ -228,6 +229,7 @@ const statListingsHiddenOther = t(
             data-label-suspended={statSuspendedStatus}
             data-label-cancel-scheduled={statCancelScheduledStatus}
             data-label-free={statFreeStatus}
+            data-label-trial-ends-on={statTrialEndsOn}
             aria-live="polite"
         >
             {statSubscriptionStatus}

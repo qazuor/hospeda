@@ -130,10 +130,12 @@ describe('TEST:V6:5 production publication listener', () => {
                 })
                 .from(accommodations)
                 .where(eq(accommodations.ownerId, user.id));
-            expect(partial.find((row) => row.id === listings[3]?.id)?.publicationStatus).toBe(
+            // HOS-1984: lowering to 3 drops the two most recently published (3 and 4); with one
+            // slot back, the newest manual publish (4) returns first and 3 stays unpublished.
+            expect(partial.find((row) => row.id === listings[4]?.id)?.publicationStatus).toBe(
                 PublicationStatusEnum.PUBLISHED
             );
-            expect(partial.find((row) => row.id === listings[4]?.id)?.publicationStatus).toBe(
+            expect(partial.find((row) => row.id === listings[3]?.id)?.publicationStatus).toBe(
                 PublicationStatusEnum.UNPUBLISHED_BY_BILLING
             );
             accessState.limit = 5;
