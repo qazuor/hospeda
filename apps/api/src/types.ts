@@ -1,5 +1,5 @@
 import type { OpenAPIHono, RouteConfig, RouteHandler } from '@hono/zod-openapi';
-import type { RoleEnum } from '@repo/schemas';
+import type { BusinessLine, RoleEnum } from '@repo/schemas';
 import type { Actor } from '@repo/service-core';
 import type { MiddlewareHandler, Schema } from 'hono';
 import type { ApiLogger } from './utils/logger';
@@ -69,6 +69,7 @@ export interface AppBindings {
         listingAccess?: {
             subjectId: string | null;
             evaluatedSteps: readonly (3 | 4 | 5 | 6 | 7)[];
+            businessLines: readonly BusinessLine[];
         };
         /** Better Auth session for the current request */
         session?: AuthSession;

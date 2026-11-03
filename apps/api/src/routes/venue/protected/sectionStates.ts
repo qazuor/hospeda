@@ -1,5 +1,6 @@
 /** GET /api/v1/protected/venues/:id/sections */
-import { VenueListingSectionStatesSchema, VerticalEnum } from '@repo/schemas';
+import { ServiceErrorCode, VenueListingSectionStatesSchema, VerticalEnum } from '@repo/schemas';
+import { ServiceError } from '@repo/service-core';
 import { resolveListingSections } from '@repo/verticals';
 import type { Context } from 'hono';
 import { z } from 'zod';
@@ -17,19 +18,18 @@ export const protectedGetVenueSectionStatesRoute = createProtectedRoute({
     requestParams: { id: z.string().uuid({ message: 'zodError.common.id.invalidUuid' }) },
     responseSchema: VenueListingSectionStatesSchema,
     handler: async (ctx: Context) => {
-        const { subjectId } = ctx.get('listingAccess');
+        const listingAccess = ctx.get('listingAccess');
+        if (!listingAccess?.subjectId)
+            throw new ServiceError(ServiceErrorCode.UNAUTHORIZED, 'Authentication required');
+        const { subjectId, businessLines } = listingAccess;
         const ports = getListingAccessPorts();
-        const { facts } = await ports.loadFacts({
-            vertical: VerticalEnum.VENUE,
-            listingId: ctx.req.param('id')
-        });
         const effective = await ports.effectiveSet({
             userId: subjectId,
             vertical: VerticalEnum.VENUE
         });
         const resolved = resolveListingSections({
             vertical: 'venue',
-            businessLines: facts?.businessLines ?? [],
+            businessLines,
             effective,
             userId: subjectId
         });

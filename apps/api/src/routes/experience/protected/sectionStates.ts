@@ -1,5 +1,10 @@
 /** GET /api/v1/protected/experiences/:id/sections */
-import { ExperienceListingSectionStatesSchema, VerticalEnum } from '@repo/schemas';
+import {
+    ExperienceListingSectionStatesSchema,
+    ServiceErrorCode,
+    VerticalEnum
+} from '@repo/schemas';
+import { ServiceError } from '@repo/service-core';
 import { resolveListingSections } from '@repo/verticals';
 import type { Context } from 'hono';
 import { z } from 'zod';
@@ -17,19 +22,18 @@ export const protectedGetExperienceSectionStatesRoute = createProtectedRoute({
     requestParams: { id: z.string().uuid({ message: 'zodError.common.id.invalidUuid' }) },
     responseSchema: ExperienceListingSectionStatesSchema,
     handler: async (ctx: Context) => {
-        const { subjectId } = ctx.get('listingAccess');
+        const listingAccess = ctx.get('listingAccess');
+        if (!listingAccess?.subjectId)
+            throw new ServiceError(ServiceErrorCode.UNAUTHORIZED, 'Authentication required');
+        const { subjectId, businessLines } = listingAccess;
         const ports = getListingAccessPorts();
-        const { facts } = await ports.loadFacts({
-            vertical: VerticalEnum.EXPERIENCE,
-            listingId: ctx.req.param('id')
-        });
         const effective = await ports.effectiveSet({
             userId: subjectId,
             vertical: VerticalEnum.EXPERIENCE
         });
         const resolved = resolveListingSections({
             vertical: 'experience',
-            businessLines: facts?.businessLines ?? [],
+            businessLines,
             effective,
             userId: subjectId
         });

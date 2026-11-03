@@ -13,13 +13,14 @@ let ownerId = OWNER;
 let businessLines: string[] = ['food'];
 let ownerKeys: string[] = ['edit_venue_info'];
 const effectiveRead = vi.fn();
+const loadFacts = vi.fn(async () => ({
+    facts: { ownerId, publicationStatus: PublicationStatusEnum.PUBLISHED, businessLines },
+    ownerId
+}));
 
 vi.mock('../../../../src/utils/listing-access/ports', () => ({
     getListingAccessPorts: () => ({
-        loadFacts: async () => ({
-            facts: { ownerId, publicationStatus: PublicationStatusEnum.PUBLISHED, businessLines },
-            ownerId
-        }),
+        loadFacts,
         billing: { coverage: async () => ({ covered: false, sources: [{ type: 'BASE' }] }) },
         effectiveSet: effectiveRead
     })
@@ -68,6 +69,7 @@ describe('TEST:3.5:1 AC:3:7 venue section states over protected HTTP route', () 
         const own = await app().request(`/${VENUE}/sections`);
         const ownBody = await own.json();
         expect(own.status).toBe(200);
+        expect(loadFacts).toHaveBeenCalledTimes(1);
         expect(ownBody.data.sections.menu).toEqual({
             state: 'locked',
             traits: {
@@ -83,6 +85,7 @@ describe('TEST:3.5:1 AC:3:7 venue section states over protected HTTP route', () 
         const support = await app().request(`/${VENUE}/sections`);
         const supportBody = await support.json();
         expect(support.status).toBe(200);
+        expect(loadFacts).toHaveBeenCalledTimes(2);
         expect(supportBody.data.sections.menu.state).toBe('locked');
         expect(effectiveRead).toHaveBeenLastCalledWith({ userId: OWNER, vertical: 'venue' });
     });
