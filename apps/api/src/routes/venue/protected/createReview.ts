@@ -9,12 +9,13 @@
  * - After creation, the listing's denormalized rating fields are recomputed.
  */
 
-import { VenueReviewCreateInputSchema, VenueReviewSchema } from '@repo/schemas';
+import { ServiceErrorCode, VenueReviewCreateInputSchema, VenueReviewSchema } from '@repo/schemas';
 import { ServiceError, VenueReviewService } from '@repo/service-core';
 import type { Context } from 'hono';
 import { createSlidingWindowPerUserRateLimit } from '../../../middlewares/rate-limit';
 import { getActorFromContext } from '../../../utils/actor';
 import { apiLogger } from '../../../utils/logger';
+import { createErrorResponse } from '../../../utils/response-helpers';
 import { createProtectedRoute } from '../../../utils/route-factory';
 import type { z } from '../../../utils/zod';
 
@@ -81,7 +82,31 @@ export const protectedCreateVenueReviewRoute = createProtectedRoute({
         const result = await service.create(actor, input);
 
         if (result.error) {
-            throw new ServiceError(result.error.code, result.error.message);
+            // A business-rule validation rejection (e.g. DIMENSION_NOT_APPLICABLE)
+            // carries client-facing `details` such as `rating.<id>`. Emit them
+            // through the standard error envelope; every other code keeps the
+            // regular status mapping and detail-hiding path.
+            if (
+                result.error.code === ServiceErrorCode.VALIDATION_ERROR &&
+                result.error.details !== undefined
+            ) {
+                return createErrorResponse(
+                    {
+                        code: result.error.code,
+                        message: result.error.message,
+                        details: result.error.details,
+                        reason: result.error.reason
+                    },
+                    ctx,
+                    400
+                );
+            }
+            throw new ServiceError(
+                result.error.code,
+                result.error.message,
+                result.error.details,
+                result.error.reason
+            );
         }
 
         return result.data;
