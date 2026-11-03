@@ -188,6 +188,7 @@ export async function sendRefundCalls(input: {
         | 'SENT'
         | 'NOT_ACCEPTED_KEPT_CONFIRMED'
         | 'PROVIDER_REJECTED_KEPT_CONFIRMED'
+        | 'PROVIDER_REJECTED_FAILED'
         | 'AWAITING_PROVIDER_ANSWER';
     readonly calls: readonly {
         readonly amount: number;
@@ -208,7 +209,7 @@ export async function sendRefundCalls(input: {
     if (!first.answered) return { outcome: 'AWAITING_PROVIDER_ANSWER', calls: publicCalls(calls) };
     if (!first.refusal)
         return {
-            outcome: first.providerRefundId ? 'SENT' : 'PROVIDER_REJECTED_KEPT_CONFIRMED',
+            outcome: first.providerRefundId ? 'SENT' : 'PROVIDER_REJECTED_FAILED',
             calls: publicCalls(calls)
         };
     const isTotal = refund.amount === first.balance;
@@ -267,6 +268,8 @@ export async function sendRefundCalls(input: {
         if (retry.providerRefundId) accepted += refund.amount;
     }
     if (accepted === refund.amount) return { outcome: 'SENT', calls: publicCalls(calls) };
+    if (accepted === 0 && calls.some((call) => call.rejected && call.refusal === null))
+        return { outcome: 'PROVIDER_REJECTED_FAILED', calls: publicCalls(calls) };
     return {
         outcome: accepted > 0 ? 'PROVIDER_REJECTED_KEPT_CONFIRMED' : 'NOT_ACCEPTED_KEPT_CONFIRMED',
         calls: publicCalls(calls)
