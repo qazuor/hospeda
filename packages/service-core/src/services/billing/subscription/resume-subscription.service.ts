@@ -11,6 +11,7 @@ import {
 } from '@repo/db';
 import { createLogger } from '@repo/logger';
 import type { PaymentProvider } from '@repo/payments';
+import { BILLING_CYCLE_MONTHS } from '@repo/schemas';
 import { z } from 'zod';
 import { type CoverageNotices, unwiredCoverageNotices } from '../payment/payment-ports.js';
 import { openReconciliationMark } from '../reconciliation/open-reconciliation-mark.service.js';
@@ -20,7 +21,6 @@ import { confirmPrincipalResume } from './resume-subscription-provider.js';
 
 const logger = createLogger('resume-subscription-s10');
 const inputSchema = z.strictObject({ subscriptionId: z.uuid(), cause: z.enum(['TERM', 'EARLY']) });
-const monthsByCycle = { monthly: 1, quarterly: 3, semiannual: 6, annual: 12 } as const;
 
 /** Outcome of the S10 principal resume transition. */
 export type ResumeSubscriptionResult =
@@ -131,7 +131,7 @@ export async function resumeSubscription(
             nextChargeAt = locked.nextChargeAt;
             while (nextChargeAt && nextChargeAt <= now) {
                 const advanced = new Date(nextChargeAt);
-                advanced.setUTCMonth(advanced.getUTCMonth() + monthsByCycle[cycle]);
+                advanced.setUTCMonth(advanced.getUTCMonth() + BILLING_CYCLE_MONTHS[cycle]);
                 nextChargeAt = advanced;
             }
         }
