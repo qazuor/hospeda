@@ -1,7 +1,9 @@
 import { randomUUID } from 'node:crypto';
 import {
     billingOptions,
+    coveredPeriods,
     getDb,
+    payments,
     plans,
     planVersionEntitlements,
     planVersions,
@@ -10,9 +12,11 @@ import {
 } from '@repo/db';
 import { RoleEnum, RoleGrantReason, VerticalEnum } from '@repo/schemas';
 import { grantRole } from '@repo/service-core';
+import type { EffectiveSetSnapshot } from '@repo/verticals';
 import { runDailyCoverageReconciler } from '@repo/verticals';
-import { afterAll, afterEach, beforeAll, describe, expect, it } from 'vitest';
+import { afterAll, afterEach, beforeAll, describe, expect, it, vi } from 'vitest';
 import { initApp } from '../../../src/app';
+import * as effectiveSetCache from '../../../src/utils/effective-set-cache';
 import { validateApiEnv } from '../../../src/utils/env';
 import { getListingAccessPorts } from '../../../src/utils/listing-access/ports';
 import { getListingReconcilerPorts } from '../../../src/utils/listing-publication/reconciler-ports';
@@ -24,6 +28,8 @@ describe('TEST:V7:12 AC:V7:12 partner role survives loss of presence', () => {
     const partnerIds: string[] = [];
     const optionIds: string[] = [];
     const subscriptionIds: string[] = [];
+    const paymentIds: string[] = [];
+    const coveredPeriodIds: string[] = [];
 
     beforeAll(async () => {
         process.env.HOSPEDA_ALLOW_MOCK_ACTOR = 'true';
@@ -33,6 +39,11 @@ describe('TEST:V7:12 AC:V7:12 partner role survives loss of presence', () => {
     });
 
     afterEach(async () => {
+        vi.restoreAllMocks();
+        for (const id of coveredPeriodIds.splice(0))
+            await getDb().delete(coveredPeriods).where(sql`${coveredPeriods.id} = ${id}::uuid`);
+        for (const id of paymentIds.splice(0))
+            await getDb().delete(payments).where(sql`${payments.id} = ${id}::uuid`);
         for (const id of subscriptionIds.splice(0))
             await getDb().delete(subscriptions).where(sql`${subscriptions.id} = ${id}::uuid`);
         for (const id of optionIds.splice(0))
@@ -141,6 +152,31 @@ describe('TEST:V7:12 AC:V7:12 partner role survives loss of presence', () => {
             .returning({ id: subscriptions.id });
         if (!subscription) throw new Error('Expected Partner subscription');
         subscriptionIds.push(subscription.id);
+        const [payment] = await getDb()
+            .insert(payments)
+            .values({
+                subscriptionId: subscription.id,
+                amount: 10_000,
+                currency: 'ARS',
+                status: 'SUCCEEDED',
+                provider: 'FAKE',
+                providerFactId: `hos1487-role-${randomUUID()}`,
+                factAt: new Date()
+            })
+            .returning({ id: payments.id });
+        if (!payment) throw new Error('Expected Partner coverage payment');
+        paymentIds.push(payment.id);
+        const [coveredPeriod] = await getDb()
+            .insert(coveredPeriods)
+            .values({
+                subscriptionId: subscription.id,
+                periodStart: new Date(),
+                paymentId: payment.id,
+                creditedAt: new Date()
+            })
+            .returning({ id: coveredPeriods.id });
+        if (!coveredPeriod) throw new Error('Expected covered Partner period');
+        coveredPeriodIds.push(coveredPeriod.id);
 
         const before = await rolePhoto(owner.id);
         expect(before.some((row) => row.role === 'PARTNER_OWNER')).toBe(true);
@@ -166,7 +202,23 @@ describe('TEST:V7:12 AC:V7:12 partner role survives loss of presence', () => {
         await getDb().execute(sql`
             UPDATE subscription SET status = 'SUSPENDED'
             WHERE id = ${subscription.id}::uuid`);
+        await getDb().execute(sql`
+            UPDATE covered_period SET released_at = now()
+            WHERE subscription_id = ${subscription.id}::uuid AND released_at IS NULL`);
         const ports = getListingReconcilerPorts();
+        expect(await ports.presence.liveKeys({ userId: owner.id })).toEqual([]);
+        const cachedSnapshot: EffectiveSetSnapshot = {
+            version: 1,
+            userId: owner.id,
+            vertical: VerticalEnum.PARTNER,
+            hasLiveNonTrialTitle: true,
+            inheritsTouristVip: false,
+            entries: [
+                { key: 'partner_public_page', value: 1, strategy: 'MAX' },
+                { key: 'partner_carousel_presence', value: 1, strategy: 'MAX' }
+            ]
+        };
+        vi.spyOn(effectiveSetCache, 'peekEffectiveSetForUser').mockResolvedValue(cachedSnapshot);
         let cursor: string | null = null;
         let ownerWasEvaluated = false;
         do {
@@ -176,6 +228,7 @@ describe('TEST:V7:12 AC:V7:12 partner role survives loss of presence', () => {
         } while (cursor !== null);
         const summary = await runDailyCoverageReconciler({ ports });
         expect(summary.partnerChecked).toBeGreaterThan(0);
+        expect(summary.partnerInvalidated).toBeGreaterThan(0);
         if (!ownerWasEvaluated) console.info('HUECO: reconciler did not evaluate the test owner');
 
         const after = await rolePhoto(owner.id);
