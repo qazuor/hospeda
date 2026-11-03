@@ -2,6 +2,8 @@
  * Admin event organizer routes
  * Routes that require admin-level access
  */
+
+import { invalidateCacheByPathPrefix } from '../../../middlewares/cache';
 import { createRouter } from '../../../utils/create-app';
 import { adminCreateEventOrganizerRoute } from './create';
 import { adminDeleteEventOrganizerRoute } from './delete';
@@ -14,6 +16,13 @@ import { adminRestoreEventOrganizerRoute } from './restore';
 import { adminUpdateEventOrganizerRoute } from './update';
 
 const app = createRouter();
+
+app.use('*', async (c, next) => {
+    await next();
+    if (c.req.method !== 'GET' && c.res.status >= 200 && c.res.status < 300) {
+        invalidateCacheByPathPrefix({ pathPrefix: '/api/v1/public/event-organizers' });
+    }
+});
 
 // GET / - List all event organizers (including deleted)
 app.route('/', adminListEventOrganizersRoute);

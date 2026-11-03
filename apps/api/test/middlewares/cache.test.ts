@@ -27,7 +27,12 @@ vi.mock('../../src/utils/logger', () => ({
     }
 }));
 
-import { clearCache, createCacheMiddleware, getCacheSize } from '../../src/middlewares/cache';
+import {
+    clearCache,
+    createCacheMiddleware,
+    getCacheSize,
+    invalidateCacheByPathPrefix
+} from '../../src/middlewares/cache';
 import { getCacheConfig } from '../../src/utils/env';
 import { apiLogger } from '../../src/utils/logger';
 
@@ -114,6 +119,35 @@ describe('Cache Middleware', () => {
     });
 
     describe('Cache Hit and Miss', () => {
+        it('invalidates organizer details by id, slug, and public list variants', async () => {
+            const app = new Hono();
+            app.use('*', createCacheMiddleware());
+            app.get('/api/v1/public/event-organizers', (c) => c.json({ data: 'list' }));
+            app.get('/api/v1/public/event-organizers/123', (c) => c.json({ data: 'id' }));
+            app.get('/api/v1/public/event-organizers/slug/example', (c) =>
+                c.json({ data: 'slug' })
+            );
+
+            for (const path of [
+                '/api/v1/public/event-organizers',
+                '/api/v1/public/event-organizers/123',
+                '/api/v1/public/event-organizers/slug/example'
+            ]) {
+                expect((await app.request(path)).headers.get('x-cache')).toBe('MISS');
+                expect((await app.request(path)).headers.get('x-cache')).toBe('HIT');
+            }
+
+            invalidateCacheByPathPrefix({ pathPrefix: '/api/v1/public/event-organizers' });
+
+            for (const path of [
+                '/api/v1/public/event-organizers',
+                '/api/v1/public/event-organizers/123',
+                '/api/v1/public/event-organizers/slug/example'
+            ]) {
+                expect((await app.request(path)).headers.get('x-cache')).toBe('MISS');
+            }
+        });
+
         it('should return MISS on first request and HIT on second', async () => {
             const { app, getCallCount } = createTestApp();
 

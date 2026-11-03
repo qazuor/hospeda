@@ -212,6 +212,17 @@ export function clearCache(): void {
 }
 
 /**
+ * Invalidates cached responses whose request path starts with the supplied prefix.
+ * @param params.pathPrefix - API path prefix to evict, excluding query strings.
+ */
+export function invalidateCacheByPathPrefix({ pathPrefix }: { readonly pathPrefix: string }): void {
+    for (const key of cache.keys()) {
+        const path = key.slice(key.indexOf(':') + 1).split('?')[0] ?? '';
+        if (path.startsWith(pathPrefix)) cache.delete(key);
+    }
+}
+
+/**
  * Returns the current number of entries in the cache.
  * Useful for testing.
  */
