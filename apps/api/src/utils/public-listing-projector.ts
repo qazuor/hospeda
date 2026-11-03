@@ -94,9 +94,8 @@ export function projectPublicListing<T extends Record<string, unknown>>(args: {
     const projected = Object.fromEntries(
         Object.entries(args.listing).filter(([key]) => !removed.has(key))
     );
-    return (
-        args.vertical === 'venue' ? projectVenueMenuTraits(projected, args.states) : projected
-    ) as T;
+    if (args.vertical === 'venue') return projectVenueMenuTraits(projected, args.states) as T;
+    return projected as T;
 }
 
 function deniedSet(userId: string, vertical: PublicVertical): RehydratedEffectiveSet {
