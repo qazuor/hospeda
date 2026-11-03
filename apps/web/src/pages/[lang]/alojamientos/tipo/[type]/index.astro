@@ -128,9 +128,8 @@ const {
 	isFeatured, minBedrooms, minBathrooms, minRating, amenitiesParam, featuresParam,
 	includeNoPrice, includeNoReviews, latitude, longitude, radius, hasLatLongRadius,
 	poiIdRaw, poiSlugRaw, hasGeoRadius, checkIn, checkOut, adults,
-	childrenCount
+	childrenCount, hasPoiRadius, paginationParams
 } = parsedFilters;
-const hasPoiRadius = Boolean((poiIdRaw || poiSlugRaw) && Number.isFinite(radius));
 
 // `distance` is only meaningful when the geo filter is active; degrade to the
 // default otherwise (the backend would silently drop it too).
@@ -152,7 +151,8 @@ const features = featuresResult.ok ? featuresResult.data.items : [];
 const result = await accommodationsApi.list({
 	page,
 	pageSize,
-	...parsedFilters.apiQuery,	type: typeEnum,
+	...parsedFilters.apiQuery,
+	type: typeEnum,
 	sortBy: sortResolved.sortBy,
 	sortOrder: sortResolved.sortOrder,
 	includeAmenities: true
@@ -235,9 +235,7 @@ if (hasPoiRadius) {
 	initialParams.radius = String(radius);
 }
 
-/** Forwarded to Pagination so page links preserve every active filter. */
-const paginationParams = new URLSearchParams(url.searchParams);
-paginationParams.delete('page');
+/** `paginationParams` (from the parser) is forwarded to Pagination: allowlisted filters + sort only. */
 
 // ---------------------------------------------------------------------------
 // Empty state recovery: removable filter chips (mirrors alojamientos/index.astro,

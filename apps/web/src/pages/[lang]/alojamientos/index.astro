@@ -46,7 +46,7 @@ import { XCircleIcon } from '@repo/icons';
 import { getAccommodationTypeIcon } from '@/lib/accommodation-type-icons';
 import { getAccommodationTypeLabel } from '@/lib/colors';
 import { buildAccommodationListingSummary, DEFAULT_TYPE_GRAMMAR } from '@/lib/accommodation-listing-summary';
-import { parseAccommodationListingFilters } from '@/lib/accommodation-listing-filters/parse-listing-filters';
+import { parseAccommodationListingFilters, resolveSummarySubjectTotal } from '@/lib/accommodation-listing-filters/parse-listing-filters';
 import type { CatalogEntry, SummaryLocale } from '@/lib/accommodation-listing-summary';
 import { hasActiveAccommodationEmptyStateFilters } from '@/lib/listing-empty-state-filters';
 import { getApiUrl } from '@/lib/env';
@@ -73,9 +73,8 @@ const {
 	minBedrooms, minBathrooms, minRating, amenitiesParam, featuresParam, includeNoPrice,
 	includeNoReviews, hasWifi, hasPool, hasParking, allowsPets, isFeatured, latitude, longitude,
 	radius, hasLatLongRadius, hasGeoRadius, poiIdRaw, poiSlugRaw, checkIn, checkOut,
-	availabilityParams, summaryFilters
+	availabilityParams, summaryFilters, hasPoiRadius, paginationParams
 } = parsedFilters;
-const hasPoiRadius = Boolean((poiIdRaw || poiSlugRaw) && Number.isFinite(radius));
 
 /**
  * Maps the URL's user-friendly sort key (e.g. `featured`, `priceAsc`) to the
@@ -273,7 +272,9 @@ const filterSummary = buildAccommodationListingSummary({
 		globalTotal: total,
 		// When types are filtered, `total` is already the type-specific count
 		// from the API, so it doubles as `subjectTotal`.
-		subjectTotal: typesArray.length > 0 ? total : undefined,
+		// Uses the summary's own types (`types ?? legacyType`) so a legacy
+		// `?type=HOTEL` link also gets the type-specific subject.
+		subjectTotal: resolveSummarySubjectTotal({ summaryFilters, total }),
 	},
 	sort: sortBy ? { key: sortBy, direction: sortOrder ?? 'asc' } : undefined,
 	catalogs: {
@@ -851,14 +852,7 @@ const emptyStateSuggestions = [
 			totalPages={totalPages}
 			baseUrl={baseUrl.slice(0, -1)}
 			locale={locale}
-			searchParams={(() => {
-				// Forward every URL param except `page` so pagination links
-				// preserve the full filter/sort/context set. Cheaper and more
-				// future-proof than re-listing every supported field.
-				const sp = new URLSearchParams(url.searchParams);
-				sp.delete('page');
-				return sp;
-			})()}
+			searchParams={paginationParams}
 		/>
 	)}
 

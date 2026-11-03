@@ -196,7 +196,16 @@ export const PHRASES: Readonly<Record<SummaryLocale, Readonly<Record<string, str
         bathroomPlural: 'baños',
         onlyFeatured: 'solo destacados',
         onlyNotFeatured: 'solo no destacados',
-        noResultsFound: 'No se encontraron'
+        noResultsFound: 'No se encontraron',
+        withQuickAmenities: 'con',
+        quickWifi: 'wifi',
+        quickPool: 'pileta',
+        quickParking: 'cochera',
+        quickPets: 'admisión de mascotas',
+        withinRadius: 'a menos de {radiusKm} km del punto elegido',
+        availableBetween: 'disponibles del {checkIn} al {checkOut}',
+        onlyWithPrice: 'solo con precio definido',
+        onlyWithReviews: 'solo con reseñas'
     },
     en: {
         showing: 'Showing',
@@ -231,7 +240,16 @@ export const PHRASES: Readonly<Record<SummaryLocale, Readonly<Record<string, str
         bathroomPlural: 'bathrooms',
         onlyFeatured: 'featured only',
         onlyNotFeatured: 'non-featured only',
-        noResultsFound: 'No results found for'
+        noResultsFound: 'No results found for',
+        withQuickAmenities: 'with',
+        quickWifi: 'wifi',
+        quickPool: 'pool',
+        quickParking: 'parking',
+        quickPets: 'pets allowed',
+        withinRadius: 'within {radiusKm} km of the chosen point',
+        availableBetween: 'available from {checkIn} to {checkOut}',
+        onlyWithPrice: 'only with a listed price',
+        onlyWithReviews: 'only with reviews'
     },
     pt: {
         showing: 'Mostrando',
@@ -266,7 +284,16 @@ export const PHRASES: Readonly<Record<SummaryLocale, Readonly<Record<string, str
         bathroomPlural: 'banheiros',
         onlyFeatured: 'somente destacados',
         onlyNotFeatured: 'somente não destacados',
-        noResultsFound: 'Nenhum resultado encontrado para'
+        noResultsFound: 'Nenhum resultado encontrado para',
+        withQuickAmenities: 'com',
+        quickWifi: 'wifi',
+        quickPool: 'piscina',
+        quickParking: 'estacionamento',
+        quickPets: 'permissão para pets',
+        withinRadius: 'a menos de {radiusKm} km do ponto escolhido',
+        availableBetween: 'disponíveis de {checkIn} a {checkOut}',
+        onlyWithPrice: 'somente com preço definido',
+        onlyWithReviews: 'somente com avaliações'
     }
 } as const;
 

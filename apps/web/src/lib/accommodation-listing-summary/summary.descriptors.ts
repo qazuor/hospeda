@@ -19,6 +19,7 @@ import {
     formatNaturalList,
     formatPrice,
     formatRating,
+    formatStayDate,
     pluralizeWord,
     toSafeNumber
 } from './summary.helpers';
@@ -113,7 +114,12 @@ const priceDescriptor: FilterDescriptor = {
         if (!p) return false;
         const minNum = toSafeNumber({ value: p.min });
         const maxNum = toSafeNumber({ value: p.max });
-        return minNum !== null || maxNum !== null || p.includeWithoutPrice === true;
+        return (
+            minNum !== null ||
+            maxNum !== null ||
+            p.includeWithoutPrice === true ||
+            p.includeWithoutPrice === false
+        );
     },
     build: ({ context }) => {
         const { filters, locale, options } = context;
@@ -149,6 +155,10 @@ const priceDescriptor: FilterDescriptor = {
         }
         if (rangePart) {
             return rangePart;
+        }
+        // Only the opt-out (`includeWithoutPrice === false`) is active
+        if (!includeWithout) {
+            return getPhrase({ locale, key: 'onlyWithPrice' });
         }
         // Only includeWithoutPrice active
         return withoutPriceDefined;
@@ -275,7 +285,8 @@ const ratingDescriptor: FilterDescriptor = {
     isActive: ({ filters }) => {
         const hasRating = toSafeNumber({ value: filters.minRating }) !== null;
         const hasWithout = filters.includeWithoutRating === true;
-        return hasRating || hasWithout;
+        const optsOut = filters.includeWithoutRating === false;
+        return hasRating || hasWithout || optsOut;
     },
     build: ({ context }) => {
         const { filters, locale } = context;
@@ -292,6 +303,10 @@ const ratingDescriptor: FilterDescriptor = {
             return includeWithout ? `${ratingPart} ${or} ${withoutRating}` : ratingPart;
         }
 
+        // Only the opt-out (`includeWithoutRating === false`) is active
+        if (!includeWithout) {
+            return getPhrase({ locale, key: 'onlyWithReviews' });
+        }
         // Only includeWithoutRating is active
         return withoutRating;
     }
@@ -324,6 +339,55 @@ const featuredDescriptor: FilterDescriptor = {
 // Ordered descriptor array (controls sentence order)
 // ---------------------------------------------------------------------------
 
+/** Boolean convenience amenities (wifi, pool, parking, pets). */
+const quickAmenitiesDescriptor: FilterDescriptor = {
+    key: 'quickAmenities',
+    isActive: ({ filters }) => Object.values(filters.quickAmenities ?? {}).some(Boolean),
+    build: ({ context }) => {
+        const { filters, locale } = context;
+        const quick = filters.quickAmenities ?? {};
+        const labelKeys = [
+            ['wifi', 'quickWifi'],
+            ['pool', 'quickPool'],
+            ['parking', 'quickParking'],
+            ['pets', 'quickPets']
+        ] as const;
+        const items = labelKeys
+            .filter(([flag]) => quick[flag] === true)
+            .map(([, phraseKey]) => getPhrase({ locale, key: phraseKey }));
+        const list = formatNaturalList({
+            items,
+            conjunction: getPhrase({ locale, key: 'and' })
+        });
+        return `${getPhrase({ locale, key: 'withQuickAmenities' })} ${list}`;
+    }
+};
+
+/** Geo radius / point-of-interest proximity filter. */
+const locationDescriptor: FilterDescriptor = {
+    key: 'location',
+    isActive: ({ filters }) => Number.isFinite(filters.location?.radiusKm),
+    build: ({ context }) =>
+        getPhrase({ locale: context.locale, key: 'withinRadius' }).replace(
+            '{radiusKm}',
+            String(context.filters.location?.radiusKm)
+        )
+};
+
+/** Availability dates filter (validated pair only). */
+const availabilityDescriptor: FilterDescriptor = {
+    key: 'availability',
+    isActive: ({ filters }) =>
+        Boolean(filters.availability?.checkIn && filters.availability?.checkOut),
+    build: ({ context }) => {
+        const { checkIn = '', checkOut = '' } = context.filters.availability ?? {};
+        const { intlLocale, locale } = context;
+        return getPhrase({ locale, key: 'availableBetween' })
+            .replace('{checkIn}', formatStayDate({ value: checkIn, intlLocale }))
+            .replace('{checkOut}', formatStayDate({ value: checkOut, intlLocale }));
+    }
+};
+
 /**
  * All filter descriptors in the order they appear in the summary sentence.
  *
@@ -338,53 +402,10 @@ const featuredDescriptor: FilterDescriptor = {
  * 8. amenities    (comma modifier)
  * 9. rating       (comma modifier)
  * 10. featured    (comma modifier)
+ * 11. quickAmenities (comma modifier)
+ * 12. location    (comma modifier)
+ * 13. availability (comma modifier)
  */
-const quickAmenitiesDescriptor: FilterDescriptor = {
-    key: 'quickAmenities',
-    isActive: ({ filters }) => Object.values(filters.quickAmenities ?? {}).some(Boolean),
-    build: ({ context }) => {
-        const { filters, locale } = context;
-        const labels =
-            locale === 'es'
-                ? { wifi: 'wifi', pool: 'pileta', parking: 'cochera', pets: 'admisión de mascotas' }
-                : locale === 'en'
-                  ? { wifi: 'wifi', pool: 'pool', parking: 'parking', pets: 'pets allowed' }
-                  : {
-                        wifi: 'wifi',
-                        pool: 'piscina',
-                        parking: 'estacionamento',
-                        pets: 'aceita pets'
-                    };
-        const active = Object.entries(filters.quickAmenities ?? {})
-            .filter(([, enabled]) => enabled)
-            .map(([key]) => labels[key as keyof typeof labels]);
-        return `${locale === 'es' ? 'con' : locale === 'en' ? 'with' : 'com'} ${formatNaturalList({ items: active, conjunction: getPhrase({ locale, key: 'and' }) })}`;
-    }
-};
-const locationDescriptor: FilterDescriptor = {
-    key: 'location',
-    isActive: ({ filters }) => Number.isFinite(filters.location?.radiusKm),
-    build: ({ context }) =>
-        context.locale === 'es'
-            ? `a menos de ${context.filters.location?.radiusKm} km del punto elegido`
-            : context.locale === 'en'
-              ? `within ${context.filters.location?.radiusKm} km of the chosen point`
-              : `a menos de ${context.filters.location?.radiusKm} km do ponto escolhido`
-};
-const availabilityDescriptor: FilterDescriptor = {
-    key: 'availability',
-    isActive: ({ filters }) =>
-        Boolean(filters.availability?.checkIn && filters.availability?.checkOut),
-    build: ({ context }) => {
-        const { checkIn = '', checkOut = '' } = context.filters.availability ?? {};
-        return context.locale === 'es'
-            ? `disponibles del ${checkIn} al ${checkOut}`
-            : context.locale === 'en'
-              ? `available from ${checkIn} to ${checkOut}`
-              : `disponíveis de ${checkIn} a ${checkOut}`;
-    }
-};
-
 export const FILTER_DESCRIPTORS: readonly FilterDescriptor[] = [
     destinationDescriptor,
     textDescriptor,

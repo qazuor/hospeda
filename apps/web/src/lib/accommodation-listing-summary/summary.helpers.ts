@@ -292,3 +292,33 @@ export function toSafeNumber({ value }: ToSafeNumberInput): number | null {
     const n = typeof value === 'string' ? Number(value) : value;
     return Number.isFinite(n) ? n : null;
 }
+
+/** Input for {@link formatStayDate}. */
+export interface FormatStayDateInput {
+    /** `YYYY-MM-DD`. */
+    readonly value: string;
+    /** BCP 47 locale used for formatting. */
+    readonly intlLocale: string;
+}
+
+/**
+ * Formats a `YYYY-MM-DD` stay date for display (e.g. "1 dic 2026").
+ *
+ * Formatted in UTC so the calendar day never shifts with the server timezone.
+ * Returns the input unchanged when it is not a valid date.
+ *
+ * @param input - {@link FormatStayDateInput}
+ * @returns Locale-formatted date, or the raw value when unparseable
+ */
+export function formatStayDate({ value, intlLocale }: FormatStayDateInput): string {
+    const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(value);
+    if (!match) return value;
+    const date = new Date(Date.UTC(Number(match[1]), Number(match[2]) - 1, Number(match[3])));
+    if (Number.isNaN(date.getTime())) return value;
+    return new Intl.DateTimeFormat(intlLocale, {
+        day: 'numeric',
+        month: 'short',
+        year: 'numeric',
+        timeZone: 'UTC'
+    }).format(date);
+}
