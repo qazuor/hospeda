@@ -6,6 +6,9 @@ export const PARTNER_APPLICATION_UNAVAILABLE = 'PARTNER_APPLICATION_UNAVAILABLE'
 /** Conflict reason when a Partner application has no active rejection wait to cancel. */
 export const PARTNER_APPLICATION_WAIT_NOT_ACTIVE = 'PARTNER_APPLICATION_WAIT_NOT_ACTIVE' as const;
 
+/** Conflict reason when a Partner application is already resolved. */
+export const PARTNER_APPLICATION_NOT_PENDING = 'PARTNER_APPLICATION_NOT_PENDING' as const;
+
 const MAX_CAUSE_DEPTH = 10;
 
 /** Classifies only the database constraints that prevent a Partner application submission. */
