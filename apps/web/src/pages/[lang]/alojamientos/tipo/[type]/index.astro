@@ -40,7 +40,7 @@ import { canonicalizeFacetValues } from '@/lib/filters/canonical-facet-order';
 import { AiSearchEntry } from '@/components/ai-search/AiSearchEntry.client';
 import { accommodationsApi, amenitiesApi, destinationsApi, featuresApi, SSR_PUBLIC_CACHE_TTL_MS } from '@/lib/api/endpoints';
 import { toAccommodationCardProps } from '@/lib/api/transforms';
-import { buildAvailabilityParams } from '@/lib/availability-params';
+import { parseAccommodationListingFilters } from '@/lib/accommodation-listing-filters/parse-listing-filters';
 import { createTranslations } from '@/lib/i18n';
 import type { SupportedLocale } from '@/lib/i18n';
 import { buildUrl } from '@/lib/urls';
@@ -117,61 +117,27 @@ const SORT_OPTION_MAP: Record<string, { sortBy: string; sortOrder: 'asc' | 'desc
 const DEFAULT_SORT_KEY = 'featured';
 const rawSortKey = url.searchParams.get('sortBy') ?? DEFAULT_SORT_KEY;
 
-// --- Combinable filters (mirrors `/alojamientos/`, minus `types` — fixed by
-// the URL path here). See that page for the full rationale per filter. ---
-const q = url.searchParams.get('q') ?? undefined;
-const destinationIds = url.searchParams.get('destinationIds') ?? undefined;
-const minPrice = url.searchParams.get('minPrice') ? Number(url.searchParams.get('minPrice')) : undefined;
-const maxPrice = url.searchParams.get('maxPrice') ? Number(url.searchParams.get('maxPrice')) : undefined;
-const hasWifi = url.searchParams.get('hasWifi') === 'true' ? true : undefined;
-const hasPool = url.searchParams.get('hasPool') === 'true' ? true : undefined;
-const hasParking = url.searchParams.get('hasParking') === 'true' ? true : undefined;
-const allowsPets = url.searchParams.get('allowsPets') === 'true' ? true : undefined;
-const isFeatured = url.searchParams.get('isFeatured') === 'true' ? true : undefined;
-const minBedrooms = url.searchParams.get('minBedrooms') ? Number(url.searchParams.get('minBedrooms')) : undefined;
-const minBathrooms = url.searchParams.get('minBathrooms') ? Number(url.searchParams.get('minBathrooms')) : undefined;
-const minRating = url.searchParams.get('minRating') ? Number(url.searchParams.get('minRating')) : undefined;
-const amenitiesParam = url.searchParams.get('amenities') ?? undefined;
-const featuresParam = url.searchParams.get('features') ?? undefined;
-const includeNoPrice = url.searchParams.get('includeNoPrice') === 'false' ? false : undefined;
-const includeNoReviews = url.searchParams.get('includeNoReviews') === 'false' ? false : undefined;
-
-// Geo radius (composite filter) — the backend haversine clause needs the
-// full triplet; missing or non-numeric values are silently ignored.
-const latitudeRaw = url.searchParams.get('latitude');
-const longitudeRaw = url.searchParams.get('longitude');
-const radiusRaw = url.searchParams.get('radius');
-const latitude = latitudeRaw !== null ? Number.parseFloat(latitudeRaw) : Number.NaN;
-const longitude = longitudeRaw !== null ? Number.parseFloat(longitudeRaw) : Number.NaN;
-const radius = radiusRaw !== null ? Number.parseFloat(radiusRaw) : Number.NaN;
-const hasLatLongRadius = Number.isFinite(latitude) && Number.isFinite(longitude) && Number.isFinite(radius);
-
-// HOS-142 G-6 — "near a landmark" proximity mode (mirrors alojamientos/index.astro).
-const poiIdRaw = url.searchParams.get('poiId') ?? undefined;
-const poiSlugRaw = poiIdRaw ? undefined : (url.searchParams.get('poiSlug') ?? undefined);
+// --- Combinable filters (mirrors `/alojamientos/`, minus the type facet
+// fixed by this URL path). ---
+const parsedFilters = parseAccommodationListingFilters({
+	searchParams: url.searchParams,
+	ignoreTypeFacet: true
+});
+const {
+	q, destinationIds, minPrice, maxPrice, hasWifi, hasPool, hasParking, allowsPets,
+	isFeatured, minBedrooms, minBathrooms, minRating, amenitiesParam, featuresParam,
+	includeNoPrice, includeNoReviews, latitude, longitude, radius, hasLatLongRadius,
+	poiIdRaw, poiSlugRaw, hasGeoRadius, checkIn, checkOut, adults,
+	childrenCount
+} = parsedFilters;
 const hasPoiRadius = Boolean((poiIdRaw || poiSlugRaw) && Number.isFinite(radius));
-const hasGeoRadius = hasLatLongRadius || hasPoiRadius;
 
 // `distance` is only meaningful when the geo filter is active; degrade to the
 // default otherwise (the backend would silently drop it too).
 const sortKey = rawSortKey === 'distance' && !hasGeoRadius ? DEFAULT_SORT_KEY : rawSortKey;
 const sortResolved = SORT_OPTION_MAP[sortKey] ?? SORT_OPTION_MAP[DEFAULT_SORT_KEY];
 
-// Trip-context fields (dates + party size). The dates seed the sidebar AND
-// filter server-side by availability (H-120) — this comment used to say
-// "informational only today (no availability system yet)", which was true of
-// this page but not of the backend: the occupancy filter existed and worked,
-// only the forwarding was missing.
-const checkIn = url.searchParams.get('checkIn') ?? undefined;
-const checkOut = url.searchParams.get('checkOut') ?? undefined;
-const availabilityParams = buildAvailabilityParams({ checkIn, checkOut });
-const adultsParam = url.searchParams.get('adults');
-const childrenParam = url.searchParams.get('children');
-const adults = adultsParam ? Number(adultsParam) : undefined;
-const childrenCount = childrenParam ? Number(childrenParam) : undefined;
-// Default 0 = NO guest filter until the visitor picks a party size (BETA-161).
-const guestCount = (adults ?? 0) + (childrenCount ?? 0);
-const minGuests = guestCount > 0 ? guestCount : undefined;
+// Trip-context fields (dates + party size) are provided by the parser.
 
 // Fetch destinations (CITY only) for the location + geo-radius groups.
 const destinationsResult = await destinationsApi.list({ destinationType: 'CITY', pageSize: 100, cacheTtlMs: SSR_PUBLIC_CACHE_TTL_MS });
@@ -186,37 +152,10 @@ const features = featuresResult.ok ? featuresResult.data.items : [];
 const result = await accommodationsApi.list({
 	page,
 	pageSize,
-	type: typeEnum,
-	q,
-	destinationIds,
-	minPrice,
-	maxPrice,
+	...parsedFilters.apiQuery,	type: typeEnum,
 	sortBy: sortResolved.sortBy,
 	sortOrder: sortResolved.sortOrder,
-	isFeatured,
-	minGuests,
-	minBedrooms,
-	minBathrooms,
-	minRating,
-	amenities: amenitiesParam,
-	features: featuresParam,
-	includeAmenities: true,
-	includeNoPrice,
-	includeNoReviews,
-	hasWifi,
-	hasPool,
-	hasParking,
-	allowsPets,
-	// HOS-142 G-6 (AC-6): the `poi` mode forwards `poiId`/`poiSlug`, never raw
-	// `latitude`/`longitude` — the server resolves the POI's coordinates
-	// itself (HOS-113 §6.2).
-	latitude: hasLatLongRadius ? latitude : undefined,
-	longitude: hasLatLongRadius ? longitude : undefined,
-	radius: hasGeoRadius ? radius : undefined,
-	poiId: poiIdRaw,
-	poiSlug: poiSlugRaw,
-	// H-120: availability filter, sent as a pair or not at all.
-	...availabilityParams
+	includeAmenities: true
 });
 
 const hasError = !result.ok;

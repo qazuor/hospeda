@@ -24,6 +24,7 @@
 export { buildAccommodationListingSummary } from './summary.builder';
 // Catalog defaults (consumers may extend these)
 export { DEFAULT_SORT_KEYS, DEFAULT_TYPE_GRAMMAR } from './summary.catalogs';
+export { FILTER_DESCRIPTORS, SUMMARY_FILTER_DESCRIPTOR_KEYS } from './summary.descriptors';
 export type { LegacyFilter, MapLegacyFiltersInput } from './summary.legacy';
 // Legacy adapter
 export { mapLegacyFiltersToSummaryFilters } from './summary.legacy';

@@ -339,6 +339,52 @@ const featuredDescriptor: FilterDescriptor = {
  * 9. rating       (comma modifier)
  * 10. featured    (comma modifier)
  */
+const quickAmenitiesDescriptor: FilterDescriptor = {
+    key: 'quickAmenities',
+    isActive: ({ filters }) => Object.values(filters.quickAmenities ?? {}).some(Boolean),
+    build: ({ context }) => {
+        const { filters, locale } = context;
+        const labels =
+            locale === 'es'
+                ? { wifi: 'wifi', pool: 'pileta', parking: 'cochera', pets: 'admisión de mascotas' }
+                : locale === 'en'
+                  ? { wifi: 'wifi', pool: 'pool', parking: 'parking', pets: 'pets allowed' }
+                  : {
+                        wifi: 'wifi',
+                        pool: 'piscina',
+                        parking: 'estacionamento',
+                        pets: 'aceita pets'
+                    };
+        const active = Object.entries(filters.quickAmenities ?? {})
+            .filter(([, enabled]) => enabled)
+            .map(([key]) => labels[key as keyof typeof labels]);
+        return `${locale === 'es' ? 'con' : locale === 'en' ? 'with' : 'com'} ${formatNaturalList({ items: active, conjunction: getPhrase({ locale, key: 'and' }) })}`;
+    }
+};
+const locationDescriptor: FilterDescriptor = {
+    key: 'location',
+    isActive: ({ filters }) => Number.isFinite(filters.location?.radiusKm),
+    build: ({ context }) =>
+        context.locale === 'es'
+            ? `a menos de ${context.filters.location?.radiusKm} km del punto elegido`
+            : context.locale === 'en'
+              ? `within ${context.filters.location?.radiusKm} km of the chosen point`
+              : `a menos de ${context.filters.location?.radiusKm} km do ponto escolhido`
+};
+const availabilityDescriptor: FilterDescriptor = {
+    key: 'availability',
+    isActive: ({ filters }) =>
+        Boolean(filters.availability?.checkIn && filters.availability?.checkOut),
+    build: ({ context }) => {
+        const { checkIn = '', checkOut = '' } = context.filters.availability ?? {};
+        return context.locale === 'es'
+            ? `disponibles del ${checkIn} al ${checkOut}`
+            : context.locale === 'en'
+              ? `available from ${checkIn} to ${checkOut}`
+              : `disponíveis de ${checkIn} a ${checkOut}`;
+    }
+};
+
 export const FILTER_DESCRIPTORS: readonly FilterDescriptor[] = [
     destinationDescriptor,
     textDescriptor,
@@ -349,8 +395,16 @@ export const FILTER_DESCRIPTORS: readonly FilterDescriptor[] = [
     servicesDescriptor,
     amenitiesDescriptor,
     ratingDescriptor,
-    featuredDescriptor
+    featuredDescriptor,
+    quickAmenitiesDescriptor,
+    locationDescriptor,
+    availabilityDescriptor
 ] as const;
+
+/** Descriptor keys; `types` is handled separately by summary.subject.ts. */
+export const SUMMARY_FILTER_DESCRIPTOR_KEYS = FILTER_DESCRIPTORS.map(
+    (descriptor) => descriptor.key
+);
 
 /** Keys of the "flow modifiers" — these attach to the subject with a space, not a comma. */
 export const FLOW_MODIFIER_KEYS: ReadonlySet<string> = new Set(['destination', 'text']);

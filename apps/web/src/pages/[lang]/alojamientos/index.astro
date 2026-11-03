@@ -28,7 +28,6 @@ import { buildAccommodationsFilterGroups } from '@/lib/filters/accommodations-fi
 import { canonicalizeFacetValues } from '@/lib/filters/canonical-facet-order';
 import { accommodationsApi, amenitiesApi, destinationsApi, featuresApi, SSR_PUBLIC_CACHE_TTL_MS } from '@/lib/api/endpoints';
 import { toAccommodationCardProps } from '@/lib/api/transforms';
-import { buildAvailabilityParams } from '@/lib/availability-params';
 import { createTranslations } from '@/lib/i18n';
 import type { SupportedLocale } from '@/lib/i18n';
 import { buildUrl } from '@/lib/urls';
@@ -47,6 +46,7 @@ import { XCircleIcon } from '@repo/icons';
 import { getAccommodationTypeIcon } from '@/lib/accommodation-type-icons';
 import { getAccommodationTypeLabel } from '@/lib/colors';
 import { buildAccommodationListingSummary, DEFAULT_TYPE_GRAMMAR } from '@/lib/accommodation-listing-summary';
+import { parseAccommodationListingFilters } from '@/lib/accommodation-listing-filters/parse-listing-filters';
 import type { CatalogEntry, SummaryLocale } from '@/lib/accommodation-listing-summary';
 import { hasActiveAccommodationEmptyStateFilters } from '@/lib/listing-empty-state-filters';
 import { getApiUrl } from '@/lib/env';
@@ -65,18 +65,18 @@ const mapHref = buildListingViewHref({
 	searchParams: url.searchParams
 }).href;
 const page = Math.max(1, Number(url.searchParams.get('page')) || 1);
+const parsedFilters = parseAccommodationListingFilters({ searchParams: url.searchParams });
 const pageSize = 20;
 
-// Extract filter params
-const q = url.searchParams.get('q') ?? undefined;
-const types = url.searchParams.get('types') ?? undefined;
-// HOS-96 pre-merge review (Option A): the legacy singular `?type=` still
-// narrows the grid (forwarded to the API below), so it is read once here
-// and reused by both the request and the empty-state filter detection.
-const legacyType = url.searchParams.get('type') ?? undefined;
-const destinationIds = url.searchParams.get('destinationIds') ?? undefined;
-const minPrice = url.searchParams.get('minPrice') ? Number(url.searchParams.get('minPrice')) : undefined;
-const maxPrice = url.searchParams.get('maxPrice') ? Number(url.searchParams.get('maxPrice')) : undefined;
+const {
+	q, types, legacyType, destinationIds, minPrice, maxPrice, adults, childrenCount,
+	minBedrooms, minBathrooms, minRating, amenitiesParam, featuresParam, includeNoPrice,
+	includeNoReviews, hasWifi, hasPool, hasParking, allowsPets, isFeatured, latitude, longitude,
+	radius, hasLatLongRadius, hasGeoRadius, poiIdRaw, poiSlugRaw, checkIn, checkOut,
+	availabilityParams, summaryFilters
+} = parsedFilters;
+const hasPoiRadius = Boolean((poiIdRaw || poiSlugRaw) && Number.isFinite(radius));
+
 /**
  * Maps the URL's user-friendly sort key (e.g. `featured`, `priceAsc`) to the
  * backend `(sortBy, sortOrder)` pair. Encoding direction in the key lets the
@@ -107,54 +107,6 @@ const DEFAULT_SORT_KEY = 'featured';
 
 const rawSortKey = url.searchParams.get('sortBy') ?? DEFAULT_SORT_KEY;
 
-// Public quick-amenity boolean shortcuts. The backend resolves these to
-// canonical amenity IDs server-side (PR fix/accommodation-backend-filters-sort).
-const hasWifi = url.searchParams.get('hasWifi') === 'true' ? true : undefined;
-const hasPool = url.searchParams.get('hasPool') === 'true' ? true : undefined;
-const hasParking = url.searchParams.get('hasParking') === 'true' ? true : undefined;
-const allowsPets = url.searchParams.get('allowsPets') === 'true' ? true : undefined;
-const isFeatured = url.searchParams.get('isFeatured') === 'true' ? true : undefined;
-// `minGuests` is no longer exposed as its own field — it's derived from
-// `adults + children` further down so a couple looking for "2 adultos +
-// 0 niños" actually filters out 1-person studios. The variable is computed
-// below once `adults` / `childrenCount` are parsed.
-const minBedrooms = url.searchParams.get('minBedrooms') ? Number(url.searchParams.get('minBedrooms')) : undefined;
-const minBathrooms = url.searchParams.get('minBathrooms') ? Number(url.searchParams.get('minBathrooms')) : undefined;
-const minRating = url.searchParams.get('minRating') ? Number(url.searchParams.get('minRating')) : undefined;
-const amenitiesParam = url.searchParams.get('amenities') ?? undefined;
-const featuresParam = url.searchParams.get('features') ?? undefined;
-// `includeNoPrice` / `includeNoReviews` are default-ON now: the corresponding
-// sidebar checkboxes start checked, so the URL only carries the param when the
-// user explicitly opts OUT. Only forward the explicit-OFF case to the API
-// (passing `true` always would push an unknown param the listing endpoint
-// rejects with INVALID_PAGINATION_PARAMS).
-const includeNoPrice =
-    url.searchParams.get('includeNoPrice') === 'false' ? false : undefined;
-const includeNoReviews =
-    url.searchParams.get('includeNoReviews') === 'false' ? false : undefined;
-
-// Geo radius (composite filter) — the backend haversine clause needs the
-// full triplet; missing or non-numeric values are silently ignored, matching
-// the model-layer guard.
-const latitudeRaw = url.searchParams.get('latitude');
-const longitudeRaw = url.searchParams.get('longitude');
-const radiusRaw = url.searchParams.get('radius');
-const latitude = latitudeRaw !== null ? Number.parseFloat(latitudeRaw) : Number.NaN;
-const longitude = longitudeRaw !== null ? Number.parseFloat(longitudeRaw) : Number.NaN;
-const radius = radiusRaw !== null ? Number.parseFloat(radiusRaw) : Number.NaN;
-const hasLatLongRadius =
-	Number.isFinite(latitude) && Number.isFinite(longitude) && Number.isFinite(radius);
-
-// HOS-142 G-6 — "near a landmark" proximity mode: the sidebar's geo-radius
-// filter's `poi` mode emits `poiId`/`poiSlug` + `radius` instead of raw
-// `latitude`/`longitude` (the server resolves the POI's coordinates itself,
-// HOS-113 §6.2). `poiId` wins over `poiSlug` when both are somehow present,
-// mirroring the server's own precedence.
-const poiIdRaw = url.searchParams.get('poiId') ?? undefined;
-const poiSlugRaw = poiIdRaw ? undefined : (url.searchParams.get('poiSlug') ?? undefined);
-const hasPoiRadius = Boolean((poiIdRaw || poiSlugRaw) && Number.isFinite(radius));
-const hasGeoRadius = hasLatLongRadius || hasPoiRadius;
-
 // Resolve the encoded sort key. `distance` is only meaningful when the geo
 // filter is active, so degrade it to the default if the URL still carries
 // `?sortBy=distance` but the user removed the geo center. The backend would
@@ -167,31 +119,7 @@ const sortBy = sortResolved.sortBy;
 const sortOrder = sortResolved.sortOrder;
 
 // --- Hero search context ---
-// `checkIn` / `checkOut` arrive from the home hero search bar. They DO filter
-// (H-120): the pair goes to the API, which drops any accommodation holding a
-// blocked occupancy row inside `[checkIn, checkOut)`. They are ALSO surfaced in
-// the sidebar and forwarded to the detail page so the contact form can pre-fill
-// the message — that second use is what they were originally added for, and for
-// a long time it was the only one, so the page confirmed a filter it never
-// applied.
-//
-// `adults` / `children` DO filter — their sum is sent to the API as
-// `minGuests` further down so a 3+2 party doesn't see 1-bedroom studios.
-const checkIn = url.searchParams.get('checkIn') ?? undefined;
-const checkOut = url.searchParams.get('checkOut') ?? undefined;
-// Both-or-neither: the server silently ignores a lone date. See the helper.
-const availabilityParams = buildAvailabilityParams({ checkIn, checkOut });
-const adultsParam = url.searchParams.get('adults');
-const childrenParam = url.searchParams.get('children');
-const adults = adultsParam ? Number(adultsParam) : undefined;
-const childrenCount = childrenParam ? Number(childrenParam) : undefined;
-
-// Derived guest-capacity filter: sum of adults + children. Used to filter
-// accommodations that fit the party size. Defaults to 0 (NO guest filter)
-// until the visitor actually picks a party size, so a fresh listing shows the
-// full catalog instead of silently excluding 1-guest stays (BETA-161).
-const guestCount = (adults ?? 0) + (childrenCount ?? 0);
-const minGuests = guestCount > 0 ? guestCount : undefined;
+// The parser preserves the URL values used by the sidebar and detail links.
 
 // Build a query suffix to forward search context to each accommodation detail link.
 const contextQueryParams = new URLSearchParams();
@@ -250,42 +178,10 @@ const [destinationsResult, amenitiesResult, featuresResult, result] = await Prom
 	accommodationsApi.list({
 	page,
 	pageSize,
-	q,
-	types,
-	// Forward the legacy singular `type` too (backend applies `types` OR, else
-	// `type`), so an old `?type=HOTEL` link filters the grid — matching how it
-	// now drives the SEO canonical and chip/sidebar highlight. Mirrors
-	// events/blog, which already forward both.
-	type: legacyType,
-	destinationIds,
-	minPrice,
-	maxPrice,
+	...parsedFilters.apiQuery,
 	sortBy,
 	sortOrder,
-	isFeatured,
-	minGuests,
-	minBedrooms,
-	minBathrooms,
-	minRating,
-	amenities: amenitiesParam,
-	features: featuresParam,
 	includeAmenities: true,
-	includeNoPrice,
-	includeNoReviews,
-	hasWifi,
-	hasPool,
-	hasParking,
-	allowsPets,
-	// HOS-142 G-6 (AC-6): the `poi` mode forwards `poiId`/`poiSlug` and
-	// deliberately NEVER raw `latitude`/`longitude` — the server resolves the
-	// POI's coordinates itself (HOS-113 §6.2).
-	latitude: hasLatLongRadius ? latitude : undefined,
-	longitude: hasLatLongRadius ? longitude : undefined,
-	radius: hasGeoRadius ? radius : undefined,
-	poiId: poiIdRaw,
-	poiSlug: poiSlugRaw,
-	// H-120: the availability filter. Spread as a pair or not at all.
-	...availabilityParams,
 	// NOT cached on purpose — see the note above the catalog reads.
 	})
 ]);
@@ -371,22 +267,7 @@ const hasActiveFilters = hasActiveAccommodationEmptyStateFilters({
 });
 const filterSummary = buildAccommodationListingSummary({
 	locale: summaryLocale,
-	filters: {
-		types: typesArray.length > 0 ? typesArray : undefined,
-		text: q,
-		price: (minPrice !== undefined || maxPrice !== undefined || includeNoPrice)
-			? { min: minPrice, max: maxPrice, includeWithoutPrice: includeNoPrice }
-			: undefined,
-		destinations: destinationIds?.split(',').filter(Boolean),
-		guests: minGuests,
-		amenities: amenitiesParam?.split(',').filter(Boolean),
-		services: featuresParam?.split(',').filter(Boolean),
-		minRating,
-		includeWithoutRating: includeNoReviews,
-		bedrooms: minBedrooms,
-		bathrooms: minBathrooms,
-		featured: isFeatured ?? null,
-	},
+	filters: summaryFilters,
 	counts: {
 		shown: cards.length,
 		globalTotal: total,
