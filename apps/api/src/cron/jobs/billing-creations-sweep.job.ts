@@ -37,7 +37,7 @@ export const billingCreationsSweepJob: CronJobDefinition = {
             );
             const { failures, ...details } = summary;
             return {
-                success: summary.stoppedOnBudget || summary.rowsFailed === 0,
+                success: summary.rowsFailed === 0,
                 message: `Examined ${summary.rowsExamined} pending subscription creations`,
                 processed: summary.rowsExamined,
                 errors: summary.rowsFailed,

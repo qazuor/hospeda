@@ -55,6 +55,35 @@ describe('billing creations sweep cron', () => {
         expect(result.details).toHaveProperty('failedSubscriptionIds', ['x']);
         expect(result.details).not.toHaveProperty('failures');
     });
+    it('HOS-1999 AC-16: a budget stop with failed rows is not green', async () => {
+        sweep.mockResolvedValue({
+            rowsExamined: 3,
+            rowsFailed: 1,
+            stoppedOnBudget: true,
+            failures: [{ subscriptionId: 'x', message: 'bad' }],
+            startedAt: new Date(),
+            finishedAt: new Date()
+        });
+        expect(await billingCreationsSweepJob.handler(context())).toMatchObject({
+            success: false,
+            errors: 1,
+            details: { stoppedOnBudget: true }
+        });
+    });
+    it('HOS-1999 AC-16: a clean budget stop stays green', async () => {
+        sweep.mockResolvedValue({
+            rowsExamined: 3,
+            rowsFailed: 0,
+            stoppedOnBudget: true,
+            failures: [],
+            startedAt: new Date(),
+            finishedAt: new Date()
+        });
+        expect(await billingCreationsSweepJob.handler(context())).toMatchObject({
+            success: true,
+            details: { stoppedOnBudget: true }
+        });
+    });
     it('supports dry run and translates thrown errors', async () => {
         expect(await billingCreationsSweepJob.handler(context(true))).toMatchObject({
             success: true,
