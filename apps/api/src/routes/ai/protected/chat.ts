@@ -55,13 +55,13 @@ import {
     type AiFeature,
     type AiMessage,
     type LanguageEnum,
-    LISTING_SECTIONS,
     PermissionEnum,
     resolveAiChatTarget,
     ServiceErrorCode,
     VerticalEnum
 } from '@repo/schemas';
 import { ServiceError } from '@repo/service-core';
+import { resolveListingSections } from '@repo/verticals';
 import { eq } from 'drizzle-orm';
 import { getPostHogClient } from '../../../lib/posthog.js';
 import { createAiRateLimitMiddlewares } from '../../../middlewares/ai-rate-limit';
@@ -75,7 +75,6 @@ import { getActorFromContext } from '../../../utils/actor.js';
 import { mapAiEngineErrorToHttpStatus } from '../../../utils/ai-error-mapper.js';
 import { enforceAiQuota } from '../../../utils/listing-access/ai-quota-gate.js';
 import { getListingAccessPorts } from '../../../utils/listing-access/ports.js';
-import { readEffectiveKeys } from '../../../utils/listing-access/user-gate.js';
 import { apiLogger } from '../../../utils/logger.js';
 import {
     createProtectedStreamingRoute,
@@ -106,35 +105,6 @@ const VERTICAL_BY_ENTITY_TYPE = {
     accommodation: VerticalEnum.ACCOMMODATION,
     venue: VerticalEnum.VENUE,
     experience: VerticalEnum.EXPERIENCE
-} as const;
-
-function sectionKey(vertical: 'venue' | 'experience', sectionId: string): string {
-    const sections: readonly { id: string; entitlementKey?: string }[] = LISTING_SECTIONS[vertical];
-    const section = sections.find(({ id }) => id === sectionId);
-    if (!section?.entitlementKey)
-        throw new Error(`Missing entitlement for ${vertical}.${sectionId}`);
-    return section.entitlementKey;
-}
-
-function traitKey(vertical: 'venue' | 'experience', sectionId: string, traitId: string): string {
-    const sections: readonly {
-        id: string;
-        traits?: readonly { id: string; entitlementKey?: string }[];
-    }[] = LISTING_SECTIONS[vertical];
-    const section = sections.find(({ id }) => id === sectionId);
-    const trait = section?.traits?.find(({ id }) => id === traitId);
-    if (!trait?.entitlementKey)
-        throw new Error(`Missing trait ${vertical}.${sectionId}.${traitId}`);
-    return trait.entitlementKey;
-}
-
-const OWNER_MENU_KEY = sectionKey('venue', 'menu');
-const OWNER_DIRECTIONS_KEY = traitKey('experience', 'meetingPoint', 'directions');
-
-const OWNER_CAPABILITY_KEYS_BY_ENTITY_TYPE = {
-    accommodation: [],
-    venue: [OWNER_MENU_KEY],
-    experience: [OWNER_DIRECTIONS_KEY]
 } as const;
 
 const OWNER_CHAT_LIMIT_BY_ENTITY_TYPE = {
@@ -284,12 +254,14 @@ export const protectedAiChatRoute = createProtectedStreamingRoute({
         } as const;
         const listingTable = LISTING_TABLE_BY_ENTITY_TYPE[entityType];
         const rows = await db
-            .select({ ownerId: listingTable.ownerId })
+            .select({ ownerId: listingTable.ownerId, businessLines: listingTable.businessLines })
             .from(listingTable)
             .where(eq(listingTable.id, entityId))
             .limit(1);
 
-        const ownerRow = rows[0] as { ownerId: string } | undefined;
+        const ownerRow = rows[0] as
+            | { ownerId: string; businessLines?: readonly string[] | null }
+            | undefined;
         if (!ownerRow) {
             throw new ServiceError(ServiceErrorCode.NOT_FOUND, `${entityType} not found.`, {
                 entityId
@@ -322,12 +294,15 @@ export const protectedAiChatRoute = createProtectedStreamingRoute({
             limitMessage: 'accommodations.aiChat.consumerLimitReached'
         });
 
-        const ownerCapabilities = await readEffectiveKeys({
-            userId: ownerId,
-            vertical: ownerVertical,
-            keys: OWNER_CAPABILITY_KEYS_BY_ENTITY_TYPE[entityType],
-            effectiveSetSnapshot: ownerEffectiveSet
-        });
+        const listingSections =
+            entityType === 'venue' || entityType === 'experience'
+                ? resolveListingSections({
+                      vertical: entityType,
+                      businessLines: ownerRow.businessLines ?? [],
+                      effective: ownerEffectiveSet,
+                      userId: ownerId
+                  }).sections
+                : new Map();
 
         if (body.messages.length === 1) {
             captureChatEvent(actor.id, 'ai_chat_opened', {
@@ -353,10 +328,7 @@ export const protectedAiChatRoute = createProtectedStreamingRoute({
             entityId,
             resolvedPrompt,
             locale,
-            ownerCapabilities: {
-                manageVenueMenu: ownerCapabilities[OWNER_MENU_KEY] === true,
-                manageExperienceDirections: ownerCapabilities[OWNER_DIRECTIONS_KEY] === true
-            }
+            listingSections
         });
 
         const aiService = await createConfiguredAiService();

@@ -12,6 +12,7 @@
  * @module test/services/listing-brochure
  */
 
+import { readFileSync } from 'node:fs';
 import { ExperiencePublicSchema, VenuePublicSchema } from '@repo/schemas';
 import { describe, expect, it } from 'vitest';
 import {
@@ -81,6 +82,20 @@ const EXPERIENCE_ROW = {
 };
 
 describe('the brochure cannot outrun the public ficha (HOS-1058)', () => {
+    it('projects the venue row before parsing the brochure source', () => {
+        const source = readFileSync(
+            new URL('../../src/routes/venue/protected/brochure.ts', import.meta.url),
+            'utf8'
+        );
+        expect(source).toContain(
+            "projectPublicListings({ vertical: 'venue', listings: [entity] })"
+        );
+        expect(source).toContain('VenueBrochureSourceSchema.safeParse(projectedEntity)');
+        expect(source.indexOf('projectPublicListings({')).toBeLessThan(
+            source.indexOf('VenueBrochureSourceSchema.safeParse(projectedEntity)')
+        );
+    });
+
     const CASES = [
         {
             label: 'venue',

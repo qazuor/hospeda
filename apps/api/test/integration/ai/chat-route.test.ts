@@ -78,8 +78,11 @@ const {
     mockOwnerLimits: { current: new Map<string, number>([['max_ai_chat_per_month', 20]]) },
     // Rows returned by the DB ownerId lookup (empty = 404).
     mockOwnerQueryResult: {
-        current: [{ ownerId: '11111111-1111-1111-1111-111111111111' }] as Array<{
+        current: [
+            { ownerId: '11111111-1111-1111-1111-111111111111', businessLines: ['food'] }
+        ] as Array<{
             ownerId: string;
+            businessLines: string[];
         }>
     },
     resolvedPromptForTest: { current: 'Resolved prompt from admin/default.' },
@@ -172,7 +175,9 @@ vi.mock('@repo/db', async (importOriginal) => {
         select: (cols: unknown) => {
             from: (table: unknown) => {
                 where: (cond: unknown) => {
-                    limit: (n: number) => Promise<Array<{ ownerId: string }>>;
+                    limit: (
+                        n: number
+                    ) => Promise<Array<{ ownerId: string; businessLines: string[] }>>;
                 };
             };
         };
@@ -428,7 +433,12 @@ describe('TEST:V5:32 POST /api/v1/protected/ai/chat — integration (SPEC-200 T-
         // Owner billing state defaults (SPEC-211 Phase 1 §7.3 — pass-through for most tests).
         mockOwnerEntitlements.current = [EntitlementKeyEnum.AI_CHAT];
         mockOwnerLimits.current = new Map([[LimitKeyEnum.MAX_AI_CHAT_PER_MONTH, 20]]);
-        mockOwnerQueryResult.current = [{ ownerId: '11111111-1111-1111-1111-111111111111' }];
+        mockOwnerQueryResult.current = [
+            {
+                ownerId: '11111111-1111-1111-1111-111111111111',
+                businessLines: ['food']
+            }
+        ];
         resolvedPromptForTest.current = 'Resolved prompt from admin/default.';
         nextContextResult.current = {
             contextBlock: '## Accommodation: Test Cabin',
@@ -490,12 +500,18 @@ describe('TEST:V5:32 POST /api/v1/protected/ai/chat — integration (SPEC-200 T-
             key: 'manage_experience_directions',
             enabled: false
         }
-    ])('passes effective $entityType capabilities to its context assembler', async (testCase) => {
+    ])('passes resolved $entityType listing states to its context assembler', async (testCase) => {
         const assembler = vi.spyOn(CHAT_CONTEXT_ASSEMBLERS, testCase.entityType).mockResolvedValue({
             contextBlock: 'context',
             systemMessage: 'system',
             entityName: 'test listing'
         });
+        mockOwnerQueryResult.current = [
+            {
+                ownerId: OWNER_ID,
+                businessLines: testCase.entityType === 'venue' ? ['food'] : ['standard']
+            }
+        ];
         mockOwnerEntitlements.current = [
             EntitlementKeyEnum.AI_CHAT,
             ...(testCase.enabled ? [testCase.key] : [])
@@ -522,13 +538,19 @@ describe('TEST:V5:32 POST /api/v1/protected/ai/chat — integration (SPEC-200 T-
         expect(res.status).toBe(200);
         expect(assembler).toHaveBeenCalledWith(
             expect.objectContaining({
-                ownerCapabilities: {
-                    manageVenueMenu: testCase.entityType === 'venue' && testCase.enabled,
-                    manageExperienceDirections:
-                        testCase.entityType === 'experience' && testCase.enabled
-                }
+                listingSections: expect.any(Map)
             })
         );
+        const resolvedStates = assembler.mock.calls[0]?.[0].listingSections;
+        if (testCase.entityType === 'venue') {
+            expect(resolvedStates?.get('menu')?.state).toBe(
+                testCase.enabled ? 'available' : 'locked'
+            );
+        } else {
+            expect(resolvedStates?.get('meetingPoint')?.traits.get('directions')).toBe(
+                testCase.enabled ? 'available' : 'locked'
+            );
+        }
         expect(
             effectiveSetSpy.mock.calls.filter(([args]) => args.userId === OWNER_ID)
         ).toHaveLength(1);

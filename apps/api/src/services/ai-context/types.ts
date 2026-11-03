@@ -24,6 +24,7 @@
 
 import type { AiChatEntityType } from '@repo/schemas';
 import type { Actor } from '@repo/service-core';
+import type { ResolveListingSectionsResult } from '@repo/verticals';
 
 /** Input contract shared by every context assembler. */
 export interface AssembleChatContextInput {
@@ -35,11 +36,8 @@ export interface AssembleChatContextInput {
     readonly resolvedPrompt: string;
     /** The visitor's locale. */
     readonly locale: 'es' | 'en' | 'pt';
-    /** Owner capabilities resolved by the route for this listing's vertical. */
-    readonly ownerCapabilities: {
-        readonly manageVenueMenu?: boolean;
-        readonly manageExperienceDirections?: boolean;
-    };
+    /** Section and trait availability resolved for this listing and owner. */
+    readonly listingSections: ResolveListingSectionsResult['sections'];
 }
 
 /** Output contract shared by every context assembler. */

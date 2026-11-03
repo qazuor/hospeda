@@ -11,8 +11,8 @@
  * `meetingPoint` (where it is) is `-basico` content. `meetingPointDirections`
  * (how to GET there, and the map that draws it) is gated behind
  * `MANAGE_EXPERIENCE_DIRECTIONS` from `-pro` upward — HOS-1049 drew that line
- * deliberately. This assembler honours it from the entitlement set the ROUTE
- * resolved, for the reason the venue assembler gates the carta: today every
+ * deliberately. This assembler honours its resolved trait state, for the
+ * reason the venue assembler gates the carta: today every
  * venue or experience tier granting `AI_CHAT` also grants the directions, and that is a
  * property of the current catalogue rather than a guarantee.
  *
@@ -109,9 +109,9 @@ export interface ExperienceContextFaq {
  *
  * @param experience - The experience row.
  * @param faqs - Its FAQs, capped at {@link EXPERIENCE_CONTEXT_FAQ_MAX}.
- * @param includeDirections - Whether the owner's plan grants
- *   `MANAGE_EXPERIENCE_DIRECTIONS`. When `false` the directions field is omitted
- *   entirely; this function does not re-check the entitlement, it renders what
+ * @param includeDirections - Whether `meetingPoint.directions` is available.
+ *   When `false` the directions field is omitted entirely; this function does
+ *   not re-check availability, it renders what
  *   the caller decided.
  * @returns The Markdown block to prepend to the system message.
  */
@@ -273,7 +273,7 @@ function formatDuration(minutes: number): string {
  * soft-deleted, mapped by the streaming factory to a pre-stream 404. The FAQ read
  * degrades to an empty list with a logged warning.
  *
- * @param input - Actor, entity id, resolved prompt, locale and owner capabilities.
+ * @param input - Actor, entity id, resolved prompt, locale and listing states.
  * @returns The context block, system message and experience name.
  */
 export async function assembleExperienceContext(
@@ -316,7 +316,7 @@ export async function assembleExperienceContext(
     const contextBlock = buildExperienceMarkdownContext(
         experience,
         faqs,
-        input.ownerCapabilities.manageExperienceDirections === true
+        input.listingSections.get('meetingPoint')?.traits.get('directions') === 'available'
     );
 
     return {
