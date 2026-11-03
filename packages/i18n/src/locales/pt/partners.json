@@ -10,5 +10,25 @@
         "contactHeading": "Contato",
         "socialHeading": "Redes",
         "websiteLabel": "Site"
+    },
+    "claim": {
+        "seo": {
+            "title": "Reivindique seu Partner",
+            "description": "Vincule seu Partner aprovado à sua conta Hospeda."
+        },
+        "heading": "Reivindique seu Partner",
+        "signInPrompt": "Para reivindicar este Partner, entre com a conta que você vai usar para administrá-lo. Essa conta será a proprietária.",
+        "signInCta": "Entrar",
+        "confirmPrompt": "Você vai vincular este Partner à conta com a qual entrou.",
+        "confirmCta": "Reivindicar o Partner",
+        "claiming": "Reivindicando…",
+        "success": "Pronto: o Partner foi vinculado à sua conta.",
+        "successCta": "Ir para Minha Conta de Partner",
+        "notFound": "Não encontramos este Partner. Confira se o link está completo.",
+        "alreadyClaimed": "Este Partner já tem proprietário; se não foi você, fale com o suporte",
+        "accountAlreadyOwns": "Sua conta já é proprietária de um Partner. Cada conta administra apenas um Partner: reivindique o segundo negócio com outra conta. Se precisar de ajuda, fale com o suporte.",
+        "verifyEmailFirst": "Para reivindicar este Partner com esta conta, primeiro verifique seu e-mail.",
+        "supportCta": "Falar com o suporte",
+        "genericError": "Não foi possível concluir a reivindicação. Tente novamente em alguns minutos."
     }
 }

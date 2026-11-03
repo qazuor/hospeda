@@ -157,7 +157,15 @@ touching PR to `staging` (CLAUDE.md). This part is TEST:B13a:14 and TEST:U1:19.
 - **Evidence:** `hops psql --target=staging`, read-only: A's Partner has a non-null `claim_secret_hash` different from the link secret; the payloads of both `email_outbox` rows contain neither the secret nor the reason; B's Partner `owner_user_id` equals B's account and has a `partner.claimed` event. V7.2 (HOS-1486) covers A's claim-link screen; do not open it in this step.
 - **Covers:** AC:V7:4, AC:V7:5; TEST:V7:4, TEST:V7:5.
 
-### S10 — Manual payment installments (HOS-1541)
+### S10 — Partner claim by link
+
+- **Preconditions:** `staging` with a real `HOSPEDA_EMAIL_API_KEY`; mailbox A with a verified Hospeda account and a distinct mailbox B, both controlled by the executor; mailbox C owned by an unverified account, with another approved application, a second session open in another browser, and Google linked; an admin with `PARTNER_RESOLVE_APPLICATION`.
+- **Steps:** Submit an application with A and approve it through the admin API; open its notice link in a signed-out browser, sign in as B, and claim; open the same link with another account; open it again after changing one character of the secret; with C, claim its Partner from the password-authenticated session, then try the other session and sign in with Google.
+- **Expected:** B owns the Partner with `PARTNER_OWNER` and A is unchanged; the second claim shows «Este Partner ya tiene dueño; si no fuiste vos, escribinos a soporte»; the altered secret shows the nonexistent-Partner state; C becomes verified, its other session stops working within 5 minutes (session-cache window, R-1) and Google can no longer sign in; the sign-in URL never contains the secret.
+- **Evidence:** `hops psql --target=staging`, read-only queries: `owner_user_id` and `claim_secret_hash` for the Partner before and after (the hash is unchanged); the `partner.claimed` event with `reason = 'claim_link'` and, for C, `changes` containing `email_verified`, `revoked_session_count`, and `removed_credential_providers`; C's `session` and `account` rows.
+- **Covers:** AC:V7:7, AC:V7:8, AC:V7:9; TEST:V7:7, TEST:V7:8, TEST:V7:9, TEST:V7:22.
+
+### S11 — Manual payment installments (HOS-1541)
 
 - **Preconditions:** HOS-1629 manual signup is deployed on staging; use only a test account and a SUPER_ADMIN. The manual payment path does not call Mercado Pago, except that activation can cancel an inherited Tourist VIP.
 - **Steps:**

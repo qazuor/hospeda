@@ -1317,6 +1317,13 @@
       "when": 1793678736020,
       "tag": "0187_hos1485_partner_application_resolution",
       "breakpoints": true
+    },
+    {
+      "idx": 188,
+      "version": "7",
+      "when": 1793711974042,
+      "tag": "0188_hos1486_session_auth_method",
+      "breakpoints": true
     }
   ]
 }
