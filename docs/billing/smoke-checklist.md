@@ -157,6 +157,21 @@ touching PR to `staging` (CLAUDE.md). This part is TEST:B13a:14 and TEST:U1:19.
 - **Evidence:** `hops psql --target=staging`, read-only: A's Partner has a non-null `claim_secret_hash` different from the link secret; the payloads of both `email_outbox` rows contain neither the secret nor the reason; B's Partner `owner_user_id` equals B's account and has a `partner.claimed` event. V7.2 (HOS-1486) covers A's claim-link screen; do not open it in this step.
 - **Covers:** AC:V7:4, AC:V7:5; TEST:V7:4, TEST:V7:5.
 
+### S10 — Manual payment installments (HOS-1541)
+
+- **Preconditions:** HOS-1629 manual signup is deployed on staging; use only a test account and a SUPER_ADMIN. The manual payment path does not call Mercado Pago, except that activation can cancel an inherited Tourist VIP.
+- **Steps:**
+  1. Start a manual plan. Confirm `PENDING_AUTHORIZATION`, one `AWAITING` installment and one unpaid installment notice per SUPER_ADMIN.
+  2. As SUPER_ADMIN, call `GET …/manual-payments`, preview `GET …/{id}/register`, then `POST …/{id}/register` with `proofRef`. Confirm preview effect `S29` and the new date, then `REGISTERED` with actor, time and proof, `ACTIVE`, one `receipt`, one cycle of `next_charge_at`, signup confirmation and publishable coverage.
+  3. Set `next_charge_at` in the past on that test row with `hops psql --target=staging` and wait for `manual-installment-open` at minute 13. Confirm a second `AWAITING` installment, `GRACE_PERIOD`, `grace_ends_at` after the plan's grace days and one admin notice. Rerun the job and confirm exact counts remain one installment and one notice for that period.
+  4. Register the second installment. Confirm `ACTIVE`, cleared grace and one cycle of date advancement.
+  5. Repeat step 3 and declare the new installment unpaid. Confirm `DECLARED_UNPAID`, `SUSPENDED`, the manual payer suspension notice and removal from public coverage.
+  6. Confirm an ADMIN without the action permissions receives 403 on both POST routes, a foreign installment receives 404, and declaring unpaid on an `ACTIVE` row receives 409.
+- **Expected:** Steps 1–6 reach exactly the states, dates, notices, receipt and HTTP responses stated above, without creating duplicate installments or notices on retry.
+- **Evidence:** The API responses, the test subscription and installment rows, its receipts and coverage, the per-admin outbox rows and the `manual-installment-open` cron run.
+- **Covers:** AC:B5:13–16; TEST:B5:7 and the MP2 half of TEST:B5:8.
+- **Sign-off:** [ ] Date: ______ Executor: ______ Result: ______ Notes: ______
+
 ### Sign-off
 
 | Date | Executor | PR | Result | Notes |
