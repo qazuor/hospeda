@@ -8,7 +8,7 @@
     },
     "listing": {
         "title": "Food & nightlife",
-        "subtitle": "Discover the best restaurants, bars, and flavors of the region",
+        "subtitle": "Discover places to eat and go out across the region",
         "emptyState": "No venues found with the selected filters.",
         "emptyCatalog": "There are no published venues yet.",
         "errorBanner": "Could not load the Food & nightlife listings. Please try again later.",
@@ -116,11 +116,11 @@
             "title": "Benefits for your food business",
             "item1": {
                 "title": "Regional visibility",
-                "desc": "Show up where thousands of travelers search for places to eat in Concepción del Uruguay and the Litoral region."
+                "desc": "Show up where thousands of travelers look for places to eat or go out in Concepción del Uruguay and the Litoral region."
             },
             "item2": {
                 "title": "Publish in minutes",
-                "desc": "Upload photos, menu and hours from a simple dashboard. Edit anytime."
+                "desc": "Add photos, food or drinks, and opening hours from a simple dashboard. Edit anytime."
             },
             "item3": {
                 "title": "Flat price, no commissions",
@@ -136,11 +136,11 @@
             },
             "step2": {
                 "title": "Publish your venue",
-                "desc": "Add photos, menu, hours and location."
+                "desc": "Add photos, food or drinks, opening hours and location."
             },
             "step3": {
                 "title": "Get discovered",
-                "desc": "Diners find you while looking for places to eat and go out in the area."
+                "desc": "Visitors discover your venue when looking for places to eat or go out nearby."
             }
         },
         "price": {
@@ -172,7 +172,7 @@
         },
         "lead": {
             "title": "Add your business",
-            "subtitle": "Create your account, publish your venue and start reaching diners looking for somewhere to eat in the area."
+            "subtitle": "Create your account, list your venue and reach visitors looking for places to eat or go out nearby."
         }
     },
     "owner": {
