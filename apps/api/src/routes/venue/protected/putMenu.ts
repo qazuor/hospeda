@@ -81,10 +81,16 @@ export const protectedPutVenueMenuRoute = createProtectedRoute({
         vertical: VerticalEnum.VENUE,
         operation: 'EDIT',
         idParam: 'id',
-        capabilities: ({ body }) => [
-            'manage_venue_menu',
-            ...(menuPayloadCarriesItemPhoto(body) ? ['menu_item_photos'] : []),
-            ...(menuPayloadCarriesTranslations(body) ? ['multilingual_venue_menu'] : [])
+        listingSection: ({ body }) => [
+            {
+                id: 'menu',
+                intent:
+                    Array.isArray(body?.sections) && body.sections.length === 0 ? 'delete' : 'write'
+            }
+        ],
+        sectionTraits: ({ body }) => [
+            ...(menuPayloadCarriesItemPhoto(body) ? ['itemPhotos'] : []),
+            ...(menuPayloadCarriesTranslations(body) ? ['translations'] : [])
         ]
     },
     tags: ['Venue', 'Venue Menu'],

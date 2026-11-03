@@ -104,9 +104,10 @@ export const protectedGetVenueMenuQrScansRoute = createProtectedRoute({
     path: '/{id}/menu-qr/scans',
     listingAccess: {
         vertical: VerticalEnum.VENUE,
-        operation: 'READ_OWN_COMMERCIAL',
+        operation: 'READ_OWN',
         idParam: 'id',
-        step6Key: 'menu_qr_scan_metrics'
+        listingSection: { id: 'menu', intent: 'read' },
+        sectionTraits: ['qrMetrics']
     },
     summary: 'Get the scan aggregate for a venue listing’s menu QR',
     description:

@@ -676,7 +676,11 @@ const cases = [
 beforeEach(() => {
     vi.clearAllMocks();
     mocks.loadFacts.mockResolvedValue({
-        facts: { ownerId: OWNER, publicationStatus: PublicationStatusEnum.PUBLISHED },
+        facts: {
+            ownerId: OWNER,
+            publicationStatus: PublicationStatusEnum.PUBLISHED,
+            businessLines: ['food']
+        },
         ownerId: OWNER
     });
     mocks.coverage.mockResolvedValue({ covered: false, sources: [baseSource] });

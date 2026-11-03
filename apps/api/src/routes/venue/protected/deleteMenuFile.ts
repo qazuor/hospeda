@@ -40,7 +40,7 @@ export const protectedDeleteVenueMenuFileRoute = createProtectedRoute({
         vertical: VerticalEnum.VENUE,
         operation: 'EDIT',
         idParam: 'id',
-        capabilities: ['manage_venue_menu']
+        listingSection: { id: 'menu', intent: 'delete' }
     },
     summary: 'Remove the uploaded menu photo or PDF',
     description:

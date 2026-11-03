@@ -10,6 +10,7 @@ const { mockGetById, mockFindLiveCodeForEntity, mockGetScanStatsForCode } = vi.h
     mockFindLiveCodeForEntity: vi.fn(),
     mockGetScanStatsForCode: vi.fn()
 }));
+let effectiveEntries = [{ key: 'menu_qr_scan_metrics', value: 1, strategy: 'MAX' as const }];
 
 vi.mock('@repo/service-core', async (importActual) => {
     const actual = await importActual<typeof import('@repo/service-core')>();
@@ -49,7 +50,7 @@ vi.mock('../../../../src/utils/listing-access/ports', () => ({
                 vertical,
                 hasLiveNonTrialTitle: false,
                 inheritsTouristVip: false,
-                entries: [{ key: 'menu_qr_scan_metrics', value: 1, strategy: 'MAX' }]
+                entries: effectiveEntries
             })
     })
 }));
@@ -84,6 +85,7 @@ function buildApp(input: { actorId?: string } = {}): Hono<AppBindings> {
 
 beforeEach(() => {
     vi.clearAllMocks();
+    effectiveEntries = [{ key: 'menu_qr_scan_metrics', value: 1, strategy: 'MAX' }];
 
     mockGetById.mockResolvedValue({
         data: {
@@ -123,6 +125,22 @@ describe('GET /{id}/menu-qr/scans — effective capability granted', () => {
 
         expect(res.status).toBe(200);
         expect(mockFindLiveCodeForEntity).toHaveBeenCalledTimes(1);
+    });
+});
+
+describe('TEST:3.3:2 menu QR scans entitlement', () => {
+    it('rejects pro without the metrics trait and never reaches the handler', async () => {
+        effectiveEntries = [{ key: 'manage_venue_menu', value: 1, strategy: 'MAX' }];
+        const res = await buildApp().request(`/${VENUE_ID}/menu-qr/scans`);
+        const body = await res.json();
+
+        expect(res.status).toBe(403);
+        expect(res.status).not.toBe(500);
+        expect(body.error).toMatchObject({
+            code: 'ENTITLEMENT_REQUIRED',
+            details: { entitlementKey: 'menu_qr_scan_metrics' }
+        });
+        expect(mockFindLiveCodeForEntity).not.toHaveBeenCalled();
     });
 });
 
