@@ -39,7 +39,8 @@ function failingProvider(
 
 async function notify(
     fixture: Awaited<ReturnType<typeof paymentFixture>>,
-    provider: PaymentProvider
+    provider: PaymentProvider,
+    rateLimitDeferral?: { readonly coolDownRemainingMs: () => number }
 ) {
     const { chargeId } = await fixture.provider.charge({
         authorizationId: fixture.started.authorizationId,
@@ -57,6 +58,7 @@ async function notify(
         },
         {
             provider,
+            ...(rateLimitDeferral ? { rateLimitDeferral } : {}),
             clock: fixture.clock,
             beforeCancelNotice,
             coverageNotices: fixture.coverageNotices,
@@ -117,6 +119,24 @@ describe('TEST:1747:4 provider notice incomplete read retry response', () => {
             });
             expect(captured).toHaveLength(1);
             expect(captured[0]).toBe(error);
+        }
+    );
+
+    it.skipIf(!isServiceTestDbAvailable())(
+        'defers a 429 only when enforce supplies the remaining cool-down (kills ungated DEFERRED)',
+        async () => {
+            const fixture = await paymentFixture();
+            const { provider } = failingProvider(fixture, false, {
+                kind: 'RATE_LIMITED',
+                retryAfterSeconds: 30
+            });
+            await expect(
+                notify(fixture, provider, { coolDownRemainingMs: () => 36_001 })
+            ).resolves.toMatchObject({
+                ack: 'ERROR',
+                outcome: 'DEFERRED',
+                retryAfterSeconds: 37
+            });
         }
     );
 });
