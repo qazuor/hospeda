@@ -12,7 +12,10 @@ import { getAnalyticsFactSink } from '../../utils/analytics/analytics-facts';
 import { buildComplementPolicyPorts } from '../../utils/billing-complement-ports';
 import { getClock } from '../../utils/clock';
 import { getCoverageNotices } from '../../utils/listing-access/coverage-notices';
-import { getMercadoPagoTrafficGovernor } from '../../utils/mp-traffic-governor';
+import {
+    getMercadoPagoTrafficGovernor,
+    mercadoPagoRateLimitDeferral
+} from '../../utils/mp-traffic-governor';
 import { getPaymentProvider } from '../../utils/payment-provider';
 import { beforeCancelNotice } from '../billing-subscription/before-cancel-notice';
 import { touristVipInheritance } from '../billing-subscription/tourist-vip-inheritance';
@@ -54,12 +57,12 @@ export function buildMercadoPagoNoticePorts() {
     const planPolicy = createPlanCatalogInverse({ reader: planCatalogModel }).planPolicy;
     const changeDirection = createPlanCatalogInverse({ reader: planCatalogModel }).changeDirection;
     const complements = buildComplementPolicyPorts();
-    const governor = getMercadoPagoTrafficGovernor();
+    const rateLimitDeferral = mercadoPagoRateLimitDeferral({
+        governor: getMercadoPagoTrafficGovernor()
+    });
     return {
         provider,
-        ...(governor?.mode === 'enforce'
-            ? { rateLimitDeferral: { coolDownRemainingMs: () => governor.coolDownRemainingMs() } }
-            : {}),
+        ...(rateLimitDeferral ? { rateLimitDeferral } : {}),
         clock,
         promoCharges: createPromoChargePolicy(),
         promoExhaustion: createPromoExhaustion({ provider, clock }),

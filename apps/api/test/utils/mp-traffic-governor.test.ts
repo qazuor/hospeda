@@ -4,7 +4,10 @@ const { info, warn } = vi.hoisted(() => ({ info: vi.fn(), warn: vi.fn() }));
 vi.mock('../../src/utils/logger', () => ({ apiLogger: { info, warn } }));
 
 import { ApiEnvBaseSchema } from '../../src/utils/env-schema';
-import { createMercadoPagoTrafficGovernor } from '../../src/utils/mp-traffic-governor';
+import {
+    createMercadoPagoTrafficGovernor,
+    mercadoPagoRateLimitDeferral
+} from '../../src/utils/mp-traffic-governor';
 
 afterEach(() => vi.clearAllMocks());
 
@@ -61,5 +64,16 @@ describe('Mercado Pago traffic governor composition', () => {
             })
         );
         governor?.stop();
+    });
+
+    it('offers the webhook deferral port only under enforce (kills deferring in observe)', () => {
+        const observe = createMercadoPagoTrafficGovernor({ mode: 'observe' });
+        const enforce = createMercadoPagoTrafficGovernor({ mode: 'enforce' });
+        expect(mercadoPagoRateLimitDeferral({ governor: undefined })).toBeUndefined();
+        expect(mercadoPagoRateLimitDeferral({ governor: observe })).toBeUndefined();
+        const port = mercadoPagoRateLimitDeferral({ governor: enforce });
+        expect(port?.coolDownRemainingMs()).toBe(0);
+        observe?.stop();
+        enforce?.stop();
     });
 });

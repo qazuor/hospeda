@@ -60,3 +60,15 @@ export function getMercadoPagoTrafficGovernor(
 export function isMercadoPagoGovernorEnforcing(): boolean {
     return getMercadoPagoTrafficGovernor()?.mode === 'enforce';
 }
+
+/**
+ * The webhook's rate-limit deferral port (HOS-1999 AC-29): present only when the
+ * governor enforces, so `off` and `observe` keep a RATE_LIMITED read as `FAILED`.
+ */
+export function mercadoPagoRateLimitDeferral(args: {
+    readonly governor: ProviderTrafficGovernor | undefined;
+}): { readonly coolDownRemainingMs: () => number } | undefined {
+    const governor = args.governor;
+    if (governor?.mode !== 'enforce') return undefined;
+    return { coolDownRemainingMs: () => governor.coolDownRemainingMs() };
+}
