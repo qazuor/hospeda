@@ -34,6 +34,15 @@ function filesUnder(root: string, relative: string): string[] {
     }
 }
 
+/**
+ * Runs G-FAC-09: every business-line validation goes through `validateBusinessLines`,
+ * with the exact caller counts pinned by the inventory and a floor of scanned files.
+ *
+ * @param args.root - Repository root; defaults to the current directory.
+ * @param args.inventory - Expected callers per file; defaults to the committed inventory.
+ * @param args.minScannedFiles - Floor of scanned source files, so an empty scan cannot pass.
+ * @returns The exit code and the report text.
+ */
 export function run(
     args: {
         readonly root?: string;
