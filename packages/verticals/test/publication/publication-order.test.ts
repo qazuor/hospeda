@@ -2,7 +2,6 @@ import { describe, expect, it } from 'vitest';
 import {
     comparePublicationOrder,
     orderRestorationCandidates,
-    orderReturningCandidates,
     type PublicationQueueEntry,
     selectSurplusToLower
 } from '../../src/publication/publication-order';
@@ -21,7 +20,7 @@ describe('publication order', () => {
             { id: 'old-null', createdAt: date('2024-01-01T00:00:00Z'), publishedAt: null },
             { id: 'ancient', createdAt: sameCreated, publishedAt: date('1900-01-01T00:00:00Z') }
         ];
-        expect(orderReturningCandidates({ entries }).map(({ id }) => id)).toEqual([
+        expect([...entries].sort(comparePublicationOrder).map(({ id }) => id)).toEqual([
             'old-null',
             'recent-null',
             'ancient',
@@ -118,11 +117,6 @@ describe('publication order', () => {
             expect(
                 selectSurplusToLower({ published: input, limit: 2 }).map(({ id }) => id)
             ).toEqual(['d', 'c']);
-            expect(
-                orderReturningCandidates({ entries: input })
-                    .slice(0, 2)
-                    .map(({ id }) => id)
-            ).toEqual(['a', 'b']);
         }
     });
 });

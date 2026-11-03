@@ -418,6 +418,12 @@
                 "UNPUBLISHED_BY_BILLING": "Ficou sem publicar, porque hoje a sua assinatura não tem lugar para ele. Nada foi apagado.",
                 "ARCHIVED": "Continua arquivado, como estava."
             },
+            "unpublished": {
+                "quotaFull": "Foi aprovado, mas a sua cota está cheia: para publicá-lo, despublique outro anúncio e publique este.",
+                "quotaFullFixRequest": "Continua sem publicar porque a sua cota está cheia: para publicá-lo, despublique outro anúncio e publique este.",
+                "notCovered": "Ficou sem publicar, porque hoje a sua assinatura não o cobre. Nada foi apagado.",
+                "freeSlot": "Há lugar na sua cota: você pode publicá-lo quando quiser."
+            },
             "draftIsYours": "Publicá-lo é decisão sua.",
             "fixRequestOpen": "O pedido de correção continua aberto."
         },

@@ -380,6 +380,47 @@ describe('TEST:V8a:6 / TEST:V8a:7 the production outbox sender renders the listi
             expected: ['Volvió a estar publicada']
         },
         {
+            template: LISTING_MODERATION_LIFTED_TEMPLATE,
+            payload: {
+                vertical: 'accommodation',
+                listingId,
+                reason: 'Ok',
+                returnedTo: 'UNPUBLISHED_BY_BILLING',
+                quotaFull: true,
+                fixRequestOpen: false
+            },
+            expected: [
+                'Quedó aprobada, pero tu cupo está lleno',
+                'despublicá otra ficha y publicá esta'
+            ]
+        },
+        {
+            template: LISTING_MODERATION_LEVEL_CHANGED_TEMPLATE,
+            payload: {
+                vertical: 'accommodation',
+                listingId,
+                reason: 'Ok',
+                returnedTo: 'UNPUBLISHED_BY_BILLING',
+                quotaFull: true,
+                fixRequestOpen: true
+            },
+            expected: [
+                'Sigue sin publicar porque tu cupo está lleno',
+                'despublicá otra ficha y publicá esta'
+            ]
+        },
+        {
+            template: LISTING_MODERATION_LIFTED_TEMPLATE,
+            payload: {
+                vertical: 'accommodation',
+                listingId,
+                reason: 'Ok',
+                returnedTo: 'UNPUBLISHED_BY_BILLING',
+                fixRequestOpen: false
+            },
+            expected: ['porque hoy tu suscripción no tiene lugar para ella']
+        },
+        {
             template: LISTING_RESTITUTION_TEMPLATE,
             payload: {
                 vertical: 'accommodation',
@@ -399,6 +440,35 @@ describe('TEST:V8a:6 / TEST:V8a:7 the production outbox sender renders the listi
         expect(result.subject.trim()).not.toBe('');
         for (const phrase of expected) expect(html).toContain(phrase);
         expect(html).not.toContain(listingId);
+    });
+
+    it('never says the listing was approved when the lift left a fix request (HOS-1997)', async () => {
+        const result = await render({
+            row: row(LISTING_MODERATION_LEVEL_CHANGED_TEMPLATE, {
+                vertical: 'accommodation',
+                listingId,
+                reason: 'Ok',
+                returnedTo: 'UNPUBLISHED_BY_BILLING',
+                quotaFull: true,
+                fixRequestOpen: true
+            })
+        });
+        const html = renderToStaticMarkup(result.react);
+        expect(html).not.toContain('aprobada');
+        expect(html).toContain('El pedido de arreglo sigue abierto');
+    });
+
+    it('gives no unpublish advice for a quota-less lift (no quotaFull flag)', async () => {
+        const result = await render({
+            row: row(LISTING_MODERATION_LIFTED_TEMPLATE, {
+                vertical: 'accommodation',
+                listingId,
+                reason: 'Ok',
+                returnedTo: 'UNPUBLISHED_BY_BILLING',
+                fixRequestOpen: false
+            })
+        });
+        expect(renderToStaticMarkup(result.react)).not.toContain('despublicá otra ficha');
     });
 });
 

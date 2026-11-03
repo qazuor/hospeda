@@ -136,8 +136,10 @@ export function hasAnyPropertyCardAction({
  *   through PB1, which starts the trial in the same transaction.
  * - `checkout`: not covered and no trial left. The button renders and, being
  *   the shared `PublishButton`, leads to the paid plans page of the vertical.
- * - `covered`: the reconciler lifts the listing on its own and PB1 would answer
- *   `COVERED_USE_PB3`, so offering a button would offer a refusal.
+ * - `covered`: the owner may publish it by hand when the quota has a free slot
+ *   (HOS-1997). With the quota full the API answers 403 `LIMIT_REACHED` and the
+ *   shared `PublishButton` shows its `limitReached` message, so the card always
+ *   offers the button instead of guessing the quota.
  * - `noPlans` / `unknown`: the shared `PublishButton` renders its own notice
  *   (no plans, check failed), so the card shows the same fail-closed states
  *   it shows a draft.
@@ -157,7 +159,7 @@ export function resolveRepublishOffer({
     const byKind: Readonly<Record<PublishAffordance['kind'], boolean>> = {
         publish: true,
         checkout: true,
-        covered: false,
+        covered: true,
         noPlans: true,
         unknown: true
     };

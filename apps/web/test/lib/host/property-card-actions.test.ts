@@ -145,7 +145,7 @@ describe('resolveRepublishOffer (HOS-1977)', () => {
         ['checkout', true],
         ['noPlans', true],
         ['unknown', true],
-        ['covered', false]
+        ['covered', true]
     ] as const)('billing-unpublished card with %s affordance -> %s', (kind, expected) => {
         expect(resolveRepublishOffer({ actions: billingActions, affordance: kinds[kind] })).toBe(
             expected
