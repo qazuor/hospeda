@@ -696,7 +696,7 @@ function buildAuth() {
                                 ...session,
                                 authMethod: resolveSessionAuthMethod({
                                     path: context?.path,
-                                    providerId: undefined
+                                    providerId: context?.params?.providerId ?? context?.params?.id
                                 })
                             }
                         };
