@@ -119,6 +119,19 @@ describe('runCronJob lifecycle', () => {
         expect(mocks.ping).not.toHaveBeenCalled();
     });
 
+    it('tells the job about a scheduled overlap, never about a manual one', async () => {
+        mocks.lock.mockResolvedValue({ acquired: false, holderRunId: 'holder-1' });
+        const onOverlapSkipped = vi.fn();
+        const hooked = { ...job, onOverlapSkipped };
+        await runCronJob({ job: hooked, executionMode: 'manual', dryRun: false });
+        expect(onOverlapSkipped).not.toHaveBeenCalled();
+        await runCronJob({ job: hooked, executionMode: 'scheduled', dryRun: false });
+        expect(onOverlapSkipped).toHaveBeenCalledTimes(1);
+        expect(onOverlapSkipped).toHaveBeenCalledWith(
+            expect.objectContaining({ startedAt: expect.any(Date) })
+        );
+    });
+
     it('sends the monitored start ping only after the lock decision is acquired', async () => {
         let grantLock!: () => void;
         let runHandler!: () => Promise<unknown>;

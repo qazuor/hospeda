@@ -85,8 +85,10 @@ describe('TEST:B11:24 reconciliation sweep run and liveness ping', () => {
             rowsComplete: false,
             incomplete: true
         });
+        // The pass ran (the summary carries it) but is not final while rows are unread.
+        expect(summary.creditedPayments).toBeDefined();
         const run = await reconciliationSweepRunModel.findById({ id: summary.runId });
-        expect(run?.passesCompleted).toContain('creditedPayments');
+        expect(run?.passesCompleted).toEqual([]);
     });
 
     it('stamps a row completed at the deadline and resumes with only the unswept row', async () => {

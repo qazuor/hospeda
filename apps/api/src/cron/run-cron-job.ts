@@ -152,6 +152,8 @@ export async function runCronJob(args: {
                 details: { runId, skipped: 'overlap', holderRunId: lock.holderRunId }
             };
             ctx.logger.info('Skipped overlapping run', { holderRunId: lock.holderRunId });
+            if (executionMode === 'scheduled')
+                job.onOverlapSkipped?.({ logger: ctx.logger, startedAt });
             await recordCronRun({
                 jobName: job.name,
                 executionMode,

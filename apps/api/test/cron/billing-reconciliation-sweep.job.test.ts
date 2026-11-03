@@ -278,7 +278,7 @@ describe('billing reconciliation sweep cron', () => {
         expect(mockGraceExpiryCheck.mock.calls[0]?.[0]).not.toHaveProperty(
             'unresolvedPeriodCharges'
         );
-        expect(result).toMatchObject({ processed: 8, errors: 2, success: true });
+        expect(result).toMatchObject({ processed: 8, errors: 2, success: false });
         expect(result.details).toHaveProperty('failedSubscriptionIds', ['failed-id']);
         expect(result.details).toMatchObject({ runId: 'run-id', complete: false, pinged: false });
         expect(result.details).toHaveProperty('zeroCallChecks', { results: [], failedChecks: [] });
@@ -435,7 +435,7 @@ describe('billing reconciliation sweep cron', () => {
             finishedAt: new Date()
         });
         const result = await billingReconciliationSweepJob.handler(context());
-        expect(result).toMatchObject({ success: true, processed: 4, errors: 2 });
+        expect(result).toMatchObject({ success: false, processed: 4, errors: 2 });
         expect(result.details).toMatchObject({
             zeroCallChecks: { failedChecks: ['PAYMENT_PENDING_WITHOUT_BRANCH'] }
         });
@@ -727,7 +727,7 @@ describe('billing reconciliation sweep cron', () => {
             expect.objectContaining({ correlationId: expect.any(String), lastSlot: true }),
             expect.objectContaining({ creditedPayments: {}, paidOrders: {} })
         );
-        expect(result).toMatchObject({ success: true, processed: 4, errors: 1 });
+        expect(result).toMatchObject({ success: false, processed: 4, errors: 1 });
         expect(result.details).toHaveProperty('failedSubscriptionIds', ['paid-row']);
         expect(result.details).toMatchObject({
             creditedPayments: { examined: 3, chargebacks: 1, outOfFlowRefunds: 1 }
@@ -834,6 +834,69 @@ describe('billing reconciliation sweep cron', () => {
             expect(alerts[0]?.[2]).toEqual({ capture: true });
             expect(results[0]?.success).toBe(true);
             expect(results[1]?.success).toBe(true);
+        });
+
+        it('HOS-1999: a cycle closing with failed rows that carry no subscription id still alerts and is never green', async () => {
+            mockSweep.mockResolvedValue({
+                ...base,
+                outcome: 'CYCLE_DONE',
+                rowsFailed: 2,
+                failures: [],
+                stoppedOnBudget: false,
+                skippedPasses: [],
+                cycle: {
+                    cycleId: 'c',
+                    slices: 3,
+                    rowsRead: 9,
+                    rowsFailed: 2,
+                    failedSubscriptionIds: []
+                }
+            });
+            const ctx = context();
+            const result = await billingReconciliationSweepJob.handler(ctx);
+            expect(ctx.logger.error).toHaveBeenCalledWith(
+                'Billing reconciliation sweep had failures',
+                expect.objectContaining({ rowsFailed: 2 }),
+                { capture: true }
+            );
+            expect(result.success).toBe(false);
+        });
+
+        it('HOS-1999: a skipped last slot says the cycle may be unfinished', async () => {
+            mockSweep.mockResolvedValue({
+                ...base,
+                skipped: 'lease_held',
+                rowsRead: 0,
+                rowsFailed: 0,
+                failures: []
+            });
+            const ctx = { ...context(), newCycle: true };
+            const result = await billingReconciliationSweepJob.handler(ctx);
+            expect(ctx.logger.error).toHaveBeenCalledWith(
+                'reconciliation last slot skipped: another slice holds the lease',
+                expect.anything(),
+                { capture: true }
+            );
+            expect(result.details).toMatchObject({ skipped: 'lease_held', outcome: null });
+        });
+
+        it('HOS-1999: the overlap hook alerts only at the last slot', () => {
+            const logger = { info: vi.fn(), warn: vi.fn(), error: vi.fn(), debug: vi.fn() };
+            billingReconciliationSweepJob.onOverlapSkipped?.({
+                logger,
+                startedAt: new Date('2026-11-04T07:10:00.000Z')
+            });
+            expect(logger.error).toHaveBeenCalledWith(
+                'reconciliation last slot skipped: the previous run still holds the lock',
+                {},
+                { capture: true }
+            );
+            logger.error.mockClear();
+            billingReconciliationSweepJob.onOverlapSkipped?.({
+                logger,
+                startedAt: new Date('2026-11-04T05:10:00.000Z')
+            });
+            expect(logger.error).not.toHaveBeenCalled();
         });
 
         it('captures to Sentry when only a zero-call check fails', async () => {

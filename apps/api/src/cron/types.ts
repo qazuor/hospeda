@@ -127,4 +127,12 @@ export interface CronJobDefinition {
      * live. If the resolver throws, registration falls back to `schedule`.
      */
     resolveSchedule?: () => Promise<string>;
+    /**
+     * Called when a SCHEDULED tick is skipped because the exclusive lock is held, so a job whose
+     * last tick matters (the sweep) can say so. Manual triggers never call it.
+     */
+    onOverlapSkipped?: (args: {
+        readonly logger: CronJobContext['logger'];
+        readonly startedAt: Date;
+    }) => void;
 }

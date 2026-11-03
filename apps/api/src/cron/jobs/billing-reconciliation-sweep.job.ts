@@ -46,6 +46,15 @@ export const billingReconciliationSweepJob: CronJobDefinition = {
     schedule: '10 2,3,4 * * *',
     exclusive: true,
     acceptsNewCycle: true,
+    onOverlapSkipped: ({ logger, startedAt }) => {
+        // A scheduled tick refused by the cron lock at the last slot leaves the cycle unfinished.
+        if (isLastSlot({ schedule: billingReconciliationSweepJob.schedule, now: startedAt }))
+            logger.error(
+                'reconciliation last slot skipped: the previous run still holds the lock',
+                {},
+                { capture: true }
+            );
+    },
     budgetMs: 2_700_000,
     enabled: true,
     timeoutMs: 3_000_000,
@@ -232,13 +241,20 @@ export const billingReconciliationSweepJob: CronJobDefinition = {
                 };
             }
             if (summary.skipped) {
+                // The last slot being refused leaves nobody to finish the cycle: say so.
+                if (summary.skipped === 'lease_held' && lastSlot)
+                    logger.error(
+                        'reconciliation last slot skipped: another slice holds the lease',
+                        { skipped: summary.skipped },
+                        { capture: true }
+                    );
                 return {
                     success: true,
                     message: `Reconciliation sweep skipped: ${summary.skipped}`,
                     processed: 0,
                     errors: 0,
                     durationMs: Date.now() - startedAt.getTime(),
-                    details: { skipped: summary.skipped, outcome: summary.outcome }
+                    details: { skipped: summary.skipped, outcome: summary.outcome ?? null }
                 };
             }
             const { failures, ...details } = summary;
@@ -258,22 +274,22 @@ export const billingReconciliationSweepJob: CronJobDefinition = {
             const cycleFailedIds =
                 summary.cycle?.failedSubscriptionIds ??
                 failures.map(({ subscriptionId }) => subscriptionId);
-            if (
-                outcome === 'CYCLE_DONE' &&
-                (cycleFailedIds.length > 0 || zeroCallFailures.length > 0 || cancelCallFailed > 0)
-            ) {
+            // Failed rows of passes without a subscription id never reach the id list, so the
+            // cycle's total count is what decides, not only the ids.
+            const cycleRowsFailed = summary.cycle?.rowsFailed ?? summary.rowsFailed;
+            const closesCycle = outcome === 'CYCLE_DONE';
+            const cycleHasFailedWork =
+                cycleRowsFailed > 0 || cycleFailedIds.length > 0 || zeroCallFailures.length > 0;
+            if (closesCycle && (cycleHasFailedWork || cancelCallFailed > 0)) {
                 logger.error(
                     'Billing reconciliation sweep had failures',
                     {
-                        rowsFailed: summary.rowsFailed,
+                        rowsFailed: cycleRowsFailed,
                         cancelCallFailed,
-                        failedSubscriptionIds:
-                            cycleFailedIds.length > 0
-                                ? cycleFailedIds
-                                : failures.map(({ subscriptionId }) => subscriptionId),
+                        failedSubscriptionIds: cycleFailedIds,
                         failedChecks: zeroCallFailures.map(({ check }) => check)
                     },
-                    { capture: cycleFailedIds.length > 0 || zeroCallFailures.length > 0 }
+                    { capture: cycleHasFailedWork }
                 );
             }
             const incomplete = summary.incomplete ?? false;
@@ -293,6 +309,8 @@ export const billingReconciliationSweepJob: CronJobDefinition = {
                 success:
                     !incomplete &&
                     outcome !== 'FAILED' &&
+                    // Failed rows never turn the run that closes the cycle green.
+                    !(closesCycle && (cycleRowsFailed > 0 || cycleFailedIds.length > 0)) &&
                     cancelCallFailed === 0 &&
                     cancellationRowsFailed === 0,
                 message: `Processed ${summary.rowsRead} billing subscriptions`,

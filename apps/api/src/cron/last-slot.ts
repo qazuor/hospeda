@@ -5,7 +5,7 @@ import { CronExpressionParser } from 'cron-parser';
 export function isLastSlot(args: {
     readonly schedule: string;
     readonly now: Date;
-    readonly newCycle: boolean;
+    readonly newCycle?: boolean;
 }): boolean {
     if (args.newCycle) return true;
 

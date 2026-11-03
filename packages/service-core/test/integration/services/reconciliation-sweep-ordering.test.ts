@@ -90,14 +90,6 @@ function pageMarks(owned: readonly string[], onPage: (call: number) => Promise<v
     return served;
 }
 
-async function leaseUntil(runId: string): Promise<{ readonly live: boolean; readonly at: Date }> {
-    const { rows } = await getServiceTestPool().query<{ at: Date; live: boolean }>(
-        'SELECT lease_until AS at, lease_until > now() AS live FROM reconciliation_sweep_run WHERE id = $1',
-        [runId]
-    );
-    return { at: rows[0]!.at, live: rows[0]!.live };
-}
-
 async function openRunId(): Promise<string> {
     const { rows } = await getServiceTestPool().query<{ id: string }>(
         'SELECT id FROM reconciliation_sweep_run WHERE outcome IS NULL'
@@ -160,25 +152,31 @@ describe('AC-22 an interrupted pass restarts from its beginning in the next slic
 });
 
 describe('lease renewal during a multi-page pass', () => {
-    it('renews lease_until on every page, so an expired lease is live again and blocks a takeover', async () => {
+    it('renews lease_until on every page, so a nearly expired lease is extended and blocks a takeover', async () => {
         const owned = await seedDueMarks();
-        const observed: { live: boolean; at: Date }[] = [];
+        const observed: { remainingMs: number }[] = [];
         let takeover: unknown;
+        const remaining = async (runId: string) => {
+            const { rows } = await getServiceTestPool().query<{ ms: number }>(
+                'SELECT extract(epoch FROM (lease_until - now())) * 1000 AS ms FROM reconciliation_sweep_run WHERE id = $1',
+                [runId]
+            );
+            return Number(rows[0]?.ms);
+        };
         pageMarks(owned, async (call) => {
             const runId = await openRunId();
             if (call === 2) {
-                // The TTL "elapsed" while page 1 was being served; the heartbeat after page 1
-                // must already have renewed the lease, so it is live right now.
-                observed.push(await leaseUntil(runId));
+                // Page 1's heartbeat has renewed the lease to a full TTL.
+                observed.push({ remainingMs: await remaining(runId) });
+                // Pretend the TTL almost elapsed while page 2 is being served.
                 await getServiceTestPool().query(
-                    "UPDATE reconciliation_sweep_run SET lease_until = now() - interval '1 minute' WHERE id = $1",
+                    "UPDATE reconciliation_sweep_run SET lease_until = now() + interval '2 seconds' WHERE id = $1",
                     [runId]
                 );
             }
             if (call === 3) {
-                // Page 2's heartbeat renewed the expired lease: still live, and a concurrent
-                // open of a new slice must be refused while this one is alive.
-                observed.push(await leaseUntil(runId));
+                // Page 2's heartbeat extended it again, and a concurrent open is refused.
+                observed.push({ remainingMs: await remaining(runId) });
                 const { reconciliationSweepRunModel } = await import('@repo/db');
                 takeover = await reconciliationSweepRunModel
                     .openSlice({ correlationId: crypto.randomUUID() })
@@ -195,8 +193,8 @@ describe('lease renewal during a multi-page pass', () => {
         );
         expect(result.outcome).toBe('CYCLE_DONE');
         expect(observed).toHaveLength(2);
-        expect(observed[0]?.live).toBe(true);
-        expect(observed[1]?.live).toBe(true);
+        expect(observed[0]!.remainingMs).toBeGreaterThan(4 * 60_000);
+        expect(observed[1]!.remainingMs).toBeGreaterThan(4 * 60_000);
         expect(takeover).toBe('ReconciliationSweepSliceAlreadyOpenError');
     });
 });
