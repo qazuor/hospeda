@@ -45,6 +45,7 @@ import { captureSignupCompleted } from './auth-signup-analytics';
 import { grantBaselineUserRole } from './auth-signup-baseline-role';
 import { parseTrustedOriginsFromConfig } from './auth-trusted-origins';
 import { captureServerAnalyticsEvent } from './posthog';
+import { resolveSessionAuthMethod } from './session-auth-method';
 import { resolveVerificationUrl } from './verification-callback';
 
 const logger = createLogger('auth');
@@ -249,6 +250,9 @@ function buildAuth() {
         },
 
         session: {
+            additionalFields: {
+                authMethod: { type: 'string', required: false, input: false }
+            },
             cookieCache: {
                 enabled: true,
                 maxAge: COOKIE_CACHE_MAX_AGE
@@ -629,7 +633,7 @@ function buildAuth() {
                      *
                      * @param session - The session about to be created
                      */
-                    before: async (session) => {
+                    before: async (session, context) => {
                         const db = getDb();
                         const userId = session.userId;
 
@@ -687,7 +691,15 @@ function buildAuth() {
                         }
 
                         // Allow session creation to proceed
-                        return true;
+                        return {
+                            data: {
+                                ...session,
+                                authMethod: resolveSessionAuthMethod({
+                                    path: context?.path,
+                                    providerId: undefined
+                                })
+                            }
+                        };
                     },
                     after: async (session) => {
                         try {
