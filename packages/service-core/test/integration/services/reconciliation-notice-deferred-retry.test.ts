@@ -37,6 +37,15 @@ function callsFor(
 }
 
 describe('notice-deferred cancellation retry (HOS-1955)', () => {
+    it('TEST:1955:1 rejects a maxRows override above the D-5 provider retry cap', async () => {
+        const h = deferredRetryHarness();
+        await expect(
+            runNoticeDeferredCancellationRetry({ ...input(), maxRows: 11 }, h.ports)
+        ).rejects.toThrow();
+        expect(h.read).toHaveBeenCalledTimes(0);
+        expect(h.cancel).toHaveBeenCalledTimes(0);
+    });
+
     it('TEST:1955:5 waits for S40 notice, then retries with its original kind and default occurrence', async () => {
         const h = deferredRetryHarness();
         const row = await seedDeferredRetryRow({ fake: h.fake, transition: 'S40', pending: true });

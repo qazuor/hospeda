@@ -30,7 +30,7 @@ export const NOTICE_DEFERRED_RETRY_PAGE_SIZE = 100;
 const inputSchema = z.object({
     correlationId: z.string().min(1),
     sweepRunMaxAgeMs: z.number().int().positive(),
-    maxRows: z.number().int().positive().optional()
+    maxRows: z.number().int().positive().max(NOTICE_DEFERRED_RETRY_MAX_ROWS).optional()
 });
 
 /** Validated input for the frequent retry pass. */
