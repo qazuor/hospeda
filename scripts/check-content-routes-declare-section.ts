@@ -10,6 +10,11 @@ const CONTENT_TABLE_REFERENCES =
     /(?:get|replace|update|delete|upload)Venue(?:Menu|DailySpecials|Events)|venueMenu|venueDailySpecials|venueEvents|menuFilePublicId/;
 type Entry = { section: string; intent: string };
 
+/** Run GUARD:G-FAC-06 over a repository root.
+ * @param args.root Repository root to scan; defaults to the repository containing this script.
+ * @param args.minRoutes Minimum number of inventoried routes required; defaults to `MIN_ROUTES`.
+ * @returns Exit code and diagnostic or success output from the guard.
+ */
 export function run(args: { root?: string; minRoutes?: number } = {}) {
     const root = args.root ?? resolve(fileURLToPath(new URL('.', import.meta.url)), '..');
     const fail = (problems: string[]) => ({ exitCode: 1, output: problems.join('\n') });
