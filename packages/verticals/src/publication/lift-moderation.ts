@@ -7,18 +7,19 @@ import {
     LISTING_MODERATION_LIFTED_TEMPLATE
 } from './moderation-notices';
 import { resolveLiftTransition } from './moderation-origin';
-import { selectPublishedWithinQuota } from './moderation-queue';
 import { publicationAfterCommit, withPublicationLock } from './publication-lock';
 import type {
     PostCommitWarning,
     PublicationAfterCommit,
     PublicationBilling,
-    PublicationListing,
     PublicationUnitOfWork,
     PublicationVertical
 } from './publication-types';
 
-/** Completed lift and any PB2 surplus lowered in the same transaction. */
+/**
+ * Completed lift. A lift never lowers a published listing, so `lowered` is
+ * always empty (kept so callers read one result shape for every transition).
+ */
 export type LiftModerationResult =
     | { readonly ok: false; readonly reason: ModerationFailure }
     | {
@@ -28,12 +29,20 @@ export type LiftModerationResult =
               | typeof Status.DRAFT
               | typeof Status.UNPUBLISHED_BY_BILLING
               | typeof Status.PUBLISHED;
-          readonly lowered: readonly string[];
+          readonly lowered: readonly [];
           readonly fixRequestOpen: boolean;
           readonly warnings: readonly PostCommitWarning[];
       };
 
-/** Lifts an admin moderation through PB11 or PB13 under the owner's publication lock. */
+/**
+ * Lifts an admin moderation through PB11 or PB13 under the owner's publication
+ * lock (HOS-1997). The lift never chooses between listings: with a free slot in
+ * the quota the listing comes back PUBLISHED, with the quota full it comes back
+ * approved but unpublished (`UNPUBLISHED_BY_BILLING`), no other listing is
+ * touched and the owner's notice says the quota is full. The COUNT of published
+ * listings therefore depends only on the quota, not on the path taken; which
+ * listings fill it can still change through moderation (F-8V3A2-003).
+ */
 export async function liftModeration(args: {
     readonly unitOfWork: PublicationUnitOfWork;
     readonly billing: PublicationBilling;
@@ -93,7 +102,7 @@ export async function liftModeration(args: {
                 correlationId: args.correlationId
             });
             let publicationStatus = firstTarget;
-            const lowered: string[] = [];
+            let quotaFull = false;
             const revalidateIds: string[] = [];
             if (transition === 'PB13') {
                 const coverage = await args.billing.coverage({
@@ -107,33 +116,11 @@ export async function liftModeration(args: {
                       })
                     : null;
                 if (coverage.covered && limit !== null) {
-                    const owned = await tx.listByOwner({
+                    const publishedCount = await tx.countPublished({
                         vertical: args.vertical,
                         ownerId: args.ownerId
                     });
-                    const published: PublicationListing[] = owned.filter(
-                        (row) => row.publicationStatus === Status.PUBLISHED
-                    );
-                    const instants = await tx.readPublicationInstants({
-                        vertical: args.vertical,
-                        listingIds: [...published.map((row) => row.id), listing.id]
-                    });
-                    const entries = (rows: readonly PublicationListing[]) =>
-                        rows.map((row) => ({
-                            id: row.id,
-                            createdAt: row.createdAt,
-                            publishedAt: instants.get(row.id) ?? null
-                        }));
-                    const selection = selectPublishedWithinQuota({
-                        published: entries(published),
-                        returning: {
-                            id: listing.id,
-                            createdAt: listing.createdAt,
-                            publishedAt: instants.get(listing.id) ?? null
-                        },
-                        limit
-                    });
-                    if (selection.publishReturning) {
+                    if (publishedCount < limit) {
                         const restored = await tx.setPublicationStatus({
                             vertical: args.vertical,
                             listingId: listing.id,
@@ -155,26 +142,10 @@ export async function liftModeration(args: {
                         });
                         publicationStatus = Status.PUBLISHED;
                         revalidateIds.push(listing.id);
-                    }
-                    for (const row of selection.lower) {
-                        const loweredChanged = await tx.setPublicationStatus({
-                            vertical: args.vertical,
-                            listingId: row.id,
-                            from: Status.PUBLISHED,
-                            to: Status.UNPUBLISHED_BY_BILLING
-                        });
-                        if (!loweredChanged)
-                            throw new Error('PB2 state changed inside locked transaction');
-                        await tx.insertStatusChangedEvent({
-                            vertical: args.vertical,
-                            listingId: row.id,
-                            from: Status.PUBLISHED,
-                            to: Status.UNPUBLISHED_BY_BILLING,
-                            actorType: 'job',
-                            correlationId: args.correlationId
-                        });
-                        lowered.push(row.id);
-                        revalidateIds.push(row.id);
+                    } else if (limit > 0) {
+                        // Only a quota that exists and is full earns the «unpublish another»
+                        // advice; a plan with room for none gets the generic «no room» text.
+                        quotaFull = true;
                     }
                 }
             }
@@ -245,6 +216,7 @@ export async function liftModeration(args: {
                         listingId: listing.id,
                         reason,
                         returnedTo: publicationStatus,
+                        ...(quotaFull ? { quotaFull: true } : {}),
                         fixRequestOpen: Boolean(open)
                     })
                 },
@@ -257,7 +229,6 @@ export async function liftModeration(args: {
                 ok: true,
                 transition,
                 publicationStatus,
-                lowered,
                 fixRequestOpen: Boolean(open),
                 revalidateIds
             } as const;
@@ -283,7 +254,7 @@ export async function liftModeration(args: {
         ok: true,
         transition: decision.transition,
         publicationStatus: decision.publicationStatus,
-        lowered: decision.lowered,
+        lowered: [],
         fixRequestOpen: decision.fixRequestOpen,
         warnings
     };

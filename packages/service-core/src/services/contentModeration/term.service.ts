@@ -59,6 +59,9 @@ export class ContentModerationTermService extends BaseCrudService<
     protected readonly createSchema = createContentModerationTermSchema;
     protected readonly updateSchema = updateContentModerationTermSchema;
     protected readonly searchSchema = contentModerationTermAdminSearchSchema;
+    // Required by the inherited `adminList`, which answers 500 CONFIGURATION_ERROR
+    // without it (HOS-1985).
+    protected readonly adminSearchSchema = contentModerationTermAdminSearchSchema;
 
     constructor(config: ServiceConfig, model?: ContentModerationTermModel) {
         super(config, 'contentModerationTerm');

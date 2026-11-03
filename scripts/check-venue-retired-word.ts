@@ -59,6 +59,11 @@ export const outOfScan = (path: string) => {
     )
         return false;
     if (path === 'packages/db/src/migrations/meta/_journal.json') return true;
+    // A drizzle snapshot is derived output of the TS schema, which this guard
+    // already scans. Its only hits are enum values kept on purpose (the
+    // GASTRONOMY event and post categories, DEC-FAC-032), so scanning it found
+    // nothing new and forced a cutoff bump on every migration (0181-0184).
+    if (/^packages\/db\/src\/migrations\/meta\/\d{4}_snapshot\.json$/.test(path)) return true;
     const name = path.split('/').at(-1) ?? '';
     const version = name.match(/^(\d{4})/)?.[1] ?? name.match(/^(\d{4})/)?.[1];
     return version !== undefined && Number(version) <= 187;

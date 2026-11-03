@@ -139,8 +139,15 @@ export const Touch: React.FC<{
     );
 };
 
-/** Brand wipe that hides a page load: blue and green panels sweep across with the logo mark. */
-export const Wipe: React.FC<{ readonly at: number }> = ({ at }) => {
+/**
+ * Brand wipe that hides a page load: blue and green panels sweep across with the logo mark.
+ * A1 draws the mark in white (`tintLogo`, default). With `tintLogo={false}` the logo is shown
+ * as-is, on a white disc so its blue stays visible over the blue panel.
+ */
+export const Wipe: React.FC<{ readonly at: number; readonly tintLogo?: boolean }> = ({
+    at,
+    tintLogo = true
+}) => {
     const f = useCurrentFrame() - at;
     if (f < -10 || f > 10) return null;
     const x = (lag: number): number =>
@@ -169,10 +176,30 @@ export const Wipe: React.FC<{ readonly at: number }> = ({ at }) => {
                     justifyContent: 'center'
                 }}
             >
-                <Img
-                    src={staticFile('brand/logo.png')}
-                    style={{ width: 150, filter: 'brightness(0) invert(1)' }}
-                />
+                {tintLogo ? (
+                    <Img
+                        src={staticFile('brand/logo.png')}
+                        style={{ width: 150, filter: 'brightness(0) invert(1)' }}
+                    />
+                ) : (
+                    <div
+                        style={{
+                            width: 230,
+                            height: 230,
+                            borderRadius: '50%',
+                            background: BRAND.white,
+                            boxShadow: '0 16px 36px rgba(13,43,62,0.25)',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center'
+                        }}
+                    >
+                        <Img
+                            src={staticFile('brand/logo.png')}
+                            style={{ width: 132 }}
+                        />
+                    </div>
+                )}
             </div>
         </>
     );

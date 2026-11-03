@@ -21,6 +21,7 @@ export function buildRestitutionPayload(args: {
         vertical: args.vertical,
         restoredListingIds: [...args.restoredListingIds],
         notRestoredListingIds: [...args.notRestoredListingIds],
+        // Historical name kept as an opaque id: queued outbox rows already carry it (HOS-1984).
         criterion: 'LAST_FELL_FIRST_BACK'
     };
 }

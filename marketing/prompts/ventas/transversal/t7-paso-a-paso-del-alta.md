@@ -13,13 +13,15 @@ Prompt para **ChatGPT** (el generador de imágenes del custom GPT de Hospeda).
 
 **Qué adjuntar:**
 
-- Logo de Hospeda (isotipo: forma azul de río, franja verde y turquesa, círculo naranja de sol, y la palabra "hospeda"). Usalo tal cual: no lo redibujes ni le cambies los colores.
-- Hospedín, la mascota (imagen y guías del personaje). Respetalo exactamente y no lo rediseñes: cabeza azul #3AA7D9 orgánica y asimétrica, franja turquesa #1EA7A1 y verde #8CC63F en la parte baja del rostro, círculo naranja #F5A623 flotando separado arriba a la derecha de la cabeza (nunca lo omitas), buzo canguro blanco con el logo y la palabra "hospeda", zapatillas blancas.
-- Captura real de Hospeda, sacada con una cuenta de anfitrión: la pantalla de registro de hospeda.com.ar (para la placa 2)
-- Captura real de Hospeda, sacada con una cuenta de anfitrión: la pantalla donde se elige qué se va a publicar (alojamiento, local o experiencia) (para la placa 3)
-- Captura real de Hospeda, sacada con una cuenta de anfitrión: el formulario de la ficha con algunos datos cargados, o la opción de importar desde un link (para la placa 4)
-- Captura real de Hospeda, sacada con una cuenta de anfitrión: la pantalla de carga de fotos, con varias fotos subidas y una marcada como principal (para la placa 5)
-- Captura real de Hospeda, sacada con una cuenta de anfitrión: el botón de publicar y el aviso de ficha publicada (para la placa 6)
+- Logo: apps/web/src/assets/images/logo.webp (otra vez antes de cada imagen nueva)
+- Hospedín: marketing/Hospedin.png
+- Hospedín: marketing/Guía de personaje de Hospedín.png
+- Hospedín: marketing/Guía de personaje de Hospedín2.png
+- Captura (placa 2): la pantalla de registro de hospeda.com.ar
+- Captura (placa 3): la pantalla donde se elige qué se va a publicar (alojamiento, local o experiencia)
+- Captura (placa 4): el formulario de la ficha con algunos datos cargados, o la opción de importar desde un link
+- Captura (placa 5): la pantalla de carga de fotos, con varias fotos subidas y una marcada como principal
+- Captura (placa 6): el botón de publicar y el aviso de ficha publicada
 
 **Cómo se genera:** una placa por vez, en el mismo chat. Después de la primera, escribí «siguiente»; antes de cada imagen nueva te va a pedir el logo otra vez.
 

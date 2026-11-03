@@ -17,7 +17,6 @@ export type PublishDeniedReason =
     | 'LISTING_NOT_FOUND'
     | 'NOT_OWNER'
     | 'INVALID_FROM'
-    | 'COVERED_USE_PB3'
     | 'LIMIT_REACHED'
     | 'TRIAL_LIMIT_REACHED'
     | 'STATE_CHANGED'
@@ -33,7 +32,15 @@ export type PublishListingResult =
           readonly warnings: readonly PostCommitWarning[];
       };
 
-/** Publishes immediately under the shared lock, starting T1 in that transaction when eligible. */
+/**
+ * Publishes immediately under the shared lock, starting T1 in that transaction when eligible.
+ *
+ * From `DRAFT` this is PB1. From `UNPUBLISHED_BY_BILLING` it is the owner's own
+ * way back up (HOS-1997, owner decision 2026-11-02): allowed only while covered
+ * and while the quota has a free slot, otherwise `LIMIT_REACHED`. The status
+ * event is written by the owner, so it counts as a manual publish for the
+ * restoration order.
+ */
 export async function publishListing(args: {
     readonly unitOfWork: PublicationUnitOfWork;
     readonly billing: PublicationBilling;
@@ -72,9 +79,6 @@ export async function publishListing(args: {
             let trialStarted = false;
             let trialConsumed = false;
             if (coverage.covered) {
-                if (from === PublicationStatusEnum.UNPUBLISHED_BY_BILLING) {
-                    return { published: false, reason: 'COVERED_USE_PB3' } as const;
-                }
                 const limit = await tx.readPublishLimit({
                     userId: args.userId,
                     vertical: args.vertical
@@ -84,17 +88,21 @@ export async function publishListing(args: {
                     ownerId: args.userId
                 });
                 if (count >= limit) return { published: false, reason: 'LIMIT_REACHED' } as const;
-                const consumed = await consumeTrialInTransaction({
-                    tx,
-                    coverage,
-                    input: {
-                        userId: args.userId,
-                        vertical: args.vertical,
-                        emailPseudonym: args.emailPseudonym,
-                        expectedEvent: args.event
-                    }
-                });
-                trialConsumed = consumed.consumed;
+                // A listing coming back from UNPUBLISHED_BY_BILLING was already published
+                // once, so it never converts a trial (T6 belongs to the first publish).
+                if (from === PublicationStatusEnum.DRAFT) {
+                    const consumed = await consumeTrialInTransaction({
+                        tx,
+                        coverage,
+                        input: {
+                            userId: args.userId,
+                            vertical: args.vertical,
+                            emailPseudonym: args.emailPseudonym,
+                            expectedEvent: args.event
+                        }
+                    });
+                    trialConsumed = consumed.consumed;
+                }
             } else {
                 const count = await tx.countPublished({
                     vertical: args.vertical,

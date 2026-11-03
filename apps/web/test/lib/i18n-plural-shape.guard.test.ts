@@ -136,7 +136,13 @@ const VOCAB_BLOCKLIST = new Set([
     // plural pair. Blocked here rather than allowlisting the keys it hits:
     // the defect is the harvest mistaking a verb for a noun, and an allowlist
     // would leave the next such key to be discovered the same way.
-    'includes'
+    'includes',
+    // Same defect with "Reaches {{count}} anchored customers." (the plan
+    // catalog editor's review step, HOS-1704): the verb sits right before the
+    // placeholder, so the harvest learns "reaches" as a noun and then flags
+    // "The new {interval} price reaches {subscribers}", whose count lives in
+    // its own `_one`/`_other` pair.
+    'reaches'
 ]);
 
 /**

@@ -343,6 +343,10 @@
             }
         },
         "publish": {
+            "republishConfirmTitle": {
+                "venue": "¿Publicar de nuevo este comercio?",
+                "experience": "¿Publicar de nuevo esta experiencia?"
+            },
             "confirmTitle": {
                 "venue": "¿Publicar este comercio?",
                 "experience": "¿Publicar esta experiencia?"
@@ -363,7 +367,7 @@
         "restitution": {
             "restored": "Volvieron estas fichas: {{listings}}.",
             "notRestored": "Estas fichas no entraron: {{listings}}.",
-            "criterion": "Vuelve primero la ficha que cayó al final, hasta llenar el cupo. Las fichas del sistema anterior que nunca se publicaron acá van primero, según su antigüedad de carga.",
+            "criterion": "Vuelven primero las fichas que publicaste más recientemente, hasta llenar el cupo.",
             "nothingDeleted": "Las fichas que no entraron siguen ahí: no se borra ninguna."
         },
         "reason": "Motivo: {{reason}}",
@@ -413,6 +417,12 @@
                 "DRAFT": "Volvió a borrador.",
                 "UNPUBLISHED_BY_BILLING": "Quedó sin publicar, porque hoy tu suscripción no tiene lugar para ella. No se borró nada.",
                 "ARCHIVED": "Sigue archivada, como estaba."
+            },
+            "unpublished": {
+                "quotaFull": "Quedó aprobada, pero tu cupo está lleno: para publicarla, despublicá otra ficha y publicá esta.",
+                "quotaFullFixRequest": "Sigue sin publicar porque tu cupo está lleno: para publicarla, despublicá otra ficha y publicá esta.",
+                "notCovered": "Quedó sin publicar, porque hoy tu suscripción no la cubre. No se borró nada.",
+                "freeSlot": "Tenés lugar en tu cupo: podés publicarla cuando quieras."
             },
             "draftIsYours": "Publicarla es decisión tuya.",
             "fixRequestOpen": "El pedido de arreglo sigue abierto."

@@ -4,7 +4,8 @@
         "title": "Conteúdo",
         "destinationAttractions": "Atrações de Destinos",
         "accommodationAmenities": "Comodidades de Alojamentos",
-        "accommodationFeatures": "Características de Alojamentos"
+        "accommodationFeatures": "Características de Alojamentos",
+        "fixRequests": "Correções pendentes"
     },
     "accommodations": {
         "title": "Alojamentos",
@@ -53,6 +54,7 @@
         "userTagModeration": "Moderação de etiquetas"
     },
     "billing": {
+        "planCatalog": "Planos e chaves",
         "title": "Faturamento",
         "plans": "Planos",
         "subscriptions": "Assinaturas",
@@ -61,6 +63,7 @@
         "reconciliation": "Conciliação",
         "invoices": "Faturas",
         "promoCodes": "Códigos Promocionais",
+        "deadlines": "Prazos",
         "sponsorships": "Patrocínios",
         "ownerPromotions": "Promoções de Proprietários",
         "exchangeRates": "Taxas de Câmbio",

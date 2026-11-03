@@ -1108,5 +1108,44 @@
                 "closeFixRequest": "The listing has no open fix request."
             }
         }
+    },
+    "fixRequestList": {
+        "title": "Pending fixes",
+        "intro": "Open fix requests. The listing stays visible until you take it down. Oldest first.",
+        "filters": {
+            "vertical": "Vertical",
+            "verticalAll": "All",
+            "ownerReported": "Owner notice",
+            "ownerReportedAll": "All",
+            "ownerReportedYes": "Reported it fixed",
+            "ownerReportedNo": "No notice",
+            "overdue": "Only past the suggested date"
+        },
+        "columns": {
+            "listing": "Listing",
+            "vertical": "Vertical",
+            "status": "Status",
+            "reason": "Reason",
+            "openedAt": "Opened",
+            "suggestedDate": "Suggested date",
+            "ownerReported": "Owner notice",
+            "actions": "Actions"
+        },
+        "openedToday": "today",
+        "age_one": "{{count}} day ago",
+        "age_other": "{{count}} days ago",
+        "noSuggestedDate": "No date",
+        "overdue": "Overdue",
+        "ownerReportedAt": "Reported on {date}",
+        "ownerNotReported": "No notice",
+        "viewListing": "View listing",
+        "moderate": "Moderate",
+        "hideModerate": "Close",
+        "empty": "There are no open fix requests with these filters.",
+        "loading": "Loading requests…",
+        "error": "Could not load the fix requests. Reload the page.",
+        "previous": "Previous",
+        "next": "Next",
+        "page": "Page {page} of {totalPages}"
     }
 }

@@ -115,6 +115,7 @@ import {
     mercadoLibreAuthorizeRoute,
     mercadoLibreCallbackRoute
 } from './integrations/mercadolibre-oauth/index.js';
+import { adminListingFixRequestRoutes } from './listing-fix-requests/admin/index.js';
 import { adminMediaRoutes } from './media/admin';
 import { protectedMediaRoutes } from './media/protected';
 import { metricsRoutes } from './metrics';
@@ -674,6 +675,7 @@ export const setupRoutes = (app: AppOpenAPI) => {
         app.route('/api/v1/admin/billing-promo-codes', adminBillingPromoCodeRoutes);
         app.route('/api/v1/admin/trials', adminTrialRoutes);
         app.route('/api/v1/admin/plan-catalog', adminPlanCatalogRoutes);
+        app.route('/api/v1/admin/listing-fix-requests', adminListingFixRequestRoutes);
 
         // AI admin (SPEC-173: credential vault, settings, prompt versions, usage reporting — AI_SETTINGS_MANAGE)
         app.route('/api/v1/admin/ai/credentials', adminAiCredentialsRoutes);
