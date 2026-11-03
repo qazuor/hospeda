@@ -492,9 +492,8 @@ beforeEach(() => {
 
 describe('TEST:V5:31 venue and experience content gates', () => {
     it.each(cases)('$file requires its effective key on the published listing', async (row) => {
-        // `menuPlain` carries content, so `putMenu` here is a write; the empty-body
-        // delete is covered by `venue/protected/menu-section-access.test.ts`.
-        const sectionDeletion = row.file === 'venue/deleteMenuFile';
+        // Every row here writes content; the empty-body and file deletes, which pass
+        // without the section key, are covered by `venue/protected/menu-section-access.test.ts`.
         const initialKeys =
             row.file === 'venue/uploadMenuItemPhoto'
                 ? ['edit_venue_info', 'manage_venue_menu']
@@ -502,22 +501,13 @@ describe('TEST:V5:31 venue and experience content gates', () => {
                   ? []
                   : [`edit_${row.vertical.toLowerCase()}_info`];
         configureSet(OWNER_A, initialKeys);
-        if (sectionDeletion) {
-            mocks.service.mockResolvedValue({
-                data: { ownerId: OWNER_A, menuFilePublicId: null }
-            });
-        }
         const denied = await request(row);
-        if (sectionDeletion) {
-            expect(denied.status, row.file).toBe(200);
-        } else {
-            expect(denied.status, row.file).toBe(403);
-            expect((await denied.json()).error).toMatchObject({
-                code: ServiceErrorCode.ENTITLEMENT_REQUIRED,
-                details: { entitlementKey: row.key }
-            });
-            expect(mocks.service).not.toHaveBeenCalled();
-        }
+        expect(denied.status, row.file).toBe(403);
+        expect((await denied.json()).error).toMatchObject({
+            code: ServiceErrorCode.ENTITLEMENT_REQUIRED,
+            details: { entitlementKey: row.key }
+        });
+        expect(mocks.service).not.toHaveBeenCalled();
         mocks.effectiveSet.mockClear();
         const full = [
             'edit_venue_info',
