@@ -23,8 +23,8 @@ import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { useTranslations } from '@/hooks/use-translations';
 import { formatCronDateTime } from '@/lib/cron-presentation';
-import { useTriggerCronJobMutation } from '../hooks';
-import type { CronJobAdmin, CronJobResult } from '../types';
+import { useAcceptedCronRunQuery, useTriggerCronJobMutation } from '../hooks';
+import type { CronJobAdmin, CronJobResult, TriggerCronJobOutcome } from '../types';
 
 interface CronJobCardProps {
     readonly job: CronJobAdmin;
@@ -167,27 +167,80 @@ function TriggerResultPanel({
 }
 
 /**
+ * Panel for a trigger the API did not run in the request (HOS-1999): a 202
+ * (exclusive job accepted, running in the background) or a 409 (another run
+ * holds the cron lock). Neither is an error.
+ */
+function TriggerPendingPanel({
+    outcome
+}: {
+    readonly outcome: Exclude<TriggerCronJobOutcome, { kind: 'completed' }>;
+}) {
+    const { t } = useTranslations();
+    const isBusy = outcome.kind === 'busy';
+    const title = isBusy
+        ? t('admin-billing.cron.card.busyTitle')
+        : t('admin-billing.cron.card.acceptedTitle');
+    const hint =
+        outcome.kind === 'busy'
+            ? outcome.holderRunId
+                ? t('admin-billing.cron.card.busyHint', { holderRunId: outcome.holderRunId })
+                : t('admin-billing.cron.card.busyHintUnknown')
+            : t('admin-billing.cron.card.acceptedHint', { runId: outcome.accepted.runId });
+
+    return (
+        <div
+            className="rounded-lg border border-warning/30 bg-warning/10 p-3"
+            data-testid={isBusy ? 'cron-trigger-busy' : 'cron-trigger-accepted'}
+        >
+            <div className="flex items-start gap-2">
+                {isBusy ? (
+                    <AlertTriangleIcon className="mt-0.5 h-4 w-4 shrink-0 text-warning" />
+                ) : (
+                    <LoaderIcon className="mt-0.5 h-4 w-4 shrink-0 animate-spin text-warning" />
+                )}
+                <div>
+                    <p className="font-medium text-foreground text-sm">{title}</p>
+                    <p className="font-mono text-muted-foreground text-xs">{hint}</p>
+                </div>
+            </div>
+        </div>
+    );
+}
+
+/**
  * Full card for a single cron job.
  */
 export function CronJobCard({ job }: CronJobCardProps) {
     const { t } = useTranslations();
     const [dryRun, setDryRun] = useState(true);
-    const [triggerResult, setTriggerResult] = useState<CronJobResult | null>(null);
+    const [outcome, setOutcome] = useState<TriggerCronJobOutcome | null>(null);
 
     const { mutate: triggerJob, isPending, error: mutationError } = useTriggerCronJobMutation();
+    const acceptedRunId = outcome?.kind === 'accepted' ? outcome.accepted.runId : null;
+    const { data: acceptedResult } = useAcceptedCronRunQuery({
+        jobName: job.name,
+        runId: acceptedRunId
+    });
 
     const handleTrigger = () => {
         // Clear previous result on each new run
-        setTriggerResult(null);
+        setOutcome(null);
         triggerJob(
             { jobName: job.name, dryRun },
             {
                 onSuccess: (response) => {
-                    setTriggerResult(response);
+                    setOutcome(response);
                 }
             }
         );
     };
+
+    // A 202 shows its recorded result once the run history has it.
+    const triggerResult: CronJobResult | null =
+        outcome?.kind === 'completed' ? outcome.result : (acceptedResult ?? null);
+    const pendingOutcome =
+        outcome && outcome.kind !== 'completed' && !triggerResult ? outcome : null;
 
     const lastRunDateTime = job.lastRun ? formatCronDateTime(job.lastRun.finishedAt) : null;
     const nextRunDateTime = job.nextRunAt ? formatCronDateTime(job.nextRunAt) : null;
@@ -317,6 +370,9 @@ export function CronJobCard({ job }: CronJobCardProps) {
                         </div>
                     </div>
                 )}
+
+                {/* Accepted (202) or already running (409) */}
+                {pendingOutcome && <TriggerPendingPanel outcome={pendingOutcome} />}
 
                 {/* Inline trigger result (success or error) */}
                 <TriggerResultPanel

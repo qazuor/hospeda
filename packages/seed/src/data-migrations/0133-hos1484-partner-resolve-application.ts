@@ -1,7 +1,7 @@
 /**
  * @fileoverview HOS-1484 grant for administrative action 5 (resolve a Partner
  * application by approving, rejecting, or cancelling its wait).
- * Run `db:migrate` (0185) before this migration.
+ * Run `db:migrate` (0186) before this migration.
  */
 import { rolePermission } from '@repo/db';
 import { PermissionEnum, RoleEnum } from '@repo/schemas';
@@ -17,7 +17,7 @@ export const meta = {
 /** Staff roles allowed to resolve Partner applications. */
 export const STAFF_ROLES: readonly RoleEnum[] = [RoleEnum.SUPER_ADMIN, RoleEnum.ADMIN];
 
-/** Exact role grants added after structural migration 0185. */
+/** Exact role grants added after structural migration 0186. */
 export const GRANTS: Array<{ role: RoleEnum; permission: PermissionEnum }> = STAFF_ROLES.map(
     (role) => ({ role, permission: PermissionEnum.PARTNER_RESOLVE_APPLICATION })
 );

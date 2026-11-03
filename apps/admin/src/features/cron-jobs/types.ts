@@ -48,7 +48,31 @@ export interface CronJobResult {
  * the `fetchApi` helper unwraps the outer `{ success, data }` envelope,
  * so the mutation receives this shape directly.
  */
-export type TriggerCronJobResponse = CronJobResult;
+/**
+ * Body of a 202: an exclusive job (HOS-1999) took its cron lock and runs in
+ * the background. Its outcome is read later from the run history.
+ */
+export interface CronJobAccepted {
+    accepted: true;
+    runId: string;
+    jobName: string;
+    dryRun: boolean;
+    executedAt: string;
+}
+
+/** Raw body of a successful manual trigger: 201 (completed) or 202 (accepted). */
+export type TriggerCronJobResponse = CronJobResult | CronJobAccepted;
+
+/**
+ * What a manual trigger means for the card, normalised from the HTTP answer:
+ * - `completed`: 201, the job ran in the request and this is its result;
+ * - `accepted`: 202, the job is running; poll its run by `runId`;
+ * - `busy`: 409, another run holds the cron lock (`holderRunId` may be unknown).
+ */
+export type TriggerCronJobOutcome =
+    | { readonly kind: 'completed'; readonly result: CronJobResult }
+    | { readonly kind: 'accepted'; readonly accepted: CronJobAccepted }
+    | { readonly kind: 'busy'; readonly holderRunId: string | null };
 
 /**
  * Error response from POST /api/v1/admin/cron/:jobName

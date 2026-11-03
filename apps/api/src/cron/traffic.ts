@@ -162,7 +162,12 @@ export async function runCronHandlerInBackground(args: {
 }): Promise<CronJobResult> {
     const { sink, counters } = createSink(args.governor);
     const result = await runWithTrafficClass({
-        context: { trafficClass: 'background', counters: sink },
+        context: {
+            trafficClass: 'background',
+            signal: args.ctx.signal,
+            deadlineAt: args.ctx.deadlineAt,
+            counters: sink
+        },
         fn: () => args.job.handler(args.ctx)
     });
     if (
