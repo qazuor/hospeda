@@ -8,7 +8,11 @@ import { executeRefundFromProviderRead } from '../../../src/services/billing/ref
 import { requestRefund } from '../../../src/services/billing/refund/request-refund.service.js';
 import { closeServiceTestPool, getServiceTestDb, isServiceTestDbAvailable } from './helpers.js';
 import { refundConfirmFixture } from './support/refund-confirm-fixtures.js';
-import { confirmedExecuteFixture, executeRows } from './support/refund-execute-fixtures.js';
+import {
+    confirmedExecuteFixture,
+    executeRows,
+    totalHonestM13Fixture
+} from './support/refund-execute-fixtures.js';
 
 afterAll(closeServiceTestPool);
 const skip = !isServiceTestDbAvailable();
@@ -149,8 +153,8 @@ describe('TEST:B6:4 AC:B6:5 provider refund execution', () => {
     );
 
     it.skipIf(skip)('(d) executes a total refund through P3 and releases coverage', async () => {
-        // Arrange: M13 applies to partials, so a total call needs no M13 switch.
-        const seeded = await confirmedExecuteFixture(10000, 10000);
+        // Arrange
+        const seeded = await totalHonestM13Fixture();
         const [coverage] = await getServiceTestDb()
             .select()
             .from(coveredPeriods)
@@ -159,7 +163,7 @@ describe('TEST:B6:4 AC:B6:5 provider refund execution', () => {
         // Act
         const result = await executeRefundFromProviderRead(
             { refundId: seeded.refundId },
-            { clock: seeded.fixture.clock, provider: seeded.fixture.provider }
+            { clock: seeded.fixture.clock, provider: seeded.provider }
         );
 
         // Assert
