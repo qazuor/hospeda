@@ -142,7 +142,9 @@ describe('TEST:V7:4 PP2 approval without claim', () => {
         expect(String(partner?.slug)).toMatch(/^hos1485-example-partner-/);
         const users = await getDb().execute(sql`
             SELECT id FROM users WHERE lower(email) = lower(${applicantEmail})`);
-        expect(users.rows).toEqual([]);
+        expect(users.rows).toHaveLength(1);
+        const createdUser = users.rows[0] as { id: string };
+        userIds.push(createdUser.id);
         const written = await events(id);
         expect(written).toEqual([
             {
@@ -154,7 +156,8 @@ describe('TEST:V7:4 PP2 approval without claim', () => {
                 changes: [
                     { field: 'status', old: 'PENDING', new: 'APPROVED' },
                     { field: 'resolved_at' },
-                    { field: 'partner_id', new: partnerId }
+                    { field: 'partner_id', new: partnerId },
+                    { field: 'claim_account_user_id', new: createdUser.id }
                 ]
             }
         ]);
