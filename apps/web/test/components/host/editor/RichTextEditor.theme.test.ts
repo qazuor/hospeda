@@ -21,10 +21,15 @@ describe('RichTextEditor theme styles', () => {
         );
         expect(stylesheet).toMatch(/\.editorContent\s*\{[^}]*color:\s*var\(--core-foreground\)/s);
 
-        const themedRules = stylesheet.match(
-            /\.(?:toolbar|toolbarButton|toolbarTextButton|toolbarButtonActive|editorContent)[^{]*\{[^}]*\}/gs
+        // Whole stylesheet: no literal colors anywhere, including the error state.
+        expect(stylesheet).not.toMatch(/#[\da-f]{3,8}\b|\boklch\(|\brgb\(|\bhsl\(/i);
+    });
+
+    it('themes the error state with destructive tokens', () => {
+        expect(stylesheet).toMatch(/\.wrapperError\s*\{[^}]*border-color:\s*var\(--destructive\)/s);
+        expect(stylesheet).toMatch(/\.errorMessage\s*\{[^}]*color:\s*var\(--destructive-text\)/s);
+        expect(stylesheet).toMatch(
+            /\.errorMessage\s*\{[^}]*background-color:\s*var\(--destructive-a08\)/s
         );
-        expect(themedRules).not.toBeNull();
-        expect(themedRules?.join('\n')).not.toMatch(/#[\da-f]{3,8}\b|\boklch\(|\brgb\(/i);
     });
 });
