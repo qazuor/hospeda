@@ -24,7 +24,10 @@ const businessLineConstraints = migrationStatements
 const venueBackfill = migrationStatements.find((statement) =>
     /^UPDATE "venues" SET "business_lines" = CASE/s.test(statement)
 );
-if (businessLineConstraints.length !== 3 || !venueBackfill) {
+const venueConstraint = businessLineConstraints.find((statement) =>
+    statement.startsWith('ALTER TABLE "venues"')
+);
+if (businessLineConstraints.length !== 3 || !venueBackfill || !venueConstraint) {
     throw new Error('0186 business_lines constraint/backfill SQL could not be read');
 }
 
@@ -74,6 +77,11 @@ describe('TEST:2.3:2 AC:2:4 business_lines PostgreSQL constraints', () => {
             await rejected('accommodations', "ARRAY['food']::text[]");
             await rejected('experiences', "ARRAY['food']::text[]", 'EXCURSION');
 
+            const venueConstraintName = venueConstraint.match(/ADD CONSTRAINT "([\w]+)"/)?.[1];
+            expect(venueConstraintName).toBeDefined();
+            await tx.execute(
+                sql.raw(`ALTER TABLE "venues" DROP CONSTRAINT "${venueConstraintName}"`)
+            );
             await tx.execute(
                 sql.raw('ALTER TABLE "venues" ALTER COLUMN "business_lines" DROP NOT NULL')
             );
@@ -89,6 +97,7 @@ describe('TEST:2.3:2 AC:2:4 business_lines PostgreSQL constraints', () => {
                 );
             }
             await tx.execute(sql.raw(venueBackfill));
+            await tx.execute(sql.raw(venueConstraint));
             const result = await tx.execute(
                 sql.raw(
                     `SELECT type::text, business_lines FROM venues WHERE slug LIKE 'bl-%' AND type IN ('BOLICHE','BAR','CAFE') ORDER BY type::text`
