@@ -49,6 +49,20 @@ const renderButton = (vertical?: PublishVerticalSlug) =>
         />
     );
 
+/**
+ * Resolves with the confirm button once it is ENABLED. `findByRole` alone is
+ * not enough: the button is rendered (disabled) while the purge preview is
+ * loading, so it resolves before the preview settles. Asserting `toBeEnabled`
+ * right after it raced the preview promise, and clicking a disabled button is
+ * a silent no-op (BETA-215).
+ */
+const findEnabledConfirm = () =>
+    waitFor(() => {
+        const button = screen.getByRole('button', { name: 'Sí, eliminar' });
+        expect(button).toBeEnabled();
+        return button;
+    });
+
 describe('DeleteButton (owner PB12 delete island)', () => {
     beforeEach(() => {
         purgeMock.mockReset();
@@ -69,7 +83,7 @@ describe('DeleteButton (owner PB12 delete island)', () => {
         fireEvent.click(screen.getByRole('button', { name: 'Eliminar' }));
         // Confirming: prompt + yes/no, still no API call.
         expect(screen.getByText('¿Eliminar esta propiedad?')).toBeInTheDocument();
-        expect(await screen.findByRole('button', { name: 'Sí, eliminar' })).toBeEnabled();
+        expect(await findEnabledConfirm()).toBeEnabled();
         expect(screen.getByRole('button', { name: 'Cancelar' })).toBeInTheDocument();
         expect(purgePreviewMock).toHaveBeenCalledWith({
             vertical: 'accommodation',
@@ -90,7 +104,7 @@ describe('DeleteButton (owner PB12 delete island)', () => {
         purgeMock.mockResolvedValue({ ok: false, error: 'boom' });
         renderButton();
         fireEvent.click(screen.getByRole('button', { name: 'Eliminar' }));
-        fireEvent.click(await screen.findByRole('button', { name: 'Sí, eliminar' }));
+        fireEvent.click(await findEnabledConfirm());
         await waitFor(() =>
             expect(screen.getByRole('alert')).toHaveTextContent(
                 'No se pudo eliminar. Intentá de nuevo.'
@@ -102,7 +116,7 @@ describe('DeleteButton (owner PB12 delete island)', () => {
         purgeMock.mockResolvedValue({ ok: true, data: {} });
         renderButton();
         fireEvent.click(screen.getByRole('button', { name: 'Eliminar' }));
-        fireEvent.click(await screen.findByRole('button', { name: 'Sí, eliminar' }));
+        fireEvent.click(await findEnabledConfirm());
         await waitFor(() =>
             expect(purgeMock).toHaveBeenCalledWith({
                 vertical: 'accommodation',
@@ -116,7 +130,7 @@ describe('DeleteButton (owner PB12 delete island)', () => {
             purgeMock.mockResolvedValue({ ok: true, data: {} });
             renderButton(vertical);
             fireEvent.click(screen.getByRole('button', { name: 'Eliminar' }));
-            fireEvent.click(await screen.findByRole('button', { name: 'Sí, eliminar' }));
+            fireEvent.click(await findEnabledConfirm());
             await waitFor(() =>
                 expect(purgeMock).toHaveBeenCalledWith({ vertical, id: 'listing-1' })
             );
@@ -152,7 +166,7 @@ describe('TEST:B13a:3c AC:B13a:4 the delete confirmation names the lost add-ons'
         expect(
             screen.queryByText('Se pierden con la ficha, sin devolución:')
         ).not.toBeInTheDocument();
-        expect(screen.getByRole('button', { name: 'Sí, eliminar' })).toBeEnabled();
+        expect(await findEnabledConfirm()).toBeEnabled();
     });
 
     it('lists two add-ons with names, centavo-converted amounts, and the title', async () => {
@@ -242,7 +256,7 @@ describe('TEST:B13a:3c AC:B13a:4 the delete confirmation names the lost add-ons'
         purgeMock.mockResolvedValue({ ok: true, data: {} });
         renderButton('experience');
         fireEvent.click(screen.getByRole('button', { name: 'Eliminar' }));
-        fireEvent.click(await screen.findByRole('button', { name: 'Sí, eliminar' }));
+        fireEvent.click(await findEnabledConfirm());
 
         await waitFor(() =>
             expect(purgeMock).toHaveBeenCalledWith({ vertical: 'experience', id: 'listing-1' })
