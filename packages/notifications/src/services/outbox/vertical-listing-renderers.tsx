@@ -320,6 +320,7 @@ export function createVerticalListingRenderers(input: {
                         listingName={await listingName(data)}
                         reason={reason}
                         returnedTo={returnedTo}
+                        quotaFull={data.quotaFull === true}
                         fixRequestOpen={fixRequestOpen}
                         accountUrl={accountUrl(vertical)}
                         subscriptionUrl={subscriptionUrl}
@@ -337,6 +338,7 @@ export function createVerticalListingRenderers(input: {
                     <ListingModerationLifted
                         listingName={await listingName(data)}
                         returnedTo={returnedTo}
+                        quotaFull={data.quotaFull === true}
                         accountUrl={accountUrl(vertical)}
                     />
                 )

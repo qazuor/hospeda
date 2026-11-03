@@ -3,8 +3,8 @@ import { Button } from '../components/button.js';
 import { Heading } from '../components/heading.js';
 import { EmailLayout } from '../components/layout.js';
 import {
-    LISTING_RETURNED_TO_COPY,
     type ListingReturnedTo,
+    listingReturnedToCopy,
     ModeratedListingBody
 } from './listing-notice-shared.js';
 
@@ -14,6 +14,8 @@ export interface ListingModerationLevelChangedProps {
     readonly reason: string;
     /** `null` when the fix request was raised to a moderation (PB10). */
     readonly returnedTo: ListingReturnedTo | null;
+    /** The listing was approved but not published because the quota is full. */
+    readonly quotaFull?: boolean;
     readonly fixRequestOpen: boolean;
     readonly accountUrl: string;
     readonly subscriptionUrl: string;
@@ -29,6 +31,7 @@ export function ListingModerationLevelChanged({
     listingName,
     reason,
     returnedTo,
+    quotaFull,
     fixRequestOpen,
     accountUrl,
     subscriptionUrl
@@ -48,7 +51,7 @@ export function ListingModerationLevelChanged({
                         Tu ficha {listingName} ya no está moderada: volvió a quedar sólo con un
                         pedido de arreglo.
                     </Text>
-                    <Text>{LISTING_RETURNED_TO_COPY[returnedTo]}</Text>
+                    <Text>{listingReturnedToCopy({ returnedTo, quotaFull })}</Text>
                 </>
             )}
             {fixRequestOpen ? (

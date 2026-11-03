@@ -17,6 +17,27 @@ export const LISTING_RETURNED_TO_COPY: Readonly<Record<ListingReturnedTo, string
     ARCHIVED: 'Sigue archivada, como estaba.'
 };
 
+/** What the owner has to do when a lifted listing came back unpublished because the quota is full. */
+export const LISTING_QUOTA_FULL_COPY =
+    'Quedó aprobada, pero tu cupo está lleno: para publicarla, despublicá otra ficha.';
+
+/**
+ * The sentence that says where the listing went back to. With `quotaFull` and
+ * an unpublished return, it says the listing was approved and what to do to
+ * publish it (HOS-1997).
+ */
+export function listingReturnedToCopy({
+    returnedTo,
+    quotaFull
+}: {
+    readonly returnedTo: ListingReturnedTo;
+    readonly quotaFull?: boolean;
+}): string {
+    return quotaFull && returnedTo === 'UNPUBLISHED_BY_BILLING'
+        ? LISTING_QUOTA_FULL_COPY
+        : LISTING_RETURNED_TO_COPY[returnedTo];
+}
+
 /** Props of {@link ModeratedListingBody}. */
 export interface ModeratedListingBodyProps {
     readonly listingName: string;

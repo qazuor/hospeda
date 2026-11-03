@@ -415,7 +415,7 @@
             "returnedTo": {
                 "PUBLISHED": "Voltou a estar publicado.",
                 "DRAFT": "Voltou para rascunho.",
-                "UNPUBLISHED_BY_BILLING": "Ficou sem publicar, porque hoje a sua assinatura não tem lugar para ele. Nada foi apagado.",
+                "UNPUBLISHED_BY_BILLING": "Foi aprovado, mas ficou sem publicar: a sua cota está cheia ou a sua assinatura hoje não o cobre. Para publicá-lo, despublique outro anúncio. Nada foi apagado.",
                 "ARCHIVED": "Continua arquivado, como estava."
             },
             "draftIsYours": "Publicá-lo é decisão sua.",

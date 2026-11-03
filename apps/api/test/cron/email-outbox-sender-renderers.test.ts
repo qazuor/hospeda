@@ -380,6 +380,29 @@ describe('TEST:V8a:6 / TEST:V8a:7 the production outbox sender renders the listi
             expected: ['Volvió a estar publicada']
         },
         {
+            template: LISTING_MODERATION_LIFTED_TEMPLATE,
+            payload: {
+                vertical: 'accommodation',
+                listingId,
+                reason: 'Ok',
+                returnedTo: 'UNPUBLISHED_BY_BILLING',
+                quotaFull: true,
+                fixRequestOpen: false
+            },
+            expected: ['Quedó aprobada, pero tu cupo está lleno', 'despublicá otra ficha']
+        },
+        {
+            template: LISTING_MODERATION_LIFTED_TEMPLATE,
+            payload: {
+                vertical: 'accommodation',
+                listingId,
+                reason: 'Ok',
+                returnedTo: 'UNPUBLISHED_BY_BILLING',
+                fixRequestOpen: false
+            },
+            expected: ['porque hoy tu suscripción no tiene lugar para ella']
+        },
+        {
             template: LISTING_RESTITUTION_TEMPLATE,
             payload: {
                 vertical: 'accommodation',

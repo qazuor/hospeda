@@ -415,7 +415,7 @@
             "returnedTo": {
                 "PUBLISHED": "It is published again.",
                 "DRAFT": "It went back to draft.",
-                "UNPUBLISHED_BY_BILLING": "It stayed unpublished, because your subscription has no room for it today. Nothing was deleted.",
+                "UNPUBLISHED_BY_BILLING": "It was approved but stayed unpublished: your quota is full or your subscription does not cover it today. To publish it, unpublish another listing. Nothing was deleted.",
                 "ARCHIVED": "It is still archived, as it was."
             },
             "draftIsYours": "Publishing it is up to you.",

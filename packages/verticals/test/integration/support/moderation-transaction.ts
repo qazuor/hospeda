@@ -1,8 +1,8 @@
 import { randomUUID } from 'node:crypto';
 import type { DrizzleClient } from '@repo/db';
-import { listingPublicationModel } from '@repo/db';
+import { domainEvent, emailOutbox, eq, listingPublicationModel } from '@repo/db';
 import { PublicationStatusEnum as Status, VerticalEnum } from '@repo/schemas';
-import { sql } from 'drizzle-orm';
+import { and, sql } from 'drizzle-orm';
 import { drizzle } from 'drizzle-orm/node-postgres';
 import { Pool } from 'pg';
 import { afterAll, afterEach, describe, expect, it, vi } from 'vitest';
@@ -27,7 +27,7 @@ const afterCommit = {
 afterAll(async () => pool.end());
 
 describe('TEST:V6:11 PB13 queue and archived origins against PostgreSQL', () => {
-    it('TEST:V6:11 PB13 keeps the most recently published listings (HOS-1997)', async () => {
+    async function liftWithQuota(limit: number) {
         const { userId, destinationId } = await fixtures.owner();
         const admin = await fixtures.owner();
         const returning = await fixtures.listing({
@@ -36,33 +36,20 @@ describe('TEST:V6:11 PB13 queue and archived origins against PostgreSQL', () => 
             destinationId,
             status: Status.PUBLISHED
         });
-        const newest = await fixtures.listing({
+        const other = await fixtures.listing({
             vertical,
             userId,
             destinationId,
             status: Status.PUBLISHED
         });
-        const returningClock = new Date('2026-08-01T12:00:00.000Z');
-        for (const [id, occurredAt] of [
-            [returning.id, returningClock],
-            [newest.id, new Date('2026-09-01T12:00:00.000Z')]
-        ] as const) {
-            await listingPublicationModel.insertStatusChangedEvent({
-                tx: db,
-                vertical,
-                listingId: id,
-                from: Status.UNPUBLISHED_BY_BILLING,
-                to: Status.PUBLISHED,
-                actorType: 'owner',
-                actorId: userId,
-                correlationId: randomUUID(),
-                occurredAt
-            });
-        }
+        const otherClock = new Date('2026-07-01T12:00:00.000Z');
+        await db.execute(
+            sql`UPDATE accommodations SET inactive_since = ${otherClock} WHERE id = ${other.id}`
+        );
         const adapter = createPublicationTestAdapter({
             db,
             covered: { value: true },
-            limit: { value: 1 }
+            limit: { value: limit }
         });
         await takeDownListing({
             ...adapter,
@@ -75,6 +62,7 @@ describe('TEST:V6:11 PB13 queue and archived origins against PostgreSQL', () => 
             reason: 'review',
             correlationId: randomUUID()
         });
+        const correlationId = randomUUID();
         const result = await liftModeration({
             ...adapter,
             billing: { coverage: async () => ({ covered: true, sources: [] }) },
@@ -85,107 +73,70 @@ describe('TEST:V6:11 PB13 queue and archived origins against PostgreSQL', () => 
             vertical,
             listingId: returning.id,
             reason: 'review cleared',
-            correlationId: randomUUID(),
+            correlationId,
             keepFixRequest: false
         });
-        expect(result).toMatchObject({
+        const notices = await db
+            .select({ template: emailOutbox.template, payload: emailOutbox.payload })
+            .from(emailOutbox)
+            .where(eq(emailOutbox.correlationId, correlationId));
+        const otherEvents = await db
+            .select({ id: domainEvent.id })
+            .from(domainEvent)
+            .where(
+                and(
+                    eq(domainEvent.entityId, other.id),
+                    eq(domainEvent.correlationId, correlationId)
+                )
+            );
+        const otherAfter = await listingPublicationModel.readListing({
+            tx: db,
+            vertical,
+            listingId: other.id
+        });
+        const otherInactive = await db.execute(
+            sql`SELECT inactive_since FROM accommodations WHERE id = ${other.id}`
+        );
+        return {
+            result,
+            notices,
+            otherEvents,
+            otherStatus: otherAfter?.publicationStatus,
+            otherInactiveSince: new Date(String(otherInactive.rows[0]?.inactive_since)),
+            otherClock
+        };
+    }
+
+    it('TEST:V6:11 PB13 with a full quota leaves the lifted listing unpublished and touches no other listing (HOS-1997)', async () => {
+        const out = await liftWithQuota(1);
+        expect(out.result).toMatchObject({
             ok: true,
             transition: 'PB13',
             publicationStatus: Status.UNPUBLISHED_BY_BILLING,
             lowered: []
         });
-        const competitor = await listingPublicationModel.readListing({
-            tx: db,
-            vertical,
-            listingId: newest.id
+        expect(out.otherStatus).toBe(Status.PUBLISHED);
+        expect(out.otherEvents).toEqual([]);
+        expect(out.otherInactiveSince).toEqual(out.otherClock);
+        expect(out.notices).toHaveLength(1);
+        expect(out.notices[0]).toMatchObject({
+            template: 'verticals.listing-moderation-lifted',
+            payload: { returnedTo: Status.UNPUBLISHED_BY_BILLING, quotaFull: true }
         });
-        expect(competitor?.publicationStatus).toBe(Status.PUBLISHED);
+    });
 
-        const inverseOwner = await fixtures.owner();
-        const inverseAdmin = await fixtures.owner();
-        const olderPublished = await fixtures.listing({
-            vertical,
-            userId: inverseOwner.userId,
-            destinationId: inverseOwner.destinationId,
-            status: Status.PUBLISHED
-        });
-        const newerReturning = await fixtures.listing({
-            vertical,
-            userId: inverseOwner.userId,
-            destinationId: inverseOwner.destinationId,
-            status: Status.PUBLISHED
-        });
-        const loweredClock = new Date('2026-07-01T12:00:00.000Z');
-        await db.execute(
-            sql`UPDATE accommodations SET inactive_since = ${loweredClock} WHERE id = ${olderPublished.id}`
-        );
-        await listingPublicationModel.insertStatusChangedEvent({
-            tx: db,
-            vertical,
-            listingId: olderPublished.id,
-            from: Status.UNPUBLISHED_BY_BILLING,
-            to: Status.PUBLISHED,
-            actorType: 'owner',
-            actorId: inverseOwner.userId,
-            correlationId: randomUUID(),
-            occurredAt: new Date('2026-08-01T12:00:00.000Z')
-        });
-        await listingPublicationModel.insertStatusChangedEvent({
-            tx: db,
-            vertical,
-            listingId: newerReturning.id,
-            from: Status.UNPUBLISHED_BY_BILLING,
-            to: Status.PUBLISHED,
-            actorType: 'owner',
-            actorId: inverseOwner.userId,
-            correlationId: randomUUID(),
-            occurredAt: new Date('2026-09-01T12:00:00.000Z')
-        });
-        const inverseAdapter = createPublicationTestAdapter({
-            db,
-            covered: { value: true },
-            limit: { value: 1 }
-        });
-        await takeDownListing({
-            ...inverseAdapter,
-            clock,
-            afterCommit,
-            adminId: inverseAdmin.userId,
-            ownerId: inverseOwner.userId,
-            vertical,
-            listingId: newerReturning.id,
-            reason: 'review',
-            correlationId: randomUUID()
-        });
-        const inverse = await liftModeration({
-            ...inverseAdapter,
-            billing: { coverage: async () => ({ covered: true, sources: [] }) },
-            clock,
-            afterCommit,
-            adminId: inverseAdmin.userId,
-            ownerId: inverseOwner.userId,
-            vertical,
-            listingId: newerReturning.id,
-            reason: 'cleared',
-            correlationId: randomUUID(),
-            keepFixRequest: false
-        });
-        expect(inverse).toMatchObject({
+    it('TEST:V6:11 PB13 with a free slot publishes the lifted listing with the normal notice (HOS-1997)', async () => {
+        const out = await liftWithQuota(2);
+        expect(out.result).toMatchObject({
             ok: true,
             transition: 'PB13',
             publicationStatus: Status.PUBLISHED,
-            lowered: [olderPublished.id]
+            lowered: []
         });
-        const displaced = await listingPublicationModel.readListing({
-            tx: db,
-            vertical,
-            listingId: olderPublished.id
-        });
-        expect(displaced?.publicationStatus).toBe(Status.UNPUBLISHED_BY_BILLING);
-        const unchanged = await db.execute(
-            sql`SELECT inactive_since FROM accommodations WHERE id = ${olderPublished.id}`
-        );
-        expect(new Date(String(unchanged.rows[0]?.inactive_since))).toEqual(loweredClock);
+        expect(out.otherStatus).toBe(Status.PUBLISHED);
+        expect(out.otherInactiveSince).toEqual(out.otherClock);
+        expect(out.notices[0]?.payload).toMatchObject({ returnedTo: Status.PUBLISHED });
+        expect(out.notices[0]?.payload).not.toHaveProperty('quotaFull');
     });
 
     it('TEST:V6:11 lifts ARCHIVED listings by the PB5 and PB4 origins', async () => {

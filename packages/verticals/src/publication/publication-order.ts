@@ -22,17 +22,9 @@ export function comparePublicationOrder(
     return a.id < b.id ? -1 : a.id > b.id ? 1 : 0;
 }
 
-/** Orders listings that return to publication, oldest publication first. */
-export function orderReturningCandidates(args: {
-    readonly entries: readonly PublicationQueueEntry[];
-}): readonly PublicationQueueEntry[] {
-    return [...args.entries].sort(comparePublicationOrder);
-}
-
 /**
  * Orders listings that regain a publication slot when coverage returns, newest
- * manual publish first (HOS-1984). Also used when a moderation is lifted with a
- * full quota (HOS-1997). With the cap full, the listings the host
+ * manual publish first (HOS-1984). With the cap full, the listings the host
  * published by hand most recently stay visible. A listing with no manual
  * publish instant (present at the data cut) ranks last; ties fall back to
  * newest creation, then identifier.
