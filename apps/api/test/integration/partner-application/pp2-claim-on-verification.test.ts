@@ -1,10 +1,11 @@
-import { getDb, partnerApplicationModel, sql } from '@repo/db';
+import { domainEventModel, getDb, partnerApplicationModel, sql } from '@repo/db';
 import { PermissionEnum, RoleEnum, ServiceErrorCode } from '@repo/schemas';
 import * as serviceCore from '@repo/service-core';
 import { ServiceError } from '@repo/service-core';
 import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { initApp } from '../../../src/app';
 import { getAuth } from '../../../src/lib/auth';
+import { claimPartnerOnEmailVerification } from '../../../src/services/partner-application/partner-claim.service';
 import { env, validateApiEnv } from '../../../src/utils/env';
 import { testDb } from '../../e2e/setup/test-database';
 import { actorHeaders, createOwner } from '../listing-publication/publication-routes.helpers';
@@ -124,6 +125,115 @@ afterEach(async () => {
 afterAll(async () => testDb.teardown());
 
 describe('TEST:V7:4 claim on email verification', () => {
+    it('rolls back the claim event, owner, and role when a later tx operation fails', async () => {
+        const email = createApplicationEmail();
+        emails.push(email);
+        const applicationId = await insertPending({ email });
+        const adminId = await createUser(`admin-${crypto.randomUUID()}@example.test`);
+        const response = await approve(applicationId, adminId);
+        const payload = (await response.json()) as { data: { partnerId: string } };
+        const partnerId = payload.data.partnerId;
+        partners.push(partnerId);
+        const user = await getDb().execute(
+            sql`SELECT id FROM users WHERE lower(email) = lower(${email})`
+        );
+        const userId = String(user.rows[0]?.id);
+        users.push(userId);
+
+        const insert = domainEventModel.insert.bind(domainEventModel);
+        const eventSpy = vi.spyOn(domainEventModel, 'insert').mockImplementation(async (args) => {
+            await insert(args);
+            throw new Error('failure after event insert');
+        });
+        try {
+            await expect(claimPartnerOnEmailVerification({ userId, email })).rejects.toThrow(
+                'failure after event insert'
+            );
+            expect(
+                (
+                    await getDb().execute(
+                        sql`SELECT owner_user_id FROM partners WHERE id = ${partnerId}::uuid`
+                    )
+                ).rows
+            ).toEqual([{ owner_user_id: null }]);
+            expect(
+                (
+                    await getDb().execute(
+                        sql`SELECT user_id FROM user_role WHERE user_id = ${userId}::uuid AND role = 'PARTNER_OWNER'`
+                    )
+                ).rows
+            ).toEqual([]);
+            expect(
+                (
+                    await getDb().execute(
+                        sql`SELECT id FROM domain_event WHERE entity_id = ${partnerId} AND event_type = 'partner.claimed'`
+                    )
+                ).rows
+            ).toEqual([]);
+        } finally {
+            eventSpy.mockRestore();
+        }
+    });
+
+    it('serializes two concurrent claims and records one owner and event', async () => {
+        const email = createApplicationEmail();
+        emails.push(email);
+        const applicationId = await insertPending({ email });
+        const adminId = await createUser(`admin-${crypto.randomUUID()}@example.test`);
+        const response = await approve(applicationId, adminId);
+        const payload = (await response.json()) as { data: { partnerId: string } };
+        const partnerId = payload.data.partnerId;
+        partners.push(partnerId);
+        const user = await getDb().execute(
+            sql`SELECT id FROM users WHERE lower(email) = lower(${email})`
+        );
+        const userId = String(user.rows[0]?.id);
+        users.push(userId);
+
+        const originalLock =
+            partnerApplicationModel.lockPartnerClaimableByCreatedAccount.bind(
+                partnerApplicationModel
+            );
+        let entrants = 0;
+        let release: (() => void) | undefined;
+        const gate = new Promise<void>((resolve) => {
+            release = resolve;
+        });
+        const fallback = setTimeout(() => release?.(), 1000);
+        const lockSpy = vi
+            .spyOn(partnerApplicationModel, 'lockPartnerClaimableByCreatedAccount')
+            .mockImplementation(async (args) => {
+                entrants += 1;
+                if (entrants === 2) release?.();
+                await gate;
+                return originalLock(args);
+            });
+        try {
+            const results = await Promise.all([
+                claimPartnerOnEmailVerification({ userId, email }),
+                claimPartnerOnEmailVerification({ userId, email })
+            ]);
+            expect(results.filter(({ claimed }) => claimed)).toHaveLength(1);
+            expect(
+                (
+                    await getDb().execute(
+                        sql`SELECT owner_user_id FROM partners WHERE id = ${partnerId}::uuid`
+                    )
+                ).rows
+            ).toEqual([{ owner_user_id: userId }]);
+            expect(
+                (
+                    await getDb().execute(
+                        sql`SELECT id FROM domain_event WHERE entity_id = ${partnerId} AND event_type = 'partner.claimed'`
+                    )
+                ).rows
+            ).toHaveLength(1);
+        } finally {
+            clearTimeout(fallback);
+            lockSpy.mockRestore();
+        }
+    });
+
     it('does not overwrite an owner set before verification', async () => {
         const email = createApplicationEmail();
         emails.push(email);
