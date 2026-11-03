@@ -125,6 +125,16 @@ describe('resolveListingSections', () => {
             state: 'locked',
             traits: new Map([['externalSync', 'locked']])
         });
+        const calendarOnly = resolveListingSections({
+            vertical: 'accommodation',
+            businessLines: ['standard'],
+            effective: effective('accommodation', ['can_use_calendar']),
+            userId: 'owner'
+        });
+        expect(calendarOnly.sections.get('calendar')).toEqual({
+            state: 'available',
+            traits: new Map([['externalSync', 'locked']])
+        });
         const accommodationGranted = resolveListingSections({
             vertical: 'accommodation',
             businessLines: ['standard'],
