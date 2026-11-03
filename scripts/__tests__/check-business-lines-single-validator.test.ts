@@ -92,14 +92,18 @@ describe('G-FAC-07 billing business-line boundary', () => {
         expect(runBillingBoundary().exitCode).toBe(0);
         expect(
             findBusinessLineViolations({
-                'apps/api/src/routes/plan-catalog/response.ts':
-                    'export const response = { businessLines: [] };'
+                files: {
+                    'apps/api/src/routes/plan-catalog/response.ts':
+                        'export const response = { businessLines: [] };'
+                }
             })
         ).toHaveLength(1);
         expect(
             findBusinessLineViolations({
-                'apps/api/src/routes/billing-promo/source.ts':
-                    "import { BUSINESS_LINES } from '@repo/schemas/catalog/business-lines';"
+                files: {
+                    'apps/api/src/routes/billing-promo/source.ts':
+                        "import { BUSINESS_LINES } from '@repo/schemas/catalog/business-lines';"
+                }
             })
         ).toHaveLength(1);
     });

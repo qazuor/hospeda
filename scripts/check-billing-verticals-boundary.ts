@@ -84,7 +84,16 @@ const isRubroBillingFile = (file: string) =>
     RUBRO_BILLING_ROOTS.some((folder) => isUnder({ path: file, folder })) ||
     /^apps\/api\/src\/routes\/billing-[^/]+(?:\/|$)/.test(file);
 
-export function findBusinessLineViolations(files: Readonly<Record<string, string>>) {
+/**
+ * Finds billing source files that depend on business-line catalog concepts.
+ * @param input - Source text keyed by repository-relative file path.
+ * @returns Matching source locations and the offending line text.
+ */
+export function findBusinessLineViolations({
+    files
+}: {
+    readonly files: Readonly<Record<string, string>>;
+}): { readonly file: string; readonly line: number; readonly detail: string }[] {
     const matches: { readonly file: string; readonly line: number; readonly detail: string }[] = [];
     for (const [file, source] of Object.entries(files)) {
         if (!CODE_FILE.test(file) || !isRubroBillingFile(file)) continue;
@@ -364,9 +373,11 @@ export function run(
         );
     }
     rubroViolations.push(
-        ...findBusinessLineViolations(
-            Object.fromEntries(files.map((file) => [file, readFileSync(join(root, file), 'utf8')]))
-        )
+        ...findBusinessLineViolations({
+            files: Object.fromEntries(
+                files.map((file) => [file, readFileSync(join(root, file), 'utf8')])
+            )
+        })
     );
 
     if (scanned < minScannedFiles) {
