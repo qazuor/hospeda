@@ -16,6 +16,12 @@ Re-derived from code (`pg_(try_)?advisory(_xact)?_lock` outside tests). Fixed in
 | 43031 | `apps/api/src/cron/jobs/destination-weather-fetch.job.ts` | Prevent overlapping destination weather fetch cron executions (12h cron) | `pg_try_advisory_xact_lock` (non-blocking) | SPEC-215 |
 | 43032 | `apps/api/src/cron/jobs/social-publish-dispatch.job.ts` | Prevent overlapping social publish dispatch cron executions | `pg_try_advisory_xact_lock` (non-blocking) | |
 
+### Cron jobs (hash-derived session lock, non-blocking)
+
+| Lock key | Owner File | Purpose | Type | Spec |
+|---------|-----------|---------|------|------|
+| `hashtext('cron:' \|\| <job name>)` (single bigint key) | `apps/api/src/cron/cron-lock.ts` | Fleet-wide exclusion; holder run ID is visible through `application_name = 'hospeda-cron:<runId>'` | `pg_try_advisory_lock` session-level (non-blocking; dedicated checked-out connection) | HOS-1999 |
+
 ### Service and model locks (blocking)
 
 | Lock key | Owner File | Purpose | Type | Spec |
@@ -38,7 +44,7 @@ Re-derived from code (`pg_(try_)?advisory(_xact)?_lock` outside tests). Fixed in
 
 ## Rules
 
-1. All advisory locks MUST be transaction-level (`_xact_` variants). Session-level locks are forbidden due to Neon connection pooling.
+1. Advisory locks SHOULD be transaction-level (`_xact_` variants). Session-level locks are allowed ONLY on a dedicated connection checked out for the lock's whole life, unlocked and released in `finally`. The API connects directly to Postgres on the VPS, so this connection is not returned through a transaction-pooling proxy.
 2. New lock IDs must be registered in this file before use.
 3. Hash-derived keys are built in SQL with `hashtextextended(<string key>, 0)` (or `hashtext` for the tag quota). Build the string from stable identifiers (user id, vertical), never from mutable data.
 4. Use `pg_try_advisory_xact_lock` (non-blocking) for cron jobs and background tasks.
