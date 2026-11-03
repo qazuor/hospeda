@@ -38,6 +38,7 @@ check answers 403 to someone the server never identified.
 | Signed in, email not verified, operation outside the closed list | **403** | `EMAIL_NOT_VERIFIED` |
 | Signed in, lacks the declared permission | **403** | `FORBIDDEN` |
 | Malformed param, query or body (non-UUID id included) | **400** | `VALIDATION_ERROR` |
+| Invalid venue business lines | **400** | `VALIDATION_ERROR` (`details.field = businessLines`, `details.reason` is `EMPTY`, `DUPLICATE`, `NOT_IN_VERTICAL`, `NOT_ALLOWED_FOR_TYPE`, `MAX_EXCEEDED` or `EXCLUDED_PAIR`) |
 | Review dimension vote for an absent bound section (`details.field = rating.<id>`) | **400** | `VALIDATION_ERROR` (`DIMENSION_NOT_APPLICABLE`) |
 | Resource does not exist | **404** | `NOT_FOUND` |
 | Resource exists but belongs to somebody else | **404** | `NOT_FOUND` |
@@ -152,18 +153,24 @@ mounted their own hand-rolled `onError` instead of exercising
 `handleRouteError` (HOS-700).
 
 Two codes carry `details` the client is meant to read, so their `details` is
-now emitted by `handleRouteError` too, with `HOSPEDA_API_DEBUG_ERRORS` off:
+now emitted by `handleRouteError` too, with `HOSPEDA_API_DEBUG_ERRORS` off.
+There is also a narrow exception for `ALREADY_EXISTS` when
+`reason: 'SECTION_ABSENT'`: that response publishes its section details so the
+client can identify which section is unavailable. Other `ALREADY_EXISTS`
+errors keep the debug-only behavior.
 
 | `error.code` | `details` shape | Why the client needs it |
 |---|---|---|
 | `LIMIT_REACHED` | `{ limitKey, currentCount, maxAllowed, usagePercent, upgradeAudience, ... }` | `apps/web/src/lib/billing-limit-error.ts` reads `limitKey` to render the limit-specific toast (which limit, and the addon that unlocks it) instead of the generic fallback. |
 | `ENTITLEMENT_REQUIRED` | `{ entitlementKey, ... }` | Same reasoning — the client needs to know which entitlement is missing to route the upgrade. |
+| `ALREADY_EXISTS` with `reason: 'SECTION_ABSENT'` | `{ reason: 'SECTION_ABSENT', section }` | The client needs the absent section identifier to explain why the requested content cannot be saved. |
 
 This list is deliberately short — a conservative choice over opening `details`
 on every 4xx, made explicitly by the issue owner (see HOS-700's decision
 comment) because widening it changes the public contract of every route that
-passes through `handleRouteError`. Every other code keeps the debug-only
-behavior. Adding a third code here is a contract change: update
+passes through `handleRouteError`. The `ALREADY_EXISTS` exception is gated by
+its machine-readable reason; other errors with that code keep debug-only
+details. Adding another public details case is a contract change: update
 `PUBLIC_DETAILS_ERROR_CODES` in `utils/response-helpers.ts` **and** this table
 in the same PR — do not fall back to "make it match the global handler" for
 every code.

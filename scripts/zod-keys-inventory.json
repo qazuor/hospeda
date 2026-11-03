@@ -1540,6 +1540,11 @@
         "zodError.result.removed.invalidType",
         "zodError.result.restoredAt.invalidType",
         "zodError.result.success.invalidType",
+        "zodError.review.dimension.integer",
+        "zodError.review.dimension.max",
+        "zodError.review.dimension.min",
+        "zodError.review.dimension.type",
+        "zodError.review.dimension.unknown",
         "zodError.review.moderate.decision.invalid",
         "zodError.search.caseSensitive.invalidType",
         "zodError.search.exact.invalidType",
@@ -1872,6 +1877,8 @@
         "zodError.validation.sanitization.failed",
         "zodError.validation.zod.failed",
         "zodError.venue.amenityIds.invalidUuid",
+        "zodError.venue.businessLines.invalid",
+        "zodError.venue.businessLines.invalidType",
         "zodError.venue.dailySpecial.description.max",
         "zodError.venue.dailySpecial.priceCents.int",
         "zodError.venue.dailySpecial.priceCents.max",
@@ -1934,7 +1941,7 @@
         "zodError.venueFeature.hostReWriteName.max",
         "zodError.venueFeature.hostReWriteName.min"
     ],
-    "total": 1933,
+    "total": 1940,
     "byNamespace": {
         "accommodation": 71,
         "accommodationAmenity": 4,
@@ -2004,7 +2011,7 @@
         "required": 1,
         "response": 1,
         "result": 6,
-        "review": 1,
+        "review": 6,
         "search": 14,
         "socialAiRequest": 4,
         "socialAsset": 3,
@@ -2036,7 +2043,7 @@
         "userIdentity": 11,
         "userProfile": 6,
         "validation": 10,
-        "venue": 58,
+        "venue": 60,
         "venueFeature": 4
     },
     "dynamicKeys": [

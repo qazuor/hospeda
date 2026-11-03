@@ -1,5 +1,6 @@
 export * from './billing-deadlines.schema.js';
 export * from './business-lines.js';
+export * from './business-lines.validator.js';
 export * from './entitlement-keys.js';
 export * from './key-attributes.js';
 export * from './key-catalog.js';

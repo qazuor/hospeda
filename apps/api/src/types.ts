@@ -68,7 +68,7 @@ export interface AppBindings {
         /** Subject and completed authorization steps for route audit records. */
         listingAccess?: {
             subjectId: string | null;
-            evaluatedSteps: readonly (3 | 4 | 5 | 6 | 7)[];
+            evaluatedSteps: readonly (3 | '4b' | 4 | 5 | 6 | 7)[];
         };
         /** Better Auth session for the current request */
         session?: AuthSession;

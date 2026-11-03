@@ -53,6 +53,7 @@ const mocks = vi.hoisted(() => ({
 vi.mock('@repo/service-core', async (importOriginal) => ({
     ...(await importOriginal<Record<string, unknown>>()),
     VenueService: class {
+        model = { update: vi.fn().mockResolvedValue(undefined) };
         getById = mocks.service;
         updateOwn = mocks.service;
         addMedia = mocks.service;
@@ -72,7 +73,9 @@ vi.mock('@repo/service-core', async (importOriginal) => ({
     removeExperienceFaq: mocks.service,
     updateExperienceFaq: mocks.service,
     reorderExperienceFaqs: mocks.service,
-    replaceVenueMenu: mocks.service,
+    replaceVenueMenu: vi.fn().mockResolvedValue({
+        data: { sections: [], file: null, externalUrl: null }
+    }),
     replaceVenueDailySpecials: mocks.service,
     replaceVenueEvents: mocks.service,
     issueExperienceCertificate: mocks.service,
@@ -441,8 +444,6 @@ function configureSet(owner: string, keys: readonly string[]): void {
         ]
     });
     mocks.loadFacts.mockResolvedValue({
-        // The section chain now evaluates venue business lines before billing;
-        // keep these legacy entitlement cases on a food venue that has menu.
         facts: {
             ownerId: owner,
             publicationStatus: PublicationStatusEnum.PUBLISHED,
@@ -491,22 +492,32 @@ beforeEach(() => {
 
 describe('TEST:V5:31 venue and experience content gates', () => {
     it.each(cases)('$file requires its effective key on the published listing', async (row) => {
-        configureSet(
-            OWNER_A,
-            row.key.startsWith('edit_')
-                ? []
-                : [
-                      `edit_${row.vertical.toLowerCase()}_info`,
-                      ...(row.file === 'venue/uploadMenuItemPhoto' ? ['manage_venue_menu'] : [])
-                  ]
-        );
+        // `menuPlain` carries content, so `putMenu` here is a write; the empty-body
+        // delete is covered by `venue/protected/menu-section-access.test.ts`.
+        const sectionDeletion = row.file === 'venue/deleteMenuFile';
+        const initialKeys =
+            row.file === 'venue/uploadMenuItemPhoto'
+                ? ['edit_venue_info', 'manage_venue_menu']
+                : row.key.startsWith('edit_')
+                  ? []
+                  : [`edit_${row.vertical.toLowerCase()}_info`];
+        configureSet(OWNER_A, initialKeys);
+        if (sectionDeletion) {
+            mocks.service.mockResolvedValue({
+                data: { ownerId: OWNER_A, menuFilePublicId: null }
+            });
+        }
         const denied = await request(row);
-        expect(denied.status, row.file).toBe(403);
-        expect((await denied.json()).error).toMatchObject({
-            code: ServiceErrorCode.ENTITLEMENT_REQUIRED,
-            details: { entitlementKey: row.key }
-        });
-        expect(mocks.service).not.toHaveBeenCalled();
+        if (sectionDeletion) {
+            expect(denied.status, row.file).toBe(200);
+        } else {
+            expect(denied.status, row.file).toBe(403);
+            expect((await denied.json()).error).toMatchObject({
+                code: ServiceErrorCode.ENTITLEMENT_REQUIRED,
+                details: { entitlementKey: row.key }
+            });
+            expect(mocks.service).not.toHaveBeenCalled();
+        }
         mocks.effectiveSet.mockClear();
         const full = [
             'edit_venue_info',
@@ -555,6 +566,20 @@ describe('TEST:V5:31 venue and experience content gates', () => {
             ).status
         ).toBe(404);
         expect(mocks.effectiveSet).not.toHaveBeenCalled();
+    });
+    it('requires the menu section key to upload a dish photo', async () => {
+        const row = cases.find((item) => item.file === 'venue/uploadMenuItemPhoto');
+        if (!row) throw new Error('Menu item photo route missing');
+        configureSet(OWNER_A, ['edit_venue_info', 'menu_item_photos']);
+
+        const denied = await request(row);
+
+        expect(denied.status).toBe(403);
+        expect((await denied.json()).error).toMatchObject({
+            code: ServiceErrorCode.ENTITLEMENT_REQUIRED,
+            details: { entitlementKey: 'manage_venue_menu' }
+        });
+        expect(mocks.service).not.toHaveBeenCalled();
     });
     it('requires dish-photo and translation keys only when the validated menu carries them', async () => {
         const row = cases.find((item) => item.file === 'venue/putMenu');

@@ -149,6 +149,7 @@ export async function handleGetVenueMenuQr(
  */
 export const protectedGetVenueMenuQrRoute = createProtectedRoute({
     method: 'get',
+    emailUnverifiedOperation: 'READ_OWN',
     path: '/{id}/menu-qr',
     listingAccess: {
         vertical: VerticalEnum.VENUE,
