@@ -112,6 +112,66 @@ describe('runCronJob lifecycle', () => {
             await expect(decision.completion).resolves.toMatchObject({ success: true });
     });
 
+    it('uses the 90 percent exclusive budget and persists the returned run ID', async () => {
+        vi.useFakeTimers();
+        vi.setSystemTime(new Date('2026-11-03T12:00:00.000Z'));
+        let observed: { readonly startedAt: Date; readonly deadlineAt: Date } | undefined;
+        const budgetJob: CronJobDefinition = {
+            ...job,
+            timeoutMs: 100,
+            budgetMs: undefined,
+            handler: async (ctx) => {
+                observed = { startedAt: ctx.startedAt, deadlineAt: ctx.deadlineAt };
+                return {
+                    success: true,
+                    message: 'ok',
+                    processed: 0,
+                    errors: 0,
+                    durationMs: 1
+                };
+            }
+        };
+        const decision = await runCronJob({
+            job: budgetJob,
+            executionMode: 'scheduled',
+            dryRun: false
+        });
+        if (!decision.started) throw new Error('expected an acquired lock');
+        const result = await decision.completion;
+        expect(observed?.deadlineAt.getTime() - observed?.startedAt.getTime()).toBe(90);
+        expect(result.details?.runId).toBe(decision.runId);
+        expect(mocks.record).toHaveBeenCalledWith(
+            expect.objectContaining({
+                result: expect.objectContaining({
+                    details: expect.objectContaining({ runId: decision.runId })
+                })
+            })
+        );
+    });
+
+    it('keeps manual soft failures out of Healthchecks and Sentry', async () => {
+        const manualJob: CronJobDefinition = {
+            ...job,
+            exclusive: false,
+            handler: vi.fn(async () => ({
+                success: false,
+                message: 'soft failure',
+                processed: 0,
+                errors: 1,
+                durationMs: 1
+            }))
+        };
+        const decision = await runCronJob({
+            job: manualJob,
+            executionMode: 'manual',
+            dryRun: false
+        });
+        if (!decision.started) throw new Error('expected a manual execution');
+        await expect(decision.completion).resolves.toMatchObject({ success: false });
+        expect(mocks.ping).not.toHaveBeenCalled();
+        expect(mocks.capture).not.toHaveBeenCalled();
+    });
+
     it('aborts at the cooperative budget and records the safety timeout without settling the lock', async () => {
         vi.useFakeTimers();
         vi.setSystemTime(new Date('2026-11-03T12:00:00.000Z'));
