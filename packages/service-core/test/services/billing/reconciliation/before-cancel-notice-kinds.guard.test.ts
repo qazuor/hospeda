@@ -102,6 +102,7 @@ function declaredKind(transition: string) {
         : 'UNDECLARED';
 }
 
+/** AC:B8b:9 adds S17's own template without adding it to the sweep retry map. */
 const EXPECTED_KINDS = [
     'AUTHORIZATION_EXPIRED',
     'FIRST_CHARGE_DECLINED',
