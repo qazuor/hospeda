@@ -88,9 +88,10 @@ provider method calls.
 
 | Test | Level | Kills the mutation |
 |---|---|---|
-| Memo count: ACTIVE credited row, 12 records, steady state → `requests().length` ≤ 15 after PR-2, ≤ 4 after PR-6 (baseline 77) | integration (fake HTTP server + DB) | B1 scope or B2 memo bypassed; snapshots not consulted |
+| Memo count: ACTIVE credited row, 12 records, steady state → `requests().length` ≤ 15 after PR-2 (`1 + P + N`, with the act-keyed share; `1 + P + 2N` = 27 without it), ≤ 4 after PR-6 (baseline 77) | integration (fake HTTP server + DB) | B1 scope or B2 memo bypassed; snapshots not consulted |
 | Tenure: 12 vs 36 records → counts differ only by listing pages | integration | snapshots not consulted for historic charges |
-| Nested act (AC-26): GRACE row past deadline with an approved charge, B2 on → row leaves grace, no freshness error | integration | B2 memoizes a stamped `ProviderRead` |
+| Nested act (AC-26): GRACE row past deadline with an approved charge, B2 on, clock advancing between reads → row leaves grace, no freshness error | integration | B2 shares a stamped `ProviderRead` across acts |
+| Act-keyed share (AC-39): one row scope, one act → the two inventory readers cost one request per charge; a nested `recordChargeFact` on the same charge costs one more | integration (fake HTTP server + DB) | the nested read served from the row's cache |
 | Rejected promise evicted (AC-35) | unit | a failed fetch stays memoized for the scope |
 | Webhook not memoized: two notices for one charge → two live reads | integration | read scope leaks outside the sweep |
 | Freshness types (AC-13): `expectTypeOf` on every check's port and on `readPeriodCharges`'s input accepts `ProviderRead` only; `closedChargeSnapshots.find` has one allowlisted consumer | type test + static guard | a decision fed from a snapshot |
@@ -136,4 +137,4 @@ provider method calls.
 |---|---|---|
 | Window log (AC-18): traffic in both classes → one `mp_traffic_window` per class with the §6.4 counters; `details.providerTraffic` persisted | integration (logger spy + DB) | counters not flushed / not scoped to the run |
 
-48 tests. Integration suites run per file, never the full package suite locally.
+49 tests. Integration suites run per file, never the full package suite locally.
