@@ -188,6 +188,7 @@ async function insertGastronomy(
             summary: 'HOS-712 fixture.',
             description: 'HOS-712 fixture gastronomy, rolled back after the test.',
             type: VenueTypeEnum.RESTAURANT,
+            businessLines: ['food'],
             ownerId: args.ownerId,
             destinationId: args.destinationId,
             publicationStatus: PublicationStatusEnum.PUBLISHED,

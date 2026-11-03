@@ -9,7 +9,13 @@ import {
     venueReviews,
     venues
 } from '@repo/db';
-import { LifecycleStatusEnum, RoleEnum, RoleGrantReason, VisibilityEnum } from '@repo/schemas';
+import {
+    BUSINESS_LINE_RULES,
+    LifecycleStatusEnum,
+    RoleEnum,
+    RoleGrantReason,
+    VisibilityEnum
+} from '@repo/schemas';
 import { grantRole } from '@repo/service-core';
 import { hash } from 'bcryptjs';
 import exampleManifest from '../manifest-example.json';
@@ -568,6 +574,11 @@ export async function seedVenues(context: SeedContext): Promise<void> {
                     descriptionI18n: { es: '', en: '', pt: '' },
                     richDescriptionI18n: { es: '', en: '', pt: '' },
                     type: item.type as (typeof venues.$inferInsert)['type'],
+                    businessLines: [
+                        ...BUSINESS_LINE_RULES.venue.typeRules[
+                            item.type as keyof typeof BUSINESS_LINE_RULES.venue.typeRules
+                        ].preselect
+                    ],
                     priceRange: (item.priceRange ??
                         null) as (typeof venues.$inferInsert)['priceRange'],
                     menuUrl: item.menuUrl ?? null,

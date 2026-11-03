@@ -13,6 +13,7 @@ import type { ListingNoticeRow } from '@repo/db';
 import {
     type ListingNotice,
     type ListingNoticesItem,
+    type ListingUnpublishedBecause,
     PublicationStatusEnum,
     TrialStatusEnum,
     type TrialSummaryResponse
@@ -34,6 +35,36 @@ const LIFT_HIDDEN_STATUSES: ReadonlySet<PublicationStatusEnum> = new Set([
     PublicationStatusEnum.MODERATED,
     PublicationStatusEnum.PURGED
 ]);
+
+/**
+ * Why a lifted listing is still unpublished (HOS-1997). Only meaningful while
+ * the listing is `UNPUBLISHED_BY_BILLING`; `null` when the quota limit was not read.
+ */
+export function resolveUnpublishedBecause(input: {
+    readonly covered: boolean;
+    readonly limit: number | null | undefined;
+    readonly published: number;
+}): ListingUnpublishedBecause | null {
+    if (!input.covered) return 'NOT_COVERED';
+    if (input.limit === undefined) return null;
+    if (input.limit === null || input.limit <= 0) return 'NO_ROOM';
+    return input.published >= input.limit ? 'QUOTA_FULL' : 'FREE_SLOT';
+}
+
+/**
+ * A lift that left the listing unpublished no longer describes it once the
+ * listing is anything else (published again by the owner or the reconciler):
+ * its advice («unpublish another one») would be stale (HOS-1997).
+ */
+function liftOutcomeIsStale(input: {
+    readonly returnedTo: PublicationStatusEnum;
+    readonly status: PublicationStatusEnum;
+}): boolean {
+    return (
+        input.returnedTo === PublicationStatusEnum.UNPUBLISHED_BY_BILLING &&
+        input.status !== PublicationStatusEnum.UNPUBLISHED_BY_BILLING
+    );
+}
 
 const TRIAL_STATUSES: ReadonlySet<string> = new Set(Object.values(TrialStatusEnum));
 
@@ -122,18 +153,40 @@ export function buildStatusNotice(input: {
  * @param input.rows - The owner's listings with their facts.
  * @param input.coverage - The owner's coverage in the vertical (one call).
  * @param input.now - The clock's instant.
+ * @param input.publishLimit - The owner's publication quota (`null` = none declared);
+ *   omit it to leave the «why unpublished» of a lift unresolved.
  * @returns One item per listing, in the rows' order.
  */
 export function buildListingNoticeItems(input: {
     readonly rows: readonly ListingNoticeRow[];
     readonly coverage: CoverageResponse;
     readonly now: Date;
+    readonly publishLimit?: number | null;
 }): readonly ListingNoticesItem[] {
+    const published = input.rows.filter(
+        (row) => row.publicationStatus === PublicationStatusEnum.PUBLISHED
+    ).length;
     const windowStart = input.now.getTime() - LIFT_NOTICE_WINDOW_DAYS * DAY_MS;
     return input.rows.map((row) => {
         const notices: ListingNotice[] = [];
+        const lift = row.lastLift;
+        const liftShown =
+            lift !== null &&
+            lift.at.getTime() >= windowStart &&
+            !LIFT_HIDDEN_STATUSES.has(row.publicationStatus) &&
+            !liftOutcomeIsStale({ returnedTo: lift.returnedTo, status: row.publicationStatus });
+        const unpublishedBecause =
+            liftShown && lift.returnedTo === PublicationStatusEnum.UNPUBLISHED_BY_BILLING
+                ? resolveUnpublishedBecause({
+                      covered: input.coverage.covered,
+                      limit: input.publishLimit,
+                      published
+                  })
+                : null;
         const { notice } = buildStatusNotice({ row, covered: input.coverage.covered });
-        if (notice) notices.push(notice);
+        // «Lowered by the quota» contradicts the lift's own «there is room in your quota».
+        if (notice && !(notice.kind === 'SURPLUS' && unpublishedBecause === 'FREE_SLOT'))
+            notices.push(notice);
         const fix = row.openFixRequest;
         if (fix && row.publicationStatus !== PublicationStatusEnum.PURGED) {
             notices.push({
@@ -144,17 +197,13 @@ export function buildListingNoticeItems(input: {
                 ownerReportedFixedAt: fix.ownerReportedFixedAt?.toISOString() ?? null
             });
         }
-        const lift = row.lastLift;
-        if (
-            lift &&
-            lift.at.getTime() >= windowStart &&
-            !LIFT_HIDDEN_STATUSES.has(row.publicationStatus)
-        ) {
+        if (liftShown && lift) {
             notices.push({
                 kind: 'MODERATION_LIFTED',
                 returnedTo: lift.returnedTo,
                 at: lift.at.toISOString(),
-                fixRequestOpen: fix !== null
+                fixRequestOpen: fix !== null,
+                ...(unpublishedBecause ? { unpublishedBecause } : {})
             });
         }
         return {

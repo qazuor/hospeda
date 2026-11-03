@@ -552,6 +552,20 @@ describe('UserMenu — sign out', () => {
         });
     });
 
+    it('clears the theme sync marker when signing out (HOS-1988)', async () => {
+        // Arrange: this tab already synced the saved theme for the user.
+        sessionStorage.setItem('themeSyncedFor', 'user-1');
+        renderMenu();
+        open();
+
+        // Act
+        fireEvent.click(screen.getByRole('menuitem', { name: /cerrar sesión/i }));
+
+        // Assert
+        await waitFor(() => expect(signOut).toHaveBeenCalled());
+        expect(sessionStorage.getItem('themeSyncedFor')).toBeNull();
+    });
+
     it('drops the /auth/me snapshot before signing out (HOS-1206)', async () => {
         // Arrange: the island has resolved and cached the authenticated user.
         renderMenu();

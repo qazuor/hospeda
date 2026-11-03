@@ -20,6 +20,7 @@ import type {
     ListingNoticeKind,
     ListingNoticesItem,
     ListingNoticesResponse,
+    ListingUnpublishedBecause,
     PublicationStatusEnum
 } from '@repo/schemas';
 import type { PublishVerticalSlug } from '../api/endpoints-protected';
@@ -119,6 +120,32 @@ const LIFTED_RETURNED_TO_KEY: Readonly<Record<PublicationStatusEnum, string | nu
     ARCHIVED: 'listing.notices.lifted.returnedTo.ARCHIVED',
     MODERATED: null,
     PURGED: null
+};
+
+/**
+ * Why a lifted listing is still unpublished (HOS-1997) → its text. The quota-full
+ * advice has a variant for a moderation that became a fix request, where saying
+ * «approved» would be false.
+ */
+const LIFTED_UNPUBLISHED_KEY: Readonly<
+    Record<ListingUnpublishedBecause, { readonly approved: string; readonly fixRequest: string }>
+> = {
+    QUOTA_FULL: {
+        approved: 'listing.notices.lifted.unpublished.quotaFull',
+        fixRequest: 'listing.notices.lifted.unpublished.quotaFullFixRequest'
+    },
+    NOT_COVERED: {
+        approved: 'listing.notices.lifted.unpublished.notCovered',
+        fixRequest: 'listing.notices.lifted.unpublished.notCovered'
+    },
+    FREE_SLOT: {
+        approved: 'listing.notices.lifted.unpublished.freeSlot',
+        fixRequest: 'listing.notices.lifted.unpublished.freeSlot'
+    },
+    NO_ROOM: {
+        approved: 'listing.notices.lifted.returnedTo.UNPUBLISHED_BY_BILLING',
+        fixRequest: 'listing.notices.lifted.returnedTo.UNPUBLISHED_BY_BILLING'
+    }
 };
 
 /** Whether the lift left the listing a draft, so publishing is the owner's call. */
@@ -249,8 +276,13 @@ const NOTICE_VIEW: NoticeViewBuilders = {
     },
     // Row 30, the lift: where it went and, if back to draft, that publishing is theirs.
     MODERATION_LIFTED: (notice, { t }) => {
-        const returnedKey = LIFTED_RETURNED_TO_KEY[notice.returnedTo];
-        if (returnedKey === null) return null;
+        const generalKey = LIFTED_RETURNED_TO_KEY[notice.returnedTo];
+        if (generalKey === null) return null;
+        const returnedKey = notice.unpublishedBecause
+            ? LIFTED_UNPUBLISHED_KEY[notice.unpublishedBecause][
+                  notice.fixRequestOpen ? 'fixRequest' : 'approved'
+              ]
+            : generalKey;
         return {
             kind: 'MODERATION_LIFTED',
             tone: 'info',

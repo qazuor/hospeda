@@ -30,7 +30,10 @@ const CREATE: Record<
     accommodation: ({ tx, base }) =>
         new AccommodationModel().create({ ...base, type: 'CABIN' } as Partial<Accommodation>, tx),
     venue: ({ tx, base }) =>
-        new VenueModel().create({ ...base, type: 'RESTAURANT' } as Partial<Venue>, tx),
+        new VenueModel().create(
+            { ...base, type: 'RESTAURANT', businessLines: ['food'] } as Partial<Venue>,
+            tx
+        ),
     experience: ({ tx, base }) =>
         new ExperienceModel().create({ ...base, type: 'EXCURSION' } as Partial<Experience>, tx)
 };

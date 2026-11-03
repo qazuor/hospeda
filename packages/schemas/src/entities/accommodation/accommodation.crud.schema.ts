@@ -69,6 +69,8 @@ export const AccommodationCreateInputSchema = AccommodationSchema.omit({
     // general create/update path.
     featuredByEntitlement: true
 }).extend({
+    /** Optional create-time business line selection; omitted values use the catalog preselection. */
+    businessLines: z.array(z.string()).optional(),
     slug: z
         .string()
         .min(3, { message: 'zodError.accommodation.slug.min' })

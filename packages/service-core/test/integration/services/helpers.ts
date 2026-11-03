@@ -834,6 +834,7 @@ export async function seedVenue(
         summary: 'A seed venue listing summary',
         description: 'A seed venue listing description for integration tests.',
         type: 'RESTAURANT',
+        businessLines: ['food'],
         ownerId,
         destinationId,
         publicationStatus: overrides.publicationStatus ?? PublicationStatusEnum.DRAFT,

@@ -153,10 +153,10 @@ la siguiente prueba de checkout del smoke la ve como desconocida.
   DBURL=$(getvar HOSPEDA_DATABASE_URL)
   [[ -n "$TOKEN" && -n "$DBURL" ]] || { echo "missing token or db url" >&2; exit 2; }
   LOCAL_PORT=25432
-  # Rewrite host:port to the local end of the tunnel (15432 = staging Postgres proxy on the VPS).
+  # Rewrite host:port to the local end of the tunnel (5433 = staging Postgres, published on the VPS loopback only).
   DBURL_LOCAL=$(printf '%s' "$DBURL" | sed -E "s#@[^/@]+/#@127.0.0.1:${LOCAL_PORT}/#")
-  ssh -p 2222 -o ExitOnForwardFailure=yes -f -N -L "${LOCAL_PORT}:127.0.0.1:15432" qazuor@216.238.103.219
-  trap 'pkill -f "${LOCAL_PORT}:127.0.0.1:15432" || true' EXIT
+  ssh -p 2222 -o ExitOnForwardFailure=yes -f -N -L "${LOCAL_PORT}:127.0.0.1:5433" qazuor@216.238.103.219
+  trap 'pkill -f "${LOCAL_PORT}:127.0.0.1:5433" || true' EXIT
   sleep 2
   cd "$REPO"
   CUTOVER_MP_ACCESS_TOKEN="$TOKEN" CUTOVER_STAGING_DATABASE_URL="$DBURL_LOCAL" \

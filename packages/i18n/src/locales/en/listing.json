@@ -418,6 +418,12 @@
                 "UNPUBLISHED_BY_BILLING": "It stayed unpublished, because your subscription has no room for it today. Nothing was deleted.",
                 "ARCHIVED": "It is still archived, as it was."
             },
+            "unpublished": {
+                "quotaFull": "It was approved, but your quota is full: to publish it, unpublish another listing and then publish this one.",
+                "quotaFullFixRequest": "It is still unpublished because your quota is full: to publish it, unpublish another listing and then publish this one.",
+                "notCovered": "It stayed unpublished, because your subscription does not cover it today. Nothing was deleted.",
+                "freeSlot": "There is room in your quota: you can publish it whenever you want."
+            },
             "draftIsYours": "Publishing it is up to you.",
             "fixRequestOpen": "The fix request is still open."
         },

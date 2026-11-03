@@ -6,9 +6,11 @@ import type {
     SocialNetwork,
     Video
 } from '@repo/schemas';
-import { relations } from 'drizzle-orm';
+import { BUSINESS_LINE_RULES, BUSINESS_LINES } from '@repo/schemas';
+import { relations, sql } from 'drizzle-orm';
 import {
     boolean,
+    check,
     index,
     integer,
     jsonb,
@@ -23,6 +25,7 @@ import { destinations } from '../destination/destination.dbschema.ts';
 import { PriceRangePgEnum, VenueTypePgEnum } from '../enums.dbschema.ts';
 import { listingPublicationColumns } from '../listing/listing-publication-columns.ts';
 import { users } from '../user/user.dbschema.ts';
+import { quotedList } from '../vertical/quoted-list.ts';
 import { rVenueAmenity } from './r_venue_amenity.dbschema.ts';
 import { rVenueFeature } from './r_venue_feature.dbschema.ts';
 import { venueEvents } from './venue_event.dbschema.ts';
@@ -70,6 +73,7 @@ export const venues = pgTable(
         richDescriptionI18n: jsonb('rich_description_i18n').$type<I18nText>(),
         /** Venue sub-category (RESTAURANT, BAR, CAFE, PARRILLA, etc.). */
         type: VenueTypePgEnum('type').notNull(),
+        businessLines: text('business_lines').array().notNull(),
         /** Price-range tier for the venue (BUDGET/MID/HIGH/PREMIUM). Nullable until owner sets it. */
         priceRange: PriceRangePgEnum('price_range'),
         /**
@@ -190,6 +194,20 @@ export const venues = pgTable(
         deletedById: uuid('deleted_by_id').references(() => users.id, { onDelete: 'set null' })
     },
     (table) => ({
+        venues_business_lines_valid: check(
+            'venues_business_lines_valid',
+            sql`cardinality(${table.businessLines}) >= 1 AND ${table.businessLines} <@ ARRAY[${quotedList(BUSINESS_LINES.venue.map(({ value }) => value))}]::text[] AND CASE ${table.type}::text ${sql.join(
+                Object.entries(BUSINESS_LINE_RULES.venue.typeRules).map(
+                    ([type, rule]) =>
+                        sql`WHEN '${sql.raw(type)}' THEN ${table.businessLines} <@ ARRAY[${quotedList(rule.allowed)}]::text[]`
+                ),
+                sql` `
+            )} ELSE false END`
+        ),
+        venues_business_lines_gin_idx: index('venues_business_lines_gin_idx').using(
+            'gin',
+            table.businessLines
+        ),
         venues_destinationId_idx: index('venues_destinationId_idx').on(table.destinationId),
         // HOS-1641 (V6.9b): public and per-destination reads filter on
         // `publication_status = 'PUBLISHED'`; these replace the visibility indexes.
