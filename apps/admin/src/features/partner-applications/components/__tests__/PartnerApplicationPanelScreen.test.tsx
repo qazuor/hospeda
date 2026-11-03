@@ -20,7 +20,16 @@ vi.mock('@/features/partner-applications/hooks/usePartnerApplicationActions', ()
 }));
 vi.mock('@/hooks/use-user-permissions', () => ({ useHasPermission: () => false }));
 vi.mock('@/hooks/use-translations', () => ({
-    useTranslations: () => ({ locale: 'es-AR', t: (key: string) => key })
+    useTranslations: () => ({
+        locale: 'es-AR',
+        t: (key: string) =>
+            ({
+                'admin-entities.partnerApplicationPanel.pending': 'Pendientes',
+                'admin-entities.partnerApplicationPanel.approvedUnclaimed':
+                    'Aprobadas sin reclamar',
+                'admin-entities.partnerApplicationPanel.rejectedWaiting': 'Rechazadas con espera'
+            })[key] ?? key
+    })
 }));
 vi.mock('@tanstack/react-router', () => ({
     Link: ({ children }: { children: ReactNode }) => <a href="/partners/test">{children}</a>
@@ -73,6 +82,14 @@ describe('PartnerApplicationPanelScreen', () => {
     });
     afterEach(cleanup);
 
+    it('renders the view labels from their existing translation keys', () => {
+        renderScreen();
+
+        expect(screen.getByRole('tab', { name: 'Pendientes' })).toBeInTheDocument();
+        expect(screen.getByRole('tab', { name: 'Aprobadas sin reclamar' })).toBeInTheDocument();
+        expect(screen.getByRole('tab', { name: 'Rechazadas con espera' })).toBeInTheDocument();
+    });
+
     it('marks only the overdue pending row', () => {
         renderScreen();
         const oldRow = screen.getByTestId(`partner-application-row-${oldId}`);
@@ -98,11 +115,7 @@ describe('PartnerApplicationPanelScreen', () => {
                 name: 'admin-entities.partnerApplicationPanel.actions.reject'
             })
         ).toHaveLength(2);
-        fireEvent.click(
-            screen.getByRole('tab', {
-                name: 'admin-entities.partnerApplicationPanel.views.approvedUnclaimed'
-            })
-        );
+        fireEvent.click(screen.getByRole('tab', { name: 'Aprobadas sin reclamar' }));
         const approvedRow = screen.getByTestId(`partner-application-row-${oldId}`);
         expect(within(approvedRow).queryByRole('button')).not.toBeInTheDocument();
         expect(within(approvedRow).getAllByRole('cell')).toHaveLength(4);
@@ -112,11 +125,7 @@ describe('PartnerApplicationPanelScreen', () => {
                 { name: 'admin-entities.partnerApplicationPanel.columns.actions' }
             )
         ).not.toBeInTheDocument();
-        fireEvent.click(
-            screen.getByRole('tab', {
-                name: 'admin-entities.partnerApplicationPanel.views.rejectedWaiting'
-            })
-        );
+        fireEvent.click(screen.getByRole('tab', { name: 'Rechazadas con espera' }));
         const rejectedRow = screen.getByTestId(`partner-application-row-${oldId}`);
         const cancel = within(rejectedRow).getByRole('button', {
             name: 'admin-entities.partnerApplicationPanel.actions.cancelWait'
@@ -140,11 +149,7 @@ describe('PartnerApplicationPanelScreen', () => {
     it('keeps the cancel dialog open and shows API failures as an alert', async () => {
         mocks.cancelWait.mockRejectedValueOnce(new Error('Request failed'));
         renderScreen();
-        fireEvent.click(
-            screen.getByRole('tab', {
-                name: 'admin-entities.partnerApplicationPanel.views.rejectedWaiting'
-            })
-        );
+        fireEvent.click(screen.getByRole('tab', { name: 'Rechazadas con espera' }));
         const row = screen.getByTestId(`partner-application-row-${oldId}`);
         fireEvent.click(
             within(row).getByRole('button', {

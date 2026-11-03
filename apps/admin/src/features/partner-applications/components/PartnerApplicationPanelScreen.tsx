@@ -60,7 +60,7 @@ export function PartnerApplicationPanelScreen() {
                         }}
                         className="rounded-md border px-3 py-2"
                     >
-                        {label(`views.${next}`)}
+                        {label(next)}
                     </button>
                 ))}
             </div>
