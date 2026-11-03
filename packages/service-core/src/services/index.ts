@@ -93,6 +93,7 @@ export * from './billing/notice/provider-notice-ports.js';
 export * from './billing/notice/provider-pause-arrears.js';
 export * from './billing/notice/purge-provider-notifications.service.js';
 export * from './billing/notice/receive-provider-delivery.service.js';
+export { confirmedRefundsForNotice } from './billing/notice/refund-execution-on-notice.js';
 export {
     NotificationRetentionService,
     type RetentionSummary
@@ -181,7 +182,10 @@ export * from './billing/reconciliation/sweep/unresolved-period-charge.port.js';
 export * from './billing/reconciliation/sweep/zero-call-checks.service.js';
 export * from './billing/reconciliation/sweep/zero-call-ports.js';
 export * from './billing/refund/confirm-refund.service.js';
+export * from './billing/refund/decline-refund.service.js';
+export * from './billing/refund/execute-refund.service.js';
 export * from './billing/refund/refund-machine.js';
+export * from './billing/refund/refund-window.js';
 export * from './billing/refund/request-refund.service.js';
 export * from './billing/refund/settle-external-refund.service.js';
 export * from './billing/subscription/activate-pending-with-signup-notice.js';

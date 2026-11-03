@@ -1147,5 +1147,66 @@
         "previous": "Anterior",
         "next": "Próxima",
         "page": "Página {page} de {totalPages}"
+    },
+    "partnerApplicationPanel": {
+        "title": "Candidaturas de parceiros",
+        "intro": "Revise as candidaturas de Partner. As pendentes não expiram; as atrasadas são marcadas para dar visibilidade.",
+        "views": "Visualizações de candidaturas",
+        "pending": "Pendentes",
+        "approvedUnclaimed": "Aprovadas sem reivindicação",
+        "rejectedWaiting": "Rejeitadas com espera",
+        "columns": {
+            "email": "E-mail",
+            "received": "Recebida",
+            "status": "Status",
+            "actions": "Ações",
+            "partner": "Partner",
+            "approved": "Aprovada",
+            "claim": "Reivindicação",
+            "rejected": "Rejeitada",
+            "waitEnds": "Fim da espera"
+        },
+        "status": {
+            "pending": "Pendente"
+        },
+        "overdue": "Atrasada",
+        "unclaimed": "Sem reivindicação",
+        "actions": {
+            "approve": "Aprovar",
+            "reject": "Rejeitar",
+            "cancelWait": "Anular a espera"
+        },
+        "dialogs": {
+            "approve": {
+                "title": "Aprovar candidatura",
+                "confirm": "Aprovar"
+            },
+            "reject": {
+                "title": "Rejeitar candidatura",
+                "confirm": "Rejeitar"
+            },
+            "cancelWait": {
+                "title": "Anular a espera",
+                "confirm": "Anular a espera"
+            },
+            "partnerName": "Nome do Partner",
+            "partnerType": "Tipo de Partner",
+            "reason": "Motivo",
+            "cancel": "Voltar"
+        },
+        "errors": {
+            "action": "Não foi possível concluir a ação. Revise o motivo e tente novamente."
+        },
+        "empty": "Não há candidaturas nesta visualização.",
+        "loading": "Carregando candidaturas…",
+        "error": "Não foi possível carregar as candidaturas. Recarregue a página.",
+        "previous": "Anterior",
+        "next": "Próxima",
+        "page": "Página {page} de {totalPages}",
+        "types": {
+            "business": "Empresa",
+            "ngo": "Organização sem fins lucrativos",
+            "institution": "Instituição"
+        }
     }
 }

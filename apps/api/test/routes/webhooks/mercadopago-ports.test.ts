@@ -1,4 +1,5 @@
 import {
+    confirmedRefundsForNotice,
     providerLinkCancellationSeen,
     unregisteredPromoChargePolicy,
     unregisteredPromoExhaustion
@@ -70,6 +71,7 @@ describe('AC:B4:11 the provider notice receiver annotates the cancellation seen 
 
         // Assert
         expect(ports.cancellationSeen).toBe(providerLinkCancellationSeen);
+        expect(ports.confirmedRefunds).toBe(confirmedRefundsForNotice);
         expect(typeof ports.complements.addonPolicy).toBe('function');
         expect(typeof ports.complements.listing).toBe('function');
         expect(ports.complements.liveAnchors).toBeDefined();
@@ -83,6 +85,7 @@ describe('AC:B4:11 the provider notice receiver annotates the cancellation seen 
                 'changeDirection',
                 'coverageNotices',
                 'complements',
+                'confirmedRefunds',
                 'delegates',
                 'markPayments',
                 'payments',

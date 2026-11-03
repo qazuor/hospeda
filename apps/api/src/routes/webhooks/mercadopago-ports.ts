@@ -1,5 +1,6 @@
 import { planCatalogModel } from '@repo/db';
 import {
+    confirmedRefundsForNotice,
     createPaymentReconciliationMarkPayments,
     createPromoChargePolicy,
     createPromoExhaustion,
@@ -76,6 +77,7 @@ export function buildMercadoPagoNoticePorts() {
         touristVipInheritance,
         cancellationSeen: providerLinkCancellationSeen,
         markPayments,
+        confirmedRefunds: confirmedRefundsForNotice,
         complements,
         delegates: createProviderNoticeMirrorDelegates({
             provider,

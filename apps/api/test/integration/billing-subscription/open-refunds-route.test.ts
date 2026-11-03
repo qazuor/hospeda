@@ -7,6 +7,8 @@ import { validateApiEnv } from '../../../src/utils/env';
 import { testDb } from '../../e2e/setup/test-database';
 import {
     actorHeaders,
+    CHARGED_AT,
+    DAY_MS,
     NOW,
     OPTION_AMOUNT,
     REVOKER_PERMISSIONS,
@@ -86,7 +88,14 @@ async function expectedItem(
         refundAmount: row.amount,
         reason: row.reason,
         requestedAt: row.createdAt.toISOString(),
-        payment
+        payment,
+        providerRefundWindow:
+            payment.source === 'PAYMENT'
+                ? {
+                      open: true,
+                      closesAt: new Date(CHARGED_AT.getTime() + 180 * DAY_MS).toISOString()
+                  }
+                : null
     };
 }
 
@@ -141,7 +150,11 @@ describe('TEST:1711:10 AC:1711:10 subscription open-refunds contents', () => {
                     refundAmount: OPTION_AMOUNT,
                     reason: 'REVOCATION',
                     requestedAt: created.createdAt.toISOString(),
-                    payment: { source: 'PAYMENT', id: seeded.paymentId }
+                    payment: { source: 'PAYMENT', id: seeded.paymentId },
+                    providerRefundWindow: {
+                        open: true,
+                        closesAt: new Date(CHARGED_AT.getTime() + 180 * DAY_MS).toISOString()
+                    }
                 }
             ]
         });
@@ -192,6 +205,27 @@ describe('TEST:1711:10 AC:1711:10 subscription open-refunds contents', () => {
         expect(secondResponse.status).toBe(200);
         expect((await secondResponse.json()).data).toEqual({
             items: [await expectedItem(secondOnly, { source: 'PAYMENT', id: second.paymentId })]
+        });
+    });
+
+    it('AC:B6:7 reports a closed provider window for a payment from 181 days ago', async () => {
+        const factAt = new Date(NOW.getTime() - 181 * DAY_MS);
+        const seeded = await seedRevocable({ factAt });
+        const refundId = await seedRefund({ paymentId: seeded.paymentId, status: 'REQUESTED' });
+
+        const response = await read(seeded.subscriptionId);
+
+        expect(response.status).toBe(200);
+        expect((await response.json()).data).toEqual({
+            items: [
+                {
+                    ...(await expectedItem(refundId, { source: 'PAYMENT', id: seeded.paymentId })),
+                    providerRefundWindow: {
+                        open: false,
+                        closesAt: new Date(factAt.getTime() + 180 * DAY_MS).toISOString()
+                    }
+                }
+            ]
         });
     });
 });
