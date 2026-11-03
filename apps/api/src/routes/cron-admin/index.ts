@@ -12,7 +12,6 @@
  * @module routes/cron-admin
  */
 
-import { randomUUID } from 'node:crypto';
 import {
     type CronCategory,
     CronJobsAdminListSchema,
@@ -26,11 +25,9 @@ import { CronExpressionParser } from 'cron-parser';
 import cronstrue from 'cronstrue/i18n.js';
 import type { Context } from 'hono';
 import { z } from 'zod';
-import { recordCronRun } from '../../cron/record-run';
 import { cronJobs, getCronJob } from '../../cron/registry';
+import { runCronJob } from '../../cron/run-cron-job';
 import { CRON_SCHEDULES } from '../../cron/schedules.manifest';
-import { runCronHandlerInBackground } from '../../cron/traffic';
-import type { CronJobContext, CronJobResult } from '../../cron/types';
 import type { AppBindings } from '../../types';
 import { getActorFromContext } from '../../utils/actor';
 import { createRouter } from '../../utils/create-app';
@@ -98,6 +95,18 @@ const cronJobExecutionDataSchema = z.object({
     executedAt: z.string()
 });
 
+const cronJobAcceptedDataSchema = z.object({
+    accepted: z.literal(true),
+    runId: z.string(),
+    jobName: z.string(),
+    dryRun: z.boolean(),
+    executedAt: z.string()
+});
+const cronJobTriggerResponseSchema = z.union([
+    cronJobExecutionDataSchema,
+    cronJobAcceptedDataSchema
+]);
+
 // ─── Route Handlers ──────────────────────────────────────────────────────────
 
 /**
@@ -162,20 +171,18 @@ export const triggerCronJobHandler = async (
     params: Record<string, unknown>,
     _body: Record<string, unknown>,
     query?: Record<string, unknown>
-): Promise<z.infer<typeof cronJobExecutionDataSchema>> => {
+): Promise<
+    z.infer<typeof cronJobExecutionDataSchema> | z.infer<typeof cronJobAcceptedDataSchema>
+> => {
     const jobName = params.jobName as string;
-    // `query` is the route-validated value: `dryRun` is already a boolean here.
     const dryRun = query?.dryRun === true;
-
     const job = getCronJob(jobName);
-
     if (!job) {
         throw Object.assign(new Error(`Cron job not found: ${jobName}`), {
             statusCode: 404,
             code: 'NOT_FOUND'
         });
     }
-
     if (!job.enabled) {
         throw Object.assign(new Error(`Cron job is disabled: ${jobName}`), {
             statusCode: 400,
@@ -183,90 +190,21 @@ export const triggerCronJobHandler = async (
         });
     }
 
-    const startTime = Date.now();
-    const startedAt = new Date();
-    // HOS-1424 (AC:U2:9): every run carries its own run id AND its own run
-    // correlation, minted here like on a scheduled tick. It is NOT the admin
-    // request's correlation (still echoed on the HTTP response by the edge
-    // middleware): two triggers sent with the same header are two runs.
-    const runId = randomUUID();
-    const correlationId = randomUUID();
-    const ids = { runId, correlationId };
-
-    const jobContext: CronJobContext = {
-        logger: {
-            info: (message: string, data?: Record<string, unknown>) => {
-                apiLogger.info({ message: `[ADMIN-CRON:${jobName}] ${message}`, ...ids, ...data });
-            },
-            warn: (message: string, data?: Record<string, unknown>) => {
-                apiLogger.warn({ message: `[ADMIN-CRON:${jobName}] ${message}`, ...ids, ...data });
-            },
-            error: (message: string, data?: Record<string, unknown>) => {
-                apiLogger.error({ message: `[ADMIN-CRON:${jobName}] ${message}`, ...ids, ...data });
-            },
-            debug: (message: string, data?: Record<string, unknown>) => {
-                apiLogger.debug({ message: `[ADMIN-CRON:${jobName}] ${message}`, ...ids, ...data });
-            }
-        },
-        startedAt,
-        runId,
-        correlationId,
-        dryRun
-    };
-
-    const timeoutMs = job.timeoutMs ?? 30000;
-    const timeoutPromise = new Promise<never>((_, reject) => {
-        setTimeout(() => {
-            reject(new Error(`Job execution timeout after ${timeoutMs}ms`));
-        }, timeoutMs);
-    });
-
-    let result: CronJobResult;
-    try {
-        result = await Promise.race([
-            runCronHandlerInBackground({ job, ctx: jobContext }),
-            timeoutPromise
-        ]);
-    } catch (error) {
-        // Fire-and-forget: record the failure/timeout, then preserve the HTTP error.
-        await recordCronRun({
-            jobName,
-            executionMode: 'manual',
-            dryRun,
-            startedAt,
-            finishedAt: new Date(),
-            error
+    const decision = await runCronJob({ job, executionMode: 'manual', dryRun });
+    if (!decision.started) {
+        throw Object.assign(new Error(`Cron job is already running: ${jobName}`), {
+            statusCode: 409,
+            code: 'CONFLICT',
+            details: { holderRunId: decision.holderRunId }
         });
-        throw error;
     }
-
-    const durationMs = Date.now() - startTime;
-
-    apiLogger.info({
-        message: `[ADMIN-CRON:${jobName}] Completed`,
-        success: result.success,
-        processed: result.processed,
-        errors: result.errors,
-        durationMs,
-        dryRun
-    });
-
-    // Fire-and-forget: record the successful (or success:false) outcome.
-    await recordCronRun({
-        jobName,
-        executionMode: 'manual',
-        dryRun,
-        startedAt,
-        finishedAt: new Date(),
-        result
-    });
-
-    return {
-        ...result,
-        jobName,
-        dryRun,
-        executedAt: startedAt.toISOString()
-    };
+    const executedAt = new Date().toISOString();
+    if (job.exclusive) {
+        void decision.completion.catch(() => undefined);
+        return { accepted: true, runId: decision.runId, jobName, dryRun, executedAt };
+    }
+    const result = await decision.completion;
+    return { ...result, jobName, dryRun, executedAt };
 };
 
 // ─── Route Definitions ───────────────────────────────────────────────────────
@@ -320,7 +258,9 @@ const triggerCronJobRoute = createAdminRoute({
     requiredPermissions: [PermissionEnum.SYSTEM_MAINTENANCE_MODE],
     requestParams: { jobName: z.string().min(1) },
     requestQuery: { dryRun: cronDryRunQuerySchema },
-    responseSchema: cronJobExecutionDataSchema,
+    responseSchema: cronJobTriggerResponseSchema,
+    successStatusCode: (result) =>
+        typeof result === 'object' && result !== null && 'accepted' in result ? 202 : 201,
     handler: async (c, params, body, query) =>
         triggerCronJobHandler(
             c as Context<AppBindings>,

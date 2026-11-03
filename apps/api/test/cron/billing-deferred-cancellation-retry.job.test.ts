@@ -65,7 +65,8 @@ describe('TEST:1955:7 AC:1955:5 deferred cancellation retry cron', () => {
         const [input, ports] = mockRetry.mock.calls[0] ?? [];
         expect(input).toStrictEqual({
             correlationId: '00000000-0000-4000-8000-000000001955',
-            sweepRunMaxAgeMs: 600_000
+            // Tracks billing-reconciliation-sweep's timeout, raised to 50 min by HOS-1999.
+            sweepRunMaxAgeMs: 3_000_000
         });
         expect(Object.keys(ports).sort()).toEqual([
             'beforeCancelNotice',

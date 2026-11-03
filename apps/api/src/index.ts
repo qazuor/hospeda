@@ -49,6 +49,7 @@ import { env, validateApiEnv } from './utils/env';
 import { listRoutes } from './utils/list-routes';
 import { subscribeListingCoverageRecalculation } from './utils/listing-publication/coverage-listener';
 import { apiLogger } from './utils/logger';
+import { shutdownMercadoPagoTrafficGovernor } from './utils/mp-traffic-governor';
 import { disconnectRedis } from './utils/redis';
 import { resolveLogFormat } from './utils/resolve-log-format';
 import { subscribeTrialCoverageConversion } from './utils/trial/trial-coverage-listener';
@@ -501,6 +502,7 @@ const startServer = async (): Promise<void> => {
                 destroyUserPermissionsCache();
 
                 // Close Redis connection
+                await shutdownMercadoPagoTrafficGovernor();
                 await disconnectRedis();
 
                 // Close database connection
