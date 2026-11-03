@@ -214,4 +214,47 @@ describe('notice-deferred cancellation retry (HOS-1955)', () => {
             (await h.fake.readAuthorization({ authorizationId: row.providerId })).snapshot.status
         ).toBe('cancelled');
     });
+
+    it('TEST:1955:1 counts CALL_FAILED and continues with the next eligible row (D-8)', async () => {
+        const h = deferredRetryHarness();
+        const rows = [
+            await seedDeferredRetryRow({ fake: h.fake, transition: 'S40' }),
+            await seedDeferredRetryRow({ fake: h.fake, transition: 'S40' })
+        ].sort((left, right) => left.subscription.id.localeCompare(right.subscription.id));
+        const [failed, next] = rows;
+        if (!failed || !next) throw new Error('Expected two seeded rows');
+        h.notices.set(failed.subscription.id, fresh);
+        h.notices.set(next.subscription.id, fresh);
+        h.cancel.mockImplementation(async (request) => {
+            if (request.authorizationId === failed.providerId) {
+                throw new Error('Simulated provider refusal');
+            }
+            return FakePaymentProvider.prototype.cancel.call(h.fake, request);
+        });
+
+        const result = await withSeededCancellationRetryInventory(() =>
+            runNoticeDeferredCancellationRetry(input(), h.ports)
+        );
+        expect(result).toMatchObject({
+            candidates: 2,
+            noRecipient: 0,
+            undeclared: 0,
+            noticePending: 0,
+            noticeAbsent: 0,
+            settledLongAgo: 0,
+            deferredToNextRun: 0,
+            retried: { callFailed: 1, confirmed: 1 },
+            rowsRead: 2,
+            rowsFailed: 0,
+            failures: []
+        });
+        expect(callsFor(h.cancel, failed.providerId)).toBe(1);
+        expect(callsFor(h.cancel, next.providerId)).toBe(1);
+        expect(
+            (await h.fake.readAuthorization({ authorizationId: failed.providerId })).snapshot.status
+        ).toBe('active');
+        expect(
+            (await h.fake.readAuthorization({ authorizationId: next.providerId })).snapshot.status
+        ).toBe('cancelled');
+    });
 });
