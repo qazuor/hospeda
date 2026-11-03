@@ -85,6 +85,7 @@ export const billingReconciliationSweepJob: CronJobDefinition = {
                 {
                     correlationId: ctx.correlationId,
                     signal: ctx.signal,
+                    mode: 'cycle',
                     newCycle: ctx.newCycle,
                     lastSlot,
                     deadlineAt: ctx.deadlineAt,

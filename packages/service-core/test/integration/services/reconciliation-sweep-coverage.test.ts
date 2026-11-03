@@ -44,7 +44,7 @@ describe('AC-19 the cycle covers every row exactly once across slices', () => {
                 sliceReads = 0;
                 return withSeededReconciliationInventory(() =>
                     runReconciliationSweep(
-                        { pageSize: 10, signal: controller.signal },
+                        { mode: 'cycle', pageSize: 10, signal: controller.signal },
                         { provider: fake, clock }
                     )
                 );
@@ -53,7 +53,7 @@ describe('AC-19 the cycle covers every row exactly once across slices', () => {
             const second = await runLimited();
             sliceReads = Number.NEGATIVE_INFINITY;
             const third = await withSeededReconciliationInventory(() =>
-                runReconciliationSweep({ pageSize: 10 }, { provider: fake, clock })
+                runReconciliationSweep({ mode: 'cycle', pageSize: 10 }, { provider: fake, clock })
             );
             expect(first.outcome).toBe('TIMED_OUT');
             expect(second.outcome).toBe('TIMED_OUT');
@@ -90,6 +90,7 @@ describe('the budget is measured on wall time, not on the injected clock', () =>
         const result = await withSeededReconciliationInventory(() =>
             runReconciliationSweep(
                 {
+                    mode: 'cycle',
                     lastSlot: true,
                     deadlineAt: new Date(Date.now() + 45 * 60_000),
                     budgetClock: () => new Date()

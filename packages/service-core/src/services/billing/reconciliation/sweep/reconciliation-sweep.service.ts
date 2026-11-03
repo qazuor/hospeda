@@ -3,7 +3,6 @@ import type { Clock } from '@repo/billing-verticals-contract';
 import {
     extendRunLease,
     isReconciliationSweepRunComplete,
-    ReconciliationSweepSliceAlreadyOpenError,
     reconciliationInventoryModel,
     reconciliationSweepRunModel,
     reconciliationSweepRuns
@@ -25,6 +24,7 @@ import type {
 } from './reconciliation-sweep.types.js';
 import { SweepLeaseLostError, SweepTimedOutError } from './sweep-control.js';
 import { runSweepPostLoop, type SweepPostLoopResult } from './sweep-post-loop.js';
+import { openCycleSlice, skippedSummary } from './sweep-slice-open.js';
 
 export type {
     ReconciliationRowCheck,
@@ -61,40 +61,6 @@ function isBudgetReached(deadlineAt: Date | undefined, clock: Clock): boolean {
     return deadlineAt !== undefined && clock.now().getTime() >= deadlineAt.getTime();
 }
 
-function skippedSummary(input: {
-    readonly skipped: 'lease_held' | 'cycle_done';
-    readonly startedAt: Date;
-    readonly finishedAt: Date;
-    readonly runId?: string;
-    readonly cycleId?: string;
-    readonly sliceIndex?: number;
-    readonly outcome?: import('@repo/db').ReconciliationSweepOutcome;
-}): ReconciliationSweepSummary {
-    const cycleId = input.cycleId ?? '';
-    return {
-        runId: input.runId ?? '',
-        complete: true,
-        pinged: false,
-        stoppedOnBudget: false,
-        skippedPasses: [],
-        rowsRead: 0,
-        rowsFailed: 0,
-        divergences: 0,
-        marksOpened: 0,
-        marksAccumulated: 0,
-        failures: [],
-        startedAt: input.startedAt,
-        finishedAt: input.finishedAt,
-        outcome: input.outcome ?? 'TIMED_OUT',
-        skipped: input.skipped,
-        phase: 'DONE',
-        rowsComplete: input.skipped === 'cycle_done',
-        sliceIndex: input.sliceIndex ?? -1,
-        cycleId,
-        incomplete: false
-    };
-}
-
 export async function runReconciliationSweep(
     input: ReconciliationSweepInput = {},
     ports: ReconciliationSweepPorts
@@ -104,64 +70,17 @@ export async function runReconciliationSweep(
     const startedAt = ports.clock.now();
     // The budget is wall time; the injected clock drives the row's act (it may be faked ahead).
     const budgetClock: Clock = input.budgetClock ? { now: input.budgetClock } : ports.clock;
-    const openRuns = await reconciliationSweepRunModel.findOpenRunsWithLease();
-    for (const openRun of openRuns) {
-        if (openRun.leaseLive) {
-            return skippedSummary({
-                skipped: 'lease_held',
-                startedAt,
-                finishedAt: ports.clock.now()
-            });
-        }
-        await reconciliationSweepRunModel.closeAbandoned({ id: openRun.id as string });
-    }
-    const todayCycle = input.newCycle
-        ? null
-        : await reconciliationSweepRunModel.findLatestCycleOfToday();
-    const previousSlices = todayCycle?.slices ?? [];
-    const cycleDone = previousSlices.some(
-        (slice) => slice.outcome === 'CYCLE_DONE' && slice.rowsComplete === true
-    );
-    let run: Awaited<ReturnType<typeof reconciliationSweepRunModel.openSlice>>;
-    try {
-        run = await reconciliationSweepRunModel.openSlice({
-            correlationId,
-            ...(todayCycle ? { cycleId: todayCycle.cycleId } : {})
-        });
-    } catch (error) {
-        // The unique index allows one open slice: losing the race means a live holder, before any work.
-        if (error instanceof ReconciliationSweepSliceAlreadyOpenError)
-            return skippedSummary({
-                skipped: 'lease_held',
-                startedAt,
-                finishedAt: ports.clock.now()
-            });
-        throw error;
-    }
-    const cycleId = run.cycleId ?? run.id;
+    const cycleMode = input.mode === 'cycle';
+    const opened = cycleMode
+        ? await openCycleSlice({ correlationId, newCycle: input.newCycle, startedAt, ports })
+        : {
+              run: await reconciliationSweepRunModel.open({ correlationId, startedAt }),
+              summary: undefined
+          };
+    if (opened.summary) return opened.summary;
+    const run = opened.run;
+    const cycleId = cycleMode ? (run.cycleId ?? run.id) : '';
     const sliceIndex = run.sliceIndex ?? 0;
-    if (cycleDone) {
-        await reconciliationSweepRunModel.closeSlice({
-            id: run.id,
-            outcome: 'SKIPPED_CYCLE_DONE',
-            phase: 'DONE',
-            rowsComplete: true,
-            passesCompleted: run.passesCompleted ?? [],
-            failedSubscriptionIds: [],
-            rowsRead: 0,
-            rowsFailed: 0
-        });
-        const finishedAt = ports.clock.now();
-        return skippedSummary({
-            skipped: 'cycle_done',
-            runId: run.id,
-            cycleId,
-            sliceIndex,
-            startedAt,
-            finishedAt,
-            outcome: 'SKIPPED_CYCLE_DONE'
-        });
-    }
     const failures: ReconciliationSweepFailure[] = [];
     let rowsRead = 0;
     let rowsFailed = 0;
@@ -201,23 +120,20 @@ export async function runReconciliationSweep(
         outcome: reconciliationSweepRuns.outcome
     };
     const heartbeat = async (): Promise<void> => {
-        const ok = await extendRunLease({
-            lease,
-            id: run.id
-        });
-        if (!ok) throw new SweepLeaseLostError();
+        if (cycleMode) {
+            const ok = await extendRunLease({ lease, id: run.id });
+            if (!ok) throw new SweepLeaseLostError();
+        }
         if (input.signal?.aborted || isBudgetReached(input.deadlineAt, budgetClock))
             throw new SweepTimedOutError();
     };
     const completePass = async (pass: ReconciliationSweepPass): Promise<void> => {
         if (passesCompleted.includes(pass)) return;
-        const next = [...passesCompleted, pass];
-        const ok = await extendRunLease({
-            lease,
-            id: run.id,
-            set: { passesCompleted: next }
-        });
-        if (!ok) throw new SweepLeaseLostError();
+        if (cycleMode) {
+            const next = [...passesCompleted, pass];
+            const ok = await extendRunLease({ lease, id: run.id, set: { passesCompleted: next } });
+            if (!ok) throw new SweepLeaseLostError();
+        }
         passesCompleted.push(pass);
     };
     const retryPorts = ports.cancellationRetry
@@ -275,7 +191,7 @@ export async function runReconciliationSweep(
     try {
         for (;;) {
             const page = await reconciliationInventoryModel.listSweepInventoryPage({
-                ...(cycleId ? { cycleId } : { afterSubscriptionId }),
+                ...(cycleMode ? { cycleId } : { afterSubscriptionId }),
                 limit: pageSize
             });
             if (page.length === 0) {
@@ -352,15 +268,19 @@ export async function runReconciliationSweep(
                         'Reconciliation row failed'
                     );
                 }
-                const stamped = await reconciliationSweepRunModel.stampSweptRow({
-                    runId: run.id,
-                    subscriptionId: subscription.id,
-                    counters: { rowsRead: rowRead ? 1 : 0, rowsFailed: rowFailed ? 1 : 0 }
-                });
-                if (!stamped.stamped) throw new SweepLeaseLostError();
+                if (cycleMode) {
+                    const stamped = await reconciliationSweepRunModel.stampSweptRow({
+                        runId: run.id,
+                        subscriptionId: subscription.id,
+                        counters: { rowsRead: rowRead ? 1 : 0, rowsFailed: rowFailed ? 1 : 0 }
+                    });
+                    if (!stamped.stamped) throw new SweepLeaseLostError();
+                }
             }
             if (input.signal?.aborted) stoppedOnBudget = true;
             if (stoppedOnBudget || passReserveReached) break;
+            // Single-run mode keeps the keyset cursor; cycle mode re-queries the unswept set.
+            afterSubscriptionId = page.at(-1)?.subscription.id;
             await heartbeat();
         }
 
@@ -409,23 +329,32 @@ export async function runReconciliationSweep(
     const finishedAt = ports.clock.now();
     const outcome = stoppedOnBudget ? 'TIMED_OUT' : 'CYCLE_DONE';
     phase = stoppedOnBudget ? phase : 'DONE';
-    const closedRun = await reconciliationSweepRunModel.closeSlice({
-        id: run.id,
-        outcome,
-        phase,
-        rowsComplete,
-        passesCompleted,
-        failedSubscriptionIds,
-        rowsRead,
-        rowsFailed
-    });
-    if (!closedRun) return await leaseLostSummary();
+    if (cycleMode) {
+        const closedRun = await reconciliationSweepRunModel.closeSlice({
+            id: run.id,
+            outcome,
+            phase,
+            rowsComplete,
+            passesCompleted,
+            failedSubscriptionIds,
+            rowsRead,
+            rowsFailed
+        });
+        if (!closedRun) return await leaseLostSummary();
+    } else {
+        await reconciliationSweepRunModel.close({
+            id: run.id,
+            finishedAt,
+            rowsRead,
+            rowsFailed
+        });
+    }
     const complete =
         !stoppedOnBudget &&
         rowsComplete &&
         isReconciliationSweepRunComplete({ finishedAt, rowsFailed });
     const cycleSummary =
-        outcome === 'CYCLE_DONE'
+        cycleMode && outcome === 'CYCLE_DONE'
             ? await reconciliationSweepRunModel.sumCycle({ cycleId })
             : undefined;
     const cycle = cycleSummary
@@ -438,8 +367,9 @@ export async function runReconciliationSweep(
               failedSubscriptionIds: cycleSummary.failedSubscriptionIds
           }
         : undefined;
-    const cycleCanPing =
-        outcome === 'CYCLE_DONE' && rowsComplete && Number(cycleSummary?.rowsFailed ?? 0) === 0;
+    const cycleCanPing = cycleMode
+        ? outcome === 'CYCLE_DONE' && rowsComplete && Number(cycleSummary?.rowsFailed ?? 0) === 0
+        : complete;
     let pinged = false;
     if (cycleCanPing && ports.livenessPing) {
         try {

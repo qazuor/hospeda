@@ -31,7 +31,7 @@ describe('TEST:B11:24 reconciliation sweep run and liveness ping', () => {
         const { fake } = createReconciliationFake();
         const read = vi.spyOn(fake, 'readAuthorization');
         const summary = await runReconciliationSweep(
-            { newCycle: true },
+            { mode: 'cycle', newCycle: true },
             { provider: fake, clock: reconciliationClock }
         );
         expect(summary.skipped).toBe('lease_held');
@@ -46,12 +46,15 @@ describe('TEST:B11:24 reconciliation sweep run and liveness ping', () => {
         const { fake } = createReconciliationFake();
         const read = vi.spyOn(fake, 'readAuthorization');
         const first = await withSeededReconciliationInventory(() =>
-            runReconciliationSweep({}, { provider: fake, clock: reconciliationClock })
+            runReconciliationSweep(
+                { mode: 'cycle' },
+                { provider: fake, clock: reconciliationClock }
+            )
         );
         expect(first.outcome).toBe('CYCLE_DONE');
 
         const second = await runReconciliationSweep(
-            {},
+            { mode: 'cycle' },
             { provider: fake, clock: reconciliationClock }
         );
         expect(second.skipped).toBe('cycle_done');
@@ -69,6 +72,7 @@ describe('TEST:B11:24 reconciliation sweep run and liveness ping', () => {
         const summary = await withSeededReconciliationInventory(() =>
             runReconciliationSweep(
                 {
+                    mode: 'cycle',
                     lastSlot: true,
                     deadlineAt: new Date(reconciliationClock.now().getTime() + 14 * 60_000)
                 },
@@ -103,13 +107,13 @@ describe('TEST:B11:24 reconciliation sweep run and liveness ping', () => {
         });
 
         const first = await withSeededReconciliationInventory(() =>
-            runReconciliationSweep({ deadlineAt }, { provider: fake, clock })
+            runReconciliationSweep({ mode: 'cycle', deadlineAt }, { provider: fake, clock })
         );
         expect(first).toMatchObject({ outcome: 'TIMED_OUT', stoppedOnBudget: true, rowsRead: 1 });
         expect(read).toHaveBeenCalledTimes(1);
 
         const second = await withSeededReconciliationInventory(() =>
-            runReconciliationSweep({}, { provider: fake, clock })
+            runReconciliationSweep({ mode: 'cycle' }, { provider: fake, clock })
         );
         expect(second).toMatchObject({ outcome: 'CYCLE_DONE', rowsComplete: true, rowsRead: 1 });
         expect(read).toHaveBeenCalledTimes(2);
@@ -145,7 +149,7 @@ describe('TEST:B11:24 reconciliation sweep run and liveness ping', () => {
         const ping = { ping: vi.fn() };
         const summary = await withSeededReconciliationInventory(() =>
             runReconciliationSweep(
-                { correlationId },
+                { mode: 'cycle', correlationId },
                 { provider: fake, clock: reconciliationClock, livenessPing: ping }
             )
         );
@@ -183,7 +187,7 @@ describe('TEST:B11:24 reconciliation sweep run and liveness ping', () => {
         const ping = { ping: vi.fn() };
         const summary = await withSeededReconciliationInventory(() =>
             runReconciliationSweep(
-                { correlationId, signal: controller.signal },
+                { mode: 'cycle', correlationId, signal: controller.signal },
                 { provider: fake, clock: reconciliationClock, livenessPing: ping }
             )
         );
@@ -207,7 +211,7 @@ describe('TEST:B11:24 reconciliation sweep run and liveness ping', () => {
         controller.abort();
         const summary = await withSeededReconciliationInventory(() =>
             runReconciliationSweep(
-                { correlationId: crypto.randomUUID(), signal: controller.signal },
+                { mode: 'cycle', correlationId: crypto.randomUUID(), signal: controller.signal },
                 {
                     provider: fake,
                     clock: reconciliationClock,
@@ -237,7 +241,7 @@ describe('TEST:B11:24 reconciliation sweep run and liveness ping', () => {
         };
         const summary = await withSeededReconciliationInventory(() =>
             runReconciliationSweep(
-                { correlationId },
+                { mode: 'cycle', correlationId },
                 { provider: fake, clock: reconciliationClock, livenessPing: ping }
             )
         );
@@ -263,7 +267,7 @@ describe('TEST:B11:24 reconciliation sweep run and liveness ping', () => {
             .mockRejectedValueOnce(new Error('page failed'));
         await expect(
             runReconciliationSweep(
-                { correlationId },
+                { mode: 'cycle', correlationId },
                 {
                     provider: createReconciliationFake().fake,
                     clock: reconciliationClock,
@@ -287,7 +291,7 @@ describe('TEST:B11:24 reconciliation sweep run and liveness ping', () => {
         const ping = { ping: vi.fn().mockRejectedValue(new Error('monitor down')) };
         const first = await withSeededReconciliationInventory(() =>
             runReconciliationSweep(
-                { correlationId },
+                { mode: 'cycle', correlationId },
                 { provider: fake, clock: reconciliationClock, livenessPing: ping }
             )
         );
@@ -295,7 +299,7 @@ describe('TEST:B11:24 reconciliation sweep run and liveness ping', () => {
         const noPingCorrelationId = crypto.randomUUID();
         const second = await withSeededReconciliationInventory(() =>
             runReconciliationSweep(
-                { correlationId: noPingCorrelationId },
+                { mode: 'cycle', correlationId: noPingCorrelationId },
                 { provider: fake, clock: reconciliationClock }
             )
         );

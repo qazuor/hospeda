@@ -47,7 +47,7 @@ describe('TEST:B11:24 reconciliation sweep cycle matrix', () => {
         };
         const result = await withSeededReconciliationInventory(() =>
             runReconciliationSweep(
-                {},
+                { mode: 'cycle' },
                 { provider: fake, clock: reconciliationClock, rowChecks: [closeAndFail] }
             )
         );
@@ -103,7 +103,10 @@ describe('TEST:B11:24 reconciliation sweep cycle matrix', () => {
             return result;
         });
         const result = await withSeededReconciliationInventory(() =>
-            runReconciliationSweep({}, { provider: fake, clock: reconciliationClock })
+            runReconciliationSweep(
+                { mode: 'cycle' },
+                { provider: fake, clock: reconciliationClock }
+            )
         );
         expect(result.leaseLost).toBe(true);
         expect(fake.readAuthorization).toHaveBeenCalledTimes(1);
@@ -129,7 +132,10 @@ describe('TEST:B11:24 reconciliation sweep cycle matrix', () => {
             [open.id]
         );
         const result = await withSeededReconciliationInventory(() =>
-            runReconciliationSweep({}, { provider: fake, clock: reconciliationClock })
+            runReconciliationSweep(
+                { mode: 'cycle' },
+                { provider: fake, clock: reconciliationClock }
+            )
         );
         expect(result.outcome).toBe('CYCLE_DONE');
         const abandoned = await reconciliationSweepRunModel.findById({ id: open.id });
@@ -164,7 +170,7 @@ describe('TEST:B11:24 reconciliation sweep cycle matrix', () => {
         });
         const first = await withSeededReconciliationInventory(() =>
             runReconciliationSweep(
-                { deadlineAt: new Date(now.getTime() + 1) },
+                { mode: 'cycle', deadlineAt: new Date(now.getTime() + 1) },
                 {
                     provider: fake,
                     clock
@@ -174,7 +180,7 @@ describe('TEST:B11:24 reconciliation sweep cycle matrix', () => {
         expect(first.outcome).toBe('TIMED_OUT');
         const ping = { ping: vi.fn() };
         const last = await withSeededReconciliationInventory(() =>
-            runReconciliationSweep({}, { provider: fake, clock, livenessPing: ping })
+            runReconciliationSweep({ mode: 'cycle' }, { provider: fake, clock, livenessPing: ping })
         );
         expect(last.outcome).toBe('CYCLE_DONE');
         expect(last.cycle?.failedSubscriptionIds).toContain(seeded[0]!.subscription.id);
@@ -204,7 +210,12 @@ describe('TEST:B11:24 reconciliation sweep cycle matrix', () => {
         });
         const first = await withSeededReconciliationInventory(() =>
             runReconciliationSweep(
-                { pageSize: 1, lastSlot: true, deadlineAt: new Date(now.getTime() + 1) },
+                {
+                    mode: 'cycle',
+                    pageSize: 1,
+                    lastSlot: true,
+                    deadlineAt: new Date(now.getTime() + 1)
+                },
                 {
                     provider: fake,
                     clock
@@ -215,7 +226,10 @@ describe('TEST:B11:24 reconciliation sweep cycle matrix', () => {
         const stored = await reconciliationSweepRunModel.findById({ id: first.runId });
         expect(stored?.rowsComplete).toBe(false);
         const next = await withSeededReconciliationInventory(() =>
-            runReconciliationSweep({ newCycle: true, pageSize: 1 }, { provider: fake, clock })
+            runReconciliationSweep(
+                { mode: 'cycle', newCycle: true, pageSize: 1 },
+                { provider: fake, clock }
+            )
         );
         expect(next.cycleId).not.toBe(first.cycleId);
         expect(seeded).toHaveLength(3);

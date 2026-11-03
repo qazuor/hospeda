@@ -22,6 +22,12 @@ import type { ZeroCallChecksPorts, ZeroCallChecksSummary } from './zero-call-che
 
 /** Inputs accepted by one reconciliation sweep slice. */
 export interface ReconciliationSweepInput {
+    /**
+     * `cycle` runs one leased slice of the resumable nightly cycle (what the cron job uses).
+     * The default `single` keeps the pre-cycle behavior: one unsliced run over the whole
+     * inventory with no lease and no `last_swept_at` stamping.
+     */
+    readonly mode?: 'cycle' | 'single';
     readonly pageSize?: number;
     readonly correlationId?: string;
     readonly signal?: AbortSignal;
