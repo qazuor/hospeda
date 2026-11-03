@@ -31,6 +31,12 @@ export interface ReconciliationSweepInput {
     readonly lastSlot?: boolean;
     /** Cooperative budget deadline evaluated using the injected clock. */
     readonly deadlineAt?: Date;
+    /**
+     * Clock the budget (`deadlineAt`, pass reserve) is measured on. Defaults to the injected
+     * clock; the job passes wall time because its deadline is wall time while the injected
+     * clock may be faked ahead (e2e).
+     */
+    readonly budgetClock?: () => Date;
 }
 
 /** Ports used by a reconciliation sweep and its ordered post-row passes. */

@@ -102,6 +102,8 @@ export async function runReconciliationSweep(
     const pageSize = input.pageSize ?? 100;
     const correlationId = input.correlationId ?? randomUUID();
     const startedAt = ports.clock.now();
+    // The budget is wall time; the injected clock drives the row's act (it may be faked ahead).
+    const budgetClock: Clock = input.budgetClock ? { now: input.budgetClock } : ports.clock;
     const openRuns = await reconciliationSweepRunModel.findOpenRunsWithLease();
     for (const openRun of openRuns) {
         if (openRun.leaseLive) {
@@ -204,7 +206,7 @@ export async function runReconciliationSweep(
             id: run.id
         });
         if (!ok) throw new SweepLeaseLostError();
-        if (input.signal?.aborted || isBudgetReached(input.deadlineAt, ports.clock))
+        if (input.signal?.aborted || isBudgetReached(input.deadlineAt, budgetClock))
             throw new SweepTimedOutError();
     };
     const completePass = async (pass: ReconciliationSweepPass): Promise<void> => {
@@ -281,14 +283,14 @@ export async function runReconciliationSweep(
                 break;
             }
             for (const { subscription, providerLink } of page) {
-                if (input.signal?.aborted || isBudgetReached(input.deadlineAt, ports.clock)) {
+                if (input.signal?.aborted || isBudgetReached(input.deadlineAt, budgetClock)) {
                     stoppedOnBudget = true;
                     break;
                 }
                 if (
                     input.lastSlot &&
                     input.deadlineAt !== undefined &&
-                    input.deadlineAt.getTime() - ports.clock.now().getTime() < SWEEP_PASS_RESERVE_MS
+                    input.deadlineAt.getTime() - budgetClock.now().getTime() < SWEEP_PASS_RESERVE_MS
                 ) {
                     passReserveReached = true;
                     break;
@@ -368,6 +370,7 @@ export async function runReconciliationSweep(
             pageSize,
             signal: input.signal,
             deadlineAt: input.deadlineAt,
+            budgetClock,
             clock: ports.clock,
             provider: ports.provider,
             ports,

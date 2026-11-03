@@ -78,3 +78,27 @@ describe('AC-19 the cycle covers every row exactly once across slices', () => {
         });
     }
 });
+
+describe('the budget is measured on wall time, not on the injected clock', () => {
+    it('sweeps normally when the injected clock is ten days ahead of a real deadline', async () => {
+        const clock = {
+            now: () => new Date(Date.now() + 10 * 24 * 3_600_000)
+        };
+        const { fake } = createReconciliationFake(clock);
+        await seedSubscription({ status: 'ACTIVE', withLink: true, fake });
+        const read = vi.spyOn(fake, 'readAuthorization');
+        const result = await withSeededReconciliationInventory(() =>
+            runReconciliationSweep(
+                {
+                    lastSlot: true,
+                    deadlineAt: new Date(Date.now() + 45 * 60_000),
+                    budgetClock: () => new Date()
+                },
+                { provider: fake, clock }
+            )
+        );
+        expect(result.outcome).toBe('CYCLE_DONE');
+        expect(result.rowsComplete).toBe(true);
+        expect(read).toHaveBeenCalledTimes(1);
+    });
+});

@@ -55,6 +55,7 @@ export async function runSweepPostLoop(input: {
     readonly pageSize: number;
     readonly signal?: AbortSignal;
     readonly deadlineAt?: Date;
+    readonly budgetClock: Clock;
     readonly clock: Clock;
     readonly provider: PaymentProvider;
     readonly ports: ReconciliationSweepPorts;
@@ -82,7 +83,7 @@ export async function runSweepPostLoop(input: {
     const passBlocked = (pass: ReconciliationSweepPass, configured: boolean): boolean => {
         if (
             input.signal?.aborted ||
-            (input.deadlineAt !== undefined && input.clock.now() >= input.deadlineAt)
+            (input.deadlineAt !== undefined && input.budgetClock.now() >= input.deadlineAt)
         )
             stoppedOnBudget = true;
         if (stoppedOnBudget && configured) skippedPasses.push(pass);

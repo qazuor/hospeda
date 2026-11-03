@@ -87,7 +87,8 @@ export const billingReconciliationSweepJob: CronJobDefinition = {
                     signal: ctx.signal,
                     newCycle: ctx.newCycle,
                     lastSlot,
-                    deadlineAt: ctx.deadlineAt
+                    deadlineAt: ctx.deadlineAt,
+                    budgetClock: () => new Date()
                 },
                 {
                     provider,
