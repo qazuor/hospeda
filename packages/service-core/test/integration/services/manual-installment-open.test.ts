@@ -6,12 +6,14 @@ import {
     inArray,
     manualPaymentModel,
     manualPayments,
+    planCatalogModel,
     plans,
     planVersions,
     subscriptions,
     userRole,
     users
 } from '@repo/db';
+import { createPlanCatalogInverse } from '@repo/verticals';
 import { afterAll, describe, expect, it, vi } from 'vitest';
 import { openDueManualInstallments } from '../../../src/services/billing/subscription/open-manual-installment.service';
 import { closeServiceTestPool, getServiceTestDb } from './helpers';
@@ -192,6 +194,8 @@ describe('TEST:B5:7 MP5 clock', () => {
             proofRef: null
         });
         expect(current.status).toBe('GRACE_PERIOD');
+        expect(current.graceStartedAt).toEqual(now);
+        expect(current.graceEndsAt).toEqual(new Date(now.getTime() + 9 * DAY_MS));
         expect(current.graceEndsAt.getTime() - current.graceStartedAt.getTime()).toBe(9 * DAY_MS);
         expect(mail).toHaveLength(2);
         expect(mail.map((row) => row.recipientUserId).sort()).toEqual([...staff.ids].sort());
@@ -206,18 +210,97 @@ describe('TEST:B5:7 MP5 clock', () => {
             });
     });
 
-    it('is idempotent across serial and parallel clock runs', async () => {
-        const { subscription } = await seed();
+    it('serializes two first openings, then remains idempotent on retry', async () => {
+        const { subscription, version } = await seed();
         const staff = await admins();
-        const run = () => openDueManualInstallments({ pageSize: 1000 }, ports(staff.recipients));
-        await run();
-        await run();
+        let arrivals = 0;
+        let release!: () => void;
+        const bothReady = new Promise<void>((resolve) => {
+            release = resolve;
+        });
+        const run = () =>
+            openDueManualInstallments(
+                { pageSize: 1000 },
+                {
+                    ...ports(staff.recipients),
+                    planPolicy: async ({ planVersionId }) => {
+                        if (planVersionId === version.id) {
+                            arrivals++;
+                            if (arrivals === 2) release();
+                            await bothReady;
+                        }
+                        return { graceDays: 9, allowsPause: false, current: true, sellable: true };
+                    }
+                }
+            );
         await Promise.all([run(), run()]);
+        await run();
         const rows = await installments(subscription.id);
         const opened = rows.find((row) => row.periodStart.getTime() === p1.getTime());
         if (!opened) throw new Error('MP5 fixture did not open');
         expect(rows).toHaveLength(2);
         expect(await notices(opened.id, staff.ids)).toHaveLength(2);
+    });
+
+    it('emits one GRACE_STARTED only after the committed row is visible', async () => {
+        const { subscription } = await seed();
+        const staff = await admins();
+        const visible: Promise<unknown>[] = [];
+        const facts: unknown[] = [];
+        const run = () =>
+            openDueManualInstallments(
+                { pageSize: 1000 },
+                {
+                    ...ports(staff.recipients),
+                    billingFacts: {
+                        emit(fact) {
+                            if (fact.subscriptionId !== subscription.id) return;
+                            facts.push(fact);
+                            visible.push(
+                                getServiceTestDb()
+                                    .select({ status: subscriptions.status })
+                                    .from(subscriptions)
+                                    .where(eq(subscriptions.id, fact.subscriptionId))
+                                    .then(([row]) => row?.status)
+                            );
+                        }
+                    }
+                }
+            );
+        await run();
+        await run();
+        expect(facts).toHaveLength(1);
+        expect(facts[0]).toMatchObject({
+            kind: 'GRACE_STARTED',
+            subscriptionId: subscription.id,
+            actorKind: 'SYSTEM',
+            graceStartedAt: now,
+            graceEndsAt: new Date(now.getTime() + 9 * DAY_MS),
+            daysOfGrace: 9
+        });
+        expect(await Promise.all(visible)).toEqual(['GRACE_PERIOD']);
+    });
+
+    it('uses the published catalog version grace days through production planPolicy', async () => {
+        const { subscription, version } = await seed();
+        const staff = await admins();
+        const realPolicy = createPlanCatalogInverse({ reader: planCatalogModel }).planPolicy;
+        const policy = await realPolicy({ planVersionId: version.id });
+        const result = await openDueManualInstallments(
+            { pageSize: 1000 },
+            {
+                ...ports(staff.recipients),
+                planPolicy: realPolicy
+            }
+        );
+        const [current] = await getServiceTestDb()
+            .select()
+            .from(subscriptions)
+            .where(eq(subscriptions.id, subscription.id));
+        expect(result.opened).toBeGreaterThanOrEqual(1);
+        expect(current?.graceStartedAt).toEqual(now);
+        expect(current?.graceEndsAt).toEqual(new Date(now.getTime() + policy.graceDays * DAY_MS));
+        expect(policy.graceDays).toBe(version.graceDays);
     });
 
     it.each([
