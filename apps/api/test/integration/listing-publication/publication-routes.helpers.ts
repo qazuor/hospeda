@@ -453,6 +453,7 @@ export async function createVerticalListing(args: {
             {
                 ...common,
                 type: 'RESTAURANT',
+                businessLines: ['food'],
                 priceRange: 'MID',
                 openingHours: {
                     timezone: 'America/Argentina/Buenos_Aires',
