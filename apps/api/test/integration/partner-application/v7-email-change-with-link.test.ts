@@ -65,7 +65,7 @@ describe('email changes for unverified Partner owners', () => {
             headers: actorHeaders({ id: user.id, role: RoleEnum.HOST }),
             body: JSON.stringify({ email: 'otro@example.test', displayName: 'X' })
         });
-        expect([200, 400]).toContain(response.status);
+        expect(response.status).toBe(400);
         const saved = await getDb().execute(
             sql`SELECT email FROM users WHERE id = ${user.id}::uuid`
         );

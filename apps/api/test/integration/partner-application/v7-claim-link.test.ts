@@ -174,12 +174,29 @@ describe('Partner link claim route', () => {
         partnerIds.push(fixture.partnerId);
         applicationIds.push(fixture.applicationId);
         expect((await claim(b.id, fixture.partnerId, secret)).status).toBe(200);
+        const sameActor = await claim(b.id, fixture.partnerId, secret);
+        expect(sameActor.status).toBe(409);
+        expect((await sameActor.json()).error.reason).toBe('PARTNER_ALREADY_CLAIMED');
         const repeated = await claim(c.id, fixture.partnerId, secret);
         expect(repeated.status).toBe(409);
         const body = await repeated.json();
         expect(body.error.reason).toBe('PARTNER_ALREADY_CLAIMED');
         expect(JSON.stringify(body)).not.toContain(b.id);
         expect(JSON.stringify(body)).not.toContain(b.email);
+        expect(
+            (
+                await getDb().execute(
+                    sql`SELECT count(*)::integer AS count FROM domain_event WHERE entity_id = ${fixture.partnerId} AND event_type = 'partner.claimed'`
+                )
+            ).rows
+        ).toEqual([{ count: 1 }]);
+        expect(
+            (
+                await getDb().execute(
+                    sql`SELECT role FROM user_role WHERE user_id = ${c.id}::uuid AND role = 'PARTNER_OWNER'`
+                )
+            ).rows
+        ).toEqual([]);
         expect((await claim(c.id, fixture.partnerId, `wrong-${randomUUID()}`)).status).toBe(404);
     });
 
