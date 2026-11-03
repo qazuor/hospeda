@@ -138,6 +138,7 @@ export async function closeSuccessionWrites(
         await clearSuccessorLink({
             predecessorId: predecessorSubscriptionId,
             successorId: successor.id,
+            successorStatus: successor.status,
             now,
             tx: input.tx
         });

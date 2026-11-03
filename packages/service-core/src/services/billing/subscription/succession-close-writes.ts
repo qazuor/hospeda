@@ -52,12 +52,14 @@ export async function clearSuccessorLink(input: {
     readonly predecessorId: string;
     readonly successorId: string;
     readonly now: Date;
+    readonly successorStatus: string;
     readonly tx: DrizzleClient;
 }): Promise<void> {
-    const value = linksSchema.parse({
+    const value = linksSchema.extend({ successorStatus: z.string().min(1) }).parse({
         predecessorId: input.predecessorId,
         successorId: input.successorId,
-        now: input.now
+        now: input.now,
+        successorStatus: input.successorStatus
     });
     const rows = await input.tx
         .update(subscriptions)
@@ -65,7 +67,8 @@ export async function clearSuccessorLink(input: {
         .where(
             and(
                 eq(subscriptions.id, value.successorId),
-                eq(subscriptions.succeedsId, value.predecessorId)
+                eq(subscriptions.succeedsId, value.predecessorId),
+                eq(subscriptions.status, value.successorStatus)
             )
         )
         .returning({ id: subscriptions.id });
