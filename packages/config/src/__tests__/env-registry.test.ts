@@ -306,8 +306,12 @@ const REGISTRY: readonly EnvVarDefinition[] = ENV_REGISTRY;
  * HOSPEDA_HEALTHCHECKS_SLUG_PREFIX (monitoring category, api only) — free
  * Healthchecks.io cron pings for the three cutover jobs (HOS-1742). Both are
  * optional; the ping is a no-op when either is absent. 274 + 2 = 276.
+ *
+ * +1 = HOSPEDA_MERCADO_PAGO_GOVERNOR_MODE (billing category, api only) — the
+ * Mercado Pago traffic governor's kill switch and rollout mode (HOS-1999).
+ * 276 + 1 = 277.
  */
-const EXPECTED_VAR_COUNT = 276;
+const EXPECTED_VAR_COUNT = 277;
 
 /** Valid type values for an EnvVarDefinition. */
 const VALID_TYPES = ['string', 'url', 'number', 'boolean', 'enum'] as const;
