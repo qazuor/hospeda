@@ -260,6 +260,11 @@ const ROUTE_BINDINGS: Readonly<Record<AdministrativeAction, BoundEntry | Unbound
                 kind: 'required',
                 file: 'apps/api/src/routes/billing-refund/admin/confirm.ts',
                 route: 'adminConfirmRefundRoute'
+            },
+            {
+                kind: 'required',
+                file: 'apps/api/src/routes/billing-refund/admin/decline.ts',
+                route: 'adminDeclineRefundRoute'
             }
         ]
     },
@@ -461,19 +466,16 @@ describe('TEST:1696:5 AC:1696:5 / HOS-1689 — each administrative action row ag
         expect(Object.keys(ROUTE_BINDINGS)).toEqual(ADMINISTRATIVE_ACTIONS);
         expect(Object.keys(ROUTE_BINDINGS)).toHaveLength(25);
     });
-
-    it('b. checks exactly 38 bindings across 16 bound rows', () => {
+    it('b. checks exactly 39 bindings across 16 bound rows', () => {
         expect(BOUND_ACTIONS).toHaveLength(16);
         const total = BOUND_ACTIONS.reduce((count, action) => count + bindingsOf(action).length, 0);
-        expect(total).toBe(38);
+        expect(total).toBe(39);
     });
-
     it.each(
         BOUND_ACTIONS.filter((action) => !(action in KNOWN_MISALIGNED))
     )('c. %s matches its route gate', (action) => {
         expect(collectDifferences(action)).toEqual([]);
     });
-
     it.each(
         ADMINISTRATIVE_ACTIONS.filter((action) => action in KNOWN_MISALIGNED)
     )('d. %s is still misaligned — remove its KNOWN_MISALIGNED entry only once it agrees', (action) => {
