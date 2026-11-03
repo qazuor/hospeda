@@ -181,7 +181,15 @@ const ROUTE_BINDINGS: Readonly<Record<AdministrativeAction, BoundEntry | Unbound
         ]
     },
     ACC_4: { unbound: 'B7 builds it' },
-    ACC_5: { unbound: 'legacy HOS-278 alliance approval; V7 (HOS-1484) builds it' },
+    ACC_5: {
+        bindings: [
+            {
+                kind: 'required',
+                file: 'apps/api/src/routes/partner-application/admin/cancel-wait.ts',
+                route: 'adminCancelPartnerApplicationWaitRoute'
+            }
+        ]
+    },
     ACC_6: { unbound: 'legacy HOS-278 partner routes; V7 (HOS-1489) builds it' },
     ACC_7: {
         bindings: [
@@ -441,10 +449,10 @@ describe('TEST:1696:5 AC:1696:5 / HOS-1689 — each administrative action row ag
         expect(Object.keys(ROUTE_BINDINGS)).toHaveLength(25);
     });
 
-    it('b. checks exactly 35 bindings across 14 bound rows', () => {
-        expect(BOUND_ACTIONS).toHaveLength(14);
+    it('b. checks exactly 36 bindings across 15 bound rows', () => {
+        expect(BOUND_ACTIONS).toHaveLength(15);
         const total = BOUND_ACTIONS.reduce((count, action) => count + bindingsOf(action).length, 0);
-        expect(total).toBe(35);
+        expect(total).toBe(36);
     });
 
     it.each(

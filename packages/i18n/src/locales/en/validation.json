@@ -5129,5 +5129,15 @@
         "windowDays": {
             "unsupported": "The requested day window is not available"
         }
+    },
+    "partnerApplication": {
+        "email": {
+            "invalid": "The email address is invalid.",
+            "max": "The email address cannot exceed 320 characters."
+        },
+        "reason": {
+            "required": "Enter the reason for cancelling the wait.",
+            "max": "The reason cannot exceed 2000 characters."
+        }
     }
 }
