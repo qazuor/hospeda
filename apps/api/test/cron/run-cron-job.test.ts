@@ -138,7 +138,8 @@ describe('runCronJob lifecycle', () => {
         });
         if (!decision.started) throw new Error('expected an acquired lock');
         const result = await decision.completion;
-        expect(observed?.deadlineAt.getTime() - observed?.startedAt.getTime()).toBe(90);
+        if (!observed) throw new Error('expected the handler to receive a run context');
+        expect(observed.deadlineAt.getTime() - observed.startedAt.getTime()).toBe(90);
         expect(result.details?.runId).toBe(decision.runId);
         expect(mocks.record).toHaveBeenCalledWith(
             expect.objectContaining({
