@@ -1,7 +1,10 @@
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
-import { BUSINESS_LINE_RULES, BUSINESS_LINES } from '@repo/schemas';
 import { describe, expect, it } from 'vitest';
+import {
+    BUSINESS_LINE_RULES,
+    BUSINESS_LINES
+} from '../../../schemas/src/catalog/business-lines.js';
 
 const root = process.cwd().endsWith('/packages/db') ? join(process.cwd(), '../..') : process.cwd();
 const migration = readFileSync(
