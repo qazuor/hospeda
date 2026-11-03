@@ -37,7 +37,10 @@ async function makeListing(args: {
             args.tx
         );
     if (args.vertical === 'venue')
-        return new VenueModel().create({ ...base, type: 'RESTAURANT' } as Partial<Venue>, args.tx);
+        return new VenueModel().create(
+            { ...base, type: 'RESTAURANT', businessLines: ['food'] } as Partial<Venue>,
+            args.tx
+        );
     return new ExperienceModel().create(
         { ...base, type: 'EXCURSION' } as Partial<Experience>,
         args.tx

@@ -75,7 +75,7 @@ describe('AC:V6:30 a media row marked for remote deletion is never shown', () =>
                 tx
             );
             const venue = await new VenueModel().create(
-                { ...fixture(), type: 'RESTAURANT' } as Partial<Venue>,
+                { ...fixture(), type: 'RESTAURANT', businessLines: ['food'] } as Partial<Venue>,
                 tx
             );
             const experience = await new ExperienceModel().create(

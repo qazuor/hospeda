@@ -76,7 +76,7 @@ describe('TEST:2.3:2 AC:2:4 business_lines PostgreSQL constraints', () => {
             const { ownerId, destinationId } = await setup(tx);
             const result = await tx.execute(
                 sql.raw(
-                    `INSERT INTO accommodations (slug,name,summary,description,type,owner_id,destination_id) VALUES ('bl-${crypto.randomUUID()}','n','s','d','CABIN','${ownerId}','${destinationId}') RETURNING business_lines`
+                    `INSERT INTO accommodations (slug,name,summary,description,type,owner_id,destination_id,publication_status,inactive_since,deadlines_version) VALUES ('bl-${crypto.randomUUID()}','n','s','d','CABIN','${ownerId}','${destinationId}','DRAFT',now(),1) RETURNING business_lines`
                 )
             );
             expect(result.rows[0]?.business_lines).toEqual(['standard']);
