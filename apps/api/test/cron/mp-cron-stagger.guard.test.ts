@@ -85,6 +85,11 @@ describe('Mercado Pago cron stagger guard (AC-17)', () => {
         expect(report.conflicts, formatMpCronStaggerFailure(report)).toEqual([]);
     });
 
+    it('accepts comma-separated scheduled hours while preserving minute ownership checks', () => {
+        expect(expandMinutes('10 2,3,4 * * *')).toEqual([10]);
+        expect(CronExpressionParser.parse('10 2,3,4 * * *').fields.hour.values).toEqual([2, 3, 4]);
+    });
+
     it('detects pending jobs when a manifest addition omits exclusivity', () => {
         const violations = findMpCronViolations({
             jobs: [

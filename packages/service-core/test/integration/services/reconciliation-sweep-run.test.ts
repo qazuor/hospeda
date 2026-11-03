@@ -1,8 +1,10 @@
 import {
     eq,
+    inArray,
     isReconciliationSweepRunComplete,
     reconciliationSweepRunModel,
-    reconciliationSweepRuns
+    reconciliationSweepRuns,
+    subscriptions
 } from '@repo/db';
 import { afterAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { runReconciliationSweep } from '../../../src/services/billing/reconciliation/sweep/reconciliation-sweep.service.js';
@@ -16,9 +18,121 @@ import {
 } from './reconciliation-sweep-fixtures.js';
 
 afterAll(closeServiceTestPool);
-beforeEach(resetSeededReconciliationInventory);
+beforeEach(async () => {
+    resetSeededReconciliationInventory();
+    await getServiceTestDb().delete(reconciliationSweepRuns);
+});
 
 describe('TEST:B11:24 reconciliation sweep run and liveness ping', () => {
+    it('skips a live slice lease, including when a fresh cycle is requested', async () => {
+        getServiceTestDb();
+        const correlationId = crypto.randomUUID();
+        const liveRun = await reconciliationSweepRunModel.openSlice({ correlationId });
+        const { fake } = createReconciliationFake();
+        const read = vi.spyOn(fake, 'readAuthorization');
+        const summary = await runReconciliationSweep(
+            { mode: 'cycle', newCycle: true },
+            { provider: fake, clock: reconciliationClock }
+        );
+        expect(summary.skipped).toBe('lease_held');
+        expect(read).not.toHaveBeenCalled();
+        const stillOpen = await reconciliationSweepRunModel.findById({ id: liveRun.id });
+        expect(stillOpen?.outcome).toBeNull();
+        await reconciliationSweepRunModel.closeAbandoned({ id: liveRun.id });
+    });
+
+    it('records a skipped run when today’s cycle has already completed', async () => {
+        getServiceTestDb();
+        const { fake } = createReconciliationFake();
+        const read = vi.spyOn(fake, 'readAuthorization');
+        const first = await withSeededReconciliationInventory(() =>
+            runReconciliationSweep(
+                { mode: 'cycle' },
+                { provider: fake, clock: reconciliationClock }
+            )
+        );
+        expect(first.outcome).toBe('CYCLE_DONE');
+
+        const second = await runReconciliationSweep(
+            { mode: 'cycle' },
+            { provider: fake, clock: reconciliationClock }
+        );
+        expect(second.skipped).toBe('cycle_done');
+        const skippedRun = await reconciliationSweepRunModel.findById({ id: second.runId });
+        expect(skippedRun?.outcome).toBe('SKIPPED_CYCLE_DONE');
+        expect(read).not.toHaveBeenCalled();
+    });
+
+    it('reserves the final-slot pass budget and still runs the post-row pass', async () => {
+        const { fake } = createReconciliationFake();
+        await Promise.all([
+            seedSubscription({ status: 'ACTIVE', withLink: true, fake }),
+            seedSubscription({ status: 'ACTIVE', withLink: true, fake })
+        ]);
+        const summary = await withSeededReconciliationInventory(() =>
+            runReconciliationSweep(
+                {
+                    mode: 'cycle',
+                    lastSlot: true,
+                    deadlineAt: new Date(reconciliationClock.now().getTime() + 14 * 60_000)
+                },
+                { provider: fake, clock: reconciliationClock, creditedPayments: {} }
+            )
+        );
+        expect(summary).toMatchObject({
+            outcome: 'CYCLE_DONE',
+            phase: 'DONE',
+            rowsComplete: false,
+            incomplete: true
+        });
+        // The pass ran (the summary carries it) but is not final while rows are unread.
+        expect(summary.creditedPayments).toBeDefined();
+        const run = await reconciliationSweepRunModel.findById({ id: summary.runId });
+        expect(run?.passesCompleted).toEqual([]);
+    });
+
+    it('stamps a row completed at the deadline and resumes with only the unswept row', async () => {
+        let currentTime = reconciliationClock.now();
+        const clock = { now: () => new Date(currentTime) };
+        const { fake } = createReconciliationFake(clock);
+        const seeded = await Promise.all([
+            seedSubscription({ status: 'ACTIVE', withLink: true, fake }),
+            seedSubscription({ status: 'ACTIVE', withLink: true, fake })
+        ]);
+        const deadlineAt = new Date(currentTime.getTime() + 1_000);
+        const originalRead = fake.readAuthorization.bind(fake);
+        const read = vi.spyOn(fake, 'readAuthorization');
+        read.mockImplementation(async (input) => {
+            const result = await originalRead(input);
+            currentTime = deadlineAt;
+            return result;
+        });
+
+        const first = await withSeededReconciliationInventory(() =>
+            runReconciliationSweep({ mode: 'cycle', deadlineAt }, { provider: fake, clock })
+        );
+        expect(first).toMatchObject({ outcome: 'TIMED_OUT', stoppedOnBudget: true, rowsRead: 1 });
+        expect(read).toHaveBeenCalledTimes(1);
+
+        const second = await withSeededReconciliationInventory(() =>
+            runReconciliationSweep({ mode: 'cycle' }, { provider: fake, clock })
+        );
+        expect(second).toMatchObject({ outcome: 'CYCLE_DONE', rowsComplete: true, rowsRead: 1 });
+        expect(read).toHaveBeenCalledTimes(2);
+        expect(new Set(read.mock.calls.map(([call]) => call.authorizationId)).size).toBe(2);
+        const stored = await getServiceTestDb()
+            .select({ id: subscriptions.id, lastSweptAt: subscriptions.lastSweptAt })
+            .from(subscriptions)
+            .where(
+                inArray(
+                    subscriptions.id,
+                    seeded.map(({ subscription }) => subscription.id)
+                )
+            );
+        expect(stored).toHaveLength(2);
+        expect(stored.every(({ lastSweptAt }) => lastSweptAt instanceof Date)).toBe(true);
+    });
+
     it('records a partial run and does not ping', async () => {
         const { fake } = createReconciliationFake();
         const rows = await Promise.all(
@@ -37,7 +151,7 @@ describe('TEST:B11:24 reconciliation sweep run and liveness ping', () => {
         const ping = { ping: vi.fn() };
         const summary = await withSeededReconciliationInventory(() =>
             runReconciliationSweep(
-                { correlationId },
+                { mode: 'cycle', correlationId },
                 { provider: fake, clock: reconciliationClock, livenessPing: ping }
             )
         );
@@ -75,7 +189,7 @@ describe('TEST:B11:24 reconciliation sweep run and liveness ping', () => {
         const ping = { ping: vi.fn() };
         const summary = await withSeededReconciliationInventory(() =>
             runReconciliationSweep(
-                { correlationId, signal: controller.signal },
+                { mode: 'cycle', correlationId, signal: controller.signal },
                 { provider: fake, clock: reconciliationClock, livenessPing: ping }
             )
         );
@@ -99,7 +213,7 @@ describe('TEST:B11:24 reconciliation sweep run and liveness ping', () => {
         controller.abort();
         const summary = await withSeededReconciliationInventory(() =>
             runReconciliationSweep(
-                { correlationId: crypto.randomUUID(), signal: controller.signal },
+                { mode: 'cycle', correlationId: crypto.randomUUID(), signal: controller.signal },
                 {
                     provider: fake,
                     clock: reconciliationClock,
@@ -129,7 +243,7 @@ describe('TEST:B11:24 reconciliation sweep run and liveness ping', () => {
         };
         const summary = await withSeededReconciliationInventory(() =>
             runReconciliationSweep(
-                { correlationId },
+                { mode: 'cycle', correlationId },
                 { provider: fake, clock: reconciliationClock, livenessPing: ping }
             )
         );
@@ -143,7 +257,7 @@ describe('TEST:B11:24 reconciliation sweep run and liveness ping', () => {
         expect(saved).toBe(true);
     });
 
-    it('leaves a run open when inventory paging throws', async () => {
+    it('closes a failed run when inventory paging throws', async () => {
         await seedSubscription({ status: 'ACTIVE' });
         const correlationId = crypto.randomUUID();
         const ping = { ping: vi.fn() };
@@ -155,7 +269,7 @@ describe('TEST:B11:24 reconciliation sweep run and liveness ping', () => {
             .mockRejectedValueOnce(new Error('page failed'));
         await expect(
             runReconciliationSweep(
-                { correlationId },
+                { mode: 'cycle', correlationId },
                 {
                     provider: createReconciliationFake().fake,
                     clock: reconciliationClock,
@@ -168,7 +282,8 @@ describe('TEST:B11:24 reconciliation sweep run and liveness ping', () => {
             .select()
             .from(reconciliationSweepRuns)
             .where(eq(reconciliationSweepRuns.correlationId, correlationId));
-        expect(run?.finishedAt).toBeNull();
+        expect(run?.outcome).toBe('FAILED');
+        expect(run?.finishedAt).toBeInstanceOf(Date);
         expect(ping.ping).not.toHaveBeenCalled();
     });
 
@@ -178,7 +293,7 @@ describe('TEST:B11:24 reconciliation sweep run and liveness ping', () => {
         const ping = { ping: vi.fn().mockRejectedValue(new Error('monitor down')) };
         const first = await withSeededReconciliationInventory(() =>
             runReconciliationSweep(
-                { correlationId },
+                { mode: 'cycle', correlationId },
                 { provider: fake, clock: reconciliationClock, livenessPing: ping }
             )
         );
@@ -186,7 +301,7 @@ describe('TEST:B11:24 reconciliation sweep run and liveness ping', () => {
         const noPingCorrelationId = crypto.randomUUID();
         const second = await withSeededReconciliationInventory(() =>
             runReconciliationSweep(
-                { correlationId: noPingCorrelationId },
+                { mode: 'cycle', correlationId: noPingCorrelationId },
                 { provider: fake, clock: reconciliationClock }
             )
         );

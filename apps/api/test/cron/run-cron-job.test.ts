@@ -78,6 +78,27 @@ describe('runCronJob lifecycle', () => {
 
     afterEach(() => vi.useRealTimers());
 
+    it('passes execution mode and newCycle to the handler context', async () => {
+        const handler = vi.fn().mockResolvedValue({
+            success: true,
+            message: 'done',
+            processed: 0,
+            errors: 0,
+            durationMs: 0
+        });
+        const decision = await runCronJob({
+            job: { ...job, handler },
+            executionMode: 'manual',
+            dryRun: false,
+            newCycle: true
+        });
+        expect(decision.started).toBe(true);
+        if (decision.started) await decision.completion;
+        expect(handler).toHaveBeenCalledWith(
+            expect.objectContaining({ executionMode: 'manual', newCycle: true })
+        );
+    });
+
     it('records an overlap as success with the holder run ID and does not ping', async () => {
         mocks.lock.mockResolvedValue({ acquired: false, holderRunId: 'holder-1' });
         const decision = await runCronJob({ job, executionMode: 'scheduled', dryRun: false });
@@ -96,6 +117,19 @@ describe('runCronJob lifecycle', () => {
             })
         );
         expect(mocks.ping).not.toHaveBeenCalled();
+    });
+
+    it('tells the job about a scheduled overlap, never about a manual one', async () => {
+        mocks.lock.mockResolvedValue({ acquired: false, holderRunId: 'holder-1' });
+        const onOverlapSkipped = vi.fn();
+        const hooked = { ...job, onOverlapSkipped };
+        await runCronJob({ job: hooked, executionMode: 'manual', dryRun: false });
+        expect(onOverlapSkipped).not.toHaveBeenCalled();
+        await runCronJob({ job: hooked, executionMode: 'scheduled', dryRun: false });
+        expect(onOverlapSkipped).toHaveBeenCalledTimes(1);
+        expect(onOverlapSkipped).toHaveBeenCalledWith(
+            expect.objectContaining({ startedAt: expect.any(Date) })
+        );
     });
 
     it('sends the monitored start ping only after the lock decision is acquired', async () => {
