@@ -258,6 +258,19 @@ const catalogoSidebar: SidebarInput = {
             route: '/platform/alliance-leads',
             permissions: ['ALLIANCE_LEAD_VIEW_ALL']
         },
+        {
+            type: 'link',
+            id: 'partner-applications',
+            label: {
+                es: 'Postulaciones de aliados',
+                en: 'Partner applications',
+                pt: 'Candidaturas de parceiros'
+            },
+            icon: 'MailIcon',
+            route: '/platform/partner-applications',
+            permissions: ['PARTNER_RESOLVE_APPLICATION'],
+            onMissing: 'hide'
+        },
         { type: 'separator', id: 'sep-content-moderation' },
         // ── Content Moderation (SPEC-195) ─────────────────────────────────
         {
