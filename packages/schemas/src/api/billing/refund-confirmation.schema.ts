@@ -18,6 +18,7 @@ export const RefundConfirmationOutcomeSchema = z.enum([
     'SENT',
     'NOT_ACCEPTED_KEPT_CONFIRMED',
     'PROVIDER_REJECTED_KEPT_CONFIRMED',
+    'PROVIDER_REJECTED_FAILED',
     'AWAITING_PROVIDER_ANSWER',
     'CHARGED_BACK'
 ]);
