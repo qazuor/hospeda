@@ -18,7 +18,7 @@
  */
 
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import {
     VenueMenuQrWidget,
     type VenueMenuQrWidgetListing
@@ -46,19 +46,11 @@ vi.mock('../../../src/lib/qr/qr-png', () => ({
     renderSvgToPngBlob: async () => new Blob(['png'], { type: 'image/png' })
 }));
 
-const { mockGetVenueSectionStates, mockGetMenuQr, mockGetMenuQrScans } = vi.hoisted(() => ({
-    mockGetVenueSectionStates: vi.fn(),
-    mockGetMenuQr: vi.fn(),
-    mockGetMenuQrScans: vi.fn()
-}));
+import { listingAnalyticsApi } from '../../../src/lib/api/endpoints-protected';
 
-vi.mock('../../../src/lib/api/endpoints-protected', () => ({
-    listingAnalyticsApi: {
-        getVenueSectionStates: mockGetVenueSectionStates,
-        getMenuQr: mockGetMenuQr,
-        getMenuQrScans: mockGetMenuQrScans
-    }
-}));
+let mockGetVenueSectionStates: ReturnType<typeof vi.spyOn>;
+let mockGetMenuQr: ReturnType<typeof vi.spyOn>;
+let mockGetMenuQrScans: ReturnType<typeof vi.spyOn>;
 
 // The fresh confirmation read (taken before any BLOCKING answer) mirrors the
 // cached read unless a test sets it apart.
@@ -119,8 +111,16 @@ const READY_STATS = {
 };
 
 describe('VenueMenuQrWidget (HOS-1044)', () => {
+    afterEach(() => vi.restoreAllMocks());
+
     beforeEach(() => {
-        vi.clearAllMocks();
+        vi.restoreAllMocks();
+        mockGetVenueSectionStates = vi.spyOn(listingAnalyticsApi, 'getVenueSectionStates');
+        mockGetMenuQr = vi.spyOn(listingAnalyticsApi, 'getMenuQr');
+        mockGetMenuQrScans = vi.spyOn(listingAnalyticsApi, 'getMenuQrScans');
+        mockGetVenueSectionStates.mockReset();
+        mockGetMenuQr.mockReset();
+        mockGetMenuQrScans.mockReset();
         mockGetVenueSectionStates.mockResolvedValue({
             ok: true,
             data: { sections: { menu: { state: 'available', traits: { qr: 'available' } } } }
@@ -305,6 +305,77 @@ describe('VenueMenuQrWidget (HOS-1044)', () => {
         await waitFor(() => expect(container.firstChild).toBeNull());
         expect(mockGetMenuQr).not.toHaveBeenCalled();
         expect(mockGetMenuQrScans).not.toHaveBeenCalled();
+    });
+
+    it('requests only section state over HTTP when the menu is absent', async () => {
+        mockGetVenueSectionStates.mockRestore();
+        mockGetMenuQr.mockRestore();
+        mockGetMenuQrScans.mockRestore();
+        const fetchMock = vi.spyOn(globalThis, 'fetch').mockImplementation(
+            async () =>
+                new Response(
+                    JSON.stringify({
+                        success: true,
+                        data: { sections: { menu: { state: 'absent', traits: { qr: 'absent' } } } }
+                    }),
+                    { status: 200, headers: { 'Content-Type': 'application/json' } }
+                )
+        );
+        const { container } = render(
+            <VenueMenuQrWidget
+                locale="es"
+                listings={[LISTING]}
+            />
+        );
+
+        await waitFor(() => expect(container.firstChild).toBeNull());
+        expect(fetchMock).toHaveBeenCalledTimes(1);
+        const [url, init] = fetchMock.mock.calls[0]!;
+        expect(new URL(String(url)).pathname).toBe('/api/v1/protected/venues/venue-1/sections');
+        expect(init?.method).toBe('GET');
+        expect(
+            fetchMock.mock.calls.some(([requestUrl]) =>
+                /\/menu-qr(?:\/scans)?(?:\?|$)/.test(String(requestUrl))
+            )
+        ).toBe(false);
+    });
+
+    it('requests section state before QR routes over HTTP when menu and QR are available', async () => {
+        mockGetVenueSectionStates.mockRestore();
+        mockGetMenuQr.mockRestore();
+        mockGetMenuQrScans.mockRestore();
+        const fetchMock = vi.spyOn(globalThis, 'fetch').mockImplementation(async (input) => {
+            const path = new URL(String(input)).pathname;
+            const data = path.endsWith('/sections')
+                ? { sections: { menu: { state: 'available', traits: { qr: 'available' } } } }
+                : path.endsWith('/menu-qr/scans')
+                  ? READY_STATS.data
+                  : READY_QR.data;
+            return new Response(JSON.stringify({ success: true, data }), {
+                status: 200,
+                headers: { 'Content-Type': 'application/json' }
+            });
+        });
+
+        render(
+            <VenueMenuQrWidget
+                locale="es"
+                listings={[LISTING]}
+            />
+        );
+        await waitFor(() => expect(screen.getByTestId('menu-qr-total')).toHaveTextContent('42'));
+
+        const requestedPaths = fetchMock.mock.calls.map(([url]) => new URL(String(url)).pathname);
+        expect(requestedPaths[0]).toBe('/api/v1/protected/venues/venue-1/sections');
+        expect(requestedPaths.slice(1)).toEqual([
+            '/api/v1/protected/venues/venue-1/menu-qr',
+            '/api/v1/protected/venues/venue-1/menu-qr/scans'
+        ]);
+        expect(fetchMock.mock.calls[0]?.[1]?.method).toBe('GET');
+        expect(fetchMock.mock.calls.slice(1).every(([, init]) => init?.method === 'GET')).toBe(
+            true
+        );
+        expect(screen.getByTestId('menu-qr-total')).toBeTruthy();
     });
 
     it.each([
