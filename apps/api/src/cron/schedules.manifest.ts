@@ -85,7 +85,7 @@ export const CRON_SCHEDULES: ReadonlyArray<CronScheduleEntry> = [
         name: 'billing-reconciliation-sweep',
         displayName: 'Barrido de conciliación de cobros',
         category: 'billing',
-        schedule: '10 2 * * *',
+        schedule: '10 2,3,4 * * *',
         description:
             'Read owned billing inventory by provider id and open marks for divergences (HOS-1602, AC:B11:1).'
     },

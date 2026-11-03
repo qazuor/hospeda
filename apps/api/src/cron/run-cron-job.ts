@@ -30,6 +30,7 @@ export function createCronJobContext(args: {
     readonly signal: AbortSignal;
     readonly deadlineAt: Date;
     readonly dryRun: boolean;
+    readonly newCycle?: boolean;
 }): CronJobContext {
     const prefix = args.executionMode === 'scheduled' ? 'CRON' : 'ADMIN-CRON';
     const ids = { runId: args.runId, correlationId: args.correlationId };
@@ -65,7 +66,9 @@ export function createCronJobContext(args: {
         correlationId: args.correlationId,
         signal: args.signal,
         deadlineAt: args.deadlineAt,
-        dryRun: args.dryRun
+        dryRun: args.dryRun,
+        executionMode: args.executionMode,
+        ...(args.newCycle === undefined ? {} : { newCycle: args.newCycle })
     };
 }
 
@@ -74,6 +77,7 @@ export async function runCronJob(args: {
     readonly job: CronJobDefinition;
     readonly executionMode: 'scheduled' | 'manual';
     readonly dryRun: boolean;
+    readonly newCycle?: boolean;
     readonly scheduleExpression?: string;
 }): Promise<RunCronJobDecision> {
     const { job, executionMode, dryRun } = args;
@@ -92,7 +96,8 @@ export async function runCronJob(args: {
         correlationId,
         signal: controller.signal,
         deadlineAt,
-        dryRun
+        dryRun,
+        newCycle: args.newCycle
     });
     const monitored = executionMode === 'scheduled' && monitoredJobs.has(job.name);
 

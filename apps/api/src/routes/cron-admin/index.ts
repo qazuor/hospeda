@@ -176,6 +176,7 @@ export const triggerCronJobHandler = async (
 > => {
     const jobName = params.jobName as string;
     const dryRun = query?.dryRun === true;
+    const newCycle = query?.newCycle === true;
     const job = getCronJob(jobName);
     if (!job) {
         throw Object.assign(new Error(`Cron job not found: ${jobName}`), {
@@ -189,8 +190,14 @@ export const triggerCronJobHandler = async (
             code: 'JOB_DISABLED'
         });
     }
+    if (newCycle && !job.acceptsNewCycle) {
+        throw Object.assign(new Error(`Cron job does not accept newCycle: ${jobName}`), {
+            statusCode: 400,
+            code: 'VALIDATION_ERROR'
+        });
+    }
 
-    const decision = await runCronJob({ job, executionMode: 'manual', dryRun });
+    const decision = await runCronJob({ job, executionMode: 'manual', dryRun, newCycle });
     if (!decision.started) {
         throw Object.assign(new Error(`Cron job is already running: ${jobName}`), {
             statusCode: 409,
@@ -222,6 +229,11 @@ export const triggerCronJobHandler = async (
  */
 export const cronDryRunQuerySchema = createBooleanQueryParamWithDefault(
     'Simulate the run without making changes',
+    false
+);
+/** Strict opt-in flag for opening a fresh reconciliation sweep cycle. */
+export const cronNewCycleQuerySchema = createBooleanQueryParamWithDefault(
+    'Open a fresh reconciliation sweep cycle',
     false
 );
 
@@ -257,7 +269,7 @@ const triggerCronJobRoute = createAdminRoute({
     tags: ['Cron'],
     requiredPermissions: [PermissionEnum.SYSTEM_MAINTENANCE_MODE],
     requestParams: { jobName: z.string().min(1) },
-    requestQuery: { dryRun: cronDryRunQuerySchema },
+    requestQuery: { dryRun: cronDryRunQuerySchema, newCycle: cronNewCycleQuerySchema },
     responseSchema: cronJobTriggerResponseSchema,
     successStatusCode: (result) =>
         typeof result === 'object' && result !== null && 'accepted' in result ? 202 : 201,

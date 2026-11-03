@@ -130,7 +130,7 @@ describe('billing reconciliation sweep cron', () => {
     it('registers the daily job metadata', () => {
         expect(billingReconciliationSweepJob).toMatchObject({
             name: 'billing-reconciliation-sweep',
-            schedule: '10 2 * * *',
+            schedule: '10 2,3,4 * * *',
             enabled: true,
             timeoutMs: 3_000_000,
             budgetMs: 2_700_000,
@@ -180,7 +180,12 @@ describe('billing reconciliation sweep cron', () => {
         });
         const result = await billingReconciliationSweepJob.handler(context());
         expect(mockSweep).toHaveBeenCalledWith(
-            { correlationId: expect.any(String) },
+            expect.objectContaining({
+                correlationId: expect.any(String),
+                newCycle: undefined,
+                lastSlot: true,
+                deadlineAt: undefined
+            }),
             expect.objectContaining({
                 provider: mockProvider,
                 clock: mockClock,
@@ -273,7 +278,7 @@ describe('billing reconciliation sweep cron', () => {
         expect(mockGraceExpiryCheck.mock.calls[0]?.[0]).not.toHaveProperty(
             'unresolvedPeriodCharges'
         );
-        expect(result).toMatchObject({ processed: 8, errors: 2, success: false });
+        expect(result).toMatchObject({ processed: 8, errors: 2, success: true });
         expect(result.details).toHaveProperty('failedSubscriptionIds', ['failed-id']);
         expect(result.details).toMatchObject({ runId: 'run-id', complete: false, pinged: false });
         expect(result.details).toHaveProperty('zeroCallChecks', { results: [], failedChecks: [] });
@@ -296,7 +301,7 @@ describe('billing reconciliation sweep cron', () => {
         });
         await billingReconciliationSweepJob.handler(context());
         expect(mockSweep).toHaveBeenCalledWith(
-            { correlationId: expect.any(String) },
+            expect.objectContaining({ correlationId: expect.any(String), lastSlot: true }),
             expect.objectContaining({ markEscalation: { notice: {} } })
         );
     });
@@ -430,14 +435,14 @@ describe('billing reconciliation sweep cron', () => {
             finishedAt: new Date()
         });
         const result = await billingReconciliationSweepJob.handler(context());
-        expect(result).toMatchObject({ success: false, processed: 4, errors: 2 });
+        expect(result).toMatchObject({ success: true, processed: 4, errors: 2 });
         expect(result.details).toMatchObject({
             zeroCallChecks: { failedChecks: ['PAYMENT_PENDING_WITHOUT_BRANCH'] }
         });
         expect(result.details?.zeroCallChecks).not.toHaveProperty('failures');
     });
 
-    it('HOS-1999 AC-16: a budget stop with failed rows is not green', async () => {
+    it('HOS-1999 AC-20: a budget stop with failed rows stays successful and does not page', async () => {
         mockSweep.mockResolvedValue({
             rowsRead: 5,
             runId: 'run-id',
@@ -454,10 +459,10 @@ describe('billing reconciliation sweep cron', () => {
             finishedAt: new Date()
         });
         const result = await billingReconciliationSweepJob.handler(context());
-        expect(result).toMatchObject({ success: false, details: { stoppedOnBudget: true } });
+        expect(result).toMatchObject({ success: true, details: { stoppedOnBudget: true } });
     });
 
-    it('HOS-1999 AC-16: a clean budget stop stays green and reports the skipped passes', async () => {
+    it('HOS-1999 AC-20: a clean budget stop stays green without paging', async () => {
         mockSweep.mockResolvedValue({
             rowsRead: 5,
             runId: 'run-id',
@@ -475,20 +480,40 @@ describe('billing reconciliation sweep cron', () => {
         });
         const ctx = context();
         const result = await billingReconciliationSweepJob.handler(ctx);
-        expect(result).toMatchObject({
-            success: true,
-            details: {
-                stoppedOnBudget: true,
-                skippedPasses: ['creditedPayments', 'paidOrders', 'zeroCallChecks']
-            }
+        expect(result).toMatchObject({ success: true, details: { stoppedOnBudget: true } });
+        expect(ctx.logger.error).not.toHaveBeenCalled();
+    });
+
+    it('fails closed and captures a slice that lost its lease after failed work', async () => {
+        mockSweep.mockResolvedValue({
+            rowsRead: 3,
+            runId: 'run-id',
+            cycleId: 'cycle-id',
+            sliceIndex: 1,
+            complete: false,
+            leaseLost: true,
+            pinged: false,
+            rowsFailed: 1,
+            divergences: 0,
+            marksOpened: 0,
+            marksAccumulated: 0,
+            failures: [{ subscriptionId: 'failed-subscription', message: 'provider failure' }],
+            startedAt: new Date(),
+            finishedAt: new Date()
+        });
+        const ctx = context();
+        const result = await billingReconciliationSweepJob.handler(ctx);
+        expect(result).toMatchObject({ success: false, processed: 3, errors: 1 });
+        expect(result.details).toMatchObject({
+            leaseLost: true,
+            failedSubscriptionIds: ['failed-subscription']
         });
         expect(ctx.logger.error).toHaveBeenCalledWith(
-            'Billing reconciliation sweep stopped on its budget',
-            {
-                runId: 'run-id',
-                rowsRead: 5,
-                skippedPasses: ['creditedPayments', 'paidOrders', 'zeroCallChecks']
-            },
+            'reconciliation slice lost its lease',
+            expect.objectContaining({
+                rowsFailed: 1,
+                failedSubscriptionIds: ['failed-subscription']
+            }),
             { capture: true }
         );
     });
@@ -699,10 +724,10 @@ describe('billing reconciliation sweep cron', () => {
 
         // Assert
         expect(mockSweep).toHaveBeenCalledWith(
-            { correlationId: expect.any(String) },
+            expect.objectContaining({ correlationId: expect.any(String), lastSlot: true }),
             expect.objectContaining({ creditedPayments: {}, paidOrders: {} })
         );
-        expect(result).toMatchObject({ success: false, processed: 4, errors: 1 });
+        expect(result).toMatchObject({ success: true, processed: 4, errors: 1 });
         expect(result.details).toHaveProperty('failedSubscriptionIds', ['paid-row']);
         expect(result.details).toMatchObject({
             creditedPayments: { examined: 3, chargebacks: 1, outOfFlowRefunds: 1 }
