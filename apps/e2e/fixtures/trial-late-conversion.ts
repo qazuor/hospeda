@@ -7,6 +7,7 @@
  * Listings are read through `publication_status` only (HOS-1641, TEST:V6:18).
  */
 import { expect } from '@playwright/test';
+import { cronTriggerUrl } from './cron-run-wait.ts';
 import { execSQL } from './db-helpers.ts';
 import type { CapturedE2eMail } from './mail-capture-server.ts';
 
@@ -94,7 +95,7 @@ export async function runCron(args: {
     readonly jobName: string;
     readonly adminCookie: string;
 }): Promise<void> {
-    const response = await fetch(`${API_URL}/api/v1/admin/cron/${args.jobName}`, {
+    const response = await fetch(cronTriggerUrl({ apiUrl: API_URL, jobName: args.jobName }), {
         method: 'POST',
         headers: { cookie: args.adminCookie }
     });

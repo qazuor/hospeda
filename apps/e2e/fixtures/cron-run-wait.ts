@@ -67,3 +67,16 @@ export function acceptedRunId(body: unknown): string | undefined {
     const data = (record?.data ?? record) as Record<string, unknown> | undefined;
     return data?.accepted === true && typeof data.runId === 'string' ? data.runId : undefined;
 }
+
+/**
+ * URL of a manual admin cron trigger. The reconciliation sweep resumes today's cycle (and skips
+ * a finished one), so an e2e run that sweeps several times in one real day must open a fresh
+ * cycle each time (HOS-1999).
+ */
+export function cronTriggerUrl(args: {
+    readonly apiUrl: string;
+    readonly jobName: string;
+}): string {
+    const base = `${args.apiUrl}/api/v1/admin/cron/${args.jobName}`;
+    return args.jobName === 'billing-reconciliation-sweep' ? `${base}?newCycle=true` : base;
+}
