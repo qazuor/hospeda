@@ -52,7 +52,7 @@
  */
 
 import type { IconProps } from '@repo/icons';
-import { CompassIcon, ForkKnifeIcon, HomeIcon, StarIcon } from '@repo/icons';
+import { CompassIcon, HomeIcon, StarIcon, VenueIcon } from '@repo/icons';
 import type { ComponentType } from 'react';
 import type { AudienceCardId } from '@/lib/billing/audience-plans';
 import type { TranslationFn } from '@/lib/i18n';
@@ -70,7 +70,7 @@ export const AUDIENCE_HIGHLIGHT_COUNT = 3;
 export const AUDIENCE_CARD_ICONS: Readonly<Record<AudienceCardId, ComponentType<IconProps>>> = {
     host: HomeIcon,
     tourist: StarIcon,
-    venue: ForkKnifeIcon,
+    venue: VenueIcon,
     experience: CompassIcon
 } as const;
 
