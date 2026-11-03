@@ -16,6 +16,7 @@ export function createMercadoPagoRedisCoolDownStore(args: {
     const cacheMs = args.cacheMs ?? 250;
     const logger = args.logger ?? apiLogger;
     let client = args.client;
+    let initialConnectionSettled = client?.status === 'ready';
     let localUntil = 0;
     let sharedUntil = 0;
     let lastRead = Number.NEGATIVE_INFINITY;
@@ -29,6 +30,9 @@ export function createMercadoPagoRedisCoolDownStore(args: {
             });
         degraded = true;
     };
+    client?.on('error', () => {
+        initialConnectionSettled = true;
+    });
     const initialize = async (): Promise<void> => {
         if (client) return;
         const { default: RedisClient } = await import('ioredis');
@@ -40,8 +44,17 @@ export function createMercadoPagoRedisCoolDownStore(args: {
             retryStrategy: (times) => Math.min(times * 200, 5000)
         });
         // Handled so ioredis never emits an unhandled `error`; refresh reports the outage.
-        client.on('error', () => undefined);
-        void client.connect().catch(() => undefined);
+        client.on('error', () => {
+            initialConnectionSettled = true;
+        });
+        void client.connect().then(
+            () => {
+                initialConnectionSettled = true;
+            },
+            () => {
+                initialConnectionSettled = true;
+            }
+        );
     };
     void initialize().catch(() => undefined);
     return {
@@ -62,6 +75,8 @@ export function createMercadoPagoRedisCoolDownStore(args: {
         until: () => Math.max(localUntil, sharedUntil),
         refresh: async () => {
             if (now() - lastRead < cacheMs) return { fallback: false };
+            if (client?.status === 'ready') initialConnectionSettled = true;
+            if (!initialConnectionSettled) return { fallback: true };
             if (client?.status !== 'ready') {
                 markDegraded();
                 return { fallback: true };
