@@ -21,6 +21,7 @@
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { buildAuthSnapshot } from '../../helpers/auth-session';
+import { trackTimers } from '../../helpers/track-timers';
 
 // ---------------------------------------------------------------------------
 // Module mocks
@@ -131,34 +132,6 @@ function rateAllAspects() {
     for (const btn of fiveStarButtons) {
         fireEvent.click(btn);
     }
-}
-
-/**
- * Records every timer the component schedules with `window.setTimeout` and every
- * one it cancels with `window.clearTimeout`, so a test can assert that nothing
- * is left pending once the component is gone (BETA-215).
- */
-function trackTimers() {
-    const scheduled: { id: number; delay: number }[] = [];
-    const cleared = new Set<number>();
-    const realSet = window.setTimeout.bind(window);
-    const realClear = window.clearTimeout.bind(window);
-    vi.spyOn(window, 'setTimeout').mockImplementation(((
-        handler: TimerHandler,
-        delay?: number,
-        ...args: unknown[]
-    ) => {
-        const id = realSet(handler, delay, ...args);
-        scheduled.push({ id, delay: delay ?? 0 });
-        return id;
-    }) as typeof window.setTimeout);
-    vi.spyOn(window, 'clearTimeout').mockImplementation(((id?: number) => {
-        if (id !== undefined) cleared.add(id);
-        realClear(id);
-    }) as typeof window.clearTimeout);
-    const pendingAfterUnmount = (delay: number) =>
-        scheduled.filter((timer) => timer.delay === delay && !cleared.has(timer.id));
-    return { scheduled, pendingAfterUnmount };
 }
 
 // ---------------------------------------------------------------------------
@@ -388,16 +361,18 @@ describe('ReviewSidebarCard — nothing outlives the component (BETA-215)', () =
         const timers = trackTimers();
         const { unmount } = renderCard();
         openDialog();
+        // Only timers created from here on count (unrelated ones must not).
+        const baseline = timers.mark();
         fireEvent.keyDown(document.querySelector('dialog') as HTMLDialogElement, {
             key: 'Escape'
         });
         // Arrange: the 200ms reset is scheduled and still pending.
-        expect(timers.pendingAfterUnmount(200)).toHaveLength(1);
+        expect(timers.pendingSince({ baseline, delay: 200 })).toHaveLength(1);
 
         unmount();
 
         // Assert: it was cancelled, so it can never set state on a gone tree.
-        expect(timers.pendingAfterUnmount(200)).toHaveLength(0);
+        expect(timers.pendingSince({ baseline, delay: 200 })).toHaveLength(0);
     });
 
     it('cancels the post-success reload timer when unmounted before it fires', async () => {
@@ -408,13 +383,15 @@ describe('ReviewSidebarCard — nothing outlives the component (BETA-215)', () =
         const timers = trackTimers();
         const { unmount } = renderCard();
         openDialog();
+        // Only timers created from here on count (unrelated ones must not).
+        const baseline = timers.mark();
         rateAllAspects();
         fireEvent.submit(document.querySelector('form') as HTMLFormElement);
-        await waitFor(() => expect(timers.pendingAfterUnmount(1400)).toHaveLength(1));
+        await waitFor(() => expect(timers.pendingSince({ baseline, delay: 1400 })).toHaveLength(1));
 
         unmount();
 
-        expect(timers.pendingAfterUnmount(1400)).toHaveLength(0);
+        expect(timers.pendingSince({ baseline, delay: 1400 })).toHaveLength(0);
     });
 
     it('aborts the in-flight submit when unmounted', () => {

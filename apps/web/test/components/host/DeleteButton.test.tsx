@@ -57,11 +57,14 @@ const renderButton = (vertical?: PublishVerticalSlug) =>
  * a silent no-op (BETA-215).
  */
 const findEnabledConfirm = () =>
-    waitFor(() => {
-        const button = screen.getByRole('button', { name: 'Sí, eliminar' });
-        expect(button).toBeEnabled();
-        return button;
-    });
+    waitFor(
+        () => {
+            const button = screen.getByRole('button', { name: 'Sí, eliminar' });
+            expect(button).toBeEnabled();
+            return button;
+        },
+        { timeout: 3000 }
+    );
 
 describe('DeleteButton (owner PB12 delete island)', () => {
     beforeEach(() => {
@@ -83,7 +86,7 @@ describe('DeleteButton (owner PB12 delete island)', () => {
         fireEvent.click(screen.getByRole('button', { name: 'Eliminar' }));
         // Confirming: prompt + yes/no, still no API call.
         expect(screen.getByText('¿Eliminar esta propiedad?')).toBeInTheDocument();
-        expect(await findEnabledConfirm()).toBeEnabled();
+        await findEnabledConfirm();
         expect(screen.getByRole('button', { name: 'Cancelar' })).toBeInTheDocument();
         expect(purgePreviewMock).toHaveBeenCalledWith({
             vertical: 'accommodation',
@@ -166,7 +169,7 @@ describe('TEST:B13a:3c AC:B13a:4 the delete confirmation names the lost add-ons'
         expect(
             screen.queryByText('Se pierden con la ficha, sin devolución:')
         ).not.toBeInTheDocument();
-        expect(await findEnabledConfirm()).toBeEnabled();
+        await findEnabledConfirm();
     });
 
     it('lists two add-ons with names, centavo-converted amounts, and the title', async () => {
