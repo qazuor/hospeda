@@ -1,4 +1,4 @@
-import { execFileSync } from 'node:child_process';
+import { execFileSync as nodeExecFileSync } from 'node:child_process';
 import { readFileSync } from 'node:fs';
 import { join, resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';
@@ -22,13 +22,16 @@ const SHARE_ALLOWED = new Set([
 const PRODUCTION_SOURCE = /^(packages|apps)\/[^/]+\/src\//;
 const IDENTIFIERS = /\b(shareProviderReadForAct|memoizeInProviderReadScope)\b/;
 
-function candidateFiles(): readonly string[] {
+type GitRunner = typeof nodeExecFileSync;
+
+function candidateFiles(execFileSync: GitRunner = nodeExecFileSync): readonly string[] {
     try {
         const output = execFileSync(
             'git',
             [
                 'grep',
                 '-l',
+                '--untracked',
                 '-E',
                 'shareProviderReadForAct|memoizeInProviderReadScope',
                 '--',
@@ -41,8 +44,33 @@ function candidateFiles(): readonly string[] {
     } catch (error) {
         // `git grep` exits 1 when nothing matches; anything else is a real failure.
         if ((error as { status?: number }).status === 1) return [];
+        if ((error as { code?: string }).code === 'ENOENT')
+            throw new Error(
+                'share-provider-read-for-act guard needs git on PATH to list candidate files'
+            );
         throw error;
     }
+}
+
+function findViolations(args: {
+    readonly files: readonly { readonly path: string; readonly source: string }[];
+}): readonly string[] {
+    const violations: string[] = [];
+    for (const { path, source } of args.files) {
+        if (!IDENTIFIERS.test(source)) continue;
+        if (/\bshareProviderReadForAct\b/.test(source) && !SHARE_ALLOWED.has(path))
+            violations.push(
+                `${path}: shareProviderReadForAct may only be used by readChargeForAct (spec §6.2)`
+            );
+        if (
+            /\bmemoizeInProviderReadScope\b/.test(source) &&
+            !path.startsWith('packages/payments/src/')
+        )
+            violations.push(
+                `${path}: memoizeInProviderReadScope is internal to packages/payments/src`
+            );
+    }
+    return violations;
 }
 
 describe('stamped provider read sharing guard (HOS-1999)', () => {
@@ -51,22 +79,27 @@ describe('stamped provider read sharing guard (HOS-1999)', () => {
         // The scan must reach the files the rule is about, or it proves nothing.
         for (const allowed of SHARE_ALLOWED) expect(files, allowed).toContain(allowed);
 
-        const violations: string[] = [];
-        for (const path of files) {
-            const source = readFileSync(join(root, path), 'utf8');
-            if (!IDENTIFIERS.test(source)) continue;
-            if (/\bshareProviderReadForAct\b/.test(source) && !SHARE_ALLOWED.has(path))
-                violations.push(
-                    `${path}: shareProviderReadForAct may only be used by readChargeForAct (spec §6.2)`
-                );
-            if (
-                /\bmemoizeInProviderReadScope\b/.test(source) &&
-                !path.startsWith('packages/payments/src/')
-            )
-                violations.push(
-                    `${path}: memoizeInProviderReadScope is internal to packages/payments/src`
-                );
-        }
+        const violations = findViolations({
+            files: files.map((path) => ({ path, source: readFileSync(join(root, path), 'utf8') }))
+        });
         expect(violations).toEqual([]);
+    });
+
+    it('reports planted violations and explains missing git (kills a vacuous guard)', () => {
+        expect(
+            findViolations({
+                files: [
+                    { path: 'packages/service-core/src/x.ts', source: 'shareProviderReadForAct()' },
+                    { path: 'apps/api/src/y.ts', source: 'memoizeInProviderReadScope()' }
+                ]
+            })
+        ).toHaveLength(2);
+        const missingGit = Object.assign(new Error('missing'), { code: 'ENOENT' });
+        const runner = (() => {
+            throw missingGit;
+        }) as unknown as GitRunner;
+        expect(() => candidateFiles(runner)).toThrow(
+            'share-provider-read-for-act guard needs git on PATH to list candidate files'
+        );
     });
 });
