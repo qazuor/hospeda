@@ -308,7 +308,8 @@ describe('Billing Email Templates', () => {
                 const html = renderToStaticMarkup(
                     RenewalReminder({ ...validProps, productDomain: 'venue' })
                 );
-                expect(html).toContain('tu local gastronómico');
+                expect(html).toContain('hacer crecer tu local.');
+                expect(html).not.toContain('gastronómico');
                 expect(html).not.toContain('alojamiento turístico');
             });
 
