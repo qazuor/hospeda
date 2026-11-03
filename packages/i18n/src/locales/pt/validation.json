@@ -4205,6 +4205,13 @@
             "decision": {
                 "invalid": "A decisão deve ser APPROVED ou REJECTED"
             }
+        },
+        "dimension": {
+            "type": "A nota deve ser um número",
+            "integer": "A nota deve ser um número inteiro",
+            "min": "A nota deve ser pelo menos 1",
+            "max": "A nota não pode exceder 5",
+            "unknown": "A avaliação contém dimensões desconhecidas"
         }
     },
     "search": {

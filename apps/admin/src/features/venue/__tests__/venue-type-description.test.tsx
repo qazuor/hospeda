@@ -44,7 +44,9 @@ describe('venue type description in the consolidated admin form', () => {
         ).toBeInTheDocument();
 
         fireEvent.click(screen.getByRole('combobox'));
-        fireEvent.click(await screen.findByRole('option', { name: 'Pub' }));
+        fireEvent.click(
+            await screen.findByRole('option', { name: 'admin-entities.venue.types.PUB' })
+        );
 
         expect(screen.getByText('admin-entities.venue.typeDescriptions.PUB')).toBeInTheDocument();
         expect(

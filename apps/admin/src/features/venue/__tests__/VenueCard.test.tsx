@@ -22,6 +22,28 @@ import { describe, expect, it, vi } from 'vitest';
 import type { VenueListItem } from '@/features/venue/config/venue.config';
 import { VenueCard } from '../components/VenueCard';
 
+vi.mock('@/hooks/use-translations', () => ({
+    useTranslations: () => ({
+        t: (key: string) => {
+            if (!key.startsWith('admin-entities.venue.types.')) return key;
+            const labels: Record<string, string> = {
+                RESTAURANT: 'Restaurante',
+                BAR: 'Bar',
+                CAFE: 'Café',
+                PARRILLA: 'Parrilla',
+                CERVECERIA: 'Cervecería',
+                HELADERIA: 'Heladería',
+                PANADERIA: 'Panadería',
+                ROTISERIA: 'Rotisería',
+                FOOD_TRUCK: 'Food Truck',
+                PUB: 'Pub',
+                BOLICHE: 'Boliche'
+            };
+            return labels[key.split('.').at(-1) ?? ''] ?? key;
+        }
+    })
+}));
+
 // ---------------------------------------------------------------------------
 // Mocks / router setup
 // ---------------------------------------------------------------------------
