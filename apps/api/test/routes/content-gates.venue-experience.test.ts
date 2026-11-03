@@ -571,6 +571,20 @@ describe('TEST:V5:31 venue and experience content gates', () => {
         ).toBe(404);
         expect(mocks.effectiveSet).not.toHaveBeenCalled();
     });
+    it('requires the menu section key to upload a dish photo', async () => {
+        const row = cases.find((item) => item.file === 'venue/uploadMenuItemPhoto');
+        if (!row) throw new Error('Menu item photo route missing');
+        configureSet(OWNER_A, ['edit_venue_info', 'menu_item_photos']);
+
+        const denied = await request(row);
+
+        expect(denied.status).toBe(403);
+        expect((await denied.json()).error).toMatchObject({
+            code: ServiceErrorCode.ENTITLEMENT_REQUIRED,
+            details: { entitlementKey: 'manage_venue_menu' }
+        });
+        expect(mocks.service).not.toHaveBeenCalled();
+    });
     it('requires dish-photo and translation keys only when the validated menu carries them', async () => {
         const row = cases.find((item) => item.file === 'venue/putMenu');
         if (!row) throw new Error('Menu route missing');
