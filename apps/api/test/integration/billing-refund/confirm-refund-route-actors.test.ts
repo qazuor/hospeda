@@ -84,6 +84,22 @@ describe('TEST:B6:1 admin action 13 route actor gates', () => {
         expect((await confirmRows(seeded.refundId)).refund?.status).toBe('REQUESTED');
     });
 
+    it('checks the route permission before rejecting a malformed body', async () => {
+        const seeded = await seedConfirmRefund();
+        const response = await confirmRequest(
+            app,
+            seeded.refundId,
+            {
+                id: seeded.adminId,
+                role: 'ADMIN',
+                permissions: [PermissionEnum.ACCESS_PANEL_ADMIN]
+            },
+            { confirmed: false }
+        );
+        expect(response.status).toBe(403);
+        expect((await confirmRows(seeded.refundId)).refund?.status).toBe('REQUESTED');
+    });
+
     it('allows a SUPER_ADMIN holding billing.refund', async () => {
         const seeded = await seedConfirmRefund();
         const response = await confirmRequest(
