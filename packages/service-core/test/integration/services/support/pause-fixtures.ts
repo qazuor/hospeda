@@ -94,17 +94,19 @@ export async function seedClosedPause(input: {
     readonly subscriptionId: string;
     readonly startsAt: Date;
     readonly actualEndAt: Date;
+    readonly requestedMonths?: number;
 }): Promise<void> {
-    await getServiceTestDb()
-        .insert(subscriptionPauses)
-        .values({
-            subscriptionId: input.subscriptionId,
-            reason: 'CUSTOMER_REQUEST',
-            requestedMonths: 2,
-            startsAt: input.startsAt,
-            expectedEndAt: new Date(input.startsAt.getTime() + 62 * 24 * 60 * 60 * 1000),
-            actualEndAt: input.actualEndAt
-        });
+    const requestedMonths = input.requestedMonths ?? 2;
+    const expectedEndAt = new Date(input.startsAt);
+    expectedEndAt.setUTCMonth(expectedEndAt.getUTCMonth() + requestedMonths);
+    await getServiceTestDb().insert(subscriptionPauses).values({
+        subscriptionId: input.subscriptionId,
+        reason: 'CUSTOMER_REQUEST',
+        requestedMonths,
+        startsAt: input.startsAt,
+        expectedEndAt,
+        actualEndAt: input.actualEndAt
+    });
 }
 
 /** Retires only rows created by this fixture; shared test tables are never truncated. */
