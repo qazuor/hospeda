@@ -105,6 +105,12 @@ describe('PartnerApplicationPanelScreen', () => {
         );
         const approvedRow = screen.getByTestId(`partner-application-row-${oldId}`);
         expect(within(approvedRow).queryByRole('button')).not.toBeInTheDocument();
+        expect(
+            within(screen.getByTestId('partner-application-panel-table')).queryByRole(
+                'columnheader',
+                { name: 'admin-entities.partnerApplicationPanel.columns.actions' }
+            )
+        ).not.toBeInTheDocument();
         fireEvent.click(
             screen.getByRole('tab', {
                 name: 'admin-entities.partnerApplicationPanel.views.rejectedWaiting'

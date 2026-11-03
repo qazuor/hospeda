@@ -35,7 +35,7 @@ export function PartnerApplicationPanelScreen() {
         view === 'pending'
             ? ['email', 'received', 'status', 'actions']
             : view === 'approvedUnclaimed'
-              ? ['email', 'partner', 'approved', 'claim', 'actions']
+              ? ['email', 'partner', 'approved', 'claim']
               : ['email', 'rejected', 'waitEnds', 'actions'];
     const dateColumn = (item: AdminPartnerApplicationPanelItem) =>
         view === 'pending' ? date(item.createdAt) : date(item.resolvedAt ?? item.createdAt);
@@ -124,12 +124,14 @@ export function PartnerApplicationPanelScreen() {
                                         <td>{item.waitEndsAt ? date(item.waitEndsAt) : '—'}</td>
                                     </>
                                 )}
-                                <td>
-                                    <PartnerApplicationRowActions
-                                        item={item}
-                                        view={view}
-                                    />
-                                </td>
+                                {view !== 'approvedUnclaimed' && (
+                                    <td>
+                                        <PartnerApplicationRowActions
+                                            item={item}
+                                            view={view}
+                                        />
+                                    </td>
+                                )}
                             </tr>
                         ))}
                     </tbody>
