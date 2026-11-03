@@ -79,7 +79,8 @@ export function createMercadoPagoRedisCoolDownStore(args: {
                 ]).finally(() => {
                     if (timeout) clearTimeout(timeout);
                 });
-                sharedUntil = Math.max(sharedUntil, Number(value ?? 0));
+                const parsed = Number(value ?? 0);
+                sharedUntil = Math.max(sharedUntil, Number.isFinite(parsed) ? parsed : 0);
                 lastRead = now();
                 if (degraded) logger.info({ message: '[mp-governor] Redis cool-down recovered' });
                 degraded = false;
