@@ -72,3 +72,15 @@ export function mercadoPagoRateLimitDeferral(args: {
     if (governor?.mode !== 'enforce') return undefined;
     return { coolDownRemainingMs: () => governor.coolDownRemainingMs() };
 }
+
+/** Stop the process governor and boundedly close its Redis client without throwing. */
+export async function shutdownMercadoPagoTrafficGovernor(): Promise<void> {
+    try {
+        await processGovernor?.shutdown();
+    } catch {
+        // Shutdown must continue even if governor cleanup fails.
+    } finally {
+        processGovernor = undefined;
+        initialized = false;
+    }
+}

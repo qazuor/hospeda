@@ -37,7 +37,7 @@ describe('HOS-1709 payment-window-expiry cron (AC:1709:4)', () => {
     it('TEST:1709:8 AC:1709:4 (a) registers the hourly job with the required settings', () => {
         expect(paymentWindowExpiryJob).toMatchObject({
             name: 'payment-window-expiry',
-            schedule: '20 * * * *',
+            schedule: '23 * * * *',
             enabled: true,
             timeoutMs: 300_000
         });
@@ -99,7 +99,7 @@ describe('HOS-1709 payment-window-expiry cron (AC:1709:4)', () => {
             name: 'payment-window-expiry',
             displayName: 'Vencimiento de ventanas de cobro',
             category: 'billing',
-            schedule: '20 * * * *',
+            schedule: '23 * * * *',
             description:
                 'Fail pending payments whose provider collection window closed without collection, re-read by id (HOS-1709, AC:B5:5).'
         });

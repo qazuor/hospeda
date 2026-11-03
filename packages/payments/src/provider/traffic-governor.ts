@@ -50,6 +50,8 @@ export interface CoolDownStore {
     until(): number;
     /** Refresh the shared deadline within the store's bounded latency. */
     refresh?(): Promise<{ readonly fallback: boolean }>;
+    /** Close resources owned by this store. */
+    close?(): Promise<void>;
 }
 
 class MemoryCoolDownStore implements CoolDownStore {
@@ -84,6 +86,7 @@ export class ProviderTrafficGovernor {
     private retrySequence = 0;
     private window: MutableWindow;
     private windowTimer: ReturnType<typeof setInterval> | undefined;
+    private storeClosePromise: Promise<void> | undefined;
     private readonly interactiveQueue: GovernorWaiter[] = [];
     private readonly backgroundQueue: GovernorWaiter[] = [];
     private pumping = false;
@@ -316,6 +319,26 @@ export class ProviderTrafficGovernor {
     stop(): void {
         if (this.windowTimer) clearInterval(this.windowTimer);
         this.windowTimer = undefined;
+        void this.closeCoolDownStore().catch((error: unknown) => this.reportError(error));
+    }
+
+    /** Stop the governor and wait briefly for its owned store to close. */
+    async shutdown(): Promise<void> {
+        this.stop();
+        if (!this.coolDownStore.close) return;
+        let timeout: ReturnType<typeof setTimeout> | undefined;
+        try {
+            await Promise.race([
+                this.closeCoolDownStore(),
+                new Promise<void>((resolve) => {
+                    timeout = setTimeout(resolve, 250);
+                })
+            ]);
+        } catch (error) {
+            this.reportError(error);
+        } finally {
+            if (timeout) clearTimeout(timeout);
+        }
     }
 
     /** Return the remaining in-process cool-down duration in milliseconds. */
@@ -333,6 +356,11 @@ export class ProviderTrafficGovernor {
         } catch (error) {
             this.reportError(error);
         }
+    }
+
+    private closeCoolDownStore(): Promise<void> {
+        this.storeClosePromise ??= Promise.resolve(this.coolDownStore.close?.());
+        return this.storeClosePromise;
     }
 
     private counter(trafficClass: TrafficClass, capability: string): MutableCounter {

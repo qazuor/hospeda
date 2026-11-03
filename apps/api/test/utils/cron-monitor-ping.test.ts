@@ -8,7 +8,7 @@ import { createSentryCronMonitorPing } from '../../src/utils/cron-monitor-ping.j
 
 describe('cron monitor ping adapter', () => {
     beforeEach(() => vi.clearAllMocks());
-    it('captures an OK daily check-in with a two-hour margin', async () => {
+    it('captures the 02:10 market-time check-in with a 170-minute margin', async () => {
         await createSentryCronMonitorPing().ping({
             sweep: 'RECONCILIATION',
             runId: 'id',
@@ -16,7 +16,11 @@ describe('cron monitor ping adapter', () => {
         });
         expect(captureCheckIn).toHaveBeenCalledWith(
             { monitorSlug: 'billing-reconciliation-sweep', status: 'ok' },
-            { schedule: { type: 'interval', value: 1, unit: 'day' }, checkinMargin: 120 }
+            {
+                schedule: { type: 'crontab', value: '10 2 * * *' },
+                timezone: 'America/Argentina/Buenos_Aires',
+                checkinMargin: 170
+            }
         );
     });
     it('swallows monitor failures', async () => {

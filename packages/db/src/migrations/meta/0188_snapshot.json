@@ -1,6 +1,6 @@
 {
-  "id": "48607b66-fb65-4682-a9e5-bfc999fe9ccc",
-  "prevId": "f75b6dea-294a-47b8-aed2-7c3d798feeeb",
+  "id": "f75b6dea-294a-47b8-aed2-7c3d798feeeb",
+  "prevId": "b5e10633-e340-4ca1-abfb-f3ce50379e8e",
   "version": "7",
   "dialect": "postgresql",
   "tables": {
@@ -1979,6 +1979,63 @@
       },
       "policies": {},
       "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.creation_sweep_attempt": {
+      "name": "creation_sweep_attempt",
+      "schema": "",
+      "columns": {
+        "subscription_id": {
+          "name": "subscription_id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "attempts": {
+          "name": "attempts",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 0
+        },
+        "next_search_at": {
+          "name": "next_search_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "reset_marker": {
+          "name": "reset_marker",
+          "type": "varchar(255)",
+          "primaryKey": false,
+          "notNull": false
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "creation_sweep_attempt_subscription_id_subscription_id_fk": {
+          "name": "creation_sweep_attempt_subscription_id_subscription_id_fk",
+          "tableFrom": "creation_sweep_attempt",
+          "tableTo": "subscription",
+          "columnsFrom": [
+            "subscription_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {
+        "ck_creation_sweep_attempts_nonnegative": {
+          "name": "ck_creation_sweep_attempts_nonnegative",
+          "value": "\"creation_sweep_attempt\".\"attempts\" >= 0"
+        }
+      },
       "isRLSEnabled": false
     },
     "public.features": {
@@ -23293,12 +23350,6 @@
         "two_factor_verified": {
           "name": "two_factor_verified",
           "type": "boolean",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "auth_method": {
-          "name": "auth_method",
-          "type": "text",
           "primaryKey": false,
           "notNull": false
         }
