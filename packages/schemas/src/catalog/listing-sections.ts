@@ -1,5 +1,5 @@
 import { EntitlementKeyEnum as K } from './key-enums.js';
-import type { ListingSectionDefinition } from './listing-catalog.types.js';
+import type { ListingSectionDefinitionBase } from './listing-catalog.base-types.js';
 
 /** All listing sections, grouped by vertical and ordered as in the editor. */
 export const LISTING_SECTIONS = {
@@ -129,7 +129,7 @@ export const LISTING_SECTIONS = {
             order: 12,
             group: 'management'
         }
-    ] as const satisfies readonly ListingSectionDefinition<'venue'>[],
+    ] as const satisfies readonly ListingSectionDefinitionBase<'venue'>[],
     experience: [
         {
             id: 'basicInfo',
@@ -242,7 +242,7 @@ export const LISTING_SECTIONS = {
             order: 10,
             group: 'management'
         }
-    ] as const satisfies readonly ListingSectionDefinition<'experience'>[],
+    ] as const satisfies readonly ListingSectionDefinitionBase<'experience'>[],
     accommodation: [
         {
             id: 'basicInfo',
@@ -358,5 +358,5 @@ export const LISTING_SECTIONS = {
             order: 11,
             group: 'management'
         }
-    ] as const satisfies readonly ListingSectionDefinition<'accommodation'>[]
+    ] as const satisfies readonly ListingSectionDefinitionBase<'accommodation'>[]
 };

@@ -5,6 +5,7 @@ export * from './key-attributes.js';
 export * from './key-catalog.js';
 export * from './key-enums.js';
 export * from './limit-keys.js';
+export * from './listing-catalog.base-types.js';
 export * from './listing-catalog.ids.js';
 export * from './listing-catalog.types.js';
 export * from './listing-sections.js';

@@ -1,4 +1,4 @@
-import type { ListingVertical } from './listing-catalog.types.js';
+import type { ListingVertical } from './listing-catalog.base-types.js';
 import type { LISTING_SECTIONS } from './listing-sections.js';
 /** Section id union derived from the section catalog for a vertical. */
 export type ListingSectionId<V extends ListingVertical> =
