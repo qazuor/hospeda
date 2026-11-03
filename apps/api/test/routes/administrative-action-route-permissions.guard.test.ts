@@ -187,6 +187,16 @@ const ROUTE_BINDINGS: Readonly<Record<AdministrativeAction, BoundEntry | Unbound
                 kind: 'required',
                 file: 'apps/api/src/routes/partner-application/admin/cancel-wait.ts',
                 route: 'adminCancelPartnerApplicationWaitRoute'
+            },
+            {
+                kind: 'required',
+                file: 'apps/api/src/routes/partner-application/admin/approve.ts',
+                route: 'adminApprovePartnerApplicationRoute'
+            },
+            {
+                kind: 'required',
+                file: 'apps/api/src/routes/partner-application/admin/reject.ts',
+                route: 'adminRejectPartnerApplicationRoute'
             }
         ]
     },
@@ -457,10 +467,10 @@ describe('TEST:1696:5 AC:1696:5 / HOS-1689 — each administrative action row ag
         expect(Object.keys(ROUTE_BINDINGS)).toHaveLength(25);
     });
 
-    it('b. checks exactly 37 bindings across 16 bound rows', () => {
+    it('b. checks exactly 39 bindings across 16 bound rows', () => {
         expect(BOUND_ACTIONS).toHaveLength(16);
         const total = BOUND_ACTIONS.reduce((count, action) => count + bindingsOf(action).length, 0);
-        expect(total).toBe(37);
+        expect(total).toBe(39);
     });
 
     it.each(
