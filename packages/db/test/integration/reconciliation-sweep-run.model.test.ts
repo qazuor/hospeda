@@ -1,9 +1,15 @@
+import { eq } from 'drizzle-orm';
 import { afterAll, describe, expect, it } from 'vitest';
 import {
     isReconciliationSweepRunComplete,
     reconciliationSweepRunModel as model
 } from '../../src/models/reconciliation-sweep-run/reconciliation-sweep-run.model.ts';
 import { reconciliationSweepRuns } from '../../src/schemas/vertical/reconciliation-sweep-run.dbschema.ts';
+import {
+    closeRunIfOpen,
+    extendRunLease,
+    findOpenRunsWithLease
+} from '../../src/utils/run-lease.ts';
 import { closeTestPool, withTestTransaction } from './helpers.ts';
 
 afterAll(closeTestPool);
@@ -127,6 +133,82 @@ describe('reconciliation sweep run registry (supports TEST:B11:24)', () => {
                 finishedAt: null,
                 rowsRead: 0,
                 rowsFailed: 0
+            });
+        });
+    });
+
+    it('computes live, expired, and null leases and closes each open run once', async () => {
+        await withTestTransaction(async (tx) => {
+            const live = await model.openSlice({ correlationId: crypto.randomUUID(), tx });
+            const expired = await model.openSlice({ correlationId: crypto.randomUUID(), tx });
+            const empty = await model.openSlice({ correlationId: crypto.randomUUID(), tx });
+            const lease = {
+                table: reconciliationSweepRuns,
+                id: reconciliationSweepRuns.id,
+                leaseUntil: reconciliationSweepRuns.leaseUntil,
+                outcome: reconciliationSweepRuns.outcome
+            };
+            await tx
+                .update(reconciliationSweepRuns)
+                .set({ leaseUntil: new Date(Date.now() - 60_000) })
+                .where(eq(reconciliationSweepRuns.id, expired.id));
+            await tx
+                .update(reconciliationSweepRuns)
+                .set({ leaseUntil: null })
+                .where(eq(reconciliationSweepRuns.id, empty.id));
+            const rows = await model.findOpenRunsWithLease({ tx });
+            expect(rows.find(({ id }) => id === live.id)?.leaseLive).toBe(true);
+            expect(rows.find(({ id }) => id === expired.id)?.leaseLive).toBe(false);
+            expect(rows.find(({ id }) => id === empty.id)?.leaseLive).toBe(false);
+            const genericRows = await findOpenRunsWithLease({ lease, tx });
+            expect(genericRows.find(({ id }) => id === live.id)?.leaseLive).toBe(true);
+            expect(
+                await extendRunLease({
+                    lease,
+                    id: live.id,
+                    tx
+                })
+            ).toBe(true);
+            expect(
+                await closeRunIfOpen({
+                    lease,
+                    id: live.id,
+                    outcome: 'TIMED_OUT',
+                    tx
+                })
+            ).not.toBeNull();
+            expect(
+                await extendRunLease({
+                    lease,
+                    id: live.id,
+                    tx
+                })
+            ).toBe(false);
+            expect(
+                await closeRunIfOpen({
+                    lease,
+                    id: live.id,
+                    outcome: 'FAILED',
+                    tx
+                })
+            ).toBeNull();
+        });
+    });
+
+    it('opens subsequent slices with the slice-zero database anchor', async () => {
+        await withTestTransaction(async (tx) => {
+            const first = await model.openSlice({ correlationId: crypto.randomUUID(), tx });
+            const second = await model.openSlice({
+                correlationId: crypto.randomUUID(),
+                cycleId: first.cycleId!,
+                tx
+            });
+            expect(first.cycleId).toBe(first.id);
+            expect(second).toMatchObject({
+                cycleId: first.cycleId,
+                cycleDate: first.cycleDate,
+                cycleStartedAt: first.cycleStartedAt,
+                sliceIndex: 1
             });
         });
     });

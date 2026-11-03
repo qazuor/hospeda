@@ -1,4 +1,4 @@
-import { and, asc, desc, eq, gt, inArray, sql } from 'drizzle-orm';
+import { and, asc, desc, eq, gt, inArray, isNull, lt, or, sql } from 'drizzle-orm';
 import { getDb } from '../../client.ts';
 import { domainEvent } from '../../schemas/domain-event/domain_event.dbschema.ts';
 import {
@@ -6,6 +6,7 @@ import {
     providerLinks,
     type SelectProviderLink
 } from '../../schemas/vertical/provider-link.dbschema.ts';
+import { reconciliationSweepRuns } from '../../schemas/vertical/reconciliation-sweep-run.dbschema.ts';
 import {
     LIVE_SUBSCRIPTION_STATUSES,
     type SelectSubscription,
@@ -16,6 +17,7 @@ import type { DrizzleClient } from '../../types.ts';
 /** Input for one keyset page of subscriptions with provider links. */
 export interface ListSweepInventoryPageInput {
     readonly afterSubscriptionId?: string;
+    readonly cycleId?: string;
     readonly limit: number;
     readonly tx?: DrizzleClient;
 }
@@ -109,6 +111,11 @@ export class ReconciliationInventoryModel {
         input: ListSweepInventoryPageInput
     ): Promise<ReadonlyArray<SweepInventoryRow>> {
         const db = input.tx ?? getDb();
+        const cycleStartedAt = db
+            .select({ cycleStartedAt: reconciliationSweepRuns.cycleStartedAt })
+            .from(reconciliationSweepRuns)
+            .where(eq(reconciliationSweepRuns.id, input.cycleId ?? ''))
+            .limit(1);
         return db
             .select({ subscription: subscriptions, providerLink: providerLinks })
             .from(subscriptions)
@@ -117,12 +124,21 @@ export class ReconciliationInventoryModel {
                 and(
                     inArray(subscriptions.class, ['PRINCIPAL', 'COMPLEMENTO']),
                     inArray(subscriptions.status, LIVE_SUBSCRIPTION_STATUSES),
-                    input.afterSubscriptionId === undefined
-                        ? undefined
-                        : gt(subscriptions.id, input.afterSubscriptionId)
+                    input.cycleId === undefined
+                        ? input.afterSubscriptionId === undefined
+                            ? undefined
+                            : gt(subscriptions.id, input.afterSubscriptionId)
+                        : or(
+                              isNull(subscriptions.lastSweptAt),
+                              lt(subscriptions.lastSweptAt, cycleStartedAt)
+                          )
                 )
             )
-            .orderBy(asc(subscriptions.id))
+            .orderBy(
+                ...(input.cycleId === undefined
+                    ? [asc(subscriptions.id)]
+                    : [sql`${subscriptions.lastSweptAt} ASC NULLS FIRST`, asc(subscriptions.id)])
+            )
             .limit(input.limit);
     }
 
