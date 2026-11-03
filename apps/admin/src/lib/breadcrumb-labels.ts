@@ -12,6 +12,7 @@
  * via the `t()` translator.
  */
 export const breadcrumbLabels: Readonly<Record<string, string>> = {
+    '/content/fix-requests': 'admin-menu.content.fixRequests',
     // Billing section (HOS-1416: the plans/subscriptions/addons/payments/
     // reconciliation/invoices/promo-codes/metrics/settings entries were
     // removed with the deleted billing pages)

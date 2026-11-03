@@ -290,6 +290,15 @@ const catalogoSidebar: SidebarInput = {
                     permissions: ['MODERATION_THRESHOLD_VIEW']
                 }
             ]
+        },
+        {
+            type: 'link',
+            id: 'fix-requests',
+            label: { es: 'Arreglos pendientes', en: 'Pending fixes', pt: 'Correções pendentes' },
+            icon: 'ListIcon',
+            route: '/content/fix-requests',
+            permissions: ['LISTING_MODERATE'],
+            onMissing: 'hide'
         }
     ]
 };
