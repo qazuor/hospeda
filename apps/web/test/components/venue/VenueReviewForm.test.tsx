@@ -7,7 +7,7 @@
  */
 
 import { fireEvent, render, screen } from '@testing-library/react';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { VenueReviewForm } from '@/components/venue/VenueReviewForm.client';
 import { buildAuthSnapshot } from '../../helpers/auth-session';
 
@@ -91,6 +91,34 @@ function openDialog() {
 
 function rateFiveStars() {
     fireEvent.click(screen.getByRole('radio', { name: '5' }));
+}
+
+/**
+ * Records every timer the component schedules with `window.setTimeout` and every
+ * one it cancels with `window.clearTimeout`, so a test can assert that nothing
+ * is left pending once the component is gone (BETA-215).
+ */
+function trackTimers() {
+    const scheduled: { id: number; delay: number }[] = [];
+    const cleared = new Set<number>();
+    const realSet = window.setTimeout.bind(window);
+    const realClear = window.clearTimeout.bind(window);
+    vi.spyOn(window, 'setTimeout').mockImplementation(((
+        handler: TimerHandler,
+        delay?: number,
+        ...args: unknown[]
+    ) => {
+        const id = realSet(handler, delay, ...args);
+        scheduled.push({ id, delay: delay ?? 0 });
+        return id;
+    }) as typeof window.setTimeout);
+    vi.spyOn(window, 'clearTimeout').mockImplementation(((id?: number) => {
+        if (id !== undefined) cleared.add(id);
+        realClear(id);
+    }) as typeof window.clearTimeout);
+    const pendingAfterUnmount = (delay: number) =>
+        scheduled.filter((timer) => timer.delay === delay && !cleared.has(timer.id));
+    return { scheduled, pendingAfterUnmount };
 }
 
 // ---------------------------------------------------------------------------
@@ -207,5 +235,52 @@ describe('VenueReviewForm — client-side session resolution (HOS-369 WB0-4)', (
         expect(
             screen.queryByText(/Necesitás una cuenta para dejar tu reseña/i)
         ).not.toBeInTheDocument();
+    });
+});
+
+describe('VenueReviewForm — nothing outlives the component (BETA-215)', () => {
+    beforeEach(() => {
+        setupDialogMocks();
+    });
+
+    afterEach(() => {
+        vi.restoreAllMocks();
+        vi.unstubAllGlobals();
+    });
+
+    it('cancels the post-close reset timer when unmounted mid-flight', () => {
+        const timers = trackTimers();
+        const { unmount } = renderForm();
+        openDialog();
+        fireEvent.keyDown(document.querySelector('dialog') as HTMLDialogElement, {
+            key: 'Escape'
+        });
+        // Arrange: the 200ms reset is scheduled and still pending.
+        expect(timers.pendingAfterUnmount(200)).toHaveLength(1);
+
+        unmount();
+
+        // Assert: it was cancelled, so it can never set state on a gone tree.
+        expect(timers.pendingAfterUnmount(200)).toHaveLength(0);
+    });
+
+    it('aborts the in-flight submit when unmounted', () => {
+        let signal: AbortSignal | undefined;
+        vi.stubGlobal(
+            'fetch',
+            vi.fn((_url: string, init?: RequestInit) => {
+                signal = init?.signal ?? undefined;
+                return new Promise<Response>(() => undefined);
+            })
+        );
+        const { unmount } = renderForm();
+        openDialog();
+        rateFiveStars();
+        fireEvent.submit(document.querySelector('form') as HTMLFormElement);
+        expect(signal?.aborted).toBe(false);
+
+        unmount();
+
+        expect(signal?.aborted).toBe(true);
     });
 });
