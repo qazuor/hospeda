@@ -1,5 +1,6 @@
 import {
     currentTrafficContext,
+    GOVERNOR_MAX_WAIT_SAMPLES,
     ProviderTrafficGovernor,
     runWithTrafficClass
 } from '@repo/payments';
@@ -78,5 +79,46 @@ describe('cron provider traffic context', () => {
             details: { retained: true }
         });
         governor.stop();
+    });
+
+    it('bounds the run-wide wait sample list', async () => {
+        const result = await runCronHandlerInBackground({
+            ctx: context,
+            job: {
+                handler: async () => {
+                    const counters = currentTrafficContext()?.counters;
+                    counters?.record({
+                        trafficClass: 'background',
+                        capability: 'read',
+                        waitMs: 999_999
+                    });
+                    for (let index = 1; index <= GOVERNOR_MAX_WAIT_SAMPLES; index += 1)
+                        counters?.record({
+                            trafficClass: 'background',
+                            capability: 'read',
+                            waitMs: 7
+                        });
+                    counters?.record({
+                        trafficClass: 'background',
+                        capability: 'read',
+                        request: true
+                    });
+                    return {
+                        success: true,
+                        message: 'ok',
+                        processed: 0,
+                        errors: 0,
+                        durationMs: 1,
+                        details: {}
+                    };
+                }
+            }
+        });
+        expect(result.details).toMatchObject({
+            providerTraffic: {
+                requests: 1,
+                waitMs: { max: 7 }
+            }
+        });
     });
 });

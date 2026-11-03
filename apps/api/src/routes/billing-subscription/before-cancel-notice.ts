@@ -5,16 +5,50 @@ import {
     emailOutboxModel,
     eq,
     getDb,
+    sql,
     subscriptions,
     users
 } from '@repo/db';
 import {
     BEFORE_CANCEL_TEMPLATE_BY_KIND,
     type BeforeCancelNotice,
-    type BeforeCancelNoticeKind
+    type BeforeCancelNoticeKind,
+    type BeforeCancelNoticeStatusReader
 } from '@repo/service-core';
 
 const SCHEDULED_CANCELLATION_KIND = 'SCHEDULED_CANCELLATION' satisfies BeforeCancelNoticeKind;
+
+function beforeCancelDedupKey(input: {
+    subscriptionId: string;
+    userId: string;
+    kind: BeforeCancelNoticeKind;
+    occurrenceId?: string;
+}): string {
+    return buildEmailDedupKey({
+        recipient: input.userId,
+        template: BEFORE_CANCEL_TEMPLATE_BY_KIND[input.kind],
+        occurrence: buildEventOccurrence({ eventId: input.occurrenceId ?? input.subscriptionId })
+    });
+}
+
+/** Reads the existing before-cancel outbox row with the database clock, without enqueueing. */
+export const beforeCancelNoticeStatus: BeforeCancelNoticeStatusReader = {
+    async read({ subscriptionId, userId, kind }) {
+        const [row] = await getDb()
+            .select({
+                status: emailOutbox.status,
+                ageMs: sql<number>`extract(epoch from (now() - ${emailOutbox.updatedAt})) * 1000`
+            })
+            .from(emailOutbox)
+            .where(eq(emailOutbox.dedupKey, beforeCancelDedupKey({ subscriptionId, userId, kind })))
+            .limit(1);
+        if (!row) return { state: 'ABSENT', settledAgeMs: null };
+        const settledAgeMs = Math.max(0, Math.round(Number(row.ageMs)));
+        if (row.status === 'sent') return { state: 'SENT', settledAgeMs };
+        if (row.status === 'failed') return { state: 'UNDELIVERABLE', settledAgeMs };
+        return { state: 'PENDING', settledAgeMs };
+    }
+};
 
 /**
  * Outbox contract for the notice that precedes every cancellation we execute.
@@ -33,11 +67,7 @@ export const beforeCancelNotice: BeforeCancelNotice = {
             .limit(1);
         if (!recipient) return 'NO_RECIPIENT';
         const template = BEFORE_CANCEL_TEMPLATE_BY_KIND[kind];
-        const dedupKey = buildEmailDedupKey({
-            recipient: userId,
-            template,
-            occurrence: buildEventOccurrence({ eventId: occurrenceId ?? subscriptionId })
-        });
+        const dedupKey = beforeCancelDedupKey({ subscriptionId, userId, kind, occurrenceId });
         const scheduledServiceEnd =
             kind === SCHEDULED_CANCELLATION_KIND
                 ? await getDb()

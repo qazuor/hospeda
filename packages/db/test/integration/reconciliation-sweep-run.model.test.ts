@@ -20,6 +20,39 @@ function postgresCause(error: unknown): { code?: string; constraint?: string } |
     return null;
 }
 
+describe('TEST:1955:9 open sweep lookup', () => {
+    it('returns a recent open run and ignores closed or old runs', async () => {
+        await withTestTransaction(async (tx) => {
+            const since = new Date('2029-05-01T12:00:00.000Z');
+            const recent = await model.open({
+                correlationId: crypto.randomUUID(),
+                startedAt: new Date(since.getTime() + 60_000),
+                tx
+            });
+            expect(await model.findOpenStartedSince({ since, tx })).toMatchObject({
+                id: recent.id
+            });
+            await model.close({
+                id: recent.id,
+                finishedAt: new Date(since.getTime() + 120_000),
+                rowsRead: 0,
+                rowsFailed: 0,
+                tx
+            });
+            expect(await model.findOpenStartedSince({ since, tx })).toBeNull();
+            const old = await model.open({
+                correlationId: crypto.randomUUID(),
+                startedAt: new Date(since.getTime() - 60_000),
+                tx
+            });
+            expect(await model.findOpenStartedSince({ since, tx })).toBeNull();
+            expect(
+                await model.findOpenStartedSince({ since: new Date(since.getTime() - 120_000), tx })
+            ).toMatchObject({ id: old.id });
+        });
+    });
+});
+
 describe('reconciliation sweep run registry (supports TEST:B11:24)', () => {
     it('opens, closes once, and defines completeness from finish and failures', async () => {
         await withTestTransaction(async (tx) => {
