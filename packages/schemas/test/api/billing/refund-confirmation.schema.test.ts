@@ -17,10 +17,14 @@ describe('refund confirmation schemas', () => {
         'SENT',
         'NOT_ACCEPTED_KEPT_CONFIRMED',
         'PROVIDER_REJECTED_KEPT_CONFIRMED',
+        'PROVIDER_REJECTED_FAILED',
         'AWAITING_PROVIDER_ANSWER',
         'CHARGED_BACK'
     ] as const)('accepts the %s service outcome', (outcome) => {
-        const status = outcome === 'CHARGED_BACK' ? 'FAILED' : 'CONFIRMED';
+        const status =
+            outcome === 'CHARGED_BACK' || outcome === 'PROVIDER_REJECTED_FAILED'
+                ? 'FAILED'
+                : 'CONFIRMED';
         expect(
             RefundConfirmationResponseSchema.safeParse({ refundId, status, outcome, calls: [] })
                 .success

@@ -7,7 +7,11 @@ export const SubscriptionOpenRefundSchema = z.object({
     refundAmount: z.number().int().positive(),
     reason: z.string().min(1).max(64),
     requestedAt: z.string().datetime(),
-    payment: z.object({ source: SubscriptionRevocationPaymentSourceSchema, id: z.string().uuid() })
+    payment: z.object({ source: SubscriptionRevocationPaymentSourceSchema, id: z.string().uuid() }),
+    /** Provider deadline for card payments; null for a manual payment. */
+    providerRefundWindow: z
+        .object({ open: z.boolean(), closesAt: z.string().datetime() })
+        .nullable()
 });
 
 /** An open refund request for one payment of the requested subscription; excludes complement and one-time add-on payments (I-7). */

@@ -407,6 +407,10 @@
         },
         {
             "method": "POST",
+            "path": "/api/v1/admin/billing-refunds/:refundId/decline"
+        },
+        {
+            "method": "POST",
             "path": "/api/v1/admin/billing-refunds/external"
         },
         {

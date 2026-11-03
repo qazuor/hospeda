@@ -19,6 +19,8 @@ import {
 } from '../reconciliation/chargeback/chargeback-detection';
 import { resolveHungPaymentsWithoutRefund } from '../reconciliation/hung-payment-resolution';
 import type { ReconciliationMarkPayments } from '../reconciliation/reconciliation-mark-payments.port';
+import { failRefund } from './refund-fail';
+import { lockRefundSource } from './refund-source';
 
 /** Resolves a newly observed provider chargeback before failing the confirmed refund. */
 export async function detectRefundChargeback(input: {
@@ -45,6 +47,7 @@ export async function detectRefundChargeback(input: {
         correlationId: input.input.correlationId ?? crypto.randomUUID()
     });
     await getDb().transaction(async (tx: DrizzleClient) => {
+        await lockRefundSource({ tx, source: { kind: 'PAYMENT', id: payment.id } });
         const [refund] = await tx
             .select()
             .from(refunds)
@@ -58,7 +61,16 @@ export async function detectRefundChargeback(input: {
                 undefined,
                 'REFUND_STATE_CHANGED'
             );
-        if (!(await canFail(tx, refund)))
+        if (
+            !(
+                await failRefund({
+                    tx,
+                    refund,
+                    at: input.ports.clock.now(),
+                    correlationId: input.input.correlationId ?? crypto.randomUUID()
+                })
+            ).failed
+        )
             throw new ServiceError(
                 ServiceErrorCode.ALREADY_EXISTS,
                 'Refund changed before chargeback handling',
@@ -102,19 +114,4 @@ export async function detectRefundChargeback(input: {
             });
         }
     });
-}
-
-async function canFail(tx: DrizzleClient, refund: SelectRefund): Promise<boolean> {
-    const [updated] = await tx
-        .update(refunds)
-        .set({ status: 'FAILED', version: refund.version + 1 })
-        .where(
-            and(
-                eq(refunds.id, refund.id),
-                eq(refunds.status, 'CONFIRMED'),
-                eq(refunds.version, refund.version)
-            )
-        )
-        .returning({ id: refunds.id });
-    return updated !== undefined;
 }

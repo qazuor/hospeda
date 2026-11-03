@@ -88,6 +88,7 @@ describe('TEST:1710:8 AC:1710:7 fake provider charge windows', () => {
             'id',
             'metadata',
             'point_of_interaction',
+            'refunds',
             'status',
             'status_detail',
             'transaction_amount',

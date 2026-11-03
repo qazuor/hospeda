@@ -119,7 +119,8 @@ describe('charge', () => {
             declineReason: null,
             amount: ARS(1_800_000),
             refundedAmount: ARS(0),
-            chargedBack: false
+            chargedBack: false,
+            refunds: []
         });
     });
 
