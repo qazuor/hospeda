@@ -6,6 +6,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import {
     applyThemeAttribute,
     applyThemeChoice,
+    clearThemeSyncMarker,
     DEFAULT_THEME_CHOICE,
     isThemeChoice,
     markThemeSynced,
@@ -185,6 +186,21 @@ describe('saved profile theme (HOS-1966)', () => {
             applyThemeChoice({ choice: 'dark' });
             markThemeSynced({ userId: 'u1' });
             expect(syncSavedThemeChoice({ userId: 'u1', savedChoice: 'light' })).toBe(false);
+            expect(localStorage.getItem(THEME_STORAGE_KEY)).toBe('dark');
+            expect(document.documentElement.getAttribute('data-theme')).toBe('dark');
+        });
+
+        it('applies the saved theme after logout and a guest toggle in the same tab', () => {
+            // The signed-in choice stamps this tab's session marker.
+            applyThemeChoice({ choice: 'dark' });
+            markThemeSynced({ userId: 'u1' });
+
+            // Logout clears the marker; a guest can then change the local theme.
+            clearThemeSyncMarker();
+            applyThemeChoice({ choice: 'light' });
+
+            // The next login resolves the saved profile choice in this session.
+            expect(syncSavedThemeChoice({ userId: 'u1', savedChoice: 'dark' })).toBe(true);
             expect(localStorage.getItem(THEME_STORAGE_KEY)).toBe('dark');
             expect(document.documentElement.getAttribute('data-theme')).toBe('dark');
         });
