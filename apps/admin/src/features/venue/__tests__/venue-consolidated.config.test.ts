@@ -14,6 +14,7 @@
  *  - priceRange field is optional
  */
 
+import { VenueTypeEnum } from '@repo/schemas';
 import { describe, expect, it } from 'vitest';
 import { createVenueConsolidatedConfig } from '../config/venue-consolidated.config';
 
@@ -107,12 +108,8 @@ describe('createVenueConsolidatedConfig', () => {
         const typeField = section?.fields.find((f) => f.id === 'type');
         const options = (typeField?.typeConfig as { options?: { value: string }[] })?.options ?? [];
         const values = options.map((o) => o.value);
-        expect(values).toContain('RESTAURANT');
-        expect(values).toContain('BAR');
-        expect(values).toContain('CAFE');
-        expect(values).toContain('FOOD_TRUCK');
-        expect(values).toContain('PUB');
-        expect(values).toContain('BOLICHE');
+        expect(values).toHaveLength(Object.values(VenueTypeEnum).length);
+        expect([...values].sort()).toEqual([...Object.values(VenueTypeEnum)].sort());
     });
 
     it('priceRange field should have select options for all price ranges', () => {

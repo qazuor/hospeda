@@ -63,7 +63,18 @@ export interface ResolveListingSectionsResult {
     readonly multiLine: boolean;
 }
 
-/** Resolve only catalog presence when a caller does not need entitlement state. */
+/**
+ * Resolves only whether each requested section is present (not `absent`) for a
+ * listing's business lines. Step 4b uses it: presence depends on the business lines
+ * alone, so it needs no effective set and reads no entitlement. Pure: no I/O.
+ *
+ * @param args.vertical - The listing's vertical.
+ * @param args.businessLines - The listing's business lines after the request, unvalidated.
+ * @param args.requested - The section ids the route declares.
+ * @returns Section id → `true` when the section is common or listed by a business line.
+ * @throws {UnknownBusinessLineError} A business line not declared for the vertical.
+ * @throws {UnknownListingSectionIdError} A requested section id missing from the catalog.
+ */
 export function resolveListingSectionPresence(args: {
     readonly vertical: ListingVertical;
     readonly businessLines: readonly string[];

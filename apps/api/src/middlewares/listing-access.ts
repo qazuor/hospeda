@@ -208,12 +208,12 @@ export async function enforceListingAccess(args: {
     const bodyLines =
         config.businessLinesFromBody?.({ body }) ??
         (Array.isArray(body?.businessLines)
-            ? body.businessLines.filter((value): value is BusinessLine => typeof value === 'string')
+            ? body.businessLines.filter((value): value is string => typeof value === 'string')
             : undefined);
     const resultingBusinessLines =
         config.operation === 'CREATE'
             ? (bodyLines ?? [])
-            : (bodyLines ?? (facts?.businessLines as readonly BusinessLine[] | undefined) ?? []);
+            : (bodyLines ?? facts?.businessLines ?? []);
     const sections = requestedSections.length
         ? {
               requested: requestedSections.map((section) => ({ ...section, traits })),
@@ -244,7 +244,7 @@ export async function enforceListingAccess(args: {
         }
         ctx.set('listingAccess', {
             subjectId: result.subjectId,
-            evaluatedSteps: result.evaluatedSteps as never
+            evaluatedSteps: result.evaluatedSteps
         });
         return;
     }

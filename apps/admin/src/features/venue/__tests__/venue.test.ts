@@ -151,6 +151,8 @@ describe('venueListConfig', () => {
         for (const val of Object.values(VenueTypeEnum)) {
             expect(optionValues).toContain(val);
         }
+        expect(optionValues).toHaveLength(Object.values(VenueTypeEnum).length);
+        expect([...optionValues].sort()).toEqual([...Object.values(VenueTypeEnum)].sort());
     });
 
     it('priceRange filter options cover all PriceRangeEnum values', () => {
