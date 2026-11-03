@@ -105,6 +105,7 @@ describe('TEST:V7:6 time does not transition partner applications', () => {
     it('(a,b) marks only overdue pending rows and preserves their state at the strict deadline edge', async () => {
         const firstEmail = email();
         const secondEmail = email();
+        const rejectedEmail = email();
         const firstId = await insertPending({
             email: firstEmail,
             deadlinesVersion: deadlineVersion
@@ -113,7 +114,29 @@ describe('TEST:V7:6 time does not transition partner applications', () => {
             email: secondEmail,
             deadlinesVersion: deadlineVersion
         });
-        applicationIds.push(firstId, secondId);
+        const rejectedId = await insertPending({
+            email: rejectedEmail,
+            deadlinesVersion: deadlineVersion
+        });
+        applicationIds.push(firstId, secondId, rejectedId);
+        const actor = await createOwner();
+        userIds.push(actor.id);
+        const rejectedResponse = await app.request(
+            `/api/v1/admin/partner-applications/${rejectedId}/reject`,
+            {
+                method: 'POST',
+                headers: actorHeaders({
+                    id: actor.id,
+                    role: RoleEnum.ADMIN,
+                    permissions: [
+                        PermissionEnum.ACCESS_PANEL_ADMIN,
+                        PermissionEnum.PARTNER_RESOLVE_APPLICATION
+                    ]
+                }),
+                body: JSON.stringify({ reason: 'Clock test rejection' })
+            }
+        );
+        expect(rejectedResponse.status).toBe(200);
         const createdAt = await readCreatedAt(firstId);
         const clock = createAdjustableClock({ start: createdAt });
         injectClock({ clock });
@@ -124,6 +147,8 @@ describe('TEST:V7:6 time does not transition partner applications', () => {
             page: 1,
             pageSize: 100
         });
+        expect(atCreation.items.every((item) => item.status === 'PENDING')).toBe(true);
+        expect(atCreation.items.some((item) => item.id === rejectedId)).toBe(false);
         for (const id of [firstId, secondId]) {
             expect(atCreation.items.find((item) => item.id === id)?.overdue).toBe(false);
         }
@@ -135,6 +160,8 @@ describe('TEST:V7:6 time does not transition partner applications', () => {
             page: 1,
             pageSize: 100
         });
+        expect(atDeadline.items.every((item) => item.status === 'PENDING')).toBe(true);
+        expect(atDeadline.items.some((item) => item.id === rejectedId)).toBe(false);
         for (const id of [firstId, secondId]) {
             expect(atDeadline.items.find((item) => item.id === id)?.overdue).toBe(false);
         }
@@ -146,6 +173,8 @@ describe('TEST:V7:6 time does not transition partner applications', () => {
             page: 1,
             pageSize: 100
         });
+        expect(overdue.items.every((item) => item.status === 'PENDING')).toBe(true);
+        expect(overdue.items.some((item) => item.id === rejectedId)).toBe(false);
         for (const id of [firstId, secondId]) {
             expect(overdue.items.find((item) => item.id === id)?.overdue).toBe(true);
             expect(await readApplication(id)).toEqual({
