@@ -1,3 +1,4 @@
+/** One scalar form control derived from a published deadline value. */
 export type DeadlineFormField = {
     readonly name: string;
     readonly kind: 'number' | 'list';

@@ -2,6 +2,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { fetchApi } from '@/lib/api/client';
 import { DEADLINE_HALVES } from '../config/deadline-halves';
 
+/** The two independently versioned deadline API halves. */
 export type DeadlineHalf = keyof typeof DEADLINE_HALVES;
 type DeadlineVersion = { readonly version: number; readonly values: Record<string, unknown> };
 type DeadlinePreview = {
