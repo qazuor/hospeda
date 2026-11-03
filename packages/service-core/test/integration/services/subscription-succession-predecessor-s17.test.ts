@@ -1,4 +1,4 @@
-import { emailOutbox, eq, subscriptionPauses, subscriptions } from '@repo/db';
+import { emailOutbox, eq, subscriptionPauses, subscriptions, users } from '@repo/db';
 import { afterAll, afterEach, describe, expect, it } from 'vitest';
 import { cancelSuccessionPredecessor } from '../../../src/services/billing/subscription/cancel-succession-predecessor.service.js';
 import { reevaluateSuccessionPredecessors } from '../../../src/services/billing/subscription/reevaluate-succession-predecessors.service.js';
@@ -82,6 +82,28 @@ describe.skipIf(!isServiceTestDbAvailable())('TEST:B8b:9 S17 predecessor cancell
         expect(provider.snapshot.status).toBe('cancelled');
         expect(seeded.calls).toEqual([seeded.predecessorAuthorizationId]);
         expect((await notices(seeded.predecessorId, seeded.userId))[0]?.status).toBe('failed');
+    });
+
+    it('(b2) cancels and escalates when the recipient has been deleted', async () => {
+        const seeded = await seedS17({});
+        await getServiceTestDb()
+            .update(users)
+            .set({ deletedAt: s17Now })
+            .where(eq(users.id, seeded.userId));
+        const result = await cancelSuccessionPredecessor(
+            { successorSubscriptionId: seeded.successorId },
+            s17Ports(seeded.provider)
+        );
+        expect(result).toEqual({
+            outcome: 'CANCELLED',
+            providerCall: 'CONFIRMED',
+            pauseClosed: false,
+            noticeUndeliverable: true
+        });
+        expect(seeded.calls).toEqual([seeded.predecessorAuthorizationId]);
+        expect((await rows(seeded.predecessorId, seeded.successorId)).predecessor.status).toBe(
+            'CANCELLED'
+        );
     });
 
     it('(c) skips both call and notice when the predecessor authorization is already cancelled', async () => {
@@ -218,6 +240,36 @@ describe.skipIf(!isServiceTestDbAvailable())('TEST:B8b:9 S17 predecessor cancell
             s17Ports(provider, { deliver: true })
         );
         expect(result).toEqual({ outcome: 'DEFERRED', reason: 'CALL_FAILED' });
+        expect((await rows(seeded.predecessorId, seeded.successorId)).predecessor.status).toBe(
+            'ACTIVE'
+        );
+        expect(
+            (
+                await seeded.fake.readAuthorization({
+                    authorizationId: seeded.predecessorAuthorizationId
+                })
+            ).snapshot.status
+        ).toBe('active');
+    });
+
+    it('(i2) defers when the provider acknowledges but does not apply cancellation', async () => {
+        const seeded = await seedS17({});
+        const provider = new Proxy(seeded.provider, {
+            get(target, property, receiver) {
+                if (property === 'cancel')
+                    return async (args: { readonly authorizationId: string }) => ({
+                        accepted: true as const,
+                        resourceId: args.authorizationId
+                    });
+                const value: unknown = Reflect.get(target, property, receiver);
+                return typeof value === 'function' ? value.bind(target) : value;
+            }
+        });
+        const result = await cancelSuccessionPredecessor(
+            { successorSubscriptionId: seeded.successorId },
+            s17Ports(provider, { deliver: true })
+        );
+        expect(result).toEqual({ outcome: 'DEFERRED', reason: 'SENT_UNCONFIRMED' });
         expect((await rows(seeded.predecessorId, seeded.successorId)).predecessor.status).toBe(
             'ACTIVE'
         );
