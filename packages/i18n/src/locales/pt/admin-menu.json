@@ -4,7 +4,8 @@
         "title": "Conteúdo",
         "destinationAttractions": "Atrações de Destinos",
         "accommodationAmenities": "Comodidades de Alojamentos",
-        "accommodationFeatures": "Características de Alojamentos"
+        "accommodationFeatures": "Características de Alojamentos",
+        "fixRequests": "Correções pendentes"
     },
     "accommodations": {
         "title": "Alojamentos",

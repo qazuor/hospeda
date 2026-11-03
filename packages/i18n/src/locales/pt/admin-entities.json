@@ -1108,5 +1108,44 @@
                 "closeFixRequest": "A ficha não tem um pedido de correção aberto."
             }
         }
+    },
+    "fixRequestList": {
+        "title": "Correções pendentes",
+        "intro": "Pedidos de correção abertos. O anúncio continua visível até você retirá-lo. Os mais antigos primeiro.",
+        "filters": {
+            "vertical": "Vertical",
+            "verticalAll": "Todas",
+            "ownerReported": "Aviso do proprietário",
+            "ownerReportedAll": "Todos",
+            "ownerReportedYes": "Avisou que corrigiu",
+            "ownerReportedNo": "Sem aviso",
+            "overdue": "Somente com a data sugerida vencida"
+        },
+        "columns": {
+            "listing": "Anúncio",
+            "vertical": "Vertical",
+            "status": "Status",
+            "reason": "Motivo",
+            "openedAt": "Aberto",
+            "suggestedDate": "Data sugerida",
+            "ownerReported": "Aviso do proprietário",
+            "actions": "Ações"
+        },
+        "openedToday": "hoje",
+        "age_one": "há {{count}} dia",
+        "age_other": "há {{count}} dias",
+        "noSuggestedDate": "Sem data",
+        "overdue": "Vencida",
+        "ownerReportedAt": "Avisou em {date}",
+        "ownerNotReported": "Sem aviso",
+        "viewListing": "Ver anúncio",
+        "moderate": "Moderar",
+        "hideModerate": "Fechar",
+        "empty": "Não há pedidos de correção abertos com esses filtros.",
+        "loading": "Carregando pedidos…",
+        "error": "Não foi possível carregar os pedidos de correção. Recarregue a página.",
+        "previous": "Anterior",
+        "next": "Próxima",
+        "page": "Página {page} de {totalPages}"
     }
 }

@@ -4,7 +4,8 @@
         "title": "Content",
         "destinationAttractions": "Destination Attractions",
         "accommodationAmenities": "Accommodation Amenities",
-        "accommodationFeatures": "Accommodation Features"
+        "accommodationFeatures": "Accommodation Features",
+        "fixRequests": "Pending fixes"
     },
     "accommodations": {
         "title": "Accommodations",
