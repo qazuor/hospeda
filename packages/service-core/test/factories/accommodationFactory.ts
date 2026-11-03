@@ -69,6 +69,7 @@ export const createMockAccommodation = (
     description:
         'A detailed description of this wonderful place to stay, long enough for validation.',
     type: AccommodationTypeEnum.HOTEL,
+    businessLines: ['standard'],
     destinationId: getMockId('destination') as string,
     ownerId: getMockId('user') as string,
     // HOS-929: billing-derived featuring (SPEC-292, renamed SPEC-309 OQ-3) —
