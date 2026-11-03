@@ -215,8 +215,9 @@ export const partnerApplicationModel = {
             FROM partner_application pa
             JOIN vertical_deadline_version v ON v.version = pa.deadlines_version
             WHERE pa.id = ${args.applicationId}`);
-        const value = result.rows[0]?.reapply_after;
-        if (!(value instanceof Date) || Number.isNaN(value.getTime())) {
+        const rawValue = result.rows[0]?.reapply_after;
+        const value = rawValue instanceof Date ? rawValue : new Date(String(rawValue ?? ''));
+        if (rawValue == null || Number.isNaN(value.getTime())) {
             throw new Error(
                 `Could not read reapply date for partner application ${args.applicationId}`
             );
