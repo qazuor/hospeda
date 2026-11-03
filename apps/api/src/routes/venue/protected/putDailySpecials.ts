@@ -84,7 +84,13 @@ export const protectedPutVenueDailySpecialsRoute = createProtectedRoute({
         vertical: VerticalEnum.VENUE,
         operation: 'EDIT',
         idParam: 'id',
-        capabilities: ['manage_venue_daily_special']
+        listingSection: ({ body }) => [
+            {
+                id: 'dailySpecials',
+                intent:
+                    Array.isArray(body?.specials) && body.specials.length === 0 ? 'delete' : 'write'
+            }
+        ]
     },
     tags: ['Venue', 'Venue Daily Specials'],
     protectedTag: false,

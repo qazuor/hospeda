@@ -23,51 +23,22 @@
  *
  * @module routes/venue/protected/getEvents
  */
-import { PermissionEnum, VenueEventsOutputSchema } from '@repo/schemas';
-import { entityNotFoundError, getVenueEvents, VenueService } from '@repo/service-core';
+import { VenueEventsOutputSchema, VerticalEnum } from '@repo/schemas';
+import { getVenueEvents, VenueService } from '@repo/service-core';
 // Same module instance `utils/response-helpers` compares against: importing
 // `ServiceError` from the package ROOT yields a DIFFERENT class under the test
 // resolver, and `instanceof` then fails — a NOT_FOUND answered as a 500.
 import { ServiceError } from '@repo/service-core/types';
 import type { Context } from 'hono';
 import { z } from 'zod';
-import { getActorFromContext } from '../../../utils/actor';
 import { apiLogger } from '../../../utils/logger';
-import { createCRUDRoute } from '../../../utils/route-factory';
+import { createProtectedRoute } from '../../../utils/route-factory';
 
 const venueService = new VenueService({ logger: apiLogger });
 
-/**
- * Refuses any listing that is not the caller's, as a 404.
- *
- * A 403 would confirm the id exists — the anti-enumeration rule the error
- * contract states and `getMenu.ts` / `protected/getById.ts` both follow, with
- * the same canonical message so "not yours" and "does not exist" are
- * indistinguishable.
- *
- * @param ctx - The Hono request context.
- * @param venueId - The listing being read.
- * @returns Nothing; throws when the caller may not read this listing.
- */
-async function requireOwnedVenue(ctx: Context, venueId: string): Promise<void> {
-    const actor = getActorFromContext(ctx);
-    const result = await venueService.getById(actor, venueId);
-
-    if (result.error) {
-        throw new ServiceError(result.error.code, result.error.message);
-    }
-
-    const hasViewAll = actor.permissions?.includes(PermissionEnum.VENUE_VIEW_ALL);
-    if (!result.data || (!hasViewAll && result.data.ownerId !== actor.id)) {
-        throw entityNotFoundError({ entityName: VenueService.ENTITY_NAME });
-    }
-}
-
 /** Reads the agenda. Exported standalone so the route test can call it directly. */
-export async function handleGetVenueEvents(ctx: Context, params: Record<string, unknown>) {
+export async function handleGetVenueEvents(_ctx: Context, params: Record<string, unknown>) {
     const venueId = params.id as string;
-
-    await requireOwnedVenue(ctx, venueId);
 
     // TYPE-WORKAROUND: access protected `model` via cast to avoid `any`, the
     // same accessor the FAQ, media and menu routes use.
@@ -82,9 +53,15 @@ export async function handleGetVenueEvents(ctx: Context, params: Record<string, 
     return result.data;
 }
 
-export const protectedGetVenueEventsRoute = createCRUDRoute({
+export const protectedGetVenueEventsRoute = createProtectedRoute({
     method: 'get',
     path: '/{id}/events',
+    listingAccess: {
+        vertical: VerticalEnum.VENUE,
+        operation: 'READ_OWN',
+        idParam: 'id',
+        listingSection: { id: 'venueEvents', intent: 'read' }
+    },
     summary: 'Read the venue events agenda of a venue listing',
     description:
         "Returns the listing's own events — live music night, happy hour, dinner show — in display order, including entries the owner has switched off. Owner-only. Not gated on the venue-events entitlement: an owner whose plan no longer grants it still owns the rows, and only writing is a paid capability.",

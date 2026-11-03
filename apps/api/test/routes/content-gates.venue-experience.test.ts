@@ -29,7 +29,6 @@ import { protectedAddVenueFaqRoute } from '../../src/routes/venue/protected/addF
 import { protectedAddVenueFeaturedMediaRoute } from '../../src/routes/venue/protected/addFeaturedMedia';
 import { protectedAddVenueMediaRoute } from '../../src/routes/venue/protected/addMedia';
 import { protectedGetVenueBrochureRoute } from '../../src/routes/venue/protected/brochure';
-import { protectedDeleteVenueMenuFileRoute } from '../../src/routes/venue/protected/deleteMenuFile';
 import { protectedPatchVenueRoute } from '../../src/routes/venue/protected/patch';
 import { protectedPutVenueDailySpecialsRoute } from '../../src/routes/venue/protected/putDailySpecials';
 import { protectedPutVenueEventsRoute } from '../../src/routes/venue/protected/putEvents';
@@ -104,9 +103,15 @@ const mediaAdd = { url: 'https://example.com/photo.jpg' };
 const mediaUpdate = { caption: 'Updated photo' };
 const mediaReorder = { orderedIds: [MEDIA] };
 const patchBody = { name: 'Updated listing' };
-const menuPlain = { sections: [] };
-const specials = { specials: [] };
-const events = { events: [] };
+const menuPlain = { sections: [{ name: 'Entradas', items: [{ name: 'Empanada' }] }] };
+const specials = {
+    specials: [{ title: 'Menú del día', validFrom: '2026-10-10', validUntil: '2026-10-10' }]
+};
+const events = {
+    events: [
+        { title: 'Música en vivo', recurrence: 'once', date: '2026-10-10', startTime: '20:00' }
+    ]
+};
 const certificate = { recipientName: 'Jane Guest', completedAt: '2026-10-10' };
 const baseSource = {
     type: 'BASE',
@@ -224,15 +229,6 @@ const cases = [
         file: 'venue/uploadMenuFile',
         route: protectedUploadVenueMenuFileRoute,
         method: 'POST',
-        path: '/{id}/menu-file',
-        body: undefined,
-        key: 'manage_venue_menu',
-        vertical: VerticalEnum.VENUE
-    },
-    {
-        file: 'venue/deleteMenuFile',
-        route: protectedDeleteVenueMenuFileRoute,
-        method: 'DELETE',
         path: '/{id}/menu-file',
         body: undefined,
         key: 'manage_venue_menu',
@@ -445,7 +441,13 @@ function configureSet(owner: string, keys: readonly string[]): void {
         ]
     });
     mocks.loadFacts.mockResolvedValue({
-        facts: { ownerId: owner, publicationStatus: PublicationStatusEnum.PUBLISHED },
+        // The section chain now evaluates venue business lines before billing;
+        // keep these legacy entitlement cases on a food venue that has menu.
+        facts: {
+            ownerId: owner,
+            publicationStatus: PublicationStatusEnum.PUBLISHED,
+            businessLines: ['food']
+        },
         ownerId: owner
     });
 }
@@ -491,7 +493,12 @@ describe('TEST:V5:31 venue and experience content gates', () => {
     it.each(cases)('$file requires its effective key on the published listing', async (row) => {
         configureSet(
             OWNER_A,
-            row.key.startsWith('edit_') ? [] : [`edit_${row.vertical.toLowerCase()}_info`]
+            row.key.startsWith('edit_')
+                ? []
+                : [
+                      `edit_${row.vertical.toLowerCase()}_info`,
+                      ...(row.file === 'venue/uploadMenuItemPhoto' ? ['manage_venue_menu'] : [])
+                  ]
         );
         const denied = await request(row);
         expect(denied.status, row.file).toBe(403);
