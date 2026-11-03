@@ -1,4 +1,4 @@
-import { and, eq, isNull } from 'drizzle-orm';
+import { and, desc, eq, gte, isNull } from 'drizzle-orm';
 import { getDb } from '../../client.ts';
 import {
     reconciliationSweepRuns,
@@ -25,6 +25,12 @@ export interface CloseReconciliationSweepRunInput {
 /** Input for finding a sweep run by identity. */
 export interface FindReconciliationSweepRunInput {
     readonly id: string;
+    readonly tx?: DrizzleClient;
+}
+
+/** Input for finding the most recent open sweep run started within a window. */
+export interface FindOpenReconciliationSweepRunInput {
+    readonly since: Date;
     readonly tx?: DrizzleClient;
 }
 
@@ -60,6 +66,25 @@ export class ReconciliationSweepRunModel {
                 )
             )
             .returning();
+        return row ?? null;
+    }
+
+    /** Finds the latest still-open run started at or after `since`, or null. */
+    async findOpenStartedSince(
+        input: FindOpenReconciliationSweepRunInput
+    ): Promise<SelectReconciliationSweepRun | null> {
+        const db = input.tx ?? getDb();
+        const [row] = await db
+            .select()
+            .from(reconciliationSweepRuns)
+            .where(
+                and(
+                    isNull(reconciliationSweepRuns.finishedAt),
+                    gte(reconciliationSweepRuns.startedAt, input.since)
+                )
+            )
+            .orderBy(desc(reconciliationSweepRuns.startedAt))
+            .limit(1);
         return row ?? null;
     }
 
