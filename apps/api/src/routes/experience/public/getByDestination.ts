@@ -56,7 +56,8 @@ export const publicGetExperiencesByDestinationRoute = createPublicListRoute({
             items: withPublicIsFeaturedList(
                 await projectPublicListings({
                     vertical: 'experience',
-                    listings: result.data?.items || []
+                    listings: result.data?.items || [],
+                    onEffectiveSetFailure: () => ctx.header('Cache-Control', 'no-store')
                 })
             ),
             pagination: getPaginationResponse(result.data?.total || 0, { page, pageSize })

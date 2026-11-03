@@ -58,7 +58,11 @@ export const publicListVenuesRoute = createPublicListRoute({
 
         // HOS-1792: withhold the menu file of unentitled owners.
         const items = withPublicIsFeaturedList(
-            await projectPublicListings({ vertical: 'venue', listings: result.data?.items || [] })
+            await projectPublicListings({
+                vertical: 'venue',
+                listings: result.data?.items || [],
+                onEffectiveSetFailure: () => ctx.header('Cache-Control', 'no-store')
+            })
         );
 
         return {

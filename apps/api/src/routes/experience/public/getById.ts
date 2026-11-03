@@ -49,6 +49,7 @@ export const publicGetExperienceByIdRoute = createPublicRoute({
         // Keep formerly plan-gated directions hidden until replacement coverage exists.
         const [projected] = await projectPublicListings({
             vertical: 'experience',
+            onEffectiveSetFailure: () => ctx.header('Cache-Control', 'no-store'),
             listings: [withPublicIsFeatured(withPublicVisibleFaqs(experience))]
         });
         return projected;

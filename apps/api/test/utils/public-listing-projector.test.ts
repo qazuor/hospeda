@@ -52,6 +52,18 @@ describe('projectPublicListing', () => {
         expect(mocks.effectiveSet).toHaveBeenCalledTimes(2);
     });
 
+    it('fails closed and signals the route to disable caching when a set read fails', async () => {
+        mocks.effectiveSet.mockRejectedValueOnce(new Error('billing unavailable'));
+        const noStore = vi.fn();
+        const [listing] = await projectPublicListings({
+            vertical: 'venue',
+            listings: [{ id: '1', ownerId: 'a', businessLines: ['food'], menuUrl: 'https://menu' }],
+            onEffectiveSetFailure: noStore
+        });
+        expect(listing).not.toHaveProperty('menuUrl');
+        expect(noStore).toHaveBeenCalledOnce();
+    });
+
     it('publishes catalog menu fields only for a granted food listing', () => {
         const state = resolveListingSections({
             vertical: 'venue',

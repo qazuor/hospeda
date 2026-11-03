@@ -48,7 +48,8 @@ export const publicGetVenueByIdRoute = createPublicRoute({
         // HOS-1792: same menu-file projection as by-slug.
         const [venue] = await projectPublicListings({
             vertical: 'venue',
-            listings: [withPublicVisibleFaqs(result.data)]
+            listings: [withPublicVisibleFaqs(result.data)],
+            onEffectiveSetFailure: () => ctx.header('Cache-Control', 'no-store')
         });
         if (!venue) return null;
         return withPublicIsFeatured(venue);

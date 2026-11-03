@@ -74,6 +74,7 @@ export const publicGetExperienceBySlugRoute = createPublicRoute({
         // the projection module's doc.
         const [projected] = await projectPublicListings({
             vertical: 'experience',
+            onEffectiveSetFailure: () => ctx.header('Cache-Control', 'no-store'),
             listings: [
                 {
                     ...withPublicVisibleFaqs(experience),

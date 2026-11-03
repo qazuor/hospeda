@@ -113,6 +113,7 @@ function deniedSet(userId: string, vertical: PublicVertical): RehydratedEffectiv
 export async function projectPublicListings<T extends ListingRecord>(args: {
     readonly vertical: PublicVertical;
     readonly listings: readonly T[];
+    readonly onEffectiveSetFailure?: () => void;
 }): Promise<T[]> {
     const owners = [...new Set(args.listings.map((listing) => listing.ownerId))];
     const effectiveByOwner = new Map<string, RehydratedEffectiveSet>();
@@ -127,6 +128,7 @@ export async function projectPublicListings<T extends ListingRecord>(args: {
                     })
                 );
             } catch {
+                args.onEffectiveSetFailure?.();
                 apiLogger.warn(
                     { userId, vertical: VERTICALS[args.vertical] },
                     'Effective set lookup failed for public listing'

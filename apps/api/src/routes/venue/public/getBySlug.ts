@@ -122,6 +122,7 @@ export const publicGetVenueBySlugRoute = createPublicRoute({
 
         const [projected] = await projectPublicListings({
             vertical: 'venue',
+            onEffectiveSetFailure: () => ctx.header('Cache-Control', 'no-store'),
             listings: [
                 {
                     ...withPublicVisibleFaqs(venue),

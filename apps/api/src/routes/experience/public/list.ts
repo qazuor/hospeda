@@ -65,7 +65,8 @@ export const publicListExperiencesRoute = createPublicListRoute({
         const items = withPublicIsFeaturedList(
             await projectPublicListings({
                 vertical: 'experience',
-                listings: result.data?.items || []
+                listings: result.data?.items || [],
+                onEffectiveSetFailure: () => ctx.header('Cache-Control', 'no-store')
             })
         );
 
