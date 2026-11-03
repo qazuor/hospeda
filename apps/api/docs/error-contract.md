@@ -38,6 +38,7 @@ check answers 403 to someone the server never identified.
 | Signed in, email not verified, operation outside the closed list | **403** | `EMAIL_NOT_VERIFIED` |
 | Signed in, lacks the declared permission | **403** | `FORBIDDEN` |
 | Malformed param, query or body (non-UUID id included) | **400** | `VALIDATION_ERROR` |
+| Review dimension vote for an absent bound section (`details.field = rating.<id>`) | **400** | `VALIDATION_ERROR` (`DIMENSION_NOT_APPLICABLE`) |
 | Resource does not exist | **404** | `NOT_FOUND` |
 | Resource exists but belongs to somebody else | **404** | `NOT_FOUND` |
 | Well-formed but unprocessable | **422** | `VALIDATION_ERROR` |

@@ -1,8 +1,12 @@
 import { describe, expect, it } from 'vitest';
 import { PRODUCTION_PLAN_CATALOG } from '../../../../scripts/production-catalog/catalog.js';
+import enReview from '../../../i18n/src/locales/en/review.json';
+import esReview from '../../../i18n/src/locales/es/review.json';
+import ptReview from '../../../i18n/src/locales/pt/review.json';
 import { BUSINESS_LINE_RULES, BUSINESS_LINES } from '../../src/catalog/business-lines.js';
 import { CATALOG_KEY_DEFINITIONS } from '../../src/catalog/key-catalog.js';
 import { LISTING_SECTIONS } from '../../src/catalog/listing-sections.js';
+import { REVIEW_RULES, reviewRatingSchemaFor } from '../../src/catalog/review-dimensions.js';
 import { AccommodationUpdateInputSchema } from '../../src/entities/accommodation/accommodation.crud.schema.js';
 import { ExperienceUpdateInputSchema } from '../../src/entities/experience/experience.crud.schema.js';
 import { VenueUpdateInputSchema } from '../../src/entities/venue/venue.crud.schema.js';
@@ -23,7 +27,13 @@ type Line = { value: string; sections: readonly string[]; public: boolean };
 function violations(
     catalogInput: unknown,
     linesInput: unknown = BUSINESS_LINES,
-    rulesInput: unknown = BUSINESS_LINE_RULES
+    rulesInput: unknown = BUSINESS_LINE_RULES,
+    reviewRulesInput: unknown = REVIEW_RULES,
+    localesInput: unknown = {
+        es: { review: esReview },
+        en: { review: enReview },
+        pt: { review: ptReview }
+    }
 ): string[] {
     const catalog = catalogInput as Record<string, readonly Section[]>;
     const lines = linesInput as Record<string, readonly Line[]>;
@@ -35,6 +45,15 @@ function violations(
             maxPerListing?: number;
         }
     >;
+    const reviewRules = reviewRulesInput as Record<
+        string,
+        | {
+              dimensions: readonly { id: string; labelKey: string; boundSection?: string }[];
+              dimensionAveraging: string;
+          }
+        | undefined
+    >;
+    const locales = localesInput as Record<string, Record<string, { [key: string]: unknown }>>;
     const errors: string[] = [];
     for (const vertical of verticals) {
         const owned = catalog[vertical] ?? [];
@@ -132,11 +151,50 @@ function violations(
         )
             errors.push(`r11:${vertical}`);
     }
+    const reviewErrors: string[] = [];
+    for (const vertical of verticals) {
+        const declared = reviewRules[vertical];
+        if ((vertical === 'venue' || vertical === 'experience') && !declared) {
+            reviewErrors.push(`r12:declaration:${vertical}`);
+            continue;
+        }
+        if (!declared) continue;
+        const ids = declared.dimensions.map((dimension) => dimension.id);
+        if (new Set(ids).size !== ids.length) reviewErrors.push(`r12:ids:${vertical}`);
+        for (const dimension of declared.dimensions) {
+            if (dimension.boundSection) {
+                const section = (catalog[vertical] ?? []).find(
+                    (item) => item.id === dimension.boundSection
+                );
+                if (!section) reviewErrors.push(`r12:bound-missing:${vertical}`);
+                else if (section.common) reviewErrors.push(`r12:bound-common:${vertical}`);
+            }
+            const segments = dimension.labelKey.split('.');
+            const hasLocaleLabel = (locale: string) => {
+                const label = segments.reduce<unknown>(
+                    (value, segment) => (value as Record<string, unknown> | undefined)?.[segment],
+                    locales[locale]
+                );
+                return typeof label === 'string' && label.trim().length > 0;
+            };
+            if (['es', 'en', 'pt'].some((locale) => !hasLocaleLabel(locale)))
+                reviewErrors.push(`r12:label:${vertical}:${dimension.id}`);
+        }
+        if (declared.dimensionAveraging === 'votedOnly') {
+            const schema = reviewRatingSchemaFor({ vertical: vertical as 'venue' | 'experience' });
+            const schemaKeys = Object.keys(
+                (schema as { shape?: Record<string, unknown> }).shape ?? {}
+            );
+            if (schemaKeys.length !== ids.length || ids.some((id) => !schemaKeys.includes(id)))
+                reviewErrors.push(`r12:schema:${vertical}`);
+        }
+    }
+    errors.push(...reviewErrors);
     return errors;
 }
 
 describe('G-FAC-02 listing catalog integrity', () => {
-    it('satisfies all eleven catalog rules', () =>
+    it('satisfies all twelve catalog rules', () =>
         expect(violations(LISTING_SECTIONS)).toEqual([]));
     it.each([
         'r1',
@@ -190,5 +248,84 @@ describe('G-FAC-02 listing catalog integrity', () => {
             });
         if (rule === 'r11') venueSections[0]!.fields = [];
         expect(violations(copy, lines, rules).some((error) => error.startsWith(rule))).toBe(true);
+    });
+});
+
+describe('G-FAC-02 rule 12 review dimensions', () => {
+    it('satisfies review dimension integrity', () =>
+        expect(violations(LISTING_SECTIONS)).toEqual([]));
+
+    type MutableReviewRules = {
+        venue: { dimensions: Array<{ id: string; labelKey: string; boundSection?: string }> };
+        experience?: { dimensions: Array<{ id: string; labelKey: string; boundSection?: string }> };
+    };
+
+    it.each([
+        [
+            'missing experience rules',
+            (rules: MutableReviewRules) => {
+                delete rules.experience;
+            }
+        ],
+        [
+            'duplicate dimension id',
+            (rules: MutableReviewRules) => {
+                rules.venue.dimensions[1]!.id = 'food';
+            }
+        ],
+        [
+            'schema not derived from dimensions',
+            (rules: MutableReviewRules) => {
+                rules.venue.dimensions.pop();
+            }
+        ],
+        [
+            'common section binding',
+            (rules: MutableReviewRules) => {
+                rules.venue.dimensions[0]!.boundSection = 'price';
+            }
+        ],
+        [
+            'unknown section binding',
+            (rules: MutableReviewRules) => {
+                rules.venue.dimensions[0]!.boundSection = 'missing';
+            }
+        ],
+        [
+            'missing Portuguese label',
+            (rules: MutableReviewRules) => {
+                rules.venue.dimensions[0]!.labelKey = 'review.dimensions.missing';
+            }
+        ]
+    ])('rejects %s (rule 12 mutation)', (_name, mutate) => {
+        const reviewRules = structuredClone(REVIEW_RULES) as unknown as MutableReviewRules;
+        mutate(reviewRules);
+        expect(
+            violations(LISTING_SECTIONS, BUSINESS_LINES, BUSINESS_LINE_RULES, reviewRules).some(
+                (error) => error.startsWith('r12:')
+            )
+        ).toBe(true);
+    });
+
+    it('rejects a label missing only in Portuguese', () => {
+        const locales = structuredClone({
+            es: { review: esReview },
+            en: { review: enReview },
+            pt: { review: ptReview }
+        }) as unknown as {
+            es: { review: { dimensions: Record<string, unknown> } };
+            en: { review: { dimensions: Record<string, unknown> } };
+            pt: { review: { dimensions: Record<string, unknown> } };
+        };
+        delete locales.pt.review.dimensions.food;
+        expect(
+            violations(
+                LISTING_SECTIONS,
+                BUSINESS_LINES,
+                BUSINESS_LINE_RULES,
+                REVIEW_RULES,
+                locales
+            ).some((error) => error.startsWith('r12:label:'))
+        ).toBe(true);
     });
 });

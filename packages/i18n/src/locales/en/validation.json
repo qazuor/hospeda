@@ -4195,6 +4195,13 @@
             "decision": {
                 "invalid": "Decision must be APPROVED or REJECTED"
             }
+        },
+        "dimension": {
+            "type": "The rating must be a number",
+            "integer": "The rating must be a whole number",
+            "min": "The rating must be at least 1",
+            "max": "The rating cannot exceed 5",
+            "unknown": "The review contains unknown dimensions"
         }
     },
     "search": {

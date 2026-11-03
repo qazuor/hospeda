@@ -91,5 +91,11 @@
         "noReviews": "Ainda não há avaliações",
         "noReviewsDescription": "Seja o primeiro a deixar uma avaliação",
         "verified": "Verificado"
+    },
+    "dimensions": {
+        "food": "Comida",
+        "service": "Atendimento",
+        "ambiance": "Ambiente",
+        "value": "Relação custo-benefício"
     }
 }

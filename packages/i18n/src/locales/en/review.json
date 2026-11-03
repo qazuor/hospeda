@@ -91,5 +91,11 @@
         "noReviews": "No reviews yet",
         "noReviewsDescription": "Be the first to leave a review",
         "verified": "Verified"
+    },
+    "dimensions": {
+        "food": "Food",
+        "service": "Service",
+        "ambiance": "Ambiance",
+        "value": "Value for money"
     }
 }
