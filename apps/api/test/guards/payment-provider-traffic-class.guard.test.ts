@@ -56,7 +56,16 @@ describe('payment provider traffic class guard', () => {
         }
         const createApp = readFileSync(join(ROOT, 'apps/api/src/utils/create-app.ts'), 'utf8');
         const script = readFileSync(join(ROOT, 'apps/api/scripts/cutover-b9a-step-3b.ts'), 'utf8');
+        const compose = readFileSync(
+            join(ROOT, 'apps/api/src/services/cutover-b9a/step-3b.compose.ts'),
+            'utf8'
+        );
         expect(createApp).toMatch(/trafficClassMiddleware\(\)/);
-        expect(script).toMatch(/runWithTrafficClass\([\s\S]*trafficClass:\s*'background'/);
+        // The script imports @repo/payments only lazily (scripts-tsx-load), so the
+        // background class is declared in compose and called from the script.
+        expect(compose).toMatch(
+            /export function runStep3bAsBackgroundTraffic[\s\S]*?runWithTrafficClass\(\{\s*context:\s*\{\s*trafficClass:\s*'background'/
+        );
+        expect(script).toMatch(/\brunStep3bAsBackgroundTraffic\(\{\s*fn:[\s\S]*?\brunStep3b\(/);
     });
 });
