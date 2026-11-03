@@ -129,6 +129,7 @@ export type {
 export {
     type ResolvedListingSection,
     type ResolveListingSectionsResult,
+    resolveListingSectionPresence,
     resolveListingSections,
     UnknownBusinessLineError,
     UnknownListingSectionIdError,
