@@ -130,9 +130,11 @@ describe('billing reconciliation sweep cron', () => {
     it('registers the daily job metadata', () => {
         expect(billingReconciliationSweepJob).toMatchObject({
             name: 'billing-reconciliation-sweep',
-            schedule: '0 6 * * *',
+            schedule: '10 2 * * *',
             enabled: true,
-            timeoutMs: 600_000
+            timeoutMs: 3_000_000,
+            budgetMs: 2_700_000,
+            exclusive: true
         });
     });
 

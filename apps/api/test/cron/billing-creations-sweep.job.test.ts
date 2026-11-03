@@ -32,7 +32,7 @@ describe('billing creations sweep cron', () => {
     it('declares its schedule', () =>
         expect(billingCreationsSweepJob).toMatchObject({
             name: 'billing-creations-sweep',
-            schedule: '*/5 * * * *',
+            schedule: '1-59/5 * * * *',
             enabled: true,
             timeoutMs: 120_000
         }));

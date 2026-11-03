@@ -42,9 +42,11 @@ export const billingReconciliationSweepJob: CronJobDefinition = {
     name: 'billing-reconciliation-sweep',
     description:
         'Read owned billing inventory by provider id and open marks for divergences (HOS-1602, AC:B11:1)',
-    schedule: '0 6 * * *',
+    schedule: '10 2 * * *',
+    exclusive: true,
+    budgetMs: 2_700_000,
     enabled: true,
-    timeoutMs: 600_000,
+    timeoutMs: 3_000_000,
 
     handler: async (ctx) => {
         const { logger, startedAt, dryRun } = ctx;

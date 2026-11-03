@@ -54,7 +54,7 @@ describe('HOS-1569 subscription-service-end cron (AC:B8a:5)', () => {
     it('(a) registers its name, cadence, enabled flag and timeout', () => {
         expect(subscriptionServiceEndJob).toMatchObject({
             name: 'subscription-service-end',
-            schedule: '*/15 * * * *',
+            schedule: '12-59/15 * * * *',
             enabled: true,
             timeoutMs: 120_000
         });
