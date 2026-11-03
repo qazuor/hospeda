@@ -140,6 +140,11 @@ export * from './billing/reconciliation/reconciliation-mark-payments.port.js';
 export * from './billing/reconciliation/revocation-refund-failed-notice.js';
 export * from './billing/reconciliation/summary/index.js';
 export * from './billing/reconciliation/sweep/addon-without-shutdown-check.js';
+export type {
+    BeforeCancelNoticeState,
+    BeforeCancelNoticeStatus as DeferredBeforeCancelNoticeStatus,
+    BeforeCancelNoticeStatusReader
+} from './billing/reconciliation/sweep/before-cancel-notice-status.port.js';
 export * from './billing/reconciliation/sweep/cancellation-observation.js';
 export * from './billing/reconciliation/sweep/comparisons/amount-comparison.js';
 export * from './billing/reconciliation/sweep/comparisons/amount-mutation-decision.js';
@@ -157,6 +162,7 @@ export * from './billing/reconciliation/sweep/last-cycle-record.js';
 export * from './billing/reconciliation/sweep/lost-rejection-check.js';
 export * from './billing/reconciliation/sweep/mark-escalation.js';
 export * from './billing/reconciliation/sweep/next-charge-sync.js';
+export * from './billing/reconciliation/sweep/notice-deferred-cancellation-retry.js';
 export * from './billing/reconciliation/sweep/our-cancellation-retry.js';
 export * from './billing/reconciliation/sweep/paid-orders-check.js';
 export * from './billing/reconciliation/sweep/pause-gift.js';
