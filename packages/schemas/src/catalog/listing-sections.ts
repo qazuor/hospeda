@@ -115,7 +115,7 @@ export const LISTING_SECTIONS = {
             vertical: 'venue',
             common: false,
             fields: [],
-            headingWhenMultiLineKey: 'listing.owner.editor.sectionNav.nightInfo',
+            headingWhenMultiLineKey: 'De noche',
             order: 11,
             group: 'property'
         },
