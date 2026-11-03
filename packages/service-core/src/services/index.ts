@@ -225,6 +225,7 @@ export * from './billing/subscription/pause-policy.js';
 export * from './billing/subscription/pause-quota.js';
 export * from './billing/subscription/pause-subscription.service.js';
 export * from './billing/subscription/paying-predecessor-successor.js';
+export * from './billing/subscription/price-increase-after-pause.js';
 export * from './billing/subscription/provider-link-cancellation-seen.js';
 export * from './billing/subscription/reactivate-suspended.service.js';
 export * from './billing/subscription/reactivate-suspended-after-commit.js';
