@@ -10,7 +10,8 @@ import {
     BaseHttpSearchSchema,
     createArrayQueryParam,
     createBooleanQueryParam,
-    createEnumArrayQueryParam
+    createEnumArrayQueryParam,
+    HttpQueryFields
 } from '../../api/http/base-http.schema.js';
 import { safeExternalUrl } from '../../common/safe-external-url.schema.js';
 import { PriceCurrencyEnum } from '../../enums/currency.enum.js';
@@ -60,6 +61,9 @@ export const AccommodationSearchHttpSchema = BaseHttpSearchSchema.extend({
     minPrice: z.coerce.number().min(0).optional(),
     maxPrice: z.coerce.number().min(0).optional(),
     currency: PriceCurrencyEnumSchema.optional(),
+    // Creation timestamp bounds are inclusive in the database query.
+    createdAfter: HttpQueryFields.createdAfter(),
+    createdBefore: HttpQueryFields.createdBefore(),
 
     // Capacity filters with HTTP coercion
     minGuests: z.coerce.number().int().min(1).optional(),
@@ -668,6 +672,8 @@ export const httpToDomainAccommodationSearch = (
     minPrice: httpParams.minPrice,
     maxPrice: httpParams.maxPrice,
     currency: httpParams.currency,
+    createdAfter: httpParams.createdAfter,
+    createdBefore: httpParams.createdBefore,
     destinationId: httpParams.destinationId,
     destinationIds: httpParams.destinationIds,
     latitude: httpParams.latitude,
@@ -694,9 +700,8 @@ export const httpToDomainAccommodationSearch = (
     checkIn: httpParams.checkIn,
     checkOut: httpParams.checkOut
 
-    // Note: Fields like ownerId, createdAfter, createdBefore exist in the domain
-    // schema but not in the HTTP schema, so they're not mapped. `isAvailable`,
-    // `city` and `country` were removed (HOS-1922): nothing ever implemented them.
+    // Note: ownerId is domain-only. `isAvailable`, `city` and `country` were
+    // removed (HOS-1922): nothing ever implemented them.
 });
 
 import { httpBodyBoolean } from '../../common/boolean-params.js';

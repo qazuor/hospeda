@@ -21,7 +21,8 @@ import {
 } from '../../subscription/subscription-billing-ports.js';
 import {
     type CancelOurAuthorizationNoticeKind,
-    cancelOurAuthorization
+    cancelOurAuthorization,
+    SWEEP_CANCEL_RETRY
 } from '../cancel-our-authorization.js';
 import { openReconciliationMark } from '../open-reconciliation-mark.service.js';
 import type { ProviderCancellationTransition } from '../provider-cancellation-decision.js';
@@ -230,7 +231,8 @@ export async function retryOurCancellation(
             userId: input.subscription.userId,
             authorizationId: input.providerLink.providerId,
             prior,
-            kind: declared === 'RECIPIENTLESS' ? null : declared
+            kind: declared === 'RECIPIENTLESS' ? null : declared,
+            retry: SWEEP_CANCEL_RETRY
         },
         {
             provider: ports.provider,

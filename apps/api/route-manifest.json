@@ -1111,6 +1111,10 @@
         },
         {
             "method": "GET",
+            "path": "/api/v1/admin/listing-fix-requests"
+        },
+        {
+            "method": "GET",
             "path": "/api/v1/admin/logs"
         },
         {
@@ -1254,6 +1258,10 @@
             "path": "/api/v1/admin/owner-promotions/:id/restore"
         },
         {
+            "method": "GET",
+            "path": "/api/v1/admin/partner-applications"
+        },
+        {
             "method": "POST",
             "path": "/api/v1/admin/partner-applications/:id/cancel-wait"
         },
@@ -1312,6 +1320,10 @@
         {
             "method": "PATCH",
             "path": "/api/v1/admin/partners/:partnerId/mentions/:id"
+        },
+        {
+            "method": "GET",
+            "path": "/api/v1/admin/plan-catalog/plans"
         },
         {
             "method": "POST",

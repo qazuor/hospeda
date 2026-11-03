@@ -231,6 +231,9 @@
                 "publishConfirmNote": "Va a aparecer en el sitio, visible para los turistas.",
                 "publishConfirmTrialNote_one": "Al publicar arranca tu prueba gratis de {{trialDays}} día. Sin tarjeta.",
                 "publishConfirmTrialNote_other": "Al publicar arranca tu prueba gratis de {{trialDays}} días. Sin tarjeta.",
+                "republish": "Publicar de nuevo",
+                "republishConfirmTitle": "¿Publicar de nuevo este alojamiento?",
+                "republishConfirmNote": "Vuelve a aparecer en el sitio, visible para los turistas.",
                 "publishYes": "Sí, publicar",
                 "choosePlan": "Elegir plan de anfitrión"
             },

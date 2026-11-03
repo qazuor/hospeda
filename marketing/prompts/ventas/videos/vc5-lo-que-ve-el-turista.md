@@ -9,17 +9,22 @@ Lo hace **Claude Code** de punta a punta con el pipeline de Remotion de `marketi
 - **Para quién:** Cualquier prospecto que pregunta «¿y cómo se ve?»
 - **Formato:** vertical 9:16, 1080×1920, para WhatsApp e Instagram
 - **Insignia de prueba gratis:** no
-- **Duración:** 25 a 30 s
+- **Duración:** 20 a 25 s
 
-**La idea:** Recorrido por una ficha pública: traducción automática, mapa, clima y qué hay cerca.
+**La idea:** Recorrido por una ficha pública: traducción automática, mapa y qué hay cerca. El clima no va: vive en la página del destino, no en la ficha.
 
 ## Prompt para Claude Code
 
+**Adjuntar y reemplazar:**
+
+- `Nada al empezar: Claude graba las pantallas reales en staging.` → undefined
+- `Logo: apps/web/src/assets/images/logo.webp, cuando Claude lo pida (antes del cierre y antes de cada render o corrección)` → undefined
+
 ````
-Hacé en Remotion el video de venta VC5 · «Lo que ve el turista» (25 a 30 s).
+Hacé en Remotion el video de venta VC5 · «Lo que ve el turista» (20 a 25 s).
 
 PARA QUIÉN: Cualquier prospecto que pregunta «¿y cómo se ve?».
-LA IDEA: Recorrido por una ficha pública: traducción automática, mapa, clima y qué hay cerca.
+LA IDEA: Recorrido por una ficha pública: traducción automática, mapa y qué hay cerca. El clima no va: vive en la página del destino, no en la ficha.
 
 ANTES DE EMPEZAR, leé: marketing/videos/REGLAS.md (todas sus reglas valen: formato,
 dispositivo de referencia, nivel estudio, sonido), marketing/videos/README.md,
@@ -41,17 +46,15 @@ GRABACIÓN (pantallas reales, vista mobile del dispositivo de referencia):
   la vista.
 - Cuenta: ninguna: es la ficha pública, sin login.
 - Qué grabar: P5 · Ficha de alojamiento completa, sección por sección.
-  1. Fotos y descripción; cambiar el idioma a inglés.
+  1. Fotos y descripción; cambiar el idioma a inglés y a portugués.
   2. Mapa y «Qué hay cerca», con distancias.
-  3. Pronóstico del clima del destino.
 - Escribí el grabador como record/record-vc5.mts, siguiendo record-a1.mts
   (eventos con su caja en pantalla, scroll suave, DEMO_HIDE_CSS).
 
 GUION:
 - Intro (2,2 s): «¿Cómo te ve el turista?» palabra por palabra, con Hospedín grande.
-- Etapa 1 · chip «1/3 · En su idioma»: Hospedín entra y dice «Tu ficha, en su idioma.». El cambio de idioma.
-- Etapa 2 · chip «2/3 · Qué hay cerca»: Hospedín entra y dice «Mapa y qué hay cerca.». Mapa y lugares con distancia.
-- Etapa 3 · chip «3/3 · El clima»: Hospedín entra y dice «Y hasta el pronóstico.». El bloque del clima.
+- Etapa 1 · chip «1/2 · En su idioma»: Hospedín entra y dice «Tu ficha, en su idioma.». El cambio de idioma.
+- Etapa 2 · chip «2/2 · Qué hay cerca»: Hospedín entra y dice «Mapa y qué hay cerca.». Mapa y lugares con distancia.
 - Cierre (4 s): logo, «Sumate a Hospeda» palabra por palabra, píldora hospeda.com.ar, Hospedín festejando (pose vamos).
 
 EL LOGO: antes de armar el cierre, y otra vez antes de cada render nuevo o de cada

@@ -9,7 +9,7 @@
 import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { attachmentsOf, buildPrompt } from './constructor.mjs';
+import { attachmentsOf, buildPrompt, filesToAttachOf } from './constructor.mjs';
 import { ASSETS, promptsOf, secondsOf, timelineOf } from './constructor-videos.mjs';
 import { ALOJAMIENTOS } from './datos-alojamientos.mjs';
 import { COMER_Y_SALIR } from './datos-comer-y-salir.mjs';
@@ -123,7 +123,7 @@ const renderPiece = ({ piece, group }) => {
         `- **Insignia de prueba gratis:** ${piece.badge ? 'sí' : 'no'}`
     ];
     if (piece.prioridad5) lines.push('- **Prioridad 5:** no se genera todavía.');
-    lines.push('', '**Qué adjuntar:**', '', ...attachmentsOf(piece));
+    lines.push('', '**Qué adjuntar:**', '', ...filesToAttachOf(piece).map((a) => `- ${a}`));
     if (units) {
         lines.push(
             '',
@@ -305,6 +305,7 @@ const generate = ({ jsonOut }) => {
                     (piece.pages || piece.slides)?.[0]?.texts?.title ||
                     piece.name,
                 notes: piece.notes || [],
+                attach: filesToAttachOf(piece),
                 file: `marketing/prompts/ventas/${group.id}/${file}`,
                 prompt: buildPrompt(piece)
             });

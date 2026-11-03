@@ -120,7 +120,7 @@ describe('buildListingNoticeViews — one view per kind (HOS-1492)', () => {
         );
         expect(text).toContain('La seguís viendo y podés exportarla.');
         expect(text).toContain('Vuelve sola cuando recuperes la cobertura');
-        expect(text).toContain('Vuelve primero la ficha que cayó al final');
+        expect(text).toContain('Vuelven primero las fichas que publicaste más recientemente');
         expect(text).toContain('Podés traerla a borrador cuando quieras, sin pagar.');
         // 2027-01-08T02:00Z is still January 7 in Argentina.
         expect(text).toContain('se borra a partir del 7 de enero de 2027');
@@ -249,6 +249,35 @@ describe('buildListingNoticeViews — one view per kind (HOS-1492)', () => {
         expect(text).toContain('Volvió a estar publicada.');
         expect(text).toContain('El pedido de arreglo sigue abierto.');
         expect(text).not.toContain('Publicarla es decisión tuya.');
+    });
+
+    it.each([
+        ['QUOTA_FULL', false, 'Quedó aprobada, pero tu cupo está lleno'],
+        ['QUOTA_FULL', true, 'Sigue sin publicar porque tu cupo está lleno'],
+        ['NOT_COVERED', false, 'hoy tu suscripción no la cubre'],
+        ['FREE_SLOT', false, 'Tenés lugar en tu cupo'],
+        ['NO_ROOM', false, 'tu suscripción no tiene lugar para ella']
+    ] as const)('row 30 (HOS-1997): unpublished because %s (fix request %s) says %s', (unpublishedBecause, fixRequestOpen, phrase) => {
+        // Act
+        const text = textOf({
+            kind: 'MODERATION_LIFTED',
+            returnedTo: 'UNPUBLISHED_BY_BILLING' as Extract<
+                ListingNotice,
+                { kind: 'MODERATION_LIFTED' }
+            >['returnedTo'],
+            at: '2026-10-10T12:00:00.000Z',
+            fixRequestOpen,
+            unpublishedBecause
+        });
+
+        // Assert
+        expect(text).toContain(phrase);
+        if (unpublishedBecause === 'QUOTA_FULL') {
+            expect(text).toContain('despublicá otra ficha y publicá esta');
+        } else {
+            expect(text).not.toContain('despublicá otra ficha');
+        }
+        if (fixRequestOpen) expect(text).not.toContain('aprobada');
     });
 
     it('TEST:V8a:7 rows 8 and 9: the criterion, no window, and the recurring boosts only with boosts', () => {

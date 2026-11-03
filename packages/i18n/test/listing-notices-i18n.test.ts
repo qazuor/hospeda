@@ -109,6 +109,10 @@ const LISTING_NOTICE_KEYS = [
     'lifted.returnedTo.DRAFT',
     'lifted.returnedTo.UNPUBLISHED_BY_BILLING',
     'lifted.returnedTo.ARCHIVED',
+    'lifted.unpublished.quotaFull',
+    'lifted.unpublished.quotaFullFixRequest',
+    'lifted.unpublished.notCovered',
+    'lifted.unpublished.freeSlot',
     'lifted.draftIsYours',
     'lifted.fixRequestOpen',
     'surplusTitle'

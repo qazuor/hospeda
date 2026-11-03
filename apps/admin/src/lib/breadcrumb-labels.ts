@@ -12,6 +12,7 @@
  * via the `t()` translator.
  */
 export const breadcrumbLabels: Readonly<Record<string, string>> = {
+    '/content/fix-requests': 'admin-menu.content.fixRequests',
     // Billing section (HOS-1416: the plans/subscriptions/addons/payments/
     // reconciliation/invoices/promo-codes/metrics/settings entries were
     // removed with the deleted billing pages)
@@ -22,6 +23,8 @@ export const breadcrumbLabels: Readonly<Record<string, string>> = {
     '/billing/exchange-rates': 'admin-menu.billing.exchangeRates',
     '/billing/reconciliation': 'admin-menu.billing.reconciliation',
     '/billing/promo-codes': 'admin-menu.billing.promoCodes',
+    '/billing/deadlines': 'admin-menu.billing.deadlines',
+    '/billing/plan-catalog': 'admin-menu.billing.planCatalog',
     '/platform/ops/cron': 'admin-menu.billing.cron',
     '/platform/ops/logs': 'admin-menu.billing.appLogs',
     '/platform/ops/webhooks': 'admin-menu.billing.webhookEvents',

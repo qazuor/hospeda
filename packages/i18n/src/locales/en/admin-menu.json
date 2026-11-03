@@ -4,7 +4,8 @@
         "title": "Content",
         "destinationAttractions": "Destination Attractions",
         "accommodationAmenities": "Accommodation Amenities",
-        "accommodationFeatures": "Accommodation Features"
+        "accommodationFeatures": "Accommodation Features",
+        "fixRequests": "Pending fixes"
     },
     "accommodations": {
         "title": "Accommodations",
@@ -53,6 +54,7 @@
         "userTagModeration": "User Tag Moderation"
     },
     "billing": {
+        "planCatalog": "Plans and keys",
         "title": "Billing",
         "plans": "Plans",
         "subscriptions": "Subscriptions",
@@ -61,6 +63,7 @@
         "reconciliation": "Reconciliation",
         "invoices": "Invoices",
         "promoCodes": "Promo Codes",
+        "deadlines": "Deadlines",
         "sponsorships": "Sponsorships",
         "ownerPromotions": "Owner Promotions",
         "exchangeRates": "Exchange Rates",

@@ -30,6 +30,7 @@ import { getCurrentBillingDeadlines } from '../deadlines/billing-deadlines.servi
 import { buildProviderReason } from '../plan-display-name';
 import { readAnchoredBillingOption } from '../read-anchored-billing-option';
 import type { ArrearsSuspensionNoticeContent } from './arrears-suspension-notice';
+import { buildAuthorizationReturnUrl } from './authorization-return-url';
 import type { BeforeCancelNoticeKind } from './before-cancel-notice-kinds';
 import type { TouristVipInheritancePort } from './cancel-inherited-tourist-vip.service';
 import { replacePendingAttempt } from './replace-pending-attempt.service';
@@ -204,7 +205,12 @@ export async function authorizePendingSubscription(input: {
         amount: { amountMinor: option.amount, currency: option.currency },
         cadence: { everyMonths: cadence },
         reason: input.reason,
-        returnUrl: input.returnUrl,
+        // HOS-1979: `input.returnUrl` is the site origin; the payer comes back to the
+        // result screen of THIS attempt, not to the home page.
+        returnUrl: buildAuthorizationReturnUrl({
+            siteUrl: input.returnUrl,
+            subscriptionId: pending.subscription.id
+        }),
         payerEmail: input.payerEmail,
         paymentToken: input.paymentToken,
         firstChargeAt: input.firstChargeAt

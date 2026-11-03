@@ -1,9 +1,15 @@
 /** Pure per-card presentation of the backend-resolved pricing situation. */
-import type { PricingSituationResponse, PricingSituationVertical } from '@repo/schemas';
-import { billingSubscriptionApi } from '@/lib/api/endpoints-protected';
+import {
+    type ListingNoticesResponse,
+    type PricingSituationResponse,
+    type PricingSituationVertical,
+    PublicationStatusEnum
+} from '@repo/schemas';
+import { billingSubscriptionApi, publishApi } from '@/lib/api/endpoints-protected';
 import type { ApiResult } from '@/lib/api/types';
 import type { PricingAudience } from '@/lib/billing-i18n';
 import type { SupportedLocale } from '@/lib/i18n';
+import { buildUrl } from '@/lib/urls';
 import { PLAN_CHANGE_UNAVAILABLE, PLAN_CHANGE_UNAVAILABLE_KEY } from './my-subscription-notices';
 import { buildSignupCheckoutHref } from './signup-checkout';
 
@@ -17,6 +23,29 @@ export const PRICING_VERTICAL_BY_AUDIENCE: Record<
     venue: 'venue',
     experience: 'experience',
     partner: null
+};
+
+/**
+ * Where the host manages the listings of one vertical (HOS-1977, HOS-1998).
+ * `null`: the vertical owns no listings (tourist), so there is nothing to
+ * republish.
+ */
+const LISTINGS_PATH_BY_PRICING_VERTICAL: Record<PricingSituationVertical, string | null> = {
+    accommodation: 'mi-cuenta/propiedades',
+    venue: 'mi-cuenta/comercio',
+    experience: 'mi-cuenta/comercio',
+    tourist: null
+};
+
+/** The publish-API vertical slug of each pricing vertical, `null` for tourist. */
+const PUBLISH_SLUG_BY_PRICING_VERTICAL: Record<
+    PricingSituationVertical,
+    'accommodation' | 'venue' | 'experience' | null
+> = {
+    accommodation: 'accommodation',
+    venue: 'venue',
+    experience: 'experience',
+    tourist: null
 };
 
 type LiveStatus = Extract<PricingSituationResponse, { situation: 'SUBSCRIBED' }>['status'];
@@ -41,6 +70,7 @@ export type PlanCardCtaView =
           }[];
       }
     | { readonly kind: 'current'; readonly showsPlanChangeNotice: boolean }
+    | { readonly kind: 'republish'; readonly href: string }
     | { readonly kind: 'planChangeUnavailable' }
     | { readonly kind: 'vipInherited' }
     | { readonly kind: 'none' };
@@ -91,12 +121,18 @@ export function resolvePlanCardCta({
     locale,
     vertical,
     plan,
-    result
+    result,
+    ownsBillingUnpublishedListing = false
 }: {
     readonly locale: SupportedLocale;
     readonly vertical: PricingSituationVertical;
     readonly plan: Plan;
     readonly result: ApiResult<PricingSituationResponse> | null;
+    /**
+     * HOS-1977: the host owns a listing the system took down for billing
+     * (see {@link hasBillingUnpublishedListing}). Only `FIRST_USE` reads it.
+     */
+    readonly ownsBillingUnpublishedListing?: boolean;
 }): PlanCardCtaView {
     const none: PlanCardCtaView = { kind: 'none' };
     if (!result?.ok) {
@@ -107,7 +143,15 @@ export function resolvePlanCardCta({
     const bySituation: Record<Situation, () => PlanCardCtaView> = {
         CHECKOUT: () => checkout(),
         TRIAL: () => checkout(),
-        FIRST_USE: () => none,
+        // HOS-1977: an unspent trial plus a billing-unpublished listing means
+        // the way out is republishing it (PB1 starts the trial). Nothing to
+        // charge here, so the CTA leads to the listing card, not to checkout.
+        FIRST_USE: () => {
+            const listingsPath = LISTINGS_PATH_BY_PRICING_VERTICAL[vertical];
+            return ownsBillingUnpublishedListing && listingsPath
+                ? { kind: 'republish', href: buildUrl({ locale, path: listingsPath }) }
+                : none;
+        },
         NO_PLANS: () => none,
         COVERED: () => none,
         TOURIST_VIP_INHERITED: () => ({ kind: 'vipInherited' }),
@@ -180,6 +224,49 @@ export function loadPricingSituation({
 /** Clear memoized reads between isolated tests. */
 export function resetPricingSituationCacheForTests(): void {
     situationPromises.clear();
+    billingUnpublishedPromises.clear();
 }
 
 export { PLAN_CHANGE_UNAVAILABLE_KEY };
+
+/**
+ * Whether the host owns at least one listing in `UNPUBLISHED_BY_BILLING`, read
+ * from `GET /protected/publish/listing-notices/{vertical}` (HOS-1977). A failed
+ * or malformed read is `false`: the plans page promises nothing it could not
+ * confirm.
+ */
+export function hasBillingUnpublishedListing({
+    result
+}: {
+    readonly result: ApiResult<ListingNoticesResponse>;
+}): boolean {
+    if (!result.ok || !Array.isArray(result.data?.items)) return false;
+    return result.data.items.some(
+        (item) => item.publicationStatus === PublicationStatusEnum.UNPUBLISHED_BY_BILLING
+    );
+}
+
+const billingUnpublishedPromises = new Map<PricingSituationVertical, Promise<boolean>>();
+/** Load, once per vertical for all cards on the page, whether the host owns a billing-unpublished listing. */
+export function loadBillingUnpublishedListing({
+    vertical
+}: {
+    readonly vertical: PricingSituationVertical;
+}): Promise<boolean> {
+    let pending = billingUnpublishedPromises.get(vertical);
+    if (!pending) {
+        const slug = PUBLISH_SLUG_BY_PRICING_VERTICAL[vertical];
+        pending = slug
+            ? publishApi
+                  .listingNotices({ vertical: slug, cookieHeader: undefined })
+                  .then((result) => hasBillingUnpublishedListing({ result }))
+                  .catch(() => {
+                      // A rejected read is not cached: the next card retries.
+                      billingUnpublishedPromises.delete(vertical);
+                      return false;
+                  })
+            : Promise.resolve(false);
+        billingUnpublishedPromises.set(vertical, pending);
+    }
+    return pending;
+}

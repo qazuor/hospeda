@@ -40,10 +40,7 @@ import {
 } from './timeline';
 
 const recording = rec as Recording;
-/**
- * Size of the take. The current take predates the S24 Ultra profile (an older, narrower and
- * taller viewport), so it is letterboxed into the 412 × 750 page area until A1 is re-recorded (REGLAS.md).
- */
+/** Size of the take (recorded on staging with the reference device, so it fills the page area). */
 const { size: REC } = recordingSize({ rec: recording });
 const { fit: FIT } = fitRecording({ size: REC });
 
@@ -329,7 +326,10 @@ export const A1: React.FC = () => {
 
             {frame >= OUTRO_AT && (
                 <>
-                    <ClosingCard at={OUTRO_AT + 8} />
+                    <ClosingCard
+                        at={OUTRO_AT + 8}
+                        badge="30 días de prueba gratis · Sin tarjeta"
+                    />
                     <div
                         style={{
                             position: 'absolute',
