@@ -110,12 +110,11 @@ export async function executeRefundFromProviderRead(
             call.completedAt !== null &&
             isRejectedResult(call.result)
     ).length;
-    if (
+    const awaitingProviderAnswer =
         calls.some((call) => call.completedAt === null) ||
-        acceptedIds.length + rejectedCount !== calls.length
-    )
-        return result(input, 'AWAITING_PROVIDER_ANSWER');
-    if (acceptedIds.length === 0) return result(input, 'NOTHING_ACCEPTED');
+        acceptedIds.length + rejectedCount !== calls.length;
+    if (!awaitingProviderAnswer && acceptedIds.length === 0)
+        return result(input, 'NOTHING_ACCEPTED');
 
     const [payment] = await db.select().from(payments).where(eq(payments.id, paymentId)).limit(1);
     if (!payment) throw new Error('Confirmed refund payment is missing');
@@ -125,6 +124,9 @@ export async function executeRefundFromProviderRead(
     actStartInstant({ act });
     const read = await ports.provider.readCharge({ chargeId: payment.providerFactId });
     const { snapshot } = assertFreshForAct({ read, act });
+    // An unanswered POST may have reached the provider. Read its current state on
+    // every notice, but do not execute without ids that identify this row's parts.
+    if (awaitingProviderAnswer) return result(input, 'AWAITING_PROVIDER_ANSWER');
     const ownRefunds = acceptedIds.map((id) =>
         snapshot.refunds.find((entry) => entry.refundId === id)
     );
