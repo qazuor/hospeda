@@ -1,5 +1,4 @@
 import {
-    billingDeadlineVersions,
     billingOptions,
     createManualPendingAuthorization,
     eq,
@@ -15,8 +14,8 @@ import {
     users
 } from '@repo/db';
 import { FakePaymentProvider } from '@repo/payments/fake';
-import type { BillingDeadlineValues } from '@repo/schemas';
-import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
+import { afterAll, describe, expect, it, vi } from 'vitest';
+import { getBillingDeadlinesVersion } from '../../../src/services/billing/deadlines/billing-deadlines.service';
 import { expireAuthorizationWindows } from '../../../src/services/billing/subscription/expire-authorization-windows.service';
 import { startManualSubscription } from '../../../src/services/billing/subscription/start-manual-subscription.service';
 import { startSubscription } from '../../../src/services/billing/subscription/start-subscription.service';
@@ -24,25 +23,6 @@ import { closeServiceTestPool, getServiceTestDb } from './helpers';
 import { noTouristVip } from './support/tourist-vip';
 
 const openedAt = new Date('2026-10-08T20:00:00.000Z');
-const deadlines = {
-    '10': { cardHours: 72, manualDays: 7 },
-    '11': { noticeDays: 60, contactDays: [30, 7] },
-    '12': { noticeDays: 60, contactDays: [30, 7] },
-    '13': { daysBefore: [5, 1] },
-    '14': { daysBefore: 7 },
-    '15': { hoursRemaining: 24 },
-    '16': { days: 7 },
-    '17': { days: 7 },
-    '18': { days: 180 },
-    '19': { minutes: 60 }
-} satisfies BillingDeadlineValues;
-
-beforeAll(async () => {
-    await getServiceTestDb()
-        .insert(billingDeadlineVersions)
-        .values({ version: 1000, values: deadlines })
-        .onConflictDoNothing();
-});
 afterAll(closeServiceTestPool);
 
 async function seedChoice(vertical: 'partner' | 'accommodation' = 'partner') {
@@ -152,6 +132,9 @@ describe('manual S1 signup', () => {
             .select()
             .from(providerLinks)
             .where(eq(providerLinks.subscriptionId, result.subscriptionId));
+        const savedDeadlines = await getBillingDeadlinesVersion({
+            version: rows.subscriptions[0]?.authorizationWindowDeadlineVersion ?? 0
+        });
 
         // Assert
         expect(rows.subscriptions).toHaveLength(1);
@@ -160,13 +143,14 @@ describe('manual S1 signup', () => {
             paymentMethod: 'MANUAL',
             class: 'PRINCIPAL',
             status: 'PENDING_AUTHORIZATION',
-            authorizationWindowDeadlineVersion: 1000,
+            authorizationWindowDeadlineVersion: savedDeadlines.version,
             nextChargeAt: null,
             firstChargeAt: null
         });
         expect(result.authorizationWindowEndsAt.getTime() - openedAt.getTime()).toBe(
             7 * 24 * 60 * 60 * 1000
         );
+        expect(savedDeadlines.values['10'].manualDays).toBe(7);
         expect(rows.subscriptions[0]?.authorizationWindowEndsAt).toEqual(
             result.authorizationWindowEndsAt
         );
