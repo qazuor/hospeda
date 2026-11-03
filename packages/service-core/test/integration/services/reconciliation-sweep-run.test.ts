@@ -80,6 +80,8 @@ describe('TEST:B11:24 reconciliation sweep run and liveness ping', () => {
             )
         );
         expect(summary).toMatchObject({ rowsRead: 1, stoppedOnBudget: true, complete: false });
+        // HOS-1999 M2: only CONFIGURED passes count as skipped; none were here.
+        expect(summary.skippedPasses).toEqual([]);
         expect(fake.readAuthorization).toHaveBeenCalledTimes(1);
         expect(ping.ping).not.toHaveBeenCalled();
         const [run] = await getServiceTestDb()
@@ -88,6 +90,27 @@ describe('TEST:B11:24 reconciliation sweep run and liveness ping', () => {
             .where(eq(reconciliationSweepRuns.correlationId, correlationId));
         expect(run?.finishedAt).toBeInstanceOf(Date);
         expect(rows).toHaveLength(2);
+    });
+
+    it('HOS-1999 M2: names every configured pass a budget stop skipped, in order', async () => {
+        const { fake } = createReconciliationFake();
+        await seedSubscription({ status: 'ACTIVE', withLink: true, fake });
+        const controller = new AbortController();
+        controller.abort();
+        const summary = await withSeededReconciliationInventory(() =>
+            runReconciliationSweep(
+                { correlationId: crypto.randomUUID(), signal: controller.signal },
+                {
+                    provider: fake,
+                    clock: reconciliationClock,
+                    creditedPayments: {},
+                    paidOrders: {},
+                    pauseGifts: {}
+                }
+            )
+        );
+        expect(summary.stoppedOnBudget).toBe(true);
+        expect(summary.skippedPasses).toEqual(['creditedPayments', 'paidOrders', 'pauseGifts']);
     });
 
     it('closes before one successful ping', async () => {

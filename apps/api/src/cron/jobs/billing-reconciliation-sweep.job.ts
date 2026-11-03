@@ -211,9 +211,23 @@ export const billingReconciliationSweepJob: CronJobDefinition = {
                     { capture: summary.rowsFailed > 0 || zeroCallFailures.length > 0 }
                 );
             }
+            // HOS-1999 (M2 mitigation): until PR-5's cursor resumes a stopped sweep,
+            // a stop on the budget must not be silent. Name every pass it skipped.
+            if (summary.stoppedOnBudget) {
+                logger.error(
+                    'Billing reconciliation sweep stopped on its budget',
+                    {
+                        runId: summary.runId,
+                        rowsRead: summary.rowsRead,
+                        skippedPasses: summary.skippedPasses
+                    },
+                    { capture: true }
+                );
+            }
             return {
-                success:
-                    summary.stoppedOnBudget || (summary.rowsFailed === 0 && cancelCallFailed === 0),
+                // AC-16: stopping on the budget is not itself a failure, but it
+                // never turns a run with failed rows green.
+                success: summary.rowsFailed === 0 && cancelCallFailed === 0,
                 message: `Processed ${summary.rowsRead} billing subscriptions`,
                 processed: summary.rowsRead,
                 errors: summary.rowsFailed + zeroCallFailures.length + cancelCallFailed,

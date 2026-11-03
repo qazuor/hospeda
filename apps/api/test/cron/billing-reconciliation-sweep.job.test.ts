@@ -437,6 +437,87 @@ describe('billing reconciliation sweep cron', () => {
         expect(result.details?.zeroCallChecks).not.toHaveProperty('failures');
     });
 
+    it('HOS-1999 AC-16: a budget stop with failed rows is not green', async () => {
+        mockSweep.mockResolvedValue({
+            rowsRead: 5,
+            runId: 'run-id',
+            complete: false,
+            pinged: false,
+            stoppedOnBudget: true,
+            skippedPasses: ['paidOrders', 'markEscalation'],
+            rowsFailed: 2,
+            divergences: 0,
+            marksOpened: 0,
+            marksAccumulated: 0,
+            failures: [],
+            startedAt: new Date(),
+            finishedAt: new Date()
+        });
+        const result = await billingReconciliationSweepJob.handler(context());
+        expect(result).toMatchObject({ success: false, details: { stoppedOnBudget: true } });
+    });
+
+    it('HOS-1999 AC-16: a clean budget stop stays green and reports the skipped passes', async () => {
+        mockSweep.mockResolvedValue({
+            rowsRead: 5,
+            runId: 'run-id',
+            complete: false,
+            pinged: false,
+            stoppedOnBudget: true,
+            skippedPasses: ['creditedPayments', 'paidOrders', 'zeroCallChecks'],
+            rowsFailed: 0,
+            divergences: 0,
+            marksOpened: 0,
+            marksAccumulated: 0,
+            failures: [],
+            startedAt: new Date(),
+            finishedAt: new Date()
+        });
+        const ctx = context();
+        const result = await billingReconciliationSweepJob.handler(ctx);
+        expect(result).toMatchObject({
+            success: true,
+            details: {
+                stoppedOnBudget: true,
+                skippedPasses: ['creditedPayments', 'paidOrders', 'zeroCallChecks']
+            }
+        });
+        expect(ctx.logger.error).toHaveBeenCalledWith(
+            'Billing reconciliation sweep stopped on its budget',
+            {
+                runId: 'run-id',
+                rowsRead: 5,
+                skippedPasses: ['creditedPayments', 'paidOrders', 'zeroCallChecks']
+            },
+            { capture: true }
+        );
+    });
+
+    it('does not report a budget stop when the sweep finished', async () => {
+        mockSweep.mockResolvedValue({
+            rowsRead: 1,
+            runId: 'run-id',
+            complete: true,
+            pinged: true,
+            stoppedOnBudget: false,
+            skippedPasses: [],
+            rowsFailed: 0,
+            divergences: 0,
+            marksOpened: 0,
+            marksAccumulated: 0,
+            failures: [],
+            startedAt: new Date(),
+            finishedAt: new Date()
+        });
+        const ctx = context();
+        await billingReconciliationSweepJob.handler(ctx);
+        expect(ctx.logger.error).not.toHaveBeenCalledWith(
+            'Billing reconciliation sweep stopped on its budget',
+            expect.anything(),
+            expect.anything()
+        );
+    });
+
     it('preserves existing counters when the summary omits zero-call checks', async () => {
         mockSweep.mockResolvedValue({
             rowsRead: 3,

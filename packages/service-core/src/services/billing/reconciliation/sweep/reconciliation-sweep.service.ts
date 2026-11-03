@@ -113,12 +113,24 @@ export interface ReconciliationSweepFailure {
     readonly message: string;
 }
 
+/** The passes that run after the subscription rows, in order. */
+export type ReconciliationSweepPass =
+    | 'cancellationRetry'
+    | 'terminalReturn'
+    | 'creditedPayments'
+    | 'paidOrders'
+    | 'markEscalation'
+    | 'pauseGifts'
+    | 'zeroCallChecks';
+
 export interface ReconciliationSweepSummary {
     readonly rowsRead: number;
     readonly runId: string;
     readonly complete: boolean;
     readonly pinged: boolean;
     readonly stoppedOnBudget: boolean;
+    /** Configured passes that did not run because the sweep stopped on its budget. */
+    readonly skippedPasses: readonly ReconciliationSweepPass[];
     readonly rowsFailed: number;
     readonly divergences: number;
     readonly marksOpened: number;
@@ -264,9 +276,19 @@ export async function runReconciliationSweep(
         afterSubscriptionId = page.at(-1)?.subscription.id;
     }
 
+    const skippedPasses: ReconciliationSweepPass[] = [];
+    /**
+     * Checks the budget before a pass; a configured pass that does not run
+     * because the sweep stopped is recorded in `skippedPasses` (HOS-1999 M2).
+     */
+    const passBlocked = (pass: ReconciliationSweepPass, configured: boolean): boolean => {
+        if (input.signal?.aborted) stoppedOnBudget = true;
+        if (stoppedOnBudget && configured) skippedPasses.push(pass);
+        return stoppedOnBudget;
+    };
+
     let cancellationRetry: ReconciliationSweepSummary['cancellationRetry'];
-    if (input.signal?.aborted) stoppedOnBudget = true;
-    if (!stoppedOnBudget && retryPorts) {
+    if (!passBlocked('cancellationRetry', Boolean(retryPorts)) && retryPorts) {
         const pass = await runOurCancellationRetry(
             { correlationId, pageSize, ...(ports.terminalReturn ? { unconfirmedOnly: true } : {}) },
             comparisons.length > 0 ? { ...retryPorts, afterRead: compareRow } : retryPorts
@@ -288,8 +310,7 @@ export async function runReconciliationSweep(
     }
 
     let terminalReturn: TerminalReturnSummary | undefined;
-    if (input.signal?.aborted) stoppedOnBudget = true;
-    if (!stoppedOnBudget && ports.terminalReturn) {
+    if (!passBlocked('terminalReturn', Boolean(ports.terminalReturn)) && ports.terminalReturn) {
         terminalReturn = await runTerminalReturn(
             { correlationId, pageSize },
             {
@@ -307,8 +328,10 @@ export async function runReconciliationSweep(
     }
 
     let creditedPayments: CreditedPaymentsCheckSummary | undefined;
-    if (input.signal?.aborted) stoppedOnBudget = true;
-    if (!stoppedOnBudget && ports.creditedPayments) {
+    if (
+        !passBlocked('creditedPayments', Boolean(ports.creditedPayments)) &&
+        ports.creditedPayments
+    ) {
         creditedPayments = await runCreditedPaymentsCheck(
             { correlationId, pageSize },
             {
@@ -326,8 +349,7 @@ export async function runReconciliationSweep(
     }
 
     let paidOrders: PaidOrdersCheckSummary | undefined;
-    if (input.signal?.aborted) stoppedOnBudget = true;
-    if (!stoppedOnBudget && ports.paidOrders) {
+    if (!passBlocked('paidOrders', Boolean(ports.paidOrders)) && ports.paidOrders) {
         paidOrders = await runPaidOrdersCheck(
             { correlationId, pageSize },
             { ...ports.paidOrders, provider: ports.provider, clock: ports.clock }
@@ -337,8 +359,7 @@ export async function runReconciliationSweep(
     }
 
     let markEscalation: MarkEscalationSummary | undefined;
-    if (input.signal?.aborted) stoppedOnBudget = true;
-    if (!stoppedOnBudget && ports.markEscalation) {
+    if (!passBlocked('markEscalation', Boolean(ports.markEscalation)) && ports.markEscalation) {
         markEscalation = await runMarkEscalation(
             { correlationId, pageSize },
             { ...ports.markEscalation, clock: ports.clock }
@@ -354,8 +375,7 @@ export async function runReconciliationSweep(
     }
 
     let pauseGifts: PauseGiftSummary | undefined;
-    if (input.signal?.aborted) stoppedOnBudget = true;
-    if (!stoppedOnBudget && ports.pauseGifts) {
+    if (!passBlocked('pauseGifts', Boolean(ports.pauseGifts)) && ports.pauseGifts) {
         pauseGifts = await runPauseGiftDetection(
             { correlationId, pageSize },
             { ...ports.pauseGifts, clock: ports.clock }
@@ -370,9 +390,8 @@ export async function runReconciliationSweep(
         );
     }
 
-    if (input.signal?.aborted) stoppedOnBudget = true;
     const zeroCallChecks =
-        !stoppedOnBudget && ports.zeroCallChecks
+        !passBlocked('zeroCallChecks', Boolean(ports.zeroCallChecks)) && ports.zeroCallChecks
             ? await runZeroCallChecks(
                   { correlationId, pageSize },
                   { ...ports.zeroCallChecks, markPayments: ports.markPayments }
@@ -401,6 +420,7 @@ export async function runReconciliationSweep(
         complete,
         pinged,
         stoppedOnBudget,
+        skippedPasses,
         rowsRead,
         rowsFailed,
         divergences,
