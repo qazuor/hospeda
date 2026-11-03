@@ -3,6 +3,7 @@ import type { Clock } from '@repo/billing-verticals-contract';
 import {
     extendRunLease,
     isReconciliationSweepRunComplete,
+    ReconciliationSweepSliceAlreadyOpenError,
     reconciliationInventoryModel,
     reconciliationSweepRunModel,
     reconciliationSweepRuns
@@ -119,10 +120,22 @@ export async function runReconciliationSweep(
     const cycleDone = previousSlices.some(
         (slice) => slice.outcome === 'CYCLE_DONE' && slice.rowsComplete === true
     );
-    const run = await reconciliationSweepRunModel.openSlice({
-        correlationId,
-        ...(todayCycle ? { cycleId: todayCycle.cycleId } : {})
-    });
+    let run: Awaited<ReturnType<typeof reconciliationSweepRunModel.openSlice>>;
+    try {
+        run = await reconciliationSweepRunModel.openSlice({
+            correlationId,
+            ...(todayCycle ? { cycleId: todayCycle.cycleId } : {})
+        });
+    } catch (error) {
+        // The unique index allows one open slice: losing the race means a live holder, before any work.
+        if (error instanceof ReconciliationSweepSliceAlreadyOpenError)
+            return skippedSummary({
+                skipped: 'lease_held',
+                startedAt,
+                finishedAt: ports.clock.now()
+            });
+        throw error;
+    }
     const cycleId = run.cycleId ?? run.id;
     const sliceIndex = run.sliceIndex ?? 0;
     if (cycleDone) {
@@ -222,6 +235,39 @@ export async function runReconciliationSweep(
         rowsFailed: 0,
         failures: [],
         failedSubscriptionIds: []
+    };
+
+    /** Fail-closed result when another slice closed this one: counts and failures are kept. */
+    const leaseLostSummary = async (): Promise<ReconciliationSweepSummary> => {
+        const lostRowsRead = rowsRead + postLoop.rowsRead;
+        const lostRowsFailed = rowsFailed + postLoop.rowsFailed;
+        const lostFailedIds = [...failedSubscriptionIds, ...postLoop.failedSubscriptionIds];
+        await reconciliationSweepRunModel.recordLostSliceProgress({
+            id: run.id,
+            rowsRead: lostRowsRead,
+            rowsFailed: lostRowsFailed,
+            failedSubscriptionIds: lostFailedIds
+        });
+        return {
+            ...skippedSummary({
+                skipped: 'lease_held',
+                runId: run.id,
+                cycleId,
+                sliceIndex,
+                startedAt,
+                finishedAt: ports.clock.now(),
+                outcome: 'ABANDONED'
+            }),
+            skipped: undefined,
+            leaseLost: true,
+            complete: false,
+            phase,
+            rowsComplete,
+            rowsRead: lostRowsRead,
+            rowsFailed: lostRowsFailed,
+            failures: [...failures, ...postLoop.failures],
+            incomplete: true
+        };
     };
 
     try {
@@ -334,16 +380,7 @@ export async function runReconciliationSweep(
             retryTally
         });
     } catch (error) {
-        if (error instanceof SweepLeaseLostError) {
-            return skippedSummary({
-                skipped: 'lease_held',
-                runId: run.id,
-                cycleId,
-                sliceIndex,
-                startedAt,
-                finishedAt: ports.clock.now()
-            });
-        }
+        if (error instanceof SweepLeaseLostError) return await leaseLostSummary();
         if (error instanceof SweepTimedOutError) {
             stoppedOnBudget = true;
         } else {
@@ -379,7 +416,7 @@ export async function runReconciliationSweep(
         rowsRead,
         rowsFailed
     });
-    if (!closedRun && outcome !== 'TIMED_OUT') throw new SweepLeaseLostError();
+    if (!closedRun) return await leaseLostSummary();
     const complete =
         !stoppedOnBudget &&
         rowsComplete &&

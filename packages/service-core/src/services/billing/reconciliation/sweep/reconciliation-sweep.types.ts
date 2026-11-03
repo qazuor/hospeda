@@ -106,6 +106,11 @@ export interface ReconciliationSweepSummary {
     readonly pauseGifts?: PauseGiftSummary;
     readonly outcome: ReconciliationSweepOutcome;
     readonly skipped?: 'lease_held' | 'cycle_done';
+    /**
+     * True when another slice closed this one (ABANDONED) after it had started working. Never
+     * green: `complete` is false and the counts and failures gathered so far are kept.
+     */
+    readonly leaseLost?: boolean;
     readonly phase: 'ROWS' | 'PASSES' | 'DONE';
     readonly rowsComplete: boolean;
     readonly sliceIndex: number;
