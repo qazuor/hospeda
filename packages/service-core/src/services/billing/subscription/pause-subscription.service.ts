@@ -3,7 +3,7 @@ import {
     VerticalSchema,
     type VerticalsForBilling
 } from '@repo/billing-verticals-contract';
-import { and, eq, getDb, providerLinks, subscriptionPauses, subscriptions } from '@repo/db';
+import { and, eq, getDb, providerLinks, sql, subscriptionPauses, subscriptions } from '@repo/db';
 import { createLogger } from '@repo/logger';
 import type { PaymentProvider } from '@repo/payments';
 import { z } from 'zod';
@@ -58,6 +58,16 @@ export async function pauseSubscription(
     if (confirmation === 'NOT_APPLIED') return { outcome: 'NOT_APPLIED' };
     const now = ports.clock.now();
     const written = await getDb().transaction(async (tx) => {
+        const [owner] = await tx
+            .select({ userId: subscriptions.userId, vertical: subscriptions.vertical })
+            .from(subscriptions)
+            .where(eq(subscriptions.id, value.subscriptionId))
+            .limit(1);
+        if (!owner?.userId || !owner.vertical) return null;
+        // Serialize quota decisions across origin and successor principals of this pair.
+        await tx.execute(
+            sql`SELECT pg_advisory_xact_lock(hashtextextended(${owner.userId} || ':' || ${owner.vertical} || ':customer-pause', 0))`
+        );
         const [locked] = await tx
             .select({ id: subscriptions.id })
             .from(subscriptions)

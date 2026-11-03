@@ -26,6 +26,7 @@ export async function seedPausePrincipal(input: {
     readonly paymentMethod?: 'CARD' | 'MANUAL';
     readonly status?: string;
     readonly userId?: string;
+    readonly succeedsId?: string;
 }): Promise<{
     readonly subscriptionId: string;
     readonly userId: string;
@@ -63,7 +64,8 @@ export async function seedPausePrincipal(input: {
                 billingOptionId,
                 paymentMethod: input.paymentMethod ?? 'CARD',
                 status: input.status ?? 'ACTIVE',
-                class: 'PRINCIPAL'
+                class: 'PRINCIPAL',
+                succeedsId: input.succeedsId
             })
             .returning({ id: subscriptions.id });
         if (!row) throw new Error('pause principal missing');

@@ -335,6 +335,63 @@ describe.skipIf(!isServiceTestDbAvailable())('TEST:B8b:1 S8 and its failure bran
         ).toEqual({ outcome: 'REFUSED', reason: 'PAUSE_COUNT_EXHAUSTED' });
     });
 
+    it('serializes concurrent pauses of origin and successor against the same quota', async () => {
+        let entered = 0;
+        let releaseBoth: (() => void) | undefined;
+        const bothAtProvider = new Promise<void>((resolve) => {
+            releaseBoth = resolve;
+        });
+        const harness = providerHarness({
+            onPause: async () => {
+                entered += 1;
+                if (entered === 2) releaseBoth?.();
+                await bothAtProvider;
+            }
+        });
+        const origin = await seedPausePrincipal({ harness });
+        const successor = await seedPausePrincipal({
+            harness,
+            userId: origin.userId,
+            succeedsId: origin.subscriptionId
+        });
+        for (const day of [1, 2])
+            await seedClosedPause({
+                subscriptionId: origin.subscriptionId,
+                startsAt: new Date(`2026-09-0${day}T12:00:00.000Z`),
+                actualEndAt: new Date(`2026-09-1${day}T12:00:00.000Z`)
+            });
+        const ports = {
+            provider: harness.provider,
+            clock,
+            planPolicy: pausePlanPolicy(),
+            complements: emptyComplements,
+            coverageNotices: { emitCoverageChanged: async () => {} }
+        };
+
+        const results = await Promise.all([
+            pauseSubscription({ subscriptionId: origin.subscriptionId, requestedMonths: 1 }, ports),
+            pauseSubscription(
+                { subscriptionId: successor.subscriptionId, requestedMonths: 1 },
+                ports
+            )
+        ]);
+
+        expect(entered).toBe(2);
+        expect(results.map((result) => result.outcome).sort()).toEqual(['LOST_RACE', 'PAUSED']);
+        const pauses = await db()
+            .select({ actualEndAt: subscriptionPauses.actualEndAt })
+            .from(subscriptionPauses)
+            .where(eq(subscriptionPauses.subscriptionId, origin.subscriptionId));
+        const successorPauses = await db()
+            .select({ actualEndAt: subscriptionPauses.actualEndAt })
+            .from(subscriptionPauses)
+            .where(eq(subscriptionPauses.subscriptionId, successor.subscriptionId));
+        expect(pauses.length + successorPauses.length).toBe(3);
+        expect([...pauses, ...successorPauses].filter((pause) => !pause.actualEndAt)).toHaveLength(
+            1
+        );
+    });
+
     it('refuses manual payers without a provider call', async () => {
         const harness = providerHarness();
         const principal = await seedPausePrincipal({ harness, paymentMethod: 'MANUAL' });
