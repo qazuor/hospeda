@@ -714,6 +714,23 @@ export const handleRouteError = (error: unknown, c: Context) => {
     }
 
     if (error instanceof Error) {
+        const routeError = error as Error & {
+            readonly statusCode?: number;
+            readonly code?: string;
+            readonly details?: unknown;
+        };
+        if (
+            routeError.statusCode === 409 &&
+            routeError.code === 'CONFLICT' &&
+            routeError.details !== undefined
+        ) {
+            return createErrorResponse(
+                { code: routeError.code, message: routeError.message, details: routeError.details },
+                c,
+                409
+            );
+        }
+
         // Check for ServiceErrorCode prefix in message (e.g., "NOT_FOUND: Resource not found")
         // This handles errors thrown with format `throw new Error(`${result.error.code}: ${result.error.message}`)`
         const errorCodeMatch = error.message.match(/^([A-Z_]+):\s*(.+)$/);
