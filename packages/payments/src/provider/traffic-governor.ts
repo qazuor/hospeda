@@ -25,6 +25,8 @@ export const GOVERNOR_MAX_BACKOFF_COOLDOWN_MS = 60_000;
 export const GOVERNOR_BASE_BACKOFF_MS = 2000;
 /** Observation window size in milliseconds. */
 export const GOVERNOR_WINDOW_MS = 60_000;
+/** Maximum wait samples retained by one traffic window. */
+export const GOVERNOR_MAX_WAIT_SAMPLES = 1000;
 
 /** The governor either measures requests or enforces the measured limits. */
 export type GovernorMode = 'observe' | 'enforce';
@@ -347,7 +349,7 @@ export class ProviderTrafficGovernor {
             (total, item) => total + item.waitSamples.length,
             0
         );
-        if (sampleCount >= 1000) {
+        if (sampleCount >= GOVERNOR_MAX_WAIT_SAMPLES) {
             for (const item of classCounters?.values() ?? []) {
                 if (item.waitSamples.length === 0) continue;
                 item.waitSamples.shift();
