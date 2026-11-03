@@ -112,4 +112,33 @@ describe('observe/off transport parity', () => {
         expect(observe).toEqual(off);
         expect(observe.outcome).not.toMatchObject({ governorRejected: true });
     });
+
+    it('fails open when governor callbacks throw (kills bookkeeping exceptions affecting adapter results)', async () => {
+        const governor = new ProviderTrafficGovernor({
+            mode: 'observe',
+            onInteractiveRateLimited: () => {
+                throw new Error('log sink unavailable');
+            },
+            onError: () => {
+                throw new Error('error sink unavailable');
+            }
+        });
+        const provider = new MercadoPagoPaymentProvider({
+            clock,
+            accessToken: 'test-token',
+            governor,
+            fetch: async () =>
+                new Response('{"message":"Too Many Requests","status":429}', { status: 429 })
+        });
+        await expect(
+            provider.authorize({
+                reference: 'subscription-1',
+                amount: { amountMinor: 1500, currency: 'ARS' },
+                cadence: { everyMonths: 1 },
+                reason: 'Monthly',
+                returnUrl: 'https://example.test/return'
+            })
+        ).rejects.toMatchObject({ code: 'UNAVAILABLE', transient: { kind: 'RATE_LIMITED' } });
+        governor.stop();
+    });
 });

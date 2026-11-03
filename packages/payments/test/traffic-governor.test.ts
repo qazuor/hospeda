@@ -273,6 +273,25 @@ describe('ProviderTrafficGovernor', () => {
         expect(windows).toEqual(['interactive', 'background']);
     });
 
+    it('counts 5xx and network failures without opening a cool-down (kills non-quota backoff)', () => {
+        const governor = new ProviderTrafficGovernor({ mode: 'observe' });
+        governor.observe({ trafficClass: 'background', capability: 'read', status: 503 });
+        governor.observe({ trafficClass: 'background', capability: 'read', networkError: true });
+        expect(governor.coolDownRemainingMs()).toBe(0);
+        const window = governor.flushWindow();
+        expect(window?.status5xx).toBe(1);
+        expect(window?.networkErrors).toBe(1);
+    });
+
+    it('clears its periodic flush timer on stop (kills leaked interval)', () => {
+        vi.useFakeTimers();
+        const governor = new ProviderTrafficGovernor({ mode: 'observe' });
+        governor.start();
+        expect(vi.getTimerCount()).toBe(1);
+        governor.stop();
+        expect(vi.getTimerCount()).toBe(0);
+    });
+
     it('accounts a classless adapter request as interactive and marks it unclassified (kills silent default class)', async () => {
         const windows: Array<{ readonly trafficClass: string; readonly unclassified: number }> = [];
         const governor = new ProviderTrafficGovernor({
