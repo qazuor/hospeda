@@ -105,9 +105,13 @@ function violations(
             exclusions.some(
                 (pair) => pair.length !== 2 || pair.some((value) => !values.includes(value))
             ) ||
-            (ruleSet.maxPerListing !== undefined && businessLines.length > ruleSet.maxPerListing) ||
-            Object.values(ruleSet.typeRules).some((entry) =>
-                exclusions.some((pair) => pair.every((value) => entry.preselect.includes(value)))
+            Object.values(ruleSet.typeRules).some(
+                (entry) =>
+                    (ruleSet.maxPerListing !== undefined &&
+                        entry.preselect.length > ruleSet.maxPerListing) ||
+                    exclusions.some((pair) =>
+                        pair.every((value) => entry.preselect.includes(value))
+                    )
             )
         )
             errors.push('r10');
@@ -156,7 +160,7 @@ describe('G-FAC-02 listing catalog integrity', () => {
         >;
         const rules = structuredClone(BUSINESS_LINE_RULES) as unknown as Record<
             string,
-            { typeRules: Record<string, unknown>; excludes?: unknown[] }
+            { typeRules: Record<string, unknown>; excludes?: unknown[]; maxPerListing?: number }
         >;
         const venueLines = lines.venue as Array<Record<string, unknown>>;
         const venueSections = copy.venue as Array<Record<string, unknown>>;
@@ -180,7 +184,10 @@ describe('G-FAC-02 listing catalog integrity', () => {
                 >
             ).public = true;
         if (rule === 'r10')
-            (rules.venue as { excludes?: unknown[] }).excludes = [['bogus', 'food']];
+            Object.assign(rules.venue as object, {
+                excludes: [['bogus', 'food']],
+                maxPerListing: 1
+            });
         if (rule === 'r11') venueSections[0]!.fields = [];
         expect(violations(copy, lines, rules).some((error) => error.startsWith(rule))).toBe(true);
     });
