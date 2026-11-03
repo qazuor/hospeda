@@ -8,7 +8,7 @@
     },
     "listing": {
         "title": "Comer y salir",
-        "subtitle": "Descubrí los mejores restaurantes, bares y sabores de la región",
+        "subtitle": "Descubrí lugares para comer y salir en la región",
         "emptyState": "No se encontraron locales con los filtros seleccionados.",
         "emptyCatalog": "Todavía no hay locales publicados.",
         "errorBanner": "No se pudo cargar el listado de Comer y salir. Intentá de nuevo más tarde.",
@@ -118,11 +118,11 @@
             "title": "Beneficios para tu local",
             "item1": {
                 "title": "Visibilidad en la región",
-                "desc": "Aparecé donde miles de viajeros buscan dónde comer en Concepción del Uruguay y el litoral entrerriano."
+                "desc": "Aparecé donde miles de viajeros buscan lugares para comer o salir en Concepción del Uruguay y el litoral entrerriano."
             },
             "item2": {
                 "title": "Publicá en minutos",
-                "desc": "Cargá fotos, menú y horarios desde un panel simple. Editá cuando quieras."
+                "desc": "Cargá fotos, carta o barra y horarios desde un panel simple. Editá cuando quieras."
             },
             "item3": {
                 "title": "Precio fijo, sin comisiones",
@@ -138,11 +138,11 @@
             },
             "step2": {
                 "title": "Publicá tu local",
-                "desc": "Cargá fotos, menú, horarios y ubicación."
+                "desc": "Cargá fotos, carta o barra, horarios y ubicación."
             },
             "step3": {
                 "title": "Te encuentran",
-                "desc": "Los comensales te descubren buscando dónde comer y salir en la zona."
+                "desc": "Quienes visitan la zona te descubren cuando buscan un lugar para comer o salir."
             }
         },
         "price": {
@@ -174,7 +174,7 @@
         },
         "lead": {
             "title": "Sumá tu negocio",
-            "subtitle": "Creá tu cuenta, publicá tu local y empezá a recibir comensales que buscan dónde comer en la zona."
+            "subtitle": "Creá tu cuenta, publicá tu local y empezá a recibir visitas de quienes buscan un lugar para comer o salir en la zona."
         }
     },
     "owner": {
