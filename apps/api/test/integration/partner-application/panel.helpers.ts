@@ -56,7 +56,7 @@ export async function insertApplication(input: {
         ) VALUES (
             ${input.email},
             ${input.status},
-            now() - (${input.createdDaysAgo ?? 0} * interval '1 day'),
+            date_trunc('milliseconds', now() - (${input.createdDaysAgo ?? 0} * interval '1 day')),
             ${input.status === 'PENDING' ? null : sql`now() - (${input.resolvedDaysAgo ?? 0} * interval '1 day')`},
             ${input.status === 'APPROVED' ? (input.partnerId ?? null) : null}::uuid,
             ${input.waitCancelled ? sql`now()` : null},
