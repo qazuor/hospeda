@@ -8,6 +8,7 @@ import { openReconciliationMark } from '../reconciliation/open-reconciliation-ma
 import type { ReconciliationMarkPayments } from '../reconciliation/reconciliation-mark-payments.port.js';
 import {
     findSubscriptionProhibition,
+    type SubscriptionProhibitionException,
     type SubscriptionProhibitionId,
     type SubscriptionStatus
 } from './subscription-prohibited-transitions.js';
@@ -24,6 +25,7 @@ export interface RefuseUndeclaredTransitionInput {
     readonly subscriptionId: string;
     readonly to: SubscriptionStatus;
     readonly attemptedBy: string;
+    readonly exception?: SubscriptionProhibitionException;
     readonly actor: { readonly type: DomainEventActorType; readonly id?: string | null };
     readonly correlationId?: string;
     readonly tx?: DrizzleClient;
@@ -54,7 +56,7 @@ export interface RefuseUndeclaredTransitionPorts {
 }
 
 /**
- * Refuses a transition listed in PROH:B:1 or PROH:B:2 and records rule 1.
+ * Refuses a transition listed in PROH:B:1, PROH:B:2 or PROH:B:4 and records rule 1.
  * Non-prohibited pairs are observed without performing a transition.
  *
  * @param input - The subscription, destination, actor, and optional transaction
@@ -70,6 +72,7 @@ export async function refuseUndeclaredSubscriptionTransition(
         subscriptionId: z.uuid(),
         to: z.enum(SUBSCRIPTION_STATUSES),
         attemptedBy: z.string().min(1).max(64),
+        exception: z.enum(['S6_CHARGEBACK_ON_COURTESY', 'S22_UNCONSUMED_CREDIT']).optional(),
         actor: z.object({
             type: z.enum(['owner', 'admin', 'job', 'provider']),
             id: z.uuid().nullable().optional()
@@ -99,7 +102,11 @@ export async function refuseUndeclaredSubscriptionTransition(
             .for('update');
         if (!row) return { outcome: 'NOT_FOUND', subscriptionId: input.subscriptionId };
 
-        const prohibition = findSubscriptionProhibition({ from: row.status, to: input.to });
+        const prohibition = findSubscriptionProhibition({
+            from: row.status,
+            to: input.to,
+            exception: parsed.data.exception
+        });
         if (!prohibition) {
             logger.info(
                 { subscriptionId: input.subscriptionId, from: row.status, to: input.to },

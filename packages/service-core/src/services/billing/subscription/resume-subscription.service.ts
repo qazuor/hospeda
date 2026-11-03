@@ -15,6 +15,10 @@ import { BILLING_CYCLE_MONTHS } from '@repo/schemas';
 import { z } from 'zod';
 import { type CoverageNotices, unwiredCoverageNotices } from '../payment/payment-ports.js';
 import { openReconciliationMark } from '../reconciliation/open-reconciliation-mark.service.js';
+import {
+    createCutExpectedAmountPolicy,
+    type ExpectedAmountPolicy
+} from '../reconciliation/sweep/comparisons/expected-amount.js';
 import type { ComplementPolicyPorts } from './complement-ports.js';
 import { type ResumeComplementsSummary, resumeComplementsS33 } from './complement-resume-s33.js';
 import { confirmPrincipalResume } from './resume-subscription-provider.js';
@@ -32,6 +36,11 @@ export type ResumeSubscriptionResult =
     | {
           readonly outcome: 'RESUMED';
           readonly nextChargeAt: Date | null;
+          readonly nextCharge: {
+              readonly at: Date;
+              readonly amountMinor: number;
+              readonly currency: string;
+          } | null;
           readonly complements: ResumeComplementsSummary;
       };
 
@@ -43,6 +52,7 @@ export async function resumeSubscription(
         readonly clock: Clock;
         readonly complements: ComplementPolicyPorts;
         readonly coverageNotices?: CoverageNotices;
+        readonly expectedAmount?: ExpectedAmountPolicy;
     }
 ): Promise<ResumeSubscriptionResult> {
     const value = inputSchema.parse(input);
@@ -174,5 +184,38 @@ export async function resumeSubscription(
         { principalSubscriptionId: value.subscriptionId, trigger: 'PRINCIPAL_ACTIVE' },
         { provider: ports.provider, clock: ports.clock, policy: ports.complements }
     );
-    return { outcome: 'RESUMED', nextChargeAt: written.nextChargeAt, complements };
+    let nextCharge: { at: Date; amountMinor: number; currency: string } | null = null;
+    if (written.nextChargeAt) {
+        try {
+            const [subscription] = await db
+                .select()
+                .from(subscriptions)
+                .where(eq(subscriptions.id, value.subscriptionId))
+                .limit(1);
+            if (!subscription) throw new Error('Resumed subscription missing');
+            const expected = await (
+                ports.expectedAmount ?? createCutExpectedAmountPolicy()
+            ).expectedAmount({
+                subscription,
+                purpose: { kind: 'PERIOD', chargeCreatedAt: written.nextChargeAt }
+            });
+            if (expected.kind === 'COMPARABLE')
+                nextCharge = {
+                    at: written.nextChargeAt,
+                    amountMinor: expected.amountMinor,
+                    currency: expected.currency
+                };
+            else
+                logger.warn(
+                    { subscriptionId: value.subscriptionId, reason: expected.reason },
+                    'Next charge amount unavailable after S10'
+                );
+        } catch (error) {
+            logger.warn(
+                { subscriptionId: value.subscriptionId, error },
+                'Next charge amount lookup failed after S10'
+            );
+        }
+    }
+    return { outcome: 'RESUMED', nextChargeAt: written.nextChargeAt, nextCharge, complements };
 }
