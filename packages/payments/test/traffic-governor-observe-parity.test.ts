@@ -114,6 +114,36 @@ describe('observe/off transport parity', () => {
         expect(observe.outcome).not.toMatchObject({ governorRejected: true });
     });
 
+    it('pins legacy retry counts and delays for the AC-28 sequences (kills enforce retry leakage)', async () => {
+        const cases: readonly {
+            readonly responses: readonly (number | 'network')[];
+            readonly retryAfter?: string;
+            readonly fetches: number;
+            readonly sleeps: readonly number[];
+        }[] = [
+            { responses: [429, 429, 200], fetches: 3, sleeps: [500, 1000] },
+            { responses: [503, 503, 503], fetches: 3, sleeps: [500, 1000] },
+            { responses: ['network', 200], fetches: 2, sleeps: [500] },
+            { responses: [429, 200], retryAfter: '5', fetches: 2, sleeps: [2000] }
+        ];
+        for (const testCase of cases) {
+            const { fetches, sleeps, ...sequence } = testCase;
+            const off = await scenario({
+                withGovernor: false,
+                method: 'readAuthorization',
+                ...sequence
+            });
+            const observe = await scenario({
+                withGovernor: true,
+                method: 'readAuthorization',
+                ...sequence
+            });
+            expect(observe).toEqual(off);
+            expect(off.fetchCalls).toHaveLength(fetches);
+            expect(off.sleepCalls).toEqual(sleeps);
+        }
+    });
+
     it('fails open when governor callbacks throw (kills bookkeeping exceptions affecting adapter results)', async () => {
         const governor = new ProviderTrafficGovernor({
             mode: 'observe',
