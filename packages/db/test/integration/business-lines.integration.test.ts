@@ -61,7 +61,7 @@ describe('TEST:2.3:2 AC:2:4 business_lines PostgreSQL constraints', () => {
                     await expect(
                         tx.execute(
                             sql.raw(
-                                `INSERT INTO "${table}" (slug,name,summary,description,type,owner_id,destination_id,business_lines) VALUES ('bl-${crypto.randomUUID()}','n','s','d',${listingType},'${ownerId}','${destinationId}',${values})`
+                                `INSERT INTO "${table}" (slug,name,summary,description,type,owner_id,destination_id,business_lines,publication_status,inactive_since,deadlines_version) VALUES ('bl-${crypto.randomUUID()}','n','s','d',${listingType},'${ownerId}','${destinationId}',${values},'DRAFT',now(),1)`
                             )
                         )
                     ).rejects.toThrow();
