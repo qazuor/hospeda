@@ -60,6 +60,7 @@ export async function handleGetVenueDailySpecials(_ctx: Context, params: Record<
 
 export const protectedGetVenueDailySpecialsRoute = createProtectedRoute({
     method: 'get',
+    emailUnverifiedOperation: 'READ_OWN',
     path: '/{id}/daily-specials',
     listingAccess: {
         vertical: VerticalEnum.VENUE,
