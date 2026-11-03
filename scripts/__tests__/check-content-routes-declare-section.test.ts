@@ -19,6 +19,7 @@ function tree() {
     const root = mkdtempSync(path.join(tmpdir(), 'gfac06-'));
     dirs.push(root);
     execFileSync('git', ['init', '-q'], { cwd: root, stdio: 'pipe' });
+    mkdirSync(path.join(root, 'apps/api/src/routes/venue/admin'), { recursive: true });
     write(root, INVENTORY_FILE, JSON.stringify(INVENTORY));
     for (const file of Object.keys(INVENTORY))
         write(root, file, readFileSync(path.join(ROOT, file), 'utf8'));
@@ -27,6 +28,15 @@ function tree() {
 function write(root: string, file: string, source: string) {
     mkdirSync(path.dirname(path.join(root, file)), { recursive: true });
     writeFileSync(path.join(root, file), source);
+}
+function removeSectionDeclaration(root: string, file: string) {
+    const p = path.join(root, file);
+    const source = readFileSync(p, 'utf8');
+    const start = source.indexOf('        listingSection:');
+    const end = source.indexOf('\n        ]\n', start) + '\n        ]\n'.length;
+    expect(start).toBeGreaterThanOrEqual(0);
+    expect(end).toBeGreaterThan(start);
+    writeFileSync(p, source.slice(0, start) + source.slice(end));
 }
 function mutate(root: string, file: string, from: string, to: string) {
     const p = path.join(root, file);
@@ -41,7 +51,7 @@ describe('TEST:3.4:3 — GUARD:G-FAC-06 content routes declare their section', (
     });
     it('fails when a route omits listingSection', () => {
         const r = tree();
-        mutate(r, ROUTE, 'listingSection: ({ body }) => [', '');
+        removeSectionDeclaration(r, ROUTE);
         expect(run({ root: r, minRoutes: 1 }).output).toContain('does not declare listingSection');
     });
     it('fails when a newly added route touches a content table without joining the inventory', () => {
