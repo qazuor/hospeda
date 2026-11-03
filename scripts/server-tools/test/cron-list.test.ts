@@ -21,6 +21,9 @@ const ENV_KEYS_TOUCHED = [
 let originalEnv: Record<string, string | undefined>;
 const originalFetch = globalThis.fetch;
 let calls: Array<{ url: string; cookie: string | null; method: string }>;
+let postOverride: Response | undefined;
+const originalStderrWrite = process.stderr.write.bind(process.stderr);
+let stderrOutput = '';
 
 beforeEach(() => {
     originalEnv = {};
@@ -29,10 +32,17 @@ beforeEach(() => {
         delete process.env[key];
     }
     calls = [];
+    postOverride = undefined;
+    stderrOutput = '';
+    process.stderr.write = ((chunk: string | Uint8Array) => {
+        stderrOutput += String(chunk);
+        return true;
+    }) as typeof process.stderr.write;
     globalThis.fetch = (async (input: string | URL | Request, init?: RequestInit) => {
         const headers = new Headers(init?.headers);
         const method = init?.method ?? 'GET';
         calls.push({ url: String(input), cookie: headers.get('Cookie'), method });
+        if (method === 'POST' && postOverride) return postOverride;
         const data =
             method === 'POST'
                 ? {
@@ -61,6 +71,7 @@ beforeEach(() => {
 
 afterEach(() => {
     globalThis.fetch = originalFetch;
+    process.stderr.write = originalStderrWrite;
     for (const key of ENV_KEYS_TOUCHED) {
         if (originalEnv[key] === undefined) {
             delete process.env[key];
@@ -128,5 +139,43 @@ describe('cronTrigger — target routing', () => {
         );
         expect(post?.cookie).toBe('staging-cookie');
         expect(calls.every((c) => new URL(c.url).hostname !== 'api.hospeda.com.ar')).toBe(true);
+    });
+
+    it('prints the run ID from an accepted asynchronous trigger', async () => {
+        process.env.HOPS_ADMIN_COOKIE = 'prod-cookie';
+        setActiveTarget('prod');
+        postOverride = new Response(
+            JSON.stringify({
+                success: true,
+                data: {
+                    accepted: true,
+                    runId: 'run-accepted-123',
+                    jobName: 'job-a',
+                    dryRun: false,
+                    executedAt: '2026-11-03T00:00:00.000Z'
+                }
+            }),
+            { status: 202, headers: { 'Content-Type': 'application/json' } }
+        );
+        await cronTrigger(['job-a', '--yes']);
+        expect(stderrOutput).toContain('run-accepted-123');
+    });
+
+    it('prints the holder run ID when a trigger conflicts', async () => {
+        process.env.HOPS_ADMIN_COOKIE = 'prod-cookie';
+        setActiveTarget('prod');
+        postOverride = new Response(
+            JSON.stringify({
+                success: false,
+                error: {
+                    code: 'CONFLICT',
+                    message: 'Cron job is already running',
+                    details: { holderRunId: 'run-holder-456' }
+                }
+            }),
+            { status: 409, headers: { 'Content-Type': 'application/json' } }
+        );
+        await cronTrigger(['job-a', '--yes']);
+        expect(stderrOutput).toContain('run-holder-456');
     });
 });

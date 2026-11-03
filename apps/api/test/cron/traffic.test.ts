@@ -4,7 +4,7 @@ import {
     ProviderTrafficGovernor,
     runWithTrafficClass
 } from '@repo/payments';
-import { describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import { runCronHandlerInBackground } from '../../src/cron/traffic';
 import type { CronJobContext } from '../../src/cron/types';
 
@@ -22,6 +22,8 @@ const context: CronJobContext = {
 };
 
 describe('cron provider traffic context', () => {
+    afterEach(() => vi.useRealTimers());
+
     it('overrides an interactive parent and only attaches traffic details after a governed request (kills missing cron class)', async () => {
         const governor = new ProviderTrafficGovernor({ mode: 'observe' });
         const result = await runWithTrafficClass({
@@ -120,5 +122,41 @@ describe('cron provider traffic context', () => {
                 waitMs: { max: 7 }
             }
         });
+    });
+
+    it('passes the job signal through AsyncLocalStorage to governor.acquire', async () => {
+        vi.useFakeTimers();
+        const controller = new AbortController();
+        const governor = new ProviderTrafficGovernor({
+            mode: 'enforce',
+            burst: 0,
+            ratePerSecond: 1
+        });
+        const signalContext: CronJobContext = {
+            ...context,
+            signal: controller.signal,
+            deadlineAt: new Date(Date.now() + 10)
+        };
+        const execution = runCronHandlerInBackground({
+            ctx: signalContext,
+            governor,
+            job: {
+                handler: async () => {
+                    setTimeout(() => controller.abort(), 10);
+                    await governor.acquire({ trafficClass: 'background', capability: 'read' });
+                    return {
+                        success: true,
+                        message: 'unexpected acquisition',
+                        processed: 0,
+                        errors: 0,
+                        durationMs: 0
+                    };
+                }
+            }
+        });
+        const executionAssertion = expect(execution).rejects.toThrow('request aborted');
+        await vi.advanceTimersByTimeAsync(10);
+        await executionAssertion;
+        governor.stop();
     });
 });
