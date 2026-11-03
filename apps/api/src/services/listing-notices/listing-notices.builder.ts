@@ -169,8 +169,24 @@ export function buildListingNoticeItems(input: {
     const windowStart = input.now.getTime() - LIFT_NOTICE_WINDOW_DAYS * DAY_MS;
     return input.rows.map((row) => {
         const notices: ListingNotice[] = [];
+        const lift = row.lastLift;
+        const liftShown =
+            lift !== null &&
+            lift.at.getTime() >= windowStart &&
+            !LIFT_HIDDEN_STATUSES.has(row.publicationStatus) &&
+            !liftOutcomeIsStale({ returnedTo: lift.returnedTo, status: row.publicationStatus });
+        const unpublishedBecause =
+            liftShown && lift.returnedTo === PublicationStatusEnum.UNPUBLISHED_BY_BILLING
+                ? resolveUnpublishedBecause({
+                      covered: input.coverage.covered,
+                      limit: input.publishLimit,
+                      published
+                  })
+                : null;
         const { notice } = buildStatusNotice({ row, covered: input.coverage.covered });
-        if (notice) notices.push(notice);
+        // «Lowered by the quota» contradicts the lift's own «there is room in your quota».
+        if (notice && !(notice.kind === 'SURPLUS' && unpublishedBecause === 'FREE_SLOT'))
+            notices.push(notice);
         const fix = row.openFixRequest;
         if (fix && row.publicationStatus !== PublicationStatusEnum.PURGED) {
             notices.push({
@@ -181,21 +197,7 @@ export function buildListingNoticeItems(input: {
                 ownerReportedFixedAt: fix.ownerReportedFixedAt?.toISOString() ?? null
             });
         }
-        const lift = row.lastLift;
-        if (
-            lift &&
-            lift.at.getTime() >= windowStart &&
-            !LIFT_HIDDEN_STATUSES.has(row.publicationStatus) &&
-            !liftOutcomeIsStale({ returnedTo: lift.returnedTo, status: row.publicationStatus })
-        ) {
-            const unpublishedBecause =
-                lift.returnedTo === PublicationStatusEnum.UNPUBLISHED_BY_BILLING
-                    ? resolveUnpublishedBecause({
-                          covered: input.coverage.covered,
-                          limit: input.publishLimit,
-                          published
-                      })
-                    : null;
+        if (liftShown && lift) {
             notices.push({
                 kind: 'MODERATION_LIFTED',
                 returnedTo: lift.returnedTo,

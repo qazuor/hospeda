@@ -313,6 +313,40 @@ describe('TEST:V8a:7 one notice per kind (AC:V8a:6)', () => {
             expect(lifted({})).not.toHaveProperty('unpublishedBecause');
         });
 
+        it('drops the SURPLUS notice when the lift says there is room in the quota', () => {
+            const [item] = buildListingNoticeItems({
+                rows: [
+                    row({
+                        publicationStatus: S.UNPUBLISHED_BY_BILLING,
+                        lastLift: { at: daysAgo(2), returnedTo: S.UNPUBLISHED_BY_BILLING }
+                    })
+                ],
+                coverage: COVERED,
+                now: NOW,
+                publishLimit: 2
+            });
+            expect(item?.notices.map((notice) => notice.kind)).toEqual(['MODERATION_LIFTED']);
+        });
+
+        it('keeps the SURPLUS notice when the quota is full', () => {
+            const [item] = buildListingNoticeItems({
+                rows: [
+                    row({
+                        publicationStatus: S.UNPUBLISHED_BY_BILLING,
+                        lastLift: { at: daysAgo(2), returnedTo: S.UNPUBLISHED_BY_BILLING }
+                    }),
+                    other('other-1', S.PUBLISHED)
+                ],
+                coverage: COVERED,
+                now: NOW,
+                publishLimit: 1
+            });
+            expect(item?.notices.map((notice) => notice.kind)).toEqual([
+                'SURPLUS',
+                'MODERATION_LIFTED'
+            ]);
+        });
+
         it('is not shown once the listing was published again (stale advice)', () => {
             expect(lifted({ status: S.PUBLISHED, limit: 1 })).toBeUndefined();
         });
