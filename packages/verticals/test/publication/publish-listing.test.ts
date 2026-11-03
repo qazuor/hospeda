@@ -1,7 +1,16 @@
 import { PublicationStatusEnum } from '@repo/schemas';
 import { describe, expect, it } from 'vitest';
 import { publishListing } from '../../src/publication/publish-listing';
-import { clock, emailPseudonym, event, listingId, makeHarness, userId, vertical } from './support';
+import {
+    at,
+    clock,
+    emailPseudonym,
+    event,
+    listingId,
+    makeHarness,
+    userId,
+    vertical
+} from './support';
 
 function input(harness: ReturnType<typeof makeHarness>) {
     return {
@@ -54,12 +63,63 @@ describe('PB1 publication decisions (AC:V6:2)', () => {
         ]);
     });
 
-    it('refuses no-coverage without trial and covered UNPUBLISHED_BY_BILLING', async () => {
-        const covered = makeHarness({ status: PublicationStatusEnum.UNPUBLISHED_BY_BILLING });
-        expect(await publishListing(input(covered))).toEqual({
-            published: false,
-            reason: 'COVERED_USE_PB3'
+    it('publishes a covered UNPUBLISHED_BY_BILLING listing by hand when the quota has a free slot (HOS-1997)', async () => {
+        const harness = makeHarness({
+            status: PublicationStatusEnum.UNPUBLISHED_BY_BILLING,
+            limit: 1
         });
+        expect(await publishListing(input(harness))).toMatchObject({
+            published: true,
+            trialStarted: false,
+            trialConsumed: false
+        });
+        expect(harness.getStatus()).toBe(PublicationStatusEnum.PUBLISHED);
+        expect(harness.statusWrites[0]).toMatchObject({
+            from: PublicationStatusEnum.UNPUBLISHED_BY_BILLING,
+            to: PublicationStatusEnum.PUBLISHED,
+            actorId: userId
+        });
+        expect(harness.statusEvents[0]).toMatchObject({
+            from: PublicationStatusEnum.UNPUBLISHED_BY_BILLING,
+            to: PublicationStatusEnum.PUBLISHED,
+            actorType: 'owner',
+            actorId: userId
+        });
+        expect(harness.calls).toEqual(
+            expect.arrayContaining(['lock', 'read', 'set', 'event', 'commit', 'revalidate'])
+        );
+    });
+
+    it('rejects a covered UNPUBLISHED_BY_BILLING listing with LIMIT_REACHED when the quota is full (HOS-1997)', async () => {
+        const harness = makeHarness({
+            status: PublicationStatusEnum.UNPUBLISHED_BY_BILLING,
+            limit: 1,
+            listings: [
+                {
+                    id: listingId,
+                    ownerId: userId,
+                    publicationStatus: PublicationStatusEnum.UNPUBLISHED_BY_BILLING,
+                    createdAt: at,
+                    inactiveSince: at
+                },
+                {
+                    id: '00000000-0000-4000-8000-0000000000aa',
+                    ownerId: userId,
+                    publicationStatus: PublicationStatusEnum.PUBLISHED,
+                    createdAt: at,
+                    inactiveSince: at
+                }
+            ]
+        });
+        expect(await publishListing(input(harness))).toEqual({
+            published: false,
+            reason: 'LIMIT_REACHED'
+        });
+        expect(harness.calls).not.toContain('set');
+        expect(harness.calls).not.toContain('event');
+    });
+
+    it('refuses no-coverage without trial', async () => {
         const noTrial = makeHarness({ covered: false, trialAvailable: false });
         const result = await publishListing(input(noTrial));
         expect(result).toEqual({ published: false, reason: 'USER_ALREADY_HAS_TRIAL_ROW' });
