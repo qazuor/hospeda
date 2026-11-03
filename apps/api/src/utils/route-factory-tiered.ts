@@ -64,7 +64,10 @@ function assertListingSectionDeclarations(args: {
             );
         }
     }
-    const sections = LISTING_SECTIONS[config.vertical];
+    const sections: readonly {
+        readonly id: string;
+        readonly traits?: readonly { readonly id: string }[];
+    }[] = LISTING_SECTIONS[config.vertical];
     for (const declaration of requested) {
         const section = sections.find(({ id }) => id === declaration.id);
         if (!section)

@@ -36,14 +36,17 @@ export type ListingAccessResult =
               | 'NOT_FOUND'
               | 'FORBIDDEN'
               | 'NO_COVERAGE'
-              | 'SECTION_ABSENT'
               | 'NO_CAPABILITY'
               | 'LIMIT_REACHED'
               | 'UNAUTHENTICATED';
           readonly key?: string;
           readonly max?: number;
           readonly requested?: number;
-          readonly section?: string;
+      }
+    | {
+          readonly allowed: false;
+          readonly reason: 'SECTION_ABSENT';
+          readonly section: string;
       };
 
 /**

@@ -119,7 +119,7 @@ describe('HOS-1834 loadFacts business lines', () => {
             { ownerId: 'owner', publicationStatus: 'PUBLISHED', businessLines: ['food'] }
         ]);
         const result = await getListingAccessPorts().loadFacts({
-            vertical: 'venue',
+            vertical: VerticalEnum.VENUE,
             listingId: 'listing'
         });
         expect(result.facts?.businessLines).toEqual(['food']);

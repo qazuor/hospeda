@@ -164,7 +164,7 @@ describe('AC:V5:9 listing access HTTP mapping', () => {
                 requestParams: { id: z.string() },
                 responseSchema: z.object({ ok: z.boolean() }),
                 listingAccess: {
-                    vertical: 'venue',
+                    vertical: VerticalEnum.VENUE,
                     operation: 'READ_OWN',
                     listingSection: { id: 'notInCatalog', intent: 'read' }
                 },
@@ -181,7 +181,7 @@ describe('AC:V5:9 listing access HTTP mapping', () => {
                 requestParams: { id: z.string() },
                 responseSchema: z.object({ ok: z.boolean() }),
                 listingAccess: {
-                    vertical: 'venue',
+                    vertical: VerticalEnum.VENUE,
                     operation: 'READ_OWN',
                     sectionTraits: ['notInCatalog']
                 },

@@ -213,7 +213,7 @@ export async function enforceListingAccess(args: {
     const resultingBusinessLines =
         config.operation === 'CREATE'
             ? (bodyLines ?? [])
-            : (bodyLines ?? facts?.businessLines ?? []);
+            : (bodyLines ?? (facts?.businessLines as readonly BusinessLine[] | undefined) ?? []);
     const sections = requestedSections.length
         ? {
               requested: requestedSections.map((section) => ({ ...section, traits })),
