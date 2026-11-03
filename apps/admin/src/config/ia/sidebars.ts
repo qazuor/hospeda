@@ -290,6 +290,15 @@ const catalogoSidebar: SidebarInput = {
                     permissions: ['MODERATION_THRESHOLD_VIEW']
                 }
             ]
+        },
+        {
+            type: 'link',
+            id: 'fix-requests',
+            label: { es: 'Arreglos pendientes', en: 'Pending fixes', pt: 'Correções pendentes' },
+            icon: 'ListIcon',
+            route: '/content/fix-requests',
+            permissions: ['LISTING_MODERATE'],
+            onMissing: 'hide'
         }
     ]
 };
@@ -610,6 +619,24 @@ const comercialSidebar: SidebarInput = {
             icon: 'CouponsIcon',
             route: '/billing/promo-codes',
             permissions: ['BILLING_MANAGE_PROMO_CODES'],
+            onMissing: 'hide'
+        },
+        {
+            type: 'link',
+            id: 'deadlines',
+            label: { es: 'Plazos', en: 'Deadlines', pt: 'Prazos' },
+            icon: 'ClockIcon',
+            route: '/billing/deadlines',
+            permissions: ['MAINTENANCE_MODE_WRITE'],
+            onMissing: 'hide'
+        },
+        {
+            type: 'link',
+            id: 'plan-catalog',
+            label: { es: 'Planes y claves', en: 'Plans and keys', pt: 'Planos e chaves' },
+            icon: 'SettingsIcon',
+            route: '/billing/plan-catalog',
+            permissions: ['MAINTENANCE_MODE_WRITE'],
             onMissing: 'hide'
         }
     ]
