@@ -111,18 +111,18 @@ describe('AccommodationReviewStatsWrapperSchema', () => {
 
 describe('AccommodationReviewWithUserListWrapperSchema', () => {
     it('should validate accommodation review with user list wrapper', () => {
-        const wrapper = { accommodationReviews: [mockAccommodationReviewWithUser] };
+        const wrapper = { accommodationReviews: [mockAccommodationReviewWithUser], total: 1 };
         expect(() => AccommodationReviewWithUserListWrapperSchema.parse(wrapper)).not.toThrow();
     });
 
     it('should validate accommodation review without user data', () => {
         const reviewWithoutUser = { ...mockAccommodationReview };
-        const wrapper = { accommodationReviews: [reviewWithoutUser] };
+        const wrapper = { accommodationReviews: [reviewWithoutUser], total: 1 };
         expect(() => AccommodationReviewWithUserListWrapperSchema.parse(wrapper)).not.toThrow();
     });
 
     it('should validate empty accommodation review array', () => {
-        const wrapper = { accommodationReviews: [] };
+        const wrapper = { accommodationReviews: [], total: 0 };
         expect(() => AccommodationReviewWithUserListWrapperSchema.parse(wrapper)).not.toThrow();
     });
 
@@ -131,8 +131,25 @@ describe('AccommodationReviewWithUserListWrapperSchema', () => {
             ...mockAccommodationReview,
             user: { id: 'invalid-uuid' } // Invalid UUID
         };
-        const wrapper = { accommodationReviews: [invalidUserReview] };
+        const wrapper = { accommodationReviews: [invalidUserReview], total: 1 };
         expect(() => AccommodationReviewWithUserListWrapperSchema.parse(wrapper)).toThrow(ZodError);
+    });
+
+    it('rejects a wrapper without total', () => {
+        expect(() =>
+            AccommodationReviewWithUserListWrapperSchema.parse({ accommodationReviews: [] })
+        ).toThrow(ZodError);
+    });
+
+    it('rejects a negative or fractional total', () => {
+        for (const total of [-1, 1.5]) {
+            expect(() =>
+                AccommodationReviewWithUserListWrapperSchema.parse({
+                    accommodationReviews: [],
+                    total
+                })
+            ).toThrow(ZodError);
+        }
     });
 
     it('should reject invalid wrapper structure', () => {
