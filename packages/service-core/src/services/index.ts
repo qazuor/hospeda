@@ -193,6 +193,8 @@ export * from './billing/subscription/billing-period-end.js';
 export * from './billing/subscription/cancel-active-subscription.service.js';
 export * from './billing/subscription/cancel-direct-subscription.service.js';
 export * from './billing/subscription/cancel-inherited-tourist-vip.service.js';
+export * from './billing/subscription/cancel-paused-subscription.service.js';
+export type { CancelPausedSubscriptionResult } from './billing/subscription/cancel-paused-subscription-support.js';
 export * from './billing/subscription/cancel-pending-attempt.service.js';
 export * from './billing/subscription/cancellation-authorization.js';
 export * from './billing/subscription/cancellation-crossing-charge.js';
