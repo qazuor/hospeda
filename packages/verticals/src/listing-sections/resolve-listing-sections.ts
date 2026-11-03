@@ -64,6 +64,42 @@ export interface ResolveListingSectionsResult {
 }
 
 /**
+ * Resolves only whether each requested section is present (not `absent`) for a
+ * listing's business lines. Step 4b uses it: presence depends on the business lines
+ * alone, so it needs no effective set and reads no entitlement. Pure: no I/O.
+ *
+ * @param args.vertical - The listing's vertical.
+ * @param args.businessLines - The listing's business lines after the request, unvalidated.
+ * @param args.requested - The section ids the route declares.
+ * @returns Section id → `true` when the section is common or listed by a business line.
+ * @throws {UnknownBusinessLineError} A business line not declared for the vertical.
+ * @throws {UnknownListingSectionIdError} A requested section id missing from the catalog.
+ */
+export function resolveListingSectionPresence(args: {
+    readonly vertical: ListingVertical;
+    readonly businessLines: readonly string[];
+    readonly requested: readonly string[];
+}): ReadonlyMap<string, boolean> {
+    const linesCatalog = BUSINESS_LINES[args.vertical];
+    const selected = args.businessLines.map((value) => {
+        const line = linesCatalog.find((entry) => entry.value === value);
+        if (!line) throw new UnknownBusinessLineError(args.vertical, value);
+        return line;
+    });
+    const catalog = LISTING_SECTIONS[args.vertical];
+    return new Map(
+        args.requested.map((id) => {
+            const section = catalog.find((entry) => entry.id === id);
+            if (!section) throw new UnknownListingSectionIdError(id);
+            return [
+                id,
+                !section.common && !selected.some((line) => line.sections.includes(id as never))
+            ];
+        })
+    );
+}
+
+/**
  * Resolves every section and trait of a listing from one already-read effective set
  * (sub-spec 3, DEC-FAC-020/050/051). A non-common section that none of the listing's
  * business lines lists is `absent`; otherwise it is `locked` when its entitlement key

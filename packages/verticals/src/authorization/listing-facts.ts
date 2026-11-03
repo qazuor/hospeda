@@ -10,8 +10,9 @@ import type { ListingAccessFacts } from './resource-step';
  * transitory Coord-43 bridge that derived a status from the old columns.
  *
  * @param args - `entity`: the raw listing row, of any shape.
- * @returns The owner id and publication status, or `null` when the row is not
- *   an object or carries no `ownerId`.
+ * @returns The owner id, publication status and business lines (string values of
+ *   the row's `businessLines`, `[]` when absent), or `null` when the row is not an
+ *   object or carries no `ownerId`.
  */
 export function readListingAccessFacts(args: {
     readonly entity: unknown;
@@ -23,5 +24,9 @@ export function readListingAccessFacts(args: {
     const status = 'publicationStatus' in entity ? entity.publicationStatus : null;
     const publicationStatus =
         Object.values(PublicationStatusEnum).find((value) => value === status) ?? null;
-    return { ownerId, publicationStatus };
+    const rawBusinessLines = (entity as Record<string, unknown>).businessLines;
+    const businessLines = Array.isArray(rawBusinessLines)
+        ? rawBusinessLines.filter((value: unknown): value is string => typeof value === 'string')
+        : [];
+    return { ownerId, publicationStatus, businessLines };
 }

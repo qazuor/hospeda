@@ -14,6 +14,8 @@ import type { AppBindings } from '../../src/types';
 import { createGuestActor } from '../../src/utils/actor';
 import { apiLogger } from '../../src/utils/logger';
 import { handleRouteError } from '../../src/utils/response-helpers';
+import { createProtectedRoute } from '../../src/utils/route-factory-tiered';
+import { z } from '../../src/utils/zod';
 
 vi.mock(
     '@repo/service-core',
@@ -48,7 +50,8 @@ function appFor(args: {
     actorId?: string;
     permissions?: PermissionEnum[];
     tier?: 'protected' | 'admin';
-    operation?: 'EDIT' | 'PUBLISH' | 'DELETE';
+    operation?: 'EDIT' | 'PUBLISH' | 'DELETE' | 'WRITE_ABOUT_LISTING';
+    listingSection?: { id: string; intent: 'read' | 'write' | 'delete' };
     administrativeAction?: 'ACC_15' | 'ACC_23';
     limit?: number;
     guest?: boolean;
@@ -72,8 +75,9 @@ function appFor(args: {
                 ctx: c,
                 params: { id: c.req.param('id') },
                 config: {
-                    vertical,
+                    vertical: args.listingSection ? VerticalEnum.VENUE : vertical,
                     operation: args.operation ?? 'EDIT',
+                    listingSection: args.listingSection,
                     administrativeAction: args.administrativeAction,
                     limit:
                         requested === undefined
@@ -124,6 +128,67 @@ beforeEach(() => {
 });
 
 describe('AC:V5:9 listing access HTTP mapping', () => {
+    it('maps SECTION_ABSENT to owner 409 details and foreign 404', async () => {
+        mocks.loadFacts.mockResolvedValue({
+            facts: {
+                ownerId: OWNER,
+                publicationStatus: PublicationStatusEnum.PUBLISHED,
+                businessLines: ['nightlife']
+            },
+            ownerId: OWNER
+        });
+        const owner = await probe(appFor({ listingSection: { id: 'menu', intent: 'write' } }));
+        expect(owner.status).toBe(409);
+        expect(owner.body.error).toMatchObject({
+            code: ServiceErrorCode.ALREADY_EXISTS,
+            details: { reason: 'SECTION_ABSENT', section: 'menu' }
+        });
+        const foreign = await probe(
+            appFor({
+                actorId: ADMIN,
+                operation: 'WRITE_ABOUT_LISTING',
+                listingSection: { id: 'menu', intent: 'write' }
+            })
+        );
+        expect(foreign.status).toBe(404);
+    });
+
+    it('createProtectedRoute rejects an unknown declared section at construction', () => {
+        expect(() =>
+            createProtectedRoute({
+                method: 'get',
+                path: '/invalid-section',
+                summary: 'invalid',
+                description: 'invalid',
+                tags: ['test'],
+                requestParams: { id: z.string() },
+                responseSchema: z.object({ ok: z.boolean() }),
+                listingAccess: {
+                    vertical: VerticalEnum.VENUE,
+                    operation: 'READ_OWN',
+                    listingSection: { id: 'notInCatalog', intent: 'read' }
+                },
+                handler: async () => ({ ok: true })
+            })
+        ).toThrow(/Unknown listing section/);
+        expect(() =>
+            createProtectedRoute({
+                method: 'get',
+                path: '/invalid-trait',
+                summary: 'invalid',
+                description: 'invalid',
+                tags: ['test'],
+                requestParams: { id: z.string() },
+                responseSchema: z.object({ ok: z.boolean() }),
+                listingAccess: {
+                    vertical: VerticalEnum.VENUE,
+                    operation: 'READ_OWN',
+                    sectionTraits: ['notInCatalog']
+                },
+                handler: async () => ({ ok: true })
+            })
+        ).toThrow(/Unknown listing section trait/);
+    });
     it('maps UNAUTHENTICATED for the API guest to 401 before reading coverage', async () => {
         const result = await probe(appFor({ guest: true }));
         expect(result.status).toBe(401);

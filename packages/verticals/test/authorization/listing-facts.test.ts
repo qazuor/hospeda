@@ -14,7 +14,7 @@ describe('readListingAccessFacts', () => {
     )('returns the written publication state %s as is', (status) => {
         expect(
             readListingAccessFacts({ entity: { ownerId: 'owner', publicationStatus: status } })
-        ).toEqual({ ownerId: 'owner', publicationStatus: status });
+        ).toEqual({ ownerId: 'owner', publicationStatus: status, businessLines: [] });
     });
 
     // HOS-1641 (V6.9b): the transitory Coord-43 bridge is gone. A row without a
@@ -28,7 +28,8 @@ describe('readListingAccessFacts', () => {
     ] as const)('fails closed to a null state when the written state is %s', (_name, entity) => {
         expect(readListingAccessFacts({ entity })).toEqual({
             ownerId: 'owner',
-            publicationStatus: null
+            publicationStatus: null,
+            businessLines: []
         });
     });
 
@@ -37,6 +38,10 @@ describe('readListingAccessFacts', () => {
             readListingAccessFacts({
                 entity: { ownerId: 42, publicationStatus: PublicationStatusEnum.PUBLISHED }
             })
-        ).toEqual({ ownerId: null, publicationStatus: PublicationStatusEnum.PUBLISHED });
+        ).toEqual({
+            ownerId: null,
+            publicationStatus: PublicationStatusEnum.PUBLISHED,
+            businessLines: []
+        });
     });
 });

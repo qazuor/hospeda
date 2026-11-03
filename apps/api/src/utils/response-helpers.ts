@@ -597,7 +597,9 @@ export const handleRouteError = (error: unknown, c: Context) => {
                 code: error.code,
                 message: error.message,
                 details:
-                    env.HOSPEDA_API_DEBUG_ERRORS || PUBLIC_DETAILS_ERROR_CODES.has(error.code)
+                    env.HOSPEDA_API_DEBUG_ERRORS ||
+                    PUBLIC_DETAILS_ERROR_CODES.has(error.code) ||
+                    error.reason === 'SECTION_ABSENT'
                         ? error.details
                         : undefined,
                 reason: error.reason
