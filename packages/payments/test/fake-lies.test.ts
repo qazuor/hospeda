@@ -5,7 +5,7 @@
  * brings the honest path back.
  *
  * SCOPE (B1.4a, HOS-1510): the lies whose surface the payment interface carries
- * today: M1, M3, M5, M6, M7, M8, M9, M10, M11 and M13. M2, M4 and M12 keep their
+ * today: M1, M3, M5, M6, M7, M8, M9, M10, M11, M12 and M13. M2 and M4 keep their
  * row in the closed list and arrive with the units that add their surface.
  *
  * Every assertion reads the state back by id or takes the deliveries, never a

@@ -146,6 +146,13 @@ export const CRON_SCHEDULES: ReadonlyArray<CronScheduleEntry> = [
             'Fail pending payments whose provider collection window closed without collection, re-read by id (HOS-1709, AC:B5:5).'
     },
     {
+        name: 'subscription-pause-end',
+        displayName: 'Fin de pausas de suscripción',
+        category: 'billing',
+        schedule: '47 * * * *',
+        description: 'Resume due principal pauses (HOS-1573, AC:B8b:3).'
+    },
+    {
         name: 'subscription-service-end',
         displayName: 'Fin de servicio de bajas programadas',
         category: 'billing',

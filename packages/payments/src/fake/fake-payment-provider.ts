@@ -75,6 +75,7 @@ import {
 } from './fake-options';
 import { FakeOrders } from './fake-orders';
 import { FakeOutbox } from './fake-outbox';
+import * as pauseCycle from './fake-pause-cycle';
 import * as refundOutcome from './fake-refund-outcome';
 import { assertChargeableAmount, assertUnusedPaymentToken, nextChargeBatch } from './fake-rules';
 import { searchStoredAuthorizations } from './fake-search';
@@ -113,7 +114,10 @@ export class FakePaymentProvider implements PaymentProvider {
     constructor(options: FakePaymentProviderOptions) {
         const parsed = parseFakeOptions({ options });
         for (const behaviour of parsed.without) {
-            if (!(FAKE_SWITCHABLE_BEHAVIOURS as readonly string[]).includes(behaviour)) {
+            if (
+                behaviour !== 'RP10' &&
+                !(FAKE_SWITCHABLE_BEHAVIOURS as readonly string[]).includes(behaviour)
+            ) {
                 throw new Error(`${behaviour} is not switchable yet`);
             }
         }
@@ -444,7 +448,8 @@ export class FakePaymentProvider implements PaymentProvider {
             input,
             capability: 'pauseAndResume',
             from: ['active'],
-            to: 'paused'
+            to: 'paused',
+            after: pauseCycle.markCapabilityPause
         });
     }
 
@@ -454,7 +459,13 @@ export class FakePaymentProvider implements PaymentProvider {
             input,
             capability: 'pauseAndResume',
             from: ['paused'],
-            to: 'active'
+            to: 'active',
+            after: (stored) =>
+                pauseCycle.applyExplicitResume(
+                    stored,
+                    this.now(),
+                    this.behaving({ behaviour: 'RP10' })
+                )
         });
     }
 
@@ -747,6 +758,7 @@ export class FakePaymentProvider implements PaymentProvider {
     /** Brings the time-driven state up to the clock: late charges land, open links expire. */
     private catchUp(): void {
         const now = this.now();
+        pauseCycle.applyHonestPauseReturn(this.ledger, now, this.lying({ lie: 'M12' }));
         applyFakeChargeCycles({
             charges: this.ledger.charges,
             authorizations: this.ledger.authorizations,
@@ -786,6 +798,7 @@ export class FakePaymentProvider implements PaymentProvider {
         readonly from: readonly AuthorizationSnapshot['status'][];
         readonly to: AuthorizationSnapshot['status'];
         readonly viaNetwork?: boolean;
+        readonly after?: (stored: import('./fake-support').StoredAuthorization) => void;
     }): Promise<MutationAcknowledgement> {
         const { value } = parseProviderInput({
             schema: AuthorizationRefSchema,
@@ -809,6 +822,7 @@ export class FakePaymentProvider implements PaymentProvider {
                 status: args.to,
                 lastModifiedAt: this.clock.now().toISOString()
             };
+            args.after?.(stored);
             this.ledger.bump({
                 stored,
                 resourceKind: 'authorization',
