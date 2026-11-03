@@ -1317,6 +1317,13 @@
       "when": 1793678736020,
       "tag": "0187_hos1485_partner_application_resolution",
       "breakpoints": true
+    },
+    {
+      "idx": 188,
+      "version": "7",
+      "when": 1793702084496,
+      "tag": "0188_hos1541_manual_payment_permissions",
+      "breakpoints": true
     }
   ]
 }
