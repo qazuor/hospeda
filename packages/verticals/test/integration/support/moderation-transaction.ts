@@ -27,7 +27,7 @@ const afterCommit = {
 afterAll(async () => pool.end());
 
 describe('TEST:V6:11 PB13 queue and archived origins against PostgreSQL', () => {
-    it('TEST:V6:11 PB13 applies the return queue and lowers only the newest published surplus', async () => {
+    it('TEST:V6:11 PB13 keeps the most recently published listings (HOS-1997)', async () => {
         const { userId, destinationId } = await fixtures.owner();
         const admin = await fixtures.owner();
         const returning = await fixtures.listing({
@@ -95,15 +95,15 @@ describe('TEST:V6:11 PB13 queue and archived origins against PostgreSQL', () => 
         expect(result).toMatchObject({
             ok: true,
             transition: 'PB13',
-            publicationStatus: Status.PUBLISHED,
-            lowered: [newest.id]
+            publicationStatus: Status.UNPUBLISHED_BY_BILLING,
+            lowered: []
         });
         const competitor = await listingPublicationModel.readListing({
             tx: db,
             vertical,
             listingId: newest.id
         });
-        expect(competitor?.publicationStatus).toBe(Status.UNPUBLISHED_BY_BILLING);
+        expect(competitor?.publicationStatus).toBe(Status.PUBLISHED);
         const unchanged = await db.execute(
             sql`SELECT inactive_since FROM accommodations WHERE id = ${newest.id}`
         );
@@ -177,9 +177,15 @@ describe('TEST:V6:11 PB13 queue and archived origins against PostgreSQL', () => 
         expect(inverse).toMatchObject({
             ok: true,
             transition: 'PB13',
-            publicationStatus: Status.UNPUBLISHED_BY_BILLING,
-            lowered: []
+            publicationStatus: Status.PUBLISHED,
+            lowered: [olderPublished.id]
         });
+        const displaced = await listingPublicationModel.readListing({
+            tx: db,
+            vertical,
+            listingId: olderPublished.id
+        });
+        expect(displaced?.publicationStatus).toBe(Status.UNPUBLISHED_BY_BILLING);
     });
 
     it('TEST:V6:11 lifts ARCHIVED listings by the PB5 and PB4 origins', async () => {
