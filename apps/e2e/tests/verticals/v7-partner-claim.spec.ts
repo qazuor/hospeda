@@ -3,6 +3,7 @@ import { expect, test } from '@playwright/test';
 import { PartnerApplicationApproveSchema } from '@repo/schemas';
 import type { CreatedUser } from '../../fixtures/api-helpers.ts';
 import { createUser } from '../../fixtures/api-helpers.ts';
+import { seedCookieConsent } from '../../fixtures/browser-helpers.ts';
 import { execSQL, getDbPool } from '../../fixtures/db-helpers.ts';
 import { attachSession } from '../../fixtures/listing-notices.ts';
 import { cleanupTestUsers } from '../../support/test-cleanup.ts';
@@ -94,6 +95,8 @@ test.describe('TEST:V7:22 AC:V7:7 partner claim by link with a session @p0', () 
         ]);
 
         const claimUrl = `${WEB_URL}/es/partners/reclamar/#partner=${partnerId}&secret=${encodeURIComponent(secret)}`;
+        // The consent backdrop intercepts the click on the sign-in button.
+        await seedCookieConsent(page);
         await page.goto(claimUrl);
         await expect(
             page.getByText(
