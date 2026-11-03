@@ -2,6 +2,7 @@ import { z } from 'zod';
 import type { OrderSearchResult, OrderSnapshot } from '../../provider/payment-provider';
 import { type MercadoPagoSend, parseResponse, providerError } from './mercadopago-http';
 import { nullAsAbsent } from './mercadopago-null-as-absent';
+import { mapOrderRefunds, OrderRefundsSchema } from './mercadopago-order-refund';
 
 // A null creation date reads as absent, so `createdAt` can fall back or fail closed.
 const OrderSchema = z.object({
@@ -9,7 +10,21 @@ const OrderSchema = z.object({
     status: z.string(),
     external_reference: z.string().nullish(),
     created_date: nullAsAbsent({ schema: z.string() }),
-    date_created: nullAsAbsent({ schema: z.string() })
+    date_created: nullAsAbsent({ schema: z.string() }),
+    transactions: nullAsAbsent({
+        schema: z.object({
+            payments: nullAsAbsent({
+                schema: z.array(
+                    z.object({
+                        id: nullAsAbsent({
+                            schema: z.union([z.string(), z.number()]).transform(String)
+                        })
+                    })
+                )
+            }),
+            refunds: OrderRefundsSchema
+        })
+    })
 });
 const OrderSearchSchema = z.object({
     data: z.array(
@@ -57,7 +72,9 @@ export async function readMercadoPagoOrder(args: {
         orderId: parsed.id,
         reference: parsed.external_reference ?? '',
         createdAt: createdAt(parsed),
-        hasApprovedPayment: hasApprovedPayment(parsed.status)
+        hasApprovedPayment: hasApprovedPayment(parsed.status),
+        paymentTransactionId: parsed.transactions?.payments?.[0]?.id ?? null,
+        refunds: mapOrderRefunds(parsed.transactions?.refunds).refunds
     };
     return snapshot;
 }

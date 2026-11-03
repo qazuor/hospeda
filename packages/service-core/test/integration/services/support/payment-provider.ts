@@ -20,6 +20,7 @@ export function namespaceFake(fake: FakePaymentProvider): PaymentProvider {
         resume: (input) => fake.resume({ authorizationId: internal(input.authorizationId) }),
         cancel: (input) => fake.cancel({ authorizationId: internal(input.authorizationId) }),
         refund: (input) => fake.refund(input),
+        refundOrder: (input) => fake.refundOrder(input),
         readAuthorization: (input) =>
             fake.readAuthorization({ authorizationId: internal(input.authorizationId) }),
         searchAuthorizations: async (input) => {

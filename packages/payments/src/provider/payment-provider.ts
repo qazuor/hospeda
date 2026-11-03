@@ -109,6 +109,30 @@ export interface RefundResult {
     readonly refundId: string;
 }
 
+/** One order refund returned by Mercado Pago (MP:EX-58, AC:B6:8, TRANS:B:RF3). */
+export interface OrderRefund {
+    readonly refundId: string;
+    readonly amountMinor: number;
+    readonly accredited: boolean;
+}
+
+/** The exact order refund request shape (MP:EX-58, AC:B6:8, TRANS:B:RF2). */
+export type OrderRefundScope =
+    | { readonly kind: 'total' }
+    | { readonly kind: 'partial'; readonly transactionId: string; readonly amount: Money };
+
+/** Capability 6 order refund input; reference is the stable key (MP:EX-58, AC:B6:8, TRANS:B:RF2). */
+export interface OrderRefundInput {
+    readonly orderId: string;
+    readonly reference: string;
+    readonly scope: OrderRefundScope;
+}
+
+/** All refunds in the order response, including older ones (MP:EX-58, AC:B6:8, TRANS:B:RF2). */
+export interface OrderRefundResult {
+    readonly refunds: readonly OrderRefund[];
+}
+
 /**
  * What a provider answers to a mutation. It says the request was ACCEPTED, and
  * nothing about whether it was APPLIED: confirm by re-reading.
@@ -228,6 +252,10 @@ export interface OrderSnapshot {
     /** The ISO 8601 instant the order was created. */
     readonly createdAt: string;
     readonly hasApprovedPayment: boolean;
+    /** Payment transaction id for a partial refund (MP:EX-58, AC:B6:8, TRANS:B:RF2). */
+    readonly paymentTransactionId: string | null;
+    /** Refunds read by order id (MP:EX-58, AC:B6:8, TRANS:B:RF3). */
+    readonly refunds: readonly OrderRefund[];
 }
 
 /**
@@ -294,6 +322,8 @@ export interface PaymentProvider {
     cancel(input: AuthorizationRef): Promise<MutationAcknowledgement>;
     /** Capability 6 · refund. */
     refund(input: RefundInput): Promise<RefundResult>;
+    /** Capability 6 · refund an order (MP:EX-58, AC:B6:8, TRANS:B:RF2). */
+    refundOrder(input: OrderRefundInput): Promise<OrderRefundResult>;
     /**
      * Capability 7 · read an authorization by id. The read carries its instant
      * (AC:B1:4): a decision takes it through `assertFreshForAct`.
