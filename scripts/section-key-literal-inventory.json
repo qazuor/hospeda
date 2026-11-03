@@ -1,0 +1,15 @@
+{
+    "count": 10,
+    "files": [
+        "apps/api/src/routes/accommodation/protected/addOccupancy.ts",
+        "apps/api/src/routes/accommodation/protected/removeOccupancy.ts",
+        "apps/api/src/routes/accommodation/protected/batchOccupancy.ts",
+        "apps/api/src/routes/accommodation/protected/updateOccupancyEvent.ts",
+        "apps/api/src/routes/accommodation/protected/calendarSync.ts",
+        "apps/api/src/routes/accommodation/protected/calendarConnectGoogle.ts",
+        "apps/api/src/routes/accommodation/protected/calendarConnectIcal.ts",
+        "apps/api/src/utils/entitlement-filter.ts",
+        "apps/api/src/routes/accommodation/public/list.ts",
+        "apps/api/src/routes/accommodation/protected/getWhatsApp.ts"
+    ]
+}
