@@ -163,6 +163,23 @@ describe('TEST:V5:14 — la cadena rechaza al actor de sistema', () => {
         ).toBe(true);
     });
 
+    it.each([
+        ['TEST:HOS-1541:1 ACC_3', 'ACC_3', PermissionEnum.BILLING_REGISTER_MANUAL_PAYMENT],
+        ['TEST:HOS-1541:2 ACC_4', 'ACC_4', PermissionEnum.BILLING_DECLARE_MANUAL_UNPAID]
+    ] as const)('%s has only its own permission', (_name, action, own) => {
+        expect(ADMINISTRATIVE_ACTION_PERMISSIONS[action]).toEqual({
+            permissions: [own],
+            pendingOwnPermission: null
+        });
+        expect([
+            isAdministrativeActionPermitted({
+                action,
+                actorPermissions: [PermissionEnum.PARTNER_MANAGE]
+            }),
+            isAdministrativeActionPermitted({ action, actorPermissions: [own] })
+        ]).toEqual([false, true]);
+    });
+
     it('TEST:1697:4 AC:1697:1 assigns ACC_7 only its own lift-reconciliation-mark permission', () => {
         expect(ADMINISTRATIVE_ACTION_PERMISSIONS.ACC_7).toEqual({
             permissions: [PermissionEnum.BILLING_LIFT_RECONCILIATION_MARK],

@@ -146,6 +146,13 @@ export const CRON_SCHEDULES: ReadonlyArray<CronScheduleEntry> = [
             'Fail pending payments whose provider collection window closed without collection, re-read by id (HOS-1709, AC:B5:5).'
     },
     {
+        name: 'manual-installment-open',
+        displayName: 'Apertura de cuotas de pago manual',
+        category: 'billing',
+        schedule: '13 * * * *',
+        description: 'Open due manual installments and apply S4 (HOS-1541, AC:B5:13, MP5).'
+    },
+    {
         name: 'subscription-pause-end',
         displayName: 'Fin de pausas de suscripción',
         category: 'billing',

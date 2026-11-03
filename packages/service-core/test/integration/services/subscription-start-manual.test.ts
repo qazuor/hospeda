@@ -1,6 +1,7 @@
 import {
     billingOptions,
     createManualPendingAuthorization,
+    emailOutbox,
     eq,
     getDb,
     idempotencyKeys,
@@ -11,6 +12,7 @@ import {
     providerLinks,
     subscriptionModel,
     subscriptions,
+    userRole,
     users
 } from '@repo/db';
 import { FakePaymentProvider } from '@repo/payments/fake';
@@ -113,6 +115,60 @@ async function ownRows(userId: string) {
 }
 
 describe('manual S1 signup', () => {
+    it('enqueues the first installment notice for seeded SUPER_ADMINs without S4', async () => {
+        const { user, option } = await seedChoice();
+        const admins = await getServiceTestDb()
+            .insert(users)
+            .values(
+                [1, 2].map(() => ({
+                    email: `manual-signup-admin-${crypto.randomUUID()}@example.test`,
+                    displayName: 'Signup admin',
+                    emailVerified: true,
+                    lifecycleState: 'ACTIVE'
+                }))
+            )
+            .returning();
+        await getServiceTestDb()
+            .insert(userRole)
+            .values(admins.map((admin) => ({ userId: admin.id, role: 'SUPER_ADMIN' as const })));
+        const { ports } = makePorts();
+        const result = await startManualSubscription(
+            { userId: user.id, billingOptionId: option.id },
+            ports
+        );
+        const again = await startManualSubscription(
+            { userId: user.id, billingOptionId: option.id },
+            ports
+        );
+        const [subscription] = await getServiceTestDb()
+            .select()
+            .from(subscriptions)
+            .where(eq(subscriptions.id, result.subscriptionId));
+        const mail = await getServiceTestDb()
+            .select()
+            .from(emailOutbox)
+            .where(eq(emailOutbox.template, 'billing.manual-installment-unpaid'));
+        const own = mail.filter(
+            (row) =>
+                admins.some((admin) => admin.id === row.recipientUserId) &&
+                (row.payload as { manualPaymentId?: string }).manualPaymentId ===
+                    result.manualPaymentId
+        );
+        expect(again.manualPaymentId).toBe(result.manualPaymentId);
+        expect(subscription?.status).toBe('PENDING_AUTHORIZATION');
+        expect(own).toHaveLength(2);
+        expect(own.map((row) => row.recipientUserId).sort()).toEqual(
+            admins.map((row) => row.id).sort()
+        );
+        for (const row of own)
+            expect(row.payload).toMatchObject({
+                manualPaymentId: result.manualPaymentId,
+                subscriptionId: result.subscriptionId,
+                periodStart: openedAt.toISOString(),
+                openedAt: openedAt.toISOString(),
+                firstInstallment: true
+            });
+    });
     it('TEST:B3:4 opens one manual installment without a provider call or creation key', async () => {
         // Arrange
         const { user, option } = await seedChoice();

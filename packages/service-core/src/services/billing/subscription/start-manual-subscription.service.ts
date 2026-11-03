@@ -10,6 +10,7 @@ import { ServiceError } from '../../../types';
 import { extractPostgresErrorCause } from '../../../utils';
 import { getCurrentBillingDeadlines } from '../deadlines/billing-deadlines.service';
 import { openManualInstallmentInTx } from './manual-installment-opening';
+import { enqueueManualInstallmentUnpaidNotice } from './manual-installment-unpaid-notice';
 import { commitmentTaken } from './resolve-live-commitment';
 import {
     assertPlanForSale,
@@ -104,6 +105,15 @@ export async function startManualSubscription(
                 tx,
                 subscriptionId: subscription.id,
                 periodStart
+            });
+            await enqueueManualInstallmentUnpaidNotice({
+                tx,
+                manualPaymentId: manualPayment.id,
+                subscriptionId: subscription.id,
+                vertical: choice.vertical,
+                periodStart,
+                openedAt: periodStart,
+                firstInstallment: true
             });
             return {
                 subscriptionId: subscription.id,

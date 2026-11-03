@@ -1331,6 +1331,13 @@
       "when": 1793711974042,
       "tag": "0189_hos1486_session_auth_method",
       "breakpoints": true
+    },
+    {
+      "idx": 190,
+      "version": "7",
+      "when": 1793734368116,
+      "tag": "0190_hos1541_manual_payment_permissions",
+      "breakpoints": true
     }
   ]
 }
