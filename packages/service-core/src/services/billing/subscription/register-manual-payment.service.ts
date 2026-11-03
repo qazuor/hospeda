@@ -40,8 +40,7 @@ const inputSchema = z.strictObject({
     actor: z.strictObject({
         id: z.uuid(),
         roles: z.array(z.enum(RoleEnum)),
-        permissions: z.array(z.enum(PermissionEnum)),
-        _isSystemActor: z.boolean().optional()
+        permissions: z.array(z.enum(PermissionEnum))
     }),
     subscriptionId: z.uuid(),
     manualPaymentId: z.uuid(),
@@ -198,11 +197,12 @@ export async function previewManualPaymentRegistration(input: Input): Promise<{
         actor: {
             id: input.actor.id,
             roles: input.actor.roles,
-            permissions: input.actor.permissions,
-            _isSystemActor: input.actor._isSystemActor
+            permissions: input.actor.permissions
         }
     });
-    const checked = await getDb().transaction((tx) => check(parsed, tx, false));
+    const checked = await getDb().transaction((tx) =>
+        check({ ...parsed, actor: input.actor }, tx, false)
+    );
     return {
         subscriptionId: checked.subscription.id,
         manualPaymentId: checked.installment.id,
@@ -230,13 +230,12 @@ export async function registerManualPayment(
         actor: {
             id: input.actor.id,
             roles: input.actor.roles,
-            permissions: input.actor.permissions,
-            _isSystemActor: input.actor._isSystemActor
+            permissions: input.actor.permissions
         }
     });
     const now = ports.clock.now();
     const committed = await getDb().transaction(async (tx) => {
-        const checked = await check(parsed, tx, true);
+        const checked = await check({ ...parsed, actor: input.actor }, tx, true);
         const { subscription, installment, effect, nextChargeAt } = checked;
         const wrote = await manualPaymentModel.markRegistered({
             manualPaymentId: installment.id,
