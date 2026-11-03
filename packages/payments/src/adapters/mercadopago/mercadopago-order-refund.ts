@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import type { PaymentCapability } from '../../provider/capabilities';
 import { PaymentProviderError } from '../../provider/errors';
 import type { OrderRefundInput, OrderRefundResult } from '../../provider/payment-provider';
 import type { MercadoPagoSend } from './mercadopago-http';
@@ -22,13 +23,25 @@ export const OrderRefundsSchema = nullAsAbsent({
 });
 
 /** Maps every refund returned by an order response (MP:EX-58, AC:B6:8, TRANS:B:RF3). */
-export function mapOrderRefunds(refunds: z.output<typeof OrderRefundsSchema>): OrderRefundResult {
+export function mapOrderRefunds(
+    refunds: z.output<typeof OrderRefundsSchema>,
+    capability: PaymentCapability
+): OrderRefundResult {
     return {
-        refunds: (refunds ?? []).map((refund) => ({
-            refundId: refund.id,
-            amountMinor: Math.round(refund.amount * 100),
-            accredited: refund.status === 'processed'
-        }))
+        refunds: (refunds ?? []).map((refund) => {
+            const amountMinor = Math.round(refund.amount * 100);
+            if (!Number.isSafeInteger(amountMinor))
+                throw new PaymentProviderError({
+                    code: 'UNAVAILABLE',
+                    capability,
+                    message: 'Mercado Pago order refund amount exceeds safe minor units'
+                });
+            return {
+                refundId: refund.id,
+                amountMinor,
+                accredited: refund.status === 'processed'
+            };
+        })
     };
 }
 
@@ -78,5 +91,5 @@ export async function refundMercadoPagoOrder(
             message: `Mercado Pago order refund returned ${response.status}`
         });
     const parsed = await parseResponse(OrderRefundResponseSchema, response, 'refund');
-    return mapOrderRefunds(parsed.transactions.refunds);
+    return mapOrderRefunds(parsed.transactions.refunds, 'refund');
 }

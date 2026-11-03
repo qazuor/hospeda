@@ -92,6 +92,32 @@ describe('HOS-1553 AC:B6:8 TEST:B6:6 Mercado Pago order refunds', () => {
         ).rejects.toMatchObject({ code: 'UNAVAILABLE' });
     });
 
+    it('rejects a finite POST amount that overflows minor units', async () => {
+        const { provider } = setup({
+            status: 201,
+            body: { transactions: { refunds: [{ id: 'R', amount: '1e307', status: 'processed' }] } }
+        });
+        await expect(
+            provider.refundOrder({ orderId: 'O', reference: 'k', scope: { kind: 'total' } })
+        ).rejects.toMatchObject({ code: 'UNAVAILABLE', capability: 'refund' });
+    });
+
+    it('rejects a finite read amount that overflows minor units', async () => {
+        const { provider } = setup({
+            status: 200,
+            body: {
+                id: 'ORD1',
+                status: 'processed',
+                created_date: '2026-09-30T00:00:00Z',
+                transactions: { refunds: [{ id: 'R', amount: '1e307', status: 'processed' }] }
+            }
+        });
+        await expect(provider.readOrder({ orderId: 'ORD1' })).rejects.toMatchObject({
+            code: 'UNAVAILABLE',
+            capability: 'read'
+        });
+    });
+
     it('reads transaction and refunds by order id, and defaults absent transactions', async () => {
         const order = {
             id: 'ORD1',

@@ -74,7 +74,7 @@ export async function readMercadoPagoOrder(args: {
         createdAt: createdAt(parsed),
         hasApprovedPayment: hasApprovedPayment(parsed.status),
         paymentTransactionId: parsed.transactions?.payments?.[0]?.id ?? null,
-        refunds: mapOrderRefunds(parsed.transactions?.refunds).refunds
+        refunds: mapOrderRefunds(parsed.transactions?.refunds, 'read').refunds
     };
     return snapshot;
 }
