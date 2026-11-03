@@ -1,5 +1,5 @@
 import type { Clock } from '@repo/billing-verticals-contract';
-import type { PaymentProvider } from '@repo/payments';
+import { type PaymentProvider, runWithTrafficClass } from '@repo/payments';
 import { type Actor, getUserRoles } from '@repo/service-core';
 import { resolveEffectivePermissions } from '../../middlewares/actor.js';
 import { buildPermanentGrantPorts } from '../../routes/billing-permanent-grant/admin/ports.js';
@@ -11,6 +11,21 @@ import {
 } from '../../utils/listing-publication/coverage-listener.js';
 import { defaultPaymentProvider, injectPaymentProvider } from '../../utils/payment-provider.js';
 import { subscribeTrialCoverageConversion } from '../../utils/trial/trial-coverage-listener.js';
+
+/**
+ * Runs the operator script's work as `background` Mercado Pago traffic
+ * (HOS-1999, AC-33): the script composes its own provider, so no API middleware
+ * or cron wrapper classifies it. Lives here, not in the script, so the script
+ * keeps loading `@repo/payments` only through this lazily imported module.
+ *
+ * @param args.fn - The work to run inside the background traffic context
+ * @returns Whatever `fn` resolves to
+ */
+export function runStep3bAsBackgroundTraffic<T>(args: {
+    readonly fn: () => Promise<T>;
+}): Promise<T> {
+    return runWithTrafficClass({ context: { trafficClass: 'background' }, fn: args.fn });
+}
 
 /** Optional process dependencies for deterministic cutover integration tests. */
 export interface ComposeStep3bOptions {

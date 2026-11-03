@@ -1,0 +1,134 @@
+import { runWithTrafficClass, type TrafficCounterSink } from '@repo/payments';
+import type { CronJobContext, CronJobDefinition, CronJobResult } from './types';
+
+interface RunCounter {
+    requests: number;
+    status2xx: number;
+    status429: number;
+    status5xx: number;
+    networkErrors: number;
+    waitMs: number[];
+    fastFailures: number;
+    coolDowns: number;
+    coolDownMs: number;
+    unclassified: number;
+}
+
+function createRunCounter(): RunCounter {
+    return {
+        requests: 0,
+        status2xx: 0,
+        status429: 0,
+        status5xx: 0,
+        networkErrors: 0,
+        waitMs: [],
+        fastFailures: 0,
+        coolDowns: 0,
+        coolDownMs: 0,
+        unclassified: 0
+    };
+}
+
+function createSink(): {
+    readonly sink: TrafficCounterSink;
+    readonly counters: Map<string, RunCounter>;
+} {
+    const counters = new Map<string, RunCounter>();
+    const sink: TrafficCounterSink = {
+        record: (args) => {
+            const key = `${args.trafficClass}:${args.capability}`;
+            let counter = counters.get(key);
+            if (!counter) {
+                counter = createRunCounter();
+                counters.set(key, counter);
+            }
+            if (args.request) counter.requests += 1;
+            if (
+                args.status === 200 ||
+                (args.status !== undefined && args.status >= 200 && args.status < 300)
+            )
+                counter.status2xx += 1;
+            if (args.status === 429) {
+                counter.status429 += 1;
+                counter.coolDowns += 1;
+            }
+            if (args.status !== undefined && args.status >= 500) counter.status5xx += 1;
+            if (args.networkError) counter.networkErrors += 1;
+            if (args.waitMs !== undefined) counter.waitMs.push(args.waitMs);
+            if (args.fastFailure) counter.fastFailures += 1;
+            if (args.coolDownMs !== undefined) counter.coolDownMs += args.coolDownMs;
+            if (args.unclassified) counter.unclassified += 1;
+        },
+        toProviderTraffic: () => snapshotCounters(counters)
+    };
+    return { sink, counters };
+}
+
+function snapshotCounters(
+    counters: ReadonlyMap<string, RunCounter>
+): Readonly<Record<string, unknown>> {
+    const byCapability: Record<string, unknown> = {};
+    const totals = createRunCounter();
+    for (const [key, value] of counters) {
+        const sorted = [...value.waitMs].sort((left, right) => left - right);
+        byCapability[key] = {
+            requests: value.requests,
+            status2xx: value.status2xx,
+            status429: value.status429,
+            status5xx: value.status5xx,
+            networkErrors: value.networkErrors,
+            waitMs: {
+                p50: sorted[Math.floor(sorted.length * 0.5)] ?? 0,
+                p95: sorted[Math.floor(sorted.length * 0.95)] ?? 0,
+                max: sorted[sorted.length - 1] ?? 0
+            },
+            fastFailures: value.fastFailures,
+            coolDowns: value.coolDowns,
+            coolDownMs: value.coolDownMs,
+            unclassified: value.unclassified,
+            memoHits: 0,
+            snapshotHits: 0,
+            redisFallbacks: 0
+        };
+        totals.requests += value.requests;
+        totals.status2xx += value.status2xx;
+        totals.status429 += value.status429;
+        totals.status5xx += value.status5xx;
+        totals.networkErrors += value.networkErrors;
+        totals.waitMs.push(...value.waitMs);
+        totals.fastFailures += value.fastFailures;
+        totals.coolDowns += value.coolDowns;
+        totals.coolDownMs += value.coolDownMs;
+        totals.unclassified += value.unclassified;
+    }
+    const sorted = [...totals.waitMs].sort((left, right) => left - right);
+    const p50 = sorted.length === 0 ? 0 : (sorted[Math.ceil(sorted.length * 0.5) - 1] ?? 0);
+    const p95 = sorted.length === 0 ? 0 : (sorted[Math.ceil(sorted.length * 0.95) - 1] ?? 0);
+    const { waitMs: _waitSamples, ...counts } = totals;
+    return {
+        ...counts,
+        waitMs: { p50, p95, max: sorted[sorted.length - 1] ?? 0 },
+        memoHits: 0,
+        snapshotHits: 0,
+        redisFallbacks: 0,
+        byCapability
+    };
+}
+
+/** Run one cron handler as background traffic and attach governed request counts. */
+export async function runCronHandlerInBackground(args: {
+    readonly job: Pick<CronJobDefinition, 'handler'>;
+    readonly ctx: CronJobContext;
+}): Promise<CronJobResult> {
+    const { sink, counters } = createSink();
+    const result = await runWithTrafficClass({
+        context: { trafficClass: 'background', counters: sink },
+        fn: () => args.job.handler(args.ctx)
+    });
+    if (![...counters.values()].some((counter) => counter.requests > 0 || counter.fastFailures > 0))
+        return result;
+    return {
+        ...result,
+        details: { ...result.details, providerTraffic: sink.toProviderTraffic() }
+    };
+}

@@ -7,6 +7,7 @@
  * @module test/cron/bootstrap
  */
 
+import { currentTrafficContext, ProviderTrafficGovernor } from '@repo/payments';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 // ---------------------------------------------------------------------------
@@ -216,6 +217,25 @@ describe('startCronScheduler — soft-failure Sentry capture', () => {
         // The thrown-error path uses level: 'error', not 'warning'
         expect((capturedErr as Error).message).toBe('db exploded');
         expect(capturedOpts).toMatchObject({ level: 'error' });
+    });
+});
+
+describe('scheduled cron traffic context', () => {
+    it('runs a scheduled handler as background and attaches its provider counters (kills tick class loss)', async () => {
+        const job = makeJob('mp-background', async () => {
+            expect(currentTrafficContext()?.trafficClass).toBe('background');
+            const governor = new ProviderTrafficGovernor({ mode: 'observe' });
+            await governor.acquire({ trafficClass: 'background', capability: 'read' });
+            governor.observe({ trafficClass: 'background', capability: 'read', status: 200 });
+            governor.stop();
+            return { ...makeSuccessResult(), details: { retained: true } };
+        });
+        const { runJobWithTimeout } = await import('../../src/cron/bootstrap');
+        const result = await runJobWithTimeout(job, 1000);
+        expect(result.details).toMatchObject({
+            retained: true,
+            providerTraffic: { requests: 1, status2xx: 1 }
+        });
     });
 });
 

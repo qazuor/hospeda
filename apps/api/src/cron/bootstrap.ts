@@ -32,6 +32,7 @@ import {
 import { apiLogger } from '../utils/logger';
 import { recordCronRun } from './record-run';
 import { getEnabledCronJobs } from './registry';
+import { runCronHandlerInBackground } from './traffic';
 import type { CronJobContext, CronJobDefinition, CronJobResult } from './types';
 
 /** Default per-job execution timeout (matches the value used by admin manual triggers). */
@@ -100,7 +101,7 @@ export function buildContext(jobName: string): CronJobContext {
 }
 
 /** Runs a single job handler with a wall-clock timeout. */
-async function runJobWithTimeout(
+export async function runJobWithTimeout(
     job: CronJobDefinition,
     timeoutMs: number
 ): Promise<CronJobResult> {
@@ -111,7 +112,7 @@ async function runJobWithTimeout(
             timeoutMs
         );
     });
-    return Promise.race([job.handler(ctx), timeoutPromise]);
+    return Promise.race([runCronHandlerInBackground({ job, ctx }), timeoutPromise]);
 }
 
 /**
