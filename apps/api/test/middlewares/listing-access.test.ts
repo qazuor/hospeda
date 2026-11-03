@@ -171,6 +171,23 @@ describe('AC:V5:9 listing access HTTP mapping', () => {
                 handler: async () => ({ ok: true })
             })
         ).toThrow(/Unknown listing section/);
+        expect(() =>
+            createProtectedRoute({
+                method: 'get',
+                path: '/invalid-trait',
+                summary: 'invalid',
+                description: 'invalid',
+                tags: ['test'],
+                requestParams: { id: z.string() },
+                responseSchema: z.object({ ok: z.boolean() }),
+                listingAccess: {
+                    vertical: 'venue',
+                    operation: 'READ_OWN',
+                    sectionTraits: ['notInCatalog']
+                },
+                handler: async () => ({ ok: true })
+            })
+        ).toThrow(/Unknown listing section trait/);
     });
     it('maps UNAUTHENTICATED for the API guest to 401 before reading coverage', async () => {
         const result = await probe(appFor({ guest: true }));
