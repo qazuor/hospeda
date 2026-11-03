@@ -1,4 +1,8 @@
-import { runWithTrafficClass, type TrafficCounterSink } from '@repo/payments';
+import {
+    GOVERNOR_MAX_WAIT_SAMPLES,
+    runWithTrafficClass,
+    type TrafficCounterSink
+} from '@repo/payments';
 import type { CronJobContext, CronJobDefinition, CronJobResult } from './types';
 
 interface RunCounter {
@@ -12,6 +16,7 @@ interface RunCounter {
     coolDowns: number;
     coolDownMs: number;
     unclassified: number;
+    memoHits: number;
 }
 
 function createRunCounter(): RunCounter {
@@ -25,8 +30,25 @@ function createRunCounter(): RunCounter {
         fastFailures: 0,
         coolDowns: 0,
         coolDownMs: 0,
-        unclassified: 0
+        unclassified: 0,
+        memoHits: 0
     };
+}
+
+function recordWaitSample(args: {
+    readonly key: string;
+    readonly waitMs: number;
+    readonly counters: Map<string, RunCounter>;
+    readonly waitSampleKeys: string[];
+}): void {
+    const counter = args.counters.get(args.key);
+    if (!counter) return;
+    counter.waitMs.push(args.waitMs);
+    args.waitSampleKeys.push(args.key);
+    if (args.waitSampleKeys.length > GOVERNOR_MAX_WAIT_SAMPLES) {
+        const oldestKey = args.waitSampleKeys.shift();
+        if (oldestKey !== undefined) args.counters.get(oldestKey)?.waitMs.shift();
+    }
 }
 
 function createSink(): {
@@ -34,6 +56,7 @@ function createSink(): {
     readonly counters: Map<string, RunCounter>;
 } {
     const counters = new Map<string, RunCounter>();
+    const waitSampleKeys: string[] = [];
     const sink: TrafficCounterSink = {
         record: (args) => {
             const key = `${args.trafficClass}:${args.capability}`;
@@ -43,6 +66,7 @@ function createSink(): {
                 counters.set(key, counter);
             }
             if (args.request) counter.requests += 1;
+            if (args.memoHit) counter.memoHits += 1;
             if (
                 args.status === 200 ||
                 (args.status !== undefined && args.status >= 200 && args.status < 300)
@@ -54,7 +78,8 @@ function createSink(): {
             }
             if (args.status !== undefined && args.status >= 500) counter.status5xx += 1;
             if (args.networkError) counter.networkErrors += 1;
-            if (args.waitMs !== undefined) counter.waitMs.push(args.waitMs);
+            if (args.waitMs !== undefined)
+                recordWaitSample({ key, waitMs: args.waitMs, counters, waitSampleKeys });
             if (args.fastFailure) counter.fastFailures += 1;
             if (args.coolDownMs !== undefined) counter.coolDownMs += args.coolDownMs;
             if (args.unclassified) counter.unclassified += 1;
@@ -86,7 +111,7 @@ function snapshotCounters(
             coolDowns: value.coolDowns,
             coolDownMs: value.coolDownMs,
             unclassified: value.unclassified,
-            memoHits: 0,
+            memoHits: value.memoHits,
             snapshotHits: 0,
             redisFallbacks: 0
         };
@@ -100,6 +125,7 @@ function snapshotCounters(
         totals.coolDowns += value.coolDowns;
         totals.coolDownMs += value.coolDownMs;
         totals.unclassified += value.unclassified;
+        totals.memoHits += value.memoHits;
     }
     const sorted = [...totals.waitMs].sort((left, right) => left - right);
     const p50 = sorted.length === 0 ? 0 : (sorted[Math.ceil(sorted.length * 0.5) - 1] ?? 0);
@@ -108,7 +134,8 @@ function snapshotCounters(
     return {
         ...counts,
         waitMs: { p50, p95, max: sorted[sorted.length - 1] ?? 0 },
-        memoHits: 0,
+        // The memo layer has no governor reference; the governor's window memoHits stays 0.
+        memoHits: totals.memoHits,
         snapshotHits: 0,
         redisFallbacks: 0,
         byCapability
@@ -125,7 +152,11 @@ export async function runCronHandlerInBackground(args: {
         context: { trafficClass: 'background', counters: sink },
         fn: () => args.job.handler(args.ctx)
     });
-    if (![...counters.values()].some((counter) => counter.requests > 0 || counter.fastFailures > 0))
+    if (
+        ![...counters.values()].some(
+            (counter) => counter.requests > 0 || counter.fastFailures > 0 || counter.memoHits > 0
+        )
+    )
         return result;
     return {
         ...result,
