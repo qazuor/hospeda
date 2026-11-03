@@ -58,6 +58,38 @@ describe('TEST:B11:24 reconciliation sweep run and liveness ping', () => {
         expect(ping.ping).not.toHaveBeenCalled();
     });
 
+    it('stops before starting the next inventory row when its budget signal aborts', async () => {
+        const { fake } = createReconciliationFake();
+        const rows = await Promise.all([
+            seedSubscription({ status: 'ACTIVE', withLink: true, fake }),
+            seedSubscription({ status: 'ACTIVE', withLink: true, fake })
+        ]);
+        const controller = new AbortController();
+        const read = fake.readAuthorization.bind(fake);
+        vi.spyOn(fake, 'readAuthorization').mockImplementation(async (input) => {
+            const result = await read(input);
+            controller.abort();
+            return result;
+        });
+        const correlationId = crypto.randomUUID();
+        const ping = { ping: vi.fn() };
+        const summary = await withSeededReconciliationInventory(() =>
+            runReconciliationSweep(
+                { correlationId, signal: controller.signal },
+                { provider: fake, clock: reconciliationClock, livenessPing: ping }
+            )
+        );
+        expect(summary).toMatchObject({ rowsRead: 1, stoppedOnBudget: true, complete: false });
+        expect(fake.readAuthorization).toHaveBeenCalledTimes(1);
+        expect(ping.ping).not.toHaveBeenCalled();
+        const [run] = await getServiceTestDb()
+            .select()
+            .from(reconciliationSweepRuns)
+            .where(eq(reconciliationSweepRuns.correlationId, correlationId));
+        expect(run?.finishedAt).toBeInstanceOf(Date);
+        expect(rows).toHaveLength(2);
+    });
+
     it('closes before one successful ping', async () => {
         const { fake } = createReconciliationFake();
         await seedSubscription({ status: 'ACTIVE', withLink: true, fake });

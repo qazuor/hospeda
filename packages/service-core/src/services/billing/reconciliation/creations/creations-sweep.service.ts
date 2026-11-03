@@ -24,6 +24,7 @@ const logger = createLogger('billing-creations-sweep');
 
 export interface CreationsSweepSummary {
     readonly rowsExamined: number;
+    readonly stoppedOnBudget: boolean;
     readonly linked: number;
     /** Creation keys completed with the recovered checkout, on link or on a later heal (HOS-1725). */
     readonly keysCompleted: number;
@@ -41,7 +42,7 @@ export interface CreationsSweepSummary {
 }
 
 export async function runCreationsSweep(
-    input: { pageSize?: number; correlationId?: string } = {},
+    input: { pageSize?: number; correlationId?: string; signal?: AbortSignal } = {},
     ports: { provider: PaymentProvider; clock: Clock; returnUrl: string }
 ): Promise<CreationsSweepSummary> {
     const pageSize = input.pageSize ?? 100;
@@ -59,6 +60,7 @@ export async function runCreationsSweep(
         skippedRaced = 0,
         rowsFailed = 0;
     let afterSubscriptionId: string | undefined;
+    let stoppedOnBudget = false;
     for (;;) {
         const page = await creationSweepModel.listPendingCreationPage({
             now: ports.clock.now(),
@@ -66,6 +68,10 @@ export async function runCreationsSweep(
             limit: pageSize
         });
         for (const row of page) {
+            if (input.signal?.aborted) {
+                stoppedOnBudget = true;
+                break;
+            }
             rowsExamined++;
             const { subscription, providerLink, newestCreateKey, payerEmail, planName, planSlug } =
                 row;
@@ -210,11 +216,16 @@ export async function runCreationsSweep(
                 );
             }
         }
+        if (stoppedOnBudget || input.signal?.aborted) {
+            stoppedOnBudget = true;
+            break;
+        }
         if (page.length < pageSize) break;
         afterSubscriptionId = page.at(-1)?.subscription.id;
     }
     return {
         rowsExamined,
+        stoppedOnBudget,
         linked,
         keysCompleted,
         duplicatesCancelled,

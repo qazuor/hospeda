@@ -28,7 +28,7 @@ export const billingCreationsSweepJob: CronJobDefinition = {
         }
         try {
             const summary = await runCreationsSweep(
-                { correlationId: ctx.correlationId },
+                { correlationId: ctx.correlationId, signal: ctx.signal },
                 {
                     provider: getPaymentProvider(),
                     clock: getClock().clock,
@@ -37,7 +37,7 @@ export const billingCreationsSweepJob: CronJobDefinition = {
             );
             const { failures, ...details } = summary;
             return {
-                success: summary.rowsFailed === 0,
+                success: summary.stoppedOnBudget || summary.rowsFailed === 0,
                 message: `Examined ${summary.rowsExamined} pending subscription creations`,
                 processed: summary.rowsExamined,
                 errors: summary.rowsFailed,

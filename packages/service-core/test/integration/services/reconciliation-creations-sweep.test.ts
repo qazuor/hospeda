@@ -28,6 +28,30 @@ afterAll(closeServiceTestPool);
 beforeEach(resetSeededReconciliationInventory);
 
 describe('TEST:B11:23 creations sweep over the fake', () => {
+    it('stops before searching the next creation row when its budget signal aborts', async () => {
+        const time = createAdjustableClock({ start: new Date(Date.now() + 6 * 60_000) });
+        const { fake } = createReconciliationFake(time);
+        await seedPendingCreation({ declaredPayerEmail: 'first@example.test' });
+        await seedPendingCreation({ declaredPayerEmail: 'second@example.test' });
+        const controller = new AbortController();
+        const search = fake.searchAuthorizations.bind(fake);
+        const searchSpy = vi
+            .spyOn(fake, 'searchAuthorizations')
+            .mockImplementation(async (input) => {
+                const result = await search(input);
+                controller.abort();
+                return result;
+            });
+        const summary = await withSeededPendingCreations(() =>
+            runCreationsSweep(
+                { signal: controller.signal },
+                { provider: fake, clock: time, returnUrl: 'https://example.test' }
+            )
+        );
+        expect(summary).toMatchObject({ rowsExamined: 1, stoppedOnBudget: true });
+        expect(searchSpy).toHaveBeenCalledTimes(1);
+    });
+
     it('TEST:1730:4 finds a loose preapproval only under the declared email', async () => {
         const time = createAdjustableClock({ start: new Date(Date.now() + 20 * 60_000) });
         const { fake } = createReconciliationFake(time);

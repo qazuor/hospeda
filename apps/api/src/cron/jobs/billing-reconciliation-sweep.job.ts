@@ -75,7 +75,7 @@ export const billingReconciliationSweepJob: CronJobDefinition = {
             }).ports;
             const complements = buildComplementPolicyPorts();
             const summary = await runReconciliationSweep(
-                { correlationId: ctx.correlationId },
+                { correlationId: ctx.correlationId, signal: ctx.signal },
                 {
                     provider,
                     clock,
@@ -212,13 +212,15 @@ export const billingReconciliationSweepJob: CronJobDefinition = {
                 );
             }
             return {
-                success: summary.rowsFailed === 0 && cancelCallFailed === 0,
+                success:
+                    summary.stoppedOnBudget || (summary.rowsFailed === 0 && cancelCallFailed === 0),
                 message: `Processed ${summary.rowsRead} billing subscriptions`,
                 processed: summary.rowsRead,
                 errors: summary.rowsFailed + zeroCallFailures.length + cancelCallFailed,
                 durationMs: Date.now() - startedAt.getTime(),
                 details: {
                     ...details,
+                    stoppedOnBudget: summary.stoppedOnBudget,
                     failedSubscriptionIds: failures.map(({ subscriptionId }) => subscriptionId),
                     ...(summary.zeroCallChecks
                         ? {

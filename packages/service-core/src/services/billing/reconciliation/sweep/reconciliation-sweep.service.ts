@@ -56,6 +56,7 @@ const logger = createLogger('billing-reconciliation-sweep');
 export interface ReconciliationSweepInput {
     readonly pageSize?: number;
     readonly correlationId?: string;
+    readonly signal?: AbortSignal;
 }
 
 export interface ReconciliationSweepPorts {
@@ -90,6 +91,7 @@ export interface ReconciliationSweepPorts {
     readonly pauseGifts?: { readonly tx?: DrizzleClient };
 }
 
+// biome-ignore lint/suspicious/noConfusingVoidType: `void` preserves existing async check callback signatures.
 export type ReconciliationRowCheckResult = 'STOP_REMAINING_CHECKS' | void;
 
 export type ReconciliationRowCheck = (
@@ -116,6 +118,7 @@ export interface ReconciliationSweepSummary {
     readonly runId: string;
     readonly complete: boolean;
     readonly pinged: boolean;
+    readonly stoppedOnBudget: boolean;
     readonly rowsFailed: number;
     readonly divergences: number;
     readonly marksOpened: number;
@@ -178,6 +181,7 @@ export async function runReconciliationSweep(
         }
     };
     let afterSubscriptionId: string | undefined;
+    let stoppedOnBudget = false;
     const retryPorts = ports.cancellationRetry
         ? {
               provider: ports.provider,
@@ -195,6 +199,10 @@ export async function runReconciliationSweep(
             limit: pageSize
         });
         for (const { subscription, providerLink } of page) {
+            if (input.signal?.aborted) {
+                stoppedOnBudget = true;
+                break;
+            }
             try {
                 await runWithProviderReadScope({
                     fn: async () => {
@@ -248,12 +256,17 @@ export async function runReconciliationSweep(
                 );
             }
         }
+        if (stoppedOnBudget || input.signal?.aborted) {
+            stoppedOnBudget = true;
+            break;
+        }
         if (page.length < pageSize) break;
         afterSubscriptionId = page.at(-1)?.subscription.id;
     }
 
     let cancellationRetry: ReconciliationSweepSummary['cancellationRetry'];
-    if (retryPorts) {
+    if (input.signal?.aborted) stoppedOnBudget = true;
+    if (!stoppedOnBudget && retryPorts) {
         const pass = await runOurCancellationRetry(
             { correlationId, pageSize, ...(ports.terminalReturn ? { unconfirmedOnly: true } : {}) },
             comparisons.length > 0 ? { ...retryPorts, afterRead: compareRow } : retryPorts
@@ -275,7 +288,8 @@ export async function runReconciliationSweep(
     }
 
     let terminalReturn: TerminalReturnSummary | undefined;
-    if (ports.terminalReturn) {
+    if (input.signal?.aborted) stoppedOnBudget = true;
+    if (!stoppedOnBudget && ports.terminalReturn) {
         terminalReturn = await runTerminalReturn(
             { correlationId, pageSize },
             {
@@ -293,7 +307,8 @@ export async function runReconciliationSweep(
     }
 
     let creditedPayments: CreditedPaymentsCheckSummary | undefined;
-    if (ports.creditedPayments) {
+    if (input.signal?.aborted) stoppedOnBudget = true;
+    if (!stoppedOnBudget && ports.creditedPayments) {
         creditedPayments = await runCreditedPaymentsCheck(
             { correlationId, pageSize },
             {
@@ -311,7 +326,8 @@ export async function runReconciliationSweep(
     }
 
     let paidOrders: PaidOrdersCheckSummary | undefined;
-    if (ports.paidOrders) {
+    if (input.signal?.aborted) stoppedOnBudget = true;
+    if (!stoppedOnBudget && ports.paidOrders) {
         paidOrders = await runPaidOrdersCheck(
             { correlationId, pageSize },
             { ...ports.paidOrders, provider: ports.provider, clock: ports.clock }
@@ -321,7 +337,8 @@ export async function runReconciliationSweep(
     }
 
     let markEscalation: MarkEscalationSummary | undefined;
-    if (ports.markEscalation) {
+    if (input.signal?.aborted) stoppedOnBudget = true;
+    if (!stoppedOnBudget && ports.markEscalation) {
         markEscalation = await runMarkEscalation(
             { correlationId, pageSize },
             { ...ports.markEscalation, clock: ports.clock }
@@ -337,7 +354,8 @@ export async function runReconciliationSweep(
     }
 
     let pauseGifts: PauseGiftSummary | undefined;
-    if (ports.pauseGifts) {
+    if (input.signal?.aborted) stoppedOnBudget = true;
+    if (!stoppedOnBudget && ports.pauseGifts) {
         pauseGifts = await runPauseGiftDetection(
             { correlationId, pageSize },
             { ...ports.pauseGifts, clock: ports.clock }
@@ -352,16 +370,19 @@ export async function runReconciliationSweep(
         );
     }
 
-    const zeroCallChecks = ports.zeroCallChecks
-        ? await runZeroCallChecks(
-              { correlationId, pageSize },
-              { ...ports.zeroCallChecks, markPayments: ports.markPayments }
-          )
-        : undefined;
+    if (input.signal?.aborted) stoppedOnBudget = true;
+    const zeroCallChecks =
+        !stoppedOnBudget && ports.zeroCallChecks
+            ? await runZeroCallChecks(
+                  { correlationId, pageSize },
+                  { ...ports.zeroCallChecks, markPayments: ports.markPayments }
+              )
+            : undefined;
 
     const finishedAt = ports.clock.now();
     await reconciliationSweepRunModel.close({ id: run.id, finishedAt, rowsRead, rowsFailed });
-    const complete = isReconciliationSweepRunComplete({ finishedAt, rowsFailed });
+    const complete =
+        !stoppedOnBudget && isReconciliationSweepRunComplete({ finishedAt, rowsFailed });
     let pinged = false;
     if (complete && ports.livenessPing) {
         try {
@@ -379,6 +400,7 @@ export async function runReconciliationSweep(
         runId: run.id,
         complete,
         pinged,
+        stoppedOnBudget,
         rowsRead,
         rowsFailed,
         divergences,
