@@ -89,18 +89,19 @@ describe('email changes for unverified Partner owners', () => {
         applications.push(partner.applicationId);
         const response = await app.request('/api/v1/protected/partner-claims', {
             method: 'POST',
-            headers: {
-                ...actorHeaders({ id: user.id, role: RoleEnum.HOST }),
-                authorization: 'Bearer integration-test-token'
-            },
+            headers: actorHeaders({ id: user.id, role: RoleEnum.HOST }),
             body: JSON.stringify({ partnerId: partner.partnerId, secret })
         });
-        expect(response.status).not.toBe(403);
-        if (response.status === 200) {
-            const saved = await getDb().execute(
-                sql`SELECT email_verified, owner_user_id FROM users JOIN partners ON partners.owner_user_id = users.id WHERE users.id = ${user.id}::uuid`
-            );
-            expect(saved.rows).toEqual([{ email_verified: true, owner_user_id: user.id }]);
-        }
+        // The unverified actor passes the email gate only because the route declares
+        // the VERIFY_EMAIL operation; without it the gate answers 403 EMAIL_NOT_VERIFIED.
+        // Past the gate, the claim service asks for the claim session, which a mock
+        // actor does not carry, so it answers 401 before writing. The verified write
+        // itself is TEST:V7:8, which supplies a real session.
+        expect(response.status).toBe(401);
+        expect((await response.json()).error.code).toBe('UNAUTHORIZED');
+        const saved = await getDb().execute(
+            sql`SELECT owner_user_id FROM partners WHERE id = ${partner.partnerId}::uuid`
+        );
+        expect(saved.rows).toEqual([{ owner_user_id: null }]);
     });
 });
