@@ -178,6 +178,14 @@
         "reason": "S8 moves an ACTIVE PRINCIPAL to PAUSED, which emits no source in subscription-sources.ts; the coverage notice is emitted after commit."
     },
     {
+        "file": "packages/service-core/src/services/billing/subscription/resume-subscription.service.ts",
+        "symbol": "resumeSubscription",
+        "table": "subscriptions",
+        "effect": "turns-on",
+        "via": null,
+        "reason": "S10 returns a PAUSED PRINCIPAL to ACTIVE, which emits a subscription coverage source after commit."
+    },
+    {
         "file": "packages/service-core/src/services/billing/subscription/service-end-s12.ts",
         "symbol": "applyS12ToPrincipal",
         "table": "subscriptions",

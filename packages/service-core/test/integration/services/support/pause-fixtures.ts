@@ -12,9 +12,62 @@ import {
     subscriptionPauses,
     subscriptions
 } from '@repo/db';
+import type { PaymentProvider } from '@repo/payments';
+import { FakePaymentProvider } from '@repo/payments/fake';
 import { getServiceTestDb } from '../helpers.js';
 import { complementNow, type providerHarness } from './complement-fixtures.js';
 import { seedCoveragePlanVersion, seedCoverageUser } from './coverage-fixtures.js';
+
+const createAdjustableClock = ({ start }: { readonly start: Date }) => {
+    let current = start;
+    return {
+        now: () => current,
+        set: ({ at }: { readonly at: Date }) => {
+            current = at;
+        }
+    };
+};
+
+/** Builds an adjustable fake and a provider proxy for deterministic S10 rereads. */
+export function adjustablePauseHarness(
+    options: {
+        readonly honestM12?: boolean;
+        readonly withoutRP10?: boolean;
+        readonly resumeAcknowledgesOnly?: boolean;
+    } = {}
+) {
+    const clock = createAdjustableClock({ start: complementNow });
+    const fake = new FakePaymentProvider({
+        clock,
+        idNamespace: crypto.randomUUID(),
+        ...(options.honestM12
+            ? { honestAbout: [{ lie: 'M12', why: 'exercise automatic return' }] }
+            : {}),
+        ...(options.withoutRP10
+            ? { withoutBehaviour: [{ behaviour: 'RP10', why: 'exercise unchanged calendar' }] }
+            : {})
+    });
+    const calls: string[] = [];
+    const provider = new Proxy(fake as PaymentProvider, {
+        get(target, property, receiver) {
+            if (property === 'resume')
+                return async (input: { readonly authorizationId: string }) => {
+                    calls.push(`resume:${input.authorizationId}`);
+                    if (options.resumeAcknowledgesOnly)
+                        return { accepted: true as const, resourceId: input.authorizationId };
+                    return fake.resume(input);
+                };
+            if (property === 'pause')
+                return async (input: { readonly authorizationId: string }) => {
+                    calls.push(`pause:${input.authorizationId}`);
+                    return fake.pause(input);
+                };
+            const method = Reflect.get(target, property, receiver);
+            return typeof method === 'function' ? method.bind(target) : method;
+        }
+    });
+    return { clock, fake, provider, calls };
+}
 
 const seededSubscriptions: string[] = [];
 const seededUsers: string[] = [];
