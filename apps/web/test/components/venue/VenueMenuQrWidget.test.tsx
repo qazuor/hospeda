@@ -266,6 +266,25 @@ describe('VenueMenuQrWidget (HOS-1044)', () => {
         expect(screen.queryByTestId('venue-menu-qr-locked')).toBeNull();
     });
 
+    it('hides the listing and the whole widget when either QR read answers 409 SECTION_ABSENT', async () => {
+        mockGetMenuQr.mockResolvedValue({
+            ok: false,
+            error: { status: 409, message: 'SECTION_ABSENT' }
+        });
+        mockGetMenuQrScans.mockResolvedValue(READY_STATS);
+
+        const { container } = render(
+            <VenueMenuQrWidget
+                locale="es"
+                listings={[LISTING]}
+            />
+        );
+
+        await waitFor(() => expect(container.firstChild).toBeNull());
+        expect(screen.queryByTestId('venue-menu-qr-locked')).toBeNull();
+        expect(screen.queryByRole('alert')).toBeNull();
+    });
+
     it('re-fetches scans (and the QR) with window=7d when the toggle is clicked', async () => {
         mockGetMenuQr.mockResolvedValue(READY_QR);
         mockGetMenuQrScans.mockResolvedValue(READY_STATS);

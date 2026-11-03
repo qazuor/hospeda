@@ -87,6 +87,7 @@ interface MenuQrScanStats {
 /** Per-listing widget state. */
 type ListingQrState =
     | { readonly status: 'loading' }
+    | { readonly status: 'absent' }
     | { readonly status: 'locked' }
     | { readonly status: 'error' }
     | { readonly status: 'ready'; readonly qr: MenuQrData; readonly stats: MenuQrScanStats };
@@ -106,6 +107,10 @@ async function fetchListingState(
     ]);
 
     if (!qrResult.ok || !scansResult.ok) {
+        const isAbsent =
+            (!qrResult.ok && qrResult.error.status === 409) ||
+            (!scansResult.ok && scansResult.error.status === 409);
+        if (isAbsent) return { status: 'absent' };
         const isLocked =
             (!qrResult.ok && qrResult.error.status === 403) ||
             (!scansResult.ok && scansResult.error.status === 403);
@@ -320,7 +325,10 @@ export function VenueMenuQrWidget({
         };
     }, [listings, windowParam]);
 
-    if (listings.length === 0) {
+    if (
+        listings.length === 0 ||
+        listings.every((listing) => states.get(listing.id)?.status === 'absent')
+    ) {
         return null;
     }
 
@@ -360,6 +368,7 @@ export function VenueMenuQrWidget({
 
             {listings.map((listing) => {
                 const state = states.get(listing.id) ?? { status: 'loading' as const };
+                if (state.status === 'absent') return null;
 
                 return (
                     <div

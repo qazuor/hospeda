@@ -44,6 +44,7 @@ import { buildLoginRedirect } from '@/lib/auth-redirect';
 import { createTranslations } from '@/lib/i18n';
 import type { SupportedLocale } from '@/lib/i18n';
 import { resolveSafeExternalUrl } from '@/lib/safe-external-url';
+import { buildRestaurantHasMenu } from '@/lib/venue/menu-jsonld';
 import { buildUrl } from '@/lib/urls';
 import { renderPlain } from '@/lib/render-plain';
 import type { VenueReviewPublicItem } from '@/lib/api/endpoints';
@@ -221,6 +222,11 @@ const amenitiesForGrid = showEventsCta
     : venue.amenities;
 
 const canonicalPath = buildUrl({ locale, path: `comer-y-salir/${venue.slug}/` });
+const jsonLdHasMenu = buildRestaurantHasMenu({
+    venue,
+    locale,
+    siteOrigin: Astro.site?.href.replace(/\/$/, '') ?? Astro.url.origin
+});
 
 // Sign-in URL (with return path) for the anonymous review CTA.
 const reviewSignInHref = buildLoginRedirect({ locale, currentUrl: canonicalPath });
@@ -272,6 +278,7 @@ const breadcrumbItems = [
         name={venue.name}
         description={seoDescription}
         url={canonicalPath}
+        hasMenu={jsonLdHasMenu}
         image={venue.featuredImage.url}
         priceRange={jsonLdPriceRange}
         aggregateRating={venue.averageRating > 0 ? {
