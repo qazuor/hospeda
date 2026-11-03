@@ -149,12 +149,14 @@ export async function handleGetVenueMenuQr(
  */
 export const protectedGetVenueMenuQrRoute = createProtectedRoute({
     method: 'get',
+    emailUnverifiedOperation: 'READ_OWN',
     path: '/{id}/menu-qr',
     listingAccess: {
         vertical: VerticalEnum.VENUE,
-        operation: 'READ_OWN_COMMERCIAL',
+        operation: 'READ_OWN',
         idParam: 'id',
-        step6Key: 'menu_qr_scan_metrics'
+        listingSection: { id: 'menu', intent: 'read' },
+        sectionTraits: ['qr']
     },
     summary: 'Get the menu QR for a venue listing',
     description:

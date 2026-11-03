@@ -21,15 +21,16 @@
  * Cloudinary asset. The same window already exists for the listing gallery,
  * where the shared upload endpoint runs before `POST .../media` persists the
  * row. It is narrowed here by an ownership check and a small per-user rate
- * limit before a byte is read; the former plan entitlement is disabled during
- * the billing transition. `photo_public_id` is round-tripped into the row so
+ * limit before a byte is read. The route declares `menu.itemPhotos`, so the
+ * listing-access chain checks the photo entitlement on the listing owner.
+ * `photo_public_id` is round-tripped into the row so
  * a sweeper can destroy what it finds instead of merely forgetting it.
  *
  * ## Order of refusals
  *
  * 1. **Authentication** — `createProtectedRoute`.
- * 2. **Billing transition** — dish-photo uploads run without the former plan
- *    entitlement.
+ * 2. **Listing access** — menu section and item-photo trait are checked before
+ *    the handler.
  * 3. **Ownership**, as a 404 — before the body is parsed, so a caller who does
  *    not own the listing cannot spend our Cloudinary quota, and so no 403 ever
  *    confirms that the id exists.
@@ -74,7 +75,8 @@ export const protectedUploadVenueMenuItemPhotoRoute = createProtectedRoute({
         vertical: VerticalEnum.VENUE,
         operation: 'EDIT',
         idParam: 'id',
-        capabilities: ['menu_item_photos']
+        listingSection: { id: 'menu', intent: 'write' },
+        sectionTraits: ['itemPhotos']
     },
     summary: 'Upload a photo for one dish of the menu',
     description:
