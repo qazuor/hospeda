@@ -12,6 +12,7 @@ import {
     ServiceErrorCode
 } from '@repo/schemas';
 import {
+    afterSubscriptionActivated,
     DECLARE_MANUAL_UNPAID_REJECTIONS,
     type DeclareManualUnpaidRejection,
     declareManualPaymentUnpaid,
@@ -24,7 +25,6 @@ import {
 } from '@repo/service-core';
 import { createPlanCatalogInverse } from '@repo/verticals';
 import type { Context } from 'hono';
-import { afterSubscriptionActivated } from '../../../../../../packages/service-core/src/services/billing/subscription/after-activation-commit';
 import { getActorFromContext } from '../../../utils/actor';
 import { getAnalyticsFactSink } from '../../../utils/analytics/analytics-facts';
 import { AuditEventType, auditLog } from '../../../utils/audit-logger';
