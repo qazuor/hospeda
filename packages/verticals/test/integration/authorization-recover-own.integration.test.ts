@@ -135,6 +135,7 @@ describe('TEST:V5:2 archived owner without TITLE', () => {
                     summary: 'Archived venue',
                     description: 'Archived venue for recovery',
                     type: 'RESTAURANT',
+                    businessLines: ['food'],
                     ownerId: user.id,
                     destinationId: destination.id,
                     publicationStatus: PublicationStatusEnum.ARCHIVED,

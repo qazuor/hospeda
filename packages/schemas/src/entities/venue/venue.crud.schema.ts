@@ -62,6 +62,8 @@ export const VenueAdminCreateInputSchema = VenueSchema.omit({
     menuFilePublicId: true,
     menuFileKind: true
 }).extend({
+    /** Optional create-time business line selection; the service preselects by type when omitted. */
+    businessLines: z.array(z.string()).optional(),
     /** Optional slug override; auto-generated from name when absent. */
     slug: z
         .string()

@@ -51,7 +51,8 @@ describe('TEST:1686:1 AC:1686:1 AC:1686:4 listingReviewsShownCondition', () => {
                     ...common,
                     name: `Review visibility ${crypto.randomUUID()}`,
                     slug: `review-${crypto.randomUUID()}`,
-                    type: 'RESTAURANT'
+                    type: 'RESTAURANT',
+                    businessLines: ['food']
                 } as never,
                 tx
             );

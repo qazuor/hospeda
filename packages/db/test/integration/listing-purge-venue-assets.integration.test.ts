@@ -19,7 +19,10 @@ async function createListing(tx: DrizzleClient, ownerId: string, destinationId: 
         ownerId,
         destinationId
     };
-    return new VenueModel().create({ ...base, type: 'RESTAURANT' } as Partial<Venue>, tx);
+    return new VenueModel().create(
+        { ...base, type: 'RESTAURANT', businessLines: ['food'] } as Partial<Venue>,
+        tx
+    );
 }
 
 async function seedMenuFileAndVideos(tx: DrizzleClient, listingId: string) {

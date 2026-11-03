@@ -26,6 +26,7 @@
 import type { DrizzleClient } from '@repo/db';
 import { DestinationModel } from '@repo/db';
 import {
+    BUSINESS_LINE_RULES,
     DestinationTypeEnum,
     type PermissionEnum,
     RoleGrantReason,
@@ -62,6 +63,21 @@ import {
     assertSupportCreateIsDraft,
     assertSupportEditContentOnly
 } from './listing-support-edit';
+
+/** Resolves the catalog preselection for a create request without validating its options. */
+export function resolveBusinessLinesOnCreate(args: {
+    readonly vertical: keyof typeof BUSINESS_LINE_RULES;
+    readonly type: string;
+    readonly businessLines?: string[];
+}): string[] | undefined {
+    if (args.businessLines !== undefined) return args.businessLines;
+    const rules = BUSINESS_LINE_RULES as Record<
+        string,
+        { readonly typeRules: Record<string, { readonly preselect: readonly string[] }> }
+    >;
+    const preselect = rules[args.vertical]?.typeRules[args.type]?.preselect;
+    return preselect ? [...preselect] : undefined;
+}
 
 // ---------------------------------------------------------------------------
 // Minimal catalog/junction interfaces (injected by concrete services)
@@ -577,6 +593,11 @@ export abstract class BaseListingService<
         ctx: ServiceContext
     ): Promise<Partial<TEntity>> {
         const payload = data as Record<string, unknown>;
+        const businessLines = resolveBusinessLinesOnCreate({
+            vertical: this.entityName as keyof typeof BUSINESS_LINE_RULES,
+            type: String(payload.type),
+            businessLines: payload.businessLines as string[] | undefined
+        });
         // ACC:15 (HOS-1493): an action-15 create is born an unpublished draft.
         assertSupportCreateIsDraft({ data: payload });
         const typedCtx = ctx as ServiceContext<ListingHookState>;
@@ -606,10 +627,10 @@ export abstract class BaseListingService<
                 const existing = await model.findOne({ slug: candidate });
                 return !!existing;
             });
-            return { slug } as Partial<TEntity>;
+            return { slug, ...(businessLines ? { businessLines } : {}) } as Partial<TEntity>;
         }
 
-        return {} as Partial<TEntity>;
+        return (businessLines ? { businessLines } : {}) as Partial<TEntity>;
     }
 
     // -----------------------------------------------------------------------

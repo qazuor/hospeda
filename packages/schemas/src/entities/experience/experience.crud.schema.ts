@@ -153,6 +153,8 @@ export const ExperienceAdminCreateInputSchema = ExperienceSchema.omit({
     // publication state — never a request body, not even an admin's.
     publicationStatus: true
 }).extend({
+    /** Optional create-time business line selection; omitted values use the catalog preselection. */
+    businessLines: z.array(z.string()).optional(),
     /** Optional slug override; auto-generated from name when absent. */
     slug: z
         .string()
