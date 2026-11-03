@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 const mocks = vi.hoisted(() => ({
     lock: vi.fn(),
@@ -62,5 +62,114 @@ describe('runCronJob lock failures', () => {
             job: job.name,
             signal: 'fail'
         });
+    });
+});
+
+describe('runCronJob lifecycle', () => {
+    beforeEach(() => {
+        vi.clearAllMocks();
+        mocks.record.mockResolvedValue(undefined);
+        mocks.ping.mockResolvedValue(undefined);
+        mocks.lock.mockImplementation(async ({ handler }: { handler: () => Promise<unknown> }) => ({
+            acquired: true,
+            completion: handler()
+        }));
+    });
+
+    afterEach(() => vi.useRealTimers());
+
+    it('records an overlap as success with the holder run ID and does not ping', async () => {
+        mocks.lock.mockResolvedValue({ acquired: false, holderRunId: 'holder-1' });
+        const decision = await runCronJob({ job, executionMode: 'scheduled', dryRun: false });
+
+        expect(decision).toEqual({ started: false, holderRunId: 'holder-1' });
+        expect(job.handler).not.toHaveBeenCalled();
+        expect(mocks.record).toHaveBeenCalledWith(
+            expect.objectContaining({
+                result: expect.objectContaining({
+                    success: true,
+                    details: expect.objectContaining({
+                        skipped: 'overlap',
+                        holderRunId: 'holder-1'
+                    })
+                })
+            })
+        );
+        expect(mocks.ping).not.toHaveBeenCalled();
+    });
+
+    it('does not lock non-exclusive jobs', async () => {
+        const regularJob = { ...job, exclusive: false };
+        const decision = await runCronJob({
+            job: regularJob,
+            executionMode: 'manual',
+            dryRun: false
+        });
+
+        expect(mocks.lock).not.toHaveBeenCalled();
+        expect(decision.started).toBe(true);
+        if (decision.started)
+            await expect(decision.completion).resolves.toMatchObject({ success: true });
+    });
+
+    it('aborts at the cooperative budget and records the safety timeout without settling the lock', async () => {
+        vi.useFakeTimers();
+        vi.setSystemTime(new Date('2026-11-03T12:00:00.000Z'));
+        let contextSignal: AbortSignal | undefined;
+        let contextDeadline: Date | undefined;
+        const handler = new Promise<never>(() => undefined);
+        const budgetJob: CronJobDefinition = {
+            ...job,
+            timeoutMs: 100,
+            budgetMs: 40,
+            handler: async (ctx) => {
+                contextSignal = ctx.signal;
+                contextDeadline = ctx.deadlineAt;
+                return handler;
+            }
+        };
+        let lockSettled = false;
+        mocks.lock.mockImplementation(
+            async ({ handler: run }: { handler: () => Promise<unknown> }) => {
+                const completion = run();
+                void completion.then(
+                    () => {
+                        lockSettled = true;
+                    },
+                    () => {
+                        lockSettled = true;
+                    }
+                );
+                return { acquired: true, completion };
+            }
+        );
+
+        const decision = await runCronJob({
+            job: budgetJob,
+            executionMode: 'scheduled',
+            dryRun: false
+        });
+        if (!decision.started) throw new Error('expected an acquired lock');
+        const completionAssertion = expect(decision.completion).rejects.toThrow(
+            'execution timeout'
+        );
+        expect(contextSignal?.aborted).toBe(false);
+        await vi.advanceTimersByTimeAsync(40);
+        expect(contextSignal?.aborted).toBe(true);
+        await vi.advanceTimersByTimeAsync(60);
+        await completionAssertion;
+        expect(mocks.record).toHaveBeenCalledWith(
+            expect.objectContaining({
+                error: expect.objectContaining({ message: expect.stringContaining('timeout') })
+            })
+        );
+        expect(mocks.capture).toHaveBeenCalledWith(
+            expect.any(Error),
+            expect.objectContaining({
+                tags: expect.objectContaining({ event_type: 'cron_failure' })
+            })
+        );
+        expect(lockSettled).toBe(false);
+        expect(contextDeadline?.toISOString()).toBe('2026-11-03T12:00:00.040Z');
     });
 });
