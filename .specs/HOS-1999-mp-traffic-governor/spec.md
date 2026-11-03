@@ -187,8 +187,10 @@ consecutive 429 (max 60 s); random is injectable. While cooling down:
 
 **Webhook under a cool-down.** Today only an incomplete read becomes `DEFERRED`
 (`process-provider-notice.service.ts:483-485`); every other error, including a
-`RATE_LIMITED` one, becomes `FAILED`, and the route answers a fixed
-`Retry-After: 60` (`routes/webhooks/mercadopago.ts:58-63`). Under `enforce`, this spec maps a
+`RATE_LIMITED` one, becomes `FAILED`, and the route answers `500` with no
+`Retry-After` header (`routes/webhooks/mercadopago.ts:65`); only a `DEFERRED`
+outcome answers `503` with the fixed `Retry-After: 60`
+(`routes/webhooks/mercadopago.ts:58-63`). Under `enforce`, this spec maps a
 `RATE_LIMITED` error (governor-rejected or a real 429) to `DEFERRED` as well, and
 carries `retryAfterSeconds` = the remaining shared cool-down (rounded up, min 1,
 max 120) into the outcome, so the route answers `503` with that `Retry-After`
@@ -660,7 +662,7 @@ under their topic, so numbers are not consecutive within a section.
   with `Retry-After: 37`. An incomplete read keeps today's `DEFERRED`. The
   `RATE_LIMITED` → `DEFERRED` mapping is part of PR-3's behaviour and applies
   **only under `enforce`**: under `off` and `observe` a `RATE_LIMITED` read
-  stays `FAILED` with today's fixed `Retry-After: 60`, so the kill switch
+  stays `FAILED` and the route keeps today's `500` with no `Retry-After`, so the kill switch
   reverts it too (AC-28).
 - **AC-33** Given the production source, then every caller of
   `defaultPaymentProvider` / `new MercadoPagoPaymentProvider` is on the guard's
