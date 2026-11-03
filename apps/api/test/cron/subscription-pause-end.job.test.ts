@@ -45,7 +45,7 @@ describe('TEST:B8b:3 subscription-pause-end job', () => {
     it('registers the expected name, schedule, enabled flag and timeout', () => {
         expect(subscriptionPauseEndJob).toMatchObject({
             name: 'subscription-pause-end',
-            schedule: '44 * * * *',
+            schedule: '47 * * * *',
             enabled: true,
             timeoutMs: 120_000
         });

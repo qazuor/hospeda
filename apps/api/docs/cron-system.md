@@ -909,7 +909,7 @@ The authoritative list is `apps/api/src/cron/schedules.manifest.ts` (`CRON_SCHED
 | `provider-notification-retention` | billing | `30 3 * * *` | `apps/api/src/cron/jobs/provider-notification-retention.job.ts` |
 | `subscription-grace-reminder` | billing | `0 9 * * *` | `apps/api/src/cron/jobs/subscription-grace-reminder.job.ts` |
 | `subscription-renewal-notice` | billing | `0 9 * * *` | `apps/api/src/cron/jobs/subscription-renewal-notice.job.ts` |
-| `subscription-pause-end` | billing | `44 * * * *` | `apps/api/src/cron/jobs/subscription-pause-end.job.ts` (HOS-1573, AC:B8b:3) |
+| `subscription-pause-end` | billing | `47 * * * *` | `apps/api/src/cron/jobs/subscription-pause-end.job.ts` (HOS-1573, AC:B8b:3) |
 | `subscription-service-end` | billing | `*/15 * * * *` | `apps/api/src/cron/jobs/subscription-service-end.job.ts` |
 | `subscription-window-expiry` | billing | `*/15 * * * *` | `apps/api/src/cron/jobs/subscription-window-expiry.job.ts` |
 | `trial-machine-expiry` | billing | `*/15 * * * *` | `apps/api/src/cron/jobs/trial-machine-expiry.job.ts` |

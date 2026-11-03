@@ -141,7 +141,7 @@ export const CRON_SCHEDULES: ReadonlyArray<CronScheduleEntry> = [
         name: 'subscription-pause-end',
         displayName: 'Fin de pausas de suscripción',
         category: 'billing',
-        schedule: '44 * * * *',
+        schedule: '47 * * * *',
         description: 'Resume due principal pauses (HOS-1573, AC:B8b:3).'
     },
     {
