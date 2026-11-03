@@ -24,7 +24,7 @@ function buildCtx(inserted: unknown[]) {
 }
 
 describe('HOS-1541 manual payment seed grants', () => {
-    it('declares both additive SUPER_ADMIN grants in the migration and baseline', () => {
+    it('grants both manual payment permissions exclusively to SUPER_ADMIN in migration and baseline', () => {
         const expected = [
             {
                 role: RoleEnum.SUPER_ADMIN,
@@ -38,11 +38,12 @@ describe('HOS-1541 manual payment seed grants', () => {
             destructive: false
         });
         expect(migration.GRANTS).toEqual(expected);
-        expect(
-            expected.map(({ permission }) =>
-                ROLE_PERMISSIONS[RoleEnum.SUPER_ADMIN].includes(permission)
-            )
-        ).toEqual([true, true]);
+        const baselineRolesByPermission = expected.map(({ permission }) =>
+            Object.entries(ROLE_PERMISSIONS)
+                .filter(([, permissions]) => permissions.includes(permission))
+                .map(([role]) => role)
+        );
+        expect(baselineRolesByPermission).toEqual([[RoleEnum.SUPER_ADMIN], [RoleEnum.SUPER_ADMIN]]);
     });
 
     it('writes both declared grants and supports already-present rows', async () => {
