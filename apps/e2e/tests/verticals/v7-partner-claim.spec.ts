@@ -161,13 +161,19 @@ test.describe('TEST:V7:22 AC:V7:7 partner claim by link with a session @p0', () 
             )
         ).toBeVisible();
 
-        await replayPage.goto(
+        await replayPage.close();
+
+        // A hash-only change on the same path does not reload the page, so the
+        // tampered link opens in a fresh page, as a pasted link would.
+        const tamperedPage = await page.context().newPage();
+        await attachSession({ page: tamperedPage, sessionCookie: otherClaimant.sessionCookie });
+        await tamperedPage.goto(
             `${WEB_URL}/es/partners/reclamar/#partner=${partnerId}&secret=${encodeURIComponent(`${secret}x`)}`
         );
-        await replayPage.getByRole('button', { name: 'Reclamar el Partner' }).click();
+        await tamperedPage.getByRole('button', { name: 'Reclamar el Partner' }).click();
         await expect(
-            replayPage.getByText('No encontramos este Partner. Revisá que el link esté completo.')
+            tamperedPage.getByText('No encontramos este Partner. Revisá que el link esté completo.')
         ).toBeVisible();
-        await replayPage.close();
+        await tamperedPage.close();
     });
 });
