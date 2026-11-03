@@ -1,5 +1,5 @@
 {
-    "$comment": "G-FAC-R1 closed exception ledger: each path, key, and marker is counted exactly. Snapshot 0185 preserves two historical GASTRONOMY enum values for event and post categories.",
+    "$comment": "G-FAC-R1 closed exception ledger: each path, key, and marker is counted exactly.",
     "exemptions": {
         "a": {
             "files": {
@@ -274,8 +274,7 @@
                 "apps/web/src/components/venue/VenueReviewForm.client.tsx": 8,
                 "apps/web/src/components/venue/VenueReviewForm.module.css": 5,
                 "apps/web/test/middleware.test.ts": 5,
-                "apps/web/test/components/account/UserReviewsList.test.tsx": 1,
-                "packages/db/src/migrations/meta/0185_snapshot.json": 2
+                "apps/web/test/components/account/UserReviewsList.test.tsx": 1
             },
             "keys": {
                 "packages/i18n/src/locales/en/admin-entities.json#ratingDimensions.gastronomy": 0,
@@ -414,5 +413,5 @@
     },
     "historyCount": 87,
     "historyWordFiles": 14,
-    "ledgerFingerprint": "fc7a1a492d0c39e2c9a123a4b66e0f62d764792c2a746c573c6de54d0874faa7"
+    "ledgerFingerprint": "40d6ee32fd61dfc170cd36f12716e6af115ae539547bd78e19307fa761a2bf45"
 }
