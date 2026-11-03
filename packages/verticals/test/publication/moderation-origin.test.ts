@@ -64,13 +64,7 @@ describe('TEST:V6:11 selectPublishedWithinQuota', () => {
             lower: []
         });
     });
-    it('TEST:V6:11 lowers the newest published candidate when the older listing returns', () => {
-        expect(selectPublishedWithinQuota({ published: [newer], returning, limit: 1 })).toEqual({
-            publishReturning: true,
-            lower: [newer]
-        });
-    });
-    it('TEST:V6:11 leaves the returning listing waiting when it is newest', () => {
+    it('TEST:V6:11 lowers the older published listing when a more recently published one returns', () => {
         const older = {
             id: 'older',
             createdAt: new Date('2026-01-01'),
@@ -78,7 +72,37 @@ describe('TEST:V6:11 selectPublishedWithinQuota', () => {
         };
         expect(
             selectPublishedWithinQuota({ published: [older], returning: newer, limit: 1 })
+        ).toEqual({ publishReturning: true, lower: [older] });
+    });
+    it('TEST:V6:11 leaves the returning listing waiting when a more recently published one holds the slot', () => {
+        expect(selectPublishedWithinQuota({ published: [newer], returning, limit: 1 })).toEqual({
+            publishReturning: false,
+            lower: []
+        });
+    });
+    it('TEST:V6:11 ranks a returning listing without a publish instant last (HOS-1997)', () => {
+        const unknown = { id: 'unknown', createdAt: new Date('2025-01-01'), publishedAt: null };
+        expect(
+            selectPublishedWithinQuota({ published: [newer], returning: unknown, limit: 1 })
         ).toEqual({ publishReturning: false, lower: [] });
+        expect(
+            selectPublishedWithinQuota({ published: [unknown], returning: newer, limit: 1 })
+        ).toEqual({ publishReturning: true, lower: [unknown] });
+    });
+    it('TEST:V6:11 keeps the most recently published listings across a limit of two (HOS-1997)', () => {
+        const mid = {
+            id: 'mid',
+            createdAt: new Date('2026-01-01'),
+            publishedAt: new Date('2026-01-15')
+        };
+        const old = {
+            id: 'old',
+            createdAt: new Date('2025-01-01'),
+            publishedAt: new Date('2025-06-01')
+        };
+        expect(
+            selectPublishedWithinQuota({ published: [old, mid], returning: newer, limit: 2 })
+        ).toEqual({ publishReturning: true, lower: [old] });
     });
     it('TEST:V6:11 publishes nothing at a zero limit', () => {
         expect(selectPublishedWithinQuota({ published: [newer], returning, limit: 0 })).toEqual({
