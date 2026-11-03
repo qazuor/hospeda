@@ -28,6 +28,7 @@ export {
     type ComposeAccommodationMediaInput,
     composeAccommodationMedia
 } from './accommodation/accommodation.media-compose';
+export * from './accommodation/accommodation.media-reader';
 export * from './accommodation/accommodation.occupancy';
 export * from './accommodation/accommodation.poi-proximity.helper';
 export * from './accommodation/accommodation.service';

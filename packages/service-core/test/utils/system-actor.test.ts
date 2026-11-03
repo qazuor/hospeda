@@ -66,6 +66,17 @@ describe('TEST:V5:14 — la fábrica de actores de sistema', () => {
         );
     });
 
+    it('HOS-1484 rejects the action 5 own permission partner.resolveApplication', () => {
+        expectDefinitionError(
+            () => makeActor([PermissionEnum.PARTNER_RESOLVE_APPLICATION]),
+            'ADMINISTRATIVE_PERMISSION',
+            PermissionEnum.PARTNER_RESOLVE_APPLICATION
+        );
+        expect(() => makeActor([PermissionEnum.PARTNER_RESOLVE_APPLICATION])).toThrow(
+            /administrative action ACC_5$/
+        );
+    });
+
     it.each([
         PermissionEnum.USER_DELETE,
         PermissionEnum.USER_HARD_DELETE

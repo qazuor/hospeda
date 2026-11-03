@@ -4,10 +4,8 @@ import { describe, expect, it } from 'vitest';
 
 const ROOT = join(import.meta.dirname, '../../src/routes');
 const EXPECTED_GET_PROTECTED_COUNT = 97;
-const PENDING_OWNER_DECISION = [
-    // HOS-1693 D-1: pending owner decision; remove when it moves to the inspection permission
-    'accommodation-external-reputation/protected/listListings.ts'
-];
+// HOS-1703: empty on purpose; add a file only with a linked owner decision
+const PENDING_OWNER_DECISION: readonly string[] = [];
 
 function files(dir: string, prefix = ''): string[] {
     return readdirSync(dir, { withFileTypes: true }).flatMap((entry) => {
@@ -54,7 +52,8 @@ describe('TEST:1693:4 no protected GET route reads ACCOMMODATION_UPDATE_ANY as a
         const sheetFiles = [
             'accommodation/protected/getById.ts',
             'accommodation/protected/qrCode.ts',
-            'accommodation/protected/qrSheet.ts'
+            'accommodation/protected/qrSheet.ts',
+            'accommodation-external-reputation/protected/listListings.ts'
         ];
         for (const file of sheetFiles) {
             const row = protectedGets.find((candidate) => candidate.file === file);
@@ -64,5 +63,28 @@ describe('TEST:1693:4 no protected GET route reads ACCOMMODATION_UPDATE_ANY as a
             );
         }
         expect(protectedGets).toHaveLength(EXPECTED_GET_PROTECTED_COUNT);
+    });
+});
+
+describe('TEST:1703:4 service read gates use inspection permission', () => {
+    it('the service read gates behind protected GET routes do not read ACCOMMODATION_UPDATE_ANY', () => {
+        const serviceRoot = join(
+            import.meta.dirname,
+            '../../../../packages/service-core/src/services/accommodation'
+        );
+        const occupancy = withoutComments(
+            readFileSync(join(serviceRoot, 'accommodation.occupancy.ts'), 'utf8')
+        );
+        const media = withoutComments(
+            readFileSync(join(serviceRoot, 'accommodation.media-reader.ts'), 'utf8')
+        );
+        const readGate = occupancy.match(/function isOwnerOrInspector\([\s\S]*?\n}/)?.[0];
+        const accessGate = occupancy.match(/function assertOwnerReadAccess\([\s\S]*?\n}/)?.[0];
+        expect(readGate, 'isOwnerOrInspector block must be instrumented').toBeDefined();
+        expect(accessGate, 'assertOwnerReadAccess block must be instrumented').toBeDefined();
+        expect(`${readGate}\n${accessGate}`).not.toMatch(/ACCOMMODATION_UPDATE_ANY\b/);
+        expect(`${readGate}\n${accessGate}`).toMatch(/ACCOMMODATION_VIEW_ALL\b/);
+        expect(media).not.toMatch(/UPDATE_ANY\b/);
+        expect(media).toMatch(/ACCOMMODATION_VIEW_ALL\b/);
     });
 });

@@ -689,6 +689,7 @@
         "total_other": "Total: {{count}} reseñas",
         "typeAccommodation": "Alojamiento",
         "typeDestination": "Destino",
+        "listingGone": "La ficha ya no existe",
         "status": {
             "approved": "Publicada",
             "pending": "Pendiente de aprobación",

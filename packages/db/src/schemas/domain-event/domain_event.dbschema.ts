@@ -32,6 +32,8 @@ import { check, index, jsonb, pgTable, text, timestamp, uuid, varchar } from 'dr
  *   replaced by the administrative action 24 (`entity_type =
  *   'partner_application'`). The email is personal data, so `changes` carries
  *   only field names (NUCLEO/08 §3 action 24; HOS-1494).
+ * - `partner_application.wait_cancelled`: administrative action 5 (ACC:5)
+ *   cancelled a rejected Partner application's wait (HOS-1484).
  * - `subscription.provider_cancellation_decided`: one of our transitions
  *   decided to cancel the preapproval of this subscription (`entity_type =
  *   'subscription'`, `entity_id` = its id, `reason` = the transition code,
@@ -65,6 +67,7 @@ export const DOMAIN_EVENT_TYPES = [
     'reconciliation.mark_opened',
     'account.closed_on_request',
     'partner_application.email_replaced',
+    'partner_application.wait_cancelled',
     'subscription.provider_cancellation_decided',
     'subscription.provider_cancelled_after_rejection',
     'subscription.amount_mutation_decided',
