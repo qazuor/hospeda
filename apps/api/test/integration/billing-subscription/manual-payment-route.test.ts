@@ -6,7 +6,7 @@ import {
     ManualUnpaidResponseSchema,
     PermissionEnum
 } from '@repo/schemas';
-import { afterAll, beforeAll, describe, expect, it } from 'vitest';
+import { afterAll, afterEach, beforeAll, describe, expect, it } from 'vitest';
 import { initApp } from '../../../src/app';
 import { validateApiEnv } from '../../../src/utils/env';
 import { injectPaymentProvider } from '../../../src/utils/payment-provider';
@@ -17,6 +17,7 @@ import {
     fake,
     NOW,
     PERIOD_START,
+    retireManualRouteNotices,
     seedManualRoute,
     stateOf
 } from './manual-payment-route-fixtures';
@@ -55,8 +56,10 @@ beforeAll(async () => {
     injectPaymentProvider({ provider: fake });
 });
 afterAll(async () => {
+    await retireManualRouteNotices();
     await testDb.teardown();
 });
+afterEach(retireManualRouteNotices);
 
 describe('HOS-1541 manual payment admin routes (ACC:3, ACC:4)', () => {
     it('(a) previews S29 and the next charge date without writing', async () => {

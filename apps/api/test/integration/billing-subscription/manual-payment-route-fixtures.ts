@@ -1,8 +1,10 @@
 import {
     billingOptions,
     coveredPeriods,
+    emailOutbox,
     eq,
     getDb,
+    inArray,
     manualPayments,
     plans,
     planVersions,
@@ -29,6 +31,15 @@ export const fake = new FakePaymentProvider({
         { lie: 'M6', why: 'manual route fixture' }
     ]
 });
+
+const seededPayerIds: string[] = [];
+
+/** Remove only notices addressed to payers seeded by this suite. */
+export async function retireManualRouteNotices(): Promise<void> {
+    const payerIds = seededPayerIds.splice(0);
+    if (payerIds.length > 0)
+        await getDb().delete(emailOutbox).where(inArray(emailOutbox.recipientUserId, payerIds));
+}
 
 /** Request headers for a mock authenticated actor. */
 export function actorHeaders(id: string, permissions: readonly PermissionEnum[]) {
@@ -70,6 +81,7 @@ export async function seedManualRoute(
         ])
         .returning();
     if (!payer || !admin) throw new Error('User fixture failed');
+    seededPayerIds.push(payer.id);
     const [plan] = await db
         .insert(plans)
         .values({
