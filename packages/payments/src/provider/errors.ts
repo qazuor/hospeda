@@ -48,6 +48,7 @@ export interface PaymentProviderErrorInput {
     readonly providerStatus?: string;
     readonly providerCadence?: string;
     readonly transient?: TransientProviderFailure;
+    readonly governorRejected?: true;
 }
 
 /** A typed refusal from a payment provider. */
@@ -62,6 +63,8 @@ export class PaymentProviderError extends Error {
     readonly providerCadence?: string;
     /** Set when the failure is transient and worth retrying later (HOS-1968). */
     readonly transient?: TransientProviderFailure;
+    /** The governor refused before any HTTP request was sent; HOS-1999. */
+    declare readonly governorRejected?: true;
 
     /**
      * @param input.code - Why the provider refused
@@ -72,6 +75,7 @@ export class PaymentProviderError extends Error {
      * @param input.providerStatus - The provider's status for an unsupported resource shape
      * @param input.providerCadence - The provider's billing cadence for an unsupported authorization, as the provider spelled it
      * @param input.transient - Set when the failure is transient (rate limit, 5xx, transport)
+     * @param input.governorRejected - The local governor refused before sending an HTTP request
      */
     constructor(input: PaymentProviderErrorInput) {
         super(input.message, input.cause === undefined ? undefined : { cause: input.cause });
@@ -82,5 +86,6 @@ export class PaymentProviderError extends Error {
         this.providerStatus = input.providerStatus;
         this.providerCadence = input.providerCadence;
         this.transient = input.transient;
+        if (input.governorRejected !== undefined) this.governorRejected = input.governorRejected;
     }
 }

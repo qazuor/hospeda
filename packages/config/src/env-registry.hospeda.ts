@@ -543,6 +543,21 @@ export const HOSPEDA_ENV_VARS = [
         category: 'billing'
     },
     {
+        name: 'HOSPEDA_MERCADO_PAGO_GOVERNOR_MODE',
+        description:
+            'Mercado Pago traffic governor mode: off disables it, observe records traffic, enforce is available in HOS-1999 PR-3',
+        descriptionEs:
+            'Modo del governor de tráfico de Mercado Pago: off lo desactiva, observe registra tráfico y enforce llega en HOS-1999 PR-3',
+        type: 'enum',
+        enumValues: ['off', 'observe', 'enforce'],
+        required: false,
+        secret: false,
+        defaultValue: 'observe',
+        exampleValue: 'observe',
+        apps: ['api'],
+        category: 'billing'
+    },
+    {
         name: 'HOSPEDA_MERCADO_PAGO_PLATFORM_ID',
         description: 'MercadoPago platform ID for marketplace tracking',
         descriptionEs: 'Platform ID de MercadoPago para tracking de marketplace',

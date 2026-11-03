@@ -8,6 +8,7 @@
  */
 import { resolve } from 'node:path';
 import { initializeDb } from '@repo/db';
+import { runWithTrafficClass } from '@repo/payments';
 import { config as loadEnv } from 'dotenv';
 import { Pool } from 'pg';
 import { parseStep3bArgs } from '../src/services/cutover-b9a/step-3b.args.js';
@@ -63,14 +64,16 @@ async function main(): Promise<void> {
     }
 }
 
-main().catch((error: unknown) => {
-    const { reason } = serviceErrorReason({ error });
-    console.error(
-        JSON.stringify({
-            errorClass: error instanceof Error ? error.name : 'UnknownError',
-            ...(reason ? { reason } : {}),
-            message: error instanceof Error ? error.message : 'Unknown error'
-        })
-    );
-    process.exitCode = 1;
-});
+runWithTrafficClass({ context: { trafficClass: 'background' }, fn: () => main() }).catch(
+    (error: unknown) => {
+        const { reason } = serviceErrorReason({ error });
+        console.error(
+            JSON.stringify({
+                errorClass: error instanceof Error ? error.name : 'UnknownError',
+                ...(reason ? { reason } : {}),
+                message: error instanceof Error ? error.message : 'Unknown error'
+            })
+        );
+        process.exitCode = 1;
+    }
+);
