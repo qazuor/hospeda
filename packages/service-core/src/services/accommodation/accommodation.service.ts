@@ -135,6 +135,7 @@ import { withServiceTransaction } from '../../utils/transaction.js';
 import { ConversationService } from '../conversation/conversation.service.js';
 import { DestinationService } from '../destination/destination.service';
 import { ACCOMMODATION_ENTITY_NAME } from '../entity-names';
+import { resolveBusinessLinesOnCreate } from '../listing/base-listing.service';
 import {
     buildListingOwnerActChanges,
     recordListingOwnerAct,
@@ -818,6 +819,12 @@ export class AccommodationService extends BaseCrudService<
         // ACC:15 (HOS-1493): an action-15 create is born an unpublished draft.
         assertSupportCreateIsDraft({ data: data as Record<string, unknown> });
         await this._assertDestinationIsCity(data.destinationId);
+        const businessLines = resolveBusinessLinesOnCreate({
+            vertical: 'accommodation',
+            type: String(data.type),
+            businessLines: (data as AccommodationCreateInput & { businessLines?: string[] })
+                .businessLines
+        });
 
         // SPEC-172: capture junction sync inputs in hookState.
         // amenityIds / featureIds are write-only — they do not map to any column in
@@ -840,10 +847,10 @@ export class AccommodationService extends BaseCrudService<
         // Only generate a slug if one is not already provided
         if (!data.slug) {
             const slug = await generateSlug(data.type as string, data.name as string);
-            return { slug };
+            return { slug, businessLines } as Partial<Accommodation>;
         }
-        // If slug is provided, return empty object to avoid overwriting
-        return {};
+        // If slug is provided, return only the catalog default when needed.
+        return businessLines ? ({ businessLines } as Partial<Accommodation>) : {};
     }
 
     /**
