@@ -1,7 +1,7 @@
 import type { TranslationKey } from '@repo/i18n';
 import { useState } from 'react';
 import { useTranslations } from '@/hooks/use-translations';
-import { DEADLINE_HALVES } from '../config/deadline-halves';
+import { DEADLINE_HALVES, getDeadlineHalf } from '../config/deadline-halves';
 import type { DeadlineHalf } from '../hooks/useDeadlines';
 import { useDeadlineVersion } from '../hooks/useDeadlines';
 import { toFormFields } from '../lib/deadline-value-form';
@@ -77,7 +77,7 @@ export function DeadlineHalfSection({ half }: { readonly half: DeadlineHalf }) {
                                     </div>
                                     {editing === keyNumber && query.data && (
                                         <DeadlineChangeForm
-                                            half={half}
+                                            half={getDeadlineHalf(keyNumber)}
                                             keyNumber={keyNumber}
                                             current={query.data}
                                             onCancel={() => setEditing(null)}
