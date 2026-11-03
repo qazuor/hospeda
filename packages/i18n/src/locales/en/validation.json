@@ -3263,6 +3263,16 @@
         "unrecognizedKeys": "Se encontraron campos no reconocidos"
     },
     "venue": {
+        "businessLines": {
+            "EMPTY": "Select at least one business line",
+            "DUPLICATE": "Business lines cannot be repeated",
+            "NOT_IN_VERTICAL": "This business line does not belong to this vertical",
+            "NOT_ALLOWED_FOR_TYPE": "This venue type does not allow that business line",
+            "MAX_EXCEEDED": "Select fewer business lines",
+            "EXCLUDED_PAIR": "These business lines cannot be combined",
+            "invalid": "The business line is invalid",
+            "invalidType": "Business lines must be a list"
+        },
         "amenityIds": {
             "invalidUuid": "El ID de servicio debe ser un UUID válido"
         },

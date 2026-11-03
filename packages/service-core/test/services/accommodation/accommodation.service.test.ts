@@ -1,4 +1,4 @@
-import { RoleEnum } from '@repo/schemas';
+import { AccommodationTypeEnum, RoleEnum, ServiceErrorCode } from '@repo/schemas';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { AccommodationService } from '../../../src/services/accommodation/accommodation.service';
 import type { Actor, ServiceConfig } from '../../../src/types';
@@ -143,4 +143,55 @@ describe('AccommodationService - Relations Support', () => {
      * which requires a real destination row. Mock-based unit tests cannot satisfy
      * that without an unwieldy stub tree.
      */
+});
+
+describe('AccommodationService business-line validation hooks', () => {
+    it('rejects empty business lines on create with field and reason details', async () => {
+        const service = new AccommodationService(
+            {} as ServiceConfig,
+            new MockAccommodationModel() as any
+        );
+        await expect(
+            (service as any)._beforeCreate(
+                {
+                    type: AccommodationTypeEnum.HOTEL,
+                    name: 'Hotel Test',
+                    slug: 'hotel-test',
+                    businessLines: []
+                },
+                { id: 'owner' } as Actor,
+                { hookState: {} }
+            )
+        ).rejects.toMatchObject({
+            code: ServiceErrorCode.VALIDATION_ERROR,
+            details: { field: 'businessLines', reason: 'EMPTY' }
+        });
+    });
+
+    it('validates changed type against stored lines and ignores untouched legacy lines', async () => {
+        const model = new MockAccommodationModel();
+        model.findById.mockResolvedValue({
+            id: 'accommodation-id',
+            type: AccommodationTypeEnum.HOTEL,
+            businessLines: ['standard']
+        });
+        const service = new AccommodationService({} as ServiceConfig, model as any);
+        await expect(
+            (service as any)._beforeUpdate(
+                { type: AccommodationTypeEnum.APARTMENT },
+                { id: 'owner' } as Actor,
+                { hookState: { updateId: 'accommodation-id' } }
+            )
+        ).resolves.toBeDefined();
+
+        model.findById.mockResolvedValue({
+            id: 'accommodation-id',
+            type: AccommodationTypeEnum.HOTEL
+        });
+        await expect(
+            (service as any)._beforeUpdate({ name: 'Updated hotel' }, { id: 'owner' } as Actor, {
+                hookState: { updateId: 'accommodation-id' }
+            })
+        ).resolves.toMatchObject({ name: 'Updated hotel' });
+    });
 });

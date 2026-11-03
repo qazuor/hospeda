@@ -7,7 +7,7 @@
  * ## The halves are a table, here
  *
  * {@link HALVES} lists the folders of each half, repo-relative. Today:
- * - billing: `packages/payments`;
+ * - billing: `packages/payments` (the rubro-specific check also scans the API billing routes);
  * - verticals: `packages/verticals` (`@repo/verticals`), registered by V2.1
  *   (HOS-1434), the first leaf that brought verticals code. Were the half ever
  *   empty again, the guard says so in its output on every run.
@@ -73,6 +73,28 @@ export const HALVES: HalfRoots = {
     billing: ['packages/payments'],
     verticals: ['packages/verticals']
 };
+
+/** Billing surfaces that must remain unaware of business-line catalog data. */
+export const RUBRO_BILLING_ROOTS = [
+    'packages/payments',
+    'apps/api/src/routes/plan-catalog'
+] as const;
+
+const isRubroBillingFile = (file: string) =>
+    RUBRO_BILLING_ROOTS.some((folder) => isUnder({ path: file, folder })) ||
+    /^apps\/api\/src\/routes\/billing-[^/]+(?:\/|$)/.test(file);
+
+export function findBusinessLineViolations(files: Readonly<Record<string, string>>) {
+    const matches: { readonly file: string; readonly line: number; readonly detail: string }[] = [];
+    for (const [file, source] of Object.entries(files)) {
+        if (!CODE_FILE.test(file) || !isRubroBillingFile(file)) continue;
+        source.split('\n').forEach((line, index) => {
+            if (/business_lines|businessLines|business-lines|BUSINESS_LINES/.test(line))
+                matches.push({ file, line: index + 1, detail: line.trim() });
+        });
+    }
+    return matches;
+}
 
 /** Never part of a half: the contract, the shared clock test package, the composition root. */
 export const EXEMPT_PATHS = [
@@ -309,6 +331,11 @@ export function run(
 
     const packageNames = packageNamesOf({ root, files: fileSet, roots });
     const violations: Violation[] = [];
+    const rubroViolations: {
+        readonly file: string;
+        readonly line: number;
+        readonly detail: string;
+    }[] = [];
     let scanned = 0;
     for (const file of files) {
         const half = halfOf({ path: file, roots });
@@ -336,6 +363,11 @@ export function run(
             })
         );
     }
+    rubroViolations.push(
+        ...findBusinessLineViolations(
+            Object.fromEntries(files.map((file) => [file, readFileSync(join(root, file), 'utf8')]))
+        )
+    );
 
     if (scanned < minScannedFiles) {
         return fail(
@@ -372,12 +404,21 @@ export function run(
                 );
             }
         }
-        return { exitCode: 1, output: lines.join('\n') };
     }
+
+    if (rubroViolations.length > 0) {
+        lines.push('', 'FAIL GUARD:G-FAC-07: billing code reads business-line catalog data.');
+        for (const violation of rubroViolations)
+            lines.push(`  ${violation.file}:${violation.line}  ${violation.detail}`);
+    }
+
+    if (violations.length > 0 || rubroViolations.length > 0)
+        return { exitCode: 1, output: lines.join('\n') };
 
     lines.push(
         `OK: ${scanned} code file(s) in the halves scanned; none imports the other half by package ` +
-            'name or relative path, and no half manifest declares the other.'
+            'name or relative path, and no half manifest declares the other.',
+        `OK GUARD:G-FAC-07: ${files.filter(isRubroBillingFile).length} billing code file(s) scanned; none reads business-line data.`
     );
     return { exitCode: 0, output: lines.join('\n') };
 }

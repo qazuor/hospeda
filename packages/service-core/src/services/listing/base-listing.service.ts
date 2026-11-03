@@ -28,9 +28,11 @@ import { DestinationModel } from '@repo/db';
 import {
     BUSINESS_LINE_RULES,
     DestinationTypeEnum,
+    normalizeBusinessLines,
     type PermissionEnum,
     RoleGrantReason,
-    ServiceErrorCode
+    ServiceErrorCode,
+    validateBusinessLines
 } from '@repo/schemas';
 import { createUniqueSlug } from '@repo/utils';
 import type { ZodObject, ZodRawShape, z } from 'zod';
@@ -593,11 +595,32 @@ export abstract class BaseListingService<
         ctx: ServiceContext
     ): Promise<Partial<TEntity>> {
         const payload = data as Record<string, unknown>;
-        const businessLines = resolveBusinessLinesOnCreate({
+        let businessLines = resolveBusinessLinesOnCreate({
             vertical: this.entityName as keyof typeof BUSINESS_LINE_RULES,
             type: String(payload.type),
             businessLines: payload.businessLines as string[] | undefined
         });
+        if (businessLines) {
+            const validation = validateBusinessLines({
+                vertical: this.entityName as keyof typeof BUSINESS_LINE_RULES,
+                type: String(payload.type),
+                businessLines
+            });
+            if (!validation.ok) {
+                throw new ServiceError(
+                    ServiceErrorCode.VALIDATION_ERROR,
+                    'Invalid business lines',
+                    {
+                        field: 'businessLines',
+                        reason: validation.reason
+                    }
+                );
+            }
+            businessLines = normalizeBusinessLines({
+                vertical: this.entityName as keyof typeof BUSINESS_LINE_RULES,
+                businessLines: businessLines as never
+            });
+        }
         // ACC:15 (HOS-1493): an action-15 create is born an unpublished draft.
         assertSupportCreateIsDraft({ data: payload });
         const typedCtx = ctx as ServiceContext<ListingHookState>;
@@ -738,6 +761,7 @@ export abstract class BaseListingService<
         assertSupportEditContentOnly({ data: payload });
         const typedCtx = ctx as ServiceContext<ListingHookState>;
         const slugWasProvided = Object.hasOwn(payload, 'slug');
+        let current: TEntity | null = null;
 
         // (a) Destination CITY-type validation on re-assignment
         if (payload.destinationId) {
@@ -746,7 +770,7 @@ export abstract class BaseListingService<
 
         const updateId = typedCtx.hookState?.updateId;
         if (updateId) {
-            const current = await this.model.findById(updateId, ctx.tx);
+            current = await this.model.findById(updateId, ctx.tx);
             if (typedCtx.hookState !== undefined) {
                 // HOS-1499: the row before the edit, for the event's old values.
                 typedCtx.hookState.ownerActBefore = current ?? null;
@@ -769,10 +793,37 @@ export abstract class BaseListingService<
                     payload.name as string,
                     async (candidate) => {
                         const existing = await this.model.findOne({ slug: candidate });
-                        return !!existing && existing.id !== current.id;
+                        return !!existing && existing.id !== current?.id;
                     }
                 );
             }
+        }
+
+        if (Object.hasOwn(payload, 'businessLines') || Object.hasOwn(payload, 'type')) {
+            const vertical = this.entityName as keyof typeof BUSINESS_LINE_RULES;
+            const resultingType = String(payload.type ?? current?.type ?? '');
+            const resultingLines = (payload.businessLines ??
+                current?.businessLines ??
+                []) as string[];
+            const validation = validateBusinessLines({
+                vertical,
+                type: resultingType,
+                businessLines: resultingLines
+            });
+            if (!validation.ok) {
+                throw new ServiceError(
+                    ServiceErrorCode.VALIDATION_ERROR,
+                    'Invalid business lines',
+                    {
+                        field: 'businessLines',
+                        reason: validation.reason
+                    }
+                );
+            }
+            payload.businessLines = normalizeBusinessLines({
+                vertical,
+                businessLines: resultingLines as never
+            });
         }
 
         // (c) Capture junction IDs into hookState

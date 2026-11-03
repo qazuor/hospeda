@@ -59,6 +59,7 @@ function makeVenueEntity(overrides: Partial<Record<string, unknown>> = {}): Venu
         name: 'La Parrilla del Sur',
         slug: 'la-parrilla-del-sur',
         type: VenueTypeEnum.PARRILLA,
+        businessLines: ['food'],
         destinationId: DEST_ID,
         ownerId: OWNER_ID,
         publicationStatus: PublicationStatusEnum.PUBLISHED,
@@ -67,7 +68,7 @@ function makeVenueEntity(overrides: Partial<Record<string, unknown>> = {}): Venu
         createdAt: new Date('2024-01-01'),
         updatedAt: new Date('2024-01-01'),
         ...overrides
-    } as Venue;
+    } as unknown as Venue;
 }
 
 const ownerActor: Actor = {
@@ -326,6 +327,62 @@ describe('VenueService.updateOwn', () => {
         await service.updateOwn(ENTITY_ID, { priceRange: PriceRangeEnum.MID }, staffActor);
 
         expect(mockUpdate).toHaveBeenCalled();
+    });
+});
+
+describe('VenueService business-line validation hooks', () => {
+    it('rejects invalid create lines with field and reason details', async () => {
+        const service = makeService();
+        await expect(
+            (service as AnyService)._beforeCreate(
+                { type: VenueTypeEnum.HELADERIA, businessLines: ['nightlife'] },
+                ownerActor,
+                { hookState: {} }
+            )
+        ).rejects.toMatchObject({
+            code: ServiceErrorCode.VALIDATION_ERROR,
+            details: { field: 'businessLines', reason: 'NOT_ALLOWED_FOR_TYPE' }
+        });
+    });
+
+    it('validates a changed type against stored lines, but leaves an untouched legacy row alone', async () => {
+        const legacy = makeVenueEntity({
+            type: VenueTypeEnum.BAR,
+            businessLines: ['food', 'nightlife']
+        });
+        const service = makeService(legacy);
+        await expect(
+            (service as AnyService)._beforeUpdate({ type: VenueTypeEnum.BOLICHE }, ownerActor, {
+                hookState: { updateId: ENTITY_ID }
+            })
+        ).rejects.toMatchObject({
+            code: ServiceErrorCode.VALIDATION_ERROR,
+            details: { field: 'businessLines', reason: 'NOT_ALLOWED_FOR_TYPE' }
+        });
+
+        const stale = makeService(
+            makeVenueEntity({
+                type: VenueTypeEnum.HELADERIA,
+                businessLines: ['nightlife']
+            })
+        );
+        await expect(
+            (stale as AnyService)._beforeUpdate({ summary: 'Updated summary' }, ownerActor, {
+                hookState: { updateId: ENTITY_ID }
+            })
+        ).resolves.toMatchObject({ summary: 'Updated summary' });
+    });
+
+    it('normalizes valid business-line order before persistence', async () => {
+        const service = makeService(
+            makeVenueEntity({ type: VenueTypeEnum.BAR, businessLines: ['food'] })
+        );
+        const result = await (service as AnyService)._beforeUpdate(
+            { businessLines: ['nightlife', 'food'] },
+            ownerActor,
+            { hookState: { updateId: ENTITY_ID } }
+        );
+        expect(result.businessLines).toEqual(['food', 'nightlife']);
     });
 });
 
