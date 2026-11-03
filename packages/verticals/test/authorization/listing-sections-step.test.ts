@@ -88,7 +88,18 @@ describe('TEST:3.2:1 listing section step 4b', () => {
         ).toMatchObject({ allowed: false, reason: 'SECTION_ABSENT' });
     });
 
-    it('gates writes on section and trait keys, while delete bypasses capability keys', async () => {
+    it('TEST:3.3:4 section read without traits does not add a capability key', async () => {
+        expect(
+            await resolveListingAccess({
+                ...base,
+                actorId: 'owner',
+                operation: 'READ_OWN',
+                sections: sectionArgs('read', 'food')
+            })
+        ).toMatchObject({ allowed: true, evaluatedSteps: [4, '4b'] });
+    });
+
+    it('gates writes on section keys, read and write on declared trait keys, while delete bypasses keys', async () => {
         const locked = { ...base, facts: { ...facts, businessLines: ['food'] } };
         expect(
             await resolveListingAccess({
@@ -133,6 +144,17 @@ describe('TEST:3.2:1 listing section step 4b', () => {
                 }
             })
         ).toMatchObject({ allowed: false, reason: 'NO_CAPABILITY', key: 'menu_item_photos' });
+        expect(
+            await resolveListingAccess({
+                ...locked,
+                actorId: 'owner',
+                operation: 'READ_OWN',
+                sections: {
+                    requested: [{ id: 'menu', intent: 'read', traits: ['qrMetrics'] }],
+                    resultingBusinessLines: ['food']
+                }
+            })
+        ).toMatchObject({ allowed: false, reason: 'NO_CAPABILITY', key: 'menu_qr_scan_metrics' });
     });
 
     it('runs on CREATE without step 4 and leaves legacy calls unchanged', async () => {

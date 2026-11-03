@@ -209,18 +209,18 @@ export async function resolveListingAccess(args: {
             readonly entitlementKey?: string;
             readonly traits?: readonly { readonly id: string; readonly entitlementKey?: string }[];
         }[] = LISTING_SECTIONS[args.vertical as ListingVertical];
-        const sectionKeys = args.sections.requested
-            .filter(({ intent }) => intent === 'write')
-            .flatMap(({ id, traits = [] }) => {
-                const section = catalogSections.find((entry) => entry.id === id);
-                return [
-                    section?.entitlementKey,
-                    ...traits.map(
-                        (trait) =>
-                            section?.traits?.find((item) => item.id === trait)?.entitlementKey
-                    )
-                ].filter((key): key is string => Boolean(key));
-            });
+        const sectionKeys = args.sections.requested.flatMap(({ id, intent, traits = [] }) => {
+            const section = catalogSections.find((entry) => entry.id === id);
+            return [
+                ...(intent === 'write' ? [section?.entitlementKey] : []),
+                ...(intent === 'delete'
+                    ? []
+                    : traits.map(
+                          (trait) =>
+                              section?.traits?.find((item) => item.id === trait)?.entitlementKey
+                      ))
+            ].filter((key): key is string => Boolean(key));
+        });
         sectionRequiredKeys = sectionKeys;
     }
     if (keys.length > 0) {
