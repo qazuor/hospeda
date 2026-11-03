@@ -209,6 +209,21 @@ describe('MobileMenu — sign-out loading state (SPEC-228 T-022)', () => {
         });
     });
 
+    it('clears the theme sync marker when signing out (HOS-1988)', async () => {
+        // Arrange: this tab already synced the saved theme for the user.
+        sessionStorage.setItem('themeSyncedFor', 'user-1');
+        mockSignOut.mockReturnValue(new Promise(() => {}));
+        renderMenu();
+        openAccountMenu();
+
+        // Act
+        fireEvent.click(screen.getByRole('button', { name: /cerrar sesión/i }));
+
+        // Assert
+        await waitFor(() => expect(mockSignOut).toHaveBeenCalled());
+        expect(sessionStorage.getItem('themeSyncedFor')).toBeNull();
+    });
+
     it('sign-out button is aria-busy=true while signing out', async () => {
         mockSignOut.mockReturnValue(new Promise(() => {}));
 

@@ -182,14 +182,14 @@ describe('AC:V4:10 (unitaria) - T6 inside PB1', () => {
         ]);
     });
 
-    it('does not evaluate T6 from UNPUBLISHED_BY_BILLING under coverage', async () => {
+    it('publishes from UNPUBLISHED_BY_BILLING under coverage without evaluating T6', async () => {
         const harness = makeHarness({
             sources: [source('COURTESY')],
             status: PublicationStatusEnum.UNPUBLISHED_BY_BILLING
         });
-        expect(await publishListing(input(harness))).toEqual({
-            published: false,
-            reason: 'COVERED_USE_PB3'
+        expect(await publishListing(input(harness))).toMatchObject({
+            published: true,
+            trialConsumed: false
         });
         expect(harness.insertedRows).toEqual([]);
     });

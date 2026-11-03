@@ -217,15 +217,35 @@ describe('ListingActions republish — HOS-1998', () => {
     it.each([
         'venue',
         'experience'
-    ] as const)('already covered: %s offers no republish', (vertical) => {
-        const { container } = render(
+    ] as const)('already covered: %s offers "Publicar de nuevo" (manual publish, HOS-1997)', (vertical) => {
+        render(
             <ListingActions
                 listing={listing(vertical, BILLING)}
                 locale="es"
                 publishAffordance={COVERED}
             />
         );
-        expect(container.querySelector('button')).not.toBeInTheDocument();
+        expect(screen.getByRole('button', { name: 'Publicar de nuevo' })).toBeInTheDocument();
+    });
+
+    it.each([
+        'venue',
+        'experience'
+    ] as const)('already covered with a full quota: %s shows the cap notice on republish (HOS-1997)', async (vertical) => {
+        publishMock.mockResolvedValue({
+            ok: false,
+            error: { status: 403, code: 'LIMIT_REACHED', message: 'Listing limit reached' }
+        });
+        render(
+            <ListingActions
+                listing={listing(vertical, BILLING)}
+                locale="es"
+                publishAffordance={COVERED}
+            />
+        );
+        fireEvent.click(screen.getByRole('button', { name: 'Publicar de nuevo' }));
+        fireEvent.click(screen.getByRole('button', { name: 'Sí, publicar' }));
+        expect(await screen.findByTestId('publish-limit-reached')).toBeInTheDocument();
     });
 
     it.each([

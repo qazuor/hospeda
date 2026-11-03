@@ -22,13 +22,6 @@ export function comparePublicationOrder(
     return a.id < b.id ? -1 : a.id > b.id ? 1 : 0;
 }
 
-/** Orders listings that return to publication, oldest publication first. */
-export function orderReturningCandidates(args: {
-    readonly entries: readonly PublicationQueueEntry[];
-}): readonly PublicationQueueEntry[] {
-    return [...args.entries].sort(comparePublicationOrder);
-}
-
 /**
  * Orders listings that regain a publication slot when coverage returns, newest
  * manual publish first (HOS-1984). With the cap full, the listings the host
