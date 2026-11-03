@@ -158,7 +158,7 @@ Sentry.captureMessage('moderation.degraded', 'warning');
 |------|-------------|------------|
 | `trial-machine-expiry` | Vence trials en curso cuya fecha de fin pasó | Cada 15 min |
 | `subscription-window-expiry` | Vence ventanas de autorización de suscripción | Cada 15 min |
-| `billing-reconciliation-sweep` | Barrido de conciliación de cobros contra el proveedor | Diario 02:10 |
+| `billing-reconciliation-sweep` | Barrido de conciliación de cobros contra el proveedor | Tres slices: 02:10, 03:10 y 04:10; un ciclo diario |
 | `conversation-notification` | Procesa notificaciones de mensajes | Cada 5 min |
 
 > Los nombres y las frecuencias salen de `apps/api/src/cron/schedules.manifest.ts`,

@@ -265,7 +265,7 @@ NODE_ENV=production
 ```
 [CRON] Initializing cron scheduler (adapter: node-cron)
 [CRON] Scheduled job: trial-machine-expiry (schedule: */15 * * * *)
-[CRON] Scheduled job: billing-reconciliation-sweep (schedule: 10 2 * * *)
+[CRON] Scheduled job: billing-reconciliation-sweep (schedule: 10 2,3,4 * * *)
 [CRON] Scheduled job: notification-schedule (schedule: 0 8 * * *)
 [CRON] Scheduled job: subscription-window-expiry (schedule: 7-59/15 * * * *)
 [CRON] Scheduler started with 4 jobs
@@ -904,7 +904,7 @@ The authoritative list is `apps/api/src/cron/schedules.manifest.ts` (`CRON_SCHED
 | `billing-creations-sweep` | billing | `1-59/5 * * * *` | `apps/api/src/cron/jobs/billing-creations-sweep.job.ts` |
 | `billing-promo-ending-notice` | billing | `0 9 * * *` | `apps/api/src/cron/jobs/billing-promo-ending-notice.job.ts` |
 | `billing-reconciliation-summary` | billing | `*/5 * * * *` | `apps/api/src/cron/jobs/billing-reconciliation-summary.job.ts` |
-| `billing-reconciliation-sweep` | billing | `10 2 * * *` | `apps/api/src/cron/jobs/billing-reconciliation-sweep.job.ts` |
+| `billing-reconciliation-sweep` | billing | `10 2,3,4 * * *` | `apps/api/src/cron/jobs/billing-reconciliation-sweep.job.ts` |
 | `payment-window-expiry` | billing | `23 * * * *` | `apps/api/src/cron/jobs/payment-window-expiry.job.ts` |
 | `provider-notification-retention` | billing | `30 3 * * *` | `apps/api/src/cron/jobs/provider-notification-retention.job.ts` |
 | `subscription-grace-reminder` | billing | `0 9 * * *` | `apps/api/src/cron/jobs/subscription-grace-reminder.job.ts` |
@@ -1348,8 +1348,9 @@ curl http://localhost:3001/api/v1/admin/cron \
 | `/api/v1/admin/cron/:jobName` | POST | Trigger specific job |
 | `/api/v1/admin/cron/:jobName?dryRun=true` | POST | Trigger in dry-run mode |
 | `/api/v1/admin/cron/:jobName?dryRun=false` | POST | Trigger a real run (`dryRun` accepts only `true` or `false`; omitting it is also a real run) |
+| `/api/v1/admin/cron/billing-reconciliation-sweep?newCycle=true` | POST | Start a fresh sweep cycle; accepted exclusive runs answer `202 { runId }`, overlapping runs answer `409 { holderRunId }` |
 
-The manual trigger needs an admin session holding `SYSTEM_MAINTENANCE_MODE` (send the session cookie). The old `X-Cron-Secret` endpoint at `/api/v1/cron/*` no longer exists.
+`newCycle` accepts only `true` or `false` and is rejected with `400 VALIDATION_ERROR` for jobs that do not support it. Exclusive manual triggers return `202` with a `runId`; a conflicting run returns `409` with the holder's `runId`. Read completion from `cron_runs`. The manual trigger needs an admin session holding `SYSTEM_MAINTENANCE_MODE` (send the session cookie). The old `X-Cron-Secret` endpoint at `/api/v1/cron/*` no longer exists.
 
 ### Common Commands
 
