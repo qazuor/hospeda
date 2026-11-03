@@ -19,16 +19,20 @@ describe('resolveTrialSeriesCopy (HOS-1283)', () => {
     it('resolves venue copy', () => {
         const copy = resolveTrialSeriesCopy('venue');
         expect(copy.possessive).toBe('tu local');
-        expect(copy.searchIntent).toBe('dónde comer');
+        expect(copy.searchIntent).toBe('dónde comer o salir');
+        expect(copy.detailsLabel).toBe('horarios');
     });
 
     it('resolves experience copy', () => {
         const copy = resolveTrialSeriesCopy('experience');
         expect(copy.possessive).toBe('tu experiencia');
+        expect(copy.searchIntent).toBe('qué experiencias hacer');
     });
 
     it('fails open to accommodation for accommodation itself, null, undefined and an unrecognized value', () => {
         const accommodation = resolveTrialSeriesCopy('accommodation');
+        expect(accommodation.searchIntent).toBe('dónde quedarse');
+        expect(accommodation.detailsLabel).toBe('servicios');
         expect(resolveTrialSeriesCopy(null)).toEqual(accommodation);
         expect(resolveTrialSeriesCopy(undefined)).toEqual(accommodation);
         expect(resolveTrialSeriesCopy('tourist')).toEqual(accommodation);
