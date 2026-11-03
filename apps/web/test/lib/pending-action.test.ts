@@ -12,6 +12,11 @@ import {
 } from '../../src/lib/pending-action';
 
 const FAVORITE: PendingAction = { kind: 'favorite', entityType: 'ACCOMMODATION', entityId: 'a-1' };
+const PARTNER_CLAIM: PendingAction = {
+    kind: 'partner-claim',
+    partnerId: 'partner-uuid',
+    secret: 'one-time-secret'
+};
 const anyAction = () => true;
 
 describe('pending-action', () => {
@@ -35,6 +40,26 @@ describe('pending-action', () => {
 
         expect(first).toEqual(FAVORITE);
         expect(second).toBeNull();
+    });
+
+    it('stores and takes a partner claim once, and expires it after ten minutes', () => {
+        savePendingAction({ action: PARTNER_CLAIM, path: '/es/partners/reclamar/', now: 1000 });
+        expect(
+            takePendingAction({ path: '/es/partners/reclamar/', matches: anyAction, now: 1001 })
+        ).toEqual(PARTNER_CLAIM);
+        expect(
+            takePendingAction({ path: '/es/partners/reclamar/', matches: anyAction, now: 1002 })
+        ).toBeNull();
+
+        savePendingAction({ action: PARTNER_CLAIM, path: '/es/partners/reclamar/', now: 2000 });
+        expect(
+            takePendingAction({
+                path: '/es/partners/reclamar/',
+                matches: anyAction,
+                now: 2000 + PENDING_ACTION_TTL_MS
+            })
+        ).toBeNull();
+        expect(window.sessionStorage.getItem(PENDING_ACTION_STORAGE_KEY)).toBeNull();
     });
 
     it('discards an expired action and purges it', () => {
