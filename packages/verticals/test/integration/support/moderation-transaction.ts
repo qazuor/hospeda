@@ -42,11 +42,7 @@ describe('TEST:V6:11 PB13 queue and archived origins against PostgreSQL', () => 
             destinationId,
             status: Status.PUBLISHED
         });
-        const competitorClock = new Date('2026-07-01T12:00:00.000Z');
         const returningClock = new Date('2026-08-01T12:00:00.000Z');
-        await db.execute(
-            sql`UPDATE accommodations SET inactive_since = ${competitorClock} WHERE id = ${newest.id}`
-        );
         for (const [id, occurredAt] of [
             [returning.id, returningClock],
             [newest.id, new Date('2026-09-01T12:00:00.000Z')]
@@ -104,10 +100,6 @@ describe('TEST:V6:11 PB13 queue and archived origins against PostgreSQL', () => 
             listingId: newest.id
         });
         expect(competitor?.publicationStatus).toBe(Status.PUBLISHED);
-        const unchanged = await db.execute(
-            sql`SELECT inactive_since FROM accommodations WHERE id = ${newest.id}`
-        );
-        expect(new Date(String(unchanged.rows[0]?.inactive_since))).toEqual(competitorClock);
 
         const inverseOwner = await fixtures.owner();
         const inverseAdmin = await fixtures.owner();
@@ -123,6 +115,10 @@ describe('TEST:V6:11 PB13 queue and archived origins against PostgreSQL', () => 
             destinationId: inverseOwner.destinationId,
             status: Status.PUBLISHED
         });
+        const loweredClock = new Date('2026-07-01T12:00:00.000Z');
+        await db.execute(
+            sql`UPDATE accommodations SET inactive_since = ${loweredClock} WHERE id = ${olderPublished.id}`
+        );
         await listingPublicationModel.insertStatusChangedEvent({
             tx: db,
             vertical,
@@ -186,6 +182,10 @@ describe('TEST:V6:11 PB13 queue and archived origins against PostgreSQL', () => 
             listingId: olderPublished.id
         });
         expect(displaced?.publicationStatus).toBe(Status.UNPUBLISHED_BY_BILLING);
+        const unchanged = await db.execute(
+            sql`SELECT inactive_since FROM accommodations WHERE id = ${olderPublished.id}`
+        );
+        expect(new Date(String(unchanged.rows[0]?.inactive_since))).toEqual(loweredClock);
     });
 
     it('TEST:V6:11 lifts ARCHIVED listings by the PB5 and PB4 origins', async () => {
