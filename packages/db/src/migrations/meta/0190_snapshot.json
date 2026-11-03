@@ -1,5 +1,5 @@
 {
-  "id": "ea051aa9-1de8-4254-a727-d774f7a9ef28",
+  "id": "cfb140e1-3be8-4b70-bb91-296267753e44",
   "prevId": "48607b66-fb65-4682-a9e5-bfc999fe9ccc",
   "version": "7",
   "dialect": "postgresql",
@@ -33189,6 +33189,8 @@
         "billing.cancelSubscription",
         "billing.liftReconciliationMark",
         "billing.refund",
+        "billing.registerManualPayment",
+        "billing.declareManualUnpaid",
         "trial.extend",
         "user.manageSuperAdminRole",
         "billing.grantComplimentary",
@@ -33230,7 +33232,6 @@
         "partner.viewAll",
         "partner.manage",
         "partner.resolveApplication",
-        "partner.editOwn",
         "allianceLead.viewAll",
         "allianceLead.manage",
         "hostTrade.view",

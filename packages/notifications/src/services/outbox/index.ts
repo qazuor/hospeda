@@ -1,4 +1,5 @@
 export * from './billing-grace-reminder-renderers.js';
+export * from './billing-manual-payment-renderers.js';
 export * from './billing-promo-renderers.js';
 export * from './billing-reconciliation-renderers.js';
 export * from './billing-renewal-renderers.js';

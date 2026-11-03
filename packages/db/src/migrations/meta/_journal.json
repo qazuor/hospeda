@@ -1335,8 +1335,15 @@
     {
       "idx": 190,
       "version": "7",
-      "when": 1793738868831,
-      "tag": "0190_hos1487_partner_edit_own",
+      "when": 1793734368116,
+      "tag": "0190_hos1541_manual_payment_permissions",
+      "breakpoints": true
+    },
+    {
+      "idx": 191,
+      "version": "7",
+      "when": 1793741426042,
+      "tag": "0191_hos1487_partner_edit_own",
       "breakpoints": true
     }
   ]

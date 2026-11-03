@@ -18,6 +18,7 @@ export * from './external-charge-settlement.schema.js';
 export * from './external-refund-settlement.schema.js';
 export * from './link-preapproval.schema.js';
 export * from './listing-purge-preview.schema.js';
+export * from './manual-payment.schema.js';
 export * from './orphan-payment-queue.schema.js';
 export * from './payer-email.schema.js';
 export * from './payment-reconciliation.schema.js';
