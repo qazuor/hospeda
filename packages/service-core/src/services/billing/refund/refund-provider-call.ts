@@ -35,10 +35,12 @@ function stateChanged(): ServiceError {
     );
 }
 
-async function persistCall(
+/** Persists an RF2 call and key before provider I/O (AC:B6:8, TRANS:B:RF2). */
+export async function persistCall(
     refundId: string,
     payment: SelectPayment,
-    amount: number
+    amount: number,
+    addonInstanceId: string | null = null
 ): Promise<{ readonly key: string; readonly balance: number }> {
     return getDb().transaction(async (tx) => {
         const [refund] = await tx
@@ -61,14 +63,19 @@ async function persistCall(
         await tx
             .insert(idempotencyKeys)
             .values({ key, operation: 'REFUND_CREATE', subjectId: refundId });
-        await tx
-            .insert(refundCalls)
-            .values({ refundId, idempotencyKey: key, amount, providerRefundId: null });
+        await tx.insert(refundCalls).values({
+            refundId,
+            idempotencyKey: key,
+            amount,
+            providerRefundId: null,
+            addonInstanceId
+        });
         return { key, balance: payment.amount - claimed };
     });
 }
 
-async function completeCall(
+/** Completes one persisted RF2 call (AC:B6:8, TRANS:B:RF2). */
+export async function completeCall(
     key: string,
     result:
         | { readonly outcome: 'ACCEPTED'; readonly providerRefundId: string }

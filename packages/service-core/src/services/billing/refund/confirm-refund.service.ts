@@ -1,6 +1,6 @@
 import type { Clock } from '@repo/billing-verticals-contract';
 import type { SelectPayment, SelectRefund } from '@repo/db';
-import { and, eq, getDb, refunds } from '@repo/db';
+import { addonInstances, and, eq, getDb, refunds } from '@repo/db';
 import type { PaymentProvider } from '@repo/payments';
 import { actStartInstant, assertFreshForAct, PaymentProviderError } from '@repo/payments';
 import { ServiceErrorCode } from '@repo/schemas';
@@ -11,6 +11,7 @@ import type { ReconciliationMarkPayments } from '../reconciliation/reconciliatio
 import { authorizeRefundAction, readRefundSubject } from './refund-action-authorization';
 import { detectRefundChargeback } from './refund-chargeback';
 import { canRefundTransition } from './refund-machine';
+import { confirmOrderRefund } from './refund-order-call';
 import { sendRefundCalls } from './refund-provider-call';
 import { failProviderRejectedRefund } from './refund-provider-rejection';
 import {
@@ -53,6 +54,9 @@ export type ConfirmRefundOutcome =
     | 'PROVIDER_REJECTED_KEPT_CONFIRMED'
     | 'PROVIDER_REJECTED_FAILED'
     | 'AWAITING_PROVIDER_ANSWER'
+    | 'ORDER_REFUND_HELD'
+    | 'PROVIDER_KEY_CONFLICT'
+    | 'ORDER_NOT_REFUNDABLE_KEPT_CONFIRMED'
     | 'CHARGED_BACK';
 /** RF2 result consumed by the administrative route. */
 export type ConfirmRefundResult = {
@@ -78,7 +82,12 @@ function reject(
 async function confirmInTransaction(
     input: ConfirmRefundInput,
     clock: Clock
-): Promise<{ refund: SelectRefund; payment: SelectPayment; subjectId: string | null }> {
+): Promise<{
+    refund: SelectRefund;
+    payment: SelectPayment;
+    subjectId: string | null;
+    providerOrderId: string | null;
+}> {
     return getDb().transaction(async (tx) => {
         const [candidate] = await tx
             .select()
@@ -129,7 +138,17 @@ async function confirmInTransaction(
                 'Refund is no longer open',
                 'REFUND_NOT_OPEN'
             );
-        if (locked.payment.addonInstanceId !== null)
+        /** AC:B6:8 allows an add-on payment only when its instance has a provider order. */
+        const [instance] =
+            locked.payment.addonInstanceId === null
+                ? []
+                : await tx
+                      .select({ providerOrderId: addonInstances.providerOrderId })
+                      .from(addonInstances)
+                      .where(eq(addonInstances.id, locked.payment.addonInstanceId))
+                      .limit(1)
+                      .for('share');
+        if (locked.payment.addonInstanceId !== null && !instance?.providerOrderId)
             throw reject(
                 ServiceErrorCode.ALREADY_EXISTS,
                 'Refund source is not provider refundable',
@@ -172,7 +191,12 @@ async function confirmInTransaction(
                 'Refund changed while confirming',
                 'REFUND_STATE_CHANGED'
             );
-        return { refund: updated, payment: locked.payment, subjectId };
+        return {
+            refund: updated,
+            payment: locked.payment,
+            subjectId,
+            providerOrderId: instance?.providerOrderId ?? null
+        };
     });
 }
 
@@ -199,7 +223,16 @@ export async function confirmRefund(
             );
         throw error;
     }
-    const { refund, payment, subjectId } = confirmed;
+    const { refund, payment, subjectId, providerOrderId } = confirmed;
+    if (providerOrderId !== null)
+        return confirmOrderRefund({
+            refund,
+            payment,
+            subjectId,
+            orderId: providerOrderId,
+            ports,
+            correlationId: input.correlationId
+        });
     const act = { kind: 'decision' as const, startedAt: ports.clock.now() };
     actStartInstant({ act });
     let chargedBack: boolean;
