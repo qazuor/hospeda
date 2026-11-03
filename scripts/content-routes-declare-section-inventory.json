@@ -1,0 +1,37 @@
+{
+    "apps/api/src/routes/venue/protected/getMenu.ts": { "section": "menu", "intent": "read" },
+    "apps/api/src/routes/venue/protected/getDailySpecials.ts": {
+        "section": "dailySpecials",
+        "intent": "read"
+    },
+    "apps/api/src/routes/venue/protected/getEvents.ts": {
+        "section": "venueEvents",
+        "intent": "read"
+    },
+    "apps/api/src/routes/venue/protected/putMenu.ts": {
+        "section": "menu",
+        "intent": "dynamic-write-delete"
+    },
+    "apps/api/src/routes/venue/protected/putDailySpecials.ts": {
+        "section": "dailySpecials",
+        "intent": "dynamic-write-delete"
+    },
+    "apps/api/src/routes/venue/protected/putEvents.ts": {
+        "section": "venueEvents",
+        "intent": "dynamic-write-delete"
+    },
+    "apps/api/src/routes/venue/protected/uploadMenuFile.ts": {
+        "section": "menu",
+        "intent": "write"
+    },
+    "apps/api/src/routes/venue/protected/deleteMenuFile.ts": {
+        "section": "menu",
+        "intent": "delete"
+    },
+    "apps/api/src/routes/venue/protected/uploadMenuItemPhoto.ts": {
+        "section": "menu",
+        "intent": "write"
+    },
+    "apps/api/src/routes/venue/protected/menuQr.ts": { "section": "menu", "intent": "read" },
+    "apps/api/src/routes/venue/protected/menuQrScans.ts": { "section": "menu", "intent": "read" }
+}

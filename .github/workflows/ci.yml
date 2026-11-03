@@ -326,6 +326,9 @@ jobs:
       # GUARD:G-R3-C (HOS-1463, AC:V5:21). Its own step, like every guard here.
       - name: Check every domain operation declares whether it passes step 5 (GUARD:G-R3-C)
         run: pnpm check:step5-declared
+      # GUARD:G-FAC-06 (HOS-1836, AC:3:2). Every inventoried content route declares its section and intent through the chain.
+      - name: Check content routes declare listing sections (GUARD:G-FAC-06)
+        run: pnpm check:content-routes-declare-section
       # TEST:V2:8 (HOS-1435, AC:V2:5). Its own step, like every guard here. No
       # code of the verticals half (G14's HALVES.verticals) writes
       # addon_product.version_id: re-pointing it is an act of billing.

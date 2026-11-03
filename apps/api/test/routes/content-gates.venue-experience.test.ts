@@ -29,7 +29,6 @@ import { protectedAddVenueFaqRoute } from '../../src/routes/venue/protected/addF
 import { protectedAddVenueFeaturedMediaRoute } from '../../src/routes/venue/protected/addFeaturedMedia';
 import { protectedAddVenueMediaRoute } from '../../src/routes/venue/protected/addMedia';
 import { protectedGetVenueBrochureRoute } from '../../src/routes/venue/protected/brochure';
-import { protectedDeleteVenueMenuFileRoute } from '../../src/routes/venue/protected/deleteMenuFile';
 import { protectedPatchVenueRoute } from '../../src/routes/venue/protected/patch';
 import { protectedPutVenueDailySpecialsRoute } from '../../src/routes/venue/protected/putDailySpecials';
 import { protectedPutVenueEventsRoute } from '../../src/routes/venue/protected/putEvents';
@@ -107,9 +106,15 @@ const mediaAdd = { url: 'https://example.com/photo.jpg' };
 const mediaUpdate = { caption: 'Updated photo' };
 const mediaReorder = { orderedIds: [MEDIA] };
 const patchBody = { name: 'Updated listing' };
-const menuPlain = { sections: [] };
-const specials = { specials: [] };
-const events = { events: [] };
+const menuPlain = { sections: [{ name: 'Entradas', items: [{ name: 'Empanada' }] }] };
+const specials = {
+    specials: [{ title: 'Menú del día', validFrom: '2026-10-10', validUntil: '2026-10-10' }]
+};
+const events = {
+    events: [
+        { title: 'Música en vivo', recurrence: 'once', date: '2026-10-10', startTime: '20:00' }
+    ]
+};
 const certificate = { recipientName: 'Jane Guest', completedAt: '2026-10-10' };
 const baseSource = {
     type: 'BASE',
@@ -227,15 +232,6 @@ const cases = [
         file: 'venue/uploadMenuFile',
         route: protectedUploadVenueMenuFileRoute,
         method: 'POST',
-        path: '/{id}/menu-file',
-        body: undefined,
-        key: 'manage_venue_menu',
-        vertical: VerticalEnum.VENUE
-    },
-    {
-        file: 'venue/deleteMenuFile',
-        route: protectedDeleteVenueMenuFileRoute,
-        method: 'DELETE',
         path: '/{id}/menu-file',
         body: undefined,
         key: 'manage_venue_menu',
@@ -496,9 +492,8 @@ beforeEach(() => {
 
 describe('TEST:V5:31 venue and experience content gates', () => {
     it.each(cases)('$file requires its effective key on the published listing', async (row) => {
-        const sectionDeletion =
-            row.file === 'venue/deleteMenuFile' ||
-            (row.file === 'venue/putMenu' && row.body === menuPlain);
+        // Every row here writes content; the empty-body and file deletes, which pass
+        // without the section key, are covered by `venue/protected/menu-section-access.test.ts`.
         const initialKeys =
             row.file === 'venue/uploadMenuItemPhoto'
                 ? ['edit_venue_info', 'manage_venue_menu']
@@ -506,22 +501,13 @@ describe('TEST:V5:31 venue and experience content gates', () => {
                   ? []
                   : [`edit_${row.vertical.toLowerCase()}_info`];
         configureSet(OWNER_A, initialKeys);
-        if (sectionDeletion) {
-            mocks.service.mockResolvedValue({
-                data: { ownerId: OWNER_A, menuFilePublicId: null }
-            });
-        }
         const denied = await request(row);
-        if (sectionDeletion) {
-            expect(denied.status, row.file).toBe(200);
-        } else {
-            expect(denied.status, row.file).toBe(403);
-            expect((await denied.json()).error).toMatchObject({
-                code: ServiceErrorCode.ENTITLEMENT_REQUIRED,
-                details: { entitlementKey: row.key }
-            });
-            expect(mocks.service).not.toHaveBeenCalled();
-        }
+        expect(denied.status, row.file).toBe(403);
+        expect((await denied.json()).error).toMatchObject({
+            code: ServiceErrorCode.ENTITLEMENT_REQUIRED,
+            details: { entitlementKey: row.key }
+        });
+        expect(mocks.service).not.toHaveBeenCalled();
         mocks.effectiveSet.mockClear();
         const full = [
             'edit_venue_info',

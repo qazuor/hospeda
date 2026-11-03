@@ -69,11 +69,16 @@ function resolve(args: {
 }
 
 describe('TEST:V8a:9 the administrative action decides the operation it admits', () => {
-    it('declares EDIT and CREATE for action 15 and DELETE for action 23', () => {
+    it('declares EDIT, CREATE, READ_OWN for action 15 and DELETE for action 23', () => {
         expect(ADMINISTRATIVE_ACTION_LISTING_OPERATIONS).toEqual({
-            ACC_15: ['EDIT', 'CREATE'],
+            ACC_15: ['EDIT', 'CREATE', 'READ_OWN'],
             ACC_23: ['DELETE']
         });
+    });
+
+    it('action 15 reads foreign content as the owner', async () => {
+        const result = await resolve({ action: 'ACC_15', operation: 'READ_OWN', doubles: ports() });
+        expect(result).toMatchObject({ allowed: true, subjectId: 'owner' });
     });
 
     it('(a) action 15 edits a foreign listing with the owner as subject', async () => {

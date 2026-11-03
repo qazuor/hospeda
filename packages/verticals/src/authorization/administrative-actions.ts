@@ -162,7 +162,8 @@ export type ListingAdministrativeAction = Extract<AdministrativeAction, 'ACC_15'
 export const ADMINISTRATIVE_ACTION_LISTING_OPERATIONS: Readonly<
     Record<ListingAdministrativeAction, readonly ListingOperation[]>
 > = {
-    ACC_15: ['EDIT', 'CREATE'],
+    // Action 15 edits content, so it may read the content it edits (DEC-FAC-055, AC:3:7).
+    ACC_15: ['EDIT', 'CREATE', 'READ_OWN'],
     ACC_23: ['DELETE']
 };
 
