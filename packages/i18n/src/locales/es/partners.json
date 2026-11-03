@@ -10,5 +10,25 @@
         "contactHeading": "Contacto",
         "socialHeading": "Redes",
         "websiteLabel": "Sitio web"
+    },
+    "claim": {
+        "seo": {
+            "title": "Reclamá tu Partner",
+            "description": "Vinculá tu Partner aprobado a tu cuenta de Hospeda."
+        },
+        "heading": "Reclamá tu Partner",
+        "signInPrompt": "Para reclamar el Partner, iniciá sesión con la cuenta con la que lo vas a administrar. Esa cuenta queda como dueña.",
+        "signInCta": "Iniciar sesión",
+        "confirmPrompt": "Vas a vincular este Partner a la cuenta con la que iniciaste sesión.",
+        "confirmCta": "Reclamar el Partner",
+        "claiming": "Reclamando…",
+        "success": "Listo: el Partner quedó vinculado a tu cuenta.",
+        "successCta": "Ir a Mi Cuenta de Partner",
+        "notFound": "No encontramos este Partner. Revisá que el link esté completo.",
+        "alreadyClaimed": "Este Partner ya tiene dueño; si no fuiste vos, escribinos a soporte",
+        "accountAlreadyOwns": "Tu cuenta ya es dueña de un Partner. Cada cuenta administra un solo Partner: el segundo negocio se reclama con otra cuenta. Si necesitás ayuda, escribinos a soporte.",
+        "verifyEmailFirst": "Para reclamar este Partner con esta cuenta, primero verificá tu correo.",
+        "supportCta": "Escribir a soporte",
+        "genericError": "No pudimos completar el reclamo. Probá de nuevo en unos minutos."
     }
 }

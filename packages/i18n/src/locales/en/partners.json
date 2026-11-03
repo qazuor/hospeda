@@ -10,5 +10,25 @@
         "contactHeading": "Contact",
         "socialHeading": "Social",
         "websiteLabel": "Website"
+    },
+    "claim": {
+        "seo": {
+            "title": "Claim your Partner",
+            "description": "Link your approved Partner to your Hospeda account."
+        },
+        "heading": "Claim your Partner",
+        "signInPrompt": "To claim this Partner, sign in with the account you will use to manage it. That account will become its owner.",
+        "signInCta": "Sign in",
+        "confirmPrompt": "You are about to link this Partner to the account you signed in with.",
+        "confirmCta": "Claim the Partner",
+        "claiming": "Claiming…",
+        "success": "Done: the Partner is now linked to your account.",
+        "successCta": "Go to My Partner Account",
+        "notFound": "We couldn't find this Partner. Check that the link is complete.",
+        "alreadyClaimed": "This Partner already has an owner; if it wasn't you, contact support",
+        "accountAlreadyOwns": "Your account already owns a Partner. Each account can manage one Partner: claim a second business with another account. If you need help, contact support.",
+        "verifyEmailFirst": "To claim this Partner with this account, verify your email first.",
+        "supportCta": "Contact support",
+        "genericError": "We couldn't complete the claim. Please try again in a few minutes."
     }
 }
