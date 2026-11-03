@@ -3,6 +3,7 @@ import path from 'node:path';
 import { describe, expect, it } from 'vitest';
 import {
     EXEMPTIONS,
+    forbiddenSourcePaths,
     hasForbiddenKeyLiteral,
     inventoryIsExact,
     run
@@ -45,5 +46,18 @@ describe('TEST:3.6:5 — GUARD:G-FAC-04 section key literals', () => {
                 [key]
             )
         ).toBe(false);
+    });
+    it.each([
+        'public',
+        'protected'
+    ])('rejects a new accommodation route with a key literal outside the exemption list in %s/', (visibility) => {
+        const route = `apps/api/src/routes/accommodation/${visibility}/newRoute.ts`;
+        expect(
+            forbiddenSourcePaths(
+                [{ path: route, source: `enforceUserGate({ keys: ['${key}'] })` }],
+                ['apps/api/src/routes/accommodation/public/list.ts'],
+                [key]
+            )
+        ).toEqual([route]);
     });
 });

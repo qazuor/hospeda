@@ -50,6 +50,18 @@ export function hasForbiddenKeyLiteral(source: string, keys: readonly string[]):
     });
 }
 
+export function forbiddenSourcePaths(
+    sources: readonly { path: string; source: string }[],
+    exemptions: readonly string[],
+    keys: readonly string[]
+): string[] {
+    return sources
+        .filter(
+            ({ path, source }) => !exemptions.includes(path) && hasForbiddenKeyLiteral(source, keys)
+        )
+        .map(({ path }) => path);
+}
+
 function walk(dir: string): string[] {
     return readdirSync(dir, { withFileTypes: true }).flatMap((entry) => {
         const path = join(dir, entry.name);
@@ -85,19 +97,19 @@ export function run({ root = resolve(fileURLToPath(new URL('.', import.meta.url)
     const targets = [
         ...walk(join(root, 'apps/api/src/routes/venue/protected')),
         ...walk(join(root, 'apps/api/src/routes/experience/protected')),
-        ...walk(join(root, 'apps/api/src/routes/accommodation/protected')),
+        ...walk(join(root, 'apps/api/src/routes/accommodation')),
+        ...walk(join(root, 'apps/api/src/utils')),
         join(root, 'apps/api/src/routes/ai/protected/chat.ts')
     ];
-    const scanned = targets.filter(
-        (path) => !inventory.files.includes(path.slice(root.length + 1))
-    );
+    const sources = targets.map((path) => ({
+        path: path.slice(root.length + 1),
+        source: readFileSync(path, 'utf8')
+    }));
+    const scanned = sources.filter(({ path }) => !inventory.files.includes(path));
     if (scanned.length < MIN_FILES)
         problems.push(`${PREFIX} scanned ${scanned.length} files; minimum is ${MIN_FILES}`);
-    for (const path of scanned) {
-        const source = readFileSync(path, 'utf8');
-        if (hasForbiddenKeyLiteral(source, keys))
-            problems.push(`${PREFIX} literal section/trait key in ${path.slice(root.length + 1)}`);
-    }
+    for (const path of forbiddenSourcePaths(sources, inventory.files, keys))
+        problems.push(`${PREFIX} literal section/trait key in ${path}`);
     if (problems.length) return { exitCode: 1, output: problems.join('\n') };
     return {
         exitCode: 0,
