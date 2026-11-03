@@ -1,104 +1,45 @@
-import type { Clock } from '@repo/billing-verticals-contract';
-import {
-    and,
-    desc,
-    domainEvent,
-    eq,
-    getDb,
-    isNull,
-    providerLinks,
-    subscriptionPauses,
-    subscriptions
-} from '@repo/db';
+import { eq, getDb, providerLinks, subscriptions } from '@repo/db';
 import { createLogger } from '@repo/logger';
-import { actStartInstant, assertFreshForAct, type PaymentProvider } from '@repo/payments';
-import { CancellationReasonSchema, PermissionEnum, VerticalEnumSchema } from '@repo/schemas';
+import { type CancellationReasonSchema, VerticalEnumSchema } from '@repo/schemas';
 import { z } from 'zod';
 import type { Actor } from '../../../types/index.js';
-import {
-    cancelAddonComplementsAtProvider,
-    emitAddonCoverageRemoved,
-    runOrphanhood
-} from '../addon/addon-instance-a5.js';
-import type { AddonOrphanhoodPorts } from '../addon/addon-orphanhood-ports.js';
+import { cancelAddonComplementsAtProvider, runOrphanhood } from '../addon/addon-instance-a5.js';
 import { recordCoverageLossIfUncovered } from '../coverage/coverage-loss.js';
-import type { CoverageNotices } from '../payment/payment-ports.js';
-import {
-    type CancelOurAuthorizationOutcome,
-    cancelOurAuthorization
-} from '../reconciliation/cancel-our-authorization.js';
-import { openReconciliationMark } from '../reconciliation/open-reconciliation-mark.service.js';
+import { cancelOurAuthorization } from '../reconciliation/cancel-our-authorization.js';
 import { recordProviderCancellationDecided } from '../reconciliation/provider-cancellation-decision.js';
+import { cancelActiveRejection } from './cancel-active-subscription.service.js';
 import {
-    type CancelActiveCall,
-    cancelActiveRejection
-} from './cancel-active-subscription.service.js';
-import {
+    CANCEL_PAUSED_CALL_BY_OUTCOME,
+    type CancelPausedProviderResult,
+    type CancelPausedReading,
+    type CancelPausedSubscriptionPorts,
     type CancelPausedSubscriptionResult,
+    cancelPausedInputSchema,
     closeOpenPause,
+    emitPausedAddonCoverageRemoved,
+    markPausedCancellationLostRace,
+    observePausedBeforeCancelNotice,
+    readOpenPauseId,
+    readPausedAuthorizationForAct,
+    readPausedCancellationIdempotency,
     writePausedCancellation,
     writePausedScheduledCancellation
 } from './cancel-paused-subscription-support.js';
 import { resolveCancellationAuthority } from './cancellation-authorization.js';
-import type { ComplementPolicyPorts } from './complement-ports.js';
 import {
     cancelComplementsByS11Rule,
     cancelDecidedComplementsAtProvider
 } from './complement-s11-rule.js';
 import { computeS11ServiceEnd, readS11ServiceEndFacts } from './s11-service-end.js';
-import type { BeforeCancelNotice, BeforeCancelNoticeStatus } from './start-subscription.service.js';
 import {
-    type CancellationSeenAnnotator,
     noCancellationSeenAnnotation,
-    recordAuthorizationSeenAlive,
     recordCancellationSeen,
-    type SuccessionCloser,
     unimplementedSuccessionCloser
 } from './subscription-billing-ports.js';
 import { findSubscriptionProhibition } from './subscription-prohibited-transitions.js';
 import { closeSuccessionIfPredecessor } from './succession-end.js';
 
 const logger = createLogger('cancel-paused-subscription-s22');
-const actorSchema = z.custom<Actor>((value) => {
-    if (typeof value !== 'object' || value === null) return false;
-    const actor = value as { readonly id?: unknown; readonly permissions?: unknown };
-    return (
-        z.uuid().safeParse(actor.id).success &&
-        z.array(z.nativeEnum(PermissionEnum)).safeParse(actor.permissions).success
-    );
-});
-const inputSchema = z.strictObject({
-    actor: actorSchema,
-    subscriptionId: z.string(),
-    reason: CancellationReasonSchema.optional()
-});
-const CALL_BY_OUTCOME: Readonly<Record<CancelOurAuthorizationOutcome, CancelActiveCall>> = {
-    ALREADY_CANCELLED: 'NOT_NEEDED',
-    NOTICE_PENDING: 'NOTICE_PENDING',
-    CALL_FAILED: 'FAILED',
-    CONFIRMED: 'SENT',
-    SENT_UNCONFIRMED: 'SENT'
-};
-
-/** Ports for both the immediate and credited S22 cancellations. */
-export interface CancelPausedSubscriptionPorts {
-    readonly provider: PaymentProvider;
-    readonly clock: Clock;
-    readonly beforeCancelNotice: BeforeCancelNotice;
-    readonly coverageNotices: CoverageNotices;
-    readonly orphanhood: AddonOrphanhoodPorts;
-    readonly complements: ComplementPolicyPorts;
-    readonly successionCloser?: SuccessionCloser;
-    readonly cancellationSeen?: CancellationSeenAnnotator;
-}
-interface Reading {
-    readonly subscriptionId: string;
-    readonly userId: string | null;
-    readonly vertical: string | null;
-    readonly cardPayer: boolean;
-    readonly authorizationId: string | null;
-    readonly kind: 'DIRECT_CANCELLATION' | 'SCHEDULED_CANCELLATION';
-}
 
 /** Executes S22 from PAUSED, preserving unconsumed successor credit through S11's full rule. */
 export async function cancelPausedSubscription(
@@ -109,7 +50,7 @@ export async function cancelPausedSubscription(
     },
     ports: CancelPausedSubscriptionPorts
 ): Promise<CancelPausedSubscriptionResult> {
-    const parsed = inputSchema.parse(input);
+    const parsed = cancelPausedInputSchema.parse(input);
     if (!z.uuid().safeParse(parsed.subscriptionId).success)
         throw cancelActiveRejection('SUBSCRIPTION_NOT_FOUND', 'Subscription not found');
     const now = ports.clock.now();
@@ -135,42 +76,17 @@ export async function cancelPausedSubscription(
                 'CANCELLATION_NOT_PRINCIPAL',
                 'Only principal subscriptions can be cancelled'
             );
-        if (row.status === 'CANCELLED')
-            return { state: 'ALREADY_CANCELLED' as const, serviceEndsAt: row.serviceEndsAt };
-        if (row.status === 'CANCEL_SCHEDULED') {
-            const [decision] = await tx
-                .select({ changes: domainEvent.changes })
-                .from(domainEvent)
-                .where(
-                    and(
-                        eq(domainEvent.entityType, 'subscription'),
-                        eq(domainEvent.entityId, row.id),
-                        eq(domainEvent.eventType, 'subscription.provider_cancellation_decided')
-                    )
-                )
-                .orderBy(desc(domainEvent.occurredAt))
-                .limit(1);
-            if (
-                decision?.changes.some(
-                    (change) => change.field === 'status' && change.old === 'PAUSED'
-                ) &&
-                row.serviceEndsAt
-            )
-                return { state: 'ALREADY_SCHEDULED' as const, serviceEndsAt: row.serviceEndsAt };
-        }
+        const already = await readPausedCancellationIdempotency({
+            tx,
+            subscriptionId: row.id,
+            status: row.status,
+            serviceEndsAt: row.serviceEndsAt
+        });
+        if (already) return already;
         if (row.status !== 'PAUSED')
             return { state: 'REJECTED' as const, reason: 'NOT_PAUSED' as const };
-        const [pause] = await tx
-            .select({ id: subscriptionPauses.id })
-            .from(subscriptionPauses)
-            .where(
-                and(
-                    eq(subscriptionPauses.subscriptionId, row.id),
-                    isNull(subscriptionPauses.actualEndAt)
-                )
-            )
-            .limit(1);
-        if (!pause) return { state: 'REJECTED' as const, reason: 'NO_OPEN_PAUSE' as const };
+        const pauseId = await readOpenPauseId({ tx, subscriptionId: row.id });
+        if (!pauseId) return { state: 'REJECTED' as const, reason: 'NO_OPEN_PAUSE' as const };
         const facts = await readS11ServiceEndFacts({ tx, subscription: row });
         const credited = facts.creditEndsAt !== null && facts.creditEndsAt > now;
         const end = credited ? computeS11ServiceEnd({ now, ...facts }) : null;
@@ -199,7 +115,7 @@ export async function cancelPausedSubscription(
                       reason: parsed.reason
                   });
         if (!written) return { state: 'LOST_RACE' as const };
-        await closeOpenPause({ tx, pauseId: pause.id, now });
+        await closeOpenPause({ tx, pauseId, now });
         const decided = credited
             ? (
                   await cancelComplementsByS11Rule(
@@ -272,7 +188,7 @@ export async function cancelPausedSubscription(
                 kind: credited
                     ? ('SCHEDULED_CANCELLATION' as const)
                     : ('DIRECT_CANCELLATION' as const)
-            } satisfies Reading,
+            } satisfies CancelPausedReading,
             serviceEndsAt: end?.serviceEndsAt ?? now,
             basis: end?.basis ?? ('NOW' as const),
             decided,
@@ -286,11 +202,9 @@ export async function cancelPausedSubscription(
         return { outcome: 'ALREADY_SCHEDULED', serviceEndsAt: committed.serviceEndsAt };
     if (committed.state === 'REJECTED') return { outcome: 'REJECTED', reason: committed.reason };
     if (committed.state === 'LOST_RACE') {
-        await openReconciliationMark({
-            subject: { kind: 'SUBSCRIPTION', subscriptionId: parsed.subscriptionId },
-            reason: 'TRANSICION_NO_DECLARADA',
-            actor: { type: 'owner', id: parsed.actor.id },
-            correlationId: crypto.randomUUID()
+        await markPausedCancellationLostRace({
+            subscriptionId: parsed.subscriptionId,
+            actorId: parsed.actor.id
         });
         return { outcome: 'LOST_RACE' };
     }
@@ -311,7 +225,7 @@ export async function cancelPausedSubscription(
             );
         }
     }
-    const providerResult = await cancelAtProvider({ reading, ports });
+    const providerResult = await cancelAtProvider(reading, ports);
     if (committed.state === 'SCHEDULED') {
         let calls: Awaited<ReturnType<typeof cancelDecidedComplementsAtProvider>>['results'] = [];
         try {
@@ -341,17 +255,11 @@ export async function cancelPausedSubscription(
             ...(providerResult.escalated ? { escalated: providerResult.escalated } : {})
         };
     }
-    try {
-        await emitAddonCoverageRemoved({
-            cancelled: committed.cancelled,
-            coverageNotices: ports.coverageNotices
-        });
-    } catch (error) {
-        logger.error(
-            { subscriptionId: reading.subscriptionId, error },
-            'S22 addon coverage notice failed'
-        );
-    }
+    await emitPausedAddonCoverageRemoved({
+        subscriptionId: reading.subscriptionId,
+        cancelled: committed.cancelled,
+        coverageNotices: ports.coverageNotices
+    });
     let addonCancelCalls: Awaited<ReturnType<typeof cancelAddonComplementsAtProvider>>['results'] =
         [];
     try {
@@ -383,42 +291,15 @@ export async function cancelPausedSubscription(
     };
 }
 
-async function cancelAtProvider(input: {
-    readonly reading: Reading;
-    readonly ports: CancelPausedSubscriptionPorts;
-}): Promise<{
-    readonly cancelCall: CancelActiveCall;
-    readonly escalated?: 'NO_RECIPIENT' | 'DELIVERY_EXHAUSTED';
-}> {
-    const { reading, ports } = input;
+async function cancelAtProvider(
+    reading: CancelPausedReading,
+    ports: CancelPausedSubscriptionPorts
+): Promise<CancelPausedProviderResult> {
     if (!reading.cardPayer || !reading.authorizationId) return { cancelCall: 'NOT_APPLICABLE' };
     const annotator = ports.cancellationSeen ?? noCancellationSeenAnnotation;
     try {
-        const act = { kind: 'decision' as const, startedAt: ports.clock.now() };
-        actStartInstant({ act });
-        const read = await ports.provider.readAuthorization({
-            authorizationId: reading.authorizationId
-        });
-        const fresh = assertFreshForAct({ read, act });
-        if (fresh.snapshot.status === 'cancelled')
-            await recordCancellationSeen({
-                annotator,
-                subscriptionId: reading.subscriptionId,
-                seenAt: fresh.readAt
-            });
-        else
-            await recordAuthorizationSeenAlive({
-                annotator,
-                subscriptionId: reading.subscriptionId,
-                seenAt: fresh.readAt
-            });
-        let notice: BeforeCancelNoticeStatus | undefined;
-        const observedNotice: BeforeCancelNotice = {
-            async beforeCancel(args) {
-                notice = await ports.beforeCancelNotice.beforeCancel(args);
-                return notice;
-            }
-        };
+        const { read, act } = await readPausedAuthorizationForAct({ reading, ports });
+        const observed = observePausedBeforeCancelNotice(ports.beforeCancelNotice);
         const shared = {
             subscriptionId: reading.subscriptionId,
             userId: reading.userId,
@@ -428,7 +309,7 @@ async function cancelAtProvider(input: {
         const cancellationPorts = {
             provider: ports.provider,
             clock: ports.clock,
-            beforeCancelNotice: observedNotice
+            beforeCancelNotice: observed.beforeCancelNotice
         };
         const { outcome } =
             reading.kind === 'DIRECT_CANCELLATION'
@@ -446,7 +327,8 @@ async function cancelAtProvider(input: {
                 subscriptionId: reading.subscriptionId,
                 seenAt: ports.clock.now()
             });
-        const cancelCall = CALL_BY_OUTCOME[outcome];
+        const cancelCall = CANCEL_PAUSED_CALL_BY_OUTCOME[outcome];
+        const notice = observed.status();
         const escalated =
             cancelCall !== 'NOTICE_PENDING' &&
             (notice === 'NO_RECIPIENT' || notice === 'DELIVERY_EXHAUSTED')
