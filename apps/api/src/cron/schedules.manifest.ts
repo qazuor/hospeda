@@ -98,6 +98,14 @@ export const CRON_SCHEDULES: ReadonlyArray<CronScheduleEntry> = [
             'Recover unanswered subscription creations and cancel duplicates (HOS-1610, AC:B11:23).'
     },
     {
+        name: 'billing-deferred-cancellation-retry',
+        displayName: 'Reintento de cancelaciones diferidas por el aviso',
+        category: 'billing',
+        schedule: '4-59/5 * * * *',
+        description:
+            'Retry, minutes after their before-cancel notice is sent, the provider cancellations our transitions deferred with NOTICE_PENDING (HOS-1955, AC:B11:6).'
+    },
+    {
         name: 'alerts-digest',
         displayName: 'Digest de alertas y ofertas',
         category: 'notifications',
