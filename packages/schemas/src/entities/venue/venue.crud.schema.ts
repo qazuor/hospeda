@@ -206,6 +206,7 @@ export const VenueOwnerUpdateInputSchema = VenueSchema.pick({
 })
     .partial()
     .extend({
+        /** Optional business-line replacement; section checks use this resulting state. */
         businessLines: z
             .array(
                 z.enum(['food', 'nightlife'], { error: 'zodError.venue.businessLines.invalid' }),

@@ -48,6 +48,8 @@ export interface ListingSectionDefinitionBase<V extends ListingVertical = Listin
 export interface SectionTraitDefinitionBase {
     /** Trait id, narrowed by the exported public definition after inference. */
     readonly id: string;
+    /** Update input fields whose presence requests this trait. */
+    readonly fields?: readonly string[];
     /** Optional entitlement needed for this feature. */
     readonly entitlementKey?: EntitlementKeyEnum;
 }

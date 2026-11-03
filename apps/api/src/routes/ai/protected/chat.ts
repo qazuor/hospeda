@@ -55,6 +55,7 @@ import {
     type AiFeature,
     type AiMessage,
     type LanguageEnum,
+    LISTING_SECTIONS,
     PermissionEnum,
     resolveAiChatTarget,
     ServiceErrorCode,
@@ -107,10 +108,33 @@ const VERTICAL_BY_ENTITY_TYPE = {
     experience: VerticalEnum.EXPERIENCE
 } as const;
 
+function sectionKey(vertical: 'venue' | 'experience', sectionId: string): string {
+    const sections: readonly { id: string; entitlementKey?: string }[] = LISTING_SECTIONS[vertical];
+    const section = sections.find(({ id }) => id === sectionId);
+    if (!section?.entitlementKey)
+        throw new Error(`Missing entitlement for ${vertical}.${sectionId}`);
+    return section.entitlementKey;
+}
+
+function traitKey(vertical: 'venue' | 'experience', sectionId: string, traitId: string): string {
+    const sections: readonly {
+        id: string;
+        traits?: readonly { id: string; entitlementKey?: string }[];
+    }[] = LISTING_SECTIONS[vertical];
+    const section = sections.find(({ id }) => id === sectionId);
+    const trait = section?.traits?.find(({ id }) => id === traitId);
+    if (!trait?.entitlementKey)
+        throw new Error(`Missing trait ${vertical}.${sectionId}.${traitId}`);
+    return trait.entitlementKey;
+}
+
+const OWNER_MENU_KEY = sectionKey('venue', 'menu');
+const OWNER_DIRECTIONS_KEY = traitKey('experience', 'meetingPoint', 'directions');
+
 const OWNER_CAPABILITY_KEYS_BY_ENTITY_TYPE = {
     accommodation: [],
-    venue: ['manage_venue_menu'],
-    experience: ['manage_experience_directions']
+    venue: [OWNER_MENU_KEY],
+    experience: [OWNER_DIRECTIONS_KEY]
 } as const;
 
 const OWNER_CHAT_LIMIT_BY_ENTITY_TYPE = {
@@ -330,8 +354,8 @@ export const protectedAiChatRoute = createProtectedStreamingRoute({
             resolvedPrompt,
             locale,
             ownerCapabilities: {
-                manageVenueMenu: ownerCapabilities.manage_venue_menu === true,
-                manageExperienceDirections: ownerCapabilities.manage_experience_directions === true
+                manageVenueMenu: ownerCapabilities[OWNER_MENU_KEY] === true,
+                manageExperienceDirections: ownerCapabilities[OWNER_DIRECTIONS_KEY] === true
             }
         });
 
