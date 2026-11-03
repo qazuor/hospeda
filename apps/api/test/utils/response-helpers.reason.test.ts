@@ -119,6 +119,33 @@ describe('createErrorResponse — reason field', () => {
 // ---------------------------------------------------------------------------
 
 describe('handleRouteError — ServiceError.reason propagation', () => {
+    it('publishes details for ALREADY_EXISTS only for SECTION_ABSENT', () => {
+        const absent = createMockContext();
+        handleRouteError(
+            new ServiceError(
+                ServiceErrorCode.ALREADY_EXISTS,
+                'Section is absent',
+                { reason: 'SECTION_ABSENT', section: 'menu' },
+                'SECTION_ABSENT'
+            ),
+            absent.ctx
+        );
+        const absentBody = absent.calls[0]?.body as { error: Record<string, unknown> };
+        expect(absentBody.error).toMatchObject({
+            code: 'ALREADY_EXISTS',
+            reason: 'SECTION_ABSENT',
+            details: { reason: 'SECTION_ABSENT', section: 'menu' }
+        });
+
+        const otherConflict = createMockContext();
+        handleRouteError(
+            new ServiceError(ServiceErrorCode.ALREADY_EXISTS, 'Already exists', { field: 'slug' }),
+            otherConflict.ctx
+        );
+        const conflictBody = otherConflict.calls[0]?.body as { error: Record<string, unknown> };
+        expect(conflictBody.error.details).toBeUndefined();
+    });
+
     it('propagates reason when HOSPEDA_API_DEBUG_ERRORS is false (default mock)', () => {
         // Arrange — debug mode is false (see vi.mock above)
         const { ctx, calls } = createMockContext();

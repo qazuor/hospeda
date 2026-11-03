@@ -244,7 +244,7 @@ export async function enforceListingAccess(args: {
         }
         ctx.set('listingAccess', {
             subjectId: result.subjectId,
-            evaluatedSteps: result.evaluatedSteps as never
+            evaluatedSteps: result.evaluatedSteps
         });
         return;
     }
