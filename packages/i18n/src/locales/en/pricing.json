@@ -15,7 +15,7 @@
             "tourist": "anyone travelling around the Litoral who wants more out of the platform",
             "experience": "people who run outings and activities for visitors",
             "partner": "institutions and businesses looking to partner with Hospeda",
-            "venue": "owners of a food business who want to be found"
+            "venue": "venue owners who want to be found"
         },
         "plan": {
             "owner-basico": "someone renting out a single property who is just getting started",
@@ -24,8 +24,8 @@
             "tourist-free": "someone starting to browse places to stay who wants to save a few favourites",
             "tourist-vip": "someone who travels often and wants every benefit plus direct contact with the host",
             "venue-basico": "someone listing their venue for the first time, to get on the map",
-            "venue-pro": "someone with regulars who wants the menu always up to date",
-            "venue-premium": "someone running a venue with a multilingual menu and constant service",
+            "venue-pro": "someone with regulars who wants their listing always up to date",
+            "venue-premium": "someone running a busy venue with visitors who speak several languages",
             "experience-basico": "someone starting to offer outings and looking to get known",
             "experience-pro": "someone with frequent visitors who needs to explain how to get there",
             "experience-premium": "someone who lives off outings and wants certificates and full support",
@@ -95,11 +95,11 @@
             },
             "venue": {
                 "title": "List my venue on Food & nightlife",
-                "audience": "For restaurants, grills, bakeries, food trucks and any food business that wants to appear in the guide.",
+                "audience": "For any place to eat or go out (bars, cafés, grills, nightclubs and more) that wants to appear in the guide.",
                 "cta": "See Food & nightlife plans",
                 "highlights": {
-                    "item1": "A listing with photos, menu, opening hours and contact details.",
-                    "item2": "Show up in the dining guide travellers browse.",
+                    "item1": "A listing with photos, opening hours, contact details and what you offer.",
+                    "item2": "Show up in the Food & nightlife guide travellers browse.",
                     "item3": "A fixed monthly price, with no commission per enquiry or booking."
                 }
             },
