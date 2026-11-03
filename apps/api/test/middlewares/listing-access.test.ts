@@ -161,6 +161,7 @@ describe('AC:V5:9 listing access HTTP mapping', () => {
                 summary: 'invalid',
                 description: 'invalid',
                 tags: ['test'],
+                requestParams: { id: z.string() },
                 responseSchema: z.object({ ok: z.boolean() }),
                 listingAccess: {
                     vertical: 'venue',
