@@ -629,6 +629,15 @@ const comercialSidebar: SidebarInput = {
             route: '/billing/deadlines',
             permissions: ['MAINTENANCE_MODE_WRITE'],
             onMissing: 'hide'
+        },
+        {
+            type: 'link',
+            id: 'plan-catalog',
+            label: { es: 'Planes y claves', en: 'Plans and keys', pt: 'Planos e chaves' },
+            icon: 'SettingsIcon',
+            route: '/billing/plan-catalog',
+            permissions: ['MAINTENANCE_MODE_WRITE'],
+            onMissing: 'hide'
         }
     ]
 };
