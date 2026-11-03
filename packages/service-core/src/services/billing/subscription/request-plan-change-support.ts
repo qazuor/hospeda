@@ -13,7 +13,12 @@ import {
     subscriptionScheduledChanges,
     subscriptions
 } from '@repo/db';
-import { ServiceErrorCode } from '@repo/schemas';
+import {
+    BILLING_CYCLE_MONTHS,
+    type BillingCycle,
+    BillingCycleSchema,
+    ServiceErrorCode
+} from '@repo/schemas';
 import { addCalendarMonths } from '@repo/utils';
 import { ServiceError } from '../../../types/index.js';
 import { computeSuccessorCreditDays } from './successor-credit.js';
@@ -71,7 +76,7 @@ export async function readSuccessorCredit(input: {
     readonly subscriptionId: string;
     readonly now: Date;
     readonly targetAmountMinor: number;
-    readonly targetCycle: 'monthly' | 'quarterly' | 'semiannual' | 'annual';
+    readonly targetCycle: BillingCycle;
 }): Promise<{ readonly creditDays: number; readonly unusedMinor: number }> {
     const rows = await getDb()
         .select({
@@ -91,14 +96,15 @@ export async function readSuccessorCredit(input: {
         )
         .orderBy(desc(coveredPeriods.periodStart));
     for (const row of rows) {
-        const months = { monthly: 1, quarterly: 3, semiannual: 6, annual: 12 }[row.cycle];
-        if (!months)
+        const cycle = BillingCycleSchema.safeParse(row.cycle);
+        if (!cycle.success)
             throw new ServiceError(
                 ServiceErrorCode.INTERNAL_ERROR,
                 'Unknown predecessor cycle',
                 undefined,
                 'PLAN_CHANGE_INVALID_CYCLE'
             );
+        const months = BILLING_CYCLE_MONTHS[cycle.data];
         const periodEnd = addCalendarMonths({
             from: row.periodStart,
             months,

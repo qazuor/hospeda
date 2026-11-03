@@ -1,15 +1,15 @@
+import { BILLING_CYCLE_MONTHS, BillingCycleSchema } from '@repo/schemas';
 import { addCalendarMonths } from '@repo/utils';
 import { z } from 'zod';
 import { scheduleSuccessorFirstCharge } from './start-succession.service.js';
 
-const cycleSchema = z.enum(['monthly', 'quarterly', 'semiannual', 'annual']);
 const creditInputSchema = z.strictObject({
     paidAmountMinor: z.number().int().nonnegative(),
     periodStart: z.date(),
     periodEnd: z.date(),
     now: z.date(),
     targetAmountMinor: z.number().int().positive(),
-    targetCycle: cycleSchema
+    targetCycle: BillingCycleSchema
 });
 const scheduleInputSchema = z.strictObject({
     authorizationWindowEndsAt: z.date(),
@@ -35,7 +35,7 @@ export function computeSuccessorCreditDays(
         0,
         Math.min(periodMs, value.periodEnd.getTime() - value.now.getTime())
     );
-    const months = { monthly: 1, quarterly: 3, semiannual: 6, annual: 12 }[value.targetCycle];
+    const months = BILLING_CYCLE_MONTHS[value.targetCycle];
     const targetEnd = addCalendarMonths({ from: value.now, months, dayOverflow: 'clamp' });
     const targetMs = targetEnd.getTime() - value.now.getTime();
     if (targetMs <= 0) throw new RangeError('Target cycle must have positive duration');

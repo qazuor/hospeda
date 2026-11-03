@@ -1,7 +1,7 @@
 import type { VerticalsForBilling } from '@repo/billing-verticals-contract';
 import { eq, getDb, subscriptions } from '@repo/db';
 import { actStartInstant, assertFreshForAct, confirmAuthorizationMutation } from '@repo/payments';
-import { ServiceErrorCode } from '@repo/schemas';
+import { BillingCycleSchema, ServiceErrorCode } from '@repo/schemas';
 import { z } from 'zod';
 import { ServiceError } from '../../../types/index.js';
 import { extractPostgresErrorCause } from '../../../utils/index.js';
@@ -22,7 +22,6 @@ const inputSchema = z.strictObject({
     payerEmail: z.email().optional(),
     returnUrl: z.url()
 });
-const cycleSchema = z.enum(['monthly', 'quarterly', 'semiannual', 'annual']);
 
 /** AC:B8b:7 request input. */
 export type RequestPlanChangeInput = z.input<typeof inputSchema>;
@@ -140,7 +139,7 @@ export async function requestPlanChange(
         return { path: 'DOWNGRADE', effectiveAt, amountMinor: target.amount };
     }
 
-    const targetCycle = cycleSchema.parse(target.cycle);
+    const targetCycle = BillingCycleSchema.parse(target.cycle);
     let creditDays = 0;
     const successor = await startSuccession(
         {
