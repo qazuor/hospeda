@@ -76,6 +76,18 @@ describe('TEST:V8b:2 (soporte API) partner application panel clock', () => {
             page: 1,
             pageSize: 100
         });
+        const modelRow = before.items.find((item) => item.id === id);
+        expect(modelRow).toBeDefined();
+        expect(Object.keys(modelRow!).sort()).toEqual([
+            'createdAt',
+            'email',
+            'id',
+            'overdue',
+            'partner',
+            'resolvedAt',
+            'status',
+            'waitEndsAt'
+        ]);
         expect(before.items.find((item) => item.id === id)?.overdue).toBe(false);
         expect(after.items.find((item) => item.id === id)?.overdue).toBe(true);
         expect(exact.items.find((item) => item.id === id)?.overdue).toBe(false);
