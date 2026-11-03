@@ -105,6 +105,7 @@ describe('PartnerApplicationPanelScreen', () => {
         );
         const approvedRow = screen.getByTestId(`partner-application-row-${oldId}`);
         expect(within(approvedRow).queryByRole('button')).not.toBeInTheDocument();
+        expect(within(approvedRow).getAllByRole('cell')).toHaveLength(4);
         expect(
             within(screen.getByTestId('partner-application-panel-table')).queryByRole(
                 'columnheader',

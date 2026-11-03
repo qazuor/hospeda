@@ -5,6 +5,7 @@ import { useTranslations } from '@/hooks/use-translations';
 import { usePartnerApplicationActions } from '../hooks/usePartnerApplicationActions';
 import { PartnerApplicationActionDialog } from './PartnerApplicationActionDialog';
 
+/** Renders the actions available for a partner application in its current view. */
 export function PartnerApplicationRowActions({
     item,
     view

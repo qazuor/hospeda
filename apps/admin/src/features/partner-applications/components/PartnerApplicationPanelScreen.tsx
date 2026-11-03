@@ -15,6 +15,7 @@ const VIEWS: readonly PartnerApplicationPanelView[] = [
     'rejectedWaiting'
 ];
 
+/** Renders the paginated admin views of partner applications. */
 export function PartnerApplicationPanelScreen() {
     const { t, locale } = useTranslations();
     const [view, setView] = useState<PartnerApplicationPanelView>('pending');

@@ -10,6 +10,7 @@ type ApproveBody = import('zod').infer<typeof PartnerApplicationApproveSchema>;
 type RejectBody = import('zod').infer<typeof PartnerApplicationRejectSchema>;
 type CancelWaitBody = import('zod').infer<typeof PartnerApplicationCancelWaitSchema>;
 
+/** Provides partner application mutations and refreshes the panel after success. */
 export function usePartnerApplicationActions() {
     const queryClient = useQueryClient();
     const invalidate = () =>

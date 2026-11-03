@@ -23,6 +23,7 @@ export function buildPartnerApplicationPanelPath({
     return `/api/v1/admin/partner-applications?${params.toString()}`;
 }
 
+/** Loads and validates one view of the admin partner application panel. */
 export function usePartnerApplicationPanel(input: PartnerApplicationPanelInput) {
     return useQuery({
         queryKey: [...PARTNER_APPLICATION_PANEL_QUERY_KEY, input],

@@ -22,6 +22,7 @@ import type { usePartnerApplicationActions } from '../hooks/usePartnerApplicatio
 type Action = 'approve' | 'reject' | 'cancelWait';
 type Mutations = ReturnType<typeof usePartnerApplicationActions>;
 
+/** Confirms a partner application action and reports API failures in the dialog. */
 export function PartnerApplicationActionDialog({
     item,
     action,
