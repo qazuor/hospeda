@@ -800,15 +800,16 @@ describe('the venue card does not narrow the vertical to restaurants', () => {
         expect(venueCard(locale).title).toMatch(/Comer y salir|Comer e sair|Food & nightlife/i);
     });
 
-    it.each(LOCALES)('%s widens the audience line past three venue types', (locale) => {
+    it.each(LOCALES)('%s widens the audience line to eating and going out', (locale) => {
         // The line used to enumerate exactly "restaurantes, bares y cafés",
-        // which reads as an exhaustive list rather than as examples. Keeping
-        // "restaurante" AMONG several examples is fine — being the only door is
-        // what was not.
+        // which reads as an exhaustive list rather than as examples. Since
+        // HOS-1850 (sub-spec 9, DEC-FAC-069) the vertical is also nightlife, so
+        // the line names both halves, gives a night example and stays open-ended.
         const audience = venueCard(locale).audience ?? '';
 
-        expect(audience).toMatch(/food truck/i);
-        expect(audience).toMatch(/todo local|todo estabelecimento|any food business/i);
+        expect(audience).toMatch(/se come o se sale|eat or go out|se come ou se sai/i);
+        expect(audience).toMatch(/boliche|nightclub|balada/i);
+        expect(audience).toMatch(/y más|and more|e mais/i);
     });
 
     it('retires the old URL instead of leaving it indexed — D-9 reversed by HOS-1032', () => {
