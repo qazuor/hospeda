@@ -14,17 +14,13 @@ export const LISTING_SECTIONS = {
                 'summary',
                 'description',
                 'richDescription',
-                'nameI18n',
-                'summaryI18n',
-                'descriptionI18n',
-                'richDescriptionI18n',
-                'translationMeta',
                 'type',
                 'destinationId',
                 'refreshSlugFromName',
                 'adminInfo',
                 'tags',
-                'rating'
+                'rating',
+                'seo'
             ],
             order: 1,
             group: 'property'
@@ -41,7 +37,7 @@ export const LISTING_SECTIONS = {
             id: 'price',
             vertical: 'venue',
             common: true,
-            fields: ['priceRange', 'seo'],
+            fields: ['priceRange'],
             order: 3,
             group: 'property'
         },
@@ -123,7 +119,13 @@ export const LISTING_SECTIONS = {
             id: 'translations',
             vertical: 'venue',
             common: true,
-            fields: [],
+            fields: [
+                'nameI18n',
+                'summaryI18n',
+                'descriptionI18n',
+                'richDescriptionI18n',
+                'translationMeta'
+            ],
             order: 12,
             group: 'management'
         }
@@ -139,17 +141,13 @@ export const LISTING_SECTIONS = {
                 'summary',
                 'description',
                 'richDescription',
-                'nameI18n',
-                'summaryI18n',
-                'descriptionI18n',
-                'richDescriptionI18n',
-                'translationMeta',
                 'type',
                 'destinationId',
                 'refreshSlugFromName',
                 'adminInfo',
                 'tags',
-                'rating'
+                'rating',
+                'seo'
             ],
             order: 1,
             group: 'property'
@@ -194,7 +192,7 @@ export const LISTING_SECTIONS = {
             id: 'price',
             vertical: 'experience',
             common: true,
-            fields: ['priceFrom', 'priceUnit', 'isPriceOnRequest', 'seo'],
+            fields: ['priceFrom', 'priceUnit', 'isPriceOnRequest'],
             order: 5,
             group: 'property'
         },
@@ -234,7 +232,13 @@ export const LISTING_SECTIONS = {
             id: 'translations',
             vertical: 'experience',
             common: true,
-            fields: [],
+            fields: [
+                'nameI18n',
+                'summaryI18n',
+                'descriptionI18n',
+                'richDescriptionI18n',
+                'translationMeta'
+            ],
             order: 10,
             group: 'management'
         }
@@ -250,11 +254,6 @@ export const LISTING_SECTIONS = {
                 'summary',
                 'description',
                 'richDescription',
-                'nameI18n',
-                'summaryI18n',
-                'descriptionI18n',
-                'richDescriptionI18n',
-                'translationMeta',
                 'type',
                 'destinationId',
                 'refreshSlugFromName',
@@ -341,7 +340,13 @@ export const LISTING_SECTIONS = {
             id: 'translations',
             vertical: 'accommodation',
             common: true,
-            fields: [],
+            fields: [
+                'nameI18n',
+                'summaryI18n',
+                'descriptionI18n',
+                'richDescriptionI18n',
+                'translationMeta'
+            ],
             order: 10,
             group: 'management'
         },
