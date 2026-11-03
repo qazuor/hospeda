@@ -6,6 +6,41 @@ export function createApplicationEmail(): string {
     return `pp1-${randomUUID()}@example.test`;
 }
 
+/** Inserts a pending application, optionally preserving an explicit deadline version. */
+export async function insertPending({
+    email,
+    deadlinesVersion
+}: {
+    readonly email: string;
+    readonly deadlinesVersion?: number | null;
+}): Promise<string> {
+    const result = await getDb().execute(sql`
+        INSERT INTO partner_application (email, status, deadlines_version)
+        VALUES (
+            ${email}, 'PENDING',
+            ${
+                deadlinesVersion === undefined
+                    ? sql`(SELECT max("version") FROM "vertical_deadline_version")`
+                    : sql`${deadlinesVersion}`
+            }
+        )
+        RETURNING id`);
+    return String(result.rows[0]?.id);
+}
+
+/** Reads a Partner row for assertions owned by the current test. */
+export async function readPartner({ id }: { readonly id: string }) {
+    const result = await getDb().execute(sql`
+        SELECT id, slug, name, type, lifecycle_state, owner_user_id, claim_secret_hash
+        FROM partners WHERE id = ${id}::uuid`);
+    return result.rows[0];
+}
+
+/** Deletes only Partner rows created by the current test. */
+export async function deletePartners({ ids }: { readonly ids: readonly string[] }): Promise<void> {
+    for (const id of ids) await getDb().execute(sql`DELETE FROM partners WHERE id = ${id}::uuid`);
+}
+
 /** Inserts a rejected application with the fields written by the real PP3 transition. */
 export async function insertRejected({
     email,
