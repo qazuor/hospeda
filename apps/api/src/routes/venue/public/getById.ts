@@ -11,8 +11,8 @@ import { withPublicIsFeatured } from '../../../utils/accommodation-featured';
 import { getActorFromContext } from '../../../utils/actor';
 import { withPublicVisibleFaqs } from '../../../utils/listing-faq-visibility';
 import { apiLogger } from '../../../utils/logger';
+import { projectPublicListings } from '../../../utils/public-listing-projector';
 import { createPublicRoute } from '../../../utils/route-factory';
-import { gateVenueMenuFile } from './menu-file-gate';
 
 const venueService = new VenueService({ logger: apiLogger });
 
@@ -46,7 +46,11 @@ export const publicGetVenueByIdRoute = createPublicRoute({
             return null;
         }
         // HOS-1792: same menu-file projection as by-slug.
-        const venue = await gateVenueMenuFile({ venue: withPublicVisibleFaqs(result.data) });
+        const [venue] = await projectPublicListings({
+            vertical: 'venue',
+            listings: [withPublicVisibleFaqs(result.data)]
+        });
+        if (!venue) return null;
         return withPublicIsFeatured(venue);
     },
     options: {

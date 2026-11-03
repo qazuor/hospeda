@@ -15,8 +15,8 @@ import {
 } from '../../../utils/listing-catalog-relations';
 import { withPublicVisibleFaqs } from '../../../utils/listing-faq-visibility';
 import { apiLogger } from '../../../utils/logger';
+import { projectPublicListings } from '../../../utils/public-listing-projector';
 import { createPublicRoute } from '../../../utils/route-factory';
-import { applyExperienceDirectionsGate } from './directions-projection';
 
 const experienceService = new ExperienceService({ logger: apiLogger });
 
@@ -72,16 +72,19 @@ export const publicGetExperienceBySlugRoute = createPublicRoute({
         // has to REMOVE `meetingPointDirections`, and a spread of
         // `{ meetingPointDirections: undefined }` leaves the key present. See
         // the projection module's doc.
-        return applyExperienceDirectionsGate({
-            experience: {
-                ...withPublicVisibleFaqs(experience),
-                // HOS-1286: PUBLIC tier derives `isFeatured` from `featuredByEntitlement`.
-                isFeatured: resolvePublicIsFeatured(experience),
-                amenities: amenitiesData.length > 0 ? amenitiesData : undefined,
-                features: featuresData.length > 0 ? featuresData : undefined
-            },
-            ownerGrantsDirections: false
+        const [projected] = await projectPublicListings({
+            vertical: 'experience',
+            listings: [
+                {
+                    ...withPublicVisibleFaqs(experience),
+                    // HOS-1286: PUBLIC tier derives `isFeatured` from `featuredByEntitlement`.
+                    isFeatured: resolvePublicIsFeatured(experience),
+                    amenities: amenitiesData.length > 0 ? amenitiesData : undefined,
+                    features: featuresData.length > 0 ? featuresData : undefined
+                }
+            ]
         });
+        return projected;
     },
     options: {
         customRateLimit: { requests: 100, windowMs: 60000 }

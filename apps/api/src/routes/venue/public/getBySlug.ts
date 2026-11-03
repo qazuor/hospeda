@@ -4,7 +4,7 @@
  * Returns null (404) when the listing is not found or not publicly visible.
  */
 
-import { VenuePublicSchema, VerticalEnum } from '@repo/schemas';
+import { VenuePublicSchema } from '@repo/schemas';
 import {
     getVenueDailySpecials,
     getVenueEvents,
@@ -17,14 +17,11 @@ import { z } from 'zod';
 import { getTodayInMarketTimezone } from '../../../services/calendar-sync/date-range';
 import { resolvePublicIsFeatured } from '../../../utils/accommodation-featured';
 import { getActorFromContext } from '../../../utils/actor';
-import { readEffectiveKeys } from '../../../utils/listing-access/user-gate';
 import { fetchVenueAmenities, fetchVenueFeatures } from '../../../utils/listing-catalog-relations';
 import { withPublicVisibleFaqs } from '../../../utils/listing-faq-visibility';
 import { apiLogger } from '../../../utils/logger';
+import { projectPublicListings } from '../../../utils/public-listing-projector';
 import { createPublicRoute } from '../../../utils/route-factory';
-import { applyVenueDailySpecialsGate } from '../../venue/public/daily-specials-projection';
-import { applyVenueEventsGate } from '../../venue/public/events-projection';
-import { applyVenueMenuManagementGate } from '../../venue/public/menu-projection';
 
 const venueService = new VenueService({ logger: apiLogger });
 
@@ -114,18 +111,6 @@ export const publicGetVenueBySlugRoute = createPublicRoute({
         // reads of the same subscription if a plan change landed mid-render,
         // publishing one paid feature while withholding another for no reason a
         // reader could see. See `resolveOwnerVenuePlanEntitlements`.
-        const ownerGrants = await readEffectiveKeys({
-            userId: venue.ownerId,
-            vertical: VerticalEnum.VENUE,
-            keys: [
-                'manage_venue_menu',
-                'menu_item_photos',
-                'multilingual_venue_menu',
-                'manage_venue_events',
-                'manage_venue_daily_special'
-            ]
-        });
-
         const [amenitiesData, featuresData, menuResult, eventsResult, dailySpecialsResult] =
             await Promise.all([
                 fetchVenueAmenities(venue.id),
@@ -135,34 +120,33 @@ export const publicGetVenueBySlugRoute = createPublicRoute({
                 getVenueDailySpecials(model, { venueId: venue.id, validOn: today })
             ]);
 
-        const menuGate = applyVenueMenuManagementGate({
-            venue: venue,
-            menuSections: menuResult.error ? [] : menuResult.data.sections,
-            ownerGrantsMenuManagement: ownerGrants.manage_venue_menu ?? false,
-            ownerGrantsMenuItemPhotos: ownerGrants.menu_item_photos ?? false,
-            ownerGrantsMenuTranslations: ownerGrants.multilingual_venue_menu ?? false
+        const [projected] = await projectPublicListings({
+            vertical: 'venue',
+            listings: [
+                {
+                    ...withPublicVisibleFaqs(venue),
+                    // HOS-1286: PUBLIC tier derives `isFeatured` from `featuredByEntitlement`.
+                    isFeatured: resolvePublicIsFeatured(venue),
+                    amenities: amenitiesData.length > 0 ? amenitiesData : undefined,
+                    features: featuresData.length > 0 ? featuresData : undefined,
+                    menuSections:
+                        menuResult.error || menuResult.data.sections.length === 0
+                            ? undefined
+                            : menuResult.data.sections,
+                    menuFileUrl: venue.menuFileUrl,
+                    menuFileKind: venue.menuFileKind,
+                    venueEvents:
+                        eventsResult.error || eventsResult.data.events.length === 0
+                            ? undefined
+                            : eventsResult.data.events.filter((event) => event.isActive),
+                    dailySpecials:
+                        dailySpecialsResult.error || dailySpecialsResult.data.specials.length === 0
+                            ? undefined
+                            : dailySpecialsResult.data.specials
+                }
+            ]
         });
-
-        const eventsGate = applyVenueEventsGate({
-            events: eventsResult.error ? [] : eventsResult.data.events,
-            ownerGrantsVenueEvents: ownerGrants.manage_venue_events ?? false
-        });
-
-        const dailySpecialsGate = applyVenueDailySpecialsGate({
-            dailySpecials: dailySpecialsResult.error ? [] : dailySpecialsResult.data.specials,
-            ownerGrantsDailySpecial: ownerGrants.manage_venue_daily_special ?? false
-        });
-
-        return {
-            ...withPublicVisibleFaqs(venue),
-            // HOS-1286: PUBLIC tier derives `isFeatured` from `featuredByEntitlement`.
-            isFeatured: resolvePublicIsFeatured(venue),
-            amenities: amenitiesData.length > 0 ? amenitiesData : undefined,
-            features: featuresData.length > 0 ? featuresData : undefined,
-            ...menuGate,
-            ...eventsGate,
-            ...dailySpecialsGate
-        };
+        return projected;
     },
     options: {
         customRateLimit: { requests: 100, windowMs: 60000 }

@@ -4,6 +4,9 @@
  * when the OWNER's plan does not grant `manage_venue_menu`, exactly as by-slug
  * does through `applyVenueMenuManagementGate`.
  */
+
+import type { VerticalEnum } from '@repo/schemas';
+import { rehydrateEffectiveSet } from '@repo/verticals';
 import { Hono } from 'hono';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { AppBindings } from '../../../../src/types';
@@ -15,21 +18,38 @@ const DEST_ID = 'dddddddd-0000-4000-8000-000000001792';
 const FILE_URL = 'https://res.cloudinary.com/x/menu.pdf';
 
 const mockGetById = vi.fn();
+const mockGetBySlug = vi.fn();
 const mockSearch = vi.fn();
-const mockReadEffectiveKeys = vi.fn();
+const mockReadEffectiveSet = vi.fn();
 
 vi.mock('@repo/service-core', async (importOriginal) => {
     const actual = await importOriginal<typeof import('@repo/service-core')>();
     return {
         ...actual,
+        getVenueMenu: vi.fn(async () => ({
+            data: { sections: [{ id: 'section', items: [] }] },
+            error: null
+        })),
+        getVenueEvents: vi.fn(async () => ({ data: { events: [] }, error: null })),
+        getVenueDailySpecials: vi.fn(async () => ({ data: { specials: [] }, error: null })),
         VenueService: vi.fn().mockImplementation(function () {
-            return { getById: mockGetById, search: mockSearch };
+            return {
+                getById: mockGetById,
+                getBySlug: mockGetBySlug,
+                search: mockSearch,
+                model: {}
+            };
         })
     };
 });
 
-vi.mock('../../../../src/utils/listing-access/user-gate', () => ({
-    readEffectiveKeys: mockReadEffectiveKeys
+vi.mock('../../../../src/utils/listing-catalog-relations', () => ({
+    fetchVenueAmenities: vi.fn(async () => []),
+    fetchVenueFeatures: vi.fn(async () => [])
+}));
+
+vi.mock('../../../../src/utils/listing-access/ports', () => ({
+    getListingAccessPorts: () => ({ effectiveSet: mockReadEffectiveSet })
 }));
 
 vi.mock('../../../../src/utils/actor', async (importOriginal) => {
@@ -66,10 +86,12 @@ vi.mock('../../../../src/utils/route-factory', () => {
     return { createPublicRoute: build, createPublicListRoute: build };
 });
 
-function makeVenue(ownerId: string): Record<string, unknown> {
+function makeVenue(ownerId: string, businessLines: string[] = ['food']): Record<string, unknown> {
     return {
         id: VENUE_ID,
         ownerId,
+        businessLines,
+        menuUrl: 'https://menu.example',
         menuFileUrl: FILE_URL,
         menuFileKind: 'PDF',
         featuredByEntitlement: false,
@@ -79,9 +101,21 @@ function makeVenue(ownerId: string): Record<string, unknown> {
 
 /** Grants `manage_venue_menu` to OWNER_PAID only. */
 function grantToPaidOwnerOnly(): void {
-    mockReadEffectiveKeys.mockImplementation(async ({ userId }: { userId: string }) => ({
-        manage_venue_menu: userId === OWNER_PAID
-    }));
+    mockReadEffectiveSet.mockImplementation(
+        async ({ userId, vertical }: { userId: string; vertical: string }) => ({
+            ...rehydrateEffectiveSet({
+                version: 1,
+                userId,
+                vertical: vertical as VerticalEnum,
+                hasLiveNonTrialTitle: false,
+                inheritsTouristVip: false,
+                entries:
+                    userId === OWNER_PAID
+                        ? [{ key: 'manage_venue_menu', value: 1, strategy: 'MAX' }]
+                        : []
+            })
+        })
+    );
 }
 
 async function get(target: readonly [string, string], url: string) {
@@ -96,6 +130,10 @@ async function get(target: readonly [string, string], url: string) {
 }
 
 const BY_ID = ['../../../../src/routes/venue/public/getById', 'publicGetVenueByIdRoute'] as const;
+const BY_SLUG = [
+    '../../../../src/routes/venue/public/getBySlug',
+    'publicGetVenueBySlugRoute'
+] as const;
 const LIST = ['../../../../src/routes/venue/public/list', 'publicListVenuesRoute'] as const;
 const BY_DEST = [
     '../../../../src/routes/venue/public/getByDestination',
@@ -111,8 +149,9 @@ describe('HOS-1792 public venue menu file gate', () => {
     it('getById withholds the menu file when the plan does not grant it', async () => {
         mockGetById.mockResolvedValue({ data: makeVenue(OWNER_FREE), error: null });
         const data = await get(BY_ID, `/${VENUE_ID}`);
-        expect(data.menuFileUrl).toBeNull();
-        expect(data.menuFileKind).toBeNull();
+        expect(data).not.toHaveProperty('menuFileUrl');
+        expect(data).not.toHaveProperty('menuFileKind');
+        expect(data).not.toHaveProperty('menuUrl');
     });
 
     it('getById returns the menu file when the plan grants it', async () => {
@@ -120,13 +159,37 @@ describe('HOS-1792 public venue menu file gate', () => {
         const data = await get(BY_ID, `/${VENUE_ID}`);
         expect(data.menuFileUrl).toBe(FILE_URL);
         expect(data.menuFileKind).toBe('PDF');
+        expect(data.menuUrl).toBe('https://menu.example');
+    });
+
+    it.each([
+        [OWNER_FREE, false],
+        [OWNER_PAID, true]
+    ] as const)('getBySlug projects menu fields for owner %s according to the plan', async (ownerId, entitled) => {
+        mockGetBySlug.mockResolvedValue({ data: makeVenue(ownerId), error: null });
+        const data = await get(BY_SLUG, '/slug/test-venue');
+        expect(data.menuUrl).toBe(entitled ? 'https://menu.example' : undefined);
+        expect(data.menuFileUrl).toBe(entitled ? FILE_URL : undefined);
+        if (entitled) expect(data.menuSections).toHaveLength(1);
+        else expect(data).not.toHaveProperty('menuSections');
+    });
+
+    it('does not publish menu fields for a boliche even when the owner is entitled', async () => {
+        mockGetBySlug.mockResolvedValue({
+            data: makeVenue(OWNER_PAID, ['nightlife']),
+            error: null
+        });
+        const data = await get(BY_SLUG, '/slug/test-venue');
+        expect(data).not.toHaveProperty('menuUrl');
+        expect(data).not.toHaveProperty('menuFileUrl');
+        expect(data).not.toHaveProperty('menuSections');
     });
 
     it('getById withholds the menu file when the entitlement lookup fails closed', async () => {
-        mockReadEffectiveKeys.mockResolvedValue({ manage_venue_menu: false });
+        mockReadEffectiveSet.mockRejectedValue(new Error('billing unavailable'));
         mockGetById.mockResolvedValue({ data: makeVenue(OWNER_PAID), error: null });
         const data = await get(BY_ID, `/${VENUE_ID}`);
-        expect(data.menuFileUrl).toBeNull();
+        expect(data).not.toHaveProperty('menuFileUrl');
     });
 
     it.each([
@@ -138,9 +201,11 @@ describe('HOS-1792 public venue menu file gate', () => {
             error: null
         });
         const data = await get(target, url);
-        expect(data.items[0].menuFileUrl).toBeNull();
-        expect(data.items[0].menuFileKind).toBeNull();
+        expect(data.items[0]).not.toHaveProperty('menuFileUrl');
+        expect(data.items[0]).not.toHaveProperty('menuFileKind');
+        expect(data.items[0]).not.toHaveProperty('menuUrl');
         expect(data.items[1].menuFileUrl).toBe(FILE_URL);
         expect(data.items[1].menuFileKind).toBe('PDF');
+        expect(data.items[1].menuUrl).toBe('https://menu.example');
     });
 });

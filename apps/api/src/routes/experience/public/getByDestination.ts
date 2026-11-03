@@ -15,8 +15,8 @@ import { withPublicIsFeaturedList } from '../../../utils/accommodation-featured'
 import { getActorFromContext } from '../../../utils/actor';
 import { apiLogger } from '../../../utils/logger';
 import { extractPaginationParams, getPaginationResponse } from '../../../utils/pagination';
+import { projectPublicListings } from '../../../utils/public-listing-projector';
 import { createPublicListRoute } from '../../../utils/route-factory';
-import { withholdExperienceDirectionsFromList } from './directions-projection';
 
 const experienceService = new ExperienceService({ logger: apiLogger });
 
@@ -54,7 +54,10 @@ export const publicGetExperiencesByDestinationRoute = createPublicListRoute({
         return {
             // HOS-1049: withheld on lists, same reason as `list.ts`.
             items: withPublicIsFeaturedList(
-                withholdExperienceDirectionsFromList(result.data?.items || [])
+                await projectPublicListings({
+                    vertical: 'experience',
+                    listings: result.data?.items || []
+                })
             ),
             pagination: getPaginationResponse(result.data?.total || 0, { page, pageSize })
         };

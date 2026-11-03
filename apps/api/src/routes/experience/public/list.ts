@@ -18,8 +18,8 @@ import { withPublicIsFeaturedList } from '../../../utils/accommodation-featured'
 import { getActorFromContext } from '../../../utils/actor';
 import { apiLogger } from '../../../utils/logger';
 import { extractPaginationParams, getPaginationResponse } from '../../../utils/pagination';
+import { projectPublicListings } from '../../../utils/public-listing-projector';
 import { createPublicListRoute } from '../../../utils/route-factory';
-import { withholdExperienceDirectionsFromList } from './directions-projection';
 
 const experienceService = new ExperienceService({ logger: apiLogger });
 
@@ -63,7 +63,10 @@ export const publicListExperiencesRoute = createPublicListRoute({
         // `ExperiencePublicSchema` — so it is withheld here unconditionally,
         // through the same gate the detail routes use.
         const items = withPublicIsFeaturedList(
-            withholdExperienceDirectionsFromList(result.data?.items || [])
+            await projectPublicListings({
+                vertical: 'experience',
+                listings: result.data?.items || []
+            })
         );
 
         return {
