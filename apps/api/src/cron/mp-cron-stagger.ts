@@ -6,6 +6,38 @@ export interface MpCronSchedule {
     readonly schedule: string;
 }
 
+/** Registry entry annotated with MP-calling and no-overlap requirements. */
+export interface MpCronJobCandidate extends MpCronSchedule {
+    /** Whether the registered definition enables the session lock. */
+    readonly exclusive: boolean;
+    /** Whether source scanning or the indirect allowlist identifies an MP call. */
+    readonly mpCalling: boolean;
+}
+
+/** Evaluate exclusivity and minute ownership from registered jobs and pending jobs. */
+export function findMpCronViolations(args: {
+    readonly jobs: readonly MpCronJobCandidate[];
+    readonly pending: readonly MpCronSchedule[];
+    readonly expandMinutes: (expression: string) => readonly number[];
+}): readonly string[] {
+    const violations: string[] = [];
+    const registered = new Map(args.jobs.map((job) => [job.name, job]));
+    for (const job of args.jobs) {
+        if (job.mpCalling && !job.exclusive) violations.push(`add exclusive: true to ${job.name}`);
+        if (job.exclusive && !job.mpCalling)
+            violations.push(`remove stale exclusive: true from ${job.name}`);
+    }
+    const schedules: MpCronSchedule[] = [
+        ...args.jobs.filter((job) => job.mpCalling),
+        ...args.pending.filter((job) => !registered.has(job.name))
+    ];
+    const report = checkMpCronStagger({ schedules, expandMinutes: args.expandMinutes });
+    violations.push(
+        ...report.conflicts.map((conflict) => `${conflict}; ${formatMpCronStaggerFailure(report)}`)
+    );
+    return violations;
+}
+
 /** Expanded minute ownership and collision findings for MP-calling schedules. */
 export interface MpCronStaggerReport {
     /** Minutes used by each job. */
