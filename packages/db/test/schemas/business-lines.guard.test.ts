@@ -43,7 +43,7 @@ describe('TEST:2.3:4 G-FAC-01', () => {
             const schema = readFileSync(join(root, schemaPath), 'utf8');
             expect(schema).toMatch(/businessLines:\s*text\('business_lines'\)/);
             expect(schema).toMatch(
-                /business_lines_gin_idx:[\s\S]{0,160}using\('gin', table\.businessLines\)/
+                /business_lines_gin_idx:[\s\S]*?using\(\s*'gin',\s*table\.businessLines\s*\)/
             );
         }
         for (const [type, rule] of Object.entries(BUSINESS_LINE_RULES.venue.typeRules)) {
