@@ -21,6 +21,8 @@ import {
     type ExperienceOwnerUpdateInput,
     ExperienceOwnerUpdateInputSchema,
     ExperienceProtectedSchema,
+    sectionsTouchedByBody,
+    sectionTraitsTouchedByBody,
     VerticalEnum
 } from '@repo/schemas';
 import { ExperienceService } from '@repo/service-core';
@@ -52,8 +54,8 @@ const experienceService = new ExperienceService({ logger: apiLogger });
  * The accepted set is `ExperienceOwnerUpdateInputSchema` itself, so a new
  * ficha field reaches this route with no edit here — and a field MISSING from
  * that schema is stripped in silence while the PATCH still answers 200. None
- * of the ficha fields needs a separate capability except the directions field.
- * The how-to-get-there field requires manage_experience_directions for the owner.
+ * of the ficha fields needs a separate capability; section traits are resolved
+ * through the listing access catalog.
  */
 export const protectedPatchExperienceRoute = createProtectedRoute({
     method: 'patch',
@@ -62,10 +64,12 @@ export const protectedPatchExperienceRoute = createProtectedRoute({
         vertical: VerticalEnum.EXPERIENCE,
         operation: 'EDIT',
         idParam: 'id',
-        capabilities: ({ body }) =>
-            body && Object.hasOwn(body, 'meetingPointDirections')
-                ? ['manage_experience_directions']
-                : []
+        listingSection: ({ body }) =>
+            sectionsTouchedByBody({ vertical: 'experience', body }).map((id) => ({
+                id,
+                intent: 'write' as const
+            })),
+        sectionTraits: ({ body }) => sectionTraitsTouchedByBody({ vertical: 'experience', body })
     },
     summary: 'Update experience listing (owner)',
     description:

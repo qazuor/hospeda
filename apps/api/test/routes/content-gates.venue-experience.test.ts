@@ -3,6 +3,7 @@ import {
     PublicationStatusEnum,
     RoleEnum,
     ServiceErrorCode,
+    VenueTypeEnum,
     VerticalEnum
 } from '@repo/schemas';
 import { rehydrateEffectiveSet } from '@repo/verticals';
@@ -29,6 +30,7 @@ import { protectedAddVenueFaqRoute } from '../../src/routes/venue/protected/addF
 import { protectedAddVenueFeaturedMediaRoute } from '../../src/routes/venue/protected/addFeaturedMedia';
 import { protectedAddVenueMediaRoute } from '../../src/routes/venue/protected/addMedia';
 import { protectedGetVenueBrochureRoute } from '../../src/routes/venue/protected/brochure';
+import { protectedCreateVenueListingRoute } from '../../src/routes/venue/protected/create';
 import { protectedPatchVenueRoute } from '../../src/routes/venue/protected/patch';
 import { protectedPutVenueDailySpecialsRoute } from '../../src/routes/venue/protected/putDailySpecials';
 import { protectedPutVenueEventsRoute } from '../../src/routes/venue/protected/putEvents';
@@ -55,6 +57,7 @@ vi.mock('@repo/service-core', async (importOriginal) => ({
     VenueService: class {
         getById = mocks.service;
         updateOwn = mocks.service;
+        createForOwner = mocks.service;
         addMedia = mocks.service;
         addFeaturedMedia = mocks.service;
     },
@@ -416,7 +419,7 @@ const cases = [
     }
 ] as const;
 type Case = (typeof cases)[number];
-function configureSet(owner: string, keys: readonly string[]): void {
+function configureSet(owner: string, keys: readonly string[], vertical = VerticalEnum.VENUE): void {
     mocks.effectiveSet.mockImplementation(
         async ({ userId, vertical }: { userId: string; vertical: VerticalEnum }) =>
             rehydrateEffectiveSet({
@@ -441,12 +444,11 @@ function configureSet(owner: string, keys: readonly string[]): void {
         ]
     });
     mocks.loadFacts.mockResolvedValue({
-        // The section chain now evaluates venue business lines before billing;
-        // keep these legacy entitlement cases on a food venue that has menu.
+        // Keep fixture business lines valid for each catalog vertical.
         facts: {
             ownerId: owner,
             publicationStatus: PublicationStatusEnum.PUBLISHED,
-            businessLines: ['food']
+            businessLines: vertical === VerticalEnum.VENUE ? ['food'] : ['standard']
         },
         ownerId: owner
     });
@@ -498,7 +500,8 @@ describe('TEST:V5:31 venue and experience content gates', () => {
                 : [
                       `edit_${row.vertical.toLowerCase()}_info`,
                       ...(row.file === 'venue/uploadMenuItemPhoto' ? ['manage_venue_menu'] : [])
-                  ]
+                  ],
+            row.vertical
         );
         const denied = await request(row);
         expect(denied.status, row.file).toBe(403);
@@ -520,7 +523,7 @@ describe('TEST:V5:31 venue and experience content gates', () => {
             'issue_experience_certificate',
             'download_listing_pdf'
         ];
-        configureSet(OWNER_B, full);
+        configureSet(OWNER_B, full, row.vertical);
         const allowed = await request(row, OWNER_B);
         const allowedBody = await allowed
             .clone()
@@ -533,7 +536,7 @@ describe('TEST:V5:31 venue and experience content gates', () => {
         });
     });
     it.each(cases)('$file preserves guest, shape and foreign-owner priority', async (row) => {
-        configureSet(OWNER_A, []);
+        configureSet(OWNER_A, [], row.vertical);
         expect((await request(row, '00000000-0000-4000-8000-000000000000')).status).toBe(401);
         expect((await request(row, OWNER_A, 'bad-id')).status).toBe(400);
         expect(mocks.effectiveSet).not.toHaveBeenCalled();
@@ -589,18 +592,83 @@ describe('TEST:V5:31 venue and experience content gates', () => {
     it('requires directions only when the patch includes meetingPointDirections', async () => {
         const row = cases.find((item) => item.file === 'experience/patch');
         if (!row) throw new Error('Experience patch route missing');
-        configureSet(OWNER_A, ['edit_experience_info']);
-        expect(
-            (
-                await (
-                    await request(row, OWNER_A, LISTING, { meetingPointDirections: ['Go north'] })
-                ).json()
-            ).error
-        ).toMatchObject({
+        configureSet(OWNER_A, ['edit_experience_info'], VerticalEnum.EXPERIENCE);
+        const directionsResponse = await request(row, OWNER_A, LISTING, {
+            meetingPointDirections: ['Go north']
+        });
+        expect((await directionsResponse.json()).error).toMatchObject({
             code: ServiceErrorCode.ENTITLEMENT_REQUIRED,
             details: { entitlementKey: 'manage_experience_directions' }
         });
         const plain = await request(row);
         expect((await plain.json()).error?.code).not.toBe(ServiceErrorCode.ENTITLEMENT_REQUIRED);
+    });
+    it('checks venue PATCH sections against resulting business lines and treats null as deletion', async () => {
+        const row = cases.find((item) => item.file === 'venue/patch');
+        if (!row) throw new Error('Venue patch route missing');
+        configureSet(OWNER_A, ['edit_venue_info', 'manage_venue_menu']);
+        mocks.loadFacts.mockResolvedValue({
+            facts: {
+                ownerId: OWNER_A,
+                publicationStatus: PublicationStatusEnum.PUBLISHED,
+                businessLines: ['nightlife']
+            },
+            ownerId: OWNER_A
+        });
+        const adding = await request(row, OWNER_A, LISTING, {
+            businessLines: ['food'],
+            menuUrl: 'https://example.com/menu'
+        });
+        expect(adding.status).not.toBe(409);
+
+        const removing = await request(row, OWNER_A, LISTING, {
+            businessLines: ['nightlife'],
+            menuUrl: 'https://example.com/menu'
+        });
+        expect(removing.status).toBe(409);
+        expect((await removing.json()).error).toMatchObject({
+            details: { reason: 'SECTION_ABSENT', section: 'menu' }
+        });
+
+        configureSet(OWNER_A, ['edit_venue_info']);
+        const clearing = await request(row, OWNER_A, LISTING, { menuUrl: null, entryKind: null });
+        expect(clearing.status).not.toBe(403);
+        expect((await clearing.json()).error?.details?.entitlementKey).not.toBe(
+            'manage_venue_menu'
+        );
+    });
+    it('uses type preselection for venue CREATE section presence', async () => {
+        configureSet(OWNER_A, ['manage_venue_menu'], VerticalEnum.VENUE);
+        const app = new Hono<AppBindings>();
+        app.use((ctx, next) => {
+            ctx.set('actor', {
+                id: OWNER_A,
+                roles: [RoleEnum.ADMIN],
+                permissions: Object.values(PermissionEnum),
+                emailVerified: true
+            });
+            return next();
+        });
+        app.route('/case', protectedCreateVenueListingRoute);
+        const create = (type: VenueTypeEnum) =>
+            app.request('/case', {
+                method: 'POST',
+                headers: { 'content-type': 'application/json' },
+                body: JSON.stringify({
+                    name: 'Local',
+                    summary: 'A good local venue summary.',
+                    description: 'A detailed description of this local venue for visitors.',
+                    destinationId: '00000000-0000-4000-a000-000000000002',
+                    type,
+                    menuUrl: 'https://example.com/menu'
+                })
+            });
+        const boliche = await create(VenueTypeEnum.BOLICHE);
+        expect(boliche.status).toBe(409);
+        expect((await boliche.json()).error).toMatchObject({
+            details: { reason: 'SECTION_ABSENT', section: 'menu' }
+        });
+        const cafe = await create(VenueTypeEnum.CAFE);
+        expect((await cafe.json()).error?.details?.reason).not.toBe('SECTION_ABSENT');
     });
 });

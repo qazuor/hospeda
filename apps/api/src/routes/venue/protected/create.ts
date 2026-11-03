@@ -37,7 +37,10 @@
  */
 
 import {
+    BUSINESS_LINE_RULES,
+    type BusinessLine,
     ServiceErrorCode,
+    sectionsTouchedByBody,
     VenueAdminCreateInputSchema,
     type VenueOwnerCreateInput,
     VenueOwnerCreateInputSchema,
@@ -111,7 +114,23 @@ export async function handleCreateVenueListing(ctx: Context, body: Record<string
 export const protectedCreateVenueListingRoute = createProtectedRoute({
     method: 'post',
     path: '/',
-    listingAccess: { vertical: VerticalEnum.VENUE, operation: 'CREATE' },
+    listingAccess: {
+        vertical: VerticalEnum.VENUE,
+        operation: 'CREATE',
+        businessLinesFromBody: ({ body }) => {
+            if (Array.isArray(body?.businessLines))
+                return body.businessLines.filter(
+                    (line): line is string => typeof line === 'string'
+                ) as BusinessLine[];
+            const type = body?.type as keyof typeof BUSINESS_LINE_RULES.venue.typeRules | undefined;
+            return type ? (BUSINESS_LINE_RULES.venue.typeRules[type]?.preselect ?? []) : [];
+        },
+        listingSection: ({ body }) =>
+            sectionsTouchedByBody({ vertical: 'venue', body }).map((id) => ({
+                id,
+                intent: 'write' as const
+            }))
+    },
     summary: 'Create a venue listing (owner self-service)',
     description:
         'Creates a venue listing owned by the authenticated caller and grants them the VENUE_OWNER role in the same transaction. Starts hidden (DRAFT) until the owner completes it. Requires an authenticated session and no venue permission.',

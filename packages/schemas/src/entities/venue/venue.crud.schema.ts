@@ -202,6 +202,8 @@ export const VenueOwnerUpdateInputSchema = VenueSchema.pick({
 })
     .partial()
     .extend({
+        /** Optional business-line replacement; section checks use this resulting state. */
+        businessLines: z.array(z.string()).optional(),
         /**
          * Optional amenity UUID list for junction sync on update (write-only).
          * undefined → no change | [] → clear all | [ids] → sync to exact set.

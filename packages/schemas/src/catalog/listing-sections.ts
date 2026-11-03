@@ -162,7 +162,13 @@ export const LISTING_SECTIONS = {
                 'meetingPointLong',
                 'meetingPointDirections'
             ],
-            traits: [{ id: 'directions', entitlementKey: K.MANAGE_EXPERIENCE_DIRECTIONS }],
+            traits: [
+                {
+                    id: 'directions',
+                    entitlementKey: K.MANAGE_EXPERIENCE_DIRECTIONS,
+                    fields: ['meetingPointDirections']
+                }
+            ],
             order: 2,
             group: 'property'
         },
