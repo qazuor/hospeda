@@ -4,6 +4,7 @@ import {
     eq,
     getDb,
     isNull,
+    manualPayments,
     ne,
     payments,
     refunds,
@@ -21,23 +22,25 @@ const logger = createLogger('succession-retained-payment');
 
 /** The partial unique index that keeps one OPEN retention per provider payment. */
 const OPEN_PAYMENT_RETENTION_INDEX = 'uq_succession_retained_payment_open_payment';
+const OPEN_MANUAL_RETENTION_INDEX = 'uq_succession_retained_payment_open_manual_payment';
 
 /** One of the acts that turn the S19 flag off (HOS-1561 H2). */
 export type SuccessionRetainedPaymentReleaseReason =
     (typeof SUCCESSION_RETAINED_PAYMENT_RELEASE_REASONS)[number];
 
 /**
- * The payment S19 retains. Only the provider payment exists at the MVP cut; the
- * manual door (`MP1`/`MP4`) arrives in Phase 4 (HOS-1561 H3).
+ * The payment S19 retains. The manual door arrives with HOS-1541.
  */
-export interface RetainablePayment {
-    readonly source: 'PAYMENT';
-    readonly id: string;
-}
+export type RetainablePayment =
+    | { readonly source: 'PAYMENT'; readonly id: string }
+    | { readonly source: 'MANUAL_PAYMENT'; readonly id: string };
 
 const retainInputSchema = z.strictObject({
     subscriptionId: z.uuid(),
-    payment: z.strictObject({ source: z.literal('PAYMENT'), id: z.uuid() }),
+    payment: z.discriminatedUnion('source', [
+        z.strictObject({ source: z.literal('PAYMENT'), id: z.uuid() }),
+        z.strictObject({ source: z.literal('MANUAL_PAYMENT'), id: z.uuid() })
+    ]),
     unpaidSince: z.date(),
     now: z.date()
 });
@@ -70,10 +73,10 @@ export interface RetainPaymentForSuccessionResult {
  * notify; it only raises "the flag" (HOS-1561 H1/H4).
  *
  * Runs inside the caller's transaction, which already holds the subscription row
- * with `FOR UPDATE`. Before the savepoint it also locks the PAYMENT `FOR UPDATE`
+ * with `FOR UPDATE`. Before the savepoint it also locks the source payment `FOR UPDATE`
  * (HOS-1676, AC:1676:5; Coord-305/316): the refund gate of GUARD:G-R1-D
  * (`assertRetainedPaymentRefundable`, run by RF1/RF4 after `lockRefundSource`)
- * locks the payment, not the subscription. The two serialize on the payment: if
+ * locks the provider payment, not the subscription. Those two serialize on the payment: if
  * S19 locks first, the RF1 waits for this commit and its gate rejects; if the RF1
  * locks first, S19 waits and then retains anyway (H-13 A: a refund that is not
  * `FAILED` is logged with `warn`; the refundable balance keeps a later branch from
@@ -82,17 +85,18 @@ export interface RetainPaymentForSuccessionResult {
  * the gate's `FOR UPDATE`, so the serialization does not depend on this lock alone;
  * what this lock adds is an explicit order that does not rest on the foreign key,
  * taken BEFORE the refund read below, so the H-13 A read sees a refund the RF1 just
- * committed. Lock order: subscription → payment, the same as S36; RF1/RF4 take only
- * the payment. A missing payment throws (fails closed).
+ * committed. Manual payment sources lock their manual_payment row and have no provider
+ * refund read. Lock order: subscription → source payment, the same as S36 for provider
+ * payments; RF1/RF4 take only the provider payment. A missing source throws (fails closed).
  *
  * The insert runs in a SAVEPOINT so that the partial unique
- * index rejecting a second OPEN retention of the same payment (a replayed notice)
+ * index rejecting a second OPEN retention of the same source payment (a replayed notice)
  * does not abort the caller's transaction; that rejection, recognised by the
  * constraint name in the `cause` chain, is `ALREADY_RETAINED`. Any other error is
  * rethrown untouched.
  *
  * @param input.subscriptionId - The predecessor that retains the payment
- * @param input.payment - The provider payment of the unpaid period
+ * @param input.payment - The provider or manual payment of the unpaid period
  * @param input.unpaidSince - The anchor of the unpaid period (`grace_started_at`)
  * @param input.now - The instant of the act
  * @param input.tx - The caller's transaction (row already locked)
@@ -111,10 +115,11 @@ export async function retainPaymentForSuccession(input: {
         unpaidSince: input.unpaidSince,
         now: input.now
     });
+    const paymentTable = value.payment.source === 'PAYMENT' ? payments : manualPayments;
     const [lockedPayment] = await input.tx
-        .select({ id: payments.id })
-        .from(payments)
-        .where(eq(payments.id, value.payment.id))
+        .select({ id: paymentTable.id })
+        .from(paymentTable)
+        .where(eq(paymentTable.id, value.payment.id))
         .for('update');
     if (!lockedPayment)
         throw new ServiceError(
@@ -123,11 +128,14 @@ export async function retainPaymentForSuccession(input: {
             undefined,
             'RETAINED_PAYMENT_NOT_FOUND'
         );
-    const [claimed] = await input.tx
-        .select({ id: refunds.id, status: refunds.status })
-        .from(refunds)
-        .where(and(eq(refunds.paymentId, value.payment.id), ne(refunds.status, 'FAILED')))
-        .limit(1);
+    const [claimed] =
+        value.payment.source === 'PAYMENT'
+            ? await input.tx
+                  .select({ id: refunds.id, status: refunds.status })
+                  .from(refunds)
+                  .where(and(eq(refunds.paymentId, value.payment.id), ne(refunds.status, 'FAILED')))
+                  .limit(1)
+            : [];
     if (claimed)
         logger.warn(
             {
@@ -142,8 +150,9 @@ export async function retainPaymentForSuccession(input: {
         await input.tx.transaction(async (savepoint) => {
             await savepoint.insert(successionRetainedPayments).values({
                 subscriptionId: value.subscriptionId,
-                paymentId: value.payment.id,
-                manualPaymentId: null,
+                paymentId: value.payment.source === 'PAYMENT' ? value.payment.id : null,
+                manualPaymentId:
+                    value.payment.source === 'MANUAL_PAYMENT' ? value.payment.id : null,
                 unpaidSince: value.unpaidSince,
                 retainedAt: value.now,
                 createdAt: value.now,
@@ -152,7 +161,11 @@ export async function retainPaymentForSuccession(input: {
         });
     } catch (error) {
         const cause = extractPostgresErrorCause(error);
-        if (cause?.code === '23505' && cause.constraint === OPEN_PAYMENT_RETENTION_INDEX)
+        if (
+            cause?.code === '23505' &&
+            (cause.constraint === OPEN_PAYMENT_RETENTION_INDEX ||
+                cause.constraint === OPEN_MANUAL_RETENTION_INDEX)
+        )
             return { outcome: 'ALREADY_RETAINED' };
         throw error;
     }
