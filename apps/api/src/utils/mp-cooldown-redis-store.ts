@@ -16,6 +16,8 @@ export function createMercadoPagoRedisCoolDownStore(args: {
     const cacheMs = args.cacheMs ?? 250;
     const logger = args.logger ?? apiLogger;
     let client = args.client;
+    const ownsClient = !args.client;
+    let closePromise: Promise<void> | undefined;
     let initialConnectionSettled = client?.status === 'ready';
     let localUntil = 0;
     let sharedUntil = 0;
@@ -58,6 +60,17 @@ export function createMercadoPagoRedisCoolDownStore(args: {
     };
     void initialize().catch(() => undefined);
     return {
+        close: async () => {
+            if (!ownsClient || !client) return;
+            closePromise ??= (async () => {
+                try {
+                    await client?.quit();
+                } catch {
+                    client?.disconnect();
+                }
+            })();
+            await closePromise;
+        },
         extend: ({ until }) => {
             localUntil = Math.max(localUntil, until);
             if (client?.status !== 'ready') return;
