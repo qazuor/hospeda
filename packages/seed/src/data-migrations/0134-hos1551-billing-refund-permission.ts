@@ -4,7 +4,7 @@ import { PermissionEnum, RoleEnum } from '@repo/schemas';
 import type { SeedMigrationCtx, SeedMigrationModule, SeedMigrationResult } from './types.js';
 
 export const meta = {
-    name: '0133-hos1551-billing-refund-permission',
+    name: '0134-hos1551-billing-refund-permission',
     group: 'required',
     destructive: false
 } as const satisfies SeedMigrationModule['meta'];

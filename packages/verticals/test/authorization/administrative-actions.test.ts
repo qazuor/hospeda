@@ -289,6 +289,31 @@ describe('TEST:V5:14 — la cadena rechaza al actor de sistema', () => {
         ).toBe(false);
     });
 
+    it('HOS-1484 assigns ACC_5 only its own partner-application permission', () => {
+        expect(ADMINISTRATIVE_ACTION_PERMISSIONS.ACC_5).toEqual({
+            permissions: [PermissionEnum.PARTNER_RESOLVE_APPLICATION],
+            pendingOwnPermission: null
+        });
+        expect(
+            ADMINISTRATIVE_ACTION_PERMISSION_SET.has(PermissionEnum.PARTNER_RESOLVE_APPLICATION)
+        ).toBe(true);
+        expect(
+            SYSTEM_ACTOR_FORBIDDEN_PERMISSION_SET.has(PermissionEnum.PARTNER_RESOLVE_APPLICATION)
+        ).toBe(true);
+        expect(
+            isAdministrativeActionPermitted({
+                action: 'ACC_5',
+                actorPermissions: [PermissionEnum.PARTNER_MANAGE]
+            })
+        ).toBe(false);
+        expect(
+            isAdministrativeActionPermitted({
+                action: 'ACC_5',
+                actorPermissions: [PermissionEnum.PARTNER_RESOLVE_APPLICATION]
+            })
+        ).toBe(true);
+    });
+
     it('TEST:V8a:15 assigns ACC_24 only its own close-on-request permission', () => {
         expect(ADMINISTRATIVE_ACTION_PERMISSIONS.ACC_24).toEqual({
             permissions: [PermissionEnum.USER_CLOSE_ON_REQUEST],

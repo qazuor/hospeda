@@ -181,7 +181,15 @@ const ROUTE_BINDINGS: Readonly<Record<AdministrativeAction, BoundEntry | Unbound
         ]
     },
     ACC_4: { unbound: 'B7 builds it' },
-    ACC_5: { unbound: 'legacy HOS-278 alliance approval; V7 (HOS-1484) builds it' },
+    ACC_5: {
+        bindings: [
+            {
+                kind: 'required',
+                file: 'apps/api/src/routes/partner-application/admin/cancel-wait.ts',
+                route: 'adminCancelPartnerApplicationWaitRoute'
+            }
+        ]
+    },
     ACC_6: { unbound: 'legacy HOS-278 partner routes; V7 (HOS-1489) builds it' },
     ACC_7: {
         bindings: [

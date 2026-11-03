@@ -1,7 +1,7 @@
 import { PermissionEnum, RoleEnum } from '@repo/schemas';
 import type { Actor } from '@repo/service-core';
 import { describe, expect, it } from 'vitest';
-import * as migration from '../../src/data-migrations/0133-hos1551-billing-refund-permission.js';
+import * as migration from '../../src/data-migrations/0134-hos1551-billing-refund-permission.js';
 import type { SeedMigrationCtx } from '../../src/data-migrations/types.js';
 import { ROLE_PERMISSIONS } from '../../src/required/rolePermissions.seed.js';
 
@@ -26,7 +26,7 @@ function buildCtx(inserted: unknown[]) {
 describe('TEST:HOS-1551:4 AC:B6:1 billing refund seed grant', () => {
     it('declares an additive migration granting the permission to SUPER_ADMIN', () => {
         expect(migration.meta).toEqual({
-            name: '0133-hos1551-billing-refund-permission',
+            name: '0134-hos1551-billing-refund-permission',
             group: 'required',
             destructive: false
         });

@@ -1,5 +1,5 @@
 {
-  "id": "e01b95e6-2d3a-44e4-ab43-6d28bde63466",
+  "id": "6ae68212-c294-4af8-8bbd-a460e26c7731",
   "prevId": "d98cf60b-d632-4a45-8eb6-5cca5c220136",
   "version": "7",
   "dialect": "postgresql",
@@ -8044,7 +8044,7 @@
       "checkConstraints": {
         "domain_event_event_type_check": {
           "name": "domain_event_event_type_check",
-          "value": "\"domain_event\".\"event_type\" IN ('email.undeliverable', 'listing.created', 'listing.edited', 'listing.status_changed', 'listing.fix_request_opened', 'listing.fix_request_closed', 'trial.extended', 'reconciliation.mark_opened', 'account.closed_on_request', 'partner_application.email_replaced', 'subscription.provider_cancellation_decided', 'subscription.provider_cancelled_after_rejection', 'subscription.amount_mutation_decided', 'reconciliation.mark_escalated', 'reconciliation.undercharge_detected', 'reconciliation.pause_gift_detected')"
+          "value": "\"domain_event\".\"event_type\" IN ('email.undeliverable', 'listing.created', 'listing.edited', 'listing.status_changed', 'listing.fix_request_opened', 'listing.fix_request_closed', 'trial.extended', 'reconciliation.mark_opened', 'account.closed_on_request', 'partner_application.email_replaced', 'partner_application.wait_cancelled', 'subscription.provider_cancellation_decided', 'subscription.provider_cancelled_after_rejection', 'subscription.amount_mutation_decided', 'reconciliation.mark_escalated', 'reconciliation.undercharge_detected', 'reconciliation.pause_gift_detected')"
         },
         "domain_event_actor_type_check": {
           "name": "domain_event_actor_type_check",
@@ -33125,7 +33125,6 @@
         "billing.settleExternal",
         "billing.cancelSubscription",
         "billing.liftReconciliationMark",
-        "billing.refund",
         "trial.extend",
         "user.manageSuperAdminRole",
         "billing.grantComplimentary",
@@ -33166,6 +33165,7 @@
         "partner.delete",
         "partner.viewAll",
         "partner.manage",
+        "partner.resolveApplication",
         "allianceLead.viewAll",
         "allianceLead.manage",
         "hostTrade.view",

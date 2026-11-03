@@ -5129,5 +5129,15 @@
         "windowDays": {
             "unsupported": "A janela de dias solicitada não está disponível"
         }
+    },
+    "partnerApplication": {
+        "email": {
+            "invalid": "O email não é válido.",
+            "max": "O email não pode exceder 320 caracteres."
+        },
+        "reason": {
+            "required": "Escreva o motivo do cancelamento da espera.",
+            "max": "O motivo não pode exceder 2000 caracteres."
+        }
     }
 }

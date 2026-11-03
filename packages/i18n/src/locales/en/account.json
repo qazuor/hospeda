@@ -689,6 +689,7 @@
         "total_other": "Total: {{count}} reviews",
         "typeAccommodation": "Accommodation",
         "typeDestination": "Destination",
+        "listingGone": "This listing no longer exists",
         "status": {
             "approved": "Published",
             "pending": "Pending approval",

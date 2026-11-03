@@ -32,7 +32,7 @@ import { buildAvailabilityParams } from '@/lib/availability-params';
 import { createTranslations } from '@/lib/i18n';
 import type { SupportedLocale } from '@/lib/i18n';
 import { buildUrl } from '@/lib/urls';
-import { buildPaginationLinks } from '@/lib/listing/listing-pagination';
+import { buildPaginationLinks, isPageOutOfRange } from '@/lib/listing/listing-pagination';
 import { buildListingViewHref } from '@/lib/listing-view-href';
 import { resolveFacetSeoDecision } from '@/lib/seo/promoted-facet-canonical';
 import { slugForAccommodationType } from '@/lib/facet-slugs';
@@ -298,6 +298,9 @@ const hasError = !result.ok;
 const items = result.ok ? result.data.items : [];
 const total = result.ok ? result.data.pagination.total : 0;
 const totalPages = result.ok ? result.data.pagination.totalPages : 0;
+if (isPageOutOfRange({ page, totalPages: result.ok ? totalPages : null })) {
+	return new Response(null, { status: 404 });
+}
 
 // Transform items for cards
 const baseCards = items.map((item) => toAccommodationCardProps({ item: item as unknown as Record<string, unknown>, locale }));
