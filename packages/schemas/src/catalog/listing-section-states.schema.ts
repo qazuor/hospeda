@@ -37,4 +37,5 @@ function createSectionStatesSchema(vertical: 'venue' | 'experience') {
 
 /** Response schemas derive valid section and trait ids from the listing catalog. */
 export const VenueListingSectionStatesSchema = createSectionStatesSchema('venue');
+/** Response schema for experience listing section and trait availability. */
 export const ExperienceListingSectionStatesSchema = createSectionStatesSchema('experience');
