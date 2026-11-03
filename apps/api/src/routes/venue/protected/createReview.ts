@@ -88,6 +88,7 @@ export const protectedCreateVenueReviewRoute = createProtectedRoute({
             // regular status mapping and detail-hiding path.
             if (
                 result.error.code === ServiceErrorCode.VALIDATION_ERROR &&
+                result.error.reason === 'DIMENSION_NOT_APPLICABLE' &&
                 result.error.details !== undefined
             ) {
                 return createErrorResponse(

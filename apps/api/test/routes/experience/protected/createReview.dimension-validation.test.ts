@@ -7,7 +7,7 @@
  * route runs the real `ExperienceReviewService._beforeCreate`; only the DB
  * models are stubbed.
  */
-import { beforeAll, describe, expect, it, vi } from 'vitest';
+import { beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { initApp } from '../../../../src/app.js';
 import type { AppOpenAPI } from '../../../../src/types.js';
 
@@ -18,7 +18,8 @@ const REVIEW_ID = 'eeeeeeee-eeee-4eee-8eee-eeeeeeeeeeee';
 const BASE = '/api/v1/protected/experiences';
 
 const fixtures = vi.hoisted(() => ({
-    experience: null as Record<string, unknown> | null
+    experience: null as Record<string, unknown> | null,
+    rejectionReason: null as string | null
 }));
 
 vi.mock('@repo/service-core', async (importOriginal) => {
@@ -52,6 +53,22 @@ vi.mock('@repo/service-core', async (importOriginal) => {
             self._experienceModel = experienceModel;
             self._experienceService = experienceService;
         }
+
+        async create(...args: Parameters<typeof orig.ExperienceReviewService.prototype.create>) {
+            if (fixtures.rejectionReason) {
+                return {
+                    error: {
+                        code: 'VALIDATION_ERROR' as never,
+                        message: 'Validation rejected',
+                        reason: fixtures.rejectionReason,
+                        details: { field: 'internal.secret', reason: fixtures.rejectionReason }
+                    }
+                } as unknown as Awaited<
+                    ReturnType<typeof orig.ExperienceReviewService.prototype.create>
+                >;
+            }
+            return super.create(...args);
+        }
     }
 
     return { ...orig, ExperienceReviewService };
@@ -76,6 +93,26 @@ describe('AC:3:13 — experience review with the four dimensions over HTTP', () 
             publicationStatus: 'PUBLISHED',
             businessLines: ['standard']
         };
+    });
+
+    beforeEach(() => {
+        fixtures.rejectionReason = null;
+    });
+
+    it('hides details for other VALIDATION_ERROR reasons', async () => {
+        fixtures.rejectionReason = 'INTERNAL_VALIDATION';
+        const res = await app.request(`${BASE}/${EXPERIENCE_ID}/reviews`, {
+            method: 'POST',
+            headers: actorHeaders,
+            body: JSON.stringify({
+                overallRating: 5,
+                rating: { food: 4, service: 4, ambiance: 4, value: 4 }
+            })
+        });
+        expect(res.status).toBe(400);
+        const body = await res.json();
+        expect(body.error.code).toBe('VALIDATION_ERROR');
+        expect(body.error.details).toBeUndefined();
     });
 
     it('accepts a review that votes food, service, ambiance and value', async () => {

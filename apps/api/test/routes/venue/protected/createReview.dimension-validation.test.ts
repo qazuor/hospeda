@@ -27,7 +27,8 @@ const REVIEW_ID = 'cccccccc-cccc-4ccc-8ccc-cccccccccccc';
 const BASE = '/api/v1/protected/venues';
 
 const fixtures = vi.hoisted(() => ({
-    venue: null as Record<string, unknown> | null
+    venue: null as Record<string, unknown> | null,
+    rejectionReason: null as string | null
 }));
 
 vi.mock('@repo/service-core', async (importOriginal) => {
@@ -60,6 +61,22 @@ vi.mock('@repo/service-core', async (importOriginal) => {
             self.model = reviewModel;
             self._venueModel = venueModel;
             self._venueService = venueService;
+        }
+
+        async create(...args: Parameters<typeof orig.VenueReviewService.prototype.create>) {
+            if (fixtures.rejectionReason) {
+                return {
+                    error: {
+                        code: 'VALIDATION_ERROR' as never,
+                        message: 'Validation rejected',
+                        reason: fixtures.rejectionReason,
+                        details: { field: 'internal.secret', reason: fixtures.rejectionReason }
+                    }
+                } as unknown as Awaited<
+                    ReturnType<typeof orig.VenueReviewService.prototype.create>
+                >;
+            }
+            return super.create(...args);
         }
     }
 
@@ -101,6 +118,7 @@ describe('AC:3:13 — venue review dimension validation over HTTP', () => {
 
     beforeEach(() => {
         setVenue();
+        fixtures.rejectionReason = null;
     });
 
     it('rejects a BOLICHE (nightlife) review that votes food', async () => {
@@ -117,6 +135,15 @@ describe('AC:3:13 — venue review dimension validation over HTTP', () => {
             field: 'rating.food',
             reason: 'DIMENSION_NOT_APPLICABLE'
         });
+    });
+
+    it('hides details for other VALIDATION_ERROR reasons', async () => {
+        fixtures.rejectionReason = 'INTERNAL_VALIDATION';
+        const res = await postReview(app, VENUE_ID, { overallRating: 4, rating: { service: 4 } });
+        expect(res.status).toBe(400);
+        const body = await res.json();
+        expect(body.error.code).toBe('VALIDATION_ERROR');
+        expect(body.error.details).toBeUndefined();
     });
 
     it('accepts a BOLICHE review without the food dimension', async () => {
