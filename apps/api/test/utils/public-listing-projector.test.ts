@@ -277,7 +277,7 @@ describe('projectPublicListing', () => {
         expect(granted.meetingPointLong).toBe(-58.23);
     });
 
-    it('keeps directions false with a granted key and absent instructions, and preserves the card shape', async () => {
+    it('preserves null directions with a granted key and preserves the card shape', async () => {
         mocks.effectiveSet.mockResolvedValueOnce(
             effective([{ key: 'manage_experience_directions', value: 1 }], VerticalEnum.EXPERIENCE)
         );
@@ -310,6 +310,25 @@ describe('projectPublicListing', () => {
             name: 'Card'
         });
         expect(await projectPublicListings({ vertical: 'experience', listings: [] })).toEqual([]);
+    });
+
+    it('omits empty directions with a granted key while keeping directions enabled', async () => {
+        mocks.effectiveSet.mockResolvedValueOnce(
+            effective([{ key: 'manage_experience_directions', value: 1 }], VerticalEnum.EXPERIENCE)
+        );
+        const [card] = await projectPublicListings({
+            vertical: 'experience',
+            listings: [
+                {
+                    id: 'exp',
+                    ownerId: 'owner',
+                    businessLines: ['standard'],
+                    meetingPointDirections: []
+                }
+            ]
+        });
+        expect(card).not.toHaveProperty('meetingPointDirections');
+        expect(card).toHaveProperty('meetingPointDirectionsEnabled', true);
     });
 
     it('handles an omitted directions column without changing other page fields', async () => {

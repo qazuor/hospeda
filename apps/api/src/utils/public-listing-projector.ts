@@ -97,7 +97,15 @@ export function projectPublicListing<T extends Record<string, unknown>>(args: {
         }
     }
     const projected = Object.fromEntries(
-        Object.entries(args.listing).filter(([key]) => !removed.has(key))
+        Object.entries(args.listing).filter(([key, value]) => {
+            if (removed.has(key)) return false;
+            return !(
+                args.vertical === 'experience' &&
+                key === 'meetingPointDirections' &&
+                Array.isArray(value) &&
+                value.length === 0
+            );
+        })
     );
     if (args.vertical === 'venue') return projectVenueMenuTraits(projected, args.states) as T;
     return projected as T;
