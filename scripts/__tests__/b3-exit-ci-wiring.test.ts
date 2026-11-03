@@ -17,9 +17,8 @@ import { describe, expect, it } from 'vitest';
  *   step of the `guards` job and are broken on purpose by their own mutation
  *   tests (run there through `pnpm test:scripts`); the three B3 e2e specs run
  *   in the `e2e-p0` job; and the UNKNOWN row PA-6 has its test.
- * - Points 10 (half: the manual payer's first instalment, AC:B3:4) and 12
- *   (AC:B3:40) of LISTA:B3 left the MVP cut: CV moves the first to HOS-1629
- *   (phase 4) and CW moves the second to HOS-1628 (phase 2).
+ * - Point 10 includes the manual payer's first installment (AC:B3:4) from
+ *   HOS-1629. Point 12 (AC:B3:40) remains deferred to HOS-1628 (phase 2).
  * - The manual smokes TEST:B3:23 and TEST:B3:36 belong to the owner; a test
  *   title may only name them as support, never as if it automated them.
  *
@@ -66,7 +65,7 @@ interface E2eContract {
     readonly testId: string;
 }
 
-// LISTA:B3, B3.md:163-197, read with the MVP cut adjustment of B3.md:204 (point 12 is fully deferred).
+// LISTA:B3, B3.md:163-197, including point 10; point 12 remains deferred.
 const CORTE_MAP: readonly CorteEntry[] = [
     { point: 1, acs: ['AC:B3:6'], tests: ['TEST:B3:6'] },
     { point: 2, acs: ['AC:B3:10'], tests: ['TEST:B3:11'] },
@@ -77,21 +76,17 @@ const CORTE_MAP: readonly CorteEntry[] = [
     { point: 7, acs: ['AC:B3:11'], tests: ['TEST:B3:12'] },
     { point: 8, acs: ['AC:B3:28'], tests: ['TEST:B3:29'] },
     { point: 9, acs: ['AC:B3:37'], tests: ['TEST:B3:39'] },
-    { point: 10, acs: ['AC:B3:38', 'AC:B3:6'], tests: ['TEST:B3:40', 'TEST:B3:6'] },
+    {
+        point: 10,
+        acs: ['AC:B3:38', 'AC:B3:6', 'AC:B3:4'],
+        tests: ['TEST:B3:40', 'TEST:B3:6', 'TEST:B3:4']
+    },
     { point: 11, acs: ['AC:B3:27', 'AC:B3:39'], tests: ['TEST:B3:28', 'TEST:B3:37'] },
     { point: 13, acs: ['AC:B3:41'], tests: ['TEST:B3:42'] }
 ];
 
-// B3.md:204, :263 and :744: the two LISTA:B3 halves the owner moved out of the MVP cut (CV, CW).
+// B3.md:204 and :744: point 12 remains deferred by the owner's MVP cut (CW).
 const DEFERRED: readonly DeferredEntry[] = [
-    {
-        point: 10,
-        ac: 'AC:B3:4',
-        test: 'TEST:B3:4',
-        issue: 'HOS-1629',
-        phase: 'fase-4',
-        letter: 'CV'
-    },
     {
         point: 12,
         ac: 'AC:B3:40',
@@ -304,32 +299,23 @@ describe('AC:B3:35 the B3 exit: LISTA:B3 evidence, guards wired, e2e in P0 (HOS-
         expect(missing, `TEST ids without a title: ${missing.join(', ')}`).toEqual([]);
     });
 
-    it('(c) the cut map plus the deferred half is exactly the spec exit list, and covers points 1 to 13', () => {
+    it('(c) the cut map is the spec exit list, and with the deferred point covers 1 to 13', () => {
         // Arrange
-        const deferredInExit = DEFERRED.filter((entry) => entry.ac === 'AC:B3:4').map(
-            (entry) => entry.test
-        );
-
         // Act
-        const union = [
-            ...new Set([...CORTE_MAP.flatMap((entry) => entry.tests), ...deferredInExit])
-        ].sort();
+        const union = [...new Set(CORTE_MAP.flatMap((entry) => entry.tests))].sort();
         const points = new Set([
             ...CORTE_MAP.map((entry) => entry.point),
             ...DEFERRED.map((entry) => entry.point)
         ]);
-        const pointTen = [
-            CORTE_MAP.some((entry) => entry.point === 10),
-            DEFERRED.some((entry) => entry.point === 10)
-        ];
+        const pointTen = CORTE_MAP.some((entry) => entry.point === 10);
 
         // Assert
         expect(union).toEqual([...SPEC_EXIT_TESTS].sort());
         expect([...points].sort((a, b) => a - b)).toEqual(
             Array.from({ length: 13 }, (_, index) => index + 1)
         );
-        expect(pointTen).toEqual([true, true]);
-        expect(DEFERRED.map((entry) => entry.issue)).toEqual(['HOS-1629', 'HOS-1628']);
+        expect(pointTen).toBe(true);
+        expect(DEFERRED.map((entry) => entry.issue)).toEqual(['HOS-1628']);
     });
 
     describe('(d) no title names a manual smoke as if it were automated', () => {
