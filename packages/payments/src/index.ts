@@ -111,10 +111,7 @@ export {
     type ProviderReadRejectedErrorInput,
     type ProviderReadRejection
 } from './provider/provider-read';
-export {
-    memoizeInProviderReadScope,
-    runWithProviderReadScope
-} from './provider/provider-read-scope';
+export { runWithProviderReadScope, shareProviderReadForAct } from './provider/provider-read-scope';
 export {
     AuthorizationRefSchema,
     AuthorizationSearchInputSchema,

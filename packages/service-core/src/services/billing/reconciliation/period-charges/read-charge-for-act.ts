@@ -1,13 +1,10 @@
 import {
     type ActStart,
     type ChargeSnapshot,
-    memoizeInProviderReadScope,
     type PaymentProvider,
-    type ProviderRead
+    type ProviderRead,
+    shareProviderReadForAct
 } from '@repo/payments';
-
-const actIds = new WeakMap<ActStart, string>();
-let nextActId = 0;
 
 /**
  * Reads a charge by id for `act`, sharing ONE live read among readers of the
@@ -22,14 +19,9 @@ export async function readChargeForAct(input: {
     readonly chargeId: string;
     readonly act: ActStart;
 }): Promise<ProviderRead<ChargeSnapshot>> {
-    let actId = actIds.get(input.act);
-    if (!actId) {
-        nextActId += 1;
-        actId = String(nextActId);
-        actIds.set(input.act, actId);
-    }
-    return await memoizeInProviderReadScope({
-        key: `charge-for-act:${actId}:${input.chargeId}`,
-        load: async () => await input.provider.readCharge({ chargeId: input.chargeId })
+    return await shareProviderReadForAct({
+        act: input.act,
+        key: `charge:${input.chargeId}`,
+        read: async () => await input.provider.readCharge({ chargeId: input.chargeId })
     });
 }
