@@ -89,6 +89,10 @@ const ENQUEUE_SITES: Readonly<
     'apps/api/src/services/listing-notices/fix-reported-notice.ts': [
         'verticals.listing-fix-reported'
     ],
+    'apps/api/src/services/partner-application/partner-application-notices.ts': [
+        'verticals.partner-application-rejected',
+        'verticals.partner-claim-notice'
+    ],
     'packages/verticals/src/publication/archive-inactive-listing.ts': [
         'verticals.listing-archived'
     ],

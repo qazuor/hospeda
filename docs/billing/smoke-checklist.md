@@ -149,6 +149,14 @@ touching PR to `staging` (CLAUDE.md). This part is TEST:B13a:14 and TEST:U1:19.
 - **Covers:** AC:1955:1, AC:1955:6; the HOS-1955 measurement (29 October: about one hour with
   a manual sweep).
 
+### S9 — Partner applications: claim notice, claim on verification, rejection
+
+- **Preconditions:** `staging` with a real `HOSPEDA_EMAIL_API_KEY`; two mailboxes controlled by the executor, A (with a Hospeda account) and B (without an account); an admin with `PARTNER_RESOLVE_APPLICATION`; and a third mailbox C for rejection.
+- **Steps:** Submit applications for A, B, and C through the public form; approve A and B and reject C through the admin API; open all three emails; open the verification link in B's email.
+- **Expected:** A receives “Reclamá tu Partner en Hospeda” with a `/partners/reclamar/#partner=…&secret=…` link; B receives Better Auth verification and, after opening it, B's account owns the Partner with `PARTNER_OWNER`; C receives the rejection communication with the date from which they can apply again and without the reason; no email arrives twice.
+- **Evidence:** `hops psql --target=staging`, read-only: A's Partner has a non-null `claim_secret_hash` different from the link secret; the payloads of both `email_outbox` rows contain neither the secret nor the reason; B's Partner `owner_user_id` equals B's account and has a `partner.claimed` event. V7.2 (HOS-1486) covers A's claim-link screen; do not open it in this step.
+- **Covers:** AC:V7:4, AC:V7:5; TEST:V7:4, TEST:V7:5.
+
 ### Sign-off
 
 | Date | Executor | PR | Result | Notes |
