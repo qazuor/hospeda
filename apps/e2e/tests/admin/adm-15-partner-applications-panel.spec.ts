@@ -32,10 +32,8 @@ test.describe('TEST:V8b:2 AC:V8b:2 partner application panel lists, marks overdu
             ownedUserIds.push(...createdUsers.map(({ id }) => id));
         }
         if (applicationIds.length) {
-            await execSQL(
-                "DELETE FROM domain_event WHERE entity_type = 'partner_application' AND entity_id = ANY($1::text[])",
-                [applicationIds]
-            );
+            // domain_event is append-only (trigger rejects DELETE); its rows stay, as in
+            // fixtures/listing-notices.ts.
             await execSQL('DELETE FROM partner_application WHERE id = ANY($1::uuid[])', [
                 applicationIds
             ]);
