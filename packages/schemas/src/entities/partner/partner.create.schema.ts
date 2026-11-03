@@ -1,4 +1,4 @@
-import type { z } from 'zod';
+import { z } from 'zod';
 import {
     PARTNER_REVIEW_MANAGED_FIELDS,
     PARTNER_REVOKE_MANAGED_FIELDS,
@@ -40,3 +40,18 @@ export const createPartnerSchema = partnerSchema
     .extend(PARTNER_SAFE_WRITE_URL_FIELDS);
 
 export type CreatePartner = z.infer<typeof createPartnerSchema>;
+
+/**
+ * Admin direct creation requires a claim-notice address (AC:V7:11, D-4).
+ * The address only addresses the claim notice; it is never stored.
+ */
+export const adminCreatePartnerSchema = createPartnerSchema.extend({
+    claimEmail: z
+        .string()
+        .trim()
+        .email('zodError.partnerApplication.email.invalid')
+        .max(320, 'zodError.partnerApplication.email.max')
+});
+
+/** Input accepted by the admin direct partner creation endpoint. */
+export type AdminCreatePartner = z.infer<typeof adminCreatePartnerSchema>;
