@@ -29,6 +29,13 @@ describe('TEST:1968 Mercado Pago webhook answers a deferred notice with a retrya
         expect(await response.json()).toEqual({ received: false, deferred: true });
     });
 
+    it('forwards the enforce cool-down in Retry-After (kills the fixed delay)', async () => {
+        receive.mockResolvedValue({ ack: 'ERROR', outcome: 'DEFERRED', retryAfterSeconds: 37 });
+        const response = await deliver();
+        expect(response.status).toBe(503);
+        expect(response.headers.get('Retry-After')).toBe('37');
+    });
+
     it('keeps 500 for a genuine processing failure', async () => {
         receive.mockResolvedValue({ ack: 'ERROR', outcome: 'FAILED' });
         const response = await deliver();

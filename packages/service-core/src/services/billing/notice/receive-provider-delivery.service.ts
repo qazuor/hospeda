@@ -19,6 +19,7 @@ export async function receiveProviderDelivery(
 ): Promise<{
     readonly ack: 'OK' | 'ERROR';
     readonly outcome: ProcessOutcome | 'DELIVERY_NOT_SAVED' | 'INVALID_DELIVERY';
+    readonly retryAfterSeconds?: number;
 }> {
     const parsed = inputSchema.safeParse(input);
     if (!parsed.success) return { ack: 'ERROR', outcome: 'INVALID_DELIVERY' };

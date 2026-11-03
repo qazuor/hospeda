@@ -59,7 +59,7 @@ mercadoPagoWebhookRoutes.post('/', async (c) => {
     // Mercado Pago retries every non-2xx, so 503 keeps the notice alive; a 200 would drop it.
     if (result.outcome === 'DEFERRED') {
         return c.json({ received: false, deferred: true }, 503, {
-            'Retry-After': DEFERRED_RETRY_AFTER_SECONDS
+            'Retry-After': String(result.retryAfterSeconds ?? DEFERRED_RETRY_AFTER_SECONDS)
         });
     }
     return c.json({ received: false }, 500);
