@@ -78,7 +78,10 @@ vi.mock('node-cron', () => ({
 import type { CronJobContext, CronJobDefinition, CronJobResult } from '../../src/cron/types';
 
 /** HOS-1424: every schedule is registered on the Buenos Aires wall clock, never via TZ. */
-const BA_TIMEZONE = { timezone: 'America/Argentina/Buenos_Aires' };
+const BA_TIMEZONE = {
+    timezone: 'America/Argentina/Buenos_Aires',
+    noOverlap: true
+};
 
 function makeJob(name: string, handler: () => Promise<CronJobResult>): CronJobDefinition {
     return {
