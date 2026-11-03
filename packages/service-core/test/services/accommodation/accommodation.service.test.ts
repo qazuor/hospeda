@@ -2,6 +2,7 @@ import { AccommodationTypeEnum, RoleEnum, ServiceErrorCode } from '@repo/schemas
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { AccommodationService } from '../../../src/services/accommodation/accommodation.service';
 import type { Actor, ServiceConfig } from '../../../src/types';
+import { createActor } from '../../factories/actorFactory';
 
 // Mock AccommodationModel
 class MockAccommodationModel {
@@ -146,21 +147,41 @@ describe('AccommodationService - Relations Support', () => {
 });
 
 describe('AccommodationService business-line validation hooks', () => {
+    class TestAccommodationService extends AccommodationService {
+        public runBeforeCreate(
+            data: Parameters<AccommodationService['_beforeCreate']>[0],
+            actor: Actor
+        ) {
+            return this._beforeCreate(data, actor, { hookState: {} });
+        }
+
+        public runBeforeUpdate(
+            data: Parameters<AccommodationService['_beforeUpdate']>[0],
+            actor: Actor
+        ) {
+            return this._beforeUpdate(data, actor, { hookState: { updateId: 'accommodation-id' } });
+        }
+    }
+
     it('rejects empty business lines on create with field and reason details', async () => {
-        const service = new AccommodationService(
+        const service = new TestAccommodationService(
             {} as ServiceConfig,
-            new MockAccommodationModel() as any
+            new MockAccommodationModel() as never
         );
         await expect(
-            (service as any)._beforeCreate(
+            service.runBeforeCreate(
                 {
                     type: AccommodationTypeEnum.HOTEL,
                     name: 'Hotel Test',
                     slug: 'hotel-test',
+                    description: 'Descripción del hotel de prueba.',
+                    summary: 'Hotel de prueba.',
+                    ownerId: 'owner',
+                    destinationId: undefined as never,
+                    averageRating: 0,
                     businessLines: []
                 },
-                { id: 'owner' } as Actor,
-                { hookState: {} }
+                createActor({ id: 'owner' })
             )
         ).rejects.toMatchObject({
             code: ServiceErrorCode.VALIDATION_ERROR,
@@ -175,12 +196,11 @@ describe('AccommodationService business-line validation hooks', () => {
             type: AccommodationTypeEnum.HOTEL,
             businessLines: ['standard']
         });
-        const service = new AccommodationService({} as ServiceConfig, model as any);
+        const service = new TestAccommodationService({} as ServiceConfig, model as never);
         await expect(
-            (service as any)._beforeUpdate(
+            service.runBeforeUpdate(
                 { type: AccommodationTypeEnum.APARTMENT },
-                { id: 'owner' } as Actor,
-                { hookState: { updateId: 'accommodation-id' } }
+                createActor({ id: 'owner' })
             )
         ).resolves.toBeDefined();
 
@@ -189,9 +209,7 @@ describe('AccommodationService business-line validation hooks', () => {
             type: AccommodationTypeEnum.HOTEL
         });
         await expect(
-            (service as any)._beforeUpdate({ name: 'Updated hotel' }, { id: 'owner' } as Actor, {
-                hookState: { updateId: 'accommodation-id' }
-            })
+            service.runBeforeUpdate({ name: 'Updated hotel' }, createActor({ id: 'owner' }))
         ).resolves.toMatchObject({ name: 'Updated hotel' });
     });
 });
