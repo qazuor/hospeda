@@ -106,11 +106,14 @@ describe('alojamientos/index.astro — type chips wired to real multi-select (HO
             expect(callIndex, 'accommodationsApi.list call not found').toBeGreaterThan(-1);
 
             const fetchBlock = src.slice(callIndex, callIndex + 400);
-            expect(fetchBlock).toContain('types,');
+            expect(fetchBlock).toContain('...parsedFilters.apiQuery');
+            // The parser's apiQuery carries `types` (covered in parse-listing-filters.test.ts).
         });
 
         it('types is read as a raw URL string, never a JS array (String(array) footgun guard)', () => {
-            expect(src).toContain("const types = url.searchParams.get('types') ?? undefined;");
+            // The read lives in the shared parser now; the page must not re-read it.
+            expect(src).not.toMatch(/url\.searchParams\.get\('types'\)/);
+            expect(src).toContain('parseAccommodationListingFilters(');
         });
 
         // HOS-96 pre-merge review (Option A): a legacy `?type=HOTEL` link must
@@ -127,25 +130,10 @@ describe('alojamientos/index.astro — type chips wired to real multi-select (HO
             const callIndex = src.indexOf('accommodationsApi.list({');
             expect(callIndex, 'accommodationsApi.list call not found').toBeGreaterThan(-1);
 
+            // The singular `type` is carried by the shared parser's apiQuery
+            // (asserted in parse-listing-filters.test.ts).
             const fetchBlock = src.slice(callIndex, callIndex + 700);
-            const forwarded = fetchBlock.match(/^\s*type:\s*(.+?),\s*$/m);
-            expect(
-                forwarded,
-                'accommodationsApi.list does not forward a singular `type`'
-            ).not.toBeNull();
-
-            const expression = (forwarded as RegExpMatchArray)[1].trim();
-            const readsParamInline = /url\.searchParams\.get\('type'\)/.test(expression);
-            const readsParamViaConst =
-                /^[A-Za-z_$][\w$]*$/.test(expression) &&
-                new RegExp(`const ${expression}\\s*=\\s*url\\.searchParams\\.get\\('type'\\)`).test(
-                    src
-                );
-
-            expect(
-                readsParamInline || readsParamViaConst,
-                `forwarded \`type\` value \`${expression}\` does not come from the ?type= param`
-            ).toBe(true);
+            expect(fetchBlock).toContain('...parsedFilters.apiQuery');
         });
     });
 });

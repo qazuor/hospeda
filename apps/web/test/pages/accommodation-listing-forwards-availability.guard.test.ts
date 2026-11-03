@@ -45,9 +45,9 @@ const PAGES_ROOT = join(import.meta.dirname, '../../src/pages/[lang]/alojamiento
  * therefore also send them to the API.
  */
 const LISTING_PAGES = [
-    { label: 'base listing', path: join(PAGES_ROOT, 'index.astro') },
-    { label: 'map view', path: join(PAGES_ROOT, 'mapa.astro') },
-    { label: 'type landing', path: join(PAGES_ROOT, 'tipo/[type]/index.astro') }
+    { label: 'base listing', path: join(PAGES_ROOT, 'index.astro'), viaParser: true },
+    { label: 'map view', path: join(PAGES_ROOT, 'mapa.astro'), viaParser: false },
+    { label: 'type landing', path: join(PAGES_ROOT, 'tipo/[type]/index.astro'), viaParser: true }
 ] as const;
 
 /**
@@ -85,6 +85,13 @@ describe('H-120 guard — listing surfaces forward the availability range', () =
             const source = readFileSync(page.path, 'utf8');
 
             it('reads checkIn and checkOut from the URL', () => {
+                if (page.viaParser) {
+                    // The shared parser reads the pair (registry: checkIn/checkOut)
+                    // and builds it with buildAvailabilityParams; the page only
+                    // consumes the result. parse-listing-filters.test.ts covers it.
+                    expect(source).toContain('parseAccommodationListingFilters(');
+                    return;
+                }
                 expect(source).toContain("url.searchParams.get('checkIn')");
                 expect(source).toContain("url.searchParams.get('checkOut')");
             });
@@ -92,11 +99,28 @@ describe('H-120 guard — listing surfaces forward the availability range', () =
             it('builds the pair through the shared both-or-neither helper', () => {
                 // Hand-rolling the rule per page is how one of the three ends up
                 // sending a lone date that the server silently drops.
+                if (page.viaParser) {
+                    expect(
+                        readFileSync(
+                            join(
+                                import.meta.dirname,
+                                '../../src/lib/accommodation-listing-filters/parse-listing-filters.ts'
+                            ),
+                            'utf8'
+                        )
+                    ).toContain('buildAvailabilityParams(');
+                    return;
+                }
                 expect(source).toContain('buildAvailabilityParams(');
             });
 
             it('spreads the range INSIDE the accommodationsApi.list call', () => {
                 const call = extractListCall(source);
+                if (page.viaParser) {
+                    // apiQuery already contains the availability pair.
+                    expect(call).toContain('...parsedFilters.apiQuery');
+                    return;
+                }
                 expect(call).toMatch(SPREAD);
             });
         });
