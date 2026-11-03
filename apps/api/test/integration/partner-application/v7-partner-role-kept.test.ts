@@ -21,9 +21,11 @@ import { validateApiEnv } from '../../../src/utils/env';
 import { getListingAccessPorts } from '../../../src/utils/listing-access/ports';
 import { getListingReconcilerPorts } from '../../../src/utils/listing-publication/reconciler-ports';
 import { testDb } from '../../e2e/setup/test-database';
-import { createOwner } from '../listing-publication/publication-routes.helpers';
+import { seededPermissionsFor } from '../helpers/seeded-role-permissions';
+import { actorHeaders, createOwner } from '../listing-publication/publication-routes.helpers';
 
 describe('TEST:V7:12 AC:V7:12 partner role survives loss of presence', () => {
+    let app: ReturnType<typeof initApp>;
     const users: string[] = [];
     const partnerIds: string[] = [];
     const optionIds: string[] = [];
@@ -35,7 +37,7 @@ describe('TEST:V7:12 AC:V7:12 partner role survives loss of presence', () => {
         process.env.HOSPEDA_ALLOW_MOCK_ACTOR = 'true';
         await testDb.setup();
         validateApiEnv();
-        initApp();
+        app = initApp();
     });
 
     afterEach(async () => {
@@ -236,5 +238,95 @@ describe('TEST:V7:12 AC:V7:12 partner role survives loss of presence', () => {
         const ownerRow = await getDb().execute(sql`
             SELECT owner_user_id FROM partners WHERE id = ${partnerId}::uuid`);
         expect(ownerRow.rows).toEqual([{ owner_user_id: owner.id }]);
+
+        // (b) Even after presence loss, the owner family still passes route step 3.
+        const familyPermissions = [
+            ...new Set([
+                ...seededPermissionsFor({ role: RoleEnum.USER }),
+                ...seededPermissionsFor({ role: RoleEnum.PARTNER_OWNER })
+            ])
+        ];
+        const update = await app.request('/api/v1/protected/partners/mine', {
+            method: 'PATCH',
+            headers: actorHeaders({
+                id: owner.id,
+                role: RoleEnum.PARTNER_OWNER,
+                permissions: familyPermissions
+            }),
+            body: JSON.stringify({ contactInfo: { workPhone: '+543442000000' } })
+        });
+        expect(update.status).toBe(200);
+        const updatedContact = await getDb().execute(sql`
+            SELECT contact_info FROM partners WHERE id = ${partnerId}::uuid`);
+        expect(updatedContact.rows).toEqual([{ contact_info: { workPhone: '+543442000000' } }]);
+    });
+
+    it('(c) rejects an owner without PARTNER_OWNER and leaves their Partner unchanged', async () => {
+        const owner = await createOwner();
+        users.push(owner.id);
+        const inserted = await getDb().execute(sql`
+            INSERT INTO partners (slug, name, type, lifecycle_state, owner_user_id, created_by_id, updated_by_id, contact_info)
+            VALUES (${`hos1487-no-role-${randomUUID()}`}, 'HOS1487 no role', 'business', 'ACTIVE',
+                    ${owner.id}::uuid, ${owner.id}::uuid, ${owner.id}::uuid, '{"workPhone":"+543442111111"}'::jsonb)
+            RETURNING id`);
+        const partnerId = String(inserted.rows[0]?.id);
+        partnerIds.push(partnerId);
+        const before = await getDb().execute(
+            sql`SELECT * FROM partners WHERE id = ${partnerId}::uuid`
+        );
+
+        const response = await app.request('/api/v1/protected/partners/mine', {
+            method: 'PATCH',
+            headers: actorHeaders({
+                id: owner.id,
+                role: RoleEnum.USER,
+                permissions: seededPermissionsFor({ role: RoleEnum.USER })
+            }),
+            body: JSON.stringify({ contactInfo: { workPhone: '+543442222222' } })
+        });
+        expect(response.status).toBe(403);
+        expect(await response.json()).toEqual({
+            success: false,
+            error: { code: 'FORBIDDEN', message: 'Insufficient permissions' },
+            metadata: {
+                timestamp: expect.any(String),
+                requestId: expect.any(String),
+                version: '1.0.0'
+            }
+        });
+        const after = await getDb().execute(
+            sql`SELECT * FROM partners WHERE id = ${partnerId}::uuid`
+        );
+        expect(after.rows).toEqual(before.rows);
+    });
+
+    it('(d) keeps GET /mine available to owners and accounts without a Partner', async () => {
+        const owner = await createOwner();
+        const visitor = await createOwner();
+        users.push(owner.id, visitor.id);
+        const inserted = await getDb().execute(sql`
+            INSERT INTO partners (slug, name, type, lifecycle_state, owner_user_id, created_by_id, updated_by_id)
+            VALUES (${`hos1487-get-mine-${randomUUID()}`}, 'HOS1487 GET mine', 'business', 'ACTIVE',
+                    ${owner.id}::uuid, ${owner.id}::uuid, ${owner.id}::uuid)
+            RETURNING id`);
+        const partnerId = String(inserted.rows[0]?.id);
+        partnerIds.push(partnerId);
+
+        const ownerResponse = await app.request('/api/v1/protected/partners/mine', {
+            headers: actorHeaders({ id: owner.id, role: RoleEnum.USER, permissions: [] })
+        });
+        expect(ownerResponse.status).toBe(200);
+        const ownerBody = await ownerResponse.json();
+        expect(ownerBody.data.partner).toMatchObject({ id: partnerId });
+
+        const visitorResponse = await app.request('/api/v1/protected/partners/mine', {
+            headers: actorHeaders({ id: visitor.id, role: RoleEnum.USER, permissions: [] })
+        });
+        expect(visitorResponse.status).toBe(200);
+        expect(await visitorResponse.json()).toEqual({
+            success: true,
+            data: { partner: null },
+            metadata: { timestamp: expect.any(String), requestId: expect.any(String) }
+        });
     });
 });

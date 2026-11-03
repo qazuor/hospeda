@@ -119,8 +119,8 @@ export const protectedUpdateMyPartnerRoute = createProtectedRoute({
     responseSchema: MyPartnerResponseSchema,
     handler: async (ctx: Context, _params: unknown, body: unknown) =>
         handleUpdateMyPartner(ctx, body),
+    requiredPermissions: [PermissionEnum.PARTNER_EDIT_OWN],
     options: {
-        requiredPermissions: [PermissionEnum.PARTNER_EDIT_OWN],
         customRateLimit: { requests: 20, windowMs: 60_000 }
     }
 });
