@@ -8,18 +8,25 @@
  * RO-RO props — inputs are plain values, outputs are via callbacks.
  */
 
-import { createPartnerSchema, LifecycleStatusEnum, PartnerTypeEnum } from '@repo/schemas';
+import {
+    adminCreatePartnerSchema,
+    createPartnerSchema,
+    LifecycleStatusEnum,
+    PartnerTypeEnum
+} from '@repo/schemas';
 import { useForm } from '@tanstack/react-form';
 import * as React from 'react';
 import type { z } from 'zod';
 import { Button } from '@/components/ui-wrapped/Button';
 import { isApiError } from '@/lib/errors';
+import { PartnerClaimEmailField } from './PartnerClaimEmailField';
 
 // ---------------------------------------------------------------------------
 // Types
 // ---------------------------------------------------------------------------
 
 type PartnerFormValues = z.infer<typeof createPartnerSchema>;
+type PartnerFormSubmitValues = PartnerFormValues & { readonly claimEmail?: string };
 
 /** Props accepted by {@link PartnerForm}. */
 export interface PartnerFormProps {
@@ -32,10 +39,12 @@ export interface PartnerFormProps {
     readonly isSubmitting?: boolean;
     /** Label for the submit button. */
     readonly submitLabel?: string;
+    /** Whether direct admin creation asks for an address for the claim notice. */
+    readonly withClaimEmail?: boolean;
     /** Called when the user clicks Cancel. */
     readonly onCancel?: () => void;
     /** Called with the validated form values when the user submits. */
-    readonly onSubmit: (values: PartnerFormValues) => Promise<void> | void;
+    readonly onSubmit: (values: PartnerFormSubmitValues) => Promise<void> | void;
 }
 
 // ---------------------------------------------------------------------------
@@ -165,6 +174,7 @@ export function PartnerForm({
     initialData,
     isSubmitting = false,
     submitLabel = 'Guardar',
+    withClaimEmail = false,
     onCancel,
     onSubmit
 }: PartnerFormProps) {
@@ -187,7 +197,7 @@ export function PartnerForm({
         readonly message: string;
     } | null>(null);
 
-    const form = useForm<PartnerFormValues>({
+    const form = useForm<PartnerFormSubmitValues>({
         defaultValues: {
             name: initialData?.name ?? '',
             slug: initialData?.slug ?? '',
@@ -195,13 +205,16 @@ export function PartnerForm({
             logoUrl: initialData?.logoUrl ?? null,
             websiteUrl: initialData?.websiteUrl ?? null,
             description: initialData?.description ?? null,
-            lifecycleState: initialData?.lifecycleState ?? LifecycleStatusEnum.ACTIVE
-        } as PartnerFormValues,
+            lifecycleState: initialData?.lifecycleState ?? LifecycleStatusEnum.ACTIVE,
+            ...(withClaimEmail ? { claimEmail: '' } : {})
+        } as PartnerFormSubmitValues,
         onSubmit: async ({ value }) => {
             submitHandlerRan.current = true;
             setGlobalError(null);
             setConflictField(null);
-            const result = createPartnerSchema.safeParse(value);
+            const result = withClaimEmail
+                ? adminCreatePartnerSchema.safeParse(value)
+                : createPartnerSchema.safeParse(value);
             if (!result.success) {
                 const firstIssue = result.error.issues[0];
                 setGlobalError(firstIssue?.message ?? 'Datos inválidos. Revisá el formulario.');
@@ -395,6 +408,27 @@ export function PartnerForm({
                             )}
                         </form.Field>
                     </div>
+                    {withClaimEmail && (
+                        <form.Field
+                            name="claimEmail"
+                            validators={{
+                                onChange: ({ value }) =>
+                                    !value || !value.trim()
+                                        ? 'El correo para el aviso de reclamo es requerido'
+                                        : undefined
+                            }}
+                        >
+                            {(field) => (
+                                <PartnerClaimEmailField
+                                    value={field.state.value ?? ''}
+                                    onBlur={field.handleBlur}
+                                    onChange={field.handleChange}
+                                    error={fieldError(field.state.meta, submitAttempted)}
+                                    disabled={isSubmitting}
+                                />
+                            )}
+                        </form.Field>
+                    )}
                 </section>
 
                 {/* ---- URLs ---- */}
