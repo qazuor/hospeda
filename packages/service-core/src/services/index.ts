@@ -93,6 +93,7 @@ export * from './billing/notice/provider-notice-ports.js';
 export * from './billing/notice/provider-pause-arrears.js';
 export * from './billing/notice/purge-provider-notifications.service.js';
 export * from './billing/notice/receive-provider-delivery.service.js';
+export { confirmedRefundsForNotice } from './billing/notice/refund-execution-on-notice.js';
 export {
     NotificationRetentionService,
     type RetentionSummary
@@ -140,6 +141,11 @@ export * from './billing/reconciliation/reconciliation-mark-payments.port.js';
 export * from './billing/reconciliation/revocation-refund-failed-notice.js';
 export * from './billing/reconciliation/summary/index.js';
 export * from './billing/reconciliation/sweep/addon-without-shutdown-check.js';
+export type {
+    BeforeCancelNoticeState,
+    BeforeCancelNoticeStatus as DeferredBeforeCancelNoticeStatus,
+    BeforeCancelNoticeStatusReader
+} from './billing/reconciliation/sweep/before-cancel-notice-status.port.js';
 export * from './billing/reconciliation/sweep/cancellation-observation.js';
 export * from './billing/reconciliation/sweep/comparisons/amount-comparison.js';
 export * from './billing/reconciliation/sweep/comparisons/amount-mutation-decision.js';
@@ -157,6 +163,7 @@ export * from './billing/reconciliation/sweep/last-cycle-record.js';
 export * from './billing/reconciliation/sweep/lost-rejection-check.js';
 export * from './billing/reconciliation/sweep/mark-escalation.js';
 export * from './billing/reconciliation/sweep/next-charge-sync.js';
+export * from './billing/reconciliation/sweep/notice-deferred-cancellation-retry.js';
 export * from './billing/reconciliation/sweep/our-cancellation-retry.js';
 export * from './billing/reconciliation/sweep/paid-orders-check.js';
 export * from './billing/reconciliation/sweep/pause-gift.js';
@@ -175,7 +182,10 @@ export * from './billing/reconciliation/sweep/unresolved-period-charge.port.js';
 export * from './billing/reconciliation/sweep/zero-call-checks.service.js';
 export * from './billing/reconciliation/sweep/zero-call-ports.js';
 export * from './billing/refund/confirm-refund.service.js';
+export * from './billing/refund/decline-refund.service.js';
+export * from './billing/refund/execute-refund.service.js';
 export * from './billing/refund/refund-machine.js';
+export * from './billing/refund/refund-window.js';
 export * from './billing/refund/request-refund.service.js';
 export * from './billing/refund/settle-external-refund.service.js';
 export * from './billing/subscription/activate-pending-with-signup-notice.js';
@@ -187,6 +197,11 @@ export * from './billing/subscription/billing-period-end.js';
 export * from './billing/subscription/cancel-active-subscription.service.js';
 export * from './billing/subscription/cancel-direct-subscription.service.js';
 export * from './billing/subscription/cancel-inherited-tourist-vip.service.js';
+export * from './billing/subscription/cancel-paused-subscription.service.js';
+export type {
+    CancelPausedSubscriptionPorts,
+    CancelPausedSubscriptionResult
+} from './billing/subscription/cancel-paused-subscription-support.js';
 export * from './billing/subscription/cancel-pending-attempt.service.js';
 export * from './billing/subscription/cancellation-authorization.js';
 export * from './billing/subscription/cancellation-crossing-charge.js';
@@ -201,6 +216,7 @@ export * from './billing/subscription/complement-s21-charge.js';
 export * from './billing/subscription/complement-selection.js';
 export * from './billing/subscription/declare-manual-unpaid.service.js';
 export * from './billing/subscription/decline-first-charge.service.js';
+export * from './billing/subscription/end-due-pauses.service.js';
 export * from './billing/subscription/end-scheduled-services.service.js';
 export * from './billing/subscription/enter-grace.service.js';
 export * from './billing/subscription/exit-grace.service.js';
@@ -213,7 +229,11 @@ export * from './billing/subscription/manual-installment-opening.js';
 export * from './billing/subscription/manual-installment-unpaid-notice.js';
 export * from './billing/subscription/open-manual-installment.service.js';
 export * from './billing/subscription/paid-after-cancellation-notice.js';
+export * from './billing/subscription/pause-policy.js';
+export * from './billing/subscription/pause-quota.js';
+export * from './billing/subscription/pause-subscription.service.js';
 export * from './billing/subscription/paying-predecessor-successor.js';
+export * from './billing/subscription/price-increase-after-pause.js';
 export * from './billing/subscription/provider-link-cancellation-seen.js';
 export * from './billing/subscription/reactivate-suspended.service.js';
 export * from './billing/subscription/reactivate-suspended-after-commit.js';
@@ -221,6 +241,7 @@ export * from './billing/subscription/refuse-undeclared-transition.js';
 export * from './billing/subscription/register-manual-payment.service.js';
 export * from './billing/subscription/renewal-notice.js';
 export { readResumableCheckoutUrl } from './billing/subscription/resolve-live-commitment.js';
+export * from './billing/subscription/resume-subscription.service.js';
 export * from './billing/subscription/revocation-payment.js';
 export * from './billing/subscription/revoke-subscription.service.js';
 export * from './billing/subscription/s11-service-end.js';

@@ -150,4 +150,46 @@ describe('TEST:1710:4 AC:1710:3 fake Mercado Pago charge shape', () => {
             await context.server.close();
         }
     });
+
+    it('round trips refund ids and accreditation through the measured refunds shape', async () => {
+        const context = await setup();
+        try {
+            // Arrange
+            const { chargeId } = await approvedCharge(context);
+            const first = await context.provider.refund({
+                chargeId,
+                amount: { amountMinor: 500, currency: 'ARS' },
+                reference: 'first'
+            });
+            const second = await context.provider.refund({
+                chargeId,
+                amount: { amountMinor: 300, currency: 'ARS' },
+                reference: 'second'
+            });
+            await context.provider.rejectRefund({ chargeId, refundId: second.refundId });
+            // Act
+            const body = await context.raw(chargeId);
+            const read = await context.adapter.readCharge({ chargeId });
+            // Assert
+            expect(body.refunds).toEqual([
+                { id: first.refundId, amount: 5, status: 'approved' },
+                { id: second.refundId, amount: 3, status: 'rejected' }
+            ]);
+            expect(read.snapshot.refunds).toEqual([
+                {
+                    refundId: first.refundId,
+                    amount: { amountMinor: 500, currency: 'ARS' },
+                    accredited: true
+                },
+                {
+                    refundId: second.refundId,
+                    amount: { amountMinor: 300, currency: 'ARS' },
+                    accredited: false
+                }
+            ]);
+            expect(read.snapshot.refundedAmount).toEqual({ amountMinor: 500, currency: 'ARS' });
+        } finally {
+            await context.server.close();
+        }
+    });
 });

@@ -147,6 +147,7 @@ describe('TEST:1683:1 AC:1683:1 AC:1683:3 every cancellation declares its notice
             'A5',
             'S13',
             'S20',
+            'S22',
             'S23',
             'S24',
             'S39',

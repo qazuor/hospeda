@@ -1147,5 +1147,66 @@
         "previous": "Anterior",
         "next": "Siguiente",
         "page": "Página {page} de {totalPages}"
+    },
+    "partnerApplicationPanel": {
+        "title": "Postulaciones de aliados",
+        "intro": "Revisá las postulaciones de Partner. Las pendientes no vencen: las atrasadas se marcan para darles visibilidad.",
+        "views": "Vistas de postulaciones",
+        "pending": "Pendientes",
+        "approvedUnclaimed": "Aprobadas sin reclamar",
+        "rejectedWaiting": "Rechazadas con espera",
+        "columns": {
+            "email": "Correo",
+            "received": "Recibida",
+            "status": "Estado",
+            "actions": "Acciones",
+            "partner": "Partner",
+            "approved": "Aprobada",
+            "claim": "Reclamo",
+            "rejected": "Rechazada",
+            "waitEnds": "Fin de la espera"
+        },
+        "status": {
+            "pending": "Pendiente"
+        },
+        "overdue": "Atrasada",
+        "unclaimed": "Sin reclamar",
+        "actions": {
+            "approve": "Aprobar",
+            "reject": "Rechazar",
+            "cancelWait": "Anular la espera"
+        },
+        "dialogs": {
+            "approve": {
+                "title": "Aprobar postulación",
+                "confirm": "Aprobar"
+            },
+            "reject": {
+                "title": "Rechazar postulación",
+                "confirm": "Rechazar"
+            },
+            "cancelWait": {
+                "title": "Anular la espera",
+                "confirm": "Anular la espera"
+            },
+            "partnerName": "Nombre del Partner",
+            "partnerType": "Tipo de Partner",
+            "reason": "Motivo",
+            "cancel": "Volver"
+        },
+        "errors": {
+            "action": "No se pudo completar la acción. Revisá el motivo e intentá de nuevo."
+        },
+        "empty": "No hay postulaciones en esta vista.",
+        "loading": "Cargando postulaciones…",
+        "error": "No se pudieron cargar las postulaciones. Recargá la página.",
+        "previous": "Anterior",
+        "next": "Siguiente",
+        "page": "Página {page} de {totalPages}",
+        "types": {
+            "business": "Empresa",
+            "ngo": "Organización sin fines de lucro",
+            "institution": "Institución"
+        }
     }
 }

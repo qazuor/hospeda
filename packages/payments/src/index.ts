@@ -77,6 +77,7 @@ export type {
     ChargeInput,
     ChargePurpose,
     ChargeRef,
+    ChargeRefund,
     ChargeResult,
     ChargeSnapshot,
     ChargeStatus,
@@ -112,6 +113,7 @@ export {
     type ProviderReadRejectedErrorInput,
     type ProviderReadRejection
 } from './provider/provider-read';
+export { runWithProviderReadScope, shareProviderReadForAct } from './provider/provider-read-scope';
 export {
     AuthorizationRefSchema,
     AuthorizationSearchInputSchema,
@@ -143,6 +145,7 @@ export {
     GOVERNOR_INTERACTIVE_RESERVE,
     GOVERNOR_MAX_BACKOFF_COOLDOWN_MS,
     GOVERNOR_MAX_RETRY_AFTER_COOLDOWN_MS,
+    GOVERNOR_MAX_WAIT_SAMPLES,
     GOVERNOR_RATE_PER_SECOND,
     GOVERNOR_WINDOW_MS,
     type GovernorMode,

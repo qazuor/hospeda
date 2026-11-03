@@ -89,7 +89,8 @@
     "platform": {
         "title": "Plataforma",
         "hostTrades": "Directorio de Oficios",
-        "featureFlags": "Feature Flags"
+        "featureFlags": "Feature Flags",
+        "partnerApplications": "Postulaciones de aliados"
     },
     "sponsors": "Patrocinadores",
     "analytics": {

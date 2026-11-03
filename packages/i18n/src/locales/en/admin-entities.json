@@ -1147,5 +1147,66 @@
         "previous": "Previous",
         "next": "Next",
         "page": "Page {page} of {totalPages}"
+    },
+    "partnerApplicationPanel": {
+        "title": "Partner applications",
+        "intro": "Review Partner applications. Pending applications do not expire; overdue ones are marked for visibility.",
+        "views": "Application views",
+        "pending": "Pending",
+        "approvedUnclaimed": "Approved unclaimed",
+        "rejectedWaiting": "Rejected with waiting period",
+        "columns": {
+            "email": "Email",
+            "received": "Received",
+            "status": "Status",
+            "actions": "Actions",
+            "partner": "Partner",
+            "approved": "Approved",
+            "claim": "Claim",
+            "rejected": "Rejected",
+            "waitEnds": "Waiting period ends"
+        },
+        "status": {
+            "pending": "Pending"
+        },
+        "overdue": "Overdue",
+        "unclaimed": "Unclaimed",
+        "actions": {
+            "approve": "Approve",
+            "reject": "Reject",
+            "cancelWait": "Cancel waiting period"
+        },
+        "dialogs": {
+            "approve": {
+                "title": "Approve application",
+                "confirm": "Approve"
+            },
+            "reject": {
+                "title": "Reject application",
+                "confirm": "Reject"
+            },
+            "cancelWait": {
+                "title": "Cancel waiting period",
+                "confirm": "Cancel waiting period"
+            },
+            "partnerName": "Partner name",
+            "partnerType": "Partner type",
+            "reason": "Reason",
+            "cancel": "Back"
+        },
+        "errors": {
+            "action": "The action could not be completed. Check the reason and try again."
+        },
+        "empty": "There are no applications in this view.",
+        "loading": "Loading applications…",
+        "error": "Could not load applications. Reload the page.",
+        "previous": "Previous",
+        "next": "Next",
+        "page": "Page {page} of {totalPages}",
+        "types": {
+            "business": "Business",
+            "ngo": "Nonprofit organization",
+            "institution": "Institution"
+        }
     }
 }

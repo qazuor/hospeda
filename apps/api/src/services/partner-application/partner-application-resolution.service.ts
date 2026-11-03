@@ -15,6 +15,10 @@ import { getRequestCorrelationId } from '../../lib/request-context';
 import { getClock } from '../../utils/clock';
 import { apiLogger } from '../../utils/logger';
 import { PARTNER_APPLICATION_NOT_PENDING } from './partner-application-errors';
+import {
+    enqueuePartnerApplicationRejectedNotice,
+    enqueuePartnerClaimNotice
+} from './partner-application-notices';
 import { assertAction5Step3 } from './partner-application-step3';
 import { createClaimAccount } from './partner-claim-account';
 
@@ -96,6 +100,16 @@ export async function approvePartnerApplication(input: {
                 at,
                 partnerId: partner.id
             });
+            const correlationId = getRequestCorrelationId() ?? randomUUID();
+            if (createdUserId === null) {
+                await enqueuePartnerClaimNotice({
+                    tx,
+                    email: application.email,
+                    partnerId: partner.id,
+                    partnerName: input.name,
+                    correlationId
+                });
+            }
             await domainEventModel.insert({
                 tx,
                 eventType: 'partner_application.approved',
@@ -104,7 +118,7 @@ export async function approvePartnerApplication(input: {
                 actorType: 'admin',
                 actorId: input.actor.id,
                 reason,
-                correlationId: getRequestCorrelationId() ?? randomUUID(),
+                correlationId,
                 occurredAt: at,
                 changes: [
                     { field: 'status', old: 'PENDING', new: 'APPROVED' },
@@ -180,6 +194,13 @@ export async function rejectPartnerApplication(input: {
             applicationId: input.applicationId,
             at
         });
+        const correlationId = getRequestCorrelationId() ?? randomUUID();
+        await enqueuePartnerApplicationRejectedNotice({
+            tx,
+            email: application.email,
+            applicationId: input.applicationId,
+            correlationId
+        });
         await domainEventModel.insert({
             tx,
             eventType: 'partner_application.rejected',
@@ -188,7 +209,7 @@ export async function rejectPartnerApplication(input: {
             actorType: 'admin',
             actorId: input.actor.id,
             reason,
-            correlationId: getRequestCorrelationId() ?? randomUUID(),
+            correlationId,
             occurredAt: at,
             changes: [
                 { field: 'status', old: 'PENDING', new: 'REJECTED' },

@@ -122,6 +122,23 @@
         "reason": "S23/S24 move SUSPENDED/GRACE_PERIOD to CANCELLED with service ended today; GRACE_PERIOD emits a source and CANCELLED does not (03-contrato-de-cobertura.md:469,474); the coverage notice is emitted after commit."
     },
     {
+        "file": "packages/service-core/src/services/billing/subscription/cancel-paused-subscription-support.ts",
+        "symbol": "writePausedCancellation",
+        "table": "subscriptions",
+        "effect": "turns-off",
+        "via": "caller",
+        "notifiedBy": "packages/service-core/src/services/billing/subscription/cancel-paused-subscription.service.ts",
+        "reason": "S22 ends a PAUSED principal today; a COURTESY pause emits coverage until cancellation, and the REMOVED notice follows the commit (AC:B8b:5)."
+    },
+    {
+        "file": "packages/service-core/src/services/billing/subscription/cancel-paused-subscription-support.ts",
+        "symbol": "writePausedScheduledCancellation",
+        "table": "subscriptions",
+        "effect": "neutral",
+        "via": null,
+        "reason": "S22 retains unconsumed successor credit through S11, scheduling the service end; the row emits coverage until S12 (AC:B8b:5)."
+    },
+    {
         "file": "packages/service-core/src/services/billing/subscription/revoke-subscription.service.ts",
         "symbol": "writeRevocation",
         "table": "subscriptions",
@@ -184,6 +201,22 @@
         "effect": "neutral",
         "via": null,
         "reason": "S32 pauses only a COMPLEMENTO row: subscription-sources.ts filters PRINCIPAL and addon-sources.ts reads addon_instance.status, which remains ACTIVE."
+    },
+    {
+        "file": "packages/service-core/src/services/billing/subscription/pause-subscription.service.ts",
+        "symbol": "pauseSubscription",
+        "table": "subscriptions",
+        "effect": "turns-off",
+        "via": "notice",
+        "reason": "S8 moves an ACTIVE PRINCIPAL to PAUSED, which emits no source in subscription-sources.ts; the coverage notice is emitted after commit."
+    },
+    {
+        "file": "packages/service-core/src/services/billing/subscription/resume-subscription.service.ts",
+        "symbol": "resumeSubscription",
+        "table": "subscriptions",
+        "effect": "turns-on",
+        "via": null,
+        "reason": "S10 returns a PAUSED PRINCIPAL to ACTIVE, which emits a subscription coverage source after commit."
     },
     {
         "file": "packages/service-core/src/services/billing/subscription/service-end-s12.ts",

@@ -28,6 +28,7 @@ import {
     notificationLogModel,
     userModel
 } from '@repo/db';
+import type { PartnerClaimSecretIssuer } from '@repo/notifications';
 import {
     BrevoEmailTransport,
     createBillingGraceReminderRenderers,
@@ -41,6 +42,7 @@ import {
     createListingRetentionRenderers,
     createOutboxMailRenderer,
     createOutboxOptOutReader,
+    createPartnerApplicationRenderers,
     createTrialCampaignRenderers,
     createVerticalListingRenderers,
     type EmailOutboxDeliveryDeps,
@@ -57,6 +59,8 @@ import { getEmailEnvironmentLabel, getEmailSender } from '../../utils/email-send
 import { env } from '../../utils/env.js';
 import { readListingNames } from '../../utils/listing-publication/listing-names-reader.js';
 import { apiLogger } from '../../utils/logger.js';
+import { issuePartnerClaimSecret } from '../../utils/partner-application/partner-claim-secret.js';
+import { resolvePartnerMailCopy } from '../../utils/partner-application/partner-mail-copy.js';
 import { readReconciliationSubjects } from '../../utils/reconciliation-summary/reconciliation-subjects-reader.js';
 import type { CronJobContext, CronJobDefinition, CronJobResult } from '../types.js';
 
@@ -71,7 +75,7 @@ export const EMAIL_OUTBOX_BATCH_SIZE = 50;
 
 /**
  * Builds the production outbox renderer with shared, trial, renewal, promo-ending, reconciliation,
- * signup, vertical listing, on-archive, and pre-archive/pre-deletion retention notices.
+ * signup, vertical listing, on-archive, pre-archive/pre-deletion retention, and partner application notices.
  *
  * @param input - Renderer configuration. `readListingNames` defaults to the
  *   database reader; tests inject a fake.
@@ -86,6 +90,8 @@ export function buildOutboxSenderRender(input: {
     readonly adminUrl?: string;
     /** Non-production marker (e.g. `STAGING`) for the summary header. Absent in production. */
     readonly environmentLabel?: string;
+    /** Issues and persists a claim secret; tests inject a fake to avoid database writes. */
+    readonly issuePartnerClaimSecret?: PartnerClaimSecretIssuer;
 }) {
     return createOutboxMailRenderer({
         renderers: {
@@ -112,7 +118,12 @@ export function buildOutboxSenderRender(input: {
                 readListingNames: input.readListingNames ?? readListingNames
             }),
             ...createListingArchivedRenderers({ siteUrl: input.siteUrl }),
-            ...createListingRetentionRenderers({ siteUrl: input.siteUrl })
+            ...createListingRetentionRenderers({ siteUrl: input.siteUrl }),
+            ...createPartnerApplicationRenderers({
+                siteUrl: input.siteUrl,
+                issueClaimSecret: input.issuePartnerClaimSecret ?? issuePartnerClaimSecret,
+                resolveCopy: resolvePartnerMailCopy
+            })
         }
     });
 }

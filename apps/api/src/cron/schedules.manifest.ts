@@ -98,6 +98,14 @@ export const CRON_SCHEDULES: ReadonlyArray<CronScheduleEntry> = [
             'Recover unanswered subscription creations and cancel duplicates (HOS-1610, AC:B11:23).'
     },
     {
+        name: 'billing-deferred-cancellation-retry',
+        displayName: 'Reintento de cancelaciones diferidas por el aviso',
+        category: 'billing',
+        schedule: '4-59/5 * * * *',
+        description:
+            'Retry, minutes after their before-cancel notice is sent, the provider cancellations our transitions deferred with NOTICE_PENDING (HOS-1955, AC:B11:6).'
+    },
+    {
         name: 'alerts-digest',
         displayName: 'Digest de alertas y ofertas',
         category: 'notifications',
@@ -136,6 +144,13 @@ export const CRON_SCHEDULES: ReadonlyArray<CronScheduleEntry> = [
         schedule: '20 * * * *',
         description:
             'Fail pending payments whose provider collection window closed without collection, re-read by id (HOS-1709, AC:B5:5).'
+    },
+    {
+        name: 'subscription-pause-end',
+        displayName: 'Fin de pausas de suscripción',
+        category: 'billing',
+        schedule: '47 * * * *',
+        description: 'Resume due principal pauses (HOS-1573, AC:B8b:3).'
     },
     {
         name: 'subscription-service-end',

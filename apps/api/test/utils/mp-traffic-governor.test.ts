@@ -4,18 +4,21 @@ const { info, warn } = vi.hoisted(() => ({ info: vi.fn(), warn: vi.fn() }));
 vi.mock('../../src/utils/logger', () => ({ apiLogger: { info, warn } }));
 
 import { ApiEnvBaseSchema } from '../../src/utils/env-schema';
-import { createMercadoPagoTrafficGovernor } from '../../src/utils/mp-traffic-governor';
+import {
+    createMercadoPagoTrafficGovernor,
+    mercadoPagoRateLimitDeferral
+} from '../../src/utils/mp-traffic-governor';
 
 afterEach(() => vi.clearAllMocks());
 
 describe('Mercado Pago traffic governor composition', () => {
-    it('supports off, observe, and enforce degradation with one warning (kills enforce activation before PR-3)', () => {
+    it('supports off, observe, and enforce without constructing Redis outside enforce (kills mode degradation)', () => {
         expect(createMercadoPagoTrafficGovernor({ mode: 'off' })).toBeUndefined();
         const observe = createMercadoPagoTrafficGovernor({ mode: 'observe' });
         expect(observe).toMatchObject({ mode: 'observe' });
         const enforce = createMercadoPagoTrafficGovernor({ mode: 'enforce' });
-        expect(enforce).toMatchObject({ mode: 'observe' });
-        expect(warn).toHaveBeenCalledTimes(1);
+        expect(enforce).toMatchObject({ mode: 'enforce' });
+        expect(warn).not.toHaveBeenCalled();
         observe?.stop();
         enforce?.stop();
     });
@@ -28,22 +31,27 @@ describe('Mercado Pago traffic governor composition', () => {
         expect(schema.safeParse('on').success).toBe(false);
     });
 
-    it('logs window records and captures only interactive 429s (kills missing observability wiring)', () => {
-        const governor = createMercadoPagoTrafficGovernor({ mode: 'observe' });
-        governor?.observe({
-            trafficClass: 'interactive',
-            capability: 'read',
-            status: 429,
-            retryAfterMs: 1000
-        });
-        governor?.observe({
-            trafficClass: 'background',
-            capability: 'read',
-            status: 429,
-            retryAfterMs: 1000
-        });
+    it('warns on every interactive 429 and captures once per capability and window', () => {
+        let now = 0;
+        const governor = createMercadoPagoTrafficGovernor({ mode: 'observe', now: () => now });
+        const rejected = (capability: 'read' | 'authorize') =>
+            governor?.observe({
+                trafficClass: 'interactive',
+                capability,
+                status: 429,
+                retryAfterMs: 1000
+            });
+        rejected('read');
+        rejected('read');
+        rejected('read');
+        rejected('authorize');
+        expect(warn).toHaveBeenCalledTimes(4);
+        expect(warn.mock.calls.filter((call) => call[2]?.capture === true)).toHaveLength(2);
+        now = 60_000;
+        rejected('read');
+        expect(warn).toHaveBeenCalledTimes(5);
+        expect(warn.mock.calls.filter((call) => call[2]?.capture === true)).toHaveLength(3);
         governor?.flushWindow();
-        expect(warn).toHaveBeenCalledTimes(1);
         expect(warn).toHaveBeenCalledWith(
             expect.objectContaining({ message: expect.stringContaining('interactive') }),
             undefined,
@@ -56,5 +64,16 @@ describe('Mercado Pago traffic governor composition', () => {
             })
         );
         governor?.stop();
+    });
+
+    it('offers the webhook deferral port only under enforce (kills deferring in observe)', () => {
+        const observe = createMercadoPagoTrafficGovernor({ mode: 'observe' });
+        const enforce = createMercadoPagoTrafficGovernor({ mode: 'enforce' });
+        expect(mercadoPagoRateLimitDeferral({ governor: undefined })).toBeUndefined();
+        expect(mercadoPagoRateLimitDeferral({ governor: observe })).toBeUndefined();
+        const port = mercadoPagoRateLimitDeferral({ governor: enforce });
+        expect(port?.coolDownRemainingMs()).toBe(0);
+        observe?.stop();
+        enforce?.stop();
     });
 });
