@@ -62,22 +62,28 @@ describe('TEST:1955:8 AC:1955:1 AC:1955:6 real before-cancel status reader', () 
     it('reads the same kind and default occurrence without enqueueing, then maps each status', async () => {
         const target = await seedNoticeTarget();
         const attempt = { ...target, kind: 'ATTEMPT_CANCELLED' as const };
+        const ownOutboxRows = () =>
+            getDb()
+                .select({ id: emailOutbox.id })
+                .from(emailOutbox)
+                .where(eq(emailOutbox.recipientUserId, target.userId));
+        expect(await ownOutboxRows()).toHaveLength(0);
         expect(await beforeCancelNoticeStatus.read(attempt)).toEqual({
             state: 'ABSENT',
             settledAgeMs: null
         });
+        expect(await ownOutboxRows()).toHaveLength(0);
         expect(await beforeCancelNotice.beforeCancel(attempt)).toBe('NOT_YET_SENT');
+        expect(await ownOutboxRows()).toHaveLength(1);
         expect((await beforeCancelNoticeStatus.read(attempt)).state).toBe('PENDING');
+        expect(await ownOutboxRows()).toHaveLength(1);
         expect(
             await beforeCancelNoticeStatus.read({ ...target, kind: 'AUTHORIZATION_EXPIRED' })
         ).toEqual({
             state: 'ABSENT',
             settledAgeMs: null
         });
-        const [row] = await getDb()
-            .select({ id: emailOutbox.id })
-            .from(emailOutbox)
-            .where(eq(emailOutbox.recipientUserId, target.userId));
+        const [row] = await ownOutboxRows();
         if (!row) throw new Error('No outbox row');
         const owner = `hos1955-${crypto.randomUUID()}`;
         const claimed = await emailOutboxModel.claim({ owner, limit: 1, leaseMs: 60_000 });
