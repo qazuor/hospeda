@@ -206,8 +206,8 @@ tunnel; the connection strings live in shell variables of that session only.
 
 - **Secrets**: read the credentials from the container over ssh straight into shell
   variables. Never `echo` them, never write them to a file, never paste them in a ticket.
-- **Staging**: the Coolify proxy publishes the staging Postgres on the VPS loopback, port
-  `15432`. Tunnel it: `ssh -N -L 25432:127.0.0.1:15432 <vps>`, and point
+- **Staging**: the staging Postgres container is published on the VPS loopback, port
+  `5433` (HOS-1972: do not use the public Coolify proxy port 15432). Tunnel it: `ssh -N -L 25432:127.0.0.1:5433 <vps>`, and point
   `CUTOVER_STAGING_DATABASE_URL` at `127.0.0.1:25432`.
 - **Production**: there is no published port. Tunnel to the database container's address
   on the Docker network, resolved at the moment of use and **never written down** (it
