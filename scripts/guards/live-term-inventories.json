@@ -1,6 +1,13 @@
 {
     "fila_viva": [
         {
+            "file": "packages/service-core/src/services/billing/subscription/succession-closer.service.ts",
+            "symbol": "closeSuccessionWrites",
+            "row": null,
+            "why": "AC:B8b:10 (HOS-1575, S18): reads the live successor at succession-closer.service.ts:83-96 and checks the predecessor at :99-100; D-1 prevents writes while the predecessor is live.",
+            "subject": "subscription"
+        },
+        {
             "file": "packages/service-core/src/services/billing/subscription/complement-selection.ts",
             "symbol": "selectComplementTargets",
             "row": null,
@@ -309,6 +316,12 @@
         }
     ],
     "cortesia_diferida": [
+        {
+            "file": "packages/service-core/src/services/billing/subscription/succession-close-writes.ts",
+            "symbol": "deferOrCloseCourtesy",
+            "row": null,
+            "why": "AC:B8b:10 (HOS-1575, S18): reads balanceMonths and balanceClosedAt at succession-close-writes.ts:153-154 to select an open courtesy balance before deferring or closing it."
+        },
         {
             "file": "packages/service-core/src/services/billing/coverage/courtesy-sources.ts",
             "symbol": "resolveCourtesySources",
