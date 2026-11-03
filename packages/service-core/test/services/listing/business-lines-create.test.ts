@@ -3,6 +3,25 @@ import { AccommodationService } from '../../../src/services/accommodation/accomm
 import { ExperienceService } from '../../../src/services/experience/experience.service';
 import { resolveBusinessLinesOnCreate } from '../../../src/services/listing/base-listing.service';
 import { VenueService } from '../../../src/services/venue/venue.service';
+import type { Actor } from '../../../src/types';
+import { createActor } from '../../factories/actorFactory';
+
+/**
+ * The protected create collaborators this test replaces, so the real `create`
+ * path (and its `_beforeCreate` hook) runs against an in-memory model.
+ */
+interface CreateHarness {
+    model: { create: (data: unknown, tx?: unknown) => Promise<unknown> };
+    _canCreate: () => Promise<void>;
+    _afterCreate: (entity: unknown) => Promise<unknown>;
+    _refetchWithWriteRelations: (entity: unknown) => Promise<unknown>;
+    _assertDestinationIsCity: () => Promise<void>;
+    create: (
+        actor: Actor,
+        input: Record<string, unknown>,
+        ctx: { tx: unknown; hookState: Record<string, unknown> }
+    ) => Promise<unknown>;
+}
 
 describe('TEST:2.3:3 AC:2:11 create business line preselection', () => {
     it.each([
@@ -30,7 +49,7 @@ describe('TEST:2.3:3 AC:2:11 create business line preselection', () => {
         ['experience', ExperienceService, 'EXCURSION', ['standard']],
         ['accommodation', AccommodationService, 'CABIN', ['standard']]
     ] as const)('%s create persists its preselection and explicit value', async (vertical, Service, type, fallback) => {
-        const service: any = new Service({});
+        const service = new Service({}) as unknown as CreateHarness;
         const model = { create: vi.fn(async (data: unknown) => data) };
         service.model = model;
         service._canCreate = async () => {};
@@ -59,8 +78,8 @@ describe('TEST:2.3:3 AC:2:11 create business line preselection', () => {
                       description: 'A sufficiently long description for this service create test.',
                       ...(vertical === 'experience' ? { priceFrom: 1000 } : {})
                   };
-        const actor: any = { id: input.ownerId, roles: [], permissions: [] };
-        const ctx: any = { tx: {}, hookState: {} };
+        const actor = createActor({ id: input.ownerId });
+        const ctx = { tx: {}, hookState: {} };
 
         await service.create(actor, input, ctx);
         expect(model.create).toHaveBeenLastCalledWith(

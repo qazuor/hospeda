@@ -76,6 +76,8 @@ describe('TEST:2.3:2 AC:2:4 business_lines PostgreSQL constraints', () => {
             await rejected('venues', "ARRAY['nightlife']::text[]", 'CAFE');
             await rejected('accommodations', "ARRAY['food']::text[]");
             await rejected('experiences', "ARRAY['food']::text[]", 'EXCURSION');
+            await rejected('experiences', "'{}'::text[]", 'EXCURSION');
+            await rejected('accommodations', "'{}'::text[]");
 
             const venueConstraintName = venueConstraint.match(/ADD CONSTRAINT "([\w]+)"/)?.[1];
             expect(venueConstraintName).toBeDefined();
@@ -103,7 +105,9 @@ describe('TEST:2.3:2 AC:2:4 business_lines PostgreSQL constraints', () => {
                     `SELECT type::text, business_lines FROM venues WHERE slug LIKE 'bl-%' AND type IN ('BOLICHE','BAR','CAFE') ORDER BY type::text`
                 )
             );
-            expect(result.rows.map((row: any) => [row.type, row.business_lines])).toEqual([
+            expect(
+                result.rows.map((row: Record<string, unknown>) => [row.type, row.business_lines])
+            ).toEqual([
                 ['BAR', ['food', 'nightlife']],
                 ['BOLICHE', ['nightlife']],
                 ['CAFE', ['food']]
