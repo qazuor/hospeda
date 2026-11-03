@@ -33,12 +33,20 @@ import {
     type ExperienceSearch,
     ExperienceSearchSchema,
     LifecycleStatusEnum,
+    type ListingSectionId,
+    type ListingSectionState,
     ModerationStatusEnum,
     PermissionEnum,
     type PublicationStatusEnum,
-    ServiceErrorCode
+    REVIEW_RULES,
+    ServiceErrorCode,
+    validateReviewDimensions
 } from '@repo/schemas';
-import { readListingAccessFacts, resolveResourceStep } from '@repo/verticals';
+import {
+    readListingAccessFacts,
+    resolveListingSectionPresence,
+    resolveResourceStep
+} from '@repo/verticals';
 import { BaseCrudService } from '../../base/base.crud.service';
 import type {
     Actor,
@@ -280,6 +288,40 @@ export class ExperienceReviewService extends BaseCrudService<
             }).allowed
         ) {
             throw entityNotFoundError({ entityName: ExperienceService.ENTITY_NAME });
+        }
+        if (data.rating) {
+            const facts = readListingAccessFacts({ entity: experience });
+            const requested = REVIEW_RULES.experience.dimensions.flatMap((dimension) => {
+                const bound = (dimension as { readonly boundSection?: string }).boundSection;
+                return bound ? [bound] : [];
+            });
+            const presence = resolveListingSectionPresence({
+                vertical: 'experience',
+                businessLines: facts?.businessLines ?? [],
+                requested
+            });
+            const sectionStates = new Map<
+                ListingSectionId<'experience'>,
+                { state: ListingSectionState }
+            >(
+                [...presence].map(([id, absent]) => [
+                    id as ListingSectionId<'experience'>,
+                    { state: absent ? 'absent' : 'available' }
+                ])
+            );
+            const validation = validateReviewDimensions({
+                vertical: 'experience',
+                sectionStates,
+                rating: data.rating
+            });
+            if (!validation.ok && validation.reason === 'DIMENSION_NOT_APPLICABLE') {
+                throw new ServiceError(
+                    ServiceErrorCode.VALIDATION_ERROR,
+                    'Review dimension is not applicable to this listing.',
+                    { field: validation.field, reason: validation.reason },
+                    validation.reason
+                );
+            }
         }
         const existing = await this.model.findOne({
             userId: actor.id,
