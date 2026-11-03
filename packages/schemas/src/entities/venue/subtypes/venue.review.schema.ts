@@ -1,9 +1,11 @@
 import { z } from 'zod';
+import { reviewRatingSchemaFor } from '../../../catalog/review-dimensions.js';
 import { BaseAuditFields } from '../../../common/audit.schema.js';
 import { UserIdSchema } from '../../../common/id.schema.js';
 import { BaseLifecycleFields } from '../../../common/lifecycle.schema.js';
 import { BaseModerationFields } from '../../../common/moderation.schema.js';
-import { VenueRatingSchema } from '../../../common/venue-rating.schema.js';
+
+const VenueReviewRatingSchema = reviewRatingSchemaFor({ vertical: 'venue' });
 
 /**
  * venue Review Schema — User review for a venue listing.
@@ -61,7 +63,7 @@ export const VenueReviewSchema = z.object({
      * so the underlying `rating` column is nullable and reads back NULL when
      * absent — the entity schema must accept both `null` and `undefined`.
      */
-    rating: VenueRatingSchema.nullish(),
+    rating: VenueReviewRatingSchema.nullish(),
 
     /**
      * Computed average of all granular rating categories (0.00–5.00).
@@ -131,7 +133,7 @@ export const VenueReviewCreateInputSchema = z.object({
         .number({ message: 'zodError.venue.review.overallRating.required' })
         .min(1, { message: 'zodError.venue.review.overallRating.min' })
         .max(5, { message: 'zodError.venue.review.overallRating.max' }),
-    rating: VenueRatingSchema.optional(),
+    rating: VenueReviewRatingSchema.optional(),
     /** Optional review headline (mirrors `title` DB column). */
     title: z
         .string()
