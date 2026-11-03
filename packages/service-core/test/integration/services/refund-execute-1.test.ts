@@ -1,4 +1,4 @@
-import { coveredPeriods, eq, payments, reconciliationMarkPayments } from '@repo/db';
+import { coveredPeriods, eq, payments, reconciliationMarkPayments, refundCalls } from '@repo/db';
 import { actStartInstant, assertFreshForAct } from '@repo/payments';
 import { afterAll, describe, expect, it } from 'vitest';
 import { createPaymentReconciliationMarkPayments } from '../../../src/services/billing/payment/payment-ledger.js';
@@ -52,6 +52,50 @@ describe('TEST:B6:4 AC:B6:5 provider refund execution', () => {
     );
 
     it.skipIf(skip)(
+        'uses accredited provider amounts when a recorded call amount differs',
+        async () => {
+            // Arrange
+            const seeded = await confirmedExecuteFixture();
+            const accepted = (await executeRows(seeded.refundId, seeded.payment.id)).calls.filter(
+                (call) => call.providerRefundId !== null
+            );
+            expect(accepted).toHaveLength(2);
+            await getServiceTestDb()
+                .update(refundCalls)
+                .set({ amount: 2000 })
+                .where(eq(refundCalls.id, accepted[1]!.id));
+            const before = await executeRows(seeded.refundId, seeded.payment.id);
+            expect(before.calls.map((call) => call.amount)).toEqual([5000, 2500, 2000]);
+            const act = { kind: 'decision' as const, startedAt: seeded.fixture.clock.now() };
+            actStartInstant({ act });
+            const read = await seeded.fixture.provider.readCharge({
+                chargeId: seeded.charge.chargeId
+            });
+            const providerRefunds = assertFreshForAct({ read, act }).snapshot.refunds;
+            expect(
+                providerRefunds.find((entry) => entry.refundId === accepted[1]!.providerRefundId)
+            ).toMatchObject({ amount: { amountMinor: 2500, currency: 'ARS' }, accredited: true });
+
+            // Act
+            const result = await executeRefundFromProviderRead(
+                { refundId: seeded.refundId },
+                { clock: seeded.fixture.clock, provider: seeded.fixture.provider }
+            );
+
+            // Assert
+            const after = await executeRows(seeded.refundId, seeded.payment.id);
+            expect(result.paymentEffect?.outcome).toBe('P4');
+            expect(result.outcome).toBe('EXECUTED');
+            expect(after.refund?.status).toBe('EXECUTED');
+            expect(after.payment).toMatchObject({
+                status: 'PARTIALLY_REFUNDED',
+                refundedAmount: 5000,
+                version: before.payment!.version + 1
+            });
+        }
+    );
+
+    it.skipIf(skip)(
         '(b) keeps a partial rejection confirmed without moving the payment',
         async () => {
             // Arrange
@@ -64,6 +108,25 @@ describe('TEST:B6:4 AC:B6:5 provider refund execution', () => {
                 chargeId: seeded.charge.chargeId,
                 refundId: accepted[1]!.providerRefundId!
             });
+            await seeded.fixture.provider.refund({
+                chargeId: seeded.charge.chargeId,
+                amount: { amountMinor: 2500, currency: 'ARS' },
+                reference: `panel-${crypto.randomUUID()}`
+            });
+            const act = { kind: 'decision' as const, startedAt: seeded.fixture.clock.now() };
+            actStartInstant({ act });
+            const read = await seeded.fixture.provider.readCharge({
+                chargeId: seeded.charge.chargeId
+            });
+            const snapshot = assertFreshForAct({ read, act }).snapshot;
+            expect(snapshot.refundedAmount.amountMinor).toBe(5000);
+            expect(
+                snapshot.refunds
+                    .filter((entry) =>
+                        accepted.some((call) => call.providerRefundId === entry.refundId)
+                    )
+                    .map((entry) => entry.accredited)
+            ).toEqual([true, false]);
             const before = await executeRows(seeded.refundId, seeded.payment.id);
 
             // Act
