@@ -119,6 +119,9 @@ export const publicGetVenueBySlugRoute = createPublicRoute({
                 getVenueEvents(model, { venueId: venue.id }),
                 getVenueDailySpecials(model, { venueId: venue.id, validOn: today })
             ]);
+        const activeVenueEvents = eventsResult.error
+            ? undefined
+            : eventsResult.data.events.filter((event) => event.isActive);
 
         const [projected] = await projectPublicListings({
             vertical: 'venue',
@@ -136,10 +139,7 @@ export const publicGetVenueBySlugRoute = createPublicRoute({
                             : menuResult.data.sections,
                     menuFileUrl: venue.menuFileUrl,
                     menuFileKind: venue.menuFileKind,
-                    venueEvents:
-                        eventsResult.error || eventsResult.data.events.length === 0
-                            ? undefined
-                            : eventsResult.data.events.filter((event) => event.isActive),
+                    venueEvents: activeVenueEvents?.length ? activeVenueEvents : undefined,
                     dailySpecials:
                         dailySpecialsResult.error || dailySpecialsResult.data.specials.length === 0
                             ? undefined

@@ -16,6 +16,11 @@ type ListingRecord = Record<string, unknown> & {
 const VERTICALS = { venue: VerticalEnum.VENUE, experience: VerticalEnum.EXPERIENCE } as const;
 type PublicVertical = keyof typeof VERTICALS;
 
+/**
+ * Projects nested menu-section and item shapes using the menu traits. These
+ * nested fields describe content shape; section response field names come
+ * from the catalog metadata below.
+ */
 function projectVenueMenuTraits(
     listing: Record<string, unknown>,
     states: ReadonlyMap<
@@ -23,7 +28,6 @@ function projectVenueMenuTraits(
         { readonly state: string; readonly traits: ReadonlyMap<string, string> }
     >
 ): Record<string, unknown> {
-    // These names describe nested menu-section/item shape, not catalog section fields.
     const menu = states.get('menu');
     const sectionsField = (
         LISTING_SECTIONS.venue as readonly {
