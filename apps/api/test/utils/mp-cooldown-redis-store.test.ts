@@ -14,7 +14,7 @@ function fakeClient(args: { status?: string; get?: () => Promise<string | null> 
 
 describe('Redis shared provider cool-down', () => {
     it('returns fallback immediately when Redis is not ready and extend stays fail-open', async () => {
-        let now = 100;
+        const now = 100;
         const client = fakeClient({ status: 'connecting' });
         const store = createMercadoPagoRedisCoolDownStore({
             redisUrl: 'redis://unused',
@@ -72,7 +72,7 @@ describe('Redis shared provider cool-down', () => {
         expect(client.get).toHaveBeenCalledTimes(1);
         store.extend({ until: 2000 });
         expect(client.eval).toHaveBeenCalledWith(
-            expect.any(String),
+            "local c = tonumber(redis.call('GET', KEYS[1]) or '0'); local n = tonumber(ARGV[1]); if n > c then redis.call('SET', KEYS[1], ARGV[1], 'PX', ARGV[2]); return 1 end; return 0",
             1,
             'mp:cooldown-until',
             '2000',
