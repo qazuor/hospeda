@@ -620,6 +620,15 @@ const comercialSidebar: SidebarInput = {
             route: '/billing/promo-codes',
             permissions: ['BILLING_MANAGE_PROMO_CODES'],
             onMissing: 'hide'
+        },
+        {
+            type: 'link',
+            id: 'deadlines',
+            label: { es: 'Plazos', en: 'Deadlines', pt: 'Prazos' },
+            icon: 'ClockIcon',
+            route: '/billing/deadlines',
+            permissions: ['MAINTENANCE_MODE_WRITE'],
+            onMissing: 'hide'
         }
     ]
 };
