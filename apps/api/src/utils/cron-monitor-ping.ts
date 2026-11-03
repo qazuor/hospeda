@@ -1,4 +1,5 @@
 import type { SweepLivenessPing, SweepName } from '@repo/service-core';
+import { MARKET_TIMEZONE } from '@repo/utils';
 import * as Sentry from '@sentry/node';
 import { apiLogger } from './logger.js';
 
@@ -7,10 +8,15 @@ type MonitorConfig = NonNullable<Parameters<typeof Sentry.captureCheckIn>[1]>;
 const monitorBySweep: Record<SweepName, { monitorSlug: string; config: MonitorConfig }> = {
     RECONCILIATION: {
         monitorSlug: 'billing-reconciliation-sweep',
-        config: { schedule: { type: 'interval', value: 1, unit: 'day' }, checkinMargin: 120 }
+        config: {
+            schedule: { type: 'crontab', value: '10 2 * * *' },
+            timezone: MARKET_TIMEZONE,
+            checkinMargin: 170
+        }
     }
 };
 
+/** Build the Sentry check-in adapter for scheduled billing sweeps. */
 export function createSentryCronMonitorPing(): SweepLivenessPing {
     return {
         async ping({ sweep }) {
