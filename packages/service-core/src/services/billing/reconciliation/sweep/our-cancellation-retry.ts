@@ -118,6 +118,8 @@ export interface RetryOurCancellationInput {
 
 /** Ports of {@link retryOurCancellation}. */
 export interface RetryOurCancellationPorts {
+    /** Called after each processed page so the owning sweep can renew its lease. */
+    readonly heartbeat?: () => Promise<void>;
     readonly provider: PaymentProvider;
     readonly clock: Clock;
     readonly beforeCancelNotice: BeforeCancelNotice;
@@ -343,6 +345,7 @@ export async function runOurCancellationRetry(
                 );
             }
         }
+        await ports.heartbeat?.();
         if (page.length < input.pageSize) break;
         afterSubscriptionId = page.at(-1)?.subscription.id;
     }

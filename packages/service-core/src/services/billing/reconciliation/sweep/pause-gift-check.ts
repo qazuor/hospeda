@@ -19,6 +19,8 @@ export interface PauseGiftSummary {
     readonly failures: ReadonlyArray<{ readonly pauseId: string; readonly message: string }>;
 }
 export interface PauseGiftPorts {
+    /** Called after each processed page so the owning sweep can renew its lease. */
+    readonly heartbeat?: () => Promise<void>;
     readonly clock: Clock;
     readonly tx?: DrizzleClient;
 }
@@ -91,6 +93,7 @@ export async function runPauseGiftDetection(
                 });
             }
         }
+        await ports.heartbeat?.();
         if (page.length < input.pageSize) break;
         afterPauseId = page.at(-1)?.pauseId;
     }

@@ -29,6 +29,8 @@ function errorMessage(error: unknown): string {
 }
 
 export interface TerminalReturnPorts {
+    /** Called after each processed page so the owning sweep can renew its lease. */
+    readonly heartbeat?: () => Promise<void>;
     readonly beforeCancelNotice: BeforeCancelNotice;
     readonly deadlines?: CanChargeDeadlines;
 }
@@ -183,6 +185,7 @@ export async function runTerminalReturn(
                 );
             }
         }
+        await ports.heartbeat?.();
         if (page.length < input.pageSize) break;
         afterSubscriptionId = page.at(-1)?.subscription.id;
     }

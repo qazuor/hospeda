@@ -19,6 +19,8 @@ const SEARCH_SPAN_MS = 29 * DAY_MS;
 
 /** Ports of the paid-orders check (AC:B11:13). */
 export interface PaidOrdersCheckPorts {
+    /** Called after each processed page so the owning sweep can renew its lease. */
+    readonly heartbeat?: () => Promise<void>;
     /** The billing deadlines (PLAZO:18); defaults to the version in force. */
     readonly deadlines?: CanChargeDeadlines;
 }
@@ -113,6 +115,7 @@ export async function runPaidOrdersCheck(
                 );
             }
         }
+        await ports.heartbeat?.();
         if (page.length < input.pageSize) break;
         afterInstanceId = page.at(-1)?.instance.id;
     }

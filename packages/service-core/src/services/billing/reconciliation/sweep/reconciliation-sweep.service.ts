@@ -1,102 +1,41 @@
 import { randomUUID } from 'node:crypto';
 import type { Clock } from '@repo/billing-verticals-contract';
-import type { DrizzleClient } from '@repo/db';
 import {
+    extendRunLease,
     isReconciliationSweepRunComplete,
     reconciliationInventoryModel,
-    reconciliationSweepRunModel
+    reconciliationSweepRunModel,
+    reconciliationSweepRuns
 } from '@repo/db';
 import { createLogger } from '@repo/logger';
-import { actStartInstant, type PaymentProvider, runWithProviderReadScope } from '@repo/payments';
-import type { BeforeCancelNotice } from '../../subscription/start-subscription.service.js';
-import {
-    type CancellationSeenAnnotator,
-    noCancellationSeenAnnotation
-} from '../../subscription/subscription-billing-ports.js';
-import type { ReconciliationMarkPayments } from '../reconciliation-mark-payments.port.js';
+import { actStartInstant, runWithProviderReadScope } from '@repo/payments';
+import { noCancellationSeenAnnotation } from '../../subscription/subscription-billing-ports.js';
 import { observeAuthorizationRead } from './cancellation-observation.js';
-import {
-    type CreditedPaymentsCheckPorts,
-    type CreditedPaymentsCheckSummary,
-    runCreditedPaymentsCheck
-} from './credited-payments-check.js';
-import {
-    type MarkEscalationPorts,
-    type MarkEscalationSummary,
-    runMarkEscalation
-} from './mark-escalation.js';
-import {
-    createOurCancellationRetryTally,
-    type OurCancellationRetryCounts,
-    retryOurCancellation,
-    runOurCancellationRetry
-} from './our-cancellation-retry.js';
-import {
-    type PaidOrdersCheckPorts,
-    type PaidOrdersCheckSummary,
-    runPaidOrdersCheck
-} from './paid-orders-check.js';
-import { type PauseGiftSummary, runPauseGiftDetection } from './pause-gift-check.js';
+import { createOurCancellationRetryTally, retryOurCancellation } from './our-cancellation-retry.js';
 import type { ReconciliationComparisonInput } from './reconciliation-divergence.js';
-import { type ReconciliationComparison, recordDivergence } from './reconciliation-divergence.js';
-import type { SweepLivenessPing } from './sweep-liveness-ping.port.js';
-import {
-    runTerminalReturn,
-    type TerminalReturnPorts,
-    type TerminalReturnSummary
-} from './terminal-return.js';
-import {
-    runZeroCallChecks,
-    type ZeroCallChecksPorts,
-    type ZeroCallChecksSummary
-} from './zero-call-checks.service.js';
+import { recordDivergence } from './reconciliation-divergence.js';
+import type {
+    ReconciliationRowCheck,
+    ReconciliationSweepFailure,
+    ReconciliationSweepInput,
+    ReconciliationSweepPass,
+    ReconciliationSweepPorts,
+    ReconciliationSweepSummary
+} from './reconciliation-sweep.types.js';
+import { SweepLeaseLostError, SweepTimedOutError } from './sweep-control.js';
+import { runSweepPostLoop, type SweepPostLoopResult } from './sweep-post-loop.js';
+
+export type {
+    ReconciliationRowCheck,
+    ReconciliationRowCheckResult,
+    ReconciliationSweepFailure,
+    ReconciliationSweepInput,
+    ReconciliationSweepPass,
+    ReconciliationSweepPorts,
+    ReconciliationSweepSummary
+} from './reconciliation-sweep.types.js';
 
 const logger = createLogger('billing-reconciliation-sweep');
-
-export interface ReconciliationSweepInput {
-    readonly pageSize?: number;
-    readonly correlationId?: string;
-    readonly signal?: AbortSignal;
-}
-
-export interface ReconciliationSweepPorts {
-    readonly provider: PaymentProvider;
-    readonly clock: Clock;
-    readonly comparisons?: readonly ReconciliationComparison[];
-    readonly rowChecks?: readonly ReconciliationRowCheck[];
-    readonly markPayments?: ReconciliationMarkPayments;
-    readonly zeroCallChecks?: ZeroCallChecksPorts;
-    readonly livenessPing?: SweepLivenessPing;
-    /**
-     * The retry of our decided cancellations (AC:B11:6). Optional: without it the sweep does
-     * exactly what it did before. Provider and clock are the sweep's own.
-     */
-    readonly cancellationRetry?: { readonly beforeCancelNotice: BeforeCancelNotice };
-    /** Optional B4 annotation port; without it, the sweep behaves as before. */
-    readonly cancellationSeen?: CancellationSeenAnnotator;
-    /** Terminal rows returning to the sweep (AC:B11:15); absent preserves the previous pass. */
-    readonly terminalReturn?: TerminalReturnPorts;
-    /**
-     * The credited-payments check (AC:B11:12, AC:B11:27). Optional: without it the sweep
-     * does exactly what it did before. Provider, clock and S14 port are the sweep's own.
-     */
-    readonly creditedPayments?: CreditedPaymentsCheckPorts;
-    /**
-     * The paid-orders check (AC:B11:13). Optional: without it the sweep does exactly
-     * what it did before. Provider and clock are the sweep's own.
-     */
-    readonly paidOrders?: PaidOrdersCheckPorts;
-    /** Optional escalation pass; without it the sweep performs exactly as before. */
-    readonly markEscalation?: Omit<MarkEscalationPorts, 'clock'>;
-    readonly pauseGifts?: { readonly tx?: DrizzleClient };
-}
-
-// biome-ignore lint/suspicious/noConfusingVoidType: `void` preserves existing async check callback signatures.
-export type ReconciliationRowCheckResult = 'STOP_REMAINING_CHECKS' | void;
-
-export type ReconciliationRowCheck = (
-    input: ReconciliationComparisonInput
-) => Promise<ReconciliationRowCheckResult>;
 
 /** Runs a row's checks in order; a handled S6 decision prevents stale checks from mutating it. */
 export async function runReconciliationRowChecks(
@@ -108,55 +47,51 @@ export async function runReconciliationRowChecks(
     }
 }
 
-export interface ReconciliationSweepFailure {
-    readonly subscriptionId: string;
-    readonly message: string;
-}
+export { SweepLeaseLostError };
 
-/** The passes that run after the subscription rows, in order. */
-export type ReconciliationSweepPass =
-    | 'cancellationRetry'
-    | 'terminalReturn'
-    | 'creditedPayments'
-    | 'paidOrders'
-    | 'markEscalation'
-    | 'pauseGifts'
-    | 'zeroCallChecks';
-
-export interface ReconciliationSweepSummary {
-    readonly rowsRead: number;
-    readonly runId: string;
-    readonly complete: boolean;
-    readonly pinged: boolean;
-    readonly stoppedOnBudget: boolean;
-    /** Configured passes that did not run because the sweep stopped on its budget. */
-    readonly skippedPasses: readonly ReconciliationSweepPass[];
-    readonly rowsFailed: number;
-    readonly divergences: number;
-    readonly marksOpened: number;
-    readonly marksAccumulated: number;
-    readonly failures: readonly ReconciliationSweepFailure[];
-    readonly startedAt: Date;
-    readonly finishedAt: Date;
-    readonly zeroCallChecks?: ZeroCallChecksSummary;
-    /** Outcomes of the cancellation retry (live `CANCEL_SCHEDULED` rows plus the terminal pass). */
-    readonly cancellationRetry?: OurCancellationRetryCounts & {
-        readonly rowsRead: number;
-        readonly rowsFailed: number;
-    };
-    /** Outcomes of the terminal return pass, when it ran. */
-    readonly terminalReturn?: TerminalReturnSummary;
-    /** Outcomes of the credited-payments check, when it ran. */
-    readonly creditedPayments?: CreditedPaymentsCheckSummary;
-    /** Outcomes of the paid-orders check, when it ran. */
-    readonly paidOrders?: PaidOrdersCheckSummary;
-    /** Outcomes of overdue mark escalation, when enabled. */
-    readonly markEscalation?: MarkEscalationSummary;
-    readonly pauseGifts?: PauseGiftSummary;
-}
+/** Time reserved for the seven post-row passes in the final scheduled slot. */
+export const SWEEP_PASS_RESERVE_MS = 15 * 60_000;
 
 function errorMessage(error: unknown): string {
     return error instanceof Error ? error.message : String(error);
+}
+
+function isBudgetReached(deadlineAt: Date | undefined, clock: Clock): boolean {
+    return deadlineAt !== undefined && clock.now().getTime() >= deadlineAt.getTime();
+}
+
+function skippedSummary(input: {
+    readonly skipped: 'lease_held' | 'cycle_done';
+    readonly startedAt: Date;
+    readonly finishedAt: Date;
+    readonly runId?: string;
+    readonly cycleId?: string;
+    readonly sliceIndex?: number;
+    readonly outcome?: import('@repo/db').ReconciliationSweepOutcome;
+}): ReconciliationSweepSummary {
+    const cycleId = input.cycleId ?? '';
+    return {
+        runId: input.runId ?? '',
+        complete: true,
+        pinged: false,
+        stoppedOnBudget: false,
+        skippedPasses: [],
+        rowsRead: 0,
+        rowsFailed: 0,
+        divergences: 0,
+        marksOpened: 0,
+        marksAccumulated: 0,
+        failures: [],
+        startedAt: input.startedAt,
+        finishedAt: input.finishedAt,
+        outcome: input.outcome ?? 'TIMED_OUT',
+        skipped: input.skipped,
+        phase: 'DONE',
+        rowsComplete: input.skipped === 'cycle_done',
+        sliceIndex: input.sliceIndex ?? -1,
+        cycleId,
+        incomplete: false
+    };
 }
 
 export async function runReconciliationSweep(
@@ -166,7 +101,52 @@ export async function runReconciliationSweep(
     const pageSize = input.pageSize ?? 100;
     const correlationId = input.correlationId ?? randomUUID();
     const startedAt = ports.clock.now();
-    const run = await reconciliationSweepRunModel.open({ correlationId, startedAt });
+    const openRuns = await reconciliationSweepRunModel.findOpenRunsWithLease();
+    for (const openRun of openRuns) {
+        if (openRun.leaseLive) {
+            return skippedSummary({
+                skipped: 'lease_held',
+                startedAt,
+                finishedAt: ports.clock.now()
+            });
+        }
+        await reconciliationSweepRunModel.closeAbandoned({ id: openRun.id as string });
+    }
+    const todayCycle = input.newCycle
+        ? null
+        : await reconciliationSweepRunModel.findLatestCycleOfToday();
+    const previousSlices = todayCycle?.slices ?? [];
+    const cycleDone = previousSlices.some(
+        (slice) => slice.outcome === 'CYCLE_DONE' && slice.rowsComplete === true
+    );
+    const run = await reconciliationSweepRunModel.openSlice({
+        correlationId,
+        ...(todayCycle ? { cycleId: todayCycle.cycleId } : {})
+    });
+    const cycleId = run.cycleId ?? run.id;
+    const sliceIndex = run.sliceIndex ?? 0;
+    if (cycleDone) {
+        await reconciliationSweepRunModel.closeSlice({
+            id: run.id,
+            outcome: 'SKIPPED_CYCLE_DONE',
+            phase: 'DONE',
+            rowsComplete: true,
+            passesCompleted: run.passesCompleted ?? [],
+            failedSubscriptionIds: [],
+            rowsRead: 0,
+            rowsFailed: 0
+        });
+        const finishedAt = ports.clock.now();
+        return skippedSummary({
+            skipped: 'cycle_done',
+            runId: run.id,
+            cycleId,
+            sliceIndex,
+            startedAt,
+            finishedAt,
+            outcome: 'SKIPPED_CYCLE_DONE'
+        });
+    }
     const failures: ReconciliationSweepFailure[] = [];
     let rowsRead = 0;
     let rowsFailed = 0;
@@ -194,6 +174,37 @@ export async function runReconciliationSweep(
     };
     let afterSubscriptionId: string | undefined;
     let stoppedOnBudget = false;
+    let passReserveReached = false;
+    let rowsComplete = false;
+    let phase: 'ROWS' | 'PASSES' | 'DONE' = 'ROWS';
+    const failedSubscriptionIds: string[] = [];
+    const passesCompleted = [...(run.passesCompleted ?? [])];
+    const lease = {
+        table: reconciliationSweepRuns,
+        id: reconciliationSweepRuns.id,
+        leaseUntil: reconciliationSweepRuns.leaseUntil,
+        outcome: reconciliationSweepRuns.outcome
+    };
+    const heartbeat = async (): Promise<void> => {
+        const ok = await extendRunLease({
+            lease,
+            id: run.id
+        });
+        if (!ok) throw new SweepLeaseLostError();
+        if (input.signal?.aborted || isBudgetReached(input.deadlineAt, ports.clock))
+            throw new SweepTimedOutError();
+    };
+    const completePass = async (pass: ReconciliationSweepPass): Promise<void> => {
+        if (passesCompleted.includes(pass)) return;
+        const next = [...passesCompleted, pass];
+        const ok = await extendRunLease({
+            lease,
+            id: run.id,
+            set: { passesCompleted: next }
+        });
+        if (!ok) throw new SweepLeaseLostError();
+        passesCompleted.push(pass);
+    };
     const retryPorts = ports.cancellationRetry
         ? {
               provider: ports.provider,
@@ -204,206 +215,193 @@ export async function runReconciliationSweep(
           }
         : undefined;
     const retryTally = createOurCancellationRetryTally();
-
-    for (;;) {
-        const page = await reconciliationInventoryModel.listSweepInventoryPage({
-            afterSubscriptionId,
-            limit: pageSize
-        });
-        for (const { subscription, providerLink } of page) {
-            if (input.signal?.aborted) {
-                stoppedOnBudget = true;
-                break;
-            }
-            try {
-                await runWithProviderReadScope({
-                    fn: async () => {
-                        const act = { kind: 'decision' as const, startedAt: ports.clock.now() };
-                        actStartInstant({ act });
-                        const read = await ports.provider.readAuthorization({
-                            authorizationId: providerLink.providerId
-                        });
-                        await observeAuthorizationRead({
-                            read,
-                            act,
-                            subscriptionId: subscription.id,
-                            annotator: ports.cancellationSeen ?? noCancellationSeenAnnotation,
-                            previouslySeenAt: providerLink.cancelledSeenAt
-                        });
-                        rowsRead++;
-                        await compareRow({ subscription, providerLink, read, act });
-                        await runReconciliationRowChecks(
-                            { subscription, providerLink, read, act },
-                            ports.rowChecks ?? []
-                        );
-                        // A live CANCEL_SCHEDULED left by S11 is retried here, with this loop's read (I8).
-                        if (retryPorts && subscription.status === 'CANCEL_SCHEDULED') {
-                            const decision =
-                                await reconciliationInventoryModel.findCancellationDecision({
-                                    subscriptionId: subscription.id
-                                });
-                            if (decision) {
-                                const retried = await retryOurCancellation(
-                                    {
-                                        subscription,
-                                        providerLink,
-                                        decision,
-                                        correlationId,
-                                        prior: { read, act }
-                                    },
-                                    retryPorts
-                                );
-                                retryTally.add(retried.outcome);
-                            }
-                        }
-                    }
-                });
-            } catch (error) {
-                rowsFailed++;
-                const message = errorMessage(error);
-                failures.push({ subscriptionId: subscription.id, message });
-                logger.error(
-                    { subscriptionId: subscription.id, error: message },
-                    'Reconciliation row failed'
-                );
-            }
-        }
-        if (stoppedOnBudget || input.signal?.aborted) {
-            stoppedOnBudget = true;
-            break;
-        }
-        if (page.length < pageSize) break;
-        afterSubscriptionId = page.at(-1)?.subscription.id;
-    }
-
-    const skippedPasses: ReconciliationSweepPass[] = [];
-    /**
-     * Checks the budget before a pass; a configured pass that does not run
-     * because the sweep stopped is recorded in `skippedPasses` (HOS-1999 M2).
-     */
-    const passBlocked = (pass: ReconciliationSweepPass, configured: boolean): boolean => {
-        if (input.signal?.aborted) stoppedOnBudget = true;
-        if (stoppedOnBudget && configured) skippedPasses.push(pass);
-        return stoppedOnBudget;
+    let postLoop: SweepPostLoopResult = {
+        stoppedOnBudget: false,
+        skippedPasses: [],
+        rowsRead: 0,
+        rowsFailed: 0,
+        failures: [],
+        failedSubscriptionIds: []
     };
 
-    let cancellationRetry: ReconciliationSweepSummary['cancellationRetry'];
-    if (!passBlocked('cancellationRetry', Boolean(retryPorts)) && retryPorts) {
-        const pass = await runOurCancellationRetry(
-            { correlationId, pageSize, ...(ports.terminalReturn ? { unconfirmedOnly: true } : {}) },
-            comparisons.length > 0 ? { ...retryPorts, afterRead: compareRow } : retryPorts
-        );
-        rowsRead += pass.rowsRead;
-        rowsFailed += pass.rowsFailed;
-        failures.push(...pass.failures);
-        const live = retryTally.totals();
-        cancellationRetry = {
-            stopped: live.stopped + pass.stopped,
-            confirmed: live.confirmed + pass.confirmed,
-            marked: live.marked + pass.marked,
-            noticePending: live.noticePending + pass.noticePending,
-            callFailed: live.callFailed + pass.callFailed,
-            sentUnconfirmed: live.sentUnconfirmed + pass.sentUnconfirmed,
-            rowsRead: pass.rowsRead,
-            rowsFailed: pass.rowsFailed
-        };
-    }
-
-    let terminalReturn: TerminalReturnSummary | undefined;
-    if (!passBlocked('terminalReturn', Boolean(ports.terminalReturn)) && ports.terminalReturn) {
-        terminalReturn = await runTerminalReturn(
-            { correlationId, pageSize },
-            {
-                ...ports.terminalReturn,
-                provider: ports.provider,
-                clock: ports.clock,
-                markPayments: ports.markPayments,
-                cancellationSeen: ports.cancellationSeen,
-                ...(comparisons.length > 0 ? { compareRow } : {})
+    try {
+        for (;;) {
+            const page = await reconciliationInventoryModel.listSweepInventoryPage({
+                ...(cycleId ? { cycleId } : { afterSubscriptionId }),
+                limit: pageSize
+            });
+            if (page.length === 0) {
+                rowsComplete = true;
+                break;
             }
-        );
-        rowsRead += terminalReturn.rowsRead;
-        rowsFailed += terminalReturn.rowsFailed;
-        failures.push(...terminalReturn.failures);
-    }
-
-    let creditedPayments: CreditedPaymentsCheckSummary | undefined;
-    if (
-        !passBlocked('creditedPayments', Boolean(ports.creditedPayments)) &&
-        ports.creditedPayments
-    ) {
-        creditedPayments = await runCreditedPaymentsCheck(
-            { correlationId, pageSize },
-            {
-                ...ports.creditedPayments,
-                provider: ports.provider,
-                clock: ports.clock,
-                markPayments: ports.markPayments
+            for (const { subscription, providerLink } of page) {
+                if (input.signal?.aborted || isBudgetReached(input.deadlineAt, ports.clock)) {
+                    stoppedOnBudget = true;
+                    break;
+                }
+                if (
+                    input.lastSlot &&
+                    input.deadlineAt !== undefined &&
+                    input.deadlineAt.getTime() - ports.clock.now().getTime() < SWEEP_PASS_RESERVE_MS
+                ) {
+                    passReserveReached = true;
+                    break;
+                }
+                let rowFailed = false;
+                let rowRead = false;
+                try {
+                    await runWithProviderReadScope({
+                        fn: async () => {
+                            const act = { kind: 'decision' as const, startedAt: ports.clock.now() };
+                            actStartInstant({ act });
+                            const read = await ports.provider.readAuthorization({
+                                authorizationId: providerLink.providerId
+                            });
+                            rowRead = true;
+                            await observeAuthorizationRead({
+                                read,
+                                act,
+                                subscriptionId: subscription.id,
+                                annotator: ports.cancellationSeen ?? noCancellationSeenAnnotation,
+                                previouslySeenAt: providerLink.cancelledSeenAt
+                            });
+                            rowsRead++;
+                            await compareRow({ subscription, providerLink, read, act });
+                            await runReconciliationRowChecks(
+                                { subscription, providerLink, read, act },
+                                ports.rowChecks ?? []
+                            );
+                            // A live CANCEL_SCHEDULED left by S11 is retried here, with this loop's read (I8).
+                            if (retryPorts && subscription.status === 'CANCEL_SCHEDULED') {
+                                const decision =
+                                    await reconciliationInventoryModel.findCancellationDecision({
+                                        subscriptionId: subscription.id
+                                    });
+                                if (decision) {
+                                    const retried = await retryOurCancellation(
+                                        {
+                                            subscription,
+                                            providerLink,
+                                            decision,
+                                            correlationId,
+                                            prior: { read, act }
+                                        },
+                                        retryPorts
+                                    );
+                                    retryTally.add(retried.outcome);
+                                }
+                            }
+                        }
+                    });
+                } catch (error) {
+                    rowsFailed++;
+                    rowFailed = true;
+                    failedSubscriptionIds.push(subscription.id);
+                    const message = errorMessage(error);
+                    failures.push({ subscriptionId: subscription.id, message });
+                    logger.error(
+                        { subscriptionId: subscription.id, error: message },
+                        'Reconciliation row failed'
+                    );
+                }
+                const stamped = await reconciliationSweepRunModel.stampSweptRow({
+                    runId: run.id,
+                    subscriptionId: subscription.id,
+                    counters: { rowsRead: rowRead ? 1 : 0, rowsFailed: rowFailed ? 1 : 0 }
+                });
+                if (!stamped.stamped) throw new SweepLeaseLostError();
             }
-        );
-        rowsRead += creditedPayments.examined;
-        rowsFailed += creditedPayments.failures.length;
-        for (const failure of creditedPayments.failures)
-            if (failure.subscriptionId !== null)
-                failures.push({ subscriptionId: failure.subscriptionId, message: failure.message });
-    }
+            if (input.signal?.aborted) stoppedOnBudget = true;
+            if (stoppedOnBudget || passReserveReached) break;
+            await heartbeat();
+        }
 
-    let paidOrders: PaidOrdersCheckSummary | undefined;
-    if (!passBlocked('paidOrders', Boolean(ports.paidOrders)) && ports.paidOrders) {
-        paidOrders = await runPaidOrdersCheck(
-            { correlationId, pageSize },
-            { ...ports.paidOrders, provider: ports.provider, clock: ports.clock }
-        );
-        rowsRead += paidOrders.examined;
-        rowsFailed += paidOrders.failures.length;
+        phase = 'PASSES';
+        postLoop = await runSweepPostLoop({
+            correlationId,
+            pageSize,
+            signal: input.signal,
+            deadlineAt: input.deadlineAt,
+            clock: ports.clock,
+            provider: ports.provider,
+            ports,
+            retryPorts,
+            comparisons,
+            compareRow,
+            completed: passesCompleted,
+            heartbeat,
+            completePass,
+            retryTally
+        });
+    } catch (error) {
+        if (error instanceof SweepLeaseLostError) {
+            return skippedSummary({
+                skipped: 'lease_held',
+                runId: run.id,
+                cycleId,
+                sliceIndex,
+                startedAt,
+                finishedAt: ports.clock.now()
+            });
+        }
+        if (error instanceof SweepTimedOutError) {
+            stoppedOnBudget = true;
+        } else {
+            await reconciliationSweepRunModel.closeSlice({
+                id: run.id,
+                outcome: 'FAILED',
+                phase,
+                rowsComplete,
+                passesCompleted,
+                failedSubscriptionIds,
+                rowsRead,
+                rowsFailed
+            });
+            throw error;
+        }
     }
-
-    let markEscalation: MarkEscalationSummary | undefined;
-    if (!passBlocked('markEscalation', Boolean(ports.markEscalation)) && ports.markEscalation) {
-        markEscalation = await runMarkEscalation(
-            { correlationId, pageSize },
-            { ...ports.markEscalation, clock: ports.clock }
-        );
-        rowsRead += markEscalation.examined;
-        rowsFailed += markEscalation.failures.length;
-        failures.push(
-            ...markEscalation.failures.map(({ markId, message }) => ({
-                subscriptionId: markId,
-                message
-            }))
-        );
-    }
-
-    let pauseGifts: PauseGiftSummary | undefined;
-    if (!passBlocked('pauseGifts', Boolean(ports.pauseGifts)) && ports.pauseGifts) {
-        pauseGifts = await runPauseGiftDetection(
-            { correlationId, pageSize },
-            { ...ports.pauseGifts, clock: ports.clock }
-        );
-        rowsRead += pauseGifts.examined;
-        rowsFailed += pauseGifts.failures.length;
-        failures.push(
-            ...pauseGifts.failures.map(({ pauseId, message }) => ({
-                subscriptionId: pauseId,
-                message
-            }))
-        );
-    }
-
-    const zeroCallChecks =
-        !passBlocked('zeroCallChecks', Boolean(ports.zeroCallChecks)) && ports.zeroCallChecks
-            ? await runZeroCallChecks(
-                  { correlationId, pageSize },
-                  { ...ports.zeroCallChecks, markPayments: ports.markPayments }
-              )
-            : undefined;
+    stoppedOnBudget ||= postLoop.stoppedOnBudget;
+    rowsRead += postLoop.rowsRead;
+    rowsFailed += postLoop.rowsFailed;
+    failures.push(...postLoop.failures);
+    failedSubscriptionIds.push(...postLoop.failedSubscriptionIds);
 
     const finishedAt = ports.clock.now();
-    await reconciliationSweepRunModel.close({ id: run.id, finishedAt, rowsRead, rowsFailed });
+    const outcome = stoppedOnBudget ? 'TIMED_OUT' : 'CYCLE_DONE';
+    phase = stoppedOnBudget ? phase : 'DONE';
+    const closedRun = await reconciliationSweepRunModel.closeSlice({
+        id: run.id,
+        outcome,
+        phase,
+        rowsComplete,
+        passesCompleted,
+        failedSubscriptionIds,
+        rowsRead,
+        rowsFailed
+    });
+    if (!closedRun && outcome !== 'TIMED_OUT') throw new SweepLeaseLostError();
     const complete =
-        !stoppedOnBudget && isReconciliationSweepRunComplete({ finishedAt, rowsFailed });
+        !stoppedOnBudget &&
+        rowsComplete &&
+        isReconciliationSweepRunComplete({ finishedAt, rowsFailed });
+    const cycleSummary =
+        outcome === 'CYCLE_DONE'
+            ? await reconciliationSweepRunModel.sumCycle({ cycleId })
+            : undefined;
+    const cycle = cycleSummary
+        ? {
+              cycleId,
+              cycleDate: run.cycleDate ?? '',
+              slices: cycleSummary.slices,
+              rowsRead: Number(cycleSummary.rowsRead ?? 0),
+              rowsFailed: Number(cycleSummary.rowsFailed ?? 0),
+              failedSubscriptionIds: cycleSummary.failedSubscriptionIds
+          }
+        : undefined;
+    const cycleCanPing =
+        outcome === 'CYCLE_DONE' && rowsComplete && Number(cycleSummary?.rowsFailed ?? 0) === 0;
     let pinged = false;
-    if (complete && ports.livenessPing) {
+    if (cycleCanPing && ports.livenessPing) {
         try {
             await ports.livenessPing.ping({ sweep: 'RECONCILIATION', runId: run.id, finishedAt });
             pinged = true;
@@ -420,7 +418,7 @@ export async function runReconciliationSweep(
         complete,
         pinged,
         stoppedOnBudget,
-        skippedPasses,
+        skippedPasses: postLoop.skippedPasses,
         rowsRead,
         rowsFailed,
         divergences,
@@ -429,12 +427,19 @@ export async function runReconciliationSweep(
         failures,
         startedAt,
         finishedAt,
-        ...(zeroCallChecks ? { zeroCallChecks } : {}),
-        ...(cancellationRetry ? { cancellationRetry } : {}),
-        ...(terminalReturn ? { terminalReturn } : {}),
-        ...(creditedPayments ? { creditedPayments } : {}),
-        ...(paidOrders ? { paidOrders } : {}),
-        ...(markEscalation ? { markEscalation } : {}),
-        ...(pauseGifts ? { pauseGifts } : {})
+        ...(postLoop.zeroCallChecks ? { zeroCallChecks: postLoop.zeroCallChecks } : {}),
+        ...(postLoop.cancellationRetry ? { cancellationRetry: postLoop.cancellationRetry } : {}),
+        ...(postLoop.terminalReturn ? { terminalReturn: postLoop.terminalReturn } : {}),
+        ...(postLoop.creditedPayments ? { creditedPayments: postLoop.creditedPayments } : {}),
+        ...(postLoop.paidOrders ? { paidOrders: postLoop.paidOrders } : {}),
+        ...(postLoop.markEscalation ? { markEscalation: postLoop.markEscalation } : {}),
+        ...(postLoop.pauseGifts ? { pauseGifts: postLoop.pauseGifts } : {}),
+        outcome,
+        phase,
+        rowsComplete,
+        sliceIndex,
+        cycleId,
+        ...(cycle ? { cycle } : {}),
+        incomplete: input.lastSlot === true && (outcome !== 'CYCLE_DONE' || !rowsComplete)
     };
 }
