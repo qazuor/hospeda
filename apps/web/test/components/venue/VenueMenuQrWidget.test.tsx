@@ -46,13 +46,15 @@ vi.mock('../../../src/lib/qr/qr-png', () => ({
     renderSvgToPngBlob: async () => new Blob(['png'], { type: 'image/png' })
 }));
 
-const { mockGetMenuQr, mockGetMenuQrScans } = vi.hoisted(() => ({
+const { mockGetVenueSectionStates, mockGetMenuQr, mockGetMenuQrScans } = vi.hoisted(() => ({
+    mockGetVenueSectionStates: vi.fn(),
     mockGetMenuQr: vi.fn(),
     mockGetMenuQrScans: vi.fn()
 }));
 
 vi.mock('../../../src/lib/api/endpoints-protected', () => ({
     listingAnalyticsApi: {
+        getVenueSectionStates: mockGetVenueSectionStates,
         getMenuQr: mockGetMenuQr,
         getMenuQrScans: mockGetMenuQrScans
     }
@@ -119,6 +121,10 @@ const READY_STATS = {
 describe('VenueMenuQrWidget (HOS-1044)', () => {
     beforeEach(() => {
         vi.clearAllMocks();
+        mockGetVenueSectionStates.mockResolvedValue({
+            ok: true,
+            data: { sections: { menu: { state: 'available', traits: { qr: 'available' } } } }
+        });
         mirrorFreshRead();
         // A failed read by default: the wording falls back to the plan copy.
         mockEntitlements.mockResolvedValue({ ...effectiveSet([]), failed: true });
@@ -283,6 +289,52 @@ describe('VenueMenuQrWidget (HOS-1044)', () => {
         await waitFor(() => expect(container.firstChild).toBeNull());
         expect(screen.queryByTestId('venue-menu-qr-locked')).toBeNull();
         expect(screen.queryByRole('alert')).toBeNull();
+    });
+
+    it('hides absent menus without calling either QR route', async () => {
+        mockGetVenueSectionStates.mockResolvedValue({
+            ok: true,
+            data: { sections: { menu: { state: 'absent', traits: { qr: 'absent' } } } }
+        });
+        const { container } = render(
+            <VenueMenuQrWidget
+                locale="es"
+                listings={[LISTING]}
+            />
+        );
+        await waitFor(() => expect(container.firstChild).toBeNull());
+        expect(mockGetMenuQr).not.toHaveBeenCalled();
+        expect(mockGetMenuQrScans).not.toHaveBeenCalled();
+    });
+
+    it.each([
+        ['locked section', { state: 'locked', traits: { qr: 'locked' } }],
+        ['unavailable qr trait', { state: 'available', traits: { qr: 'locked' } }]
+    ])('shows the existing upsell for %s', async (_label, menu) => {
+        mockGetVenueSectionStates.mockResolvedValue({ ok: true, data: { sections: { menu } } });
+        render(
+            <VenueMenuQrWidget
+                locale="es"
+                listings={[LISTING]}
+            />
+        );
+        expect(await screen.findByTestId('venue-menu-qr-locked')).toBeTruthy();
+        expect(mockGetMenuQr).not.toHaveBeenCalled();
+        expect(mockGetMenuQrScans).not.toHaveBeenCalled();
+    });
+
+    it('shows the existing error and never calls QR routes when section state fails', async () => {
+        mockGetVenueSectionStates.mockResolvedValue({ ok: false, error: { status: 500 } });
+        render(
+            <VenueMenuQrWidget
+                locale="es"
+                listings={[LISTING]}
+            />
+        );
+        expect(await screen.findByRole('alert')).toHaveTextContent('No pudimos cargar');
+        expect(screen.queryByTestId('venue-menu-qr-total')).toBeNull();
+        expect(mockGetMenuQr).not.toHaveBeenCalled();
+        expect(mockGetMenuQrScans).not.toHaveBeenCalled();
     });
 
     it('re-fetches scans (and the QR) with window=7d when the toggle is clicked', async () => {

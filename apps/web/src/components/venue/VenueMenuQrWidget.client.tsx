@@ -101,6 +101,14 @@ async function fetchListingState(
     listingId: string,
     windowParam: '7d' | '30d'
 ): Promise<ListingQrState> {
+    const sectionsResult = await listingAnalyticsApi.getVenueSectionStates({ venueId: listingId });
+    if (!sectionsResult.ok) return { status: 'error' };
+    const menu = sectionsResult.data.sections.menu;
+    if (menu.state === 'absent') return { status: 'absent' };
+    if (menu.state === 'locked' || menu.traits.qr !== 'available') {
+        return { status: 'locked' };
+    }
+
     const [qrResult, scansResult] = await Promise.all([
         listingAnalyticsApi.getMenuQr({ venueId: listingId }),
         listingAnalyticsApi.getMenuQrScans({ venueId: listingId, window: windowParam })
