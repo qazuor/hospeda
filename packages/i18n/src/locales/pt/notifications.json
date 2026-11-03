@@ -15,5 +15,23 @@
             "cta": "Ver alojamento",
             "manageAlerts": "Gerenciar meus alertas"
         }
+    },
+    "partnerApplication": {
+        "claimNotice": {
+            "subject": "Reivindique seu Partner na Hospeda",
+            "preview": "Aprovamos a candidatura de {{partnerName}}",
+            "heading": "Aprovamos a candidatura de {{partnerName}}",
+            "body": "Para administrá-lo, abra o link abaixo e entre com a conta que deseja usar. Essa conta será a proprietária do Partner.",
+            "singleUse": "Este link pessoal pode ser usado uma única vez. Não o encaminhe.",
+            "ignore": "Se você não se candidatou a Partner da Hospeda, ignore este e-mail.",
+            "cta": "Reivindicar o Partner"
+        },
+        "rejected": {
+            "subject": "Sua candidatura a Partner da Hospeda",
+            "preview": "Analisamos sua candidatura",
+            "heading": "Analisamos sua candidatura",
+            "body": "Desta vez, não foi possível aprová-la.",
+            "reapply": "Você poderá se candidatar novamente a partir de {{date}}."
+        }
     }
 }

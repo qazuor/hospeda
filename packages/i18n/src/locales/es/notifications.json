@@ -15,5 +15,23 @@
             "cta": "Ver alojamiento",
             "manageAlerts": "Administrar mis alertas"
         }
+    },
+    "partnerApplication": {
+        "claimNotice": {
+            "subject": "Reclamá tu Partner en Hospeda",
+            "preview": "Aprobamos la postulación de {{partnerName}}",
+            "heading": "Aprobamos la postulación de {{partnerName}}",
+            "body": "Para administrarlo, abrí el link de abajo e iniciá sesión con la cuenta con la que lo vas a manejar. Esa cuenta queda como dueña del Partner.",
+            "singleUse": "El link es personal y sirve una sola vez. No lo reenvíes.",
+            "ignore": "Si no te postulaste como Partner de Hospeda, ignorá este correo.",
+            "cta": "Reclamar el Partner"
+        },
+        "rejected": {
+            "subject": "Tu postulación como Partner de Hospeda",
+            "preview": "Revisamos tu postulación",
+            "heading": "Revisamos tu postulación",
+            "body": "Esta vez no la aprobamos.",
+            "reapply": "Podés volver a postularte a partir del {{date}}."
+        }
     }
 }
