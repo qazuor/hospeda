@@ -493,6 +493,27 @@ decides the action permission, subject, system actor and `actor = subject`, so a
 403 can come from the route or the service. Revocation does not have a route yet
 (B9a.6, Fase 2).
 
+## Actions 3 and 4 manual payment rejections
+
+`GET` previews and `POST` acts at `/api/v1/admin/billing-subscription/{subscriptionId}/manual-payments/{manualPaymentId}/register` (ACC:3, MP1) and `/declare-unpaid` (ACC:4, MP2) require their own action permissions. A caller without that permission receives 403 from the route factory. Invalid UUIDs and a `proofRef` outside 1–500 characters receive 400. An installment belonging to another subscription is 404. The service rechecks the administrative action inside its transaction.
+
+| `reason` | Status | `error.code` |
+|---|---:|---|
+| `SUBSCRIPTION_NOT_FOUND` | 404 | `NOT_FOUND` |
+| `MANUAL_PAYMENT_NOT_FOUND` | 404 | `NOT_FOUND` |
+| `ADMINISTRATIVE_ACTION_FORBIDDEN` | 403 | `FORBIDDEN` |
+| `MANUAL_PAYMENT_NOT_AWAITING` | 409 | `ALREADY_EXISTS` |
+| `MANUAL_PAYMENT_NOT_IN_GRACE` | 409 | `ALREADY_EXISTS` |
+| `MANUAL_PAYMENT_STATE_NOT_ALLOWED` | 409 | `ALREADY_EXISTS` |
+| `MANUAL_PAYMENT_COVERAGE_CONFLICT` | 409 | `ALREADY_EXISTS` |
+| `SUCCESSION_IN_PROGRESS` | 409 | `ALREADY_EXISTS` |
+| `RETAINED_PAYMENT` | 409 | `ALREADY_EXISTS` |
+| `LOST_RACE` | 409 | `ALREADY_EXISTS` |
+| `MANUAL_PAYMENT_NOT_MANUAL` | 422 | `VALIDATION_ERROR` |
+| `MANUAL_PAYMENT_CONDITION_FAILED` | 422 | `VALIDATION_ERROR` |
+
+`GET /api/v1/admin/billing-subscription/{subscriptionId}/manual-payments` requires `BILLING_SUBSCRIPTION_INSPECT`, lists that subscription's installments, and returns 404 for an unknown subscription. Both previews write no billing state.
+
 ## Action 8 revocation rejections (B5, S36)
 
 `GET` and `POST /api/v1/admin/billing-subscription/{subscriptionId}/revocation` (ACC:8 with reason revocation, S36; HOS-1543) answer every typed rejection of `previewSubscriptionRevocation` and `revokeSubscription` with its `reason`. The preview rejects with the same reasons as the act and writes nothing. The mapping lives in `src/routes/billing-subscription/admin/revocation.ts` as an exhaustive `Record` over `REVOKE_SUBSCRIPTION_REJECTIONS`, so a new service reason without an entry breaks the typecheck.

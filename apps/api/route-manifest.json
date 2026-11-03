@@ -431,6 +431,26 @@
         },
         {
             "method": "GET",
+            "path": "/api/v1/admin/billing-subscription/:subscriptionId/manual-payments"
+        },
+        {
+            "method": "GET",
+            "path": "/api/v1/admin/billing-subscription/:subscriptionId/manual-payments/:manualPaymentId/declare-unpaid"
+        },
+        {
+            "method": "POST",
+            "path": "/api/v1/admin/billing-subscription/:subscriptionId/manual-payments/:manualPaymentId/declare-unpaid"
+        },
+        {
+            "method": "GET",
+            "path": "/api/v1/admin/billing-subscription/:subscriptionId/manual-payments/:manualPaymentId/register"
+        },
+        {
+            "method": "POST",
+            "path": "/api/v1/admin/billing-subscription/:subscriptionId/manual-payments/:manualPaymentId/register"
+        },
+        {
+            "method": "GET",
             "path": "/api/v1/admin/billing-subscription/:subscriptionId/open-refunds"
         },
         {
