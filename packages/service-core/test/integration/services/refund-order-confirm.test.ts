@@ -153,12 +153,6 @@ describe('HOS-1553 TEST:B6:6 AC:B6:8 order RF2 confirmation', () => {
             { clock: seeded.fixture.clock, provider: rejectedProvider }
         );
         const rows = await orderRefundRows(seeded.refundId);
-        expect(first).toMatchObject({ status: 'FAILED', outcome: 'PROVIDER_REJECTED_FAILED' });
-        expect(rows.refund?.status).toBe('FAILED');
-        expect(rows.calls).toHaveLength(0);
-        expect(rows.keys).toHaveLength(1);
-        expect(rows.keys[0]).toMatchObject({ result: { outcome: 'REJECTED', code: 'REJECTED' } });
-        expect(rows.keys[0]?.completedAt).toBeInstanceOf(Date);
         const request = await requestRefund(
             {
                 source: { kind: 'PAYMENT', id: seeded.payment.id },
@@ -171,7 +165,13 @@ describe('HOS-1553 TEST:B6:6 AC:B6:8 order RF2 confirmation', () => {
             { actor: seeded.actor, refundId: request.refundId },
             { clock: seeded.fixture.clock, provider: seeded.fixture.provider }
         );
+        expect(first).toMatchObject({ status: 'FAILED', outcome: 'PROVIDER_REJECTED_FAILED' });
         expect(second.outcome).toBe('SENT');
+        expect(rows.refund?.status).toBe('FAILED');
+        expect(rows.calls).toHaveLength(0);
+        expect(rows.keys).toHaveLength(1);
+        expect(rows.keys[0]).toMatchObject({ result: { outcome: 'REJECTED', code: 'REJECTED' } });
+        expect(rows.keys[0]?.completedAt).toBeInstanceOf(Date);
     });
 
     it.skipIf(skip)('keeps an unpaid order confirmed without a call', async () => {
