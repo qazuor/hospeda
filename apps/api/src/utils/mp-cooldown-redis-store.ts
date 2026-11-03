@@ -19,7 +19,16 @@ export function createMercadoPagoRedisCoolDownStore(args: {
     let localUntil = 0;
     let sharedUntil = 0;
     let lastRead = Number.NEGATIVE_INFINITY;
-    let failed = false;
+    // `degraded` is only flipped by refresh outcomes, so a client `error` event cannot
+    // pre-empt the one warning an outage owes (the event fires before any refresh sees it).
+    let degraded = false;
+    const markDegraded = (): void => {
+        if (!degraded)
+            logger.warn({
+                message: '[mp-governor] Redis cool-down unavailable; using local state'
+            });
+        degraded = true;
+    };
     const initialize = async (): Promise<void> => {
         if (client) return;
         const { default: RedisClient } = await import('ioredis');
@@ -30,16 +39,11 @@ export function createMercadoPagoRedisCoolDownStore(args: {
             maxRetriesPerRequest: 0,
             retryStrategy: (times) => Math.min(times * 200, 5000)
         });
-        client.on('error', () => {
-            failed = true;
-        });
-        void client.connect().catch(() => {
-            failed = true;
-        });
+        // Handled so ioredis never emits an unhandled `error`; refresh reports the outage.
+        client.on('error', () => undefined);
+        void client.connect().catch(() => undefined);
     };
-    void initialize().catch(() => {
-        failed = true;
-    });
+    void initialize().catch(() => undefined);
     return {
         extend: ({ until }) => {
             localUntil = Math.max(localUntil, until);
@@ -53,19 +57,13 @@ export function createMercadoPagoRedisCoolDownStore(args: {
                     String(until),
                     String(ttl)
                 )
-                .catch(() => {
-                    failed = true;
-                });
+                .catch(() => undefined);
         },
         until: () => Math.max(localUntil, sharedUntil),
         refresh: async () => {
             if (now() - lastRead < cacheMs) return { fallback: false };
             if (client?.status !== 'ready') {
-                if (!failed)
-                    logger.warn({
-                        message: '[mp-governor] Redis cool-down unavailable; using local state'
-                    });
-                failed = true;
+                markDegraded();
                 return { fallback: true };
             }
             try {
@@ -83,15 +81,11 @@ export function createMercadoPagoRedisCoolDownStore(args: {
                 });
                 sharedUntil = Math.max(sharedUntil, Number(value ?? 0));
                 lastRead = now();
-                if (failed) logger.info({ message: '[mp-governor] Redis cool-down recovered' });
-                failed = false;
+                if (degraded) logger.info({ message: '[mp-governor] Redis cool-down recovered' });
+                degraded = false;
                 return { fallback: false };
             } catch {
-                if (!failed)
-                    logger.warn({
-                        message: '[mp-governor] Redis cool-down unavailable; using local state'
-                    });
-                failed = true;
+                markDegraded();
                 return { fallback: true };
             }
         }

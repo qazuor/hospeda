@@ -1,5 +1,5 @@
 import Redis from 'ioredis';
-import { afterAll, beforeAll, describe, expect, it } from 'vitest';
+import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
 import { createMercadoPagoRedisCoolDownStore } from '../../src/utils/mp-cooldown-redis-store';
 
 const redisUrl = process.env.HOSPEDA_TEST_REDIS_URL;
@@ -32,5 +32,20 @@ describe.skipIf(!redisUrl)('Redis shared provider cool-down integration', () => 
         const stored = Number(await client!.get('mp:cooldown-until'));
         expect(stored).toBeGreaterThanOrEqual(until);
         expect(await client!.pttl('mp:cooldown-until')).toBeGreaterThan(9_000);
+    });
+
+    it('falls back within 50 ms and warns once when its own client cannot connect (kills a swallowed outage)', async () => {
+        const warn = vi.fn();
+        const store = createMercadoPagoRedisCoolDownStore({
+            redisUrl: 'redis://127.0.0.1:1',
+            logger: { warn, info: vi.fn() } as never
+        });
+        // Let the dedicated client fail its first connection and emit `error` before any refresh.
+        await new Promise((resolve) => setTimeout(resolve, 300));
+        const start = Date.now();
+        expect(await store.refresh?.()).toEqual({ fallback: true });
+        expect(await store.refresh?.()).toEqual({ fallback: true });
+        expect(Date.now() - start).toBeLessThan(50);
+        expect(warn).toHaveBeenCalledTimes(1);
     });
 });
