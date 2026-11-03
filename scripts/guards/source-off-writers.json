@@ -82,6 +82,14 @@
         "reason": "S4 keeps the same SUSCRIPCIÓN coverage source in GRACE_PERIOD as ACTIVE (03-contrato-de-cobertura.md:567-571; D-9)."
     },
     {
+        "file": "packages/service-core/src/services/billing/subscription/manual-grace-entry.ts",
+        "symbol": "enterManualGraceInTx",
+        "table": "subscriptions",
+        "effect": "neutral",
+        "via": null,
+        "reason": "Manual S4 keeps the same subscription coverage source in GRACE_PERIOD as ACTIVE (AC:B5:13)."
+    },
+    {
         "file": "packages/service-core/src/services/billing/subscription/exit-grace.service.ts",
         "symbol": "reactivateFromGrace",
         "table": "subscriptions",
