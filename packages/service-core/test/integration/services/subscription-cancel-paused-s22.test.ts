@@ -12,6 +12,7 @@ import { FakePaymentProvider } from '@repo/payments/fake';
 import { VerticalEnum } from '@repo/schemas';
 import { afterAll, afterEach, describe, expect, it, vi } from 'vitest';
 import { resolveCourtesySources } from '../../../src/services/billing/coverage/courtesy-sources.js';
+import { BEFORE_CANCEL_KIND_BY_TRANSITION } from '../../../src/services/billing/reconciliation/sweep/our-cancellation-retry.js';
 import { cancelPausedSubscription } from '../../../src/services/billing/subscription/cancel-paused-subscription.service.js';
 import { classifyCancellationCrossing } from '../../../src/services/billing/subscription/cancellation-crossing-rule.js';
 import { resumeSubscription } from '../../../src/services/billing/subscription/resume-subscription.service.js';
@@ -118,6 +119,7 @@ describe.skipIf(!isServiceTestDbAvailable())('TEST:B8b:5 S22 paused cancellation
         ).toBe('cancelled');
         const events = await decisions(seeded.subscriptionId);
         expect(events).toHaveLength(1);
+        expect(BEFORE_CANCEL_KIND_BY_TRANSITION.S22).toBe('DIRECT_CANCELLATION');
         expect(events[0]).toMatchObject({
             reason: 'S22',
             changes: [{ field: 'status', old: 'PAUSED', new: 'CANCELLED' }]
