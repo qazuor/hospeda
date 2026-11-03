@@ -3022,6 +3022,10 @@
             "path": "/api/v1/protected/owner-promotions/exclusive-deals"
         },
         {
+            "method": "POST",
+            "path": "/api/v1/protected/partner-claims"
+        },
+        {
             "method": "GET",
             "path": "/api/v1/protected/partners/mine"
         },

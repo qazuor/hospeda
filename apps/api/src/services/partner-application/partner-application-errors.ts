@@ -9,6 +9,12 @@ export const PARTNER_APPLICATION_WAIT_NOT_ACTIVE = 'PARTNER_APPLICATION_WAIT_NOT
 /** Conflict reason when a Partner application is already resolved. */
 export const PARTNER_APPLICATION_NOT_PENDING = 'PARTNER_APPLICATION_NOT_PENDING' as const;
 
+/** Conflict reason when a correct claim link belongs to an already claimed Partner. */
+export const PARTNER_ALREADY_CLAIMED = 'PARTNER_ALREADY_CLAIMED' as const;
+
+/** Conflict reason when the claimant already owns a different Partner. */
+export const PARTNER_CLAIM_ACCOUNT_ALREADY_OWNS = 'PARTNER_CLAIM_ACCOUNT_ALREADY_OWNS' as const;
+
 const MAX_CAUSE_DEPTH = 10;
 
 /** Classifies only the database constraints that prevent a Partner application submission. */

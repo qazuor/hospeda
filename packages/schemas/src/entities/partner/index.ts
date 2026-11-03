@@ -10,6 +10,7 @@ export * from './partner.schema.js';
 export * from './partner.update.schema.js';
 export * from './partner-application.schema.js';
 export * from './partner-application-panel.schema.js';
+export * from './partner-claim.schema';
 // Partner mentions log (HOS-377)
 export * from './partner-mention.admin-search.schema.js';
 export * from './partner-mention.create.schema.js';

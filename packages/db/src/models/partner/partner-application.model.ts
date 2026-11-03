@@ -3,6 +3,109 @@ import type { DrizzleClient } from '../../types.ts';
 
 /** Transaction-bound persistence operations for Partner applications. */
 export const partnerApplicationModel = {
+    /** Locks a live Partner and reads its approved application mailbox and claim hash. */
+    async lockPartnerForLinkClaim(args: {
+        readonly tx: DrizzleClient;
+        readonly partnerId: string;
+    }): Promise<{
+        readonly partnerId: string;
+        readonly ownerUserId: string | null;
+        readonly claimSecretHash: string | null;
+        readonly applicationEmail: string | null;
+    } | null> {
+        const result = await args.tx.execute(sql`
+            SELECT p.id AS partner_id, p.owner_user_id, p.claim_secret_hash, pa.email AS application_email
+            FROM partners p
+            LEFT JOIN partner_application pa ON pa.partner_id = p.id AND pa.status = 'APPROVED'
+            WHERE p.id = ${args.partnerId} AND p.deleted_at IS NULL
+            ORDER BY pa.resolved_at ASC NULLS LAST LIMIT 1 FOR UPDATE OF p`);
+        const row = result.rows[0];
+        return row
+            ? {
+                  partnerId: String(row.partner_id),
+                  ownerUserId: row.owner_user_id == null ? null : String(row.owner_user_id),
+                  claimSecretHash:
+                      row.claim_secret_hash == null ? null : String(row.claim_secret_hash),
+                  applicationEmail:
+                      row.application_email == null ? null : String(row.application_email)
+              }
+            : null;
+    },
+
+    /** Finds the live Partner already owned by an account. */
+    async findOwnedPartnerId(args: {
+        readonly tx: DrizzleClient;
+        readonly userId: string;
+    }): Promise<string | null> {
+        const result = await args.tx.execute(
+            sql`SELECT id FROM partners WHERE owner_user_id = ${args.userId} AND deleted_at IS NULL LIMIT 1`
+        );
+        return result.rows[0] ? String(result.rows[0].id) : null;
+    },
+
+    /** Reads a live account's email verification state. */
+    async readAccountForClaim(args: {
+        readonly tx: DrizzleClient;
+        readonly userId: string;
+    }): Promise<{ readonly email: string; readonly emailVerified: boolean } | null> {
+        const result = await args.tx.execute(
+            sql`SELECT email, email_verified FROM users WHERE id = ${args.userId} AND deleted_at IS NULL`
+        );
+        const row = result.rows[0];
+        return row
+            ? { email: String(row.email), emailVerified: Boolean(row.email_verified) }
+            : null;
+    },
+
+    /** Reads the credential stored on the specified account session. */
+    async readSessionAuthMethod(args: {
+        readonly tx: DrizzleClient;
+        readonly sessionId: string;
+        readonly userId: string;
+    }): Promise<{ readonly found: boolean; readonly authMethod: string | null }> {
+        const result = await args.tx.execute(
+            sql`SELECT auth_method FROM session WHERE id = ${args.sessionId} AND user_id = ${args.userId}`
+        );
+        return result.rows[0]
+            ? {
+                  found: true,
+                  authMethod:
+                      result.rows[0].auth_method == null ? null : String(result.rows[0].auth_method)
+              }
+            : { found: false, authMethod: null };
+    },
+
+    /**
+     * Verifies the account and removes all prior sessions, credentials, and verification tokens.
+     * Same capability as account closure (ACC:24), scoped to everything except the claim session and its credential (V7 §2.4 rule 2).
+     */
+    async verifyAccountAndRevokeOthers(args: {
+        readonly tx: DrizzleClient;
+        readonly userId: string;
+        readonly email: string;
+        readonly keepSessionId: string;
+        readonly keepProviderId: string | null;
+    }): Promise<{
+        readonly revokedSessionIds: readonly string[];
+        readonly removedProviderIds: readonly string[];
+    }> {
+        await args.tx.execute(
+            sql`UPDATE users SET email_verified = true WHERE id = ${args.userId}`
+        );
+        const sessionsResult = await args.tx.execute(
+            sql`DELETE FROM session WHERE user_id = ${args.userId} AND id <> ${args.keepSessionId} RETURNING id`
+        );
+        const accountsResult = await args.tx.execute(
+            sql`DELETE FROM account WHERE user_id = ${args.userId} AND (${args.keepProviderId}::text IS NULL OR provider_id <> ${args.keepProviderId}) RETURNING provider_id`
+        );
+        await args.tx.execute(
+            sql`DELETE FROM verification WHERE value = ${args.userId} OR lower(identifier) = lower(${args.email})`
+        );
+        return {
+            revokedSessionIds: sessionsResult.rows.map((row) => String(row.id)),
+            removedProviderIds: accountsResult.rows.map((row) => String(row.provider_id)).sort()
+        };
+    },
     /** Reads an application without locking it for approval preflight checks. */
     async readById(args: { readonly tx: DrizzleClient; readonly applicationId: string }): Promise<{
         readonly id: string;

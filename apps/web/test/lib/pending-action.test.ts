@@ -12,6 +12,11 @@ import {
 } from '../../src/lib/pending-action';
 
 const FAVORITE: PendingAction = { kind: 'favorite', entityType: 'ACCOMMODATION', entityId: 'a-1' };
+const PARTNER_CLAIM: PendingAction = {
+    kind: 'partner-claim',
+    partnerId: 'partner-uuid',
+    secret: 'one-time-secret'
+};
 const anyAction = () => true;
 
 describe('pending-action', () => {
@@ -35,6 +40,34 @@ describe('pending-action', () => {
 
         expect(first).toEqual(FAVORITE);
         expect(second).toBeNull();
+    });
+
+    it('stores and takes a partner claim once, and expires it after ten minutes', () => {
+        savePendingAction({ action: PARTNER_CLAIM, path: '/es/partners/reclamar/', now: 1000 });
+        const taken = takePendingAction({
+            path: '/es/partners/reclamar/',
+            matches: anyAction,
+            now: 1001
+        });
+        const takenClaim = taken as Extract<PendingAction, { readonly kind: 'partner-claim' }>;
+        expect(takenClaim.kind).toBe('partner-claim');
+        expect(takenClaim.partnerId).toBe(PARTNER_CLAIM.partnerId);
+        expect(takenClaim.secret === PARTNER_CLAIM.secret).toBe(true);
+        const replayed = takePendingAction({
+            path: '/es/partners/reclamar/',
+            matches: anyAction,
+            now: 1002
+        });
+        expect(replayed === null).toBe(true);
+
+        savePendingAction({ action: PARTNER_CLAIM, path: '/es/partners/reclamar/', now: 2000 });
+        const expired = takePendingAction({
+            path: '/es/partners/reclamar/',
+            matches: anyAction,
+            now: 2000 + PENDING_ACTION_TTL_MS
+        });
+        expect(expired === null).toBe(true);
+        expect(window.sessionStorage.getItem(PENDING_ACTION_STORAGE_KEY) === null).toBe(true);
     });
 
     it('discards an expired action and purges it', () => {
