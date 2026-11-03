@@ -29,6 +29,30 @@ describe('resolveTrialSeriesCopy (HOS-1283)', () => {
         expect(copy.searchIntent).toBe('qué experiencias hacer');
     });
 
+    it('keeps the accommodation and experience copy byte-identical (HOS-1851 touches venue only)', () => {
+        expect(resolveTrialSeriesCopy('accommodation')).toStrictEqual({
+            possessive: 'tu alojamiento',
+            searchIntent: 'dónde quedarse',
+            detailsLabel: 'servicios',
+            savedItemsLine: 'Tus fotos, tu descripción, tus servicios y tus datos',
+            descriptionTip:
+                'Una descripción que cuente cómo se vive el alojamiento, no sólo cuántas camas tiene.',
+            detailsTip: 'Los servicios cargados completos: es lo que la gente filtra al buscar.',
+            expiredSavedLine: 'fotos, descripción, servicios, ubicación y datos de contacto'
+        });
+        expect(resolveTrialSeriesCopy('experience')).toStrictEqual({
+            possessive: 'tu experiencia',
+            searchIntent: 'qué experiencias hacer',
+            detailsLabel: 'horarios',
+            savedItemsLine: 'Tus fotos, tu descripción, tus horarios y tus datos',
+            descriptionTip:
+                'Una descripción que cuente cómo se vive la experiencia, no sólo la duración.',
+            detailsTip:
+                'Los horarios y cupos cargados completos: es lo que la gente filtra al buscar.',
+            expiredSavedLine: 'fotos, descripción, horarios, ubicación y datos de contacto'
+        });
+    });
+
     it('fails open to accommodation for accommodation itself, null, undefined and an unrecognized value', () => {
         const accommodation = resolveTrialSeriesCopy('accommodation');
         expect(accommodation.searchIntent).toBe('dónde quedarse');
