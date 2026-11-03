@@ -93,6 +93,7 @@ export * from './billing/notice/provider-notice-ports.js';
 export * from './billing/notice/provider-pause-arrears.js';
 export * from './billing/notice/purge-provider-notifications.service.js';
 export * from './billing/notice/receive-provider-delivery.service.js';
+export { confirmedRefundsForNotice } from './billing/notice/refund-execution-on-notice.js';
 export {
     NotificationRetentionService,
     type RetentionSummary
