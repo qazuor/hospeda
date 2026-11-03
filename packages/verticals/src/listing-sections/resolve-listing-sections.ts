@@ -63,6 +63,31 @@ export interface ResolveListingSectionsResult {
     readonly multiLine: boolean;
 }
 
+/** Resolve only catalog presence when a caller does not need entitlement state. */
+export function resolveListingSectionPresence(args: {
+    readonly vertical: ListingVertical;
+    readonly businessLines: readonly string[];
+    readonly requested: readonly string[];
+}): ReadonlyMap<string, boolean> {
+    const linesCatalog = BUSINESS_LINES[args.vertical];
+    const selected = args.businessLines.map((value) => {
+        const line = linesCatalog.find((entry) => entry.value === value);
+        if (!line) throw new UnknownBusinessLineError(args.vertical, value);
+        return line;
+    });
+    const catalog = LISTING_SECTIONS[args.vertical];
+    return new Map(
+        args.requested.map((id) => {
+            const section = catalog.find((entry) => entry.id === id);
+            if (!section) throw new UnknownListingSectionIdError(id);
+            return [
+                id,
+                !section.common && !selected.some((line) => line.sections.includes(id as never))
+            ];
+        })
+    );
+}
+
 /**
  * Resolves every section and trait of a listing from one already-read effective set
  * (sub-spec 3, DEC-FAC-020/050/051). A non-common section that none of the listing's

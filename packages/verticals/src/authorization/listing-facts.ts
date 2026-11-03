@@ -23,5 +23,9 @@ export function readListingAccessFacts(args: {
     const status = 'publicationStatus' in entity ? entity.publicationStatus : null;
     const publicationStatus =
         Object.values(PublicationStatusEnum).find((value) => value === status) ?? null;
-    return { ownerId, publicationStatus };
+    const rawBusinessLines = (entity as Record<string, unknown>).businessLines;
+    const businessLines = Array.isArray(rawBusinessLines)
+        ? rawBusinessLines.filter((value: unknown): value is string => typeof value === 'string')
+        : [];
+    return { ownerId, publicationStatus, businessLines };
 }

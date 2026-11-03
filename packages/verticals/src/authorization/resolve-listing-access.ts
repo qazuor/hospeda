@@ -1,5 +1,11 @@
 import type { BillingForVerticals } from '@repo/billing-verticals-contract';
-import { PublicationStatusEnum, VerticalEnumSchema } from '@repo/schemas';
+import {
+    type BusinessLine,
+    LISTING_SECTIONS,
+    PublicationStatusEnum,
+    VerticalEnumSchema
+} from '@repo/schemas';
+import { resolveListingSectionPresence } from '../listing-sections/resolve-listing-sections';
 import { resolveAdministrativeActionStep } from './administrative-action-step';
 import {
     ADMINISTRATIVE_ACTION_LISTING_OPERATIONS,
@@ -22,7 +28,7 @@ export type ListingAccessResult =
     | {
           readonly allowed: true;
           readonly subjectId: string | null;
-          readonly evaluatedSteps: readonly (3 | 4 | 5 | 6 | 7)[];
+          readonly evaluatedSteps: readonly (3 | 4 | '4b' | 5 | 6 | 7)[];
       }
     | {
           readonly allowed: false;
@@ -30,12 +36,14 @@ export type ListingAccessResult =
               | 'NOT_FOUND'
               | 'FORBIDDEN'
               | 'NO_COVERAGE'
+              | 'SECTION_ABSENT'
               | 'NO_CAPABILITY'
               | 'LIMIT_REACHED'
               | 'UNAUTHENTICATED';
           readonly key?: string;
           readonly max?: number;
           readonly requested?: number;
+          readonly section?: string;
       };
 
 /**
@@ -82,6 +90,14 @@ export async function resolveListingAccess(args: {
     readonly createSubjectId?: string | null;
     readonly step6Key?: string;
     readonly requiredKeys?: readonly string[];
+    readonly sections?: {
+        readonly requested: readonly {
+            readonly id: string;
+            readonly intent: 'read' | 'write' | 'delete';
+            readonly traits?: readonly string[];
+        }[];
+        readonly resultingBusinessLines: readonly BusinessLine[];
+    };
     readonly limit?: { readonly key: string; readonly requested: number };
     readonly billing: Pick<BillingForVerticals, 'coverage'>;
     readonly effectiveSet: EffectiveSetPort;
@@ -95,7 +111,7 @@ export async function resolveListingAccess(args: {
     // Step 1 — "quién es": guest fails except for READ_PUBLIC.
     if (!args.actorId && args.operation !== 'READ_PUBLIC')
         return { allowed: false, reason: 'UNAUTHENTICATED' };
-    const evaluatedSteps: (3 | 4 | 5 | 6 | 7)[] = [];
+    const evaluatedSteps: (3 | 4 | '4b' | 5 | 6 | 7)[] = [];
     let subjectId = args.actorId;
     if (args.adminAction) {
         evaluatedSteps.push(3);
@@ -136,6 +152,26 @@ export async function resolveListingAccess(args: {
     if (subjectId === null && args.operation !== 'READ_PUBLIC') {
         return { allowed: false, reason: 'NOT_FOUND' };
     }
+    if (args.sections) {
+        evaluatedSteps.push('4b');
+        const presence = resolveListingSectionPresence({
+            vertical: args.vertical as ListingVertical,
+            businessLines: args.sections.resultingBusinessLines,
+            requested: args.sections.requested.map(({ id }) => id)
+        });
+        for (const requested of args.sections.requested) {
+            if (!presence.get(requested.id)) continue;
+            const isOwnerSubject =
+                (subjectId !== null && subjectId === args.facts?.ownerId) ||
+                (args.operation === 'CREATE' && subjectId === args.actorId) ||
+                Boolean(args.adminAction?.permitted);
+            if (requested.intent === 'read' && isOwnerSubject) continue;
+            if (requested.intent === 'delete' && args.actorId === subjectId) continue;
+            if (isOwnerSubject)
+                return { allowed: false, reason: 'SECTION_ABSENT', section: requested.id };
+            return { allowed: false, reason: 'NOT_FOUND' };
+        }
+    }
     if (OPERATION_PASSES_STEP5[args.operation]) {
         evaluatedSteps.push(5);
         if (subjectId === null) return { allowed: false, reason: 'NOT_FOUND' };
@@ -147,6 +183,7 @@ export async function resolveListingAccess(args: {
     }
     const requirement = OPERATION_STEP6_KEY[args.operation];
     let keys: readonly string[] = [];
+    let sectionRequiredKeys: readonly string[] = [];
     if (requirement.kind === 'KEY') keys = [requirement.key];
     if (requirement.kind === 'CALLER_KEY') {
         if (!args.step6Key) throw new Error('READ_OWN_COMMERCIAL requires step6Key');
@@ -163,6 +200,26 @@ export async function resolveListingAccess(args: {
             keys = typeof key === 'string' ? [key] : key;
         }
     }
+    if (args.sections) {
+        const catalogSections: readonly {
+            readonly id: string;
+            readonly entitlementKey?: string;
+            readonly traits?: readonly { readonly id: string; readonly entitlementKey?: string }[];
+        }[] = LISTING_SECTIONS[args.vertical as ListingVertical];
+        const sectionKeys = args.sections.requested
+            .filter(({ intent }) => intent === 'write')
+            .flatMap(({ id, traits = [] }) => {
+                const section = catalogSections.find((entry) => entry.id === id);
+                return [
+                    section?.entitlementKey,
+                    ...traits.map(
+                        (trait) =>
+                            section?.traits?.find((item) => item.id === trait)?.entitlementKey
+                    )
+                ].filter((key): key is string => Boolean(key));
+            });
+        sectionRequiredKeys = sectionKeys;
+    }
     if (keys.length > 0) {
         evaluatedSteps.push(6);
         if (subjectId === null) return { allowed: false, reason: 'NOT_FOUND' };
@@ -174,10 +231,11 @@ export async function resolveListingAccess(args: {
         });
         if (!entitlement.allowed) return entitlement;
     }
-    if (args.requiredKeys) {
+    const requiredKeys = [...(args.requiredKeys ?? []), ...sectionRequiredKeys];
+    if (args.requiredKeys || sectionRequiredKeys.length > 0) {
         if (!evaluatedSteps.includes(6)) evaluatedSteps.push(6);
         if (subjectId === null) return { allowed: false, reason: 'NOT_FOUND' };
-        for (const key of args.requiredKeys) {
+        for (const key of requiredKeys) {
             const entitlement = await resolveEntitlementStep({
                 userId: subjectId,
                 vertical: VerticalEnumSchema.parse(args.vertical),
