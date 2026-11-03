@@ -37,6 +37,8 @@ export interface ListingSectionDefinitionBase<V extends ListingVertical = Listin
     readonly traits?: readonly SectionTraitDefinitionBase[];
     /** Update input fields owned by this section. */
     readonly fields: readonly (keyof UpdateInputOf<V>)[];
+    /** Fields owned by this section in read responses; never writable and never counted by sections-touched. */
+    readonly readOnlyFields?: readonly string[];
     /** Optional heading when the listing has multiple business lines. */
     readonly headingWhenMultiLineKey?: string;
     /** Shared editor and public-page order. */

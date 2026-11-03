@@ -6,6 +6,7 @@
  */
 
 import type { VerticalEnum } from '@repo/schemas';
+import { getVenueDailySpecials, getVenueEvents } from '@repo/service-core';
 import { rehydrateEffectiveSet } from '@repo/verticals';
 import { Hono } from 'hono';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
@@ -174,6 +175,69 @@ describe('HOS-1792 public venue menu file gate', () => {
         else expect(data).not.toHaveProperty('menuSections');
     });
 
+    it('publishes only active events and omits empty or unavailable specials', async () => {
+        mockGetBySlug.mockResolvedValue({ data: makeVenue(OWNER_PAID), error: null });
+        mockReadEffectiveSet.mockImplementation(async ({ userId, vertical }) =>
+            rehydrateEffectiveSet({
+                version: 1,
+                userId,
+                vertical: vertical as VerticalEnum,
+                hasLiveNonTrialTitle: false,
+                inheritsTouristVip: false,
+                entries: [
+                    { key: 'manage_venue_menu', value: 1, strategy: 'MAX' },
+                    { key: 'manage_venue_daily_special', value: 1, strategy: 'MAX' },
+                    { key: 'manage_venue_events', value: 1, strategy: 'MAX' }
+                ]
+            })
+        );
+        vi.mocked(getVenueEvents).mockResolvedValueOnce({
+            data: {
+                events: [
+                    { id: 'active', isActive: true },
+                    { id: 'inactive', isActive: false }
+                ]
+            },
+            error: null
+        } as never);
+        vi.mocked(getVenueDailySpecials).mockResolvedValueOnce({
+            data: { specials: [{ id: 'one' }, { id: 'two' }] },
+            error: null
+        } as never);
+        const data = await get(BY_SLUG, '/slug/test-venue');
+        expect(data.venueEvents).toEqual([{ id: 'active', isActive: true }]);
+        expect(data.dailySpecials).toEqual([{ id: 'one' }, { id: 'two' }]);
+
+        vi.mocked(getVenueEvents).mockResolvedValueOnce({
+            data: { events: [{ id: 'inactive', isActive: false }] },
+            error: null
+        } as never);
+        vi.mocked(getVenueDailySpecials).mockResolvedValueOnce({
+            data: { specials: [] },
+            error: null
+        } as never);
+        const empty = await get(BY_SLUG, '/slug/test-venue');
+        expect(empty.venueEvents).toBeUndefined();
+        expect(empty.dailySpecials).toBeUndefined();
+
+        mockReadEffectiveSet.mockImplementation(async ({ userId, vertical }) =>
+            rehydrateEffectiveSet({
+                version: 1,
+                userId,
+                vertical: vertical as VerticalEnum,
+                hasLiveNonTrialTitle: false,
+                inheritsTouristVip: false,
+                entries: []
+            })
+        );
+        vi.mocked(getVenueDailySpecials).mockResolvedValueOnce({
+            data: { specials: [{ id: 'withheld' }] },
+            error: null
+        } as never);
+        const withheld = await get(BY_SLUG, '/slug/test-venue');
+        expect(withheld.dailySpecials).toBeUndefined();
+    });
+
     it('does not publish menu fields for a boliche even when the owner is entitled', async () => {
         mockGetBySlug.mockResolvedValue({
             data: makeVenue(OWNER_PAID, ['nightlife']),
@@ -183,6 +247,29 @@ describe('HOS-1792 public venue menu file gate', () => {
         expect(data).not.toHaveProperty('menuUrl');
         expect(data).not.toHaveProperty('menuFileUrl');
         expect(data).not.toHaveProperty('menuSections');
+    });
+
+    it.each([
+        ['getById', BY_ID, `/${VENUE_ID}`],
+        ['getBySlug', BY_SLUG, '/slug/test-venue'],
+        ['list', LIST, '/'],
+        ['getByDestination', BY_DEST, `/destination/${DEST_ID}`]
+    ] as const)('never publishes menu fields for a boliche through %s', async (_name, target, url) => {
+        mockGetById.mockResolvedValue({ data: makeVenue(OWNER_PAID, ['nightlife']), error: null });
+        mockGetBySlug.mockResolvedValue({
+            data: makeVenue(OWNER_PAID, ['nightlife']),
+            error: null
+        });
+        mockSearch.mockResolvedValue({
+            data: { items: [makeVenue(OWNER_PAID, ['nightlife'])], total: 1 },
+            error: null
+        });
+        const data = await get(target, url);
+        const venue = 'items' in data ? data.items[0] : data;
+        expect(venue).not.toHaveProperty('menuUrl');
+        expect(venue).not.toHaveProperty('menuFileUrl');
+        expect(venue).not.toHaveProperty('menuFileKind');
+        expect(venue).not.toHaveProperty('menuSections');
     });
 
     it('getById withholds the menu file when the entitlement lookup fails closed', async () => {

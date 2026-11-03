@@ -1,3 +1,4 @@
+import { readFileSync } from 'node:fs';
 import { VerticalEnum } from '@repo/schemas';
 import { rehydrateEffectiveSet, resolveListingSections } from '@repo/verticals';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
@@ -37,6 +38,22 @@ describe('projectPublicListing', () => {
                 })
             )
         );
+    });
+
+    it('keeps response field inventories out of the projector implementation', () => {
+        const source = readFileSync(
+            new URL('../../src/utils/public-listing-projector.ts', import.meta.url),
+            'utf8'
+        );
+        for (const field of [
+            'menuFileUrl',
+            'menuFileKind',
+            'menuSections',
+            'dailySpecials',
+            'venueEvents'
+        ]) {
+            expect(source).not.toContain(field);
+        }
     });
 
     it('reads the effective set once per owner for a page', async () => {
@@ -84,6 +101,94 @@ describe('projectPublicListing', () => {
         expect(result).toHaveProperty('menuUrl', 'https://menu');
         expect(result).toHaveProperty('menuFileUrl', '/menu.pdf');
         expect(result).toHaveProperty('menuSections');
+    });
+
+    it('projects null files and empty or missing menu sections for a paid owner', () => {
+        const state = resolveListingSections({
+            vertical: 'venue',
+            businessLines: ['food'],
+            effective: effective([{ key: 'manage_venue_menu', value: 1 }]),
+            userId: 'owner'
+        });
+        for (const menuSections of [[], undefined]) {
+            const result = projectPublicListing({
+                vertical: 'venue',
+                states: state.sections,
+                listing: { menuFileUrl: null, menuFileKind: null, menuSections, menuUrl: null }
+            });
+            expect(result).toHaveProperty('menuFileUrl', null);
+            expect(result).toHaveProperty('menuSections', menuSections);
+        }
+    });
+
+    it('projects menu photos and translations independently and strips photoPublicId', () => {
+        const sections = [
+            {
+                nameI18n: { es: 'Entradas' },
+                descriptionI18n: { es: 'D' },
+                items: [
+                    {
+                        nameI18n: { es: 'Empanada' },
+                        descriptionI18n: { es: 'Rellena' },
+                        photoUrl: 'photo',
+                        photoAlt: 'alt',
+                        photoPublicId: 'private-id'
+                    }
+                ]
+            }
+        ];
+        const project = (photos: string, translations: string) =>
+            projectPublicListing({
+                vertical: 'venue',
+                states: new Map([
+                    [
+                        'menu',
+                        {
+                            state: 'available',
+                            traits: new Map([
+                                ['itemPhotos', photos],
+                                ['translations', translations]
+                            ])
+                        }
+                    ]
+                ]),
+                listing: { menuSections: sections }
+            });
+        const photosOnly = project('available', 'locked').menuSections as typeof sections;
+        const photosSection = photosOnly[0]!;
+        const photosItem = photosSection.items[0]!;
+        expect(photosSection.nameI18n).toBeNull();
+        expect(photosItem.photoUrl).toBe('photo');
+        expect(photosItem).not.toHaveProperty('photoPublicId');
+        const translationsOnly = project('locked', 'available').menuSections as typeof sections;
+        const translationsSection = translationsOnly[0]!;
+        const translationsItem = translationsSection.items[0]!;
+        expect(translationsSection.nameI18n).toEqual({ es: 'Entradas' });
+        expect(translationsItem.nameI18n).toEqual({ es: 'Empanada' });
+        expect(translationsItem.photoUrl).toBeNull();
+        const neither = project('locked', 'locked').menuSections as typeof sections;
+        const neitherItem = neither[0]!.items[0]!;
+        expect(neitherItem.nameI18n).toBeNull();
+        expect(neitherItem.photoAlt).toBeNull();
+    });
+
+    it('removes catalog read-only fields whenever their section is unavailable', () => {
+        const result = projectPublicListing({
+            vertical: 'venue',
+            states: new Map(),
+            listing: {
+                menuSections: [],
+                menuFileUrl: 'x',
+                menuFileKind: 'pdf',
+                dailySpecials: [],
+                venueEvents: [],
+                intact: 1
+            }
+        });
+        expect(result).not.toHaveProperty('menuSections');
+        expect(result).not.toHaveProperty('dailySpecials');
+        expect(result).not.toHaveProperty('venueEvents');
+        expect(result.intact).toBe(1);
     });
 
     it('removes fields for absent and locked sections and unavailable traits, preserving unrelated fields', () => {
@@ -170,5 +275,69 @@ describe('projectPublicListing', () => {
         expect(granted.meetingPointDirectionsEnabled).toBe(true);
         expect(granted.meetingPointLat).toBe(-32.48);
         expect(granted.meetingPointLong).toBe(-58.23);
+    });
+
+    it('keeps directions false with a granted key and absent instructions, and preserves the card shape', async () => {
+        mocks.effectiveSet.mockResolvedValueOnce(
+            effective([{ key: 'manage_experience_directions', value: 1 }], VerticalEnum.EXPERIENCE)
+        );
+        const [cardRaw] = await projectPublicListings({
+            vertical: 'experience',
+            listings: [
+                {
+                    id: 'exp',
+                    ownerId: 'owner',
+                    businessLines: ['standard'],
+                    meetingPoint: 'Muelle',
+                    meetingPointDirections: null,
+                    meetingPointLat: -32.4,
+                    meetingPointLong: -58.2,
+                    name: 'Card'
+                }
+            ]
+        });
+        const card = cardRaw as
+            | (typeof cardRaw & { meetingPointDirectionsEnabled: boolean })
+            | undefined;
+        expect(card).toBeDefined();
+        expect(card!).toHaveProperty('meetingPointDirectionsEnabled', true);
+        expect(card!).toHaveProperty('meetingPointDirections', null);
+        expect(card!).toMatchObject({
+            id: 'exp',
+            meetingPoint: 'Muelle',
+            meetingPointLat: -32.4,
+            meetingPointLong: -58.2,
+            name: 'Card'
+        });
+        expect(await projectPublicListings({ vertical: 'experience', listings: [] })).toEqual([]);
+    });
+
+    it('handles an omitted directions column without changing other page fields', async () => {
+        mocks.effectiveSet.mockResolvedValueOnce(effective([], VerticalEnum.EXPERIENCE));
+        const [raw] = await projectPublicListings({
+            vertical: 'experience',
+            listings: [
+                {
+                    id: 'exp',
+                    ownerId: 'owner',
+                    businessLines: ['standard'],
+                    meetingPoint: 'Plaza',
+                    meetingPointLat: 1,
+                    meetingPointLong: 2,
+                    name: 'Card'
+                }
+            ]
+        });
+        const card = raw as (typeof raw & { meetingPointDirectionsEnabled: boolean }) | undefined;
+        expect(card).toBeDefined();
+        expect(card).not.toHaveProperty('meetingPointDirections');
+        expect(card).toMatchObject({
+            id: 'exp',
+            meetingPoint: 'Plaza',
+            meetingPointLat: 1,
+            meetingPointLong: 2,
+            name: 'Card',
+            meetingPointDirectionsEnabled: false
+        });
     });
 });

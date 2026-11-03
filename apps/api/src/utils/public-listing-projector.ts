@@ -23,8 +23,18 @@ function projectVenueMenuTraits(
         { readonly state: string; readonly traits: ReadonlyMap<string, string> }
     >
 ): Record<string, unknown> {
+    // These names describe nested menu-section/item shape, not catalog section fields.
     const menu = states.get('menu');
-    const sections = listing.menuSections;
+    const sectionsField = (
+        LISTING_SECTIONS.venue as readonly {
+            readonly id: string;
+            readonly readOnlyFields?: readonly string[];
+        }[]
+    )
+        .find(({ id }) => id === 'menu')
+        ?.readOnlyFields?.at(-1);
+    if (!sectionsField) return listing;
+    const sections = listing[sectionsField];
     if (menu?.state !== 'available' || !Array.isArray(sections)) return listing;
     const keepPhotos = menu.traits.get('itemPhotos') === 'available';
     const keepTranslations = menu.traits.get('translations') === 'available';
@@ -32,7 +42,7 @@ function projectVenueMenuTraits(
         keepTranslations ? entity : { ...entity, nameI18n: null, descriptionI18n: null };
     return {
         ...listing,
-        menuSections: sections.map((rawSection) => {
+        [sectionsField]: sections.map((rawSection) => {
             const section = projectTranslation(rawSection as Record<string, unknown>);
             const items = Array.isArray(section.items) ? section.items : [];
             return {
@@ -65,11 +75,13 @@ export function projectPublicListing<T extends Record<string, unknown>>(args: {
     for (const section of LISTING_SECTIONS[args.vertical] as readonly {
         readonly id: string;
         readonly fields: readonly string[];
+        readonly readOnlyFields?: readonly string[];
         readonly traits?: readonly { readonly id: string; readonly fields?: readonly string[] }[];
     }[]) {
         const state = args.states.get(section.id);
         if (state?.state !== 'available') {
             for (const field of section.fields) removed.add(field);
+            for (const field of section.readOnlyFields ?? []) removed.add(field);
             for (const trait of section.traits ?? []) {
                 for (const field of trait.fields ?? []) removed.add(field);
             }
@@ -79,17 +91,6 @@ export function projectPublicListing<T extends Record<string, unknown>>(args: {
             if (state.traits.get(trait.id) !== 'available')
                 for (const field of trait.fields ?? []) removed.add(field);
         }
-    }
-    // These are relation/column names from older public payloads. Their catalog
-    // sections own the state, but the relation fields are not CRUD fields and
-    // therefore cannot appear in LISTING_SECTIONS.fields.
-    if (args.vertical === 'venue') {
-        const menu = args.states.get('menu');
-        if (menu?.state !== 'available') {
-            for (const field of ['menuFileUrl', 'menuFileKind', 'menuSections']) removed.add(field);
-        }
-        if (args.states.get('dailySpecials')?.state !== 'available') removed.add('dailySpecials');
-        if (args.states.get('venueEvents')?.state !== 'available') removed.add('venueEvents');
     }
     const projected = Object.fromEntries(
         Object.entries(args.listing).filter(([key]) => !removed.has(key))
