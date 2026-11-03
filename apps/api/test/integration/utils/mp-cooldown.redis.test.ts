@@ -1,6 +1,6 @@
 import Redis from 'ioredis';
 import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
-import { createMercadoPagoRedisCoolDownStore } from '../../src/utils/mp-cooldown-redis-store';
+import { createMercadoPagoRedisCoolDownStore } from '../../../src/utils/mp-cooldown-redis-store';
 
 const redisUrl = process.env.HOSPEDA_TEST_REDIS_URL;
 const client = redisUrl
