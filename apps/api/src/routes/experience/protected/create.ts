@@ -85,7 +85,7 @@ export async function handleCreateExperienceListing(ctx: Context, body: Record<s
     const result = await experienceService.createForOwner(actor, parsed.data);
 
     if (result.error) {
-        throw new ServiceError(result.error.code, result.error.message);
+        throw new ServiceError(result.error.code, result.error.message, result.error.details);
     }
 
     return result.data;

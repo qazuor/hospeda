@@ -1603,12 +1603,20 @@ export function createDbMock() {
             hardDelete: vi.fn().mockResolvedValue(undefined)
         },
 
+        // HOS-1831's API application mounts the plan catalog routes while
+        // constructing the route tree. These billing reads stay stubbed in
+        // route tests; the mock must expose the singleton so unrelated
+        // protected listing tests can initialize the real app.
+        PlanCatalogModel: GenericMockModel,
+        planCatalogModel: new GenericMockModel(),
+
         // SPEC-239: Venue singleton model instances. VenueService,
         // VenueReviewService, and the standalone FAQ helpers access these at module
         // scope (via service constructor or direct import). They are exported as singleton
         // instances (not classes) in @repo/db — mirror that here with GenericMockModel
         // instances so initApp() can construct all venue routes without a real DB.
         venueModel: new VenueMockModel(),
+        venues: VENUE_TABLE_COLUMNS,
         venueReviewModel: new GenericMockModel(),
         rVenueAmenityModel: new GenericMockModel(),
         rVenueFeatureModel: new GenericMockModel(),

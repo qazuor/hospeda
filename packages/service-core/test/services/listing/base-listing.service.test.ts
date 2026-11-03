@@ -67,7 +67,7 @@ type TestEntity = ListingEntity & {
 
 function makeModel(entity: TestEntity | null = null) {
     return {
-        entityName: 'test_listing',
+        entityName: 'venue',
         findById: vi.fn().mockResolvedValue(entity),
         findByIds: vi.fn().mockResolvedValue(entity ? [entity] : []),
         findOne: vi.fn().mockResolvedValue(entity),
@@ -202,7 +202,7 @@ class TestListingService extends BaseListingService<
         private readonly _amenityJunction_instance: ListingJunctionModel<Record<string, unknown>>,
         private readonly _featureJunction_instance: ListingJunctionModel<Record<string, unknown>>
     ) {
-        super(config, 'testListing');
+        super(config, 'venue');
     }
 
     protected get model() {
@@ -1004,6 +1004,7 @@ describe('BaseListingService — owner act rides the write transaction (HOS-1499
             name: 'Mi Restaurante',
             slug: 'mi-restaurante',
             type: 'RESTAURANT',
+            businessLines: ['food'],
             publicationStatus: 'DRAFT',
             ownerId: OWNER_ID
         }) as TestEntity;
