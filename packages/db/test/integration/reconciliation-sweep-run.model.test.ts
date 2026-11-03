@@ -6,11 +6,7 @@ import {
     ReconciliationSweepSliceAlreadyOpenError
 } from '../../src/models/reconciliation-sweep-run/reconciliation-sweep-run.model.ts';
 import { reconciliationSweepRuns } from '../../src/schemas/vertical/reconciliation-sweep-run.dbschema.ts';
-import {
-    closeRunIfOpen,
-    extendRunLease,
-    findOpenRunsWithLease
-} from '../../src/utils/run-lease.ts';
+import { closeRunIfOpen, extendRunLease, getRunLiveness } from '../../src/utils/run-lease.ts';
 import {
     closeTestPool,
     getTestDb,
@@ -181,8 +177,28 @@ describe('reconciliation sweep run registry (supports TEST:B11:24)', () => {
                 (await model.findOpenRunsWithLease({ tx })).find(({ id }) => id === live.id)
                     ?.leaseLive
             ).toBe(true);
-            const genericRows = await findOpenRunsWithLease({ lease, tx });
-            expect(genericRows.find(({ id }) => id === live.id)?.leaseLive).toBe(true);
+            expect(await getRunLiveness({ lease, id: live.id, tx })).toBe('live');
+            // A live lease is never closed as abandoned.
+            expect(
+                await closeRunIfOpen({
+                    lease,
+                    id: live.id,
+                    outcome: 'ABANDONED',
+                    onlyIfLeaseExpired: true,
+                    tx
+                })
+            ).toBeNull();
+            await tx
+                .update(reconciliationSweepRuns)
+                .set({ leaseUntil: new Date(Date.now() - 60_000) })
+                .where(eq(reconciliationSweepRuns.id, live.id));
+            // An expired lease cannot be revived by a late renewal.
+            expect(await extendRunLease({ lease, id: live.id, tx })).toBe(false);
+            expect(await getRunLiveness({ lease, id: live.id, tx })).toBe('abandoned');
+            await tx
+                .update(reconciliationSweepRuns)
+                .set({ leaseUntil: new Date(Date.now() + 60_000) })
+                .where(eq(reconciliationSweepRuns.id, live.id));
             expect(
                 await extendRunLease({
                     lease,

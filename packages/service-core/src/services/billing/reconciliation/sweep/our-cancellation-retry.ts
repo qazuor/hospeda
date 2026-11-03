@@ -324,6 +324,8 @@ export async function runOurCancellationRetry(
             unconfirmedOnly: input.unconfirmedOnly
         });
         for (const row of page) {
+            // Per item, before any provider write: a lost lease stops the pass here.
+            await ports.heartbeat?.();
             try {
                 const result = await retryOurCancellation(
                     {

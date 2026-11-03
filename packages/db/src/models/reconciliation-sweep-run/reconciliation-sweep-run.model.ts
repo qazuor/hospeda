@@ -8,7 +8,7 @@ import {
 } from '../../schemas/vertical/reconciliation-sweep-run.dbschema.ts';
 import { subscriptions } from '../../schemas/vertical/subscription.dbschema.ts';
 import type { DrizzleClient } from '../../types.ts';
-import { closeRunIfOpen, extendRunLease } from '../../utils/run-lease.ts';
+import { closeRunIfOpen, extendRunLease, getRunLiveness } from '../../utils/run-lease.ts';
 
 export type { ReconciliationSweepOutcome };
 /** Terminal outcomes permitted for a reconciliation slice. */
@@ -202,15 +202,23 @@ export class ReconciliationSweepRunModel {
             );
     }
 
-    /** Closes one abandoned open slice with database time. */
-    async closeAbandoned(input: { readonly id: string; readonly tx?: DrizzleClient }) {
-        return closeRunIfOpen({
+    /**
+     * Closes one open slice as ABANDONED, but only if its lease is still expired when the
+     * UPDATE runs. Returns false when it was renewed in between (or closed by someone else).
+     */
+    async closeAbandoned(input: {
+        readonly id: string;
+        readonly tx?: DrizzleClient;
+    }): Promise<boolean> {
+        const closed = await closeRunIfOpen({
             lease: runLease,
             id: input.id,
             outcome: 'ABANDONED',
             set: { finishedAt: sql`now()` },
+            onlyIfLeaseExpired: true,
             tx: input.tx
         });
+        return closed !== null;
     }
 
     /** Closes a slice once and persists its final progress using database time. */
@@ -261,28 +269,12 @@ export class ReconciliationSweepRunModel {
         return { cycleId, slices };
     }
 
-    /**
-     * Reads one run's liveness from the database clock. This is the helper other jobs
-     * (HOS-1955) use instead of a max age derived from `timeoutMs`: `live` means the lease is
-     * still in the future, `abandoned` means the run is open but its lease expired, `closed`
-     * means it has an outcome, `missing` means no such run.
-     */
+    /** Thin wrapper over the generic {@link getRunLiveness} for the sweep run table. */
     async getRunLiveness(input: {
         readonly id: string;
         readonly tx?: DrizzleClient;
     }): Promise<'live' | 'abandoned' | 'closed' | 'missing'> {
-        const db = input.tx ?? getDb();
-        const [row] = await db
-            .select({
-                outcome: reconciliationSweepRuns.outcome,
-                leaseLive: sql<boolean>`COALESCE(${reconciliationSweepRuns.leaseUntil} > now(), false)`
-            })
-            .from(reconciliationSweepRuns)
-            .where(eq(reconciliationSweepRuns.id, input.id))
-            .limit(1);
-        if (!row) return 'missing';
-        if (row.outcome !== null) return 'closed';
-        return row.leaseLive ? 'live' : 'abandoned';
+        return getRunLiveness({ lease: runLease, id: input.id, tx: input.tx });
     }
 
     /**

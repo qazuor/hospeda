@@ -29,7 +29,8 @@ function payload(
 }
 
 /**
- * Extends a run lease only while its outcome remains open.
+ * Extends a run lease only while its outcome remains open AND the lease has not expired
+ * (`false` means the lease is lost and the caller must stop).
  * Another job can adopt this helper by providing a table with `lease_until timestamptz`
  * and `outcome varchar` columns, plus its identity column.
  */
@@ -45,24 +46,41 @@ export async function extendRunLease(input: {
     const [updated] = await db
         .update(input.lease.table)
         .set(payload(input.lease, input.lease.leaseUntil, leaseValue, input.set))
-        .where(and(eq(input.lease.id, input.id), isNull(input.lease.outcome)))
+        .where(
+            and(
+                eq(input.lease.id, input.id),
+                isNull(input.lease.outcome),
+                // A lost lease cannot be revived: once it expired another run may take over.
+                sql`${input.lease.leaseUntil} > now()`
+            )
+        )
         .returning({ id: input.lease.id });
     return updated !== undefined;
 }
 
-/** Finds open rows and computes lease liveness in PostgreSQL; NULL is expired. */
-export async function findOpenRunsWithLease(input: {
+/**
+ * Reads one run's liveness on the database clock: `live` (open, lease in the future),
+ * `abandoned` (open, lease expired or never set), `closed` (has an outcome) or `missing`.
+ * Another job adopts this over any table with the descriptor's columns, instead of deriving
+ * a maximum age from a timeout.
+ */
+export async function getRunLiveness(input: {
     readonly lease: RunLeaseDescriptor;
+    readonly id: string;
     readonly tx?: DrizzleClient;
-}): Promise<ReadonlyArray<Record<string, unknown> & { readonly leaseLive: boolean }>> {
+}): Promise<'live' | 'abandoned' | 'closed' | 'missing'> {
     const db = input.tx ?? getDb();
-    return db
+    const [row] = await db
         .select({
-            ...getTableColumns(input.lease.table),
+            outcome: input.lease.outcome,
             leaseLive: sql<boolean>`COALESCE(${input.lease.leaseUntil} > now(), false)`
         })
         .from(input.lease.table)
-        .where(isNull(input.lease.outcome));
+        .where(eq(input.lease.id, input.id))
+        .limit(1);
+    if (!row) return 'missing';
+    if (row.outcome !== null) return 'closed';
+    return row.leaseLive ? 'live' : 'abandoned';
 }
 
 /** Closes an open run once, returning null when another actor already closed it. */
@@ -71,13 +89,23 @@ export async function closeRunIfOpen(input: {
     readonly id: string;
     readonly outcome: string;
     readonly set?: Readonly<Record<string, unknown>>;
+    /** Close only when the lease is expired (or unset), so a renewed lease is never closed. */
+    readonly onlyIfLeaseExpired?: boolean;
     readonly tx?: DrizzleClient;
 }): Promise<Record<string, unknown> | null> {
     const db = input.tx ?? getDb();
     const [row] = await db
         .update(input.lease.table)
         .set(payload(input.lease, input.lease.outcome, input.outcome, input.set))
-        .where(and(eq(input.lease.id, input.id), isNull(input.lease.outcome)))
+        .where(
+            and(
+                eq(input.lease.id, input.id),
+                isNull(input.lease.outcome),
+                input.onlyIfLeaseExpired
+                    ? sql`(${input.lease.leaseUntil} IS NULL OR ${input.lease.leaseUntil} <= now())`
+                    : undefined
+            )
+        )
         .returning();
     return row ?? null;
 }

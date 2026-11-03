@@ -117,6 +117,8 @@ export async function runTerminalReturn(
             holdCutoffs
         });
         for (const row of page) {
+            // Per item, before any provider write: a lost lease stops the pass here.
+            await ports.heartbeat?.();
             try {
                 const act = { kind: 'decision' as const, startedAt: ports.clock.now() };
                 actStartInstant({ act });

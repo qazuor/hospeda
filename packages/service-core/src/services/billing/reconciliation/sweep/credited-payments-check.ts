@@ -109,6 +109,8 @@ export async function runCreditedPaymentsCheck(
             limit: input.pageSize
         });
         for (const payment of page) {
+            // Per item, before any provider write: a lost lease stops the pass here.
+            await ports.heartbeat?.();
             const subscriptionId = payment.subscriptionId;
             try {
                 if (subscriptionId === null) continue;

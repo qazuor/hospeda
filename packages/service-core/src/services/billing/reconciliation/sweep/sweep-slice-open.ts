@@ -32,7 +32,7 @@ export function skippedSummary(input: {
         failures: [],
         startedAt: input.startedAt,
         finishedAt: input.finishedAt,
-        outcome: input.outcome ?? 'TIMED_OUT',
+        ...(input.outcome ? { outcome: input.outcome } : {}),
         skipped: input.skipped,
         phase: 'DONE',
         rowsComplete: input.skipped === 'cycle_done',
@@ -62,7 +62,11 @@ export async function openCycleSlice(args: {
     const openRuns = await reconciliationSweepRunModel.findOpenRunsWithLease();
     for (const openRun of openRuns) {
         if (openRun.leaseLive) return { run: none, summary: held() };
-        await reconciliationSweepRunModel.closeAbandoned({ id: openRun.id as string });
+        const closed = await reconciliationSweepRunModel.closeAbandoned({
+            id: openRun.id as string
+        });
+        // Renewed between our read and the close: the holder is alive, so we did not take it over.
+        if (!closed) return { run: none, summary: held() };
     }
     const todayCycle = args.newCycle
         ? null

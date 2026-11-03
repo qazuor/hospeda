@@ -107,6 +107,8 @@ export async function runReconciliationSweep(
         }
     };
     let afterSubscriptionId: string | undefined;
+    /** Rows whose stamp failed in this slice: counted as failed and skipped, never retried here. */
+    const stampFailedIds = new Set<string>();
     let stoppedOnBudget = false;
     let passReserveReached = false;
     let rowsComplete = false;
@@ -191,7 +193,9 @@ export async function runReconciliationSweep(
     try {
         for (;;) {
             const page = await reconciliationInventoryModel.listSweepInventoryPage({
-                ...(cycleMode ? { cycleId } : { afterSubscriptionId }),
+                ...(cycleMode
+                    ? { cycleId, excludeSubscriptionIds: [...stampFailedIds] }
+                    : { afterSubscriptionId }),
                 limit: pageSize
             });
             if (page.length === 0) {
@@ -211,6 +215,8 @@ export async function runReconciliationSweep(
                     passReserveReached = true;
                     break;
                 }
+                // Verify the lease right before the row's provider calls (a lost one stops here).
+                if (cycleMode) await heartbeat();
                 let rowFailed = false;
                 let rowRead = false;
                 try {
@@ -269,12 +275,34 @@ export async function runReconciliationSweep(
                     );
                 }
                 if (cycleMode) {
-                    const stamped = await reconciliationSweepRunModel.stampSweptRow({
-                        runId: run.id,
-                        subscriptionId: subscription.id,
-                        counters: { rowsRead: rowRead ? 1 : 0, rowsFailed: rowFailed ? 1 : 0 }
-                    });
-                    if (!stamped.stamped) throw new SweepLeaseLostError();
+                    try {
+                        const stamped = await reconciliationSweepRunModel.stampSweptRow({
+                            runId: run.id,
+                            subscriptionId: subscription.id,
+                            counters: {
+                                rowsRead: rowRead ? 1 : 0,
+                                rowsFailed: rowFailed ? 1 : 0
+                            }
+                        });
+                        if (!stamped.stamped) throw new SweepLeaseLostError();
+                    } catch (error) {
+                        if (error instanceof SweepLeaseLostError) throw error;
+                        // A persistent stamp error must not stall the cycle: count the row as
+                        // failed (it is alerted), skip it for this slice and move on.
+                        stampFailedIds.add(subscription.id);
+                        if (!rowFailed) {
+                            rowsFailed++;
+                            failedSubscriptionIds.push(subscription.id);
+                            failures.push({
+                                subscriptionId: subscription.id,
+                                message: `stamp failed: ${errorMessage(error)}`
+                            });
+                        }
+                        logger.error(
+                            { subscriptionId: subscription.id, error: errorMessage(error) },
+                            'Reconciliation row stamp failed'
+                        );
+                    }
                 }
             }
             if (input.signal?.aborted) stoppedOnBudget = true;
@@ -335,7 +363,9 @@ export async function runReconciliationSweep(
             outcome,
             phase,
             rowsComplete,
-            passesCompleted,
+            // Passes that ran while rows were still unread are not final: a later slice that
+            // completes the rows must run them again, so only a complete row phase keeps them.
+            passesCompleted: rowsComplete ? passesCompleted : [],
             failedSubscriptionIds,
             rowsRead,
             rowsFailed

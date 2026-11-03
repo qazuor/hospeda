@@ -88,6 +88,8 @@ export async function runPaidOrdersCheck(
             limit: input.pageSize
         });
         for (const { instance, orderKeyCreatedAt } of page) {
+            // Per item, before any provider write: a lost lease stops the pass here.
+            await ports.heartbeat?.();
             try {
                 examined++;
                 const orderIds = await orderIdsOf({ instance, orderKeyCreatedAt }, ports);

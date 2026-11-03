@@ -116,7 +116,8 @@ export interface ReconciliationSweepSummary {
     readonly paidOrders?: PaidOrdersCheckSummary;
     readonly markEscalation?: MarkEscalationSummary;
     readonly pauseGifts?: PauseGiftSummary;
-    readonly outcome: ReconciliationSweepOutcome;
+    /** Absent for a `lease_held` skip: this call opened no run of its own. */
+    readonly outcome?: ReconciliationSweepOutcome;
     readonly skipped?: 'lease_held' | 'cycle_done';
     /**
      * True when another slice closed this one (ABANDONED) after it had started working. Never

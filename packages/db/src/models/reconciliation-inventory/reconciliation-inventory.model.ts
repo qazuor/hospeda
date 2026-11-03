@@ -1,4 +1,4 @@
-import { and, asc, desc, eq, gt, inArray, isNull, lt, or, sql } from 'drizzle-orm';
+import { and, asc, desc, eq, gt, inArray, isNull, lt, notInArray, or, sql } from 'drizzle-orm';
 import { getDb } from '../../client.ts';
 import { domainEvent } from '../../schemas/domain-event/domain_event.dbschema.ts';
 import {
@@ -18,6 +18,8 @@ import type { DrizzleClient } from '../../types.ts';
 export interface ListSweepInventoryPageInput {
     readonly afterSubscriptionId?: string;
     readonly cycleId?: string;
+    /** Rows this slice already gave up on (their stamp failed), so they cannot loop the page query. */
+    readonly excludeSubscriptionIds?: readonly string[];
     readonly limit: number;
     readonly tx?: DrizzleClient;
 }
@@ -124,6 +126,9 @@ export class ReconciliationInventoryModel {
                 and(
                     inArray(subscriptions.class, ['PRINCIPAL', 'COMPLEMENTO']),
                     inArray(subscriptions.status, LIVE_SUBSCRIPTION_STATUSES),
+                    input.excludeSubscriptionIds && input.excludeSubscriptionIds.length > 0
+                        ? notInArray(subscriptions.id, [...input.excludeSubscriptionIds])
+                        : undefined,
                     input.cycleId === undefined
                         ? input.afterSubscriptionId === undefined
                             ? undefined
