@@ -64,7 +64,7 @@ const preview = {
     vertical: 'accommodation',
     role: null,
     sellable: true,
-    currentVersionId: plan.currentVersion.versionId,
+    currentVersionId: plan.currentVersion?.versionId ?? 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa',
     anchoredCustomers: 1,
     changes: [],
     message: 'Sin cambios.'

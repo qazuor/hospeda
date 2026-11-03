@@ -1,4 +1,4 @@
-import type { AdminCatalogPlanVersion, PlanVersionContentInput } from '@repo/schemas';
+import type { AdminCatalogPlanVersion, BillingCycle, PlanVersionContentInput } from '@repo/schemas';
 
 type EntitlementDraft = {
     readonly rowId: string;
