@@ -10,8 +10,11 @@ Dashboard path: **hospeda.com.ar → Security → WAF → Custom rules**.
 when the cutover aborts, stays on until the retry). It is an operational act of
 the cutover, dated and verified, not a switch in the code of either system
 (`.specs/HOS-1352-billing-verticals-redesign/spec-consolidada/30-el-corte.md`,
-paso 0b and paso 5). Current state: **not applied** (nothing is applied until
-the operator does it, and the operator records the date here).
+paso 0b and paso 5). Current state: **removed**. The rule was applied and then
+disabled during the HOS-1352 production cutover. It was **deleted** from the zone
+on **2026-11-02**, once an abort was no longer possible (HOS-1964). The only
+custom rule left in the zone is `H-48 - block meta-webindexer`. The text below
+documents the rule so it can be re-created for a future cutover.
 
 ---
 
