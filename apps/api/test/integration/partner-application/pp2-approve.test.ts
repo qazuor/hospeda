@@ -1,5 +1,5 @@
 /** TEST:V7:4 (base) — PP2 approves without claiming or granting a role. */
-import { getDb, partnerApplicationModel, sql } from '@repo/db';
+import { domainEventModel, getDb, partnerApplicationModel, sql } from '@repo/db';
 import { PermissionEnum, RoleEnum } from '@repo/schemas';
 import { afterAll, afterEach, beforeAll, describe, expect, it, vi } from 'vitest';
 import { initApp } from '../../../src/app';
@@ -370,5 +370,35 @@ describe('TEST:V7:4 PP2 approval without claim', () => {
         expect(partners.rows).toHaveLength(1);
         partnerIds.push(...partners.rows.map((row) => String(row.id)));
         expect(await events(id)).toHaveLength(1);
+    });
+
+    it('(j) rolls back approval and Partner creation when audit insertion fails', async () => {
+        const id = await pending(email());
+        const actorId = await admin();
+        const insertEvent = domainEventModel.insert.bind(domainEventModel);
+        const eventSpy = vi.spyOn(domainEventModel, 'insert').mockImplementation(async (args) => {
+            await insertEvent(args);
+            throw new Error('Injected audit insertion failure');
+        });
+        const response = await approve({
+            id,
+            actorId,
+            body: { ...BODY, name: 'HOS1485 Audit Atomicity' }
+        });
+        eventSpy.mockRestore();
+        expect(response.status).toBe(500);
+        expect(await application(id)).toMatchObject({
+            status: 'PENDING',
+            resolved_at: null,
+            partner_id: null
+        });
+        expect(
+            (
+                await getDb().execute(
+                    sql`SELECT id FROM partners WHERE slug LIKE 'hos1485-audit-atomicity-%'`
+                )
+            ).rows
+        ).toEqual([]);
+        expect(await events(id)).toEqual([]);
     });
 });
