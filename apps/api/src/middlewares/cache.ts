@@ -217,9 +217,20 @@ export function clearCache(): void {
  */
 export function invalidateCacheByPathPrefix({ pathPrefix }: { readonly pathPrefix: string }): void {
     for (const key of cache.keys()) {
-        const path = key.slice(key.indexOf(':') + 1).split('?')[0] ?? '';
+        const path = getCacheKeyPath({ key });
         if (path.startsWith(pathPrefix)) cache.delete(key);
     }
+}
+
+/** Extracts the request path from a key built by {@link generateCacheKey}. */
+function getCacheKeyPath({ key }: { readonly key: string }): string {
+    const namespace = key.startsWith('public:')
+        ? 'public:'
+        : key.startsWith('private:')
+          ? 'private:'
+          : null;
+    if (namespace === null) return '';
+    return key.slice(namespace.length).split('?')[0] ?? '';
 }
 
 /**
@@ -333,7 +344,7 @@ function requestCarriesCredentials({ c }: { readonly c: Context<AppBindings> }):
  * Determines the cache key for a request based on endpoint classification.
  * Returns null if the request should not be cached.
  */
-function generateCacheKey({
+export function generateCacheKey({
     path,
     queryString,
     publicEndpoints,

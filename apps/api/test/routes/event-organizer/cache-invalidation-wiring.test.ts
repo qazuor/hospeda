@@ -54,6 +54,9 @@ function buildApp(tier: 'protected' | 'admin'): Hono<AppBindings> {
         });
         await next();
     });
+    app.get(`/api/v1/public/events/organizer/${ID}`, (c) =>
+        c.json({ organizer: { email: 'stale@example.com' } })
+    );
     app.get(`/api/v1/public/event-organizers/${ID}`, (c) => c.json({ email: 'stale@example.com' }));
     app.route(
         `/api/v1/${tier}/event-organizers`,
@@ -94,6 +97,9 @@ describe.each(['protected', 'admin'] as const)('%s event-organizer cache invalid
         const first = await app.request(`/api/v1/public/event-organizers/${ID}`);
         expect(first.headers.get('x-cache')).toBe('MISS');
         expect((await first.json()).email).toBe('stale@example.com');
+        const firstEvent = await app.request(`/api/v1/public/events/organizer/${ID}`);
+        expect(firstEvent.headers.get('x-cache')).toBe('MISS');
+        expect((await firstEvent.json()).organizer.email).toBe('stale@example.com');
 
         const write = await app.request(`/api/v1/${tier}/event-organizers/${ID}`, {
             method: 'PATCH',
@@ -104,6 +110,8 @@ describe.each(['protected', 'admin'] as const)('%s event-organizer cache invalid
 
         const nextRead = await app.request(`/api/v1/public/event-organizers/${ID}`);
         expect(nextRead.headers.get('x-cache')).toBe('MISS');
+        const nextEventRead = await app.request(`/api/v1/public/events/organizer/${ID}`);
+        expect(nextEventRead.headers.get('x-cache')).toBe('MISS');
     });
 
     it('keeps the cached public detail after a failed PATCH', async () => {
@@ -114,6 +122,9 @@ describe.each(['protected', 'admin'] as const)('%s event-organizer cache invalid
         const first = await app.request(`/api/v1/public/event-organizers/${ID}`);
         expect(first.headers.get('x-cache')).toBe('MISS');
         await first.text();
+        const firstEvent = await app.request(`/api/v1/public/events/organizer/${ID}`);
+        expect(firstEvent.headers.get('x-cache')).toBe('MISS');
+        await firstEvent.text();
 
         const write = await app.request(`/api/v1/${tier}/event-organizers/${ID}`, {
             method: 'PATCH',
@@ -125,5 +136,7 @@ describe.each(['protected', 'admin'] as const)('%s event-organizer cache invalid
         const nextRead = await app.request(`/api/v1/public/event-organizers/${ID}`);
         expect(nextRead.headers.get('x-cache')).toBe('HIT');
         expect((await nextRead.json()).email).toBe('stale@example.com');
+        const nextEventRead = await app.request(`/api/v1/public/events/organizer/${ID}`);
+        expect(nextEventRead.headers.get('x-cache')).toBe('HIT');
     });
 });

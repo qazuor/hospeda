@@ -3,7 +3,7 @@
  * Routes that require admin-level access
  */
 
-import { invalidateCacheByPathPrefix } from '../../../middlewares/cache';
+import { eventOrganizerCacheInvalidationMiddleware } from '../../../middlewares/event-organizer-cache-invalidation';
 import { createRouter } from '../../../utils/create-app';
 import { adminCreateEventOrganizerRoute } from './create';
 import { adminDeleteEventOrganizerRoute } from './delete';
@@ -17,12 +17,7 @@ import { adminUpdateEventOrganizerRoute } from './update';
 
 const app = createRouter();
 
-app.use('*', async (c, next) => {
-    await next();
-    if (c.req.method !== 'GET' && c.res.status >= 200 && c.res.status < 300) {
-        invalidateCacheByPathPrefix({ pathPrefix: '/api/v1/public/event-organizers' });
-    }
-});
+app.use('*', eventOrganizerCacheInvalidationMiddleware());
 
 // GET / - List all event organizers (including deleted)
 app.route('/', adminListEventOrganizersRoute);

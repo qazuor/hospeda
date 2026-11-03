@@ -3,7 +3,7 @@
  * Routes that require authentication
  */
 
-import { invalidateCacheByPathPrefix } from '../../../middlewares/cache';
+import { eventOrganizerCacheInvalidationMiddleware } from '../../../middlewares/event-organizer-cache-invalidation';
 import { createRouter } from '../../../utils/create-app';
 import { protectedCreateEventOrganizerRoute } from './create';
 import { protectedPatchEventOrganizerRoute } from './patch';
@@ -12,12 +12,7 @@ import { protectedUpdateEventOrganizerRoute } from './update';
 
 const app = createRouter();
 
-app.use('*', async (c, next) => {
-    await next();
-    if (c.req.method !== 'GET' && c.res.status >= 200 && c.res.status < 300) {
-        invalidateCacheByPathPrefix({ pathPrefix: '/api/v1/public/event-organizers' });
-    }
-});
+app.use('*', eventOrganizerCacheInvalidationMiddleware());
 
 // POST / - Create event organizer
 app.route('/', protectedCreateEventOrganizerRoute);
