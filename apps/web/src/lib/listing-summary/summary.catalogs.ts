@@ -10,20 +10,27 @@
  * the venue and experience locale files.
  */
 
+import { VenueTypeEnum } from '@repo/schemas';
 import type { CatalogEntry, EntityGender, SummaryLocale } from './summary.types';
 
 /** Default venue type labels (mirror the FilterSidebar config + i18n copy). */
-export const DEFAULT_VENUE_TYPES: readonly CatalogEntry[] = [
-    { key: 'RESTAURANT', label: { es: 'restaurante', en: 'restaurant', pt: 'restaurante' } },
-    { key: 'BAR', label: { es: 'bar', en: 'bar', pt: 'bar' } },
-    { key: 'CAFE', label: { es: 'café', en: 'café', pt: 'café' } },
-    { key: 'PARRILLA', label: { es: 'parrilla', en: 'grill', pt: 'churrascaria' } },
-    { key: 'CERVECERIA', label: { es: 'cervecería', en: 'brewery', pt: 'cervejaria' } },
-    { key: 'HELADERIA', label: { es: 'heladería', en: 'ice cream shop', pt: 'sorveteria' } },
-    { key: 'PANADERIA', label: { es: 'panadería', en: 'bakery', pt: 'padaria' } },
-    { key: 'ROTISERIA', label: { es: 'rotisería', en: 'delicatessen', pt: 'rotisserie' } },
-    { key: 'FOOD_TRUCK', label: { es: 'food truck', en: 'food truck', pt: 'food truck' } }
-] as const;
+const VENUE_TYPE_LABELS: Record<VenueTypeEnum, Record<SummaryLocale, string>> = {
+    [VenueTypeEnum.RESTAURANT]: { es: 'restaurante', en: 'restaurant', pt: 'restaurante' },
+    [VenueTypeEnum.BAR]: { es: 'bar', en: 'bar', pt: 'bar' },
+    [VenueTypeEnum.CAFE]: { es: 'café', en: 'café', pt: 'café' },
+    [VenueTypeEnum.PARRILLA]: { es: 'parrilla', en: 'grill', pt: 'churrascaria' },
+    [VenueTypeEnum.CERVECERIA]: { es: 'cervecería', en: 'brewery', pt: 'cervejaria' },
+    [VenueTypeEnum.HELADERIA]: { es: 'heladería', en: 'ice cream shop', pt: 'sorveteria' },
+    [VenueTypeEnum.PANADERIA]: { es: 'panadería', en: 'bakery', pt: 'padaria' },
+    [VenueTypeEnum.ROTISERIA]: { es: 'rotisería', en: 'delicatessen', pt: 'rotisserie' },
+    [VenueTypeEnum.FOOD_TRUCK]: { es: 'food truck', en: 'food truck', pt: 'food truck' },
+    [VenueTypeEnum.PUB]: { es: 'pub', en: 'pub', pt: 'pub' },
+    [VenueTypeEnum.BOLICHE]: { es: 'boliche', en: 'nightclub', pt: 'balada' }
+};
+
+export const DEFAULT_VENUE_TYPES: readonly CatalogEntry[] = Object.values(VenueTypeEnum).map(
+    (key) => ({ key, label: VENUE_TYPE_LABELS[key] })
+);
 
 /** Default experience type labels (mirror the FilterSidebar config + i18n copy). */
 export const DEFAULT_EXPERIENCE_TYPES: readonly CatalogEntry[] = [

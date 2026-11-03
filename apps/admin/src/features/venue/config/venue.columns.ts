@@ -19,21 +19,6 @@ import type { VenueListItem } from './venue.config';
 // Badge label maps
 // ---------------------------------------------------------------------------
 
-/** Spanish labels for each VenueTypeEnum value. */
-const TYPE_LABELS: Record<VenueTypeEnum, string> = {
-    [VenueTypeEnum.RESTAURANT]: 'Restaurante',
-    [VenueTypeEnum.BAR]: 'Bar',
-    [VenueTypeEnum.CAFE]: 'Café',
-    [VenueTypeEnum.PARRILLA]: 'Parrilla',
-    [VenueTypeEnum.CERVECERIA]: 'Cervecería',
-    [VenueTypeEnum.HELADERIA]: 'Heladería',
-    [VenueTypeEnum.PANADERIA]: 'Panadería',
-    [VenueTypeEnum.ROTISERIA]: 'Rotisería',
-    [VenueTypeEnum.FOOD_TRUCK]: 'Food Truck',
-    [VenueTypeEnum.PUB]: 'Pub',
-    [VenueTypeEnum.BOLICHE]: 'Boliche'
-};
-
 /** Spanish labels for each PriceRangeEnum value. */
 const PRICE_RANGE_LABELS: Record<PriceRangeEnum, string> = {
     [PriceRangeEnum.BUDGET]: 'Económico',
@@ -45,7 +30,7 @@ const PRICE_RANGE_LABELS: Record<PriceRangeEnum, string> = {
 /** Badge colour mapping per venue type. */
 const TYPE_BADGE_OPTIONS = Object.values(VenueTypeEnum).map((value) => ({
     value,
-    label: TYPE_LABELS[value] ?? value,
+    label: `admin-entities.venue.types.${value}`,
     color: BadgeColor.ORANGE
 }));
 
@@ -91,7 +76,10 @@ export const createVenueColumns = (t: ColumnTFunction): readonly ColumnConfig<Ve
         accessorKey: 'type',
         enableSorting: true,
         columnType: ColumnType.BADGE,
-        badgeOptions: TYPE_BADGE_OPTIONS
+        badgeOptions: TYPE_BADGE_OPTIONS.map((option) => ({
+            ...option,
+            label: t(`admin-entities.venue.types.${option.value}` as const)
+        }))
     },
     {
         id: 'priceRange',
