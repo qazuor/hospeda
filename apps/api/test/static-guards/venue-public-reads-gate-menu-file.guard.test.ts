@@ -14,7 +14,7 @@ import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 
 const DIR = join(__dirname, '../../src/routes/venue/public');
-const GATE = /projectPublicListings/;
+const GATE = /\bprojectPublicListings\b/;
 const PUBLIC_READERS = ['getById.ts', 'getBySlug.ts', 'list.ts', 'getByDestination.ts'];
 
 describe('public venue reads gate the menu file (HOS-1792)', () => {
