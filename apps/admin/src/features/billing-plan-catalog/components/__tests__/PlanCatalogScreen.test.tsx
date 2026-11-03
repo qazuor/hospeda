@@ -84,6 +84,7 @@ describe('TEST:1704:13 PlanCatalogScreen', () => {
     );
     it('renders current version fields and a plan without a version in ordered rows', async () => {
         renderScreen();
+        expect(await screen.findByTestId('plan-catalog-table')).toBeInTheDocument();
         const first = await screen.findByTestId(`plan-row-${withVersion.planId}`);
         const second = screen.getByTestId(`plan-row-${withoutVersion.planId}`);
         expect(first).toHaveTextContent('Básico');
