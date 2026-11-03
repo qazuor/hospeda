@@ -69,12 +69,12 @@ export function run(args: { root?: string; minRoutes?: number } = {}) {
             continue;
         }
         const body = access[1];
-        if (
-            !body.includes(`id: '${expected.section}'`) &&
-            !body.includes(`id: "${expected.section}"`)
-        )
-            problems.push(`${PREFIX} ${label}`);
-        if (/id:\s*['"](?:common|listing)['"]/.test(body))
+        const sectionDeclaration = body.match(
+            /listingSection\s*:[\s\S]*?\bid\s*:\s*['"]([^'"]+)['"]/
+        );
+        if (!sectionDeclaration) problems.push(`${PREFIX} ${file} does not declare listingSection`);
+        else if (sectionDeclaration[1] !== expected.section) problems.push(`${PREFIX} ${label}`);
+        if (sectionDeclaration && /^(?:common|listing)$/.test(sectionDeclaration[1]))
             problems.push(
                 `${PREFIX} ${file} declares a common section instead of ${expected.section}`
             );

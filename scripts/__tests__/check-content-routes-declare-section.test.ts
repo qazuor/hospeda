@@ -41,10 +41,8 @@ describe('TEST:3.4:3 — GUARD:G-FAC-06 content routes declare their section', (
     });
     it('fails when a route omits listingSection', () => {
         const r = tree();
-        mutate(r, ROUTE, "id: 'dailySpecials',", '');
-        expect(run({ root: r, minRoutes: 1 }).output).toContain(
-            'must declare section dailySpecials'
-        );
+        mutate(r, ROUTE, 'listingSection: ({ body }) => [', '');
+        expect(run({ root: r, minRoutes: 1 }).output).toContain('does not declare listingSection');
     });
     it('fails when a newly added route touches a content table without joining the inventory', () => {
         const r = tree();
