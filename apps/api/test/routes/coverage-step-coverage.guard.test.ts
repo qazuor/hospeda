@@ -213,6 +213,19 @@ const accessOperation =
     /^\s*listingAccess:\s*\{[^}]*operation:\s*'(CREATE|EDIT|PUBLISH|DELETE|REACTIVATE)'/m;
 
 describe('AC:V5:9 TEST:V5:10 coverage step on every vertical write route', () => {
+    it('keeps section step 4b before coverage step 5', () => {
+        const resolver = readFileSync(
+            join(
+                import.meta.dirname,
+                '../../../../packages/verticals/src/authorization/resolve-listing-access.ts'
+            ),
+            'utf8'
+        );
+        const sectionGate = resolver.indexOf("evaluatedSteps.push('4b')");
+        const coverageGate = resolver.indexOf('OPERATION_PASSES_STEP5[args.operation]');
+        expect(sectionGate).toBeGreaterThan(-1);
+        expect(coverageGate).toBeGreaterThan(sectionGate);
+    });
     const actual = ['accommodation', 'venue', 'experience']
         .flatMap((vertical) => routeFiles(join(ROUTES_DIR, vertical), vertical))
         .filter((file) => hasWriteMethod.test(readFileSync(join(ROUTES_DIR, file), 'utf8')))

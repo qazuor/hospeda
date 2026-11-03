@@ -1,4 +1,5 @@
 import { UserModel } from '@repo/db';
+import type { BusinessLine } from '@repo/schemas';
 import { NO_PLANS_AVAILABLE_MESSAGE, ServiceErrorCode } from '@repo/schemas';
 import {
     isSystemActor,
@@ -43,6 +44,23 @@ function isPublishCapabilityKey({
 
 /** Header carrying the "why" of an administrative action (ACC:15, H6). */
 export const ACTION_REASON_HEADER = 'x-action-reason';
+type ListingSectionDeclaration = {
+    readonly id: string;
+    readonly intent: 'read' | 'write' | 'delete';
+};
+type ListingAccessWithSections = ListingAccessConfig & {
+    readonly listingSection?:
+        | ListingSectionDeclaration
+        | ((args: {
+              readonly body: Record<string, unknown> | undefined;
+          }) => readonly ListingSectionDeclaration[]);
+    readonly sectionTraits?:
+        | readonly string[]
+        | ((args: { readonly body: Record<string, unknown> | undefined }) => readonly string[]);
+    readonly businessLinesFromBody?: (args: {
+        readonly body: Record<string, unknown> | undefined;
+    }) => readonly BusinessLine[];
+};
 
 /** Upper bound of a decoded action reason, the same as action 23's body reason. */
 const ACTION_REASON_MAX_LENGTH = 2000;
@@ -88,7 +106,8 @@ function readForeignCreateSubject(args: {
  * Runs ONE content call of a route under the action-15 authorization its
  * listing-access chain granted (ACC:15, HOS-1493). The scope opens only when
  * step 3 ran and resolved a subject other than the actor; otherwise `run` runs
- * as is. Wrap only the route's own content service call — never a whole
+ * as is. Step 4b checks section presence and does not change this subject scope.
+ * Wrap only the route's own content service call — never a whole
  * handler nor several calls (coordinator decision, corrida 4).
  *
  * @param input.ctx - The request context after `enforceListingAccess`.
@@ -114,7 +133,7 @@ export function runListingContentCall<T>(input: {
 export async function enforceListingAccess(args: {
     ctx: Context;
     params: Record<string, unknown>;
-    config: ListingAccessConfig;
+    config: ListingAccessWithSections;
     tier: 'protected' | 'admin';
     body?: Record<string, unknown>;
 }): Promise<void> {
@@ -130,13 +149,19 @@ export async function enforceListingAccess(args: {
     // A CREATE on behalf of another owner (H12) is action 15 too: there is no
     // listing yet, so the subject comes from the validated body.
     const createSubjectId = readForeignCreateSubject({ config, body, actorId });
+    const requestedSections =
+        typeof config.listingSection === 'function'
+            ? config.listingSection({ body })
+            : config.listingSection
+              ? [config.listingSection]
+              : [];
     // An own create on a route that admits action 15 runs as before the route
     // declared listing access, still demanding the route's own create permission
     // (the route gate is an OR with action 15's permission, so it is re-checked here).
     if (config.createSubjectFromBody && createSubjectId === null) {
         if (config.ownCreatePermission && !actor.permissions.includes(config.ownCreatePermission))
             throw new ServiceError(ServiceErrorCode.FORBIDDEN, 'Forbidden');
-        return;
+        if (requestedSections.length === 0) return;
     }
     // Resolved only past the own-create exit: an own create never reads the
     // ports, so building them (and the real coverage reader) is not its cost.
@@ -176,6 +201,25 @@ export async function enforceListingAccess(args: {
         typeof config.capabilities === 'function'
             ? config.capabilities({ body })
             : config.capabilities;
+    const traits =
+        typeof config.sectionTraits === 'function'
+            ? config.sectionTraits({ body })
+            : (config.sectionTraits ?? []);
+    const bodyLines =
+        config.businessLinesFromBody?.({ body }) ??
+        (Array.isArray(body?.businessLines)
+            ? body.businessLines.filter((value): value is BusinessLine => typeof value === 'string')
+            : undefined);
+    const resultingBusinessLines =
+        config.operation === 'CREATE'
+            ? (bodyLines ?? [])
+            : (bodyLines ?? facts?.businessLines ?? []);
+    const sections = requestedSections.length
+        ? {
+              requested: requestedSections.map((section) => ({ ...section, traits })),
+              resultingBusinessLines
+          }
+        : undefined;
     const result = await resolveListingAccess({
         actorId,
         vertical: config.vertical,
@@ -186,6 +230,7 @@ export async function enforceListingAccess(args: {
         createSubjectId,
         step6Key: config.step6Key,
         requiredKeys,
+        sections,
         limit,
         billing: ports.billing,
         effectiveSet: ports.effectiveSet,
@@ -199,7 +244,7 @@ export async function enforceListingAccess(args: {
         }
         ctx.set('listingAccess', {
             subjectId: result.subjectId,
-            evaluatedSteps: result.evaluatedSteps
+            evaluatedSteps: result.evaluatedSteps as never
         });
         return;
     }
@@ -216,6 +261,16 @@ export async function enforceListingAccess(args: {
                 entitlementKey: null,
                 reason: 'NO_COVERAGE'
             });
+        case 'SECTION_ABSENT':
+            throw new ServiceError(
+                ServiceErrorCode.ALREADY_EXISTS,
+                'Section is absent for listing business lines',
+                {
+                    reason: 'SECTION_ABSENT',
+                    section: result.section
+                },
+                'SECTION_ABSENT'
+            );
         case 'NO_CAPABILITY':
             if (
                 config.operation === 'PUBLISH' &&

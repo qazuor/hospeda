@@ -5,6 +5,7 @@
  * bootstrap assembler of `@repo/verticals`.
  */
 
+import { getDb } from '@repo/db';
 import { VerticalEnum } from '@repo/schemas';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
@@ -22,7 +23,14 @@ const mocks = vi.hoisted(() => ({
 
 vi.mock('@repo/db', async () => {
     const { createDbMock } = await import('../../helpers/mocks/db-mock');
-    return { ...createDbMock(), planCatalogModel: { tag: 'plan catalog model' } };
+    const mock = createDbMock();
+    const db = mock.getDb();
+    return {
+        ...mock,
+        getDb: vi.fn(() => db),
+        venues: { id: 'venues.id', deletedAt: 'venues.deletedAt' },
+        planCatalogModel: { tag: 'plan catalog model' }
+    };
 });
 
 vi.mock('@repo/verticals', async (importOriginal) => ({
@@ -99,5 +107,22 @@ describe('HOS-1721 getListingAccessPorts().preTrialDraftLimits', () => {
             userId: '11111111-1111-4111-8111-111111111111',
             vertical: VerticalEnum.ACCOMMODATION
         });
+    });
+});
+
+describe('HOS-1834 loadFacts business lines', () => {
+    it('returns businessLines from the already selected listing row', async () => {
+        const query = getDb() as unknown as {
+            limit: { mockResolvedValueOnce(value: unknown): void };
+        };
+        query.limit.mockResolvedValueOnce([
+            { ownerId: 'owner', publicationStatus: 'PUBLISHED', businessLines: ['food'] }
+        ]);
+        const result = await getListingAccessPorts().loadFacts({
+            vertical: 'venue',
+            listingId: 'listing'
+        });
+        expect(result.facts?.businessLines).toEqual(['food']);
+        expect(result.ownerId).toBe('owner');
     });
 });

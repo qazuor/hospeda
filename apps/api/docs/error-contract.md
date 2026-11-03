@@ -62,13 +62,15 @@ For an unverified account, an operation on the list runs without the staff permi
 Listing access runs inside business rules (step 6 of the HTTP order), after
 request shape and resource existence or ownership. The route factory wraps the
 validated handler, so an invalid body receives 400 before listing access runs.
-The listing resolver then evaluates its own steps 3 through 7 in order.
+The listing resolver then evaluates its own steps 3, 4, 4b, 5, 6 and 7 in order. Step 4b returns 409 `ALREADY_EXISTS` with `details: { reason: 'SECTION_ABSENT', section }` to the owner when a requested section is absent for the listing's business lines; a foreign subject receives 404 `NOT_FOUND`.
 
 | Listing decision | HTTP status | `error.code` | Public `error.details` |
 |---|---|---|---|
 | `NOT_FOUND` | 404 | `NOT_FOUND` | None; body matches the entity ownership 404 |
 | `FORBIDDEN` | 403 | `FORBIDDEN` | None |
 | `NO_COVERAGE` | 403 | `ENTITLEMENT_REQUIRED` | `{ entitlementKey: null, reason: 'NO_COVERAGE' }` |
+| `SECTION_ABSENT` (owner) | 409 | `ALREADY_EXISTS` | `{ reason: 'SECTION_ABSENT', section }` |
+| `SECTION_ABSENT` (foreign subject) | 404 | `NOT_FOUND` | None; same hidden-resource response as a missing listing |
 | `NO_CAPABILITY` | 403 | `ENTITLEMENT_REQUIRED` | `{ entitlementKey }` |
 | `NO_CAPABILITY` on `PUBLISH` without a live non-trial title | 403 | `FORBIDDEN` | Message: `subscription_required` (same response as PB1 when the trial cannot start) |
 | `NO_PLANS_AVAILABLE` | 403 | `FORBIDDEN` | Message: `no_plans_available` (la vertical no tiene ninguna versión de plan vigente y vendible; no es `subscription_required`: no hay nada que contratar) |
